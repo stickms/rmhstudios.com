@@ -1117,6 +1117,7 @@ import { Route as ApiStorefrontCreatorUseridRouteImport } from './routes/api/sto
 import { Route as ApiStorefrontProductsIndexRouteImport } from './routes/api/storefront/products/index'
 import { Route as ApiStudioChallengesIndexRouteImport } from './routes/api/studio/challenges/index'
 import { Route as ApiStudyDecksIndexRouteImport } from './routes/api/study/decks/index'
+import { Route as ApiTf2GameAssetsSplatRouteImport } from './routes/api/tf2-game/assets/$'
 import { Route as ApiTf2HudBaseSplatRouteImport } from './routes/api/tf2-hud/base/$'
 import { Route as ApiTf2HudBlobsSha1RouteImport } from './routes/api/tf2-hud/blobs/$sha1'
 import { Route as ApiTf2HudBlobsCheckRouteImport } from './routes/api/tf2-hud/blobs/check'
@@ -6997,6 +6998,11 @@ const ApiStudyDecksIndexRoute = ApiStudyDecksIndexRouteImport.update({
   path: '/api/study/decks/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTf2GameAssetsSplatRoute = ApiTf2GameAssetsSplatRouteImport.update({
+  id: '/api/tf2-game/assets/$',
+  path: '/api/tf2-game/assets/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTf2HudBaseSplatRoute = ApiTf2HudBaseSplatRouteImport.update({
   id: '/api/tf2-hud/base/$',
   path: '/api/tf2-hud/base/$',
@@ -9160,6 +9166,7 @@ export interface FileRoutesByFullPath {
   '/api/stamps/$id/wall': typeof ApiStampsIdWallRoute
   '/api/stamps/image/$filename': typeof ApiStampsImageFilenameRoute
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
+  '/api/tf2-game/assets/$': typeof ApiTf2GameAssetsSplatRoute
   '/api/tf2-hud/base/$': typeof ApiTf2HudBaseSplatRoute
   '/api/tf2-hud/blobs/$sha1': typeof ApiTf2HudBlobsSha1Route
   '/api/tf2-hud/blobs/check': typeof ApiTf2HudBlobsCheckRoute
@@ -10444,6 +10451,7 @@ export interface FileRoutesByTo {
   '/api/stamps/$id/wall': typeof ApiStampsIdWallRoute
   '/api/stamps/image/$filename': typeof ApiStampsImageFilenameRoute
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
+  '/api/tf2-game/assets/$': typeof ApiTf2GameAssetsSplatRoute
   '/api/tf2-hud/base/$': typeof ApiTf2HudBaseSplatRoute
   '/api/tf2-hud/blobs/$sha1': typeof ApiTf2HudBlobsSha1Route
   '/api/tf2-hud/blobs/check': typeof ApiTf2HudBlobsCheckRoute
@@ -11757,6 +11765,7 @@ export interface FileRoutesById {
   '/api/stamps/$id/wall': typeof ApiStampsIdWallRoute
   '/api/stamps/image/$filename': typeof ApiStampsImageFilenameRoute
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
+  '/api/tf2-game/assets/$': typeof ApiTf2GameAssetsSplatRoute
   '/api/tf2-hud/base/$': typeof ApiTf2HudBaseSplatRoute
   '/api/tf2-hud/blobs/$sha1': typeof ApiTf2HudBlobsSha1Route
   '/api/tf2-hud/blobs/check': typeof ApiTf2HudBlobsCheckRoute
@@ -13070,6 +13079,7 @@ export interface FileRouteTypes {
     | '/api/stamps/$id/wall'
     | '/api/stamps/image/$filename'
     | '/api/storefront/creator/$userid'
+    | '/api/tf2-game/assets/$'
     | '/api/tf2-hud/base/$'
     | '/api/tf2-hud/blobs/$sha1'
     | '/api/tf2-hud/blobs/check'
@@ -14354,6 +14364,7 @@ export interface FileRouteTypes {
     | '/api/stamps/$id/wall'
     | '/api/stamps/image/$filename'
     | '/api/storefront/creator/$userid'
+    | '/api/tf2-game/assets/$'
     | '/api/tf2-hud/base/$'
     | '/api/tf2-hud/blobs/$sha1'
     | '/api/tf2-hud/blobs/check'
@@ -15666,6 +15677,7 @@ export interface FileRouteTypes {
     | '/api/stamps/$id/wall'
     | '/api/stamps/image/$filename'
     | '/api/storefront/creator/$userid'
+    | '/api/tf2-game/assets/$'
     | '/api/tf2-hud/base/$'
     | '/api/tf2-hud/blobs/$sha1'
     | '/api/tf2-hud/blobs/check'
@@ -16591,6 +16603,7 @@ export interface RootRouteChildren {
   ApiSpacesIdStartRoute: typeof ApiSpacesIdStartRoute
   ApiStampsImageFilenameRoute: typeof ApiStampsImageFilenameRoute
   ApiStorefrontCreatorUseridRoute: typeof ApiStorefrontCreatorUseridRoute
+  ApiTf2GameAssetsSplatRoute: typeof ApiTf2GameAssetsSplatRoute
   ApiTf2HudBaseSplatRoute: typeof ApiTf2HudBaseSplatRoute
   ApiTf2HudBlobsSha1Route: typeof ApiTf2HudBlobsSha1Route
   ApiTf2HudBlobsCheckRoute: typeof ApiTf2HudBlobsCheckRoute
@@ -24493,6 +24506,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStudyDecksIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tf2-game/assets/$': {
+      id: '/api/tf2-game/assets/$'
+      path: '/api/tf2-game/assets/$'
+      fullPath: '/api/tf2-game/assets/$'
+      preLoaderRoute: typeof ApiTf2GameAssetsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/tf2-hud/base/$': {
       id: '/api/tf2-hud/base/$'
       path: '/api/tf2-hud/base/$'
@@ -28819,6 +28839,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpacesIdStartRoute: ApiSpacesIdStartRoute,
   ApiStampsImageFilenameRoute: ApiStampsImageFilenameRoute,
   ApiStorefrontCreatorUseridRoute: ApiStorefrontCreatorUseridRoute,
+  ApiTf2GameAssetsSplatRoute: ApiTf2GameAssetsSplatRoute,
   ApiTf2HudBaseSplatRoute: ApiTf2HudBaseSplatRoute,
   ApiTf2HudBlobsSha1Route: ApiTf2HudBlobsSha1Route,
   ApiTf2HudBlobsCheckRoute: ApiTf2HudBlobsCheckRoute,

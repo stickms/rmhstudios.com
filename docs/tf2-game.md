@@ -77,6 +77,63 @@ event loop. The pieces, outermost first:
 The worker is its own esbuild entry in both `package.json` `build` and the
 Dockerfile `server-builder` stage (which asserts the output exists).
 
+## Game assets
+
+The `tf2-assets-sync` workflow converts the game's content into object storage
+under `tf2-game/`, as channels gated by the Steam build like the hub's (see
+[TF2 Hub](tf2-hub.md) "Keeping the game files current"). Builder versions live
+in `lib/tf2-game/assets/versions.ts`; the workflow reads them from there.
+
+| Channel          | Stored at                                | Built by                                                      | Entry point (published last) |
+| ---------------- | ---------------------------------------- | ------------------------------------------------------------- | ---------------------------- |
+| `game-models`    | `tf2-game/mdl/`, shared `tf2-game/tex/`  | `scripts/tf2-game/model-list.py` → `models.py`                | `mdl/index.json`             |
+| `game-sounds`    | `tf2-game/snd/<sha>.mp3`                 | `scripts/tf2-game/sound-list.py` → `sounds.py` (ffmpeg)       | `snd/index.json`             |
+| `game-particles` | `tf2-game/particles/{effects,tex}/<sha>` | `scripts/tf2-game/game_particles.py` (`particle-systems.txt`) | `particles/index.json`       |
+| `game-maps`      | `tf2-game/maps/`                         | `scripts/tf2-game/build-maps.ts` (wired once it exists)       | `maps/index.json`            |
+
+`GET /api/tf2-game/assets/<kind>/<file>` serves them (`lib/tf2-game/assets/store.server.ts`,
+paths checked by `paths.ts`): content-addressed files are immutable for a year,
+index files revalidate after five minutes, Brotli passes through. In the
+browser, `lib/tf2-game/assets/urls.ts` builds the URLs and loads the indexes.
+The scheme is `<game>-game/<kind>/`, so the later `hl2-game/` and `portal-game/`
+channels reuse the same code with a `game` argument.
+
+- **Sounds.** `snd/index.json` is `{ v, entries: { <script name>: { waves: [sha…],
+volume: [min,max], pitch: [min,max], soundlevel, channel, flags? } }, files:
+{ "sound/<path>": "<sha>.mp3" }, loops: { "<sha>.mp3": { start, end } } }`.
+  Scripts are read tf/-first (`gamefs.py`), conditionals evaluated as Windows
+  desktop, Source's prefix characters kept as `flags`. MP3 is mono 64 kbps
+  (less below 32 kHz) unless the sound is stereo by design (`)`, `^`, music:
+  96 kbps stereo); an MP3 source already that small is copied untouched. Loop
+  points come from the WAV `cue `/`ltxt` or `smpl` chunk, in seconds of the
+  source. The encoder's leading padding is recorded in the LAME header, which
+  Chromium and Firefox trim when decoding; where it is not trimmed (Safari) a
+  loop starts about 25 ms late. The default list is about 1,400 files.
+- **Particles.** `particles/index.json` is `{ v, systems: { <name>:
+"effects/<sha>.json" }, missingTextures }`; each bundle is exactly the loadout's
+  `ParticleBundle` (built by `scripts/tf2-assets/particles.py`'s `Graphs`), with
+  `id` a stable hash of the name and `schema: { system }`. Its texture frames are
+  `particles/tex/<sha>.webp` — load them with `particleAssetUrl`, not the loadout's
+  `PARTICLE_API`.
+
+**Storage budget.** Every game channel (all games) shares one budget,
+`TF2_GAME_STORAGE_BUDGET_GB` (a repository variable; default 12 GB, R2).
+Before any game upload, `scripts/tf2-game/storage-report.ts report` sums the
+stored size of every channel from its state file — no bucket listing — plus
+what this run would add, and fails the publish past the budget. Run it locally
+(with the S3 variables) to see the footprint. Keep lists lean: `sound-list.py
+--max-files` (default 1,500) fails a selection that grows, and
+`particle-systems.txt` names only systems the game spawns.
+
+Local runs: `python3 -B scripts/tf2-game/sound-list.py --root <install> --out list.json`,
+`python3 -B scripts/tf2-game/sounds.py --root <install> --list list.json --out out`,
+`python3 -B scripts/tf2-game/game_particles.py --root <install> --out out`. A
+dedicated-server install has no texture or sound data, only their indexes: the
+particle exporter records the textures it could not read and carries on; the
+sound exporter reports every file as missing. Exporter tests:
+`python3 -B -m unittest discover -s scripts/tf2-game -p 'test_sounds.py'` and
+`-p test_game_particles.py` (the latter needs `vpk numpy pillow srctools==2.6.2`).
+
 ## Tests
 
 The game's tests are their own suite, `pnpm test:tf2` (`vitest.tf2.config.ts`),

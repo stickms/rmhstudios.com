@@ -130,58 +130,56 @@ def texture(raw, emit):
             "frames": frames, "sequences": sheets}
 
 
-def build(fs, out, state=None, only=None):
-    published = (state or {}).get("models", {})
-    wanted = {}
-    os.makedirs(out, exist_ok=True)
+def json_bytes(data):
+    return json.dumps(data, separators=(",", ":"), sort_keys=True, allow_nan=False).encode()
 
-    def write(path, data):
+
+class Output:
+    """Content-addressed, incremental writer shared by every particle exporter.
+
+    `wanted` maps each relative path to the hash of exactly what produced it; a file
+    whose hash matches the published state is neither written nor (for frames) decoded.
+    """
+
+    def __init__(self, out, state=None):
+        self.out = out
+        self.published = (state or {}).get("models", {})
+        self.wanted = {}
+        os.makedirs(out, exist_ok=True)
+
+    def _stale(self, path, src):
+        self.wanted[path] = {"src": src}
+        return self.published.get(path, {}).get("src") != src or os.environ.get("FORCE") == "1"
+
+    def _put(self, path, data):
+        full = os.path.join(self.out, path)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        with open(full, "wb") as fh:
+            fh.write(data)
+
+    def write(self, path, data):
         src = hashlib.sha256(b"particles-v%d|" % VERSION + data).hexdigest()
-        wanted[path] = {"src": src}
-        if published.get(path, {}).get("src") != src or os.environ.get("FORCE") == "1":
-            full = os.path.join(out, path)
-            os.makedirs(os.path.dirname(full), exist_ok=True)
-            with open(full, "wb") as fh:
-                fh.write(data)
+        if self._stale(path, src):
+            self._put(path, data)
         return path
 
-    def emit(directory, ext, data):
-        return write("%s/%s.%s" % (directory, hashlib.sha256(data).hexdigest(), ext), data)
+    def emit(self, directory, ext, data):
+        return self.write("%s/%s.%s" % (directory, hashlib.sha256(data).hexdigest(), ext), data)
 
-    def emit_frame(raw, frame, encode):
+    def emit_frame(self, raw, frame, encode):
         # Address by exact source, frame and converter version, so unchanged images
         # are neither decoded nor encoded again. SHT metadata is read header-only.
         src = hashlib.sha256(b"particles-v%d|frame%d|" % (VERSION, frame) + hashlib.sha256(raw).digest()).hexdigest()
         path = "tex/%s.webp" % src
-        wanted[path] = {"src": src}
-        if published.get(path, {}).get("src") != src or os.environ.get("FORCE") == "1":
-            full = os.path.join(out, path)
-            os.makedirs(os.path.dirname(full), exist_ok=True)
-            with open(full, "wb") as fh:
-                fh.write(encode())
+        if self._stale(path, src):
+            self._put(path, encode())
         return path
 
-    def json_bytes(data):
-        return json.dumps(data, separators=(",", ":"), sort_keys=True, allow_nan=False).encode()
 
-    raw = fs.read("scripts/items/items_game.txt")
-    if raw is None:
-        raise FileNotFoundError("scripts/items/items_game.txt")
-    ig = kv.get(kv.parse(raw.decode("utf8", "replace")), "items_game")
-    groups = kv.get(ig, "attribute_controlled_attached_particles") or []
-    effects = {int(idx): dict(body) for group, entries in groups
-               if group in ("cosmetic_unusual_effects", "taunt_unusual_effects", "weapon_unusual_effects")
-               for idx, body in entries if isinstance(body, list) and (not only or int(idx) in only)}
+def load_systems(fs):
+    """Every particle system definition, by name. The game's manifest is read in order so
+    later definitions override earlier ones; PCFs it does not list are read after it."""
     systems = {}
-    suffixes = set()
-    def collect_suffixes(pairs):
-        for key, value in pairs:
-            if key == "particle_suffix" and isinstance(value, str):
-                suffixes.add(value)
-            elif isinstance(value, list):
-                collect_suffixes(value)
-    collect_suffixes(ig)
-    # Parse the game's manifest in order so later definitions override earlier ones.
     manifest_raw = fs.read("particles/particles_manifest.txt")
     paths = []
     if manifest_raw:
@@ -197,37 +195,110 @@ def build(fs, out, state=None, only=None):
             raise ValueError("not a particle file: " + path)
         for el in root["particleSystemDefinitions"].iter_elem():
             systems[el.name] = system(el)
+    return systems
 
-    materials, textures, errors = {}, {}, []
 
-    def visit(name, graph):
+TEXTURE_PARAMS = ("$basetexture", "$basetexture2", "$texture2", "$normalmap",
+                  "$bumpmap", "$ram texture", "$ramptexture", "$detail")
+
+
+class Graphs:
+    """Collects a root system's complete graph (children followed) and its materials.
+
+    By default a missing texture is an error for the whole graph. With
+    `missing_textures` (a dict), a texture absent from the install is recorded there
+    (texture path -> reason) and left out of its material instead; the bundle format
+    is unchanged.
+    """
+
+    def __init__(self, fs, systems, emit_frame, missing_textures=None):
+        self.fs = fs
+        self.systems = systems
+        self.emit_frame = emit_frame
+        self.materials = {}
+        self.textures = {}
+        self.missing_textures = missing_textures
+
+    def _texture(self, tex):
+        if tex in self.textures:
+            return self.textures[tex]
+        if self.missing_textures is not None and tex in self.missing_textures:
+            return None
+        try:
+            vtf_raw = self.fs.read("materials/" + tex + ".vtf")
+        except FileNotFoundError as exc:
+            # A VPK index entry whose archive is absent (e.g. a dedicated-server install).
+            if self.missing_textures is None:
+                raise
+            self.missing_textures[tex] = str(exc)
+            return None
+        if vtf_raw is None:
+            if self.missing_textures is None:
+                raise FileNotFoundError("materials/" + tex + ".vtf")
+            self.missing_textures[tex] = "not in the install"
+            return None
+        self.textures[tex] = texture(vtf_raw, self.emit_frame)
+        return self.textures[tex]
+
+    def visit(self, name, graph):
         if name in graph:
             return
-        if name not in systems:
+        if name not in self.systems:
             raise ValueError("missing particle system: " + name)
-        graph[name] = systems[name]
+        graph[name] = self.systems[name]
         mat = graph[name]["options"].get("material", "")
         if mat:
             key = clean(mat)
             graph[name] = {**graph[name], "material": key}
-            if key not in materials:
-                data = material(fs, mat)
+            if key not in self.materials:
+                data = material(self.fs, mat)
                 for param, path in data["params"].items():
-                    if param not in ("$basetexture", "$basetexture2", "$texture2", "$normalmap",
-                                     "$bumpmap", "$ram texture", "$ramptexture", "$detail") or not path:
+                    if param not in TEXTURE_PARAMS or not path:
                         continue
                     tex = clean(path.removesuffix(".vtf"))
                     if tex.startswith("_"):
                         continue  # engine framebuffer textures, supplied by the renderer
-                    if tex not in textures:
-                        vtf_raw = fs.read("materials/" + tex + ".vtf")
-                        if vtf_raw is None:
-                            raise FileNotFoundError("materials/" + tex + ".vtf")
-                        textures[tex] = texture(vtf_raw, emit_frame)
-                    data["textures"][param] = textures[tex]
-                materials[key] = data
+                    found = self._texture(tex)
+                    if found is not None:
+                        data["textures"][param] = found
+                self.materials[key] = data
         for child in graph[name]["children"]:
-            visit(child["system"], graph)
+            self.visit(child["system"], graph)
+
+    def bundle(self, name, idx, schema):
+        """The bundle format consumed by lib/tf2-loadout/particles (ParticleBundle)."""
+        graph = {}
+        self.visit(name, graph)
+        mats = {s["material"]: self.materials[s["material"]] for s in graph.values() if "material" in s}
+        return {"v": VERSION, "id": idx, "system": name, "schema": schema,
+                "systems": graph, "materials": mats}
+
+
+def build(fs, out, state=None, only=None):
+    output = Output(out, state)
+    published = output.published
+    wanted = output.wanted
+    write, emit = output.write, output.emit
+
+    raw = fs.read("scripts/items/items_game.txt")
+    if raw is None:
+        raise FileNotFoundError("scripts/items/items_game.txt")
+    ig = kv.get(kv.parse(raw.decode("utf8", "replace")), "items_game")
+    groups = kv.get(ig, "attribute_controlled_attached_particles") or []
+    effects = {int(idx): dict(body) for group, entries in groups
+               if group in ("cosmetic_unusual_effects", "taunt_unusual_effects", "weapon_unusual_effects")
+               for idx, body in entries if isinstance(body, list) and (not only or int(idx) in only)}
+    suffixes = set()
+    def collect_suffixes(pairs):
+        for key, value in pairs:
+            if key == "particle_suffix" and isinstance(value, str):
+                suffixes.add(value)
+            elif isinstance(value, list):
+                collect_suffixes(value)
+    collect_suffixes(ig)
+    systems = load_systems(fs)
+    graphs = Graphs(fs, systems, output.emit_frame)
+    materials, textures, errors = graphs.materials, graphs.textures, []
 
     index = {}
     for idx, schema in sorted(effects.items()):
@@ -239,12 +310,7 @@ def build(fs, out, state=None, only=None):
                 errors.append({"id": str(idx), "error": "no matching weapon particle variants"})
         for key, name in variants:
             try:
-                graph = {}
-                visit(name, graph)
-                mats = {s["material"]: materials[s["material"]] for s in graph.values() if "material" in s}
-                bundle = {"v": VERSION, "id": idx, "system": name, "schema": schema,
-                          "systems": graph, "materials": mats}
-                index[key] = emit("effects", "json", json_bytes(bundle))
+                index[key] = emit("effects", "json", json_bytes(graphs.bundle(name, idx, schema)))
             except (ValueError, FileNotFoundError, NotImplementedError) as exc:
                 # Never advertise a graph with missing dependencies as a working effect.
                 # --preserve-index keeps its previously published version on refresh.

@@ -2,7 +2,8 @@ name: tf2-assets-sync
 
 # Keeps the TF2 Hub's game files in object storage current: item 3D models
 # (GLB, textures baked in), inventory icons, war paints, unusual particle graphs
-# and the HUD editor's base. Valve's files are
+# and the HUD editor's base — and the browser game's channels under tf2-game/
+# (game-models, game-sounds, game-particles, game-maps). Valve's files are
 # downloaded with SteamCMD, the few thousand we use are converted/selected, the
 # rest (tens of GB) is deleted, and nothing is committed to the repository.
 #
@@ -16,6 +17,18 @@ name: tf2-assets-sync
 #   4. Cleanup: the 30+ GB install is deleted as soon as extraction finishes
 #      (and again on failure); objects no longer in the game are only deleted
 #      when a manual run asks for `prune`.
+#   5. Budget (game channels): before any tf2-game/ upload, storage-report.ts sums every
+#      game channel's stored size from the state files (plus what this run would add) and
+#      fails the publish past TF2_GAME_STORAGE_BUDGET_GB (default 12 GB, shared with the
+#      later hl2-game/ and portal-game/ channels). Builder versions come from
+#      lib/tf2-game/assets/versions.ts.
+#
+# Game channels never hold up the hub's channels: their conversions run with
+# continue-on-error, upload after the hub's uploads, and a failure fails the job at the end.
+# Expected durations on a full rebuild (ubuntu-latest): download 20–40 min, hub models
+# 60–90 min, game-models 20–45 min, game-sounds ~5 min (≈1,400 ffmpeg encodes),
+# game-particles ~5 min, uploads ~10 min; an incremental run is a fraction of that. Each
+# game step has its own timeout so the job stays inside its 240 minutes.
 #
 # Needs these repository secrets (the job exits with a notice while any is missing):
 #   S3_ENDPOINT, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET, S3_REGION
@@ -120,12 +133,24 @@ jobs:
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as icons --state-key tf2-icons/_state.json --build "$build" --builder 1 $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as paintkits --state-key tf2-paintkits/_state.json --build "$build" --builder 1 $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as particles --state-key tf2-particles/_state.json --build "$build" --builder 1 $force
+          # The browser game's channels; builder versions from lib/tf2-game/assets/versions.ts.
+          builders=$(pnpm exec tsx scripts/tf2-game/storage-report.ts builders)
+          eval "$builders"; echo "$builders" >> "$GITHUB_ENV"
+          # A channel whose converter is not in the repo yet is not gated (it would download the game every day).
+          if [ -f scripts/tf2-game/model-list.py ] && [ -f scripts/tf2-game/models.py ]; then
+            pnpm exec tsx scripts/tf2-assets/publish.ts gate --as game_models --state-key tf2-game/mdl/_state.json --build "$build" --builder "$TF2_GAME_BUILDER_MODELS" $force
+          fi
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as game_sounds --state-key tf2-game/snd/_state.json --build "$build" --builder "$TF2_GAME_BUILDER_SOUNDS" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as game_particles --state-key tf2-game/particles/_state.json --build "$build" --builder "$TF2_GAME_BUILDER_PARTICLES" $force
+          if [ -f scripts/tf2-game/build-maps.ts ]; then
+            pnpm exec tsx scripts/tf2-assets/publish.ts gate --as game_maps --state-key tf2-game/maps/_state.json --build "$build" --builder "$TF2_GAME_BUILDER_MAPS" $force
+          fi
           if grep -q 'run_' "$GITHUB_OUTPUT" && grep -q '^run_.*=true' "$GITHUB_OUTPUT"; then echo "any=true" >> "$GITHUB_OUTPUT"; fi
           rm -f appinfo.txt
 
       - name: Nothing to do
         if: steps.cfg.outputs.ready == 'true' && steps.gate.outputs.any != 'true'
-        run: echo "Models, icons, war paints, particles and HUD base are already published for this game build — no download, no uploads."
+        run: echo "Models, icons, war paints, particles, HUD base and the game channels are already published for this game build — no download, no uploads."
 
       - name: Make room on the runner
         if: steps.gate.outputs.any == 'true'
@@ -150,6 +175,22 @@ jobs:
       - name: Python tools
         if: steps.gate.outputs.any == 'true'
         run: pip install --quiet vpk numpy pillow srctools==2.6.2
+
+      - name: ffmpeg (game sounds)
+        id: ffmpeg
+        if: steps.gate.outputs.run_game_sounds == 'true'
+        continue-on-error: true
+        run: |
+          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg; }
+          ffmpeg -hide_banner -encoders 2>/dev/null | grep -q libmp3lame || { echo "::error::ffmpeg lacks libmp3lame"; exit 1; }
+
+      - name: Validate game asset exporters
+        id: game_tests
+        if: steps.gate.outputs.run_game_sounds == 'true' || steps.gate.outputs.run_game_particles == 'true'
+        continue-on-error: true
+        run: |
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_sounds.py
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_game_particles.py
 
       - name: Validate particle asset formats
         if: steps.gate.outputs.run_particles == 'true'
@@ -213,6 +254,60 @@ jobs:
           (cd scripts/tf2-assets && FORCE=${{ inputs.force == true && '1' || '0' }} python3 hud.py \
             --root /mnt/tf2 --state /mnt/work/hud-state.json --build "${{ steps.gate.outputs.build }}" --out /mnt/work/hud)
 
+      # The browser game's channels. continue-on-error: a failure here never stops the hub's
+      # uploads below; the job fails at the end instead (Report game channel failures).
+      - name: Game models — class bodies, weapons, view models, buildings, props
+        id: game_models
+        if: steps.gate.outputs.run_game_models == 'true'
+        continue-on-error: true
+        timeout-minutes: 60
+        run: |
+          mkdir -p /mnt/work/game-mdl
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key tf2-game/mdl/_state.json --out /mnt/work/game-mdl-state.json
+          pnpm exec tsx scripts/tf2-assets/publish.ts get --key tf2-game/mdl/index.json --out /mnt/work/game-mdl-prev-index.json
+          python3 -B scripts/tf2-game/model-list.py --root /mnt/tf2 --out /mnt/work/game-models.list
+          lim=""; [ -n "${{ inputs.limit }}" ] && lim="--limit ${{ inputs.limit }}"
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/models.py \
+            --root /mnt/tf2 --list /mnt/work/game-models.list --out /mnt/work/game-mdl \
+            --state /mnt/work/game-mdl-state.json --prev-index /mnt/work/game-mdl-prev-index.json $lim
+
+      - name: Game sounds — sound scripts and their audio as MP3
+        id: game_sounds
+        if: >-
+          steps.gate.outputs.run_game_sounds == 'true' && steps.ffmpeg.outcome == 'success' &&
+          steps.game_tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 30
+        run: |
+          mkdir -p /mnt/work/game-snd
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key tf2-game/snd/_state.json --out /mnt/work/game-snd-state.json
+          python3 -B scripts/tf2-game/sound-list.py --root /mnt/tf2 --out /mnt/work/game-sounds.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/sounds.py \
+            --root /mnt/tf2 --list /mnt/work/game-sounds.json --out /mnt/work/game-snd --state /mnt/work/game-snd-state.json
+
+      - name: Game particles — the systems the game spawns
+        id: game_particles
+        if: steps.gate.outputs.run_game_particles == 'true' && steps.game_tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          mkdir -p /mnt/work/game-particles
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key tf2-game/particles/_state.json --out /mnt/work/game-particles-state.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/game_particles.py \
+            --root /mnt/tf2 --out /mnt/work/game-particles --state /mnt/work/game-particles-state.json
+
+      - name: Game maps — BSP collision, geometry and lighting
+        id: game_maps
+        if: steps.gate.outputs.run_game_maps == 'true'
+        continue-on-error: true
+        timeout-minutes: 60
+        run: |
+          if [ ! -f scripts/tf2-game/build-maps.ts ]; then echo "::notice::scripts/tf2-game/build-maps.ts is not written yet"; exit 0; fi
+          mkdir -p /mnt/work/game-maps
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key tf2-game/maps/_state.json --out /mnt/work/game-maps-state.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} pnpm exec tsx scripts/tf2-game/build-maps.ts \
+            --root /mnt/tf2 --out /mnt/work/game-maps --state /mnt/work/game-maps-state.json
+
       # The game is no longer needed: free the 30+ GB before uploading.
       - name: Delete the game install
         if: always() && (steps.gate.outputs.any == 'true')
@@ -257,6 +352,62 @@ jobs:
           prune=""; [ "${{ inputs.prune }}" = "true" ] && prune="--prune"
           pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/hud --prefix tf2-hud-base/ \
             --state-key tf2-hud-base/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune $force
+
+      # Game channels: nothing goes up past the shared storage budget.
+      - name: Game storage guard (budget TF2_GAME_STORAGE_BUDGET_GB, default 12)
+        id: game_storage
+        if: >-
+          steps.game_models.outcome == 'success' || steps.game_sounds.outcome == 'success' ||
+          steps.game_particles.outcome == 'success' || steps.game_maps.outcome == 'success'
+        env:
+          TF2_GAME_STORAGE_BUDGET_GB: ${{ vars.TF2_GAME_STORAGE_BUDGET_GB }}
+        run: |
+          pnpm exec tsx scripts/tf2-game/storage-report.ts report \
+            --pending tf2-game/mdl/=/mnt/work/game-mdl --pending tf2-game/snd/=/mnt/work/game-snd \
+            --pending tf2-game/particles/=/mnt/work/game-particles --pending tf2-game/maps/=/mnt/work/game-maps
+
+      - name: Upload changed game models and textures (index last)
+        if: steps.game_models.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          # One state for mdl/ and the shared tex/; content-addressed files are never pruned.
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/game-mdl --prefix tf2-game/ \
+            --state-key tf2-game/mdl/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$TF2_GAME_BUILDER_MODELS" --index mdl/index.json $force
+
+      - name: Upload changed game sounds (index last)
+        if: steps.game_sounds.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/game-snd --prefix tf2-game/snd/ \
+            --state-key tf2-game/snd/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$TF2_GAME_BUILDER_SOUNDS" --index index.json --preserve-index entries,files $force
+
+      - name: Upload changed game particles (index last)
+        if: steps.game_particles.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/game-particles --prefix tf2-game/particles/ \
+            --state-key tf2-game/particles/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$TF2_GAME_BUILDER_PARTICLES" --index index.json --preserve-index systems $force
+
+      - name: Upload changed game maps (index last)
+        if: steps.game_maps.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          if [ ! -f /mnt/work/game-maps/wanted.json ]; then echo "No map output this run."; exit 0; fi
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/game-maps --prefix tf2-game/maps/ \
+            --state-key tf2-game/maps/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$TF2_GAME_BUILDER_MAPS" --index index.json $force
+
+      - name: Report game channel failures
+        if: >-
+          always() && (steps.game_models.outcome == 'failure' || steps.game_sounds.outcome == 'failure' ||
+          steps.game_particles.outcome == 'failure' || steps.game_maps.outcome == 'failure' ||
+          steps.ffmpeg.outcome == 'failure' || steps.game_tests.outcome == 'failure')
+        run: |
+          echo "::error::A game channel failed (tests: ${{ steps.game_tests.outcome }}, ffmpeg: ${{ steps.ffmpeg.outcome }}, models: ${{ steps.game_models.outcome }}, sounds: ${{ steps.game_sounds.outcome }}, particles: ${{ steps.game_particles.outcome }}, maps: ${{ steps.game_maps.outcome }}); the hub's channels were published."
+          exit 1
 
       - name: Clean up
         if: always()

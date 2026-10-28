@@ -10,7 +10,10 @@
  *       anything to do for this Steam build? Costs one small GET.
  *   publish.ts state --state-key K --out state.json
  *       Download the channel's state file (an empty one when there is none yet).
+ *   publish.ts get   --key K --out file
+ *       Download one object, inflated (e.g. a channel's published index); writes nothing when absent.
  *   publish.ts push  --dir D --prefix P --state-key K --build <id> [--builder N] [--prune] [--force]
+ *                    [--index F [--preserve-index field[,field…]]]
  *       D holds `wanted.json` ({ <relative path>: { src } }) and the files that
  *       changed. Files whose source hash matches the state are never sent;
  *       changed ones are Brotli-compressed and stored with their encoding; the
@@ -65,6 +68,10 @@ const CONTENT_TYPE: Record<string, string> = {
   '.res': 'text/plain; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8',
   '.menu': 'text/plain; charset=utf-8',
+  // The browser game's channels (tf2-game/).
+  '.mp3': 'audio/mpeg',
+  '.bin': 'application/octet-stream',
+  '.bsp': 'application/octet-stream',
 };
 
 async function loadState(key: string) {
@@ -114,6 +121,11 @@ if (cmd === 'check') {
   const state = await loadState(need('state-key'));
   writeFileSync(need('out'), JSON.stringify(state));
   process.stdout.write(`${Object.keys(state.models).length} published entries\n`);
+} else if (cmd === 'get') {
+  const key = need('key');
+  const obj = await getObject(key);
+  if (obj) writeFileSync(need('out'), obj.body);
+  process.stdout.write(obj ? `${key}: ${obj.body.length} bytes\n` : `${key}: not published yet\n`);
 } else if (cmd === 'push') {
   const dir = need('dir');
   const prefix = need('prefix');
@@ -195,9 +207,12 @@ if (cmd === 'check') {
           string,
           Record<string, unknown>
         >;
-        for (const { id } of errors) {
-          if (prior[preserve]?.[id] !== undefined && next[preserve]?.[id] === undefined) {
-            next[preserve][id] = prior[preserve][id];
+        // One field (`effects`), or several separated by commas (`entries,files`).
+        for (const field of preserve.split(',')) {
+          for (const { id } of errors) {
+            if (prior[field]?.[id] !== undefined && next[field] && next[field][id] === undefined) {
+              next[field][id] = prior[field][id];
+            }
           }
         }
         writeFileSync(file, JSON.stringify(next));
@@ -232,7 +247,7 @@ if (cmd === 'check') {
     process.exit(1);
   }
 } else {
-  console.error('usage: publish.ts gate|state|push …');
+  console.error('usage: publish.ts check|gate|state|get|push …');
   process.exit(2);
 }
 process.exit(0);

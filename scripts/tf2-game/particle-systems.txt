@@ -1,0 +1,155 @@
+# Particle systems the browser game spawns (game_particles.py exports these by name).
+# One root system per line; children are followed automatically, so list only what
+# the game code dispatches (SDK: DispatchParticleEffect / ParticleProp()->Create).
+# Keep this to what lib/tf2-game actually spawns: storage is shared with the other
+# game channels (docs/tf2-game.md, "Storage budget").
+
+# Explosions (rockets, pipes, stickies, buildings) — tf_weaponbase_rocket/grenade_pipebomb
+ExplosionCore_Wall
+ExplosionCore_MidAir
+ExplosionCore_Wall_underwater
+ExplosionCore_MidAir_underwater
+ExplosionCore_buildings
+ExplosionCore_sapperdestroyed
+
+# Projectile trails
+rockettrail
+rockettrail_underwater
+critical_rocket_red
+critical_rocket_blue
+pipebombtrail_red
+pipebombtrail_blue
+critical_pipe_red
+critical_pipe_blue
+stickybombtrail_red
+stickybombtrail_blue
+critical_grenade_red
+critical_grenade_blue
+sentry_rocket
+nailtrails_medic_red
+nailtrails_medic_blue
+nailtrails_medic_red_crit
+nailtrails_medic_blue_crit
+
+# Muzzle flashes and shell ejection
+muzzle_scattergun
+muzzle_shotgun
+muzzle_minigun
+muzzle_minigun_constant
+muzzle_pistol
+muzzle_smg
+muzzle_sniperrifle
+muzzle_revolver
+muzzle_syringe
+muzzle_grenadelauncher
+muzzle_pipelauncher
+muzzle_sentry
+muzzle_sentry2
+rocketbackblast
+eject_minigunbrass
+
+# Bullet tracers (team + crit) — FX_FireBullets / UTIL_ParticleTracer
+bullet_tracer01_red
+bullet_tracer01_blue
+bullet_tracer01_red_crit
+bullet_tracer01_blue_crit
+bullet_scattergun_tracer01_red
+bullet_scattergun_tracer01_blue
+bullet_scattergun_tracer01_red_crit
+bullet_scattergun_tracer01_blue_crit
+bullet_shotgun_tracer01_red
+bullet_shotgun_tracer01_blue
+bullet_shotgun_tracer01_red_crit
+bullet_shotgun_tracer01_blue_crit
+bullet_pistol_tracer01_red
+bullet_pistol_tracer01_blue
+bullet_pistol_tracer01_red_crit
+bullet_pistol_tracer01_blue_crit
+
+# Flamethrower and airblast
+flamethrower
+flamethrower_blue
+flamethrower_crit_red
+flamethrower_crit_blue
+flamethrower_underwater
+pyro_blast
+deflect_fx
+
+# Medi Gun, über, healing
+medicgun_beam_red
+medicgun_beam_blue
+medicgun_beam_red_invun
+medicgun_beam_blue_invun
+medicgun_invulnstatus_fullcharge_red
+medicgun_invulnstatus_fullcharge_blue
+healthgained_red
+healthgained_blu
+healthlost_red
+healthlost_blu
+overhealedplayer_red_pluses
+overhealedplayer_blue_pluses
+
+# Crits and hit text
+crit_text
+minicrit_text
+critgun_weaponmodel_red
+critgun_weaponmodel_blu
+
+# Blood and impacts — FX_BloodSpray / UTIL_ImpactTrace
+blood_impact_red_01
+blood_trail_red_01_goop
+impact_metal
+impact_concrete
+impact_dirt
+impact_wood
+impact_generic_burst
+water_bulletsplash01
+water_splash01
+water_playerdive
+water_playeremerge
+
+# Burning, spy, teleport
+burningplayer_red
+burningplayer_blue
+burningplayer_corpse
+spy_start_disguise_red
+spy_start_disguise_blue
+player_recent_teleport_red
+player_recent_teleport_blue
+teleported_red
+teleported_blue
+teleportedin_red
+teleportedin_blue
+
+# Buildings — tf_obj_sentrygun / dispenser / teleporter
+sentrydamage_1
+sentrydamage_2
+sentrydamage_3
+sentrydamage_4
+dispenserdamage_1
+dispenserdamage_2
+dispenserdamage_3
+dispenserdamage_4
+dispenser_heal_red
+dispenser_heal_blue
+teleporter_red_charged
+teleporter_blue_charged
+teleporter_red_entrance
+teleporter_blue_entrance
+teleporter_red_exit
+teleporter_blue_exit
+teleporter_arms_circle_red
+teleporter_arms_circle_blue
+sapper_sentry1_fx
+
+# Objectives: payload cart, intelligence, control points
+cart_flashinglight
+cart_flashinglight_red
+player_intel_trail_red
+player_intel_trail_blue
+player_intel_papertrail
+
+# Rocket / sticky jumps and voice-menu bubbles
+rocketjump_smoke
+speech_mediccall
+speech_mediccall_auto
