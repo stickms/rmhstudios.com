@@ -9,6 +9,7 @@ import {
   acceptedSlots,
   regionsConflict,
   slotFor,
+  effectAppliesTo,
   type Catalog,
   type CatalogItem,
   type ItemSlot,
@@ -118,9 +119,7 @@ export function legalize(
     const ok =
       slotFor(item, cls) !== null &&
       kept.length < COSMETIC_SLOTS &&
-      !kept.some(
-        (k) => k.id === item.id || regionsConflict(k.r, item.r, catalog.conflicts),
-      );
+      !kept.some((k) => k.id === item.id || regionsConflict(k.r, item.r, catalog.conflicts));
     if (ok) {
       kept.push(item);
       // Renumbered, so the kept cosmetics fill the first slots instead of leaving gaps.
@@ -175,12 +174,22 @@ export function equipInto(
 export function withSupportedOptions(catalog: Catalog, slots: LoadoutSlots): LoadoutSlots {
   const byId = new Map(catalog.items.map((i) => [i.id, i]));
   const paints = new Set(catalog.paints.map((p) => p.id));
+  const effects = new Map(catalog.effects.map((e) => [e.id, e]));
   const kits = new Map((catalog.kits ?? []).map((k) => [k.id, k]));
   let out: LoadoutSlots | null = null;
   for (const [key, entry] of Object.entries(slots)) {
     const item = byId.get(entry.item);
     if (!item) continue;
     const next = { ...entry };
+    const effect = next.effect !== undefined ? effects.get(next.effect) : undefined;
+    // Keep legacy draft data during a failed catalog upgrade until classification is available.
+    if (
+      next.effect !== undefined &&
+      (!effect || (effect.category && !effectAppliesTo(effect, item)))
+    ) {
+      delete next.effect;
+      delete next.fx;
+    }
     if (next.paint !== undefined && !(item.p && paints.has(next.paint))) delete next.paint;
     if (next.style !== undefined && !item.st?.some((s) => s.k === next.style)) delete next.style;
     if (next.festive && !item.fz) delete next.festive;

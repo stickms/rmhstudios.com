@@ -31,7 +31,7 @@ import {
  * new field): stored catalogs built by an older version are then rebuilt on the
  * next refresh instead of waiting for Valve to change the schema.
  */
-export const BUILDER_VERSION = 6;
+export const BUILDER_VERSION = 8;
 
 /** Identifies a schema *as this builder reads it*. */
 export const schemaHash = (itemsGame: string): string =>
@@ -277,6 +277,7 @@ export function buildCatalog(input: BuildInput): Catalog {
       ...((slot === 'head' || slot === 'misc') && regions.length ? { r: regions } : {}),
       ...(str(block(it, 'capabilities'), 'paintable') === '1' ? { p: 1 as const } : {}),
       ...(styles.length >= 2 ? { st: styles } : {}),
+      ...(str(it, 'particle_suffix') ? { ps: str(it, 'particle_suffix')! } : {}),
       ...extra,
     });
   }
@@ -320,6 +321,7 @@ export function buildCatalog(input: BuildInput): Catalog {
       c: base.c,
       ...(base.o ? { o: base.o } : {}),
       wk: sk.key,
+      ...(base.ps ? { ps: base.ps } : {}),
       sk: { kit: sk.kit, base: base.id },
       ...flags(resolve(sk.node), tiers),
     });
@@ -339,11 +341,15 @@ export function buildCatalog(input: BuildInput): Catalog {
   out.sort((a, b) => a.n.localeCompare(b.n) || a.id - b.id);
   paints.sort((a, b) => a.n.localeCompare(b.n));
 
-  // Unusual effects the game names, for cosmetics and taunts.
+  // The schema's three effect families stay distinct throughout selection and validation.
   const particles = block(ig, 'attribute_controlled_attached_particles');
   const effects: CatalogEffect[] = [];
   const seen = new Set<number>();
-  for (const group of ['cosmetic_unusual_effects', 'taunt_unusual_effects']) {
+  for (const group of [
+    'cosmetic_unusual_effects',
+    'taunt_unusual_effects',
+    'weapon_unusual_effects',
+  ]) {
     const g = block(particles, group);
     if (!g) continue;
     for (const key of Object.keys(g)) {
@@ -351,7 +357,13 @@ export function buildCatalog(input: BuildInput): Catalog {
       const n = loc(`Attrib_Particle${key}`);
       if (!Number.isInteger(eid) || seen.has(eid) || !n || /^particle \d+$/i.test(n)) continue;
       seen.add(eid);
-      effects.push({ id: eid, n });
+      const category =
+        group === 'cosmetic_unusual_effects'
+          ? 'cosmetic'
+          : group === 'taunt_unusual_effects'
+            ? 'taunt'
+            : 'weapon';
+      effects.push({ id: eid, n, system: str(block(g, key), 'system') || undefined, category });
     }
   }
   effects.sort((a, b) => a.n.localeCompare(b.n));

@@ -92,7 +92,9 @@ if (cmd === 'check') {
     process.stdout.write('storage: write, read and delete all work\n');
   } catch (e) {
     const err = e as { name?: string; message?: string; $metadata?: { httpStatusCode?: number } };
-    console.error(`storage check failed: ${err.name ?? 'Error'} ${err.$metadata?.httpStatusCode ?? ''} ${err.message ?? ''}`);
+    console.error(
+      `storage check failed: ${err.name ?? 'Error'} ${err.$metadata?.httpStatusCode ?? ''} ${err.message ?? ''}`,
+    );
     console.error(
       'Check the repository secrets: S3_BUCKET must be the bucket the R2 token is scoped to, ' +
         'S3_ENDPOINT must be https://<account-id>.r2.cloudflarestorage.com (no bucket in the path), and the ' +
@@ -131,31 +133,67 @@ if (cmd === 'check') {
   let bytes = 0;
   let rawBytes = 0;
   let missing = 0;
-  const queue = [...plan.upload];
+  // A mutable asset index can only advertise files after all its dependencies exist.
+  const index = flags.get('index');
+  const queue = plan.upload.filter((w) => w.name !== index);
+  const upload = async (w: { name: string; src: string }): Promise<void> => {
+    const file = path.join(dir, w.name);
+    if (!existsSync(file)) {
+      missing++;
+      return;
+    }
+    const raw = readFileSync(file);
+    const ct = CONTENT_TYPE[path.extname(w.name).toLowerCase()] ?? 'application/octet-stream';
+    const { body, contentEncoding } = encodeAsset(raw, ct);
+    await putObject(prefix + w.name, body, ct, contentEncoding);
+    rawBytes += raw.length;
+    published[w.name] = { src: w.src, size: body.length };
+    sent++;
+    bytes += body.length;
+  };
   const worker = async (): Promise<void> => {
     for (let w = queue.shift(); w; w = queue.shift()) {
-      const file = path.join(dir, w.name);
-      if (!existsSync(file)) {
-        missing++; // listed as wanted but not produced (a conversion failure): retried next run
-        continue;
-      }
-      const raw = readFileSync(file);
-      const ct = CONTENT_TYPE[path.extname(w.name).toLowerCase()] ?? 'application/octet-stream';
-      const { body, contentEncoding } = encodeAsset(raw, ct);
-      await putObject(prefix + w.name, body, ct, contentEncoding);
-      rawBytes += raw.length;
-      published[w.name] = { src: w.src, size: body.length };
-      sent++;
-      bytes += body.length;
+      await upload(w);
     }
   };
   await Promise.all(Array.from({ length: 8 }, worker));
+  const indexUpload = plan.upload.find((w) => w.name === index);
+  const preserve = flags.get('preserve-index');
+  if (indexUpload && missing === 0 && preserve) {
+    const errorsFile = path.join(dir, 'errors.json');
+    const errors = existsSync(errorsFile)
+      ? (JSON.parse(readFileSync(errorsFile, 'utf8')) as { id: number | string }[])
+      : [];
+    if (errors.length) {
+      const old = await getObject(prefix + indexUpload.name);
+      if (old) {
+        const prior = JSON.parse(old.body.toString('utf8')) as Record<
+          string,
+          Record<string, unknown>
+        >;
+        const file = path.join(dir, indexUpload.name);
+        const next = JSON.parse(readFileSync(file, 'utf8')) as Record<
+          string,
+          Record<string, unknown>
+        >;
+        for (const { id } of errors) {
+          if (prior[preserve]?.[id] !== undefined && next[preserve]?.[id] === undefined) {
+            next[preserve][id] = prior[preserve][id];
+          }
+        }
+        writeFileSync(file, JSON.stringify(next));
+      }
+    }
+  }
+  if (indexUpload && missing === 0) await upload(indexUpload);
 
   let removed: string[] = [];
   if (bare.has('prune')) {
     // A model that failed to convert this run drops out of `wanted`; it is not gone, so keep it.
     const failedFile = path.join(dir, 'failed.json');
-    const failed = new Set<string>(existsSync(failedFile) ? JSON.parse(readFileSync(failedFile, 'utf8')) : []);
+    const failed = new Set<string>(
+      existsSync(failedFile) ? JSON.parse(readFileSync(failedFile, 'utf8')) : [],
+    );
     removed = plan.stale.filter((n) => !failed.has(n));
     for (const name of removed) await deleteObject(prefix + name);
   }

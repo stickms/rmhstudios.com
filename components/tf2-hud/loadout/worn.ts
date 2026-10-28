@@ -4,12 +4,13 @@ import {
   TAUNT_KEYS,
   modelItemId,
   slotFor,
+  effectAppliesTo,
   type LoadoutEntry,
   type LoadoutSlotKey,
   type LoadoutSlots,
   type TfClass,
 } from '@/lib/tf2-loadout/catalog-types';
-import { effectProfile, resolvePlacement } from '@/lib/tf2-loadout/fx';
+import { resolvePlacement } from '@/lib/tf2-loadout/fx';
 import type { CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import { warPaintOf } from '@/lib/tf2-loadout/warpaint';
 import type { WornItem } from './PlayerViewer';
@@ -21,8 +22,9 @@ export function effectSpecOf(
   slot: Parameters<typeof resolvePlacement>[1],
 ) {
   const fx = e.effect !== undefined ? idx.effect(e.effect) : undefined;
-  return fx
-    ? { profile: effectProfile(fx.n, fx.id), placement: resolvePlacement(e.fx, slot) }
+  const item = idx.item(e.item);
+  return fx && item && effectAppliesTo(fx, item)
+    ? { id: fx.id, suffix: item.ps, placement: resolvePlacement(e.fx, slot) }
     : undefined;
 }
 
@@ -55,6 +57,7 @@ export function wornItems(
       slotKey: held,
       itemId: modelItemId(idx.item(e.item) ?? { id: e.item }),
       paint: warPaintOf(idx, e),
+      effect: effectSpecOf(idx, e, 'misc'),
     });
   }
   return out;

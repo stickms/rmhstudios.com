@@ -1,6 +1,6 @@
 """VTF texture and VMT material readers.
 
-`decode_vtf` returns the largest mip of frame 0 as an RGBA Pillow image. DXT
+`decode_vtf` returns the largest mip of the requested frame as an RGBA Pillow image. DXT
 data is decoded by wrapping it in a DDS header and letting Pillow do the work.
 """
 import re
@@ -46,10 +46,13 @@ def _dds(fourcc, w, h, data):
     return head + data
 
 
-def decode_vtf(vtf):
+def decode_vtf(vtf, frame=0):
     if vtf[:4] != b"VTF\0":
         raise TextureError("not a VTF")
     header_size = struct.unpack_from("<I", vtf, 12)[0]
+    major, minor = struct.unpack_from("<II", vtf, 4)
+    if major != 7 or minor > 5:
+        raise TextureError("unsupported VTF version")
     w, h = struct.unpack_from("<HH", vtf, 16)
     flags, frames = struct.unpack_from("<IH", vtf, 20)
     fmt = struct.unpack_from("<i", vtf, 52)[0]
@@ -58,13 +61,29 @@ def decode_vtf(vtf):
     low_w, low_h = vtf[61], vtf[62]
     if flags & 0x4000:
         raise TextureError("cubemap")
-    off = header_size
-    if low_fmt >= 0 and low_w and low_h:
-        off += _image_size(low_fmt, low_w, low_h)
+    frames = max(1, frames)
+    if not 0 <= frame < frames:
+        raise TextureError("VTF frame out of range")
+    depth = max(1, struct.unpack_from("<H", vtf, 63)[0]) if minor >= 2 else 1
+    off = None
+    if minor >= 3:
+        count = struct.unpack_from("<I", vtf, 68)[0]
+        for i in range(count):
+            tag, resource_flags, at = struct.unpack_from("<3sBI", vtf, 80 + i * 8)
+            if tag == b"\x30\0\0" and not resource_flags & 2:
+                off = at
+                break
+        if off is None:
+            raise TextureError("VTF has no high-resolution image resource")
+    else:
+        off = header_size
+        if low_fmt >= 0 and low_w and low_h:
+            off += _image_size(low_fmt, low_w, low_h)
     # mips are stored smallest first; each holds every frame
     for level in range(mips - 1, 0, -1):
-        off += _image_size(fmt, max(1, w >> level), max(1, h >> level)) * max(1, frames)
+        off += _image_size(fmt, max(1, w >> level), max(1, h >> level)) * frames * max(1, depth >> level)
     size = _image_size(fmt, w, h)
+    off += frame * depth * size
     data = vtf[off:off + size]
     if len(data) < size:
         raise TextureError("truncated VTF")

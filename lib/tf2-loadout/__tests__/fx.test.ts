@@ -1,34 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { compactPlacement, defaultPlacement, effectProfile, resolvePlacement } from '../fx';
-
-describe('effectProfile', () => {
-  it('reads the character and colour from the effect name', () => {
-    expect(effectProfile('Burning Flames', 13)).toMatchObject({ kind: 'flame' });
-    expect(effectProfile('Haunted Ghosts', 8)).toMatchObject({ kind: 'smoke' });
-    expect(effectProfile('Electrostatic', 7)).toMatchObject({ kind: 'electric' });
-    // "spark" is electric, but "sparkle" is not
-    expect(effectProfile('Sparkle Shimmer', 9)).toMatchObject({ kind: 'sparkle' });
-    expect(effectProfile('Sparks', 10)).toMatchObject({ kind: 'electric' });
-    expect(effectProfile('Green Energy', 9)).toMatchObject({ kind: 'electric', colors: ['#52d65a', '#ffffff'] });
-    expect(effectProfile('Purple Confetti', 1).colors[0]).toBe('#9b59d0');
-  });
-
-  it('gives an effect with no clue a colour of its own, the same every time', () => {
-    const a = effectProfile('Mystery', 4242);
-    expect(a.kind).toBe('glow');
-    expect(effectProfile('Mystery', 4242)).toEqual(a);
-    expect(effectProfile('Mystery', 17).colors).not.toEqual(a.colors);
-  });
-
-  it('keeps the particle count phone-sized', () => {
-    for (const n of ['Burning Flames', 'Snowfall', 'Orbiting Fire', 'Mystery'])
-      expect(effectProfile(n, 1).count).toBeLessThanOrEqual(90);
-  });
-});
+import { compactPlacement, defaultPlacement, resolvePlacement } from '../fx';
 
 describe('placement', () => {
-  it('crowns a hat, hangs about a misc item, surrounds a taunt', () => {
-    expect(defaultPlacement('head').y).toBeGreaterThan(defaultPlacement('misc').y);
+  it('uses the game attachment without additional offsets', () => {
+    expect(defaultPlacement('head')).toEqual({ x: 0, y: 0, z: 0, s: 1 });
+    expect(defaultPlacement('misc').y).toBe(0);
     expect(defaultPlacement('taunt').y).toBe(0);
   });
 

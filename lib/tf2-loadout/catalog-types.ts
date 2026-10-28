@@ -72,6 +72,8 @@ export interface CatalogItem {
   st?: { k: number; n: string }[];
   /** The weapon key a war paint is looked up by (`weapon_<key>` prefab), on weapons that can take one. */
   wk?: string;
+  /** Schema particle suffix selecting this weapon's own unusual PCF variants. */
+  ps?: string;
   /** The item's tier (the game's rarity: common … ancient), when a collection grades it. */
   rt?: Rarity;
   /** Only equippable around Halloween (the schema's `holiday_restriction`). */
@@ -101,6 +103,35 @@ export interface CatalogPaint {
 export interface CatalogEffect {
   id: number;
   n: string;
+  /** Source PCF system name, independent of the localized display name. */
+  system?: string;
+  category: 'cosmetic' | 'taunt' | 'weapon';
+}
+
+/** Effect eligibility is shared by the item picker, drafts, AI actions and save validation. */
+export function effectCategory(
+  item: CatalogItem,
+  slot: ItemSlot | null = item.s,
+): CatalogEffect['category'] | null {
+  if (slot === 'head' || slot === 'misc') return 'cosmetic';
+  if (slot === 'taunt') return 'taunt';
+  if ((slot === 'primary' || slot === 'secondary' || slot === 'melee') && item.ps) return 'weapon';
+  return null;
+}
+export function effectAppliesTo(
+  effect: CatalogEffect | undefined,
+  item: CatalogItem,
+  slot: ItemSlot | null = item.s,
+): boolean {
+  return !!effect && effect.category === effectCategory(item, slot);
+}
+export function effectsForItem(
+  catalog: Pick<Catalog, 'effects'>,
+  item: CatalogItem,
+  cls: TfClass,
+): CatalogEffect[] {
+  const slot = slotFor(item, cls);
+  return slot ? catalog.effects.filter((effect) => effectAppliesTo(effect, item, slot)) : [];
 }
 
 /** A war paint: a pattern applied to a weapon, with a wear level and a seed (see {@link LoadoutEntry}). */
@@ -233,7 +264,7 @@ export function itemsForSlot(catalog: Catalog, cls: TfClass, key: LoadoutSlotKey
 
 /* ───────────────────────────── loadout data ───────────────────────────── */
 
-/** Where an unusual effect sits relative to its item, as fractions of the item's size, and how big it is. */
+/** Optional offsets from the game's attachment, in fractions of the item's size, plus size scaling. */
 export interface EffectPlacement {
   x?: number;
   y?: number;

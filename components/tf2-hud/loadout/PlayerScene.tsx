@@ -13,14 +13,13 @@
 import { useGLTF } from '@react-three/drei';
 import StudioLight from './StudioLight';
 import { ResetViewButton, ViewerOrbit, rememberView, useResetView } from './viewer-controls';
-import { Canvas, createPortal, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
   AnimationMixer,
   Box3,
   LoopRepeat,
   MathUtils,
-  Matrix4,
   Vector3,
   type Mesh,
   type Object3D,
@@ -157,7 +156,11 @@ function Part({
   const [mount, setMount] = useState<{ bone: Object3D; box: Box3 } | null>(null);
 
   useLayoutEffect(() => {
-    const attach = scene.userData.attach as { bone: string; pose: number[] } | undefined;
+    type Attachment = { bone: string; pose: number[] };
+    const data = scene.userData.attach as (Attachment & { fallbacks?: Attachment[] }) | undefined;
+    const attach = data
+      ? [data, ...(data.fallbacks ?? [])].find((a) => body.root.getObjectByName(a.bone))
+      : undefined;
     const bone = attach ? body.root.getObjectByName(attach.bone) : undefined;
     if (!attach || !bone) {
       // No known attachment (an older file, or a bone this class lacks): show nothing rather than
@@ -170,9 +173,7 @@ function Part({
     bone.add(root);
     body.root.updateMatrixWorld(true);
     // Where the cosmetic sits on its bone, for an effect that follows it.
-    const box = new Box3()
-      .setFromObject(root)
-      .applyMatrix4(new Matrix4().copy(bone.matrixWorld).invert());
+    const box = new Box3().setFromObject(root);
     setMount({ bone, box });
     return () => {
       bone.remove(root);
@@ -188,9 +189,9 @@ function Part({
     applyPaintTexture(root, paintTexture);
   }, [root, paintTexture]);
 
-  return effect && mount
-    ? createPortal(<EffectParticles spec={effect} box={mount.box} />, mount.bone)
-    : null;
+  return effect && mount ? (
+    <EffectParticles spec={effect} box={mount.box} owner={root} body={body.root} />
+  ) : null;
 }
 
 export default function PlayerScene({
@@ -227,7 +228,9 @@ export default function PlayerScene({
         <Suspense fallback={null}>
           <Body url={body} tauntUrl={tauntUrl} onReady={setReady} />
         </Suspense>
-        {ready && bodyEffect ? <EffectParticles spec={bodyEffect} box={ready.box} /> : null}
+        {ready && bodyEffect ? (
+          <EffectParticles spec={bodyEffect} box={ready.box} owner={ready.root} body={ready.root} />
+        ) : null}
         {ready
           ? parts.map((p) => (
               // One missing or broken cosmetic must not take the player down with it.

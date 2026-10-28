@@ -33,7 +33,7 @@ const catalog: Catalog = {
     it_(200, 'Laugh Taunt', { s: 'taunt' }),
   ],
   paints: [{ id: 5000, n: 'Team Spirit', rgb: '#ff0000' }],
-  effects: [{ id: 13, n: 'Burning Flames' }],
+  effects: [{ id: 13, n: 'Burning Flames', category: 'cosmetic' }],
   conflicts: { hat: ['face'], face: ['hat'] },
 };
 
@@ -93,7 +93,15 @@ describe('validateActions', () => {
   });
 
   it('allows a known effect on a cosmetic and not on a weapon', () => {
-    const r = validateActions(catalog, 'scout', [{ item: 100, effect: 13 }, { item: 13, effect: 13 }], {});
+    const r = validateActions(
+      catalog,
+      'scout',
+      [
+        { item: 100, effect: 13 },
+        { item: 13, effect: 13 },
+      ],
+      {},
+    );
     expect(r.actions.find((a) => a.item === 100)?.effect).toBe(13);
     expect(r.actions.find((a) => a.item === 13)?.effect).toBeUndefined();
   });

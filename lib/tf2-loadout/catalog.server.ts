@@ -225,8 +225,8 @@ async function load(): Promise<ServedCatalog | null> {
 }
 
 /**
- * The current catalog. Blocks only the very first time (nothing stored yet);
- * afterwards a stale snapshot is served at once and refreshed in the background.
+ * The current catalog. First load and schema upgrades wait for a refresh;
+ * ordinary stale snapshots are served at once and refreshed in the background.
  */
 export async function getCatalog(): Promise<ServedCatalog | null> {
   let served = await load();
@@ -234,6 +234,17 @@ export async function getCatalog(): Promise<ServedCatalog | null> {
     await refreshCatalog(true);
     served = await load();
     return served;
+  }
+  // Upgrade the shape before clients sanitize saved drafts. A legacy snapshot
+  // without effect families must not erase valid saved unusuals after a deploy.
+  if (!served.builderCurrent && Date.now() - lastFailureAt > RETRY_AFTER_MS) {
+    try {
+      await refreshCatalog(true);
+      return await load();
+    } catch (error) {
+      console.warn('[tf2-loadout] catalog upgrade failed; keeping the previous snapshot:', error);
+      return served;
+    }
   }
   const age = Date.now() - served.checkedAt.getTime();
   // A snapshot built by an older builder is stale however recently it was checked: after a deploy that
@@ -253,7 +264,7 @@ export async function getCatalog(): Promise<ServedCatalog | null> {
 /** The parsed catalog, for server-side validation of a saved loadout. */
 export async function getCatalogObject(): Promise<Catalog | null> {
   const served = await getCatalog();
-  if (!served) return null;
+  if (!served || !served.builderCurrent) return null;
   if (parsed?.hash !== served.hash) {
     parsed = { hash: served.hash, catalog: JSON.parse(served.json) as Catalog };
   }
