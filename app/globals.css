@@ -2741,7 +2741,7 @@ html.readable-font body {
      edge by itself, which is exactly right on every non-feed page. */
   .floating-fab-lane {
     right: calc(var(--site-fab-row-right) + var(--float-fab-lane, 0px));
-    bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom));
+    bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom) - var(--vv-shift, 0px));
   }
 
   /* The tripwire back-to-top watches instead of a scroll listener: a 1px marker
@@ -2853,7 +2853,7 @@ html.readable-font body {
     )
     [data-floating='backtotop'] {
     bottom: calc(
-      var(--safe-bottom) + var(--site-fab-row-bottom) + var(--float-lift-hub) +
+      var(--safe-bottom) + var(--site-fab-row-bottom) - var(--vv-shift, 0px) + var(--float-lift-hub) +
         var(--float-lift-cookie) + var(--float-lift-miniplayer)
     );
   }
@@ -2863,7 +2863,7 @@ html.readable-font body {
     )
     [data-floating='backtotop'] {
     bottom: calc(
-      var(--safe-bottom) + var(--site-fab-row-bottom) + var(--float-lift-cookie) +
+      var(--safe-bottom) + var(--site-fab-row-bottom) - var(--vv-shift, 0px) + var(--float-lift-cookie) +
         var(--float-lift-miniplayer)
     );
   }

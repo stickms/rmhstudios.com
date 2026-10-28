@@ -38,6 +38,7 @@ import { inShell } from './eversion/eversion-nav';
 import { createHandOff, type HandOffHow } from './hub-handoff';
 import { whenQuiet } from './quiet';
 import { GLOBE_EVERT_EVENT, SELF_EVERT_MS } from './self-evert-timing';
+import { useViewportShift } from '@/hooks/useViewportShift';
 import { RmhLogo } from './RmhLogo';
 import { isGlobeDocked, useGlobeDestinations } from './globe-dock';
 
@@ -452,6 +453,11 @@ export function RadialHub() {
     hub.style.setProperty('--dock-ox', `${stage.offsetLeft + half}px`);
     hub.style.setProperty('--dock-oy', `${stage.offsetTop + half}px`);
   }, []);
+  // The orb follows Safari's toolbar as it grows and shrinks; the docked globe is measured onto it again each time.
+  const onViewportShift = useCallback(() => {
+    if (inPlace && phaseRef.current === 'closed') measureDock();
+  }, [inPlace, measureDock]);
+  useViewportShift(hubRef, onViewportShift);
   useEffect(() => {
     if (!inPlace || !dockReady) return;
     const raf = requestAnimationFrame(measureDock);

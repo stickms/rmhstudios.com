@@ -1099,7 +1099,8 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
      Size/inset come from globals.css so the floating-bottom stack (§5.5x A.1)
      can reserve exactly this footprint. */
   --orb-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-inset));
-  bottom: var(--orb-bottom);
+  /* `--vv-shift`: where iOS Safari's changing toolbar has left the fixed container (hooks/useViewportShift). */
+  bottom: calc(var(--orb-bottom) - var(--vv-shift, 0px));
   z-index: var(--z-floating);
   transform: translateX(-50%);
   display: grid;
@@ -2268,7 +2269,9 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   /* Where it always sat on the screen: the overlay is 1.5rem in from the bottom edge now. */
   /* At least 1.75rem off the screen's edge: a fixed element near the bottom centre is what iOS Safari can fill
      its tab bar strip from while the menu is open (the overlay is 1.5rem in, so subtract that). */
-  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1.75rem, 5vw, 2.25rem) - 1.5rem);
+  bottom: calc(
+    env(safe-area-inset-bottom, 0px) + clamp(1.75rem, 5vw, 2.25rem) - 1.5rem - var(--vv-shift, 0px)
+  );
   z-index: 2;
   display: inline-flex;
   align-items: center;
@@ -2355,6 +2358,12 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   /* The overlay's keyframe open/close is for the wider screens; here the same element just moves. */
   animation: none;
   pointer-events: none;
+  /* Docked, the pose follows the orb at once (the orb follows Safari's toolbar, hooks/useViewportShift): a
+     transition on `translate` here would be the globe lagging behind the tab bar. It only moves smoothly between
+     docked and open (the two rules below). */
+  transition: opacity 0.4s var(--ease-smooth);
+}
+.radial-hub:is([data-phase='open'], [data-phase='closing']) .radial-hub__dock .radial-globe {
   transition:
     translate 0.5s var(--ease-glass, var(--ease-smooth)),
     scale 0.5s var(--ease-glass, var(--ease-smooth)),
@@ -2367,8 +2376,10 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 /* LANDING: the page has already changed (RadialHub `landOnOrb`) and the globe comes home over the length of its own
    self-eversion, so the run ends on the docked globe. Same element, same two properties, slower. */
 .radial-hub[data-phase='landing'] .radial-hub__dock .radial-globe {
-  transition-duration: var(--land-ms, 1500ms), var(--land-ms, 1500ms), 0.4s;
-  transition-timing-function: var(--ease-smooth);
+  transition:
+    translate var(--land-ms, 1500ms) var(--ease-smooth),
+    scale var(--land-ms, 1500ms) var(--ease-smooth),
+    opacity 0.4s var(--ease-smooth);
 }
 /* A globe that mounts at its docked pose fades in rather than appearing; one mounted by a tap before it was ready
    grows in from the orb. */
@@ -2594,7 +2605,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   /* The shared bottom-right lane (globals.css §5.5x A.1). Same numbers this rule
      always used, now expressed once so the lane's clamps live in one place. */
   right: var(--site-fab-row-right);
-  bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom));
+  bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom) - var(--vv-shift, 0px));
   z-index: var(--z-floating);
   display: inline-flex;
   align-items: stretch;
