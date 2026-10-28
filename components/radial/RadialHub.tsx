@@ -451,6 +451,9 @@ export function RadialHub() {
     hub.style.setProperty('--dock-dy', `${rect.top + rect.height / 2 - (box.top + y + half)}px`);
     hub.style.setProperty('--dock-scale', String(rect.width / stage.offsetWidth));
     hub.style.setProperty('--dock-ox', `${stage.offsetLeft + half}px`);
+    // The orb's centre inside the dock's box: where the sun behind the docked globe is centred.
+    hub.style.setProperty('--sun-x', `${rect.left + rect.width / 2 - box.left}px`);
+    hub.style.setProperty('--sun-y', `${rect.top + rect.height / 2 - box.top}px`);
     hub.style.setProperty('--dock-oy', `${stage.offsetTop + half}px`);
   }, []);
   // The orb follows Safari's toolbar as it grows and shrinks; the docked globe is measured onto it again each time.
@@ -758,6 +761,8 @@ export function RadialHub() {
           dialog on purpose: it outlives each open. */}
       {inPlace && dockReady && (
         <div ref={dockRef} className="radial-hub__dock">
+          {/* Light behind the docked globe, so it reads against any page (radial.css `.radial-hub__sun`). */}
+          <span className="radial-hub__sun" aria-hidden />
           <Suspense fallback={null}>
             <LiquidGlobe
               rootRef={attachGlobe}
