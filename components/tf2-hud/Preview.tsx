@@ -31,6 +31,7 @@ import { beginGesture, endGesture, useEditor } from '@/lib/tf2-hud/store';
 import { useSceneContext as useScene } from './scene-context';
 import { cn } from '@/lib/utils';
 import { isModelPanel } from '@/lib/tf2-hud/scene/model-panels';
+import ColorChips from './ColorChips';
 import ModelLayer from './ModelLayer';
 import PlayBar from './PlayBar';
 
@@ -615,6 +616,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
             onPointerLeave={() => (play ? setPlayHover(null) : hover(null))}
           />
           <ModelLayer scene={scene} zoom={cssW / sw} front enabled={modelsActive} />
+          {readOnly ? null : <ColorChips zoom={cssW / sw} stage={{ w: cssW, h: cssH }} />}
           {view.compareOpacity > 0 && view.backdropImage ? (
             <img
               src={view.backdropImage}

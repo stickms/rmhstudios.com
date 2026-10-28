@@ -23,14 +23,9 @@ import {
 import { setSchemeColor } from '@/lib/tf2-hud/scheme/edit';
 import { explainDim } from '@/lib/tf2-hud/scheme/inspect';
 import { COND_ENVS } from '@/lib/tf2-hud/scheme/cond';
-import {
-  blockOfNode,
-  editMemberValue,
-  resetOverride,
-  useBlocksDoc,
-} from '@/lib/tf2-hud/blocks/actions';
+import { blockOfNode, resetOverride, useBlocksDoc } from '@/lib/tf2-hud/blocks/actions';
+import { writePanelProp } from '@/lib/tf2-hud/panel-edit';
 import { isSharable } from '@/lib/tf2-hud/blocks/types';
-import { useTf2HudPrefs } from '@/lib/tf2-hud/prefs';
 import { useEditor } from '@/lib/tf2-hud/store';
 import { useLocalisation } from '@/lib/tf2-hud/use-scene';
 import ImageThumb from './ImageThumb';
@@ -80,7 +75,6 @@ export default function Inspector() {
   const node = scene?.nodes.find((n) => n.id === selectedId);
   const [adding, setAdding] = useState('');
   const blocksDoc = useBlocksDoc();
-  const blockScope = useTf2HudPrefs((s) => s.blockScope);
 
   const env = COND_ENVS[view.env];
   const text = node ? readText(node.file) : undefined;
@@ -111,20 +105,8 @@ export default function Inspector() {
   const inBlock = blockOfNode(blocksDoc, node);
   const pinnedHere = (key: string) =>
     inBlock?.member.pinned.some((p) => p.toLowerCase() === key.toLowerCase()) ?? false;
-  const set = (base: string, value: string) => {
-    // A panel in a block: the edit goes to the block (all its panels) or, by the author's choice,
-    // only to this panel, which then remembers that it overrides. A key already overridden is just
-    // this panel's.
-    if (inBlock && isSharable(base) && !pinnedHere(base)) {
-      editMemberValue(inBlock.block.id, inBlock.member, base, value, blockScope);
-      return;
-    }
-    writeText(
-      node.file,
-      kvSet(text, [...node.keyPath, keyFor(base)], value, { env }),
-      `inspect:${node.id}:${base}`,
-    );
-  };
+  // Where an edit goes (the whole block, only this panel, or just the file) is decided once, in panel-edit.
+  const set = (base: string, value: string) => writePanelProp(node, base, value);
   const remove = (key: string) =>
     writeText(node.file, kvRemove(text, [...node.keyPath, key], { env }));
 
