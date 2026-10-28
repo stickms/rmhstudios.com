@@ -10,11 +10,12 @@
  *       anything to do for this Steam build? Costs one small GET.
  *   publish.ts state --state-key K --out state.json
  *       Download the channel's state file (an empty one when there is none yet).
- *   publish.ts push  --dir D --prefix P --state-key K --build <id> [--builder N] [--prune]
+ *   publish.ts push  --dir D --prefix P --state-key K --build <id> [--builder N] [--prune] [--force]
  *       D holds `wanted.json` ({ <relative path>: { src } }) and the files that
  *       changed. Files whose source hash matches the state are never sent;
  *       changed ones are Brotli-compressed and stored with their encoding; the
- *       state file is rewritten last. Stale objects are deleted only with --prune.
+ *       state file is rewritten last. Stale objects are deleted only with --prune. With --force
+ *       every wanted file is sent again, whatever the state says.
  *
  * Why no ListObjects: the state file is the only index, so a run that changes
  * nothing costs a single GET, and cost scales with what changed, not with the
@@ -126,6 +127,7 @@ if (cmd === 'check') {
   const plan = planSync(
     state,
     Object.entries(wantedRaw).map(([name, v]) => ({ name, src: v.src })),
+    { force: bare.has('force') },
   );
 
   const published: Record<string, PublishedModel> = {};

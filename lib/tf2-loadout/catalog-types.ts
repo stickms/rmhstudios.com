@@ -66,6 +66,16 @@ export interface CatalogItem {
   r?: string[];
   /** Can be painted. */
   p?: 1;
+  /**
+   * The weapon pose the game holds it in (the schema's `anim_slot`), when that differs from its slot —
+   * a weapon filed as a primary that is held like a secondary.
+   */
+  as?: HeldStance;
+  /**
+   * A taunt that keeps a weapon out: the slot the schema forces (`taunt_force_weapon_slot`). Every other
+   * taunt holsters the player's weapon.
+   */
+  tw?: HeldStance;
   /** Inventory icon, relative to {@link ICON_BASE} (or an absolute URL). Present once the Steam schema has been merged. */
   i?: string;
   /** The styles a player can choose between (two or more), by the game's style key and name. */
@@ -86,6 +96,10 @@ export interface CatalogItem {
    */
   sk?: { kit: number; base: number };
 }
+
+/** The weapon poses the class bodies have a standing animation for (`stand_primary` …). */
+export const HELD_STANCES = ['primary', 'secondary', 'melee'] as const;
+export type HeldStance = (typeof HELD_STANCES)[number];
 
 /** The game's item tiers, lowest to highest (named Civilian … Elite on weapons). */
 export const RARITIES = ['common', 'uncommon', 'rare', 'mythical', 'legendary', 'ancient'] as const;

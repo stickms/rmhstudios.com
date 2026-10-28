@@ -104,6 +104,40 @@ def read_bones(mdl):
     return bones
 
 
+STUDIO_PROC_JIGGLE = 5
+JIGGLE_IS_FLEXIBLE = 0x01
+JIGGLE_HAS_ANGLE_CONSTRAINT = 0x10
+_JIGGLE = struct.Struct("<i9f")  # mstudiojigglebone_t, up to angleLimit
+
+
+def read_jiggle(mdl):
+    """The flexible jiggle bones of a model (a cosmetic's hair, tassels, antennas): bone name -> spring
+    settings, in Source units (`length`) and the model's own stiffness/damping numbers.
+
+    mstudiobone_t keeps `proctype` at +164 and `procindex` (offset to the procedural data) at +168."""
+    num_bones, bone_idx = struct.unpack_from("<2i", mdl, 0x9C)
+    out = {}
+    for i in range(num_bones):
+        b = bone_idx + i * 216
+        proc_type, proc_index = struct.unpack_from("<2i", mdl, b + 164)
+        if proc_type != STUDIO_PROC_JIGGLE or proc_index <= 0:
+            continue
+        start = b + proc_index
+        if start + _JIGGLE.size > len(mdl):
+            continue
+        (flags, length, tip_mass, yaw_k, yaw_c, pitch_k, pitch_c, along_k, along_c,
+         angle_limit) = _JIGGLE.unpack_from(mdl, start)
+        if not flags & JIGGLE_IS_FLEXIBLE or length <= 0:
+            continue
+        name = _cstr(mdl, b + struct.unpack_from("<i", mdl, b)[0]).lower()
+        out[name] = {"length": length, "tipMass": tip_mass,
+                     "yawStiffness": yaw_k, "yawDamping": yaw_c,
+                     "pitchStiffness": pitch_k, "pitchDamping": pitch_c,
+                     "alongStiffness": along_k, "alongDamping": along_c,
+                     "angleLimit": angle_limit if flags & JIGGLE_HAS_ANGLE_CONSTRAINT else 0.0}
+    return out
+
+
 def read_vtx(vtx):
     """LOD 0 triangle indices: [bodypart][model][mesh] -> mesh-local vertex ids."""
     (version, _cache, _mb, _mt, _mv, _cs, _nl, _mat, num_bp, bp_off) = struct.unpack_from(

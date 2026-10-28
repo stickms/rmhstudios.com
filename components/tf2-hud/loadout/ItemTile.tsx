@@ -73,6 +73,7 @@ export default function ItemTile({
   item,
   paint,
   selected,
+  conflict,
   label,
   onClick,
   className,
@@ -80,6 +81,8 @@ export default function ItemTile({
   item: CatalogItem;
   paint?: CatalogPaint;
   selected?: boolean;
+  /** Shares an equip region (or is a repeat of another worn item): tinted yellow. */
+  conflict?: boolean;
   /** Accessible name; defaults to the item name. */
   label?: string;
   onClick?: () => void;
@@ -115,10 +118,13 @@ export default function ItemTile({
   );
   const accent = qualityAccent(item.q);
   const style =
-    accent || item.rt
+    accent || item.rt || conflict
       ? {
           ...(accent ? { borderColor: accent } : {}),
           ...(item.rt ? { backgroundColor: rarityBackground(item.rt) } : {}),
+          ...(conflict
+            ? { backgroundColor: 'color-mix(in srgb, var(--app-warning) 32%, var(--app-bg))' }
+            : {}),
         }
       : undefined;
   return onClick ? (

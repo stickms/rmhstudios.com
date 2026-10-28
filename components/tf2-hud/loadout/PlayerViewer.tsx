@@ -10,11 +10,13 @@ import { Box } from 'lucide-react';
 import { lazy, Suspense, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
+import type { HeldStance } from '@/lib/tf2-loadout/catalog-types';
 import { supportsWebGL } from '@/lib/shared/platform';
 import {
   animUrl,
   classClips,
   clipLabel,
+  stanceClipFor,
   tauntClip,
   useAnimIndex,
 } from '@/lib/tf2-loadout/use-anims';
@@ -39,6 +41,8 @@ function Note({ children }: { children: ReactNode }) {
 export interface WornItem {
   slotKey: string;
   itemId: number;
+  /** For the held weapon: the pose the player stands in (`stand_<stance>`). */
+  stance?: HeldStance;
   /** The chosen item style. */
   style?: number;
   /** Paint colour, `#rrggbb`. */
@@ -75,7 +79,12 @@ export default function PlayerViewer({
   const anims = useAnimIndex();
   const clips = useMemo(() => classClips(anims, cls), [anims, cls]);
   const picked = animation && clips.includes(animation) ? animation : null;
-  const clip = picked ?? (taunt !== undefined ? tauntClip(anims, taunt, cls) : null);
+  const tauntPlaying = taunt !== undefined ? tauntClip(anims, taunt, cls) : null;
+  // The body's own idle is the class's loadout-screen pose, which holds its usual weapon. Holding
+  // another kind (a melee, a secondary) needs that kind's standing animation, where the class has one.
+  const stance = worn.find((w) => w.stance)?.stance;
+  const stanceClip = stanceClipFor(clips, cls, stance);
+  const clip = picked ?? tauntPlaying ?? stanceClip;
   const options = useMemo(() => clips.map((c, id) => ({ id, label: clipLabel(c) })), [clips]);
   const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
   const body = ids ? classModel(ids, cls) : null;
@@ -124,19 +133,6 @@ export default function PlayerViewer({
     </SilentErrorBoundary>
   );
 
-  const caption = picked
-    ? t('animation-playing', {
-        defaultValue: 'Playing {{name}} on a loop.',
-        name: clipLabel(picked),
-      })
-    : taunt === undefined || anims === null
-      ? null
-      : clip
-        ? t('taunt-playing', { defaultValue: 'Playing the taunt on a loop.' })
-        : t('taunt-no-animation', {
-            defaultValue: 'No animation is available for this taunt yet.',
-          });
-
   return (
     <div className={cn('flex flex-col gap-1', className)}>
       <div
@@ -157,11 +153,6 @@ export default function PlayerViewer({
           placeholder={t('animation-search', { defaultValue: 'Search animations' })}
           label={t('animation-pick', { defaultValue: 'Animation' })}
         />
-      ) : null}
-      {caption ? (
-        <p aria-live="polite" className="text-center text-xs text-(--app-text-dim)">
-          {caption}
-        </p>
       ) : null}
     </div>
   );

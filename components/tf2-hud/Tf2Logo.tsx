@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ImageStore } from '@/lib/tf2-hud/assets/images';
-import { BASE_URL } from '@/lib/tf2-hud/project/base';
+import { browserLoader } from '@/lib/tf2-hud/project/base';
 import { cn } from '@/lib/utils';
 
 const LOGO = 'materials/logo/tf2_logo';
@@ -18,8 +18,14 @@ async function ensure(paths: string[]): Promise<void> {
   await Promise.all(
     paths.map(async (p) => {
       if (cache.has(p)) return;
-      const res = await fetch(`${BASE_URL}/${p}`);
-      if (res.ok) cache.set(p, new Uint8Array(await res.arrayBuffer()));
+      // The loader asks the synced copy first, then the one shipped with the site, so the logo
+      // appears as soon as a sync has published it. The sync stores paths lower case, while the
+      // material names its texture `logo\TF2_Logo`.
+      try {
+        cache.set(p, await browserLoader.file(p.toLowerCase()));
+      } catch {
+        /* not published yet: the text wordmark stays */
+      }
     }),
   );
 }

@@ -11,10 +11,17 @@
 'use client';
 
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
+import {
+  renameSkeleton,
+  setupJiggle,
+  stepJiggle,
+  type JiggleBone,
+  type JiggleSpec,
+} from '@/lib/tf2-loadout/jiggle';
 import StudioLight from './StudioLight';
 import { ResetViewButton, ViewerOrbit, rememberView, useResetView } from './viewer-controls';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   AnimationMixer,
   type AnimationAction,
@@ -190,6 +197,7 @@ function Part({
   const { scene } = useLoader(Tf2GLTFLoader, url);
   const root = useMemo(() => cloneWithMaterials(scene), [scene]);
   const [mount, setMount] = useState<{ bone: Object3D; box: Box3 } | null>(null);
+  const jiggle = useRef<JiggleBone[]>([]);
 
   useLayoutEffect(() => applyFestive(root, festive), [root, festive]);
 
@@ -213,7 +221,17 @@ function Part({
     // Where the cosmetic sits on its bone, for an effect that follows it.
     const box = new Box3().setFromObject(root);
     setMount({ bone, box });
+    // Flexible jiggle bones swing on their own springs; their skeleton rides on the bone it is mounted on.
+    jiggle.current = setupJiggle(root, scene.userData.jiggle as JiggleSpec[] | undefined);
+    if (jiggle.current.length) {
+      renameSkeleton(root);
+      // A swinging bone can leave the bind-pose bounds the renderer culls by.
+      root.traverse((o) => {
+        if ((o as Mesh).isMesh) o.frustumCulled = false;
+      });
+    }
     return () => {
+      jiggle.current = [];
       bone.remove(root);
     };
   }, [root, scene, body]);
@@ -221,6 +239,11 @@ function Part({
   useEffect(() => {
     applyTint(root, tint);
   }, [root, tint]);
+
+  // After the body's animation for the frame (it is mounted first), so the springs see this frame's motion.
+  useFrame((_, dt) => {
+    if (jiggle.current.length) stepJiggle(jiggle.current, Math.min(dt, 0.1));
+  });
 
   const paintTexture = useWarPaintTexture(paint?.script, paint?.wear ?? 1, paint?.seed ?? 0);
   useEffect(() => {

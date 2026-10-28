@@ -45,6 +45,8 @@ export function wornItems(
   slots: LoadoutSlots,
   cosmeticKeys: readonly LoadoutSlotKey[],
   held: HeldSlot | null = null,
+  /** While a taunt plays: the weapon slot it keeps out, or `'none'` when it holsters the weapon. */
+  tauntWeapon?: HeldSlot | 'none',
 ): WornItem[] {
   const out: WornItem[] = cosmeticKeys.flatMap((k) => {
     const e = slots[k];
@@ -60,11 +62,21 @@ export function wornItems(
       },
     ];
   });
-  const heldKey = held && slots[held] ? held : HELD_SLOTS.find((k) => slots[k]);
+  const heldKey =
+    tauntWeapon === 'none'
+      ? undefined
+      : tauntWeapon
+        ? slots[tauntWeapon]
+          ? tauntWeapon
+          : undefined
+        : held && slots[held]
+          ? held
+          : HELD_SLOTS.find((k) => slots[k]);
   if (heldKey) {
     const e = slots[heldKey]!;
     out.push({
       slotKey: heldKey,
+      stance: idx.item(e.item)?.as ?? heldKey,
       itemId: modelItemId(idx.item(e.item) ?? { id: e.item }),
       paint: warPaintOf(idx, e),
       festive: e.festive,
@@ -78,6 +90,12 @@ export function wornItems(
 export function tauntItemOf(slots: LoadoutSlots): number | undefined {
   for (const k of TAUNT_KEYS) if (slots[k]) return slots[k]!.item;
   return undefined;
+}
+
+/** The weapon a playing taunt keeps out (its schema `taunt_force_weapon_slot`), else none: taunts holster it. */
+export function tauntWeaponOf(idx: CatalogIndex, taunt: number | undefined): HeldSlot | 'none' | undefined {
+  if (taunt === undefined) return undefined;
+  return idx.item(taunt)?.tw ?? 'none';
 }
 
 /** The first equipped taunt's unusual effect, if any. */
