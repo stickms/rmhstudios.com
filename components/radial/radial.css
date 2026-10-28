@@ -1262,10 +1262,11 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    swelling into the sphere. */
 .radial-hub__overlay {
   position: fixed;
-  /* Clear of the top and bottom edges by 12px (symmetric, so the globe's centre does not move): a fixed
-     layer touching an edge is what iOS Safari fills its status bar and tab bar strips from, and with the
-     globe open that was a solid band under it. */
-  inset: 0.75rem 0;
+  /* Clear of every edge, symmetric (so the globe's centre does not move), and narrower than 90% of the width:
+     a fixed layer that wide and that near an edge is what iOS Safari fills its status bar and tab bar strips
+     from, and with the globe open that was a solid band under it. The veil below paints out to the screen's
+     edges (it takes no pointer, so Safari does not see it); the drag surface is the overlay's own box. */
+  inset: 1.5rem 6%;
   z-index: var(--z-hub-overlay);
   display: grid;
   place-items: center;
@@ -1409,7 +1410,8 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    sits still. */
 .radial-hub__veil {
   position: absolute;
-  inset: 0;
+  /* Out to the screen's edges, past the narrower overlay it sits in. */
+  inset: -1.5rem -6vw;
   z-index: 1;
   pointer-events: none;
   /* Denser toward the rim than the middle, so the globe sits in a pool of light
@@ -2258,7 +2260,8 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   width: max-content;
   /* Same safe-area reasoning as the orb: this pill carries identity, settings,
      sign-out and close, so it cannot sit under the home indicator. */
-  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1rem, 4vw, 2rem));
+  /* Where it always sat on the screen: the overlay is 1.5rem in from the bottom edge now. */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1rem, 4vw, 2rem) - 1.5rem);
   z-index: 2;
   display: inline-flex;
   align-items: center;
@@ -2319,8 +2322,15 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
    and the icons arrive as it grows. It takes no pointer: the orb above it is the touch target. */
 .radial-hub__dock {
   position: fixed;
-  /* Clear of the top and bottom edges, symmetric about the screen's centre (the globe is laid out there). */
-  inset: 0.75rem 0;
+  /* A box about the globe's own size, centred on the screen, where the globe is laid out. It used to be a
+     full-width box 12px off the top and bottom edges: a transparent fixed layer that wide, that near an edge, is
+     what iOS Safari can read as the page's edge (it shifts fixed layers by about 10px while its toolbar collapses),
+     and it filled the strip behind its tab bar with one flat colour. This is under 90% of the width and far from
+     both edges. */
+  top: 50%;
+  left: 50%;
+  width: min(86vw, 48dvh, 30rem);
+  translate: -50% -50%;
   z-index: calc(var(--z-floating) - 1);
   display: grid;
   place-items: center;

@@ -3077,7 +3077,9 @@ html.readable-font body {
 /* ==================== BASE STYLES ==================== */
 html {
   scroll-behavior: smooth;
-  overflow-y: auto;
+  /* No `overflow` here: the viewport already scrolls the document, and an explicit `overflow-y: auto` on the root
+     marks it as a scroll container of its own, which is not what iOS Safari's bars expect of the page they sit over
+     (it is the element the bars' content inset and colour extension are computed against). */
   min-height: 100%;
   background-color: var(--site-bg);
   scroll-padding-top: calc(var(--site-sticky-secondary-top) + var(--site-section-gap));
