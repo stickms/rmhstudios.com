@@ -56,7 +56,10 @@ export function parseDim(raw: string | undefined): Dim {
  * toward zero. Layout is integer arithmetic in the engine, and matching it is
  * what makes 1px borders and tight stacks land where they do in game.
  */
-export const scaled = (value: number, scale: number): number => Math.trunc(value * scale + 1e-9);
+export const scaled = (value: number, scale: number): number =>
+  // The nudge absorbs float error (2.2499999 for 2.25) and must push away from zero either way, or an
+  // exact negative product such as -288 × 2.25 = -648 would truncate to -647.
+  Math.trunc(value * scale + Math.sign(value) * 1e-9);
 
 /** Resolve a position component against the parent's extent. */
 export function resolveAxis(dim: Dim, parentExtent: number, scale: number): number {

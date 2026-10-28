@@ -28,7 +28,7 @@ import type { WarPaint } from './model-utils';
 import type { PlayerPart } from './PlayerScene';
 import { SearchSelect } from '../ui';
 
-const PlayerScene = lazy(() => import('./PlayerScene'));
+export const PlayerScene = lazy(() => import('./PlayerScene'));
 
 function Note({ children }: { children: ReactNode }) {
   return (
@@ -56,28 +56,22 @@ export interface WornItem {
   festive?: boolean;
 }
 
-export default function PlayerViewer({
+/**
+ * Everything a 3D player needs from what it is wearing: the class body model, each cosmetic's model file,
+ * the animation to play (a picked one, the equipped taunt's, or the stance for the held weapon) and what is
+ * available (WebGL, the model list). The builder's viewer and the HUD editor's embedded stage both build on it.
+ */
+export function usePlayerParts({
   cls,
   worn,
-  tauntEffect,
   taunt,
   animation,
-  onAnimationChange,
-  className,
 }: {
   cls: string;
-  /** The cosmetics currently equipped, plus the weapon the player holds. */
   worn: readonly WornItem[];
-  /** The equipped taunt item: its animation plays, looped, on the player. */
   taunt?: number;
-  /** The equipped taunt's unusual effect, if any: it surrounds the whole player. */
-  tauntEffect?: EffectSpec;
-  /** An animation picked from the list: it plays instead of the taunt. */
   animation?: string | null;
-  onAnimationChange?: (clip: string | null) => void;
-  className?: string;
 }) {
-  const { t } = useTranslation('c-tf2-hud');
   const ids = useModelIds();
   const anims = useAnimIndex();
   const clips = useMemo(() => classClips(anims, cls), [anims, cls]);
@@ -88,7 +82,6 @@ export default function PlayerViewer({
   const stance = worn.find((w) => w.stance)?.stance;
   const stanceClip = stanceClipFor(clips, cls, stance);
   const clip = picked ?? tauntPlaying ?? stanceClip;
-  const options = useMemo(() => clips.map((c, id) => ({ id, label: clipLabel(c) })), [clips]);
   const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
   const body = ids ? classModel(ids, cls) : null;
 
@@ -113,6 +106,39 @@ export default function PlayerViewer({
     }
     return out;
   }, [ids, worn, cls]);
+
+  return { ids, webgl, body, bodygroups, parts, clip, clips, picked };
+}
+
+export default function PlayerViewer({
+  cls,
+  worn,
+  tauntEffect,
+  taunt,
+  animation,
+  onAnimationChange,
+  className,
+}: {
+  cls: string;
+  /** The cosmetics currently equipped, plus the weapon the player holds. */
+  worn: readonly WornItem[];
+  /** The equipped taunt item: its animation plays, looped, on the player. */
+  taunt?: number;
+  /** The equipped taunt's unusual effect, if any: it surrounds the whole player. */
+  tauntEffect?: EffectSpec;
+  /** An animation picked from the list: it plays instead of the taunt. */
+  animation?: string | null;
+  onAnimationChange?: (clip: string | null) => void;
+  className?: string;
+}) {
+  const { t } = useTranslation('c-tf2-hud');
+  const { ids, webgl, body, bodygroups, parts, clip, clips, picked } = usePlayerParts({
+    cls,
+    worn,
+    taunt,
+    animation,
+  });
+  const options = useMemo(() => clips.map((c, id) => ({ id, label: clipLabel(c) })), [clips]);
 
   const content = !webgl ? (
     <Note>{t('model-no-webgl', { defaultValue: 'Your browser cannot show 3D models.' })}</Note>

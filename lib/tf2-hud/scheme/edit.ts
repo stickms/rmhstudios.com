@@ -18,6 +18,23 @@ export function setSchemeColor(text: string, name: string, value: string): strin
   return root ? kvSet(text, [root, 'Colors', name], value) : text;
 }
 
+/** Set (or add) an entry in `BaseSettings`, the built-in colour names (`FgColor`, `BgColor`…). */
+export function setSchemeBase(text: string, name: string, value: string): string {
+  const root = rootKey(text);
+  return root ? kvSet(text, [root, 'BaseSettings', name], value) : text;
+}
+
+/** Change the colour a hop of a name chain stands for, wherever that name is defined. */
+export function setSchemeHop(
+  text: string,
+  hop: { name: string; source: 'colors' | 'base' },
+  value: string,
+): string {
+  return hop.source === 'base'
+    ? setSchemeBase(text, hop.name, value)
+    : setSchemeColor(text, hop.name, value);
+}
+
 export function removeSchemeColor(text: string, name: string): string {
   const root = rootKey(text);
   return root ? kvRemove(text, [root, 'Colors', name]) : text;

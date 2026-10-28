@@ -93,6 +93,8 @@ export interface PanelNode {
   /** Whether it is drawn right now (visible, or revealed by the test options). */
   shown: boolean;
   isFrame: boolean;
+  /** Opacity (0–1) from the panel's `alpha` and its ancestors'; absent when fully opaque. */
+  alpha?: number;
   parentId: string | null;
   /** Bounds of the ancestor panels this one is clipped to (absent when only the screen clips it). */
   clip?: Rect;

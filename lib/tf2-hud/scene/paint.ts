@@ -16,6 +16,8 @@ export interface PaintOptions {
   images: ImageStore;
   /** Faint outline round every shown panel (the "show bounds" aid). */
   showBounds?: boolean;
+  /** Leave the labelled box off these panels: something else (the 3D model layer) draws them. */
+  skipDynamic?: (node: PanelNode) => boolean;
 }
 
 function clipTo(g: CanvasRenderingContext2D, r: { x: number; y: number; w: number; h: number }) {
@@ -194,7 +196,8 @@ function drawImage(g: CanvasRenderingContext2D, op: ImageOp, images: ImageStore)
   const src = op.tint ? tinted(img, op.tint) : img;
   g.save();
   g.imageSmoothingEnabled = true;
-  g.globalAlpha = tex.alpha * (op.tint && op.tint.a < 255 ? op.tint.a / 255 : 1);
+  // Multiplied in: the panel's own fade (animations, `alpha`) is already on the context.
+  g.globalAlpha *= tex.alpha * (op.tint && op.tint.a < 255 ? op.tint.a / 255 : 1);
   if (tex.additive) g.globalCompositeOperation = 'lighter';
   if (op.native) {
     // Natural size, anchored top-left, clipped to the panel — an ImagePanel without `scaleImage`.
@@ -263,19 +266,26 @@ function drawOp(g: CanvasRenderingContext2D, op: DrawOp, opts: PaintOptions) {
   }
 }
 
+function skipped(node: PanelNode, op: DrawOp, opts: PaintOptions): boolean {
+  return op.t === 'dynamic' && (opts.skipDynamic?.(node) ?? false);
+}
+
 export function paintScene(g: CanvasRenderingContext2D, scene: Scene, opts: PaintOptions): void {
   for (const node of scene.nodes) {
     if (!node.shown) continue;
+    const outer = g.globalAlpha;
+    if (node.alpha !== undefined) g.globalAlpha = outer * node.alpha;
     if (node.clip) {
       g.save();
       g.beginPath();
       g.rect(node.clip.x, node.clip.y, node.clip.w, node.clip.h);
       g.clip();
-      for (const op of node.ops) drawOp(g, op, opts);
+      for (const op of node.ops) if (!skipped(node, op, opts)) drawOp(g, op, opts);
       g.restore();
     } else {
-      for (const op of node.ops) drawOp(g, op, opts);
+      for (const op of node.ops) if (!skipped(node, op, opts)) drawOp(g, op, opts);
     }
+    g.globalAlpha = outer;
     if (opts.showBounds) {
       g.save();
       g.strokeStyle = 'rgba(120,200,255,0.35)';
@@ -303,6 +313,12 @@ export interface GuideSpec {
 export interface OverlayOptions {
   guide?: GuideSpec;
   selected?: PanelNode;
+  /** The rest of a multi-selection (the inspected panel is `selected`). */
+  alsoSelected?: readonly PanelNode[];
+  /** Members of the block open in the Blocks panel. */
+  blockMembers?: readonly PanelNode[];
+  /** A selection box being dragged, in scene pixels. */
+  marquee?: { x: number; y: number; w: number; h: number };
   hover?: PanelNode;
   /** Scene pixels per CSS pixel, so handles keep a constant on-screen size. */
   pxPerCss: number;
@@ -404,6 +420,32 @@ function paintGuide(g: CanvasRenderingContext2D, guide: GuideSpec, k: number) {
 export function paintOverlay(g: CanvasRenderingContext2D, o: OverlayOptions): void {
   const k = o.pxPerCss;
   if (o.guide) paintGuide(g, o.guide, k);
+  if (o.blockMembers?.length) {
+    g.save();
+    g.strokeStyle = 'rgba(90,170,255,0.95)';
+    g.lineWidth = 1.5 * k;
+    g.setLineDash([6 * k, 3 * k]);
+    for (const n of o.blockMembers) g.strokeRect(n.rect.x, n.rect.y, n.rect.w, n.rect.h);
+    g.restore();
+  }
+  if (o.alsoSelected?.length) {
+    g.save();
+    g.strokeStyle = 'rgb(255,140,40)';
+    g.lineWidth = 1.5 * k;
+    for (const n of o.alsoSelected) g.strokeRect(n.rect.x, n.rect.y, n.rect.w, n.rect.h);
+    g.restore();
+  }
+  if (o.marquee) {
+    const m = o.marquee;
+    g.save();
+    g.fillStyle = 'rgba(255,140,40,0.12)';
+    g.strokeStyle = 'rgb(255,140,40)';
+    g.lineWidth = k;
+    g.setLineDash([4 * k, 3 * k]);
+    g.fillRect(m.x, m.y, m.w, m.h);
+    g.strokeRect(m.x, m.y, m.w, m.h);
+    g.restore();
+  }
   if (o.hover && o.hover !== o.selected) {
     const r = o.hover.rect;
     g.save();

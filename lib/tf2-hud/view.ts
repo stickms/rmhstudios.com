@@ -98,6 +98,12 @@ export interface ViewSettings {
   hudOpacity: number;
   /** Draw the backdrop image above the HUD at this opacity (0 = off) for pixel comparison. */
   compareOpacity: number;
+  /** Play mode: buttons click, keys run a little match, and nothing is selected or dragged. */
+  play: boolean;
+  /** Draw the game's 3D content (class and item models, a backpack of items) where the HUD has model panels. */
+  models3d: boolean;
+  /** A 3D player behind the whole HUD, on in-game screens. */
+  player3d: boolean;
 }
 
 export const DEFAULT_VIEW: ViewSettings = {
@@ -111,6 +117,9 @@ export const DEFAULT_VIEW: ViewSettings = {
   backdrop: 'auto',
   hudOpacity: 1,
   compareOpacity: 0,
+  play: false,
+  models3d: true,
+  player3d: false,
 };
 
 export function screenOf(view: ViewSettings): { w: number; h: number } {

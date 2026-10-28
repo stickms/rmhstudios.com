@@ -11,20 +11,29 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { syncCustomFonts } from '@/lib/tf2-hud/assets/font-sync';
 import { ensureBundledFonts } from '@/lib/tf2-hud/assets/fonts';
 import { ImageStore, materialsChanged } from '@/lib/tf2-hud/assets/images';
 import { kvSet } from '@/lib/tf2-hud/kv/edit';
 import { propsOf } from '@/lib/tf2-hud/kv/props';
-import { parseCached, hitTest } from '@/lib/tf2-hud/scene/build';
+import { parseCached, hitTest, kindOf } from '@/lib/tf2-hud/scene/build';
+import { interpretCommand } from '@/lib/tf2-hud/play/commands';
+import { clearPlayTimers, playKey, runAction } from '@/lib/tf2-hud/play/run';
+import { tick as simTick } from '@/lib/tf2-hud/play/sim';
 import { hitHandle, paintOverlay, paintScene, type HandleId } from '@/lib/tf2-hud/scene/paint';
 import { growSize, shiftPosition } from '@/lib/tf2-hud/layout/inverse';
 import { kvAt } from '@/lib/tf2-hud/kv/query';
 import { COND_ENVS } from '@/lib/tf2-hud/scheme/cond';
 import type { PanelNode } from '@/lib/tf2-hud/scene/types';
+import { blockOfNode, moveNodes, nodesOfBlock, useBlocksDoc } from '@/lib/tf2-hud/blocks/actions';
 import { beginGesture, endGesture, useEditor } from '@/lib/tf2-hud/store';
 import { useSceneContext as useScene } from './scene-context';
 import { cn } from '@/lib/utils';
+import { isModelPanel } from '@/lib/tf2-hud/scene/model-panels';
+import ColorChips from './ColorChips';
+import ModelLayer from './ModelLayer';
+import PlayBar from './PlayBar';
 
 const MAX_BACKING = 4096;
 
@@ -34,6 +43,15 @@ interface DragState {
   startX: number;
   startY: number;
   originalText: string;
+  /** Moving several panels at once (a multi-selection, or a block with Alt): every panel and the files as they were. */
+  group?: { nodes: PanelNode[]; snapshot: Map<string, string> };
+}
+
+interface Marquee {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
 }
 
 const KEYS = { x: 'xpos', y: 'ypos', w: 'wide', h: 'tall' } as const;
@@ -43,10 +61,20 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
   const { scene, scheme, page, loading } = useScene();
   const view = useEditor((s) => s.view);
   const selectedId = useEditor((s) => s.selectedId);
+  const selectedIds = useEditor((s) => s.selectedIds);
+  const focusedBlockId = useEditor((s) => s.focusedBlockId);
+  const toggleSelect = useEditor((s) => s.toggleSelect);
+  const selectMany = useEditor((s) => s.selectMany);
+  const blocksDoc = useBlocksDoc();
   const hoverId = useEditor((s) => s.hoverId);
   const focusProp = useEditor((s) => s.focusProp);
   const select = useEditor((s) => s.select);
   const hover = useEditor((s) => s.hover);
+  const play = view.play;
+  // Models in panels belong to the menu screens (class choice, backpack, store); the in-game HUD stays as it was.
+  const modelsActive = view.models3d && page?.backdrop === 'menu';
+  const setPlay = useEditor((s) => s.setPlay);
+  const setPlayHover = useEditor((s) => s.setPlayHover);
   const readBytes = useEditor((s) => s.readBytes);
   const readText = useEditor((s) => s.readText);
   const writeText = useEditor((s) => s.writeText);
@@ -56,6 +84,8 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef<DragState | null>(null);
+  const [marquee, setMarquee] = useState<Marquee | null>(null);
+  const marqueeRef = useRef<Marquee | null>(null);
   const rafRef = useRef(0);
   const [box, setBox] = useState({ w: 800, h: 450 });
   const [tick, setTick] = useState(0);
@@ -129,6 +159,26 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
     [scene, selectedId],
   );
   const hovered = useMemo(() => scene?.nodes.find((n) => n.id === hoverId), [scene, hoverId]);
+  const alsoSelected = useMemo(
+    () => scene?.nodes.filter((n) => selectedIds.has(n.id) && n.id !== selectedId) ?? [],
+    [scene, selectedIds, selectedId],
+  );
+  const blockMembers = useMemo(() => {
+    const b = blocksDoc.blocks.find((x) => x.id === focusedBlockId);
+    return b ? nodesOfBlock(b, scene ?? null) : [];
+  }, [blocksDoc, focusedBlockId, scene]);
+  const marqueeRect = useMemo(
+    () =>
+      marquee
+        ? {
+            x: Math.min(marquee.x0, marquee.x1),
+            y: Math.min(marquee.y0, marquee.y1),
+            w: Math.abs(marquee.x1 - marquee.x0),
+            h: Math.abs(marquee.y1 - marquee.y0),
+          }
+        : undefined,
+    [marquee],
+  );
   // The measurement for the layout property being edited in the inspector.
   const guide = useMemo(() => {
     if (!scene || !focusProp) return undefined;
@@ -167,9 +217,22 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
       if (!scene) return;
       g.setTransform(k, 0, 0, k, 0, 0);
       g.globalAlpha = view.hudOpacity;
-      paintScene(g, scene, { images, showBounds: view.showBounds });
+      paintScene(g, scene, {
+        images,
+        showBounds: view.showBounds,
+        // The 3D layer draws these panels' contents; without it they are labelled boxes.
+        skipDynamic: modelsActive ? (n) => isModelPanel(n.control) : undefined,
+      });
       g.globalAlpha = 1;
-      paintOverlay(g, { selected, hover: hovered, guide, pxPerCss: 1 / zoom });
+      paintOverlay(g, {
+        selected: play ? undefined : selected,
+        alsoSelected: play ? undefined : alsoSelected,
+        blockMembers: play ? undefined : blockMembers,
+        marquee: marqueeRect,
+        hover: play ? undefined : hovered,
+        guide: play ? undefined : guide,
+        pxPerCss: 1 / zoom,
+      });
     });
     return () => cancelAnimationFrame(rafRef.current);
   }, [
@@ -179,12 +242,34 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
     sh,
     view.hudOpacity,
     view.showBounds,
+    modelsActive,
     images,
     selected,
+    alsoSelected,
+    blockMembers,
+    play,
+    marqueeRect,
     hovered,
     guide,
     tick,
   ]);
+
+  /* ── Play mode: a match clock, and focus on the canvas so keys reach it ── */
+  const inGame = page?.backdrop === 'game';
+  useEffect(() => {
+    if (!play) {
+      clearPlayTimers();
+      return undefined;
+    }
+    canvasRef.current?.focus();
+    if (!inGame) return undefined;
+    const id = setInterval(() => {
+      const st = useEditor.getState();
+      const patch = simTick(st.test, 1);
+      if (patch) st.setTest(patch);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [play, inGame]);
 
   /* ── pointer interaction ── */
   const toScene = useCallback(
@@ -241,7 +326,63 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
     [sh, view.env, view.minmode, writeText],
   );
 
+  /** Panels to move together for a gesture on `hit`: a block (Alt) or the multi-selection. */
+  const groupFor = (hit: PanelNode, alt: boolean): PanelNode[] | undefined => {
+    if (!scene) return undefined;
+    if (alt) {
+      const found = blockOfNode(blocksDoc, hit);
+      const nodes = found ? nodesOfBlock(found.block, scene) : [];
+      if (nodes.length > 1) return nodes;
+    }
+    if (selectedIds.size > 1 && selectedIds.has(hit.id)) {
+      return scene.nodes.filter((n) => selectedIds.has(n.id));
+    }
+    return undefined;
+  };
+
+  /** The topmost button under a point, with the command it runs. */
+  const buttonAt = (x: number, y: number) => {
+    if (!scene) return undefined;
+    for (let i = scene.nodes.length - 1; i >= 0; i--) {
+      const n = scene.nodes[i];
+      if (!n.shown || kindOf(n.control) !== 'button') continue;
+      const r = n.rect;
+      if (x < r.x || y < r.y || x >= r.x + r.w || y >= r.y + r.h) continue;
+      const text = readText(n.file);
+      const entry = text === undefined ? undefined : kvAt(parseCached(text), n.keyPath);
+      const command = entry
+        ? propsOf(entry, { env: COND_ENVS[view.env], minmode: view.minmode }).get('command')
+        : undefined;
+      return { node: n, command };
+    }
+    return undefined;
+  };
+
+  const onPlayDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!scene || e.button !== 0) return;
+    const p = toScene(e);
+    const button = buttonAt(p.x, p.y);
+    if (button) {
+      const unknown = runAction(interpretCommand(button.command));
+      if (unknown !== null) {
+        toast.info(
+          t('play-command', {
+            defaultValue: 'This button runs “{{command}}”, which Play mode does not simulate.',
+            command: unknown || button.node.name,
+          }),
+        );
+      }
+      return;
+    }
+    // Anywhere else on the in-game HUD is a shot.
+    if (page?.backdrop === 'game') playKey('fire');
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (play) {
+      onPlayDown(e);
+      return;
+    }
     if (!scene || e.button !== 0) return;
     const p = toScene(e);
     const pxPerCss = 1 / zoom;
@@ -249,7 +390,20 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
       select(hitTest(scene, p.x, p.y)?.id ?? null);
       return;
     }
-    if (selected) {
+    // Shift (or Ctrl/Cmd) builds a selection: click adds or removes a panel, dragging boxes some in.
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+      const hit = hitTest(scene, p.x, p.y);
+      if (hit) {
+        toggleSelect(hit.id);
+      } else {
+        const m = { x0: p.x, y0: p.y, x1: p.x, y1: p.y };
+        marqueeRef.current = m;
+        setMarquee(m);
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }
+      return;
+    }
+    if (selected && selectedIds.size <= 1) {
       const handle = hitHandle(selected.rect, p.x, p.y, pxPerCss);
       const text = readText(selected.file);
       if (handle && text !== undefined) {
@@ -265,10 +419,29 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
       }
     }
     const hit = hitTest(scene, p.x, p.y);
-    select(hit?.id ?? null);
+    const group = hit ? groupFor(hit, e.altKey) : undefined;
+    // Pressing a panel that is already part of a multi-selection keeps the selection, so it can be dragged as one.
+    if (!(hit && selectedIds.size > 1 && selectedIds.has(hit.id)) || e.altKey) {
+      if (group && e.altKey) selectMany(group.map((n) => n.id));
+      else select(hit?.id ?? null);
+    }
     const text = hit ? readText(hit.file) : undefined;
     if (hit && text !== undefined) {
-      dragRef.current = { mode: 'move', node: hit, startX: p.x, startY: p.y, originalText: text };
+      const snapshot = new Map<string, string>();
+      if (group) {
+        for (const n of group) {
+          const t = readText(n.file);
+          if (t !== undefined) snapshot.set(n.file, t);
+        }
+      }
+      dragRef.current = {
+        mode: 'move',
+        node: hit,
+        startX: p.x,
+        startY: p.y,
+        originalText: text,
+        group: group ? { nodes: group, snapshot } : undefined,
+      };
       e.currentTarget.setPointerCapture(e.pointerId);
     }
   };
@@ -276,17 +449,41 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!scene) return;
     const p = toScene(e);
+    if (play) {
+      const button = buttonAt(p.x, p.y);
+      setPlayHover(
+        button
+          ? { file: button.node.file, name: button.node.keyPath[button.node.keyPath.length - 1] }
+          : null,
+      );
+      e.currentTarget.style.cursor = button ? 'pointer' : 'default';
+      return;
+    }
+    if (marqueeRef.current) {
+      const m = { ...marqueeRef.current, x1: p.x, y1: p.y };
+      marqueeRef.current = m;
+      setMarquee(m);
+      return;
+    }
     const d = dragRef.current;
     if (d) {
       const dx = p.x - d.startX;
       const dy = p.y - d.startY;
       if (Math.abs(dx) + Math.abs(dy) > 2 / zoom) {
-        beginGesture(`drag:${d.node.id}`);
-        applyDrag(d, dx, dy);
+        if (d.group) {
+          beginGesture('drag:group');
+          moveNodes(d.group.nodes, scene, dx, dy, {
+            snapshot: d.group.snapshot,
+            coalesceKey: 'drag:group',
+          });
+        } else {
+          beginGesture(`drag:${d.node.id}`);
+          applyDrag(d, dx, dy);
+        }
       }
       return;
     }
-    if (selected) {
+    if (selected && selectedIds.size <= 1) {
       const h = hitHandle(selected.rect, p.x, p.y, 1 / zoom);
       e.currentTarget.style.cursor = h
         ? h === 'n' || h === 's'
@@ -302,6 +499,30 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
   };
 
   const endDrag = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const m = marqueeRef.current;
+    if (m && scene) {
+      marqueeRef.current = null;
+      setMarquee(null);
+      e.currentTarget.releasePointerCapture(e.pointerId);
+      const x0 = Math.min(m.x0, m.x1);
+      const y0 = Math.min(m.y0, m.y1);
+      const x1 = Math.max(m.x0, m.x1);
+      const y1 = Math.max(m.y0, m.y1);
+      if (x1 - x0 + (y1 - y0) > 4 / zoom) {
+        const inside = scene.nodes.filter(
+          (n) =>
+            n.shown &&
+            !(n.isFrame && n.rect.w >= scene.screen.w - 1 && n.rect.h >= scene.screen.h - 1) &&
+            n.rect.x < x1 &&
+            n.rect.x + n.rect.w > x0 &&
+            n.rect.y < y1 &&
+            n.rect.y + n.rect.h > y0,
+        );
+        // Shift-drag adds to what is already selected.
+        selectMany([...selectedIds, ...inside.map((n) => n.id)]);
+      }
+      return;
+    }
     if (dragRef.current) {
       dragRef.current = null;
       endGesture();
@@ -311,6 +532,11 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
 
   /** Arrow keys nudge the selection by 1 virtual unit (10 with Shift). */
   const onKeyDown = (e: React.KeyboardEvent) => {
+    if (play) {
+      if (e.key === 'Escape') setPlay(false);
+      else if (!e.ctrlKey && !e.metaKey && !e.altKey && playKey(e.key)) e.preventDefault();
+      return;
+    }
     if (!selected || readOnly) return;
     const dirs: Record<string, [number, number]> = {
       ArrowLeft: [-1, 0],
@@ -328,6 +554,12 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
     const text = readText(selected.file);
     if (text === undefined) return;
     const step = (e.shiftKey ? 10 : 1) * (sh / 480);
+    // A multi-selection (or, with Alt, the whole block) nudges together.
+    const group = scene ? groupFor(selected, e.altKey) : undefined;
+    if (group && scene) {
+      moveNodes(group, scene, dir[0] * step, dir[1] * step, { coalesceKey: 'nudge:group' });
+      return;
+    }
     applyDrag(
       { mode: 'move', node: selected, startX: 0, startY: 0, originalText: text },
       dir[0] * step,
@@ -346,6 +578,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
 
   return (
     <div ref={wrapRef} className="relative min-h-0 flex-1 overflow-auto bg-(--app-bg) p-3">
+      {play ? <PlayBar inGame={inGame} /> : null}
       <div className="mx-auto flex min-h-full w-fit min-w-full items-center justify-center">
         <div
           className={cn(
@@ -363,6 +596,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
               draggable={false}
             />
           ) : null}
+          <ModelLayer scene={scene} zoom={cssW / sw} front={false} />
           <canvas
             ref={canvasRef}
             className="tf2hud-canvas absolute inset-0 size-full"
@@ -379,8 +613,10 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
             onPointerMove={onPointerMove}
             onPointerUp={endDrag}
             onPointerCancel={endDrag}
-            onPointerLeave={() => hover(null)}
+            onPointerLeave={() => (play ? setPlayHover(null) : hover(null))}
           />
+          <ModelLayer scene={scene} zoom={cssW / sw} front enabled={modelsActive} />
+          {readOnly ? null : <ColorChips zoom={cssW / sw} stage={{ w: cssW, h: cssH }} />}
           {view.compareOpacity > 0 && view.backdropImage ? (
             <img
               src={view.backdropImage}

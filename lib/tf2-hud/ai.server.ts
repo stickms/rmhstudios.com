@@ -16,8 +16,7 @@ export interface HudTurn {
 }
 
 export type SelectResult =
-  | { ok: true; files: string[] }
-  | { ok: false; reason: 'unconfigured' | 'failed' };
+  { ok: true; files: string[] } | { ok: false; reason: 'unconfigured' | 'failed' };
 
 export type ProposeResult =
   | { ok: true; summary: string; changes: HudChange[]; malformed: number }
@@ -65,6 +64,8 @@ export async function proposeHudChanges(a: {
   message: string;
   files: readonly { path: string; text: string }[];
   history: readonly HudTurn[];
+  /** What the player has selected or is looking at (built by the editor from their own project), as data. */
+  context?: string;
 }): Promise<ProposeResult> {
   if (!isAiConfigured()) return { ok: false, reason: 'unconfigured' };
   await assertAiBudget(a.userId);
@@ -74,7 +75,7 @@ export async function proposeHudChanges(a: {
     const answer = await runTaskJson(
       'concierge',
       systemFor(TF2_HUD_EDIT),
-      `${body}\n\nREQUEST:\n${conversation(a.message, a.history)}`,
+      `${body}${a.context ? `\n\nSELECTED:\n${asData(a.context)}` : ''}\n\nREQUEST:\n${conversation(a.message, a.history)}`,
       (v) => {
         const o = (v ?? {}) as Record<string, unknown>;
         if (typeof o.summary !== 'string') throw new AppError('AI_UNAVAILABLE');

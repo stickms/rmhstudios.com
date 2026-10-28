@@ -41,6 +41,7 @@ import { ValidationProvider } from './validation-context';
 // The heavy panels (CodeMirror especially) and every dialog load on first use, so the editor
 // paints with just the file tree, preview and inspector; they are prefetched at idle below.
 const AssetsPanel = lazy(() => import('./AssetsPanel'));
+const BlocksPanel = lazy(() => import('./BlocksPanel'));
 const CodePane = lazy(() => import('./CodePane'));
 const CommandPalette = lazy(() => import('./CommandPalette'));
 const DiffView = lazy(() => import('./DiffView'));
@@ -81,7 +82,7 @@ function prefetchHeavyPanels() {
 }
 
 type RightTab =
-  'inspector' | 'code' | 'scheme' | 'test' | 'history' | 'diff' | 'problems' | 'assets';
+  'inspector' | 'blocks' | 'code' | 'scheme' | 'test' | 'history' | 'diff' | 'problems' | 'assets';
 type MobileView = 'files' | 'preview' | 'edit';
 
 interface Props {
@@ -106,6 +107,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
   const redo = useEditor((s) => s.redo);
   const revertAll = useEditor((s) => s.revertAll);
   const setView = useEditor((s) => s.setView);
+  const setPlay = useEditor((s) => s.setPlay);
   const view = useEditor((s) => s.view);
 
   const desktop = useMediaQuery('(min-width: 1024px)');
@@ -119,6 +121,11 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
   const [saveOpen, setSaveOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  // Buttons elsewhere (a panel, a problem, the scheme) ask the assistant through the store.
+  const assistantNonce = useEditor((s) => s.assistantRequest?.nonce);
+  useEffect(() => {
+    if (assistantNonce) setAssistantOpen(true);
+  }, [assistantNonce]);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const { save: cloudSave, canQuickSave } = useCloudSave();
   const [confirmImport, setConfirmImport] = useState<File | null>(null);
@@ -345,6 +352,19 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
         run: () => setConfirmRevert(true),
       },
       {
+        id: 'play',
+        label: t('toggle-play', { defaultValue: 'Toggle Play mode' }),
+        run: () => setPlay(!view.play),
+      },
+      {
+        id: 'blocks',
+        label: t('show-blocks', { defaultValue: 'Show blocks' }),
+        run: () => {
+          setPref('rightOpen', true);
+          setPref('rightTab', 'blocks');
+        },
+      },
+      {
         id: 'history',
         label: t('show-history', { defaultValue: 'Show edit history' }),
         run: () => {
@@ -375,11 +395,23 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
         },
       },
     ],
-    [t, undo, redo, setView, view.showHidden, view.showBounds, view.minmode, setPref],
+    [
+      t,
+      undo,
+      redo,
+      setView,
+      setPlay,
+      view.play,
+      view.showHidden,
+      view.showBounds,
+      view.minmode,
+      setPref,
+    ],
   );
 
   const rightTabs: TfTab[] = [
     { id: 'inspector', label: t('inspector', { defaultValue: 'Inspector' }) },
+    { id: 'blocks', label: t('blocks', { defaultValue: 'Blocks' }) },
     { id: 'code', label: t('code', { defaultValue: 'Code' }) },
     { id: 'scheme', label: t('scheme', { defaultValue: 'Scheme' }) },
     { id: 'test', label: t('test', { defaultValue: 'Test' }) },
@@ -408,6 +440,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
       <div className="min-h-0 flex-1">
         {rightTab === 'inspector' ? <Inspector /> : null}
         <Suspense fallback={<PanelFallback />}>
+          {rightTab === 'blocks' ? <BlocksPanel /> : null}
           {rightTab === 'code' ? <CodePane /> : null}
           {rightTab === 'scheme' ? <SchemePanel /> : null}
           {rightTab === 'test' ? <TestPanel /> : null}

@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { Check, Send, Sparkles, Undo2 } from 'lucide-react';
+import { Check, Send, Sparkles, Undo2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SignInRequiredDialog } from '@/components/shared/SignInRequiredDialog';
@@ -22,6 +22,7 @@ import {
   type RejectedChange,
 } from '@/lib/tf2-hud/ai-core';
 import { api, ApiError } from '@/lib/tf2-hud/api';
+import type { AiContext } from '@/lib/tf2-hud/ai-context';
 import { useEditor } from '@/lib/tf2-hud/store';
 import { Btn, Modal, TextField } from './ui';
 
@@ -85,6 +86,10 @@ export default function HudAssistant({
   const [text, setText] = useState('');
   const [step, setStep] = useState<'select' | 'edit' | null>(null);
   const [signIn, setSignIn] = useState(false);
+  /** What the conversation is about (a panel, a problem, the scheme), until the player removes it. */
+  const [ctx, setCtx] = useState<AiContext | null>(null);
+  const request = useEditor((s) => s.assistantRequest);
+  const takenNonce = useRef(0);
   const nextId = useRef(1);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -100,11 +105,18 @@ export default function HudAssistant({
   const patch = (id: number, f: (m: Message) => Message) =>
     setMessages((cur) => cur.map((m) => (m.id === id ? f(m) : m)));
 
-  const chips = [
-    t('hud-ai-chip-health', { defaultValue: 'Make the health number bigger' }),
-    t('hud-ai-chip-colour', { defaultValue: 'Change the main colour to blue' }),
-    t('hud-ai-chip-ammo', { defaultValue: 'Move the ammo display to the left' }),
-  ];
+  const chips = ctx
+    ? [
+        t('hud-ai-chip-explain', { defaultValue: 'Explain what this does' }),
+        t('hud-ai-chip-readable', { defaultValue: 'Make it easier to read' }),
+        t('hud-ai-chip-match', { defaultValue: 'Make it match the rest of the HUD' }),
+      ]
+    : [
+        t('hud-ai-chip-health', { defaultValue: 'Make the health number bigger' }),
+        t('hud-ai-chip-colour', { defaultValue: 'Change the main colour to blue' }),
+        t('hud-ai-chip-ammo', { defaultValue: 'Move the ammo display to the left' }),
+        t('hud-ai-chip-theme', { defaultValue: 'Give the whole HUD a dark teal and amber look' }),
+      ];
 
   const unavailable = () =>
     add({
@@ -115,7 +127,7 @@ export default function HudAssistant({
       }),
     });
 
-  const send = async (raw: string) => {
+  const send = async (raw: string, withContext: AiContext | null = ctx) => {
     const message = raw.trim().slice(0, HUD_AI_LIMITS.message);
     if (!message || step) return;
     if (!session) {
@@ -129,8 +141,12 @@ export default function HudAssistant({
       .map((m) => ({ role: m.role, content: m.text.slice(0, HUD_AI_LIMITS.historyChars) }));
     const store = useEditor.getState();
     try {
-      setStep('select');
-      const picked = await api.aiSelect({ message, paths: offeredPaths(store.paths()), history });
+      // A request that comes with its files (a selected panel, a problem) does not need to ask which files.
+      const known = withContext?.files.filter((f) => store.hasFile(f)) ?? [];
+      setStep(known.length ? 'edit' : 'select');
+      const picked = known.length
+        ? { files: known }
+        : await api.aiSelect({ message, paths: offeredPaths(store.paths()), history });
       if ('unavailable' in picked) {
         unavailable();
         return;
@@ -161,7 +177,7 @@ export default function HudAssistant({
         unavailable();
         return;
       }
-      const res = await api.aiEdit({ message, files: shown, history });
+      const res = await api.aiEdit({ message, files: shown, history, context: withContext?.notes });
       if ('unavailable' in res) {
         unavailable();
         return;
@@ -171,8 +187,7 @@ export default function HudAssistant({
       add({
         role: 'assistant',
         text:
-          res.summary ||
-          t('hud-ai-no-summary', { defaultValue: 'Here is what I would change.' }),
+          res.summary || t('hud-ai-no-summary', { defaultValue: 'Here is what I would change.' }),
         proposal: {
           changes: res.changes,
           applied: dry.applied,
@@ -200,6 +215,20 @@ export default function HudAssistant({
     }
   };
 
+  // A button elsewhere asked something (about a panel, a problem, the scheme): take it, and send it if it says so.
+  const sendRef = useRef(send);
+  sendRef.current = send;
+  useEffect(() => {
+    if (!request || request.nonce === takenNonce.current) return;
+    takenNonce.current = request.nonce;
+    setCtx(request.context ?? null);
+    if (request.prompt) {
+      if (request.autoSend) void sendRef.current(request.prompt, request.context ?? null);
+      else setText(request.prompt);
+    }
+    useEditor.getState().clearAssistantRequest();
+  }, [request]);
+
   const apply = (m: Message) => {
     const pr = m.proposal;
     if (!pr) return;
@@ -212,7 +241,10 @@ export default function HudAssistant({
     // Re-run on the current text, in case the player edited something since the proposal.
     const done = applyChanges(files, pr.changes);
     if (!Object.keys(done.files).length) {
-      patch(m.id, (x) => ({ ...x, proposal: { ...pr, applied: done.applied, state: 'discarded' } }));
+      patch(m.id, (x) => ({
+        ...x,
+        proposal: { ...pr, applied: done.applied, state: 'discarded' },
+      }));
       return;
     }
     store.applyBatch(`AI: ${m.text.slice(0, 60)}`, done.files);
@@ -239,26 +271,48 @@ export default function HudAssistant({
             'Describe what you want. You will see exactly what would change before anything is applied.',
         })}
         footer={
-          <form
-            className="flex w-full items-center gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void send(text);
-            }}
-          >
-            <TextField
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              maxLength={HUD_AI_LIMITS.message}
-              placeholder={t('hud-ai-placeholder', { defaultValue: 'What should change?' })}
-              aria-label={t('hud-ai-placeholder', { defaultValue: 'What should change?' })}
-              enterKeyHint="send"
-              className="min-w-0 flex-1"
-            />
-            <Btn type="submit" variant="primary" icon={Send} disabled={step !== null || !text.trim()}>
-              {t('ai-send', { defaultValue: 'Send' })}
-            </Btn>
-          </form>
+          <div className="flex w-full flex-col gap-2">
+            {ctx ? (
+              <p className="flex items-center gap-1.5 text-xs text-(--app-text-muted)">
+                <span className="min-w-0 truncate">
+                  {t('hud-ai-about', { defaultValue: 'About: {{what}}', what: ctx.label })}
+                </span>
+                <button
+                  type="button"
+                  className="inline-flex shrink-0 items-center rounded-(--app-radius-sm) p-0.5 hover:bg-(--app-surface-hover)"
+                  aria-label={t('hud-ai-forget', { defaultValue: 'Stop talking about this' })}
+                  onClick={() => setCtx(null)}
+                >
+                  <X className="size-3.5" aria-hidden />
+                </button>
+              </p>
+            ) : null}
+            <form
+              className="flex w-full items-center gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void send(text);
+              }}
+            >
+              <TextField
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                maxLength={HUD_AI_LIMITS.message}
+                placeholder={t('hud-ai-placeholder', { defaultValue: 'What should change?' })}
+                aria-label={t('hud-ai-placeholder', { defaultValue: 'What should change?' })}
+                enterKeyHint="send"
+                className="min-w-0 flex-1"
+              />
+              <Btn
+                type="submit"
+                variant="primary"
+                icon={Send}
+                disabled={step !== null || !text.trim()}
+              >
+                {t('ai-send', { defaultValue: 'Send' })}
+              </Btn>
+            </form>
+          </div>
         }
       >
         <div className="flex min-h-48 flex-col gap-3" aria-live="polite">
@@ -324,7 +378,9 @@ export default function HudAssistant({
                     </ul>
                   ) : (
                     <p className="text-xs text-(--app-text-dim)">
-                      {t('hud-ai-nothing', { defaultValue: 'Nothing in the files needs to change.' })}
+                      {t('hud-ai-nothing', {
+                        defaultValue: 'Nothing in the files needs to change.',
+                      })}
                     </p>
                   )}
                   {m.proposal.rejected.length + m.proposal.malformed ? (

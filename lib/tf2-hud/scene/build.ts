@@ -20,6 +20,7 @@ import {
   type Rect,
   type Screen,
 } from '../layout/geometry';
+import { ALPHA_KEY } from '../anim/style';
 import { placeholderFor } from '../placeholders';
 import type { CondEnv } from '../scheme/cond';
 import { borderOf, pickFont, resolveColor, type Rgba, type Scheme } from '../scheme/scheme';
@@ -48,6 +49,11 @@ export interface SceneContext {
   progressFor?: (file: string, name: string) => number | undefined;
   /** Who is playing, for team-coloured backgrounds and class images. */
   player?: { playerClass: string; team: 'red' | 'blue' };
+  /**
+   * Adjust a panel's properties just before it is laid out and drawn: Play mode's hover colours and
+   * running HUD animations use it. `name` is the entry's key; return `props` itself for no change.
+   */
+  styleFor?: (file: string, name: string, props: Props) => Props;
 }
 
 /* ───────────────────────── parse cache ───────────────────────── */
@@ -77,7 +83,7 @@ type Kind =
   'label' | 'image' | 'button' | 'progress' | 'check' | 'radio' | 'input' | 'dynamic' | 'panel';
 
 const DYNAMIC =
-  /^(cavatarimagepanel|cmodelpanel|citemmodelpanel|ctfplayermodelpanel|cstorepreview\w*|html|sectionedlistpanel|cexrichtext|richtext|cquest\w*|cnavigationpanel|cctfstaticbadgepanel|ctfstaticbadgepanel|scrollbar|menu|listpanel)$/i;
+  /^(cavatarimagepanel|cmodelpanel|citemmodelpanel|cembeddeditemmodelpanel|cbasemodelpanel|cmodelimagepanel|ctfplayermodelpanel|cstorepreview\w*|html|sectionedlistpanel|cexrichtext|richtext|cquest\w*|cnavigationpanel|cctfstaticbadgepanel|ctfstaticbadgepanel|scrollbar|menu|listpanel)$/i;
 
 export function kindOf(control: string): Kind {
   const c = control.toLowerCase();
@@ -396,7 +402,11 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
   const screenRect: Rect = { x: 0, y: 0, w: ctx.screen.w, h: ctx.screen.h };
   const images = new Set<string>();
   const opts = { env: ctx.env, minmode: ctx.minmode };
-  const propsFor = (e: KvNode) => propsOf(e, opts);
+  let styleFile = '';
+  const propsFor = (e: KvNode): Props => {
+    const base = propsOf(e, opts);
+    return ctx.styleFor ? ctx.styleFor(styleFile, e.key.text, base) : base;
+  };
 
   // `scripts/hudlayout.res` re-states where each HUD element sits. Its block for
   // an element wins over whatever the element's own file says, and it is also
@@ -421,6 +431,7 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
   const groups: { z: number; order: number; nodes: PanelNode[] }[] = [];
 
   files.forEach((file, order) => {
+    styleFile = file;
     const text = ctx.readText(file);
     if (text === undefined) return;
     const doc = parseCached(text);
@@ -482,6 +493,8 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
       keyPath: string[];
       /** Ancestors' bounds the panel is clipped to (VGUI clips children to their parent). */
       clip?: Rect;
+      /** The product of the ancestors' alpha (0–1): a faded panel fades what is inside it. */
+      alpha: number;
     }
     interface Placed {
       node: PanelNode;
@@ -511,6 +524,9 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
       if (ctx.forceHidden.has(id)) shown = false;
       // A hidden panel hides everything inside it.
       if (!isFrame && !host.shown && (hasFrame || host.id !== null)) shown = false;
+      // A panel's own `alpha` (0–255), or the one an animation is giving it, fades it and what is inside it.
+      const ownAlpha = props.has(ALPHA_KEY) ? props.num(ALPHA_KEY) : props.num('alpha', 255);
+      const alpha = host.alpha * Math.max(0, Math.min(1, ownAlpha / 255));
       const kind = kindOf(control);
       const progress = ctx.progressFor?.(file, name) ?? ctx.progress;
       const ops = shown
@@ -527,6 +543,7 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
         visible,
         shown,
         isFrame,
+        alpha: alpha < 1 ? alpha : undefined,
         parentId: isFrame ? null : host.id,
         clip: isFrame ? undefined : host.clip,
         source: isFrame ? frameSource : kvRange(e!),
@@ -585,6 +602,7 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
                 shown: node.shown,
                 keyPath: node.keyPath,
                 clip: host.clip ? intersect(host.clip, abs) : abs,
+                alpha: node.alpha ?? 1,
               },
             )
           : [];
@@ -602,12 +620,13 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
         });
     };
 
-    const frameHost: Host = { id: frameId, shown: true, keyPath: [top.key.text] };
+    const frameHost: Host = { id: frameId, shown: true, keyPath: [top.key.text], alpha: 1 };
     const nodes: PanelNode[] = [];
     if (frameProps) {
       const frame = make(frameEntry, frameProps, frameLocal, true, frameHost);
       nodes.push(frame);
       frameHost.shown = frame.shown;
+      frameHost.alpha = frame.alpha ?? 1;
     }
     flatten(
       place(

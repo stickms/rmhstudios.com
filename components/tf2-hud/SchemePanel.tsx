@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TfTabs, type TfTab } from './TfTabs';
@@ -26,6 +26,7 @@ import { propsOf } from '@/lib/tf2-hud/kv/props';
 import { kvAt } from '@/lib/tf2-hud/kv/query';
 import { parseCached } from '@/lib/tf2-hud/scene/build';
 import { COND_ENVS } from '@/lib/tf2-hud/scheme/cond';
+import { schemeContext } from '@/lib/tf2-hud/ai-context';
 import { useEditor } from '@/lib/tf2-hud/store';
 import { cn } from '@/lib/utils';
 import { ColorPickerPopover } from './ColorPicker';
@@ -71,6 +72,8 @@ function ColorsTab({ scheme }: { scheme: Scheme }) {
   const [source, setSource] = useState<'colors' | 'base'>('colors');
   const [editing, setEditing] = useState<{ name: string; anchor: HTMLElement } | null>(null);
   const [newName, setNewName] = useState('');
+  const [look, setLook] = useState('');
+  const askAssistant = useEditor((s) => s.askAssistant);
   const colors = useMemo(() => listSchemeColors(scheme, source), [scheme, source]);
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -106,6 +109,41 @@ function ColorsTab({ scheme }: { scheme: Scheme }) {
             {t('base-settings', { defaultValue: 'BaseSettings' })}
           </label>
         </div>
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const text = look.trim();
+            if (!text) return;
+            askAssistant({
+              context: schemeContext(
+                t('look-note', {
+                  defaultValue:
+                    'The player wants the HUD recoloured. Change scheme colours so the whole HUD follows the look they describe.',
+                }),
+              ),
+              prompt: t('look-prompt', {
+                defaultValue: 'Recolour the HUD: {{look}}',
+                look: text.slice(0, 300),
+              }),
+              autoSend: true,
+            });
+            setLook('');
+          }}
+        >
+          <TextField
+            value={look}
+            maxLength={300}
+            onChange={(e) => setLook(e.target.value)}
+            placeholder={t('look-ph', { defaultValue: 'Describe a look: dark teal with amber' })}
+            aria-label={t('look-label', {
+              defaultValue: 'Describe a colour look for the assistant',
+            })}
+          />
+          <Btn type="submit" icon={Sparkles} disabled={!look.trim()}>
+            {t('look-go', { defaultValue: 'Recolour' })}
+          </Btn>
+        </form>
         <div className="flex gap-2">
           <TextField
             value={newName}

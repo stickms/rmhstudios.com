@@ -59,6 +59,26 @@ export function propsOf(node: KvNode, opts: PropOptions): Props {
   };
 }
 
+/** A property bag made from literal values (keys are case-insensitive). */
+export function propsFromMap(values: Readonly<Record<string, string>>): Props {
+  const map = new Map(Object.entries(values).map(([k, v]) => [k.toLowerCase(), v]));
+  const get = (key: string): string | undefined => map.get(key.toLowerCase());
+  return {
+    get,
+    has: (key) => get(key) !== undefined,
+    num(key, fallback = 0) {
+      const v = Number.parseFloat(get(key) ?? '');
+      return Number.isFinite(v) ? v : fallback;
+    },
+    bool(key, fallback = false) {
+      const v = get(key);
+      if (v === undefined) return fallback;
+      return v !== '0' && v.toLowerCase() !== 'false' && v !== '';
+    },
+    keys: () => [...map.keys()],
+  };
+}
+
 /**
  * `over` wins for every key it defines. This is how `scripts/hudlayout.res`
  * works: it re-states the position and size of a HUD element, and whatever it

@@ -33,14 +33,14 @@ import { Btn, Popover, TextField } from './ui';
 const OPAQUE_BLACK: Rgba = { r: 0, g: 0, b: 0, a: 255 };
 const OPAQUE_WHITE: Rgba = { r: 255, g: 255, b: 255, a: 255 };
 
-interface BodyProps {
+export interface BodyProps {
   value: string;
   scheme: Scheme;
   onChange: (v: string) => void;
   onCreateSchemeColor?: (name: string, literal: string) => void;
 }
 
-function PickerBody({ value, scheme, onChange, onCreateSchemeColor }: BodyProps) {
+export function PickerBody({ value, scheme, onChange, onCreateSchemeColor }: BodyProps) {
   const { t } = useTranslation('c-tf2-hud');
   const recent = useTf2HudPrefs((p) => p.recentColors);
   const pushRecent = useTf2HudPrefs((p) => p.pushRecentColor);
