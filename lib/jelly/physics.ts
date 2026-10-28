@@ -353,6 +353,16 @@ export function installJellyPhysics(
   const pointer = { x: 0, y: 0, t: 0, fine: false, inDoc: false };
   const pvx = new VelocityTracker();
   const pvy = new VelocityTracker();
+  /**
+   * How far the page has scrolled under the pointer, in px (the pointer's travel relative to the content). A
+   * stationary mouse over scrolling content is moving through it exactly as a moving mouse over still content is, so
+   * the pointer velocity trackers are fed `pointer + this`: wheel scrolling kicks a body the pointer arrives on the
+   * same way a mouse move does.
+   */
+  let scrolledX = 0;
+  let scrolledY = 0;
+  let lastScrollX = win.scrollX ?? 0;
+  let lastScrollY = win.scrollY ?? 0;
 
   const now = () => win.performance?.now?.() ?? Date.now();
 
@@ -765,8 +775,8 @@ export function installJellyPhysics(
     trackPointer(e);
     const t = pointer.t;
     if (e.pointerType !== 'touch') {
-      pvx.add(e.clientX, t);
-      pvy.add(e.clientY, t);
+      pvx.add(e.clientX + scrolledX, t);
+      pvy.add(e.clientY + scrolledY, t);
     }
     if (bodies.size === 0) return;
     for (const b of bodies.values()) {
@@ -869,6 +879,17 @@ export function installJellyPhysics(
   const onScroll = () => {
     lastScroll = now();
     epoch++;
+    // The pointer's travel through the content, as a velocity (see `scrolledX`).
+    const sx = win.scrollX ?? 0;
+    const sy = win.scrollY ?? 0;
+    scrolledX += sx - lastScrollX;
+    scrolledY += sy - lastScrollY;
+    lastScrollX = sx;
+    lastScrollY = sy;
+    if (pointer.inDoc && pointer.fine) {
+      pvx.add(pointer.x + scrolledX, lastScroll);
+      pvy.add(pointer.y + scrolledY, lastScroll);
+    }
     // Scrolling moves hosts beneath a stationary fine pointer. Hit-test once
     // in the next read phase, never in the scroll handler or on touch flicks.
     hoverNeedsHitTest = pointer.inDoc && pointer.fine && hoverAllowed();
@@ -1121,11 +1142,18 @@ export function installJellyPhysics(
     if (hoverNeedsHitTest) {
       hoverNeedsHitTest = false;
       const el = bodyElFrom(doc.elementFromPoint?.(pointer.x, pointer.y) ?? null);
-      for (const b of bodies.values()) b.hovering = b.el === el;
+      let alreadyHovering = false;
+      for (const b of bodies.values()) {
+        if (b.el === el && b.hovering) alreadyHovering = true;
+        b.hovering = b.el === el;
+      }
       if (el) {
         const b = bodies.get(el) ?? create(el);
         if (b) {
           b.hovering = true;
+          // Content scrolled a body under the pointer: it arrives with the pointer's velocity through the content,
+          // the kick a mouse move onto it would give.
+          if (!alreadyHovering && !b.press && !b.drag) b.kick = { vx: pvx.get(), vy: pvy.get() };
           if (!b.press && !b.drag) b.phase = 'hover';
           plasmaFor(el);
           enforceCap();
