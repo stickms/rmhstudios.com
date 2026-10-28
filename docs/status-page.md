@@ -46,6 +46,21 @@ the tile sat at "Degraded" with 0.00% uptime while the sitemap was served
 correctly. The target now uses `ExpectAny: ["<sitemapindex", "<urlset"]`, and
 `TestSitemapProbeAcceptsTheIndex` pins it.
 
+### Short sitemap timeout bursts
+
+The index used to fan out database counts on every request, including every
+15-second status check. Catching rejected counts did not protect against slow
+ones: the request could wait beyond the probe's four-second timeout.
+`lib/sitemap.server.ts` now uses the shared single-flight SWR cache per section:
+counts are fresh for ten minutes and usable for another hour while refreshing
+in the background. Cold requests wait at most one second for counts; slow
+queries remain deduplicated and can warm the cache after that response.
+Sections without an available count are omitted, with the static pages and
+healthy sections retained. Partial indexes use `max-age=60` so crawlers retry
+soon; complete indexes retain the existing hourly cache policy. Only chunk
+counts are cached here; child sitemaps still enforce their visibility rules.
+The status probe's timeout and incident thresholds are unchanged.
+
 ## Persistence
 
 All three files live in `STATUS_DATA_DIR` (`/app/db` in Compose) and are

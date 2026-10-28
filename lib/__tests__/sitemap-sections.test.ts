@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SITEMAP_CHUNK_SIZE } from '@/lib/sitemap';
+import { apiCache } from '@/lib/cache';
 
 /**
  * The section machinery, with Prisma stood in for.
@@ -30,9 +31,14 @@ const prismaMock = {
 };
 
 vi.mock('@/lib/prisma.server', () => ({ prisma: prismaMock }));
+vi.mock('@/lib/redis.server', () => ({ redisEnabled: () => false }));
+vi.mock('@tanstack/react-router', () => ({
+  createFileRoute: () => (config: unknown) => ({ options: config }),
+}));
 
 /** Every model answers 0 / [] unless a test says otherwise. */
 function resetToEmpty() {
+  apiCache.dropLocalPrefix('sitemap:count:');
   for (const model of Object.values(prismaMock)) {
     model.count.mockReset().mockResolvedValue(0);
     model.findMany.mockReset().mockResolvedValue([]);
@@ -40,9 +46,112 @@ function resetToEmpty() {
 }
 
 beforeEach(resetToEmpty);
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 describe('the sitemap index survives a broken database', () => {
+  it('coalesces concurrent counts and reuses them for subsequent checks', async () => {
+    const { listSitemapChunks } = await import('@/lib/sitemap.server');
+    const [first, second] = await Promise.all([listSitemapChunks(), listSitemapChunks()]);
+    expect(await listSitemapChunks()).toEqual(first);
+    expect(second).toEqual(first);
+    for (const model of Object.values(prismaMock)) {
+      expect(model.count).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it('serves the previous chunk paths while a stale count refresh is pending or fails', async () => {
+    const { getSitemapIndex } = await import('@/lib/sitemap.server');
+    vi.useFakeTimers();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    prismaMock.user.count.mockResolvedValue(SITEMAP_CHUNK_SIZE + 1);
+    const original = await getSitemapIndex();
+    let rejectCount!: (error: Error) => void;
+    prismaMock.user.count.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectCount = reject;
+        }),
+    );
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    expect(await getSitemapIndex()).toEqual(original);
+    rejectCount(new Error('db down'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(await getSitemapIndex()).toEqual(original);
+    expect(original.paths).toContain('/sitemaps/users-2.xml');
+    expect(original.complete).toBe(true);
+
+    // A successful background retry publishes the new count for the next check.
+    prismaMock.user.count.mockResolvedValue(0);
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    await getSitemapIndex();
+    await vi.advanceTimersByTimeAsync(0);
+    const refreshed = await getSitemapIndex();
+    expect(refreshed.complete).toBe(true);
+    expect(refreshed.paths).not.toContain('/sitemaps/users-2.xml');
+  });
+
+  it('bounds cold waits and reuses the pending query after a timeout', async () => {
+    const { getSitemapIndex } = await import('@/lib/sitemap.server');
+    vi.useFakeTimers();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    let resolveCount!: (total: number) => void;
+    prismaMock.user.count.mockReturnValueOnce(
+      new Promise<number>((resolve) => {
+        resolveCount = resolve;
+      }),
+    );
+    const first = getSitemapIndex();
+    await vi.advanceTimersByTimeAsync(1_000);
+    const partial = await first;
+    expect(partial.complete).toBe(false);
+    expect(partial.paths).toContain('/sitemaps/pages.xml');
+    expect(partial.paths).toContain('/sitemaps/posts.xml');
+    expect(partial.paths).not.toContain('/sitemaps/users.xml');
+
+    const retry = getSitemapIndex();
+    resolveCount(SITEMAP_CHUNK_SIZE + 1);
+    const recovered = await retry;
+    expect(recovered.complete).toBe(true);
+    expect(recovered.paths).toContain('/sitemaps/users-2.xml');
+    expect(prismaMock.user.count).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops serving old counts after the bounded stale window', async () => {
+    const { getSitemapIndex } = await import('@/lib/sitemap.server');
+    vi.useFakeTimers();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    await getSitemapIndex();
+    prismaMock.user.count.mockRejectedValue(new Error('db down'));
+    await vi.advanceTimersByTimeAsync(70 * 60_000);
+    const expired = await getSitemapIndex();
+    expect(expired.complete).toBe(false);
+    expect(expired.paths).not.toContain('/sitemaps/users.xml');
+  });
+
+  it.each([false, true])('uses a short HTTP cache only when partial=%s', async (partial) => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    if (partial) prismaMock.user.count.mockRejectedValue(new Error('db down'));
+    const { Route } = await import('@/app/routes/sitemap[.]xml');
+    const GET = (
+      Route as unknown as {
+        options: { server: { handlers: { GET: () => Promise<Response> } } };
+      }
+    ).options.server.handlers.GET;
+    const response = await GET();
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('application/xml; charset=utf-8');
+    expect(response.headers.get('cache-control')).toBe(
+      partial ? 'public, max-age=60' : 'public, max-age=3600, stale-while-revalidate=86400',
+    );
+    const xml = await response.text();
+    expect(xml).toContain('<sitemapindex');
+    expect(xml).toContain('/sitemaps/pages.xml');
+    expect(xml.includes('/sitemaps/users.xml')).toBe(!partial);
+  });
+
   it('omits a section whose count throws, and keeps the rest', async () => {
     const { listSitemapChunks } = await import('@/lib/sitemap.server');
     prismaMock.user.count.mockRejectedValue(new Error('connection refused'));
