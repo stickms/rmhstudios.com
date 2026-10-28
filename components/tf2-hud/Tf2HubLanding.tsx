@@ -1,6 +1,9 @@
 /**
  * The TF2 Hub menu: pick the HUD editor or the loadout builder, or head to the
  * workshop where both kinds of creation are shared.
+ *
+ * The logo already says Team Fortress 2, so it sits inside the heading and the heading
+ * adds only "Hub" beneath it; together they read "Team Fortress 2 Hub".
  */
 'use client';
 
@@ -46,12 +49,12 @@ export default function Tf2HubLanding() {
       />
       <main className="mx-auto w-full max-w-4xl px-4 pb-16">
         <section className="py-10 text-center sm:py-16">
-          <Tf2Logo
-            className="max-h-24 w-auto"
-            label={t('game-name', { defaultValue: 'Team Fortress 2' })}
-          />
           <h1 className="tf2hud-title text-5xl text-(--app-text) sm:text-7xl">
-            {t('hub-hero', { defaultValue: 'TF2 Hub' })}
+            <Tf2Logo
+              className="mb-2 h-20 sm:h-24"
+              label={t('game-name', { defaultValue: 'Team Fortress 2' })}
+            />
+            {t('hub-hero-word', { defaultValue: 'Hub' })}
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-(--app-text-muted)">
             {t('hub-hero-body', {

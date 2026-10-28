@@ -368,6 +368,7 @@
   "history-hint": "Ctrl+Z undo · Ctrl+Shift+Z redo · click a step to jump to it",
   "hub-hero": "TF2 Hub",
   "hub-hero-body": "Tools for Team Fortress 2 players, right in your browser.",
+  "hub-hero-word": "Hub",
   "hub-hud-body": "Edit every .res file with a live, resolution-accurate preview. Test health, ammo and class states, diff against the default HUD, then download a ready-to-install zip.",
   "hub-hud-cta": "Open the HUD Editor",
   "hub-hud-title": "HUD Editor",

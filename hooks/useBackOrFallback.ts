@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import { useRouter } from '@tanstack/react-router';
+import { previousEntryHref } from '@/lib/router/history-trail';
 
 /**
  * "Back" that actually goes back, falling through to the link's own href when
@@ -46,5 +47,32 @@ export function useBackOrFallback() {
       router.history.back();
     },
     [router],
+  );
+}
+
+/**
+ * "Back to <named page>": steps back through history only when the previous entry IS
+ * that page, and otherwise follows the link to it.
+ *
+ * {@link useBackOrFallback} is right for a corner arrow that just says "back". A control
+ * that names its destination ("TF2 Hub", "Workshop") is an up link, and stepping back
+ * from it can contradict its label: open a HUD from the workshop, then the HUD editor,
+ * and the editor's "TF2 Hub" arrow took you back to the HUD. Stepping back when it does
+ * land on the named page keeps that page's scroll position and doesn't grow the
+ * history; when it doesn't, the `<Link>` navigates to `to`.
+ *
+ * Usage: `<Link to={href} onClick={useBackTo(href)}>`. `href` is compared as path +
+ * search, so pass it the same way the link does.
+ */
+export function useBackTo(href: string) {
+  const router = useRouter();
+
+  return useCallback(
+    (event?: { preventDefault: () => void }) => {
+      if (previousEntryHref() !== href) return; // not the named page — let the <Link> navigate
+      event?.preventDefault();
+      router.history.back();
+    },
+    [router, href],
   );
 }

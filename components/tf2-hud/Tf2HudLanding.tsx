@@ -96,7 +96,7 @@ export default function Tf2HudLanding() {
       <main className="mx-auto w-full max-w-5xl px-4 pb-16">
         <section className="py-10 text-center sm:py-16">
           <Tf2Logo
-            className="max-h-24 w-auto"
+            className="mb-2 h-20 sm:h-24"
             label={t('game-name', { defaultValue: 'Team Fortress 2' })}
           />
           <h1 className="tf2hud-title text-5xl text-(--app-text) sm:text-7xl">
