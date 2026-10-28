@@ -142,6 +142,16 @@ def parse_vmt(text):
     return shader, kv
 
 
+def texture_path(base):
+    """The `materials/….vtf` path a `$basetexture` value names. Valve's files are inconsistent about it:
+    most omit the extension, some include `.vtf` (`oh_xmas_tree.vtf`), and some start with a slash or use
+    backslashes; the engine accepts all of them."""
+    name = re.sub(r"/{2,}", "/", base.strip().replace("\\", "/").lower()).lstrip("/")
+    name = re.sub(r"^materials/", "", name)
+    name = re.sub(r"\.vtf$", "", name)
+    return "materials/" + name + ".vtf"
+
+
 def resolve_material(fs, vmt_path, depth=0):
     """Load a VMT, following a `patch` shader's include. Returns (shader, kv, raw_text)."""
     data = fs.read(vmt_path)

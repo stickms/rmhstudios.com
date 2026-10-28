@@ -29,7 +29,7 @@ import srctex
 from vpkfs import GameFS
 
 # Bump when the output for the same source would change.
-CONVERTER_VERSION = 7
+CONVERTER_VERSION = 8
 SCALE = 0.01905  # Source units are 0.75 inch
 MAX_TEX = 512
 TINT_KEYS = ("$blendtintbybasealpha",)
@@ -270,7 +270,7 @@ def material_files(fs, info):
             continue
         shader, kv, text = res
         base = kv.get("$basetexture")
-        vtf_path = ("materials/" + base.replace("\\", "/").lower() + ".vtf") if base else None
+        vtf_path = srctex.texture_path(base) if base else None
         vtf = fs.read(vtf_path) if vtf_path else None
         slots.append((vmt_path, shader, kv, vtf_path, vtf, text))
     return slots

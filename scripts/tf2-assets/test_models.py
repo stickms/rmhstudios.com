@@ -63,6 +63,17 @@ class ModelAssets(unittest.TestCase):
         self.assertEqual(out["emissiveFactor"], [1, 1, 1])
 
 
+class TexturePaths(unittest.TestCase):
+    def test_basetexture_spellings_all_name_the_same_file(self):
+        want = "materials/models/player/items/all_class/oh_xmas_tree.vtf"
+        for raw in ["models/player/items/all_class/oh_xmas_tree",
+                    "models/player/items/all_class/oh_xmas_tree.vtf",
+                    "/models/player/items/all_class/Oh_Xmas_Tree",
+                    "models\\player\\items\\all_class\\oh_xmas_tree.VTF",
+                    "materials/models/player/items/all_class/oh_xmas_tree"]:
+            self.assertEqual(convert.srctex.texture_path(raw), want, raw)
+
+
 class JiggleBones(unittest.TestCase):
     def _mdl(self, proc_type, flags, length=4.0):
         """Two bones; the second carries (or not) a jiggle block, as mstudiobone_t lays it out."""
