@@ -82,7 +82,14 @@ import LoadoutAssistant from './LoadoutAssistant';
 import { kitOf, warPaintOf } from '@/lib/tf2-loadout/warpaint';
 import { rarityColor, tierName } from '@/lib/tf2-loadout/rarity';
 import PlayerViewer from './PlayerViewer';
-import { effectSpecOf, tauntEffectOf, tauntItemOf, wornItems } from './worn';
+import {
+  effectSpecOf,
+  isHeldSlot,
+  tauntEffectOf,
+  tauntItemOf,
+  wornItems,
+  type HeldSlot,
+} from './worn';
 import ItemTile from './ItemTile';
 import ItemPreviewModal from './ItemPreviewModal';
 import { IconButton } from '@/components/ui/icon-button';
@@ -170,9 +177,22 @@ function Builder({
   const [slots, setSlots] = useState<LoadoutSlots>(initialSlots);
   const [selected, setSelected] = useState<LoadoutSlotKey | null>(null);
   const [activeTauntSlot, setActiveTauntSlot] = useState<LoadoutSlotKey | null>(null);
+  // The weapon the player holds: the last weapon slot picked. Picking one also ends the taunt, so the
+  // player stands holding it; picking a taunt slot performs that taunt instead.
+  const [heldSlot, setHeldSlot] = useState<HeldSlot | null>(null);
+  // An animation picked from the list, played in place of the taunt until a slot is selected again.
+  const [animation, setAnimation] = useState<string | null>(null);
+  const showSlot = (key: LoadoutSlotKey) => {
+    setAnimation(null);
+    if (key.startsWith('taunt')) setActiveTauntSlot(key);
+    else if (isHeldSlot(key)) {
+      setHeldSlot(key);
+      setActiveTauntSlot(null);
+    }
+  };
   const selectSlot = (key: LoadoutSlotKey) => {
     setSelected(key);
-    if (key.startsWith('taunt')) setActiveTauntSlot(key);
+    showSlot(key);
   };
   const [remote, setRemote] = useState<{
     id: string;
@@ -256,6 +276,8 @@ function Builder({
     }
     setCls(next);
     setActiveTauntSlot(null);
+    setHeldSlot(null);
+    setAnimation(null);
     setSlots(draftOrStock(next));
     setExtraCosmetics(0);
     setSelected(null);
@@ -294,14 +316,18 @@ function Builder({
 
   // What the 3D player wears: the cosmetics, with their paint, and the held weapon.
   const worn = useMemo(
-    () => wornItems(idx, cls, slots, cosmeticKeys),
-    [slots, idx, cosmeticKeys, cls],
+    () => wornItems(idx, cls, slots, cosmeticKeys, heldSlot),
+    [slots, idx, cosmeticKeys, cls, heldSlot],
   );
   const activeTaunt = activeTauntSlot ? slots[activeTauntSlot] : undefined;
-  const tauntItem = activeTaunt?.item ?? tauntItemOf(slots);
+  // Before anything is picked the first equipped taunt plays; once a weapon slot is picked, none does.
+  const idleDefault = heldSlot === null;
+  const tauntItem = activeTaunt?.item ?? (idleDefault ? tauntItemOf(slots) : undefined);
   const tauntEffect = activeTaunt
     ? effectSpecOf(idx, activeTaunt, 'taunt')
-    : tauntEffectOf(idx, slots);
+    : idleDefault
+      ? tauntEffectOf(idx, slots)
+      : undefined;
 
   const slotLabel = useCallback(
     (key: LoadoutSlotKey): string => {
@@ -337,7 +363,7 @@ function Builder({
   };
 
   const equip = (key: LoadoutSlotKey, item: CatalogItem) => {
-    if (key.startsWith('taunt')) setActiveTauntSlot(key);
+    showSlot(key);
     const { slots: next, removed } = equipInto(catalog, slots, key, item, unrestricted);
     edit(next);
     setAnnounce(
@@ -563,7 +589,14 @@ function Builder({
           className="flex flex-col gap-4"
         >
           {/* The player sits right under the class bar; the options follow it. */}
-          <PlayerViewer cls={cls} worn={worn} tauntEffect={tauntEffect} taunt={tauntItem} />
+          <PlayerViewer
+            cls={cls}
+            worn={worn}
+            tauntEffect={tauntEffect}
+            taunt={tauntItem}
+            animation={animation}
+            onAnimationChange={setAnimation}
+          />
           <RulesPanel
             warnings={warnings}
             idx={idx}

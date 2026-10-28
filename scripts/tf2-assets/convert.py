@@ -109,7 +109,6 @@ def particle_metadata(mdl, bones):
 
 EYE_SHADERS = ("eyerefract", "eyes")
 IDLE_SEQUENCE = "selectionMenu_Idle"  # the loadout screen's own idle: every class has it, and it loops
-TAUNT_NAME = re.compile(r"(^|_)taunt", re.I)
 SKIP_CLIP = re.compile(r"^(layer_|a_|armslayer_|bodylayer_)|vehicle|kart|steer|_layer$", re.I)
 # the game's scene file names abbreviate some words the sequences spell out
 SCENE_ALIASES = (("hi5", "highfive"),)
@@ -163,8 +162,22 @@ def norm_name(n):
     return re.sub(r"[^a-z0-9]", "", n.lower())
 
 
+def clip_slug(name):
+    """A sequence name as the file/route-safe clip id: `anim_<class>_<slug>.glb`."""
+    return re.sub(r"[^a-z0-9_]+", "_", name.lower()).strip("_")[:64]
+
+
+def _core(n):
+    """A name with spelling, a leading `taunt`, the class prefix and loop/start suffixes taken out."""
+    n = norm_name(n)
+    n = re.sub(r"^(taunt|layer)", "", n)
+    return re.sub(r"(start|loop|looping|intro|full)$", "", n)
+
+
 def scene_clip(scene, cls_file, clips):
-    """The clip a scene file plays: same name once spelling differences are ignored, or `<class>_<name>`."""
+    """The clip a scene file plays. Tried in order: the same name once spelling differences are ignored (or
+    `<class>_<name>`); the same name without its `taunt` prefix and loop/start suffix; then a clip whose
+    name contains (or is contained in) the scene's, closest in length first."""
     s = scene.lower()
     for a, b in SCENE_ALIASES:
         s = s.replace(a, b)
@@ -172,6 +185,15 @@ def scene_clip(scene, cls_file, clips):
     for c in clips:
         if norm_name(c) in want:
             return c
+    core = {_core(s), _core(cls_file + "_" + s)} - {""}
+    for c in clips:
+        if _core(c) in core:
+            return c
+    key = _core(s)
+    if len(key) >= 4:
+        near = [c for c in clips if len(_core(c)) >= 4 and (key in _core(c) or _core(c) in key)]
+        if near:
+            return min(near, key=lambda c: (abs(len(_core(c)) - len(key)), c))
     return None
 
 
@@ -410,17 +432,20 @@ def convert_clip(base_mdl, anim, name):
 
 
 def exportable_clips(anim):
-    """Names of the animations worth shipping: taunts, whole-body and decodable."""
+    """Names of the animations worth shipping: every whole-body sequence the viewer can decode (taunts, the
+    class's stances, runs, attacks…), one per clip id. Layers, additive gestures and vehicle poses are left out."""
     a_bones = srcanim.read_skeleton(anim)
     seqs = srcanim.read_sequences(anim)
-    out = []
+    out, seen = [], set()
     for q in seqs:
-        if not TAUNT_NAME.search(q["name"]) or SKIP_CLIP.search(q["name"]) or q["name"] in out:
+        slug = clip_slug(q["name"])
+        if not slug or slug in seen or SKIP_CLIP.search(q["name"]):
             continue
         try:
             srcanim.decode_sequence(anim, a_bones, q, None, max_frames=1, seqs=seqs)
         except (srcmodel.ModelError, struct_error, ValueError, IndexError):
             continue
+        seen.add(slug)
         out.append(q["name"])
     return out
 
@@ -431,17 +456,19 @@ def publish_clips(args, class_anims, published, wanted, failed):
     index = {"idle": "idle", "clips": {}, "taunts": {}}
     taunts = json.load(open(args.taunts)) if args.taunts and os.path.exists(args.taunts) else []
     made = reused = 0
+    unmapped = []
     for cls, (stem, mdl, anim) in sorted(class_anims.items()):
         file_cls = stem.rsplit("/", 1)[-1]
         names = exportable_clips(anim)
         have = []
         for name in names:
-            fname = "anim_%s_%s.glb" % (cls, name.lower())
+            slug = clip_slug(name)
+            fname = "anim_%s_%s.glb" % (cls, slug)
             src = hashlib.sha1(b"v%d|%s|%s|%s" % (CONVERTER_VERSION, hashlib.sha1(mdl).digest(),
                                                    hashlib.sha1(anim).digest(), name.encode())).hexdigest()
             if published.get(fname, {}).get("src") == src and os.environ.get("FORCE") != "1":
                 wanted[fname] = {"src": src}
-                have.append(name.lower())
+                have.append(slug)
                 reused += 1
                 continue
             data = convert_clip(mdl, anim, name)
@@ -450,21 +477,30 @@ def publish_clips(args, class_anims, published, wanted, failed):
             with open(os.path.join(args.out, fname), "wb") as fh:
                 fh.write(data)
             wanted[fname] = {"src": src}
-            have.append(name.lower())
+            have.append(slug)
             made += 1
         index["clips"][cls] = have
         for t in taunts:
-            for scene in t["scenes"].get(cls, []):
+            scenes = t["scenes"].get(cls, [])
+            for scene in scenes:
                 hit = scene_clip(scene, file_cls, have)
                 if hit:
                     index["taunts"].setdefault(str(t["id"]), {})[cls] = hit
                     break
+            else:
+                if scenes:
+                    unmapped.append("%s %s: %s" % (t["id"], cls, ", ".join(scenes)))
     body = json.dumps(index, separators=(",", ":"), sort_keys=True).encode()
     with open(os.path.join(args.out, "anims.json"), "wb") as fh:
         fh.write(body)
     wanted["anims.json"] = {"src": hashlib.sha1(body).hexdigest()}
     print("clips: %d converted, %d unchanged; %d taunt items mapped to a clip of %d" % (
         made, reused, len(index["taunts"]), len(taunts)))
+    if unmapped:
+        # What is left shows "no animation yet" in the builder: the scene name that found no sequence.
+        print("%d taunt scenes matched no sequence (item class: scenes):" % len(unmapped))
+        for line in unmapped[:200]:
+            print("  " + line)
     return index
 
 

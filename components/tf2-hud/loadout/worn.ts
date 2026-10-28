@@ -28,12 +28,23 @@ export function effectSpecOf(
     : undefined;
 }
 
-/** The cosmetics (with paint, style and effect), plus the one weapon the player holds. */
+export type HeldSlot = 'primary' | 'secondary' | 'melee';
+
+const HELD_SLOTS: readonly HeldSlot[] = ['primary', 'secondary', 'melee'];
+
+export const isHeldSlot = (key: LoadoutSlotKey): key is HeldSlot =>
+  (HELD_SLOTS as readonly string[]).includes(key);
+
+/**
+ * The cosmetics (with paint, style and effect), plus the one weapon the player holds: `held` when that
+ * slot is filled, else the primary, else the secondary, else the melee.
+ */
 export function wornItems(
   idx: CatalogIndex,
   cls: TfClass,
   slots: LoadoutSlots,
   cosmeticKeys: readonly LoadoutSlotKey[],
+  held: HeldSlot | null = null,
 ): WornItem[] {
   const out: WornItem[] = cosmeticKeys.flatMap((k) => {
     const e = slots[k];
@@ -49,12 +60,11 @@ export function wornItems(
       },
     ];
   });
-  // The player holds one weapon: the primary, else the secondary, else the melee.
-  const held = (['primary', 'secondary', 'melee'] as const).find((k) => slots[k]);
-  if (held) {
-    const e = slots[held]!;
+  const heldKey = held && slots[held] ? held : HELD_SLOTS.find((k) => slots[k]);
+  if (heldKey) {
+    const e = slots[heldKey]!;
     out.push({
-      slotKey: held,
+      slotKey: heldKey,
       itemId: modelItemId(idx.item(e.item) ?? { id: e.item }),
       paint: warPaintOf(idx, e),
       festive: e.festive,

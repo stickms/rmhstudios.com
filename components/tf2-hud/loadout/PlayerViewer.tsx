@@ -11,12 +11,19 @@ import { lazy, Suspense, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { supportsWebGL } from '@/lib/shared/platform';
-import { animUrl, tauntClip, useAnimIndex } from '@/lib/tf2-loadout/use-anims';
+import {
+  animUrl,
+  classClips,
+  clipLabel,
+  tauntClip,
+  useAnimIndex,
+} from '@/lib/tf2-loadout/use-anims';
 import { classModel, modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
 import { cn } from '@/lib/utils';
 import type { EffectSpec } from './EffectParticles';
 import type { WarPaint } from './model-utils';
 import type { PlayerPart } from './PlayerScene';
+import { SearchSelect } from '../ui';
 
 const PlayerScene = lazy(() => import('./PlayerScene'));
 
@@ -47,6 +54,8 @@ export default function PlayerViewer({
   worn,
   tauntEffect,
   taunt,
+  animation,
+  onAnimationChange,
   className,
 }: {
   cls: string;
@@ -56,12 +65,18 @@ export default function PlayerViewer({
   taunt?: number;
   /** The equipped taunt's unusual effect, if any: it surrounds the whole player. */
   tauntEffect?: EffectSpec;
+  /** An animation picked from the list: it plays instead of the taunt. */
+  animation?: string | null;
+  onAnimationChange?: (clip: string | null) => void;
   className?: string;
 }) {
   const { t } = useTranslation('c-tf2-hud');
   const ids = useModelIds();
   const anims = useAnimIndex();
-  const clip = taunt !== undefined ? tauntClip(anims, taunt, cls) : null;
+  const clips = useMemo(() => classClips(anims, cls), [anims, cls]);
+  const picked = animation && clips.includes(animation) ? animation : null;
+  const clip = picked ?? (taunt !== undefined ? tauntClip(anims, taunt, cls) : null);
+  const options = useMemo(() => clips.map((c, id) => ({ id, label: clipLabel(c) })), [clips]);
   const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
   const body = ids ? classModel(ids, cls) : null;
 
@@ -109,8 +124,12 @@ export default function PlayerViewer({
     </SilentErrorBoundary>
   );
 
-  const caption =
-    taunt === undefined || anims === null
+  const caption = picked
+    ? t('animation-playing', {
+        defaultValue: 'Playing {{name}} on a loop.',
+        name: clipLabel(picked),
+      })
+    : taunt === undefined || anims === null
       ? null
       : clip
         ? t('taunt-playing', { defaultValue: 'Playing the taunt on a loop.' })
@@ -129,6 +148,16 @@ export default function PlayerViewer({
       >
         {content}
       </div>
+      {onAnimationChange && options.length ? (
+        <SearchSelect
+          value={picked ? clips.indexOf(picked) : undefined}
+          options={options}
+          onChange={(id) => onAnimationChange(id === undefined ? null : clips[id])}
+          noneLabel={t('animation-auto', { defaultValue: 'Animation: automatic' })}
+          placeholder={t('animation-search', { defaultValue: 'Search animations' })}
+          label={t('animation-pick', { defaultValue: 'Animation' })}
+        />
+      ) : null}
       {caption ? (
         <p aria-live="polite" className="text-center text-xs text-(--app-text-dim)">
           {caption}
