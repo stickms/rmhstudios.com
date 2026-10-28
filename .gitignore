@@ -117,3 +117,4 @@ scripts/perf/out/
 # WebAssembly compiler outputs (rebuilt before dev, tests, and production builds)
 /lib/wasm/generated/
 /wasm/.generated/
+scripts/tf2-game/__pycache__/
