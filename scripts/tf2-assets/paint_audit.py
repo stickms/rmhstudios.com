@@ -53,10 +53,14 @@ def main():
         counts["cosmetics"] += 1
         counts["paintable"] += item["paintable"]
         masked = [m for m in mats if m[2].get("$blendtintbybasealpha") == "1"]
-        if item["paintable"] and not masked:
-            note("paintable but no material is paint-masked ($blendtintbybasealpha)", item)
-            if any("$colortint_base" in m[2] or "$phongtint" in m[2] for m in mats):
-                note("paintable, no mask, but has $colortint_base/$phongtint (another tint mechanism)", item)
+        whole = [m for m in mats if m[2].get("$blendtintbybasealpha") != "1" and convert.parse_colour(m[2].get("$colortint_base"))]
+        counts["whole-material tinted ($colortint_base, no mask)"] += len(whole)
+        counts["constant colour modulation ($color2/$color)"] += sum(
+            1 for m in mats if convert.material_colour(m[2]) and m not in masked and m not in whole)
+        if item["paintable"] and not masked and not whole:
+            note("paintable and the converter finds NO tint to apply (no mask, no $colortint_base)", item)
+            if any("$phongtint" in m[2] or "$color2" in m[2] for m in mats):
+                note("  ... of those, ones that set $phongtint/$color2 (a mechanism not handled)", item)
         if masked and not item["paintable"]:
             note("paint-masked material on an item the schema does not mark paintable", item)
         for m in masked:

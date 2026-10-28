@@ -44,12 +44,14 @@ const materialsOf = (mesh: Mesh): Material[] =>
  */
 export const PAINT_TINT_GLSL = `
   vec3 paintTinted = mix(sampledDiffuseColor.rgb * uPaint, uPaint, uPaintReplace);
-  sampledDiffuseColor.rgb = mix(sampledDiffuseColor.rgb, paintTinted, sampledDiffuseColor.a);
+  sampledDiffuseColor.rgb = mix(sampledDiffuseColor.rgb, paintTinted, mix(1.0, sampledDiffuseColor.a, uPaintMasked));
 `;
 
 interface PaintUniforms {
   uPaint: { value: Color };
   uPaintReplace: { value: number };
+  /** 1 when the texture's alpha is the paint mask; 0 when the paint multiplies the whole material. */
+  uPaintMasked: { value: number };
 }
 
 /** Patch a flagged material once to blend `uPaint` into its base colour map by the map's alpha. */
@@ -64,10 +66,11 @@ function paintUniforms(m: Material): PaintUniforms {
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uPaint = uniforms.uPaint;
     shader.uniforms.uPaintReplace = uniforms.uPaintReplace;
+    shader.uniforms.uPaintMasked = uniforms.uPaintMasked;
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
-        '#include <common>\nuniform vec3 uPaint;\nuniform float uPaintReplace;',
+        '#include <common>\nuniform vec3 uPaint;\nuniform float uPaintReplace;\nuniform float uPaintMasked;',
       )
       .replace(
         '#include <map_fragment>',
@@ -102,6 +105,7 @@ export function applyTint(root: Object3D, tint?: string): void {
       // A painted item replaces its own colour only by the material's factor; the paint colour itself is
       // always the tint.
       uniforms.uPaintReplace.value = (m.userData.tintReplace as number | undefined) ?? 0;
+      uniforms.uPaintMasked.value = m.userData.tintWhole ? 0 : 1;
     }
   });
 }

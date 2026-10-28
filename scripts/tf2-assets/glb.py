@@ -66,6 +66,8 @@ def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips
         pbr = {"metallicFactor": 0.0, "roughnessFactor": 0.85}
         if mat["image"] is not None:
             pbr["baseColorTexture"] = {"index": mat["image"]}
+            if mat.get("base_color"):
+                pbr["baseColorFactor"] = [*mat["base_color"], 1.0]
         else:
             pbr["baseColorFactor"] = [0.7, 0.7, 0.7, 1.0]
         g = {"name": mat["name"], "pbrMetallicRoughness": pbr, "doubleSided": bool(mat["double_sided"])}
@@ -81,6 +83,8 @@ def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips
             extras["tintDefault"] = mat["tint_default"]
         if mat.get("tint_replace"):
             extras["tintReplace"] = mat["tint_replace"]
+        if mat.get("tint_whole"):
+            extras["tintWhole"] = True
         if extras:
             g["extras"] = extras
         gl_mats.append(g)

@@ -111,6 +111,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout --orphan tf2-effect-diagnostics-data
           git rm -rf --quiet . || true
+          # The render step installed dependencies in the workspace: nothing but the results may be committed.
+          git clean -ffdxq
           cp -r /mnt/work/out/. .
           du -sh . | cat
           git add -A

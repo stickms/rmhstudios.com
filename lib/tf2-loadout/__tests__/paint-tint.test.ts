@@ -8,8 +8,14 @@ describe('paint tint shader patch', () => {
     expect(ShaderChunk.map_fragment).toContain('sampledDiffuseColor');
   });
 
+  it('can multiply the whole material instead of using the alpha as a mask (paintable items with no mask)', () => {
+    expect(PAINT_TINT_GLSL).toContain('mix(1.0, sampledDiffuseColor.a, uPaintMasked)');
+  });
+
   it("is the game's formula: tint multiplies or replaces by the factor, then blends by the mask alpha", () => {
-    expect(PAINT_TINT_GLSL).toContain('mix(sampledDiffuseColor.rgb * uPaint, uPaint, uPaintReplace)');
-    expect(PAINT_TINT_GLSL).toContain('mix(sampledDiffuseColor.rgb, paintTinted, sampledDiffuseColor.a)');
+    expect(PAINT_TINT_GLSL).toContain(
+      'mix(sampledDiffuseColor.rgb * uPaint, uPaint, uPaintReplace)',
+    );
+    expect(PAINT_TINT_GLSL).toContain('mix(sampledDiffuseColor.rgb, paintTinted,');
   });
 });

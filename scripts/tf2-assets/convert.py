@@ -317,9 +317,21 @@ def paint_tint(kv):
     return out
 
 
+def material_colour(kv):
+    """A material's constant colour modulation ($color2, else $color), as a linear glTF base colour factor, or
+    None when it is white or absent. The game takes these from gamma to linear before multiplying."""
+    colour = parse_colour(kv.get("$color2")) or parse_colour(kv.get("$color"))
+    if not colour or all(c >= 0.999 for c in colour):
+        return None
+    return [round(c ** 2.2, 4) for c in colour]
+
+
 def has_paint_mask(slots):
-    """Whether any material of a model is paint-masked by its base alpha (these textures keep their alpha)."""
-    return any(s is not None and any(s[2].get(k) == "1" for k in TINT_KEYS) for s in slots)
+    """Whether any material of a model is tinted (by a base-alpha paint mask, as a whole, or by a constant
+    colour): these export differently, so only these models are re-hashed."""
+    return any(s is not None and (any(s[2].get(k) == "1" for k in TINT_KEYS)
+                                  or parse_colour(s[2].get("$colortint_base")) or material_colour(s[2]))
+               for s in slots)
 
 
 def source_hash(mdl, vvd, vtx, slots, extra=b""):
@@ -417,14 +429,18 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                         image_index[key] = len(images) - 1
                     image = image_index[key]
                     vtf = None
-                keep = kv.get("$alphatest") == "1" or kv.get("$translucent") == "1"
+                masked = any(kv.get(k) == "1" for k in TINT_KEYS)
+                # Where the VMT paints by base alpha, that alpha is the mask of where the paint goes and nothing
+                # else: the game ignores the base texture for translucency then (vertexlitgeneric_dx9_helper.cpp)
+                # and skips self-illumination from it (the shader combination does not exist). So the material
+                # stays opaque and keeps the alpha in its image for the viewer to blend the tint by.
+                keep = (kv.get("$alphatest") == "1" or kv.get("$translucent") == "1") and not masked
                 if keep:
                     alpha = "MASK" if kv.get("$alphatest") == "1" else "BLEND"
                 double = kv.get("$nocull") == "1"
-                tint = any(kv.get(k) == "1" for k in TINT_KEYS)
-                # A paintable item's base alpha is the mask of where the paint goes, not transparency: keep it in
-                # the image (the material stays opaque) so the viewer can blend the tint by it.
-                keep_alpha = keep or tint
+                whole = not masked and bool(parse_colour(kv.get("$colortint_base")))
+                tint = masked or whole
+                keep_alpha = keep or masked
                 if vtf is None and image is None:
                     why = ("%s has no $basetexture" % _vp if not vtf_path
                            else "%s is not in the game files (from %s)" % (vtf_path, _vp))
@@ -438,7 +454,7 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                             image_index[key] = None
                             why = "%s: %s" % (vtf_path, e)
                     image = image_index[key]
-                    if kv.get("$selfillum") == "1" and image is not None:
+                    if kv.get("$selfillum") == "1" and image is not None and not masked:
                         emission_key = ("emission", vtf_path, kv.get("$selfillumtint"))
                         if emission_key not in image_index:
                             images.append(encode_emission(vtf, kv))
@@ -450,6 +466,12 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                      "double_sided": double, "tint": tint, "emissive": emissive}
             if tint and slot is not None:
                 entry.update(paint_tint(slot[2]))
+                if not masked:
+                    # A paintable item tinted whole ($colortint_base, no mask): the paint multiplies all of it.
+                    entry["tint_whole"] = True
+            elif slot is not None and (colour := material_colour(slot[2])):
+                # A constant $color2/$color the game multiplies in (the glTF base colour factor, linear).
+                entry["base_color"] = colour
             materials.append(entry)
             mat_index[t] = len(materials) - 1
         uv = m["uv"]
