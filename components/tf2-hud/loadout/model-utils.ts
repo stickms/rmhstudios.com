@@ -61,6 +61,7 @@ function paintUniforms(m: Material): PaintUniforms {
   const uniforms: PaintUniforms = {
     uPaint: { value: new Color(1, 1, 1) },
     uPaintReplace: { value: 0 },
+    uPaintMasked: { value: 1 },
   };
   m.userData.paintUniforms = uniforms;
   m.onBeforeCompile = (shader) => {
