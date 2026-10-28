@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { request } from '@/lib/tf2-hud/api';
+import { MODEL_BUILDER_VERSION } from './model-sync';
 
 let pending: Promise<Set<string>> | null = null;
 
@@ -16,7 +17,8 @@ function loadModelIds(): Promise<Set<string>> {
   return pending;
 }
 
-export const modelUrl = (name: string): string => `/api/tf2-loadout/models/${name}.glb`;
+export const modelUrl = (name: string): string =>
+  `/api/tf2-loadout/models/${name}.glb?v=${MODEL_BUILDER_VERSION}`;
 
 /**
  * The model to show for an item worn by `cls` in `style`: the style's own file (per-class, then shared)

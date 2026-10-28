@@ -29,7 +29,7 @@ import srctex
 from vpkfs import GameFS
 
 # Bump when the output for the same source would change.
-CONVERTER_VERSION = 5
+CONVERTER_VERSION = 6
 SCALE = 0.01905  # Source units are 0.75 inch
 MAX_TEX = 512
 TINT_KEYS = ("$blendtintbybasealpha",)
@@ -267,7 +267,23 @@ def encode_texture(vtf, keep_alpha):
     return buf.getvalue()
 
 
-def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=0):
+def encode_emission(vtf, kv):
+    """Source self-illumination uses base alpha as its mask (coloured bulbs, dark wire)."""
+    img = srctex.decode_vtf(vtf)
+    if max(img.size) > MAX_TEX:
+        img.thumbnail((MAX_TEX, MAX_TEX), Image.LANCZOS)
+    rgba = np.asarray(img, dtype=np.float32) / 255.0
+    tint = [float(v) for v in re.findall(r"[-+\d.]+", kv.get("$selfillumtint", "1 1 1"))]
+    if len(tint) != 3:
+        tint = [1, 1, 1]
+    rgb = np.clip(rgba[..., :3] * rgba[..., 3:] * tint, 0, 1)
+    buf = io.BytesIO()
+    Image.fromarray((rgb * 255).astype(np.uint8)).save(buf, "WEBP", quality=82, method=4)
+    return buf.getvalue()
+
+
+def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=0,
+            attachments=(), parts_only=False):
     """`anim` = (animations mdl bytes) for a class body: its skeleton, skin and idle clip go in the GLB."""
     info, meshes = srcmodel.build_meshes(mdl, vvd, vtx, skin)
     if not meshes:
@@ -277,24 +293,14 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
         bones, skeleton = class_skeleton(mdl)
         world = [np.linalg.inv(np.vstack([np.array(p["pose_to_bone"]).reshape(3, 4), [0, 0, 0, 1]]))
                  for p in srcmodel.read_bones(mdl)]
-    eyes = {}
     eye_slots = [i for i, slot in enumerate(slots) if slot and slot[1] in EYE_SHADERS]
-    for e in info.get("eyeballs", []):
-        t = e["texture"]
-        t = info["skin0"][t] if 0 <= t < len(info["skin0"]) else t
-        # Some compiled TF2 eyeballs retain a zero in the legacy texture field.
-        # It must never make us project the iris UVs onto material 0 (the body).
-        if t not in eye_slots:
-            t = next((i for i in eye_slots if i not in eyes), None)
-        if t is None:
-            continue
-        eyes[t] = e
     images, image_index, materials, mat_index, out_meshes = [], {}, [], {}, []
     for m in meshes:
         t = m["texture"]
         if t not in mat_index:
             slot = slots[t] if 0 <= t < len(slots) else None
             image = None
+            emissive = None
             alpha = "OPAQUE"
             double = False
             tint = False
@@ -322,12 +328,25 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                         except srctex.TextureError:
                             image_index[key] = None
                     image = image_index[key]
+                    if kv.get("$selfillum") == "1" and image is not None:
+                        emission_key = ("emission", vtf_path, kv.get("$selfillumtint"))
+                        if emission_key not in image_index:
+                            images.append(encode_emission(vtf, kv))
+                            image_index[emission_key] = len(images) - 1
+                        emissive = image_index[emission_key]
             materials.append({"name": name.split("/")[-1], "image": image, "alpha": alpha,
-                              "double_sided": double, "tint": tint})
+                              "double_sided": double, "tint": tint, "emissive": emissive})
             mat_index[t] = len(materials) - 1
         uv = m["uv"]
-        if is_class and t in eyes and eyes[t]["bone"] < len(world):
-            uv = project_eye_uv(m["pos"], eyes[t], world[eyes[t]["bone"]])
+        if is_class and t in eye_slots:
+            # The legacy eyeball texture field is often zero (the BODY), and eye material
+            # order need not match eyeball order. Match only eye shaders, by spatial centre.
+            candidates = [e for e in info.get("eyeballs", []) if 0 <= e["bone"] < len(world)]
+            if candidates:
+                centre = m["pos"].mean(0)
+                eye = min(candidates, key=lambda e: np.linalg.norm(
+                    (world[e["bone"]] @ np.array([*e["org"], 1]))[:3] - centre))
+                uv = project_eye_uv(m["pos"], eye, world[eye["bone"]])
         out = {"pos": to_gl(m["pos"]), "nrm": to_gl(m["nrm"]) / SCALE,
                "uv": uv, "idx": m["idx"], "material": mat_index[t]}
         if is_class:
@@ -337,10 +356,40 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
     if is_class and anim is not None:
         a_bones = srcanim.read_skeleton(anim)
         seqs = srcanim.read_sequences(anim)
-        seq = next((q for q in seqs if q["name"] == IDLE_SEQUENCE), None)
+        seq = next((q for q in seqs if q["name"].lower() == IDLE_SEQUENCE.lower()), None)
         if seq is not None:
             fix = srcanim.root_fix(mdl, bones)
             clips = [clip_from(anim, a_bones, skeleton, seq, seqs, fix, "idle")]
+    for ref, entry in attachments:
+        a_mdl, a_vvd, a_vtx, a_slots = entry
+        a_meshes, a_materials, a_images = convert(
+            fs, ref["mdl"], a_mdl, a_vvd, a_vtx, a_slots,
+            skin=ref.get("skin", 0), parts_only=True)
+        # Wearables and c_models share named bones, but not necessarily their bind pose.
+        # Re-express the attachment in the weapon's bind space before combining geometry.
+        base_bones = {b["name"]: b for b in srcmodel.read_bones(mdl)}
+        a_bones = srcmodel.read_bones(a_mdl)
+        shared = next((b for b in a_bones if b["name"] in base_bones), None)
+        if shared:
+            transform = (np.linalg.inv(matrix4(base_bones[shared["name"]]["pose_to_bone"]))
+                         @ matrix4(shared["pose_to_bone"]))
+            for mesh in a_meshes:
+                mesh["pos"] = mesh["pos"] @ transform[:3, :3].T + transform[:3, 3]
+                mesh["nrm"] = mesh["nrm"] @ transform[:3, :3].T
+        for mesh in a_meshes:
+            mesh["material"] += len(materials)
+        for material in a_materials:
+            if material["image"] is not None:
+                material["image"] += len(images)
+            if material.get("emissive") is not None:
+                material["emissive"] += len(images)
+            material["attachment"] = True
+            material["festive"] = ref.get("festive", False)
+        out_meshes.extend(a_meshes)
+        materials.extend(a_materials)
+        images.extend(a_images)
+    if parts_only:
+        return out_meshes, materials, images
     return glb.write_glb(out_meshes, materials, images, attachment_extras(mdl, info, is_class), skeleton, clips)
 
 
@@ -466,8 +515,25 @@ def main():
         is_class = ref["glb"].startswith("class_")
         anim = fs.read(stem + "_animations.mdl") if is_class else None
         skin = int(ref.get("skin", 0) or 0)
+        attachments = []
+        dependency_hash = b""
+        try:
+            for attachment in ref.get("attachments", []):
+                a_stem = attachment["mdl"][:-4]
+                a_raw = [fs.read(a_stem + ext) for ext in (".mdl", ".vvd", ".dx90.vtx")]
+                if any(raw is None for raw in a_raw):
+                    raise srcmodel.ModelError("missing attachment " + attachment["mdl"])
+                a_slots = material_files(fs, srcmodel.read_mdl(a_raw[0]))
+                attachments.append((attachment, (*a_raw, a_slots)))
+                dependency_hash += (json.dumps(attachment, sort_keys=True).encode()
+                                    + source_hash(*a_raw, a_slots).encode())
+        except (srcmodel.ModelError, struct_error, ValueError, IndexError) as e:
+            print("skip", ref["glb"], e, file=sys.stderr)
+            failed.append(ref["glb"])
+            continue
         src = source_hash(mdl, vvd, vtx, slots,
-                          (hashlib.sha1(anim).digest() if anim else b"") + b"|skin%d" % skin)
+                          (hashlib.sha1(anim).digest() if anim else b"") + b"|skin%d" % skin
+                          + dependency_hash)
         if is_class and anim:
             class_anims[ref["glb"][len("class_"):-4]] = (stem, mdl, anim)
         if published.get(ref["glb"], {}).get("src") == src and os.environ.get("FORCE") != "1":
@@ -475,7 +541,7 @@ def main():
             skipped += 1
             continue
         try:
-            data = convert(fs, ref["mdl"], mdl, vvd, vtx, slots, is_class, anim, skin)
+            data = convert(fs, ref["mdl"], mdl, vvd, vtx, slots, is_class, anim, skin, attachments)
         except Exception as e:  # noqa: BLE001
             reasons[type(e).__name__ + ": " + str(e)] = reasons.get(type(e).__name__ + ": " + str(e), 0) + 1
             failed.append(ref["glb"])

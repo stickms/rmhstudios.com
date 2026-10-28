@@ -39,6 +39,7 @@ export interface WornItem {
   effect?: EffectSpec;
   /** War paint on the held weapon. */
   paint?: WarPaint;
+  festive?: boolean;
 }
 
 export default function PlayerViewer({
@@ -75,6 +76,8 @@ export default function PlayerViewer({
           url: modelUrl(name),
           tint: w.tint,
           effect: w.effect,
+          paint: w.paint,
+          festive: w.festive,
         });
       }
     }

@@ -55,10 +55,14 @@ describe('buildModelManifest', () => {
     ]);
   });
 
-  it('adds an extra wearable as its own file', () => {
-    expect(m.find((i) => i.id === 941)?.models.map((x) => x.glb)).toEqual([
-      '941.glb',
-      '941_extra.glb',
+  it('includes an extra wearable in the weapon so every viewer loads it', () => {
+    expect(m.find((i) => i.id === 941)?.models).toEqual([
+      {
+        mdl: 'models/w/shield.mdl',
+        role: 'main',
+        glb: '941.glb',
+        attachments: [{ mdl: 'models/w/shield_back.mdl', skin: 0 }],
+      },
     ]);
   });
 
@@ -206,5 +210,35 @@ describe('pickModel with styles', () => {
     expect(pickModel(ids, 702, 'demoman', 1)).toBe('702_demoman_s1');
     expect(pickModel(ids, 702, 'demoman')).toBe('702_demoman');
     expect(pickModel(ids, 999, 'demoman', 1)).toBeNull();
+  });
+});
+
+describe('weapon attachment dependencies', () => {
+  it('merges Botkiller skin families, permanent festive parts and optional lights into each weapon', () => {
+    const items = `"items_game" {
+      "prefabs" { "gun" { "item_slot" "primary" "model_player" "models/gun.mdl"
+        "used_by_classes" { "scout" "1" }
+        "visuals" { "attached_models_festive" { "0" { "model" "models/lights.mdl" } } }
+      } }
+      "items" { "897" { "name" "Botkiller" "prefab" "gun"
+        "extra_wearable" "models/head.mdl" "visuals_red" { "skin" "6" }
+        "visuals" { "attached_models" {
+          "0" { "model" "models/chain.mdl" "model_display_flags" "1" }
+          "1" { "model" "models/first_person_only.mdl" "model_display_flags" "2" }
+        } }
+      } }
+    }`;
+    const manifest = buildModelManifest(items, ENGLISH);
+    expect(manifest[0].models[0].attachments).toEqual([
+      { mdl: 'models/head.mdl', skin: 6 },
+      { mdl: 'models/chain.mdl', skin: 6 },
+      { mdl: 'models/lights.mdl', skin: 6, festive: true },
+    ]);
+    expect(uniqueModels(manifest)).toEqual([
+      'models/chain.mdl',
+      'models/gun.mdl',
+      'models/head.mdl',
+      'models/lights.mdl',
+    ]);
   });
 });

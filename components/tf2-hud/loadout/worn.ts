@@ -57,6 +57,7 @@ export function wornItems(
       slotKey: held,
       itemId: modelItemId(idx.item(e.item) ?? { id: e.item }),
       paint: warPaintOf(idx, e),
+      festive: e.festive,
       effect: effectSpecOf(idx, e, 'misc'),
     });
   }

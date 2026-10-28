@@ -63,6 +63,7 @@ export function applyPaintTexture(root: Object3D, texture: Texture | null): void
     const mesh = o as Mesh;
     if (done || !mesh.isMesh) return;
     for (const m of materialsOf(mesh)) {
+      if (m.userData.attachment) continue;
       const std = m as MeshStandardMaterial;
       if (!('map' in std) || (!std.map && !std.userData.originalMap)) continue;
       std.userData.originalMap ??= std.map;
@@ -70,6 +71,17 @@ export function applyPaintTexture(root: Object3D, texture: Texture | null): void
       std.needsUpdate = true;
       done = true;
       return;
+    }
+  });
+}
+
+/** Optional geometry is exported from the game's attached_models_festive block. */
+export function applyFestive(root: Object3D, festive = false): void {
+  root.traverse((o) => {
+    const mesh = o as Mesh;
+    if (!mesh.isMesh) return;
+    for (const material of materialsOf(mesh)) {
+      if (material.userData.festive) material.visible = festive;
     }
   });
 }

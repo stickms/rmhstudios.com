@@ -108,6 +108,8 @@ export default function ItemCustomizeModal({
           <ItemModelViewer
             itemId={modelItemId(item)}
             cls={cls}
+            taunt={slot === 'taunt'}
+            festive={entry.festive}
             style={entry.style}
             paint={warPaintOf(idx, entry)}
             tint={item.p && entry.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}

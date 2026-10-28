@@ -82,7 +82,7 @@ import LoadoutAssistant from './LoadoutAssistant';
 import { kitOf, warPaintOf } from '@/lib/tf2-loadout/warpaint';
 import { rarityColor, tierName } from '@/lib/tf2-loadout/rarity';
 import PlayerViewer from './PlayerViewer';
-import { tauntEffectOf, tauntItemOf, wornItems } from './worn';
+import { effectSpecOf, tauntEffectOf, tauntItemOf, wornItems } from './worn';
 import ItemTile from './ItemTile';
 import ItemPreviewModal from './ItemPreviewModal';
 import { IconButton } from '@/components/ui/icon-button';
@@ -169,6 +169,11 @@ function Builder({
   const initialSlots = useRef<LoadoutSlots>({}).current;
   const [slots, setSlots] = useState<LoadoutSlots>(initialSlots);
   const [selected, setSelected] = useState<LoadoutSlotKey | null>(null);
+  const [activeTauntSlot, setActiveTauntSlot] = useState<LoadoutSlotKey | null>(null);
+  const selectSlot = (key: LoadoutSlotKey) => {
+    setSelected(key);
+    if (key.startsWith('taunt')) setActiveTauntSlot(key);
+  };
   const [remote, setRemote] = useState<{
     id: string;
     slug: string;
@@ -250,6 +255,7 @@ function Builder({
       /* storage unavailable */
     }
     setCls(next);
+    setActiveTauntSlot(null);
     setSlots(draftOrStock(next));
     setExtraCosmetics(0);
     setSelected(null);
@@ -291,8 +297,11 @@ function Builder({
     () => wornItems(idx, cls, slots, cosmeticKeys),
     [slots, idx, cosmeticKeys, cls],
   );
-  const tauntItem = useMemo(() => tauntItemOf(slots), [slots]);
-  const tauntEffect = useMemo(() => tauntEffectOf(idx, slots), [slots, idx]);
+  const activeTaunt = activeTauntSlot ? slots[activeTauntSlot] : undefined;
+  const tauntItem = activeTaunt?.item ?? tauntItemOf(slots);
+  const tauntEffect = activeTaunt
+    ? effectSpecOf(idx, activeTaunt, 'taunt')
+    : tauntEffectOf(idx, slots);
 
   const slotLabel = useCallback(
     (key: LoadoutSlotKey): string => {
@@ -328,6 +337,7 @@ function Builder({
   };
 
   const equip = (key: LoadoutSlotKey, item: CatalogItem) => {
+    if (key.startsWith('taunt')) setActiveTauntSlot(key);
     const { slots: next, removed } = equipInto(catalog, slots, key, item, unrestricted);
     edit(next);
     setAnnounce(
@@ -570,7 +580,7 @@ function Builder({
                 idx={idx}
                 entry={slots[k]}
                 selected={selected === k}
-                onSelect={() => setSelected(k)}
+                onSelect={() => selectSlot(k)}
                 ready={ready}
               />
             ))}
@@ -584,7 +594,7 @@ function Builder({
                 idx={idx}
                 entry={slots[k]}
                 selected={selected === k}
-                onSelect={() => setSelected(k)}
+                onSelect={() => selectSlot(k)}
                 ready={ready}
               />
             ))}
@@ -611,7 +621,7 @@ function Builder({
                 idx={idx}
                 entry={slots[k]}
                 selected={selected === k}
-                onSelect={() => setSelected(k)}
+                onSelect={() => selectSlot(k)}
                 ready={ready}
               />
             ))}
@@ -970,6 +980,8 @@ function Picker({
           <ItemModelViewer
             itemId={modelItemId(current)}
             cls={cls}
+            taunt={current.s === 'taunt'}
+            festive={entry?.festive}
             style={entry?.style}
             paint={entry ? warPaintOf(idx, entry) : undefined}
             tint={current.p && entry?.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}

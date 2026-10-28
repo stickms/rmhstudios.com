@@ -38,6 +38,8 @@ export interface ModelRef {
   style?: number;
   /** The MDL skin family to render it with, for a style that only changes the skin. */
   skin?: number;
+  /** Bone-merged geometry included in this model, including optional festive lights. */
+  attachments?: { mdl: string; skin: number; festive?: boolean }[];
 }
 
 export interface ModelManifestItem {
@@ -186,8 +188,27 @@ export function buildModelManifest(
         }
       }
     }
+    const attachments: NonNullable<ModelRef['attachments']> = [];
     const extra = str(it, 'extra_wearable');
-    if (extra) models.push({ mdl: norm(extra), role: 'extra', glb: `${id}_extra.glb` });
+    const skin = Number(str(block(it, 'visuals_red'), 'skin') ?? 0);
+    if (extra) attachments.push({ mdl: norm(extra), skin });
+    const visuals = block(it, 'visuals');
+    for (const key of ['attached_models', 'attached_models_festive'] as const) {
+      for (const value of Object.values(block(visuals, key) ?? {})) {
+        if (typeof value !== 'object') continue;
+        const mdl = str(value, 'model');
+        // Source display flags: 1 = world, 2 = viewmodel. Standalone previews use world geometry.
+        const flags = Number(str(value, 'model_display_flags') ?? 3);
+        if (mdl && flags & 1) {
+          attachments.push({
+            mdl: norm(mdl),
+            skin,
+            ...(key === 'attached_models_festive' ? { festive: true } : {}),
+          });
+        }
+      }
+    }
+    if (attachments.length) for (const model of models) model.attachments = attachments;
     if (!models.length) continue;
     out.push({ id, name, models });
   }
@@ -282,5 +303,11 @@ export function classModelEntries(): ModelManifestItem {
 
 /** The distinct `.mdl` files a manifest points at. */
 export function uniqueModels(manifest: readonly ModelManifestItem[]): string[] {
-  return [...new Set(manifest.flatMap((i) => i.models.map((m) => m.mdl)))].sort();
+  return [
+    ...new Set(
+      manifest.flatMap((i) =>
+        i.models.flatMap((m) => [m.mdl, ...(m.attachments ?? []).map((a) => a.mdl)]),
+      ),
+    ),
+  ].sort();
 }

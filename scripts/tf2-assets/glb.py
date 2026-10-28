@@ -68,12 +68,16 @@ def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips
         else:
             pbr["baseColorFactor"] = [0.7, 0.7, 0.7, 1.0]
         g = {"name": mat["name"], "pbrMetallicRoughness": pbr, "doubleSided": bool(mat["double_sided"])}
+        if mat.get("emissive") is not None:
+            g["emissiveFactor"] = [1, 1, 1]
+            g["emissiveTexture"] = {"index": mat["emissive"]}
         if mat["alpha"] != "OPAQUE":
             g["alphaMode"] = mat["alpha"]
             if mat["alpha"] == "MASK":
                 g["alphaCutoff"] = 0.5
-        if mat.get("tint"):
-            g["extras"] = {"tint": True}
+        extras = {key: True for key in ("tint", "attachment", "festive") if mat.get(key)}
+        if extras:
+            g["extras"] = extras
         gl_mats.append(g)
 
     nodes, root_nodes, skins = [], [], []
