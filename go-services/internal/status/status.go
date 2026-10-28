@@ -75,6 +75,7 @@ type Service struct {
 	oncall    *OncallNotifier
 	heartbeat *heartbeater
 	workers   *workerWatch
+	diag      *Diagnoser
 	startedAt time.Time
 }
 
@@ -149,6 +150,12 @@ func New(cfg Config) *Service {
 	store := NewStore(cfg.Targets, storePath, cfg.Logger, n)
 	store.SetStaticAnnouncement(cfg.Announcement, cfg.AnnouncementLevel, cfg.AnnouncementLink)
 
+	// Evidence for on-call alarms; also sampled once per probe cycle (Start).
+	diagnoser := NewDiagnoser(p, time.Now())
+	if oncallNotifier != nil {
+		oncallNotifier.diag = diagnoser
+	}
+
 	p.inMaintenance = store.InMaintenance
 	p.onEvents = store.HandleEvents
 
@@ -157,7 +164,7 @@ func New(cfg Config) *Service {
 		hb = &heartbeater{client: cfg.Oncall, logger: cfg.Logger, interval: HeartbeatInterval}
 	}
 	return &Service{
-		cfg: cfg, prober: p, store: store, notifier: notifier, oncall: oncallNotifier, heartbeat: hb,
+		cfg: cfg, prober: p, store: store, notifier: notifier, oncall: oncallNotifier, heartbeat: hb, diag: diagnoser,
 		workers:   newWorkerWatch(cfg.SupervisorMetricsURL, cfg.Oncall, cfg.Logger),
 		startedAt: time.Now(),
 	}
@@ -182,6 +189,7 @@ func (s *Service) Start(ctx context.Context) {
 	go func() {
 		s.prober.ProbeOnce(ctx)
 		s.store.Tick(time.Now())
+		s.diag.Sample(time.Now())
 		// Checked in only after a completed cycle, so a wedged prober goes
 		// silent and the watchdog pages.
 		s.heartbeat.afterCycle(ctx, time.Now())
@@ -197,6 +205,7 @@ func (s *Service) Start(ctx context.Context) {
 			case <-ticker.C:
 				s.prober.ProbeOnce(ctx)
 				s.store.Tick(time.Now())
+				s.diag.Sample(time.Now())
 				s.heartbeat.afterCycle(ctx, time.Now())
 			}
 		}

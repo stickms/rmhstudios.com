@@ -109,6 +109,29 @@ curl -sX POST $S/api/admin/test-webhook -H "Authorization: Bearer $TOKEN"
 `DELETE` exists for incidents, maintenance windows and announcements, for
 removing mistakes rather than rewriting history.
 
+## Diagnostics in on-call alarms
+
+Every automatic-incident alarm sent to the on-call watchdog (and its resolve)
+ends with a fenced evidence block built by `internal/status/diagnostics.go`:
+
+- the failing probe: target path, streak, DNS / connect / TLS / first-byte
+  timings, address family and connect-attempt count, HTTP code and protocol;
+- the service's last eight checks;
+- **every service's state right now** and which are not up, which is what tells
+  a shared front-door stall (Website, App readiness, Content feed and Sitemap
+  failing together) from one broken route;
+- the prober's own cycle time and the status process (uptime, goroutines, heap,
+  GC, build revision);
+- the host: load average, `/proc/pressure` CPU / IO / memory stall, and the
+  container's CPU quota, memory against its limit, and how much CPU throttling
+  it suffered during the failure (sampled once per cycle).
+
+It is built from an allowlist and bounded to 2800 bytes (the watchdog keeps
+3500). It never includes environment values, headers, cookies, bodies, resolved
+or peer IP addresses, internal hostnames or URLs, or file paths; free-text
+probe errors are scrubbed of IP literals, URL hosts, control characters and
+backticks first. Missing `/proc` or cgroup files just drop their line.
+
 ## Public endpoints
 
 | Path | What |

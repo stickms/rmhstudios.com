@@ -91,7 +91,16 @@ type OncallNotifier struct {
 	client  *oncall.Client
 	pageURL string
 	logger  Warner
-	queue   chan Notification
+	queue   chan oncallJob
+	// diag, when set, appends an evidence block (diagnostics.go) to each alarm.
+	diag *Diagnoser
+}
+
+// oncallJob is a notification plus the evidence captured when it fired: the
+// state of the prober and host at that moment, not whenever the queue drains.
+type oncallJob struct {
+	n    Notification
+	diag string
 }
 
 // NewOncallNotifier returns nil when client is nil (on-call not configured).
@@ -99,7 +108,7 @@ func NewOncallNotifier(client *oncall.Client, pageURL string, logger Warner) *On
 	if client == nil {
 		return nil
 	}
-	return &OncallNotifier{client: client, pageURL: pageURL, logger: logger, queue: make(chan Notification, 64)}
+	return &OncallNotifier{client: client, pageURL: pageURL, logger: logger, queue: make(chan oncallJob, 64)}
 }
 
 func (o *OncallNotifier) Notify(n Notification) {
@@ -109,8 +118,12 @@ func (o *OncallNotifier) Notify(n Notification) {
 	if _, ok := alertFor(n, o.pageURL); !ok {
 		return
 	}
+	job := oncallJob{n: n}
+	if o.diag != nil && len(n.Incident.Components) == 1 {
+		job.diag = o.diag.Report(n.Incident.Components[0], time.Now())
+	}
 	select {
-	case o.queue <- n:
+	case o.queue <- job:
 	default:
 		if o.logger != nil {
 			o.logger.Warn("status: on-call queue full — dropping alarm", "event", n.Event)
@@ -123,13 +136,24 @@ func (o *OncallNotifier) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case n := <-o.queue:
-			a, _ := alertFor(n, o.pageURL)
+		case job := <-o.queue:
+			a, _ := alertFor(job.n, o.pageURL)
+			a.Detail = withDiagnostics(a.Detail, job.diag)
 			if err := o.client.Send(ctx, a); err != nil && o.logger != nil {
-				o.logger.Warn("status: on-call alarm failed", "event", n.Event, "error", err)
+				o.logger.Warn("status: on-call alarm failed", "event", job.n.Event, "error", err)
 			}
 		}
 	}
+}
+
+// withDiagnostics appends the evidence block to an alarm's detail as a code
+// fence, so Discord keeps its columns. diagText has already removed backticks,
+// so the block cannot close the fence early.
+func withDiagnostics(detail, diag string) string {
+	if diag == "" {
+		return detail
+	}
+	return strings.TrimSpace(detail + "\n```\n" + diag + "\n```")
 }
 
 // multiNotifier fans one notification out to several notifiers.
