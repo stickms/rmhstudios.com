@@ -3,9 +3,12 @@ package status
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/rmhstudios/rmh-go/pkg/oncall"
 )
 
 func i64(v int64) *int64 { return &v }
@@ -34,7 +37,7 @@ func sampleInput(now time.Time) diagInput {
 // The report has to answer the diagnosis questions: which phase, did anything
 // else fail with it, and how was the prober and host doing.
 func TestRenderDiagCarriesTheEvidence(t *testing.T) {
-	out := renderDiag(sampleInput(time.Date(2026, 10, 28, 18, 3, 49, 0, time.UTC)))
+	out := renderDiag(sampleInput(time.Date(2026, 10, 28, 18, 3, 49, 0, time.UTC)), true)
 	for _, want := range []string{
 		"18:03:49 UTC",
 		"rmhstudios.com/blog/rss.xml",
@@ -88,8 +91,16 @@ func TestRenderDiagIsCapped(t *testing.T) {
 	for i := 0; i < 80; i++ {
 		in.all = append(in.all, diagService{Name: strings.Repeat("svc", 6), Status: StatusDown, Detail: strings.Repeat("x", 200)})
 	}
-	if out := renderDiag(in); len(out) > diagMaxBytes+40 || !strings.HasSuffix(out, "(truncated)") {
-		t.Errorf("report not capped: %d bytes", len(out))
+	// The compact form holds no per-service table, so it stays small however
+	// many services fail; it must never exceed its cap.
+	if out := renderDiag(in, false); len(out) > diagCompactBytes+40 {
+		t.Errorf("compact report over its cap: %d bytes", len(out))
+	}
+	for i := 0; i < 600; i++ {
+		in.all = append(in.all, diagService{Name: "svc", Status: StatusDown, Detail: strings.Repeat("x", 200), Phases: &Phases{}})
+	}
+	if out := renderDiag(in, true); len(out) > diagFullBytes+40 || !strings.HasSuffix(out, "(truncated)") {
+		t.Errorf("full report not capped: %d bytes", len(out))
 	}
 }
 
@@ -143,16 +154,16 @@ func TestDiagnoserReportAndFence(t *testing.T) {
 	p := NewProber([]Target{{Name: "Content feed", Group: "Content", URL: "https://rmhstudios.com/blog/rss.xml"}})
 	d := NewDiagnoser(p, time.Now())
 	d.procRoot, d.cgroupRoot = t.TempDir(), t.TempDir()
-	rep := d.Report("Content feed", time.Now())
-	if !strings.Contains(rep, "── diagnostics") || !strings.Contains(rep, "Content feed") {
-		t.Fatalf("report = %q", rep)
+	compact, full := d.Reports("Content feed", time.Now())
+	if !strings.Contains(compact, "── diagnostics") || !strings.Contains(full, "Content feed") {
+		t.Fatalf("compact = %q full = %q", compact, full)
 	}
-	if d.Report("No such service", time.Now()) != "" {
-		t.Error("unknown service must yield no block")
+	if c, f := d.Reports("No such service", time.Now()); c != "" || f != "" {
+		t.Error("unknown service must yield no report")
 	}
 	var nilDiag *Diagnoser
-	if nilDiag.Report("x", time.Now()) != "" {
-		t.Error("nil diagnoser must yield no block")
+	if c, f := nilDiag.Reports("x", time.Now()); c != "" || f != "" {
+		t.Error("nil diagnoser must yield no report")
 	}
 }
 
@@ -163,5 +174,59 @@ func TestWithDiagnosticsFencesTheBlock(t *testing.T) {
 	}
 	if withDiagnostics("plain", "") != "plain" {
 		t.Error("an empty block must leave the detail untouched")
+	}
+}
+
+// The compact summary keeps the discriminating facts; the table, the trend and
+// the per-service timings belong to the file.
+func TestCompactReportIsASummary(t *testing.T) {
+	in := sampleInput(time.Date(2026, 10, 28, 18, 3, 49, 0, time.UTC))
+	in.all[0].Phases = &Phases{DNS: 2, Connect: 1, TLS: -1, TTFB: -1, Total: 4000}
+	compact, full := renderDiag(in, false), renderDiag(in, true)
+	for _, want := range []string{"failing  4 checks", "last req", "2 of 3 not up: Website, Content feed", "prober"} {
+		if !strings.Contains(compact, want) {
+			t.Errorf("compact missing %q\n%s", want, compact)
+		}
+	}
+	for _, only := range []string{"recent checks", "last probe:", "failures by category", "state changes"} {
+		if strings.Contains(compact, only) {
+			t.Errorf("compact must not carry %q\n%s", only, compact)
+		}
+		if !strings.Contains(full, only) {
+			t.Errorf("full missing %q\n%s", only, full)
+		}
+	}
+	if len(compact) > diagCompactBytes+40 {
+		t.Errorf("compact is %d bytes", len(compact))
+	}
+}
+
+// A resolve carries its evidence in the file only: the watchdog echoes a
+// resolve's detail into a reply capped at 2000 characters.
+func TestWithEvidenceKeepsResolveDetailShort(t *testing.T) {
+	job := oncallJob{
+		n:       Notification{Incident: &Incident{Components: []string{"Content feed"}}},
+		compact: "summary", full: "the whole report",
+	}
+	firing := withEvidence(oncall.Alert{State: "firing", Detail: "down"}, job)
+	if !strings.Contains(firing.Detail, "```\nsummary\n```") || firing.Attachment == nil || firing.Attachment.Content != "the whole report" {
+		t.Errorf("firing alarm = %+v", firing)
+	}
+	resolved := withEvidence(oncall.Alert{State: "resolved", Detail: "recovered"}, job)
+	if resolved.Detail != "recovered" {
+		t.Errorf("resolve detail must stay as it was, got %q", resolved.Detail)
+	}
+	if resolved.Attachment == nil {
+		t.Error("resolve must still carry the file")
+	}
+}
+
+// The watchdog only accepts names of this shape; a rejected alarm would be lost.
+func TestAttachmentNameMatchesWatchdogRule(t *testing.T) {
+	re := regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}\.txt$`)
+	for _, svc := range []string{"Content feed", "App readiness", "RMHbox", "", "Ünï cødé / ../x", strings.Repeat("long", 40)} {
+		if n := attachmentName(svc, time.Now()); !re.MatchString(n) {
+			t.Errorf("attachmentName(%q) = %q", svc, n)
+		}
 	}
 }

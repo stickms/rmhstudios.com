@@ -34,6 +34,23 @@ Durable Object, so a click and a cron tick can never lose each other's write.
 rejected (humans escalate). Heartbeats (`status`, `pg-backup`) only arm after
 their first check-in, so silence can't page before the sender exists.
 
+**Attachments.** `detail` is capped (3500 chars stored, 4000 shown in the embed,
+and a resolve echoes it into a reply capped at 2000). Long evidence goes in an
+optional text file instead:
+
+```json
+{ "...": "...", "attachment": { "name": "diagnostics-content-feed-180349.txt", "content": "…" } }
+```
+
+`name` is letters, digits and `. _ -` ending in `.txt`; `content` is 1–40000
+characters. The file is posted with the new alert message, as a quiet
+"📎 Updated diagnostics" reply when an alarm that is already firing sends one,
+and with the resolve reply. It is never stored. The echoed resolve note is
+clamped to 1500 characters. A Worker that predates the field ignores it, so
+sender and Worker can be deployed in either order (`npx wrangler@4 deploy
+--config deploy/oncall-watchdog/wrangler.toml`; files appear once the Worker is
+redeployed).
+
 ## One-time setup
 
 Do these **in this order** — the gates are proven closed before anything real

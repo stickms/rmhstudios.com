@@ -6,7 +6,7 @@
 // All of it runs inside one Durable Object, so an ack and a cron tick can never
 // interleave and lose each other's write.
 
-import { alertMessage, pageRoles, pages, replyMessage, type MessageContext, type Notifier } from './discord';
+import { alertMessage, pageRoles, pages, replyMessage, type DiscordFile, type MessageContext, type Notifier } from './discord';
 import type { DurableObjectStorageLike } from './env';
 
 export const REPAGE_MS = 10 * 60 * 1000;
@@ -24,7 +24,15 @@ export interface AlarmInput {
   /** Runbook file name under RUNBOOK_BASE (defaults to the id), or an absolute https URL. */
   runbook?: string;
   source: string;
+  /** Long evidence posted as a text file beside the message. Never stored. */
+  attachment?: DiscordFile;
 }
+
+/** Attachment bounds: the request body is capped at 64 KiB, and a name becomes a file name. */
+export const MAX_ATTACHMENT_CHARS = 40_000;
+/** A reply's content is capped at 2000 chars by Discord; the echoed note must leave room for the rest of it. */
+export const RESOLVE_NOTE_MAX = 1500;
+const ATTACHMENT_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}\.txt$/;
 
 export interface AlarmRecord {
   key: string;
@@ -74,6 +82,21 @@ export function validateInput(raw: unknown): AlarmInput | string {
     runbook: str(r.runbook, 300),
   };
   if (!alarmKey(input)) return 'id/instance may only contain letters, digits and _ . : -';
+  if (r.attachment !== undefined) {
+    const a = r.attachment as Record<string, unknown> | null;
+    if (
+      !a ||
+      typeof a !== 'object' ||
+      typeof a.name !== 'string' ||
+      !ATTACHMENT_NAME_RE.test(a.name) ||
+      typeof a.content !== 'string' ||
+      a.content.length === 0 ||
+      a.content.length > MAX_ATTACHMENT_CHARS
+    ) {
+      return `attachment must be { name: "<letters, digits, . _ ->.txt", content: 1-${MAX_ATTACHMENT_CHARS} chars }`;
+    }
+    input.attachment = { name: a.name, content: a.content };
+  }
   return input;
 }
 
@@ -124,6 +147,10 @@ export class Engine {
       if (worse && pages(rec.sev)) {
         await this.notifier.post(replyMessage(rec.messageId, `<@&${this.ctx.roleId}> worsened to **SEV${rec.sev}**`, [this.ctx.roleId]));
       }
+      // New evidence for an alarm that is already up: a quiet reply under it.
+      if (input.attachment) {
+        await this.notifier.post(replyMessage(rec.messageId, '📎 Updated diagnostics'), [input.attachment]);
+      }
       await this.save(rec);
       return rec;
     }
@@ -142,12 +169,12 @@ export class Engine {
       lastPageAt: now,
       pageCount: pages(input.sev) ? 1 : 0,
     };
-    rec.messageId = (await this.notifier.post(alertMessage(rec, this.ctx))) ?? undefined;
+    rec.messageId = (await this.notifier.post(alertMessage(rec, this.ctx), input.attachment ? [input.attachment] : undefined)) ?? undefined;
     await this.save(rec);
     return rec;
   }
 
-  async resolve(key: string, now: number, note?: string): Promise<AlarmRecord | undefined> {
+  async resolve(key: string, now: number, note?: string, attachment?: DiscordFile): Promise<AlarmRecord | undefined> {
     const rec = await this.get(key);
     if (!rec || rec.state !== 'firing') return rec;
     rec.state = 'resolved';
@@ -155,7 +182,10 @@ export class Engine {
     rec.updatedAt = now;
     if (rec.messageId) await this.notifier.edit(rec.messageId, alertMessage(rec, this.ctx));
     const minutes = Math.max(1, Math.round((now - rec.firedAt) / 60_000));
-    await this.notifier.post(replyMessage(rec.messageId, `✅ **Resolved** after ${minutes}m${note ? ` — ${note}` : ''} · \`${rec.key}\``));
+    await this.notifier.post(
+      replyMessage(rec.messageId, `✅ **Resolved** after ${minutes}m${note ? ` — ${note.slice(0, RESOLVE_NOTE_MAX)}` : ''} · \`${rec.key}\``),
+      attachment ? [attachment] : undefined,
+    );
     await this.save(rec);
     return rec;
   }

@@ -99,8 +99,9 @@ type OncallNotifier struct {
 // oncallJob is a notification plus the evidence captured when it fired: the
 // state of the prober and host at that moment, not whenever the queue drains.
 type oncallJob struct {
-	n    Notification
-	diag string
+	n       Notification
+	compact string // rides in the embed (firing / update only)
+	full    string // posted as a text file beside the message
 }
 
 // NewOncallNotifier returns nil when client is nil (on-call not configured).
@@ -120,7 +121,7 @@ func (o *OncallNotifier) Notify(n Notification) {
 	}
 	job := oncallJob{n: n}
 	if o.diag != nil && len(n.Incident.Components) == 1 {
-		job.diag = o.diag.Report(n.Incident.Components[0], time.Now())
+		job.compact, job.full = o.diag.Reports(n.Incident.Components[0], time.Now())
 	}
 	select {
 	case o.queue <- job:
@@ -138,7 +139,7 @@ func (o *OncallNotifier) Run(ctx context.Context) {
 			return
 		case job := <-o.queue:
 			a, _ := alertFor(job.n, o.pageURL)
-			a.Detail = withDiagnostics(a.Detail, job.diag)
+			a = withEvidence(a, job)
 			if err := o.client.Send(ctx, a); err != nil && o.logger != nil {
 				o.logger.Warn("status: on-call alarm failed", "event", job.n.Event, "error", err)
 			}
@@ -146,9 +147,23 @@ func (o *OncallNotifier) Run(ctx context.Context) {
 	}
 }
 
-// withDiagnostics appends the evidence block to an alarm's detail as a code
-// fence, so Discord keeps its columns. diagText has already removed backticks,
-// so the block cannot close the fence early.
+// withEvidence adds a job's evidence to an alarm. The compact summary goes in
+// the detail as a code fence (Discord keeps its columns; diagText has removed
+// backticks, so it cannot close the fence early) — but only on a firing or
+// updated alarm: the watchdog echoes a resolve's detail into a reply capped at
+// 2000 characters, so a resolve carries its evidence in the file alone. The
+// full report is attached as a text file either way.
+func withEvidence(a oncall.Alert, job oncallJob) oncall.Alert {
+	if a.State != "resolved" {
+		a.Detail = withDiagnostics(a.Detail, job.compact)
+	}
+	if job.full != "" {
+		a.Attachment = &oncall.Attachment{Name: attachmentName(job.n.Incident.Components[0], time.Now()), Content: job.full}
+	}
+	return a
+}
+
+// withDiagnostics appends a summary block to an alarm's detail as a code fence.
 func withDiagnostics(detail, diag string) string {
 	if diag == "" {
 		return detail

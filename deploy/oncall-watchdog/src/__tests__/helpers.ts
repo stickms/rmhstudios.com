@@ -1,4 +1,4 @@
-import type { DiscordMessage, Notifier } from '../discord';
+import type { DiscordFile, DiscordMessage, Notifier } from '../discord';
 import type { DurableObjectStorageLike } from '../env';
 
 export function memoryStorage(): DurableObjectStorageLike & { data: Map<string, unknown> } {
@@ -22,14 +22,22 @@ export function memoryStorage(): DurableObjectStorageLike & { data: Map<string, 
   };
 }
 
-export function recordingNotifier(): Notifier & { posts: DiscordMessage[]; edits: { id: string; msg: DiscordMessage }[] } {
+export function recordingNotifier(): Notifier & {
+  posts: DiscordMessage[];
+  /** The files posted with each message, index-aligned with `posts` (undefined = none). */
+  files: (DiscordFile[] | undefined)[];
+  edits: { id: string; msg: DiscordMessage }[];
+} {
   const posts: DiscordMessage[] = [];
+  const files: (DiscordFile[] | undefined)[] = [];
   const edits: { id: string; msg: DiscordMessage }[] = [];
   return {
     posts,
+    files,
     edits,
-    async post(msg) {
+    async post(msg, attached) {
       posts.push(msg);
+      files.push(attached);
       return `m${posts.length}`;
     },
     async edit(id, msg) {
