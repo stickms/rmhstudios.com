@@ -132,12 +132,12 @@ class PaintMask(unittest.TestCase):
 class PaintEdgeCases(unittest.TestCase):
     """Every VMT shape the audit of all cosmetics found around paint."""
 
-    def _convert(self, kv, vtf=b"vtf"):
+    def _convert(self, kv, vtf=b"vtf", text=""):
         info = {"textures": ["m"], "eyeballs": [], "bodypart_names": ["studio"], "bodyparts": [[{}]],
                 "dominant_bone": 0}
         mesh = {"texture": 0, "group": None, "pos": np.zeros((3, 3), np.float32), "nrm": np.zeros((3, 3), np.float32),
                 "uv": np.zeros((3, 2), np.float32), "idx": np.array([0, 1, 2])}
-        slots = [("m.vmt", "vertexlitgeneric", kv, "m.vtf", vtf, "")]
+        slots = [("m.vmt", "vertexlitgeneric", kv, "m.vtf", vtf, text)]
         with patch.object(convert.srcmodel, "build_meshes", return_value=(info, [mesh])), \
              patch.object(convert.srcmodel, "read_bones", return_value=[]), \
              patch.object(convert.srcmodel, "read_jiggle", return_value={}), \
@@ -163,9 +163,15 @@ class PaintEdgeCases(unittest.TestCase):
         self.assertTrue(image.call_args.args[1])  # the alpha (the mask) is kept in the image
 
     def test_a_paintable_material_with_no_mask_is_tinted_whole(self):
-        material, image, _ = self._convert({"$colortint_base": "{ 184 56 59 }"})
+        material, image, _ = self._convert({"$colortint_base": "{ 184 56 59 }"},
+                                           text='"Proxies" { "ItemTintColor" { "resultVar" "$colortint_tmp" } }')
         self.assertTrue(material["tint"] and material["tint_whole"])
         self.assertEqual(material["tint_default"], [0.7216, 0.2196, 0.2314])
+
+    def test_a_colortint_base_with_no_itemtintcolor_proxy_does_nothing_as_in_the_game(self):
+        material, _, _ = self._convert({"$colortint_base": "{ 184 56 59 }"})
+        self.assertFalse(material["tint"])
+        self.assertNotIn("tint_whole", material)
 
     def test_a_constant_colour_modulation_becomes_the_base_colour_factor(self):
         material, _, _ = self._convert({"$color2": "{ 128 128 128 }"})
@@ -186,8 +192,11 @@ class PaintEdgeCases(unittest.TestCase):
 
     def test_models_with_any_of_these_tints_are_rehashed_and_others_are_not(self):
         vmt = lambda kv: [("a.vmt", "vertexlitgeneric", kv, "t.vtf", b"", "")]
-        for kv in ({"$blendtintbybasealpha": "1"}, {"$colortint_base": "{ 1 2 3 }"}, {"$color2": "{ 9 9 9 }"}):
+        for kv in ({"$blendtintbybasealpha": "1"}, {"$color2": "{ 9 9 9 }"}):
             self.assertTrue(convert.has_paint_mask(vmt(kv)), kv)
+        proxied = [("a.vmt", "vertexlitgeneric", {"$colortint_base": "{ 1 2 3 }"}, "t.vtf", b"", "ItemTintColor")]
+        self.assertTrue(convert.has_paint_mask(proxied))
+        self.assertFalse(convert.has_paint_mask(vmt({"$colortint_base": "{ 1 2 3 }"})))
         self.assertFalse(convert.has_paint_mask(vmt({"$color2": "[1 1 1]"})))
 
 

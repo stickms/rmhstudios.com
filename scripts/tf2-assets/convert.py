@@ -317,6 +317,13 @@ def paint_tint(kv):
     return out
 
 
+def tints_whole(kv, text):
+    """A paintable material the paint multiplies as a whole: it has a $colortint_base AND the ItemTintColor proxy,
+    which is what copies the paint (else $colortint_base) into $color2. A $colortint_base with no such proxy does
+    nothing in the game, so it must not tint here either (such a material uses its constant $color2 instead)."""
+    return bool(parse_colour(kv.get("$colortint_base"))) and "itemtintcolor" in (text or "").lower()
+
+
 def material_colour(kv):
     """A material's constant colour modulation ($color2, else $color), as a linear glTF base colour factor, or
     None when it is white or absent. The game takes these from gamma to linear before multiplying."""
@@ -330,7 +337,7 @@ def has_paint_mask(slots):
     """Whether any material of a model is tinted (by a base-alpha paint mask, as a whole, or by a constant
     colour): these export differently, so only these models are re-hashed."""
     return any(s is not None and (any(s[2].get(k) == "1" for k in TINT_KEYS)
-                                  or parse_colour(s[2].get("$colortint_base")) or material_colour(s[2]))
+                                  or tints_whole(s[2], s[5]) or material_colour(s[2]))
                for s in slots)
 
 
@@ -438,7 +445,7 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                 if keep:
                     alpha = "MASK" if kv.get("$alphatest") == "1" else "BLEND"
                 double = kv.get("$nocull") == "1"
-                whole = not masked and bool(parse_colour(kv.get("$colortint_base")))
+                whole = not masked and tints_whole(kv, _text)
                 tint = masked or whole
                 keep_alpha = keep or masked
                 if vtf is None and image is None:

@@ -53,7 +53,10 @@ def main():
         counts["cosmetics"] += 1
         counts["paintable"] += item["paintable"]
         masked = [m for m in mats if m[2].get("$blendtintbybasealpha") == "1"]
-        whole = [m for m in mats if m[2].get("$blendtintbybasealpha") != "1" and convert.parse_colour(m[2].get("$colortint_base"))]
+        whole = [m for m in mats if m[2].get("$blendtintbybasealpha") != "1" and convert.tints_whole(m[2], m[5])]
+        counts["$colortint_base with no ItemTintColor proxy (not applied)"] += sum(
+            1 for m in mats if m[2].get("$blendtintbybasealpha") != "1"
+            and convert.parse_colour(m[2].get("$colortint_base")) and m not in whole)
         counts["whole-material tinted ($colortint_base, no mask)"] += len(whole)
         counts["constant colour modulation ($color2/$color)"] += sum(
             1 for m in mats if convert.material_colour(m[2]) and m not in masked and m not in whole)

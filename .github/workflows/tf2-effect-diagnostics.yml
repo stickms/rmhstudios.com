@@ -25,6 +25,10 @@ on:
       - scripts/tf2-assets/paint_audit.py
       - scripts/tf2-assets/itemlist.py
       - scripts/tf2-assets/render-probe/**
+      - scripts/tf2-assets/convert.py
+      - scripts/tf2-assets/glb.py
+      - components/tf2-hud/loadout/**
+      - lib/tf2-loadout/**
 
 permissions:
   contents: write
