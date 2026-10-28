@@ -134,8 +134,11 @@ export const PARTICLE_FRAGMENT = `
     #endif
     if(result.a<uAlphaTest) discard;
     #ifdef PREMULTIPLIED
-      result.rgb*=result.a;
-      result.rgb+=sample1.rgb*vTint.rgb*uColor*uOverbright*uAddSelf*opacity;
+      // spritecard_ps2x.fxc ($addself): premultiply by alpha, add the premultiplied colour back in scaled by
+      // overbright, $addself and the particle's alpha, then apply the tint. That is
+      // tint * texture * overbright * alpha * (1 + overbright * addself * particleAlpha): the self-add is
+      // itself scaled by alpha and overbright (the old form added it unscaled, so glows were too strong).
+      result.rgb*=result.a * (1.0 + uOverbright*uAddSelf*opacity);
     #endif
     gl_FragColor=result;
     #include <colorspace_fragment>

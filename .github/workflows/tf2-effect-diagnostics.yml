@@ -20,6 +20,7 @@ on:
     paths:
       - .github/workflows/tf2-effect-diagnostics.yml
       - scripts/tf2-assets/effect_audit.py
+      - scripts/tf2-assets/visuals_audit.py
 
 permissions:
   contents: write
@@ -79,6 +80,7 @@ jobs:
           (cd scripts/tf2-assets && python3 effect_audit.py --root /mnt/tf2 --out /mnt/work/out \
             --effects "${{ inputs.effects || 'Aces High' }}" --repo ../..)
           rm -rf /mnt/work/out/_work
+          (cd scripts/tf2-assets && python3 visuals_audit.py --root /mnt/tf2 --out /mnt/work/out)
 
       - name: Delete the game install
         if: always()
