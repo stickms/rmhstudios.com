@@ -1266,7 +1266,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
      a fixed layer that wide and that near an edge is what iOS Safari fills its status bar and tab bar strips
      from, and with the globe open that was a solid band under it. The veil below paints out to the screen's
      edges (it takes no pointer, so Safari does not see it); the drag surface is the overlay's own box. */
-  inset: 1.5rem 6%;
+  inset: 1.5rem 10%;
   z-index: var(--z-hub-overlay);
   display: grid;
   place-items: center;
@@ -1411,7 +1411,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
 .radial-hub__veil {
   position: absolute;
   /* Out to the screen's edges, past the narrower overlay it sits in. */
-  inset: -1.5rem -6vw;
+  inset: -1.5rem -10vw;
   z-index: 1;
   pointer-events: none;
   /* Denser toward the rim than the middle, so the globe sits in a pool of light
@@ -1606,7 +1606,12 @@ html:not(.perf-lite) .radial-shell:has(.radial-hub:is([data-phase='open'], [data
     filter: blur(var(--hub-page-blur, 3px));
   }
   html:not(.perf-lite) .radial-hub__veil {
-    background: color-mix(in srgb, var(--site-bg) 24%, transparent);
+    /* A gradient, not a flat colour: Safari reads a plain full-width background colour at the screen's edge as
+       the page's edge and fills its tab bar with it (the band that showed while the menu was open). */
+    background: linear-gradient(
+      color-mix(in srgb, var(--site-bg) 24%, transparent),
+      color-mix(in srgb, var(--site-bg) 24%, transparent)
+    );
   }
 }
 
@@ -2261,7 +2266,9 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   /* Same safe-area reasoning as the orb: this pill carries identity, settings,
      sign-out and close, so it cannot sit under the home indicator. */
   /* Where it always sat on the screen: the overlay is 1.5rem in from the bottom edge now. */
-  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1rem, 4vw, 2rem) - 1.5rem);
+  /* At least 1.75rem off the screen's edge: a fixed element near the bottom centre is what iOS Safari can fill
+     its tab bar strip from while the menu is open (the overlay is 1.5rem in, so subtract that). */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1.75rem, 5vw, 2.25rem) - 1.5rem);
   z-index: 2;
   display: inline-flex;
   align-items: center;
