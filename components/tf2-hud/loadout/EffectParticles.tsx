@@ -64,10 +64,14 @@ export default function EffectParticles({
         try {
           const attachment = createParticleEnvironment(bundle, owner, body, box, spec.placement);
           const simulation = new ParticleSimulation(bundle, attachment.environment);
-          simulation.warmup();
+          // Open settled, as the game shows it, within a frame or two of work.
+          simulation.warmup(simulation.steadyStateSeconds(), 150);
           renderer = new ParticleRenderer(simulation, textures);
           if (simulation.unsupported.size)
-            console.warn('TF2 particle operators not implemented:', [...simulation.unsupported]);
+            console.warn(
+              `TF2 particle effect ${bundle.id} (${bundle.system}): operators not implemented:`,
+              [...simulation.unsupported],
+            );
           camera.layers.enable(1);
           if (renderer.needsScene) capture.current = acquireParticleCapture(gl);
           renderer.update(camera, spec.placement.s);

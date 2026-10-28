@@ -1,0 +1,97 @@
+name: tf2-effect-diagnostics
+
+# A diagnostic, not a pipeline: downloads Team Fortress 2 with SteamCMD, builds every unusual effect's
+# particle graph the way the asset sync does (no images, nothing published), and writes
+#   audit.json        which PCF operators the browser engine does not implement, and which effects they break
+#   bundles/*.json    the full graph of the effects named in `effects`
+# to the `tf2-effect-diagnostics-data` branch, so they can be read without the game files.
+#
+# Uses the same STEAM_USER / STEAM_PASS repository secrets as tf2-assets-sync. Nothing here touches the bucket.
+
+on:
+  workflow_dispatch:
+    inputs:
+      effects:
+        description: Effects to dump in full — schema names or ids, comma separated
+        type: string
+        default: Aces High
+  push:
+    branches: [claude/intelligent-pasteur-1ebvf7]
+    paths:
+      - .github/workflows/tf2-effect-diagnostics.yml
+      - scripts/tf2-assets/effect_audit.py
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tf2-effect-diagnostics
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      STEAM_USER: ${{ secrets.STEAM_USER }}
+      STEAM_PASS: ${{ secrets.STEAM_PASS }}
+    steps:
+      - name: Check configuration
+        id: cfg
+        run: |
+          if [ -z "$STEAM_USER" ] || [ -z "$STEAM_PASS" ]; then
+            echo "::error title=Steam account missing::Add the STEAM_USER and STEAM_PASS repository secrets (an account that owns Team Fortress 2)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install SteamCMD
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lib32gcc-s1 lib32stdc++6 curl
+          mkdir -p "$HOME/steamcmd" && cd "$HOME/steamcmd"
+          curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar xz
+
+      - name: Make room on the runner
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL
+          sudo mkdir -p /mnt/tf2 /mnt/work && sudo chown "$USER" /mnt/tf2 /mnt/work
+
+      - name: Download Team Fortress 2
+        run: |
+          for i in 1 2 3; do
+            "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/tf2 +login "$STEAM_USER" "$STEAM_PASS" +app_update 440 validate +quit \
+              > "$HOME/steam.log" 2>&1 || true
+            grep -i -E 'success|error|fail|guard' "$HOME/steam.log" | grep -v -i password | tail -5
+            [ -f /mnt/tf2/tf/tf2_textures_000.vpk ] && break
+            echo "attempt $i did not finish; retrying"; sleep 30
+          done
+          [ -f /mnt/tf2/tf/tf2_textures_000.vpk ] || { echo "::error::Texture archives missing — does the Steam account own TF2?"; exit 1; }
+
+      - name: Python tools
+        run: pip install --quiet vpk numpy pillow srctools==2.6.2
+
+      - name: Audit the unusual effects
+        run: |
+          mkdir -p /mnt/work/out
+          (cd scripts/tf2-assets && python3 effect_audit.py --root /mnt/tf2 --out /mnt/work/out \
+            --effects "${{ inputs.effects || 'Aces High' }}" --repo ../..)
+          rm -rf /mnt/work/out/_work
+
+      - name: Delete the game install
+        if: always()
+        run: sudo rm -rf /mnt/tf2 "$HOME/Steam" "$HOME/.steam"
+
+      - name: Publish the results to a branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan tf2-effect-diagnostics-data
+          git rm -rf --quiet . || true
+          cp -r /mnt/work/out/. .
+          du -sh . | cat
+          git add -A
+          git commit -q -m "Effect audit for game build $(date -u +%F)"
+          git push -f origin tf2-effect-diagnostics-data

@@ -52,6 +52,39 @@ function simulation(root: ParticleDefinition, systems: ParticleDefinition[] = []
   };
 }
 
+describe('steady state', () => {
+  const lives = (max: number) => op('lifetime random', { lifetime_min: max, lifetime_max: max });
+  const trickle = op('emit_continuously', { emission_rate: 10 });
+
+  it('settles after the longest particle life, plus a child that starts late', () => {
+    const root = definition('root', {
+      initializers: [lives(2)],
+      children: [{ system: 'kid', delay: 3 }],
+    });
+    const kid = definition('kid', { initializers: [lives(4)] });
+    expect(simulation(root, [kid]).simulation.steadyStateSeconds()).toBe(7);
+  });
+
+  it('is bounded below and above', () => {
+    expect(
+      simulation(definition('a', { initializers: [lives(0.2)] })).simulation.steadyStateSeconds(),
+    ).toBe(1.5);
+    expect(
+      simulation(definition('b', { initializers: [lives(60)] })).simulation.steadyStateSeconds(),
+    ).toBe(8);
+  });
+
+  it('opens with the particles a running effect has, not the few a new one has', () => {
+    const root = definition('cards', { initializers: [lives(5)], emitters: [trickle] });
+    const early = simulation(root).simulation;
+    early.warmup(1.5);
+    const settled = simulation(root).simulation;
+    settled.warmup(settled.steadyStateSeconds());
+    expect(settled.root.particles.length).toBeGreaterThan(early.root.particles.length * 2);
+    expect(settled.root.particles.length).toBeGreaterThan(40);
+  });
+});
+
 describe('Source particle asset contract', () => {
   it('serves only the manifest and immutable bundle/texture names', async () => {
     for (const path of [
