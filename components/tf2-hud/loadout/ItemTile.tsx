@@ -117,15 +117,21 @@ export default function ItemTile({
     className,
   );
   const accent = qualityAccent(item.q);
-  const style =
-    accent || item.rt || conflict
+  // A clash is yellow; on a tiered item the tile is cut along the diagonal, yellow above and the tier's
+  // colour below, so neither the warning nor the tier is lost.
+  const warning = 'color-mix(in srgb, var(--app-warning) 32%, var(--app-bg))';
+  const background = conflict
+    ? item.rt
       ? {
-          ...(accent ? { borderColor: accent } : {}),
-          ...(item.rt ? { backgroundColor: rarityBackground(item.rt) } : {}),
-          ...(conflict
-            ? { backgroundColor: 'color-mix(in srgb, var(--app-warning) 32%, var(--app-bg))' }
-            : {}),
+          backgroundImage: `linear-gradient(135deg, ${warning} 50%, ${rarityBackground(item.rt)} 50%)`,
         }
+      : { backgroundColor: warning }
+    : item.rt
+      ? { backgroundColor: rarityBackground(item.rt) }
+      : undefined;
+  const style =
+    accent || background
+      ? { ...(accent ? { borderColor: accent } : {}), ...background }
       : undefined;
   return onClick ? (
     <button

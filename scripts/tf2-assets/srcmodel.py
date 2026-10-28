@@ -62,9 +62,11 @@ def read_mdl(mdl):
              for f in range(max(num_fam, 1))] if num_skin_ref else [[]]
     skin0 = skins[0]
     bodyparts = []
+    bodypart_names = []
     for b in range(num_body):
         bp = body_idx + b * 16
-        _name, nmodels, _base, model_idx = struct.unpack_from("<4i", mdl, bp)
+        name_off, nmodels, _base, model_idx = struct.unpack_from("<4i", mdl, bp)
+        bodypart_names.append(_cstr(mdl, bp + name_off).lower())
         models = []
         for m in range(nmodels):
             mo = bp + model_idx + m * 148
@@ -88,7 +90,25 @@ def read_mdl(mdl):
                              "forward": forward, "texture": texture, "iris_scale": iris_scale})
             models.append({"meshes": meshes, "vert_start": vert_idx // 48, "eyeballs": eyes})
         bodyparts.append(models)
-    return {"textures": textures, "cdtextures": cds, "skin0": skin0, "skins": skins, "bodyparts": bodyparts}
+    return {"textures": textures, "cdtextures": cds, "skin0": skin0, "skins": skins, "bodyparts": bodyparts,
+            "bodypart_names": bodypart_names}
+
+
+def spreads_over_bones(vvd, share=0.15):
+    """True when a model's vertices follow more than one bone in earnest: the second-heaviest bone carries at
+    least `share` of all the weight. A hat rides one bone; boots, gloves and capes follow a pair or more, which
+    a rigid attachment to a single bone cannot reproduce (both mantreads would sit on one foot)."""
+    verts = read_vvd(vvd)
+    if not len(verts):
+        return False
+    weight = {}
+    for k in range(3):
+        live = k < verts["nb"].astype(np.int64)
+        for bone in np.unique(verts["bone"][live, k]):
+            hit = live & (verts["bone"][:, k] == bone)
+            weight[int(bone)] = weight.get(int(bone), 0.0) + float(verts["w"][hit, k].sum())
+    ranked = sorted(weight.values(), reverse=True)
+    return len(ranked) > 1 and ranked[1] / sum(ranked) >= share
 
 
 def read_bones(mdl):
@@ -187,8 +207,14 @@ def read_vtx(vtx):
     return result
 
 
-def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0):
-    """-> (info, [ {texture, pos, nrm, uv, idx} ]) merged per texture index."""
+def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0, groups=False):
+    """-> (info, [ {texture, pos, nrm, uv, idx, group?} ]) merged per texture index.
+
+    Only the default submodel of each body group by default. With `groups`, every submodel of a body group
+    that has more than one (a class body's `hat`, `headphones`, `shoes_socks`, … — submodel 1 is usually
+    empty, which is how an item hides the default one) is kept as its own mesh, tagged
+    `group = (name, submodel)`, so a viewer can show whichever one the worn items select. Groups with a
+    single submodel are never tagged: nothing can switch them."""
     info = read_mdl(mdl_bytes)
     verts = read_vvd(vvd_bytes)
     vtx = read_vtx(vtx_bytes)
@@ -196,19 +222,21 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0):
     for b, models in enumerate(info["bodyparts"]):
         if not models:
             continue
-        model = models[0]  # default body group
-        vmeshes = vtx[b][0] if b < len(vtx) and vtx[b] else []
-        for k, mesh in enumerate(model["meshes"]):
-            if k >= len(vmeshes) or not len(vmeshes[k]):
-                continue
-            fam = info["skins"][skin] if 0 <= skin < len(info["skins"]) else info["skin0"]
-            tex = fam[mesh["material"]] if mesh["material"] < len(fam) else mesh["material"]
-            # Source's triangles are clockwise (Direct3D); glTF front faces are counter-clockwise.
-            ids = (vmeshes[k][: len(vmeshes[k]) // 3 * 3].reshape(-1, 3)[:, ::-1].reshape(-1)
-                   + model["vert_start"] + mesh["voff"])
-            if ids.max() >= len(verts):
-                raise ModelError("vertex index out of range")
-            by_tex.setdefault(tex, []).append(ids)
+        switchable = groups and len(models) > 1
+        for m, model in enumerate(models if switchable else models[:1]):
+            vmeshes = vtx[b][m] if b < len(vtx) and m < len(vtx[b]) else []
+            tag = (info["bodypart_names"][b], m) if switchable else None
+            for k, mesh in enumerate(model["meshes"]):
+                if k >= len(vmeshes) or not len(vmeshes[k]):
+                    continue
+                fam = info["skins"][skin] if 0 <= skin < len(info["skins"]) else info["skin0"]
+                tex = fam[mesh["material"]] if mesh["material"] < len(fam) else mesh["material"]
+                # Source's triangles are clockwise (Direct3D); glTF front faces are counter-clockwise.
+                ids = (vmeshes[k][: len(vmeshes[k]) // 3 * 3].reshape(-1, 3)[:, ::-1].reshape(-1)
+                       + model["vert_start"] + mesh["voff"])
+                if ids.max() >= len(verts):
+                    raise ModelError("vertex index out of range")
+                by_tex.setdefault((tex, tag), []).append(ids)
     info["eyeballs"] = [e for models in info["bodyparts"] if models for e in models[0]["eyeballs"]]
     # The bone most of this model's vertices follow: a cosmetic attaches to the wearer through it.
     if by_tex:
@@ -223,8 +251,8 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0):
     else:
         info["dominant_bone"] = 0
     out = []
-    for tex, groups in by_tex.items():
-        ids = np.concatenate(groups)
+    for (tex, tag), parts in by_tex.items():
+        ids = np.concatenate(parts)
         uniq, inverse = np.unique(ids, return_inverse=True)
         v = verts[uniq]
         nb = np.maximum(v["nb"].astype(np.int64), 1)
@@ -233,6 +261,7 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0):
         w /= np.maximum(w.sum(1, keepdims=True), 1e-6)
         out.append({
             "texture": tex,
+            "group": tag,
             "joints": np.concatenate([v["bone"].astype(np.uint16), np.zeros((len(v), 1), np.uint16)], axis=1),
             "weights": np.concatenate([w, np.zeros((len(v), 1), np.float32)], axis=1),
             "pos": np.ascontiguousarray(v["pos"]),

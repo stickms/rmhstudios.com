@@ -55,7 +55,8 @@ def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips
             attrs["WEIGHTS_0"] = add_acc(weights.tobytes(), 5126, len(weights), "VEC4", 34962)
         prims.append({"attributes": attrs,
                       "indices": add_acc(idx.tobytes(), 5125 if wide else 5123, len(idx), "SCALAR", 34963),
-                      "material": m["material"]})
+                      "material": m["material"],
+                      **({"extras": m["extras"]} if m.get("extras") else {})})
 
     gl_images, textures, gl_mats = [], [], []
     for img in images:

@@ -9,6 +9,8 @@ import {
   type Texture,
 } from 'three';
 import type { WarPaint } from '@/lib/tf2-loadout/warpaint';
+import type { Bodygroups } from '@/lib/tf2-loadout/catalog-types';
+import { showsSubmodel } from '@/lib/tf2-loadout/bodygroups';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 /**
@@ -72,6 +74,21 @@ export function applyPaintTexture(root: Object3D, texture: Texture | null): void
       done = true;
       return;
     }
+  });
+}
+
+/**
+ * Show the class body's submodels the worn items select. The converter tags each switchable mesh with
+ * its group and submodel (primitive extras, which the loader keeps on the geometry); a mesh with no tag
+ * is never switched. Visibility only: nothing is rebuilt, so changing a hat is free.
+ */
+export function applyBodygroups(root: Object3D, selection: Bodygroups): void {
+  root.traverse((o: Object3D) => {
+    const mesh = o as Mesh;
+    if (!mesh.isMesh) return;
+    const tag = (mesh.geometry?.userData ?? mesh.userData) as { bodygroup?: string; sub?: number };
+    if (typeof tag.bodygroup !== 'string' || typeof tag.sub !== 'number') return;
+    mesh.visible = showsSubmodel(selection, tag.bodygroup, tag.sub);
   });
 }
 

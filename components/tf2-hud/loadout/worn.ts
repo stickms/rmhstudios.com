@@ -10,6 +10,7 @@ import {
   type LoadoutSlots,
   type TfClass,
 } from '@/lib/tf2-loadout/catalog-types';
+import { bodygroupsOf } from '@/lib/tf2-loadout/bodygroups';
 import { resolvePlacement } from '@/lib/tf2-loadout/fx';
 import type { CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import { warPaintOf } from '@/lib/tf2-loadout/warpaint';
@@ -57,6 +58,7 @@ export function wornItems(
         slotKey: k,
         itemId: e.item,
         style: e.style,
+        bodygroups: bodygroupsOf(it, e.style),
         tint: it?.p && e.paint !== undefined ? idx.paint(e.paint)?.rgb : undefined,
         effect: effectSpecOf(idx, e, slotFor(idx.item(e.item)!, cls) ?? 'misc'),
       },

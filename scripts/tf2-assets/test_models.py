@@ -63,6 +63,60 @@ class ModelAssets(unittest.TestCase):
         self.assertEqual(out["emissiveFactor"], [1, 1, 1])
 
 
+class BodyGroups(unittest.TestCase):
+    def test_only_groups_with_alternatives_are_switchable(self):
+        info = {"bodypart_names": ["studio", "hat", "headphones"], "bodyparts": [[{}], [{}, {}], [{}, {}, {}]]}
+        self.assertEqual(convert.bodygroup_counts(info), {"hat": 2, "headphones": 3})
+
+    def test_primitive_extras_and_scene_groups_survive_glb_encoding(self):
+        mesh = {"pos": np.zeros((3, 3)), "nrm": np.zeros((3, 3)), "uv": np.zeros((3, 2)),
+                "idx": np.array([0, 1, 2]), "material": 0, "extras": {"bodygroup": "hat", "sub": 0}}
+        material = {"name": "m", "image": None, "alpha": "OPAQUE", "double_sided": False}
+        raw = glb.write_glb([mesh], [material], [], {"bodygroups": {"hat": 2}})
+        doc = json.loads(raw[20:20 + struct.unpack_from("<I", raw, 12)[0]])
+        self.assertEqual(doc["meshes"][0]["primitives"][0]["extras"], {"bodygroup": "hat", "sub": 0})
+        self.assertEqual(doc["scenes"][0]["extras"], {"bodygroups": {"hat": 2}})
+
+    def test_class_bodies_ask_for_every_submodel_and_tag_them(self):
+        bones = [{"name": "head", "parent": -1, "pose_to_bone": np.eye(4)[:3].reshape(-1).tolist()}]
+        mesh = {"texture": 0, "group": ("hat", 1), "pos": np.zeros((3, 3), np.float32),
+                "nrm": np.zeros((3, 3), np.float32), "uv": np.zeros((3, 2), np.float32),
+                "idx": np.array([0, 1, 2]), "joints": np.zeros((3, 4)), "weights": np.zeros((3, 4))}
+        info = {"textures": ["body"], "eyeballs": [], "bodypart_names": ["hat"], "bodyparts": [[{}, {}]]}
+        with patch.object(convert.srcmodel, "build_meshes", return_value=(info, [mesh])) as build, \
+             patch.object(convert.srcmodel, "read_bones", return_value=bones), \
+             patch.object(convert, "class_skeleton", return_value=(bones, {})), \
+             patch.object(convert, "attachment_extras", return_value={}), \
+             patch.object(convert.glb, "write_glb") as write:
+            convert.convert(None, "class.mdl", b"", b"", b"", [None], True, None)
+        self.assertTrue(build.call_args.kwargs["groups"])
+        args = write.call_args.args
+        self.assertEqual(args[0][0]["extras"], {"bodygroup": "hat", "sub": 1})
+        self.assertEqual(args[3], {"bodygroups": {"hat": 2}})
+
+
+class BoneMerge(unittest.TestCase):
+    def _vvd(self, rows):
+        """A VVD with one vertex per (bone0, w0, bone1, w1) row, laid out as the reader expects."""
+        head = bytearray(64)
+        struct.pack_into("<4si", head, 0, b"IDSV", 4)
+        struct.pack_into("<4i", head, 48, 0, 0, 64, 0)
+        body = b"".join(struct.pack("<3f3BB3f3f2f", w0, w1, 0.0, b0, b1, 0, 2 if w1 else 1, 0, 0, 0, 0, 0, 1, 0, 0)
+                        for b0, w0, b1, w1 in rows)
+        return bytes(head) + body
+
+    def test_boots_follow_two_bones_a_hat_follows_one(self):
+        boots = self._vvd([(3, 1.0, 0, 0.0)] * 5 + [(7, 1.0, 0, 0.0)] * 5)
+        hat = self._vvd([(3, 1.0, 0, 0.0)] * 20 + [(7, 1.0, 0, 0.0)])
+        self.assertTrue(convert.srcmodel.spreads_over_bones(boots))
+        self.assertFalse(convert.srcmodel.spreads_over_bones(hat))
+
+    def test_only_cosmetics_are_merged_not_weapons(self):
+        boots = self._vvd([(3, 1.0, 0, 0.0)] * 5 + [(7, 1.0, 0, 0.0)] * 5)
+        self.assertTrue(convert.follows_player_bones("models/player/items/soldier/mantreads.mdl", boots))
+        self.assertFalse(convert.follows_player_bones("models/weapons/c_models/c_shotgun/c_shotgun.mdl", boots))
+
+
 class TexturePaths(unittest.TestCase):
     def test_basetexture_spellings_all_name_the_same_file(self):
         want = "materials/models/player/items/all_class/oh_xmas_tree.vtf"

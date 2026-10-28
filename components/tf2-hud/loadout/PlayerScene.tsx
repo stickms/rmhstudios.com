@@ -10,6 +10,9 @@
  */
 'use client';
 
+import { selectionKey } from '@/lib/tf2-loadout/bodygroups';
+import type { Bodygroups } from '@/lib/tf2-loadout/catalog-types';
+import { boneMerge } from '@/lib/tf2-loadout/bone-merge';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import {
   renameSkeleton,
@@ -38,6 +41,7 @@ import {
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import EffectParticles, { type EffectSpec } from './EffectParticles';
 import {
+  applyBodygroups,
   applyFestive,
   applyPaintTexture,
   applyTint,
@@ -101,10 +105,13 @@ function Taunt({ url, body }: { url: string; body: BodyState }) {
 
 function Body({
   url,
+  bodygroups,
   tauntUrl,
   onReady,
 }: {
   url: string;
+  /** The submodel to show per body group, from what is worn. */
+  bodygroups: Bodygroups;
   tauntUrl?: string;
   onReady: (body: BodyState) => void;
 }) {
@@ -127,6 +134,14 @@ function Body({
       mixer.uncacheRoot(root);
     };
   }, [root, mixer, gltf.animations]);
+
+  // A worn cosmetic takes the part of the body it replaces (the class's own hat, headphones, …) off. This
+  // runs before the framing below, so the bounds never include a part that is hidden.
+  const groupsKey = selectionKey(bodygroups);
+  useLayoutEffect(() => {
+    applyBodygroups(root, bodygroups);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `groupsKey` is the selection's value
+  }, [root, groupsKey]);
 
   // Frame the whole player, front on, from a distance that fits its height.
   useLayoutEffect(() => {
@@ -214,16 +229,30 @@ function Part({
       setMount(null);
       return undefined;
     }
-    root.matrixAutoUpdate = false;
-    root.matrix.fromArray(attach.pose);
-    bone.add(root);
+    // Boots, gloves and capes follow several bones: they deform with the player's skeleton, as the game's
+    // bone-merge does. Everything else sits rigidly on the one bone it follows.
+    const merged = scene.userData.boneMerge === true && boneMerge(root, body.root);
+    if (merged) {
+      body.root.add(root);
+    } else {
+      root.matrixAutoUpdate = false;
+      root.matrix.fromArray(attach.pose);
+      bone.add(root);
+    }
     body.root.updateMatrixWorld(true);
     // Where the cosmetic sits on its bone, for an effect that follows it.
     const box = new Box3().setFromObject(root);
     setMount({ bone, box });
     // Flexible jiggle bones swing on their own springs; their skeleton rides on the bone it is mounted on.
-    jiggle.current = setupJiggle(root, scene.userData.jiggle as JiggleSpec[] | undefined);
-    if (jiggle.current.length) {
+    jiggle.current = merged
+      ? []
+      : setupJiggle(root, scene.userData.jiggle as JiggleSpec[] | undefined);
+    if (merged) {
+      // Deformed by bones far from the one it was framed on, so the bind-pose bounds do not hold.
+      root.traverse((o) => {
+        if ((o as Mesh).isMesh) o.frustumCulled = false;
+      });
+    } else if (jiggle.current.length) {
       renameSkeleton(root);
       // A swinging bone can leave the bind-pose bounds the renderer culls by.
       root.traverse((o) => {
@@ -232,7 +261,7 @@ function Part({
     }
     return () => {
       jiggle.current = [];
-      bone.remove(root);
+      root.removeFromParent();
     };
   }, [root, scene, body]);
 
@@ -257,11 +286,14 @@ function Part({
 
 export default function PlayerScene({
   body,
+  bodygroups,
   parts,
   bodyEffect,
   tauntUrl,
 }: {
   body: string;
+  /** The submodel to show per class-body group (a worn cosmetic hides the part it replaces). */
+  bodygroups: Bodygroups;
   parts: PlayerPart[];
   /** A taunt's unusual effect, around the whole player. */
   bodyEffect?: EffectSpec;
@@ -287,7 +319,7 @@ export default function PlayerScene({
           maxDistance={ready ? ready.height * 3.5 : 8}
         />
         <Suspense fallback={null}>
-          <Body url={body} tauntUrl={tauntUrl} onReady={setReady} />
+          <Body url={body} bodygroups={bodygroups} tauntUrl={tauntUrl} onReady={setReady} />
         </Suspense>
         {ready && bodyEffect ? (
           <EffectParticles spec={bodyEffect} box={ready.box} owner={ready.root} body={ready.root} />

@@ -55,7 +55,9 @@ export function ResetViewButton({ onClick }: { onClick: () => void }) {
       showTooltip={false}
       variant="outline"
       onClick={onClick}
-      className="absolute end-2 top-2"
+      // The viewer's background is near-black and so is the outline variant's ink: a solid, lighter chip
+      // with a bright edge stays visible over the model and the backdrop alike.
+      className="absolute end-2 top-2 z-10 size-9 border-(--app-border-bright) bg-(--app-surface) text-(--app-text) hover:bg-(--app-surface-hover)"
     />
   );
 }
