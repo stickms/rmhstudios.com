@@ -351,8 +351,36 @@ export class ParticleSimulation {
       }
     }
   }
-  warmup(seconds = 1.5) {
-    for (let i = 0; i < seconds * 60; i++) this.advance(1 / 60);
+  /**
+   * How long an effect takes to reach the look it has once it has been running a while: the longest any
+   * particle lives (its `lifetime random` ceiling) after the latest a child system starts. A hat's effect
+   * is seen in that settled state in the game; starting from an empty scene instead shows a sparse effect
+   * for the first several seconds (a card that lives five seconds is only a third as common at 1.5 s).
+   * Capped, since an effect with very long-lived particles would otherwise take too long to settle.
+   */
+  steadyStateSeconds(min = 1.5, max = 8): number {
+    let settle = 0;
+    for (const sys of this.systems) {
+      let start = 0;
+      for (let at: SimSystem | undefined = sys; at; at = at.parent) start += at.delay;
+      const life = sys.definition.initializers
+        .filter((o) => o.function === 'lifetime random')
+        .reduce((most, o) => Math.max(most, n(o.params, 'lifetime_max', 1)), 0);
+      settle = Math.max(settle, start + life);
+    }
+    return Math.max(min, Math.min(max, settle));
+  }
+
+  /**
+   * Run the effect forward `seconds` so it opens already settled. `budgetMs` bounds the time spent doing
+   * so on a slow machine: the effect then simply opens a little sparser.
+   */
+  warmup(seconds = 1.5, budgetMs = Infinity) {
+    const began = typeof performance !== 'undefined' ? performance.now() : 0;
+    for (let i = 0; i < seconds * 60; i++) {
+      this.advance(1 / 60);
+      if (budgetMs !== Infinity && !(i & 7) && performance.now() - began > budgetMs) break;
+    }
   }
 }
 
