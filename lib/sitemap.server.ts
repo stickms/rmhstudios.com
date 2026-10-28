@@ -16,6 +16,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { cachedSWR } from '@/lib/cached.server';
 import type { Prisma } from '@prisma/client';
 import { PUBLIC_POST_WHERE } from '@/lib/feed/rss.server';
 import {
@@ -492,18 +493,48 @@ function ladderJobWhere(): Prisma.LadderJobWhereInput {
 
 // ─────────────────────────────── assembly ───────────────────────────────
 
+// The index contains chunk paths, not content URLs: retaining a count cannot
+// expose a newly-private post/community. Child sitemaps still apply visibility
+// predicates. Refresh counts off the request path after ten minutes, keeping
+// the last good count for up to another hour if Postgres is briefly unavailable.
+const COUNT_CACHE = { ttlMs: 10 * 60_000, swrMs: 60 * 60_000, l2: false };
+const COUNT_WAIT_MS = 1_000;
+
+async function countForIndex(name: string, section: Section): Promise<number> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const total = await Promise.race([
+      cachedSWR(`sitemap:count:${name}`, COUNT_CACHE, section.count),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('count exceeded sitemap index budget')),
+          COUNT_WAIT_MS,
+        );
+      }),
+    ]);
+    // A cold caller can join a failed background refresh, which resolves to
+    // undefined. Treat that like an unavailable count rather than emit NaN chunks.
+    if (typeof total !== 'number') throw new Error('sitemap count unavailable');
+    return total;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * The child sitemap paths the index should list.
  *
- * A section that fails to count is skipped rather than taking the index down
- * with it — a partial sitemap is worth far more than a 500.
+ * Cold counts have a shared one-second wall-time budget (they run in parallel).
+ * A slow query keeps its single-flight slot and can populate the cache when it
+ * eventually completes; timed-out callers do not start another count storm.
+ * Failed sections are omitted only when no usable cached count remains.
  */
-export async function listSitemapChunks(): Promise<string[]> {
+export async function getSitemapIndex(): Promise<{ paths: string[]; complete: boolean }> {
   const counted = await Promise.all(
     Object.entries(SITEMAP_SECTIONS).map(async ([name, section]) => {
       let total: number;
       try {
-        total = await section.count();
+        total = await countForIndex(name, section);
       } catch (e) {
         console.error(`[sitemap] section "${name}" failed to count, omitting it:`, e);
         return { name, chunks: 0 };
@@ -521,12 +552,17 @@ export async function listSitemapChunks(): Promise<string[]> {
 
   // Sorting after the concurrent fan-out keeps the index byte-stable between
   // requests, which is what makes the hourly cache actually cacheable.
-  return counted
+  const paths = counted
     .filter((s) => s.chunks > 0)
     .sort((a, b) => a.name.localeCompare(b.name))
     .flatMap(({ name, chunks }) =>
       Array.from({ length: chunks }, (_, i) => chunkPath(name, i + 1)),
     );
+  return { paths, complete: counted.every((s) => s.chunks > 0) };
+}
+
+export async function listSitemapChunks(): Promise<string[]> {
+  return (await getSitemapIndex()).paths;
 }
 
 /** Render one child sitemap, or null when the section doesn't exist. */
