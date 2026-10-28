@@ -347,18 +347,20 @@ func freshClient(timeout time.Duration) *http.Client {
 // resolver stall from a handshake stall from a slow handler, and each points at
 // a different part of the stack. Phases are checked in the order a request
 // passes through them; a phase that started but never finished is the stall.
-func stalledIn(dnsStart, dnsDone, connStart, connDone, tlsStart, tlsDone, firstByte time.Time) string {
+// preRequest reports a stall before the request was sent, which says nothing
+// about the target itself.
+func stalledIn(dnsStart, dnsDone, connStart, connDone, tlsStart, tlsDone, firstByte time.Time) (suffix string, preRequest bool) {
 	switch {
 	case !dnsStart.IsZero() && dnsDone.IsZero():
-		return " (stalled in DNS lookup)"
+		return " (stalled in DNS lookup)", true
 	case !connStart.IsZero() && connDone.IsZero():
-		return " (stalled connecting)"
+		return " (stalled connecting)", true
 	case !tlsStart.IsZero() && tlsDone.IsZero():
-		return " (stalled in TLS handshake)"
+		return " (stalled in TLS handshake)", true
 	case firstByte.IsZero() && (!connDone.IsZero() || !dnsDone.IsZero()):
-		return " (connected; no response from the server)"
+		return " (connected; no response from the server)", false
 	}
-	return ""
+	return "", false
 }
 
 // ProbeOnce fires a parallel HTTP GET for every target and records results.
@@ -508,12 +510,17 @@ type TLSInfo struct {
 
 // Failure categories. Stable strings: they are API values and metric labels.
 const (
-	CatTimeout  = "timeout"
-	CatDNS      = "dns"
-	CatRefused  = "refused"
-	CatReset    = "reset"
-	CatTLS      = "tls"
-	CatNetwork  = "network"
+	CatTimeout = "timeout"
+	CatDNS     = "dns"
+	CatRefused = "refused"
+	CatReset   = "reset"
+	CatTLS     = "tls"
+	CatNetwork = "network"
+	// CatStall is a timeout that never got as far as sending the request: the
+	// probe was still in DNS, connecting or the TLS handshake. That is a fault in
+	// the path to the shared front door, not in the target, so it is shown on the
+	// status page but not forwarded to on-call (see alertFor).
+	CatStall    = "connect_stall"
 	CatHTTP5xx  = "http_5xx"
 	CatHTTP4xx  = "http_4xx"
 	CatContent  = "content"
@@ -537,6 +544,8 @@ func CategoryLabel(c string) string {
 		return "TLS error"
 	case CatNetwork:
 		return "Network error"
+	case CatStall:
+		return "Connection stall"
 	case CatHTTP5xx:
 		return "Server error (5xx)"
 	case CatHTTP4xx:
@@ -642,8 +651,11 @@ func probe(ctx context.Context, client *http.Client, t Target) (ServiceStatus, P
 		ss.Status = StatusDown
 		pd.Category = classifyErr(err)
 		if pd.Category == CatTimeout {
-			ss.Detail = fmt.Sprintf("timeout after %dms", client.Timeout.Milliseconds()) +
-				stalledIn(dnsStart, dnsDone, connStart, connDone, tlsStart, tlsDone, firstByte)
+			stall, preRequest := stalledIn(dnsStart, dnsDone, connStart, connDone, tlsStart, tlsDone, firstByte)
+			ss.Detail = fmt.Sprintf("timeout after %dms", client.Timeout.Milliseconds()) + stall
+			if preRequest {
+				pd.Category = CatStall
+			}
 		} else {
 			ss.Detail = err.Error()
 		}

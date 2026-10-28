@@ -46,6 +46,13 @@ func alertFor(n Notification, pageURL string) (a oncall.Alert, ok bool) {
 	if inc == nil || inc.Kind != "auto" || len(inc.Components) != 1 || watchdogCovered[inc.Components[0]] {
 		return a, false
 	}
+	// A timeout before the request was sent (DNS / connect / TLS) is the shared
+	// front door being unreachable from the prober — exactly what Website and
+	// App readiness, which the watchdog probes from outside, already report. The
+	// per-route targets add only noise then; they stay on the status page.
+	if inc.Category == CatStall {
+		return a, false
+	}
 	state := "firing"
 	switch n.Event {
 	case "incident.created", "incident.updated":
