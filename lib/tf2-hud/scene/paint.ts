@@ -16,6 +16,8 @@ export interface PaintOptions {
   images: ImageStore;
   /** Faint outline round every shown panel (the "show bounds" aid). */
   showBounds?: boolean;
+  /** Leave the labelled box off these panels: something else (the 3D model layer) draws them. */
+  skipDynamic?: (node: PanelNode) => boolean;
 }
 
 function clipTo(g: CanvasRenderingContext2D, r: { x: number; y: number; w: number; h: number }) {
@@ -263,6 +265,10 @@ function drawOp(g: CanvasRenderingContext2D, op: DrawOp, opts: PaintOptions) {
   }
 }
 
+function skipped(node: PanelNode, op: DrawOp, opts: PaintOptions): boolean {
+  return op.t === 'dynamic' && (opts.skipDynamic?.(node) ?? false);
+}
+
 export function paintScene(g: CanvasRenderingContext2D, scene: Scene, opts: PaintOptions): void {
   for (const node of scene.nodes) {
     if (!node.shown) continue;
@@ -271,10 +277,10 @@ export function paintScene(g: CanvasRenderingContext2D, scene: Scene, opts: Pain
       g.beginPath();
       g.rect(node.clip.x, node.clip.y, node.clip.w, node.clip.h);
       g.clip();
-      for (const op of node.ops) drawOp(g, op, opts);
+      for (const op of node.ops) if (!skipped(node, op, opts)) drawOp(g, op, opts);
       g.restore();
     } else {
-      for (const op of node.ops) drawOp(g, op, opts);
+      for (const op of node.ops) if (!skipped(node, op, opts)) drawOp(g, op, opts);
     }
     if (opts.showBounds) {
       g.save();

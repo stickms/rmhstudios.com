@@ -260,6 +260,7 @@ export default function PlayerScene({
   parts,
   bodyEffect,
   tauntUrl,
+  bare = false,
 }: {
   body: string;
   parts: PlayerPart[];
@@ -267,6 +268,8 @@ export default function PlayerScene({
   bodyEffect?: EffectSpec;
   /** The taunt clip to play (looped) instead of the idle. */
   tauntUrl?: string;
+  /** No controls: the player is scenery (the HUD editor's backdrop and model panels), not something to turn around. */
+  bare?: boolean;
 }) {
   const [ready, setReady] = useState<BodyState | null>(null);
   const { ref, reset } = useResetView();
@@ -281,6 +284,9 @@ export default function PlayerScene({
         <StudioLight />
         <ViewerOrbit
           resetRef={ref}
+          enablePan={!bare}
+          enableZoom={!bare}
+          enableRotate={!bare}
           minPolarAngle={Math.PI / 3}
           maxPolarAngle={(Math.PI * 2) / 3}
           minDistance={ready ? ready.height * 0.8 : 1}
@@ -310,7 +316,7 @@ export default function PlayerScene({
             ))
           : null}
       </Canvas>
-      <ResetViewButton onClick={reset} />
+      {bare ? null : <ResetViewButton onClick={reset} />}
     </div>
   );
 }

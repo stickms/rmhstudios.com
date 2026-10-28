@@ -533,6 +533,27 @@ export const PAGES: readonly HudPage[] = [
     files: ui('charinfopanel', 'charinfoloadoutsubpanel', 'classloadoutpanel'),
   },
   {
+    id: 'backpack',
+    label: 'Backpack',
+    group: 'Items & loadout',
+    backdrop: 'menu',
+    files: ui('econ/backpackpanel'),
+  },
+  {
+    id: 'inspect',
+    label: 'Item inspection',
+    group: 'Items & loadout',
+    backdrop: 'menu',
+    files: ui('econ/inspectionpanel'),
+  },
+  {
+    id: 'store',
+    label: 'Mann Co. Store',
+    group: 'Items & loadout',
+    backdrop: 'menu',
+    files: ui('econ/store/v2/storepanel', 'econ/store/v2/storepage_items'),
+  },
+  {
     id: 'craft',
     label: 'Crafting',
     group: 'Items & loadout',

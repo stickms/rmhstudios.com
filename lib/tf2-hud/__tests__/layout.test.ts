@@ -3,7 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { evalCond, PC_ENV, X360_ENV } from '../scheme/cond';
 import { parseScheme } from '../scheme/scheme';
-import { layoutRect, parseDim } from '../layout/geometry';
+import { layoutRect, parseDim, scaled } from '../layout/geometry';
 import { propsOf } from '../kv/props';
 import { parseKv } from '../kv/parse';
 import { buildScene, hitTest, imagePath, type SceneContext } from '../scene/build';
@@ -42,6 +42,16 @@ describe('conditionals', () => {
     expect(evalCond('$X360 || $WIN32', X360_ENV)).toBe(true);
     expect(evalCond(undefined, PC_ENV)).toBe(true);
     expect(evalCond('garbage', PC_ENV)).toBe(true);
+  });
+});
+
+describe('scaling', () => {
+  it('truncates toward zero, exactly, for negative values too', () => {
+    expect(scaled(-288, 2.25)).toBe(-648);
+    expect(scaled(288, 2.25)).toBe(648);
+    expect(scaled(-5, 2.25)).toBe(-11);
+    expect(scaled(5, 2.25)).toBe(11);
+    expect(scaled(0, 2.25)).toBe(0);
   });
 });
 

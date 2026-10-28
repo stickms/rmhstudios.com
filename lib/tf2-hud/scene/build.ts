@@ -82,7 +82,7 @@ type Kind =
   'label' | 'image' | 'button' | 'progress' | 'check' | 'radio' | 'input' | 'dynamic' | 'panel';
 
 const DYNAMIC =
-  /^(cavatarimagepanel|cmodelpanel|citemmodelpanel|ctfplayermodelpanel|cstorepreview\w*|html|sectionedlistpanel|cexrichtext|richtext|cquest\w*|cnavigationpanel|cctfstaticbadgepanel|ctfstaticbadgepanel|scrollbar|menu|listpanel)$/i;
+  /^(cavatarimagepanel|cmodelpanel|citemmodelpanel|cembeddeditemmodelpanel|cbasemodelpanel|cmodelimagepanel|ctfplayermodelpanel|cstorepreview\w*|html|sectionedlistpanel|cexrichtext|richtext|cquest\w*|cnavigationpanel|cctfstaticbadgepanel|ctfstaticbadgepanel|scrollbar|menu|listpanel)$/i;
 
 export function kindOf(control: string): Kind {
   const c = control.toLowerCase();

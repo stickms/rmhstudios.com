@@ -27,7 +27,7 @@ import type { WarPaint } from './model-utils';
 import type { PlayerPart } from './PlayerScene';
 import { SearchSelect } from '../ui';
 
-const PlayerScene = lazy(() => import('./PlayerScene'));
+export const PlayerScene = lazy(() => import('./PlayerScene'));
 
 function Note({ children }: { children: ReactNode }) {
   return (
@@ -53,6 +53,57 @@ export interface WornItem {
   festive?: boolean;
 }
 
+/**
+ * Everything a 3D player needs from what it is wearing: the class body model, each cosmetic's model file,
+ * the animation to play (a picked one, the equipped taunt's, or the stance for the held weapon) and what is
+ * available (WebGL, the model list). The builder's viewer and the HUD editor's embedded stage both build on it.
+ */
+export function usePlayerParts({
+  cls,
+  worn,
+  taunt,
+  animation,
+}: {
+  cls: string;
+  worn: readonly WornItem[];
+  taunt?: number;
+  animation?: string | null;
+}) {
+  const ids = useModelIds();
+  const anims = useAnimIndex();
+  const clips = useMemo(() => classClips(anims, cls), [anims, cls]);
+  const picked = animation && clips.includes(animation) ? animation : null;
+  const tauntPlaying = taunt !== undefined ? tauntClip(anims, taunt, cls) : null;
+  // The body's own idle is the class's loadout-screen pose, which holds its usual weapon. Holding
+  // another kind (a melee, a secondary) needs that kind's standing animation, where the class has one.
+  const stance = worn.find((w) => w.stance)?.stance;
+  const stanceClip = stanceClipFor(clips, cls, stance);
+  const clip = picked ?? tauntPlaying ?? stanceClip;
+  const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
+  const body = ids ? classModel(ids, cls) : null;
+
+  const parts = useMemo<PlayerPart[]>(() => {
+    if (!ids) return [];
+    const out: PlayerPart[] = [];
+    for (const w of worn) {
+      const name = pickModel(ids, w.itemId, cls, w.style);
+      if (name) {
+        out.push({
+          key: `${w.slotKey}:${name}`,
+          url: modelUrl(name),
+          tint: w.tint,
+          effect: w.effect,
+          paint: w.paint,
+          festive: w.festive,
+        });
+      }
+    }
+    return out;
+  }, [ids, worn, cls]);
+
+  return { ids, webgl, body, parts, clip, clips, picked };
+}
+
 export default function PlayerViewer({
   cls,
   worn,
@@ -75,38 +126,13 @@ export default function PlayerViewer({
   className?: string;
 }) {
   const { t } = useTranslation('c-tf2-hud');
-  const ids = useModelIds();
-  const anims = useAnimIndex();
-  const clips = useMemo(() => classClips(anims, cls), [anims, cls]);
-  const picked = animation && clips.includes(animation) ? animation : null;
-  const tauntPlaying = taunt !== undefined ? tauntClip(anims, taunt, cls) : null;
-  // The body's own idle is the class's loadout-screen pose, which holds its usual weapon. Holding
-  // another kind (a melee, a secondary) needs that kind's standing animation, where the class has one.
-  const stance = worn.find((w) => w.stance)?.stance;
-  const stanceClip = stanceClipFor(clips, cls, stance);
-  const clip = picked ?? tauntPlaying ?? stanceClip;
+  const { ids, webgl, body, parts, clip, clips, picked } = usePlayerParts({
+    cls,
+    worn,
+    taunt,
+    animation,
+  });
   const options = useMemo(() => clips.map((c, id) => ({ id, label: clipLabel(c) })), [clips]);
-  const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
-  const body = ids ? classModel(ids, cls) : null;
-
-  const parts = useMemo<PlayerPart[]>(() => {
-    if (!ids) return [];
-    const out: PlayerPart[] = [];
-    for (const w of worn) {
-      const name = pickModel(ids, w.itemId, cls, w.style);
-      if (name) {
-        out.push({
-          key: `${w.slotKey}:${name}`,
-          url: modelUrl(name),
-          tint: w.tint,
-          effect: w.effect,
-          paint: w.paint,
-          festive: w.festive,
-        });
-      }
-    }
-    return out;
-  }, [ids, worn, cls]);
 
   const content = !webgl ? (
     <Note>{t('model-no-webgl', { defaultValue: 'Your browser cannot show 3D models.' })}</Note>

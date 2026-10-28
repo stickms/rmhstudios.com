@@ -6,6 +6,7 @@
 
 import {
   ArrowLeftRight,
+  Box,
   Eye,
   EyeOff,
   Maximize,
@@ -13,6 +14,7 @@ import {
   Minimize2,
   Play,
   Scan,
+  UserRound,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
@@ -213,6 +215,20 @@ export default function PreviewToolbar() {
           label={t('show-hidden', { defaultValue: 'Show hidden panels' })}
           active={view.showHidden}
           onClick={() => setView({ showHidden: !view.showHidden })}
+        />
+        <IconBtn
+          icon={Box}
+          label={t('models-3d', {
+            defaultValue: 'Show 3D models and a backpack of items in the panels that use them',
+          })}
+          active={view.models3d}
+          onClick={() => setView({ models3d: !view.models3d })}
+        />
+        <IconBtn
+          icon={UserRound}
+          label={t('player-3d', { defaultValue: 'Show a 3D player behind the HUD' })}
+          active={view.player3d}
+          onClick={() => setView({ player3d: !view.player3d })}
         />
         <IconBtn
           icon={Play}

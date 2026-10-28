@@ -30,6 +30,8 @@ import { blockOfNode, moveNodes, nodesOfBlock, useBlocksDoc } from '@/lib/tf2-hu
 import { beginGesture, endGesture, useEditor } from '@/lib/tf2-hud/store';
 import { useSceneContext as useScene } from './scene-context';
 import { cn } from '@/lib/utils';
+import { isModelPanel } from '@/lib/tf2-hud/scene/model-panels';
+import ModelLayer from './ModelLayer';
 import PlayBar from './PlayBar';
 
 const MAX_BACKING = 4096;
@@ -212,7 +214,12 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
       if (!scene) return;
       g.setTransform(k, 0, 0, k, 0, 0);
       g.globalAlpha = view.hudOpacity;
-      paintScene(g, scene, { images, showBounds: view.showBounds });
+      paintScene(g, scene, {
+        images,
+        showBounds: view.showBounds,
+        // The 3D layer draws these panels' contents; without it they are labelled boxes.
+        skipDynamic: view.models3d ? (n) => isModelPanel(n.control) : undefined,
+      });
       g.globalAlpha = 1;
       paintOverlay(g, {
         selected: play ? undefined : selected,
@@ -232,6 +239,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
     sh,
     view.hudOpacity,
     view.showBounds,
+    view.models3d,
     images,
     selected,
     alsoSelected,
@@ -585,6 +593,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
               draggable={false}
             />
           ) : null}
+          <ModelLayer scene={scene} zoom={cssW / sw} front={false} />
           <canvas
             ref={canvasRef}
             className="tf2hud-canvas absolute inset-0 size-full"
@@ -603,6 +612,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
             onPointerCancel={endDrag}
             onPointerLeave={() => (play ? setPlayHover(null) : hover(null))}
           />
+          <ModelLayer scene={scene} zoom={cssW / sw} front />
           {view.compareOpacity > 0 && view.backdropImage ? (
             <img
               src={view.backdropImage}
