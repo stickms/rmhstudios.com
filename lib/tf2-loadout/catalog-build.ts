@@ -32,7 +32,7 @@ import {
  * new field): stored catalogs built by an older version are then rebuilt on the
  * next refresh instead of waiting for Valve to change the schema.
  */
-export const BUILDER_VERSION = 8;
+export const BUILDER_VERSION = 9;
 
 /** Identifies a schema *as this builder reads it*. */
 export const schemaHash = (itemsGame: string): string =>
@@ -89,6 +89,17 @@ function merge(base: VdfObject, over: VdfObject): VdfObject {
     out[k] = typeof a === 'object' && typeof b === 'object' ? merge(a, b) : b;
   }
   return out;
+}
+
+/** A schema block of `<body group> "<submodel>"` pairs as a map, leaving out the default (0) and anything unreadable. */
+function bodygroupValues(node: VdfObject | undefined): Record<string, number> | undefined {
+  if (!node) return undefined;
+  const out: Record<string, number> = {};
+  for (const key of Object.keys(node)) {
+    const v = Number(str(node, key));
+    if (Number.isInteger(v) && v > 0) out[key.toLowerCase()] = v;
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 /** An item with its `prefab` chain applied (later prefabs and the item's own keys win). */
@@ -257,15 +268,22 @@ export function buildCatalog(input: BuildInput): Catalog {
     if (stock) stockIds.add(id);
     // Styles a player can choose (the schema also keeps ones only the game applies, marked not selectable).
     const styleBlock = block(block(it, 'visuals'), 'styles');
-    const styles: { k: number; n: string }[] = [];
+    const styles: CatalogItem['st'] = [];
     if (styleBlock) {
       for (const key of Object.keys(styleBlock)) {
         const sb = block(styleBlock, key);
         const k = Number(key);
         if (!sb || !Number.isInteger(k) || str(sb, 'selectable') === '0') continue;
-        styles.push({ k, n: loc(str(sb, 'name')) ?? `Style ${k + 1}` });
+        const hides = bodygroupValues(block(sb, 'additional_hidden_bodygroups'));
+        styles.push({
+          k,
+          n: loc(str(sb, 'name')) ?? `Style ${k + 1}`,
+          ...(hides ? { bg: hides } : {}),
+        });
       }
     }
+    // The class-body groups (hat, headphones, …) this item switches while worn.
+    const bodygroups = bodygroupValues(block(block(it, 'visuals'), 'player_bodygroups'));
     const animSlot = (str(it, 'anim_slot') ?? '').toLowerCase();
     const stance = HELD_STANCES.find((s) => s === animSlot);
     const forced = (str(block(it, 'taunt'), 'taunt_force_weapon_slot') ?? '').toLowerCase();
@@ -282,6 +300,7 @@ export function buildCatalog(input: BuildInput): Catalog {
       ...((slot === 'head' || slot === 'misc') && regions.length ? { r: regions } : {}),
       ...(str(block(it, 'capabilities'), 'paintable') === '1' ? { p: 1 as const } : {}),
       ...(styles.length >= 2 ? { st: styles } : {}),
+      ...(bodygroups && (slot === 'head' || slot === 'misc') ? { bg: bodygroups } : {}),
       ...(str(it, 'particle_suffix') ? { ps: str(it, 'particle_suffix')! } : {}),
       ...(stance && stance !== slot ? { as: stance } : {}),
       ...(tauntWeapon ? { tw: tauntWeapon } : {}),

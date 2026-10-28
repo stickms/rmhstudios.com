@@ -7,7 +7,8 @@
  */
 
 import { brotliDecompressSync } from 'node:zlib';
-import { getObjectEncoded, listObjects } from '@/lib/storage/s3.server';
+import { listObjects } from '@/lib/storage/s3.server';
+import { readStored } from './stored-cache.server';
 
 const PREFIX = 'tf2-models/';
 const LIST_TTL_MS = 5 * 60_000;
@@ -46,16 +47,19 @@ export async function listModelIds(): Promise<string[]> {
 export async function readModel(
   name: string,
   acceptEncoding = '',
-): Promise<{ body: Buffer; contentEncoding?: 'br' } | null> {
+): Promise<{ body: Buffer; contentEncoding?: 'br'; etag: string } | null> {
   if (!MODEL_NAME.test(name)) return null;
-  const stored = await getObjectEncoded(modelKey(name));
+  const stored = await readStored(modelKey(name));
   if (!stored) return null;
-  if (stored.contentEncoding !== 'br') return { body: stored.body };
-  if (/\bbr\b/.test(acceptEncoding)) return { body: stored.body, contentEncoding: 'br' };
+  if (stored.contentEncoding !== 'br') return { body: stored.body, etag: stored.etag };
+  // The tag names the representation sent, so a Brotli copy and a plain one never share a validator.
+  if (/\bbr\b/.test(acceptEncoding)) {
+    return { body: stored.body, contentEncoding: 'br', etag: `${stored.etag}-br` };
+  }
   try {
-    return { body: brotliDecompressSync(stored.body) };
+    return { body: brotliDecompressSync(stored.body), etag: stored.etag };
   } catch {
-    return { body: stored.body };
+    return { body: stored.body, etag: stored.etag };
   }
 }
 
@@ -64,7 +68,7 @@ export async function readModel(
  * item plays. Stored Brotli-compressed like the models; always sent decoded (it is a few KB).
  */
 export async function readAnimIndex(): Promise<string | null> {
-  const stored = await getObjectEncoded(ANIM_INDEX_KEY);
+  const stored = await readStored(ANIM_INDEX_KEY);
   if (!stored) return null;
   if (stored.contentEncoding !== 'br') return stored.body.toString('utf8');
   try {

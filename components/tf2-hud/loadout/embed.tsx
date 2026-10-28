@@ -36,7 +36,7 @@ export function PlayerStage({
   worn: readonly WornItem[];
   className?: string;
 }) {
-  const { ids, webgl, body, parts, clip } = usePlayerParts({ cls, worn });
+  const { ids, webgl, body, bodygroups, parts, clip } = usePlayerParts({ cls, worn });
   if (!webgl || !ids || !body) return null;
   return (
     <div className={cn('size-full', className)} aria-hidden>
@@ -45,6 +45,7 @@ export function PlayerStage({
           <PlayerScene
             bare
             body={modelUrl(body)}
+            bodygroups={bodygroups}
             parts={parts}
             tauntUrl={clip ? animUrl(cls, clip) : undefined}
           />

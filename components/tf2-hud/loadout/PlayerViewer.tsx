@@ -10,7 +10,8 @@ import { Box } from 'lucide-react';
 import { lazy, Suspense, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
-import type { HeldStance } from '@/lib/tf2-loadout/catalog-types';
+import { merge } from '@/lib/tf2-loadout/bodygroups';
+import type { Bodygroups, HeldStance } from '@/lib/tf2-loadout/catalog-types';
 import { supportsWebGL } from '@/lib/shared/platform';
 import {
   animUrl,
@@ -45,6 +46,8 @@ export interface WornItem {
   stance?: HeldStance;
   /** The chosen item style. */
   style?: number;
+  /** The class-body groups this cosmetic switches (the hat it replaces, …). */
+  bodygroups?: Bodygroups;
   /** Paint colour, `#rrggbb`. */
   tint?: string;
   effect?: EffectSpec;
@@ -82,6 +85,8 @@ export function usePlayerParts({
   const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
   const body = ids ? classModel(ids, cls) : null;
 
+  const bodygroups = useMemo(() => merge(worn.map((w) => w.bodygroups)), [worn]);
+
   const parts = useMemo<PlayerPart[]>(() => {
     if (!ids) return [];
     const out: PlayerPart[] = [];
@@ -101,7 +106,7 @@ export function usePlayerParts({
     return out;
   }, [ids, worn, cls]);
 
-  return { ids, webgl, body, parts, clip, clips, picked };
+  return { ids, webgl, body, bodygroups, parts, clip, clips, picked };
 }
 
 export default function PlayerViewer({
@@ -126,7 +131,7 @@ export default function PlayerViewer({
   className?: string;
 }) {
   const { t } = useTranslation('c-tf2-hud');
-  const { ids, webgl, body, parts, clip, clips, picked } = usePlayerParts({
+  const { ids, webgl, body, bodygroups, parts, clip, clips, picked } = usePlayerParts({
     cls,
     worn,
     taunt,
@@ -151,6 +156,7 @@ export default function PlayerViewer({
       <Suspense fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}>
         <PlayerScene
           body={modelUrl(body)}
+          bodygroups={bodygroups}
           parts={parts}
           bodyEffect={tauntEffect}
           tauntUrl={clip ? animUrl(cls, clip) : undefined}
@@ -165,7 +171,7 @@ export default function PlayerViewer({
         role="img"
         aria-label={t('model-view', { defaultValue: '3D model viewer' })}
         className={cn(
-          'h-72 overflow-hidden rounded-(--app-radius) border border-(--app-border) bg-(--app-bg) sm:h-80',
+          'h-72 overflow-hidden rounded-(--app-radius) border border-(--app-border) bg-(--app-bg) sm:h-80 lg:h-[clamp(13rem,34dvh,20rem)]',
         )}
       >
         {content}

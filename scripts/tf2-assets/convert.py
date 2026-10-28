@@ -30,6 +30,10 @@ from vpkfs import GameFS
 
 # Bump when the output for the same source would change.
 CONVERTER_VERSION = 8
+# Bump when a class body's body-group export changes. Only class bodies hash it in.
+BODYGROUPS_VERSION = 1
+# Bump when the bone-merge export (skinned cosmetics that follow the player's bones) changes.
+BONEMERGE_VERSION = 1
 SCALE = 0.01905  # Source units are 0.75 inch
 MAX_TEX = 512
 TINT_KEYS = ("$blendtintbybasealpha",)
@@ -276,6 +280,12 @@ def material_files(fs, info):
     return slots
 
 
+def bodygroup_counts(info):
+    """Body group name -> number of submodels, for the groups a worn item can switch (more than one)."""
+    return {name: len(models) for name, models in zip(info.get("bodypart_names", []), info.get("bodyparts", []))
+            if len(models) > 1}
+
+
 def source_hash(mdl, vvd, vtx, slots, extra=b""):
     h = hashlib.sha1()
     h.update(b"v%d" % CONVERTER_VERSION)
@@ -319,15 +329,24 @@ def encode_emission(vtf, kv):
     return buf.getvalue()
 
 
+def follows_player_bones(mdl_path, vvd):
+    """A cosmetic (not a weapon or a class) whose vertices follow several bones, as boots and gloves do. The
+    game bone-merges it onto the wearer's skeleton, so it is exported skinned and the viewer binds it to the
+    player's bones instead of hanging the whole model off one of them."""
+    return "/player/items/" in mdl_path.replace("\\", "/") and srcmodel.spreads_over_bones(vvd)
+
+
 def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=0,
             attachments=(), parts_only=False):
     """`anim` = (animations mdl bytes) for a class body: its skeleton, skin and idle clip go in the GLB."""
-    info, meshes = srcmodel.build_meshes(mdl, vvd, vtx, skin)
+    info, meshes = srcmodel.build_meshes(mdl, vvd, vtx, skin, groups=is_class)
     if not meshes:
         raise srcmodel.ModelError("no geometry")
     skeleton = bones = world = None
     # A cosmetic with jiggle bones is skinned (rigid ones stay plain meshes), so the viewer can swing them.
     jiggly = not is_class and not parts_only and bool(srcmodel.read_jiggle(mdl))
+    bone_merge = not is_class and not parts_only and follows_player_bones(mdl_path, vvd)
+    jiggly = jiggly or bone_merge  # skinned either way
     if is_class or jiggly:
         bones, skeleton = class_skeleton(mdl)
     if is_class:
@@ -398,6 +417,9 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                "uv": uv, "idx": m["idx"], "material": mat_index[t]}
         if is_class or jiggly:
             out["joints"], out["weights"] = m["joints"], m["weights"]
+        if m.get("group"):
+            # Which submodel of which body group this is: the viewer shows it only while a worn item selects it.
+            out["extras"] = {"bodygroup": m["group"][0], "sub": m["group"][1]}
         out_meshes.append(out)
     clips = None
     if is_class and anim is not None:
@@ -443,7 +465,14 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
         images.extend(a_images)
     if parts_only:
         return out_meshes, materials, images
-    return glb.write_glb(out_meshes, materials, images, attachment_extras(mdl, info, is_class), skeleton, clips)
+    extras = attachment_extras(mdl, info, is_class)
+    if bone_merge:
+        extras = {**(extras or {}), "boneMerge": True}
+    if is_class:
+        switch = bodygroup_counts(info)
+        if switch:
+            extras = {**(extras or {}), "bodygroups": switch}
+    return glb.write_glb(out_meshes, materials, images, extras, skeleton, clips)
 
 
 def convert_clip(base_mdl, anim, name):
@@ -600,7 +629,13 @@ def main():
             continue
         src = source_hash(mdl, vvd, vtx, slots,
                           (hashlib.sha1(anim).digest() if anim else b"") + b"|skin%d" % skin
-                          + dependency_hash)
+                          + dependency_hash
+                          # Class bodies carry their switchable body groups; no other model's file changed,
+                          # so only these are rebuilt (CONVERTER_VERSION would rebuild every model).
+                          + (b"|bodygroups%d" % BODYGROUPS_VERSION if is_class else b"")
+                          # Only the cosmetics that follow several bones change, so only they are rebuilt.
+                          + (b"|bonemerge%d" % BONEMERGE_VERSION
+                             if not is_class and follows_player_bones(ref["mdl"], vvd) else b""))
         if is_class and anim:
             class_anims[ref["glb"][len("class_"):-4]] = (stem, mdl, anim)
         if published.get(ref["glb"], {}).get("src") == src and os.environ.get("FORCE") != "1":

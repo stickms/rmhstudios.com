@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Box3, Group, Matrix4, Vector3 } from 'three';
 import { brotliCompressSync } from 'node:zlib';
 import { ParticleSimulation, controlPoint } from '../particles/simulation';
-import { sampleSheet } from '../particles/sheet';
+import { sampleSheet, sequenceOf } from '../particles/sheet';
 import { sourceToGl, glToSource } from '../particles/renderer';
 import { createParticleEnvironment } from '../particles/attachments';
 import {
@@ -51,6 +51,63 @@ function simulation(root: ParticleDefinition, systems: ParticleDefinition[] = []
     bundle,
   };
 }
+
+describe('sprite sheet sequences', () => {
+  const frame = (x: number): SheetSequence['frames'][number] => ({
+    duration: 1,
+    uv: [[x, 0, x + 0.1, 0.1]],
+  });
+  const cards: SheetSequence = { clamp: false, duration: 2, frames: [frame(0), frame(0.1)] };
+
+  it('uses the sequence a particle names when the sheet has it', () => {
+    const other: SheetSequence = { ...cards, duration: 1, frames: [frame(0.5)] };
+    expect(sequenceOf({ '0': cards, '3': other }, 3)).toBe(other);
+  });
+
+  it('falls back to the first sequence for a number the sheet does not define, never the whole atlas', () => {
+    // Aces High draws `sequence random 0-5` from a card sheet that defines only sequence 0.
+    for (const n of [1, 3, 5]) expect(sequenceOf({ '0': cards }, n)).toBe(cards);
+    expect(sequenceOf({ '2': cards, '7': cards }, 0)).toBe(cards);
+  });
+
+  it('leaves a texture that is not a sheet alone', () => {
+    expect(sequenceOf({}, 0)).toBeUndefined();
+    expect(sequenceOf(undefined, 0)).toBeUndefined();
+  });
+});
+
+describe('steady state', () => {
+  const lives = (max: number) => op('lifetime random', { lifetime_min: max, lifetime_max: max });
+  const trickle = op('emit_continuously', { emission_rate: 10 });
+
+  it('settles after the longest particle life, plus a child that starts late', () => {
+    const root = definition('root', {
+      initializers: [lives(2)],
+      children: [{ system: 'kid', delay: 3 }],
+    });
+    const kid = definition('kid', { initializers: [lives(4)] });
+    expect(simulation(root, [kid]).simulation.steadyStateSeconds()).toBe(7);
+  });
+
+  it('is bounded below and above', () => {
+    expect(
+      simulation(definition('a', { initializers: [lives(0.2)] })).simulation.steadyStateSeconds(),
+    ).toBe(1.5);
+    expect(
+      simulation(definition('b', { initializers: [lives(60)] })).simulation.steadyStateSeconds(),
+    ).toBe(8);
+  });
+
+  it('opens with the particles a running effect has, not the few a new one has', () => {
+    const root = definition('cards', { initializers: [lives(5)], emitters: [trickle] });
+    const early = simulation(root).simulation;
+    early.warmup(1.5);
+    const settled = simulation(root).simulation;
+    settled.warmup(settled.steadyStateSeconds());
+    expect(settled.root.particles.length).toBeGreaterThan(early.root.particles.length * 2);
+    expect(settled.root.particles.length).toBeGreaterThan(40);
+  });
+});
 
 describe('Source particle asset contract', () => {
   it('serves only the manifest and immutable bundle/texture names', async () => {

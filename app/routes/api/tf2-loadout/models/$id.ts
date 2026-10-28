@@ -4,7 +4,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { apiError, defineHandler } from '@/lib/api/handler.server';
+import { apiError, defineHandler, ifNoneMatchMatches } from '@/lib/api/handler.server';
 import { readAnimIndex, readModel } from '@/lib/tf2-loadout/models.server';
 
 export const Route = createFileRoute('/api/tf2-loadout/models/$id')({
@@ -31,13 +31,22 @@ export const Route = createFileRoute('/api/tf2-loadout/models/$id')({
           if (!m) return apiError('Not found', 404);
           const model = await readModel(m[1], request.headers.get('accept-encoding') ?? '');
           if (!model) return apiError('Not found', 404);
+          const etag = `"${model.etag}"`;
+          // The URL carries the builder version, and a sync that changes a model changes its ETag: a browser
+          // keeps the file for a day, then revalidates (a 304 with no body) while it keeps showing the old one.
+          const cache = {
+            ETag: etag,
+            Vary: 'Accept-Encoding',
+            'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+          };
+          const match = request.headers.get('if-none-match');
+          if (match && ifNoneMatchMatches(match, etag))
+            return new Response(null, { status: 304, headers: cache });
           return new Response(new Uint8Array(model.body), {
             headers: {
+              ...cache,
               ...(model.contentEncoding ? { 'Content-Encoding': model.contentEncoding } : {}),
-              Vary: 'Accept-Encoding',
               'Content-Type': 'model/gltf-binary',
-              // A rebuild can replace a model at this path. Do not retain broken conversions for days.
-              'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
               'X-Content-Type-Options': 'nosniff',
             },
           });

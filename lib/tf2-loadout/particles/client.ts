@@ -41,6 +41,8 @@ export function useParticleBundle(id: number | undefined, suffix?: string) {
     enabled: !!path,
     queryFn: ({ signal }) => fetchJson<ParticleBundle>(path!, signal),
     staleTime: Infinity,
+    // A bundle never changes (its path is a content hash), so keep it for the session once seen.
+    gcTime: 30 * 60_000,
     retry: 1,
   });
   return {
@@ -59,7 +61,14 @@ export function useParticleBundle(id: number | undefined, suffix?: string) {
 interface CachedTexture {
   users: number;
   promise: Promise<Texture>;
+  /** Pending release after the last user left. */
+  release?: ReturnType<typeof setTimeout>;
 }
+/**
+ * Textures outlive their last viewer by this long: re-picking an effect, or flipping between two, reuses the
+ * uploaded texture instead of decoding and uploading it again. Bounded, so nothing lingers for good.
+ */
+const LINGER_MS = 60_000;
 const cache = new Map<string, CachedTexture>();
 export interface LoadedTextures {
   get(texture: ParticleTexture | undefined, frame?: number, data?: boolean): Texture | undefined;
@@ -75,11 +84,14 @@ export async function acquireTextures(bundle: ParticleBundle): Promise<LoadedTex
     for (const [key, entry] of acquired) {
       entry.users--;
       if (!entry.users) {
-        if (cache.get(key) === entry) cache.delete(key);
-        void entry.promise.then(
-          (tex) => tex.dispose(),
-          () => {},
-        );
+        entry.release = setTimeout(() => {
+          if (entry.users) return;
+          if (cache.get(key) === entry) cache.delete(key);
+          void entry.promise.then(
+            (tex) => tex.dispose(),
+            () => {},
+          );
+        }, LINGER_MS);
       }
     }
     acquired.clear();
@@ -116,6 +128,7 @@ export async function acquireTextures(bundle: ParticleBundle): Promise<LoadedTex
             };
             cache.set(key, entry);
           }
+          clearTimeout(entry.release);
           entry.users++;
           acquired.set(key, entry);
           tasks.push(

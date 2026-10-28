@@ -1,6 +1,26 @@
 import type { SheetSequence, UVRect } from './types';
 
 const FULL: UVRect = [0, 0, 1, 1];
+
+/**
+ * The sprite sheet sequence a particle's sequence number names. A system may pick a number the sheet does not
+ * define (Aces High draws `sequence random 0–5` from a card sheet that has only sequence 0): the game shows
+ * a real sequence there, never the whole atlas, so an undefined number falls back to the sheet's first
+ * sequence. `undefined` only for a texture that is not a sheet at all, which is drawn whole.
+ */
+export function sequenceOf(
+  sequences: Record<string, SheetSequence> | undefined,
+  number: number,
+): SheetSequence | undefined {
+  if (!sequences) return undefined;
+  const exact = sequences[String(number)];
+  if (exact) return exact;
+  const first = Object.keys(sequences)
+    .map(Number)
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b)[0];
+  return first === undefined ? undefined : sequences[String(first)];
+}
 export interface SheetSample {
   first: UVRect;
   second: UVRect;

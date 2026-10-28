@@ -17,7 +17,7 @@
  */
 
 /** Bump when the converter's output changes for the same game files: every model is then rebuilt once. */
-export const MODEL_BUILDER_VERSION = 9;
+export const MODEL_BUILDER_VERSION = 10;
 
 export const STATE_KEY = 'tf2-models/_state.json';
 

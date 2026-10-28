@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { cosmeticSlotKeys, TF_CLASSES, type Catalog, type CatalogItem } from '../catalog-types';
 import {
+  clashesWithWorn,
   equipInto,
-  legalize,
   loadoutWarnings,
   stockLoadout,
   STOCK_ITEMS,
@@ -86,7 +86,7 @@ describe('loadoutWarnings', () => {
     ).toEqual([{ kind: 'overlap', a: 100, b: 101 }]);
   });
 
-  it('flags more than the game\'s three cosmetics', () => {
+  it("flags more than the game's three cosmetics", () => {
     const w = loadoutWarnings(catalog, 'scout', {
       cosmetic1: { item: 100 },
       cosmetic2: { item: 102 },
@@ -117,21 +117,23 @@ describe('cosmeticSlotKeys', () => {
   });
 });
 
-describe('legalize', () => {
-  it('keeps what works and drops what the game would not allow, by slot order', () => {
-    const { slots, dropped } = legalize(catalog, 'scout', {
-      primary: { item: 13 },
-      cosmetic1: { item: 100 },
-      cosmetic2: { item: 101 }, // overlaps 100
-      cosmetic3: { item: 102 },
-      cosmetic4: { item: 103 },
-      cosmetic5: { item: 104 }, // over the limit
-      cosmetic6: { item: 100 }, // a repeat
-    });
-    expect(Object.keys(slots).sort()).toEqual(['cosmetic1', 'cosmetic2', 'cosmetic3', 'primary']);
-    expect(slots.cosmetic2).toEqual({ item: 102 });
-    expect(dropped.sort()).toEqual(['cosmetic2', 'cosmetic5', 'cosmetic6']);
-    expect(loadoutWarnings(catalog, 'scout', slots)).toEqual([]);
+describe('clashesWithWorn', () => {
+  const find = (id: number) => catalog.items.find((i) => i.id === id)!;
+
+  it('flags an item overlapping, or repeating, one worn in another cosmetic slot', () => {
+    const worn = { cosmetic1: { item: 100 } };
+    expect(clashesWithWorn(catalog, worn, 'cosmetic2')(find(101))).toBe(true); // overlaps 100
+    expect(clashesWithWorn(catalog, worn, 'cosmetic2')(find(100))).toBe(true); // a repeat
+    expect(clashesWithWorn(catalog, worn, 'cosmetic2')(find(102))).toBe(false);
+  });
+
+  it('does not count the slot being filled, or anything that is not a cosmetic slot', () => {
+    expect(clashesWithWorn(catalog, { cosmetic1: { item: 100 } }, 'cosmetic1')(find(101))).toBe(
+      false,
+    );
+    expect(clashesWithWorn(catalog, { cosmetic1: { item: 100 } }, 'primary')(find(101))).toBe(
+      false,
+    );
   });
 });
 
