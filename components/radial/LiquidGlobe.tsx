@@ -37,7 +37,7 @@ import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EntryPoint } from '@/lib/eversion/marks';
 import type { JellyFrame, JellyGlass } from './jelly-glass';
 import type { SelfEvertSkin } from './self-evert-skin';
-import { SELF_EVERT_MS } from './self-evert-timing';
+import { GLOBE_EVERT_EVENT, SELF_EVERT_MS } from './self-evert-timing';
 import { luminance, resolveColor } from '@/lib/liquid/glass/color';
 import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
 import { PLASMA_LOOK } from '@/lib/liquid/glass/policy';
@@ -1394,6 +1394,13 @@ export function LiquidGlobe({
     if (skinOn.current) stageRef.current?.setAttribute('data-skin', 'on');
     dirty.current = true;
   }, [ambient, evertInPlace]);
+
+  // The hub's own links (the foot) ask for the same run a pin gets.
+  useEffect(() => {
+    if (!(ambient || evertInPlace)) return;
+    window.addEventListener(GLOBE_EVERT_EVENT, startSelfEvert);
+    return () => window.removeEventListener(GLOBE_EVERT_EVENT, startSelfEvert);
+  }, [ambient, evertInPlace, startSelfEvert]);
 
   /* ── The self-eversion's surface ──────────────────────────────────────────
      The cage alone turned inside out in front of a glass disc that stayed a
