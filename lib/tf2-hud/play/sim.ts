@@ -5,32 +5,8 @@
  */
 
 import { currentWeapon, weaponsFor } from '../game-state';
+import { CLIP_SIZE, RESERVE_MAX } from './ammo';
 import type { TestState, Tf2Class } from '../fixtures';
-
-/** Rounds in a full clip; 0 for weapons that draw straight from the reserve. */
-const CLIP_SIZE: Record<Tf2Class, number> = {
-  scout: 6,
-  soldier: 4,
-  pyro: 0,
-  demoman: 4,
-  heavy: 0,
-  engineer: 6,
-  medic: 40,
-  sniper: 25,
-  spy: 6,
-};
-
-const RESERVE_MAX: Record<Tf2Class, number> = {
-  scout: 32,
-  soldier: 20,
-  pyro: 200,
-  demoman: 16,
-  heavy: 200,
-  engineer: 32,
-  medic: 150,
-  sniper: 75,
-  spy: 24,
-};
 
 /** A full clip and reserve for a class, as after spawning. */
 export const freshAmmo = (cls: Tf2Class): Pick<TestState, 'ammoClip' | 'ammoReserve'> => ({

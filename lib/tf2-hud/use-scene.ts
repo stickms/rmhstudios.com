@@ -18,6 +18,8 @@ import { useTf2HudPrefs } from './prefs';
 import { CORE_FILES, useEditor } from './store';
 import { screenOf } from './view';
 import { armedStyle } from './play/style';
+import { useAnimation } from './anim/use-animation';
+import { composeStyles } from './anim/style';
 
 export interface SceneResult {
   scene: Scene | null;
@@ -89,7 +91,10 @@ export function useScene(): SceneResult {
   const gate = useMemo(() => gateFor(test), [test]);
   const progressForPanel = useMemo(() => progressFor(test), [test]);
   // Play mode: the button under the pointer is drawn in its armed colours.
-  const styleFor = useMemo(() => armedStyle(view.play ? playHover : null), [view.play, playHover]);
+  const armed = useMemo(() => armedStyle(view.play ? playHover : null), [view.play, playHover]);
+  // Running animations, then the hover colours on top.
+  const animated = useAnimation(scheme, page, env, view.minmode);
+  const styleFor = useMemo(() => composeStyles(animated, armed), [animated, armed]);
 
   const scene = useMemo(() => {
     if (!page || baseStatus !== 'ready') return null;

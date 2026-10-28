@@ -5,7 +5,7 @@
 'use client';
 
 import { ImageUp, RotateCcw, X } from 'lucide-react';
-import { useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_WEAPON, EVENTS, SITUATIONS, weaponsFor } from '@/lib/tf2-hud/game-state';
 import {
@@ -16,11 +16,70 @@ import {
   type Team,
   type Tf2Class,
 } from '@/lib/tf2-hud/fixtures';
+import { useAnimScript } from '@/lib/tf2-hud/anim/use-animation';
+import { animRuntime } from '@/lib/tf2-hud/anim/runtime';
 import { useEditor } from '@/lib/tf2-hud/store';
 import type { BackdropKind } from '@/lib/tf2-hud/view';
-import { Btn, NumberField, Toggle, PanelHead, RangeField, Row, SelectField, TextField } from './ui';
+import {
+  Btn,
+  NumberField,
+  Toggle,
+  PanelHead,
+  RangeField,
+  Row,
+  SearchSelect,
+  SelectField,
+  TextField,
+} from './ui';
 
 const BACKDROPS: BackdropKind[] = ['auto', 'checker', 'game', 'menu', 'image'];
+
+/** Run any of the HUD's animation events by hand, to see a pulse, fade or slide without waiting for the game to cause it. */
+function AnimationRunner() {
+  const { t } = useTranslation('c-tf2-hud');
+  const wantAnimations = useEditor((s) => s.wantAnimations);
+  useEffect(() => wantAnimations(), [wantAnimations]);
+  const script = useAnimScript(true);
+  const names = useMemo(
+    () =>
+      script
+        ? [...script.events.values()].map((e) => e.name).sort((a, b) => a.localeCompare(b))
+        : [],
+    [script],
+  );
+  const options = useMemo(() => names.map((label, id) => ({ id, label })), [names]);
+  const [picked, setPicked] = useState<number | undefined>();
+  const name = picked === undefined ? undefined : names[picked];
+
+  return (
+    <div className="space-y-1.5 pt-2">
+      <h3 className="tf2hud-panel-head">{t('animations', { defaultValue: 'Animations' })}</h3>
+      <p className="text-[11px] text-(--app-text-dim)">
+        {script
+          ? t('animations-hint', {
+              defaultValue: 'Run an event from hudanimations to see it play on the preview.',
+            })
+          : t('animations-loading', { defaultValue: 'Loading the HUD’s animations…' })}
+      </p>
+      <SearchSelect
+        value={picked}
+        options={options}
+        onChange={setPicked}
+        noneLabel={t('animation-none', { defaultValue: 'Pick an event' })}
+        placeholder={t('animation-search-events', { defaultValue: 'Search events' })}
+        label={t('animation-event', { defaultValue: 'Animation event' })}
+      />
+      <div className="flex gap-1.5">
+        <Btn size="sm" disabled={!name} onClick={() => name && animRuntime.fire(name)}>
+          {t('animation-run', { defaultValue: 'Run' })}
+        </Btn>
+        <Btn size="sm" variant="ghost" onClick={() => animRuntime.stopAll()}>
+          {t('animation-reset', { defaultValue: 'Reset' })}
+        </Btn>
+      </div>
+    </div>
+  );
+}
 
 export default function TestPanel() {
   const { t } = useTranslation('c-tf2-hud');
@@ -343,6 +402,7 @@ export default function TestPanel() {
             </div>
           </Row>
         ) : null}
+        <AnimationRunner />
       </div>
     </section>
   );

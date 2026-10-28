@@ -196,7 +196,8 @@ function drawImage(g: CanvasRenderingContext2D, op: ImageOp, images: ImageStore)
   const src = op.tint ? tinted(img, op.tint) : img;
   g.save();
   g.imageSmoothingEnabled = true;
-  g.globalAlpha = tex.alpha * (op.tint && op.tint.a < 255 ? op.tint.a / 255 : 1);
+  // Multiplied in: the panel's own fade (animations, `alpha`) is already on the context.
+  g.globalAlpha *= tex.alpha * (op.tint && op.tint.a < 255 ? op.tint.a / 255 : 1);
   if (tex.additive) g.globalCompositeOperation = 'lighter';
   if (op.native) {
     // Natural size, anchored top-left, clipped to the panel — an ImagePanel without `scaleImage`.
@@ -272,6 +273,8 @@ function skipped(node: PanelNode, op: DrawOp, opts: PaintOptions): boolean {
 export function paintScene(g: CanvasRenderingContext2D, scene: Scene, opts: PaintOptions): void {
   for (const node of scene.nodes) {
     if (!node.shown) continue;
+    const outer = g.globalAlpha;
+    if (node.alpha !== undefined) g.globalAlpha = outer * node.alpha;
     if (node.clip) {
       g.save();
       g.beginPath();
@@ -282,6 +285,7 @@ export function paintScene(g: CanvasRenderingContext2D, scene: Scene, opts: Pain
     } else {
       for (const op of node.ops) if (!skipped(node, op, opts)) drawOp(g, op, opts);
     }
+    g.globalAlpha = outer;
     if (opts.showBounds) {
       g.save();
       g.strokeStyle = 'rgba(120,200,255,0.35)';

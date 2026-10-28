@@ -102,6 +102,8 @@ export interface EditorState {
   hoverId: string | null;
   /** Screens Play mode came through, so a Back button can return to them. */
   playStack: string[];
+  /** Something (Play mode, the Test panel's animation runner) needs the HUD's animation scripts loaded. */
+  animsWanted: boolean;
   /** The button the pointer is on in Play mode. */
   playHover: { file: string; name: string } | null;
   /** The layout property being edited, so the preview can draw its measurement. */
@@ -171,6 +173,7 @@ export interface EditorState {
   selectMany(ids: readonly string[]): void;
   focusBlock(id: string | null): void;
   setPlay(on: boolean): void;
+  wantAnimations(): void;
   /** Open another screen from Play mode (keeping a way back). False when the editor has no such page. */
   playGo(page: string): boolean;
   playBack(): void;
@@ -239,6 +242,7 @@ export const useEditor = create<EditorState>((set, get) => {
     focusedBlockId: null,
     hoverId: null,
     playStack: [],
+    animsWanted: false,
     playHover: null,
     focusProp: null,
     forceShown: new Set(),
@@ -551,6 +555,9 @@ export const useEditor = create<EditorState>((set, get) => {
         selectedId: on ? null : s.selectedId,
         selectedIds: on ? new Set() : s.selectedIds,
       }));
+    },
+    wantAnimations() {
+      if (!get().animsWanted) set({ animsWanted: true });
     },
     playGo(page) {
       if (!resolvePage(page)) return false;

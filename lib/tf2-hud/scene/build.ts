@@ -20,6 +20,7 @@ import {
   type Rect,
   type Screen,
 } from '../layout/geometry';
+import { ALPHA_KEY } from '../anim/style';
 import { placeholderFor } from '../placeholders';
 import type { CondEnv } from '../scheme/cond';
 import { borderOf, pickFont, resolveColor, type Rgba, type Scheme } from '../scheme/scheme';
@@ -492,6 +493,8 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
       keyPath: string[];
       /** Ancestors' bounds the panel is clipped to (VGUI clips children to their parent). */
       clip?: Rect;
+      /** The product of the ancestors' alpha (0–1): a faded panel fades what is inside it. */
+      alpha: number;
     }
     interface Placed {
       node: PanelNode;
@@ -521,6 +524,9 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
       if (ctx.forceHidden.has(id)) shown = false;
       // A hidden panel hides everything inside it.
       if (!isFrame && !host.shown && (hasFrame || host.id !== null)) shown = false;
+      // A panel's own `alpha` (0–255), or the one an animation is giving it, fades it and what is inside it.
+      const ownAlpha = props.has(ALPHA_KEY) ? props.num(ALPHA_KEY) : props.num('alpha', 255);
+      const alpha = host.alpha * Math.max(0, Math.min(1, ownAlpha / 255));
       const kind = kindOf(control);
       const progress = ctx.progressFor?.(file, name) ?? ctx.progress;
       const ops = shown
@@ -537,6 +543,7 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
         visible,
         shown,
         isFrame,
+        alpha: alpha < 1 ? alpha : undefined,
         parentId: isFrame ? null : host.id,
         clip: isFrame ? undefined : host.clip,
         source: isFrame ? frameSource : kvRange(e!),
@@ -595,6 +602,7 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
                 shown: node.shown,
                 keyPath: node.keyPath,
                 clip: host.clip ? intersect(host.clip, abs) : abs,
+                alpha: node.alpha ?? 1,
               },
             )
           : [];
@@ -612,12 +620,13 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
         });
     };
 
-    const frameHost: Host = { id: frameId, shown: true, keyPath: [top.key.text] };
+    const frameHost: Host = { id: frameId, shown: true, keyPath: [top.key.text], alpha: 1 };
     const nodes: PanelNode[] = [];
     if (frameProps) {
       const frame = make(frameEntry, frameProps, frameLocal, true, frameHost);
       nodes.push(frame);
       frameHost.shown = frame.shown;
+      frameHost.alpha = frame.alpha ?? 1;
     }
     flatten(
       place(

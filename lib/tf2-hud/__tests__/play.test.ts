@@ -120,3 +120,56 @@ describe('armed button colours', () => {
     expect(armedStyle(null)).toBeUndefined();
   });
 });
+
+describe('animation triggers', () => {
+  it('starts and stops the pulses as the player crosses each threshold', async () => {
+    const { animationEvents } = await import('../play/anim-events');
+    const full = state({ health: 125, maxHealth: 125, ammoClip: 6 });
+    expect(animationEvents(full, state({ health: 150, maxHealth: 125, ammoClip: 6 }))).toEqual([
+      'HudHealthBonusPulse',
+    ]);
+    // Overheal draining away stops the pulse (and, like any loss of health, flashes the damage animation).
+    expect(animationEvents(state({ health: 150, maxHealth: 125, ammoClip: 6 }), full)).toEqual([
+      'HudHealthBonusPulseStop',
+      'DamagedPlayer',
+    ]);
+    expect(animationEvents(full, state({ health: 30, maxHealth: 125, ammoClip: 6 }))).toEqual([
+      'HudHealthDyingPulse',
+      'DamagedPlayer',
+    ]);
+    expect(
+      animationEvents(state({ health: 30, ammoClip: 6 }), state({ health: 125, ammoClip: 6 })),
+    ).toEqual(['HudHealthDyingPulseStop']);
+    expect(animationEvents(full, state({ ammoClip: 1 }))).toEqual(['HudLowAmmoPulse']);
+    const medic = state({ playerClass: 'medic', charge: 90, ammoClip: 40 });
+    expect(animationEvents(medic, { ...medic, charge: 100 })).toEqual(['HudMedicCharged']);
+  });
+
+  it('does nothing for no change, and stops everything on death', async () => {
+    const { animationEvents } = await import('../play/anim-events');
+    const s = state({ health: 100, ammoClip: 6 });
+    expect(animationEvents(s, { ...s })).toEqual([]);
+    const dying = state({ health: 20, ammoClip: 1 });
+    expect(animationEvents(dying, { ...dying, health: 0 })).toEqual([
+      'HudHealthDyingPulseStop',
+      'HudLowAmmoPulseStop',
+    ]);
+    // Just started in a bad state: the pulses start.
+    expect(animationEvents(null, dying)).toEqual(['HudHealthDyingPulse', 'HudLowAmmoPulse']);
+  });
+
+  it('switches the flagged panels on only while their state lasts', async () => {
+    const { gateFor } = await import('../game-state');
+    const gate = (s: TestState) =>
+      gateFor(s)('resource/ui/hudplayerhealth.res', 'PlayerStatusHealthBonusImage');
+    expect(gate(state({ health: 125, maxHealth: 125 }))).toBe(false);
+    expect(gate(state({ health: 160, maxHealth: 125 }))).toBe(true);
+    expect(gate(state({ health: 20, maxHealth: 125 }))).toBe(true);
+    expect(gate(state({ health: 0, maxHealth: 125 }))).toBe(false);
+    const low = gateFor(state({ health: 100, ammoClip: 1 }))(
+      'resource/ui/hudammoweapons.res',
+      'HudWeaponLowAmmoImage',
+    );
+    expect(low).toBe(true);
+  });
+});

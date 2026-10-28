@@ -10,6 +10,7 @@
  */
 
 import { type TestState, type Tf2Class, TF2_CLASSES } from './fixtures';
+import { lowAmmo } from './play/ammo';
 
 export interface WeaponDef {
   id: string;
@@ -182,6 +183,13 @@ export function gateFor(s: TestState): (file: string, name: string) => boolean |
         if (up) return sentry >= Number(up[1]);
       }
       return undefined;
+    }
+    // The game switches these on while the state they flag lasts; the HUD's animations pulse them.
+    if (base === 'hudplayerhealth' && n === 'playerstatushealthbonusimage') {
+      return s.health > s.maxHealth || (s.health > 0 && s.health <= s.maxHealth * 0.25);
+    }
+    if (base === 'hudammoweapons' && n === 'hudweaponlowammoimage') {
+      return s.health > 0 && lowAmmo(s);
     }
     if (base === 'hudplayerclass') {
       // The Spy's disguise portrait and the "carrying" banner only show in their situations.
