@@ -107,6 +107,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
   const redo = useEditor((s) => s.redo);
   const revertAll = useEditor((s) => s.revertAll);
   const setView = useEditor((s) => s.setView);
+  const setPlay = useEditor((s) => s.setPlay);
   const view = useEditor((s) => s.view);
 
   const desktop = useMediaQuery('(min-width: 1024px)');
@@ -346,6 +347,11 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
         run: () => setConfirmRevert(true),
       },
       {
+        id: 'play',
+        label: t('toggle-play', { defaultValue: 'Toggle Play mode' }),
+        run: () => setPlay(!view.play),
+      },
+      {
         id: 'blocks',
         label: t('show-blocks', { defaultValue: 'Show blocks' }),
         run: () => {
@@ -384,7 +390,18 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
         },
       },
     ],
-    [t, undo, redo, setView, view.showHidden, view.showBounds, view.minmode, setPref],
+    [
+      t,
+      undo,
+      redo,
+      setView,
+      setPlay,
+      view.play,
+      view.showHidden,
+      view.showBounds,
+      view.minmode,
+      setPref,
+    ],
   );
 
   const rightTabs: TfTab[] = [

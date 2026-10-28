@@ -100,6 +100,10 @@ export interface EditorState {
   /** The block being worked on in the Blocks panel; its members are outlined on the canvas. */
   focusedBlockId: string | null;
   hoverId: string | null;
+  /** Screens Play mode came through, so a Back button can return to them. */
+  playStack: string[];
+  /** The button the pointer is on in Play mode. */
+  playHover: { file: string; name: string } | null;
   /** The layout property being edited, so the preview can draw its measurement. */
   focusProp: { nodeId: string; key: 'xpos' | 'ypos' | 'wide' | 'tall' } | null;
   forceShown: ReadonlySet<string>;
@@ -166,6 +170,11 @@ export interface EditorState {
   toggleSelect(id: string): void;
   selectMany(ids: readonly string[]): void;
   focusBlock(id: string | null): void;
+  setPlay(on: boolean): void;
+  /** Open another screen from Play mode (keeping a way back). False when the editor has no such page. */
+  playGo(page: string): boolean;
+  playBack(): void;
+  setPlayHover(p: { file: string; name: string } | null): void;
   hover(id: string | null): void;
   setFocusProp(p: EditorState['focusProp']): void;
   toggleForce(id: string, shown: boolean): void;
@@ -229,6 +238,8 @@ export const useEditor = create<EditorState>((set, get) => {
     selectedIds: new Set(),
     focusedBlockId: null,
     hoverId: null,
+    playStack: [],
+    playHover: null,
     focusProp: null,
     forceShown: new Set(),
     forceHidden: new Set(),
@@ -531,6 +542,37 @@ export const useEditor = create<EditorState>((set, get) => {
     },
     focusBlock(id) {
       set({ focusedBlockId: id });
+    },
+    setPlay(on) {
+      set((s) => ({
+        view: { ...s.view, play: on },
+        playStack: [],
+        playHover: null,
+        selectedId: on ? null : s.selectedId,
+        selectedIds: on ? new Set() : s.selectedIds,
+      }));
+    },
+    playGo(page) {
+      if (!resolvePage(page)) return false;
+      const s = get();
+      if (page === s.pageId) return true;
+      set({ playStack: [...s.playStack, s.pageId], playHover: null });
+      get().setPage(page);
+      return true;
+    },
+    playBack() {
+      const s = get();
+      const prev =
+        s.playStack[s.playStack.length - 1] ??
+        (s.pageId === DEFAULT_PAGE_ID ? null : DEFAULT_PAGE_ID);
+      if (!prev) return;
+      get().setPage(prev);
+      set({ playStack: s.playStack.slice(0, -1), playHover: null });
+    },
+    setPlayHover(p) {
+      const cur = get().playHover;
+      if (cur?.file === p?.file && cur?.name === p?.name) return;
+      set({ playHover: p });
     },
     hover(id) {
       if (get().hoverId !== id) set({ hoverId: id });

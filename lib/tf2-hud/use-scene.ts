@@ -17,6 +17,7 @@ import { buildTokens, languageFilePath } from './localisation';
 import { useTf2HudPrefs } from './prefs';
 import { CORE_FILES, useEditor } from './store';
 import { screenOf } from './view';
+import { armedStyle } from './play/style';
 
 export interface SceneResult {
   scene: Scene | null;
@@ -67,6 +68,7 @@ export function useScene(): SceneResult {
   const ensureFiles = useEditor((s) => s.ensureFiles);
   const readText = useEditor((s) => s.readText);
   const hasFile = useEditor((s) => s.hasFile);
+  const playHover = useEditor((s) => s.playHover);
 
   const page = useMemo(() => resolvePage(pageId), [pageId]);
 
@@ -86,6 +88,8 @@ export function useScene(): SceneResult {
   const vars = useMemo(() => varsFromState(test), [test]);
   const gate = useMemo(() => gateFor(test), [test]);
   const progressForPanel = useMemo(() => progressFor(test), [test]);
+  // Play mode: the button under the pointer is drawn in its armed colours.
+  const styleFor = useMemo(() => armedStyle(view.play ? playHover : null), [view.play, playHover]);
 
   const scene = useMemo(() => {
     if (!page || baseStatus !== 'ready') return null;
@@ -105,6 +109,7 @@ export function useScene(): SceneResult {
         gate,
         progressFor: progressForPanel,
         player: { playerClass: test.playerClass, team: test.team },
+        styleFor,
       },
       page.files,
     );
@@ -129,6 +134,7 @@ export function useScene(): SceneResult {
     test.progress,
     test.playerClass,
     test.team,
+    styleFor,
   ]);
 
   // Files that exist but whose bytes have not arrived yet.

@@ -11,12 +11,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { syncCustomFonts } from '@/lib/tf2-hud/assets/font-sync';
 import { ensureBundledFonts } from '@/lib/tf2-hud/assets/fonts';
 import { ImageStore, materialsChanged } from '@/lib/tf2-hud/assets/images';
 import { kvSet } from '@/lib/tf2-hud/kv/edit';
 import { propsOf } from '@/lib/tf2-hud/kv/props';
-import { parseCached, hitTest } from '@/lib/tf2-hud/scene/build';
+import { parseCached, hitTest, kindOf } from '@/lib/tf2-hud/scene/build';
+import { interpretCommand } from '@/lib/tf2-hud/play/commands';
+import { clearPlayTimers, playKey, runAction } from '@/lib/tf2-hud/play/run';
+import { tick as simTick } from '@/lib/tf2-hud/play/sim';
 import { hitHandle, paintOverlay, paintScene, type HandleId } from '@/lib/tf2-hud/scene/paint';
 import { growSize, shiftPosition } from '@/lib/tf2-hud/layout/inverse';
 import { kvAt } from '@/lib/tf2-hud/kv/query';
@@ -26,6 +30,7 @@ import { blockOfNode, moveNodes, nodesOfBlock, useBlocksDoc } from '@/lib/tf2-hu
 import { beginGesture, endGesture, useEditor } from '@/lib/tf2-hud/store';
 import { useSceneContext as useScene } from './scene-context';
 import { cn } from '@/lib/utils';
+import PlayBar from './PlayBar';
 
 const MAX_BACKING = 4096;
 
@@ -62,6 +67,9 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
   const focusProp = useEditor((s) => s.focusProp);
   const select = useEditor((s) => s.select);
   const hover = useEditor((s) => s.hover);
+  const play = view.play;
+  const setPlay = useEditor((s) => s.setPlay);
+  const setPlayHover = useEditor((s) => s.setPlayHover);
   const readBytes = useEditor((s) => s.readBytes);
   const readText = useEditor((s) => s.readText);
   const writeText = useEditor((s) => s.writeText);
@@ -207,12 +215,12 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
       paintScene(g, scene, { images, showBounds: view.showBounds });
       g.globalAlpha = 1;
       paintOverlay(g, {
-        selected,
-        alsoSelected,
-        blockMembers,
+        selected: play ? undefined : selected,
+        alsoSelected: play ? undefined : alsoSelected,
+        blockMembers: play ? undefined : blockMembers,
         marquee: marqueeRect,
-        hover: hovered,
-        guide,
+        hover: play ? undefined : hovered,
+        guide: play ? undefined : guide,
         pxPerCss: 1 / zoom,
       });
     });
@@ -228,11 +236,29 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
     selected,
     alsoSelected,
     blockMembers,
+    play,
     marqueeRect,
     hovered,
     guide,
     tick,
   ]);
+
+  /* ── Play mode: a match clock, and focus on the canvas so keys reach it ── */
+  const inGame = page?.backdrop === 'game';
+  useEffect(() => {
+    if (!play) {
+      clearPlayTimers();
+      return undefined;
+    }
+    canvasRef.current?.focus();
+    if (!inGame) return undefined;
+    const id = setInterval(() => {
+      const st = useEditor.getState();
+      const patch = simTick(st.test, 1);
+      if (patch) st.setTest(patch);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [play, inGame]);
 
   /* ── pointer interaction ── */
   const toScene = useCallback(
@@ -303,7 +329,49 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
     return undefined;
   };
 
+  /** The topmost button under a point, with the command it runs. */
+  const buttonAt = (x: number, y: number) => {
+    if (!scene) return undefined;
+    for (let i = scene.nodes.length - 1; i >= 0; i--) {
+      const n = scene.nodes[i];
+      if (!n.shown || kindOf(n.control) !== 'button') continue;
+      const r = n.rect;
+      if (x < r.x || y < r.y || x >= r.x + r.w || y >= r.y + r.h) continue;
+      const text = readText(n.file);
+      const entry = text === undefined ? undefined : kvAt(parseCached(text), n.keyPath);
+      const command = entry
+        ? propsOf(entry, { env: COND_ENVS[view.env], minmode: view.minmode }).get('command')
+        : undefined;
+      return { node: n, command };
+    }
+    return undefined;
+  };
+
+  const onPlayDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!scene || e.button !== 0) return;
+    const p = toScene(e);
+    const button = buttonAt(p.x, p.y);
+    if (button) {
+      const unknown = runAction(interpretCommand(button.command));
+      if (unknown !== null) {
+        toast.info(
+          t('play-command', {
+            defaultValue: 'This button runs “{{command}}”, which Play mode does not simulate.',
+            command: unknown || button.node.name,
+          }),
+        );
+      }
+      return;
+    }
+    // Anywhere else on the in-game HUD is a shot.
+    if (page?.backdrop === 'game') playKey('fire');
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (play) {
+      onPlayDown(e);
+      return;
+    }
     if (!scene || e.button !== 0) return;
     const p = toScene(e);
     const pxPerCss = 1 / zoom;
@@ -370,6 +438,16 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!scene) return;
     const p = toScene(e);
+    if (play) {
+      const button = buttonAt(p.x, p.y);
+      setPlayHover(
+        button
+          ? { file: button.node.file, name: button.node.keyPath[button.node.keyPath.length - 1] }
+          : null,
+      );
+      e.currentTarget.style.cursor = button ? 'pointer' : 'default';
+      return;
+    }
     if (marqueeRef.current) {
       const m = { ...marqueeRef.current, x1: p.x, y1: p.y };
       marqueeRef.current = m;
@@ -443,6 +521,11 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
 
   /** Arrow keys nudge the selection by 1 virtual unit (10 with Shift). */
   const onKeyDown = (e: React.KeyboardEvent) => {
+    if (play) {
+      if (e.key === 'Escape') setPlay(false);
+      else if (!e.ctrlKey && !e.metaKey && !e.altKey && playKey(e.key)) e.preventDefault();
+      return;
+    }
     if (!selected || readOnly) return;
     const dirs: Record<string, [number, number]> = {
       ArrowLeft: [-1, 0],
@@ -484,6 +567,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
 
   return (
     <div ref={wrapRef} className="relative min-h-0 flex-1 overflow-auto bg-(--app-bg) p-3">
+      {play ? <PlayBar inGame={inGame} /> : null}
       <div className="mx-auto flex min-h-full w-fit min-w-full items-center justify-center">
         <div
           className={cn(
@@ -517,7 +601,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
             onPointerMove={onPointerMove}
             onPointerUp={endDrag}
             onPointerCancel={endDrag}
-            onPointerLeave={() => hover(null)}
+            onPointerLeave={() => (play ? setPlayHover(null) : hover(null))}
           />
           {view.compareOpacity > 0 && view.backdropImage ? (
             <img

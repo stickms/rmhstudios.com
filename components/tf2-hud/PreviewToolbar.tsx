@@ -11,6 +11,7 @@ import {
   Maximize,
   MonitorSmartphone,
   Minimize2,
+  Play,
   Scan,
   ZoomIn,
   ZoomOut,
@@ -45,6 +46,7 @@ export default function PreviewToolbar() {
   const setPage = useEditor((s) => s.setPage);
   const view = useEditor((s) => s.view);
   const setView = useEditor((s) => s.setView);
+  const setPlay = useEditor((s) => s.setPlay);
 
   const current = resolvePage(pageId);
   const zoomValue = view.zoom === 'fit' ? 'fit' : String(view.zoom);
@@ -211,6 +213,14 @@ export default function PreviewToolbar() {
           label={t('show-hidden', { defaultValue: 'Show hidden panels' })}
           active={view.showHidden}
           onClick={() => setView({ showHidden: !view.showHidden })}
+        />
+        <IconBtn
+          icon={Play}
+          label={t('play-mode', {
+            defaultValue: 'Play mode: click buttons and run a little match',
+          })}
+          active={view.play}
+          onClick={() => setPlay(!view.play)}
         />
         <IconBtn
           icon={Scan}

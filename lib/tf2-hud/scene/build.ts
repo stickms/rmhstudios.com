@@ -48,6 +48,11 @@ export interface SceneContext {
   progressFor?: (file: string, name: string) => number | undefined;
   /** Who is playing, for team-coloured backgrounds and class images. */
   player?: { playerClass: string; team: 'red' | 'blue' };
+  /**
+   * Adjust a panel's properties just before it is laid out and drawn: Play mode's hover colours and
+   * running HUD animations use it. `name` is the entry's key; return `props` itself for no change.
+   */
+  styleFor?: (file: string, name: string, props: Props) => Props;
 }
 
 /* ───────────────────────── parse cache ───────────────────────── */
@@ -396,7 +401,11 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
   const screenRect: Rect = { x: 0, y: 0, w: ctx.screen.w, h: ctx.screen.h };
   const images = new Set<string>();
   const opts = { env: ctx.env, minmode: ctx.minmode };
-  const propsFor = (e: KvNode) => propsOf(e, opts);
+  let styleFile = '';
+  const propsFor = (e: KvNode): Props => {
+    const base = propsOf(e, opts);
+    return ctx.styleFor ? ctx.styleFor(styleFile, e.key.text, base) : base;
+  };
 
   // `scripts/hudlayout.res` re-states where each HUD element sits. Its block for
   // an element wins over whatever the element's own file says, and it is also
@@ -421,6 +430,7 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
   const groups: { z: number; order: number; nodes: PanelNode[] }[] = [];
 
   files.forEach((file, order) => {
+    styleFile = file;
     const text = ctx.readText(file);
     if (text === undefined) return;
     const doc = parseCached(text);
