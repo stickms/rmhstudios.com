@@ -95,6 +95,40 @@ class BodyGroups(unittest.TestCase):
         self.assertEqual(args[3], {"bodygroups": {"hat": 2}})
 
 
+class PaintMask(unittest.TestCase):
+    def test_vmt_colours_are_read_as_0_to_1(self):
+        self.assertEqual(convert.parse_colour("{ 184 56 59 }"), [0.7216, 0.2196, 0.2314])
+        self.assertEqual(convert.parse_colour("[0.7 0.2 0.2]"), [0.7, 0.2, 0.2])
+        self.assertIsNone(convert.parse_colour(""))
+        self.assertIsNone(convert.parse_colour(None))
+
+    def test_a_paintable_material_records_its_default_tint_and_replace_factor(self):
+        self.assertEqual(convert.paint_tint({"$color2": "{ 255 255 255 }", "$blendtintcoloroverbase": "1"}),
+                         {"tint_default": [1.0, 1.0, 1.0], "tint_replace": 1.0})
+        # $colortint_base stands in when there is no $color2; no replace factor means a plain multiply
+        self.assertEqual(convert.paint_tint({"$colortint_base": "{ 184 56 59 }"}),
+                         {"tint_default": [0.7216, 0.2196, 0.2314]})
+        self.assertEqual(convert.paint_tint({}), {})
+
+    def test_the_tint_and_its_mask_survive_glb_encoding(self):
+        mesh = {"pos": np.zeros((3, 3)), "nrm": np.zeros((3, 3)), "uv": np.zeros((3, 2)),
+                "idx": np.array([0, 1, 2]), "material": 0}
+        material = {"name": "hat", "image": 0, "alpha": "OPAQUE", "double_sided": False, "tint": True,
+                    "tint_default": [0.7, 0.2, 0.2], "tint_replace": 0.5}
+        raw = glb.write_glb([mesh], [material], [b"image"])
+        doc = json.loads(raw[20:20 + struct.unpack_from("<I", raw, 12)[0]])
+        self.assertEqual(doc["materials"][0]["extras"],
+                         {"tint": True, "tintDefault": [0.7, 0.2, 0.2], "tintReplace": 0.5})
+        # still opaque: the alpha is a mask, not transparency
+        self.assertNotIn("alphaMode", doc["materials"][0])
+
+    def test_only_models_with_a_paint_masked_material_are_rehashed(self):
+        masked = [("a.vmt", "vertexlitgeneric", {"$blendtintbybasealpha": "1"}, "t.vtf", b"", "")]
+        plain = [("b.vmt", "vertexlitgeneric", {"$basetexture": "x"}, "t.vtf", b"", "")]
+        self.assertTrue(convert.has_paint_mask(masked))
+        self.assertFalse(convert.has_paint_mask(plain + [None]))
+
+
 class ClassVariantCosmetics(unittest.TestCase):
     def test_a_per_class_cosmetic_keeps_every_submodel_of_its_second_body_part_only(self):
         bones = [{"name": "root", "parent": -1, "pose_to_bone": np.eye(4)[:3].reshape(-1).tolist()}]

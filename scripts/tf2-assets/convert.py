@@ -36,6 +36,8 @@ BODYGROUPS_VERSION = 1
 BONEMERGE_VERSION = 1
 # Bump when the class-variant cosmetic export (`use_per_class_bodygroups`) changes.
 CLASSBODY_VERSION = 1
+# Bump when the paint-mask export (texture alpha kept, default tint and replace factor) changes.
+PAINTMASK_VERSION = 1
 SCALE = 0.01905  # Source units are 0.75 inch
 MAX_TEX = 512
 TINT_KEYS = ("$blendtintbybasealpha",)
@@ -288,6 +290,38 @@ def bodygroup_counts(info):
             if len(models) > 1}
 
 
+def parse_colour(value):
+    """A VMT colour (`{ 184 56 59 }` as 0-255, or `[0.7 0.2 0.2]` as 0-1) as three 0-1 numbers, or None."""
+    nums = [float(v) for v in re.findall(r"[-+]?\d*\.?\d+", value or "")]
+    if len(nums) < 3:
+        return None
+    nums = nums[:3]
+    scale = 255.0 if "{" in value or max(nums) > 1 else 1.0
+    return [round(min(1.0, max(0.0, v / scale)), 4) for v in nums]
+
+
+def paint_tint(kv):
+    """What the game does with a paintable item's tint (vertexlit_and_unlit_generic_ps2x.fxc, BLENDTINTBYBASEALPHA):
+    albedo = lerp(albedo, lerp(albedo * tint, tint, $blendtintcoloroverbase), base alpha). Unpainted, the tint is the
+    material's own default ($color2, which the ItemTintColor proxy falls back to; else $colortint_base)."""
+    out = {}
+    default = parse_colour(kv.get("$color2")) or parse_colour(kv.get("$colortint_base"))
+    if default:
+        out["tint_default"] = default
+    try:
+        replace = float(kv.get("$blendtintcoloroverbase", 0) or 0)
+    except ValueError:
+        replace = 0.0
+    if replace:
+        out["tint_replace"] = round(min(1.0, max(0.0, replace)), 4)
+    return out
+
+
+def has_paint_mask(slots):
+    """Whether any material of a model is paint-masked by its base alpha (these textures keep their alpha)."""
+    return any(s is not None and any(s[2].get(k) == "1" for k in TINT_KEYS) for s in slots)
+
+
 def source_hash(mdl, vvd, vtx, slots, extra=b""):
     h = hashlib.sha1()
     h.update(b"v%d" % CONVERTER_VERSION)
@@ -388,14 +422,17 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                     alpha = "MASK" if kv.get("$alphatest") == "1" else "BLEND"
                 double = kv.get("$nocull") == "1"
                 tint = any(kv.get(k) == "1" for k in TINT_KEYS)
+                # A paintable item's base alpha is the mask of where the paint goes, not transparency: keep it in
+                # the image (the material stays opaque) so the viewer can blend the tint by it.
+                keep_alpha = keep or tint
                 if vtf is None and image is None:
                     why = ("%s has no $basetexture" % _vp if not vtf_path
                            else "%s is not in the game files (from %s)" % (vtf_path, _vp))
                 if vtf is not None:
-                    key = (vtf_path, keep)
+                    key = (vtf_path, keep_alpha)
                     if key not in image_index:
                         try:
-                            images.append(encode_texture(vtf, keep))
+                            images.append(encode_texture(vtf, keep_alpha))
                             image_index[key] = len(images) - 1
                         except srctex.TextureError as e:
                             image_index[key] = None
@@ -409,8 +446,11 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                         emissive = image_index[emission_key]
             if image is None:
                 UNTEXTURED.append((mdl_path, name, why or "texture could not be decoded"))
-            materials.append({"name": name.split("/")[-1], "image": image, "alpha": alpha,
-                              "double_sided": double, "tint": tint, "emissive": emissive})
+            entry = {"name": name.split("/")[-1], "image": image, "alpha": alpha,
+                     "double_sided": double, "tint": tint, "emissive": emissive}
+            if tint and slot is not None:
+                entry.update(paint_tint(slot[2]))
+            materials.append(entry)
             mat_index[t] = len(materials) - 1
         uv = m["uv"]
         if is_class and t in eye_slots:
@@ -644,6 +684,8 @@ def main():
                           # Class bodies carry their switchable body groups; no other model's file changed,
                           # so only these are rebuilt (CONVERTER_VERSION would rebuild every model).
                           + (b"|bodygroups%d" % BODYGROUPS_VERSION if is_class else b"")
+                          # Paint-masked models keep their texture alpha and carry the default tint; only they change.
+                          + (b"|paintmask%d" % PAINTMASK_VERSION if has_paint_mask(slots) else b"")
                           # Only the cosmetics that follow several bones change, so only they are rebuilt.
                           # Only the cosmetics that pick a model per class change, so only they are rebuilt.
                           + (b"|classbody%d" % CLASSBODY_VERSION if ref.get("classBodygroup") else b"")

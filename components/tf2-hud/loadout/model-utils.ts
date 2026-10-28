@@ -2,6 +2,8 @@
 
 import {
   Color,
+  ShaderChunk,
+  SRGBColorSpace,
   type Material,
   type Mesh,
   type MeshStandardMaterial,
@@ -34,21 +36,72 @@ const materialsOf = (mesh: Mesh): Material[] =>
   Array.isArray(mesh.material) ? mesh.material : [mesh.material];
 
 /**
- * Paint: a material the converter flagged `extras.tint = true` has its base colour multiplied
- * by the paint colour; passing no colour restores the original.
+ * The game's paint tint (vertexlit_and_unlit_generic_ps2x.fxc, BLENDTINTBYBASEALPHA), applied where the
+ * texture's alpha says paint goes:
+ *   tinted = mix(albedo * tint, tint, replace);  albedo = mix(albedo, tinted, alpha)
+ * The converter keeps the texture alpha (the mask) and records the material's own default tint and replace
+ * factor (`extras.tintDefault`, `extras.tintReplace`).
+ */
+export const PAINT_TINT_GLSL = `
+  vec3 paintTinted = mix(sampledDiffuseColor.rgb * uPaint, uPaint, uPaintReplace);
+  sampledDiffuseColor.rgb = mix(sampledDiffuseColor.rgb, paintTinted, sampledDiffuseColor.a);
+`;
+
+interface PaintUniforms {
+  uPaint: { value: Color };
+  uPaintReplace: { value: number };
+}
+
+/** Patch a flagged material once to blend `uPaint` into its base colour map by the map's alpha. */
+function paintUniforms(m: Material): PaintUniforms {
+  const existing = m.userData.paintUniforms as PaintUniforms | undefined;
+  if (existing) return existing;
+  const uniforms: PaintUniforms = {
+    uPaint: { value: new Color(1, 1, 1) },
+    uPaintReplace: { value: 0 },
+  };
+  m.userData.paintUniforms = uniforms;
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uPaint = uniforms.uPaint;
+    shader.uniforms.uPaintReplace = uniforms.uPaintReplace;
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nuniform vec3 uPaint;\nuniform float uPaintReplace;',
+      )
+      .replace(
+        '#include <map_fragment>',
+        ShaderChunk.map_fragment.replace(
+          'diffuseColor *= sampledDiffuseColor;',
+          PAINT_TINT_GLSL + 'diffuseColor *= sampledDiffuseColor;',
+        ),
+      );
+  };
+  m.customProgramCacheKey = () => 'rmh-paint-tint';
+  m.needsUpdate = true;
+  return uniforms;
+}
+
+/**
+ * Paint: a material the converter flagged `extras.tint = true` is tinted by the paint colour where its texture's
+ * alpha says so. With no paint it wears the material's own default tint (an unpainted item keeps its colour);
+ * a file from before the converter kept the mask has none and is multiplied whole, as it always was.
  */
 export function applyTint(root: Object3D, tint?: string): void {
-  const colour = tint ? new Color(tint) : null;
   root.traverse((o: Object3D) => {
     const mesh = o as Mesh;
     if (!mesh.isMesh) return;
     for (const m of materialsOf(mesh)) {
       if (!m.userData?.tint || !('color' in m)) continue;
-      const std = m as MeshStandardMaterial;
-      std.userData.baseColor ??= std.color.clone();
-      std.color.copy(std.userData.baseColor as Color);
-      if (colour) std.color.multiply(colour);
-      std.needsUpdate = true;
+      const uniforms = paintUniforms(m);
+      const fallback = m.userData.tintDefault as number[] | undefined;
+      if (tint) uniforms.uPaint.value.set(tint);
+      else if (fallback?.length === 3)
+        uniforms.uPaint.value.setRGB(fallback[0], fallback[1], fallback[2], SRGBColorSpace);
+      else uniforms.uPaint.value.setRGB(1, 1, 1);
+      // A painted item replaces its own colour only by the material's factor; the paint colour itself is
+      // always the tint.
+      uniforms.uPaintReplace.value = (m.userData.tintReplace as number | undefined) ?? 0;
     }
   });
 }

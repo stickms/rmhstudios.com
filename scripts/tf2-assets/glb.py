@@ -77,6 +77,10 @@ def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips
             if mat["alpha"] == "MASK":
                 g["alphaCutoff"] = 0.5
         extras = {key: True for key in ("tint", "attachment", "festive") if mat.get(key)}
+        if mat.get("tint_default"):
+            extras["tintDefault"] = mat["tint_default"]
+        if mat.get("tint_replace"):
+            extras["tintReplace"] = mat["tint_replace"]
         if extras:
             g["extras"] = extras
         gl_mats.append(g)

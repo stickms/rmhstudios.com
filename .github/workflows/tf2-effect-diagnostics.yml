@@ -98,7 +98,7 @@ jobs:
           pnpm exec playwright install --with-deps chromium
           pnpm exec esbuild scripts/tf2-assets/render-probe/entry.tsx --bundle --format=iife --jsx=automatic \
             --define:process.env.NODE_ENV=\"production\" --log-level=warning --outfile=/mnt/work/render/entry.js
-          printf '<!doctype html><meta charset="utf-8"><body style="margin:0;background:#111"><div id="root"></div><script src="/entry.js"></script>' > /mnt/work/render/index.html
+          cp scripts/tf2-assets/render-probe/index.html /mnt/work/render/index.html
           node scripts/tf2-assets/render-probe/render.mjs /mnt/work/render /mnt/work/out /mnt/work/render/render-config.json
 
       - name: Publish the results to a branch
