@@ -73,10 +73,18 @@ function findBone(root: Object3D, name: string): Object3D | undefined {
 }
 
 /** The jiggle bones of `root` (a cosmetic's scene), parents before children. */
-export function setupJiggle(root: Object3D, specs: readonly JiggleSpec[] | undefined): JiggleBone[] {
+export function setupJiggle(
+  root: Object3D,
+  specs: readonly JiggleSpec[] | undefined,
+  /** Bones that were taken out of `root` and mounted elsewhere (see `boneMerge`). */
+  moved: readonly Object3D[] = [],
+): JiggleBone[] {
   const out: JiggleBone[] = [];
   for (const spec of specs ?? []) {
-    const node = findBone(root, spec.bone);
+    const node = [root, ...moved].reduce<Object3D | undefined>(
+      (found, where) => found ?? findBone(where, spec.bone),
+      undefined,
+    );
     if (!node || !(spec.length > 0)) continue;
     out.push({
       spec,
@@ -153,9 +161,7 @@ export function stepJiggle(bones: readonly JiggleBone[], dt: number): void {
     if (spec.angleLimit > 0) {
       const angle = forward.angleTo(dir);
       if (angle > spec.angleLimit) {
-        dir
-          .lerp(forward, 1 - spec.angleLimit / angle)
-          .normalize();
+        dir.lerp(forward, 1 - spec.angleLimit / angle).normalize();
       }
     }
     b.tip.copy(base).addScaledVector(dir, length);

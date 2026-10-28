@@ -213,6 +213,24 @@ describe('pickModel with styles', () => {
   });
 });
 
+describe('per-class cosmetics', () => {
+  it("flags a model that carries one submodel per class (the schema's use_per_class_bodygroups)", () => {
+    const items = `"items_game" {
+      "prefabs" { "hat" { "item_slot" "misc" "used_by_classes" { "scout" "1" "soldier" "1" } } }
+      "items" {
+        "164" { "name" "Per class" "prefab" "hat" "model_player" "models/p/boots.mdl"
+          "visuals" { "use_per_class_bodygroups" "1" } }
+        "165" { "name" "Plain" "prefab" "hat" "model_player" "models/p/hat.mdl" "visuals" { "use_per_class_bodygroups" "0" } }
+        "166" { "name" "Also plain" "prefab" "hat" "model_player" "models/p/cap.mdl" }
+      }
+    }`;
+    const byId = Object.fromEntries(buildModelManifest(items, ENGLISH).map((m) => [m.id, m]));
+    expect(byId[164].models[0].classBodygroup).toBe(true);
+    expect(byId[165].models[0].classBodygroup).toBeUndefined();
+    expect(byId[166].models[0].classBodygroup).toBeUndefined();
+  });
+});
+
 describe('weapon attachment dependencies', () => {
   it('merges Botkiller skin families, permanent festive parts and optional lights into each weapon', () => {
     const items = `"items_game" {

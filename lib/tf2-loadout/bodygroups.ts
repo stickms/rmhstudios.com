@@ -5,7 +5,20 @@
  * empty one, which is how a hat takes the class's own cap off. Pure, so the viewer and the tests share it.
  */
 
-import type { Bodygroups, CatalogItem } from './catalog-types';
+import { TF_CLASSES, type Bodygroups, type CatalogItem } from './catalog-types';
+
+/**
+ * The group the converter names the per-class submodels of a cosmetic that sets `use_per_class_bodygroups`
+ * (boots, gloves and the like modelled once per class). The game sets it to the wearer's class number - 1,
+ * which is the class's index in {@link TF_CLASSES}.
+ */
+export const CLASS_BODYGROUP = '__class__';
+
+/** The selection that shows the submodel for `cls` of a per-class cosmetic (nothing for an unknown class). */
+export const classVariant = (cls: string | undefined): Bodygroups => {
+  const index = TF_CLASSES.findIndex((c) => c === cls);
+  return index < 0 ? {} : { [CLASS_BODYGROUP]: index };
+};
 
 /** What one worn item selects: its own groups, plus those of the style it is worn in. */
 export function bodygroupsOf(

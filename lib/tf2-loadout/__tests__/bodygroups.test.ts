@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { bodygroupsOf, merge, selectionKey, showsSubmodel } from '../bodygroups';
+import {
+  bodygroupsOf,
+  CLASS_BODYGROUP,
+  classVariant,
+  merge,
+  selectionKey,
+  showsSubmodel,
+} from '../bodygroups';
 
 describe('bodygroups', () => {
   it('shows submodel 0 of a group nothing selects, and only the selected one otherwise', () => {
@@ -31,5 +38,14 @@ describe('bodygroups', () => {
   it('keys a selection by its value, not its order', () => {
     expect(selectionKey({ b: 1, a: 2 })).toBe(selectionKey({ a: 2, b: 1 }));
     expect(selectionKey({ a: 1 })).not.toBe(selectionKey({ a: 2 }));
+  });
+
+  it("selects a per-class cosmetic's submodel by the wearer's class, as the game does (class number - 1)", () => {
+    expect(classVariant('scout')).toEqual({ [CLASS_BODYGROUP]: 0 });
+    expect(classVariant('demoman')).toEqual({ [CLASS_BODYGROUP]: 3 });
+    expect(classVariant('spy')).toEqual({ [CLASS_BODYGROUP]: 8 });
+    expect(classVariant(undefined)).toEqual({});
+    expect(showsSubmodel(classVariant('heavy'), CLASS_BODYGROUP, 4)).toBe(true);
+    expect(showsSubmodel(classVariant('heavy'), CLASS_BODYGROUP, 0)).toBe(false);
   });
 });

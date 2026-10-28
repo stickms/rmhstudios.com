@@ -95,6 +95,26 @@ class BodyGroups(unittest.TestCase):
         self.assertEqual(args[3], {"bodygroups": {"hat": 2}})
 
 
+class ClassVariantCosmetics(unittest.TestCase):
+    def test_a_per_class_cosmetic_keeps_every_submodel_of_its_second_body_part_only(self):
+        bones = [{"name": "root", "parent": -1, "pose_to_bone": np.eye(4)[:3].reshape(-1).tolist()}]
+        mesh = lambda sub: {"texture": 0, "group": ("variant", sub), "pos": np.zeros((3, 3), np.float32),
+                            "nrm": np.zeros((3, 3), np.float32), "uv": np.zeros((3, 2), np.float32),
+                            "idx": np.array([0, 1, 2]), "joints": np.zeros((3, 4)), "weights": np.zeros((3, 4))}
+        info = {"textures": ["m"], "eyeballs": [], "bodypart_names": ["studio", "variant"],
+                "bodyparts": [[{}], [{}, {}, {}]], "dominant_bone": 0}
+        with patch.object(convert.srcmodel, "build_meshes", return_value=(info, [mesh(0), mesh(2)])) as build, \
+             patch.object(convert.srcmodel, "read_bones", return_value=bones), \
+             patch.object(convert.srcmodel, "read_jiggle", return_value={}), \
+             patch.object(convert, "class_skeleton", return_value=(bones, {})), \
+             patch.object(convert, "attachment_extras", return_value={}), \
+             patch.object(convert.glb, "write_glb") as write:
+            convert.convert(None, "boots.mdl", b"", b"", b"", [None], class_bodygroup=True)
+        self.assertEqual(build.call_args.kwargs["groups"], {convert.CLASS_BODYPART})
+        groups = [m["extras"] for m in write.call_args.args[0]]
+        self.assertEqual(groups, [{"bodygroup": "__class__", "sub": 0}, {"bodygroup": "__class__", "sub": 2}])
+
+
 class BoneMerge(unittest.TestCase):
     def _vvd(self, rows):
         """A VVD with one vertex per (bone0, w0, bone1, w1) row, laid out as the reader expects."""

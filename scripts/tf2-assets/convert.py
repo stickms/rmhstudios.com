@@ -34,6 +34,8 @@ CONVERTER_VERSION = 8
 BODYGROUPS_VERSION = 1
 # Bump when the bone-merge export (skinned cosmetics that follow the player's bones) changes.
 BONEMERGE_VERSION = 1
+# Bump when the class-variant cosmetic export (`use_per_class_bodygroups`) changes.
+CLASSBODY_VERSION = 1
 SCALE = 0.01905  # Source units are 0.75 inch
 MAX_TEX = 512
 TINT_KEYS = ("$blendtintbybasealpha",)
@@ -336,10 +338,17 @@ def follows_player_bones(mdl_path, vvd):
     return "/player/items/" in mdl_path.replace("\\", "/") and srcmodel.spreads_over_bones(vvd)
 
 
+# A cosmetic that sets `use_per_class_bodygroups` carries one submodel per class in its second body part
+# (the game sets that group to the wearer's class number - 1). Meshes of it are tagged with this group name.
+CLASS_GROUP = "__class__"
+CLASS_BODYPART = 1
+
+
 def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=0,
-            attachments=(), parts_only=False):
+            attachments=(), parts_only=False, class_bodygroup=False):
     """`anim` = (animations mdl bytes) for a class body: its skeleton, skin and idle clip go in the GLB."""
-    info, meshes = srcmodel.build_meshes(mdl, vvd, vtx, skin, groups=is_class)
+    info, meshes = srcmodel.build_meshes(mdl, vvd, vtx, skin,
+                                         groups={CLASS_BODYPART} if class_bodygroup else is_class)
     if not meshes:
         raise srcmodel.ModelError("no geometry")
     skeleton = bones = world = None
@@ -418,8 +427,10 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
         if is_class or jiggly:
             out["joints"], out["weights"] = m["joints"], m["weights"]
         if m.get("group"):
-            # Which submodel of which body group this is: the viewer shows it only while a worn item selects it.
-            out["extras"] = {"bodygroup": m["group"][0], "sub": m["group"][1]}
+            # Which submodel of which body group this is: the viewer shows it only while a worn item selects it
+            # (for a class-variant cosmetic, while the wearer is that class).
+            name = CLASS_GROUP if class_bodygroup else m["group"][0]
+            out["extras"] = {"bodygroup": name, "sub": m["group"][1]}
         out_meshes.append(out)
     clips = None
     if is_class and anim is not None:
@@ -634,6 +645,8 @@ def main():
                           # so only these are rebuilt (CONVERTER_VERSION would rebuild every model).
                           + (b"|bodygroups%d" % BODYGROUPS_VERSION if is_class else b"")
                           # Only the cosmetics that follow several bones change, so only they are rebuilt.
+                          # Only the cosmetics that pick a model per class change, so only they are rebuilt.
+                          + (b"|classbody%d" % CLASSBODY_VERSION if ref.get("classBodygroup") else b"")
                           + (b"|bonemerge%d" % BONEMERGE_VERSION
                              if not is_class and follows_player_bones(ref["mdl"], vvd) else b""))
         if is_class and anim:
@@ -643,7 +656,8 @@ def main():
             skipped += 1
             continue
         try:
-            data = convert(fs, ref["mdl"], mdl, vvd, vtx, slots, is_class, anim, skin, attachments)
+            data = convert(fs, ref["mdl"], mdl, vvd, vtx, slots, is_class, anim, skin, attachments,
+                           class_bodygroup=bool(ref.get("classBodygroup")))
         except Exception as e:  # noqa: BLE001
             reasons[type(e).__name__ + ": " + str(e)] = reasons.get(type(e).__name__ + ": " + str(e), 0) + 1
             failed.append(ref["glb"])
