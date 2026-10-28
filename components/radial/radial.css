@@ -2391,6 +2391,66 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 .radial-hub[data-phase='open'] .radial-hub__dock .radial-globe__stage {
   pointer-events: auto;
 }
+/* The sun behind the docked globe: a pale glow and rays of light round it, over a soft frost of the page ground, so
+   the globe and its points read against any page (a small globe over busy content is hard to see). Drawn with
+   gradients only: no filter and no backdrop-filter (Safari's bars), no animation (the globe is what moves), and it
+   takes no pointer. It is centred on the orb (`--sun-x/y`, measured with the dock's pose) and is for the docked globe
+   only: it fades out as the globe opens and comes back as it lands. */
+.radial-hub__sun {
+  position: absolute;
+  left: var(--sun-x, 50%);
+  top: var(--sun-y, 50%);
+  width: calc(var(--site-hub-orb-size) * 4.2);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  pointer-events: none;
+  /* The light's colour: the theme's haze, lifted toward white where the theme's glass light is white (Daylight), so
+     the rays still show on a pale page. */
+  --sun-ray: color-mix(in srgb, var(--site-jelly-haze-strong) 40%, var(--site-glass-light, transparent));
+  background:
+    /* the glow hugging the globe */
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--sun-ray) 62%, transparent) 0%,
+      color-mix(in srgb, var(--sun-ray) 26%, transparent) 25%,
+      transparent 44%
+    ),
+    /* long rays, soft at both edges */
+    repeating-conic-gradient(
+      from 4deg,
+      transparent 0deg,
+      color-mix(in srgb, var(--sun-ray) 55%, transparent) 2.4deg,
+      transparent 5.4deg,
+      transparent 15deg
+    ),
+    /* short rays between them */
+    repeating-conic-gradient(
+      from 11.5deg,
+      transparent 0deg,
+      color-mix(in srgb, var(--sun-ray) 34%, transparent) 1.6deg,
+      transparent 3.6deg,
+      transparent 15deg
+    ),
+    /* frost: the page ground, thickest right behind the globe */
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--site-bg) 58%, transparent) 0%,
+      color-mix(in srgb, var(--site-bg) 30%, transparent) 30%,
+      transparent 52%
+    );
+  -webkit-mask-image: radial-gradient(circle, rgb(0 0 0) 0%, rgb(0 0 0) 32%, transparent 70%);
+  mask-image: radial-gradient(circle, rgb(0 0 0) 0%, rgb(0 0 0) 32%, transparent 70%);
+  opacity: 1;
+  transition: opacity 0.4s var(--ease-smooth);
+}
+.radial-hub[data-phase='open'] .radial-hub__sun {
+  opacity: 0;
+}
+/* It comes back as the globe lands, not while it is still big. */
+.radial-hub[data-phase='landing'] .radial-hub__sun {
+  transition-delay: calc(var(--land-ms, 1500ms) * 0.55);
+}
 /* The marquee, the reticle and the readout are for the open globe. */
 .radial-hub__dock .radial-globe__title,
 .radial-hub__dock .radial-globe__reticle {
