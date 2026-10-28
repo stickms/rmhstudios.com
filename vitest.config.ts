@@ -66,6 +66,12 @@ export default defineConfig({
       // is its own suite: `pnpm test:integration` (vitest.integration.config.ts),
       // gated by the `integration` job in .github/workflows/web-ci.yml.
       'testing/integration/**',
+      // The TF2 browser game is gameplay, not mission-critical, so it is its
+      // own suite: `pnpm test:tf2` (vitest.tf2.config.ts), gated by
+      // .github/workflows/tf2-game-tests.yml.
+      'lib/tf2-game/**',
+      'scripts/tf2-game/**',
+      'server/socket-server/tf2/**',
     ],
     environment: 'node',
     globals: true,
