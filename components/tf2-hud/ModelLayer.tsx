@@ -30,6 +30,8 @@ import {
   useSampleInventory,
 } from './loadout/embed';
 
+const BACKPACK_NODE = /(^|\/)backpackpanel\.res$/i;
+
 /** At most this many live WebGL views at once; everything beyond shows an icon or nothing. */
 export const MAX_LIVE_VIEWS = 4;
 /** A panel smaller than this (scene pixels) is too small to be worth a 3D view. */
@@ -43,12 +45,12 @@ const place = (r: PanelNode['rect'], k: number): React.CSSProperties => ({
   height: r.h * k,
 });
 
-export default function ModelLayer({
+function ModelContent({
   scene,
   zoom,
   front,
 }: {
-  scene: Scene | null;
+  scene: Scene;
   /** CSS pixels per scene pixel. */
   zoom: number;
   /** `true` draws over the HUD canvas (model panels); `false` behind it (the world player). */
@@ -138,4 +140,32 @@ export default function ModelLayer({
       })}
     </div>
   );
+}
+
+/**
+ * Mounts the 3D content only where there is some: a page with no model panels, no backpack and no world
+ * player does not even fetch the item catalog.
+ */
+export default function ModelLayer({
+  scene,
+  zoom,
+  front,
+}: {
+  scene: Scene | null;
+  /** CSS pixels per scene pixel. */
+  zoom: number;
+  /** `true` draws over the HUD canvas (model panels); `false` behind it (the world player). */
+  front: boolean;
+}) {
+  const models3d = useEditor((s) => s.view.models3d);
+  const player3d = useEditor((s) => s.view.player3d);
+  const hasContent = useMemo(
+    () =>
+      !!scene &&
+      scene.nodes.some((n) => n.shown && (isModelPanel(n.control) || BACKPACK_NODE.test(n.file))),
+    [scene],
+  );
+  if (!scene) return null;
+  if (front ? !(models3d && hasContent) : !player3d) return null;
+  return <ModelContent scene={scene} zoom={zoom} front={front} />;
 }

@@ -44,13 +44,26 @@ export function useAnimScript(wanted: boolean): AnimScript | null {
     if (wanted && baseStatus === 'ready') void ensureFiles([ANIM_MANIFEST, ...files]);
   }, [wanted, baseStatus, files, ensureFiles]);
 
+  // The same scripts give the same merged object, so an unrelated edit does not restart what is playing.
+  const last = useRef<{ from: AnimScript[]; merged: AnimScript } | null>(null);
   return useMemo(() => {
     if (!wanted || manifest === undefined) return null;
     const scripts = files
       .map((f) => readText(f))
       .filter((t): t is string => t !== undefined)
       .map(parseCachedScript);
-    return scripts.length ? mergeScripts(scripts) : null;
+    if (!scripts.length) return null;
+    const prev = last.current;
+    if (
+      prev &&
+      prev.from.length === scripts.length &&
+      prev.from.every((s, i) => s === scripts[i])
+    ) {
+      return prev.merged;
+    }
+    const merged = mergeScripts(scripts);
+    last.current = { from: scripts, merged };
+    return merged;
     // `overlay` and `baseVersion` are the real inputs behind `readText`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wanted, manifest, files, overlay, baseVersion]);

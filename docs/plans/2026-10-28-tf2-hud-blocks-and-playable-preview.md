@@ -1,7 +1,21 @@
 # TF2 HUD editor — blocks, and a preview you can play
 
-Status: proposal. Nothing here is built. Supersedes nothing; extends
-[`docs/tf2-hud-editor.md`](../tf2-hud-editor.md).
+Status: **built** (all five phases). Reference for how it works now:
+[`docs/tf2-hud-editor.md`](../tf2-hud-editor.md) (Blocks, Play mode, 3D and items,
+Animations). The text below is the plan as proposed; where the build differs:
+
+- Blocks are stored at `resource/_rmh_blocks.txt` (JSON), not `_rmh/blocks.json`: the
+  editor's import and export only accept known extensions inside the HUD folders, and an
+  unknown `.txt` in `resource/` is ignored by the game.
+- "Copy to similar" shipped as the inspector's _Make block_ offer for look-alike nearby
+  panels rather than as a separate one-off command.
+- Adding a property to a block records it but does not overwrite the panels; the ones that
+  differ are listed with an _Apply to all_ button (the first version overwrote them at once).
+- The backpack page's cells are made by the game at run time, so their grid is worked out
+  from the panel file's numbers (`lib/tf2-hud/scene/inventory.ts`); it is approximate.
+- Fixed on the way: `scaled()` truncated exact negative products one pixel the wrong way.
+
+Supersedes nothing; extends [`docs/tf2-hud-editor.md`](../tf2-hud-editor.md).
 
 ## Why
 
@@ -243,7 +257,7 @@ Where it shows up:
 Each phase ships on its own and is useful without the next.
 
 - **P0, engine** (no UI): `lib/tf2-hud/blocks/{types,resolve,apply,suggest,
-  arrange}.ts` and tests in `lib/tf2-hud/__tests__/blocks*.test.ts` covering
+arrange}.ts` and tests in `lib/tf2-hud/__tests__/blocks*.test.ts` covering
   idempotent apply, pinned keys, `_minmode` and platform conditionals,
   anchoring-prefix preservation on move, and round-trips through the existing
   zip import/export. Pure, fast to test.
