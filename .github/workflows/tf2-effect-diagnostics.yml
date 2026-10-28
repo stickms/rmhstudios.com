@@ -22,6 +22,8 @@ on:
       - scripts/tf2-assets/effect_audit.py
       - scripts/tf2-assets/visuals_audit.py
       - scripts/tf2-assets/model_probe.py
+      - scripts/tf2-assets/paint_audit.py
+      - scripts/tf2-assets/itemlist.py
       - scripts/tf2-assets/render-probe/**
 
 permissions:
@@ -83,7 +85,8 @@ jobs:
             --effects "${{ inputs.effects || 'Aces High' }}" --repo ../..)
           rm -rf /mnt/work/out/_work
           (cd scripts/tf2-assets && python3 visuals_audit.py --root /mnt/tf2 --out /mnt/work/out)
-          (cd scripts/tf2-assets && python3 model_probe.py --root /mnt/tf2 --out /mnt/work/out --glb-dir /mnt/work/render)
+          (cd scripts/tf2-assets && python3 model_probe.py --root /mnt/tf2 --out /mnt/work/out --glb-dir /mnt/work/render --sample 40)
+          (cd scripts/tf2-assets && python3 paint_audit.py --root /mnt/tf2 --out /mnt/work/out)
 
       - name: Delete the game install
         if: always()
@@ -100,6 +103,7 @@ jobs:
             --define:process.env.NODE_ENV=\"production\" --log-level=warning --outfile=/mnt/work/render/entry.js
           cp scripts/tf2-assets/render-probe/index.html /mnt/work/render/index.html
           node scripts/tf2-assets/render-probe/render.mjs /mnt/work/render /mnt/work/out /mnt/work/render/render-config.json
+          python3 scripts/tf2-assets/render-probe/sheet.py /mnt/work/out /mnt/work/render/render-labels.json
 
       - name: Publish the results to a branch
         run: |
