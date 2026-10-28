@@ -115,10 +115,12 @@ func main() {
 		MaxBuckets:    maxBuckets,
 		MaxDays:       config.GetInt("STATUS_MAX_DAYS", 90),
 		RecentSamples: config.GetInt("STATUS_RECENT_SAMPLES", 240),
-		// A failure streak must reach this many consecutive checks (30s at the
+		// A failure streak must reach this many consecutive checks (60s at the
 		// default cadence) before it is an incident; anything shorter is
-		// counted as a blip on the service instead of paging a timeline.
-		IncidentOpenAfter:  config.GetInt("STATUS_INCIDENT_OPEN_AFTER", 2),
+		// counted as a blip on the service instead of paging a timeline. 2 (30s)
+		// paged on routine self-healing probe timeouts (e.g. the Content feed's
+		// DB-backed render), each one a Sev2 open + resolve pair in #oncall.
+		IncidentOpenAfter:  config.GetInt("STATUS_INCIDENT_OPEN_AFTER", 4),
 		IncidentCloseAfter: config.GetInt("STATUS_INCIDENT_CLOSE_AFTER", 2),
 		HistoryPath:        status.ResolveHistoryPath(config.GetString("STATUS_DATA_DIR", "")),
 		Logger:             logger,

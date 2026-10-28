@@ -30,7 +30,7 @@ isn't.
   so a gap in the prober's own history shows as an empty slot rather than
   quietly compressing time.
 - **Incidents** open automatically when a failure streak reaches
-  `STATUS_INCIDENT_OPEN_AFTER` checks (default 2, i.e. 30s) and are dated from
+  `STATUS_INCIDENT_OPEN_AFTER` checks (default 4, i.e. 60s) and are dated from
   the first failed check; `STATUS_INCIDENT_CLOSE_AFTER` good checks resolve
   them. Shorter streaks are counted as *blips*.
 - **Percentiles**: exact (nearest-rank) over the last hour's raw checks;
