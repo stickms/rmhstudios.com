@@ -32,12 +32,14 @@ export const Route = createFileRoute('/api/tf2-loadout/models/$id')({
           const model = await readModel(m[1], request.headers.get('accept-encoding') ?? '');
           if (!model) return apiError('Not found', 404);
           const etag = `"${model.etag}"`;
-          // The URL carries the builder version, and a sync that changes a model changes its ETag: a browser
-          // keeps the file for a day, then revalidates (a 304 with no body) while it keeps showing the old one.
+          // A sync can replace a model at this URL without the builder version changing (a cosmetic that is
+          // rebuilt, a class body that gains data), so a browser must not keep one for long: it keeps it for
+          // five minutes, then asks with the ETag, and a model that has not changed costs a bodyless 304 served
+          // from the server's own cache. (A day-long max-age left the class body stale for a day after a sync.)
           const cache = {
             ETag: etag,
             Vary: 'Accept-Encoding',
-            'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+            'Cache-Control': 'public, max-age=300, stale-while-revalidate=300',
           };
           const match = request.headers.get('if-none-match');
           if (match && ifNoneMatchMatches(match, etag))

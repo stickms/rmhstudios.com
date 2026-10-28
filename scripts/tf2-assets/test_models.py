@@ -127,9 +127,12 @@ class BoneMerge(unittest.TestCase):
 
     def test_boots_follow_two_bones_a_hat_follows_one(self):
         boots = self._vvd([(3, 1.0, 0, 0.0)] * 5 + [(7, 1.0, 0, 0.0)] * 5)
-        hat = self._vvd([(3, 1.0, 0, 0.0)] * 20 + [(7, 1.0, 0, 0.0)])
+        hat = self._vvd([(3, 1.0, 0, 0.0)] * 200 + [(7, 1.0, 0, 0.0)])
+        sleeves = self._vvd([(3, 1.0, 0, 0.0)] * 40 + [(7, 1.0, 0, 0.0)] * 3)
         self.assertTrue(convert.srcmodel.spreads_over_bones(boots))
         self.assertFalse(convert.srcmodel.spreads_over_bones(hat))
+        # a jacket whose arms are a small part of its weight still follows the arm bones
+        self.assertTrue(convert.srcmodel.spreads_over_bones(sleeves))
 
     def test_only_cosmetics_are_merged_not_weapons(self):
         boots = self._vvd([(3, 1.0, 0, 0.0)] * 5 + [(7, 1.0, 0, 0.0)] * 5)
