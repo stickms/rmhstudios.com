@@ -9,7 +9,7 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useBackOrFallback } from '@/hooks/useBackOrFallback';
+import { useBackTo } from '@/hooks/useBackOrFallback';
 
 export default function Tf2Header({
   title,
@@ -25,7 +25,8 @@ export default function Tf2Header({
   /** False when the page has its own visible h1 (a hero): the bar's title is then plain text. */
   heading?: boolean;
 }) {
-  const goBack = useBackOrFallback();
+  // The back control names where it goes, so it only steps back when that is the previous page.
+  const goBack = useBackTo(backHref);
   return (
     // Phone: [back] [title…] [actions]. From `sm` up the title is centred between them.
     <header className="grid h-14 shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 border-b border-(--app-border) bg-(--app-bg-subtle) px-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-2 sm:px-4">

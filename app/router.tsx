@@ -4,6 +4,7 @@ import { RoutePending } from '@/components/ui/RoutePending';
 import { installNotFoundHeadGuard } from '@/lib/router/not-found-head';
 import { installStyleTierPreload } from '@/lib/style-tier';
 import { installPageTransitions } from '@/lib/page-transition';
+import { installHistoryTrail } from '@/lib/router/history-trail';
 import appTierCss from '@/app/app-tier.css?url';
 
 // `getRouter()` runs once per client page load and once per SSR request. The
@@ -11,6 +12,7 @@ import appTierCss from '@/app/app-tier.css?url';
 // installed here behind a latch rather than from a component effect.
 let styleTierPreloadInstalled = false;
 let pageTransitionsInstalled = false;
+let historyTrailInstalled = false;
 
 export function getRouter() {
   const router = createTanStackRouter({
@@ -88,6 +90,13 @@ export function getRouter() {
   if (typeof document !== 'undefined' && !pageTransitionsInstalled) {
     pageTransitionsInstalled = true;
     installPageTransitions(router);
+  }
+
+  // Which page each history entry holds, so a labelled back control can tell whether
+  // stepping back reaches the page it names (lib/router/history-trail.ts): browser-only, once.
+  if (typeof document !== 'undefined' && !historyTrailInstalled) {
+    historyTrailInstalled = true;
+    installHistoryTrail(router);
   }
 
   return router;

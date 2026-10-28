@@ -123,8 +123,10 @@ export default function Tf2LoadoutBuilder({
   const { t } = useTranslation('c-tf2-hud');
   const cat = useCatalog();
 
+  // From `lg` the whole page — header included — is exactly the window, so only the columns scroll.
+  // Sizing just the <main> to the window left the page one header taller than it, and it scrolled too.
   return (
-    <div className="app-page flex min-h-dvh flex-col bg-(--app-bg) text-(--app-text)">
+    <div className="app-page flex min-h-dvh flex-col bg-(--app-bg) text-(--app-text) lg:h-dvh lg:overflow-hidden">
       <Tf2Header
         title={t('loadout-title', { defaultValue: 'Loadout Builder' })}
         backLabel={t('tf2-hub', { defaultValue: 'TF2 Hub' })}
@@ -479,7 +481,7 @@ function Builder({
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 pb-16 pt-4 lg:h-dvh lg:flex-none lg:overflow-hidden lg:pb-4">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 pb-16 pt-4 lg:min-h-0 lg:overflow-hidden lg:pb-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <TfTabs
           tabs={classTabs}
