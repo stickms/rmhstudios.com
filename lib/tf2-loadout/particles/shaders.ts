@@ -16,12 +16,33 @@ export const PARTICLE_VERTEX = `
   varying vec2 vUv3;
   varying vec2 vBlend;
   varying float vDepth;
+  uniform vec4 uSize;
   vec2 sheetUv(vec4 box) { return vec2(mix(box.x,box.z,uv.x),mix(box.w,box.y,uv.y)); }
   void main() {
-    vTint = aTint;
+    // The game's vertex shader takes the tint from gamma to linear (GammaToLinear: pow 2.2 on rgb, alpha as is)
+    // before it multiplies the sRGB-decoded texture; used raw, every tinted particle came out pale.
+    vTint = vec4(pow(aTint.rgb, vec3(2.2)), aTint.a);
     vBlend = aBlend;
     vUv0=sheetUv(aUv0); vUv1=sheetUv(aUv1); vUv2=sheetUv(aUv2); vUv3=sheetUv(aUv3);
-    vec4 view = modelViewMatrix * vec4(aCenter + position.x*aRight + position.y*aUp,1.0);
+    vec3 right = aRight;
+    vec3 up = aUp;
+    #ifdef SIZE_LIMITS
+      // spritecard_vsxx.fxc: a sprite is never smaller than $minsize of its distance from the eye, never
+      // larger than $maxsize of it, and fades out between $startfadesize and $endfadesize (gone past that),
+      // so a particle right up at the camera does not fill the screen. Sizes are fractions of the distance.
+      float dist = length((modelViewMatrix * vec4(aCenter,1.0)).xyz);
+      float radius = length(aUp) * length(modelMatrix[0].xyz);
+      float size = max(radius, uSize.x * dist);
+      if (size > uSize.z * dist) {
+        if (size > uSize.w * dist) { vTint = vec4(0.0); size = 0.0; }
+        else vTint *= 1.0 - (size - uSize.z * dist) / max(1e-6, (uSize.w - uSize.z) * dist);
+      }
+      size = min(size, uSize.y * dist);
+      float grow = radius > 1e-9 ? size / radius : 0.0;
+      right *= grow;
+      up *= grow;
+    #endif
+    vec4 view = modelViewMatrix * vec4(aCenter + position.x*right + position.y*up,1.0);
     vDepth = -view.z;
     gl_Position = projectionMatrix * view;
   }

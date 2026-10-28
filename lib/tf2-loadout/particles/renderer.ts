@@ -27,7 +27,7 @@ import {
   type Scene,
   type WebGLRenderer,
 } from 'three';
-import { sampleSheet } from './sheet';
+import { sampleSheet, sequenceOf } from './sheet';
 import { PARTICLE_FRAGMENT, PARTICLE_VERTEX } from './shaders';
 import type { LoadedTextures } from './client';
 import type { ParticleSimulation, SimParticle, SimSystem } from './simulation';
@@ -180,6 +180,12 @@ class DrawLayer {
     if (premultiplied) defines.PREMULTIPLIED = 1;
     if (n(p, '$depthblend', source.shader === 'spritecard' ? 1 : 0)) defines.SOFT_PARTICLE = 1;
     if (source.shader === 'refract') defines.REFRACT = 1;
+    // The game's own bounds on a sprite's on-screen size apply to card sprites; the defaults (0 / 20 / 10 / 20
+    // of the distance) never bind, so only a material that sets one pays for the work.
+    const sizeLimits =
+      renderer.function === 'render_animated_sprites' &&
+      ['$minsize', '$maxsize', '$startfadesize', '$endfadesize'].some((k) => p[k] !== undefined);
+    if (sizeLimits) defines.SIZE_LIMITS = 1;
     this.needsScene = !!(defines.SOFT_PARTICLE || defines.REFRACT);
     const color = vector(p, '$color', [1, 1, 1]),
       color2 = vector(p, '$color2', [1, 1, 1]);
@@ -214,6 +220,14 @@ class DrawLayer {
         uBlendMode: { value: n(p, '$sequence_blend_mode') },
         uZoomSecond: { value: Math.max(1, n(p, '$zoomanimateseq2', 1)) },
         uUvTransform: { value: new Vector4(1, 1, 0, 0) },
+        uSize: {
+          value: new Vector4(
+            n(p, '$minsize', 0),
+            n(p, '$maxsize', 20),
+            n(p, '$startfadesize', 10),
+            n(p, '$endfadesize', 20),
+          ),
+        },
       },
       transparent: true,
       depthWrite: false,
@@ -301,7 +315,7 @@ class DrawLayer {
     const r = this.renderer.params,
       sourceTex = this.baseTexture;
     const sheet = sampleSheet(
-      sourceTex?.sequences[String(p.sequence)],
+      sequenceOf(sourceTex?.sequences, p.sequence),
       p.age,
       p.life,
       n(r, 'animation rate', 1),
@@ -309,7 +323,7 @@ class DrawLayer {
       !!n(r, 'use animation rate as fps'),
     );
     const sheet2 = sampleSheet(
-      sourceTex?.sequences[String(p.sequence2)],
+      sequenceOf(sourceTex?.sequences, p.sequence2),
       p.age,
       p.life,
       n(r, 'second sequence animation rate', n(r, 'animation rate', 1)),

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Box3, Group, Matrix4, Vector3 } from 'three';
 import { brotliCompressSync } from 'node:zlib';
 import { ParticleSimulation, controlPoint } from '../particles/simulation';
-import { sampleSheet } from '../particles/sheet';
+import { sampleSheet, sequenceOf } from '../particles/sheet';
 import { sourceToGl, glToSource } from '../particles/renderer';
 import { createParticleEnvironment } from '../particles/attachments';
 import {
@@ -51,6 +51,30 @@ function simulation(root: ParticleDefinition, systems: ParticleDefinition[] = []
     bundle,
   };
 }
+
+describe('sprite sheet sequences', () => {
+  const frame = (x: number): SheetSequence['frames'][number] => ({
+    duration: 1,
+    uv: [[x, 0, x + 0.1, 0.1]],
+  });
+  const cards: SheetSequence = { clamp: false, duration: 2, frames: [frame(0), frame(0.1)] };
+
+  it('uses the sequence a particle names when the sheet has it', () => {
+    const other: SheetSequence = { ...cards, duration: 1, frames: [frame(0.5)] };
+    expect(sequenceOf({ '0': cards, '3': other }, 3)).toBe(other);
+  });
+
+  it('falls back to the first sequence for a number the sheet does not define, never the whole atlas', () => {
+    // Aces High draws `sequence random 0-5` from a card sheet that defines only sequence 0.
+    for (const n of [1, 3, 5]) expect(sequenceOf({ '0': cards }, n)).toBe(cards);
+    expect(sequenceOf({ '2': cards, '7': cards }, 0)).toBe(cards);
+  });
+
+  it('leaves a texture that is not a sheet alone', () => {
+    expect(sequenceOf({}, 0)).toBeUndefined();
+    expect(sequenceOf(undefined, 0)).toBeUndefined();
+  });
+});
 
 describe('steady state', () => {
   const lives = (max: number) => op('lifetime random', { lifetime_min: max, lifetime_max: max });
