@@ -9,6 +9,7 @@
  */
 'use client';
 
+import { classVariant } from '@/lib/tf2-loadout/bodygroups';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import StudioLight from './StudioLight';
 import { ResetViewButton, ViewerOrbit, rememberView, useResetView } from './viewer-controls';
@@ -17,6 +18,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Box3, MathUtils, Sphere, Vector3, type Object3D, type PerspectiveCamera } from 'three';
 import EffectParticles, { type EffectSpec } from './EffectParticles';
 import {
+  applyBodygroups,
   applyFestive,
   applyPaintTexture,
   applyTint,
@@ -27,12 +29,15 @@ import { useWarPaintTexture } from './use-war-paint';
 
 function Model({
   url,
+  cls,
   tint,
   paint,
   festive,
   onFit,
 }: {
   url: string;
+  /** The class wearing it, to show a per-class cosmetic's own submodel. */
+  cls?: string;
   tint?: string;
   paint?: WarPaint;
   festive?: boolean;
@@ -47,6 +52,11 @@ function Model({
     applyFestive(root, festive);
     invalidate();
   }, [root, festive, invalidate]);
+
+  useLayoutEffect(() => {
+    applyBodygroups(root, classVariant(cls));
+    invalidate();
+  }, [root, cls, invalidate]);
 
   useEffect(() => {
     applyTint(root, tint);
@@ -88,12 +98,15 @@ function Model({
 
 export default function Viewer3D({
   url,
+  cls,
   tint,
   paint,
   effect,
   festive,
 }: {
   url: string;
+  /** The class wearing it, to show a per-class cosmetic's own submodel. */
+  cls?: string;
   tint?: string;
   /** A war paint to draw the model with. */
   paint?: WarPaint;
@@ -124,7 +137,7 @@ export default function Viewer3D({
       >
         <StudioLight />
         <ViewerOrbit resetRef={ref} minDistance={radius * 1.2} maxDistance={radius * 8} />
-        <Model url={url} tint={tint} paint={paint} festive={festive} onFit={onFit} />
+        <Model url={url} cls={cls} tint={tint} paint={paint} festive={festive} onFit={onFit} />
         {effect && box ? <EffectParticles spec={effect} box={box} owner={owner} /> : null}
       </Canvas>
       <ResetViewButton onClick={reset} />

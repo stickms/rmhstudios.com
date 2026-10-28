@@ -214,7 +214,8 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0, groups=False):
     that has more than one (a class body's `hat`, `headphones`, `shoes_socks`, … — submodel 1 is usually
     empty, which is how an item hides the default one) is kept as its own mesh, tagged
     `group = (name, submodel)`, so a viewer can show whichever one the worn items select. Groups with a
-    single submodel are never tagged: nothing can switch them."""
+    single submodel are never tagged: nothing can switch them. `groups` may instead be a set of body part
+    indexes, to switch only those (a cosmetic that picks its model by the wearer's class)."""
     info = read_mdl(mdl_bytes)
     verts = read_vvd(vvd_bytes)
     vtx = read_vtx(vtx_bytes)
@@ -222,7 +223,7 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0, groups=False):
     for b, models in enumerate(info["bodyparts"]):
         if not models:
             continue
-        switchable = groups and len(models) > 1
+        switchable = len(models) > 1 and (b in groups if isinstance(groups, (set, frozenset)) else bool(groups))
         for m, model in enumerate(models if switchable else models[:1]):
             vmeshes = vtx[b][m] if b < len(vtx) and m < len(vtx[b]) else []
             tag = (info["bodypart_names"][b], m) if switchable else None

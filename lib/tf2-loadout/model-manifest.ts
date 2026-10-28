@@ -38,6 +38,11 @@ export interface ModelRef {
   style?: number;
   /** The MDL skin family to render it with, for a style that only changes the skin. */
   skin?: number;
+  /**
+   * The model carries one submodel per class in its second body part, and the game shows the wearer's
+   * (the schema's `use_per_class_bodygroups`): the converter keeps all of them, the viewer picks one.
+   */
+  classBodygroup?: true;
   /** Bone-merged geometry included in this model, including optional festive lights. */
   attachments?: { mdl: string; skin: number; festive?: boolean }[];
 }
@@ -209,6 +214,8 @@ export function buildModelManifest(
       }
     }
     if (attachments.length) for (const model of models) model.attachments = attachments;
+    const variantFlag = str(visuals, 'use_per_class_bodygroups');
+    if (variantFlag && variantFlag !== '0') for (const model of models) model.classBodygroup = true;
     if (!models.length) continue;
     out.push({ id, name, models });
   }

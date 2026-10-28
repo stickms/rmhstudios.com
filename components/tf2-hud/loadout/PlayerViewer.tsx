@@ -103,6 +103,7 @@ export default function PlayerViewer({
         out.push({
           key: `${w.slotKey}:${name}`,
           url: modelUrl(name),
+          cls,
           tint: w.tint,
           effect: w.effect,
           paint: w.paint,

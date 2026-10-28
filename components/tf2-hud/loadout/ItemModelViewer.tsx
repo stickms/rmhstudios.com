@@ -86,6 +86,7 @@ export default function ItemModelViewer({
       <Suspense fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}>
         <Viewer3D
           url={modelUrl(model)}
+          cls={cls}
           tint={tint}
           paint={paint}
           effect={effect}

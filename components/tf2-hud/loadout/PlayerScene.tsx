@@ -10,7 +10,7 @@
  */
 'use client';
 
-import { selectionKey } from '@/lib/tf2-loadout/bodygroups';
+import { classVariant, selectionKey } from '@/lib/tf2-loadout/bodygroups';
 import type { Bodygroups } from '@/lib/tf2-loadout/catalog-types';
 import { boneMerge } from '@/lib/tf2-loadout/bone-merge';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
@@ -60,6 +60,8 @@ export interface PlayerPart {
   /** A war paint on this weapon. */
   paint?: WarPaint;
   festive?: boolean;
+  /** The class wearing it, to show a per-class cosmetic's own submodel. */
+  cls?: string;
 }
 
 interface BodyState {
@@ -196,6 +198,7 @@ function Body({
 
 function Part({
   url,
+  cls,
   tint,
   effect,
   paint,
@@ -203,6 +206,7 @@ function Part({
   body,
 }: {
   url: string;
+  cls?: string;
   tint?: string;
   effect?: EffectSpec;
   paint?: WarPaint;
@@ -215,6 +219,8 @@ function Part({
   const jiggle = useRef<JiggleBone[]>([]);
 
   useLayoutEffect(() => applyFestive(root, festive), [root, festive]);
+  // A cosmetic modelled once per class (`use_per_class_bodygroups`) shows the wearer's own.
+  useLayoutEffect(() => applyBodygroups(root, classVariant(cls)), [root, cls]);
 
   useLayoutEffect(() => {
     type Attachment = { bone: string; pose: number[] };
@@ -231,7 +237,8 @@ function Part({
     }
     // Boots, gloves and capes follow several bones: they deform with the player's skeleton, as the game's
     // bone-merge does. Everything else sits rigidly on the one bone it follows.
-    const merged = scene.userData.boneMerge === true && boneMerge(root, body.root);
+    const merge = scene.userData.boneMerge === true ? boneMerge(root, body.root) : null;
+    const merged = merge !== null;
     if (merged) {
       body.root.add(root);
     } else {
@@ -244,11 +251,15 @@ function Part({
     const box = new Box3().setFromObject(root);
     setMount({ bone, box });
     // Flexible jiggle bones swing on their own springs; their skeleton rides on the bone it is mounted on.
-    jiggle.current = merged
-      ? []
-      : setupJiggle(root, scene.userData.jiggle as JiggleSpec[] | undefined);
+    jiggle.current = setupJiggle(
+      root,
+      scene.userData.jiggle as JiggleSpec[] | undefined,
+      merge?.moved,
+    );
     if (merged) {
-      // Deformed by bones far from the one it was framed on, so the bind-pose bounds do not hold.
+      // Deformed by bones far from the one it was framed on, so the bind-pose bounds do not hold. Its own
+      // bones now live in the player's skeleton: rename them so no lookup by name finds a copy.
+      merge.moved.forEach(renameSkeleton);
       root.traverse((o) => {
         if ((o as Mesh).isMesh) o.frustumCulled = false;
       });
@@ -261,6 +272,7 @@ function Part({
     }
     return () => {
       jiggle.current = [];
+      merge?.moved.forEach((b) => b.removeFromParent());
       root.removeFromParent();
     };
   }, [root, scene, body]);
@@ -331,6 +343,7 @@ export default function PlayerScene({
                 <Suspense fallback={null}>
                   <Part
                     url={p.url}
+                    cls={p.cls}
                     tint={p.tint}
                     effect={p.effect}
                     paint={p.paint}

@@ -52,21 +52,41 @@ describe('boneMerge', () => {
   it("binds the cosmetic's bones to the player's bones of the same name", () => {
     const { body, left, right } = player();
     const { root, mesh } = boots(['bip_foot_l'], ['bip_foot_r']);
-    expect(boneMerge(root, body)).toBe(true);
+    expect(boneMerge(root, body)?.moved).toEqual([]);
     expect(mesh.skeleton.bones).toEqual([left, right]);
     // The file's own copy of the skeleton is gone.
     expect(root.children.filter((c) => (c as Bone).isBone)).toEqual([]);
   });
 
-  it('lets a bone the player lacks follow its nearest ancestor that exists', () => {
+  it('keeps a bone the player lacks, under the player bone its parent became, with its own bind', () => {
     const { body, left } = player();
     const { root, mesh } = boots(['bip_foot_l'], ['prop_strap', 'bip_foot_l']);
-    boneMerge(root, body);
-    expect(mesh.skeleton.bones).toEqual([left, left]);
+    const strap = mesh.skeleton.bones[1];
+    const inverse = mesh.skeleton.boneInverses[1].clone();
+    const merged = boneMerge(root, body);
+    // Not collapsed onto the foot (that would leave its vertices on the wrong bind matrix): it stays a bone
+    // of its own, mounted on the foot, and its inverse bind matrix is untouched.
+    expect(mesh.skeleton.bones).toEqual([left, strap]);
+    expect(strap.parent).toBe(left);
+    expect(mesh.skeleton.boneInverses[1].equals(inverse)).toBe(true);
+    expect(merged?.moved).toEqual([strap]);
+  });
+
+  it('carries a chain of private bones along with the first one', () => {
+    const { body, right } = player();
+    const { root, mesh } = boots(
+      ['bip_foot_r'],
+      ['spring_1', 'bip_foot_r'],
+      ['spring_2', 'spring_1'],
+    );
+    const [, one, two] = mesh.skeleton.bones;
+    expect(boneMerge(root, body)?.moved).toEqual([one]);
+    expect(one.parent).toBe(right);
+    expect(two.parent).toBe(one);
   });
 
   it('changes nothing when there is nothing to bind', () => {
     const { body } = player();
-    expect(boneMerge(new Group(), body)).toBe(false);
+    expect(boneMerge(new Group(), body)).toBeNull();
   });
 });
