@@ -22,6 +22,14 @@ on:
       - scripts/tf2-assets/effect_audit.py
       - scripts/tf2-assets/visuals_audit.py
       - scripts/tf2-assets/model_probe.py
+      - scripts/tf2-assets/paint_audit.py
+      - scripts/tf2-assets/material_audit.py
+      - scripts/tf2-assets/itemlist.py
+      - scripts/tf2-assets/render-probe/**
+      - scripts/tf2-assets/convert.py
+      - scripts/tf2-assets/glb.py
+      - components/tf2-hud/loadout/**
+      - lib/tf2-loadout/**
 
 permissions:
   contents: write
@@ -82,11 +90,26 @@ jobs:
             --effects "${{ inputs.effects || 'Aces High' }}" --repo ../..)
           rm -rf /mnt/work/out/_work
           (cd scripts/tf2-assets && python3 visuals_audit.py --root /mnt/tf2 --out /mnt/work/out)
-          (cd scripts/tf2-assets && python3 model_probe.py --root /mnt/tf2 --out /mnt/work/out)
+          (cd scripts/tf2-assets && python3 model_probe.py --root /mnt/tf2 --out /mnt/work/out --glb-dir /mnt/work/render --sample 40)
+          (cd scripts/tf2-assets && python3 paint_audit.py --root /mnt/tf2 --out /mnt/work/out)
+          (cd scripts/tf2-assets && python3 material_audit.py --root /mnt/tf2 --out /mnt/work/out)
 
       - name: Delete the game install
         if: always()
         run: sudo rm -rf /mnt/tf2 "$HOME/Steam" "$HOME/.steam"
+
+      # The real builder player (PlayerScene), with the models just converted, rendered headlessly: a screenshot of
+      # what the viewer does with them, so a rendering bug can be seen rather than guessed at.
+      - uses: ./.github/actions/setup-deps
+
+      - name: Render the converted models in the real player
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm exec esbuild scripts/tf2-assets/render-probe/entry.tsx --bundle --format=iife --jsx=automatic \
+            --define:process.env.NODE_ENV=\"production\" --log-level=warning --outfile=/mnt/work/render/entry.js
+          cp scripts/tf2-assets/render-probe/index.html /mnt/work/render/index.html
+          node scripts/tf2-assets/render-probe/render.mjs /mnt/work/render /mnt/work/out /mnt/work/render/render-config.json
+          python3 scripts/tf2-assets/render-probe/sheet.py /mnt/work/out /mnt/work/render/render-labels.json
 
       - name: Publish the results to a branch
         run: |
@@ -94,6 +117,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout --orphan tf2-effect-diagnostics-data
           git rm -rf --quiet . || true
+          # The render step installed dependencies in the workspace: nothing but the results may be committed.
+          git clean -ffdxq
           cp -r /mnt/work/out/. .
           du -sh . | cat
           git add -A

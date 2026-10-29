@@ -15,6 +15,7 @@ import struct
 import sys
 
 import convert
+import itemlist
 import kv
 import srcmodel
 from vpkfs import GameFS
@@ -59,6 +60,10 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--items", default="Spooky Sleeves,Spooky Shoes,Spooky Head-Bouncers,A Well Wrapped Hat")
     ap.add_argument("--class", dest="cls", default="scout")
+    ap.add_argument("--sample", type=int, default=0,
+                    help="also convert and render this many other cosmetics, spread over paintable, plain, "
+                         "body-group and per-class ones")
+    ap.add_argument("--glb-dir", help="also write the converted models here, with render-config.json for render.mjs")
     args = ap.parse_args()
     fs = GameFS(args.root)
     out = {}
@@ -70,6 +75,10 @@ def main():
     info = srcmodel.read_mdl(mdl)
     body = convert.convert(fs, path, mdl, vvd, vtx, slots, True, anim)
     class_bones = {b["name"].lower() for b in srcmodel.read_bones(mdl)}
+    glb_dir = args.glb_dir
+    if glb_dir:
+        os.makedirs(os.path.join(glb_dir, "glb"), exist_ok=True)
+        open(os.path.join(glb_dir, "glb", "class_%s.glb" % args.cls), "wb").write(body)
     out["classBody"] = {**summarise(body),
                         "bodyparts": dict(zip(info["bodypart_names"], (len(m) for m in info["bodyparts"]))),
                         "boneCount": len(class_bones)}
@@ -116,10 +125,87 @@ def main():
                 s = summarise(data)
                 info_c = srcmodel.read_mdl(m)
                 skin = set(s["skinBones"])
+                if glb_dir:
+                    open(os.path.join(glb_dir, "glb", "%s.glb" % item_id), "wb").write(data)
+                entry["materials"] = [
+                    {"vmt": q[0], "shader": q[1], "texture": q[3], "textureDecoded": q[4] is not None,
+                     "params": {k: v for k, v in q[2].items() if k.lower() in (
+                         "$colortint_base", "$colortint_tmp", "$color2", "$color", "$alphatest", "$translucent",
+                         "$blendtintbybasealpha", "$blendtintcoloroverbase", "$nocull", "$phong", "$envmap",
+                         "$basetexture", "$surfaceprop", "$basealphaenvmapmask", "$selfillum")}}
+                    for q in sl if q]
                 entry["converted"] = {**s, "followsPlayerBones": convert.follows_player_bones(mdl_path, v),
                                       "bodyparts": dict(zip(info_c["bodypart_names"], (len(q) for q in info_c["bodyparts"]))),
                                       "privateBones": sorted(skin - class_bones)}
         out["cosmetics"][str(item_id)] = entry
+    sample_scenes, labels = [], {}
+    if args.sample:
+        named = {e["id"] for e in out["cosmetics"].values()}
+        pool = [c for c in itemlist.cosmetics(fs, args.cls) if str(c["id"]) not in named]
+
+        def bodygroups_of(c):
+            vis = [p for k, v in c["flat"] if k == "visuals" and isinstance(v, list) for p in v]
+            return {k.lower(): int(v) for b in [v for k, v in vis if k == "player_bodygroups"]
+                    for k, v in b if str(v).isdigit()}, kv.get(vis, "use_per_class_bodygroups") not in (None, "0")
+
+        for c in pool:
+            c["groups"], c["perclass"] = bodygroups_of(c)
+        categories = {"paintable": [c for c in pool if c["paintable"]],
+                      "plain": [c for c in pool if not c["paintable"] and not c["groups"]],
+                      "bodygroup": [c for c in pool if c["groups"]],
+                      "perclass": [c for c in pool if c["perclass"]]}
+        per = max(1, args.sample // 4)
+        picked, seen = [], set()
+        for cat, members in categories.items():
+            members = sorted(members, key=lambda c: int(c["id"]))
+            step = max(1, len(members) // per)
+            for c in members[::step][:per]:
+                if c["id"] not in seen:
+                    seen.add(c["id"])
+                    picked.append((cat, c))
+        out["sample"] = {}
+        for cat, c in picked:
+            try:
+                loaded = load(fs, c["mdl"])
+                if loaded is None:
+                    out["sample"][c["id"]] = {"name": c["name"], "category": cat, "error": "model files missing"}
+                    continue
+                m, v, x, sl = loaded
+                data = convert.convert(fs, c["mdl"], m, v, x, sl, class_bodygroup=c["perclass"])
+            except Exception as e:  # noqa: BLE001
+                out["sample"][c["id"]] = {"name": c["name"], "category": cat, "error": "%s: %s" % (type(e).__name__, e)}
+                continue
+            summary = summarise(data)
+            out["sample"][c["id"]] = {"name": c["name"], "category": cat, "paintable": c["paintable"],
+                                      "bodygroups": c["groups"], "perClass": c["perclass"],
+                                      "boneMerge": bool(summary["sceneExtras"].get("boneMerge")),
+                                      "privateBones": sorted(set(summary["skinBones"]) - class_bones),
+                                      "primitiveTags": summary["primitiveTags"], "bytes": summary["bytes"]}
+            if glb_dir:
+                open(os.path.join(glb_dir, "glb", "%s.glb" % c["id"]), "wb").write(data)
+                name = "s-%s" % c["id"]
+                labels[name] = "%s %s (%s)" % (c["id"], c["name"][:22], cat)
+                sample_scenes.append({"name": name, "body": "/glb/class_%s.glb" % args.cls, "bodygroups": c["groups"],
+                                      "parts": [{"key": c["name"], "url": "/glb/%s.glb" % c["id"], "cls": args.cls}],
+                                      "width": 480, "height": 640, "wait": 3500})
+    if glb_dir:
+        groups = {}
+        for e in out["cosmetics"].values():
+            for k, v in e["playerBodygroups"].items():
+                groups[k.lower()] = max(groups.get(k.lower(), 0), int(v))
+        parts = [{"key": e["name"], "url": "/glb/%s.glb" % e["id"], "cls": args.cls}
+                 for e in out["cosmetics"].values() if "converted" in e]
+        body_url = "/glb/class_%s.glb" % args.cls
+        scenes = [{"name": "loadout", "body": body_url, "bodygroups": groups, "parts": parts, "width": 800, "height": 1000},
+                  {"name": "naked", "body": body_url, "bodygroups": {}, "parts": [], "width": 800, "height": 1000}]
+        for p_ in parts:
+            alone = {k.lower(): int(v) for e in out["cosmetics"].values() if e["name"] == p_["key"]
+                     for k, v in e["playerBodygroups"].items()}
+            scenes.append({"name": "only-" + re.sub(r"[^a-z0-9]+", "-", p_["key"].lower()).strip("-"),
+                           "body": body_url, "bodygroups": alone, "parts": [p_], "width": 800, "height": 1000})
+        scenes += sample_scenes
+        json.dump({"scenes": scenes}, open(os.path.join(glb_dir, "render-config.json"), "w"), indent=1)
+        json.dump(labels, open(os.path.join(glb_dir, "render-labels.json"), "w"), indent=1)
     os.makedirs(args.out, exist_ok=True)
     json.dump(out, open(os.path.join(args.out, "model-probe.json"), "w"), indent=1, default=str)
     print("probe: class body %s, %d cosmetics" % (args.cls, len(out["cosmetics"])))

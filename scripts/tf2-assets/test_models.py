@@ -95,6 +95,111 @@ class BodyGroups(unittest.TestCase):
         self.assertEqual(args[3], {"bodygroups": {"hat": 2}})
 
 
+class PaintMask(unittest.TestCase):
+    def test_vmt_colours_are_read_as_0_to_1(self):
+        self.assertEqual(convert.parse_colour("{ 184 56 59 }"), [0.7216, 0.2196, 0.2314])
+        self.assertEqual(convert.parse_colour("[0.7 0.2 0.2]"), [0.7, 0.2, 0.2])
+        self.assertIsNone(convert.parse_colour(""))
+        self.assertIsNone(convert.parse_colour(None))
+
+    def test_a_paintable_material_records_its_default_tint_and_replace_factor(self):
+        self.assertEqual(convert.paint_tint({"$color2": "{ 255 255 255 }", "$blendtintcoloroverbase": "1"}),
+                         {"tint_default": [1.0, 1.0, 1.0], "tint_replace": 1.0})
+        # $colortint_base stands in when there is no $color2; no replace factor means a plain multiply
+        self.assertEqual(convert.paint_tint({"$colortint_base": "{ 184 56 59 }"}),
+                         {"tint_default": [0.7216, 0.2196, 0.2314]})
+        self.assertEqual(convert.paint_tint({}), {})
+
+    def test_the_tint_and_its_mask_survive_glb_encoding(self):
+        mesh = {"pos": np.zeros((3, 3)), "nrm": np.zeros((3, 3)), "uv": np.zeros((3, 2)),
+                "idx": np.array([0, 1, 2]), "material": 0}
+        material = {"name": "hat", "image": 0, "alpha": "OPAQUE", "double_sided": False, "tint": True,
+                    "tint_default": [0.7, 0.2, 0.2], "tint_replace": 0.5}
+        raw = glb.write_glb([mesh], [material], [b"image"])
+        doc = json.loads(raw[20:20 + struct.unpack_from("<I", raw, 12)[0]])
+        self.assertEqual(doc["materials"][0]["extras"],
+                         {"tint": True, "tintDefault": [0.7, 0.2, 0.2], "tintReplace": 0.5})
+        # still opaque: the alpha is a mask, not transparency
+        self.assertNotIn("alphaMode", doc["materials"][0])
+
+    def test_only_models_with_a_paint_masked_material_are_rehashed(self):
+        masked = [("a.vmt", "vertexlitgeneric", {"$blendtintbybasealpha": "1"}, "t.vtf", b"", "")]
+        plain = [("b.vmt", "vertexlitgeneric", {"$basetexture": "x"}, "t.vtf", b"", "")]
+        self.assertTrue(convert.has_paint_mask(masked))
+        self.assertFalse(convert.has_paint_mask(plain + [None]))
+
+
+class PaintEdgeCases(unittest.TestCase):
+    """Every VMT shape the audit of all cosmetics found around paint."""
+
+    def _convert(self, kv, vtf=b"vtf", text=""):
+        info = {"textures": ["m"], "eyeballs": [], "bodypart_names": ["studio"], "bodyparts": [[{}]],
+                "dominant_bone": 0}
+        mesh = {"texture": 0, "group": None, "pos": np.zeros((3, 3), np.float32), "nrm": np.zeros((3, 3), np.float32),
+                "uv": np.zeros((3, 2), np.float32), "idx": np.array([0, 1, 2])}
+        slots = [("m.vmt", "vertexlitgeneric", kv, "m.vtf", vtf, text)]
+        with patch.object(convert.srcmodel, "build_meshes", return_value=(info, [mesh])), \
+             patch.object(convert.srcmodel, "read_bones", return_value=[]), \
+             patch.object(convert.srcmodel, "read_jiggle", return_value={}), \
+             patch.object(convert, "attachment_extras", return_value={}), \
+             patch.object(convert, "follows_player_bones", return_value=False), \
+             patch.object(convert, "encode_texture", return_value=b"img") as image, \
+             patch.object(convert, "encode_emission", return_value=b"glow") as glow, \
+             patch.object(convert.glb, "write_glb") as write:
+            convert.convert(None, "models/player/items/x.mdl", b"", b"", b"", slots)
+        return write.call_args.args[1][0], image, glow
+
+    def test_paint_by_alpha_keeps_the_material_opaque_and_does_not_glow_from_that_alpha(self):
+        # The alpha is the paint mask. The game ignores it for translucency and cannot self-illuminate from it,
+        # so $translucent / $alphatest / $selfillum on such a material must not make it see-through or glow.
+        material, image, glow = self._convert({"$blendtintbybasealpha": "1", "$translucent": "1",
+                                               "$selfillum": "1", "$color2": "{ 184 56 59 }"})
+        self.assertEqual(material["alpha"], "OPAQUE")
+        self.assertTrue(material["tint"])
+        self.assertNotIn("tint_whole", material)
+        self.assertIsNone(material["emissive"])
+        glow.assert_not_called()
+        image.assert_called_once()
+        self.assertTrue(image.call_args.args[1])  # the alpha (the mask) is kept in the image
+
+    def test_a_paintable_material_with_no_mask_is_tinted_whole(self):
+        material, image, _ = self._convert({"$colortint_base": "{ 184 56 59 }"},
+                                           text='"Proxies" { "ItemTintColor" { "resultVar" "$colortint_tmp" } }')
+        self.assertTrue(material["tint"] and material["tint_whole"])
+        self.assertEqual(material["tint_default"], [0.7216, 0.2196, 0.2314])
+
+    def test_a_colortint_base_with_no_itemtintcolor_proxy_does_nothing_as_in_the_game(self):
+        material, _, _ = self._convert({"$colortint_base": "{ 184 56 59 }"})
+        self.assertFalse(material["tint"])
+        self.assertNotIn("tint_whole", material)
+
+    def test_a_constant_colour_modulation_becomes_the_base_colour_factor(self):
+        material, _, _ = self._convert({"$color2": "{ 128 128 128 }"})
+        self.assertFalse(material["tint"])
+        self.assertEqual(material["base_color"], [0.2196, 0.2196, 0.2196])  # gamma to linear, as the game does
+        white, _, _ = self._convert({"$color2": "[1 1 1]"})
+        self.assertNotIn("base_color", white)
+
+    def test_the_base_colour_factor_is_written_alongside_the_texture(self):
+        mesh = {"pos": np.zeros((3, 3)), "nrm": np.zeros((3, 3)), "uv": np.zeros((3, 2)),
+                "idx": np.array([0, 1, 2]), "material": 0}
+        material = {"name": "m", "image": 0, "alpha": "OPAQUE", "double_sided": False, "base_color": [0.2, 0.2, 0.2]}
+        raw = glb.write_glb([mesh], [material], [b"image"])
+        doc = json.loads(raw[20:20 + struct.unpack_from("<I", raw, 12)[0]])
+        pbr = doc["materials"][0]["pbrMetallicRoughness"]
+        self.assertEqual(pbr["baseColorFactor"], [0.2, 0.2, 0.2, 1.0])
+        self.assertIn("baseColorTexture", pbr)
+
+    def test_models_with_any_of_these_tints_are_rehashed_and_others_are_not(self):
+        vmt = lambda kv: [("a.vmt", "vertexlitgeneric", kv, "t.vtf", b"", "")]
+        for kv in ({"$blendtintbybasealpha": "1"}, {"$color2": "{ 9 9 9 }"}):
+            self.assertTrue(convert.has_paint_mask(vmt(kv)), kv)
+        proxied = [("a.vmt", "vertexlitgeneric", {"$colortint_base": "{ 1 2 3 }"}, "t.vtf", b"", "ItemTintColor")]
+        self.assertTrue(convert.has_paint_mask(proxied))
+        self.assertFalse(convert.has_paint_mask(vmt({"$colortint_base": "{ 1 2 3 }"})))
+        self.assertFalse(convert.has_paint_mask(vmt({"$color2": "[1 1 1]"})))
+
+
 class ClassVariantCosmetics(unittest.TestCase):
     def test_a_per_class_cosmetic_keeps_every_submodel_of_its_second_body_part_only(self):
         bones = [{"name": "root", "parent": -1, "pose_to_bone": np.eye(4)[:3].reshape(-1).tolist()}]
@@ -199,6 +304,35 @@ class TauntClips(unittest.TestCase):
         self.assertEqual(pick("taunt_dosido"), "taunt_dosido_initiator")
         self.assertIsNone(pick("taunt_nothing_like_it"))
         self.assertIsNone(pick("ab"))
+
+
+class MaskedTextureEncoding(unittest.TestCase):
+    def test_colour_under_zero_alpha_survives_encoding(self):
+        """Base alpha is a paint/phong mask in Source: the colour where it is 0 must still reach the viewer."""
+        import io
+        from PIL import Image
+        rng = np.random.default_rng(1)
+        pixels = rng.integers(0, 255, (128, 128, 4), dtype=np.uint8)
+        pixels[..., 3] = 0
+        pixels[:8, :8, 3] = 255
+        image = Image.fromarray(pixels, "RGBA")
+        with patch.object(convert.srctex, "decode_vtf", return_value=image):
+            data = convert.encode_texture(b"", True)
+        out = np.asarray(Image.open(io.BytesIO(data)).convert("RGBA"))
+        self.assertLess(abs(float(out[64:, 64:, :3].mean()) - float(pixels[64:, 64:, :3].mean())), 2.0)
+
+    def test_downscale_keeps_colour_under_zero_alpha(self):
+        import io
+        from PIL import Image
+        pixels = np.zeros((2 * convert.MAX_TEX, 2 * convert.MAX_TEX, 4), dtype=np.uint8)
+        pixels[..., 0] = 200
+        pixels[..., 1] = 40
+        image = Image.fromarray(pixels, "RGBA")
+        with patch.object(convert.srctex, "decode_vtf", return_value=image):
+            data = convert.encode_texture(b"", True)
+        out = np.asarray(Image.open(io.BytesIO(data)).convert("RGBA"))
+        self.assertEqual(out.shape[0], convert.MAX_TEX)
+        self.assertGreater(float(out[..., 0].mean()), 150)
 
 
 if __name__ == "__main__":

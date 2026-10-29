@@ -73,6 +73,8 @@ def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips
         pbr = {"metallicFactor": 0.0, "roughnessFactor": 0.85}
         if mat["image"] is not None:
             pbr["baseColorTexture"] = {"index": mat["image"]}
+            if mat.get("base_color"):
+                pbr["baseColorFactor"] = [*mat["base_color"], 1.0]
         else:
             pbr["baseColorFactor"] = [0.7, 0.7, 0.7, 1.0]
         g = {"name": mat["name"], "pbrMetallicRoughness": pbr, "doubleSided": bool(mat["double_sided"])}
@@ -84,6 +86,12 @@ def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips
             if mat["alpha"] == "MASK":
                 g["alphaCutoff"] = mat.get("cutoff", 0.5)
         extras = {key: True for key in ("tint", "attachment", "festive") if mat.get(key)}
+        if mat.get("tint_default"):
+            extras["tintDefault"] = mat["tint_default"]
+        if mat.get("tint_replace"):
+            extras["tintReplace"] = mat["tint_replace"]
+        if mat.get("tint_whole"):
+            extras["tintWhole"] = True
         extras.update(mat.get("extras") or {})
         if extras:
             g["extras"] = extras
