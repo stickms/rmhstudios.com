@@ -47,6 +47,7 @@ import {
   zEmpty,
   zExtraCommand,
   zJoinRoom,
+  zLoadout,
   zPing,
   zTeam,
   zVoice,
@@ -60,6 +61,8 @@ import {
   type PoolCloseReason,
 } from '../../../lib/tf2-game/server/pool.server';
 import { TEAM_UNASSIGNED, TICK_INTERVAL } from '../../../lib/tf2-game/core/constants';
+import { startItemCatalogFeed } from '../../../lib/tf2-game/server/item-catalog.server';
+import { getPrismaClient } from '../prisma-client';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -105,6 +108,22 @@ interface Tf2Room {
 }
 
 const rooms = new Map<string, Tf2Room>();
+
+/**
+ * The item schema for the matches (items beyond stock, equip checks): the loadout catalog the web
+ * tier stores, watched from the first room on and handed to the match pool (docs/tf2-game.md
+ * "Items and loadouts"). Not without a database (tests, the echo host).
+ */
+let stopItemCatalogFeed: (() => void) | null = null;
+function ensureItemCatalogFeed(): void {
+  if (stopItemCatalogFeed || !process.env.DATABASE_URL || process.env.TF2_MATCH_HOST === 'echo') return;
+  try {
+    const pool = getMatchPool(logger);
+    stopItemCatalogFeed = startItemCatalogFeed(getPrismaClient(), (catalog) => pool.setItemCatalog(catalog), logger);
+  } catch (error) {
+    logger.warn({ event: 'tf2_item_catalog_unavailable', error: error instanceof Error ? error.message : String(error) });
+  }
+}
 /** A socket plays in at most one TF2 room. */
 const seats = new Map<string, { code: string; playerId: number }>();
 
@@ -343,6 +362,7 @@ export function registerTf2GameHandlers(io: Server, socket: Socket): void {
     // Assigned once the pool accepts; the listener only fires after that.
     let room: Tf2Room | null = null;
 
+    ensureItemCatalogFeed();
     const result = getMatchPool(logger).createMatch(
       {
         matchId: code,
@@ -507,6 +527,11 @@ export function registerTf2GameHandlers(io: Server, socket: Socket): void {
   socket.on(TF2_C2S.EXTRA, (payload: unknown) => {
     const data = gate(TF2_C2S.EXTRA, zExtraCommand, payload);
     if (data) forward(TF2_C2S.EXTRA, { kind: 'extra', command: data.command, args: data.args });
+  });
+
+  socket.on(TF2_C2S.LOADOUT, (payload: unknown) => {
+    const data = gate(TF2_C2S.LOADOUT, zLoadout, payload);
+    if (data) forward(TF2_C2S.LOADOUT, { kind: 'loadout', cls: data.cls, slots: data.slots });
   });
 
   socket.on(TF2_C2S.PING, (payload: unknown) => {

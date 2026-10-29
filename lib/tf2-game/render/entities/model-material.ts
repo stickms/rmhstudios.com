@@ -25,6 +25,7 @@ import {
   FrontSide,
   type Material,
   NormalBlending,
+  SRGBColorSpace,
   ShaderMaterial,
   type Texture,
   Vector2,
@@ -59,6 +60,15 @@ export interface ModelMaterialExtras {
   eye?: boolean;
   missing?: string;
   unlit?: boolean;
+  /** Loadout-channel paint data (scripts/tf2-assets/convert.py): the material takes paint. */
+  tint?: boolean;
+  /** Its own colour when unpainted (sRGB), and how much a paint replaces the base colour. */
+  tintDefault?: number[];
+  tintReplace?: number;
+  /** The paint multiplies the whole material (no mask in the texture alpha). */
+  tintWhole?: boolean;
+  /** Festivizer geometry (drawn only on a festivized weapon). */
+  festive?: boolean;
 }
 
 /** Per-instance uniforms shared by all of an instance's materials. */
@@ -81,6 +91,15 @@ export interface InstanceUniforms {
   uCloakColor: { value: Vector3 };
   uFogColor: { value: Vector4 };
   uFogRange: { value: Vector2 };
+}
+
+/**
+ * An instance's uniforms for a painted part: the owner's set (lit, faded and cloaked with
+ * them — the uniform objects are shared, so writes through `.value` reach both) plus its own
+ * paint: `uPaint` (linear colour) and `uPaintOn`, read by PAINT materials only.
+ */
+export function paintUniforms(owner: InstanceUniforms): InstanceUniforms {
+  return { ...owner, uPaint: { value: new Vector3(1, 1, 1) }, uPaintOn: { value: 0 } };
 }
 
 export function createInstanceUniforms(fog?: {
@@ -150,6 +169,13 @@ uniform float uCloak;
 uniform vec3 uCloakColor;
 uniform vec4 uFogColor;
 uniform vec2 uFogRange;
+#ifdef PAINT
+uniform vec3 uPaint;
+uniform float uPaintOn;
+uniform vec3 uPaintDefault;
+uniform float uPaintReplace;
+uniform float uPaintMasked;
+#endif
 varying vec2 vUv;
 varying vec3 vNormalW;
 varying vec3 vWorldPos;
@@ -192,6 +218,14 @@ void main() {
   }
   vec4 albedo = uHasMap > 0.5 ? texture2D(uMap, vUv) : vec4(1.0);
   albedo.rgb *= uColor;
+#ifdef PAINT
+  // The game's paint tint (BLENDTINTBYBASEALPHA): where the base alpha says, the paint colour
+  // multiplies the albedo, replacing it by the material's factor; unpainted, its own tint.
+  vec3 paintC = uPaintOn > 0.5 ? uPaint : uPaintDefault;
+  vec3 paintTinted = mix(albedo.rgb * paintC, paintC, uPaintReplace);
+  albedo.rgb = mix(albedo.rgb, paintTinted, mix(1.0, albedo.a, uPaintMasked));
+  albedo.a = mix(albedo.a, 1.0, uPaintMasked);
+#endif
 #ifdef ALPHATEST
   if (albedo.a < uCutoff) discard;
 #endif
@@ -277,6 +311,10 @@ export function materialTemplate(src: Material): MaterialTemplate {
   if (translucent) defines.TRANSLUCENT = '';
   if (ud.selfillum) defines.SELFILLUM = '';
   if (ud.unlit || ud.shader === 'unlitgeneric') defines.UNLIT = '';
+  if (ud.tint) defines.PAINT = '';
+  const paintDefault = new Color(1, 1, 1);
+  if (ud.tintDefault?.length === 3)
+    paintDefault.setRGB(ud.tintDefault[0], ud.tintDefault[1], ud.tintDefault[2], SRGBColorSpace);
   const hasMap = !!s.map;
   const phong = ud.phong;
   const rim = ud.rimlight;
@@ -301,6 +339,12 @@ export function materialTemplate(src: Material): MaterialTemplate {
       uFresnel: { value: new Vector3(fr[0] ?? 0, fr[1] ?? 0.5, fr[2] ?? 1) },
       uRim: { value: new Vector3(rim?.exponent ?? 4, rim?.boost ?? 1, rim ? 1 : 0) },
       uSelfIllumTint: { value: new Vector3(tint[0] ?? 1, tint[1] ?? 1, tint[2] ?? 1) },
+      uPaintDefault: { value: new Vector3(paintDefault.r, paintDefault.g, paintDefault.b) },
+      uPaintReplace: { value: ud.tintReplace ?? 0 },
+      uPaintMasked: { value: ud.tintWhole ? 0 : 1 },
+      // Unpainted unless the instance brings its own (paintUniforms).
+      uPaint: { value: new Vector3(1, 1, 1) },
+      uPaintOn: { value: 0 },
     },
     transparent: translucent,
     additive: !!ud.additive,

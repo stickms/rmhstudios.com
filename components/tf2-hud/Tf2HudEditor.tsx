@@ -24,7 +24,8 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { api, ApiError } from '@/lib/tf2-hud/api';
 import { loadOverlay, type Progress } from '@/lib/tf2-hud/cloud';
 import { useTf2HudPrefs } from '@/lib/tf2-hud/prefs';
-import { startLocalAutosave, useEditor } from '@/lib/tf2-hud/store';
+import { flushLocalDraft, startLocalAutosave, useEditor } from '@/lib/tf2-hud/store';
+import { testInGameUrl } from '@/lib/tf2-game/client/custom-hud/selection';
 import { ImportError } from '@/lib/tf2-hud/zip/import';
 import type { PaletteAction } from './CommandPalette';
 import { ConfirmDialog } from './dialogs';
@@ -89,9 +90,15 @@ interface Props {
   draft?: string;
   hud?: string;
   fork?: string;
+  /**
+   * Mounted inside the game (pause menu → HUD → Edit HUD,
+   * components/tf2-game/custom-hud/HudEditorOverlay): the caller has loaded the project, the URL is the
+   * game's and is left alone, and the top bar's back control and "Test in game" go back to the match.
+   */
+  embedded?: { onTestInGame: () => void; onBackToGame: () => void };
 }
 
-export default function Tf2HudEditor({ draft, hud, fork }: Props) {
+export default function Tf2HudEditor({ draft, hud, fork, embedded }: Props) {
   const { t } = useTranslation('c-tf2-hud');
   const navigate = useNavigate();
   const boot = useEditor((s) => s.boot);
@@ -208,9 +215,20 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
   useEffect(() => startLocalAutosave(), []);
   useEffect(() => prefetchHeavyPanels(), []);
   useEffect(() => {
-    if (draft || hud || (overlaySize === 0 && metaName === 'My HUD')) return;
+    if (embedded || draft || hud || (overlaySize === 0 && metaName === 'My HUD')) return;
     void navigate({ to: '/tf2/hud-editor/editor', search: { draft: draftId }, replace: true });
-  }, [draft, hud, overlaySize, metaName, draftId, navigate]);
+  }, [embedded, draft, hud, overlaySize, metaName, draftId, navigate]);
+
+  /* ── "Test in game": the draft, written now, opened in /tf2/play in a new tab (this one keeps the editor) ── */
+  const testInGame = useCallback(async () => {
+    const saved = await flushLocalDraft();
+    const target = testInGameUrl(
+      saved ? { kind: 'draft', id: useEditor.getState().draftId } : { kind: 'default' },
+    );
+    const win = window.open(target, '_blank');
+    if (win) win.opener = null;
+    else window.location.assign(target);
+  }, []);
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
@@ -505,6 +523,8 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
             onSave={() => setSaveOpen(true)}
             onPalette={() => setPaletteOpen(true)}
             onAssistant={() => setAssistantOpen(true)}
+            onTestInGame={embedded ? embedded.onTestInGame : () => void testInGame()}
+            onBackToGame={embedded?.onBackToGame}
           />
           {loading ? (
             <div

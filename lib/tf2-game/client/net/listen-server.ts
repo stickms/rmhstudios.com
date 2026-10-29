@@ -24,6 +24,7 @@ import type {
 import { MatchRunner, type MatchRunnerOptions } from '../../server/match-runner';
 import type { CloseReason, FromWorker } from '../../server/worker-protocol';
 import type { GameObjectLoader } from '../../server/tf2-match-host';
+import type { Catalog } from '../../../tf2-loadout/catalog-types';
 
 /** The local human's player id on the listen server (the hub's ids start at 1 too). */
 export const LISTEN_PLAYER_ID = 1;
@@ -33,6 +34,10 @@ export type ToListenServer =
   | { t: 'start'; opts: MatchOptions; playerName: string; userId?: string }
   | { t: 'input'; data: ArrayBuffer }
   | { t: 'command'; cmd: MatchCommand }
+  /** The player's pause menu (or the in-game HUD editor): the match holds still. */
+  | { t: 'pause'; paused: boolean }
+  /** The item schema (the loadout catalog) for items beyond stock and the equip checks (sim/items). */
+  | { t: 'items'; catalog: Catalog | null }
   | { t: 'stop' };
 
 /** Worker → page. */
@@ -50,6 +55,7 @@ export class ListenServer {
   private readonly runner: MatchRunner;
   private opts: MatchOptions | null = null;
   private started = false;
+  private paused = false;
 
   constructor(
     factory: MatchFactory,
@@ -86,6 +92,8 @@ export class ListenServer {
         });
         return;
       case 'input':
+        // Nothing the player does while paused reaches the match.
+        if (this.paused) return;
         this.runner.handle({
           t: 'input',
           matchId: id,
@@ -100,6 +108,13 @@ export class ListenServer {
           playerId: LISTEN_PLAYER_ID,
           cmd: message.cmd,
         });
+        return;
+      case 'items':
+        this.runner.handle({ t: 'items', catalog: message.catalog });
+        return;
+      case 'pause':
+        this.paused = message.paused;
+        this.runner.setPaused(message.paused);
         return;
       case 'stop':
         this.runner.shutdown();
@@ -172,6 +187,10 @@ export interface ListenConnection {
   /** One packed input packet (usercmd-codec). */
   sendInput(packet: Uint8Array): void;
   command(cmd: MatchCommand): void;
+  /** Hold the match still (offline play pauses; there is nobody else in it). */
+  pause(paused: boolean): void;
+  /** Hand the listen server the item schema (once the page has loaded the catalog). */
+  items(catalog: Catalog | null): void;
   stop(): void;
 }
 
@@ -213,6 +232,12 @@ export function connectListenServer<E extends { data: unknown }>(
     },
     command(cmd: MatchCommand) {
       post({ t: 'command', cmd });
+    },
+    pause(paused: boolean) {
+      post({ t: 'pause', paused });
+    },
+    items(catalog: Catalog | null) {
+      post({ t: 'items', catalog });
     },
     stop() {
       post({ t: 'stop' });

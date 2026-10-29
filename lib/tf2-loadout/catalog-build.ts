@@ -16,7 +16,9 @@ import {
   RARITIES,
   TF_CLASSES,
   classBit,
+  type AttributeOp,
   type Catalog,
+  type CatalogAttribute,
   type CatalogEffect,
   type CatalogItem,
   type CatalogKit,
@@ -32,7 +34,7 @@ import {
  * new field): stored catalogs built by an older version are then rebuilt on the
  * next refresh instead of waiting for Valve to change the schema.
  */
-export const BUILDER_VERSION = 9;
+export const BUILDER_VERSION = 10;
 
 /** Identifies a schema *as this builder reads it*. */
 export const schemaHash = (itemsGame: string): string =>
@@ -62,6 +64,66 @@ const QUALITY_BY_NAME: Record<string, Quality> = {
  * again, once per paint kit). Matched on the prefab names an item lists itself.
  */
 const EXCLUDED_PREFAB = /^(tournament_medal|paintkit_weapon)/;
+
+/**
+ * Attribute classes with no gameplay effect: stat tracking, view-model placement, inspect, economy flags,
+ * description lines, ragdoll and vision cosmetics. Left out of `item.at` to keep the catalog small; what
+ * the game hooks for gameplay is everything else.
+ */
+const NON_GAMEPLAY_ATTRIBUTE =
+  /^(kill_eater|killstreak|min_viewmodel|inspect_|weapon_stattrak|weapon_uses_stattrak|weapon_allow_inspect|disable_fancy_class_select_anim|special_taunt|allowed_in_medieval_mode|cannot_|always_tradable|is_marketable|desc_|vision_opt_in|pyrovision|ragdolls_|set_turn_to_gold|sapper_voice_pak|item_style_override|set_attached_particle|set_item_tint|paintkit_|limited_quantity|unusualifier|supply_crate|tool_|gifter|event_date|custom_|makers_mark|is_australium_item|loot_rarity|series_number|item_meter_starts_empty)|_display_only$/i;
+
+/** description_format → how a hooked value combines ({@link AttributeOp}). */
+const ATTRIBUTE_OP: Record<string, AttributeOp> = {
+  value_is_percentage: 0,
+  value_is_inverted_percentage: 0,
+  value_is_additive: 1,
+  value_is_additive_percentage: 1,
+  value_is_particle_index: 1,
+  value_is_from_lookup_table: 2,
+  value_is_killstreakeffect_index: 2,
+  value_is_killstreak_idleeffect_index: 2,
+  value_is_or: 3,
+};
+
+/** Attribute name (lower-cased) → its class and combine op, from the schema's `attributes` block. */
+function attributeDefs(ig: VdfObject): Map<string, { cls: string; op: AttributeOp }> {
+  const out = new Map<string, { cls: string; op: AttributeOp }>();
+  const defs = block(ig, 'attributes');
+  for (const key of Object.keys(defs ?? {})) {
+    const def = block(defs, key);
+    const name = str(def, 'name');
+    const cls = str(def, 'attribute_class');
+    if (!def || !name || !cls) continue;
+    out.set(name.toLowerCase(), {
+      cls,
+      op: ATTRIBUTE_OP[(str(def, 'description_format') ?? '').toLowerCase()] ?? 4,
+    });
+  }
+  return out;
+}
+
+/**
+ * A resolved item's gameplay attributes: `attributes` (`"<name>" { "attribute_class" "value" }`) and
+ * `static_attrs` (`"<name>" "<value>"`), in schema order, as `[class, value, op]`.
+ */
+function gameplayAttributes(
+  it: VdfObject,
+  defs: Map<string, { cls: string; op: AttributeOp }>,
+): CatalogAttribute[] {
+  const out: CatalogAttribute[] = [];
+  const add = (name: string, raw: string | undefined) => {
+    const def = defs.get(name.toLowerCase());
+    if (!def || raw === undefined || NON_GAMEPLAY_ATTRIBUTE.test(def.cls)) return;
+    const n = Number(raw);
+    out.push([def.cls, raw.trim() !== '' && Number.isFinite(n) ? n : raw, def.op]);
+  };
+  const dyn = block(it, 'attributes');
+  for (const name of Object.keys(dyn ?? {})) add(name, str(block(dyn, name), 'value'));
+  const stat = block(it, 'static_attrs');
+  for (const name of Object.keys(stat ?? {})) add(name, str(stat, name));
+  return out;
+}
 
 /** Item `name` → tier, from the schema's collections (`items { <tier> { <item name> "10" } }`). */
 function rarities(ig: VdfObject): Map<string, Rarity> {
@@ -181,6 +243,7 @@ export function buildCatalog(input: BuildInput): Catalog {
   if (!ig || !items || !prefabs) throw new Error('items_game.txt is missing its items or prefabs');
   const loc = localiser(input.english);
   const resolve = resolver(prefabs);
+  const attrDefs = attributeDefs(ig);
 
   const out: CatalogItem[] = [];
   const paints: CatalogPaint[] = [];
@@ -289,6 +352,11 @@ export function buildCatalog(input: BuildInput): Catalog {
     const forced = (str(block(it, 'taunt'), 'taunt_force_weapon_slot') ?? '').toLowerCase();
     const tauntWeapon = slot === 'taunt' ? HELD_STANCES.find((s) => s === forced) : undefined;
     const extra = flags(it, tiers);
+    // What the game simulates a weapon-slot item by: its entity class, held pose and gameplay attributes.
+    const weaponSlot = WEAPON_SLOTS.has(slot);
+    const itemClass = weaponSlot ? str(it, 'item_class') : undefined;
+    const rawAnim = weaponSlot ? str(it, 'anim_slot')?.toUpperCase() : undefined;
+    const gameplay = weaponSlot ? gameplayAttributes(it, attrDefs) : [];
     out.push({
       id,
       n: displayName,
@@ -304,6 +372,9 @@ export function buildCatalog(input: BuildInput): Catalog {
       ...(str(it, 'particle_suffix') ? { ps: str(it, 'particle_suffix')! } : {}),
       ...(stance && stance !== slot ? { as: stance } : {}),
       ...(tauntWeapon ? { tw: tauntWeapon } : {}),
+      ...(itemClass ? { ic: itemClass } : {}),
+      ...(rawAnim ? { an: rawAnim } : {}),
+      ...(gameplay.length ? { at: gameplay } : {}),
       ...extra,
     });
   }
@@ -349,6 +420,10 @@ export function buildCatalog(input: BuildInput): Catalog {
       wk: sk.key,
       ...(base.ps ? { ps: base.ps } : {}),
       sk: { kit: sk.kit, base: base.id },
+      // A skin plays exactly like the weapon it decorates.
+      ...(base.ic ? { ic: base.ic } : {}),
+      ...(base.an ? { an: base.an } : {}),
+      ...(base.at ? { at: base.at } : {}),
       ...flags(resolve(sk.node), tiers),
     });
   }

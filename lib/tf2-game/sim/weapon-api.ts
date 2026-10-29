@@ -26,6 +26,8 @@ import type { DamageInfo, RadiusDamageInfo } from './damage';
 import type { Entity } from './entity';
 import type { EffectEvent } from './events';
 import type { Player } from './player';
+import type { CatalogAttribute } from '../../tf2-loadout/catalog-types';
+import { AttributeSet, hookPlayer, hookWeapon } from './items/attributes';
 
 // ─── Slots and ammo ────────────────────────────────────────────────────────
 /** Loadout slots (TF_WPN_TYPE_* / loadout_positions_t order). */
@@ -191,6 +193,10 @@ export interface Weapon {
   onOwnerDeath(): void;
   /** Movement speed multiplier while active (GetSpeedMod). */
   speedMod(): number;
+  /** The item's attributes (sim/items), read by the attribute hooks; empty for a stock weapon. */
+  readonly attributes?: AttributeSet;
+  /** `provide_on_active`: provides its attributes to the owner only while it is out. */
+  readonly provideOnActive?: boolean;
   /** Writes the prediction state into a NET_WEAPON record. */
   writeNet(out: NetRecord): void;
   /** Restores prediction state from a NET_WEAPON record (client). */
@@ -278,6 +284,9 @@ export abstract class BaseWeapon implements Weapon {
   critShots = 0;
   protected inAttack = false;
   protected inAttack2 = false;
+  /** The item's attributes (set by `createWeapon` from the spec). */
+  attributes: AttributeSet = AttributeSet.EMPTY;
+  provideOnActive = false;
 
   constructor(stats: WeaponStats) {
     this.stats = stats;
@@ -339,10 +348,32 @@ export abstract class BaseWeapon implements Weapon {
     return true;
   }
 
+  /**
+   * SDK: CTFWeaponBase::Deploy's flDeployTimeMultiplier — this weapon's own (folded into
+   * `stats.deployTimeMult`: mult_single_wep_deploy_time, a sword's 1.75), the wearer's
+   * mult_deploy_time, and the weapon switched from: its mult_switch_from_wep_deploy_time once it
+   * has been out longer than the switch time, and a sword's slower holster.
+   */
+  deployTimeMultiplier(): number {
+    const o = this.owner;
+    let mult = this.stats.deployTimeMult;
+    if (!o) return mult;
+    mult = hookPlayer(o, 'mult_deploy_time', mult);
+    const last = o.lastSlot >= 0 ? o.weapons[o.lastSlot] : null;
+    if (last && last !== this) {
+      const lw = last as Weapon & { deployedAt?: number };
+      if (this.curtime - (lw.deployedAt ?? 0) > TF_WEAPON_SWITCH_TIME) {
+        mult = hookWeapon(last, null, 'mult_switch_from_wep_deploy_time', mult);
+      }
+      if (hookWeapon(last, null, 'is_a_sword', 0) !== 0 && this.attributes.apply('is_a_sword', 0) === 0) mult *= 1.75;
+    }
+    return Math.max(mult, 0.00001);
+  }
+
   /** SDK: CTFWeaponBase::Deploy — the next attack waits for the draw. */
   deploy(): boolean {
     const t = this.curtime;
-    const delay = TF_WEAPON_SWITCH_TIME * this.stats.deployTimeMult;
+    const delay = TF_WEAPON_SWITCH_TIME * this.deployTimeMultiplier();
     this.nextPrimaryAttack = Math.max(this.nextPrimaryAttack, t + delay);
     this.nextSecondaryAttack = Math.max(this.nextSecondaryAttack, t + delay);
     this.timeWeaponIdle = t + delay;
@@ -600,8 +631,10 @@ export interface WeaponSpec {
   defindex: number;
   classname: string;
   slot: number;
-  /** For StubWeapon: optional stats overrides. */
+  /** Stats overrides: a StubWeapon's numbers, or an item's attributes folded into the script's. */
   stats?: Partial<WeaponStats>;
+  /** The item's attributes (`[class, value, op]`), for every hook not folded into `stats`. */
+  attributes?: readonly CatalogAttribute[];
 }
 
 export type WeaponFactory = (spec: WeaponSpec) => Weapon;
@@ -635,10 +668,16 @@ export function createWeapon(key: number | string | WeaponSpec): Weapon | null {
     spec = { defindex: -1, classname: String(key).toLowerCase(), slot: SLOT_PRIMARY };
   }
   const f = byDefindex.get(spec.defindex) ?? byClassname.get(spec.classname.toLowerCase());
-  if (f) return f(spec);
-  return new StubWeapon(
-    defaultWeaponStats({ classname: spec.classname, defindex: spec.defindex, slot: spec.slot, ...spec.stats }),
-  );
+  const w =
+    f?.(spec) ??
+    new StubWeapon(
+      defaultWeaponStats({ classname: spec.classname, defindex: spec.defindex, slot: spec.slot, ...spec.stats }),
+    );
+  if (spec.attributes?.length && w instanceof BaseWeapon) {
+    w.attributes = new AttributeSet(spec.attributes);
+    w.provideOnActive = w.attributes.apply('provide_on_active', 0) === 1;
+  }
+  return w;
 }
 
 /** Test helper: forget every registration. */

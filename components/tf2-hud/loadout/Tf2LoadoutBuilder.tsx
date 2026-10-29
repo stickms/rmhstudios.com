@@ -776,7 +776,7 @@ function RulesPanel({
   );
 }
 
-function SlotGroup({ title, children }: { title: string; children: React.ReactNode }) {
+export function SlotGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle)">
       <PanelHead title={title} />
@@ -787,7 +787,7 @@ function SlotGroup({ title, children }: { title: string; children: React.ReactNo
   );
 }
 
-function SlotCell({
+export function SlotCell({
   slotKey,
   label,
   idx,
@@ -855,7 +855,7 @@ function SlotCell({
   );
 }
 
-function Picker({
+export function Picker({
   idx,
   cls,
   slotKey,

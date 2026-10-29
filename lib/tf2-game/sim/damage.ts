@@ -28,6 +28,8 @@ import type { Entity } from './entity';
 import { TF_COND } from './conditions';
 import type { Player } from './player';
 import type { GameWorld } from './world';
+import { hookInt, hookPlayer, hookWeapon } from './items/attributes';
+import { applyRadiusHeal, damageWeapon, inAirDueToExplosion } from './items/hooks';
 
 // ─── DMG_* (shareddefs.h) ───────────────────────────────────────────────────
 export const DMG_GENERIC = 0;
@@ -450,10 +452,21 @@ export function applyOnDamageModifyRules(
     if (info.critType === CRIT_NONE && inflictor && !inflictor.isPlayer() && world.isDeflected(inflictor)) {
       info.critType = CRIT_MINI;
     }
+    // Weapons that mini-crit targets an enemy explosion put in the air (mini_crit_airborne: the Direct Hit).
+    if (info.critType === CRIT_NONE && victim && inAirDueToExplosion(victim)) {
+      const weapon = damageWeapon(world, info);
+      if (weapon && hookInt(hookWeapon(weapon, weapon.owner, 'mini_crit_airborne', 0)) === 1) info.critType = CRIT_MINI;
+    }
   }
 
   // Invulnerable: events only (the caller still applies the push).
   if (victim && victim.cond.invulnerable && !allowDamage) return false;
+
+  // Attributes that change damage against players (mult_dmg_vs_players).
+  if (victim) {
+    const weapon = damageWeapon(world, info);
+    if (weapon) flDamage = hookWeapon(weapon, weapon.owner, 'mult_dmg_vs_players', flDamage);
+  }
 
   // Defense buffs (Battalion's Backup), unless backstab or crush.
   if (victim && info.customKill !== TF_DMG_CUSTOM_BACKSTAB && (info.damageType & DMG_CRUSH) === 0) {
@@ -564,6 +577,11 @@ export function applyPushFromDamage(player: Player, info: DamageInfo, dir: Vec3)
     }
   }
 
+  // damage_force_reduction on the victim (the Shortstop, the Mantreads) — not for self damage.
+  if (info.attacker !== player.id) {
+    const reduce = hookPlayer(player, 'damage_force_reduction', 1);
+    if (reduce !== 1) set(force, force.x * reduce, force.y * reduce, force.z * reduce);
+  }
   player.applyAbsVelocityImpulse(force);
   if (info.attacker !== player.id && info.damageType & DMG_BLAST) player.takenBlastDamageSinceLastMovement = true;
 }
@@ -571,6 +589,8 @@ export function applyPushFromDamage(player: Player, info: DamageInfo, dir: Vec3)
 /** m_iBlastJumpState bits. */
 export const TF_PLAYER_STICKY_JUMPED = 0x01;
 export const TF_PLAYER_ROCKET_JUMPED = 0x02;
+/** Knocked into the air by an enemy's blast (CTFGameMovement::CategorizePosition). */
+export const TF_PLAYER_ENEMY_BLASTED_ME = 0x04;
 
 /** CTFRadiusDamageInfo. */
 export interface RadiusDamageInfo {
@@ -665,6 +685,7 @@ export function radiusDamage(world: GameWorld, r: RadiusDamageInfo): void {
   const info = r.info;
   const falloff = radiusFalloff(info.damage, r.radius, info.damageType);
   let enemiesHit = 0;
+  let dealt = 0;
   if (r.radius > 0) {
     rdCandidates.length = 0;
     world.entitiesInSphere(r.src, r.radius, rdCandidates);
@@ -679,7 +700,10 @@ export function radiusDamage(world: GameWorld, r: RadiusDamageInfo): void {
       const dz = r.src.z - rdNearest.z;
       if (dx * dx + dy * dy + dz * dz > radSqr) continue;
       const taken = applyRadiusToEntity(world, r, e, falloff);
-      if (taken && e.isPlayer() && attacker && !e.inSameTeam(attacker)) enemiesHit++;
+      if (taken && e.isPlayer() && attacker && !e.inSameTeam(attacker)) {
+        enemiesHit++;
+        dealt += Math.trunc(taken);
+      }
     }
   }
   if (r.rjRadius && info.attacker !== NO_ENTITY) {
@@ -692,6 +716,8 @@ export function radiusDamage(world: GameWorld, r: RadiusDamageInfo): void {
       info.baseDamage = r.rjBaseDamage;
     }
     info.damagedOtherPlayers = enemiesHit;
+    // Health from the damage the blast did to enemies (add_health_on_radius_damage: the Black Box).
+    if (dealt > 0 && attacker.isPlayer()) applyRadiusHeal(attacker as Player, damageWeapon(world, info), dealt, info.damage);
     attacker.nearestPoint(r.src, rdNearest);
     const dx = r.src.x - rdNearest.x;
     const dy = r.src.y - rdNearest.y;

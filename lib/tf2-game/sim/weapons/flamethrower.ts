@@ -61,6 +61,7 @@ import {
 import { TFWeaponGun } from './gun';
 import { removeInvisibility } from './spy-state';
 import { num } from './tf-weapon';
+import { hookInt, hookWeapon } from '../items/attributes';
 
 const DEG2RAD = Math.PI / 180;
 /** MAX_TRACE_LENGTH. */
@@ -729,8 +730,11 @@ export class Flamethrower extends TFWeaponGun {
       this.setWeaponState(FT_STATE_IDLE);
       return;
     }
-    if (this.reserve() < FLAMETHROWER.airblastCost) return;
-    this.fireAirBlast(cmd, FLAMETHROWER.airblastCost);
+    // CTFFlameThrower::CanAirBlast (airblast_disabled) and the burst ammo × mult_airblast_cost.
+    if (hookInt(hookWeapon(this, o, 'airblast_disabled', 0)) !== 0) return;
+    const cost = Math.trunc(FLAMETHROWER.airblastCost * hookWeapon(this, o, 'mult_airblast_cost', 1));
+    if (this.reserve() < cost) return;
+    this.fireAirBlast(cmd, cost);
   }
 
   /** SDK: CTFFlameThrower::FireAirBlast. */

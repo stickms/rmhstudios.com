@@ -55,6 +55,8 @@ export interface ImageOp {
   tint?: Rgba;
   /** 0–1: draw only this fraction of the width (progress bars). */
   clipX?: number;
+  /** 0–1: draw only this fraction of the height, from the bottom up (a health cross filling). */
+  clipY?: number;
   /**
    * Draw at the texture's own pixel size from the panel's top-left, clipped to the panel, instead of
    * stretching to it. This is what an `ImagePanel` does unless `scaleImage` is set.

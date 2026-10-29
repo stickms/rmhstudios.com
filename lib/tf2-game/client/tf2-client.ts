@@ -36,7 +36,8 @@ import { findTf2Map, type Tf2Mode } from '../data/maps';
 import { gameAssetUrl } from '../assets/urls';
 import { SOURCE_UNIT } from '../render/coords';
 import { WorldRenderer } from '../render/world-renderer';
-import { EntityRenderer, ModelLibrary, ParticleLibrary, type EntityState as RenderEntity } from '../render/entities';
+import { decodeItemsCached } from '../sim/items/loadout';
+import { EntityRenderer, LoadoutModels, ModelLibrary, ParticleLibrary, type EntityState as RenderEntity } from '../render/entities';
 import { classEyeHeight } from '../sim/class-speeds';
 import { CRIT_BOOST_CONDS, TF_COND } from '../sim/conditions';
 import { LIFE_ALIVE, EF_NODRAW } from '../sim/entity';
@@ -59,6 +60,7 @@ import { InterpolationBuffer, RenderClock } from './net/interpolation';
 import { Prediction, type PredictedEffect, type PredictedSound } from './net/prediction';
 import { SnapshotClient, type TimedEvent } from './net/snapshot-client';
 import { connectListenServer, type ListenConnection } from './net/listen-server';
+import { loadItemCatalog } from './item-catalog';
 import { FixedStep, GameLoop, type FrameInfo } from './loop';
 import {
   applyVolumes,
@@ -100,6 +102,8 @@ const HUD_HZ = 20;
 interface Transport {
   input(packet: Uint8Array): void;
   command(cmd: MatchCommand): void;
+  /** Offline only: hold the listen server's match still. */
+  pause?(paused: boolean): void;
   chat(text: string, teamOnly: boolean): void;
   stop(): void;
   readonly online: boolean;
@@ -127,6 +131,8 @@ export class Tf2Client implements GameClient {
   private readonly snap = new SnapshotClient();
   private interp = new InterpolationBuffer();
   private readonly clock = new RenderClock();
+  /** The listen server is held still (offline pause). */
+  private offlinePaused = false;
   private sender = new InputSender();
   private readonly ticks = new FixedStep(TICK_INTERVAL, 5);
   private readonly log = new HudEventLog();
@@ -207,6 +213,8 @@ export class Tf2Client implements GameClient {
   // ─── Transport ───────────────────────────────────────────────────────────
 
   private connect(): void {
+    // Items beyond stock: prediction and rendering read the item schema (sim/items).
+    void loadItemCatalog();
     const s = this.opts.session;
     if (s.kind === 'offline') {
       const info = findTf2Map(s.map);
@@ -235,10 +243,15 @@ export class Tf2Client implements GameClient {
             this.fail(new ClientFailure({ code: reason === 'map-failed' ? 'map-failed' : 'room', detail: `${reason}${message ? `: ${message}` : ''}`, retryable: true })),
         },
       );
+      // The item schema: items beyond stock and the equip checks run in the listen server too.
+      void loadItemCatalog().then((catalog) => {
+        if (catalog && !this.disposed) conn.items(catalog);
+      });
       this.transport = {
         online: false,
         input: (p) => conn.sendInput(p),
         command: (c) => conn.command(c),
+        pause: (paused) => conn.pause(paused),
         chat: (text, teamOnly) => {
           conn.command({ kind: 'chat', text, teamOnly });
           // No hub to deliver it back offline: show it here.
@@ -292,6 +305,7 @@ export class Tf2Client implements GameClient {
         else if (c.kind === 'voice') net.tf2.voice(c.menu, c.item);
         else if (c.kind === 'chat') net.tf2.chat(c.text, c.teamOnly);
         else if (c.kind === 'extra') net.tf2.extra(c.command, c.args);
+        else if (c.kind === 'loadout') net.tf2.loadout(c.cls, c.slots);
       },
       chat: (text, teamOnly) => net.tf2.chat(text, teamOnly),
       stop: () => {
@@ -357,6 +371,8 @@ export class Tf2Client implements GameClient {
         scene: world.scene,
         models,
         particles: new ParticleLibrary((p) => gameAssetUrl(p, 'tf2')),
+        // Unlock weapons and cosmetics from the loadout builder's model channel.
+        loadout: new LoadoutModels(),
         game: 'tf2',
         sunVisible: this.sunVisible,
         trace: (a, b) => {
@@ -552,6 +568,19 @@ export class Tf2Client implements GameClient {
     }
     if (!t) return;
     switch (c.kind) {
+      case 'pause':
+        // Offline play pauses (the pause menu, the in-game HUD editor); online play goes on.
+        if (t.pause && c.paused !== this.offlinePaused) {
+          this.offlinePaused = c.paused;
+          t.pause(c.paused);
+          if (!c.paused) {
+            // The match resumes from the tick it stopped on: take the clock and prediction from there.
+            this.clock.resync();
+            this.ticks.reset();
+            this.prediction = null;
+          }
+        }
+        break;
       case 'team':
         t.command({ kind: 'team', team: c.team });
         break;
@@ -575,6 +604,9 @@ export class Tf2Client implements GameClient {
         break;
       case 'extra':
         t.command({ kind: 'extra', command: c.command, args: c.args });
+        break;
+      case 'loadout':
+        t.command({ kind: 'loadout', cls: c.cls, slots: c.slots });
         break;
       default:
         break;
@@ -620,7 +652,7 @@ export class Tf2Client implements GameClient {
 
     // Ticks: build, predict, send.
     const t0 = performance.now();
-    const n = this.ticks.advance(dt);
+    const n = this.offlinePaused ? 0 : this.ticks.advance(dt);
     for (let i = 0; i < n; i++) this.tick(Math.floor(this.serverTime / TICK_INTERVAL) + i);
 
     const t1 = performance.now();
@@ -683,6 +715,7 @@ export class Tf2Client implements GameClient {
             invis: this.vmInvis(pp, dt),
             uber: pp.cond.has(TF_COND.INVULNERABLE),
             crit: CRIT_BOOST_CONDS.some((c) => pp.cond.has(c)),
+            item: decodeItemsCached(pp.items).weapons.find((w) => w.item === weapon?.defindex && !w.worn),
           }
         : null,
     );

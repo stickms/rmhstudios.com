@@ -38,6 +38,7 @@ import {
 } from './constants';
 import { disguiseTime, exposeCloak, fadeInvis, invisibilityThink, removeDisguise, resetSpyState, spyState } from './spy-state';
 import { num, TFWeapon, type ClassSkillWeapon } from './tf-weapon';
+import { hookPlayer, hookWeapon } from '../items/attributes';
 
 /** CTFWeaponInvis. */
 export class InvisWatch extends TFWeapon implements ClassSkillWeapon {
@@ -110,7 +111,7 @@ export class InvisWatch extends TFWeapon implements ClassSkillWeapon {
       return;
     }
     if (o.cond.has(TF_COND.STEALTHED)) {
-      o.cloakMeter -= dt * INVIS_WATCH.consumeRate;
+      o.cloakMeter -= dt * cloakConsumeRate(o);
       if (o.cloakMeter <= 0) {
         o.cloakMeter = 0;
         fadeInvis(o, 1);
@@ -118,7 +119,7 @@ export class InvisWatch extends TFWeapon implements ClassSkillWeapon {
       }
       // Bumping into an enemy (OnSpyTouchedByEnemy) or getting hurt flickers the cloak.
       if (this.touchingEnemy(o) || this.prevHealth - o.health > STEALTH_BLINK_DAMAGE) exposeCloak(o);
-    } else o.cloakMeter = Math.min(INVIS_WATCH.meterMax, o.cloakMeter + dt * INVIS_WATCH.regenRate);
+    } else o.cloakMeter = Math.min(INVIS_WATCH.meterMax, o.cloakMeter + dt * hookWeapon(this, o, 'mult_cloak_meter_regen_rate', INVIS_WATCH.regenRate));
     if (o.cond.has(TF_COND.STEALTHED_BLINK) && SPY_STEALTH_BLINKTIME < t - s.lastStealthExposeTime) o.cond.remove(TF_COND.STEALTHED_BLINK);
     this.prevHealth = o.health;
     invisibilityThink(o);
@@ -341,3 +342,13 @@ export const disguiseWeaponOf = (p: Player): number => (p.cond.has(TF_COND.DISGU
 
 /** The world model for a disguise weapon (renderer helper). */
 export const disguiseWeaponModel = (defindex: number): string => STOCK_WEAPONS[defindex]?.worldModel ?? '';
+
+/**
+ * SDK: CTFWeaponInvis::SetCloakRates — tf_spy_cloak_consume_rate × the owner's
+ * mult_cloak_meter_consume_rate, where a factor below 1 is read inverted (0.75 → 1 / 1.25).
+ */
+export function cloakConsumeRate(o: Player): number {
+  let factor = hookPlayer(o, 'mult_cloak_meter_consume_rate', 1);
+  if (factor < 1) factor = 1 / (2 - factor);
+  return INVIS_WATCH.consumeRate * factor;
+}

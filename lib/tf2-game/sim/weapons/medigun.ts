@@ -28,6 +28,7 @@ import type { WeaponSpec } from '../weapon-api';
 import { ACT, MEDIGUN_TARGET_CHECK_INTERVAL, PLAYERANIMEVENT_ATTACK_POST, PLAYERANIMEVENT_ATTACK_PRE } from './constants';
 import { isStealthed } from './spy-state';
 import { num, TFWeapon } from './tf-weapon';
+import { hookInt, hookPlayer, hookWeapon } from '../items/attributes';
 
 const mgTrace = emptyTrace();
 const mgSrc = vec3();
@@ -73,8 +74,27 @@ export class Medigun extends TFWeapon {
     return this.targetRange() * MEDIGUN.stickRangeMult;
   }
 
+  /** SDK: CWeaponMedigun::GetHealRate — the script rate × the owner's mult_medigun_healrate. */
   healRate(): number {
-    return this.stats.damage || MEDIGUN.baseHealRate;
+    return hookPlayer(this.owner, 'mult_medigun_healrate', this.stats.damage || MEDIGUN.baseHealRate);
+  }
+
+  /**
+   * SDK: CWeaponMedigun::GetOverHealBonus — how far past max health the beam overheals:
+   * tf_max_health_boost, with mult_medigun_overheal_amount added as a bonus or scaling the
+   * overheal part as a penalty (the Quick-Fix's 0.5 → 125 %).
+   */
+  overhealMult(): number {
+    let bonus = MEDIGUN.overhealMult - 1;
+    const mod = hookWeapon(this, this.owner, 'mult_medigun_overheal_amount', 1);
+    if (mod >= 1) bonus += mod;
+    else if (bonus > 0) bonus = bonus * mod + 1;
+    return Math.max(1, bonus);
+  }
+
+  /** SDK: CWeaponMedigun::GetChargeType (set_charge_type): 0 ÜberCharge, 1 Kritzkrieg crits. */
+  chargeType(): number {
+    return hookInt(hookWeapon(this, this.owner, 'set_charge_type', 0));
   }
 
   /** SDK: CWeaponMedigun::IsReleasingCharge. */
@@ -172,7 +192,7 @@ export class Medigun extends TFWeapon {
     if (target.id !== prev) this.startHealingTarget(target);
     // The beam's heal rate with the out-of-combat ramp (ConditionThink's flScale).
     const scale = remapClamped(w.curtime - target.lastDamageTime, MEDIGUN.healRampStart, MEDIGUN.healRampEnd, 1, MEDIGUN.healRampMaxMult);
-    target.addHealer(o.id, this.healRate() * scale, MEDIGUN.overhealMult);
+    target.addHealer(o.id, this.healRate() * scale, this.overhealMult());
     if (!this.chargeRelease) this.buildCharge(target);
     return true;
   }
@@ -189,6 +209,13 @@ export class Medigun extends TFWeapon {
     if (healers > 1) mod /= healers;
     amount *= mod;
     if (rules.inSetup) amount *= MEDIGUN.setupChargeMult;
+    // The owner's charge-rate attributes (mult_medigun_overheal_uberchargerate on a full-health
+    // patient outside setup, then mult_medigun_uberchargerate).
+    const owner = this.owner!;
+    if (patient.health >= patient.maxHealth && !rules.inSetup) {
+      amount = hookPlayer(owner, 'mult_medigun_overheal_uberchargerate', amount);
+    }
+    amount = hookPlayer(owner, 'mult_medigun_uberchargerate', amount);
     const next = Math.min(this.chargeLevel + amount, 1);
     if (next >= 1 && this.chargeLevel < 1) this.notifyChargeReady();
     this.chargeLevel = next;
@@ -274,7 +301,7 @@ export class Medigun extends TFWeapon {
   /** SDK: CWeaponMedigun::StartHealingTarget → CTFPlayerShared::Heal. */
   private startHealingTarget(target: Player): void {
     const o = this.owner!;
-    target.addHealer(o.id, this.healRate(), MEDIGUN.overhealMult);
+    target.addHealer(o.id, this.healRate(), this.overhealMult());
     o.world.emitEffect({
       kind: 'beam',
       system: this.beamName(),
@@ -335,7 +362,7 @@ export class Medigun extends TFWeapon {
     if (this.chargeLevel < 1 || this.chargeRelease) return;
     this.chargeRelease = true;
     this.releaseStartedAt = this.t;
-    o.world.emitSound('TFPlayer.InvulnerableOn', { entity: o.id });
+    o.world.emitSound(this.chargeType() === 1 ? 'TFPlayer.CritBoostOn' : 'TFPlayer.InvulnerableOn', { entity: o.id });
     this.applyChargeEffects();
     if (this.healTarget !== NO_ENTITY) {
       o.world.emitEffect({ kind: 'beam', system: this.beamName(), pos: { x: o.origin.x, y: o.origin.y, z: o.origin.z }, entity: o.id, value: this.healTarget });
@@ -365,18 +392,22 @@ export class Medigun extends TFWeapon {
       this.releaseStartedAt = 0;
       this.readyNotified = false;
       this.detachedIds.fill(NO_ENTITY);
-      o.world.emitSound('TFPlayer.InvulnerableOff', { entity: o.id });
+      o.world.emitSound(this.chargeType() === 1 ? 'TFPlayer.CritBoostOff' : 'TFPlayer.InvulnerableOff', { entity: o.id });
       o.world.emitEffect({ kind: 'particle', system: this.chargedEffectName(), pos: { x: o.origin.x, y: o.origin.y, z: o.origin.z }, entity: o.id, value: 0 });
     }
   }
 
-  /** RecalculateChargeEffects: invulnerable medic and patient, lingering tf_invuln_time. */
+  /**
+   * RecalculateChargeEffects: invulnerable medic and patient, lingering tf_invuln_time — or, for a
+   * Kritzkrieg (MEDIGUN_CHARGE_CRITICALBOOST), crit-boosted.
+   */
   applyChargeEffects(): void {
     const o = this.owner;
     if (!o || !o.alive || !this.isReleasingCharge()) return;
-    o.cond.add(TF_COND.INVULNERABLE, MEDIGUN.invulnLinger, o.id);
+    const cond = this.chargeType() === 1 ? TF_COND.CRITBOOSTED : TF_COND.INVULNERABLE;
+    o.cond.add(cond, MEDIGUN.invulnLinger, o.id);
     const patient = o.world.player(this.healTarget);
-    if (patient && patient.alive) patient.cond.add(TF_COND.INVULNERABLE, MEDIGUN.invulnLinger, o.id);
+    if (patient && patient.alive) patient.cond.add(cond, MEDIGUN.invulnLinger, o.id);
   }
 
   /** SDK: CWeaponMedigun::WeaponIdle. */

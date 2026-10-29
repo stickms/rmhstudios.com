@@ -7,6 +7,7 @@
 import { create } from 'zustand';
 import {
   clearTfAssets,
+  DRAFT_CHANNEL,
   deleteDraft,
   loadDraft,
   loadTfAssets,
@@ -16,7 +17,7 @@ import {
 import type { AiContext } from './ai-context';
 import { DEFAULT_TEST_STATE, type TestState } from './fixtures';
 import { DEFAULT_PAGE_ID, resolvePage } from './pages';
-import { BaseCache } from './project/base';
+import { baseCache } from './project/base-cache';
 import {
   binaryContent,
   contentBytes,
@@ -41,7 +42,7 @@ import { buildHudZip } from './zip/build';
 import type { ExportScope } from './zip/export';
 import { decodeUtf8, encodeUtf8 } from './util/sha1';
 
-export const baseCache = new BaseCache();
+export { baseCache };
 
 /** Files every preview needs regardless of page. */
 export const CORE_FILES = [
@@ -686,15 +687,35 @@ export const useEditor = create<EditorState>((set, get) => {
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 const LOCAL_SAVE_DELAY = 1200;
 
-async function flushLocal(): Promise<void> {
+function announceDraft(id: string): void {
+  try {
+    const channel = new BroadcastChannel(DRAFT_CHANNEL);
+    channel.postMessage({ type: 'draft-saved', id });
+    channel.close();
+  } catch {
+    /* no BroadcastChannel: the game picks the draft up on its next load */
+  }
+}
+
+async function flushLocal(): Promise<boolean> {
   clearTimeout(saveTimer);
   saveTimer = undefined;
   const cur = useEditor.getState();
   // An untouched project is not worth a draft.
   if (cur.overlay.size === 0 && cur.meta.name === DEFAULT_META.name && cur.meta.description === '')
-    return;
+    return false;
   await saveDraft(cur.draftId, cur.meta, cur.overlay, cur.remoteId);
   useEditor.getState().noteAutosave(Date.now());
+  announceDraft(cur.draftId);
+  return true;
+}
+
+/**
+ * Write the draft now (the game's "Test in game" reads it). False when the project is untouched — the
+ * TF2 Default, which needs no draft.
+ */
+export function flushLocalDraft(): Promise<boolean> {
+  return flushLocal();
 }
 
 /**

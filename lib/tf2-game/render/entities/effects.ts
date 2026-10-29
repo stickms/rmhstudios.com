@@ -45,7 +45,11 @@ import {
   ParticleSimulation,
   type ParticleEnvironment,
 } from '@/lib/tf2-loadout/particles/simulation';
-import type { ParticleBundle } from '@/lib/tf2-loadout/particles/types';
+import {
+  PARTICLE_API,
+  type ParticleBundle,
+  type ParticleManifest,
+} from '@/lib/tf2-loadout/particles/types';
 import { TF_TEAM_BLUE } from '../../core/constants';
 import type { DeathEvent, EffectEvent } from '../../sim/events';
 import { SOURCE_UNIT, srcToThree } from '../coords';
@@ -55,6 +59,8 @@ import type { ModelAsset } from './model-asset';
 import { ModelInstance } from './model-instance';
 
 export const MAX_LIVE_SYSTEMS = 64;
+/** System names `unusual:<effect id>[:<suffix>]` load an unusual effect from the loadout channel. */
+export const UNUSUAL_PREFIX = 'unusual:';
 /** Source units: one-shots farther than this are skipped, loops stop simulating. */
 export const LOD_DISTANCE = 3000;
 export const MAX_DECALS = 128;
@@ -195,8 +201,40 @@ export class ParticleLibrary {
   >();
   private readonly fallback: Texture | undefined;
 
-  constructor(private readonly url: (path: string) => string) {
+  private unusualManifest: Promise<ParticleManifest | null> | null = null;
+  private readonly unusualUrl: (path: string) => string;
+
+  /**
+   * `url` resolves a game particle channel path; `opts.unusualUrl` the loadout particle
+   * channel's (unusual effects by effect id, PARTICLE_API by default).
+   */
+  constructor(
+    private readonly url: (path: string) => string,
+    opts: { unusualUrl?: (path: string) => string } = {},
+  ) {
     this.fallback = typeof document !== 'undefined' ? softDiscTexture() : undefined;
+    this.unusualUrl = opts.unusualUrl ?? ((p) => PARTICLE_API + p);
+  }
+
+  /** The loadout channel's bundle for `unusual:<effect id>[:<item particle suffix>]`. */
+  private async loadUnusual(
+    system: string,
+  ): Promise<{ bundle: ParticleBundle; textures: LoadedTextures } | null> {
+    this.unusualManifest ??= fetch(this.unusualUrl('manifest.json'))
+      .then((r) => (r.ok ? (r.json() as Promise<ParticleManifest>) : null))
+      .catch(() => null);
+    const manifest = await this.unusualManifest;
+    const path = manifest?.effects[system.slice(UNUSUAL_PREFIX.length)];
+    if (!path || !/^effects\/[a-f0-9]{40,64}\.json$/.test(path)) return null;
+    const r = await fetch(this.unusualUrl(path));
+    if (!r.ok) return null;
+    const bundle = (await r.json()) as ParticleBundle;
+    if (bundle.v !== 1) return null;
+    const textures = await acquireTextures(bundle, {
+      url: (p2) => this.unusualUrl(p2),
+      fallback: this.fallback,
+    });
+    return { bundle, textures };
   }
 
   loadIndex(): Promise<GameParticleIndex | null> {
@@ -210,6 +248,7 @@ export class ParticleLibrary {
     let p = this.bundles.get(system);
     if (!p) {
       p = (async () => {
+        if (system.startsWith(UNUSUAL_PREFIX)) return this.loadUnusual(system);
         const idx = await this.loadIndex();
         const path = idx?.systems[system];
         if (!path) return null;

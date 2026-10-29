@@ -1,6 +1,8 @@
 /**
  * The editor's top bar: back, HUD name, save status, history, and the three
- * big actions — import, download, save & share.
+ * big actions — import, download, save & share — plus "Test in game" (the
+ * HUD applied in /tf2/play). Inside the game (pause menu → HUD → Edit) the
+ * back link returns to the match instead.
  */
 'use client';
 
@@ -11,6 +13,7 @@ import {
   Download,
   FileDiff,
   FolderUp,
+  Gamepad2,
   Redo2,
   Save,
   Sparkles,
@@ -28,12 +31,18 @@ export default function TopBar({
   onSave,
   onPalette,
   onAssistant,
+  onTestInGame,
+  onBackToGame,
 }: {
   onImport: () => void;
   onExport: () => void;
   onSave: () => void;
   onPalette: () => void;
   onAssistant: () => void;
+  /** Play with this HUD (/tf2/play, or back into the running match). */
+  onTestInGame?: () => void;
+  /** Inside the game: the back control returns to the match. */
+  onBackToGame?: () => void;
 }) {
   const { t } = useTranslation('c-tf2-hud');
   const meta = useEditor((s) => s.meta);
@@ -74,13 +83,29 @@ export default function TopBar({
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-(--app-border) bg-(--app-bg-subtle) px-2 sm:px-3">
-      <Link
-        to="/tf2/hud-editor"
-        className="flex shrink-0 items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1 text-sm font-medium text-(--app-text-muted) hover:text-(--app-text)"
-      >
-        <ArrowLeft className="size-4 rtl-flip" aria-hidden />
-        <span className="hidden sm:inline">{t('back', { defaultValue: 'Back' })}</span>
-      </Link>
+      {onBackToGame ? (
+        <button
+          type="button"
+          onClick={onBackToGame}
+          className="flex shrink-0 items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1 text-sm font-medium text-(--app-text-muted) hover:text-(--app-text)"
+        >
+          <ArrowLeft className="size-4 rtl-flip" aria-hidden />
+          <span className="hidden sm:inline">
+            {t('back-to-game', { defaultValue: 'Back to game' })}
+          </span>
+          <span className="sr-only sm:hidden">
+            {t('back-to-game', { defaultValue: 'Back to game' })}
+          </span>
+        </button>
+      ) : (
+        <Link
+          to="/tf2/hud-editor"
+          className="flex shrink-0 items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1 text-sm font-medium text-(--app-text-muted) hover:text-(--app-text)"
+        >
+          <ArrowLeft className="size-4 rtl-flip" aria-hidden />
+          <span className="hidden sm:inline">{t('back', { defaultValue: 'Back' })}</span>
+        </Link>
+      )}
 
       <input
         value={meta.name}
@@ -134,6 +159,21 @@ export default function TopBar({
         <Btn variant="ghost" icon={FolderUp} onClick={onImport} className="hidden lg:inline-flex">
           {t('import-zip', { defaultValue: 'Import zip' })}
         </Btn>
+        {onTestInGame ? (
+          <Btn
+            variant="ghost"
+            icon={Gamepad2}
+            onClick={onTestInGame}
+            title={t('test-in-game-hint', { defaultValue: 'Play a match with this HUD' })}
+          >
+            <span className="hidden sm:inline">
+              {t('test-in-game', { defaultValue: 'Test in game' })}
+            </span>
+            <span className="sr-only sm:hidden">
+              {t('test-in-game', { defaultValue: 'Test in game' })}
+            </span>
+          </Btn>
+        ) : null}
         <Btn variant="secondary" icon={Download} onClick={onExport}>
           <span className="hidden sm:inline">{t('download', { defaultValue: 'Download' })}</span>
         </Btn>

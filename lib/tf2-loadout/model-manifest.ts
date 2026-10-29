@@ -151,7 +151,7 @@ export function buildModelManifest(
       const basename = str(perClass, 'basename');
       for (const c of classes) {
         const explicit = str(perClass, c) ?? str(perClass, FILE_CLASS[c]);
-        const mdl = explicit ?? (basename ? basename.replace('%s', FILE_CLASS[c]) : null);
+        const mdl = explicit ?? (basename ? basename.replaceAll('%s', FILE_CLASS[c]) : null);
         if (mdl) models.push({ class: c, mdl: norm(mdl), role: 'main', glb: `${id}_${c}.glb` });
       }
     } else if (single) {
@@ -173,7 +173,7 @@ export function buildModelManifest(
           const basename = str(own, 'basename');
           for (const c of classes) {
             const explicit = str(own, c) ?? str(own, FILE_CLASS[c]);
-            const mdl = explicit ?? (basename ? basename.replace('%s', FILE_CLASS[c]) : null);
+            const mdl = explicit ?? (basename ? basename.replaceAll('%s', FILE_CLASS[c]) : null);
             if (mdl) {
               models.push({
                 class: c,

@@ -2184,6 +2184,365 @@
      "advance": 0.06
     }
    ]
+  },
+  {
+   "name": "loadout-players",
+   "view": {
+    "origin": [
+     1330,
+     1465,
+     345
+    ],
+    "angles": [
+     10,
+     180,
+     0
+    ],
+    "fov": 75
+   },
+   "entities": [
+    {
+     "id": 1,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1150,
+      "oy": 1290,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 127,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P127/S133w/M6/C183p5046e13/C446p5051"
+     },
+     "ground": true
+    },
+    {
+     "id": 2,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1150,
+      "oy": 1360,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 127,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P127/S133w/M6/C183p5046e13/C446p5051"
+     },
+     "ground": true
+    },
+    {
+     "id": 3,
+     "type": "player",
+     "fields": {
+      "cls": 7,
+      "team": 2,
+      "ox": 1150,
+      "oy": 1430,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 215,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P215/S12/M214f/C126p5054e59"
+     },
+     "ground": true
+    },
+    {
+     "id": 4,
+     "type": "player",
+     "fields": {
+      "cls": 7,
+      "team": 3,
+      "ox": 1150,
+      "oy": 1500,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 214,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P215/S12/M214f/C126p5054e59"
+     },
+     "ground": true
+    },
+    {
+     "id": 5,
+     "type": "player",
+     "fields": {
+      "cls": 6,
+      "team": 2,
+      "ox": 1150,
+      "oy": 1570,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 41,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P41/S11/M5/C378/C734p5051"
+     },
+     "ground": true
+    },
+    {
+     "id": 6,
+     "type": "player",
+     "fields": {
+      "cls": 5,
+      "team": 3,
+      "ox": 1150,
+      "oy": 1640,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 35,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P17/S35/M8/C126e19"
+     },
+     "ground": true
+    }
+   ],
+   "script": [
+    {
+     "advance": 0.5
+    }
+   ]
+  },
+  {
+   "name": "loadout-closeup",
+   "view": {
+    "origin": [
+     1290,
+     1325,
+     335
+    ],
+    "angles": [
+     6,
+     180,
+     0
+    ],
+    "fov": 45
+   },
+   "entities": [
+    {
+     "id": 1,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1150,
+      "oy": 1290,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 127,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P127/S133w/M6/C183p5046e13/C446p5051"
+     },
+     "ground": true
+    },
+    {
+     "id": 2,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1150,
+      "oy": 1360,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 127,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P127/S133w/M6/C183p5046e13/C446p5051"
+     },
+     "ground": true
+    }
+   ],
+   "script": [
+    {
+     "advance": 0.5
+    }
+   ]
+  },
+  {
+   "name": "loadout-vm-directhit-idle",
+   "view": {
+    "origin": [
+     1420,
+     1440,
+     340
+    ],
+    "angles": [
+     0,
+     180,
+     0
+    ],
+    "fov": 90
+   },
+   "vm": {
+    "cls": 3,
+    "team": 2,
+    "defindex": 127,
+    "vmActivity": 0,
+    "vmActivitySeq": 1,
+    "eyeOrigin": {
+     "x": 1420,
+     "y": 1440,
+     "z": 340
+    },
+    "eyeAngles": {
+     "x": 0,
+     "y": 180,
+     "z": 0
+    },
+    "velocity": {
+     "x": 0,
+     "y": 0,
+     "z": 0
+    },
+    "visible": true
+   },
+   "script": [
+    {
+     "advance": 0.5
+    }
+   ]
+  },
+  {
+   "name": "loadout-vm-directhit-fire",
+   "view": {
+    "origin": [
+     1420,
+     1440,
+     340
+    ],
+    "angles": [
+     0,
+     180,
+     0
+    ],
+    "fov": 90
+   },
+   "vm": {
+    "cls": 3,
+    "team": 2,
+    "defindex": 127,
+    "vmActivity": 0,
+    "vmActivitySeq": 1,
+    "eyeOrigin": {
+     "x": 1420,
+     "y": 1440,
+     "z": 340
+    },
+    "eyeAngles": {
+     "x": 0,
+     "y": 180,
+     "z": 0
+    },
+    "velocity": {
+     "x": 0,
+     "y": 0,
+     "z": 0
+    },
+    "visible": true
+   },
+   "script": [
+    {
+     "advance": 0.5
+    },
+    {
+     "vm": {
+      "vmActivity": 3,
+      "vmActivitySeq": 2
+     }
+    },
+    {
+     "advance": 0.06
+    }
+   ]
   }
  ],
  "hl2/d1_trainstation_02": [

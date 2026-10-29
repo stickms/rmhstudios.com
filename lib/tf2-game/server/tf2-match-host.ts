@@ -65,6 +65,8 @@ import { BitWriter } from '../net/bitbuf';
 import type { BotDifficulty, ClassChoice, TeamChoice } from '../net/events';
 import { eventIsCosmetic, eventVisibleTo, writeEvent, type StringRefs } from '../net/event-codec';
 import { dispatchExtraCommand } from '../net/extra-commands';
+import { applyLoadoutCommand } from '../sim/items/command';
+import { randomBotLoadouts } from '../sim/items/bots';
 import { ReliableWriter, type ScoreRow } from '../net/protocol';
 import { getBotManager, provideNavMesh } from '../bots/brain/manager';
 import { TFBotBrain } from '../bots/brain/tf-bot-brain';
@@ -551,6 +553,11 @@ export class Tf2MatchHost implements MatchHost {
       const name = `${BOT_NAMES[this.nextBotName % BOT_NAMES.length]}${this.nextBotName >= BOT_NAMES.length ? ` (${1 + Math.floor(this.nextBotName / BOT_NAMES.length)})` : ''}`;
       this.nextBotName++;
       const player = this.world.addPlayer(name, { bot: true });
+      // Hard and expert bots may carry fully simulated unlocks (sim/items/bots.ts); others stay stock.
+      if (difficulty === 'hard' || difficulty === 'expert') {
+        const loadouts = randomBotLoadouts(this.world.random);
+        loadouts?.forEach((slots, cls) => slots && player.setClassLoadout(cls, slots));
+      }
       const brain = this.brainFactory(difficulty, player);
       this.bots.set(player.id, { player, brain, commandNumber: 0 });
       this.rosterChanges.push({ entity: player.id, present: true });
@@ -668,6 +675,9 @@ export class Tf2MatchHost implements MatchHost {
         if (!dispatchExtraCommand(cmd.command, { world: this.world, player: p }, cmd.args)) {
           this.opts.log?.('tf2: unhandled command', { command: cmd.command });
         }
+        break;
+      case 'loadout':
+        applyLoadoutCommand(this.world, p, cmd.cls, cmd.slots);
         break;
     }
   }

@@ -27,6 +27,7 @@ import { NET_PICKUP, type NetRecord, type NetSchema } from './net-schema';
 import { TF_COND } from './conditions';
 import type { Player } from './player';
 import { TF_AMMO_GRENADES1, TF_AMMO_METAL, TF_AMMO_PRIMARY, TF_AMMO_SECONDARY } from './weapon-api';
+import { hookPlayer } from './items/attributes';
 
 /** PackRatios[POWERUP_SIZES] (tf_powerup.cpp): small, medium, full. */
 export const PACK_RATIOS = [0.2, 0.5, 1.0] as const;
@@ -201,7 +202,8 @@ export class HealthKit extends TFPowerup {
   }
 
   myTouch(p: Player): boolean {
-    const amount = Math.ceil(p.maxHealth * PACK_RATIOS[this.size]);
+    // × mult_health_frompacks on the player (the Back Scratcher).
+    const amount = hookPlayer(p, 'mult_health_frompacks', Math.ceil(p.maxHealth * PACK_RATIOS[this.size]));
     const given = p.takeHealth(amount);
     const burning = p.cond.has(TF_COND.BURNING) || p.cond.has(TF_COND.BLEEDING);
     if (given > 0 || burning) {

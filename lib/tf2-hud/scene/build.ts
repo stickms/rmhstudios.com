@@ -9,7 +9,7 @@
  */
 
 import { parseKv } from '../kv/parse';
-import { activeEntries, mergeProps, propsOf, type Props } from '../kv/props';
+import { activeEntries, mergeProps, propsFromMap, propsOf, type Props } from '../kv/props';
 import { kvRange } from '../kv/query';
 import type { KvDoc, KvNode } from '../kv/types';
 import {
@@ -54,7 +54,22 @@ export interface SceneContext {
    * running HUD animations use it. `name` is the entry's key; return `props` itself for no change.
    */
   styleFor?: (file: string, name: string, props: Props) => Props;
+  /**
+   * What the game sets on a panel at run time, by its key path in its file: a label's text (a clock, a
+   * player's name — `labeltext`), an image the code picks (`image`), a vertical fill (`FILL_KEY`).
+   * Merged over the panel's own keys. The in-game HUD uses it; the editor's preview does not.
+   */
+  overridesFor?: (
+    file: string,
+    keyPath: readonly string[],
+  ) => Readonly<Record<string, string>> | undefined;
 }
+
+/**
+ * A scene-only key (never in a file): the fraction (0–1) of an image panel shown, filled from the bottom —
+ * how the game draws a health cross (`CTFHealthPanel`) or a building's health bar.
+ */
+export const FILL_KEY = '_rmh_fill_y';
 
 /* ───────────────────────── parse cache ───────────────────────── */
 
@@ -288,6 +303,7 @@ function opsFor(
       addImage(classImage ?? teamImage ?? props.get('image') ?? props.get('icon'), {
         tint: colorProp(ctx, props, 'drawcolor'),
         native: !props.bool('scaleimage', false),
+        ...(props.has(FILL_KEY) ? { clipY: Math.max(0, Math.min(1, props.num(FILL_KEY, 1))) } : {}),
       });
       break;
     }
@@ -379,7 +395,7 @@ const LAYOUT_FILE_OVERRIDES: Record<string, string> = {
 };
 
 /** The panel file (base name, no extension) a `hudlayout.res` block positions. */
-function layoutFileFor(blockName: string): string {
+export function layoutFileFor(blockName: string): string {
   const k = blockName.toLowerCase();
   return LAYOUT_FILE_OVERRIDES[k] ?? k.replace(/^c(?=hud)/, '');
 }
@@ -504,12 +520,16 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
 
     const make = (
       e: KvNode | null,
-      props: Props,
+      ownProps: Props,
       rect: Rect,
       isFrame: boolean,
       host: Host,
     ): PanelNode => {
       const name = e ? e.key.text : frameName;
+      const keyPath = isFrame ? frameKeyPath : [...host.keyPath, name];
+      const injected = !isFrame ? ctx.overridesFor?.(file, keyPath) : undefined;
+      const props =
+        injected === undefined ? ownProps : mergeProps(ownProps, propsFromMap(injected));
       const control = props.get('controlname') ?? (e ? 'Panel' : 'HudElement');
       const baseId = `${file}#${name}`;
       const dup = seen.get(baseId) ?? 0;
@@ -535,7 +555,7 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
       return {
         id,
         file: isFrame ? frameFile : file,
-        keyPath: isFrame ? frameKeyPath : [...host.keyPath, name],
+        keyPath,
         name: props.get('fieldname') ?? name,
         control,
         rect,

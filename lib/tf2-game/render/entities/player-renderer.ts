@@ -3,13 +3,20 @@
  * (player-anim-state.ts) from the networked player record, the held weapon's c_model
  * bone-merged, team / über skins, the cloak (fade + dissolve, no refraction), disguises
  * (enemies see the disguise class/team/weapon; the spy and his team see him with a
- * disguise-kit tint), crit glow, burning (particles), and death (a death sequence, gibs on
+ * disguise-kit tint), the loadout's items (loadout-models.ts: an unlock weapon's own model,
+ * cosmetics with paint, styles, body groups and unusual effects), crit glow, burning (particles), and death (a death sequence, gibs on
  * explosive deaths, a corpse kept for a while). The flag a player carries is drawn by the
  * flag renderable at this player's `flag` attachment (`attachment()`).
  */
 import { Matrix4, Quaternion, Vector3 } from 'three';
 import { CLASS_DATA } from '../../data/classes';
 import { playerAnimSuffix, STOCK_WEAPONS, type StockWeapon } from '../../data/weapons';
+import {
+  decodeItems,
+  tfClassOf,
+  type PublicItem,
+  type ReplicatedItems,
+} from '../../sim/items/loadout';
 import { FL_INWATER, TF_TEAM_BLUE, TF_TEAM_RED } from '../../core/constants';
 import { TF_COND } from '../../sim/conditions';
 import { LIFE_ALIVE } from '../../sim/entity';
@@ -25,11 +32,19 @@ import {
   LightProbe,
   num,
   stateOrigin,
+  str,
   TEAM_GLOW,
   type EntityState,
   type RenderContext,
 } from './common';
 import type { EffectSystem } from './effects';
+import {
+  heldModelName,
+  ItemInstance,
+  PlayerOutfit,
+  weaponLook,
+  type WeaponLook,
+} from './loadout-models';
 import type { ModelAsset } from './model-asset';
 import { ModelInstance } from './model-instance';
 import { angleNormalize, TFPlayerAnimState, type PlayerAnimInput } from './player-anim-state';
@@ -97,6 +112,10 @@ export class PlayerRenderable {
   private inst: ModelInstance | null = null;
   private weapon: ModelInstance | null = null;
   private weaponModel = '';
+  private weaponItem: ItemInstance | null = null;
+  private readonly outfit: PlayerOutfit;
+  private itemsField = '';
+  private items: ReplicatedItems | null = null;
   private model = '';
   private readonly anim = new TFPlayerAnimState();
   private readonly probe = new LightProbe();
@@ -117,7 +136,19 @@ export class PlayerRenderable {
   constructor(
     readonly id: number,
     private readonly effects: EffectSystem | null,
-  ) {}
+  ) {
+    this.outfit = new PlayerOutfit(id, effects);
+  }
+
+  /** The player's replicated items (NET_PLAYER `items`), decoded once per change. */
+  private replicatedItems(s: EntityState): ReplicatedItems {
+    const field = str(s.fields, 'items');
+    if (field !== this.itemsField || !this.items) {
+      this.itemsField = field;
+      this.items = decodeItems(field);
+    }
+    return this.items;
+  }
 
   /** The model the viewer sees: the disguise to enemies, else the real class. */
   private appearance(s: EntityState, ctx: RenderContext) {
@@ -133,18 +164,25 @@ export class PlayerRenderable {
       const slot = (['primary', 'secondary', 'melee'] as const)[
         Math.max(0, Math.min(2, num(f, 'activeSlot')))
       ];
+      const stock = classWeapon(cls, slot) ?? classWeapon(cls, 'primary');
       return {
         cls,
         team: dteam,
-        weapon: classWeapon(cls, slot) ?? classWeapon(cls, 'primary'),
+        weapon: stock ? weaponLook(stock.defindex, cls) : undefined,
+        held: undefined as PublicItem | undefined,
+        // The disguise wears the target class's stock look.
+        items: null as ReplicatedItems | null,
         tint: false,
       };
     }
     const def = num(f, 'activeWeapon', -1);
+    const items = this.replicatedItems(s);
     return {
       cls: realCls,
       team,
-      weapon: def >= 0 ? STOCK_WEAPONS[def] : undefined,
+      weapon: weaponLook(def, realCls),
+      held: items.weapons.find((w) => w.item === def && !w.worn),
+      items,
       tint: disguised,
     };
   }
@@ -183,7 +221,9 @@ export class PlayerRenderable {
     this.visible = true;
     if (!inst.root.parent) ctx.scene.add(inst.root);
     inst.root.visible = true;
-    this.updateWeapon(look.weapon, look.team, ctx);
+    this.updateWeapon(look.weapon, look.held, look.cls, look.team, ctx);
+    if (ctx.loadout)
+      inst.setBodygroups(this.outfit.update(inst, look.items, look.cls, look.team, ctx));
     // Skin: team, + 2 while invulnerable (SDK C_TFPlayer::GetSkin).
     const uber = inCond(f, TF_COND.INVULNERABLE) || inCond(f, TF_COND.INVULNERABLE_WEARINGOFF);
     const flicker =
@@ -198,6 +238,7 @@ export class PlayerRenderable {
     const u = inst.uniforms;
     u.uCloak.value = this.invis;
     inst.root.visible = this.invis < 0.999;
+    this.outfit.setVisible(this.invis < 0.5);
     // Disguise-kit tint for the spy's own side; crit glow; burning darken.
     const tint = u.uTint.value as Vector3;
     tint.set(1, 1, 1);
@@ -223,6 +264,7 @@ export class PlayerRenderable {
   private replaceBody(asset: ModelAsset, ctx: RenderContext): void {
     this.inst?.dispose();
     this.weapon = null;
+    this.weaponItem = null;
     this.weaponModel = '';
     this.inst = new ModelInstance(asset, { fog: ctx.lighting?.shared });
     if (this.inst.animator) {
@@ -233,15 +275,42 @@ export class PlayerRenderable {
     this.lastEventSeq = -1;
   }
 
-  private updateWeapon(w: StockWeapon | undefined, team: number, ctx: RenderContext): void {
+  /**
+   * The held weapon: an unlock's loadout-channel model when published (the class's stock
+   * weapon of the slot from the game channel meanwhile, or when there is none), else the stock
+   * weapon's c_model.
+   */
+  private updateWeapon(
+    look: WeaponLook | undefined,
+    entry: PublicItem | undefined,
+    cls: number,
+    team: number,
+    ctx: RenderContext,
+  ): void {
     const inst = this.inst!;
-    const model = w?.worldModel ?? '';
-    if (model !== this.weaponModel) {
+    const name = heldModelName(ctx.loadout, look, cls, entry);
+    const part = name ? ctx.loadout!.peek(name) : null;
+    if (part) {
+      const key = `loadout:${name}`;
+      if (key !== this.weaponModel) {
+        this.dropWeapon();
+        const item = new ItemInstance(part, inst.uniforms);
+        if (item.attachTo(inst)) {
+          this.weaponItem = item;
+          this.weapon = item.inst;
+        } else item.dispose();
+        this.weaponModel = key;
+      }
+      this.weaponItem?.dress({ cls: tfClassOf(cls), festive: entry?.festive, entry });
+      return;
+    }
+    const model = look?.stock?.worldModel ?? '';
+    const key = model ? `game:${model}` : '';
+    if (key !== this.weaponModel) {
       const asset = model ? ctx.models.peek(model) : null;
       if (asset === undefined) return; // loading: keep the old one
-      this.weapon?.dispose();
-      this.weapon = null;
-      this.weaponModel = model;
+      this.dropWeapon();
+      this.weaponModel = key;
       if (asset) {
         this.weapon = new ModelInstance(asset, { uniforms: inst.uniforms, noAnim: true });
         inst.attach(this.weapon);
@@ -250,14 +319,21 @@ export class PlayerRenderable {
     this.weapon?.setSkin(team === TF_TEAM_BLUE ? 1 : 0);
   }
 
-  private animate(s: EntityState, ctx: RenderContext, weapon: StockWeapon | undefined): void {
+  private dropWeapon(): void {
+    this.weaponItem?.dispose();
+    if (!this.weaponItem) this.weapon?.dispose();
+    this.weaponItem = null;
+    this.weapon = null;
+  }
+
+  private animate(s: EntityState, ctx: RenderContext, weapon: WeaponLook | undefined): void {
     const inst = this.inst!;
     const animator = inst.animator;
     const f = s.fields;
     const set = animator?.set;
     const role = weapon?.role ?? 'PRIMARY';
     const suffix = playerAnimSuffix(role);
-    const isMinigun = weapon?.name === 'TF_WEAPON_MINIGUN';
+    const isMinigun = !!weapon?.isMinigun;
     const flags = num(f, 'flags');
     const onGround = !!f.onGround;
     const waterLevel =
@@ -282,7 +358,7 @@ export class PlayerRenderable {
       inCond: (c) => inCond(f, c),
       suffix: set && !set.hasActivity(`ACT_MP_STAND_${suffix}`) ? this.fallbackSuffix(set) : suffix,
       isMinigun,
-      isSniperRifle: weapon?.name === 'TF_WEAPON_SNIPERRIFLE',
+      isSniperRifle: !!weapon?.isSniperRifle,
       hasActivity: (a) => !!set?.hasActivity(a),
     };
     // Gesture events (PlayerAnimEvent_t + a change counter).
@@ -382,6 +458,7 @@ export class PlayerRenderable {
   private hide(): void {
     if (this.inst) this.inst.root.visible = false;
     this.visible = false;
+    this.outfit.setVisible(false);
   }
 
   // ─── death ────────────────────────────────────────────────────────────────
@@ -406,9 +483,11 @@ export class PlayerRenderable {
       yaw: this.yaw,
     };
     this.corpses.push(corpse);
-    // The live body is rebuilt on respawn.
+    // The live body is rebuilt on respawn (its items stay on the corpse).
+    this.outfit.setVisible(false);
     this.inst = null;
     this.weapon = null;
+    this.weaponItem = null;
     this.model = '';
     this.weaponModel = '';
     const a = inst.animator;
@@ -502,6 +581,7 @@ export class PlayerRenderable {
 
   dispose(): void {
     this.stopBurning();
+    this.outfit.dispose();
     this.inst?.dispose();
     this.inst = null;
     while (this.corpses.length) this.removeCorpse(0);

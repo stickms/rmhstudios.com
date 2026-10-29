@@ -38,6 +38,7 @@ import { createTf2Match } from './create-match';
 import type { MatchCommand, MatchFactory, MatchOptions, PlayerInfo, RoomSummary } from './match-host';
 import { MatchRunner } from './match-runner';
 import type { FromWorker, ToWorker, WirePacket } from './worker-protocol';
+import type { Catalog } from '../../tf2-loadout/catalog-types';
 
 export const TF2_MAX_PLAYERS_PER_MATCH = 24;
 const WORKER_BUNDLE = 'lib/tf2-game/server/match-worker.server.cjs';
@@ -242,6 +243,8 @@ export class MatchPool {
   private respawnTimer: ReturnType<typeof setTimeout> | null = null;
   private watchdog: ReturnType<typeof setInterval> | null = null;
   private closed = false;
+  /** The item schema every worker gets (sim/items; `setItemCatalog`). */
+  private itemCatalog: Catalog | null = null;
 
   constructor(options: MatchPoolOptions = {}) {
     this.maxWorkers = options.maxWorkers ?? envCount('TF2_MAX_WORKERS', 1, 1, 16);
@@ -331,6 +334,21 @@ export class MatchPool {
     };
   }
 
+  /**
+   * The item schema (the loadout builder's catalog) for every match: sent to each worker now and
+   * to every worker spawned later, so a crash-replaced thread has it too.
+   */
+  setItemCatalog(catalog: Catalog | null): void {
+    this.itemCatalog = catalog;
+    for (const slot of this.slots) {
+      try {
+        slot.worker.postMessage({ t: 'items', catalog });
+      } catch {
+        /* a worker going away gets it again when it is replaced */
+      }
+    }
+  }
+
   /** Stop everything. Matches are dropped without listener calls (the hub is going away). */
   shutdown(): void {
     this.closed = true;
@@ -379,6 +397,7 @@ export class MatchPool {
       onMessage: (message) => this.onWorkerMessage(slot, message),
       onExit: (code, error) => this.onWorkerExit(slot, code, error),
     });
+    if (this.itemCatalog) slot.worker.postMessage({ t: 'items', catalog: this.itemCatalog });
     this.slots.push(slot);
     return slot;
   }

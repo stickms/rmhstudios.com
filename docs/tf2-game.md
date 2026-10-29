@@ -112,6 +112,100 @@ Smoke test in a real browser (not part of a suite): `scripts/tf2-game/play-smoke
 a Vite dev server with the map packages under `LOCAL_STORAGE_DIR`, no Postgres needed). Pure client logic is
 tested in `lib/tf2-game/client/play-client.test.ts`.
 
+## Custom HUDs in game
+
+Any HUD from the [HUD editor](tf2-hud-editor.md) can be the in-game HUD: pause menu → **HUD** (TF2 Default,
+this device's drafts, the account's saved HUDs, the workshop, or a pasted share link), or the editor's
+**Test in game** (`/tf2/play?hud=draft:<id>|cloud:<id>|share:<token>|default`). The choice is remembered
+(`localStorage` `rmh-tf2-game-hud`). Code: `lib/tf2-game/client/custom-hud/` (logic, tested in
+`custom-hud.test.ts`) and `components/tf2-game/custom-hud/` (UI).
+
+- **Same renderer as the editor.** The HUD's `.res` panels are built by the editor's scene builder
+  (`lib/tf2-hud/scene/build.ts`) and painted by its painter onto one canvas over the game, so positions,
+  sizes (`c`/`r`/`f`, `pin_to_sibling`, proportional integer scaling), visibility, scheme colours, fonts
+  (including font files the HUD ships), textures and labels resolve exactly as the editor previews them.
+  The fidelity test checks every panel rectangle against the editor's build for the base HUD and two sample
+  HUDs (`sample-huds.ts`) at 1920×1080 and 1280×720.
+- **Fed by the live game.** `adapter.ts` maps `HudState` onto the editor's `TestState` (class, team,
+  health, ammo, Über/cloak/sticky meters, metal, sentry level, scores, round clock, events) plus the
+  `%variables%` only the game knows; `bindings.ts` adds what the game decides at run time (clip vs. no-clip
+  ammo labels, condition icons, the health cross fill, KOTH clocks, the win panel's top players, building
+  bars); `events.ts` starts the HUD's own animation events (`DamagedPlayer`, the health/low-ammo/Über
+  pulses, `AccountMoneyAdded`, disguise fades, `ActiveTimerHighlight`, `TimerIncrement`, …).
+- **Cost.** `scene.ts` builds each panel file on its own and caches it under exactly the inputs it reads;
+  `renderer.ts` repaints only the changed areas, inside the HUD store's ≤30 Hz publish (no loop of its
+  own). Measured in Chromium at 1920×1080 (`scripts/tf2-game/hud-harness/perf.ts`): ~0.3–0.9 ms per update
+  when nothing changed, ~0.7–1.4 ms when health or Über changes, ~1.1–2.2 ms (p95 ≤ 4 ms) for a full
+  rebuild and repaint. Switching HUDs loads files, fonts and textures first and keeps the old HUD until then.
+- **What stays the game's own** (made at run time in TF2 too): the round timer, control points, flags and
+  cart, kill feed, chat, messages, damage numbers, crosshair and menus — placed by the HUD's
+  `hudlayout.res` (`layout.ts`). The Engineer's building panels come from the HUD only when it customises
+  them (the base pack lacks most of their textures). Missing textures draw nothing in game.
+- **Edit HUD** opens the full editor over the match (offline play pauses: the listen server holds the
+  match, `MatchRunner.setPaused`; online play goes on); **Test in game** applies the edited draft and
+  returns; **Export** is the editor's zip for `tf/custom`. A draft saved in another tab is re-read
+  (`BroadcastChannel` `rmh-tf2-hud-drafts`).
+- Harness: `shoot.ts` adds `custom-*` shots and `compare-*` (game HUD beside the editor's pipeline, same
+  HUD and state); `tap-check.ts` covers the pause menu and its HUD view.
+
+## Items and loadouts
+
+Players can wear what they build in the [loadout builder](tf2-hub.md): pause menu → **Loadout**
+(`components/tf2-game/tf2/LoadoutPauseView.tsx`, the builder's own class picker, slot tiles, item picker,
+customise modal and 3D preview) loads this device's drafts or the account's saved loadouts and **Equip**s
+one. As in TF2 a change applies at the next respawn or resupply, or at once inside your own respawn room;
+the view says which. Bots stay stock; at hard and expert each held slot may carry a fully simulated unlock
+(`sim/items/bots.ts`, from the match's seeded random stream).
+
+- **Command.** Online: `tf2:loadout` `{ cls, slots }` (`net/lobby-schema.ts` `zLoadout`, the saved-loadout
+  slot schema; 20/min in `server/socket-server/config.ts`) → the match command `{ kind: 'loadout' }`;
+  offline the same command goes to the listen server. `sim/items/command.ts` checks it like a saved loadout
+  (`lib/tf2-loadout/validate.ts` `slotProblem` — class, slot, equip regions, duplicates — plus the game's
+  rules, `checkGameLoadout`) and answers the owner with a `loadout` event: `applied`, `pending` or
+  `refused` + reason. The private NET_PLAYER fields `loadoutPending` / `inSpawnRoom` drive the view's status.
+- **Catalog.** The hub reads the stored catalog row (`lib/tf2-game/server/item-catalog.server.ts`, every 10
+  min) and posts it to every match worker (`{ t: 'items' }`); the browser fetches
+  `/api/tf2-loadout/catalog` for the listen server and for prediction. Both call `setItemCatalog`
+  (`sim/items/registry.ts`). Without a catalog everyone is stock.
+- **What an item does** (`sim/items/resolve.ts`): a weapon's `item_class` (after TranslateWeaponEntForClass)
+  picks the stock implementation, or an unlock script that refines one (`data/unlock-scripts.ts`, generated
+  by `scripts/tf2-game/extract-unlock-scripts.py`: the Direct Hit is the rocket launcher running
+  `tf_weapon_rocketlauncher_directhit`); `tf_wearable…` items are worn providers (Gunboats); an item class
+  with no implementation here (the Huntsman, jars, lunchboxes, flare guns, shields' charge…) is a
+  **fallback**: the wearer gets the class's stock weapon of that slot, and the builder view says so.
+- **Attributes** (`sim/items/attributes.ts`, `hooks.ts`): the catalog's `at` (`[class, value, op]`) is
+  applied per CALL_ATTRIB_HOOK as the SDK does — a weapon's hooks see its own attributes plus the wearer's
+  worn items, a player hook sees every provider (a `provide_on_active` weapon only while active), ops by
+  `description_format` (percentage/inverted multiply, additive add, or/lookup set), integer hooks rounded.
+  Weapon-only numbers are folded into the weapon's stats from its defindex (clip, damage, bullets, spread,
+  fire delay, reload, deploy), so prediction rebuilds them from the replicated defindex. Simulated:
+  damage, clip (override and multiplier), fire rate, reload, bullets and spread, deploy and switch times,
+  swords' range and holster penalty, crit chance, projectile speed, blast radius, damage vs players /
+  buildings, mini-crits on airborne targets, damage taken (all, fire, blast, bullet, melee), blast-jump
+  self damage and force, health on hit / on kill / on blast damage, über on hit, max health, max ammo,
+  move speed (always, active, aiming), health regen, healing received (medics, packs), Medi Gun heal
+  rate / overheal / über build and the Kritzkrieg's crits, minigun spin-up, sniper charge rate, cloak
+  drain and regen, afterburn damage and duration, airblast cost and its removal
+  (`sim/items/support.ts` `SUPPORTED_ATTRIBUTES`; a few take only their stock value, `PARTIAL_ATTRIBUTES`).
+  Everything else on an item is listed as unsupported and the Loadout view shows "Some of this item's
+  effects aren't simulated yet" with the list. Whole mechanics not simulated (`ITEM_CLASS_MECHANICS`):
+  Air Strike, shove, hype and boost, revenge crits, Crikey, heads, the Classic's charge, honorbound,
+  balls, the Caber, the Gunslinger, slaps, sapper variants, shield charges, the Razorback. Against the
+  local catalog build: of 477 weapon-slot items, 315 are fully simulated, 118 partly, 44 fall back.
+- **Replication.** NET_PLAYER `items` (public string) lists what a player shows:
+  `/`-separated `<slot code><defindex>[w][s<style>][p<paint>][e<effect>][f][k<kit>.<wear>.<seed>]`
+  (`P/S/M/D/E/B/A` weapon slots, `w` worn, `C` cosmetics; `sim/items/loadout.ts` `encodeItems`). The
+  predicting client restores the owner's worn providers from it, and the renderer dresses every player.
+- **Rendering** (`render/entities/loadout-models.ts`): unlock weapons (third person and the view model,
+  with the role's view-model activity table) and cosmetics from the loadout builder's model channel —
+  rigid parts on their bone at the converter's pose, bone-merged ones on the skeleton — with paint
+  (two-tone paints switch per team), styles, per-class variants, the body groups they hide, festivizers,
+  war paints and unusual effects (`ParticleLibrary` `unusual:<id>`, the loadout particle channel, on the
+  head). Until a model loads, or when the channel has none, the class's stock weapon of the slot is drawn.
+  Cosmetics are not drawn beyond 1800 units. Gaps: the channel publishes RED skins only (unpainted BLU
+  cosmetics wear them), jiggle bones hang still, weapon unusual effects and killstreak sheens are not drawn,
+  wearable c_models that span both feet (Gunboats, Mantreads) are rigid on one bone.
+
 ## Game assets
 
 The `tf2-assets-sync` workflow converts the game's content into object storage
@@ -476,6 +570,10 @@ snapshot mirror and a single-player world feed it the same way, plus the simulat
   models with their sequence, `info_particle_system`.
 - **Effects** (`effects.ts`): the game particle bundles (pooled, ≤ 64 live systems, LOD at 3000 units, soft
   particles and refraction off), instanced tracers and ring-buffer decals, gibs.
+- **Items** (`loadout-models.ts`): unlock weapons and cosmetics from the loadout model channel — see
+  [Items and loadouts](#items-and-loadouts).
 
 The render harness shoots entity scenes too: `shoot.ts --scenes scripts/tf2-game/render-harness/entity-scenes.json`
-(regenerate it with `entity-scenes.py`).
+(regenerate it with `entity-scenes.py`). With `--loadout <dir>` players wear their `items` (the `loadout-*`
+scenes): `<dir>/catalog.json`, `<dir>/models/*.glb` from `scripts/tf2-assets/convert.py` and
+`<dir>/particles/manifest.json` + effect bundles.

@@ -28,6 +28,7 @@ import {
 } from './constants';
 import { TFWeaponGun } from './gun';
 import { num } from './tf-weapon';
+import { hookWeapon } from '../items/attributes';
 
 /** cl_autorezoom (1). */
 const AUTO_REZOOM = true;
@@ -188,7 +189,9 @@ export class SniperRifle extends TFWeaponGun {
     } else if (this.nextSecondaryAttack <= t) {
       const dt = o.world.frametime;
       if (o.cond.has(TF_COND.AIMING) && !this.rezoomAfterShot) {
-        const rate = Math.min(Math.max(SNIPER_RIFLE.chargePerSecond, 0), 2 * SNIPER_RIFLE.chargePerSecond);
+        // CTFSniperRifle::ApplyChargeSpeedModifications: × mult_sniper_charge_per_sec (the Sydney Sleeper).
+        const base = hookWeapon(this, o, 'mult_sniper_charge_per_sec', SNIPER_RIFLE.chargePerSecond);
+        const rate = Math.min(Math.max(base, 0), 2 * SNIPER_RIFLE.chargePerSecond);
         this.chargedDamage = Math.min(this.chargedDamage + dt * rate, SNIPER_RIFLE.maxDamage);
       } else this.chargedDamage = Math.max(0, this.chargedDamage - dt * SNIPER_RIFLE.unchargePerSecond);
     }

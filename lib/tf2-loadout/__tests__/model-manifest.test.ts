@@ -55,6 +55,16 @@ describe('buildModelManifest', () => {
     ]);
   });
 
+  it('fills every %s of a basename (a class folder and a class file name)', () => {
+    const bill =
+      '"944" { "name" "Bill" "prefab" "base_hat" "item_name" "#T_Hat" "model_player_per_class" ' +
+      '{ "basename" "models/player/items/%s/%s_bill.mdl" } "used_by_classes" { "demoman" "1" } }';
+    const out = buildModelManifest(ITEMS_GAME.replace('"943"', `${bill}\n    "943"`), ENGLISH);
+    expect(out.find((i) => i.id === 944)?.models[0]?.mdl).toBe(
+      'models/player/items/demo/demo_bill.mdl',
+    );
+  });
+
   it('includes an extra wearable in the weapon so every viewer loads it', () => {
     expect(m.find((i) => i.id === 941)?.models).toEqual([
       {
