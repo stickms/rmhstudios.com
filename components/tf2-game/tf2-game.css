@@ -1732,6 +1732,10 @@
   right: 0;
   width: 58%;
 }
+/* While a menu is up its items take the taps: the stick and look zones stand down (buttons stay live). */
+.tf2g-touch[data-menu-open='true'] .tf2g-touch-zone {
+  pointer-events: none;
+}
 .tf2g-stick-base,
 .tf2g-stick-knob {
   position: absolute;
