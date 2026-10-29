@@ -62,7 +62,7 @@ RMH Study brings the Pomodoro technique to a social setting. Create a study room
 
 ### RMH TF2 Hub
 
-RMH TF2 Hub brings two Team Fortress 2 tools together. The HUD Editor starts from the TF2 Default HUD, a community HUD or an uploaded zip, then lets you edit every .res file with a code editor and a visual inspector while a resolution-accurate canvas shows where each panel lands; test any page with adjustable health, ammo, class and round state, validate fonts, colours and textures, and download a ready-to-install zip. The Loadout Builder plans weapons, cosmetics, paints, unusual effects and taunts for every class from the game’s own item list, which refreshes itself when the game updates. Save loadouts per class, and share HUDs and loadouts in the RMH TF2 Workshop.
+RMH TF2 Hub brings Team Fortress 2 to the browser. Play is the game itself on a clean-room engine: join a server or host your own room with bots on the games hub, or practise offline against bots that run on your own machine, with every class, the stock arsenal and the classic maps. The HUD Editor starts from the TF2 Default HUD, a community HUD or an uploaded zip, then lets you edit every .res file with a code editor and a visual inspector while a resolution-accurate canvas shows where each panel lands; test any page with adjustable health, ammo, class and round state, validate fonts, colours and textures, and download a ready-to-install zip. The Loadout Builder plans weapons, cosmetics, paints, unusual effects and taunts for every class from the game’s own item list, which refreshes itself when the game updates. Save loadouts per class, and share HUDs and loadouts in the RMH TF2 Workshop.
 
 **Route:** `/tf2` · **Catalog id:** `rmh-tf2-hud` · **Sign-in:** not required
 

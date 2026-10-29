@@ -1,0 +1,156 @@
+/**
+ * The screens around a running game (GameCanvas): loading, errors, "click to play",
+ * the reconnect banner, the corner controls and the phone's rotate hint. They sit
+ * over the game's canvas, inside the game's own palette (the TF2 Hub's
+ * `.app-theme.tf2hud-theme`, or its Half-Life 2 / Portal variants), so they use
+ * the `--app-*` tokens only — no site material: the play-field is outside jelly.
+ */
+
+.tf2g-stage {
+  isolation: isolate;
+}
+
+/* A full-stage screen (loading, error, end, rotate): the game's dark ground with a centred column. */
+.tf2g-play-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: 0.875rem;
+  overflow-y: auto;
+  padding: calc(var(--safe-top, 0px) + 1.5rem) calc(var(--safe-right, 0px) + 1rem) calc(var(--safe-bottom, 0px) + 1.5rem)
+    calc(var(--safe-left, 0px) + 1rem);
+  background: color-mix(in srgb, var(--app-bg) 92%, transparent);
+  color: var(--app-text);
+}
+
+.tf2g-stage[data-phase='loading'] .tf2g-play-screen {
+  background: var(--app-bg);
+}
+
+/* Progress bars: a track and an accent fill. */
+.tf2g-play-bar {
+  display: block;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface);
+}
+.tf2g-play-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--app-accent);
+  transition: width var(--app-duration-fast, 150ms) linear;
+}
+.tf2g-play-bar-thin {
+  height: 0.25rem;
+}
+
+.tf2g-play-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-accent);
+  color: var(--app-accent-fg);
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition:
+    background-color var(--app-duration-fast, 150ms),
+    color var(--app-duration-fast, 150ms);
+}
+.tf2g-play-button:hover {
+  background: var(--app-accent-hover, var(--app-accent));
+}
+.tf2g-play-button-quiet {
+  background: transparent;
+  border-color: var(--app-border-bright);
+  color: var(--app-text);
+}
+.tf2g-play-button-quiet:hover {
+  background: var(--app-surface-hover);
+}
+
+/* "Click to play": a scrim over the view and the HUD, light ink in every game's palette. */
+.tf2g-play-prompt {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgb(0 0 0 / 0.45);
+  color: rgb(245 242 235);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+  cursor: pointer;
+}
+.tf2g-play-prompt-hint {
+  color: rgb(225 220 210);
+}
+
+/* Top-right corner chips (fullscreen), inside the safe area, off the edge. */
+.tf2g-play-corner {
+  position: absolute;
+  z-index: 35;
+  top: calc(var(--safe-top, 0px) + 0.75rem);
+  right: calc(var(--safe-right, 0px) + 0.75rem);
+  display: flex;
+  gap: 0.5rem;
+}
+.tf2g-play-chip {
+  display: inline-flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--app-border-bright);
+  border-radius: var(--app-radius-sm);
+  background: color-mix(in srgb, var(--app-bg) 70%, transparent);
+  color: var(--app-text);
+}
+.tf2g-play-chip:hover {
+  background: var(--app-surface-hover);
+}
+
+.tf2g-play-banner {
+  position: absolute;
+  z-index: 45;
+  top: calc(var(--safe-top, 0px) + 0.75rem);
+  left: 50%;
+  translate: -50% 0;
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-accent);
+  color: var(--app-accent-fg);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* The running game over its page (the TF2 server browser stays mounted underneath). */
+.tf2g-play-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--app-bg);
+}
+.tf2g-play-chip-wide {
+  width: auto;
+  gap: 0.375rem;
+  padding: 0 0.75rem;
+}
+
+/* Touch devices: the HUD's touch overlay owns the top-right (ammo) and the top row (scores, chat,
+   voice, menu); the corner chips move to the top-left, above the health panel and the move stick. */
+.tf2g-stage[data-touch='true'] .tf2g-play-corner {
+  top: calc(var(--safe-top, 0px) + 0.75rem);
+  right: auto;
+  left: calc(var(--safe-left, 0px) + 0.75rem);
+}

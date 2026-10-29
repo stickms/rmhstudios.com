@@ -28,6 +28,7 @@ import { Route as DunesdayRouteImport } from './routes/dunesday'
 import { Route as EversionLabRouteImport } from './routes/eversion-lab'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
+import { Route as HalfLife2RouteImport } from './routes/half-life-2'
 import { Route as HandleRouteImport } from './routes/handle'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
 import { Route as IsleworksRouteImport } from './routes/isleworks'
@@ -44,6 +45,7 @@ import { Route as NightrailRouteImport } from './routes/nightrail'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OptimizationRouteImport } from './routes/optimization'
 import { Route as Pf2ecalRouteImport } from './routes/pf2ecal'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as RmhFarmingSimRouteImport } from './routes/rmh-farming-sim'
@@ -226,6 +228,7 @@ import { Route as StrategiesSahurRouteImport } from './routes/strategies/sahur'
 import { Route as StudioIndexRouteImport } from './routes/studio/index'
 import { Route as TempleOfJoyIndexRouteImport } from './routes/temple-of-joy/index'
 import { Route as Tf2IndexRouteImport } from './routes/tf2/index'
+import { Route as Tf2PlayRouteImport } from './routes/tf2/play'
 import { Route as Tf2WorkshopRouteImport } from './routes/tf2/workshop'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as VNewRouteImport } from './routes/v.new'
@@ -972,6 +975,7 @@ import { Route as ApiGroupChatsIdMessagesRouteImport } from './routes/api/group-
 import { Route as ApiGroupChatsIdReactRouteImport } from './routes/api/group-chats/$id/react'
 import { Route as ApiGroupChatsIdStreamRouteImport } from './routes/api/group-chats/$id/stream'
 import { Route as ApiGuidesIdPublishRouteImport } from './routes/api/guides/$id.publish'
+import { Route as ApiHl2GameAssetsSplatRouteImport } from './routes/api/hl2-game/assets/$'
 import { Route as ApiHomesListingsIdRouteImport } from './routes/api/homes/listings.$id'
 import { Route as ApiHuntAnswerIndexRouteImport } from './routes/api/hunt/answer/index'
 import { Route as ApiHuntMarkerIndexRouteImport } from './routes/api/hunt/marker/index'
@@ -1021,6 +1025,7 @@ import { Route as ApiPhotoOfTheDayVoteIndexRouteImport } from './routes/api/phot
 import { Route as ApiPlaylistsIdIndexRouteImport } from './routes/api/playlists/$id/index'
 import { Route as ApiPoolsIdIndexRouteImport } from './routes/api/pools/$id/index'
 import { Route as ApiPoolsIdContributeRouteImport } from './routes/api/pools/$id/contribute'
+import { Route as ApiPortalGameAssetsSplatRouteImport } from './routes/api/portal-game/assets/$'
 import { Route as ApiPredictionsIdCommentsRouteImport } from './routes/api/predictions/$id/comments'
 import { Route as ApiPredictionsIdDevilsAdvocateRouteImport } from './routes/api/predictions/$id/devils-advocate'
 import { Route as ApiPredictionsIdTradeRouteImport } from './routes/api/predictions/$id/trade'
@@ -1117,6 +1122,7 @@ import { Route as ApiStorefrontCreatorUseridRouteImport } from './routes/api/sto
 import { Route as ApiStorefrontProductsIndexRouteImport } from './routes/api/storefront/products/index'
 import { Route as ApiStudioChallengesIndexRouteImport } from './routes/api/studio/challenges/index'
 import { Route as ApiStudyDecksIndexRouteImport } from './routes/api/study/decks/index'
+import { Route as ApiTf2GameAssetsSplatRouteImport } from './routes/api/tf2-game/assets/$'
 import { Route as ApiTf2HudBaseSplatRouteImport } from './routes/api/tf2-hud/base/$'
 import { Route as ApiTf2HudBlobsSha1RouteImport } from './routes/api/tf2-hud/blobs/$sha1'
 import { Route as ApiTf2HudBlobsCheckRouteImport } from './routes/api/tf2-hud/blobs/check'
@@ -1414,6 +1420,11 @@ const GabrielsHornRoute = GabrielsHornRouteImport.update({
   path: '/gabriels-horn',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HalfLife2Route = HalfLife2RouteImport.update({
+  id: '/half-life-2',
+  path: '/half-life-2',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HandleRoute = HandleRouteImport.update({
   id: '/handle',
   path: '/handle',
@@ -1492,6 +1503,11 @@ const OptimizationRoute = OptimizationRouteImport.update({
 const Pf2ecalRoute = Pf2ecalRouteImport.update({
   id: '/pf2ecal',
   path: '/pf2ecal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -2404,6 +2420,11 @@ const TempleOfJoyIndexRoute = TempleOfJoyIndexRouteImport.update({
 const Tf2IndexRoute = Tf2IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => Tf2Route,
+} as any)
+const Tf2PlayRoute = Tf2PlayRouteImport.update({
+  id: '/play',
+  path: '/play',
   getParentRoute: () => Tf2Route,
 } as any)
 const Tf2WorkshopRoute = Tf2WorkshopRouteImport.update({
@@ -6237,6 +6258,11 @@ const ApiGuidesIdPublishRoute = ApiGuidesIdPublishRouteImport.update({
   path: '/publish',
   getParentRoute: () => ApiGuidesIdRoute,
 } as any)
+const ApiHl2GameAssetsSplatRoute = ApiHl2GameAssetsSplatRouteImport.update({
+  id: '/api/hl2-game/assets/$',
+  path: '/api/hl2-game/assets/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHomesListingsIdRoute = ApiHomesListingsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -6503,6 +6529,12 @@ const ApiPoolsIdContributeRoute = ApiPoolsIdContributeRouteImport.update({
   path: '/api/pools/$id/contribute',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPortalGameAssetsSplatRoute =
+  ApiPortalGameAssetsSplatRouteImport.update({
+    id: '/api/portal-game/assets/$',
+    path: '/api/portal-game/assets/$',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPredictionsIdCommentsRoute =
   ApiPredictionsIdCommentsRouteImport.update({
     id: '/comments',
@@ -6995,6 +7027,11 @@ const ApiStudioChallengesIndexRoute =
 const ApiStudyDecksIndexRoute = ApiStudyDecksIndexRouteImport.update({
   id: '/api/study/decks/',
   path: '/api/study/decks/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTf2GameAssetsSplatRoute = ApiTf2GameAssetsSplatRouteImport.update({
+  id: '/api/tf2-game/assets/$',
+  path: '/api/tf2-game/assets/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTf2HudBaseSplatRoute = ApiTf2HudBaseSplatRouteImport.update({
@@ -8130,6 +8167,7 @@ export interface FileRoutesByFullPath {
   '/eversion-lab': typeof EversionLabRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
+  '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
@@ -8146,6 +8184,7 @@ export interface FileRoutesByFullPath {
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
   '/pf2ecal': typeof Pf2ecalRoute
+  '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
@@ -8305,6 +8344,7 @@ export interface FileRoutesByFullPath {
   '/sohumtracker/$date': typeof SohumtrackerDateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
+  '/tf2/play': typeof Tf2PlayRoute
   '/tf2/workshop': typeof Tf2WorkshopRoute
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
@@ -9039,6 +9079,7 @@ export interface FileRoutesByFullPath {
   '/api/group-chats/$id/react': typeof ApiGroupChatsIdReactRoute
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
+  '/api/hl2-game/assets/$': typeof ApiHl2GameAssetsSplatRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
   '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
   '/api/internal/ops/post-deploy-health': typeof ApiInternalOpsPostDeployHealthRoute
@@ -9078,6 +9119,7 @@ export interface FileRoutesByFullPath {
   '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
+  '/api/portal-game/assets/$': typeof ApiPortalGameAssetsSplatRoute
   '/api/predictions/$id/comments': typeof ApiPredictionsIdCommentsRoute
   '/api/predictions/$id/devils-advocate': typeof ApiPredictionsIdDevilsAdvocateRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -9160,6 +9202,7 @@ export interface FileRoutesByFullPath {
   '/api/stamps/$id/wall': typeof ApiStampsIdWallRoute
   '/api/stamps/image/$filename': typeof ApiStampsImageFilenameRoute
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
+  '/api/tf2-game/assets/$': typeof ApiTf2GameAssetsSplatRoute
   '/api/tf2-hud/base/$': typeof ApiTf2HudBaseSplatRoute
   '/api/tf2-hud/blobs/$sha1': typeof ApiTf2HudBlobsSha1Route
   '/api/tf2-hud/blobs/check': typeof ApiTf2HudBlobsCheckRoute
@@ -9437,6 +9480,7 @@ export interface FileRoutesByTo {
   '/dunesday': typeof DunesdayRoute
   '/eversion-lab': typeof EversionLabRoute
   '/gabriels-horn': typeof GabrielsHornRoute
+  '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
@@ -9452,6 +9496,7 @@ export interface FileRoutesByTo {
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
   '/pf2ecal': typeof Pf2ecalRoute
+  '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmhcalculator': typeof RmhcalculatorRoute
@@ -9588,6 +9633,7 @@ export interface FileRoutesByTo {
   '/sohumtracker/$date': typeof SohumtrackerDateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
+  '/tf2/play': typeof Tf2PlayRoute
   '/tf2/workshop': typeof Tf2WorkshopRoute
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
@@ -10323,6 +10369,7 @@ export interface FileRoutesByTo {
   '/api/group-chats/$id/react': typeof ApiGroupChatsIdReactRoute
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
+  '/api/hl2-game/assets/$': typeof ApiHl2GameAssetsSplatRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
   '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
   '/api/internal/ops/post-deploy-health': typeof ApiInternalOpsPostDeployHealthRoute
@@ -10362,6 +10409,7 @@ export interface FileRoutesByTo {
   '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
+  '/api/portal-game/assets/$': typeof ApiPortalGameAssetsSplatRoute
   '/api/predictions/$id/comments': typeof ApiPredictionsIdCommentsRoute
   '/api/predictions/$id/devils-advocate': typeof ApiPredictionsIdDevilsAdvocateRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -10444,6 +10492,7 @@ export interface FileRoutesByTo {
   '/api/stamps/$id/wall': typeof ApiStampsIdWallRoute
   '/api/stamps/image/$filename': typeof ApiStampsImageFilenameRoute
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
+  '/api/tf2-game/assets/$': typeof ApiTf2GameAssetsSplatRoute
   '/api/tf2-hud/base/$': typeof ApiTf2HudBaseSplatRoute
   '/api/tf2-hud/blobs/$sha1': typeof ApiTf2HudBlobsSha1Route
   '/api/tf2-hud/blobs/check': typeof ApiTf2HudBlobsCheckRoute
@@ -10726,6 +10775,7 @@ export interface FileRoutesById {
   '/eversion-lab': typeof EversionLabRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
+  '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
@@ -10742,6 +10792,7 @@ export interface FileRoutesById {
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
   '/pf2ecal': typeof Pf2ecalRoute
+  '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
@@ -10901,6 +10952,7 @@ export interface FileRoutesById {
   '/sohumtracker/$date': typeof SohumtrackerDateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
+  '/tf2/play': typeof Tf2PlayRoute
   '/tf2/workshop': typeof Tf2WorkshopRoute
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
@@ -11636,6 +11688,7 @@ export interface FileRoutesById {
   '/api/group-chats/$id/react': typeof ApiGroupChatsIdReactRoute
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
+  '/api/hl2-game/assets/$': typeof ApiHl2GameAssetsSplatRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
   '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
   '/api/internal/ops/post-deploy-health': typeof ApiInternalOpsPostDeployHealthRoute
@@ -11675,6 +11728,7 @@ export interface FileRoutesById {
   '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
+  '/api/portal-game/assets/$': typeof ApiPortalGameAssetsSplatRoute
   '/api/predictions/$id/comments': typeof ApiPredictionsIdCommentsRoute
   '/api/predictions/$id/devils-advocate': typeof ApiPredictionsIdDevilsAdvocateRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -11757,6 +11811,7 @@ export interface FileRoutesById {
   '/api/stamps/$id/wall': typeof ApiStampsIdWallRoute
   '/api/stamps/image/$filename': typeof ApiStampsImageFilenameRoute
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
+  '/api/tf2-game/assets/$': typeof ApiTf2GameAssetsSplatRoute
   '/api/tf2-hud/base/$': typeof ApiTf2HudBaseSplatRoute
   '/api/tf2-hud/blobs/$sha1': typeof ApiTf2HudBlobsSha1Route
   '/api/tf2-hud/blobs/check': typeof ApiTf2HudBlobsCheckRoute
@@ -12040,6 +12095,7 @@ export interface FileRouteTypes {
     | '/eversion-lab'
     | '/forest-explorer'
     | '/gabriels-horn'
+    | '/half-life-2'
     | '/handle'
     | '/house-always-wins'
     | '/isleworks'
@@ -12056,6 +12112,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/optimization'
     | '/pf2ecal'
+    | '/portal'
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
@@ -12215,6 +12272,7 @@ export interface FileRouteTypes {
     | '/sohumtracker/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
+    | '/tf2/play'
     | '/tf2/workshop'
     | '/v/$slug'
     | '/v/new'
@@ -12949,6 +13007,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/react'
     | '/api/group-chats/$id/stream'
     | '/api/guides/$id/publish'
+    | '/api/hl2-game/assets/$'
     | '/api/homes/listings/$id'
     | '/api/internal/ops/deploy-event'
     | '/api/internal/ops/post-deploy-health'
@@ -12988,6 +13047,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
+    | '/api/portal-game/assets/$'
     | '/api/predictions/$id/comments'
     | '/api/predictions/$id/devils-advocate'
     | '/api/predictions/$id/trade'
@@ -13070,6 +13130,7 @@ export interface FileRouteTypes {
     | '/api/stamps/$id/wall'
     | '/api/stamps/image/$filename'
     | '/api/storefront/creator/$userid'
+    | '/api/tf2-game/assets/$'
     | '/api/tf2-hud/base/$'
     | '/api/tf2-hud/blobs/$sha1'
     | '/api/tf2-hud/blobs/check'
@@ -13347,6 +13408,7 @@ export interface FileRouteTypes {
     | '/dunesday'
     | '/eversion-lab'
     | '/gabriels-horn'
+    | '/half-life-2'
     | '/handle'
     | '/house-always-wins'
     | '/isleworks'
@@ -13362,6 +13424,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/optimization'
     | '/pf2ecal'
+    | '/portal'
     | '/privacy'
     | '/rmh-internal-affairs'
     | '/rmhcalculator'
@@ -13498,6 +13561,7 @@ export interface FileRouteTypes {
     | '/sohumtracker/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
+    | '/tf2/play'
     | '/tf2/workshop'
     | '/v/$slug'
     | '/v/new'
@@ -14233,6 +14297,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/react'
     | '/api/group-chats/$id/stream'
     | '/api/guides/$id/publish'
+    | '/api/hl2-game/assets/$'
     | '/api/homes/listings/$id'
     | '/api/internal/ops/deploy-event'
     | '/api/internal/ops/post-deploy-health'
@@ -14272,6 +14337,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
+    | '/api/portal-game/assets/$'
     | '/api/predictions/$id/comments'
     | '/api/predictions/$id/devils-advocate'
     | '/api/predictions/$id/trade'
@@ -14354,6 +14420,7 @@ export interface FileRouteTypes {
     | '/api/stamps/$id/wall'
     | '/api/stamps/image/$filename'
     | '/api/storefront/creator/$userid'
+    | '/api/tf2-game/assets/$'
     | '/api/tf2-hud/base/$'
     | '/api/tf2-hud/blobs/$sha1'
     | '/api/tf2-hud/blobs/check'
@@ -14635,6 +14702,7 @@ export interface FileRouteTypes {
     | '/eversion-lab'
     | '/forest-explorer'
     | '/gabriels-horn'
+    | '/half-life-2'
     | '/handle'
     | '/house-always-wins'
     | '/isleworks'
@@ -14651,6 +14719,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/optimization'
     | '/pf2ecal'
+    | '/portal'
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
@@ -14810,6 +14879,7 @@ export interface FileRouteTypes {
     | '/sohumtracker/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
+    | '/tf2/play'
     | '/tf2/workshop'
     | '/v/$slug'
     | '/v/new'
@@ -15545,6 +15615,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/react'
     | '/api/group-chats/$id/stream'
     | '/api/guides/$id/publish'
+    | '/api/hl2-game/assets/$'
     | '/api/homes/listings/$id'
     | '/api/internal/ops/deploy-event'
     | '/api/internal/ops/post-deploy-health'
@@ -15584,6 +15655,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
+    | '/api/portal-game/assets/$'
     | '/api/predictions/$id/comments'
     | '/api/predictions/$id/devils-advocate'
     | '/api/predictions/$id/trade'
@@ -15666,6 +15738,7 @@ export interface FileRouteTypes {
     | '/api/stamps/$id/wall'
     | '/api/stamps/image/$filename'
     | '/api/storefront/creator/$userid'
+    | '/api/tf2-game/assets/$'
     | '/api/tf2-hud/base/$'
     | '/api/tf2-hud/blobs/$sha1'
     | '/api/tf2-hud/blobs/check'
@@ -15948,6 +16021,7 @@ export interface RootRouteChildren {
   EversionLabRoute: typeof EversionLabRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   GabrielsHornRoute: typeof GabrielsHornRoute
+  HalfLife2Route: typeof HalfLife2Route
   HandleRoute: typeof HandleRoute
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
   IsleworksRoute: typeof IsleworksRoute
@@ -15964,6 +16038,7 @@ export interface RootRouteChildren {
   OfflineRoute: typeof OfflineRoute
   OptimizationRoute: typeof OptimizationRoute
   Pf2ecalRoute: typeof Pf2ecalRoute
+  PortalRoute: typeof PortalRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
   RmhFarmingSimRoute: typeof RmhFarmingSimRouteWithChildren
@@ -16544,6 +16619,7 @@ export interface RootRouteChildren {
   ApiGroupChatsIdMessagesRoute: typeof ApiGroupChatsIdMessagesRouteWithChildren
   ApiGroupChatsIdReactRoute: typeof ApiGroupChatsIdReactRoute
   ApiGroupChatsIdStreamRoute: typeof ApiGroupChatsIdStreamRoute
+  ApiHl2GameAssetsSplatRoute: typeof ApiHl2GameAssetsSplatRoute
   ApiInternalOpsDeployEventRoute: typeof ApiInternalOpsDeployEventRoute
   ApiInternalOpsPostDeployHealthRoute: typeof ApiInternalOpsPostDeployHealthRoute
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
@@ -16563,6 +16639,7 @@ export interface RootRouteChildren {
   ApiPersonasIdChatRoute: typeof ApiPersonasIdChatRoute
   ApiPersonasAvatarFilenameRoute: typeof ApiPersonasAvatarFilenameRoute
   ApiPoolsIdContributeRoute: typeof ApiPoolsIdContributeRoute
+  ApiPortalGameAssetsSplatRoute: typeof ApiPortalGameAssetsSplatRoute
   ApiProfileLinksIdVerifyRoute: typeof ApiProfileLinksIdVerifyRoute
   ApiQuestsIdClaimRoute: typeof ApiQuestsIdClaimRoute
   ApiRankedGameLeaderboardRoute: typeof ApiRankedGameLeaderboardRoute
@@ -16591,6 +16668,7 @@ export interface RootRouteChildren {
   ApiSpacesIdStartRoute: typeof ApiSpacesIdStartRoute
   ApiStampsImageFilenameRoute: typeof ApiStampsImageFilenameRoute
   ApiStorefrontCreatorUseridRoute: typeof ApiStorefrontCreatorUseridRoute
+  ApiTf2GameAssetsSplatRoute: typeof ApiTf2GameAssetsSplatRoute
   ApiTf2HudBaseSplatRoute: typeof ApiTf2HudBaseSplatRoute
   ApiTf2HudBlobsSha1Route: typeof ApiTf2HudBlobsSha1Route
   ApiTf2HudBlobsCheckRoute: typeof ApiTf2HudBlobsCheckRoute
@@ -16870,6 +16948,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GabrielsHornRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/half-life-2': {
+      id: '/half-life-2'
+      path: '/half-life-2'
+      fullPath: '/half-life-2'
+      preLoaderRoute: typeof HalfLife2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/handle': {
       id: '/handle'
       path: '/handle'
@@ -16980,6 +17065,13 @@ declare module '@tanstack/react-router' {
       path: '/pf2ecal'
       fullPath: '/pf2ecal'
       preLoaderRoute: typeof Pf2ecalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -18254,6 +18346,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/tf2/'
       preLoaderRoute: typeof Tf2IndexRouteImport
+      parentRoute: typeof Tf2Route
+    }
+    '/tf2/play': {
+      id: '/tf2/play'
+      path: '/play'
+      fullPath: '/tf2/play'
+      preLoaderRoute: typeof Tf2PlayRouteImport
       parentRoute: typeof Tf2Route
     }
     '/tf2/workshop': {
@@ -23478,6 +23577,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGuidesIdPublishRouteImport
       parentRoute: typeof ApiGuidesIdRoute
     }
+    '/api/hl2-game/assets/$': {
+      id: '/api/hl2-game/assets/$'
+      path: '/api/hl2-game/assets/$'
+      fullPath: '/api/hl2-game/assets/$'
+      preLoaderRoute: typeof ApiHl2GameAssetsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/homes/listings/$id': {
       id: '/api/homes/listings/$id'
       path: '/$id'
@@ -23819,6 +23925,13 @@ declare module '@tanstack/react-router' {
       path: '/api/pools/$id/contribute'
       fullPath: '/api/pools/$id/contribute'
       preLoaderRoute: typeof ApiPoolsIdContributeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/portal-game/assets/$': {
+      id: '/api/portal-game/assets/$'
+      path: '/api/portal-game/assets/$'
+      fullPath: '/api/portal-game/assets/$'
+      preLoaderRoute: typeof ApiPortalGameAssetsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/predictions/$id/comments': {
@@ -24491,6 +24604,13 @@ declare module '@tanstack/react-router' {
       path: '/api/study/decks'
       fullPath: '/api/study/decks/'
       preLoaderRoute: typeof ApiStudyDecksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tf2-game/assets/$': {
+      id: '/api/tf2-game/assets/$'
+      path: '/api/tf2-game/assets/$'
+      fullPath: '/api/tf2-game/assets/$'
+      preLoaderRoute: typeof ApiTf2GameAssetsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/tf2-hud/base/$': {
@@ -26739,6 +26859,7 @@ const TempleOfJoyRouteWithChildren = TempleOfJoyRoute._addFileChildren(
 )
 
 interface Tf2RouteChildren {
+  Tf2PlayRoute: typeof Tf2PlayRoute
   Tf2WorkshopRoute: typeof Tf2WorkshopRoute
   Tf2IndexRoute: typeof Tf2IndexRoute
   Tf2HudEditorEditorRoute: typeof Tf2HudEditorEditorRoute
@@ -26752,6 +26873,7 @@ interface Tf2RouteChildren {
 }
 
 const Tf2RouteChildren: Tf2RouteChildren = {
+  Tf2PlayRoute: Tf2PlayRoute,
   Tf2WorkshopRoute: Tf2WorkshopRoute,
   Tf2IndexRoute: Tf2IndexRoute,
   Tf2HudEditorEditorRoute: Tf2HudEditorEditorRoute,
@@ -28172,6 +28294,7 @@ const rootRouteChildren: RootRouteChildren = {
   EversionLabRoute: EversionLabRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   GabrielsHornRoute: GabrielsHornRoute,
+  HalfLife2Route: HalfLife2Route,
   HandleRoute: HandleRoute,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
   IsleworksRoute: IsleworksRoute,
@@ -28188,6 +28311,7 @@ const rootRouteChildren: RootRouteChildren = {
   OfflineRoute: OfflineRoute,
   OptimizationRoute: OptimizationRoute,
   Pf2ecalRoute: Pf2ecalRoute,
+  PortalRoute: PortalRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
   RmhFarmingSimRoute: RmhFarmingSimRouteWithChildren,
@@ -28772,6 +28896,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGroupChatsIdMessagesRoute: ApiGroupChatsIdMessagesRouteWithChildren,
   ApiGroupChatsIdReactRoute: ApiGroupChatsIdReactRoute,
   ApiGroupChatsIdStreamRoute: ApiGroupChatsIdStreamRoute,
+  ApiHl2GameAssetsSplatRoute: ApiHl2GameAssetsSplatRoute,
   ApiInternalOpsDeployEventRoute: ApiInternalOpsDeployEventRoute,
   ApiInternalOpsPostDeployHealthRoute: ApiInternalOpsPostDeployHealthRoute,
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
@@ -28791,6 +28916,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPersonasIdChatRoute: ApiPersonasIdChatRoute,
   ApiPersonasAvatarFilenameRoute: ApiPersonasAvatarFilenameRoute,
   ApiPoolsIdContributeRoute: ApiPoolsIdContributeRoute,
+  ApiPortalGameAssetsSplatRoute: ApiPortalGameAssetsSplatRoute,
   ApiProfileLinksIdVerifyRoute: ApiProfileLinksIdVerifyRoute,
   ApiQuestsIdClaimRoute: ApiQuestsIdClaimRoute,
   ApiRankedGameLeaderboardRoute: ApiRankedGameLeaderboardRoute,
@@ -28819,6 +28945,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpacesIdStartRoute: ApiSpacesIdStartRoute,
   ApiStampsImageFilenameRoute: ApiStampsImageFilenameRoute,
   ApiStorefrontCreatorUseridRoute: ApiStorefrontCreatorUseridRoute,
+  ApiTf2GameAssetsSplatRoute: ApiTf2GameAssetsSplatRoute,
   ApiTf2HudBaseSplatRoute: ApiTf2HudBaseSplatRoute,
   ApiTf2HudBlobsSha1Route: ApiTf2HudBlobsSha1Route,
   ApiTf2HudBlobsCheckRoute: ApiTf2HudBlobsCheckRoute,

@@ -41,6 +41,9 @@ const SOURCE_OVERRIDES: Record<string, string[]> = {
   'slice-it': ['lib/game', 'components/game', 'lib/slice-it', 'components/slice-it'],
   // Ships under its working title: the route lazy-loads `components/breakpoint`.
   'rochester-offensive': ['lib/breakpoint', 'components/breakpoint'],
+  // The Valve games share one browser engine: the SP simulation, the game client and the HUD.
+  'half-life-2': ['lib/sp-game', 'lib/tf2-game/client', 'components/sp-game', 'components/tf2-game'],
+  portal: ['lib/sp-game', 'lib/tf2-game/client', 'components/sp-game', 'components/tf2-game'],
 };
 
 /** Every source file that belongs to a game, by convention or override. */

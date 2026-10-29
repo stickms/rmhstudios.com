@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 349 routes. 199 render inside the standard site shell (sidebar, nav, context rail); 150 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 352 routes. 199 render inside the standard site shell (sidebar, nav, context rail); 153 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -263,6 +263,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/forest-explorer/explore` | — | public | `app/routes/forest-explorer/explore.tsx` |
 | `/forest-explorer/story` | — | public | `app/routes/forest-explorer/story.tsx` |
 | `/gabriels-horn` | Gabriel | public | `app/routes/gabriels-horn.tsx` |
+| `/half-life-2` | — | public | `app/routes/half-life-2.tsx` |
 | `/handle` | — | public | `app/routes/handle.ts` |
 | `/house-always-wins` | — | public | `app/routes/house-always-wins.tsx` |
 | `/isleworks` | Isleworks — isometric island city builder | public | `app/routes/isleworks.tsx` |
@@ -283,6 +284,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/offline` | Offline | public | `app/routes/offline.tsx` |
 | `/optimization` | Speed & Optimization | public | `app/routes/optimization.tsx` |
 | `/pf2ecal` | PF2e Calendar | public | `app/routes/pf2ecal.tsx` |
+| `/portal` | — | public | `app/routes/portal.tsx` |
 | `/privacy` | Privacy Policy | public | `app/routes/privacy.tsx` |
 | `/ref/:code` | Join RMH Studios | public | `app/routes/ref.$code.tsx` |
 | `/replays/:id` | — | public | `app/routes/replays.$id.tsx` |
@@ -367,6 +369,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/tf2/loadout` | TF2 Loadout Builder — plan every class | public | `app/routes/tf2/loadout/index.tsx` |
 | `/tf2/loadout/l/:slug` | — | public | `app/routes/tf2/loadout/l.$slug.tsx` |
 | `/tf2/loadout/mine` | — | public | `app/routes/tf2/loadout/mine.tsx` |
+| `/tf2/play` | Play TF2 in your browser — online or against bots | public | `app/routes/tf2/play.tsx` |
 | `/tf2/workshop` | TF2 Workshop — community HUDs and loadouts | public | `app/routes/tf2/workshop.tsx` |
 | `/u/:handle/rss.xml` | — | public | `app/routes/u.$handle.rss[.]xml.ts` |
 | `/v/:slug` | — | public | `app/routes/v.$slug.tsx` |

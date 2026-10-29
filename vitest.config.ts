@@ -66,6 +66,15 @@ export default defineConfig({
       // is its own suite: `pnpm test:integration` (vitest.integration.config.ts),
       // gated by the `integration` job in .github/workflows/web-ci.yml.
       'testing/integration/**',
+      // The TF2 browser game is gameplay, not mission-critical, so it is its
+      // own suite: `pnpm test:tf2` (vitest.tf2.config.ts), gated by
+      // .github/workflows/tf2-game-tests.yml.
+      'lib/tf2-game/**',
+      'scripts/tf2-game/**',
+      'server/socket-server/tf2/**',
+      // The single-player game layer (HL2 / Portal) is gameplay on the same
+      // engine: it runs in the TF2 suite, `pnpm test:tf2` (vitest.tf2.config.ts).
+      'lib/sp-game/**',
     ],
     environment: 'node',
     globals: true,

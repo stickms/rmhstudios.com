@@ -23,6 +23,9 @@ const ROOT = process.cwd();
 const DIRS: Record<string, string[]> = {
   'rochester-offensive': ['components/breakpoint'],
   'daily-puzzles': ['components/daily-puzzles'],
+  // Half-Life 2 / Portal: their pages are components/sp-game; the game surface is the shared GameCanvas.
+  'half-life-2': ['components/sp-game', 'components/tf2-game'],
+  portal: ['components/sp-game', 'components/tf2-game'],
 };
 
 const EXEMPT: Record<string, string> = {

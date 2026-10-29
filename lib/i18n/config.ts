@@ -64,7 +64,7 @@ export const NAMESPACES = [
   "c-rebar-rutabaga", "c-rmhcoins", "c-rmhfashion", "c-rmhmusic", "c-rmhstudy",
   "c-rmhtech", "c-rmhtube",
   "c-rmhtype", "c-rmhvibe", "c-roadmap", "c-saves", "c-signal-forge",
-  "c-status", "c-studio", "c-synapse-storm", "c-temple-of-joy", "c-tf2-hud",
+  "c-status", "c-studio", "c-synapse-storm", "c-temple-of-joy", "c-tf2-game", "c-tf2-hud",
   "c-tournaments", "c-ui", "c-user-builds", "c-vega", "c-velum2099",
   "c-versecraft", "c-void-breaker", "c-wager", "c-wishlist",
   // Route namespaces.

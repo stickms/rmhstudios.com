@@ -33,6 +33,7 @@ const CLIENTS = [
   'lib/gabriels-horn/net/client.ts',
   'lib/laundry-sort/net/client.ts',
   'lib/massive-march/net/client.ts',
+  'lib/tf2-game/net/client.ts',
 ];
 
 /**

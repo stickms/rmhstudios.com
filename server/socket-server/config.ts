@@ -329,6 +329,23 @@ export const config = {
     'br:hostHandoff': { max: 10, windowMs: 60_000 },
     'br:ping': { max: 120, windowMs: 60_000 },
     'br:leave': { max: 20, windowMs: 60_000 },
+    // RMH TF2 (docs/tf2-game.md). `tf2:input` is the hot path: a client sends
+    // one packet per 15 ms tick (~4,000/min), so 5,000 leaves headroom for a
+    // burst after a stall without letting one socket flood its match worker.
+    // `tf2:ping` is clock sync (a few per second while joining, then ~1/s).
+    // The rest are a human pressing a key.
+    'tf2:rooms:list': { max: 30, windowMs: 60_000 },
+    'tf2:room:create': { max: 6, windowMs: 60_000 },
+    'tf2:room:join': { max: 20, windowMs: 60_000 },
+    'tf2:room:leave': { max: 20, windowMs: 60_000 },
+    'tf2:input': { max: 5000, windowMs: 60_000 },
+    'tf2:chat:send': { max: 40, windowMs: 60_000 },
+    'tf2:team': { max: 30, windowMs: 60_000 },
+    'tf2:class': { max: 60, windowMs: 60_000 },
+    'tf2:voice': { max: 60, windowMs: 60_000 },
+    // Build / destroy / disguise / taunt: a few per second at most, even mid-fight.
+    'tf2:extra': { max: 120, windowMs: 60_000 },
+    'tf2:ping': { max: 240, windowMs: 60_000 },
     // ─── High-frequency relay / movement events ───
     // Movement + per-frame update events were previously unmetered (the rate
     // limiter returns true for events with no rule), so a single socket could

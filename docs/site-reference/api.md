@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 932 files across 196 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 935 files across 199 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -940,6 +940,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/history/position` | `GET` `POST` | `app/routes/api/history/position.ts` |
 | `/api/history/resume` | `GET` | `app/routes/api/history/resume.ts` |
 
+## `/api/hl2-game`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/hl2-game/assets/*` | `GET` | `app/routes/api/hl2-game/assets/$.ts` |
+
 ## `/api/homes`
 
 8 routes.
@@ -1317,6 +1325,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/pools` | `GET` `POST` | `app/routes/api/pools/index.ts` |
 | `/api/pools/:id` | `GET` | `app/routes/api/pools/$id/index.ts` |
 | `/api/pools/:id/contribute` | `POST` | `app/routes/api/pools/$id/contribute.ts` |
+
+## `/api/portal-game`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/portal-game/assets/*` | `GET` | `app/routes/api/portal-game/assets/$.ts` |
 
 ## `/api/predictions`
 
@@ -2016,6 +2032,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/temple-of-joy/efficiency` | `GET` `POST` | `app/routes/api/temple-of-joy/efficiency.ts` |
 | `/api/temple-of-joy/save` | `DELETE` `GET` `POST` | `app/routes/api/temple-of-joy/save.ts` |
+
+## `/api/tf2-game`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/tf2-game/assets/*` | `GET` | `app/routes/api/tf2-game/assets/$.ts` |
 
 ## `/api/tf2-hud`
 

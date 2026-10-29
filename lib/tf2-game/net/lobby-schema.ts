@@ -1,0 +1,79 @@
+/**
+ * RMH TF2 — validation for the JSON control plane (`./events.ts`).
+ *
+ * The hub parses every inbound payload with these before it touches a room, so
+ * a client cannot ask a match worker for an unknown map, an out-of-range bot
+ * count or a voice line that does not exist. The client may use them too, to
+ * avoid building a payload the hub would refuse.
+ *
+ * Strings that other players will render (room names, chat, player names) are
+ * length-capped here and sanitised again by the hub (server/socket-server/utils.ts).
+ *
+ * Environment-agnostic; no `@/` specifiers (the hub imports it relatively).
+ */
+
+import { z } from 'zod';
+import { TF2_MODES } from '../data/maps';
+import {
+  BOT_DIFFICULTIES,
+  CLASS_CHOICES,
+  TEAM_CHOICES,
+  TF2_LIMITS,
+  TF2_ROOM_CODE_RE,
+  type BotDifficulty,
+  type ClassChoice,
+  type TeamChoice,
+} from './events';
+import type { Tf2Mode } from '../data/maps';
+import { EXTRA_COMMAND_MAX_ARGS, EXTRA_COMMAND_NAME_RE } from './extra-commands';
+
+const playerName = z.string().max(64).optional();
+
+export const zCreateRoom = z.object({
+  map: z.string().min(1).max(64),
+  mode: z.enum(TF2_MODES as [Tf2Mode, ...Tf2Mode[]]).optional(),
+  maxPlayers: z.number().int().min(TF2_LIMITS.MIN_PLAYERS).max(TF2_LIMITS.MAX_PLAYERS),
+  botCount: z.number().int().min(0).max(TF2_LIMITS.MAX_BOTS),
+  botDifficulty: z.enum(BOT_DIFFICULTIES as [BotDifficulty, ...BotDifficulty[]]),
+  name: z.string().max(TF2_LIMITS.ROOM_NAME_MAX_LENGTH * 2),
+  private: z.boolean().optional(),
+  playerName,
+});
+
+export const zJoinRoom = z.object({
+  code: z.string().regex(TF2_ROOM_CODE_RE),
+  playerName,
+});
+
+export const zChat = z.object({
+  text: z.string().min(1).max(TF2_LIMITS.CHAT_MAX_LENGTH * 2),
+  teamOnly: z.boolean().optional(),
+});
+
+export const zTeam = z.object({
+  team: z.enum(TEAM_CHOICES as [TeamChoice, ...TeamChoice[]]),
+});
+
+export const zClass = z.object({
+  cls: z.enum(CLASS_CHOICES as [ClassChoice, ...ClassChoice[]]),
+});
+
+export const zVoice = z.object({
+  menu: z.union([z.literal(0), z.literal(1), z.literal(2)]),
+  item: z.number().int().min(0).max(7),
+});
+
+export const zPing = z.object({
+  t: z.number().finite(),
+});
+
+/** A generic game command (`MatchCommand { kind: 'extra' }`): a verb and console-style arguments. */
+export const zExtraCommand = z.object({
+  command: z.string().regex(EXTRA_COMMAND_NAME_RE),
+  args: z
+    .array(z.union([z.number().finite(), z.string().max(64), z.boolean()]))
+    .max(EXTRA_COMMAND_MAX_ARGS),
+});
+
+/** No payload; anything (or nothing) is accepted and ignored. */
+export const zEmpty = z.unknown();

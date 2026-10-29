@@ -1,0 +1,1823 @@
+/**
+ * RMH TF2 / Half-Life 2 / Portal — the in-game HUDs and their menus.
+ *
+ * The in-game HUD is each game's OWN design (TF2's default HUD, HL2's suit HUD,
+ * Portal's crosshair), so this is a game-scoped stylesheet with its own variable
+ * groups (`--tf2g-*`, `--hl2g-*`, `--ptl-*`), the way `tf2-hud.css` scopes the TF2
+ * Hub. The menus around the game (pause, settings) use the app tier: the TF2
+ * Hub's `.app-theme.tf2hud-theme` palette, imported below with the TF2 faces.
+ *
+ * Geometry follows VGUI: every number is in the game's virtual 640×480 screen,
+ * scaled by `--u` (pixels per unit, set on the root from the viewport), so
+ * `calc(var(--u) * 18)` is what a `.res` file calls "18". Panels are placed by
+ * the layout table in `hud-layout.ts`; this file styles what is inside them.
+ */
+
+@import '../tf2-hud/tf2-hud.css';
+
+/* ══ Roots ═══════════════════════════════════════════════════════════════ */
+
+.tf2g-hud {
+  /* clientscheme.res colours. */
+  --tf2g-tan-light: rgb(235 226 202);
+  --tf2g-tan-dark: rgb(117 107 94);
+  --tf2g-tan-darker: rgb(46 43 42);
+  --tf2g-white: rgb(235 235 235);
+  --tf2g-team-red: rgb(184 56 59);
+  --tf2g-team-blu: rgb(88 133 162);
+  --tf2g-red-solid: rgb(180 92 77);
+  --tf2g-blu-solid: rgb(104 124 155);
+  --tf2g-panel-red: rgb(190 60 60 / 0.68);
+  --tf2g-panel-blu: rgb(80 118 143 / 0.68);
+  --tf2g-panel-dark: rgb(46 43 42 / 0.78);
+  --tf2g-panel-black: rgb(0 0 0 / 0.55);
+  --tf2g-health-bg: rgb(72 71 69);
+  --tf2g-death-warning: rgb(255 0 0);
+  --tf2g-progress: rgb(251 235 202);
+  --tf2g-progress-bg: rgb(250 234 201 / 0.2);
+  --tf2g-uber: rgb(251 235 202);
+  --tf2g-crit: rgb(255 70 40);
+  --tf2g-combat: rgb(255 40 40);
+  --tf2g-neutral: rgb(124 124 124);
+  --tf2g-gold: rgb(255 215 0);
+  --tf2g-radius: calc(var(--u) * 3);
+  --tf2g-font-build: 'TF2 Build', Impact, 'Arial Narrow', sans-serif;
+  --tf2g-font: 'TF2', 'TF2 Secondary', 'Trebuchet MS', sans-serif;
+  --tf2g-font-small: 'TF2 Secondary', 'Trebuchet MS', Verdana, sans-serif;
+
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Over the game canvas: the app tier's ground must not paint here. */
+  background: transparent;
+  color: var(--tf2g-tan-light);
+  font-family: var(--tf2g-font-small);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  text-rendering: optimizeLegibility;
+}
+
+/* Menus and other interactive layers take the pointer back (the pause dialog is portalled in here). */
+.tf2g-hud :is(.tf2g-interactive, [role='dialog'], .app-overlay, [data-radix-popper-content-wrapper]) {
+  pointer-events: auto;
+}
+
+/* The team colour of whatever a rule sits in. */
+.tf2g-team-2 {
+  --team: var(--tf2g-team-red);
+  --team-panel: var(--tf2g-panel-red);
+  --team-solid: var(--tf2g-red-solid);
+}
+.tf2g-team-3 {
+  --team: var(--tf2g-team-blu);
+  --team-panel: var(--tf2g-panel-blu);
+  --team-solid: var(--tf2g-blu-solid);
+}
+.tf2g-team-0,
+.tf2g-team-1 {
+  --team: var(--tf2g-neutral);
+  --team-panel: var(--tf2g-panel-dark);
+  --team-solid: var(--tf2g-neutral);
+}
+.tf2g-team-text {
+  color: var(--team);
+}
+
+/* A positioned layout panel (the rect comes from hud-layout.ts). */
+.tf2g-panel {
+  position: absolute;
+}
+
+.tf2g-build {
+  font-family: var(--tf2g-font-build);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+.tf2g-font {
+  font-family: var(--tf2g-font);
+}
+.tf2g-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The drop shadow TF2's text carries on the world (dropshadow 1 in the scheme). */
+.tf2g-shadow {
+  text-shadow: calc(var(--u) * 0.6) calc(var(--u) * 0.6) 0 rgb(0 0 0 / 0.85);
+}
+
+/* ══ Health (HudPlayerHealth + HudPlayerClass) ═══════════════════════════ */
+
+.tf2g-class-bg {
+  position: absolute;
+  left: calc(var(--u) * 9);
+  bottom: calc(var(--u) * 10);
+  width: calc(var(--u) * 100);
+  height: calc(var(--u) * 50);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+}
+.tf2g-class-img {
+  position: absolute;
+  left: calc(var(--u) * 25);
+  bottom: calc(var(--u) * 13);
+  width: calc(var(--u) * 75);
+  height: calc(var(--u) * 75);
+  object-fit: contain;
+}
+.tf2g-class-fallback {
+  position: absolute;
+  left: calc(var(--u) * 14);
+  bottom: calc(var(--u) * 16);
+  width: calc(var(--u) * 58);
+  font-size: calc(var(--u) * 11);
+  text-transform: uppercase;
+  color: var(--tf2g-tan-light);
+}
+
+.tf2g-cross {
+  position: absolute;
+  left: calc(var(--u) * 73);
+  top: calc(var(--u) * 33);
+  width: calc(var(--u) * 55);
+  height: calc(var(--u) * 55);
+  overflow: visible;
+}
+.tf2g-cross-bg {
+  fill: var(--tf2g-health-bg);
+}
+.tf2g-cross-fill {
+  fill: var(--tf2g-tan-light);
+}
+.tf2g-cross-over {
+  fill: var(--tf2g-tan-light);
+  opacity: 0;
+  transform-origin: 50% 50%;
+  transform-box: fill-box;
+}
+.tf2g-health[data-overheal='true'] .tf2g-cross-over {
+  animation: tf2g-overheal 1s ease-in-out infinite;
+}
+.tf2g-health[data-low='true'] .tf2g-cross-bg {
+  animation: tf2g-low-health 0.6s steps(2, jump-none) infinite;
+}
+.tf2g-health[data-low='true'][data-calm='true'] .tf2g-cross-bg {
+  animation: none;
+  fill: rgb(150 20 20);
+}
+.tf2g-health[data-dead='true'] .tf2g-cross-bg {
+  fill: rgb(60 20 20);
+}
+@keyframes tf2g-overheal {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(1.05);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.25);
+  }
+}
+@keyframes tf2g-low-health {
+  0% {
+    fill: var(--tf2g-death-warning);
+  }
+  100% {
+    fill: var(--tf2g-health-bg);
+  }
+}
+
+.tf2g-health-value {
+  position: absolute;
+  left: calc(var(--u) * 76);
+  top: calc(var(--u) * 50);
+  width: calc(var(--u) * 50);
+  height: calc(var(--u) * 20);
+  text-align: center;
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 17);
+  line-height: calc(var(--u) * 20);
+  color: var(--tf2g-tan-darker);
+}
+.tf2g-health[data-overheal='true'] .tf2g-health-value {
+  color: var(--tf2g-tan-darker);
+}
+.tf2g-health-max {
+  position: absolute;
+  left: calc(var(--u) * 76);
+  top: calc(var(--u) * 20);
+  width: calc(var(--u) * 50);
+  text-align: center;
+  font-size: calc(var(--u) * 8);
+  color: var(--tf2g-tan-light);
+}
+.tf2g-status-icons {
+  position: absolute;
+  left: calc(var(--u) * 132);
+  top: calc(var(--u) * 40);
+  display: flex;
+  gap: calc(var(--u) * 3);
+}
+.tf2g-status-icon {
+  min-width: calc(var(--u) * 16);
+  height: calc(var(--u) * 16);
+  padding: 0 calc(var(--u) * 3);
+  border-radius: var(--tf2g-radius);
+  background: var(--tf2g-panel-dark);
+  color: var(--tf2g-tan-light);
+  font-size: calc(var(--u) * 7);
+  line-height: calc(var(--u) * 16);
+  text-align: center;
+  text-transform: uppercase;
+}
+.tf2g-status-icon[data-kind='burning'] {
+  color: rgb(255 160 60);
+}
+.tf2g-status-icon[data-kind='bleeding'],
+.tf2g-status-icon[data-kind='marked'] {
+  color: rgb(255 90 90);
+}
+.tf2g-status-icon[data-kind='jarate'] {
+  color: rgb(255 220 80);
+}
+.tf2g-status-icon[data-kind='milk'] {
+  color: rgb(250 250 250);
+}
+.tf2g-status-icon[data-kind='ubered'],
+.tf2g-status-icon[data-kind='crit'] {
+  color: var(--team);
+  background: var(--tf2g-tan-light);
+}
+
+/* ══ Ammo (HudWeaponAmmo) ════════════════════════════════════════════════ */
+
+.tf2g-ammo-bg {
+  position: absolute;
+  left: calc(var(--u) * 4);
+  top: 0;
+  width: calc(var(--u) * 90);
+  height: calc(var(--u) * 45);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+}
+.tf2g-ammo-clip,
+.tf2g-ammo-noclip {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  font-family: var(--tf2g-font-build);
+  color: var(--tf2g-tan-light);
+  line-height: 1;
+}
+.tf2g-ammo-clip {
+  left: calc(var(--u) * 4);
+  top: 0;
+  width: calc(var(--u) * 55);
+  height: calc(var(--u) * 40);
+  font-size: calc(var(--u) * 30);
+}
+.tf2g-ammo-noclip {
+  left: 0;
+  top: calc(var(--u) * 2);
+  width: calc(var(--u) * 84);
+  height: calc(var(--u) * 40);
+  font-size: calc(var(--u) * 30);
+}
+.tf2g-ammo-reserve {
+  position: absolute;
+  left: calc(var(--u) * 61);
+  top: calc(var(--u) * 8);
+  width: calc(var(--u) * 34);
+  height: calc(var(--u) * 27);
+  display: flex;
+  align-items: flex-end;
+  font-family: var(--tf2g-font);
+  font-size: calc(var(--u) * 14);
+  line-height: 1;
+}
+.tf2g-ammo[data-low='true'] .tf2g-ammo-clip,
+.tf2g-ammo[data-low='true'] .tf2g-ammo-noclip {
+  color: rgb(255 120 100);
+}
+
+/* A meter bar (sticky charge, cloak, über, metal…): progress over a faint track. */
+.tf2g-bar {
+  position: relative;
+  height: calc(var(--u) * 6);
+  background: var(--tf2g-progress-bg);
+  border-radius: calc(var(--u) * 1);
+  overflow: hidden;
+}
+.tf2g-bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--tf2g-progress);
+  transform-origin: left center;
+}
+.tf2g-bar[data-tone='team'] > span {
+  background: var(--team);
+}
+.tf2g-bar[data-tone='warn'] > span {
+  background: var(--tf2g-death-warning);
+}
+
+/* ══ Meters (HudMedicCharge, HudItemEffectMeter, HudDemomanPipes) ═══════ */
+
+.tf2g-meter-box {
+  position: absolute;
+  border-radius: var(--tf2g-radius);
+  background: var(--tf2g-panel-dark);
+  padding: calc(var(--u) * 4) calc(var(--u) * 6);
+}
+.tf2g-meter-label {
+  font-family: var(--tf2g-font);
+  font-size: calc(var(--u) * 8.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  margin-bottom: calc(var(--u) * 3);
+}
+.tf2g-uber {
+  left: calc(var(--u) * 22);
+  top: calc(var(--u) * 18);
+  width: calc(var(--u) * 102);
+}
+.tf2g-uber .tf2g-bar {
+  height: calc(var(--u) * 8);
+}
+.tf2g-uber[data-full='true'] .tf2g-bar > span {
+  animation: tf2g-uber-ready 0.9s ease-in-out infinite alternate;
+}
+.tf2g-hud[data-calm='true'] .tf2g-uber[data-full='true'] .tf2g-bar > span {
+  animation: none;
+}
+@keyframes tf2g-uber-ready {
+  from {
+    background: var(--tf2g-uber);
+  }
+  to {
+    background: var(--team);
+  }
+}
+.tf2g-effect {
+  left: 0;
+  top: 0;
+  width: calc(var(--u) * 92);
+}
+.tf2g-pipes {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--u) * 4);
+}
+.tf2g-pipes-count {
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 18);
+  line-height: 1;
+}
+
+/* ══ Crosshair, damage numbers, scope ════════════════════════════════════ */
+
+.tf2g-crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  overflow: visible;
+}
+.tf2g-crosshair * {
+  vector-effect: non-scaling-stroke;
+}
+
+.tf2g-damage {
+  position: absolute;
+  font-family: var(--tf2g-font-build);
+  color: var(--tf2g-combat);
+  font-size: calc(var(--u) * 14);
+  translate: -50% -50%;
+  text-shadow: calc(var(--u) * 0.6) calc(var(--u) * 0.6) 0 rgb(0 0 0 / 0.8);
+  animation: tf2g-damage-rise 1.5s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+  white-space: nowrap;
+}
+.tf2g-damage[data-crit='2'] {
+  font-size: calc(var(--u) * 18);
+}
+@keyframes tf2g-damage-rise {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(calc(var(--u) * -40));
+    opacity: 0;
+  }
+}
+
+.tf2g-scope {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.tf2g-scope-charge {
+  position: absolute;
+  left: calc(50% + var(--u) * 60);
+  top: calc(50% + var(--u) * 10);
+  width: calc(var(--u) * 6);
+  height: calc(var(--u) * 50);
+  background: rgb(0 0 0 / 0.5);
+  border: calc(var(--u) * 0.6) solid rgb(0 0 0 / 0.8);
+}
+.tf2g-scope-charge > span {
+  position: absolute;
+  inset: auto 0 0 0;
+  background: var(--tf2g-tan-light);
+}
+.tf2g-scope-charge[data-full='true'] > span {
+  background: rgb(255 210 80);
+}
+
+/* ══ Objective: timer, KOTH, control points, flags, payload ══════════════ */
+
+.tf2g-timer {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--u) * 6);
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.tf2g-timer-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 5);
+  min-width: calc(var(--u) * 78);
+  height: calc(var(--u) * 30);
+  padding: 0 calc(var(--u) * 8) 0 calc(var(--u) * 10);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+  border: calc(var(--u) * 1) solid rgb(0 0 0 / 0.2);
+}
+.tf2g-timer-value {
+  flex: 1;
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 19);
+  line-height: 1;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.tf2g-timer-ring {
+  width: calc(var(--u) * 17);
+  height: calc(var(--u) * 17);
+  flex: none;
+}
+.tf2g-timer-ring circle {
+  fill: none;
+  stroke-width: 3.5;
+}
+.tf2g-timer-ring .bg {
+  stroke: rgb(0 0 0 / 0.35);
+}
+.tf2g-timer-ring .fg {
+  stroke: var(--tf2g-tan-light);
+}
+.tf2g-timer[data-urgent='true'] .tf2g-timer-value {
+  color: rgb(255 230 120);
+}
+.tf2g-timer-tag {
+  margin-top: calc(var(--u) * 2);
+  padding: calc(var(--u) * 1) calc(var(--u) * 6);
+  border-radius: var(--tf2g-radius);
+  background: var(--tf2g-panel-dark);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 9);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tf2g-timer-tag[data-kind='overtime'] {
+  color: rgb(255 210 80);
+}
+
+.tf2g-koth {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  gap: calc(var(--u) * 10);
+  padding-top: calc(var(--u) * 6);
+}
+.tf2g-koth-clock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--u) * 70);
+  height: calc(var(--u) * 26);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 16);
+  opacity: 0.78;
+  font-variant-numeric: tabular-nums;
+}
+.tf2g-koth-clock[data-active='true'] {
+  opacity: 1;
+  height: calc(var(--u) * 32);
+  font-size: calc(var(--u) * 21);
+  border: calc(var(--u) * 1) solid var(--tf2g-tan-light);
+}
+
+.tf2g-cps {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--u) * 12);
+  translate: -50% 0;
+  display: flex;
+  gap: calc(var(--u) * 4);
+  padding: calc(var(--u) * 3);
+  border-radius: var(--tf2g-radius);
+  background: var(--tf2g-panel-black);
+}
+.tf2g-cp {
+  position: relative;
+  width: calc(var(--u) * 28);
+  height: calc(var(--u) * 28);
+}
+.tf2g-cp svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.tf2g-cp-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 11);
+  color: var(--tf2g-white);
+}
+.tf2g-cp-cappers {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--u) * 3);
+  translate: -50% 0;
+  padding: 0 calc(var(--u) * 3);
+  border-radius: var(--tf2g-radius);
+  background: var(--team);
+  color: var(--tf2g-white);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 9);
+  white-space: nowrap;
+}
+.tf2g-cp-timer {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + var(--u) * 1);
+  translate: -50% 0;
+  font-size: calc(var(--u) * 8);
+  font-family: var(--tf2g-font-build);
+}
+
+.tf2g-flags {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--u) * 10);
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 6);
+}
+.tf2g-flag {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 4);
+  height: calc(var(--u) * 36);
+  padding: 0 calc(var(--u) * 8);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+}
+.tf2g-flag svg {
+  width: calc(var(--u) * 24);
+  height: calc(var(--u) * 24);
+}
+.tf2g-flag-score {
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 20);
+  min-width: calc(var(--u) * 12);
+  text-align: center;
+}
+.tf2g-flag-status {
+  font-size: calc(var(--u) * 7);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  max-width: calc(var(--u) * 60);
+  line-height: 1.15;
+}
+.tf2g-flag-to {
+  padding: calc(var(--u) * 2) calc(var(--u) * 6);
+  border-radius: var(--tf2g-radius);
+  background: var(--tf2g-panel-black);
+  font-size: calc(var(--u) * 7);
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.2;
+}
+.tf2g-flag-carried {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--u) * 56);
+  translate: -50% 0;
+  padding: calc(var(--u) * 3) calc(var(--u) * 10);
+  border-radius: var(--tf2g-radius);
+  background: var(--tf2g-panel-black);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 11);
+  text-transform: uppercase;
+}
+
+.tf2g-payload {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--u) * 12);
+  translate: -50% 0;
+  width: calc(var(--u) * 300);
+  height: calc(var(--u) * 40);
+}
+.tf2g-payload-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--u) * 8);
+  height: calc(var(--u) * 6);
+  border-radius: calc(var(--u) * 3);
+  background: var(--tf2g-panel-black);
+  border: calc(var(--u) * 0.6) solid rgb(0 0 0 / 0.6);
+}
+.tf2g-payload-done {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: calc(var(--u) * 3);
+  background: var(--team);
+}
+.tf2g-payload-point {
+  position: absolute;
+  bottom: calc(var(--u) * 5);
+  width: calc(var(--u) * 12);
+  height: calc(var(--u) * 12);
+  translate: -50% 0;
+  border-radius: 50%;
+  border: calc(var(--u) * 1.2) solid var(--tf2g-tan-light);
+  background: var(--tf2g-panel-dark);
+}
+.tf2g-payload-point[data-captured='true'] {
+  background: var(--team);
+}
+.tf2g-payload-cart {
+  position: absolute;
+  bottom: calc(var(--u) * 13);
+  width: calc(var(--u) * 26);
+  height: calc(var(--u) * 26);
+  translate: -50% 0;
+  transition: left 0.25s linear;
+}
+.tf2g-payload-cart svg,
+.tf2g-payload-cart img {
+  width: 100%;
+  height: 100%;
+}
+.tf2g-payload-pushers {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--u) * 1);
+  translate: -50% 0;
+  padding: 0 calc(var(--u) * 3);
+  border-radius: var(--tf2g-radius);
+  background: var(--team);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 9);
+  white-space: nowrap;
+}
+
+/* ══ Kill feed (HudDeathNotice) ══════════════════════════════════════════ */
+
+.tf2g-killfeed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: calc(var(--u) * 2);
+}
+.tf2g-kill {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 4);
+  height: calc(var(--u) * 16);
+  padding: 0 calc(var(--u) * 5);
+  border-radius: var(--tf2g-radius);
+  background: var(--tf2g-panel-dark);
+  font-family: var(--tf2g-font-small);
+  font-size: calc(var(--u) * 9);
+  white-space: nowrap;
+}
+.tf2g-kill[data-local='true'] {
+  background: rgb(235 226 202 / 0.92);
+}
+.tf2g-kill-name {
+  max-width: calc(var(--u) * 120);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--team);
+}
+.tf2g-kill[data-local='true'] .tf2g-team-2 {
+  --team: rgb(160 40 40);
+}
+.tf2g-kill[data-local='true'] .tf2g-team-3 {
+  --team: rgb(50 90 125);
+}
+.tf2g-kill-plus {
+  color: var(--tf2g-tan-light);
+}
+.tf2g-kill[data-local='true'] .tf2g-kill-plus,
+.tf2g-kill[data-local='true'] .tf2g-kill-note {
+  color: var(--tf2g-tan-darker);
+}
+.tf2g-kill-icon {
+  padding: 0 calc(var(--u) * 3);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 7.5);
+  line-height: calc(var(--u) * 12);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--tf2g-white);
+  border-radius: calc(var(--u) * 1.5);
+  background: rgb(0 0 0 / 0.35);
+}
+.tf2g-kill[data-local='true'] .tf2g-kill-icon {
+  color: var(--tf2g-tan-darker);
+  background: rgb(0 0 0 / 0.12);
+}
+.tf2g-kill-icon[data-crit='true'] {
+  color: var(--tf2g-white);
+  background: var(--tf2g-crit);
+}
+.tf2g-kill-note {
+  font-size: calc(var(--u) * 7);
+  text-transform: uppercase;
+  color: var(--tf2g-tan-light);
+}
+
+/* ══ Engineer buildings (BuildingStatus_Engineer) ════════════════════════ */
+
+.tf2g-buildings {
+  position: absolute;
+  left: calc(var(--u) * 4);
+  top: calc(var(--u) * 4);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 3);
+}
+.tf2g-building {
+  position: relative;
+  display: grid;
+  grid-template-columns: calc(var(--u) * 26) calc(var(--u) * 5) 1fr;
+  align-items: center;
+  gap: calc(var(--u) * 4);
+  width: calc(var(--u) * 128);
+  min-height: calc(var(--u) * 30);
+  padding: calc(var(--u) * 2) calc(var(--u) * 5) calc(var(--u) * 2) calc(var(--u) * 2);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+}
+.tf2g-building[data-exists='false'] {
+  background: var(--tf2g-panel-dark);
+  grid-template-columns: calc(var(--u) * 26) 1fr;
+}
+.tf2g-building[data-alert='true'] {
+  box-shadow: inset 0 0 0 calc(var(--u) * 1) var(--tf2g-death-warning);
+}
+.tf2g-building-icon {
+  width: calc(var(--u) * 26);
+  height: calc(var(--u) * 26);
+  object-fit: contain;
+  border-radius: calc(var(--u) * 2);
+  background: rgb(0 0 0 / 0.35);
+}
+.tf2g-building-hp {
+  position: relative;
+  width: calc(var(--u) * 5);
+  height: calc(var(--u) * 26);
+  background: rgb(0 0 0 / 0.4);
+  border-radius: calc(var(--u) * 1);
+  overflow: hidden;
+}
+.tf2g-building-hp > span {
+  position: absolute;
+  inset: auto 0 0 0;
+  background: rgb(110 220 110);
+}
+.tf2g-building-hp[data-low='true'] > span {
+  background: var(--tf2g-death-warning);
+}
+.tf2g-building-body {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+  min-width: 0;
+  font-size: calc(var(--u) * 7.5);
+}
+.tf2g-building-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--u) * 4);
+  white-space: nowrap;
+}
+.tf2g-building-row .tf2g-bar {
+  flex: 1;
+  height: calc(var(--u) * 4);
+}
+.tf2g-building-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--tf2g-font);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ══ Death, respawn, win, center text ════════════════════════════════════ */
+
+.tf2g-respawn {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--u) * 56);
+  translate: -50% 0;
+  padding: calc(var(--u) * 3) calc(var(--u) * 12);
+  border-radius: var(--tf2g-radius);
+  background: var(--tf2g-panel-black);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 13);
+  white-space: nowrap;
+}
+.tf2g-spectating {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--u) * 70);
+  translate: -50% 0;
+  padding: calc(var(--u) * 3) calc(var(--u) * 10);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+  font-family: var(--tf2g-font);
+  font-size: calc(var(--u) * 11);
+  white-space: nowrap;
+}
+
+.tf2g-freeze {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--u) * 90);
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 8);
+  min-width: calc(var(--u) * 220);
+  padding: calc(var(--u) * 6) calc(var(--u) * 10);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+}
+.tf2g-freeze-img {
+  width: calc(var(--u) * 40);
+  height: calc(var(--u) * 40);
+  object-fit: contain;
+}
+.tf2g-freeze-text {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 1);
+  min-width: 0;
+}
+.tf2g-freeze-label {
+  font-size: calc(var(--u) * 8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tf2g-freeze-name {
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 16);
+  color: var(--tf2g-white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tf2g-freeze-note {
+  font-size: calc(var(--u) * 8);
+  color: rgb(255 210 120);
+  text-transform: uppercase;
+}
+.tf2g-freeze-health {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 3);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 11);
+}
+.tf2g-freeze-health svg {
+  width: calc(var(--u) * 14);
+  height: calc(var(--u) * 14);
+}
+
+.tf2g-win {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 3);
+}
+.tf2g-win-head {
+  padding: calc(var(--u) * 5) calc(var(--u) * 10);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+  text-align: center;
+}
+.tf2g-win-title {
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 22);
+  text-transform: uppercase;
+  color: var(--tf2g-white);
+}
+.tf2g-win-reason {
+  font-size: calc(var(--u) * 9);
+}
+.tf2g-win-scores {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--u) * 3);
+}
+.tf2g-win-score {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--u) * 3) calc(var(--u) * 8);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 12);
+}
+.tf2g-win-score b {
+  font-weight: 400;
+  font-size: calc(var(--u) * 20);
+}
+.tf2g-win-top {
+  padding: calc(var(--u) * 5) calc(var(--u) * 8);
+  border-radius: var(--tf2g-radius);
+  background: var(--tf2g-panel-black);
+  font-size: calc(var(--u) * 9);
+}
+.tf2g-win-top li {
+  display: flex;
+  justify-content: space-between;
+  gap: calc(var(--u) * 8);
+  padding: calc(var(--u) * 1) 0;
+}
+.tf2g-win-next {
+  text-align: center;
+  font-size: calc(var(--u) * 8);
+  color: var(--tf2g-tan-light);
+}
+
+.tf2g-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 3);
+}
+.tf2g-center-msg {
+  max-width: 100%;
+  padding: calc(var(--u) * 3) calc(var(--u) * 10);
+  border-radius: var(--tf2g-radius);
+  background: var(--tf2g-panel-black);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 12);
+  text-align: center;
+}
+.tf2g-center-msg[data-kind='alert'] {
+  color: rgb(255 210 120);
+}
+
+/* ══ Chat and voice menu ═════════════════════════════════════════════════ */
+
+.tf2g-chat {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: calc(var(--u) * 1);
+  font-size: calc(var(--u) * 8.5);
+}
+.tf2g-chat[data-open='true'] {
+  pointer-events: auto;
+}
+.tf2g-chat-lines {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 1);
+  overflow: hidden;
+}
+.tf2g-chat[data-open='true'] .tf2g-chat-lines {
+  max-height: calc(var(--u) * 100);
+  overflow-y: auto;
+  padding: calc(var(--u) * 3);
+  border-radius: var(--tf2g-radius);
+  background: var(--tf2g-panel-black);
+}
+.tf2g-chat-line {
+  overflow-wrap: anywhere;
+  text-shadow: calc(var(--u) * 0.5) calc(var(--u) * 0.5) 0 rgb(0 0 0 / 0.9);
+}
+.tf2g-chat-line b {
+  font-weight: 700;
+  color: var(--team);
+}
+.tf2g-chat-system {
+  color: rgb(160 220 120);
+}
+.tf2g-chat-input {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 3);
+  padding: calc(var(--u) * 2) calc(var(--u) * 4);
+  border-radius: var(--tf2g-radius);
+  background: rgb(0 0 0 / 0.7);
+}
+.tf2g-chat-input label {
+  white-space: nowrap;
+  color: var(--tf2g-tan-light);
+}
+.tf2g-chat-input input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--tf2g-white);
+  /* 16px floor so iOS does not zoom into the field. */
+  font: inherit;
+  font-size: max(16px, calc(var(--u) * 8.5));
+}
+
+.tf2g-menu-list {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.tf2g-menu-box {
+  padding: calc(var(--u) * 6) calc(var(--u) * 8);
+  border-radius: var(--tf2g-radius);
+  background: rgb(0 0 0 / 0.72);
+  font-size: calc(var(--u) * 9);
+}
+.tf2g-menu-title {
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 11);
+  color: var(--tf2g-tan-light);
+  margin-bottom: calc(var(--u) * 4);
+  text-transform: uppercase;
+}
+.tf2g-menu-item {
+  display: flex;
+  width: 100%;
+  gap: calc(var(--u) * 4);
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 2);
+  border: 0;
+  border-radius: calc(var(--u) * 1.5);
+  background: transparent;
+  color: var(--tf2g-tan-light);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.tf2g-menu-item:hover,
+.tf2g-menu-item:focus-visible {
+  background: rgb(235 226 202 / 0.16);
+}
+.tf2g-menu-item kbd {
+  font: inherit;
+  color: rgb(255 210 120);
+  min-width: calc(var(--u) * 8);
+}
+
+/* Visible focus for every interactive HUD element (keyboard and gamepad). */
+.tf2g-hud :is(button, input, [tabindex]):focus-visible {
+  outline: max(2px, calc(var(--u) * 1)) solid rgb(255 210 120);
+  outline-offset: max(1px, calc(var(--u) * 0.5));
+}
+
+/* ══ Full-screen menus: scoreboard, team, class, PDA ═════════════════════ */
+
+.tf2g-dim {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.45);
+}
+
+.tf2g-scores {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: min(calc(var(--u) * 600), calc(100% - 16px));
+  max-height: calc(100% - 16px);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 4);
+  padding: calc(var(--u) * 8);
+  border-radius: var(--tf2g-radius);
+  background: rgb(36 33 32 / 0.92);
+}
+.tf2g-scores-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: calc(var(--u) * 8);
+  color: var(--tf2g-tan-light);
+}
+.tf2g-scores-map {
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 12);
+}
+.tf2g-scores-teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--u) * 6);
+  min-height: 0;
+  overflow-y: auto;
+}
+@container (max-width: 600px) {
+  .tf2g-scores-teams {
+    grid-template-columns: 1fr;
+  }
+}
+.tf2g-scores-team-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--u) * 3) calc(var(--u) * 6);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 13);
+  text-transform: uppercase;
+}
+.tf2g-scores-team-head b {
+  font-weight: 400;
+  font-size: calc(var(--u) * 24);
+}
+.tf2g-scores table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: calc(var(--u) * 8);
+  margin-top: calc(var(--u) * 2);
+}
+.tf2g-scores th {
+  font-weight: 400;
+  font-size: calc(var(--u) * 6.5);
+  color: var(--tf2g-tan-dark);
+  text-transform: uppercase;
+  text-align: right;
+  padding: calc(var(--u) * 1) calc(var(--u) * 3);
+}
+.tf2g-scores th:first-child,
+.tf2g-scores td:first-child {
+  text-align: left;
+}
+.tf2g-scores td {
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 3);
+  text-align: right;
+  white-space: nowrap;
+  border-top: calc(var(--u) * 0.5) solid rgb(235 226 202 / 0.08);
+}
+.tf2g-scores td.name {
+  max-width: calc(var(--u) * 120);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--team);
+}
+.tf2g-scores tr[data-local='true'] td {
+  background: rgb(235 226 202 / 0.12);
+}
+.tf2g-scores tr[data-dead='true'] td {
+  opacity: 0.55;
+}
+.tf2g-score-class {
+  width: calc(var(--u) * 11);
+  height: calc(var(--u) * 11);
+  vertical-align: middle;
+}
+.tf2g-score-tag {
+  margin-left: calc(var(--u) * 3);
+  padding: 0 calc(var(--u) * 2);
+  border-radius: calc(var(--u) * 1);
+  font-size: calc(var(--u) * 6);
+  text-transform: uppercase;
+  background: rgb(235 226 202 / 0.15);
+  color: rgb(255 210 120);
+}
+.tf2g-scores-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--u) * 10);
+  font-size: calc(var(--u) * 8);
+  color: var(--tf2g-tan-light);
+}
+
+.tf2g-select {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: calc(var(--u) * 10);
+  padding: calc(var(--u) * 10) 16px;
+  overflow-y: auto;
+  background: rgb(25 23 22 / 0.82);
+  pointer-events: auto;
+}
+.tf2g-select-title {
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 24);
+  text-transform: uppercase;
+  color: var(--tf2g-tan-light);
+  text-align: center;
+}
+.tf2g-select-hint {
+  font-size: calc(var(--u) * 8);
+  color: var(--tf2g-tan-dark);
+  text-align: center;
+}
+.tf2g-teams {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(var(--u) * 8);
+}
+.tf2g-team-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc(var(--u) * 4);
+  width: calc(var(--u) * 120);
+  height: calc(var(--u) * 150);
+  padding: calc(var(--u) * 8);
+  border: calc(var(--u) * 1) solid rgb(0 0 0 / 0.4);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+  color: var(--tf2g-white);
+  font-family: var(--tf2g-font-build);
+  cursor: pointer;
+}
+.tf2g-team-card:hover,
+.tf2g-team-card:focus-visible {
+  background: var(--team);
+}
+.tf2g-team-card[data-small='true'] {
+  height: calc(var(--u) * 60);
+  width: calc(var(--u) * 120);
+}
+.tf2g-team-card[data-small='true'] .tf2g-team-card-name {
+  font-size: calc(var(--u) * 13);
+}
+.tf2g-team-card-name {
+  font-size: calc(var(--u) * 26);
+  line-height: 1;
+}
+.tf2g-team-card-count {
+  font-family: var(--tf2g-font-small);
+  font-size: calc(var(--u) * 8);
+}
+.tf2g-card-key {
+  position: absolute;
+  left: calc(var(--u) * 4);
+  top: calc(var(--u) * 3);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 10);
+  color: rgb(255 210 120);
+}
+
+.tf2g-classes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(var(--u) * 10);
+}
+.tf2g-class-group {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 3);
+}
+.tf2g-class-group-name {
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 8);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tf2g-tan-dark);
+}
+.tf2g-class-group-row {
+  display: flex;
+  gap: calc(var(--u) * 3);
+}
+.tf2g-class-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(var(--u) * 46);
+  padding: calc(var(--u) * 3) 0 calc(var(--u) * 2);
+  border: calc(var(--u) * 1) solid transparent;
+  border-radius: var(--tf2g-radius);
+  background: rgb(0 0 0 / 0.35);
+  color: var(--tf2g-tan-light);
+  cursor: pointer;
+  font: inherit;
+}
+.tf2g-class-card:hover,
+.tf2g-class-card:focus-visible,
+.tf2g-class-card[data-current='true'] {
+  background: var(--team-panel);
+  border-color: var(--tf2g-tan-light);
+}
+.tf2g-class-card img,
+.tf2g-class-card .tf2g-class-ph {
+  width: calc(var(--u) * 40);
+  height: calc(var(--u) * 40);
+  object-fit: contain;
+}
+.tf2g-class-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 16);
+  color: var(--team);
+}
+.tf2g-class-card-name {
+  font-size: calc(var(--u) * 7);
+  text-transform: uppercase;
+}
+.tf2g-class-count {
+  position: absolute;
+  right: calc(var(--u) * 2);
+  top: calc(var(--u) * 1);
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 8);
+  color: var(--tf2g-white);
+}
+.tf2g-class-card .tf2g-card-key {
+  left: calc(var(--u) * 2);
+  top: calc(var(--u) * 1);
+  font-size: calc(var(--u) * 8);
+}
+.tf2g-class-focus {
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 18);
+  color: var(--team);
+  text-transform: uppercase;
+  min-height: calc(var(--u) * 20);
+}
+
+.tf2g-pda {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -10%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 4);
+  pointer-events: auto;
+}
+.tf2g-pda-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(var(--u) * 4);
+}
+.tf2g-pda-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  width: calc(var(--u) * 62);
+  padding: calc(var(--u) * 4);
+  border: calc(var(--u) * 1) solid rgb(0 0 0 / 0.5);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+  color: var(--tf2g-white);
+  font: inherit;
+  font-size: calc(var(--u) * 7);
+  cursor: pointer;
+}
+.tf2g-pda-item:hover,
+.tf2g-pda-item:focus-visible {
+  border-color: var(--tf2g-tan-light);
+}
+.tf2g-pda-item[aria-disabled='true'] {
+  background: var(--tf2g-panel-dark);
+  color: var(--tf2g-tan-dark);
+}
+.tf2g-pda-item img,
+.tf2g-pda-item .tf2g-class-ph {
+  width: calc(var(--u) * 42);
+  height: calc(var(--u) * 42);
+  object-fit: contain;
+}
+.tf2g-pda-cost {
+  font-family: var(--tf2g-font-build);
+  font-size: calc(var(--u) * 9);
+}
+.tf2g-pda-note {
+  font-size: calc(var(--u) * 6.5);
+  text-transform: uppercase;
+  color: rgb(255 210 120);
+}
+.tf2g-pda-foot {
+  font-size: calc(var(--u) * 8);
+  padding: calc(var(--u) * 2) calc(var(--u) * 6);
+  border-radius: var(--tf2g-radius);
+  background: rgb(0 0 0 / 0.6);
+}
+
+.tf2g-disguise-status {
+  position: absolute;
+  left: 0;
+  bottom: calc(var(--u) * 40);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 4);
+  padding: calc(var(--u) * 2) calc(var(--u) * 6);
+  border-radius: var(--tf2g-radius);
+  background: var(--team-panel);
+  font-size: calc(var(--u) * 8);
+  white-space: nowrap;
+}
+
+.tf2g-fps {
+  position: absolute;
+  right: calc(var(--safe-right, 0px) + 8px);
+  top: calc(var(--safe-top, 0px) + 8px);
+  font: 12px/1 ui-monospace, monospace;
+  color: rgb(255 255 0);
+  text-shadow: 1px 1px 0 rgb(0 0 0);
+}
+
+/* ══ Half-Life 2 (the suit HUD) ══════════════════════════════════════════ */
+
+.hl2g-hud {
+  --hl2g-fg: rgb(255 220 0 / 0.82);
+  --hl2g-fg-bright: rgb(255 220 0);
+  --hl2g-damaged: rgb(180 0 0 / 0.9);
+  --hl2g-bg: rgb(0 0 0 / 0.3);
+  --hl2g-radius: calc(var(--u) * 7);
+  --hl2g-font: 'HalfLife2', 'Trebuchet MS', 'Arial Rounded MT Bold', Verdana, sans-serif;
+}
+.hl2g-panel {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  gap: calc(var(--u) * 6);
+  padding: 0 calc(var(--u) * 8) calc(var(--u) * 4);
+  border-radius: var(--hl2g-radius);
+  background: var(--hl2g-bg);
+  color: var(--hl2g-fg);
+  font-family: var(--hl2g-font);
+}
+.hl2g-label {
+  font-size: calc(var(--u) * 7);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding-bottom: calc(var(--u) * 2);
+  white-space: nowrap;
+  font-weight: 700;
+}
+.hl2g-num {
+  font-size: calc(var(--u) * 26);
+  line-height: 1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.hl2g-num-small {
+  font-size: calc(var(--u) * 13);
+  line-height: 1;
+  padding-bottom: calc(var(--u) * 2);
+  font-weight: 700;
+}
+.hl2g-panel[data-low='true'] {
+  color: var(--hl2g-damaged);
+}
+.hl2g-aux {
+  position: absolute;
+  flex-direction: column;
+  align-items: stretch;
+  gap: calc(var(--u) * 2);
+  padding: calc(var(--u) * 4) calc(var(--u) * 8);
+}
+.hl2g-aux-bar {
+  flex: none;
+  display: flex;
+  gap: calc(var(--u) * 1.4);
+  height: calc(var(--u) * 4);
+}
+.hl2g-aux-bar span {
+  flex: 1;
+  background: currentColor;
+  opacity: 0.2;
+}
+.hl2g-aux-bar span[data-on='true'] {
+  opacity: 1;
+}
+.hl2g-aux-uses {
+  position: absolute;
+  right: calc(var(--u) * 8);
+  top: calc(var(--u) * 4);
+  font-size: calc(var(--u) * 6);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.hl2g-pickups {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: calc(var(--u) * 3);
+  color: var(--hl2g-fg);
+  font-family: var(--hl2g-font);
+  font-weight: 700;
+}
+.hl2g-pickup {
+  padding: calc(var(--u) * 2) calc(var(--u) * 6);
+  border-radius: var(--hl2g-radius);
+  background: var(--hl2g-bg);
+  font-size: calc(var(--u) * 9);
+  animation: hl2g-pickup 4s linear forwards;
+}
+@keyframes hl2g-pickup {
+  0%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.hl2g-crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  color: var(--hl2g-fg);
+  overflow: visible;
+}
+.hl2g-damage {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ══ Captions (HL2 and Portal) ═══════════════════════════════════════════ */
+
+.sp-captions {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: calc(var(--u) * 2);
+  padding: calc(var(--u) * 6) calc(var(--u) * 10);
+  border-radius: calc(var(--u) * 6);
+  background: rgb(0 0 0 / 0.72);
+  color: rgb(255 255 255);
+  font-family: Tahoma, Verdana, 'DejaVu Sans', sans-serif;
+  font-size: calc(var(--u) * 9.5);
+  line-height: 1.35;
+  text-align: center;
+}
+.sp-caption[data-sfx='true'] {
+  color: rgb(200 200 200);
+  font-style: italic;
+}
+.sp-caption b {
+  font-weight: 700;
+}
+.ptl-hud .sp-captions {
+  background: rgb(10 12 16 / 0.7);
+  border-radius: calc(var(--u) * 2);
+  font-family: 'Univers', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ══ Portal ═════════════════════════════════════════════════════════════ */
+
+.ptl-hud {
+  --ptl-blue: rgb(64 160 255);
+  --ptl-orange: rgb(255 154 0);
+}
+.ptl-crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  overflow: visible;
+}
+.ptl-fade {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.2s linear;
+}
+.ptl-damage {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(closest-side, transparent 55%, rgb(200 0 0 / 0.5));
+}
+
+/* ══ App-tier menus (pause, settings: the TF2 Hub's Modal and controls) ═══ */
+
+
+/* HL2 and Portal recolour the TF2 Hub palette for their pause menus. */
+.tf2hud-theme.tf2g-hl2-theme {
+  --app-bg: #1c1a17;
+  --app-bg-subtle: #23201c;
+  --app-surface: #2f2b25;
+  --app-surface-hover: #3a352d;
+  --app-border: #403a31;
+  --app-border-bright: #5c5344;
+  --app-accent: #e8a628;
+  --app-accent-text: #f2bc52;
+  --app-accent-fg: #1a1203;
+  --app-accent-hover: #f0b23e;
+  --tf2-panel: #2f2b25;
+}
+.tf2hud-theme.tf2g-portal-theme {
+  --app-bg: #e9ecef;
+  --app-bg-subtle: #f5f6f7;
+  --app-surface: #ffffff;
+  --app-surface-hover: #e1e5ea;
+  --app-surface-active: #d3d9e0;
+  --app-border: #cfd5dc;
+  --app-border-bright: #a9b3be;
+  --app-text: #1e2329;
+  --app-text-muted: #4a535d;
+  --app-text-dim: #5b646e;
+  --app-accent: #1f6fbf;
+  --app-accent-text: #1a5fa4;
+  --app-accent-fg: #ffffff;
+  --app-accent-hover: #2a7fd4;
+  --tf2-panel: #ffffff;
+  --app-font-display: 'Univers', 'Helvetica Neue', Arial, sans-serif;
+  --app-font-body: 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ══ Touch overlay ══════════════════════════════════════════════════════ */
+
+.tf2g-touch {
+  --touch-scale: 1;
+  --touch-ink: rgb(255 255 255 / 0.9);
+  --touch-fill: rgb(20 20 20 / 0.35);
+  --touch-edge: rgb(255 255 255 / 0.4);
+  --touch-active: rgb(255 255 255 / 0.3);
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tf2g-touch-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  touch-action: none;
+}
+.tf2g-touch-zone[data-zone='move'] {
+  left: 0;
+  width: 42%;
+}
+.tf2g-touch-zone[data-zone='look'] {
+  right: 0;
+  width: 58%;
+}
+.tf2g-stick-base,
+.tf2g-stick-knob {
+  position: absolute;
+  border-radius: 50%;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+.tf2g-stick-base {
+  width: calc(112px * var(--touch-scale));
+  height: calc(112px * var(--touch-scale));
+  border: 2px solid var(--touch-edge);
+  background: var(--touch-fill);
+}
+.tf2g-stick-knob {
+  width: calc(50px * var(--touch-scale));
+  height: calc(50px * var(--touch-scale));
+  background: var(--touch-ink);
+  opacity: 0.75;
+}
+.tf2g-stick-hint {
+  position: absolute;
+  left: calc(env(safe-area-inset-left, 0px) + 28px + 56px * var(--touch-scale));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 33%);
+  translate: -50% 50%;
+  width: calc(112px * var(--touch-scale));
+  height: calc(112px * var(--touch-scale));
+  border-radius: 50%;
+  border: 2px dashed var(--touch-edge);
+  opacity: 0.6;
+  pointer-events: none;
+}
+.tf2g-touch-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--size, 56px) * var(--touch-scale));
+  height: calc(var(--size, 56px) * var(--touch-scale));
+  border: 2px solid var(--touch-edge);
+  border-radius: 50%;
+  background: var(--touch-fill);
+  color: var(--touch-ink);
+  font: 600 calc(11px * var(--touch-scale)) / 1 'TF2 Build', system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tf2g-touch-btn[data-pressed='true'] {
+  background: var(--touch-active);
+  border-color: var(--touch-ink);
+}
+.tf2g-touch-btn svg {
+  width: 45%;
+  height: 45%;
+}
+.tf2g-touch-btn[data-tone='blue'] {
+  border-color: rgb(64 160 255 / 0.9);
+  color: rgb(140 200 255);
+}
+.tf2g-touch-btn[data-tone='orange'] {
+  border-color: rgb(255 154 0 / 0.9);
+  color: rgb(255 190 90);
+}
+/* The small buttons (scores, chat, voice, menu, weapon slots): a column on the right in
+   portrait, a row along the top in landscape (clear of the Engineer's building panels). */
+.tf2g-touch-side {
+  position: absolute;
+  right: calc(env(safe-area-inset-right, 0px) + 14px);
+  top: calc(env(safe-area-inset-top, 0px) + 20%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tf2g-touch-side .tf2g-touch-btn {
+  position: relative;
+  border-radius: 12px;
+}
+@media (orientation: landscape) {
+  .tf2g-touch-side {
+    right: auto;
+    left: calc(env(safe-area-inset-left, 0px) + 128px);
+    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    flex-direction: row;
+  }
+  .tf2g-touch-side [data-slot-button='true'] {
+    display: none;
+  }
+}

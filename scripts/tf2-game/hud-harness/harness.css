@@ -1,0 +1,5 @@
+/* Tailwind for the HUD preview harness: the utilities the TF2 Hub's controls use. */
+@import 'tailwindcss';
+@source '../../../components/tf2-game';
+@source '../../../components/tf2-hud/ui.tsx';
+@source '../../../components/tf2-hud/TfTabs.tsx';

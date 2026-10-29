@@ -2,26 +2,48 @@ name: tf2-assets-sync
 
 # Keeps the TF2 Hub's game files in object storage current: item 3D models
 # (GLB, textures baked in), inventory icons, war paints, unusual particle graphs
-# and the HUD editor's base. Valve's files are
-# downloaded with SteamCMD, the few thousand we use are converted/selected, the
-# rest (tens of GB) is deleted, and nothing is committed to the repository.
+# and the HUD editor's base — and the browser game's channels under tf2-game/
+# (game-models, game-sounds, game-particles, game-maps), plus the Half-Life 2 demo's
+# (app 219) and Portal: First Slice's (app 410) maps, props and sounds (with their
+# soundscapes, scenes and captions) under hl2-game/ and portal-game/. Valve's files are downloaded with SteamCMD, the few thousand we use
+# are converted/selected, the rest (tens of GB) is deleted, and nothing is committed
+# to the repository.
 #
 # Cost control, in order:
-#   1. Gate: one tiny GET of each channel's state file, compared with the game's
-#      current public Steam build id. Same build → the job ends here, having
-#      downloaded nothing and uploaded nothing.
+#   1. Gate: one tiny GET of each channel's state file, compared with its game's
+#      current public Steam build id (440, 219 and 410 each gate their own channels,
+#      and a game is only downloaded when one of its channels has work). Same builds →
+#      the job ends here, having downloaded nothing and uploaded nothing.
 #   2. Per-file: every output is keyed by a hash of exactly what it was built
 #      from; the state file remembers it, and only changed files are uploaded.
 #   3. Compression: changed files are Brotli-compressed before upload.
-#   4. Cleanup: the 30+ GB install is deleted as soon as extraction finishes
-#      (and again on failure); objects no longer in the game are only deleted
-#      when a manual run asks for `prune`.
+#   4. Cleanup: each install (TF2 30+ GB, the HL2 demo and Portal ~3 GB each) is deleted
+#      as soon as its conversions finish (and again on failure); objects no longer in the
+#      game are only deleted when a manual run asks for `prune`.
+#   5. Budget (game channels): before any game upload, storage-report.ts sums every
+#      game channel's stored size from the state files (plus what this run would add)
+#      across tf2-game/, hl2-game/ and portal-game/ (a shared tex/ object counted once) and
+#      fails the publish past TF2_GAME_STORAGE_BUDGET_GB (default 12 GB). Builder versions
+#      come from lib/tf2-game/assets/versions.ts.
+#
+# Game channels never hold up the hub's channels: their conversions run with
+# continue-on-error, upload after the hub's uploads, and a failure fails the job at the end.
+# Expected durations on a full rebuild (ubuntu-latest): download 20–40 min, hub models
+# 60–90 min, game-maps ~5–10 min (9 maps, ≈1,500 texture encodes), game-models 20–45 min,
+# game-sounds ~5 min (≈1,400 ffmpeg encodes), game-particles ~5 min; HL2 demo: download
+# 3–6 min, maps ~2 min, props ~3 min, sounds ~1 min (≈650 encodes); Portal: download
+# 3–6 min, maps ~1 min, props ~2 min, sounds ~1 min (≈340 encodes);
+# uploads ~15 min. ≈ 200 min worst case; an incremental run is a fraction of that (and a
+# game whose channels are current is not downloaded at all). Each game step has its own
+# timeout so the job stays inside its 240 minutes.
 #
 # Needs these repository secrets (the job exits with a notice while any is missing):
 #   S3_ENDPOINT, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET, S3_REGION
 #   STEAM_USER, STEAM_PASS   a Steam account that owns Team Fortress 2 (free to
-#                            add). Valve's texture files are not downloadable
-#                            anonymously. Use a dedicated account with Steam Guard off.
+#                            add); the Half-Life 2 demo (219) and Portal: First Slice
+#                            (410) are free apps in every account's base package.
+#                            Valve's texture files are not downloadable anonymously.
+#                            Use a dedicated account with Steam Guard off.
 
 on:
   schedule:
@@ -103,39 +125,68 @@ jobs:
         id: gate
         if: steps.cfg.outputs.ready == 'true'
         run: |
-          "$HOME/steamcmd/steamcmd.sh" +login anonymous +app_info_print 440 +quit > appinfo.txt 2>&1 || true
-          build=$(python3 - <<'PY'
-          import re
+          "$HOME/steamcmd/steamcmd.sh" +login anonymous +app_info_update 1 +app_info_print 440 +app_info_print 219 +app_info_print 410 +quit > appinfo.txt 2>&1 || true
+          # The public branch's build id of one app in the dump (each app's section starts at "AppID : <id>").
+          buildid() {
+            python3 - "$1" <<'PY'
+          import re, sys
           t = open("appinfo.txt", errors="replace").read()
-          i = t.find('"branches"')
-          m = re.search(r'"public"\s*\{[^{}]*?"buildid"\s*"(\d+)"', t[i:], re.S) if i >= 0 else None
-          print(m.group(1) if m else "")
+          app = sys.argv[1]
+          m = re.search(r"AppID\s*:\s*%s\b" % app, t)
+          sec = t[m.end():] if m else ""
+          nxt = re.search(r"AppID\s*:\s*\d+", sec)
+          sec = sec[: nxt.start()] if nxt else sec
+          i = sec.find('"branches"')
+          b = re.search(r'"public"\s*\{[^{}]*?"buildid"\s*"(\d+)"', sec[i:], re.S) if i >= 0 else None
+          print(b.group(1) if b else "")
           PY
-          )
-          echo "Steam public build: ${build:-unknown}"
-          echo "build=$build" >> "$GITHUB_OUTPUT"
+          }
+          build=$(buildid 440); build_hl2=$(buildid 219); build_portal=$(buildid 410)
+          echo "Steam public builds: TF2 ${build:-unknown}, HL2 demo ${build_hl2:-unknown}, Portal First Slice ${build_portal:-unknown}"
+          { echo "build=$build"; echo "build_hl2=$build_hl2"; echo "build_portal=$build_portal"; } >> "$GITHUB_OUTPUT"
           force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as models --state-key tf2-models/_state.json --build "$build" $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hud --state-key tf2-hud-base/_state.json --build "$build" --builder 1 $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as icons --state-key tf2-icons/_state.json --build "$build" --builder 1 $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as paintkits --state-key tf2-paintkits/_state.json --build "$build" --builder 1 $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as particles --state-key tf2-particles/_state.json --build "$build" --builder 1 $force
-          if grep -q 'run_' "$GITHUB_OUTPUT" && grep -q '^run_.*=true' "$GITHUB_OUTPUT"; then echo "any=true" >> "$GITHUB_OUTPUT"; fi
+          # The browser game's channels; builder versions from lib/tf2-game/assets/versions.ts.
+          builders=$(pnpm exec tsx scripts/tf2-game/storage-report.ts builders)
+          eval "$builders"; echo "$builders" >> "$GITHUB_ENV"
+          # A channel whose converter is not in the repo yet is not gated (it would download the game every day).
+          if [ -f scripts/tf2-game/model-list.py ] && [ -f scripts/tf2-game/models.py ]; then
+            pnpm exec tsx scripts/tf2-assets/publish.ts gate --as game_models --state-key tf2-game/mdl/_state.json --build "$build" --builder "$TF2_GAME_BUILDER_MODELS" $force
+          fi
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as game_sounds --state-key tf2-game/snd/_state.json --build "$build" --builder "$TF2_GAME_BUILDER_SOUNDS" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as game_particles --state-key tf2-game/particles/_state.json --build "$build" --builder "$TF2_GAME_BUILDER_PARTICLES" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as game_maps --state-key tf2-game/maps/_state.json --build "$build" --builder "$TF2_GAME_BUILDER_MAPS" $force
+          # Half-Life 2 demo and Portal: First Slice — maps and their props, gated on their own builds.
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hl2_maps --state-key hl2-game/maps/_state.json --build "$build_hl2" --builder "$HL2_GAME_BUILDER_MAPS" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hl2_models --state-key hl2-game/mdl/_state.json --build "$build_hl2" --builder "$HL2_GAME_BUILDER_MODELS" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hl2_sounds --state-key hl2-game/snd/_state.json --build "$build_hl2" --builder "$HL2_GAME_BUILDER_SOUNDS" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as portal_maps --state-key portal-game/maps/_state.json --build "$build_portal" --builder "$PORTAL_GAME_BUILDER_MAPS" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as portal_models --state-key portal-game/mdl/_state.json --build "$build_portal" --builder "$PORTAL_GAME_BUILDER_MODELS" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as portal_sounds --state-key portal-game/snd/_state.json --build "$build_portal" --builder "$PORTAL_GAME_BUILDER_SOUNDS" $force
+          # Which installs this run needs: TF2 for the hub's and tf2-game/ channels, 219 and 410 for theirs.
+          if grep -q -E '^run_(models|hud|icons|paintkits|particles|game_[a-z]+)=true' "$GITHUB_OUTPUT"; then echo "tf2=true" >> "$GITHUB_OUTPUT"; fi
+          if grep -q -E '^run_hl2_[a-z]+=true' "$GITHUB_OUTPUT"; then echo "hl2=true" >> "$GITHUB_OUTPUT"; fi
+          if grep -q -E '^run_portal_[a-z]+=true' "$GITHUB_OUTPUT"; then echo "portal=true" >> "$GITHUB_OUTPUT"; fi
+          if grep -q '^run_.*=true' "$GITHUB_OUTPUT"; then echo "any=true" >> "$GITHUB_OUTPUT"; fi
           rm -f appinfo.txt
 
       - name: Nothing to do
         if: steps.cfg.outputs.ready == 'true' && steps.gate.outputs.any != 'true'
-        run: echo "Models, icons, war paints, particles and HUD base are already published for this game build — no download, no uploads."
+        run: echo "Models, icons, war paints, particles, HUD base and the game channels (TF2, HL2 demo, Portal) are already published for these game builds — no download, no uploads."
 
       - name: Make room on the runner
         if: steps.gate.outputs.any == 'true'
         run: |
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL
-          sudo mkdir -p /mnt/tf2 /mnt/work && sudo chown "$USER" /mnt/tf2 /mnt/work
+          sudo mkdir -p /mnt/tf2 /mnt/hl2 /mnt/portal /mnt/work && sudo chown "$USER" /mnt/tf2 /mnt/hl2 /mnt/portal /mnt/work
           df -h / /mnt | cat
 
       - name: Download Team Fortress 2
-        if: steps.gate.outputs.any == 'true'
+        if: steps.gate.outputs.tf2 == 'true'
         run: |
           for i in 1 2 3; do
             "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/tf2 +login "$STEAM_USER" "$STEAM_PASS" +app_update 440 validate +quit \
@@ -150,6 +201,27 @@ jobs:
       - name: Python tools
         if: steps.gate.outputs.any == 'true'
         run: pip install --quiet vpk numpy pillow srctools==2.6.2
+
+      - name: ffmpeg (game sounds)
+        id: ffmpeg
+        if: >-
+          steps.gate.outputs.run_game_sounds == 'true' || steps.gate.outputs.run_hl2_sounds == 'true' ||
+          steps.gate.outputs.run_portal_sounds == 'true'
+        continue-on-error: true
+        run: |
+          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg; }
+          ffmpeg -hide_banner -encoders 2>/dev/null | grep -q libmp3lame || { echo "::error::ffmpeg lacks libmp3lame"; exit 1; }
+
+      - name: Validate game asset exporters
+        id: game_tests
+        if: >-
+          steps.gate.outputs.run_game_sounds == 'true' || steps.gate.outputs.run_game_particles == 'true' ||
+          steps.gate.outputs.run_hl2_sounds == 'true' || steps.gate.outputs.run_portal_sounds == 'true'
+        continue-on-error: true
+        run: |
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_sounds.py
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_sourcegame.py
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_game_particles.py
 
       - name: Validate particle asset formats
         if: steps.gate.outputs.run_particles == 'true'
@@ -213,10 +285,200 @@ jobs:
           (cd scripts/tf2-assets && FORCE=${{ inputs.force == true && '1' || '0' }} python3 hud.py \
             --root /mnt/tf2 --state /mnt/work/hud-state.json --build "${{ steps.gate.outputs.build }}" --out /mnt/work/hud)
 
-      # The game is no longer needed: free the 30+ GB before uploading.
+      # The browser game's channels. continue-on-error: a failure here never stops the hub's
+      # uploads below; the job fails at the end instead (Report game channel failures).
+      - name: Game maps — BSP, materials and textures, prop hulls
+        id: game_maps
+        if: steps.gate.outputs.run_game_maps == 'true'
+        continue-on-error: true
+        timeout-minutes: 30
+        run: |
+          mkdir -p /mnt/work/game-maps
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key tf2-game/maps/_state.json --out /mnt/work/game-maps-state.json
+          pnpm exec tsx scripts/tf2-assets/publish.ts get --key tf2-game/maps/index.json --out /mnt/work/game-maps-prev-index.json
+          # The maps are lib/tf2-game/data/maps.ts's allowlist (build-maps.ts's default for --game tf2).
+          FORCE=${{ inputs.force == true && '1' || '0' }} pnpm exec tsx scripts/tf2-game/build-maps.ts \
+            --root /mnt/tf2 --game tf2 --out /mnt/work/game-maps \
+            --state /mnt/work/game-maps-state.json --prev-index /mnt/work/game-maps-prev-index.json
+
+      - name: Game models — class bodies, weapons, view models, buildings, props
+        id: game_models
+        if: steps.gate.outputs.run_game_models == 'true'
+        continue-on-error: true
+        timeout-minutes: 60
+        run: |
+          mkdir -p /mnt/work/game-mdl
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key tf2-game/mdl/_state.json --out /mnt/work/game-mdl-state.json
+          pnpm exec tsx scripts/tf2-assets/publish.ts get --key tf2-game/mdl/index.json --out /mnt/work/game-mdl-prev-index.json
+          python3 -B scripts/tf2-game/model-list.py --root /mnt/tf2 --out /mnt/work/game-models.list
+          # Plus every prop of the game's maps (static props and prop/item entities), every run.
+          pnpm exec tsx scripts/tf2-game/build-maps.ts --root /mnt/tf2 --game tf2 --props-only --props-list-out /mnt/work/game-models.list
+          lim=""; [ -n "${{ inputs.limit }}" ] && lim="--limit ${{ inputs.limit }}"
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/models.py \
+            --root /mnt/tf2 --list /mnt/work/game-models.list --out /mnt/work/game-mdl \
+            --state /mnt/work/game-mdl-state.json --prev-index /mnt/work/game-mdl-prev-index.json $lim
+
+      - name: Game sounds — sound scripts and their audio as MP3
+        id: game_sounds
+        if: >-
+          steps.gate.outputs.run_game_sounds == 'true' && steps.ffmpeg.outcome == 'success' &&
+          steps.game_tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 30
+        run: |
+          mkdir -p /mnt/work/game-snd
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key tf2-game/snd/_state.json --out /mnt/work/game-snd-state.json
+          python3 -B scripts/tf2-game/sound-list.py --root /mnt/tf2 --out /mnt/work/game-sounds.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/sounds.py \
+            --root /mnt/tf2 --list /mnt/work/game-sounds.json --out /mnt/work/game-snd --state /mnt/work/game-snd-state.json
+
+      - name: Game particles — the systems the game spawns
+        id: game_particles
+        if: steps.gate.outputs.run_game_particles == 'true' && steps.game_tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          mkdir -p /mnt/work/game-particles
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key tf2-game/particles/_state.json --out /mnt/work/game-particles-state.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/game_particles.py \
+            --root /mnt/tf2 --out /mnt/work/game-particles --state /mnt/work/game-particles-state.json
+
+      # The game is no longer needed: free the 30+ GB before the next game and the uploads.
       - name: Delete the game install
-        if: always() && (steps.gate.outputs.any == 'true')
-        run: sudo rm -rf /mnt/tf2 "$HOME/Steam" "$HOME/.steam"
+        if: always() && (steps.gate.outputs.tf2 == 'true')
+        run: sudo rm -rf /mnt/tf2
+
+      # Half-Life 2 demo (app 219): d1_trainstation_01–06 and their props, under hl2-game/.
+      - name: Download the Half-Life 2 demo
+        id: hl2_download
+        if: steps.gate.outputs.hl2 == 'true'
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          for i in 1 2 3; do
+            "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/hl2 +login "$STEAM_USER" "$STEAM_PASS" +app_update 219 validate +quit \
+              > "$HOME/steam-hl2.log" 2>&1 || true
+            grep -i -E 'success|error|fail|guard' "$HOME/steam-hl2.log" | grep -v -i password | tail -5
+            [ -f /mnt/hl2/hl2/hl2_textures_dir.vpk ] && break
+            echo "attempt $i did not finish; retrying"; sleep 30
+          done
+          [ -f /mnt/hl2/hl2/hl2_textures_dir.vpk ] || { echo "::error::Half-Life 2 demo texture archives missing"; exit 1; }
+          du -sh /mnt/hl2 | cat
+
+      - name: HL2 maps — BSP, materials and textures, prop hulls
+        id: hl2_maps
+        if: steps.gate.outputs.run_hl2_maps == 'true' && steps.hl2_download.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          mkdir -p /mnt/work/hl2-maps
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key hl2-game/maps/_state.json --out /mnt/work/hl2-maps-state.json
+          pnpm exec tsx scripts/tf2-assets/publish.ts get --key hl2-game/maps/index.json --out /mnt/work/hl2-maps-prev-index.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} pnpm exec tsx scripts/tf2-game/build-maps.ts \
+            --root /mnt/hl2 --game hl2 --out /mnt/work/hl2-maps \
+            --state /mnt/work/hl2-maps-state.json --prev-index /mnt/work/hl2-maps-prev-index.json
+
+      - name: HL2 models — the maps' props
+        id: hl2_models
+        if: steps.gate.outputs.run_hl2_models == 'true' && steps.hl2_download.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 30
+        run: |
+          mkdir -p /mnt/work/hl2-mdl
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key hl2-game/mdl/_state.json --out /mnt/work/hl2-mdl-state.json
+          pnpm exec tsx scripts/tf2-assets/publish.ts get --key hl2-game/mdl/index.json --out /mnt/work/hl2-mdl-prev-index.json
+          : > /mnt/work/hl2-models.list
+          pnpm exec tsx scripts/tf2-game/build-maps.ts --root /mnt/hl2 --game hl2 --props-only --props-list-out /mnt/work/hl2-models.list
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/models.py \
+            --root /mnt/hl2 --search hl2 --list /mnt/work/hl2-models.list --out /mnt/work/hl2-mdl \
+            --state /mnt/work/hl2-mdl-state.json --prev-index /mnt/work/hl2-mdl-prev-index.json
+
+      - name: HL2 sounds — the maps' sounds, soundscapes, scenes and captions
+        id: hl2_sounds
+        if: >-
+          steps.gate.outputs.run_hl2_sounds == 'true' && steps.hl2_download.outcome == 'success' &&
+          steps.ffmpeg.outcome == 'success' && steps.game_tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          mkdir -p /mnt/work/hl2-snd
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key hl2-game/snd/_state.json --out /mnt/work/hl2-snd-state.json
+          # What the maps (lib/tf2-game/assets/game-maps.ts) use: entities, soundscapes, scenes, the NPCs and
+          # surfaces present, the player — plus snd/soundscapes.json, scenes.json and captions.json.
+          python3 -B scripts/tf2-game/sound-list.py --root /mnt/hl2 --game hl2 --out /mnt/work/hl2-sounds.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/sounds.py --game hl2 \
+            --root /mnt/hl2 --list /mnt/work/hl2-sounds.json --out /mnt/work/hl2-snd \
+            --state /mnt/work/hl2-snd-state.json
+
+      - name: Delete the Half-Life 2 demo install
+        if: always() && (steps.gate.outputs.hl2 == 'true')
+        run: sudo rm -rf /mnt/hl2
+
+      # Portal: First Slice (app 410): testchmb_a_00–06 and their props, under portal-game/.
+      - name: Download Portal First Slice
+        id: portal_download
+        if: steps.gate.outputs.portal == 'true'
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          for i in 1 2 3; do
+            "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/portal +login "$STEAM_USER" "$STEAM_PASS" +app_update 410 validate +quit \
+              > "$HOME/steam-portal.log" 2>&1 || true
+            grep -i -E 'success|error|fail|guard' "$HOME/steam-portal.log" | grep -v -i password | tail -5
+            [ -f /mnt/portal/portal/portal_pak_dir.vpk ] && [ -f /mnt/portal/hl2/hl2_textures_dir.vpk ] && break
+            echo "attempt $i did not finish; retrying"; sleep 30
+          done
+          [ -f /mnt/portal/portal/portal_pak_dir.vpk ] || { echo "::error::Portal First Slice archives missing"; exit 1; }
+          du -sh /mnt/portal | cat
+
+      - name: Portal maps — BSP, materials and textures, prop hulls
+        id: portal_maps
+        if: steps.gate.outputs.run_portal_maps == 'true' && steps.portal_download.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          mkdir -p /mnt/work/portal-maps
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key portal-game/maps/_state.json --out /mnt/work/portal-maps-state.json
+          pnpm exec tsx scripts/tf2-assets/publish.ts get --key portal-game/maps/index.json --out /mnt/work/portal-maps-prev-index.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} pnpm exec tsx scripts/tf2-game/build-maps.ts \
+            --root /mnt/portal --game portal --out /mnt/work/portal-maps \
+            --state /mnt/work/portal-maps-state.json --prev-index /mnt/work/portal-maps-prev-index.json
+
+      - name: Portal models — the maps' props
+        id: portal_models
+        if: steps.gate.outputs.run_portal_models == 'true' && steps.portal_download.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 30
+        run: |
+          mkdir -p /mnt/work/portal-mdl
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key portal-game/mdl/_state.json --out /mnt/work/portal-mdl-state.json
+          pnpm exec tsx scripts/tf2-assets/publish.ts get --key portal-game/mdl/index.json --out /mnt/work/portal-mdl-prev-index.json
+          : > /mnt/work/portal-models.list
+          pnpm exec tsx scripts/tf2-game/build-maps.ts --root /mnt/portal --game portal --props-only --props-list-out /mnt/work/portal-models.list
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/models.py \
+            --root /mnt/portal --search portal,hl2 --list /mnt/work/portal-models.list --out /mnt/work/portal-mdl \
+            --state /mnt/work/portal-mdl-state.json --prev-index /mnt/work/portal-mdl-prev-index.json
+
+      - name: Portal sounds — the maps' sounds, soundscapes, scenes and captions
+        id: portal_sounds
+        if: >-
+          steps.gate.outputs.run_portal_sounds == 'true' && steps.portal_download.outcome == 'success' &&
+          steps.ffmpeg.outcome == 'success' && steps.game_tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          mkdir -p /mnt/work/portal-snd
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key portal-game/snd/_state.json --out /mnt/work/portal-snd-state.json
+          # What the maps (lib/tf2-game/assets/game-maps.ts) use: entities, soundscapes, scenes, the NPCs and
+          # surfaces present, the player — plus snd/soundscapes.json, scenes.json and captions.json.
+          python3 -B scripts/tf2-game/sound-list.py --root /mnt/portal --game portal --out /mnt/work/portal-sounds.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/sounds.py --game portal \
+            --root /mnt/portal --list /mnt/work/portal-sounds.json --out /mnt/work/portal-snd \
+            --state /mnt/work/portal-snd-state.json
+
+      - name: Delete the Portal install
+        if: always() && (steps.gate.outputs.portal == 'true')
+        run: sudo rm -rf /mnt/portal "$HOME/Steam" "$HOME/.steam"
 
       - name: Upload changed models (Brotli)
         if: steps.gate.outputs.run_models == 'true'
@@ -258,6 +520,121 @@ jobs:
           pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/hud --prefix tf2-hud-base/ \
             --state-key tf2-hud-base/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune $force
 
+      # Game channels: nothing goes up past the shared storage budget.
+      - name: Game storage guard, all three games (budget TF2_GAME_STORAGE_BUDGET_GB, default 12)
+        id: game_storage
+        if: >-
+          steps.game_models.outcome == 'success' || steps.game_sounds.outcome == 'success' ||
+          steps.game_particles.outcome == 'success' || steps.game_maps.outcome == 'success' ||
+          steps.hl2_maps.outcome == 'success' || steps.hl2_models.outcome == 'success' ||
+          steps.hl2_sounds.outcome == 'success' || steps.portal_maps.outcome == 'success' ||
+          steps.portal_models.outcome == 'success' || steps.portal_sounds.outcome == 'success'
+        env:
+          TF2_GAME_STORAGE_BUDGET_GB: ${{ vars.TF2_GAME_STORAGE_BUDGET_GB }}
+        run: |
+          pnpm exec tsx scripts/tf2-game/storage-report.ts report \
+            --pending tf2-game/mdl/=/mnt/work/game-mdl --pending tf2-game/snd/=/mnt/work/game-snd \
+            --pending tf2-game/particles/=/mnt/work/game-particles --pending tf2-game/maps/=/mnt/work/game-maps \
+            --pending hl2-game/maps/=/mnt/work/hl2-maps --pending hl2-game/mdl/=/mnt/work/hl2-mdl \
+            --pending hl2-game/snd/=/mnt/work/hl2-snd \
+            --pending portal-game/maps/=/mnt/work/portal-maps --pending portal-game/mdl/=/mnt/work/portal-mdl \
+            --pending portal-game/snd/=/mnt/work/portal-snd
+
+      - name: Upload changed game models and textures (index last)
+        if: steps.game_models.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          # One state for mdl/ and the shared tex/; content-addressed files are never pruned.
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/game-mdl --prefix tf2-game/ \
+            --state-key tf2-game/mdl/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$TF2_GAME_BUILDER_MODELS" --index mdl/index.json $force
+
+      - name: Upload changed game sounds (index last)
+        if: steps.game_sounds.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/game-snd --prefix tf2-game/snd/ \
+            --state-key tf2-game/snd/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$TF2_GAME_BUILDER_SOUNDS" --index index.json --preserve-index entries,files $force
+
+      - name: Upload changed game particles (index last)
+        if: steps.game_particles.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/game-particles --prefix tf2-game/particles/ \
+            --state-key tf2-game/particles/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$TF2_GAME_BUILDER_PARTICLES" --index index.json --preserve-index systems $force
+
+      - name: Upload changed game maps and their textures (index last)
+        if: steps.game_maps.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          # Published at the game root: maps/ and the tex/ shared with the models (never pruned).
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/game-maps --prefix tf2-game/ \
+            --state-key tf2-game/maps/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$TF2_GAME_BUILDER_MAPS" --index maps/index.json $force
+
+      - name: Upload changed HL2 maps (index last)
+        if: steps.hl2_maps.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/hl2-maps --prefix hl2-game/ \
+            --state-key hl2-game/maps/_state.json --build "${{ steps.gate.outputs.build_hl2 }}" \
+            --builder "$HL2_GAME_BUILDER_MAPS" --index maps/index.json $force
+
+      - name: Upload changed HL2 models (index last)
+        if: steps.hl2_models.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/hl2-mdl --prefix hl2-game/ \
+            --state-key hl2-game/mdl/_state.json --build "${{ steps.gate.outputs.build_hl2 }}" \
+            --builder "$HL2_GAME_BUILDER_MODELS" --index mdl/index.json $force
+
+      - name: Upload changed HL2 sounds (index last)
+        if: steps.hl2_sounds.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/hl2-snd --prefix hl2-game/snd/ \
+            --state-key hl2-game/snd/_state.json --build "${{ steps.gate.outputs.build_hl2 }}" \
+            --builder "$HL2_GAME_BUILDER_SOUNDS" --index index.json --preserve-index entries,files $force
+
+      - name: Upload changed Portal maps (index last)
+        if: steps.portal_maps.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/portal-maps --prefix portal-game/ \
+            --state-key portal-game/maps/_state.json --build "${{ steps.gate.outputs.build_portal }}" \
+            --builder "$PORTAL_GAME_BUILDER_MAPS" --index maps/index.json $force
+
+      - name: Upload changed Portal models (index last)
+        if: steps.portal_models.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/portal-mdl --prefix portal-game/ \
+            --state-key portal-game/mdl/_state.json --build "${{ steps.gate.outputs.build_portal }}" \
+            --builder "$PORTAL_GAME_BUILDER_MODELS" --index mdl/index.json $force
+
+      - name: Upload changed Portal sounds (index last)
+        if: steps.portal_sounds.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/portal-snd --prefix portal-game/snd/ \
+            --state-key portal-game/snd/_state.json --build "${{ steps.gate.outputs.build_portal }}" \
+            --builder "$PORTAL_GAME_BUILDER_SOUNDS" --index index.json --preserve-index entries,files $force
+
+      - name: Report game channel failures
+        if: >-
+          always() && (steps.game_models.outcome == 'failure' || steps.game_sounds.outcome == 'failure' ||
+          steps.game_particles.outcome == 'failure' || steps.game_maps.outcome == 'failure' ||
+          steps.ffmpeg.outcome == 'failure' || steps.game_tests.outcome == 'failure' ||
+          steps.hl2_download.outcome == 'failure' || steps.hl2_maps.outcome == 'failure' || steps.hl2_models.outcome == 'failure' ||
+          steps.hl2_sounds.outcome == 'failure' ||
+          steps.portal_download.outcome == 'failure' || steps.portal_maps.outcome == 'failure' || steps.portal_models.outcome == 'failure' ||
+          steps.portal_sounds.outcome == 'failure')
+        run: |
+          echo "::error::A game channel failed (tests: ${{ steps.game_tests.outcome }}, ffmpeg: ${{ steps.ffmpeg.outcome }}, models: ${{ steps.game_models.outcome }}, sounds: ${{ steps.game_sounds.outcome }}, particles: ${{ steps.game_particles.outcome }}, maps: ${{ steps.game_maps.outcome }}; HL2 download/maps/models/sounds: ${{ steps.hl2_download.outcome }}/${{ steps.hl2_maps.outcome }}/${{ steps.hl2_models.outcome }}/${{ steps.hl2_sounds.outcome }}; Portal download/maps/models/sounds: ${{ steps.portal_download.outcome }}/${{ steps.portal_maps.outcome }}/${{ steps.portal_models.outcome }}/${{ steps.portal_sounds.outcome }}); the hub's channels were published."
+          exit 1
+
       - name: Clean up
         if: always()
-        run: sudo rm -rf /mnt/work /mnt/tf2 "$HOME/Steam" "$HOME/.steam" "$HOME/steamcmd" appinfo.txt 2>/dev/null || true
+        run: sudo rm -rf /mnt/work /mnt/tf2 /mnt/hl2 /mnt/portal "$HOME/Steam" "$HOME/.steam" "$HOME/steamcmd" appinfo.txt 2>/dev/null || true
