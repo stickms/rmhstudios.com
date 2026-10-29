@@ -59,7 +59,13 @@ export type EffectKind =
   | 'gibs'
   /** Floating "CRITICAL HIT!!!" / "Mini-Crit!" text over a victim. */
   | 'crittext'
-  | 'beam';
+  | 'beam'
+  /** env_shake: `value` amplitude, `force.x` frequency, `force.y` duration, `force.z` radius (0 = everywhere). */
+  | 'shake'
+  /** env_spark / env_explosion style one-shots from map entities. */
+  | 'spark'
+  /** env_fade: `value` duration, `normal` rgb 0…1, `angles.x` hold time. */
+  | 'fade';
 
 export interface EffectEvent extends Recipients {
   type: 'effect';

@@ -16,7 +16,7 @@ import { MOVETYPE_NONE } from '../core/constants';
 import type { BspEntity } from '../formats/keyvalues';
 import { EntityOutput, parseAddOutput, parseOutputAction } from './io';
 import { NET_BRUSH, NET_ENTITY, type NetRecord, type NetSchema } from './net-schema';
-import type { DamageInfo } from './damage';
+import { createDamageInfo, DMG_GENERIC, type DamageInfo } from './damage';
 import type { GameWorld } from './world';
 
 // ─── Solidity (const.h SolidType_t / SolidFlags_t) ─────────────────────────
@@ -549,9 +549,23 @@ export class Entity {
       case 'skin':
         this.skin = parseInt(value, 10) || 0;
         return true;
-      case 'sethealth':
-        this.health = parseInt(value, 10) || 0;
+      case 'sethealth': {
+        // SDK: CBaseEntity::InputSetHealth — heal up to, or damage down to,
+        // the new value (so map kill triggers' "!activator SetHealth -1000"
+        // kill through the damage path). Raw set for what takes no damage.
+        const target = parseInt(value, 10) || 0;
+        if (this.takeDamage === DAMAGE_NO) this.health = target;
+        else if (target > this.health) this.takeHealth(target - this.health);
+        else if (target < this.health) {
+          const info = createDamageInfo();
+          info.attacker = this.id;
+          info.inflictor = this.id;
+          info.damage = this.health - target;
+          info.damageType = DMG_GENERIC;
+          this.world.applyDamage(this, info);
+        }
         return true;
+      }
       case 'addhealth':
         this.health += parseInt(value, 10) || 0;
         return true;

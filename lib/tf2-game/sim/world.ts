@@ -668,9 +668,39 @@ export class GameWorld implements CollisionWorld, WeaponHost {
       e.parent = NO_ENTITY;
       return;
     }
-    e.origin.x = parent.origin.x + e.parentOffset.x;
-    e.origin.y = parent.origin.y + e.parentOffset.y;
-    e.origin.z = parent.origin.z + e.parentOffset.z;
+    const pa = parent.angles;
+    const pa0 = e.parentAnglesAtSet;
+    if (pa.x === pa0.x && pa.y === pa0.y && pa.z === pa0.z) {
+      e.origin.x = parent.origin.x + e.parentOffset.x;
+      e.origin.y = parent.origin.y + e.parentOffset.y;
+      e.origin.z = parent.origin.z + e.parentOffset.z;
+    } else {
+      // The parent turned since we were attached: carry the offset (and our angles) round with it.
+      angleMatrixRows(pa0, followM0);
+      angleMatrixRows(pa, followM1);
+      const o = e.parentOffset;
+      // local = M0ᵀ · offset; world = M1 · local.
+      const lx = followM0[0] * o.x + followM0[3] * o.y + followM0[6] * o.z;
+      const ly = followM0[1] * o.x + followM0[4] * o.y + followM0[7] * o.z;
+      const lz = followM0[2] * o.x + followM0[5] * o.y + followM0[8] * o.z;
+      e.origin.x = parent.origin.x + followM1[0] * lx + followM1[1] * ly + followM1[2] * lz;
+      e.origin.y = parent.origin.y + followM1[3] * lx + followM1[4] * ly + followM1[5] * lz;
+      e.origin.z = parent.origin.z + followM1[6] * lx + followM1[7] * ly + followM1[8] * lz;
+      // Our rotation follows the parent's: R = M1 · M0ᵀ · R0 (MatrixAngles of the composition).
+      angleMatrixRows(e.anglesAtSet, followM2);
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          // (M0ᵀ · R0)[r][c]
+          followM3[r * 3 + c] = followM0[r] * followM2[c] + followM0[3 + r] * followM2[3 + c] + followM0[6 + r] * followM2[6 + c];
+        }
+      }
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          followM2[r * 3 + c] = followM1[r * 3] * followM3[c] + followM1[r * 3 + 1] * followM3[3 + c] + followM1[r * 3 + 2] * followM3[6 + c];
+        }
+      }
+      matrixAngles(followM2, e.angles);
+    }
     if (e.bspModel > 0) this.syncBrushModel(e);
   }
 
@@ -1422,6 +1452,50 @@ export class GameWorld implements CollisionWorld, WeaponHost {
 }
 
 const ZERO: Vec3 = { x: 0, y: 0, z: 0 };
+const followM0 = new Float64Array(9);
+const followM1 = new Float64Array(9);
+const followM2 = new Float64Array(9);
+const followM3 = new Float64Array(9);
+
+/** SDK: MatrixAngles (row-major, columns forward/left/up). */
+function matrixAngles(m: Float64Array, out: Vec3): void {
+  const fx = m[0];
+  const fy = m[3];
+  const fz = m[6];
+  const lz = m[7];
+  const uz = m[8];
+  const xyDist = Math.sqrt(fx * fx + fy * fy);
+  const r2d = 180 / Math.PI;
+  if (xyDist > 0.001) {
+    out.y = Math.atan2(fy, fx) * r2d;
+    out.x = Math.atan2(-fz, xyDist) * r2d;
+    out.z = Math.atan2(lz, uz) * r2d;
+  } else {
+    out.y = Math.atan2(-m[1], m[4]) * r2d;
+    out.x = Math.atan2(-fz, xyDist) * r2d;
+    out.z = 0;
+  }
+}
+
+/** SDK: AngleMatrix, row-major (columns forward, left, up). */
+function angleMatrixRows(a: Vec3, out: Float64Array): void {
+  const d = Math.PI / 180;
+  const sy = Math.sin(a.y * d);
+  const cy = Math.cos(a.y * d);
+  const sp = Math.sin(a.x * d);
+  const cp = Math.cos(a.x * d);
+  const sr = Math.sin(a.z * d);
+  const cr = Math.cos(a.z * d);
+  out[0] = cp * cy;
+  out[3] = cp * sy;
+  out[6] = -sp;
+  out[1] = sr * sp * cy + cr * -sy;
+  out[4] = sr * sp * sy + cr * cy;
+  out[7] = sr * cp;
+  out[2] = cr * sp * cy + -sr * -sy;
+  out[5] = cr * sp * sy + -sr * cy;
+  out[8] = cr * cp;
+}
 const EMPTY_LIST: readonly Entity[] = [];
 const EMPTY_INFO = createDamageInfo();
 

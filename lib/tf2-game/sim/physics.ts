@@ -289,9 +289,17 @@ const absMaxs = vec3();
  * rotation of a brush model. Moves `pusher` to `newOrigin`/`newAngles`,
  * carrying riders and shoving anything in the way along the move delta. If
  * something can't be moved out of the way, everything reverts, `blocked`
- * is called on the pusher, and false is returned.
+ * is called on the pusher, and false is returned. With `unblockableByPlayer`
+ * (FL_UNBLOCKABLE_BY_PLAYER: payload carts) players never block: they are
+ * left where the push put them (CPhysicsPushedEntities' bIsUnblockable).
  */
-export function pushMove(world: GameWorld, pusher: Entity, newOrigin: Vec3, newAngles: Vec3): boolean {
+export function pushMove(
+  world: GameWorld,
+  pusher: Entity,
+  newOrigin: Vec3,
+  newAngles: Vec3,
+  unblockableByPlayer = false,
+): boolean {
   const dx = newOrigin.x - pusher.origin.x;
   const dy = newOrigin.y - pusher.origin.y;
   const dz = newOrigin.z - pusher.origin.z;
@@ -341,7 +349,7 @@ export function pushMove(world: GameWorld, pusher: Entity, newOrigin: Vec3, newA
     // Still inside the pusher (or shoved into a wall)? Then we're blocked.
     const filter = world.entityFilter(e, e.collisionGroup);
     world.traceHull(e.origin, e.origin, e.mins, e.maxs, MASK_PLAYERSOLID, filter, pushTrace);
-    if (pushTrace.startSolid) {
+    if (pushTrace.startSolid && !(unblockableByPlayer && e.isPlayer())) {
       blockedBy = e;
     } else if (e.isPlayer()) {
       world.onPlayerPushed(e);
