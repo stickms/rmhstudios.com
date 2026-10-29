@@ -1,0 +1,283 @@
+{
+ "tf2/ctf_2fort": [
+  {
+   "name": "red-spawn",
+   "origin": [
+    1830,
+    1400,
+    340
+   ],
+   "angles": [
+    0,
+    180,
+    0
+   ]
+  },
+  {
+   "name": "red-spawn-exit",
+   "origin": [
+    1420,
+    1440,
+    340
+   ],
+   "angles": [
+    0,
+    180,
+    0
+   ]
+  },
+  {
+   "name": "blu-spawn-exit",
+   "origin": [
+    -1420,
+    -1440,
+    340
+   ],
+   "angles": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "bridge",
+   "origin": [
+    0,
+    -450,
+    76
+   ],
+   "angles": [
+    2,
+    90,
+    0
+   ]
+  },
+  {
+   "name": "blu-sniper-deck",
+   "origin": [
+    0,
+    -1150,
+    650
+   ],
+   "angles": [
+    12,
+    90,
+    0
+   ]
+  },
+  {
+   "name": "red-sniper-deck",
+   "origin": [
+    200,
+    1180,
+    610
+   ],
+   "angles": [
+    10,
+    270,
+    0
+   ]
+  },
+  {
+   "name": "river",
+   "origin": [
+    -700,
+    -200,
+    -60
+   ],
+   "angles": [
+    -10,
+    70,
+    0
+   ]
+  }
+ ],
+ "hl2/d1_trainstation_01": [
+  {
+   "name": "station-gate",
+   "origin": [
+    -4690,
+    -1186,
+    37
+   ],
+   "angles": [
+    0,
+    165,
+    0
+   ]
+  },
+  {
+   "name": "platform",
+   "origin": [
+    -4300,
+    -1560,
+    40
+   ],
+   "angles": [
+    5,
+    180,
+    0
+   ]
+  },
+  {
+   "name": "train-arrival",
+   "origin": [
+    -7000,
+    -2000,
+    0
+   ],
+   "angles": [
+    -10,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "trainyard",
+   "origin": [
+    -9000,
+    -3000,
+    0
+   ],
+   "angles": [
+    -10,
+    90,
+    0
+   ]
+  },
+  {
+   "name": "trainyard-back",
+   "origin": [
+    -7000,
+    -2000,
+    0
+   ],
+   "angles": [
+    -10,
+    180,
+    0
+   ]
+  },
+  {
+   "name": "vault-corridor",
+   "origin": [
+    -4000,
+    -550,
+    60
+   ],
+   "angles": [
+    -8,
+    35,
+    0
+   ]
+  }
+ ],
+ "hl2/d1_trainstation_02": [
+  {
+   "name": "plaza-citadel",
+   "origin": [
+    -2500,
+    -2500,
+    60
+   ],
+   "angles": [
+    -5,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "plaza",
+   "origin": [
+    -2500,
+    -2500,
+    60
+   ],
+   "angles": [
+    -5,
+    90,
+    0
+   ]
+  }
+ ],
+ "portal/testchmb_a_00": [
+  {
+   "name": "relaxation-vault",
+   "origin": [
+    -607,
+    -346,
+    225
+   ],
+   "angles": [
+    5,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "vault-exit",
+   "origin": [
+    -607,
+    -346,
+    225
+   ],
+   "angles": [
+    5,
+    180,
+    0
+   ]
+  },
+  {
+   "name": "vault-glass",
+   "origin": [
+    -600,
+    -200,
+    225
+   ],
+   "angles": [
+    10,
+    270,
+    0
+   ]
+  },
+  {
+   "name": "chamber-button",
+   "origin": [
+    -1100,
+    -400,
+    700
+   ],
+   "angles": [
+    15,
+    180,
+    0
+   ]
+  },
+  {
+   "name": "chamber-exit",
+   "origin": [
+    -1100,
+    -400,
+    700
+   ],
+   "angles": [
+    15,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "floor-signs",
+   "origin": [
+    -720,
+    -1024,
+    230
+   ],
+   "angles": [
+    89.9,
+    90,
+    0
+   ]
+  }
+ ]
+}
