@@ -9,14 +9,18 @@ def _pad(b, fill=b"\0"):
     return b + fill * (-len(b) % 4)
 
 
-def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips=None):
+def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips=None, compact=False):
     """meshes: [{pos, nrm, uv, idx, material, joints?, weights?}]; materials: [{name, image (index|None),
     alpha ('OPAQUE'|'MASK'|'BLEND'), double_sided, tint}]; images: [webp bytes].
 
     skeleton: {names, parent, pos [n,3], quat [n,4], ibm [n,4,4]} — bone nodes (local bind TRS), plus a skin
     over them when the meshes carry `joints`/`weights`.
     clips: [{name, times [k], tracks: [{bone, path ('translation'|'rotation'), values [k or 1, 3|4]}]}] —
-    animation targeting the skeleton's bone nodes (the file may carry no mesh at all)."""
+    animation targeting the skeleton's bone nodes (the file may carry no mesh at all).
+
+    compact: pack every animation accessor into one buffer view, share identical key-time accessors, let a
+    track carry its own `times` (keyframe-reduced) and write a constant track as a single key. The
+    default (False) output is unchanged."""
     blob = bytearray()
     views, accessors, prims = [], [], []
 
@@ -60,7 +64,10 @@ def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips
 
     gl_images, textures, gl_mats = [], [], []
     for img in images:
-        gl_images.append({"bufferView": add_view(img), "mimeType": "image/webp"})
+        if isinstance(img, dict):  # an external file shared by many models: {"uri": "../tex/<sha>.webp"}
+            gl_images.append({"uri": img["uri"], "mimeType": img.get("mimeType", "image/webp")})
+        else:
+            gl_images.append({"bufferView": add_view(img), "mimeType": "image/webp"})
         textures.append({"extensions": {"EXT_texture_webp": {"source": len(gl_images) - 1}}})
     for mat in materials:
         pbr = {"metallicFactor": 0.0, "roughnessFactor": 0.85}
@@ -75,8 +82,9 @@ def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips
         if mat["alpha"] != "OPAQUE":
             g["alphaMode"] = mat["alpha"]
             if mat["alpha"] == "MASK":
-                g["alphaCutoff"] = 0.5
+                g["alphaCutoff"] = mat.get("cutoff", 0.5)
         extras = {key: True for key in ("tint", "attachment", "festive") if mat.get(key)}
+        extras.update(mat.get("extras") or {})
         if extras:
             g["extras"] = extras
         gl_mats.append(g)
@@ -104,12 +112,63 @@ def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips
         if meshes and "joints" in meshes[0]:
             ibm = np.ascontiguousarray(
                 np.asarray(skeleton["ibm"], np.float64).transpose(0, 2, 1).reshape(n, 16), "<f4")
+            roots = [base + i for i in range(n) if skeleton["parent"][i] < 0]
             skins.append({"joints": [base + i for i in range(n)],
                           "inverseBindMatrices": add_acc(ibm.tobytes(), 5126, n, "MAT4", None),
-                          "skeleton": next(base + i for i in range(n) if skeleton["parent"][i] < 0)})
+                          "skeleton": roots[0]})
+            if compact and len(roots) > 1:
+                del skins[-1]["skeleton"]  # optional, and must be a common root: a forest has none
             mesh_node["skin"] = 0
 
     animations = []
+    if compact and clips:
+        anim_view = len(views)
+        views.append(None)
+        ablob = bytearray()
+        time_cache = {}
+
+        def anim_acc(data, ctype, count, atype, bounds=None):
+            while len(ablob) % 4:
+                ablob.append(0)
+            acc = {"bufferView": anim_view, "byteOffset": len(ablob), "componentType": ctype, "count": count,
+                   "type": atype}
+            if bounds:
+                acc["min"], acc["max"] = bounds
+            ablob.extend(data)
+            accessors.append(acc)
+            return len(accessors) - 1
+
+        def time_acc(t):
+            t = np.ascontiguousarray(t, "<f4")
+            key = t.tobytes()
+            if key not in time_cache:
+                time_cache[key] = anim_acc(key, 5126, len(t), "SCALAR", ([float(t.min())], [float(t.max())]))
+            return time_cache[key]
+
+        for clip in clips:
+            times = np.asarray(clip["times"], np.float64)
+            samplers, channels = [], []
+            for tr in clip["tracks"]:
+                vals = np.ascontiguousarray(tr["values"], "<f4")
+                t = tr.get("times")
+                if t is None:
+                    t = times if len(vals) == len(times) else times[:len(vals)]
+                if tr["path"] == "rotation" and clip.get("short_rotations"):
+                    q = np.ascontiguousarray(np.round(np.clip(vals, -1, 1) * 32767), "<i2")
+                    acc = anim_acc(q.tobytes(), 5122, len(q), "VEC4")
+                    accessors[acc]["normalized"] = True
+                else:
+                    acc = anim_acc(vals.tobytes(), 5126, len(vals), "VEC4" if tr["path"] == "rotation" else "VEC3")
+                samplers.append({"input": time_acc(t), "output": acc})
+                channels.append({"sampler": len(samplers) - 1,
+                                 "target": {"node": base + tr["bone"], "path": tr["path"]}})
+            animations.append({"name": clip["name"], "samplers": samplers, "channels": channels,
+                               **({"extras": clip["extras"]} if clip.get("extras") else {})})
+        while len(blob) % 4:
+            blob.append(0)
+        views[anim_view] = {"buffer": 0, "byteOffset": len(blob), "byteLength": len(ablob)}
+        blob.extend(ablob)
+        clips = []
     for clip in clips or []:
         times = np.ascontiguousarray(clip["times"], "<f4")
         t_acc = add_acc(times.tobytes(), 5126, len(times), "SCALAR", None, ([float(times.min())], [float(times.max())]))
@@ -120,11 +179,18 @@ def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips
             # a single sample is a constant pose: it still needs two keys of the same value to span the clip
             if len(vals) == 1 and len(times) > 1:
                 vals = np.repeat(vals, len(times), axis=0)
-            acc = add_acc(vals.tobytes(), 5126, len(vals), "VEC4" if width == 4 else "VEC3", None)
+            if width == 4 and clip.get("short_rotations"):
+                # glTF allows normalized signed shorts for rotation outputs: half the bytes, ~3e-5 precision
+                q = np.ascontiguousarray(np.round(np.clip(vals, -1, 1) * 32767), "<i2")
+                acc = add_acc(q.tobytes(), 5122, len(q), "VEC4", None)
+                accessors[acc]["normalized"] = True
+            else:
+                acc = add_acc(vals.tobytes(), 5126, len(vals), "VEC4" if width == 4 else "VEC3", None)
             samplers.append({"input": t_acc, "output": acc, "interpolation": "LINEAR"})
             channels.append({"sampler": len(samplers) - 1,
                              "target": {"node": base + tr["bone"], "path": tr["path"]}})
-        animations.append({"name": clip["name"], "samplers": samplers, "channels": channels})
+        animations.append({"name": clip["name"], "samplers": samplers, "channels": channels,
+                           **({"extras": clip["extras"]} if clip.get("extras") else {})})
 
     doc = {
         "asset": {"version": "2.0", "generator": "rmhstudios tf2-assets"},

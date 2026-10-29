@@ -140,3 +140,80 @@ The game's tests are their own suite, `pnpm test:tf2` (`vitest.tf2.config.ts`),
 because the main suite is scoped to mission-critical code (see
 [testing](testing.md)). Tests that need real game files read them from
 `TF2_ROOT` (a Steam install) and skip when it is unset.
+
+## Models
+
+The game's model channel (`tf2-game/mdl/` and `tf2-game/tex/` in object storage) is built by
+`scripts/tf2-game/models.py` from a list of MDL paths. `scripts/tf2-game/model-list.py --root <install>`
+writes TF2's default list (class bodies and arms, stock weapons, projectiles, buildings, pickups, the flag,
+player gibs); the map pipeline appends its props. Nothing in the converter is TF2-specific: `--search portal,hl2`
+points it at another Source game.
+
+```bash
+python3 scripts/tf2-game/model-list.py --root <install> --out model-list.txt
+python3 scripts/tf2-game/models.py --root <install> --list model-list.txt --out out [--state state.json] [--prev-index index.json]
+pnpm exec tsx scripts/tf2-assets/publish.ts push --dir out --prefix tf2-game/ --state-key tf2-game/mdl/_state.json --index mdl/index.json --build <id>
+```
+
+- **Content addressed.** `mdl/<sha>.glb` and `tex/<sha>.webp` are named by the hash of their _source_
+  (model, includes, VMTs, VTF bytes, encoder settings and `MODELS_VERSION` / `TEX_VERSION`), so an unchanged
+  file keeps its name and is neither rebuilt nor uploaded. Textures are written once and shared by every
+  model (and map) that uses them; a GLB references them as `../tex/<sha>.webp`. WebP q80, capped at 1024 px
+  for player bodies, weapons and viewmodels and 512 px for everything else; alpha is kept when the VMT gives
+  it a meaning (`alphaUse`). A missing texture (a dedicated-server install has none) leaves the material
+  untextured but still named, and is listed in `untextured.json`.
+- **`mdl/index.json`**: `{ <mdl path>: { glb, anims?, kind, bones, skinned, skins, attachments, hitboxes,
+sequences, poseParameters? } }`. `mdl/players/<class>.anims.json` and `mdl/viewmodels/<class>.anims.json`
+  hold `{ mdl, glb, anims, poseParameters, activities: { ACT_*: [{ seq, weight }] }, weightlists,
+sequences: { <name>: { clips, looping, delta, post, fps, frames, blend?, layers?, weightlist? } } }`.
+- **Body GLB.** LOD 0 of every body part; a switchable body group's submodels are separate primitives
+  (`extras.bodygroup`, `extras.sub`); every primitive has `extras.slot` (its skin-reference slot) and uses
+  skin family 0. Skinned (bones + inverse binds) unless it is a static single-bone prop. Positions are the
+  compiled bind space in metres (Y up; Source (x, y, z) is glTF (y, z, x)).
+- **Animation.** A model with `$includemodel`s (players, arms) gets a separate _anim pack_ GLB (skeleton +
+  clips, no mesh); any other model carries its sequences in its own GLB. Players export every `ACT_MP_*`
+  sequence except voice-command gestures, PASS Time and the CYOA PDA, plus the death sequences; arms every
+  sequence with an activity; other models every sequence; plus, recursively, every sequence those layer on
+  themselves (aim matrices, arm layers). Each animdesc is one glTF clip named `<sequence>` or
+  `<sequence>@<cell>` (blend grids: cell = y × groupsize[0] + x). Rotations are normalized shorts and keys
+  are reduced (0.06°, 0.01 unit). **Delta** clips (`extras.delta`) hold offsets from the identity: add the
+  translation, and compose the rotation `d^w * base`, or `base * d^w` when the sequence is `post`; a bone
+  with no track is the identity (delta) or the bind pose (absolute).
+
+`scene.extras` of a body (all lengths in metres, matrices column-major 4×4, unless noted):
+
+```jsonc
+{
+  "tf2game": 1, "mdl": "models/player/scout.mdl", "scale": 0.01905,
+  "source": { "eyePosition": [x,y,z], "illumPosition", "hullMin", "hullMax", "viewMin", "viewMax" }, // Source units, Z up
+  "flags": 0, "mass": 100, "contents": 1, "surfaceprop": "flesh", "keyvalues"?: "<raw $keyvalues>",
+  "skinned": true,
+  "bodyparts": [{ "name": "hat", "count": 2 }],            // every body part, in order (body index math)
+  "skins": [[materialIndex per slot], ...per family],      // -1: no material for that slot
+  "attachments": [{ "name": "muzzle", "bone": "weapon_bone", "flags": 0, "local": [16] }],
+  "hitboxSets": [{ "name": "default", "hitboxes": [{ "bone", "group", "min": [3], "max": [3], "name"? }] }],
+  "poseParameters": [{ "name": "body_pitch", "start": -45, "end": 90, "loop": 360 }],
+  "boneControllers"?: [{ "bone", "axis": "XR", "type", "loop", "start", "end", "rest", "input" }],
+  "includes"?: ["models/player/scout_animations.mdl"], "jiggle"?: [...], "proceduralBones"?: [{ "bone", "type" }],
+  // models with their own sequences, and every anim pack (which also has "animPack": true):
+  "sequences"?: [{ "name", "activity"?, "actweight"?, "flags", "looping", "delta", "post", "autoplay",
+                   "hidden"?, "snap"?, "realtime"?, "world"?, "fps", "frames", "fadeIn", "fadeOut",
+                   "clips": ["run_PRIMARY@0", ...],
+                   "blend"?: { "groupsize": [3,3], "params": ["move_y","move_x"], "start": [..], "end": [..], "poseKeys"?: [[..],[..]] },
+                   "layers"?: [{ "seq", "flags", "pose"?, "start", "peak", "tail", "end" }],
+                   "events"?: [{ "frame", "cycle", "event", "type", "name"?, "options"? }],
+                   "weightlist"?: 0, "nextSeq"?, "cyclePose"?, "modifiers"?, "keyvalues"? }],
+  "activities"?: { "ACT_MP_RUN_PRIMARY": [{ "seq": "run_PRIMARY", "weight": 1 }] },
+  "weightlists"?: [{ "<bone>": 0.0 }]   // per-bone weights that are not 1
+}
+```
+
+A clip's `extras`: `{ fps, frames, looping, delta, source (animdesc name), movement?: [mstudiomovement_t, Source
+units], groundSpeed? (units/s) }`. A material's `extras`: `{ material, vmt, shader, texture (VTF path),
+translucent?, alphatest?, cutoff?, additive?, nocull?, selfillum?, selfillumTint?, selfillumMask?, vertexalpha?,
+tintByBaseAlpha?, tintColorOverBase?, color?, color2?, phong?: { exponent, boost, fresnelRanges, tint?,
+albedoTint?, baseAlphaMask?, exponentTexture? }, rimlight?: { exponent, boost, mask }, lightwarp?, bumpmap?,
+envmap?, envmapTint?, envmapMask?, detail?, surfaceprop?, alphaUse?, eye?, missing? }` (texture names are
+`materials/….vtf` paths).
+
+Tests: `TF2_ROOT=<install> python -B -m unittest discover -s scripts/tf2-game -p test_models_game.py`.

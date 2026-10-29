@@ -302,3 +302,131 @@ def world_matrices(bones, pos, quat):
         m[:3, 3] = pos[i]
         out[i] = m if b["parent"] < 0 else out[b["parent"]] @ m
     return out
+
+
+# --- Delta, sectioned and animblock-aware decoding (used by scripts/tf2-game/models.py) -------------------
+# `decode_animdesc` above is what the loadout converter uses and is left exactly as it is. These functions
+# follow bone_setup.cpp more completely: per-entry STUDIO_ANIM_DELTA, delta animdescs (STUDIO_DELTA: a bone
+# the animation does not mention is the identity, not the bind pose), and data stored in an external .ani
+# block (`animblock` != 0).
+
+def _apply_ex(data, bones, entries, frame, pos, quat, delta):
+    """CalcBoneQuaternion / CalcBonePosition for one frame. `delta` is the animdesc's STUDIO_DELTA."""
+    for e in entries:
+        bone = e["bone"]
+        bn = bones[bone]
+        is_delta = bool(e.get("flags", 0) & ANIMDELTA) or delta
+        if e["rot"] is not None:
+            quat[bone] = e["rot"]
+        elif e["rot_ptr"] is not None:
+            base, ptr = e["rot_ptr"]
+            ang = [(_rle(data, base + ptr[j], frame) * bn["rotscale"][j] if ptr[j] > 0 else 0.0)
+                   + (0.0 if is_delta else bn["rot"][j]) for j in range(3)]
+            quat[bone] = _euler_quat(*ang)
+        elif is_delta:
+            quat[bone] = (0.0, 0.0, 0.0, 1.0)
+        if e["pos"] is not None:
+            pos[bone] = e["pos"]
+        elif e["pos_ptr"] is not None:
+            base, ptr = e["pos_ptr"]
+            pos[bone] = [(_rle(data, base + ptr[j], frame) * bn["posscale"][j] if ptr[j] > 0 else 0.0)
+                         + (0.0 if is_delta else bn["pos"][j]) for j in range(3)]
+        elif is_delta:
+            pos[bone] = (0.0, 0.0, 0.0)
+
+
+def _entry_at(data, o, bone, flags):
+    """One mstudioanim_t record (the body of `_entries`' loop)."""
+    p = o + 4
+    e = {"bone": bone, "flags": flags, "rot": None, "pos": None, "rot_ptr": None, "pos_ptr": None}
+    if flags & RAWROT:
+        e["rot"] = _quat48(data, p)
+        p += 6
+    elif flags & RAWROT2:
+        e["rot"] = _quat64(data, p)
+        p += 8
+    elif flags & ANIMROT:
+        e["rot_ptr"] = (p, struct.unpack_from("<3h", data, p))
+        p += 6
+    if flags & RAWPOS:
+        e["pos"] = tuple(_half(h) for h in struct.unpack_from("<3H", data, p))
+        p += 6
+    elif flags & ANIMPOS:
+        e["pos_ptr"] = (p, struct.unpack_from("<3h", data, p))
+        p += 6
+    return e
+
+
+def _entries_ex(data, start, nb):
+    """`_entries` that keeps each record's flags and treats bone 255 as an empty chain: studiomdl writes a
+    lone {bone 255} record for an animation that moves no bone (e.g. the neutral cell of an aim matrix),
+    which CalcAnimation never matches to a bone."""
+    out = []
+    o = start
+    for _ in range(nb + 1):
+        bone, flags, nxt = struct.unpack_from("<BBh", data, o)
+        if bone == 255:
+            break
+        if bone >= nb:
+            raise ModelError("animation names bone %d of %d" % (bone, nb))
+        out.append(_entry_at(data, o, bone, flags))
+        if nxt == 0:
+            break
+        o += nxt
+    return out
+
+
+def decode_animdesc_ex(mdl, bones, desc, max_frames=None, anim_block=None):
+    """-> (pos [frames, bones, 3], quat [frames, bones, 4], delta) local transforms in Source's animation
+    space. For a delta animation (`delta` True) the values are offsets: pos is added to the base pose and
+    quat composed with it (see SlerpBones: q = d^w * base, or base * d^w for STUDIO_POST), and bones the
+    animation does not mention are the identity. `anim_block(block)` returns (bytes, offset of the block's
+    data) for an animation stored in a .ani file, or None when it is not available."""
+    if desc["flags"] & DESC_FRAMEANIM:
+        raise ModelError("frame animation")
+    delta = bool(desc["flags"] & DESC_DELTA)
+    frames = desc["frames"] if max_frames is None else min(desc["frames"], max_frames)
+    frames = max(frames, 1)
+    nb = len(bones)
+    if delta:
+        pos = np.zeros((frames, nb, 3), np.float32)
+        quat = np.tile(np.array([0, 0, 0, 1], np.float32), (frames, nb, 1))
+    else:
+        pos = np.tile(np.array([b["pos"] for b in bones], np.float32), (frames, 1, 1))
+        quat = np.tile(np.array([b["quat"] for b in bones], np.float32), (frames, 1, 1))
+    if desc["flags"] & DESC_ALLZEROS:
+        return pos, quat, delta
+    cache = {}
+
+    def locate(block, index, relative_to):
+        if block == 0:
+            return mdl, relative_to + index
+        if anim_block is None:
+            raise ModelError("animation lives in a .ani block")
+        found = anim_block(block)
+        if found is None:
+            raise ModelError("animation block %d is not available" % block)
+        data, base = found
+        return data, base + index
+
+    def section(index):
+        if index not in cache:
+            if desc["sections"]:
+                block, aindex = struct.unpack_from("<2i", mdl, desc["at"] + desc["sectionindex"] + index * 8)
+            else:
+                block, aindex = desc["block"], desc["index"]
+            data, start = locate(block, aindex, desc["at"])
+            cache[index] = (data, _entries_ex(data, start, nb))
+        return cache[index]
+
+    for f in range(frames):
+        local, sec = f, 0
+        if desc["sections"]:
+            if desc["frames"] > desc["sections"] and f == desc["frames"] - 1:
+                sec, local = desc["frames"] // desc["sections"] + 1, 0
+            else:
+                sec = f // desc["sections"]
+                local = f - sec * desc["sections"]
+        data, entries = section(sec)
+        _apply_ex(data, bones, entries, local, pos[f], quat[f], delta)
+    return pos, quat, delta
