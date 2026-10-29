@@ -306,5 +306,34 @@ class TauntClips(unittest.TestCase):
         self.assertIsNone(pick("ab"))
 
 
+class MaskedTextureEncoding(unittest.TestCase):
+    def test_colour_under_zero_alpha_survives_encoding(self):
+        """Base alpha is a paint/phong mask in Source: the colour where it is 0 must still reach the viewer."""
+        import io
+        from PIL import Image
+        rng = np.random.default_rng(1)
+        pixels = rng.integers(0, 255, (128, 128, 4), dtype=np.uint8)
+        pixels[..., 3] = 0
+        pixels[:8, :8, 3] = 255
+        image = Image.fromarray(pixels, "RGBA")
+        with patch.object(convert.srctex, "decode_vtf", return_value=image):
+            data = convert.encode_texture(b"", True)
+        out = np.asarray(Image.open(io.BytesIO(data)).convert("RGBA"))
+        self.assertLess(abs(float(out[64:, 64:, :3].mean()) - float(pixels[64:, 64:, :3].mean())), 2.0)
+
+    def test_downscale_keeps_colour_under_zero_alpha(self):
+        import io
+        from PIL import Image
+        pixels = np.zeros((2 * convert.MAX_TEX, 2 * convert.MAX_TEX, 4), dtype=np.uint8)
+        pixels[..., 0] = 200
+        pixels[..., 1] = 40
+        image = Image.fromarray(pixels, "RGBA")
+        with patch.object(convert.srctex, "decode_vtf", return_value=image):
+            data = convert.encode_texture(b"", True)
+        out = np.asarray(Image.open(io.BytesIO(data)).convert("RGBA"))
+        self.assertEqual(out.shape[0], convert.MAX_TEX)
+        self.assertGreater(float(out[..., 0].mean()), 150)
+
+
 if __name__ == "__main__":
     unittest.main()

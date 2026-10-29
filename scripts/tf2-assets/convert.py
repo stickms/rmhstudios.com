@@ -37,7 +37,7 @@ BONEMERGE_VERSION = 1
 # Bump when the class-variant cosmetic export (`use_per_class_bodygroups`) changes.
 CLASSBODY_VERSION = 1
 # Bump when the paint-mask export (texture alpha kept, default tint and replace factor) changes.
-PAINTMASK_VERSION = 1
+PAINTMASK_VERSION = 2
 SCALE = 0.01905  # Source units are 0.75 inch
 MAX_TEX = 512
 TINT_KEYS = ("$blendtintbybasealpha",)
@@ -361,11 +361,22 @@ def source_hash(mdl, vvd, vtx, slots, extra=b""):
 def encode_texture(vtf, keep_alpha):
     img = srctex.decode_vtf(vtf)
     if max(img.size) > MAX_TEX:
-        img.thumbnail((MAX_TEX, MAX_TEX), Image.LANCZOS)
+        scale = MAX_TEX / max(img.size)
+        size = (max(1, round(img.width * scale)), max(1, round(img.height * scale)))
+        if keep_alpha:
+            # Pillow resizes RGBA premultiplied, which blacks out colour under alpha 0; Source's base alpha is
+            # often a paint/phong mask rather than coverage, so resample colour and alpha separately.
+            rgb = img.convert("RGB").resize(size, Image.LANCZOS)
+            rgb.putalpha(img.getchannel("A").resize(size, Image.LANCZOS))
+            img = rgb
+        else:
+            img = img.resize(size, Image.LANCZOS)
     if not keep_alpha:
         img = img.convert("RGB")
     buf = io.BytesIO()
-    img.save(buf, "WEBP", quality=82, method=4)
+    # exact=True keeps the RGB under fully transparent pixels: libwebp otherwise zeroes it, and base alpha
+    # in Source is frequently a mask (paint, phong) over fully coloured texels (Batter's Beak: red body, alpha 0).
+    img.save(buf, "WEBP", quality=82, method=4, exact=True)
     return buf.getvalue()
 
 
