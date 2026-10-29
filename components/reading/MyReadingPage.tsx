@@ -26,7 +26,7 @@ export function MyReadingPage({ tab }: { tab: ReadingTab }) {
       backTo="/library"
       backLabel={t('back-to-library', { defaultValue: 'Back to the library' })}
     >
-      <div className="space-y-4 px-4 pt-4 pb-12">
+      <div className="space-y-4 pt-4 pb-12 md:px-4">
         <LiquidTabs
           aria-label={t('my-reading-tabs', { defaultValue: 'My reading sections' })}
           value={tab}

@@ -286,7 +286,7 @@
   --site-glass-tint-strong: rgba(255, 255, 255, 0.5);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(255, 255, 255, 0.9);
   --site-glass-blur-pane: 18px;
@@ -333,16 +333,16 @@
      Values are bounded by lib/__tests__/jelly-legibility.test.ts. */
   --site-jelly-haze: #ccd4e4;
   --site-jelly-haze-strong: #dce1ec;
-  --site-jelly-haze-fill: 0.12;
-  --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.13;
-  --site-jelly-haze-chrome: 0.16;
-  --site-jelly-haze-overlay: 0.06;
+  --site-jelly-haze-fill: 0.0165;
+  --site-jelly-haze-inset: 0.0055;
+  --site-jelly-haze-pane: 0.018;
+  --site-jelly-haze-chrome: 0.022;
+  --site-jelly-haze-overlay: 0.0085;
   --site-jelly-plasma-a: #b4a9ff;
   --site-jelly-plasma-b: #8fe0ee;
-  --site-jelly-plasma: 0.25;
+  --site-jelly-plasma: 0.069;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.3;
+  --site-jelly-quiet: 0.15;
   --site-jelly-haze-edge: 0.16;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -364,27 +364,27 @@
   --gel-depth: rgba(16, 20, 36, 0.035);
   --gel-ink: var(--site-accent);
   --on-ink: var(--site-accent-fg);
-  --gel-fresnel: rgba(255, 255, 255, 0.55);
+  --gel-fresnel: rgba(255, 255, 255, 0.3);
   --gel-specular: rgba(255, 255, 255, 0.95);
-  --gel-edge-r: rgba(255, 84, 104, 0.16);
-  --gel-edge-g: rgba(64, 200, 140, 0.08);
-  --gel-edge-b: rgba(72, 120, 255, 0.16);
-  --gel-bevel: 6px;
-  --gel-disperse-r: -1.5px;
+  --gel-edge-r: rgba(255, 84, 104, 0.064);
+  --gel-edge-g: rgba(64, 200, 140, 0.032);
+  --gel-edge-b: rgba(72, 120, 255, 0.064);
+  --gel-bevel: 4px;
+  --gel-disperse-r: -0.75px;
   --gel-disperse-g: 0px;
-  --gel-disperse-b: 1.5px;
+  --gel-disperse-b: 0.75px;
   /* The molded rim (2026-10-25): the slab rises out of the ground instead of being outlined on it.
      `--gel-mold` is the shoulder's depth (0 = the outlined rim), `--gel-feather` how far the outermost
      pixels dissolve into the ground, `--gel-shoulder` widens the bevel for the rounded shoulder. Read
      per surface by the rim shader (lib/liquid/glass/shader.ts "Molded shoulder"). */
-  --gel-mold: 1.15;
-  --gel-feather: 3px;
-  --gel-shoulder: 1.2;
+  --gel-mold: 0.8;
+  --gel-feather: 2px;
+  --gel-shoulder: 1;
   /* The lens (docs/plasmatic-jelly-system.md §1.1, lib/liquid/glass/shader.ts): `--gel-dispersion` scales the
      red-to-blue refraction spread against real crown glass (×8 makes the fringe ~2px at the steepest rim instead of
      0.2px), `--gel-lens` scales the slab thickness the refraction travels, `--gel-reflect` the Fresnel environment
      reflection on the shoulder. All three are free per pixel (no extra texture read). */
-  --gel-dispersion: 8;
+  --gel-dispersion: 3;
   --gel-lens: 1;
   --gel-reflect: 1;
   /* Where the shader cannot draw the rim (an <input> holds no canvas; a surface past the rim budget), CSS molds it
@@ -428,7 +428,7 @@
   /* Entrances of the shader-drawn layers, each the CSS twin of the constant that times its hand-over: a rim or haze
      canvas fading in over the CSS material (engine.ts ENTER_MS), the globe's coat fading in over its CSS glass
      (LiquidGlobe COAT_FADE_MS), and the docked globe growing in when its chunk lands. */
-  --liquid-enter: 300ms;
+  --liquid-enter: 450ms;
   --globe-coat-fade: 420ms;
   --globe-enter: 560ms;
   --glass-bevel: 12px;
@@ -981,7 +981,7 @@
   --site-glass-tint-strong: rgba(255, 255, 255, 0.52);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-rim: rgba(0, 0, 0, 0.12);
   --site-glass-rim-soft: rgba(0, 0, 0, 0.05);
@@ -1008,16 +1008,16 @@
      Daylight: white haze is invisible on white, so the veil is a cool milky grey. */
   --site-jelly-haze: #ccd4e4;
   --site-jelly-haze-strong: #dce1ec;
-  --site-jelly-haze-fill: 0.12;
-  --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.13;
-  --site-jelly-haze-chrome: 0.16;
-  --site-jelly-haze-overlay: 0.06;
+  --site-jelly-haze-fill: 0.0165;
+  --site-jelly-haze-inset: 0.0055;
+  --site-jelly-haze-pane: 0.018;
+  --site-jelly-haze-chrome: 0.022;
+  --site-jelly-haze-overlay: 0.0085;
   --site-jelly-plasma-a: #b4a9ff;
   --site-jelly-plasma-b: #8fe0ee;
-  --site-jelly-plasma: 0.25;
+  --site-jelly-plasma: 0.069;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.3;
+  --site-jelly-quiet: 0.15;
   --site-jelly-haze-edge: 0.16;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -1028,11 +1028,11 @@
   --gel-depth: rgba(16, 20, 36, 0.035);
   --gel-ink: var(--site-accent);
   --on-ink: var(--site-accent-fg);
-  --gel-fresnel: rgba(255, 255, 255, 0.55);
+  --gel-fresnel: rgba(255, 255, 255, 0.3);
   --gel-specular: rgba(255, 255, 255, 0.95);
-  --gel-edge-r: rgba(255, 84, 104, 0.16);
-  --gel-edge-g: rgba(64, 200, 140, 0.08);
-  --gel-edge-b: rgba(72, 120, 255, 0.16);
+  --gel-edge-r: rgba(255, 84, 104, 0.064);
+  --gel-edge-g: rgba(64, 200, 140, 0.032);
+  --gel-edge-b: rgba(72, 120, 255, 0.064);
   --focus-ring: var(--site-accent);
 }
 
@@ -1066,7 +1066,7 @@
   --site-glass-tint-strong: rgba(255, 255, 255, 0.48);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(244, 247, 253, 0.55);
   --site-glass-rim: rgba(255, 255, 255, 0.9);
@@ -1095,16 +1095,16 @@
   /* Plasmatic Jelly material + arcs (meanings: the :root block). */
   --site-jelly-haze: #f4f7fd;
   --site-jelly-haze-strong: #ffffff;
-  --site-jelly-haze-fill: 0.1;
-  --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.14;
-  --site-jelly-haze-chrome: 0.18;
-  --site-jelly-haze-overlay: 0.06;
+  --site-jelly-haze-fill: 0.014;
+  --site-jelly-haze-inset: 0.0055;
+  --site-jelly-haze-pane: 0.019;
+  --site-jelly-haze-chrome: 0.025;
+  --site-jelly-haze-overlay: 0.0085;
   --site-jelly-plasma-a: color-mix(in srgb, var(--site-accent) 45%, white);
   --site-jelly-plasma-b: #9fdcf4;
-  --site-jelly-plasma: 0.5;
+  --site-jelly-plasma: 0.138;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.3;
+  --site-jelly-quiet: 0.15;
   --site-jelly-haze-edge: 0.14;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -1115,11 +1115,11 @@
   --gel-depth: rgba(18, 30, 66, 0.04);
   --gel-ink: var(--site-accent);
   --on-ink: var(--site-accent-fg);
-  --gel-fresnel: rgba(255, 255, 255, 0.6);
+  --gel-fresnel: rgba(255, 255, 255, 0.3);
   --gel-specular: rgba(255, 255, 255, 0.95);
-  --gel-edge-r: rgba(255, 92, 120, 0.16);
-  --gel-edge-g: rgba(64, 200, 150, 0.08);
-  --gel-edge-b: rgba(80, 110, 255, 0.16);
+  --gel-edge-r: rgba(255, 92, 120, 0.064);
+  --gel-edge-g: rgba(64, 200, 150, 0.032);
+  --gel-edge-b: rgba(80, 110, 255, 0.064);
   --focus-ring: var(--site-accent);
 }
 
@@ -1205,16 +1205,16 @@
   /* Plasmatic Jelly material + arcs (meanings: the :root block). */
   --site-jelly-haze: #c9d2e3;
   --site-jelly-haze-strong: #dfe6f2;
-  --site-jelly-haze-fill: 0.11;
-  --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.12;
-  --site-jelly-haze-chrome: 0.14;
-  --site-jelly-haze-overlay: 0.05;
+  --site-jelly-haze-fill: 0.015;
+  --site-jelly-haze-inset: 0.0055;
+  --site-jelly-haze-pane: 0.0165;
+  --site-jelly-haze-chrome: 0.019;
+  --site-jelly-haze-overlay: 0.007;
   --site-jelly-plasma-a: var(--site-accent);
   --site-jelly-plasma-b: #9b6bff;
-  --site-jelly-plasma: 0.8;
+  --site-jelly-plasma: 0.22;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.25;
+  --site-jelly-quiet: 0.125;
   --site-jelly-haze-edge: 0.04;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -1228,9 +1228,9 @@
   --gel-fresnel: rgba(255, 255, 255, 0.14);
   --gel-well-shade: rgba(0, 0, 0, 0.5);
   --gel-specular: rgba(255, 255, 255, 0.85);
-  --gel-edge-r: rgba(255, 96, 112, 0.22);
-  --gel-edge-g: rgba(80, 220, 150, 0.1);
-  --gel-edge-b: rgba(90, 140, 255, 0.24);
+  --gel-edge-r: rgba(255, 96, 112, 0.088);
+  --gel-edge-g: rgba(80, 220, 150, 0.04);
+  --gel-edge-b: rgba(90, 140, 255, 0.096);
   --focus-ring: var(--site-accent);
 }
 
@@ -1263,7 +1263,7 @@
   --site-glass-tint-strong: rgba(255, 250, 238, 0.48);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(240, 232, 214, 0.6);
   --site-glass-rim: rgba(255, 248, 230, 0.85);
@@ -1291,16 +1291,16 @@
   /* Plasmatic Jelly material + arcs (meanings: the :root block). */
   --site-jelly-haze: #fff6e6;
   --site-jelly-haze-strong: #fffaf0;
-  --site-jelly-haze-fill: 0.1;
-  --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.14;
-  --site-jelly-haze-chrome: 0.18;
-  --site-jelly-haze-overlay: 0.06;
+  --site-jelly-haze-fill: 0.014;
+  --site-jelly-haze-inset: 0.0055;
+  --site-jelly-haze-pane: 0.019;
+  --site-jelly-haze-chrome: 0.025;
+  --site-jelly-haze-overlay: 0.0085;
   --site-jelly-plasma-a: #f0c48c;
   --site-jelly-plasma-b: #eaa79e;
-  --site-jelly-plasma: 0.5;
+  --site-jelly-plasma: 0.138;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.3;
+  --site-jelly-quiet: 0.15;
   --site-jelly-haze-edge: 0.1;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -1313,9 +1313,9 @@
   --on-ink: var(--site-accent-fg);
   --gel-fresnel: rgba(255, 248, 230, 0.6);
   --gel-specular: rgba(255, 250, 236, 0.95);
-  --gel-edge-r: rgba(230, 90, 70, 0.16);
-  --gel-edge-g: rgba(120, 170, 90, 0.08);
-  --gel-edge-b: rgba(90, 110, 210, 0.14);
+  --gel-edge-r: rgba(230, 90, 70, 0.064);
+  --gel-edge-g: rgba(120, 170, 90, 0.032);
+  --gel-edge-b: rgba(90, 110, 210, 0.056);
   --focus-ring: var(--site-accent);
 }
 
@@ -1348,7 +1348,7 @@
   --site-glass-tint-strong: rgba(150, 185, 255, 0.15);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   /* Nocturne declared the whole glass contract EXCEPT this one, so it fell
      through to the light theme's `rgba(255, 255, 255, 0.9)` at :root — and
@@ -1379,16 +1379,16 @@
   /* Plasmatic Jelly material + arcs (meanings: the :root block). */
   --site-jelly-haze: #b4c8ff;
   --site-jelly-haze-strong: #cbd9ff;
-  --site-jelly-haze-fill: 0.07;
-  --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.1;
-  --site-jelly-haze-chrome: 0.14;
-  --site-jelly-haze-overlay: 0.05;
+  --site-jelly-haze-fill: 0.0095;
+  --site-jelly-haze-inset: 0.0055;
+  --site-jelly-haze-pane: 0.014;
+  --site-jelly-haze-chrome: 0.019;
+  --site-jelly-haze-overlay: 0.007;
   --site-jelly-plasma-a: #6f9bff;
   --site-jelly-plasma-b: #47d1c4;
-  --site-jelly-plasma: 0.8;
+  --site-jelly-plasma: 0.22;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.25;
+  --site-jelly-quiet: 0.125;
   --site-jelly-haze-edge: 0.04;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -1402,9 +1402,9 @@
   --gel-fresnel: rgba(200, 220, 255, 0.18);
   --gel-well-shade: rgba(0, 0, 0, 0.5);
   --gel-specular: rgba(225, 236, 255, 0.85);
-  --gel-edge-r: rgba(255, 110, 140, 0.2);
-  --gel-edge-g: rgba(80, 220, 190, 0.1);
-  --gel-edge-b: rgba(94, 157, 255, 0.26);
+  --gel-edge-r: rgba(255, 110, 140, 0.08);
+  --gel-edge-g: rgba(80, 220, 190, 0.04);
+  --gel-edge-b: rgba(94, 157, 255, 0.104);
   --focus-ring: var(--site-accent);
 }
 
@@ -1442,7 +1442,7 @@
   --site-glass-tint-strong: rgba(177, 232, 255, 0.12);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(2, 6, 14, 0.58);
   --site-glass-rim: rgba(191, 244, 255, 0.42);
@@ -1511,16 +1511,16 @@
   /* Plasmatic Jelly material + arcs (meanings: the :root block). */
   --site-jelly-haze: #bff4ff;
   --site-jelly-haze-strong: #d6f9ff;
-  --site-jelly-haze-fill: 0.06;
-  --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.09;
-  --site-jelly-haze-chrome: 0.13;
-  --site-jelly-haze-overlay: 0.05;
+  --site-jelly-haze-fill: 0.0085;
+  --site-jelly-haze-inset: 0.0055;
+  --site-jelly-haze-pane: 0.0125;
+  --site-jelly-haze-chrome: 0.018;
+  --site-jelly-haze-overlay: 0.007;
   --site-jelly-plasma-a: #76f7ff;
   --site-jelly-plasma-b: #c86bff;
-  --site-jelly-plasma: 0.9;
+  --site-jelly-plasma: 0.247;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.25;
+  --site-jelly-quiet: 0.125;
   --site-jelly-haze-edge: 0.04;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -1534,9 +1534,9 @@
   --gel-fresnel: rgba(191, 244, 255, 0.22);
   --gel-well-shade: rgba(0, 0, 0, 0.5);
   --gel-specular: rgba(214, 250, 255, 0.9);
-  --gel-edge-r: rgba(255, 90, 160, 0.22);
-  --gel-edge-g: rgba(0, 255, 198, 0.1);
-  --gel-edge-b: rgba(118, 160, 255, 0.26);
+  --gel-edge-r: rgba(255, 90, 160, 0.088);
+  --gel-edge-g: rgba(0, 255, 198, 0.04);
+  --gel-edge-b: rgba(118, 160, 255, 0.104);
   --focus-ring: var(--site-accent);
 }
 
@@ -4945,7 +4945,7 @@ html.nav-pop .page-root > * {
       border: solid currentColor;
       border-width: 0 2px 2px 0;
       transform: rotate(45deg) scale(0);
-      transition: transform 0.12s ease-in;
+      transition: transform 0.12s var(--ease-smooth);
     }
     :where(input[type='checkbox']):checked::after {
       transform: rotate(45deg) scale(1);
@@ -4967,7 +4967,7 @@ html.nav-pop .page-root > * {
       border-radius: 50%;
       background: currentColor;
       transform: scale(0);
-      transition: transform 0.12s ease-in;
+      transition: transform 0.12s var(--ease-smooth);
     }
     :where(input[type='radio']):checked::after {
       transform: scale(1);

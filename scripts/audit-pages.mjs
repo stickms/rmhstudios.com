@@ -220,7 +220,9 @@ for (const pass of passes) {
 }
 await browser.close();
 
-const isAllowed = (kind, path, text) => (allow[kind]?.[path] ?? []).includes(text);
+// `"*"` allows a finding on every route: for the one element the shell puts on all of them (the full-bleed phone top bar).
+const isAllowed = (kind, path, text) =>
+  (allow[kind]?.[path] ?? []).includes(text) || (allow[kind]?.['*'] ?? []).includes(text);
 let bad = 0;
 const report = [];
 const TITLES = {
@@ -245,6 +247,13 @@ const audited = new Set(routes);
 const stale = [];
 for (const kind of ['edges', 'near', 'anatomy']) {
   for (const [path, list] of Object.entries(allow[kind] ?? {})) {
+    if (path === '*') {
+      // A wildcard entry is stale only when no audited route shows it.
+      for (const text of list)
+        if (!Object.values(findings[kind]).some((l) => l.includes(text)))
+          stale.push(`${kind} * :: ${text}`);
+      continue;
+    }
     if (!audited.has(path.split(' @')[0])) continue;
     for (const text of list)
       if (!findings[kind][path]?.includes(text)) stale.push(`${kind} ${path} :: ${text}`);

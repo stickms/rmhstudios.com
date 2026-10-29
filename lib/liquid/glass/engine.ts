@@ -222,7 +222,7 @@ const WORKER_WAIT_MS = 5000;
  * the host keeps its CSS material underneath until the fade has landed; only then is it marked
  * `data-liquid-canvas="on"` and the static coat, edge and carrier step aside. A cross-fade, never a swap.
  */
-const ENTER_MS = 300;
+const ENTER_MS = 450;
 /**
  * New slabs admitted per reconcile pass. A cold page admits up to the rim budget at once; each admission reads its
  * host's computed style and adds a canvas, so they are spread over a few frames instead of landing in one.

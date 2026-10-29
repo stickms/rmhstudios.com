@@ -246,7 +246,7 @@ export function MembershipPanel({
           the hero has painted. A feature deep link scrolls into this part, so
           that arrival renders it at once. */}
       <DeferOnNavigate enabled={!highlightFeature} minHeight="100vh">
-        <div className="relative px-4 pb-12 pt-8 sm:pt-12">
+        <div className="relative pb-12 pt-8 sm:pt-12 md:px-4">
           {/* ── Status banner ──────────────────────────────────── */}
           {status && (
             <Reveal

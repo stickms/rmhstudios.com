@@ -299,7 +299,8 @@ Cards `--site-radius` (32px), controls `--site-radius-sm` (24px — a pill up to
 the scale is concentric in 8px steps). **A cluster of related controls is one body,
 not a row of pills:** `<JellyGroup>` (`components/ui/jelly-group.tsx`) is the parent
 and its members are flat (no edge or body of their own); the selected member is a
-feathered glow lying on it, as in `LiquidTabs` on the main site. A lone control may
+quiet flat mark lying on it (a neutral capsule with a hairline ring in `LiquidTabs` on the
+main site; a feathered glow in `JellyGroup`). A lone control may
 still be a pill. A dropdown is one rounded slab: its rows are plain
 text with no fill, edge or radius, and hover wakes a soft glow behind the text.
 Games and apps keep their own design scheme (e.g. the raised tab thumb). Game play-fields are
@@ -339,6 +340,13 @@ strips behind its status bar and floating tab bar from any `position: fixed` / s
 layer at a screen edge, as one flat band. So: no `theme-color` on iOS, no full-viewport
 fixed decoration (hide it on `html.ios-webkit`; the root carries the canvas), and
 nothing pinned flush to the top or bottom (float it off the edge like `.radial-topbar`).
+**One deliberate exception (owner, 2026-10-29):** below 640px the top bar is a full-bleed bar
+(`.radial-topbar.glass-chrome` in `radial.css`), square-cornered, carrying
+`env(safe-area-inset-top)` in its own height and in `--rad-topbar-h` — it IS the strip behind
+the status bar, in the page's own glass, not a stray flat band. Don't turn it back into a pill
+on phones, and don't take it as licence for any other flush layer. While the globe menu is open
+the **root** canvas carries the veil's tint (`html.ios-webkit:has(.radial-hub[data-phase='open'])`)
+so the strips behind the bars take the menu's colour with no fixed layer at the edge.
 `lib/__tests__/ios-edge-contract.test.ts` asserts the invariants and ratchets any new
 edge-pinned layer; `pnpm audit:pages` finds the rest in a real browser. Both are
 described in [`docs/page-consistency.md`](docs/page-consistency.md) §"How consistency

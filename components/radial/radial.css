@@ -332,12 +332,43 @@ body:has(.radial-shell) .call-banner {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
+/* Narrow screens (2026-10-29): the capsule gives way to a bar that spans the whole top of the screen. On a phone the
+   capsule's margins and curve spend width the brand, search and avatar need, and a floating pill under the status bar
+   reads as an unrelated object; a full-width bar is what every native app and Apple's own chrome does. It is still the
+   one glass chrome slab (same role, same rim), square-cornered because the screen's edge is its edge, and it carries
+   the status-bar inset in its own height (`env(safe-area-inset-top)`: 0 where Safari keeps its bar outside the page, the
+   notch where the page runs under it), so the bar always starts at the very top and its content always clears the
+   clock. `--rad-topbar-h` includes the inset, so every offset keyed to it (rails, banners, sticky headers, the
+   `100dvh - bar` minimums) stays exact. This is a deliberate exception to the iOS edge contract: the bar IS the
+   strip behind the status bar, tinted by the same glass the rest of the page uses, not a stray flat band
+   (lib/__tests__/ios-edge-contract.test.ts). */
+@media (max-width: 639.98px) {
+  :root {
+    --rad-topbar-h: calc(3.5rem + env(safe-area-inset-top, 0px));
+  }
+  .radial-topbar.glass-chrome {
+    top: 0;
+    margin: 0;
+    height: var(--rad-topbar-h);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-inline: max(1rem, var(--safe-left, 0px)) max(1rem, var(--safe-right, 0px));
+    border-radius: 0;
+    /* The role's hairline border would draw a box around the full-bleed bar; the shader's rim (or, before it
+       arrives, the CSS twin) already marks its lower edge. */
+    border-inline-width: 0;
+    border-top-width: 0;
+  }
+}
 .radial-topbar__brand {
   display: inline-flex;
   align-items: baseline;
   gap: var(--rad-2);
   color: var(--site-text);
   text-decoration: none;
+  /* The wordmark is the home link and was 44×30: under the touch target the bar's own buttons honour. The extra hit
+     area is padding taken back out of the margin, so the wordmark and its baseline sit exactly where they did. */
+  padding: 0.5rem;
+  margin: -0.5rem;
 }
 .radial-topbar__mark {
   font-weight: 700;
@@ -1613,6 +1644,30 @@ html:not(.perf-lite) .radial-shell:has(.radial-hub:is([data-phase='open'], [data
       color-mix(in srgb, var(--site-bg) 24%, transparent),
       color-mix(in srgb, var(--site-bg) 24%, transparent)
     );
+  }
+}
+
+/* ── The strips behind Safari's bars while the menu is open (2026-10-29) ────────────────────────────────────────────
+   The veil and the blurred page only exist INSIDE the viewport box, but on iOS 26 Safari the status-bar strip and the
+   floating tab bar are tinted from the ROOT's canvas (globals.css "The page's ground on iOS WebKit"), which the menu
+   never touched: the menu opened as a tinted screen between two strips of untinted page. So while the menu is up the
+   root carries the veil's own tint over the canvas, and the strips take the menu's colour — with no fixed layer at the
+   edge, which is what would bring the flat bands back. It follows the veil exactly: opaque `--site-bg` where the veil is
+   opaque (iPad and wider), 24% on phones where the page stays visible behind the globe. Not on `closing`: the veil
+   shrinks away from the edges first, and the strips should be the first thing to hand the page back. */
+html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) {
+  background-image:
+    linear-gradient(var(--site-bg), var(--site-bg)),
+    var(--site-canvas);
+}
+@media (max-width: 767.98px) {
+  html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) {
+    background-image:
+      linear-gradient(
+        color-mix(in srgb, var(--site-bg) 24%, transparent),
+        color-mix(in srgb, var(--site-bg) 24%, transparent)
+      ),
+      var(--site-canvas);
   }
 }
 
@@ -3855,6 +3910,13 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 .radial-feed .radial-wheel__slot,
 .radial-feed .radial-wheel__lead {
   max-width: 100%;
+}
+/* The lead slot's own content (the compose box, or its signed-out prompt) is shared with the classic columns, which
+   inset it with `mx-3` because they have no gutter of their own. Here the wheel already supplies the gutter, so that
+   margin left the compose card 24px narrower than the posts under it and the tab strip above it: three edges where
+   there should be one. The card is flush with the column, like every slot. */
+.radial-feed .radial-wheel__lead > * {
+  margin-inline: 0;
 }
 .radial-shell:is([data-layout='catalog'], [data-layout='workspace']) .rad-rail--live {
   display: none;

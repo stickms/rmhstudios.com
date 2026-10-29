@@ -163,7 +163,7 @@ interface LiquidTabsProps {
   /** Accessible name for the tablist / nav (already translated). */
   'aria-label'?: string;
   /**
-   * How the selected tab is drawn. `glow` (the main-site default): a flat, feathered accent wash lying on the track,
+   * How the selected tab is drawn. `glow` (the main-site default, whatever the name): a flat neutral capsule with a hairline inset ring lying on the track,
    * and the tabs are flat members of it (not jelly bodies). `thumb` (the default on game/app routes, from
    * `AppTierContext`): the raised thumb the full-screen games and apps keep for their own design scheme.
    */

@@ -47,7 +47,7 @@ function AppsIndexPage() {
       wide
     >
       <CatalogTabs active="/apps" />
-      <div className="px-4 pb-12">
+      <div className="pb-12 md:px-4">
         <CuratedBuildsTab
           curated={apps}
           seed={0}

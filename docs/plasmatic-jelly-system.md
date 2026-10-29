@@ -101,6 +101,31 @@ z-index inside its host; the arc layer is the one body-level exception and is
 `pointer-events: none`. No jelly layer paints more than 2 px outside its host's border
 box (`AMBIENT_BOUNDS.maxOverdrawPx`, the focus ring's offset).
 
+### 1.0 Calibration to Apple's Liquid Glass (2026-10-29)
+
+The material was read as heavy and toy-like (a thick lit bevel, a rainbow edge, smoky haze inside every card) and
+as unfinished on load (the CSS first paint differed from the shader's, so surfaces visibly changed 0.3–2.5 s later).
+One pass retuned it by the tokens, not by new code paths, toward what Apple's Liquid Glass does: a thin specular rim, a
+clear body, refraction only at the edge, restrained dispersion.
+
+| Token | Was | Now | Why |
+| ----- | --- | --- | --- |
+| `--gel-bevel` | 6px | 4px | a thinner lit band; the CSS twin (`--jelly-edge-blur`) is 5px, was 10px |
+| `--gel-shoulder` / `--gel-mold` / `--gel-feather` | 1.2 / 1.15 / 3px | 1 / 0.8 / 2px | a flatter shoulder that still dissolves into the ground |
+| `--gel-dispersion`, `--gel-disperse-r/-b` | 8, ±1.5px | 3, ±0.75px | the R/G/B split is a hint, not a rainbow |
+| `--gel-edge-r/-g/-b` alpha | ×1 | ×0.4 | same |
+| `--site-jelly-haze-*` alpha, `--site-jelly-plasma`, `--site-jelly-quiet` | ×1 | ×0.25, ×0.5, ×0.5 | the body reads clear, not smoky; the currents that remain run along the rim |
+| `--liquid-enter` = `ENTER_MS` | 300ms | 450ms | the hand-over from CSS to shader is a longer, softer cross-fade |
+| `--gel-fresnel` (light themes) | 0.55 / 0.6 | 0.3 | the CSS-only rim (what a low-tier or not-yet-admitted surface shows) read as a heavy white ring on a light ground |
+| `--site-glass-overlay-tint` | bg 86% | bg 94% | dialog bodies let the page behind show through at ~14%, which hurt legibility |
+
+Because the CSS tier reads the same tokens, the first paint now looks like the loaded state and the hand-over is
+not a visible change. The engine still starts after the window `load` event (a node inserted into a subtree React has
+not hydrated is a #418), but its idle timeout is 400 ms, not 2.5 s (`hooks/useLiquidInteractions.ts`). Other changes in the same pass: the selected tab on the main site is a flat neutral capsule with a
+hairline inset ring (`app/jelly-coverage.css` §6b), and the globe cursor defaults to a small translucent graphite
+sphere (`lib/globe-cursor/settings.ts`). Electric arcs still default to `full`; moving that default is a product
+decision (it is stored per account), not a styling one.
+
 ### 1.1 The physical layers (#989)
 
 Read a surface from the inside out. Each layer is drawn by a shared service and tuned
@@ -359,6 +384,18 @@ table):
 | `lite` (`perf-lite`)                   | 0    | 0          | 0        | 0            | 3 (press) | 0        | off          | 0           |
 | `off` (degraded)                       | 0    | 0          | 0        | 0            | 3 (press) | 0        | off          | 0           |
 | game playing (`html[data-game-state]`) | 2    | 0          | 0        | 0            | 0         | 0        | off          | 0           |
+
+**Software rendering is the `lite` tier (2026-10-29).** A browser with hardware acceleration off, a blocklisted
+GPU or a VM rasterises and composites on the CPU, where animated haze carriers and shader rims cost tens of
+milliseconds a frame. Measured on `/games` (a shared 4-core box, software raster): Firefox 2 → 49 fps, Chromium
+8 → 57 (acceleration off) and 11 → 44 (no WebGL), WebKit 1.4 → 14, with the same page, from putting the page on
+`lite` (`perf-lite`). `reconcileSoftRender()` (`lib/perf-tier.ts`) therefore runs once at idle **before any jelly
+service starts**: a software WebGL renderer string (SwiftShader, llvmpipe, Basic Render, "software") or no WebGL at
+all, read through the same throwaway-context probe the games use (`lib/render/probe.ts`), stamps `html.perf-lite`,
+skips loading the carrier, arc and shader chunks, and caches the finding in `localStorage` (`rmh-soft-render`, 12 h)
+so the next page load gets the class from the pre-paint script on its first frame. A real GPU on a later visit clears
+it. WebKit reports "Apple GPU" whatever it draws with, so it cannot be detected this way (and Safari cannot turn
+acceleration off); nothing frame-rate-driven was added, on purpose (`lib/perf-tier.ts` §Why capability reads).
 
 Animated area (haze + carriers) is also capped at 1.5 / 1.25 / 1 viewports. Ambient
 bounds (`AMBIENT_BOUNDS`): drift ≤ 12 px/s, feature size ≥ 120 px, luminance period ≥ 6 s,
