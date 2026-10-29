@@ -56,8 +56,10 @@ export function gainFromDistMult(distMult: number, dist: number): number {
   if (gain > SND_GAIN_MAX) gain = SND_GAIN_MAX;
   if (gain < SND_GAIN_MIN) {
     // Sounds under snd_gain_min fall to zero over the distance it took them to get there.
-    gain = SND_GAIN_MIN * (2 - relative * SND_GAIN_MIN);
-    if (gain <= 0) gain = 0;
+    const fade = 2 - relative * SND_GAIN_MIN;
+    // At audibleRadius() the fade is 0 in exact arithmetic but ~1e-16 in doubles;
+    // snap it so a voice at the edge is culled rather than kept at an inaudible gain.
+    gain = fade > 1e-9 ? SND_GAIN_MIN * fade : 0;
   }
   return gain;
 }
