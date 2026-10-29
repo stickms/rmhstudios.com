@@ -103,7 +103,29 @@ export interface CatalogItem {
    * icon it uses) painted with a fixed kit. Unlike a war paint, the kit cannot be changed.
    */
   sk?: { kit: number; base: number };
+  /**
+   * The schema's `item_class` (weapon-slot items only): the entity the game creates for it, before the
+   * per-class translation (`tf_weapon_shotgun` → `tf_weapon_shotgun_soldier`). `tf_wearable…` items in a
+   * weapon slot (Gunboats, a shield) are worn, not held. The browser game simulates items by it.
+   */
+  ic?: string;
+  /** The schema's raw `anim_slot` (weapon-slot items only, upper-cased), e.g. `ITEM1`, `FORCE_NOT_USED`. */
+  an?: string;
+  /**
+   * Gameplay attributes (weapon-slot items only), from `attributes` and `static_attrs`, each as
+   * `[attribute_class, value, op]`: what the game's attribute hooks (CALL_ATTRIB_HOOK_*) read, and how
+   * stacked values combine ({@link AttributeOp}). Display-only and economy attributes are left out.
+   */
+  at?: CatalogAttribute[];
 }
+
+/**
+ * How a hooked attribute value combines with the running value (the attribute's `description_format`,
+ * attribute_manager.cpp ApplyAttribute): 0 multiply (percentages), 1 add, 2 replace, 3 bitwise or,
+ * 4 none (a format the game never hooks: a date, an account id).
+ */
+export type AttributeOp = 0 | 1 | 2 | 3 | 4;
+export type CatalogAttribute = [cls: string, value: number | string, op: AttributeOp];
 
 /** The weapon poses the class bodies have a standing animation for (`stand_primary` …). */
 export const HELD_STANCES = ['primary', 'secondary', 'melee'] as const;

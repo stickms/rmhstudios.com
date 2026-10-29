@@ -8,6 +8,7 @@
  */
 
 import type { MatchCommand, MatchOptions, PlayerInfo, RoomSummary } from './match-host';
+import type { Catalog } from '../../tf2-loadout/catalog-types';
 
 /** Pool → worker. */
 export type ToWorker =
@@ -18,6 +19,11 @@ export type ToWorker =
   | { t: 'input'; matchId: string; playerId: number; data: ArrayBuffer }
   | { t: 'command'; matchId: string; playerId: number; cmd: MatchCommand }
   | { t: 'dispose'; matchId: string }
+  /**
+   * The item schema (the loadout builder's catalog) every match on the thread reads: items
+   * beyond stock and the equip checks (sim/items). Sent on spawn and whenever the hub sees a new one.
+   */
+  | { t: 'items'; catalog: Catalog | null }
   | { t: 'shutdown' };
 
 export interface WirePacket {

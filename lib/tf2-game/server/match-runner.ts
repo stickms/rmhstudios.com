@@ -41,6 +41,7 @@
 import { TICK_INTERVAL } from '../core/constants';
 import type { MatchFactory, MatchHost, MatchOptions, OutgoingPacket } from './match-host';
 import type { CloseReason, FromWorker, MatchFrame, ToWorker, WirePacket } from './worker-protocol';
+import { setItemCatalog } from '../sim/items/registry';
 
 export const TICK_INTERVAL_MS = TICK_INTERVAL * 1000;
 export const MAX_CATCH_UP_TICKS = 5;
@@ -114,6 +115,8 @@ export class MatchRunner {
   private readonly heartbeatMs: number;
 
   private running = false;
+  /** Held by `setPaused` (a listen server's pause menu): no ticks run until it is released. */
+  private paused = false;
   private last = 0;
   private acc = 0;
   private timer: TimerHandle | null = null;
@@ -156,6 +159,10 @@ export class MatchRunner {
     }
     if (message.t === 'create') {
       this.create(message.matchId, message.opts);
+      return;
+    }
+    if (message.t === 'items') {
+      setItemCatalog(message.catalog);
       return;
     }
     const match = this.matches.get(message.matchId);
@@ -210,6 +217,24 @@ export class MatchRunner {
       this.postSummaries(now);
     }
     return due;
+  }
+
+  /**
+   * Hold every match exactly where it is (offline play's pause menu), or release it: the clock restarts
+   * from the moment of release, so no ticks are owed for the time spent paused.
+   */
+  setPaused(paused: boolean): void {
+    if (this.paused === paused) return;
+    this.paused = paused;
+    if (paused) {
+      this.running = false;
+      if (this.timer !== null) {
+        this.clearTimer(this.timer);
+        this.timer = null;
+      }
+    } else if (this.hasRunningMatch()) {
+      this.ensureLoop();
+    }
   }
 
   shutdown(): void {
@@ -378,7 +403,7 @@ export class MatchRunner {
   }
 
   private ensureLoop(): void {
-    if (!this.autoRun || this.shutDown) return;
+    if (!this.autoRun || this.shutDown || this.paused) return;
     if (this.timer !== null || this.deferred) return;
     if (!this.running) {
       this.running = true;
@@ -405,7 +430,7 @@ export class MatchRunner {
   }
 
   private wake(): void {
-    if (this.shutDown || !this.running) return;
+    if (this.shutDown || !this.running || this.paused) return;
     this.pump();
     if (this.hasRunningMatch()) this.scheduleNext();
     else this.stopLoop();

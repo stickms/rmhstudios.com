@@ -68,6 +68,24 @@ for c,n,w in CLASSES:
         name = f'vm-{n}-{"fire" if fire else "idle"}'
         vms.append(dict(name=name, view=dict(origin=[1420,1440,340], angles=[0,180,0], fov=90), vm=vm, script=script))
 scenes['tf2/ctf_2fort'] += vms
+# loadouts (shoot.ts --loadout <dir>; without it the same players render stock): unlock weapons,
+# painted cosmetics (two-tone Team Spirit on RED and BLU), a bone-merged coat, a festivized
+# Powerjack, unusual effects, and the Direct Hit in first person
+lo = [
+  player(1,3,2,1150,1290,300,0,127, items='P127/S133w/M6/C183p5046e13/C446p5051'),
+  player(2,3,3,1150,1360,300,0,127, items='P127/S133w/M6/C183p5046e13/C446p5051'),
+  player(3,7,2,1150,1430,300,0,215, items='P215/S12/M214f/C126p5054e59'),
+  player(4,7,3,1150,1500,300,0,214, items='P215/S12/M214f/C126p5054e59'),
+  player(5,6,2,1150,1570,300,0,41, items='P41/S11/M5/C378/C734p5051'),
+  player(6,5,3,1150,1640,300,0,35, items='P17/S35/M8/C126e19'),
+]
+scenes['tf2/ctf_2fort'].append(dict(name='loadout-players', view=dict(origin=[1330,1465,345], angles=[10,180,0], fov=75), entities=lo, script=[dict(advance=0.5)]))
+scenes['tf2/ctf_2fort'].append(dict(name='loadout-closeup', view=dict(origin=[1290,1325,335], angles=[6,180,0], fov=45), entities=lo[:2], script=[dict(advance=0.5)]))
+for fire in (0,1):
+    vm = dict(cls=3, team=2, defindex=127, vmActivity=0, vmActivitySeq=1, eyeOrigin=dict(x=1420,y=1440,z=340), eyeAngles=dict(x=0,y=180,z=0), velocity=dict(x=0,y=0,z=0), visible=True)
+    script = [dict(advance=0.5)]
+    if fire: script += [dict(vm=dict(vmActivity=3, vmActivitySeq=2)), dict(advance=0.06)]
+    scenes['tf2/ctf_2fort'].append(dict(name='loadout-vm-directhit-' + ('fire' if fire else 'idle'), view=dict(origin=[1420,1440,340], angles=[0,180,0], fov=90), vm=vm, script=script))
 
 def prop(id, model, x, y, z, yaw, seq='', skin=0, **kw):
     f = dict(model=model, ox=x, oy=y, oz=z, pitch=0, yaw=yaw, roll=0, skin=skin, body=0, sequence=seq, animStart=0, playbackRate=1, modelScale=1)

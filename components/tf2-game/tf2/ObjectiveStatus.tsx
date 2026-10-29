@@ -259,7 +259,7 @@ export function PayloadPanel({ match }: { match: HudMatch }) {
 }
 
 /** Everything objective-related, composed per mode. */
-export default function ObjectiveStatus({ match, team }: { match: HudMatch; team: number }) {
+export default function ObjectiveStatus({ match, team, koth = true }: { match: HudMatch; team: number; koth?: boolean }) {
   const style = usePanelStyle('HudObjectiveStatus');
   if (!style) return null;
   return (
@@ -270,7 +270,7 @@ export default function ObjectiveStatus({ match, team }: { match: HudMatch; team
         {match.mode === 'ctf' ? <FlagPanel match={match} localTeam={team} /> : null}
         {match.mode !== 'pl' && match.mode !== 'ctf' ? <ControlPoints points={match.controlPoints} /> : null}
       </div>
-      <KothClocks match={match} />
+      {koth ? <KothClocks match={match} /> : null}
     </>
   );
 }

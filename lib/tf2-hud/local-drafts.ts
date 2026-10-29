@@ -9,6 +9,12 @@ import { binaryContent, textContent } from './project/model';
 import type { FileContent, HudMeta, Overlay } from './project/types';
 
 const DB_NAME = 'rmh-tf2-hud';
+
+/**
+ * BroadcastChannel a saved draft is announced on (`{ type: 'draft-saved', id }`), so a game tab testing
+ * that draft (/tf2/play, lib/tf2-game/client/custom-hud) re-reads it.
+ */
+export const DRAFT_CHANNEL = 'rmh-tf2-hud-drafts';
 const DB_VERSION = 1;
 
 export interface DraftSummary {

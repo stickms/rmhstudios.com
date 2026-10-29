@@ -237,7 +237,22 @@ export interface PickupEvent {
   item: string;
 }
 
+/**
+ * The answer to a player's loadout command (sim/items/command.ts), to that player only:
+ * `applied` (put on now: in the respawn room, or not alive yet), `pending` (at the next respawn
+ * or resupply), `refused` (failed the checks; `reason` says which).
+ */
+export interface LoadoutEvent extends Recipients {
+  type: 'loadout';
+  player: number;
+  /** TF_CLASS_* the loadout is for. */
+  cls: number;
+  status: 'applied' | 'pending' | 'refused';
+  reason?: string;
+}
+
 export type SimEvent =
+  | LoadoutEvent
   | SoundEvent
   | EffectEvent
   | DeathEvent

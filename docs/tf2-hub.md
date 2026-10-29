@@ -30,6 +30,8 @@ A loadout is one class plus `slots`: `{ [slotKey]: { item: defindex, paint?: def
 3. **Refresh.** No cron and nobody pushes anything: a read serves the stored snapshot and, when it was last checked more than 6 hours ago, refreshes it in the background. The mirror is queried with `If-None-Match`, so an unchanged schema is a 304. A failed refresh keeps the previous snapshot and backs off 15 minutes. The first-ever read builds synchronously.
 4. **Serving.** `GET /api/tf2-loadout/catalog` — public, ETag = schema hash, `max-age` 15 min + a day of stale-while-revalidate.
 
+Weapon-slot items also carry what the browser game needs to play them (catalog `BUILDER_VERSION` 10): `ic` (the schema's `item_class`), `an` (its raw `anim_slot`, when set) and `at` (gameplay attributes, `[attribute class, value, op]` from `attributes` and `static_attrs`; cosmetic-only attributes are left out, and `op` follows the attribute's `description_format`). The game's TF2 match workers read the stored row; see [the game's Items and loadouts](tf2-game.md#items-and-loadouts).
+
 ## 3D models
 
 The builder shows a 3D view of any item that has a model (`ItemModelViewer` → `Viewer3D`, three.js via react-three-fiber). The viewer, three.js and the model are all lazy: nothing loads until an item with a model is selected, and the canvas renders on demand (no idle cost), with orbit and zoom.

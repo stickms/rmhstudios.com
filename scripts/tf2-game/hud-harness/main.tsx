@@ -1,13 +1,28 @@
 /**
  * The HUD harness page: renders `HudPreview` for the scenario in the query
  * string (?s=soldierCp&menu=class&scores=1&touch=1). Not part of the app.
+ *
+ * `&hud=moved|fonts|base` draws that custom HUD (custom-huds.ts; `base` is the
+ * TF2 Default through the custom-HUD pipeline); `&compare=1` puts the game's
+ * HUD (left) next to the HUD editor's preview pipeline for the same HUD and
+ * state (right), both laid out at 960×540. `&editor=1` opens the in-game HUD
+ * editor over the game (inside a memory router, as the editor needs one).
  */
 import { createRoot } from 'react-dom/client';
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  RouterProvider,
+} from '@tanstack/react-router';
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import HudPreview from '@/components/tf2-game/preview/HudPreview';
 import type { HudMenu } from '@/components/tf2-game/GameHud';
-import type { ScenarioName } from '@/components/tf2-game/preview/sample-states';
+import { SCENARIOS, type ScenarioName } from '@/components/tf2-game/preview/sample-states';
+import { useHudChoice } from '@/components/tf2-game/custom-hud/hud-choice';
+import { harnessHud } from './custom-huds';
+import EditorPane from './EditorPane';
 import './harness.css';
 
 const q = new URLSearchParams(location.search);
@@ -19,20 +34,79 @@ const menu: HudMenu | undefined =
       ? { kind: 'voice', menu: 0 }
       : menuParam === 'chat'
         ? { kind: 'chat', team: true }
-        : menuParam === 'pause' || menuParam === 'settings'
-          ? { kind: 'pause', view: menuParam === 'settings' ? 'settings' : 'menu' }
+        : menuParam === 'pause' || menuParam === 'settings' || menuParam === 'hud'
+          ? { kind: 'pause', view: menuParam === 'pause' ? 'menu' : menuParam }
           : undefined;
 
-void i18next
-  .use(initReactI18next)
-  .init({ lng: 'en', fallbackLng: 'en', resources: {}, interpolation: { escapeValue: false } })
-  .then(() => {
-    createRoot(document.getElementById('root')!).render(
-      <HudPreview
-        scenario={(q.get('s') ?? 'soldierCp') as ScenarioName}
-        menu={menu}
-        scores={q.get('scores') === '1'}
-        touch={q.has('touch') ? q.get('touch') === '1' : undefined}
-      />,
-    );
-  });
+const scenario = (q.get('s') ?? 'soldierCp') as ScenarioName;
+const hudId = q.get('hud');
+const compare = q.get('compare') === '1';
+const editor = q.get('editor') === '1';
+
+async function main(): Promise<void> {
+  await i18next
+    .use(initReactI18next)
+    .init({ lng: 'en', fallbackLng: 'en', resources: {}, interpolation: { escapeValue: false } });
+  if (hudId) {
+    const loaded = await harnessHud(hudId);
+    if (loaded) await useHudChoice.getState().apply(loaded, { persist: false });
+  }
+  const root = createRoot(document.getElementById('root')!);
+  const preview = (
+    <HudPreview
+      scenario={scenario}
+      menu={menu}
+      scores={q.get('scores') === '1'}
+      touch={q.has('touch') ? q.get('touch') === '1' : undefined}
+    />
+  );
+  const active = useHudChoice.getState().active;
+  if (editor) {
+    useHudChoice.getState().setEditorOpen(true);
+    const router = createRouter({
+      routeTree: createRootRoute({
+        component: () => (
+          <div className="app-theme tf2hud-theme" style={{ width: '100%', height: '100%' }}>
+            {preview}
+          </div>
+        ),
+      }),
+      history: createMemoryHistory({ initialEntries: ['/tf2/play'] }),
+    });
+    root.render(<RouterProvider router={router} />);
+    return;
+  }
+  if (!compare || !active) {
+    root.render(preview);
+    return;
+  }
+  const W = 960;
+  const H = 540;
+  const label = {
+    position: 'absolute',
+    top: 4,
+    left: 8,
+    color: '#ff0',
+    font: '13px monospace',
+    zIndex: 100,
+  } as const;
+  root.render(
+    <div style={{ display: 'flex', gap: 0, background: '#000', width: W * 2, height: H }}>
+      <div style={{ position: 'relative', width: W, height: H }}>
+        <div style={{ position: 'relative', width: W, height: H }}>{preview}</div>
+        <span style={label}>game · {active.hud.meta.name}</span>
+      </div>
+      <div style={{ position: 'relative', width: W, height: H }}>
+        <div
+          className="tf2hud-backdrop-game"
+          style={{ position: 'relative', width: W, height: H, overflow: 'hidden' }}
+        >
+          <EditorPane hud={active} state={SCENARIOS[scenario]()} w={W} h={H} />
+        </div>
+        <span style={label}>editor preview pipeline</span>
+      </div>
+    </div>,
+  );
+}
+
+void main();

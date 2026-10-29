@@ -10,6 +10,7 @@
 
 import { registerWeapon, type WeaponFactory, type WeaponSpec } from '../weapon-api';
 import '../projectiles';
+import { UNLOCK_WEAPON_SCRIPTS } from '../../data/unlock-scripts';
 import { Flamethrower } from './flamethrower';
 import { HitscanGun } from './gun';
 import { GrenadeLauncher, RocketLauncher, StickybombLauncher, SyringeGun } from './launchers';
@@ -69,7 +70,14 @@ export const STOCK_WEAPON_FACTORIES: Readonly<Record<string, WeaponFactory>> = {
   tf_weapon_pda_spy: make(DisguiseKit),
 };
 
-/** Registers every stock weapon factory with the core's weapon registry (idempotent). */
+/**
+ * Registers every stock weapon factory with the core's weapon registry (idempotent), and every
+ * unlock script that refines a stock class (data/unlock-scripts.ts) with its base's factory.
+ */
 export function registerStockWeapons(): void {
   for (const [classname, factory] of Object.entries(STOCK_WEAPON_FACTORIES)) registerWeapon(classname, factory);
+  for (const [classname, script] of Object.entries(UNLOCK_WEAPON_SCRIPTS)) {
+    const factory = STOCK_WEAPON_FACTORIES[script.base];
+    if (factory) registerWeapon(classname, factory);
+  }
 }

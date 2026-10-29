@@ -41,6 +41,11 @@ export const TF2_C2S = {
    * MatchCommand { kind: 'extra' }, validated by `zExtraCommand` (./lobby-schema.ts).
    */
   EXTRA: 'tf2:extra',
+  /**
+   * Equip a loadout for a class (the pause menu's Loadout view): MatchCommand { kind: 'loadout' },
+   * shape-checked by `zLoadout` (./lobby-schema.ts), checked against the item catalog in the match.
+   */
+  LOADOUT: 'tf2:loadout',
   /** Clock sync — answered by `TF2_S2C.PONG`. */
   PING: 'tf2:ping',
 } as const;

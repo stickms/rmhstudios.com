@@ -8,6 +8,7 @@ import type { BspFile, BspWorldLight } from '../../formats/bsp';
 import { decompressVis, findLeaf } from '../../formats/bsp';
 import { srcDirToThree } from '../coords';
 import { newAmbientCube, type AmbientCube, type SunLight, type Vec3Like } from '../lighting';
+import type { LoadoutModels } from './loadout-models';
 import type { ModelLibrary } from './model-asset';
 import { setInstanceLighting, type InstanceUniforms } from './model-material';
 
@@ -141,6 +142,10 @@ export interface RenderContext {
   attachment(id: number, name: string, out: Matrix4): boolean;
   /** Game of the assets ('tf2' | 'hl2' | 'portal'). */
   game: string;
+  /** The loadout model channel (unlock weapons, cosmetics); absent: stock looks only. */
+  loadout?: LoadoutModels | null;
+  /** The world camera's position (three world space), for level of detail. */
+  cameraPosition?: Vector3;
 }
 
 /**

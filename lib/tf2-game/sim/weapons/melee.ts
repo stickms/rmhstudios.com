@@ -60,10 +60,11 @@ export class TFWeaponMelee extends TFWeapon {
     super(spec);
   }
 
-  /** SDK: CTFWeaponBaseMelee::GetSwingRange (shield charge 128; swords 72 — none stock). */
+  /** SDK: CTFWeaponBaseMelee::GetSwingRange (shield charge 128; swords — is_a_sword — 72). */
   swingRange(): number {
     const o = this.owner;
-    return o && o.cond.has(TF_COND.SHIELD_CHARGE) ? MELEE.chargeRange : MELEE.range;
+    if (o && o.cond.has(TF_COND.SHIELD_CHARGE)) return MELEE.chargeRange;
+    return this.attributes.apply('is_a_sword', 0) !== 0 ? MELEE.swordRange : MELEE.range;
   }
 
   override calcIsAttackCriticalHelper(cmd: UserCmd): boolean {

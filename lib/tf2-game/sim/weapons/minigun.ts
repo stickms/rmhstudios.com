@@ -35,6 +35,7 @@ import {
 } from './constants';
 import { TFWeaponGun } from './gun';
 import { num } from './tf-weapon';
+import { hookWeapon } from '../items/attributes';
 
 export class Minigun extends TFWeaponGun {
   /** m_iWeaponState (AC_STATE_*). */
@@ -112,7 +113,8 @@ export class Minigun extends TFWeaponGun {
       default:
       case AC_STATE_IDLE: {
         this.windUp();
-        const spin = MINIGUN.spinUpTime;
+        // TF_MINIGUN_SPINUP_TIME × mult_minigun_spinup_time (Natascha, the Brass Beast, Tomislav).
+        const spin = Math.max(hookWeapon(this, o, 'mult_minigun_spinup_time', MINIGUN.spinUpTime), 0.00001);
         this.nextPrimaryAttack = t + spin;
         this.nextSecondaryAttack = t + spin;
         this.timeWeaponIdle = t + spin;

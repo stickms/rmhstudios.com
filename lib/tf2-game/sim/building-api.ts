@@ -21,6 +21,8 @@ import {
 import { NET_OBJECT, type NetRecord, type NetSchema } from './net-schema';
 import { DMG_BLAST, type DamageInfo } from './damage';
 import type { Player } from './player';
+import { hookWeapon } from './items/attributes';
+import { damageWeapon } from './items/hooks';
 
 /** ObjectType_t (tf_shareddefs.h). */
 export const OBJ_DISPENSER = 0;
@@ -159,7 +161,10 @@ export abstract class BaseObject extends Entity {
     const attacker = this.world.entity(info.attacker);
     if (attacker && attacker !== this && this.inSameTeam(attacker)) return 0;
     if (attacker) this.damagers.set(attacker.id, this.world.curtime);
-    const dmg = this.modifyDamage(info);
+    let dmg = this.modifyDamage(info);
+    // CBaseObject::OnTakeDamage: the weapon's mult_dmg_vs_buildings (the Homewrecker, the Jag).
+    const weapon = damageWeapon(this.world, info);
+    if (weapon) dmg = hookWeapon(weapon, weapon.owner, 'mult_dmg_vs_buildings', dmg);
     if (dmg <= 0) return 0;
     this.health -= dmg;
     this.world.events.push({

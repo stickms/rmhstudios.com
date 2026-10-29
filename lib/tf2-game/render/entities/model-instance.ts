@@ -62,6 +62,7 @@ export class ModelInstance {
   private groups: Record<string, number> = {};
   private groupsKey = '';
   private readonly children: ModelInstance[] = [];
+  private meshFilter: ((mesh: Mesh) => boolean) | null = null;
   /** Set when this instance is bone-merged onto a parent. */
   mergedInto: ModelInstance | null = null;
   disposed = false;
@@ -164,8 +165,20 @@ export class ModelInstance {
     for (const e of this.meshes) {
       const g = e.prim.bodygroup;
       const shown = !g || (this.groups[g] ?? 0) === (e.prim.sub ?? 0);
-      e.mesh.visible = shown && !e.mesh.userData.skinHidden;
+      e.mesh.visible =
+        shown && !e.mesh.userData.skinHidden && (!this.meshFilter || this.meshFilter(e.mesh));
     }
+  }
+
+  /** An extra per-mesh visibility rule on top of skins and body groups (festivizer parts). */
+  setMeshFilter(filter: ((mesh: Mesh) => boolean) | null): void {
+    this.meshFilter = filter;
+    this.applyBodygroups();
+  }
+
+  /** The instance's materials that exist so far, by template index. */
+  forEachMaterial(fn: (m: ShaderMaterial, index: number) => void): void {
+    for (const [i, m] of this.materials) fn(m, i);
   }
 
   // ─── placement and pose ───────────────────────────────────────────────────
@@ -270,6 +283,25 @@ export class ModelInstance {
       }
     }
     this.children.push(child);
+  }
+
+  /**
+   * Hangs a rigid child (a loadout-channel weapon or cosmetic: plain meshes in the item's own
+   * compiled bind space) on the first of `bones` this model has, at `pose` (the item's
+   * pose-to-bone matrix) — where the game's bone-merge puts it. False when no bone matches.
+   */
+  attachRigid(child: ModelInstance, bones: readonly string[], pose: Matrix4): boolean {
+    let bone: Bone | null = null;
+    for (const name of bones) if ((bone = this.bone(name))) break;
+    if (!bone) return false;
+    child.detach();
+    child.mergedInto = this;
+    child.frameGroup.matrix.identity();
+    child.root.matrix.copy(pose);
+    child.root.matrixWorldNeedsUpdate = true;
+    bone.add(child.root);
+    this.children.push(child);
+    return true;
   }
 
   detach(): void {

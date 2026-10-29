@@ -24,6 +24,7 @@
 import type { Tf2Mode } from '../data/maps';
 import type { BotDifficulty, ClassChoice, TeamChoice } from '../net/events';
 import type { ExtraCommandArgs } from '../net/extra-commands';
+import type { LoadoutSlots, TfClass } from '../../tf2-loadout/catalog-types';
 
 /** What a match is created with. Validated by the hub before it gets here. */
 export interface MatchOptions {
@@ -57,7 +58,13 @@ export type MatchCommand =
    * to a handler registered with `registerExtraCommand` (net/extra-commands.ts).
    * Validated by `zExtraCommand` (net/lobby-schema.ts).
    */
-  | { kind: 'extra'; command: string; args: ExtraCommandArgs };
+  | { kind: 'extra'; command: string; args: ExtraCommandArgs }
+  /**
+   * Equip a loadout for a class (the pause menu's Loadout view): checked against the item catalog
+   * on the simulation thread (sim/items/command.ts), applied at the next respawn or resupply —
+   * at once in the player's own respawn room. Shape-validated by `zLoadout` (net/lobby-schema.ts).
+   */
+  | { kind: 'loadout'; cls: TfClass; slots: LoadoutSlots };
 
 export interface PlayerInfo {
   name: string;
