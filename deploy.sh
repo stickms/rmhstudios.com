@@ -164,7 +164,10 @@ curl_retry() {
 get_commit_info() {
     local rev="${1:-HEAD}"
     DEPLOY_SHORT_HASH=$("$GIT_BIN" rev-parse --short "$rev" 2>/dev/null || echo "unknown")
-    DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%B "$rev" 2>/dev/null || echo "(no commit message)")
+    # The subject line only, like the CI card (deploy.yml `--pretty=%s`). The whole body is a squash merge's list of
+    # every commit in the PR — 7-11 KB on 2026-10-29 — and Discord rejects an embed description over 4096 characters,
+    # so the card for any such deploy never updated. Clipped as well, for a subject that is itself too long.
+    DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%s "$rev" 2>/dev/null | cut -c1-300 || echo "(no commit message)")
     DEPLOY_AUTHOR=$("$GIT_BIN" log -1 --pretty='%an' "$rev" 2>/dev/null || echo "unknown")
     # Escape special JSON characters and control characters
     DEPLOY_COMMIT_MSG=$(printf '%s' "$DEPLOY_COMMIT_MSG" | \
