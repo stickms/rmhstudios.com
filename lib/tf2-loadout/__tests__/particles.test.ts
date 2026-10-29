@@ -246,4 +246,26 @@ describe('PCF playback', () => {
     });
     expect(env.environment.points.get(0)?.position.z).toBeCloseTo(1.25 / 0.01905);
   });
+
+  it('anchors a bone-merged cosmetic effect to the player skeleton bone', () => {
+    const { bundle } = simulation(definition('attachment'));
+    bundle.schema = { attachment: 'unusual' };
+    const owner = new Group();
+    const body = new Group();
+    const head = new Group();
+    head.name = 'bip_head';
+    head.position.set(0, 1.5, 0);
+    body.add(head);
+    body.updateMatrixWorld(true);
+    owner.userData.particleAttachments = {
+      unusual: { bone: 'bip_head', bind: new Matrix4().toArray() },
+    };
+    const env = createParticleEnvironment(bundle, owner, body, new Box3(), {
+      x: 0,
+      y: 0,
+      z: 0,
+      s: 1,
+    });
+    expect(env.environment.points.get(0)?.position.z).toBeCloseTo(1.5 / 0.01905);
+  });
 });

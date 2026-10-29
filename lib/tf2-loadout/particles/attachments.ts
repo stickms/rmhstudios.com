@@ -47,6 +47,11 @@ export function createParticleEnvironment(
   queried?.traverse((o) => {
     if (o.name) bones.set(o.name.toLowerCase(), o);
   });
+  // A bone-merged cosmetic drops its copies of the shared bones, so the attachment's bone
+  // lives on the player's skeleton; the cosmetic's own bones take precedence.
+  body?.traverse((o) => {
+    if (o.name) ownerBones.set(o.name.toLowerCase(), o);
+  });
   owner?.traverse((o) => {
     if (o.name) ownerBones.set(o.name.toLowerCase(), o);
   });
