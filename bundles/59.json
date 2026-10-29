@@ -1,0 +1,1625 @@
+{
+ "id": 59,
+ "materials": {
+  "effects/animatedcards/animated_cards.vmt": {
+   "params": {
+    "$basetexture": "Effects\\AnimatedCards/animated_cards",
+    "$overbrightfactor": "1",
+    "$translucent": "1"
+   },
+   "proxies": [],
+   "shader": "spritecard",
+   "textures": {
+    "$basetexture": {
+     "flags": 8192,
+     "frames": [
+      "frame0"
+     ],
+     "height": 256,
+     "sequences": {
+      "0": {
+       "clamp": false,
+       "duration": 32.0,
+       "frames": [
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.0009765625,
+           0.001953125,
+           0.1240234375,
+           0.248046875
+          ],
+          [
+           0.0009765625,
+           0.001953125,
+           0.1240234375,
+           0.248046875
+          ],
+          [
+           0.0009765625,
+           0.001953125,
+           0.1240234375,
+           0.248046875
+          ],
+          [
+           0.0009765625,
+           0.001953125,
+           0.1240234375,
+           0.248046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.1259765625,
+           0.001953125,
+           0.2490234375,
+           0.248046875
+          ],
+          [
+           0.1259765625,
+           0.001953125,
+           0.2490234375,
+           0.248046875
+          ],
+          [
+           0.1259765625,
+           0.001953125,
+           0.2490234375,
+           0.248046875
+          ],
+          [
+           0.1259765625,
+           0.001953125,
+           0.2490234375,
+           0.248046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.2509765625,
+           0.001953125,
+           0.3740234375,
+           0.248046875
+          ],
+          [
+           0.2509765625,
+           0.001953125,
+           0.3740234375,
+           0.248046875
+          ],
+          [
+           0.2509765625,
+           0.001953125,
+           0.3740234375,
+           0.248046875
+          ],
+          [
+           0.2509765625,
+           0.001953125,
+           0.3740234375,
+           0.248046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.3759765625,
+           0.001953125,
+           0.4990234375,
+           0.248046875
+          ],
+          [
+           0.3759765625,
+           0.001953125,
+           0.4990234375,
+           0.248046875
+          ],
+          [
+           0.3759765625,
+           0.001953125,
+           0.4990234375,
+           0.248046875
+          ],
+          [
+           0.3759765625,
+           0.001953125,
+           0.4990234375,
+           0.248046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.5009765625,
+           0.001953125,
+           0.6240234375,
+           0.248046875
+          ],
+          [
+           0.5009765625,
+           0.001953125,
+           0.6240234375,
+           0.248046875
+          ],
+          [
+           0.5009765625,
+           0.001953125,
+           0.6240234375,
+           0.248046875
+          ],
+          [
+           0.5009765625,
+           0.001953125,
+           0.6240234375,
+           0.248046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.6259765625,
+           0.001953125,
+           0.7490234375,
+           0.248046875
+          ],
+          [
+           0.6259765625,
+           0.001953125,
+           0.7490234375,
+           0.248046875
+          ],
+          [
+           0.6259765625,
+           0.001953125,
+           0.7490234375,
+           0.248046875
+          ],
+          [
+           0.6259765625,
+           0.001953125,
+           0.7490234375,
+           0.248046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.7509765625,
+           0.001953125,
+           0.8740234375,
+           0.248046875
+          ],
+          [
+           0.7509765625,
+           0.001953125,
+           0.8740234375,
+           0.248046875
+          ],
+          [
+           0.7509765625,
+           0.001953125,
+           0.8740234375,
+           0.248046875
+          ],
+          [
+           0.7509765625,
+           0.001953125,
+           0.8740234375,
+           0.248046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.8759765625,
+           0.001953125,
+           0.9990234375,
+           0.248046875
+          ],
+          [
+           0.8759765625,
+           0.001953125,
+           0.9990234375,
+           0.248046875
+          ],
+          [
+           0.8759765625,
+           0.001953125,
+           0.9990234375,
+           0.248046875
+          ],
+          [
+           0.8759765625,
+           0.001953125,
+           0.9990234375,
+           0.248046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.0009765625,
+           0.251953125,
+           0.1240234375,
+           0.498046875
+          ],
+          [
+           0.0009765625,
+           0.251953125,
+           0.1240234375,
+           0.498046875
+          ],
+          [
+           0.0009765625,
+           0.251953125,
+           0.1240234375,
+           0.498046875
+          ],
+          [
+           0.0009765625,
+           0.251953125,
+           0.1240234375,
+           0.498046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.1259765625,
+           0.251953125,
+           0.2490234375,
+           0.498046875
+          ],
+          [
+           0.1259765625,
+           0.251953125,
+           0.2490234375,
+           0.498046875
+          ],
+          [
+           0.1259765625,
+           0.251953125,
+           0.2490234375,
+           0.498046875
+          ],
+          [
+           0.1259765625,
+           0.251953125,
+           0.2490234375,
+           0.498046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.2509765625,
+           0.251953125,
+           0.3740234375,
+           0.498046875
+          ],
+          [
+           0.2509765625,
+           0.251953125,
+           0.3740234375,
+           0.498046875
+          ],
+          [
+           0.2509765625,
+           0.251953125,
+           0.3740234375,
+           0.498046875
+          ],
+          [
+           0.2509765625,
+           0.251953125,
+           0.3740234375,
+           0.498046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.3759765625,
+           0.251953125,
+           0.4990234375,
+           0.498046875
+          ],
+          [
+           0.3759765625,
+           0.251953125,
+           0.4990234375,
+           0.498046875
+          ],
+          [
+           0.3759765625,
+           0.251953125,
+           0.4990234375,
+           0.498046875
+          ],
+          [
+           0.3759765625,
+           0.251953125,
+           0.4990234375,
+           0.498046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.5009765625,
+           0.251953125,
+           0.6240234375,
+           0.498046875
+          ],
+          [
+           0.5009765625,
+           0.251953125,
+           0.6240234375,
+           0.498046875
+          ],
+          [
+           0.5009765625,
+           0.251953125,
+           0.6240234375,
+           0.498046875
+          ],
+          [
+           0.5009765625,
+           0.251953125,
+           0.6240234375,
+           0.498046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.6259765625,
+           0.251953125,
+           0.7490234375,
+           0.498046875
+          ],
+          [
+           0.6259765625,
+           0.251953125,
+           0.7490234375,
+           0.498046875
+          ],
+          [
+           0.6259765625,
+           0.251953125,
+           0.7490234375,
+           0.498046875
+          ],
+          [
+           0.6259765625,
+           0.251953125,
+           0.7490234375,
+           0.498046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.7509765625,
+           0.251953125,
+           0.8740234375,
+           0.498046875
+          ],
+          [
+           0.7509765625,
+           0.251953125,
+           0.8740234375,
+           0.498046875
+          ],
+          [
+           0.7509765625,
+           0.251953125,
+           0.8740234375,
+           0.498046875
+          ],
+          [
+           0.7509765625,
+           0.251953125,
+           0.8740234375,
+           0.498046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.8759765625,
+           0.251953125,
+           0.9990234375,
+           0.498046875
+          ],
+          [
+           0.8759765625,
+           0.251953125,
+           0.9990234375,
+           0.498046875
+          ],
+          [
+           0.8759765625,
+           0.251953125,
+           0.9990234375,
+           0.498046875
+          ],
+          [
+           0.8759765625,
+           0.251953125,
+           0.9990234375,
+           0.498046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.0009765625,
+           0.501953125,
+           0.1240234375,
+           0.748046875
+          ],
+          [
+           0.0009765625,
+           0.501953125,
+           0.1240234375,
+           0.748046875
+          ],
+          [
+           0.0009765625,
+           0.501953125,
+           0.1240234375,
+           0.748046875
+          ],
+          [
+           0.0009765625,
+           0.501953125,
+           0.1240234375,
+           0.748046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.1259765625,
+           0.501953125,
+           0.2490234375,
+           0.748046875
+          ],
+          [
+           0.1259765625,
+           0.501953125,
+           0.2490234375,
+           0.748046875
+          ],
+          [
+           0.1259765625,
+           0.501953125,
+           0.2490234375,
+           0.748046875
+          ],
+          [
+           0.1259765625,
+           0.501953125,
+           0.2490234375,
+           0.748046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.2509765625,
+           0.501953125,
+           0.3740234375,
+           0.748046875
+          ],
+          [
+           0.2509765625,
+           0.501953125,
+           0.3740234375,
+           0.748046875
+          ],
+          [
+           0.2509765625,
+           0.501953125,
+           0.3740234375,
+           0.748046875
+          ],
+          [
+           0.2509765625,
+           0.501953125,
+           0.3740234375,
+           0.748046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.3759765625,
+           0.501953125,
+           0.4990234375,
+           0.748046875
+          ],
+          [
+           0.3759765625,
+           0.501953125,
+           0.4990234375,
+           0.748046875
+          ],
+          [
+           0.3759765625,
+           0.501953125,
+           0.4990234375,
+           0.748046875
+          ],
+          [
+           0.3759765625,
+           0.501953125,
+           0.4990234375,
+           0.748046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.5009765625,
+           0.501953125,
+           0.6240234375,
+           0.748046875
+          ],
+          [
+           0.5009765625,
+           0.501953125,
+           0.6240234375,
+           0.748046875
+          ],
+          [
+           0.5009765625,
+           0.501953125,
+           0.6240234375,
+           0.748046875
+          ],
+          [
+           0.5009765625,
+           0.501953125,
+           0.6240234375,
+           0.748046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.6259765625,
+           0.501953125,
+           0.7490234375,
+           0.748046875
+          ],
+          [
+           0.6259765625,
+           0.501953125,
+           0.7490234375,
+           0.748046875
+          ],
+          [
+           0.6259765625,
+           0.501953125,
+           0.7490234375,
+           0.748046875
+          ],
+          [
+           0.6259765625,
+           0.501953125,
+           0.7490234375,
+           0.748046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.7509765625,
+           0.501953125,
+           0.8740234375,
+           0.748046875
+          ],
+          [
+           0.7509765625,
+           0.501953125,
+           0.8740234375,
+           0.748046875
+          ],
+          [
+           0.7509765625,
+           0.501953125,
+           0.8740234375,
+           0.748046875
+          ],
+          [
+           0.7509765625,
+           0.501953125,
+           0.8740234375,
+           0.748046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.8759765625,
+           0.501953125,
+           0.9990234375,
+           0.748046875
+          ],
+          [
+           0.8759765625,
+           0.501953125,
+           0.9990234375,
+           0.748046875
+          ],
+          [
+           0.8759765625,
+           0.501953125,
+           0.9990234375,
+           0.748046875
+          ],
+          [
+           0.8759765625,
+           0.501953125,
+           0.9990234375,
+           0.748046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.0009765625,
+           0.751953125,
+           0.1240234375,
+           0.998046875
+          ],
+          [
+           0.0009765625,
+           0.751953125,
+           0.1240234375,
+           0.998046875
+          ],
+          [
+           0.0009765625,
+           0.751953125,
+           0.1240234375,
+           0.998046875
+          ],
+          [
+           0.0009765625,
+           0.751953125,
+           0.1240234375,
+           0.998046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.1259765625,
+           0.751953125,
+           0.2490234375,
+           0.998046875
+          ],
+          [
+           0.1259765625,
+           0.751953125,
+           0.2490234375,
+           0.998046875
+          ],
+          [
+           0.1259765625,
+           0.751953125,
+           0.2490234375,
+           0.998046875
+          ],
+          [
+           0.1259765625,
+           0.751953125,
+           0.2490234375,
+           0.998046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.2509765625,
+           0.751953125,
+           0.3740234375,
+           0.998046875
+          ],
+          [
+           0.2509765625,
+           0.751953125,
+           0.3740234375,
+           0.998046875
+          ],
+          [
+           0.2509765625,
+           0.751953125,
+           0.3740234375,
+           0.998046875
+          ],
+          [
+           0.2509765625,
+           0.751953125,
+           0.3740234375,
+           0.998046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.3759765625,
+           0.751953125,
+           0.4990234375,
+           0.998046875
+          ],
+          [
+           0.3759765625,
+           0.751953125,
+           0.4990234375,
+           0.998046875
+          ],
+          [
+           0.3759765625,
+           0.751953125,
+           0.4990234375,
+           0.998046875
+          ],
+          [
+           0.3759765625,
+           0.751953125,
+           0.4990234375,
+           0.998046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.5009765625,
+           0.751953125,
+           0.6240234375,
+           0.998046875
+          ],
+          [
+           0.5009765625,
+           0.751953125,
+           0.6240234375,
+           0.998046875
+          ],
+          [
+           0.5009765625,
+           0.751953125,
+           0.6240234375,
+           0.998046875
+          ],
+          [
+           0.5009765625,
+           0.751953125,
+           0.6240234375,
+           0.998046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.6259765625,
+           0.751953125,
+           0.7490234375,
+           0.998046875
+          ],
+          [
+           0.6259765625,
+           0.751953125,
+           0.7490234375,
+           0.998046875
+          ],
+          [
+           0.6259765625,
+           0.751953125,
+           0.7490234375,
+           0.998046875
+          ],
+          [
+           0.6259765625,
+           0.751953125,
+           0.7490234375,
+           0.998046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.7509765625,
+           0.751953125,
+           0.8740234375,
+           0.998046875
+          ],
+          [
+           0.7509765625,
+           0.751953125,
+           0.8740234375,
+           0.998046875
+          ],
+          [
+           0.7509765625,
+           0.751953125,
+           0.8740234375,
+           0.998046875
+          ],
+          [
+           0.7509765625,
+           0.751953125,
+           0.8740234375,
+           0.998046875
+          ]
+         ]
+        },
+        {
+         "duration": 1.0,
+         "uv": [
+          [
+           0.8759765625,
+           0.751953125,
+           0.9990234375,
+           0.998046875
+          ],
+          [
+           0.8759765625,
+           0.751953125,
+           0.9990234375,
+           0.998046875
+          ],
+          [
+           0.8759765625,
+           0.751953125,
+           0.9990234375,
+           0.998046875
+          ],
+          [
+           0.8759765625,
+           0.751953125,
+           0.9990234375,
+           0.998046875
+          ]
+         ]
+        }
+       ]
+      }
+     },
+     "width": 512
+    }
+   }
+  }
+ },
+ "schema": {
+  "attach_to_rootbone": "1",
+  "attachment": "unusual",
+  "system": "unusual_orbit_cards_teamcolor_red"
+ },
+ "system": "unusual_orbit_cards_teamcolor_red",
+ "systems": {
+  "unusual_orbit_cards_teamcolor_red": {
+   "children": [
+    {
+     "delay": 0.0,
+     "system": "unusual_orbit_cards_trail_teamcolor_red"
+    }
+   ],
+   "constraints": [],
+   "emitters": [
+    {
+     "function": "emit_instantaneously",
+     "params": {
+      "emission count scale control point": -1,
+      "emission count scale control point field": 0,
+      "emission_start_time": 0.10000000149011612,
+      "maximum emission per frame": -1,
+      "num_to_emit": 1,
+      "num_to_emit_minimum": -1,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0
+     }
+    }
+   ],
+   "forces": [],
+   "initializers": [
+    {
+     "function": "color random",
+     "params": {
+      "color1": [
+       216,
+       216,
+       216,
+       255
+      ],
+      "color2": [
+       233,
+       233,
+       233,
+       255
+      ],
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "tint clamp max": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "tint clamp min": [
+       0,
+       0,
+       0,
+       0
+      ],
+      "tint control point": 0,
+      "tint update movement threshold": 32.0,
+      "tint_perc": 0.0
+     }
+    },
+    {
+     "function": "position within sphere random",
+     "params": {
+      "bias in local system": false,
+      "control_point_number": 0,
+      "create in model": 0,
+      "distance_bias": [
+       1.0,
+       1.0,
+       0.0
+      ],
+      "distance_bias_absolute_value": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "distance_max": 16.0,
+      "distance_min": 16.0,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "randomly distribute to highest supplied control point": false,
+      "randomly distribution growth time": 0.0,
+      "speed_in_local_coordinate_system_max": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "speed_in_local_coordinate_system_min": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "speed_max": 0.0,
+      "speed_min": 0.0,
+      "speed_random_exponent": 1.0
+     }
+    },
+    {
+     "function": "position modify offset random",
+     "params": {
+      "control_point_number": 0,
+      "offset in local space 0/1": false,
+      "offset max": [
+       0.0,
+       0.0,
+       12.0
+      ],
+      "offset min": [
+       0.0,
+       0.0,
+       12.0
+      ],
+      "offset proportional to radius 0/1": false,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0
+     }
+    },
+    {
+     "function": "lifetime random",
+     "params": {
+      "lifetime_max": 10000.0,
+      "lifetime_min": 10000.0,
+      "lifetime_random_exponent": 1.0,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0
+     }
+    },
+    {
+     "function": "radius random",
+     "params": {
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "radius_max": 4.0,
+      "radius_min": 4.0,
+      "radius_random_exponent": 1.0
+     }
+    }
+   ],
+   "material": "effects/animatedcards/animated_cards.vmt",
+   "name": "unusual_orbit_cards_teamcolor_red",
+   "operators": [
+    {
+     "function": "movement basic",
+     "params": {
+      "drag": 0.0,
+      "gravity": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "max constraint passes": 3,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0
+     }
+    },
+    {
+     "function": "movement lock to control point",
+     "params": {
+      "control_point_number": 0,
+      "distance fade range": 0.0,
+      "end_fadeout_exponent": 1.0,
+      "end_fadeout_max": 1.0,
+      "end_fadeout_min": 1.0,
+      "lock rotation": false,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "start_fadeout_exponent": 1.0,
+      "start_fadeout_max": 1.0,
+      "start_fadeout_min": 1.0
+     }
+    },
+    {
+     "function": "movement rotate particle around axis",
+     "params": {
+      "control point": 0,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "rotation axis": [
+       0.0,
+       0.0,
+       1.0
+      ],
+      "rotation rate": 150.0,
+      "use local space": false
+     }
+    },
+    {
+     "function": "set child control points from particle positions",
+     "params": {
+      "# of control points to set": 1,
+      "first control point to set": 1,
+      "first particle to copy": 0,
+      "group id to affect": 0,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "set cp density for particles": false,
+      "set cp orientation for particles": false,
+      "set cp radius for particles": false,
+      "set cp velocity for particles": false
+     }
+    },
+    {
+     "function": "oscillate scalar",
+     "params": {
+      "end time max": 1000.0,
+      "end time min": 1000.0,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "oscillation field": 4,
+      "oscillation frequency max": 1.0,
+      "oscillation frequency min": 1.0,
+      "oscillation multiplier": 2.0,
+      "oscillation rate max": 10.0,
+      "oscillation rate min": 10.0,
+      "oscillation start phase": 0.5,
+      "proportional 0/1": false,
+      "start time max": 0.0,
+      "start time min": 0.0,
+      "start/end proportional": false
+     }
+    }
+   ],
+   "options": {
+    "batch particle systems": false,
+    "bounding_box_max": [
+     10.0,
+     10.0,
+     10.0
+    ],
+    "bounding_box_min": [
+     -10.0,
+     -10.0,
+     -10.0
+    ],
+    "color": [
+     255,
+     255,
+     255,
+     255
+    ],
+    "control point to disable rendering if it is the camera": -1,
+    "cull_control_point": 0,
+    "cull_cost": 1.0,
+    "cull_radius": 0.0,
+    "cull_replacement_definition": "",
+    "group id": 0,
+    "initial_particles": 1,
+    "material": "effects\\animatedcards\\animated_cards.vmt",
+    "max_particles": 1,
+    "maximum draw distance": 100000.0,
+    "maximum sim tick rate": 0.0,
+    "maximum time step": 0.10000000149011612,
+    "minimum rendered frames": 0,
+    "minimum sim tick rate": 0.0,
+    "preventnamebasedlookup": false,
+    "radius": 4.0,
+    "rotation": 0.0,
+    "rotation_speed": 0.0,
+    "sequence_number": 0,
+    "sequence_number 1": 0,
+    "sort particles": true,
+    "time to sleep when not drawn": 8.0,
+    "view model effect": false
+   },
+   "renderers": [
+    {
+     "function": "render_animated_sprites",
+     "params": {
+      "animation rate": 0.8500000238418579,
+      "animation_fit_lifetime": false,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "orientation control point": -1,
+      "orientation_type": 0,
+      "second sequence animation rate": 0.0,
+      "use animation rate as fps": false,
+      "visibility alpha scale maximum": 1.0,
+      "visibility alpha scale minimum": 0.0,
+      "visibility camera depth bias": 0.0,
+      "visibility input maximum": 1.0,
+      "visibility input minimum": 0.0,
+      "visibility proxy input control point number": -1,
+      "visibility proxy radius": 1.0,
+      "visibility radius scale maximum": 1.0,
+      "visibility radius scale minimum": 1.0
+     }
+    }
+   ]
+  },
+  "unusual_orbit_cards_trail_teamcolor_red": {
+   "children": [],
+   "constraints": [],
+   "emitters": [
+    {
+     "function": "emit_continuously",
+     "params": {
+      "emission_duration": 0.0,
+      "emission_rate": 8.0,
+      "emission_start_time": 0.0,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "scale emission to used control points": 0.0,
+      "use parent particles for emission scaling": false
+     }
+    }
+   ],
+   "forces": [],
+   "initializers": [
+    {
+     "function": "color random",
+     "params": {
+      "color1": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "color2": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "tint clamp max": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "tint clamp min": [
+       255,
+       255,
+       255,
+       0
+      ],
+      "tint control point": 0,
+      "tint update movement threshold": 32.0,
+      "tint_perc": 0.0
+     }
+    },
+    {
+     "function": "alpha random",
+     "params": {
+      "alpha_max": 255,
+      "alpha_min": 255,
+      "alpha_random_exponent": 1.0,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0
+     }
+    },
+    {
+     "function": "radius random",
+     "params": {
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "radius_max": 2.75,
+      "radius_min": 2.5,
+      "radius_random_exponent": 1.0
+     }
+    },
+    {
+     "function": "sequence random",
+     "params": {
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "sequence_max": 5,
+      "sequence_min": 0
+     }
+    },
+    {
+     "function": "lifetime random",
+     "params": {
+      "lifetime_max": 1.25,
+      "lifetime_min": 0.75,
+      "lifetime_random_exponent": 1.0,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0
+     }
+    },
+    {
+     "function": "rotation yaw flip random",
+     "params": {
+      "flip percentage": 0.5,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0
+     }
+    },
+    {
+     "function": "rotation random",
+     "params": {
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "rotation_initial": 0.0,
+      "rotation_offset_max": 360.0,
+      "rotation_offset_min": 0.0,
+      "rotation_random_exponent": 1.0
+     }
+    },
+    {
+     "function": "position from parent particles",
+     "params": {
+      "inherited velocity scale": 1.0,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "random parent particle distribution": false
+     }
+    },
+    {
+     "function": "position modify offset random",
+     "params": {
+      "control_point_number": 0,
+      "offset in local space 0/1": false,
+      "offset max": [
+       0.0,
+       0.0,
+       3.0
+      ],
+      "offset min": [
+       0.0,
+       0.0,
+       -3.0
+      ],
+      "offset proportional to radius 0/1": false,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0
+     }
+    }
+   ],
+   "material": "effects/animatedcards/animated_cards.vmt",
+   "name": "unusual_orbit_cards_trail_teamcolor_red",
+   "operators": [
+    {
+     "function": "movement basic",
+     "params": {
+      "drag": 0.0,
+      "gravity": [
+       0.0,
+       0.0,
+       -10.0
+      ],
+      "max constraint passes": 3,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0
+     }
+    },
+    {
+     "function": "lifespan decay",
+     "params": {
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0
+     }
+    },
+    {
+     "function": "radius scale",
+     "params": {
+      "ease_in_and_out": false,
+      "end_time": 1.0,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "radius_end_scale": 0.20000000298023224,
+      "radius_start_scale": 1.0,
+      "scale_bias": 0.25,
+      "start_time": 0.0
+     }
+    },
+    {
+     "function": "rotation basic",
+     "params": {
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0
+     }
+    },
+    {
+     "function": "movement lock to control point",
+     "params": {
+      "control_point_number": 0,
+      "distance fade range": 0.0,
+      "end_fadeout_exponent": 1.0,
+      "end_fadeout_max": 1.0,
+      "end_fadeout_min": 1.0,
+      "lock rotation": false,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "start_fadeout_exponent": 1.0,
+      "start_fadeout_max": 1.0,
+      "start_fadeout_min": 1.0
+     }
+    },
+    {
+     "function": "alpha fade in random",
+     "params": {
+      "fade in curve exponent": 0.0,
+      "fade in time exponent": 1.0,
+      "fade in time max": 0.10000000149011612,
+      "fade in time min": 0.05000000074505806,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "proportional 0/1": true
+     }
+    }
+   ],
+   "options": {
+    "batch particle systems": false,
+    "bounding_box_max": [
+     10.0,
+     10.0,
+     10.0
+    ],
+    "bounding_box_min": [
+     -10.0,
+     -10.0,
+     -10.0
+    ],
+    "color": [
+     255,
+     255,
+     255,
+     255
+    ],
+    "control point to disable rendering if it is the camera": 0,
+    "cull_control_point": 0,
+    "cull_cost": 1.0,
+    "cull_radius": 0.0,
+    "cull_replacement_definition": "",
+    "group id": 0,
+    "initial_particles": 0,
+    "material": "effects\\animatedcards\\animated_cards.vmt",
+    "max_particles": 10,
+    "maximum draw distance": 100000.0,
+    "maximum sim tick rate": 0.0,
+    "maximum time step": 0.10000000149011612,
+    "minimum rendered frames": 0,
+    "minimum sim tick rate": 0.0,
+    "preventnamebasedlookup": false,
+    "radius": 3.0,
+    "rotation": 0.0,
+    "rotation_speed": 0.0,
+    "sequence_number": 0,
+    "sequence_number 1": 0,
+    "sort particles": true,
+    "time to sleep when not drawn": 8.0,
+    "view model effect": false
+   },
+   "renderers": [
+    {
+     "function": "render_animated_sprites",
+     "params": {
+      "animation rate": 1.5,
+      "animation_fit_lifetime": false,
+      "operator end fadein": 0.0,
+      "operator end fadeout": 0.0,
+      "operator fade oscillate": 0.0,
+      "operator start fadein": 0.0,
+      "operator start fadeout": 0.0,
+      "orientation control point": -1,
+      "orientation_type": 0,
+      "second sequence animation rate": 0.0,
+      "use animation rate as fps": false,
+      "visibility alpha scale maximum": 1.0,
+      "visibility alpha scale minimum": 0.0,
+      "visibility camera depth bias": 0.0,
+      "visibility input maximum": 1.0,
+      "visibility input minimum": 1.0,
+      "visibility proxy input control point number": -1,
+      "visibility proxy radius": 1.0,
+      "visibility radius scale maximum": 1.0,
+      "visibility radius scale minimum": 1.0
+     }
+    }
+   ]
+  }
+ },
+ "v": 1
+}

@@ -1,0 +1,156 @@
+{
+ "visualKeys": {
+  "skin": 1301,
+  "player_bodygroups": 1132,
+  "styles": 598,
+  "use_per_class_bodygroups": 19,
+  "playback_activity": 2,
+  "custom_sound0": 2,
+  "attached_particlesystems": 1,
+  "vm_bodygroup_state_override": 1,
+  "vm_bodygroup_override": 1,
+  "wm_bodygroup_override": 1,
+  "wm_bodygroup_state_override": 1,
+  "code_controlled_bodygroup": 1
+ },
+ "bodygroupKeys": {
+  "hat": {
+   "items": 924,
+   "onAClassBody": true
+  },
+  "headphones": {
+   "items": 342,
+   "onAClassBody": true
+  },
+  "grenades": {
+   "items": 82,
+   "onAClassBody": true
+  },
+  "head": {
+   "items": 77,
+   "onAClassBody": true
+  },
+  "dogtags": {
+   "items": 51,
+   "onAClassBody": true
+  },
+  "shoes_socks": {
+   "items": 35,
+   "onAClassBody": true
+  },
+  "backpack": {
+   "items": 33,
+   "onAClassBody": true
+  },
+  "bullets": {
+   "items": 24,
+   "onAClassBody": true
+  },
+  "shoes": {
+   "items": 15,
+   "onAClassBody": true
+  },
+  "medic_backpack": {
+   "items": 6,
+   "onAClassBody": true
+  },
+  "hands": {
+   "items": 2,
+   "onAClassBody": true
+  },
+  "medal": {
+   "items": 1,
+   "onAClassBody": true
+  },
+  "whole_head": {
+   "items": 1,
+   "onAClassBody": false
+  }
+ },
+ "classBodygroups": {
+  "scout": {
+   "scout": 1,
+   "hat": 2,
+   "headphones": 2,
+   "shoes_socks": 2,
+   "dogtags": 2
+  },
+  "soldier": {
+   "soldier": 1,
+   "rocket": 2,
+   "hat": 2,
+   "medal": 2,
+   "grenades": 2
+  },
+  "pyro": {
+   "pyro": 1,
+   "head": 2,
+   "grenades": 2,
+   "backpack": 2,
+   "righthand": 2
+  },
+  "demo": {
+   "demo": 1,
+   "smile": 2,
+   "shoes": 2,
+   "grenades": 2
+  },
+  "heavy": {
+   "heavy": 1,
+   "hands": 3,
+   "bullets": 2
+  },
+  "engineer": {
+   "engineer": 1,
+   "hat": 2,
+   "rightarm": 3
+  },
+  "medic": {
+   "medic": 1,
+   "medic_backpack": 2
+  },
+  "sniper": {
+   "sniper": 1,
+   "arrows": 2,
+   "hat": 2,
+   "bullets": 2,
+   "darts": 2
+  },
+  "spy": {
+   "spy": 1,
+   "spymask": 2
+  }
+ },
+ "perClass": {
+  "count": 19,
+  "examples": [
+   "164",
+   "165",
+   "166",
+   "170",
+   "242",
+   "243",
+   "244",
+   "245",
+   "268",
+   "269",
+   "270",
+   "271",
+   "272",
+   "273",
+   "274",
+   "275",
+   "276",
+   "277",
+   "655"
+  ]
+ },
+ "unknownGroupItems": {
+  "whole_head": {
+   "count": 1,
+   "examples": [
+    "30211"
+   ]
+  }
+ }
+}

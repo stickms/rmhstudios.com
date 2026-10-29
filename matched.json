@@ -1,0 +1,3178 @@
+{
+ "asked": [
+  "aces high"
+ ],
+ "matched": [
+  "59"
+ ],
+ "names": {
+  "10": [
+   "Purple Energy",
+   "superrare_purpleenergy"
+  ],
+  "100": [
+   "Death by Disco",
+   "unusual_hw_deathbydisco_parent"
+  ],
+  "101": [
+   "It's a Mystery to Everyone",
+   "unusual_mystery_parent"
+  ],
+  "102": [
+   "It's a Puzzle to Me",
+   "unusual_mystery_parent_green"
+  ],
+  "103": [
+   "Ether Trail",
+   "unusual_nether_blue"
+  ],
+  "104": [
+   "Nether Trail",
+   "unusual_nether_pink"
+  ],
+  "105": [
+   "Ancient Eldritch",
+   "unusual_eldritch_flames_purple"
+  ],
+  "106": [
+   "Eldritch Flame",
+   "unusual_eldritch_flames_orange"
+  ],
+  "107": [
+   "Neutron Star",
+   "unusual_universe"
+  ],
+  "108": [
+   "Tesla Coil",
+   "unusual_tesla_flash"
+  ],
+  "109": [
+   "Starstorm Insomnia",
+   "unusual_star_green_parent"
+  ],
+  "11": [
+   "Circling TF Logo",
+   "superrare_circling_tf"
+  ],
+  "110": [
+   "Starstorm Slumber",
+   "unusual_star_purple_parent"
+  ],
+  "111": [
+   "Brain Drain",
+   "unusual_bubble_mess_parent_green"
+  ],
+  "112": [
+   "Open Mind",
+   "unusual_bubble_mess_parent_orange"
+  ],
+  "113": [
+   "Head of Steam",
+   "unusual_bubble_mess_parent_purple"
+  ],
+  "114": [
+   "Galactic Gateway",
+   "unusual_constellations_blue"
+  ],
+  "115": [
+   "The Eldritch Opening",
+   "unusual_constellations_pink"
+  ],
+  "116": [
+   "The Dark Doorway",
+   "unusual_constellations_purple"
+  ],
+  "117": [
+   "Ring of Fire",
+   "unusual_symbols_parent_fire"
+  ],
+  "118": [
+   "Vicious Circle",
+   "unusual_symbols_parent_dead"
+  ],
+  "119": [
+   "White Lightning",
+   "unusual_symbols_parent_lightning"
+  ],
+  "12": [
+   "Massed Flies",
+   "superrare_flies"
+  ],
+  "120": [
+   "Omniscient Orb",
+   "unusual_crystalball"
+  ],
+  "121": [
+   "Clairvoyance",
+   "unusual_psychic_eye"
+  ],
+  "122": [
+   "Fifth Dimension",
+   "unusual_dimension_parent"
+  ],
+  "123": [
+   "Vicious Vortex",
+   "unusual_aura_purple_parent"
+  ],
+  "124": [
+   "Menacing Miasma",
+   "unusual_aura_green_parent"
+  ],
+  "125": [
+   "Abyssal Aura",
+   "unusual_aura_red_parent"
+  ],
+  "126": [
+   "Wicked Wood",
+   "unusual_forest_scene_parent_purple"
+  ],
+  "127": [
+   "Ghastly Grove",
+   "unusual_forest_scene_parent_green"
+  ],
+  "128": [
+   "Mystical Medley",
+   "unusual_magicsmoke_purple_parent"
+  ],
+  "129": [
+   "Ethereal Essence",
+   "unusual_magicsmoke_green_parent"
+  ],
+  "13": [
+   "Burning Flames",
+   "superrare_burning1"
+  ],
+  "130": [
+   "Twisted Radiance",
+   "unusual_magicsmoke_blue_parent"
+  ],
+  "131": [
+   "Violet Vortex",
+   "unusual_vortex_energy_parent_p"
+  ],
+  "132": [
+   "Verdant Vortex",
+   "unusual_vortex_energy_parent_g"
+  ],
+  "133": [
+   "Valiant Vortex",
+   "unusual_vortex_energy_parent_o"
+  ],
+  "134": [
+   "Sparkling Lights",
+   "unusual_sparkling_lights_parent02"
+  ],
+  "135": [
+   "Frozen Icefall",
+   "unusual_icecave_parent"
+  ],
+  "136": [
+   "Fragmented Gluons",
+   "unusual_aurora_parent_green"
+  ],
+  "137": [
+   "Fragmented Quarks",
+   "unusual_aurora_parent_orange"
+  ],
+  "138": [
+   "Fragmented Photons",
+   "unusual_aurora_parent_purple"
+  ],
+  "139": [
+   "Defragmenting Reality",
+   "unusual_polygon_teamcolor_red"
+  ],
+  "14": [
+   "Scorching Flames",
+   "superrare_burning2"
+  ],
+  "140": [
+   null,
+   "unusual_polygon_teamcolor_blue"
+  ],
+  "141": [
+   "Fragmenting Reality",
+   "unusual_polygon_green"
+  ],
+  "142": [
+   "Refragmenting Reality",
+   "unusual_polygon_amber"
+  ],
+  "143": [
+   "Snowfallen",
+   "unusual_snowfall_blue"
+  ],
+  "144": [
+   "Snowblinded",
+   "unusual_snowfall_white"
+  ],
+  "145": [
+   "Pyroland Daydream",
+   "unusual_mayor_balloonicorn_teamcolor_red"
+  ],
+  "146": [
+   null,
+   "unusual_mayor_balloonicorn_teamcolor_blue"
+  ],
+  "147": [
+   "Verdatica",
+   "unusual_circling_spell_green_parent"
+  ],
+  "148": [
+   "Aromatica",
+   "unusual_circling_spell_orange_parent"
+  ],
+  "149": [
+   "Chromatica",
+   "unusual_circling_spell_purple_parent"
+  ],
+  "15": [
+   "Searing Plasma",
+   "superrare_plasma1"
+  ],
+  "150": [
+   "Prismatica",
+   "unusual_circling_spell_blue_parent"
+  ],
+  "151": [
+   "Bee Swarm",
+   "unusual_bees"
+  ],
+  "152": [
+   "Frisky Fireflies",
+   "unusual_playflies_green_parent"
+  ],
+  "153": [
+   "Smoldering Spirits",
+   "unusual_playflies_orange_parent"
+  ],
+  "154": [
+   "Wandering Wisps",
+   "unusual_playflies_purple_parent"
+  ],
+  "155": [
+   "Kaleidoscope",
+   "unusual_kaleido_scope_parent"
+  ],
+  "156": [
+   "Green Giggler",
+   "unusual_face_parent_G"
+  ],
+  "157": [
+   "Laugh-O-Lantern",
+   "unusual_face_parent_O"
+  ],
+  "158": [
+   "Plum Prankster",
+   "unusual_face_parent_P"
+  ],
+  "159": [
+   "Pyroland Nightmare",
+   "unusual_undead_mayor_balloonicorn"
+  ],
+  "16": [
+   "Vivid Plasma",
+   "superrare_plasma2"
+  ],
+  "160": [
+   "Gravelly Ghoul",
+   "unusual_gargoyle"
+  ],
+  "161": [
+   "Vexed Volcanics",
+   "unusual_gargoyle2"
+  ],
+  "162": [
+   "Gourdian Angel",
+   "unusual_candy_parent"
+  ],
+  "163": [
+   "Pumpkin Party",
+   "unusual_pumpkinhead_parent"
+  ],
+  "164": [
+   "Frozen Fractals",
+   "unusual_froststorm_blue_parent"
+  ],
+  "165": [
+   "Lavender Landfall",
+   "unusual_froststorm_purple_parent"
+  ],
+  "166": [
+   "Special Snowfall",
+   "unusual_froststorm_yellow_parent"
+  ],
+  "167": [
+   "Divine Desire",
+   "unusual_swirlybeams_goldpurple_parent"
+  ],
+  "168": [
+   "Distant Dream",
+   "unusual_swirlybeams_pinkblue_parent"
+  ],
+  "169": [
+   "Violent Wintertide",
+   "unusual_icetornado_blue_parent"
+  ],
+  "17": [
+   "Sunbeams",
+   "superrare_beams1"
+  ],
+  "170": [
+   "Blighted Snowstorm",
+   "unusual_icetornado_purple_parent"
+  ],
+  "171": [
+   "Pale Nimbus",
+   "unusual_icetornado_white_parent"
+  ],
+  "172": [
+   "Genus Plasmos",
+   "unusual_genplasmos_parent"
+  ],
+  "173": [
+   "Serenus Lumen",
+   "unusual_genplasmos_b_parent"
+  ],
+  "174": [
+   "Ventum Maris",
+   "unusual_genplasmos_c_parent"
+  ],
+  "175": [
+   "Mirthful Mistletoe",
+   "unusual_mistletoe_teamcolor_red"
+  ],
+  "176": [
+   null,
+   "unusual_mistletoe_teamcolor_blue"
+  ],
+  "177": [
+   "Resonation",
+   "unusual_breaker_green_parent"
+  ],
+  "178": [
+   "Aggradation",
+   "unusual_breaker_orange_parent"
+  ],
+  "179": [
+   "Lucidation",
+   "unusual_breaker_purple_parent"
+  ],
+  "18": [
+   "Circling Peace Sign",
+   "superrare_circling_peacesign"
+  ],
+  "180": [
+   "Stunning",
+   "unusual_star_parent"
+  ],
+  "181": [
+   "Ardentum Saturnalis",
+   "unusual_magic_stingers_orange_parent"
+  ],
+  "182": [
+   "Fragrancium Elementalis",
+   "unusual_magic_stingers_pink_parent"
+  ],
+  "183": [
+   "Reverium Irregularis",
+   "unusual_magic_stingers_teamcolor_red"
+  ],
+  "184": [
+   null,
+   "unusual_magic_stingers_teamcolor_blue"
+  ],
+  "185": [
+   "Perennial Petals",
+   "unusual_flowers_parent"
+  ],
+  "186": [
+   "Flavorsome Sunset",
+   "unusual_bloomhead_orangepurple_parent"
+  ],
+  "187": [
+   "Raspberry Bloom",
+   "unusual_bloomhead_pinkgreen_parent"
+  ],
+  "188": [
+   "Iridescence",
+   "unusual_magicalorb_parent"
+  ],
+  "189": [
+   "Tempered Thorns",
+   "unusual_demonhorns_green_parent"
+  ],
+  "19": [
+   "Circling Heart",
+   "superrare_circling_heart"
+  ],
+  "190": [
+   "Devilish Diablo",
+   "unusual_demonhorns_orange_parent"
+  ],
+  "191": [
+   "Severed Serration",
+   "unusual_demonhorns_purple_parent"
+  ],
+  "192": [
+   "Shrieking Shades",
+   "unusual_souls_shades_parent"
+  ],
+  "193": [
+   "Restless Wraiths",
+   "unusual_souls_teamcolor_red"
+  ],
+  "194": [
+   "Restless Wraiths",
+   "unusual_souls_teamcolor_blue"
+  ],
+  "196": [
+   "Phantom Crown",
+   "unusual_phantomcrown_purple_parent"
+  ],
+  "197": [
+   "Ancient Specter",
+   "unusual_phantomcrown_yellow_parent"
+  ],
+  "198": [
+   "Viridescent Peeper",
+   "unusual_lurking_eyes_parent_g"
+  ],
+  "199": [
+   "Eyes of Molten",
+   "unusual_lurking_eyes_parent_o"
+  ],
+  "200": [
+   "Ominous Stare",
+   "unusual_lurking_eyes_parent_p"
+  ],
+  "201": [
+   "Pumpkin Moon",
+   "unusual_pumpkin_moon_parent"
+  ],
+  "202": [
+   "Frantic Spooker",
+   "unusual_wacky_spooky_ghost_parent_g"
+  ],
+  "203": [
+   "Frightened Poltergeist",
+   "unusual_wacky_spooky_ghost_parent_o"
+  ],
+  "204": [
+   "Energetic Haunter",
+   "unusual_wacky_spooky_ghost_parent_p"
+  ],
+  "205": [
+   "Smissmas Tree",
+   "unusual_smissmas_tree_parent"
+  ],
+  "206": [
+   "Hospitable Festivity",
+   "unusual_tree3_yellow_parent"
+  ],
+  "207": [
+   "Condescending Embrace",
+   "unusual_tree3_teamcolor_red"
+  ],
+  "208": [
+   "Condescending Embrace",
+   "unusual_tree3_teamcolor_blue"
+  ],
+  "209": [
+   "Sparkling Spruce",
+   "unusual_sparkletree_gold_parent"
+  ],
+  "210": [
+   "Glittering Juniper",
+   "unusual_sparkletree_silver_parent"
+  ],
+  "211": [
+   "Prismatic Pine",
+   "unusual_sparkletree_RGB_parent"
+  ],
+  "212": [
+   "Spiraling Lights",
+   "unusual_fairylights_green_parent"
+  ],
+  "213": [
+   "Twisting Lights",
+   "unusual_fairylights_purple_parent"
+  ],
+  "214": [
+   "Stardust Pathway",
+   "unusual_spire_star_parent"
+  ],
+  "215": [
+   "Flurry Rush",
+   "unusual_spire_snowball_parent"
+  ],
+  "216": [
+   "Spark of Smissmas",
+   "unusual_spire_firework_teamcolor_red"
+  ],
+  "217": [
+   "Spark of Smissmas",
+   "unusual_spire_firework_teamcolor_blue"
+  ],
+  "218": [
+   "Polar Forecast",
+   "unusual_snowflake_parent"
+  ],
+  "219": [
+   "Shining Stag",
+   "unusual_antlers_gold_parent"
+  ],
+  "220": [
+   "Holiday Horns",
+   "unusual_antlers_purple_parent"
+  ],
+  "221": [
+   "Ardent Antlers",
+   "unusual_antlers_teamcolor_red"
+  ],
+  "222": [
+   "Ardent Antlers",
+   "unusual_antlers_teamcolor_blue"
+  ],
+  "223": [
+   "Festive Lights",
+   "unusual_festive_lights_lights1_parent"
+  ],
+  "224": [
+   "Crustacean Sensation",
+   "unusual_spycrabs_teamcolor_red"
+  ],
+  "225": [
+   "Crustacean Sensation",
+   "unusual_spycrabs_teamcolor_blue"
+  ],
+  "226": [
+   "Frosted Decadence",
+   "unusual_sprinkles_teamcolor_red"
+  ],
+  "227": [
+   "Frosted Decadence",
+   "unusual_sprinkles_teamcolor_blue"
+  ],
+  "228": [
+   "Sprinkled Delights",
+   "unusual_sprinkles_rainbow_parent"
+  ],
+  "229": [
+   "Terrestrial Favor",
+   "unusual_liquidmagic_green_parent"
+  ],
+  "230": [
+   "Tropical Thrill",
+   "unusual_liquidmagic_ocean_parent"
+  ],
+  "231": [
+   "Flourishing Passion",
+   "unusual_liquidmagic_pink_parent"
+  ],
+  "232": [
+   "Dazzling Fireworks",
+   "unusual_firework_blue_red_parent"
+  ],
+  "233": [
+   "Blazing Fireworks",
+   "unusual_firework_green_yellow_parent"
+  ],
+  "234": [
+   "Shimmering Fireworks",
+   "unusual_firework_orange_yellow_parent"
+  ],
+  "235": [
+   "Twinkling Fireworks",
+   "unusual_firework_pgb_parent"
+  ],
+  "236": [
+   "Sparkling Fireworks",
+   "unusual_firework_purple_yellow_parent"
+  ],
+  "237": [
+   "Glowing Fireworks",
+   "unusual_firework_rainbow_parent"
+  ],
+  "238": [
+   "Glimmering Fireworks",
+   "unusual_firework_wgb_parent"
+  ],
+  "239": [
+   "Flying Lights",
+   "unusual_lanterns_teamcolor_red"
+  ],
+  "240": [
+   "Flying Lights",
+   "unusual_lanterns_teamcolor_blue"
+  ],
+  "241": [
+   "Limelight",
+   "unusual_lanterns_green_parent"
+  ],
+  "242": [
+   "Shining Star",
+   "unusual_lanterns_yellow_parent"
+  ],
+  "243": [
+   "Cold Cosmos",
+   "unusual_coldcosmos_parent"
+  ],
+  "244": [
+   "Refracting Fractals",
+   "unusual_helix_parent"
+  ],
+  "245": [
+   "Startrance",
+   "unusual_stardust_teamcolor_red"
+  ],
+  "246": [
+   "Startrance",
+   "unusual_stardust_teamcolor_blue"
+  ],
+  "247": [
+   "Starlush",
+   "unusual_stardust_green_parent"
+  ],
+  "248": [
+   "Starfire",
+   "unusual_stardust_orange_parent"
+  ],
+  "249": [
+   "Stardust",
+   "unusual_stardust_white_parent"
+  ],
+  "250": [
+   "Contagious Eruption",
+   "unusual_erupt_alien_parent"
+  ],
+  "251": [
+   "Daydream Eruption",
+   "unusual_erupt_daydream_parent"
+  ],
+  "252": [
+   "Volcanic Eruption",
+   "unusual_erupt_volcan_parent"
+  ],
+  "253": [
+   "Divine Sunlight",
+   "unusual_supernova_parent"
+  ],
+  "254": [
+   "Audiophile",
+   "unusual_audio_soundwave_green_parent"
+  ],
+  "255": [
+   "Soundwave",
+   "unusual_audio_soundwave_orange_parent"
+  ],
+  "256": [
+   "Synesthesia",
+   "unusual_audio_soundwave_purple_parent"
+  ],
+  "257": [
+   "Haunted Kraken",
+   "unusual_kraken_green_parent"
+  ],
+  "258": [
+   "Eerie Kraken",
+   "unusual_kraken_purple_parent"
+  ],
+  "259": [
+   "Soulful Slice",
+   "unusual_ghostaxe_parent_green"
+  ],
+  "260": [
+   "Horsemann's Hack",
+   "unusual_ghostaxe_parent_purple"
+  ],
+  "261": [
+   "Haunted Forever!",
+   "unusual_hauntedforever_teamcolor_red"
+  ],
+  "262": [
+   "Haunted Forever!",
+   "unusual_hauntedforever_teamcolor_blue"
+  ],
+  "263": [
+   "Forever and Forever!",
+   "unusual_hauntedforever_green_parent"
+  ],
+  "264": [
+   "Cursed Forever!",
+   "unusual_hauntedforever_purple_parent"
+  ],
+  "265": [
+   "Moth Plague",
+   "unusual_moths_parent"
+  ],
+  "266": [
+   "Malevolent Monoculi",
+   "unusual_eyeboss_parent"
+  ],
+  "267": [
+   "Haunted Wick",
+   "unusual_ghostly_flame_teamcolor_red"
+  ],
+  "268": [
+   "Haunted Wick",
+   "unusual_ghostly_flame_teamcolor_blue"
+  ],
+  "269": [
+   "Wicked Wick",
+   "unusual_ghostly_flame_parent_orange"
+  ],
+  "270": [
+   "Spectral Wick",
+   "unusual_ghostly_flame_parent_purple"
+  ],
+  "271": [
+   "Musical Maelstrom",
+   "unusual_sheetmusic_gold_parent"
+  ],
+  "272": [
+   "Verdant Virtuoso",
+   "unusual_sheetmusic_green_parent"
+  ],
+  "273": [
+   "Silver Serenade",
+   "unusual_sheetmusic_silver_parent"
+  ],
+  "274": [
+   "Cosmic Constellations",
+   "unusual_constellation_teamcolor_red"
+  ],
+  "275": [
+   "Cosmic Constellations",
+   "unusual_constellation_teamcolor_blue"
+  ],
+  "276": [
+   "Dazzling Constellations",
+   "unusual_constellation_green_parent"
+  ],
+  "277": [
+   "Tainted Frost",
+   "unusual_blood_snow_parent"
+  ],
+  "278": [
+   "Starlight Haze",
+   "unusual_aestheticneons_parent"
+  ],
+  "279": [
+   "Hard Carry",
+   "unusual_hardcarry_teamcolor_red"
+  ],
+  "28": [
+   "Genteel Smoke",
+   "drg_pipe_smoke"
+  ],
+  "280": [
+   "Hard Carry",
+   "unusual_hardcarry_teamcolor_blue"
+  ],
+  "281": [
+   "Jellyfish Field",
+   "unusual_jellyfish_teamcolor_red"
+  ],
+  "282": [
+   "Jellyfish Field",
+   "unusual_jellyfish_teamcolor_blue"
+  ],
+  "283": [
+   "Jellyfish Hunter",
+   "unusual_jellyfish_green_parent"
+  ],
+  "284": [
+   "Jellyfish Jam",
+   "unusual_jellyfish_purple_parent"
+  ],
+  "285": [
+   "Global Clusters",
+   "unusual_shootingstar_green_parent"
+  ],
+  "286": [
+   "Celestial Starburst",
+   "unusual_shootingstar_purple_parent"
+  ],
+  "287": [
+   "Sylicone Succiduous",
+   "unusual_shootingstar_orange_parent"
+  ],
+  "288": [
+   "Sakura Smoke Bomb",
+   "unusual_sakura_smokebomb"
+  ],
+  "289": [
+   "Treasure Trove",
+   "unusual_australian_riches"
+  ],
+  "29": [
+   "Stormy Storm",
+   "unusual_storm"
+  ],
+  "290": [
+   "Bubble Breeze",
+   "unusual_buble_parent"
+  ],
+  "291": [
+   "Fireflies",
+   "unusual_fireflies"
+  ],
+  "292": [
+   "Mountain Halo",
+   "unusual_mountainhalo_parent"
+  ],
+  "293": [
+   "Celestial Summit",
+   "unusual_risingstar_green_parent"
+  ],
+  "294": [
+   "Stellar Ascent",
+   "unusual_risingstar_purple_parent"
+  ],
+  "295": [
+   "Sapped",
+   "unusual_sapper_teamcolor_red"
+  ],
+  "296": [
+   "Sapped",
+   "unusual_sapper_teamcolor_blue"
+  ],
+  "297": [
+   "Hellspawned Horns",
+   "unusual_devilish_teamcolor_red"
+  ],
+  "298": [
+   "Hellspawned Horns",
+   "unusual_devilish_teamcolor_blue"
+  ],
+  "299": [
+   "Demonic Impaler",
+   "unusual_devilish_green_parent"
+  ],
+  "30": [
+   "Blizzardy Storm",
+   "unusual_blizzard"
+  ],
+  "300": [
+   "Revenant's Rack",
+   "unusual_devilish_purple_parent"
+  ],
+  "3001": [
+   "Showstopper",
+   "utaunt_firework_teamcolor_red"
+  ],
+  "3002": [
+   "Showstopper",
+   "utaunt_firework_teamcolor_blue"
+  ],
+  "3003": [
+   "Holy Grail",
+   "utaunt_beams_yellow"
+  ],
+  "3004": [
+   "'72",
+   "utaunt_disco_party"
+  ],
+  "3005": [
+   "Fountain of Delight",
+   "utaunt_hearts_glow_parent"
+  ],
+  "3006": [
+   "Screaming Tiger",
+   "utaunt_meteor_parent"
+  ],
+  "3007": [
+   "Skill Gotten Gains",
+   "utaunt_cash_confetti"
+  ],
+  "3008": [
+   "Midnight Whirlwind",
+   "utaunt_tornado_parent_black"
+  ],
+  "3009": [
+   "Silver Cyclone",
+   "utaunt_tornado_parent_white"
+  ],
+  "301": [
+   "Sixth Sense",
+   "unusual_sixthsense_teamcolor_red"
+  ],
+  "3010": [
+   "Mega Strike",
+   "utaunt_lightning_parent"
+  ],
+  "3011": [
+   "Haunted Phantasm",
+   "utaunt_souls_green_parent"
+  ],
+  "3012": [
+   "Ghastly Ghosts",
+   "utaunt_souls_purple_parent"
+  ],
+  "3013": [
+   "Hellish Inferno",
+   "utaunt_hellpit_parent"
+  ],
+  "3014": [
+   "Spectral Swirl",
+   "utaunt_hellswirl"
+  ],
+  "3015": [
+   "Infernal Flames",
+   "utaunt_headless"
+  ],
+  "3016": [
+   "Infernal Smoke",
+   "utaunt_merasmus"
+  ],
+  "3017": [
+   "Acidic Bubbles of Envy",
+   "utaunt_bubbles_glow_green_parent"
+  ],
+  "3018": [
+   "Flammable Bubbles of Attraction",
+   "utaunt_bubbles_glow_orange_parent"
+  ],
+  "3019": [
+   "Poisonous Bubbles of Regret",
+   "utaunt_bubbles_glow_purple_parent"
+  ],
+  "302": [
+   "Sixth Sense",
+   "unusual_sixthsense_teamcolor_blue"
+  ],
+  "3020": [
+   "Roaring Rockets",
+   "utaunt_firework_dragon_parent"
+  ],
+  "3021": [
+   "Spooky Night",
+   "utaunt_smoke_moon_parent"
+  ],
+  "3022": [
+   "Ominous Night",
+   "utaunt_smoke_moon_green_parent"
+  ],
+  "3023": [
+   "Bewitched",
+   "utaunt_arcane_purple_parent"
+  ],
+  "3024": [
+   "Accursed",
+   "utaunt_arcane_green_parent"
+  ],
+  "3025": [
+   "Enchanted",
+   "utaunt_arcane_yellow_parent"
+  ],
+  "3026": [
+   "Static Mist",
+   "utaunt_electric_mist_parent"
+  ],
+  "3027": [
+   "Eerie Lightning",
+   "utaunt_electricity_cloud_parent_WP"
+  ],
+  "3028": [
+   "Terrifying Thunder",
+   "utaunt_electricity_cloud_parent_WB"
+  ],
+  "3029": [
+   "Jarate Shock",
+   "utaunt_electricity_cloud_parent_WY"
+  ],
+  "303": [
+   "Amygdala",
+   "unusual_sixthsense_pink_parent"
+  ],
+  "3030": [
+   "Nether Void",
+   "utaunt_portalswirl_purple_parent"
+  ],
+  "3031": [
+   "Good-Hearted Goodies",
+   "utaunt_present_parent"
+  ],
+  "3032": [
+   "Wintery Wisp",
+   "utaunt_snowring_icy_parent"
+  ],
+  "3033": [
+   "Arctic Aurora",
+   "utaunt_snowring_space_parent"
+  ],
+  "3034": [
+   "Winter Spirit",
+   "utaunt_spirit_winter_parent"
+  ],
+  "3035": [
+   "Festive Spirit",
+   "utaunt_spirit_festive_parent"
+  ],
+  "3036": [
+   "Magical Spirit",
+   "utaunt_spirit_magical_parent"
+  ],
+  "3037": [
+   "Spectral Escort",
+   "utaunt_astralbodies_greenorange_parent"
+  ],
+  "3038": [
+   "Astral Presence",
+   "utaunt_astralbodies_tealpurple_parent"
+  ],
+  "3039": [
+   "Arcane Assistance",
+   "utaunt_astralbodies_teamcolor_red"
+  ],
+  "304": [
+   "The Bone Zone",
+   "unusual_skullhead_parent"
+  ],
+  "3040": [
+   "Arcane Assistance",
+   "utaunt_astralbodies_teamcolor_blue"
+  ],
+  "3041": [
+   "Emerald Allurement",
+   "utaunt_glowyplayer_green_parent"
+  ],
+  "3042": [
+   "Pyrophoric Personality",
+   "utaunt_glowyplayer_orange_parent"
+  ],
+  "3043": [
+   "Spellbound Aspect",
+   "utaunt_glowyplayer_purple_parent"
+  ],
+  "3044": [
+   "Static Shock",
+   "utaunt_electricity_parent"
+  ],
+  "3045": [
+   "Veno Shock",
+   "utaunt_electricity_purple_parent"
+  ],
+  "3046": [
+   "Toxic Terrors",
+   "utaunt_spider_green_parent"
+  ],
+  "3047": [
+   "Arachnid Assault",
+   "utaunt_spider_orange_parent"
+  ],
+  "3048": [
+   "Creepy Crawlies",
+   "utaunt_spider_purple_parent"
+  ],
+  "3049": [
+   "Delightful Star",
+   "utaunt_tf2smissmas_tree_parent"
+  ],
+  "305": [
+   "Arachne's Web",
+   "unusual_spiderweb_parent"
+  ],
+  "3050": [
+   "Frosted Star",
+   "utaunt_tf2smissmas_tree_parent_w"
+  ],
+  "3051": [
+   "Apotheosis",
+   "utaunt_spirits_blue_parent"
+  ],
+  "3052": [
+   "Ascension",
+   "utaunt_spirits_purple_parent"
+  ],
+  "3053": [
+   "Reindoonicorn Rancher",
+   "utaunt_balloonicorn_reindeer_teamcolor_red"
+  ],
+  "3054": [
+   "Reindoonicorn Rancher",
+   "utaunt_balloonicorn_reindeer_teamcolor_blue"
+  ],
+  "3055": [
+   "Twinkling Lights",
+   "utaunt_twinkling_rgb_parent"
+  ],
+  "3056": [
+   "Shimmering Lights",
+   "utaunt_twinkling_goldsilver_parent"
+  ],
+  "3059": [
+   "Spectral Shackles",
+   "utaunt_chain_green_parent"
+  ],
+  "306": [
+   "Acidic Climate",
+   "unusual_deepsmoke_parent_g"
+  ],
+  "3060": [
+   "Cursed Confinement",
+   "utaunt_chain_purple_parent"
+  ],
+  "3061": [
+   "Cavalier de Carte",
+   "utaunt_tarotcard_teamcolor_red"
+  ],
+  "3062": [
+   "Cavalier de Carte",
+   "utaunt_tarotcard_teamcolor_blue"
+  ],
+  "3063": [
+   "Hollow Flourish",
+   "utaunt_tarotcard_orange_parent"
+  ],
+  "3064": [
+   "Magic Shuffle",
+   "utaunt_tarotcard_purple_parent"
+  ],
+  "3065": [
+   "Vigorous Pulse",
+   "utaunt_elebound_green_parent"
+  ],
+  "3066": [
+   "Thundering Spirit",
+   "utaunt_elebound_purple_parent"
+  ],
+  "3067": [
+   "Galvanic Defiance",
+   "utaunt_elebound_yellow_parent"
+  ],
+  "3068": [
+   "Wispy Halos",
+   "utaunt_wispy_parent_g"
+  ],
+  "3069": [
+   "Nether Wisps",
+   "utaunt_wispy_parent_p"
+  ],
+  "307": [
+   "Otherworldly Weather",
+   "unusual_deepsmoke_parent_p"
+  ],
+  "3070": [
+   "Aurora Borealis",
+   "utaunt_auroraglow_green_parent"
+  ],
+  "3071": [
+   "Aurora Australis",
+   "utaunt_auroraglow_orange_parent"
+  ],
+  "3072": [
+   "Aurora Polaris",
+   "utaunt_auroraglow_purple_parent"
+  ],
+  "3073": [
+   "Amethyst Winds",
+   "utaunt_snowswirl_purple_parent"
+  ],
+  "3074": [
+   "Golden Gusts",
+   "utaunt_snowswirl_yellow_parent"
+  ],
+  "3075": [
+   "Smissmas Swirls",
+   "utaunt_snowswirl_teamcolor_red"
+  ],
+  "3076": [
+   "Smissmas Swirls",
+   "utaunt_snowswirl_teamcolor_blue"
+  ],
+  "3077": [
+   "Minty Cypress",
+   "utaunt_treespiral_green_parent"
+  ],
+  "3078": [
+   "Pristine Pine",
+   "utaunt_treespiral_purple_parent"
+  ],
+  "3079": [
+   "Sparkly Spruce",
+   "utaunt_treespiral_teamcolor_red"
+  ],
+  "308": [
+   "Nightmarish Storm",
+   "unusual_deepsmoke_parent_o"
+  ],
+  "3080": [
+   "Sparkly Spruce",
+   "utaunt_treespiral_teamcolor_blue"
+  ],
+  "3081": [
+   "Festive Fever",
+   "utaunt_gifts_teamcolor_red"
+  ],
+  "3082": [
+   "Festive Fever",
+   "utaunt_gifts_teamcolor_blue"
+  ],
+  "3083": [
+   "Golden Glimmer",
+   "utaunt_glitter_parent_gold"
+  ],
+  "3084": [
+   "Frosty Silver",
+   "utaunt_glitter_parent_silver"
+  ],
+  "3085": [
+   "Glamorous Dazzle",
+   "utaunt_glitter_teamcolor_red"
+  ],
+  "3086": [
+   "Glamorous Dazzle",
+   "utaunt_glitter_teamcolor_blue"
+  ],
+  "3087": [
+   "Sublime Snowstorm",
+   "utaunt_ice_parent"
+  ],
+  "3088": [
+   "Marigold Ritual",
+   "utaunt_marigoldritual_teamcolor_red"
+  ],
+  "3089": [
+   "Marigold Ritual",
+   "utaunt_marigoldritual_teamcolor_blue"
+  ],
+  "309": [
+   "Icestruck",
+   "unusual_icearrow_teamcolor_red"
+  ],
+  "3090": [
+   "Pungent Poison",
+   "utaunt_poison_parent_green"
+  ],
+  "3091": [
+   "Blazed Brew",
+   "utaunt_poison_parent_orange"
+  ],
+  "3092": [
+   "Mysterious Mixture",
+   "utaunt_poison_parent_purple"
+  ],
+  "3093": [
+   "Linguistic Deviation",
+   "utaunt_runeprison_green_parent"
+  ],
+  "3094": [
+   "Aurelian Seal",
+   "utaunt_runeprison_yellow_parent"
+  ],
+  "3095": [
+   "Runic Imprisonment",
+   "utaunt_runeprison_teamcolor_red"
+  ],
+  "3096": [
+   "Runic Imprisonment",
+   "utaunt_runeprison_teamcolor_blue"
+  ],
+  "3097": [
+   "Prismatic Haze",
+   "utaunt_prismatichaze_parent"
+  ],
+  "3098": [
+   "Rising Ritual",
+   "utaunt_risingsprit_teamcolor_red"
+  ],
+  "3099": [
+   "Rising Ritual",
+   "utaunt_risingsprit_teamcolor_blue"
+  ],
+  "31": [
+   "Nuts n' Bolts",
+   "unusual_orbit_nutsnbolts"
+  ],
+  "310": [
+   "Icestruck",
+   "unusual_icearrow_teamcolor_blue"
+  ],
+  "3100": [
+   "Bloody Grip",
+   "utaunt_hands_teamcolor_red"
+  ],
+  "3101": [
+   "Bloody Grip",
+   "utaunt_hands_teamcolor_blue"
+  ],
+  "3102": [
+   "Toxic Grip",
+   "utaunt_hands_green_parent"
+  ],
+  "3103": [
+   "Infernal Grip",
+   "utaunt_hands_orange_parent"
+  ],
+  "3104": [
+   "Death Grip",
+   "utaunt_hands_purple_parent"
+  ],
+  "3105": [
+   "Charged Arcane",
+   "utaunt_storm_parent_g"
+  ],
+  "3106": [
+   "Thunderous Rage",
+   "utaunt_storm_parent_k"
+  ],
+  "3107": [
+   "Convulsive Fiery",
+   "utaunt_storm_parent_o"
+  ],
+  "3108": [
+   "Festivized Formation",
+   "utaunt_festivelights_teamcolor_red"
+  ],
+  "3109": [
+   "Festivized Formation",
+   "utaunt_festivelights_teamcolor_blue"
+  ],
+  "311": [
+   "Goldstruck",
+   "unusual_goldarrow_parent"
+  ],
+  "3110": [
+   "Twirling Spirits",
+   "utaunt_glow_spirit_parent_cr"
+  ],
+  "3111": [
+   "Squash n' Twist",
+   "utaunt_glow_spirit_parent_og"
+  ],
+  "3112": [
+   "Midnight Sparklers",
+   "utaunt_glow_spirit_parent_pp"
+  ],
+  "3113": [
+   "Boundless Blizzard",
+   "utaunt_snowflakesaura_parent"
+  ],
+  "3114": [
+   "Solar Scorched",
+   "utaunt_sun_sand_rays_parent"
+  ],
+  "3115": [
+   "Deepsea Rave",
+   "utaunt_undersea_teamcolor_red"
+  ],
+  "3116": [
+   "Deepsea Rave",
+   "utaunt_undersea_teamcolor_blue"
+  ],
+  "3117": [
+   "Blooming Beacon",
+   "utaunt_lavalamp_green_parent"
+  ],
+  "3118": [
+   "Beaming Beacon",
+   "utaunt_lavalamp_purple_parent"
+  ],
+  "3119": [
+   "Blazing Beacon",
+   "utaunt_lavalamp_yellow_parent"
+  ],
+  "312": [
+   "Radiant Rivalry",
+   "unusual_aestheticsigns_teamcolor_red"
+  ],
+  "3120": [
+   "Floppin' Frenzy",
+   "utaunt_fish_parent"
+  ],
+  "3121": [
+   "Pastel Trance",
+   "utaunt_rainbow_teamcolor_red"
+  ],
+  "3122": [
+   "Pastel Trance",
+   "utaunt_rainbow_teamcolor_blue"
+  ],
+  "3123": [
+   "Wildflower Meadows",
+   "utaunt_wild_meadows_parent"
+  ],
+  "3124": [
+   "Deep-Sea Devourer",
+   "utaunt_krakenmouth_green_parent"
+  ],
+  "3125": [
+   "Eldritch Horror",
+   "utaunt_krakenmouth_purple_parent"
+  ],
+  "3126": [
+   "Autumn Leaves",
+   "utaunt_leaftaunt_parent"
+  ],
+  "3127": [
+   "Dead Man's Party",
+   "utaunt_graveparty_parent"
+  ],
+  "3128": [
+   "Potion Explosion",
+   "utaunt_spellsplash_parent"
+  ],
+  "3129": [
+   "Haunted Cremation",
+   "utaunt_cremation_purple_parent"
+  ],
+  "313": [
+   "Radiant Rivalry",
+   "unusual_aestheticsigns_teamcolor_blue"
+  ],
+  "3130": [
+   "Cremation",
+   "utaunt_cremation_black_parent"
+  ],
+  "3131": [
+   "Snowfall",
+   "utaunt_snowfall_parent"
+  ],
+  "3132": [
+   "Galactic Connection",
+   "utaunt_constellations_teamcolor_red"
+  ],
+  "3133": [
+   "Galactic Connection",
+   "utaunt_constellations_teamcolor_blue"
+  ],
+  "3134": [
+   "Dark Twilight",
+   "utaunt_constellations_purple_parent"
+  ],
+  "3135": [
+   "Eldritch Rift",
+   "utaunt_constellations_pink_parent"
+  ],
+  "3136": [
+   "Selfless Sensation",
+   "utaunt_wispyworks_orangegreen_parent"
+  ],
+  "3137": [
+   "Distant Desire",
+   "utaunt_wispyworks_purpleblue_parent"
+  ],
+  "3138": [
+   "Glamorous Glance",
+   "utaunt_wispyworks_yellowpurple_parent"
+  ],
+  "3139": [
+   "Permafrost Essence",
+   "utaunt_innerblizzard_teamcolor_red"
+  ],
+  "314": [
+   "Radiant Legacy",
+   "unusual_aestheticsigns_mannco_parent"
+  ],
+  "3140": [
+   "Permafrost Essence",
+   "utaunt_innerblizzard_teamcolor_blue"
+  ],
+  "3141": [
+   "Arctic Delight",
+   "utaunt_innerblizzard_purple_parent"
+  ],
+  "3142": [
+   "Winning Spirit",
+   "utaunt_spotlight_parent"
+  ],
+  "3143": [
+   "Petal Prance",
+   "utaunt_pedalfly_teamcolor_red"
+  ],
+  "3144": [
+   "Petal Prance",
+   "utaunt_pedalfly_teamcolor_blue"
+  ],
+  "3145": [
+   "Dragonflies' Embrace",
+   "utaunt_dragonfly_teamcolor_red"
+  ],
+  "3146": [
+   "Dragonflies' Embrace",
+   "utaunt_dragonfly_teamcolor_blue"
+  ],
+  "3147": [
+   "Dragonflies' Nature",
+   "utaunt_dragonfly_green_parent"
+  ],
+  "3148": [
+   "Dragonflies' Lucent",
+   "utaunt_dragonfly_purple_parent"
+  ],
+  "3149": [
+   "Electrocution",
+   "utaunt_demigodery_teamcolor_red"
+  ],
+  "315": [
+   "Frosty Flavours",
+   "unusual_frosty_flavours_teamcolor_red"
+  ],
+  "3150": [
+   "Electrocution",
+   "utaunt_demigodery_teamcolor_blue"
+  ],
+  "3151": [
+   "Distress Signal",
+   "utaunt_signalflares_teamcolor_red"
+  ],
+  "3152": [
+   "Distress Signal",
+   "utaunt_signalflares_teamcolor_blue"
+  ],
+  "3153": [
+   "Carioca's Call",
+   "utaunt_signalflares_green_parent"
+  ],
+  "3154": [
+   "Fiesta Royale",
+   "utaunt_celebrationtime_teamcolor_red"
+  ],
+  "3155": [
+   "Fiesta Royale",
+   "utaunt_celebrationtime_teamcolor_blue"
+  ],
+  "3156": [
+   "Grand Jubilee",
+   "utaunt_celebrationtime_yellow_parent"
+  ],
+  "3157": [
+   "Elemental",
+   "utaunt_god_lava_teamcolor_red"
+  ],
+  "3158": [
+   "Elemental",
+   "utaunt_god_lava_teamcolor_blue"
+  ],
+  "3159": [
+   "Godlike",
+   "utaunt_god_gold_parent"
+  ],
+  "316": [
+   "Frosty Flavours",
+   "unusual_frosty_flavours_teamcolor_blue"
+  ],
+  "3160": [
+   "Teamwork Valorance",
+   "utaunt_aestheticlogo_teamcolor_red"
+  ],
+  "3161": [
+   "Teamwork Valorance",
+   "utaunt_aestheticlogo_teamcolor_blue"
+  ],
+  "3162": [
+   "Legacy Logo",
+   "utaunt_aestheticlogo_orange_parent"
+  ],
+  "3163": [
+   "Desert Wind",
+   "utaunt_desert_wind_parent"
+  ],
+  "3164": [
+   "Monsoon Season",
+   "utaunt_desert_monsoon_parent"
+  ],
+  "3165": [
+   "Bountiful Riches",
+   "utaunt_treasure_teamcolor_red"
+  ],
+  "3166": [
+   "Bountiful Riches",
+   "utaunt_treasure_teamcolor_blue"
+  ],
+  "3167": [
+   "Luxurious Lover",
+   "utaunt_hearttreasure_parent"
+  ],
+  "3168": [
+   "Amatory",
+   "utaunt_wiggletube_teamcolor_red"
+  ],
+  "3169": [
+   "Amatory",
+   "utaunt_wiggletube_teamcolor_blue"
+  ],
+  "317": [
+   "Mint Frost",
+   "unusual_frosty_mint_glow_parent"
+  ],
+  "3170": [
+   "Electrum",
+   "utaunt_wiggletube_coffee_parent"
+  ],
+  "3171": [
+   "Sakura Blessings",
+   "utaunt_flowerrain_teamcolor_red"
+  ],
+  "3172": [
+   "Sakura Blessings",
+   "utaunt_flowerrain_teamcolor_blue"
+  ],
+  "3173": [
+   "Violent Violets",
+   "utaunt_flowerrain_purple_parent"
+  ],
+  "3174": [
+   "Power Pressure",
+   "utaunt_poweraura_teamcolor_red"
+  ],
+  "3175": [
+   "Power Pressure",
+   "utaunt_poweraura_teamcolor_blue"
+  ],
+  "3176": [
+   "Magnifying Momentum",
+   "utaunt_poweraura_green_parent"
+  ],
+  "3177": [
+   "Charging Catalyst",
+   "utaunt_poweraura_purple_parent"
+  ],
+  "3178": [
+   "Amplifying Aura",
+   "utaunt_poweraura_yellow_parent"
+  ],
+  "3179": [
+   "Mystic Fusion",
+   "utaunt_mysticfusion_parent"
+  ],
+  "318": [
+   "North Star",
+   "unusual_northstar_teamcolor_red"
+  ],
+  "3180": [
+   "Obnoxious Confetti",
+   "utaunt_confetti_gy_parent"
+  ],
+  "3181": [
+   "Lovable Confetti",
+   "utaunt_confetti_pp_parent"
+  ],
+  "3182": [
+   "Confetti Celebration",
+   "utaunt_confetti_yp_parent"
+  ],
+  "3183": [
+   "Heavy Rain",
+   "utaunt_heavyrain_parent"
+  ],
+  "3184": [
+   "Pumpkin Patch",
+   "utaunt_field_parent"
+  ],
+  "3185": [
+   "Snowy Day",
+   "utaunt_whitesmissmas_parent"
+  ],
+  "3186": [
+   "Snowy Spirit",
+   "utaunt_busysnow_teamcolor_red"
+  ],
+  "3187": [
+   "Snowy Spirit",
+   "utaunt_busysnow_teamcolor_blue"
+  ],
+  "3188": [
+   "Lavender Sensation",
+   "utaunt_busysnow_parent_p"
+  ],
+  "3189": [
+   "Verdant Phenomenon",
+   "utaunt_busysnow_parent_g"
+  ],
+  "319": [
+   "North Star",
+   "unusual_northstar_teamcolor_blue"
+  ],
+  "3190": [
+   "Award Winning",
+   "utaunt_roses_teamcolor_red"
+  ],
+  "3191": [
+   "Award Winning",
+   "utaunt_roses_teamcolor_blue"
+  ],
+  "3192": [
+   "Operatic Triumph",
+   "utaunt_roses_gold_parent"
+  ],
+  "3193": [
+   "Tangled Lights",
+   "utaunt_tangledlights_parent"
+  ],
+  "3194": [
+   "Seamine",
+   "utaunt_seamine_teamcolor_red"
+  ],
+  "3195": [
+   "Seamine",
+   "utaunt_seamine_teamcolor_blue"
+  ],
+  "3196": [
+   "Iconic Outline",
+   "utaunt_iconicoutline_teamcolor_red"
+  ],
+  "3197": [
+   "Iconic Outline",
+   "utaunt_iconicoutline_teamcolor_blue"
+  ],
+  "3198": [
+   "Subtle Silhouette",
+   "utaunt_iconicoutline_pink_parent"
+  ],
+  "3199": [
+   "Ocean Reef",
+   "utaunt_oceanreef_parent"
+  ],
+  "32": [
+   "Orbiting Planets",
+   "unusual_orbit_planets"
+  ],
+  "320": [
+   "Prettiest Star",
+   "unusual_northstar_parent_purple"
+  ],
+  "3200": [
+   "Lost Signal",
+   "utaunt_signalinterference_parent"
+  ],
+  "3201": [
+   "Summer Wave",
+   "utaunt_waterwave_parent"
+  ],
+  "3202": [
+   "Shark Attack",
+   "utaunt_sharkfin2_parent"
+  ],
+  "3203": [
+   "Hazardous Gas",
+   "utaunt_phantasam_green_parent"
+  ],
+  "3204": [
+   "Phantasmal Fog",
+   "utaunt_phantasam_grey_parent"
+  ],
+  "3205": [
+   "Haunted Mist",
+   "utaunt_phantasam_purple_parent"
+  ],
+  "3206": [
+   "Split Malice",
+   "utaunt_multicurse_teamcolor_red"
+  ],
+  "3207": [
+   "Split Malice",
+   "utaunt_multicurse_teamcolor_blue"
+  ],
+  "3208": [
+   "Void Crawlers",
+   "utaunt_voidcrawlers_parent"
+  ],
+  "3209": [
+   "Fossil Fueled",
+   "utaunt_tarpit_dinos_parent"
+  ],
+  "321": [
+   "Festive Falling Star",
+   "unusual_orbitingstar_parent"
+  ],
+  "3210": [
+   "Tar Pit",
+   "utaunt_tarpit_people_parent"
+  ],
+  "3211": [
+   "Morbidly Beast",
+   "utaunt_morbed_teamcolor_red"
+  ],
+  "3212": [
+   "Morbidly Beast",
+   "utaunt_morbed_teamcolor_blue"
+  ],
+  "3213": [
+   "Snow Dome",
+   "utaunt_2fort_teamc_teamcolor_red"
+  ],
+  "3214": [
+   "Snow Dome",
+   "utaunt_2fort_teamc_teamcolor_blue"
+  ],
+  "3215": [
+   "Scorching Sensation",
+   "utaunt_burningdesire_green_parent"
+  ],
+  "3216": [
+   "Burning Sensation",
+   "utaunt_burningdesire_orange_parent"
+  ],
+  "3217": [
+   "Galactic Dust",
+   "utaunt_spacecoated_2colored_parent_pb"
+  ],
+  "3218": [
+   "Galactic Cloud",
+   "utaunt_spacecoated_2colored_parent_pg"
+  ],
+  "3219": [
+   "Aurora Aura",
+   "utaunt_aurora25_teamcolor_red"
+  ],
+  "322": [
+   "Lunar Lights",
+   "unusual_firefly_teamcolor_red"
+  ],
+  "3220": [
+   "Aurora Aura",
+   "utaunt_aurora25_teamcolor_blue"
+  ],
+  "3221": [
+   "Northern Nights",
+   "utaunt_aurora25_parent_purple"
+  ],
+  "3222": [
+   "Chilling Mist",
+   "utaunt_chillingmist_parent"
+  ],
+  "3223": [
+   "Circuit Break",
+   "utaunt_80smalfunction_parent"
+  ],
+  "3224": [
+   "Wheat Field",
+   "utaunt_wheatfield_parent"
+  ],
+  "3225": [
+   "Luminous Drift",
+   "utaunt_luminousdrift_teamcolor_red"
+  ],
+  "3226": [
+   "Luminous Drift",
+   "utaunt_luminousdrift_teamcolor_blue"
+  ],
+  "3227": [
+   "Luminous Shift",
+   "utaunt_luminousdrift_purple_parent"
+  ],
+  "3228": [
+   "Showtime Spotlights",
+   "utaunt_dualspotlights_parent"
+  ],
+  "3229": [
+   "Deep Dive",
+   "utaunt_underwater_parent"
+  ],
+  "323": [
+   "Lunar Lights",
+   "unusual_firefly_teamcolor_blue"
+  ],
+  "3230": [
+   "Electric Impulse",
+   "utaunt_electropulse_teamc_teamcolor_red"
+  ],
+  "3231": [
+   "Electric Impulse",
+   "utaunt_electropulse_teamc_teamcolor_blue"
+  ],
+  "3232": [
+   "Primordial Ooze",
+   "utaunt_waste_purple_parent"
+  ],
+  "3233": [
+   "Geiger Breaker",
+   "utaunt_waste_green_parent"
+  ],
+  "3234": [
+   "Sulfuric Acid",
+   "utaunt_waste_yellow_parent"
+  ],
+  "3235": [
+   "Shroud of Darkness",
+   "utaunt_shroud_parent"
+  ],
+  "3236": [
+   "Gradient Gale",
+   "utaunt_spiral_teamcolor_red"
+  ],
+  "3237": [
+   "Gradient Gale",
+   "utaunt_spiral_teamcolor_blue"
+  ],
+  "3238": [
+   "Amethyst Gale",
+   "utaunt_spiral_parent_purple"
+  ],
+  "3239": [
+   "Gamma Rays",
+   "utaunt_radioactive_teamcolor_red"
+  ],
+  "324": [
+   "Fairy Lights",
+   "unusual_firefly_purple_parent"
+  ],
+  "3240": [
+   "Gamma Rays",
+   "utaunt_radioactive_teamcolor_blue"
+  ],
+  "3241": [
+   "Meltdown",
+   "utaunt_radioactive_purple_parent"
+  ],
+  "3242": [
+   "Radioactive",
+   "utaunt_radioactive_green_parent"
+  ],
+  "325": [
+   "Natural Lights",
+   "unusual_firefly_green_parent"
+  ],
+  "327": [
+   "Loyalist's Coronet",
+   "unusual_corrodedknight_teamcolor_red"
+  ],
+  "328": [
+   "Loyalist's Coronet",
+   "unusual_corrodedknight_teamcolor_blue"
+  ],
+  "329": [
+   "Knight's Prideful Spirit",
+   "unusual_corrodedknight_parent_silver"
+  ],
+  "33": [
+   "Orbiting Fire",
+   "unusual_orbit_fire"
+  ],
+  "330": [
+   "Baron's Cherished Chaplet",
+   "unusual_corrodedknight_parent_golden"
+  ],
+  "331": [
+   "Lure of the Deep",
+   "unusual_poseidon_teamcolor_red"
+  ],
+  "332": [
+   "Lure of the Deep",
+   "unusual_poseidon_teamcolor_blue"
+  ],
+  "333": [
+   "Violent Viridian",
+   "unusual_poseidon_parent_green"
+  ],
+  "334": [
+   "Magenta Monstrum",
+   "unusual_poseidon_parent_purple"
+  ],
+  "335": [
+   "Rainbow Reverie",
+   "unusual_rainglow_parent"
+  ],
+  "336": [
+   "Cuban Smoke",
+   "unusual_cubancigar_parent"
+  ],
+  "337": [
+   "Melting Mohawk",
+   "unusual_mohawk_teamcolor_red"
+  ],
+  "338": [
+   "Melting Mohawk",
+   "unusual_mohawk_teamcolor_blue"
+  ],
+  "339": [
+   "Scorched Scalp",
+   "unusual_mohawk_parent_green"
+  ],
+  "34": [
+   "Bubbling",
+   "unusual_bubbles"
+  ],
+  "340": [
+   "Ignited Crest",
+   "unusual_mohawk_parent_purple"
+  ],
+  "341": [
+   "Rare Shine",
+   "unusual_rare_shine_glow_parent"
+  ],
+  "342": [
+   "Distant Drift",
+   "unusual_horstars_teamcolor_red"
+  ],
+  "343": [
+   "Distant Drift",
+   "unusual_horstars_teamcolor_blue"
+  ],
+  "344": [
+   "Warp Drive",
+   "unusual_electric_parent_white"
+  ],
+  "345": [
+   "Overdrive",
+   "unusual_electric_parent_gold"
+  ],
+  "346": [
+   "Butterfly Season",
+   "unusual_butterflyhead_teamcolor_red"
+  ],
+  "347": [
+   "Butterfly Season",
+   "unusual_butterflyhead_teamcolor_blue"
+  ],
+  "348": [
+   "Psycho-Delic",
+   "unusual_hippieaura_parent"
+  ],
+  "349": [
+   "Bewitching Bugs",
+   "unusual_butterfly_parent"
+  ],
+  "35": [
+   "Smoking",
+   "unusual_smoking"
+  ],
+  "350": [
+   "Spectral Fire",
+   "unusual_spectral_fire_parent"
+  ],
+  "351": [
+   "Galactic Flame",
+   "unusual_galactic_fire_parent"
+  ],
+  "352": [
+   "Revived Recharge",
+   "unusual_frank_green_parent"
+  ],
+  "353": [
+   "Undead Electricity",
+   "unusual_frank_purple_parent"
+  ],
+  "354": [
+   "Frankencharged",
+   "unusual_frank_yellow_parent"
+  ],
+  "355": [
+   "Phantom Plague",
+   "unusual_skullsmoke_green_parent"
+  ],
+  "356": [
+   "Haunting Haze",
+   "unusual_skullsmoke_purple_parent"
+  ],
+  "357": [
+   "Vicious Vampires",
+   "unusual_pigeons_green_parent"
+  ],
+  "358": [
+   "Ravenous Ravens",
+   "unusual_pigeons_purple_parent"
+  ],
+  "359": [
+   "Delightful Doves",
+   "unusual_pigeons_white_parent"
+  ],
+  "36": [
+   "Steaming",
+   "unusual_steaming"
+  ],
+  "360": [
+   "Searing Stove",
+   "unusual_stove_teamcolor_red"
+  ],
+  "361": [
+   "Searing Stove",
+   "unusual_stove_teamcolor_blue"
+  ],
+  "362": [
+   "\u00dcber Blaze",
+   "unusual_electricfire_teamcolor_red"
+  ],
+  "363": [
+   "\u00dcber Blaze",
+   "unusual_electricfire_teamcolor_blue"
+  ],
+  "364": [
+   "Sizzling",
+   "unusual_sizzling_parent"
+  ],
+  "365": [
+   "Crystal Crown",
+   "unusual_icrown_teamcolor_red"
+  ],
+  "366": [
+   "Crystal Crown",
+   "unusual_icrown_teamcolor_blue"
+  ],
+  "367": [
+   "Halcyon Halo",
+   "unusual_icrown_parent_purple"
+  ],
+  "368": [
+   "Ghosts of Smissmas Time",
+   "unusual_timeghosts_parent"
+  ],
+  "369": [
+   "Aurora Skies",
+   "unusual_aurora_parent"
+  ],
+  "37": [
+   "Flaming Lantern",
+   "unusual_orbit_jack_flaming"
+  ],
+  "370": [
+   "Shining Bokeh",
+   "unusual_bokehsparkle_parent"
+  ],
+  "371": [
+   "Playful Aurora",
+   "unusual_playful_purple_parent"
+  ],
+  "372": [
+   "Frisky Morning",
+   "unusual_playful_yellow_parent"
+  ],
+  "373": [
+   "Drunkard",
+   "unusual_drunk_parent"
+  ],
+  "374": [
+   "Blades of Betrayal",
+   "unusual_excalibur_teamcolor_red"
+  ],
+  "375": [
+   "Blades of Betrayal",
+   "unusual_excalibur_teamcolor_blue"
+  ],
+  "376": [
+   "Death's Daggers",
+   "unusual_excalibur_parent_purple"
+  ],
+  "377": [
+   "Fully Charged",
+   "unusual_uber_teamcolor_red"
+  ],
+  "378": [
+   "Fully Charged",
+   "unusual_uber_teamcolor_blue"
+  ],
+  "379": [
+   "Overcharged",
+   "unusual_uber_gold_parent"
+  ],
+  "38": [
+   "Cloudy Moon",
+   "unusual_fullmoon_cloudy"
+  ],
+  "380": [
+   "Piercing Headache",
+   "unusual_orbitingbullet_parent"
+  ],
+  "381": [
+   "Decimating Wind",
+   "unusual_typhoon_parent"
+  ],
+  "382": [
+   "Ocean Swirl",
+   "unusual_ocean_swirl_teamcolor_red"
+  ],
+  "383": [
+   "Ocean Swirl",
+   "unusual_ocean_swirl_teamcolor_blue"
+  ],
+  "384": [
+   "Toxic Swirl",
+   "unusual_ocean_swirl_green_parent"
+  ],
+  "385": [
+   "Candle Flame",
+   "unusual_candle_teamcolor_red"
+  ],
+  "386": [
+   "Candle Flame",
+   "unusual_candle_teamcolor_blue"
+  ],
+  "387": [
+   "Sizzling Aroma",
+   "unusual_deadlyaroma_teamcolor_red"
+  ],
+  "388": [
+   "Sizzling Aroma",
+   "unusual_deadlyaroma_teamcolor_blue"
+  ],
+  "389": [
+   "Toxic Aroma",
+   "unusual_deadlyaroma_green_parent"
+  ],
+  "39": [
+   "Cauldron Bubbles",
+   "unusual_bubbles_green"
+  ],
+  "390": [
+   "Current Conductor",
+   "unusual_conductor_teamc_teamcolor_red"
+  ],
+  "391": [
+   "Current Conductor",
+   "unusual_conductor_teamc_teamcolor_blue"
+  ],
+  "392": [
+   "Sandy",
+   "unusual_sandy_parent"
+  ],
+  "393": [
+   "Chromatic Blaze",
+   "unusual_ombre_parent_purple"
+  ],
+  "394": [
+   "Frostfire",
+   "unusual_ombre_parent_teal"
+  ],
+  "395": [
+   "Spectrum Inferno",
+   "unusual_ombre_parent_spectrum"
+  ],
+  "396": [
+   "Calm Snowfall",
+   "unusual_calmsnowfall_parent"
+  ],
+  "397": [
+   "Team Recognition",
+   "unusual_team_recognition_teamcolor_red"
+  ],
+  "398": [
+   "Team Recognition",
+   "unusual_team_recognition_teamcolor_blue"
+  ],
+  "399": [
+   "Old Hire",
+   "unusual_classicfortress_teamcolor_red"
+  ],
+  "40": [
+   "Eerie Orbiting Fire",
+   "unusual_orbit_fire_dark"
+  ],
+  "400": [
+   "Old Hire",
+   "unusual_classicfortress_teamcolor_blue"
+  ],
+  "401": [
+   "Analog Fortress",
+   "unusual_classicfortress_tflogo_parent"
+  ],
+  "402": [
+   "Winter Whiteout",
+   "unusual_growing_flake_parent_white"
+  ],
+  "403": [
+   "Midnight Frostfall",
+   "unusual_growing_flake_parent_purple"
+  ],
+  "404": [
+   "Twilight Snowfall",
+   "unusual_growing_flake_parent_twilight"
+  ],
+  "405": [
+   "Cryogenic",
+   "unusual_cryogenic_parent"
+  ],
+  "406": [
+   null,
+   "coin_spin"
+  ],
+  "407": [
+   "Umbral Lights",
+   "unusual_aurora_purple_parent"
+  ],
+  "408": [
+   "Polar Prism",
+   "unusual_aurora_teal_parent"
+  ],
+  "409": [
+   "Solar Singed",
+   "unusual_aurora_green_parent"
+  ],
+  "410": [
+   "Floral Growth",
+   "unusual_vinethorn_teamcolor_red"
+  ],
+  "411": [
+   "Floral Growth",
+   "unusual_vinethorn_teamcolor_blue"
+  ],
+  "412": [
+   "Stellar Orbit",
+   "unusual_spaceorbit_parent"
+  ],
+  "413": [
+   "Blissful Butterflies",
+   "unusual_butterfly_teamcolor_red"
+  ],
+  "414": [
+   "Blissful Butterflies",
+   "unusual_butterfly_teamcolor_blue"
+  ],
+  "415": [
+   "Wispful Wings",
+   "unusual_butterfly_parent_purple"
+  ],
+  "416": [
+   "Flor de Muerto",
+   "unusual_muertopetals_teamc_teamcolor_red"
+  ],
+  "417": [
+   "Flor de Muerto",
+   "unusual_muertopetals_teamc_teamcolor_blue"
+  ],
+  "418": [
+   "Autumn Breeze",
+   "unusual_autumnbreeze_parent"
+  ],
+  "419": [
+   "Spirit Swirl",
+   "unusual_ghostspiral_purple_parent"
+  ],
+  "420": [
+   "Ghost Swirl",
+   "unusual_ghostspiral_green_parent"
+  ],
+  "421": [
+   "Fable Feathers",
+   "unusual_fablefeathers_teamcolor_red"
+  ],
+  "422": [
+   "Fable Feathers",
+   "unusual_fablefeathers_teamcolor_blue"
+  ],
+  "423": [
+   "Fable Quills",
+   "unusual_fablefeathers_purple_parent"
+  ],
+  "424": [
+   "Grudge n' Drudge",
+   "unusual_boiltoil_purple_parent"
+  ],
+  "425": [
+   "Boil n' Toil",
+   "unusual_boiltoil_green_parent"
+  ],
+  "426": [
+   "Screaming Soul",
+   "unusual_scaredsouls_purple_parent"
+  ],
+  "427": [
+   "Screeching Soul",
+   "unusual_scaredsouls_green_parent"
+  ],
+  "428": [
+   "Shrieking Soul",
+   "unusual_scaredsouls_orange_parent"
+  ],
+  "43": [
+   "Knifestorm",
+   "unusual_storm_knives"
+  ],
+  "44": [
+   "Misty Skull",
+   "unusual_skull_misty"
+  ],
+  "45": [
+   "Harvest Moon",
+   "unusual_fullmoon_cloudy_green"
+  ],
+  "46": [
+   "It's a Secret to Everybody",
+   "unusual_fullmoon_cloudy_secret"
+  ],
+  "47": [
+   "Stormy 13th Hour",
+   "unusual_storm_spooky"
+  ],
+  "55": [
+   null,
+   "unusual_orbit_cards_teamcolor_blue"
+  ],
+  "56": [
+   "Kill-a-Watt",
+   "unusual_zap_yellow"
+  ],
+  "57": [
+   "Terror-Watt",
+   "unusual_zap_green"
+  ],
+  "58": [
+   "Cloud 9",
+   "unusual_hearts_bubbling"
+  ],
+  "59": [
+   "Aces High",
+   "unusual_orbit_cards_teamcolor_red"
+  ],
+  "6": [
+   "Green Confetti",
+   "superrare_confetti_green"
+  ],
+  "60": [
+   "Dead Presidents",
+   "unusual_orbit_cash"
+  ],
+  "61": [
+   "Miami Nights",
+   "unusual_crisp_spotlights"
+  ],
+  "62": [
+   "Disco Beat Down",
+   "unusual_spotlights"
+  ],
+  "63": [
+   "Phosphorous",
+   "unusual_robot_holo_glow_green"
+  ],
+  "64": [
+   "Sulphurous",
+   "unusual_robot_holo_glow_orange"
+  ],
+  "65": [
+   "Memory Leak",
+   "unusual_robot_orbit_binary"
+  ],
+  "66": [
+   "Overclocked",
+   "unusual_robot_orbit_binary2"
+  ],
+  "67": [
+   "Electrostatic",
+   "unusual_robot_orbiting_sparks"
+  ],
+  "68": [
+   "Power Surge",
+   "unusual_robot_orbiting_sparks2"
+  ],
+  "69": [
+   "Anti-Freeze",
+   "unusual_robot_radioactive"
+  ],
+  "7": [
+   "Purple Confetti",
+   "superrare_confetti_purple"
+  ],
+  "70": [
+   "Time Warp",
+   "unusual_robot_time_warp"
+  ],
+  "701:air_strike": [
+   "Hot",
+   "weapon_unusual_hot_air_strike"
+  ],
+  "701:amputator": [
+   "Hot",
+   "weapon_unusual_hot_amputator"
+  ],
+  "701:back_scratcher": [
+   "Hot",
+   "weapon_unusual_hot_back_scratcher"
+  ],
+  "701:bazaar_bargain": [
+   "Hot",
+   "weapon_unusual_hot_bazaar_bargain"
+  ],
+  "701:black_box": [
+   "Hot",
+   "weapon_unusual_hot_black_box"
+  ],
+  "701:brass_beast": [
+   "Hot",
+   "weapon_unusual_hot_brass_beast"
+  ],
+  "701:claidheamohmor": [
+   "Hot",
+   "weapon_unusual_hot_claidheamohmor"
+  ],
+  "701:crusaders_crossbow": [
+   "Hot",
+   "weapon_unusual_hot_crusaders_crossbow"
+  ],
+  "701:degreaser": [
+   "Hot",
+   "weapon_unusual_hot_degreaser"
+  ],
+  "701:detonator": [
+   "Hot",
+   "weapon_unusual_hot_detonator"
+  ],
+  "701:disciplinary_action": [
+   "Hot",
+   "weapon_unusual_hot_disciplinary_action"
+  ],
+  "701:family_business": [
+   "Hot",
+   "weapon_unusual_hot_family_business"
+  ],
+  "701:flamethrower": [
+   "Hot",
+   "weapon_unusual_hot_flamethrower"
+  ],
+  "701:grenade_launcher": [
+   "Hot",
+   "weapon_unusual_hot_grenade_launcher"
+  ],
+  "701:holy_mackerel": [
+   "Hot",
+   "weapon_unusual_hot_holy_mackerel"
+  ],
+  "701:iron_bomber": [
+   "Hot",
+   "weapon_unusual_hot_iron_bomber"
+  ],
+  "701:jag": [
+   "Hot",
+   "weapon_unusual_hot_jag"
+  ],
+  "701:knife": [
+   "Hot",
+   "weapon_unusual_hot_knife"
+  ],
+  "701:loch_n_load": [
+   "Hot",
+   "weapon_unusual_hot_loch_n_load"
+  ],
+  "701:loose_cannon": [
+   "Hot",
+   "weapon_unusual_hot_loose_cannon"
+  ],
+  "701:medigun": [
+   "Hot",
+   "weapon_unusual_hot_medigun"
+  ],
+  "701:minigun": [
+   "Hot",
+   "weapon_unusual_hot_minigun"
+  ],
+  "701:paintkit": [
+   "Hot",
+   "weapon_unusual_hot_paintkit"
+  ],
+  "701:panic_attack": [
+   "Hot",
+   "weapon_unusual_hot_panic_attack"
+  ],
+  "701:persian_persuader": [
+   "Hot",
+   "weapon_unusual_hot_persian_persuader"
+  ],
+  "701:pistol": [
+   "Hot",
+   "weapon_unusual_hot_pistol"
+  ],
+  "701:powerjack": [
+   "Hot",
+   "weapon_unusual_hot_powerjack"
+  ],
+  "701:rescue_ranger": [
+   "Hot",
+   "weapon_unusual_hot_rescue_ranger"
+  ],
+  "701:reserve_shooter": [
+   "Hot",
+   "weapon_unusual_hot_reserve_shooter"
+  ],
+  "701:revolver": [
+   "Hot",
+   "weapon_unusual_hot_revolver"
+  ],
+  "701:rocketlauncher": [
+   "Hot",
+   "weapon_unusual_hot_rocketlauncher"
+  ],
+  "701:scattergun": [
+   "Hot",
+   "weapon_unusual_hot_scattergun"
+  ],
+  "701:scorch_shot": [
+   "Hot",
+   "weapon_unusual_hot_scorch_shot"
+  ],
+  "701:scotsmans_skullcutter": [
+   "Hot",
+   "weapon_unusual_hot_scotsmans_skullcutter"
+  ],
+  "701:shahanshah": [
+   "Hot",
+   "weapon_unusual_hot_shahanshah"
+  ],
+  "701:shortstop": [
+   "Hot",
+   "weapon_unusual_hot_shortstop"
+  ],
+  "701:shotgun": [
+   "Hot",
+   "weapon_unusual_hot_shotgun"
+  ],
+  "701:smg": [
+   "Hot",
+   "weapon_unusual_hot_smg"
+  ],
+  "701:sniperrifle": [
+   "Hot",
+   "weapon_unusual_hot_sniperrifle"
+  ],
+  "701:soda_popper": [
+   "Hot",
+   "weapon_unusual_hot_soda_popper"
+  ],
+  "701:stickybomb_launcher": [
+   "Hot",
+   "weapon_unusual_hot_stickybomb_launcher"
+  ],
+  "701:tomislav": [
+   "Hot",
+   "weapon_unusual_hot_tomislav"
+  ],
+  "701:ubersaw": [
+   "Hot",
+   "weapon_unusual_hot_ubersaw"
+  ],
+  "701:winger": [
+   "Hot",
+   "weapon_unusual_hot_winger"
+  ],
+  "701:wrench": [
+   "Hot",
+   "weapon_unusual_hot_wrench"
+  ],
+  "702:air_strike": [
+   "Isotope",
+   "weapon_unusual_isotope_air_strike"
+  ],
+  "702:amputator": [
+   "Isotope",
+   "weapon_unusual_isotope_amputator"
+  ],
+  "702:back_scratcher": [
+   "Isotope",
+   "weapon_unusual_isotope_back_scratcher"
+  ],
+  "702:bazaar_bargain": [
+   "Isotope",
+   "weapon_unusual_isotope_bazaar_bargain"
+  ],
+  "702:black_box": [
+   "Isotope",
+   "weapon_unusual_isotope_black_box"
+  ],
+  "702:brass_beast": [
+   "Isotope",
+   "weapon_unusual_isotope_brass_beast"
+  ],
+  "702:claidheamohmor": [
+   "Isotope",
+   "weapon_unusual_isotope_claidheamohmor"
+  ],
+  "702:crusaders_crossbow": [
+   "Isotope",
+   "weapon_unusual_isotope_crusaders_crossbow"
+  ],
+  "702:degreaser": [
+   "Isotope",
+   "weapon_unusual_isotope_degreaser"
+  ],
+  "702:detonator": [
+   "Isotope",
+   "weapon_unusual_isotope_detonator"
+  ],
+  "702:disciplinary_action": [
+   "Isotope",
+   "weapon_unusual_isotope_disciplinary_action"
+  ],
+  "702:dragons_fury": [
+   "Isotope",
+   "weapon_unusual_isotope_dragons_fury"
+  ],
+  "702:family_business": [
+   "Isotope",
+   "weapon_unusual_isotope_family_business"
+  ],
+  "702:flamethrower": [
+   "Isotope",
+   "weapon_unusual_isotope_flamethrower"
+  ],
+  "702:grenade_launcher": [
+   "Isotope",
+   "weapon_unusual_isotope_grenade_launcher"
+  ],
+  "702:holy_mackerel": [
+   "Isotope",
+   "weapon_unusual_isotope_holy_mackerel"
+  ],
+  "702:iron_bomber": [
+   "Isotope",
+   "weapon_unusual_isotope_iron_bomber"
+  ],
+  "702:jag": [
+   "Isotope",
+   "weapon_unusual_isotope_jag"
+  ],
+  "702:knife": [
+   "Isotope",
+   "weapon_unusual_isotope_knife"
+  ],
+  "702:loch_n_load": [
+   "Isotope",
+   "weapon_unusual_isotope_loch_n_load"
+  ],
+  "702:loose_cannon": [
+   "Isotope",
+   "weapon_unusual_isotope_loose_cannon"
+  ],
+  "702:medigun": [
+   "Isotope",
+   "weapon_unusual_isotope_medigun"
+  ],
+  "702:minigun": [
+   "Isotope",
+   "weapon_unusual_isotope_minigun"
+  ],
+  "702:paintkit": [
+   "Isotope",
+   "weapon_unusual_isotope_paintkit"
+  ],
+  "702:panic_attack": [
+   "Isotope",
+   "weapon_unusual_isotope_panic_attack"
+  ],
+  "702:persian_persuader": [
+   "Isotope",
+   "weapon_unusual_isotope_persian_persuader"
+  ],
+  "702:pistol": [
+   "Isotope",
+   "weapon_unusual_isotope_pistol"
+  ],
+  "702:powerjack": [
+   "Isotope",
+   "weapon_unusual_isotope_powerjack"
+  ],
+  "702:rescue_ranger": [
+   "Isotope",
+   "weapon_unusual_isotope_rescue_ranger"
+  ],
+  "702:reserve_shooter": [
+   "Isotope",
+   "weapon_unusual_isotope_reserve_shooter"
+  ],
+  "702:revolver": [
+   "Isotope",
+   "weapon_unusual_isotope_revolver"
+  ],
+  "702:rocketlauncher": [
+   "Isotope",
+   "weapon_unusual_isotope_rocketlauncher"
+  ],
+  "702:scattergun": [
+   "Isotope",
+   "weapon_unusual_isotope_scattergun"
+  ],
+  "702:scorch_shot": [
+   "Isotope",
+   "weapon_unusual_isotope_scorch_shot"
+  ],
+  "702:scotsmans_skullcutter": [
+   "Isotope",
+   "weapon_unusual_isotope_scotsmans_skullcutter"
+  ],
+  "702:shahanshah": [
+   "Isotope",
+   "weapon_unusual_isotope_shahanshah"
+  ],
+  "702:shortstop": [
+   "Isotope",
+   "weapon_unusual_isotope_shortstop"
+  ],
+  "702:shotgun": [
+   "Isotope",
+   "weapon_unusual_isotope_shotgun"
+  ],
+  "702:smg": [
+   "Isotope",
+   "weapon_unusual_isotope_smg"
+  ],
+  "702:sniperrifle": [
+   "Isotope",
+   "weapon_unusual_isotope_sniperrifle"
+  ],
+  "702:soda_popper": [
+   "Isotope",
+   "weapon_unusual_isotope_soda_popper"
+  ],
+  "702:stickybomb_launcher": [
+   "Isotope",
+   "weapon_unusual_isotope_stickybomb_launcher"
+  ],
+  "702:tomislav": [
+   "Isotope",
+   "weapon_unusual_isotope_tomislav"
+  ],
+  "702:ubersaw": [
+   "Isotope",
+   "weapon_unusual_isotope_ubersaw"
+  ],
+  "702:winger": [
+   "Isotope",
+   "weapon_unusual_isotope_winger"
+  ],
+  "702:wrench": [
+   "Isotope",
+   "weapon_unusual_isotope_wrench"
+  ],
+  "703:air_strike": [
+   "Cool",
+   "weapon_unusual_cool_air_strike"
+  ],
+  "703:amputator": [
+   "Cool",
+   "weapon_unusual_cool_amputator"
+  ],
+  "703:back_scratcher": [
+   "Cool",
+   "weapon_unusual_cool_back_scratcher"
+  ],
+  "703:bazaar_bargain": [
+   "Cool",
+   "weapon_unusual_cool_bazaar_bargain"
+  ],
+  "703:black_box": [
+   "Cool",
+   "weapon_unusual_cool_black_box"
+  ],
+  "703:brass_beast": [
+   "Cool",
+   "weapon_unusual_cool_brass_beast"
+  ],
+  "703:claidheamohmor": [
+   "Cool",
+   "weapon_unusual_cool_claidheamohmor"
+  ],
+  "703:crusaders_crossbow": [
+   "Cool",
+   "weapon_unusual_cool_crusaders_crossbow"
+  ],
+  "703:degreaser": [
+   "Cool",
+   "weapon_unusual_cool_degreaser"
+  ],
+  "703:detonator": [
+   "Cool",
+   "weapon_unusual_cool_detonator"
+  ],
+  "703:disciplinary_action": [
+   "Cool",
+   "weapon_unusual_cool_disciplinary_action"
+  ],
+  "703:dragons_fury": [
+   "Cool",
+   "weapon_unusual_cool_dragons_fury"
+  ],
+  "703:family_business": [
+   "Cool",
+   "weapon_unusual_cool_family_business"
+  ],
+  "703:flamethrower": [
+   "Cool",
+   "weapon_unusual_cool_flamethrower"
+  ],
+  "703:grenade_launcher": [
+   "Cool",
+   "weapon_unusual_cool_grenade_launcher"
+  ],
+  "703:holy_mackerel": [
+   "Cool",
+   "weapon_unusual_cool_holy_mackerel"
+  ],
+  "703:iron_bomber": [
+   "Cool",
+   "weapon_unusual_cool_iron_bomber"
+  ],
+  "703:jag": [
+   "Cool",
+   "weapon_unusual_cool_jag"
+  ],
+  "703:knife": [
+   "Cool",
+   "weapon_unusual_cool_knife"
+  ],
+  "703:loch_n_load": [
+   "Cool",
+   "weapon_unusual_cool_loch_n_load"
+  ],
+  "703:loose_cannon": [
+   "Cool",
+   "weapon_unusual_cool_loose_cannon"
+  ],
+  "703:medigun": [
+   "Cool",
+   "weapon_unusual_cool_medigun"
+  ],
+  "703:minigun": [
+   "Cool",
+   "weapon_unusual_cool_minigun"
+  ],
+  "703:paintkit": [
+   "Cool",
+   "weapon_unusual_cool_paintkit"
+  ],
+  "703:panic_attack": [
+   "Cool",
+   "weapon_unusual_cool_panic_attack"
+  ],
+  "703:persian_persuader": [
+   "Cool",
+   "weapon_unusual_cool_persian_persuader"
+  ],
+  "703:pistol": [
+   "Cool",
+   "weapon_unusual_cool_pistol"
+  ],
+  "703:powerjack": [
+   "Cool",
+   "weapon_unusual_cool_powerjack"
+  ],
+  "703:rescue_ranger": [
+   "Cool",
+   "weapon_unusual_cool_rescue_ranger"
+  ],
+  "703:reserve_shooter": [
+   "Cool",
+   "weapon_unusual_cool_reserve_shooter"
+  ],
+  "703:revolver": [
+   "Cool",
+   "weapon_unusual_cool_revolver"
+  ],
+  "703:rocketlauncher": [
+   "Cool",
+   "weapon_unusual_cool_rocketlauncher"
+  ],
+  "703:scattergun": [
+   "Cool",
+   "weapon_unusual_cool_scattergun"
+  ],
+  "703:scorch_shot": [
+   "Cool",
+   "weapon_unusual_cool_scorch_shot"
+  ],
+  "703:scotsmans_skullcutter": [
+   "Cool",
+   "weapon_unusual_cool_scotsmans_skullcutter"
+  ],
+  "703:shahanshah": [
+   "Cool",
+   "weapon_unusual_cool_shahanshah"
+  ],
+  "703:shortstop": [
+   "Cool",
+   "weapon_unusual_cool_shortstop"
+  ],
+  "703:shotgun": [
+   "Cool",
+   "weapon_unusual_cool_shotgun"
+  ],
+  "703:smg": [
+   "Cool",
+   "weapon_unusual_cool_smg"
+  ],
+  "703:sniperrifle": [
+   "Cool",
+   "weapon_unusual_cool_sniperrifle"
+  ],
+  "703:soda_popper": [
+   "Cool",
+   "weapon_unusual_cool_soda_popper"
+  ],
+  "703:stickybomb_launcher": [
+   "Cool",
+   "weapon_unusual_cool_stickybomb_launcher"
+  ],
+  "703:tomislav": [
+   "Cool",
+   "weapon_unusual_cool_tomislav"
+  ],
+  "703:ubersaw": [
+   "Cool",
+   "weapon_unusual_cool_ubersaw"
+  ],
+  "703:winger": [
+   "Cool",
+   "weapon_unusual_cool_winger"
+  ],
+  "703:wrench": [
+   "Cool",
+   "weapon_unusual_cool_wrench"
+  ],
+  "704:flamethrower": [
+   "Energy Orb",
+   "weapon_unusual_energyorb_flamethrower"
+  ],
+  "704:medigun": [
+   "Energy Orb",
+   "weapon_unusual_energyorb_medigun"
+  ],
+  "704:minigun": [
+   "Energy Orb",
+   "weapon_unusual_energyorb_minigun"
+  ],
+  "704:pistol": [
+   "Energy Orb",
+   "weapon_unusual_energyorb_pistol"
+  ],
+  "704:revolver": [
+   "Energy Orb",
+   "weapon_unusual_energyorb_revolver"
+  ],
+  "704:rocketlauncher": [
+   "Energy Orb",
+   "weapon_unusual_energyorb_rocketlauncher"
+  ],
+  "704:scattergun": [
+   "Energy Orb",
+   "weapon_unusual_energyorb_scattergun"
+  ],
+  "704:shotgun": [
+   "Energy Orb",
+   "weapon_unusual_energyorb_shotgun"
+  ],
+  "704:smg": [
+   "Energy Orb",
+   "weapon_unusual_energyorb_smg"
+  ],
+  "704:sniperrifle": [
+   "Energy Orb",
+   "weapon_unusual_energyorb_sniperrifle"
+  ],
+  "704:stickybomb_launcher": [
+   "Energy Orb",
+   "weapon_unusual_energyorb_stickybomb_launcher"
+  ],
+  "71": [
+   "Green Black Hole",
+   "unusual_robot_time_warp2"
+  ],
+  "72": [
+   "Roboactive",
+   "unusual_robot_radioactive2"
+  ],
+  "73": [
+   "Arcana",
+   "unusual_spellbook_circle_green"
+  ],
+  "74": [
+   "Spellbound",
+   "unusual_spellbook_circle_purple"
+  ],
+  "75": [
+   "Chiroptera Venenata",
+   "unusual_bats_flaming_proxy_green"
+  ],
+  "76": [
+   "Poisoned Shadows",
+   "unusual_bats_flaming_proxy_purple"
+  ],
+  "77": [
+   "Something Burning This Way Comes",
+   "unusual_bats_flaming_proxy_orange"
+  ],
+  "78": [
+   "Hellfire",
+   "unusual_meteor_shower_parent_orange"
+  ],
+  "79": [
+   "Darkblaze",
+   "unusual_meteor_shower_parent_purple"
+  ],
+  "8": [
+   "Haunted Ghosts",
+   "superrare_ghosts"
+  ],
+  "80": [
+   "Demonflame",
+   "unusual_meteor_shower_parent_green"
+  ],
+  "81": [
+   "Bonzo the All-Gnawing",
+   "unusual_tentmonster_purple_parent"
+  ],
+  "82": [
+   "Amaranthine",
+   "unusual_eyes_purple_parent"
+  ],
+  "83": [
+   "Stare from Beyond",
+   "unusual_eyes_orange_parent"
+  ],
+  "84": [
+   "The Ooze",
+   "unusual_eyes_green_parent"
+  ],
+  "85": [
+   "Ghastly Ghosts Jr",
+   "unusual_souls_purple_parent"
+  ],
+  "86": [
+   "Haunted Phantasm Jr",
+   "unusual_souls_green_parent"
+  ],
+  "87": [
+   "Frostbite",
+   "unusual_eotl_frostbite"
+  ],
+  "88": [
+   "Molten Mallard",
+   "unusual_eotl_oribiting_burning_duck_parent"
+  ],
+  "89": [
+   "Morning Glory",
+   "unusual_eotl_sunrise"
+  ],
+  "9": [
+   "Green Energy",
+   "superrare_greenenergy"
+  ],
+  "90": [
+   "Death at Dusk",
+   "unusual_eotl_sunset"
+  ],
+  "91": [
+   "Abduction",
+   "unusual_invasion_abduction"
+  ],
+  "92": [
+   "Atomic",
+   "unusual_invasion_atomic"
+  ],
+  "93": [
+   "Subatomic",
+   "unusual_invasion_atomic_green"
+  ],
+  "94": [
+   "Electric Hat Protector",
+   "unusual_invasion_boogaloop"
+  ],
+  "95": [
+   "Magnetic Hat Protector",
+   "unusual_invasion_boogaloop_2"
+  ],
+  "96": [
+   "Voltaic Hat Protector",
+   "unusual_invasion_boogaloop_3"
+  ],
+  "97": [
+   "Galactic Codex",
+   "unusual_invasion_codex"
+  ],
+  "98": [
+   "Ancient Codex",
+   "unusual_invasion_codex_2"
+  ],
+  "99": [
+   "Nebula",
+   "unusual_invasion_nebula"
+  ]
+ }
+}

@@ -1,0 +1,449 @@
+{
+ "batter's helmet": {
+  "id": "52",
+  "mdl": "models/player/items/scout/batter_helmet.mdl",
+  "skinFamilies": [
+   [
+    0,
+    1
+   ],
+   [
+    1,
+    1
+   ]
+  ],
+  "textureNames": [
+   "models/player/items/scout/batter_helmet_red",
+   "batter_helmet_blue"
+  ],
+  "materials": [
+   {
+    "slot": 0,
+    "vmt": "materials/models/player/items/scout/batter_helmet_red.vmt",
+    "shader": "vertexlitgeneric",
+    "params": {
+     "$basetexture": "models/player/items/scout/batter_helmet",
+     "$bumpmap": "models/effects/flat_normal",
+     "$detail": "effects/tiledfire/fireLayeredSlowTiled512.vtf",
+     "$detailscale": "5",
+     "$detailblendfactor": ".01",
+     "$detailblendmode": "6",
+     "$yellow": "0",
+     "$phong": "1",
+     "$phongexponent": "20",
+     "$phongboost": "3",
+     "$lightwarptexture": "models/lightwarps/weapon_lightwarp",
+     "$phongfresnelranges": "[.3 1 8]",
+     "$basemapalphaphongmask": "1",
+     "$blendtintbybasealpha": "0",
+     "$blendtintcoloroverbase": "0",
+     "$colortint_base": "{141 34 32}",
+     "$colortint_tmp": "[0 0 0]",
+     "$rimlight": "1",
+     "$rimlightexponent": "4",
+     "$rimlightboost": "2",
+     "$cloakpassenabled": "1",
+     "animatedtexturevar": "$detail",
+     "animatedtextureframenumvar": "$detailframe",
+     "animatedtextureframerate": "30",
+     "resultvar": "$detailblendfactor",
+     "srcvar1": "$colortint_tmp",
+     "srcvar2": "$colortint_base"
+    },
+    "vmtText": "\"VertexlitGeneric\"\r\n{\r\n\t\"$baseTexture\" \"models/player/items/scout/batter_helmet\"\r\n\t\"$bumpmap\" \"models/effects/flat_normal\" \r\n\t\"$detail\" \"effects/tiledfire/fireLayeredSlowTiled512.vtf\"\t\r\n\t\"$detailscale\" \"5\"\r\n\t\"$detailblendfactor\" .01\r\n\t\"$detailblendmode\" 6\r\n\t\"$yellow\" \"0\"\r\n\r\n\t\"$phong\" \"1\"\r\n\t\"$phongexponent\" \"20\"\r\n\t\"$phongboost\" \"3\"\r\n\t\"$lightwarptexture\" \"models/lightwarps/weapon_lightwarp\"\t\r\n\t\"$phongfresnelranges\"\t\"[.3 1 8]\"\r\n\t\"$basemapalphaphongmask\" \"1\"\r\n\r\n \t\"$blendtintbybasealpha\" \"0\" \r\n \t\"$blendtintcoloroverbase\" \"0\"  \r\n\r\n\t\"$colortint_base\" \"{141 34 32}\"\r\n\t\"$colortint_tmp\" \"[0 0 0]\" \r\n\r\n\t// Rim lighting parameters\r\n\t\"$rimlight\" \"1\"\t\t\t\t\t\t\t\t\t\t\t\t// To enable rim lighting (requires phong)\r\n\t\"$rimlightexponent\" \"4\"\t\t\t\t\t\t\t\t\t\t// Exponent for phong component of rim lighting\t\r\n\t\"$rimlightboost\" \"2\"\t\t\t\t\t\t\t\t\t\t// Boost for ambient cube component of rim lighting\r\n\r\n\t// Cloaking\r\n\t\"$cloakPassEnabled\" \"1\"\r\n\r\n\t\"Proxies\"\r\n\t{\r\n\t\t\"invis\"\r\n\t\t{\r\n\t\t}\r\n\t\t\"AnimatedTexture\"\r\n\t\t{\r\n\t\t\t\"animatedtexturevar\" \"$detail\"\r\n\t\t\t\"animatedtextureframenumvar\" \"$detailframe\"\r\n\t\t\t\"animatedtextureframerate\" 30\r\n\t\t}\r\n\t\t\"BurnLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\" \"$detailblendfactor\"\r\n\t\t}\r\n\t\t\"ItemTintColor\"\r\n\t\t{\r\n\t\t\t\"resultVar\" \"$colortint_tmp\"\r\n\t\t}\r\n\t\t\"SelectFirstIfNonZero\"\r\n\t\t{\r\n\t\t\t\"srcVar1\"\t\"$colortint_tmp\"\r\n\t\t\t\"srcVar2\"\t\"$colortint_base\"\r\n\t\t\t\"resultVar\" \"$color2\"\r\n\t\t}\r\n\t\t\"YellowLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\" \"$yellow\"\r\n\t\t}\r\n\t\t\"Multiply\"\r\n\t\t{\r\n\t\t\t\"srcVar1\" \"$color2\"\r\n\t\t\t\"srcVar2\" \"$yellow\"\r\n\t\t\t\"resultVar\" \"$color2\"\r\n\t\t}\r\n\t}\r\n}",
+    "proxies": [
+     "invis",
+     "animatedtexture",
+     "burnlevel",
+     "itemtintcolor",
+     "selectfirstifnonzero",
+     "yellowlevel",
+     "multiply"
+    ],
+    "vtfPath": "materials/models/player/items/scout/batter_helmet.vtf",
+    "vtf": {
+     "width": 1024,
+     "height": 512,
+     "flags": 0,
+     "frames": 1,
+     "format": 13
+    }
+   },
+   {
+    "slot": 1,
+    "vmt": "materials/models/player/items/scout/batter_helmet_blue.vmt",
+    "shader": "vertexlitgeneric",
+    "params": {
+     "$basetexture": "models/player/items/scout/batter_helmet",
+     "$bumpmap": "models/effects/flat_normal",
+     "$detail": "effects/tiledfire/fireLayeredSlowTiled512.vtf",
+     "$detailscale": "5",
+     "$detailblendfactor": ".01",
+     "$detailblendmode": "6",
+     "$yellow": "0",
+     "$phong": "1",
+     "$phongexponent": "20",
+     "$phongboost": "3",
+     "$lightwarptexture": "models/lightwarps/weapon_lightwarp",
+     "$phongfresnelranges": "[.3 1 8]",
+     "$basemapalphaphongmask": "1",
+     "$blendtintbybasealpha": "0",
+     "$blendtintcoloroverbase": "0",
+     "$colortint_base": "{51 87 142}",
+     "$colortint_tmp": "[0 0 0]",
+     "$rimlight": "1",
+     "$rimlightexponent": "4",
+     "$rimlightboost": "2",
+     "$cloakpassenabled": "1",
+     "animatedtexturevar": "$detail",
+     "animatedtextureframenumvar": "$detailframe",
+     "animatedtextureframerate": "30",
+     "resultvar": "$detailblendfactor",
+     "srcvar1": "$colortint_tmp",
+     "srcvar2": "$colortint_base"
+    },
+    "vmtText": "\"VertexlitGeneric\"\r\n{\r\n\t\"$baseTexture\" \"models/player/items/scout/batter_helmet\"\r\n\t\"$bumpmap\" \"models/effects/flat_normal\" \r\n\t\"$detail\" \"effects/tiledfire/fireLayeredSlowTiled512.vtf\"\t\r\n\t\"$detailscale\" \"5\"\r\n\t\"$detailblendfactor\" .01\r\n\t\"$detailblendmode\" 6\r\n\t\"$yellow\" \"0\"\r\n\r\n\r\n\t\"$phong\" \"1\"\r\n\t\"$phongexponent\" \"20\"\r\n\t\"$phongboost\" \"3\"\r\n\t\"$lightwarptexture\" \"models/lightwarps/weapon_lightwarp\"\t\r\n\t\"$phongfresnelranges\"\t\"[.3 1 8]\"\r\n\t\"$basemapalphaphongmask\" \"1\"\r\n\r\n \t\"$blendtintbybasealpha\" \"0\" \r\n \t\"$blendtintcoloroverbase\" \"0\"  \r\n\r\n\t\"$colortint_base\" \"{51 87 142}\"\r\n\t\"$colortint_tmp\" \"[0 0 0]\" \r\n\r\n\t// Rim lighting parameters\r\n\t\"$rimlight\" \"1\"\t\t\t\t\t\t\t\t\t\t\t\t// To enable rim lighting (requires phong)\r\n\t\"$rimlightexponent\" \"4\"\t\t\t\t\t\t\t\t\t\t// Exponent for phong component of rim lighting\t\r\n\t\"$rimlightboost\" \"2\"\t\t\t\t\t\t\t\t\t\t// Boost for ambient cube component of rim lighting\r\n\r\n\t// Cloaking\r\n\t\"$cloakPassEnabled\" \"1\"\r\n\r\n\t\"Proxies\"\r\n\t{\r\n\t\t\"invis\"\r\n\t\t{\r\n\t\t}\r\n\t\t\"AnimatedTexture\"\r\n\t\t{\r\n\t\t\t\"animatedtexturevar\" \"$detail\"\r\n\t\t\t\"animatedtextureframenumvar\" \"$detailframe\"\r\n\t\t\t\"animatedtextureframerate\" 30\r\n\t\t}\r\n\t\t\"BurnLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\" \"$detailblendfactor\"\r\n\t\t}\r\n\t\t\"ItemTintColor\"\r\n\t\t{\r\n\t\t\t\"resultVar\" \"$colortint_tmp\"\r\n\t\t}\r\n\t\t\"SelectFirstIfNonZero\"\r\n\t\t{\r\n\t\t\t\"srcVar1\"\t\"$colortint_tmp\"\r\n\t\t\t\"srcVar2\"\t\"$colortint_base\"\r\n\t\t\t\"resultVar\" \"$color2\"\r\n\t\t}\r\n\t\t\"YellowLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\" \"$yellow\"\r\n\t\t}\r\n\t\t\"Multiply\"\r\n\t\t{\r\n\t\t\t\"srcVar1\" \"$color2\"\r\n\t\t\t\"srcVar2\" \"$yellow\"\r\n\t\t\t\"resultVar\" \"$color2\"\r\n\t\t}\r\n\t}\r\n}",
+    "proxies": [
+     "invis",
+     "animatedtexture",
+     "burnlevel",
+     "itemtintcolor",
+     "selectfirstifnonzero",
+     "yellowlevel",
+     "multiply"
+    ],
+    "vtfPath": "materials/models/player/items/scout/batter_helmet.vtf",
+    "vtf": {
+     "width": 1024,
+     "height": 512,
+     "flags": 0,
+     "frames": 1,
+     "format": 13
+    }
+   }
+  ]
+ },
+ "spooky shoes": {
+  "id": "924",
+  "mdl": "models/workshop/player/items/scout/scout_halloweenshoes/scout_halloweenshoes.mdl",
+  "skinFamilies": [
+   [
+    0
+   ]
+  ],
+  "textureNames": [
+   "models/workshop/player/items/scout/scout_halloweenshoes/scout_halloweenshoes"
+  ],
+  "materials": [
+   {
+    "slot": 0,
+    "vmt": "materials/models/workshop/player/items/scout/scout_halloweenshoes/scout_halloweenshoes.vmt",
+    "shader": "vertexlitgeneric",
+    "params": {
+     "$basetexture": "models/workshop/player/items/scout/scout_halloweenshoes/scout_halloweenshoes_color",
+     "$lightwarptexture": "models/player/pyro/pyro_lightwarp",
+     "$phong": "1",
+     "$phongexponent": "10.000000",
+     "$phongboost": "0.100000",
+     "$phongfresnelranges": "[.25 .5 1]",
+     "$rimlight": "1",
+     "$rimlightexponent": "4",
+     "$rimlightboost": "2",
+     "$blendtintbybasealpha": "1",
+     "$blendtintcoloroverbase": "1.000000",
+     "$colortint_base": "{ 151 151 155 }",
+     "$color2": "{ 151 151 155 }",
+     "$colortint_tmp": "[0 0 0]",
+     "$bumpmapalphaphongmask": "1",
+     "$cloakpassenabled": "1",
+     "$detail": "effects/tiledfire/fireLayeredSlowTiled512",
+     "$detailscale": "5",
+     "$detailblendfactor": "0",
+     "$detailblendmode": "6",
+     "$yellow": "0",
+     "$selfillum": "0",
+     "animatedtexturevar": "$detail",
+     "animatedtextureframenumvar": "$detailframe",
+     "animatedtextureframerate": "30",
+     "resultvar": "$detailblendfactor",
+     "srcvar1": "$colortint_tmp",
+     "srcvar2": "$colortint_base"
+    },
+    "vmtText": "\"VertexLitGeneric\"\r\n{\r\n\t\"$basetexture\"\t\t\"models/workshop/player/items/scout/scout_halloweenshoes/scout_halloweenshoes_color\"\r\n\t\"$lightwarptexture\"\t\t\"models/player/pyro/pyro_lightwarp\"\r\n\t\"$phong\"\t\t\"1\"\r\n\t\"$phongexponent\"\t\t\"10.000000\"\r\n\t\"$phongboost\"\t\t\"0.100000\"\r\n\t\"$phongfresnelranges\"\t\t\"[.25 .5 1]\"\r\n\t\"$rimlight\"\t\t\"1\"\r\n\t\"$rimlightexponent\"\t\t\"4\"\r\n\t\"$rimlightboost\"\t\t\"2\"\r\n\t\"$blendtintbybasealpha\"\t\t\"1\"\r\n\t\"$blendtintcoloroverbase\"\t\t\"1.000000\"\r\n\t\"$colortint_base\"\t\t\"{ 151 151 155 }\"\r\n\t\"$color2\"\t\t\"{ 151 151 155 }\"\r\n\t\"$colortint_tmp\"\t\t\"[0 0 0]\"\r\n\t\"$bumpmapalphaphongmask\"\t\t\"1\"\r\n\t\"$cloakPassEnabled\"\t\t\"1\"\r\n\t\"$detail\"\t\t\"effects/tiledfire/fireLayeredSlowTiled512\"\r\n\t\"$detailscale\"\t\t\"5\"\r\n\t\"$detailblendfactor\"\t\t\"0\"\r\n\t\"$detailblendmode\"\t\t\"6\"\r\n\t\"$yellow\"\t\t\"0\"\r\n\t\">=DX90\"\r\n\t{\r\n\t\t\"$selfillum\"\t\t\"0\"\r\n\t}\r\n\t\"proxies\"\r\n\t{\r\n\t\t\"invis\"\r\n\t\t{\r\n\t\t}\r\n\t\t\"AnimatedTexture\"\r\n\t\t{\r\n\t\t\t\"animatedtexturevar\"\t\t\"$detail\"\r\n\t\t\t\"animatedtextureframenumvar\"\t\t\"$detailframe\"\r\n\t\t\t\"animatedtextureframerate\"\t\t\"30\"\r\n\t\t}\r\n\t\t\"BurnLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$detailblendfactor\"\r\n\t\t}\r\n\t\t\"ItemTintColor\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$colortint_tmp\"\r\n\t\t}\r\n\t\t\"SelectFirstIfNonZero\"\r\n\t\t{\r\n\t\t\t\"srcVar1\"\t\t\"$colortint_tmp\"\r\n\t\t\t\"srcVar2\"\t\t\"$colortint_base\"\r\n\t\t\t\"resultVar\"\t\t\"$color2\"\r\n\t\t}\r\n\t\t\"YellowLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$yellow\"\r\n\t\t}\r\n\t\t\"Multiply\"\r\n\t\t{\r\n\t\t\t\"srcVar1\"\t\t\"$color2\"\r\n\t\t\t\"srcVar2\"\t\t\"$yellow\"\r\n\t\t\t\"resultVar\"\t\t\"$color2\"\r\n\t\t}\r\n\t}\r\n}\r\n",
+    "proxies": [
+     "invis",
+     "animatedtexture",
+     "burnlevel",
+     "itemtintcolor",
+     "selectfirstifnonzero",
+     "yellowlevel",
+     "multiply"
+    ],
+    "vtfPath": "materials/models/workshop/player/items/scout/scout_halloweenshoes/scout_halloweenshoes_color.vtf",
+    "vtf": {
+     "width": 256,
+     "height": 256,
+     "flags": 8192,
+     "frames": 1,
+     "format": 15
+    }
+   }
+  ]
+ },
+ "a well wrapped hat": {
+  "id": "30746",
+  "mdl": "models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_scout.mdl",
+  "skinFamilies": [
+   [
+    0,
+    1
+   ],
+   [
+    1,
+    1
+   ]
+  ],
+  "textureNames": [
+   "models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat",
+   "dec15_a_well_wrapped_hat_blue"
+  ],
+  "materials": [
+   {
+    "slot": 0,
+    "vmt": "materials/models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat.vmt",
+    "shader": "vertexlitgeneric",
+    "params": {
+     "$basetexture": "models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_color",
+     "$bumpmap": "models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_normal",
+     "$lightwarptexture": "models/player/pyro/pyro_lightwarp",
+     "$phong": "1",
+     "$phongexponent": "25",
+     "$phongboost": "2.000000",
+     "$phongfresnelranges": "[.25 .5 1]",
+     "$rimlight": "1",
+     "$rimlightexponent": "4",
+     "$rimlightboost": "2",
+     "$blendtintbybasealpha": "1",
+     "$blendtintcoloroverbase": "0",
+     "$colortint_base": "{ 195 108 45 }",
+     "$color2": "{ 195 108 45 }",
+     "$colortint_tmp": "[0 0 0]",
+     "$bumpmapalphaphongmask": "1",
+     "$cloakpassenabled": "1",
+     "$detail": "effects/tiledfire/fireLayeredSlowTiled512",
+     "$detailscale": "5",
+     "$detailblendfactor": "0",
+     "$detailblendmode": "6",
+     "$yellow": "0",
+     "$selfillum": "0",
+     "animatedtexturevar": "$detail",
+     "animatedtextureframenumvar": "$detailframe",
+     "animatedtextureframerate": "30",
+     "resultvar": "$detailblendfactor",
+     "srcvar1": "$colortint_tmp",
+     "srcvar2": "$colortint_base"
+    },
+    "vmtText": "\"VertexLitGeneric\"\r\n{\r\n\t\"$basetexture\"\t\t\"models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_color\"\r\n\t\"$bumpmap\"\t\t\"models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_normal\"\r\n\t\"$lightwarptexture\"\t\t\"models/player/pyro/pyro_lightwarp\"\r\n\t\"$phong\"\t\t\"1\"\r\n\t\"$phongexponent\"\t\t\"25\"\r\n\t\"$phongboost\"\t\t\"2.000000\"\r\n\t\"$phongfresnelranges\"\t\t\"[.25 .5 1]\"\r\n\t\"$rimlight\"\t\t\"1\"\r\n\t\"$rimlightexponent\"\t\t\"4\"\r\n\t\"$rimlightboost\"\t\t\"2\"\r\n\t\"$blendtintbybasealpha\"\t\t\"1\"\r\n\t\"$blendtintcoloroverbase\"\t\t\"0\"\r\n\t\"$colortint_base\"\t\t\"{ 195 108 45 }\"\r\n\t\"$color2\"\t\t\"{ 195 108 45 }\"\r\n\t\"$colortint_tmp\"\t\t\"[0 0 0]\"\r\n\t\"$bumpmapalphaphongmask\"\t\t\"1\"\r\n\t\"$cloakPassEnabled\"\t\t\"1\"\r\n\t\"$detail\"\t\t\"effects/tiledfire/fireLayeredSlowTiled512\"\r\n\t\"$detailscale\"\t\t\"5\"\r\n\t\"$detailblendfactor\"\t\t\"0\"\r\n\t\"$detailblendmode\"\t\t\"6\"\r\n\t\"$yellow\"\t\t\"0\"\r\n\t\">=DX90\"\r\n\t{\r\n\t\t\"$selfillum\"\t\t\"0\"\r\n\t}\r\n\t\"proxies\"\r\n\t{\r\n\t\t\"invis\"\r\n\t\t{\r\n\t\t}\r\n\t\t\"AnimatedTexture\"\r\n\t\t{\r\n\t\t\t\"animatedtexturevar\"\t\t\"$detail\"\r\n\t\t\t\"animatedtextureframenumvar\"\t\t\"$detailframe\"\r\n\t\t\t\"animatedtextureframerate\"\t\t\"30\"\r\n\t\t}\r\n\t\t\"BurnLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$detailblendfactor\"\r\n\t\t}\r\n\t\t\"ItemTintColor\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$colortint_tmp\"\r\n\t\t}\r\n\t\t\"SelectFirstIfNonZero\"\r\n\t\t{\r\n\t\t\t\"srcVar1\"\t\t\"$colortint_tmp\"\r\n\t\t\t\"srcVar2\"\t\t\"$colortint_base\"\r\n\t\t\t\"resultVar\"\t\t\"$color2\"\r\n\t\t}\r\n\t\t\"YellowLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$yellow\"\r\n\t\t}\r\n\t\t\"Multiply\"\r\n\t\t{\r\n\t\t\t\"srcVar1\"\t\t\"$color2\"\r\n\t\t\t\"srcVar2\"\t\t\"$yellow\"\r\n\t\t\t\"resultVar\"\t\t\"$color2\"\r\n\t\t}\r\n\t}\r\n}\r\n",
+    "proxies": [
+     "invis",
+     "animatedtexture",
+     "burnlevel",
+     "itemtintcolor",
+     "selectfirstifnonzero",
+     "yellowlevel",
+     "multiply"
+    ],
+    "vtfPath": "materials/models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_color.vtf",
+    "vtf": {
+     "width": 512,
+     "height": 512,
+     "flags": 8192,
+     "frames": 1,
+     "format": 15
+    }
+   },
+   {
+    "slot": 1,
+    "vmt": "materials/models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_blue.vmt",
+    "shader": "vertexlitgeneric",
+    "params": {
+     "$basetexture": "models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_color",
+     "$bumpmap": "models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_normal",
+     "$lightwarptexture": "models/player/pyro/pyro_lightwarp",
+     "$phong": "1",
+     "$phongexponent": "25",
+     "$phongboost": "2.000000",
+     "$phongfresnelranges": "[.25 .5 1]",
+     "$rimlight": "1",
+     "$rimlightexponent": "4",
+     "$rimlightboost": "2",
+     "$blendtintbybasealpha": "1",
+     "$blendtintcoloroverbase": "0",
+     "$colortint_base": "{ 184 128 53 }",
+     "$color2": "{ 184 128 53 }",
+     "$colortint_tmp": "[0 0 0]",
+     "$bumpmapalphaphongmask": "1",
+     "$cloakpassenabled": "1",
+     "$detail": "effects/tiledfire/fireLayeredSlowTiled512",
+     "$detailscale": "5",
+     "$detailblendfactor": "0",
+     "$detailblendmode": "6",
+     "$yellow": "0",
+     "$selfillum": "0",
+     "animatedtexturevar": "$detail",
+     "animatedtextureframenumvar": "$detailframe",
+     "animatedtextureframerate": "30",
+     "resultvar": "$detailblendfactor",
+     "srcvar1": "$colortint_tmp",
+     "srcvar2": "$colortint_base"
+    },
+    "vmtText": "\"VertexLitGeneric\"\r\n{\r\n\t\"$basetexture\"\t\t\"models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_color\"\r\n\t\"$bumpmap\"\t\t\"models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_normal\"\r\n\t\"$lightwarptexture\"\t\t\"models/player/pyro/pyro_lightwarp\"\r\n\t\"$phong\"\t\t\"1\"\r\n\t\"$phongexponent\"\t\t\"25\"\r\n\t\"$phongboost\"\t\t\"2.000000\"\r\n\t\"$phongfresnelranges\"\t\t\"[.25 .5 1]\"\r\n\t\"$rimlight\"\t\t\"1\"\r\n\t\"$rimlightexponent\"\t\t\"4\"\r\n\t\"$rimlightboost\"\t\t\"2\"\r\n\t\"$blendtintbybasealpha\"\t\t\"1\"\r\n\t\"$blendtintcoloroverbase\"\t\t\"0\"\r\n\t\"$colortint_base\"\t\t\"{ 184 128 53 }\"\r\n\t\"$color2\"\t\t\"{ 184 128 53 }\"\r\n\t\"$colortint_tmp\"\t\t\"[0 0 0]\"\r\n\t\"$bumpmapalphaphongmask\"\t\t\"1\"\r\n\t\"$cloakPassEnabled\"\t\t\"1\"\r\n\t\"$detail\"\t\t\"effects/tiledfire/fireLayeredSlowTiled512\"\r\n\t\"$detailscale\"\t\t\"5\"\r\n\t\"$detailblendfactor\"\t\t\"0\"\r\n\t\"$detailblendmode\"\t\t\"6\"\r\n\t\"$yellow\"\t\t\"0\"\r\n\t\">=DX90\"\r\n\t{\r\n\t\t\"$selfillum\"\t\t\"0\"\r\n\t}\r\n\t\"proxies\"\r\n\t{\r\n\t\t\"invis\"\r\n\t\t{\r\n\t\t}\r\n\t\t\"AnimatedTexture\"\r\n\t\t{\r\n\t\t\t\"animatedtexturevar\"\t\t\"$detail\"\r\n\t\t\t\"animatedtextureframenumvar\"\t\t\"$detailframe\"\r\n\t\t\t\"animatedtextureframerate\"\t\t\"30\"\r\n\t\t}\r\n\t\t\"BurnLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$detailblendfactor\"\r\n\t\t}\r\n\t\t\"ItemTintColor\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$colortint_tmp\"\r\n\t\t}\r\n\t\t\"SelectFirstIfNonZero\"\r\n\t\t{\r\n\t\t\t\"srcVar1\"\t\t\"$colortint_tmp\"\r\n\t\t\t\"srcVar2\"\t\t\"$colortint_base\"\r\n\t\t\t\"resultVar\"\t\t\"$color2\"\r\n\t\t}\r\n\t\t\"YellowLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$yellow\"\r\n\t\t}\r\n\t\t\"Multiply\"\r\n\t\t{\r\n\t\t\t\"srcVar1\"\t\t\"$color2\"\r\n\t\t\t\"srcVar2\"\t\t\"$yellow\"\r\n\t\t\t\"resultVar\"\t\t\"$color2\"\r\n\t\t}\r\n\t}\r\n}\r\n",
+    "proxies": [
+     "invis",
+     "animatedtexture",
+     "burnlevel",
+     "itemtintcolor",
+     "selectfirstifnonzero",
+     "yellowlevel",
+     "multiply"
+    ],
+    "vtfPath": "materials/models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_color.vtf",
+    "vtf": {
+     "width": 512,
+     "height": 512,
+     "flags": 8192,
+     "frames": 1,
+     "format": 15
+    }
+   }
+  ]
+ },
+ "batter's beak": {
+  "id": "31229",
+  "mdl": "models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak.mdl",
+  "skinFamilies": [
+   [
+    0,
+    1
+   ],
+   [
+    1,
+    1
+   ]
+  ],
+  "textureNames": [
+   "models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak",
+   "hwn2021_batters_beak_blue"
+  ],
+  "materials": [
+   {
+    "slot": 0,
+    "vmt": "materials/models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak.vmt",
+    "shader": "vertexlitgeneric",
+    "params": {
+     "$basetexture": "models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak_color",
+     "$bumpmap": "models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak_normal",
+     "$lightwarptexture": "models/player/pyro/pyro_lightwarp",
+     "$phong": "1",
+     "$phongexponent": "6.000000",
+     "$phongboost": "0.100000",
+     "$phongfresnelranges": "[.25 .5 1]",
+     "$rimlight": "1",
+     "$rimlightexponent": "4",
+     "$rimlightboost": "0.500000",
+     "$blendtintbybasealpha": "1",
+     "$blendtintcoloroverbase": "0",
+     "$colortint_base": "{ 112 134 138 }",
+     "$color2": "{ 112 134 138 }",
+     "$colortint_tmp": "[0 0 0]",
+     "$bumpmapalphaphongmask": "1",
+     "$cloakpassenabled": "1",
+     "$detail": "effects/tiledfire/fireLayeredSlowTiled512",
+     "$detailscale": "5",
+     "$detailblendfactor": "0",
+     "$detailblendmode": "6",
+     "$yellow": "0",
+     "$selfillum": "0",
+     "animatedtexturevar": "$detail",
+     "animatedtextureframenumvar": "$detailframe",
+     "animatedtextureframerate": "30",
+     "resultvar": "$detailblendfactor",
+     "srcvar1": "$colortint_tmp",
+     "srcvar2": "$colortint_base"
+    },
+    "vmtText": "\"VertexLitGeneric\"\r\n{\r\n\t\"$basetexture\"\t\t\"models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak_color\"\r\n\t\"$bumpmap\"\t\t\"models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak_normal\"\r\n\t\"$lightwarptexture\"\t\t\"models/player/pyro/pyro_lightwarp\"\r\n\t\"$phong\"\t\t\"1\"\r\n\t\"$phongexponent\"\t\t\"6.000000\"\r\n\t\"$phongboost\"\t\t\"0.100000\"\r\n\t\"$phongfresnelranges\"\t\t\"[.25 .5 1]\"\r\n\t\"$rimlight\"\t\t\"1\"\r\n\t\"$rimlightexponent\"\t\t\"4\"\r\n\t\"$rimlightboost\"\t\t\"0.500000\"\r\n\t\"$blendtintbybasealpha\"\t\t\"1\"\r\n\t\"$blendtintcoloroverbase\"\t\t\"0\"\r\n\t\"$colortint_base\"\t\t\"{ 112 134 138 }\"\r\n\t\"$color2\"\t\t\"{ 112 134 138 }\"\r\n\t\"$colortint_tmp\"\t\t\"[0 0 0]\"\r\n\t\"$bumpmapalphaphongmask\"\t\t\"1\"\r\n\t\"$cloakPassEnabled\"\t\t\"1\"\r\n\t\"$detail\"\t\t\"effects/tiledfire/fireLayeredSlowTiled512\"\r\n\t\"$detailscale\"\t\t\"5\"\r\n\t\"$detailblendfactor\"\t\t\"0\"\r\n\t\"$detailblendmode\"\t\t\"6\"\r\n\t\"$yellow\"\t\t\"0\"\r\n\t\">=DX90\"\r\n\t{\r\n\t\t\"$selfillum\"\t\t\"0\"\r\n\t}\r\n\t\"proxies\"\r\n\t{\r\n\t\t\"invis\"\r\n\t\t{\r\n\t\t}\r\n\t\t\"AnimatedTexture\"\r\n\t\t{\r\n\t\t\t\"animatedtexturevar\"\t\t\"$detail\"\r\n\t\t\t\"animatedtextureframenumvar\"\t\t\"$detailframe\"\r\n\t\t\t\"animatedtextureframerate\"\t\t\"30\"\r\n\t\t}\r\n\t\t\"BurnLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$detailblendfactor\"\r\n\t\t}\r\n\t\t\"ItemTintColor\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$colortint_tmp\"\r\n\t\t}\r\n\t\t\"SelectFirstIfNonZero\"\r\n\t\t{\r\n\t\t\t\"srcVar1\"\t\t\"$colortint_tmp\"\r\n\t\t\t\"srcVar2\"\t\t\"$colortint_base\"\r\n\t\t\t\"resultVar\"\t\t\"$color2\"\r\n\t\t}\r\n\t\t\"YellowLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$yellow\"\r\n\t\t}\r\n\t\t\"Multiply\"\r\n\t\t{\r\n\t\t\t\"srcVar1\"\t\t\"$color2\"\r\n\t\t\t\"srcVar2\"\t\t\"$yellow\"\r\n\t\t\t\"resultVar\"\t\t\"$color2\"\r\n\t\t}\r\n\t}\r\n}\r\n",
+    "proxies": [
+     "invis",
+     "animatedtexture",
+     "burnlevel",
+     "itemtintcolor",
+     "selectfirstifnonzero",
+     "yellowlevel",
+     "multiply"
+    ],
+    "vtfPath": "materials/models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak_color.vtf",
+    "vtf": {
+     "width": 512,
+     "height": 512,
+     "flags": 8192,
+     "frames": 1,
+     "format": 15
+    }
+   },
+   {
+    "slot": 1,
+    "vmt": "materials/models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak_blue.vmt",
+    "shader": "vertexlitgeneric",
+    "params": {
+     "$basetexture": "models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak_blue_color",
+     "$bumpmap": "models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak_normal",
+     "$lightwarptexture": "models/player/pyro/pyro_lightwarp",
+     "$phong": "1",
+     "$phongexponent": "6.000000",
+     "$phongboost": "0.100000",
+     "$phongfresnelranges": "[.25 .5 1]",
+     "$rimlight": "1",
+     "$rimlightexponent": "4",
+     "$rimlightboost": "0.500000",
+     "$blendtintbybasealpha": "1",
+     "$blendtintcoloroverbase": "0",
+     "$colortint_base": "{ 112 134 138 }",
+     "$color2": "{ 112 134 138 }",
+     "$colortint_tmp": "[0 0 0]",
+     "$bumpmapalphaphongmask": "1",
+     "$cloakpassenabled": "1",
+     "$detail": "effects/tiledfire/fireLayeredSlowTiled512",
+     "$detailscale": "5",
+     "$detailblendfactor": "0",
+     "$detailblendmode": "6",
+     "$yellow": "0",
+     "$selfillum": "0",
+     "animatedtexturevar": "$detail",
+     "animatedtextureframenumvar": "$detailframe",
+     "animatedtextureframerate": "30",
+     "resultvar": "$detailblendfactor",
+     "srcvar1": "$colortint_tmp",
+     "srcvar2": "$colortint_base"
+    },
+    "vmtText": "\"VertexLitGeneric\"\r\n{\r\n\t\"$basetexture\"\t\t\"models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak_blue_color\"\r\n\t\"$bumpmap\"\t\t\"models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak_normal\"\r\n\t\"$lightwarptexture\"\t\t\"models/player/pyro/pyro_lightwarp\"\r\n\t\"$phong\"\t\t\"1\"\r\n\t\"$phongexponent\"\t\t\"6.000000\"\r\n\t\"$phongboost\"\t\t\"0.100000\"\r\n\t\"$phongfresnelranges\"\t\t\"[.25 .5 1]\"\r\n\t\"$rimlight\"\t\t\"1\"\r\n\t\"$rimlightexponent\"\t\t\"4\"\r\n\t\"$rimlightboost\"\t\t\"0.500000\"\r\n\t\"$blendtintbybasealpha\"\t\t\"1\"\r\n\t\"$blendtintcoloroverbase\"\t\t\"0\"\r\n\t\"$colortint_base\"\t\t\"{ 112 134 138 }\"\r\n\t\"$color2\"\t\t\"{ 112 134 138 }\"\r\n\t\"$colortint_tmp\"\t\t\"[0 0 0]\"\r\n\t\"$bumpmapalphaphongmask\"\t\t\"1\"\r\n\t\"$cloakPassEnabled\"\t\t\"1\"\r\n\t\"$detail\"\t\t\"effects/tiledfire/fireLayeredSlowTiled512\"\r\n\t\"$detailscale\"\t\t\"5\"\r\n\t\"$detailblendfactor\"\t\t\"0\"\r\n\t\"$detailblendmode\"\t\t\"6\"\r\n\t\"$yellow\"\t\t\"0\"\r\n\t\">=DX90\"\r\n\t{\r\n\t\t\"$selfillum\"\t\t\"0\"\r\n\t}\r\n\t\"proxies\"\r\n\t{\r\n\t\t\"invis\"\r\n\t\t{\r\n\t\t}\r\n\t\t\"AnimatedTexture\"\r\n\t\t{\r\n\t\t\t\"animatedtexturevar\"\t\t\"$detail\"\r\n\t\t\t\"animatedtextureframenumvar\"\t\t\"$detailframe\"\r\n\t\t\t\"animatedtextureframerate\"\t\t\"30\"\r\n\t\t}\r\n\t\t\"BurnLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$detailblendfactor\"\r\n\t\t}\r\n\t\t\"ItemTintColor\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$colortint_tmp\"\r\n\t\t}\r\n\t\t\"SelectFirstIfNonZero\"\r\n\t\t{\r\n\t\t\t\"srcVar1\"\t\t\"$colortint_tmp\"\r\n\t\t\t\"srcVar2\"\t\t\"$colortint_base\"\r\n\t\t\t\"resultVar\"\t\t\"$color2\"\r\n\t\t}\r\n\t\t\"YellowLevel\"\r\n\t\t{\r\n\t\t\t\"resultVar\"\t\t\"$yellow\"\r\n\t\t}\r\n\t\t\"Multiply\"\r\n\t\t{\r\n\t\t\t\"srcVar1\"\t\t\"$color2\"\r\n\t\t\t\"srcVar2\"\t\t\"$yellow\"\r\n\t\t\t\"resultVar\"\t\t\"$color2\"\r\n\t\t}\r\n\t}\r\n}\r\n",
+    "proxies": [
+     "invis",
+     "animatedtexture",
+     "burnlevel",
+     "itemtintcolor",
+     "selectfirstifnonzero",
+     "yellowlevel",
+     "multiply"
+    ],
+    "vtfPath": "materials/models/workshop/player/items/scout/hwn2021_batters_beak/hwn2021_batters_beak_blue_color.vtf",
+    "vtf": {
+     "width": 512,
+     "height": 512,
+     "flags": 8192,
+     "frames": 1,
+     "format": 15
+    }
+   }
+  ]
+ }
+}

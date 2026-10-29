@@ -1,0 +1,92 @@
+[loadout] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[loadout] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[naked] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[naked] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[only-spooky-shoes] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[only-spooky-shoes] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[only-spooky-sleeves] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[only-spooky-sleeves] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[only-a-well-wrapped-hat] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[only-a-well-wrapped-hat] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[only-spooky-head-bouncers] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[only-spooky-head-bouncers] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-52] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-52] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-9048] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-9048] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-10623] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-10623] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-11432] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-11432] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-12325] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-12325] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-13238] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-13238] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-13693] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-13693] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-14535] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-14535] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-18882] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-18882] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-30928] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-30928] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-143] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-143] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-8565] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-8565] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-9362] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-9362] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-10086] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-10086] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-10877] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-10877] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-11656] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-11656] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-12525] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-12525] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-13345] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-13345] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-14172] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-14172] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-18524] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-18524] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-106] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-106] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-302] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-302] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-617] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-617] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-1014] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-1014] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-30154] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-30154] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-30427] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-30427] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-30733] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-30733] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-30998] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-30998] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-31173] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-31173] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-31326] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-31326] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-164] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-164] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-165] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-165] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-166] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-166] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-170] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-170] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-242] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-242] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-243] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-243] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-244] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-244] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-245] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-245] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-268] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-268] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[s-269] warning: react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next or by passing it via props or context. In monorepo setups, make sure there is only one instance of react-i18next. {code: NO_I18NEXT_INSTANCE}
+[s-269] warning: THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.

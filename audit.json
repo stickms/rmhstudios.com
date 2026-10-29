@@ -1,0 +1,413 @@
+{
+ "effects": 792,
+ "effectsBrokenByUnsupported": {},
+ "ignoredMaterialParams": {
+  "$angle": 5,
+  "$basetexture": 792,
+  "$bluramount": 32,
+  "$brightness": 5,
+  "$bumpframe": 1,
+  "$bumpmap": 1,
+  "$center": 5,
+  "$deptblend": 1,
+  "$detail": 3,
+  "$detailblendmode": 3,
+  "$detailscale": 6,
+  "$forcerefract": 26,
+  "$model": 23,
+  "$no_fullbright": 459,
+  "$nocull": 327,
+  "$nofog": 60,
+  "$normalmap": 34,
+  "$noviewportfixup": 9,
+  "$refractblur": 1,
+  "$refracttint": 1,
+  "$scale": 1,
+  "$silhouettecolor": 1,
+  "$silhouettethickness": 1,
+  "$splinetype": 1,
+  "$surfaceprop": 660,
+  "$texture2": 3,
+  "$translate": 5,
+  "$translucent": 736,
+  "$traslucent": 1,
+  "$vertexalpha": 770,
+  "$vertexalphamat": 171,
+  "$vertexcolor": 781,
+  "$vertexcolormodulate": 34,
+  "%keywords": 1,
+  "lowfill?$maxfadesize": 3,
+  "lowfill?$minfadesize": 3
+ },
+ "ignoredOperatorParams": {
+  "constraints/collision via traces": {
+   "collision group": 57,
+   "collision mode": 57,
+   "control point movement distance tolerance": 57,
+   "control point offset for fast collisions": 57,
+   "trace accuracy tolerance": 57
+  },
+  "constraints/constrain distance to control point": {
+   "global center point": 58
+  },
+  "constraints/constrain distance to path between two control points": {
+   "bulge control 0=random 1=orientation of start pnt 2=orientation of end point": 132,
+   "maximum distance end": 132,
+   "maximum distance middle": 132,
+   "mid point position": 132,
+   "travel time": 132
+  },
+  "emitters/emit noise": {
+   "scale emission to used control points": 31,
+   "world time noise coordinate scale": 31
+  },
+  "emitters/emit_continuously": {
+   "scale emission to used control points": 791
+  },
+  "emitters/emit_instantaneously": {
+   "maximum emission per frame": 226
+  },
+  "initializers/color random": {
+   "tint update movement threshold": 786
+  },
+  "initializers/position along path random": {
+   "bulge control 0=random 1=orientation of start pnt 2=orientation of end point": 12,
+   "mid point position": 12
+  },
+  "initializers/position along path sequential": {
+   "bulge control 0=random 1=orientation of start pnt 2=orientation of end point": 5,
+   "mid point position": 5,
+   "save offset": 5,
+   "use sequential cp pairs between start and end point": 5
+  },
+  "initializers/position modify warp random": {
+   "reverse warp (0/1)": 2,
+   "warp transition start time": 2,
+   "warp transition time (treats min/max as start/end sizes)": 2
+  },
+  "initializers/position on model random": {
+   "direction bias": 117,
+   "force to be inside model": 117
+  },
+  "initializers/position within sphere random": {
+   "create in model": 733,
+   "randomly distribute to highest supplied control point": 733,
+   "randomly distribution growth time": 733
+  },
+  "initializers/remap control point to vector": {
+   "accelerate position": 6,
+   "local space cp": 6,
+   "offset position": 6
+  },
+  "initializers/remap initial distance to control point to scalar": {
+   "ensure line of sight": 5,
+   "los collision group": 5,
+   "los failure scalar": 5,
+   "maximum trace length": 5
+  },
+  "initializers/remap noise to scalar": {
+   "world time noise coordinate scale": 7
+  },
+  "operators/alpha fade in random": {
+   "fade in time exponent": 593,
+   "fade in time max": 593,
+   "fade in time min": 593
+  },
+  "operators/alpha fade out random": {
+   "fade out time exponent": 627,
+   "fade out time max": 627,
+   "fade out time min": 627
+  },
+  "operators/cull relative to model": {
+   "use only bounding box": 2
+  },
+  "operators/movement basic": {
+   "max constraint passes": 777
+  },
+  "operators/movement lock to control point": {
+   "distance fade range": 744
+  },
+  "operators/movement lock to saved position along path": {
+   "bulge control 0=random 1=orientation of start pnt 2=orientation of end point": 1,
+   "mid point position": 1,
+   "use sequential cp pairs between start and end point": 1
+  },
+  "operators/movement maintain position along path": {
+   "bulge control 0=random 1=orientation of start pnt 2=orientation of end point": 5,
+   "cohesion strength": 5,
+   "control point movement tolerance": 5,
+   "mid point position": 5,
+   "use existing particle count": 5
+  },
+  "operators/movement match particle velocities": {
+   "control point to broadcast speed and direction to": 6
+  },
+  "operators/remap distance between two control points to scalar": {
+   "ensure line of sight": 4,
+   "los collision group": 4,
+   "los failure scalar": 4,
+   "maximum trace length": 4
+  },
+  "operators/remap distance to control point to scalar": {
+   "ensure line of sight": 39,
+   "los collision group": 39,
+   "los failure scalar": 39,
+   "maximum trace length": 39
+  },
+  "operators/remap distance to control point to vector": {
+   "local space cp": 6
+  },
+  "operators/rotation orient relative to cp": {
+   "spin strength": 3
+  },
+  "operators/rotation orient to 2d direction": {
+   "spin strength": 2
+  },
+  "operators/rotation spin roll": {
+   "spin_rate_degrees": 570,
+   "spin_rate_min": 570,
+   "spin_stop_time": 570
+  },
+  "operators/rotation spin yaw": {
+   "yaw_rate_degrees": 23,
+   "yaw_rate_min": 23,
+   "yaw_stop_time": 23
+  },
+  "operators/set child control points from particle positions": {
+   "set cp density for particles": 205,
+   "set cp radius for particles": 205,
+   "set cp velocity for particles": 205
+  },
+  "operators/set control point positions": {
+   "first control point location": 63,
+   "first control point number": 63,
+   "first control point parent": 63,
+   "fourth control point location": 63,
+   "fourth control point number": 63,
+   "fourth control point parent": 63,
+   "second control point location": 63,
+   "second control point number": 63,
+   "second control point parent": 63,
+   "third control point location": 63,
+   "third control point number": 63,
+   "third control point parent": 63
+  },
+  "renderers/render_animated_sprites": {
+   "visibility alpha scale maximum": 792,
+   "visibility alpha scale minimum": 792,
+   "visibility camera depth bias": 790,
+   "visibility input maximum": 792,
+   "visibility input minimum": 792,
+   "visibility proxy input control point number": 792,
+   "visibility proxy radius": 792,
+   "visibility radius scale maximum": 792,
+   "visibility radius scale minimum": 792
+  },
+  "renderers/render_screen_velocity_rotate": {
+   "rotate_rate(dps)": 20,
+   "visibility alpha scale maximum": 20,
+   "visibility alpha scale minimum": 20,
+   "visibility camera depth bias": 20,
+   "visibility input maximum": 20,
+   "visibility input minimum": 20,
+   "visibility proxy input control point number": 20,
+   "visibility proxy radius": 20,
+   "visibility radius scale maximum": 20,
+   "visibility radius scale minimum": 20
+  },
+  "renderers/render_sprite_trail": {
+   "visibility alpha scale maximum": 100,
+   "visibility alpha scale minimum": 100,
+   "visibility camera depth bias": 100,
+   "visibility input maximum": 100,
+   "visibility input minimum": 100,
+   "visibility proxy input control point number": 100,
+   "visibility proxy radius": 100,
+   "visibility radius scale maximum": 100,
+   "visibility radius scale minimum": 100
+  }
+ },
+ "ignoredSystemOptions": {
+  "batch particle systems": 792,
+  "bounding_box_max": 792,
+  "bounding_box_min": 792,
+  "color": 792,
+  "control point to disable rendering if it is the camera": 792,
+  "cull_control_point": 792,
+  "cull_cost": 792,
+  "cull_radius": 792,
+  "cull_replacement_definition": 792,
+  "material": 792,
+  "maximum draw distance": 792,
+  "maximum sim tick rate": 792,
+  "maximum time step": 792,
+  "minimum rendered frames": 792,
+  "minimum sim tick rate": 792,
+  "preventnamebasedlookup": 792,
+  "time to sleep when not drawn": 792,
+  "view model effect": 792
+ },
+ "materialParams": {
+  "!lowfill?$depthblend": 10,
+  "!lowfill?$endfadesize": 7,
+  "!lowfill?$startfadesize": 7,
+  "!srgb?$overbrightfactor": 2,
+  "$additive": 730,
+  "$addself": 70,
+  "$alpha": 16,
+  "$alphatest": 19,
+  "$angle": 5,
+  "$basetexture": 792,
+  "$blendframes": 96,
+  "$bluramount": 32,
+  "$brightness": 5,
+  "$bumpframe": 1,
+  "$bumpmap": 1,
+  "$center": 5,
+  "$color": 78,
+  "$color2": 1,
+  "$deptblend": 1,
+  "$depthblend": 681,
+  "$depthblendscale": 127,
+  "$detail": 3,
+  "$detailblendfactor": 3,
+  "$detailblendmode": 3,
+  "$detailscale": 6,
+  "$dualsequence": 2,
+  "$endfadesize": 268,
+  "$farfadeinterval": 23,
+  "$forcerefract": 26,
+  "$ignorez": 465,
+  "$maxdistance": 19,
+  "$maxlumframeblend1": 2,
+  "$maxlumframeblend2": 2,
+  "$maxsize": 205,
+  "$minsize": 174,
+  "$mod2x": 32,
+  "$model": 23,
+  "$no_fullbright": 459,
+  "$nocull": 327,
+  "$nofog": 60,
+  "$normalmap": 34,
+  "$noviewportfixup": 9,
+  "$overbright": 1,
+  "$overbrightfactor": 301,
+  "$refractamount": 34,
+  "$refractblur": 1,
+  "$refracttint": 1,
+  "$scale": 1,
+  "$sequence_blend_mode": 2,
+  "$silhouettecolor": 1,
+  "$silhouettethickness": 1,
+  "$splinetype": 1,
+  "$spriterendermode": 68,
+  "$startfadesize": 268,
+  "$surfaceprop": 660,
+  "$texture2": 3,
+  "$translate": 5,
+  "$translucent": 736,
+  "$traslucent": 1,
+  "$vertexalpha": 770,
+  "$vertexalphamat": 171,
+  "$vertexcolor": 781,
+  "$vertexcolormodulate": 34,
+  "$zoomanimateseq2": 2,
+  "%keywords": 1,
+  "360?$endfadesize": 2,
+  "360?$startfadesize": 2,
+  "lowfill?$blendframes": 10,
+  "lowfill?$depthblend": 10,
+  "lowfill?$endfadesize": 7,
+  "lowfill?$maxfadesize": 3,
+  "lowfill?$minfadesize": 3,
+  "lowfill?$startfadesize": 7,
+  "srgb?$alpha": 1,
+  "srgb?$overbrightfactor": 76
+ },
+ "shaders": {
+  "refract": 34,
+  "sprite": 68,
+  "spritecard": 750,
+  "unlitgeneric": 695,
+  "unlittwotexture": 3
+ },
+ "supportedUsage": {
+  "alpha fade and decay": 506,
+  "alpha fade in random": 593,
+  "alpha fade out random": 627,
+  "alpha random": 777,
+  "collision via traces": 57,
+  "color fade": 557,
+  "color random": 786,
+  "constrain distance to control point": 58,
+  "constrain distance to path between two control points": 132,
+  "cull relative to model": 2,
+  "cull when crossing plane": 8,
+  "emit noise": 31,
+  "emit_continuously": 791,
+  "emit_instantaneously": 226,
+  "lifespan decay": 667,
+  "lifetime from sequence": 31,
+  "lifetime random": 785,
+  "movement basic": 777,
+  "movement dampen relative to control point": 7,
+  "movement lock to bone": 103,
+  "movement lock to control point": 744,
+  "movement lock to saved position along path": 1,
+  "movement maintain position along path": 5,
+  "movement match particle velocities": 6,
+  "movement max velocity": 96,
+  "movement rotate particle around axis": 272,
+  "noise scalar": 6,
+  "oscillate scalar": 124,
+  "oscillate vector": 265,
+  "position along path random": 12,
+  "position along path sequential": 5,
+  "position from parent particles": 308,
+  "position modify offset random": 748,
+  "position modify warp random": 2,
+  "position on model random": 117,
+  "position within box random": 31,
+  "position within sphere random": 733,
+  "prevent passing through a plane": 3,
+  "pull towards control point": 137,
+  "radius random": 776,
+  "radius scale": 762,
+  "random force": 176,
+  "remap control point to scalar": 11,
+  "remap control point to vector": 6,
+  "remap cp speed to cp": 10,
+  "remap distance between two control points to scalar": 4,
+  "remap distance to control point to scalar": 39,
+  "remap distance to control point to vector": 6,
+  "remap initial distance to control point to scalar": 5,
+  "remap initial scalar": 135,
+  "remap noise to scalar": 7,
+  "remap scalar": 5,
+  "remap scalar to vector": 10,
+  "render_animated_sprites": 792,
+  "render_rope": 80,
+  "render_screen_velocity_rotate": 20,
+  "render_sprite_trail": 100,
+  "rotation basic": 179,
+  "rotation orient relative to cp": 3,
+  "rotation orient to 2d direction": 2,
+  "rotation random": 740,
+  "rotation speed random": 31,
+  "rotation spin roll": 570,
+  "rotation spin yaw": 23,
+  "rotation yaw flip random": 464,
+  "rotation yaw random": 129,
+  "sequence random": 445,
+  "set child control points from particle positions": 205,
+  "set control point positions": 63,
+  "set control point to particles' center": 3,
+  "set control point to player": 18,
+  "trail length random": 84,
+  "twist around axis": 162,
+  "velocity inherit from control point": 51,
+  "velocity noise": 198,
+  "velocity random": 288
+ },
+ "unsupported": []
+}

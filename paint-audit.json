@@ -1,0 +1,261 @@
+{
+ "counts": {
+  "cosmetics": 8239,
+  "paintable": 1588,
+  "$colortint_base with no ItemTintColor proxy (not applied)": 0,
+  "whole-material tinted ($colortint_base, no mask)": 3082,
+  "constant colour modulation ($color2/$color)": 231,
+  "masked materials": 6623
+ },
+ "replaceFactors": {
+  "0.0": 5886,
+  "1.0": 674,
+  "0.5": 5,
+  "0.99": 4,
+  "0.05": 2,
+  "0.9": 7,
+  "0.0001": 1,
+  "0.85": 9,
+  "0.3": 4,
+  "0.8": 3,
+  "0.78": 2,
+  "0.95": 4,
+  "0.1": 3,
+  "0.4": 1,
+  "0.66": 1,
+  "0.2": 3,
+  "0.65": 2,
+  "0.46": 2,
+  "0.001": 2,
+  "0.96": 4,
+  "0.86": 2,
+  "0.813": 2
+ },
+ "topDefaultTints": [
+  [
+   [
+    0.8902,
+    0.5294,
+    0.2196
+   ],
+   958
+  ],
+  [
+   [
+    0.6157,
+    0.1922,
+    0.1843
+   ],
+   524
+  ],
+  [
+   [
+    0.2235,
+    0.3608,
+    0.4706
+   ],
+   478
+  ],
+  [
+   [
+    0.7647,
+    0.7725,
+    0.8627
+   ],
+   438
+  ],
+  [
+   [
+    1.0,
+    1.0,
+    1.0
+   ],
+   384
+  ],
+  [
+   [
+    0.3647,
+    0.3647,
+    0.3647
+   ],
+   219
+  ],
+  [
+   [
+    0.6431,
+    0.3882,
+    0.2353
+   ],
+   219
+  ],
+  [
+   [
+    0.8196,
+    0.8196,
+    0.851
+   ],
+   219
+  ],
+  [
+   [
+    0.9922,
+    0.7059,
+    0.298
+   ],
+   219
+  ],
+  [
+   [
+    0.1176,
+    0.549,
+    0.6667
+   ],
+   191
+  ],
+  [
+   [
+    0.4863,
+    0.8,
+    0.3137
+   ],
+   128
+  ],
+  [
+   [
+    0.7843,
+    0.1765,
+    0.1765
+   ],
+   128
+  ]
+ ],
+ "cases": {
+  "  ... of those, ones that set $phongtint/$color2 (a mechanism not handled)": {
+   "count": 8,
+   "examples": [
+    "31184 Manndatory Attire",
+    "31261 Decorated Veteran",
+    "31327 Festive Rack",
+    "9306 ESA Rewind Participant",
+    "9733 ",
+    "9734 ",
+    "9735 ",
+    "9736 "
+   ]
+  },
+  "$color2 differs from $colortint_base": {
+   "count": 1,
+   "examples": [
+    "760 Front Runner"
+   ]
+  },
+  "masked material also uses $additive (alpha means two things)": {
+   "count": 229,
+   "examples": [
+    "30300 Haunted Hat",
+    "30536 Li'l Dutchman",
+    "30733 Teufort Knight",
+    "30733 Teufort Knight",
+    "31131 Sir Pumpkinton",
+    "31215 Alakablamicon",
+    "31215 Alakablamicon",
+    "8368 UGC Highlander Platinum 1st Place",
+    "8368 UGC Highlander Platinum 1st Place",
+    "8369 UGC Highlander Platinum 2nd Place",
+    "8369 UGC Highlander Platinum 2nd Place",
+    "8370 UGC Highlander Platinum 3rd Place"
+   ]
+  },
+  "masked material also uses $alphatest (alpha means two things)": {
+   "count": 14,
+   "examples": [
+    "10673 Copenhagen Games 6v6 2nd Place",
+    "10673 Copenhagen Games 6v6 2nd Place",
+    "10674 Copenhagen Games 6v6 3rd Place",
+    "10674 Copenhagen Games 6v6 3rd Place",
+    "10675 Copenhagen Games Highlander 1st Place",
+    "10675 Copenhagen Games Highlander 1st Place",
+    "10676 Copenhagen Games Highlander 2nd Place",
+    "10676 Copenhagen Games Highlander 2nd Place",
+    "10677 Copenhagen Games Highlander 3rd Place",
+    "10677 Copenhagen Games Highlander 3rd Place",
+    "10678 Copenhagen Games Participant",
+    "10678 Copenhagen Games Participant"
+   ]
+  },
+  "masked material also uses $selfillum (alpha means two things)": {
+   "count": 278,
+   "examples": [
+    "30536 Li'l Dutchman",
+    "31128 Hollowed Helm",
+    "31128 Hollowed Helm",
+    "31131 Sir Pumpkinton",
+    "31215 Alakablamicon",
+    "31215 Alakablamicon",
+    "31218 Bone Cone",
+    "31218 Bone Cone",
+    "31232 Computron 5000",
+    "31232 Computron 5000",
+    "31245 Oh Deer!",
+    "31245 Oh Deer!"
+   ]
+  },
+  "masked material also uses $translucent (alpha means two things)": {
+   "count": 18,
+   "examples": [
+    "30300 Haunted Hat",
+    "30536 Li'l Dutchman",
+    "30733 Teufort Knight",
+    "30733 Teufort Knight",
+    "10673 Copenhagen Games 6v6 2nd Place",
+    "10673 Copenhagen Games 6v6 2nd Place",
+    "10674 Copenhagen Games 6v6 3rd Place",
+    "10674 Copenhagen Games 6v6 3rd Place",
+    "10675 Copenhagen Games Highlander 1st Place",
+    "10675 Copenhagen Games Highlander 1st Place",
+    "10676 Copenhagen Games Highlander 2nd Place",
+    "10676 Copenhagen Games Highlander 2nd Place"
+   ]
+  },
+  "masked material with no $color2/$colortint_base default": {
+   "count": 2,
+   "examples": [
+    "1034 Conspiracy Cap",
+    "1035 Public Accessor"
+   ]
+  },
+  "paint-masked material on an item the schema does not mark paintable": {
+   "count": 1606,
+   "examples": [
+    "704 Bolgan Family Crest",
+    "868 Heroic Companion Badge",
+    "955 Tuxxy",
+    "992 Smissmas Wreath",
+    "30065 Hardy Laurel",
+    "30720 Arkham Cowl",
+    "30733 Teufort Knight",
+    "30740 Arkham Cowl",
+    "8224 UGC Highlander Platinum 1st Place",
+    "8225 UGC Highlander Platinum 2nd Place",
+    "8226 UGC Highlander Platinum 3rd Place",
+    "8227 UGC Highlander Silver 1st Place"
+   ]
+  },
+  "paintable and the converter finds NO tint to apply (no mask, no $colortint_base)": {
+   "count": 11,
+   "examples": [
+    "30234 Sackcloth Spook",
+    "30252 Guano",
+    "30289 Quoth",
+    "31184 Manndatory Attire",
+    "31261 Decorated Veteran",
+    "31327 Festive Rack",
+    "9306 ESA Rewind Participant",
+    "9733 ",
+    "9734 ",
+    "9735 ",
+    "9736 "
+   ]
+  }
+ }
+}

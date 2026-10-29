@@ -1,0 +1,1568 @@
+{
+ "classBody": {
+  "bytes": 510800,
+  "sceneExtras": {
+   "bodygroups": {
+    "hat": 2,
+    "headphones": 2,
+    "shoes_socks": 2,
+    "dogtags": 2
+   }
+  },
+  "primitives": 8,
+  "primitiveTags": [
+   [
+    "dogtags",
+    0
+   ],
+   [
+    "hat",
+    0
+   ],
+   [
+    "headphones",
+    0
+   ],
+   [
+    "shoes_socks",
+    0
+   ]
+  ],
+  "skinBones": [
+   "bip_pelvis",
+   "bip_spine_0",
+   "bip_spine_1",
+   "bip_spine_2",
+   "bip_spine_3",
+   "bip_neck",
+   "bip_head",
+   "bip_collar_l",
+   "bip_collar_r",
+   "bip_upperarm_l",
+   "bip_upperarm_r",
+   "bip_lowerarm_l",
+   "bip_lowerarm_r",
+   "bip_hip_l",
+   "bip_hip_r",
+   "bip_knee_l",
+   "bip_knee_r",
+   "bip_foot_l",
+   "bip_foot_r",
+   "bip_hand_l",
+   "bip_hand_r",
+   "bip_toe_l",
+   "bip_toe_r",
+   "weapon_bone",
+   "weapon_bone_1",
+   "weapon_bone_2",
+   "weapon_bone_3",
+   "weapon_bone_4",
+   "weapon_bone_l",
+   "medal_bone",
+   "mvm",
+   "effect_hand_l",
+   "effect_hand_r",
+   "bip_dogtag_0",
+   "bip_dogtag_1",
+   "bip_dogtag_2",
+   "bip_dogtag_3",
+   "bip_packtop",
+   "bip_packmiddle",
+   "bip_thumb_0_l",
+   "bip_thumb_0_r",
+   "bip_index_0_l",
+   "bip_index_0_r",
+   "bip_middle_0_l",
+   "bip_middle_0_r",
+   "bip_ring_0_l",
+   "bip_ring_0_r",
+   "bip_pinky_0_l",
+   "bip_pinky_0_r",
+   "bip_thumb_1_l",
+   "bip_thumb_1_r",
+   "bip_index_1_l",
+   "bip_index_1_r",
+   "bip_middle_1_l",
+   "bip_middle_1_r",
+   "bip_ring_1_l",
+   "bip_ring_1_r",
+   "bip_pinky_1_l",
+   "bip_pinky_1_r",
+   "bip_thumb_2_l",
+   "bip_thumb_2_r",
+   "bip_index_2_l",
+   "bip_index_2_r",
+   "bip_middle_2_l",
+   "bip_middle_2_r",
+   "bip_ring_2_l",
+   "bip_ring_2_r",
+   "bip_pinky_2_l",
+   "bip_pinky_2_r",
+   "prop_bone",
+   "prop_bone_1",
+   "prop_bone_2",
+   "prop_bone_3",
+   "prop_bone_4",
+   "prop_bone_5",
+   "prop_bone_6",
+   "hlp_forearm_l",
+   "hlp_forearm_r"
+  ],
+  "hasJiggle": false,
+  "bodyparts": {
+   "scout": 1,
+   "hat": 2,
+   "headphones": 2,
+   "shoes_socks": 2,
+   "dogtags": 2
+  },
+  "boneCount": 78
+ },
+ "cosmetics": {
+  "924": {
+   "id": "924",
+   "name": "Spooky Shoes",
+   "mdl": "models/workshop/player/items/scout/scout_halloweenshoes/scout_halloweenshoes.mdl",
+   "slot": "misc",
+   "regions": "feet",
+   "playerBodygroups": {
+    "shoes_socks": "1"
+   },
+   "styles": {},
+   "usePerClassBodygroups": null,
+   "materials": [
+    {
+     "vmt": "materials/models/workshop/player/items/scout/scout_halloweenshoes/scout_halloweenshoes.vmt",
+     "shader": "vertexlitgeneric",
+     "texture": "materials/models/workshop/player/items/scout/scout_halloweenshoes/scout_halloweenshoes_color.vtf",
+     "textureDecoded": true,
+     "params": {
+      "$basetexture": "models/workshop/player/items/scout/scout_halloweenshoes/scout_halloweenshoes_color",
+      "$phong": "1",
+      "$blendtintbybasealpha": "1",
+      "$blendtintcoloroverbase": "1.000000",
+      "$colortint_base": "{ 151 151 155 }",
+      "$color2": "{ 151 151 155 }",
+      "$colortint_tmp": "[0 0 0]",
+      "$selfillum": "0"
+     }
+    }
+   ],
+   "converted": {
+    "bytes": 58668,
+    "sceneExtras": {
+     "attach": {
+      "bone": "bip_foot_r",
+      "pose": [
+       0.947939,
+       -0.243591,
+       0.205122,
+       0.0,
+       1e-06,
+       -0.644119,
+       -0.764925,
+       0.0,
+       0.318452,
+       0.725103,
+       -0.610585,
+       0.0,
+       0.15825,
+       0.103504,
+       0.033544,
+       1.0
+      ],
+      "fallbacks": [
+       {
+        "bone": "bip_knee_r",
+        "pose": [
+         -0.035655,
+         0.971574,
+         -0.234035,
+         0.0,
+         -0.967891,
+         -0.091881,
+         -0.233976,
+         0.0,
+         -0.248829,
+         0.218178,
+         0.943654,
+         0.0,
+         0.436517,
+         0.15932,
+         0.089835,
+         1.0
+        ]
+       }
+      ]
+     },
+     "boneMerge": true
+    },
+    "primitives": 1,
+    "primitiveTags": [],
+    "skinBones": [
+     "bip_knee_r",
+     "bip_foot_r",
+     "bip_toe_r",
+     "bip_knee_l",
+     "bip_foot_l",
+     "bip_toe_l"
+    ],
+    "hasJiggle": false,
+    "followsPlayerBones": true,
+    "bodyparts": {
+     "default": 1
+    },
+    "privateBones": []
+   }
+  },
+  "925": {
+   "id": "925",
+   "name": "Spooky Sleeves",
+   "mdl": "models/workshop/player/items/all_class/halloweenjacket/halloweenjacket_scout.mdl",
+   "slot": "misc",
+   "regions": "sleeves",
+   "playerBodygroups": {},
+   "styles": {},
+   "usePerClassBodygroups": null,
+   "materials": [
+    {
+     "vmt": "materials/models/workshop/player/items/all_class/halloweenjacket/halloweenjacket.vmt",
+     "shader": "vertexlitgeneric",
+     "texture": "materials/models/workshop/player/items/all_class/halloweenjacket/halloweenjacket_color.vtf",
+     "textureDecoded": true,
+     "params": {
+      "$basetexture": "models/workshop/player/items/all_class/halloweenjacket/halloweenjacket_color",
+      "$phong": "1",
+      "$blendtintbybasealpha": "1",
+      "$blendtintcoloroverbase": "1.000000",
+      "$colortint_base": "{ 151 151 155 }",
+      "$color2": "{ 151 151 155 }",
+      "$colortint_tmp": "[0 0 0]",
+      "$selfillum": "0"
+     }
+    }
+   ],
+   "converted": {
+    "bytes": 83720,
+    "sceneExtras": {
+     "attach": {
+      "bone": "bip_spine_3",
+      "pose": [
+       1.0,
+       3e-06,
+       1e-06,
+       0.0,
+       2e-06,
+       -0.455111,
+       -0.890435,
+       0.0,
+       -2e-06,
+       0.890435,
+       -0.455111,
+       0.0,
+       -2e-06,
+       1.093201,
+       -0.677528,
+       1.0
+      ],
+      "fallbacks": [
+       {
+        "bone": "bip_spine_2",
+        "pose": [
+         1.0,
+         2e-06,
+         2e-06,
+         0.0,
+         2e-06,
+         -0.047872,
+         -0.998854,
+         0.0,
+         -2e-06,
+         0.998854,
+         -0.047872,
+         0.0,
+         -2e-06,
+         1.168492,
+         -0.167006,
+         1.0
+        ]
+       }
+      ]
+     },
+     "boneMerge": true
+    },
+    "primitives": 1,
+    "primitiveTags": [],
+    "skinBones": [
+     "bip_spine_2",
+     "bip_spine_3",
+     "bip_collar_l",
+     "bip_upperarm_l",
+     "bip_lowerarm_l",
+     "bip_hand_l",
+     "bip_thumb_0_l",
+     "bip_thumb_1_l",
+     "bip_thumb_2_l",
+     "bip_pinky_0_l",
+     "bip_index_0_l",
+     "bip_middle_0_l",
+     "bip_ring_0_l",
+     "hlp_forearm_l",
+     "bip_collar_r",
+     "bip_upperarm_r",
+     "bip_lowerarm_r",
+     "bip_hand_r",
+     "bip_thumb_0_r",
+     "bip_thumb_1_r",
+     "bip_thumb_2_r",
+     "bip_index_0_r",
+     "bip_middle_0_r",
+     "bip_pinky_0_r",
+     "bip_ring_0_r",
+     "hlp_forearm_r"
+    ],
+    "hasJiggle": false,
+    "followsPlayerBones": true,
+    "bodyparts": {
+     "default": 1
+    },
+    "privateBones": []
+   }
+  },
+  "30746": {
+   "id": "30746",
+   "name": "A Well Wrapped Hat",
+   "mdl": "models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_scout.mdl",
+   "slot": "misc",
+   "regions": "hat",
+   "playerBodygroups": {
+    "hat": "1",
+    "headphones": "1"
+   },
+   "styles": {
+    "0": [
+     {
+      "name": "#TF_style0"
+     }
+    ],
+    "1": [
+     {
+      "name": "#TF_style1"
+     }
+    ]
+   },
+   "usePerClassBodygroups": null,
+   "materials": [
+    {
+     "vmt": "materials/models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat.vmt",
+     "shader": "vertexlitgeneric",
+     "texture": "materials/models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_color.vtf",
+     "textureDecoded": true,
+     "params": {
+      "$basetexture": "models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_color",
+      "$phong": "1",
+      "$blendtintbybasealpha": "1",
+      "$blendtintcoloroverbase": "0",
+      "$colortint_base": "{ 195 108 45 }",
+      "$color2": "{ 195 108 45 }",
+      "$colortint_tmp": "[0 0 0]",
+      "$selfillum": "0"
+     }
+    },
+    {
+     "vmt": "materials/models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_blue.vmt",
+     "shader": "vertexlitgeneric",
+     "texture": "materials/models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_color.vtf",
+     "textureDecoded": true,
+     "params": {
+      "$basetexture": "models/workshop/player/items/all_class/dec15_a_well_wrapped_hat/dec15_a_well_wrapped_hat_color",
+      "$phong": "1",
+      "$blendtintbybasealpha": "1",
+      "$blendtintcoloroverbase": "0",
+      "$colortint_base": "{ 184 128 53 }",
+      "$color2": "{ 184 128 53 }",
+      "$colortint_tmp": "[0 0 0]",
+      "$selfillum": "0"
+     }
+    }
+   ],
+   "converted": {
+    "bytes": 50844,
+    "sceneExtras": {
+     "attach": {
+      "bone": "bip_head",
+      "pose": [
+       1.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       -0.993474,
+       0.114059,
+       0.0,
+       0.0,
+       -0.114059,
+       -0.993474,
+       0.0,
+       -0.0,
+       1.388329,
+       -0.186816,
+       1.0
+      ],
+      "fallbacks": [
+       {
+        "bone": "bip_neck",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.770468,
+         0.637479,
+         0.0,
+         0.0,
+         -0.637479,
+         -0.770468,
+         0.0,
+         -0.0,
+         0.987445,
+         -0.913831,
+         1.0
+        ]
+       },
+       {
+        "bone": "bip_spine_3",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.890433,
+         0.455114,
+         0.0,
+         0.0,
+         -0.455114,
+         -0.890433,
+         0.0,
+         -0.0,
+         1.093637,
+         -0.677802,
+         1.0
+        ]
+       },
+       {
+        "bone": "bip_spine_2",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.998854,
+         0.047871,
+         0.0,
+         0.0,
+         -0.047871,
+         -0.998854,
+         0.0,
+         -0.0,
+         1.169004,
+         -0.167071,
+         1.0
+        ]
+       },
+       {
+        "bone": "bip_spine_1",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.980088,
+         -0.198562,
+         0.0,
+         0.0,
+         0.198562,
+         -0.980088,
+         0.0,
+         -0.0,
+         1.077867,
+         0.124732,
+         1.0
+        ]
+       },
+       {
+        "bone": "bip_spine_0",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.957101,
+         -0.289756,
+         0.0,
+         0.0,
+         0.289756,
+         -0.957101,
+         0.0,
+         -0.0,
+         0.975806,
+         0.225438,
+         1.0
+        ]
+       },
+       {
+        "bone": "bip_pelvis",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.938613,
+         -0.344971,
+         0.0,
+         0.0,
+         0.344971,
+         -0.938613,
+         0.0,
+         -0.0,
+         0.857053,
+         0.281851,
+         1.0
+        ]
+       }
+      ]
+     }
+    },
+    "primitives": 1,
+    "primitiveTags": [],
+    "skinBones": [],
+    "hasJiggle": false,
+    "followsPlayerBones": false,
+    "bodyparts": {
+     "default": 1
+    },
+    "privateBones": []
+   }
+  },
+  "31209": {
+   "id": "31209",
+   "name": "Spooky Head-Bouncers",
+   "mdl": "models/workshop/player/items/all_class/hwn2021_spooky_head_bouncers/hwn2021_spooky_head_bouncers_scout.mdl",
+   "slot": "misc",
+   "regions": "hat",
+   "playerBodygroups": {
+    "hat": "1",
+    "headphones": "1"
+   },
+   "styles": {
+    "0": [
+     {
+      "name": "#TF_hwn2021_spooky_head_bouncers_style0"
+     }
+    ],
+    "1": [
+     {
+      "name": "#TF_hwn2021_spooky_head_bouncers_style1"
+     }
+    ],
+    "2": [
+     {
+      "name": "#TF_hwn2021_spooky_head_bouncers_style2"
+     }
+    ]
+   },
+   "usePerClassBodygroups": null,
+   "materials": [
+    {
+     "vmt": "materials/models/workshop/player/items/all_class/hwn2021_spooky_head_bouncers/hwn2021_spooky_head_bouncers.vmt",
+     "shader": "vertexlitgeneric",
+     "texture": "materials/models/workshop/player/items/all_class/hwn2021_spooky_head_bouncers/hwn2021_spooky_head_bouncers_color.vtf",
+     "textureDecoded": true,
+     "params": {
+      "$basetexture": "models/workshop/player/items/all_class/hwn2021_spooky_head_bouncers/hwn2021_spooky_head_bouncers_color",
+      "$phong": "1",
+      "$blendtintbybasealpha": "1",
+      "$blendtintcoloroverbase": "0",
+      "$colortint_base": "{ 135 90 60 }",
+      "$color2": "{ 135 90 60 }",
+      "$colortint_tmp": "[0 0 0]",
+      "$selfillum": "0"
+     }
+    },
+    {
+     "vmt": "materials/models/workshop/player/items/all_class/hwn2021_spooky_head_bouncers/hwn2021_spooky_head_bouncers_1.vmt",
+     "shader": "vertexlitgeneric",
+     "texture": "materials/models/workshop/player/items/all_class/hwn2021_spooky_head_bouncers/hwn2021_spooky_head_bouncers_1_color.vtf",
+     "textureDecoded": true,
+     "params": {
+      "$basetexture": "models/workshop/player/items/all_class/hwn2021_spooky_head_bouncers/hwn2021_spooky_head_bouncers_1_color",
+      "$phong": "1",
+      "$color2": "{ 255 255 255 }",
+      "$selfillum": "0"
+     }
+    }
+   ],
+   "converted": {
+    "bytes": 90236,
+    "sceneExtras": {
+     "attach": {
+      "bone": "spring_l",
+      "pose": [
+       -0.0,
+       0.373446,
+       -0.927652,
+       0.0,
+       -1e-06,
+       0.927652,
+       0.373446,
+       0.0,
+       1.0,
+       1e-06,
+       0.0,
+       0.0,
+       0.021954,
+       -1.44205,
+       -0.543275,
+       1.0
+      ],
+      "fallbacks": [
+       {
+        "bone": "jiggle_base_l",
+        "pose": [
+         -0.0,
+         1.0,
+         1e-06,
+         0.0,
+         4e-06,
+         -1e-06,
+         1.0,
+         0.0,
+         1.0,
+         0.0,
+         -4e-06,
+         0.0,
+         0.021946,
+         1e-06,
+         -1.540604,
+         1.0
+        ]
+       },
+       {
+        "bone": "jiggle_base",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         0.99921,
+         -0.039737,
+         0.0,
+         0.0,
+         0.039737,
+         0.99921,
+         0.0,
+         -0.0,
+         -1.394722,
+         0.083153,
+         1.0
+        ]
+       },
+       {
+        "bone": "bip_head",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.993474,
+         0.114059,
+         0.0,
+         0.0,
+         -0.114059,
+         -0.993474,
+         0.0,
+         -0.0,
+         1.388329,
+         -0.186817,
+         1.0
+        ]
+       },
+       {
+        "bone": "bip_neck",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.770469,
+         0.637478,
+         0.0,
+         0.0,
+         -0.637478,
+         -0.770469,
+         0.0,
+         -0.0,
+         0.987445,
+         -0.913831,
+         1.0
+        ]
+       },
+       {
+        "bone": "bip_spine_3",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.890434,
+         0.455112,
+         0.0,
+         0.0,
+         -0.455112,
+         -0.890434,
+         0.0,
+         -0.0,
+         1.093639,
+         -0.6778,
+         1.0
+        ]
+       },
+       {
+        "bone": "bip_spine_2",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.998854,
+         0.047871,
+         0.0,
+         0.0,
+         -0.047871,
+         -0.998854,
+         0.0,
+         -0.0,
+         1.169003,
+         -0.167071,
+         1.0
+        ]
+       },
+       {
+        "bone": "bip_spine_1",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.980088,
+         -0.198564,
+         0.0,
+         0.0,
+         0.198564,
+         -0.980088,
+         0.0,
+         -0.0,
+         1.077867,
+         0.124734,
+         1.0
+        ]
+       },
+       {
+        "bone": "bip_spine_0",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.9571,
+         -0.289757,
+         0.0,
+         0.0,
+         0.289757,
+         -0.9571,
+         0.0,
+         -0.0,
+         0.975806,
+         0.225439,
+         1.0
+        ]
+       },
+       {
+        "bone": "bip_pelvis",
+        "pose": [
+         1.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         -0.938613,
+         -0.344971,
+         0.0,
+         0.0,
+         0.344971,
+         -0.938613,
+         0.0,
+         -0.0,
+         0.857053,
+         0.281851,
+         1.0
+        ]
+       }
+      ]
+     },
+     "boneMerge": true
+    },
+    "primitives": 2,
+    "primitiveTags": [],
+    "skinBones": [
+     "bip_pelvis",
+     "bip_spine_0",
+     "bip_spine_1",
+     "bip_spine_2",
+     "bip_spine_3",
+     "bip_neck",
+     "bip_head",
+     "jiggle_base",
+     "jiggle_base_l",
+     "spring_l",
+     "jiggle_base_r",
+     "spring_r"
+    ],
+    "hasJiggle": true,
+    "followsPlayerBones": true,
+    "bodyparts": {
+     "default": 1
+    },
+    "privateBones": [
+     "jiggle_base",
+     "jiggle_base_l",
+     "jiggle_base_r",
+     "spring_l",
+     "spring_r"
+    ]
+   }
+  }
+ },
+ "sample": {
+  "52": {
+   "name": "Batter's Helmet",
+   "category": "paintable",
+   "paintable": true,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 50592
+  },
+  "9048": {
+   "name": "Gift of Giving",
+   "category": "paintable",
+   "paintable": true,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 87792
+  },
+  "10623": {
+   "name": "Palaise Limitless 6v6 Champion",
+   "category": "paintable",
+   "paintable": true,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 40116
+  },
+  "11432": {
+   "name": "",
+   "category": "paintable",
+   "paintable": true,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 79356
+  },
+  "12325": {
+   "name": "RGL.gg - Challenger 2nd Place - Highlander",
+   "category": "paintable",
+   "paintable": true,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 54196
+  },
+  "13238": {
+   "name": "",
+   "category": "paintable",
+   "paintable": true,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": true,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 81912
+  },
+  "13693": {
+   "name": "RGL.gg - Intermediate 2nd Place - Highlander",
+   "category": "paintable",
+   "paintable": true,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 57792
+  },
+  "14535": {
+   "name": "RGL.gg - Main 3rd Place - Highlander",
+   "category": "paintable",
+   "paintable": true,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 57648
+  },
+  "18882": {
+   "name": "RGL.gg - Newcomer Participant - 6v6",
+   "category": "paintable",
+   "paintable": true,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 63836
+  },
+  "30928": {
+   "name": "Balloonihoodie",
+   "category": "paintable",
+   "paintable": true,
+   "bodygroups": {
+    "hat": 1,
+    "dogtags": 1,
+    "headphones": 1
+   },
+   "perClass": false,
+   "boneMerge": true,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 105448
+  },
+  "143": {
+   "name": "Earbuds",
+   "category": "plain",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": true,
+   "privateBones": [
+    "joint1",
+    "joint4",
+    "joint5",
+    "joint6",
+    "joint8"
+   ],
+   "primitiveTags": [],
+   "bytes": 39136
+  },
+  "8565": {
+   "name": "ETF2L Highlander Division 6 Participation Medal",
+   "category": "plain",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": true,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 135336
+  },
+  "9362": {
+   "name": "UGC 4vs4 Gold 3rd Place",
+   "category": "plain",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 52892
+  },
+  "10086": {
+   "name": "UGC Highlander Steel 3rd Place",
+   "category": "plain",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 64012
+  },
+  "10877": {
+   "name": "UGC 4vs4 Steel 3rd Place",
+   "category": "plain",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 44400
+  },
+  "11656": {
+   "name": "Brazil Fortress Jump Cup Speed Run Soldier Participant",
+   "category": "plain",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 66048
+  },
+  "12525": {
+   "name": "Respawn League AUS/NZ Highlander Main 3rd Place",
+   "category": "plain",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 31524
+  },
+  "13345": {
+   "name": "ozfortress Summer Cup Highlander Division 2 Second Place",
+   "category": "plain",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": true,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 116432
+  },
+  "14172": {
+   "name": "ETF2L 6v6 Division 1 Bronze Medal",
+   "category": "plain",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": true,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 143388
+  },
+  "18524": {
+   "name": "Brazil Fortress 6v6 Division 2 First Place",
+   "category": "plain",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 46220
+  },
+  "106": {
+   "name": "Bonk Helm",
+   "category": "bodygroup",
+   "paintable": true,
+   "bodygroups": {
+    "hat": 1,
+    "headphones": 1
+   },
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 112640
+  },
+  "302": {
+   "name": "Frontline Field Recorder",
+   "category": "bodygroup",
+   "paintable": false,
+   "bodygroups": {
+    "hat": 1,
+    "headphones": 1
+   },
+   "perClass": false,
+   "boneMerge": true,
+   "privateBones": [
+    "prp_hat"
+   ],
+   "primitiveTags": [],
+   "bytes": 101200
+  },
+  "617": {
+   "name": "Backwards Ballcap",
+   "category": "bodygroup",
+   "paintable": true,
+   "bodygroups": {
+    "hat": 1
+   },
+   "perClass": false,
+   "boneMerge": true,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 144816
+  },
+  "1014": {
+   "name": "Br\u00fctal Bouffant",
+   "category": "bodygroup",
+   "paintable": true,
+   "bodygroups": {
+    "hat": 1
+   },
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 56436
+  },
+  "30154": {
+   "name": "Scoutbot Hat",
+   "category": "bodygroup",
+   "paintable": false,
+   "bodygroups": {
+    "hat": 1
+   },
+   "perClass": false,
+   "boneMerge": true,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 63084
+  },
+  "30427": {
+   "name": "Argyle Ace",
+   "category": "bodygroup",
+   "paintable": false,
+   "bodygroups": {
+    "shoes_socks": 1
+   },
+   "perClass": false,
+   "boneMerge": true,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 128960
+  },
+  "30733": {
+   "name": "Teufort Knight",
+   "category": "bodygroup",
+   "paintable": false,
+   "bodygroups": {
+    "hat": 1,
+    "headphones": 1
+   },
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 71512
+  },
+  "30998": {
+   "name": "Lucky Cat Hat",
+   "category": "bodygroup",
+   "paintable": true,
+   "bodygroups": {
+    "hat": 1,
+    "headphones": 1
+   },
+   "perClass": false,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 66688
+  },
+  "31173": {
+   "name": "Towering Pile of Presents",
+   "category": "bodygroup",
+   "paintable": true,
+   "bodygroups": {
+    "hat": 1
+   },
+   "perClass": false,
+   "boneMerge": true,
+   "privateBones": [
+    "jiggle"
+   ],
+   "primitiveTags": [],
+   "bytes": 117784
+  },
+  "31326": {
+   "name": "Lumbercap",
+   "category": "bodygroup",
+   "paintable": true,
+   "bodygroups": {
+    "hat": 1,
+    "headphones": 1
+   },
+   "perClass": false,
+   "boneMerge": true,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 128304
+  },
+  "164": {
+   "name": "Grizzled Veteran",
+   "category": "perclass",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": true,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [
+    {
+     "bodygroup": "__class__",
+     "sub": 0
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 1
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 2
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 3
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 4
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 5
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 6
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 7
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 8
+    }
+   ],
+   "bytes": 134360
+  },
+  "165": {
+   "name": "Soldier of Fortune",
+   "category": "perclass",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": true,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [
+    {
+     "bodygroup": "__class__",
+     "sub": 0
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 1
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 2
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 3
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 4
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 5
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 6
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 7
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 8
+    }
+   ],
+   "bytes": 134360
+  },
+  "166": {
+   "name": "Mercenary",
+   "category": "perclass",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": true,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [
+    {
+     "bodygroup": "__class__",
+     "sub": 0
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 1
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 2
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 3
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 4
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 5
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 6
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 7
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 8
+    }
+   ],
+   "bytes": 134360
+  },
+  "170": {
+   "name": "Primeval Warrior",
+   "category": "perclass",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": true,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [
+    {
+     "bodygroup": "__class__",
+     "sub": 0
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 1
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 2
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 3
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 4
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 5
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 6
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 7
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 8
+    }
+   ],
+   "bytes": 134360
+  },
+  "242": {
+   "name": "Bronze Dueling Badge",
+   "category": "perclass",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": true,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 29140
+  },
+  "243": {
+   "name": "Silver Dueling Badge",
+   "category": "perclass",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": true,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 29140
+  },
+  "244": {
+   "name": "Gold Dueling Badge",
+   "category": "perclass",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": true,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 29140
+  },
+  "245": {
+   "name": "Platinum Dueling Badge",
+   "category": "perclass",
+   "paintable": false,
+   "bodygroups": {},
+   "perClass": true,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [],
+   "bytes": 29140
+  },
+  "268": {
+   "name": "Scout Mask",
+   "category": "perclass",
+   "paintable": false,
+   "bodygroups": {
+    "hat": 1,
+    "headphones": 1
+   },
+   "perClass": true,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [
+    {
+     "bodygroup": "__class__",
+     "sub": 0
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 1
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 2
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 3
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 4
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 5
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 6
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 7
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 8
+    }
+   ],
+   "bytes": 150904
+  },
+  "269": {
+   "name": "Sniper Mask",
+   "category": "perclass",
+   "paintable": false,
+   "bodygroups": {
+    "hat": 1,
+    "headphones": 1
+   },
+   "perClass": true,
+   "boneMerge": false,
+   "privateBones": [],
+   "primitiveTags": [
+    {
+     "bodygroup": "__class__",
+     "sub": 0
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 1
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 2
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 3
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 4
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 5
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 6
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 7
+    },
+    {
+     "bodygroup": "__class__",
+     "sub": 8
+    }
+   ],
+   "bytes": 150904
+  }
+ }
+}
