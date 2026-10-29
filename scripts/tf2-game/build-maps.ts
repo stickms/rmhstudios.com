@@ -3,7 +3,7 @@
  *
  *   pnpm exec tsx scripts/tf2-game/build-maps.ts --root <install> --game tf2|hl2|portal --out <dir>
  *       [--maps a,b | --maps-file <file>] [--state state.json] [--prev-index maps/index.json]
- *       [--props-list-out <file>] [--sizes] [--force] [--nav]
+ *       [--props-list-out <file>] [--sizes] [--force] [--nav | --no-nav]
  *   pnpm exec tsx scripts/tf2-game/build-maps.ts --root <install> --game … --props-only --props-list-out <file>
  *       Only appends the maps' prop models to the list (the model channel runs this every time).
  *
@@ -27,7 +27,9 @@
  * (VTF bytes + encoding). With --state (the channel's published state) a file the state already
  * holds is neither written nor (for textures) decoded: an unchanged map writes nothing, but is
  * still listed in wanted.json. --props-list-out appends every prop model path (one per line) for
- * models.py. --nav is reserved for navigation meshes (not generated yet: `nav` stays null).
+ * models.py. Each TF2 map also gets the bots' navigation mesh, `maps/<sha>.nav.bin`
+ * (lib/tf2-game/bots/nav; on by default for tf2, --nav forces it for other games, --no-nav
+ * skips it), generated from the BSP and the prop hulls within NAV_TIME_BUDGET_MS.
  */
 import { createHash } from 'node:crypto';
 import {
@@ -75,7 +77,14 @@ import {
   TEXTUREFLAGS,
   type VtfHeader,
 } from '../../lib/tf2-game/formats/vtf';
-import { loadPropCollisionModel } from '../../lib/tf2-game/world/prop-collision';
+import {
+  addBspStaticProps,
+  loadPropCollisionModel,
+  type PropCollisionModel,
+} from '../../lib/tf2-game/world/prop-collision';
+import { MapCollision } from '../../lib/tf2-game/world/map-collision';
+import { NavGenerator } from '../../lib/tf2-game/bots/nav/generate';
+import { encodeNavMesh } from '../../lib/tf2-game/bots/nav/serialize';
 import { findGameMap, GAME_MAPS } from '../../lib/tf2-game/assets/game-maps';
 import {
   MAP_PACKAGE_VERSION,
@@ -472,6 +481,8 @@ export function resolveMaterial(
 
   if (SKY_TOOLS.test(key) || vmtFlag(v, '%compilesky') || vmtFlag(v, '%compile2dsky')) m.sky = true;
   else if (key.startsWith('tools/') || NODRAW_COMPILE.some((f) => vmtFlag(v, f))) m.nodraw = true;
+  // Portal's gun reads this per surface (lib/sp-game/portal); kept on sky/nodraw too.
+  if (vmtFlag(v, '%noportal')) m.noportal = true;
   if (m.sky || m.nodraw) return { material: m, textures, untextured };
 
   const translucent = vmtFlag(v, '$translucent');
@@ -737,6 +748,8 @@ export interface BuildOptions {
   force?: boolean;
   /** Also compute each BSP's Brotli size (what storage holds). */
   sizes?: boolean;
+  /** Generate the bots' navigation mesh (`maps/<sha>.nav.bin`); default on for TF2. */
+  nav?: boolean;
   log?: (line: string) => void;
 }
 
@@ -755,6 +768,8 @@ export interface MapReport {
   textureBytes: number;
   props: number;
   hulls: number;
+  /** Navigation mesh: areas, bytes and generation time (absent when not generated). */
+  nav?: { areas: number; connections: number; bytes: number; ms: number };
   /** Files this map wrote (the rest the state already holds). */
   written: number;
   ms: number;
@@ -766,6 +781,9 @@ export interface BuildResult {
   wanted: Record<string, { src: string; bytes?: number }>;
   index: MapIndex;
 }
+
+/** The most one map's navigation mesh may take to generate (the build fails the map past it). */
+export const NAV_TIME_BUDGET_MS = 60_000;
 
 const sortKeys = <T>(o: Record<string, T>): Record<string, T> =>
   Object.fromEntries(Object.entries(o).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
@@ -784,6 +802,7 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
   const index: MapIndex = { v: 1, maps: {} };
   const texBytes = new Map<string, number>(); // rel → bytes (encoded this run, or stored)
   const propsOut = new Set<string>();
+  const wantNav = o.nav ?? o.game === 'tf2';
 
   const unchanged = (rel: string, src: string) => !o.force && state[rel]?.src === src;
   const writeFile = (rel: string, src: string, data: Uint8Array): boolean => {
@@ -840,9 +859,11 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
         const propSolids = collectProps(bsp);
         const props: MapManifest['props'] = {};
         const table: HullTable = [];
+        const collisionModels = new Map<string, PropCollisionModel | null>();
         for (const [model, solid] of propSolids) {
           const entry: MapManifest['props'][string] = { solid };
           const cm = loadPropCollisionModel(fs, model);
+          collisionModels.set(model.toLowerCase(), cm);
           if (cm && cm.hulls.length) {
             entry.hull = table.length;
             table.push(cm.hulls);
@@ -851,6 +872,27 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
         }
         hullCount = table.length;
         if (table.length) hullsBin = writeHullsBin(table);
+
+        // The bots' navigation mesh, from the same collision the game runs (BSP + prop hulls).
+        let navBin: Uint8Array | null = null;
+        let navReport: MapReport['nav'];
+        if (wantNav) {
+          const t = Date.now();
+          const collision = new MapCollision(bsp);
+          addBspStaticProps(collision, bsp, (m) => collisionModels.get(m.toLowerCase()) ?? null);
+          const gen = new NavGenerator(bsp, collision);
+          while (!gen.step(20_000)) {
+            if (Date.now() - t > NAV_TIME_BUDGET_MS)
+              throw new Error(`nav generation over its ${NAV_TIME_BUDGET_MS / 1000} s budget`);
+          }
+          navBin = encodeNavMesh(gen.result());
+          navReport = {
+            areas: gen.stats.areas,
+            connections: gen.stats.connections,
+            bytes: navBin.length,
+            ms: Date.now() - t,
+          };
+        }
 
         // Textures (deduplicated by name within the map).
         const textures: Record<string, MapTexture> = {};
@@ -864,6 +906,7 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
         const { data: bspData, lighting } = stripBsp(raw, bsp);
         const bspSha = sha256(bspData);
         const hullsSha = hullsBin ? sha256(hullsBin) : null;
+        const navSha = navBin ? sha256(navBin) : null;
         manifest = {
           v: MAP_PACKAGE_VERSION,
           game: o.game,
@@ -876,7 +919,7 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
           sky: skyRes.sky,
           props,
           hulls: hullsSha ? `maps/${hullsSha}.hulls.bin` : null,
-          nav: null,
+          nav: navSha ? `maps/${navSha}.nav.bin` : null,
         };
 
         // Write what the state does not hold yet.
@@ -884,6 +927,7 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
         if (writeFile(manifest.bsp, bspSha, bspData)) written++;
         if (hullsBin && hullsSha && writeFile(`maps/${hullsSha}.hulls.bin`, hullsSha, hullsBin))
           written++;
+        if (navBin && navSha && writeFile(`maps/${navSha}.nav.bin`, navSha, navBin)) written++;
         const todo = planned.filter((t) => {
           if (texBytes.has(t.rel)) {
             wanted[t.rel] ??= { src: t.key };
@@ -943,7 +987,12 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
           manifest: manifestRel,
           title: entry?.title ?? name,
           mode: entry?.mode ?? (o.game === 'tf2' ? (name.split('_')[0] ?? 'tf2') : 'sp'),
-          bytes: bspData.length + (hullsBin?.length ?? 0) + json.length + textureBytes,
+          bytes:
+            bspData.length +
+            (hullsBin?.length ?? 0) +
+            (navBin?.length ?? 0) +
+            json.length +
+            textureBytes,
         };
         const report: MapReport = {
           map: name,
@@ -958,6 +1007,7 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
           textureBytes,
           props: Object.keys(props).length,
           hulls: hullCount,
+          nav: navReport,
           written,
           ms: Date.now() - t0,
         };
@@ -971,7 +1021,8 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
           `${name}: bsp ${mib(report.bspBytes)} MiB${report.bspBrotli !== undefined ? ` (brotli ${mib(report.bspBrotli)})` : ''}, ` +
             `textures ${report.textures} (${mib(textureBytes)} MiB), materials ${report.materials} ` +
             `(textured ${textured}, untextured ${untextured}), props ${report.props} (hulls ${hullCount}, ` +
-            `${mib(report.hullsBytes)} MiB), wrote ${written} files, ${(report.ms / 1000).toFixed(1)} s`,
+            `${mib(report.hullsBytes)} MiB)${navReport ? `, nav ${navReport.areas} areas (${(navReport.bytes / 1024).toFixed(0)} KiB, ${(navReport.ms / 1000).toFixed(1)} s)` : ''}, ` +
+            `wrote ${written} files, ${(report.ms / 1000).toFixed(1)} s`,
         );
       } finally {
         fs.remove(pakPath);
@@ -1039,7 +1090,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   if (!root || !GAME_IDS.includes(game) || (propsOnly ? !flags.get('props-list-out') : !out)) {
     process.stderr.write(
       'usage: build-maps.ts --root <install> --game tf2|hl2|portal --out <dir> [--maps a,b | --maps-file f] ' +
-        '[--state state.json] [--prev-index index.json] [--props-list-out file] [--sizes] [--force] [--nav]\n' +
+        '[--state state.json] [--prev-index index.json] [--props-list-out file] [--sizes] [--force] [--nav | --no-nav]\n' +
         '       build-maps.ts --root <install> --game … --props-only --props-list-out <file> [--maps …]\n',
     );
     return 2;
@@ -1057,8 +1108,6 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     process.stdout.write(`props (${game}): ${n} models from ${maps.length} maps\n`);
     return 0;
   }
-  if (bare.has('nav'))
-    process.stdout.write('--nav: navigation meshes are not generated yet; nav stays null\n');
 
   const stateRaw = readJson<{ models?: Record<string, PublishedFile> }>(flags.get('state'));
   const prev = readJson<MapIndex>(flags.get('prev-index'));
@@ -1072,6 +1121,8 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     propsListOut: flags.get('props-list-out'),
     force: bare.has('force') || process.env.FORCE === '1',
     sizes: bare.has('sizes'),
+    // Default on for TF2 (its bots need it); --nav forces it, --no-nav skips it.
+    nav: bare.has('no-nav') ? false : bare.has('nav') ? true : undefined,
   });
   const made = Object.values(result.wanted).filter((w) => w.bytes !== undefined);
   const total = made.reduce((s, w) => s + (w.bytes ?? 0), 0);

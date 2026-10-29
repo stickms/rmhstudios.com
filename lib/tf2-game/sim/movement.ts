@@ -77,7 +77,7 @@ import {
   simpleSpline,
 } from '../core/vec';
 import { TF_MAX_CHARGE_SPEED, TF_MAX_SPEED, VEC_DEAD_VIEW_Z, classEyeHeight } from './class-speeds';
-import type { MoveContext, MoveState, SurfaceProps } from './movement-types';
+import type { MoveContext, MoveParams, MoveState, SurfaceProps } from './movement-types';
 import {
   MOVE_COND_AIR_CURRENT,
   MOVE_COND_BLAST_JUMPING,
@@ -161,6 +161,34 @@ const CHECK_STUCK_TICK_INTERVAL = Math.trunc(1 / TICK_INTERVAL);
 const PUNCH_DAMPING = 9;
 const PUNCH_SPRING_CONSTANT = 65;
 
+/** TF2's movement parameters — what `playerMove` uses when the context gives none. */
+export const TF_MOVE_PARAMS: Readonly<MoveParams> = Object.freeze({
+  gravity: SV_GRAVITY,
+  sv_friction: SV_FRICTION,
+  sv_stopspeed: SV_STOPSPEED,
+  sv_accelerate: SV_ACCELERATE,
+  sv_airaccelerate: SV_AIRACCELERATE,
+  sv_maxvelocity: SV_MAXVELOCITY,
+  sv_stepsize: SV_STEPSIZE,
+  maxSpeedCap: TF_MAX_SPEED,
+  jumpImpulse: TF_JUMP_IMPULSE,
+  hullMin: VEC_HULL_MIN,
+  hullMax: VEC_HULL_MAX,
+  duckHullMin: VEC_DUCK_HULL_MIN,
+  duckHullMax: VEC_DUCK_HULL_MAX,
+  duckViewZ: VEC_DUCK_VIEW_Z,
+  viewZ: null,
+  timeToDuck: TIME_TO_DUCK,
+  timeToUnduck: TIME_TO_UNDUCK,
+  maxSafeFallSpeed: PLAYER_MAX_SAFE_FALL_SPEED,
+  minBounceSpeed: PLAYER_MIN_BOUNCE_SPEED,
+  fallPunchThreshold: PLAYER_FALL_PUNCH_THRESHOLD,
+  waterJumpForward: TF_WATERJUMP_FORWARD,
+  waterJumpUp: TF_WATERJUMP_UP,
+  tfRules: true,
+  hl2JumpBoost: false,
+});
+
 const DEFAULT_SURFACE: SurfaceProps = { friction: 0.8, jumpFactor: 1, maxSpeedFactor: 1 };
 const DT = TICK_INTERVAL;
 const FRAME_MSEC = 1000 * TICK_INTERVAL;
@@ -169,6 +197,8 @@ const FRAME_MSEC = 1000 * TICK_INTERVAL;
 
 let st: MoveState;
 let cx: MoveContext;
+/** This tick's game parameters (ctx.params, else TF2's). */
+let P: Readonly<MoveParams> = TF_MOVE_PARAMS;
 let fmove = 0;
 let smove = 0;
 let umove = 0;
@@ -271,6 +301,8 @@ const hasCond = (bit: number): boolean => (st.conds & bit) !== 0;
 const isObserver = (): boolean => st.moveType === MOVETYPE_OBSERVER;
 const inWater = (): boolean => st.waterLevel > WL_FEET;
 const gravityScale = (): number => (st.gravity ? st.gravity : 1);
+/** Standing eye height: the game's VEC_VIEW, or the TF class's. */
+const standEyeHeight = (): number => (P.viewZ !== null ? P.viewZ : classEyeHeight(st.classIndex));
 const surface = (name: string): SurfaceProps =>
   cx.surfaceProps ? cx.surfaceProps(name) : DEFAULT_SURFACE;
 
@@ -284,17 +316,17 @@ function updateHull(): void {
     copy(hullMins, VEC_OBS_HULL_MIN);
     copy(hullMaxs, VEC_OBS_HULL_MAX);
   } else if (st.ducked) {
-    copy(hullMins, VEC_DUCK_HULL_MIN);
-    copy(hullMaxs, VEC_DUCK_HULL_MAX);
+    copy(hullMins, P.duckHullMin);
+    copy(hullMaxs, P.duckHullMax);
   } else {
-    copy(hullMins, VEC_HULL_MIN);
-    copy(hullMaxs, VEC_HULL_MAX);
+    copy(hullMins, P.hullMin);
+    copy(hullMaxs, P.hullMax);
   }
 }
 
 /** Standing-minus-crouched hull height: how far the feet move when ducking in the air (20). */
-const DUCK_HULL_DELTA_Z =
-  VEC_HULL_MAX.z - VEC_HULL_MIN.z - (VEC_DUCK_HULL_MAX.z - VEC_DUCK_HULL_MIN.z);
+const duckHullDeltaZ = (): number =>
+  P.hullMax.z - P.hullMin.z - (P.duckHullMax.z - P.duckHullMin.z);
 
 /** SDK: CTFGameMovement::PlayerSolidMask — enemy team contents block us unless passing through. */
 function playerSolidMask(): number {
@@ -351,6 +383,7 @@ function endCharge(): void {
 export function playerMove(state: MoveState, cmd: UserCmd, ctx: MoveContext): void {
   st = state;
   cx = ctx;
+  P = ctx.params ?? TF_MOVE_PARAMS;
   fmove = cmd.forwardMove;
   smove = cmd.sideMove;
   umove = cmd.upMove;
@@ -362,7 +395,7 @@ export function playerMove(state: MoveState, cmd: UserCmd, ctx: MoveContext): vo
   oldWaterLevel = state.waterLevel;
 
   // The max speed is the Scout's with headroom; CheckParameters lowers it to the player's.
-  maxSpeed = TF_MAX_SPEED;
+  maxSpeed = P.maxSpeedCap;
   clientMaxSpeed = state.maxSpeed;
 
   chargeMove();
@@ -679,7 +712,7 @@ function categorizePosition(): void {
   const underwater = st.waterLevel >= WL_EYES;
   let moveToEndPos = false;
   if (st.moveType === MOVETYPE_WALK && onGround() && !underwater) {
-    catEnd.z -= SV_STEPSIZE;
+    catEnd.z -= P.sv_stepsize;
     moveToEndPos = true;
   }
 
@@ -814,8 +847,8 @@ function checkWaterJump(): void {
   wjStart.x = st.origin.x + (hullMins.x + hullMaxs.x) * 0.5;
   wjStart.y = st.origin.y + (hullMins.y + hullMaxs.y) * 0.5;
   wjStart.z = st.origin.z + (hullMins.z + hullMaxs.z) * 0.5;
-  wjEnd.x = wjStart.x + wjFlatFwd.x * TF_WATERJUMP_FORWARD;
-  wjEnd.y = wjStart.y + wjFlatFwd.y * TF_WATERJUMP_FORWARD;
+  wjEnd.x = wjStart.x + wjFlatFwd.x * P.waterJumpForward;
+  wjEnd.y = wjStart.y + wjFlatFwd.y * P.waterJumpForward;
   wjEnd.z = wjStart.z;
 
   const mask = playerSolidMask();
@@ -823,8 +856,8 @@ function checkWaterJump(): void {
   if (trWaterJump.fraction < 1) {
     // Solid at the waist: is it open at eye level?
     wjStart.z = st.origin.z + st.viewOffsetZ + WATERJUMP_HEIGHT;
-    wjEnd.x = wjStart.x + wjFlatFwd.x * TF_WATERJUMP_FORWARD;
-    wjEnd.y = wjStart.y + wjFlatFwd.y * TF_WATERJUMP_FORWARD;
+    wjEnd.x = wjStart.x + wjFlatFwd.x * P.waterJumpForward;
+    wjEnd.y = wjStart.y + wjFlatFwd.y * P.waterJumpForward;
     wjEnd.z = wjStart.z;
     st.waterJumpVel.x = -50 * trWaterJump.plane.normal.x;
     st.waterJumpVel.y = -50 * trWaterJump.plane.normal.y;
@@ -837,7 +870,7 @@ function checkWaterJump(): void {
       wjEnd.z -= 1024;
       tracePlayerBBox(wjStart, wjEnd, mask, trWaterJump);
       if (trWaterJump.fraction < 1 && trWaterJump.plane.normal.z >= MIN_STANDABLE_NORMAL_Z) {
-        st.velocity.z = TF_WATERJUMP_UP;
+        st.velocity.z = P.waterJumpUp;
         oldButtons |= IN_JUMP;
         st.flags |= FL_WATERJUMP;
         st.waterJumpTime = 2000;
@@ -918,7 +951,7 @@ function waterMove(): void {
   const speed = length(v);
   let newspeed = 0;
   if (speed) {
-    newspeed = speed - DT * speed * SV_FRICTION * st.surfaceFriction;
+    newspeed = speed - DT * speed * P.sv_friction * st.surfaceFriction;
     if (newspeed < 0.1) newspeed = 0;
     const s = newspeed / speed;
     v.x *= s;
@@ -931,7 +964,7 @@ function waterMove(): void {
     const addspeed = wishspeed - newspeed;
     if (addspeed > 0) {
       normalize(wishvel);
-      let accelspeed = SV_ACCELERATE * wishspeed * DT * st.surfaceFriction;
+      let accelspeed = P.sv_accelerate * wishspeed * DT * st.surfaceFriction;
       if (accelspeed > addspeed) accelspeed = addspeed;
       v.x += accelspeed * wishvel.x;
       v.y += accelspeed * wishvel.y;
@@ -949,7 +982,7 @@ function waterMove(): void {
   tracePlayerBBox(st.origin, waterDest, mask, trWater);
   if (trWater.fraction === 1) {
     copy(waterStart, waterDest);
-    waterStart.z += SV_STEPSIZE + 1;
+    waterStart.z += P.sv_stepsize + 1;
     tracePlayerBBox(waterStart, waterDest, mask, trWater);
     if (!trWater.startSolid && !trWater.allSolid) {
       copy(st.origin, trWater.endPos);
@@ -1050,9 +1083,9 @@ function friction(): void {
 
   let drop = 0;
   if (onGround()) {
-    const fr = SV_FRICTION * st.surfaceFriction;
+    const fr = P.sv_friction * st.surfaceFriction;
     // Bleed at least the stop speed's worth.
-    const control = speed < SV_STOPSPEED ? SV_STOPSPEED : speed;
+    const control = speed < P.sv_stopspeed ? P.sv_stopspeed : speed;
     drop += control * fr * DT;
   }
 
@@ -1109,13 +1142,13 @@ function walkMove(): void {
 
   v.z = 0;
 
-  let accel = SV_ACCELERATE;
-  const fr = SV_FRICTION * st.surfaceFriction;
+  let accel = P.sv_accelerate;
+  const fr = P.sv_friction * st.surfaceFriction;
   // Below this wish speed friction would win; scale acceleration so we can still move.
-  const wishThreshold = (100 * fr) / SV_ACCELERATE;
+  const wishThreshold = (100 * fr) / P.sv_accelerate;
   if (wishspeed > 0 && wishspeed < wishThreshold && !hasCond(MOVE_COND_LOST_FOOTING)) {
     const spd = length(v);
-    const control = spd < SV_STOPSPEED ? SV_STOPSPEED : spd;
+    const control = spd < P.sv_stopspeed ? P.sv_stopspeed : spd;
     accel = (control * fr) / wishspeed + 1;
   }
 
@@ -1143,7 +1176,7 @@ function walkMove(): void {
   }
 
   // Backpedalling runs at 90 % of max speed (above a 100 u/s floor).
-  if (TF_CLAMP_BACK_SPEED < 1 && length(v) > TF_CLAMP_BACK_SPEED_MIN) {
+  if (P.tfRules && TF_CLAMP_BACK_SPEED < 1 && length(v) > TF_CLAMP_BACK_SPEED_MIN) {
     const fdot = dot(fwd, v);
     if (fdot < 0) {
       let bx = fwd.x * fdot;
@@ -1224,7 +1257,7 @@ function stepMove(dest: Vec3, trace: TraceResult): void {
 
   // High road: up by the step height…
   copy(stepEnd, st.origin);
-  stepEnd.z += SV_STEPSIZE + DIST_EPSILON;
+  stepEnd.z += P.sv_stepsize + DIST_EPSILON;
   tracePlayerBBox(st.origin, stepEnd, mask, trStep);
   if (!trStep.startSolid && !trStep.allSolid) copy(st.origin, trStep.endPos);
 
@@ -1233,7 +1266,7 @@ function stepMove(dest: Vec3, trace: TraceResult): void {
 
   // …and back down.
   copy(stepEnd, st.origin);
-  stepEnd.z -= SV_STEPSIZE + DIST_EPSILON;
+  stepEnd.z -= P.sv_stepsize + DIST_EPSILON;
   tracePlayerBBox(st.origin, stepEnd, mask, trStep);
   if (!trStep.startSolid && !trStep.allSolid) copy(st.origin, trStep.endPos);
 
@@ -1463,8 +1496,8 @@ function tryPlayerMove(
   // Slammed into a wall?
   const lateralStop = length2D(tryPrimal) - length2D(v);
   let slamVol = 0;
-  if (lateralStop > PLAYER_MAX_SAFE_FALL_SPEED * 2) slamVol = 1;
-  else if (lateralStop > PLAYER_MAX_SAFE_FALL_SPEED) slamVol = 0.85;
+  if (lateralStop > P.maxSafeFallSpeed * 2) slamVol = 1;
+  else if (lateralStop > P.maxSafeFallSpeed) slamVol = 0.85;
   roughLandingEffects(slamVol);
 
   return blocked;
@@ -1517,7 +1550,7 @@ function airMove(): void {
     wishspeed = maxSpeed;
   }
 
-  let airAccel = SV_AIRACCELERATE;
+  let airAccel = P.sv_airaccelerate;
   let wallSlide = 0;
   if (hasCond(MOVE_COND_AIR_CURRENT)) {
     airAccel *= TF_AIRCURRENT_AIRCONTROL_MULT;
@@ -1545,7 +1578,7 @@ function airMove(): void {
 /** SDK: CGameMovement::StartGravity — the first half of this tick's gravity, plus base z. */
 function startGravity(): void {
   const v = st.velocity;
-  v.z -= gravityScale() * SV_GRAVITY * 0.5 * DT;
+  v.z -= gravityScale() * P.gravity * 0.5 * DT;
   v.z += st.baseVelocity.z * DT;
   st.baseVelocity.z = 0;
   checkVelocity();
@@ -1554,7 +1587,7 @@ function startGravity(): void {
 /** SDK: CGameMovement::FinishGravity — the second half. */
 function finishGravity(): void {
   if (st.waterJumpTime) return;
-  st.velocity.z -= gravityScale() * SV_GRAVITY * DT * 0.5;
+  st.velocity.z -= gravityScale() * P.gravity * DT * 0.5;
   checkVelocity();
 }
 
@@ -1568,9 +1601,9 @@ function checkVelocity(): void {
   if (Number.isNaN(o.x)) o.x = 0;
   if (Number.isNaN(o.y)) o.y = 0;
   if (Number.isNaN(o.z)) o.z = 0;
-  v.x = v.x > SV_MAXVELOCITY ? SV_MAXVELOCITY : v.x < -SV_MAXVELOCITY ? -SV_MAXVELOCITY : v.x;
-  v.y = v.y > SV_MAXVELOCITY ? SV_MAXVELOCITY : v.y < -SV_MAXVELOCITY ? -SV_MAXVELOCITY : v.y;
-  v.z = v.z > SV_MAXVELOCITY ? SV_MAXVELOCITY : v.z < -SV_MAXVELOCITY ? -SV_MAXVELOCITY : v.z;
+  v.x = v.x > P.sv_maxvelocity ? P.sv_maxvelocity : v.x < -P.sv_maxvelocity ? -P.sv_maxvelocity : v.x;
+  v.y = v.y > P.sv_maxvelocity ? P.sv_maxvelocity : v.y < -P.sv_maxvelocity ? -P.sv_maxvelocity : v.y;
+  v.z = v.z > P.sv_maxvelocity ? P.sv_maxvelocity : v.z < -P.sv_maxvelocity ? -P.sv_maxvelocity : v.z;
 }
 
 // --- Jumping ------------------------------------------------------------------------
@@ -1615,6 +1648,25 @@ function preventBunnyJumping(): void {
   v.z *= f;
 }
 
+/**
+ * SDK: CGameMovement::CheckJumpButton under HL2_DLL with one client — a share of
+ * the forward move (half, a tenth when sprinting or ducked) is added along the
+ * view's flat forward, clipped so the jump never exceeds that share over max speed.
+ */
+function hl2JumpBoost(): void {
+  angleVectors(viewAngles, fwd);
+  fwd.z = 0;
+  normalize(fwd);
+  const perc = !cx.sprinting && !st.ducked ? 0.5 : 0.1;
+  let add = Math.abs(fmove * perc);
+  const maxS = maxSpeed + maxSpeed * perc;
+  const newSpeed = add + length2D(st.velocity);
+  if (newSpeed > maxS) add -= newSpeed - maxS;
+  if (fmove < 0) add *= -1;
+  st.velocity.x += fwd.x * add;
+  st.velocity.y += fwd.y * add;
+}
+
 /** SDK: CTFGameMovement::ToggleParachute. */
 function toggleParachute(): void {
   if (oldButtons & IN_JUMP) return;
@@ -1639,8 +1691,8 @@ function checkJumpButton(): boolean {
 
   toggleParachute();
 
-  // Cannot jump while ducked — unless a Scout in the air.
-  if (st.flags & FL_DUCKING) {
+  // Cannot jump while ducked — unless a Scout in the air (TF only; the base movement allows it).
+  if (P.tfRules && st.flags & FL_DUCKING) {
     if (!(st.classIndex === TF_CLASS_SCOUT && !grounded)) return false;
   }
 
@@ -1666,7 +1718,7 @@ function checkJumpButton(): boolean {
     return true;
   }
 
-  preventBunnyJumping();
+  if (P.tfRules) preventBunnyJumping();
 
   if (st.surfaceName) cx.onFootstep?.(st.surfaceName, 1);
   st.jumping = true;
@@ -1676,11 +1728,13 @@ function checkJumpButton(): boolean {
   const groundFactor = st.surfaceName ? surface(st.surfaceName).jumpFactor : 1;
   let jumpMod = st.attrs.jumpHeightMod;
   if (st.attrs.agilityRune) jumpMod *= 1.8;
-  const mul = TF_JUMP_IMPULSE * jumpMod * groundFactor;
+  const mul = P.jumpImpulse * jumpMod * groundFactor;
 
   // Ducking sets the speed outright; standing adds to it.
   if (st.ducking || st.flags & FL_DUCKING) st.velocity.z = mul;
   else st.velocity.z += mul;
+
+  if (P.hl2JumpBoost) hl2JumpBoost();
 
   finishGravity();
 
@@ -1697,7 +1751,7 @@ function checkFalling(): void {
 
   if (!onGround() || st.fallVelocity <= 0) return;
 
-  if (!st.dead && st.fallVelocity >= PLAYER_FALL_PUNCH_THRESHOLD) {
+  if (!st.dead && st.fallVelocity >= P.fallPunchThreshold) {
     let fvol = 0.5;
     if (st.waterLevel > 0) {
       // Landed in water.
@@ -1706,12 +1760,12 @@ function checkFalling(): void {
       entityVelocity(st.groundEntity, groundVel);
       if (groundVel.z < 0) st.fallVelocity = Math.max(0.1, st.fallVelocity + groundVel.z);
 
-      if (st.fallVelocity > PLAYER_MAX_SAFE_FALL_SPEED) {
+      if (st.fallVelocity > P.maxSafeFallSpeed) {
         cx.onFallDamage?.(st.fallVelocity);
         fvol = 1;
-      } else if (st.fallVelocity > PLAYER_MAX_SAFE_FALL_SPEED / 2) {
+      } else if (st.fallVelocity > P.maxSafeFallSpeed / 2) {
         fvol = 0.85;
-      } else if (st.fallVelocity < PLAYER_MIN_BOUNCE_SPEED) {
+      } else if (st.fallVelocity < P.minBounceSpeed) {
         fvol = 0;
       }
     }
@@ -1794,8 +1848,8 @@ function updateStepSound(): void {
 
 /** SDK: CGameMovement::SetDuckedEyeOffset — eye height between standing (0) and ducked (1). */
 function setDuckedEyeOffset(frac: number): void {
-  const more = VEC_DUCK_HULL_MIN.z - VEC_HULL_MIN.z;
-  st.viewOffsetZ = (VEC_DUCK_VIEW_Z - more) * frac + classEyeHeight(st.classIndex) * (1 - frac);
+  const more = P.duckHullMin.z - P.hullMin.z;
+  st.viewOffsetZ = (P.duckViewZ - more) * frac + standEyeHeight() * (1 - frac);
 }
 
 /** SDK: CGameMovement::HandleDuckingSpeedCrop (+ TF loser freeze) — a third of the input when crouched on ground. */
@@ -1829,7 +1883,7 @@ function fixPlayerCrouchStuck(upward: boolean): void {
 /** SDK: CGameMovement::CanUnduck — room for the standing hull (lowered by 20 in the air). */
 function canUnduck(): boolean {
   copy(duckOrigin, st.origin);
-  if (!onGround()) duckOrigin.z -= DUCK_HULL_DELTA_Z;
+  if (!onGround()) duckOrigin.z -= duckHullDeltaZ();
   const saved = st.ducked;
   st.ducked = false;
   tracePlayerBBox(st.origin, duckOrigin, playerSolidMask(), trDuck);
@@ -1843,11 +1897,11 @@ function finishDuck(): void {
   st.flags |= FL_DUCKING;
   st.ducked = true;
   st.ducking = false;
-  st.viewOffsetZ = VEC_DUCK_VIEW_Z;
+  st.viewOffsetZ = P.duckViewZ;
   if (onGround()) {
-    st.origin.z -= VEC_DUCK_HULL_MIN.z - VEC_HULL_MIN.z;
+    st.origin.z -= P.duckHullMin.z - P.hullMin.z;
   } else {
-    st.origin.z += DUCK_HULL_DELTA_Z;
+    st.origin.z += duckHullDeltaZ();
   }
   fixPlayerCrouchStuck(true);
   categorizePosition();
@@ -1855,12 +1909,12 @@ function finishDuck(): void {
 
 /** SDK: CGameMovement::FinishUnDuck — back to the standing hull; in the air the feet drop 20. */
 function finishUnDuck(): void {
-  if (onGround()) st.origin.z += VEC_DUCK_HULL_MIN.z - VEC_HULL_MIN.z;
-  else st.origin.z -= DUCK_HULL_DELTA_Z;
+  if (onGround()) st.origin.z += P.duckHullMin.z - P.hullMin.z;
+  else st.origin.z -= duckHullDeltaZ();
   st.ducked = false;
   st.flags &= ~FL_DUCKING;
   st.ducking = false;
-  st.viewOffsetZ = classEyeHeight(st.classIndex);
+  st.viewOffsetZ = standEyeHeight();
   st.duckTime = 0;
   categorizePosition();
 }
@@ -1869,6 +1923,7 @@ function finishUnDuck(): void {
 function duckOverrides(): void {
   const grounded = onGround();
   if ((st.waterLevel >= WL_FEET && !grounded) || st.waterLevel >= WL_EYES) buttons &= ~IN_DUCK;
+  if (!P.tfRules) return;
   if (cx.curtime < st.duckTimer && grounded) buttons &= ~IN_DUCK;
   // No "quantum crouch": no re-duck while standing back up.
   if (st.ducked && st.ducking) buttons &= ~IN_DUCK;
@@ -1887,8 +1942,8 @@ function onDuck(pressed: number): void {
 
   if (st.ducking) {
     const secs = Math.max(0, GAMEMOVEMENT_DUCK_TIME - st.duckTime) * 0.001;
-    if (secs > TIME_TO_DUCK || inDuck || inAir) finishDuck();
-    else setDuckedEyeOffset(simpleSpline(secs / TIME_TO_DUCK));
+    if (secs > P.timeToDuck || inDuck || inAir) finishDuck();
+    else setDuckedEyeOffset(simpleSpline(secs / P.timeToDuck));
   }
 }
 
@@ -1908,8 +1963,8 @@ function onUnDuck(released: number): void {
       st.duckTime = GAMEMOVEMENT_DUCK_TIME;
     } else if (st.ducking && !st.ducked) {
       // Released before fully ducked: reverse from the same eye height.
-      const unduckMs = 1000 * TIME_TO_UNDUCK;
-      const duckMs = 1000 * TIME_TO_DUCK;
+      const unduckMs = 1000 * P.timeToUnduck;
+      const duckMs = 1000 * P.timeToDuck;
       const elapsed = GAMEMOVEMENT_DUCK_TIME - st.duckTime;
       const fracDucked = elapsed / duckMs;
       st.duckTime = GAMEMOVEMENT_DUCK_TIME - unduckMs + fracDucked * unduckMs;
@@ -1919,10 +1974,10 @@ function onUnDuck(released: number): void {
   if (canUnduck()) {
     if (st.ducking || st.ducked) {
       const secs = Math.max(0, GAMEMOVEMENT_DUCK_TIME - st.duckTime) * 0.001;
-      if (secs > TIME_TO_UNDUCK || inAir) {
+      if (secs > P.timeToUnduck || inAir) {
         finishUnDuck();
       } else {
-        setDuckedEyeOffset(simpleSpline(1 - secs / TIME_TO_UNDUCK));
+        setDuckedEyeOffset(simpleSpline(1 - secs / P.timeToUnduck));
         st.ducking = true;
       }
     }
@@ -1946,7 +2001,7 @@ function duck(): void {
   if (buttons & IN_DUCK) oldButtons |= IN_DUCK;
   else oldButtons &= ~IN_DUCK;
 
-  const standEye = classEyeHeight(st.classIndex);
+  const standEye = standEyeHeight();
   if (st.dead) {
     st.viewOffsetZ = standEye;
     return;
@@ -2001,7 +2056,7 @@ function fullNoClipMove(factor: number, maxAccel: number): void {
     }
     // Bleed off speed, at least a quarter of max speed's worth.
     const control = spd < maxspeed / 4 ? maxspeed / 4 : spd;
-    const drop = control * SV_FRICTION * st.surfaceFriction * DT;
+    const drop = control * P.sv_friction * st.surfaceFriction * DT;
     const s = Math.max(0, spd - drop) / spd;
     v.x *= s;
     v.y *= s;

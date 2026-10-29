@@ -14,6 +14,7 @@ import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { LUMP, parseBsp, texInfoMaterial, type BspFile } from '../../lib/tf2-game/formats/bsp';
 import { materialPath, parseVmt, texturePath } from '../../lib/tf2-game/formats/vmt';
+import { decodeNavMesh } from '../../lib/tf2-game/bots/nav/serialize';
 import { loadPropCollisionModel } from '../../lib/tf2-game/world/prop-collision';
 import { GAME_MAPS } from '../../lib/tf2-game/assets/game-maps';
 import {
@@ -167,7 +168,12 @@ for (const suite of suites) {
         const manifest = manifests.get(m)!;
         expect(() => mapManifestSchema.strict().parse(manifest)).not.toThrow();
         expect(manifest.game).toBe(suite.game);
-        expect(manifest.nav).toBeNull();
+        if (suite.game === 'tf2') {
+          // The bots' navigation mesh (lib/tf2-game/bots/nav), written and decodable.
+          expect(manifest.nav).toMatch(/^maps\/[a-f0-9]{64}\.nav\.bin$/);
+          const mesh = decodeNavMesh(new Uint8Array(readFileSync(path.join(out, manifest.nav!))));
+          expect(mesh.areaCount).toBeGreaterThan(100);
+        } else expect(manifest.nav).toBeNull();
       }
       const index = mapIndexSchema.parse(
         JSON.parse(readFileSync(path.join(out, 'maps/index.json'), 'utf8')),

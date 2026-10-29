@@ -46,6 +46,8 @@ export const mapMaterialSchema = z.object({
   nodraw: z.literal(true).optional(),
   /** tools/toolsskybox(2d) and `%compilesky`: draw the sky here. */
   sky: z.literal(true).optional(),
+  /** Portal: `%noportal` — the portal gun cannot place a portal on this surface (lib/sp-game). */
+  noportal: z.literal(true).optional(),
   /** Water shader: fog under the surface. */
   water: z.object({ fogColor: vec3, fogStart: z.number(), fogEnd: z.number() }).optional(),
   /** TextureScroll proxy: texture-space offset per second. */

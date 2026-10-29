@@ -14,7 +14,13 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['lib/tf2-game/**/*.test.ts', 'scripts/tf2-game/**/*.test.ts', 'server/socket-server/tf2/**/*.test.ts'],
+    include: [
+      'lib/tf2-game/**/*.test.ts',
+      'scripts/tf2-game/**/*.test.ts',
+      'server/socket-server/tf2/**/*.test.ts',
+      // The single-player layer (Half-Life 2 demo, Portal: First Slice) on the same engine.
+      'lib/sp-game/**/*.test.ts',
+    ],
     testTimeout: 60_000,
     pool: 'threads',
   },

@@ -235,8 +235,60 @@ export interface SurfaceProps {
   maxSpeedFactor: number;
 }
 
+/**
+ * The convars, hulls and rule switches movement reads, so another Source game
+ * can reuse `playerMove` (lib/sp-game runs Half-Life 2 and Portal through it).
+ * Omitted from the context, movement uses `TF_MOVE_PARAMS` — exactly TF2.
+ */
+export interface MoveParams {
+  /** sv_gravity. */
+  gravity: number;
+  sv_friction: number;
+  sv_stopspeed: number;
+  sv_accelerate: number;
+  sv_airaccelerate: number;
+  sv_maxvelocity: number;
+  sv_stepsize: number;
+  /** The speed cap CheckParameters starts from before the player's own max speed (TF_MAX_SPEED in TF, sv_maxspeed in HL2). */
+  maxSpeedCap: number;
+  /** The ground jump impulse (TF 289; CGameMovement 160 at sv_gravity 600). */
+  jumpImpulse: number;
+  hullMin: Readonly<Vec3>;
+  hullMax: Readonly<Vec3>;
+  duckHullMin: Readonly<Vec3>;
+  duckHullMax: Readonly<Vec3>;
+  duckViewZ: number;
+  /** Standing eye height; null = the TF class's (classEyeHeight). */
+  viewZ: number | null;
+  /** TIME_TO_DUCK / TIME_TO_UNDUCK, seconds. */
+  timeToDuck: number;
+  timeToUnduck: number;
+  /** PLAYER_MAX_SAFE_FALL_SPEED, PLAYER_MIN_BOUNCE_SPEED, PLAYER_FALL_PUNCH_THRESHOLD. */
+  maxSafeFallSpeed: number;
+  minBounceSpeed: number;
+  fallPunchThreshold: number;
+  /** CheckWaterJump: forward probe distance and the upward velocity. */
+  waterJumpForward: number;
+  waterJumpUp: number;
+  /**
+   * TF2's CTFGameMovement rules: backpedal clamp, PreventBunnyJumping, the air
+   * duck count and re-duck lockout, no ground jump while ducked. False runs the
+   * base CGameMovement behaviour instead.
+   */
+  tfRules: boolean;
+  /**
+   * Half-Life 2 single player's jump boost (CGameMovement::CheckJumpButton under
+   * HL2_DLL with one client): a share of the forward move added to the jump.
+   */
+  hl2JumpBoost: boolean;
+}
+
 /** Everything `playerMove` needs from the outside world for one tick. */
 export interface MoveContext {
+  /** Game convars and rules; TF2's when omitted (TF_MOVE_PARAMS in movement.ts). */
+  params?: MoveParams;
+  /** HL2 sprint state for the jump boost (CHLMoveData::m_bIsSprinting). */
+  sprinting?: boolean;
   world: CollisionWorld;
   /** Simulation time at this tick (gpGlobals->curtime). */
   curtime: number;
