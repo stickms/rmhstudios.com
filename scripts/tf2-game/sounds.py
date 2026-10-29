@@ -32,6 +32,22 @@ sound is neither transcoded nor uploaded again):
 The list is JSON: {"entries": [...], "paths": [...]} or a flat array in which a string
 starting with `sound/` or ending in .wav/.mp3 is a raw path and anything else an entry.
 `scripts/tf2-game/sound-list.py` writes the default one.
+
+`--game hl2|portal` reads a single-player game the way its gameinfo.txt searches (`portal` then
+`hl2`, the sound packs included; gamefs.SearchFS) instead of TF2's tf/-first view. Its list (from
+`sound-list.py --game …`) also carries the maps' soundscapes, scenes and captions, published
+next to the index (mutable entry points like it, small):
+
+  <out>/soundscapes.json  {v, soundscapes: {name: {dsp?, rules: [{type: looping|random|soundscape,
+                            wave|waves|name, volume, pitch, soundlevel?, time?, position?, …}]}}}
+                            (waves are `sound/…` paths — look them up in the index's `files` — or
+                            script entry names)
+  <out>/scenes.json       {v, scenes: {"scenes/…/x.vcd" (lowercase): {duration, speak: [{actor,
+                            sound, start, end, cc?, ccType?}]}}}
+  <out>/captions.json     {v, lang, captions: {token (lowercase entry name / caption token):
+                            {text, color?, sfx?, len?, delay?, norepeat?}}}
+                            (`text` keeps only <i>…</i>, <b>…</b>, <color=#rrggbb>…</color> and
+                            newlines; sourcegame.reduce_caption)
 """
 import argparse
 import hashlib
@@ -428,7 +444,25 @@ def json_bytes(data):
     return json.dumps(data, separators=(",", ":"), sort_keys=True, allow_nan=False).encode()
 
 
-def build(fs, out, entry_names, paths, state=None, ffmpeg="ffmpeg", scripts=None):
+EXTRA_DOCS = ("soundscapes", "scenes", "captions")
+
+
+def read_extras(path):
+    """The single-player documents a list carries ({} for TF2's list)."""
+    with open(path) as fh:
+        data = json.load(fh)
+    if not isinstance(data, dict):
+        return {}
+    return {k: data[k] for k in EXTRA_DOCS if isinstance(data.get(k), dict)}
+
+
+def extra_document(kind, body):
+    if kind == "captions":
+        return {"v": 1, "lang": "english", "captions": body}
+    return {"v": 1, kind: body}
+
+
+def build(fs, out, entry_names, paths, state=None, ffmpeg="ffmpeg", scripts=None, extras=None):
     published = (state or {}).get("models", {})
     os.makedirs(out, exist_ok=True)
     scripts = load_scripts(fs) if scripts is None else scripts
@@ -512,6 +546,11 @@ def build(fs, out, entry_names, paths, state=None, ffmpeg="ffmpeg", scripts=None
     wanted["index.json"] = {"src": hashlib.sha256(data).hexdigest()}
     with open(os.path.join(out, "index.json"), "wb") as fh:
         fh.write(data)
+    for kind, body in sorted((extras or {}).items()):
+        doc = json_bytes(extra_document(kind, body))
+        wanted[kind + ".json"] = {"src": hashlib.sha256(doc).hexdigest()}
+        with open(os.path.join(out, kind + ".json"), "wb") as fh:
+            fh.write(doc)
     with open(os.path.join(out, "wanted.json"), "w") as fh:
         json.dump(wanted, fh)
     with open(os.path.join(out, "errors.json"), "w") as fh:
@@ -527,20 +566,22 @@ def build(fs, out, entry_names, paths, state=None, ffmpeg="ffmpeg", scripts=None
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--root", required=True, help="game install (the folder holding tf/ and hl2/)")
+    ap.add_argument("--game", choices=("tf2", "hl2", "portal"), default="tf2",
+                    help="which game's search path to read (default tf2)")
     ap.add_argument("--list", required=True, help="sound list JSON (sound-list.py writes the default)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--state", help="the channel's published state (publish.ts state)")
     ap.add_argument("--ffmpeg", default=shutil.which("ffmpeg") or "ffmpeg")
     args = ap.parse_args()
-    from gamefs import GameFirst
-    from vpkfs import GameFS
+    from gamefs import open_game
 
     state = None
     if args.state and os.path.exists(args.state):
         with open(args.state) as fh:
             state = json.load(fh)
     entries, paths = read_list(args.list)
-    build(GameFirst(GameFS(args.root)), args.out, entries, paths, state, args.ffmpeg)
+    build(open_game(args.root, args.game), args.out, entries, paths, state, args.ffmpeg,
+          extras=read_extras(args.list))
 
 
 if __name__ == "__main__":

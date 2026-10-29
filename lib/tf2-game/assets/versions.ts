@@ -78,6 +78,14 @@ export const GAME_ASSET_CHANNELS = {
     env: 'HL2_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },
+  // Its maps' sounds (`sound-list.py --game hl2`), soundscapes, scenes and captions.
+  'hl2-sounds': {
+    game: 'hl2',
+    kind: 'snd',
+    builder: 1,
+    env: 'HL2_GAME_BUILDER_SOUNDS',
+    script: 'scripts/tf2-game/sounds.py',
+  },
   // Portal: First Slice (Steam app 410): its seven maps and their props.
   'portal-maps': {
     game: 'portal',
@@ -92,6 +100,13 @@ export const GAME_ASSET_CHANNELS = {
     builder: 1,
     env: 'PORTAL_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
+  },
+  'portal-sounds': {
+    game: 'portal',
+    kind: 'snd',
+    builder: 1,
+    env: 'PORTAL_GAME_BUILDER_SOUNDS',
+    script: 'scripts/tf2-game/sounds.py',
   },
 } as const satisfies Record<string, GameAssetChannel>;
 

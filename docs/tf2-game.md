@@ -27,7 +27,7 @@ storage, like the loadout builder's models (see [TF2 Hub](tf2-hub.md)).
 | `lib/tf2-game/bots/`                        | Bots: navigation graph, pathing, per-class behaviour.                                                                                                                                                                                                                             |
 | `lib/tf2-game/net/`                         | Protocol: snapshots, deltas, input packing; client prediction and interpolation.                                                                                                                                                                                                  |
 | `lib/tf2-game/render/`                      | three.js renderer: world, props, players, view models, projectiles, buildings, particles, decals. Browser only.                                                                                                                                                                   |
-| `lib/tf2-game/audio/`                       | Sound playback over `getAudioContext()`.                                                                                                                                                                                                                                          |
+| `lib/tf2-game/audio/`                       | Sound playback over `getAudioContext()`: the mixer, attenuation and channel rules, soundscapes, scenes, captions.                                                                                                                                                                 |
 | `lib/tf2-game/client/`                      | The browser game loop: input, local "listen server" worker for offline play, connection to the hub for online play.                                                                                                                                                               |
 | `components/tf2-game/`                      | React UI: the play page, HUD, menus (team, class, scoreboard, settings).                                                                                                                                                                                                          |
 | `lib/tf2-game/server/`                      | Match hosting: the `MatchHost` contract the simulation implements (`match-host.ts`), its one entry point `createTf2Match` (`create-match.ts`), the fixed-step loop (`match-runner.ts`), the worker entry (`match-worker.server.ts`) and the hub's thread pool (`pool.server.ts`). |
@@ -92,6 +92,7 @@ in `lib/tf2-game/assets/versions.ts`; the workflow reads them from there.
 | `game-maps`                    | `tf2-game/maps/`, shared `tf2-game/tex/`                    | `scripts/tf2-game/build-maps.ts` (see [Maps](#maps))                                          | `maps/index.json`                   |
 | `hl2-maps`, `hl2-models`       | `hl2-game/maps/`, `hl2-game/mdl/`, `hl2-game/tex/`          | `build-maps.ts --game hl2`, `models.py --search hl2` (Half-Life 2 demo, app 219)              | `maps/index.json`, `mdl/index.json` |
 | `portal-maps`, `portal-models` | `portal-game/maps/`, `portal-game/mdl/`, `portal-game/tex/` | `build-maps.ts --game portal`, `models.py --search portal,hl2` (Portal: First Slice, app 410) | `maps/index.json`, `mdl/index.json` |
+| `hl2-sounds`, `portal-sounds`  | `hl2-game/snd/`, `portal-game/snd/`                         | `sound-list.py --game hl2\|portal` → `sounds.py --game hl2\|portal` (ffmpeg)                  | `snd/index.json`                    |
 
 `GET /api/tf2-game/assets/<kind>/<file>` serves them (`lib/tf2-game/assets/store.server.ts`,
 paths checked by `paths.ts`): content-addressed files are immutable for a year,
@@ -113,6 +114,25 @@ volume: [min,max], pitch: [min,max], soundlevel, channel, flags? } }, files:
   source. The encoder's leading padding is recorded in the LAME header, which
   Chromium and Firefox trim when decoding; where it is not trimmed (Safari) a
   loop starts about 25 ms late. The default list is about 1,400 files.
+- **Half-Life 2 and Portal sounds.** `sound-list.py --game hl2|portal` lists what the published
+  maps use (read as their gameinfo.txt searches, sound packs included — `gamefs.SearchFS`):
+  entity values naming a script entry or a sound file (ambient_generic, door / button / train
+  sounds), env_soundscape soundscapes and their waves, logic_choreographed_scene speech (read
+  from `scenes/scenes.image`, `sourcegame.SceneImage`), the NPCs and surfaces present, the
+  player and each game's own set (portal gun, portals, energy balls; the suit), dropping what
+  the demo depots do not ship; `--max-files` defaults to 800. `sounds.py --game …` publishes,
+  next to the index, `snd/soundscapes.json` (`{v, soundscapes: {name: {dsp?, rules}}}`),
+  `snd/scenes.json` (`{v, scenes: {"scenes/…/x.vcd": {duration, speak: [{actor, sound, start,
+end, cc?, ccType?}]}}}`) and `snd/captions.json` (`{v, lang, captions: {token: {text, color?,
+sfx?, len?, delay?, norepeat?}}}` — English captions, `<clr>` / `<I>` / `<B>` / `<cr>` reduced
+  to `<color=#rrggbb>`, `<i>`, `<b>` and newlines). About 650 files / 11 MB (HL2) and 340 files
+  / 14 MB (Portal, mostly its songs). Tests: `-p test_sourcegame.py` (with `HL2_ROOT` /
+  `PORTAL_ROOT` it also lists the real games).
+- **Playback.** `lib/tf2-game/audio/` (`AudioEngine`) mixes over the page's shared
+  `getAudioContext()`: Source's sound-level attenuation (`attenuation.ts`), per-entity channel
+  replacement (`channels.ts`), an LRU of decoded buffers under a byte budget, HRTF panning,
+  volume groups, voice ducking, throttled occlusion, a 48-voice limit, soundscapes with the
+  3-second crossfade, scene speech and caption events for the HUD.
 - **Particles.** `particles/index.json` is `{ v, systems: { <name>:
 "effects/<sha>.json" }, missingTextures }`; each bundle is exactly the loadout's
   `ParticleBundle` (built by `scripts/tf2-assets/particles.py`'s `Graphs`), with
