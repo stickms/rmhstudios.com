@@ -146,7 +146,8 @@ export const PLAYERANIMEVENT_RELOAD_END = 5;
 export const PLAYERANIMEVENT_JUMP = 6;
 export const PLAYERANIMEVENT_SWIM = 7;
 export const PLAYERANIMEVENT_DIE = 8;
-export const PLAYERANIMEVENT_SPAWN = 11;
+export const PLAYERANIMEVENT_DOUBLEJUMP = 15;
+export const PLAYERANIMEVENT_SPAWN = 17;
 export const PLAYERANIMEVENT_CUSTOM_GESTURE = 20;
 
 export interface PlayerStats {
