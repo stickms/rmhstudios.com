@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   GLASS_BUDGET,
+  advanceHazeClock,
   LIGHT_REACH,
   admit,
   approach,
@@ -151,5 +152,26 @@ describe('inner radius', () => {
     expect(innerRadius('50%', 0, 100, 100)).toBe(50);
     expect(innerRadius('0px', 1, 100, 100)).toBe(0);
     expect(innerRadius('', 0, 100, 100)).toBe(0);
+  });
+});
+
+describe('advanceHazeClock', () => {
+  it('advances by the time since the previous tick', () => {
+    expect(advanceHazeClock(10, 1100, 1000, 12)).toBeCloseTo(10.1, 6);
+  });
+
+  it('does not move before the first tick or with the clock stopped', () => {
+    expect(advanceHazeClock(5, 1000, 0, 12)).toBe(5);
+    expect(advanceHazeClock(5, 1000, 900, 0)).toBe(5);
+  });
+
+  it('counts a long pause as one period, so the field resumes where it stopped', () => {
+    // A scroll that held the clock at 0 for 4 s: the field advances by one 60 Hz period, not by four seconds.
+    expect(advanceHazeClock(5, 5000, 1000, 60)).toBeLessThan(5 + 3 / 60 + 1e-9);
+    expect(advanceHazeClock(5, 5000, 1000, 60)).toBeGreaterThan(5);
+  });
+
+  it('never runs backwards', () => {
+    expect(advanceHazeClock(5, 900, 1000, 30)).toBe(5);
   });
 });
