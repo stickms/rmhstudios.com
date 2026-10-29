@@ -11,7 +11,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getAlbumBySlug } from '@/lib/albums.server';
 import { AlbumViewer } from '@/components/library/AlbumViewer';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 
 const fetchAlbum = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
@@ -28,15 +28,13 @@ export const Route = createFileRoute('/library/albums/$albumId')({
     const title = album ? `${album.title} | RMH Studios Albums` : 'Album | RMH Studios';
     const description = album?.description ?? 'Browse this album in the RMH Studios library.';
     return {
-      // The cover is the right preview for an album — it just has to be an
-      // absolute URL to be fetched at all, and its own shape is not 1200×630.
+      // The album's card (`/api/og/album/$albumId`) frames its cover beside its name and how much is in it.
       meta: buildMeta({
         title,
         description,
         path: `/library/albums/${params.albumId}`,
-        image: album?.cover || undefined,
-        imageAlt: album ? `Cover of ${album.title}` : undefined,
-        imageSize: album?.cover ? null : undefined,
+        image: album ? ogCardPath('album', params.albumId) : undefined,
+        imageAlt: album ? `${album.title}, an album in the RMH Studios library` : undefined,
         type: 'article',
       }),
       links: [buildCanonical(`/library/albums/${params.albumId}`)],

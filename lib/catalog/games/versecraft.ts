@@ -5,7 +5,7 @@ const entry: GameInfo = {
   order: 40,
   title: 'Versecraft',
   description:
-    'A visual novel that writes a brand-new emotional story every time — your cast, your bonds, your seed to share.',
+    'A visual novel that writes a new emotional story every time. Share your seed.',
   longDescription:
     'Every playthrough is generated from a seed: a unique anime cast, setting, and a multi-act, character-driven story you steer through choices and poem-writing. Prompt the kind of experience you want or roll the dice, deepen bonds with the cast, and share your seed so anyone can replay your exact version.',
   href: '/versecraft',

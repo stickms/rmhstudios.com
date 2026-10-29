@@ -26,9 +26,9 @@ function DailyIndex() {
 export const Route = createFileRoute('/daily/')({
   head: () => ({
     meta: buildMeta({
-      title: 'Daily Puzzles — a new set every day | RMH Studios',
+      title: 'Daily Puzzles | RMH Studios',
       description:
-        'Seven bite-size daily brain puzzles — Lights Out, Alibi, Spectrum, Outcast, Chainlink, Impostor and GlobeSet. New puzzles every day at midnight EST, the same for everyone. Build a streak and share your results.',
+        'Seven daily brain puzzles, the same for everyone. A new set at midnight EST.',
       path: PATH,
     }),
     links: [buildCanonical(PATH)],

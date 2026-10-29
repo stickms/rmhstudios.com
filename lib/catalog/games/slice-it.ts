@@ -5,7 +5,7 @@ const entry: GameInfo = {
   order: 50,
   title: 'Slice It!',
   description:
-    'A high-octane neon rhythm game where you slice through beats in a pulse-pounding world.',
+    'A neon rhythm game where you slice through every beat.',
   longDescription:
     'Test your reflexes as you slice through beat sequences and dodge obstacles in a vibrant, neon-soaked environment. Feature-rich with global leaderboards, multiplayer lobbies, and support for custom track uploads.',
   href: '/slice-it',

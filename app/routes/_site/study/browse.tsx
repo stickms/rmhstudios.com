@@ -18,7 +18,7 @@ export const Route = createFileRoute('/_site/study/browse')({
     meta: buildMeta({
       title: 'Browse decks | RMH Studios',
       description:
-        'Browse public flashcard decks shared by the RMH Studios community and clone any of them into your own library.',
+        'Browse public flashcard decks and clone any of them into your library.',
       path: '/study/browse',
     }),
     links: [buildCanonical('/study/browse')],

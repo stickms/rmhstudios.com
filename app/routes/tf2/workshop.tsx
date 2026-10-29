@@ -16,9 +16,8 @@ export const Route = createFileRoute('/tf2/workshop')({
   }),
   head: () => ({
     meta: buildMeta({
-      title: 'TF2 Workshop — community HUDs and loadouts | RMH Studios',
-      description:
-        'Browse community-made Team Fortress 2 custom HUDs and class loadouts. Preview, like, and copy them into the editor or the loadout builder.',
+      title: 'TF2 Workshop | RMH Studios',
+      description: 'Community-made TF2 HUDs and loadouts. Preview, like, and copy them.',
       path: PATH,
     }),
     links: [buildCanonical(PATH)],

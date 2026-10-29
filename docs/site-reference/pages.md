@@ -99,7 +99,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/groups/:id` | Group Chat | public | `app/routes/_site/groups/$id.tsx` |
 | `/help` | Help & Concierge | public | `app/routes/_site/help.tsx` |
 | `/history` | History | public | `app/routes/_site/history.tsx` |
-| `/homes` | RMHHomes — Rentals & houses posted by the community | public | `app/routes/_site/homes/index.tsx` |
+| `/homes` | RMHHomes | public | `app/routes/_site/homes/index.tsx` |
 | `/homes/listing/:id` | Listing \| RMHHomes | public | `app/routes/_site/homes/listing.$id.tsx` |
 | `/homes/manage` | RMHHomes — Your homes | public | `app/routes/_site/homes/manage.tsx` |
 | `/homes/rent-split` | Fair Rent Split Calculator \| RMHHomes | public | `app/routes/_site/homes/rent-split.tsx` |
@@ -140,7 +140,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/ranked` | Ranked | public | `app/routes/_site/ranked.tsx` |
 | `/reading` | My reading | public | `app/routes/_site/reading/index.tsx` |
 | `/recap` | Your Week | public | `app/routes/_site/recap.tsx` |
-| `/rideshare` | RMH Rideshare — Rides across the community | public | `app/routes/_site/rideshare/index.tsx` |
+| `/rideshare` | RMH Rideshare | public | `app/routes/_site/rideshare/index.tsx` |
 | `/rideshare/drive` | Drive with RMH Rideshare | public | `app/routes/_site/rideshare/drive.tsx` |
 | `/rideshare/ride` | Request a ride — RMH Rideshare | public | `app/routes/_site/rideshare/ride.tsx` |
 | `/rings` | Webrings | public | `app/routes/_site/rings/index.tsx` |
@@ -189,7 +189,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/spaces` | redirects to `/communities?tab=spaces` | public | `app/routes/_site/spaces.index.tsx` |
 | `/spaces/:id` | — | public | `app/routes/_site/spaces.$id.tsx` |
 | `/speedruns` | Speedruns | public | `app/routes/_site/speedruns.tsx` |
-| `/store` | Store — RMH Studios | public | `app/routes/_site/store/index.tsx` |
+| `/store` | Store | public | `app/routes/_site/store/index.tsx` |
 | `/store/:userid` | Store | public | `app/routes/_site/store/$userid.tsx` |
 | `/studio/themes` | redirects to `/settings/themes` | public | `app/routes/_site/studio/themes.tsx` |
 | `/study` | Flashcards | public | `app/routes/_site/study/index.tsx` |
@@ -240,10 +240,10 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
 | `/copyright` | Copyright | public | `app/routes/copyright.tsx` |
 | `/covid` | — | public | `app/routes/covid.tsx` |
-| `/daily` | Daily Puzzles — a new set every day | public | `app/routes/daily/index.tsx` |
+| `/daily` | Daily Puzzles | public | `app/routes/daily/index.tsx` |
 | `/daily/alibi` | — | public | `app/routes/daily/alibi.tsx` |
 | `/daily/chainlink` | — | public | `app/routes/daily/chainlink.tsx` |
-| `/daily/globeset` | GlobeSet — the daily globe puzzle | public | `app/routes/daily/globeset.tsx` |
+| `/daily/globeset` | GlobeSet | public | `app/routes/daily/globeset.tsx` |
 | `/daily/impostor` | — | public | `app/routes/daily/impostor.tsx` |
 | `/daily/lights-out` | — | public | `app/routes/daily/lights-out.tsx` |
 | `/daily/outcast` | — | public | `app/routes/daily/outcast.tsx` |
@@ -255,7 +255,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/discord/lights-out` | — | public | `app/routes/discord/lights-out.tsx` |
 | `/discord/rmhbox` | — | public | `app/routes/discord/rmhbox.tsx` |
 | `/dream-rift` | — | public | `app/routes/dream-rift.tsx` |
-| `/dunesday` | Dunesday — MCU + Dune Marathon Planner | public | `app/routes/dunesday.tsx` |
+| `/dunesday` | Dunesday | public | `app/routes/dunesday.tsx` |
 | `/embed/post/:id` | — | public | `app/routes/embed.post.$id.tsx` |
 | `/embed/replay/:id` | — | public | `app/routes/embed.replay.$id.tsx` |
 | `/eversion-lab` | — | admin | `app/routes/eversion-lab.tsx` |
@@ -305,9 +305,9 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmh-pmc/operators` | — | public | `app/routes/rmh-pmc/operators.tsx` |
 | `/rmhbox` | — | sign-in | `app/routes/rmhbox/index.tsx` |
 | `/rmhbox/:lobbyId` | — | sign-in | `app/routes/rmhbox/$lobbyId.tsx` |
-| `/rmhbox/minigames` | RMHbox minigames — the full list | sign-in | `app/routes/rmhbox/minigames/index.tsx` |
+| `/rmhbox/minigames` | RMHbox minigames | sign-in | `app/routes/rmhbox/minigames/index.tsx` |
 | `/rmhbox/minigames/:minigameId/history` | — | sign-in | `app/routes/rmhbox/minigames/$minigameId/history.tsx` |
-| `/rmhcalculator` | RMHCalculator — AI Graphing & Scientific Calculator | sign-in | `app/routes/rmhcalculator.tsx` |
+| `/rmhcalculator` | RMHCalculator | sign-in | `app/routes/rmhcalculator.tsx` |
 | `/rmhcode` | — | public | `app/routes/rmhcode/index.tsx` |
 | `/rmhcode/auth` | — | public | `app/routes/rmhcode/auth.tsx` |
 | `/rmhmusic` | — | sign-in | `app/routes/rmhmusic/index.tsx` |
@@ -361,16 +361,16 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/temple-of-joy` | — | public | `app/routes/temple-of-joy/index.tsx` |
 | `/terms` | Terms of Use | public | `app/routes/terms.tsx` |
 | `/tf2` | — | public | `app/routes/tf2/index.tsx` |
-| `/tf2/hud-editor` | TF2 HUD Editor — build and preview custom Team Fortress 2 HUDs | public | `app/routes/tf2/hud-editor/index.tsx` |
+| `/tf2/hud-editor` | TF2 HUD Editor | public | `app/routes/tf2/hud-editor/index.tsx` |
 | `/tf2/hud-editor/editor` | — | public | `app/routes/tf2/hud-editor/editor.tsx` |
 | `/tf2/hud-editor/h/:slug` | — | public | `app/routes/tf2/hud-editor/h.$slug.tsx` |
 | `/tf2/hud-editor/mine` | — | public | `app/routes/tf2/hud-editor/mine.tsx` |
 | `/tf2/hud-editor/s/:token` | — | public | `app/routes/tf2/hud-editor/s.$token.tsx` |
-| `/tf2/loadout` | TF2 Loadout Builder — plan every class | public | `app/routes/tf2/loadout/index.tsx` |
+| `/tf2/loadout` | TF2 Loadout Builder | public | `app/routes/tf2/loadout/index.tsx` |
 | `/tf2/loadout/l/:slug` | — | public | `app/routes/tf2/loadout/l.$slug.tsx` |
 | `/tf2/loadout/mine` | — | public | `app/routes/tf2/loadout/mine.tsx` |
-| `/tf2/play` | Play TF2 in your browser — online or against bots | public | `app/routes/tf2/play.tsx` |
-| `/tf2/workshop` | TF2 Workshop — community HUDs and loadouts | public | `app/routes/tf2/workshop.tsx` |
+| `/tf2/play` | Play TF2 | public | `app/routes/tf2/play.tsx` |
+| `/tf2/workshop` | TF2 Workshop | public | `app/routes/tf2/workshop.tsx` |
 | `/u/:handle/rss.xml` | — | public | `app/routes/u.$handle.rss[.]xml.ts` |
 | `/v/:slug` | — | public | `app/routes/v.$slug.tsx` |
 | `/v/new` | redirects to `/v` | public | `app/routes/v.new.tsx` |

@@ -68,7 +68,7 @@ export const Route = createFileRoute('/services/rebar-rutabaga')({
     meta: buildMeta({
       title: 'Rebar & Rutabaga | RMH Studios',
       description:
-        'A molecular-gastronomy restaurant in a decommissioned Göteborg rebar foundry. Nine spherified courses, read off a glass globe. Two stars, one of them for the lighting.',
+        'Molecular gastronomy in a decommissioned Göteborg rebar foundry. Nine spherified courses.',
       path: '/services/rebar-rutabaga',
     }),
     links: [buildCanonical('/services/rebar-rutabaga')],

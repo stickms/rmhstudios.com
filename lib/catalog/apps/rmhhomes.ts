@@ -5,7 +5,7 @@ const entry: AppInfo = {
   order: 110,
   title: 'RMHHomes',
   description:
-    'A housing marketplace — browse member posts plus real listings aggregated from across the web on a map, filter, and save favorites.',
+    'A housing marketplace: member posts and real listings on one map. Filter and save.',
   longDescription:
     'RMHHomes is a housing marketplace that blends member-posted rentals and houses with real apartment/home postings aggregated from public feeds across the web. Browse everything on an interactive map, filter by price, beds, baths, property type and source, save favorites, and set up alerts for new matches. Post your own listing and message the owner directly, or jump straight to the original posting for aggregated listings.',
   href: '/homes',

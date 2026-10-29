@@ -4,7 +4,7 @@ const entry: AppInfo = {
   id: 'rmhtube',
   order: 0,
   title: 'RMHTube',
-  description: 'Watch videos together in sync. Create rooms, queue media, and chat in real-time.',
+  description: 'Watch videos together in sync. Make a room, queue media, chat.',
   longDescription:
     'RMHTube is a real-time watch party platform. Create a room, share the code, and watch YouTube, Twitch, or direct videos in perfect sync with friends. Queue up media, vote to skip, react live, and chat — all powered by WebSocket magic.',
   href: '/rmhtube',

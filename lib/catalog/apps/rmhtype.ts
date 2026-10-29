@@ -4,7 +4,7 @@ const entry: AppInfo = {
   id: 'rmhtype',
   order: 30,
   title: 'RMH Type',
-  description: 'Test your typing speed solo or race against friends in real-time multiplayer.',
+  description: 'Test your typing speed solo or race friends in real time.',
   longDescription:
     'RMH Type is a competitive typing platform. Practice solo to improve your WPM, or create a room to race friends on the same passage simultaneously. Track your progress on the global leaderboard and climb the ranks.',
   href: '/rmhtype',

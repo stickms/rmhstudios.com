@@ -34,9 +34,9 @@ import { RIDE_CLASSES, type RideClassId } from '@/lib/rideshare/classes';
 export const Route = createFileRoute('/_site/rideshare/')({
   head: () => ({
     meta: buildMeta({
-      title: 'RMH Rideshare — Rides across the community',
+      title: 'RMH Rideshare',
       description:
-        'Request a ride or sign up to drive with RMH Rideshare. Map your trip with OpenStreetMap and choose from RMH-X, RMH-XL, RMH-Comfort and more.',
+        'Request a ride or drive with RMH Rideshare. Pick RMH-X, XL, Comfort and more.',
       path: '/rideshare',
     }),
     links: [buildCanonical('/rideshare')],

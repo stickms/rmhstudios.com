@@ -37,9 +37,9 @@ export const Route = createFileRoute('/daily/globeset')({
    */
   head: () => ({
     meta: buildMeta({
-      title: 'GlobeSet — the daily globe puzzle | RMH Studios',
+      title: 'GlobeSet | RMH Studios',
       description:
-        'Sixty-three cards on a glass globe you turn with a finger. Find every group whose colours all pair up, clear the deck against the clock, and share your grid. Turn the gyroscope on and the globe stays put in the room while you walk around it. A new deal every day at midnight EST — the same one for everyone.',
+        'Sixty-three cards on a glass globe. Find every matching group and clear the deck against the clock.',
       path: PATH,
     }),
   }),

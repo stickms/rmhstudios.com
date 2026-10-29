@@ -20,7 +20,7 @@ export const Route = createFileRoute('/dunesday')({
   head: () => ({
     meta: [
       ...buildMeta({
-        title: 'Dunesday — MCU + Dune Marathon Planner | RMH Studios',
+        title: 'Dunesday | RMH Studios',
         // Short on purpose: every route's head() ships in the site-wide entry
         // chunk (routeTree imports all route modules statically).
         description:

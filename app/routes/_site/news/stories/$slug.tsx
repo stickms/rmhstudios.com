@@ -8,7 +8,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { StoryTimeline } from '@/components/reading/StoryTimeline';
 import { getStoryPage } from '@/lib/reading/stories.server';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 
 const fetchStory = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
@@ -25,6 +25,8 @@ export const Route = createFileRoute('/_site/news/stories/$slug')({
       title: `${loaderData?.title ?? 'Story'} | RMH News`,
       description: loaderData?.summary || 'A timeline of related stories from RMH News.',
       path: `/news/stories/${params.slug}`,
+      // The story's own card: how many articles, and how far back the timeline goes.
+      image: loaderData ? ogCardPath('story', params.slug) : undefined,
     }),
     links: [buildCanonical(`/news/stories/${params.slug}`)],
   }),

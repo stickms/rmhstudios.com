@@ -124,7 +124,7 @@ export const Route = createFileRoute('/_site/services/')({
     meta: buildMeta({
       title: 'Services | RMH Studios',
       description:
-        'RMH Studios services — RMHHomes housing marketplace, RMHLadder early-career job discovery, RMH Rideshare, the RMH family of cars, and RMH Fashion: a 3D wardrobe built around a figure you design.',
+        'RMHHomes, RMHLadder, Rideshare, RMH Cars and RMH Fashion.',
       path: '/services',
     }),
     links: [buildCanonical('/services')],

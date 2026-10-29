@@ -15,7 +15,7 @@ export const Route = createFileRoute('/_site/developer/ai-practices')({
     meta: buildMeta({
       title: 'Coding with AI | RMH Studios Developer',
       description:
-        'How we use AI coding tools on rmhstudios.com: the working loop, repo rules, the commit gate, CI/CD and reviewing AI-written code.',
+        'How we use AI coding tools on rmhstudios.com: the loop, the rules, the commit gate, review.',
       path: '/developer/ai-practices',
     }),
     links: [buildCanonical('/developer/ai-practices')],

@@ -4,7 +4,7 @@ const entry: AppInfo = {
   id: 'rmh-connections',
   order: 20,
   title: 'RMHConnections',
-  description: 'A daily puzzle game about finding common threads in RMH lore.',
+  description: 'A daily puzzle about finding the common thread in RMH lore.',
   longDescription:
     'Group sixteen community-themed items into four categories. A daily test of your RMH knowledge, featuring characters, memes, and historical events from across the community.',
   href: 'https://discord.gg/ZdfhdAKVSf',

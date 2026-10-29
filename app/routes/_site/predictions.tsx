@@ -9,7 +9,7 @@ export const Route = createFileRoute('/_site/predictions')({
     meta: buildMeta({
       title: 'Predictions | RMH Studios',
       description:
-        "Prediction markets and RMH Coins — back your calls on YES/NO markets, or play Plinko, Blackjack, Hold'em, Baccarat, and Roulette.",
+        'Prediction markets, plus Plinko, Blackjack, Hold’em, Baccarat and Roulette, played with RMH Coins.',
       path: '/predictions',
     }),
     links: [buildCanonical('/predictions')],

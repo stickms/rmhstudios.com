@@ -10,7 +10,7 @@ export const Route = createFileRoute('/_site/help')({
     meta: buildMeta({
       title: 'Help & Concierge | RMH Studios',
       description:
-        'Ask the RMH Studios concierge anything about the platform — games, apps, coins, settings, and where to find things.',
+        'Ask the concierge about games, apps, coins, settings, and where things are.',
       path: '/help',
     }),
     links: [buildCanonical('/help')],

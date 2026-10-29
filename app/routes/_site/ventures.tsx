@@ -101,7 +101,7 @@ export const Route = createFileRoute('/_site/ventures')({
     meta: buildMeta({
       title: 'RMH Ventures | RMH Studios',
       description:
-        'RMH Ventures — RMH Capital, RMH Datacenter, RMH PMC, Adaptive Intelligence, and RMH Deeplink: the brands and programmes built around RMH Studios.',
+        'RMH Capital, Datacenter, PMC, Adaptive Intelligence and Deeplink: the brands around RMH Studios.',
       path: '/ventures',
     }),
     links: [buildCanonical('/ventures')],

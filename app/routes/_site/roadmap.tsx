@@ -50,7 +50,7 @@ export const Route = createFileRoute('/_site/roadmap')({
     meta: buildMeta({
       title: 'Roadmap & requests | RMH Studios',
       description:
-        'The road ahead — games, community, immersive tech, and film — plus the public request board: vote on what you want next and read the official replies.',
+        'What is coming, plus a public request board: vote on what is next and read the replies.',
       path: '/roadmap',
     }),
     links: [buildCanonical('/roadmap')],

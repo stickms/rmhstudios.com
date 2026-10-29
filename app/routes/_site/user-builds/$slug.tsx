@@ -14,7 +14,7 @@ import { WatchControl } from '@/components/discovery/WatchControl';
 import { BuildDetail } from '@/components/user-builds';
 import { blurImagePreload } from '@/components/ui/BlurImage';
 import { getPublicBuildDetail } from '@/lib/user-builds-detail.server';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 
 const fetchBuild = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
@@ -32,16 +32,15 @@ const fetchBuild = createServerFn({ method: 'GET' })
 export const Route = createFileRoute('/_site/user-builds/$slug')({
   loader: ({ params }) => fetchBuild({ data: params.slug }),
   head: ({ loaderData, params }) => ({
-    // As with `/builds/$slug`: the thumbnail is used when there is one, but
-    // absolute — a site-relative `og:image` is ignored by every crawler.
+    // The build's card (`/api/og/build/$slug`) frames its thumbnail beside the title, author and figures, and
+    // exists for the many builds that have no thumbnail at all.
     meta: loaderData
       ? buildMeta({
           title: `${loaderData.title} | User Builds`,
           description: loaderData.description,
           path: `/user-builds/${params.slug}`,
-          image: loaderData.thumbnailUrl || undefined,
-          imageAlt: loaderData.thumbnailUrl ? `${loaderData.title} on RMH Studios` : undefined,
-          imageSize: loaderData.thumbnailUrl ? null : undefined,
+          image: ogCardPath('build', loaderData.slug),
+          imageAlt: `${loaderData.title} on RMH Studios`,
           type: 'article',
         })
       : [{ title: 'Build Not Found' }],

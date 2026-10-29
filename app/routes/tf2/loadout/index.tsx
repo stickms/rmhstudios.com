@@ -23,9 +23,8 @@ export const Route = createFileRoute('/tf2/loadout/')({
   }),
   head: () => ({
     meta: buildMeta({
-      title: 'TF2 Loadout Builder — plan every class | RMH Studios',
-      description:
-        'Build Team Fortress 2 loadouts for every class from the live item list: weapons, cosmetics, paints, unusual effects and taunts. Save them and share them in the workshop.',
+      title: 'TF2 Loadout Builder | RMH Studios',
+      description: 'Build a loadout for every TF2 class: weapons, cosmetics, paints, unusuals, taunts.',
       path: PATH,
     }),
     links: [buildCanonical(PATH)],

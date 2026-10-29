@@ -4,7 +4,7 @@ const entry: GameInfo = {
   id: 'altair',
   order: 20,
   title: 'Altair',
-  description: 'A narrative-driven extraction thriller set on a fragmented deep space mining rig.',
+  description: 'A narrative extraction thriller on a fragmented deep-space mining rig.',
   longDescription:
     'Navigate Outpost 13, a reality-glitched mining station overrun by "Echoes." Use your neural link to piece together fragmented memories, manage cryo-sickness, and survive the shadows in this narrative-heavy survival experience.',
   href: '/altair',

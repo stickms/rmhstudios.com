@@ -22,7 +22,7 @@ import { BlurImage, blurImagePreload } from '@/components/ui/BlurImage';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import { getPublicBuildDetail } from '@/lib/user-builds-detail.server';
-import { buildCanonical, buildMeta } from '@/lib/seo';
+import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 
 const allOfficial = [...games, ...apps];
 
@@ -63,10 +63,13 @@ export const Route = createFileRoute('/_site/builds/$slug')({
         title: `${d.title} | Builds`,
         description: d.description,
         path: `/builds/${params.slug}`,
-        image: thumb || undefined,
-        imageAlt: thumb ? `${d.title} on RMH Studios` : undefined,
-        // A build thumbnail is whatever shape it was uploaded at.
-        imageSize: thumb ? null : undefined,
+        // Every build has a card: an official game or app uses its catalog card, a member's build its own
+        // (`/api/og/build/$slug`), which frames the thumbnail when there is one.
+        image:
+          loaderData.kind === 'official'
+            ? ogCardPath(games.some((g) => g.id === d.id) ? 'game' : 'app', d.id)
+            : ogCardPath('build', 'slug' in d ? d.slug : params.slug),
+        imageAlt: `${d.title} on RMH Studios`,
         type: 'article',
       }),
       links: [

@@ -12,9 +12,8 @@ const PATH = '/tf2/hud-editor';
 export const Route = createFileRoute('/tf2/hud-editor/')({
   head: () => ({
     meta: buildMeta({
-      title: 'TF2 HUD Editor — build and preview custom Team Fortress 2 HUDs | RMH Studios',
-      description:
-        'Edit every .res file of a Team Fortress 2 custom HUD with a live, resolution-accurate preview, test health, ammo and class states, then download a ready-to-install zip.',
+      title: 'TF2 HUD Editor | RMH Studios',
+      description: 'Edit a custom TF2 HUD with a live preview, then download it ready to install.',
       path: PATH,
     }),
     links: [buildCanonical(PATH)],

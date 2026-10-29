@@ -5,7 +5,7 @@ const entry: AppInfo = {
   order: 90,
   title: 'RMH Ladder',
   description:
-    'Discover verified internships, new-grad programs, and early-career roles from official company sources.',
+    'Verified internships, new-grad programs and early-career roles, from official sources.',
   longDescription:
     'RMH Ladder automatically checks official company job boards every four hours, filters for verified early-career opportunities, and helps you save roles, track applications, and compare your resume with the jobs that fit.',
   href: '/rmhladder',

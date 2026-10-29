@@ -35,7 +35,7 @@ export const Route = createFileRoute('/_site/schedule')({
     meta: buildMeta({
       title: 'Schedule | RMH Studios',
       description:
-        'Daily puzzle drops, tournaments, premieres, community events and the weekly company report — everything happening on RMH Studios this week.',
+        'Daily puzzle drops, tournaments, premieres and events: everything on this week.',
       path: '/schedule',
     }),
     links: [buildCanonical('/schedule')],

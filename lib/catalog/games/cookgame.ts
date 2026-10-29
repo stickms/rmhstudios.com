@@ -5,7 +5,7 @@ const entry: GameInfo = {
   order: 140,
   title: 'CookGame',
   description:
-    'A satirical underground tycoon sim — buy ingredients, mix product for wild effects, and hustle your block before the heat catches up.',
+    'A satirical underground tycoon sim. Mix product, hustle your block, stay ahead of the heat.',
   longDescription:
     'A tongue-in-cheek crime-management sim. Run a small-town operation: stock up at the supplier, experiment at the mixing bench to stack value-boosting effects onto your product, package it, and sell to the neighbourhood — all while keeping your heat meter cool. Pure fiction, all invented strains and effects.',
   href: '/cookgame',
