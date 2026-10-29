@@ -23,6 +23,7 @@ on:
       - scripts/tf2-assets/visuals_audit.py
       - scripts/tf2-assets/model_probe.py
       - scripts/tf2-assets/paint_audit.py
+      - scripts/tf2-assets/material_audit.py
       - scripts/tf2-assets/itemlist.py
       - scripts/tf2-assets/render-probe/**
       - scripts/tf2-assets/convert.py
@@ -91,6 +92,7 @@ jobs:
           (cd scripts/tf2-assets && python3 visuals_audit.py --root /mnt/tf2 --out /mnt/work/out)
           (cd scripts/tf2-assets && python3 model_probe.py --root /mnt/tf2 --out /mnt/work/out --glb-dir /mnt/work/render --sample 40)
           (cd scripts/tf2-assets && python3 paint_audit.py --root /mnt/tf2 --out /mnt/work/out)
+          (cd scripts/tf2-assets && python3 material_audit.py --root /mnt/tf2 --out /mnt/work/out)
 
       - name: Delete the game install
         if: always()
