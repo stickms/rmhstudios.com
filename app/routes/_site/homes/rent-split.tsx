@@ -21,7 +21,7 @@ export const Route = createFileRoute('/_site/homes/rent-split')({
     meta: buildMeta({
       title: 'Fair Rent Split Calculator | RMHHomes',
       description:
-        'Split rent between roommates by room size and features, with every number explained and a link you can share.',
+        'Split rent by room size and features, with every number explained and a link to share.',
       path: '/homes/rent-split',
     }),
     links: [buildCanonical('/homes/rent-split')],

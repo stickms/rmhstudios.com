@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildMeta, ogCardPath, absoluteUrl, SITE_URL, DEFAULT_OG_IMAGE } from '@/lib/seo';
 import { STATIC_CARDS, staticCardFor, staticCardImage } from '@/lib/og/static-cards';
+import { catalogStatsFor } from '@/lib/og/catalog-stats';
 import { fitText } from '@/lib/og/chrome.server';
 import { MAX_COLLAGE_TILES, collageTiles } from '@/lib/og/collage';
 import { postCardShowsContent } from '@/lib/og/post-visibility';
@@ -25,14 +26,55 @@ const meta = (arr: ReturnType<typeof buildMeta>, key: string): string | undefine
 };
 
 describe('static cards', () => {
-  it('every declared card has a rendered PNG on disk', () => {
+  it('every card served as a file has that file on disk', () => {
     // The original bug this whole area had: `lib/seo.ts` referenced
     // `/images/og/default.png` for months while `public/images/og/` did not
-    // exist, so every share without a custom card unfurled broken.
-    const missing = STATIC_CARDS.filter(
+    // exist, so every share without a custom card unfurled broken. Only `default`
+    // is a file now; every other card is rendered on request.
+    const missing = STATIC_CARDS.filter((card) => staticCardImage(card).startsWith('/images/')).filter(
       (card) => !existsSync(resolve(process.cwd(), 'public', staticCardImage(card).slice(1))),
-    ).map((c) => c.file);
-    expect(missing).toEqual([]);
+    );
+    expect(missing.map((c) => c.file)).toEqual([]);
+  });
+
+  it('every other card is answered by the section route', () => {
+    for (const card of STATIC_CARDS.filter((c) => c.file !== 'default')) {
+      expect(staticCardImage(card)).toBe(`/api/og/section/${card.file}`);
+    }
+  });
+
+  it('cards that share a file share their copy (the file is the card, the path is only who it answers for)', () => {
+    const byFile = new Map<string, string>();
+    for (const c of STATIC_CARDS) {
+      const copy = JSON.stringify([c.eyebrow, c.title, c.subtitle]);
+      const seen = byFile.get(c.file);
+      if (seen !== undefined) expect(copy, `${c.path} disagrees with another card on file "${c.file}"`).toBe(seen);
+      byFile.set(c.file, copy);
+    }
+  });
+
+  it('keeps the copy short enough to read at the size an unfurl is drawn', () => {
+    for (const c of STATIC_CARDS) {
+      expect(c.eyebrow.length, `${c.file} eyebrow`).toBeLessThanOrEqual(28);
+      expect(c.title.length, `${c.file} title`).toBeLessThanOrEqual(48);
+      expect(c.subtitle.length, `${c.file} subtitle`).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it('puts no counts in the copy: the figures are drawn from the catalog', () => {
+    const word = /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\b/i;
+    for (const c of STATIC_CARDS.filter((x) => ['default', 'games', 'apps'].includes(x.file))) {
+      expect(word.test(c.title), `${c.file} title`).toBe(false);
+      expect(/\d/.test(c.title), `${c.file} title`).toBe(false);
+    }
+  });
+
+  it('commits the same figures the catalog has, so the default PNG can not go stale unnoticed', () => {
+    for (const file of ['default', 'games', 'apps']) {
+      const card = STATIC_CARDS.find((c) => c.file === file)!;
+      const live = catalogStatsFor(file)!;
+      expect(card.stats?.map((s) => [s.value, s.label])).toEqual(live.map((s) => [s.value, s.label]));
+    }
   });
 
   it('matches the home page exactly, not by prefix', () => {
@@ -82,7 +124,7 @@ describe('buildMeta', () => {
 
   it('uses the section card when the path has one', () => {
     const tags = buildMeta({ ...base, path: '/library/albums/x' });
-    expect(meta(tags, 'og:image')).toBe(`${SITE_URL}/images/og/library.png`);
+    expect(meta(tags, 'og:image')).toBe(`${SITE_URL}/api/og/section/library`);
   });
 
   it('declares dimensions for rendered cards', () => {
@@ -114,6 +156,10 @@ describe('ogCardPath', () => {
   it('points at the card route for a kind', () => {
     expect(ogCardPath('game', 'isleworks')).toBe('/api/og/game/isleworks');
     expect(ogCardPath('app', 'rmhtube')).toBe('/api/og/app/rmhtube');
+    expect(ogCardPath('section', 'tf2-play')).toBe('/api/og/section/tf2-play');
+    expect(ogCardPath('build', 'my-build')).toBe('/api/og/build/my-build');
+    expect(ogCardPath('story', 's')).toBe('/api/og/story/s');
+    expect(ogCardPath('album', 'a')).toBe('/api/og/album/a');
   });
 
   it('encodes ids so a handle with a slash cannot escape the route', () => {

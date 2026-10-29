@@ -5,7 +5,7 @@ const entry: AppInfo = {
   order: 60,
   title: 'RMH Studio',
   description:
-    'Make beats in your browser. Multi-track DAW with synths, drums, effects, and samples.',
+    'Make beats in your browser: multi-track DAW with synths, drums, effects and samples.',
   longDescription:
     'RMH Studio is a fully-featured digital audio workstation that runs entirely in your browser. Create multi-track arrangements with built-in synths, drum machines, effects, and samples. Record audio, edit MIDI, mix, and export — no downloads required.',
   href: '/studio',

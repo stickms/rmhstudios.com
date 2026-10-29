@@ -28,6 +28,12 @@ export interface StaticCard {
   subtitle: string;
   /** Optional figures, for sections that have a countable inventory. */
   stats?: { value: string; label: string; lead?: boolean }[];
+  /**
+   * The section's own picture, a `public/`-relative path, drawn beside the text. Only for a section that belongs to
+   * one thing with key art (a game, an app, the TF2 logo): a section about nothing in particular has no picture to
+   * show, and a stock one would be worse than the empty pane.
+   */
+  art?: string;
 }
 
 /**
@@ -43,8 +49,8 @@ export const STATIC_CARDS: StaticCard[] = [
     subtitle:
       'A social-first home for original games, creative tools, music, learning, and the people making them.',
     stats: [
-      { value: '18', label: 'games', lead: true },
-      { value: '12', label: 'apps' },
+      { value: '25', label: 'games', lead: true },
+      { value: '14', label: 'apps' },
       { value: '16', label: 'languages' },
     ],
   },
@@ -52,19 +58,19 @@ export const STATIC_CARDS: StaticCard[] = [
     path: '/games',
     file: 'games',
     eyebrow: 'Games',
-    title: 'Eighteen games, in the browser.',
+    title: 'Games, in the browser.',
     subtitle:
       'Party games, puzzles, roguelikes and 3D — multiplayer where it matters, no download anywhere.',
-    stats: [{ value: '18', label: 'to play', lead: true }],
+    stats: [{ value: '25', label: 'to play', lead: true }],
   },
   {
     path: '/apps',
     file: 'apps',
     eyebrow: 'Apps',
-    title: 'Twelve tools that live here.',
+    title: 'Tools that live here.',
     subtitle:
       'Watch parties, music, typing, study, code, ladders — full apps, not demos, all on one account.',
-    stats: [{ value: '12', label: 'apps', lead: true }],
+    stats: [{ value: '14', label: 'apps', lead: true }],
   },
   {
     path: '/blog',
@@ -153,6 +159,58 @@ export const STATIC_CARDS: StaticCard[] = [
     title: 'The rest of the portfolio.',
     subtitle: 'What RMH Studios runs beyond the platform itself.',
   },
+
+  // ── Sections that used to unfurl as the home card ───────────────────────────────────────────────────────────
+  // Every entry below answers for a page that had no card of its own, so a link to `/tf2/workshop` and a link to
+  // `/communities` and a link to the home page were the same picture. Copy rules (design.md §1): short, literal, the
+  // eyebrow says what kind of page it is, the title is a sentence and not a slogan, the subtitle is one line.
+  { path: '/communities', file: 'communities', eyebrow: 'Communities', title: 'Find your people.', subtitle: 'Public communities with their own spaces, events and conversation.' },
+  { path: '/groups', file: 'groups', eyebrow: 'Group chats', title: 'Talk it through.', subtitle: 'Start a group chat with friends, or drop into a public room.' },
+  { path: '/create/builds', file: 'user-builds', eyebrow: 'User builds', title: 'Made here, by members.', subtitle: 'Games and apps published by the community.' },
+  { path: '/create/personas', file: 'personas', eyebrow: 'AI personas', title: 'Characters you can talk to.', subtitle: 'Create a persona, give it a voice, and chat across the site.' },
+  { path: '/create', file: 'create', eyebrow: 'Create', title: 'Make something here.', subtitle: 'Shareable pages, community builds and AI personas, in one place.' },
+  { path: '/user-builds', file: 'user-builds', eyebrow: 'User builds', title: 'Made here, by members.', subtitle: 'Games and apps published by the community.' },
+  { path: '/builds', file: 'user-builds', eyebrow: 'User builds', title: 'Made here, by members.', subtitle: 'Games and apps published by the community.' },
+  { path: '/developer', file: 'developer', eyebrow: 'Developer API', title: 'Build on RMH Studios.', subtitle: 'Scoped API keys, a documented REST API, webhooks and quotas.' },
+  { path: '/help', file: 'help', eyebrow: 'Help', title: 'Ask the concierge.', subtitle: 'Games, apps, coins, settings, and where to find them.' },
+  { path: '/changelog', file: 'changelog', eyebrow: 'Changelog', title: 'Every fix, as it ships.', subtitle: 'New features, fixes and improvements on RMH Studios.' },
+  { path: '/roadmap', file: 'roadmap', eyebrow: 'Roadmap', title: 'What is coming next.', subtitle: 'Plus a public request board: vote on what you want and read the replies.' },
+  { path: '/jams', file: 'jams', eyebrow: 'Game jams', title: 'One secret theme. One build.', subtitle: 'Ship it as a User Build and get rated by the community.' },
+  { path: '/rings', file: 'rings', eyebrow: 'Webrings', title: 'Small circles, on purpose.', subtitle: 'Member-run rings, with previous and next on every profile.' },
+  { path: '/services/cars', file: 'cars', eyebrow: 'RMH Cars', title: 'The whole fleet, in 3D.', subtitle: 'Every model behind RMH Rideshare, turnable.' },
+  { path: '/services/fashion', file: 'fashion', eyebrow: 'RMH Fashion', title: 'A wardrobe for a figure you design.', subtitle: 'Dress it in 3D.' },
+  { path: '/services/rebar-rutabaga', file: 'rebar-rutabaga', eyebrow: 'Restaurant', title: 'Rebar & Rutabaga.', subtitle: 'Nine spherified courses in a decommissioned Göteborg rebar foundry.' },
+  { path: '/services', file: 'services', eyebrow: 'Services', title: 'Housing, jobs, rides and more.', subtitle: 'RMHHomes, RMHLadder, Rideshare, RMH Cars and RMH Fashion.' },
+  { path: '/homes/rent-split', file: 'rent-split', eyebrow: 'RMHHomes', title: 'Split the rent fairly.', subtitle: 'By room size and features, with every number explained.' },
+  { path: '/homes', file: 'homes', eyebrow: 'RMHHomes', title: 'Rentals and houses, posted by members.', subtitle: 'Search, map every result, save favorites, message the poster.' },
+  { path: '/rideshare', file: 'rideshare', eyebrow: 'RMH Rideshare', title: 'Request a ride, or drive.', subtitle: 'RMH-X, XL, Comfort and more, mapped on OpenStreetMap.' },
+  { path: '/tf2/play', file: 'tf2-play', eyebrow: 'Team Fortress 2', title: 'Play TF2 in your browser.', subtitle: 'All nine classes, online or against bots.' },
+  { path: '/tf2/workshop', file: 'tf2-workshop', eyebrow: 'TF2 Workshop', title: 'Community HUDs and loadouts.', subtitle: 'Preview, like, and copy them into your own.' },
+  { path: '/tf2/loadout', file: 'tf2-loadout', eyebrow: 'TF2 Loadout Builder', title: 'Plan every class.', subtitle: 'Weapons, cosmetics, paints, unusuals and taunts.' },
+  { path: '/tf2/hud-editor', file: 'tf2-hud-editor', eyebrow: 'TF2 HUD Editor', title: 'Build a HUD with a live preview.', subtitle: 'Then download it ready to install.' },
+  { path: '/tf2', file: 'tf2', eyebrow: 'Team Fortress 2', title: 'TF2, in your browser.', subtitle: 'Play it, edit a HUD, build a loadout, share them in the workshop.' },
+  { path: '/predictions', file: 'predictions', eyebrow: 'Predictions', title: 'Back your call.', subtitle: 'Prediction markets, plus casino games, played with RMH Coins.' },
+  { path: '/wager', file: 'wager', eyebrow: 'Wager matches', title: 'Put coins on it.', subtitle: 'A staked head-to-head match on any skill game.' },
+  { path: '/tournaments', file: 'tournaments', eyebrow: 'Tournaments', title: 'Brackets, with coin prizes.', subtitle: 'Compete across the RMH Studios games.' },
+  { path: '/ranked', file: 'ranked', eyebrow: 'Ranked', title: 'Climb the ladder.', subtitle: 'Standings, your rating, and the seasons in progress.' },
+  { path: '/speedruns', file: 'speedruns', eyebrow: 'Speedruns', title: 'Verified by replay.', subtitle: 'Every run is re-simulated from its own inputs.' },
+  { path: '/today', file: 'today', eyebrow: 'Today', title: 'The last 24 hours.', subtitle: 'Top posts, new builds, news and what is trending.' },
+  { path: '/qotd', file: 'qotd', eyebrow: 'Question of the day', title: 'One question. Everyone answers.', subtitle: 'Read the answers, or add your own.' },
+  { path: '/photo-of-the-day', file: 'photo-of-the-day', eyebrow: 'Photo of the day', title: 'Nominate. Vote. Feature.', subtitle: 'One image a day, chosen by members.' },
+  { path: '/game-night', file: 'game-night', eyebrow: 'Game night', title: 'A weekly lobby of party games.', subtitle: 'See what is on now, and what is next.' },
+  { path: '/schedule', file: 'schedule', eyebrow: 'Schedule', title: 'Everything on this week.', subtitle: 'Puzzle drops, tournaments, premieres and events.' },
+  { path: '/when', file: 'when', eyebrow: 'Find a time', title: 'Everyone paints when they are free.', subtitle: 'In their own timezone. The best slot rises to the top.' },
+  { path: '/canvas', file: 'canvas', eyebrow: 'Community canvas', title: 'One pixel at a time.', subtitle: 'A shared canvas, with a timelapse when the event ends.' },
+  { path: '/museum', file: 'museum', eyebrow: 'Site museum', title: 'Every era of RMH Studios.', subtitle: 'A timeline, with screenshots and what changed in each.' },
+  { path: '/emoji-packs', file: 'emoji-packs', eyebrow: 'Emoji & stickers', title: 'Packs made by the community.', subtitle: 'Install the ones you like, or build your own.' },
+  { path: '/study', file: 'study', eyebrow: 'RMHStudy', title: 'Flashcards that stick.', subtitle: 'Spaced repetition, public decks, and synced study rooms.', art: '/images/games/rmhstudy.webp' },
+  { path: '/slice-it', file: 'slice-it', eyebrow: 'Slice It!', title: 'Upload a track. Get a chart.', subtitle: 'Then race up to eight players.', art: '/images/games/slice_it.webp' },
+  { path: '/rmhbox', file: 'rmhbox', eyebrow: 'RMHbox', title: 'Every minigame, in one lobby.', subtitle: 'Leaderboards and match history for each.', art: '/images/games/rmhbox.webp' },
+  { path: '/rmhcalculator', file: 'rmhcalculator', eyebrow: 'RMHCalculator', title: 'Graphs, computed by AI.', subtitle: 'A graphing and scientific calculator.' },
+  { path: '/dunesday', file: 'dunesday', eyebrow: 'Dunesday', title: 'An MCU and Dune marathon.', subtitle: 'Planned night by night, before Doomsday.' },
+  { path: '/design', file: 'design', eyebrow: 'Design', title: 'Spatial minimalism.', subtitle: 'Simple color, editorial hierarchy, purposeful motion.' },
+  { path: '/breaches', file: 'breaches', eyebrow: 'Breaches', title: 'Our public incident log.', subtitle: 'What happened, how, and why deleting the line did not undo it.' },
+  { path: '/adaptive-intelligence', file: 'adaptive-intelligence', eyebrow: 'Adaptive Intelligence', title: 'Adaptive Intelligence.', subtitle: 'An RMH Studios programme.' },
 ];
 
 /** Legal pages share one card — they are the same kind of page. */
@@ -185,7 +243,15 @@ export function staticCardFor(path: string): StaticCard | null {
   );
 }
 
-/** Where the rendered PNG for a card lives. */
+/**
+ * Where a card's image lives.
+ *
+ * Only `default` is a committed PNG now: the site-wide card has to exist as a plain file, because `__root.tsx`
+ * advertises it, the legacy `/og.png` aliases it, and it is what every failure falls back to. Every other section
+ * card is rendered on request by `/api/og/section/$file` (`app/routes/api/og/section/$file.ts`), so the figures on
+ * it are read from the catalog when it is drawn and a new section is one entry here, with no PNG to regenerate and
+ * commit. (The older section PNGs are still on disk: a link shared before this change still points at them.)
+ */
 export function staticCardImage(card: StaticCard): string {
-  return `/images/og/${card.file}.png`;
+  return card.file === 'default' ? '/images/og/default.png' : `/api/og/section/${card.file}`;
 }

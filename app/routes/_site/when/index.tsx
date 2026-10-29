@@ -11,7 +11,7 @@ export const Route = createFileRoute('/_site/when/')({
     meta: buildMeta({
       title: 'Find a time | RMH Studios',
       description:
-        'Availability polls: share a link, everyone paints the times they are free in their own timezone, and the best slot rises to the top.',
+        'Availability polls: everyone paints the times they are free, in their own timezone.',
       path: '/when',
     }),
     links: [buildCanonical('/when')],

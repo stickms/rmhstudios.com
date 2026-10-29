@@ -4,7 +4,7 @@ const entry: AppInfo = {
   id: 'rmhdle',
   order: 10,
   title: 'RMHdle',
-  description: 'The official daily word challenge for the RMH community.',
+  description: 'The daily word challenge for the RMH community.',
   longDescription:
     'A daily 5-letter word game tailored for the RMH ecosystem. Join the community on Discord to share your streaks, compete with others, and guess secret terms from RMH history.',
   href: 'https://discord.gg/ZdfhdAKVSf',

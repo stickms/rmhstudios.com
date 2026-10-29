@@ -5,7 +5,7 @@ const entry: GameInfo = {
   order: 130,
   title: 'Kowloon Knockout',
   description:
-    'A neon 3D brawler set in 90s Hong Kong — pixel-shaded stick fighters, combos, and up to 4-player FFA or team battles.',
+    'A neon 3D brawler in 90s Hong Kong. Combos, and up to 4-player free-for-all or teams.',
   longDescription:
     'Step into the neon-lit rooftops of Kowloon, 1997, rendered in fully animated 3D stick fighters with a retro pixel-art filter. Pick from nine fighter classes, master devastating combos and counter-strikes, and brawl across an open arena. Battle the CPU solo or take up to four players online in free-for-all or 2v2 teams — with touch controls on mobile.',
   href: '/kowloon-knockout',

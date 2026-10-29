@@ -34,7 +34,7 @@ export const Route = createFileRoute('/_site/communities')({
     meta: buildMeta({
       title: 'Communities | RMH Studios',
       description:
-        'Find and join public communities on RMH Studios — spaces, events and group discussion around what you are into.',
+        'Find and join public communities: spaces, events and group discussion.',
       path: '/communities',
     }),
     links: [buildCanonical('/communities')],

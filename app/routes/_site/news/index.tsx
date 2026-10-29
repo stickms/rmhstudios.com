@@ -24,7 +24,7 @@ export const Route = createFileRoute('/_site/news/')({
     meta: buildMeta({
       title: 'News | RMH Studios',
       description:
-        'Curated news and commentary on AI, gaming, neuroscience, tech, science, and culture from RMH Studios.',
+        'Curated news on AI, gaming, neuroscience, tech, science and culture.',
       path: '/news',
     }),
     links: [

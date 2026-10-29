@@ -17,7 +17,7 @@ export const Route = createFileRoute('/_site/rmhladder')({
   loader: () => getLadderViewer(),
   head: () => ({
     meta: buildMeta({
-      title: 'RMH Ladder | Early-Career Jobs',
+      title: 'RMH Ladder',
       description: 'Discover verified internships, new-grad programs, and early-career roles.',
       path: '/rmhladder',
     }),

@@ -60,7 +60,7 @@ export const Route = createFileRoute('/_site/store/')({
   loader: () => fetchStore(),
   head: () => ({
     meta: buildMeta({
-      title: 'Store — RMH Studios',
+      title: 'Store',
       description:
         'Membership tiers, the cosmetics shop, and the player marketplace — all in one place.',
       path: '/store',

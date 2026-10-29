@@ -5,7 +5,7 @@ const entry: GameInfo = {
   order: 230,
   title: 'Half-Life 2 (Demo)',
   description:
-    'The opening of Half-Life 2 — Point Insertion — on a clean-room browser engine, with the original maps, physics and captions.',
+    'The opening of Half-Life 2, Point Insertion, on a clean-room browser engine.',
   longDescription:
     'Step off the train into City 17. The Half-Life 2 demo’s two Point Insertion maps run on an independent browser engine: Source-accurate movement, rigid-body physics you can pick up and throw, scripted sequences, doors and lifts, soundscapes and closed captions. Your progress is saved at each level start, so Continue picks up where you left off. Keyboard and mouse, gamepad or touch.',
   href: '/half-life-2',

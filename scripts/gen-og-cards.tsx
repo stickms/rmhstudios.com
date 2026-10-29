@@ -18,6 +18,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { STATIC_CARDS } from '../lib/og/static-cards';
 import { renderPageCard } from '../lib/og/page-card.server';
+import { catalogStatsFor } from '../lib/og/catalog-stats';
 
 async function main() {
   const dir = resolve(process.cwd(), 'public/images/og');
@@ -30,7 +31,8 @@ async function main() {
   const seen = new Set<string>();
   let defaultPng: Buffer | null = null;
 
-  for (const card of STATIC_CARDS) {
+  // Only `default` is a file; every other section card is rendered on request (see `staticCardImage`).
+  for (const card of STATIC_CARDS.filter((c) => c.file === 'default')) {
     if (seen.has(card.file)) continue;
     seen.add(card.file);
 
@@ -39,7 +41,7 @@ async function main() {
       eyebrow: card.eyebrow,
       title: card.title,
       subtitle: card.subtitle,
-      stats: card.stats,
+      stats: catalogStatsFor(card.file) ?? card.stats,
       path: card.path === '/' ? null : card.path,
     });
     if (card.file === 'default') defaultPng = png;

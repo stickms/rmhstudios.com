@@ -41,9 +41,9 @@ import { parseFilters, serializeFilters } from '@/lib/homes/query';
 export const Route = createFileRoute('/_site/homes/')({
   head: () => ({
     meta: buildMeta({
-      title: 'RMHHomes — Rentals & houses posted by the community',
+      title: 'RMHHomes',
       description:
-        'Browse real apartments and houses posted by RMH members, or post your own. Search by location, map every result, save favorites, and message the poster.',
+        'Rentals and houses posted by RMH members. Search, map, save, message the poster.',
       path: '/homes',
     }),
     links: [buildCanonical('/homes')],

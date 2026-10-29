@@ -5,7 +5,7 @@ const entry: AppInfo = {
   order: 40,
   title: 'RMHMusic',
   description:
-    'Listen to Spotify together. Create rooms, share queues, vibe with friends, and play Guess the Song.',
+    'Listen to Spotify together: shared queues, room chat, and Guess the Song.',
   longDescription:
     'RMHMusic is a social music player powered by Spotify. Connect your Premium account, create a listening room, and enjoy synced playback with friends. Features a mesmerizing WebGL particle visualizer, shared queues, real-time chat, and Guess the Song — create and solve music puzzles for coins.',
   href: '/rmhmusic',

@@ -17,7 +17,7 @@ export const Route = createFileRoute('/design')({
     meta: buildMeta({
       title: 'Spatial Minimalism | RMH Studios',
       description:
-        'The spatial-minimal design system behind RMH Studios: simple color, editorial hierarchy, purposeful motion, and a quieter interface.',
+        'The design system behind RMH Studios: simple color, editorial hierarchy, purposeful motion.',
       path: '/design',
     }),
     links: [buildCanonical('/design')],

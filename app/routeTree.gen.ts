@@ -1004,14 +1004,18 @@ import { Route as ApiMessagesConversationIdVoiceRouteImport } from './routes/api
 import { Route as ApiMessagesVoiceFilenameRouteImport } from './routes/api/messages/voice/$filename'
 import { Route as ApiNightrailTricksIndexRouteImport } from './routes/api/nightrail/tricks/index'
 import { Route as ApiNightrailTricksVoteRouteImport } from './routes/api/nightrail/tricks/vote'
+import { Route as ApiOgAlbumAlbumIdRouteImport } from './routes/api/og/album/$albumId'
 import { Route as ApiOgAppAppIdRouteImport } from './routes/api/og/app/$appId'
 import { Route as ApiOgBlogSlugRouteImport } from './routes/api/og/blog/$slug'
+import { Route as ApiOgBuildSlugRouteImport } from './routes/api/og/build/$slug'
 import { Route as ApiOgGameGameIdRouteImport } from './routes/api/og/game/$gameId'
 import { Route as ApiOgJobJobIdRouteImport } from './routes/api/og/job/$jobId'
 import { Route as ApiOgMomentIdRouteImport } from './routes/api/og/moment/$id'
 import { Route as ApiOgPostIdRouteImport } from './routes/api/og/post/$id'
 import { Route as ApiOgProfileIdRouteImport } from './routes/api/og/profile/$id'
 import { Route as ApiOgReplayIdRouteImport } from './routes/api/og/replay/$id'
+import { Route as ApiOgSectionFileRouteImport } from './routes/api/og/section/$file'
+import { Route as ApiOgStorySlugRouteImport } from './routes/api/og/story/$slug'
 import { Route as ApiPersonasIdIndexRouteImport } from './routes/api/personas/$id/index'
 import { Route as ApiPersonasIdChatRouteImport } from './routes/api/personas/$id/chat'
 import { Route as ApiPersonasAvatarFilenameRouteImport } from './routes/api/personas/avatar/$filename'
@@ -6418,6 +6422,11 @@ const ApiNightrailTricksVoteRoute = ApiNightrailTricksVoteRouteImport.update({
   path: '/api/nightrail/tricks/vote',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOgAlbumAlbumIdRoute = ApiOgAlbumAlbumIdRouteImport.update({
+  id: '/api/og/album/$albumId',
+  path: '/api/og/album/$albumId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOgAppAppIdRoute = ApiOgAppAppIdRouteImport.update({
   id: '/api/og/app/$appId',
   path: '/api/og/app/$appId',
@@ -6426,6 +6435,11 @@ const ApiOgAppAppIdRoute = ApiOgAppAppIdRouteImport.update({
 const ApiOgBlogSlugRoute = ApiOgBlogSlugRouteImport.update({
   id: '/api/og/blog/$slug',
   path: '/api/og/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOgBuildSlugRoute = ApiOgBuildSlugRouteImport.update({
+  id: '/api/og/build/$slug',
+  path: '/api/og/build/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOgGameGameIdRoute = ApiOgGameGameIdRouteImport.update({
@@ -6456,6 +6470,16 @@ const ApiOgProfileIdRoute = ApiOgProfileIdRouteImport.update({
 const ApiOgReplayIdRoute = ApiOgReplayIdRouteImport.update({
   id: '/api/og/replay/$id',
   path: '/api/og/replay/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOgSectionFileRoute = ApiOgSectionFileRouteImport.update({
+  id: '/api/og/section/$file',
+  path: '/api/og/section/$file',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOgStorySlugRoute = ApiOgStorySlugRouteImport.update({
+  id: '/api/og/story/$slug',
+  path: '/api/og/story/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPersonasIdIndexRoute = ApiPersonasIdIndexRouteImport.update({
@@ -9103,14 +9127,18 @@ export interface FileRoutesByFullPath {
   '/api/messages/$conversationId/voice': typeof ApiMessagesConversationIdVoiceRoute
   '/api/messages/voice/$filename': typeof ApiMessagesVoiceFilenameRoute
   '/api/nightrail/tricks/vote': typeof ApiNightrailTricksVoteRoute
+  '/api/og/album/$albumId': typeof ApiOgAlbumAlbumIdRoute
   '/api/og/app/$appId': typeof ApiOgAppAppIdRoute
   '/api/og/blog/$slug': typeof ApiOgBlogSlugRoute
+  '/api/og/build/$slug': typeof ApiOgBuildSlugRoute
   '/api/og/game/$gameId': typeof ApiOgGameGameIdRoute
   '/api/og/job/$jobId': typeof ApiOgJobJobIdRoute
   '/api/og/moment/$id': typeof ApiOgMomentIdRoute
   '/api/og/post/$id': typeof ApiOgPostIdRouteWithChildren
   '/api/og/profile/$id': typeof ApiOgProfileIdRoute
   '/api/og/replay/$id': typeof ApiOgReplayIdRoute
+  '/api/og/section/$file': typeof ApiOgSectionFileRoute
+  '/api/og/story/$slug': typeof ApiOgStorySlugRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
@@ -10393,14 +10421,18 @@ export interface FileRoutesByTo {
   '/api/messages/$conversationId/voice': typeof ApiMessagesConversationIdVoiceRoute
   '/api/messages/voice/$filename': typeof ApiMessagesVoiceFilenameRoute
   '/api/nightrail/tricks/vote': typeof ApiNightrailTricksVoteRoute
+  '/api/og/album/$albumId': typeof ApiOgAlbumAlbumIdRoute
   '/api/og/app/$appId': typeof ApiOgAppAppIdRoute
   '/api/og/blog/$slug': typeof ApiOgBlogSlugRoute
+  '/api/og/build/$slug': typeof ApiOgBuildSlugRoute
   '/api/og/game/$gameId': typeof ApiOgGameGameIdRoute
   '/api/og/job/$jobId': typeof ApiOgJobJobIdRoute
   '/api/og/moment/$id': typeof ApiOgMomentIdRoute
   '/api/og/post/$id': typeof ApiOgPostIdRouteWithChildren
   '/api/og/profile/$id': typeof ApiOgProfileIdRoute
   '/api/og/replay/$id': typeof ApiOgReplayIdRoute
+  '/api/og/section/$file': typeof ApiOgSectionFileRoute
+  '/api/og/story/$slug': typeof ApiOgStorySlugRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
@@ -11712,14 +11744,18 @@ export interface FileRoutesById {
   '/api/messages/$conversationId/voice': typeof ApiMessagesConversationIdVoiceRoute
   '/api/messages/voice/$filename': typeof ApiMessagesVoiceFilenameRoute
   '/api/nightrail/tricks/vote': typeof ApiNightrailTricksVoteRoute
+  '/api/og/album/$albumId': typeof ApiOgAlbumAlbumIdRoute
   '/api/og/app/$appId': typeof ApiOgAppAppIdRoute
   '/api/og/blog/$slug': typeof ApiOgBlogSlugRoute
+  '/api/og/build/$slug': typeof ApiOgBuildSlugRoute
   '/api/og/game/$gameId': typeof ApiOgGameGameIdRoute
   '/api/og/job/$jobId': typeof ApiOgJobJobIdRoute
   '/api/og/moment/$id': typeof ApiOgMomentIdRoute
   '/api/og/post/$id': typeof ApiOgPostIdRouteWithChildren
   '/api/og/profile/$id': typeof ApiOgProfileIdRoute
   '/api/og/replay/$id': typeof ApiOgReplayIdRoute
+  '/api/og/section/$file': typeof ApiOgSectionFileRoute
+  '/api/og/story/$slug': typeof ApiOgStorySlugRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
@@ -13031,14 +13067,18 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/voice'
     | '/api/messages/voice/$filename'
     | '/api/nightrail/tricks/vote'
+    | '/api/og/album/$albumId'
     | '/api/og/app/$appId'
     | '/api/og/blog/$slug'
+    | '/api/og/build/$slug'
     | '/api/og/game/$gameId'
     | '/api/og/job/$jobId'
     | '/api/og/moment/$id'
     | '/api/og/post/$id'
     | '/api/og/profile/$id'
     | '/api/og/replay/$id'
+    | '/api/og/section/$file'
+    | '/api/og/story/$slug'
     | '/api/personas/$id/chat'
     | '/api/personas/avatar/$filename'
     | '/api/pf2ecal/announcements/$id'
@@ -14321,14 +14361,18 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/voice'
     | '/api/messages/voice/$filename'
     | '/api/nightrail/tricks/vote'
+    | '/api/og/album/$albumId'
     | '/api/og/app/$appId'
     | '/api/og/blog/$slug'
+    | '/api/og/build/$slug'
     | '/api/og/game/$gameId'
     | '/api/og/job/$jobId'
     | '/api/og/moment/$id'
     | '/api/og/post/$id'
     | '/api/og/profile/$id'
     | '/api/og/replay/$id'
+    | '/api/og/section/$file'
+    | '/api/og/story/$slug'
     | '/api/personas/$id/chat'
     | '/api/personas/avatar/$filename'
     | '/api/pf2ecal/announcements/$id'
@@ -15639,14 +15683,18 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/voice'
     | '/api/messages/voice/$filename'
     | '/api/nightrail/tricks/vote'
+    | '/api/og/album/$albumId'
     | '/api/og/app/$appId'
     | '/api/og/blog/$slug'
+    | '/api/og/build/$slug'
     | '/api/og/game/$gameId'
     | '/api/og/job/$jobId'
     | '/api/og/moment/$id'
     | '/api/og/post/$id'
     | '/api/og/profile/$id'
     | '/api/og/replay/$id'
+    | '/api/og/section/$file'
+    | '/api/og/story/$slug'
     | '/api/personas/$id/chat'
     | '/api/personas/avatar/$filename'
     | '/api/pf2ecal/announcements/$id'
@@ -16628,14 +16676,18 @@ export interface RootRouteChildren {
   ApiMarathonListsSharedShareIdRoute: typeof ApiMarathonListsSharedShareIdRoute
   ApiMassiveMarchSignalsVoteRoute: typeof ApiMassiveMarchSignalsVoteRoute
   ApiNightrailTricksVoteRoute: typeof ApiNightrailTricksVoteRoute
+  ApiOgAlbumAlbumIdRoute: typeof ApiOgAlbumAlbumIdRoute
   ApiOgAppAppIdRoute: typeof ApiOgAppAppIdRoute
   ApiOgBlogSlugRoute: typeof ApiOgBlogSlugRoute
+  ApiOgBuildSlugRoute: typeof ApiOgBuildSlugRoute
   ApiOgGameGameIdRoute: typeof ApiOgGameGameIdRoute
   ApiOgJobJobIdRoute: typeof ApiOgJobJobIdRoute
   ApiOgMomentIdRoute: typeof ApiOgMomentIdRoute
   ApiOgPostIdRoute: typeof ApiOgPostIdRouteWithChildren
   ApiOgProfileIdRoute: typeof ApiOgProfileIdRoute
   ApiOgReplayIdRoute: typeof ApiOgReplayIdRoute
+  ApiOgSectionFileRoute: typeof ApiOgSectionFileRoute
+  ApiOgStorySlugRoute: typeof ApiOgStorySlugRoute
   ApiPersonasIdChatRoute: typeof ApiPersonasIdChatRoute
   ApiPersonasAvatarFilenameRoute: typeof ApiPersonasAvatarFilenameRoute
   ApiPoolsIdContributeRoute: typeof ApiPoolsIdContributeRoute
@@ -23780,6 +23832,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiNightrailTricksVoteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/og/album/$albumId': {
+      id: '/api/og/album/$albumId'
+      path: '/api/og/album/$albumId'
+      fullPath: '/api/og/album/$albumId'
+      preLoaderRoute: typeof ApiOgAlbumAlbumIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/og/app/$appId': {
       id: '/api/og/app/$appId'
       path: '/api/og/app/$appId'
@@ -23792,6 +23851,13 @@ declare module '@tanstack/react-router' {
       path: '/api/og/blog/$slug'
       fullPath: '/api/og/blog/$slug'
       preLoaderRoute: typeof ApiOgBlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/og/build/$slug': {
+      id: '/api/og/build/$slug'
+      path: '/api/og/build/$slug'
+      fullPath: '/api/og/build/$slug'
+      preLoaderRoute: typeof ApiOgBuildSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/og/game/$gameId': {
@@ -23834,6 +23900,20 @@ declare module '@tanstack/react-router' {
       path: '/api/og/replay/$id'
       fullPath: '/api/og/replay/$id'
       preLoaderRoute: typeof ApiOgReplayIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/og/section/$file': {
+      id: '/api/og/section/$file'
+      path: '/api/og/section/$file'
+      fullPath: '/api/og/section/$file'
+      preLoaderRoute: typeof ApiOgSectionFileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/og/story/$slug': {
+      id: '/api/og/story/$slug'
+      path: '/api/og/story/$slug'
+      fullPath: '/api/og/story/$slug'
+      preLoaderRoute: typeof ApiOgStorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/personas/$id/': {
@@ -28905,14 +28985,18 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMarathonListsSharedShareIdRoute: ApiMarathonListsSharedShareIdRoute,
   ApiMassiveMarchSignalsVoteRoute: ApiMassiveMarchSignalsVoteRoute,
   ApiNightrailTricksVoteRoute: ApiNightrailTricksVoteRoute,
+  ApiOgAlbumAlbumIdRoute: ApiOgAlbumAlbumIdRoute,
   ApiOgAppAppIdRoute: ApiOgAppAppIdRoute,
   ApiOgBlogSlugRoute: ApiOgBlogSlugRoute,
+  ApiOgBuildSlugRoute: ApiOgBuildSlugRoute,
   ApiOgGameGameIdRoute: ApiOgGameGameIdRoute,
   ApiOgJobJobIdRoute: ApiOgJobJobIdRoute,
   ApiOgMomentIdRoute: ApiOgMomentIdRoute,
   ApiOgPostIdRoute: ApiOgPostIdRouteWithChildren,
   ApiOgProfileIdRoute: ApiOgProfileIdRoute,
   ApiOgReplayIdRoute: ApiOgReplayIdRoute,
+  ApiOgSectionFileRoute: ApiOgSectionFileRoute,
+  ApiOgStorySlugRoute: ApiOgStorySlugRoute,
   ApiPersonasIdChatRoute: ApiPersonasIdChatRoute,
   ApiPersonasAvatarFilenameRoute: ApiPersonasAvatarFilenameRoute,
   ApiPoolsIdContributeRoute: ApiPoolsIdContributeRoute,

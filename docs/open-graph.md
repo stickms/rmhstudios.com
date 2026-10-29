@@ -67,7 +67,7 @@ Dynamic cards are `GET /api/og/<kind>/<id>`, all `auth: 'none'`, all returning
 `image/png` with a long `Cache-Control`:
 
 `post` · `post/$id/story` · `profile` · `replay` · `moment` · `game` · `app` ·
-`blog` · `job`
+`blog` · `job` · `section` · `build` · `story` · `album`
 
 Reference them through **`ogCardPath(kind, id)`** rather than by writing the
 path — that keeps the set of pages with a real card greppable, and stops a route
@@ -144,8 +144,18 @@ In order of preference:
    since it is not 1200×630.
 3. **A section card**, automatically. `buildMeta` resolves the route's `path`
    against `lib/og/static-cards.ts` by longest matching prefix, so everything
-   under `/library/…` shares the library card without any route knowing.
-4. **The site default**, `/images/og/default.png`.
+   under `/library/…` shares the library card without any route knowing. Section
+   cards are **rendered on request** by `/api/og/section/$file`, from the same
+   entry, with the figures read live (`lib/og/catalog-stats.ts`,
+   `lib/og/live-stats.server.ts`): "25 to play" is the catalog's number, not the
+   one that was true when a PNG was last committed. A section that belongs to one
+   thing with key art may name it (`art`). If a render ever fails the route
+   redirects to the default rather than returning an error.
+4. **The site default**, `/images/og/default.png` — the one card that is still a
+   committed file, because `__root.tsx` advertises it and every failure falls back
+   to it. It is the **home page's** card, and should not be what any other page
+   unfurls as: if a page lands here, it needs an entry (`pnpm exec tsx` the scan in
+   the PR that introduced this, or just look at what its link unfurls as).
 
 `buildMeta` also guarantees three things no route has to remember:
 
@@ -158,10 +168,24 @@ In order of preference:
 
 ### Adding a section card
 
-Add an entry to `STATIC_CARDS`, run `pnpm og:cards`, commit the PNG. No route
-changes. `lib/__tests__/og-cards.test.ts` fails if a declared card has no file
-on disk — which is the exact bug (`default.png` referenced for months while
-`public/images/og/` did not exist) that made every uncustomised share broken.
+Add an entry to `STATIC_CARDS`. That is all: no route changes and no PNG. The copy
+is held to a size an unfurl can show (`og-cards.test.ts`: eyebrow ≤ 28, title ≤ 48,
+subtitle ≤ 100 characters), a card's copy cannot contradict another card on the
+same `file`, and the title carries no numbers — a count is a figure, and figures
+come from `catalogStatsFor` / `liveStatsFor`. Only `default` is a file; the test
+still fails if *that* is missing, which is the bug (`default.png` referenced for
+months while `public/images/og/` did not exist) that once made every uncustomised
+share broken. `pnpm og:cards` re-renders it, with the catalog's current counts.
+
+### Titles and descriptions
+
+The title is **the page's name**, not a tagline: `TF2 Workshop | RMH Studios`, not
+`TF2 Workshop — community HUDs and loadouts | RMH Studios`. A game is
+`${title} | RMH Studios` (`lib/seo-catalog.ts`); the description is where the one
+idea about it goes. Descriptions are one short, literal sentence — about 100
+characters, because that is what an unfurl shows before it truncates — with no
+marketing filler ("A relaxing…", "Party game madness!") and no second sentence
+that restates the first.
 
 ### Adding a dynamic card
 

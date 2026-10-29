@@ -5,7 +5,7 @@ const entry: AppInfo = {
   order: 80,
   title: 'RMH Strategies',
   description:
-    'The coalition command center. Daily puzzles, tiered safehouse, reputation system, and Sahur Mode.',
+    'The coalition command center: daily puzzles, a tiered safehouse, reputation, Sahur Mode.',
   longDescription:
     'RMH Strategies is the unified platform layer for the RMH ecosystem. Earn XP across all RMH products with a single reputation system, compete on daily puzzle leaderboards across five modes (Alibi, Spectrum, Outcast, Chainlink, Impostor), access tiered Safehouse intelligence, track public incidents as entertainment, and unlock Sahur Mode — a chaotic 3 AM experience with triple XP and a bat cursor.',
   href: '/strategies',

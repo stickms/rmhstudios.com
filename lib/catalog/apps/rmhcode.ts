@@ -5,7 +5,7 @@ const entry: AppInfo = {
   order: 70,
   title: 'rmhcode',
   description:
-    'AI-powered coding assistant. Build projects with Claude and publish to User Builds.',
+    'An AI coding assistant. Build with Claude and publish to User Builds.',
   longDescription:
     'rmhcode is a CLI wrapper around Claude Code with RMH integrations. Sign in with your rmhstudios.com account, build projects with AI assistance, and publish your creations to the User Builds showcase.',
   href: '/rmhcode',

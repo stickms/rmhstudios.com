@@ -22,7 +22,7 @@ export const Route = createFileRoute('/_site/create/')({
     meta: buildMeta({
       title: 'Create | RMH Studios',
       description:
-        'Generate shareable pages, browse community builds, and craft AI personas — your whole creative toolkit in one place.',
+        'Generate shareable pages, browse community builds, craft AI personas.',
       path: '/create',
     }),
     links: [buildCanonical('/create')],

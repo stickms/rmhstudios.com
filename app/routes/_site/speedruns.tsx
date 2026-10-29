@@ -51,7 +51,7 @@ export const Route = createFileRoute('/_site/speedruns')({
     meta: buildMeta({
       title: 'Speedruns | RMH Studios',
       description:
-        'Replay-verified speedrun categories: every run is re-simulated from its own inputs, and boards are kept per game version.',
+        'Replay-verified speedrun boards: every run is re-simulated from its own inputs.',
       path: '/speedruns',
     }),
     links: [buildCanonical('/speedruns')],

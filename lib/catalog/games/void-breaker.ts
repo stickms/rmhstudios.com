@@ -5,7 +5,7 @@ const entry: GameInfo = {
   order: 120,
   title: 'Void Breaker',
   description:
-    'Obsidian and gold arena shooter. Collect void shards, dash, slow time with Focus, detonate when overwhelmed.',
+    'An obsidian-and-gold arena shooter. Collect shards, dash, slow time, detonate.',
   longDescription:
     'Survive waves of enemies in a dark arena. Collect void shards that orbit you as a shield and score multiplier. Activate Focus for bullet-time. Dash to dodge. Detonate your shard ring for a devastating Void Burst. Boss fights every 5 waves.',
   href: '/void-breaker',

@@ -76,7 +76,7 @@ export function gameRouteHead(id: string, options: HeadOptions = {}) {
   const fontLinks = (options.fontPreloads ?? []).map(preloadFont);
   return {
     meta: buildMeta({
-      title: `${game.title} — play free in your browser | RMH Studios`,
+      title: `${game.title} | RMH Studios`,
       description: game.description,
       path,
       image: ogCardPath('game', game.id),
@@ -115,7 +115,7 @@ export function appRouteHead(id: string, options: HeadOptions = {}) {
   const fontLinks = (options.fontPreloads ?? []).map(preloadFont);
   return {
     meta: buildMeta({
-      title: `${app.title} — ${app.cta} | RMH Studios`,
+      title: `${app.title} | RMH Studios`,
       description: app.description,
       path,
       // The rendered card, not the raw screenshot this used to point at: a

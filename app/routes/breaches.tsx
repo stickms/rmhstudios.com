@@ -12,7 +12,7 @@ export const Route = createFileRoute('/breaches')({
     meta: buildMeta({
       title: 'Breaches | RMH Studios',
       description:
-        'Our public incident log. In March 2026 a Discord webhook URL was committed to this repository in plain text and sat in the default branch for nine days — how it got there, why nobody caught it, and why deleting the line did not undo it.',
+        'Our public incident log, starting with a Discord webhook URL that sat in the repo for nine days.',
       path: '/breaches',
     }),
     links: [buildCanonical('/breaches')],

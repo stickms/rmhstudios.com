@@ -10,7 +10,7 @@ export const Route = createFileRoute('/_site/rings/')({
     meta: buildMeta({
       title: 'Webrings | RMH Studios',
       description:
-        'Member-run webrings: small circles of people who share a thing, with a previous / next strip on each profile.',
+        'Member-run webrings: small circles of people sharing a thing, with prev and next on each profile.',
       path: '/rings',
     }),
     links: [buildCanonical('/rings')],

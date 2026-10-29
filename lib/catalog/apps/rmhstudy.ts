@@ -4,7 +4,7 @@ const entry: AppInfo = {
   id: 'rmhstudy',
   order: 50,
   title: 'RMH Study',
-  description: 'Study together with synced Pomodoro timers, focus tracking, and flashcards.',
+  description: 'Study together with synced Pomodoro timers, focus tracking and flashcards.',
   longDescription:
     'RMH Study brings the Pomodoro technique to a social setting. Create a study room, invite friends, and stay focused together with synced timers. Track your focus time, set session goals, climb the study leaderboard, and drill solo with flashcard decks and an AI tutor.',
   href: '/rmhstudy',

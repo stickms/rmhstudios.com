@@ -21,7 +21,7 @@ export const Route = createFileRoute('/_site/ranked')({
     meta: buildMeta({
       title: 'Ranked | RMH Studios',
       description:
-        'Competitive ladders across the RMH Studios arcade: current standings, your rating, and the seasons in progress.',
+        'Competitive ladders across the arcade: standings, your rating, current seasons.',
       path: '/ranked',
     }),
     links: [buildCanonical('/ranked')],

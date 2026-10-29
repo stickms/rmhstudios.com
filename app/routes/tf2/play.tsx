@@ -15,9 +15,8 @@ const PATH = '/tf2/play';
 export const Route = createFileRoute('/tf2/play')({
   head: () => ({
     meta: buildMeta({
-      title: 'Play TF2 in your browser — online or against bots | RMH Studios',
-      description:
-        'Team Fortress 2 on a clean-room browser engine: all nine classes on 2Fort, Dustbowl, Badwater and more. Join a server, host your own with bots, or practise offline.',
+      title: 'Play TF2 | RMH Studios',
+      description: 'Team Fortress 2 in your browser: all nine classes, online or against bots.',
       path: PATH,
     }),
     links: [buildCanonical(PATH)],
