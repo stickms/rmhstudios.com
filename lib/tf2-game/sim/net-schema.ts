@@ -265,6 +265,25 @@ export const NET_WEAPON = registerNetSchema(6, 'weapon', [
   f('aux1', 'f32', true),
   f('aux2', 'f32', true),
   f('aux3', 'f32', true),
+  // Added by the weapons module (sim/weapons): the view-model activity the
+  // renderer plays (index into VM_ACTIVITY_NAMES + a change counter), the
+  // owner's m_flNextAttack, the random-crit state CalcIsAttackCritical rolls
+  // against (token bucket, check counts, rapid-fire window, the owner's crit
+  // multiplier byte) and four more weapon-specific slots.
+  f('vmActivity', 'u16', true),
+  f('vmActivitySeq', 'u8', true),
+  f('nextAttack', 'f32', true),
+  f('reloadPriorNextFire', 'f32', true),
+  f('critBucket', 'f32', true),
+  f('critChecks', 'u16', true),
+  f('critRequests', 'u16', true),
+  f('critTime', 'f32', true),
+  f('lastCritCheck', 'f32', true),
+  f('critMult', 'u8', true),
+  f('aux4', 'f32', true),
+  f('aux5', 'f32', true),
+  f('aux6', 'f32', true),
+  f('aux7', 'f32', true),
 ]);
 
 /** Buildings (CBaseObject's DT_BaseObject). Subtypes extend with their own ids 128+. */
