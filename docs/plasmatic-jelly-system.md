@@ -184,6 +184,15 @@ Between ticks the engine sleeps on a timer, not on a spinning rAF: the timer wak
 engine's driver on the shared frame loop (§8.1), which draws at most six due surfaces with
 one shared `uTime` and then lets the driver sleep again.
 
+`uTime` is the haze's own clock (`advanceHazeClock`, `policy.ts`), **not** `performance.now()`:
+it advances only on a tick, by the time since the previous one, and a gap of more than three
+periods counts as one. The clock is 0 for the whole of a scroll, so a wall-clock `uTime` made the
+field resume after every scroll with everything it would have flowed meanwhile — a visible jump the
+moment scrolling stopped. Haze slots have hysteresis for the same reason (`reconcileHaze`): a
+surface that holds one keeps it while it stays within `HAZE_SLOT_SLACK` (4) places of the cut,
+and none is handed out mid-scroll (the scroll-end reconcile does it), so the ranking — which
+moves under a stationary cursor as the page scrolls — never swaps a slot between two cards.
+
 **2026-10-25: the clock doubled (30/12 → 60/30 Hz, 15/8 → 30/15 handheld).** The owner asked
 for "zero lag and as much fps as possible". What made it affordable: rims and haze draw in a
 worker (`lib/liquid/glass/glass.worker.ts`; the engine still makes every decision — which

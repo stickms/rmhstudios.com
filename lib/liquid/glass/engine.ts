@@ -117,6 +117,7 @@ import {
 import { luminance, resolveColor, type RGBA } from './color';
 import {
   admit,
+  advanceHazeClock,
   ambientHz,
   addRing,
   approach,
@@ -223,6 +224,9 @@ const WORKER_WAIT_MS = 5000;
  * `data-liquid-canvas="on"` and the static coat, edge and carrier step aside. A cross-fade, never a swap.
  */
 const ENTER_MS = 450;
+
+/** Places beyond the haze budget a surface that already holds a slot may fall before it gives the slot up. */
+const HAZE_SLOT_SLACK = 4;
 /**
  * New slabs admitted per reconcile pass. A cold page admits up to the rim budget at once; each admission reads its
  * host's computed style and adds a canvas, so they are spread over a few frames instead of landing in one.
@@ -1144,18 +1148,30 @@ export function installLiquidGlass(doc: Document = document): () => void {
     const want = new Set<Surface>();
     if (registry && hazeDrawable() && mode.ambient && governed.hazeSlots > 0) {
       const focus = pointerLive && queries.fine.matches ? { x: pointerX, y: pointerY } : null;
-      for (const e of hazeSlots(registry.ambientSlots(governed, focus))) {
+      // Slots are ranked by distance to the focus, which moves under a stationary cursor whenever the page scrolls: a
+      // strict top-N would hand a slot to a different surface at every scroll end, and each swap is a surface whose
+      // haze changes look (shader ↔ CSS carrier) in one frame. So a surface that already holds a slot keeps it while it
+      // stays within HAZE_SLOT_SLACK places of the cut, and a newcomer takes only the slots that are left over.
+      // During a scroll nothing is added at all: a canvas created under moving content would fade in on a surface that
+      // is about to leave (the scroll-end reconcile hands out the slots once the page is at rest).
+      const cap = governed.hazeSlots;
+      const ranked = hazeSlots(
+        registry.ambientSlots({ ...governed, hazeSlots: cap + HAZE_SLOT_SLACK }, focus),
+      );
+      const fit = (s: Surface | undefined): s is Surface =>
+        !!s?.canvas &&
+        s.visible &&
+        hazeEligible(s.role) &&
+        !s.still &&
+        s.jellyOn &&
+        s.look.hazeA + s.look.plasma > 0;
+      const candidates: Surface[] = [];
+      for (const e of ranked) {
         const s = surfaces.get(e.el as HTMLElement);
-        if (
-          s?.canvas &&
-          s.visible &&
-          hazeEligible(s.role) &&
-          !s.still &&
-          s.jellyOn &&
-          s.look.hazeA + s.look.plasma > 0
-        )
-          want.add(s);
+        if (fit(s)) candidates.push(s);
       }
+      for (const s of candidates) if (hazeSet.has(s) && want.size < cap) want.add(s);
+      if (!scrolling) for (const s of candidates) if (want.size < cap) want.add(s);
     }
     for (const s of [...hazeSet]) if (!want.has(s)) removeHaze(s);
     for (const s of want) addHaze(s);
@@ -1396,6 +1412,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
    * frame switches program at most twice. Fresh canvases draw even with the clock at 0, so a frozen field is never a
    * blank one. The batch's cost feeds the governor.
    */
+  /** The haze's own clock, seconds (`advanceHazeClock`): frozen across pauses, so the field resumes where it stopped. */
+  let hazeClock = 0;
+
   const tickHaze = (now: number, hz: number) => {
     if (hazeSet.size === 0) {
       lastTick = 0;
@@ -1413,7 +1432,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
       return;
     }
     const t0 = win.performance.now();
-    const time = (now / 1000) % 3600;
+    if (ticking) hazeClock = advanceHazeClock(hazeClock, now, lastTick, hz);
+    const time = hazeClock % 3600;
     for (const s of batch) {
       drawHaze(s, time);
       s.hazeFresh = false;
@@ -1746,6 +1766,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
     win.clearTimeout(scrollTimer);
     scrollTimer = win.setTimeout(() => {
       scrolling = false;
+      // Slots are not handed out mid-scroll (`reconcileHaze`): do it now the page is at rest.
+      scheduleReconcile();
       requestFrame();
     }, 160);
     provider.request('scroll');

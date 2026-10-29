@@ -273,6 +273,19 @@ export function ambientHz(s: ClockState): number {
   return Math.max(0, Math.min(hz, s.clockHz));
 }
 
+/**
+ * The haze's own clock, in seconds. It is not `performance.now()`: the ambient clock stops while a scroll is in
+ * flight, the tab is hidden or the window is unfocused, and a field keyed to the wall clock resumes the other side of
+ * the pause with everything it would have flowed meanwhile — a visible jump the moment scrolling comes to rest. This
+ * one advances only on a tick, by the time since the previous one, so a pause freezes the field and the resume carries
+ * on from the frame it stopped on. A gap of more than three periods is a pause: it counts as one period, not the gap.
+ */
+export function advanceHazeClock(clock: number, now: number, last: number, hz: number): number {
+  if (!(last > 0) || !(hz > 0)) return clock;
+  const period = 1000 / hz;
+  return clock + Math.max(0, Math.min(now - last, period * 3)) / 1000;
+}
+
 export interface HazeTicket {
   /** `performance.now()` this surface is next due. */
   due: number;
