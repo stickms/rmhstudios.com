@@ -36,6 +36,11 @@ export const TF2_C2S = {
   TEAM: 'tf2:team',
   CLASS: 'tf2:class',
   VOICE: 'tf2:voice',
+  /**
+   * A generic game command (`build 2 0`, `destroy 1`, `disguise 8 3`, `taunt` …):
+   * MatchCommand { kind: 'extra' }, validated by `zExtraCommand` (./lobby-schema.ts).
+   */
+  EXTRA: 'tf2:extra',
   /** Clock sync — answered by `TF2_S2C.PONG`. */
   PING: 'tf2:ping',
 } as const;
@@ -154,6 +159,12 @@ export interface ClassPayload {
 export interface VoicePayload {
   menu: 0 | 1 | 2;
   item: number;
+}
+
+/** `tf2:extra` — a console verb and its arguments (net/extra-commands.ts). */
+export interface ExtraCommandPayload {
+  command: string;
+  args: ReadonlyArray<number | string | boolean>;
 }
 
 export interface PingPayload {

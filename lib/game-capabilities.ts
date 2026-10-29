@@ -242,6 +242,30 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     save: 'own-table',
     accessibility: ['no-timed-input'],
   },
+  // Half-Life 2 demo / Portal: First Slice on the browser engine (lib/sp-game, lib/tf2-game/client).
+  // Saves are level starts in localStorage (lib/tf2-game/client/sp-save.ts); captions are the
+  // games' own closed captions; keys are rebindable (lib/tf2-game/client/settings.ts).
+  'half-life-2': {
+    genre: ['shooter', 'narrative'],
+    players: ['single'],
+    input: { supported: ['keyboard', 'mouse', 'gamepad', 'touch'], required: [] },
+    sessionMinutes: [10, 40],
+    engine: 'webgl',
+    demanding: true,
+    save: 'local-only',
+    accessibility: ['remappable-input', 'subtitles', 'reduced-flashing'],
+    descriptors: ['violence'],
+  },
+  portal: {
+    genre: ['puzzle', 'shooter'],
+    players: ['single'],
+    input: { supported: ['keyboard', 'mouse', 'gamepad', 'touch'], required: [] },
+    sessionMinutes: [10, 60],
+    engine: 'webgl',
+    demanding: true,
+    save: 'local-only',
+    accessibility: ['remappable-input', 'subtitles', 'reduced-flashing'],
+  },
   'neon-driftway': {
     genre: ['racing', 'arcade'],
     players: ['single', 'online-versus'],

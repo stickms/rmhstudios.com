@@ -45,6 +45,7 @@ import {
   zClass,
   zCreateRoom,
   zEmpty,
+  zExtraCommand,
   zJoinRoom,
   zPing,
   zTeam,
@@ -501,6 +502,11 @@ export function registerTf2GameHandlers(io: Server, socket: Socket): void {
   socket.on(TF2_C2S.VOICE, (payload: unknown) => {
     const data = gate(TF2_C2S.VOICE, zVoice, payload);
     if (data) forward(TF2_C2S.VOICE, { kind: 'voice', menu: data.menu, item: data.item });
+  });
+
+  socket.on(TF2_C2S.EXTRA, (payload: unknown) => {
+    const data = gate(TF2_C2S.EXTRA, zExtraCommand, payload);
+    if (data) forward(TF2_C2S.EXTRA, { kind: 'extra', command: data.command, args: data.args });
   });
 
   socket.on(TF2_C2S.PING, (payload: unknown) => {

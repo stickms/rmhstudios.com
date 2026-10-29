@@ -6,8 +6,9 @@
  *
  * It loads the map package for `opts.map` from object storage — the
  * `tf2-game/maps/` tree the `tf2-assets-sync` workflow publishes
- * (assets/map-manifest.ts) — and returns a `Tf2MatchHost` with
- * `opts.botCount` bots (./tf2-match-host.ts). A rejection here closes the
+ * (assets/map-manifest.ts), with its navigation mesh — and returns a
+ * `Tf2MatchHost` with `opts.botCount` TFBots at `opts.botDifficulty`
+ * (./tf2-match-host.ts, lib/tf2-game/bots). A rejection here closes the
  * room with `map-failed`; it never takes the worker (or anyone else's match)
  * down.
  *

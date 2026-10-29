@@ -66,6 +66,10 @@ import type { BotDifficulty, ClassChoice, TeamChoice } from '../net/events';
 import { eventIsCosmetic, eventVisibleTo, writeEvent, type StringRefs } from '../net/event-codec';
 import { dispatchExtraCommand } from '../net/extra-commands';
 import { ReliableWriter, type ScoreRow } from '../net/protocol';
+import { getBotManager, provideNavMesh } from '../bots/brain/manager';
+import { TFBotBrain } from '../bots/brain/tf-bot-brain';
+import { decodeNavMesh } from '../bots/nav/serialize';
+import type { NavMesh } from '../bots/nav/nav-mesh';
 import {
   ClientSnapshotState,
   SnapshotEncoder,
@@ -116,7 +120,9 @@ export class StandStillBrain implements BotBrain {
 
 export type BotBrainFactory = (difficulty: BotDifficulty, player: Player) => BotBrain;
 
-const defaultBrain: BotBrainFactory = () => new StandStillBrain();
+/** TFBots (lib/tf2-game/bots): the default for every host. */
+const defaultBrain: BotBrainFactory = (difficulty, player) =>
+  new TFBotBrain(player, { difficulty });
 
 /** TF2's bot name list (tf_bot_names), a few of them. */
 const BOT_NAMES = [
@@ -234,7 +240,47 @@ export async function loadMapPackage(loader: GameObjectLoader, map: string): Pro
   ]);
   if (!bsp) throw new Error(`map BSP missing (${manifest.bsp})`);
   const table = hullBytes ? parseHullsBin(hullBytes) : null;
-  return loadMap(bsp, { name: map, propCollision: hullResolver(manifest, table) });
+  const loaded: PackagedMap = loadMap(bsp, {
+    name: map,
+    propCollision: hullResolver(manifest, table),
+  });
+  // The bots' navigation mesh rides along (an unreadable one is generated in the background instead).
+  if (manifest.nav) {
+    const navBytes = await loader.get(manifest.nav).catch(() => null);
+    if (navBytes) {
+      try {
+        loaded.navMesh = decodeNavMesh(navBytes);
+      } catch {
+        loaded.navMesh = null;
+      }
+    }
+  }
+  return loaded;
+}
+
+/** A LoadedMap from a package, with the package's nav mesh when it has one. */
+export type PackagedMap = LoadedMap & { navMesh?: NavMesh | null };
+
+/**
+ * The map package's navigation mesh (`nav`, maps/<sha>.nav.bin), or null
+ * when the package has none or it is unreadable — the bots then generate one
+ * in the background (lib/tf2-game/bots/brain/manager.ts).
+ */
+export async function loadMapNav(loader: GameObjectLoader, map: string): Promise<NavMesh | null> {
+  try {
+    const indexBytes = await loader.get('maps/index.json');
+    if (!indexBytes) return null;
+    const entry = mapIndexSchema.parse(JSON.parse(textOf(indexBytes))).maps[map];
+    if (!entry) return null;
+    const manifestBytes = await loader.get(entry.manifest);
+    if (!manifestBytes) return null;
+    const manifest = mapManifestSchema.parse(JSON.parse(textOf(manifestBytes)));
+    if (!manifest.nav) return null;
+    const bytes = await loader.get(manifest.nav);
+    return bytes ? decodeNavMesh(bytes) : null;
+  } catch {
+    return null;
+  }
 }
 
 // ─── The host ───────────────────────────────────────────────────────────────
@@ -244,8 +290,12 @@ export interface Tf2MatchHostOptions {
   map?: LoadedMap | null;
   /** A prebuilt world (tests with synthetic collision). */
   world?: GameWorld;
-  /** Bot brains (default: stand still). */
+  /** Bot brains (default: TFBotBrain at the match's botDifficulty). */
   botBrain?: BotBrainFactory;
+  /** The navigation mesh for the map (else the bots generate one, a slice per tick). */
+  nav?: NavMesh | null;
+  /** Classes the bots of a team play, in order (an offline player's line-up); TF_CLASS_* ids. */
+  botClasses?: Partial<Record<number, number[]>>;
   /** Put joining humans on the smaller team at once (skip the team menu). */
   autoTeam?: boolean;
   /** …and give them a random class (skip the class menu). */
@@ -260,6 +310,8 @@ export interface Tf2MatchHostOptions {
 export interface Tf2MatchDeps extends Tf2MatchHostOptions {
   /** Loads the map when neither `world` nor `map` is given. */
   loadMap?: (map: string) => Promise<LoadedMap>;
+  /** Loads the map package's nav mesh (null = none: the bots generate one). */
+  loadNav?: (map: string) => Promise<NavMesh | null>;
 }
 
 /** Builds a host: loads the map (unless given one), registers the sim modules, adds the bots. */
@@ -273,7 +325,9 @@ export async function createTf2MatchHost(
     if (!deps.loadMap) throw new Error('no map loader');
     map = await deps.loadMap(opts.map);
   }
-  return new Tf2MatchHost(opts, { ...deps, map });
+  let nav = deps.nav ?? (map as PackagedMap | null)?.navMesh ?? null;
+  if (!nav && deps.loadNav) nav = await deps.loadNav(opts.map);
+  return new Tf2MatchHost(opts, { ...deps, map, nav });
 }
 
 interface HumanClient {
@@ -356,6 +410,12 @@ export class Tf2MatchHost implements MatchHost {
       if (mode) this.world.setMode(mode);
     }
     this.brainFactory = opts.botBrain ?? defaultBrain;
+    if (opts.nav) provideNavMesh(this.world, opts.nav);
+    if (opts.botClasses) {
+      for (const [team, classes] of Object.entries(opts.botClasses)) {
+        if (classes) this.setBotClassPreference(Number(team), classes);
+      }
+    }
     this.snapshotInterval = Math.max(
       1,
       Math.floor(opts.snapshotInterval ?? SNAPSHOT_INTERVAL_TICKS),
@@ -499,6 +559,17 @@ export class Tf2MatchHost implements MatchHost {
       out.push(player);
     }
     return out;
+  }
+
+  /**
+   * The classes a team's bots play, in order (an offline player's line-up;
+   * empty = the TFBot roster). Applies as bots respawn.
+   */
+  setBotClassPreference(team: number, classes: readonly number[]): void {
+    const valid = classes.filter((c) => Number.isInteger(c) && c > 0 && c < TF_CLASS_COUNT);
+    const m = getBotManager(this.world).classPreference;
+    if (valid.length > 0) m.set(team, valid);
+    else m.delete(team);
   }
 
   /** Replaces every bot's brain (the bots module plugs in here). */

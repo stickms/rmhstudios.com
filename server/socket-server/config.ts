@@ -343,6 +343,8 @@ export const config = {
     'tf2:team': { max: 30, windowMs: 60_000 },
     'tf2:class': { max: 60, windowMs: 60_000 },
     'tf2:voice': { max: 60, windowMs: 60_000 },
+    // Build / destroy / disguise / taunt: a few per second at most, even mid-fight.
+    'tf2:extra': { max: 120, windowMs: 60_000 },
     'tf2:ping': { max: 240, windowMs: 60_000 },
     // ─── High-frequency relay / movement events ───
     // Movement + per-frame update events were previously unmetered (the rate

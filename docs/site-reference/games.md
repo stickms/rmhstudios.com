@@ -35,6 +35,8 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **Nightrail** | [`/nightrail`](https://rmhstudios.com/nightrail) | Playable | required | `Arcade` `Racing` `3D` `Trick Scoring` |
 | **Massive March** | [`/massive-march`](https://rmhstudios.com/massive-march) | Playable | required | `Multiplayer` `Co-op` `3D` `Exploration` `Puzzle` |
 | **Bum's Rush** | [`/bums-rush`](https://rmhstudios.com/bums-rush) | Beta | — | `Party` `Multiplayer` `Physics` `Platformer` |
+| **Half-Life 2 (Demo)** | [`/half-life-2`](https://rmhstudios.com/half-life-2) | Beta | — | `Valve` `FPS` `Single-player` `Beta` |
+| **Portal: First Slice** | [`/portal`](https://rmhstudios.com/portal) | Beta | — | `Valve` `FPS` `Single-player` `Beta` |
 
 ## Detail
 
@@ -175,3 +177,15 @@ A first-person cooperative campaign with no combat, no health bar and no quest m
 You are a head with two enormous arms and no legs whatsoever. Grab a ledge, swing, let go at exactly the wrong moment, and paint the wall. Bum's Rush is a hand-drawn physics party game for one to four players: link hands into a living rope, haul each other over gaps none of you could cross alone, and argue about whose fault it was. Eight themed worlds with hidden objectives, and a Showdown mode for when co-operation has run its course. Plays online, on one screen, or both at once — with a gamepad, a keyboard, or two thumbs.
 
 **Route:** `/bums-rush` · **Catalog id:** `bums-rush` · **Status:** Beta · **Sign-in:** not required
+
+### Half-Life 2 (Demo)
+
+Step off the train into City 17. The Half-Life 2 demo’s two Point Insertion maps run on an independent browser engine: Source-accurate movement, rigid-body physics you can pick up and throw, scripted sequences, doors and lifts, soundscapes and closed captions. Your progress is saved at each level start, so Continue picks up where you left off. Keyboard and mouse, gamepad or touch.
+
+**Route:** `/half-life-2` · **Catalog id:** `half-life-2` · **Status:** Beta · **Sign-in:** not required
+
+### Portal: First Slice
+
+The First Slice of Portal — test chambers 00 to 10 — on an independent browser engine. Fire the blue and orange portals onto walls and floors, look and walk through them (momentum is conserved), carry cubes onto buttons and dodge energy balls. Portals render the view through them, one level deep on phones and two on a desktop. Continue resumes from the last chamber you reached. Keyboard and mouse, gamepad or touch.
+
+**Route:** `/portal` · **Catalog id:** `portal` · **Status:** Beta · **Sign-in:** not required

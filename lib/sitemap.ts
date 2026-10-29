@@ -82,6 +82,7 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/rmhladder/jobs', changefreq: 'daily', priority: 0.8 },
   { loc: '/homes/rent-split', changefreq: 'monthly', priority: 0.4 },
   // The TF2 Hub's tools and its workshop (HUDs + loadouts) — a public, regularly changing listing. (`/tf2` itself is the app root, so `catalogRoutes()` emits it.)
+  { loc: '/tf2/play', changefreq: 'monthly', priority: 0.7 },
   { loc: '/tf2/hud-editor', changefreq: 'monthly', priority: 0.6 },
   { loc: '/tf2/loadout', changefreq: 'monthly', priority: 0.6 },
   { loc: '/tf2/workshop', changefreq: 'daily', priority: 0.6 },

@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { IN_FORWARD } from '../../core/constants';
 import { LIFE_ALIVE } from '../../sim/entity';
 import type { JoinedPayload } from '../../net/events';
-import { createTf2MatchHost } from '../../server/tf2-match-host';
+import { createTf2MatchHost, StandStillBrain } from '../../server/tf2-match-host';
 import { matchOptions, roomClientWorld, roomWorld, TICK_MS } from '../../server/match.test-support';
 import { InputSender } from './input';
 import {
@@ -33,7 +33,13 @@ describe('listen server', () => {
       onmessage: null,
     };
     const server = new ListenServer(
-      (opts) => createTf2MatchHost(opts, { world: roomWorld(), autoTeam: true }),
+      // Bots that stand still: this is about the transport, not a fight.
+      (opts) =>
+        createTf2MatchHost(opts, {
+          world: roomWorld(),
+          autoTeam: true,
+          botBrain: () => new StandStillBrain(),
+        }),
       (message: FromListenServer) => page.onmessage?.({ data: message }),
       { now: () => clock, autoRun: false },
     );

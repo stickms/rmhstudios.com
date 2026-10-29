@@ -66,6 +66,7 @@ import dailyPuzzles from './games/daily-puzzles';
 import dreamRift from './games/dream-rift';
 import forestExplorer from './games/forest-explorer';
 import gabrielsHorn from './games/gabriels-horn';
+import halfLife2 from './games/half-life-2';
 import houseAlwaysWins from './games/house-always-wins';
 import isleworks from './games/isleworks';
 import kowloonKnockout from './games/kowloon-knockout';
@@ -73,6 +74,7 @@ import laundrySort from './games/laundry-sort';
 import massiveMarch from './games/massive-march';
 import neonDriftway from './games/neon-driftway';
 import nightrail from './games/nightrail';
+import portal from './games/portal';
 import rmhFarmingSim from './games/rmh-farming-sim';
 import rmhbox from './games/rmhbox';
 import rochesterOffensive from './games/rochester-offensive';
@@ -107,6 +109,7 @@ const GAME_MODULES: readonly GameInfo[] = [
   dreamRift,
   forestExplorer,
   gabrielsHorn,
+  halfLife2,
   houseAlwaysWins,
   isleworks,
   kowloonKnockout,
@@ -114,6 +117,7 @@ const GAME_MODULES: readonly GameInfo[] = [
   massiveMarch,
   neonDriftway,
   nightrail,
+  portal,
   rmhFarmingSim,
   rmhbox,
   rochesterOffensive,

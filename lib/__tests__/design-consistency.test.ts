@@ -184,6 +184,14 @@ const FULLSCREEN_TIER_DIRS = new Set([
   'rmhtube',
   'rmhtype',
   'tf2-hud',
+  // The TF2 / HL2 / Portal in-game HUDs: each draws its game's own HUD (TF2's
+  // default HUD colours, HL2's amber suit, Portal's blue/orange) from scoped
+  // `--tf2g-*` / `--hl2g-*` / `--ptl-*` groups in `components/tf2-game/tf2-game.css`;
+  // their menus use the TF2 Hub's `--app-*` palette like `tf2-hud`.
+  'tf2-game',
+  // Half-Life 2 / Portal play pages (chapter select around the shared game canvas),
+  // in the same scoped HL2 / Portal variants of that palette.
+  'sp-game',
   'rmhvibe',
   'shared',
   'studio',

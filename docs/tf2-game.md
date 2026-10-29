@@ -24,11 +24,11 @@ storage, like the loadout builder's models (see [TF2 Hub](tf2-hub.md)).
 | `lib/tf2-game/world/`                       | The map as a collision world: BSP brush tracing (CM_BoxTrace), displacement and static-prop collision, brush entities that move.                                                                                                                                                  |
 | `lib/tf2-game/data/`                        | Class and weapon tables (stock arsenal), extracted from the game scripts and checked against the SDK.                                                                                                                                                                             |
 | `lib/tf2-game/sim/`                         | The authoritative simulation: game movement, players, weapons, projectiles, damage, conditions, buildings, map entities and I/O, game rules and modes. Deterministic.                                                                                                             |
-| `lib/tf2-game/bots/`                        | Bots: navigation graph, pathing, per-class behaviour.                                                                                                                                                                                                                             |
+| `lib/tf2-game/bots/`                        | Bots (see [Bots](#bots)): nav mesh generation and `nav.bin`, A\* and path following, the TFBot brain.                                                                                                                                                                             |
 | `lib/tf2-game/net/`                         | Protocol: snapshots, deltas, input packing; client prediction and interpolation.                                                                                                                                                                                                  |
 | `lib/tf2-game/render/`                      | three.js renderer: world, props, players, view models, projectiles, buildings, particles, decals. Browser only.                                                                                                                                                                   |
 | `lib/tf2-game/audio/`                       | Sound playback over `getAudioContext()`: the mixer, attenuation and channel rules, soundscapes, scenes, captions.                                                                                                                                                                 |
-| `lib/tf2-game/client/`                      | The browser game loop: input, local "listen server" worker for offline play, connection to the hub for online play.                                                                                                                                                               |
+| `lib/tf2-game/client/`                      | The browser game loop: input, local "listen server" worker for offline play, connection to the hub for online play; the HL2 / Portal client (see [Playing](#playing-the-clients)).                                                                                              |
 | `components/tf2-game/`                      | React UI: the play page, HUD, menus (team, class, scoreboard, settings).                                                                                                                                                                                                          |
 | `lib/tf2-game/server/`                      | Match hosting: the `MatchHost` contract the simulation implements (`match-host.ts`), its one entry point `createTf2Match` (`create-match.ts`), the fixed-step loop (`match-runner.ts`), the worker entry (`match-worker.server.ts`) and the hub's thread pool (`pool.server.ts`). |
 | `server/socket-server/handlers/tf2-game.ts` | Room manager on the hub (`tf2:*` events, `lib/tf2-game/net/events.ts`). Each match runs on a `worker_threads` worker (`lib/tf2-game/server/match-worker.server.ts`) so the hub's event loop never simulates.                                                                      |
@@ -76,6 +76,41 @@ event loop. The pieces, outermost first:
 
 The worker is its own esbuild entry in both `package.json` `build` and the
 Dockerfile `server-builder` stage (which asserts the output exists).
+
+## Playing: the clients
+
+| Route          | Page                                    | Client                                                         |
+| -------------- | --------------------------------------- | -------------------------------------------------------------- |
+| `/tf2/play`    | `components/tf2-game/Tf2PlayPage.tsx`   | `lib/tf2-game/client/tf2-client.ts` (online or listen server)  |
+| `/half-life-2` | `components/sp-game/Hl2PlayPage.tsx`    | `lib/tf2-game/client/sp-client.ts` (`SpWorld`, main thread)    |
+| `/portal`      | `components/sp-game/PortalPlayPage.tsx` | `sp-client.ts` + `portal-view.ts` (recursive portal views)     |
+
+All three mount `components/tf2-game/GameCanvas.tsx`: the canvas, the HUD (`GameHud`), loading progress per
+stage, errors with retry, pointer lock, fullscreen and the phone's rotate hint. A client owns exactly one
+`requestAnimationFrame` (`client/loop.ts`, paused while the tab is hidden) and runs everything on it.
+
+- **TF2** (`tf2-client.ts`): `connectTf2` → create/join (or the listen-server worker, `net/listen-worker.ts`, which
+  uses the bots module's brain when one is present) → the map package (one BSP parse feeds the renderer and the
+  predicting client world) → per frame: look applied to the view angles, 66.67 Hz commands (`buildUserCmd` →
+  `InputSender` → `Prediction`), snapshots into the interpolation buffer, the camera (`client/view.ts`: stairs,
+  roll, punch, the zoom FOV; death cam → freeze cam on the killer → chase; spectator in-eye / chase / roaming),
+  `WorldRenderer` + `EntityRenderer` + the view model, audio, the HUD at 20 Hz. HUD commands map to match
+  commands; build / destroy / disguise / taunt travel as `tf2:extra` (`zExtraCommand`). A new `hello` map
+  reloads the level; a reconnect restarts prediction.
+- **Half-Life 2 / Portal** (`sp-client.ts`): the browser `SpAssets` (`client/sp-assets.ts`: model sequences and
+  bounds from the GLBs' `scene.extras`, hulls from the map's `hulls.bin`, scenes and captions from `snd/`), a
+  fixed-step `SpWorld`, level transitions (`trigger_changelevel` loads the next package with the carried
+  player; a map that is not published ends the demo), checkpoints (death reloads them inside the world) and
+  Continue (`client/sp-save.ts`: the last level start in localStorage). The manifest has no `%noportal` or
+  `$surfaceprop` yet, so Portal refuses portals on metal / glass / tool materials by name.
+- **Quality** (`client/quality.ts`): desktop / laptop / mobile from WebGL2, the texture limit, memory, cores,
+  the GPU name and touch; each sets resolution scale, DPR cap, texture cap, anisotropy, particle budget, prop
+  draw distance and portal recursion (2 desktop, 1 phone). A frame-time governor lowers the resolution scale
+  under sustained load and raises it slowly.
+
+Smoke test in a real browser (not part of a suite): `scripts/tf2-game/play-smoke.ts` (its header has the setup —
+a Vite dev server with the map packages under `LOCAL_STORAGE_DIR`, no Postgres needed). Pure client logic is
+tested in `lib/tf2-game/client/play-client.test.ts`.
 
 ## Game assets
 
@@ -199,8 +234,10 @@ pnpm exec tsx scripts/tf2-assets/publish.ts push --dir out --prefix hl2-game/ \
   list, so every prop gets a GLB.
 - **Incremental**: files are named by their content (textures by their source), so with `--state` an
   unchanged map writes nothing and decodes no texture, but is still listed in `wanted.json`. A map that
-  fails keeps its previous index entry (`failed.json`). Navigation meshes are not generated yet (`nav: null`;
-  `--nav` is reserved).
+  fails keeps its previous index entry (`failed.json`).
+- **Navigation mesh** (TF2, on by default; `--no-nav` skips it, `--nav` forces it for another game):
+  `maps/<sha>.nav.bin`, generated from the BSP and the prop hulls — the same collision the game runs —
+  within `NAV_TIME_BUDGET_MS` (60 s) per map; see [Bots](#bots). The manifest's `nav` names it.
 
 Sizes (BSP raw / Brotli as stored; textures as encoded; local installs, 2026-10-29 — the TF2 dedicated
 server has no texture data, so TF2's textures are an estimate from HL2's per-map figure):
@@ -229,6 +266,81 @@ All maps of the three games come to about 0.2 GB, plus their props' GLBs (HL2: 2
 Portal 2 maps: 47 props, 4.5 MiB; ctf_2fort: 326 props, 13.5 MiB untextured).
 Tests: `HL2_ROOT=… PORTAL_ROOT=… TF2_ROOT=… pnpm test:tf2 scripts/tf2-game/build-maps.test.ts` (each game
 skips without its install; prints the sizes above).
+
+## Bots
+
+`lib/tf2-game/bots/` fills empty seats online and is the opposition offline. Bots are ordinary players:
+a `BotBrain` (`server/tf2-match-host.ts`) returns one `UserCmd` per tick and the host queues it, so bots
+move through the same `playerMove`, weapons and rules as humans. `createTf2Match` and the listen server
+play `TFBotBrain` at the match's `botDifficulty` by default; `Tf2MatchHostOptions.botBrain` replaces it
+and `botClasses` / `setBotClassPreference(team, classes)` give a team's bots a fixed line-up (an
+offline player's choice). The SDK's NextBot / TFBot code (`game/server/NextBot`, `tf/bot`,
+`nav_*.cpp`) is the behavioural reference; the implementation is independent.
+
+- **Nav mesh** (`bots/nav/`). `NavGenerator` samples walkable ground on a 25-unit grid with the TF
+  player hull (48 × 48, 82 tall, 62 crouched), flood-filling from the map's spawns, control points,
+  flags, capture zones, payload `path_track`s and pickups. Each sample tries its four neighbours as
+  `CGameMovement` would move: a step (≤ 18), a walk off a ledge (a drop, ≤ 250), a crouch-jump up to
+  64 (landing up to two cells away, over lips a hull cannot stand on), or swimming up out of water;
+  ground steeper than 0.7, ledge corners whose centre is unsupported, and lethal `trigger_hurt`
+  volumes are not walkable; a low lintel makes both ends crouch areas. Doors, toggled `func_brush`es
+  and the cart are ignored while sampling; the areas they overlap remember the brush. Samples merge
+  into coplanar rectangles (≤ 12 × 12 cells) that share their attributes: RED/BLU spawn room
+  (`func_respawnroom`), capture area, capture zone, resupply, water, crouch, door. Connections carry
+  their kind (walk / jump / drop, one-way when too high to climb back) and portal. Visibility is a
+  sector PVS: areas grouped into ~512-unit sectors, pairs within 5000 units that the BSP's PVS allows
+  sampled with line traces, stored as a bitset. `nav.bin` (`serialize.ts`) is the compact
+  little-endian form. Generation is incremental (`step(traceBudget)`): when a package has no mesh
+  the hub worker (or the browser listen server) builds one a slice per tick, cached per map.
+- **Paths** (`bots/path.ts`). A\* over areas (distance, crouch/water/jump/drop costs, the per-team
+  danger map of recent deaths; the enemy's spawn rooms and blocked doors are forbidden — doors per
+  `CTFNavMesh::ComputeBlockedAreas`: a bare closed door or solid toggled brush blocks everyone, a
+  trigger-opened door only the team its filter keeps out). An unreachable goal paths to the closest
+  area (bots wait at setup gates). `PathFollower` steers to the portals (each leg stays inside one
+  convex area, narrow ramps walked down the middle), jumps and crouch-jumps at jump connections,
+  crouches through crouch areas, swims up, walks off perches the mesh does not know, and repaths when
+  stuck or off the path. A world's bots share three searches a tick.
+- **Brain** (`bots/brain/`). Perception every third tick: a vision cone and line of sight (pre-culled by
+  the sector PVS), gunfire heard within 1800, whoever just hurt us; disguised spies pass as friends
+  until they bump, attack or are seen through; cloaked ones show only when flickering or burning. Class
+  choice follows TFBot's offense / defense rosters (`CTFBot::GetNextSpawnClassname`), re-chosen each
+  death. Objectives (`objective.ts`) read the live entities: capture or block points (standing in the
+  capture trigger), defend, KOTH, push or block the cart, fetch / escort / deliver / defend the
+  intelligence, chase a carrier. Per class: scouts strafe and jump with the scattergun close, soldiers
+  lead rockets at the feet (and rocket-jump toward far goals on hard+), pyros flame close and reflect
+  incoming rockets and pipes, demomen arc pipes and lay sticky traps they detonate under enemies,
+  heavies spin up before engaging, engineers build a sentry at a spot that sees what they defend, a
+  dispenser and teleporters, and maintain them with the wrench, medics pick a patient (heavy first),
+  heal, über when hurt, and defend themselves, snipers scope from vantage spots and wait for charge,
+  spies disguise, cloak on the approach, backstab and sap sentries. Everyone retreats to health or
+  ammo (pickups, resupply, dispensers), reloads when safe and calls lines (`voice` events).
+- **Difficulty** (`difficulty.ts`):
+
+| Knob                                     | easy | normal | hard | expert |
+| ---------------------------------------- | ---- | ------ | ---- | ------ |
+| Reaction time (s, `GetMinRecognizeTime`) | 1.0  | 0.5    | 0.3  | 0.2    |
+| Aim tracking interval (s)                | 1.0  | 0.25   | 0.1  | 0.05   |
+| Aim error (°; scoped rifle × 0.35)       | 4.5  | 2.2    | 1.2  | 0.5    |
+| Turn rate (°/s)                          | 300  | 540    | 800  | 1200   |
+| Field of view (°)                        | 90   | 90     | 100  | 110    |
+| Retreat below health                     | 55 % | 45 %   | 35 % | 30 %   |
+| Sniper charge before a body shot         | 30 % | 50 %   | 70 % | 85 %   |
+| Projectile lead                          | 30 % | 65 %   | 85 % | 100 %  |
+| Airblast reaction chance                 | 10 % | 35 %   | 60 % | 85 %   |
+| Rocket jumps                             | no   | no     | yes  | yes    |
+
+Nav meshes of the nine maps (local install, 2026-10-29; generation in Node, including the visibility
+pass): ctf_2fort 866 areas / 80 KiB / 1.7 s, ctf_turbine 606 / 55 KiB / 0.8 s, cp_dustbowl 2132 /
+202 KiB / 2.5 s, cp_granary 1841 / 181 KiB / 1.7 s, cp_badlands 2726 / 276 KiB / 2.8 s, koth_viaduct
+1274 / 125 KiB / 1.5 s, koth_harvest_final 1165 / 115 KiB / 1.5 s, pl_badwater 1949 / 190 KiB / 1.8 s,
+pl_upward 2592 / 262 KiB / 2.7 s.
+
+Tests: `pnpm test:tf2 lib/tf2-game/bots` (the synthetic mesh test runs anywhere); with `TF2_ROOT`,
+`bots.nav.maps.test.ts` checks every map's mesh (connectivity from each team spawn to every
+objective, the `nav.bin` round trip) and walks a bot from each spawn to every current objective,
+`bots.match.maps.test.ts` plays 12v12 bots for five minutes on each map (objective progress, kills for
+every class, > 90 % of bots moving, the bots' share of a tick; ~15 minutes) and
+`bots.offline.maps.test.ts` one human through the host's input path with eleven bots.
 
 ## Tests
 
@@ -265,7 +377,21 @@ sequences: { <name>: { clips, looping, delta, post, fps, frames, blend?, layers?
 - **Body GLB.** LOD 0 of every body part; a switchable body group's submodels are separate primitives
   (`extras.bodygroup`, `extras.sub`); every primitive has `extras.slot` (its skin-reference slot) and uses
   skin family 0. Skinned (bones + inverse binds) unless it is a static single-bone prop. Positions are the
-  compiled bind space in metres (Y up; Source (x, y, z) is glTF (y, z, x)).
+  MDL's compiled bind space in metres, unpermuted — so the axes depend on how the model was compiled, and
+  the GLB does not record them:
+  - TF2 players, arms, c_model weapons and buildings: Y up, Source (x, y, z) is glTF (y, z, x).
+  - Most static props, pickups, the flag, HL2/Portal props and HL2 humans: Source axes (Z up).
+  - Some rigid single-bone models: another axis rotation (`w_rocket`: Source X along glTF Y).
+
+  Clips are re-expressed with the MDL's `ref` sequence root fix, or with the (y, z, x) mapping when the
+  MDL has no `ref` — even when its bind pose is Z up (HL2 humans, most props), so a posed model can sit in a
+  different frame from its bind pose. Child bones keep Source's bone-local frames; only the root differs.
+  The renderer resolves both in one place, `lib/tf2-game/render/model-axes.ts`: `modelFrame()` matches the
+  bind bounds against `extras.source.hullMin/hullMax` over the 24 axis rotations, `animatedFrame()`
+  compares the root bone's rotation at the start of an idle clip with its bind rotation, and every model
+  (static props included) is placed with `sourceTransformToMatrix(origin, angles) · frame`. (Writing the
+  root fix into `scene.extras` would let the converter state this instead.)
+
 - **Animation.** A model with `$includemodel`s (players, arms) gets a separate _anim pack_ GLB (skeleton +
   clips, no mesh); any other model carries its sequences in its own GLB. Players export every `ACT_MP_*`
   sequence except voice-command gestures, PASS Time and the CYOA PDA, plus the death sequences; arms every
@@ -313,3 +439,37 @@ envmap?, envmapTint?, envmapMask?, detail?, surfaceprop?, alphaUse?, eye?, missi
 `materials/….vtf` paths).
 
 Tests: `TF2_ROOT=<install> python -B -m unittest discover -s scripts/tf2-game -p test_models_game.py`.
+
+## Entity rendering
+
+`lib/tf2-game/render/entities/` draws everything that is not the map, from plain per-entity state —
+`{ id, type: <net schema type>, fields: <the schema's field names>, origin?, angles? }` — so the client's
+snapshot mirror and a single-player world feed it the same way, plus the simulation's events
+(`index.ts` documents the per-frame calls: `beginFrame`, `sync`, `handleEvent`, `updateViewModel`,
+`endFrame`, then the world, then `renderViewModel`).
+
+- **Models** (`model-asset.ts`, `model-instance.ts`, `model-material.ts`): a `ModelLibrary` per game loads
+  GLBs and anim packs by MDL path (it is also the world's static-prop `ModelProvider`); an instance clones
+  the scene with its own skeleton, skin family, body groups and attachments, bone-merges weapons
+  (`lib/tf2-loadout/bone-merge.ts`), and shades with VertexLitGeneric terms in linear space: the leaf
+  ambient cube, the sun and up to two local world lights vrad left out of the cubes, half-Lambert through a
+  lightwarp stand-in, phong and rim light per material extras, alpha test / translucency / additive,
+  per-instance tint, screen-door fade and a noise dissolve (cloak). Untextured materials (a dedicated
+  server install) draw their team colour.
+- **Animation** (`animator.ts`): bone_setup.cpp's AccumulatePose over the clips — blend grids with pose
+  keys, autolayers (aim matrices), weightlists, delta layers, gesture slots, a main-sequence cross-fade,
+  autoplay sequences and events (footsteps).
+- **Players** (`player-anim-state.ts`, `player-renderer.ts`): CMultiPlayerAnimState + CTFPlayerAnimState
+  over the networked record (activity selection, the weapon acttables, 9-way move blend, feet-yaw lag,
+  `animEvent` gestures), team / über skins, cloak, disguises, crit glow, burning, death sequences, gibs and
+  corpses.
+- **View model** (`viewmodel.ts`): arms + c_model, the weapon's `vmActivity` → item `vmActivities` → arms
+  sequence, TF weapon bob (no lag: `cl_wpn_sway_interp` 0), `viewmodel_fov` 54 in its own pass.
+- **Objects** (`objects.ts`): projectiles and trails, buildings (blueprints, construction, sentry aim pose
+  parameters and muzzle flashes, damage smoke, teleporter effects), pickups, the flag, `prop` / `entity`
+  models with their sequence, `info_particle_system`.
+- **Effects** (`effects.ts`): the game particle bundles (pooled, ≤ 64 live systems, LOD at 3000 units, soft
+  particles and refraction off), instanced tracers and ring-buffer decals, gibs.
+
+The render harness shoots entity scenes too: `shoot.ts --scenes scripts/tf2-game/render-harness/entity-scenes.json`
+(regenerate it with `entity-scenes.py`).

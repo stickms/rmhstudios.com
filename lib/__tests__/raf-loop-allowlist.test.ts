@@ -365,6 +365,14 @@ const ALLOW = new Set<string>([
   'lib/rmhmusic/spotify-player.ts',
   'lib/rmhvibe/vibe.server.ts',
   'lib/vega/VegaGame.ts',
+  // The browser TF2 / Half-Life 2 / Portal clients' ONE frame loop (`GameLoop`). Every
+  // part of a running game — input, simulation/command ticks, rendering, audio, the
+  // HUD — rides this callback; nothing else in lib/tf2-game or components/tf2-game
+  // calls rAF. Bounded by mount: the client's `dispose()` (the play page's unmount)
+  // calls `stop()`, which cancels the pending frame and unsubscribes from visibility.
+  // It also schedules NOTHING while the tab is hidden (resuming with a zero-length
+  // frame), and the jelly material is off for the whole run (`markGamePlaying`).
+  'lib/tf2-game/client/loop.ts',
 ]);
 
 function collect(dir: string, out: string[] = []): string[] {

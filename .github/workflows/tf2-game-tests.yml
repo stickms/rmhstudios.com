@@ -1,0 +1,72 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# The browser game suite (TF2, Half-Life 2 demo, Portal: First Slice).
+#
+# `pnpm test:tf2` (vitest.tf2.config.ts) covers lib/tf2-game, lib/sp-game,
+# scripts/tf2-game and the hub's TF2 handler. It is its own suite because the
+# main suite is scoped to mission-critical code (docs/testing.md) and these
+# tests are about how the games play. Tests that need real game files read a
+# Steam install from TF2_ROOT / HL2_ROOT / PORTAL_ROOT and skip here, where no
+# install exists; the asset sync job (tf2-assets-sync.yml) runs the pipeline
+# against real installs. Path-filtered so unrelated PRs don't pay for it.
+# ─────────────────────────────────────────────────────────────────────────────
+name: tf2-game-tests
+
+on:
+  pull_request:
+    paths:
+      - 'lib/tf2-game/**'
+      - 'lib/sp-game/**'
+      - 'lib/tf2-loadout/**'
+      - 'scripts/tf2-game/**'
+      - 'scripts/tf2-assets/**'
+      - 'server/socket-server/tf2/**'
+      - 'server/socket-server/handlers/tf2-game.ts'
+      - 'vitest.tf2.config.ts'
+      - '.github/workflows/tf2-game-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'lib/tf2-game/**'
+      - 'lib/sp-game/**'
+      - 'scripts/tf2-game/**'
+      - 'server/socket-server/tf2/**'
+      - 'vitest.tf2.config.ts'
+  workflow_dispatch: {}
+
+concurrency:
+  group: tf2-game-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      # Node 24.21.0 to match the production Dockerfile (as in web-ci.yml).
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.21.0
+          cache: pnpm
+
+      # postinstall runs `prisma generate` (schema-only, no DB needed).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Game suite
+        run: pnpm test:tf2
+
+      # The converters' Python tests (synthetic fixtures; install-backed cases skip).
+      - name: Pipeline unit tests
+        run: |
+          pip install vpk numpy pillow srctools==2.6.2
+          sudo apt-get install -y ffmpeg > /dev/null
+          cd scripts/tf2-game && python3 -B -m unittest discover -p 'test_*.py'

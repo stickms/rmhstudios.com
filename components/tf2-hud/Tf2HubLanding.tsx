@@ -8,7 +8,7 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, Globe, LayoutDashboard, Shirt } from 'lucide-react';
+import { ArrowRight, Crosshair, Globe, LayoutDashboard, Shirt } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import Tf2Logo from './Tf2Logo';
@@ -17,6 +17,16 @@ export default function Tf2HubLanding() {
   const { t } = useTranslation('c-tf2-hud');
 
   const tools = [
+    {
+      to: '/tf2/play',
+      icon: Crosshair,
+      title: t('hub-play-title', { defaultValue: 'Play' }),
+      body: t('hub-play-body', {
+        defaultValue:
+          'Team Fortress 2 in your browser: join a server, host a room with bots for your friends, or practise offline against bots. All nine classes, the stock weapons and the classic maps.',
+      }),
+      cta: t('hub-play-cta', { defaultValue: 'Find a game' }),
+    },
     {
       to: '/tf2/hud-editor',
       icon: LayoutDashboard,
@@ -68,7 +78,7 @@ export default function Tf2HubLanding() {
             <li key={tool.to} className="contents">
               <Link
                 to={tool.to}
-                className="group flex flex-col gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-6 transition-[background-color,border-color] duration-(--app-duration-fast) hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
+                className={`group flex flex-col gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-6 transition-[background-color,border-color] duration-(--app-duration-fast) hover:border-(--app-accent) hover:bg-(--app-surface-hover)${tool.to === '/tf2/play' ? ' sm:col-span-2' : ''}`}
               >
                 <tool.icon className="size-8 text-(--app-accent-text)" aria-hidden />
                 <h2 className="tf2hud-title text-3xl">{tool.title}</h2>

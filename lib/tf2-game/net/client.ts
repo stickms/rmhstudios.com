@@ -34,6 +34,7 @@ import {
   type ClassChoice,
   type CreateRoomPayload,
   type ErrorPayload,
+  type ExtraCommandPayload,
   type JoinedPayload,
   type KickedPayload,
   type PongPayload,
@@ -212,6 +213,9 @@ export const tf2 = {
   team: (team: TeamChoice) => emit(TF2_C2S.TEAM, { team }, true),
   playerClass: (cls: ClassChoice) => emit(TF2_C2S.CLASS, { cls }, true),
   voice: (menu: 0 | 1 | 2, item: number) => emit(TF2_C2S.VOICE, { menu, item }),
+  /** A generic game command (`build`, `destroy`, `disguise`, `taunt` …) — MatchCommand { kind: 'extra' }. */
+  extra: (command: string, args: ReadonlyArray<number | string | boolean> = []) =>
+    emit(TF2_C2S.EXTRA, { command, args } satisfies ExtraCommandPayload),
   /** The latest server-tick estimate, or null before the first pong. */
   clock: (): ClockEstimate | null => clock.estimate(),
   currentRoom: (): string | null => currentCode,

@@ -28,6 +28,7 @@ import { Route as DunesdayRouteImport } from './routes/dunesday'
 import { Route as EversionLabRouteImport } from './routes/eversion-lab'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
+import { Route as HalfLife2RouteImport } from './routes/half-life-2'
 import { Route as HandleRouteImport } from './routes/handle'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
 import { Route as IsleworksRouteImport } from './routes/isleworks'
@@ -44,6 +45,7 @@ import { Route as NightrailRouteImport } from './routes/nightrail'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OptimizationRouteImport } from './routes/optimization'
 import { Route as Pf2ecalRouteImport } from './routes/pf2ecal'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as RmhFarmingSimRouteImport } from './routes/rmh-farming-sim'
@@ -226,6 +228,7 @@ import { Route as StrategiesSahurRouteImport } from './routes/strategies/sahur'
 import { Route as StudioIndexRouteImport } from './routes/studio/index'
 import { Route as TempleOfJoyIndexRouteImport } from './routes/temple-of-joy/index'
 import { Route as Tf2IndexRouteImport } from './routes/tf2/index'
+import { Route as Tf2PlayRouteImport } from './routes/tf2/play'
 import { Route as Tf2WorkshopRouteImport } from './routes/tf2/workshop'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as VNewRouteImport } from './routes/v.new'
@@ -1417,6 +1420,11 @@ const GabrielsHornRoute = GabrielsHornRouteImport.update({
   path: '/gabriels-horn',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HalfLife2Route = HalfLife2RouteImport.update({
+  id: '/half-life-2',
+  path: '/half-life-2',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HandleRoute = HandleRouteImport.update({
   id: '/handle',
   path: '/handle',
@@ -1495,6 +1503,11 @@ const OptimizationRoute = OptimizationRouteImport.update({
 const Pf2ecalRoute = Pf2ecalRouteImport.update({
   id: '/pf2ecal',
   path: '/pf2ecal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -2407,6 +2420,11 @@ const TempleOfJoyIndexRoute = TempleOfJoyIndexRouteImport.update({
 const Tf2IndexRoute = Tf2IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => Tf2Route,
+} as any)
+const Tf2PlayRoute = Tf2PlayRouteImport.update({
+  id: '/play',
+  path: '/play',
   getParentRoute: () => Tf2Route,
 } as any)
 const Tf2WorkshopRoute = Tf2WorkshopRouteImport.update({
@@ -8149,6 +8167,7 @@ export interface FileRoutesByFullPath {
   '/eversion-lab': typeof EversionLabRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
+  '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
@@ -8165,6 +8184,7 @@ export interface FileRoutesByFullPath {
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
   '/pf2ecal': typeof Pf2ecalRoute
+  '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
@@ -8324,6 +8344,7 @@ export interface FileRoutesByFullPath {
   '/sohumtracker/$date': typeof SohumtrackerDateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
+  '/tf2/play': typeof Tf2PlayRoute
   '/tf2/workshop': typeof Tf2WorkshopRoute
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
@@ -9459,6 +9480,7 @@ export interface FileRoutesByTo {
   '/dunesday': typeof DunesdayRoute
   '/eversion-lab': typeof EversionLabRoute
   '/gabriels-horn': typeof GabrielsHornRoute
+  '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
@@ -9474,6 +9496,7 @@ export interface FileRoutesByTo {
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
   '/pf2ecal': typeof Pf2ecalRoute
+  '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmhcalculator': typeof RmhcalculatorRoute
@@ -9610,6 +9633,7 @@ export interface FileRoutesByTo {
   '/sohumtracker/$date': typeof SohumtrackerDateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
+  '/tf2/play': typeof Tf2PlayRoute
   '/tf2/workshop': typeof Tf2WorkshopRoute
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
@@ -10751,6 +10775,7 @@ export interface FileRoutesById {
   '/eversion-lab': typeof EversionLabRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
+  '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
@@ -10767,6 +10792,7 @@ export interface FileRoutesById {
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
   '/pf2ecal': typeof Pf2ecalRoute
+  '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
@@ -10926,6 +10952,7 @@ export interface FileRoutesById {
   '/sohumtracker/$date': typeof SohumtrackerDateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
+  '/tf2/play': typeof Tf2PlayRoute
   '/tf2/workshop': typeof Tf2WorkshopRoute
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
@@ -12068,6 +12095,7 @@ export interface FileRouteTypes {
     | '/eversion-lab'
     | '/forest-explorer'
     | '/gabriels-horn'
+    | '/half-life-2'
     | '/handle'
     | '/house-always-wins'
     | '/isleworks'
@@ -12084,6 +12112,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/optimization'
     | '/pf2ecal'
+    | '/portal'
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
@@ -12243,6 +12272,7 @@ export interface FileRouteTypes {
     | '/sohumtracker/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
+    | '/tf2/play'
     | '/tf2/workshop'
     | '/v/$slug'
     | '/v/new'
@@ -13378,6 +13408,7 @@ export interface FileRouteTypes {
     | '/dunesday'
     | '/eversion-lab'
     | '/gabriels-horn'
+    | '/half-life-2'
     | '/handle'
     | '/house-always-wins'
     | '/isleworks'
@@ -13393,6 +13424,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/optimization'
     | '/pf2ecal'
+    | '/portal'
     | '/privacy'
     | '/rmh-internal-affairs'
     | '/rmhcalculator'
@@ -13529,6 +13561,7 @@ export interface FileRouteTypes {
     | '/sohumtracker/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
+    | '/tf2/play'
     | '/tf2/workshop'
     | '/v/$slug'
     | '/v/new'
@@ -14669,6 +14702,7 @@ export interface FileRouteTypes {
     | '/eversion-lab'
     | '/forest-explorer'
     | '/gabriels-horn'
+    | '/half-life-2'
     | '/handle'
     | '/house-always-wins'
     | '/isleworks'
@@ -14685,6 +14719,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/optimization'
     | '/pf2ecal'
+    | '/portal'
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
@@ -14844,6 +14879,7 @@ export interface FileRouteTypes {
     | '/sohumtracker/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
+    | '/tf2/play'
     | '/tf2/workshop'
     | '/v/$slug'
     | '/v/new'
@@ -15985,6 +16021,7 @@ export interface RootRouteChildren {
   EversionLabRoute: typeof EversionLabRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   GabrielsHornRoute: typeof GabrielsHornRoute
+  HalfLife2Route: typeof HalfLife2Route
   HandleRoute: typeof HandleRoute
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
   IsleworksRoute: typeof IsleworksRoute
@@ -16001,6 +16038,7 @@ export interface RootRouteChildren {
   OfflineRoute: typeof OfflineRoute
   OptimizationRoute: typeof OptimizationRoute
   Pf2ecalRoute: typeof Pf2ecalRoute
+  PortalRoute: typeof PortalRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
   RmhFarmingSimRoute: typeof RmhFarmingSimRouteWithChildren
@@ -16910,6 +16948,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GabrielsHornRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/half-life-2': {
+      id: '/half-life-2'
+      path: '/half-life-2'
+      fullPath: '/half-life-2'
+      preLoaderRoute: typeof HalfLife2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/handle': {
       id: '/handle'
       path: '/handle'
@@ -17020,6 +17065,13 @@ declare module '@tanstack/react-router' {
       path: '/pf2ecal'
       fullPath: '/pf2ecal'
       preLoaderRoute: typeof Pf2ecalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -18294,6 +18346,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/tf2/'
       preLoaderRoute: typeof Tf2IndexRouteImport
+      parentRoute: typeof Tf2Route
+    }
+    '/tf2/play': {
+      id: '/tf2/play'
+      path: '/play'
+      fullPath: '/tf2/play'
+      preLoaderRoute: typeof Tf2PlayRouteImport
       parentRoute: typeof Tf2Route
     }
     '/tf2/workshop': {
@@ -26800,6 +26859,7 @@ const TempleOfJoyRouteWithChildren = TempleOfJoyRoute._addFileChildren(
 )
 
 interface Tf2RouteChildren {
+  Tf2PlayRoute: typeof Tf2PlayRoute
   Tf2WorkshopRoute: typeof Tf2WorkshopRoute
   Tf2IndexRoute: typeof Tf2IndexRoute
   Tf2HudEditorEditorRoute: typeof Tf2HudEditorEditorRoute
@@ -26813,6 +26873,7 @@ interface Tf2RouteChildren {
 }
 
 const Tf2RouteChildren: Tf2RouteChildren = {
+  Tf2PlayRoute: Tf2PlayRoute,
   Tf2WorkshopRoute: Tf2WorkshopRoute,
   Tf2IndexRoute: Tf2IndexRoute,
   Tf2HudEditorEditorRoute: Tf2HudEditorEditorRoute,
@@ -28233,6 +28294,7 @@ const rootRouteChildren: RootRouteChildren = {
   EversionLabRoute: EversionLabRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   GabrielsHornRoute: GabrielsHornRoute,
+  HalfLife2Route: HalfLife2Route,
   HandleRoute: HandleRoute,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
   IsleworksRoute: IsleworksRoute,
@@ -28249,6 +28311,7 @@ const rootRouteChildren: RootRouteChildren = {
   OfflineRoute: OfflineRoute,
   OptimizationRoute: OptimizationRoute,
   Pf2ecalRoute: Pf2ecalRoute,
+  PortalRoute: PortalRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
   RmhFarmingSimRoute: RmhFarmingSimRouteWithChildren,

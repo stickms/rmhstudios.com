@@ -17,6 +17,14 @@ export interface GameAssetFile {
   contentEncoding?: string;
 }
 
+/**
+ * The asset routes' rate-limit bucket (per IP, before RATE_LIMIT_MULTIPLIER): a map's first
+ * load is several hundred immutable files — HL2's d1_trainstation_01 is ~240 textures, ~200
+ * model GLBs and its sounds — so the shared 'read' policy (120/min) throttled a single player
+ * mid-load. Shared by the three games' routes, which a level change can hit together.
+ */
+export const GAME_ASSET_RATE_LIMIT = { limit: 2400, windowMs: 60_000, prefix: 'game-assets' } as const;
+
 const ACCEPTS_BR = /(?:^|,)\s*br(?:\s*;\s*q=(?!0(?:\.0*)?(?:\s|,|$))[\d.]+)?\s*(?:,|$)/i;
 
 export async function readGameAsset(
