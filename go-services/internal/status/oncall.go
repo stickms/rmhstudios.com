@@ -28,6 +28,13 @@ const HeartbeatInterval = time.Minute
 // for one outage.
 var watchdogCovered = map[string]bool{"Website": true, "App readiness": true}
 
+// timeoutIsNoise are targets whose plain timeout is not worth a page: Sitemap
+// is probed through the same public front door as Website and App readiness
+// (DNS → Cloudflare → Apache → web container), so a hang there is already
+// reported by the watchdog, and a crawler-facing index is not worth a call.
+// Content feed is deliberately absent: it proves the DB-backed render path.
+var timeoutIsNoise = map[string]bool{"Sitemap": true}
+
 var nonSlug = regexp.MustCompile(`[^a-z0-9]+`)
 
 func slug(s string) string {
@@ -51,6 +58,11 @@ func alertFor(n Notification, pageURL string) (a oncall.Alert, ok bool) {
 	// App readiness, which the watchdog probes from outside, already report. The
 	// per-route targets add only noise then; they stay on the status page.
 	if inc.Category == CatStall {
+		return a, false
+	}
+	// The prober alternates between a stall and "connected, no answer" as the
+	// front door degrades, so suppressing only stalls still paged on every flip.
+	if inc.Category == CatTimeout && timeoutIsNoise[inc.Components[0]] {
 		return a, false
 	}
 	state := "firing"

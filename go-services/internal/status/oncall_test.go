@@ -37,6 +37,8 @@ func TestAlertForSkipsWhatIsNotForOncall(t *testing.T) {
 	cases := map[string]Notification{
 		"manual incident": {Event: "incident.created", Incident: &Incident{Kind: "manual", Components: []string{"RMHbox"}}},
 		"watchdog covers": {Event: "incident.created", Incident: &Incident{Kind: "auto", Components: []string{"Website"}}},
+		"edge stall":      {Event: "incident.created", Incident: &Incident{Kind: "auto", Category: CatStall, Components: []string{"Sitemap"}}},
+		"edge timeout":    {Event: "incident.created", Incident: &Incident{Kind: "auto", Category: CatTimeout, Components: []string{"Sitemap"}}},
 		"maintenance":     {Event: "maintenance.scheduled", Maintenance: &Maintenance{}},
 		"announcement":    {Event: "announcement.created", Announcement: &Announcement{}},
 	}
