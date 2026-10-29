@@ -116,6 +116,8 @@ clear body, refraction only at the edge, restrained dispersion.
 | `--gel-edge-r/-g/-b` alpha | ×1 | ×0.4 | same |
 | `--site-jelly-haze-*` alpha, `--site-jelly-plasma`, `--site-jelly-quiet` | ×1 | ×0.25, ×0.5, ×0.5 | the body reads clear, not smoky; the currents that remain run along the rim |
 | `--liquid-enter` = `ENTER_MS` | 300ms | 450ms | the hand-over from CSS to shader is a longer, softer cross-fade |
+| `--gel-fresnel` (light themes) | 0.55 / 0.6 | 0.3 | the CSS-only rim (what a low-tier or not-yet-admitted surface shows) read as a heavy white ring on a light ground |
+| `--site-glass-overlay-tint` | bg 86% | bg 94% | dialog bodies let the page behind show through at ~14%, which hurt legibility |
 
 Because the CSS tier reads the same tokens, the first paint now looks like the loaded state and the hand-over is
 not a visible change. The engine still starts after the window `load` event (a node inserted into a subtree React has

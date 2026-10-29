@@ -286,7 +286,7 @@
   --site-glass-tint-strong: rgba(255, 255, 255, 0.5);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(255, 255, 255, 0.9);
   --site-glass-blur-pane: 18px;
@@ -364,7 +364,7 @@
   --gel-depth: rgba(16, 20, 36, 0.035);
   --gel-ink: var(--site-accent);
   --on-ink: var(--site-accent-fg);
-  --gel-fresnel: rgba(255, 255, 255, 0.55);
+  --gel-fresnel: rgba(255, 255, 255, 0.3);
   --gel-specular: rgba(255, 255, 255, 0.95);
   --gel-edge-r: rgba(255, 84, 104, 0.064);
   --gel-edge-g: rgba(64, 200, 140, 0.032);
@@ -981,7 +981,7 @@
   --site-glass-tint-strong: rgba(255, 255, 255, 0.52);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-rim: rgba(0, 0, 0, 0.12);
   --site-glass-rim-soft: rgba(0, 0, 0, 0.05);
@@ -1028,7 +1028,7 @@
   --gel-depth: rgba(16, 20, 36, 0.035);
   --gel-ink: var(--site-accent);
   --on-ink: var(--site-accent-fg);
-  --gel-fresnel: rgba(255, 255, 255, 0.55);
+  --gel-fresnel: rgba(255, 255, 255, 0.3);
   --gel-specular: rgba(255, 255, 255, 0.95);
   --gel-edge-r: rgba(255, 84, 104, 0.064);
   --gel-edge-g: rgba(64, 200, 140, 0.032);
@@ -1066,7 +1066,7 @@
   --site-glass-tint-strong: rgba(255, 255, 255, 0.48);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(244, 247, 253, 0.55);
   --site-glass-rim: rgba(255, 255, 255, 0.9);
@@ -1115,7 +1115,7 @@
   --gel-depth: rgba(18, 30, 66, 0.04);
   --gel-ink: var(--site-accent);
   --on-ink: var(--site-accent-fg);
-  --gel-fresnel: rgba(255, 255, 255, 0.6);
+  --gel-fresnel: rgba(255, 255, 255, 0.3);
   --gel-specular: rgba(255, 255, 255, 0.95);
   --gel-edge-r: rgba(255, 92, 120, 0.064);
   --gel-edge-g: rgba(64, 200, 150, 0.032);
@@ -1263,7 +1263,7 @@
   --site-glass-tint-strong: rgba(255, 250, 238, 0.48);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(240, 232, 214, 0.6);
   --site-glass-rim: rgba(255, 248, 230, 0.85);
@@ -1348,7 +1348,7 @@
   --site-glass-tint-strong: rgba(150, 185, 255, 0.15);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   /* Nocturne declared the whole glass contract EXCEPT this one, so it fell
      through to the light theme's `rgba(255, 255, 255, 0.9)` at :root — and
@@ -1442,7 +1442,7 @@
   --site-glass-tint-strong: rgba(177, 232, 255, 0.12);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(2, 6, 14, 0.58);
   --site-glass-rim: rgba(191, 244, 255, 0.42);
