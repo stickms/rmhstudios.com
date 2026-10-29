@@ -67,8 +67,28 @@ async function main(action) {
     console.log(`Release ${id} accepted. Host completion is reported separately.`);
     return;
   }
+  if (action === 'status') {
+    // One-shot, read-only: what does the host's journal say about each release id? (release-status.yml)
+    for (const rid of String(process.env.RELEASE_IDS || '')
+      .split(/[\s,]+/)
+      .filter(Boolean)) {
+      const result = await webhookRequest({ action: 'status', release_id: rid });
+      let state = null;
+      try {
+        state = JSON.parse(result.text);
+      } catch {
+        // A listener that predates the status action answers in plain text.
+      }
+      console.log(
+        `\n${rid}: HTTP ${result.status}, phase ${state ? state.phase : result.text.slice(0, 120)}`,
+      );
+      for (const event of (state && state.events) || [])
+        console.log(`  ${new Date(event.at).toISOString()}  ${event.phase}`);
+    }
+    return;
+  }
   if (action !== 'wait' && action !== 'rollback')
-    throw new Error('Expected trigger, wait or rollback');
+    throw new Error('Expected trigger, wait, rollback or status');
   const state = await awaitRelease(id);
   if (action === 'wait') {
     if (state.phase !== 'success' && state.phase !== 'superseded')

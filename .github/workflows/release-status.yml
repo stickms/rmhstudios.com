@@ -1,0 +1,30 @@
+name: release-status
+
+# Read-only: asks the VPS webhook listener what its release journal says about
+# one or more releases (`release-<deploy run id>-<attempt>`). For finding out
+# where a deploy that reported green on GitHub actually stopped on the host.
+# Sends no deploy, rollback or restart request.
+on:
+  workflow_dispatch:
+    inputs:
+      release_ids:
+        description: 'Space- or comma-separated release ids, e.g. release-40905300457-1'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+      - name: Ask the host
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          RELEASE_IDS: ${{ inputs.release_ids }}
+        run: node .github/scripts/release-webhook.mjs status
