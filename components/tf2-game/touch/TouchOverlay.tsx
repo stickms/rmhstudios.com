@@ -170,6 +170,7 @@ export default function TouchOverlay({
   store,
   local,
   settings,
+  menuOpen = false,
   onToggleScores,
 }: {
   game: HudGame;
@@ -177,6 +178,8 @@ export default function TouchOverlay({
   store: HudStore;
   local: HudLocalPlayer | null;
   settings: GameSettings;
+  /** A menu, PDA panel or the scoreboard is up: taps belong to it, not to the stick or the look zone. */
+  menuOpen?: boolean;
   onToggleScores: () => void;
 }) {
   const { t } = useTranslation('c-tf2-game');
@@ -218,6 +221,13 @@ export default function TouchOverlay({
     input.analog.touch.y = 0;
     setStick(null);
   }, [input]);
+
+  // A menu opening mid-drag drops the stick and the look drag, so nothing stays held under it.
+  useEffect(() => {
+    if (!menuOpen) return;
+    endStick();
+    lookPointer.current = null;
+  }, [menuOpen, endStick]);
 
   const sendPda = (slot: number) => () => pushImpulse(input, `slot${slot}` as ImpulseAction);
 
@@ -271,6 +281,7 @@ export default function TouchOverlay({
       className="tf2g-touch tf2g-interactive"
       style={{ '--touch-scale': scale } as CSSProperties}
       data-jelly-zone="playfield"
+      data-menu-open={menuOpen}
       aria-label={t('touch_aria', { defaultValue: 'Touch controls' })}
       role="group"
     >

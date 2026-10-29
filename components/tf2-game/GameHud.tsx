@@ -243,6 +243,18 @@ function HudBody({
       {game === 'hl2' && state.hl2 ? <Hl2Hud hl2={state.hl2} alive={(state.hl2.health ?? 0) > 0} /> : null}
       {game === 'portal' && state.portal ? <PortalHud portal={state.portal} fade={state.fade} /> : null}
       {game !== 'tf2' ? <Captions captions={state.captions} /> : null}
+      {/* Before every menu, so menus paint above it; its move/look zones stand down while one is open. */}
+      {touch && input && shown.kind !== 'pause' ? (
+        <TouchOverlay
+          game={game}
+          input={input}
+          store={store}
+          local={local}
+          settings={settings}
+          menuOpen={shown.kind !== 'none' || pda !== null || touchScores}
+          onToggleScores={() => setTouchScores((v) => !v)}
+        />
+      ) : null}
       {tf2 ? (
         <Chat
           lines={state.chat}
@@ -279,9 +291,6 @@ function HudBody({
           }}
           onClose={close}
         />
-      ) : null}
-      {touch && input && shown.kind !== 'pause' ? (
-        <TouchOverlay game={game} input={input} store={store} local={local} settings={settings} onToggleScores={() => setTouchScores((v) => !v)} />
       ) : null}
       {settings.showFps ? (
         <span className="tf2g-fps">{t('fps', { defaultValue: '{{n}} fps', n: Math.round(state.fps) })}</span>
