@@ -2,7 +2,14 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { getPublicBuildDetail } from '@/lib/user-builds-detail.server';
 import { renderPageCard } from '@/lib/og/page-card.server';
-import { truncate } from '@/lib/og/shared.server';
+
+/** Cut at a word, not mid-word: "chain corners, c..." reads as a bug on a card. */
+function clip(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max - 1);
+  const at = cut.lastIndexOf(' ');
+  return `${(at > max * 0.6 ? cut.slice(0, at) : cut).replace(/[\s,;:.\-–—]+$/, '')}…`;
+}
 
 /**
  * GET /api/og/build/$slug — the Open Graph card for a User Build.
@@ -28,8 +35,9 @@ export const Route = createFileRoute('/api/og/build/$slug')({
           eyebrow: 'User build',
           lead: build.category?.name ?? null,
           title: build.title,
-          // Short enough that the author line keeps its room beneath the thumbnail's column.
-          subtitle: truncate(build.description, 96),
+          // The thumbnail takes ~40% of the pane, so the text column is narrow: three lines of subtitle is what
+          // leaves the author line its room above the pane's edge. Without a picture the column is the full width.
+          subtitle: clip(build.description, build.thumbnailUrl ? 64 : 100),
           art: build.thumbnailUrl,
           byline: build.user?.name
             ? { name: build.user.name, handle: build.user.handle ?? null, image: build.user.image ?? null }
