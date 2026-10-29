@@ -118,9 +118,8 @@ clear body, refraction only at the edge, restrained dispersion.
 | `--liquid-enter` = `ENTER_MS` | 300ms | 450ms | the hand-over from CSS to shader is a longer, softer cross-fade |
 
 Because the CSS tier reads the same tokens, the first paint now looks like the loaded state and the hand-over is
-not a visible change. The engine also starts when the document has parsed and the main thread is idle
-(`hooks/useLiquidInteractions.ts`, idle timeout 400 ms), not after the window `load` event, which waited for every
-image on the page. Other changes in the same pass: the selected tab on the main site is a flat neutral capsule with a
+not a visible change. The engine still starts after the window `load` event (a node inserted into a subtree React has
+not hydrated is a #418), but its idle timeout is 400 ms, not 2.5 s (`hooks/useLiquidInteractions.ts`). Other changes in the same pass: the selected tab on the main site is a flat neutral capsule with a
 hairline inset ring (`app/jelly-coverage.css` §6b), and the globe cursor defaults to a small translucent graphite
 sphere (`lib/globe-cursor/settings.ts`). Electric arcs still default to `full`; moving that default is a product
 decision (it is stored per account), not a styling one.
@@ -383,6 +382,18 @@ table):
 | `lite` (`perf-lite`)                   | 0    | 0          | 0        | 0            | 3 (press) | 0        | off          | 0           |
 | `off` (degraded)                       | 0    | 0          | 0        | 0            | 3 (press) | 0        | off          | 0           |
 | game playing (`html[data-game-state]`) | 2    | 0          | 0        | 0            | 0         | 0        | off          | 0           |
+
+**Software rendering is the `lite` tier (2026-10-29).** A browser with hardware acceleration off, a blocklisted
+GPU or a VM rasterises and composites on the CPU, where animated haze carriers and shader rims cost tens of
+milliseconds a frame. Measured on `/games` (a shared 4-core box, software raster): Firefox 2 → 49 fps, Chromium
+8 → 57 (acceleration off) and 11 → 44 (no WebGL), WebKit 1.4 → 14, with the same page, from putting the page on
+`lite` (`perf-lite`). `reconcileSoftRender()` (`lib/perf-tier.ts`) therefore runs once at idle **before any jelly
+service starts**: a software WebGL renderer string (SwiftShader, llvmpipe, Basic Render, "software") or no WebGL at
+all, read through the same throwaway-context probe the games use (`lib/render/probe.ts`), stamps `html.perf-lite`,
+skips loading the carrier, arc and shader chunks, and caches the finding in `localStorage` (`rmh-soft-render`, 12 h)
+so the next page load gets the class from the pre-paint script on its first frame. A real GPU on a later visit clears
+it. WebKit reports "Apple GPU" whatever it draws with, so it cannot be detected this way (and Safari cannot turn
+acceleration off); nothing frame-rate-driven was added, on purpose (`lib/perf-tier.ts` §Why capability reads).
 
 Animated area (haze + carriers) is also capped at 1.5 / 1.25 / 1 viewports. Ambient
 bounds (`AMBIENT_BOUNDS`): drift ≤ 12 px/s, feature size ≥ 120 px, luminance period ≥ 6 s,

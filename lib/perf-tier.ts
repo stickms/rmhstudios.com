@@ -55,6 +55,8 @@
  * a perf fix, so it is deliberately left alone here.)
  */
 
+import { probeGpu } from '@/lib/render/probe';
+
 /** The `navigator.connection` shape this module reads, none of it standard. */
 interface NetworkInformationLike {
   saveData?: boolean;
@@ -71,6 +73,24 @@ export const LOW_MEMORY_GB = 4;
 export const LOW_CORE_COUNT = 2;
 /** Connection types treated as an implicit Data Saver request. */
 export const SLOW_EFFECTIVE_TYPES = ['2g', 'slow-2g'] as const;
+/**
+ * `localStorage` key holding the time (ms since epoch) a software renderer was last found. A positive result is trusted
+ * for {@link SOFT_RENDER_TTL_MS}, so the next page load gets `perf-lite` on its first frame from the pre-paint script
+ * instead of discovering it again after hydration.
+ */
+export const SOFT_RENDER_KEY = 'rmh-soft-render';
+/** How long a software-renderer finding is trusted before the probe runs again (a user can turn acceleration back on). */
+export const SOFT_RENDER_TTL_MS = 12 * 60 * 60 * 1000;
+
+/** Epoch ms of the cached software-renderer finding, or 0 when absent, stale or unreadable. */
+function softRenderStamp(): number {
+  try {
+    const at = Number(localStorage.getItem(SOFT_RENDER_KEY));
+    return at > 0 && Date.now() - at < SOFT_RENDER_TTL_MS ? at : 0;
+  } catch {
+    return 0;
+  }
+}
 
 /** True when this device should run the reduced-effect tier. */
 export function isLowEndDevice(): boolean {
@@ -92,6 +112,12 @@ export function isLowEndDevice(): boolean {
   ) {
     return true;
   }
+
+  // A browser found to be drawing in software (hardware acceleration off, a blocklisted GPU, a VM): compositing
+  // translucent layers and animating haze on the CPU is what takes such a page from 60 fps to single digits, and this
+  // tier is the one that makes it cheap. Measured on a software renderer: Firefox 2 → 49 fps, Chromium 11 → 46,
+  // WebKit 1.4 → 14 on /games. See `reconcileSoftRender`.
+  if (softRenderStamp() > 0) return true;
 
   const memory = nav.deviceMemory;
   if (typeof memory === 'number' && memory > 0 && memory < LOW_MEMORY_GB) return true;
@@ -164,6 +190,38 @@ export function applyPerfTier(): void {
 }
 
 /**
+ * Is the browser rasterising in software — hardware acceleration off, a blocklisted driver, a VM? A software WebGL
+ * (SwiftShader, llvmpipe, Microsoft Basic Render) or no WebGL at all is the signature, and it is read from a throwaway
+ * context (`lib/render/probe.ts`, the same probe the games use). Browsers that mask the renderer string report a real
+ * one or none; neither is mistaken for software.
+ */
+export function detectSoftRender(): boolean {
+  if (typeof document === 'undefined') return false;
+  return probeGpu().gpuTier === 0;
+}
+
+/**
+ * Settle whether this session draws in software, remember it, and stamp `html.perf-lite` to match. Call once, at idle,
+ * BEFORE the material's services start: a fresh positive finding skips the probe (and the context it creates); anything
+ * else probes once. A negative result clears the cached flag so turning acceleration back on takes effect, and the class
+ * then follows the device-capability signals alone. Returns whether the page is on the low tier afterwards.
+ */
+export function reconcileSoftRender(): boolean {
+  if (typeof document === 'undefined') return false;
+  const cached = softRenderStamp();
+  const soft = cached > 0 || detectSoftRender();
+  try {
+    if (soft) localStorage.setItem(SOFT_RENDER_KEY, String(cached || Date.now()));
+    else localStorage.removeItem(SOFT_RENDER_KEY);
+  } catch {
+    /* storage unavailable: the finding holds for this page only */
+  }
+  const low = soft || isLowEndDevice();
+  document.documentElement.classList.toggle('perf-lite', low);
+  return low;
+}
+
+/**
  * The pre-paint form of {@link isLowEndDevice}, as an inline `<head>` script.
  *
  * ## Why this has to run before paint
@@ -189,4 +247,4 @@ export function applyPerfTier(): void {
  * evaluates this string against the same navigator fixtures it runs
  * `isLowEndDevice()` on and fails when they disagree.
  */
-export const PERF_TIER_SCRIPT = `(function(){try{var n=navigator,c=n.connection||{},m=n.deviceMemory,h=n.hardwareConcurrency,S=${JSON.stringify(SLOW_EFFECTIVE_TYPES)},l=false;if(c.saveData===true)l=true;else if(c.effectiveType!=null&&S.indexOf(c.effectiveType)>=0)l=true;else if(typeof m==="number"&&m>0&&m<${LOW_MEMORY_GB})l=true;else if(typeof h==="number"&&h>0&&h<=${LOW_CORE_COUNT})l=true;if(l)document.documentElement.classList.add("perf-lite")}catch(e){}})()`;
+export const PERF_TIER_SCRIPT = `(function(){try{var sr=function(){try{var a=+localStorage.getItem(${JSON.stringify(SOFT_RENDER_KEY)});return a>0&&Date.now()-a<${SOFT_RENDER_TTL_MS}}catch(e){return false}};var n=navigator,c=n.connection||{},m=n.deviceMemory,h=n.hardwareConcurrency,S=${JSON.stringify(SLOW_EFFECTIVE_TYPES)},l=false;if(c.saveData===true)l=true;else if(c.effectiveType!=null&&S.indexOf(c.effectiveType)>=0)l=true;else if(sr())l=true;else if(typeof m==="number"&&m>0&&m<${LOW_MEMORY_GB})l=true;else if(typeof h==="number"&&h>0&&h<=${LOW_CORE_COUNT})l=true;if(l)document.documentElement.classList.add("perf-lite")}catch(e){}})()`;

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { installLiquidInteractions } from '@/lib/liquid/runtime';
+import { reconcileSoftRender } from '@/lib/perf-tier';
 
 /**
  * Mount the Plasmatic Jelly document services once at the provider boundary, including full-screen app routes. One
@@ -55,6 +56,12 @@ export function useLiquidInteractions(enabled = true): void {
 
     const start = () => {
       if (cancelled) return;
+      // Settle whether this browser draws in software BEFORE any layer is added. If it does, the page is on the low
+      // tier (`perf-lite`: the static CSS material, nothing moving on its own, press still works): the carriers, arcs and shader engine would only
+      // be loaded to switch themselves off, and on a software renderer even their setup is seconds of main thread.
+      if (reconcileSoftRender()) return;
+      // From here on, glass that mounts fades in (app/jelly-material.css §7); the first paint never did.
+      document.documentElement.setAttribute('data-jelly-ready', '');
       // The engine's governor sheds carriers too (step 3); until its chunk loads the step is 0.
       let governorStep = () => 0;
       void Promise.all([
@@ -90,20 +97,21 @@ export function useLiquidInteractions(enabled = true): void {
     };
     const idle = typeof w.requestIdleCallback === 'function';
     let handle: number | null = null;
-    // The material is the first thing a visitor sees change after paint, so it starts as soon as the document is
-    // parsed and the main thread is idle: waiting for `load` held it behind every image on the page (a games grid
-    // is dozens), and a 2.5 s idle timeout let a busy page starve it for just as long.
+    // The window `load` event is the gate on purpose (see the header: a node inserted into a subtree React has not
+    // hydrated is a #418). What was slow was not the gate but what came after it: an idle timeout of 2.5 s let a busy
+    // page hold the material back for that long, so it is 400 ms now, and a software renderer skips the material
+    // altogether (below).
     const schedule = () => {
       if (cancelled) return;
       handle = idle
         ? w.requestIdleCallback!(start, { timeout: 400 })
         : window.setTimeout(start, 200);
     };
-    if (document.readyState !== 'loading') schedule();
-    else document.addEventListener('DOMContentLoaded', schedule, { once: true });
+    if (document.readyState === 'complete') schedule();
+    else window.addEventListener('load', schedule, { once: true });
     return () => {
       cancelled = true;
-      document.removeEventListener('DOMContentLoaded', schedule);
+      window.removeEventListener('load', schedule);
       if (handle !== null) {
         if (idle) w.cancelIdleCallback?.(handle);
         else window.clearTimeout(handle);

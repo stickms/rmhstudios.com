@@ -45,6 +45,17 @@ the globe's jelly where it lands, and the docked globe's self-eversion turns its
 inside out with the cage (`self-evert-skin.ts`). Historical compositor measurements still explain the
 blur budgets; they do not validate the replacement on native hardware.
 
+## The top bar, and the strips behind Safari's bars
+
+Wide screens get the floating capsule. **Below 640px the top bar is a full-bleed bar** (`.radial-topbar.glass-chrome` in
+`radial.css`): the same chrome slab, square-cornered, flush with the top and sides, carrying `env(safe-area-inset-top)`
+in its own height and in `--rad-topbar-h`, so every offset keyed to that variable stays exact whether Safari keeps its
+status bar outside the page or the page runs under it. It is the one deliberate exception to the iOS edge contract
+(`lib/__tests__/ios-edge-contract.test.ts` pins it). While the globe menu is open, the **root** carries the veil's tint
+over the page canvas (`html.ios-webkit:has(.radial-hub[data-phase='open'])`), because on iOS 26 the strips behind the
+status bar and the floating tab bar are tinted from the root canvas: the menu's colour reaches them with no fixed layer
+at the edge. Neither change touches the globe.
+
 ## WebAssembly numerical kernels
 
 `LiquidGlobe.tsx` calls `DoughBody.enableWasm()` after mounting. Loading migrates

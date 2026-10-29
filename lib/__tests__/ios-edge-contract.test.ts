@@ -9,7 +9,9 @@
  * lived only in comments; this file is where it is enforced.
  *
  *  1. INVARIANTS: the pieces the contract is made of still exist (viewport-fit=cover, no theme-color on iOS in any of its
- *     three writers, the fixed decoration hidden on iOS, the root carrying the canvas, the top capsule floating).
+ *     three writers, the fixed decoration hidden on iOS, the root carrying the canvas, the top capsule floating — and, below
+ *     640px, the one deliberate exception: a full-bleed, inset-aware top bar; plus the root tint that carries the open
+ *     globe menu's colour behind the bars).
  *  2. RATCHET: a site-tier rule or class that pins a fixed/sticky layer flush to the top or bottom edge is counted per
  *     file and frozen in `ios-edge.baseline.json`. A new one fails ("float it off the edge, or hide it on
  *     `html.ios-webkit`, then…"); a file UNDER its frozen count also fails ("lower it"), so the list only goes down.
@@ -64,10 +66,39 @@ describe('iOS edge contract: invariants', () => {
     );
   });
 
-  it('the top capsule floats clear of the edge (a flush sticky bar is what Safari tints from)', () => {
+  it('the top capsule floats clear of the edge on screens wide enough to hold a capsule', () => {
     const m = /\.radial-topbar \{[^}]*?\btop:\s*([\d.]+)rem/.exec(radial);
     expect(m, '.radial-topbar declares a rem offset from the top').toBeTruthy();
     expect(Number(m![1])).toBeGreaterThanOrEqual(0.5);
+  });
+
+  // The one deliberate exception (2026-10-29, owner's call): below 640px the capsule gives way to a full-bleed bar that
+  // IS the strip behind the status bar, tinted by the same glass as the page, instead of a pill whose margins and curve
+  // spend a phone's width. It carries the status-bar inset in its own height so its content clears the clock whether
+  // Safari keeps its bar outside the page (inset 0) or the page runs under it. What this pins is that the exception
+  // stays exactly that: one bar, narrow screens only, inset-aware — not a licence for other flush layers (the ratchet
+  // below still counts those).
+  it('below 640px the top bar is a full-bleed, inset-aware bar (the one flush top layer, by design)', () => {
+    const m = /@media \(max-width: 639\.98px\) \{\s*:root \{[^}]*--rad-topbar-h:[^;]*safe-area-inset-top[^;]*;[^}]*\}\s*\.radial-topbar\.glass-chrome \{([^}]*)\}/.exec(
+      radial,
+    );
+    expect(m, 'a narrow-screen block that adds the inset to --rad-topbar-h and restyles the bar').toBeTruthy();
+    const rule = m![1];
+    expect(rule).toMatch(/\btop:\s*0\b/);
+    expect(rule).toMatch(/\bmargin:\s*0\b/);
+    expect(rule).toMatch(/\bborder-radius:\s*0\b/);
+    expect(rule).toMatch(/padding-top:\s*env\(safe-area-inset-top/);
+  });
+
+  it('while the globe menu is open the ROOT carries the veil tint, so the strips behind the bars take its colour', () => {
+    // Not a fixed layer at the edge (that is the band): the same root canvas Safari already tints from, under the veil's
+    // own colour. Two rules: opaque `--site-bg` where the veil is opaque, 24% on phones where the page shows through.
+    expect(radial).toMatch(
+      /html\.ios-webkit:not\(\.app-route\):has\(\.radial-hub:is\(\[data-phase='open'\], \[data-phase='everting'\]\)\) \{\s*background-image:\s*linear-gradient\(var\(--site-bg\), var\(--site-bg\)\),\s*var\(--site-canvas\);/,
+    );
+    expect(radial).toMatch(
+      /@media \(max-width: 767\.98px\) \{\s*html\.ios-webkit:not\(\.app-route\):has\(\.radial-hub:is\(\[data-phase='open'\], \[data-phase='everting'\]\)\) \{[^}]*color-mix\(in srgb, var\(--site-bg\) 24%, transparent\)/,
+    );
   });
 });
 

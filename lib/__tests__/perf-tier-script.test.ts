@@ -16,7 +16,16 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { PERF_TIER_SCRIPT, isLowEndDevice, LOW_MEMORY_GB, LOW_CORE_COUNT } from '@/lib/perf-tier';
+import {
+  PERF_TIER_SCRIPT,
+  isLowEndDevice,
+  LOW_MEMORY_GB,
+  LOW_CORE_COUNT,
+  SOFT_RENDER_KEY,
+  SOFT_RENDER_TTL_MS,
+  reconcileSoftRender,
+} from '@/lib/perf-tier';
+import { resetGpuProbe } from '@/lib/render/probe';
 
 interface FakeNavigator {
   deviceMemory?: number;
@@ -110,5 +119,88 @@ describe('PERF_TIER_SCRIPT agrees with isLowEndDevice()', () => {
     // have the class cleared and re-added around hydration for no reason.
     expect(PERF_TIER_SCRIPT).not.toContain('remove');
     expect(PERF_TIER_SCRIPT).not.toContain('toggle');
+  });
+});
+
+
+/**
+ * A browser found to be drawing in software (hardware acceleration off, a blocklisted driver, a VM) is put on the low
+ * tier: measured on /games, Firefox 2 → 49 fps, Chromium 11 → 46, WebKit 1.4 → 14. The finding is cached in
+ * localStorage so the NEXT page load gets the class on its first frame, which only works if the pre-paint script and the
+ * predicate read that cache the same way.
+ */
+describe('software-render finding', () => {
+  const store = (value: string | null) => ({
+    getItem: (k: string) => (k === SOFT_RENDER_KEY ? value : null),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+  });
+  const withStore = (value: string | null) => {
+    vi.stubGlobal('localStorage', store(value));
+    return { script: scriptStamps({}), predicate: predicateSays({}) };
+  };
+
+  it('a fresh cached finding stamps the class pre-paint and in the predicate', () => {
+    expect(withStore(String(Date.now() - 1000))).toEqual({ script: true, predicate: true });
+  });
+
+  it('a stale finding is ignored by both, so turning acceleration back on takes effect', () => {
+    expect(withStore(String(Date.now() - SOFT_RENDER_TTL_MS - 1000))).toEqual({
+      script: false,
+      predicate: false,
+    });
+  });
+
+  it('no finding, an unparsable one, or unreadable storage is not the low tier', () => {
+    expect(withStore(null)).toEqual({ script: false, predicate: false });
+    expect(withStore('soft')).toEqual({ script: false, predicate: false });
+    vi.stubGlobal('localStorage', {
+      getItem: () => {
+        throw new Error('blocked');
+      },
+    });
+    expect(scriptStamps({})).toBe(false);
+    expect(predicateSays({})).toBe(false);
+  });
+
+  it('reconcileSoftRender caches a software finding, stamps the class, and clears it when hardware returns', () => {
+    const classes = new Set<string>();
+    const doc = {
+      documentElement: {
+        classList: {
+          toggle: (c: string, on: boolean) => (on ? classes.add(c) : classes.delete(c)),
+        },
+      },
+      createElement: () => ({
+        getContext: () => ({
+          getExtension: (n: string) =>
+            n === 'WEBGL_debug_renderer_info' ? { UNMASKED_RENDERER_WEBGL: 1 } : null,
+          getParameter: () => renderer,
+          drawBuffers: () => {},
+        }),
+      }),
+    };
+    let renderer = 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)';
+    let stored: string | null = null;
+    vi.stubGlobal('document', doc);
+    vi.stubGlobal('navigator', {});
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => (k === SOFT_RENDER_KEY ? stored : null),
+      setItem: (_: string, v: string) => (stored = v),
+      removeItem: () => (stored = null),
+    });
+
+    resetGpuProbe();
+    expect(reconcileSoftRender()).toBe(true);
+    expect(classes.has('perf-lite')).toBe(true);
+    expect(Number(stored)).toBeGreaterThan(0);
+
+    // A real GPU on a later visit, after the cached finding has aged out.
+    stored = String(Date.now() - SOFT_RENDER_TTL_MS - 1000);
+    renderer = 'ANGLE (Apple, ANGLE Metal Renderer: Apple M2, Unspecified Version)';
+    resetGpuProbe();
+    expect(reconcileSoftRender()).toBe(false);
+    expect(classes.has('perf-lite')).toBe(false);
+    expect(stored).toBeNull();
   });
 });

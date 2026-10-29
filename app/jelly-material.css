@@ -516,6 +516,32 @@ html[data-game-state='playing'] .jelly-flow > span,
   }
 }
 
+/* ── 7. Entrance (2026-10-29): glass that mounts AFTER the page is up fades in, it does not pop ────────────────────────
+   A feed card streamed in, a panel opened, a list filled after its fetch: each arrives as a finished slab in one frame,
+   which reads as a pop next to the page-level enter and the rim's own cross-fade. `@starting-style` gives the host a
+   first frame at 0 and a transition on `opacity` carries it up on the site's one curve (`--ease-smooth`: zero speed at
+   both ends, so a surface re-mounted mid-fade turns around from the frame it is on). Opacity ONLY: the soft body owns the
+   host's `translate`/`scale`, and a transition on those would fight it (and the layout never moves anyway).
+
+   Gated on `html[data-jelly-ready]`, stamped by `useLiquidInteractions` once the material has started, so the document's
+   own first paint is never faded: an element at opacity 0 is not an LCP candidate and the server-rendered page must be
+   there at first contentful paint (the same reason `.page-root > *` skips its enter until `data-navigated`).
+   Fills and panes only: floating roles (`overlay`, `chrome`) already have their own enter (dialog.css, sheet.css,
+   anchored-menu.css), and a field is never faded in under a caret. A utility `transition-*` on the host outranks this
+   (utilities layer) and simply keeps its own. */
+@layer components {
+  html[data-jelly-ready]
+    :is(.glass-fill, .glass-pane):not([data-liquid-material='off'], [data-jelly-enter='off']) {
+    transition: opacity var(--liquid-enter, 450ms) var(--ease-smooth);
+  }
+  @starting-style {
+    html[data-jelly-ready]
+      :is(.glass-fill, .glass-pane):not([data-liquid-material='off'], [data-jelly-enter='off']) {
+      opacity: 0;
+    }
+  }
+}
+
 @keyframes jelly-drift {
   0% {
     transform: translate3d(-8%, -6%, 0) rotate(-8deg) scale(1.04);

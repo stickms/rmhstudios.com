@@ -93,6 +93,15 @@
   .glass-opaque {
     background: var(--site-surface-opaque, var(--site-bg));
   }
+  /* The role rules above are `.glass-x:not([data-liquid-material='off'])` (class + attribute), which outrank a lone
+     `.glass-opaque` (one class), so on a host that carried both the role's translucent tint won and "opaque" was a
+     name only: the cookie notice let the page's own text show through its label. Same specificity as the roles, later in
+     source, so the opaque fill is the one that applies; the role still supplies the rim, the coat and the elevation. */
+  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay).glass-opaque:not(
+      [data-liquid-material='off']
+    ) {
+    background-color: var(--site-surface-opaque, var(--site-bg));
+  }
   /* Fixed descendants keep the viewport as their containing block. */
   .glass-chrome--aside {
     position: relative;
