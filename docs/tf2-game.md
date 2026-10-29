@@ -28,7 +28,7 @@ storage, like the loadout builder's models (see [TF2 Hub](tf2-hub.md)).
 | `lib/tf2-game/net/`                         | Protocol: snapshots, deltas, input packing; client prediction and interpolation.                                                                                                                                                                                                  |
 | `lib/tf2-game/render/`                      | three.js renderer: world, props, players, view models, projectiles, buildings, particles, decals. Browser only.                                                                                                                                                                   |
 | `lib/tf2-game/audio/`                       | Sound playback over `getAudioContext()`: the mixer, attenuation and channel rules, soundscapes, scenes, captions.                                                                                                                                                                 |
-| `lib/tf2-game/client/`                      | The browser game loop: input, local "listen server" worker for offline play, connection to the hub for online play; the HL2 / Portal client (see [Playing](#playing-the-clients)).                                                                                              |
+| `lib/tf2-game/client/`                      | The browser game loop: input, local "listen server" worker for offline play, connection to the hub for online play; the HL2 / Portal client (see [Playing](#playing-the-clients)).                                                                                                |
 | `components/tf2-game/`                      | React UI: the play page, HUD, menus (team, class, scoreboard, settings).                                                                                                                                                                                                          |
 | `lib/tf2-game/server/`                      | Match hosting: the `MatchHost` contract the simulation implements (`match-host.ts`), its one entry point `createTf2Match` (`create-match.ts`), the fixed-step loop (`match-runner.ts`), the worker entry (`match-worker.server.ts`) and the hub's thread pool (`pool.server.ts`). |
 | `server/socket-server/handlers/tf2-game.ts` | Room manager on the hub (`tf2:*` events, `lib/tf2-game/net/events.ts`). Each match runs on a `worker_threads` worker (`lib/tf2-game/server/match-worker.server.ts`) so the hub's event loop never simulates.                                                                      |
@@ -79,11 +79,11 @@ Dockerfile `server-builder` stage (which asserts the output exists).
 
 ## Playing: the clients
 
-| Route          | Page                                    | Client                                                         |
-| -------------- | --------------------------------------- | -------------------------------------------------------------- |
-| `/tf2/play`    | `components/tf2-game/Tf2PlayPage.tsx`   | `lib/tf2-game/client/tf2-client.ts` (online or listen server)  |
-| `/half-life-2` | `components/sp-game/Hl2PlayPage.tsx`    | `lib/tf2-game/client/sp-client.ts` (`SpWorld`, main thread)    |
-| `/portal`      | `components/sp-game/PortalPlayPage.tsx` | `sp-client.ts` + `portal-view.ts` (recursive portal views)     |
+| Route          | Page                                    | Client                                                        |
+| -------------- | --------------------------------------- | ------------------------------------------------------------- |
+| `/tf2/play`    | `components/tf2-game/Tf2PlayPage.tsx`   | `lib/tf2-game/client/tf2-client.ts` (online or listen server) |
+| `/half-life-2` | `components/sp-game/Hl2PlayPage.tsx`    | `lib/tf2-game/client/sp-client.ts` (`SpWorld`, main thread)   |
+| `/portal`      | `components/sp-game/PortalPlayPage.tsx` | `sp-client.ts` + `portal-view.ts` (recursive portal views)    |
 
 All three mount `components/tf2-game/GameCanvas.tsx`: the canvas, the HUD (`GameHud`), loading progress per
 stage, errors with retry, pointer lock, fullscreen and the phone's rotate hint. A client owns exactly one
