@@ -7,7 +7,7 @@
  *
  * Prints each map's sizes and the projection for the game's whole list (docs/tf2-game.md "Maps").
  */
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import sharp from 'sharp';
@@ -28,6 +28,8 @@ import { isContentAddressed } from '../../lib/tf2-game/assets/paths';
 import type { GameId } from '../../lib/tf2-game/assets/versions';
 import {
   buildMaps,
+  GAME_ALWAYS_MODELS,
+  listMapProps,
   materialKey,
   openGameFileSystem,
   stripBsp,
@@ -46,6 +48,15 @@ const MAPS_DIR: Record<GameId, string> = { tf2: 'tf/maps', hl2: 'hl2/maps', port
 const mib = (b: number) => (b / 1048576).toFixed(1);
 
 describe('map package pieces', () => {
+  it("always lists Portal's portal gun models, which no map names", () => {
+    expect(GAME_ALWAYS_MODELS.portal).toEqual([
+      'models/weapons/v_portalgun.mdl',
+      'models/weapons/w_portalgun.mdl',
+    ]);
+    for (const list of Object.values(GAME_ALWAYS_MODELS))
+      for (const m of list) expect(m).toMatch(/^models\/[a-z0-9_/]+\.mdl$/);
+  });
+
   it('names textures with models.py TEX_VERSION', () => {
     const py = readFileSync(path.join(import.meta.dirname, 'models.py'), 'utf8');
     expect(py).toMatch(new RegExp(`^TEX_VERSION = ${TEX_VERSION}$`, 'm'));
@@ -202,6 +213,20 @@ for (const suite of suites) {
       const props = readFileSync(path.join(out, 'props.list'), 'utf8').trim().split('\n');
       expect(props.length).toBeGreaterThan(5);
       expect(props.every((p) => /^models\/.+\.mdl$/.test(p))).toBe(true);
+      // Models the client draws that no map names (Portal's portal gun) ride along.
+      expect(props).toEqual(expect.arrayContaining([...GAME_ALWAYS_MODELS[suite.game]]));
+    });
+
+    it('lists the props, and the always-included models, with --props-only', () => {
+      const list = path.join(out, 'props-only.list');
+      writeFileSync(list, '');
+      const n = listMapProps(root, suite.game, suite.maps, list);
+      const props = readFileSync(list, 'utf8').trim().split('\n');
+      expect(props.length).toBe(n);
+      expect(props).toEqual(expect.arrayContaining([...GAME_ALWAYS_MODELS[suite.game]]));
+      // The same set the build appended.
+      const built = readFileSync(path.join(out, 'props.list'), 'utf8').trim().split('\n');
+      expect([...props].sort()).toEqual([...built].sort());
     });
 
     it('writes a stripped BSP that re-parses to the same map', () => {

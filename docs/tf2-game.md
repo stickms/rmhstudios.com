@@ -231,7 +231,8 @@ pnpm exec tsx scripts/tf2-assets/publish.ts push --dir out --prefix hl2-game/ \
 - **Props**: every static prop model and every `prop_*`, `item_*` and `physics_cannister` entity model;
   their collision (the `.phy`'s first solid, via `world/prop-collision.ts`) is `maps/<sha>.hulls.bin`.
   `--props-list-out` / `--props-only` append the models models.py can read (not pakfile-only ones) to its
-  list, so every prop gets a GLB.
+  list, so every prop gets a GLB, plus the game's `GAME_ALWAYS_MODELS` — models the client draws that no
+  map names (Portal: `v_portalgun` / `w_portalgun`).
 - **Incremental**: files are named by their content (textures by their source), so with `--state` an
   unchanged map writes nothing and decodes no texture, but is still listed in `wanted.json`. A map that
   fails keeps its previous index entry (`failed.json`).
@@ -388,7 +389,9 @@ sequences: { <name>: { clips, looping, delta, post, fps, frames, blend?, layers?
   different frame from its bind pose. Child bones keep Source's bone-local frames; only the root differs.
   The renderer resolves both in one place, `lib/tf2-game/render/model-axes.ts`: `modelFrame()` matches the
   bind bounds against `extras.source.hullMin/hullMax` over the 24 axis rotations, `animatedFrame()`
-  compares the root bone's rotation at the start of an idle clip with its bind rotation, and every model
+  compares the root bone's rotation at the start of an idle clip with its bind rotation (kept only when the
+  idle's bones fit the hull better that way, `checkPosedFrame`: an HL2 / Portal view model's `ref` pose
+  turns its arm 90° and the idle swings it back, which is animation, not a frame change), and every model
   (static props included) is placed with `sourceTransformToMatrix(origin, angles) · frame`. (Writing the
   root fix into `scene.extras` would let the converter state this instead.)
 
@@ -465,6 +468,9 @@ snapshot mirror and a single-player world feed it the same way, plus the simulat
   corpses.
 - **View model** (`viewmodel.ts`): arms + c_model, the weapon's `vmActivity` → item `vmActivities` → arms
   sequence, TF weapon bob (no lag: `cl_wpn_sway_interp` 0), `viewmodel_fov` 54 in its own pass.
+  `sp-viewmodel.ts` draws a single-player `v_` model the same way (Portal's `v_portalgun` from the model
+  channel: ACT_VM_IDLE, ACT_VM_PRIMARYATTACK on either portal); nothing until it loads, nothing if the
+  channel lacks it.
 - **Objects** (`objects.ts`): projectiles and trails, buildings (blueprints, construction, sentry aim pose
   parameters and muzzle flashes, damage smoke, teleporter effects), pickups, the flag, `prop` / `entity`
   models with their sequence, `info_particle_system`.

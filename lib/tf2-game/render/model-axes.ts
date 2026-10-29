@@ -251,6 +251,54 @@ export function animatedFrame(
   return bindFrame.clone().multiply(r2t);
 }
 
+/**
+ * Mean distance (Source units) by which points lie outside the MDL's hull (Source model space,
+ * inches) once placed with `frame` — the points in GLB space (metres, xyz triples).
+ */
+export function hullMiss(
+  frame: Matrix4,
+  points: ArrayLike<number>,
+  hullMin: ArrayLike<number>,
+  hullMax: ArrayLike<number>,
+): number {
+  const e = frame.elements;
+  const n = Math.floor(points.length / 3);
+  let miss = 0;
+  for (let i = 0; i < n; i++) {
+    const x = points[i * 3];
+    const y = points[i * 3 + 1];
+    const z = points[i * 3 + 2];
+    // three model space is Source (y, z, x): Source x = three z, y = three x, z = three y.
+    const src = [
+      (e[2] * x + e[6] * y + e[10] * z + e[14]) / SCALE,
+      (e[0] * x + e[4] * y + e[8] * z + e[12]) / SCALE,
+      (e[1] * x + e[5] * y + e[9] * z + e[13]) / SCALE,
+    ];
+    for (let a = 0; a < 3; a++) miss += Math.max(0, hullMin[a] - src[a], src[a] - hullMax[a]);
+  }
+  return n ? miss / n : 0;
+}
+
+/**
+ * `animatedFrame`'s guess checked against the posed skeleton. A root bone whose idle rotation
+ * differs from its bind rotation by an axis rotation is usually the converter's frame change,
+ * but can be the animation itself: an HL2 / Portal view model's `ref` pose holds the arm turned
+ * 90° away and every sequence swings it forward, in the bind frame. The frame that puts the
+ * idle's bones inside the hull wins; the guess keeps near-ties.
+ */
+export function checkPosedFrame(
+  bindFrame: Matrix4,
+  guess: Matrix4,
+  posedBones: ArrayLike<number>,
+  hullMin: ArrayLike<number>,
+  hullMax: ArrayLike<number>,
+): Matrix4 {
+  if (guess === bindFrame || guess.equals(bindFrame)) return guess;
+  const g = hullMiss(guess, posedBones, hullMin, hullMax);
+  const b = hullMiss(bindFrame, posedBones, hullMin, hullMax);
+  return g - b > 1 && b < g * 0.5 ? bindFrame : guess;
+}
+
 function quatMatrix(q: ArrayLike<number>): number[] {
   const [x, y, z, w] = [q[0], q[1], q[2], q[3]];
   return [

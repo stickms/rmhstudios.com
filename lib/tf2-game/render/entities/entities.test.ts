@@ -14,6 +14,7 @@ import { ACT, vmActivityName } from '../../sim/weapons/constants';
 import { sourceTransformToMatrix, srcToThree } from '../coords';
 import {
   animatedFrame,
+  checkPosedFrame,
   detectAxisRotation,
   frameMatrixFor,
   IDENTITY_ROTATION,
@@ -441,6 +442,23 @@ describe('GLB frames (model-axes)', () => {
     expect(frame.equals(new Matrix4())).toBe(true);
     expect(nearestAxisRotation([0.9, 0.1, 0, -0.1, 0.9, 0, 0, 0, 1])).toEqual(IDENTITY_ROTATION);
     expect(nearestAxisRotation([0.7, 0.7, 0, -0.7, 0.7, 0, 0, 0, 1])).toBeNull();
+  });
+
+  it('posed frames: the idle skeleton must fit the hull (an HL2 view model swings its arm, not its frame)', () => {
+    // v_portalgun: bind and clips share the (y, z, x) frame; the ref pose holds the root turned
+    // 90° about X and the idle turns it forward, which animatedFrame reads as a frame change.
+    const bind = new Matrix4();
+    const guess = new Matrix4().makeRotationX(Math.PI / 2);
+    const gun = { min: [-2.4, -12.5, -16.4], max: [37.4, 1, 5.3] };
+    // Idle bones (GLB metres): bip01, the hand, the gun's front cover.
+    const gunBones = [0, -16.4, 11.5, -8.2, -11.3, 7.3, -6.3, -9.4, 29.5].map((v) => v * S);
+    expect(checkPosedFrame(bind, guess, gunBones, gun.min, gun.max)).toBe(bind);
+    // HL2 human: Source-axes bind, clips in (y, z, x); the idle stands up in the guessed frame.
+    const sourceBind = frameMatrixFor(IDENTITY_ROTATION);
+    const human = { min: [-13, -13, 0], max: [13, 13, 72] };
+    const humanBones = [0, 40, 0, 0, 70, 0, 8, 60, 0].map((v) => v * S);
+    const identity = new Matrix4();
+    expect(checkPosedFrame(sourceBind, identity, humanBones, human.min, human.max)).toBe(identity);
   });
 
   it('attachments: an entity transform × the model frame × a bone-local offset', () => {

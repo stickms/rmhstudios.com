@@ -27,7 +27,7 @@
  * (VTF bytes + encoding). With --state (the channel's published state) a file the state already
  * holds is neither written nor (for textures) decoded: an unchanged map writes nothing, but is
  * still listed in wanted.json. --props-list-out appends every prop model path (one per line) for
- * models.py. Each TF2 map also gets the bots' navigation mesh, `maps/<sha>.nav.bin`
+ * models.py, plus the game's GAME_ALWAYS_MODELS (models the client draws that no map names). Each TF2 map also gets the bots' navigation mesh, `maps/<sha>.nav.bin`
  * (lib/tf2-game/bots/nav; on by default for tf2, --nav forces it for other games, --no-nav
  * skips it), generated from the BSP and the prop hulls within NAV_TIME_BUDGET_MS.
  */
@@ -711,12 +711,29 @@ export function installedPropModels(fs: GameFileSystem, bsp: BspFile): string[] 
 }
 
 /**
+ * Models a game's client draws that no map names, so the props list must carry them itself.
+ * Portal's portal gun is the player's weapon, given by `weapon_portalgun` / the player's
+ * equipment rather than placed as a prop model: its view model (drawn by the client in its own
+ * viewmodel_fov pass) and its world model would otherwise never reach the model channel.
+ */
+export const GAME_ALWAYS_MODELS: Record<GameId, readonly string[]> = {
+  tf2: [],
+  hl2: [],
+  portal: ['models/weapons/v_portalgun.mdl', 'models/weapons/w_portalgun.mdl'],
+};
+
+/** The game's always-included models that the install has (what models.py can read). */
+export function alwaysModels(fs: GameFileSystem, game: GameId): string[] {
+  return GAME_ALWAYS_MODELS[game].filter((m) => fs.exists(m));
+}
+
+/**
  * Appends every map's installed prop models to `listFile` (models.py's list), without building
  * anything — so the model channel includes map props even on a run that does not rebuild maps.
  */
 export function listMapProps(root: string, game: GameId, maps: string[], listFile: string): number {
   const fs = openGameFileSystem(root, game);
-  const all = new Set<string>();
+  const all = new Set<string>(alwaysModels(fs, game));
   for (const name of maps) {
     try {
       for (const m of installedPropModels(fs, parseBsp(readMapBsp(root, game, fs, name))))
@@ -801,7 +818,7 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
   const untexturedAll: Array<{ map: string; material: string; why: string }> = [];
   const index: MapIndex = { v: 1, maps: {} };
   const texBytes = new Map<string, number>(); // rel → bytes (encoded this run, or stored)
-  const propsOut = new Set<string>();
+  const propsOut = new Set<string>(alwaysModels(fs, o.game));
   const wantNav = o.nav ?? o.game === 'tf2';
 
   const unchanged = (rel: string, src: string) => !o.force && state[rel]?.src === src;

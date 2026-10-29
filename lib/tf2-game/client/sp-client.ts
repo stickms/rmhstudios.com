@@ -24,26 +24,15 @@
  * Browser only.
  */
 
-import {
-  BoxGeometry,
-  CylinderGeometry,
-  Group,
-  Mesh,
-  MeshBasicMaterial,
-  PerspectiveCamera,
-  Scene,
-  type WebGLRenderer,
-} from 'three';
 import { IN_ATTACK, IN_ATTACK2, MASK_OPAQUE, SURF_SKY, TICK_INTERVAL } from '../core/constants';
 import { emptyTrace } from '../core/types';
 import type { Vec3 } from '../core/vec';
 import type { GameId } from '../assets/versions';
 import { gameAssetUrl } from '../assets/urls';
 import { GAME_MAPS } from '../assets/game-maps';
-import { sourceFovToVertical } from '../render/camera';
 import { SOURCE_UNIT } from '../render/coords';
 import { WorldRenderer } from '../render/world-renderer';
-import { EntityRenderer, ModelLibrary, type EntityState as RenderEntity } from '../render/entities';
+import { EntityRenderer, ModelLibrary, SpViewModelRenderer, type EntityState as RenderEntity } from '../render/entities';
 import type { AudioEngine } from '../audio/engine';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import { SpWorld, type SpSnapshot } from '@/lib/sp-game/world/sp-world';
@@ -73,7 +62,7 @@ import {
 import { createHttpSpAssets } from './sp-assets';
 import { makeSave, writeSave, type SpGameId } from './sp-save';
 import { FovState, StairSmoother, calcFirstPerson } from './view';
-import { PortalView, PORTAL_COLORS } from './portal-view';
+import { PortalView } from './portal-view';
 
 export interface SpClientOptions extends ClientMount {
   game: SpGameId;
@@ -85,70 +74,8 @@ export interface SpClientOptions extends ClientMount {
 const HUD_HZ = 20;
 /** IMPULSE_FLASHLIGHT. */
 const IMPULSE_FLASHLIGHT = 100;
-/** viewmodel_fov for the portal gun. */
-const VIEWMODEL_FOV = 54;
-
-/** A stand-in portal gun drawn over the world (the model channel publishes no v_portalgun yet). */
-class PortalGunViewModel {
-  readonly scene = new Scene();
-  readonly camera = new PerspectiveCamera(sourceFovToVertical(VIEWMODEL_FOV), 16 / 9, 0.01, 10);
-  private readonly gun = new Group();
-  private readonly tipMat = new MeshBasicMaterial({ color: PORTAL_COLORS[0].clone() });
-  private bob = 0;
-  private kick = 0;
-
-  constructor() {
-    const body = new Mesh(new CylinderGeometry(0.045, 0.06, 0.42, 16), new MeshBasicMaterial({ color: 0xd8dadc }));
-    body.rotation.x = Math.PI / 2;
-    const band = new Mesh(new CylinderGeometry(0.063, 0.063, 0.05, 16), new MeshBasicMaterial({ color: 0x2b2d30 }));
-    band.rotation.x = Math.PI / 2;
-    band.position.z = -0.08;
-    const tip = new Mesh(new CylinderGeometry(0.03, 0.03, 0.06, 12), this.tipMat);
-    tip.rotation.x = Math.PI / 2;
-    tip.position.z = -0.24;
-    const claw = new Mesh(new BoxGeometry(0.012, 0.06, 0.08), new MeshBasicMaterial({ color: 0x3a3c40 }));
-    claw.position.set(0.04, 0.04, -0.22);
-    const claw2 = claw.clone();
-    claw2.position.x = -0.04;
-    this.gun.add(body, band, tip, claw, claw2);
-    this.gun.position.set(0.16, -0.14, -0.38);
-    this.gun.rotation.y = 0.08;
-    this.scene.add(this.gun);
-  }
-
-  update(dt: number, speed: number, last: 'blue' | 'orange' | null, fired: boolean, visible: boolean): void {
-    this.gun.visible = visible;
-    if (fired) this.kick = 1;
-    this.kick = Math.max(0, this.kick - dt * 6);
-    this.bob += dt * Math.min(1, speed / 175) * 9;
-    const b = Math.min(1, speed / 175);
-    this.gun.position.x = 0.16 + Math.sin(this.bob) * 0.008 * b;
-    this.gun.position.y = -0.14 + Math.abs(Math.cos(this.bob)) * 0.01 * b;
-    this.gun.position.z = -0.38 + this.kick * 0.04;
-    this.tipMat.color.copy(PORTAL_COLORS[last === 'orange' ? 1 : 0]);
-  }
-
-  render(renderer: WebGLRenderer, aspect: number): void {
-    if (!this.gun.visible) return;
-    if (this.camera.aspect !== aspect) {
-      this.camera.aspect = aspect;
-      this.camera.updateProjectionMatrix();
-    }
-    const ac = renderer.autoClear;
-    renderer.autoClear = false;
-    renderer.clearDepth();
-    renderer.render(this.scene, this.camera);
-    renderer.autoClear = ac;
-  }
-
-  dispose(): void {
-    this.scene.traverse((o) => {
-      const m = o as Mesh;
-      m.geometry?.dispose();
-      (m.material as MeshBasicMaterial | undefined)?.dispose?.();
-    });
-  }
-}
+/** The portal gun's view model (models.py converts it from the game; build-maps always lists it). */
+const PORTALGUN_VIEWMODEL = 'models/weapons/v_portalgun.mdl';
 
 interface Shake {
   amplitude: number;
@@ -170,7 +97,7 @@ export class SpClient implements GameClient {
   private world: WorldRenderer | null = null;
   private ents: EntityRenderer | null = null;
   private portals: PortalView | null = null;
-  private gun: PortalGunViewModel | null = null;
+  private gun: SpViewModelRenderer | null = null;
   private snap: SpSnapshot | null = null;
   private readonly prevOrigin = { x: 0, y: 0, z: 0 };
   private readonly curOrigin = { x: 0, y: 0, z: 0 };
@@ -312,7 +239,8 @@ export class SpClient implements GameClient {
     this.ents = new EntityRenderer({ lighting: world, scene: world.scene, models, particles: null, game: this.game });
     if (this.game === 'portal') {
       this.portals = new PortalView(world.scene, { recursion: core.plan.portalRecursion });
-      this.gun = new PortalGunViewModel();
+      this.gun = new SpViewModelRenderer(PORTALGUN_VIEWMODEL);
+      void models.asset(PORTALGUN_VIEWMODEL);
     }
     let peak = 1;
     const tick = setInterval(() => {
@@ -526,6 +454,14 @@ export class SpClient implements GameClient {
     ents.beginFrame({ time: snap.curtime, dt, localPlayer: -1, localTeam: 0, firstPerson: true, camera: cam.camera });
     ents.sync(states);
     ents.endFrame();
+    if (this.gun) {
+      // weapon_portalgun sends ACT_VM_PRIMARYATTACK for either portal; prefer a secondary one if the model has it.
+      if (this.firedThisFrame) this.gun.play(...(this.lastFired === 'orange' ? ['ACT_VM_SECONDARYATTACK'] : []), 'ACT_VM_PRIMARYATTACK');
+      this.gun.update(
+        { eyeOrigin: view.origin, eyeAngles: view.angles, velocity: p.velocity, visible: !!p.portalgun && !p.dead && !snap.view },
+        ents.context,
+      );
+    }
 
     // Draw.
     const t2 = performance.now();
@@ -537,11 +473,7 @@ export class SpClient implements GameClient {
     else world.update(cam, this.clientNow);
     this.culler.cull(world.props?.group, cam.camera, core.plan.propDrawDistance, SOURCE_UNIT);
     world.render(core.renderer, cam);
-    if (this.gun) {
-      const speed = Math.hypot(p.velocity.x, p.velocity.y);
-      this.gun.update(dt, speed, this.lastFired, this.firedThisFrame, !!p.portalgun && !p.dead && !snap.view);
-      this.gun.render(core.renderer, core.aspect);
-    }
+    this.gun?.render(core.renderer, cam);
 
     this.fps.phase('render', performance.now() - t2);
     // Audio.

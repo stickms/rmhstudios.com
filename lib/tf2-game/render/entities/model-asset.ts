@@ -7,12 +7,21 @@
  * `ModelLibrary` also implements the world renderer's `ModelProvider`, so static props and
  * entities share one cache of GLBs.
  */
-import { Matrix4, type Material, type Mesh, type Object3D, type SkinnedMesh } from 'three';
+import {
+  type Bone,
+  Matrix4,
+  type Material,
+  type Mesh,
+  type Object3D,
+  Quaternion,
+  type SkinnedMesh,
+  Vector3,
+} from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
-import { animatedFrame, modelFrame } from '../model-axes';
+import { animatedFrame, checkPosedFrame, modelFrame } from '../model-axes';
 import type { LoadedModel, ModelProvider } from '../props';
-import { AnimSet, type PoseParamDesc, type RawClip, type SequenceDesc } from './animator';
+import { Animator, AnimSet, type PoseParamDesc, type RawClip, type SequenceDesc } from './animator';
 import { materialTemplate, type MaterialTemplate } from './model-material';
 
 /** One `mdl/index.json` entry (scripts/tf2-game/models.py). */
@@ -139,12 +148,23 @@ export class ModelAsset {
         ? this.anim.clips.get(seq.clips[Math.floor(seq.clips.length / 2)] ?? seq.clips[0])
         : undefined;
       const track = root >= 0 ? clip?.rot[root] : null;
-      if (track && !clip?.delta) {
-        this.frame = animatedFrame(
+      if (seq && track && !clip?.delta) {
+        const guess = animatedFrame(
           this.frame,
           this.restQuat.subarray(root * 4, root * 4 + 4),
           track.values.subarray(0, 4),
         );
+        const src = this.extras.source;
+        this.frame =
+          guess !== this.frame && src?.hullMin?.length === 3 && src.hullMax?.length === 3
+            ? checkPosedFrame(
+                this.frame,
+                guess,
+                posedBonePositions(scene, bones, this.anim, seq),
+                src.hullMin,
+                src.hullMax,
+              )
+            : guess;
       }
     }
   }
@@ -202,6 +222,48 @@ function idleSequence(set: AnimSet): SequenceDesc | undefined {
       return s;
   }
   return first;
+}
+
+/** The bones' positions (GLB space, xyz triples) at the start of a sequence. */
+function posedBonePositions(
+  scene: Object3D,
+  bones: Bone[],
+  set: AnimSet,
+  seq: SequenceDesc,
+): Float32Array {
+  const n = bones.length;
+  const pos = new Float32Array(n * 3);
+  const quat = new Float32Array(n * 4);
+  const animator = new Animator(set);
+  animator.setSequence(seq, { fade: false });
+  animator.evaluate(pos, quat);
+  scene.updateMatrixWorld(true);
+  const sceneInv = scene.matrixWorld.clone().invert();
+  const index = new Map<Object3D, number>(bones.map((b, i) => [b, i]));
+  const world: Array<Matrix4 | undefined> = new Array(n);
+  const one = new Vector3(1, 1, 1);
+  const t = new Vector3();
+  const q = new Quaternion();
+  const boneWorld = (i: number): Matrix4 => {
+    const done = world[i];
+    if (done) return done;
+    const parent = bones[i].parent;
+    const pi = parent ? index.get(parent) : undefined;
+    const base =
+      pi !== undefined
+        ? boneWorld(pi).clone()
+        : parent
+          ? new Matrix4().multiplyMatrices(sceneInv, parent.matrixWorld)
+          : new Matrix4();
+    const m = base.multiply(
+      new Matrix4().compose(t.fromArray(pos, i * 3), q.fromArray(quat, i * 4), one),
+    );
+    world[i] = m;
+    return m;
+  };
+  const out = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) t.setFromMatrixPosition(boneWorld(i)).toArray(out, i * 3);
+  return out;
 }
 
 /** Copies each primitive's extras (slot, body group) onto its mesh's userData.prim. */

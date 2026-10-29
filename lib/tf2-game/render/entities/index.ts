@@ -53,6 +53,7 @@ import { VIEWMODEL_ENTITY, ViewModelRenderer, type ViewModelInput } from './view
 
 export type { EntityState, NetValue, LightingSource } from './common';
 export type { ViewModelInput } from './viewmodel';
+export { SpViewModelRenderer, type SpViewModelInput } from './sp-viewmodel';
 export { ModelLibrary } from './model-asset';
 export { ParticleLibrary } from './effects';
 
@@ -220,6 +221,11 @@ export class EntityRenderer {
       const r = this.renderables.get((ev as DeathEvent).victim);
       if (r instanceof PlayerRenderable) r.onDeath(ev as DeathEvent, this.ctx);
     }
+  }
+
+  /** This frame's render context (after beginFrame), for renderables drawn outside sync. */
+  get context(): RenderContext {
+    return this.ctx;
   }
 
   /** The first-person view model (null hides it). */
