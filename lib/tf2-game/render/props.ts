@@ -2,8 +2,9 @@
  * Static props (the BSP's sprp game lump): one InstancedMesh per (model, skin,
  * primitive, main world / 3D skybox), drawn from the model channel's GLBs with the
  * skin family remapped through `scene.extras.skins` (docs/tf2-game.md "Models").
- * A static prop GLB is unskinned and its positions are MDL model space in metres with
- * Source's axes (Z up), so instances use sourceTransformToMatrixSrcAxes.
+ * A GLB is in its MDL's bind space, whose axes vary by model (model-axes.ts): each mesh's
+ * local matrix carries `modelFrame()` so instances use sourceTransformToMatrix like every
+ * other model the renderer places.
  *
  * Lighting: the leaf ambient cube sampled at each prop's lighting origin plus the sun
  * when that origin can see it (lighting.ts) — a stand-in for vrad's per-vertex prop
@@ -34,7 +35,8 @@ import {
 } from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { BspFile, StaticProp } from '../formats/bsp';
-import { SOURCE_UNIT, sourceTransformToMatrixSrcAxes } from './coords';
+import { SOURCE_UNIT, sourceTransformToMatrix } from './coords';
+import { modelFrame } from './model-axes';
 import { AMBIENT_CUBE_GLSL, newAmbientCube, sampleAmbientCube, type SunLight } from './lighting';
 import type { SharedWorldUniforms } from './materials';
 
@@ -230,7 +232,7 @@ export class StaticPropRenderer {
       const fadeMin = prop.fadeMaxDist > 0 ? (Math.max(0, prop.fadeMinDist) / fadeScale) * SOURCE_UNIT : 0;
       g.instances.push({
         prop,
-        matrix: sourceTransformToMatrixSrcAxes(prop.origin, prop.angles, prop.uniformScale || 1, new Matrix4()),
+        matrix: sourceTransformToMatrix(prop.origin, prop.angles, prop.uniformScale || 1, new Matrix4()),
         cube,
         params: [fadeMin, fadeMax, sunVis, 0],
         clusters: [...clusters],
@@ -262,6 +264,7 @@ export class StaticPropRenderer {
     const extras = (gltf.scene.userData ?? {}) as { skins?: number[][] };
     const json = gltf.parser.json as { meshes?: Array<{ primitives: Array<{ extras?: { slot?: number } }> }> };
     gltf.scene.updateMatrixWorld(true);
+    const frame = modelFrame(gltf.scene).matrix;
     const skins = extras.skins ?? [];
     const family = skins[g.skin] ?? skins[0];
     const n = g.instances.length;
@@ -307,7 +310,7 @@ export class StaticPropRenderer {
       im.name = `${g.model}#${g.skin}`;
       im.matrixAutoUpdate = false;
       g.meshes.push(im);
-      g.locals.push(mesh.matrixWorld.clone());
+      g.locals.push(frame.clone().multiply(mesh.matrixWorld));
       (g.sky3d ? this.skyGroup : this.group).add(im);
     }
     this.fill(g, this.lastRow);

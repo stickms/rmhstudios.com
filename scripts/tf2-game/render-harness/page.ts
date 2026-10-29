@@ -14,7 +14,8 @@ import { MASK_OPAQUE, SURF_SKY } from '@/lib/tf2-game/core/constants';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import { SourceCamera, type SourceView } from '@/lib/tf2-game/render/camera';
 import { TextureCache } from '@/lib/tf2-game/render/texture-cache';
-import { GlbModelProvider } from '@/lib/tf2-game/render/props';
+import { EntityRenderer, ModelLibrary, ParticleLibrary, type EntityState, type ViewModelInput } from '@/lib/tf2-game/render/entities';
+import type { SimEvent } from '@/lib/tf2-game/sim/events';
 import { WorldRenderer, type GameName } from '@/lib/tf2-game/render/world-renderer';
 import { measureHdrScale } from '@/lib/tf2-game/render/lightmap';
 
@@ -42,6 +43,13 @@ const cam = new SourceCamera(W / H);
 let world: WorldRenderer | null = null;
 let textures: TextureCache | null = null;
 let bsp: BspFile | null = null;
+let collision: MapCollision | null = null;
+let models: ModelLibrary | null = null;
+let ents: EntityRenderer | null = null;
+let entStates: EntityState[] = [];
+let vmInput: ViewModelInput | null = null;
+let simTime = 0;
+let curGame: GameName = 'tf2';
 const t0 = performance.now();
 
 async function fetchBytes(url: string): Promise<Uint8Array | null> {
@@ -51,8 +59,11 @@ async function fetchBytes(url: string): Promise<Uint8Array | null> {
 }
 
 async function loadMap(game: GameName, map: string, mode: 'auto' | 'package' | 'original' = 'auto'): Promise<LoadResult> {
+  ents?.dispose();
+  ents = null;
   world?.dispose();
   world = null;
+  curGame = game;
   const pkg = `/pkg/${game}/`;
   let manifest: MapManifest | null = null;
   let bytes: Uint8Array | null = null;
@@ -75,10 +86,12 @@ async function loadMap(game: GameName, map: string, mode: 'auto' | 'package' | '
   bsp = parseBsp(bytes);
   const f2 = performance.now();
   textures ??= new TextureCache({ url: (f) => pkg + f, renderer, maxSize: Number(params.get('maxtex') ?? 0) || undefined });
-  const collision = new MapCollision(bsp);
+  collision = new MapCollision(bsp);
   const tr = emptyTrace();
+  const col = collision;
   const sun = { x: 0, y: 0, z: 0 };
   const loader = new Tf2GLTFLoader();
+  models = new ModelLibrary({ url: (p) => pkg + p, loader });
   world = new WorldRenderer({
     bsp,
     manifest,
@@ -86,14 +99,14 @@ async function loadMap(game: GameName, map: string, mode: 'auto' | 'package' | '
     textures: manifest ? textures : null,
     lighting: (params.get('lighting') as 'hdr' | 'ldr' | null) ?? undefined,
     debugView: (params.get('debug') as 'lightmap' | 'blend' | null) ?? null,
-    models: new GlbModelProvider({ url: (p) => pkg + p, loader }),
+    models,
     sunVisible: (p) => {
       const s = world?.sun ?? null;
       if (!s) return false;
       sun.x = p.x + s.dir[0] * 16384;
       sun.y = p.y + s.dir[1] * 16384;
       sun.z = p.z + s.dir[2] * 16384;
-      collision.traceLine(p, sun, MASK_OPAQUE, null, tr);
+      col.traceLine(p, sun, MASK_OPAQUE, null, tr);
       return tr.fraction >= 1 || (tr.surfaceFlags & SURF_SKY) !== 0;
     },
   });
@@ -117,7 +130,9 @@ function render(): { ms: number; stats: WorldRenderer['stats']; propMeshes: numb
   if (!world) throw new Error('no map');
   const a = performance.now();
   world.update(cam, (performance.now() - t0) / 1000);
+  if (ents) frame(0);
   world.render(renderer, cam);
+  ents?.renderViewModel(renderer, cam);
   const gl = renderer.getContext();
   gl.finish();
   let propMeshes = 0;
@@ -131,6 +146,86 @@ function render(): { ms: number; stats: WorldRenderer['stats']; propMeshes: numb
 
 async function waitLoaded(): Promise<void> {
   await world?.whenLoaded();
+  await ents?.whenLoaded();
+}
+
+// --- entities (lib/tf2-game/render/entities) -------------------------------------------
+
+function setupEntities(): void {
+  if (!world || !models || ents) return;
+  const col = collision!;
+  const tr = emptyTrace();
+  const pkg = `/pkg/${curGame}/`;
+  ents = new EntityRenderer({
+    lighting: world,
+    scene: world.scene,
+    models,
+    particles: new ParticleLibrary((p) => pkg + p),
+    game: curGame,
+    sunVisible: (p) => {
+      const s = world?.sun;
+      if (!s) return false;
+      col.traceLine(p, { x: p.x + s.dir[0] * 16384, y: p.y + s.dir[1] * 16384, z: p.z + s.dir[2] * 16384 }, MASK_OPAQUE, null, tr);
+      return tr.fraction >= 1 || (tr.surfaceFlags & SURF_SKY) !== 0;
+    },
+    lineOfSight: (a, b) => {
+      col.traceLine(a, b, MASK_OPAQUE, null, tr);
+      return tr.fraction > 0.97;
+    },
+    trace: (a, b) => {
+      col.traceLine(a, b, MASK_OPAQUE, null, tr);
+      return { fraction: tr.fraction, endPos: { ...tr.endPos }, normal: { ...tr.plane.normal } };
+    },
+  });
+}
+
+/** One entity frame of `dt` seconds (no draw). */
+function frame(dt: number): void {
+  if (!ents) return;
+  simTime += dt;
+  ents.beginFrame({ time: simTime, dt, localPlayer: vmInput ? -100 : -1, localTeam: 0, firstPerson: true, camera: cam.camera });
+  ents.sync(entStates);
+  ents.updateViewModel(vmInput);
+  ents.endFrame();
+}
+
+function setEntities(list: EntityState[]): void {
+  setupEntities();
+  entStates = list;
+}
+
+function setViewModel(v: ViewModelInput | null): void {
+  setupEntities();
+  vmInput = v;
+}
+
+function entityEvent(ev: SimEvent): void {
+  setupEntities();
+  ents?.handleEvent(ev);
+}
+
+/** Runs entity frames (animation, effects) for `seconds` at `fps`; `mutate` edits states per frame. */
+function advance(seconds: number, fps = 30): void {
+  const n = Math.max(1, Math.round(seconds * fps));
+  for (let i = 0; i < n; i++) frame(1 / fps);
+}
+
+/** Floor height under a point (a trace straight down). */
+function groundZ(x: number, y: number, z: number): number {
+  if (!collision) return z;
+  const tr = emptyTrace();
+  collision.traceLine({ x, y, z }, { x, y, z: z - 4096 }, MASK_OPAQUE, null, tr);
+  return tr.endPos.z;
+}
+
+function entityStats(): Record<string, unknown> {
+  const lit: Record<string, unknown> = {};
+  for (const e of entStates.slice(0, 4)) {
+    const inst = (ents?.renderable(e.id) as { instance?: { uniforms: { uAmbientCube: { value: Array<{ x: number; y: number; z: number }> } } } } | undefined)?.instance;
+    const up = inst?.uniforms.uAmbientCube.value[4];
+    if (up) lit[e.id] = [up.x, up.y, up.z].map((v) => +v.toFixed(3));
+  }
+  return { count: ents?.count ?? 0, fx: ents?.effects.liveSystems ?? 0, simTime, lit };
 }
 
 function entities(prefix: string): Array<Record<string, string>> {
@@ -162,9 +257,30 @@ declare global {
       entities: typeof entities;
       ambientAt: typeof ambientAt;
       propsNear: typeof propsNear;
+      setEntities: typeof setEntities;
+      setViewModel: typeof setViewModel;
+      entityEvent: typeof entityEvent;
+      advance: typeof advance;
+      groundZ: typeof groundZ;
+      entityStats: typeof entityStats;
       ready: boolean;
     };
   }
 }
 
-window.harness = { loadMap, setView, render, waitLoaded, entities, ambientAt, propsNear, ready: true };
+window.harness = {
+  loadMap,
+  setView,
+  render,
+  waitLoaded,
+  entities,
+  ambientAt,
+  propsNear,
+  setEntities,
+  setViewModel,
+  entityEvent,
+  advance,
+  groundZ,
+  entityStats,
+  ready: true,
+};

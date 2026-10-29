@@ -7,6 +7,11 @@
  *     [--views scripts/tf2-game/render-harness/views.json] [--only <name,…>] \
  *     [--pkg <maps-out root>] [--out <dir>] [--size 960x540] [--mode auto|package|original] \
  *     [--spawns]   # also shoot every player start (info_player_teamspawn / info_player_start)
+ *     [--scenes scripts/tf2-game/render-harness/entity-scenes.json]  # entity scenes instead of views
+ *
+ * An entity scene (lib/tf2-game/render/entities) places entities, an optional view model and
+ * sim events, runs `script` steps ({ advance: s } | { event } | { patch: { id, fields } }),
+ * then shoots. An entity with `"ground": true` is dropped onto the floor under it.
  *
  * --pkg is the root holding `<game>/maps/index.json` etc. (default $RENDER_PKG_ROOT);
  * original BSPs come from $TF2_ROOT/maps, $HL2_ROOT/maps, $PORTAL_ROOT/maps
@@ -17,6 +22,25 @@ import { createServer, type Server } from 'node:http';
 import path from 'node:path';
 import { build } from 'esbuild';
 import { chromium } from 'playwright';
+
+interface SceneEntity {
+  id: number;
+  type: string;
+  fields: Record<string, number | string | boolean>;
+  ground?: boolean;
+}
+interface Scene {
+  name: string;
+  view: View;
+  entities?: SceneEntity[];
+  vm?: Record<string, unknown> | null;
+  script?: Array<{
+    advance?: number;
+    event?: Record<string, unknown>;
+    patch?: { id: number; fields: Record<string, unknown> };
+    vm?: Record<string, unknown>;
+  }>;
+}
 
 interface View {
   name: string;
@@ -151,6 +175,50 @@ async function main(): Promise<void> {
         const a = (e.angles ?? '0 0 0').split(' ').map(Number) as [number, number, number];
         views.push({ name: `spawn${i}-${e.teamnum ?? ''}`, origin: [o[0], o[1], o[2] + 64], angles: [0, a[1], 0] });
       });
+    }
+    const scenesFile = arg('scenes');
+    if (scenesFile) {
+      const all = JSON.parse(readFileSync(scenesFile, 'utf8')) as Record<string, Scene[]>;
+      const scenes = (all[`${game}/${map}`] ?? []).filter((v) => !only || only.includes(v.name));
+      for (const sc of scenes) {
+        const t = Date.now();
+        await page.evaluate(async (scene) => {
+          const h = window.harness;
+          const v = scene.view;
+          h.setView({ origin: { x: v.origin[0], y: v.origin[1], z: v.origin[2] }, angles: { x: v.angles[0], y: v.angles[1], z: v.angles[2] }, fov: v.fov ?? 90 });
+          const states = (scene.entities ?? []).map((e) => {
+            const f = { ...e.fields };
+            if (e.ground) f.oz = h.groundZ(Number(f.ox), Number(f.oy), Number(f.oz ?? 0) + 64) + 0.1;
+            return { id: e.id, type: e.type, fields: f };
+          });
+          h.setEntities(states as never);
+          let vm = scene.vm ? { ...scene.vm } : null;
+          h.setViewModel(vm as never);
+          // Load everything first (models, particles), then play the script from the start.
+          h.advance(0.05);
+          await h.waitLoaded();
+          h.advance(0.05);
+          await h.waitLoaded();
+          for (const step of scene.script ?? []) {
+            if (step.advance) h.advance(step.advance);
+            if (step.event) h.entityEvent(step.event as never);
+            if (step.vm && vm) {
+              vm = { ...vm, ...step.vm };
+              h.setViewModel(vm as never);
+            }
+            if (step.patch) {
+              const st = states.find((x) => x.id === step.patch!.id);
+              if (st) Object.assign(st.fields, step.patch.fields);
+            }
+          }
+          await h.waitLoaded();
+        }, sc);
+        const r = await page.evaluate(() => ({ r: window.harness.render(), e: window.harness.entityStats() }));
+        const file = path.join(outDir, `${game}-${map}-${sc.name}${arg('tag') ? `-${arg('tag')}` : ''}.jpg`);
+        await page.locator('#c').screenshot({ path: file, type: 'jpeg', quality: 85 });
+        log(`${sc.name}: ${r.r.stats.drawCalls} draws, ${r.r.stats.triangles} tris, entities ${JSON.stringify(r.e)}, ${r.r.ms.toFixed(0)} ms render, ${Date.now() - t} ms total -> ${file}`);
+      }
+      return;
     }
     if (!views.length) views = [{ name: 'origin', origin: [0, 0, 64], angles: [0, 0, 0] }];
     const summary: Record<string, unknown> = { load };

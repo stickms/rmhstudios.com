@@ -75,11 +75,22 @@ export interface LoadedTextures {
   dispose(): void;
 }
 
+export interface AcquireTexturesOptions {
+  /** URL of a bundle texture path (`tex/<sha>.webp`); default the loadout's PARTICLE_API. */
+  url?: (path: string) => string;
+  /** Returned for a material texture the bundle lacks (an install without texture data). */
+  fallback?: Texture;
+}
+
 /** Share GPU textures across item/player viewers; the last unmount releases them. */
-export async function acquireTextures(bundle: ParticleBundle): Promise<LoadedTextures> {
+export async function acquireTextures(
+  bundle: ParticleBundle,
+  options: AcquireTexturesOptions = {},
+): Promise<LoadedTextures> {
   const acquired = new Map<string, CachedTexture>();
   const ready = new Map<string, Texture>();
-  const keyOf = (path: string, data: boolean) => path + (data ? ':data' : ':color');
+  const urlOf = options.url ?? ((path: string) => PARTICLE_API + path);
+  const keyOf = (path: string, data: boolean) => urlOf(path) + (data ? ':data' : ':color');
   const dispose = () => {
     for (const [key, entry] of acquired) {
       entry.users--;
@@ -109,7 +120,7 @@ export async function acquireTextures(bundle: ParticleBundle): Promise<LoadedTex
           if (!entry) {
             entry = {
               users: 0,
-              promise: new TextureLoader().loadAsync(PARTICLE_API + path).then((texture) => {
+              promise: new TextureLoader().loadAsync(urlOf(path)).then((texture) => {
                 texture.flipY = false; // Source SHT coordinates start at the top-left.
                 texture.colorSpace = data ? NoColorSpace : SRGBColorSpace;
                 texture.magFilter = tex.flags & 1 ? NearestFilter : LinearFilter;
@@ -141,7 +152,7 @@ export async function acquireTextures(bundle: ParticleBundle): Promise<LoadedTex
     await Promise.all(tasks);
     return {
       get(tex, frame = 0, data = false) {
-        if (!tex?.frames.length) return undefined;
+        if (!tex?.frames.length) return data ? undefined : options.fallback;
         return ready.get(
           keyOf(
             tex.frames[
