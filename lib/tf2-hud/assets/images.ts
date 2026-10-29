@@ -201,6 +201,15 @@ export class ImageStore {
     return null;
   }
 
+  /**
+   * Start resolving `paths` and wait until each has either decoded or turned out missing — so a HUD can
+   * be swapped in only once its textures are ready (the in-game HUD keeps the old one until then).
+   */
+  async preload(paths: readonly string[]): Promise<void> {
+    for (const p of paths) this.get(p);
+    await Promise.all(paths.map((p) => this.pending.get(p)).filter((p): p is Promise<void> => !!p));
+  }
+
   /** Forget cached results (all, or just these paths) so changed files reload. */
   invalidate(paths?: readonly string[]): void {
     if (!paths) {

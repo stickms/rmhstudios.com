@@ -103,11 +103,16 @@ import {
   TF_DMG_CUSTOM_TELEFRAG,
   TF_DMG_CUSTOM_TRIGGER_HURT,
   TF_PLAYER_ROCKET_JUMPED,
+  TF_PLAYER_ENEMY_BLASTED_ME,
   type DamageInfo,
 } from './damage';
 import { MOVE_STATE_NET_FIELDS, NET_PLAYER, type NetRecord, type NetSchema } from './net-schema';
 import { createWeapon, TF_AMMO_COUNT, WEAPON_SLOTS, type Weapon } from './weapon-api';
-import { classHealth, classMaxAmmo, stockLoadout } from './loadout';
+import { classHealth, classMaxAmmo, weaponSpecFor } from './loadout';
+import { AttributeSet, hookInt, hookPlayer, hookWeapon, type AttributeOwner } from './items/attributes';
+import { encodeItems, planLoadout } from './items/loadout';
+import { aliveDamageModifiers, applyOnHitAttributes, applyOnKillAttributes, damageWeapon, inAirDueToExplosion } from './items/hooks';
+import type { LoadoutSlots } from '../../tf2-loadout/catalog-types';
 import { TF_DEATH_DOMINATION, TF_DEATH_REVENGE, TF_DEATH_ASSISTER_DOMINATION, TF_DEATH_ASSISTER_REVENGE } from './events';
 
 // ─── Constants (tf_shareddefs.h, tf_player.cpp, tf_player_shared.cpp) ─────
@@ -237,7 +242,7 @@ const scratchB = vec3();
 const damageStack: DamageInfo[] = [];
 let damageDepth = 0;
 
-export class Player extends Entity {
+export class Player extends Entity implements AttributeOwner {
   name: string;
   userId: string | undefined;
   isBot = false;
@@ -260,6 +265,16 @@ export class Player extends Entity {
   readonly weapons: (Weapon | null)[] = new Array<Weapon | null>(WEAPON_SLOTS).fill(null);
   activeSlot = -1;
   lastSlot = -1;
+  /**
+   * Items (sim/items): the loadout chosen per class (by class index; undefined = stock), whether
+   * a class's choice still waits for the next respawn or resupply, the attribute sets of worn
+   * weapon-slot items (Gunboats, shields), and the public form of what is equipped now
+   * (NET_PLAYER `items`, every client renders from it).
+   */
+  readonly loadouts: Array<LoadoutSlots | undefined> = [];
+  readonly loadoutDirty: boolean[] = [];
+  wornAttributes: AttributeSet[] = [];
+  items = '';
   readonly cond = new Conditions();
   stats: PlayerStats = newStats();
   /** Unanswered kills by each player id (statsKills.iNumKilledByUnanswered). */
@@ -293,6 +308,8 @@ export class Player extends Entity {
   private flameBurnTime = 0;
   burnAttacker: number = NO_ENTITY;
   burnWeaponId = 0;
+  /** m_hBurnWeapon: the weapon whose afterburn this is (mult_wpn_burndmg). */
+  burnWeapon: Weapon | null = null;
 
   readonly healers: Healer[] = [];
   /** The medigun's current target (MedicGetHealTarget), set by the medigun. */
@@ -506,6 +523,8 @@ export class Player extends Entity {
     this.lastSlot = this.activeSlot;
     this.activeSlot = slot;
     next.deploy();
+    // A provide_on_active weapon changes the wearer's numbers while it is out.
+    if (this.weapons.some((w) => w?.provideOnActive)) this.maxHealth = this.computeMaxHealth();
     return true;
   }
 
@@ -516,27 +535,65 @@ export class Player extends Entity {
     return false;
   }
 
-  /** Builds the class's stock loadout (CTFPlayer::GiveDefaultItems). */
+  /**
+   * SDK: CTFPlayer::GiveDefaultItems — the class's loadout (its stock items where none was
+   * chosen): a weapon per filled bucket, worn weapon-slot items as attribute providers, and the
+   * public form of what is equipped.
+   */
   giveDefaultItems(): void {
     for (let i = 0; i < WEAPON_SLOTS; i++) {
       this.weapons[i]?.onOwnerDeath();
       this.weapons[i] = null;
     }
-    for (const spec of stockLoadout(this.playerClass)) {
-      const w = createWeapon(spec);
-      if (w) {
+    const plan = planLoadout(this.playerClass, this.loadouts[this.playerClass], weaponSpecFor);
+    for (const p of plan.slots) {
+      if (!p.spec) continue;
+      const w = createWeapon(p.spec);
+      if (w && w.slot >= 0 && w.slot < WEAPON_SLOTS && !this.weapons[w.slot]) {
         this.weapons[w.slot] = w;
         w.equip(this);
       }
     }
+    this.wornAttributes = plan.worn;
+    this.items = encodeItems(plan.items);
+    this.loadoutDirty[this.playerClass] = false;
     this.activeSlot = -1;
     this.lastSlot = -1;
   }
 
+  /**
+   * A new loadout for a class (already validated: sim/items checkGameLoadout). It takes effect at
+   * the next respawn or resupply; `CheckInstantLoadoutRespawn` applies it at once in a respawn room.
+   */
+  setClassLoadout(classIndex: number, slots: LoadoutSlots | undefined): void {
+    if (classIndex <= 0 || classIndex >= TF_CLASS_COUNT) return;
+    this.loadouts[classIndex] = slots;
+    this.loadoutDirty[classIndex] = true;
+  }
+
+  /** A chosen loadout for the current class waits for the next respawn or resupply. */
+  get loadoutPending(): boolean {
+    return this.loadoutDirty[this.playerClass] === true;
+  }
+
+  /** SDK: CTFPlayer::GetMaxHealthForBuffing — the class's health, add_maxhealth from every provider. */
+  computeMaxHealth(): number {
+    return hookInt(hookPlayer(this, 'add_maxhealth', classHealth(this.playerClass)));
+  }
+
   /** Refills ammo to the class maximums (GiveDefaultAmmo). */
   refillAmmo(): void {
-    classMaxAmmo(this.playerClass, this.maxAmmo);
+    this.updateMaxAmmo();
     this.ammo.set(this.maxAmmo);
+  }
+
+  /** SDK: CTFPlayer::GetMaxAmmo — the class's maximums with mult_maxammo_* (CALL_ATTRIB_HOOK_INT). */
+  updateMaxAmmo(): void {
+    classMaxAmmo(this.playerClass, this.maxAmmo);
+    const m = this.maxAmmo;
+    m[1] = hookInt(hookPlayer(this, 'mult_maxammo_primary', m[1]));
+    m[2] = hookInt(hookPlayer(this, 'mult_maxammo_secondary', m[2]));
+    m[3] = hookInt(hookPlayer(this, 'mult_maxammo_metal', m[3]));
   }
 
   /** CTFPlayer::GiveAmmo. Returns how much was taken. */
@@ -580,6 +637,15 @@ export class Player extends Entity {
     if (this.removed || this.lifeState !== LIFE_ALIVE) return;
     if (this.takenBlastDamageSinceLastMovement && this.move.flags & FL_ONGROUND) {
       this.takenBlastDamageSinceLastMovement = false;
+    } else if (
+      world.isServer &&
+      this.takenBlastDamageSinceLastMovement &&
+      !(this.move.flags & FL_ONGROUND) &&
+      this.move.velocity.z > 250 &&
+      !inAirDueToExplosion(this)
+    ) {
+      // SDK: CTFGameMovement::CategorizePosition — leaving the ground after an enemy's blast.
+      this.setBlastJumpState(TF_PLAYER_ENEMY_BLASTED_ME);
     }
 
     // Weapons: the active one runs its frame, the others their holster frame.
@@ -653,6 +719,11 @@ export class Player extends Entity {
     s.teamWin = rules.bonusRoundSide(this);
     s.weaponSpeedMod = w ? w.speedMod() : 1;
     s.shieldCharging = this.cond.has(TF_COND.SHIELD_CHARGE);
+    // Items: mult_player_movespeed from every provider, mult_player_movespeed_active on the weapon
+    // out, mult_player_aiming_movespeed while aiming (TeamFortress_CalculateMaxSpeed).
+    s.moveSpeedMult = hookPlayer(this, 'mult_player_movespeed', 1);
+    s.activeWeaponSpeedMult = w ? hookWeapon(w, null, 'mult_player_movespeed_active', 1) : 1;
+    s.aimingSpeedMult = hookPlayer(this, 'mult_player_aiming_movespeed', 1);
     return calculateMaxSpeed(s);
   }
 
@@ -694,6 +765,9 @@ export class Player extends Entity {
     let decayHealth = true;
     if (this.healers.length > 0) {
       decayHealth = false;
+      // CTFPlayerShared::HealthThink: mult_health_fromhealers on every healer, mult_healing_from_medics on players.
+      const fromHealers = hookPlayer(this, 'mult_health_fromhealers', 1);
+      const fromMedics = fromHealers * hookPlayer(this, 'mult_healing_from_medics', 1);
       for (let i = 0; i < this.healers.length; i++) {
         const h = this.healers[i];
         const healer = world.entity(h.id);
@@ -701,7 +775,7 @@ export class Player extends Entity {
           this.healers.splice(i--, 1);
           continue;
         }
-        h.accum += h.rate * dt;
+        h.accum += h.rate * dt * (h.dispenser ? fromHealers : fromMedics);
         const cap = this.maxBuffedHealth(h.overhealMult);
         const whole = Math.floor(h.accum);
         if (whole > 0) {
@@ -737,7 +811,7 @@ export class Player extends Entity {
           info.attacker = this.burnAttacker;
           info.inflictor = this.burnAttacker;
           info.weaponId = this.burnWeaponId;
-          info.damage = TF_BURNING_DMG;
+          info.damage = this.burnWeapon ? hookWeapon(this.burnWeapon, this.burnWeapon.owner, 'mult_wpn_burndmg', TF_BURNING_DMG) : TF_BURNING_DMG;
           info.damageType = DMG_BURN | DMG_PREVENT_PHYSICS_FORCE;
           info.customKill = TF_DMG_CUSTOM_BURNING;
           info.killIcon = 'tf_weapon_flamethrower';
@@ -767,17 +841,37 @@ export class Player extends Entity {
       if (patient && patient.isPlayer() && patient.health < patient.maxHealth) amt += TF_REGEN_AMOUNT;
       this.accumulatedRegen += amt * scale;
     }
+    // Other classes regenerate from items (add_health_regen), less soon after being hurt.
+    let regen = hookPlayer(this, 'add_health_regen', 0);
+    if (regen) {
+      const since = t - this.lastDamageTime;
+      regen *= since < 5 ? 0.25 : remapClamped(since, 5, 10, 0.5, 1);
+    }
+    this.accumulatedRegen += regen;
     let heal = 0;
     if (this.accumulatedRegen >= 1) {
       heal = Math.floor(this.accumulatedRegen);
       if (this.health < this.maxHealth) this.takeHealth(heal);
+    } else if (this.accumulatedRegen < -1) {
+      // A drain (the Blutsauger): CTakeDamageInfo from the player to himself.
+      heal = Math.ceil(this.accumulatedRegen);
+      const info = this.scratchDamage();
+      info.attacker = this.id;
+      info.inflictor = this.id;
+      info.damage = -heal;
+      info.damageType = DMG_GENERIC;
+      this.worldSpaceCenter(info.position);
+      this.world.applyDamage(this, info);
+      this.releaseScratchDamage();
     }
     this.accumulatedRegen -= heal;
   }
 
   /** SDK: CTFPlayerShared::Burn. `flameLife` = the weapon's afterburn per hit. */
-  ignite(attacker: number, weaponId: number, flameLife = TF_BURNING_FLAME_LIFE): void {
+  ignite(attacker: number, weaponId: number, flameLife = TF_BURNING_FLAME_LIFE, weapon: Weapon | null = null): void {
     if (!this.alive) return;
+    // mult_wpn_burntime on the igniting weapon (the Degreaser's shorter afterburn is mult_wpn_burndmg).
+    const life = (base: number) => (weapon ? hookWeapon(weapon, weapon.owner, 'mult_wpn_burntime', base) : base);
     const immunePyro = this.playerClass === TF_CLASS_PYRO && !this.cond.has(TF_COND.BURNING_PYRO);
     if (!this.cond.has(TF_COND.BURNING)) {
       this.cond.add(TF_COND.BURNING, PERMANENT_CONDITION, attacker);
@@ -786,8 +880,9 @@ export class Player extends Entity {
     }
     this.burnAttacker = attacker;
     this.burnWeaponId = weaponId;
-    if (immunePyro) this.afterburnDuration = TF_BURNING_FLAME_LIFE_PYRO;
-    else this.afterburnDuration = Math.min(TF_AFTERBURN_MAX_DURATION, this.afterburnDuration + flameLife);
+    this.burnWeapon = weapon;
+    if (immunePyro) this.afterburnDuration = life(TF_BURNING_FLAME_LIFE_PYRO);
+    else this.afterburnDuration = Math.min(TF_AFTERBURN_MAX_DURATION, this.afterburnDuration + life(flameLife));
   }
 
   extinguish(): void {
@@ -875,8 +970,11 @@ export class Player extends Entity {
         return 0;
       }
 
-      // ApplyOnDamageAliveModifyRules (stock subset): ignition immunity in water handled in ignite.
-      const realDamage = info.damage;
+      // ApplyOnDamageAliveModifyRules: the victim's resistances and vulnerabilities from items
+      // (resists scale the damage without its crit bonus); ignition immunity in water is in ignite.
+      const bonus = Math.max(0, Math.min(info.damageBonus, info.damage));
+      const realDamage = aliveDamageModifiers(this, attacker, info, info.damage - bonus, bonus);
+      info.damage = realDamage;
       if (realDamage <= 0 && !(info.damageType & DMG_BLAST && attacker === this)) return 0;
 
       const prev = this.health;
@@ -918,7 +1016,12 @@ export class Player extends Entity {
 
       // Ignition.
       if (info.damageType & DMG_IGNITE && this.move.waterLevel < WL_WAIST && attacker && attacker.isPlayer()) {
-        this.ignite(attacker.id, info.weaponId, info.afterburn > 0 ? info.afterburn : TF_BURNING_FLAME_LIFE);
+        this.ignite(attacker.id, info.weaponId, info.afterburn > 0 ? info.afterburn : TF_BURNING_FLAME_LIFE, damageWeapon(world, info));
+      }
+
+      // The attacker's on-hit attributes (CTFWeaponBase::ApplyOnHitAttributes).
+      if (removed > 0 && attacker && attacker !== this && attacker.isPlayer() && attacker.team !== this.team) {
+        applyOnHitAttributes(attacker as Player, this, info);
       }
 
       if (this.health <= 0) this.die(info);
@@ -1000,6 +1103,7 @@ export class Player extends Entity {
     let deathFlags = 0;
     this.stats.deaths++;
     if (scorer) {
+      if (killer === scorer) applyOnKillAttributes(scorer, info);
       scorer.stats.kills++;
       if (info.customKill === TF_DMG_CUSTOM_BACKSTAB) scorer.stats.backstabs++;
       if (isHeadshot(info.customKill)) scorer.stats.headshots++;
@@ -1159,9 +1263,10 @@ export class Player extends Entity {
     this.meters.fill(100);
     this.carriedFlag = NO_ENTITY;
 
-    this.initClass();
-    if (this.weapons.every((w) => w === null)) this.giveDefaultItems();
+    // Items first: max health and ammo read their attributes (CTFPlayer::InitClass).
+    if (this.weapons.every((w) => w === null) || this.loadoutPending) this.giveDefaultItems();
     else for (const w of this.weapons) w?.refill();
+    this.initClass();
     this.activeSlot = -1;
     const first = this.weapons.findIndex((w) => w !== null);
     if (first >= 0) this.switchToSlot(first);
@@ -1179,7 +1284,7 @@ export class Player extends Entity {
 
   /** SDK: CTFPlayer::InitClass — max health and full ammo. */
   initClass(): void {
-    this.maxHealth = classHealth(this.playerClass);
+    this.maxHealth = this.computeMaxHealth();
     this.health = this.maxHealth;
     this.refillAmmo();
   }
@@ -1190,7 +1295,15 @@ export class Player extends Entity {
     const oldHealth = this.health;
     const oldMax = this.maxHealth;
     const boosted = oldHealth > oldMax;
-    this.maxHealth = classHealth(this.playerClass);
+    // A loadout chosen since the last spawn is put on here (Regenerate → InitClass → GiveDefaultItems).
+    if (this.loadoutPending) {
+      const active = this.activeSlot;
+      this.giveDefaultItems();
+      const slot = active >= 0 && this.weapons[active] ? active : this.weapons.findIndex((w) => w !== null);
+      if (slot >= 0) this.switchToSlot(slot);
+      this.lastSlot = -1;
+    }
+    this.maxHealth = this.computeMaxHealth();
     if (refillHealthAndAmmo) {
       this.health = Math.max(boosted ? oldHealth : 0, this.maxHealth);
       for (const c of [TF_COND.BURNING, TF_COND.URINE, TF_COND.MAD_MILK, TF_COND.BLEEDING, TF_COND.ENERGY_BUFF, TF_COND.PHASE]) {
@@ -1274,6 +1387,7 @@ export class Player extends Entity {
     out.carriedFlag = this.carriedFlag;
     out.observerMode = this.observerMode;
     out.observerTarget = this.observerTarget;
+    out.items = this.items;
     // Private block.
     for (let i = 1; i < TF_AMMO_COUNT; i++) out[AMMO_FIELDS[i]] = this.ammo[i];
     out.lastSlot = this.lastSlot;
@@ -1281,6 +1395,8 @@ export class Player extends Entity {
     out.nextRegenAt = this.nextRegenTime;
     for (let i = 0; i < 4; i++) out[METER_FIELDS[i]] = this.meters[i];
     out.blastJump = this.blastJumpState;
+    out.loadoutPending = this.loadoutPending;
+    out.inSpawnRoom = this.inRespawnRoom();
     writeMoveState(this.move, out);
   }
 }

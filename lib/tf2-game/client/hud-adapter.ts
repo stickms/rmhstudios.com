@@ -65,6 +65,7 @@ import {
   type HudKillEntry,
   type HudKillParty,
   type HudLocalPlayer,
+  type HudLoadoutAnswer,
   type HudMatch,
   type HudMeters,
   type HudMode,
@@ -378,6 +379,9 @@ export function adaptLocalPlayer(src: HudSource): HudLocalPlayer | null {
     engineer: cls === TF_CLASS_ENGINEER ? adaptEngineer(r, src.entities, src.localEntity) : null,
     respawnIn: !alive && respawnAt > 0 ? Math.max(0, respawnAt - src.curtime) : null,
     spectating,
+    items: typeof r.items === 'string' ? r.items : '',
+    loadoutPending: r.loadoutPending === true,
+    inSpawnRoom: r.inSpawnRoom === true,
   };
 }
 
@@ -661,6 +665,8 @@ export class HudEventLog {
   readonly dominated = new Set<number>();
   readonly nemeses = new Set<number>();
   freezecam: HudFreezeCam | null = null;
+  /** The last answer to an equip (`loadout` event). */
+  loadout: HudLoadoutAnswer | null = null;
   hitSeq = 0;
   killSeq = 0;
   lastHitCrit = false;
@@ -785,6 +791,9 @@ export class HudEventLog {
       case 'hud':
         this.pushCenter(ev.key, ev.kind, ev.holdTime ?? 5, ctx.now);
         break;
+      case 'loadout':
+        if (ev.player === local) this.loadout = { cls: ev.cls, status: ev.status, reason: ev.reason, at: ctx.now };
+        break;
       case 'spawn':
         if (ev.player === local) this.freezecam = null;
         break;
@@ -832,6 +841,7 @@ export class HudEventLog {
   /** Copies the live history into `state` (arrays are copied, so React sees new references). */
   apply(state: HudState, now: number): void {
     this.prune(now);
+    state.loadout = this.loadout;
     state.killfeed = this.killfeed.slice();
     state.chat = this.chat.slice();
     state.damageNumbers = this.damageNumbers.slice();

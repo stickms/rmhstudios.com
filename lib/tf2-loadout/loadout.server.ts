@@ -22,15 +22,8 @@ import {
   type Visibility,
 } from './api-types';
 import { getCatalogObject } from './catalog.server';
-import {
-  acceptedSlots,
-  slotFor,
-  effectAppliesTo,
-  TF_CLASSES,
-  type Catalog,
-  type LoadoutSlots,
-  type TfClass,
-} from './catalog-types';
+import { TF_CLASSES, type Catalog, type LoadoutSlots, type TfClass } from './catalog-types';
+import { slotProblem } from './validate';
 
 export class LoadoutError extends Error {
   constructor(
@@ -105,53 +98,11 @@ async function uniqueSlug(title: string): Promise<string> {
  * unchecked.
  */
 export function validateSlots(catalog: Catalog, tfClass: TfClass, slots: LoadoutSlots): void {
-  const byId = new Map(catalog.items.map((i) => [i.id, i]));
-  const paints = new Set(catalog.paints.map((p) => p.id));
-  const effects = new Map(catalog.effects.map((e) => [e.id, e]));
-  const kits = new Map((catalog.kits ?? []).map((k) => [k.id, k]));
-
-  for (const [key, entry] of Object.entries(slots)) {
-    const item = byId.get(entry.item);
-    if (!item) throw new LoadoutError(`Unknown item ${entry.item} in ${key}`, 400);
-    const slot = slotFor(item, tfClass);
-    if (!slot || !acceptedSlots(key).includes(slot)) {
-      throw new LoadoutError(`${item.n} cannot go in ${key} for ${tfClass}`, 400);
-    }
-    if (entry.paint !== undefined && (!item.p || !paints.has(entry.paint))) {
-      throw new LoadoutError(`${item.n} cannot take that paint`, 400);
-    }
-    if (entry.effect !== undefined) {
-      if (!effectAppliesTo(effects.get(entry.effect), item, slot)) {
-        throw new LoadoutError(`${item.n} cannot take that effect`, 400);
-      }
-    }
-    if (entry.fx !== undefined && entry.effect === undefined) {
-      throw new LoadoutError(`${item.n} has an effect placement but no effect`, 400);
-    }
-    if (entry.style !== undefined && !item.st?.some((s) => s.k === entry.style)) {
-      throw new LoadoutError(`${item.n} has no such style`, 400);
-    }
-    if (entry.festive && !item.fz) {
-      throw new LoadoutError(`${item.n} cannot be festivized`, 400);
-    }
-    if (entry.kit !== undefined || entry.wear !== undefined || entry.seed !== undefined) {
-      const warPaintable = slot === 'primary' || slot === 'secondary' || slot === 'melee';
-      // A decorated weapon already has its kit; only its wear and seed are the player's to set.
-      if (item.sk && entry.kit !== undefined) {
-        throw new LoadoutError(`${item.n} already has its own pattern`, 400);
-      }
-      const kit = entry.kit !== undefined ? kits.get(entry.kit) : undefined;
-      if (
-        !warPaintable ||
-        (!item.sk && entry.kit !== undefined && !(kit && item.wk && kit.w[item.wk]))
-      ) {
-        throw new LoadoutError(`${item.n} cannot take that war paint`, 400);
-      }
-    }
-    // Overlapping regions, a repeated cosmetic and more than three cosmetics are allowed on purpose:
-    // the builder lets players go past the game's rules (it shows a warning), and a view of such a
-    // loadout shows the same warning (lib/tf2-loadout/rules.ts).
-  }
+  const problem = slotProblem(catalog, tfClass, slots);
+  if (problem) throw new LoadoutError(problem, 400);
+  // Overlapping regions, a repeated cosmetic and more than three cosmetics are allowed on purpose:
+  // the builder lets players go past the game's rules (it shows a warning), and a view of such a
+  // loadout shows the same warning (lib/tf2-loadout/rules.ts).
 }
 
 /** Distinct defindexes in a loadout (items, not paints), for the search index. */

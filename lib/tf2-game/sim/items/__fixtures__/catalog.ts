@@ -1,0 +1,216 @@
+/**
+ * A small catalog for the items tests: a few unlocks with their schema attributes as
+ * items_game.txt gives them (and catalog-build.ts emits them — items.test.ts checks the
+ * real build against these when TF2_ROOT is set), cosmetics with equip regions, a paint
+ * and an effect. Stock items are not listed: the resolver falls back to the stock table.
+ * Test-only.
+ */
+
+import type { Catalog, CatalogItem } from '../../../../tf2-loadout/catalog-types';
+
+// Class bits in TF_CLASSES order: scout 1, soldier 2, pyro 4, demoman 8, heavy 16, engineer 32,
+// medic 64, sniper 128, spy 256.
+export const ITEMS: CatalogItem[] = [
+  {
+    id: 127,
+    n: 'Direct Hit',
+    t: 'Rocket Launcher',
+    q: 'unique',
+    s: 'primary',
+    c: 2,
+    ic: 'tf_weapon_rocketlauncher_directhit',
+    at: [
+      ['mult_explosion_radius', 0.3, 0],
+      ['mult_projectile_speed', 1.8, 0],
+      ['mult_dmg', 1.25, 0],
+      ['mini_crit_airborne', 1, 1],
+    ],
+  },
+  {
+    id: 228,
+    n: 'Black Box',
+    t: 'Rocket Launcher',
+    q: 'unique',
+    s: 'primary',
+    c: 2,
+    ic: 'tf_weapon_rocketlauncher',
+    at: [
+      ['add_health_on_radius_damage', 20, 1],
+      ['mult_clipsize', 0.75, 0],
+    ],
+  },
+  {
+    id: 414,
+    n: 'Liberty Launcher',
+    t: 'Rocket Launcher',
+    q: 'unique',
+    s: 'primary',
+    c: 2,
+    ic: 'tf_weapon_rocketlauncher',
+    at: [
+      ['mult_projectile_speed', 1.4, 0],
+      ['mult_dmg', 0.75, 0],
+      ['mult_clipsize', 1.25, 0],
+      ['rocket_jump_dmg_reduction', 0.75, 0],
+    ],
+  },
+  {
+    id: 133,
+    n: 'Gunboats',
+    t: 'Boots',
+    q: 'unique',
+    s: 'secondary',
+    c: 2,
+    ic: 'tf_wearable',
+    an: 'FORCE_NOT_USED',
+    at: [['rocket_jump_dmg_reduction', 0.4, 0]],
+  },
+  {
+    id: 215,
+    n: 'Degreaser',
+    t: 'Flame Thrower',
+    q: 'unique',
+    s: 'primary',
+    c: 4,
+    ic: 'tf_weapon_flamethrower',
+    at: [
+      ['flame_gravity', 0, 1],
+      ['flame_drag', 8.5, 1],
+      ['flame_up_speed', 50, 1],
+      ['flame_speed', 2450, 1],
+      ['flame_spread_degree', 2.8, 1],
+      ['flame_lifetime', 0.6, 1],
+      ['flame_random_life_time_offset', 0.1, 1],
+      ['extinguish_restores_health', 20, 1],
+      ['mult_single_wep_deploy_time', 0.4, 0],
+      ['mult_switch_from_wep_deploy_time', 0.7, 0],
+      ['mult_wpn_burndmg', 0.34, 0],
+      ['mult_airblast_cost', 1.25, 0],
+    ],
+  },
+  {
+    id: 35,
+    n: 'Kritzkrieg',
+    t: 'Medi Gun',
+    q: 'unique',
+    s: 'secondary',
+    c: 64,
+    ic: 'tf_weapon_medigun',
+    at: [
+      ['set_charge_type', 1, 1],
+      ['mult_medigun_uberchargerate', 1.25, 0],
+    ],
+  },
+  {
+    id: 41,
+    n: 'Natascha',
+    t: 'Minigun',
+    q: 'unique',
+    s: 'primary',
+    c: 16,
+    ic: 'tf_weapon_minigun',
+    at: [
+      ['mult_onhit_enemyspeed', 1, 1],
+      ['mult_dmg', 0.75, 0],
+      ['mult_minigun_spinup_time', 1.3, 0],
+      ['set_weapon_mode', 1, 1],
+      ['spunup_damage_resistance', 0.8, 0],
+    ],
+  },
+  {
+    id: 56,
+    n: 'Huntsman',
+    t: 'Bow',
+    q: 'unique',
+    s: 'primary',
+    c: 128,
+    ic: 'tf_weapon_compound_bow',
+    an: 'ITEM2',
+    at: [['mult_maxammo_primary', 0.5, 0]],
+  },
+  {
+    id: 61,
+    n: 'Ambassador',
+    t: 'Revolver',
+    q: 'unique',
+    s: 'secondary',
+    c: 256,
+    ic: 'tf_weapon_revolver',
+    at: [
+      ['set_weapon_mode', 1, 1],
+      ['mult_dmg', 0.85, 0],
+      ['mult_postfiredelay', 1.2, 0],
+      ['mult_crit_chance', 0, 0],
+      ['crit_dmg_falloff', 1, 1],
+    ],
+  },
+  {
+    id: 220,
+    n: 'Shortstop',
+    t: 'Peppergun',
+    q: 'unique',
+    s: 'primary',
+    c: 1,
+    ic: 'tf_weapon_handgun_scout_primary',
+    an: 'SECONDARY',
+    at: [
+      ['provide_on_active', 1, 1],
+      ['mult_reload_time_hidden', 1.5, 0],
+      ['damage_force_reduction', 1, 0],
+      ['damage_force_reduction', 1.2, 0],
+      ['airblast_vulnerability_multiplier', 1.2, 0],
+    ],
+  },
+  {
+    id: 214,
+    n: 'Powerjack',
+    t: 'Sledgehammer',
+    q: 'unique',
+    s: 'melee',
+    c: 4,
+    ic: 'tf_weapon_fireaxe',
+    at: [
+      ['heal_on_kill', 25, 1],
+      ['mult_player_movespeed', 1.15, 0],
+      ['mult_dmgtaken', 1.2, 0],
+      ['provide_on_active', 1, 1],
+    ],
+  },
+  // Cosmetics: two hats sharing the "hat" region, glasses, a medal; one paintable with styles.
+  {
+    id: 30001,
+    n: 'Test Hat A',
+    t: 'Hat',
+    q: 'unique',
+    s: 'head',
+    c: 511,
+    r: ['hat'],
+    p: 1,
+    st: [
+      { k: 0, n: 'One' },
+      { k: 1, n: 'Two' },
+    ],
+    bg: { hat: 1 },
+  },
+  { id: 30002, n: 'Test Hat B', t: 'Hat', q: 'unique', s: 'head', c: 511, r: ['hat'] },
+  { id: 30003, n: 'Test Glasses', t: 'Glasses', q: 'unique', s: 'misc', c: 511, r: ['glasses'] },
+  { id: 30004, n: 'Test Medal', t: 'Medal', q: 'unique', s: 'misc', c: 511, r: ['medal'] },
+  { id: 30005, n: 'Test Beard', t: 'Beard', q: 'unique', s: 'misc', c: 511, r: ['beard'] },
+  { id: 30006, n: 'Test Face', t: 'Mask', q: 'unique', s: 'misc', c: 511, r: ['face'] },
+];
+
+export function testCatalog(): Catalog {
+  return {
+    v: 1,
+    source: {
+      label: 'test',
+      hash: 'test-catalog',
+      builtAt: '2026-10-29T00:00:00.000Z',
+      hasIcons: false,
+    },
+    items: ITEMS,
+    paints: [{ id: 5029, n: 'An Extraordinary Abundance of Tinge', rgb: '#e6e6e6' }],
+    effects: [{ id: 13, n: 'Burning Flames', system: 'superrare_burning1', category: 'cosmetic' }],
+    conflicts: { glasses: ['face'], face: ['glasses'] },
+  };
+}

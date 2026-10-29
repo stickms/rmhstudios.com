@@ -36,6 +36,7 @@ import type { NetRecord } from '../../sim/net-schema';
 import { readMoveState, type Player } from '../../sim/player';
 import { weaponSpecFor } from '../../sim/loadout';
 import { createWeapon, WEAPON_SLOTS, type SoundOptions } from '../../sim/weapon-api';
+import { decodeItems, wornAttributesOf } from '../../sim/items/loadout';
 import type { GameWorld } from '../../sim/world';
 
 /** cl_smoothtime. */
@@ -105,6 +106,12 @@ export function restorePlayerFromRecords(
     if (`ammo${i}` in rec) player.ammo[i] = n(`ammo${i}`);
   for (let i = 0; i < player.meters.length; i++) player.meters[i] = n(`meter${i}`);
   player.blastJumpState = n('blastJump');
+  // Worn weapon-slot items provide attributes the shared code reads (move speed, deploy time…).
+  const items = typeof rec.items === 'string' ? rec.items : '';
+  if (items !== player.items) {
+    player.items = items;
+    player.wornAttributes = wornAttributesOf(decodeItems(items), player.playerClass);
+  }
   player.lastSlot = n('lastSlot');
   player.eyeAngles.x = n('eyePitch');
   player.eyeAngles.y = n('eyeYaw');

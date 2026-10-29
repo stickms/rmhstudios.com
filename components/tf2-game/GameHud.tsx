@@ -19,10 +19,16 @@
  * belong to a menu (`input.menuOpen`: number keys pick items) or to text and
  * the pause menu (`input.suspended`: the game sees nothing). It also mounts
  * the touch controls on touch-first devices.
+ *
+ * TF2 can draw a custom HUD (pause menu → HUD, or the HUD editor's "Test in
+ * game"): its `.res` panels come from the HUD editor's renderer on a canvas
+ * (custom-hud/CustomHudLayer), the panels the game makes at run time follow
+ * its hudlayout.res, and the full HUD editor can be opened over the match
+ * (custom-hud/HudEditorOverlay; it has the keys, and offline play pauses).
  */
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { HudGame } from '@/lib/tf2-game/client/hud-state';
 import type { HudStore } from '@/lib/tf2-game/client/hud-store';
@@ -31,7 +37,9 @@ import { CLASS_MENU_ORDER, TF_CLASS_ENGINEER, TF_CLASS_SPY, enemyTeam } from '@/
 import { slotOf, type ImpulseAction } from '@/lib/tf2-game/client/input/actions';
 import type { InputState } from '@/lib/tf2-game/client/input/input-state';
 import { detectTouchFirst } from '@/lib/tf2-game/client/input/touch';
-import { defaultLayout, hudScale, mergeLayout, TOUCH_OVERRIDES, type HudLayout, type HudScreen } from './hud-layout';
+import { layoutOverrides } from '@/lib/tf2-game/client/custom-hud/layout';
+import { PC_ENV } from '@/lib/tf2-hud/scheme/cond';
+import { defaultLayout, hudScale, mergeLayout, TF2_LAYOUT, TOUCH_OVERRIDES, type HudLayout, type HudScreen } from './hud-layout';
 import { HudProvider, useHudState } from './use-hud';
 import Tf2Hud from './tf2/Tf2Hud';
 import Scoreboard from './tf2/Scoreboard';
@@ -39,9 +47,17 @@ import { ClassMenu, TeamMenu, TEAM_MENU_KEYS, classForMenuKey } from './tf2/Sele
 import { Chat, VoiceMenu } from './tf2/Comms';
 import { BUILD_SLOTS, BuildMenu, DisguiseMenu } from './tf2/PdaMenus';
 import { Captions, Hl2Hud, PortalHud } from './sp/SpHuds';
-import PauseMenu from './shared/PauseMenu';
+import PauseMenu, { type PauseView } from './shared/PauseMenu';
+import CustomHudLayer from './custom-hud/CustomHudLayer';
+import { useHudChoice } from './custom-hud/hud-choice';
 import TouchOverlay from './touch/TouchOverlay';
 import './tf2-game.css';
+
+// The HUD picker and the HUD editor load when first opened.
+const HudPauseView = lazy(() => import('./custom-hud/HudPauseView'));
+const HudEditorOverlay = lazy(() => import('./custom-hud/HudEditorOverlay'));
+// The in-game loadout editor loads when first opened (three.js, the item catalog).
+const LoadoutPauseView = lazy(() => import('./tf2/LoadoutPauseView'));
 
 export type HudMenu =
   | { kind: 'none' }
@@ -49,7 +65,8 @@ export type HudMenu =
   | { kind: 'class' }
   | { kind: 'voice'; menu: 0 | 1 | 2 }
   | { kind: 'chat'; team: boolean }
-  | { kind: 'pause'; view: 'menu' | 'settings' };
+  /** `menu`, `settings`, or a pause view's id (`hud`, …). */
+  | { kind: 'pause'; view: string };
 
 export interface GameHudProps {
   game: HudGame;
@@ -97,6 +114,10 @@ function HudBody({
   const [touchScores, setTouchScores] = useState(false);
   const local = state.local;
   const tf2 = game === 'tf2';
+  const customHud = useHudChoice((s) => (tf2 ? s.active : null));
+  const editorOpen = useHudChoice((s) => tf2 && s.editorOpen);
+  const editorUsed = useHudChoice((s) => tf2 && s.editorKey !== null);
+  const setEditorOpen = useHudChoice((s) => s.setEditorOpen);
 
   // The join flow: no team → team menu; a team but no class → class menu (until dismissed).
   const joinMenu: HudMenu | null =
@@ -125,10 +146,11 @@ function HudBody({
   useEffect(() => {
     if (!input) return;
     input.menuOpen = shown.kind === 'voice' || shown.kind === 'team' || shown.kind === 'class' || pda !== null;
-    input.suspended = shown.kind === 'chat' || shown.kind === 'pause';
-  }, [input, shown.kind, pda]);
+    input.suspended = shown.kind === 'chat' || shown.kind === 'pause' || editorOpen;
+  }, [input, shown.kind, pda, editorOpen]);
 
-  const paused = shown.kind === 'pause';
+  // The pause menu, or the HUD editor over the match: offline play stops, online play goes on.
+  const paused = shown.kind === 'pause' || editorOpen;
   useEffect(() => {
     store.send({ kind: 'pause', paused });
   }, [store, paused]);
@@ -167,6 +189,8 @@ function HudBody({
   // Impulses from the input layer (keyboard, gamepad, touch).
   useEffect(() => {
     return store.onImpulse((a: ImpulseAction) => {
+      // The HUD editor has the keys.
+      if (editorOpen) return;
       const slot = slotOf(a);
       if (a === 'menu') {
         if (shown.kind !== 'none') close();
@@ -215,7 +239,7 @@ function HudBody({
           break;
       }
     });
-  }, [store, shown, pda, tf2, close, pickMenuItem]);
+  }, [store, shown, pda, tf2, close, pickMenuItem, editorOpen]);
 
   // Keys with no binding action: 0 (cancel / random class) and - (the disguise kit's team) while a menu has the keys.
   useEffect(() => {
@@ -237,14 +261,66 @@ function HudBody({
     (!!input && (input.held.key.has('showscores') || input.held.pad.has('showscores') || input.held.touch.has('showscores'))) ||
     state.match.roundState === 'game_over';
 
+  // The pause menu's views beyond Options (others append here).
+  const pauseViews = useMemo<PauseView[]>(() => {
+    if (!tf2) return [];
+    const views: PauseView[] = [];
+    if (editorUsed) {
+      views.push({
+        id: 'hud-editor',
+        label: t('hud_back_to_editor', { defaultValue: 'Back to the HUD editor' }),
+        action: () => {
+          setMenu(NONE);
+          setEditorOpen(true);
+        },
+      });
+    }
+    views.push({
+      id: 'hud',
+      label: t('hud', { defaultValue: 'HUD' }),
+      wide: true,
+      render: ({ back }) => (
+        <Suspense fallback={<p className="text-sm text-(--app-text-muted)">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
+          <HudPauseView
+            onBack={back}
+            onEdit={() => {
+              setMenu(NONE);
+              setEditorOpen(true);
+            }}
+          />
+        </Suspense>
+      ),
+    });
+    // Loadout: the builder's slots, picker and 3D player; Equip sends it to the match.
+    views.push({
+      id: 'loadout',
+      label: t('loadout', { defaultValue: 'Loadout' }),
+      wide: true,
+      render: () => (
+        <Suspense fallback={<p className="text-sm text-(--app-text-muted)">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
+          <LoadoutPauseView />
+        </Suspense>
+      ),
+    });
+    return views;
+  }, [tf2, t, editorUsed, setEditorOpen]);
+
   return (
     <>
-      {tf2 ? <Tf2Hud state={state} hideCrosshair={(shown.kind !== 'none' && shown.kind !== 'chat') || pda !== null} /> : null}
+      {tf2 ? (
+        <Tf2Hud
+          state={state}
+          hideCrosshair={(shown.kind !== 'none' && shown.kind !== 'chat') || pda !== null}
+          custom={!!customHud}
+          customBuildings={customHud?.drawsBuildings}
+          customLayer={customHud ? <CustomHudLayer hud={customHud} store={store} /> : null}
+        />
+      ) : null}
       {game === 'hl2' && state.hl2 ? <Hl2Hud hl2={state.hl2} alive={(state.hl2.health ?? 0) > 0} /> : null}
       {game === 'portal' && state.portal ? <PortalHud portal={state.portal} fade={state.fade} /> : null}
       {game !== 'tf2' ? <Captions captions={state.captions} /> : null}
       {/* Before every menu, so menus paint above it; its move/look zones stand down while one is open. */}
-      {touch && input && shown.kind !== 'pause' ? (
+      {touch && input && shown.kind !== 'pause' && !editorOpen ? (
         <TouchOverlay
           game={game}
           input={input}
@@ -305,8 +381,14 @@ function HudBody({
         onChangeTeam={tf2 ? () => setMenu({ kind: 'team' }) : undefined}
         onChangeClass={tf2 && local && local.team >= 2 ? () => setMenu({ kind: 'class' }) : undefined}
         onDisconnect={onDisconnect}
+        views={pauseViews}
         initialView={shown.kind === 'pause' ? shown.view : 'menu'}
       />
+      {editorOpen ? (
+        <Suspense fallback={null}>
+          <HudEditorOverlay store={store} />
+        </Suspense>
+      ) : null}
     </>
   );
 }
@@ -325,12 +407,22 @@ export default function GameHud(props: GameHudProps) {
     return () => ro.disconnect();
   }, []);
   const touch = useTouchControls(settings.touch.mode, forceTouch);
+  // The remembered HUD choice (TF2 only); a custom HUD moves the game's own panels with its hudlayout.res.
+  useEffect(() => {
+    if (game === 'tf2') useHudChoice.getState().init();
+  }, [game]);
+  const customHud = useHudChoice((s) => (game === 'tf2' ? s.active : null));
+  const hudLayout = useMemo(
+    () => (customHud ? layoutOverrides(customHud.files.readText, PC_ENV, Object.keys(TF2_LAYOUT)) : null),
+    [customHud],
+  );
   const value = useMemo(
     () => {
-      const base = layout ?? defaultLayout(game);
+      const own = layout ?? defaultLayout(game);
+      const base = hudLayout ? mergeLayout(own, hudLayout) : own;
       return { store, layout: touch ? mergeLayout(base, TOUCH_OVERRIDES[game]) : base, screen, settings };
     },
-    [store, layout, game, screen, settings, touch],
+    [store, layout, game, screen, settings, touch, hudLayout],
   );
   const theme = game === 'hl2' ? ' tf2g-hl2-theme' : game === 'portal' ? ' tf2g-portal-theme' : '';
   return (

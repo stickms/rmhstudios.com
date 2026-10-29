@@ -8,6 +8,8 @@
  *     [--pkg <maps-out root>] [--out <dir>] [--size 960x540] [--mode auto|package|original] \
  *     [--spawns]   # also shoot every player start (info_player_teamspawn / info_player_start)
  *     [--scenes scripts/tf2-game/render-harness/entity-scenes.json]  # entity scenes instead of views
+ *     [--loadout <dir>]   # players wear their `items`: <dir>/catalog.json, <dir>/models/*.glb
+ *                         # (scripts/tf2-assets/convert.py), <dir>/particles/ (manifest.json + effects)
  *
  * An entity scene (lib/tf2-game/render/entities) places entities, an optional view model and
  * sim events, runs `script` steps ({ advance: s } | { event } | { patch: { id, fields } }),
@@ -66,6 +68,7 @@ const outDir = path.resolve(arg('out', process.env.RENDER_OUT ?? path.join(ROOT,
 const [W, H] = (arg('size', '960x540') ?? '960x540').split('x').map(Number);
 const mode = arg('mode', 'auto')!;
 const only = arg('only')?.split(',');
+const loadoutDir = arg('loadout') ? path.resolve(arg('loadout')!) : '';
 const installs: Record<string, string> = {
   tf2: process.env.TF2_ROOT ?? '/home/user/tf2ds/tf',
   hl2: process.env.HL2_ROOT ?? '/home/user/hl2demo/hl2',
@@ -109,6 +112,13 @@ function serve(js: string): Promise<{ server: Server; port: number }> {
     if (p === '/' || p === '/index.html') return send(200, html, 'text/html');
     if (p === '/harness.js') return send(200, js, 'text/javascript');
     let file: string | null = null;
+    if (loadoutDir && p === '/loadout/models.json') {
+      const dir = path.join(loadoutDir, 'models');
+      const ids = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.glb')).map((f) => f.slice(0, -4)) : [];
+      return send(200, JSON.stringify(ids), 'application/json');
+    }
+    const lo = /^\/loadout\/(.+)$/.exec(p);
+    if (lo && loadoutDir) file = path.join(loadoutDir, lo[1]);
     let m = /^\/pkg\/(tf2|hl2|portal)\/(.+)$/.exec(p);
     if (m && pkgRoot) file = path.join(pkgRoot, m[1], m[2]);
     m = /^\/orig\/(tf2|hl2|portal)\/([\w.-]+\.bsp)$/.exec(p);
@@ -152,7 +162,7 @@ async function main(): Promise<void> {
       if (msg.type() === 'error' || msg.type() === 'warning') log(`[page ${msg.type()}]`, msg.text().slice(0, 300));
     });
     page.on('pageerror', (e) => log('[page error]', e.message));
-    await page.goto(`http://127.0.0.1:${port}/?w=${W}&h=${H}${arg('lighting') ? `&lighting=${arg('lighting')}` : ''}${arg('debug') ? `&debug=${arg('debug')}` : ''}`);
+    await page.goto(`http://127.0.0.1:${port}/?w=${W}&h=${H}${arg('lighting') ? `&lighting=${arg('lighting')}` : ''}${arg('debug') ? `&debug=${arg('debug')}` : ''}${loadoutDir ? '&loadout=1' : ''}`);
     await page.waitForFunction(() => window.harness?.ready === true);
     const load = await page.evaluate(
       ([g, m, mo]) => window.harness.loadMap(g as 'tf2', m, mo as 'auto'),

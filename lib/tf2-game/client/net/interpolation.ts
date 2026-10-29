@@ -74,6 +74,12 @@ export class RenderClock {
     return this.synced;
   }
 
+  /** Forget the estimate (the listen server resumed from a pause): the next snapshot sets it afresh. */
+  resync(): void {
+    this.synced = false;
+    this.window.length = 0;
+  }
+
   /** The estimated current server time (seconds). Call once per frame, with a monotonic clock. */
   serverTime(localMs: number): number {
     const local = localMs / 1000;

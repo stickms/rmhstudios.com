@@ -19,6 +19,7 @@ import { TF_RELOAD_START, type WeaponSpec } from '../weapon-api';
 import { ACT, TF_WEAPON_PRIMARY_MODE } from './constants';
 import { removeDisguise, removeInvisibility } from './spy-state';
 import { TFWeapon } from './tf-weapon';
+import { hookWeapon } from '../items/attributes';
 
 const scratchEye = vec3();
 const scratchAngles = vec3();
@@ -202,7 +203,9 @@ export class TFWeaponGun extends TFWeapon {
     o.eyePosition(scratchEye);
     o.world.traceLine(scratchEye, scratchSrc, MASK_SOLID_BRUSHONLY, o.world.entityFilter(o, COLLISION_GROUP_NONE), backTrace);
     angleVectors(scratchAngles, scratchFwd);
-    set(scratchVel, scratchFwd.x * ROCKET.speed, scratchFwd.y * ROCKET.speed, scratchFwd.z * ROCKET.speed);
+    // SDK: CTFBaseRocket::Create — 1100 × mult_projectile_speed (the Direct Hit, the Liberty Launcher).
+    const speed = hookWeapon(this, o, 'mult_projectile_speed', ROCKET.speed);
+    set(scratchVel, scratchFwd.x * speed, scratchFwd.y * speed, scratchFwd.z * speed);
     return o.world.spawnProjectile('tf_projectile_rocket', {
       origin: backTrace.endPos,
       angles: scratchAngles,
@@ -237,9 +240,9 @@ export class TFWeaponGun extends TFWeapon {
     });
   }
 
-  /** Launch speed for pipes (TF_GRENADE_LAUNCER_MIN_VEL); stickies override with their charge. */
+  /** Launch speed for pipes (CTFGrenadeLauncher::GetProjectileSpeed: × mult_projectile_speed); stickies override with their charge. */
   projectileSpeed(): number {
-    return GRENADE_LAUNCHER.speed;
+    return hookWeapon(this, this.owner, 'mult_projectile_speed', GRENADE_LAUNCHER.speed);
   }
 
   /** The projectile classname FirePipeBomb creates. */
@@ -289,7 +292,8 @@ export class TFWeaponGun extends TFWeapon {
       weapon: this,
       damage: this.projectileDamage(),
       critType: this.currentAttackIsCrit ? 2 : 0,
-      extra: { radius: this.script.damageRadius, spinX: GRENADE_LAUNCHER.spinX, spinY },
+      // CTFWeaponBaseGrenadeProj::GetDamageRadius: the script radius × mult_explosion_radius.
+      extra: { radius: hookWeapon(this, o, 'mult_explosion_radius', this.script.damageRadius), spinX: GRENADE_LAUNCHER.spinX, spinY },
     });
   }
 

@@ -224,6 +224,8 @@ export const NET_PLAYER = registerNetSchema(5, 'player', [
   f('carriedFlag', 'i16'),
   f('observerMode', 'u8'),
   f('observerTarget', 'i16'),
+  /** What the player has equipped, public (sim/items/loadout.ts encodeItems): every client renders it. */
+  f('items', 'str'),
   // ---- private (owner only) ----
   ...moveStateFields(),
   f('ammo1', 'i16', true),
@@ -240,6 +242,10 @@ export const NET_PLAYER = registerNetSchema(5, 'player', [
   f('meter2', 'f32', true),
   f('meter3', 'f32', true),
   f('blastJump', 'u8', true),
+  /** A loadout chosen for the current class waits for the next respawn or resupply. */
+  f('loadoutPending', 'bool', true),
+  /** In one of the team's own respawn rooms (a new loadout applies at once there). */
+  f('inSpawnRoom', 'bool', true),
 ]);
 
 /**

@@ -41,6 +41,7 @@ import {
   type RoomListEntry,
   type TeamChoice,
 } from './events';
+import type { LoadoutSlots, TfClass } from '../../tf2-loadout/catalog-types';
 
 export interface Tf2ClientHandlers {
   onStatus?(status: RealtimeStatus): void;
@@ -216,6 +217,8 @@ export const tf2 = {
   /** A generic game command (`build`, `destroy`, `disguise`, `taunt` …) — MatchCommand { kind: 'extra' }. */
   extra: (command: string, args: ReadonlyArray<number | string | boolean> = []) =>
     emit(TF2_C2S.EXTRA, { command, args } satisfies ExtraCommandPayload),
+  /** Equip a loadout for a class (MatchCommand { kind: 'loadout' }). */
+  loadout: (cls: TfClass, slots: LoadoutSlots) => emit(TF2_C2S.LOADOUT, { cls, slots }, true),
   /** The latest server-tick estimate, or null before the first pong. */
   clock: (): ClockEstimate | null => clock.estimate(),
   currentRoom: (): string | null => currentCode,

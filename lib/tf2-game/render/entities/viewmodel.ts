@@ -14,12 +14,15 @@
  *   - Muzzle flashes at the c_model's `muzzle` attachment on fire activities (the shooter
  *     does not receive their own muzzle-flash event); the minigun barrel spins on
  *     PREFIRE/PRIMARYATTACK and winds down on POSTFIRE (CTFMinigun::SendWeaponAnim).
+ *   - Unlock weapons: the loadout channel's c_model on the arms' weapon bone, the activity
+ *     table of the item's role (data/unlock-scripts.ts VM_ACTIVITY_TABLES); the class's stock
+ *     weapon of the slot stands in until (or unless) the channel has the model.
  *   - Hidden when zoomed, dead or spectating (the caller says so with `visible`).
  */
 import { Matrix4, PerspectiveCamera, Scene, Vector3, type WebGLRenderer } from 'three';
 import { CLASS_DATA } from '../../data/classes';
-import { STOCK_WEAPONS, weaponScriptFor } from '../../data/weapons';
 import { TF_TEAM_BLUE } from '../../core/constants';
+import type { PublicItem } from '../../sim/items/loadout';
 import { vmActivityName } from '../../sim/weapons/constants';
 import { sourceFovToVertical, type SourceCamera } from '../camera';
 import { SOURCE_UNIT } from '../coords';
@@ -27,6 +30,7 @@ import type { Vec3Like } from '../lighting';
 import { angleVectors } from '../coords';
 import { LightProbe, type RenderContext } from './common';
 import type { EffectSystem } from './effects';
+import { heldModelName, ItemInstance, weaponLook } from './loadout-models';
 import { ModelInstance } from './model-instance';
 
 /** viewmodel_fov default. */
@@ -112,6 +116,8 @@ export interface ViewModelInput {
   invis?: number;
   uber?: boolean;
   crit?: boolean;
+  /** The held item's public entry (style, festivizer, war paint), from the player's `items`. */
+  item?: PublicItem;
 }
 
 /** Fire activities that flash the muzzle. */
@@ -124,6 +130,7 @@ export class ViewModelRenderer {
   private armsModel = '';
   private weapon: ModelInstance | null = null;
   private weaponModel = '';
+  private weaponItem: ItemInstance | null = null;
   private lastSeq = -1;
   private lastAct = -1;
   private lastDef = -2;
@@ -161,27 +168,44 @@ export class ViewModelRenderer {
       this.scene.add(this.arms.root);
       this.armsModel = cls.handsModel;
       this.weapon = null;
+      this.weaponItem = null;
       this.weaponModel = '';
       this.lastSeq = -1;
     }
     const arms = this.arms;
-    const w = inp.defindex >= 0 ? STOCK_WEAPONS[inp.defindex] : undefined;
-    const vmModel = w?.attachToHands ? (w.viewModel ?? '') : '';
-    if (vmModel !== this.weaponModel) {
-      const asset = vmModel ? ctx.models.peek(vmModel) : null;
-      if (asset !== undefined) {
-        this.weapon?.dispose();
-        this.weapon = null;
-        this.weaponModel = vmModel;
-        if (asset) {
-          this.weapon = new ModelInstance(asset, { uniforms: arms.uniforms, noAnim: true });
-          arms.attach(this.weapon);
+    const look = weaponLook(inp.defindex, inp.cls);
+    const name = heldModelName(ctx.loadout, look, inp.cls, inp.item);
+    const part = name ? ctx.loadout!.peek(name) : null;
+    if (part) {
+      const key = `loadout:${name}`;
+      if (key !== this.weaponModel) {
+        this.dropWeapon();
+        const item = new ItemInstance(part, arms.uniforms);
+        if (item.attachTo(arms)) {
+          this.weaponItem = item;
+          this.weapon = item.inst;
+        } else item.dispose();
+        this.weaponModel = key;
+      }
+      this.weaponItem?.dress({ festive: inp.item?.festive, entry: inp.item });
+    } else {
+      const w = look?.stock;
+      const vmModel = w?.attachToHands ? (w.viewModel ?? '') : '';
+      if (vmModel !== this.weaponModel) {
+        const asset = vmModel ? ctx.models.peek(vmModel) : null;
+        if (asset !== undefined) {
+          this.dropWeapon();
+          this.weaponModel = vmModel;
+          if (asset) {
+            this.weapon = new ModelInstance(asset, { uniforms: arms.uniforms, noAnim: true });
+            arms.attach(this.weapon);
+          }
         }
       }
     }
     const skin = inp.team === TF_TEAM_BLUE ? 1 : 0;
     arms.setSkin(skin);
-    this.weapon?.setSkin(skin);
+    if (!this.weaponItem) this.weapon?.setSkin(skin);
     // Activity → sequence.
     if (
       inp.vmActivitySeq !== this.lastSeq ||
@@ -230,7 +254,7 @@ export class ViewModelRenderer {
     const arms = this.arms;
     const anim = arms?.animator;
     if (!anim || !base) return;
-    const w = inp.defindex >= 0 ? STOCK_WEAPONS[inp.defindex] : undefined;
+    const w = weaponLook(inp.defindex, inp.cls);
     const act = w?.vmActivities[base] ?? base;
     const seq = anim.set.selectWeightedSequence(act) ?? anim.set.selectWeightedSequence(base);
     if (seq) anim.setSequence(seq, { restart: true, fade: false });
@@ -240,16 +264,8 @@ export class ViewModelRenderer {
       this.barrelTarget = 20;
     else if (base === 'ACT_MP_ATTACK_STAND_POSTFIRE') this.barrelTarget = 0;
     // Muzzle flash for the local shooter.
-    if (restart && FIRE_ACTIVITIES.has(base) && this.effects && w) {
-      const className = CLASS_DATA[inp.cls]?.name;
-      const script = className ? weaponScriptFor(inp.defindex, className) : undefined;
-      if (script?.muzzleFlashParticle) {
-        this.effects.oneShot(
-          script.muzzleFlashParticle,
-          { entity: VIEWMODEL_ENTITY, attachment: 'muzzle' },
-          'vm',
-        );
-      }
+    if (restart && FIRE_ACTIVITIES.has(base) && this.effects && w?.muzzleFlash) {
+      this.effects.oneShot(w.muzzleFlash, { entity: VIEWMODEL_ENTITY, attachment: 'muzzle' }, 'vm');
     }
     void ctx;
   }
@@ -262,6 +278,13 @@ export class ViewModelRenderer {
     this.barrelAngle += this.barrelSpeed * dt;
     const barrel = this.weapon?.bone('barrel');
     if (barrel) barrel.quaternion.setFromAxisAngle(Z, this.barrelAngle);
+  }
+
+  private dropWeapon(): void {
+    this.weaponItem?.dispose();
+    if (!this.weaponItem) this.weapon?.dispose();
+    this.weaponItem = null;
+    this.weapon = null;
   }
 
   private hide(): void {

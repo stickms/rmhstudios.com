@@ -1,7 +1,8 @@
 /**
  * Tap check for the touch overlay (not part of the app): with the touch
  * controls on, every HUD menu button (team, class, voice, the Engineer's and
- * the Spy's PDA menus) must be the topmost element at its centre, so a tap
+ * the Spy's PDA menus, the pause menu and its HUD view) must be the topmost
+ * element at its centre, so a tap
  * reaches it instead of starting the thumbstick under it. Phone landscape and
  * portrait. Exits non-zero when any button is covered.
  *
@@ -40,6 +41,10 @@ for (const q of [
   's=soldierCp&menu=voice&touch=1',
   's=engineerCtf&touch=1',
   's=spyDisguise&touch=1',
+  // The pause menu and its HUD view (pick / edit / export a HUD).
+  's=soldierCp&menu=pause&touch=1',
+  's=soldierCp&menu=hud&touch=1',
+  's=soldierCp&menu=hud&touch=1&hud=moved',
 ]) {
   for (const size of [
     { width: 844, height: 390 },
@@ -51,13 +56,16 @@ for (const q of [
     await page.waitForTimeout(500);
     const r = await page.evaluate(() => {
       const touch = document.querySelector('.tf2g-touch');
+      // Enabled buttons only (a disabled one takes no taps); each is scrolled into view first, as a
+      // player scrolls a long menu (the pause menu's HUD view) to reach it.
       const items = [...document.querySelectorAll('button')].filter(
-        (b) => !touch?.contains(b) && b.getBoundingClientRect().width > 0,
+        (b) => !touch?.contains(b) && !b.disabled && b.getBoundingClientRect().width > 0,
       );
       let ok = 0,
         blocked = 0;
       const bad: string[] = [];
       for (const b of items) {
+        b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
         const rc = b.getBoundingClientRect();
         const x = rc.left + rc.width / 2,
           y = rc.top + rc.height / 2;

@@ -35,13 +35,13 @@ import type { UserCmd } from '../../core/types';
 import { CRIT, remapValClamped } from '../../data/damage';
 import {
   STOCK_WEAPONS,
-  WEAPON_SCRIPTS,
   type StockWeapon,
-  type StockWeaponScriptName,
   type WeaponScript,
   type WeaponSoundCategory,
 } from '../../data/weapons';
 import { TF_COND } from '../conditions';
+import { hookWeapon } from '../items/attributes';
+import { weaponScript } from '../items/scripts';
 import { MOVE_COND_AIR_CURRENT } from '../movement-types';
 import { CHAN_WEAPON } from '../events';
 import { weaponSpecFor } from '../loadout';
@@ -92,7 +92,7 @@ const AMMO_INDEX: Readonly<Record<string, number>> = {
 
 /** Stats for a spec: the loadout's (when given) or rebuilt from the script and item. */
 export function statsForSpec(spec: WeaponSpec): WeaponStats {
-  const script = WEAPON_SCRIPTS[spec.classname as StockWeaponScriptName];
+  const script = weaponScript(spec.classname);
   if (!script) return defaultWeaponStats({ classname: spec.classname, defindex: spec.defindex, slot: spec.slot, ...spec.stats });
   const item: StockWeapon | undefined = STOCK_WEAPONS[spec.defindex];
   const mode = script.primary;
@@ -161,7 +161,7 @@ export abstract class TFWeapon extends BaseWeapon {
 
   constructor(spec: WeaponSpec) {
     super(statsForSpec(spec));
-    this.script = WEAPON_SCRIPTS[this.stats.classname as StockWeaponScriptName];
+    this.script = weaponScript(this.stats.classname) as WeaponScript;
     this.item = STOCK_WEAPONS[this.stats.defindex] ?? null;
     this.sounds = this.item && Object.keys(this.item.sounds).length > 0 ? this.item.sounds : (this.script?.sounds ?? {});
   }
@@ -290,8 +290,9 @@ export abstract class TFWeapon extends BaseWeapon {
     const rapid = mode.useRapidFireCrits;
     if (rapid && this.critTime > t) return true;
 
-    const projectiles = Math.max(1, mode.bulletsPerShot);
-    let damage = mode.damage * projectiles;
+    // SDK: the bucket is filled with the hooked damage × the hooked pellet count (mult_dmg, mult_bullets_per_shot).
+    const projectiles = Math.max(1, this.stats.bulletsPerShot);
+    let damage = this.stats.damage * projectiles;
     this.addToCritBucket(damage);
     let crit: boolean;
     this.currentCritIsRandom = true;
@@ -301,11 +302,11 @@ export abstract class TFWeapon extends BaseWeapon {
       this.lastCritCheckTime = t;
       const total = Math.min(0.99, Math.max(0.01, CRIT.chanceRapid * mult));
       const nonCrit = CRIT.rapidDuration / total - CRIT.rapidDuration;
-      const start = 1 / nonCrit;
+      const start = hookWeapon(this, o, 'mult_crit_chance', 1 / nonCrit);
       const roll = this.critStream(cmd, false).randomInt(0, CRIT.randomRange - 1);
       crit = roll < start * CRIT.randomRange;
     } else {
-      const chance = CRIT.chance * mult;
+      const chance = hookWeapon(this, o, 'mult_crit_chance', CRIT.chance * mult);
       const roll = this.critStream(cmd, false).randomInt(0, CRIT.randomRange - 1);
       crit = roll < chance * CRIT.randomRange;
     }
@@ -329,9 +330,9 @@ export abstract class TFWeapon extends BaseWeapon {
     if (!o || !this.script) return false;
     if (!this.canFireCriticalShot()) return false;
     if (o.cond.critBoosted) return true;
-    const chance = CRIT.chanceMelee * critTracker(o).mult();
+    const chance = hookWeapon(this, o, 'mult_crit_chance', CRIT.chanceMelee * critTracker(o).mult());
     const stream = this.critStream(cmd, true);
-    const damage = this.script.primary.damage;
+    const damage = this.stats.damage;
     this.addToCritBucket(damage);
     this.critChecks = Math.min(this.critChecks + 1, 65535);
     let crit = stream.randomInt(0, CRIT.randomRange - 1) < chance * CRIT.randomRange;

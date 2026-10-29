@@ -26,6 +26,7 @@ import {
 } from './events';
 import type { Tf2Mode } from '../data/maps';
 import { EXTRA_COMMAND_MAX_ARGS, EXTRA_COMMAND_NAME_RE } from './extra-commands';
+import { classSchema, slotsSchema } from '../../tf2-loadout/api-schema';
 
 const playerName = z.string().max(64).optional();
 
@@ -73,6 +74,15 @@ export const zExtraCommand = z.object({
   args: z
     .array(z.union([z.number().finite(), z.string().max(64), z.boolean()]))
     .max(EXTRA_COMMAND_MAX_ARGS),
+});
+
+/**
+ * A loadout to equip: the class and its slots, in the saved-loadout shape (the same schema the
+ * loadout API validates). The match checks the items themselves against the catalog.
+ */
+export const zLoadout = z.object({
+  cls: classSchema,
+  slots: slotsSchema,
 });
 
 /** No payload; anything (or nothing) is accepted and ignored. */

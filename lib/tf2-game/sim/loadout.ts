@@ -10,6 +10,7 @@ import { CLASS_NAMES, TF_CLASS_COUNT, type ClassName } from '../core/constants';
 import { CLASS_DATA, type AmmoType, type LoadoutSlot } from '../data/classes';
 import { STOCK_WEAPONS, WEAPON_SCRIPTS, type WeaponScript } from '../data/weapons';
 import { TF_AMMO_COUNT, TF_AMMO_DUMMY, defaultWeaponStats, type WeaponSpec } from './weapon-api';
+import { weaponSpecForItem } from './items/resolve';
 
 const AMMO_INDEX: Readonly<Record<AmmoType, number>> = {
   primary: 1,
@@ -38,8 +39,17 @@ export function className(classIndex: number): ClassName | null {
   return classIndex > 0 && classIndex < TF_CLASS_COUNT ? (CLASS_NAMES[classIndex] as ClassName) : null;
 }
 
-/** The weapon spec a class gets for an item, or null when the class can't use it. */
+/**
+ * The weapon spec a class gets for an item, or null when the class can't use it (or it is not a
+ * held weapon). Stock items use the extracted stock tables; any other item goes through the item
+ * schema (sim/items: its item_class, unlock script and attributes).
+ */
 export function weaponSpecFor(defindex: number, classIndex: number): WeaponSpec | null {
+  return stockWeaponSpecFor(defindex, classIndex) ?? weaponSpecForItem(defindex, classIndex);
+}
+
+/** The stock path of {@link weaponSpecFor}: null for anything but a stock weapon the class has. */
+export function stockWeaponSpecFor(defindex: number, classIndex: number): WeaponSpec | null {
   const name = className(classIndex);
   const item = STOCK_WEAPONS[defindex];
   if (!name || !item) return null;

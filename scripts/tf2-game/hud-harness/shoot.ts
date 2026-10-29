@@ -23,6 +23,7 @@ const only = arg('only')?.split(',');
 
 const DESKTOP = { width: 1920, height: 1080 };
 const PHONE = { width: 390, height: 844 };
+const COMPARE = { width: 1920, height: 540 };
 
 const VIEWS: Array<{ name: string; query: string; size: { width: number; height: number }; mobile?: boolean }> = [
   { name: 'tf2-soldier-cp', query: 's=soldierCp', size: DESKTOP },
@@ -45,7 +46,39 @@ const VIEWS: Array<{ name: string; query: string; size: { width: number; height:
   { name: 'phone-hl2-touch', query: 's=hl2&touch=1', size: PHONE, mobile: true },
   { name: 'phone-portal-touch', query: 's=portal&touch=1', size: PHONE, mobile: true },
   { name: 'phone-landscape-tf2-touch', query: 's=medicPayload&touch=1', size: { width: 844, height: 390 }, mobile: true },
+  // Custom HUDs (lib/tf2-game/client/custom-hud/sample-huds.ts) and the pause menu's HUD view.
+  { name: 'custom-moved-medic', query: 's=medicPayload&hud=moved', size: DESKTOP },
+  { name: 'custom-fonts-soldier', query: 's=soldierCp&hud=fonts', size: DESKTOP },
+  { name: 'custom-base-engineer', query: 's=engineerCtf&hud=base', size: DESKTOP },
+  { name: 'custom-moved-koth', query: 's=sniperKoth&hud=moved', size: DESKTOP },
+  { name: 'custom-base-freezecam', query: 's=spyDead&hud=base', size: DESKTOP },
+  { name: 'custom-base-winpanel', query: 's=winPanel&hud=base', size: DESKTOP },
+  // Side by side: the game's HUD (left) and the HUD editor's preview pipeline (right), same HUD and state.
+  { name: 'compare-moved-medic', query: 's=medicPayload&hud=moved&compare=1', size: COMPARE },
+  { name: 'compare-fonts-soldier', query: 's=soldierCp&hud=fonts&compare=1', size: COMPARE },
+  { name: 'compare-base-engineer', query: 's=engineerCtf&hud=base&compare=1', size: COMPARE },
+  { name: 'compare-moved-koth', query: 's=sniperKoth&hud=moved&compare=1', size: COMPARE },
+  { name: 'tf2-pause-hud', query: 's=soldierCp&menu=hud&hud=moved', size: DESKTOP },
+  { name: 'tf2-hud-editor-overlay', query: 's=medicPayload&hud=moved&editor=1', size: DESKTOP },
+  { name: 'phone-landscape-pause-hud', query: 's=soldierCp&menu=hud&touch=1', size: { width: 844, height: 390 }, mobile: true },
 ];
+
+/** No API here: `/api/*` answers 404 (not the SPA fallback), so the HUD code takes its offline paths. */
+function noApi() {
+  return {
+    name: 'harness-no-api',
+    configureServer(server: { middlewares: { use: (fn: (req: { url?: string }, res: { statusCode: number; end: () => void }, next: () => void) => void) => void } }) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url?.startsWith('/api/')) {
+          res.statusCode = 404;
+          res.end();
+          return;
+        }
+        next();
+      });
+    },
+  };
+}
 
 function findChromium(): string | undefined {
   const base = process.env.PLAYWRIGHT_BROWSERS_PATH ?? '/opt/pw-browsers';
@@ -63,7 +96,7 @@ async function main(): Promise<void> {
     root: import.meta.dirname,
     configFile: false,
     publicDir: path.join(ROOT, 'public'),
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), noApi()],
     resolve: { alias: { '@': ROOT } },
     esbuild: { jsx: 'automatic' },
     server: { port: 0, host: '127.0.0.1', fs: { allow: [ROOT] }, hmr: false },

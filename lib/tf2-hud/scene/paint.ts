@@ -18,6 +18,11 @@ export interface PaintOptions {
   showBounds?: boolean;
   /** Leave the labelled box off these panels: something else (the 3D model layer) draws them. */
   skipDynamic?: (node: PanelNode) => boolean;
+  /**
+   * Draw nothing for a texture that cannot be found, instead of the engine's checkerboard. The in-game
+   * HUD sets it: the base pack does not ship every texture, and that is not the HUD's fault.
+   */
+  hideMissing?: boolean;
 }
 
 function clipTo(g: CanvasRenderingContext2D, r: { x: number; y: number; w: number; h: number }) {
@@ -182,16 +187,26 @@ function missingTexture(g: CanvasRenderingContext2D, r: ImageOp['rect']) {
   g.restore();
 }
 
-function drawImage(g: CanvasRenderingContext2D, op: ImageOp, images: ImageStore) {
+function drawImage(
+  g: CanvasRenderingContext2D,
+  op: ImageOp,
+  images: ImageStore,
+  hideMissing = false,
+) {
   const tex = images.get(op.path);
   if (tex === undefined) return; // still loading: draw nothing this frame
   if (tex === null) {
-    missingTexture(g, op.rect);
+    if (!hideMissing) missingTexture(g, op.rect);
     return;
   }
-  const { x, y, w, h } = op.rect;
+  const { x, w } = op.rect;
   const frac = op.clipX === undefined ? 1 : Math.max(0, Math.min(1, op.clipX));
   if (frac <= 0) return;
+  // A vertical fill shows the bottom `fy` of the texture in the bottom `fy` of the panel.
+  const fy = op.clipY === undefined ? 1 : Math.max(0, Math.min(1, op.clipY));
+  if (fy <= 0) return;
+  const y = op.rect.y + op.rect.h * (1 - fy);
+  const h = op.rect.h * fy;
   const img = tex.bitmap;
   const src = op.tint ? tinted(img, op.tint) : img;
   g.save();
@@ -204,9 +219,20 @@ function drawImage(g: CanvasRenderingContext2D, op: ImageOp, images: ImageStore)
     g.beginPath();
     g.rect(x, y, w, h);
     g.clip();
-    g.drawImage(src, 0, 0, img.width * frac, img.height, x, y, img.width * frac, img.height);
+    g.drawImage(
+      src,
+      0,
+      0,
+      img.width * frac,
+      img.height,
+      x,
+      op.rect.y,
+      img.width * frac,
+      img.height,
+    );
   } else {
-    g.drawImage(src, 0, 0, img.width * frac, img.height, x, y, w * frac, h);
+    const sy = img.height * (1 - fy);
+    g.drawImage(src, 0, sy, img.width * frac, img.height - sy, x, y, w * frac, h);
   }
   g.restore();
 }
@@ -246,7 +272,7 @@ function drawOp(g: CanvasRenderingContext2D, op: DrawOp, opts: PaintOptions) {
       drawText(g, op);
       break;
     case 'image':
-      drawImage(g, op, opts.images);
+      drawImage(g, op, opts.images, opts.hideMissing);
       break;
     case 'dynamic':
       drawDynamic(g, op.rect, op.label);

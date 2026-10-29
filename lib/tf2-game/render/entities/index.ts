@@ -39,6 +39,7 @@ import {
   type RenderContext,
 } from './common';
 import { EffectSystem, type FxTrace, ParticleLibrary } from './effects';
+import type { LoadoutModels } from './loadout-models';
 import type { ModelLibrary } from './model-asset';
 import {
   BuildingRenderable,
@@ -56,6 +57,7 @@ export type { ViewModelInput } from './viewmodel';
 export { SpViewModelRenderer, type SpViewModelInput } from './sp-viewmodel';
 export { ModelLibrary } from './model-asset';
 export { ParticleLibrary } from './effects';
+export { LoadoutModels, LOADOUT_MODEL_API, type LoadoutModelSource } from './loadout-models';
 
 export interface EntityRendererOptions {
   /** The map renderer (ambient cubes, sun, fog) — null renders with flat light. */
@@ -72,6 +74,8 @@ export interface EntityRendererOptions {
   trace?: FxTrace;
   /** Whether two Source points see each other (local lights on models). */
   lineOfSight?: (a: Vec3Like, b: Vec3Like) => boolean;
+  /** The loadout model channel: unlock weapons and cosmetics (null: stock looks only). */
+  loadout?: LoadoutModels | null;
 }
 
 export interface FrameInfo {
@@ -131,6 +135,8 @@ export class EntityRenderer {
       localTeam: 0,
       firstPerson: true,
       game: opts.game ?? 'tf2',
+      loadout: opts.loadout ?? null,
+      cameraPosition: new Vector3(),
       entity: (id) => this.states.get(id),
       attachment: (id, name, out) => this.attachment(id, name, out),
       isVisible: (p, r = CULL_RADIUS) => this.isVisible(p, r),
@@ -147,6 +153,7 @@ export class EntityRenderer {
     c.firstPerson = f.firstPerson ?? true;
     this.camera = f.camera;
     f.camera.updateMatrixWorld();
+    c.cameraPosition?.setFromMatrixPosition(f.camera.matrixWorld);
     this.projView.multiplyMatrices(f.camera.projectionMatrix, f.camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.projView);
   }
@@ -291,6 +298,7 @@ export class EntityRenderer {
   /** Resolves when every model and particle bundle requested so far has loaded. */
   async whenLoaded(): Promise<void> {
     await this.opts.models.whenIdle();
+    await this.opts.loadout?.whenIdle();
     await this.effects.particles?.whenIdle();
   }
 

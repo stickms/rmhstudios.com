@@ -74,6 +74,13 @@ A **block** is a named group of panels that share a look, so "all the charge bar
 
 The play button in the preview toolbar turns the preview into the HUD. Buttons run their `command` (`lib/tf2-hud/play/commands.ts`): dismiss commands go back, `openloadout`/`open_charinfo`/`open_store`/`jointeam …`/`select N` and a few more open the matching page (picking a class starts a match); anything else is reported rather than guessed. A hovered button takes its `armed…` colours. On in-game pages the keys in the bar above the preview drive a small match (`play/sim.ts`: weapon switch, fire, reload, damage, heal, die/respawn, kill, target ID, alert, plus a 1 Hz clock for the round timer, Medic charge and weapon meters), through the same state as the Test panel. Esc exits.
 
+## Test in game
+
+**Test in game** (top bar) saves the draft and opens `/tf2/play?hud=draft:<id>` in a new tab, where the
+HUD is drawn by this editor's own renderer from the live match (see [the game's docs](tf2-game.md#custom-huds-in-game)).
+Later saves reach the open game (it re-reads the draft). In the game, pause → HUD → **Edit HUD** opens this
+editor over the match; its back control and **Test in game** return to the match.
+
 ## 3D and items
 
 `components/tf2-hud/ModelLayer.tsx` draws the game's 3D content over the preview: class model panels get the loadout builder's player, item panels an item (or its icon), and the toolbar's second 3D button puts a player behind the whole HUD. At most four live WebGL views are shown at a time. The builder's viewer logic lives in `usePlayerParts` and the single import surface `components/tf2-hud/loadout/embed.tsx` (`PlayerStage`, `ItemStage`, `useSampleInventory`), so there is one implementation. `lib/tf2-loadout/sample.ts` picks a plausible loadout and backpack from the catalog. The **Backpack** page's cells are made by the game at run time; `lib/tf2-hud/scene/inventory.ts` lays out a full page (10 × 5) from the panel file's own numbers, and fills it with the sample items. Also new pages: Item inspection and Mann Co. Store.

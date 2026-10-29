@@ -151,6 +151,22 @@ export interface HudLocalPlayer {
   /** Seconds until respawn while dead, null when alive or not scheduled. */
   respawnIn: number | null;
   spectating: HudSpectatorTarget | null;
+  /** What is equipped (sim/items/loadout.ts encodeItems; '' before the first spawn). */
+  items?: string;
+  /** A loadout chosen for this class waits for the next respawn or resupply. */
+  loadoutPending?: boolean;
+  /** In the team's own respawn room: a new loadout goes on at once. */
+  inSpawnRoom?: boolean;
+}
+
+/** The answer to the last loadout the player equipped (a `loadout` event). */
+export interface HudLoadoutAnswer {
+  /** TF_CLASS_* it was for. */
+  cls: number;
+  status: 'applied' | 'pending' | 'refused';
+  reason?: string;
+  /** Client clock time it arrived. */
+  at: number;
 }
 
 export type HudMode = 'ctf' | 'cp' | 'cp_ad' | 'koth' | 'pl' | 'arena' | '';
@@ -430,6 +446,8 @@ export interface HudState {
   fade: HudFade | null;
   /** Frames per second (shown when the setting is on). */
   fps: number;
+  /** The last loadout answer (TF2), null before one. */
+  loadout?: HudLoadoutAnswer | null;
 }
 
 // ─── Factories ─────────────────────────────────────────────────────────────

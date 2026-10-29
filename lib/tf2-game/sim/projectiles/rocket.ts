@@ -17,6 +17,7 @@ import { registerEntityClass } from '../entity-registry';
 import type { Entity } from '../entity';
 import { BaseProjectile } from '../physics';
 import type { Player } from '../player';
+import { hookWeapon } from '../items/attributes';
 import { explodeProjectile, launcherScript, PROJECTILE_KIND, ROCKET_MODEL, type Deflectable } from './common';
 
 const ZERO: Vec3 = { x: 0, y: 0, z: 0 };
@@ -85,7 +86,10 @@ export class TFProjectileRocket extends BaseProjectile implements Deflectable {
       damage: this.damage,
       damageType: script.damageType,
       customKill: 0,
-      radius: RADIUS_DAMAGE.rocketRadius,
+      // CTFBaseRocket::GetRadius: TF_ROCKET_RADIUS × the launcher's mult_explosion_radius.
+      radius: this.launcher
+        ? hookWeapon(this.launcher, this.launcher.owner, 'mult_explosion_radius', RADIUS_DAMAGE.rocketRadius)
+        : RADIUS_DAMAGE.rocketRadius,
       selfRadius: RADIUS_DAMAGE.rocketSelfRadius,
       selfBaseDamage: script.primary.damage,
       script,

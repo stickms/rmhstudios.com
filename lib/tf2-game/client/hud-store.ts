@@ -12,6 +12,7 @@
 import { emptyHudState, type HudGame, type HudState } from './hud-state';
 import type { ClassChoice, TeamChoice } from '../net/events';
 import type { ImpulseAction } from './input/actions';
+import type { LoadoutSlots, TfClass } from '../../tf2-loadout/catalog-types';
 
 /** What the HUD asks the game to do. The loop maps them to MatchCommands / hub events. */
 export type HudCommand =
@@ -28,7 +29,9 @@ export type HudCommand =
   | { kind: 'extra'; command: string; args: ReadonlyArray<number | string | boolean> }
   | { kind: 'disconnect' }
   /** Pause menu opened/closed (single-player pauses the world). */
-  | { kind: 'pause'; paused: boolean };
+  | { kind: 'pause'; paused: boolean }
+  /** Equip a loadout for a class (the pause menu's Loadout view) — MatchCommand { kind: 'loadout' }. */
+  | { kind: 'loadout'; cls: TfClass; slots: LoadoutSlots };
 
 export type HudCommandListener = (cmd: HudCommand) => void;
 

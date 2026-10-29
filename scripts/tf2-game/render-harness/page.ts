@@ -3,7 +3,10 @@
  * app). Loads a map package from the harness server (`/pkg/<game>/…`, the layout
  * scripts/tf2-game/build-maps.ts writes) or, without one, an original BSP from the game
  * install (`/orig/<game>/<map>.bsp`, colour-only materials), and exposes `window.harness`
- * for the Playwright driver.
+ * for the Playwright driver. With `?loadout=1` (shoot.ts --loadout <dir>) players wear their
+ * `items` from a local loadout folder: `/loadout/catalog.json`, `/loadout/models.json` +
+ * `/loadout/models/<name>.glb` (scripts/tf2-assets/convert.py output) and
+ * `/loadout/particles/manifest.json` (unusual effects).
  */
 import { SRGBColorSpace, WebGLRenderer } from 'three';
 import type { MapIndex, MapManifest } from '@/lib/tf2-game/assets/map-manifest';
@@ -14,7 +17,9 @@ import { MASK_OPAQUE, SURF_SKY } from '@/lib/tf2-game/core/constants';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import { SourceCamera, type SourceView } from '@/lib/tf2-game/render/camera';
 import { TextureCache } from '@/lib/tf2-game/render/texture-cache';
-import { EntityRenderer, ModelLibrary, ParticleLibrary, type EntityState, type ViewModelInput } from '@/lib/tf2-game/render/entities';
+import { EntityRenderer, LoadoutModels, ModelLibrary, ParticleLibrary, type EntityState, type ViewModelInput } from '@/lib/tf2-game/render/entities';
+import { setItemCatalog } from '@/lib/tf2-game/sim/items/registry';
+import type { Catalog } from '@/lib/tf2-loadout/catalog-types';
 import type { SimEvent } from '@/lib/tf2-game/sim/events';
 import { WorldRenderer, type GameName } from '@/lib/tf2-game/render/world-renderer';
 import { measureHdrScale } from '@/lib/tf2-game/render/lightmap';
@@ -50,6 +55,13 @@ let entStates: EntityState[] = [];
 let vmInput: ViewModelInput | null = null;
 let simTime = 0;
 let curGame: GameName = 'tf2';
+const withLoadout = params.get('loadout') === '1';
+let loadoutModels: LoadoutModels | null = null;
+const loadoutReady = withLoadout
+  ? fetch('/loadout/catalog.json')
+      .then((r) => (r.ok ? (r.json() as Promise<Catalog>) : null))
+      .then((c) => setItemCatalog(c))
+  : Promise.resolve();
 const t0 = performance.now();
 
 async function fetchBytes(url: string): Promise<Uint8Array | null> {
@@ -145,6 +157,7 @@ function render(): { ms: number; stats: WorldRenderer['stats']; propMeshes: numb
 }
 
 async function waitLoaded(): Promise<void> {
+  await loadoutReady;
   await world?.whenLoaded();
   await ents?.whenLoaded();
 }
@@ -153,6 +166,11 @@ async function waitLoaded(): Promise<void> {
 
 function setupEntities(): void {
   if (!world || !models || ents) return;
+  if (withLoadout)
+    loadoutModels ??= new LoadoutModels({
+      list: () => fetch('/loadout/models.json').then((r) => r.json() as Promise<string[]>),
+      url: (n) => `/loadout/models/${n}.glb`,
+    });
   const col = collision!;
   const tr = emptyTrace();
   const pkg = `/pkg/${curGame}/`;
@@ -160,7 +178,8 @@ function setupEntities(): void {
     lighting: world,
     scene: world.scene,
     models,
-    particles: new ParticleLibrary((p) => pkg + p),
+    particles: new ParticleLibrary((p) => pkg + p, { unusualUrl: (p) => `/loadout/particles/${p}` }),
+    loadout: loadoutModels,
     game: curGame,
     sunVisible: (p) => {
       const s = world?.sun;
@@ -263,6 +282,8 @@ declare global {
       advance: typeof advance;
       groundZ: typeof groundZ;
       entityStats: typeof entityStats;
+      /** The entity renderer (debugging from --eval). */
+      entityRenderer: () => EntityRenderer | null;
       ready: boolean;
     };
   }
@@ -282,5 +303,6 @@ window.harness = {
   advance,
   groundZ,
   entityStats,
+  entityRenderer: () => ents,
   ready: true,
 };
