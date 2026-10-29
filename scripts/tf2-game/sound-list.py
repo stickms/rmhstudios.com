@@ -8,6 +8,7 @@ Selects sound-script entries by name, not whole folders, so the list stays lean
 
   * the stock arsenal's weapon sounds, buildings (sentry, dispenser, teleporter, sapper),
     projectiles, explosions, ricochets and bullet impacts;
+  * the simulated unlock weapons' sounds (UNLOCK_PREFIXES / UNLOCK_NAMES);
   * player sounds: pain, death, fall damage, burning, crits, uber, spawn, spy cloak and
     disguise, swimming, the default hit and kill sounds, pickups (health, ammo, locker);
   * footsteps and bullet impacts of the common surfaces;
@@ -107,6 +108,22 @@ WEAPON_PREFIXES = (
     "Building_Teleporter",
 )
 
+# The simulated own-class unlock weapons' entries (lib/tf2-game/sim/weapons: their scripts' own
+# sounds — unlock-scripts.ts ownSounds of the `ownClass` scripts — and what their projectiles and
+# items play). Unlocks that refine a stock class play the stock class's sounds.
+UNLOCK_PREFIXES = (
+    "Weapon_CompoundBow", "Weapon_Bow", "Weapon_Arrow", "Weapon_Jarate", "Weapon_GasCan", "Cleaver",
+    "Jar", "Weapon_FlareGun", "Weapon_Detonator", "Weapon_ManMelter", "Weapon_SniperRailgun",
+    "Weapon_LooseCannon", "Weapon_DragonsFury", "Weapon_Pomson", "Weapon_Bison", "Weapon_CowMangler",
+    "Weapon_BuffBanner", "Weapon_BattalionsBackup", "Weapon_RescueRanger", "Weapon_Wrangler",
+    "DemoCharge",
+)
+UNLOCK_NAMES = (
+    "ArrowLight", "Samurai.Conch", "Heavy.SandwichEat", "Scout.DodgeCanDrinkFast", "Rubber.BulletImpact",
+    "TFPlayer.FlareImpact", "Player.Spy_Shield_Break", "Weapon_Upgrade.ExplosiveHeadshot",
+    "Building_Teleporter.Send", "Building_Teleporter.Receive",
+)
+
 PLAYER = re.compile(
     r"^(Player\.(Death|ExplosionDeath|MeleeDeath|FallDamage|FallDamageDealt|FallGib|OnFire|"
     r"Spawn|Spy_Cloak|Spy_UnCloak|Spy_UnCloakFeignDeath|Spy_Disguise|Swim|Wade|DrownStart|"
@@ -140,7 +157,8 @@ PATHS = ("sound/ui/hitsound.wav", "sound/ui/killsound.wav", "sound/ui/item_heal.
 def select(scripts):
     names = []
     concept = re.compile(r"^(%s)\.(%s)\d*$" % ("|".join(CLASSES), "|".join(CLASS_CONCEPTS)))
-    weapon = re.compile(r"^(%s)\." % "|".join(re.escape(p) for p in WEAPON_PREFIXES))
+    weapon = re.compile(r"^(%s)\." % "|".join(re.escape(p) for p in WEAPON_PREFIXES + UNLOCK_PREFIXES))
+    unlock_names = {n.lower() for n in UNLOCK_NAMES}
     surface = re.compile(r"^(%s)\.(%s)$" % ("|".join(SURFACES), "|".join(SURFACE_SOUNDS)), re.I)
     for name in sorted(scripts):
         if EXCLUDE.search(name):
@@ -151,7 +169,7 @@ def select(scripts):
             if not variant or int(variant.group(1)) <= MAX_VARIANTS:
                 names.append(name)
             continue
-        if ANNOUNCER.match(name) or weapon.match(name) \
+        if ANNOUNCER.match(name) or weapon.match(name) or name.lower() in unlock_names \
                 or PLAYER.match(name) or surface.match(name):
             names.append(name)
     return names

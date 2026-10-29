@@ -1,7 +1,8 @@
 /**
  * Tap check for the touch overlay (not part of the app): with the touch
  * controls on, every HUD menu button (team, class, voice, the Engineer's and
- * the Spy's PDA menus, the pause menu and its HUD view) must be the topmost
+ * the Spy's PDA menus, the pause menu and its HUD view, and the team / class
+ * menus a custom HUD restyles) must be the topmost
  * element at its centre, so a tap
  * reaches it instead of starting the thumbstick under it. Phone landscape and
  * portrait. Exits non-zero when any button is covered.
@@ -25,7 +26,33 @@ const server = await createServer({
   root: import.meta.dirname,
   configFile: false,
   publicDir: path.join(ROOT, 'public'),
-  plugins: [tailwindcss()],
+  plugins: [
+    tailwindcss(),
+    // No API here: `/api/*` answers 404 (not the SPA page), so a custom HUD loads from public/ as in shoot.ts.
+    {
+      name: 'harness-no-api',
+      configureServer(sv: {
+        middlewares: {
+          use: (
+            fn: (
+              req: { url?: string },
+              res: { statusCode: number; end: () => void },
+              next: () => void,
+            ) => void,
+          ) => void;
+        };
+      }) {
+        sv.middlewares.use((req, res, next) => {
+          if (req.url?.startsWith('/api/')) {
+            res.statusCode = 404;
+            res.end();
+            return;
+          }
+          next();
+        });
+      },
+    },
+  ],
   resolve: { alias: { '@': ROOT } },
   esbuild: { jsx: 'automatic' },
   server: { port: 0, host: '127.0.0.1', fs: { allow: [ROOT] }, hmr: false },
@@ -45,6 +72,9 @@ for (const q of [
   's=soldierCp&menu=pause&touch=1',
   's=soldierCp&menu=hud&touch=1',
   's=soldierCp&menu=hud&touch=1&hud=moved',
+  // Team and class select drawn from a HUD that restyles them (their hit layer over the HUD's canvas).
+  's=joinClass&touch=1&hud=menus',
+  's=soldierCp&menu=team&touch=1&hud=menus',
 ]) {
   for (const size of [
     { width: 844, height: 390 },
@@ -52,7 +82,7 @@ for (const q of [
   ]) {
     const ctx = await browser.newContext({ viewport: size, isMobile: true, hasTouch: true });
     const page = await ctx.newPage();
-    await page.goto(`${url}?${q}`, { waitUntil: 'networkidle' });
+    await page.goto(`${url}?${q}`, { waitUntil: 'networkidle', timeout: 120_000 });
     await page.waitForTimeout(500);
     const r = await page.evaluate(() => {
       const touch = document.querySelector('.tf2g-touch');
@@ -79,7 +109,13 @@ for (const q of [
           );
         }
       }
-      return { ok, blocked, bad: bad.slice(0, 5), touch: !!touch };
+      return {
+        ok,
+        blocked,
+        bad: bad.slice(0, 5),
+        touch: !!touch,
+        customMenu: !!document.querySelector('.tf2g-custom-menu'),
+      };
     });
     covered += r.blocked;
     process.stdout.write(`${q} ${size.width}x${size.height} ${JSON.stringify(r)}\n`);

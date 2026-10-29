@@ -811,7 +811,7 @@ export function SlotCell({
   const effect = entry?.effect !== undefined ? idx.effect(entry.effect) : undefined;
   return (
     <div className="flex min-w-0 flex-col gap-1" data-slot={slotKey}>
-      <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-(--app-text-dim)">
+      <span className="truncate text-[11px] pointer-coarse:text-xs font-semibold uppercase tracking-wider text-(--app-text-dim)">
         {label}
       </span>
       {item ? (
@@ -957,7 +957,8 @@ export function Picker({
       ) : (
         <PanelHead
           title={label}
-          className="sticky top-0 z-10 bg-(--app-bg-subtle)"
+          // A landscape phone has no height for two sticky bars over the items: they scroll away there.
+          className="sticky top-0 z-10 bg-(--app-bg-subtle) [@media(max-height:560px)]:static"
           actions={
             <>
               {entry ? (
@@ -969,7 +970,7 @@ export function Picker({
                 type="button"
                 onClick={onClose}
                 aria-label={t('close', { defaultValue: 'Close' })}
-                className="inline-flex size-7 items-center justify-center rounded-(--app-radius-sm) text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)"
+                className="inline-flex size-7 items-center justify-center rounded-(--app-radius-sm) text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text) pointer-coarse:size-11"
               >
                 <X className="size-4" aria-hidden />
               </button>
@@ -1050,7 +1051,7 @@ export function Picker({
 
       <div
         className={cn(
-          'sticky z-10 flex flex-wrap gap-2 border-b border-(--app-border) bg-(--app-bg-subtle) p-3',
+          'sticky z-10 flex flex-wrap gap-2 border-b border-(--app-border) bg-(--app-bg-subtle) p-3 [@media(max-height:560px)]:static',
           embedded ? 'top-0' : 'top-9',
         )}
       >
@@ -1089,7 +1090,7 @@ export function Picker({
             ))}
           </SelectField>
         ) : null}
-        <p role="status" className="basis-full text-[11px] text-(--app-text-dim)">
+        <p role="status" className="basis-full text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">
           {t('showing-count', {
             defaultValue: 'Showing {{shown}} of {{total}}',
             shown: Math.min(shown, matches.length),

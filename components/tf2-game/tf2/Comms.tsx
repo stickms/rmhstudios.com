@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { X } from 'lucide-react';
 import type { HudChatLine } from '@/lib/tf2-game/client/hud-state';
 import { TF2_LIMITS } from '@/lib/tf2-game/net/events';
 import { useMenuNav } from '../menu-nav';
@@ -22,6 +23,7 @@ export function Chat({
   input,
   onSend,
   onClose,
+  touch = false,
 }: {
   lines: HudChatLine[];
   now: number;
@@ -29,6 +31,8 @@ export function Chat({
   input: 'all' | 'team' | null;
   onSend: (text: string, teamOnly: boolean) => void;
   onClose: () => void;
+  /** Touch controls: a close button beside the field (there is no Esc key). */
+  touch?: boolean;
 }) {
   const { t } = useTranslation('c-tf2-game');
   const style = usePanelStyle('HudChat');
@@ -89,6 +93,19 @@ export function Chat({
                 }
               }}
             />
+            {touch ? (
+              <button
+                type="button"
+                className="tf2g-chat-close"
+                aria-label={t('chat_close', { defaultValue: 'Close chat' })}
+                onClick={() => {
+                  setDraft('');
+                  onClose();
+                }}
+              >
+                <X aria-hidden="true" />
+              </button>
+            ) : null}
           </form>
         ) : null}
       </div>

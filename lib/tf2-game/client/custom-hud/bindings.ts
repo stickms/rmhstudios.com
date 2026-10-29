@@ -15,6 +15,7 @@ import { currentWeapon, gateFor, progressFor } from '@/lib/tf2-hud/game-state';
 import { FILL_KEY } from '@/lib/tf2-hud/scene/build';
 import type { TestState } from '@/lib/tf2-hud/fixtures';
 import { formatClock, type HudBuilding, type HudConditions, type HudState } from '../hud-state';
+import { localize, SPECTATOR_FILE, SPECTATOR_TARGET_FILE } from './menus';
 
 const ui = (name: string) => `resource/ui/${name}.res`;
 
@@ -34,10 +35,16 @@ export const ENGINEER_FILES = [
 export const KOTH_FILE = ui('hudobjectivekothtimepanel');
 export const WIN_FILE = ui('winpanel');
 /**
- * The freeze cam's card. (`freezepanelkillerhealth.res` is loaded by the card's health panel at run time;
- * the editor previews it at the screen's origin, so it is not drawn on its own here.)
+ * The freeze cam's card. Its `FreezePanelHealth` (`CTFFreezePanelHealth`) loads
+ * `freezepanelkillerhealth.res` into itself at run time; the scene builder nests it there
+ * (`embeddedFileFor` in lib/tf2-hud/scene/build.ts), in game and in the editor alike.
  */
 export const FREEZE_FILES = [ui('freezepanel_basic')] as const;
+/** Panel files other panels load into themselves (fetched with the HUD, never drawn on their own). */
+export const EMBEDDED_INGAME_FILES = [
+  ui('freezepanelkillerhealth'),
+  ui('spectatorguihealth'),
+] as const;
 export const MEDIC_FILE = ui('hudmediccharge');
 export const DISGUISE_FILE = ui('disguisestatuspanel');
 
@@ -66,6 +73,11 @@ export interface InGameOptions {
    * stays (placed by the HUD's `BuildingStatus_Engineer`).
    */
   buildings?: boolean;
+  /**
+   * The spectator GUI (`spectator.res`, and the watched player's target ID) while dead or spectating.
+   * Drawn only for a HUD that customises `spectator.res`; otherwise the game's own respawn text stays.
+   */
+  spectator?: boolean;
 }
 
 export function inGameFiles(
@@ -94,6 +106,16 @@ export function inGameFiles(
   }
   if (m.mode === 'koth' && m.koth) out.push(KOTH_FILE);
   if (playing && local && !local.alive && state.freezecam) out.push(...FREEZE_FILES);
+  // CTFSpectatorGUI: while dead (after the freeze cam) or watching as a spectator.
+  if (
+    opts.spectator &&
+    local &&
+    (!local.alive || local.team < 2) &&
+    !(playing && state.freezecam)
+  ) {
+    out.push(SPECTATOR_FILE);
+    if (local.spectating) out.push(SPECTATOR_TARGET_FILE);
+  }
   if (m.win) out.push(WIN_FILE);
   return [...new Set(out)];
 }
@@ -132,7 +154,11 @@ function buildingOf(state: HudState, file: string): HudBuilding | undefined {
   return kind && eng ? eng[kind] : undefined;
 }
 
-export function bindingsFor(state: HudState, test: TestState): Bindings {
+export function bindingsFor(
+  state: HudState,
+  test: TestState,
+  strings: ReadonlyMap<string, string> = new Map(),
+): Bindings {
   const gate = gateFor(test);
   const progress = progressFor(test);
   const local = state.local;
@@ -185,6 +211,37 @@ export function bindingsFor(state: HudState, test: TestState): Bindings {
         const fc = state.freezecam;
         if (n === 'nemesissubpanel') return !!fc?.dominated;
         if (n === 'screenshotpanel' || n === 'itempanel') return false;
+        // The killer's health: a player's or a building's (CTFFreezePanel::ShowSnapshotPanel), none for the world.
+        if (n === 'freezepanelhealth')
+          return !!fc && (fc.kind === 'player' || fc.kind === 'object');
+      }
+      if (base === 'freezepanelkillerhealth') {
+        const building = state.freezecam?.kind === 'object';
+        if (n === 'buildingstatushealthimagebg') return building;
+        if (n === 'playerstatushealthimagebg') return !building;
+      }
+      if (base === 'spectator') {
+        // Tips, the buy-back counter and the killer's item card need data this game does not have.
+        if (n === 'tiplabel' || n === 'buybacklabel' || n === 'itempanel') return false;
+        if (n === 'reinforcementslabel')
+          return !!local && local.team >= 2 && !local.alive && local.respawnIn !== null;
+      }
+      if (base === 'cspectatortargetid') {
+        // CSpectatorTargetID: the watched player's team background and health; no avatar, item or streak.
+        const spec = local?.spectating;
+        // The element itself (hudlayout.res starts it hidden; the game shows it while someone is watched).
+        if (n === 'cspectatortargetid') return !!spec;
+        if (n === 'targetidbg') return false;
+        if (n === 'targetidbg_spec_blue') return spec?.team === 3;
+        if (n === 'targetidbg_spec_red') return spec?.team === 2;
+        if (n === 'spectatorguihealth') return !!spec;
+        if (
+          n === 'ammoicon' ||
+          n === 'killstreakicon' ||
+          n === 'moveablesubpanel' ||
+          n === 'avatarimage'
+        )
+          return false;
       }
       if (base === 'winpanel' && win) {
         const row = /^(?:killstreak)?player(\d)/.exec(n);
@@ -219,10 +276,13 @@ export function bindingsFor(state: HudState, test: TestState): Bindings {
       // CTFHealthPanel: the health cross the code fills from the bottom (hud/health_color), grey when dead.
       if (n === 'playerstatushealthimage') {
         const fc = state.freezecam;
+        const spec = local && !local.alive ? local.spectating : null;
         const [health, max] =
           base === 'freezepanelkillerhealth' && fc
             ? [fc.killerHealth, fc.killerMaxHealth]
-            : [local?.alive ? local.health : 0, local?.maxHealth ?? 1];
+            : base === 'spectatorguihealth' && spec
+              ? [spec.health, spec.maxHealth]
+              : [local?.alive ? local.health : 0, local?.maxHealth ?? 1];
         if (health <= 0) return { image: '../hud/health_dead', scaleimage: '1' };
         return {
           image: '../hud/health_color',
@@ -239,6 +299,22 @@ export function bindingsFor(state: HudState, test: TestState): Bindings {
     const base = baseOf(file);
     const n = keyPath[keyPath.length - 1]?.toLowerCase() ?? '';
     const parent = keyPath[keyPath.length - 2]?.toLowerCase() ?? '';
+    if (base === 'spectator') {
+      // CTFSpectatorGUI::UpdateReinforcements / the map name, through the game's own strings.
+      if (
+        n === 'reinforcementslabel' &&
+        local?.respawnIn !== null &&
+        local?.respawnIn !== undefined
+      ) {
+        const secs = Math.max(0, Math.ceil(local.respawnIn));
+        return secs <= 0
+          ? localize(strings, 'game_respawntime_now', 'Prepare to respawn')
+          : secs === 1
+            ? localize(strings, 'game_respawntime_in_sec', 'Respawn in: 1 second')
+            : localize(strings, 'game_respawntime_in_secs', 'Respawn in: %s1 seconds', secs);
+      }
+      if (n === 'maplabel') return localize(strings, 'Spec_Map', 'Map: %s1', m.map);
+    }
     if (base === 'hudobjectivekothtimepanel' && n === 'timepanelvalue' && m.koth) {
       if (parent === 'bluetimer') return formatClock(m.koth.blue);
       if (parent === 'redtimer') return formatClock(m.koth.red);
@@ -251,6 +327,14 @@ export function bindingsFor(state: HudState, test: TestState): Bindings {
         if (row[2] === 'score') return String(p.score);
         return CLASS_LABEL[p.cls] ?? '';
       }
+    }
+    if (n === 'playerstatushealthvalue') {
+      // The health panels loaded into the freeze cam (the killer) and a target ID (who is watched).
+      const fc = state.freezecam;
+      if (base === 'freezepanelkillerhealth' && fc) return String(Math.max(0, fc.killerHealth));
+      const spec = local?.spectating;
+      if (base === 'spectatorguihealth' && spec && !local?.alive)
+        return String(Math.max(0, spec.health));
     }
     const b = buildingOf(state, file);
     if (b && b.exists) {

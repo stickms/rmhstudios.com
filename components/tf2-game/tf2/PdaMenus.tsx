@@ -83,12 +83,15 @@ export function BuildMenu({
   destroy,
   onPick,
   onClose,
+  touch = false,
 }: {
   engineer: HudEngineer;
   team: number;
   destroy: boolean;
   onPick: (index: number) => void;
   onClose: () => void;
+  /** Touch controls: the hint says tap, not a key. */
+  touch?: boolean;
 }) {
   const { t } = useTranslation('c-tf2-game');
   const ref = useRef<HTMLDivElement>(null);
@@ -106,9 +109,13 @@ export function BuildMenu({
         ))}
       </div>
       <div className="tf2g-pda-foot tf2g-shadow">
-        {destroy
-          ? t('pda_destroy_hint', { defaultValue: 'Press 1–4 to demolish a building' })
-          : t('pda_build_hint', { defaultValue: 'Metal: {{metal}} · Press 1–4 to build', metal: engineer.metal })}
+        {touch
+          ? destroy
+            ? t('pda_destroy_hint_touch', { defaultValue: 'Tap a building to demolish it' })
+            : t('pda_build_hint_touch', { defaultValue: 'Metal: {{metal}} · Tap a building to build it', metal: engineer.metal })
+          : destroy
+            ? t('pda_destroy_hint', { defaultValue: 'Press 1–4 to demolish a building' })
+            : t('pda_build_hint', { defaultValue: 'Metal: {{metal}} · Press 1–4 to build', metal: engineer.metal })}
       </div>
     </div>
   );
@@ -137,12 +144,15 @@ export function DisguiseMenu({
   onPick,
   onToggleTeam,
   onClose,
+  touch = false,
 }: {
   /** The team whose uniform the menu offers (the enemy by default). */
   disguiseTeam: number;
   onPick: (cls: number) => void;
   onToggleTeam: () => void;
   onClose: () => void;
+  /** Touch controls: the hint says tap, not a key. */
+  touch?: boolean;
 }) {
   const { t } = useTranslation('c-tf2-game');
   const teams = useTeamNames();
@@ -156,10 +166,15 @@ export function DisguiseMenu({
         ))}
       </div>
       <button type="button" className="tf2g-pda-foot tf2g-menu-item tf2g-shadow" data-menu-item onClick={onToggleTeam}>
-        {t('pda_disguise_team', {
-          defaultValue: 'Disguising as {{team}} — press - to switch team',
-          team: teams[disguiseTeam],
-        })}
+        {touch
+          ? t('pda_disguise_team_touch', {
+              defaultValue: 'Disguising as {{team}} — tap to switch team',
+              team: teams[disguiseTeam],
+            })
+          : t('pda_disguise_team', {
+              defaultValue: 'Disguising as {{team}} — press - to switch team',
+              team: teams[disguiseTeam],
+            })}
       </button>
     </div>
   );

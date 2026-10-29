@@ -18,6 +18,7 @@ import {
   OBJ_TELEPORTER,
 } from '../building-api';
 import { TF_COND } from '../conditions';
+import { hookInt, hookWeapon } from '../items/attributes';
 import { GR_STATE_BETWEEN_RNDS, GR_STATE_RND_RUNNING, GR_STATE_STALEMATE } from '../rules';
 import type { Player } from '../player';
 import type { Weapon } from '../weapon-api';
@@ -309,7 +310,26 @@ export function canPickupBuilding(player: Player, o: TFBaseObject | null): boole
   const dx = pEye.x - o.origin.x;
   const dy = pEye.y - o.origin.y;
   const dz = pEye.z - o.origin.z;
-  return dx * dx + dy * dy + dz * dz <= TF_BUILDING_PICKUP_RANGE * TF_BUILDING_PICKUP_RANGE;
+  const d2 = dx * dx + dy * dy + dz * dz;
+  // building_teleporting_pickup on the active weapon (the Rescue Ranger): any range for that much
+  // metal, except a dead zone between the normal reach and 250 units.
+  const cost = rescuePickupCost(player);
+  if (cost !== 0) {
+    if (d2 > TF_BUILDING_PICKUP_RANGE * TF_BUILDING_PICKUP_RANGE && d2 < TF_BUILDING_RESCUE_MIN_RANGE_SQ) return false;
+    if (d2 >= TF_BUILDING_RESCUE_MIN_RANGE_SQ && player.ammo[3] < cost) return false;
+    return true;
+  }
+  return d2 <= TF_BUILDING_PICKUP_RANGE * TF_BUILDING_PICKUP_RANGE;
+}
+
+/** TF_BUILDING_RESCUE_MIN_RANGE_SQ / TF_BUILDING_RESCUE_MAX_RANGE (tf_player_shared.cpp). */
+export const TF_BUILDING_RESCUE_MIN_RANGE_SQ = 250 * 250;
+export const TF_BUILDING_RESCUE_MAX_RANGE = 5500;
+
+/** building_teleporting_pickup on the active weapon: the metal a long-range pickup costs (0 = none). */
+function rescuePickupCost(player: Player): number {
+  const w = player.activeWeapon();
+  return w ? hookInt(hookWeapon(w, player, 'building_teleporting_pickup', 0)) : 0;
 }
 
 const pEye = vec3();
@@ -329,11 +349,13 @@ export function tryToPickupBuilding(player: Player): boolean {
   const world = player.world;
   player.eyePosition(pEye);
   angleVectors(player.eyeAngles, pFwd);
-  pEnd.x = pEye.x + pFwd.x * TF_BUILDING_PICKUP_RANGE;
-  pEnd.y = pEye.y + pFwd.y * TF_BUILDING_PICKUP_RANGE;
-  pEnd.z = pEye.z + pFwd.z * TF_BUILDING_PICKUP_RANGE;
+  const cost = rescuePickupCost(player);
+  const range = cost !== 0 ? TF_BUILDING_RESCUE_MAX_RANGE : TF_BUILDING_PICKUP_RANGE;
+  pEnd.x = pEye.x + pFwd.x * range;
+  pEnd.y = pEye.y + pFwd.y * range;
+  pEnd.z = pEye.z + pFwd.z * range;
   let best: TFBaseObject | null = null;
-  let bestDist2 = TF_BUILDING_PICKUP_RANGE * TF_BUILDING_PICKUP_RANGE;
+  let bestDist2 = range * range;
   const list = objectsOf(world);
   for (let i = 0; i < list.length; i++) {
     const o = list[i];
@@ -357,6 +379,19 @@ export function tryToPickupBuilding(player: Player): boolean {
     return false;
   }
   const obj = best as TFBaseObject;
+  if (cost !== 0) {
+    // The Rescue Ranger's long-range pickup: metal, and the teleport effects.
+    const ex = pEye.x - obj.origin.x;
+    const ey = pEye.y - obj.origin.y;
+    const ez = pEye.z - obj.origin.z;
+    if (ex * ex + ey * ey + ez * ez > TF_BUILDING_RESCUE_MIN_RANGE_SQ) {
+      player.ammo[3] = Math.max(0, player.ammo[3] - cost);
+      const blue = player.team === 3;
+      world.emitEffect({ kind: 'particle', system: blue ? 'teleported_blue' : 'teleported_red', pos: { x: obj.origin.x, y: obj.origin.y, z: obj.origin.z } });
+      world.emitSound('Building_Teleporter.Send', { entity: obj.id });
+      world.emitSound('Building_Teleporter.Receive', { entity: player.id });
+    }
+  }
   obj.makeCarriedObject(player);
   const builder = builderWeaponFor(player, obj.objectType);
   if (builder) {

@@ -1623,7 +1623,8 @@
   background: rgb(0 0 0 / 0.72);
   color: rgb(255 255 255);
   font-family: Tahoma, Verdana, 'DejaVu Sans', sans-serif;
-  font-size: calc(var(--u) * 9.5);
+  /* Captions are read, not glanced at: never under 13px (a landscape phone's unit is ~0.8px). */
+  font-size: max(13px, calc(var(--u) * 9.5));
   line-height: 1.35;
   text-align: center;
 }
@@ -1703,6 +1704,114 @@
 
 /* ══ Touch overlay ══════════════════════════════════════════════════════ */
 
+/* The safe-area probe GameHud measures (CSS env() has no JS reader): the layout panels are placed
+   inside it, clear of a notch, the rounded corners and the home indicator. */
+.tf2g-safe-probe {
+  position: absolute;
+  inset: var(--safe-top, 0px) var(--safe-right, 0px) var(--safe-bottom, 0px) var(--safe-left, 0px);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Touch: the menus a finger picks from (team, class, PDAs, voice, chat) use --u-menu, which never
+   drops under 1px per unit (a 46px class card, a 62px PDA item), and the keyboard hints give way. */
+.tf2g-hud[data-touch='true'] :is(.tf2g-select, .tf2g-pda, .tf2g-menu-list, .tf2g-chat-input) {
+  --u: var(--u-menu);
+}
+.tf2g-hud[data-touch='true'] :is(.tf2g-select-hint, .tf2g-card-key) {
+  display: none;
+}
+/* …and the labels a finger reads there stay at 12px or more. */
+.tf2g-hud[data-touch='true'] :is(.tf2g-class-group-name, .tf2g-team-card-count, .tf2g-pda-foot) {
+  font-size: max(12px, calc(var(--u) * 8));
+}
+.tf2g-hud[data-touch='true'] .tf2g-pda-item {
+  font-size: max(12px, calc(var(--u) * 7));
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.tf2g-hud[data-touch='true'] .tf2g-pda-cost {
+  font-size: max(12px, calc(var(--u) * 9));
+}
+.tf2g-hud[data-touch='true'] .tf2g-pda-note {
+  font-size: max(12px, calc(var(--u) * 6.5));
+}
+/* The PDAs grow with the 12px labels: centred on a phone, so a wrapped disguise kit stays clear of the
+   home indicator (TF2 hangs them just below the middle). */
+.tf2g-hud[data-touch='true'] .tf2g-pda {
+  translate: -50% -50%;
+}
+/* The team and class menus cover the touch controls: on touch they carry their own close button. */
+.tf2g-select-close {
+  display: none;
+}
+.tf2g-hud[data-touch='true'] .tf2g-select-close {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 8px);
+  right: calc(var(--safe-right, 0px) + 8px);
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgb(255 255 255 / 0.4);
+  border-radius: 12px;
+  background: rgb(20 20 20 / 0.35);
+  color: var(--tf2g-tan-light);
+  cursor: pointer;
+}
+.tf2g-select-close svg {
+  width: 20px;
+  height: 20px;
+}
+/* The voice menu: two columns of 44px rows, so nine items fit a landscape phone. */
+.tf2g-hud[data-touch='true'] .tf2g-menu-list {
+  right: auto;
+  width: max-content;
+  /* Taller than its panel now: it overflows downwards, never off the top of the screen. */
+  justify-content: safe center;
+}
+.tf2g-hud[data-touch='true'] .tf2g-menu-box {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(8.5rem, auto));
+  column-gap: 4px;
+  font-size: max(13px, calc(var(--u) * 9));
+}
+.tf2g-hud[data-touch='true'] .tf2g-menu-title {
+  grid-column: 1 / -1;
+  font-size: max(14px, calc(var(--u) * 11));
+}
+.tf2g-hud[data-touch='true'] .tf2g-menu-item {
+  min-height: 44px;
+  align-items: center;
+}
+/* Chat: a 44px field with a readable label and a close button (a phone has no Esc). */
+.tf2g-hud[data-touch='true'] .tf2g-chat-input {
+  min-height: 44px;
+  padding-block: 0;
+  padding-inline-end: 0;
+  font-size: max(12px, calc(var(--u) * 8.5));
+}
+.tf2g-hud[data-touch='true'] .tf2g-chat-input input {
+  align-self: stretch;
+}
+.tf2g-chat-close {
+  display: inline-flex;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--tf2g-tan-light);
+  cursor: pointer;
+}
+.tf2g-chat-close svg {
+  width: 18px;
+  height: 18px;
+}
+
 .tf2g-touch {
   --touch-scale: 1;
   --touch-ink: rgb(255 255 255 / 0.9);
@@ -1778,7 +1887,7 @@
   border-radius: 50%;
   background: var(--touch-fill);
   color: var(--touch-ink);
-  font: 600 calc(11px * var(--touch-scale)) / 1 'TF2 Build', system-ui, sans-serif;
+  font: 600 calc(12px * var(--touch-scale)) / 1 'TF2 Build', system-ui, sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   touch-action: none;
@@ -1808,6 +1917,10 @@
   top: calc(env(safe-area-inset-top, 0px) + 20%);
   display: flex;
   flex-direction: column;
+  /* A short portrait screen wraps the column leftwards before it reaches the fire cluster (240px tall). */
+  flex-wrap: wrap-reverse;
+  align-content: flex-start;
+  max-height: calc(80% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 252px * var(--touch-scale));
   gap: 8px;
 }
 .tf2g-touch-side .tf2g-touch-btn {
@@ -1817,9 +1930,12 @@
 @media (orientation: landscape) {
   .tf2g-touch-side {
     right: auto;
-    left: calc(env(safe-area-inset-left, 0px) + 128px);
+    /* Right of the Engineer's building panels (136 units wide at the top left; 128px on a phone). */
+    left: calc(env(safe-area-inset-left, 0px) + max(128px, calc(var(--u, 1px) * 136 + 8px)));
     top: calc(env(safe-area-inset-top, 0px) + 8px);
     flex-direction: row;
+    flex-wrap: nowrap;
+    max-height: none;
   }
   .tf2g-touch-side [data-slot-button='true'] {
     display: none;
@@ -1833,4 +1949,316 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+
+/* The HUD editor over the match (custom-hud/HudEditorOverlay): the editor lays out inside the safe
+   area, clear of a notch and the home indicator. Its own phone tab bar pads itself by
+   --app-safe-bottom, which is zero in here: the overlay has already taken the inset. */
+.tf2g-hud-editor {
+  --app-safe-bottom: 0px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--safe-top, 0px) var(--safe-right, 0px) var(--safe-bottom, 0px) var(--safe-left, 0px);
+}
+.tf2g-hud-editor > .app-viewport {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+/* ══ Developer console (console/Console.tsx, console/NetGraph.tsx) ══════════
+   The Source console: one translucent VGUI frame over the top of the game, a
+   monospace scrollback coloured by severity (Console.TextColor /
+   Console.DevTextColor from the scheme, warnings amber, errors red), the
+   command line under it. The same engine panel in all three games. */
+
+.tf2g-console,
+.tf2g-netgraph {
+  --tf2g-con-bg: rgb(44 41 38 / 0.92);
+  --tf2g-con-head: rgb(62 57 52 / 0.96);
+  --tf2g-con-edge: rgb(117 107 94);
+  --tf2g-con-field: rgb(20 19 18 / 0.9);
+  --tf2g-con-title: rgb(235 226 202);
+  --tf2g-con-text: rgb(216 222 211);
+  --tf2g-con-dev: rgb(196 181 80);
+  --tf2g-con-echo: rgb(170 170 160);
+  --tf2g-con-warn: rgb(240 180 70);
+  --tf2g-con-error: rgb(255 110 96);
+  --tf2g-con-ok: rgb(150 220 120);
+  --tf2g-con-focus: rgb(255 215 120);
+  --tf2g-con-radius: 4px;
+  --tf2g-con-line: 16px;
+  --tf2g-con-font: ui-monospace, 'Lucida Console', Consolas, 'DejaVu Sans Mono', monospace;
+  --tf2g-con-tap: 32px;
+}
+.tf2g-hud[data-touch='true'] :is(.tf2g-console, .tf2g-netgraph) {
+  --tf2g-con-tap: 44px;
+}
+
+.tf2g-console {
+  position: absolute;
+  z-index: 30;
+  top: calc(var(--safe-top, 0px) + 8px);
+  left: calc(var(--safe-left, 0px) + 8px);
+  right: calc(var(--safe-right, 0px) + 8px);
+  max-width: 1040px;
+  margin-inline: auto;
+  height: max(220px, 56%);
+  display: flex;
+  flex-direction: column;
+  background: var(--tf2g-con-bg);
+  border: 1px solid var(--tf2g-con-edge);
+  border-radius: var(--tf2g-con-radius);
+  color: var(--tf2g-con-text);
+  font: 12px / var(--tf2g-con-line) var(--tf2g-con-font);
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .tf2g-console {
+    height: calc(100% - var(--safe-top, 0px) - var(--safe-bottom, 0px) - 16px);
+  }
+}
+.tf2g-console :focus-visible {
+  outline: 2px solid var(--tf2g-con-focus);
+  outline-offset: 1px;
+}
+
+.tf2g-console-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px 2px 10px;
+  background: var(--tf2g-con-head);
+  border-bottom: 1px solid var(--tf2g-con-edge);
+  border-radius: var(--tf2g-con-radius) var(--tf2g-con-radius) 0 0;
+}
+.tf2g-console-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: var(--tf2g-con-title);
+  font: 700 13px/1.6 var(--tf2g-font-small, sans-serif);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.tf2g-console-tools {
+  display: flex;
+  gap: 2px;
+}
+.tf2g-console-tool {
+  display: inline-grid;
+  place-items: center;
+  min-width: var(--tf2g-con-tap);
+  min-height: var(--tf2g-con-tap);
+  border: 0;
+  border-radius: var(--tf2g-con-radius);
+  background: transparent;
+  color: var(--tf2g-con-title);
+  cursor: pointer;
+}
+.tf2g-console-tool:hover {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.tf2g-console-log {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 4px 0;
+  touch-action: pan-x pan-y;
+}
+.tf2g-console-lines {
+  position: relative;
+  min-width: 100%;
+}
+.tf2g-con-line {
+  position: absolute;
+  left: 10px;
+  height: var(--tf2g-con-line);
+  white-space: pre;
+}
+.tf2g-con-echo {
+  color: var(--tf2g-con-echo);
+}
+.tf2g-con-dev {
+  color: var(--tf2g-con-dev);
+}
+.tf2g-con-warn {
+  color: var(--tf2g-con-warn);
+}
+.tf2g-con-error {
+  color: var(--tf2g-con-error);
+}
+.tf2g-con-success {
+  color: var(--tf2g-con-ok);
+}
+
+.tf2g-console-suggest {
+  margin: 0;
+  padding: 2px 0;
+  max-height: 40%;
+  overflow-y: auto;
+  list-style: none;
+  border-top: 1px solid var(--tf2g-con-edge);
+  background: var(--tf2g-con-field);
+}
+.tf2g-console-option {
+  display: block;
+  width: 100%;
+  min-height: calc(var(--tf2g-con-tap) * 0.75);
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--tf2g-con-text);
+  font: inherit;
+  text-align: start;
+  white-space: pre;
+  cursor: pointer;
+}
+.tf2g-console-option:hover,
+.tf2g-console-option[data-active] {
+  background: rgb(255 255 255 / 0.1);
+  color: var(--tf2g-con-title);
+}
+
+.tf2g-console-row {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-top: 1px solid var(--tf2g-con-edge);
+}
+.tf2g-console-row-end {
+  justify-content: flex-end;
+}
+.tf2g-console-input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--tf2g-con-tap);
+  padding: 0 8px;
+  border: 1px solid var(--tf2g-con-edge);
+  border-radius: var(--tf2g-con-radius);
+  background: var(--tf2g-con-field);
+  color: var(--tf2g-con-text);
+  font: 13px var(--tf2g-con-font);
+}
+.tf2g-console-submit {
+  min-height: var(--tf2g-con-tap);
+  padding: 0 14px;
+  border: 1px solid var(--tf2g-con-edge);
+  border-radius: var(--tf2g-con-radius);
+  background: var(--tf2g-con-head);
+  color: var(--tf2g-con-title);
+  font: 700 12px/1 var(--tf2g-font-small, sans-serif);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.tf2g-console-submit:hover {
+  background: rgb(117 107 94 / 0.6);
+}
+.tf2g-console-quiet {
+  background: transparent;
+}
+.tf2g-console-editor {
+  flex: 1;
+  min-height: 0;
+  margin: 6px 6px 0;
+  padding: 6px 8px;
+  resize: none;
+  border: 1px solid var(--tf2g-con-edge);
+  border-radius: var(--tf2g-con-radius);
+  background: var(--tf2g-con-field);
+  color: var(--tf2g-con-text);
+  font: 12px / var(--tf2g-con-line) var(--tf2g-con-font);
+  white-space: pre;
+}
+
+/* net_graph / cl_showpos: bottom right as Source's net_graphpos 1, growing up from just above the
+   ammo panel (62 HUD units), clear of the kill feed and the page's corner controls. */
+.tf2g-netgraph {
+  position: absolute;
+  z-index: 5;
+  bottom: calc(var(--safe-bottom, 0px) + var(--u, 1px) * 62);
+  right: calc(var(--safe-right, 0px) + 8px);
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 6px;
+  color: var(--tf2g-con-text);
+  font: 11px/14px var(--tf2g-con-font);
+  text-align: right;
+  text-shadow: 1px 1px 0 rgb(0 0 0);
+  pointer-events: none;
+  white-space: pre;
+}
+.tf2g-netgraph-block {
+  padding: 2px 4px;
+  background: rgb(0 0 0 / 0.35);
+  border-radius: var(--tf2g-con-radius);
+}
+.tf2g-netgraph-graph {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  width: 196px;
+  height: 40px;
+  margin-top: 4px;
+}
+.tf2g-netgraph-graph > span {
+  flex: 1;
+  min-height: 1px;
+  background: var(--tf2g-con-ok);
+}
+.tf2g-netgraph-graph > span[data-slow] {
+  background: var(--tf2g-con-error);
+}
+
+/* A menu drawn from a custom HUD's own file (custom-hud/CustomHudMenu): the HUD's canvas, and over it
+   transparent buttons exactly where the HUD's buttons are (labelled only where its picture is missing). */
+.tf2g-custom-menu {
+  position: absolute;
+  inset: 0;
+}
+.tf2g-custom-menu[data-kind='scoreboard'] {
+  pointer-events: none;
+}
+/* Team and class select fill the screen in TF2 (a 3D room behind them): the match all but goes dark. */
+.tf2g-custom-menu:not([data-kind='scoreboard']) > .tf2g-dim {
+  background: rgb(14 13 12 / 0.95);
+}
+.tf2g-custom-menu-canvas,
+.tf2g-custom-menu-hits {
+  position: absolute;
+}
+.tf2g-custom-menu-canvas {
+  pointer-events: none;
+}
+/* The HUD root lets taps through to the game; the menu's buttons take them (above the touch controls). */
+.tf2g-custom-menu-hits {
+  pointer-events: auto;
+}
+.tf2g-custom-menu-btn {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 0 4px;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.tf2g-custom-menu-btn > span {
+  visibility: hidden;
+}
+.tf2g-custom-menu-btn[data-missing] {
+  color: var(--tf2g-tan-light);
+}
+.tf2g-custom-menu-btn[data-missing] > span {
+  visibility: visible;
+  text-shadow: 1px 1px 0 rgb(0 0 0);
 }

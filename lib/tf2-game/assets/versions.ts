@@ -123,5 +123,14 @@ export const channelStateKey = (c: GameAssetChannel): string => `${channelPrefix
 export const channelPublishPrefix = (c: GameAssetChannel): string =>
   c.kind === 'mdl' || c.kind === 'maps' ? gameRoot(c.game) : channelPrefix(c);
 
+/**
+ * Channels outside `<game>-game/` that the game also reads at run time, counted against the same
+ * budget by the storage guard: the HUD base (`tf2-hud-base/`: panels, schemes, textures and the game's
+ * localisation, `resource/tf_<language>.txt`, which custom HUDs and the HUD editor draw `#Token`s
+ * from). Each is a prefix whose state file sits at `<prefix>_state.json`, published by
+ * scripts/tf2-assets/publish.ts like the game channels.
+ */
+export const COUNTED_CHANNELS = ['tf2-hud-base/'] as const;
+
 /** Default ceiling for everything under every `<game>-game/` prefix (R2), in GB. */
 export const GAME_STORAGE_BUDGET_GB = 12;

@@ -251,7 +251,29 @@ export interface LoadoutEvent extends Recipients {
   reason?: string;
 }
 
+/**
+ * A developer-console reply (console/tf2-server.ts): to the player who ran the command (`to`), or
+ * a notice to everyone ("Server cvar 'sv_cheats' changed to 1"). Free text, so it goes inline.
+ */
+export interface ConsoleEvent extends Recipients {
+  type: 'console';
+  text: string;
+  /** 0 info, 1 warning, 2 error, 3 success. */
+  level: number;
+  /** `setang`: the player's client snaps its view to these angles (SnapEyeAngles). */
+  setang?: Vec3;
+}
+
+/** A replicated server cvar's value (FCVAR_REPLICATED): every client's console mirrors it. */
+export interface CvarEvent extends Recipients {
+  type: 'cvar';
+  name: string;
+  value: string;
+}
+
 export type SimEvent =
+  | ConsoleEvent
+  | CvarEvent
   | LoadoutEvent
   | SoundEvent
   | EffectEvent

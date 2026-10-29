@@ -37,18 +37,27 @@ export interface Dim {
   align: Align;
   /** `f` prefix: the number is subtracted from the parent's size. */
   fill: boolean;
+  /**
+   * Positions only (`Panel::ComputePos`): `s` after the anchor makes the number a fraction of the panel's
+   * own size (`cs-0.5` centres it), `p` a fraction of the parent's.
+   */
+  of?: 'self' | 'parent';
 }
 
 export function parseDim(raw: string | undefined): Dim {
   const s = (raw ?? '').trim();
-  const m = /^([rcf]?)(-?\d*\.?\d+)?/i.exec(s);
+  const m = /^([rcf]?)([sp]?)(-?\d*\.?\d+)?/i.exec(s);
   const prefix = (m?.[1] ?? '').toLowerCase();
-  const value = m?.[2] === undefined ? 0 : Number.parseFloat(m[2]);
-  return {
+  const rel = (m?.[2] ?? '').toLowerCase();
+  const value = m?.[3] === undefined ? 0 : Number.parseFloat(m[3]);
+  const dim: Dim = {
     value: Number.isFinite(value) ? value : 0,
     align: prefix === 'r' ? 'end' : prefix === 'c' ? 'center' : 'start',
     fill: prefix === 'f',
   };
+  if (rel === 's') dim.of = 'self';
+  else if (rel === 'p') dim.of = 'parent';
+  return dim;
 }
 
 /**
@@ -61,9 +70,14 @@ export const scaled = (value: number, scale: number): number =>
   // exact negative product such as -288 × 2.25 = -648 would truncate to -647.
   Math.trunc(value * scale + Math.sign(value) * 1e-9);
 
-/** Resolve a position component against the parent's extent. */
-export function resolveAxis(dim: Dim, parentExtent: number, scale: number): number {
-  const v = scaled(dim.value, scale);
+/** Resolve a position component against the parent's extent (and the panel's own, for `s` values). */
+export function resolveAxis(dim: Dim, parentExtent: number, scale: number, ownExtent = 0): number {
+  const v =
+    dim.of === 'self'
+      ? Math.trunc(ownExtent * dim.value)
+      : dim.of === 'parent'
+        ? Math.trunc(parentExtent * dim.value)
+        : scaled(dim.value, scale);
   if (dim.align === 'end') return parentExtent - v;
   if (dim.align === 'center') return Math.trunc(parentExtent / 2) + v;
   return v;
@@ -137,8 +151,8 @@ export function layoutRect({ props, parent, scale, sibling }: LayoutInput): Rect
     return { x: ax + scaled(xd.value, scale) - ox, y: ay + scaled(yd.value, scale) - oy, w, h };
   }
   return {
-    x: resolveAxis(xd, parent.w, scale),
-    y: resolveAxis(yd, parent.h, scale),
+    x: resolveAxis(xd, parent.w, scale, w),
+    y: resolveAxis(yd, parent.h, scale, h),
     w,
     h,
   };

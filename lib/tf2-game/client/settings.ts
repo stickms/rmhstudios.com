@@ -29,6 +29,9 @@ export interface GameSettings {
   version: 1;
   /** `sensitivity` (Source default 3). */
   sensitivity: number;
+  /** `m_yaw` / `m_pitch`: degrees per mouse count at sensitivity 1 (0.022; `m_pitch` < 0 is `invertY`). */
+  mYaw: number;
+  mPitch: number;
   invertY: boolean;
   /** Pointer lock with `unadjustedMovement` (no OS acceleration) where supported. */
   rawInput: boolean;
@@ -49,6 +52,11 @@ export interface GameSettings {
   damageNumbers: boolean;
   /** Softens the damage flash / screen fades (WCAG 2.3.1). */
   reducedFlashing: boolean;
+  /**
+   * "Enable developer console" (`con_enable`, TF2's advanced keyboard option): the backquote key
+   * and the pause menu's Console. `auto` is on with a keyboard and mouse, off on touch-first devices.
+   */
+  devConsole: 'auto' | 'on' | 'off';
   /** `cl_autoreload`. */
   autoReload: boolean;
   gamepad: {
@@ -77,11 +85,15 @@ export const FOV_RANGE: Record<HudGame, { min: number; max: number; def: number 
 };
 export const VIEWMODEL_FOV_RANGE = { min: 54, max: 70, def: 54 };
 export const SENSITIVITY_RANGE = { min: 0.1, max: 20 };
+/** m_yaw / m_pitch magnitudes the settings accept. */
+export const M_YAW_RANGE = { min: 0.001, max: 0.2 };
 
 export function defaultSettings(game: HudGame): GameSettings {
   return {
     version: 1,
     sensitivity: 3,
+    mYaw: M_YAW,
+    mPitch: M_PITCH,
     invertY: false,
     rawInput: true,
     fov: FOV_RANGE[game].def,
@@ -95,6 +107,7 @@ export function defaultSettings(game: HudGame): GameSettings {
     hitSound: game === 'tf2',
     damageNumbers: game === 'tf2',
     reducedFlashing: false,
+    devConsole: 'auto',
     autoReload: true,
     gamepad: { lookSpeed: 220, deadzone: 0.15, curve: 2, invertY: false },
     touch: { lookSensitivity: 0.25, buttonScale: 1, mode: 'auto', haptics: true },
@@ -138,6 +151,8 @@ export function sanitizeSettings(raw: unknown, game: HudGame): GameSettings {
   return {
     version: 1,
     sensitivity: numIn(raw.sensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max, d.sensitivity),
+    mYaw: numIn(raw.mYaw, M_YAW_RANGE.min, M_YAW_RANGE.max, d.mYaw),
+    mPitch: numIn(raw.mPitch, M_YAW_RANGE.min, M_YAW_RANGE.max, d.mPitch),
     invertY: boolOr(raw.invertY, d.invertY),
     rawInput: boolOr(raw.rawInput, d.rawInput),
     fov: Math.round(numIn(raw.fov, fov.min, fov.max, d.fov)),
@@ -160,6 +175,7 @@ export function sanitizeSettings(raw: unknown, game: HudGame): GameSettings {
     hitSound: boolOr(raw.hitSound, d.hitSound),
     damageNumbers: boolOr(raw.damageNumbers, d.damageNumbers),
     reducedFlashing: boolOr(raw.reducedFlashing, d.reducedFlashing),
+    devConsole: oneOf(raw.devConsole, ['auto', 'on', 'off'] as const, d.devConsole),
     autoReload: boolOr(raw.autoReload, d.autoReload),
     gamepad: {
       lookSpeed: numIn(gp.lookSpeed, 30, 720, d.gamepad.lookSpeed),
@@ -224,12 +240,21 @@ export function saveSettings(
 // ─── Derived values ────────────────────────────────────────────────────────
 
 /** Degrees of yaw / pitch for a mouse movement of (dx, dy) counts (CInput::MouseMove). */
-export function mouseToDegrees(dx: number, dy: number, s: Pick<GameSettings, 'sensitivity' | 'invertY'>): { yaw: number; pitch: number } {
+export function mouseToDegrees(
+  dx: number,
+  dy: number,
+  s: Pick<GameSettings, 'sensitivity' | 'invertY'> & Partial<Pick<GameSettings, 'mYaw' | 'mPitch'>>,
+): { yaw: number; pitch: number } {
   return {
     // Moving right turns right: yaw decreases (Source yaw is counter-clockwise).
-    yaw: -dx * s.sensitivity * M_YAW,
-    pitch: dy * s.sensitivity * M_PITCH * (s.invertY ? -1 : 1),
+    yaw: -dx * s.sensitivity * (s.mYaw ?? M_YAW),
+    pitch: dy * s.sensitivity * (s.mPitch ?? M_PITCH) * (s.invertY ? -1 : 1),
   };
+}
+
+/** Whether the developer console is on for this device (`devConsole` auto: keyboard yes, touch-first no). */
+export function devConsoleEnabled(s: Pick<GameSettings, 'devConsole'>, touchFirst: boolean): boolean {
+  return s.devConsole === 'on' || (s.devConsole === 'auto' && !touchFirst);
 }
 
 export interface QualityProfile {

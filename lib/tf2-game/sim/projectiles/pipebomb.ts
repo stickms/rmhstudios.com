@@ -110,7 +110,7 @@ export class TFGrenadePipebomb extends BaseProjectile implements Deflectable {
   readonly impactNormal = vec3();
   private nextDetonateCheck = 0;
   private readonly lastOrigin = vec3();
-  private exploded = false;
+  protected exploded = false;
 
   constructor(classname: string) {
     super(classname);
@@ -235,7 +235,7 @@ export class TFGrenadePipebomb extends BaseProjectile implements Deflectable {
   }
 
   /** SDK: CTFGrenadePipebombProjectile::PipebombTouch — an enemy before the world: full damage, now. */
-  private pipebombTouch(other: Entity): void {
+  protected pipebombTouch(other: Entity): void {
     if (this.touched || this.exploded) return;
     if (other.id === this.owner) return;
     if (!other.team || other.team === this.team || other.takeDamage === 0) return;

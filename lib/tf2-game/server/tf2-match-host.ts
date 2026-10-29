@@ -53,7 +53,7 @@ import {
   type HullTable,
   type MapManifest,
 } from '../assets/map-manifest';
-import type { Tf2Mode } from '../data/maps';
+import { findTf2Map, type Tf2Mode } from '../data/maps';
 import { loadMap, type LoadedMap } from '../sim/map-loader';
 import { OBS_MODE_ROAMING } from '../sim/movement-types';
 import { calcPlayerScore, type Player } from '../sim/player';
@@ -65,6 +65,9 @@ import { BitWriter } from '../net/bitbuf';
 import type { BotDifficulty, ClassChoice, TeamChoice } from '../net/events';
 import { eventIsCosmetic, eventVisibleTo, writeEvent, type StringRefs } from '../net/event-codec';
 import { dispatchExtraCommand } from '../net/extra-commands';
+import { Tf2ServerConsole, type ServerConsolePolicy, type ServerConsoleState } from '../console/tf2-server';
+import type { GraphCatalog } from '../sim/checkpoint/catalog';
+import { captureWorld, CheckpointError, restoreWorld, type WorldCheckpoint } from '../sim/checkpoint/world-state';
 import { applyLoadoutCommand } from '../sim/items/command';
 import { randomBotLoadouts } from '../sim/items/bots';
 import { ReliableWriter, type ScoreRow } from '../net/protocol';
@@ -307,6 +310,18 @@ export interface Tf2MatchHostOptions {
   snapshotMaxBytes?: number;
   /** Diagnostics. */
   log?: (message: string, data?: Record<string, unknown>) => void;
+  /**
+   * Who administers the developer console (console/tf2-server.ts). Default: a dedicated room —
+   * nobody, `sv_cheats` locked to 0. The listen server passes `{ kind: 'listen', ownerId }`.
+   */
+  console?: ServerConsolePolicy;
+  /**
+   * Loads another map for a level change (`changelevel`): the map and its nav mesh (null: the bots
+   * generate one). `createTf2MatchHost` fills it from its loaders; without it the map cannot change.
+   */
+  loadLevel?: (map: string) => Promise<{ map: LoadedMap; nav: NavMesh | null }>;
+  /** host_timescale (a listen server's cheat): the runner paces its ticks this much faster. */
+  setTimescale?: (scale: number) => void;
 }
 
 export interface Tf2MatchDeps extends Tf2MatchHostOptions {
@@ -329,7 +344,36 @@ export async function createTf2MatchHost(
   }
   let nav = deps.nav ?? (map as PackagedMap | null)?.navMesh ?? null;
   if (!nav && deps.loadNav) nav = await deps.loadNav(opts.map);
-  return new Tf2MatchHost(opts, { ...deps, map, nav });
+  return new Tf2MatchHost(opts, { ...deps, map, nav, loadLevel: deps.loadLevel ?? levelLoader(deps) });
+}
+
+/** A level loader from a host's map and nav loaders (undefined when it has no map loader). */
+export function levelLoader(deps: Pick<Tf2MatchDeps, 'loadMap' | 'loadNav'>): Tf2MatchHostOptions['loadLevel'] {
+  const { loadMap: load, loadNav } = deps;
+  if (!load) return undefined;
+  return async (name) => {
+    const map = await load(name);
+    let nav = (map as PackagedMap).navMesh ?? null;
+    if (!nav && loadNav) nav = await loadNav(name);
+    return { map, nav };
+  };
+}
+
+/** What a host checkpoint carries beside the world (host migration): seats, bots, the console. */
+interface HostCheckpointExtra {
+  options: MatchOptions;
+  humans: Array<{ hubId: number; player: Player; lastVoiceAt: number; rtt: number }>;
+  bots: Array<{ player: Player; brain: BotBrain; commandNumber: number }>;
+  nextBotName: number;
+  console: ServerConsoleState;
+}
+
+/** A human's seat as a checkpoint knows it (the successor's host session restores seats from these). */
+export interface CheckpointSeat {
+  hubId: number;
+  entity: number;
+  name: string;
+  userId?: string;
 }
 
 interface HumanClient {
@@ -373,8 +417,9 @@ export interface ClientNetStats {
 const SKIP_COMMAND = (): void => {};
 
 export class Tf2MatchHost implements MatchHost {
-  readonly world: GameWorld;
-  readonly map: LoadedMap | null;
+  /** The match's world (replaced by a level change). */
+  world: GameWorld;
+  map: LoadedMap | null;
   readonly options: MatchOptions;
   private readonly opts: Tf2MatchHostOptions;
   private readonly humans = new Map<number, HumanClient>();
@@ -382,7 +427,7 @@ export class Tf2MatchHost implements MatchHost {
   private readonly bots = new Map<number, BotClient>();
   private readonly brainFactory: BotBrainFactory;
   private readonly strings = new ServerStringTable();
-  private readonly capture: WorldCapture;
+  private capture: WorldCapture;
   private readonly encoder: SnapshotEncoder;
   private readonly reliableWriter = new ReliableWriter();
   private readonly eventWriter = new BitWriter(256);
@@ -395,6 +440,10 @@ export class Tf2MatchHost implements MatchHost {
   private nextBotName = 0;
   private disposed = false;
   readonly stats = new Map<number, ClientNetStats>();
+  /** The developer console's server half (sv_cheats, tf_bot_add, noclip…). */
+  readonly serverConsole: Tf2ServerConsole;
+  /** A level change in progress (the map being loaded), or null. */
+  private levelLoading: string | null = null;
 
   constructor(options: MatchOptions, opts: Tf2MatchHostOptions = {}) {
     registerAllSimModules();
@@ -425,7 +474,194 @@ export class Tf2MatchHost implements MatchHost {
     this.capture = new WorldCapture(this.map ? this.map.bsp : null);
     this.encoder = new SnapshotEncoder(this.strings);
     this.refs = { idFor: (s: string) => this.strings.idFor(s) };
+    this.serverConsole = new Tf2ServerConsole(this.consoleHost(), opts.console);
     this.rebalanceBots();
+  }
+
+  /** The match as the console sees it (console/tf2-server.ts ConsoleMatchHost). */
+  private consoleHost() {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- the getter below must read the CURRENT world (a level change replaces it)
+    const self = this;
+    return {
+      get world() {
+        return self.world;
+      },
+      options: this.options,
+      humans: () => [...this.humans.values()].map((c) => ({ hubId: c.hubId, player: c.player, rttMs: c.rtt * 1000 })),
+      bots: () => [...this.bots.values()].map((b) => b.player).filter((p) => !p.removed),
+      addBots: (count: number, difficulty: BotDifficulty, prefs?: { team?: TeamChoice; cls?: ClassChoice; name?: string }) =>
+        this.addBots(count, difficulty, prefs),
+      removeBot: (entity: number) => {
+        if (!this.bots.delete(entity)) return false;
+        this.rosterChanges.push({ entity, present: false });
+        this.world.removePlayer(entity);
+        return true;
+      },
+      rebalanceBots: () => this.rebalanceBots(),
+      setTimescale: this.opts.setTimescale
+        ? (scale: number) => {
+            this.opts.setTimescale!(scale);
+            return true;
+          }
+        : undefined,
+    };
+  }
+
+  /** The match's tick (the runner reports frames with it; a restored or level-changed match keeps counting). */
+  tickCount(): number {
+    return this.world.tickCount;
+  }
+
+  /** A dedicated room's owner (hub player id) administers the match settings — never cheats. Null: nobody. */
+  setOwner(hubId: number | null): void {
+    this.serverConsole.setOwner(hubId);
+  }
+
+  // ─── Level change (changelevel / map) ─────────────────────────────────────
+
+  /**
+   * Moves the match to another published map: loads it (the match plays on meanwhile), then builds a
+   * new world on it that keeps the tick count running and puts every human back in their seat —
+   * same player id, team, class and loadouts (TF2 resets scores on a level change). Bots are dealt
+   * again. Each client gets a new `hello` naming the map (it reloads the level) and a full snapshot.
+   */
+  async changeLevel(map: string): Promise<boolean> {
+    const info = findTf2Map(map);
+    if (this.disposed || !info || !this.opts.loadLevel || this.levelLoading) return false;
+    this.levelLoading = info.name;
+    this.serverConsole.broadcast(`Changing level to ${info.name}...`);
+    try {
+      const { map: loaded, nav } = await this.opts.loadLevel(info.name);
+      if (this.disposed) return false;
+      this.swapLevel(info.name, info.mode as Tf2Mode, loaded, nav);
+      this.opts.log?.('tf2: level changed', { map: info.name });
+      return true;
+    } catch (error) {
+      this.serverConsole.broadcast(`changelevel: ${info.name} failed to load (${error instanceof Error ? error.message : String(error)})`, 'error');
+      return false;
+    } finally {
+      this.levelLoading = null;
+    }
+  }
+
+  /** The new world, the humans moved over (between ticks). */
+  private swapLevel(name: string, mode: Tf2Mode, loaded: LoadedMap, nav: NavMesh | null): void {
+    const old = this.world;
+    const seats = [...this.humans.values()].map((c) => ({
+      client: c,
+      name: c.player.name,
+      userId: c.player.userId,
+      team: c.player.team,
+      cls: c.player.desiredClass || c.player.playerClass,
+      loadouts: [...c.player.loadouts],
+    }));
+    this.bots.clear();
+    this.byEntity.clear();
+    this.map = loaded;
+    this.options.map = name;
+    this.options.mode = mode;
+    this.world = new GameWorld({
+      map: loaded,
+      startTick: old.tickCount,
+      options: { seed: this.options.seed >>> 0 || 1, isServer: true, lagCompensation: true, friendlyFire: old.options.friendlyFire, rules: { ...old.rules.options } },
+    });
+    const gm = gameModeForMap(this.world, name, mode);
+    if (gm) this.world.setMode(gm);
+    if (nav) provideNavMesh(this.world, nav);
+    this.capture = new WorldCapture(loaded.bsp);
+    this.rosterChanges = [];
+    this.outgoing = [];
+    for (const s of seats) {
+      const player = this.world.addPlayer(s.name, { userId: s.userId });
+      s.loadouts.forEach((slots, cls) => slots && player.setClassLoadout(cls, slots));
+      const c = s.client;
+      c.player = player;
+      this.resetClient(c);
+      this.byEntity.set(player.id, c);
+      if (s.team === TF_TEAM_RED || s.team === TF_TEAM_BLUE) {
+        player.requestTeam(s.team);
+        if (s.cls > 0) player.requestClass(s.cls);
+      } else if (s.team === TEAM_SPECTATOR) {
+        player.requestTeam(TEAM_SPECTATOR);
+      } else {
+        player.observerMode = OBS_MODE_ROAMING;
+      }
+      this.serverConsole.playerJoined(player);
+    }
+    this.rebalanceBots();
+  }
+
+  /** A client starts over (a level change, a resync, a restored seat): fresh baseline, strings, hello, roster. */
+  private resetClient(c: HumanClient): void {
+    c.strings = new ClientStringKnowledge();
+    c.snap = new ClientSnapshotState(c.strings);
+    c.queue = [];
+    c.lastQueued = 0;
+    c.lastRun = 0;
+    c.budget = 1;
+    c.reliable = [];
+    c.needsHello = true;
+    c.needsRoster = true;
+  }
+
+  // ─── Checkpoints (peer-to-peer host migration) ───────────────────────────
+
+  /**
+   * The whole match written down (sim/checkpoint): the world, every human's seat, the bots and
+   * their brains, the console's cvars. A successor restores it with `Tf2MatchHost.restore`.
+   */
+  checkpoint(catalog: GraphCatalog & { fingerprint?: string }): WorldCheckpoint {
+    const extra: HostCheckpointExtra = {
+      options: { ...this.options },
+      humans: [...this.humans.values()].map((c) => ({ hubId: c.hubId, player: c.player, lastVoiceAt: c.lastVoiceAt, rtt: c.rtt })),
+      bots: [...this.bots.values()].map((b) => ({ player: b.player, brain: b.brain, commandNumber: b.commandNumber })),
+      nextBotName: this.nextBotName,
+      console: this.serverConsole.exportState(),
+    };
+    const cp = captureWorld(this.world, extra, catalog);
+    cp.seats = [...this.humans.values()].map((c) => ({ hubId: c.hubId, entity: c.player.id, name: c.player.name, userId: c.player.userId }));
+    return cp;
+  }
+
+  /** The seats a checkpoint holds (hub player id, entity, account), without restoring it. */
+  static checkpointSeats(cp: WorldCheckpoint): CheckpointSeat[] {
+    return cp.seats ?? [];
+  }
+
+  /**
+   * A match from a checkpoint, on `opts.map` (the same map, loaded by the successor). Every human
+   * keeps their seat (player entity, team, class, score) and their client starts over (full snapshot);
+   * a seat nobody reclaims is removed by whoever runs the room (the host session's grace).
+   */
+  static restore(
+    options: MatchOptions,
+    opts: Tf2MatchHostOptions,
+    cp: WorldCheckpoint,
+    catalog: GraphCatalog & { fingerprint?: string; strict?: boolean },
+  ): Tf2MatchHost {
+    // No bots of its own: the checkpoint's come back with their brains.
+    const host = new Tf2MatchHost({ ...options, botCount: 0 }, opts);
+    const template: HostCheckpointExtra = {
+      options: host.options,
+      humans: [],
+      bots: [],
+      nextBotName: 0,
+      console: host.serverConsole.exportState(),
+    };
+    const { extra, report } = restoreWorld(host.world, cp, catalog, template);
+    if (report.unresolvedClosures.length > 0) {
+      throw new CheckpointError(`checkpoint closures without a home: ${report.unresolvedClosures.slice(0, 4).join(', ')}`);
+    }
+    host.nextBotName = extra.nextBotName;
+    for (const b of extra.bots) host.bots.set(b.player.id, { player: b.player, brain: b.brain, commandNumber: b.commandNumber });
+    for (const h of extra.humans) {
+      const c = host.newClient(h.hubId, h.player);
+      c.lastVoiceAt = h.lastVoiceAt;
+      c.rtt = h.rtt;
+    }
+    host.serverConsole.importState(extra.console);
+    for (const c of host.humans.values()) host.serverConsole.playerJoined(c.player);
+    return host;
   }
 
   // ─── Players ──────────────────────────────────────────────────────────────
@@ -437,6 +673,23 @@ export class Tf2MatchHost implements MatchHost {
     if (this.playerCount() >= this.options.maxPlayers) this.removeOneBot();
     const name = sanitizeName(info.name) || `Player ${id}`;
     const player = this.world.addPlayer(name, { userId: info.userId });
+    this.newClient(id, player);
+    this.serverConsole.playerJoined(player);
+    this.rosterChanges.push({ entity: player.id, present: true });
+    if (info.spectate) {
+      // Joined as a spectator: straight to the spectators (the join request said so; no team switch after).
+      player.requestTeam(TEAM_SPECTATOR);
+      player.observerMode = OBS_MODE_ROAMING;
+    } else if (this.opts.autoTeam) {
+      this.joinTeam(player, 'auto');
+      if (this.opts.autoClass) this.joinClass(player, 'random');
+    } else {
+      player.observerMode = OBS_MODE_ROAMING;
+    }
+    this.rebalanceBots();
+  }
+
+  private newClient(id: number, player: Player): HumanClient {
     const strings = new ClientStringKnowledge();
     const client: HumanClient = {
       hubId: id,
@@ -465,14 +718,7 @@ export class Tf2MatchHost implements MatchHost {
       reliablePackets: 0,
       maxSnapshotBytes: 0,
     });
-    this.rosterChanges.push({ entity: player.id, present: true });
-    if (this.opts.autoTeam) {
-      this.joinTeam(player, 'auto');
-      if (this.opts.autoClass) this.joinClass(player, 'random');
-    } else {
-      player.observerMode = OBS_MODE_ROAMING;
-    }
-    this.rebalanceBots();
+    return client;
   }
 
   removePlayer(id: number): void {
@@ -483,6 +729,20 @@ export class Tf2MatchHost implements MatchHost {
     this.rosterChanges.push({ entity: client.player.id, present: false });
     this.world.removePlayer(client.player.id);
     this.rebalanceBots();
+  }
+
+  /**
+   * A human's client starts over on the same seat (a peer-to-peer member that
+   * rejoined): its snapshot baseline, strings, server info and roster are sent
+   * afresh and command numbers restart. The player entity, team, class and
+   * score stay — that is the seat.
+   */
+  resyncPlayer(id: number): void {
+    const client = this.humans.get(id);
+    if (!client) return;
+    this.resetClient(client);
+    // A console starting over learns the replicated cvars again.
+    this.serverConsole.playerJoined(client.player);
   }
 
   /** The player entity of a human (tests, the listen server). */
@@ -546,12 +806,21 @@ export class Tf2MatchHost implements MatchHost {
 
   // ─── Bots ─────────────────────────────────────────────────────────────────
 
-  /** Adds bots (they balance the teams and pick random classes). Returns the players. */
-  addBots(count: number, difficulty: BotDifficulty = this.options.botDifficulty): Player[] {
+  /**
+   * Adds bots (they balance the teams and pick random classes, unless `prefs` names a team, class or
+   * name — the console's `tf_bot_add`). Returns the players.
+   */
+  addBots(
+    count: number,
+    difficulty: BotDifficulty = this.options.botDifficulty,
+    prefs: { team?: TeamChoice; cls?: ClassChoice; name?: string } = {},
+  ): Player[] {
     const out: Player[] = [];
     for (let i = 0; i < count && this.playerCount() < this.options.maxPlayers; i++) {
-      const name = `${BOT_NAMES[this.nextBotName % BOT_NAMES.length]}${this.nextBotName >= BOT_NAMES.length ? ` (${1 + Math.floor(this.nextBotName / BOT_NAMES.length)})` : ''}`;
-      this.nextBotName++;
+      const name =
+        (prefs.name && sanitizeName(prefs.name)) ||
+        `${BOT_NAMES[this.nextBotName % BOT_NAMES.length]}${this.nextBotName >= BOT_NAMES.length ? ` (${1 + Math.floor(this.nextBotName / BOT_NAMES.length)})` : ''}`;
+      if (!prefs.name) this.nextBotName++;
       const player = this.world.addPlayer(name, { bot: true });
       // Hard and expert bots may carry fully simulated unlocks (sim/items/bots.ts); others stay stock.
       if (difficulty === 'hard' || difficulty === 'expert') {
@@ -561,8 +830,8 @@ export class Tf2MatchHost implements MatchHost {
       const brain = this.brainFactory(difficulty, player);
       this.bots.set(player.id, { player, brain, commandNumber: 0 });
       this.rosterChanges.push({ entity: player.id, present: true });
-      this.joinTeam(player, 'auto');
-      this.joinClass(player, 'random');
+      this.joinTeam(player, prefs.team ?? 'auto');
+      this.joinClass(player, prefs.cls ?? 'random');
       out.push(player);
     }
     return out;
@@ -672,6 +941,8 @@ export class Tf2MatchHost implements MatchHost {
         break;
       }
       case 'extra':
+        // The developer console's server commands and cvars first (validated and permission-checked there).
+        if (this.serverConsole.handle(id, p, cmd.command, cmd.args)) break;
         if (!dispatchExtraCommand(cmd.command, { world: this.world, player: p }, cmd.args)) {
           this.opts.log?.('tf2: unhandled command', { command: cmd.command });
         }
@@ -716,6 +987,7 @@ export class Tf2MatchHost implements MatchHost {
       }
     }
 
+    this.serverConsole.tick();
     try {
       world.step();
     } finally {
@@ -873,6 +1145,7 @@ export class Tf2MatchHost implements MatchHost {
       const human = this.byEntity.get(p.id);
       players.push({
         id: human ? human.hubId : -p.id,
+        entity: p.id,
         name: p.name,
         team: p.team,
         cls: p.playerClass,
@@ -887,7 +1160,19 @@ export class Tf2MatchHost implements MatchHost {
       tick: this.world.tickCount,
       players,
       teamScores: [scores[TF_TEAM_RED] ?? 0, scores[TF_TEAM_BLUE] ?? 0],
+      round: { state: this.world.rules.stateName, timeLeft: this.roundTimeLeft() },
     };
+  }
+
+  /** Seconds on the round timer the HUD shows (team_round_timer, show_in_hud), or null. */
+  private roundTimeLeft(): number | null {
+    let left: number | null = null;
+    this.world.forEachEntity((e) => {
+      const t = e as unknown as { showInHud?: unknown; disabled?: unknown; getTimeRemaining?: () => number };
+      if (left !== null || t.showInHud !== true || t.disabled === true || typeof t.getTimeRemaining !== 'function') return;
+      left = Math.max(0, Math.round(t.getTimeRemaining()));
+    });
+    return left;
   }
 
   dispose(): void {

@@ -31,6 +31,7 @@
 import { TICK_INTERVAL } from '../../core/constants';
 import type { UserCmd } from '../../core/types';
 import { copy, vec3, type Vec3 } from '../../core/vec';
+import { unpackUnlockNet } from '../../sim/items/effects';
 import type { EffectEvent } from '../../sim/events';
 import type { NetRecord } from '../../sim/net-schema';
 import { readMoveState, type Player } from '../../sim/player';
@@ -106,6 +107,7 @@ export function restorePlayerFromRecords(
     if (`ammo${i}` in rec) player.ammo[i] = n(`ammo${i}`);
   for (let i = 0; i < player.meters.length; i++) player.meters[i] = n(`meter${i}`);
   player.blastJumpState = n('blastJump');
+  unpackUnlockNet(player, n('unlockState'));
   // Worn weapon-slot items provide attributes the shared code reads (move speed, deploy time…).
   const items = typeof rec.items === 'string' ? rec.items : '';
   if (items !== player.items) {

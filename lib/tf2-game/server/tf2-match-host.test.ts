@@ -14,6 +14,7 @@ import {
   TF_CLASS_SOLDIER,
   TF_TEAM_BLUE,
   TF_TEAM_RED,
+  TEAM_SPECTATOR,
 } from '../core/constants';
 import { Entity, LIFE_ALIVE } from '../sim/entity';
 import { registerEntityClass } from '../sim/entity-registry';
@@ -191,6 +192,57 @@ describe('Tf2MatchHost (synthetic room)', () => {
     const empty: GameObjectLoader = { get: async () => null };
     await expect(loadMapPackage(empty, 'ctf_2fort')).rejects.toThrow(/index/);
   });
+});
+
+describe('joining as a spectator', () => {
+  it('a join that asks to spectate seats the player with the spectators (no team switch after)', () => {
+    const host = new Tf2MatchHost(matchOptions({ maxPlayers: 8 }), { world: roomWorld(), autoTeam: true, autoClass: true });
+    host.addPlayer(1, { name: 'Watcher', spectate: true });
+    host.addPlayer(2, { name: 'Player' });
+    for (let i = 0; i < 4; i++) host.tick();
+    expect(host.playerOf(1)!.team).toBe(TEAM_SPECTATOR);
+    expect(host.playerOf(2)!.team === TF_TEAM_RED || host.playerOf(2)!.team === TF_TEAM_BLUE).toBe(true);
+  });
+});
+
+describe.skipIf(!ROOT)('a level change (TF2_ROOT)', () => {
+  it('changelevel moves the match to another map: seats, teams and classes kept, the tick count running, a new hello', async () => {
+    const { loadMap } = await import('../sim/map-loader');
+    const dustbowl = () => {
+      const b = readFileSync(path.join(ROOT, 'tf', 'maps', 'cp_dustbowl.bsp'));
+      return loadMap(new Uint8Array(b.buffer, b.byteOffset, b.byteLength), { name: 'cp_dustbowl' });
+    };
+    const host = new Tf2MatchHost(matchOptions({ maxPlayers: 12, botCount: 2 }), {
+      map: load2fort(),
+      botBrain: (_d, p) => new WanderBrain(p.id * 7),
+      loadLevel: async () => ({ map: dustbowl(), nav: null }),
+    });
+    const client = new SnapshotClient();
+    const clients = new Map([[1, client]]);
+    host.addPlayer(1, { name: 'Engie', userId: 'u1' });
+    host.onCommand(1, { kind: 'team', team: 'blue' });
+    host.onCommand(1, { kind: 'class', cls: 'engineer' });
+    pump(host, clients, 400);
+    expect(client.hello?.map).toBe('ctf_2fort');
+    const tick = host.world.tickCount;
+    expect(await host.changeLevel('not_a_map')).toBe(false);
+    expect(await host.changeLevel('cp_dustbowl')).toBe(true);
+    expect(host.world.map?.name).toBe('cp_dustbowl');
+    expect(host.world.tickCount).toBe(tick);
+    expect(host.summary().map).toBe('cp_dustbowl');
+    const me = host.playerOf(1)!;
+    expect(me.team).toBe(TF_TEAM_BLUE);
+    expect(me.desiredClass || me.playerClass).toBe(9);
+    // The client hears the new map from a fresh hello (it reloads the level) and gets a full snapshot of
+    // the new world, on the same seat.
+    const before = client.stats.snapshots;
+    pump(host, clients, 10);
+    expect(client.hello?.map).toBe('cp_dustbowl');
+    expect(client.localEntity).toBe(me.id);
+    expect(client.stats.snapshots).toBeGreaterThan(before);
+    expect(client.stats.errors['no-baseline'] + client.stats.errors.malformed).toBe(0);
+    expect(host.summary().players.filter((p) => p.bot)).toHaveLength(2);
+  }, 120_000);
 });
 
 describe.skipIf(!ROOT)('Tf2MatchHost on ctf_2fort (TF2_ROOT)', () => {

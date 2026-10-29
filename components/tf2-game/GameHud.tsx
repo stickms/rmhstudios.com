@@ -39,8 +39,8 @@ import type { InputState } from '@/lib/tf2-game/client/input/input-state';
 import { detectTouchFirst } from '@/lib/tf2-game/client/input/touch';
 import { layoutOverrides } from '@/lib/tf2-game/client/custom-hud/layout';
 import { PC_ENV } from '@/lib/tf2-hud/scheme/cond';
-import { defaultLayout, hudScale, mergeLayout, TF2_LAYOUT, TOUCH_OVERRIDES, type HudLayout, type HudScreen } from './hud-layout';
-import { HudProvider, useHudState } from './use-hud';
+import { defaultLayout, hudScale, mergeLayout, TF2_LAYOUT, touchOverrides, type HudLayout, type HudScreen } from './hud-layout';
+import { HudProvider, NO_INSETS, safeScreen, useHudState, type HudInsets } from './use-hud';
 import Tf2Hud from './tf2/Tf2Hud';
 import Scoreboard from './tf2/Scoreboard';
 import { ClassMenu, TeamMenu, TEAM_MENU_KEYS, classForMenuKey } from './tf2/SelectMenus';
@@ -48,9 +48,14 @@ import { Chat, VoiceMenu } from './tf2/Comms';
 import { BUILD_SLOTS, BuildMenu, DisguiseMenu } from './tf2/PdaMenus';
 import { Captions, Hl2Hud, PortalHud } from './sp/SpHuds';
 import PauseMenu, { type PauseView } from './shared/PauseMenu';
-import CustomHudLayer from './custom-hud/CustomHudLayer';
+import CustomHudLayer, { hudTokens } from './custom-hud/CustomHudLayer';
+import CustomHudMenu from './custom-hud/CustomHudMenu';
+import { teamMenuHotkeys, type MenuAction } from '@/lib/tf2-game/client/custom-hud/menus';
 import { useHudChoice } from './custom-hud/hud-choice';
-import TouchOverlay from './touch/TouchOverlay';
+import TouchOverlay, { type TouchAction } from './touch/TouchOverlay';
+import Console, { useConsoleEntry, useConsoleOpen } from './console/Console';
+import ServerAdminView from './ServerAdminView';
+import NetNotices from './NetNotices';
 import './tf2-game.css';
 
 // The HUD picker and the HUD editor load when first opened.
@@ -78,6 +83,8 @@ export interface GameHudProps {
   onDisconnect: () => void;
   /** A custom HUD's layout (defaults to the game's own). */
   layout?: HudLayout;
+  /** Page controls the touch controls carry in their top row (full screen, the invite link). */
+  touchActions?: readonly TouchAction[];
   /** Previews: start with a menu open / the scoreboard held / the touch overlay on. */
   initialMenu?: HudMenu;
   forceScores?: boolean;
@@ -105,6 +112,7 @@ function HudBody({
   forceScores,
   touch,
   store,
+  touchActions,
 }: Omit<GameHudProps, 'layout' | 'forceTouch'> & { touch: boolean }) {
   const { t } = useTranslation('c-tf2-game');
   const state = useHudState();
@@ -115,6 +123,11 @@ function HudBody({
   const local = state.local;
   const tf2 = game === 'tf2';
   const customHud = useHudChoice((s) => (tf2 ? s.active : null));
+  // A HUD's own team menu marks its number keys (`&3` on BLU in TF2's file); otherwise the game's 1–4.
+  const hudTeamKeys = useMemo(() => {
+    const keys = customHud?.menus.has('team') ? teamMenuHotkeys(customHud.source) : null;
+    return keys && keys.size ? keys : null;
+  }, [customHud]);
   const editorOpen = useHudChoice((s) => tf2 && s.editorOpen);
   const editorUsed = useHudChoice((s) => tf2 && s.editorKey !== null);
   const setEditorOpen = useHudChoice((s) => s.setEditorOpen);
@@ -142,15 +155,20 @@ function HudBody({
     setMenu(NONE);
   }, [menu.kind, joinOpen]);
 
+  // The developer console (console/Console.tsx): it has the keys while open; the pause menu opens it.
+  const consoleOpen = useConsoleOpen(store, game);
+  const devConsole = useConsoleEntry(store, game, settings);
+
   // Tell the input layer who owns the keys.
   useEffect(() => {
     if (!input) return;
     input.menuOpen = shown.kind === 'voice' || shown.kind === 'team' || shown.kind === 'class' || pda !== null;
-    input.suspended = shown.kind === 'chat' || shown.kind === 'pause' || editorOpen;
-  }, [input, shown.kind, pda, editorOpen]);
+    input.suspended = shown.kind === 'chat' || shown.kind === 'pause' || editorOpen || consoleOpen;
+  }, [input, shown.kind, pda, editorOpen, consoleOpen]);
 
   // The pause menu, or the HUD editor over the match: offline play stops, online play goes on.
-  const paused = shown.kind === 'pause' || editorOpen;
+  // Single-player also pauses while the developer console is up, as Source does.
+  const paused = shown.kind === 'pause' || editorOpen || (consoleOpen && !tf2);
   useEffect(() => {
     store.send({ kind: 'pause', paused });
   }, [store, paused]);
@@ -163,10 +181,11 @@ function HudBody({
         if (n >= 1 && n <= 8) store.send({ kind: 'voice', menu: shown.menu, item: n - 1 });
         setMenu(NONE);
       } else if (shown.kind === 'team') {
-        const choice = TEAM_MENU_KEYS[n - 1];
+        const choice = hudTeamKeys ? hudTeamKeys.get(n) : TEAM_MENU_KEYS[n - 1];
         if (choice) {
           store.send({ kind: 'team', team: choice });
-          setMenu(NONE);
+          // As TF2 does (HandleCommand_JoinTeam shows the team's class panel): joining a team asks for a class.
+          setMenu(choice === 'spectator' ? NONE : { kind: 'class' });
           setDismissedJoin(false);
         }
       } else if (shown.kind === 'class') {
@@ -183,7 +202,7 @@ function HudBody({
         if (cls) store.send({ kind: 'disguise', cls, team: disguiseTeam });
       }
     },
-    [shown, pda, store, disguiseTeam],
+    [shown, pda, store, disguiseTeam, hudTeamKeys],
   );
 
   // Impulses from the input layer (keyboard, gamepad, touch).
@@ -262,6 +281,7 @@ function HudBody({
     state.match.roundState === 'game_over';
 
   // The pause menu's views beyond Options (others append here).
+  const hasAdmin = tf2 && !!state.admin;
   const pauseViews = useMemo<PauseView[]>(() => {
     if (!tf2) return [];
     const views: PauseView[] = [];
@@ -291,6 +311,16 @@ function HudBody({
         </Suspense>
       ),
     });
+    // Server: the room's administration (players — kick, make host / owner — the map, the settings, the
+    // door, a server message) for the peer-to-peer host or a hub room's owner; every device reaches it here.
+    if (hasAdmin) {
+      views.push({
+        id: 'server',
+        label: t('admin_server', { defaultValue: 'Server' }),
+        wide: true,
+        render: () => <ServerAdminView />,
+      });
+    }
     // Loadout: the builder's slots, picker and 3D player; Equip sends it to the match.
     views.push({
       id: 'loadout',
@@ -303,7 +333,26 @@ function HudBody({
       ),
     });
     return views;
-  }, [tf2, t, editorUsed, setEditorOpen]);
+  }, [tf2, t, editorUsed, setEditorOpen, hasAdmin]);
+
+  // Menus a custom HUD restyles (it ships their .res) are drawn from it, as in TF2; the rest stay the game's.
+  const hudMenus = customHud?.menus;
+  const hudFallbackTokens = useMemo(() => hudTokens(t), [t]);
+  const onHudMenu = useCallback(
+    (a: MenuAction) => {
+      if (a.kind === 'team') {
+        store.send({ kind: 'team', team: a.team });
+        // As TF2 does: joining a team asks for a class.
+        setMenu(a.team === 'spectator' ? NONE : { kind: 'class' });
+        setDismissedJoin(false);
+      } else if (a.kind === 'class') {
+        store.send({ kind: 'class', cls: a.cls });
+        setMenu(NONE);
+      } else if (a.kind === 'loadout') setMenu({ kind: 'pause', view: 'loadout' });
+      else close();
+    },
+    [store, close],
+  );
 
   return (
     <>
@@ -313,6 +362,7 @@ function HudBody({
           hideCrosshair={(shown.kind !== 'none' && shown.kind !== 'chat') || pda !== null}
           custom={!!customHud}
           customBuildings={customHud?.drawsBuildings}
+          customSpectator={customHud?.drawsSpectator}
           customLayer={customHud ? <CustomHudLayer hud={customHud} store={store} /> : null}
         />
       ) : null}
@@ -329,6 +379,7 @@ function HudBody({
           settings={settings}
           menuOpen={shown.kind !== 'none' || pda !== null || touchScores}
           onToggleScores={() => setTouchScores((v) => !v)}
+          actions={touchActions}
         />
       ) : null}
       {tf2 ? (
@@ -338,11 +389,12 @@ function HudBody({
           input={shown.kind === 'chat' ? (shown.team ? 'team' : 'all') : null}
           onSend={(text, teamOnly) => store.send({ kind: 'chat', text, teamOnly })}
           onClose={() => setMenu(NONE)}
+          touch={touch}
         />
       ) : null}
       {tf2 && shown.kind === 'voice' ? <VoiceMenu menu={shown.menu} onPick={(i) => pickMenuItem(i + 1)} onClose={() => setMenu(NONE)} /> : null}
       {tf2 && local && pda && local.engineer && pda !== 'disguise' ? (
-        <BuildMenu engineer={local.engineer} team={local.team} destroy={pda === 'destroy'} onPick={(i) => pickMenuItem(i + 1)} onClose={() => {}} />
+        <BuildMenu engineer={local.engineer} team={local.team} destroy={pda === 'destroy'} onPick={(i) => pickMenuItem(i + 1)} onClose={() => {}} touch={touch} />
       ) : null}
       {tf2 && local && pda === 'disguise' ? (
         <DisguiseMenu
@@ -350,13 +402,32 @@ function HudBody({
           onPick={(cls) => store.send({ kind: 'disguise', cls, team: disguiseTeam })}
           onToggleTeam={() => setDisguiseFriendly((v) => !v)}
           onClose={() => {}}
+          touch={touch}
         />
       ) : null}
-      {tf2 && scoresHeld && shown.kind === 'none' ? <Scoreboard rows={state.scoreboard} match={state.match} localTeam={local?.team ?? 0} /> : null}
-      {tf2 && shown.kind === 'team' ? (
+      {tf2 && scoresHeld && shown.kind === 'none' ? (
+        customHud && hudMenus?.has('scoreboard') ? (
+          <CustomHudMenu hud={customHud} kind="scoreboard" state={state} fallbackTokens={hudFallbackTokens} onAction={onHudMenu} onClose={close} />
+        ) : (
+          <Scoreboard rows={state.scoreboard} match={state.match} localTeam={local?.team ?? 0} />
+        )
+      ) : null}
+      {tf2 && shown.kind === 'team' && customHud && hudMenus?.has('team') ? (
+        <CustomHudMenu hud={customHud} kind="team" state={state} fallbackTokens={hudFallbackTokens} onAction={onHudMenu} onClose={close} />
+      ) : tf2 && shown.kind === 'team' ? (
         <TeamMenu rows={state.scoreboard} current={local?.team ?? 0} onPick={(team) => pickMenuItem(TEAM_MENU_KEYS.indexOf(team) + 1)} onClose={close} />
       ) : null}
-      {tf2 && shown.kind === 'class' && local ? (
+      {tf2 && shown.kind === 'class' && local && customHud && hudMenus?.has('class') ? (
+        <CustomHudMenu
+          hud={customHud}
+          kind="class"
+          state={state}
+          team={local.team >= 2 ? local.team : 2}
+          fallbackTokens={hudFallbackTokens}
+          onAction={onHudMenu}
+          onClose={close}
+        />
+      ) : tf2 && shown.kind === 'class' && local ? (
         <ClassMenu
           team={local.team >= 2 ? local.team : 2}
           rows={state.scoreboard}
@@ -381,9 +452,25 @@ function HudBody({
         onChangeTeam={tf2 ? () => setMenu({ kind: 'team' }) : undefined}
         onChangeClass={tf2 && local && local.team >= 2 ? () => setMenu({ kind: 'class' }) : undefined}
         onDisconnect={onDisconnect}
-        views={pauseViews}
+        views={
+          devConsole.enabled
+            ? [
+                ...pauseViews,
+                {
+                  id: 'console',
+                  label: t('console', { defaultValue: 'Console' }),
+                  action: () => {
+                    setMenu(NONE);
+                    devConsole.open();
+                  },
+                },
+              ]
+            : pauseViews
+        }
         initialView={shown.kind === 'pause' ? shown.view : 'menu'}
       />
+      {tf2 ? <NetNotices /> : null}
+      <Console game={game} store={store} input={input} settings={settings} onSettingsChange={onSettingsChange} />
       {editorOpen ? (
         <Suspense fallback={null}>
           <HudEditorOverlay store={store} />
@@ -393,17 +480,38 @@ function HudBody({
   );
 }
 
+/** Reads the safe-area insets from a probe positioned by them (CSS `env()` has no JS reader). */
+function readInsets(root: HTMLElement, probe: HTMLElement): HudInsets {
+  const a = root.getBoundingClientRect();
+  const b = probe.getBoundingClientRect();
+  const px = (v: number) => Math.max(0, Math.round(v));
+  return { top: px(b.top - a.top), right: px(a.right - b.right), bottom: px(a.bottom - b.bottom), left: px(b.left - a.left) };
+}
+
 export default function GameHud(props: GameHudProps) {
   const { game, store, settings, layout, forceTouch } = props;
   const root = useRef<HTMLDivElement>(null);
+  const probe = useRef<HTMLDivElement>(null);
   const [screen, setScreen] = useState<HudScreen>({ w: 1280, h: 720 });
+  const [safe, setSafe] = useState<HudInsets>(NO_INSETS);
   useEffect(() => {
     const el = root.current;
+    const pr = probe.current;
     if (!el) return;
-    const measure = () => setScreen({ w: el.clientWidth, h: el.clientHeight });
+    const measure = () => {
+      setScreen({ w: el.clientWidth, h: el.clientHeight });
+      if (pr) {
+        const next = readInsets(el, pr);
+        setSafe((cur) =>
+          cur.top === next.top && cur.right === next.right && cur.bottom === next.bottom && cur.left === next.left ? cur : next,
+        );
+      }
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
+    // The insets change with the orientation even when the game area keeps its size.
+    if (pr) ro.observe(pr);
     return () => ro.disconnect();
   }, []);
   const touch = useTouchControls(settings.touch.mode, forceTouch);
@@ -416,25 +524,31 @@ export default function GameHud(props: GameHudProps) {
     () => (customHud ? layoutOverrides(customHud.files.readText, PC_ENV, Object.keys(TF2_LAYOUT)) : null),
     [customHud],
   );
+  const inner = safeScreen(screen, safe);
   const value = useMemo(
     () => {
       const own = layout ?? defaultLayout(game);
       const base = hudLayout ? mergeLayout(own, hudLayout) : own;
-      return { store, layout: touch ? mergeLayout(base, TOUCH_OVERRIDES[game]) : base, screen, settings };
+      const placed = touch ? mergeLayout(base, touchOverrides(game, safeScreen(screen, safe), settings.touch.buttonScale)) : base;
+      return { store, layout: placed, screen, settings, safe };
     },
-    [store, layout, game, screen, settings, touch, hudLayout],
+    [store, layout, game, screen, settings, touch, hudLayout, safe],
   );
   const theme = game === 'hl2' ? ' tf2g-hl2-theme' : game === 'portal' ? ' tf2g-portal-theme' : '';
+  const u = hudScale(inner);
   return (
     <div
       ref={root}
       className={`tf2g-hud app-theme tf2hud-theme${theme}`}
-      style={{ '--u': `${hudScale(screen)}px` } as CSSProperties}
+      // --u-menu: the unit the menus a finger picks from use on touch (never under 1px, so a class card is 46px wide).
+      style={{ '--u': `${u}px`, '--u-menu': `${touch ? Math.max(u, 1) : u}px` } as CSSProperties}
       data-game={game}
       data-calm={settings.reducedFlashing}
+      data-touch={touch ? 'true' : undefined}
       data-jelly="off"
       data-jelly-zone="playfield"
     >
+      <div ref={probe} className="tf2g-safe-probe" aria-hidden="true" />
       <HudProvider value={value}>
         <HudBody {...props} touch={touch} />
       </HudProvider>

@@ -188,6 +188,14 @@ export function gateFor(s: TestState): (file: string, name: string) => boolean |
     if (base === 'hudplayerhealth' && n === 'playerstatushealthbonusimage') {
       return s.health > s.maxHealth || (s.health > 0 && s.health <= s.maxHealth * 0.25);
     }
+    // CTFHudPlayerHealth loaded into the freeze cam / a target ID: a player's health shows the player
+    // background, a building's (SetBuilding) the building one — never both.
+    if (
+      (base === 'freezepanelkillerhealth' || base === 'spectatorguihealth') &&
+      n === 'buildingstatushealthimagebg'
+    ) {
+      return false;
+    }
     if (base === 'hudammoweapons' && n === 'hudweaponlowammoimage') {
       return s.health > 0 && lowAmmo(s);
     }

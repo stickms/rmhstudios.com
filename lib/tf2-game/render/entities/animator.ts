@@ -10,10 +10,14 @@
  *     sequences slerp toward their pose, delta sequences add translation and compose rotation
  *     d^w · base, or base · d^w when `post` — then its autolayers are accumulated on top
  *     (AddSequenceLayers: cycle- or pose-driven start/peak/tail/end ramps, spline, xfade, noblend).
- *   - `Animator` holds what C_BaseAnimatingOverlay holds: the main sequence and its cycle (with
- *     a cross-fade from the previous one over the new sequence's fade-in), gesture layers in
- *     slots (MP animstate GESTURE_SLOT_*), pose parameters in their own units, autoplay
- *     sequences, and animation events (footsteps) fired as cycles pass them.
+ *   - `Animator` holds what C_BaseAnimatingOverlay holds: the main sequence and its cycle, the
+ *     sequences it is still blending out of (CSequenceTransitioner: a stack of outgoing
+ *     sequences that keep playing and fade over MIN(fade-out, the new fade-in) along the SDK
+ *     spline), gesture layers in slots (MP animstate GESTURE_SLOT_*) with blend-in/out ramps,
+ *     pose parameters in their own units, autoplay sequences, and animation events (footsteps)
+ *     fired as cycles pass them. Cycles advance per render frame; an authoritative cycle is
+ *     bled in (`syncCycle`), not snapped to. `lod` trims the work for distant and off-screen
+ *     models. Nothing allocates per frame.
  *
  * Bones with no track hold the bind pose (absolute) or the identity (delta).
  */
@@ -532,6 +536,8 @@ interface Scratch {
 
 export class PoseBlender {
   private readonly scratch: Scratch[] = [];
+  /** autolayerWeight's result, reused (no per-frame allocation). */
+  private readonly layerOut = { cycle: 0, weight: 0 };
 
   constructor(readonly set: AnimSet) {
     const n = set.boneCount;
@@ -644,12 +650,15 @@ export class PoseBlender {
   ): void {
     const layers = seq.layers;
     if (!layers) return;
+    const r = this.layerOut;
     for (const l of layers) {
       const lseq = this.set.seq(l.seq);
       if (!lseq || lseq === seq) continue;
-      const r = autolayerWeight(l, cycle, weight, this.set, pose);
-      if (!r) continue;
-      this.accumulatePose(pos, quat, lseq, r.cycle, r.weight, pose, depth + 1);
+      if (!autolayerWeight(l, cycle, weight, this.set, pose, r)) continue;
+      // Read before recursing: the nested call reuses the same scratch.
+      const lc = r.cycle;
+      const lw = r.weight;
+      this.accumulatePose(pos, quat, lseq, lc, lw, pose, depth + 1);
     }
   }
 }
@@ -661,6 +670,7 @@ export function autolayerWeight(
   weight: number,
   set: Pick<AnimSet, 'poseIndex'>,
   pose: ArrayLike<number>,
+  out: { cycle: number; weight: number } = { cycle: 0, weight: 0 },
 ): { cycle: number; weight: number } | null {
   let layerCycle = cycle;
   let layerWeight = weight;
@@ -682,10 +692,66 @@ export function autolayerWeight(
     else layerWeight = weight * s;
     layerCycle = (cycle - l.start) / (l.end - l.start);
   }
-  return layerWeight > 0 ? { cycle: layerCycle, weight: layerWeight } : null;
+  if (!(layerWeight > 0)) return null;
+  out.cycle = layerCycle;
+  out.weight = layerWeight;
+  return out;
 }
 
 // --- layered playback ----------------------------------------------------------------------
+
+/** A sequence's fade when the studio data gives none (mstudioseqdesc_t fadein/fadeout default). */
+export const DEFAULT_FADE_TIME = 0.2;
+/** Outgoing sequences one layer keeps blending out at once (CSequenceTransitioner's queue, capped). */
+export const MAX_OUTGOING = 3;
+/** A drift from the authority's cycle (syncCycle) is bled off over this long, seconds. */
+export const CYCLE_CORRECT_TIME = 0.1;
+/** A drift larger than this (cycles) is not bled off: the authority's cycle cross-fades in. */
+export const CYCLE_SNAP_ERROR = 0.25;
+/** A gesture's blend-in plus blend-out never take more than this share of its length. */
+export const GESTURE_RAMP_SHARE = 0.5;
+
+/** Level of detail (`Animator.lod`): everything. */
+export const ANIM_LOD_FULL = 0;
+/** Distant: one outgoing transition per layer, gestures under 5 % weight skipped. */
+export const ANIM_LOD_REDUCED = 1;
+/** Far: sequence changes cut instead of cross-fading, no autoplay sequences. */
+export const ANIM_LOD_MINIMAL = 2;
+/** Off screen: cycles, transitions and events keep running; the pose is not evaluated. */
+export const ANIM_LOD_HIDDEN = 3;
+/** Source units from the camera where ANIM_LOD_REDUCED / ANIM_LOD_MINIMAL start. */
+export const ANIM_LOD_REDUCED_DISTANCE = 1200;
+export const ANIM_LOD_MINIMAL_DISTANCE = 3000;
+const LOD_MIN_GESTURE_WEIGHT = 0.05;
+
+/** The level of detail for a model `distance` units from the camera. */
+export function animLod(distance: number, onScreen: boolean): number {
+  if (!onScreen) return ANIM_LOD_HIDDEN;
+  if (distance >= ANIM_LOD_MINIMAL_DISTANCE) return ANIM_LOD_MINIMAL;
+  if (distance >= ANIM_LOD_REDUCED_DISTANCE) return ANIM_LOD_REDUCED;
+  return ANIM_LOD_FULL;
+}
+
+/**
+ * An outgoing layer's weight `age` seconds into a `fadeTime` fade (C_AnimationLayer::GetFadeout):
+ * 1 → 0 along the SDK's spline, 3s² − 2s³.
+ */
+export function fadeWeight(age: number, fadeTime: number): number {
+  if (fadeTime <= 0) return 0;
+  const s = 1 - age / fadeTime;
+  if (s <= 0) return 0;
+  if (s >= 1) return 1;
+  return simpleSpline(s);
+}
+
+/**
+ * How long `prev` blends out under `next` (CSequenceTransitioner::CheckForSequenceChange):
+ * MIN(prev fadeout, next fadein); a STUDIO_SNAP sequence cuts (`snapBlend`, normally 0).
+ */
+export function transitionTime(prev: SequenceDesc, next: SequenceDesc, snapBlend = 0): number {
+  if (next.snap) return snapBlend;
+  return Math.min(prev.fadeOut ?? DEFAULT_FADE_TIME, next.fadeIn ?? DEFAULT_FADE_TIME);
+}
 
 export interface LayerState {
   seq: SequenceDesc;
@@ -694,34 +760,105 @@ export interface LayerState {
   weight: number;
 }
 
+/** A sequence blending out (a CSequenceTransitioner queue entry). */
+export interface TransitionLayer extends LayerState {
+  /** Seconds the fade lasts, and how far into it the layer is. */
+  fadeTime: number;
+  age: number;
+  /** Weight when the fade began (a gesture may have been mid-ramp). */
+  startWeight: number;
+}
+
 export interface GestureState extends LayerState {
   slot: number;
   autoKill: boolean;
   /** Activity it was started for (IsGestureSlotPlaying). */
   activity: string;
   age: number;
+  /** Blend-in / blend-out ramps, seconds (CAnimationLayer m_flBlendIn / m_flBlendOut). */
+  fadeIn: number;
+  fadeOut: number;
+}
+
+/**
+ * A gesture's weight (CAnimationLayer::BlendWeight, in seconds): a linear ramp up over `fadeIn`
+ * from its start, and for a one-shot autokill gesture down over its last `fadeOut` seconds.
+ */
+export function gestureWeight(g: GestureState): number {
+  let w = 1;
+  if (g.fadeIn > 0) w = Math.min(w, g.age / g.fadeIn);
+  if (g.fadeOut > 0) {
+    const cps = cycleRate(g.seq) * g.rate;
+    const left = cps > 0 ? (1 - g.cycle) / cps : Infinity;
+    w = Math.min(w, left / g.fadeOut);
+  }
+  return Math.min(1, Math.max(0, w));
 }
 
 export type AnimEventHandler = (ev: SeqEvent, seq: SequenceDesc) => void;
 
+const newTransition = (seq: SequenceDesc): TransitionLayer => ({
+  seq,
+  cycle: 0,
+  rate: 1,
+  weight: 0,
+  fadeTime: 0,
+  age: 0,
+  startWeight: 1,
+});
+
+const wrapCycle = (c: number, looping: boolean): number =>
+  looping ? c - Math.floor(c) : Math.min(1, Math.max(0, c));
+
 /**
- * The per-model playback state (CBaseAnimatingOverlay): main sequence, the one it is
- * fading from, gestures, pose parameters. `advance()` then `evaluate()` each frame.
+ * The per-model playback state (C_BaseAnimatingOverlay): the main sequence and the ones it is
+ * still fading from, gestures, pose parameters. `advance()` then `evaluate()` each frame.
+ *
+ *   - Sequence transitions (CSequenceTransitioner): a new main sequence starts at weight 1 while
+ *     the outgoing one keeps advancing and blends out over MIN(its fade-out, the new fade-in)
+ *     along the SDK's spline; up to MAX_OUTGOING outgoing sequences stack, accumulated newest
+ *     first on top of the current one, so a change during a change stays continuous. Asking for
+ *     the sequence already playing does nothing (a looping activity re-requested keeps its
+ *     cycle); `restart` is the new-sequence parity — the same sequence from the start,
+ *     cross-faded from where it was.
+ *   - Cycles advance per render frame at fps × playback rate. An authoritative cycle
+ *     (`syncCycle`) is not snapped to: the drift is bled off over CYCLE_CORRECT_TIME, or, past
+ *     CYCLE_SNAP_ERROR, cross-faded in like a restart.
+ *   - Gestures (MP animstate slots) ramp in and out (`gestureWeight`); one restarted while
+ *     playing keeps fading out under the new one.
  */
 export class Animator {
   readonly blender: PoseBlender;
   readonly poseValues: Float32Array;
   main: LayerState | null = null;
-  private prev: LayerState | null = null;
-  private fade = 1;
-  private fadeTime = 0.2;
+  /** Outgoing main sequences, oldest first; `outCount` of the pool are live. */
+  private readonly outgoing: TransitionLayer[] = [];
+  private outCount = 0;
   readonly gestures: Array<GestureState | null> = new Array(GESTURE_SLOT_COUNT).fill(null);
+  /** Per slot: the gesture a restart replaced, fading out under the new one. */
+  private readonly gestureOut: Array<TransitionLayer | null> = new Array(GESTURE_SLOT_COUNT).fill(
+    null,
+  );
+  private readonly gesturePool: Array<GestureState | null> = new Array(GESTURE_SLOT_COUNT).fill(
+    null,
+  );
+  private readonly gestureOutPool: Array<TransitionLayer | null> = new Array(
+    GESTURE_SLOT_COUNT,
+  ).fill(null);
   /** Global time (seconds) for realtime/autoplay sequences. */
   time = 0;
   /** Main cycle playback multiplier (CBaseAnimating m_flPlaybackRate). */
   playbackRate = 1;
-  private readonly tmpPos: Float32Array;
-  private readonly tmpQuat: Float32Array;
+  /** Blend time for a STUDIO_SNAP sequence change (Source cuts: 0). */
+  snapBlend = 0;
+  /** Level of detail (ANIM_LOD_*). */
+  lod = ANIM_LOD_FULL;
+  private cycleTarget = 0;
+  private hasCycleTarget = false;
+  private targetFresh = false;
+  private readonly gsNames = ['', '', '', ''];
+  private readonly gsWeights = [0, 0, 0, 0];
+  private readonly clipGroundSpeed = (c: string): number => this.set.clips.get(c)?.groundSpeed ?? 0;
   onEvent: AnimEventHandler | null = null;
 
   constructor(readonly set: AnimSet) {
@@ -730,8 +867,6 @@ export class Animator {
     set.poseParams.forEach((p, i) => {
       this.poseValues[i] = clampPoseValue(p, 0);
     });
-    this.tmpPos = new Float32Array(set.boneCount * 3);
-    this.tmpQuat = new Float32Array(set.boneCount * 4);
   }
 
   setPoseParam(name: string, value: number): void {
@@ -745,38 +880,97 @@ export class Animator {
     return i === undefined ? 0 : this.poseValues[i];
   }
 
-  /** Sets the main sequence; a new one cross-fades in over its fade-in. */
+  /**
+   * Sets the main sequence. A different one transitions in (the current one blends out over
+   * `transitionTime`); the same one is left alone unless `restart` (the new-sequence parity),
+   * which plays it again from `cycle`, cross-faded from where it was. `fade: false` cuts.
+   */
   setSequence(
     seq: SequenceDesc | null,
-    opts: { restart?: boolean; cycle?: number; fade?: boolean } = {},
+    opts: { restart?: boolean; cycle?: number; fade?: boolean; rate?: number } = {},
   ): void {
     if (!seq) return;
-    if (this.main && this.main.seq === seq) {
-      if (opts.restart) this.main.cycle = opts.cycle ?? 0;
+    const m = this.main;
+    const cycle = opts.cycle ?? 0;
+    if (!m) {
+      this.main = { seq, cycle, rate: opts.rate ?? 1, weight: 1 };
       return;
     }
-    if (this.main && opts.fade !== false) {
-      this.prev = this.main;
-      this.fade = 0;
-      this.fadeTime = Math.max(0.01, seq.fadeIn ?? 0.2);
-    } else {
-      this.prev = null;
-      this.fade = 1;
+    if (m.seq === seq && (!opts.restart || m.cycle === cycle)) return;
+    const t =
+      opts.fade === false || this.lod >= ANIM_LOD_MINIMAL
+        ? 0
+        : transitionTime(m.seq, seq, this.snapBlend);
+    if (t > 0) this.pushOutgoing(m, t);
+    else this.outCount = 0; // a cut drops every queued transition (SDK: RemoveAll on snap)
+    m.seq = seq;
+    m.cycle = cycle;
+    m.rate = opts.rate ?? 1;
+    m.weight = 1;
+    this.hasCycleTarget = false;
+  }
+
+  private pushOutgoing(m: LayerState, fadeTime: number): void {
+    const cap = this.lod >= ANIM_LOD_REDUCED ? 1 : MAX_OUTGOING;
+    while (this.outCount >= cap) this.removeOutgoing(0);
+    let o = this.outgoing[this.outCount];
+    if (!o) {
+      o = newTransition(m.seq);
+      this.outgoing[this.outCount] = o;
     }
-    this.main = { seq, cycle: opts.cycle ?? 0, rate: 1, weight: 1 };
+    this.outCount++;
+    o.seq = m.seq;
+    o.cycle = m.cycle;
+    o.rate = m.rate * this.playbackRate;
+    o.weight = 1;
+    o.startWeight = 1;
+    o.fadeTime = fadeTime;
+    o.age = 0;
+  }
+
+  private removeOutgoing(i: number): void {
+    const o = this.outgoing[i];
+    for (let j = i; j < this.outCount - 1; j++) this.outgoing[j] = this.outgoing[j + 1];
+    this.outgoing[this.outCount - 1] = o;
+    this.outCount--;
+  }
+
+  /** Live outgoing transitions of the main layer, oldest first. */
+  get transitionCount(): number {
+    return this.outCount;
+  }
+
+  transition(i: number): Readonly<TransitionLayer> | undefined {
+    return i >= 0 && i < this.outCount ? this.outgoing[i] : undefined;
   }
 
   /** Plays the weighted sequence for an activity unless one of its sequences already plays. */
   setActivity(act: string, opts: { restart?: boolean } = {}): boolean {
     const list = this.set.activities.get(act);
     if (!list?.length) return false;
-    if (this.main && !opts.restart && list.some((e) => e.seq === this.main!.seq.name)) return true;
+    if (this.main && !opts.restart) {
+      const name = this.main.seq.name;
+      for (const e of list) if (e.seq === name) return true;
+    }
     this.setSequence(this.set.selectWeightedSequence(act), opts);
     return true;
   }
 
+  /** The main sequence again from the start, cross-faded (RestartMainSequence + new parity). */
   restartMain(): void {
-    if (this.main) this.main.cycle = 0;
+    const m = this.main;
+    if (m) this.setSequence(m.seq, { restart: true, rate: m.rate });
+  }
+
+  /**
+   * The authority's cycle for the main sequence now (a server cycle, or one derived from a
+   * networked start time). Cycles keep advancing per frame; the difference is bled off, not
+   * snapped (see CYCLE_CORRECT_TIME / CYCLE_SNAP_ERROR).
+   */
+  syncCycle(target: number): void {
+    this.cycleTarget = target;
+    this.hasCycleTarget = true;
+    this.targetFresh = true;
   }
 
   /** SDK RestartGesture: (re)starts a gesture sequence in a slot. */
@@ -789,9 +983,61 @@ export class Animator {
   ): void {
     if (!seq) {
       this.gestures[slot] = null;
+      this.gestureOut[slot] = null;
       return;
     }
-    this.gestures[slot] = { slot, seq, cycle: 0, rate, weight: 1, autoKill, activity, age: 0 };
+    const cur = this.gestures[slot];
+    this.gestureOut[slot] = null;
+    if (cur && cur.weight > 0 && this.lod < ANIM_LOD_MINIMAL) {
+      const t = transitionTime(cur.seq, seq);
+      if (t > 0) {
+        let o = this.gestureOutPool[slot];
+        if (!o) o = this.gestureOutPool[slot] = newTransition(cur.seq);
+        o.seq = cur.seq;
+        o.cycle = cur.cycle;
+        o.rate = cur.rate;
+        o.startWeight = cur.weight;
+        o.weight = cur.weight;
+        o.fadeTime = t;
+        o.age = 0;
+        this.gestureOut[slot] = o;
+      }
+    }
+    let g = this.gesturePool[slot];
+    if (!g) {
+      g = this.gesturePool[slot] = {
+        slot,
+        seq,
+        cycle: 0,
+        rate,
+        weight: 0,
+        autoKill,
+        activity,
+        age: 0,
+        fadeIn: 0,
+        fadeOut: 0,
+      };
+    }
+    g.seq = seq;
+    g.cycle = 0;
+    g.rate = rate;
+    g.autoKill = autoKill;
+    g.activity = activity;
+    g.age = 0;
+    // Ramps from the studio fades, never more than GESTURE_RAMP_SHARE of the gesture.
+    let fi = seq.snap ? 0 : (seq.fadeIn ?? DEFAULT_FADE_TIME);
+    let fo = seq.looping || !autoKill ? 0 : (seq.fadeOut ?? DEFAULT_FADE_TIME);
+    const cps = cycleRate(seq) * rate;
+    const cap = cps > 0 ? GESTURE_RAMP_SHARE / cps : Infinity;
+    if (fi + fo > cap) {
+      const k = cap / (fi + fo);
+      fi *= k;
+      fo *= k;
+    }
+    g.fadeIn = fi;
+    g.fadeOut = fo;
+    g.weight = gestureWeight(g);
+    this.gestures[slot] = g;
   }
 
   isGesturePlaying(slot: number, activity: string): boolean {
@@ -799,27 +1045,82 @@ export class Animator {
     return !!g && g.activity === activity && g.cycle < 1;
   }
 
-  /** Advances cycles, fires events, retires finished gestures. */
+  /** Clears every gesture slot; `fade` lets the playing ones blend out first (death). */
+  clearGestures(fade = false): void {
+    for (let i = 0; i < this.gestures.length; i++) {
+      const g = this.gestures[i];
+      this.gestureOut[i] = null;
+      this.gestures[i] = null;
+      if (!g || !fade || g.weight <= 0) continue;
+      let o = this.gestureOutPool[i];
+      if (!o) o = this.gestureOutPool[i] = newTransition(g.seq);
+      o.seq = g.seq;
+      o.cycle = g.cycle;
+      o.rate = g.rate;
+      o.startWeight = g.weight;
+      o.weight = g.weight;
+      o.fadeTime = g.seq.fadeOut ?? DEFAULT_FADE_TIME;
+      o.age = 0;
+      if (o.fadeTime > 0) this.gestureOut[i] = o;
+    }
+  }
+
+  /** Advances cycles and fades, fires events, retires finished gestures and transitions. */
   advance(dt: number): void {
     this.time += dt;
-    if (this.main) this.step(this.main, dt * this.playbackRate);
-    if (this.prev) {
-      this.step(this.prev, dt, false);
-      this.fade = Math.min(1, this.fade + dt / this.fadeTime);
-      if (this.fade >= 1) this.prev = null;
+    const m = this.main;
+    if (m) {
+      this.step(m, dt * this.playbackRate);
+      if (this.hasCycleTarget) this.correctCycle(m, dt);
+    }
+    for (let i = 0; i < this.outCount;) {
+      const o = this.outgoing[i];
+      o.age += dt;
+      if (o.age >= o.fadeTime) {
+        this.removeOutgoing(i);
+        continue;
+      }
+      this.step(o, dt, false);
+      o.weight = fadeWeight(o.age, o.fadeTime);
+      i++;
     }
     for (let i = 0; i < this.gestures.length; i++) {
+      const o = this.gestureOut[i];
+      if (o) {
+        o.age += dt;
+        if (o.age >= o.fadeTime) this.gestureOut[i] = null;
+        else {
+          this.step(o, dt, false);
+          o.weight = o.startWeight * fadeWeight(o.age, o.fadeTime);
+        }
+      }
       const g = this.gestures[i];
       if (!g) continue;
       g.age += dt;
       this.step(g, dt);
-      if (!g.seq.looping && g.cycle >= 1 && g.autoKill) {
-        // Fade out over the sequence's fade-out before removing (layer m_flBlendOut).
-        const fo = g.seq.fadeOut ?? 0.2;
-        g.weight -= fo > 0 ? dt / fo : 1;
-        if (g.weight <= 0) this.gestures[i] = null;
-      }
+      if (!g.seq.looping && g.cycle >= 1 && g.autoKill) this.gestures[i] = null;
+      else g.weight = gestureWeight(g);
     }
+  }
+
+  /** Bleeds the main cycle toward the authority's (syncCycle), which advances at the same rate. */
+  private correctCycle(m: LayerState, dt: number): void {
+    const looping = m.seq.looping;
+    if (!this.targetFresh)
+      this.cycleTarget = wrapCycle(
+        this.cycleTarget + dt * this.playbackRate * m.rate * cycleRate(m.seq),
+        looping,
+      );
+    this.targetFresh = false;
+    let e = this.cycleTarget - m.cycle;
+    if (looping) e -= Math.round(e);
+    if (Math.abs(e) > CYCLE_SNAP_ERROR) {
+      this.setSequence(m.seq, { restart: true, cycle: this.cycleTarget, rate: m.rate });
+      return;
+    }
+    const k = dt > 0 ? Math.min(1, dt / CYCLE_CORRECT_TIME) : 0;
+    m.cycle = wrapCycle(m.cycle + e * k, looping);
+    if (Math.abs(e * (1 - k)) < 1e-5) this.hasCycleTarget = false;
   }
 
   private step(l: LayerState, dt: number, events = true): void {
@@ -848,32 +1149,29 @@ export class Animator {
     }
   }
 
-  /** The current pose, local per bone. */
+  /** The current pose, local per bone (left as it was at ANIM_LOD_HIDDEN). */
   evaluate(pos: Float32Array, quat: Float32Array): void {
+    if (this.lod >= ANIM_LOD_HIDDEN) return;
     const b = this.blender;
     b.initPose(pos, quat);
     const pose = this.poseValues;
-    if (this.main) b.accumulatePose(pos, quat, this.main.seq, this.cycleOf(this.main), 1, pose);
-    if (this.prev && this.fade < 1) {
-      b.initPose(this.tmpPos, this.tmpQuat);
-      b.accumulatePose(this.tmpPos, this.tmpQuat, this.prev.seq, this.cycleOf(this.prev), 1, pose);
-      // Old pose → new pose by the fade (SDK m_SequenceTransitioner).
-      const n = this.set.boneCount;
-      const f = this.fade;
-      for (let i = 0; i < n; i++) {
-        const p = i * 3;
-        pos[p] = this.tmpPos[p] + (pos[p] - this.tmpPos[p]) * f;
-        pos[p + 1] = this.tmpPos[p + 1] + (pos[p + 1] - this.tmpPos[p + 1]) * f;
-        pos[p + 2] = this.tmpPos[p + 2] + (pos[p + 2] - this.tmpPos[p + 2]) * f;
-        quatSlerp(this.tmpQuat, i * 4, quat, i * 4, f, quat, i * 4);
-      }
+    const m = this.main;
+    if (m) b.accumulatePose(pos, quat, m.seq, this.cycleOf(m), 1, pose);
+    // C_BaseAnimating::MaintainSequenceTransitions: the outgoing sequences, newest first, each
+    // slerped in by its fade weight on top of the current one.
+    const oldest = this.lod >= ANIM_LOD_REDUCED ? Math.max(0, this.outCount - 1) : 0;
+    for (let i = this.outCount - 1; i >= oldest; i--) {
+      const o = this.outgoing[i];
+      if (o.weight > 0) b.accumulatePose(pos, quat, o.seq, this.cycleOf(o), o.weight, pose);
     }
-    for (const g of this.gestures) {
-      if (!g) continue;
-      const fi = g.seq.fadeIn ?? 0;
-      const w = Math.min(g.weight, fi > 0 && !g.seq.snap ? Math.min(1, g.age / fi) : 1);
-      b.accumulatePose(pos, quat, g.seq, this.cycleOf(g), w, pose);
+    const minW = this.lod >= ANIM_LOD_REDUCED ? LOD_MIN_GESTURE_WEIGHT : 0;
+    for (let i = 0; i < this.gestures.length; i++) {
+      const o = this.gestureOut[i];
+      if (o && o.weight > minW) b.accumulatePose(pos, quat, o.seq, this.cycleOf(o), o.weight, pose);
+      const g = this.gestures[i];
+      if (g && g.weight > minW) b.accumulatePose(pos, quat, g.seq, this.cycleOf(g), g.weight, pose);
     }
+    if (this.lod >= ANIM_LOD_MINIMAL) return;
     for (const a of this.set.autoplay) {
       const c = (this.time * cycleRate(a)) % 1;
       b.accumulatePose(pos, quat, a, c, 1, pose);
@@ -896,10 +1194,10 @@ export class Animator {
   /** Ground speed (units/s) of a sequence at the current pose: its cells' clip speeds, blended. */
   groundSpeed(
     seq: SequenceDesc,
-    clipSpeed: (clip: string) => number = (c) => this.set.clips.get(c)?.groundSpeed ?? 0,
+    clipSpeed: (clip: string) => number = this.clipGroundSpeed,
   ): number {
-    const names = ['', '', '', ''];
-    const weights = [0, 0, 0, 0];
+    const names = this.gsNames;
+    const weights = this.gsWeights;
     const n = seqCells(this.set, seq, this.poseValues, names, weights);
     let v = 0;
     for (let i = 0; i < n; i++) if (weights[i] > 0) v += clipSpeed(names[i]) * weights[i];

@@ -242,6 +242,8 @@ export const NET_PLAYER = registerNetSchema(5, 'player', [
   f('meter2', 'f32', true),
   f('meter3', 'f32', true),
   f('blastJump', 'u8', true),
+  /** Unlock item state (sim/items/effects.ts packUnlockNet: heads, revenge crits, the charge's melee crit …). */
+  f('unlockState', 'u32', true),
   /** A loadout chosen for the current class waits for the next respawn or resupply. */
   f('loadoutPending', 'bool', true),
   /** In one of the team's own respawn rooms (a new loadout applies at once there). */
@@ -290,6 +292,8 @@ export const NET_WEAPON = registerNetSchema(6, 'weapon', [
   f('aux5', 'f32', true),
   f('aux6', 'f32', true),
   f('aux7', 'f32', true),
+  /** m_flEffectBarRegenTime (jars, drinks, lunchboxes, the cleaver: sim/weapons/tf-weapon.ts). */
+  f('effectBarRegenTime', 'f32', true),
 ]);
 
 /** Buildings (CBaseObject's DT_BaseObject). Subtypes extend with their own ids 128+. */

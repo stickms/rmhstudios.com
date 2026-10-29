@@ -9,6 +9,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { X } from 'lucide-react';
 import { CLASS_MENU_ORDER, CLASS_NAMES } from '@/lib/tf2-game/core/constants';
 import type { ClassChoice, TeamChoice } from '@/lib/tf2-game/net/events';
 import type { HudScoreRow } from '@/lib/tf2-game/client/hud-state';
@@ -62,6 +63,7 @@ export function TeamMenu({
         {card('spectator', 4, 1, teams[1], true)}
       </div>
       <p className="tf2g-select-hint">{t('team_menu_hint', { defaultValue: 'Press 1–4 to choose, Esc to close' })}</p>
+      <SelectClose onClose={onClose} />
     </div>
   );
 }
@@ -189,7 +191,18 @@ export function ClassMenu({
         {classNames[focused] ?? ''}
       </div>
       <p className="tf2g-select-hint">{t('class_menu_hint', { defaultValue: 'Press 1–9 to choose, 0 for random, Esc to close' })}</p>
+      <SelectClose onClose={onClose} />
     </div>
+  );
+}
+
+/** Touch only (CSS): the menus cover the touch controls, and a phone has no Esc key to close them. */
+function SelectClose({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation('c-tf2-game');
+  return (
+    <button type="button" className="tf2g-select-close" aria-label={t('menu_close', { defaultValue: 'Close' })} onClick={onClose}>
+      <X aria-hidden="true" />
+    </button>
   );
 }
 

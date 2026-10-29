@@ -73,6 +73,25 @@ describe('the fixed-step clock', () => {
     expect(runner.pump()).toBe(1);
   });
 
+  it('host_timescale paces the ticks (clamped 0.1–10), keeping the slot it was in', async () => {
+    const { runner, advance } = fakeClockRunner();
+    runner.handle({ t: 'create', matchId: 'A', opts: opts('A') });
+    await settle();
+    runner.pump();
+    runner.setTimescale(2);
+    advance(TICK_INTERVAL_MS * 2);
+    expect(runner.pump()).toBe(4);
+    runner.setTimescale(0.5);
+    advance(TICK_INTERVAL_MS * 2);
+    expect(runner.pump()).toBe(1);
+    advance(TICK_INTERVAL_MS * 2);
+    expect(runner.pump()).toBe(1);
+    runner.setTimescale(100);
+    expect(runner.timescale).toBe(10);
+    runner.setTimescale(0);
+    expect(runner.timescale).toBe(0.1);
+  });
+
   it('caps catch-up at five ticks and drops the rest of the backlog', async () => {
     const { runner, advance } = fakeClockRunner();
     runner.handle({ t: 'create', matchId: 'A', opts: opts('A') });

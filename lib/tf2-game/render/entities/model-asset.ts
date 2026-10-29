@@ -77,6 +77,8 @@ export interface AttachmentDesc {
   name: string;
   bone: string;
   local: Matrix4;
+  /** The attachment in the model's bind space (loadout items), used when no bone of that name is found. */
+  bind?: Matrix4;
 }
 
 export interface GltfLoaderLike {

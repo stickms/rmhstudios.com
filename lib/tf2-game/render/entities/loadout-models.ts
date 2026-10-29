@@ -19,10 +19,16 @@
  *   - unusual effects: the loadout particle channel's bundle (ParticleLibrary `unusual:<id>`)
  *     following the wearer's head.
  *
- * The channel publishes RED skins only, so a BLU player's unpainted cosmetics wear the RED skin
- * (two-tone paints still switch). Jiggle bones hang still. Cosmetics are not drawn beyond
- * COSMETIC_LOD_DISTANCE from the camera (their unusual effects stop there too) — players in the
- * distance cost their body and weapon only.
+ *   - team skins: a material with a BLU variant (`extras.blu`, lib/tf2-loadout/team-skins.ts)
+ *     wears BLU's texture / tint on a BLU player (decoded on first use, shared by every player);
+ *   - killstreak kits: the sheen tints and sweeps the weapon's materials (model-material.ts
+ *     uSheen); the killstreaker's eye particles are the player renderer's;
+ *   - weapon unusual effects: `unusual:<id>:<particle suffix>` with its control points on the
+ *     weapon's own `unusual_<n>` attachments (`weapon:` names, `weaponEffect`);
+ *   - jiggle bones (lib/tf2-loadout/jiggle.ts) swing on cosmetics within JIGGLE_LOD_DISTANCE.
+ *
+ * Cosmetics are not drawn beyond COSMETIC_LOD_DISTANCE from the camera (their unusual effects
+ * stop there too) — players in the distance cost their body and weapon only.
  */
 import {
   CanvasTexture,
@@ -30,10 +36,29 @@ import {
   type Material,
   Matrix4,
   type Mesh,
+  type ShaderMaterial,
   SRGBColorSpace,
+  type Texture,
   Vector3,
+  Vector4,
 } from 'three';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
+import {
+  renameSkeleton,
+  resetJiggle,
+  setupJiggle,
+  stepJiggle,
+  type JiggleBone,
+  type JiggleSpec,
+} from '@/lib/tf2-loadout/jiggle';
+import { sheenColor } from '@/lib/tf2-loadout/killstreak';
+import {
+  hasTeamVariants,
+  loadTeamTextures,
+  peekTeamTextures,
+  teamVariantOf,
+  type TeamSkinSource,
+} from '@/lib/tf2-loadout/team-skins';
 import { bodygroupsOf, classVariant, merge } from '@/lib/tf2-loadout/bodygroups';
 import { modelItemId, type Bodygroups } from '@/lib/tf2-loadout/catalog-types';
 import { modelUrl, pickModel } from '@/lib/tf2-loadout/use-models';
@@ -57,10 +82,24 @@ import type { EffectSystem } from './effects';
 import { UNUSUAL_PREFIX } from './effects';
 import { ModelAsset, type GltfLoaderLike } from './model-asset';
 import { ModelInstance } from './model-instance';
-import { paintUniforms, type InstanceUniforms } from './model-material';
+import {
+  fallbackColor,
+  paintUniforms,
+  type InstanceUniforms,
+  type ModelMaterialExtras,
+} from './model-material';
 
 /** Source units from the camera beyond which cosmetics are not drawn. */
 export const COSMETIC_LOD_DISTANCE = 1800;
+/**
+ * Item meshes (draw calls) the cosmetics and worn items of all players may draw per frame, nearest
+ * players first; 24 decorated players draw ~110 (render harness `loadout-crowd`).
+ */
+export const ITEM_DRAW_BUDGET = 200;
+/** Source units from the camera beyond which cosmetics' jiggle bones hang still (at rest). */
+export const JIGGLE_LOD_DISTANCE = 1000;
+/** Attachment-name prefix that resolves on a player's held weapon only (weapon unusual effects). */
+export const WEAPON_ATTACHMENT = 'weapon:';
 /** Source units → metres (the GLB scale). */
 const SOURCE_UNIT = 0.01905;
 
@@ -154,6 +193,10 @@ export interface LoadoutPart {
   attach: Array<{ bone: string; pose: Matrix4 }>;
   /** Skinned over the wearer's bones (bone-merged) instead of hung on one. */
   boneMerge: boolean;
+  /** Some material looks different on BLU (team-skins.ts). */
+  teamVariants: boolean;
+  /** Flexible jiggle bones (the GLB's `extras.jiggle`). */
+  jiggle: JiggleSpec[];
 }
 
 interface AttachExtras {
@@ -235,13 +278,17 @@ export class LoadoutModels {
     const extras = gltf.scene.userData as {
       attach?: AttachExtras;
       boneMerge?: boolean;
-      particleAttachments?: Record<string, { bone: string; pose: number[] }>;
+      jiggle?: JiggleSpec[];
+      particleAttachments?: Record<string, { bone: string; pose: number[]; bind?: number[] }>;
     };
     for (const [key, a] of Object.entries(extras.particleAttachments ?? {})) {
       asset.attachments.set(key.toLowerCase(), {
         name: key,
         bone: a.bone,
         local: new Matrix4().fromArray(a.pose),
+        // A plain-mesh item (most weapons) has no bones of its own: its private ones are placed
+        // in the item's bind space (ModelInstance.attachmentMatrix).
+        ...(a.bind ? { bind: new Matrix4().fromArray(a.bind) } : {}),
       });
     }
     const chain = extras.attach ? [extras.attach, ...(extras.attach.fallbacks ?? [])] : [];
@@ -250,6 +297,8 @@ export class LoadoutModels {
       asset,
       attach: chain.map((a) => ({ bone: a.bone, pose: new Matrix4().fromArray(a.pose) })),
       boneMerge: extras.boneMerge === true,
+      teamVariants: hasTeamVariants(gltf.scene),
+      jiggle: Array.isArray(extras.jiggle) ? extras.jiggle : [],
     };
   }
 
@@ -320,6 +369,15 @@ export class ItemInstance {
   private paintKey = '';
   private warPaintKey = '';
   private festive: boolean | null = null;
+  /** Template indexes of materials the war paint replaced (team skins leave their map alone). */
+  private readonly warPainted = new Set<number>();
+  private blu = false;
+  /** RED's uniforms of the materials a BLU skin changed, to put back. */
+  private readonly redLook = new Map<ShaderMaterial, Record<string, { value: unknown }>>();
+  private jiggleBones: JiggleBone[] | null = null;
+  private jiggling = false;
+  /** Meshes the item draws (each a draw call: one per material, merged at conversion). */
+  readonly meshCount: number;
   disposed = false;
 
   constructor(
@@ -327,6 +385,11 @@ export class ItemInstance {
     owner: InstanceUniforms,
   ) {
     this.inst = new ModelInstance(part.asset, { uniforms: paintUniforms(owner), noAnim: true });
+    let n = 0;
+    this.inst.scene.traverse((o) => {
+      if ((o as Mesh).isMesh) n++;
+    });
+    this.meshCount = n;
   }
 
   /** Hangs the item on `body` (bone-merged or on its bone). False when the body lacks the bone. */
@@ -335,8 +398,14 @@ export class ItemInstance {
       body.attach(this.inst);
       return true;
     }
-    for (const a of this.part.attach)
-      if (body.attachRigid(this.inst, [a.bone], a.pose)) return true;
+    for (const a of this.part.attach) {
+      if (body.attachRigid(this.inst, [a.bone], a.pose)) {
+        // A rigid item is skinned only for its jiggle bones: its copies of the class's bone names
+        // must not be found by a later bone-merge looking up the wearer's skeleton.
+        if (this.inst.bones.length) renameSkeleton(this.inst.scene);
+        return true;
+      }
+    }
     return false;
   }
 
@@ -346,6 +415,8 @@ export class ItemInstance {
     cls?: string | null;
     festive?: boolean;
     entry?: PublicItem;
+    /** The wearer's team: BLU wears the model's BLU skin where it has one. */
+    team?: number;
   }): void {
     const u = this.inst.uniforms as InstanceUniforms & {
       uPaint: { value: Vector3 };
@@ -366,6 +437,7 @@ export class ItemInstance {
       this.festive = festive;
       this.inst.setMeshFilter(festive ? null : notFestive);
     }
+    if (opts.team !== undefined) this.setTeam(opts.team);
     const script = opts.entry ? warPaintScript(opts.entry) : undefined;
     const wpKey = script ? `${script}|${opts.entry?.wear ?? 1}|${opts.entry?.seed ?? 0}` : '';
     if (wpKey !== this.warPaintKey) {
@@ -386,14 +458,151 @@ export class ItemInstance {
       m.uniforms.uMap = { value: tex };
       m.uniforms.uHasMap = { value: 1 };
       m.uniforms.uColor = { value: new Color(1, 1, 1) };
+      this.warPainted.add(i);
       done = true;
     });
+  }
+
+  /** RED's or BLU's skin (TF_TEAM_BLUE: BLU); BLU's textures arrive asynchronously, once per model. */
+  setTeam(team: number): void {
+    const blu = team === TF_TEAM_BLUE;
+    if (blu === this.blu) return;
+    this.blu = blu;
+    if (!this.part.teamVariants) return;
+    if (!blu) {
+      this.applyTeam(false, null);
+      return;
+    }
+    // BLU's tints and colours at once; its textures as soon as they are decoded (at once when
+    // another player already wears the model).
+    const gltf = this.part.asset.gltf as unknown as TeamSkinSource;
+    const ready = peekTeamTextures(gltf);
+    this.applyTeam(true, ready ?? null);
+    if (!ready)
+      void loadTeamTextures(gltf).then((tex) => {
+        if (!this.disposed && this.blu) this.applyTeam(true, tex);
+      });
+  }
+
+  private applyTeam(blu: boolean, textures: ReadonlyMap<number, Texture> | null): void {
+    this.inst.forEachMaterial((m, i) => {
+      const src = this.part.asset.materials[i];
+      const v = teamVariantOf(src);
+      if (!v) return;
+      let red = this.redLook.get(m);
+      if (!red) {
+        red = {};
+        for (const k of ['uMap', 'uHasMap', 'uColor', 'uPaintDefault', 'uPaintReplace'])
+          red[k] = m.uniforms[k];
+        this.redLook.set(m, red);
+      }
+      // Back to RED's own uniform objects (shared with the template), then BLU's changes on new ones.
+      for (const [k, val] of Object.entries(red)) {
+        if (k === 'uMap' || k === 'uHasMap' || k === 'uColor') {
+          if (this.warPainted.has(i)) continue;
+        }
+        m.uniforms[k] = val;
+      }
+      if (!blu) return;
+      const map = v.baseColorTexture !== undefined ? textures?.get(v.baseColorTexture) : undefined;
+      if (map && !this.warPainted.has(i)) {
+        m.uniforms.uMap = { value: map };
+        m.uniforms.uHasMap = { value: 1 };
+        m.uniforms.uColor = { value: new Color(1, 1, 1) };
+      } else if (!m.uniforms.uHasMap.value && v.name && !this.warPainted.has(i)) {
+        // Untextured (an install without texture data): BLU's material name picks its colour.
+        const ud = { ...(src?.userData as ModelMaterialExtras), material: v.name };
+        m.uniforms.uColor = { value: fallbackColor({ name: v.name } as Material, ud) };
+      }
+      if (v.tintDefault?.length === 3) {
+        const c = new Color().setRGB(
+          v.tintDefault[0],
+          v.tintDefault[1],
+          v.tintDefault[2],
+          SRGBColorSpace,
+        );
+        m.uniforms.uPaintDefault = { value: new Vector3(c.r, c.g, c.b) };
+      }
+      if (v.tintReplace !== undefined) m.uniforms.uPaintReplace = { value: v.tintReplace };
+    });
+  }
+
+  /**
+   * A killstreak sheen on the item (lib/tf2-loadout/killstreak.ts; undefined: none), its sweep
+   * clocked by `time` (seconds).
+   */
+  setSheen(sheen: number | undefined, team: number, time: number): void {
+    setSheenUniforms(this.inst.uniforms, sheen, team, time);
+  }
+
+  /** Swings the item's jiggle bones by `dt` (after the wearer's pose); `near: false` rests them. */
+  stepJiggle(dt: number, near: boolean): void {
+    if (!this.part.jiggle.length) return;
+    this.jiggleBones ??= setupJiggle(this.inst.scene, this.part.jiggle, this.inst.mergedBones);
+    if (!this.jiggleBones.length) return;
+    if (!near) {
+      if (this.jiggling) resetJiggle(this.jiggleBones);
+      this.jiggling = false;
+      return;
+    }
+    this.jiggling = true;
+    stepJiggle(this.jiggleBones, dt);
+  }
+
+  /** Jiggle bones being simulated this frame (stats). */
+  get jiggleCount(): number {
+    return this.jiggling ? (this.jiggleBones?.length ?? 0) : 0;
   }
 
   dispose(): void {
     this.disposed = true;
     this.inst.dispose();
   }
+}
+
+/** Sheen strength (the shader's uSheen.w): the rim and sweep stay below the lit colour. */
+const SHEEN_STRENGTH = 0.9;
+const tmpColor = new Color();
+
+/**
+ * Writes a killstreak sheen into an item's own uniforms (from `paintUniforms`: never the wearer's
+ * set, or the body would shine too). No sheen switches it off.
+ */
+export function setSheenUniforms(
+  uniforms: InstanceUniforms,
+  sheen: number | undefined,
+  team: number,
+  time: number,
+): void {
+  const u = uniforms as InstanceUniforms & {
+    uSheen?: { value: Vector4 };
+    uSheenTime?: { value: number };
+  };
+  if (!u.uSheen || !u.uSheenTime) return;
+  const c = sheenColor(sheen, team);
+  if (!c) {
+    u.uSheen.value.w = 0;
+    return;
+  }
+  const lin = tmpColor.setRGB(c[0], c[1], c[2], SRGBColorSpace);
+  u.uSheen.value.set(lin.r, lin.g, lin.b, SHEEN_STRENGTH);
+  u.uSheenTime.value = time;
+}
+
+/**
+ * The loadout particle system of a weapon's unusual effect (`unusual:<id>:<particle suffix>`,
+ * the manifest's per-weapon variant), or undefined when the entry has none the weapon can show.
+ */
+export function weaponEffect(entry: PublicItem | undefined): string | undefined {
+  const effect = entry?.effect;
+  if (effect === undefined || !entry) return undefined;
+  const item = catalogItem(entry.item);
+  if (!item) return undefined;
+  const suffix = item.ps ?? catalogItem(modelItemId(item))?.ps;
+  if (!suffix) return undefined;
+  const known = itemCatalog()?.effects.find((e) => e.id === effect);
+  if (!known || known.category !== 'weapon') return undefined;
+  return `${UNUSUAL_PREFIX}${effect}:${suffix}`;
 }
 
 /** A paint's colour for a team: BLU wears a two-tone paint's second colour. */
@@ -461,7 +670,8 @@ export class PlayerOutfit {
       for (const [k, w] of this.worn) if (!keep.has(k)) this.drop(k, w);
     }
     const groups: Array<Bodygroups | undefined> = [];
-    const near = this.isNear(body, ctx);
+    let near = this.isNear(body, ctx);
+    let draws = 0;
     for (const { key: k, entry } of list) {
       const item = catalogItem(entry.item);
       groups.push(bodygroupsOf(item ?? undefined, entry.style));
@@ -488,9 +698,19 @@ export class PlayerOutfit {
         }
       }
       if (w.part) {
-        w.part.dress({ paint: item?.p ? paintColor(entry.paint, team) : undefined, cls });
-        w.part.inst.root.visible = near;
+        w.part.dress({ paint: item?.p ? paintColor(entry.paint, team) : undefined, cls, team });
+        draws += w.part.meshCount;
       }
+    }
+    // The frame's item draw budget, nearest players first (EntityRenderer sorts them): a player
+    // past it shows body and weapon only, as one past COSMETIC_LOD_DISTANCE does.
+    const budget = ctx.itemDrawBudget;
+    if (near && budget && draws) {
+      if (budget.left >= draws) budget.left -= draws;
+      else near = false;
+    }
+    for (const w of this.worn.values()) {
+      if (w.part) w.part.inst.root.visible = near;
       this.updateEffect(w, near && this.visible);
     }
     return merge(groups);
@@ -503,11 +723,29 @@ export class PlayerOutfit {
     if (!visible) for (const w of this.worn.values()) this.stopEffect(w);
   }
 
-  private isNear(body: ModelInstance, ctx: RenderContext): boolean {
+  private isNear(body: ModelInstance, ctx: RenderContext, range = COSMETIC_LOD_DISTANCE): boolean {
     const cam = ctx.cameraPosition;
     if (!cam) return true;
     tmpV.setFromMatrixPosition(body.root.matrixWorld);
-    return tmpV.distanceTo(cam) < COSMETIC_LOD_DISTANCE * SOURCE_UNIT;
+    return tmpV.distanceTo(cam) < range * SOURCE_UNIT;
+  }
+
+  /**
+   * After the wearer's pose for the frame: the cosmetics' jiggle bones swing (within
+   * JIGGLE_LOD_DISTANCE of the camera, while shown; farther away they rest — LOD).
+   * Returns how many jiggle bones were simulated.
+   */
+  afterPose(ctx: RenderContext): number {
+    const body = this.body;
+    if (!body || !this.worn.size) return 0;
+    const near = this.visible && body.root.visible && this.isNear(body, ctx, JIGGLE_LOD_DISTANCE);
+    let n = 0;
+    for (const w of this.worn.values()) {
+      if (!w.part) continue;
+      w.part.stepJiggle(ctx.dt, near);
+      n += w.part.jiggleCount;
+    }
+    return n;
   }
 
   private updateEffect(w: Worn, on: boolean): void {

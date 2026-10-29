@@ -13,6 +13,7 @@ import { cycleRate, type SequenceDesc } from './animator';
 import {
   bool,
   LightProbe,
+  modelLod,
   num,
   stateAngles,
   stateOrigin,
@@ -39,6 +40,8 @@ export class ModelRenderable {
   protected readonly origin = { x: 0, y: 0, z: 0 };
   protected readonly angles = { x: 0, y: 0, z: 0 };
   protected seqName = '';
+  /** The `animStart` the playing sequence was started for (a new one replays it). */
+  protected animStart = 0;
   protected visible = false;
   /** Height above the origin the ambient light is sampled at. */
   protected lightHeight = 16;
@@ -127,7 +130,12 @@ export class ModelRenderable {
     return num(s.fields, 'skin');
   }
 
-  /** prop_dynamic: `sequence` from `animStart` at `playbackRate` (else the model's idle). */
+  /**
+   * prop_dynamic (and single-player actors, SetAnimation): `sequence` from `animStart` at
+   * `playbackRate` (else the model's idle). A new sequence — or the same one replayed (a new
+   * `animStart`, the new-sequence parity) — cross-fades in through the Animator's transitioner;
+   * the cycle runs per frame and the networked start time only bleeds off drift (syncCycle).
+   */
   protected animate(s: EntityState, ctx: RenderContext, inst: ModelInstance): void {
     const a = inst.animator;
     if (!a) return;
@@ -137,21 +145,26 @@ export class ModelRenderable {
     if (name) seq = a.set.seq(name) ?? a.set.selectWeightedSequence(name) ?? undefined;
     seq ??= a.main?.seq ?? defaultSequence(a.set.sequences);
     if (!seq) return;
-    if (seq.name !== this.seqName) {
-      a.setSequence(seq, { restart: true, fade: !!this.seqName });
+    a.lod = modelLod(ctx, this.origin);
+    const timed = f.animStart !== undefined;
+    const start = timed ? num(f, 'animStart') : 0;
+    const rate = f.playbackRate !== undefined ? num(f, 'playbackRate') : 1;
+    let cycle = 0;
+    if (timed) {
+      const c = (ctx.time - start) * cycleRate(seq) * rate;
+      cycle = seq.looping ? c - Math.floor(c) : Math.min(1, Math.max(0, c));
+    }
+    if (seq.name !== this.seqName || (timed && start !== this.animStart)) {
+      a.setSequence(seq, { restart: true, fade: !!this.seqName, cycle, rate: timed ? rate : 1 });
       this.seqName = seq.name;
+      this.animStart = start;
+    } else if (timed && a.main) {
+      a.main.rate = rate;
+      a.syncCycle(cycle);
     }
-    const main = a.main;
-    if (main && f.animStart !== undefined) {
-      const rate = f.playbackRate !== undefined ? num(f, 'playbackRate') : 1;
-      const c = (ctx.time - num(f, 'animStart')) * cycleRate(seq) * rate;
-      main.cycle = seq.looping ? c - Math.floor(c) : Math.min(1, Math.max(0, c));
-      a.advance(0);
-      a.time = ctx.time;
-      a.evaluate(inst.pos, inst.quat);
-    } else {
-      inst.animate(ctx.dt);
-    }
+    // Autoplay / realtime sequences follow the render clock.
+    if (timed) a.time = ctx.time - ctx.dt;
+    inst.animate(ctx.dt);
   }
 
   /** Hook before world matrices update (procedural bones). */

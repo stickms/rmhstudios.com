@@ -38,7 +38,11 @@ import {
 } from './constants';
 import { disguiseTime, exposeCloak, fadeInvis, invisibilityThink, removeDisguise, resetSpyState, spyState } from './spy-state';
 import { num, TFWeapon, type ClassSkillWeapon } from './tf-weapon';
-import { hookPlayer, hookWeapon } from '../items/attributes';
+import { hookInt, hookPlayer, hookWeapon } from '../items/attributes';
+
+/** The invis watch types (CTFWeaponInvis: set_weapon_mode). */
+const INVIS_FEIGN_DEATH = 1;
+const INVIS_MOTION_CLOAK = 2;
 
 /** CTFWeaponInvis. */
 export class InvisWatch extends TFWeapon implements ClassSkillWeapon {
@@ -61,6 +65,11 @@ export class InvisWatch extends TFWeapon implements ClassSkillWeapon {
     this.activateInvisibilityWatch();
   }
 
+  /** CTFWeaponInvis::GetInvisType (set_weapon_mode): 1 the Dead Ringer (feign death), 2 the Cloak and Dagger (motion cloak). */
+  invisType(): number {
+    return hookInt(hookWeapon(this, this.owner, 'set_weapon_mode', 0));
+  }
+
   /** SDK: CTFWeaponInvis::ActivateInvisibilityWatch. */
   activateInvisibilityWatch(): boolean {
     const o = this.owner;
@@ -71,6 +80,10 @@ export class InvisWatch extends TFWeapon implements ClassSkillWeapon {
     if (o.cond.has(TF_COND.STEALTHED)) {
       fadeInvis(o, 1);
       o.world.emitSound('Player.Spy_UnCloak', { entity: o.id });
+    } else if (this.invisType() === INVIS_FEIGN_DEATH) {
+      // The Dead Ringer: armed (SetFeignDeathState) with a full meter, disarmed by pressing again.
+      if (o.unlock.feignDeathReady) o.unlock.feignDeathReady = false;
+      else if (o.cloakMeter >= INVIS_WATCH.meterMax) o.unlock.feignDeathReady = true;
     } else if (this.canGoInvisible(o) && o.cloakMeter > CLOAK_MIN_TO_START) {
       o.cond.add(TF_COND.STEALTHED, -1, o.id);
       // CTFPlayerShared::OnAddStealthed.
@@ -110,7 +123,20 @@ export class InvisWatch extends TFWeapon implements ClassSkillWeapon {
       if (o.cond.has(TF_COND.STEALTHED)) o.cond.remove(TF_COND.STEALTHED);
       return;
     }
-    if (o.cond.has(TF_COND.STEALTHED)) {
+    if (o.cond.has(TF_COND.STEALTHED) && this.invisType() === INVIS_MOTION_CLOAK) {
+      // The Cloak and Dagger: drains by movement (× 1.5 at full speed), refills standing still a second after exposure.
+      const v2 = o.velocity.x * o.velocity.x + o.velocity.y * o.velocity.y + o.velocity.z * o.velocity.z;
+      if (v2 === 0) {
+        if (t - s.lastStealthExposeTime > 1) {
+          o.cloakMeter = Math.min(INVIS_WATCH.meterMax, o.cloakMeter + dt * hookWeapon(this, o, 'mult_cloak_meter_regen_rate', INVIS_WATCH.regenRate));
+        }
+      } else {
+        const max = o.computeMaxSpeed();
+        const factor = Math.min(1, max > 0 ? v2 / (max * max) : 1);
+        o.cloakMeter = Math.max(0, o.cloakMeter - dt * cloakConsumeRate(o) * factor * 1.5);
+      }
+      if (this.touchingEnemy(o) || this.prevHealth - o.health > STEALTH_BLINK_DAMAGE) exposeCloak(o);
+    } else if (o.cond.has(TF_COND.STEALTHED)) {
       o.cloakMeter -= dt * cloakConsumeRate(o);
       if (o.cloakMeter <= 0) {
         o.cloakMeter = 0;
@@ -153,6 +179,27 @@ export class InvisWatch extends TFWeapon implements ClassSkillWeapon {
   override onOwnerDeath(): void {
     super.onOwnerDeath();
     if (this.owner) resetSpyState(this.owner);
+  }
+
+  /**
+   * SDK: CTFPlayer::SpyDeadRingerDeath's watch half: the meter drops to 50 and OnAddFeignDeath cloaks
+   * at once (no fade, no sound). Returns false when the Spy cannot feign (already cloaked, not full).
+   */
+  canFeignDeath(): boolean {
+    const o = this.owner;
+    if (!o || !o.alive || o.playerClass !== TF_CLASS_SPY) return false;
+    if (o.cond.has(TF_COND.STEALTHED)) return false;
+    return this.canGoInvisible(o) && o.cloakMeter >= INVIS_WATCH.meterMax;
+  }
+
+  onFeignDeath(): void {
+    const o = this.owner;
+    if (!o) return;
+    o.cloakMeter = 50;
+    if (!o.cond.has(TF_COND.STEALTHED)) {
+      o.cond.add(TF_COND.STEALTHED, -1, o.id);
+      spyState(o).invisChangeCompleteTime = this.t;
+    }
   }
 
   protected override writeWeaponNet(out: NetRecord): void {

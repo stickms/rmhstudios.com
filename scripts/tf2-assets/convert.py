@@ -29,7 +29,8 @@ import srctex
 from vpkfs import GameFS
 
 # Bump when the output for the same source would change.
-CONVERTER_VERSION = 8
+# 9: BLU skin-family textures (material `extras.blu`), weapon-model wearables bone-merged, stray bone ids.
+CONVERTER_VERSION = 9
 # Bump when a class body's body-group export changes. Only class bodies hash it in.
 BODYGROUPS_VERSION = 1
 # Bump when the bone-merge export (skinned cosmetics that follow the player's bones) changes.
@@ -279,7 +280,10 @@ def material_files(fs, info):
         shader, kv, text = res
         base = kv.get("$basetexture")
         vtf_path = srctex.texture_path(base) if base else None
-        vtf = fs.read(vtf_path) if vtf_path else None
+        try:
+            vtf = fs.read(vtf_path) if vtf_path else None
+        except OSError:  # listed in the VPK index but its archive is absent (a dedicated-server install)
+            vtf = None
         slots.append((vmt_path, shader, kv, vtf_path, vtf, text))
     return slots
 
@@ -395,11 +399,61 @@ def encode_emission(vtf, kv):
     return buf.getvalue()
 
 
-def follows_player_bones(mdl_path, vvd):
-    """A cosmetic (not a weapon or a class) whose vertices follow several bones, as boots and gloves do. The
-    game bone-merges it onto the wearer's skeleton, so it is exported skinned and the viewer binds it to the
-    player's bones instead of hanging the whole model off one of them."""
-    return "/player/items/" in mdl_path.replace("\\", "/") and srcmodel.spreads_over_bones(vvd)
+def follows_player_bones(mdl_path, vvd, mdl=None):
+    """A worn model whose vertices follow several bones, as boots and gloves do. The game bone-merges it onto
+    the wearer's skeleton, so it is exported skinned and the viewer binds it to the player's bones instead of
+    hanging the whole model off one of them.
+
+    A cosmetic (`/player/items/`) qualifies when its weight spreads over any bones. A weapon-path model (the
+    Gunboats are `c_rocketboots_soldier.mdl`, worn from a weapon slot) qualifies only when it spreads over the
+    player's own skeleton (`bip_*` bones, both feet): a held weapon's weight sits on its weapon bone and its
+    moving parts, and it stays rigid on that bone."""
+    path = mdl_path.replace("\\", "/")
+    count = srcmodel.num_bones(mdl) if mdl else None
+    if "/player/items/" in path:
+        return srcmodel.spreads_over_bones(vvd, num_bones=count)
+    if not mdl or ("/c_models/" not in path and "/weapons/" not in path):
+        return False
+    names = [b["name"] for b in srcmodel.read_bones(mdl)]
+    return srcmodel.spreads_over_bones(
+        vvd, num_bones=count, only=lambda b: b < len(names) and names[b].startswith("bip_"))
+
+
+def blu_family(skin, skin_blu=None):
+    """The skin family a BLU wearer shows (CTFWearable::GetSkin): the schema's when it names one, else
+    family 1 for a RED family of 0 (team colours), else RED's own (a style's fixed family)."""
+    if skin_blu is not None:
+        return int(skin_blu)
+    return 1 if not skin else int(skin)
+
+
+# What a BLU material may change from RED's: glTF material extras `blu` (key: what it holds).
+TEAM_KEYS = (("image", "baseColorTexture"), ("emissive", "emissiveTexture"), ("tint_default", "tintDefault"),
+             ("tint_replace", "tintReplace"), ("base_color", "baseColor"))
+
+
+def team_variant(red, blu):
+    """What BLU's material changes from RED's, as `extras.blu`, or None when it looks the same. Texture
+    entries are image indexes in the GLB (one texture per image): a texture BLU shares with RED is the same
+    image and costs nothing; only a family whose texture really differs adds one. A BLU texture the install
+    lacks keeps RED's (never a hole). `name` lets a viewer with no texture tell the teams apart."""
+    out = {}
+    for key, out_key in TEAM_KEYS:
+        a, b = red.get(key), blu.get(key)
+        if a == b:
+            continue
+        if key in ("image", "emissive"):
+            if b is not None:  # else BLU's texture is missing (or it does not glow): keep RED's
+                out[out_key] = b
+        elif key == "base_color":
+            out[out_key] = b if b is not None else [1.0, 1.0, 1.0]
+        elif key == "tint_replace":
+            out[out_key] = b or 0.0
+        elif b is not None:
+            out[out_key] = b
+    if blu["name"] != red["name"] and (out or red.get("image") is None):
+        out["name"] = blu["name"]
+    return out or None
 
 
 # A cosmetic that sets `use_per_class_bodygroups` carries one submodel per class in its second body part
@@ -409,16 +463,19 @@ CLASS_BODYPART = 1
 
 
 def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=0,
-            attachments=(), parts_only=False, class_bodygroup=False):
-    """`anim` = (animations mdl bytes) for a class body: its skeleton, skin and idle clip go in the GLB."""
+            attachments=(), parts_only=False, class_bodygroup=False, blu_skin=None):
+    """`anim` = (animations mdl bytes) for a class body: its skeleton, skin and idle clip go in the GLB.
+    `blu_skin`: the BLU skin family; where its material differs from RED's (`skin`), the material carries
+    `extras.blu` (see team_variant)."""
     info, meshes = srcmodel.build_meshes(mdl, vvd, vtx, skin,
-                                         groups={CLASS_BODYPART} if class_bodygroup else is_class)
+                                         groups={CLASS_BODYPART} if class_bodygroup else is_class,
+                                         alt_skin=blu_skin)
     if not meshes:
         raise srcmodel.ModelError("no geometry")
     skeleton = bones = world = None
     # A cosmetic with jiggle bones is skinned (rigid ones stay plain meshes), so the viewer can swing them.
     jiggly = not is_class and not parts_only and bool(srcmodel.read_jiggle(mdl))
-    bone_merge = not is_class and not parts_only and follows_player_bones(mdl_path, vvd)
+    bone_merge = not is_class and not parts_only and follows_player_bones(mdl_path, vvd, mdl)
     jiggly = jiggly or bone_merge  # skinned either way
     if is_class or jiggly:
         bones, skeleton = class_skeleton(mdl)
@@ -427,71 +484,85 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                  for p in srcmodel.read_bones(mdl)]
     eye_slots = [i for i, slot in enumerate(slots) if slot and slot[1] in EYE_SHADERS]
     images, image_index, materials, mat_index, out_meshes = [], {}, [], {}, []
+
+    def material_for(t):
+        """The glTF material entry for MDL texture `t` (its images appended to `images`, shared by key)."""
+        slot = slots[t] if 0 <= t < len(slots) else None
+        image = None
+        why = "no .vmt found in the model's material paths" if slot is None else None
+        emissive = None
+        alpha = "OPAQUE"
+        double = False
+        tint = False
+        masked = False
+        name = info["textures"][t] if 0 <= t < len(info["textures"]) else "material"
+        if slot is not None:
+            _vp, shader, kv, vtf_path, vtf, _text = slot
+            if shader in EYE_SHADERS and kv.get("$iris"):
+                key = ("eye", kv["$iris"].lower())
+                if key not in image_index:
+                    images.append(eye_texture(fs, kv))
+                    image_index[key] = len(images) - 1
+                image = image_index[key]
+                vtf = None
+            masked = any(kv.get(k) == "1" for k in TINT_KEYS)
+            # Where the VMT paints by base alpha, that alpha is the mask of where the paint goes and nothing
+            # else: the game ignores the base texture for translucency then (vertexlitgeneric_dx9_helper.cpp)
+            # and skips self-illumination from it (the shader combination does not exist). So the material
+            # stays opaque and keeps the alpha in its image for the viewer to blend the tint by.
+            keep = (kv.get("$alphatest") == "1" or kv.get("$translucent") == "1") and not masked
+            if keep:
+                alpha = "MASK" if kv.get("$alphatest") == "1" else "BLEND"
+            double = kv.get("$nocull") == "1"
+            whole = not masked and tints_whole(kv, _text)
+            tint = masked or whole
+            keep_alpha = keep or masked
+            if vtf is None and image is None:
+                why = ("%s has no $basetexture" % _vp if not vtf_path
+                       else "%s is not in the game files (from %s)" % (vtf_path, _vp))
+            if vtf is not None:
+                # By content: two VMTs (RED's and BLU's) over the same texture share one image.
+                key = (hashlib.sha1(vtf).digest(), keep_alpha)
+                if key not in image_index:
+                    try:
+                        images.append(encode_texture(vtf, keep_alpha))
+                        image_index[key] = len(images) - 1
+                    except srctex.TextureError as e:
+                        image_index[key] = None
+                        why = "%s: %s" % (vtf_path, e)
+                image = image_index[key]
+                if kv.get("$selfillum") == "1" and image is not None and not masked:
+                    emission_key = ("emission", vtf_path, kv.get("$selfillumtint"))
+                    if emission_key not in image_index:
+                        images.append(encode_emission(vtf, kv))
+                        image_index[emission_key] = len(images) - 1
+                    emissive = image_index[emission_key]
+        if image is None:
+            UNTEXTURED.append((mdl_path, name, why or "texture could not be decoded"))
+        entry = {"name": name.split("/")[-1], "image": image, "alpha": alpha,
+                 "double_sided": double, "tint": tint, "emissive": emissive}
+        if tint and slot is not None:
+            entry.update(paint_tint(slot[2]))
+            if not masked:
+                # A paintable item tinted whole ($colortint_base, no mask): the paint multiplies all of it.
+                entry["tint_whole"] = True
+        elif slot is not None and (colour := material_colour(slot[2])):
+            # A constant $color2/$color the game multiplies in (the glTF base colour factor, linear).
+            entry["base_color"] = colour
+        return entry
+
     for m in meshes:
         t = m["texture"]
-        if t not in mat_index:
-            slot = slots[t] if 0 <= t < len(slots) else None
-            image = None
-            why = "no .vmt found in the model's material paths" if slot is None else None
-            emissive = None
-            alpha = "OPAQUE"
-            double = False
-            tint = False
-            name = info["textures"][t] if 0 <= t < len(info["textures"]) else "material"
-            if slot is not None:
-                _vp, shader, kv, vtf_path, vtf, _text = slot
-                if shader in EYE_SHADERS and kv.get("$iris"):
-                    key = ("eye", kv["$iris"].lower())
-                    if key not in image_index:
-                        images.append(eye_texture(fs, kv))
-                        image_index[key] = len(images) - 1
-                    image = image_index[key]
-                    vtf = None
-                masked = any(kv.get(k) == "1" for k in TINT_KEYS)
-                # Where the VMT paints by base alpha, that alpha is the mask of where the paint goes and nothing
-                # else: the game ignores the base texture for translucency then (vertexlitgeneric_dx9_helper.cpp)
-                # and skips self-illumination from it (the shader combination does not exist). So the material
-                # stays opaque and keeps the alpha in its image for the viewer to blend the tint by.
-                keep = (kv.get("$alphatest") == "1" or kv.get("$translucent") == "1") and not masked
-                if keep:
-                    alpha = "MASK" if kv.get("$alphatest") == "1" else "BLEND"
-                double = kv.get("$nocull") == "1"
-                whole = not masked and tints_whole(kv, _text)
-                tint = masked or whole
-                keep_alpha = keep or masked
-                if vtf is None and image is None:
-                    why = ("%s has no $basetexture" % _vp if not vtf_path
-                           else "%s is not in the game files (from %s)" % (vtf_path, _vp))
-                if vtf is not None:
-                    key = (vtf_path, keep_alpha)
-                    if key not in image_index:
-                        try:
-                            images.append(encode_texture(vtf, keep_alpha))
-                            image_index[key] = len(images) - 1
-                        except srctex.TextureError as e:
-                            image_index[key] = None
-                            why = "%s: %s" % (vtf_path, e)
-                    image = image_index[key]
-                    if kv.get("$selfillum") == "1" and image is not None and not masked:
-                        emission_key = ("emission", vtf_path, kv.get("$selfillumtint"))
-                        if emission_key not in image_index:
-                            images.append(encode_emission(vtf, kv))
-                            image_index[emission_key] = len(images) - 1
-                        emissive = image_index[emission_key]
-            if image is None:
-                UNTEXTURED.append((mdl_path, name, why or "texture could not be decoded"))
-            entry = {"name": name.split("/")[-1], "image": image, "alpha": alpha,
-                     "double_sided": double, "tint": tint, "emissive": emissive}
-            if tint and slot is not None:
-                entry.update(paint_tint(slot[2]))
-                if not masked:
-                    # A paintable item tinted whole ($colortint_base, no mask): the paint multiplies all of it.
-                    entry["tint_whole"] = True
-            elif slot is not None and (colour := material_colour(slot[2])):
-                # A constant $color2/$color the game multiplies in (the glTF base colour factor, linear).
-                entry["base_color"] = colour
+        alt_t = m.get("alt_texture")
+        key = (t, alt_t if alt_t is not None and alt_t != t else None)
+        if key not in mat_index:
+            entry = material_for(t)
+            if key[1] is not None:
+                blu = team_variant(entry, material_for(key[1]))
+                if blu:
+                    entry.setdefault("extras", {})["blu"] = blu
             materials.append(entry)
-            mat_index[t] = len(materials) - 1
+            mat_index[key] = len(materials) - 1
         uv = m["uv"]
         if is_class and t in eye_slots:
             # The legacy eyeball texture field is often zero (the BODY), and eye material
@@ -503,7 +574,7 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                     (world[e["bone"]] @ np.array([*e["org"], 1]))[:3] - centre))
                 uv = project_eye_uv(m["pos"], eye, world[eye["bone"]])
         out = {"pos": to_gl(m["pos"]), "nrm": to_gl(m["nrm"]) / SCALE,
-               "uv": uv, "idx": m["idx"], "material": mat_index[t]}
+               "uv": uv, "idx": m["idx"], "material": mat_index[key]}
         if is_class or jiggly:
             out["joints"], out["weights"] = m["joints"], m["weights"]
         if m.get("group"):
@@ -522,9 +593,11 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
             clips = [clip_from(anim, a_bones, skeleton, seq, seqs, fix, "idle")]
     for ref, entry in attachments:
         a_mdl, a_vvd, a_vtx, a_slots = entry
+        a_skin = ref.get("skin", 0)
         a_meshes, a_materials, a_images = convert(
             fs, ref["mdl"], a_mdl, a_vvd, a_vtx, a_slots,
-            skin=ref.get("skin", 0), parts_only=True)
+            skin=a_skin, parts_only=True,
+            blu_skin=blu_family(a_skin, ref.get("skinBlu")) if blu_skin is not None else None)
         # Wearables and c_models share named bones, but not necessarily their bind pose.
         # Re-express the attachment in the weapon's bind space before combining geometry.
         base_bones = {b["name"]: b for b in srcmodel.read_bones(mdl)}
@@ -543,6 +616,10 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                 material["image"] += len(images)
             if material.get("emissive") is not None:
                 material["emissive"] += len(images)
+            blu = (material.get("extras") or {}).get("blu")
+            for k in ("baseColorTexture", "emissiveTexture"):
+                if blu and blu.get(k) is not None:
+                    blu[k] += len(images)
             material["attachment"] = True
             material["festive"] = ref.get("festive", False)
         if jiggly:
@@ -702,6 +779,7 @@ def main():
         is_class = ref["glb"].startswith("class_")
         anim = fs.read(stem + "_animations.mdl") if is_class else None
         skin = int(ref.get("skin", 0) or 0)
+        blu_skin = blu_family(skin, ref.get("skinBlu"))
         attachments = []
         dependency_hash = b""
         try:
@@ -719,7 +797,7 @@ def main():
             failed.append(ref["glb"])
             continue
         src = source_hash(mdl, vvd, vtx, slots,
-                          (hashlib.sha1(anim).digest() if anim else b"") + b"|skin%d" % skin
+                          (hashlib.sha1(anim).digest() if anim else b"") + b"|skin%d|blu%d" % (skin, blu_skin)
                           + dependency_hash
                           # Class bodies carry their switchable body groups; no other model's file changed,
                           # so only these are rebuilt (CONVERTER_VERSION would rebuild every model).
@@ -730,7 +808,7 @@ def main():
                           # Only the cosmetics that pick a model per class change, so only they are rebuilt.
                           + (b"|classbody%d" % CLASSBODY_VERSION if ref.get("classBodygroup") else b"")
                           + (b"|bonemerge%d" % BONEMERGE_VERSION
-                             if not is_class and follows_player_bones(ref["mdl"], vvd) else b""))
+                             if not is_class and follows_player_bones(ref["mdl"], vvd, mdl) else b""))
         if is_class and anim:
             class_anims[ref["glb"][len("class_"):-4]] = (stem, mdl, anim)
         if published.get(ref["glb"], {}).get("src") == src and os.environ.get("FORCE") != "1":
@@ -739,7 +817,7 @@ def main():
             continue
         try:
             data = convert(fs, ref["mdl"], mdl, vvd, vtx, slots, is_class, anim, skin, attachments,
-                           class_bodygroup=bool(ref.get("classBodygroup")))
+                           class_bodygroup=bool(ref.get("classBodygroup")), blu_skin=blu_skin)
         except Exception as e:  # noqa: BLE001
             reasons[type(e).__name__ + ": " + str(e)] = reasons.get(type(e).__name__ + ": " + str(e), 0) + 1
             failed.append(ref["glb"])

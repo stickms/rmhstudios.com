@@ -93,7 +93,9 @@ export function TfTabs({
   const compact = size === 'sm';
 
   return (
-    <div className={cn('relative min-w-0', className)}>
+    // Collapsed, the strip is still laid out (invisibly, at its full width) to be measured: clip it, or a
+    // narrow phone's page scrolls sideways by the overhang.
+    <div className={cn('relative min-w-0', collapsed && 'overflow-x-clip', className)}>
       {collapsed ? (
         <>
           <button
@@ -106,6 +108,7 @@ export function TfTabs({
             className={cn(
               'tf2hud-tab flex w-full min-w-40 items-center justify-between gap-2 border-b border-(--app-border) bg-(--tf2-panel) font-semibold uppercase tracking-wide text-(--app-text)',
               compact ? 'h-8 px-2.5 text-[11px]' : 'h-10 px-4 text-xs',
+              'pointer-coarse:h-11 pointer-coarse:text-xs',
             )}
           >
             <span className="flex min-w-0 items-center gap-1.5">
@@ -138,7 +141,7 @@ export function TfTabs({
                         trigger?.focus();
                       }}
                       className={cn(
-                        'flex w-full items-center gap-2 px-2.5 py-2 text-start text-xs font-semibold uppercase tracking-wide hover:bg-(--app-surface-hover) disabled:opacity-45',
+                        'flex w-full items-center gap-2 px-2.5 py-2 text-start text-xs font-semibold uppercase tracking-wide hover:bg-(--app-surface-hover) disabled:opacity-45 pointer-coarse:min-h-11',
                         active ? 'text-(--app-text)' : 'text-(--app-text-muted)',
                       )}
                     >
@@ -194,6 +197,8 @@ export function TfTabs({
               className={cn(
                 'tf2hud-tab inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap font-semibold uppercase tracking-wide disabled:opacity-45',
                 size === 'sm' ? 'h-8 px-2.5 text-[11px]' : 'h-10 px-4 text-xs',
+                // Touch: 44px tabs with 12px labels.
+                'pointer-coarse:h-11 pointer-coarse:text-xs',
                 active
                   ? 'bg-(--tf2-panel) text-(--app-text)'
                   : 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)',

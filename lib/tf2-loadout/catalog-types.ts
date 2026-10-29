@@ -335,6 +335,9 @@ export interface LoadoutEntry {
   seed?: number;
   /** A festivized weapon (its lights are drawn on the model). */
   festive?: boolean;
+  /** Killstreak kit on a weapon: its sheen (1–7) and killstreaker (2002–2008, needs a sheen); see killstreak.ts. */
+  sheen?: number;
+  streaker?: number;
 }
 
 export type LoadoutSlots = Record<LoadoutSlotKey, LoadoutEntry>;

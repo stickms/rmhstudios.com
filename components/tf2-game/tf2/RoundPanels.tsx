@@ -18,7 +18,16 @@ import { useClassNames, useTeamNames, useWinReason } from '../strings';
 import { usePanelStyle } from '../use-hud';
 import { HealthCross } from './HealthPanel';
 
-export function RespawnPanel({ local, freeze }: { local: HudLocalPlayer; freeze: boolean }) {
+export function RespawnPanel({
+  local,
+  freeze,
+  srOnly = false,
+}: {
+  local: HudLocalPlayer;
+  freeze: boolean;
+  /** A custom HUD's spectator GUI shows these: keep them for screen readers only. */
+  srOnly?: boolean;
+}) {
   const { t } = useTranslation('c-tf2-game');
   const teams = useTeamNames();
   const classNames = useClassNames();
@@ -26,7 +35,7 @@ export function RespawnPanel({ local, freeze }: { local: HudLocalPlayer; freeze:
   const s = local.respawnIn === null ? null : Math.ceil(local.respawnIn);
   return (
     <>
-      <div className="tf2g-respawn tf2g-shadow" role="status" aria-live="polite">
+      <div className={srOnly ? 'sr-only' : 'tf2g-respawn tf2g-shadow'} role="status" aria-live="polite">
         {s === null
           ? t('respawn_wait', { defaultValue: 'Waiting to respawn' })
           : s <= 0
@@ -38,7 +47,7 @@ export function RespawnPanel({ local, freeze }: { local: HudLocalPlayer; freeze:
               })}
       </div>
       {local.spectating && !freeze ? (
-        <div className={`tf2g-spectating tf2g-team-${local.spectating.team} tf2g-shadow`}>
+        <div className={srOnly ? 'sr-only' : `tf2g-spectating tf2g-team-${local.spectating.team} tf2g-shadow`}>
           {t('spectating', {
             defaultValue: 'Spectating {{name}} ({{cls}}, {{team}})',
             name: local.spectating.name,

@@ -135,6 +135,12 @@ export function objectsOf(world: GameWorld): TFBaseObject[] {
   return list;
 }
 
+/** The list table, for a checkpoint (sim/checkpoint): read without creating, and put back. */
+export const worldObjectsTable = {
+  peek: (world: GameWorld): TFBaseObject[] | undefined => worldObjects.get(world),
+  set: (world: GameWorld, list: TFBaseObject[]): void => void worldObjects.set(world, list),
+};
+
 // ─── Scratch ─────────────────────────────────────────────────────────────────
 
 const tr = emptyTrace();
@@ -471,22 +477,20 @@ export abstract class TFBaseObject extends BaseObject {
 
   /** A filter for the brush-only placement traces: the map and brush entities, never boxes. */
   private brushOnlyFilter(): TraceFilter {
-    let f = this.brushFilterFn;
-    if (!f) {
-      f = (id, mask) => {
-        if (id === WORLD_ENTITY) return true;
-        const e = this.world.entity(id);
-        if (!e) return true;
-        if (e === this || e.isBaseObject() || e.isPlayer()) return false;
-        return e.shouldCollide(COLLISION_GROUP_PLAYER_MOVEMENT, mask);
-      };
-      this.brushFilterFn = f;
-    }
-    return f;
+    return this.brushFilterFn;
   }
 
-  /** The map-only trace filter (created once). */
-  private brushFilterFn: TraceFilter | null = null;
+  /**
+   * The map-only trace filter, made with the object (a field, not made on first use: a checkpoint
+   * rebuilds a closure only where the object's constructor makes it — sim/checkpoint/graph.ts).
+   */
+  private readonly brushFilterFn: TraceFilter = (id, mask) => {
+    if (id === WORLD_ENTITY) return true;
+    const e = this.world.entity(id);
+    if (!e) return true;
+    if (e === this || e.isBaseObject() || e.isPlayer()) return false;
+    return e.shouldCollide(COLLISION_GROUP_PLAYER_MOVEMENT, mask);
+  };
 
   /** SDK: CBaseObject::CalculatePlacementPos. */
   calculatePlacementPos(): boolean {

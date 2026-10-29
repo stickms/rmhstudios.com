@@ -11,6 +11,7 @@ import {
   type Texture,
 } from 'three';
 import type { WarPaint } from '@/lib/tf2-loadout/warpaint';
+import { teamVariantOf, type Team } from '@/lib/tf2-loadout/team-skins';
 import type { Bodygroups } from '@/lib/tf2-loadout/catalog-types';
 import { showsSubmodel } from '@/lib/tf2-loadout/bodygroups';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
@@ -147,6 +148,75 @@ export function applyBodygroups(root: Object3D, selection: Bodygroups): void {
     const tag = (mesh.geometry?.userData ?? mesh.userData) as { bodygroup?: string; sub?: number };
     if (typeof tag.bodygroup !== 'string' || typeof tag.sub !== 'number') return;
     mesh.visible = showsSubmodel(selection, tag.bodygroup, tag.sub);
+  });
+}
+
+interface RedLook {
+  map: Texture | null;
+  emissiveMap: Texture | null;
+  color: Color;
+  tintDefault: unknown;
+  tintReplace: unknown;
+}
+const redLooks = new WeakMap<Material, RedLook>();
+
+/**
+ * Show the team's skin: a material the sync recorded a BLU variant for (`extras.blu`, see
+ * lib/tf2-loadout/team-skins.ts) takes BLU's texture, colour and default paint tint on `blu`, and its
+ * own (RED's) back on `red`. `textures` are BLU's, by texture index (`loadTeamTextures`); a BLU texture
+ * still loading keeps RED's for now. Call `applyTint` after, so the default tint takes effect. A war
+ * paint shown on the material stays on top (its "original" becomes the team's texture).
+ */
+export function applyTeam(
+  root: Object3D,
+  team: Team,
+  textures?: ReadonlyMap<number, Texture>,
+): void {
+  root.traverse((o: Object3D) => {
+    const mesh = o as Mesh;
+    if (!mesh.isMesh) return;
+    for (const m of materialsOf(mesh)) {
+      const v = teamVariantOf(m);
+      if (!v || !('color' in m)) continue;
+      const std = m as MeshStandardMaterial;
+      let red = redLooks.get(m);
+      if (!red) {
+        red = {
+          map: (std.userData.originalMap as Texture | undefined) ?? std.map,
+          emissiveMap: std.emissiveMap,
+          color: std.color.clone(),
+          tintDefault: std.userData.tintDefault,
+          tintReplace: std.userData.tintReplace,
+        };
+        redLooks.set(m, red);
+      }
+      const blu = team === 'blu';
+      const map =
+        blu && v.baseColorTexture !== undefined
+          ? (textures?.get(v.baseColorTexture) ?? red.map)
+          : red.map;
+      const emissive =
+        blu && v.emissiveTexture !== undefined
+          ? (textures?.get(v.emissiveTexture) ?? red.emissiveMap)
+          : red.emissiveMap;
+      const painted =
+        std.userData.originalMap !== undefined && std.map !== std.userData.originalMap;
+      if (std.userData.originalMap !== undefined) std.userData.originalMap = map;
+      if (!painted && std.map !== map) {
+        std.map = map;
+        std.needsUpdate = true;
+      }
+      if (std.emissiveMap !== emissive) {
+        std.emissiveMap = emissive;
+        std.needsUpdate = true;
+      }
+      if (blu && v.baseColor?.length === 3)
+        std.color.setRGB(v.baseColor[0], v.baseColor[1], v.baseColor[2]);
+      else std.color.copy(red.color);
+      std.userData.tintDefault = blu && v.tintDefault ? v.tintDefault : red.tintDefault;
+      std.userData.tintReplace =
+        blu && v.tintReplace !== undefined ? v.tintReplace : red.tintReplace;
+    }
   });
 }
 

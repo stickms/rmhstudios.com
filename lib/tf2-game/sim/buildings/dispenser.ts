@@ -56,7 +56,7 @@ const sEye = vec3();
 const sCenter = vec3();
 
 /** The dispenser's touch trigger (dispenser_touch_trigger): a box the world links players to. */
-class DispenserTouchTrigger implements TouchVolume {
+export class DispenserTouchTrigger implements TouchVolume {
   readonly id: number;
   removed = false;
   readonly center = vec3();

@@ -68,6 +68,11 @@ export class GameLoop {
   frames = 0;
   /** Times the loop was paused because the page was hidden. */
   pauses = 0;
+  /**
+   * `fps_max` (the developer console): frames closer together than 1000 / maxFps ms are skipped (the
+   * next one runs with the whole elapsed time). 0 = every display frame.
+   */
+  maxFps = 0;
 
   constructor(
     private readonly onFrame: (f: FrameInfo) => void,
@@ -119,6 +124,11 @@ export class GameLoop {
       return;
     }
     const now = this.host.now();
+    // fps_max: too soon after the last frame — wait for the next display frame (a 1 ms tolerance for rAF jitter).
+    if (this.maxFps > 0 && this.last >= 0 && now - this.last < 1000 / this.maxFps - 1) {
+      this.schedule();
+      return;
+    }
     const rawMs = this.last < 0 ? 0 : now - this.last;
     const dt = this.last < 0 ? 0 : Math.min(MAX_FRAME_DT, Math.max(0, rawMs / 1000));
     this.last = now;

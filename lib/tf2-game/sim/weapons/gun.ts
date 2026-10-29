@@ -19,7 +19,11 @@ import { TF_RELOAD_START, type WeaponSpec } from '../weapon-api';
 import { ACT, TF_WEAPON_PRIMARY_MODE } from './constants';
 import { removeDisguise, removeInvisibility } from './spy-state';
 import { TFWeapon } from './tf-weapon';
-import { hookWeapon } from '../items/attributes';
+import { hookInt, hookWeapon } from '../items/attributes';
+import { onAttack } from '../items/effects';
+import { TF_COND } from '../conditions';
+import { PROJECTILE_TYPES, type ProjectileType } from '../../data/weapons';
+import { remapClamped } from '../../core/vec';
 
 const scratchEye = vec3();
 const scratchAngles = vec3();
@@ -91,7 +95,7 @@ export class TFWeaponGun extends TFWeapon {
     if (this.usesClip() && this.clip <= 0) return;
     if (this.nextPrimaryAttack > t) return;
     if (!this.canAttack()) return;
-    const delay = this.stats.fireDelay;
+    const delay = this.fireDelay();
     this.calcIsAttackCritical(cmd);
     removeInvisibility(o);
     this.weaponMode = TF_WEAPON_PRIMARY_MODE;
@@ -100,14 +104,43 @@ export class TFWeaponGun extends TFWeapon {
     this.nextPrimaryAttack = t + delay;
     this.timeWeaponIdle = t + Math.max(delay, this.idleTime());
     if (this.stats.reloadsSingly) this.reloadMode = TF_RELOAD_START;
-    removeDisguise(o);
+    if (this.shouldRemoveDisguiseOnPrimaryAttack()) removeDisguise(o);
+    onAttack(o);
+  }
+
+  /**
+   * SDK: CTFWeaponBaseGun::PrimaryAttack's refire time — ApplyFireDelay (folded into the stats),
+   * mult_postfiredelay_with_reduced_health, and rocketjump_attackrate_bonus while blast jumping
+   * (the Air Strike) / mul_nonrocketjump_attackrate otherwise.
+   */
+  fireDelay(): number {
+    const o = this.owner;
+    let delay = this.stats.fireDelay;
+    if (!o) return delay;
+    const reduced = hookWeapon(this, o, 'mult_postfiredelay_with_reduced_health', 1);
+    if (reduced !== 1) delay *= remapClamped(o.health / Math.max(1, o.maxHealth), 0.2, 0.9, reduced, 1);
+    if (o.cond.has(TF_COND.BLASTJUMPING)) delay = hookWeapon(this, o, 'rocketjump_attackrate_bonus', delay);
+    else delay = hookWeapon(this, o, 'mul_nonrocketjump_attackrate', delay);
+    return delay;
+  }
+
+  /** SDK: CTFWeaponBaseGun::ShouldRemoveDisguiseOnPrimaryAttack (keep_disguise_on_attack). */
+  shouldRemoveDisguiseOnPrimaryAttack(): boolean {
+    return hookInt(hookWeapon(this, this.owner, 'keep_disguise_on_attack', 0)) === 0;
+  }
+
+  /** The projectile this weapon fires (override_projectile_type, else the script's). */
+  projectileType(): ProjectileType {
+    const over = hookInt(hookWeapon(this, this.owner, 'override_projectile_type', 0));
+    if (over > 0 && over < PROJECTILE_TYPES.length) return PROJECTILE_TYPES[over];
+    return this.script.primary.projectile;
   }
 
   /** SDK: CTFWeaponBaseGun::FireProjectile. */
   fireProjectile(cmd: UserCmd): Entity | null {
     const o = this.owner!;
     let proj: Entity | null = null;
-    switch (this.script.primary.projectile) {
+    switch (this.projectileType()) {
       case 'projectile_bullet':
         this.fireBullet(cmd);
         break;
@@ -119,7 +152,34 @@ export class TFWeaponGun extends TFWeapon {
         break;
       case 'projectile_pipe':
       case 'projectile_pipe_remote':
+      case 'projectile_pipe_remote_practice':
+      case 'projectile_cannonball':
         proj = this.firePipeBomb(cmd);
+        break;
+      case 'projectile_flare':
+        proj = this.fireFlare(cmd);
+        break;
+      case 'projectile_jar':
+      case 'projectile_jar_milk':
+      case 'projectile_cleaver':
+      case 'projectile_festive_urine':
+      case 'projectfile_breadmonster_jarate':
+      case 'projectfile_breadmonster_madmilk':
+      case 'projectile_jar_gas':
+        proj = this.fireJar(cmd);
+        break;
+      case 'projectile_arrow':
+      case 'projectile_healing_bolt':
+      case 'projectile_building_repair_bolt':
+      case 'projectile_festive_arrow':
+      case 'projectile_festive_healing_bolt':
+        proj = this.fireArrow(cmd);
+        break;
+      case 'projectile_energy_ball':
+        proj = this.fireEnergyBall(cmd, false);
+        break;
+      case 'projectile_energy_ring':
+        proj = this.fireEnergyBall(cmd, true);
         break;
       default:
         break;
@@ -132,9 +192,136 @@ export class TFWeaponGun extends TFWeapon {
     return proj;
   }
 
-  /** SDK: CTFWeaponBaseGun::RemoveProjectileAmmo. */
+  /** SDK: CTFWeaponBaseGun::RemoveProjectileAmmo (+ the delayed add_onhit_addammo). */
   removeProjectileAmmo(): void {
     this.consumeAmmo(this.stats.ammoPerShot);
+    if (this.ammoToAdd > 0 && this.owner && !this.usesClip()) {
+      this.owner.giveAmmo(this.ammoToAdd, this.stats.ammoType);
+      this.ammoToAdd = 0;
+    }
+  }
+
+  /** m_iAmmoToAdd (add_onhit_addammo, the Widowmaker): given back with the next shot. */
+  ammoToAdd = 0;
+
+  /** SDK: CTFWeaponBaseGun::FireJar — the jars toss from their own think (CTFJar::FireJar). */
+  fireJar(_cmd: UserCmd): Entity | null {
+    return null;
+  }
+
+  /** Arrow speed / gravity / type (CTFWeaponBaseGun::GetProjectileSpeed / GetProjectileGravity). */
+  arrowSpeed(): number {
+    return hookWeapon(this, this.owner, 'mult_projectile_speed', this.script.primary.projectileSpeed || 2400);
+  }
+
+  arrowGravity(): number {
+    return 0.2;
+  }
+
+  arrowExtra(): Record<string, number | string | boolean> {
+    return {};
+  }
+
+  /** SDK: CTFWeaponBaseGun::FireArrow — from (23.5, −8, −3) at the crosshair (teammates not traced). */
+  fireArrow(_cmd: UserCmd): Entity | null {
+    const o = this.owner!;
+    this.playShootSound();
+    projectileFireSetup(o, 23.5, -8, -3, scratchSrc, scratchAngles, false);
+    this.adjustArrowAngles(scratchAngles);
+    angleVectors(scratchAngles, scratchFwd);
+    const speed = this.arrowSpeed();
+    set(scratchVel, scratchFwd.x * speed, scratchFwd.y * speed, scratchFwd.z * speed);
+    const type = PROJECTILE_TYPES.indexOf(this.projectileType());
+    const healing = type === 11 || type === 23;
+    return o.world.spawnProjectile(healing ? 'tf_projectile_healing_bolt' : 'tf_projectile_arrow', {
+      origin: scratchSrc,
+      angles: scratchAngles,
+      velocity: scratchVel,
+      owner: o,
+      weapon: this,
+      damage: this.projectileDamage(),
+      critType: this.currentAttackIsCrit ? 2 : 0,
+      extra: {
+        arrowType: type,
+        gravity: this.arrowGravity(),
+        penetrate: hookInt(hookWeapon(this, o, 'projectile_penetration', 0)) === 1,
+        ...this.arrowExtra(),
+      },
+    });
+  }
+
+  /** A hook for the Huntsman's wild over-held shot (CTFCompoundBow::GetProjectileFireSetup). */
+  adjustArrowAngles(_angles: Vec3): void {}
+
+  /** SDK: CTFWeaponBaseGun::FireFlare — from (23.5, 12, −3) (8 up while ducking). */
+  fireFlare(_cmd: UserCmd): Entity | null {
+    const o = this.owner!;
+    this.playShootSound();
+    const w = o.world;
+    if (!w.isServer) return null;
+    projectileFireSetup(o, 23.5, 12, o.move.flags & FL_DUCKING ? 8 : -3, scratchSrc, scratchAngles, false);
+    angleVectors(scratchAngles, scratchFwd);
+    const speed = this.flareSpeed();
+    set(scratchVel, scratchFwd.x * speed, scratchFwd.y * speed, scratchFwd.z * speed);
+    const proj = w.spawnProjectile('tf_projectile_flare', {
+      origin: scratchSrc,
+      angles: scratchAngles,
+      velocity: scratchVel,
+      owner: o,
+      weapon: this,
+      damage: this.projectileDamage(),
+      critType: this.currentAttackIsCrit ? 2 : 0,
+      extra: this.flareExtra(),
+    });
+    if (proj) this.onFlareFired(proj);
+    return proj;
+  }
+
+  /** CTFProjectile_Flare::Create: 2000 × mult_projectile_speed. */
+  flareSpeed(): number {
+    return hookWeapon(this, this.owner, 'mult_projectile_speed', 2000);
+  }
+
+  onFlareFired(_flare: Entity): void {}
+
+  /** Extra flare spawn fields (the flare gun's gravity, type and afterburn). */
+  flareExtra(): Record<string, number | string | boolean> {
+    return {};
+  }
+
+  /** SDK: CTFWeaponBaseGun::FireEnergyBall — from (23.5, −8, −3) (8 up while ducking), traced back to the eye. */
+  fireEnergyBall(_cmd: UserCmd, ring: boolean): Entity | null {
+    const o = this.owner!;
+    this.playShootSound();
+    const w = o.world;
+    projectileFireSetup(o, 23.5, -8, o.move.flags & FL_DUCKING ? 8 : -3, scratchSrc, scratchAngles, false);
+    this.adjustEnergySource(scratchSrc);
+    o.eyePosition(scratchEye);
+    w.traceLine(scratchEye, scratchSrc, MASK_SOLID_BRUSHONLY, w.entityFilter(o, COLLISION_GROUP_NONE), backTrace);
+    angleVectors(scratchAngles, scratchFwd);
+    const speed = this.energySpeed();
+    set(scratchVel, scratchFwd.x * speed, scratchFwd.y * speed, scratchFwd.z * speed);
+    return w.spawnProjectile(ring ? 'tf_projectile_energy_ring' : 'tf_projectile_energy_ball', {
+      origin: backTrace.endPos,
+      angles: scratchAngles,
+      velocity: scratchVel,
+      owner: o,
+      weapon: this,
+      damage: this.projectileDamage(),
+      critType: this.currentAttackIsCrit ? 2 : 0,
+      extra: this.energyExtra(),
+    });
+  }
+
+  /** The Pomson's GetProjectileFireSetup lowers the launch point to its muzzle. */
+  adjustEnergySource(_src: Vec3): void {}
+
+  energySpeed(): number {
+    return hookWeapon(this, this.owner, 'mult_projectile_speed', 1100);
+  }
+
+  energyExtra(): Record<string, number | string | boolean> {
+    return {};
   }
 
   /** SDK: CTFWeaponBaseGun::PlayWeaponShootSound. */
@@ -247,7 +434,8 @@ export class TFWeaponGun extends TFWeapon {
 
   /** The projectile classname FirePipeBomb creates. */
   pipeClassname(): string {
-    return this.script.primary.projectile === 'projectile_pipe_remote' ? 'tf_projectile_pipe_remote' : 'tf_projectile_pipe';
+    const t = this.projectileType();
+    return t === 'projectile_pipe_remote' || t === 'projectile_pipe_remote_practice' ? 'tf_projectile_pipe_remote' : 'tf_projectile_pipe';
   }
 
   /**
@@ -293,8 +481,18 @@ export class TFWeaponGun extends TFWeapon {
       damage: this.projectileDamage(),
       critType: this.currentAttackIsCrit ? 2 : 0,
       // CTFWeaponBaseGrenadeProj::GetDamageRadius: the script radius × mult_explosion_radius.
-      extra: { radius: hookWeapon(this, o, 'mult_explosion_radius', this.script.damageRadius), spinX: GRENADE_LAUNCHER.spinX, spinY },
+      extra: {
+        radius: hookWeapon(this, o, 'mult_explosion_radius', this.script.damageRadius),
+        spinX: GRENADE_LAUNCHER.spinX,
+        spinY,
+        ...this.pipeExtra(),
+      },
     });
+  }
+
+  /** Extra pipe spawn fields (the Loose Cannon's fuse, the Iron Bomber's bounce). */
+  pipeExtra(): Record<string, number | string | boolean> {
+    return {};
   }
 
   /** SDK: CTFWeaponBaseGun::DoFireEffects → CTFPlayer::DoMuzzleFlash. */

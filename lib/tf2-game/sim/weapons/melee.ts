@@ -17,7 +17,7 @@
 
 import { MASK_SOLID, TF_CLASS_DEMOMAN, TF_CLASS_SPY } from '../../core/constants';
 import { emptyTrace, type TraceResult, type UserCmd } from '../../core/types';
-import { angleVectors, set, vec3, type Vec3 } from '../../core/vec';
+import { angleVectors, remapClamped, set, vec3, type Vec3 } from '../../core/vec';
 import { KNIFE, MELEE, WRENCH } from '../../data/weapons';
 import {
   createDamageInfo,
@@ -36,6 +36,8 @@ import type { WeaponSpec } from '../weapon-api';
 import { ACT, DEFAULT_SECONDARY_DELAY, DEMOMAN_SECONDARY_DELAY, TF_WEAPON_PRIMARY_MODE, TF_WEAPON_SECONDARY_MODE, WRENCH_BUILDING_RANGE } from './constants';
 import { removeDisguise, removeInvisibility, spyState } from './spy-state';
 import { num, TFWeapon } from './tf-weapon';
+import { endClassSpecialSkill, MELEE_CRIT, MELEE_MINICRIT, MELEE_NOCRIT, onAttack } from '../items/effects';
+import { hookInt, hookWeapon } from '../items/attributes';
 
 const SWING_MINS: Vec3 = { x: -MELEE.hullHalfExtent, y: -MELEE.hullHalfExtent, z: -MELEE.hullHalfExtent };
 const SWING_MAXS: Vec3 = { x: MELEE.hullHalfExtent, y: MELEE.hullHalfExtent, z: MELEE.hullHalfExtent };
@@ -67,9 +69,22 @@ export class TFWeaponMelee extends TFWeapon {
     return this.attributes.apply('is_a_sword', 0) !== 0 ? MELEE.swordRange : MELEE.range;
   }
 
+  /** SDK: CTFWeaponBaseMelee::CalcIsAttackCriticalHelper — a shield charge's full crit comes first. */
   override calcIsAttackCriticalHelper(cmd: UserCmd): boolean {
+    const o = this.owner;
+    if (o && this.canFireCriticalShot() && !o.cond.critBoosted && o.unlock.nextMeleeCrit === MELEE_CRIT) return true;
     return this.calcMeleeCrit(cmd);
   }
+
+  /** SDK: CTFWeaponBaseMelee::CalcIsAttackCriticalHelperNoCrits. */
+  override calcIsAttackCriticalHelperNoCrits(): boolean {
+    const o = this.owner;
+    if (o && o.unlock.nextMeleeCrit === MELEE_CRIT) return true;
+    return super.calcIsAttackCriticalHelperNoCrits();
+  }
+
+  /** m_bMiniCrit: the swing after a shield charge that ran 25…60 % of the meter mini-crits. */
+  miniCrit = false;
 
   /** SDK: CTFWeaponBaseMelee::PrimaryAttack. */
   override primaryAttack(cmd: UserCmd): void {
@@ -77,8 +92,11 @@ export class TFWeaponMelee extends TFWeapon {
     if (!o || !this.canAttack()) return;
     this.weaponMode = TF_WEAPON_PRIMARY_MODE;
     this.connected = false;
+    endClassSpecialSkill(o);
     this.swing(cmd);
+    this.miniCrit = o.unlock.nextMeleeCrit === MELEE_MINICRIT;
     removeInvisibility(o);
+    onAttack(o);
   }
 
   /** SDK: CTFWeaponBaseMelee::SecondaryAttack — the class skill (Demomen cycle fast). */
@@ -132,6 +150,10 @@ export class TFWeaponMelee extends TFWeapon {
 
   override holster(next: Parameters<TFWeapon['holster']>[0]): boolean {
     this.smackTime = -1;
+    // CTFWeaponBaseMelee::Holster: the charge crit is lost, and the self mark renewed.
+    const o = this.owner;
+    if (o) o.unlock.nextMeleeCrit = MELEE_NOCRIT;
+    this.selfMark();
     return super.holster(next);
   }
 
@@ -173,9 +195,44 @@ export class TFWeaponMelee extends TFWeapon {
     return hitEnemy;
   }
 
-  /** SDK: CTFWeaponBaseMelee::GetMeleeDamage (the script damage; knives override). */
+  /** SDK: CTFWeaponBaseMelee::GetMeleeDamage (the script damage; knives override) and CTFShovel's. */
   meleeDamage(_target: Entity, _custom: { value: number }): number {
+    const o = this.owner;
+    // CTFShovel::GetMeleeDamage: the Equalizer (SHOVEL_DAMAGE_BOOST) hits harder the more hurt its owner is.
+    if (o && this.shovelType() === SHOVEL_DAMAGE_BOOST) {
+      return this.stats.damage * remapClamped(o.health / Math.max(1, o.maxHealth), 0, 1, 1.65, 0.5);
+    }
     return this.stats.damage;
+  }
+
+  /** CTFShovel::GetShovelType (set_weapon_mode on a shovel: 1 the Equalizer, 2 the Escape Plan). */
+  shovelType(): number {
+    return this.weaponId === TF_WEAPON_SHOVEL ? hookInt(hookWeapon(this, this.owner, 'set_weapon_mode', 0)) : 0;
+  }
+
+  /** SDK: CTFShovel::GetSpeedMod — the Escape Plan runs faster as its owner's health falls. */
+  override speedMod(): number {
+    const o = this.owner;
+    if (!o || this.shovelType() !== SHOVEL_SPEED_BOOST) return super.speedMod();
+    const ratio = o.health / Math.max(1, o.maxHealth);
+    if (ratio > 0.8) return 1;
+    if (ratio > 0.6) return 1.1;
+    if (ratio > 0.4) return 1.2;
+    if (ratio > 0.2) return 1.4;
+    return 1.6;
+  }
+
+  /** CTFWeaponBaseMelee::ItemPreFrame / Holster: self_mark_for_death (the Escape Plan) marks the wielder. */
+  private selfMark(): void {
+    const o = this.owner;
+    if (!o) return;
+    const mark = hookInt(hookWeapon(this, o, 'self_mark_for_death', 0));
+    if (mark) o.cond.add(TF_COND.MARKEDFORDEATH_SILENT, mark);
+  }
+
+  override itemPostFrame(cmd: UserCmd): void {
+    this.selfMark();
+    super.itemPostFrame(cmd);
   }
 
   /** SDK: CTFWeaponBaseMelee::DoMeleeDamage. */
@@ -194,7 +251,8 @@ export class TFWeaponMelee extends TFWeapon {
       info.killIcon = this.killIcon;
       info.damage = damage;
       info.damageType = MELEE_DAMAGE_TYPE | (this.currentAttackIsCrit ? DMG_CRITICAL : 0);
-      info.critType = this.currentAttackIsCrit ? 2 : 0;
+      // A charge's mini-crit (the SDK marks it DMG_RADIUS_MAX for ApplyOnDamageModifyRules).
+      info.critType = this.currentAttackIsCrit ? 2 : this.miniCrit ? 1 : 0;
       info.customKill = custom.value;
       info.hitGroup = tr.hitGroup;
       info.position.x = tr.endPos.x;
@@ -223,7 +281,7 @@ export class TFWeaponMelee extends TFWeapon {
 
   protected override writeWeaponNet(out: NetRecord): void {
     out.aux0 = this.smackTime;
-    out.aux1 = (this.currentAttackIsCrit ? 1 : 0) | (this.connected ? 2 : 0) | (this.weaponMode ? 4 : 0);
+    out.aux1 = (this.currentAttackIsCrit ? 1 : 0) | (this.connected ? 2 : 0) | (this.weaponMode ? 4 : 0) | (this.miniCrit ? 8 : 0);
   }
 
   protected override readWeaponNet(rec: NetRecord): void {
@@ -232,10 +290,15 @@ export class TFWeaponMelee extends TFWeapon {
     this.currentAttackIsCrit = (f & 1) !== 0;
     this.connected = (f & 2) !== 0;
     this.weaponMode = f & 4 ? TF_WEAPON_SECONDARY_MODE : TF_WEAPON_PRIMARY_MODE;
+    this.miniCrit = (f & 8) !== 0;
   }
 }
 
 const customKillBox = { value: 0 };
+/** ShovelType_t (tf_weapon_shovel.h) and TF_WEAPON_SHOVEL. */
+const SHOVEL_DAMAGE_BOOST = 1;
+const SHOVEL_SPEED_BOOST = 2;
+const TF_WEAPON_SHOVEL = 9;
 
 /** Bat, Shovel, Fire Axe, Kukri, Bonesaw. */
 export class MeleeWeapon extends TFWeaponMelee {}

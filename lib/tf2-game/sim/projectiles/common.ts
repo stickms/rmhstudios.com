@@ -23,6 +23,14 @@ export const PROJECTILE_KIND = {
   PIPE: 2,
   STICKY: 3,
   SYRINGE: 4,
+  ARROW: 5,
+  FLARE: 6,
+  JAR: 7,
+  CLEAVER: 8,
+  CANNONBALL: 9,
+  ENERGY_BALL: 10,
+  ENERGY_RING: 11,
+  FIREBALL: 12,
 } as const;
 
 export const ROCKET_MODEL = 'models/weapons/w_models/w_rocket.mdl';

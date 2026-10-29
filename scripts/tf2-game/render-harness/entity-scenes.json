@@ -2543,6 +2543,1440 @@
      "advance": 0.06
     }
    ]
+  },
+  {
+   "name": "loadout-teams",
+   "view": {
+    "origin": [
+     1430,
+     1400,
+     350
+    ],
+    "angles": [
+     8,
+     180,
+     0
+    ],
+    "fov": 50
+   },
+   "entities": [
+    {
+     "id": 1,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1150,
+      "oy": 1290,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 18,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P18/S10/M6/C712/C1025"
+     },
+     "ground": true
+    },
+    {
+     "id": 2,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1150,
+      "oy": 1350,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 18,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P18/S10/M6/C712/C1025"
+     },
+     "ground": true
+    },
+    {
+     "id": 3,
+     "type": "player",
+     "fields": {
+      "cls": 6,
+      "team": 2,
+      "ox": 1150,
+      "oy": 1430,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 15,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P15/S11/M5/C756"
+     },
+     "ground": true
+    },
+    {
+     "id": 4,
+     "type": "player",
+     "fields": {
+      "cls": 6,
+      "team": 3,
+      "ox": 1150,
+      "oy": 1510,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 15,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P15/S11/M5/C756"
+     },
+     "ground": true
+    }
+   ],
+   "script": [
+    {
+     "advance": 0.5
+    }
+   ]
+  },
+  {
+   "name": "loadout-killstreak",
+   "view": {
+    "origin": [
+     1290,
+     1335,
+     322
+    ],
+    "angles": [
+     2,
+     180,
+     0
+    ],
+    "fov": 50
+   },
+   "entities": [
+    {
+     "id": 1,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1150,
+      "oy": 1300,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 228,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P228e701x6.2006/S10/M6"
+     },
+     "ground": true
+    },
+    {
+     "id": 2,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1150,
+      "oy": 1370,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 18,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P18e701x1.2002/S10/M6"
+     },
+     "ground": true
+    }
+   ],
+   "script": [
+    {
+     "advance": 0.3
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 60,
+      "attacker": 1,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 61,
+      "attacker": 2,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 62,
+      "attacker": 1,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 63,
+      "attacker": 2,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 64,
+      "attacker": 1,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 65,
+      "attacker": 2,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 66,
+      "attacker": 1,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 67,
+      "attacker": 2,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 68,
+      "attacker": 1,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 69,
+      "attacker": 2,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "advance": 0.05
+    },
+    {
+     "wait": true
+    },
+    {
+     "advance": 1.0
+    }
+   ]
+  },
+  {
+   "name": "loadout-killstreak-sheen",
+   "view": {
+    "origin": [
+     1225,
+     1290,
+     318
+    ],
+    "angles": [
+     4,
+     180,
+     0
+    ],
+    "fov": 45
+   },
+   "entities": [
+    {
+     "id": 1,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1150,
+      "oy": 1300,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 228,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P228e701x6.2006/S10/M6"
+     },
+     "ground": true
+    }
+   ],
+   "script": [
+    {
+     "advance": 0.3
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 60,
+      "attacker": 1,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 61,
+      "attacker": 2,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 62,
+      "attacker": 1,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 63,
+      "attacker": 2,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 64,
+      "attacker": 1,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 65,
+      "attacker": 2,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 66,
+      "attacker": 1,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 67,
+      "attacker": 2,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 68,
+      "attacker": 1,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "event": {
+      "type": "death",
+      "victim": 69,
+      "attacker": 2,
+      "assister": 0,
+      "inflictor": 0,
+      "weapon": "",
+      "weaponDefIndex": 0,
+      "crit": 0,
+      "customKill": 0,
+      "damageType": 0,
+      "deathFlags": 0,
+      "victimClass": 1,
+      "gib": false,
+      "burning": false
+     }
+    },
+    {
+     "advance": 0.05
+    },
+    {
+     "wait": true
+    },
+    {
+     "advance": 0.62
+    }
+   ]
+  },
+  {
+   "name": "loadout-vm-blackbox-unusual",
+   "view": {
+    "origin": [
+     1420,
+     1440,
+     340
+    ],
+    "angles": [
+     0,
+     180,
+     0
+    ],
+    "fov": 90
+   },
+   "vm": {
+    "cls": 3,
+    "team": 2,
+    "defindex": 228,
+    "vmActivity": 0,
+    "vmActivitySeq": 1,
+    "eyeOrigin": {
+     "x": 1420,
+     "y": 1440,
+     "z": 340
+    },
+    "eyeAngles": {
+     "x": 0,
+     "y": 180,
+     "z": 0
+    },
+    "velocity": {
+     "x": 0,
+     "y": 0,
+     "z": 0
+    },
+    "visible": true,
+    "item": {
+     "item": 228,
+     "effect": 701,
+     "sheen": 6,
+     "streaker": 2006
+    }
+   },
+   "script": [
+    {
+     "advance": 1.0
+    }
+   ]
+  },
+  {
+   "name": "loadout-boots",
+   "view": {
+    "origin": [
+     1300,
+     1340,
+     300
+    ],
+    "angles": [
+     16,
+     180,
+     0
+    ],
+    "fov": 55
+   },
+   "entities": [
+    {
+     "id": 1,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1150,
+      "oy": 1300,
+      "oz": 300,
+      "yaw": 90,
+      "eyeYaw": 90,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 18,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 240,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P18/S444w/M6"
+     },
+     "ground": true
+    },
+    {
+     "id": 2,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1150,
+      "oy": 1380,
+      "oz": 300,
+      "yaw": 90,
+      "eyeYaw": 90,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 18,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 240,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P18/S133w/M6"
+     },
+     "ground": true
+    }
+   ],
+   "script": [
+    {
+     "advance": 0.43
+    }
+   ]
+  },
+  {
+   "name": "loadout-crowd",
+   "view": {
+    "origin": [
+     1420,
+     1450,
+     380
+    ],
+    "angles": [
+     12,
+     180,
+     0
+    ],
+    "fov": 75
+   },
+   "entities": [
+    {
+     "id": 1,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1000,
+      "oy": 1260,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 127,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P127/S133w/M6/C183p5046/C446/C712"
+     },
+     "ground": true
+    },
+    {
+     "id": 2,
+     "type": "player",
+     "fields": {
+      "cls": 6,
+      "team": 2,
+      "ox": 1055,
+      "oy": 1260,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 41,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P41/S11/M5/C942/C756"
+     },
+     "ground": true
+    },
+    {
+     "id": 3,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1110,
+      "oy": 1260,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 228,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P228x6/S10/M6/C1025/C30769/C30085"
+     },
+     "ground": true
+    },
+    {
+     "id": 4,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1165,
+      "oy": 1260,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 127,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P127/S133w/M6/C183p5046/C446/C712"
+     },
+     "ground": true
+    },
+    {
+     "id": 5,
+     "type": "player",
+     "fields": {
+      "cls": 6,
+      "team": 2,
+      "ox": 1220,
+      "oy": 1260,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 41,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P41/S11/M5/C942/C756"
+     },
+     "ground": true
+    },
+    {
+     "id": 6,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1275,
+      "oy": 1260,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 228,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P228x6/S10/M6/C1025/C30769/C30085"
+     },
+     "ground": true
+    },
+    {
+     "id": 7,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1000,
+      "oy": 1335,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 127,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P127/S133w/M6/C183p5046/C446/C712"
+     },
+     "ground": true
+    },
+    {
+     "id": 8,
+     "type": "player",
+     "fields": {
+      "cls": 6,
+      "team": 2,
+      "ox": 1055,
+      "oy": 1335,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 41,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P41/S11/M5/C942/C756"
+     },
+     "ground": true
+    },
+    {
+     "id": 9,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1110,
+      "oy": 1335,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 228,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P228x6/S10/M6/C1025/C30769/C30085"
+     },
+     "ground": true
+    },
+    {
+     "id": 10,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1165,
+      "oy": 1335,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 127,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P127/S133w/M6/C183p5046/C446/C712"
+     },
+     "ground": true
+    },
+    {
+     "id": 11,
+     "type": "player",
+     "fields": {
+      "cls": 6,
+      "team": 2,
+      "ox": 1220,
+      "oy": 1335,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 41,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P41/S11/M5/C942/C756"
+     },
+     "ground": true
+    },
+    {
+     "id": 12,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 2,
+      "ox": 1275,
+      "oy": 1335,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 228,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P228x6/S10/M6/C1025/C30769/C30085"
+     },
+     "ground": true
+    },
+    {
+     "id": 13,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1000,
+      "oy": 1410,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 127,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P127/S133w/M6/C183p5046/C446/C712"
+     },
+     "ground": true
+    },
+    {
+     "id": 14,
+     "type": "player",
+     "fields": {
+      "cls": 6,
+      "team": 3,
+      "ox": 1055,
+      "oy": 1410,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 41,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P41/S11/M5/C942/C756"
+     },
+     "ground": true
+    },
+    {
+     "id": 15,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1110,
+      "oy": 1410,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 228,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P228x6/S10/M6/C1025/C30769/C30085"
+     },
+     "ground": true
+    },
+    {
+     "id": 16,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1165,
+      "oy": 1410,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 127,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P127/S133w/M6/C183p5046/C446/C712"
+     },
+     "ground": true
+    },
+    {
+     "id": 17,
+     "type": "player",
+     "fields": {
+      "cls": 6,
+      "team": 3,
+      "ox": 1220,
+      "oy": 1410,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 41,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P41/S11/M5/C942/C756"
+     },
+     "ground": true
+    },
+    {
+     "id": 18,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1275,
+      "oy": 1410,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 228,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P228x6/S10/M6/C1025/C30769/C30085"
+     },
+     "ground": true
+    },
+    {
+     "id": 19,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1000,
+      "oy": 1485,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 127,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P127/S133w/M6/C183p5046/C446/C712"
+     },
+     "ground": true
+    },
+    {
+     "id": 20,
+     "type": "player",
+     "fields": {
+      "cls": 6,
+      "team": 3,
+      "ox": 1055,
+      "oy": 1485,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 41,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P41/S11/M5/C942/C756"
+     },
+     "ground": true
+    },
+    {
+     "id": 21,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1110,
+      "oy": 1485,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 228,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P228x6/S10/M6/C1025/C30769/C30085"
+     },
+     "ground": true
+    },
+    {
+     "id": 22,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1165,
+      "oy": 1485,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 127,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P127/S133w/M6/C183p5046/C446/C712"
+     },
+     "ground": true
+    },
+    {
+     "id": 23,
+     "type": "player",
+     "fields": {
+      "cls": 6,
+      "team": 3,
+      "ox": 1220,
+      "oy": 1485,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 41,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P41/S11/M5/C942/C756"
+     },
+     "ground": true
+    },
+    {
+     "id": 24,
+     "type": "player",
+     "fields": {
+      "cls": 3,
+      "team": 3,
+      "ox": 1275,
+      "oy": 1485,
+      "oz": 300,
+      "yaw": 0,
+      "eyeYaw": 0,
+      "eyePitch": 0,
+      "lifeState": 0,
+      "onGround": true,
+      "activeWeapon": 228,
+      "activeSlot": 0,
+      "vx": 0,
+      "vy": 0,
+      "vz": 0,
+      "health": 125,
+      "maxHealth": 125,
+      "animEvent": 0,
+      "animEventSeq": 0,
+      "items": "P228x6/S10/M6/C1025/C30769/C30085"
+     },
+     "ground": true
+    }
+   ],
+   "script": [
+    {
+     "advance": 0.5
+    }
+   ]
   }
  ],
  "hl2/d1_trainstation_02": [

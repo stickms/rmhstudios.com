@@ -11,6 +11,9 @@
  *  - `fonts`: a HUD that ships its own font file (registered through
  *    `CustomFontFiles`), sets the ammo in it, hides the class portrait and
  *    pins the reserve count to the clip with `pin_to_sibling`.
+ *  - `menus`: a HUD that restyles the menus TF2 lets a HUD restyle — the
+ *    scoreboard, team and class select, the spectator GUI — and moves the
+ *    freeze cam's killer health (a file loaded into the card at run time).
  */
 
 import { kvSet } from '@/lib/tf2-hud/kv/edit';
@@ -24,7 +27,7 @@ export interface SampleEdit {
 }
 
 export interface SampleHud {
-  id: 'moved' | 'fonts';
+  id: 'moved' | 'fonts' | 'menus';
   name: string;
   edits: SampleEdit[];
   /** Binary files the HUD adds: published path → where the bytes come from (a public URL path). */
@@ -109,6 +112,54 @@ export const SAMPLE_HUDS: readonly SampleHud[] = [
       },
     ],
     binaries: { 'resource/fonts/rmhsample.ttf': '/tf2-hud/fonts/tf2professor.ttf' },
+  },
+  {
+    id: 'menus',
+    name: 'Sample: menus',
+    edits: [
+      {
+        path: 'resource/ui/scoreboard.res',
+        set: [
+          [['scores', 'ypos'], '16'],
+          [['BluePlayerList', 'ypos'], '80'],
+          [['RedPlayerList', 'ypos'], '80'],
+          [['BlueTeamScore', 'fgcolor'], '120 200 255 255'],
+          [['RedTeamScore', 'fgcolor'], '255 140 120 255'],
+          [['mapname', 'fgcolor'], '255 200 60 255'],
+        ],
+      },
+      {
+        path: 'resource/ui/teammenu.res',
+        set: [
+          [['teambutton0', 'xpos'], 'c-80'],
+          [['teambutton1', 'xpos'], 'c190'],
+          [['BlueCount', 'fgcolor'], '255 255 255 255'],
+          [['RedCount', 'fgcolor'], '255 255 255 255'],
+        ],
+      },
+      {
+        path: 'resource/ui/classselection.res',
+        set: [
+          [['scout', 'ypos'], '30'],
+          [['numScout', 'ypos'], '40'],
+          [['CountLabel', 'fgcolor'], '255 200 60 255'],
+        ],
+      },
+      {
+        path: 'resource/ui/spectator.res',
+        set: [
+          [['MapLabel', 'fgcolor'], '255 200 60 255'],
+          [['ReinforcementsLabel', 'ypos'], '40'],
+        ],
+      },
+      {
+        path: 'resource/ui/freezepanel_basic.res',
+        set: [
+          [['FreezePanelBase', 'FreezePanelHealth', 'xpos'], '200'],
+          [['FreezePanelBase', 'FreezePanelHealth', 'ypos'], '120'],
+        ],
+      },
+    ],
   },
 ];
 

@@ -34,6 +34,8 @@ export const entrySchema = z.object({
   wear: z.number().int().min(1).max(5).optional(),
   seed: z.number().int().min(0).max(MAX_SEED).optional(),
   festive: z.boolean().optional(),
+  sheen: z.number().int().min(1).max(7).optional(),
+  streaker: z.number().int().min(2002).max(2008).optional(),
 });
 
 export const slotsSchema = z

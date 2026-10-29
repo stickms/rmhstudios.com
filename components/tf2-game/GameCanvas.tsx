@@ -37,6 +37,8 @@ import {
 } from '@/lib/tf2-game/client/game-client';
 import { cn } from '@/lib/utils';
 import GameHud from './GameHud';
+import P2pHostPlayers from './P2pHostPlayers';
+import type { TouchAction } from './touch/TouchOverlay';
 import './play.css';
 
 export interface GameCanvasProps {
@@ -54,14 +56,17 @@ export interface GameCanvasProps {
 
 const subscribeNoop = () => () => {};
 
-function useOrientationPortrait(): boolean {
+/** A phone held upright (a tablet in portrait is wide enough to play: no rotate hint there). */
+const PHONE_PORTRAIT = '(orientation: portrait) and (max-width: 600px)';
+
+function usePhonePortrait(): boolean {
   return useSyncExternalStore(
     (cb) => {
-      const mq = window.matchMedia('(orientation: portrait)');
+      const mq = window.matchMedia(PHONE_PORTRAIT);
       mq.addEventListener('change', cb);
       return () => mq.removeEventListener('change', cb);
     },
-    () => window.matchMedia('(orientation: portrait)').matches,
+    () => window.matchMedia(PHONE_PORTRAIT).matches,
     () => false,
   );
 }
@@ -94,6 +99,16 @@ function useErrorText(): (e: ClientError) => string {
         return t('play_error_kicked', { defaultValue: 'You were removed from the server: the room closed or its match stopped.' });
       case 'room':
         return t('play_error_room', { defaultValue: 'The server refused the room. It may be full, closed or unavailable.' });
+      case 'host-left':
+        return t('play_error_host_left_migration', {
+          defaultValue: 'The host left and nobody could take the match over, so it ended.',
+        });
+      case 'auth-required':
+        return t('play_error_auth', { defaultValue: 'Online play needs an account. Sign in, then join again — offline practice works without one.' });
+      case 'p2p-connect':
+        return t('play_error_p2p_connect', {
+          defaultValue: 'Could not reach the host, directly or through our relay. Their network may block it, or the relay is full.',
+        });
       case 'context-lost':
         return t('play_error_context', { defaultValue: 'The graphics device was reset. Reload the game to continue.' });
       default:
@@ -121,7 +136,7 @@ export default function GameCanvas({ game, create, onExit, title, onEnded, sessi
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const invite = useLobbyLink({ code: roomCode, path: '/tf2/play' });
   const touchFirst = useSyncExternalStore(subscribeNoop, detectTouchFirst, () => false);
-  const portrait = useOrientationPortrait();
+  const portrait = usePhonePortrait();
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   const onExitRef = useRef(onExit);
@@ -214,6 +229,33 @@ export default function GameCanvas({ game, create, onExit, title, onEnded, sessi
   }, [input, running]);
   const showPlayPrompt = running && !touchFirst && !locked && !choosing && !menuBusy;
   const showRotate = running && touchFirst && portrait && !hintDismissed;
+
+  // A touch device has no spare corner (the HUD's panels own them all): full screen — where the
+  // browser has it (not iPhone Safari) — and the invite link ride in the touch controls' row.
+  const canFullscreen = useSyncExternalStore(subscribeNoop, () => !!document.fullscreenEnabled, () => false);
+  const touchActions = useMemo<TouchAction[]>(() => {
+    if (!touchFirst) return [];
+    const out: TouchAction[] = [];
+    if (roomCode) {
+      out.push({
+        id: 'invite',
+        label: t('play_invite', { defaultValue: 'Copy the invite link' }),
+        icon: invite.copied ? <Check aria-hidden="true" /> : <Link2 aria-hidden="true" />,
+        onTap: () => void invite.copyLink(),
+      });
+    }
+    if (canFullscreen) {
+      out.push({
+        id: 'fullscreen',
+        label: fullscreen
+          ? t('play_exit_fullscreen', { defaultValue: 'Exit full screen' })
+          : t('play_fullscreen', { defaultValue: 'Full screen' }),
+        icon: fullscreen ? <Shrink aria-hidden="true" /> : <Expand aria-hidden="true" />,
+        onTap: () => void fullscreenToggle(),
+      });
+    }
+    return out;
+  }, [touchFirst, roomCode, canFullscreen, fullscreen, invite, fullscreenToggle, t]);
   const stagesShown = LOAD_STAGES.filter((s) => progress?.stages[s].state !== 'skipped');
 
   return (
@@ -236,7 +278,15 @@ export default function GameCanvas({ game, create, onExit, title, onEnded, sessi
       />
 
       {running ? (
-        <GameHud game={game} store={store} input={input} settings={settings} onSettingsChange={onSettingsChange} onDisconnect={onExit} />
+        <GameHud
+          game={game}
+          store={store}
+          input={input}
+          settings={settings}
+          onSettingsChange={onSettingsChange}
+          onDisconnect={onExit}
+          touchActions={touchActions}
+        />
       ) : null}
 
       {/* Over the HUD (and its fades), never while one of its menus has the keys or the cursor. */}
@@ -256,8 +306,8 @@ export default function GameCanvas({ game, create, onExit, title, onEnded, sessi
       ) : null}
 
 
-      {/* Desktop: with the click-to-play scrim only (never over the kill feed mid-game); touch: always. */}
-      {running && (touchFirst || showPlayPrompt) ? (
+      {/* Desktop: with the click-to-play scrim only (never over the kill feed mid-game); touch: in the touch controls' row. */}
+      {running && showPlayPrompt ? (
         <div className="tf2g-play-corner">
           {roomCode ? (
             <button
@@ -271,6 +321,7 @@ export default function GameCanvas({ game, create, onExit, title, onEnded, sessi
               <span className="font-mono text-xs">{roomCode}</span>
             </button>
           ) : null}
+          {roomCode ? <P2pHostPlayers client={clientRef} /> : null}
           <button
             type="button"
             className="tf2g-play-chip"

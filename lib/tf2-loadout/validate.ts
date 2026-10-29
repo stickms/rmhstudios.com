@@ -1,12 +1,14 @@
 /**
  * Checking a loadout against the catalog: the item exists, the class can use it, it fits the slot,
  * paint only on paintable items, effects only of the item's own family, styles it has, festive only on
- * festivizable weapons, war paints only on weapons that can take that kit. Pure, so the save route
+ * festivizable weapons, war paints only on weapons that can take that kit, killstreak kits only on
+ * weapons (a killstreaker only with a sheen). Pure, so the save route
  * (`loadout.server.ts` validateSlots) and the browser game's equip command (lib/tf2-game/sim/items)
  * refuse exactly the same loadouts. What the game additionally forbids (more than three cosmetics,
  * overlapping equip regions, a repeated cosmetic) is `loadoutWarnings` in rules.ts.
  */
 
+import { killstreakerById, sheenById } from './killstreak';
 import {
   acceptedSlots,
   effectAppliesTo,
@@ -50,6 +52,16 @@ export function slotProblem(
     }
     if (entry.festive && !item.fz) {
       return `${item.n} cannot be festivized`;
+    }
+    if (entry.sheen !== undefined || entry.streaker !== undefined) {
+      const weapon = slot === 'primary' || slot === 'secondary' || slot === 'melee';
+      if (
+        !weapon ||
+        !sheenById(entry.sheen) ||
+        (entry.streaker !== undefined && !killstreakerById(entry.streaker))
+      ) {
+        return `${item.n} cannot take that killstreak kit`;
+      }
     }
     if (entry.kit !== undefined || entry.wear !== undefined || entry.seed !== undefined) {
       const warPaintable = slot === 'primary' || slot === 'secondary' || slot === 'melee';

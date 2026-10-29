@@ -38,6 +38,7 @@ import {
   TF_DMG_CUSTOM_MINIGUN,
   TF_WEAPON,
   type DamageInfo,
+  TF_DMG_CUSTOM_PLAYER_SENTRY,
 } from '../damage';
 import { COLLISION_GROUP_NONE, LIFE_ALIVE, type Entity } from '../entity';
 import { BaseProjectile } from '../physics';
@@ -68,6 +69,23 @@ const NEW_TARGET_RATIO = 0.75;
 const EMPTY_CLICK_DELAY = 0.2;
 /** Fire: aim at the eye less this when the centre is hidden. */
 const EYE_AIM_DROP = 5;
+/** WRANGLER_DISABLE_TIME (tf_obj_sentrygun.cpp): the shield lingers, and the gun sleeps, this long. */
+export const WRANGLER_DISABLE_TIME = 3;
+/** SHIELD_NONE / SHIELD_NORMAL and SHIELD_NORMAL_VALUE (tf_obj.h): a wrangled gun takes 33 %. */
+export const SHIELD_NONE = 0;
+export const SHIELD_NORMAL = 1;
+export const SHIELD_NORMAL_VALUE = 0.33;
+/** FireRocket: a wrangled gun's rockets come every 2.25 s. */
+const WRANGLED_ROCKET_INTERVAL = 2.25;
+/** VECTOR_CONE_3DEGREES: a wrangled gun's spread. */
+const WRANGLED_SPREAD = 0.02618;
+
+/** The builder's active Wrangler with its laser dot (CTFLaserPointer::HasLaserDot / GetLaserDot). */
+interface LaserPointerLike {
+  laserDot(): Entity | null;
+}
+const laserPointerOf = (w: unknown): LaserPointerLike | null =>
+  w && typeof (w as Partial<LaserPointerLike>).laserDot === 'function' ? (w as LaserPointerLike) : null;
 
 const MODEL_PLACEMENT = 'models/buildables/sentry1_blueprint.mdl';
 const MODEL_LEVEL: readonly string[] = [
@@ -187,6 +205,16 @@ export class ObjectSentrygun extends TFBaseObject {
   muzzle = 0;
   fireSeq = 0;
   rocketSeq = 0;
+  /** The Wrangler (CTFLaserPointer): m_bPlayerControlled, m_nShieldLevel, m_flShieldFadeTime. */
+  playerControlled = false;
+  shieldLevel = SHIELD_NONE;
+  shieldFadeTime = 0;
+  /** m_bFireNextFrame / m_bFireRocketNextFrame (the laser pointer's +attack / +attack2). */
+  fireNextFrame = false;
+  fireRocketNextFrame = false;
+  /** m_hAutoAimTarget / m_flAutoAimStartTime: a player the laser touched, aimed at for 0.2 s. */
+  autoAimTarget: number = NO_ENTITY;
+  autoAimStartTime = 0;
 
   constructor(classname = 'obj_sentrygun') {
     super(classname);
@@ -337,6 +365,8 @@ export class ObjectSentrygun extends TFBaseObject {
         dmg *= 0.66;
       }
     }
+    // The Wrangler's shield (bFullyShielded: not while sapped or plasma-disabled).
+    if (this.shieldLevel > 0 && !this.sapped && !this.plasmaDisabled) dmg *= SHIELD_NORMAL_VALUE;
     return dmg;
   }
 
@@ -358,8 +388,10 @@ export class ObjectSentrygun extends TFBaseObject {
     hitLoc?: Vec3,
   ): boolean {
     let did = false;
+    // The Wrangler's shield: repairs and ammo go in at SHIELD_NORMAL_VALUE.
+    const shield = this.shieldLevel === SHIELD_NORMAL ? SHIELD_NORMAL_VALUE : 1;
     if (this.health < this.maxHealth) {
-      if (this.commandRepair(player, wrenchRepair(wrench), 1) > 0) {
+      if (this.commandRepair(player, wrenchRepair(wrench) * shield, 1) > 0) {
         this.doWrenchHitEffect(hitLoc, true, false);
         did = true;
       }
@@ -373,7 +405,7 @@ export class ObjectSentrygun extends TFBaseObject {
       let metal = player.ammo[METAL];
       if (this.ammoShells < this.maxShells && metal > 0) {
         let add = Math.min(SENTRY.shellsPerHit, Math.trunc(metal / SENTRY.metalPerShell));
-        add = Math.min(this.maxShells - this.ammoShells, add);
+        add = Math.trunc(Math.min(this.maxShells - this.ammoShells, add) * shield);
         player.ammo[METAL] -= add * SENTRY.metalPerShell;
         this.ammoShells += add;
         if (add > 0) did = true;
@@ -381,7 +413,7 @@ export class ObjectSentrygun extends TFBaseObject {
       metal = player.ammo[METAL];
       if (this.ammoRockets < this.maxRockets && this.level === 3 && metal > 0) {
         let add = Math.min(SENTRY.rocketsPerHit, Math.trunc(metal / SENTRY.metalPerRocket));
-        add = Math.min(this.maxRockets - this.ammoRockets, add);
+        add = Math.trunc(Math.min(this.maxRockets - this.ammoRockets, add) * shield);
         player.ammo[METAL] -= add * SENTRY.metalPerRocket;
         this.ammoRockets += add;
         if (add > 0) did = true;
@@ -406,6 +438,10 @@ export class ObjectSentrygun extends TFBaseObject {
         break;
     }
     this.setContextThinkIn(SENTRY_THINK_DELAY);
+    if (this.shieldLevel > 0 && this.world.curtime > this.shieldFadeTime) {
+      this.shieldLevel = SHIELD_NONE;
+      this.goalAngles.x = 0;
+    }
   }
 
   /** SDK: CObjectSentrygun::SentryRotate. */
@@ -464,9 +500,37 @@ export class ObjectSentrygun extends TFBaseObject {
 
   /** SDK: CObjectSentrygun::FindTarget — players first, then buildings. */
   findTarget(): boolean {
-    if (this.disabled) return false;
     const world = this.world;
+    if (this.playerControlled) this.shieldFadeTime = world.curtime + WRANGLER_DISABLE_TIME;
+    this.playerControlled = false;
+    if (this.disabled) return false;
     const eye = this.eyePosition(sEye);
+    // If our builder has an active laser pointer we don't seek targets.
+    const builder = this.builderPlayer();
+    const pointer = builder ? laserPointerOf(builder.activeWeapon()) : null;
+    const dot = pointer ? pointer.laserDot() : null;
+    if (dot) {
+      this.playerControlled = true;
+      this.shieldLevel = SHIELD_NORMAL;
+      this.shieldFadeTime = world.curtime + WRANGLER_DISABLE_TIME;
+      let target: Entity = dot;
+      // The brief auto-aim at a player the laser touched (only if the gun can reach him).
+      const auto = world.entity(this.autoAimTarget);
+      if (auto && world.curtime - this.autoAimStartTime < 0.2 && auto.isPlayer() && (auto as Player).alive) {
+        auto.worldSpaceCenter(sTarget);
+        if (this.fVisible(auto, eye, sTarget)) target = auto;
+        else this.autoAimTarget = NO_ENTITY;
+      } else this.autoAimTarget = NO_ENTITY;
+      const dx = target.origin.x - eye.x;
+      const dy = target.origin.y - eye.y;
+      const dz = target.origin.z - eye.z;
+      if (dx * dx + dy * dy + dz * dz > 30 * 30) {
+        if (target.id !== this.enemy) this.foundTarget(target, eye, true);
+        return true;
+      }
+    }
+    // Don't auto track while the player shield is up (it fades 3 s after the Wrangler lets go).
+    if (this.shieldLevel === SHIELD_NORMAL) return false;
     const enemyTeam = this.team === TF_TEAM_BLUE ? TF_TEAM_RED : TF_TEAM_BLUE;
     let minDist2 = this.range * this.range;
     let current: Entity | null = null;
@@ -519,10 +583,10 @@ export class ObjectSentrygun extends TFBaseObject {
   }
 
   /** SDK: CObjectSentrygun::FoundTarget. */
-  private foundTarget(target: Entity, _eye: Vec3): void {
+  private foundTarget(target: Entity, _eye: Vec3, noSound = false): void {
     const world = this.world;
     this.enemy = target.id;
-    if (this.ammoShells > 0 || (this.ammoRockets > 0 && this.level === 3)) {
+    if (!noSound && (this.ammoShells > 0 || (this.ammoRockets > 0 && this.level === 3))) {
       if (target.isPlayer()) {
         world.emitSound('Building_Sentrygun.AlertTarget', { entity: this.id, to: target.id });
         world.emitSound('Building_Sentrygun.Alert', { entity: this.id, predictedBy: target.id });
@@ -569,15 +633,38 @@ export class ObjectSentrygun extends TFBaseObject {
     const gx = this.goalAngles.x - this.curAngles.x;
     const gy = this.goalAngles.y - this.curAngles.y;
     if (this.nextAttack <= world.curtime + 1e-9 && Math.sqrt(gx * gx + gy * gy) <= FIRE_TOLERANCE) {
-      this.fire(enemy);
-      this.nextAttack = world.curtime + (SENTRY.fireInterval[this.level] ?? SENTRY.fireInterval[1]);
+      if (!this.playerControlled || this.fireNextFrame) {
+        this.fireNextFrame = false;
+        this.fire(enemy);
+      }
+      // A wrangled gun fires twice as fast (m_flFireRate × 0.5).
+      const rate = this.playerControlled ? 0.5 : 1;
+      this.nextAttack = world.curtime + (SENTRY.fireInterval[this.level] ?? SENTRY.fireInterval[1]) * rate;
     }
+    if (this.playerControlled && this.fireRocketNextFrame) {
+      this.fireRocketNextFrame = false;
+      this.fireRocket(enemy);
+    }
+  }
+
+  /** SDK: CObjectSentrygun::ClearTarget (the Wrangler put away). */
+  clearTarget(): void {
+    this.enemy = NO_ENTITY;
+    this.fireNextFrame = false;
+    this.fireRocketNextFrame = false;
+  }
+
+  /** SDK: CObjectSentrygun::SetAutoAimTarget. */
+  setAutoAimTarget(p: Player): void {
+    if (this.autoAimTarget !== p.id) this.autoAimStartTime = this.world.curtime;
+    this.autoAimTarget = p.id;
   }
 
   /** SDK: CObjectSentrygun::MoveTurret. Returns whether the turret moved. */
   moveTurret(): boolean {
     let moved = false;
-    const base = this.baseTurnRate;
+    // GetBaseTurnRate: a wrangled gun turns 100× as fast.
+    const base = this.playerControlled ? this.baseTurnRate * 100 : this.baseTurnRate;
     const cur = this.curAngles;
     const goal = this.goalAngles;
     if (cur.x !== goal.x) {
@@ -634,7 +721,7 @@ export class ObjectSentrygun extends TFBaseObject {
   /** SDK: CObjectSentrygun::Fire. */
   private fire(enemy: Entity): boolean {
     const world = this.world;
-    if (this.level === 3 && this.ammoRockets > 0 && this.nextRocketAttack < world.curtime)
+    if (!this.playerControlled && this.level === 3 && this.ammoRockets > 0 && this.nextRocketAttack < world.curtime)
       this.fireRocket(enemy);
 
     if (this.ammoShells <= 0) {
@@ -688,6 +775,8 @@ export class ObjectSentrygun extends TFBaseObject {
       copy(bp.angles, sAng);
       bp.seed = world.tickCount;
       bp.range = dist + 100;
+      bp.spread = this.playerControlled ? WRANGLED_SPREAD : 0;
+      bp.customKill = this.playerControlled ? TF_DMG_CUSTOM_PLAYER_SENTRY : 0;
       world.fireBullets(bp);
       firingSentryId = NO_ENTITY;
       if (!tracerEndSet)
@@ -743,9 +832,8 @@ export class ObjectSentrygun extends TFBaseObject {
       fireTrace,
     );
     if (
-      fireTrace.fraction < 1 &&
-      fireTrace.entity !== WORLD_ENTITY &&
-      fireTrace.entity !== NO_ENTITY
+      this.playerControlled ||
+      (fireTrace.fraction < 1 && fireTrace.entity !== WORLD_ENTITY && fireTrace.entity !== NO_ENTITY)
     ) {
       vectorAngles(sDir, sAng);
       world.emitSound('Building_Sentrygun.FireRocket', { entity: this.id });
@@ -767,7 +855,7 @@ export class ObjectSentrygun extends TFBaseObject {
         if (rocket instanceof SentryRocket) rocket.scorer = builder ? builder.id : this.id;
       }
       this.rocketSeq = (this.rocketSeq + 1) & 255;
-      this.nextRocketAttack = world.curtime + SENTRY.rocketInterval;
+      this.nextRocketAttack = world.curtime + (this.playerControlled ? WRANGLED_ROCKET_INTERVAL : SENTRY.rocketInterval);
       this.ammoRockets--;
     }
     return true;
@@ -793,6 +881,8 @@ export class ObjectSentrygun extends TFBaseObject {
     out.rocketSeq = this.rocketSeq;
     out.muzzle = this.muzzle;
     out.assists = this.assists;
+    out.shieldLevel = this.shieldLevel;
+    out.playerControlled = this.playerControlled;
   }
 }
 

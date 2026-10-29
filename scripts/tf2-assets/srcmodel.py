@@ -1,7 +1,7 @@
 """Source-engine model reader (MDL v44-49 + VVD v4 + VTX v7) -> triangle meshes.
 
 LOD 0 of the default body group: bind-pose vertex positions, normals, UVs, bone weights, eyeballs, and the
-material (skin family 0) each triangle uses. Skeleton and animation live in srcanim.
+material each triangle uses in one skin family (RED's), plus optionally a second family's (BLU's). Skeleton and animation live in srcanim.
 """
 import struct
 
@@ -94,23 +94,40 @@ def read_mdl(mdl):
             "bodypart_names": bodypart_names}
 
 
-def spreads_over_bones(vvd, share=0.02):
-    """True when a model's vertices follow more than one bone: the second-heaviest bone carries at least
-    `share` of all the weight (2% by default, to ignore a stray vertex). The game bone-merges every wearable
-    onto the player's skeleton, so a model whose vertices follow several bones (boots, gloves, sleeves, a
-    jacket whose arms follow the arm bones) cannot be hung rigidly from one: both mantreads would sit on one
-    foot and sleeves would stay on the spine while the arms move. A hat that rides one bone stays rigid."""
+def bone_weights(vvd, num_bones=None):
+    """Total vertex weight per bone index. Bone indexes past `num_bones` (some single-bone weapon models
+    carry a stray 128 in an unused weight slot) are not bones and are ignored."""
     verts = read_vvd(vvd)
-    if not len(verts):
-        return False
     weight = {}
     for k in range(3):
         live = k < verts["nb"].astype(np.int64)
         for bone in np.unique(verts["bone"][live, k]):
+            if num_bones is not None and int(bone) >= num_bones:
+                continue
             hit = live & (verts["bone"][:, k] == bone)
             weight[int(bone)] = weight.get(int(bone), 0.0) + float(verts["w"][hit, k].sum())
-    ranked = sorted(weight.values(), reverse=True)
-    return len(ranked) > 1 and ranked[1] / sum(ranked) >= share
+    return weight
+
+
+def num_bones(mdl):
+    return struct.unpack_from("<i", mdl, 0x9C)[0]
+
+
+def spreads_over_bones(vvd, share=0.02, num_bones=None, only=None):
+    """True when a model's vertices follow more than one bone: the second-heaviest bone carries at least
+    `share` of all the weight (2% by default, to ignore a stray vertex). The game bone-merges every wearable
+    onto the player's skeleton, so a model whose vertices follow several bones (boots, gloves, sleeves, a
+    jacket whose arms follow the arm bones) cannot be hung rigidly from one: both mantreads would sit on one
+    foot and sleeves would stay on the spine while the arms move. A hat that rides one bone stays rigid.
+
+    `only(bone_index)` limits the count to some bones (a weapon model's share on the player's own
+    `bip_*` skeleton: the Gunboats follow both feet, a held gun only its weapon bone)."""
+    weight = bone_weights(vvd, num_bones)
+    if not weight:
+        return False
+    total = sum(weight.values())
+    ranked = sorted((w for b, w in weight.items() if only is None or only(b)), reverse=True)
+    return len(ranked) > 1 and total > 0 and ranked[1] / total >= share
 
 
 def read_bones(mdl):
@@ -209,8 +226,17 @@ def read_vtx(vtx):
     return result
 
 
-def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0, groups=False):
-    """-> (info, [ {texture, pos, nrm, uv, idx, group?} ]) merged per texture index.
+def family(info, skin):
+    """A skin family's texture per material slot; an index past the model's families is family 0, as
+    studiorender treats it."""
+    return info["skins"][skin] if 0 <= skin < len(info["skins"]) else info["skin0"]
+
+
+def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0, groups=False, alt_skin=None):
+    """-> (info, [ {texture, alt_texture, pos, nrm, uv, idx, group?} ]) merged per texture index.
+
+    `alt_skin` is a second skin family (BLU's): meshes are split so each one has a single texture in it
+    too (`alt_texture`; None without `alt_skin`).
 
     Only the default submodel of each body group by default. With `groups`, every submodel of a body group
     that has more than one (a class body's `hat`, `headphones`, `shoes_socks`, … — submodel 1 is usually
@@ -221,6 +247,9 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0, groups=False):
     info = read_mdl(mdl_bytes)
     verts = read_vvd(vvd_bytes)
     vtx = read_vtx(vtx_bytes)
+    bone_count = num_bones(mdl_bytes)
+    fam = family(info, skin)
+    alt = family(info, alt_skin) if alt_skin is not None else None
     by_tex = {}
     for b, models in enumerate(info["bodyparts"]):
         if not models:
@@ -232,14 +261,16 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0, groups=False):
             for k, mesh in enumerate(model["meshes"]):
                 if k >= len(vmeshes) or not len(vmeshes[k]):
                     continue
-                fam = info["skins"][skin] if 0 <= skin < len(info["skins"]) else info["skin0"]
                 tex = fam[mesh["material"]] if mesh["material"] < len(fam) else mesh["material"]
+                alt_tex = None
+                if alt is not None:
+                    alt_tex = alt[mesh["material"]] if mesh["material"] < len(alt) else mesh["material"]
                 # Source's triangles are clockwise (Direct3D); glTF front faces are counter-clockwise.
                 ids = (vmeshes[k][: len(vmeshes[k]) // 3 * 3].reshape(-1, 3)[:, ::-1].reshape(-1)
                        + model["vert_start"] + mesh["voff"])
                 if ids.max() >= len(verts):
                     raise ModelError("vertex index out of range")
-                by_tex.setdefault((tex, tag), []).append(ids)
+                by_tex.setdefault((tex, alt_tex, tag), []).append(ids)
     info["eyeballs"] = [e for models in info["bodyparts"] if models for e in models[0]["eyeballs"]]
     # The bone most of this model's vertices follow: a cosmetic attaches to the wearer through it.
     if by_tex:
@@ -248,24 +279,30 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0, groups=False):
         weight = {}
         for k in range(3):
             for bone, w, nb in zip(v["bone"][:, k], v["w"][:, k], v["nb"]):
-                if k < nb:
+                if k < nb and bone < max(bone_count, 1):
                     weight[int(bone)] = weight.get(int(bone), 0.0) + float(w)
         info["dominant_bone"] = max(weight, key=weight.get) if weight else 0
     else:
         info["dominant_bone"] = 0
     out = []
-    for (tex, tag), parts in by_tex.items():
+    for (tex, alt_tex, tag), parts in by_tex.items():
         ids = np.concatenate(parts)
         uniq, inverse = np.unique(ids, return_inverse=True)
         v = verts[uniq]
         nb = np.maximum(v["nb"].astype(np.int64), 1)
         w = np.where(np.arange(3)[None, :] < nb[:, None], v["w"], 0.0).astype(np.float32)
-        w[:, 0] = np.where(v["nb"] == 0, 1.0, w[:, 0])
+        # A stray bone index past the skeleton is no bone: its weight goes, the rest renormalizes below.
+        bone_ids = v["bone"].astype(np.uint16)
+        stray = bone_ids >= max(bone_count, 1)
+        w = np.where(stray, 0.0, w).astype(np.float32)
+        bone_ids = np.where(stray, 0, bone_ids).astype(np.uint16)
+        w[:, 0] = np.where((v["nb"] == 0) | (w.sum(1) <= 0), 1.0, w[:, 0])
         w /= np.maximum(w.sum(1, keepdims=True), 1e-6)
         out.append({
             "texture": tex,
+            "alt_texture": alt_tex,
             "group": tag,
-            "joints": np.concatenate([v["bone"].astype(np.uint16), np.zeros((len(v), 1), np.uint16)], axis=1),
+            "joints": np.concatenate([bone_ids, np.zeros((len(v), 1), np.uint16)], axis=1),
             "weights": np.concatenate([w, np.zeros((len(v), 1), np.float32)], axis=1),
             "pos": np.ascontiguousarray(v["pos"]),
             "nrm": np.ascontiguousarray(v["nrm"]),

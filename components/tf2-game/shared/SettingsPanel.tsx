@@ -14,7 +14,6 @@ import type { HudGame } from '@/lib/tf2-game/client/hud-state';
 import {
   defaultSettings,
   FOV_RANGE,
-  M_YAW,
   SENSITIVITY_RANGE,
   VIEWMODEL_FOV_RANGE,
   type CrosshairStyle,
@@ -185,10 +184,11 @@ export default function SettingsPanel({
                 onChange={(v) => set('sensitivity', v)}
               />
             </Row>
-            <p className="text-[11px] text-(--app-text-dim)">
-              {t('set_sensitivity_hint', {
-                defaultValue: '{{deg}}° per mouse count (sensitivity × m_yaw 0.022)',
-                deg: (settings.sensitivity * M_YAW).toFixed(4),
+            <p className="text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">
+              {t('set_sensitivity_hint_myaw', {
+                defaultValue: '{{deg}}° per mouse count (sensitivity × m_yaw {{yaw}})',
+                deg: (settings.sensitivity * settings.mYaw).toFixed(4),
+                yaw: settings.mYaw,
               })}
             </p>
             <Row label={t('set_invert', { defaultValue: 'Invert mouse' })}>
@@ -263,6 +263,20 @@ export default function SettingsPanel({
                 {t('bind_defaults', { defaultValue: 'Use defaults' })}
               </Btn>
             </div>
+            <Row label={t('set_dev_console', { defaultValue: 'Developer console' })}>
+              <SelectField
+                value={settings.devConsole}
+                onChange={(e) => set('devConsole', e.target.value as GameSettings['devConsole'])}
+                aria-label={t('set_dev_console', { defaultValue: 'Developer console' })}
+              >
+                <option value="auto">{t('dev_console_auto', { defaultValue: 'Automatic (on with a keyboard)' })}</option>
+                <option value="on">{t('dev_console_on', { defaultValue: 'On' })}</option>
+                <option value="off">{t('dev_console_off', { defaultValue: 'Off' })}</option>
+              </SelectField>
+            </Row>
+            <p className="text-[11px] text-(--app-text-dim)">
+              {t('set_dev_console_hint', { defaultValue: 'Open it with the ` key, or from the pause menu.' })}
+            </p>
           </>
         ) : null}
         {section === 'pad' ? (
@@ -307,7 +321,8 @@ export default function SettingsPanel({
               <Toggle label={t('hud_captions', { defaultValue: 'Closed captions' })} checked={settings.captions} onChange={(v) => set('captions', v)} />
             </Row>
             <Row label={t('hud_crosshair', { defaultValue: 'Crosshair' })}>
-              <span className="inline-grid size-9 place-items-center rounded-(--app-radius-sm) bg-(--app-bg)" aria-hidden="true">
+              {/* relative: the glyph is the HUD's centred crosshair, centred here in its box rather than over the dialog. */}
+              <span className="relative inline-grid size-9 place-items-center rounded-(--app-radius-sm) bg-(--app-bg)" aria-hidden="true">
                 <CrosshairGlyph style={settings.crosshair.style} color={settings.crosshair.color} size={28} />
               </span>
               <SelectField value={settings.crosshair.style} onChange={(e) => set('crosshair', { ...settings.crosshair, style: e.target.value as CrosshairStyle })} aria-label={t('hud_crosshair', { defaultValue: 'Crosshair' })}>

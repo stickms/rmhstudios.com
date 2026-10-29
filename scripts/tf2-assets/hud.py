@@ -4,7 +4,12 @@
 
 Same selection as scripts/tf2-hud/import-base.mjs (panels and schemes under
 resource/, the named scripts, the HUD's own materials and every material a
-panel names) plus the texture (.vtf) each material points at. Only files whose
+panel names) plus the texture (.vtf) each material points at, and the game's
+localisation for the panels' `#Token` labels: `resource/tf_<language>.txt`
+for every language TF2 ships (UTF-16 KeyValues, stored Brotli-compressed by
+publish.ts; the editor and the browser game read only the one they show).
+Closed captions and the item schema's strings are left out: no HUD reads
+them, and they are the bulk of `resource/`. Only files whose
 content changed since `--state` are written; `wanted.json` lists them all, and
 `manifest.json` (the editor's index: [path, size, sha1]) is rebuilt every run.
 """
@@ -23,7 +28,23 @@ KEEP_MATERIAL_DIRS = ["vgui", "hud", "console", "logo"]
 TEXT_EXT = re.compile(r"\.(res|txt|menu)$", re.I)
 IMAGE_KEYS = re.compile(
     r'"(?:image|icon|fg_image|bg_image|image_default|image_armed|image_selected|teambg_\d+|iconimage|texture|texturename|material|image_[a-z]+)"\s+"([^"\n]+)"', re.I)
+# TF2's languages (lib/tf2-hud/localisation.ts TF_LANGUAGES): `resource/tf_<id>.txt`.
+LANGUAGES = ["english", "spanish", "latam", "french", "german", "italian", "portuguese", "brazilian",
+             "dutch", "polish", "czech", "hungarian", "romanian", "bulgarian", "russian", "ukrainian",
+             "greek", "turkish", "danish", "finnish", "norwegian", "swedish", "schinese", "tchinese",
+             "japanese", "koreana", "thai", "vietnamese"]
+# resource/ files no HUD reads: closed captions and the war paint / item names.
+SKIP_RESOURCE = re.compile(r"^resource/(?:closecaption_|subtitles_|tf_proto_obj_defs_)", re.I)
 BASE_VERSION = 1  # bump when the selection above changes
+
+
+def wanted_resource(name):
+    """Whether a file under resource/ belongs in the HUD base."""
+    return not SKIP_RESOURCE.match(name)
+
+
+def language_files():
+    return ["resource/tf_%s.txt" % lang for lang in LANGUAGES]
 
 
 def norm(parts):
@@ -61,6 +82,10 @@ def main():
         return True
 
     for n in fs.all_names("resource/"):
+        if wanted_resource(n):
+            take(n)
+    # The localisation lives in tf2_misc (or loose in tf/resource/): taken by name, wherever it is.
+    for n in language_files():
         take(n)
     for n in KEEP_SCRIPTS:
         take(n)

@@ -176,6 +176,8 @@ export function substituteLabel(
     const key = text.slice(1).toLowerCase();
     text = strings.get(key) ?? humanizeToken(text.slice(1));
   }
+  // VGUI hotkey markers: `&3` draws "3" (underlined in game), `&&` a literal ampersand.
+  if (text.includes('&')) text = text.replace(/&(&|[^&\s])/g, '$1');
   return text.replace(
     /%([A-Za-z0-9_]+)%/g,
     (_m, name: string) => vars.get(name.toLowerCase()) ?? placeholderFor(name),
@@ -413,16 +415,73 @@ function intersect(a: Rect, b: Rect): Rect {
 
 export const HUD_LAYOUT_FILE = 'scripts/hudlayout.res';
 
+/**
+ * Panels whose own code loads another panel file into themselves at run time (the class calls
+ * `LoadControlSettings` with its own file): that file's blocks become the panel's children, laid out
+ * inside it. TF2's `CTFFreezePanelHealth` (the killer's health on the freeze cam) loads
+ * `FreezePanelKillerHealth.res`; `CTFSpectatorGUIHealth` (a spectated or disguise target's health)
+ * loads `SpectatorGUIHealth.res` — SDK `CTFHudPlayerHealth::GetResFilename` and its overrides. HUD
+ * files often name these panels with a plain control (`EditablePanel`: the game creates the class
+ * by the panel's name), so the name is matched as well.
+ */
+const EMBEDDED_BY_CONTROL: Readonly<Record<string, string>> = {
+  ctffreezepanelhealth: 'resource/ui/freezepanelkillerhealth.res',
+  ctfspectatorguihealth: 'resource/ui/spectatorguihealth.res',
+};
+const EMBEDDED_BY_NAME: Readonly<Record<string, string>> = {
+  freezepanelhealth: 'resource/ui/freezepanelkillerhealth.res',
+  spectatorguihealth: 'resource/ui/spectatorguihealth.res',
+};
+
+/** The panel file a panel loads into itself at run time, if any. */
+export function embeddedFileFor(control: string | undefined, name: string): string | undefined {
+  return (
+    (control ? EMBEDDED_BY_CONTROL[control.toLowerCase()] : undefined) ??
+    EMBEDDED_BY_NAME[name.toLowerCase()]
+  );
+}
+
+/** The `ControlName` of a block, read without building its props. */
+function controlOf(e: KvNode, env: CondEnv): string | undefined {
+  for (const c of activeEntries(e, env)) {
+    if (!c.children && c.value && c.key.text.toLowerCase() === 'controlname') return c.value.text;
+  }
+  return undefined;
+}
+
+/** The panel files `text` loads into its panels at run time (see `embeddedFileFor`), in file order. */
+export function embeddedFilesOf(text: string, env: CondEnv): string[] {
+  const top = parseCached(text).roots.find((n) => n.children);
+  const out = new Set<string>();
+  const walk = (entries: readonly KvNode[], depth: number) => {
+    for (const e of entries) {
+      if (!e.children) continue;
+      const f = embeddedFileFor(controlOf(e, env), e.key.text);
+      if (f) out.add(f);
+      if (depth < 16) walk(activeEntries(e, env), depth + 1);
+    }
+  };
+  if (top?.children) walk(activeEntries(top, env), 0);
+  return [...out];
+}
+
 export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
   const scale = screenScale(ctx.screen);
   const screenRect: Rect = { x: 0, y: 0, w: ctx.screen.w, h: ctx.screen.h };
   const images = new Set<string>();
   const opts = { env: ctx.env, minmode: ctx.minmode };
   let styleFile = '';
-  const propsFor = (e: KvNode): Props => {
+  const propsFor = (e: KvNode, inFile = styleFile): Props => {
     const base = propsOf(e, opts);
-    return ctx.styleFor ? ctx.styleFor(styleFile, e.key.text, base) : base;
+    return ctx.styleFor ? ctx.styleFor(inFile, e.key.text, base) : base;
   };
+  // A file that another file on this page loads into one of its panels is drawn there, not on its own.
+  const embeddedHere = new Set<string>();
+  for (const f of files) {
+    const text = ctx.readText(f);
+    if (text !== undefined)
+      for (const e of embeddedFilesOf(text, ctx.env)) if (e !== f) embeddedHere.add(e);
+  }
 
   // `scripts/hudlayout.res` re-states where each HUD element sits. Its block for
   // an element wins over whatever the element's own file says, and it is also
@@ -447,6 +506,7 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
   const groups: { z: number; order: number; nodes: PanelNode[] }[] = [];
 
   files.forEach((file, order) => {
+    if (embeddedHere.has(file)) return;
     styleFile = file;
     const text = ctx.readText(file);
     if (text === undefined) return;
@@ -498,12 +558,16 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
     const frameSource = kvRange(layoutBlock ?? frameEntry ?? first);
 
     const seen = new Map<string, number>();
+    /** How deep panel files loaded into panels nest (a file that loads itself stops). */
+    let depth = 0;
     const frameId = hasFrame ? `${file}#${frameName}` : null;
     const originX = hasFrame ? frameLocal.x : 0;
     const originY = hasFrame ? frameLocal.y : 0;
 
     /** What a panel needs to know about the panel it sits in. */
     interface Host {
+      /** The file the panel's block is in (a panel file loaded into another panel is its own file). */
+      file: string;
       id: string | null;
       shown: boolean;
       keyPath: string[];
@@ -526,19 +590,20 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
       host: Host,
     ): PanelNode => {
       const name = e ? e.key.text : frameName;
+      const inFile = host.file;
       const keyPath = isFrame ? frameKeyPath : [...host.keyPath, name];
-      const injected = !isFrame ? ctx.overridesFor?.(file, keyPath) : undefined;
+      const injected = !isFrame ? ctx.overridesFor?.(inFile, keyPath) : undefined;
       const props =
         injected === undefined ? ownProps : mergeProps(ownProps, propsFromMap(injected));
       const control = props.get('controlname') ?? (e ? 'Panel' : 'HudElement');
-      const baseId = `${file}#${name}`;
+      const baseId = `${inFile}#${name}`;
       const dup = seen.get(baseId) ?? 0;
       seen.set(baseId, dup + 1);
       const id = dup ? `${baseId}~${dup}` : baseId;
       const visible = props.bool('visible', true);
       let shown = visible || ctx.showHidden;
       // The game decides what is on screen for this class/weapon (unless the author asked to see everything).
-      const gated = ctx.gate?.(file, name);
+      const gated = ctx.gate?.(inFile, name);
       if (gated !== undefined && !ctx.showHidden) shown = gated;
       if (ctx.forceShown.has(id)) shown = true;
       if (ctx.forceHidden.has(id)) shown = false;
@@ -548,13 +613,13 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
       const ownAlpha = props.has(ALPHA_KEY) ? props.num(ALPHA_KEY) : props.num('alpha', 255);
       const alpha = host.alpha * Math.max(0, Math.min(1, ownAlpha / 255));
       const kind = kindOf(control);
-      const progress = ctx.progressFor?.(file, name) ?? ctx.progress;
+      const progress = ctx.progressFor?.(inFile, name) ?? ctx.progress;
       const ops = shown
         ? opsFor(ctx, kind, control, name, props, rect, isFrame, images, progress)
         : [];
       return {
         id,
-        file: isFrame ? frameFile : file,
+        file: isFrame ? frameFile : inFile,
         keyPath,
         name: props.get('fieldname') ?? name,
         control,
@@ -588,7 +653,7 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
       const localRect = (e: KvNode): Rect => {
         const cached = memo.get(e);
         if (cached) return cached;
-        const props = propsFor(e);
+        const props = propsFor(e, host.file);
         let sibling: Rect | undefined;
         const pin = pinOf(props);
         if (pin && !resolving.has(e)) {
@@ -607,25 +672,47 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
       return siblings.map((e, order) => {
         const local = localRect(e);
         const abs = translate(local, origin.x, origin.y);
-        const node = make(e, propsFor(e), abs, false, host);
+        const ownProps = propsFor(e, host.file);
+        const node = make(e, ownProps, abs, false, host);
         // Nested blocks that name a control are child panels; others (`if_vr`, …) are conditionals.
         const nested = activeEntries(e, ctx.env).filter(
-          (c) => c.children && propsFor(c).has('controlname'),
+          (c) => c.children && propsFor(c, host.file).has('controlname'),
         );
+        const inner = { x: 0, y: 0, w: local.w, h: local.h };
+        const clip = host.clip ? intersect(host.clip, abs) : abs;
         const kids = nested.length
-          ? place(
-              nested,
-              { x: abs.x, y: abs.y },
-              { x: 0, y: 0, w: local.w, h: local.h },
-              {
-                id: node.id,
-                shown: node.shown,
-                keyPath: node.keyPath,
-                clip: host.clip ? intersect(host.clip, abs) : abs,
-                alpha: node.alpha ?? 1,
-              },
-            )
+          ? place(nested, { x: abs.x, y: abs.y }, inner, {
+              file: host.file,
+              id: node.id,
+              shown: node.shown,
+              keyPath: node.keyPath,
+              clip,
+              alpha: node.alpha ?? 1,
+            })
           : [];
+        // A panel whose class loads its own file at run time: that file's blocks are its children.
+        const loads = embeddedFileFor(ownProps.get('controlname'), e.key.text);
+        const loadedText =
+          loads && loads !== host.file && depth < 4 ? ctx.readText(loads) : undefined;
+        const loadedTop =
+          loadedText !== undefined
+            ? parseCached(loadedText).roots.find((n) => n.children)
+            : undefined;
+        if (loads && loadedTop?.children) {
+          depth++;
+          const blocks = activeEntries(loadedTop, ctx.env).filter((c) => c.children);
+          kids.push(
+            ...place(blocks, { x: abs.x, y: abs.y }, inner, {
+              file: loads,
+              id: node.id,
+              shown: node.shown,
+              keyPath: [loadedTop.key.text],
+              clip,
+              alpha: node.alpha ?? 1,
+            }).map((p) => ({ ...p, order: p.order + nested.length })),
+          );
+          depth--;
+        }
         return { node, order, kids };
       });
     };
@@ -640,7 +727,13 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
         });
     };
 
-    const frameHost: Host = { id: frameId, shown: true, keyPath: [top.key.text], alpha: 1 };
+    const frameHost: Host = {
+      file,
+      id: frameId,
+      shown: true,
+      keyPath: [top.key.text],
+      alpha: 1,
+    };
     const nodes: PanelNode[] = [];
     if (frameProps) {
       const frame = make(frameEntry, frameProps, frameLocal, true, frameHost);

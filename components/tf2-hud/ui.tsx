@@ -9,7 +9,7 @@
 'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { Check, ChevronDown, Search, X, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Search, X, type LucideIcon } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useSentinel } from '@/hooks/useSentinel';
 import {
@@ -32,6 +32,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { portalRoot } from '@/lib/tf2-hud/portal-root';
 
 /* ─────────────────────────────── buttons ─────────────────────────────── */
 
@@ -52,10 +53,11 @@ const BTN_VARIANT: Record<BtnVariant, string> = {
     'border-transparent bg-(--app-danger-dim) text-(--app-danger) hover:bg-(--app-danger) hover:text-(--app-bg)',
 };
 
+// On a touch-first device (`pointer: coarse`) every size is a 44px target.
 const BTN_SIZE: Record<BtnSize, string> = {
-  xs: 'h-7 px-2 text-xs',
-  sm: 'h-8 px-3 text-xs',
-  md: 'h-10 px-4 text-sm',
+  xs: 'h-7 px-2 text-xs pointer-coarse:h-11 pointer-coarse:min-w-11',
+  sm: 'h-8 px-3 text-xs pointer-coarse:h-11 pointer-coarse:min-w-11',
+  md: 'h-10 px-4 text-sm pointer-coarse:h-11',
 };
 
 export interface BtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -103,6 +105,7 @@ export const IconBtn = forwardRef<HTMLButtonElement, IconBtnProps>(function Icon
       className={cn(
         'inline-flex shrink-0 items-center justify-center rounded-(--app-radius-sm) border border-transparent text-(--app-text-muted) transition-[color,background-color] duration-(--app-duration-fast) hover:bg-(--app-surface-hover) hover:text-(--app-text) disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4',
         size === 'xs' ? 'size-7' : 'size-8',
+        'pointer-coarse:size-11',
         active && 'bg-(--app-accent-dim) text-(--app-accent-text)',
         className,
       )}
@@ -115,8 +118,9 @@ export const IconBtn = forwardRef<HTMLButtonElement, IconBtnProps>(function Icon
 
 /* ─────────────────────────────── fields ─────────────────────────────── */
 
+// Touch: a 44px field with 16px text (iOS Safari zooms the page into a field set smaller than 16px).
 const FIELD =
-  'h-8 w-full min-w-0 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) px-2 text-xs text-(--app-text) placeholder:text-(--app-text-dim) focus-visible:border-(--app-accent) disabled:opacity-50';
+  'h-8 w-full min-w-0 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) px-2 text-xs text-(--app-text) placeholder:text-(--app-text-dim) focus-visible:border-(--app-accent) disabled:opacity-50 pointer-coarse:h-11 pointer-coarse:text-base';
 
 export const TextField = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   function TextField({ className, ...rest }, ref) {
@@ -305,7 +309,7 @@ export const SelectField = forwardRef<HTMLButtonElement, SelectHTMLAttributes<HT
                     onClick={() => pick(o)}
                     onPointerMove={() => !o.disabled && setActive(i)}
                     className={cn(
-                      'flex cursor-pointer items-center gap-2 rounded-(--app-radius-sm) px-2 py-1.5 text-xs',
+                      'flex cursor-pointer items-center gap-2 rounded-(--app-radius-sm) px-2 py-1.5 text-xs pointer-coarse:min-h-11 pointer-coarse:text-sm',
                       i === active && 'bg-(--app-surface-hover)',
                       o.disabled && 'cursor-default opacity-45',
                     )}
@@ -341,12 +345,12 @@ export function Field({
     <div className={cn('flex flex-col gap-1', className)}>
       <label
         htmlFor={id}
-        className="text-[11px] font-semibold uppercase tracking-wider text-(--app-text-dim)"
+        className="text-[11px] font-semibold uppercase tracking-wider text-(--app-text-dim) pointer-coarse:text-xs"
       >
         {label}
       </label>
       <div id={id}>{children}</div>
-      {hint ? <p className="text-[11px] text-(--app-text-dim)">{hint}</p> : null}
+      {hint ? <p className="text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">{hint}</p> : null}
     </div>
   );
 }
@@ -435,7 +439,7 @@ export function RangeField({
       step={step}
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
-      className="h-5 w-full min-w-0 cursor-pointer accent-(--app-accent)"
+      className="h-5 w-full min-w-0 cursor-pointer accent-(--app-accent) pointer-coarse:h-11"
     />
   );
 }
@@ -463,7 +467,7 @@ export function PanelHead({
   return (
     <div
       className={cn(
-        'flex h-9 shrink-0 items-center justify-between gap-2 border-b border-(--app-border) px-3',
+        'flex h-9 shrink-0 items-center justify-between gap-2 border-b border-(--app-border) px-3 pointer-coarse:h-auto pointer-coarse:min-h-11',
         className,
       )}
     >
@@ -493,7 +497,7 @@ export function Pill({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-(--app-radius-sm) px-1.5 py-0.5 text-[11px] font-semibold',
+        'inline-flex items-center gap-1 rounded-(--app-radius-sm) px-1.5 py-0.5 text-[11px] font-semibold pointer-coarse:text-xs',
         tones[tone],
         className,
       )}
@@ -522,6 +526,8 @@ export function Modal({
   footer,
   wide,
   sheet,
+  onBack,
+  backLabel,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -530,13 +536,17 @@ export function Modal({
   children: ReactNode;
   footer?: ReactNode;
   wide?: boolean;
+  /** A back arrow before the title (a dialog with views): no footer row is spent on it. */
+  onBack?: () => void;
+  backLabel?: string;
   /** A full-height bottom sheet (phones) instead of a centred dialog. */
   sheet?: boolean;
 }) {
   const { t } = useTranslation('c-tf2-hud');
   const [container, setContainer] = useState<HTMLElement | null>(null);
   useLayoutEffect(() => {
-    setContainer(document.querySelector<HTMLElement>('.tf2hud-theme'));
+    // The themed root — inside the full-screen element when the editor is open over a full-screen game.
+    setContainer(portalRoot());
   }, [open]);
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -546,13 +556,21 @@ export function Modal({
           className={cn(
             'fixed z-50 flex flex-col border border-(--app-border-bright) bg-(--app-bg-subtle) text-(--app-text) shadow-(--app-shadow)',
             sheet
-              ? 'app-sheet inset-x-0 bottom-0 h-[calc(100dvh-2.5rem)] rounded-t-(--app-radius) pb-[var(--app-safe-bottom,0px)]'
-              : 'app-modal top-1/2 left-1/2 max-h-[min(88dvh,46rem)] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-(--app-radius)',
+              ? 'app-sheet inset-x-0 bottom-0 h-[calc(100dvh-2.5rem)] rounded-t-(--app-radius) pr-(--safe-right) pb-(--safe-bottom) pl-(--safe-left)'
+              : 'app-modal tf2hud-dialog -translate-x-1/2 -translate-y-1/2 rounded-(--app-radius)',
             !sheet && (wide ? 'max-w-3xl' : 'max-w-md'),
           )}
         >
           <div className="flex items-start justify-between gap-3 border-b border-(--app-border) px-4 py-3">
-            <div className="min-w-0">
+            {onBack ? (
+              <IconBtn
+                icon={ArrowLeft}
+                label={backLabel ?? t('back', { defaultValue: 'Back' })}
+                onClick={onBack}
+                className="-ms-1.5 rtl-flip"
+              />
+            ) : null}
+            <div className="min-w-0 flex-1">
               <DialogPrimitive.Title className="tf2hud-title truncate text-xl">
                 {title}
               </DialogPrimitive.Title>
@@ -709,8 +727,7 @@ export function Popover({
     if (!open) return;
     // Inside a dialog, portal into it: a modal dialog makes everything outside it inert.
     setRoot(
-      anchor?.closest<HTMLElement>('[role=dialog]') ??
-        document.querySelector<HTMLElement>('.tf2hud-theme'),
+      anchor?.closest<HTMLElement>('[role=dialog]') ?? portalRoot(),
     );
   }, [open, anchor]);
 

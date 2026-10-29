@@ -30,6 +30,15 @@ import type { Player } from './player';
 import type { GameWorld } from './world';
 import { hookInt, hookPlayer, hookWeapon } from './items/attributes';
 import { applyRadiusHeal, damageWeapon, inAirDueToExplosion } from './items/hooks';
+import {
+  unlockDamageVsPlayers,
+  unlockEnergyBuffDamageTaken,
+  unlockForcedCrits,
+  unlockMiniCrits,
+  unlockPostModify,
+  unlockPreDistance,
+  unlockPromoteMiniCrit,
+} from './items/damage-rules';
 
 // ─── DMG_* (shareddefs.h) ───────────────────────────────────────────────────
 export const DMG_GENERIC = 0;
@@ -331,6 +340,8 @@ export interface DistanceModInput {
   optimalDistance?: number;
   /** Whether the attacker is a player (the per-weapon tweaks apply only then). */
   attackerIsPlayer?: boolean;
+  /** crit_dmg_falloff (the Ambassador): a crit keeps the distance falloff. */
+  forceCritFalloff?: boolean;
 }
 
 /**
@@ -344,8 +355,8 @@ export function applyDistanceAndCrit(input: DistanceModInput): { damage: number;
   const bCrit = crit === CRIT_FULL || (input.damageType & DMG_CRITICAL) !== 0;
   let flDamage = input.current ?? input.damage;
   const bitsDamage = input.damageType;
-  // tf_weapon_criticals_distance_falloff / minicrits_distance_falloff are 0.
-  const bForceCritFalloff = false;
+  // tf_weapon_criticals_distance_falloff / minicrits_distance_falloff are 0; crit_dmg_falloff forces it.
+  const bForceCritFalloff = !!input.forceCritFalloff && (bitsDamage & DMG_USEDISTANCEMOD) !== 0;
   const bDoShortRangeDistanceIncrease = !bCrit || crit === CRIT_MINI;
   const bDoLongRangeDistanceDecrease =
     !input.ignoreLongRange && (bForceCritFalloff || (!bCrit && crit !== CRIT_MINI));
@@ -431,7 +442,11 @@ export function applyOnDamageModifyRules(
 
   if (info.damageType & DMG_CRITICAL) info.critType = CRIT_FULL;
 
+  // Item-forced crits (or_crit_vs_playercond, crit_vs_wet_players, the Axtinguisher, the Market Gardener).
+  unlockForcedCrits(world, info, victim, tfAttacker);
+
   // Mini-crits (only when the attacker isn't the victim).
+  if (attackerEnt !== victimEnt) flDamage = unlockMiniCrits(world, info, victim, tfAttacker, flDamage);
   if (attackerEnt !== victimEnt && info.critType === CRIT_NONE) {
     if (
       victim &&
@@ -458,6 +473,7 @@ export function applyOnDamageModifyRules(
       if (weapon && hookInt(hookWeapon(weapon, weapon.owner, 'mini_crit_airborne', 0)) === 1) info.critType = CRIT_MINI;
     }
   }
+  unlockPromoteMiniCrit(world, info);
 
   // Invulnerable: events only (the caller still applies the push).
   if (victim && victim.cond.invulnerable && !allowDamage) return false;
@@ -466,6 +482,7 @@ export function applyOnDamageModifyRules(
   if (victim) {
     const weapon = damageWeapon(world, info);
     if (weapon) flDamage = hookWeapon(weapon, weapon.owner, 'mult_dmg_vs_players', flDamage);
+    flDamage = unlockDamageVsPlayers(world, info, victim, tfAttacker, flDamage);
   }
 
   // Defense buffs (Battalion's Backup), unless backstab or crush.
@@ -498,6 +515,7 @@ export function applyOnDamageModifyRules(
         distance = length(sub(scratchA, scratchB, scratchA));
       }
     }
+    const forceCritFalloff = unlockPreDistance(world, info);
     const res = applyDistanceAndCrit({
       damage: info.damage,
       current: flDamage,
@@ -507,8 +525,10 @@ export function applyOnDamageModifyRules(
       critType: info.critType,
       optimalDistance: optimal,
       attackerIsPlayer: !!tfAttacker,
+      forceCritFalloff,
     });
     flDamage = res.damage;
+    if (info.critType === CRIT_NONE && !(info.damageType & DMG_CRITICAL)) flDamage = unlockEnergyBuffDamageTaken(victim, info, flDamage);
     if (info.critType !== CRIT_NONE || info.damageType & DMG_CRITICAL) {
       info.damageType |= DMG_CRITICAL;
       if (info.critType === CRIT_NONE) info.critType = CRIT_FULL;
@@ -516,6 +536,7 @@ export function applyOnDamageModifyRules(
     }
   }
 
+  flDamage = unlockPostModify(world, info, victim, tfAttacker, flDamage);
   info.damage = flDamage;
   return true;
 }

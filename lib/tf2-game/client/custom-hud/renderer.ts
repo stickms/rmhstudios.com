@@ -6,6 +6,7 @@
  *   const r = new CustomHudRenderer(canvas);
  *   r.setHud(prepared);                               // swaps only once everything is ready
  *   r.resize(cssW, cssH);                              // on resize only (never per frame)
+ *   r.setPlacement(safeInsets, touchButtons);           // phones: inside the safe area, clear of the thumbs
  *   store.subscribe(() => r.update(store.getSnapshot()));   // the HUD store's ≤30 Hz publishes
  *
  * Per update it adapts the state (adapter.ts), starts the HUD animation events
@@ -35,7 +36,13 @@ import {
 } from '@/lib/tf2-hud/anim/style';
 import { DEFAULT_TEST_STATE, type TestState } from '@/lib/tf2-hud/fixtures';
 import type { Rect, Screen } from '@/lib/tf2-hud/layout/geometry';
-import { buildTokens, languageFilePath } from '@/lib/tf2-hud/localisation';
+import {
+  DEFAULT_LANGUAGE,
+  languageFilePath,
+  languageForSite,
+  layeredTokens,
+} from '@/lib/tf2-hud/localisation';
+import { contentBytes } from '@/lib/tf2-hud/project/model';
 import { baseCache } from '@/lib/tf2-hud/project/base-cache';
 import { buildScene, HUD_LAYOUT_FILE } from '@/lib/tf2-hud/scene/build';
 import { paintScene } from '@/lib/tf2-hud/scene/paint';
@@ -45,8 +52,9 @@ import { EMPTY_SCHEME, parseScheme, type Scheme } from '@/lib/tf2-hud/scheme/sch
 import { gameSurfaceDpr } from '@/lib/display-scale';
 import type { HudState } from '../hud-state';
 import { liveVars, toTestState } from './adapter';
-import { ALL_INGAME_FILES, bindingsFor, inGameFiles } from './bindings';
+import { ALL_INGAME_FILES, bindingsFor, EMBEDDED_INGAME_FILES, inGameFiles } from './bindings';
 import { hudAnimEvents } from './events';
+import { customisedMenus, MENU_SOURCE_FILES, readMenuText, type HudMenuKind } from './menus';
 import { InGameScene, type SceneSource } from './scene';
 import { HudFiles, type LoadedHud } from './source';
 
@@ -55,6 +63,16 @@ const CORE_FILES = [SCHEME_FILE, 'resource/sourcescheme.res', HUD_LAYOUT_FILE] a
 const ANIM_MANIFEST = 'scripts/hudanimations_manifest.txt';
 /** Longest a HUD switch waits for textures before swapping anyway (missing ones draw the checkerboard). */
 const PRELOAD_TIMEOUT_MS = 6000;
+
+/** Safe-area insets in CSS px. */
+export interface Insets {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 /** A HUD with everything it draws already loaded. */
 export interface PreparedHud {
@@ -65,8 +83,34 @@ export interface PreparedHud {
   images: ImageStore;
   /** Called when a texture arrives after the swap (the renderer repaints). */
   onImage: (() => void) | null;
+  /** Others painting this HUD's textures (the HUD-driven menus): told when one arrives. */
+  imageListeners: Set<() => void>;
+  /** The menus the HUD restyles (it ships their file); the others stay the game's own. */
+  menus: ReadonlySet<HudMenuKind>;
+  /** The HUD restyles the spectator GUI (`spectator.res`). */
+  drawsSpectator: boolean;
   /** The HUD customises the Engineer's building panels (see `InGameOptions.buildings`). */
   drawsBuildings: boolean;
+  /** TF2 language the `#Token`s read (`tf_<language>.txt`): the site's when the game ships it, else English. */
+  language: string;
+}
+
+/** The site's locale, as the page declares it (`<html lang>`, set before paint). */
+const siteLocale = (): string =>
+  typeof document === 'undefined' ? 'en' : document.documentElement.lang || 'en';
+
+/**
+ * The HUD's `#Token` strings: its own `resource/*_<language>.txt`, then the game's localisation
+ * (`resource/tf_<language>.txt`, then English) from the HUD base channel. The game's built-in
+ * stand-ins go underneath (`CustomHudRenderer.setFallbackTokens`).
+ */
+export function hudStrings(hud: LoadedHud, language: string): Map<string, string> {
+  const readHud = (p: string) => {
+    const c = hud.overlay.get(p);
+    return c ? contentBytes(c) : undefined;
+  };
+  const hudPaths = [...hud.overlay].filter(([, c]) => c).map(([p]) => p);
+  return layeredTokens({ language, readGame: (p) => baseCache.getBytes(p), readHud, hudPaths });
 }
 
 const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T | undefined> =>
@@ -81,14 +125,21 @@ function sampleTests(): TestState[] {
 }
 
 /** Load everything a HUD draws in game: its panel files, scheme, fonts, animations and textures. */
-export async function prepareHud(hud: LoadedHud): Promise<PreparedHud> {
+export async function prepareHud(
+  hud: LoadedHud,
+  opts: { locale?: string } = {},
+): Promise<PreparedHud> {
   const files = new HudFiles(hud.overlay);
   await baseCache.loadIndex();
+  const language = languageForSite(opts.locale ?? siteLocale(), (p) => baseCache.has(p));
+  // The game's language files come from the base whatever the HUD ships (its own only add to them).
+  await baseCache.ensure([languageFilePath(DEFAULT_LANGUAGE), languageFilePath(language)]);
   await files.ensure([
     ...CORE_FILES,
     ...ALL_INGAME_FILES,
+    ...EMBEDDED_INGAME_FILES,
+    ...MENU_SOURCE_FILES,
     ANIM_MANIFEST,
-    languageFilePath('english'),
   ]);
   const scripts = manifestFiles(files.readText(ANIM_MANIFEST));
   await files.ensure(scripts);
@@ -96,11 +147,11 @@ export async function prepareHud(hud: LoadedHud): Promise<PreparedHud> {
   const schemeText = files.readText(SCHEME_FILE);
   const scheme: Scheme = schemeText === undefined ? EMPTY_SCHEME : parseScheme(schemeText, PC_ENV);
   const source: SceneSource = {
-    readText: files.readText,
+    readText: readMenuText(files.readText),
     scheme,
     env: PC_ENV,
     minmode: false,
-    strings: buildTokens('english', files.readBytes),
+    strings: hudStrings(hud, language),
   };
   const parsed = scripts.map((f) => files.readText(f)).filter((t): t is string => t !== undefined);
   const script = parsed.length ? mergeScripts(parsed.map(parseAnimScript)) : null;
@@ -112,11 +163,20 @@ export async function prepareHud(hud: LoadedHud): Promise<PreparedHud> {
     script,
     images: null as unknown as ImageStore,
     onImage: null,
+    imageListeners: new Set(),
+    ...(() => {
+      const c = customisedMenus(hud.overlay);
+      return { menus: c.menus, drawsSpectator: c.spectator };
+    })(),
     drawsBuildings: [...hud.overlay.keys()].some((p) => /\/hud_obj_[^/]*\.res$/i.test(p)),
+    language,
   };
   const images = new ImageStore(
     files.readBytes,
-    () => prepared.onImage?.(),
+    () => {
+      prepared.onImage?.();
+      for (const l of prepared.imageListeners) l();
+    },
     (paths) => baseCache.ensure(paths),
   );
   images.setLookup(files.readBytes);
@@ -148,6 +208,17 @@ export async function prepareHud(hud: LoadedHud): Promise<PreparedHud> {
   }
   await withTimeout(images.preload([...paths]), PRELOAD_TIMEOUT_MS);
   return prepared;
+}
+
+/** `source` with the game's built-in stand-ins under its strings (the HUD's and the game's files win). */
+export function withFallbackTokens(
+  source: SceneSource,
+  fallback: ReadonlyMap<string, string>,
+): SceneSource {
+  if (fallback.size === 0) return source;
+  const strings = new Map(fallback);
+  for (const [k, v] of source.strings) strings.set(k, v);
+  return { ...source, strings };
 }
 
 export interface RendererStats {
@@ -202,6 +273,13 @@ export class CustomHudRenderer {
   private prepared: PreparedHud | null = null;
   private scene: InGameScene | null = null;
   private current: Scene | null = null;
+  /** The canvas in CSS px. */
+  private full: Screen = { w: 0, h: 0 };
+  /** Where the HUD's virtual screen sits on the canvas: the safe area (notch, home indicator). */
+  private insets: Insets = NO_INSETS;
+  /** The touch controls' buttons on the canvas (CSS px), or none. */
+  private reserve: readonly Rect[] | null = null;
+  /** The HUD's screen: the canvas inside the insets. */
   private screen: Screen = { w: 0, h: 0 };
   private dpr = 1;
   private lastState: HudState | null = null;
@@ -230,8 +308,8 @@ export class CustomHudRenderer {
   private fallbackTokens: ReadonlyMap<string, string> = new Map();
 
   /**
-   * English (or the player's language) for the `#tokens` the in-game panels use, where the HUD and the
-   * base have no `tf_<language>.txt` to say them (the base does not ship Valve's language files).
+   * The game's built-in stand-ins (in the player's language) for `#tokens` no language file defines —
+   * the HUD's own files and the game's localisation (`hudStrings`) win over them.
    */
   setFallbackTokens(tokens: ReadonlyMap<string, string>): void {
     this.fallbackTokens = tokens;
@@ -242,11 +320,13 @@ export class CustomHudRenderer {
     }
   }
 
+  /** The strings the HUD's labels and the game's run-time texts (bindings) read. */
+  private strings: ReadonlyMap<string, string> = new Map();
+
   private sourceOf(prepared: PreparedHud): SceneSource {
-    if (this.fallbackTokens.size === 0) return prepared.source;
-    const strings = new Map(this.fallbackTokens);
-    for (const [k, v] of prepared.source.strings) strings.set(k, v);
-    return { ...prepared.source, strings };
+    const source = withFallbackTokens(prepared.source, this.fallbackTokens);
+    this.strings = source.strings;
+    return source;
   }
 
   setHud(prepared: PreparedHud | null): void {
@@ -275,11 +355,37 @@ export class CustomHudRenderer {
     const w = Math.max(1, Math.round(cssW));
     const h = Math.max(1, Math.round(cssH));
     const dpr = typeof window === 'undefined' ? 1 : gameSurfaceDpr(window);
-    if (w === this.screen.w && h === this.screen.h && dpr === this.dpr) return;
-    this.screen = { w, h };
+    if (w === this.full.w && h === this.full.h && dpr === this.dpr) return;
+    this.full = { w, h };
     this.dpr = dpr;
     this.canvas.width = Math.round(w * dpr);
     this.canvas.height = Math.round(h * dpr);
+    this.relayout();
+  }
+
+  /**
+   * Phones: lay the HUD out inside the safe-area `insets` (as the game's own panels are), and move
+   * panel files that would sit under a touch button (`reserve`, canvas CSS px) up above it. Re-lays
+   * out only on a change.
+   */
+  setPlacement(insets: Insets, reserve: readonly Rect[] | null): void {
+    const key = (r: readonly Rect[] | null) => (r ? r.map((x) => `${x.x},${x.y},${x.w},${x.h}`).join(';') : '');
+    const same =
+      insets.top === this.insets.top &&
+      insets.right === this.insets.right &&
+      insets.bottom === this.insets.bottom &&
+      insets.left === this.insets.left &&
+      key(reserve) === key(this.reserve);
+    if (same) return;
+    this.insets = { ...insets };
+    this.reserve = reserve ? reserve.map((r) => ({ ...r })) : null;
+    this.relayout();
+  }
+
+  private relayout(): void {
+    const { w, h } = this.full;
+    const i = this.insets;
+    this.screen = { w: Math.max(1, w - i.left - i.right), h: Math.max(1, h - i.top - i.bottom) };
     this.scene?.invalidate();
     this.fullPaint = true;
     if (this.lastState) this.update(this.lastState, true);
@@ -316,13 +422,19 @@ export class CustomHudRenderer {
     }
 
     const result = scene.build({
-      files: inGameFiles(state, test, { buildings: prepared.drawsBuildings }),
+      files: inGameFiles(state, test, {
+        buildings: prepared.drawsBuildings,
+        spectator: prepared.drawsSpectator,
+      }),
       test,
       vars: liveVars(state, test),
-      bindings: bindingsFor(state, test),
+      bindings: bindingsFor(state, test, this.strings),
       screen: this.screen,
       styleFor: this.styleFor,
       anim: this.snapshot,
+      reserve: this.reserve
+        ? this.reserve.map((r) => ({ ...r, x: r.x - this.insets.left, y: r.y - this.insets.top }))
+        : null,
     });
     const t1 = performance.now();
     if (result.rebuilt > 0) {
@@ -349,12 +461,15 @@ export class CustomHudRenderer {
     if (!g || !prepared) return;
     const t0 = performance.now();
     const k = this.dpr;
+    // The scene is in safe-area coordinates; the canvas is the whole game area.
+    const ox = k * this.insets.left;
+    const oy = k * this.insets.top;
     // Run-time content (3D models, avatars, lists) has no stand-in box in game: the editor's dashed placeholders stay out.
     const opts = { images: prepared.images, skipDynamic: () => true, hideMissing: true };
     if (!dirty) {
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      g.setTransform(k, 0, 0, k, 0, 0);
+      g.setTransform(k, 0, 0, k, ox, oy);
       paintScene(g, scene, opts);
       this.fullPaint = false;
     } else {
@@ -369,7 +484,7 @@ export class CustomHudRenderer {
           h: Math.ceil(r.y + r.h + 1) - y0,
         };
         g.save();
-        g.setTransform(k, 0, 0, k, 0, 0);
+        g.setTransform(k, 0, 0, k, ox, oy);
         g.beginPath();
         g.rect(area.x, area.y, area.w, area.h);
         g.clip();

@@ -115,6 +115,8 @@ export class MatchRunner {
   private readonly heartbeatMs: number;
 
   private running = false;
+  /** host_timescale (a listen server's cheat): ticks are paced this much faster than real time. */
+  private scale = 1;
   /** Held by `setPaused` (a listen server's pause menu): no ticks run until it is released. */
   private paused = false;
   private last = 0;
@@ -148,6 +150,11 @@ export class MatchRunner {
 
   get matchCount(): number {
     return this.matches.size;
+  }
+
+  /** A running match's host (the listen server writes migration checkpoints from it), or null. */
+  hostOf(matchId: string): MatchHost | null {
+    return this.matches.get(matchId)?.host ?? null;
   }
 
   /** Apply one message from the pool. */
@@ -194,17 +201,18 @@ export class MatchRunner {
     this.acc += now - this.last;
     this.last = now;
 
-    let due = Math.floor((this.acc + this.earlyMs) / this.interval);
+    const interval = this.interval / this.scale;
+    let due = Math.floor((this.acc + this.earlyMs) / interval);
     if (due > this.maxCatchUp) {
       const dropped = due - this.maxCatchUp;
       this.stats.droppedTicks += dropped;
-      this.acc -= dropped * this.interval;
+      this.acc -= dropped * interval;
       due = this.maxCatchUp;
     }
     for (let i = 0; i < due; i += 1) {
       const started = this.now();
       this.runTick(started);
-      this.acc -= this.interval;
+      this.acc -= interval;
       const cost = this.now() - started;
       this.stats.tickCostMs = this.stats.tickCostMs * 0.95 + cost * 0.05;
     }
@@ -235,6 +243,21 @@ export class MatchRunner {
     } else if (this.hasRunningMatch()) {
       this.ensureLoop();
     }
+  }
+
+  /**
+   * host_timescale: pace the ticks `scale` times real time (clamped 0.1–10). Each tick is still 15 ms of
+   * game time; only how often they run changes. The current slot's progress carries over.
+   */
+  setTimescale(scale: number): void {
+    const s = Math.min(10, Math.max(0.1, Number.isFinite(scale) ? scale : 1));
+    if (s === this.scale) return;
+    this.acc *= this.scale / s;
+    this.scale = s;
+  }
+
+  get timescale(): number {
+    return this.scale;
   }
 
   shutdown(): void {
@@ -268,6 +291,8 @@ export class MatchRunner {
             return;
           }
           match.host = host;
+          // A restored match keeps its tick count (frames, clock sync and snapshots agree).
+          match.tick = host.tickCount?.() ?? 0;
           const queued = match.queue;
           match.queue = [];
           for (const message of queued) {
@@ -306,6 +331,17 @@ export class MatchRunner {
         case 'command':
           host.onCommand(message.playerId, message.cmd);
           this.summaryDirty = true;
+          break;
+        case 'resync':
+          host.resyncPlayer?.(message.playerId);
+          break;
+        case 'changelevel':
+          void host.changeLevel?.(message.map).then(() => {
+            this.summaryDirty = true;
+          });
+          break;
+        case 'owner':
+          host.setOwner?.(message.playerId);
           break;
         default:
           break;
@@ -414,7 +450,7 @@ export class MatchRunner {
   }
 
   private scheduleNext(): void {
-    const wait = this.interval - this.earlyMs - this.acc - (this.now() - this.last);
+    const wait = this.interval / this.scale - this.earlyMs - this.acc - (this.now() - this.last);
     if (wait > 0) {
       this.timer = this.setTimer(() => {
         this.timer = null;

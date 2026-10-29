@@ -26,6 +26,7 @@ export default function Tf2Hud({
   hideCrosshair,
   custom = false,
   customBuildings = false,
+  customSpectator = false,
   customLayer = null,
 }: {
   state: HudState;
@@ -34,6 +35,8 @@ export default function Tf2Hud({
   custom?: boolean;
   /** …including the Engineer's building panels. */
   customBuildings?: boolean;
+  /** …and the spectator GUI (its respawn text): the game's own stays for screen readers only. */
+  customSpectator?: boolean;
   /** The custom HUD's canvas: over the sniper scope, under everything the game draws itself. */
   customLayer?: ReactNode;
 }) {
@@ -62,7 +65,7 @@ export default function Tf2Hud({
           {local.engineer && local.alive ? <EngineerStatus engineer={local.engineer} team={local.team} /> : null}
         </>
       ) : null}
-      {local ? <RespawnPanel local={local} freeze={!!state.freezecam} /> : null}
+      {local ? <RespawnPanel local={local} freeze={!!state.freezecam} srOnly={custom && customSpectator} /> : null}
       {!custom && dead && state.freezecam ? <FreezeCam freeze={state.freezecam} /> : null}
       {!custom && state.match.win ? <WinPanel win={state.match.win} /> : null}
       {local?.alive && !zoomed ? <DamageNumbers numbers={state.damageNumbers} /> : null}

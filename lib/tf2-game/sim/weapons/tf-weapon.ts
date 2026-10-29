@@ -41,6 +41,7 @@ import {
 } from '../../data/weapons';
 import { TF_COND } from '../conditions';
 import { hookWeapon } from '../items/attributes';
+import { activateSodaPopperHype, tryShieldCharge } from '../items/effects';
 import { weaponScript } from '../items/scripts';
 import { MOVE_COND_AIR_CURRENT } from '../movement-types';
 import { CHAN_WEAPON } from '../events';
@@ -126,6 +127,13 @@ export function specFor(defindex: number, classIndex: number): WeaponSpec | null
   return weaponSpecFor(defindex, classIndex);
 }
 
+/** TF_WEAPON_SODA_POPPER. */
+const TF_WEAPON_SODA_POPPER = 76;
+/** ENERGY_WEAPON_MAX_CHARGE (tf_weaponbase.h). */
+export const ENERGY_WEAPON_MAX_CHARGE = 20;
+/** What reserve() reports for an energy weapon: there is always more to recharge from. */
+const ENERGY_RESERVE = 1 << 20;
+
 export abstract class TFWeapon extends BaseWeapon {
   readonly script: WeaponScript;
   readonly item: StockWeapon | null;
@@ -209,7 +217,50 @@ export abstract class TFWeapon extends BaseWeapon {
   }
 
   reserve(): number {
-    return this.reserveAmmo();
+    // An energy weapon recharges from nothing (CTFWeaponBase::Reload → Energy_Recharge).
+    return this.isEnergyWeapon() ? ENERGY_RESERVE : this.reserveAmmo();
+  }
+
+  // ─── Energy weapons (Energy_*: the Bison, the Pomson, the Cow Mangler, the Manmelter) ───
+
+  /** SDK: CTFWeaponBase::IsEnergyWeapon. The clip holds the energy (Clip1 → Energy_GetEnergy). */
+  isEnergyWeapon(): boolean {
+    return false;
+  }
+
+  /** SDK: Energy_GetShotCost / Energy_GetRechargeCost. */
+  energyShotCost(): number {
+    return 4;
+  }
+
+  energyRechargeCost(): number {
+    return 4;
+  }
+
+  /** SDK: CTFWeaponBase::Energy_GetMaxEnergy — whole shots of ENERGY_WEAPON_MAX_CHARGE (× mult_clipsize_upgrade). */
+  energyMax(): number {
+    const cost = this.energyShotCost();
+    if (cost <= 0) return ENERGY_WEAPON_MAX_CHARGE;
+    const shots = Math.trunc(hookWeapon(this, this.owner, 'mult_clipsize_upgrade', Math.trunc(ENERGY_WEAPON_MAX_CHARGE / cost)));
+    return shots * cost;
+  }
+
+  /** Energy_HasEnergy. */
+  energyHasEnergy(): boolean {
+    return this.clip >= this.energyShotCost();
+  }
+
+  /**
+   * Makes the clip the energy store: as many units as Energy_GetMaxEnergy, a shot's cost per shot,
+   * recharged a step at a time (ReloadSingly) with no reserve. Energy weapons call it from their
+   * constructor.
+   */
+  protected initEnergy(): void {
+    const max = this.energyMax();
+    this.stats.maxClip = max;
+    this.stats.ammoPerShot = this.energyShotCost();
+    this.stats.reloadsSingly = true;
+    this.clip = max;
   }
 
   // ─── CTFPlayer::CanAttack & co ───────────────────────────────────────────
@@ -243,6 +294,8 @@ export abstract class TFWeapon extends BaseWeapon {
         return;
       }
     }
+    // No stickybomb launcher: a Demoman's shield charges (CTFWearableDemoShield::DoSpecialAction).
+    if (o.playerClass === TF_CLASS_DEMOMAN) tryShieldCharge(o);
   }
 
   // ─── Crits ───────────────────────────────────────────────────────────────
@@ -382,6 +435,7 @@ export abstract class TFWeapon extends BaseWeapon {
     this.fireOnEmpty = false;
     this.currentAttackIsCrit = false;
     this.critTime = 0;
+    this.effectBarRegenTime = 0;
   }
 
   // ─── The frame ───────────────────────────────────────────────────────────
@@ -394,11 +448,89 @@ export abstract class TFWeapon extends BaseWeapon {
     airborneCondThink(o);
     if (this.nextAttack > o.world.curtime) this.itemBusyFrame(cmd);
     else this.tfItemPostFrame(cmd);
+    this.checkEffectBarRegen();
   }
 
   override itemHolsterFrame(_cmd: UserCmd): void {
     const o = this.owner;
     if (o) critTracker(o).update(o);
+    this.checkEffectBarRegen();
+  }
+
+  // ─── The effect bar (jars, drinks, the Sandvich, the cleaver, the ball) ───
+
+  /** m_flEffectBarRegenTime: when the next charge of the effect bar's ammo comes back (0 = full). */
+  effectBarRegenTime = 0;
+
+  /** SDK: InternalGetEffectBarRechargeTime — 0 for weapons without an effect bar. */
+  internalEffectBarRechargeTime(): number {
+    return 0;
+  }
+
+  /** SDK: CTFWeaponBase::HasEffectBarRegeneration. */
+  hasEffectBarRegeneration(): boolean {
+    return this.internalEffectBarRechargeTime() > 0;
+  }
+
+  /** SDK: CTFWeaponBase::GetEffectBarRechargeTime (× effectbar_recharge_rate). */
+  effectBarRechargeTime(): number {
+    return hookWeapon(this, this.owner, 'effectbar_recharge_rate', this.internalEffectBarRechargeTime());
+  }
+
+  /** SDK: CTFWeaponBase::GetEffectBarAmmo — the primary ammo type. */
+  effectBarAmmo(): number {
+    return this.stats.ammoType;
+  }
+
+  /** SDK: CTFWeaponBase::GetEffectBarProgress (0…1; 1 when the ammo is full). */
+  effectBarProgress(): number {
+    const o = this.owner;
+    const a = this.effectBarAmmo();
+    if (o && o.ammo[a] < o.maxAmmo[a]) {
+      const time = this.effectBarRechargeTime();
+      if (time <= 0) return 1;
+      return (time - (this.effectBarRegenTime - this.t)) / time;
+    }
+    return 1;
+  }
+
+  /** SDK: CTFWeaponBase::StartEffectBarRegen. */
+  startEffectBarRegen(): void {
+    const o = this.owner;
+    const a = this.effectBarAmmo();
+    const wasFull = !!o && o.ammo[a] + 1 === o.maxAmmo[a];
+    if (this.effectBarRegenTime < this.t || wasFull) this.effectBarRegenTime = this.t + this.effectBarRechargeTime();
+  }
+
+  /** SDK: CTFWeaponBase::CheckEffectBarRegen. */
+  checkEffectBarRegen(): void {
+    if (!this.effectBarRegenTime) return;
+    const o = this.owner;
+    if (!o) return;
+    const a = this.effectBarAmmo();
+    if (o.ammo[a] === o.maxAmmo[a]) {
+      this.effectBarRegenTime = 0;
+      return;
+    }
+    if (this.effectBarRegenTime < this.t) {
+      this.effectBarRegenTime = 0;
+      this.effectBarRegenFinished();
+    }
+  }
+
+  /** SDK: CTFWeaponBase::EffectBarRegenFinished — one more, and recharge again if not full. */
+  effectBarRegenFinished(): void {
+    const o = this.owner;
+    const a = this.effectBarAmmo();
+    if (o && o.ammo[a] < o.maxAmmo[a]) {
+      o.giveAmmo(1, a);
+      if (o.ammo[a] < o.maxAmmo[a]) this.startEffectBarRegen();
+    }
+  }
+
+  /** SDK: CTFWeaponBase::DecrementBarRegenTime. */
+  decrementBarRegenTime(time: number): void {
+    this.effectBarRegenTime -= time;
   }
 
   /** Was this button up in the previous command (m_afButtonPressed)? */
@@ -417,6 +549,8 @@ export abstract class TFWeapon extends BaseWeapon {
   itemBusyFrame(cmd: UserCmd): void {
     const t = this.t;
     const buttons = cmd.buttons;
+    // CTFSodaPopper::ItemBusyFrame: the hype can start mid-reload.
+    if (this.weaponId === TF_WEAPON_SODA_POPPER && buttons & IN_ATTACK2 && this.owner) activateSodaPopperHype(this.owner);
     if (buttons & IN_ATTACK2 && !this.inAttack2) {
       this.doClassSpecialSkill();
       this.inAttack2 = true;
@@ -492,6 +626,11 @@ export abstract class TFWeapon extends BaseWeapon {
 
   /** Default +attack2 for guns and melee (CTFWeaponBaseGun::SecondaryAttack): the class skill. */
   override secondaryAttack(_cmd: UserCmd): void {
+    // CTFSodaPopper::SecondaryAttack: the hype, not the class skill.
+    if (this.weaponId === TF_WEAPON_SODA_POPPER) {
+      if (this.owner) activateSodaPopperHype(this.owner);
+      return;
+    }
     if (this.inAttack2) return;
     this.doClassSpecialSkill();
     this.inAttack2 = true;
@@ -604,6 +743,11 @@ export abstract class TFWeapon extends BaseWeapon {
   incrementAmmo(): void {
     const o = this.owner;
     if (!o) return;
+    if (this.isEnergyWeapon()) {
+      // Energy_Recharge.
+      this.clip = Math.min(this.maxClip, this.clip + this.energyRechargeCost());
+      return;
+    }
     const a = o.ammo;
     if (a[this.stats.ammoType] > 0 && this.clip < this.maxClip) {
       this.clip++;
@@ -614,6 +758,10 @@ export abstract class TFWeapon extends BaseWeapon {
   /** SDK: CTFWeaponBase::ReloadSinglyPostFrame. */
   reloadSinglyPostFrame(): void {
     if (this.timeWeaponIdle > this.t) return;
+    if (this.isEnergyWeapon()) {
+      if (this.clip < this.maxClip) this.reload();
+      return;
+    }
     if ((this.clip === 0 && this.reserve() > 0) || this.reloadMode !== TF_RELOAD_START) this.reload();
   }
 
@@ -636,6 +784,7 @@ export abstract class TFWeapon extends BaseWeapon {
     out.critTime = this.critTime;
     out.lastCritCheck = this.lastCritCheckTime;
     out.critMult = o ? critTracker(o).critMultByte : 0;
+    out.effectBarRegenTime = this.effectBarRegenTime;
     out.aux4 = 0;
     out.aux5 = 0;
     out.aux6 = 0;
@@ -654,6 +803,7 @@ export abstract class TFWeapon extends BaseWeapon {
     this.critRequests = num(rec.critRequests);
     this.critTime = num(rec.critTime);
     this.lastCritCheckTime = num(rec.lastCritCheck);
+    this.effectBarRegenTime = num(rec.effectBarRegenTime);
     if (o) {
       const tr = critTracker(o);
       tr.networked = true;
@@ -670,6 +820,7 @@ export abstract class TFWeapon extends BaseWeapon {
   static readonly AMMO_SLOTS = TF_AMMO_COUNT;
   static readonly PRIMARY_SLOT = SLOT_PRIMARY;
 }
+
 
 /** A net value as a number (records hold number | string | boolean). */
 export const num = (v: unknown): number => (typeof v === 'number' ? v : typeof v === 'boolean' ? (v ? 1 : 0) : 0);

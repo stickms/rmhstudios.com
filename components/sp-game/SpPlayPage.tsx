@@ -68,7 +68,7 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
   return (
     <AppShell appClassName={theme}>
       <main className={cn('spg-menu app-page min-h-dvh bg-(--app-bg) text-(--app-text)', `spg-${game}`)}>
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 pb-16 pt-[calc(var(--safe-top,0px)+1rem)]">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 pr-[calc(1rem_+_var(--safe-right,0px))] pb-16 pl-[calc(1rem_+_var(--safe-left,0px))] pt-[calc(var(--safe-top,0px)+1rem)]">
           <Link
             to="/games"
             className="inline-flex min-h-11 w-fit items-center gap-1.5 text-sm font-medium text-(--app-text-muted) hover:text-(--app-text)"
@@ -124,7 +124,7 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
                         {t('play_chapter_n', { defaultValue: 'Chapter {{n}}', n: i + 1 })}
                       </span>
                       <span className="block text-base font-semibold">{chapters[m.name] ?? m.title}</span>
-                      <span className="block font-mono text-[11px] text-(--app-text-dim)">{m.name}</span>
+                      <span className="block font-mono text-xs text-(--app-text-dim)">{m.name}</span>
                       {!ok ? (
                         <span className="block text-xs text-(--app-text-muted)">
                           {t('play_not_available', { defaultValue: 'Not available yet' })}

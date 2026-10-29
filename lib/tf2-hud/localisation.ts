@@ -126,3 +126,105 @@ export function buildTokens(
 /** Whether a language's file is available from `readBytes`. */
 export const hasLanguage = (id: string, has: (path: string) => boolean): boolean =>
   has(languageFilePath(id));
+
+/* ───────────────────────── the site's language, and the layered lookup ───────────────────────── */
+
+/**
+ * The site's locale (i18next, `<html lang>`) → TF2's language id. Region tags pick TF2's regional
+ * files (`pt-BR` → `brazilian`, `zh-TW` → `tchinese`, `es-419` → `latam`); a language TF2 does not
+ * ship (Arabic, Hindi, Urdu, Indonesian…) has no entry and reads English.
+ */
+const SITE_LANGUAGE: Readonly<Record<string, string>> = {
+  en: 'english',
+  zh: 'schinese',
+  es: 'spanish',
+  fr: 'french',
+  pt: 'brazilian',
+  ru: 'russian',
+  de: 'german',
+  ja: 'japanese',
+  ko: 'koreana',
+  it: 'italian',
+  vi: 'vietnamese',
+  tr: 'turkish',
+  pl: 'polish',
+  nl: 'dutch',
+  cs: 'czech',
+  el: 'greek',
+  ro: 'romanian',
+  sv: 'swedish',
+  th: 'thai',
+  uk: 'ukrainian',
+  hu: 'hungarian',
+  da: 'danish',
+  fi: 'finnish',
+  nb: 'norwegian',
+  no: 'norwegian',
+  bg: 'bulgarian',
+};
+
+/** TF2's language id for a site locale, or undefined when TF2 has none (the caller reads English). */
+export function tfLanguageOf(locale: string | undefined): string | undefined {
+  const tag = (locale ?? '').toLowerCase().replace('_', '-');
+  const [lang = '', region = ''] = tag.split('-');
+  if (lang === 'zh' && (region === 'tw' || region === 'hk' || region === 'hant')) return 'tchinese';
+  if (lang === 'pt' && region === 'pt') return 'portuguese';
+  if (lang === 'es' && region && region !== 'es') return 'latam';
+  return SITE_LANGUAGE[lang];
+}
+
+/**
+ * The language to show `#Token`s in: the site's when the game ships its `tf_<language>.txt`
+ * (`has`), otherwise English.
+ */
+export function languageForSite(
+  locale: string | undefined,
+  has: (path: string) => boolean,
+): string {
+  const id = tfLanguageOf(locale);
+  return id && id !== DEFAULT_LANGUAGE && has(languageFilePath(id)) ? id : DEFAULT_LANGUAGE;
+}
+
+/** A HUD's own language files: `resource/<anything>_<language>.txt` (the engine adds every one it finds). */
+export function hudLanguageFiles(paths: Iterable<string>, language: string): string[] {
+  const english: string[] = [];
+  const chosen: string[] = [];
+  for (const p of paths) {
+    const m = /^resource\/[^/]+_([a-z]+)\.txt$/i.exec(p);
+    if (!m) continue;
+    const lang = m[1].toLowerCase();
+    if (lang === DEFAULT_LANGUAGE) english.push(p);
+    else if (lang === language) chosen.push(p);
+  }
+  return [...english.sort(), ...(language === DEFAULT_LANGUAGE ? [] : chosen.sort())];
+}
+
+export interface TokenLayers {
+  language: string;
+  /** The game's files (the published HUD base, or a file loaded into the editor). */
+  readGame: (path: string) => Uint8Array | undefined;
+  /** The HUD's own files, and which of its paths exist. */
+  readHud?: (path: string) => Uint8Array | undefined;
+  hudPaths?: Iterable<string>;
+  /** Last resort for tokens nobody defines (the game's few built-in strings, already translated). */
+  fallback?: ReadonlyMap<string, string>;
+}
+
+/**
+ * `#Token` → text, each token from the first of: the HUD's own `resource/*_<language>.txt`, then its
+ * `*_english.txt`, the game's `tf_<language>.txt`, the game's `tf_english.txt`, and `fallback`. The
+ * engine does the same: every file is added to one table, later files winning, the chosen language
+ * over English.
+ */
+export function layeredTokens(src: TokenLayers): Map<string, string> {
+  const out = new Map<string, string>(src.fallback ?? []);
+  const add = (bytes: Uint8Array | undefined) => {
+    if (bytes) for (const [k, v] of parseLanguageBytes(bytes).tokens) out.set(k, v);
+  };
+  add(src.readGame(languageFilePath(DEFAULT_LANGUAGE)));
+  if (src.language !== DEFAULT_LANGUAGE) add(src.readGame(languageFilePath(src.language)));
+  if (src.readHud && src.hudPaths) {
+    for (const p of hudLanguageFiles(src.hudPaths, src.language)) add(src.readHud(p));
+  }
+  return out;
+}

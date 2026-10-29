@@ -6,6 +6,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { COND_ENVS } from './scheme/cond';
 import { EMPTY_SCHEME, parseScheme, type Scheme } from './scheme/scheme';
 import { buildScene } from './scene/build';
@@ -13,7 +14,9 @@ import type { Scene } from './scene/types';
 import { varsFromState } from './fixtures';
 import { resolvePage, type HudPage } from './pages';
 import { gateFor, progressFor } from './game-state';
-import { buildTokens, languageFilePath } from './localisation';
+import { DEFAULT_LANGUAGE, languageFilePath, languageForSite, layeredTokens } from './localisation';
+import { baseCache } from './project/base-cache';
+import { contentBytes } from './project/model';
 import { useTf2HudPrefs } from './prefs';
 import { CORE_FILES, useEditor } from './store';
 import { screenOf } from './view';
@@ -32,28 +35,52 @@ export interface SceneResult {
 const EMPTY_SET: ReadonlySet<string> = new Set();
 
 /**
- * `#Token` strings for the chosen language (English by default), from the project's own
- * `resource/tf_<language>.txt`, an imported game file, or the base. Loads what it needs on demand.
+ * The TF2 language `#Token`s are shown in: the one picked in the toolbar, else the site's language when
+ * its `resource/tf_<language>.txt` is available (published with the base, or loaded here), else English.
+ */
+export function useTfLanguage(): string {
+  const picked = useTf2HudPrefs((s) => s.language);
+  const { i18n } = useTranslation();
+  const hasFile = useEditor((s) => s.hasFile);
+  // `hasFile` reads the base index and the loaded game files, which these follow.
+  useEditor((s) => s.baseStatus);
+  useEditor((s) => s.tfVersion);
+  return picked || languageForSite(i18n.language, hasFile);
+}
+
+/**
+ * `#Token` strings for the language (`useTfLanguage`): the project's own `resource/*_<language>.txt`
+ * and `*_english.txt` first, then the game's `tf_<language>.txt` and `tf_english.txt` (the published
+ * base, or a file loaded from the toolbar). Loads what it needs on demand.
  */
 export function useLocalisation(): ReadonlyMap<string, string> {
-  const language = useTf2HudPrefs((s) => s.language);
+  const language = useTfLanguage();
   const overlay = useEditor((s) => s.overlay);
   const baseVersion = useEditor((s) => s.baseVersion);
   const tfVersion = useEditor((s) => s.tfVersion);
+  const tfAssets = useEditor((s) => s.tfAssets);
   const baseStatus = useEditor((s) => s.baseStatus);
   const ensureFiles = useEditor((s) => s.ensureFiles);
-  const readBytes = useEditor((s) => s.readBytes);
 
   useEffect(() => {
     if (baseStatus !== 'ready') return;
-    void ensureFiles([languageFilePath('english'), languageFilePath(language)]);
+    void ensureFiles([languageFilePath(DEFAULT_LANGUAGE), languageFilePath(language)]);
   }, [baseStatus, language, ensureFiles]);
 
   return useMemo(
-    () => buildTokens(language, readBytes),
-    // `overlay`, `baseVersion` and `tfVersion` are the real inputs behind `readBytes`.
+    () =>
+      layeredTokens({
+        language,
+        readGame: (p) => baseCache.getBytes(p) ?? tfAssets.get(p),
+        readHud: (p) => {
+          const c = overlay.get(p);
+          return c ? contentBytes(c) : undefined;
+        },
+        hudPaths: [...overlay].filter(([, c]) => c).map(([p]) => p),
+      }),
+    // `baseVersion` and `tfVersion` change when the files behind the readers arrive.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [language, overlay, baseVersion, tfVersion, readBytes],
+    [language, overlay, baseVersion, tfVersion, tfAssets],
   );
 }
 

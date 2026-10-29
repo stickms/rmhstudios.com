@@ -6,10 +6,14 @@
  * through an Animator.
  *
  * Activities are named here by their base names (ACT_MP_RUN, ACT_MP_ATTACK_STAND_PRIMARYFIRE,
- * …) and translated for the held weapon's role with `translateActivity` — the weapon
- * acttables of tf_weaponbase.cpp (s_acttablePrimary, …) by their naming rule.
+ * …) and translated for the held weapon's activity role with `translateActivity` — the weapon
+ * acttables of tf_weaponbase.cpp (acttables.ts). Pose parameters are smoothed toward their
+ * per-frame goals (MOVE_POSE_RATE, AIM_POSE_RATE); the feet lag the eyes and turn in place in
+ * 45° steps (ComputePoseParam_AimYaw). Smooth blending between the activities and gestures
+ * chosen here is the Animator's (animator.ts: sequence transitions, gesture ramps).
  */
 import { TF_COND } from '../../sim/conditions';
+import { PLAYER_ACTTABLES } from './acttables';
 
 /** SDK: MOVING_MINIMUM_SPEED. */
 export const MOVING_MINIMUM_SPEED = 0.5;
@@ -20,6 +24,14 @@ export const MAX_BODY_YAW = 45;
 /** ConvergeYawAngles rate (DOD_BODYYAW_RATE) and fade span. */
 export const BODY_YAW_RATE = 720;
 const FADE_TURN_DEGREES = 60;
+/**
+ * Pose-parameter smoothing (the render-rate stand-in for C_BaseAnimating's pose-parameter
+ * interpolation): move_x / move_y approach their goal at this many units per second (a full
+ * 1 → 0 swing in 1/6 s, inside the 0.2 s sequence cross-fade a start or stop also brings) …
+ */
+export const MOVE_POSE_RATE = 6;
+/** … and body_yaw / body_pitch at DOD_BODYYAW_RATE degrees per second (flicks, snapshot steps). */
+export const AIM_POSE_RATE = BODY_YAW_RATE;
 
 // PlayerAnimEvent_t (multiplayer_animstate.h).
 export const PLAYERANIMEVENT_ATTACK_PRIMARY = 0;
@@ -38,9 +50,30 @@ export const PLAYERANIMEVENT_ATTACK_PRE = 23;
 export const PLAYERANIMEVENT_ATTACK_POST = 24;
 export const PLAYERANIMEVENT_DOUBLEJUMP = 27;
 
-/** Gesture slots (same numbering as animator.ts). */
+/** Gesture slots (same numbering as animator.ts, multiplayer_animstate.h GestureSlot_t). */
 export const SLOT_ATTACK_AND_RELOAD = 0;
+export const SLOT_GRENADE = 1;
 export const SLOT_JUMP = 2;
+export const SLOT_SWIM = 3;
+export const SLOT_FLINCH = 4;
+export const SLOT_VCD = 5;
+export const SLOT_CUSTOM = 6;
+
+/** SDK Approach: `cur` moved toward `goal` by at most `step`. */
+export function approach(goal: number, cur: number, step: number): number {
+  const d = goal - cur;
+  if (d > step) return cur + step;
+  if (d < -step) return cur - step;
+  return goal;
+}
+
+/** Approach for angles in degrees, the short way round. */
+export function approachAngle(goal: number, cur: number, step: number): number {
+  const d = angleNormalize(goal - cur);
+  if (d > step) return angleNormalize(cur + step);
+  if (d < -step) return angleNormalize(cur - step);
+  return goal;
+}
 
 export const angleNormalize = (a: number): number => {
   a %= 360;
@@ -50,60 +83,17 @@ export const angleNormalize = (a: number): number => {
 };
 
 /**
- * Translates a base activity for a weapon role suffix (PRIMARY, SECONDARY, MELEE, ITEM1, …),
- * following the tf_weaponbase.cpp acttables. Returns the base activity when the table has no
- * row for it (PREFIRE/POSTFIRE, voice gestures …).
+ * Translates a base activity for the held weapon's activity role (PRIMARY, SECONDARY, MELEE,
+ * PDA, BUILDING, ITEM1–4, MELEE_ALLCLASS, PRIMARY2, SECONDARY2 — the script's WeaponType or the
+ * item's `anim_slot`): CTFWeaponBase::ActivityList picks the role's acttable
+ * (acttables.ts, s_acttablePrimary …; an unknown role uses the primary table, as the SDK's
+ * `default:` does) and a base activity without a row stays as it is (PREFIRE/POSTFIRE, …).
+ * No role ('') translates nothing.
  */
-export function translateActivity(base: string, suffix: string): string {
-  if (!suffix) return base;
-  const S = suffix;
-  const m = /^ACT_MP_(.*)$/.exec(base);
-  if (!m) return base;
-  const rest = m[1];
-  switch (rest) {
-    case 'STAND_IDLE':
-      return `ACT_MP_STAND_${S}`;
-    case 'CROUCH_IDLE':
-      return `ACT_MP_CROUCH_${S}`;
-    case 'RUN':
-    case 'WALK':
-    case 'AIRWALK':
-    case 'CROUCHWALK':
-    case 'JUMP':
-    case 'JUMP_START':
-    case 'JUMP_FLOAT':
-    case 'JUMP_LAND':
-    case 'SWIM':
-    case 'DOUBLEJUMP_CROUCH':
-    case 'FALLING_STOMP':
-    case 'GESTURE_FLINCH':
-      return `ACT_MP_${rest}_${S}`;
-    case 'DEPLOYED':
-    case 'DEPLOYED_IDLE':
-    case 'SWIM_DEPLOYED':
-      return `ACT_MP_${rest}_${S}`;
-    case 'CROUCH_DEPLOYED':
-      return S === 'PRIMARY' ? 'ACT_MP_CROUCHWALK_DEPLOYED' : `ACT_MP_CROUCHWALK_DEPLOYED_${S}`;
-    case 'CROUCH_DEPLOYED_IDLE':
-      return S === 'PRIMARY' ? 'ACT_MP_CROUCH_DEPLOYED_IDLE' : `ACT_MP_CROUCH_DEPLOYED_IDLE_${S}`;
-  }
-  let a = /^ATTACK_(STAND|CROUCH|SWIM|AIRWALK)_PRIMARYFIRE(_DEPLOYED)?$/.exec(rest);
-  if (a) return `ACT_MP_ATTACK_${a[1]}_${S}${a[2] ?? ''}`;
-  a = /^ATTACK_(STAND|CROUCH|SWIM|AIRWALK)_SECONDARYFIRE$/.exec(rest);
-  if (a) {
-    if (a[1] === 'STAND' || a[1] === 'CROUCH') {
-      return S === 'PRIMARY' || S === 'SECONDARY' ? base : `ACT_MP_ATTACK_${a[1]}_${S}_SECONDARY`;
-    }
-    return `ACT_MP_ATTACK_${a[1]}_${S}`;
-  }
-  a = /^ATTACK_(STAND|CROUCH|SWIM|AIRWALK)_GRENADE$/.exec(rest);
-  if (a)
-    return S === 'BUILDING'
-      ? 'ACT_MP_ATTACK_STAND_GRENADE_BUILDING'
-      : 'ACT_MP_ATTACK_STAND_GRENADE';
-  a = /^RELOAD_(STAND|CROUCH|SWIM|AIRWALK)(_LOOP|_END)?$/.exec(rest);
-  if (a) return `ACT_MP_RELOAD_${a[1]}_${S}${a[2] ?? ''}`;
-  return base;
+export function translateActivity(base: string, role: string): string {
+  if (!role) return base;
+  const table = PLAYER_ACTTABLES[role] ?? PLAYER_ACTTABLES.PRIMARY;
+  return table[base] ?? base;
 }
 
 export interface PlayerAnimInput {
@@ -161,10 +151,20 @@ export class TFPlayerAnimState {
   /** Outputs of the last update. */
   mainActivity = 'ACT_MP_STAND_IDLE';
   translatedMain = 'ACT_MP_STAND_IDLE';
+  /**
+   * Pose parameters. The compute*() steps write their goals here; `update()` then replaces them
+   * with the smoothed values the model is posed with (MOVE_POSE_RATE / AIM_POSE_RATE).
+   */
   moveX = 0;
   moveY = 0;
   bodyYaw = 0;
   bodyPitch = 0;
+  /** The smoothed pose parameters (valid once `poseInit`). */
+  private smoothMoveX = 0;
+  private smoothMoveY = 0;
+  private smoothBodyYaw = 0;
+  private smoothBodyPitch = 0;
+  private poseInit = false;
   /** Gestures to start this frame. */
   readonly gestures: GestureRequest[] = [];
 
@@ -179,6 +179,34 @@ export class TFPlayerAnimState {
     this.currentFeetYaw = eyeYaw;
     this.lastAimTurnTime = 0;
     this.gestures.length = 0;
+    this.poseInit = false;
+  }
+
+  /**
+   * Moves the posed parameters toward this frame's goals (in moveX … bodyPitch) at their
+   * approach rates and writes the result back. The first update after a reset takes the goals.
+   */
+  smoothPoseParams(dt: number): void {
+    if (!this.poseInit || dt <= 0) {
+      if (!this.poseInit) {
+        this.smoothMoveX = this.moveX;
+        this.smoothMoveY = this.moveY;
+        this.smoothBodyYaw = this.bodyYaw;
+        this.smoothBodyPitch = this.bodyPitch;
+        this.poseInit = true;
+      }
+    } else {
+      const m = MOVE_POSE_RATE * dt;
+      const a = AIM_POSE_RATE * dt;
+      this.smoothMoveX = approach(this.moveX, this.smoothMoveX, m);
+      this.smoothMoveY = approach(this.moveY, this.smoothMoveY, m);
+      this.smoothBodyYaw = approachAngle(this.bodyYaw, this.smoothBodyYaw, a);
+      this.smoothBodyPitch = approachAngle(this.bodyPitch, this.smoothBodyPitch, a);
+    }
+    this.moveX = this.smoothMoveX;
+    this.moveY = this.smoothMoveY;
+    this.bodyYaw = this.smoothBodyYaw;
+    this.bodyPitch = this.smoothBodyPitch;
   }
 
   private isAiming(inp: PlayerAnimInput): boolean {
@@ -438,7 +466,7 @@ export class TFPlayerAnimState {
         break;
       case PLAYERANIMEVENT_ATTACK_GRENADE:
         this.gestures.push({
-          slot: 1,
+          slot: SLOT_GRENADE,
           activity: this.translate('ACT_MP_ATTACK_STAND_GRENADE', inp),
           autoKill: true,
         });
@@ -502,7 +530,7 @@ export class TFPlayerAnimState {
         break;
       case PLAYERANIMEVENT_FLINCH_CHEST:
         this.gestures.push({
-          slot: 4,
+          slot: SLOT_FLINCH,
           activity: this.translate('ACT_MP_GESTURE_FLINCH', inp),
           autoKill: true,
         });
@@ -511,8 +539,9 @@ export class TFPlayerAnimState {
   }
 
   /**
-   * One update (SDK CTFPlayerAnimState::Update): the main activity, then pose parameters.
-   * `entityYaw` is the networked entity yaw; returns the render (feet) yaw.
+   * One update (SDK CTFPlayerAnimState::Update): the main activity, then pose parameters
+   * (smoothed: `smoothPoseParams`). `entityYaw` is the networked entity yaw; returns the render
+   * (feet) yaw. Run it every render frame on interpolated state.
    */
   update(
     inp: PlayerAnimInput,
@@ -524,6 +553,7 @@ export class TFPlayerAnimState {
     this.computeMoveYaw(inp, entityYaw, groundSpeedAt);
     this.computeAimPitch(inp);
     this.computeAimYaw(inp);
+    this.smoothPoseParams(inp.dt);
     return this.currentFeetYaw;
   }
 }

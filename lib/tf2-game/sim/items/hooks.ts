@@ -14,6 +14,14 @@ import type { Weapon } from '../weapon-api';
 import type { GameWorld } from '../world';
 import { TF_COND } from '../conditions';
 import { hookInt, hookPlayer, hookWeapon } from './attributes';
+import { isDotDamage, unlockOnHit } from './damage-rules';
+import {
+  FEIGN_DEATH_ACTIVATE_DAMAGE_SCALE,
+  FEIGN_DEATH_DAMAGE_SCALE,
+  setScoutHypeMeter,
+  STEALTH_DAMAGE_REDUCTION,
+} from './effects';
+import { remapClamped } from '../../core/vec';
 
 /** DMG_BURN (sim/damage.ts), repeated here to keep this module free of the damage module's imports. */
 const DMG_BURN = 1 << 3;
@@ -61,7 +69,13 @@ export function applyOnHitAttributes(attacker: Player, victim: Player, info: Dam
     const base = info.baseDamage || info.damage;
     const scale = Math.min(1, Math.max(0, base > 0 ? info.damage / base : 1));
     health = Math.max(3, Math.trunc(health * scale));
-    if (health > 0) attacker.takeHealth(health);
+  }
+  // Mad Milk, the Concheror, meters, Natascha's slow, marks … (sim/items/damage-rules.ts).
+  health += unlockOnHit(attacker, victim, weapon, info);
+  if (health > 0) attacker.takeHealth(health);
+  else if (health < 0) {
+    // A negative add_onhit_addhealth hurts the wielder (CTakeDamageInfo( attacker, weapon, -n )).
+    attacker.health = Math.max(1, attacker.health + health);
   }
   if (attacker.playerClass === TF_CLASS_MEDIC) {
     const uber = hookWeapon(weapon, attacker, 'add_onhit_ubercharge', 0);
@@ -130,13 +144,56 @@ export function aliveDamageModifiers(
   base: number,
   bonus: number,
 ): number {
+  // (base and bonus are reassigned below: resists scale only the base, crit resists the bonus)
   const type = info.damageType;
-  if (type & (DMG_BURN | DMG_IGNITE)) base = hookPlayer(victim, 'mult_dmgtaken_from_fire', base);
-  if (type & DMG_BLAST && attacker !== victim)
-    base = hookPlayer(victim, 'mult_dmgtaken_from_explosions', base);
-  if (type & (DMG_BULLET | DMG_BUCKSHOT))
-    base = hookPlayer(victim, 'mult_dmgtaken_from_bullets', base);
-  if (type & DMG_MELEE) base = hookPlayer(victim, 'mult_dmgtaken_from_melee', base);
+  const world = victim.world;
+  const hitWeapon = damageWeapon(world, info);
+  // set_dmgtype_ignite (the Sharpened Volcano Fragment), never from a damage-over-time tick.
+  if (hitWeapon && !isDotDamage(info.customKill) && hookInt(hookWeapon(hitWeapon, hitWeapon.owner, 'set_dmgtype_ignite', 0)))
+    info.damageType |= DMG_IGNITE;
+  if (info.damageType & DMG_IGNITE && victim.move.waterLevel < 2 && victim.cond.has(TF_COND.FIRE_IMMUNE)) return 0;
+  const pierce = hitWeapon ? hookInt(hookWeapon(hitWeapon, hitWeapon.owner, 'mod_pierce_resists_absorbs', 0)) !== 0 : false;
+  const rawBase = base;
+  // CheckForDamageTypeImmunity.
+  if (
+    (type & (DMG_BURN | DMG_IGNITE) && victim.cond.has(TF_COND.FIRE_IMMUNE)) ||
+    (!(type & (DMG_BURN | DMG_IGNITE)) && type & (DMG_BULLET | DMG_BUCKSHOT) && victim.cond.has(TF_COND.BULLET_IMMUNE)) ||
+    (!(type & (DMG_BURN | DMG_IGNITE | DMG_BULLET | DMG_BUCKSHOT)) && type & DMG_BLAST && victim.cond.has(TF_COND.BLAST_IMMUNE))
+  ) {
+    base = 0;
+    bonus = 0;
+  }
+  if (!pierce) {
+    const crit = (type & DMG_CRITICAL) !== 0;
+    if (crit) bonus = hookPlayer(victim, 'mult_dmgtaken_from_crit', bonus);
+    if (type & (DMG_BURN | DMG_IGNITE)) {
+      base = hookPlayer(victim, 'mult_dmgtaken_from_fire', base);
+      const active = victim.activeWeapon();
+      if (active) base = hookWeapon(active, null, 'mult_dmgtaken_from_fire_active', base);
+      [base, bonus] = checkMedicResist(TF_COND.MEDIGUN_SMALL_FIRE_RESIST, TF_COND.MEDIGUN_UBER_FIRE_RESIST, 'fire', victim, base, crit, bonus);
+    }
+    if (attacker && attacker.isPlayer() && victim.cond.has(TF_COND.BURNING)) {
+      const aw = (attacker as Player).activeWeapon();
+      if (aw) base = hookWeapon(aw, attacker as Player, 'mult_dmg_vs_burning', base);
+    }
+    if (type & DMG_BLAST && attacker !== victim) {
+      base = hookPlayer(victim, 'mult_dmgtaken_from_explosions', base);
+      [base, bonus] = checkMedicResist(TF_COND.MEDIGUN_SMALL_BLAST_RESIST, TF_COND.MEDIGUN_UBER_BLAST_RESIST, 'blast', victim, base, crit, bonus);
+    }
+    if (type & (DMG_BULLET | DMG_BUCKSHOT)) {
+      base = hookPlayer(victim, 'mult_dmgtaken_from_bullets', base);
+      [base, bonus] = checkMedicResist(TF_COND.MEDIGUN_SMALL_BULLET_RESIST, TF_COND.MEDIGUN_UBER_BULLET_RESIST, 'bullet', victim, base, crit, bonus);
+    }
+    if (type & DMG_MELEE) base = hookPlayer(victim, 'mult_dmgtaken_from_melee', base);
+  }
+  if (base !== rawBase && victim.world.isServer) {
+    // PlayDamageResistSound: the light / medium / heavy resist sound by how much was kept off.
+    const ratio = rawBase > 0 ? base / rawBase : 1;
+    if (ratio < 1) {
+      const name = ratio <= 0.25 ? 'Player.ResistanceHeavy' : ratio <= 0.75 ? 'Player.ResistanceMedium' : 'Player.ResistanceLight';
+      world.emitSound(name, { entity: victim.id });
+    }
+  }
   // A spun-up Heavy below half health (spunup_damage_resistance: Natascha, the Brass Beast).
   if (victim.playerClass === TF_CLASS_HEAVY && victim.cond.has(TF_COND.AIMING)) {
     const real = base + bonus;
@@ -146,10 +203,22 @@ export function aliveDamageModifiers(
   let real = base + bonus;
   real = hookPlayer(victim, 'mult_dmgtaken', real);
   const active = victim.activeWeapon();
-  if (active) {
+  if (active) real = hookWeapon(active, null, 'mult_dmgtaken_active', real);
+  const inflictorEnt = world.entity(info.inflictor);
+  if (inflictorEnt && inflictorEnt.isBaseObject()) real = hookPlayer(victim, 'dmg_from_sentry_reduced', real);
+  if (active && !pierce) {
     if (type & DMG_CLUB) real = hookWeapon(active, null, 'dmg_from_melee', real);
     else if (type & (DMG_BLAST | DMG_BULLET | DMG_BUCKSHOT | DMG_IGNITE | DMG_SONIC))
       real = hookWeapon(active, null, 'dmg_from_ranged', real);
+  }
+  // The Dead Ringer and the cloak: less damage while feigning (60 % → 20 % kept as the cloak runs
+  // down), a quarter on the hit that triggers it, 80 % while cloaked.
+  if (victim.playerClass === TF_CLASS_SPY && info.customKill !== TF_DMG_CUSTOM_TELEFRAG && !victim.cond.has(TF_COND.TAUNTING) && !pierce) {
+    if (victim.cond.has(TF_COND.FEIGN_DEATH) || victim.unlock.feignDeathReady) {
+      let scale = remapClamped(victim.cloakMeter, 50, 0, FEIGN_DEATH_DAMAGE_SCALE, STEALTH_DAMAGE_REDUCTION);
+      if (victim.unlock.feignDeathReady) scale = FEIGN_DEATH_ACTIVATE_DAMAGE_SCALE;
+      real *= scale;
+    } else if (victim.cond.has(TF_COND.STEALTHED)) real *= STEALTH_DAMAGE_REDUCTION;
   }
   if (attacker === victim) {
     // Self blast damage: rocket_jump_dmg_reduction when the blast hurt no other player, then the
@@ -162,11 +231,52 @@ export function aliveDamageModifiers(
       real = hookWeapon(weapon, victim, 'blast_dmg_to_self', real);
     }
   }
+  // hype_on_damage (the Soda Popper): 1 → 50 hype for 1 → 200 damage.
+  if (attacker && attacker !== victim && attacker.isPlayer() && real > 0) {
+    const a = attacker as Player;
+    if (hookInt(hookPlayer(a, 'hype_on_damage', 0))) {
+      const hype = remapClamped(real, 1, 200, 1, 50);
+      setScoutHypeMeter(a, Math.min(100, hype + a.move.scoutHype));
+    }
+  }
   return real;
+}
+
+/**
+ * SDK: CheckMedicResist (tf_gamerules.cpp) — the Vaccinator's passive and über resistances,
+ * read from the providing Medic (medigun_<type>_resist_passive / _deployed); an über resist
+ * also cancels the crit bonus. Returns [base, bonus].
+ */
+function checkMedicResist(
+  passive: number,
+  deployed: number,
+  type: 'bullet' | 'blast' | 'fire',
+  victim: Player,
+  base: number,
+  crit: boolean,
+  bonus: number,
+): [number, number] {
+  const cond = victim.cond.has(deployed) ? deployed : victim.cond.has(passive) ? passive : -1;
+  if (cond < 0) return [base, bonus];
+  const providerEnt = victim.world.entity(victim.cond.getProvider(cond));
+  if (!providerEnt || !providerEnt.isPlayer()) return [base, bonus];
+  const provider = providerEnt as Player;
+  const uber = cond === deployed;
+  let scale = hookPlayer(provider, `medigun_${type}_resist_${uber ? 'deployed' : 'passive'}`, 0);
+  if (uber && victim.cond.has(TF_COND.HEALING_DEBUFF)) scale *= 1 - PYRO_AFTERBURN_HEALING_REDUCTION;
+  scale = Math.max(0, 1 - scale);
+  if (crit && uber) bonus = victim.cond.has(TF_COND.HEALING_DEBUFF) ? bonus * PYRO_AFTERBURN_HEALING_REDUCTION : 0;
+  return [base * scale, bonus];
 }
 
 // Damage bits (sim/damage.ts), repeated to avoid importing the damage module here.
 const DMG_BULLET = 1 << 1;
+const DMG_CRITICAL = 1 << 20;
+/** PYRO_AFTERBURN_HEALING_REDUCTION (tf_shareddefs.h). */
+const PYRO_AFTERBURN_HEALING_REDUCTION = 0.2;
+/** TF_DMG_CUSTOM_TELEFRAG. */
+const TF_DMG_CUSTOM_TELEFRAG = 16;
+const TF_CLASS_SPY = 8;
 /** DMG_IGNORE_MAXHEALTH (= DMG_BULLET, as the SDK reuses it for TakeHealth). */
 const DMG_IGNORE_MAXHEALTH = DMG_BULLET;
 const DMG_BLAST = 1 << 6;

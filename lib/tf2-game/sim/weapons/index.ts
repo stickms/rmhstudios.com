@@ -19,6 +19,16 @@ import { Bottle, Fists, Knife, MeleeWeapon, Wrench } from './melee';
 import { Minigun } from './minigun';
 import { SniperRifle } from './sniper-rifle';
 import { DisguiseKit, InvisWatch } from './spy';
+import { CompoundBow, Crossbow } from './bow';
+import { ThrownCleaver, ThrownGas, ThrownJar, ThrownMilk } from './throwables';
+import { Lunchbox, LunchboxDrink } from './lunchbox';
+import { FlareGun, FlareGunRevenge } from './flaregun';
+import { DRGPomson, ParticleCannon, Raygun } from './energy';
+import { BuffItem, Parachute } from './buff-item';
+import { Cannon } from './cannon';
+import { DragonsFury } from './dragons-fury';
+import { LaserPointer, MechanicalArm, ShotgunBuildingRescue } from './engineer';
+import { Revolver } from './revolver';
 
 export * from './constants';
 export * from './crits';
@@ -32,6 +42,16 @@ export * from './flamethrower';
 export * from './melee';
 export * from './medigun';
 export * from './spy';
+export * from './bow';
+export * from './throwables';
+export * from './lunchbox';
+export * from './flaregun';
+export * from './energy';
+export * from './buff-item';
+export * from './cannon';
+export * from './dragons-fury';
+export * from './engineer';
+export * from './revolver';
 
 const make =
   <T>(ctor: new (spec: WeaponSpec) => T): WeaponFactory =>
@@ -48,7 +68,7 @@ export const STOCK_WEAPON_FACTORIES: Readonly<Record<string, WeaponFactory>> = {
   tf_weapon_pistol: make(HitscanGun),
   tf_weapon_pistol_scout: make(HitscanGun),
   tf_weapon_smg: make(HitscanGun),
-  tf_weapon_revolver: make(HitscanGun),
+  tf_weapon_revolver: make(Revolver),
   tf_weapon_minigun: make(Minigun),
   tf_weapon_sniperrifle: make(SniperRifle),
   tf_weapon_syringegun_medic: make(SyringeGun),
@@ -71,13 +91,41 @@ export const STOCK_WEAPON_FACTORIES: Readonly<Record<string, WeaponFactory>> = {
 };
 
 /**
+ * Unlock scripts with a class of their own (data/unlock-scripts.ts `ownClass`), by script name:
+ * each is the SDK class of that name ported here.
+ */
+export const UNLOCK_WEAPON_FACTORIES: Readonly<Record<string, WeaponFactory>> = {
+  tf_weapon_compound_bow: make(CompoundBow),
+  tf_weapon_crossbow: make(Crossbow),
+  tf_weapon_jar: make(ThrownJar),
+  tf_weapon_jar_milk: make(ThrownMilk),
+  tf_weapon_cleaver: make(ThrownCleaver),
+  tf_weapon_jar_gas: make(ThrownGas),
+  tf_weapon_lunchbox: make(Lunchbox),
+  tf_weapon_lunchbox_drink: make(LunchboxDrink),
+  tf_weapon_flaregun: make(FlareGun),
+  tf_weapon_flaregun_revenge: make(FlareGunRevenge),
+  tf_weapon_raygun: make(Raygun),
+  tf_weapon_drg_pomson: make(DRGPomson),
+  tf_weapon_particle_cannon: make(ParticleCannon),
+  tf_weapon_buff_item: make(BuffItem),
+  tf_weapon_parachute_primary: make(Parachute),
+  tf_weapon_parachute_secondary: make(Parachute),
+  tf_weapon_cannon: make(Cannon),
+  tf_weapon_rocketlauncher_fireball: make(DragonsFury),
+  tf_weapon_laser_pointer: make(LaserPointer),
+  tf_weapon_mechanical_arm: make(MechanicalArm),
+  tf_weapon_shotgun_building_rescue: make(ShotgunBuildingRescue),
+};
+
+/**
  * Registers every stock weapon factory with the core's weapon registry (idempotent), and every
  * unlock script that refines a stock class (data/unlock-scripts.ts) with its base's factory.
  */
 export function registerStockWeapons(): void {
   for (const [classname, factory] of Object.entries(STOCK_WEAPON_FACTORIES)) registerWeapon(classname, factory);
   for (const [classname, script] of Object.entries(UNLOCK_WEAPON_SCRIPTS)) {
-    const factory = STOCK_WEAPON_FACTORIES[script.base];
+    const factory = script.ownClass ? UNLOCK_WEAPON_FACTORIES[classname] : STOCK_WEAPON_FACTORIES[script.base];
     if (factory) registerWeapon(classname, factory);
   }
 }

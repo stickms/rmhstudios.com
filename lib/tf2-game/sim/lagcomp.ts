@@ -26,7 +26,7 @@ export const LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR = 64 * 64;
 export const LAG_HISTORY_TICKS = Math.ceil(SV_MAXUNLAG / TICK_INTERVAL) + 1;
 
 /** Ring of LagRecords for one player (structure of arrays). */
-class PlayerTrack {
+export class PlayerTrack {
   readonly time = new Float64Array(LAG_HISTORY_TICKS);
   readonly x = new Float64Array(LAG_HISTORY_TICKS);
   readonly y = new Float64Array(LAG_HISTORY_TICKS);

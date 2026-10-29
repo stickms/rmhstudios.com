@@ -55,7 +55,21 @@ function TeamTable({ team, score, rows, showClass }: { team: number; score: numb
               </td>
               <td>{r.score}</td>
               <td>{showClass || r.isLocal ? <ClassIcon cls={r.cls} /> : null}</td>
-              <td>{r.bot ? t('scores_bot', { defaultValue: 'BOT' }) : r.ping}</td>
+              <td>
+                {r.bot ? t('scores_bot', { defaultValue: 'BOT' }) : r.ping}
+                {r.link === 'host' ? (
+                  <span className="tf2g-score-tag">{t('scores_link_host', { defaultValue: 'Host' })}</span>
+                ) : r.link === 'relayed' ? (
+                  <span className="tf2g-score-tag">{t('scores_link_relayed', { defaultValue: 'Relayed' })}</span>
+                ) : r.link === 'turn' ? (
+                  <span className="tf2g-score-tag">{t('scores_link_turn', { defaultValue: 'TURN' })}</span>
+                ) : r.link === 'direct' ? (
+                  <span className="tf2g-score-tag">{t('scores_link_direct', { defaultValue: 'Direct' })}</span>
+                ) : null}
+                {r.loss && r.loss >= 0.01 ? (
+                  <span className="tf2g-score-tag">{t('scores_loss', { defaultValue: '{{n}}% loss', n: Math.round(r.loss * 100) })}</span>
+                ) : null}
+              </td>
             </tr>
           ))}
         </tbody>

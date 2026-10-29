@@ -65,6 +65,10 @@ export class ModelInstance {
   private meshFilter: ((mesh: Mesh) => boolean) | null = null;
   /** Set when this instance is bone-merged onto a parent. */
   mergedInto: ModelInstance | null = null;
+  /** A rigid child: the parent's bone it hangs from (attachRigid). */
+  private hungFrom = '';
+  /** Bone-merged: this model's own bones the parent lacks, now hanging from the parent's (jiggle bones). */
+  mergedBones: readonly Bone[] = [];
   disposed = false;
 
   constructor(
@@ -227,8 +231,18 @@ export class ModelInstance {
   attachmentMatrix(name: string, out: Matrix4): boolean {
     const a = this.asset.attachments.get(name.toLowerCase());
     if (a) {
-      const bone = this.bone(a.bone);
+      // A loadout item's attachment on a bone it does not have and does not hang from (a gun's
+      // barrel bone, exported as plain meshes) is placed by its bind-space matrix instead.
+      const lower = a.bone.toLowerCase();
+      const bone =
+        this.boneByName.get(lower) ??
+        (!a.bind || lower === this.hungFrom ? this.bone(a.bone) : null);
       if (bone) out.multiplyMatrices(bone.matrixWorld, a.local);
+      else if (a.bind)
+        out.multiplyMatrices(
+          tmpM.multiplyMatrices(this.root.matrixWorld, this.asset.frame),
+          a.bind,
+        );
       else
         out.multiplyMatrices(
           tmpM.multiplyMatrices(this.root.matrixWorld, this.asset.frame),
@@ -261,6 +275,7 @@ export class ModelInstance {
     // Skinned meshes draw where their bones are; keep the child under our root so it shows and
     // hides with us. A rigid child (no skinning) follows its own root, placed at our origin.
     this.frameGroup.add(child.root);
+    child.mergedBones = merged?.moved ?? [];
     if (merged) {
       child.boneByName.clear();
       child.scene.traverse((o) => {
@@ -299,6 +314,7 @@ export class ModelInstance {
     child.frameGroup.matrix.identity();
     child.root.matrix.copy(pose);
     child.root.matrixWorldNeedsUpdate = true;
+    child.hungFrom = bone.name.toLowerCase();
     bone.add(child.root);
     this.children.push(child);
     return true;
@@ -323,6 +339,7 @@ export class ModelInstance {
     if (this.disposed) return;
     this.disposed = true;
     for (const c of [...this.children]) c.dispose();
+    for (const b of this.mergedBones) b.removeFromParent();
     this.detach();
     this.root.removeFromParent();
     for (const m of this.materials.values()) m.dispose();

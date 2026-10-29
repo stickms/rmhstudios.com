@@ -87,6 +87,39 @@ for fire in (0,1):
     if fire: script += [dict(vm=dict(vmActivity=3, vmActivitySeq=2)), dict(advance=0.06)]
     scenes['tf2/ctf_2fort'].append(dict(name='loadout-vm-directhit-' + ('fire' if fire else 'idle'), view=dict(origin=[1420,1440,340], angles=[0,180,0], fov=90), vm=vm, script=script))
 
+# team skins: the same items on RED and BLU (a BLU skin where the model has one: textures and default tints)
+teams = [
+  player(1,3,2,1150,1290,300,0,18, items='P18/S10/M6/C712/C1025'),
+  player(2,3,3,1150,1350,300,0,18, items='P18/S10/M6/C712/C1025'),
+  player(3,6,2,1150,1430,300,0,15, items='P15/S11/M5/C756'),
+  player(4,6,3,1150,1510,300,0,15, items='P15/S11/M5/C756'),
+]
+scenes['tf2/ctf_2fort'].append(dict(name='loadout-teams', view=dict(origin=[1430,1400,350], angles=[8,180,0], fov=50), entities=teams, script=[dict(advance=0.5)]))
+# killstreak kits and weapon unusuals: a Black Box (Hot, Villainous Violet, Singularity) and a stock
+# Rocket Launcher (Hot, Team Shine, Fire Horns); five kills each light the killstreakers at the eyes
+ks = [
+  player(1,3,2,1150,1300,300,0,228, items='P228e701x6.2006/S10/M6'),
+  player(2,3,3,1150,1370,300,0,18, items='P18e701x1.2002/S10/M6'),
+]
+kills = [dict(event=dict(type='death', victim=60+k, attacker=1+(k % 2), assister=0, inflictor=0, weapon='', weaponDefIndex=0, crit=0, customKill=0, damageType=0, deathFlags=0, victimClass=1, gib=False, burning=False)) for k in range(10)]
+scenes['tf2/ctf_2fort'].append(dict(name='loadout-killstreak', view=dict(origin=[1290,1335,322], angles=[2,180,0], fov=50), entities=ks, script=[dict(advance=0.3)] + kills + [dict(advance=0.05), dict(wait=True), dict(advance=1.0)]))
+scenes['tf2/ctf_2fort'].append(dict(name='loadout-killstreak-sheen', view=dict(origin=[1225,1290,318], angles=[4,180,0], fov=45), entities=ks[:1], script=[dict(advance=0.3)] + kills + [dict(advance=0.05), dict(wait=True), dict(advance=0.62)]))
+vm = dict(cls=3, team=2, defindex=228, vmActivity=0, vmActivitySeq=1, eyeOrigin=dict(x=1420,y=1440,z=340), eyeAngles=dict(x=0,y=180,z=0), velocity=dict(x=0,y=0,z=0), visible=True, item=dict(item=228, effect=701, sheen=6, streaker=2006))
+scenes['tf2/ctf_2fort'].append(dict(name='loadout-vm-blackbox-unusual', view=dict(origin=[1420,1440,340], angles=[0,180,0], fov=90), vm=vm, script=[dict(advance=1.0)]))
+# worn weapon-slot boots bone-merged on both feet: the Mantreads and the Gunboats, mid stride
+feet = [
+  player(1,3,2,1150,1300,300,90,18, items='P18/S444w/M6', vy=240),
+  player(2,3,3,1150,1380,300,90,18, items='P18/S133w/M6', vy=240),
+]
+scenes['tf2/ctf_2fort'].append(dict(name='loadout-boots', view=dict(origin=[1300,1340,300], angles=[16,180,0], fov=55), entities=feet, script=[dict(advance=0.43)]))
+# the frame budget: 24 decorated players (unlock weapons, 2–3 cosmetics each, paints, both teams)
+crowd_items = [(3,127,'P127/S133w/M6/C183p5046/C446/C712'), (6,41,'P41/S11/M5/C942/C756'), (3,228,'P228x6/S10/M6/C1025/C30769/C30085')]
+crowd = []
+for i in range(24):
+    cls, wpn, items = crowd_items[i % 3]
+    crowd.append(player(1+i, cls, 2 + (i // 12), 1000 + (i % 6) * 55, 1260 + (i // 6) * 75, 300, 0, wpn, items=items))
+scenes['tf2/ctf_2fort'].append(dict(name='loadout-crowd', view=dict(origin=[1420,1450,380], angles=[12,180,0], fov=75), entities=crowd, script=[dict(advance=0.5)]))
+
 def prop(id, model, x, y, z, yaw, seq='', skin=0, **kw):
     f = dict(model=model, ox=x, oy=y, oz=z, pitch=0, yaw=yaw, roll=0, skin=skin, body=0, sequence=seq, animStart=0, playbackRate=1, modelScale=1)
     f.update(kw)

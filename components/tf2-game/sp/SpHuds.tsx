@@ -18,16 +18,17 @@
 
 import { useTranslation } from 'react-i18next';
 import type { HudCaption, HudFade, HudHl2, HudPortal } from '@/lib/tf2-game/client/hud-state';
-import { useHudContext, usePanelStyle } from '../use-hud';
+import { NO_INSETS, safeScreen, useHudContext, usePanelStyle } from '../use-hud';
 
 export function Captions({ captions }: { captions: HudCaption[] }) {
   const { t } = useTranslation('c-tf2-game');
-  const { settings, screen } = useHudContext();
+  const { settings, screen, safe = NO_INSETS } = useHudContext();
   const panel = usePanelStyle('HudCloseCaption');
   if (!settings.captions || !panel || captions.length === 0) return null;
-  // A portrait phone is narrower than the 500-unit box: keep a 16px gutter.
-  const width = Math.min(Number(panel.width), screen.w - 32);
-  const style = { ...panel, width, left: Math.max(16, (screen.w - width) / 2) };
+  // A portrait phone is narrower than the 500-unit box: keep a 16px gutter inside the safe area.
+  const inner = safeScreen(screen, safe);
+  const width = Math.min(Number(panel.width), inner.w - 32);
+  const style = { ...panel, width, left: safe.left + Math.max(16, (inner.w - width) / 2) };
   return (
     <div className="tf2g-panel" style={style}>
       <div className="sp-captions" style={{ left: 0, right: 0, bottom: 0 }} role="log" aria-live="polite" aria-label={t('captions_aria', { defaultValue: 'Captions' })}>

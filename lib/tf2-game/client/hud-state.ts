@@ -57,6 +57,23 @@ export interface HudMeters {
   stickyMax: number;
   /** Minigun spin-up, 0 idle … 1 spinning. */
   minigunSpin: number | null;
+  /**
+   * Unlock item meters (CHudItemEffectMeter and kin), the loadout's in priority order: the jar /
+   * drink / lunch box recharge, rage, hype, the shield charge, heads, revenge crits, the bow's draw …
+   */
+  items: HudItemMeter[];
+}
+
+/** One unlock item meter. */
+export interface HudItemMeter {
+  /** What it measures (picks the editor meter: jarate, bonk, cleaver, sandvich, buff-banner, gas-passer, phlog, sodapopper, shield, eyelander, huntsman, pomson, raygun, crits, pressure, fuse). */
+  kind: string;
+  /** The SDK's label token (GetEffectLabelText). */
+  label: string;
+  /** 0…1 (full: ready). */
+  value: number;
+  /** A count instead of / as well as the bar (heads, crits). */
+  count?: number;
 }
 
 export interface HudConditions {
@@ -284,6 +301,13 @@ export interface HudScoreRow {
   deaths: number;
   assists: number;
   ping: number;
+  /**
+   * Peer-to-peer matches: how this human reaches the host (the host itself, directly, through a TURN
+   * server, or through the hub's relay).
+   */
+  link?: 'host' | 'direct' | 'turn' | 'relayed';
+  /** Peer-to-peer matches: share of this human's packets lost on the way to the host (0…1). */
+  loss?: number;
   dead: boolean;
   bot: boolean;
   isLocal: boolean;
@@ -448,6 +472,49 @@ export interface HudState {
   fps: number;
   /** The last loadout answer (TF2), null before one. */
   loadout?: HudLoadoutAnswer | null;
+  /** Network notices (host migration, hosting) — rendered with their own words by the HUD. */
+  notices?: HudNotice[];
+  /** The room's administration when this player runs it (peer-to-peer host, dedicated room owner). */
+  admin?: HudAdmin | null;
+}
+
+/** A network notice. `name`: the account it concerns (the new host). */
+export interface HudNotice {
+  id: number;
+  at: number;
+  kind: 'host-migrated' | 'migrating' | 'hosting' | 'you-host' | 'transfer-failed';
+  name?: string;
+}
+
+/** One player in the administration view (humans only). */
+export interface HudAdminPlayer {
+  /** The room's player id (what kick / make-owner take). */
+  id: number;
+  name: string;
+  self: boolean;
+  /** Peer-to-peer: how they reach this host; a held seat (reconnecting) has none. */
+  connection?: 'direct' | 'turn' | 'relayed' | null;
+  pingMs?: number | null;
+  loss?: number;
+  /** Peer-to-peer: may take the match over (Make host). */
+  canHost?: boolean;
+  /** Peer-to-peer: the current successor (takes over if the host leaves). */
+  successor?: boolean;
+  /** A seat held while they reconnect. */
+  held?: boolean;
+  /** Dedicated rooms: a signed-in account (ownership can only go to one). */
+  account?: boolean;
+}
+
+export interface HudAdmin {
+  /** `host`: this browser runs the match (offline or peer-to-peer); `owner`: a dedicated room's owner. */
+  role: 'host' | 'owner';
+  /** Peer-to-peer or a hub room (kick / lock / password / say apply); offline has no one to admin. */
+  online: boolean;
+  players: HudAdminPlayer[];
+  map: string;
+  locked: boolean;
+  passworded: boolean;
 }
 
 // ─── Factories ─────────────────────────────────────────────────────────────
@@ -461,6 +528,7 @@ export const emptyMeters = (): HudMeters => ({
   stickyCount: null,
   stickyMax: 8,
   minigunSpin: null,
+  items: [],
 });
 
 export const emptyConditions = (): HudConditions => ({

@@ -249,6 +249,14 @@ export function spyDead(): HudState {
   return s;
 }
 
+/** Dead Spy after the freeze cam: respawning, watching a teammate (the spectator GUI). */
+export function spectating(): HudState {
+  const s = spyDead();
+  s.freezecam = null;
+  s.local = { ...s.local!, respawnIn: 6.4, spectating: { id: 7, name: 'Pocket Medic', team: 3, cls: 5, health: 131, maxHealth: 150 } };
+  return s;
+}
+
 /** Spy alive and disguised, cloak meter, disguise kit out. */
 export function spyDisguise(): HudState {
   const s = base();
@@ -345,6 +353,7 @@ export const SCENARIOS = {
   engineerCtf,
   sniperKoth,
   spyDead,
+  spectating,
   spyDisguise,
   winPanel,
   joinClass,

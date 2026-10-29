@@ -202,13 +202,41 @@ describe('item styles', () => {
     expect(m.find((i) => i.id === 701)?.models).toEqual([
       { mdl: 'models/p/hat.mdl', role: 'main', glb: '701.glb' },
       { mdl: 'models/p/hat_alt.mdl', role: 'main', glb: '701_s1.glb', style: 1 },
-      { mdl: 'models/p/hat.mdl', role: 'main', glb: '701_s2.glb', style: 2, skin: 2 },
+      { mdl: 'models/p/hat.mdl', role: 'main', glb: '701_s2.glb', style: 2, skin: 2, skinBlu: 3 },
     ]);
   });
   it('names per-class style models by class and style, in a form the routes accept', () => {
     const models = m.find((i) => i.id === 702)!.models;
     expect(models.map((x) => x.glb)).toEqual(['702_demoman.glb', '702_demoman_s1.glb']);
     for (const x of models) expect(MODEL_NAME.test(x.glb.replace(/\.glb$/, ''))).toBe(true);
+  });
+});
+
+describe('team skins', () => {
+  it('records the BLU family the schema names, and leaves the default (RED 0, BLU 1) implicit', () => {
+    const items = `"items_game" {
+      "prefabs" { "hat" { "item_slot" "head" "used_by_classes" { "scout" "1" } } }
+      "items" {
+        "801" { "name" "Plain" "prefab" "hat" "model_player" "models/p/a.mdl" }
+        "802" { "name" "Gloves" "prefab" "hat" "model_player" "models/p/b.mdl"
+          "visuals_red" { "skin" "2" } "visuals_blu" { "skin" "3" } }
+        "803" { "name" "One look" "prefab" "hat" "model_player" "models/p/c.mdl"
+          "visuals" { "styles" { "0" { "skin" "0" } "1" { "skin" "1" } } } }
+        "804" { "name" "Botkiller" "prefab" "hat" "model_player" "models/p/d.mdl"
+          "extra_wearable" "models/p/head.mdl" "visuals_red" { "skin" "6" } "visuals_blu" { "skin" "7" } }
+      }
+    }`;
+    const byId = Object.fromEntries(buildModelManifest(items, ENGLISH).map((m) => [m.id, m]));
+    expect(byId[801].models[0]).toEqual({ mdl: 'models/p/a.mdl', role: 'main', glb: '801.glb' });
+    expect(byId[802].models[0]).toMatchObject({ skin: 2, skinBlu: 3 });
+    // A style that sets one `skin` shows it on both teams (no team colours to switch).
+    expect(byId[803].models).toEqual([
+      { mdl: 'models/p/c.mdl', role: 'main', glb: '803.glb', skinBlu: 0 },
+      { mdl: 'models/p/c.mdl', role: 'main', glb: '803_s1.glb', style: 1, skin: 1, skinBlu: 1 },
+    ]);
+    expect(byId[804].models[0].attachments).toEqual([
+      { mdl: 'models/p/head.mdl', skin: 6, skinBlu: 7 },
+    ]);
   });
 });
 

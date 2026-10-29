@@ -4,6 +4,7 @@
  * here refuses a loadout — {@link loadoutWarnings} only says what would not work in the game.
  */
 
+import { killstreakerById, sheenById } from './killstreak';
 import {
   COSMETIC_SLOTS,
   acceptedSlots,
@@ -147,7 +148,7 @@ export function equipInto(
 /**
  * A loadout with every option the item cannot take taken off: a paint on an item that is not
  * paintable, a style it does not have, a festive weapon that cannot be festivized, a war paint on
- * something that is not a paintable weapon. The server rejects these when saving; this keeps one that
+ * something that is not a paintable weapon, a killstreak kit off a weapon. The server rejects these when saving; this keeps one that
  * arrives from an older save, a shared link or a draft from being shown (or re-saved) as if it worked.
  * Items the catalog no longer has are left alone. Returns the same object when nothing changed.
  */
@@ -186,6 +187,14 @@ export function withSupportedOptions(catalog: Catalog, slots: LoadoutSlots): Loa
       delete next.wear;
       delete next.seed;
     }
+    // A killstreak kit only on a weapon, its killstreaker only with a sheen.
+    const weapon = item.s === 'primary' || item.s === 'secondary' || item.s === 'melee';
+    if (next.sheen !== undefined && (!weapon || !sheenById(next.sheen))) delete next.sheen;
+    if (
+      next.streaker !== undefined &&
+      (next.sheen === undefined || !killstreakerById(next.streaker))
+    )
+      delete next.streaker;
     if (Object.keys(next).length !== Object.keys(entry).length) (out ??= { ...slots })[key] = next;
   }
   return out ?? slots;

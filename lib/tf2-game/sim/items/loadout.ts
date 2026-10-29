@@ -142,7 +142,9 @@ export function planLoadout(
         spec = specFor(entry.item, classIndex);
         break;
       case 'wearable':
-        worn.push(new AttributeSet(play.attributes));
+        worn.push(
+          new AttributeSet(play.attributes, { itemClass: play.itemClass, defindex: play.defindex }),
+        );
         break;
       case 'fallback':
         if (play.stockDefindex !== undefined) {
@@ -197,6 +199,9 @@ export interface PublicItem {
   kit?: number;
   wear?: number;
   seed?: number;
+  /** Killstreak sheen (1–7) and killstreaker (2002–2008), lib/tf2-loadout/killstreak.ts. */
+  sheen?: number;
+  streaker?: number;
 }
 
 export interface ReplicatedItems {
@@ -215,6 +220,8 @@ function publicEntry(e: LoadoutEntry): PublicItem {
     ...(e.kit !== undefined ? { kit: e.kit } : {}),
     ...(e.wear !== undefined ? { wear: e.wear } : {}),
     ...(e.seed !== undefined ? { seed: e.seed } : {}),
+    ...(e.sheen !== undefined ? { sheen: e.sheen } : {}),
+    ...(e.streaker !== undefined ? { streaker: e.streaker } : {}),
   };
 }
 
@@ -240,12 +247,14 @@ function encodeItem(code: string, it: PublicItem, worn = false): string {
   if (it.festive) s += 'f';
   if (it.kit !== undefined || it.wear !== undefined || it.seed !== undefined)
     s += `k${it.kit ?? 0}.${it.wear ?? 1}.${it.seed ?? 0}`;
+  if (it.sheen !== undefined)
+    s += `x${it.sheen}${it.streaker !== undefined ? `.${it.streaker}` : ''}`;
   return s;
 }
 
 /**
  * The public form as one short string (a NET_PLAYER `items` field, delta-encoded like any other):
- * `/`-separated tokens `<slot code><defindex>[w][s<style>][p<paint>][e<effect>][f][k<kit>.<wear>.<seed>]`,
+ * `/`-separated tokens `<slot code><defindex>[w][s<style>][p<paint>][e<effect>][f][k<kit>.<wear>.<seed>][x<sheen>[.<killstreaker>]]`,
  * slot codes P S M D E B A for the weapon slots and the action item, C for a cosmetic. Only
  * identifier characters, so the match string table can intern it.
  */
@@ -260,7 +269,7 @@ export function encodeItems(items: ReplicatedItems): string {
 }
 
 const TOKEN =
-  /^([PSMDEBAC])(\d+)(w?)(?:s(\d+))?(?:p(\d+))?(?:e(\d+))?(f?)(?:k(\d+)\.(\d+)\.(\d+))?$/;
+  /^([PSMDEBAC])(\d+)(w?)(?:s(\d+))?(?:p(\d+))?(?:e(\d+))?(f?)(?:k(\d+)\.(\d+)\.(\d+))?(?:x(\d+)(?:\.(\d+))?)?$/;
 
 export function decodeItems(s: string): ReplicatedItems {
   const out: ReplicatedItems = { weapons: [], cosmetics: [] };
@@ -278,6 +287,10 @@ export function decodeItems(s: string): ReplicatedItems {
       it.wear = Number(m[9]);
       it.seed = Number(m[10]);
     }
+    if (m[11] !== undefined) {
+      it.sheen = Number(m[11]);
+      if (m[12] !== undefined) it.streaker = Number(m[12]);
+    }
     if (m[1] === 'C') out.cosmetics.push(it);
     else out.weapons.push({ slot: CODE_SLOT[m[1]], ...it, ...(m[3] ? { worn: true } : {}) });
   }
@@ -290,7 +303,10 @@ export function wornAttributesOf(items: ReplicatedItems, classIndex: number): At
   for (const w of items.weapons) {
     if (!w.worn) continue;
     const play = resolveItem(w.item, classIndex);
-    if (play?.kind === 'wearable') out.push(new AttributeSet(play.attributes));
+    if (play?.kind === 'wearable')
+      out.push(
+        new AttributeSet(play.attributes, { itemClass: play.itemClass, defindex: play.defindex }),
+      );
   }
   return out;
 }

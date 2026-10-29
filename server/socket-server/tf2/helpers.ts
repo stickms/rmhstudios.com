@@ -23,7 +23,7 @@ export interface FakeSocket {
   received: Received[];
 }
 
-export function makeWorld(register: (io: Server, socket: Socket) => void) {
+export function makeWorld(...registers: Array<(io: Server, socket: Socket) => void>) {
   const sockets = new Map<string, FakeSocket>();
 
   const deliver = (room: string, event: string, payload: unknown, volatile: boolean) => {
@@ -59,6 +59,11 @@ export function makeWorld(register: (io: Server, socket: Socket) => void) {
       emit(event: string, payload: unknown) {
         fake.received.push({ event, payload, volatile: false });
       },
+      volatile: {
+        emit(event: string, payload: unknown) {
+          fake.received.push({ event, payload, volatile: true });
+        },
+      },
       join(room: string) {
         fake.rooms.add(room);
       },
@@ -67,7 +72,7 @@ export function makeWorld(register: (io: Server, socket: Socket) => void) {
       },
     };
     sockets.set(id, fake as unknown as FakeSocket);
-    register(io, fake as unknown as Socket);
+    for (const register of registers) register(io, fake as unknown as Socket);
     return fake as unknown as FakeSocket;
   }
 

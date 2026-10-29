@@ -31,7 +31,7 @@ import { weaponSpecFor } from '../loadout';
 import { Medigun } from '../weapons/medigun';
 import { Minigun } from '../weapons/minigun';
 import { RocketLauncher } from '../weapons/launchers';
-import { SniperRifle } from '../weapons/sniper-rifle';
+import { CompoundBow } from '../weapons/bow';
 import {
   cmd,
   damageTo,
@@ -265,10 +265,10 @@ describe('attributes applied where the SDK hooks them', () => {
     expect(p.computeMaxSpeed()).toBeCloseTo(base, 3);
   });
 
-  it('Ambassador: no random crits (mult_crit_chance 0) and its headshot mode reported as not simulated', () => {
+  it('Ambassador: no random crits (mult_crit_chance 0); its headshot mode (set_weapon_mode 1) is simulated', () => {
     const play = resolveItem(61, TF_CLASS_SPY)!;
     expect(play.kind).toBe('weapon');
-    expect(play.unsupported).toContain('set_weapon_mode');
+    expect(play.unsupported).toEqual([]);
     expect(play.unsupported).not.toContain('mult_crit_chance');
     const spec = weaponSpecForItem(61, TF_CLASS_SPY)!;
     expect(spec.stats?.fireDelay).toBeCloseTo(0.5 * 1.2);
@@ -276,19 +276,18 @@ describe('attributes applied where the SDK hooks them', () => {
     expect(hookWeapon(w, null, 'mult_crit_chance', 0.02)).toBe(0);
   });
 
-  it('Huntsman: its class is not simulated, so the Sniper carries the Sniper Rifle and the UI is told', () => {
+  it('Huntsman: its own class (CTFCompoundBow) is simulated, with the max-ammo penalty applied', () => {
     const play = resolveItem(56, TF_CLASS_SNIPER)!;
-    expect(play.kind).toBe('fallback');
-    expect(play.stockDefindex).toBe(14);
-    expect(play.unsupported).toEqual(['item-class']);
+    expect(play.kind).toBe('weapon');
+    expect(play.unsupported).toEqual([]);
     const { players } = arena([
       { team: TF_TEAM_RED, cls: TF_CLASS_SNIPER, slots: { primary: { item: 56 } } },
     ]);
     const [s] = players;
-    expect(s.weapons[0]).toBeInstanceOf(SniperRifle);
-    expect(s.weapons[0]!.defindex).toBe(14);
-    // The Huntsman's max-ammo penalty is not applied to the stand-in.
-    expect(s.maxAmmo[1]).toBe(25);
+    expect(s.weapons[0]).toBeInstanceOf(CompoundBow);
+    expect(s.weapons[0]!.defindex).toBe(56);
+    // mult_maxammo_primary 0.5 on the Sniper's 25: RoundFloatToInt( 12.5 ) is 12 (halves to even).
+    expect(s.maxAmmo[1]).toBe(12);
   });
 
   it('Shortstop: an unlock script on the Pistol class, reload ×1.5, and its shove reported', () => {
@@ -372,6 +371,20 @@ describe('equip checks', () => {
     expect(
       checkGameLoadout(cat(), 'soldier', { cosmetic1: { item: 30001, style: 7 } }),
     ).toMatchObject({ ok: false });
+  });
+  it('takes a killstreak kit on a weapon only, and a killstreaker only with a sheen', () => {
+    expect(
+      checkGameLoadout(cat(), 'soldier', { primary: { item: 127, sheen: 6, streaker: 2006 } }),
+    ).toMatchObject({ ok: true });
+    expect(
+      checkGameLoadout(cat(), 'soldier', { cosmetic1: { item: 30001, sheen: 6 } }),
+    ).toMatchObject({ ok: false });
+    expect(
+      checkGameLoadout(cat(), 'soldier', { primary: { item: 127, streaker: 2006 } }),
+    ).toMatchObject({ ok: false });
+    expect(checkGameLoadout(cat(), 'soldier', { primary: { item: 127, sheen: 9 } })).toMatchObject({
+      ok: false,
+    });
   });
 });
 

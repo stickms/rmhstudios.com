@@ -24,6 +24,7 @@
  * Browser only.
  */
 
+import { indexFromEntities } from '../console/entity-complete';
 import { IN_ATTACK, IN_ATTACK2, MASK_OPAQUE, SURF_SKY, TICK_INTERVAL } from '../core/constants';
 import { emptyTrace } from '../core/types';
 import type { Vec3 } from '../core/vec';
@@ -63,6 +64,8 @@ import { createHttpSpAssets } from './sp-assets';
 import { makeSave, writeSave, type SpGameId } from './sp-save';
 import { FovState, StairSmoother, calcFirstPerson } from './view';
 import { PortalView } from './portal-view';
+import { attachConsoleHost, type ConsoleLink } from '../console/runtime';
+import { SpServerConsole } from '../console/sp-server';
 
 export interface SpClientOptions extends ClientMount {
   game: SpGameId;
@@ -129,6 +132,10 @@ export class SpClient implements GameClient {
   private readonly entityPos = new Map<number, Vec3>();
   private abort = new AbortController();
   private changing = false;
+  /** The developer console: the panel's link, and its server half on this world (sv_cheats, noclip…). */
+  private console: ConsoleLink | null = null;
+  private readonly spConsole: SpServerConsole;
+  private fpsMax = 0;
 
   constructor(private readonly opts: SpClientOptions) {
     this.game = opts.game;
@@ -138,6 +145,16 @@ export class SpClient implements GameClient {
     this.transition = opts.transition ?? null;
     this.fov = new FovState(opts.settings.fov);
     this.progress = new ProgressTracker((p) => opts.callbacks.onProgress?.(p), ['connect']);
+    this.spConsole = new SpServerConsole(opts.game, {
+      print: (text, level) => this.console?.console.print(text, level),
+      cvar: (name, value) => this.console?.serverEvent({ type: 'cvar', name, value } as { type: string }),
+      maps: () => GAME_MAPS[this.game].map((m) => m.name),
+      changeLevel: (map) => this.consoleChangeLevel(map),
+      setViewAngles: (a) => {
+        this.viewAngles.x = a.x;
+        this.viewAngles.y = a.y;
+      },
+    });
   }
 
   get input() {
@@ -162,6 +179,27 @@ export class SpClient implements GameClient {
         }),
       );
       this.unsubs.push(this.store.onCommand((c) => this.onHudCommand(c)));
+      this.console = attachConsoleHost(this.store, this.game, {
+        authority: () => 'sp',
+        stats: () => this.stats(),
+        canvas: () => this.opts.canvas,
+        hudRoot: () => this.opts.canvas.parentElement?.querySelector<HTMLElement>('.tf2g-hud') ?? null,
+        // ent_fire completes from the world itself (the single-player client runs it).
+        entityIndex: () => (this.sim ? indexFromEntities(this.sim.entities) : null),
+        mapName: () => this.mapName,
+        setFpsMax: (fps) => (this.fpsMax = fps),
+        setViewAngles: (a) => {
+          this.viewAngles.x = a.x;
+          this.viewAngles.y = a.y;
+        },
+        position: () => {
+          const p = this.sim?.player;
+          return p ? { origin: { ...p.origin }, angles: { ...this.viewAngles }, velocity: { ...p.velocity } } : null;
+        },
+        retry: () => void this.consoleChangeLevel(this.mapName),
+      });
+      this.unsubs.push(() => this.console?.detach());
+      this.spConsole.replicateAll();
       this.progress.begin('sounds');
       void this.audio
         .load()
@@ -216,6 +254,7 @@ export class SpClient implements GameClient {
       return;
     }
     this.sim = sim;
+    this.spConsole.bind(sim);
     this.mapName = map;
     this.transition = transition;
     this.progress.finish('world');
@@ -319,6 +358,9 @@ export class SpClient implements GameClient {
       this.paused = c.paused;
       if (c.paused) this.inputCore?.km.unlock();
     } else if (c.kind === 'disconnect') this.opts.callbacks.onExit?.();
+    else if (c.kind === 'extra' && !this.spConsole.execute(c.command, c.args)) {
+      this.console?.console.print(`Unknown command "${c.command}"`, 'warn');
+    }
   }
 
   // ─── The frame ───────────────────────────────────────────────────────────
@@ -356,7 +398,7 @@ export class SpClient implements GameClient {
         this.firedThisFrame = true;
       }
     }
-    const n = this.paused ? 0 : this.ticks.advance(dt);
+    const n = this.paused ? 0 : this.ticks.advance(dt * this.spConsole.timescale);
     const t0 = performance.now();
     for (let i = 0; i < n && this.sim === sim; i++) {
       const cmd: SpUserCmd = buildUserCmd(input, this.viewAngles, this.settings, undefined, { tickCount: sim.tickCount + 1 });
@@ -458,7 +500,7 @@ export class SpClient implements GameClient {
       // weapon_portalgun sends ACT_VM_PRIMARYATTACK for either portal; prefer a secondary one if the model has it.
       if (this.firedThisFrame) this.gun.play(...(this.lastFired === 'orange' ? ['ACT_VM_SECONDARYATTACK'] : []), 'ACT_VM_PRIMARYATTACK');
       this.gun.update(
-        { eyeOrigin: view.origin, eyeAngles: view.angles, velocity: p.velocity, visible: !!p.portalgun && !p.dead && !snap.view },
+        { eyeOrigin: view.origin, eyeAngles: view.angles, velocity: p.velocity, visible: !!p.portalgun && !p.dead && !snap.view && (this.console?.console.drawViewModel.bool ?? true) },
         ents.context,
       );
     }
@@ -490,6 +532,17 @@ export class SpClient implements GameClient {
       this.hudAcc = 0;
       this.publishHud(snap);
     }
+    // The console after the frame is drawn (its screenshot reads this frame), fps_max for the next.
+    if (this.loop) this.loop.maxFps = this.fpsMax;
+    this.console?.frame();
+  }
+
+  /** The console's changelevel / map / retry: a published map from its start (the demo's rule). */
+  private consoleChangeLevel(map: string): boolean {
+    if (this.disposed || !GAME_MAPS[this.game].some((m) => m.name === map)) return false;
+    this.changing = true;
+    void this.loadLevel(map, null).catch((e) => this.fail(e));
+    return true;
   }
 
   private applyBrush(model: number, o: Vec3, an: Vec3, visible: boolean): void {
