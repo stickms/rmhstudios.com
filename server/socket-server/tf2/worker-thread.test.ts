@@ -20,6 +20,8 @@ let dir = '';
 let workerPath = '';
 
 beforeAll(() => {
+  // The transport double: these tests have no map packages (create-match.ts).
+  process.env.TF2_MATCH_HOST = 'echo';
   dir = mkdtempSync(path.join(tmpdir(), 'tf2-worker-'));
   workerPath = path.join(dir, 'match-worker.server.cjs');
   buildSync({

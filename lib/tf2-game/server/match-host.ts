@@ -23,6 +23,7 @@
 
 import type { Tf2Mode } from '../data/maps';
 import type { BotDifficulty, ClassChoice, TeamChoice } from '../net/events';
+import type { ExtraCommandArgs } from '../net/extra-commands';
 
 /** What a match is created with. Validated by the hub before it gets here. */
 export interface MatchOptions {
@@ -50,7 +51,13 @@ export type MatchCommand =
    * it can log it or let bots react. It is not expected to echo it.
    */
   | { kind: 'chat'; text: string; teamOnly: boolean }
-  | { kind: 'voice'; menu: 0 | 1 | 2; item: number };
+  | { kind: 'voice'; menu: 0 | 1 | 2; item: number }
+  /**
+   * Any other game command (`build 2 0`, `destroy 1`, …), dispatched by name
+   * to a handler registered with `registerExtraCommand` (net/extra-commands.ts).
+   * Validated by `zExtraCommand` (net/lobby-schema.ts).
+   */
+  | { kind: 'extra'; command: string; args: ExtraCommandArgs };
 
 export interface PlayerInfo {
   name: string;

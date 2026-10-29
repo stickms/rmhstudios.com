@@ -25,6 +25,7 @@ import {
   type TeamChoice,
 } from './events';
 import type { Tf2Mode } from '../data/maps';
+import { EXTRA_COMMAND_MAX_ARGS, EXTRA_COMMAND_NAME_RE } from './extra-commands';
 
 const playerName = z.string().max(64).optional();
 
@@ -64,6 +65,14 @@ export const zVoice = z.object({
 
 export const zPing = z.object({
   t: z.number().finite(),
+});
+
+/** A generic game command (`MatchCommand { kind: 'extra' }`): a verb and console-style arguments. */
+export const zExtraCommand = z.object({
+  command: z.string().regex(EXTRA_COMMAND_NAME_RE),
+  args: z
+    .array(z.union([z.number().finite(), z.string().max(64), z.boolean()]))
+    .max(EXTRA_COMMAND_MAX_ARGS),
 });
 
 /** No payload; anything (or nothing) is accepted and ignored. */

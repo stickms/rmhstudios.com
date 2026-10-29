@@ -213,6 +213,11 @@ export abstract class BaseObject extends Entity {
     this.world.remove(this);
   }
 
+  /** A blueprint being placed is seen only by its builder (CBaseObject::ShouldTransmit). */
+  override shouldTransmitTo(playerId: number): boolean {
+    return !this.placing || playerId === this.builder;
+  }
+
   override netSchema(): NetSchema | null {
     return NET_OBJECT;
   }

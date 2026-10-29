@@ -167,6 +167,10 @@ export class Entity {
   parentName = '';
   /** Offset from the parent's origin while parented. */
   readonly parentOffset: Vec3 = vec3();
+  /** The parent's angles when parented (a parent that turns carries the offset and angles round). */
+  readonly parentAnglesAtSet: Vec3 = vec3();
+  /** Our angles when parented. */
+  readonly anglesAtSet: Vec3 = vec3();
   /** curtime at which `think()` runs next; -1 = never. */
   nextThink = -1;
   /** Optional think function (SetThink); `think()` calls it by default. */
@@ -458,6 +462,8 @@ export class Entity {
     this.parentOffset.x = this.origin.x - parent.origin.x;
     this.parentOffset.y = this.origin.y - parent.origin.y;
     this.parentOffset.z = this.origin.z - parent.origin.z;
+    copy(this.parentAnglesAtSet, parent.angles);
+    copy(this.anglesAtSet, this.angles);
   }
 
   // ─── I/O ─────────────────────────────────────────────────────────────────
@@ -573,6 +579,16 @@ export class Entity {
     if (this.bspModel > 0) return NET_BRUSH;
     if (this.model !== '' && (this.effects & EF_NODRAW) === 0) return NET_ENTITY;
     return null;
+  }
+
+  /**
+   * Per-client transmit filter (the SDK's CBaseEntity::ShouldTransmit): false
+   * keeps the entity out of `playerId`'s snapshots (it is removed from that
+   * client if it was there). Checked every snapshot for every networked
+   * entity, so keep it cheap. Default: everyone.
+   */
+  shouldTransmitTo(_playerId: number): boolean {
+    return true;
   }
 
   /** Fills the base fields; subclasses call super then add theirs. */
