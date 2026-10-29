@@ -7,6 +7,9 @@
  * converter writes, for every cosmetic or weapon, the bone it follows and its pose on that bone
  * (`attach`). Each one is added to that bone, so it moves with the animation exactly as the game's
  * bone-merge does, and sits in the right place in the reference pose.
+ *
+ * The player wears its team's skin: the body and every item with team colours switch to BLU's
+ * textures (decoded on first use, lib/tf2-loadout/team-skins.ts) when `team` is `blu`.
  */
 'use client';
 
@@ -14,6 +17,12 @@ import { classVariant, selectionKey } from '@/lib/tf2-loadout/bodygroups';
 import type { Bodygroups } from '@/lib/tf2-loadout/catalog-types';
 import { boneMerge } from '@/lib/tf2-loadout/bone-merge';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
+import {
+  hasTeamVariants,
+  loadTeamTextures,
+  type Team,
+  type TeamSkinSource,
+} from '@/lib/tf2-loadout/team-skins';
 import {
   renameSkeleton,
   setupJiggle,
@@ -28,6 +37,7 @@ import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 
 import {
   AnimationMixer,
   type AnimationAction,
+  type Texture,
   type AnimationClip,
   Box3,
   LoopRepeat,
@@ -44,6 +54,7 @@ import {
   applyBodygroups,
   applyFestive,
   applyPaintTexture,
+  applyTeam,
   applyTint,
   cloneWithMaterials,
   type WarPaint,
@@ -62,6 +73,25 @@ export interface PlayerPart {
   festive?: boolean;
   /** The class wearing it, to show a per-class cosmetic's own submodel. */
   cls?: string;
+}
+
+/**
+ * BLU's textures of a loaded model while the player is BLU (null: none needed, or still loading — RED's
+ * show meanwhile). Loaded once per file and shared by every viewer.
+ */
+function useTeamTextures(gltf: TeamSkinSource, team: Team): ReadonlyMap<number, Texture> | null {
+  const [textures, setTextures] = useState<ReadonlyMap<number, Texture> | null>(null);
+  const variants = useMemo(() => hasTeamVariants(gltf.scene), [gltf]);
+  const wanted = team === 'blu' && variants;
+  useEffect(() => {
+    if (!wanted) return undefined;
+    let alive = true;
+    void loadTeamTextures(gltf).then((t) => alive && setTextures(t));
+    return () => {
+      alive = false;
+    };
+  }, [gltf, wanted]);
+  return wanted ? textures : null;
 }
 
 interface BodyState {
@@ -108,10 +138,12 @@ function Taunt({ url, body }: { url: string; body: BodyState }) {
 function Body({
   url,
   bodygroups,
+  team,
   tauntUrl,
   onReady,
 }: {
   url: string;
+  team: Team;
   /** The submodel to show per body group, from what is worn. */
   bodygroups: Bodygroups;
   tauntUrl?: string;
@@ -122,6 +154,11 @@ function Body({
   const root = useMemo(() => cloneWithMaterials(gltf.scene), [gltf.scene]);
   const mixer = useMemo(() => new AnimationMixer(root), [root]);
   const [state, setState] = useState<BodyState | null>(null);
+  const teamTextures = useTeamTextures(gltf, team);
+  useLayoutEffect(() => {
+    applyTeam(root, team, teamTextures ?? undefined);
+    applyTint(root);
+  }, [root, team, teamTextures]);
 
   useLayoutEffect(() => {
     // A pose moves limbs outside the bind-pose bounds the renderer culls by.
@@ -199,6 +236,7 @@ function Body({
 function Part({
   url,
   cls,
+  team,
   tint,
   effect,
   paint,
@@ -207,14 +245,17 @@ function Part({
 }: {
   url: string;
   cls?: string;
+  team: Team;
   tint?: string;
   effect?: EffectSpec;
   paint?: WarPaint;
   festive?: boolean;
   body: BodyState;
 }) {
-  const { scene } = useLoader(Tf2GLTFLoader, url);
+  const gltf = useLoader(Tf2GLTFLoader, url);
+  const { scene } = gltf;
   const root = useMemo(() => cloneWithMaterials(scene), [scene]);
+  const teamTextures = useTeamTextures(gltf, team);
   const [mount, setMount] = useState<{ bone: Object3D; box: Box3 } | null>(null);
   const jiggle = useRef<JiggleBone[]>([]);
 
@@ -277,9 +318,11 @@ function Part({
     };
   }, [root, scene, body]);
 
+  // The team's skin first: it can change the default tint the paint falls back to.
   useEffect(() => {
+    applyTeam(root, team, teamTextures ?? undefined);
     applyTint(root, tint);
-  }, [root, tint]);
+  }, [root, tint, team, teamTextures]);
 
   // After the body's animation for the frame (it is mounted first), so the springs see this frame's motion.
   useFrame((_, dt) => {
@@ -289,7 +332,7 @@ function Part({
   const paintTexture = useWarPaintTexture(paint?.script, paint?.wear ?? 1, paint?.seed ?? 0);
   useEffect(() => {
     applyPaintTexture(root, paintTexture);
-  }, [root, paintTexture]);
+  }, [root, paintTexture, teamTextures]);
 
   return effect && mount ? (
     <EffectParticles spec={effect} box={mount.box} owner={root} body={body.root} />
@@ -302,9 +345,12 @@ export default function PlayerScene({
   parts,
   bodyEffect,
   tauntUrl,
+  team = 'red',
   bare = false,
 }: {
   body: string;
+  /** The team whose skin the player and its items wear. */
+  team?: Team;
   /** The submodel to show per class-body group (a worn cosmetic hides the part it replaces). */
   bodygroups: Bodygroups;
   parts: PlayerPart[];
@@ -337,7 +383,13 @@ export default function PlayerScene({
           maxDistance={ready ? ready.height * 3.5 : 8}
         />
         <Suspense fallback={null}>
-          <Body url={body} bodygroups={bodygroups} tauntUrl={tauntUrl} onReady={setReady} />
+          <Body
+            url={body}
+            bodygroups={bodygroups}
+            team={team}
+            tauntUrl={tauntUrl}
+            onReady={setReady}
+          />
         </Suspense>
         {ready && bodyEffect ? (
           <EffectParticles spec={bodyEffect} box={ready.box} owner={ready.root} body={ready.root} />
@@ -350,6 +402,7 @@ export default function PlayerScene({
                   <Part
                     url={p.url}
                     cls={p.cls}
+                    team={team}
                     tint={p.tint}
                     effect={p.effect}
                     paint={p.paint}

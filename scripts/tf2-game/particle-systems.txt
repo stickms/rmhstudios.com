@@ -153,3 +153,20 @@ player_intel_papertrail
 rocketjump_smoke
 speech_mediccall
 speech_mediccall_auto
+
+# Killstreakers at the eyes during a 5+ (lvl1) / 10+ (lvl2) kill streak — C_TFPlayer killstreak
+# effects, CP 9 = the sheen colour (lib/tf2-loadout/killstreak.ts KILLSTREAKER_SYSTEMS)
+killstreak_t1_lvl1
+killstreak_t1_lvl2
+killstreak_t2_lvl1
+killstreak_t2_lvl2
+killstreak_t3_lvl1
+killstreak_t3_lvl2
+killstreak_t4_lvl1
+killstreak_t4_lvl2
+killstreak_t5_lvl1
+killstreak_t5_lvl2
+killstreak_t6_lvl1
+killstreak_t6_lvl2
+killstreak_t7_lvl1
+killstreak_t7_lvl2

@@ -123,6 +123,61 @@
 .tf2hud-check:disabled {
   opacity: 0.45;
 }
+/* On a touch-first device the tick-box is a 44px target around the same 22px box. */
+@media (pointer: coarse) {
+  .tf2hud-check {
+    position: relative;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-color: transparent;
+    background: transparent;
+  }
+  .tf2hud-check::after {
+    content: '';
+    position: absolute;
+    inset: 0.6875rem;
+    border: 1px solid var(--app-border-bright);
+    border-radius: var(--app-radius-sm);
+    background: var(--app-bg);
+  }
+  .tf2hud-check::before {
+    position: relative;
+    z-index: 1;
+  }
+  .tf2hud-check:checked {
+    border-color: transparent;
+  }
+  .tf2hud-check:checked::after {
+    border-color: var(--app-accent);
+  }
+}
+
+/* Tf2Header: 56px of bar below the safe-area top, its ends clear of a landscape notch. */
+.tf2hud-header {
+  height: calc(3.5rem + var(--safe-top, 0px));
+  padding: var(--safe-top, 0px) calc(0.5rem + var(--safe-right, 0px)) 0 calc(0.5rem + var(--safe-left, 0px));
+}
+@media (min-width: 640px) {
+  .tf2hud-header {
+    padding-right: calc(1rem + var(--safe-right, 0px));
+    padding-left: calc(1rem + var(--safe-left, 0px));
+  }
+}
+
+/* A centred dialog (ui.tsx Modal) stays inside the safe area: a notch, the rounded corners and the
+   home indicator never cut into it, in either orientation. */
+.tf2hud-dialog {
+  top: calc(50% + (var(--safe-top, 0px) - var(--safe-bottom, 0px)) / 2);
+  left: calc(50% + (var(--safe-left, 0px) - var(--safe-right, 0px)) / 2);
+  width: calc(100vw - 2rem - var(--safe-left, 0px) - var(--safe-right, 0px));
+  max-height: min(88dvh, calc(100dvh - 2rem - var(--safe-top, 0px) - var(--safe-bottom, 0px)), 46rem);
+}
+/* A landscape phone: every pixel of height goes to the dialog. */
+@media (max-height: 520px) {
+  .tf2hud-dialog {
+    max-height: calc(100dvh - 1rem - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+  }
+}
 
 /* ─── Dark (default): the in-game menu palette ───────────────────── */
 

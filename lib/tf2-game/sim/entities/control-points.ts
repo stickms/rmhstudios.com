@@ -1758,6 +1758,12 @@ export class TeamControlPointMaster extends MapEntity {
 /** CTeamplayRoundBasedRules' last played mini-round, per world (persists across CleanUpMap). */
 const lastPlayedRound = new WeakMap<object, string>();
 
+/** The last played mini-round, for a checkpoint (sim/checkpoint). Keyed by the world's objectives. */
+export const lastPlayedRoundTable = {
+  peek: (o: object): string | undefined => lastPlayedRound.get(o),
+  set: (o: object, round: string): void => void lastPlayedRound.set(o, round),
+};
+
 registerEntityClass('team_control_point', TeamControlPoint);
 registerEntityClass('trigger_capture_area', TriggerAreaCapture);
 registerEntityClass('team_control_point_round', TeamControlPointRound);

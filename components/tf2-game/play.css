@@ -96,7 +96,7 @@
   color: rgb(225 220 210);
 }
 
-/* Top-right corner chips (fullscreen), inside the safe area, off the edge. */
+/* Top-right corner chips (full screen, invite) with the click-to-play scrim, inside the safe area. */
 .tf2g-play-corner {
   position: absolute;
   z-index: 35;
@@ -147,10 +147,5 @@
   padding: 0 0.75rem;
 }
 
-/* Touch devices: the HUD's touch overlay owns the top-right (ammo) and the top row (scores, chat,
-   voice, menu); the corner chips move to the top-left, above the health panel and the move stick. */
-.tf2g-stage[data-touch='true'] .tf2g-play-corner {
-  top: calc(var(--safe-top, 0px) + 0.75rem);
-  right: auto;
-  left: calc(var(--safe-left, 0px) + 0.75rem);
-}
+/* Touch devices have no corner chips: full screen and the invite link ride in the touch controls'
+   row (TouchOverlay `actions`), since the HUD's panels own every corner. */

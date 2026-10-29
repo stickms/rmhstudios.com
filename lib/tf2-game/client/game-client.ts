@@ -65,6 +65,12 @@ export type ClientErrorCode =
   | 'network'
   | 'kicked'
   | 'room'
+  /** Peer-to-peer: the host left, so the match ended (there is no host migration). */
+  | 'host-left'
+  /** Multiplayer needs a signed-in account. */
+  | 'auth-required'
+  /** Peer-to-peer: no path to the host, direct or through the hub's relay. */
+  | 'p2p-connect'
   | 'context-lost'
   | 'unknown';
 

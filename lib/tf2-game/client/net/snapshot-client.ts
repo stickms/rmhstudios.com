@@ -32,6 +32,7 @@ import {
   stateToRecord,
   weaponKey,
   decodeSnapshot,
+  snapshotTick,
   type DecodedSnapshot,
   type EntityState,
   type SnapshotDecodeError,
@@ -58,8 +59,21 @@ export interface SnapshotClientStats {
   snapshotBytes: number;
   reliablePackets: number;
   reliableBytes: number;
-  errors: Record<SnapshotDecodeError | 'reliable', number>;
+  /**
+   * Snapshots older than the newest one taken, skipped before decoding (only
+   * the peer-to-peer unreliable channel reorders; their baselines are gone).
+   */
+  stale: number;
+  /**
+   * Snapshots that named a string the reliable stream had not defined yet
+   * (only possible when the two streams travel separately — the peer-to-peer
+   * DataChannels); each is held and retried after the next reliable packet.
+   */
+  errors: Record<SnapshotDecodeError | 'reliable' | 'unknown-string', number>;
 }
+
+/** Snapshots held for their string definitions (a few ticks' worth at most). */
+const DEFERRED_MAX = 8;
 
 export class SnapshotClient {
   readonly strings = new ClientStringTable();
@@ -78,8 +92,10 @@ export class SnapshotClient {
     snapshotBytes: 0,
     reliablePackets: 0,
     reliableBytes: 0,
-    errors: { malformed: 0, 'no-baseline': 0, 'unknown-schema': 0, reliable: 0 },
+    stale: 0,
+    errors: { malformed: 0, 'no-baseline': 0, 'unknown-schema': 0, reliable: 0, 'unknown-string': 0 },
   };
+  private deferred: Uint8Array[] = [];
 
   /** The tick the next input packet acknowledges (0 before the first snapshot). */
   get ackTick(): number {
@@ -131,16 +147,34 @@ export class SnapshotClient {
    * re-deltas from the frame we keep acking).
    */
   onSnapshot(bytes: Uint8Array): (DecodedSnapshot & { cosmetic: TimedEvent[] }) | null {
+    const tick = snapshotTick(bytes);
+    if (tick !== null && this.latest && tick <= this.latest.tick) {
+      this.stats.stale++;
+      return null;
+    }
+    let missing = false;
     const result = decodeSnapshot(
       bytes,
       (tick) => this.frame(tick),
-      (id) => this.strings.get(id),
+      (id) => {
+        const s = this.strings.get(id);
+        if (s === undefined) missing = true;
+        return s;
+      },
     );
     if (typeof result === 'string') {
       this.stats.errors[result]++;
       return null;
     }
     if (this.latest && result.tick <= this.latest.tick) return null;
+    if (missing) {
+      // Its definitions are still on their way: keep it (it is not acknowledged, so the
+      // server keeps sending from the last baseline we did take) and retry it later.
+      this.stats.errors['unknown-string']++;
+      this.deferred.push(bytes.slice());
+      while (this.deferred.length > DEFERRED_MAX) this.deferred.shift();
+      return null;
+    }
     this.stats.snapshots++;
     this.stats.snapshotBytes += bytes.byteLength;
     this.frames.push(result.frame);
@@ -154,6 +188,16 @@ export class SnapshotClient {
     this.ackCmd = result.ackCmd;
     const cosmetic = result.events.map((e) => ({ tick: e.tick, event: e.event, reliable: false }));
     return { ...result, cosmetic };
+  }
+
+  /**
+   * Snapshots held for string definitions, oldest first, handed back once
+   * (call after `onReliable` and feed each to `onSnapshot` again).
+   */
+  takeDeferred(): Uint8Array[] {
+    const out = this.deferred;
+    this.deferred = [];
+    return out;
   }
 
   /** A kept frame by tick. */
@@ -210,6 +254,7 @@ export class SnapshotClient {
 
   /** Forget everything (new match / new player). */
   reset(): void {
+    this.deferred = [];
     this.frames.length = 0;
     this.latest = null;
     this.localEntity = -1;

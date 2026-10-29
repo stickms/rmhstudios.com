@@ -18,7 +18,8 @@ import type {
   JoinedPayload,
   KickedPayload,
   PongPayload,
-  RoomListEntry,
+  RoomDetailsPayload,
+  RoomsPayload,
 } from '@/lib/tf2-game/net/events';
 import { MatchPool, setMatchPool } from '@/lib/tf2-game/server/pool.server';
 import { EchoMatchHost, ECHO_TAG_INPUT, ECHO_TAG_SNAPSHOT } from '@/lib/tf2-game/server/echo-host';
@@ -45,9 +46,10 @@ let world: ReturnType<typeof makeWorld>;
 let pool: MatchPool;
 let nextId = 0;
 
-function connect(data: Record<string, unknown> = {}): FakeSocket {
+/** A signed-in socket (multiplayer needs an account); pass `{}` for a signed-out visitor. */
+function connect(data?: Record<string, unknown>): FakeSocket {
   nextId += 1;
-  return world.connect(`sock-${nextId}`, data);
+  return world.connect(`sock-${nextId}`, data ?? { userId: `user-${nextId}`, userName: `Player ${nextId}` });
 }
 
 const errors = (s: FakeSocket) => all<ErrorPayload>(s, TF2_S2C.ERROR).map((e) => e.code);
@@ -117,18 +119,18 @@ describe('creating a room', () => {
     expect(pool.matchCount).toBe(1);
   });
 
-  it('sanitises the room name and the anonymous player name', async () => {
+  it('sanitises the room name', async () => {
     const s = connect();
     const joined = await createRoom(s, { name: '<b>Pub</b>', playerName: '<img src=x>' });
     expect(joined.name).toBe('bPub/b');
-    const list = listPublicTf2Rooms();
+    const list = listPublicTf2Rooms().rooms;
     expect(list[0].name).toBe('bPub/b');
   });
 
   it('clamps bots below the player cap', async () => {
     const s = connect();
     await createRoom(s, { maxPlayers: 2, botCount: 23 });
-    expect(listPublicTf2Rooms()[0].bots).toBeLessThanOrEqual(1);
+    expect(listPublicTf2Rooms().rooms[0].bots).toBeLessThanOrEqual(1);
   });
 
   it('caps matches at the pool size', async () => {
@@ -144,7 +146,7 @@ describe('creating a room', () => {
     await until(() => last(s, TF2_S2C.KICKED) !== undefined, 2_000, 'kicked');
     expect(last<KickedPayload>(s, TF2_S2C.KICKED)?.reason).toBe('map-failed');
     expect(last(s, TF2_S2C.JOINED)).toBeUndefined();
-    expect(listPublicTf2Rooms()).toEqual([]);
+    expect(listPublicTf2Rooms().rooms).toEqual([]);
     expect(pool.matchCount).toBe(0);
   });
 
@@ -163,9 +165,26 @@ describe('the server browser and joining', () => {
     await createRoom(b, { private: true, map: 'koth_viaduct' });
     const c = connect();
     world.send(c, TF2_C2S.LIST_ROOMS, {});
-    const rooms = last<RoomListEntry[]>(c, TF2_S2C.ROOMS)!;
-    expect(rooms.map((r) => r.code)).toEqual([pub.code]);
-    expect(rooms[0]).toMatchObject({ map: 'ctf_2fort', players: 1, maxPlayers: 4, state: 'running' });
+    const page = last<RoomsPayload>(c, TF2_S2C.ROOMS)!;
+    expect(page.total).toBe(1);
+    expect(page.rooms.map((r) => r.code)).toEqual([pub.code]);
+    expect(page.rooms[0]).toMatchObject({ map: 'ctf_2fort', players: 1, maxPlayers: 4, state: 'running', kind: 'dedicated' });
+  });
+
+  it('answers the details pane, for anyone, and pages the list', async () => {
+    const a = connect();
+    const { code } = await createRoom(a);
+    const visitor = connect({});
+    world.send(visitor, TF2_C2S.ROOM_DETAILS, { code });
+    world.send(visitor, TF2_C2S.ROOM_DETAILS, { code: 'ZZZZZZ' });
+    world.send(visitor, TF2_C2S.ROOM_DETAILS, { code: 'nope' });
+    const details = all<RoomDetailsPayload>(visitor, TF2_S2C.ROOM_DETAILS);
+    expect(details[0].room).toMatchObject({ code, kind: 'dedicated', map: 'ctf_2fort' });
+    expect(Array.isArray(details[0].room?.roster)).toBe(true);
+    expect(details[1]).toEqual({ code: 'ZZZZZZ', room: null });
+    expect(errors(visitor)).toEqual(['bad-payload']);
+    world.send(visitor, TF2_C2S.LIST_ROOMS, { offset: 1 });
+    expect(last<RoomsPayload>(visitor, TF2_S2C.ROOMS)).toEqual({ rooms: [], total: 1, offset: 1 });
   });
 
   it('joins by code with the next player id', async () => {
@@ -193,15 +212,41 @@ describe('the server browser and joining', () => {
     expect(errors(c)).toEqual(['room-full']);
   });
 
-  it('uses the account name for a signed-in player', async () => {
+  it('names players by their account, never by what they send', async () => {
     const a = connect({ userId: 'user-1', userName: 'Heavy Weapons Guy' });
     const { code } = await createRoom(a, { playerName: 'Impostor' });
-    const b = connect();
-    await joinRoom(b, code);
+    const b = connect({ userId: 'user-2', userName: 'Scout' });
+    world.send(b, TF2_C2S.JOIN_ROOM, { code, playerName: 'Also an impostor' });
+    await until(() => last(b, TF2_S2C.JOINED) !== undefined, 2_000, 'joined');
     world.send(b, TF2_C2S.CHAT, { text: 'hi' });
     world.send(a, TF2_C2S.CHAT, { text: 'hello' });
     const lines = all<ChatMessage>(b, TF2_S2C.CHAT);
-    expect(lines.map((l) => l.name)).toEqual(['Player', 'Heavy Weapons Guy']);
+    expect(lines.map((l) => l.name)).toEqual(['Scout', 'Heavy Weapons Guy']);
+  });
+});
+
+describe('multiplayer needs an account', () => {
+  it('refuses every room action from a signed-out socket, but lets it browse', async () => {
+    const owner = connect();
+    const { code } = await createRoom(owner);
+    const anon = connect({});
+    world.send(anon, TF2_C2S.CREATE_ROOM, VALID);
+    world.send(anon, TF2_C2S.JOIN_ROOM, { code });
+    world.send(anon, TF2_C2S.CHAT, { text: 'hi' });
+    world.send(anon, TF2_C2S.TEAM, { team: 'red' });
+    world.send(anon, TF2_C2S.CLASS, { cls: 'scout' });
+    world.send(anon, TF2_C2S.VOICE, { menu: 0, item: 0 });
+    world.send(anon, TF2_C2S.EXTRA, { command: 'taunt', args: [] });
+    world.send(anon, TF2_C2S.LOADOUT, { cls: 'scout', slots: {} });
+    expect(errors(anon)).toEqual(Array(8).fill('auth-required'));
+    expect(last(anon, TF2_S2C.JOINED)).toBeUndefined();
+    expect(pool.matchCount).toBe(1);
+    world.send(anon, TF2_C2S.INPUT, new Uint8Array([1, 2, 3]));
+    expect(errors(anon)).toHaveLength(8);
+    world.send(anon, TF2_C2S.LIST_ROOMS, {});
+    world.send(anon, TF2_C2S.PING, { t: 1 });
+    expect(last<RoomsPayload>(anon, TF2_S2C.ROOMS)?.rooms.map((r) => r.code)).toEqual([code]);
+    expect(last<PongPayload>(anon, TF2_S2C.PONG)?.tick).toBeNull();
   });
 });
 
@@ -320,9 +365,9 @@ describe('leaving', () => {
   it('closes a room when its last player leaves', async () => {
     const a = connect();
     await createRoom(a);
-    expect(listPublicTf2Rooms()).toHaveLength(1);
+    expect(listPublicTf2Rooms().rooms).toHaveLength(1);
     world.send(a, TF2_C2S.LEAVE, {});
-    expect(listPublicTf2Rooms()).toEqual([]);
+    expect(listPublicTf2Rooms().rooms).toEqual([]);
     expect(pool.matchCount).toBe(0);
   });
 
@@ -331,7 +376,7 @@ describe('leaving', () => {
     const { code } = await createRoom(a);
     handleTf2GameDisconnect(world.io, a as never);
     world.disconnect(a);
-    const rooms = listPublicTf2Rooms();
+    const rooms = listPublicTf2Rooms().rooms;
     expect(rooms).toHaveLength(1);
     expect(rooms[0].players).toBe(0);
 
@@ -347,7 +392,7 @@ describe('leaving', () => {
     await joinRoom(b, code);
     handleTf2GameDisconnect(world.io, b as never);
     world.disconnect(b);
-    expect(listPublicTf2Rooms()[0].players).toBe(1);
+    expect(listPublicTf2Rooms().rooms[0].players).toBe(1);
     world.send(a, TF2_C2S.CHAT, { text: 'still here' });
     expect(last<ChatMessage>(a, TF2_S2C.CHAT)?.text).toBe('still here');
   });
@@ -360,7 +405,7 @@ describe('leaving', () => {
     a.received.length = 0;
     const second = await createRoom(a, { map: 'pl_badwater' });
     expect(second.code).not.toBe(first.code);
-    const rooms = listPublicTf2Rooms();
+    const rooms = listPublicTf2Rooms().rooms;
     expect(rooms.find((r) => r.code === first.code)?.players).toBe(1);
     expect(rooms.find((r) => r.code === second.code)?.players).toBe(1);
   });

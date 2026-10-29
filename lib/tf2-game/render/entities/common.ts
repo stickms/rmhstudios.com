@@ -6,8 +6,9 @@
 import { Matrix4, type Object3D, Vector3, type Vector2, type Vector4 } from 'three';
 import type { BspFile, BspWorldLight } from '../../formats/bsp';
 import { decompressVis, findLeaf } from '../../formats/bsp';
-import { srcDirToThree } from '../coords';
+import { SOURCE_UNIT, srcDirToThree, srcToThree } from '../coords';
 import { newAmbientCube, type AmbientCube, type SunLight, type Vec3Like } from '../lighting';
+import { animLod } from './animator';
 import type { LoadoutModels } from './loadout-models';
 import type { ModelLibrary } from './model-asset';
 import { setInstanceLighting, type InstanceUniforms } from './model-material';
@@ -146,6 +147,36 @@ export interface RenderContext {
   loadout?: LoadoutModels | null;
   /** The world camera's position (three world space), for level of detail. */
   cameraPosition?: Vector3;
+  /**
+   * A player's current kill streak (kills since their last death, counted from the death events
+   * this client saw): drives killstreaker eye effects.
+   */
+  killStreak?: (player: number) => number;
+  /** What is left this frame of the item draw budget (loadout-models.ts ITEM_DRAW_BUDGET). */
+  itemDrawBudget?: { left: number };
+  /** Whether a sphere of radius `r` (Source units) at a Source point is in the camera frustum. */
+  isVisible?: (p: Vec3Like, r?: number) => boolean;
+}
+
+const lodPos = new Vector3();
+const lodCentre = { x: 0, y: 0, z: 0 };
+/** Radius (Source units) of the sphere a character is tested against, centred 40 units up. */
+const LOD_CULL_RADIUS = 72;
+
+/**
+ * The animation level of detail (animator.ts animLod) for a model standing at a Source origin:
+ * off screen (frustum) or by distance from the camera.
+ */
+export function modelLod(ctx: RenderContext, origin: Vec3Like): number {
+  lodCentre.x = origin.x;
+  lodCentre.y = origin.y;
+  lodCentre.z = origin.z + 40;
+  const onScreen = ctx.isVisible ? ctx.isVisible(lodCentre, LOD_CULL_RADIUS) : true;
+  const cam = ctx.cameraPosition;
+  const d = cam
+    ? srcToThree(origin.x, origin.y, origin.z, lodPos).distanceTo(cam) / SOURCE_UNIT
+    : 0;
+  return animLod(d, onScreen);
 }
 
 /**

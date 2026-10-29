@@ -29,6 +29,11 @@ export interface OutputAction {
 
 let nextActionId = 1;
 
+/** A checkpoint restored actions stamped up to `id`: new ones are numbered past them. */
+export function reserveActionIds(id: number): void {
+  if (Number.isFinite(id) && id >= nextActionId) nextActionId = Math.floor(id) + 1;
+}
+
 /** Parses "target,input,param,delay,times" (comma or ESC separated). */
 export function parseOutputAction(value: string): OutputAction {
   const p = parseEntityOutput(value);

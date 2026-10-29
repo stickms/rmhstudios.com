@@ -7,7 +7,7 @@
 'use client';
 
 import { Box } from 'lucide-react';
-import { lazy, Suspense, useMemo, type ReactNode } from 'react';
+import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { merge } from '@/lib/tf2-loadout/bodygroups';
@@ -22,11 +22,13 @@ import {
   useAnimIndex,
 } from '@/lib/tf2-loadout/use-anims';
 import { classModel, modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
+import type { Team } from '@/lib/tf2-loadout/team-skins';
 import { cn } from '@/lib/utils';
 import type { EffectSpec } from './EffectParticles';
 import type { WarPaint } from './model-utils';
 import type { PlayerPart } from './PlayerScene';
 import { SearchSelect } from '../ui';
+import { TfTabs } from '../TfTabs';
 
 export const PlayerScene = lazy(() => import('./PlayerScene'));
 
@@ -117,9 +119,15 @@ export default function PlayerViewer({
   taunt,
   animation,
   onAnimationChange,
+  team: teamProp,
   className,
 }: {
   cls: string;
+  /**
+   * The team whose skin the player wears. Given (the game's pause view: the player's own team), it is
+   * fixed; left out, a RED/BLU switch under the viewer picks it.
+   */
+  team?: Team;
   /** The cosmetics currently equipped, plus the weapon the player holds. */
   worn: readonly WornItem[];
   /** The equipped taunt item: its animation plays, looped, on the player. */
@@ -139,6 +147,8 @@ export default function PlayerViewer({
     animation,
   });
   const options = useMemo(() => clips.map((c, id) => ({ id, label: clipLabel(c) })), [clips]);
+  const [teamPick, setTeamPick] = useState<Team>('red');
+  const team = teamProp ?? teamPick;
 
   const content = !webgl ? (
     <Note>{t('model-no-webgl', { defaultValue: 'Your browser cannot show 3D models.' })}</Note>
@@ -161,6 +171,7 @@ export default function PlayerViewer({
           parts={parts}
           bodyEffect={tauntEffect}
           tauntUrl={clip ? animUrl(cls, clip) : undefined}
+          team={team}
         />
       </Suspense>
     </SilentErrorBoundary>
@@ -177,6 +188,18 @@ export default function PlayerViewer({
       >
         {content}
       </div>
+      {teamProp === undefined && body ? (
+        <TfTabs
+          size="sm"
+          aria-label={t('player-team', { defaultValue: 'Team colours' })}
+          tabs={[
+            { id: 'red', label: t('team-red', { defaultValue: 'RED' }) },
+            { id: 'blu', label: t('team-blu', { defaultValue: 'BLU' }) },
+          ]}
+          value={team}
+          onChange={(id) => setTeamPick(id === 'blu' ? 'blu' : 'red')}
+        />
+      ) : null}
       {onAnimationChange && options.length ? (
         <SearchSelect
           value={picked ? clips.indexOf(picked) : undefined}

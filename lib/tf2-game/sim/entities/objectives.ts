@@ -136,6 +136,11 @@ export function objectives(world: GameWorld): Objectives {
   return o;
 }
 
+/** The objectives table, for a checkpoint (sim/checkpoint): read without creating. */
+export const objectivesTable = {
+  peek: (world: GameWorld): Objectives | undefined => registry.get(world),
+};
+
 /** Adds `e` to `list` once. */
 export function track<T>(list: T[], e: T): void {
   if (!list.includes(e)) list.push(e);

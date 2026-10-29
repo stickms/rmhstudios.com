@@ -1,8 +1,11 @@
 /**
- * The TF2 game client: one match, online through the games hub or offline
- * against bots on a listen-server worker — the same bytes either way.
+ * The TF2 game client: one match, online through the games hub, offline
+ * against bots on a listen-server worker, or peer-to-peer (hosting: the
+ * listen worker opened to friends over WebRTC; joining: a friend's listen
+ * server over DataChannels) — the same bytes every way.
  *
- *   connect (hub: connectTf2 → create/join a room; offline: the listen worker)
+ *   connect (hub: connectTf2 → create/join a room; offline: the listen worker;
+ *            P2P: client/net/p2p-host.ts, client/net/p2p-join.ts)
  *     → joined (map, player id) → load the map package (renderer + the
  *       predicting client world share one BSP parse)
  *     → every frame (GameLoop, the one rAF):
@@ -21,9 +24,12 @@
  *         audio: sim sound events and predicted sounds, the listener;
  *         HUD: buildHudState → the store (throttled), impulses → the menus.
  *
- * Map changes (a new `hello` naming another map), reconnects (a new player id:
- * prediction and interpolation restart) and kicks are handled here; the play
- * page shows the loading screen and errors from the callbacks.
+ * Map changes (a new `hello` naming another map — `changelevel` on a listen
+ * server, a peer-to-peer host or a hub room's owner all arrive that way),
+ * reconnects (a new player id: prediction and interpolation restart), host
+ * migration (a member becomes the host from its checkpoint, or resyncs with
+ * the new host) and kicks are handled here; the play page shows the loading
+ * screen and errors from the callbacks.
  *
  * Browser only.
  */
@@ -47,7 +53,15 @@ import { registerAllSimModules } from '../sim/register-all';
 import { GameWorld } from '../sim/world';
 import type { Player } from '../sim/player';
 import { keyKind, type EntityState as NetEntityState } from '../net/snapshot';
-import type { BotDifficulty, ChatMessage, CreateRoomPayload, JoinedPayload } from '../net/events';
+import {
+  TF2_LIMITS,
+  type BotDifficulty,
+  type ChatMessage,
+  type CreateRoomPayload,
+  type JoinedPayload,
+  type RoomAdminPayload,
+  type RoomInfoPayload,
+} from '../net/events';
 import type { MatchCommand, MatchOptions } from '../server/match-host';
 import type { AudioEngine } from '../audio/engine';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
@@ -60,6 +74,13 @@ import { InterpolationBuffer, RenderClock } from './net/interpolation';
 import { Prediction, type PredictedEffect, type PredictedSound } from './net/prediction';
 import { SnapshotClient, type TimedEvent } from './net/snapshot-client';
 import { connectListenServer, type ListenConnection } from './net/listen-server';
+import type { P2pHostController } from './net/p2p-host';
+import type { P2pJoinEnd, P2pJoinOptions } from './net/p2p-join';
+import { P2P_SNAPSHOT_MAX_BYTES } from '../net/p2p/wire';
+import type { PeerConnection, PeerRow } from '../net/p2p/control';
+import type { P2pHostPayload, P2pHostedPayload } from '../net/p2p/signal';
+import type { SeatInfo } from '../net/p2p/host-session';
+import type { HudAdmin, HudNotice } from './hud-state';
 import { loadItemCatalog } from './item-catalog';
 import { FixedStep, GameLoop, type FrameInfo } from './loop';
 import {
@@ -79,6 +100,10 @@ import {
   type LoadedPackage,
 } from './game-client';
 import { FovState, TF_WEAPON_ZOOM_FOV, TF_ZOOM_RATE, ViewController, type ViewTarget } from './view';
+import { TF_MOVE_PARAMS } from '../sim/movement';
+import { attachConsoleHost, type ConsoleLink } from '../console/runtime';
+import type { ConsoleHost } from '../console/game-console';
+import { indexFromLump, type EntityIndex } from '../console/entity-complete';
 
 export type Tf2Session =
   | {
@@ -90,7 +115,22 @@ export type Tf2Session =
       playerName: string;
     }
   | { kind: 'online-create'; room: CreateRoomPayload }
-  | { kind: 'online-join'; code: string; playerName?: string };
+  /**
+   * By code: a peer-to-peer code switches to `p2p-join` on its own (the hub says which it is).
+   * `spectate` is part of the join request (seated with the spectators, no team switch after it).
+   */
+  | { kind: 'online-join'; code: string; playerName?: string; spectate?: boolean; password?: string }
+  /** Host a peer-to-peer match: a listen server in this page, opened to signed-in friends. */
+  | { kind: 'p2p-host'; room: P2pHostPayload; playerName: string }
+  | { kind: 'p2p-join'; code: string; spectate?: boolean; password?: string };
+
+/** What this client is in its match right now (it can change: a member promoted to host). */
+type Role = 'offline' | 'hub' | 'p2p-host' | 'p2p-member';
+
+/** Peer-to-peer and listen-server tuning for the worker: its clock for the room, and checkpoints. */
+const P2P_WORKER_CLOCK = { upkeepMs: 100, checkpointMs: 2_000 } as const;
+/** A network notice stays this long (s). */
+const NOTICE_SECONDS = 8;
 
 export interface Tf2ClientOptions extends ClientMount {
   session: Tf2Session;
@@ -99,6 +139,10 @@ export interface Tf2ClientOptions extends ClientMount {
 /** HUD updates per second (the store throttles too; building the state is the cost saved). */
 const HUD_HZ = 20;
 
+/**
+ * How the client reaches its match: the hub's sockets, the local listen
+ * worker, or a peer-to-peer host's DataChannels — one shape for all three.
+ */
 interface Transport {
   input(packet: Uint8Array): void;
   command(cmd: MatchCommand): void;
@@ -108,6 +152,23 @@ interface Transport {
   stop(): void;
   readonly online: boolean;
   pingMs(): number | null;
+  /** Peer-to-peer: every human's connection type by entity (the scoreboard). */
+  links?(): ReadonlyMap<number, PeerConnection>;
+  /** Peer-to-peer diagnostics (the smoke test, the net graph). */
+  p2p?(): Record<string, unknown>;
+  /** Peer-to-peer host: the members' seats, and removing one. */
+  seats?(): SeatInfo[];
+  kick?(playerId: number): void;
+  /** Peer-to-peer: each human's ping and input loss by entity (the scoreboard). */
+  linkRows?(): ReadonlyMap<number, { pingMs?: number; loss?: number }>;
+  /** A listen server (offline, a P2P host): move the match to another published map. */
+  changeLevel?(map: string): void;
+  /** Room administration; resolves to an error key for the player, or null when it was sent. */
+  admin?(action: RoomAdminPayload): Promise<string | null> | string | null;
+  /** The administration view, when this player runs the room. */
+  adminView?(): HudAdmin | null;
+  /** Peer-to-peer member: loss, choke and jitter of the host's snapshots as they arrive. */
+  traffic?(): { loss: number; choke: number; jitterMs: number } | null;
 }
 
 export class Tf2Client implements GameClient {
@@ -160,6 +221,28 @@ export class Tf2Client implements GameClient {
   private lastSpawnedAlive = false;
   private worker: Worker | null = null;
   private abort = new AbortController();
+  /** Peer-to-peer member: the host's connection rows (by entity). */
+  private peerLinks: ReadonlyMap<number, PeerConnection> = new Map();
+  private peerStats: ReadonlyMap<number, { pingMs?: number; loss?: number }> = new Map();
+  private role: Role = 'offline';
+  /** A hub room's administration (owner, lock, password), as the hub last said. */
+  private roomInfo: RoomInfoPayload | null = null;
+  private notices: HudNotice[] = [];
+  /** The newest network transitions (diagnostics: debug() and the smoke tests). */
+  private readonly netLog: string[] = [];
+  private netTrace(what: string): void {
+    this.netLog.push(`${Math.round(performance.now())} ${what}`);
+    if (this.netLog.length > 40) this.netLog.shift();
+  }
+  private nextNoticeId = 1;
+  /** host_timescale as the server replicates it (the client's ticks and clock follow). */
+  private timescale = 1;
+  /** The developer console (lib/tf2-game/console): its replies, binds' waits, net_graph, cheats' views. */
+  private console: ConsoleLink | null = null;
+  private thirdPersonCheat = false;
+  private fpsMax = 0;
+  /** The server's replicated sv_gravity when not the default (prediction must fall the same). */
+  private gravity: number | null = null;
 
   constructor(private readonly opts: Tf2ClientOptions) {
     this.store = opts.store;
@@ -191,6 +274,8 @@ export class Tf2Client implements GameClient {
       );
       this.unsubs.push(this.audio.attach());
       this.unsubs.push(this.store.onCommand((c) => this.onHudCommand(c)));
+      this.console = attachConsoleHost(this.store, 'tf2', this.consoleHost());
+      this.unsubs.push(() => this.console?.detach());
       const title = this.sessionMap();
       if (title) this.progress.title = findTf2Map(title)?.title ?? title;
       this.progress.begin('sounds');
@@ -207,26 +292,30 @@ export class Tf2Client implements GameClient {
 
   private sessionMap(): string | null {
     const s = this.opts.session;
-    return s.kind === 'offline' ? s.map : s.kind === 'online-create' ? s.room.map : null;
+    return s.kind === 'offline' ? s.map : s.kind === 'online-create' || s.kind === 'p2p-host' ? s.room.map : null;
   }
 
   // ─── Transport ───────────────────────────────────────────────────────────
 
-  private connect(): void {
+  /** `map` (offline only): restart the listen server on this map instead of the session's (`retry`). */
+  private connect(map?: string): void {
     // Items beyond stock: prediction and rendering read the item schema (sim/items).
     void loadItemCatalog();
     const s = this.opts.session;
     if (s.kind === 'offline') {
-      const info = findTf2Map(s.map);
-      if (!info) throw new ClientFailure({ code: 'map-missing', detail: `unknown map ${s.map}`, retryable: false });
+      this.role = 'offline';
+      const mapName = map ?? s.map;
+      const info = findTf2Map(mapName);
+      if (!info) throw new ClientFailure({ code: 'map-missing', detail: `unknown map ${mapName}`, retryable: false });
       const worker = new Worker(new URL('./net/listen-worker.ts', import.meta.url), { type: 'module', name: 'tf2-listen-server' });
       this.worker = worker;
       worker.onerror = (e) => this.fail(new ClientFailure({ code: 'map-failed', detail: `listen server: ${e.message}`, retryable: true }));
       const opts: MatchOptions = {
         matchId: 'LOCAL',
-        map: s.map,
+        map: info.name,
         mode: info.mode as Tf2Mode,
-        maxPlayers: s.maxPlayers,
+        // A listen server's full complement of slots: the bots fill `botCount`, the console's tf_bot_add the rest.
+        maxPlayers: Math.max(s.maxPlayers, TF2_LIMITS.MAX_PLAYERS),
         botCount: s.botCount,
         botDifficulty: s.difficulty,
         name: 'Offline',
@@ -259,6 +348,8 @@ export class Tf2Client implements GameClient {
           const name = this.snap.roster.get(this.snap.localEntity)?.name ?? s.playerName;
           this.log.pushChat({ name, team: num(me, 'team'), text, teamOnly, dead: num(me, 'lifeState') !== LIFE_ALIVE, system: false }, this.clientNow);
         },
+        // The listen server moves the match; the new `hello` reloads the level here (the same path as online).
+        changeLevel: (m) => conn.changeLevel(m),
         stop: () => {
           conn.stop();
           worker.terminate();
@@ -269,14 +360,23 @@ export class Tf2Client implements GameClient {
       this.opts.callbacks.onConnection?.('connected');
       return;
     }
-    void this.connectOnline(s).catch((e) =>
-      this.fail(new ClientFailure({ code: 'network', detail: `games hub: ${e instanceof Error ? e.message : String(e)}`, retryable: true })),
-    );
+    const failNet = (e: unknown) =>
+      this.fail(new ClientFailure({ code: 'network', detail: `games hub: ${e instanceof Error ? e.message : String(e)}`, retryable: true }));
+    if (s.kind === 'p2p-host') {
+      void this.connectP2pHost(s).catch(failNet);
+      return;
+    }
+    if (s.kind === 'p2p-join') {
+      void this.connectP2pJoin(s.code, { spectate: s.spectate, password: s.password }).catch(failNet);
+      return;
+    }
+    void this.connectOnline(s).catch(failNet);
   }
 
   private async connectOnline(s: Extract<Tf2Session, { kind: 'online-create' | 'online-join' }>): Promise<void> {
     const net = await import('../net/client');
     if (this.disposed) return;
+    this.role = 'hub';
     await net.connectTf2({
       onStatus: (status) => {
         this.connected = status === 'connected';
@@ -286,16 +386,37 @@ export class Tf2Client implements GameClient {
       onSnapshot: (d) => this.onSnapshot(d),
       onEvents: (d) => this.onReliable(d),
       onChat: (m: ChatMessage) => this.log.onChat(m, this.clientNow),
-      onKicked: (k) => this.fail(new ClientFailure({ code: 'kicked', detail: k.reason, retryable: k.reason !== 'room-closed' })),
+      onRoomInfo: (info) => {
+        const was = this.roomInfo?.ownerId ?? null;
+        this.roomInfo = info;
+        // The room just became ours (the owner left, or handed it on).
+        if (this.joined && info.ownerId === this.joined.playerId && was !== info.ownerId && was !== null) this.notice('you-host');
+      },
+      onKicked: (k) => this.fail(new ClientFailure({ code: 'kicked', detail: k.reason, retryable: k.reason !== 'room-closed' && k.reason !== 'kicked' })),
       onError: (e) => {
         if (e.code === 'rate-limited' || e.code === 'not-in-room') return;
+        if (e.event === 'tf2:room:admin') {
+          this.console?.console.print(`admin: ${e.code}`, 'error');
+          return;
+        }
+        if (e.code === 'p2p-room' && s.kind === 'online-join' && !this.joined) {
+          // The code names a peer-to-peer room: join its host over WebRTC instead (the spectator choice goes along).
+          net.tf2.leave();
+          void this.connectP2pJoin(s.code, { spectate: s.spectate, password: s.password }).catch((err) => this.fail(err));
+          return;
+        }
+        if (e.code === 'auth-required') {
+          this.fail(new ClientFailure({ code: 'auth-required', detail: e.event ?? 'auth-required', retryable: false }));
+          return;
+        }
         if (this.joined && e.event !== 'tf2:room:create' && e.event !== 'tf2:room:join') return;
         this.fail(new ClientFailure({ code: 'room', detail: e.code, retryable: e.code === 'capacity' || e.code === 'unavailable' }));
       },
     });
     if (this.disposed) return;
     if (s.kind === 'online-create') net.tf2.createRoom(s.room);
-    else net.tf2.joinRoom(s.code, s.playerName);
+    else net.tf2.joinRoom(s.code, s.playerName, { spectate: s.spectate, password: s.password });
+    const isOwner = () => !!this.joined && this.roomInfo?.ownerId === this.joined.playerId;
     this.transport = {
       online: true,
       input: (p) => void net.tf2.sendInput(p),
@@ -313,7 +434,423 @@ export class Tf2Client implements GameClient {
         net.disconnectTf2();
       },
       pingMs: () => net.tf2.clock()?.rttMs ?? null,
+      // The owner's administration: the hub checks it again (who asks, the map allowlist) and logs it.
+      changeLevel: (map) => {
+        if (isOwner()) net.tf2.roomAdmin({ action: 'changelevel', map });
+      },
+      admin: (action) => {
+        if (!isOwner()) return 'not-owner';
+        net.tf2.roomAdmin(action);
+        return null;
+      },
+      adminView: () => {
+        const info = this.roomInfo;
+        if (!info || !isOwner()) return null;
+        return {
+          role: 'owner',
+          online: true,
+          map: this.pkg?.name ?? this.joined?.map ?? '',
+          locked: info.locked,
+          passworded: info.passworded,
+          players: (info.players ?? []).map((p) => ({ id: p.id, name: p.name, self: p.id === this.joined?.playerId, account: p.account })),
+        };
+      },
     };
+  }
+
+  // ─── Peer-to-peer ─────────────────────────────────────────────────────────
+
+  /** Host: the listen worker (P2P options) plus the controller that opens it to members. */
+  private async connectP2pHost(s: Extract<Tf2Session, { kind: 'p2p-host' }>): Promise<void> {
+    const info = findTf2Map(s.room.map);
+    if (!info) throw new ClientFailure({ code: 'map-missing', detail: `unknown map ${s.room.map}`, retryable: false });
+    const net = await import('../net/client');
+    if (this.disposed) return;
+    await net.connectTf2({
+      onStatus: (status) => {
+        // The match runs here; the hub only matters for new members joining.
+        if (status === 'connected') this.opts.callbacks.onConnection?.('connected');
+      },
+      onError: (e) => {
+        if (e.code === 'auth-required' && e.event === 'tf2:p2p:host') {
+          this.fail(new ClientFailure({ code: 'auth-required', detail: e.event, retryable: false }));
+        }
+      },
+    });
+    const { P2pHostController } = await import('./net/p2p-host');
+    if (this.disposed) return;
+    const opts: MatchOptions = {
+      matchId: 'LOCAL',
+      map: info.name,
+      mode: info.mode as Tf2Mode,
+      maxPlayers: s.room.maxPlayers,
+      botCount: Math.min(s.room.botCount, s.room.maxPlayers - 1),
+      botDifficulty: s.room.botDifficulty,
+      name: s.room.name,
+      seed: (Math.random() * 0x7fffffff) | 0,
+    };
+    this.startHosting(net, P2pHostController, { ...s.room, mode: info.mode as Tf2Mode }, opts, s.playerName, null);
+  }
+
+  /**
+   * Runs the listen-server worker for a peer-to-peer room and opens it to members — a fresh match
+   * (`promoted` null: announce the room), or, after a host migration, the match from the previous
+   * host's checkpoint (`promoted`: the room is already ours on the hub).
+   */
+  private startHosting(
+    net: typeof import('../net/client'),
+    HostController: typeof P2pHostController,
+    room: P2pHostPayload,
+    opts: MatchOptions,
+    playerName: string,
+    promoted: { hosted: P2pHostedPayload; checkpoint: Uint8Array; localPlayerId: number } | null,
+  ): void {
+    this.role = 'p2p-host';
+    const worker = new Worker(new URL('./net/listen-worker.ts', import.meta.url), { type: 'module', name: 'tf2-listen-server' });
+    this.worker = worker;
+    worker.onerror = (e) => this.fail(new ClientFailure({ code: 'map-failed', detail: `listen server: ${e.message}`, retryable: true }));
+    let host: P2pHostController | null = null;
+    const restore = promoted ? (promoted.checkpoint.slice().buffer as ArrayBuffer) : undefined;
+    const conn: ListenConnection = connectListenServer(
+      worker,
+      {
+        opts,
+        playerName,
+        // TF2's join menus (like a hub room), every snapshot one DataChannel datagram, and the room's
+        // clock and migration checkpoints on the worker's own (unthrottled) timers.
+        host: { autoTeam: false, snapshotMaxBytes: P2P_SNAPSHOT_MAX_BYTES, p2p: P2P_WORKER_CLOCK, ...(restore ? { restore } : {}) },
+        ...(promoted ? { localPlayerId: promoted.localPlayerId } : {}),
+      },
+      {
+        onJoined: (j) => {
+          this.onJoined(j);
+          if (!promoted) host?.start();
+        },
+        onSnapshot: (d) => this.onSnapshot(d),
+        onEvents: (d) => this.onReliable(d),
+        onSummary: (summary) => host?.onSummary(summary),
+        onPeerFrame: (tick, packets) => host?.deliver(tick, packets),
+        onUpkeep: () => host?.upkeep(),
+        onCheckpoint: (data) => host?.onCheckpoint(data),
+        onClosed: (reason, message) =>
+          this.fail(new ClientFailure({ code: reason === 'map-failed' ? 'map-failed' : 'room', detail: `${reason}${message ? `: ${message}` : ''}`, retryable: true })),
+      },
+    );
+    host = new HostController(
+      net,
+      room,
+      conn,
+      {
+        onHosted: (h) => {
+          this.opts.callbacks.onRoom?.(h.code);
+          if (!promoted) this.notice('hosting');
+        },
+        onChat: (m) => this.log.onChat(m, this.clientNow),
+        onError: (code) => {
+          if (code === 'auth-required') this.fail(new ClientFailure({ code: 'auth-required', detail: 'tf2:p2p:host', retryable: false }));
+          else console.warn('[tf2 client] the hub refused the room:', code);
+        },
+      },
+      promoted ? { localPlayerId: promoted.localPlayerId } : {},
+    );
+    if (promoted) {
+      host.startPromoted(promoted.hosted);
+      // Every seat in the checkpoint but ours is held for its account (they are being asked back now).
+      void import('../sim/checkpoint/pack')
+        .then(({ unpackCheckpoint }) => unpackCheckpoint(promoted.checkpoint))
+        .then((cp) => host?.seatsRestored((cp.seats ?? []).map((x) => ({ playerId: x.hubId, userId: x.userId, name: x.name }))))
+        .catch(() => host?.seatsRestored([]));
+    }
+    void loadItemCatalog().then((catalog) => {
+      if (catalog && !this.disposed) conn.items(catalog);
+    });
+    const h = host;
+    this.transport = {
+      online: true,
+      input: (p) => conn.sendInput(p),
+      command: (c) => {
+        if (c.kind === 'chat') h.chat(c.text, c.teamOnly);
+        else conn.command(c);
+      },
+      chat: (text, teamOnly) => h.chat(text, teamOnly),
+      stop: () => {
+        h.stop();
+        // A moment for the goodbyes, then the match goes.
+        setTimeout(() => {
+          conn.stop();
+          worker.terminate();
+        }, 400);
+      },
+      // The host plays on its own listen server: no transport latency.
+      pingMs: () => 0,
+      links: () => h.links(),
+      linkRows: () => h.linkRows(),
+      seats: () => h.seats(),
+      kick: (playerId) => h.kick(playerId),
+      changeLevel: (map) => conn.changeLevel(map),
+      admin: (action) => this.p2pHostAdmin(net, h, conn, action),
+      adminView: () => ({
+        role: 'host',
+        online: true,
+        map: this.pkg?.name ?? opts.map,
+        locked: this.p2pDoor.locked,
+        passworded: this.p2pDoor.passworded,
+        players: [
+          { id: this.joined?.playerId ?? 1, name: h.hostName ?? playerName, self: true },
+          ...h.seats().map((seat) => ({
+            id: seat.playerId,
+            name: seat.name,
+            self: false,
+            connection: seat.droppedAt !== null ? null : seat.connection === 'host' ? null : seat.connection,
+            pingMs: seat.pingMs,
+            loss: seat.loss,
+            canHost: seat.canHost && (seat.connection === 'direct' || seat.connection === 'turn') && seat.droppedAt === null,
+            successor: h.successor === seat.playerId,
+            held: seat.droppedAt !== null,
+          })),
+        ],
+      }),
+      p2p: () => ({
+        role: 'host',
+        code: h.code,
+        seats: h.seats(),
+        links: Object.fromEntries(h.links()),
+        peers: h.linkStats(),
+        successor: h.successor,
+        checkpointsSent: h.checkpointsSent,
+        checkpointBytes: h.lastCheckpointBytes,
+      }),
+    };
+    this.connected = true;
+    this.opts.callbacks.onConnection?.('connected');
+  }
+
+  /** The peer-to-peer host's door (lock, password) as last set here. */
+  private p2pDoor = { locked: false, passworded: false };
+
+  /** A peer-to-peer host's administration: the match is here, the door is the hub's. */
+  private async p2pHostAdmin(
+    net: typeof import('../net/client'),
+    host: P2pHostController,
+    conn: ListenConnection,
+    action: RoomAdminPayload,
+  ): Promise<string | null> {
+    switch (action.action) {
+      case 'kick':
+        host.kick(action.playerId);
+        return null;
+      case 'transfer': {
+        // Hand the match to that member and come back as one of its players.
+        const ok = await host.transfer(action.playerId);
+        if (!ok) {
+          this.notice('transfer-failed');
+          return 'transfer-failed';
+        }
+        const code = host.code;
+        conn.stop();
+        this.worker?.terminate();
+        this.worker = null;
+        if (code) {
+          this.resetNetState();
+          void this.connectP2pJoin(code, {}).catch((e) => this.fail(e));
+        }
+        return null;
+      }
+      case 'changelevel':
+        conn.changeLevel(action.map);
+        return null;
+      case 'say':
+        host.serverSay(action.text);
+        return null;
+      case 'lock':
+        this.p2pDoor.locked = action.locked;
+        net.tf2.roomAdmin(action);
+        return null;
+      case 'password':
+        this.p2pDoor.passworded = action.password !== '';
+        net.tf2.roomAdmin(action);
+        return null;
+    }
+  }
+
+  /** Member: the hub introduces us to the host; the game runs over the DataChannels. */
+  private async connectP2pJoin(code: string, joinOpts: P2pJoinOptions): Promise<void> {
+    const net = await import('../net/client');
+    const { P2pJoinController } = await import('./net/p2p-join');
+    if (this.disposed) return;
+    this.role = 'p2p-member';
+    await net.connectTf2({
+      onStatus: (status) => {
+        if (status !== 'connected' && !this.joined) this.opts.callbacks.onConnection?.(status === 'connecting' ? 'connecting' : 'reconnecting');
+      },
+    });
+    if (this.disposed) return;
+    const join = new P2pJoinController(
+      net,
+      code,
+      {
+        onAdmitted: () => {
+          this.netTrace('admitted');
+          this.opts.callbacks.onRoom?.(code);
+        },
+        onConnection: (type) => this.netTrace(`connection ${type}`),
+        onJoined: (j) => {
+          this.netTrace(`joined ${j.code} ${j.playerId}`);
+          this.connected = true;
+          this.opts.callbacks.onConnection?.('connected');
+          this.onJoined(j);
+        },
+        onSnapshot: (d) => this.onSnapshot(d),
+        onEvents: (d) => this.onReliable(d),
+        onChat: (m) => this.log.onChat(m, this.clientNow),
+        onPeers: (rows) => this.onPeerRows(rows),
+        onReconnecting: () => {
+          this.netTrace('reconnecting');
+          this.connected = false;
+          this.opts.callbacks.onConnection?.('reconnecting');
+        },
+        onMigrating: (hostName) => {
+          this.netTrace(`migrating ${hostName}`);
+          // The match moves to another member: whatever this client knew of the old host's stream goes.
+          this.resetNetState();
+          this.connected = false;
+          this.opts.callbacks.onConnection?.('reconnecting');
+          this.notice('migrating', hostName);
+          this.pendingMigration = hostName;
+        },
+        onPromoted: (hosted, previousHost, checkpoint) => {
+          this.netTrace(`promoted ${checkpoint ? checkpoint.byteLength : 'no checkpoint'}`);
+          void this.becomeHost(net, code, hosted, previousHost, checkpoint);
+        },
+        onEnded: (reason) => {
+          this.netTrace(`ended ${reason}`);
+          this.onP2pEnded(reason);
+        },
+      },
+      { canHost: true, ...joinOpts },
+    );
+    this.transport = {
+      online: true,
+      input: (p) => join.sendInput(p),
+      command: (c) => join.command(c),
+      chat: (text, teamOnly) => join.chat(text, teamOnly),
+      stop: () => join.stop(),
+      pingMs: () => join.pingMs(),
+      links: () => this.peerLinks,
+      linkRows: () => this.peerStats,
+      traffic: () => {
+        const st = join.stats;
+        return st ? { loss: st.trafficLoss, choke: st.trafficChoke, jitterMs: st.trafficJitterMs } : null;
+      },
+      p2p: () => ({
+        role: 'member',
+        code,
+        connection: join.connectionType,
+        connectMs: join.connectTimeMs,
+        stats: join.stats,
+        checkpoint: join.checkpointInfo,
+        migrations: join.migrations,
+      }),
+    };
+    join.start();
+  }
+
+  /** The new host's name while a migration is in progress (the notice when we are back in). */
+  private pendingMigration: string | null = null;
+
+  private onPeerRows(rows: PeerRow[]): void {
+    this.peerLinks = new Map(rows.map((r) => [r.entity, r.link]));
+    this.peerStats = new Map(rows.map((r) => [r.entity, { pingMs: r.pingMs, loss: r.loss }]));
+  }
+
+  /**
+   * Host migration — the hub made this member the host: start the match from the previous host's
+   * checkpoint in a listen-server worker of our own, on our seat, and open it to the others (the hub
+   * is asking for them already). Without a checkpoint the match cannot go on.
+   */
+  private async becomeHost(
+    net: typeof import('../net/client'),
+    code: string,
+    hosted: P2pHostedPayload,
+    previousHost: string,
+    checkpoint: Uint8Array | null,
+  ): Promise<void> {
+    const joined = this.joined;
+    if (!checkpoint || !joined || this.disposed) {
+      net.tf2.p2p.close();
+      this.fail(new ClientFailure({ code: 'host-left', detail: 'the host left (no checkpoint to continue from)', retryable: false }));
+      return;
+    }
+    const info = findTf2Map(joined.map);
+    if (!info) return;
+    this.resetNetState();
+    const name = this.snap.roster.get(this.snap.localEntity)?.name ?? hosted.hostName;
+    const opts: MatchOptions = {
+      matchId: 'LOCAL',
+      map: info.name,
+      mode: info.mode as Tf2Mode,
+      maxPlayers: joined.maxPlayers,
+      botCount: 0,
+      botDifficulty: 'normal',
+      name: joined.name,
+      seed: 1,
+    };
+    const room: P2pHostPayload = {
+      map: info.name,
+      mode: info.mode as Tf2Mode,
+      maxPlayers: Math.min(joined.maxPlayers, TF2_LIMITS.P2P_MAX_PLAYERS),
+      botCount: 0,
+      botDifficulty: 'normal',
+      name: joined.name,
+    };
+    const { P2pHostController } = await import('./net/p2p-host');
+    if (this.disposed) return;
+    this.startHosting(net, P2pHostController, room, opts, name, { hosted, checkpoint, localPlayerId: joined.playerId });
+    this.notice('host-migrated', hosted.hostName);
+    void previousHost;
+    void code;
+  }
+
+  private onP2pEnded(reason: P2pJoinEnd): void {
+    switch (reason) {
+      case 'host-left':
+        this.fail(new ClientFailure({ code: 'host-left', detail: 'the host left', retryable: false }));
+        return;
+      case 'kicked':
+        this.fail(new ClientFailure({ code: 'kicked', detail: 'kicked by the host', retryable: false }));
+        return;
+      case 'auth-required':
+        this.fail(new ClientFailure({ code: 'auth-required', detail: 'tf2:p2p:join', retryable: false }));
+        return;
+      case 'connection-lost':
+      case 'relay-full':
+        this.fail(new ClientFailure({ code: 'p2p-connect', detail: reason, retryable: true }));
+        return;
+      default:
+        this.fail(new ClientFailure({ code: 'room', detail: reason, retryable: reason !== 'refused' }));
+    }
+  }
+
+  /**
+   * The match's stream starts over (a host migration): the snapshot mirror, interpolation and
+   * prediction restart from the next full snapshot; the level stays loaded (same map).
+   */
+  private resetNetState(): void {
+    this.snap.reset();
+    this.interp = new InterpolationBuffer();
+    this.records.clear();
+    this.prediction = null;
+    this.clientWorld = null;
+    this.localPlayerSim = null;
+    this.sender = new InputSender(this.sender.lastCommandNumber);
+    this.clock.resync();
+    this.ticks.reset();
+    this.joined = null;
+  }
+
+  private notice(kind: HudNotice['kind'], name?: string): void {
+    this.notices.push({ id: this.nextNoticeId++, at: this.clientNow, kind, ...(name ? { name } : {}) });
+    while (this.notices.length > 4) this.notices.shift();
   }
 
   private onJoined(j: JoinedPayload): void {
@@ -321,13 +858,20 @@ export class Tf2Client implements GameClient {
     const sameMatch = this.joined && this.joined.code === j.code && this.joined.playerId === j.playerId;
     this.joined = j;
     if (first) this.progress.finish('connect');
-    if (this.transport?.online !== false && this.opts.session.kind !== 'offline') this.opts.callbacks.onRoom?.(j.code);
+    if (this.pendingMigration !== null) {
+      // Back in after a host migration, on our seat with the new host.
+      this.notice('host-migrated', this.pendingMigration);
+      this.pendingMigration = null;
+    }
+    if (this.transport?.online !== false && (this.opts.session.kind === 'online-create' || this.opts.session.kind === 'online-join') && this.role === 'hub') {
+      this.opts.callbacks.onRoom?.(j.code);
+    }
     if (!sameMatch) {
       // A new player in the match (first join or a reconnect): prediction and interpolation restart.
       this.prediction = null;
       this.localPlayerSim = null;
       this.clientWorld = null;
-      this.sender = new InputSender();
+      this.sender = new InputSender(this.sender.lastCommandNumber);
       this.interp = new InterpolationBuffer();
       this.records.clear();
       this.log.reset();
@@ -385,6 +929,7 @@ export class Tf2Client implements GameClient {
       const fx = ents.effects as unknown as { maxLiveSystems?: number };
       if ('maxLiveSystems' in fx) fx.maxLiveSystems = core.plan.particleBudget;
       ents.viewModel.fov = this.settings.viewmodelFov;
+      if (this.gravity !== null) ents.effects.gravity = this.gravity;
       this.ents = ents;
       // Texture progress: the cache's pending count against the most seen.
       let peak = 1;
@@ -475,6 +1020,8 @@ export class Tf2Client implements GameClient {
       }
     }
     for (const e of r.events) this.queueEvent(e);
+    // Snapshots that arrived ahead of their string definitions (peer-to-peer: two channels).
+    for (const held of this.snap.takeDeferred()) this.onSnapshot(held);
   }
 
   private onSnapshot(bytes: Uint8Array): void {
@@ -515,6 +1062,10 @@ export class Tf2Client implements GameClient {
     const player = world.addPlayer(this.snap.roster.get(this.snap.localEntity)?.name ?? 'me');
     this.clientWorld = world;
     this.localPlayerSim = player;
+    if (this.gravity !== null) {
+      player.moveCtx.params = { ...TF_MOVE_PARAMS, gravity: this.gravity };
+      world.gravity = this.gravity;
+    }
     this.prediction = new Prediction(world, player, { onEvent: (e) => this.onPredicted(e) });
   }
 
@@ -532,6 +1083,8 @@ export class Tf2Client implements GameClient {
   }
 
   private queueEvent(e: TimedEvent): void {
+    // Console replies and replicated cvars are the console's.
+    if (this.console?.serverEvent(e.event)) return;
     const ev = e.event;
     const local = this.snap.localEntity;
     const me = this.snap.localPlayer();
@@ -573,11 +1126,13 @@ export class Tf2Client implements GameClient {
         if (t.pause && c.paused !== this.offlinePaused) {
           this.offlinePaused = c.paused;
           t.pause(c.paused);
-          if (!c.paused) {
-            // The match resumes from the tick it stopped on: take the clock and prediction from there.
-            this.clock.resync();
+          // The match holds on the tick it stopped on and resumes from it: hold the render clock with it and
+          // rebase it on resume, keeping the prediction (its pending commands are still the server's next
+          // ones) — restarting either would snap the view on resume.
+          if (c.paused) this.clock.hold(performance.now());
+          else {
+            this.clock.release(performance.now());
             this.ticks.reset();
-            this.prediction = null;
           }
         }
         break;
@@ -608,9 +1163,35 @@ export class Tf2Client implements GameClient {
       case 'loadout':
         t.command({ kind: 'loadout', cls: c.cls, slots: c.slots });
         break;
+      case 'admin':
+        void this.admin(c.action);
+        break;
       default:
         break;
     }
+  }
+
+  /** Room administration (the pause menu's Server view, the console). Prints why when it cannot. */
+  private async admin(action: RoomAdminPayload): Promise<boolean> {
+    const t = this.transport;
+    if (action.action === 'changelevel' && t?.changeLevel && !t.admin) {
+      // Offline: the listen server is ours.
+      t.changeLevel(action.map);
+      return true;
+    }
+    const err = t?.admin ? await t.admin(action) : 'not-owner';
+    if (err) {
+      this.console?.console.print(
+        err === 'not-owner'
+          ? `${action.action}: only the room's owner (or the peer-to-peer host) can do that`
+          : err === 'transfer-failed'
+            ? 'That player cannot host (they need a direct or TURN connection, and to allow it).'
+            : `${action.action}: ${err}`,
+        'error',
+      );
+      return false;
+    }
+    return true;
   }
 
   // ─── The frame ───────────────────────────────────────────────────────────
@@ -652,7 +1233,8 @@ export class Tf2Client implements GameClient {
 
     // Ticks: build, predict, send.
     const t0 = performance.now();
-    const n = this.offlinePaused ? 0 : this.ticks.advance(dt);
+    // host_timescale (a listen server's cheat, replicated): the client's ticks run at the server's pace.
+    const n = this.offlinePaused ? 0 : this.ticks.advance(dt * this.timescale);
     for (let i = 0; i < n; i++) this.tick(Math.floor(this.serverTime / TICK_INTERVAL) + i);
 
     const t1 = performance.now();
@@ -686,7 +1268,7 @@ export class Tf2Client implements GameClient {
       player: (id) => this.viewTarget(id),
       pickTarget: (after) => this.pickTarget(after, team),
       fov: this.fov.current(this.clientNow),
-      thirdPerson: taunting,
+      thirdPerson: taunting || this.thirdPersonCheat,
       trace: this.trace ?? noTrace,
     });
     const cam = core.cam;
@@ -711,7 +1293,7 @@ export class Tf2Client implements GameClient {
             eyeOrigin: view.origin,
             eyeAngles: view.angles,
             velocity: pp.move.velocity,
-            visible: !zoomed,
+            visible: !zoomed && (this.console?.console.drawViewModel.bool ?? true),
             invis: this.vmInvis(pp, dt),
             uber: pp.cond.has(TF_COND.INVULNERABLE),
             crit: CRIT_BOOST_CONDS.some((c) => pp.cond.has(c)),
@@ -744,9 +1326,28 @@ export class Tf2Client implements GameClient {
     if (this.hudAcc >= 1 / HUD_HZ) {
       this.hudAcc = 0;
       const state = buildHudState(this.hudSource(), this.log, { game: 'tf2', now: this.clientNow, connected: this.connected, fps: this.fps.fps });
+      const links = this.transport?.links?.();
+      if (links && links.size > 0) {
+        // Peer-to-peer: how each human reaches the host, their round trip to it and their loss (the ping column).
+        const rows = this.transport?.linkRows?.();
+        for (const row of state.scoreboard) {
+          if (row.bot) continue;
+          row.link = links.get(row.id);
+          const st = rows?.get(row.id);
+          if (st?.pingMs !== undefined && row.link !== 'host') row.ping = st.pingMs;
+          if (st?.loss !== undefined) row.loss = st.loss;
+        }
+      }
+      // Network notices (host migration, hosting), each for a few seconds.
+      this.notices = this.notices.filter((n) => this.clientNow - n.at < NOTICE_SECONDS);
+      if (this.notices.length) state.notices = [...this.notices];
+      state.admin = this.transport?.adminView?.() ?? (this.role === 'offline' && this.transport ? this.offlineAdminView() : null);
       this.store.publish(state);
     }
     if (alive !== this.lastSpawnedAlive) this.lastSpawnedAlive = alive;
+    // The console after the frame is drawn (its screenshot reads this frame), fps_max for the next.
+    if (this.loop) this.loop.maxFps = this.fpsMax;
+    this.console?.frame();
   }
 
   /** The view model's cloak, faded like the body's (tf_spy_invis_time 1 s in, 2 s out). */
@@ -766,7 +1367,10 @@ export class Tf2Client implements GameClient {
     const cmd = this.sender.createCommand(tickCount, (c) => Object.assign(c, buildUserCmd(input, this.viewAngles, this.settings, ctx)));
     this.prediction?.addCommand(cmd);
     const packet = this.sender.packet(this.snap.ackTick, Math.round(this.clock.interp / TICK_INTERVAL));
-    if (packet) t.input(packet);
+    if (packet) {
+      t.input(packet);
+      this.console?.netOut(packet.byteLength);
+    }
   }
 
   private weaponContext(): WeaponContext | undefined {
@@ -909,6 +1513,16 @@ export class Tf2Client implements GameClient {
     };
   }
 
+  /** Hosting peer-to-peer: the members' seats (null when this client is not a P2P host). */
+  p2pSeats(): SeatInfo[] | null {
+    return this.transport?.seats ? this.transport.seats() : null;
+  }
+
+  /** Hosting peer-to-peer: remove a member (refused for the rest of the room's life). */
+  kickPlayer(playerId: number): void {
+    this.transport?.kick?.(playerId);
+  }
+
   /** Diagnostics for the smoke script (window.__tf2 in dev). */
   debug() {
     const me = this.snap.localPlayer();
@@ -923,7 +1537,142 @@ export class Tf2Client implements GameClient {
       snapshots: this.snap.stats.snapshots,
       misprediction: this.prediction?.maxMisprediction ?? 0,
       stats: this.stats(),
+      p2p: this.transport?.p2p?.() ?? null,
+      role: this.role,
+      joined: this.joined ? { code: this.joined.code, playerId: this.joined.playerId } : null,
+      netLog: [...this.netLog],
+      connected: this.connected,
+      commands: this.sender.lastCommandNumber,
+      notices: this.notices.map((n) => ({ kind: n.kind, name: n.name ?? null })),
+      timescale: this.timescale,
+      /** Every player this client draws, where it draws them (the smoke tests watch others move). */
+      players: this.renderStates
+        .filter((r) => r.type === 'player')
+        .map((r) => ({ id: r.id, x: num(r.fields, 'ox'), y: num(r.fields, 'oy'), z: num(r.fields, 'oz'), alive: num(r.fields, 'lifeState') === LIFE_ALIVE })),
     };
+  }
+
+  // ─── Developer console ───────────────────────────────────────────────────
+
+  /** What the console reads and drives here (lib/tf2-game/console/game-console.ts ConsoleHost). */
+  private consoleHost(): ConsoleHost {
+    const kind = this.opts.session.kind;
+    return {
+      // The role can change mid-match (a member promoted to host by a migration).
+      authority: () => (this.role === 'offline' || this.role === 'p2p-host' ? 'listen' : this.role === 'p2p-member' ? 'remote' : 'dedicated'),
+      stats: () => this.stats(),
+      netCounters: () => {
+        const st = this.snap.stats;
+        if (!this.snap.hello) return null;
+        // Peer-to-peer: loss, choke and jitter from the host's snapshots' own sequence numbers.
+        const traffic = this.transport?.traffic?.() ?? null;
+        return {
+          inBytes: st.snapshotBytes + st.reliableBytes,
+          inPackets: st.snapshots + st.reliablePackets,
+          snapshots: st.snapshots,
+          newestTick: this.snap.ackTick,
+          snapshotInterval: this.snap.hello.snapshotInterval,
+          ...(traffic ? { lossPct: traffic.loss * 100, chokePct: traffic.choke * 100, jitterMs: traffic.jitterMs } : {}),
+        };
+      },
+      admin: (action) => this.admin(action),
+      isAdmin: () => !!this.transport?.adminView?.() || this.role === 'offline',
+      players: () => this.adminPlayers(),
+      entityIndex: () => this.entityIndex(),
+      canvas: () => this.opts.canvas,
+      hudRoot: () => this.opts.canvas.parentElement?.querySelector<HTMLElement>('.tf2g-hud') ?? null,
+      mapName: () => this.pkg?.name ?? 'tf2',
+      setFpsMax: (fps) => (this.fpsMax = fps),
+      setThirdPerson: (on) => (this.thirdPersonCheat = on),
+      setViewAngles: (a) => {
+        this.viewAngles.x = Math.max(-89, Math.min(89, a.x));
+        this.viewAngles.y = a.y;
+        this.viewAngles.z = 0;
+      },
+      position: () => {
+        const p = this.prediction?.player;
+        return p ? { origin: { ...p.origin }, angles: { ...this.viewAngles }, velocity: { ...p.move.velocity } } : null;
+      },
+      applyReplicated: (name, value) => {
+        if (name === 'host_timescale') {
+          const v = Number(value);
+          this.timescale = Number.isFinite(v) ? Math.min(10, Math.max(0.1, v)) : 1;
+          this.clock.setRate(this.timescale);
+          return;
+        }
+        if (name !== 'sv_gravity') return;
+        const g = Number(value);
+        this.gravity = Number.isFinite(g) && g !== TF_MOVE_PARAMS.gravity ? g : null;
+        if (this.localPlayerSim) this.localPlayerSim.moveCtx.params = this.gravity === null ? undefined : { ...TF_MOVE_PARAMS, gravity: this.gravity };
+        // What falls on this side too: the predicting world's projectiles and the renderer's gibs.
+        const grav = this.gravity ?? TF_MOVE_PARAMS.gravity;
+        if (this.clientWorld) this.clientWorld.gravity = grav;
+        if (this.ents) this.ents.effects.gravity = grav;
+      },
+      // changelevel: the listen server (offline, a P2P host) or the hub room's owner moves the match;
+      // every client then reloads the level from the new `hello` — one path for all three.
+      changeLevel: (map) => {
+        const t = this.transport;
+        if (!t?.changeLevel) return false;
+        if (t.admin) void this.admin({ action: 'changelevel', map });
+        else t.changeLevel(map);
+        return true;
+      },
+      retry: () => {
+        if (kind === 'offline') this.restartOffline();
+        else if (this.joined && (kind === 'online-create' || kind === 'online-join') && typeof window !== 'undefined') {
+          window.location.assign(`/tf2/play?lobby=${encodeURIComponent(this.joined.code)}`);
+        }
+      },
+    };
+  }
+
+  /** Offline: the administration view (the map; nobody to kick). */
+  private offlineAdminView(): HudAdmin {
+    return { role: 'host', online: false, map: this.pkg?.name ?? this.sessionMap() ?? '', locked: false, passworded: false, players: [] };
+  }
+
+  /** The room's players by name and id, for the console's `kick` (the admin view's list). */
+  private adminPlayers(): Array<{ id: number; name: string }> {
+    return (this.transport?.adminView?.()?.players ?? []).filter((p) => !p.self).map((p) => ({ id: p.id, name: p.name }));
+  }
+
+  /**
+   * Entity names, classnames and inputs for `ent_fire`'s completion: the map's own entity lump (the
+   * level this client loaded — snapshots carry no names) and the classes the simulation registers
+   * (console/entity-complete.ts). Built once per level.
+   */
+  private entityIndex(): EntityIndex | null {
+    const pkg = this.pkg;
+    if (!pkg?.loaded) return null;
+    if (this.entityIndexFor !== pkg) {
+      this.entityIndexFor = pkg;
+      this.entityIndexCache = indexFromLump(pkg.loaded.entities);
+    }
+    return this.entityIndexCache;
+  }
+
+  private entityIndexFor: LoadedPackage | null = null;
+  private entityIndexCache: EntityIndex | null = null;
+
+  /** Offline `retry`: a new listen server on the map being played (the client reloads the level from its hello). */
+  private restartOffline(): boolean {
+    const s = this.opts.session;
+    const map = this.pkg?.name ?? this.sessionMap();
+    if (s.kind !== 'offline' || this.disposed || !map || !findTf2Map(map)) return false;
+    try {
+      this.transport?.stop();
+    } catch {
+      /* already closed */
+    }
+    this.transport = null;
+    this.worker = null;
+    this.joined = null;
+    this.offlinePaused = false;
+    this.snap.reset();
+    this.clock.resync();
+    this.connect(map);
+    return true;
   }
 
   private fail(e: unknown): void {
@@ -953,7 +1702,8 @@ export class Tf2Client implements GameClient {
       /* already closed */
     }
     this.transport = null;
-    this.worker?.terminate();
+    // A P2P host's transport ends its worker itself, after the goodbyes.
+    if (this.opts.session.kind !== 'p2p-host') this.worker?.terminate();
     this.worker = null;
     this.audio?.dispose();
     this.audio = null;

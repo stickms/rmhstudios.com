@@ -61,7 +61,7 @@ const teleInfo = createDamageInfo();
 const telefragVictims: Player[] = [];
 
 /** The pad's touch volume: players standing on (or in) the teleporter. */
-class TeleporterPad implements TouchVolume {
+export class TeleporterPad implements TouchVolume {
   readonly id: number;
   removed = false;
   constructor(readonly owner: ObjectTeleporter) {

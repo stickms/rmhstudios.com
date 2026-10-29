@@ -21,6 +21,7 @@ import {
 import {
   channelPrefix,
   channelStateKey,
+  COUNTED_CHANNELS,
   GAME_ASSET_CHANNELS,
   GAME_STORAGE_BUDGET_GB,
 } from './versions';
@@ -174,6 +175,17 @@ describe('channels and the sync workflow', () => {
       expect(workflow, `budget for ${key}`).toContain(`--pending ${channelPrefix(channel)}=`);
     }
     expect(workflow).toContain('scripts/tf2-game/storage-report.ts builders');
+  });
+
+  it('counts the HUD base (and the game localisation it publishes) against the same budget', () => {
+    expect(COUNTED_CHANNELS).toContain('tf2-hud-base/');
+    for (const prefix of COUNTED_CHANNELS) {
+      expect(workflow, `budget for ${prefix}`).toContain(`--pending ${prefix}=`);
+      // Published by the same tool, so its state file has the shape the guard reads.
+      expect(workflow).toContain(
+        `--prefix ${prefix} \\\n            --state-key ${prefix}_state.json`,
+      );
+    }
   });
 
   it('keeps every state key distinct and under its game prefix', () => {

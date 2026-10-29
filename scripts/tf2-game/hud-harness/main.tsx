@@ -23,6 +23,7 @@ import { SCENARIOS, type ScenarioName } from '@/components/tf2-game/preview/samp
 import { useHudChoice } from '@/components/tf2-game/custom-hud/hud-choice';
 import { harnessHud } from './custom-huds';
 import EditorPane from './EditorPane';
+import { MENU_FILES, SPECTATOR_FILE } from '@/lib/tf2-game/client/custom-hud/menus';
 import './harness.css';
 
 const q = new URLSearchParams(location.search);
@@ -42,6 +43,17 @@ const scenario = (q.get('s') ?? 'soldierCp') as ScenarioName;
 const hudId = q.get('hud');
 const compare = q.get('compare') === '1';
 const editor = q.get('editor') === '1';
+/** `&compare=1` with a menu: the editor's preview of that menu's file (or the spectator GUI's). */
+const editorFiles: readonly string[] | undefined =
+  q.get('scores') === '1'
+    ? [MENU_FILES.scoreboard]
+    : menuParam === 'team' || menuParam === 'class'
+      ? [MENU_FILES[menuParam]]
+      : scenario === 'joinClass'
+        ? [MENU_FILES.class]
+        : scenario === 'spectating'
+          ? [SPECTATOR_FILE]
+          : undefined;
 
 async function main(): Promise<void> {
   await i18next
@@ -101,7 +113,7 @@ async function main(): Promise<void> {
           className="tf2hud-backdrop-game"
           style={{ position: 'relative', width: W, height: H, overflow: 'hidden' }}
         >
-          <EditorPane hud={active} state={SCENARIOS[scenario]()} w={W} h={H} />
+          <EditorPane hud={active} state={SCENARIOS[scenario]()} w={W} h={H} files={editorFiles} />
         </div>
         <span style={label}>editor preview pipeline</span>
       </div>

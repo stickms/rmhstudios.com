@@ -1,7 +1,9 @@
 /**
  * /tf2/play — the server browser inside the TF2 Hub's shell, and the running
  * game in a full-viewport layer over it. `?lobby=CODE` (an invite link) joins
- * that room as soon as the page is up. `?hud=draft:<id>|cloud:<id>|share:<token>|default`
+ * that room — dedicated or peer-to-peer, the hub says which — as soon as the
+ * page is up and the visitor is signed in (online play needs an account; the
+ * lobby's sign-in prompt keeps the invite through the login detour). `?hud=draft:<id>|cloud:<id>|share:<token>|default`
  * (the HUD editor's "Test in game") makes that HUD the one the game draws.
  */
 'use client';
@@ -11,6 +13,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
+import { useSession } from '@/components/Providers';
 import { createTf2Client, type Tf2Session } from '@/lib/tf2-game/client/tf2-client';
 import { findTf2Map } from '@/lib/tf2-game/data/maps';
 import { HUD_PARAM, parseSelection } from '@/lib/tf2-game/client/custom-hud/selection';
@@ -23,7 +26,9 @@ export default function Tf2PlayPage() {
   const [session, setSession] = useState<Tf2Session | null>(null);
   const [run, setRun] = useState(0);
 
-  useLobbyInviteJoin(true, (code) => setSession({ kind: 'online-join', code }));
+  const { data: auth } = useSession();
+  const signedIn = !!(auth as { user?: { id?: string | null } } | null)?.user?.id;
+  useLobbyInviteJoin(signedIn, (code) => setSession({ kind: 'online-join', code }));
 
   // The HUD editor's "Test in game": use that HUD (validated; a HUD is data), then drop the param.
   const navigate = useNavigate();
@@ -69,7 +74,7 @@ export default function Tf2PlayPage() {
   const title =
     session?.kind === 'offline'
       ? (findTf2Map(session.map)?.title ?? session.map)
-      : session?.kind === 'online-create'
+      : session?.kind === 'online-create' || session?.kind === 'p2p-host'
         ? (findTf2Map(session.room.map)?.title ?? session.room.map)
         : t('play_joining', { defaultValue: 'Joining server' });
 

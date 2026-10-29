@@ -160,6 +160,11 @@ export interface SupplySpot {
 
 const managers = new WeakMap<GameWorld, BotManager>();
 
+/** The manager table, for a checkpoint (sim/checkpoint): read without creating. */
+export const botManagerTable = {
+  peek: (world: GameWorld): BotManager | undefined => managers.get(world),
+};
+
 export function getBotManager(world: GameWorld): BotManager {
   let m = managers.get(world);
   if (!m) {
@@ -181,6 +186,8 @@ export class BotManager {
   readonly classPreference = new Map<number, number[]>();
   /** tf_bot_force_class (0 = off). */
   forceClass = 0;
+  /** A bot added with a class (`tf_bot_add soldier`) keeps it: bot entity id → TF_CLASS_*. */
+  readonly fixedClass = new Map<number, number>();
   supplies: SupplySpot[] = [];
   private suppliesAt = -1000;
   private readonly captureAreaCache = new Map<number, Int32Array>();
@@ -304,6 +311,8 @@ export class BotManager {
   /** The class a bot should (re)spawn as (CTFBot::GetNextSpawnClassname's roster rules). */
   chooseClass(bot: Player, skill: BotSkill, pick: (n: number) => number): number {
     if (this.forceClass > 0 && this.forceClass < TF_CLASS_COUNT) return this.forceClass;
+    const fixed = this.fixedClass.get(bot.id);
+    if (fixed !== undefined && fixed > 0 && fixed < TF_CLASS_COUNT) return fixed;
     const team = bot.team;
     const pref = this.classPreference.get(team);
     if (pref && pref.length > 0) {

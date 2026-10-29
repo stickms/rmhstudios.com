@@ -4,9 +4,11 @@
  * ClientModeTFNormal::GetViewModelFOV) into a cleared depth buffer.
  *
  *   - Animation: the weapon's networked/predicted view-model activity (sim VM_ACTIVITY_NAMES
- *     id + a change counter) → the item's `vmActivities` (data/weapons.ts, the SDK's
- *     s_viewmodelacttable) → a weighted sequence of the arms' activity table. A new counter
- *     restarts the sequence; a finished one holds its last frame (the weapon sends IDLE).
+ *     id + a change counter) → the item's `vmActivities` (data/weapons.ts), then the SDK's
+ *     s_viewmodelacttable for its role → a weighted sequence of the arms' activity table
+ *     (vm-anim.ts). A new counter restarts a one-shot sequence; a looping one re-sent keeps its
+ *     cycle; changes cross-fade over the sequences' fade times; a finished one holds its last
+ *     frame (the weapon sends IDLE).
  *   - Placement: CBaseViewModel::CalcViewModelView — the eye position and angles plus the TF
  *     weapon bob (CTFWeaponBase::AddViewmodelBob → CalcViewModelBobHelper, cl_bobcycle 0.8,
  *     cl_bobup 0.5). TF2 has no view-model lag: CTFViewModel::CalcViewModelLag returns
@@ -17,6 +19,8 @@
  *   - Unlock weapons: the loadout channel's c_model on the arms' weapon bone, the activity
  *     table of the item's role (data/unlock-scripts.ts VM_ACTIVITY_TABLES); the class's stock
  *     weapon of the slot stands in until (or unless) the channel has the model.
+ *   - The held item's team skin, killstreak sheen and weapon unusual effect (its control points
+ *     on the c_model's `unusual_<n>` attachments, drawn in the view model's pass).
  *   - Hidden when zoomed, dead or spectating (the caller says so with `visible`).
  */
 import { Matrix4, PerspectiveCamera, Scene, Vector3, type WebGLRenderer } from 'three';
@@ -30,8 +34,17 @@ import type { Vec3Like } from '../lighting';
 import { angleVectors } from '../coords';
 import { LightProbe, type RenderContext } from './common';
 import type { EffectSystem } from './effects';
-import { heldModelName, ItemInstance, weaponLook } from './loadout-models';
+import {
+  heldModelName,
+  ItemInstance,
+  setSheenUniforms,
+  WEAPON_ATTACHMENT,
+  weaponEffect,
+  weaponLook,
+} from './loadout-models';
 import { ModelInstance } from './model-instance';
+import { paintUniforms } from './model-material';
+import { playVmActivity } from './vm-anim';
 
 /** viewmodel_fov default. */
 export const VIEWMODEL_FOV = 54;
@@ -140,6 +153,7 @@ export class ViewModelRenderer {
   private barrelSpeed = 0;
   private barrelTarget = 0;
   private visible = false;
+  private weaponFxKey = '';
   fov = VIEWMODEL_FOV;
   private readonly origin = { x: 0, y: 0, z: 0 };
   private readonly angles = { x: 0, y: 0, z: 0 };
@@ -187,7 +201,7 @@ export class ViewModelRenderer {
         } else item.dispose();
         this.weaponModel = key;
       }
-      this.weaponItem?.dress({ festive: inp.item?.festive, entry: inp.item });
+      this.weaponItem?.dress({ festive: inp.item?.festive, entry: inp.item, team: inp.team });
     } else {
       const w = look?.stock;
       const vmModel = w?.attachToHands ? (w.viewModel ?? '') : '';
@@ -197,7 +211,10 @@ export class ViewModelRenderer {
           this.dropWeapon();
           this.weaponModel = vmModel;
           if (asset) {
-            this.weapon = new ModelInstance(asset, { uniforms: arms.uniforms, noAnim: true });
+            this.weapon = new ModelInstance(asset, {
+              uniforms: paintUniforms(arms.uniforms),
+              noAnim: true,
+            });
             arms.attach(this.weapon);
           }
         }
@@ -206,6 +223,7 @@ export class ViewModelRenderer {
     const skin = inp.team === TF_TEAM_BLUE ? 1 : 0;
     arms.setSkin(skin);
     if (!this.weaponItem) this.weapon?.setSkin(skin);
+    if (this.weapon) setSheenUniforms(this.weapon.uniforms, inp.item?.sheen, inp.team, ctx.time);
     // Activity → sequence.
     if (
       inp.vmActivitySeq !== this.lastSeq ||
@@ -218,6 +236,7 @@ export class ViewModelRenderer {
       this.lastAct = inp.vmActivity;
       this.playActivity(vmActivityName(inp.vmActivity), inp, ctx, restart);
     }
+    this.updateWeaponEffect(this.visible ? inp.item : undefined);
     if (!this.visible) return this.hide();
     arms.root.visible = true;
     // Placement: eye + bob (no lag in TF2).
@@ -255,10 +274,8 @@ export class ViewModelRenderer {
     const anim = arms?.animator;
     if (!anim || !base) return;
     const w = weaponLook(inp.defindex, inp.cls);
-    const act = w?.vmActivities[base] ?? base;
-    const seq = anim.set.selectWeightedSequence(act) ?? anim.set.selectWeightedSequence(base);
-    if (seq) anim.setSequence(seq, { restart: true, fade: false });
-    else if (restart) anim.restartMain();
+    // Item table → s_viewmodelacttable → base; loops re-sent keep their cycle (vm-anim.ts).
+    playVmActivity(anim, base, w, restart);
     // Minigun barrel (SDK CTFMinigun::SendWeaponAnim).
     if (base === 'ACT_MP_ATTACK_STAND_PREFIRE' || base === 'ACT_VM_PRIMARYATTACK')
       this.barrelTarget = 20;
@@ -268,6 +285,20 @@ export class ViewModelRenderer {
       this.effects.oneShot(w.muzzleFlash, { entity: VIEWMODEL_ENTITY, attachment: 'muzzle' }, 'vm');
     }
     void ctx;
+  }
+
+  /** The held weapon's unusual effect on its `unusual_<n>` attachments, in the view-model pass. */
+  private updateWeaponEffect(item: ViewModelInput['item']): void {
+    const fx = this.effects;
+    if (!fx) return;
+    const system = weaponEffect(item);
+    const key = system && this.weapon?.asset.attachments.has('unusual_0') ? `wfx:vm:${system}` : '';
+    if (key !== this.weaponFxKey) {
+      if (this.weaponFxKey) fx.stop(this.weaponFxKey);
+      this.weaponFxKey = key;
+    }
+    if (key && system)
+      fx.loop(key, system, { entity: VIEWMODEL_ENTITY, schemaPrefix: WEAPON_ATTACHMENT }, 'vm');
   }
 
   private spinBarrel(dt: number): void {
@@ -289,11 +320,15 @@ export class ViewModelRenderer {
 
   private hide(): void {
     if (this.arms) this.arms.root.visible = false;
+    if (this.weaponFxKey) this.effects?.stop(this.weaponFxKey);
+    this.weaponFxKey = '';
   }
 
   /** A view-model attachment (three world space: the view model shares the world camera's view). */
   attachment(name: string, out: Matrix4): boolean {
     if (!this.arms || !this.visible) return false;
+    if (name.startsWith(WEAPON_ATTACHMENT))
+      return !!this.weapon?.attachmentMatrix(name.slice(WEAPON_ATTACHMENT.length), out);
     return this.arms.attachmentMatrix(name, out);
   }
 

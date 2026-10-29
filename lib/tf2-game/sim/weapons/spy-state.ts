@@ -59,6 +59,12 @@ const newState = (): SpyState => ({
   lastDisguiseClass: 0,
 });
 
+/** The state table, for a checkpoint (sim/checkpoint): read without creating, and put back. */
+export const spyStateTable = {
+  peek: (p: Player): SpyState | undefined => states.get(p),
+  set: (p: Player, s: SpyState): void => void states.set(p, s),
+};
+
 export function spyState(p: Player): SpyState {
   let s = states.get(p);
   if (!s) {

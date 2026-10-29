@@ -92,6 +92,8 @@ export class SpPlayer extends SpEntity {
   flashlight = false;
   dead = false;
   deathTime = 0;
+  /** `buddha` (console cheat): damage lands but never kills (health stays at 1). */
+  buddha = false;
   /** Seconds of the current command (lastCmd buttons). */
   buttons = 0;
   oldButtons = 0;
@@ -713,7 +715,10 @@ export class SpPlayer extends SpEntity {
     this.health -= dmg;
     this.sp.emitSound(info.damageType & DMG_FALL ? 'Player.FallDamage' : 'Player.Pain', { entity: this.id, quiet: true });
     this.move.punchAngle.x = Math.min(this.move.punchAngle.x + dmg * 0.3, 10);
-    if (this.health <= 0) this.die();
+    if (this.health <= 0) {
+      if (this.buddha) this.health = 1;
+      else this.die();
+    }
     return dmg;
   }
 

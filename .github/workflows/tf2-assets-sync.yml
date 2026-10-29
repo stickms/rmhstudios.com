@@ -538,7 +538,8 @@ jobs:
             --pending hl2-game/maps/=/mnt/work/hl2-maps --pending hl2-game/mdl/=/mnt/work/hl2-mdl \
             --pending hl2-game/snd/=/mnt/work/hl2-snd \
             --pending portal-game/maps/=/mnt/work/portal-maps --pending portal-game/mdl/=/mnt/work/portal-mdl \
-            --pending portal-game/snd/=/mnt/work/portal-snd
+            --pending portal-game/snd/=/mnt/work/portal-snd \
+            --pending tf2-hud-base/=/mnt/work/hud
 
       - name: Upload changed game models and textures (index last)
         if: steps.game_models.outcome == 'success' && steps.game_storage.outcome == 'success'

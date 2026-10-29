@@ -199,13 +199,21 @@ function setupEntities(): void {
 }
 
 /** One entity frame of `dt` seconds (no draw). */
+/** CPU time of the last 30 entity frames (sync, animation, items, effects), ms. */
+const frameTimes: number[] = [];
+
 function frame(dt: number): void {
   if (!ents) return;
+  const t = performance.now();
   simTime += dt;
   ents.beginFrame({ time: simTime, dt, localPlayer: vmInput ? -100 : -1, localTeam: 0, firstPerson: true, camera: cam.camera });
   ents.sync(entStates);
   ents.updateViewModel(vmInput);
   ents.endFrame();
+  if (dt > 0) {
+    frameTimes.push(performance.now() - t);
+    if (frameTimes.length > 30) frameTimes.shift();
+  }
 }
 
 function setEntities(list: EntityState[]): void {
@@ -244,7 +252,37 @@ function entityStats(): Record<string, unknown> {
     const up = inst?.uniforms.uAmbientCube.value[4];
     if (up) lit[e.id] = [up.x, up.y, up.z].map((v) => +v.toFixed(3));
   }
-  return { count: ents?.count ?? 0, fx: ents?.effects.liveSystems ?? 0, simTime, lit };
+  // Entity draw calls: visible meshes under the entity root, effects aside (every model mesh
+  // draws: frustum culling is off for skinned bodies).
+  let meshes = 0;
+  const fxGroup = ents?.effects.group;
+  ents?.root.traverseVisible((o) => {
+    if (!(o as { isMesh?: boolean }).isMesh) return;
+    for (let p = o.parent; p; p = p.parent) if (p === fxGroup) return;
+    meshes++;
+  });
+  // Of those, the ones on players' items (cosmetics, worn items, weapons), and how many materials
+  // they use — what merging and material sharing can save.
+  let itemMeshes = 0;
+  let mergeable = 0;
+  const itemMaterials = new Set<unknown>();
+  for (const e of entStates) {
+    const inst = (ents?.renderable(e.id) as { instance?: { attached: Array<{ asset: { mdl: string }; root: { traverseVisible(f: (o: unknown) => void): void } }> } } | undefined)?.instance;
+    const looks = new Set<string>();
+    for (const c of inst?.attached ?? [])
+      c.root.traverseVisible((o) => {
+        const m = o as { isMesh?: boolean; isSkinnedMesh?: boolean; material?: { name?: string } };
+        if (!m.isMesh) return;
+        itemMeshes++;
+        itemMaterials.add(m.material);
+        // Same model and material on one player: what a per-material merge could fold together.
+        const key = `${c.asset.mdl}|${m.material?.name}|${m.isSkinnedMesh ? 's' : 'r'}`;
+        if (looks.has(key)) mergeable++;
+        looks.add(key);
+      });
+  }
+  const frameMs = frameTimes.length ? +(frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length).toFixed(2) : 0;
+  return { count: ents?.count ?? 0, fx: ents?.effects.liveSystems ?? 0, meshes, itemMeshes, itemMaterials: itemMaterials.size, mergeable, frameMs, simTime, lit };
 }
 
 function entities(prefix: string): Array<Record<string, string>> {

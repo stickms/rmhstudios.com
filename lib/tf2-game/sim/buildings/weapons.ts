@@ -24,6 +24,7 @@ import {
   OBJ_TELEPORTER,
 } from '../building-api';
 import { TF_COND } from '../conditions';
+import { hookInt, hookPlayer } from '../items/attributes';
 import { GR_STATE_TEAM_WIN } from '../rules';
 import {
   BaseWeapon,
@@ -79,7 +80,7 @@ const statsFor = (spec: WeaponSpec, over: Partial<WeaponStats>): WeaponStats =>
   });
 
 /** CTFWeaponPDA: attack1 puts the PDA away, attack2 is the class special skill. */
-abstract class EngineerPda extends BaseWeapon {
+export abstract class EngineerPda extends BaseWeapon {
   primaryAttack(_cmd: UserCmd): void {
     const owner = this.owner;
     if (!owner) return;
@@ -343,6 +344,10 @@ export class WeaponBuilder extends BaseWeapon implements BuilderWeaponLike {
     this.updatePlacementState();
     if (cmd.buttons & IN_ATTACK && this.nextPrimaryAttack <= t) this.primaryAttack(cmd);
     if (owner.activeWeapon() !== this) return;
+    // mark_for_death_on_building_pickup (the Rescue Ranger): marked while carrying, renewed each frame.
+    if (carriedObjectOf(owner) && hookInt(hookPlayer(owner, 'mark_for_death_on_building_pickup', 0))) {
+      owner.cond.add(TF_COND.MARKEDFORDEATH_SILENT, 3);
+    }
     if (cmd.buttons & IN_ATTACK2) {
       if (this.nextSecondaryAttack <= t) this.secondaryAttack(cmd);
     } else this.inAttack2 = false;

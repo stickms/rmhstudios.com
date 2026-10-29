@@ -961,6 +961,14 @@ export interface DecodedSnapshot {
 
 export type SnapshotDecodeError = 'malformed' | 'no-baseline' | 'unknown-schema';
 
+/** A snapshot's tick from its header without decoding it, or null when it is not a snapshot. */
+export function snapshotTick(bytes: Uint8Array): number | null {
+  const r = new BitReader(bytes);
+  if (r.readU8() !== SNAPSHOT_TAG) return null;
+  const tick = r.readVarUint();
+  return r.overflowed ? null : tick;
+}
+
 /**
  * Decodes a snapshot against the client's frame history. `baseline(tick)`
  * returns the frame the client built for that tick (or null if it was

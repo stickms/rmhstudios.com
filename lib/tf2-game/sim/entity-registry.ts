@@ -34,3 +34,13 @@ export function createEntity(classname: string): Entity {
 export function registeredClassnames(): string[] {
   return [...registry.keys()].sort();
 }
+
+/** Every registered class by classname (a checkpoint names classes no module exports this way). */
+export function registeredEntityClasses(): Array<[string, EntityConstructor]> {
+  return [...registry.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+}
+
+/** The class a classname makes (PointEntity's for an unknown one) — `ent_fire`'s input completion reads its inputs. */
+export function entityClassFor(classname: string): EntityConstructor | null {
+  return registry.get(classname.toLowerCase()) ?? null;
+}

@@ -39,12 +39,19 @@ export interface ModelRef {
   /** The MDL skin family to render it with, for a style that only changes the skin. */
   skin?: number;
   /**
+   * The skin family a BLU wearer shows, when the schema names one (a style's `skin_blu` or plain
+   * `skin`, the item's `visuals_blu`). Absent: the game's default, family 1 for a RED family of 0
+   * (CTFWearable::GetSkin), else the RED family. The converter embeds that family's textures only
+   * where they differ from RED's.
+   */
+  skinBlu?: number;
+  /**
    * The model carries one submodel per class in its second body part, and the game shows the wearer's
    * (the schema's `use_per_class_bodygroups`): the converter keeps all of them, the viewer picks one.
    */
   classBodygroup?: true;
   /** Bone-merged geometry included in this model, including optional festive lights. */
-  attachments?: { mdl: string; skin: number; festive?: boolean }[];
+  attachments?: { mdl: string; skin: number; skinBlu?: number; festive?: boolean }[];
 }
 
 export interface ModelManifestItem {
@@ -65,6 +72,26 @@ function merge(base: VdfObject, over: VdfObject): VdfObject {
     out[k] = typeof a === 'object' && typeof b === 'object' ? merge(a, b) : b;
   }
   return out;
+}
+
+/** A schema skin number, or undefined when absent or not a family index. */
+function skinNumber(v: string | undefined): number | undefined {
+  if (v === undefined) return undefined;
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 0 ? n : undefined;
+}
+
+/**
+ * The skin families a style (or the item's own visuals) gives each team, as CEconItemView::GetSkin
+ * reads them: a style's `skin_red` / `skin_blu`, or one `skin` for both teams.
+ */
+function teamSkins(node: VdfObject | undefined): { red?: number; blu?: number } {
+  if (!node) return {};
+  const both = skinNumber(str(node, 'skin'));
+  return {
+    red: skinNumber(str(node, 'skin_red')) ?? both,
+    blu: skinNumber(str(node, 'skin_blu')) ?? both,
+  };
 }
 
 const norm = (p: string): string => p.replace(/\\/g, '/').replace(/^\/+/, '').toLowerCase();
@@ -157,8 +184,16 @@ export function buildModelManifest(
     } else if (single) {
       models.push({ mdl: norm(single), role: 'main', glb: `${id}.glb` });
     }
-    // Styles that change the model or its skin family are published as their own files.
+    // The default look's team skins: style 0's, else the item's visuals_red / visuals_blu.
     const styleBlock = block(block(it, 'visuals') ?? Object.create(null), 'styles');
+    const style0 = teamSkins(block(styleBlock, '0'));
+    const defRed = style0.red ?? skinNumber(str(block(it, 'visuals_red'), 'skin'));
+    const defBlu = style0.blu ?? skinNumber(str(block(it, 'visuals_blu'), 'skin'));
+    for (const m of models) {
+      if (defRed) m.skin = defRed;
+      if (defBlu !== undefined) m.skinBlu = defBlu;
+    }
+    // Styles that change the model or its skin family are published as their own files.
     if (styleBlock && models.length) {
       const base = models.filter((m) => m.role === 'main' && m.style === undefined);
       for (const key of Object.keys(styleBlock)) {
@@ -168,7 +203,8 @@ export function buildModelManifest(
         const suffix = `_s${k}`;
         const own = block(sb, 'model_player_per_class');
         const single = str(sb, 'model_player');
-        const skin = Number(str(sb, 'skin_red') ?? str(sb, 'skin'));
+        const ownSkins = teamSkins(sb);
+        const skin = ownSkins.red ?? NaN;
         if (own) {
           const basename = str(own, 'basename');
           for (const c of classes) {
@@ -181,14 +217,31 @@ export function buildModelManifest(
                 role: 'main',
                 glb: `${id}_${c}${suffix}.glb`,
                 style: k,
+                ...(ownSkins.red ? { skin: ownSkins.red } : {}),
+                ...(ownSkins.blu !== undefined ? { skinBlu: ownSkins.blu } : {}),
               });
             }
           }
         } else if (single) {
-          models.push({ mdl: norm(single), role: 'main', glb: `${id}${suffix}.glb`, style: k });
+          models.push({
+            mdl: norm(single),
+            role: 'main',
+            glb: `${id}${suffix}.glb`,
+            style: k,
+            ...(ownSkins.red ? { skin: ownSkins.red } : {}),
+            ...(ownSkins.blu !== undefined ? { skinBlu: ownSkins.blu } : {}),
+          });
         } else if (Number.isInteger(skin) && skin > 0) {
           for (const m of base) {
-            models.push({ ...m, glb: m.glb.replace(/\.glb$/, `${suffix}.glb`), style: k, skin });
+            const rest: ModelRef = { ...m };
+            delete rest.skinBlu;
+            models.push({
+              ...rest,
+              glb: m.glb.replace(/\.glb$/, `${suffix}.glb`),
+              style: k,
+              skin,
+              ...(ownSkins.blu !== undefined ? { skinBlu: ownSkins.blu } : {}),
+            });
           }
         }
       }
@@ -196,7 +249,9 @@ export function buildModelManifest(
     const attachments: NonNullable<ModelRef['attachments']> = [];
     const extra = str(it, 'extra_wearable');
     const skin = Number(str(block(it, 'visuals_red'), 'skin') ?? 0);
-    if (extra) attachments.push({ mdl: norm(extra), skin });
+    const skinBlu = skinNumber(str(block(it, 'visuals_blu'), 'skin'));
+    const blu = skinBlu !== undefined ? { skinBlu } : {};
+    if (extra) attachments.push({ mdl: norm(extra), skin, ...blu });
     const visuals = block(it, 'visuals');
     for (const key of ['attached_models', 'attached_models_festive'] as const) {
       for (const value of Object.values(block(visuals, key) ?? {})) {
@@ -208,6 +263,7 @@ export function buildModelManifest(
           attachments.push({
             mdl: norm(mdl),
             skin,
+            ...blu,
             ...(key === 'attached_models_festive' ? { festive: true } : {}),
           });
         }

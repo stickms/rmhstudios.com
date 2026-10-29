@@ -86,6 +86,7 @@ import {
 import { registerBumsRushHandlers, handleBumsRushDisconnect } from './handlers/bums-rush';
 import { registerGlobeSetHandlers, handleGlobeSetDisconnect } from './handlers/globeset';
 import { registerTf2GameHandlers, handleTf2GameDisconnect } from './handlers/tf2-game';
+import { registerTf2P2pHandlers, handleTf2P2pDisconnect } from './handlers/tf2-p2p';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './handlers/matchmaking';
@@ -545,6 +546,8 @@ io.on('connection', (socket) => {
   registerGlobeSetHandlers(io, socket);
   // TF2: room manager only — matches run on worker threads (lib/tf2-game/server/pool.server.ts).
   registerTf2GameHandlers(io, socket);
+  // TF2 peer-to-peer rooms: signaling (and a capped relay fallback) only — the match runs in the host's browser.
+  registerTf2P2pHandlers(io, socket);
 
   // Platform expansion (§4, §5): live Spaces + cross-game party.
   registerSpacesHandlers(io, socket);
@@ -588,6 +591,7 @@ io.on('connection', (socket) => {
     handleBumsRushDisconnect(io, socket);
     handleGlobeSetDisconnect(io, socket);
     handleTf2GameDisconnect(io, socket);
+    handleTf2P2pDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });

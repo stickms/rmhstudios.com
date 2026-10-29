@@ -21,7 +21,6 @@ import {
   MOVETYPE_FLYGRAVITY,
   MOVETYPE_NONE,
   MOVETYPE_WALK,
-  SV_GRAVITY,
   SV_MAXVELOCITY,
   TF_TEAM_BLUE,
   TF_TEAM_RED,
@@ -97,7 +96,8 @@ export function physicsToss(world: GameWorld, ent: Entity, dt: number): void {
   tossMove.x = (v.x + ent.baseVelocity.x) * dt;
   tossMove.y = (v.y + ent.baseVelocity.y) * dt;
   if (ent.moveType === MOVETYPE_FLYGRAVITY && !(ent.flags & FL_ONGROUND)) {
-    const g = (ent.gravity || 1) * SV_GRAVITY;
+    // SDK: PhysicsAddGravityMove — GetActualGravity (the entity's scale) × sv_gravity.
+    const g = (ent.gravity || 1) * world.gravity;
     const newZ = v.z - g * dt;
     tossMove.z = ((v.z + newZ) * 0.5 + ent.baseVelocity.z) * dt;
     v.z = newZ;

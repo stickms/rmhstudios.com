@@ -241,12 +241,17 @@ function LoadoutEditor({ idx }: { idx: CatalogIndex }) {
         size="sm"
         className="max-w-full"
       />
-      <div className="grid gap-3 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
+      <div className="grid gap-3 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
         <section
           aria-label={th('loadout-slots', { defaultValue: 'Loadout slots' })}
           className="flex min-w-0 flex-col gap-3"
         >
-          <PlayerViewer cls={cls} worn={worn} className="h-56" />
+          <PlayerViewer
+            cls={cls}
+            worn={worn}
+            team={local?.team === 3 ? 'blu' : 'red'}
+            className="h-56"
+          />
           {session ? (
             <SelectField
               value=""
@@ -375,7 +380,7 @@ function LoadoutEditor({ idx }: { idx: CatalogIndex }) {
           href={`/tf2/loadout?class=${cls}`}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex h-8 items-center gap-1.5 rounded-(--app-radius-sm) px-2 text-xs text-(--app-text-muted) hover:text-(--app-text)"
+          className="inline-flex h-8 pointer-coarse:h-11 items-center gap-1.5 rounded-(--app-radius-sm) px-2 text-xs text-(--app-text-muted) hover:text-(--app-text)"
         >
           <ExternalLink className="size-3.5" aria-hidden />
           {t('loadout_open_builder', { defaultValue: 'Open the full builder' })}

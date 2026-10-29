@@ -70,6 +70,8 @@ export interface PlayerInfo {
   name: string;
   /** Present for signed-in players. */
   userId?: string;
+  /** Joined as a spectator (the join request said so): straight to the spectators, no team menu. */
+  spectate?: boolean;
 }
 
 /** One packet for the hub to deliver. */
@@ -91,6 +93,8 @@ export interface OutgoingPacket {
 
 export interface PlayerSummary {
   id: number;
+  /** The player's entity id in the match (what snapshots and scoreboards key by). */
+  entity?: number;
   name: string;
   /** TEAM_* (core/constants.ts). The hub routes team chat by it. */
   team: number;
@@ -109,6 +113,8 @@ export interface RoomSummary {
   players: PlayerSummary[];
   /** [RED, BLU] round/capture/score — whatever the mode counts. */
   teamScores: [number, number];
+  /** The round for the server browser: the rules' state and the HUD timer's time left. */
+  round?: { state: string; timeLeft: number | null } | null;
 }
 
 export interface MatchHost {
@@ -117,6 +123,22 @@ export interface MatchHost {
   /** One opaque packet from the player's client; at most `TF2_LIMITS.INPUT_MAX_BYTES`. */
   onInput(id: number, packet: Uint8Array): void;
   onCommand(id: number, cmd: MatchCommand): void;
+  /**
+   * The player's client starts over on the same seat: forget what it had
+   * acknowledged (the next snapshot is full), resend server info and the
+   * roster, and accept command numbers from 1 again. Optional; a host without
+   * it treats a rejoin as nothing (the runner ignores the message).
+   */
+  resyncPlayer?(id: number): void;
+  /**
+   * Move the match to another map (`changelevel`; the caller checked the allowlist and who asked).
+   * Humans keep their seats; resolves false when the map could not be loaded. Optional.
+   */
+  changeLevel?(map: string): Promise<boolean>;
+  /** A dedicated room's owner (hub player id) may change the match settings — never cheats. Optional. */
+  setOwner?(id: number | null): void;
+  /** The host's own tick count, when it does not start at 0 (a restored match, after a level change). */
+  tickCount?(): number;
   /** Advance one simulation tick (TICK_INTERVAL = 15 ms of game time). */
   tick(): void;
   /** Everything produced since the last drain. */

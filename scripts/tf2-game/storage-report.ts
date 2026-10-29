@@ -9,7 +9,8 @@
  *       `portal-game/`; `<game>-game/<kind>/`) from its state file
  *       (one GET each — never a bucket listing). With --pending, a channel about to be pushed
  *       is counted as it will be after the push (its converter's wanted.json and output dir).
- *       An object two channels publish (the shared `tex/`) is counted once.
+ *       An object two channels publish (the shared `tex/`) is counted once. The other channels the game
+ *       reads (`COUNTED_CHANNELS`: the HUD base and its localisation) count against the same budget.
  *       Exits 1 when the total exceeds the budget: --budget-gb, else $TF2_GAME_STORAGE_BUDGET_GB,
  *       else GAME_STORAGE_BUDGET_GB (12). Pending dirs without a wanted.json are skipped.
  */
@@ -27,6 +28,7 @@ import {
   channelPrefix,
   channelPublishPrefix,
   channelStateKey,
+  COUNTED_CHANNELS,
   GAME_ASSET_CHANNELS,
   GAME_STORAGE_BUDGET_GB,
 } from '../../lib/tf2-game/assets/versions';
@@ -105,6 +107,28 @@ for (const channel of Object.values(GAME_ASSET_CHANNELS)) {
     );
   } else {
     usages.push(storedUsage(prefix, state, dedupe));
+  }
+}
+
+for (const prefix of COUNTED_CHANNELS) {
+  const state = await loadState(`${prefix}_state.json`);
+  const dir = pending.get(prefix);
+  const wantedFile = dir ? path.join(dir, 'wanted.json') : null;
+  if (dir && wantedFile && existsSync(wantedFile)) {
+    const wanted = JSON.parse(readFileSync(wantedFile, 'utf8')) as Record<string, { src: string }>;
+    usages.push(
+      projectedUsage(
+        `${prefix} (after push)`,
+        state,
+        { wanted, localSizes: localSizes(dir, wanted) },
+        {
+          root: prefix,
+          seen,
+        },
+      ),
+    );
+  } else {
+    usages.push(storedUsage(prefix, state, { root: prefix, seen }));
   }
 }
 

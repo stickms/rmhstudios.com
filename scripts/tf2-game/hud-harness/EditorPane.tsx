@@ -20,11 +20,14 @@ export default function EditorPane({
   state,
   w,
   h,
+  files,
 }: {
   hud: PreparedHud;
   state: HudState;
   w: number;
   h: number;
+  /** The files to preview (a menu's file); default: the in-game HUD's files for the state. */
+  files?: readonly string[];
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -35,6 +38,7 @@ export default function EditorPane({
       const scene = buildScene(
         {
           readText: hud.files.readText,
+
           scheme: hud.source.scheme,
           env: hud.source.env,
           screen: { w, h },
@@ -49,7 +53,7 @@ export default function EditorPane({
           progressFor: progressFor(test),
           player: { playerClass: test.playerClass, team: test.team },
         },
-        inGameFiles(state, test, { buildings: hud.drawsBuildings }),
+        files ?? inGameFiles(state, test, { buildings: hud.drawsBuildings }),
       );
       canvas.width = w;
       canvas.height = h;
@@ -67,7 +71,7 @@ export default function EditorPane({
     return () => {
       hud.onImage = prev;
     };
-  }, [hud, state, w, h]);
+  }, [hud, state, w, h, files]);
   return (
     <canvas
       ref={ref}

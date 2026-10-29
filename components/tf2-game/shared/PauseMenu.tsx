@@ -87,13 +87,9 @@ export default function PauseMenu({
       }}
       title={title}
       wide={view?.wide}
-      footer={
-        view ? (
-          <Btn size="sm" onClick={back}>
-            {t('back', { defaultValue: 'Back' })}
-          </Btn>
-        ) : undefined
-      }
+      // Back sits in the title row: a landscape phone keeps the height for the view itself.
+      onBack={view ? back : undefined}
+      backLabel={t('back', { defaultValue: 'Back' })}
     >
       {view ? (
         view.render?.({ back, close: onResume })

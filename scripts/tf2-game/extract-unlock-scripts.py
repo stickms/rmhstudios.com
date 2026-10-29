@@ -72,12 +72,56 @@ UNLOCK_SCRIPT_BASES: dict[str, tuple[str, bool, str]] = {
     "tf_weapon_robot_arm": ("tf_weapon_wrench", False, "melee"),
 }
 
+# Unlock scripts whose C++ class has a behaviour of its own, implemented by a class of the same
+# name in lib/tf2-game/sim/weapons (registered by script name; `ownClass: true` in the output, and
+# they play their own sounds). `base` is the nearest stock ancestor of the C++ class (what the
+# renderer and the HUD fall back to), reloadsSingly / randomCrits as above.
+OWN_CLASS_SCRIPTS: dict[str, tuple[str, bool, str]] = {
+    # tf_weapon_compound_bow.h: CTFCompoundBow : CTFPipebombLauncher
+    "tf_weapon_compound_bow": ("tf_weapon_pipebomblauncher", False, "ranged"),
+    # tf_weapon_rocketlauncher.h: CTFCrossbow : CTFRocketLauncher
+    "tf_weapon_crossbow": ("tf_weapon_rocketlauncher", True, "ranged"),
+    # tf_weapon_jar.h / tf_weapon_jar_gas.h: CTFJar, CTFJarMilk, CTFCleaver, CTFJarGas : CTFWeaponBaseGun
+    "tf_weapon_jar": ("tf_weapon_grenadelauncher", False, "ranged"),
+    "tf_weapon_jar_milk": ("tf_weapon_grenadelauncher", False, "ranged"),
+    "tf_weapon_jar_gas": ("tf_weapon_grenadelauncher", False, "ranged"),
+    "tf_weapon_cleaver": ("tf_weapon_grenadelauncher", False, "ranged"),
+    # tf_weapon_lunchbox.h: CTFLunchBox / CTFLunchBox_Drink : CTFWeaponBase
+    "tf_weapon_lunchbox": ("tf_weapon_fists", False, "none"),
+    "tf_weapon_lunchbox_drink": ("tf_weapon_fists", False, "none"),
+    # tf_weapon_flaregun.h: CTFFlareGun / CTFFlareGun_Revenge : CTFWeaponBaseGun
+    "tf_weapon_flaregun": ("tf_weapon_shotgun_pyro", False, "ranged"),
+    "tf_weapon_flaregun_revenge": ("tf_weapon_shotgun_pyro", False, "ranged"),
+    # tf_weapon_dragons_fury.h: CTFWeaponFlameBall : CTFFlameThrower
+    "tf_weapon_rocketlauncher_fireball": ("tf_weapon_flamethrower", False, "ranged"),
+    # tf_weapon_grenadelauncher.h: CTFCannon : CTFGrenadeLauncher
+    "tf_weapon_cannon": ("tf_weapon_grenadelauncher", True, "ranged"),
+    # tf_weapon_parachute.h / tf_weapon_buff_item.h: CTFParachute_* / CTFBuffItem : CTFWeaponBaseMelee
+    "tf_weapon_parachute_primary": ("tf_weapon_shovel", False, "none"),
+    "tf_weapon_parachute_secondary": ("tf_weapon_shovel", False, "none"),
+    "tf_weapon_buff_item": ("tf_weapon_shovel", False, "none"),
+    # tf_weapon_laser_pointer.h / tf_weapon_mechanical_arm.h: CTFLaserPointer, CTFMechanicalArm : CTFWeaponBaseGun
+    "tf_weapon_laser_pointer": ("tf_weapon_pistol", False, "none"),
+    "tf_weapon_mechanical_arm": ("tf_weapon_pistol", False, "ranged"),
+    # tf_weapon_raygun.h / tf_weapon_particle_cannon.h: CTFRaygun, CTFDRGPomson, CTFParticleCannon : CTFRocketLauncher
+    "tf_weapon_raygun": ("tf_weapon_rocketlauncher", False, "ranged"),
+    "tf_weapon_drg_pomson": ("tf_weapon_shotgun_primary", False, "ranged"),
+    "tf_weapon_particle_cannon": ("tf_weapon_rocketlauncher", False, "ranged"),
+    # tf_weapon_shotgun.h: CTFShotgunBuildingRescue : CTFShotgun
+    "tf_weapon_shotgun_building_rescue": ("tf_weapon_shotgun_primary", True, "ranged"),
+}
+
 # Scripts whose C++ class reports another ETFWeaponType than the upper-cased script name
 # (GetWeaponID in tf_weapon_sword.h, tf_weapon_wrench.h, tf_weapon_rocketlauncher.h).
 WEAPON_ID_OVERRIDES = {
     "tf_weapon_katana": "TF_WEAPON_SWORD",
     "tf_weapon_robot_arm": "TF_WEAPON_WRENCH",
     "tf_weapon_rocketlauncher_airstrike": "TF_WEAPON_ROCKETLAUNCHER",
+    # tf_weapon_lunchbox.h CTFLunchBox_Drink, tf_weapon_dragons_fury.h, tf_weapon_parachute.h
+    "tf_weapon_lunchbox_drink": "TF_WEAPON_LUNCHBOX",
+    "tf_weapon_rocketlauncher_fireball": "TF_WEAPON_FLAME_BALL",
+    "tf_weapon_parachute_primary": "TF_WEAPON_PARACHUTE",
+    "tf_weapon_parachute_secondary": "TF_WEAPON_PARACHUTE",
 }
 
 ROLES = [r for r in ed.WEAPON_TYPES]
@@ -103,8 +147,9 @@ def main() -> int:
     weapon_dmg = sdk.weapon_damage_types(weapon_ids, sdk.dmg_bits())
 
     scripts: dict[str, object] = {}
-    for name in sorted(UNLOCK_SCRIPT_BASES):
-        base, singly, crits = UNLOCK_SCRIPT_BASES[name]
+    rows = {**UNLOCK_SCRIPT_BASES, **OWN_CLASS_SCRIPTS}
+    for name in sorted(rows):
+        base, singly, crits = rows[name]
         kv = ed.first_block(g.kv(f"scripts/{name}.ctx"))
         s = ed.parse_weapon_script(name, kv, projectile_names)
         wid = WEAPON_ID_OVERRIDES.get(name, name.upper())
@@ -134,6 +179,8 @@ def main() -> int:
             "randomCrits": crits,
             "damageType": ed.Commented(dval, f"g_aWeaponDamageTypes: {dexpr}"),
         }
+        if name in OWN_CLASS_SCRIPTS:
+            out["ownClass"] = True
         out.update(s)
         out["ownSounds"] = own_sounds
         scripts[name] = ed.Commented(out, f"scripts/{name}.ctx")
@@ -154,8 +201,10 @@ import type {{ StockWeaponScriptName, WeaponRole, WeaponScript, WeaponSoundCateg
 
 export interface UnlockWeaponScript extends Omit<WeaponScript, 'scriptName' | 'sounds'> {{
   scriptName: string;
-  /** The stock script whose implementation runs this one. */
+  /** The stock script whose implementation runs this one (an own class: its nearest stock ancestor). */
   base: StockWeaponScriptName;
+  /** A C++ class with behaviour of its own, implemented by sim/weapons under this script's name. */
+  ownClass?: boolean;
   /** The unlock's own SoundData (names the sound channel may not publish). */
   ownSounds: Readonly<Partial<Record<WeaponSoundCategory, string>>>;
 }}

@@ -139,10 +139,21 @@ export interface FxPlacement {
   cp1?: Vec3Like;
   cp1Entity?: number;
   cp1Attachment?: string;
+  /**
+   * Control points 0–7 at the attachments the bundle's schema names (`attachment`,
+   * `control_point_<n>` — a weapon unusual's `unusual_0…5` on the weapon), looked up on `entity`
+   * as `<schemaPrefix><name>`. A point whose attachment is missing stays unset (it reads CP 0);
+   * CP 0 falls back to `attachment`.
+   */
+  schemaPrefix?: string;
+  /** Constant control points (a value, not a place: the killstreak colour on CP 9, 0–1). */
+  cps?: Record<number, Vec3Like>;
 }
 
 interface Fx {
   system: string;
+  /** The bundle's schema (attachment names of its control points). */
+  schema: Record<string, string>;
   sim: ParticleSimulation;
   renderer: ParticleRenderer;
   env: ParticleEnvironment;
@@ -414,6 +425,9 @@ export class EffectSystem {
     return this.live.length;
   }
 
+  /** sv_gravity as the server replicates it: gibs fall by it (C_Gib's gravity × sv_gravity). */
+  gravity = GRAVITY;
+
   constructor(readonly particles: ParticleLibrary | null) {
     this.group.name = 'fx';
     this.vmGroup.name = 'fx-viewmodel';
@@ -568,6 +582,7 @@ export class EffectSystem {
       }
       return {
         system,
+        schema: bundle.schema ?? {},
         sim,
         renderer,
         env,
@@ -600,7 +615,33 @@ export class EffectSystem {
     const p = fx.place;
     const cp0 = fx.env.points.get(0)!;
     let placed = false;
-    if (p.entity !== undefined && this.ctx) {
+    if (p.schemaPrefix !== undefined && p.entity !== undefined && this.ctx) {
+      for (let i = 0; i < 8; i++) {
+        const name = i === 0 ? fx.schema.attachment : fx.schema[`control_point_${i}`];
+        if (!name || !this.ctx.attachment(p.entity, p.schemaPrefix + name.toLowerCase(), tmpM))
+          continue;
+        let cp = fx.env.points.get(i);
+        if (!cp) fx.env.points.set(i, (cp = controlPoint()));
+        tmpM.decompose(tmpV, tmpQ, tmpV2);
+        glToSourceV(tmpV, cp.position);
+        cp.rotation.copy(tmpQ).premultiply(GL_TO_SOURCE);
+        if (first) {
+          cp.previous.copy(cp.position);
+          cp.previousRotation.copy(cp.rotation);
+        }
+        if (i === 0) placed = true;
+      }
+    }
+    if (p.cps) {
+      for (const [k, v] of Object.entries(p.cps)) {
+        const i = Number(k);
+        let cp = fx.env.points.get(i);
+        if (!cp) fx.env.points.set(i, (cp = controlPoint()));
+        cp.position.set(v.x, v.y, v.z);
+        cp.previous.copy(cp.position);
+      }
+    }
+    if (!placed && p.entity !== undefined && this.ctx) {
       if (this.ctx.attachment(p.entity, p.attachment ?? '', tmpM)) {
         tmpM.decompose(tmpV, tmpQ, tmpV2);
         glToSourceV(tmpV, cp0.position);
@@ -755,7 +796,7 @@ export class EffectSystem {
         this.debris.splice(i, 1);
         continue;
       }
-      g.vel.z -= GRAVITY * dt;
+      g.vel.z -= this.gravity * dt;
       const next = tmpV.copy(g.pos).addScaledVector(g.vel, dt);
       let hit = false;
       if (this.trace) {

@@ -34,6 +34,7 @@ import {
   MessageSquare,
   Megaphone,
   RotateCcw,
+  VenetianMask,
   Zap,
 } from 'lucide-react';
 import type { HudGame, HudLocalPlayer } from '@/lib/tf2-game/client/hud-state';
@@ -64,6 +65,8 @@ interface ButtonSpec {
   impulse?: ImpulseAction;
   /** Custom press handler. */
   onPress?: () => void;
+  /** Runs on the tap's click instead (APIs that need user activation: full screen, the clipboard). */
+  onTap?: () => void;
   /** Drags on it also turn the view. */
   look?: boolean;
   /** Offsets from the bottom-right (px at scale 1), or top-left when `top`. */
@@ -113,6 +116,8 @@ function TouchButton({
       data-pressed={pressed}
       data-tone={spec.tone}
       data-slot-button={spec.slot}
+      // Which edge it is placed from: the right-anchored ones are the thumb cluster a custom HUD keeps clear of.
+      data-anchor={spec.right !== undefined ? 'right' : spec.left !== undefined ? 'left' : undefined}
       aria-label={spec.label}
       onPointerDown={(e) => {
         e.preventDefault();
@@ -135,6 +140,7 @@ function TouchButton({
       onPointerUp={release}
       onPointerCancel={release}
       onLostPointerCapture={release}
+      onClick={spec.onTap}
       onContextMenu={(e) => e.preventDefault()}
     >
       {spec.icon}
@@ -164,6 +170,14 @@ function useAltLabel(cls: number): string {
   }
 }
 
+/** A page control the touch row carries (the play page's full screen and invite link). */
+export interface TouchAction {
+  id: string;
+  label: string;
+  icon: ReactNode;
+  onTap: () => void;
+}
+
 export default function TouchOverlay({
   game,
   input,
@@ -172,6 +186,7 @@ export default function TouchOverlay({
   settings,
   menuOpen = false,
   onToggleScores,
+  actions = [],
 }: {
   game: HudGame;
   input: InputState;
@@ -181,6 +196,8 @@ export default function TouchOverlay({
   /** A menu, PDA panel or the scoreboard is up: taps belong to it, not to the stick or the look zone. */
   menuOpen?: boolean;
   onToggleScores: () => void;
+  /** Page controls after the menu button (a phone has no spare corner for them: the HUD owns them all). */
+  actions?: readonly TouchAction[];
 }) {
   const { t } = useTranslation('c-tf2-game');
   const root = useRef<HTMLDivElement>(null);
@@ -257,7 +274,7 @@ export default function TouchOverlay({
   if (game === 'hl2') {
     buttons.push(
       { id: 'sprint', label: t('touch_sprint', { defaultValue: 'Sprint' }), icon: <Zap aria-hidden="true" />, hold: 'speed', left: 28, bottom: 200, size: 50 },
-      { id: 'flashlight', label: t('touch_flashlight', { defaultValue: 'Flashlight' }), icon: <Flashlight aria-hidden="true" />, impulse: 'flashlight', left: 28, bottom: 262, size: 44 },
+      { id: 'flashlight', label: t('touch_flashlight', { defaultValue: 'Flashlight' }), icon: <Flashlight aria-hidden="true" />, impulse: 'flashlight', left: 90, bottom: 203, size: 44 },
     );
   }
   if (game === 'tf2' && local) {
@@ -265,11 +282,11 @@ export default function TouchOverlay({
     if (local.cls === TF_CLASS_ENGINEER) {
       buttons.push(
         { id: 'build', label: t('touch_build', { defaultValue: 'Build' }), text: t('touch_build', { defaultValue: 'Build' }), onPress: sendPda(4), left: 28, bottom: 200, size: 50 },
-        { id: 'destroy', label: t('touch_destroy', { defaultValue: 'Destroy' }), text: t('touch_destroy_short', { defaultValue: 'Demo' }), onPress: sendPda(5), left: 28, bottom: 260, size: 44 },
+        { id: 'destroy', label: t('touch_destroy', { defaultValue: 'Destroy' }), text: t('touch_destroy_short', { defaultValue: 'Demo' }), onPress: sendPda(5), left: 90, bottom: 203, size: 44 },
       );
     }
     if (local.cls === TF_CLASS_SPY) {
-      buttons.push({ id: 'disguise', label: t('touch_disguise', { defaultValue: 'Disguise' }), text: t('touch_disguise', { defaultValue: 'Disguise' }), onPress: sendPda(4), left: 28, bottom: 200, size: 50 });
+      buttons.push({ id: 'disguise', label: t('touch_disguise', { defaultValue: 'Disguise' }), icon: <VenetianMask aria-hidden="true" />, onPress: sendPda(4), left: 28, bottom: 200, size: 50 });
     }
   }
 
@@ -353,12 +370,15 @@ export default function TouchOverlay({
       <div className="tf2g-touch-side">
         {game === 'tf2' ? (
           <>
-            <TouchButton spec={{ id: 'scores', label: t('touch_scores', { defaultValue: 'Scoreboard' }), icon: <ListOrdered aria-hidden="true" />, onPress: onToggleScores, size: 40 }} input={input} settings={settings} />
-            <TouchButton spec={{ id: 'chat', label: t('touch_chat', { defaultValue: 'Chat' }), icon: <MessageSquare aria-hidden="true" />, impulse: 'say', size: 40 }} input={input} settings={settings} />
-            <TouchButton spec={{ id: 'voice', label: t('touch_voice', { defaultValue: 'Voice commands' }), icon: <Megaphone aria-hidden="true" />, impulse: 'voice_menu_1', size: 40 }} input={input} settings={settings} />
+            <TouchButton spec={{ id: 'scores', label: t('touch_scores', { defaultValue: 'Scoreboard' }), icon: <ListOrdered aria-hidden="true" />, onPress: onToggleScores, size: 44 }} input={input} settings={settings} />
+            <TouchButton spec={{ id: 'chat', label: t('touch_chat', { defaultValue: 'Chat' }), icon: <MessageSquare aria-hidden="true" />, impulse: 'say', size: 44 }} input={input} settings={settings} />
+            <TouchButton spec={{ id: 'voice', label: t('touch_voice', { defaultValue: 'Voice commands' }), icon: <Megaphone aria-hidden="true" />, impulse: 'voice_menu_1', size: 44 }} input={input} settings={settings} />
           </>
         ) : null}
-        <TouchButton spec={{ id: 'menu', label: t('touch_menu', { defaultValue: 'Menu' }), icon: <Menu aria-hidden="true" />, onPress: () => store.dispatchImpulse('menu'), size: 40 }} input={input} settings={settings} />
+        <TouchButton spec={{ id: 'menu', label: t('touch_menu', { defaultValue: 'Menu' }), icon: <Menu aria-hidden="true" />, onPress: () => store.dispatchImpulse('menu'), size: 44 }} input={input} settings={settings} />
+        {actions.map((a) => (
+          <TouchButton key={a.id} spec={{ id: a.id, label: a.label, icon: a.icon, onTap: a.onTap, size: 44 }} input={input} settings={settings} />
+        ))}
         {slots.length > 1
           ? slots.map((s) => (
               <TouchButton
@@ -369,7 +389,7 @@ export default function TouchOverlay({
                   text: String(s.slot + 1),
                   impulse: `slot${s.slot + 1}` as ImpulseAction,
                   slot: true,
-                  size: 40,
+                  size: 44,
                 }}
                 input={input}
                 settings={settings}

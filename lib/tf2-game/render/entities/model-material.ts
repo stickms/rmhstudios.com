@@ -99,7 +99,14 @@ export interface InstanceUniforms {
  * paint: `uPaint` (linear colour) and `uPaintOn`, read by PAINT materials only.
  */
 export function paintUniforms(owner: InstanceUniforms): InstanceUniforms {
-  return { ...owner, uPaint: { value: new Vector3(1, 1, 1) }, uPaintOn: { value: 0 } };
+  return {
+    ...owner,
+    uPaint: { value: new Vector3(1, 1, 1) },
+    uPaintOn: { value: 0 },
+    // A killstreak sheen (rgb linear, strength; 0: none) and its clock: the item's own.
+    uSheen: { value: new Vector4(0, 0, 0, 0) },
+    uSheenTime: { value: 0 },
+  };
 }
 
 export function createInstanceUniforms(fog?: {
@@ -169,6 +176,8 @@ uniform float uCloak;
 uniform vec3 uCloakColor;
 uniform vec4 uFogColor;
 uniform vec2 uFogRange;
+uniform vec4 uSheen;
+uniform float uSheenTime;
 #ifdef PAINT
 uniform vec3 uPaint;
 uniform float uPaintOn;
@@ -259,6 +268,18 @@ void main() {
   c = mix(c, albedo.rgb * uSelfIllumTint, albedo.a);
 #endif
 #endif
+  if (uSheen.a > 0.0) {
+    // Killstreak sheen: a rim in the sheen's colour, and a bright band that sweeps along the
+    // weapon (a diagonal of its own model space, metres) in 0.8 s, every 2.5 s.
+    float sv = 1.0 - clamp(dot(n, v), 0.0, 1.0);
+    float phase = fract(uSheenTime * 0.4) * 2.5;
+    float along = dot(vObjPos, vec3(0.3, 0.45, 0.84));
+    float band = exp(-pow((along - (-0.7 + phase * 1.75)) * 9.0, 2.0));
+    float rimS = pow(sv, 2.5);
+    // Brighter where the weapon is lit, never gone in the dark.
+    float lit = clamp(0.3 + 2.5 * dot(c, vec3(0.3, 0.59, 0.11)), 0.3, 1.0);
+    c += uSheen.rgb * uSheen.a * lit * (0.18 * rimS + band * (0.5 + 0.7 * rimS));
+  }
   c *= uTint;
   c += uGlow * pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 2.0);
   if (uCloak > 0.0) c = mix(uCloakColor, c, edge);
@@ -282,7 +303,8 @@ export const TEAM_FALLBACK_COLOR = {
   blue: new Color().setRGB(0.36, 0.5, 0.62, 'srgb'),
 } as const;
 
-function fallbackColor(src: Material & { color?: Color }, ud: ModelMaterialExtras): Color {
+/** An untextured material's colour: its team's when its name says RED/BLU (exported for team skins). */
+export function fallbackColor(src: Material & { color?: Color }, ud: ModelMaterialExtras): Color {
   const name = (ud.material ?? src.name ?? '').toLowerCase();
   if (/(^|[_/])(blue|blu)([_/.]|$)|_blue|_blu\b/.test(name))
     return TEAM_FALLBACK_COLOR.blue.clone();
@@ -342,9 +364,11 @@ export function materialTemplate(src: Material): MaterialTemplate {
       uPaintDefault: { value: new Vector3(paintDefault.r, paintDefault.g, paintDefault.b) },
       uPaintReplace: { value: ud.tintReplace ?? 0 },
       uPaintMasked: { value: ud.tintWhole ? 0 : 1 },
-      // Unpainted unless the instance brings its own (paintUniforms).
+      // Unpainted and unsheened unless the instance brings its own (paintUniforms).
       uPaint: { value: new Vector3(1, 1, 1) },
       uPaintOn: { value: 0 },
+      uSheen: { value: new Vector4(0, 0, 0, 0) },
+      uSheenTime: { value: 0 },
     },
     transparent: translucent,
     additive: !!ud.additive,

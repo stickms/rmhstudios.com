@@ -17,7 +17,7 @@ import {
   type PublicItem,
   type ReplicatedItems,
 } from '../../sim/items/loadout';
-import { FL_INWATER, TF_TEAM_BLUE, TF_TEAM_RED } from '../../core/constants';
+import { FL_INWATER, TF_CLASS_DEMOMAN, TF_TEAM_BLUE, TF_TEAM_RED } from '../../core/constants';
 import { TF_COND } from '../../sim/conditions';
 import { LIFE_ALIVE } from '../../sim/entity';
 import {
@@ -30,6 +30,7 @@ import type { SequenceDesc } from './animator';
 import {
   inCond,
   LightProbe,
+  modelLod,
   num,
   stateOrigin,
   str,
@@ -38,13 +39,18 @@ import {
   type RenderContext,
 } from './common';
 import type { EffectSystem } from './effects';
+import { killstreakerSystem, sheenColor } from '@/lib/tf2-loadout/killstreak';
 import {
   heldModelName,
   ItemInstance,
   PlayerOutfit,
+  setSheenUniforms,
+  WEAPON_ATTACHMENT,
+  weaponEffect,
   weaponLook,
   type WeaponLook,
 } from './loadout-models';
+import { paintUniforms } from './model-material';
 import type { ModelAsset } from './model-asset';
 import { ModelInstance } from './model-instance';
 import { angleNormalize, TFPlayerAnimState, type PlayerAnimInput } from './player-anim-state';
@@ -130,6 +136,11 @@ export class PlayerRenderable {
   private yaw = 0;
   private visible = false;
   private burnKey = '';
+  /** The held weapon's unusual effect (`effects` loop key and system). */
+  private weaponFxKey = '';
+  /** Killstreaker eye effects running (loop keys). */
+  private eyeFx: string[] = [];
+  private eyeFxSystem = '';
   /** Called for footstep events (sound hook). */
   onFootstep: ((player: number, side: string) => void) | null = null;
 
@@ -216,6 +227,7 @@ export class PlayerRenderable {
     if (hidden) {
       this.hide();
       this.stopBurning();
+      this.stopItemEffects();
       return;
     }
     this.visible = true;
@@ -254,8 +266,10 @@ export class PlayerRenderable {
         .copy(TEAM_GLOW[look.team] ?? TEAM_GLOW[TF_TEAM_RED])
         .multiplyScalar(0.6 + 0.2 * Math.sin(ctx.time * 8));
     this.probe.update(ctx, u, this.origin, 40);
-    // Animation.
+    // Animation, then what follows the pose: jiggle bones, the weapon's and the eyes' effects.
     this.animate(s, ctx, look.weapon);
+    if (ctx.loadout) this.outfit.afterPose(ctx);
+    this.updateItemEffects(look.held, look.team, look.cls, this.invis < 0.5, ctx);
     // Burning particles follow the body.
     if (inCond(f, TF_COND.BURNING)) this.startBurning(look.team);
     else this.stopBurning();
@@ -301,7 +315,8 @@ export class PlayerRenderable {
         } else item.dispose();
         this.weaponModel = key;
       }
-      this.weaponItem?.dress({ cls: tfClassOf(cls), festive: entry?.festive, entry });
+      this.weaponItem?.dress({ cls: tfClassOf(cls), festive: entry?.festive, entry, team });
+      this.weaponItem?.setSheen(entry?.sheen, team, ctx.time);
       return;
     }
     const model = look?.stock?.worldModel ?? '';
@@ -312,11 +327,70 @@ export class PlayerRenderable {
       this.dropWeapon();
       this.weaponModel = key;
       if (asset) {
-        this.weapon = new ModelInstance(asset, { uniforms: inst.uniforms, noAnim: true });
+        // Its own uniform set over the wearer's (lit with them), so a sheen stays on the weapon.
+        this.weapon = new ModelInstance(asset, {
+          uniforms: paintUniforms(inst.uniforms),
+          noAnim: true,
+        });
         inst.attach(this.weapon);
       }
     }
     this.weapon?.setSkin(team === TF_TEAM_BLUE ? 1 : 0);
+    if (this.weapon) setSheenUniforms(this.weapon.uniforms, entry?.sheen, team, ctx.time);
+  }
+
+  /**
+   * The held weapon's unusual effect (its control points on the weapon's `unusual_<n>`
+   * attachments) and, during a streak of five kills or more, the weapon's killstreaker at the eyes
+   * in the sheen's colour (C_TFPlayer killstreak effects). Third person only: the view model draws
+   * its own weapon effect.
+   */
+  private updateItemEffects(
+    held: PublicItem | undefined,
+    team: number,
+    cls: number,
+    shown: boolean,
+    ctx: RenderContext,
+  ): void {
+    const fx = this.effects;
+    if (!fx) return;
+    const system = shown ? weaponEffect(held) : undefined;
+    const onWeapon = !!system && !!this.weapon?.asset.attachments.has('unusual_0');
+    const key = onWeapon ? `wfx:${this.id}:${system}` : '';
+    if (key !== this.weaponFxKey) {
+      if (this.weaponFxKey) fx.stop(this.weaponFxKey);
+      this.weaponFxKey = key;
+    }
+    if (key && system) fx.loop(key, system, { entity: this.id, schemaPrefix: WEAPON_ATTACHMENT });
+    const eyes = shown
+      ? killstreakerSystem(held?.streaker, ctx.killStreak?.(this.id) ?? 0)
+      : undefined;
+    if (eyes !== this.eyeFxSystem) {
+      for (const k of this.eyeFx) fx.stop(k);
+      this.eyeFx = [];
+      this.eyeFxSystem = eyes ?? '';
+    }
+    if (!eyes || !this.inst) return;
+    const c = sheenColor(held?.sheen, team) ?? sheenColor(1, team)!;
+    const colour = { x: c[0], y: c[1], z: c[2] };
+    // The Demoman has one eye (the other is under his patch).
+    const sides = cls === TF_CLASS_DEMOMAN ? ['eyeglow_r'] : ['eyeglow_r', 'eyeglow_l'];
+    const keys: string[] = [];
+    for (const side of sides) {
+      if (!this.inst.asset.attachments.has(side)) continue;
+      const k = `ks:${this.id}:${side}`;
+      keys.push(k);
+      fx.loop(k, eyes, { entity: this.id, attachment: side, cps: { 9: colour } });
+    }
+    this.eyeFx = keys;
+  }
+
+  private stopItemEffects(): void {
+    if (this.weaponFxKey) this.effects?.stop(this.weaponFxKey);
+    this.weaponFxKey = '';
+    for (const k of this.eyeFx) this.effects?.stop(k);
+    this.eyeFx = [];
+    this.eyeFxSystem = '';
   }
 
   private dropWeapon(): void {
@@ -401,6 +475,7 @@ export class PlayerRenderable {
     }
     this.yaw = renderYaw;
     inst.place(this.origin, { x: 0, y: renderYaw, z: 0 });
+    if (animator) animator.lod = modelLod(ctx, this.origin);
     inst.animate(ctx.dt);
     inst.applyPose();
     this.spinBarrel(isMinigun && inCond(f, TF_COND.AIMING), ctx.dt);
@@ -472,6 +547,7 @@ export class PlayerRenderable {
 
   private die(ctx: RenderContext): void {
     this.stopBurning();
+    this.stopItemEffects();
     const inst = this.inst;
     if (!inst || !this.visible) return;
     const corpse: Corpse = {
@@ -492,7 +568,9 @@ export class PlayerRenderable {
     this.weaponModel = '';
     const a = inst.animator;
     if (a) {
-      for (let i = 0; i < a.gestures.length; i++) a.gestures[i] = null;
+      // Gestures blend out under the death sequence; the corpse animates at full detail.
+      a.clearGestures(true);
+      a.lod = 0;
       a.setPoseParam('body_yaw', 0);
     }
     this.applyDeath(corpse, this.pendingDeath, ctx);
@@ -564,6 +642,8 @@ export class PlayerRenderable {
   /** An attachment of the live body (or its weapon), three world space. */
   attachment(name: string, out: Matrix4): boolean {
     if (!this.inst || !this.visible) return false;
+    if (name.startsWith(WEAPON_ATTACHMENT))
+      return !!this.weapon?.attachmentMatrix(name.slice(WEAPON_ATTACHMENT.length), out);
     return this.inst.attachmentMatrix(name, out);
   }
 
@@ -581,6 +661,7 @@ export class PlayerRenderable {
 
   dispose(): void {
     this.stopBurning();
+    this.stopItemEffects();
     this.outfit.dispose();
     this.inst?.dispose();
     this.inst = null;

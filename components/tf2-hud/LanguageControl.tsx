@@ -1,5 +1,6 @@
 /**
- * Which TF2 language `#Token` labels are shown in. English by default; a language
+ * Which TF2 language `#Token` labels are shown in: the site's language when the game ships it,
+ * else English, until one is picked here. A language
  * is available when its `resource/tf_<language>.txt` is in the base, the project or
  * a game file loaded here (kept on this device, never part of an export).
  */
@@ -16,12 +17,13 @@ import {
   languageOf,
 } from '@/lib/tf2-hud/localisation';
 import { useTf2HudPrefs } from '@/lib/tf2-hud/prefs';
+import { useTfLanguage } from '@/lib/tf2-hud/use-scene';
 import { useEditor } from '@/lib/tf2-hud/store';
 import { IconBtn, SelectField } from './ui';
 
 export default function LanguageControl() {
   const { t } = useTranslation('c-tf2-hud');
-  const language = useTf2HudPrefs((s) => s.language);
+  const language = useTfLanguage();
   const setPref = useTf2HudPrefs((s) => s.set);
   const hasFile = useEditor((s) => s.hasFile);
   const baseStatus = useEditor((s) => s.baseStatus);

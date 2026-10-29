@@ -39,7 +39,7 @@ import {
   type RenderContext,
 } from './common';
 import { EffectSystem, type FxTrace, ParticleLibrary } from './effects';
-import type { LoadoutModels } from './loadout-models';
+import { ITEM_DRAW_BUDGET, WEAPON_ATTACHMENT, type LoadoutModels } from './loadout-models';
 import type { ModelLibrary } from './model-asset';
 import {
   BuildingRenderable,
@@ -112,6 +112,8 @@ export class EntityRenderer {
   private readonly projView = new Matrix4();
   private readonly sphere = new Sphere();
   private camera: Camera | null = null;
+  /** Kills since each player's last death (death events seen by this client). */
+  private readonly streaks = new Map<number, number>();
   /** Sound hook for footsteps (player id, 'left'|'right'). */
   onFootstep: ((player: number, side: string) => void) | null = null;
 
@@ -139,6 +141,8 @@ export class EntityRenderer {
       cameraPosition: new Vector3(),
       entity: (id) => this.states.get(id),
       attachment: (id, name, out) => this.attachment(id, name, out),
+      killStreak: (id) => this.streaks.get(id) ?? 0,
+      itemDrawBudget: { left: ITEM_DRAW_BUDGET },
       isVisible: (p, r = CULL_RADIUS) => this.isVisible(p, r),
     };
   }
@@ -154,6 +158,7 @@ export class EntityRenderer {
     this.camera = f.camera;
     f.camera.updateMatrixWorld();
     c.cameraPosition?.setFromMatrixPosition(f.camera.matrixWorld);
+    if (c.itemDrawBudget) c.itemDrawBudget.left = ITEM_DRAW_BUDGET;
     this.projView.multiplyMatrices(f.camera.projectionMatrix, f.camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.projView);
   }
@@ -177,7 +182,19 @@ export class EntityRenderer {
       this.states.set(s.id, s);
       list.push(s);
     }
-    list.sort((a, b) => order(a.type) - order(b.type));
+    // Players nearest the camera first: they get the item draw budget before distant ones.
+    const cam = this.ctx.cameraPosition;
+    const dist = new Map<number, number>();
+    if (cam)
+      for (const s of list)
+        if (s.type === 'player') {
+          const o = stateOrigin(s, tmpO);
+          srcToThree(o.x, o.y, o.z, tmpV);
+          dist.set(s.id, tmpV.distanceToSquared(cam));
+        }
+    list.sort(
+      (a, b) => order(a.type) - order(b.type) || (dist.get(a.id) ?? 0) - (dist.get(b.id) ?? 0),
+    );
     for (const s of list) {
       this.seen.add(s.id);
       let r = this.renderables.get(s.id);
@@ -196,6 +213,7 @@ export class EntityRenderer {
     }
     for (const [id, r] of this.renderables) {
       if (this.seen.has(id)) continue;
+      this.streaks.delete(id);
       r.dispose();
       this.renderables.delete(id);
       this.effects.stopEntity(id);
@@ -225,6 +243,11 @@ export class EntityRenderer {
       if (ev.notTo !== undefined && ev.notTo === this.ctx.localPlayer) return;
       this.effects.handle(ev, this.ctx);
     } else if (ev.type === 'death') {
+      const d = ev as DeathEvent;
+      // A kill streak counts a player's kills since they last died (CTFPlayer::m_Shared streaks).
+      this.streaks.delete(d.victim);
+      if (d.attacker > 0 && d.attacker !== d.victim)
+        this.streaks.set(d.attacker, (this.streaks.get(d.attacker) ?? 0) + 1);
       const r = this.renderables.get((ev as DeathEvent).victim);
       if (r instanceof PlayerRenderable) r.onDeath(ev as DeathEvent, this.ctx);
     }
@@ -278,6 +301,8 @@ export class EntityRenderer {
     }
     const r = this.renderables.get(id);
     if (r && name && r.attachment(name, out)) return true;
+    // A held weapon's own attachment (`weapon:<name>`, weapon unusual effects) has no stand-in.
+    if (name.startsWith(WEAPON_ATTACHMENT)) return false;
     const s = this.states.get(id);
     if (!s) return false;
     const o = stateOrigin(s, { x: 0, y: 0, z: 0 });
@@ -313,5 +338,6 @@ export class EntityRenderer {
 
 const ZERO = { x: 0, y: 0, z: 0 };
 const tmpV = new Vector3();
+const tmpO = { x: 0, y: 0, z: 0 };
 const order = (t: string) =>
   t === 'player' ? 0 : BUILDING_TYPES.has(t) ? 1 : t === 'flag' ? 3 : 2;

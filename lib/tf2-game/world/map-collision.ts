@@ -89,6 +89,18 @@ const SOLID_BRUSH_CLASSES = new Set([
   'func_pushable',
 ]);
 
+/** Brush models' run-time state (MapCollision.captureModelState). */
+export interface BrushModelState {
+  origin: Float64Array;
+  angles: Float64Array;
+  matrix: Float64Array;
+  rotated: Uint8Array;
+  solid: Uint8Array;
+  contents: Int32Array;
+  entity: Int32Array;
+  bounds: Float64Array;
+}
+
 export interface MapCollisionOptions {
   /** Prebuilt displacements (e.g. shared with the renderer); built here when omitted. */
   displacements?: Array<DisplacementSurface | null>;
@@ -133,7 +145,7 @@ function angleMatrix(a: QAngle, out: Float64Array): void {
 }
 
 /** Growable Float64 storage. */
-class F64List {
+export class F64List {
   data = new Float64Array(1024);
   length = 0;
   push4(a: number, b: number, c: number, d: number): void {
@@ -598,6 +610,40 @@ export class MapCollision implements CollisionWorld {
     angles.x = this.modelAngles[m * 3];
     angles.y = this.modelAngles[m * 3 + 1];
     angles.z = this.modelAngles[m * 3 + 2];
+  }
+
+  /**
+   * What the world changes in the collision at run time — every brush model's transform, solidity,
+   * contents and owner — for a checkpoint (sim/checkpoint) to write down and put back.
+   */
+  captureModelState(): BrushModelState {
+    return {
+      origin: this.modelOrigin.slice(),
+      angles: this.modelAngles.slice(),
+      matrix: this.modelMatrix.slice(),
+      rotated: this.modelRotated.slice(),
+      solid: this.modelSolid.slice(),
+      contents: this.modelContents.slice(),
+      entity: this.modelEntity.slice(),
+      bounds: this.modelWorldBounds.slice(),
+    };
+  }
+
+  /** Puts back a `captureModelState()` from a collision world of the same map. False when it does not fit. */
+  restoreModelState(s: BrushModelState): boolean {
+    const pairs: Array<[ArrayLike<number>, { set(a: ArrayLike<number>): void; length: number }]> = [
+      [s.origin, this.modelOrigin],
+      [s.angles, this.modelAngles],
+      [s.matrix, this.modelMatrix],
+      [s.rotated, this.modelRotated],
+      [s.solid, this.modelSolid],
+      [s.contents, this.modelContents],
+      [s.entity, this.modelEntity],
+      [s.bounds, this.modelWorldBounds],
+    ];
+    if (pairs.some(([a, b]) => !a || a.length !== b.length)) return false;
+    for (const [a, b] of pairs) b.set(a);
+    return true;
   }
 
   /** Whether traces hit this brush model at all. */

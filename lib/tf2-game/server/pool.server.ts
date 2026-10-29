@@ -63,6 +63,10 @@ export interface MatchHandle {
   /** Copied before it crosses threads — socket.io's Buffer is a pooled view. */
   input(playerId: number, bytes: Uint8Array): void;
   command(playerId: number, cmd: MatchCommand): void;
+  /** `changelevel` (the hub checked the owner and the allowlist). */
+  changeLevel(map: string): void;
+  /** The room's owner changed (hub player id; null: nobody): they administer the match settings. */
+  setOwner(playerId: number | null): void;
   /** Close the match from the hub's side. The listener is not called. */
   dispose(): void;
 }
@@ -325,6 +329,8 @@ export class MatchPool {
           send({ t: 'input', matchId, playerId, data }, [data]);
         },
         command: (playerId, cmd) => send({ t: 'command', matchId, playerId, cmd }),
+        changeLevel: (map) => send({ t: 'changelevel', matchId, map }),
+        setOwner: (playerId) => send({ t: 'owner', matchId, playerId }),
         dispose: () => {
           if (this.entries.get(matchId) !== entry) return;
           send({ t: 'dispose', matchId });

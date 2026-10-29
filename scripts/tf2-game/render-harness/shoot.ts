@@ -12,7 +12,8 @@
  *                         # (scripts/tf2-assets/convert.py), <dir>/particles/ (manifest.json + effects)
  *
  * An entity scene (lib/tf2-game/render/entities) places entities, an optional view model and
- * sim events, runs `script` steps ({ advance: s } | { event } | { patch: { id, fields } }),
+ * sim events, runs `script` steps ({ advance: s } | { event } | { patch: { id, fields } } |
+ * { wait: true } — let what the steps so far requested load),
  * then shoots. An entity with `"ground": true` is dropped onto the floor under it.
  *
  * --pkg is the root holding `<game>/maps/index.json` etc. (default $RENDER_PKG_ROOT);
@@ -41,6 +42,8 @@ interface Scene {
     event?: Record<string, unknown>;
     patch?: { id: number; fields: Record<string, unknown> };
     vm?: Record<string, unknown>;
+    /** Wait for what the steps so far requested (particle bundles an event started) before going on. */
+    wait?: boolean;
   }>;
 }
 
@@ -210,6 +213,7 @@ async function main(): Promise<void> {
           h.advance(0.05);
           await h.waitLoaded();
           for (const step of scene.script ?? []) {
+            if (step.wait) await h.waitLoaded();
             if (step.advance) h.advance(step.advance);
             if (step.event) h.entityEvent(step.event as never);
             if (step.vm && vm) {

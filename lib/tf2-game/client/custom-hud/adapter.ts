@@ -60,11 +60,31 @@ export const teamOf = (team: number): Team => (team === TF_TEAM_BLUE ? 'blue' : 
  */
 export function weaponFor(local: HudLocalPlayer, cls: Tf2Class): string {
   const m = local.meters;
+  // An unlock with a meter of its own (client/item-meters.ts) shows the editor's meter for it.
+  const item = m.items?.find((i) => ITEM_METER_WEAPONS[i.kind]);
+  if (item) return ITEM_METER_WEAPONS[item.kind];
   if (cls === 'medic') return 'medigun';
   if (cls === 'demoman' && m.stickyCount !== null) return 'stickies';
   if (cls === 'spy' && m.cloak !== null) return 'cloak';
   return `stock-${cls}`;
 }
+
+/** Item meter kinds (HudItemMeter.kind) → the editor weapon (lib/tf2-hud/game-state.ts WEAPONS) showing that meter. */
+const ITEM_METER_WEAPONS: Readonly<Record<string, string>> = {
+  jarate: 'jarate',
+  bonk: 'bonk',
+  cleaver: 'cleaver',
+  sodapopper: 'sodapopper',
+  'buff-banner': 'buff-banner',
+  'gas-passer': 'gas-passer',
+  phlog: 'phlog',
+  raygun: 'raygun',
+  pomson: 'pomson',
+  shield: 'shield',
+  eyelander: 'eyelander',
+  sandvich: 'sandvich',
+  huntsman: 'huntsman',
+};
 
 const pct = (v: number | null | undefined): number =>
   v === null || v === undefined ? 0 : Math.max(0, Math.min(100, v * 100));
@@ -72,6 +92,8 @@ const pct = (v: number | null | undefined): number =>
 /** The weapon / item meter (0–100) the editor's `meter` field drives for this loadout. */
 export function meterFor(local: HudLocalPlayer, cls: Tf2Class): number {
   const m = local.meters;
+  const item = m.items?.find((i) => ITEM_METER_WEAPONS[i.kind]);
+  if (item) return pct(item.value);
   if (cls === 'spy') return pct(m.cloak);
   if (cls === 'demoman') return pct(m.stickyCharge);
   if (cls === 'sniper') return pct(m.sniperCharge);
@@ -196,6 +218,9 @@ export function liveVars(
   if (spec) {
     vars.set('spectargetname', spec.name);
     vars.set('playername', spec.name);
+    // The watched player's target ID (CSpectatorTargetID): name, and no extra line.
+    vars.set('targetname', spec.name);
+    vars.set('targetdata', '');
   }
   const win = m.win;
   if (win) {

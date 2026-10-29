@@ -10,7 +10,7 @@
  */
 
 import { emptyHudState, type HudGame, type HudState } from './hud-state';
-import type { ClassChoice, TeamChoice } from '../net/events';
+import type { ClassChoice, RoomAdminPayload, TeamChoice } from '../net/events';
 import type { ImpulseAction } from './input/actions';
 import type { LoadoutSlots, TfClass } from '../../tf2-loadout/catalog-types';
 
@@ -31,7 +31,12 @@ export type HudCommand =
   /** Pause menu opened/closed (single-player pauses the world). */
   | { kind: 'pause'; paused: boolean }
   /** Equip a loadout for a class (the pause menu's Loadout view) — MatchCommand { kind: 'loadout' }. */
-  | { kind: 'loadout'; cls: TfClass; slots: LoadoutSlots };
+  | { kind: 'loadout'; cls: TfClass; slots: LoadoutSlots }
+  /**
+   * Room administration (the pause menu's Server view, the console): a peer-to-peer host or a
+   * dedicated room's owner. `transfer` hands the room on (P2P: migrates the match to that player).
+   */
+  | { kind: 'admin'; action: RoomAdminPayload };
 
 export type HudCommandListener = (cmd: HudCommand) => void;
 

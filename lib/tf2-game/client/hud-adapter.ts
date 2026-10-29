@@ -34,6 +34,7 @@ import {
   GR_STATE_TEAM_WIN,
 } from '../sim/rules';
 import type { NetRecord } from '../sim/net-schema';
+import { adaptItemMeters } from './item-meters';
 import {
   TF_DEATH_ASSISTER_DOMINATION,
   TF_DEATH_ASSISTER_REVENGE,
@@ -291,6 +292,7 @@ export function adaptMeters(
         break;
     }
   }
+  adaptItemMeters(player, weapons, cls, curtime, m.items);
   return m;
 }
 

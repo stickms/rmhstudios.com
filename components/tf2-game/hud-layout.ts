@@ -84,12 +84,15 @@ export const PORTAL_LAYOUT: HudLayout = {
 
 /**
  * With the touch controls on, the panels the thumbs would cover move: TF2's ammo
- * and meters go top right under the kill feed (the fire cluster owns the bottom
- * right); HL2's suit panels go to the top edge.
+ * and meters go top right (the fire cluster owns the bottom right) and the kill
+ * feed ends left of them; HL2's suit panels go to the top edge.
  */
 export const TOUCH_OVERRIDES: Readonly<Record<HudGame, Readonly<Record<string, Partial<PanelLayout>>>>> = {
   tf2: {
     HudWeaponAmmo: { xpos: 'r95', ypos: '80' },
+    // The kill feed starts under the touch controls' top row (44px at y 8, clear for any unit ≥ 0.75px) and
+    // stops left of that ammo column (its lines are right-aligned), so a long feed runs under neither.
+    HudDeathNotice: { ypos: '70', wide: '530' },
     HudMedicCharge: { xpos: 'r138', ypos: '118' },
     HudItemEffectMeter: { xpos: 'r104', ypos: '128' },
     HudDemomanPipes: { xpos: 'r104', ypos: '128' },
@@ -108,6 +111,52 @@ export const TOUCH_OVERRIDES: Readonly<Record<HudGame, Readonly<Record<string, P
   },
   portal: {},
 };
+
+/**
+ * The touch layout for this screen.
+ *
+ * Portrait: the thumb controls take the bottom ~240 CSS px (TouchOverlay's fire / jump / alt-fire
+ * cluster), far more of the height in HUD units than in landscape, so the bottom-centre objective
+ * strip (flags, points, cart) rides above them.
+ *
+ * Landscape: the touch controls' top row (scores, chat, voice, menu, …) runs along the top from the
+ * left, and the cluster fills the bottom right — on a phone both reach the middle of the screen. The
+ * objective panel (the round timer at its top, the strip at its bottom) and the KOTH clocks take the
+ * area left of the cluster and below the row instead, and the team-goal banner drops below the row.
+ */
+export function touchOverrides(game: HudGame, screen: HudScreen, buttonScale = 1): Readonly<Record<string, Partial<PanelLayout>>> {
+  const base = TOUCH_OVERRIDES[game];
+  if (game !== 'tf2') return base;
+  const u = hudScale(screen);
+  if (screen.h > screen.w) {
+    const units = Math.ceil((TOUCH_THUMB_CLUSTER_PX * buttonScale) / u) + 10;
+    return {
+      ...base,
+      HudObjectiveStatus: { tall: `f${units}` },
+      // Portrait is narrower than the feed's 628 units: it spans the screen up to the ammo column instead.
+      HudDeathNotice: { xpos: '0', ypos: '70', wide: 'f110' },
+    };
+  }
+  const top = Math.ceil(TOUCH_TOP_ROW_PX / u);
+  const right = Math.ceil((TOUCH_THUMB_CLUSTER_WIDTH_PX * buttonScale) / u);
+  // The strip stays clear of the class portrait and health (bottom left, 98 units tall).
+  const bottom = 120;
+  const centre = Math.round((screen.w / u - right) / 2);
+  return {
+    ...base,
+    HudObjectiveStatus: { xpos: '0', ypos: String(top), wide: `f${right}`, tall: `f${top + bottom}` },
+    HudKothTimeStatus: { xpos: String(centre - 100), ypos: String(top) },
+    HudTeamGoal: { xpos: String(centre - 160), ypos: String(top + 10) },
+  };
+}
+
+/** The touch controls' landscape top row: 44px buttons at 8px from the top, plus an 8px gap. */
+export const TOUCH_TOP_ROW_PX = 60;
+/** The width of the bottom-right cluster at button scale 1 (the previous-weapon button's left edge, 286px, plus a margin). */
+export const TOUCH_THUMB_CLUSTER_WIDTH_PX = 300;
+
+/** The height of the touch controls' bottom-right cluster at button scale 1 (TouchOverlay's alt-fire top edge, 226px, plus a margin). */
+export const TOUCH_THUMB_CLUSTER_PX = 240;
 
 export function defaultLayout(game: HudGame): HudLayout {
   return game === 'hl2' ? HL2_LAYOUT : game === 'portal' ? PORTAL_LAYOUT : TF2_LAYOUT;
@@ -149,10 +198,12 @@ export interface PanelRect {
 
 /** A panel's rectangle in pixels on `screen`. */
 export function resolvePanel(layout: PanelLayout, screen: HudScreen, scale = hudScale(screen)): PanelRect {
+  const width = resolveSize(parseDim(layout.wide), screen.w, scale);
+  const height = resolveSize(parseDim(layout.tall), screen.h, scale);
   return {
-    left: resolveAxis(parseDim(layout.xpos), screen.w, scale),
-    top: resolveAxis(parseDim(layout.ypos), screen.h, scale),
-    width: resolveSize(parseDim(layout.wide), screen.w, scale),
-    height: resolveSize(parseDim(layout.tall), screen.h, scale),
+    left: resolveAxis(parseDim(layout.xpos), screen.w, scale, width),
+    top: resolveAxis(parseDim(layout.ypos), screen.h, scale, height),
+    width,
+    height,
   };
 }

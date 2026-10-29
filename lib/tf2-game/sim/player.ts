@@ -12,6 +12,7 @@
  * restore prediction state with `restoreMoveState` (it copies).
  */
 
+import type { EntityTraceFilter } from './world';
 import {
   copy,
   normalize,
@@ -26,6 +27,7 @@ import {
   FL_GODMODE,
   FL_ONGROUND,
   IN_ATTACK,
+  MOVETYPE_NOCLIP,
   MOVETYPE_NONE,
   MOVETYPE_OBSERVER,
   MOVETYPE_WALK,
@@ -111,6 +113,21 @@ import { createWeapon, TF_AMMO_COUNT, WEAPON_SLOTS, type Weapon } from './weapon
 import { classHealth, classMaxAmmo, weaponSpecFor } from './loadout';
 import { AttributeSet, hookInt, hookPlayer, hookWeapon, type AttributeOwner } from './items/attributes';
 import { encodeItems, planLoadout } from './items/loadout';
+import {
+  afterburnImmune,
+  burnKillType,
+  onUnlockOwnerDied,
+  resetUnlockMeters,
+  packUnlockNet,
+  unlockMaxHealthBonus,
+  unlockMoveInputs,
+  unlockPreCommand,
+  unlockSpeedInputs,
+  unlockThink,
+  UnlockState,
+  UNLOCK_MOVE_CONDS,
+} from './items/effects';
+import { onUnlockChargeEnd, unlockOnDamaged, unlockOnKill, unlockPreventsDamage } from './items/damage-rules';
 import { aliveDamageModifiers, applyOnHitAttributes, applyOnKillAttributes, damageWeapon, inAirDueToExplosion } from './items/hooks';
 import type { LoadoutSlots } from '../../tf2-loadout/catalog-types';
 import { TF_DEATH_DOMINATION, TF_DEATH_REVENGE, TF_DEATH_ASSISTER_DOMINATION, TF_DEATH_ASSISTER_REVENGE } from './events';
@@ -259,6 +276,8 @@ export class Player extends Entity implements AttributeOwner {
 
   readonly move: MoveState;
   readonly moveCtx: MoveContext;
+  /** The movement trace filter (its `fn` is `moveCtx.filter`), set when the player joins. */
+  moveFilter: EntityTraceFilter | null = null;
   readonly eyeAngles: Vec3 = vec3();
   readonly ammo = new Int32Array(TF_AMMO_COUNT);
   readonly maxAmmo = new Int32Array(TF_AMMO_COUNT);
@@ -276,6 +295,8 @@ export class Player extends Entity implements AttributeOwner {
   wornAttributes: AttributeSet[] = [];
   items = '';
   readonly cond = new Conditions();
+  /** What unlock items keep on the player (sim/items/effects.ts: stuns, bleeds, rage, heads …). */
+  readonly unlock = new UnlockState();
   stats: PlayerStats = newStats();
   /** Unanswered kills by each player id (statsKills.iNumKilledByUnanswered). */
   readonly killedByUnanswered = new Map<number, number>();
@@ -288,6 +309,8 @@ export class Player extends Entity implements AttributeOwner {
   readonly lastCmd: UserCmd = emptyUserCmd();
   /** cl_autoreload. */
   autoReload = true;
+  /** `buddha` (console cheat): damage still lands, but never below 1 health (OVERLAY_BUDDHA_MODE). */
+  buddha = false;
   /** Buttons of the command being run. */
   buttons = 0;
 
@@ -386,13 +409,16 @@ export class Player extends Entity implements AttributeOwner {
       onWaterLevelChange: (_old: number, level: number) => {
         if (level >= WL_WAIST && this.cond.has(TF_COND.BURNING)) this.extinguish();
       },
+      onChargeEnd: () => onUnlockChargeEnd(this),
     };
   }
 
   /** Called by the world when the player joins. */
   attach(): void {
     this.moveCtx.world = this.world;
-    this.moveCtx.filter = this.world.createEntityFilter(this, COLLISION_GROUP_PLAYER_MOVEMENT);
+    // The filter object is kept beside its function, so a checkpoint (sim/checkpoint) can rebuild it.
+    this.moveFilter = this.world.createEntityFilterObject(this, COLLISION_GROUP_PLAYER_MOVEMENT);
+    this.moveCtx.filter = this.moveFilter.fn;
     this.moveCtx.entityIndex = this.id;
   }
 
@@ -531,6 +557,8 @@ export class Player extends Entity implements AttributeOwner {
   /** Can't attack: humiliated losers, taunting, stunned (CTFPlayer::CanAttack / IsAllowedToFire). */
   cannotAttack(): boolean {
     if (this.cond.has(TF_COND.TAUNTING)) return true;
+    // Bonk!'s phase and an armed Dead Ringer (CTFPlayer::CanAttack).
+    if (this.cond.has(TF_COND.PHASE) || this.unlock.feignDeathReady) return true;
     if (this.world.rules.isHumiliated(this)) return true;
     return false;
   }
@@ -578,7 +606,7 @@ export class Player extends Entity implements AttributeOwner {
 
   /** SDK: CTFPlayer::GetMaxHealthForBuffing — the class's health, add_maxhealth from every provider. */
   computeMaxHealth(): number {
-    return hookInt(hookPlayer(this, 'add_maxhealth', classHealth(this.playerClass)));
+    return hookInt(hookPlayer(this, 'add_maxhealth', classHealth(this.playerClass))) + unlockMaxHealthBonus(this);
   }
 
   /** Refills ammo to the class maximums (GiveDefaultAmmo). */
@@ -614,6 +642,7 @@ export class Player extends Entity implements AttributeOwner {
    */
   runCommand(cmd: UserCmd): void {
     const world = this.world;
+    if (this.lifeState === LIFE_ALIVE) unlockPreCommand(this, cmd);
     copy(this.eyeAngles, cmd.viewAngles);
     this.buttons = cmd.buttons;
 
@@ -680,7 +709,9 @@ export class Player extends Entity implements AttributeOwner {
     m.team = this.team;
     m.classIndex = this.playerClass;
     m.dead = this.lifeState !== LIFE_ALIVE;
-    m.moveType = this.lifeState === LIFE_ALIVE ? MOVETYPE_WALK : this.move.moveType;
+    // Alive: walking, unless the console's `noclip` put the movement in MOVETYPE_NOCLIP (it is part of
+    // the replicated MoveState, so the owner's prediction flies too).
+    m.moveType = this.lifeState === LIFE_ALIVE ? (m.moveType === MOVETYPE_NOCLIP ? MOVETYPE_NOCLIP : MOVETYPE_WALK) : this.move.moveType;
     m.maxSpeed = this.computeMaxSpeed();
     let conds = 0;
     if (this.cond.has(TF_COND.TAUNTING)) conds |= MOVE_COND_TAUNTING;
@@ -688,7 +719,7 @@ export class Player extends Entity implements AttributeOwner {
     if (this.cond.has(TF_COND.BLASTJUMPING)) conds |= MOVE_COND_BLAST_JUMPING;
     if (this.cond.has(TF_COND.SHIELD_CHARGE)) conds |= MOVE_COND_SHIELD_CHARGE;
     if (this.world.rules.isHumiliated(this)) conds |= MOVE_COND_LOSER;
-    m.conds = (m.conds & ~GAME_MOVE_CONDS) | conds;
+    m.conds = (m.conds & ~(GAME_MOVE_CONDS | UNLOCK_MOVE_CONDS)) | conds | unlockMoveInputs(this);
     if (this.world.rules.isFrozen(this)) m.flags |= FL_FROZEN;
     else m.flags &= ~FL_FROZEN;
   }
@@ -724,6 +755,7 @@ export class Player extends Entity implements AttributeOwner {
     s.moveSpeedMult = hookPlayer(this, 'mult_player_movespeed', 1);
     s.activeWeaponSpeedMult = w ? hookWeapon(w, null, 'mult_player_movespeed_active', 1) : 1;
     s.aimingSpeedMult = hookPlayer(this, 'mult_player_aiming_movespeed', 1);
+    unlockSpeedInputs(this, s);
     return calculateMaxSpeed(s);
   }
 
@@ -813,7 +845,7 @@ export class Player extends Entity implements AttributeOwner {
           info.weaponId = this.burnWeaponId;
           info.damage = this.burnWeapon ? hookWeapon(this.burnWeapon, this.burnWeapon.owner, 'mult_wpn_burndmg', TF_BURNING_DMG) : TF_BURNING_DMG;
           info.damageType = DMG_BURN | DMG_PREVENT_PHYSICS_FORCE;
-          info.customKill = TF_DMG_CUSTOM_BURNING;
+          info.customKill = this.burnWeapon ? burnKillType(this.burnWeapon) : TF_DMG_CUSTOM_BURNING;
           info.killIcon = 'tf_weapon_flamethrower';
           this.eyePosition(info.position);
           world.applyDamage(this, info);
@@ -825,6 +857,8 @@ export class Player extends Entity implements AttributeOwner {
       }
     }
 
+    unlockThink(this, dt);
+    if (this.lifeState !== LIFE_ALIVE) return;
     this.cond.think(dt);
     this.regenThink();
   }
@@ -870,9 +904,13 @@ export class Player extends Entity implements AttributeOwner {
   /** SDK: CTFPlayerShared::Burn. `flameLife` = the weapon's afterburn per hit. */
   ignite(attacker: number, weaponId: number, flameLife = TF_BURNING_FLAME_LIFE, weapon: Weapon | null = null): void {
     if (!this.alive) return;
+    // CTFPlayerShared::Burn: no ignition while phasing (Bonk!).
+    if (this.cond.has(TF_COND.PHASE)) return;
     // mult_wpn_burntime on the igniting weapon (the Degreaser's shorter afterburn is mult_wpn_burndmg).
     const life = (base: number) => (weapon ? hookWeapon(weapon, weapon.owner, 'mult_wpn_burntime', base) : base);
-    const immunePyro = this.playerClass === TF_CLASS_PYRO && !this.cond.has(TF_COND.BURNING_PYRO);
+    // Afterburn immunity: a Pyro, or afterburn_immunity on the active weapon / shield / Darwin's, or
+    // TF_COND_AFTERBURN_IMMUNE (the Dead Ringer's escape): a brief, fixed burn.
+    const immunePyro = (this.playerClass === TF_CLASS_PYRO && !this.cond.has(TF_COND.BURNING_PYRO)) || afterburnImmune(this);
     if (!this.cond.has(TF_COND.BURNING)) {
       this.cond.add(TF_COND.BURNING, PERMANENT_CONDITION, attacker);
       this.flameBurnTime = this.world.curtime + TF_BURNING_FREQUENCY;
@@ -970,6 +1008,9 @@ export class Player extends Entity implements AttributeOwner {
         return 0;
       }
 
+      // Bonk!'s phase: no damage, only the push (CTFPlayer::OnTakeDamage).
+      if (!allowDamage && unlockPreventsDamage(this, info, inflictor, dir)) return 0;
+
       // ApplyOnDamageAliveModifyRules: the victim's resistances and vulnerabilities from items
       // (resists scale the damage without its crit bonus); ignition immunity in water is in ignite.
       const bonus = Math.max(0, Math.min(info.damageBonus, info.damage));
@@ -1023,8 +1064,14 @@ export class Player extends Entity implements AttributeOwner {
       if (removed > 0 && attacker && attacker !== this && attacker.isPlayer() && attacker.team !== this.team) {
         applyOnHitAttributes(attacker as Player, this, info);
       }
+      // The unlock reactions to a hit (bleeding, rage, hype, feign death, gas …).
+      unlockOnDamaged(this, attacker, info, removed);
 
-      if (this.health <= 0) this.die(info);
+      if (this.health <= 0) {
+        // CBasePlayer::OnTakeDamage under OVERLAY_BUDDHA_MODE: the hit lands, the player lives.
+        if (this.buddha) this.health = 1;
+        else this.die(info);
+      }
       return removed;
     } finally {
       this.releaseScratchDamage();
@@ -1104,6 +1151,7 @@ export class Player extends Entity implements AttributeOwner {
     this.stats.deaths++;
     if (scorer) {
       if (killer === scorer) applyOnKillAttributes(scorer, info);
+      unlockOnKill(this, info, scorer, assister);
       scorer.stats.kills++;
       if (info.customKill === TF_DMG_CUSTOM_BACKSTAB) scorer.stats.backstabs++;
       if (isHeadshot(info.customKill)) scorer.stats.headshots++;
@@ -1151,6 +1199,7 @@ export class Player extends Entity implements AttributeOwner {
     for (let i = 0; i < WEAPON_SLOTS; i++) this.weapons[i]?.onOwnerDeath();
     this.healers.length = 0;
     this.cond.clear();
+    onUnlockOwnerDied(this);
     this.afterburnDuration = 0;
     this.blastJumpState = 0;
     this.health = 0;
@@ -1260,13 +1309,13 @@ export class Player extends Entity implements AttributeOwner {
     this.lastRegenAt = world.curtime;
     this.respawnAt = 0;
     this.cloakMeter = 100;
-    this.meters.fill(100);
     this.carriedFlag = NO_ENTITY;
 
     // Items first: max health and ammo read their attributes (CTFPlayer::InitClass).
     if (this.weapons.every((w) => w === null) || this.loadoutPending) this.giveDefaultItems();
     else for (const w of this.weapons) w?.refill();
     this.initClass();
+    resetUnlockMeters(this, true);
     this.activeSlot = -1;
     const first = this.weapons.findIndex((w) => w !== null);
     if (first >= 0) this.switchToSlot(first);
@@ -1311,8 +1360,11 @@ export class Player extends Entity implements AttributeOwner {
       }
       this.afterburnDuration = 0;
       this.cloakMeter = 100;
-      this.meters.fill(100);
+      resetUnlockMeters(this, false);
+      // grenades1_resupply_denied (the Gas Passer): the locker does not refill that ammo.
+      const keepGrenades1 = hookInt(hookPlayer(this, 'grenades1_resupply_denied', 0)) ? this.ammo[4] : -1;
       this.refillAmmo();
+      if (keepGrenades1 >= 0) this.ammo[4] = keepGrenades1;
       for (const w of this.weapons) w?.refill();
     }
     this.world.events.push({ type: 'pickup', player: this.id, item: 'regenerate' });
@@ -1395,6 +1447,7 @@ export class Player extends Entity implements AttributeOwner {
     out.nextRegenAt = this.nextRegenTime;
     for (let i = 0; i < 4; i++) out[METER_FIELDS[i]] = this.meters[i];
     out.blastJump = this.blastJumpState;
+    out.unlockState = packUnlockNet(this);
     out.loadoutPending = this.loadoutPending;
     out.inSpawnRoom = this.inRespawnRoom();
     writeMoveState(this.move, out);

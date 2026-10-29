@@ -22,6 +22,7 @@
  * crosshair with the Pyro as owner (mini-crits), stickies shoved loose.
  */
 
+import { lightTeammateArrow } from './bow';
 import { MASK_SOLID, MASK_WATER, MASK_PLAYERSOLID, IN_ATTACK, IN_ATTACK2, IN_RELOAD, TF_CLASS_PYRO, TF_TEAM_BLUE, WL_EYES } from '../../core/constants';
 import { UniformRandomStream } from '../../core/random';
 import { emptyTrace, NO_ENTITY, type UserCmd } from '../../core/types';
@@ -385,6 +386,8 @@ export class FlameManager extends Entity {
       rec.heat += amount;
     }
     if (!this.canBurn(ent.id)) return;
+    // A teammate Sniper's drawn arrow catches fire (CTFFlameEntity::OnCollideWithTeammate).
+    if (ent.isPlayer() && ent.team === attacker.team) lightTeammateArrow(ent as Player);
     if (!(ent.isPlayer() && ent.team === attacker.team)) {
       let dmgType = this.dmgType;
       let victim: Player | null = null;
@@ -394,7 +397,18 @@ export class FlameManager extends Entity {
           victim.cond.add(TF_COND.HEALING_DEBUFF, FLAME_HEALING_DEBUFF_TIME, attacker.id);
         }
       }
-      if (this.critFromBehind) dmgType |= DMG_CRITICAL;
+      // CTFFlameManager::OnCollide: the Backburner crits a flame travelling along the victim's facing (> 0.8).
+      if (this.critFromBehind && victim) {
+        let fx = p.pos.x - p.initialPos.x;
+        let fy = p.pos.y - p.initialPos.y;
+        let fz = p.pos.z - p.initialPos.z;
+        const fl = Math.hypot(fx, fy, fz) || 1;
+        fx /= fl;
+        fy /= fl;
+        fz /= fl;
+        const yaw = (victim.angles.y * Math.PI) / 180;
+        if (fx * Math.cos(yaw) + fy * Math.sin(yaw) + fz * 0 > 0.8) dmgType |= DMG_CRITICAL;
+      }
       const damage = Math.max(this.damageScale(p, victim) * this.flameDamage, 1);
       const info = resetDamageInfo(flameInfo);
       info.attacker = attacker.id;
@@ -697,7 +711,12 @@ export class Flamethrower extends TFWeaponGun {
           this.flameManager = m;
         }
         this.flameManager.startFiring();
-        this.flameManager.updateDamage(dmgType, FLAMETHROWER.damagePerTick, FLAMETHROWER.burnFrequency, false);
+        this.flameManager.updateDamage(
+          dmgType,
+          FLAMETHROWER.damagePerTick,
+          FLAMETHROWER.burnFrequency,
+          hookInt(hookWeapon(this, o, 'set_flamethrower_back_crit', 0)) === 1,
+        );
         this.flameManager.addPoint(w.tickCount);
       }
       removeInvisibility(o);

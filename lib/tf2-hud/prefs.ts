@@ -25,7 +25,7 @@ export interface Tf2HudPrefs {
   treeFilter: 'all' | 'modified' | 'problems';
   /** Save signed-in HUDs to the account in the background. */
   cloudAutosave: boolean;
-  /** TF2 language for `#Token` strings (`tf_<language>.txt`); English unless changed. */
+  /** TF2 language for `#Token` strings (`tf_<language>.txt`); '' follows the site's language (English when the game lacks it). */
   language: string;
   /** Most recently picked colours (VGUI `r g b a` literals), newest first. */
   recentColors: string[];
@@ -59,7 +59,7 @@ export const useTf2HudPrefs = create<Tf2HudPrefs>()(
       blockScope: 'block',
       treeFilter: 'all',
       cloudAutosave: true,
-      language: 'english',
+      language: '',
       recentColors: [],
       pushRecentColor: (literal) =>
         set((s) => ({

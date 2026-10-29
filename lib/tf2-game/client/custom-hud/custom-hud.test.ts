@@ -36,7 +36,7 @@ import { bindingsFor, inGameFiles } from './bindings';
 import { hudAnimEvents } from './events';
 import { layoutOverrides } from './layout';
 import { applySampleEdits, SAMPLE_HUDS } from './sample-huds';
-import { InGameScene, isStacked, type SceneSource } from './scene';
+import { clearOfReserve, InGameScene, isStacked, type SceneSource } from './scene';
 import {
   DEFAULT_SELECTION,
   isDraftSavedMessage,
@@ -546,6 +546,50 @@ describe('in-game panels sit exactly where the editor previews them', () => {
     const id = 'resource/ui/hudplayerhealth.res#HudPlayerHealth';
     expect(rect(HUDS[1], id)).not.toEqual(rect(HUDS[0], id));
     expect(rect(HUDS[1], id)).toEqual({ x: 308, y: 777, w: 562, h: 270 });
+  });
+});
+
+describe('touch controls reserve', () => {
+  const screen = { w: 852, h: 372 };
+  it('moves a panel that sits under a touch button up above it, never off the top', () => {
+    const fire = { x: 700, y: 150, w: 76, h: 76 };
+    const jump = { x: 760, y: 300, w: 66, h: 66 };
+    // Above the jump button it rests on (the fire button is further left and higher).
+    expect(clearOfReserve({ x: 760, y: 300, w: 80, h: 40 }, [fire, jump], screen)).toBe(300 - 6 - 340);
+    // Over two buttons: above the higher one.
+    expect(clearOfReserve({ x: 740, y: 300, w: 80, h: 40 }, [{ ...fire, y: 230 }, jump], screen)).toBe(230 - 6 - 340);
+    // Moved above one, it would land on another: above that one too.
+    expect(clearOfReserve({ x: 760, y: 300, w: 80, h: 40 }, [{ ...fire, x: 750, y: 220 }, jump], screen)).toBe(220 - 6 - 340);
+    expect(clearOfReserve({ x: 10, y: 300, w: 80, h: 40 }, [fire, jump], screen)).toBe(0);
+    expect(clearOfReserve({ x: 600, y: 300, w: 80, h: 40 }, [fire, jump], screen)).toBe(0);
+    expect(clearOfReserve({ x: 760, y: 20, w: 80, h: 160 }, [{ ...fire, y: 40 }], screen)).toBe(-20);
+    // A container spanning half the screen is not moved.
+    expect(clearOfReserve({ x: 600, y: 100, w: 200, h: 250 }, [fire], screen)).toBe(0);
+    expect(clearOfReserve({ x: 760, y: 300, w: 80, h: 40 }, null, screen)).toBe(0);
+  });
+
+  it("lifts the base HUD's ammo above a phone's fire cluster and leaves the health panel", () => {
+    const s = SCENARIOS.soldierCp();
+    const test = toTestState(s);
+    const input = (reserve: Array<{ x: number; y: number; w: number; h: number }> | null) => ({
+      files: inGameFiles(s, test),
+      test,
+      vars: liveVars(s, test),
+      bindings: bindingsFor(s, test),
+      screen,
+      reserve,
+    });
+    const scene = new InGameScene(sourceOf(HUDS[0]));
+    const before = scene.build(input(null)).scene;
+    const reserve = { x: 560, y: 150, w: 292, h: 222 };
+    const after = scene.build(input([reserve]));
+    const ammo = 'resource/ui/hudammoweapons.res#HudWeaponAmmoBG';
+    const health = 'resource/ui/hudplayerhealth.res#HudPlayerHealth';
+    const rect = (sc: Scene, id: string) => sc.nodes.find((n) => n.id === id)?.rect;
+    expect(rect(before, ammo)!.y + rect(before, ammo)!.h).toBeGreaterThan(reserve.y);
+    expect(rect(after.scene, ammo)!.y + rect(after.scene, ammo)!.h).toBeLessThanOrEqual(reserve.y - 6);
+    expect(rect(after.scene, health)).toEqual(rect(before, health));
+    expect(after.dirty.length).toBeGreaterThan(0);
   });
 });
 

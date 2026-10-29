@@ -46,6 +46,19 @@ export const VM_ACTIVITY_NAMES = [
   'ACT_VM_HITLEFT',
   'ACT_VM_HITRIGHT',
   'ACT_VM_SWINGHARD_BROKEN',
+  // Unlock item roles' own activities (sent by name: the Huntsman's draw, banners' horn …).
+  'ACT_ITEM2_VM_CHARGE',
+  'ACT_ITEM2_VM_IDLE_2',
+  'ACT_ITEM2_VM_CHARGE_IDLE_3',
+  'ACT_ITEM2_VM_DRYFIRE',
+  'ACT_ITEM1_VM_PRIMARYATTACK',
+  'ACT_ITEM1_VM_SECONDARYATTACK',
+  'ACT_ITEM1_VM_IDLE',
+  'ACT_VM_PRIMARYATTACK_3',
+  'ACT_VM_RELOAD_2',
+  'ACT_VM_SWINGHARD_2',
+  'ACT_ITEM3_VM_PRIMARYATTACK',
+  'ACT_VM_IDLE_2',
 ] as const;
 export type VmActivityName = (typeof VM_ACTIVITY_NAMES)[number];
 
@@ -72,6 +85,12 @@ export const ACT = {
   VM_HITLEFT: actId('ACT_VM_HITLEFT'),
   VM_HITRIGHT: actId('ACT_VM_HITRIGHT'),
 } as const;
+
+/** The networked id of an activity name (ACT_VM_IDLE when unknown). */
+export const vmActivityByName = (name: string): number => {
+  const i = (VM_ACTIVITY_NAMES as readonly string[]).indexOf(name);
+  return i >= 0 ? i : 0;
+};
 
 /** The activity name for a networked id ('' when out of range). */
 export const vmActivityName = (id: number): string => VM_ACTIVITY_NAMES[id] ?? '';

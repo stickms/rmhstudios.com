@@ -1,6 +1,7 @@
 /**
  * Customize one equipped item in a modal with a live preview: paint, style, an unusual effect and where
- * it sits, and a war paint with its wear and seed. Every change goes straight to the loadout (the
+ * it sits, a war paint with its wear and seed, and a killstreak kit (sheen and killstreaker, drawn in
+ * the game). Every change goes straight to the loadout (the
  * preview is the same model the builder shows), so closing the modal is just closing it.
  */
 'use client';
@@ -29,10 +30,15 @@ import {
   effectsForItem,
 } from '@/lib/tf2-loadout/catalog-types';
 import { compactPlacement, resolvePlacement, WEAR_NAMES } from '@/lib/tf2-loadout/fx';
+import { KILLSTREAKERS, SHEENS } from '@/lib/tf2-loadout/killstreak';
 import type { CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import { warPaintOf } from '@/lib/tf2-loadout/warpaint';
 import { useParticleBundle } from '@/lib/tf2-loadout/particles/client';
 import ItemModelViewer from './ItemModelViewer';
+
+// The game's own names (tf_english), like the catalog's item and effect names.
+const SHEEN_OPTIONS = SHEENS.map((s) => ({ id: s.id, label: s.name }));
+const KILLSTREAKER_OPTIONS = KILLSTREAKERS.map((k) => ({ id: k.id, label: k.name }));
 
 export default function ItemCustomizeModal({
   open,
@@ -117,7 +123,7 @@ export default function ItemCustomizeModal({
             className="h-64 md:h-72"
           />
           {effect && particle.status !== 'ready' ? (
-            <p className="text-[11px] text-(--app-text-dim)">
+            <p className="text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">
               {particle.status === 'loading'
                 ? t('effect-loading', { defaultValue: 'Loading the game’s particle effect…' })
                 : particle.status === 'error'
@@ -291,7 +297,7 @@ export default function ItemCustomizeModal({
                       </Btn>
                     </div>
                   </Field>
-                  <p className="text-[11px] text-(--app-text-dim)">
+                  <p className="text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">
                     {t('war-paint-preview-approx', {
                       defaultValue:
                         "The preview paints the weapon with the game's own pattern for this war paint. The pattern's random parts come from the seed here, so the same seed can differ from the game in detail.",
@@ -304,15 +310,49 @@ export default function ItemCustomizeModal({
 
           {item.fz ? (
             <Field label={t('festivized', { defaultValue: 'Festivized' })}>
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm pointer-coarse:min-h-11">
                 <input
                   type="checkbox"
+                  className="tf2hud-check"
                   checked={!!entry.festive}
                   onChange={(e) => onPatch({ festive: e.target.checked || undefined })}
                 />
                 {t('festivize-weapon', { defaultValue: 'Festivize this weapon' })}
               </label>
             </Field>
+          ) : null}
+
+          {canWarPaint ? (
+            <>
+              <Field label={t('killstreak-sheen', { defaultValue: 'Killstreak sheen' })}>
+                <SearchSelect
+                  value={entry.sheen}
+                  options={SHEEN_OPTIONS}
+                  onChange={(id) =>
+                    onPatch(
+                      id === undefined ? { sheen: undefined, streaker: undefined } : { sheen: id },
+                    )
+                  }
+                  noneLabel={t('no-killstreak', { defaultValue: 'None' })}
+                  placeholder={t('search-sheens', { defaultValue: 'Search sheens' })}
+                  label={t('killstreak-sheen', { defaultValue: 'Killstreak sheen' })}
+                />
+              </Field>
+              {entry.sheen !== undefined ? (
+                <Field label={t('killstreaker', { defaultValue: 'Killstreaker' })}>
+                  <SearchSelect
+                    value={entry.streaker}
+                    options={KILLSTREAKER_OPTIONS}
+                    onChange={(id) => onPatch({ streaker: id })}
+                    noneLabel={t('no-killstreak', { defaultValue: 'None' })}
+                    placeholder={t('search-killstreakers', {
+                      defaultValue: 'Search killstreakers',
+                    })}
+                    label={t('killstreaker', { defaultValue: 'Killstreaker' })}
+                  />
+                </Field>
+              ) : null}
+            </>
           ) : null}
 
           {!item.p && !item.st && !canEffect && !canWarPaint && !item.fz ? (

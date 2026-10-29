@@ -32,6 +32,7 @@ import {
   IN_DUCK,
   IN_JUMP,
   IN_RELOAD,
+  FL_NOTARGET,
   FL_ONGROUND,
   MASK_BLOCKLOS,
   TEAM_SPECTATOR,
@@ -48,6 +49,7 @@ import {
   TF_TEAM_BLUE,
   TF_TEAM_RED,
   enemyTeam,
+  SV_GRAVITY,
 } from '../../core/constants';
 import { UniformRandomStream } from '../../core/random';
 import { emptyTrace, emptyUserCmd, NO_ENTITY, type UserCmd } from '../../core/types';
@@ -133,6 +135,7 @@ export const VOICE_COOLDOWN = 8;
 const ROCKET_SPEED = 1100;
 const PIPE_SPEED = 1200;
 const PIPE_UP = 200;
+/** A pipe's fall (its 0.4 gravity scale × the default sv_gravity 800); scaled by the world's sv_gravity. */
 const PIPE_GRAVITY = 320;
 const SYRINGE_SPEED = 1000;
 
@@ -197,6 +200,8 @@ export class TFBotBrain implements BotBrain {
   private errPitch = 0;
   private nextErrAt = 0;
   private snapAim = false;
+  /** sv_gravity / 800 (a grenade's arc). */
+  private gravityScale = 1;
 
   // Life.
   private wasAlive = false;
@@ -254,6 +259,7 @@ export class TFBotBrain implements BotBrain {
     cmd.weaponSelect = 0;
     const mgr = (this.mgr ??= getBotManager(world));
     mgr.update();
+    this.gravityScale = world.gravity / SV_GRAVITY;
     if (mgr.pathfinder) this.fhost = mgr.followerHost;
     this.jobGoalSet = false;
     this.jobStand = false;
@@ -431,6 +437,8 @@ export class TFBotBrain implements BotBrain {
       const e = world.entities[i] as Player | undefined;
       if (!e || e.removed || !e.alive || e === player || e.team === team || !isPlaying(e.team))
         continue;
+      // `notarget` (the console cheat): bots neither see nor hear this player.
+      if (e.flags & FL_NOTARGET) continue;
       const ex = e.origin.x - eye.x;
       const ey = e.origin.y - eye.y;
       const ez = e.origin.z + 40 - eye.z;
@@ -1105,7 +1113,7 @@ export class TFBotBrain implements BotBrain {
       const vz = PIPE_SPEED * Math.sin(r) + PIPE_UP * Math.cos(r);
       if (vh <= 1) continue;
       const t = d / vh;
-      const z = vz * t - 0.5 * PIPE_GRAVITY * t * t;
+      const z = vz * t - 0.5 * PIPE_GRAVITY * this.gravityScale * t * t;
       const err = Math.abs(z - h);
       if (err < bestErr) {
         bestErr = err;

@@ -348,6 +348,28 @@ export const config = {
     // Equipping a loadout from the pause menu: a person clicking "Equip".
     'tf2:loadout': { max: 20, windowMs: 60_000 },
     'tf2:ping': { max: 240, windowMs: 60_000 },
+    // The server browser's details pane: a click per room, plus its refresh.
+    'tf2:room:details': { max: 60, windowMs: 60_000 },
+    // A room owner's administration (kick, map, lock, password, a server message): a person at a menu.
+    'tf2:room:admin': { max: 30, windowMs: 60_000 },
+    // Peer-to-peer play (docs/tf2-game.md "Peer-to-peer play"): the hub only
+    // signals. `update` is the host's digest every couple of seconds. `admit`
+    // and `signal` scale with members (a host answers up to 11 joins, each a
+    // trickle of ICE candidates), like `gcall:ice`. `relay` is the fallback hot
+    // path: a host relaying 4 members sends ~100 packets/s for each; the byte
+    // budget per relayed member (32 KB/s, p2p/signal.ts) is the real limit.
+    'tf2:p2p:host': { max: 6, windowMs: 60_000 },
+    'tf2:p2p:update': { max: 90, windowMs: 60_000 },
+    'tf2:p2p:close': { max: 10, windowMs: 60_000 },
+    'tf2:p2p:join': { max: 20, windowMs: 60_000 },
+    'tf2:p2p:leave': { max: 20, windowMs: 60_000 },
+    'tf2:p2p:admit': { max: 120, windowMs: 60_000 },
+    'tf2:p2p:kick': { max: 30, windowMs: 60_000 },
+    'tf2:p2p:signal': { max: 600, windowMs: 60_000 },
+    'tf2:p2p:relay:start': { max: 30, windowMs: 60_000 },
+    'tf2:p2p:relay': { max: 30_000, windowMs: 60_000 },
+    // Host migration: the host names its successor when the best candidate changes (a few a minute).
+    'tf2:p2p:successor': { max: 30, windowMs: 60_000 },
     // ─── High-frequency relay / movement events ───
     // Movement + per-frame update events were previously unmetered (the rate
     // limiter returns true for events with no rule), so a single socket could

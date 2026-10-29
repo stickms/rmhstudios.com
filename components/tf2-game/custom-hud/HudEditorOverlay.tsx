@@ -7,21 +7,23 @@
  * the undo history. "Test in game" saves the draft, applies it to the game and
  * returns to the match; the pause menu's "Back to the HUD editor" comes back.
  * While it is open the game is paused offline (online play goes on) and gets
- * no input.
+ * no input. It mounts inside the game's HUD root when the game is full screen
+ * (its dialogs too: `portalRoot`), so opening it no longer leaves full screen;
+ * it borrows the pointer lock and gives it back on the way out.
  */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { flushLocalDraft, useEditor } from '@/lib/tf2-hud/store';
 import { selectionKey, type HudSelection } from '@/lib/tf2-game/client/custom-hud/selection';
-import { isFullscreen } from '@/lib/shared/platform';
 import { toTestState } from '@/lib/tf2-game/client/custom-hud/adapter';
 import type { HudStore } from '@/lib/tf2-game/client/hud-store';
 import Tf2HudEditor from '../../tf2-hud/Tf2HudEditor';
 import { ensureEditorHolds } from './editor-session';
+import { editorContainer, PointerLockMemo } from '@/lib/tf2-game/client/custom-hud/editor-portal';
 import { useHudChoice } from './hud-choice';
 
 export default function HudEditorOverlay({ store }: { store: HudStore }) {
@@ -30,12 +32,12 @@ export default function HudEditorOverlay({ store }: { store: HudStore }) {
   const setEditorOpen = useHudChoice((s) => s.setEditorOpen);
   const [ready, setReady] = useState(false);
   const [container, setContainer] = useState<HTMLElement | null>(null);
+  const lock = useRef(new PointerLockMemo());
 
   useEffect(() => {
-    // The editor's dialogs portal into the app root, which is outside a full-screen game: leave full screen.
-    if (isFullscreen()) void document.exitFullscreen?.().catch(() => undefined);
-    if (document.pointerLockElement) document.exitPointerLock();
-    setContainer(document.querySelector<HTMLElement>('.tf2hud-theme') ?? document.body);
+    // The editor needs the mouse; full screen stays (the editor mounts inside it).
+    lock.current.release(document);
+    setContainer(editorContainer(document));
   }, []);
 
   useEffect(() => {
@@ -64,11 +66,14 @@ export default function HudEditorOverlay({ store }: { store: HudStore }) {
   }, []);
 
   const backToGame = () => {
+    // Inside the click: a browser grants pointer lock only during a user gesture.
+    lock.current.restore();
     void flushLocalDraft();
     setEditorOpen(false);
   };
 
   const testInGame = async () => {
+    lock.current.restore();
     const saved = await flushLocalDraft();
     const ed = useEditor.getState();
     const sel: HudSelection = saved ? { kind: 'draft', id: ed.draftId } : { kind: 'default' };

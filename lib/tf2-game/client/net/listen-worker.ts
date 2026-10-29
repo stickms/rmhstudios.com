@@ -1,20 +1,26 @@
 /**
  * The listen-server worker entry: `new Worker(new URL('./listen-worker.ts',
  * import.meta.url), { type: 'module' })`, then `connectListenServer(worker, …)`
- * (./listen-server.ts). It hosts one offline match against bots, reading the
- * map package from the site's asset API.
+ * (./listen-server.ts). It hosts one match — offline against bots, or a
+ * peer-to-peer host's match with remote players (./p2p-host.ts) — reading the
+ * map package from the site's asset API. A peer-to-peer host's worker also
+ * writes the migration checkpoints (sim/checkpoint) and keeps the room's
+ * clock; a promoted successor's worker starts the match from one.
  *
  * Everything but the message plumbing lives in `ListenServer`.
  */
 
 import { GAME_ASSET_API } from '../../assets/urls';
-import { createTf2MatchHost, loadMapPackage, type BotBrainFactory } from '../../server/tf2-match-host';
 import {
-  httpObjectLoader,
-  ListenServer,
-  type FromListenServer,
-  type ToListenServer,
-} from './listen-server';
+  createTf2MatchHost,
+  levelLoader,
+  loadMapPackage,
+  Tf2MatchHost,
+  type BotBrainFactory,
+  type PackagedMap,
+} from '../../server/tf2-match-host';
+import { registerAllSimModules } from '../../sim/register-all';
+import { httpObjectLoader, ListenServer, type FromListenServer, type ToListenServer } from './listen-server';
 
 interface WorkerScope {
   postMessage(message: FromListenServer, transfer: ArrayBuffer[]): void;
@@ -54,15 +60,47 @@ function findBotBrain(): Promise<BotBrainFactory | undefined> {
   return brainPromise;
 }
 
+/** The worker's checkpoint catalog (every simulation module, by path), built on the first checkpoint. */
+let catalogPromise: Promise<import('../../sim/checkpoint/catalog').ModuleCatalog> | null = null;
+const catalog = () => (catalogPromise ??= import('./checkpoint-catalog').then((m) => m.checkpointCatalog()));
+
 const server = new ListenServer(
-  async (opts) =>
-    createTf2MatchHost(opts, {
-      loadMap: (map) => loadMapPackage(loader, map),
+  async (opts, host, controls) => {
+    const deps = {
       botBrain: await findBotBrain(),
-      // Offline: straight into the game; the team and class menus still work.
-      autoTeam: true,
-    }),
+      // Offline: straight into the game (the team and class menus still work);
+      // a peer-to-peer host plays TF2's join menus like a hub room.
+      autoTeam: host.autoTeam ?? true,
+      // Peer-to-peer: every snapshot fits one DataChannel datagram.
+      snapshotMaxBytes: host.snapshotMaxBytes,
+      // The page's player hosts this match: they administer the developer console (sv_cheats, bots).
+      console: { kind: 'listen' as const, ownerId: controls.localPlayerId },
+      // host_timescale paces this runner.
+      setTimescale: controls.setTimescale,
+    };
+    const loadMap = (map: string) => loadMapPackage(loader, map);
+    if (host.restore) {
+      // Host migration: the match from the previous host's checkpoint, on the same map.
+      const [{ unpackCheckpoint }, cat] = await Promise.all([import('../../sim/checkpoint/pack'), catalog()]);
+      const cp = await unpackCheckpoint(new Uint8Array(host.restore));
+      registerAllSimModules();
+      const map = await loadMap(opts.map);
+      return Tf2MatchHost.restore(opts, { ...deps, map, nav: (map as PackagedMap).navMesh ?? null, loadLevel: levelLoader({ loadMap }) }, cp, cat);
+    }
+    return createTf2MatchHost(opts, { ...deps, loadMap });
+  },
   (message, transfer) => scope.postMessage(message, transfer),
+  {
+    // Peer-to-peer hosting: the match written down for the successor, packed here (off the page).
+    checkpointer: async (host) => {
+      if (!(host instanceof Tf2MatchHost)) return null;
+      const [{ packCheckpoint }, cat] = await Promise.all([import('../../sim/checkpoint/pack'), catalog()]);
+      const cp = host.checkpoint(cat);
+      const packed = await packCheckpoint(cp);
+      const data = packed.buffer.byteLength === packed.byteLength ? (packed.buffer as ArrayBuffer) : (packed.slice().buffer as ArrayBuffer);
+      return { data, tick: cp.tick };
+    },
+  },
 );
 
 scope.onmessage = (event) => server.handle(event.data);

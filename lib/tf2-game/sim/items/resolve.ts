@@ -30,8 +30,8 @@ import {
 import type { WeaponSpec } from '../weapon-api';
 import { AttributeSet } from './attributes';
 import { catalogItem } from './registry';
-import { implementingScript, isUnlockScript, weaponScript } from './scripts';
-import { ITEM_CLASS_MECHANICS, PARTIAL_ATTRIBUTES, SUPPORTED_ATTRIBUTES } from './support';
+import { implementingScript, isOwnClassScript, isUnlockScript, weaponScript } from './scripts';
+import { IMPLEMENTED_OWN_CLASSES, ITEM_CLASS_ATTRIBUTES, ITEM_CLASS_MECHANICS, PARTIAL_ATTRIBUTES, SUPPORTED_ATTRIBUTES } from './support';
 
 /** SDK: tf_shareddefs.cpp pszWpnEntTranslationList (TranslateWeaponEntForClass). */
 const TRANSLATIONS: Readonly<Record<string, Partial<Record<ClassName, string>>>> = {
@@ -57,6 +57,8 @@ const TRANSLATIONS: Readonly<Record<string, Partial<Record<ClassName, string>>>>
   },
   // The Engineer's revolver entity (tf_weapon_revolver_secondary) is a CTFRevolver.
   tf_weapon_revolver: { spy: 'tf_weapon_revolver', engineer: 'tf_weapon_revolver' },
+  // The B.A.S.E. Jumper: a secondary for the Soldier, a primary for the Demoman.
+  tf_weapon_parachute: { soldier: 'tf_weapon_parachute_secondary', demoman: 'tf_weapon_parachute_primary' },
 };
 
 /** Item classes the buildings module implements without a weapon script here. */
@@ -78,6 +80,8 @@ export interface ItemPlay {
   defindex: number;
   /** The wearer's loadout slot for it. */
   slot: ItemSlot;
+  /** The schema item_class (before TranslateWeaponEntForClass). */
+  itemClass?: string;
   /** weapon: the script (entity class) that runs it. */
   scriptName?: string;
   /** fallback: the stock item the wearer gets instead. */
@@ -99,11 +103,13 @@ const WEAPON_SLOTS: ReadonlySet<ItemSlot> = new Set([
   'pda2',
 ]);
 
-/** Attribute classes on an item the simulation does not apply. */
-export function unsupportedAttributes(attrs: readonly CatalogAttribute[]): string[] {
+/** Attribute classes on an item the simulation does not apply (`itemClass`: its schema item_class). */
+export function unsupportedAttributes(attrs: readonly CatalogAttribute[], itemClass = ''): string[] {
   const out: string[] = [];
+  const scoped = ITEM_CLASS_ATTRIBUTES[itemClass];
   for (const [cls, value] of attrs) {
     if (SUPPORTED_ATTRIBUTES.has(cls)) continue;
+    if (scoped && scoped.has(cls)) continue;
     const partial = PARTIAL_ATTRIBUTES[cls];
     if (partial && typeof value === 'number' && partial(value)) continue;
     if (!out.includes(cls)) out.push(cls);
@@ -132,15 +138,17 @@ export function resolveItem(defindex: number, classIndex: number): ItemPlay | nu
   }
   const itemClass = item.ic ?? STOCK_WEAPONS[defindex]?.itemClass ?? '';
   if (isWearableClass(itemClass)) {
-    const unsupported = unsupportedAttributes(attributes);
+    const unsupported = unsupportedAttributes(attributes, itemClass);
     const mech = ITEM_CLASS_MECHANICS[itemClass];
     if (mech) unsupported.unshift(`mechanic:${mech}`);
-    return { kind: 'wearable', defindex, slot, attributes, unsupported };
+    return { kind: 'wearable', defindex, slot, itemClass, attributes, unsupported };
   }
   const scriptName = translateItemClass(itemClass, cls);
   const implemented =
     BUILDING_ITEM_CLASSES.has(scriptName) ||
-    (implementingScript(scriptName) !== undefined && !!weaponScript(scriptName));
+    (implementingScript(scriptName) !== undefined &&
+      !!weaponScript(scriptName) &&
+      (!isOwnClassScript(scriptName) || IMPLEMENTED_OWN_CLASSES.has(scriptName)));
   if (!implemented) {
     return {
       kind: 'fallback',
@@ -151,7 +159,7 @@ export function resolveItem(defindex: number, classIndex: number): ItemPlay | nu
       unsupported: ['item-class'],
     };
   }
-  const unsupported = unsupportedAttributes(attributes);
+  const unsupported = unsupportedAttributes(attributes, itemClass);
   const mech = ITEM_CLASS_MECHANICS[itemClass] ?? ITEM_CLASS_MECHANICS[scriptName];
   if (mech) unsupported.unshift(`mechanic:${mech}`);
   return { kind: 'weapon', defindex, slot, scriptName, attributes, unsupported };

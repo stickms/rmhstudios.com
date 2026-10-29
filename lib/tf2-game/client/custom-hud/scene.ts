@@ -20,6 +20,7 @@ import type { KvNode } from '@/lib/tf2-hud/kv/types';
 import { activeEntries } from '@/lib/tf2-hud/kv/props';
 import {
   buildScene,
+  embeddedFilesOf,
   HUD_LAYOUT_FILE,
   layoutFileFor,
   parseCached,
@@ -86,6 +87,12 @@ export interface FrameInput {
   screen: Screen;
   styleFor?: StyleFor;
   anim?: AnimSnapshot;
+  /**
+   * The touch controls' buttons (scene coordinates), or none. A panel file that would draw under one
+   * rides up just above it — the custom-HUD counterpart of the default HUD's touch layout
+   * (`touchOverrides`), so the ammo of a HUD made for a mouse is not under the fire button.
+   */
+  reserve?: readonly Rect[] | null;
 }
 
 export interface SceneSource {
@@ -94,6 +101,14 @@ export interface SceneSource {
   env: CondEnv;
   minmode: boolean;
   strings: ReadonlyMap<string, string>;
+}
+
+/** One file as the scene builder made it, before any move. */
+interface Raw {
+  key: string;
+  nodes: PanelNode[];
+  images: string[];
+  bounds: Rect | null;
 }
 
 interface Built {
@@ -152,6 +167,9 @@ export const isStacked = (file: string): boolean =>
 
 const shift = (r: Rect, dy: number): Rect => ({ x: r.x, y: r.y + dy, w: r.w, h: r.h });
 
+/** Gap kept between a moved panel and the touch controls above which it rides. */
+const RESERVE_GAP = 6;
+
 /** Copies of `nodes` moved down by `dy` (rects are shared between a node and its ops, so everything is copied). */
 function translateNodes(nodes: readonly PanelNode[], dy: number): PanelNode[] {
   return nodes.map((n) => ({
@@ -162,7 +180,29 @@ function translateNodes(nodes: readonly PanelNode[], dy: number): PanelNode[] {
   }));
 }
 
+const overlaps = (a: Rect, b: Rect): boolean =>
+  a.x < b.x + b.w - 2 && a.x + a.w > b.x + 2 && a.y < b.y + b.h - 2 && a.y + a.h > b.y + 2;
+
+/**
+ * How far up (≤ 0) a file drawn at `bounds` moves to clear the touch buttons in `reserve`: 0 when it
+ * overlaps none, or when it is too tall to move (a file spanning half the screen is a container, not a
+ * panel); otherwise just above the buttons it would sit on (and above any it then meets), never above
+ * the top of the screen.
+ */
+export function clearOfReserve(bounds: Rect | null, reserve: readonly Rect[] | null | undefined, screen: Screen): number {
+  if (!bounds || !reserve?.length || bounds.h > screen.h / 2) return 0;
+  let dy = 0;
+  for (let i = 0; i < 8; i++) {
+    const at = shift(bounds, dy);
+    const hits = reserve.filter((r) => overlaps(at, r));
+    if (!hits.length) break;
+    dy = Math.min(...hits.map((r) => r.y)) - RESERVE_GAP - (bounds.y + bounds.h);
+  }
+  return Math.min(0, Math.max(dy, -bounds.y));
+}
+
 export class InGameScene {
+  private raw = new Map<string, Raw>();
   private cache = new Map<string, Built>();
   private lastFiles: readonly string[] = [];
   private layoutNames = new Map<string, string[]>();
@@ -172,6 +212,7 @@ export class InGameScene {
   /** A different HUD (or scheme, language, platform): everything is rebuilt next time. */
   setSource(source: SceneSource): void {
     this.source = source;
+    this.raw.clear();
     this.cache.clear();
     this.layoutNames.clear();
     this.lastFiles = [];
@@ -179,6 +220,7 @@ export class InGameScene {
 
   /** Forget cached files (all of them, e.g. after the screen size changed). */
   invalidate(): void {
+    this.raw.clear();
     this.cache.clear();
   }
 
@@ -216,11 +258,21 @@ export class InGameScene {
       input.test.progress,
       text.length,
     ];
-    for (const v of info.vars) parts.push(input.vars.get(v));
-    for (const n of info.names) parts.push(b.gate(file, n), b.progressFor(file, n));
-    for (const p of info.keyPaths) {
-      const o = b.overridesFor(file, p);
-      if (o) parts.push(JSON.stringify(o));
+    const read = (f: string, i: FileInfo) => {
+      for (const v of i.vars) parts.push(input.vars.get(v));
+      for (const n of i.names) parts.push(b.gate(f, n), b.progressFor(f, n));
+      for (const p of i.keyPaths) {
+        const o = b.overridesFor(f, p);
+        if (o) parts.push(JSON.stringify(o));
+      }
+    };
+    read(file, info);
+    // Panel files the file's panels load into themselves at run time (the freeze cam's killer health).
+    for (const sub of embeddedFilesOf(text, this.source.env)) {
+      const subText = this.source.readText(sub);
+      if (subText === undefined) continue;
+      parts.push(sub, subText.length);
+      read(sub, fileInfo(subText, this.source.env));
     }
     const anim = input.anim;
     if (anim && anim.size) {
@@ -252,20 +304,29 @@ export class InGameScene {
     input.files.forEach((file, order) => {
       const text = this.source.readText(file);
       if (text === undefined) return;
+      const rawKey = this.keyFor(file, text, input);
+      let raw = this.raw.get(file);
+      if (!raw || raw.key !== rawKey) {
+        const scene = buildScene(ctx, [file]);
+        raw = { key: rawKey, nodes: scene.nodes, images: scene.images, bounds: boundsOf(scene.nodes) };
+        this.raw.set(file, raw);
+      }
       // The Engineer's building panels stack top to bottom, as the game's status container lays them out.
       const stacked = isStacked(file);
-      const dy = stacked ? stackY : 0;
-      const key = `${this.keyFor(file, text, input)}\u0001${dy}`;
+      const stackDy = stacked ? stackY : 0;
+      // Then clear of the touch controls, if any.
+      const dy =
+        stackDy + clearOfReserve(raw.bounds && shift(raw.bounds, stackDy), input.reserve, input.screen);
+      const key = `${rawKey}\u0001${dy}`;
       let built = this.cache.get(file);
       if (!built || built.key !== key) {
-        const scene = buildScene(ctx, [file]);
-        const nodes = dy ? translateNodes(scene.nodes, dy) : scene.nodes;
+        const nodes = dy ? translateNodes(raw.nodes, dy) : raw.nodes;
         const first = nodes[0];
         const next: Built = {
           key,
           z: first?.isFrame ? first.z : 0,
           nodes,
-          images: scene.images,
+          images: raw.images,
           bounds: boundsOf(nodes),
         };
         mark(built?.bounds ?? null);

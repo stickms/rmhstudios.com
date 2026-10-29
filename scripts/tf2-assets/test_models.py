@@ -245,6 +245,123 @@ class BoneMerge(unittest.TestCase):
         self.assertFalse(convert.follows_player_bones("models/weapons/c_models/c_shotgun/c_shotgun.mdl", boots))
 
 
+    def _mdl_with_bones(self, names):
+        """An MDL header and bone table naming `names` (what read_bones / num_bones read)."""
+        mdl = bytearray(2048)
+        bone_idx = 400
+        struct.pack_into("<2i", mdl, 0x9C, len(names), bone_idx)
+        at = bone_idx + len(names) * 216
+        for i, name in enumerate(names):
+            b = bone_idx + i * 216
+            mdl[at:at + len(name) + 1] = name.encode() + b"\0"
+            struct.pack_into("<2i", mdl, b, at - b, -1)
+            at += len(name) + 1
+        return bytes(mdl)
+
+    def test_weapon_model_wearables_on_both_feet_are_merged_held_weapons_are_not(self):
+        feet = self._vvd([(0, 1.0, 0, 0.0)] * 5 + [(1, 1.0, 0, 0.0)] * 5)
+        boots = self._mdl_with_bones(["bip_foot_l", "bip_foot_r"])
+        gun = self._mdl_with_bones(["weapon_bone", "barrel"])
+        self.assertTrue(convert.follows_player_bones("models/weapons/c_models/c_rocketboots_soldier.mdl", feet, boots))
+        # a held weapon's moving parts are its own bones, not the player's: it stays rigid on its weapon bone
+        self.assertFalse(convert.follows_player_bones("models/weapons/c_models/c_minigun/c_minigun.mdl", feet, gun))
+        # one foot (a stray vertex on the other) is a single player bone
+        one = self._vvd([(0, 1.0, 0, 0.0)] * 200 + [(1, 1.0, 0, 0.0)])
+        self.assertFalse(convert.follows_player_bones("models/weapons/c_models/c_peg.mdl", one, boots))
+
+    def test_a_stray_bone_index_past_the_skeleton_is_not_a_second_bone(self):
+        # the Razorback and the Targe carry a 128 in an unused weight slot of a one-bone model
+        shield = self._vvd([(0, 0.96, 128, 0.04)] * 10)
+        self.assertTrue(convert.srcmodel.spreads_over_bones(shield))
+        self.assertFalse(convert.srcmodel.spreads_over_bones(shield, num_bones=1))
+
+
+class TeamSkins(unittest.TestCase):
+    """BLU skin families: only a material whose BLU texture (or tint) differs carries `extras.blu`."""
+
+    def _convert(self, meshes, slots, textures, attachments=()):
+        info = {"textures": textures, "eyeballs": [], "bodypart_names": ["studio"], "bodyparts": [[{}]],
+                "dominant_bone": 0}
+        encoded = []
+
+        def encode(vtf, keep_alpha):
+            encoded.append(vtf)
+            return b"webp:" + vtf
+
+        with patch.object(convert.srcmodel, "build_meshes", return_value=(info, meshes)) as build, \
+             patch.object(convert.srcmodel, "read_bones", return_value=[]), \
+             patch.object(convert.srcmodel, "read_jiggle", return_value={}), \
+             patch.object(convert, "attachment_extras", return_value={}), \
+             patch.object(convert, "follows_player_bones", return_value=False), \
+             patch.object(convert, "encode_texture", side_effect=encode), \
+             patch.object(convert.glb, "write_glb") as write:
+            convert.convert(None, "models/player/items/x.mdl", b"", b"", b"", slots, blu_skin=1)
+        return build, write.call_args.args, encoded
+
+    @staticmethod
+    def _mesh(tex, alt):
+        return {"texture": tex, "alt_texture": alt, "group": None, "pos": np.zeros((3, 3), np.float32),
+                "nrm": np.zeros((3, 3), np.float32), "uv": np.zeros((3, 2), np.float32),
+                "idx": np.array([0, 1, 2])}
+
+    @staticmethod
+    def _slot(name, vtf, kv=None):
+        return ("%s.vmt" % name, "vertexlitgeneric", kv or {}, "%s.vtf" % name, vtf, "")
+
+    def test_only_a_differing_family_adds_an_image(self):
+        # hat: RED hat_red / BLU hat_blue (team colours); strap: the same texture on both teams
+        slots = [self._slot("hat_red", b"R"), self._slot("hat_blue", b"B"), self._slot("strap", b"S")]
+        build, args, encoded = self._convert([self._mesh(0, 1), self._mesh(2, 2)], slots,
+                                             ["hat_red", "hat_blue", "strap"])
+        self.assertEqual(build.call_args.kwargs["alt_skin"], 1)
+        meshes, materials, images = args[0], args[1], args[2]
+        self.assertEqual(images, [b"webp:R", b"webp:B", b"webp:S"])
+        self.assertEqual(materials[0]["extras"]["blu"], {"baseColorTexture": 1, "name": "hat_blue"})
+        self.assertNotIn("extras", materials[1])  # nothing to switch, nothing stored
+        self.assertEqual([m["material"] for m in meshes], [0, 1])
+        self.assertEqual(encoded.count(b"S"), 1)
+
+    def test_a_shared_texture_with_another_tint_stores_only_the_tint(self):
+        red = self._slot("cap_red", b"T", {"$blendtintbybasealpha": "1", "$color2": "{ 184 56 59 }"})
+        blu = self._slot("cap_blue", b"T", {"$blendtintbybasealpha": "1", "$color2": "{ 88 133 162 }"})
+        _, args, encoded = self._convert([self._mesh(0, 1)], [red, blu], ["cap_red", "cap_blue"])
+        self.assertEqual(args[2], [b"webp:T"])
+        self.assertEqual(args[1][0]["extras"]["blu"],
+                         {"tintDefault": [0.3451, 0.5216, 0.6353], "name": "cap_blue"})
+
+    def test_a_blu_texture_the_install_lacks_keeps_red_s(self):
+        slots = [self._slot("boot_red", b"R"), self._slot("boot_blue", None)]
+        _, args, _ = self._convert([self._mesh(0, 1)], slots, ["boot_red", "boot_blue"])
+        self.assertNotIn("extras", args[1][0])
+
+    def test_one_red_texture_with_two_blu_partners_becomes_two_materials(self):
+        slots = [self._slot("a", b"A"), self._slot("b", b"B"), self._slot("c", b"C")]
+        _, args, _ = self._convert([self._mesh(0, 1), self._mesh(0, 2)], slots, ["a", "b", "c"])
+        self.assertEqual([m["extras"]["blu"]["baseColorTexture"] for m in args[1]], [1, 2])
+
+    def test_blu_family_follows_the_game_default(self):
+        self.assertEqual(convert.blu_family(0), 1)  # team colours
+        self.assertEqual(convert.blu_family(2), 2)  # a style's fixed family: no team switch
+        self.assertEqual(convert.blu_family(2, 3), 3)  # the schema's skin_blu
+        self.assertEqual(convert.blu_family(0, 0), 0)  # a style that sets one skin for both teams
+
+    def test_the_blu_variant_survives_glb_encoding(self):
+        mesh = {"pos": np.zeros((3, 3)), "nrm": np.zeros((3, 3)), "uv": np.zeros((3, 2)),
+                "idx": np.array([0, 1, 2]), "material": 0}
+        material = {"name": "hat_red", "image": 0, "alpha": "OPAQUE", "double_sided": False,
+                    "extras": {"blu": {"baseColorTexture": 1, "name": "hat_blue"}}}
+        raw = glb.write_glb([mesh], [material], [b"red", b"blue"])
+        doc = json.loads(raw[20:20 + struct.unpack_from("<I", raw, 12)[0]])
+        self.assertEqual(doc["materials"][0]["extras"], {"blu": {"baseColorTexture": 1, "name": "hat_blue"}})
+        self.assertEqual(len(doc["textures"]), 2)  # texture i is image i, so the index is a texture index
+        self.assertEqual(doc["materials"][0]["pbrMetallicRoughness"]["baseColorTexture"], {"index": 0})
+
+    def test_build_meshes_splits_by_both_families(self):
+        info = {"skins": [[0, 1], [2, 1]], "skin0": [0, 1]}
+        self.assertEqual(convert.srcmodel.family(info, 1), [2, 1])
+        self.assertEqual(convert.srcmodel.family(info, 5), [0, 1])  # past the families: family 0
+
+
 class TexturePaths(unittest.TestCase):
     def test_basetexture_spellings_all_name_the_same_file(self):
         want = "materials/models/player/items/all_class/oh_xmas_tree.vtf"

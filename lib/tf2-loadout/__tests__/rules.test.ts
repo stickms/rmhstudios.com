@@ -211,6 +211,17 @@ describe('withSupportedOptions', () => {
     expect(out.primary).toEqual({ item: 103, wear: 3, seed: 9 });
   });
 
+  it('keeps a killstreak kit on a weapon only, and a killstreaker only with a sheen', () => {
+    const out = withSupportedOptions(cat, {
+      primary: { item: 102, sheen: 6, streaker: 2006 },
+      cosmetic1: { item: 100, sheen: 6 },
+      secondary: { item: 103, streaker: 2004 },
+    });
+    expect(out.primary).toEqual({ item: 102, sheen: 6, streaker: 2006 });
+    expect(out.cosmetic1.sheen).toBeUndefined();
+    expect(out.secondary.streaker).toBeUndefined();
+  });
+
   it('returns the same object when nothing needs dropping', () => {
     const slots = { cosmetic1: { item: 100, paint: 7 } };
     expect(withSupportedOptions(cat, slots)).toBe(slots);

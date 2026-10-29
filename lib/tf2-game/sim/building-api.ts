@@ -23,6 +23,10 @@ import { DMG_BLAST, type DamageInfo } from './damage';
 import type { Player } from './player';
 import { hookWeapon } from './items/attributes';
 import { damageWeapon } from './items/hooks';
+import { TF_DMG_CUSTOM } from '../data/damage';
+
+/** PLASMA_DISABLE_TIME (tf_obj.cpp): a charged Cow Mangler shot disables a building this long. */
+const PLASMA_DISABLE_TIME = 4;
 
 /** ObjectType_t (tf_shareddefs.h). */
 export const OBJ_DISPENSER = 0;
@@ -162,6 +166,12 @@ export abstract class BaseObject extends Entity {
     if (attacker && attacker !== this && this.inSameTeam(attacker)) return 0;
     if (attacker) this.damagers.set(attacker.id, this.world.curtime);
     let dmg = this.modifyDamage(info);
+    // CBaseObject::OnTakeDamage: buildings resist plasma (×0.2); a charged shot also disables them.
+    if (info.customKill === TF_DMG_CUSTOM.TF_DMG_CUSTOM_PLASMA) dmg *= 0.2;
+    else if (info.customKill === TF_DMG_CUSTOM.TF_DMG_CUSTOM_PLASMA_CHARGED) {
+      dmg *= 0.2;
+      (this as BaseObject & { setPlasmaDisabled?: (t: number) => void }).setPlasmaDisabled?.(PLASMA_DISABLE_TIME);
+    }
     // CBaseObject::OnTakeDamage: the weapon's mult_dmg_vs_buildings (the Homewrecker, the Jag).
     const weapon = damageWeapon(this.world, info);
     if (weapon) dmg = hookWeapon(weapon, weapon.owner, 'mult_dmg_vs_buildings', dmg);

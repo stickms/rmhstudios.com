@@ -40,6 +40,7 @@ import {
   MOVETYPE_NONE,
   TF_TEAM_BLUE,
   TF_TEAM_RED,
+  SV_GRAVITY,
   TICK_INTERVAL,
 } from '../core/constants';
 import { angleVectors, copy, normalize, set, vec3, type Vec3 } from '../core/vec';
@@ -142,6 +143,11 @@ export interface GameWorldInit {
   entities?: readonly BspEntity[];
   mode?: GameMode | null;
   options?: Partial<GameWorldOptions>;
+  /**
+   * The tick the world starts on (a level change keeps the match's tick count running, so clients'
+   * clocks and acknowledgements carry on across it). Default 0.
+   */
+  startTick?: number;
 }
 
 const defaultOptions = (): GameWorldOptions => ({
@@ -275,8 +281,8 @@ export class EntityTraceFilter {
   }
 }
 
-/** A worldspawn stand-in (entity 0). */
-class WorldSpawn extends Entity {
+/** A worldspawn stand-in (entity 0). Exported for checkpoints (sim/checkpoint/catalog.ts names classes by export). */
+export class WorldSpawn extends Entity {
   constructor() {
     super('worldspawn');
     this.preserved = true;
@@ -312,6 +318,12 @@ export class GameWorld implements CollisionWorld, WeaponHost {
   readonly worldEntity: Entity;
   curtime = 0;
   tickCount = 0;
+  /**
+   * sv_gravity (units/s²): what MOVETYPE_FLYGRAVITY entities fall by — pipes, stickies, syringes,
+   * dropped packs — each times its own gravity scale (PhysicsAddGravityMove). Players read theirs
+   * from their move parameters (the console sets both).
+   */
+  gravity = SV_GRAVITY;
   readonly frametime = TICK_INTERVAL;
 
   private readonly serials: number[] = [];
@@ -335,6 +347,10 @@ export class GameWorld implements CollisionWorld, WeaponHost {
   private readonly pendingUnregister: TouchVolume[] = [];
 
   constructor(init: GameWorldInit = {}) {
+    if (init.startTick && init.startTick > 0) {
+      this.tickCount = Math.floor(init.startTick);
+      this.curtime = this.tickCount * TICK_INTERVAL;
+    }
     this.options = { ...defaultOptions(), ...init.options };
     this.map = init.map ?? null;
     const collision = this.map ? this.map.collision : init.collision;
@@ -756,6 +772,11 @@ export class GameWorld implements CollisionWorld, WeaponHost {
   /** A filter object owned by the caller (create once, reuse). */
   createEntityFilter(pass: Entity | null, group: number): TraceFilter {
     return new EntityTraceFilter(this).set(pass, group).fn;
+  }
+
+  /** A long-lived filter object (its `fn` is the TraceFilter). Keep the object, not just `fn`: a checkpoint rebuilds `fn` from it. */
+  createEntityFilterObject(pass: Entity | null, group: number): EntityTraceFilter {
+    return new EntityTraceFilter(this).set(pass, group);
   }
 
   /** A short-lived filter from a small ring (valid until 8 more are taken). */

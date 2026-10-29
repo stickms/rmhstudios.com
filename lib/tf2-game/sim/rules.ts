@@ -279,7 +279,7 @@ export class GameRules {
   }
 
   /** Starts a fresh game (scores, map time) — used when looping instead of changing level. */
-  private resetGame(): void {
+  resetGame(): void {
     this.gameOver = false;
     this.teamScores.fill(0);
     this.flagCaptures.fill(0);

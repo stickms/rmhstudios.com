@@ -364,7 +364,7 @@ export default function HudPauseView({
             placeholder={t('hud_link_placeholder', { defaultValue: 'Paste a share link' })}
             aria-invalid={linkError}
             aria-describedby={linkError ? 'tf2g-hud-link-error' : undefined}
-            className="h-11 min-w-0 flex-1 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 text-sm text-(--app-text) placeholder:text-(--app-text-dim) focus-visible:border-(--app-accent)"
+            className="h-11 min-w-0 flex-1 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 text-sm pointer-coarse:text-base text-(--app-text) placeholder:text-(--app-text-dim) focus-visible:border-(--app-accent)"
           />
           <Btn size="md" type="submit" icon={Link2} data-menu-item disabled={!link.trim()}>
             {t('hud_link_use', { defaultValue: 'Use' })}

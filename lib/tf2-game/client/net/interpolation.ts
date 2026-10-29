@@ -43,6 +43,9 @@ export class RenderClock {
   private synced = false;
   private readonly window: Array<{ at: number; offset: number }> = [];
   private lastLocal = 0;
+  /** Local time (s, on the clock's timeline) it was held at for an offline pause, and the server time it shows. */
+  private heldAt: number | null = null;
+  private heldTime = 0;
 
   /**
    * @param interp seconds behind the server to render other entities
@@ -56,9 +59,39 @@ export class RenderClock {
     private readonly slew = 0.05,
   ) {}
 
+  /** host_timescale: server time runs `rate` × local time (1 normally). */
+  private rate = 1;
+  private scaled = 0;
+  private lastRaw: number | null = null;
+
+  /**
+   * Server time advances `rate` times as fast as the local clock (host_timescale on a listen server):
+   * local time is read through a scaled timeline, continuous across a change, so the estimate does not jump.
+   */
+  setRate(rate: number): void {
+    this.rate = Number.isFinite(rate) && rate > 0 ? rate : 1;
+  }
+
+  /** Local ms → seconds on the (scaled) timeline. */
+  private toLocal(localMs: number): number {
+    if (this.rate === 1 && this.scaled === 0) return localMs / 1000;
+    if (this.lastRaw === null) {
+      this.lastRaw = localMs;
+      this.scaled = localMs / 1000;
+      return this.scaled;
+    }
+    const d = (localMs - this.lastRaw) / 1000;
+    if (d < 0) return this.scaled + d * this.rate;
+    this.scaled += d * this.rate;
+    this.lastRaw = localMs;
+    return this.scaled;
+  }
+
   /** A snapshot for `tick` arrived at local time `localMs`. */
   onSnapshot(tick: number, localMs: number): void {
-    const local = localMs / 1000;
+    const now = this.toLocal(localMs);
+    // A snapshot still in flight when the clock was held counts as arriving at the hold.
+    const local = this.heldAt ?? now;
     const sample = tick * this.tickInterval - local;
     this.window.push({ at: local, offset: sample });
     while (this.window.length > 0 && this.window[0].at < local - this.windowSeconds)
@@ -78,12 +111,43 @@ export class RenderClock {
   resync(): void {
     this.synced = false;
     this.window.length = 0;
+    this.heldAt = null;
+  }
+
+  /**
+   * Stop the clock (the listen server holds its match: an offline pause). The server time stands still
+   * until `release`, which rebases the estimate by the time spent held — the server's clock restarts from
+   * the tick it stopped on (MatchRunner.setPaused), so prediction and interpolation carry on from where
+   * they were instead of starting over, and nothing is corrected on resume.
+   */
+  hold(localMs: number): void {
+    if (this.heldAt !== null || !this.synced) return;
+    this.heldTime = this.serverTime(localMs);
+    this.heldAt = this.lastLocal;
+  }
+
+  release(localMs: number): void {
+    if (this.heldAt === null) return;
+    const local = this.toLocal(localMs);
+    const held = Math.max(0, local - this.heldAt);
+    this.heldAt = null;
+    this.offset -= held;
+    for (const s of this.window) {
+      s.offset -= held;
+      s.at += held;
+    }
+    this.lastLocal = local;
+  }
+
+  get isHeld(): boolean {
+    return this.heldAt !== null;
   }
 
   /** The estimated current server time (seconds). Call once per frame, with a monotonic clock. */
   serverTime(localMs: number): number {
-    const local = localMs / 1000;
+    const local = this.toLocal(localMs);
     if (!this.synced) return 0;
+    if (this.heldAt !== null) return this.heldTime;
     let target = -Infinity;
     for (const s of this.window) if (s.offset > target) target = s.offset;
     const dt = Math.max(0, local - this.lastLocal);

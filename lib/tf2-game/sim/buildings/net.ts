@@ -55,6 +55,9 @@ export const NET_SENTRYGUN = registerNetSchema(128, 'sentrygun', [
   f('rocketSeq', 'u8'),
   f('muzzle', 'u8'),
   f('assists', 'u16'),
+  /** The Wrangler: m_nShieldLevel (the shield bubble) and m_bPlayerControlled. */
+  f('shieldLevel', 'u8'),
+  f('playerControlled', 'bool'),
 ]);
 
 /**

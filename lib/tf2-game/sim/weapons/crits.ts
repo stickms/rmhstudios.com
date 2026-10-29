@@ -84,3 +84,9 @@ export function critTracker(p: Player): CritTracker {
   }
   return t;
 }
+
+/** The tracker table, for a checkpoint (sim/checkpoint): read without creating, and put back. */
+export const critTrackerTable = {
+  peek: (p: Player): CritTracker | undefined => trackers.get(p),
+  set: (p: Player, t: CritTracker): void => void trackers.set(p, t),
+};

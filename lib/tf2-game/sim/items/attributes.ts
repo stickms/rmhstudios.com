@@ -55,8 +55,16 @@ export class AttributeSet {
   /** Attribute classes whose value is a string (custom_projectile_model …): kept for reporting only. */
   readonly textClasses: readonly string[];
   readonly all: readonly ItemAttribute[];
+  /** The item it came from (worn items: GetEquippedDemoShield, the Razorback …), when known. */
+  readonly itemClass: string;
+  readonly defindex: number;
 
-  constructor(attrs: readonly CatalogAttribute[] | readonly ItemAttribute[]) {
+  constructor(
+    attrs: readonly CatalogAttribute[] | readonly ItemAttribute[],
+    item: { itemClass?: string; defindex?: number } = {},
+  ) {
+    this.itemClass = item.itemClass ?? '';
+    this.defindex = item.defindex ?? -1;
     const list: ItemAttribute[] = [];
     const text: string[] = [];
     for (const a of attrs) {
@@ -152,5 +160,12 @@ export function hookWeapon(
   return value;
 }
 
-/** CALL_ATTRIB_HOOK_INT: the float result rounded to the nearest integer (RoundFloatToInt). */
-export const hookInt = (value: number): number => Math.round(value);
+/**
+ * CALL_ATTRIB_HOOK_INT: the float result rounded to the nearest integer (RoundFloatToInt →
+ * _mm_cvtss_si32 on a float: halves go to the even neighbour, so the Huntsman's 25 × 0.5 is 12).
+ */
+export function hookInt(value: number): number {
+  const f = Math.fround(value);
+  const r = Math.round(f);
+  return r - f === 0.5 && (r & 1) !== 0 ? r - 1 : r;
+}

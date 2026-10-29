@@ -18,6 +18,15 @@ export type ToWorker =
   /** `data` is transferred; the pool copies socket.io's pooled Buffer first. */
   | { t: 'input'; matchId: string; playerId: number; data: ArrayBuffer }
   | { t: 'command'; matchId: string; playerId: number; cmd: MatchCommand }
+  /**
+   * The player's client starts over on the same seat (a peer-to-peer member
+   * rejoining within its grace): `MatchHost.resyncPlayer`.
+   */
+  | { t: 'resync'; matchId: string; playerId: number }
+  /** `changelevel`: the room's owner (hub) or the listen server's host asked; the map is on the allowlist. */
+  | { t: 'changelevel'; matchId: string; map: string }
+  /** A dedicated room's owner changed (hub player id; null: nobody). */
+  | { t: 'owner'; matchId: string; playerId: number | null }
   | { t: 'dispose'; matchId: string }
   /**
    * The item schema (the loadout builder's catalog) every match on the thread reads: items

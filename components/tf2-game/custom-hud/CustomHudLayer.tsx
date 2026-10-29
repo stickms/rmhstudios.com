@@ -4,6 +4,10 @@
  * canvas the size of the game area; it repaints only what changed, inside the
  * HUD store's own ≤30 Hz publish (no frame loop of its own).
  *
+ * On a phone the HUD is laid out inside the safe area, like the game's own panels, and panel files
+ * that would sit under the touch controls' thumb cluster (the fire / jump / alt-fire buttons) ride up
+ * above it: a HUD made for a mouse keeps its ammo readable.
+ *
  * The canvas is decoration for assistive tech: the numbers it shows are also
  * in a polite live region, so a screen reader hears health and ammo as it
  * does with the default HUD.
@@ -15,11 +19,36 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { CustomHudRenderer, type PreparedHud } from '@/lib/tf2-game/client/custom-hud/renderer';
 import type { HudStore } from '@/lib/tf2-game/client/hud-store';
+import type { Rect } from '@/lib/tf2-hud/layout/geometry';
+import { NO_INSETS, useHudContext } from '../use-hud';
+
+/**
+ * The touch controls' buttons a HUD panel must not sit under — the bottom-right cluster (placed from
+ * the right edge) and the small-button column when it runs down the right edge — in CSS px relative to
+ * `host`; null when the overlay is not up (a menu is open, or no touch controls).
+ */
+function touchButtons(host: HTMLElement): Rect[] | null {
+  const hud = host.closest('.tf2g-hud');
+  const cluster = hud?.querySelectorAll<HTMLElement>('.tf2g-touch .tf2g-touch-btn[data-anchor="right"]');
+  if (!cluster?.length) return null;
+  const at = host.getBoundingClientRect();
+  const rects = [...cluster].map((b) => b.getBoundingClientRect());
+  for (const b of hud?.querySelectorAll<HTMLElement>('.tf2g-touch .tf2g-touch-side .tf2g-touch-btn') ?? []) {
+    const r = b.getBoundingClientRect();
+    if (r.width > 0 && r.left > at.left + at.width / 2) rects.push(r);
+  }
+  return rects.map((r) => ({
+    x: Math.round(r.left - at.left),
+    y: Math.round(r.top - at.top),
+    w: Math.round(r.width),
+    h: Math.round(r.height),
+  }));
+}
 
 /**
  * The TF2 language strings the in-game panels name (`#TF_Ubercharge`, …), for when neither the HUD nor
- * the base ships `resource/tf_<language>.txt` (Valve's files are not redistributed). Keys are the
- * tokens, lower-case, without `#`. A HUD's own language file still wins.
+ * the game's localisation (`resource/tf_<language>.txt`, published with the HUD base) defines them — before
+ * the asset sync has published it. Keys are the tokens, lower-case, without `#`. Any language file wins.
  */
 export function hudTokens(t: TFunction): Map<string, string> {
   return new Map([
@@ -67,6 +96,10 @@ export default function CustomHudLayer({ hud, store }: { hud: PreparedHud; store
   const { t } = useTranslation('c-tf2-game');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<CustomHudRenderer | null>(null);
+  const { safe = NO_INSETS, settings, screen } = useHudContext();
+  const touchMode = settings.touch.mode;
+  const buttonScale = settings.touch.buttonScale;
+  const reserveRef = useRef<Rect[] | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -88,6 +121,27 @@ export default function CustomHudLayer({ hud, store }: { hud: PreparedHud; store
       rendererRef.current = null;
     };
   }, [store]);
+
+  // Placement: the safe area, and the touch buttons, measured again whenever the HUD's layers change (the
+  // touch overlay steps aside for a menu and comes back: while it is away the last buttons are kept).
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const r = rendererRef.current;
+    if (!canvas || !r) return;
+    const host = canvas.parentElement ?? canvas;
+    const place = () => {
+      const buttons = touchButtons(host);
+      if (buttons) reserveRef.current = buttons;
+      else if (touchMode === 'off') reserveRef.current = null;
+      r.setPlacement(safe, reserveRef.current);
+    };
+    place();
+    const hud = host.closest('.tf2g-hud');
+    if (!hud) return;
+    const mo = new MutationObserver(place);
+    mo.observe(hud, { childList: true });
+    return () => mo.disconnect();
+  }, [safe, screen, touchMode, buttonScale]);
 
   const tokens = useMemo(() => hudTokens(t), [t]);
   useEffect(() => {
