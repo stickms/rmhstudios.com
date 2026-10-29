@@ -64,7 +64,7 @@ function RoadmapPage() {
   return (
     <PageFrame className="relative isolate min-h-screen">
       <RoadmapSection />
-      <div className="px-4 pb-12">
+      <div className="pb-12 md:px-4">
         <RequestBoard initial={board} signedIn={signedIn} isAdmin={isAdmin} />
       </div>
     </PageFrame>

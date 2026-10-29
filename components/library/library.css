@@ -2558,7 +2558,10 @@
      to the strip — so the shelves were up to 32px narrower than the tabs and
      search directly above them, on a page where all three read as one column.
      The playground does not clip, so the 3D orbit still has room to lift. */
-  --lib-gutter: clamp(8px, 1.2vw, 12px);
+  /* Aligned with the page controls above it: 1rem from the column on wide screens, none on a phone (below 768px the
+     controls are pinned to the screen edge and the frame already provides the gutter, so a gutter here put the
+     catalog section 8px inside the search and tabs). */
+  --lib-gutter: 1rem;
   --lib-content: 1400px;
   padding-bottom: var(--site-page-bottom-space);
   background:
@@ -2577,6 +2580,11 @@
 .lib-playground {
   padding-inline: var(--lib-gutter);
   perspective: 1200px;
+}
+@media (max-width: 767.98px) {
+  .lib--glass-playground {
+    --lib-gutter: 0px;
+  }
 }
 
 /* The explorer is the only sticky group: search, result feedback, and tabs
@@ -2812,7 +2820,7 @@
 
 @media (max-width: 560px) {
   .lib--glass-playground {
-    --lib-gutter: 8px;
+    --lib-gutter: 0px;
   }
 
   .lib-explorer {

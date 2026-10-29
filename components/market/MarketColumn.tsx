@@ -209,7 +209,7 @@ export function MarketColumn({
           />
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 p-4 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 py-4 md:px-4 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {listings.map((listing) => (
             <ListingCard
               key={listing.id}

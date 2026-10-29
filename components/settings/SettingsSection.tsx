@@ -26,7 +26,7 @@ export function SettingsPageBody({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={cn('space-y-4 px-4 pt-4 pb-12', className)}>{children}</div>;
+  return <div className={cn('space-y-4 pt-4 pb-12 md:px-4', className)}>{children}</div>;
 }
 
 export function SettingsSection({
