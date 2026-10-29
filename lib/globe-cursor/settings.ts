@@ -86,31 +86,36 @@ export interface GlobeCursorSettings {
 /** Seconds for one full eversion at speed 1. */
 export const BASE_EVERT_SECONDS = 6;
 
+/**
+ * The defaults are the quiet end of the range: a small translucent sphere in the site's own graphite and white ink,
+ * soft rather than glossy and nearly still. A saturated, glowing, bouncing candy ball reads as a toy on a page whose
+ * surfaces are calm glass; every one of these is still a slider in Settings → Appearance.
+ */
 export const DEFAULT_GLOBE_CURSOR: GlobeCursorSettings = {
   enabled: true,
-  size: 34,
+  size: 26,
   speed: 1,
   mode: 'loop',
   dwell: 0.15,
-  motionBoost: 0.35,
-  spin: 40,
+  motionBoost: 0.2,
+  spin: 20,
   tilt: 18,
-  roll: true,
-  jelly: 0.55,
+  roll: false,
+  jelly: 0.25,
   lag: 0,
   clickSquish: true,
-  hoverGrow: 1.35,
+  hoverGrow: 1.15,
   palette: 'duo',
-  outside: '#4f8cff',
-  inside: '#ff5fa2',
+  outside: '#dfe4ee',
+  inside: '#8a92a6',
   hueDrift: 0,
-  vibrance: 1.2,
-  glow: 0.45,
+  vibrance: 0.7,
+  glow: 0.12,
   glowColor: null,
   opacity: 1,
-  style: 'solid',
+  style: 'glass',
   detail: 'medium',
-  shine: 0.6,
+  shine: 0.45,
   trail: 0,
   sparkles: false,
   hotspot: true,

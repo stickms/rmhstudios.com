@@ -299,7 +299,8 @@ Cards `--site-radius` (32px), controls `--site-radius-sm` (24px — a pill up to
 the scale is concentric in 8px steps). **A cluster of related controls is one body,
 not a row of pills:** `<JellyGroup>` (`components/ui/jelly-group.tsx`) is the parent
 and its members are flat (no edge or body of their own); the selected member is a
-feathered glow lying on it, as in `LiquidTabs` on the main site. A lone control may
+quiet flat mark lying on it (a neutral capsule with a hairline ring in `LiquidTabs` on the
+main site; a feathered glow in `JellyGroup`). A lone control may
 still be a pill. A dropdown is one rounded slab: its rows are plain
 text with no fill, edge or radius, and hover wakes a soft glow behind the text.
 Games and apps keep their own design scheme (e.g. the raised tab thumb). Game play-fields are

@@ -90,17 +90,20 @@ export function useLiquidInteractions(enabled = true): void {
     };
     const idle = typeof w.requestIdleCallback === 'function';
     let handle: number | null = null;
+    // The material is the first thing a visitor sees change after paint, so it starts as soon as the document is
+    // parsed and the main thread is idle: waiting for `load` held it behind every image on the page (a games grid
+    // is dozens), and a 2.5 s idle timeout let a busy page starve it for just as long.
     const schedule = () => {
       if (cancelled) return;
       handle = idle
-        ? w.requestIdleCallback!(start, { timeout: 2500 })
-        : window.setTimeout(start, 600);
+        ? w.requestIdleCallback!(start, { timeout: 400 })
+        : window.setTimeout(start, 200);
     };
-    if (document.readyState === 'complete') schedule();
-    else window.addEventListener('load', schedule, { once: true });
+    if (document.readyState !== 'loading') schedule();
+    else document.addEventListener('DOMContentLoaded', schedule, { once: true });
     return () => {
       cancelled = true;
-      window.removeEventListener('load', schedule);
+      document.removeEventListener('DOMContentLoaded', schedule);
       if (handle !== null) {
         if (idle) w.cancelIdleCallback?.(handle);
         else window.clearTimeout(handle);

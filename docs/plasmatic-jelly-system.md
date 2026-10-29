@@ -101,6 +101,30 @@ z-index inside its host; the arc layer is the one body-level exception and is
 `pointer-events: none`. No jelly layer paints more than 2 px outside its host's border
 box (`AMBIENT_BOUNDS.maxOverdrawPx`, the focus ring's offset).
 
+### 1.0 Calibration to Apple's Liquid Glass (2026-10-29)
+
+The material was read as heavy and toy-like (a thick lit bevel, a rainbow edge, smoky haze inside every card) and
+as unfinished on load (the CSS first paint differed from the shader's, so surfaces visibly changed 0.3–2.5 s later).
+One pass retuned it by the tokens, not by new code paths, toward what Apple's Liquid Glass does: a thin specular rim, a
+clear body, refraction only at the edge, restrained dispersion.
+
+| Token | Was | Now | Why |
+| ----- | --- | --- | --- |
+| `--gel-bevel` | 6px | 4px | a thinner lit band; the CSS twin (`--jelly-edge-blur`) is 5px, was 10px |
+| `--gel-shoulder` / `--gel-mold` / `--gel-feather` | 1.2 / 1.15 / 3px | 1 / 0.8 / 2px | a flatter shoulder that still dissolves into the ground |
+| `--gel-dispersion`, `--gel-disperse-r/-b` | 8, ±1.5px | 3, ±0.75px | the R/G/B split is a hint, not a rainbow |
+| `--gel-edge-r/-g/-b` alpha | ×1 | ×0.4 | same |
+| `--site-jelly-haze-*` alpha, `--site-jelly-plasma`, `--site-jelly-quiet` | ×1 | ×0.25, ×0.5, ×0.5 | the body reads clear, not smoky; the currents that remain run along the rim |
+| `--liquid-enter` = `ENTER_MS` | 300ms | 450ms | the hand-over from CSS to shader is a longer, softer cross-fade |
+
+Because the CSS tier reads the same tokens, the first paint now looks like the loaded state and the hand-over is
+not a visible change. The engine also starts when the document has parsed and the main thread is idle
+(`hooks/useLiquidInteractions.ts`, idle timeout 400 ms), not after the window `load` event, which waited for every
+image on the page. Other changes in the same pass: the selected tab on the main site is a flat neutral capsule with a
+hairline inset ring (`app/jelly-coverage.css` §6b), and the globe cursor defaults to a small translucent graphite
+sphere (`lib/globe-cursor/settings.ts`). Electric arcs still default to `full`; moving that default is a product
+decision (it is stored per account), not a styling one.
+
 ### 1.1 The physical layers (#989)
 
 Read a surface from the inside out. Each layer is drawn by a shared service and tuned

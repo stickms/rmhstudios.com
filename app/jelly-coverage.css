@@ -428,18 +428,15 @@ html .glass-overlay[data-dialog-shell='bare'] {
   border: 0 !important;
 }
 
-/* ── 6b. LiquidTabs on the main site: the selected tab is a flat glow, not a raised droplet ───────────────────────────
-   The thumb element stays (it is the layoutId morph and the ink hook), but on the site it paints a feathered accent wash
-   lying on the track: no edge, no coat, no rim. Games and apps keep the droplet above (`html.app-route`, or
-   `appearance="thumb"` on the strip). Higher specificity than §6, so it needs no `!important`. */
+/* ── 6b. LiquidTabs on the main site: the selected tab is a flat, defined capsule, not a raised droplet ─────────────────
+   The thumb element stays (it is the layoutId morph and the ink hook), but on the site it paints a quiet neutral capsule
+   lying on the track, as the selected segment does in Apple's Liquid Glass: ink at a low alpha, a hairline inset ring in
+   the same ink, no accent smear, no coat, no raised rim. Neutral rather than accent so it reads the same in both themes
+   and never competes with the one signal action; the accent stays on the ink. Games and apps keep the droplet above
+   (`html.app-route`, or `appearance="thumb"` on the strip). Higher specificity than §6, so it needs no `!important`. */
 html:not(.app-route) [data-slot='liquid-tabs']:not([data-tab-appearance='thumb']) [data-tab-thumb] {
   border: 0;
-  background-color: transparent;
-  background-image: radial-gradient(
-    ellipse closest-side at 50% 50%,
-    color-mix(in srgb, var(--site-accent) calc(var(--row-glow-strength, 20%) * 1.8), transparent)
-      35%,
-    transparent 100%
-  );
-  box-shadow: none;
+  background-color: color-mix(in srgb, var(--site-text) 10%, transparent);
+  background-image: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--site-text) 11%, transparent);
 }
