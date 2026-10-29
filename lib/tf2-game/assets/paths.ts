@@ -3,13 +3,15 @@
  * serving route, the browser helpers and the tests share it.
  *
  * A path is relative to a game's prefix (`tf2-game/`): `<kind>/<file>` where kind is one
- * of GAME_ASSET_KINDS. Files named by a 64-hex content hash never change (immutable);
+ * of GAME_ASSET_KINDS. Files named by a content hash (64 or 40 hex) never change (immutable);
  * everything else (`index.json`, a map's manifest) is a mutable entry point.
  */
 import { GAME_ASSET_KINDS } from './versions';
 
 const SAFE = new RegExp(`^(?:${GAME_ASSET_KINDS.join('|')})/[a-z0-9_./-]+$`);
-const CONTENT_ADDRESSED = /(?:^|\/)[a-f0-9]{64}\.[a-z0-9]+$/;
+// sha256 (map packages, sounds, particles) or sha1 (the model channel's `tex/` and `mdl/`),
+// then the extension — which may have parts, like a map's `<sha>.hulls.bin`.
+const CONTENT_ADDRESSED = /(?:^|\/)(?:[a-f0-9]{64}|[a-f0-9]{40})(?:\.[a-z0-9]+)+$/;
 
 export const GAME_ASSET_TYPES: Record<string, string> = {
   '.glb': 'model/gltf-binary',

@@ -24,12 +24,40 @@ export interface ChannelUsage {
   bytes: number;
 }
 
+/**
+ * Several channels can publish the same object (the model and map channels share
+ * `tex/`): pass the channel's publish root and one `seen` set across all channels, and an
+ * object another channel already counted is not counted again.
+ */
+export interface DedupeOptions {
+  /** The prefix the channel's state names are relative to (`tf2-game/`). */
+  root: string;
+  /** Object keys counted so far; updated. */
+  seen: Set<string>;
+}
+
+const firstSeen = (name: string, dedupe?: DedupeOptions): boolean => {
+  if (!dedupe) return true;
+  const key = dedupe.root + name;
+  if (dedupe.seen.has(key)) return false;
+  dedupe.seen.add(key);
+  return true;
+};
+
 /** Stored bytes now: every object the state lists (stale ones too — they stay until pruned). */
-export function storedUsage(name: string, state: ChannelState): ChannelUsage {
+export function storedUsage(
+  name: string,
+  state: ChannelState,
+  dedupe?: DedupeOptions,
+): ChannelUsage {
   let bytes = 0;
-  const entries = Object.values(state.models);
-  for (const m of entries) bytes += Number.isFinite(m.size) ? m.size : 0;
-  return { name, files: entries.length, bytes };
+  let files = 0;
+  for (const [file, m] of Object.entries(state.models)) {
+    if (!firstSeen(file, dedupe)) continue;
+    files++;
+    bytes += Number.isFinite(m.size) ? m.size : 0;
+  }
+  return { name, files, bytes };
 }
 
 /**
@@ -40,6 +68,7 @@ export function projectedUsage(
   name: string,
   state: ChannelState,
   pending: PendingChannel,
+  dedupe?: DedupeOptions,
 ): ChannelUsage {
   const sizes = new Map<string, number>();
   for (const [file, m] of Object.entries(state.models)) sizes.set(file, m.size || 0);
@@ -50,8 +79,13 @@ export function projectedUsage(
     if (local !== undefined) sizes.set(file, local);
   }
   let bytes = 0;
-  for (const s of sizes.values()) bytes += s;
-  return { name, files: sizes.size, bytes };
+  let files = 0;
+  for (const [file, s] of sizes) {
+    if (!firstSeen(file, dedupe)) continue;
+    files++;
+    bytes += s;
+  }
+  return { name, files, bytes };
 }
 
 export const GB = 1024 ** 3;

@@ -9,7 +9,7 @@ import type { GameId } from './versions';
 
 export const GAME_ASSET_API = '/api/tf2-game/assets/';
 
-/** The API root of a game's assets (`/api/tf2-game/assets/`; `hl2` and `portal` later). */
+/** The API root of a game's assets: `/api/tf2-game/assets/`, `/api/hl2-game/assets/`, `/api/portal-game/assets/`. */
 export const gameAssetApi = (game: GameId = 'tf2'): string => `/api/${game}-game/assets/`;
 
 export function gameAssetUrl(path: string, game: GameId = 'tf2'): string {

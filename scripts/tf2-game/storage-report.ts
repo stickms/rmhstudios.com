@@ -5,9 +5,11 @@
  *       Prints `TF2_GAME_BUILDER_<KIND>=<n>` lines (lib/tf2-game/assets/versions.ts) for the
  *       workflow to `eval` and append to $GITHUB_ENV, so the builder versions live in one place.
  *   storage-report.ts report [--budget-gb N] [--pending <prefix>=<dir> ...]
- *       Sums the stored size of every game channel (`<game>-game/<kind>/`) from its state file
+ *       Sums the stored size of every game channel of every game (`tf2-game/`, `hl2-game/`,
+ *       `portal-game/`; `<game>-game/<kind>/`) from its state file
  *       (one GET each — never a bucket listing). With --pending, a channel about to be pushed
  *       is counted as it will be after the push (its converter's wanted.json and output dir).
+ *       An object two channels publish (the shared `tex/`) is counted once.
  *       Exits 1 when the total exceeds the budget: --budget-gb, else $TF2_GAME_STORAGE_BUDGET_GB,
  *       else GAME_STORAGE_BUDGET_GB (12). Pending dirs without a wanted.json are skipped.
  */
@@ -23,6 +25,7 @@ import {
 } from '../../lib/tf2-game/assets/storage';
 import {
   channelPrefix,
+  channelPublishPrefix,
   channelStateKey,
   GAME_ASSET_CHANNELS,
   GAME_STORAGE_BUDGET_GB,
@@ -79,21 +82,29 @@ function localSizes(dir: string, wanted: Record<string, unknown>): Record<string
 }
 
 const usages: ChannelUsage[] = [];
+// The model and map channels of a game publish the same `tex/` objects: count each object once.
+const seen = new Set<string>();
 for (const channel of Object.values(GAME_ASSET_CHANNELS)) {
   const prefix = channelPrefix(channel);
+  const dedupe = { root: channelPublishPrefix(channel), seen };
   const state = await loadState(channelStateKey(channel));
   const dir = pending.get(prefix);
   const wantedFile = dir ? path.join(dir, 'wanted.json') : null;
   if (dir && wantedFile && existsSync(wantedFile)) {
     const wanted = JSON.parse(readFileSync(wantedFile, 'utf8')) as Record<string, { src: string }>;
     usages.push(
-      projectedUsage(`${prefix} (after push)`, state, {
-        wanted,
-        localSizes: localSizes(dir, wanted),
-      }),
+      projectedUsage(
+        `${prefix} (after push)`,
+        state,
+        {
+          wanted,
+          localSizes: localSizes(dir, wanted),
+        },
+        dedupe,
+      ),
     );
   } else {
-    usages.push(storedUsage(prefix, state));
+    usages.push(storedUsage(prefix, state, dedupe));
   }
 }
 

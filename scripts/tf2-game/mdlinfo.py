@@ -57,7 +57,14 @@ def _f(b, o, n=1):
 
 
 def _str(b, base, rel):
-    return _cstr(b, base + rel) if rel else ""
+    # Older MDLs (HL2's v44) leave some name offsets (a hitbox's szhitboxnameindex) as garbage:
+    # an offset outside the file reads as no name.
+    if not rel or not 0 <= base + rel < len(b):
+        return ""
+    try:
+        return _cstr(b, base + rel)
+    except ValueError:
+        return ""
 
 
 def check(mdl):

@@ -8,8 +8,10 @@
  * reads these numbers (`scripts/tf2-game/storage-report.ts builders`), so they live here
  * only.
  *
- * Layout: `<game>-game/<kind>/…` — `tf2-game/` now, `hl2-game/` and `portal-game/` later
- * (same kinds, same serving code, one shared storage budget).
+ * Layout: `<game>-game/<kind>/…` — `tf2-game/`, `hl2-game/` (Half-Life 2 demo) and
+ * `portal-game/` (Portal: First Slice): same kinds, same serving code, one shared storage
+ * budget. The model and map channels publish at the game root (`mdl/…`, `maps/…` and the
+ * `tex/…` they share); the others under their own kind.
  */
 
 export const GAME_IDS = ['tf2', 'hl2', 'portal'] as const;
@@ -61,12 +63,50 @@ export const GAME_ASSET_CHANNELS = {
     env: 'TF2_GAME_BUILDER_MAPS',
     script: 'scripts/tf2-game/build-maps.ts',
   },
+  // Half-Life 2 demo (Steam app 219): its six maps and their props.
+  'hl2-maps': {
+    game: 'hl2',
+    kind: 'maps',
+    builder: 1,
+    env: 'HL2_GAME_BUILDER_MAPS',
+    script: 'scripts/tf2-game/build-maps.ts',
+  },
+  'hl2-models': {
+    game: 'hl2',
+    kind: 'mdl',
+    builder: 1,
+    env: 'HL2_GAME_BUILDER_MODELS',
+    script: 'scripts/tf2-game/models.py',
+  },
+  // Portal: First Slice (Steam app 410): its seven maps and their props.
+  'portal-maps': {
+    game: 'portal',
+    kind: 'maps',
+    builder: 1,
+    env: 'PORTAL_GAME_BUILDER_MAPS',
+    script: 'scripts/tf2-game/build-maps.ts',
+  },
+  'portal-models': {
+    game: 'portal',
+    kind: 'mdl',
+    builder: 1,
+    env: 'PORTAL_GAME_BUILDER_MODELS',
+    script: 'scripts/tf2-game/models.py',
+  },
 } as const satisfies Record<string, GameAssetChannel>;
 
 export type GameAssetChannelName = keyof typeof GAME_ASSET_CHANNELS;
 
 export const channelPrefix = (c: GameAssetChannel): string => `${gameRoot(c.game)}${c.kind}/`;
 export const channelStateKey = (c: GameAssetChannel): string => `${channelPrefix(c)}_state.json`;
+
+/**
+ * Where a channel's files are pushed (the names in its state file are relative to this):
+ * the game root for the model and map channels, which share `tex/`; the kind's prefix
+ * for the others.
+ */
+export const channelPublishPrefix = (c: GameAssetChannel): string =>
+  c.kind === 'mdl' || c.kind === 'maps' ? gameRoot(c.game) : channelPrefix(c);
 
 /** Default ceiling for everything under every `<game>-game/` prefix (R2), in GB. */
 export const GAME_STORAGE_BUDGET_GB = 12;

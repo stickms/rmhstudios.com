@@ -972,6 +972,7 @@ import { Route as ApiGroupChatsIdMessagesRouteImport } from './routes/api/group-
 import { Route as ApiGroupChatsIdReactRouteImport } from './routes/api/group-chats/$id/react'
 import { Route as ApiGroupChatsIdStreamRouteImport } from './routes/api/group-chats/$id/stream'
 import { Route as ApiGuidesIdPublishRouteImport } from './routes/api/guides/$id.publish'
+import { Route as ApiHl2GameAssetsSplatRouteImport } from './routes/api/hl2-game/assets/$'
 import { Route as ApiHomesListingsIdRouteImport } from './routes/api/homes/listings.$id'
 import { Route as ApiHuntAnswerIndexRouteImport } from './routes/api/hunt/answer/index'
 import { Route as ApiHuntMarkerIndexRouteImport } from './routes/api/hunt/marker/index'
@@ -1021,6 +1022,7 @@ import { Route as ApiPhotoOfTheDayVoteIndexRouteImport } from './routes/api/phot
 import { Route as ApiPlaylistsIdIndexRouteImport } from './routes/api/playlists/$id/index'
 import { Route as ApiPoolsIdIndexRouteImport } from './routes/api/pools/$id/index'
 import { Route as ApiPoolsIdContributeRouteImport } from './routes/api/pools/$id/contribute'
+import { Route as ApiPortalGameAssetsSplatRouteImport } from './routes/api/portal-game/assets/$'
 import { Route as ApiPredictionsIdCommentsRouteImport } from './routes/api/predictions/$id/comments'
 import { Route as ApiPredictionsIdDevilsAdvocateRouteImport } from './routes/api/predictions/$id/devils-advocate'
 import { Route as ApiPredictionsIdTradeRouteImport } from './routes/api/predictions/$id/trade'
@@ -6238,6 +6240,11 @@ const ApiGuidesIdPublishRoute = ApiGuidesIdPublishRouteImport.update({
   path: '/publish',
   getParentRoute: () => ApiGuidesIdRoute,
 } as any)
+const ApiHl2GameAssetsSplatRoute = ApiHl2GameAssetsSplatRouteImport.update({
+  id: '/api/hl2-game/assets/$',
+  path: '/api/hl2-game/assets/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHomesListingsIdRoute = ApiHomesListingsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -6504,6 +6511,12 @@ const ApiPoolsIdContributeRoute = ApiPoolsIdContributeRouteImport.update({
   path: '/api/pools/$id/contribute',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPortalGameAssetsSplatRoute =
+  ApiPortalGameAssetsSplatRouteImport.update({
+    id: '/api/portal-game/assets/$',
+    path: '/api/portal-game/assets/$',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPredictionsIdCommentsRoute =
   ApiPredictionsIdCommentsRouteImport.update({
     id: '/comments',
@@ -9045,6 +9058,7 @@ export interface FileRoutesByFullPath {
   '/api/group-chats/$id/react': typeof ApiGroupChatsIdReactRoute
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
+  '/api/hl2-game/assets/$': typeof ApiHl2GameAssetsSplatRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
   '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
   '/api/internal/ops/post-deploy-health': typeof ApiInternalOpsPostDeployHealthRoute
@@ -9084,6 +9098,7 @@ export interface FileRoutesByFullPath {
   '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
+  '/api/portal-game/assets/$': typeof ApiPortalGameAssetsSplatRoute
   '/api/predictions/$id/comments': typeof ApiPredictionsIdCommentsRoute
   '/api/predictions/$id/devils-advocate': typeof ApiPredictionsIdDevilsAdvocateRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -10330,6 +10345,7 @@ export interface FileRoutesByTo {
   '/api/group-chats/$id/react': typeof ApiGroupChatsIdReactRoute
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
+  '/api/hl2-game/assets/$': typeof ApiHl2GameAssetsSplatRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
   '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
   '/api/internal/ops/post-deploy-health': typeof ApiInternalOpsPostDeployHealthRoute
@@ -10369,6 +10385,7 @@ export interface FileRoutesByTo {
   '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
+  '/api/portal-game/assets/$': typeof ApiPortalGameAssetsSplatRoute
   '/api/predictions/$id/comments': typeof ApiPredictionsIdCommentsRoute
   '/api/predictions/$id/devils-advocate': typeof ApiPredictionsIdDevilsAdvocateRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -11644,6 +11661,7 @@ export interface FileRoutesById {
   '/api/group-chats/$id/react': typeof ApiGroupChatsIdReactRoute
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
+  '/api/hl2-game/assets/$': typeof ApiHl2GameAssetsSplatRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
   '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
   '/api/internal/ops/post-deploy-health': typeof ApiInternalOpsPostDeployHealthRoute
@@ -11683,6 +11701,7 @@ export interface FileRoutesById {
   '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
+  '/api/portal-game/assets/$': typeof ApiPortalGameAssetsSplatRoute
   '/api/predictions/$id/comments': typeof ApiPredictionsIdCommentsRoute
   '/api/predictions/$id/devils-advocate': typeof ApiPredictionsIdDevilsAdvocateRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -12958,6 +12977,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/react'
     | '/api/group-chats/$id/stream'
     | '/api/guides/$id/publish'
+    | '/api/hl2-game/assets/$'
     | '/api/homes/listings/$id'
     | '/api/internal/ops/deploy-event'
     | '/api/internal/ops/post-deploy-health'
@@ -12997,6 +13017,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
+    | '/api/portal-game/assets/$'
     | '/api/predictions/$id/comments'
     | '/api/predictions/$id/devils-advocate'
     | '/api/predictions/$id/trade'
@@ -14243,6 +14264,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/react'
     | '/api/group-chats/$id/stream'
     | '/api/guides/$id/publish'
+    | '/api/hl2-game/assets/$'
     | '/api/homes/listings/$id'
     | '/api/internal/ops/deploy-event'
     | '/api/internal/ops/post-deploy-health'
@@ -14282,6 +14304,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
+    | '/api/portal-game/assets/$'
     | '/api/predictions/$id/comments'
     | '/api/predictions/$id/devils-advocate'
     | '/api/predictions/$id/trade'
@@ -15556,6 +15579,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/react'
     | '/api/group-chats/$id/stream'
     | '/api/guides/$id/publish'
+    | '/api/hl2-game/assets/$'
     | '/api/homes/listings/$id'
     | '/api/internal/ops/deploy-event'
     | '/api/internal/ops/post-deploy-health'
@@ -15595,6 +15619,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
+    | '/api/portal-game/assets/$'
     | '/api/predictions/$id/comments'
     | '/api/predictions/$id/devils-advocate'
     | '/api/predictions/$id/trade'
@@ -16556,6 +16581,7 @@ export interface RootRouteChildren {
   ApiGroupChatsIdMessagesRoute: typeof ApiGroupChatsIdMessagesRouteWithChildren
   ApiGroupChatsIdReactRoute: typeof ApiGroupChatsIdReactRoute
   ApiGroupChatsIdStreamRoute: typeof ApiGroupChatsIdStreamRoute
+  ApiHl2GameAssetsSplatRoute: typeof ApiHl2GameAssetsSplatRoute
   ApiInternalOpsDeployEventRoute: typeof ApiInternalOpsDeployEventRoute
   ApiInternalOpsPostDeployHealthRoute: typeof ApiInternalOpsPostDeployHealthRoute
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
@@ -16575,6 +16601,7 @@ export interface RootRouteChildren {
   ApiPersonasIdChatRoute: typeof ApiPersonasIdChatRoute
   ApiPersonasAvatarFilenameRoute: typeof ApiPersonasAvatarFilenameRoute
   ApiPoolsIdContributeRoute: typeof ApiPoolsIdContributeRoute
+  ApiPortalGameAssetsSplatRoute: typeof ApiPortalGameAssetsSplatRoute
   ApiProfileLinksIdVerifyRoute: typeof ApiProfileLinksIdVerifyRoute
   ApiQuestsIdClaimRoute: typeof ApiQuestsIdClaimRoute
   ApiRankedGameLeaderboardRoute: typeof ApiRankedGameLeaderboardRoute
@@ -23491,6 +23518,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGuidesIdPublishRouteImport
       parentRoute: typeof ApiGuidesIdRoute
     }
+    '/api/hl2-game/assets/$': {
+      id: '/api/hl2-game/assets/$'
+      path: '/api/hl2-game/assets/$'
+      fullPath: '/api/hl2-game/assets/$'
+      preLoaderRoute: typeof ApiHl2GameAssetsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/homes/listings/$id': {
       id: '/api/homes/listings/$id'
       path: '/$id'
@@ -23832,6 +23866,13 @@ declare module '@tanstack/react-router' {
       path: '/api/pools/$id/contribute'
       fullPath: '/api/pools/$id/contribute'
       preLoaderRoute: typeof ApiPoolsIdContributeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/portal-game/assets/$': {
+      id: '/api/portal-game/assets/$'
+      path: '/api/portal-game/assets/$'
+      fullPath: '/api/portal-game/assets/$'
+      preLoaderRoute: typeof ApiPortalGameAssetsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/predictions/$id/comments': {
@@ -28792,6 +28833,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGroupChatsIdMessagesRoute: ApiGroupChatsIdMessagesRouteWithChildren,
   ApiGroupChatsIdReactRoute: ApiGroupChatsIdReactRoute,
   ApiGroupChatsIdStreamRoute: ApiGroupChatsIdStreamRoute,
+  ApiHl2GameAssetsSplatRoute: ApiHl2GameAssetsSplatRoute,
   ApiInternalOpsDeployEventRoute: ApiInternalOpsDeployEventRoute,
   ApiInternalOpsPostDeployHealthRoute: ApiInternalOpsPostDeployHealthRoute,
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
@@ -28811,6 +28853,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPersonasIdChatRoute: ApiPersonasIdChatRoute,
   ApiPersonasAvatarFilenameRoute: ApiPersonasAvatarFilenameRoute,
   ApiPoolsIdContributeRoute: ApiPoolsIdContributeRoute,
+  ApiPortalGameAssetsSplatRoute: ApiPortalGameAssetsSplatRoute,
   ApiProfileLinksIdVerifyRoute: ApiProfileLinksIdVerifyRoute,
   ApiQuestsIdClaimRoute: ApiQuestsIdClaimRoute,
   ApiRankedGameLeaderboardRoute: ApiRankedGameLeaderboardRoute,
