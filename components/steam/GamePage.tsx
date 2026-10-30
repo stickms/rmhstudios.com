@@ -13,6 +13,7 @@ import { heroSource, isOffSite } from '@/lib/games/library';
 import type { GuideSummary, RatingAgg, ReviewView } from '@/lib/games/reviews';
 import type { TrickView } from '@/lib/trick-week/trick-week';
 import { SteamAchievements } from './SteamAchievements';
+import { SteamCards } from './SteamCards';
 import { SteamGuides } from './SteamGuides';
 import { SteamCommunity, SteamFriends } from './SteamPeople';
 import { SteamReviews } from './SteamReviews';
@@ -164,6 +165,7 @@ export function GamePage({ data }: { data: GamePageData }) {
 
       <nav className="stm-hubnav" aria-label={t('steam-hub-nav', { defaultValue: 'On this page' })}>
         {total > 0 ? <a href="#achievements">{t('steam-achievements', { defaultValue: 'Achievements' })}</a> : null}
+        {extras.cards ? <a href="#cards">{t('steam-trading-cards', { defaultValue: 'Trading Cards' })}</a> : null}
         {offSite ? null : <a href="#friends">{t('steam-friends-short', { defaultValue: 'Friends' })}</a>}
         {isGame ? <a href="#reviews">{t('reviews', { defaultValue: 'Reviews' })}</a> : null}
         {isGame ? <a href="#guides">{t('guides', { defaultValue: 'Player guides' })}</a> : null}
@@ -173,6 +175,9 @@ export function GamePage({ data }: { data: GamePageData }) {
       <div className="stm-hub-cols">
         <div className="stm-hub-main">
           {offSite ? null : <SteamAchievements items={extras.achievements} signedIn={data.signedIn} />}
+          {extras.cards ? (
+            <SteamCards gameId={data.gameId} title={data.title} hue={data.hue} cards={extras.cards} />
+          ) : null}
           {data.gameId === 'nightrail' ? (
             <div className="stm-legacy">
               <NightrailTrickBoard winner={data.trickOfTheWeek ?? null} signedIn={data.signedIn} />

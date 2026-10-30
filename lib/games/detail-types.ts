@@ -2,6 +2,7 @@
 
 import type { AchievementTier } from '@/lib/achievements/catalog';
 import type { PlayerView, PlaytimeActivity } from '@/lib/playtime/types';
+import type { TitleCards } from '@/lib/cards/types';
 
 export type DetailAchievement = {
   id: string;
@@ -29,4 +30,6 @@ export type LibraryExtras = {
   friends: PlayerView[];
   topPlayers: PlayerView[];
   communities: DetailCommunity[];
+  /** The viewer's trading cards for this title; null when signed out or untracked. */
+  cards: TitleCards | null;
 };

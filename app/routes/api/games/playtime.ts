@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { isTrackableTitle } from '@/lib/games/route-match';
 import { recordHeartbeat } from '@/lib/playtime/playtime.server';
+import { grantDueDrops } from '@/lib/cards/cards.server';
+import type { GrantedDrop } from '@/lib/cards/types';
 
 /**
  * POST /api/games/playtime — one playtime heartbeat for the title the caller has
@@ -31,7 +33,18 @@ export const Route = createFileRoute('/api/games/playtime')({
           if (!isTrackableTitle(body.gameId)) {
             return Response.json({ error: 'Unknown title' }, { status: 400 });
           }
-          return Response.json(await recordHeartbeat(userId, body.gameId));
+          const beat = await recordHeartbeat(userId, body.gameId);
+          // Trading-card drops ride on credited play. A failure here must never fail
+          // the heartbeat: the drop is granted again by the next beat.
+          let drops: GrantedDrop[] = [];
+          if (beat.credited > 0) {
+            try {
+              drops = await grantDueDrops(userId, body.gameId);
+            } catch (err) {
+              console.error('[cards] grantDueDrops failed:', err);
+            }
+          }
+          return Response.json({ ...beat, drops });
         },
       ),
     },

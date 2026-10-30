@@ -189,6 +189,38 @@ export function ProfilePage({ profile: p, signedIn }: { profile: SteamProfile; s
             </dl>
           </section>
 
+          <section className="stm-web-card" aria-labelledby="stm-pf-badges">
+            <h2 id="stm-pf-badges" className="stm-web-head">
+              {t('steam-badges', { defaultValue: 'Badges' })}
+              <span className="stm-count">{p.badges.length}</span>
+            </h2>
+            {p.badges.length === 0 ? (
+              <p className="stm-muted stm-web-pad">
+                {t('steam-no-badges', { defaultValue: 'No badges crafted yet.' })}
+              </p>
+            ) : (
+              <ul className="stm-people">
+                {p.badges.map((b) => (
+                  <li key={`${b.id}-${b.foil}`}>
+                    <Link to="/games/$gameId" params={{ gameId: b.id }} className="stm-person">
+                      <span className="stm-badge-chip" data-foil={b.foil ? 'true' : undefined} aria-hidden>
+                        {b.level}
+                      </span>
+                      <span className="stm-person-body">
+                        <span className="stm-person-name">{b.title}</span>
+                        <span className="stm-person-sub">
+                          {b.foil
+                            ? t('steam-badge-foil', { defaultValue: 'Foil badge' })
+                            : t('steam-badge-level-n', { defaultValue: 'Level {{n}}', n: b.level })}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
           <section className="stm-web-card" aria-labelledby="stm-pf-groups">
             <h2 id="stm-pf-groups" className="stm-web-head">
               {t('steam-groups', { defaultValue: 'Groups' })}

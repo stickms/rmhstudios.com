@@ -9,6 +9,7 @@ import { ACHIEVEMENTS } from '@/lib/achievements/catalog';
 import { listAchievements } from '@/lib/achievements.server';
 import { achievementsForTitle } from '@/lib/games/achievement-groups';
 import type { DetailAchievement, DetailCommunity, LibraryExtras } from '@/lib/games/detail-types';
+import { getTitleCards } from '@/lib/cards/cards.server';
 import { getActivity, listFriendsWhoPlay, listTopPlayers } from '@/lib/playtime/playtime.server';
 
 async function titleAchievements(
@@ -58,12 +59,13 @@ export async function getLibraryExtras(
   viewerId: string | null,
   gameId: string,
 ): Promise<LibraryExtras> {
-  const [activity, achievements, friends, topPlayers, communities] = await Promise.all([
+  const [activity, achievements, friends, topPlayers, communities, cards] = await Promise.all([
     viewerId ? getActivity(viewerId, gameId) : Promise.resolve(null),
     titleAchievements(viewerId, gameId),
     listFriendsWhoPlay(viewerId, gameId),
     listTopPlayers(viewerId, gameId),
     titleCommunities(gameId),
+    viewerId ? getTitleCards(viewerId, gameId) : Promise.resolve(null),
   ]);
-  return { activity, achievements, friends, topPlayers, communities };
+  return { activity, achievements, friends, topPlayers, communities, cards };
 }

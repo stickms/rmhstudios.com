@@ -15,6 +15,12 @@ export function CommunityNav() {
       >
         {t('steam-community-home', { defaultValue: 'Community Home' })}
       </Link>
+      <Link
+        to="/games/inventory"
+        aria-current={pathname === '/games/inventory' ? 'page' : undefined}
+      >
+        {t('steam-inventory', { defaultValue: 'Inventory' })}
+      </Link>
       <Link to="/communities">{t('steam-all-groups', { defaultValue: 'All groups' })}</Link>
     </nav>
   );

@@ -18,6 +18,7 @@ import type {
   GroupRef,
   PersonRef,
   ProfileAchievement,
+  ProfileBadge,
   ProfileGame,
   RecentReview,
   SteamGroup,
@@ -150,7 +151,7 @@ export async function getSteamProfile(
   const since = new Date(Date.now() - TWO_WEEKS_MS);
   const titles = titleIndex();
 
-  const [owner, achievementRows, memberships, follows, reviewCount] = await Promise.all([
+  const [owner, achievementRows, memberships, follows, reviewCount, badgeRows] = await Promise.all([
     prisma.user.findUnique({
       where: { id: ownerId },
       select: { playtimePrivacy: true, profile: { select: { xp: true } } },
@@ -173,6 +174,12 @@ export async function getSteamProfile(
       select: { following: { select: userDisplaySelect } },
     }),
     prisma.gameReview.count({ where: { userId: ownerId } }),
+    prisma.gameBadge.findMany({
+      where: { userId: ownerId },
+      orderBy: { craftedAt: 'desc' },
+      take: 12,
+      select: { gameId: true, foil: true, level: true },
+    }),
   ]);
 
   const setting = isPlaytimePrivacy(owner?.playtimePrivacy) ? owner.playtimePrivacy : 'private';
@@ -251,6 +258,10 @@ export async function getSteamProfile(
     games,
     friends: follows.map((f) => personRef(f.following as DisplayUser)),
     groups: memberships.map((m) => groupRef(m.community)),
+    badges: badgeRows.flatMap((b): ProfileBadge[] => {
+      const title = titles.get(b.gameId);
+      return title ? [{ ...title, level: b.level, foil: b.foil }] : [];
+    }),
     reviewCount,
   };
 }
