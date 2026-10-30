@@ -975,6 +975,10 @@ import { Route as ApiGamesIdReviewRouteImport } from './routes/api/games/$id.rev
 import { Route as ApiGamesIdReviewsRouteImport } from './routes/api/games/$id.reviews'
 import { Route as ApiGamesIdScoreRouteImport } from './routes/api/games/$id/score'
 import { Route as ApiGamesCardsCraftRouteImport } from './routes/api/games/cards/craft'
+import { Route as ApiGamesCollectionsDeleteRouteImport } from './routes/api/games/collections/delete'
+import { Route as ApiGamesCollectionsImportRouteImport } from './routes/api/games/collections/import'
+import { Route as ApiGamesCollectionsItemRouteImport } from './routes/api/games/collections/item'
+import { Route as ApiGamesCollectionsRenameRouteImport } from './routes/api/games/collections/rename'
 import { Route as ApiGamesHubDeleteRouteImport } from './routes/api/games/hub/delete'
 import { Route as ApiGamesHubModerateRouteImport } from './routes/api/games/hub/moderate'
 import { Route as ApiGamesHubPostRouteImport } from './routes/api/games/hub/post'
@@ -6291,6 +6295,29 @@ const ApiGamesCardsCraftRoute = ApiGamesCardsCraftRouteImport.update({
   path: '/api/games/cards/craft',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGamesCollectionsDeleteRoute =
+  ApiGamesCollectionsDeleteRouteImport.update({
+    id: '/api/games/collections/delete',
+    path: '/api/games/collections/delete',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiGamesCollectionsImportRoute =
+  ApiGamesCollectionsImportRouteImport.update({
+    id: '/api/games/collections/import',
+    path: '/api/games/collections/import',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiGamesCollectionsItemRoute = ApiGamesCollectionsItemRouteImport.update({
+  id: '/api/games/collections/item',
+  path: '/api/games/collections/item',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesCollectionsRenameRoute =
+  ApiGamesCollectionsRenameRouteImport.update({
+    id: '/api/games/collections/rename',
+    path: '/api/games/collections/rename',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiGamesHubDeleteRoute = ApiGamesHubDeleteRouteImport.update({
   id: '/api/games/hub/delete',
   path: '/api/games/hub/delete',
@@ -9299,6 +9326,10 @@ export interface FileRoutesByFullPath {
   '/api/games/$id/reviews': typeof ApiGamesIdReviewsRoute
   '/api/games/$id/score': typeof ApiGamesIdScoreRoute
   '/api/games/cards/craft': typeof ApiGamesCardsCraftRoute
+  '/api/games/collections/delete': typeof ApiGamesCollectionsDeleteRoute
+  '/api/games/collections/import': typeof ApiGamesCollectionsImportRoute
+  '/api/games/collections/item': typeof ApiGamesCollectionsItemRoute
+  '/api/games/collections/rename': typeof ApiGamesCollectionsRenameRoute
   '/api/games/hub/delete': typeof ApiGamesHubDeleteRoute
   '/api/games/hub/moderate': typeof ApiGamesHubModerateRoute
   '/api/games/hub/post': typeof ApiGamesHubPostRoute
@@ -10623,6 +10654,10 @@ export interface FileRoutesByTo {
   '/api/games/$id/reviews': typeof ApiGamesIdReviewsRoute
   '/api/games/$id/score': typeof ApiGamesIdScoreRoute
   '/api/games/cards/craft': typeof ApiGamesCardsCraftRoute
+  '/api/games/collections/delete': typeof ApiGamesCollectionsDeleteRoute
+  '/api/games/collections/import': typeof ApiGamesCollectionsImportRoute
+  '/api/games/collections/item': typeof ApiGamesCollectionsItemRoute
+  '/api/games/collections/rename': typeof ApiGamesCollectionsRenameRoute
   '/api/games/hub/delete': typeof ApiGamesHubDeleteRoute
   '/api/games/hub/moderate': typeof ApiGamesHubModerateRoute
   '/api/games/hub/post': typeof ApiGamesHubPostRoute
@@ -11978,6 +12013,10 @@ export interface FileRoutesById {
   '/api/games/$id/reviews': typeof ApiGamesIdReviewsRoute
   '/api/games/$id/score': typeof ApiGamesIdScoreRoute
   '/api/games/cards/craft': typeof ApiGamesCardsCraftRoute
+  '/api/games/collections/delete': typeof ApiGamesCollectionsDeleteRoute
+  '/api/games/collections/import': typeof ApiGamesCollectionsImportRoute
+  '/api/games/collections/item': typeof ApiGamesCollectionsItemRoute
+  '/api/games/collections/rename': typeof ApiGamesCollectionsRenameRoute
   '/api/games/hub/delete': typeof ApiGamesHubDeleteRoute
   '/api/games/hub/moderate': typeof ApiGamesHubModerateRoute
   '/api/games/hub/post': typeof ApiGamesHubPostRoute
@@ -13332,6 +13371,10 @@ export interface FileRouteTypes {
     | '/api/games/$id/reviews'
     | '/api/games/$id/score'
     | '/api/games/cards/craft'
+    | '/api/games/collections/delete'
+    | '/api/games/collections/import'
+    | '/api/games/collections/item'
+    | '/api/games/collections/rename'
     | '/api/games/hub/delete'
     | '/api/games/hub/moderate'
     | '/api/games/hub/post'
@@ -14656,6 +14699,10 @@ export interface FileRouteTypes {
     | '/api/games/$id/reviews'
     | '/api/games/$id/score'
     | '/api/games/cards/craft'
+    | '/api/games/collections/delete'
+    | '/api/games/collections/import'
+    | '/api/games/collections/item'
+    | '/api/games/collections/rename'
     | '/api/games/hub/delete'
     | '/api/games/hub/moderate'
     | '/api/games/hub/post'
@@ -16010,6 +16057,10 @@ export interface FileRouteTypes {
     | '/api/games/$id/reviews'
     | '/api/games/$id/score'
     | '/api/games/cards/craft'
+    | '/api/games/collections/delete'
+    | '/api/games/collections/import'
+    | '/api/games/collections/item'
+    | '/api/games/collections/rename'
     | '/api/games/hub/delete'
     | '/api/games/hub/moderate'
     | '/api/games/hub/post'
@@ -17044,6 +17095,10 @@ export interface RootRouteChildren {
   ApiGamesIdReviewsRoute: typeof ApiGamesIdReviewsRoute
   ApiGamesIdScoreRoute: typeof ApiGamesIdScoreRoute
   ApiGamesCardsCraftRoute: typeof ApiGamesCardsCraftRoute
+  ApiGamesCollectionsDeleteRoute: typeof ApiGamesCollectionsDeleteRoute
+  ApiGamesCollectionsImportRoute: typeof ApiGamesCollectionsImportRoute
+  ApiGamesCollectionsItemRoute: typeof ApiGamesCollectionsItemRoute
+  ApiGamesCollectionsRenameRoute: typeof ApiGamesCollectionsRenameRoute
   ApiGamesHubDeleteRoute: typeof ApiGamesHubDeleteRoute
   ApiGamesHubModerateRoute: typeof ApiGamesHubModerateRoute
   ApiGamesHubPostRoute: typeof ApiGamesHubPostRoute
@@ -24030,6 +24085,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGamesCardsCraftRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/games/collections/delete': {
+      id: '/api/games/collections/delete'
+      path: '/api/games/collections/delete'
+      fullPath: '/api/games/collections/delete'
+      preLoaderRoute: typeof ApiGamesCollectionsDeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/collections/import': {
+      id: '/api/games/collections/import'
+      path: '/api/games/collections/import'
+      fullPath: '/api/games/collections/import'
+      preLoaderRoute: typeof ApiGamesCollectionsImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/collections/item': {
+      id: '/api/games/collections/item'
+      path: '/api/games/collections/item'
+      fullPath: '/api/games/collections/item'
+      preLoaderRoute: typeof ApiGamesCollectionsItemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/collections/rename': {
+      id: '/api/games/collections/rename'
+      path: '/api/games/collections/rename'
+      fullPath: '/api/games/collections/rename'
+      preLoaderRoute: typeof ApiGamesCollectionsRenameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/games/hub/delete': {
       id: '/api/games/hub/delete'
       path: '/api/games/hub/delete'
@@ -29638,6 +29721,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesIdReviewsRoute: ApiGamesIdReviewsRoute,
   ApiGamesIdScoreRoute: ApiGamesIdScoreRoute,
   ApiGamesCardsCraftRoute: ApiGamesCardsCraftRoute,
+  ApiGamesCollectionsDeleteRoute: ApiGamesCollectionsDeleteRoute,
+  ApiGamesCollectionsImportRoute: ApiGamesCollectionsImportRoute,
+  ApiGamesCollectionsItemRoute: ApiGamesCollectionsItemRoute,
+  ApiGamesCollectionsRenameRoute: ApiGamesCollectionsRenameRoute,
   ApiGamesHubDeleteRoute: ApiGamesHubDeleteRoute,
   ApiGamesHubModerateRoute: ApiGamesHubModerateRoute,
   ApiGamesHubPostRoute: ApiGamesHubPostRoute,

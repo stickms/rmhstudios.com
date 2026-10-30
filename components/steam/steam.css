@@ -2023,3 +2023,55 @@ button.stm-star {
 .stm-cm-sell .stm-sell-open {
   width: 100%;
 }
+
+/* Collections menu on the game page */
+.stm-collmenu {
+  position: relative;
+}
+.stm-collmenu > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  cursor: pointer;
+}
+.stm-collmenu > summary::-webkit-details-marker {
+  display: none;
+}
+.stm-collmenu-panel {
+  position: absolute;
+  z-index: 20;
+  inset-block-start: calc(100% + 4px);
+  inset-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 260px;
+  max-width: calc(100vw - 32px);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--stm-hover);
+  border-radius: var(--stm-radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.stm-collmenu-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 4px;
+  color: var(--stm-text);
+  overflow-wrap: anywhere;
+}
+.stm-collmenu-new {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-collmenu-new .stm-input {
+  min-width: 0;
+  flex: 1;
+}

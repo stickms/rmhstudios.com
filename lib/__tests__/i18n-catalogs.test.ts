@@ -256,6 +256,13 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // Games library detail pane + playtime notice (2026-10-30). English-only until the
   // translate pipeline runs on build; remove with it.
   'games-hub': [
+    // Library collections (2026-10-30)
+    'steam-collections-add',
+    'steam-collections-create',
+    'steam-collections-err',
+    'steam-collections-err-many',
+    'steam-collections-err-name',
+    'steam-collections-new',
     // Market depth: card page, price history, buy orders (2026-10-30)
     'steam-chart-empty',
     'steam-chart-label',

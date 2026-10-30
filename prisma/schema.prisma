@@ -604,7 +604,7 @@ model User {
   /// Who may see this user's per-title playtime: 'public' (any signed-in viewer)
   /// | 'followers' (people who follow this user) | 'private' (only them).
   /// Enforced server-side in lib/playtime, never by a client.
-  playtimePrivacy           String            @default("public") @db.VarChar(10)
+  playtimePrivacy           String               @default("public") @db.VarChar(10)
   /// Set when the one-time "your playtime is visible" notice is dismissed.
   playtimeNoticeDismissedAt DateTime?
   gamePlaytime              GamePlaytime[]
@@ -612,11 +612,12 @@ model User {
   userCards                 UserCard[]
   cardDrops                 CardDrop[]
   gameBadges                GameBadge[]
-  cardListingsSold          CardListing[]     @relation("CardSeller")
-  cardListingsBought        CardListing[]     @relation("CardBuyer")
+  cardListingsSold          CardListing[]        @relation("CardSeller")
+  cardListingsBought        CardListing[]        @relation("CardBuyer")
   cardBuyOrders             CardBuyOrder[]
-  cardTradesSent            CardTrade[]       @relation("CardTradeFrom")
-  cardTradesReceived        CardTrade[]       @relation("CardTradeTo")
+  gameCollectionItems       GameCollectionItem[]
+  cardTradesSent            CardTrade[]          @relation("CardTradeFrom")
+  cardTradesReceived        CardTrade[]          @relation("CardTradeTo")
   gameThreads               GameThread[]
   gameThreadPosts           GameThreadPost[]
 
@@ -5968,6 +5969,20 @@ model CardListing {
   @@index([status, gameId, cardIndex, foil, priceCoins])
   @@index([sellerId, status])
   @@map("card_listing")
+}
+
+// A title in one of the member's game library collections ("favorites" is the reserved
+// built-in one). A collection exists while it holds at least one title.
+model GameCollectionItem {
+  userId     String
+  collection String   @db.VarChar(40)
+  gameId     String   @db.VarChar(64)
+  addedAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, collection, gameId])
+  @@map("game_collection_item")
 }
 
 enum BuyOrderStatus {
