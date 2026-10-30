@@ -43,5 +43,5 @@ describe.skipIf(w.skip || !on)(w.title(`soak: ${ANTES} antes 1v1 (1 browser + 1 
     process.stdout.write(`# soak: ${antes} antes in ${mins.toFixed(1)} min wall\n`);
     expect(p.errors.filter((e) => /dropped|CRASH|frame hook failed|mailbox failed|\[lua:error\]/.test(e))).toEqual([]);
     await p.cmd('forfeit').catch(() => {});
-  });
+  }, ANTES * 360_000);
 });
