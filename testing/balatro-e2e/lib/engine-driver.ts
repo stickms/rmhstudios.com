@@ -13,7 +13,24 @@ import { chromium, type Browser, type BrowserContext, type Page } from 'playwrig
 import { buildHarness } from './build-harness';
 import { chromiumLaunchOptions } from './chromium';
 import { zSpecSummary, type SpecResult, type SpecSummary } from './channel';
-import { startStaticServer, type StaticServer } from './static-server';
+import { REPO_ROOT, startStaticServer, type StaticServer } from './static-server';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+/**
+ * The harness query that MP specs need: `mp=1` (extract the MP pack) whenever the pack
+ * manifest lists one, else none. Specs that need the pack skip themselves without it.
+ */
+export function defaultEngineQuery(): string {
+  try {
+    const manifest = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'lib/balatro/game-pack.json'), 'utf8'),
+    ) as { mp?: { file?: string } };
+    return manifest.mp?.file ? 'mp=1' : '';
+  } catch {
+    return '';
+  }
+}
 
 /** Software-rendered boot on a CI runner: download + unpack + engine start. */
 export const BOOT_TIMEOUT_MS = Number(process.env.BALATRO_E2E_BOOT_TIMEOUT_MS ?? 240_000);

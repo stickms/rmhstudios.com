@@ -187,7 +187,7 @@ local function run_one(t)
 end
 
 --- files: array of { name = 'x_spec', source = '...' }
--- opts: { filter = 'text', env = {...}, on_result = fn(result), clock = fn }
+-- opts: { filter = 'text', env = {...}, on_result = fn(result), clock = fn, before_file = fn(file) }
 function runner.run(files, opts)
   opts = opts or {}
   local clock = opts.clock or sched.clock
@@ -202,7 +202,13 @@ function runner.run(files, opts)
     else summary.failed = summary.failed + 1 end
     if opts.on_result then opts.on_result(r) end
   end
-  for _, file in ipairs(files) do
+  for i, file in ipairs(files) do
+    -- Each file starts from the same place (the harness passes "back to the main menu"), so a
+    -- spec that leaves a run up (for a screenshot) cannot break the files after it.
+    if opts.before_file and i > 1 then
+      local ok, err = pcall(opts.before_file, file)
+      if not ok then push({ name = file.name .. ' (reset)', ok = false, msg = err_text(err), ms = 0 }) end
+    end
     local tests, err = runner.collect(file.name, file.source, env)
     if not tests then
       push({ name = file.name .. ' (load)', ok = false, msg = err, ms = 0 })

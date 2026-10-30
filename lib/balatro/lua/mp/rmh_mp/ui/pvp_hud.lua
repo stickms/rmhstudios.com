@@ -16,6 +16,8 @@
 --   PH.patch(def)        pure surgery on the create_UIBox_HUD_blind definition
 --   PH.chip()            -> { atlas, pos, colour, blind_key } wanted for the current PvP blind, or nil
 --   PH.frame(view)       per-frame sprite/colour upkeep (called by ui/hud.lua)
+-- Also wraps ease_background_colour_blind so the PvP blind's background uses its boss colour
+-- instead of crashing on MP blinds' missing `boss` table.
 
 local MP = require 'rmh_mp.state'
 local tree = require 'rmh_mp.util.tree'
@@ -126,6 +128,21 @@ function PH.install()
       end
     end
   end
+  -- The background behind the PvP blind takes its boss colour (#AC3232 for bl_mp_nemesis). Vanilla
+  -- reads v.boss.showdown for every P_BLINDS entry whose name matches the blind, and MP blinds carry
+  -- no `boss` table (they must never enter a boss roll), so lend them an empty one for the call.
+  MP.hooks.wrap(_G, 'ease_background_colour_blind', function(orig, ...)
+    local lent = {}
+    for k, v in pairs(G.P_BLINDS or {}) do
+      if v.boss == nil and type(k) == 'string' and k:sub(1, 6) == 'bl_mp_' then
+        v.boss = {}
+        lent[#lent + 1] = v
+      end
+    end
+    local ok, err = pcall(orig, ...)
+    for _, v in ipairs(lent) do v.boss = nil end
+    if not ok then error(err, 0) end
+  end, { group = 'session', optional = true, id = 'ui.pvp_background' })
   MP.hooks.wrap(_G, 'create_UIBox_HUD_blind', function(orig, ...)
     local def = orig(...)
     local ok, err = pcall(PH.patch, def)

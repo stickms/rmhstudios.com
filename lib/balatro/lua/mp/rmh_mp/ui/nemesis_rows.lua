@@ -104,14 +104,17 @@ function NR.create()
   local layout = NR.layout()
   local jw, jh = G.jokers.T.w, G.jokers.T.h
   local cw, ch = G.consumeables.T.w, G.consumeables.T.h
-  local cfg = function(limit) return { card_limit = limit, type = 'joker', highlight_limit = 0 } end
+  -- 'title' areas draw no backdrop and no "n/limit" count (display rows, not slots).
+  local cfg = function(limit) return { card_limit = limit, type = 'title', highlight_limit = 0 } end
+  local jl = (G.jokers.config and G.jokers.config.card_limit) or 5
+  local cl = (G.consumeables.config and G.consumeables.config.card_limit) or 2
   local a = { layout = layout }
   if layout == 'classic' then
-    a.jokers = CardArea(0, 0, cw / 2, ch, cfg(NR.MAX))
+    a.jokers = CardArea(0, 0, cw / 2, ch, cfg(cl))
     a.traps = a.jokers
   else
-    a.jokers = CardArea(0, 0, jw, jh, cfg(NR.MAX))
-    a.traps = CardArea(0, 0, cw, ch, cfg(NR.MAX))
+    a.jokers = CardArea(0, 0, jw, jh, cfg(jl))
+    a.traps = CardArea(0, 0, cw, ch, cfg(cl))
   end
   a.jokers.mp_nemesis_row = true
   a.traps.mp_nemesis_row = true
