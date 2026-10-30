@@ -491,6 +491,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/games/$gameId/guides/$guideId': 'content',
   '/games/profile/$id': null, // a second, noindex view of /u/$userid
   '/games/hub/$gameId': null, // per-title discussions; the game page and guides stay the indexed ones
+  '/games/market/$gameId/$cardIndex': null, // per-card market page; noindex
   '/games/hub/$gameId/t/$threadId': null, // user-generated discussions; noindex
   '/games/trades/new/$id': null, // a signed-in composer
   '/games/groups/$slug': null, // a second, noindex view of /c/$slug

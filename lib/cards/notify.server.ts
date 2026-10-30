@@ -74,3 +74,20 @@ export async function notifyHubReply(w: {
     dedupeUnread: true,
   });
 }
+
+export async function notifyBuyOrderFilled(w: {
+  buyerId: string;
+  listingId: string;
+  gameId: string;
+  cardIndex: number;
+  price: number;
+}) {
+  await createNotification({
+    type: 'SYSTEM',
+    userId: w.buyerId,
+    entityType: 'card-order',
+    entityId: w.listingId,
+    preview: `Your buy order for ${cardName(w.gameId, w.cardIndex)} filled for ${w.price} coins`,
+    link: '/games/inventory',
+  });
+}

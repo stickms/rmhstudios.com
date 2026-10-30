@@ -1970,3 +1970,56 @@ button.stm-star {
   letter-spacing: 0;
   line-height: 1;
 }
+
+/* Card market page */
+.stm-cardhead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 28px;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+.stm-cardhead .stm-web-title {
+  margin-bottom: 4px;
+}
+.stm-cardhead > div {
+  min-width: 220px;
+  flex: 1;
+}
+.stm-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 8px 14px;
+}
+.stm-chart-axis {
+  fill: var(--stm-muted);
+  font-size: 11px;
+}
+.stm-cm-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 767px) {
+  .stm-cm-cols {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+.stm-order-mine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-cm-sell {
+  max-width: 200px;
+}
+.stm-cm-sell .stm-sell,
+.stm-cm-sell .stm-sell-open {
+  width: 100%;
+}

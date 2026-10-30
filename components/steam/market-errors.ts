@@ -22,6 +22,10 @@ export function marketErrorText(code: string | undefined, t: TFunction): string 
       return t('steam-market-err-new', { defaultValue: 'Your account must be 7 days old before you can sell.' });
     case 'LEVEL_TOO_LOW':
       return t('steam-market-err-level', { defaultValue: 'You must be level 3 or higher to sell.' });
+    case 'TOO_MANY_ORDERS':
+      return t('steam-market-err-orders', { defaultValue: 'You have too many open buy orders.' });
+    case 'ALREADY_ORDERED':
+      return t('steam-market-err-ordered', { defaultValue: 'You already have a buy order for this card.' });
     default:
       return t('steam-market-err', { defaultValue: 'Something went wrong. Try again.' });
   }

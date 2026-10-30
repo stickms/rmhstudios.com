@@ -143,6 +143,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of a Steam-style profile.',
   },
+  '/games/market/$gameId/$cardIndex': {
+    path: '/games/market/isleworks/0',
+    fidelity: 'content',
+    why: 'A catalog id and a real card index, so the card page renders its empty market.',
+  },
   '/games/hub/$gameId/': {
     path: '/games/hub/isleworks',
     fidelity: 'content',

@@ -614,6 +614,7 @@ model User {
   gameBadges                GameBadge[]
   cardListingsSold          CardListing[]     @relation("CardSeller")
   cardListingsBought        CardListing[]     @relation("CardBuyer")
+  cardBuyOrders             CardBuyOrder[]
   cardTradesSent            CardTrade[]       @relation("CardTradeFrom")
   cardTradesReceived        CardTrade[]       @relation("CardTradeTo")
   gameThreads               GameThread[]
@@ -5967,6 +5968,34 @@ model CardListing {
   @@index([status, gameId, cardIndex, foil, priceCoins])
   @@index([sellerId, status])
   @@map("card_listing")
+}
+
+enum BuyOrderStatus {
+  OPEN
+  FILLED
+  CANCELED
+}
+
+// A standing instruction to buy one card for up to `priceCoins`. Custody-free: no
+// coins are held; the balance is checked when it fills, and a fill is the same
+// transaction as a purchase (docs/superpowers/specs/2026-10-30-market-depth-design.md).
+model CardBuyOrder {
+  id              String         @id @default(cuid())
+  buyerId         String
+  gameId          String         @db.VarChar(64)
+  cardIndex       Int            @db.SmallInt
+  foil            Boolean        @default(false)
+  priceCoins      Int
+  status          BuyOrderStatus @default(OPEN)
+  createdAt       DateTime       @default(now())
+  closedAt        DateTime?
+  filledListingId String?
+
+  buyer User @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([gameId, cardIndex, foil, status, priceCoins(sort: Desc)])
+  @@index([buyerId, status])
+  @@map("card_buy_order")
 }
 
 enum CardTradeStatus {

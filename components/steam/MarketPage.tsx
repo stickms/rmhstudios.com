@@ -134,10 +134,15 @@ export function MarketPage({ data }: { data: MarketData }) {
                   <li key={id} className="stm-market-row">
                     <CardArt gameId={g.gameId} title={g.title} hue={g.hue} cardIndex={g.cardIndex} foil={g.foil} width={56} />
                     <span className="stm-person-body">
-                      <span className="stm-person-name">
+                      <Link
+                        to="/games/market/$gameId/$cardIndex"
+                        params={{ gameId: g.gameId, cardIndex: String(g.cardIndex) }}
+                        search={g.foil ? { foil: true } : {}}
+                        className="stm-person-name stm-link"
+                      >
                         {cardName(g.gameId, g.cardIndex)}
                         {g.foil ? ` (${t('steam-market-foil', { defaultValue: 'foil' })})` : ''}
-                      </span>
+                      </Link>
                       <span className="stm-person-sub">
                         {g.title} · {t('steam-market-qty', { defaultValue: 'For sale: {{n}}', n: g.count })}
                       </span>

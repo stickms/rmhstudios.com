@@ -81,4 +81,12 @@ describe('anonymizeAccount', () => {
     expect(post?.args).toEqual({ where: { authorId: 'user-1' } });
     expect(thread?.args).toEqual({ where: { authorId: 'user-1' } });
   });
+
+  it('removes open buy orders (no coins were held, so nothing to refund)', async () => {
+    (prismaMock.$transaction as ReturnType<typeof vi.fn>).mockClear();
+    await anonymizeAccount('user-1');
+    const tx = (prismaMock.$transaction as ReturnType<typeof vi.fn>).mock.calls[0][0] as Op[];
+    const op = tx.find((o) => o.model === 'cardBuyOrder' && o.method === 'deleteMany');
+    expect(op?.args).toEqual({ where: { buyerId: 'user-1', status: 'OPEN' } });
+  });
 });
