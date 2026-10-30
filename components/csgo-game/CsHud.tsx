@@ -8,6 +8,7 @@
  *   - top centre: the score (T – CT), the round clock or the bomb's countdown, the phase;
  *   - top right: the kill feed;
  *   - centre: the round's result, planting / defusing progress, deathmatch respawn;
+ *   - a crosshair at the centre (no weapon is drawn in view yet: render.ts CS_DRAW_VIEWMODEL);
  *   - a white-out while flashed; the scoreboard while Tab is held.
  *
  * Weapon names are the published short names (`ak47`); no game artwork is drawn here.
@@ -19,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import type { HudCs, HudState } from '@/lib/tf2-game/client/hud-state';
 import type { HudStore } from '@/lib/tf2-game/client/hud-store';
 import { BUY_GROUPS, buyCatalog, type BuyGroupId } from '@/lib/csgo-game/client/buy-catalog';
+import { csWeapon, hasCsWeaponData } from '@/lib/csgo-game/data/weapon-data';
 import { CS_TEAM_CT, CS_TEAM_T, CS_WIN_BOMB_DEFUSED, CS_WIN_TARGET_BOMBED, CS_WIN_TARGET_SAVED } from '@/lib/csgo-game/constants';
 import './cs-hud.css';
 
@@ -76,6 +78,7 @@ export default function CsHud({ state, store }: { state: HudState; store: HudSto
 
   return (
     <div className="csg-hud" data-team={local?.team ?? 0}>
+      {alive && !scores && !buyOpen ? <span className="csg-crosshair" aria-hidden /> : null}
       {cs.flash > 0 ? <div className="csg-flash" style={{ opacity: cs.flash }} aria-hidden /> : null}
 
       <div className="csg-top">
@@ -104,7 +107,7 @@ export default function CsHud({ state, store }: { state: HudState; store: HudSto
         {state.killfeed.slice(-5).map((k) => (
           <li key={k.id} data-local={k.involvesLocal || undefined}>
             {k.attacker ? <span data-team={teamKey(k.attacker.team)}>{k.attacker.name}</span> : null}
-            <span className="csg-feed-weapon">{k.weaponName || k.icon}</span>
+            <span className="csg-feed-weapon">{killWeapon(k.icon)}</span>
             {k.customKill === 1 ? <span className="csg-feed-weapon">{t('cs_headshot', { defaultValue: 'headshot' })}</span> : null}
             <span data-team={teamKey(k.victim.team)}>{k.victim.name}</span>
           </li>
@@ -153,6 +156,12 @@ export default function CsHud({ state, store }: { state: HudState; store: HudSto
       {scores ? <Scoreboard state={state} /> : null}
     </div>
   );
+}
+
+/** The kill feed's weapon: the event's CS weapon name (`weapon_ak47` → `ak47`), not TF2's item names. */
+function killWeapon(name: string): string {
+  const info = hasCsWeaponData() ? (csWeapon(name) ?? csWeapon(`weapon_${name}`)) : null;
+  return info?.short ?? name.replace(/^weapon_/, '');
 }
 
 const teamKey = (team: number): string => (team === CS_TEAM_T ? 't' : team === CS_TEAM_CT ? 'ct' : 'none');

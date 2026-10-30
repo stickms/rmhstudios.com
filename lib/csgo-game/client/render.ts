@@ -301,6 +301,15 @@ export function csEntityFactory(s: EntityState, fx: EffectSystem): EntityRendera
 
 // ─── View model ──────────────────────────────────────────────────────────────
 
+/**
+ * Off for now: the published CS:GO view models carry their sequences, but in a real browser the
+ * converted animation does not pose them (the weapon sits in its bind pose across the view), and
+ * models.py's CS:GO animation data is the part docs/tf2-game.md lists as verifiable only on the real
+ * install. Until it is, the game plays as with CS:GO's `cl_drawviewmodel 0`: the HUD's crosshair, no
+ * weapon in view.
+ */
+export const CS_DRAW_VIEWMODEL = false;
+
 /** How far (units) and how fast the weapon bobs and sways with movement and turning. */
 const BOB_AMOUNT = 0.6;
 const BOB_RATE = 9;
@@ -341,7 +350,7 @@ export class CsViewModel implements ProfileViewModel {
     void me;
     const w = p?.activeWeapon() as CsWeapon | null;
     const info = w ? csWeaponByDefindex(w.defindex) : null;
-    this.visible = !!p && !!info && frame.visible;
+    this.visible = CS_DRAW_VIEWMODEL && !!p && !!info && frame.visible;
     if (!this.visible || !info) {
       this.model.hide();
       return;

@@ -12,6 +12,7 @@
   --csg-ink-dim: rgb(200 198 190);
   --csg-panel: rgb(12 14 18 / 0.55);
   --csg-low: rgb(232 96 80);
+  --csg-cross: rgb(120 230 140);
   position: absolute;
   inset: 0;
   z-index: 20;
@@ -23,6 +24,22 @@
 
 .csg-hud :is(button, .csg-buy, .csg-scores) {
   pointer-events: auto;
+}
+
+/* A plain cross with a gap at the centre of the view, legible on light and dark ground. */
+.csg-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  translate: -50% -50%;
+  background:
+    linear-gradient(var(--csg-cross), var(--csg-cross)) center top / 2px 8px no-repeat,
+    linear-gradient(var(--csg-cross), var(--csg-cross)) center bottom / 2px 8px no-repeat,
+    linear-gradient(var(--csg-cross), var(--csg-cross)) left center / 8px 2px no-repeat,
+    linear-gradient(var(--csg-cross), var(--csg-cross)) right center / 8px 2px no-repeat;
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.9));
 }
 
 .csg-flash {
