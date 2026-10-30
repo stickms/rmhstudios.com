@@ -266,7 +266,6 @@ what each one gates:
 | `go-microservices.yml`   | Go fleet: `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`. (The Postgres-backed e2e + `helm lint` jobs were removed with the Go realtime/Helm topology — design §5.2.) |
 | `senior-review.yml`      | LLM review gate on PRs (Claude Opus over the diff; fails on a FAIL verdict; short-circuits green for non-owner authors)                                                                                        |
 | `synthetic-perf.yml`     | Lighthouse runs against the deployed site, scored by `scripts/ci/synthetic-perf-report.mjs`                                                                                                                     |
-| `i18n-translate.yml`     | Machine-translates new `en` keys into the other 15 locales                                                                                                                                                     |
 | `build-vibe-packages.yml`, `compose-validate.yml`, `prisma-validate.yml`, `prisma-migrate-status.yml` | Build/deploy guards — the vibe package bundle, `docker compose config`, `prisma validate`, and migration drift                                              |
 
 Dependabot (`.github/dependabot.yml`) covers npm (root), gomod (`go-services/`),
