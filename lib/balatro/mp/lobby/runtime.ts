@@ -62,6 +62,13 @@ export class MpRuntime {
   role: Role | null = null;
   client: MatchClient | null = null;
   practice: Practice | null = null;
+  /**
+   * Extension hooks (queue/attach.ts). `practiceGuard` returns a lobby_error
+   * code that refuses Practice (PR-05: never while searching); `joinHook`
+   * may take over a `ui_join` (true = handled; MM-06 party reclaim).
+   */
+  practiceGuard: (() => string | null) | null = null;
+  joinHook: ((code: string) => boolean) | null = null;
   settings: MpSettings;
   readonly chat: Chat;
   readonly lang: string;
@@ -216,12 +223,16 @@ export class MpRuntime {
     return false;
   }
 
-  createLobby(queueMode: LobbyState['queueMode'], kind: LobbyState['kind']): LobbyHost | null {
+  createLobby(
+    queueMode: LobbyState['queueMode'],
+    kind: LobbyState['kind'],
+    reclaim?: { code: string; token: string },
+  ): LobbyHost | null {
     if (!this.requireAccount()) return null;
     this.dropRole();
     const host = new LobbyHost(this.ctx());
     this.role = host;
-    host.create(queueMode, kind);
+    host.create(queueMode, kind, reclaim);
     return host;
   }
 
@@ -367,6 +378,11 @@ export class MpRuntime {
       this.error('practice-busy');
       return;
     }
+    const block = this.practiceGuard?.() ?? null;
+    if (block) {
+      this.error(block);
+      return;
+    }
     let resolved;
     let options;
     try {
@@ -435,7 +451,13 @@ export class MpRuntime {
     const whenReady = <T>(fn: (d: T) => void) => (d: T) => void this.ready.then(() => !this.stopped && fn(d));
     on.push(
       b.on('ui_create_lobby', whenReady((d) => void this.createLobby(d.queueMode, d.kind))),
-      b.on('ui_join', whenReady((d) => void this.joinCode(d.code, 'player'))),
+      b.on(
+        'ui_join',
+        whenReady((d) => {
+          if (this.joinHook?.(d.code)) return;
+          void this.joinCode(d.code, 'player');
+        }),
+      ),
       b.on('ui_spectate', whenReady((d) => void this.joinCode(d.code, 'spectator'))),
       b.on('ui_leave', () => {
         this.dropRole();
