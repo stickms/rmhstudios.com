@@ -35,9 +35,9 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **Nightrail** | [`/nightrail`](https://rmhstudios.com/nightrail) | Playable | required | `Arcade` `Racing` `3D` `Trick Scoring` |
 | **Massive March** | [`/massive-march`](https://rmhstudios.com/massive-march) | Playable | required | `Multiplayer` `Co-op` `3D` `Exploration` `Puzzle` |
 | **Bum's Rush** | [`/bums-rush`](https://rmhstudios.com/bums-rush) | Beta | — | `Party` `Multiplayer` `Physics` `Platformer` |
-| **Half-Life 2 (Demo)** | [`/half-life-2`](https://rmhstudios.com/half-life-2) | Beta | — | `Valve` `FPS` `Single-player` `Beta` |
-| **Portal: First Slice** | [`/portal`](https://rmhstudios.com/portal) | Beta | — | `Valve` `FPS` `Single-player` `Beta` |
-| **Counter-Strike: Dust II** | [`/csgo`](https://rmhstudios.com/csgo) | Beta | — | `Valve` `FPS` `Multiplayer` `Beta` |
+| **Half-Life 2** | [`/half-life-2`](https://rmhstudios.com/half-life-2) | Beta | — | `Valve` `FPS` `Single-player` `Beta` |
+| **Portal** | [`/portal`](https://rmhstudios.com/portal) | Beta | — | `Valve` `FPS` `Single-player` `Beta` |
+| **Counter-Strike: Global Offensive** | [`/csgo`](https://rmhstudios.com/csgo) | Beta | — | `Valve` `FPS` `Multiplayer` `Beta` |
 
 ## Detail
 
@@ -179,20 +179,20 @@ You are a head with two enormous arms and no legs whatsoever. Grab a ledge, swin
 
 **Route:** `/bums-rush` · **Catalog id:** `bums-rush` · **Status:** Beta · **Sign-in:** not required
 
-### Half-Life 2 (Demo)
+### Half-Life 2
 
 Step off the train into City 17. The Half-Life 2 demo’s two Point Insertion maps run on an independent browser engine: Source-accurate movement, rigid-body physics you can pick up and throw, scripted sequences, doors and lifts, soundscapes and closed captions. Your progress is saved at each level start, so Continue picks up where you left off. Keyboard and mouse, gamepad or touch.
 
 **Route:** `/half-life-2` · **Catalog id:** `half-life-2` · **Status:** Beta · **Sign-in:** not required
 
-### Portal: First Slice
+### Portal
 
-The First Slice of Portal — test chambers 00 to 10 — on an independent browser engine. Fire the blue and orange portals onto walls and floors, look and walk through them (momentum is conserved), carry cubes onto buttons and dodge energy balls. Portals render the view through them, one level deep on phones and two on a desktop. Continue resumes from the last chamber you reached. Keyboard and mouse, gamepad or touch.
+Portal’s opening test chambers, 00 to 10, on an independent browser engine. Fire the blue and orange portals onto walls and floors, look and walk through them (momentum is conserved), carry cubes onto buttons and dodge energy balls. Portals render the view through them, one level deep on phones and two on a desktop. Continue resumes from the last chamber you reached. Keyboard and mouse, gamepad or touch.
 
 **Route:** `/portal` · **Catalog id:** `portal` · **Status:** Beta · **Sign-in:** not required
 
-### Counter-Strike: Dust II
+### Counter-Strike: Global Offensive
 
-Dust II on an independent browser engine, with default loadouts and plain weapons. Play bomb defusal (freeze time, a buy period, the money system, planting and defusing, first to 16) or deathmatch (instant respawns, free weapons). Practise offline against bots, or sign in to host a peer-to-peer match for friends; the match runs in the host’s browser and moves to another player if the host leaves. Keyboard and mouse, gamepad or touch.
+Counter-Strike: Global Offensive’s Dust II on an independent browser engine, with default loadouts and plain weapons. Play bomb defusal (freeze time, a buy period, the money system, planting and defusing, first to 16) or deathmatch (instant respawns, free weapons). Practise offline against bots, or sign in to host a peer-to-peer match for friends; the match runs in the host’s browser and moves to another player if the host leaves. Keyboard and mouse, gamepad or touch.
 
 **Route:** `/csgo` · **Catalog id:** `csgo` · **Status:** Beta · **Sign-in:** not required

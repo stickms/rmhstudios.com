@@ -1,5 +1,5 @@
 /**
- * /csgo — Counter-Strike on Dust II: a lobby (bomb defusal or deathmatch; offline against bots;
+ * /csgo — Counter-Strike: Global Offensive on Dust II: a lobby (bomb defusal or deathmatch; offline against bots;
  * host a peer-to-peer match for friends; the CS rooms players host; join by code) and the running
  * game in the shared GameCanvas, full screen over it. Online play needs an account (the hub refuses
  * otherwise); `?lobby=CODE` joins that room once signed in. A page of its own in the TF2 Hub's
@@ -63,7 +63,7 @@ export default function CsPlayPage() {
             {t('play_back_games', { defaultValue: 'Games' })}
           </Link>
           <header>
-            <h1 className="tf2hud-title text-4xl sm:text-5xl">{t('cs_title', { defaultValue: 'Counter-Strike: Dust II' })}</h1>
+            <h1 className="tf2hud-title text-4xl sm:text-5xl">{t('csgo_title', { defaultValue: 'Counter-Strike: Global Offensive' })}</h1>
             <p className="mt-2 text-sm text-(--app-text-muted)">
               {t('cs_subtitle', { defaultValue: 'Default loadouts, plain weapons, one map. Bomb defusal or deathmatch.' })}
             </p>
@@ -164,7 +164,7 @@ export default function CsPlayPage() {
           <GameCanvas
             game="csgo"
             sessionId="rmh-csgo"
-            title={t('cs_title', { defaultValue: 'Counter-Strike: Dust II' })}
+            title={t('csgo_title', { defaultValue: 'Counter-Strike: Global Offensive' })}
             create={(mount) => createTf2Client({ ...mount, session })}
             onExit={leave}
           />
