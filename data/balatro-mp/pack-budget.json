@@ -1,7 +1,7 @@
 {
-  "$comment": "Size budgets enforced by scripts/balatro/build-game-pack.py (the build and --check fail past them) and asserted by scripts/balatro/__tests__/pack.test.ts. PLAN §6.4. coreBaselineBytes is the core pack before multiplayer (core-2a3045c1e7e7.zip); folding the MP localization's characters into the core font subset may grow it by at most coreGrowthMaxBytes (raised from the plan's 30 KB: each language's MP text goes only into its own font, and the ~240 new Japanese, Korean and Chinese glyphs still cost ~38 KB). mpMaxBytes is raised from the plan's 1.3 MB: the used art alone is ~1.25 MB after lossless oxipng (1x + 2x, PLAN AS-01), so 1.3 MB left no room for the Lua or the localization; see docs/balatro-mp.md §6.",
+  "$comment": "Size budgets enforced by scripts/balatro/build-game-pack.py (the build and --check fail past them) and asserted by scripts/balatro/__tests__/pack.test.ts. PLAN §6.4. coreBaselineBytes is the core pack before multiplayer (core-2a3045c1e7e7.zip); folding the MP localization's characters into the core font subset may grow it by at most coreGrowthMaxBytes (raised from the plan's 30 KB: each language's MP text goes only into its own font, and the ~240 new Japanese, Korean and Chinese glyphs still cost ~38 KB), plus exactly 16 422 B since merge point M1b for the web platform Lua (rmh_web.lua, rmh/*.lua, rmh_mp_entry.lua) moved from ?raw imports in the page bundle into the core pack (40 000 + 16 422). mpMaxBytes is raised from the plan's 1.3 MB: the used art alone is ~1.25 MB after lossless oxipng (1x + 2x, PLAN AS-01), so 1.3 MB left no room for the Lua or the localization; see docs/balatro-mp.md §6.",
   "coreBaselineBytes": 4930572,
-  "coreGrowthMaxBytes": 40000,
+  "coreGrowthMaxBytes": 56422,
   "mpMaxBytes": 1800000,
   "mpMaxExtractedBytes": 8000000
 }

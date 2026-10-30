@@ -12,7 +12,7 @@
  * `in` before returning (so Lua reads them in the same frame), and dispatches
  * the batch's messages to listeners in a microtask, outside the FS call.
  *
- * **JS → Lua.** `send` validates with zod, numbers the line, and queues it. A
+ * **JS → Lua.** `send` validates (bridge-codec.ts), numbers the line, and queues it. A
  * microtask (or the rename above) rewrites `in` with every line Lua has not
  * consumed, capped at 256 KB; the rest waits. Lua reads `in` whole, removes it
  * (`onDeletePath` → consumed) and drops `s ≤ last`, so a rewrite that repeats a
@@ -23,18 +23,10 @@
  * `in` lines as consumed only once acked: an absent `in` with unacked lines is
  * rewritten, never assumed read. Lua holds its next batch while `out` exists.
  */
-import {
-  BRIDGE_LIMITS,
-  BRIDGE_PATHS,
-  encodeJsLine,
-  parseLuaBatch,
-  utf8Length,
-  type J2LData,
-  type J2LType,
-  type L2JData,
-  type L2JMessage,
-  type L2JType,
-} from './bridge-protocol';
+// The zod-free codec (same checks, generated from bridge-protocol.ts): zod would
+// cost the lazy MP chunk ~80 KB gzip. Types still come from the contract.
+import { BRIDGE_LIMITS, BRIDGE_PATHS, encodeJsLine, parseLuaBatch, utf8Length } from './bridge-codec';
+import type { J2LData, J2LType, L2JData, L2JMessage, L2JType } from './bridge-protocol';
 
 /** The slice of Emscripten's FS the mailbox uses (node `fs` fits too). */
 export interface MailboxFs {
