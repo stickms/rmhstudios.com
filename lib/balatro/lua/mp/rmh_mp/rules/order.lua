@@ -109,7 +109,7 @@ local function apply_stickers(card, et, per, rent, ed)
   if et and card.set_eternal then card:set_eternal(true) end
   if per and card.set_perishable then card:set_perishable(true) end
   if rent and card.set_rental then card:set_rental(true) end
-  if card.set_edition then card:set_edition(ed) end
+  if ed and card.set_edition then card:set_edition(ed, true, true) end
 end
 
 local function order_create_card(orig, _type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append)
@@ -126,7 +126,13 @@ local function order_create_card(orig, _type, area, legendary, _rarity, skip_mat
     end
     if _type == 'Joker' and not forced_key then
       local key, et, per, rent, ed = stable_joker(_type, area or G.jokers, legendary, _rarity, append)
-      local c = orig(_type, area, legendary, _rarity, skip_materialize, soulable, key, append)
+      -- Only Order's own edition roll applies: vanilla's roll would queue a juice event for an
+      -- edition that apply_stickers then replaces, and that event crashes on the nil edition.
+      local poll = poll_edition
+      poll_edition = function() return nil end
+      local cok, c = pcall(orig, _type, area, legendary, _rarity, skip_materialize, soulable, key, append)
+      poll_edition = poll
+      if not cok then error(c, 0) end
       apply_stickers(c, et, per, rent, ed)
       return c
     end

@@ -290,7 +290,24 @@
       "rmh_mp_spectate_refresh": "REFRESH",
       "rmh_mp_spectate_offline": "Offline: the lobby list needs a connection.",
       "rmh_mp_spectate_timeout": "The lobby list did not answer. Try again.",
-      "rmh_mp_spectate_joining": "Joining as a spectator..."
+      "rmh_mp_spectate_joining": "Joining as a spectator...",
+      "rmh_mp_the_royale": "The Royale",
+      "rmh_mp_the_hunters": "The Hunters",
+      "rmh_mp_the_runner": "The Runner",
+      "rmh_mp_team_a": "Team A",
+      "rmh_mp_team_b": "Team B",
+      "rmh_mp_seed_change": "Seed Change",
+      "rmh_mp_vote_draw": "Vote for Draw",
+      "rmh_mp_draw_title": "DRAW!",
+      "rmh_mp_nemesis": "Nemesis",
+      "rmh_mp_view_deck": "View Deck",
+      "rmh_mp_roster": "Roster",
+      "rmh_mp_jokers": "Jokers",
+      "rmh_mp_reconnecting": "Connection lost, reconnecting...",
+      "rmh_mp_shopping": "Shopping",
+      "rmh_mp_ui_catching_up": "Catching up",
+      "rmh_mp_ui_left": "Left",
+      "rmh_mp_ui_forfeited": "Forfeited"
     },
     "v_dictionary": {
       "rmh_mp_invited_by": "#1# invited you",
@@ -308,7 +325,11 @@
       "rmh_mp_replay_diverged_at": "The replay diverged at event #1# (#2#).",
       "rmh_mp_replay_seek_label": "Ante #1# #2#",
       "rmh_mp_spectate_ante": "Ante #1#",
-      "rmh_mp_spectate_players": "#1# players"
+      "rmh_mp_spectate_players": "#1# players",
+      "rmh_mp_vote_seed_progress": "Vote to change seed: #1#/#2#",
+      "rmh_mp_vote_draw_progress": "Vote for Draw: #1#/#2#",
+      "rmh_mp_place": "Place #1#",
+      "rmh_mp_best_pvp": "Best PvP score: #1#"
     }
   }
 }
