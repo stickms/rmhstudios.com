@@ -74,6 +74,14 @@ function randomId(): string {
   return s;
 }
 
+/** The site block list (GET /api/moderation/block → {blocked: string[]}); [] on any failure. */
+async function blockedIds(): Promise<string[]> {
+  const res = await fetch('/api/moderation/block', { credentials: 'same-origin' });
+  if (!res.ok) return [];
+  const body = (await res.json()) as { blocked?: unknown };
+  return Array.isArray(body.blocked) ? body.blocked.filter((x): x is string => typeof x === 'string') : [];
+}
+
 export function startMultiplayer(opts: StartMultiplayerOptions): MpSession {
   const { bridge, session, intent, invite } = opts;
   const overrides = testOverrides();
@@ -99,6 +107,7 @@ export function startMultiplayer(opts: StartMultiplayerOptions): MpSession {
       randomSeed: cryptoSeedString,
       randomInt: cryptoSeed,
       log,
+      blockedIds,
     },
     { intent, invite },
   );

@@ -33,6 +33,8 @@ import { LobbyHost } from './lobby-host';
 import { LobbyMember } from './lobby-member';
 
 export const SETTINGS_KEY = 'rmh-balatro-mp-settings';
+/** At most this many site blocks are seeded as chat mutes. */
+export const MAX_SEEDED_MUTES = 512;
 
 export type StartIntent = 'menu' | 'join' | 'rejoin' | 'invite';
 
@@ -82,6 +84,8 @@ export class MpRuntime {
   private localDeck: WireData<'deck_res'> | null = null;
   private localStats: WireData<'stats_res'> | null = null;
   private readonly offs: (() => void)[] = [];
+  /** Ids muted because the site block list has them (not saved with the player's own mutes). */
+  private readonly siteBlocked = new Set<string>();
   private stopped = false;
   private ready: Promise<void>;
 
@@ -114,11 +118,29 @@ export class MpRuntime {
       this.avatarUrl = acct.avatarUrl;
     }
     this.pushNetStatus();
+    if (acct) this.seedBlockedMutes();
     this.deps.bridge.send('history', readHistory(this.deps.kv));
     this.loadGlyphs();
     const { intent, invite } = this.opts;
     if (invite) this.joinCode(invite, 'player');
     else if (intent === 'rejoin' || rejoinHint(this.deps.kv)) this.deps.hub.emit('balatro:seat:query', {});
+  }
+
+  /** Site blocks become chat mutes for this session (never written to the saved mute list). */
+  private seedBlockedMutes(): void {
+    const load = this.deps.blockedIds;
+    if (!load) return;
+    load().then(
+      (ids) => {
+        if (this.stopped || !Array.isArray(ids)) return;
+        for (const id of ids.slice(0, MAX_SEEDED_MUTES)) {
+          if (typeof id !== 'string' || id.length === 0 || id.length > 64) continue;
+          this.siteBlocked.add(id);
+          this.chat.mute(id, true);
+        }
+      },
+      (err) => this.deps.log(`[mp] block list unavailable: ${String(err)}`),
+    );
   }
 
   /* ─── Settings, glyphs, status ─── */
@@ -474,7 +496,7 @@ export class MpRuntime {
       b.on('ui_mute', (d) => {
         const on = d.on ?? !this.chat.muted.has(d.userId);
         this.chat.mute(d.userId, on);
-        this.settings.muted = [...this.chat.muted].slice(-256);
+        this.settings.muted = [...this.chat.muted].filter((id) => !this.siteBlocked.has(id)).slice(-256);
         this.saveSettings();
       }),
       b.on('ui_vote', (d) => this.role?.vote(d.stepId, d.option)),

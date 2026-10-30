@@ -92,6 +92,35 @@ describe('chat (D-35)', () => {
   });
 });
 
+describe('chat mutes seeded from the site block list', () => {
+  it('a blocked sender is muted from the start, and not saved with the player\'s own mutes', async () => {
+    const host = w.peer('alice');
+    await w.step(20);
+    host.lua.emit('ui_create_lobby', { queueMode: 'pvp_royale', kind: 'private' });
+    await w.until(() => !!code(host), 5_000, 'hosted');
+    const carol = w.peer('carol', { blockedIds: async () => ['bob', 7 as never, '', 'x'.repeat(65)] });
+    const bob = w.peer('bob');
+    await w.step(20);
+    carol.lua.emit('ui_join', { code: code(host) as string });
+    bob.lua.emit('ui_join', { code: code(host) as string });
+    await w.until(() => host.lua.last('lobby_view')?.state.players.length === 3, 30_000, 'everyone in');
+    expect([...carol.runtime.chat.muted]).toEqual(['bob']);
+    bob.lua.emit('ui_chat', { text: 'blocked?' });
+    host.lua.emit('ui_chat', { text: 'hi all' });
+    await w.until(() => carol.lua.all('chat_line').some((l) => l.text === 'hi all'), 2_000, 'host line');
+    expect(carol.lua.all('chat_line').some((l) => l.text === 'blocked?')).toBe(false);
+    carol.lua.emit('ui_mute', { userId: 'alice', on: true });
+    expect(JSON.parse(carol.kv.getItem('rmh-balatro-mp-settings') ?? '{}').muted).toEqual(['alice']);
+  });
+
+  it('a failing block list request leaves chat as it was', async () => {
+    const dave = w.peer('dave', { blockedIds: async () => { throw new Error('401'); } });
+    await w.step(50);
+    expect(dave.runtime.chat.muted.size).toBe(0);
+    expect(dave.logs.some((l) => l.includes('block list unavailable'))).toBe(true);
+  });
+});
+
 describe('version gate (D-36)', () => {
   it('the hub refuses a member built from different packs', async () => {
     const host = w.peer('alice');

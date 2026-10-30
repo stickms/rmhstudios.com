@@ -50,6 +50,12 @@ export interface RuntimeDeps {
   randomSeed(): string;
   randomInt(): number;
   log(msg: string, isError?: boolean): void;
+  /**
+   * The ids this account blocked on the site (GET /api/moderation/block). Chat
+   * starts with them muted; optional (tests, signed out). /api/pulse carries no
+   * block list, so this is its own request, made once per session.
+   */
+  blockedIds?(): Promise<readonly string[]>;
 }
 
 /** Everything a fresh boot or a promotion carries into a role. */

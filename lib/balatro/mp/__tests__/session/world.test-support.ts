@@ -327,6 +327,8 @@ export interface PeerOptions {
   kv?: KeyValue;
   snapshots?: ReturnType<typeof memorySnapshotStore>;
   testBuild?: boolean;
+  /** The site block list this account sees (RuntimeDeps.blockedIds). */
+  blockedIds?: () => Promise<readonly string[]>;
 }
 
 export class World {
@@ -370,6 +372,7 @@ export class World {
         randomSeed: () => 'SEEDABCD',
         randomInt: () => this.rng.int(0x7fffffff),
         log: (m) => logs.push(m),
+        ...(o.blockedIds ? { blockedIds: o.blockedIds } : {}),
       },
       { intent: o.intent ?? 'menu', invite: o.invite ?? null, lang: 'en-us' },
     );
