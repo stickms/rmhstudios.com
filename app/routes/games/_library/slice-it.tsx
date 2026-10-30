@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { Suspense } from 'react';
 
-import { LibraryPane } from '@/components/games-library/LibraryPane';
+import { SteamPane } from '@/components/steam/SteamPane';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
 import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
@@ -34,7 +34,7 @@ const DESCRIPTION =
   'Upload any track and Slice It! charts it automatically — four nested difficulties, ' +
   'replays, leaderboards and eight-player races.';
 
-export const Route = createFileRoute('/_site/games/slice-it')({
+export const Route = createFileRoute('/games/_library/slice-it')({
   // Static meta: the hub's title and description do not depend on the loader,
   // so `head` never touches `loaderData` and a crawler that gets a cold cache
   // still gets the full Open Graph block.
@@ -73,10 +73,10 @@ export const Route = createFileRoute('/_site/games/slice-it')({
 function SliceItHubPage() {
   const data = Route.useLoaderData();
   return (
-    <LibraryPane title="Slice It!">
+    <SteamPane title="Slice It!">
       <Suspense fallback={null}>
         <SliceItHub data={data} />
       </Suspense>
-    </LibraryPane>
+    </SteamPane>
   );
 }

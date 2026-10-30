@@ -65,6 +65,7 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // their own canonicals, so they are listed too. (`/create/earnings` is not:
   // it is one viewer's own dashboard — see EXCLUDED_ROUTES.)
   { loc: '/games', changefreq: 'weekly', priority: 0.9 },
+  { loc: '/arcade', changefreq: 'daily', priority: 0.6 },
   { loc: '/daily-mutator', changefreq: 'daily', priority: 0.6 },
   { loc: '/connections', changefreq: 'daily', priority: 0.5 },
   { loc: '/rmhbox-packs', changefreq: 'weekly', priority: 0.4 },
@@ -357,9 +358,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/user-builds': 'redirect', // → /builds → /games
   '/builds': 'redirect', // → /games
   '/lights-out': 'redirect', // → /daily/lights-out
-  '/arcade': 'redirect', // → /games
   '/apps': 'redirect', // → /games?kind=app (apps are in the library)
-  '/leaderboard': 'redirect', // → /games?sub=leaderboard
+  '/leaderboard': 'redirect', // → /arcade?sub=leaderboard
   '/events': 'redirect', // → /communities?tab=events
   '/market': 'redirect', // → /store?tab=market
   '/shop': 'redirect', // → /store?tab=shop

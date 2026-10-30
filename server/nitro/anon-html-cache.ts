@@ -90,7 +90,7 @@ import { responseHeaders } from './security-headers';
  *
  *   `/`             app/routes/_site/index.tsx — the shared For-You feed for
  *                   anon (the origin already caches that assembly).
- *   `/games`        app/routes/_site/games.tsx + games/index.tsx — the library
+ *   `/games`        app/routes/games.tsx + games/_library/index.tsx — the library
  *                   shell and its Home. The layout loader (`fetchRecents`) DOES
  *                   read the session, but only to list the viewer's recents: it
  *                   returns `[]` for anyone without one, so the anonymous render
@@ -165,8 +165,8 @@ export const CACHEABLE_ANON_PATHS = new Set<string>([
  *                                           read anywhere in the route.
  *     app/routes/news.rss[.]xml.ts        — `/news/rss.xml`, XML, skipped.
  *
- * Deliberately NOT here: `/games/`. Its subtree (`_site/games/$gameId.tsx` and
- * `_site/games/$gameId_.guides.$guideId.tsx`) IS anon-invariant today — every
+ * Deliberately NOT here: `/games/`. Its subtree (`games/_library/$gameId.tsx` and
+ * `games/_library/$gameId_.guides.$guideId.tsx`) IS anon-invariant today — every
  * query takes a `viewerId` that is `null` for anon, and `listGuides`/`getGuide`
  * then return published rows only. But the pages are built out of live
  * user-generated reviews and guides rather than article content, so the long

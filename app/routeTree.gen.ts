@@ -30,6 +30,7 @@ import { Route as DunesdayRouteImport } from './routes/dunesday'
 import { Route as EversionLabRouteImport } from './routes/eversion-lab'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
+import { Route as GamesRouteImport } from './routes/games'
 import { Route as HalfLife2RouteImport } from './routes/half-life-2'
 import { Route as HandleRouteImport } from './routes/handle'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
@@ -97,7 +98,6 @@ import { Route as SiteEmojiPacksRouteImport } from './routes/_site/emoji-packs'
 import { Route as SiteEventsRouteImport } from './routes/_site/events'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteGameNightRouteImport } from './routes/_site/game-night'
-import { Route as SiteGamesRouteImport } from './routes/_site/games'
 import { Route as SiteHelpRouteImport } from './routes/_site/help'
 import { Route as SiteHistoryRouteImport } from './routes/_site/history'
 import { Route as SiteHuntRouteImport } from './routes/_site/hunt'
@@ -178,6 +178,7 @@ import { Route as DiscordRmhboxRouteImport } from './routes/discord/rmhbox'
 import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explorer/index'
 import { Route as ForestExplorerExploreRouteImport } from './routes/forest-explorer/explore'
 import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
+import { Route as GamesLibraryRouteImport } from './routes/games/_library'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
@@ -285,9 +286,6 @@ import { Route as SiteExchangeIndexRouteImport } from './routes/_site/exchange.i
 import { Route as SiteExchangeIdRouteImport } from './routes/_site/exchange.$id'
 import { Route as SiteFeedsIndexRouteImport } from './routes/_site/feeds.index'
 import { Route as SiteFeedsIdRouteImport } from './routes/_site/feeds.$id'
-import { Route as SiteGamesIndexRouteImport } from './routes/_site/games/index'
-import { Route as SiteGamesGameIdRouteImport } from './routes/_site/games/$gameId'
-import { Route as SiteGamesSliceItRouteImport } from './routes/_site/games/slice-it'
 import { Route as SiteGroupsIndexRouteImport } from './routes/_site/groups/index'
 import { Route as SiteGroupsIdRouteImport } from './routes/_site/groups/$id'
 import { Route as SiteHomesIndexRouteImport } from './routes/_site/homes/index'
@@ -798,6 +796,9 @@ import { Route as ApiWorldsPostcardsRouteImport } from './routes/api/worlds/post
 import { Route as ApiWorldsSnapshotsRouteImport } from './routes/api/worlds/snapshots'
 import { Route as EmbedPostIdRouteImport } from './routes/embed.post.$id'
 import { Route as EmbedReplayIdRouteImport } from './routes/embed.replay.$id'
+import { Route as GamesLibraryIndexRouteImport } from './routes/games/_library/index'
+import { Route as GamesLibraryGameIdRouteImport } from './routes/games/_library/$gameId'
+import { Route as GamesLibrarySliceItRouteImport } from './routes/games/_library/slice-it'
 import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
@@ -1196,7 +1197,6 @@ import { Route as Tf2HudEditorSTokenRouteImport } from './routes/tf2/hud-editor/
 import { Route as Tf2LoadoutLSlugRouteImport } from './routes/tf2/loadout/l.$slug'
 import { Route as SiteAdminBlogSlugEditRouteImport } from './routes/_site/admin/blog/$slug/edit'
 import { Route as SiteCSlugInviteCodeRouteImport } from './routes/_site/c.$slug_.invite.$code'
-import { Route as SiteGamesGameIdGuidesGuideIdRouteImport } from './routes/_site/games/$gameId_.guides.$guideId'
 import { Route as SiteUUseridPostPostidRouteImport } from './routes/_site/u/$userid/post/$postid'
 import { Route as ApiAccountRecoveryContactsIdRouteImport } from './routes/api/account/recovery/contacts/$id'
 import { Route as ApiAccountRecoveryRequestsIdRouteImport } from './routes/api/account/recovery/requests/$id'
@@ -1317,6 +1317,7 @@ import { Route as ApiV1UsersHandleFollowingRouteImport } from './routes/api/v1/u
 import { Route as ApiV1UsersHandlePostsRouteImport } from './routes/api/v1/users/$handle/posts'
 import { Route as ApiWorldsVisitCodePostcardRouteImport } from './routes/api/worlds/visit.$code.postcard'
 import { Route as ApiWorldsVisitCodeWaterRouteImport } from './routes/api/worlds/visit.$code.water'
+import { Route as GamesLibraryGameIdGuidesGuideIdRouteImport } from './routes/games/_library/$gameId_.guides.$guideId'
 import { Route as ApiAdminAlbumsIdSlidesSlideIdRouteImport } from './routes/api/admin/albums/$id/slides/$slideId'
 import { Route as ApiAdminDelightFortunesIdIndexRouteImport } from './routes/api/admin/delight/fortunes/$id/index'
 import { Route as ApiAdminDelightHuntsIdIndexRouteImport } from './routes/api/admin/delight/hunts/$id/index'
@@ -1439,6 +1440,11 @@ const ForestExplorerRoute = ForestExplorerRouteImport.update({
 const GabrielsHornRoute = GabrielsHornRouteImport.update({
   id: '/gabriels-horn',
   path: '/gabriels-horn',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GamesRoute = GamesRouteImport.update({
+  id: '/games',
+  path: '/games',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HalfLife2Route = HalfLife2RouteImport.update({
@@ -1776,11 +1782,6 @@ const SiteExploreRoute = SiteExploreRouteImport.update({
 const SiteGameNightRoute = SiteGameNightRouteImport.update({
   id: '/game-night',
   path: '/game-night',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteGamesRoute = SiteGamesRouteImport.update({
-  id: '/games',
-  path: '/games',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteHelpRoute = SiteHelpRouteImport.update({
@@ -2182,6 +2183,10 @@ const ForestExplorerStoryRoute = ForestExplorerStoryRouteImport.update({
   id: '/story',
   path: '/story',
   getParentRoute: () => ForestExplorerRoute,
+} as any)
+const GamesLibraryRoute = GamesLibraryRouteImport.update({
+  id: '/_library',
+  getParentRoute: () => GamesRoute,
 } as any)
 const KowloonKnockoutIndexRoute = KowloonKnockoutIndexRouteImport.update({
   id: '/',
@@ -2720,21 +2725,6 @@ const SiteFeedsIdRoute = SiteFeedsIdRouteImport.update({
   id: '/feeds/$id',
   path: '/feeds/$id',
   getParentRoute: () => SiteRoute,
-} as any)
-const SiteGamesIndexRoute = SiteGamesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SiteGamesRoute,
-} as any)
-const SiteGamesGameIdRoute = SiteGamesGameIdRouteImport.update({
-  id: '/$gameId',
-  path: '/$gameId',
-  getParentRoute: () => SiteGamesRoute,
-} as any)
-const SiteGamesSliceItRoute = SiteGamesSliceItRouteImport.update({
-  id: '/slice-it',
-  path: '/slice-it',
-  getParentRoute: () => SiteGamesRoute,
 } as any)
 const SiteGroupsIndexRoute = SiteGroupsIndexRouteImport.update({
   id: '/groups/',
@@ -5318,6 +5308,21 @@ const EmbedReplayIdRoute = EmbedReplayIdRouteImport.update({
   path: '/embed/replay/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesLibraryIndexRoute = GamesLibraryIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GamesLibraryRoute,
+} as any)
+const GamesLibraryGameIdRoute = GamesLibraryGameIdRouteImport.update({
+  id: '/$gameId',
+  path: '/$gameId',
+  getParentRoute: () => GamesLibraryRoute,
+} as any)
+const GamesLibrarySliceItRoute = GamesLibrarySliceItRouteImport.update({
+  id: '/slice-it',
+  path: '/slice-it',
+  getParentRoute: () => GamesLibraryRoute,
+} as any)
 const LibraryAlbumsAlbumIdRoute = LibraryAlbumsAlbumIdRouteImport.update({
   id: '/library/albums/$albumId',
   path: '/library/albums/$albumId',
@@ -7420,12 +7425,6 @@ const SiteCSlugInviteCodeRoute = SiteCSlugInviteCodeRouteImport.update({
   path: '/c/$slug/invite/$code',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteGamesGameIdGuidesGuideIdRoute =
-  SiteGamesGameIdGuidesGuideIdRouteImport.update({
-    id: '/$gameId_/guides/$guideId',
-    path: '/$gameId/guides/$guideId',
-    getParentRoute: () => SiteGamesRoute,
-  } as any)
 const SiteUUseridPostPostidRoute = SiteUUseridPostPostidRouteImport.update({
   id: '/u/$userid/post/$postid',
   path: '/u/$userid/post/$postid',
@@ -8099,6 +8098,12 @@ const ApiWorldsVisitCodeWaterRoute = ApiWorldsVisitCodeWaterRouteImport.update({
   path: '/water',
   getParentRoute: () => ApiWorldsVisitCodeRoute,
 } as any)
+const GamesLibraryGameIdGuidesGuideIdRoute =
+  GamesLibraryGameIdGuidesGuideIdRouteImport.update({
+    id: '/$gameId_/guides/$guideId',
+    path: '/$gameId/guides/$guideId',
+    getParentRoute: () => GamesLibraryRoute,
+  } as any)
 const ApiAdminAlbumsIdSlidesSlideIdRoute =
   ApiAdminAlbumsIdSlidesSlideIdRouteImport.update({
     id: '/$slideId',
@@ -8236,6 +8241,7 @@ export interface FileRoutesByFullPath {
   '/eversion-lab': typeof EversionLabRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
+  '/games': typeof GamesRouteWithChildren
   '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
@@ -8302,7 +8308,6 @@ export interface FileRoutesByFullPath {
   '/events': typeof SiteEventsRoute
   '/explore': typeof SiteExploreRoute
   '/game-night': typeof SiteGameNightRoute
-  '/games': typeof SiteGamesRouteWithChildren
   '/help': typeof SiteHelpRoute
   '/history': typeof SiteHistoryRoute
   '/hunt': typeof SiteHuntRoute
@@ -8481,8 +8486,6 @@ export interface FileRoutesByFullPath {
   '/developer/ai-practices': typeof SiteDeveloperAiPracticesRoute
   '/exchange/$id': typeof SiteExchangeIdRoute
   '/feeds/$id': typeof SiteFeedsIdRoute
-  '/games/$gameId': typeof SiteGamesGameIdRoute
-  '/games/slice-it': typeof SiteGamesSliceItRoute
   '/groups/$id': typeof SiteGroupsIdRoute
   '/homes/manage': typeof SiteHomesManageRoute
   '/homes/rent-split': typeof SiteHomesRentSplitRoute
@@ -8895,6 +8898,8 @@ export interface FileRoutesByFullPath {
   '/api/worlds/snapshots': typeof ApiWorldsSnapshotsRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
+  '/games/$gameId': typeof GamesLibraryGameIdRoute
+  '/games/slice-it': typeof GamesLibrarySliceItRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
@@ -8922,7 +8927,6 @@ export interface FileRoutesByFullPath {
   '/developer/': typeof SiteDeveloperIndexRoute
   '/exchange/': typeof SiteExchangeIndexRoute
   '/feeds/': typeof SiteFeedsIndexRoute
-  '/games/': typeof SiteGamesIndexRoute
   '/groups/': typeof SiteGroupsIndexRoute
   '/homes/': typeof SiteHomesIndexRoute
   '/jams/': typeof SiteJamsIndexRoute
@@ -9021,6 +9025,7 @@ export interface FileRoutesByFullPath {
   '/api/wheel/': typeof ApiWheelIndexRoute
   '/api/when/': typeof ApiWhenIndexRoute
   '/api/wishlist/': typeof ApiWishlistIndexRoute
+  '/games/': typeof GamesLibraryIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
@@ -9401,7 +9406,6 @@ export interface FileRoutesByFullPath {
   '/api/when/$id/': typeof ApiWhenIdIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/c/$slug/invite/$code': typeof SiteCSlugInviteCodeRoute
-  '/games/$gameId/guides/$guideId': typeof SiteGamesGameIdGuidesGuideIdRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/account/recovery/contacts/$id': typeof ApiAccountRecoveryContactsIdRoute
   '/api/account/recovery/requests/$id': typeof ApiAccountRecoveryRequestsIdRoute
@@ -9504,6 +9508,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/api/worlds/visit/$code/postcard': typeof ApiWorldsVisitCodePostcardRoute
   '/api/worlds/visit/$code/water': typeof ApiWorldsVisitCodeWaterRoute
+  '/games/$gameId/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
   '/api/admin/delight/fools/': typeof ApiAdminDelightFoolsIndexRoute
   '/api/admin/delight/fortunes/': typeof ApiAdminDelightFortunesIndexRoute
   '/api/admin/delight/hunts/': typeof ApiAdminDelightHuntsIndexRoute
@@ -9560,6 +9565,7 @@ export interface FileRoutesByTo {
   '/dunesday': typeof DunesdayRoute
   '/eversion-lab': typeof EversionLabRoute
   '/gabriels-horn': typeof GabrielsHornRoute
+  '/games': typeof GamesLibraryIndexRoute
   '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
@@ -9781,8 +9787,6 @@ export interface FileRoutesByTo {
   '/developer/ai-practices': typeof SiteDeveloperAiPracticesRoute
   '/exchange/$id': typeof SiteExchangeIdRoute
   '/feeds/$id': typeof SiteFeedsIdRoute
-  '/games/$gameId': typeof SiteGamesGameIdRoute
-  '/games/slice-it': typeof SiteGamesSliceItRoute
   '/groups/$id': typeof SiteGroupsIdRoute
   '/homes/manage': typeof SiteHomesManageRoute
   '/homes/rent-split': typeof SiteHomesRentSplitRoute
@@ -10195,6 +10199,8 @@ export interface FileRoutesByTo {
   '/api/worlds/snapshots': typeof ApiWorldsSnapshotsRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
+  '/games/$gameId': typeof GamesLibraryGameIdRoute
+  '/games/slice-it': typeof GamesLibrarySliceItRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
@@ -10222,7 +10228,6 @@ export interface FileRoutesByTo {
   '/developer': typeof SiteDeveloperIndexRoute
   '/exchange': typeof SiteExchangeIndexRoute
   '/feeds': typeof SiteFeedsIndexRoute
-  '/games': typeof SiteGamesIndexRoute
   '/groups': typeof SiteGroupsIndexRoute
   '/homes': typeof SiteHomesIndexRoute
   '/jams': typeof SiteJamsIndexRoute
@@ -10701,7 +10706,6 @@ export interface FileRoutesByTo {
   '/api/when/$id': typeof ApiWhenIdIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/c/$slug/invite/$code': typeof SiteCSlugInviteCodeRoute
-  '/games/$gameId/guides/$guideId': typeof SiteGamesGameIdGuidesGuideIdRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/account/recovery/contacts/$id': typeof ApiAccountRecoveryContactsIdRoute
   '/api/account/recovery/requests/$id': typeof ApiAccountRecoveryRequestsIdRoute
@@ -10804,6 +10808,7 @@ export interface FileRoutesByTo {
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/api/worlds/visit/$code/postcard': typeof ApiWorldsVisitCodePostcardRoute
   '/api/worlds/visit/$code/water': typeof ApiWorldsVisitCodeWaterRoute
+  '/games/$gameId/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
   '/api/admin/delight/fools': typeof ApiAdminDelightFoolsIndexRoute
   '/api/admin/delight/fortunes': typeof ApiAdminDelightFortunesIndexRoute
   '/api/admin/delight/hunts': typeof ApiAdminDelightHuntsIndexRoute
@@ -10865,6 +10870,7 @@ export interface FileRoutesById {
   '/eversion-lab': typeof EversionLabRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
+  '/games': typeof GamesRouteWithChildren
   '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
@@ -10931,7 +10937,6 @@ export interface FileRoutesById {
   '/_site/events': typeof SiteEventsRoute
   '/_site/explore': typeof SiteExploreRoute
   '/_site/game-night': typeof SiteGameNightRoute
-  '/_site/games': typeof SiteGamesRouteWithChildren
   '/_site/help': typeof SiteHelpRoute
   '/_site/history': typeof SiteHistoryRoute
   '/_site/hunt': typeof SiteHuntRoute
@@ -11008,6 +11013,7 @@ export interface FileRoutesById {
   '/discord/rmhbox': typeof DiscordRmhboxRoute
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
+  '/games/_library': typeof GamesLibraryRouteWithChildren
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
@@ -11111,8 +11117,6 @@ export interface FileRoutesById {
   '/_site/developer/ai-practices': typeof SiteDeveloperAiPracticesRoute
   '/_site/exchange/$id': typeof SiteExchangeIdRoute
   '/_site/feeds/$id': typeof SiteFeedsIdRoute
-  '/_site/games/$gameId': typeof SiteGamesGameIdRoute
-  '/_site/games/slice-it': typeof SiteGamesSliceItRoute
   '/_site/groups/$id': typeof SiteGroupsIdRoute
   '/_site/homes/manage': typeof SiteHomesManageRoute
   '/_site/homes/rent-split': typeof SiteHomesRentSplitRoute
@@ -11525,6 +11529,8 @@ export interface FileRoutesById {
   '/api/worlds/snapshots': typeof ApiWorldsSnapshotsRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
+  '/games/_library/$gameId': typeof GamesLibraryGameIdRoute
+  '/games/_library/slice-it': typeof GamesLibrarySliceItRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
@@ -11552,7 +11558,6 @@ export interface FileRoutesById {
   '/_site/developer/': typeof SiteDeveloperIndexRoute
   '/_site/exchange/': typeof SiteExchangeIndexRoute
   '/_site/feeds/': typeof SiteFeedsIndexRoute
-  '/_site/games/': typeof SiteGamesIndexRoute
   '/_site/groups/': typeof SiteGroupsIndexRoute
   '/_site/homes/': typeof SiteHomesIndexRoute
   '/_site/jams/': typeof SiteJamsIndexRoute
@@ -11651,6 +11656,7 @@ export interface FileRoutesById {
   '/api/wheel/': typeof ApiWheelIndexRoute
   '/api/when/': typeof ApiWhenIndexRoute
   '/api/wishlist/': typeof ApiWishlistIndexRoute
+  '/games/_library/': typeof GamesLibraryIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
@@ -12031,7 +12037,6 @@ export interface FileRoutesById {
   '/api/when/$id/': typeof ApiWhenIdIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/_site/c/$slug_/invite/$code': typeof SiteCSlugInviteCodeRoute
-  '/_site/games/$gameId_/guides/$guideId': typeof SiteGamesGameIdGuidesGuideIdRoute
   '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/account/recovery/contacts/$id': typeof ApiAccountRecoveryContactsIdRoute
   '/api/account/recovery/requests/$id': typeof ApiAccountRecoveryRequestsIdRoute
@@ -12134,6 +12139,7 @@ export interface FileRoutesById {
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/api/worlds/visit/$code/postcard': typeof ApiWorldsVisitCodePostcardRoute
   '/api/worlds/visit/$code/water': typeof ApiWorldsVisitCodeWaterRoute
+  '/games/_library/$gameId_/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
   '/api/admin/delight/fools/': typeof ApiAdminDelightFoolsIndexRoute
   '/api/admin/delight/fortunes/': typeof ApiAdminDelightFortunesIndexRoute
   '/api/admin/delight/hunts/': typeof ApiAdminDelightHuntsIndexRoute
@@ -12196,6 +12202,7 @@ export interface FileRouteTypes {
     | '/eversion-lab'
     | '/forest-explorer'
     | '/gabriels-horn'
+    | '/games'
     | '/half-life-2'
     | '/handle'
     | '/house-always-wins'
@@ -12262,7 +12269,6 @@ export interface FileRouteTypes {
     | '/events'
     | '/explore'
     | '/game-night'
-    | '/games'
     | '/help'
     | '/history'
     | '/hunt'
@@ -12441,8 +12447,6 @@ export interface FileRouteTypes {
     | '/developer/ai-practices'
     | '/exchange/$id'
     | '/feeds/$id'
-    | '/games/$gameId'
-    | '/games/slice-it'
     | '/groups/$id'
     | '/homes/manage'
     | '/homes/rent-split'
@@ -12855,6 +12859,8 @@ export interface FileRouteTypes {
     | '/api/worlds/snapshots'
     | '/embed/post/$id'
     | '/embed/replay/$id'
+    | '/games/$gameId'
+    | '/games/slice-it'
     | '/library/albums/$albumId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
@@ -12882,7 +12888,6 @@ export interface FileRouteTypes {
     | '/developer/'
     | '/exchange/'
     | '/feeds/'
-    | '/games/'
     | '/groups/'
     | '/homes/'
     | '/jams/'
@@ -12981,6 +12986,7 @@ export interface FileRouteTypes {
     | '/api/wheel/'
     | '/api/when/'
     | '/api/wishlist/'
+    | '/games/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/strategies/profile/'
@@ -13361,7 +13367,6 @@ export interface FileRouteTypes {
     | '/api/when/$id/'
     | '/admin/blog/$slug/edit'
     | '/c/$slug/invite/$code'
-    | '/games/$gameId/guides/$guideId'
     | '/u/$userid/post/$postid'
     | '/api/account/recovery/contacts/$id'
     | '/api/account/recovery/requests/$id'
@@ -13464,6 +13469,7 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/posts'
     | '/api/worlds/visit/$code/postcard'
     | '/api/worlds/visit/$code/water'
+    | '/games/$gameId/guides/$guideId'
     | '/api/admin/delight/fools/'
     | '/api/admin/delight/fortunes/'
     | '/api/admin/delight/hunts/'
@@ -13520,6 +13526,7 @@ export interface FileRouteTypes {
     | '/dunesday'
     | '/eversion-lab'
     | '/gabriels-horn'
+    | '/games'
     | '/half-life-2'
     | '/handle'
     | '/house-always-wins'
@@ -13741,8 +13748,6 @@ export interface FileRouteTypes {
     | '/developer/ai-practices'
     | '/exchange/$id'
     | '/feeds/$id'
-    | '/games/$gameId'
-    | '/games/slice-it'
     | '/groups/$id'
     | '/homes/manage'
     | '/homes/rent-split'
@@ -14155,6 +14160,8 @@ export interface FileRouteTypes {
     | '/api/worlds/snapshots'
     | '/embed/post/$id'
     | '/embed/replay/$id'
+    | '/games/$gameId'
+    | '/games/slice-it'
     | '/library/albums/$albumId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
@@ -14182,7 +14189,6 @@ export interface FileRouteTypes {
     | '/developer'
     | '/exchange'
     | '/feeds'
-    | '/games'
     | '/groups'
     | '/homes'
     | '/jams'
@@ -14661,7 +14667,6 @@ export interface FileRouteTypes {
     | '/api/when/$id'
     | '/admin/blog/$slug/edit'
     | '/c/$slug/invite/$code'
-    | '/games/$gameId/guides/$guideId'
     | '/u/$userid/post/$postid'
     | '/api/account/recovery/contacts/$id'
     | '/api/account/recovery/requests/$id'
@@ -14764,6 +14769,7 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/posts'
     | '/api/worlds/visit/$code/postcard'
     | '/api/worlds/visit/$code/water'
+    | '/games/$gameId/guides/$guideId'
     | '/api/admin/delight/fools'
     | '/api/admin/delight/fortunes'
     | '/api/admin/delight/hunts'
@@ -14824,6 +14830,7 @@ export interface FileRouteTypes {
     | '/eversion-lab'
     | '/forest-explorer'
     | '/gabriels-horn'
+    | '/games'
     | '/half-life-2'
     | '/handle'
     | '/house-always-wins'
@@ -14890,7 +14897,6 @@ export interface FileRouteTypes {
     | '/_site/events'
     | '/_site/explore'
     | '/_site/game-night'
-    | '/_site/games'
     | '/_site/help'
     | '/_site/history'
     | '/_site/hunt'
@@ -14967,6 +14973,7 @@ export interface FileRouteTypes {
     | '/discord/rmhbox'
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
+    | '/games/_library'
     | '/library/$slug'
     | '/news/$slug'
     | '/news/rss.xml'
@@ -15070,8 +15077,6 @@ export interface FileRouteTypes {
     | '/_site/developer/ai-practices'
     | '/_site/exchange/$id'
     | '/_site/feeds/$id'
-    | '/_site/games/$gameId'
-    | '/_site/games/slice-it'
     | '/_site/groups/$id'
     | '/_site/homes/manage'
     | '/_site/homes/rent-split'
@@ -15484,6 +15489,8 @@ export interface FileRouteTypes {
     | '/api/worlds/snapshots'
     | '/embed/post/$id'
     | '/embed/replay/$id'
+    | '/games/_library/$gameId'
+    | '/games/_library/slice-it'
     | '/library/albums/$albumId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
@@ -15511,7 +15518,6 @@ export interface FileRouteTypes {
     | '/_site/developer/'
     | '/_site/exchange/'
     | '/_site/feeds/'
-    | '/_site/games/'
     | '/_site/groups/'
     | '/_site/homes/'
     | '/_site/jams/'
@@ -15610,6 +15616,7 @@ export interface FileRouteTypes {
     | '/api/wheel/'
     | '/api/when/'
     | '/api/wishlist/'
+    | '/games/_library/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/strategies/profile/'
@@ -15990,7 +15997,6 @@ export interface FileRouteTypes {
     | '/api/when/$id/'
     | '/_site/admin/blog/$slug/edit'
     | '/_site/c/$slug_/invite/$code'
-    | '/_site/games/$gameId_/guides/$guideId'
     | '/_site/u/$userid/post/$postid'
     | '/api/account/recovery/contacts/$id'
     | '/api/account/recovery/requests/$id'
@@ -16093,6 +16099,7 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/posts'
     | '/api/worlds/visit/$code/postcard'
     | '/api/worlds/visit/$code/water'
+    | '/games/_library/$gameId_/guides/$guideId'
     | '/api/admin/delight/fools/'
     | '/api/admin/delight/fortunes/'
     | '/api/admin/delight/hunts/'
@@ -16154,6 +16161,7 @@ export interface RootRouteChildren {
   EversionLabRoute: typeof EversionLabRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   GabrielsHornRoute: typeof GabrielsHornRoute
+  GamesRoute: typeof GamesRouteWithChildren
   HalfLife2Route: typeof HalfLife2Route
   HandleRoute: typeof HandleRoute
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
@@ -17103,6 +17111,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GabrielsHornRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games': {
+      id: '/games'
+      path: '/games'
+      fullPath: '/games'
+      preLoaderRoute: typeof GamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/half-life-2': {
       id: '/half-life-2'
       path: '/half-life-2'
@@ -17570,13 +17585,6 @@ declare module '@tanstack/react-router' {
       path: '/game-night'
       fullPath: '/game-night'
       preLoaderRoute: typeof SiteGameNightRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/games': {
-      id: '/_site/games'
-      path: '/games'
-      fullPath: '/games'
-      preLoaderRoute: typeof SiteGamesRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/help': {
@@ -18138,6 +18146,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/forest-explorer/story'
       preLoaderRoute: typeof ForestExplorerStoryRouteImport
       parentRoute: typeof ForestExplorerRoute
+    }
+    '/games/_library': {
+      id: '/games/_library'
+      path: ''
+      fullPath: '/games'
+      preLoaderRoute: typeof GamesLibraryRouteImport
+      parentRoute: typeof GamesRoute
     }
     '/kowloon-knockout/': {
       id: '/kowloon-knockout/'
@@ -18887,27 +18902,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/feeds/$id'
       preLoaderRoute: typeof SiteFeedsIdRouteImport
       parentRoute: typeof SiteRoute
-    }
-    '/_site/games/': {
-      id: '/_site/games/'
-      path: '/'
-      fullPath: '/games/'
-      preLoaderRoute: typeof SiteGamesIndexRouteImport
-      parentRoute: typeof SiteGamesRoute
-    }
-    '/_site/games/$gameId': {
-      id: '/_site/games/$gameId'
-      path: '/$gameId'
-      fullPath: '/games/$gameId'
-      preLoaderRoute: typeof SiteGamesGameIdRouteImport
-      parentRoute: typeof SiteGamesRoute
-    }
-    '/_site/games/slice-it': {
-      id: '/_site/games/slice-it'
-      path: '/slice-it'
-      fullPath: '/games/slice-it'
-      preLoaderRoute: typeof SiteGamesSliceItRouteImport
-      parentRoute: typeof SiteGamesRoute
     }
     '/_site/groups/': {
       id: '/_site/groups/'
@@ -22479,6 +22473,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmbedReplayIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games/_library/': {
+      id: '/games/_library/'
+      path: '/'
+      fullPath: '/games/'
+      preLoaderRoute: typeof GamesLibraryIndexRouteImport
+      parentRoute: typeof GamesLibraryRoute
+    }
+    '/games/_library/$gameId': {
+      id: '/games/_library/$gameId'
+      path: '/$gameId'
+      fullPath: '/games/$gameId'
+      preLoaderRoute: typeof GamesLibraryGameIdRouteImport
+      parentRoute: typeof GamesLibraryRoute
+    }
+    '/games/_library/slice-it': {
+      id: '/games/_library/slice-it'
+      path: '/slice-it'
+      fullPath: '/games/slice-it'
+      preLoaderRoute: typeof GamesLibrarySliceItRouteImport
+      parentRoute: typeof GamesLibraryRoute
+    }
     '/library/albums/$albumId': {
       id: '/library/albums/$albumId'
       path: '/library/albums/$albumId'
@@ -25265,13 +25280,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteCSlugInviteCodeRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/games/$gameId_/guides/$guideId': {
-      id: '/_site/games/$gameId_/guides/$guideId'
-      path: '/$gameId/guides/$guideId'
-      fullPath: '/games/$gameId/guides/$guideId'
-      preLoaderRoute: typeof SiteGamesGameIdGuidesGuideIdRouteImport
-      parentRoute: typeof SiteGamesRoute
-    }
     '/_site/u/$userid/post/$postid': {
       id: '/_site/u/$userid/post/$postid'
       path: '/u/$userid/post/$postid'
@@ -26112,6 +26120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWorldsVisitCodeWaterRouteImport
       parentRoute: typeof ApiWorldsVisitCodeRoute
     }
+    '/games/_library/$gameId_/guides/$guideId': {
+      id: '/games/_library/$gameId_/guides/$guideId'
+      path: '/$gameId/guides/$guideId'
+      fullPath: '/games/$gameId/guides/$guideId'
+      preLoaderRoute: typeof GamesLibraryGameIdGuidesGuideIdRouteImport
+      parentRoute: typeof GamesLibraryRoute
+    }
     '/api/admin/albums/$id/slides/$slideId': {
       id: '/api/admin/albums/$id/slides/$slideId'
       path: '/$slideId'
@@ -26361,24 +26376,6 @@ const SiteDeveloperRouteRouteChildren: SiteDeveloperRouteRouteChildren = {
 const SiteDeveloperRouteRouteWithChildren =
   SiteDeveloperRouteRoute._addFileChildren(SiteDeveloperRouteRouteChildren)
 
-interface SiteGamesRouteChildren {
-  SiteGamesGameIdRoute: typeof SiteGamesGameIdRoute
-  SiteGamesSliceItRoute: typeof SiteGamesSliceItRoute
-  SiteGamesIndexRoute: typeof SiteGamesIndexRoute
-  SiteGamesGameIdGuidesGuideIdRoute: typeof SiteGamesGameIdGuidesGuideIdRoute
-}
-
-const SiteGamesRouteChildren: SiteGamesRouteChildren = {
-  SiteGamesGameIdRoute: SiteGamesGameIdRoute,
-  SiteGamesSliceItRoute: SiteGamesSliceItRoute,
-  SiteGamesIndexRoute: SiteGamesIndexRoute,
-  SiteGamesGameIdGuidesGuideIdRoute: SiteGamesGameIdGuidesGuideIdRoute,
-}
-
-const SiteGamesRouteWithChildren = SiteGamesRoute._addFileChildren(
-  SiteGamesRouteChildren,
-)
-
 interface SiteRmhladderJobsRouteChildren {
   SiteRmhladderJobsJobIdRoute: typeof SiteRmhladderJobsJobIdRoute
 }
@@ -26456,7 +26453,6 @@ interface SiteRouteChildren {
   SiteEventsRoute: typeof SiteEventsRoute
   SiteExploreRoute: typeof SiteExploreRoute
   SiteGameNightRoute: typeof SiteGameNightRoute
-  SiteGamesRoute: typeof SiteGamesRouteWithChildren
   SiteHelpRoute: typeof SiteHelpRoute
   SiteHistoryRoute: typeof SiteHistoryRoute
   SiteHuntRoute: typeof SiteHuntRoute
@@ -26605,7 +26601,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteEventsRoute: SiteEventsRoute,
   SiteExploreRoute: SiteExploreRoute,
   SiteGameNightRoute: SiteGameNightRoute,
-  SiteGamesRoute: SiteGamesRouteWithChildren,
   SiteHelpRoute: SiteHelpRoute,
   SiteHistoryRoute: SiteHistoryRoute,
   SiteHuntRoute: SiteHuntRoute,
@@ -26813,6 +26808,34 @@ const ForestExplorerRouteChildren: ForestExplorerRouteChildren = {
 const ForestExplorerRouteWithChildren = ForestExplorerRoute._addFileChildren(
   ForestExplorerRouteChildren,
 )
+
+interface GamesLibraryRouteChildren {
+  GamesLibraryGameIdRoute: typeof GamesLibraryGameIdRoute
+  GamesLibrarySliceItRoute: typeof GamesLibrarySliceItRoute
+  GamesLibraryIndexRoute: typeof GamesLibraryIndexRoute
+  GamesLibraryGameIdGuidesGuideIdRoute: typeof GamesLibraryGameIdGuidesGuideIdRoute
+}
+
+const GamesLibraryRouteChildren: GamesLibraryRouteChildren = {
+  GamesLibraryGameIdRoute: GamesLibraryGameIdRoute,
+  GamesLibrarySliceItRoute: GamesLibrarySliceItRoute,
+  GamesLibraryIndexRoute: GamesLibraryIndexRoute,
+  GamesLibraryGameIdGuidesGuideIdRoute: GamesLibraryGameIdGuidesGuideIdRoute,
+}
+
+const GamesLibraryRouteWithChildren = GamesLibraryRoute._addFileChildren(
+  GamesLibraryRouteChildren,
+)
+
+interface GamesRouteChildren {
+  GamesLibraryRoute: typeof GamesLibraryRouteWithChildren
+}
+
+const GamesRouteChildren: GamesRouteChildren = {
+  GamesLibraryRoute: GamesLibraryRouteWithChildren,
+}
+
+const GamesRouteWithChildren = GamesRoute._addFileChildren(GamesRouteChildren)
 
 interface KowloonKnockoutRouteChildren {
   KowloonKnockoutIndexRoute: typeof KowloonKnockoutIndexRoute
@@ -28526,6 +28549,7 @@ const rootRouteChildren: RootRouteChildren = {
   EversionLabRoute: EversionLabRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   GabrielsHornRoute: GabrielsHornRoute,
+  GamesRoute: GamesRouteWithChildren,
   HalfLife2Route: HalfLife2Route,
   HandleRoute: HandleRoute,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
