@@ -9,6 +9,8 @@ import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { ACHIEVEMENTS } from '@/lib/achievements/catalog';
 import { getProfile } from '@/lib/profile.server';
 import { getFriendActivity, getNowPlayingFor } from '@/lib/games/activity.server';
+import { getShowcase } from '@/lib/games/showcase.server';
+import { badgeKey } from '@/lib/games/showcase';
 import { listCommunities } from '@/lib/communities.server';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { canViewPlaytime, isPlaytimePrivacy } from '@/lib/playtime/privacy';
@@ -20,6 +22,7 @@ import type {
   PersonRef,
   ProfileAchievement,
   ProfileBadge,
+  ShowcaseEditorData,
   ProfileGame,
   RecentReview,
   SteamGroup,
@@ -154,7 +157,7 @@ export async function getSteamProfile(
   const since = new Date(Date.now() - TWO_WEEKS_MS);
   const titles = titleIndex();
 
-  const [owner, achievementRows, memberships, follows, reviewCount, badgeRows] = await Promise.all([
+  const [owner, achievementRows, memberships, follows, reviewCount, badgeRows, showcase] = await Promise.all([
     prisma.user.findUnique({
       where: { id: ownerId },
       select: { playtimePrivacy: true, profile: { select: { xp: true } } },
@@ -180,9 +183,10 @@ export async function getSteamProfile(
     prisma.gameBadge.findMany({
       where: { userId: ownerId },
       orderBy: { craftedAt: 'desc' },
-      take: 12,
+      take: 200,
       select: { gameId: true, foil: true, level: true },
     }),
+    getShowcase(ownerId),
   ]);
 
   const setting = isPlaytimePrivacy(owner?.playtimePrivacy) ? owner.playtimePrivacy : 'private';
@@ -222,11 +226,12 @@ export async function getSteamProfile(
   }
 
   const byId = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));
-  const recentAchievements: ProfileAchievement[] = [];
+  // Every achievement they have unlocked, newest first.
+  const unlocked: ProfileAchievement[] = [];
   for (const row of achievementRows) {
     const def = byId.get(row.achievementId);
     if (!def || !row.unlockedAt) continue;
-    recentAchievements.push({
+    unlocked.push({
       id: def.id,
       name: def.name,
       description: def.description,
@@ -234,8 +239,27 @@ export async function getSteamProfile(
       target: def.target,
       unlockedAt: row.unlockedAt.toISOString(),
     });
-    if (recentAchievements.length === 6) break;
   }
+  const allBadges = badgeRows.flatMap((b): (ProfileBadge & { key: string })[] => {
+    const title = titles.get(b.gameId);
+    return title ? [{ ...title, level: b.level, foil: b.foil, key: badgeKey(b.gameId, b.foil) }] : [];
+  });
+
+  // The showcase they chose, else their most recent. Chosen order is kept.
+  const chosenAch = showcase.achievements.flatMap((id) => unlocked.find((a) => a.id === id) ?? []);
+  const chosenBadges = showcase.badges.flatMap((k) => allBadges.find((b) => b.key === k) ?? []);
+  const recentAchievements = chosenAch.length > 0 ? chosenAch : unlocked.slice(0, 6);
+  const shownBadges = chosenBadges.length > 0 ? chosenBadges : allBadges.slice(0, 12);
+  const showcaseEditor: ShowcaseEditorData | null = profile.isOwnProfile
+    ? {
+        selected: {
+          achievements: chosenAch.map((a) => a.id),
+          badges: chosenBadges.map((b) => b.key),
+        },
+        achievements: unlocked,
+        badges: allBadges,
+      }
+    : null;
 
   const lv = levelInfo(owner?.profile?.xp ?? 0);
   return {
@@ -255,22 +279,20 @@ export async function getSteamProfile(
     followingCount: profile.followingCount,
     level: lv.level,
     levelProgress: lv.progress,
-    achievementsUnlocked: achievementRows.filter((r) => byId.has(r.achievementId)).length,
+    achievementsUnlocked: unlocked.length,
     achievementsTotal: ACHIEVEMENTS.length,
     recentAchievements,
     games,
     friends: follows.map((f) => personRef(f.following as DisplayUser)),
     groups: memberships.map((m) => groupRef(m.community)),
-    badges: badgeRows.flatMap((b): ProfileBadge[] => {
-      const title = titles.get(b.gameId);
-      return title ? [{ ...title, level: b.level, foil: b.foil }] : [];
-    }),
+    badges: shownBadges.map(({ key: _key, ...b }) => b),
     reviewCount,
     nowPlaying: await getNowPlayingFor(
       viewerId,
       { id: ownerId, playtimePrivacy: owner?.playtimePrivacy ?? 'private' },
       viewerFollowsOwner,
     ),
+    showcaseEditor,
   };
 }
 

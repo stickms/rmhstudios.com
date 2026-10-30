@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 960 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 961 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -815,7 +815,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/games`
 
-28 routes.
+29 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -840,6 +840,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/games/market/order` | `POST` | `app/routes/api/games/market/order.ts` |
 | `/api/games/market/order-cancel` | `POST` | `app/routes/api/games/market/order-cancel.ts` |
 | `/api/games/playtime` | `POST` | `app/routes/api/games/playtime.ts` |
+| `/api/games/showcase` | `POST` | `app/routes/api/games/showcase.ts` |
 | `/api/games/synapse-storm/leaderboard` | `GET` | `app/routes/api/games/synapse-storm/leaderboard.ts` |
 | `/api/games/synapse-storm/save` | `GET` | `app/routes/api/games/synapse-storm/save.ts` |
 | `/api/games/synapse-storm/score` | `POST` | `app/routes/api/games/synapse-storm/score.ts` |
