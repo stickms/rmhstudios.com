@@ -130,7 +130,8 @@ export const GAME_ASSET_CHANNELS = {
     // 2: CS:GO's frame animations decode (every weapon view model's sequences were dropped before).
     // 3: Quaternion48S counts its dropped component from w, constants read rotation, position, raw (srcanim
     //    FRAMEANIM_VERSION 2 rebuilds the models with frame animations); the sync runs probe-frameanim.py.
-    builder: 3,
+    // 4: the frame-animated ref sets the clips' basis, recorded as source.clipFrame (FRAMEANIM_VERSION 3).
+    builder: 4,
     env: 'CSGO_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },

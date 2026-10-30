@@ -788,7 +788,11 @@ sections? }` (`mapRadarSchema`, additive: the other games' manifests do not carr
   decoder change rebuilds exactly those models. The run prints how many constant rotations (compressed and
   raw) decode near the bind pose, and `scripts/tf2-game/probe-frameanim.py` (a step of the models channel)
   scores the candidate bit layouts against the install; `test_frameanim.py` covers the format on synthetic
-  data. The client keeps the view model off (`CS_DRAW_VIEWMODEL`) until the real clips are verified; it
+  data. The clips' basis comes from the model's `ref` sequence (itself a frame animation) and is
+  recorded in the GLB as `source.clipFrame`; the client places such a model by it
+  (`model-asset.ts`) instead of guessing the frame from the bind pose's bounds, which for a view model
+  (arms hanging down in the bind pose) is a quarter turn out. The client keeps the view model off
+  (`CS_DRAW_VIEWMODEL`) until the real clips are verified; it
   then draws one once its weapon has clips, with the team's default gloves bone-merged onto the weapon.
   Players stay the client's own original figures (lib/csgo-game/client/render.ts).
 - **Models.** MDL v49 and VTF 7.5 read as TF2's do. VMT conditional keys (`srgb?`, `>=dx90?`,
