@@ -70,6 +70,47 @@ local CONN = {
   relay = { 'rmh_mp_conn_relayed', 'Relayed' },
 }
 
+-- ── Hidden tabs (NET-09) ────────────────────────────────────────────────────
+-- A tab hidden for 2 s is announced as a display-only `presence away` WITHOUT graceMsLeft
+-- (lobby-host.ts hiddenShown). It never reaches the lobby state's `away` (that field gates Start
+-- and the successor choice), so the waiting room shows it from presence: L.hidden[id] = the lobby
+-- code the away was heard in, cleared by any later presence for that player (back, a graced
+-- away, left, ...). Only an entry for the lobby on screen counts, so a stale one from an earlier
+-- lobby never shows. The host re-sends the away to a joiner after its welcome (lobby_view first).
+
+L.hidden = L.hidden or {}
+
+function L.on_presence(p)
+  if not p or p.id == nil then return end
+  if p.status == 'away' and p.graceMsLeft == nil then
+    local v = U.model and U.model.lobby
+    L.hidden[p.id] = v and v.state and v.state.code or false
+  else
+    L.hidden[p.id] = nil
+  end
+  if U.model and U.model.lobby and U.changed then U.changed() end
+end
+
+if not L.presence_hooked and MP.report and MP.report.on then
+  L.presence_hooked = true
+  MP.report.on('presence', function(p) return L.on_presence(p) end)
+end
+
+--- Whether `id`'s tab is hidden (display-only away) in the lobby `view`.
+function L.hidden_away(view, id)
+  local code = view and view.state and view.state.code
+  return code ~= nil and L.hidden[id] == code
+end
+
+--- The player row to draw: `p` itself, or a copy with `away` set for a hidden tab.
+function L.display_player(view, p)
+  if p.away or not L.hidden_away(view, p.id) then return p end
+  local q = {}
+  for k, v in pairs(p) do q[k] = v end
+  q.away = true
+  return q
+end
+
 function L.conn_label(p)
   local c = CONN[p.conn] or CONN.direct
   return TH.T(c[1], c[2])
@@ -94,7 +135,7 @@ function L.roster_def(model)
   local first = (L.ui.page - 1) * L.PER_PAGE + 1
   local rows, row = {}, {}
   for i = first, math.min(#players, first + L.PER_PAGE - 1) do
-    local p = players[i]
+    local p = L.display_player(view, players[i])
     row[#row + 1] = W.player_card(p, {
       scale = 0.62,
       info = { host = p.id == state.hostId, muted = model.muted[p.id], show_ready = state.kind ~= 'casual',
@@ -262,6 +303,7 @@ function L.player_overlay_contents(model, id)
   local view = model.lobby
   local p = view and L.find_player(view, id)
   if not p then return nil end
+  p = L.display_player(view, p)
   local muted = model.muted[id] == true
   local actions = {
     W.row({ W.button({ id = 'mp_player_mute', label = muted and TH.T('rmh_mp_ui_unmute_player', 'Unmute Player') or TH.T('rmh_mp_ui_mute_player', 'Mute Player'),
@@ -272,13 +314,15 @@ function L.player_overlay_contents(model, id)
     actions[#actions + 1] = W.row({ W.button({ id = 'mp_player_kick', label = TH.T('rmh_mp_ui_kick_player', 'Kick Player'),
       button = 'rmh_mp_player_kick', ref_table = { id = id }, colour = TH.col('RED'), minw = 4, minh = 0.7 }) }, { padding = 0.05 })
   end
+  -- Built row by row: a nil team row inside the table constructor cut the list short (ipairs
+  -- stopped there), so the status and build rows never showed for a player without a team.
   local info = {
     W.row({ W.text(TH.T('rmh_mp_ui_connection', 'Connection') .. ': ' .. L.conn_label(p), { scale = 0.35 }) }),
-    L.team_label(p.team) and W.row({ W.text(L.team_label(p.team), { scale = 0.35 }) }) or nil,
-    W.row({ W.text(p.connected and (p.away and TH.T('rmh_mp_conn_away', 'Away') or TH.T('rmh_mp_ui_status_connected', 'Connected'))
-      or TH.T('rmh_mp_conn_lost', 'Connection lost'), { scale = 0.35 }) }),
-    W.row({ W.text(TH.T('rmh_mp_ui_build', 'Build') .. ': ' .. tostring(MP.version), { scale = 0.3, colour = TH.ui_col('TEXT_INACTIVE') }) }),
   }
+  if L.team_label(p.team) then info[#info + 1] = W.row({ W.text(L.team_label(p.team), { scale = 0.35 }) }) end
+  info[#info + 1] = W.row({ W.text(p.connected and (p.away and TH.T('rmh_mp_conn_away', 'Away') or TH.T('rmh_mp_ui_status_connected', 'Connected'))
+    or TH.T('rmh_mp_conn_lost', 'Connection lost'), { scale = 0.35 }) })
+  info[#info + 1] = W.row({ W.text(TH.T('rmh_mp_ui_build', 'Build') .. ': ' .. tostring(MP.version), { scale = 0.3, colour = TH.ui_col('TEXT_INACTIVE') }) })
   return {
     W.row({ W.text(p.name, { scale = 0.6 }) }, { padding = 0.05 }),
     create_tabs({ colour = TH.col('MP_PURPLE'), tabs = {

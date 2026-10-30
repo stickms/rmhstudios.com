@@ -276,7 +276,8 @@ WS6 (Lua core):
 - Teams card targets are `opp[(index + ante − 1) mod |opp|]` (A1 has no rule).
 - The Runner's voucher adds a life only to alive Hunters.
 - Practice reaching ante 9 emits nothing from the referee; the vanilla win screen there is the Lua side's.
-- `chip_cap` (`chips_dollar_cap`: vanilla `mod_chips` caps chips at the money held) and `shrinking_hand` (`minus_hand_size_per_X_dollar = 10`: vanilla `CardArea:update` shrinks the hand by 1 per $10) are Advanced layers after `all_eternal`; they were excluded as EX-18 only because the mod's layers are flag-only, but the flags are vanilla challenge modifiers, so no Lua is needed. `no_uncommons` stays excluded (nothing implements it).
+- `chip_cap` (`chips_dollar_cap`: vanilla `mod_chips` caps chips at the money held) and `shrinking_hand` (`minus_hand_size_per_X_dollar = 10`: vanilla `CardArea:update` shrinks the hand by 1 per $10) are Advanced layers after `all_eternal`; they were excluded as EX-18 only because the mod's layers are flag-only, but the flags are vanilla challenge modifiers, so no Lua is needed.
+- EX-18 lifted (LY-26): `no_uncommons` (Uncommon rarity roll → Common in `get_current_pool`, Uncommon Tag banned) and the Glass cycle `glass_vanilla` / `glass_standard` / `glass_legacy` / `glass_experimental` are Advanced layers. A layer's `group` makes Advanced layers mutually exclusive (`sanitizeModifierLayers` keeps the first; the Lua toggle clears the others) and its `overrides` keys are removed from every list built so far before it adds its own, so a Glass layer replaces the ruleset's Glass choice. The Modifiers tab is three columns.
 
 ### WS5 (session runtime)
 

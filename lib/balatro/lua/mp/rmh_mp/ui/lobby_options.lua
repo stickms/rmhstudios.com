@@ -196,23 +196,34 @@ function LO.modifier_nodes(view)
   local o = view.state.options
   local on = MP.set_of(o.modifierLayers)
   local can = editable(view)
-  local cols = { {}, {} }
+  -- Three columns: 25 layers (EX-18 added five) keep the tab as tall as the 20 in two did.
+  local cols = { {}, {}, {} }
   for i, l in ipairs(TH.ADVANCED_LAYERS) do
     local ref = { v = on[l.name] == true }
     local t = W.toggle({ label = TH.layer_label(l.name), ref_table = ref, ref_value = 'v',
       callback = can and LO.layer_cb(l.name) or LO.revert_cb(ref, on[l.name] == true), w = 3.2,
       colour = can and TH.col('RED') or TH.col('GREY'), id = 'mp_layer_' .. l.name })
     t.config.mp_layer = l.name
-    local c = cols[(i - 1) % 2 + 1]
+    local c = cols[(i - 1) % 3 + 1]
     c[#c + 1] = W.row({ t })
   end
-  return { W.row({ W.col(cols[1]), W.col(cols[2]) }) }
+  return { W.row({ W.col(cols[1]), W.col(cols[2]), W.col(cols[3]) }) }
 end
 
 --- The modifierLayers list after toggling `name` (keeps TH.ADVANCED_LAYERS order).
+--- Picking a layer of a `group` (the Glass cycle) drops the group's others.
 function LO.layers_with(current, name, v)
   local set = MP.set_of(current)
   set[name] = v and true or nil
+  if v then
+    local group
+    for _, l in ipairs(TH.ADVANCED_LAYERS) do if l.name == name then group = l.group end end
+    if group then
+      for _, l in ipairs(TH.ADVANCED_LAYERS) do
+        if l.group == group and l.name ~= name then set[l.name] = nil end
+      end
+    end
+  end
   local out = {}
   for _, l in ipairs(TH.ADVANCED_LAYERS) do if set[l.name] then out[#out + 1] = l.name end end
   return out

@@ -385,6 +385,10 @@ describe('layer contents', () => {
       'score_instability',
       'shared_pockets',
       'glass_cannon',
+      'glass_vanilla',
+      'glass_standard',
+      'glass_legacy',
+      'glass_experimental',
       'inflation',
       'no_interest',
       'discard_tax',
@@ -397,6 +401,7 @@ describe('layer contents', () => {
       'chip_cap',
       'shrinking_hand',
       'gambling_opportunity',
+      'no_uncommons',
       'bigger_shop',
     ]);
     expect(getLayer('nope')).toBeUndefined();
@@ -422,6 +427,64 @@ describe('layer contents', () => {
     expect(r.gameModifiers).toEqual({ chips_dollar_cap: true, minus_hand_size_per_X_dollar: 10 });
     expect(r.layers.slice(-2)).toEqual(['chip_cap', 'shrinking_hand']);
     expect(r.setupHooks).not.toContain('chip_cap');
+  });
+});
+
+describe('EX-18 lifted: no_uncommons and the Glass cycle', () => {
+  it('no_uncommons bans the Uncommon Tag and runs its Lua wrap', () => {
+    const r = resolve('ruleset_mp_balanced', { modifierLayers: ['no_uncommons'] }).resolved;
+    expect(r.banned).toContain('tag_uncommon');
+    expect(r.setupHooks).toContain('no_uncommons');
+    expect(r.layers.at(-1)).toBe('no_uncommons');
+  });
+  it('glass_vanilla clears the ruleset rework and bans', () => {
+    expect(resolve('ruleset_mp_balanced').resolved.reworked).toContain('m_glass');
+    const bal = resolve('ruleset_mp_balanced', { modifierLayers: ['glass_vanilla'] }).resolved;
+    expect(bal.reworked).not.toContain('m_glass');
+    expect(bal.banned).not.toContain('m_glass');
+    const bad = resolve('ruleset_mp_badlatro', { modifierLayers: ['glass_vanilla'] }).resolved;
+    expect(bad.banned).not.toContain('m_glass');
+    expect(bad.spectralBannedEnhancements).not.toContain('m_glass');
+    // Everything else the ruleset bans stays banned.
+    expect(bad.banned).toContain('c_justice');
+    expect(bad.banned).toContain('tag_uncommon');
+  });
+  it('glass_standard and glass_legacy rework Glass even where the ruleset bans it', () => {
+    for (const layer of ['glass_standard', 'glass_legacy']) {
+      const exp = resolve('ruleset_mp_experimental', { modifierLayers: [layer] }).resolved;
+      expect(exp.banned).not.toContain('m_glass');
+      expect(exp.reworked).toContain('m_glass');
+      // The Experimental layer's own Justice ban is not Glass's to undo.
+      expect(exp.banned).toContain('c_justice');
+      const van = resolve('ruleset_mp_vanilla', { modifierLayers: [layer] }).resolved;
+      expect(van.reworked).toEqual(['m_glass']);
+    }
+  });
+  it('glass_experimental bans Glass and Justice and drops the rework', () => {
+    const r = resolve('ruleset_mp_balanced', { modifierLayers: ['glass_experimental'] }).resolved;
+    expect(r.banned).toEqual(expect.arrayContaining(['m_glass', 'c_justice']));
+    expect(r.reworked).not.toContain('m_glass');
+  });
+  it('the Glass cycle is one choice: only the first picked survives sanitizing', () => {
+    expect(
+      sanitizeModifierLayers([
+        'glass_experimental',
+        'no_uncommons',
+        'glass_standard',
+        'glass_cannon',
+      ]),
+    ).toEqual(['glass_cannon', 'glass_standard', 'no_uncommons']);
+    const r = resolve('ruleset_mp_balanced', {
+      modifierLayers: ['glass_vanilla', 'glass_experimental'],
+    }).resolved;
+    expect(r.layers.filter((l) => l.startsWith('glass_'))).toEqual(['glass_vanilla']);
+    expect(r.banned).not.toContain('m_glass');
+  });
+  it('a ruleset without Glass choices is unchanged by overrides of absent keys', () => {
+    const a = resolve('ruleset_mp_vanilla').resolved;
+    const b = resolve('ruleset_mp_vanilla', { modifierLayers: ['glass_vanilla'] }).resolved;
+    expect(b.banned).toEqual(a.banned);
+    expect(b.reworked).toEqual(a.reworked);
   });
 });
 

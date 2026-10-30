@@ -20,14 +20,13 @@
  *   (`mpContentPooled`).
  * - D-23: a key that is both banned and reworked is dropped from `reworked`
  *   (the ban wins).
+ * - A layer's `overrides` keys are first removed from every list built so far
+ *   (bans, silent bans, reworks, included, spectral bans, Attrition's too), then the
+ *   layer adds its own: the Glass cycle replaces the ruleset's Glass choice.
  */
 
 import { requireResolvedRuleset } from '../wire-codec';
-import type {
-  LobbyOptionKey,
-  LobbyOptions,
-  ResolvedRuleset,
-} from '../types';
+import type { LobbyOptionKey, LobbyOptions, ResolvedRuleset } from '../types';
 import {
   ATTRITION_BANS,
   TRAP_PACKS,
@@ -116,6 +115,7 @@ export function resolveDef(rs: RulesetDef, input: ResolveInput): ResolveResult {
     | 'stickers'
     | 'gameModifiers'
     | 'startingParams'
+    | 'overrides'
   >[] = [...layers, rs];
 
   const lists = {
@@ -136,6 +136,13 @@ export function resolveDef(rs: RulesetDef, input: ResolveInput): ResolveResult {
   };
   pushUnique(lists.banned, seen.banned, ATTRITION_BANS);
   for (const src of sources) {
+    if (src.overrides && src.overrides.length > 0) {
+      const drop = new Set(src.overrides);
+      for (const f of Object.keys(lists) as (keyof typeof lists)[]) {
+        lists[f] = lists[f].filter((k) => !drop.has(k));
+        for (const k of drop) seen[f].delete(k);
+      }
+    }
     for (const f of Object.keys(lists) as (keyof typeof lists)[])
       pushUnique(lists[f], seen[f], src[f]);
   }

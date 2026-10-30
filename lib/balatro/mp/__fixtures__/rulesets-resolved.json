@@ -1457,6 +1457,7 @@
         "score_instability",
         "shared_pockets",
         "glass_cannon",
+        "glass_vanilla",
         "inflation",
         "no_interest",
         "discard_tax",
@@ -1469,6 +1470,7 @@
         "chip_cap",
         "shrinking_hand",
         "gambling_opportunity",
+        "no_uncommons",
         "bigger_shop"
       ],
       "multiplayerContent": true,
@@ -1491,7 +1493,8 @@
         "c_deja_vu",
         "j_stencil",
         "m_gold",
-        "m_lucky"
+        "m_lucky",
+        "tag_uncommon"
       ],
       "bannedSilent": [
         "j_hanging_chad",
@@ -1529,7 +1532,6 @@
         "j_mp_turtle_bean",
         "j_mp_bloodstone",
         "c_mp_ouija_standard",
-        "m_glass",
         "c_mp_wraith"
       ],
       "spectralBannedEnhancements": [],
@@ -1560,6 +1562,7 @@
         "score_instability",
         "shared_pockets",
         "glass_cannon",
+        "no_uncommons",
         "bigger_shop"
       ],
       "flags": {
@@ -1612,6 +1615,10 @@
         "score_instability",
         "shared_pockets",
         "glass_cannon",
+        "glass_vanilla",
+        "glass_standard",
+        "glass_legacy",
+        "glass_experimental",
         "inflation",
         "no_interest",
         "discard_tax",
@@ -1624,6 +1631,7 @@
         "chip_cap",
         "shrinking_hand",
         "gambling_opportunity",
+        "no_uncommons",
         "bigger_shop"
       ],
       "seatGraceMs": 120000

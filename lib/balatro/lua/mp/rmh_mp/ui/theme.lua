@@ -272,6 +272,11 @@ TH.ADVANCED_LAYERS = {
   { name = 'score_instability', def = 'Score Instability' },
   { name = 'shared_pockets', def = 'Shared Pockets' },
   { name = 'glass_cannon', def = 'Glass Cannon' },
+  -- The Glass cycle: one group, at most one picked (layers.ts `group`).
+  { name = 'glass_vanilla', def = 'Glass: Vanilla', group = 'glass' },
+  { name = 'glass_standard', def = 'Glass: Standard', group = 'glass' },
+  { name = 'glass_legacy', def = 'Glass: Legacy', group = 'glass' },
+  { name = 'glass_experimental', def = 'Glass: Experimental', group = 'glass' },
   { name = 'inflation', def = 'Inflation' },
   { name = 'no_interest', def = 'No Interest' },
   { name = 'discard_tax', def = 'Discard Tax' },
@@ -284,6 +289,7 @@ TH.ADVANCED_LAYERS = {
   { name = 'chip_cap', def = 'Chip Cap' },
   { name = 'shrinking_hand', def = 'Shrinking Hand' },
   { name = 'gambling_opportunity', def = 'Gambling Opportunity' },
+  { name = 'no_uncommons', def = 'No Uncommons' },
   { name = 'bigger_shop', def = 'Bigger Shop' },
 }
 

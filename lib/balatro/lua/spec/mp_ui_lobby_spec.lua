@@ -187,6 +187,78 @@ describe('ui lobby: screen from lobby_view', function()
   end)
 end)
 
+describe('ui lobby: a hidden tab shows as away in the waiting room (NET-09)', function()
+  before_each(boot)
+  after_each(UH.teardown)
+
+  local function card_player(top, id)
+    local node = UH.find(top, 'mp_player_' .. id)
+    local area
+    UH.walk(node, function(n)
+      local o = n.config and n.config.object
+      if type(o) == 'table' and o.cards then area = o end
+    end)
+    return area and area.cards[1] and area.cards[1].mp_player
+  end
+
+  it('a display-only away (no graceMsLeft) marks the row, the tooltip and the Info tab; state.away stays false', function()
+    local view = UH.view()
+    local _, top = show(view)
+    local L = U.lobby
+    expect(card_player(top, 'u_bob').away).falsy()
+    expect(UH.recv('presence', { id = 'u_bob', status = 'away' })).truthy()
+    UH.frame()
+    top = U.boxes.top and U.boxes.top.definition
+    expect(card_player(top, 'u_bob').away).eq(true)
+    expect(card_player(top, 'u_alice').away).falsy()
+    expect(L.find_player(MP.state.lobby, 'u_bob').away).falsy() -- the lobby state is not touched
+    local W = require 'rmh_mp.ui.widgets'
+    expect(UH.has_text(W.player_tooltip(card_player(top, 'u_bob'), {}), 'Away')).truthy()
+    -- The Info tab of the per-player overlay (vanilla create_tabs keeps each tab in a ref_table).
+    local c = L.player_overlay_contents(U.model, 'u_bob')
+    local found = false
+    UH.walk({ nodes = c }, function(n)
+      local t = n.config and n.config.ref_table
+      if type(t) == 'table' and t.tab_definition_function and UH.has_text(t.tab_definition_function(), 'Away') then
+        found = true
+      end
+    end)
+    expect(found).eq(true)
+  end)
+
+  it('back, a graced away and leaving clear it; a later lobby never inherits it', function()
+    local view = UH.view()
+    show(view)
+    local L = U.lobby
+    UH.recv('presence', { id = 'u_bob', status = 'away' })
+    expect(L.hidden_away(U.model.lobby, 'u_bob')).eq(true)
+    UH.recv('presence', { id = 'u_bob', status = 'back' })
+    expect(L.hidden_away(U.model.lobby, 'u_bob')).eq(false)
+    UH.recv('presence', { id = 'u_bob', status = 'away' })
+    UH.recv('presence', { id = 'u_bob', status = 'away', graceMsLeft = 120000 })
+    expect(L.hidden_away(U.model.lobby, 'u_bob')).eq(false) -- the link away shows through state.away
+    UH.recv('presence', { id = 'u_bob', status = 'away' })
+    UH.recv('presence', { id = 'u_bob', status = 'left' })
+    expect(L.hidden_away(U.model.lobby, 'u_bob')).eq(false)
+    -- Heard in lobby ABC234, then the player moves to another lobby: not shown there.
+    UH.recv('presence', { id = 'u_bob', status = 'away' })
+    local other = UH.view()
+    other.state.code = 'XYZ789'
+    show(other)
+    expect(L.hidden_away(U.model.lobby, 'u_bob')).eq(false)
+    expect(L.display_player(U.model.lobby, L.find_player(U.model.lobby, 'u_bob')).away).falsy()
+  end)
+
+  it('a player already away by link keeps its own row object', function()
+    local view = UH.view()
+    view.state.players[2].away = true
+    show(view)
+    UH.recv('presence', { id = view.state.players[2].id, status = 'away' })
+    local p = U.lobby.find_player(U.model.lobby, view.state.players[2].id)
+    expect(U.lobby.display_player(U.model.lobby, p) == p).eq(true)
+  end)
+end)
+
 describe('ui lobby: party and casual', function()
   before_each(boot)
   after_each(UH.teardown)
@@ -440,6 +512,23 @@ describe('ui lobby: Lobby Options', function()
     expect(v.value[1]).eq('wraith_rework')
     expect(v.value[2]).eq('glass_cannon')
     expect(U.lobby_options.layers_with({ 'glass_cannon' }, 'glass_cannon', false)).eq({})
+  end)
+
+  it('Modifiers: the Glass cycle is one choice, No Uncommons is its own toggle (EX-18)', function()
+    local LO = U.lobby_options
+    expect(LO.layers_with({ 'glass_cannon', 'glass_vanilla' }, 'glass_legacy', true))
+      .eq({ 'glass_cannon', 'glass_legacy' })
+    expect(LO.layers_with({ 'glass_legacy' }, 'glass_legacy', false)).eq({})
+    expect(LO.layers_with({ 'glass_standard' }, 'no_uncommons', true)).eq({ 'glass_standard', 'no_uncommons' })
+    LO.st.tab = 'modifiers'
+    local view = UH.view()
+    view.state.options.modifierLayers = { 'glass_standard' }
+    local def = open(view)
+    expect(UH.find(def, 'mp_layer_glass_experimental') ~= nil).eq(true)
+    expect(UH.find(def, 'mp_layer_no_uncommons') ~= nil).eq(true)
+    UH.toggle(def, 'mp_layer_glass_experimental')
+    expect(UH.sent('ui_set_option')[1].d.value).eq({ 'glass_experimental' })
+    expect(U.theme.layer_label('glass_experimental')).eq('Glass: Experimental')
   end)
 
   it('Manhunt: Role (Runner hidden when taken) and Hunter Lives 7-16', function()
