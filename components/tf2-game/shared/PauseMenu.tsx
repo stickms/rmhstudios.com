@@ -24,6 +24,7 @@ import { Btn, Modal } from '../../tf2-hud/ui';
 import OptionsDialog from '../menus/OptionsDialog';
 import type { OptionsTab } from '@/lib/tf2-game/client/menus/options';
 import { useMenuSource } from '../menus/use-menu-source';
+import { useGameSkin } from '../menus/use-game-skin';
 
 /** One view of the pause menu. */
 export interface PauseView {
@@ -73,6 +74,7 @@ export default function PauseMenu({
 }) {
   const { t } = useTranslation('c-tf2-game');
   const source = useMenuSource(game);
+  const skin = useGameSkin(game);
   const { data: session } = useSession();
   const accountName = (session as { user?: { name?: string | null } } | null)?.user?.name ?? null;
   // `settings:<tab>` opens Options on that tab (Keyboard, Mouse, …).
@@ -114,6 +116,7 @@ export default function PauseMenu({
       // Back sits in the title row: a landscape phone keeps the height for the view itself.
       onBack={view ? back : undefined}
       backLabel={t('back', { defaultValue: 'Back' })}
+      skin={skin}
     >
       {view ? (
         view.render?.({ back, close: onResume })

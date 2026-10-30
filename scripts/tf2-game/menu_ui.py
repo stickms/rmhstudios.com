@@ -61,7 +61,12 @@ CSGO_MENU_ICONS = re.compile(
     r"stats\w*|leaderboard\w*|news\w*|friends?\w*|profile\w*|map\w*|bot\w*|globe\w*|search\w*|back\w*|"
     r"close\w*|x\w*|check\w*|arrow\w*|caret\w*|plus\w*|minus\w*|controller\w*|keyboard\w*|mouse\w*|"
     r"audio\w*|speaker\w*|volume\w*|display\w*|video\w*|monitor\w*|crosshair\w*|radar\w*|hud\w*)$")
-CSGO_VIDEO_PREFERENCE = ("dust2", "sirocco", "nuke", "blacksite", "bank", "shattered", "phoenix", "cbble")
+# The main menu's map backgrounds (`<map>.webm`, `<map>720.webm`, `<map>540.webm`): Dust II's when it
+# has one, else a classic map's; previews, intros and the like are not backgrounds.
+CSGO_VIDEO_PREFERENCE = ("dust2", "mirage", "inferno", "nuke", "overpass", "vertigo", "ancient", "anubis",
+                         "cbble", "train", "sirocco")
+CSGO_VIDEO_SKIP = re.compile(r"(preview|acknowledge|intro|tutorial|trailer|loading)")
+FONT_EXT = (".ttf", ".otf", ".woff", ".woff2")
 
 
 def json_bytes(doc):
@@ -246,20 +251,38 @@ def build_csgo(inst, out, errors):
                    "materials/panorama/images/logo", "panorama/images/"):
         names = inst.names(prefix)
         print("  %-44s %d (%s)" % (prefix, len(names), ", ".join(n.rsplit("/", 1)[-1] for n in names[:10])))
-    # A background movie: the preferred names first, under the size cap.
-    movies = [n for n in inst.names("panorama/videos/", ".webm")]
-    ranked = sorted(movies, key=lambda n: next((i for i, k in enumerate(CSGO_VIDEO_PREFERENCE) if k in n), 99))
+    # A background movie: the preferred map first, its 720p cut before the full one, under the size cap.
+    movies = [n for n in inst.names("panorama/videos/", ".webm") if not CSGO_VIDEO_SKIP.search(n)]
+    print("  videos: %s" % ", ".join(n.rsplit("/", 1)[-1] for n in movies))
+
+    def rank(n):
+        stem = n.rsplit("/", 1)[-1][:-5]
+        pref = next((i for i, k in enumerate(CSGO_VIDEO_PREFERENCE) if stem.startswith(k)), 99)
+        cut = 0 if stem.endswith("720") else 1 if not re.search(r"\d+$", stem) else 2
+        return (pref, cut, stem)
+    ranked = sorted(movies, key=rank)
     for n in ranked:
         raw = inst.read(n)
         if raw and len(raw) <= VIDEO_CAP:
             video = {"path": n, "file": out.emit("video", "webm", raw)}
             break
-    # Fonts.
-    for n in inst.names("panorama/fonts/"):
-        if n.endswith((".ttf", ".otf")):
+    # Fonts (Panorama's own, wherever the install keeps them).
+    font_names = [n for n in inst.names("panorama/fonts/") + inst.names("resource/") if n.endswith(FONT_EXT)]
+    print("  fonts: %s" % ", ".join(font_names[:40]))
+    print("  panorama/fonts/: %s" % ", ".join(n.rsplit("/", 1)[-1] for n in inst.names("panorama/fonts/")))
+    for n in font_names:
+        if n.endswith(FONT_EXT):
             raw = inst.read(n)
             if raw:
                 fonts[n] = out.emit("font", n.rsplit(".", 1)[1], raw)
+    # The logo and the default background, where Panorama keeps them as textures.
+    for n in inst.names("materials/panorama/images/backgrounds/", ".vtf"):
+        stem = n.rsplit("/", 1)[-1][:-4]
+        if "logo" in stem or stem == "csgo_default":
+            try:
+                images[n] = out.emit("img", "webp", webp(srctex.decode_vtf(inst.read(n)), IMAGE_CAP))
+            except (srctex.TextureError, OSError, ValueError, TypeError) as exc:
+                errors.append({"id": n, "error": str(exc)})
     # The map's screenshot(s) and any background picture.
     for n in inst.names("materials/panorama/images/"):
         if not n.endswith((".png", ".jpg")):

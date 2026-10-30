@@ -264,3 +264,10 @@
   --app-radius-sm: 0;
   color: var(--gui-text);
 }
+
+/* The skin on a dialog over the running game (use-game-skin.ts): the frame itself in the scheme's colours. */
+.gui-skin-dialog {
+  background: var(--gui-frame-bg);
+  border-color: var(--gui-border-bright);
+  font-family: Tahoma, Verdana, sans-serif;
+}

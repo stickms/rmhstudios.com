@@ -25,6 +25,7 @@ import {
   useState,
   type ButtonHTMLAttributes,
   type ChangeEvent,
+  type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type InputHTMLAttributes,
   type ReactNode,
@@ -528,10 +529,13 @@ export function Modal({
   sheet,
   onBack,
   backLabel,
+  skin,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
+  /** A game's own look for the dialog (a class re-pointing the --app-* tokens, and its custom properties). */
+  skin?: { className?: string; style?: CSSProperties };
   description?: string;
   children: ReactNode;
   footer?: ReactNode;
@@ -559,7 +563,9 @@ export function Modal({
               ? 'app-sheet inset-x-0 bottom-0 h-[calc(100dvh-2.5rem)] rounded-t-(--app-radius) pr-(--safe-right) pb-(--safe-bottom) pl-(--safe-left)'
               : 'app-modal tf2hud-dialog -translate-x-1/2 -translate-y-1/2 rounded-(--app-radius)',
             !sheet && (wide ? 'max-w-3xl' : 'max-w-md'),
+            skin?.className,
           )}
+          style={skin?.style}
         >
           <div className="flex items-start justify-between gap-3 border-b border-(--app-border) px-4 py-3">
             {onBack ? (

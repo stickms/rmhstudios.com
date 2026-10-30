@@ -35,6 +35,14 @@ export interface MenuChannel {
   game: GameId;
 }
 
+/** A channel with nothing published: every style falls back to Source's defaults. */
+export const emptyMenuChannel = (game: GameId): MenuChannel => ({
+  index: { v: 1, game, files: null, lang: {}, images: {}, icons: {}, fonts: {}, video: null },
+  files: {},
+  tokens: new Map(),
+  game,
+});
+
 /** A published file of the channel, by its `menu/…` path. */
 export const menuAssetUrl = (rel: string, game: GameId): string => gameAssetUrl(`menu/${rel}`, game);
 

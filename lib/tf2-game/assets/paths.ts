@@ -26,6 +26,8 @@ export const GAME_ASSET_TYPES: Record<string, string> = {
   // A game's main menu (`menu/…`): the fonts its schemes load and CS:GO's background movie.
   '.ttf': 'font/ttf',
   '.otf': 'font/otf',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
   '.webm': 'video/webm',
 };
 
