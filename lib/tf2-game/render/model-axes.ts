@@ -116,8 +116,11 @@ export function detectAxisRotation(hull: Bounds3, glb: Bounds3): AxisRotation {
   return best;
 }
 
-/** three model space = P · Source; GLB = R · Source → three model = P · Rᵀ · GLB. */
-export function frameMatrixFor(r: AxisRotation, out = new Matrix4()): Matrix4 {
+/**
+ * three model space = P · Source; GLB = R · Source → three model = P · Rᵀ · GLB. `r` is any rotation
+ * (row-major): an axis rotation, or the converter's recorded clip frame (`source.clipFrame`).
+ */
+export function frameMatrixFor(r: ArrayLike<number>, out = new Matrix4()): Matrix4 {
   const p = PERM_SOURCE_TO_GL;
   const m = [0, 0, 0, 0, 0, 0, 0, 0, 0];
   for (let i = 0; i < 3; i++) {

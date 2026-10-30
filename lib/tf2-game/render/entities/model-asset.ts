@@ -19,7 +19,7 @@ import {
 } from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
-import { animatedFrame, checkPosedFrame, modelFrame } from '../model-axes';
+import { animatedFrame, checkPosedFrame, frameMatrixFor, modelFrame } from '../model-axes';
 import type { LoadedModel, ModelProvider } from '../props';
 import { Animator, AnimSet, type PoseParamDesc, type RawClip, type SequenceDesc } from './animator';
 import { materialTemplate, type MaterialTemplate } from './model-material';
@@ -42,6 +42,11 @@ export interface BodyExtras {
     illumPosition?: number[];
     hullMin?: number[];
     hullMax?: number[];
+    /**
+     * The space the clips pose the skeleton in (rows of GLB = M · Source model space), written for
+     * models whose animations are CS:GO frame animations: the frame is then known, not guessed.
+     */
+    clipFrame?: number[];
   };
   skinned?: boolean;
   bodyparts?: Array<{ name: string; count: number }>;
@@ -105,7 +110,9 @@ export class ModelAsset {
   ) {
     const scene = gltf.scene;
     this.extras = (scene.userData ?? {}) as BodyExtras;
-    this.frame = modelFrame(scene).matrix;
+    const clipFrame = this.extras.source?.clipFrame;
+    const knownFrame = clipFrame?.length === 9 && clipFrame.every(Number.isFinite) ? frameMatrixFor(clipFrame) : null;
+    this.frame = knownFrame ?? modelFrame(scene).matrix;
     this.templates = materials.map((m) => materialTemplate(m));
     annotatePrimitives(gltf);
     let skel: SkinnedMesh | null = null;
@@ -143,7 +150,8 @@ export class ModelAsset {
           clips: src.animations as unknown as RawClip[],
         })
       : null;
-    if (this.anim && sm) {
+    // Otherwise the frame is recovered from the bind pose's bounds and then the idle pose's root.
+    if (this.anim && sm && !knownFrame) {
       const root = bones.findIndex((b) => !(b.parent as { isBone?: boolean } | null)?.isBone);
       const seq = idleSequence(this.anim);
       const clip = seq

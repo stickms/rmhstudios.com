@@ -236,7 +236,11 @@ def root_fix(base_mdl, bones):
     ref = next((s for s in read_sequences(base_mdl) if s["name"] == "ref"), None)
     if ref is None or not ref["anims"]:
         raise ModelError("no ref sequence")
-    pos, quat = decode_animdesc(base_mdl, bones, read_animdesc(base_mdl, ref["anims"][0]), 1)
+    desc = read_animdesc(base_mdl, ref["anims"][0])
+    if desc["flags"] & DESC_FRAMEANIM:  # CS:GO: the ref is a frame animation too
+        pos, quat, _ = decode_animdesc_ex(base_mdl, bones, desc, 1)
+    else:
+        pos, quat = decode_animdesc(base_mdl, bones, desc, 1)
     root = next(i for i, b in enumerate(bones) if b["parent"] < 0)
     return quat_matrix(bones[root]["quat"]) @ quat_matrix(quat[0, root]).T
 
@@ -387,7 +391,7 @@ F_RAWPOS, F_RAWROT, F_ANIMPOS, F_ANIMROT = 0x01, 0x02, 0x04, 0x08
 F_FULLANIMPOS, F_CONST_POS2, F_CONST_ROT2, F_ANIM_ROT2 = 0x10, 0x20, 0x40, 0x80
 # Folded into the source hash of every model that has frame animations (scripts/tf2-game/models.py), so a
 # change here rebuilds exactly those models.
-FRAMEANIM_VERSION = 2
+FRAMEANIM_VERSION = 3
 # A plausibility check the converter prints (no install here to test against): of the bones a frame
 # animation holds at a constant rotation, how many sit within FRAME_CHECK_DEGREES of the bind pose. Most
 # such bones (static weapon parts, unanimated fingers) are at rest, so a misdecoded rotation shows up as a
