@@ -1,4 +1,6 @@
 {
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
   "all-categories": "すべてのカテゴリ",
   "anonymous": "匿名",
   "cancel": "キャンセル",
@@ -16,6 +18,7 @@
   "label-category": "カテゴリ",
   "label-demo-url": "デモURL",
   "label-description": "説明",
+  "label-made-for": "対象ゲーム（任意）",
   "label-price": "価格（コイン）",
   "label-readme": "README（Markdown）",
   "label-repo-url": "リポジトリURL",
@@ -27,6 +30,8 @@
   "likes-count_other": "{{count}}いいね",
   "live-demo": "ライブデモ",
   "load-more-comments": "さらにコメントを読み込む",
+  "made-for-hint": "公開ビルドはそのゲームのWorkshopに表示されます。",
+  "made-for-none": "特定のゲーム向けではありません",
   "minutes-ago_other": "{{count}}分前",
   "months-ago_other": "{{count}}ヶ月前",
   "my-builds": "マイビルド",
@@ -38,6 +43,7 @@
   "placeholder-tag": "タグを追加...",
   "placeholder-title": "私の素晴らしいプロジェクト",
   "popular": "人気",
+  "post-comment": "Post comment",
   "premium-build": "プレミアムビルド",
   "premium-build-desc": "このビルドのREADME、ソース、ライブデモをアンロックします。",
   "price-description": "README、ソース、デモをアンロックするためにコインを請求します。無料のままにするには0にしてください。販売には10%のプラットフォーム手数料がかかります。",
@@ -71,8 +77,5 @@
   "views-count_other": "{{count}}ビュー",
   "write-comment": "コメントを書く...",
   "write-reply": "返信を書く...",
-  "years-ago_other": "{{count}}年前",
-  "add-tag": "Add tag",
-  "add-technology": "Add technology",
-  "post-comment": "Post comment"
+  "years-ago_other": "{{count}}年前"
 }

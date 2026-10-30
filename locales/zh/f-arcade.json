@@ -1,0 +1,5 @@
+{
+  "back-to-admin": "返回管理员",
+  "median-line_one": "完成时间中位数：{{time}}（{{count}} 名玩家）",
+  "median-line_other": "完成时间中位数：{{time}}（{{count}} 名玩家）"
+}

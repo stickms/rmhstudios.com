@@ -6,6 +6,7 @@ import viBuilds from "@/locales/vi/builds.json";
 import viCAdmin from "@/locales/vi/c-admin.json";
 import viCAltair from "@/locales/vi/c-altair.json";
 import viCAwards from "@/locales/vi/c-awards.json";
+import viCBalatro from "@/locales/vi/c-balatro.json";
 import viCBlog from "@/locales/vi/c-blog.json";
 import viCBuilds from "@/locales/vi/c-builds.json";
 import viCBumsRush from "@/locales/vi/c-bums-rush.json";
@@ -59,6 +60,7 @@ import viCStatus from "@/locales/vi/c-status.json";
 import viCStudio from "@/locales/vi/c-studio.json";
 import viCSynapseStorm from "@/locales/vi/c-synapse-storm.json";
 import viCTempleOfJoy from "@/locales/vi/c-temple-of-joy.json";
+import viCTf2Game from "@/locales/vi/c-tf2-game.json";
 import viCTf2Hud from "@/locales/vi/c-tf2-hud.json";
 import viCTournaments from "@/locales/vi/c-tournaments.json";
 import viCUi from "@/locales/vi/c-ui.json";
@@ -69,6 +71,23 @@ import viCVoidBreaker from "@/locales/vi/c-void-breaker.json";
 import viCWager from "@/locales/vi/c-wager.json";
 import viCWishlist from "@/locales/vi/c-wishlist.json";
 import viCommon from "@/locales/vi/common.json";
+import viFArcade from "@/locales/vi/f-arcade.json";
+import viFCanvas from "@/locales/vi/f-canvas.json";
+import viFCommunitiesPlus from "@/locales/vi/f-communities-plus.json";
+import viFCreative from "@/locales/vi/f-creative.json";
+import viFDelight from "@/locales/vi/f-delight.json";
+import viFDevplatform from "@/locales/vi/f-devplatform.json";
+import viFDiscovery from "@/locales/vi/f-discovery.json";
+import viFGifting from "@/locales/vi/f-gifting.json";
+import viFLadderHomes from "@/locales/vi/f-ladder-homes.json";
+import viFMessaging from "@/locales/vi/f-messaging.json";
+import viFParty from "@/locales/vi/f-party.json";
+import viFPostsPlus from "@/locales/vi/f-posts-plus.json";
+import viFReading from "@/locales/vi/f-reading.json";
+import viFSafety from "@/locales/vi/f-safety.json";
+import viFTools from "@/locales/vi/f-tools.json";
+import viFWatch from "@/locales/vi/f-watch.json";
+import viFWorlds from "@/locales/vi/f-worlds.json";
 import viFeed from "@/locales/vi/feed.json";
 import viGamesHub from "@/locales/vi/games-hub.json";
 import viGroups from "@/locales/vi/groups.json";
@@ -104,6 +123,7 @@ const viResources = {
   "c-admin": viCAdmin,
   "c-altair": viCAltair,
   "c-awards": viCAwards,
+  "c-balatro": viCBalatro,
   "c-blog": viCBlog,
   "c-builds": viCBuilds,
   "c-bums-rush": viCBumsRush,
@@ -157,6 +177,7 @@ const viResources = {
   "c-studio": viCStudio,
   "c-synapse-storm": viCSynapseStorm,
   "c-temple-of-joy": viCTempleOfJoy,
+  "c-tf2-game": viCTf2Game,
   "c-tf2-hud": viCTf2Hud,
   "c-tournaments": viCTournaments,
   "c-ui": viCUi,
@@ -167,6 +188,23 @@ const viResources = {
   "c-wager": viCWager,
   "c-wishlist": viCWishlist,
   "common": viCommon,
+  "f-arcade": viFArcade,
+  "f-canvas": viFCanvas,
+  "f-communities-plus": viFCommunitiesPlus,
+  "f-creative": viFCreative,
+  "f-delight": viFDelight,
+  "f-devplatform": viFDevplatform,
+  "f-discovery": viFDiscovery,
+  "f-gifting": viFGifting,
+  "f-ladder-homes": viFLadderHomes,
+  "f-messaging": viFMessaging,
+  "f-party": viFParty,
+  "f-posts-plus": viFPostsPlus,
+  "f-reading": viFReading,
+  "f-safety": viFSafety,
+  "f-tools": viFTools,
+  "f-watch": viFWatch,
+  "f-worlds": viFWorlds,
   "feed": viFeed,
   "games-hub": viGamesHub,
   "groups": viGroups,

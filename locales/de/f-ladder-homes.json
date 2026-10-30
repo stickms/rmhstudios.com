@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} Berichte · durchschnittliche Schwierigkeit {{avg}}/5",
+  "ir-summary_other": "{{count}} Berichte · durchschnittliche Schwierigkeit {{avg}}/5",
+  "rb-spots_one": "Noch {{count}} Platz frei",
+  "rb-spots_other": "Noch {{count}} Plätze frei"
+}

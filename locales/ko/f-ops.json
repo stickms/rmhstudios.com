@@ -1,0 +1,8 @@
+{
+  "dead-flagged_one": "통합 후보 ({{count}})",
+  "dead-flagged_other": "통합 후보 ({{count}})",
+  "errors-count_one": "이벤트 {{count}}개",
+  "errors-count_other": "이벤트 {{count}}개",
+  "notices-dismissed_one": "{{count}}개 닫힘",
+  "notices-dismissed_other": "{{count}}개 닫힘"
+}

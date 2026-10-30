@@ -1,0 +1,14 @@
+{
+  "folder-chat-count_one": "{{count}} чат",
+  "folder-chat-count_other": "{{count}} чатов",
+  "forward-send_one": "Отправить в {{count}} чат(ов)",
+  "forward-send_other": "Отправить в {{count}} чат(ов)",
+  "pinned-bar-count_one": "{{count}} закреплённое сообщение",
+  "pinned-bar-count_other": "{{count}} закреплённых сообщений",
+  "poll-votes_one": "{{count}} голос",
+  "poll-votes_other": "{{count}} голосов",
+  "thread-replies_one": "{{count}} ответ",
+  "thread-replies_other": "{{count}} ответов",
+  "thread-reply-count_one": "{{count}} ответ",
+  "thread-reply-count_other": "{{count}} ответов"
+}

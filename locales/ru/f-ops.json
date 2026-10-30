@@ -1,0 +1,8 @@
+{
+  "dead-flagged_one": "Кандидаты на консолидацию ({{count}})",
+  "dead-flagged_other": "Кандидаты на консолидацию ({{count}})",
+  "errors-count_one": "{{count}} событие",
+  "errors-count_other": "{{count}} событий",
+  "notices-dismissed_one": "{{count}} отклонено",
+  "notices-dismissed_other": "{{count}} отклонено"
+}

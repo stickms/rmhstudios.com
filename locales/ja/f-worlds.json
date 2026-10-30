@@ -1,0 +1,6 @@
+{
+  "fest-next_one": "次のフェスティバル：{{name}}まであと{{count}}日",
+  "fest-next_other": "次のフェスティバル：{{name}}まであと{{count}}日",
+  "garden-bonus_one": "{{count}}人の友達があなたの庭に水をやりました - 植物の成長が少し早まりました。",
+  "garden-bonus_other": "{{count}}人の友達があなたの庭に水をやりました - 植物の成長が少し早まりました。"
+}

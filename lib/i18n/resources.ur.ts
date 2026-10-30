@@ -6,6 +6,7 @@ import urBuilds from "@/locales/ur/builds.json";
 import urCAdmin from "@/locales/ur/c-admin.json";
 import urCAltair from "@/locales/ur/c-altair.json";
 import urCAwards from "@/locales/ur/c-awards.json";
+import urCBalatro from "@/locales/ur/c-balatro.json";
 import urCBlog from "@/locales/ur/c-blog.json";
 import urCBuilds from "@/locales/ur/c-builds.json";
 import urCBumsRush from "@/locales/ur/c-bums-rush.json";
@@ -59,6 +60,7 @@ import urCStatus from "@/locales/ur/c-status.json";
 import urCStudio from "@/locales/ur/c-studio.json";
 import urCSynapseStorm from "@/locales/ur/c-synapse-storm.json";
 import urCTempleOfJoy from "@/locales/ur/c-temple-of-joy.json";
+import urCTf2Game from "@/locales/ur/c-tf2-game.json";
 import urCTf2Hud from "@/locales/ur/c-tf2-hud.json";
 import urCTournaments from "@/locales/ur/c-tournaments.json";
 import urCUi from "@/locales/ur/c-ui.json";
@@ -69,6 +71,24 @@ import urCVoidBreaker from "@/locales/ur/c-void-breaker.json";
 import urCWager from "@/locales/ur/c-wager.json";
 import urCWishlist from "@/locales/ur/c-wishlist.json";
 import urCommon from "@/locales/ur/common.json";
+import urFArcade from "@/locales/ur/f-arcade.json";
+import urFCanvas from "@/locales/ur/f-canvas.json";
+import urFCommunitiesPlus from "@/locales/ur/f-communities-plus.json";
+import urFCreative from "@/locales/ur/f-creative.json";
+import urFDelight from "@/locales/ur/f-delight.json";
+import urFDevplatform from "@/locales/ur/f-devplatform.json";
+import urFDiscovery from "@/locales/ur/f-discovery.json";
+import urFGifting from "@/locales/ur/f-gifting.json";
+import urFLadderHomes from "@/locales/ur/f-ladder-homes.json";
+import urFMessaging from "@/locales/ur/f-messaging.json";
+import urFOps from "@/locales/ur/f-ops.json";
+import urFParty from "@/locales/ur/f-party.json";
+import urFPostsPlus from "@/locales/ur/f-posts-plus.json";
+import urFReading from "@/locales/ur/f-reading.json";
+import urFSafety from "@/locales/ur/f-safety.json";
+import urFTools from "@/locales/ur/f-tools.json";
+import urFWatch from "@/locales/ur/f-watch.json";
+import urFWorlds from "@/locales/ur/f-worlds.json";
 import urFeed from "@/locales/ur/feed.json";
 import urGamesHub from "@/locales/ur/games-hub.json";
 import urGroups from "@/locales/ur/groups.json";
@@ -104,6 +124,7 @@ const urResources = {
   "c-admin": urCAdmin,
   "c-altair": urCAltair,
   "c-awards": urCAwards,
+  "c-balatro": urCBalatro,
   "c-blog": urCBlog,
   "c-builds": urCBuilds,
   "c-bums-rush": urCBumsRush,
@@ -157,6 +178,7 @@ const urResources = {
   "c-studio": urCStudio,
   "c-synapse-storm": urCSynapseStorm,
   "c-temple-of-joy": urCTempleOfJoy,
+  "c-tf2-game": urCTf2Game,
   "c-tf2-hud": urCTf2Hud,
   "c-tournaments": urCTournaments,
   "c-ui": urCUi,
@@ -167,6 +189,24 @@ const urResources = {
   "c-wager": urCWager,
   "c-wishlist": urCWishlist,
   "common": urCommon,
+  "f-arcade": urFArcade,
+  "f-canvas": urFCanvas,
+  "f-communities-plus": urFCommunitiesPlus,
+  "f-creative": urFCreative,
+  "f-delight": urFDelight,
+  "f-devplatform": urFDevplatform,
+  "f-discovery": urFDiscovery,
+  "f-gifting": urFGifting,
+  "f-ladder-homes": urFLadderHomes,
+  "f-messaging": urFMessaging,
+  "f-ops": urFOps,
+  "f-party": urFParty,
+  "f-posts-plus": urFPostsPlus,
+  "f-reading": urFReading,
+  "f-safety": urFSafety,
+  "f-tools": urFTools,
+  "f-watch": urFWatch,
+  "f-worlds": urFWorlds,
   "feed": urFeed,
   "games-hub": urGamesHub,
   "groups": urGroups,

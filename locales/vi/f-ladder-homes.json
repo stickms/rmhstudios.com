@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} báo cáo · độ khó trung bình {{avg}}/5",
+  "ir-summary_other": "{{count}} báo cáo · độ khó trung bình {{avg}}/5",
+  "rb-spots_one": "Còn {{count}} chỗ",
+  "rb-spots_other": "Còn {{count}} chỗ"
+}

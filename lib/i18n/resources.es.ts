@@ -6,6 +6,7 @@ import esBuilds from "@/locales/es/builds.json";
 import esCAdmin from "@/locales/es/c-admin.json";
 import esCAltair from "@/locales/es/c-altair.json";
 import esCAwards from "@/locales/es/c-awards.json";
+import esCBalatro from "@/locales/es/c-balatro.json";
 import esCBlog from "@/locales/es/c-blog.json";
 import esCBuilds from "@/locales/es/c-builds.json";
 import esCBumsRush from "@/locales/es/c-bums-rush.json";
@@ -59,6 +60,7 @@ import esCStatus from "@/locales/es/c-status.json";
 import esCStudio from "@/locales/es/c-studio.json";
 import esCSynapseStorm from "@/locales/es/c-synapse-storm.json";
 import esCTempleOfJoy from "@/locales/es/c-temple-of-joy.json";
+import esCTf2Game from "@/locales/es/c-tf2-game.json";
 import esCTf2Hud from "@/locales/es/c-tf2-hud.json";
 import esCTournaments from "@/locales/es/c-tournaments.json";
 import esCUi from "@/locales/es/c-ui.json";
@@ -69,6 +71,24 @@ import esCVoidBreaker from "@/locales/es/c-void-breaker.json";
 import esCWager from "@/locales/es/c-wager.json";
 import esCWishlist from "@/locales/es/c-wishlist.json";
 import esCommon from "@/locales/es/common.json";
+import esFArcade from "@/locales/es/f-arcade.json";
+import esFCanvas from "@/locales/es/f-canvas.json";
+import esFCommunitiesPlus from "@/locales/es/f-communities-plus.json";
+import esFCreative from "@/locales/es/f-creative.json";
+import esFDelight from "@/locales/es/f-delight.json";
+import esFDevplatform from "@/locales/es/f-devplatform.json";
+import esFDiscovery from "@/locales/es/f-discovery.json";
+import esFGifting from "@/locales/es/f-gifting.json";
+import esFLadderHomes from "@/locales/es/f-ladder-homes.json";
+import esFMessaging from "@/locales/es/f-messaging.json";
+import esFOps from "@/locales/es/f-ops.json";
+import esFParty from "@/locales/es/f-party.json";
+import esFPostsPlus from "@/locales/es/f-posts-plus.json";
+import esFReading from "@/locales/es/f-reading.json";
+import esFSafety from "@/locales/es/f-safety.json";
+import esFTools from "@/locales/es/f-tools.json";
+import esFWatch from "@/locales/es/f-watch.json";
+import esFWorlds from "@/locales/es/f-worlds.json";
 import esFeed from "@/locales/es/feed.json";
 import esGamesHub from "@/locales/es/games-hub.json";
 import esGroups from "@/locales/es/groups.json";
@@ -104,6 +124,7 @@ const esResources = {
   "c-admin": esCAdmin,
   "c-altair": esCAltair,
   "c-awards": esCAwards,
+  "c-balatro": esCBalatro,
   "c-blog": esCBlog,
   "c-builds": esCBuilds,
   "c-bums-rush": esCBumsRush,
@@ -157,6 +178,7 @@ const esResources = {
   "c-studio": esCStudio,
   "c-synapse-storm": esCSynapseStorm,
   "c-temple-of-joy": esCTempleOfJoy,
+  "c-tf2-game": esCTf2Game,
   "c-tf2-hud": esCTf2Hud,
   "c-tournaments": esCTournaments,
   "c-ui": esCUi,
@@ -167,6 +189,24 @@ const esResources = {
   "c-wager": esCWager,
   "c-wishlist": esCWishlist,
   "common": esCommon,
+  "f-arcade": esFArcade,
+  "f-canvas": esFCanvas,
+  "f-communities-plus": esFCommunitiesPlus,
+  "f-creative": esFCreative,
+  "f-delight": esFDelight,
+  "f-devplatform": esFDevplatform,
+  "f-discovery": esFDiscovery,
+  "f-gifting": esFGifting,
+  "f-ladder-homes": esFLadderHomes,
+  "f-messaging": esFMessaging,
+  "f-ops": esFOps,
+  "f-party": esFParty,
+  "f-posts-plus": esFPostsPlus,
+  "f-reading": esFReading,
+  "f-safety": esFSafety,
+  "f-tools": esFTools,
+  "f-watch": esFWatch,
+  "f-worlds": esFWorlds,
   "feed": esFeed,
   "games-hub": esGamesHub,
   "groups": esGroups,

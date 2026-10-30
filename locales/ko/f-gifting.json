@@ -1,0 +1,10 @@
+{
+  "advent-tally_one": "올해 {{total}}개 중 {{count}}개의 문을 열었습니다",
+  "advent-tally_other": "올해 {{total}}개 중 {{count}}개의 문을 열었습니다",
+  "list-members_one": "멤버 {{count}}명",
+  "list-members_other": "멤버 {{count}}명",
+  "members-title_one": "멤버 ({{count}})",
+  "members-title_other": "멤버 ({{count}})",
+  "mixtape-title_one": "내 믹스테이프 ({{count}}/{{max}})",
+  "mixtape-title_other": "내 믹스테이프 ({{count}}/{{max}})"
+}

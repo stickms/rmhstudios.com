@@ -1,4 +1,6 @@
 {
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
   "all-categories": "모든 카테고리",
   "anonymous": "익명",
   "cancel": "취소",
@@ -16,6 +18,7 @@
   "label-category": "카테고리",
   "label-demo-url": "데모 URL",
   "label-description": "설명",
+  "label-made-for": "제작 대상 (선택 사항)",
   "label-price": "가격 (코인)",
   "label-readme": "README (Markdown)",
   "label-repo-url": "저장소 URL",
@@ -27,6 +30,8 @@
   "likes-count_other": "좋아요 {{count}}개",
   "live-demo": "라이브 데모",
   "load-more-comments": "댓글 더 보기",
+  "made-for-hint": "공개 빌드는 해당 게임의 Workshop에 표시됩니다.",
+  "made-for-none": "특정 게임을 대상으로 하지 않음",
   "minutes-ago_other": "{{count}}분 전",
   "months-ago_other": "{{count}}개월 전",
   "my-builds": "내 빌드",
@@ -38,6 +43,7 @@
   "placeholder-tag": "태그 추가...",
   "placeholder-title": "내 멋진 프로젝트",
   "popular": "인기",
+  "post-comment": "Post comment",
   "premium-build": "프리미엄 빌드",
   "premium-build-desc": "이 빌드의 README, 소스 및 라이브 데모를 잠금 해제하세요.",
   "price-description": "README, 소스 및 데모를 잠금 해제하려면 코인을 청구하세요. 무료로 유지하려면 0으로 두세요. 판매에는 10% 플랫폼 수수료가 적용됩니다.",
@@ -71,8 +77,5 @@
   "views-count_other": "조회수 {{count}}회",
   "write-comment": "댓글 작성...",
   "write-reply": "답변 작성...",
-  "years-ago_other": "{{count}}년 전",
-  "add-tag": "Add tag",
-  "add-technology": "Add technology",
-  "post-comment": "Post comment"
+  "years-ago_other": "{{count}}년 전"
 }

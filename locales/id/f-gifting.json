@@ -1,0 +1,10 @@
+{
+  "advent-tally_one": "{{count}} dari {{total}} pintu dibuka tahun ini",
+  "advent-tally_other": "{{count}} dari {{total}} pintu dibuka tahun ini",
+  "list-members_one": "{{count}} anggota",
+  "list-members_other": "{{count}} anggota",
+  "members-title_one": "Anggota ({{count}})",
+  "members-title_other": "Anggota ({{count}})",
+  "mixtape-title_one": "Mixtape kamu ({{count}}/{{max}})",
+  "mixtape-title_other": "Mixtape kamu ({{count}}/{{max}})"
+}

@@ -1,0 +1,14 @@
+{
+  "folder-chat-count_one": "{{count}} sohbet",
+  "folder-chat-count_other": "{{count}} sohbet",
+  "forward-send_one": "{{count}} sohbete gönder",
+  "forward-send_other": "{{count}} sohbete gönder",
+  "pinned-bar-count_one": "{{count}} sabitlenmiş mesaj",
+  "pinned-bar-count_other": "{{count}} sabitlenmiş mesaj",
+  "poll-votes_one": "{{count}} oy",
+  "poll-votes_other": "{{count}} oy",
+  "thread-replies_one": "{{count}} yanıt",
+  "thread-replies_other": "{{count}} yanıt",
+  "thread-reply-count_one": "{{count}} yanıt",
+  "thread-reply-count_other": "{{count}} yanıt"
+}

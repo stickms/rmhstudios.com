@@ -15,6 +15,8 @@
   "join-room": "Tham Gia",
   "join-room-to-queue": "Join a room to queue",
   "listener-count_other": "{{count}} người nghe",
+  "listening-count_one": "{{count}} người đang nghe",
+  "listening-count_other": "{{count}} listening",
   "loading": "Loading…",
   "loading-rooms": "Đang tải phòng...",
   "mini-close": "Dừng và đóng",
@@ -46,6 +48,5 @@
   "sign-in-to-guess": "Đăng nhập để đoán.",
   "solves-plays": "{{solves}} đã giải · {{plays}} lượt phát",
   "song-title-placeholder": "Tên bài hát...",
-  "your-playlists": "Your playlists",
-  "listening-count_other": "{{count}} listening"
+  "your-playlists": "Your playlists"
 }

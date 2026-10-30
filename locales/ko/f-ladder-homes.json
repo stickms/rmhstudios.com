@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}}개 보고서 · 평균 난이도 {{avg}}/5",
+  "ir-summary_other": "{{count}}개 보고서 · 평균 난이도 {{avg}}/5",
+  "rb-spots_one": "{{count}}자리 남음",
+  "rb-spots_other": "{{count}}자리 남음"
+}

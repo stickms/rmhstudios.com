@@ -1,0 +1,8 @@
+{
+  "dead-flagged_one": "Kandidat untuk konsolidasi ({{count}})",
+  "dead-flagged_other": "Kandidat untuk konsolidasi ({{count}})",
+  "errors-count_one": "{{count}} peristiwa",
+  "errors-count_other": "{{count}} peristiwa",
+  "notices-dismissed_one": "{{count}} diabaikan",
+  "notices-dismissed_other": "{{count}} diabaikan"
+}

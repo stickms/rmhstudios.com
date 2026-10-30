@@ -6,6 +6,7 @@ import arBuilds from "@/locales/ar/builds.json";
 import arCAdmin from "@/locales/ar/c-admin.json";
 import arCAltair from "@/locales/ar/c-altair.json";
 import arCAwards from "@/locales/ar/c-awards.json";
+import arCBalatro from "@/locales/ar/c-balatro.json";
 import arCBlog from "@/locales/ar/c-blog.json";
 import arCBuilds from "@/locales/ar/c-builds.json";
 import arCBumsRush from "@/locales/ar/c-bums-rush.json";
@@ -59,6 +60,7 @@ import arCStatus from "@/locales/ar/c-status.json";
 import arCStudio from "@/locales/ar/c-studio.json";
 import arCSynapseStorm from "@/locales/ar/c-synapse-storm.json";
 import arCTempleOfJoy from "@/locales/ar/c-temple-of-joy.json";
+import arCTf2Game from "@/locales/ar/c-tf2-game.json";
 import arCTf2Hud from "@/locales/ar/c-tf2-hud.json";
 import arCTournaments from "@/locales/ar/c-tournaments.json";
 import arCUi from "@/locales/ar/c-ui.json";
@@ -70,6 +72,24 @@ import arCVoidBreaker from "@/locales/ar/c-void-breaker.json";
 import arCWager from "@/locales/ar/c-wager.json";
 import arCWishlist from "@/locales/ar/c-wishlist.json";
 import arCommon from "@/locales/ar/common.json";
+import arFArcade from "@/locales/ar/f-arcade.json";
+import arFCanvas from "@/locales/ar/f-canvas.json";
+import arFCommunitiesPlus from "@/locales/ar/f-communities-plus.json";
+import arFCreative from "@/locales/ar/f-creative.json";
+import arFDelight from "@/locales/ar/f-delight.json";
+import arFDevplatform from "@/locales/ar/f-devplatform.json";
+import arFDiscovery from "@/locales/ar/f-discovery.json";
+import arFGifting from "@/locales/ar/f-gifting.json";
+import arFLadderHomes from "@/locales/ar/f-ladder-homes.json";
+import arFMessaging from "@/locales/ar/f-messaging.json";
+import arFOps from "@/locales/ar/f-ops.json";
+import arFParty from "@/locales/ar/f-party.json";
+import arFPostsPlus from "@/locales/ar/f-posts-plus.json";
+import arFReading from "@/locales/ar/f-reading.json";
+import arFSafety from "@/locales/ar/f-safety.json";
+import arFTools from "@/locales/ar/f-tools.json";
+import arFWatch from "@/locales/ar/f-watch.json";
+import arFWorlds from "@/locales/ar/f-worlds.json";
 import arFeed from "@/locales/ar/feed.json";
 import arGamesHub from "@/locales/ar/games-hub.json";
 import arGroups from "@/locales/ar/groups.json";
@@ -106,6 +126,7 @@ const arResources = {
   "c-admin": arCAdmin,
   "c-altair": arCAltair,
   "c-awards": arCAwards,
+  "c-balatro": arCBalatro,
   "c-blog": arCBlog,
   "c-builds": arCBuilds,
   "c-bums-rush": arCBumsRush,
@@ -159,6 +180,7 @@ const arResources = {
   "c-studio": arCStudio,
   "c-synapse-storm": arCSynapseStorm,
   "c-temple-of-joy": arCTempleOfJoy,
+  "c-tf2-game": arCTf2Game,
   "c-tf2-hud": arCTf2Hud,
   "c-tournaments": arCTournaments,
   "c-ui": arCUi,
@@ -170,6 +192,24 @@ const arResources = {
   "c-wager": arCWager,
   "c-wishlist": arCWishlist,
   "common": arCommon,
+  "f-arcade": arFArcade,
+  "f-canvas": arFCanvas,
+  "f-communities-plus": arFCommunitiesPlus,
+  "f-creative": arFCreative,
+  "f-delight": arFDelight,
+  "f-devplatform": arFDevplatform,
+  "f-discovery": arFDiscovery,
+  "f-gifting": arFGifting,
+  "f-ladder-homes": arFLadderHomes,
+  "f-messaging": arFMessaging,
+  "f-ops": arFOps,
+  "f-party": arFParty,
+  "f-posts-plus": arFPostsPlus,
+  "f-reading": arFReading,
+  "f-safety": arFSafety,
+  "f-tools": arFTools,
+  "f-watch": arFWatch,
+  "f-worlds": arFWorlds,
   "feed": arFeed,
   "games-hub": arGamesHub,
   "groups": arGroups,

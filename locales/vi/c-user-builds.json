@@ -1,4 +1,6 @@
 {
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
   "all-categories": "Tất cả danh mục",
   "anonymous": "Ẩn danh",
   "cancel": "Hủy",
@@ -16,6 +18,7 @@
   "label-category": "Danh mục",
   "label-demo-url": "URL Demo",
   "label-description": "Mô tả",
+  "label-made-for": "Được tạo cho (tùy chọn)",
   "label-price": "Giá (xu)",
   "label-readme": "README (Markdown)",
   "label-repo-url": "URL Kho lưu trữ",
@@ -27,6 +30,8 @@
   "likes-count_other": "{{count}} lượt thích",
   "live-demo": "Demo Trực tiếp",
   "load-more-comments": "Tải thêm bình luận",
+  "made-for-hint": "Các bản dựng công khai sẽ xuất hiện trong Workshop của trò chơi đó.",
+  "made-for-none": "Không được tạo cho một trò chơi cụ thể",
   "minutes-ago_other": "{{count}} phút trước",
   "months-ago_other": "{{count}} tháng trước",
   "my-builds": "Builds của tôi",
@@ -38,6 +43,7 @@
   "placeholder-tag": "Thêm thẻ...",
   "placeholder-title": "Dự án Tuyệt vời của Tôi",
   "popular": "Phổ biến",
+  "post-comment": "Post comment",
   "premium-build": "Bản dựng cao cấp",
   "premium-build-desc": "Mở khóa README, mã nguồn và bản demo trực tiếp cho bản dựng này.",
   "price-description": "Thu xu để mở khóa README, mã nguồn và bản demo. Để 0 nếu muốn giữ miễn phí. Phí nền tảng 10% áp dụng cho các giao dịch bán.",
@@ -71,8 +77,5 @@
   "views-count_other": "{{count}} lượt xem",
   "write-comment": "Viết bình luận...",
   "write-reply": "Viết phản hồi...",
-  "years-ago_other": "{{count}} năm trước",
-  "add-tag": "Add tag",
-  "add-technology": "Add technology",
-  "post-comment": "Post comment"
+  "years-ago_other": "{{count}} năm trước"
 }

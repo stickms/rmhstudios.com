@@ -1,0 +1,6 @@
+{
+  "fest-next_one": "Next festival: {{name}} in {{count}} days",
+  "fest-next_other": "Next festival: {{name}} in {{count}} days",
+  "garden-bonus_one": "{{count}} friend watered your garden - your plants grew a little faster.",
+  "garden-bonus_other": "{{count}} friend watered your garden - your plants grew a little faster."
+}

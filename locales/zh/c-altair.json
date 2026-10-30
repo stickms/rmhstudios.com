@@ -54,6 +54,8 @@
   "joystick-side": "摇杆侧边",
   "keybinds": "按键绑定",
   "keyboard-hint": "[Esc] 继续 · [W/S] 导航 · [Space] 选择",
+  "keyboard-hint-level-up-screen_one": "[A/D] 或 [←/→] 导航 · [Space] 选择 · [1-{{count}}] 快速选择",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
   "keyboard-hint_other": "[A/D] 或 [←/→] 导航 · [空格] 选择 · [1-{{count}}] 快速选取",
   "kick-player": "踢出玩家",
   "kill-milestones": "杀戮里程碑",
@@ -163,6 +165,5 @@
   "webgl-context-lost": "WebGL上下文丢失！请重新加载页面。",
   "you": "（你）",
   "your-class": "你的班级",
-  "zoom": "Zoom",
-  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
+  "zoom": "Zoom"
 }

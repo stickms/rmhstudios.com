@@ -1,0 +1,10 @@
+{
+  "advent-tally_one": "{{count}} من {{total}} أبواب مفتوحة هذا العام",
+  "advent-tally_other": "{{count}} من {{total}} أبواب مفتوحة هذا العام",
+  "list-members_one": "{{count}} عضو",
+  "list-members_other": "{{count}} أعضاء",
+  "members-title_one": "الأعضاء ({{count}})",
+  "members-title_other": "الأعضاء ({{count}})",
+  "mixtape-title_one": "مزيجك الموسيقي ({{count}}/{{max}})",
+  "mixtape-title_other": "مزيجك الموسيقي ({{count}}/{{max}})"
+}

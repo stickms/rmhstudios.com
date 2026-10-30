@@ -1,0 +1,5 @@
+{
+  "back-to-admin": "관리자로 돌아가기",
+  "median-line_one": "완료까지 중앙값 시간: {{time}} ({{count}}명 플레이어)",
+  "median-line_other": "완료까지 중앙값 시간: {{time}} ({{count}}명 플레이어)"
+}

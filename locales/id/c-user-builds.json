@@ -1,4 +1,6 @@
 {
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
   "all-categories": "Semua Kategori",
   "anonymous": "Anonim",
   "cancel": "Batal",
@@ -16,6 +18,7 @@
   "label-category": "Kategori",
   "label-demo-url": "URL Demo",
   "label-description": "Deskripsi",
+  "label-made-for": "Dibuat untuk (opsional)",
   "label-price": "Harga (koin)",
   "label-readme": "README (Markdown)",
   "label-repo-url": "URL Repositori",
@@ -27,6 +30,8 @@
   "likes-count_other": "{{count}} suka",
   "live-demo": "Demo Langsung",
   "load-more-comments": "Muat lebih banyak komentar",
+  "made-for-hint": "Build publik muncul di Workshop game tersebut.",
+  "made-for-none": "Tidak dibuat untuk game tertentu",
   "minutes-ago_other": "{{count}} menit yang lalu",
   "months-ago_other": "{{count}} bulan yang lalu",
   "my-builds": "Build Saya",
@@ -38,6 +43,7 @@
   "placeholder-tag": "Tambahkan tag...",
   "placeholder-title": "Proyek Keren Saya",
   "popular": "Populer",
+  "post-comment": "Post comment",
   "premium-build": "Bangunan premium",
   "premium-build-desc": "Buka README, sumber, dan demo langsung untuk bangunan ini.",
   "price-description": "Kenakan koin untuk membuka README, sumber, dan demo. Biarkan 0 agar tetap gratis. Biaya platform 10% berlaku untuk penjualan.",
@@ -71,8 +77,5 @@
   "views-count_other": "{{count}} tampilan",
   "write-comment": "Tulis komentar...",
   "write-reply": "Tulis balasan...",
-  "years-ago_other": "{{count}}t yang lalu",
-  "add-tag": "Add tag",
-  "add-technology": "Add technology",
-  "post-comment": "Post comment"
+  "years-ago_other": "{{count}}t yang lalu"
 }

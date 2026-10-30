@@ -1,0 +1,6 @@
+{
+  "pack-meta_one": "{{count}} موجه بواسطة {{author}}",
+  "pack-meta_other": "{{count}} موجه بواسطة {{author}}",
+  "prompt-count_one": "{{count}} موجه (مطلوب {{min}} إلى {{max}})",
+  "prompt-count_other": "{{count}} موجه (مطلوب {{min}} إلى {{max}})"
+}

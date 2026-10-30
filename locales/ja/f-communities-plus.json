@@ -1,0 +1,6 @@
+{
+  "automod-new_one": "新しいルール（{{max}} 中 {{count}}）",
+  "automod-new_other": "新しいルール（{{max}} 中 {{count}}）",
+  "flair-count_one": "{{max}} 中 {{count}} 件のフレア",
+  "flair-count_other": "{{max}} 中 {{count}} 件のフレア"
+}

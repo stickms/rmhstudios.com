@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} signalement · difficulté moyenne {{avg}}/5",
+  "ir-summary_other": "{{count}} signalements · difficulté moyenne {{avg}}/5",
+  "rb-spots_one": "{{count}} place restante",
+  "rb-spots_other": "{{count}} places restantes"
+}

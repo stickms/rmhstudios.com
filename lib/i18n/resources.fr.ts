@@ -6,6 +6,7 @@ import frBuilds from "@/locales/fr/builds.json";
 import frCAdmin from "@/locales/fr/c-admin.json";
 import frCAltair from "@/locales/fr/c-altair.json";
 import frCAwards from "@/locales/fr/c-awards.json";
+import frCBalatro from "@/locales/fr/c-balatro.json";
 import frCBlog from "@/locales/fr/c-blog.json";
 import frCBuilds from "@/locales/fr/c-builds.json";
 import frCBumsRush from "@/locales/fr/c-bums-rush.json";
@@ -59,6 +60,7 @@ import frCStatus from "@/locales/fr/c-status.json";
 import frCStudio from "@/locales/fr/c-studio.json";
 import frCSynapseStorm from "@/locales/fr/c-synapse-storm.json";
 import frCTempleOfJoy from "@/locales/fr/c-temple-of-joy.json";
+import frCTf2Game from "@/locales/fr/c-tf2-game.json";
 import frCTf2Hud from "@/locales/fr/c-tf2-hud.json";
 import frCTournaments from "@/locales/fr/c-tournaments.json";
 import frCUi from "@/locales/fr/c-ui.json";
@@ -69,6 +71,24 @@ import frCVoidBreaker from "@/locales/fr/c-void-breaker.json";
 import frCWager from "@/locales/fr/c-wager.json";
 import frCWishlist from "@/locales/fr/c-wishlist.json";
 import frCommon from "@/locales/fr/common.json";
+import frFArcade from "@/locales/fr/f-arcade.json";
+import frFCanvas from "@/locales/fr/f-canvas.json";
+import frFCommunitiesPlus from "@/locales/fr/f-communities-plus.json";
+import frFCreative from "@/locales/fr/f-creative.json";
+import frFDelight from "@/locales/fr/f-delight.json";
+import frFDevplatform from "@/locales/fr/f-devplatform.json";
+import frFDiscovery from "@/locales/fr/f-discovery.json";
+import frFGifting from "@/locales/fr/f-gifting.json";
+import frFLadderHomes from "@/locales/fr/f-ladder-homes.json";
+import frFMessaging from "@/locales/fr/f-messaging.json";
+import frFOps from "@/locales/fr/f-ops.json";
+import frFParty from "@/locales/fr/f-party.json";
+import frFPostsPlus from "@/locales/fr/f-posts-plus.json";
+import frFReading from "@/locales/fr/f-reading.json";
+import frFSafety from "@/locales/fr/f-safety.json";
+import frFTools from "@/locales/fr/f-tools.json";
+import frFWatch from "@/locales/fr/f-watch.json";
+import frFWorlds from "@/locales/fr/f-worlds.json";
 import frFeed from "@/locales/fr/feed.json";
 import frGamesHub from "@/locales/fr/games-hub.json";
 import frGroups from "@/locales/fr/groups.json";
@@ -104,6 +124,7 @@ const frResources = {
   "c-admin": frCAdmin,
   "c-altair": frCAltair,
   "c-awards": frCAwards,
+  "c-balatro": frCBalatro,
   "c-blog": frCBlog,
   "c-builds": frCBuilds,
   "c-bums-rush": frCBumsRush,
@@ -157,6 +178,7 @@ const frResources = {
   "c-studio": frCStudio,
   "c-synapse-storm": frCSynapseStorm,
   "c-temple-of-joy": frCTempleOfJoy,
+  "c-tf2-game": frCTf2Game,
   "c-tf2-hud": frCTf2Hud,
   "c-tournaments": frCTournaments,
   "c-ui": frCUi,
@@ -167,6 +189,24 @@ const frResources = {
   "c-wager": frCWager,
   "c-wishlist": frCWishlist,
   "common": frCommon,
+  "f-arcade": frFArcade,
+  "f-canvas": frFCanvas,
+  "f-communities-plus": frFCommunitiesPlus,
+  "f-creative": frFCreative,
+  "f-delight": frFDelight,
+  "f-devplatform": frFDevplatform,
+  "f-discovery": frFDiscovery,
+  "f-gifting": frFGifting,
+  "f-ladder-homes": frFLadderHomes,
+  "f-messaging": frFMessaging,
+  "f-ops": frFOps,
+  "f-party": frFParty,
+  "f-posts-plus": frFPostsPlus,
+  "f-reading": frFReading,
+  "f-safety": frFSafety,
+  "f-tools": frFTools,
+  "f-watch": frFWatch,
+  "f-worlds": frFWorlds,
   "feed": frFeed,
   "games-hub": frGamesHub,
   "groups": frGroups,

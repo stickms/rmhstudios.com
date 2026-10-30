@@ -1,4 +1,6 @@
 {
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
   "all-categories": "تمام زمرے",
   "anonymous": "گمنام",
   "cancel": "منسوخ کریں",
@@ -18,6 +20,7 @@
   "label-category": "زمرہ",
   "label-demo-url": "ڈیمو یو آر ایل",
   "label-description": "تفصیل",
+  "label-made-for": "کس کے لیے بنایا گیا (اختیاری)",
   "label-price": "قیمت (سکے)",
   "label-readme": "README (مارک ڈاؤن)",
   "label-repo-url": "ریپوزٹری یو آر ایل",
@@ -30,6 +33,8 @@
   "likes-count_other": "{{count}} پسند",
   "live-demo": "لائیو ڈیمو",
   "load-more-comments": "مزید تبصرے لوڈ کریں",
+  "made-for-hint": "عوامی بلڈز اس گیم کے ورکشاپ میں ظاہر ہوتے ہیں۔",
+  "made-for-none": "کسی خاص گیم کے لیے نہیں بنایا گیا",
   "minutes-ago_one": "{{count}} منٹ پہلے",
   "minutes-ago_other": "{{count}} منٹ پہلے",
   "months-ago_one": "{{count}} مہینہ پہلے",
@@ -43,6 +48,7 @@
   "placeholder-tag": "ایک ٹیگ شامل کریں...",
   "placeholder-title": "میرا شاندار پروجیکٹ",
   "popular": "مقبول",
+  "post-comment": "Post comment",
   "premium-build": "پریمیم بلڈ",
   "premium-build-desc": "اس بلڈ کے لیے README، سورس اور لائیو ڈیمو غیر مقفل کریں۔",
   "price-description": "README، سورس اور ڈیمو کو غیر مقفل کرنے کے لیے سکے چارج کریں۔ مفت رکھنے کے لیے 0 چھوڑیں۔ فروخت پر 10% پلیٹ فارم فیس لاگو ہوتی ہے۔",
@@ -80,8 +86,5 @@
   "write-comment": "ایک تبصرہ لکھیں...",
   "write-reply": "جواب لکھیں...",
   "years-ago_one": "{{count}} سال پہلے",
-  "years-ago_other": "{{count}} سال پہلے",
-  "add-tag": "Add tag",
-  "add-technology": "Add technology",
-  "post-comment": "Post comment"
+  "years-ago_other": "{{count}} سال پہلے"
 }

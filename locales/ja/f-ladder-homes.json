@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}}件のレポート · 平均難易度 {{avg}}/5",
+  "ir-summary_other": "{{count}}件のレポート · 平均難易度 {{avg}}/5",
+  "rb-spots_one": "残り{{count}}枠",
+  "rb-spots_other": "残り{{count}}枠"
+}

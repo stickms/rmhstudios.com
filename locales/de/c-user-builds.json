@@ -1,4 +1,6 @@
 {
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
   "all-categories": "Alle Kategorien",
   "anonymous": "Anonym",
   "cancel": "Abbrechen",
@@ -18,6 +20,7 @@
   "label-category": "Kategorie",
   "label-demo-url": "Demo-URL",
   "label-description": "Beschreibung",
+  "label-made-for": "Erstellt für (optional)",
   "label-price": "Preis (Münzen)",
   "label-readme": "README (Markdown)",
   "label-repo-url": "Repository-URL",
@@ -30,6 +33,8 @@
   "likes-count_other": "{{count}} Likes",
   "live-demo": "Live-Demo",
   "load-more-comments": "Weitere Kommentare laden",
+  "made-for-hint": "Öffentliche Builds erscheinen im Workshop dieses Spiels.",
+  "made-for-none": "Nicht für ein bestimmtes Spiel erstellt",
   "minutes-ago_one": "vor {{count}} Minute",
   "minutes-ago_other": "vor {{count}} Minuten",
   "months-ago_one": "vor {{count}} Monat",
@@ -43,6 +48,7 @@
   "placeholder-tag": "Tag hinzufügen...",
   "placeholder-title": "Mein großartiges Projekt",
   "popular": "Beliebt",
+  "post-comment": "Post comment",
   "premium-build": "Premium-Build",
   "premium-build-desc": "Schalte die README, den Quellcode und die Live-Demo für diesen Build frei.",
   "price-description": "Verlange Coins, um die README, den Quellcode und die Demo freizuschalten. Lass 0, um es kostenlos zu halten. Auf Verkäufe wird eine Plattformgebühr von 10 % erhoben.",
@@ -80,8 +86,5 @@
   "write-comment": "Schreibe einen Kommentar...",
   "write-reply": "Eine Antwort schreiben...",
   "years-ago_one": "vor {{count}} Jahr",
-  "years-ago_other": "vor {{count}} Jahren",
-  "add-tag": "Add tag",
-  "add-technology": "Add technology",
-  "post-comment": "Post comment"
+  "years-ago_other": "vor {{count}} Jahren"
 }

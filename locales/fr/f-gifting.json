@@ -1,0 +1,10 @@
+{
+  "advent-tally_one": "{{count}} portes ouvertes sur {{total}} cette année",
+  "advent-tally_other": "{{count}} portes ouvertes sur {{total}} cette année",
+  "list-members_one": "{{count}} membre",
+  "list-members_other": "{{count}} membres",
+  "members-title_one": "Membres ({{count}})",
+  "members-title_other": "Membres ({{count}})",
+  "mixtape-title_one": "Votre mixtape ({{count}}/{{max}})",
+  "mixtape-title_other": "Votre mixtape ({{count}}/{{max}})"
+}

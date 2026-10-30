@@ -54,6 +54,8 @@
   "joystick-side": "Bên cần điều khiển",
   "keybinds": "Phím tắt",
   "keyboard-hint": "[Esc] tiếp tục · [W/S] điều hướng · [Space] chọn",
+  "keyboard-hint-level-up-screen_one": "[A/D] hoặc [←/→] điều hướng · [Space] chọn · [1-{{count}}] chọn nhanh",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
   "keyboard-hint_other": "[A/D] hoặc [←/→] điều hướng · [Space] chọn · [1-{{count}}] chọn nhanh",
   "kick-player": "Đuổi người chơi",
   "kill-milestones": "Mốc tiêu diệt",
@@ -163,6 +165,5 @@
   "webgl-context-lost": "Mất ngữ cảnh WebGL! Vui lòng tải lại trang.",
   "you": "(bạn)",
   "your-class": "Lớp của bạn",
-  "zoom": "Thu phóng",
-  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
+  "zoom": "Thu phóng"
 }

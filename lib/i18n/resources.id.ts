@@ -6,6 +6,7 @@ import idBuilds from "@/locales/id/builds.json";
 import idCAdmin from "@/locales/id/c-admin.json";
 import idCAltair from "@/locales/id/c-altair.json";
 import idCAwards from "@/locales/id/c-awards.json";
+import idCBalatro from "@/locales/id/c-balatro.json";
 import idCBlog from "@/locales/id/c-blog.json";
 import idCBuilds from "@/locales/id/c-builds.json";
 import idCBumsRush from "@/locales/id/c-bums-rush.json";
@@ -59,6 +60,7 @@ import idCStatus from "@/locales/id/c-status.json";
 import idCStudio from "@/locales/id/c-studio.json";
 import idCSynapseStorm from "@/locales/id/c-synapse-storm.json";
 import idCTempleOfJoy from "@/locales/id/c-temple-of-joy.json";
+import idCTf2Game from "@/locales/id/c-tf2-game.json";
 import idCTf2Hud from "@/locales/id/c-tf2-hud.json";
 import idCTournaments from "@/locales/id/c-tournaments.json";
 import idCUi from "@/locales/id/c-ui.json";
@@ -69,6 +71,24 @@ import idCVoidBreaker from "@/locales/id/c-void-breaker.json";
 import idCWager from "@/locales/id/c-wager.json";
 import idCWishlist from "@/locales/id/c-wishlist.json";
 import idCommon from "@/locales/id/common.json";
+import idFArcade from "@/locales/id/f-arcade.json";
+import idFCanvas from "@/locales/id/f-canvas.json";
+import idFCommunitiesPlus from "@/locales/id/f-communities-plus.json";
+import idFCreative from "@/locales/id/f-creative.json";
+import idFDelight from "@/locales/id/f-delight.json";
+import idFDevplatform from "@/locales/id/f-devplatform.json";
+import idFDiscovery from "@/locales/id/f-discovery.json";
+import idFGifting from "@/locales/id/f-gifting.json";
+import idFLadderHomes from "@/locales/id/f-ladder-homes.json";
+import idFMessaging from "@/locales/id/f-messaging.json";
+import idFOps from "@/locales/id/f-ops.json";
+import idFParty from "@/locales/id/f-party.json";
+import idFPostsPlus from "@/locales/id/f-posts-plus.json";
+import idFReading from "@/locales/id/f-reading.json";
+import idFSafety from "@/locales/id/f-safety.json";
+import idFTools from "@/locales/id/f-tools.json";
+import idFWatch from "@/locales/id/f-watch.json";
+import idFWorlds from "@/locales/id/f-worlds.json";
 import idFeed from "@/locales/id/feed.json";
 import idGamesHub from "@/locales/id/games-hub.json";
 import idGroups from "@/locales/id/groups.json";
@@ -104,6 +124,7 @@ const idResources = {
   "c-admin": idCAdmin,
   "c-altair": idCAltair,
   "c-awards": idCAwards,
+  "c-balatro": idCBalatro,
   "c-blog": idCBlog,
   "c-builds": idCBuilds,
   "c-bums-rush": idCBumsRush,
@@ -157,6 +178,7 @@ const idResources = {
   "c-studio": idCStudio,
   "c-synapse-storm": idCSynapseStorm,
   "c-temple-of-joy": idCTempleOfJoy,
+  "c-tf2-game": idCTf2Game,
   "c-tf2-hud": idCTf2Hud,
   "c-tournaments": idCTournaments,
   "c-ui": idCUi,
@@ -167,6 +189,24 @@ const idResources = {
   "c-wager": idCWager,
   "c-wishlist": idCWishlist,
   "common": idCommon,
+  "f-arcade": idFArcade,
+  "f-canvas": idFCanvas,
+  "f-communities-plus": idFCommunitiesPlus,
+  "f-creative": idFCreative,
+  "f-delight": idFDelight,
+  "f-devplatform": idFDevplatform,
+  "f-discovery": idFDiscovery,
+  "f-gifting": idFGifting,
+  "f-ladder-homes": idFLadderHomes,
+  "f-messaging": idFMessaging,
+  "f-ops": idFOps,
+  "f-party": idFParty,
+  "f-posts-plus": idFPostsPlus,
+  "f-reading": idFReading,
+  "f-safety": idFSafety,
+  "f-tools": idFTools,
+  "f-watch": idFWatch,
+  "f-worlds": idFWorlds,
   "feed": idFeed,
   "games-hub": idGamesHub,
   "groups": idGroups,

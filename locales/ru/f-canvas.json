@@ -1,0 +1,4 @@
+{
+  "admin-row_one": "{{size}}px, {{phase}}, размещено пикселей: {{count}}",
+  "admin-row_other": "{{size}}px, {{phase}}, размещено пикселей: {{count}}"
+}

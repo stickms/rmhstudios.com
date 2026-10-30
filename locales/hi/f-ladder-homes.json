@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} रिपोर्ट · औसत कठिनाई {{avg}}/5",
+  "ir-summary_other": "{{count}} रिपोर्ट · औसत कठिनाई {{avg}}/5",
+  "rb-spots_one": "{{count}} स्थान शेष",
+  "rb-spots_other": "{{count}} स्थान शेष"
+}

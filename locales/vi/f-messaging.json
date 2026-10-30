@@ -1,0 +1,14 @@
+{
+  "folder-chat-count_one": "{{count}} cuộc trò chuyện",
+  "folder-chat-count_other": "{{count}} cuộc trò chuyện",
+  "forward-send_one": "Gửi đến {{count}} cuộc trò chuyện",
+  "forward-send_other": "Gửi đến {{count}} cuộc trò chuyện",
+  "pinned-bar-count_one": "{{count}} tin nhắn đã ghim",
+  "pinned-bar-count_other": "{{count}} tin nhắn đã ghim",
+  "poll-votes_one": "{{count}} phiếu bầu",
+  "poll-votes_other": "{{count}} phiếu bầu",
+  "thread-replies_one": "{{count}} phản hồi",
+  "thread-replies_other": "{{count}} phản hồi",
+  "thread-reply-count_one": "{{count}} phản hồi",
+  "thread-reply-count_other": "{{count}} phản hồi"
+}

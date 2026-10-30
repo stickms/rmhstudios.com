@@ -1,4 +1,6 @@
 {
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
   "all-categories": "Tüm Kategoriler",
   "anonymous": "Anonim",
   "cancel": "İptal",
@@ -18,6 +20,7 @@
   "label-category": "Kategori",
   "label-demo-url": "Demo URL",
   "label-description": "Açıklama",
+  "label-made-for": "Şunun için yapıldı (isteğe bağlı)",
   "label-price": "Fiyat (coin)",
   "label-readme": "README (Markdown)",
   "label-repo-url": "Depo URL",
@@ -30,6 +33,8 @@
   "likes-count_other": "{{count}} beğeni",
   "live-demo": "Canlı Demo",
   "load-more-comments": "Daha fazla yorum yükle",
+  "made-for-hint": "Herkese açık yapılar o oyunun Atölyesi'nde görünür.",
+  "made-for-none": "Belirli bir oyun için yapılmadı",
   "minutes-ago_one": "{{count}}dk önce",
   "minutes-ago_other": "{{count}}dk önce",
   "months-ago_one": "{{count}}ay önce",
@@ -43,6 +48,7 @@
   "placeholder-tag": "Bir etiket ekleyin...",
   "placeholder-title": "Harika Projem",
   "popular": "Popüler",
+  "post-comment": "Post comment",
   "premium-build": "Premium yapı",
   "premium-build-desc": "Bu yapı için README, kaynak ve canlı demoyu açın.",
   "price-description": "README, kaynak ve demoyu açmak için coin talep edin. Ücretsiz tutmak için 0 bırakın. Satışlarda %10 platform ücreti uygulanır.",
@@ -80,8 +86,5 @@
   "write-comment": "Bir yorum yazın...",
   "write-reply": "Bir yanıt yaz...",
   "years-ago_one": "{{count}} yıl önce",
-  "years-ago_other": "{{count}} yıl önce",
-  "add-tag": "Add tag",
-  "add-technology": "Add technology",
-  "post-comment": "Post comment"
+  "years-ago_other": "{{count}} yıl önce"
 }

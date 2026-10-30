@@ -1,0 +1,8 @@
+{
+  "dead-flagged_one": "مرشحون للدمج ({{count}})",
+  "dead-flagged_other": "مرشحون للدمج ({{count}})",
+  "errors-count_one": "{{count}} حدث",
+  "errors-count_other": "{{count}} أحداث",
+  "notices-dismissed_one": "تم تجاهل {{count}}",
+  "notices-dismissed_other": "تم تجاهل {{count}}"
+}

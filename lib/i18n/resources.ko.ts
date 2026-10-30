@@ -6,6 +6,7 @@ import koBuilds from "@/locales/ko/builds.json";
 import koCAdmin from "@/locales/ko/c-admin.json";
 import koCAltair from "@/locales/ko/c-altair.json";
 import koCAwards from "@/locales/ko/c-awards.json";
+import koCBalatro from "@/locales/ko/c-balatro.json";
 import koCBlog from "@/locales/ko/c-blog.json";
 import koCBuilds from "@/locales/ko/c-builds.json";
 import koCBumsRush from "@/locales/ko/c-bums-rush.json";
@@ -59,6 +60,7 @@ import koCStatus from "@/locales/ko/c-status.json";
 import koCStudio from "@/locales/ko/c-studio.json";
 import koCSynapseStorm from "@/locales/ko/c-synapse-storm.json";
 import koCTempleOfJoy from "@/locales/ko/c-temple-of-joy.json";
+import koCTf2Game from "@/locales/ko/c-tf2-game.json";
 import koCTf2Hud from "@/locales/ko/c-tf2-hud.json";
 import koCTournaments from "@/locales/ko/c-tournaments.json";
 import koCUi from "@/locales/ko/c-ui.json";
@@ -69,6 +71,24 @@ import koCVoidBreaker from "@/locales/ko/c-void-breaker.json";
 import koCWager from "@/locales/ko/c-wager.json";
 import koCWishlist from "@/locales/ko/c-wishlist.json";
 import koCommon from "@/locales/ko/common.json";
+import koFArcade from "@/locales/ko/f-arcade.json";
+import koFCanvas from "@/locales/ko/f-canvas.json";
+import koFCommunitiesPlus from "@/locales/ko/f-communities-plus.json";
+import koFCreative from "@/locales/ko/f-creative.json";
+import koFDelight from "@/locales/ko/f-delight.json";
+import koFDevplatform from "@/locales/ko/f-devplatform.json";
+import koFDiscovery from "@/locales/ko/f-discovery.json";
+import koFGifting from "@/locales/ko/f-gifting.json";
+import koFLadderHomes from "@/locales/ko/f-ladder-homes.json";
+import koFMessaging from "@/locales/ko/f-messaging.json";
+import koFOps from "@/locales/ko/f-ops.json";
+import koFParty from "@/locales/ko/f-party.json";
+import koFPostsPlus from "@/locales/ko/f-posts-plus.json";
+import koFReading from "@/locales/ko/f-reading.json";
+import koFSafety from "@/locales/ko/f-safety.json";
+import koFTools from "@/locales/ko/f-tools.json";
+import koFWatch from "@/locales/ko/f-watch.json";
+import koFWorlds from "@/locales/ko/f-worlds.json";
 import koFeed from "@/locales/ko/feed.json";
 import koGamesHub from "@/locales/ko/games-hub.json";
 import koGroups from "@/locales/ko/groups.json";
@@ -104,6 +124,7 @@ const koResources = {
   "c-admin": koCAdmin,
   "c-altair": koCAltair,
   "c-awards": koCAwards,
+  "c-balatro": koCBalatro,
   "c-blog": koCBlog,
   "c-builds": koCBuilds,
   "c-bums-rush": koCBumsRush,
@@ -157,6 +178,7 @@ const koResources = {
   "c-studio": koCStudio,
   "c-synapse-storm": koCSynapseStorm,
   "c-temple-of-joy": koCTempleOfJoy,
+  "c-tf2-game": koCTf2Game,
   "c-tf2-hud": koCTf2Hud,
   "c-tournaments": koCTournaments,
   "c-ui": koCUi,
@@ -167,6 +189,24 @@ const koResources = {
   "c-wager": koCWager,
   "c-wishlist": koCWishlist,
   "common": koCommon,
+  "f-arcade": koFArcade,
+  "f-canvas": koFCanvas,
+  "f-communities-plus": koFCommunitiesPlus,
+  "f-creative": koFCreative,
+  "f-delight": koFDelight,
+  "f-devplatform": koFDevplatform,
+  "f-discovery": koFDiscovery,
+  "f-gifting": koFGifting,
+  "f-ladder-homes": koFLadderHomes,
+  "f-messaging": koFMessaging,
+  "f-ops": koFOps,
+  "f-party": koFParty,
+  "f-posts-plus": koFPostsPlus,
+  "f-reading": koFReading,
+  "f-safety": koFSafety,
+  "f-tools": koFTools,
+  "f-watch": koFWatch,
+  "f-worlds": koFWorlds,
   "feed": koFeed,
   "games-hub": koGamesHub,
   "groups": koGroups,

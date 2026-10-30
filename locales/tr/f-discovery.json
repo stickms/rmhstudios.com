@@ -1,0 +1,6 @@
+{
+  "feeds-people_one": "{{count}} kişi",
+  "feeds-people_other": "{{count}} kişi",
+  "feeds-subscribers_one": "{{count}} abone",
+  "feeds-subscribers_other": "{{count}} abone"
+}

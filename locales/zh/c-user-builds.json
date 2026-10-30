@@ -1,4 +1,6 @@
 {
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
   "all-categories": "所有类别",
   "anonymous": "匿名",
   "cancel": "取消",
@@ -16,6 +18,7 @@
   "label-category": "类别",
   "label-demo-url": "演示网址",
   "label-description": "描述",
+  "label-made-for": "适用于（可选）",
   "label-price": "价格（金币）",
   "label-readme": "README（Markdown）",
   "label-repo-url": "仓库 URL",
@@ -27,6 +30,8 @@
   "likes-count_other": "{{count}} 次赞",
   "live-demo": "现场演示",
   "load-more-comments": "加载更多评论",
+  "made-for-hint": "公开构建会出现在该游戏的创意工坊中。",
+  "made-for-none": "并非为特定游戏制作",
   "minutes-ago_other": "{{count}}分钟前",
   "months-ago_other": "{{count}}个月前",
   "my-builds": "我的构建",
@@ -38,6 +43,7 @@
   "placeholder-tag": "添加标签...",
   "placeholder-title": "我的超棒项目",
   "popular": "流行",
+  "post-comment": "Post comment",
   "premium-build": "高级配置",
   "premium-build-desc": "解锁此构建的README、源代码和在线演示。",
   "price-description": "收费币以解锁README、源码和演示。设为0则保持免费。销售将收取10%的平台费用。",
@@ -71,8 +77,5 @@
   "views-count_other": "{{count}} 次观看",
   "write-comment": "写一条评论……",
   "write-reply": "写回复...",
-  "years-ago_other": "{{count}}年前",
-  "add-tag": "Add tag",
-  "add-technology": "Add technology",
-  "post-comment": "Post comment"
+  "years-ago_other": "{{count}}年前"
 }

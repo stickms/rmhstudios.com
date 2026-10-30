@@ -1,0 +1,6 @@
+{
+  "automod-new_one": "Yeni kural ({{max}} kuraldan {{count}}. kural)",
+  "automod-new_other": "Yeni kural ({{max}} kuraldan {{count}}. kural)",
+  "flair-count_one": "{{max}} flairs içinden {{count}} tanesi",
+  "flair-count_other": "{{max}} flairs içinden {{count}} tanesi"
+}

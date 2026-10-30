@@ -18,6 +18,7 @@
   "joining-lobby": "Bergabung dengan lobi {{lobbyId}}...",
   "leaderboard": "Papan Peringkat",
   "leave": "Keluar",
+  "loading": "Loading…",
   "loading-detail": "Loading details…",
   "loading-history": "Memuat riwayat...",
   "match-history": "Riwayat Pertandingan",
@@ -28,11 +29,14 @@
   "pagination-next": "Berikutnya",
   "pagination-previous": "Sebelumnya",
   "pagination-range": "{{from}}–{{to}} dari {{total}}",
+  "player-count-of-max_one": "{{count}}/{{max}} pemain",
+  "player-count-of-max_other": "{{count}}/{{max}} players",
   "player-count_other": "{{count}} pemain",
   "player-range": "{{minPlayers}}–{{maxPlayers}} pemain",
   "pts": "poin",
   "public-lobbies": "Lobi Publik",
   "refresh": "Segarkan",
+  "room-code": "Room code",
   "room-code-length": "Kode ruangan harus 6 karakter",
   "search-by-fields": "Cari berdasarkan {{fields}}, pemain...",
   "search-games": "Cari permainan...",
@@ -45,8 +49,5 @@
   "starting-game": "Memulai permainan...",
   "view-minigames": "Lihat Minigames",
   "winner-label": "Pemenang:",
-  "winner-none": "Tidak ada",
-  "loading": "Loading…",
-  "room-code": "Room code",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "winner-none": "Tidak ada"
 }

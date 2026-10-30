@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} informes · dificultad media {{avg}}/5",
+  "ir-summary_other": "{{count}} informes · dificultad media {{avg}}/5",
+  "rb-spots_one": "Queda {{count}} plaza",
+  "rb-spots_other": "Quedan {{count}} plazas"
+}

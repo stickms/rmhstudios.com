@@ -1,0 +1,10 @@
+{
+  "advent-tally_one": "{{count}} von {{total}} Türchen dieses Jahr geöffnet",
+  "advent-tally_other": "{{count}} von {{total}} Türchen dieses Jahr geöffnet",
+  "list-members_one": "{{count}} Mitglied",
+  "list-members_other": "{{count}} Mitglieder",
+  "members-title_one": "Mitglieder ({{count}})",
+  "members-title_other": "Mitglieder ({{count}})",
+  "mixtape-title_one": "Deine Mixtape ({{count}}/{{max}})",
+  "mixtape-title_other": "Deine Mixtape ({{count}}/{{max}})"
+}

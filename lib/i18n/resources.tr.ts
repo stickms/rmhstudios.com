@@ -6,6 +6,7 @@ import trBuilds from "@/locales/tr/builds.json";
 import trCAdmin from "@/locales/tr/c-admin.json";
 import trCAltair from "@/locales/tr/c-altair.json";
 import trCAwards from "@/locales/tr/c-awards.json";
+import trCBalatro from "@/locales/tr/c-balatro.json";
 import trCBlog from "@/locales/tr/c-blog.json";
 import trCBuilds from "@/locales/tr/c-builds.json";
 import trCBumsRush from "@/locales/tr/c-bums-rush.json";
@@ -59,6 +60,7 @@ import trCStatus from "@/locales/tr/c-status.json";
 import trCStudio from "@/locales/tr/c-studio.json";
 import trCSynapseStorm from "@/locales/tr/c-synapse-storm.json";
 import trCTempleOfJoy from "@/locales/tr/c-temple-of-joy.json";
+import trCTf2Game from "@/locales/tr/c-tf2-game.json";
 import trCTf2Hud from "@/locales/tr/c-tf2-hud.json";
 import trCTournaments from "@/locales/tr/c-tournaments.json";
 import trCUi from "@/locales/tr/c-ui.json";
@@ -69,6 +71,24 @@ import trCVoidBreaker from "@/locales/tr/c-void-breaker.json";
 import trCWager from "@/locales/tr/c-wager.json";
 import trCWishlist from "@/locales/tr/c-wishlist.json";
 import trCommon from "@/locales/tr/common.json";
+import trFArcade from "@/locales/tr/f-arcade.json";
+import trFCanvas from "@/locales/tr/f-canvas.json";
+import trFCommunitiesPlus from "@/locales/tr/f-communities-plus.json";
+import trFCreative from "@/locales/tr/f-creative.json";
+import trFDelight from "@/locales/tr/f-delight.json";
+import trFDevplatform from "@/locales/tr/f-devplatform.json";
+import trFDiscovery from "@/locales/tr/f-discovery.json";
+import trFGifting from "@/locales/tr/f-gifting.json";
+import trFLadderHomes from "@/locales/tr/f-ladder-homes.json";
+import trFMessaging from "@/locales/tr/f-messaging.json";
+import trFOps from "@/locales/tr/f-ops.json";
+import trFParty from "@/locales/tr/f-party.json";
+import trFPostsPlus from "@/locales/tr/f-posts-plus.json";
+import trFReading from "@/locales/tr/f-reading.json";
+import trFSafety from "@/locales/tr/f-safety.json";
+import trFTools from "@/locales/tr/f-tools.json";
+import trFWatch from "@/locales/tr/f-watch.json";
+import trFWorlds from "@/locales/tr/f-worlds.json";
 import trFeed from "@/locales/tr/feed.json";
 import trGamesHub from "@/locales/tr/games-hub.json";
 import trGroups from "@/locales/tr/groups.json";
@@ -104,6 +124,7 @@ const trResources = {
   "c-admin": trCAdmin,
   "c-altair": trCAltair,
   "c-awards": trCAwards,
+  "c-balatro": trCBalatro,
   "c-blog": trCBlog,
   "c-builds": trCBuilds,
   "c-bums-rush": trCBumsRush,
@@ -157,6 +178,7 @@ const trResources = {
   "c-studio": trCStudio,
   "c-synapse-storm": trCSynapseStorm,
   "c-temple-of-joy": trCTempleOfJoy,
+  "c-tf2-game": trCTf2Game,
   "c-tf2-hud": trCTf2Hud,
   "c-tournaments": trCTournaments,
   "c-ui": trCUi,
@@ -167,6 +189,24 @@ const trResources = {
   "c-wager": trCWager,
   "c-wishlist": trCWishlist,
   "common": trCommon,
+  "f-arcade": trFArcade,
+  "f-canvas": trFCanvas,
+  "f-communities-plus": trFCommunitiesPlus,
+  "f-creative": trFCreative,
+  "f-delight": trFDelight,
+  "f-devplatform": trFDevplatform,
+  "f-discovery": trFDiscovery,
+  "f-gifting": trFGifting,
+  "f-ladder-homes": trFLadderHomes,
+  "f-messaging": trFMessaging,
+  "f-ops": trFOps,
+  "f-party": trFParty,
+  "f-posts-plus": trFPostsPlus,
+  "f-reading": trFReading,
+  "f-safety": trFSafety,
+  "f-tools": trFTools,
+  "f-watch": trFWatch,
+  "f-worlds": trFWorlds,
   "feed": trFeed,
   "games-hub": trGamesHub,
   "groups": trGroups,

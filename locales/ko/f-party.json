@@ -1,0 +1,6 @@
+{
+  "pack-meta_one": "{{author}}의 프롬프트 {{count}}개",
+  "pack-meta_other": "{{author}}의 프롬프트 {{count}}개",
+  "prompt-count_one": "프롬프트 {{count}}개 ({{min}}~{{max}}개 필요)",
+  "prompt-count_other": "프롬프트 {{count}}개 ({{min}}~{{max}}개 필요)"
+}

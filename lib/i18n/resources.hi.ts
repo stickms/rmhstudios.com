@@ -6,6 +6,7 @@ import hiBuilds from "@/locales/hi/builds.json";
 import hiCAdmin from "@/locales/hi/c-admin.json";
 import hiCAltair from "@/locales/hi/c-altair.json";
 import hiCAwards from "@/locales/hi/c-awards.json";
+import hiCBalatro from "@/locales/hi/c-balatro.json";
 import hiCBlog from "@/locales/hi/c-blog.json";
 import hiCBuilds from "@/locales/hi/c-builds.json";
 import hiCBumsRush from "@/locales/hi/c-bums-rush.json";
@@ -59,6 +60,7 @@ import hiCStatus from "@/locales/hi/c-status.json";
 import hiCStudio from "@/locales/hi/c-studio.json";
 import hiCSynapseStorm from "@/locales/hi/c-synapse-storm.json";
 import hiCTempleOfJoy from "@/locales/hi/c-temple-of-joy.json";
+import hiCTf2Game from "@/locales/hi/c-tf2-game.json";
 import hiCTf2Hud from "@/locales/hi/c-tf2-hud.json";
 import hiCTournaments from "@/locales/hi/c-tournaments.json";
 import hiCUi from "@/locales/hi/c-ui.json";
@@ -69,6 +71,24 @@ import hiCVoidBreaker from "@/locales/hi/c-void-breaker.json";
 import hiCWager from "@/locales/hi/c-wager.json";
 import hiCWishlist from "@/locales/hi/c-wishlist.json";
 import hiCommon from "@/locales/hi/common.json";
+import hiFArcade from "@/locales/hi/f-arcade.json";
+import hiFCanvas from "@/locales/hi/f-canvas.json";
+import hiFCommunitiesPlus from "@/locales/hi/f-communities-plus.json";
+import hiFCreative from "@/locales/hi/f-creative.json";
+import hiFDelight from "@/locales/hi/f-delight.json";
+import hiFDevplatform from "@/locales/hi/f-devplatform.json";
+import hiFDiscovery from "@/locales/hi/f-discovery.json";
+import hiFGifting from "@/locales/hi/f-gifting.json";
+import hiFLadderHomes from "@/locales/hi/f-ladder-homes.json";
+import hiFMessaging from "@/locales/hi/f-messaging.json";
+import hiFOps from "@/locales/hi/f-ops.json";
+import hiFParty from "@/locales/hi/f-party.json";
+import hiFPostsPlus from "@/locales/hi/f-posts-plus.json";
+import hiFReading from "@/locales/hi/f-reading.json";
+import hiFSafety from "@/locales/hi/f-safety.json";
+import hiFTools from "@/locales/hi/f-tools.json";
+import hiFWatch from "@/locales/hi/f-watch.json";
+import hiFWorlds from "@/locales/hi/f-worlds.json";
 import hiFeed from "@/locales/hi/feed.json";
 import hiGamesHub from "@/locales/hi/games-hub.json";
 import hiGroups from "@/locales/hi/groups.json";
@@ -104,6 +124,7 @@ const hiResources = {
   "c-admin": hiCAdmin,
   "c-altair": hiCAltair,
   "c-awards": hiCAwards,
+  "c-balatro": hiCBalatro,
   "c-blog": hiCBlog,
   "c-builds": hiCBuilds,
   "c-bums-rush": hiCBumsRush,
@@ -157,6 +178,7 @@ const hiResources = {
   "c-studio": hiCStudio,
   "c-synapse-storm": hiCSynapseStorm,
   "c-temple-of-joy": hiCTempleOfJoy,
+  "c-tf2-game": hiCTf2Game,
   "c-tf2-hud": hiCTf2Hud,
   "c-tournaments": hiCTournaments,
   "c-ui": hiCUi,
@@ -167,6 +189,24 @@ const hiResources = {
   "c-wager": hiCWager,
   "c-wishlist": hiCWishlist,
   "common": hiCommon,
+  "f-arcade": hiFArcade,
+  "f-canvas": hiFCanvas,
+  "f-communities-plus": hiFCommunitiesPlus,
+  "f-creative": hiFCreative,
+  "f-delight": hiFDelight,
+  "f-devplatform": hiFDevplatform,
+  "f-discovery": hiFDiscovery,
+  "f-gifting": hiFGifting,
+  "f-ladder-homes": hiFLadderHomes,
+  "f-messaging": hiFMessaging,
+  "f-ops": hiFOps,
+  "f-party": hiFParty,
+  "f-posts-plus": hiFPostsPlus,
+  "f-reading": hiFReading,
+  "f-safety": hiFSafety,
+  "f-tools": hiFTools,
+  "f-watch": hiFWatch,
+  "f-worlds": hiFWorlds,
   "feed": hiFeed,
   "games-hub": hiGamesHub,
   "groups": hiGroups,

@@ -6,6 +6,7 @@ import zhBuilds from "@/locales/zh/builds.json";
 import zhCAdmin from "@/locales/zh/c-admin.json";
 import zhCAltair from "@/locales/zh/c-altair.json";
 import zhCAwards from "@/locales/zh/c-awards.json";
+import zhCBalatro from "@/locales/zh/c-balatro.json";
 import zhCBlog from "@/locales/zh/c-blog.json";
 import zhCBuilds from "@/locales/zh/c-builds.json";
 import zhCBumsRush from "@/locales/zh/c-bums-rush.json";
@@ -59,6 +60,7 @@ import zhCStatus from "@/locales/zh/c-status.json";
 import zhCStudio from "@/locales/zh/c-studio.json";
 import zhCSynapseStorm from "@/locales/zh/c-synapse-storm.json";
 import zhCTempleOfJoy from "@/locales/zh/c-temple-of-joy.json";
+import zhCTf2Game from "@/locales/zh/c-tf2-game.json";
 import zhCTf2Hud from "@/locales/zh/c-tf2-hud.json";
 import zhCTournaments from "@/locales/zh/c-tournaments.json";
 import zhCUi from "@/locales/zh/c-ui.json";
@@ -70,6 +72,24 @@ import zhCVoidBreaker from "@/locales/zh/c-void-breaker.json";
 import zhCWager from "@/locales/zh/c-wager.json";
 import zhCWishlist from "@/locales/zh/c-wishlist.json";
 import zhCommon from "@/locales/zh/common.json";
+import zhFArcade from "@/locales/zh/f-arcade.json";
+import zhFCanvas from "@/locales/zh/f-canvas.json";
+import zhFCommunitiesPlus from "@/locales/zh/f-communities-plus.json";
+import zhFCreative from "@/locales/zh/f-creative.json";
+import zhFDelight from "@/locales/zh/f-delight.json";
+import zhFDevplatform from "@/locales/zh/f-devplatform.json";
+import zhFDiscovery from "@/locales/zh/f-discovery.json";
+import zhFGifting from "@/locales/zh/f-gifting.json";
+import zhFLadderHomes from "@/locales/zh/f-ladder-homes.json";
+import zhFMessaging from "@/locales/zh/f-messaging.json";
+import zhFOps from "@/locales/zh/f-ops.json";
+import zhFParty from "@/locales/zh/f-party.json";
+import zhFPostsPlus from "@/locales/zh/f-posts-plus.json";
+import zhFReading from "@/locales/zh/f-reading.json";
+import zhFSafety from "@/locales/zh/f-safety.json";
+import zhFTools from "@/locales/zh/f-tools.json";
+import zhFWatch from "@/locales/zh/f-watch.json";
+import zhFWorlds from "@/locales/zh/f-worlds.json";
 import zhFeed from "@/locales/zh/feed.json";
 import zhGamesHub from "@/locales/zh/games-hub.json";
 import zhGroups from "@/locales/zh/groups.json";
@@ -106,6 +126,7 @@ const zhResources = {
   "c-admin": zhCAdmin,
   "c-altair": zhCAltair,
   "c-awards": zhCAwards,
+  "c-balatro": zhCBalatro,
   "c-blog": zhCBlog,
   "c-builds": zhCBuilds,
   "c-bums-rush": zhCBumsRush,
@@ -159,6 +180,7 @@ const zhResources = {
   "c-studio": zhCStudio,
   "c-synapse-storm": zhCSynapseStorm,
   "c-temple-of-joy": zhCTempleOfJoy,
+  "c-tf2-game": zhCTf2Game,
   "c-tf2-hud": zhCTf2Hud,
   "c-tournaments": zhCTournaments,
   "c-ui": zhCUi,
@@ -170,6 +192,24 @@ const zhResources = {
   "c-wager": zhCWager,
   "c-wishlist": zhCWishlist,
   "common": zhCommon,
+  "f-arcade": zhFArcade,
+  "f-canvas": zhFCanvas,
+  "f-communities-plus": zhFCommunitiesPlus,
+  "f-creative": zhFCreative,
+  "f-delight": zhFDelight,
+  "f-devplatform": zhFDevplatform,
+  "f-discovery": zhFDiscovery,
+  "f-gifting": zhFGifting,
+  "f-ladder-homes": zhFLadderHomes,
+  "f-messaging": zhFMessaging,
+  "f-ops": zhFOps,
+  "f-party": zhFParty,
+  "f-posts-plus": zhFPostsPlus,
+  "f-reading": zhFReading,
+  "f-safety": zhFSafety,
+  "f-tools": zhFTools,
+  "f-watch": zhFWatch,
+  "f-worlds": zhFWorlds,
   "feed": zhFeed,
   "games-hub": zhGamesHub,
   "groups": zhGroups,

@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} segnalazioni · difficoltà media {{avg}}/5",
+  "ir-summary_other": "{{count}} segnalazioni · difficoltà media {{avg}}/5",
+  "rb-spots_one": "{{count}} posti rimasti",
+  "rb-spots_other": "{{count}} posti rimasti"
+}

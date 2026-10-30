@@ -1,0 +1,8 @@
+{
+  "ai_hud_applied_one": "Applied {{count}} changes. Playing with {{name}}.",
+  "ai_hud_diff_summary_one": "{{count}} changes in {{files}} files",
+  "ai_hud_more_one": "Show all {{count}}",
+  "ai_hud_ready_one": "{{count}} changes ready to apply. {{summary}}",
+  "ai_hud_skipped_one": "{{count}} suggested changes could not be used and were skipped.",
+  "respawn_in_one": "Respawn in: {{count}} second"
+}

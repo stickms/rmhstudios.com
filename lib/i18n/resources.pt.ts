@@ -6,6 +6,7 @@ import ptBuilds from "@/locales/pt/builds.json";
 import ptCAdmin from "@/locales/pt/c-admin.json";
 import ptCAltair from "@/locales/pt/c-altair.json";
 import ptCAwards from "@/locales/pt/c-awards.json";
+import ptCBalatro from "@/locales/pt/c-balatro.json";
 import ptCBlog from "@/locales/pt/c-blog.json";
 import ptCBuilds from "@/locales/pt/c-builds.json";
 import ptCBumsRush from "@/locales/pt/c-bums-rush.json";
@@ -59,6 +60,7 @@ import ptCStatus from "@/locales/pt/c-status.json";
 import ptCStudio from "@/locales/pt/c-studio.json";
 import ptCSynapseStorm from "@/locales/pt/c-synapse-storm.json";
 import ptCTempleOfJoy from "@/locales/pt/c-temple-of-joy.json";
+import ptCTf2Game from "@/locales/pt/c-tf2-game.json";
 import ptCTf2Hud from "@/locales/pt/c-tf2-hud.json";
 import ptCTournaments from "@/locales/pt/c-tournaments.json";
 import ptCUi from "@/locales/pt/c-ui.json";
@@ -69,6 +71,24 @@ import ptCVoidBreaker from "@/locales/pt/c-void-breaker.json";
 import ptCWager from "@/locales/pt/c-wager.json";
 import ptCWishlist from "@/locales/pt/c-wishlist.json";
 import ptCommon from "@/locales/pt/common.json";
+import ptFArcade from "@/locales/pt/f-arcade.json";
+import ptFCanvas from "@/locales/pt/f-canvas.json";
+import ptFCommunitiesPlus from "@/locales/pt/f-communities-plus.json";
+import ptFCreative from "@/locales/pt/f-creative.json";
+import ptFDelight from "@/locales/pt/f-delight.json";
+import ptFDevplatform from "@/locales/pt/f-devplatform.json";
+import ptFDiscovery from "@/locales/pt/f-discovery.json";
+import ptFGifting from "@/locales/pt/f-gifting.json";
+import ptFLadderHomes from "@/locales/pt/f-ladder-homes.json";
+import ptFMessaging from "@/locales/pt/f-messaging.json";
+import ptFOps from "@/locales/pt/f-ops.json";
+import ptFParty from "@/locales/pt/f-party.json";
+import ptFPostsPlus from "@/locales/pt/f-posts-plus.json";
+import ptFReading from "@/locales/pt/f-reading.json";
+import ptFSafety from "@/locales/pt/f-safety.json";
+import ptFTools from "@/locales/pt/f-tools.json";
+import ptFWatch from "@/locales/pt/f-watch.json";
+import ptFWorlds from "@/locales/pt/f-worlds.json";
 import ptFeed from "@/locales/pt/feed.json";
 import ptGamesHub from "@/locales/pt/games-hub.json";
 import ptGroups from "@/locales/pt/groups.json";
@@ -104,6 +124,7 @@ const ptResources = {
   "c-admin": ptCAdmin,
   "c-altair": ptCAltair,
   "c-awards": ptCAwards,
+  "c-balatro": ptCBalatro,
   "c-blog": ptCBlog,
   "c-builds": ptCBuilds,
   "c-bums-rush": ptCBumsRush,
@@ -157,6 +178,7 @@ const ptResources = {
   "c-studio": ptCStudio,
   "c-synapse-storm": ptCSynapseStorm,
   "c-temple-of-joy": ptCTempleOfJoy,
+  "c-tf2-game": ptCTf2Game,
   "c-tf2-hud": ptCTf2Hud,
   "c-tournaments": ptCTournaments,
   "c-ui": ptCUi,
@@ -167,6 +189,24 @@ const ptResources = {
   "c-wager": ptCWager,
   "c-wishlist": ptCWishlist,
   "common": ptCommon,
+  "f-arcade": ptFArcade,
+  "f-canvas": ptFCanvas,
+  "f-communities-plus": ptFCommunitiesPlus,
+  "f-creative": ptFCreative,
+  "f-delight": ptFDelight,
+  "f-devplatform": ptFDevplatform,
+  "f-discovery": ptFDiscovery,
+  "f-gifting": ptFGifting,
+  "f-ladder-homes": ptFLadderHomes,
+  "f-messaging": ptFMessaging,
+  "f-ops": ptFOps,
+  "f-party": ptFParty,
+  "f-posts-plus": ptFPostsPlus,
+  "f-reading": ptFReading,
+  "f-safety": ptFSafety,
+  "f-tools": ptFTools,
+  "f-watch": ptFWatch,
+  "f-worlds": ptFWorlds,
   "feed": ptFeed,
   "games-hub": ptGamesHub,
   "groups": ptGroups,

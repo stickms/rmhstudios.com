@@ -1,0 +1,4 @@
+{
+  "admin-row_one": "{{size}}px，{{phase}}，已放置 {{count}} 个像素",
+  "admin-row_other": "{{size}}px，{{phase}}，已放置 {{count}} 个像素"
+}

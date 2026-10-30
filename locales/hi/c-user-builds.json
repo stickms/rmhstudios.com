@@ -1,4 +1,6 @@
 {
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
   "all-categories": "सभी श्रेणियाँ",
   "anonymous": "अनाम",
   "cancel": "रद्द करें",
@@ -18,6 +20,7 @@
   "label-category": "श्रेणी",
   "label-demo-url": "डेमो URL",
   "label-description": "विवरण",
+  "label-made-for": "के लिए बनाया गया (वैकल्पिक)",
   "label-price": "मूल्य (सिक्के)",
   "label-readme": "README (मार्कडाउन)",
   "label-repo-url": "रिपॉजिटरी URL",
@@ -30,6 +33,8 @@
   "likes-count_other": "{{count}} पसंद",
   "live-demo": "लाइव डेमो",
   "load-more-comments": "और टिप्पणियाँ लोड करें",
+  "made-for-hint": "सार्वजनिक बिल्ड उस गेम के Workshop में दिखाई देते हैं।",
+  "made-for-none": "किसी विशेष गेम के लिए नहीं बनाया गया",
   "minutes-ago_one": "{{count}} मिनट पहले",
   "minutes-ago_other": "{{count}} मिनट पहले",
   "months-ago_one": "{{count}} महीने पहले",
@@ -43,6 +48,7 @@
   "placeholder-tag": "एक टैग जोड़ें...",
   "placeholder-title": "मेरा अद्भुत प्रोजेक्ट",
   "popular": "लोकप्रिय",
+  "post-comment": "Post comment",
   "premium-build": "प्रीमियम बिल्ड",
   "premium-build-desc": "इस बिल्ड के लिए README, स्रोत और लाइव डेमो अनलॉक करें।",
   "price-description": "README, स्रोत और डेमो अनलॉक करने के लिए सिक्के चार्ज करें। इसे मुफ्त रखने के लिए 0 छोड़ें। बिक्री पर 10% प्लेटफॉर्म शुल्क लागू होता है।",
@@ -80,8 +86,5 @@
   "write-comment": "एक टिप्पणी लिखें...",
   "write-reply": "जवाब लिखें...",
   "years-ago_one": "{{count}} वर्ष पहले",
-  "years-ago_other": "{{count}} वर्ष पहले",
-  "add-tag": "Add tag",
-  "add-technology": "Add technology",
-  "post-comment": "Post comment"
+  "years-ago_other": "{{count}} वर्ष पहले"
 }

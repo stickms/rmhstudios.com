@@ -1,0 +1,6 @@
+{
+  "calc-tab-notebook": "노트북",
+  "marathon-shared-intro_one": "{{count}}권, {{date}}까지 완료. 오늘부터 계획됨.",
+  "marathon-shared-intro_other": "{{count}}권, {{date}}까지 완료. 오늘부터 계획됨.",
+  "plan-back": "공부"
+}
