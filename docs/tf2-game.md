@@ -778,6 +778,16 @@ sections? }` (`mapRadarSchema`, additive: the other games' manifests do not carr
   L4D2's v21 reorders it), v1 leafs, static props v10 (76 bytes) and v11 (80, uniform scale),
   `dworldlight_t` v1 (100 bytes, `shadow_cast_offset`) and the `byte bevel, byte thin` brush side —
   each with a synthetic test in `bsp.test.ts`.
+- **Frame animations.** CS:GO stores every weapon view model's sequences (and many others) as frame
+  animations (`STUDIO_FRAMEANIM`): a header, a flag byte per bone, per-bone constants and fixed-size
+  per-frame records (Quaternion48S / Quaternion48 rotations, Vector48 or full-float positions).
+  `scripts/tf2-assets/srcanim.py` `decode_frame_anim` reads them — the layout as public model tools
+  document it, refused when the sizes it computes disagree with the header's — and models builder 2
+  rebuilds exactly the models that use them (`FRAMEANIM_VERSION` in their source hash). The run prints how
+  many constant-rotation bones decode near the bind pose, a plausibility check on the real install
+  (`test_frameanim.py` covers the format on synthetic data). The client draws a view model only once its
+  weapon has clips, with the team's default gloves bone-merged onto the weapon; players stay the client's
+  own original figures (lib/csgo-game/client/render.ts).
 - **Models.** MDL v49 and VTF 7.5 read as TF2's do. VMT conditional keys (`srgb?`, `>=dx90?`,
   `GPU>=2?`, negations) are applied as a high-end Windows desktop; `CustomWeapon` (only its
   `$basetexture` — the default finish) and `Character` are converted as VertexLitGeneric with
