@@ -31,7 +31,7 @@ export function getAward(id: string): AwardDef | null {
   return AWARD_MAP.get(id) ?? null;
 }
 
-export const AWARD_ENTITY_TYPES = ['rmhark', 'comment', 'build', 'guide'] as const;
+export const AWARD_ENTITY_TYPES = ['rmhark', 'comment', 'build', 'guide', 'review'] as const;
 export type AwardEntityType = (typeof AWARD_ENTITY_TYPES)[number];
 
 /** Recipient share (floored) for an award price. */

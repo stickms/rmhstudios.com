@@ -1,9 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Star, ThumbsUp } from 'lucide-react';
+import { Award, Star, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import type { RatingAgg, ReviewView } from '@/lib/games/reviews';
+import { AWARD_CATALOG } from '@/lib/awards/catalog';
+import { formatPlaytime } from '@/lib/games/format-playtime';
+import { recommendation, summaryLabel } from '@/lib/games/review-extras';
 import { PersonAvatar } from './SteamPeople';
 
 function Stars({
@@ -111,6 +115,37 @@ export function SteamReviews({
   }
 
   const ratingLabel = t('rating', { defaultValue: 'Rating' });
+  const label = summaryLabel(agg.positive ?? 0, agg.count);
+  const labelText = {
+    'very-positive': t('steam-rev-very-positive', { defaultValue: 'Very Positive' }),
+    'mostly-positive': t('steam-rev-mostly-positive', { defaultValue: 'Mostly Positive' }),
+    mixed: t('steam-rev-mixed', { defaultValue: 'Mixed' }),
+    'mostly-negative': t('steam-rev-mostly-negative', { defaultValue: 'Mostly Negative' }),
+    'very-negative': t('steam-rev-very-negative', { defaultValue: 'Very Negative' }),
+  } as const;
+
+  async function award(review: ReviewView, awardId: string) {
+    try {
+      const res = await fetch('/api/awards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ awardId, entityType: 'review', entityId: review.id }),
+      });
+      if (res.ok) {
+        toast.success(t('steam-rev-award-sent', { defaultValue: 'Award given.' }));
+        await refresh();
+      } else {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        toast.error(
+          b.error === 'INSUFFICIENT_COINS'
+            ? t('steam-gems-err-coins', { defaultValue: 'You do not have enough coins.' })
+            : t('steam-rev-award-err', { defaultValue: 'Could not give that award.' }),
+        );
+      }
+    } catch {
+      toast.error(t('steam-rev-award-err', { defaultValue: 'Could not give that award.' }));
+    }
+  }
 
   return (
     <section id="reviews" className="stm-card" aria-labelledby="stm-reviews-h">
@@ -118,6 +153,7 @@ export function SteamReviews({
         {t('reviews', { defaultValue: 'Reviews' })}
         {agg.count > 0 ? (
           <span className="stm-count">
+            {label ? `${labelText[label.key]} · ` : ''}
             {agg.average} · {agg.count}
           </span>
         ) : null}
@@ -168,8 +204,37 @@ export function SteamReviews({
                   <div className="stm-review-head">
                     <span className="stm-person-name">{name}</span>
                     <Stars value={r.stars} label={ratingLabel} />
+                    <span className="stm-recommend" data-kind={recommendation(r.stars)}>
+                      {recommendation(r.stars) === 'not-recommended' ? (
+                        <ThumbsDown aria-hidden size={14} />
+                      ) : (
+                        <ThumbsUp aria-hidden size={14} />
+                      )}
+                      {recommendation(r.stars) === 'recommended'
+                        ? t('steam-rev-recommended', { defaultValue: 'Recommended' })
+                        : recommendation(r.stars) === 'mixed'
+                          ? t('steam-rev-mixed-short', { defaultValue: 'Mixed' })
+                          : t('steam-rev-not-recommended', { defaultValue: 'Not recommended' })}
+                    </span>
+                    {r.playtimeSeconds ? (
+                      <span className="stm-muted">
+                        {t('steam-on-record', { defaultValue: '{{time}} on record', time: formatPlaytime(r.playtimeSeconds) })}
+                      </span>
+                    ) : null}
                   </div>
                   {r.body ? <p>{r.body}</p> : null}
+                  {r.awards && r.awards.length > 0 ? (
+                    <ul className="stm-awards" aria-label={t('steam-rev-awards', { defaultValue: 'Awards' })}>
+                      {r.awards.map((a) => {
+                        const def = AWARD_CATALOG.find((d) => d.id === a.awardId);
+                        return (
+                          <li key={a.awardId} title={def?.name}>
+                            <span aria-hidden>{def?.emoji ?? '🏅'}</span> {a.count}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : null}
                   <button
                     type="button"
                     className="stm-helpful"
@@ -180,6 +245,21 @@ export function SteamReviews({
                     <ThumbsUp aria-hidden />
                     {r.helpfulCount} {t('helpful', { defaultValue: 'helpful' })}
                   </button>
+                  {signedIn && !r.isMine ? (
+                    <details className="stm-collmenu stm-award-menu">
+                      <summary className="stm-helpful">
+                        <Award aria-hidden />
+                        {t('steam-rev-award', { defaultValue: 'Award' })}
+                      </summary>
+                      <div className="stm-collmenu-panel">
+                        {AWARD_CATALOG.map((a) => (
+                          <button key={a.id} type="button" className="stm-btn" onClick={() => void award(r, a.id)}>
+                            <span aria-hidden>{a.emoji}</span> {a.name} · {t('steam-market-price', { defaultValue: '{{n}} coins', n: a.priceCoins })}
+                          </button>
+                        ))}
+                      </div>
+                    </details>
+                  ) : null}
                 </div>
               </li>
             );

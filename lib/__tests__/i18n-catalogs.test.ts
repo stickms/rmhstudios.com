@@ -256,6 +256,20 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // Games library detail pane + playtime notice (2026-10-30). English-only until the
   // translate pipeline runs on build; remove with it.
   'games-hub': [
+    // Review upgrades (2026-10-30)
+    'steam-gems-err-coins',
+    'steam-rev-award',
+    'steam-rev-award-err',
+    'steam-rev-award-sent',
+    'steam-rev-awards',
+    'steam-rev-mixed',
+    'steam-rev-mixed-short',
+    'steam-rev-mostly-negative',
+    'steam-rev-mostly-positive',
+    'steam-rev-not-recommended',
+    'steam-rev-recommended',
+    'steam-rev-very-negative',
+    'steam-rev-very-positive',
     // Workshop (2026-10-30)
     'steam-hub-workshop',
     'steam-hub-workshop-empty',

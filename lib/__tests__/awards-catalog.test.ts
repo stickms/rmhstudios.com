@@ -29,6 +29,7 @@ describe('award catalog', () => {
 describe('giveAwardSchema', () => {
   it('validates input', () => {
     expect(giveAwardSchema.safeParse({ awardId: 'gold', entityType: 'rmhark', entityId: 'p1' }).success).toBe(true);
+    expect(giveAwardSchema.safeParse({ awardId: 'gold', entityType: 'review', entityId: 'r1' }).success).toBe(true);
     expect(giveAwardSchema.safeParse({ awardId: 'gold', entityType: 'nope', entityId: 'p1' }).success).toBe(false);
     expect(giveAwardSchema.safeParse({ awardId: 'gold', entityType: 'build', entityId: '', anonymous: true }).success).toBe(false);
   });
