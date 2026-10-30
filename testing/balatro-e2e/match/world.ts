@@ -74,7 +74,10 @@ export function matchWorld() {
     },
     /** After each test: every real player out of its match/lobby, whatever the test left. */
     async cleanup() {
-      for (const p of w.players) await leaveMatch(p).catch(() => {});
+      for (const p of w.players) {
+        await p.context.setOffline(false).catch(() => {});
+        await leaveMatch(p).catch(() => {});
+      }
     },
     async down() {
       for (const a of w.accounts) await a.context.close().catch(() => {});

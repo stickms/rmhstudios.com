@@ -97,6 +97,8 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
       Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
       document.dispatchEvent(new Event('visibilitychange'));
     });
+    // The press needs the timer the session pushes after Ready (TIM-02 press rules).
+    await waitFor('the host timer is pressable', async () => !!(await a.mp<{ timer_pressable?: boolean }>('hud')).timer_pressable, 60_000, 500);
     const pressed = await a.cmd<{ sent: boolean }>('timer_press');
     expect(pressed.sent).toBe(true);
     await waitFor('the guest loses a life to the timer', async () => (await a.snap()).lives[guestId] === 1, 120_000, 1000);
@@ -166,15 +168,23 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
   it('E2E-12: a member drops for 5 s → away → back, and the match completes', async () => {
     await setupMatch(a, [b], 'pvp_nemesis', { ...SHORT, startingLives: 1 });
     const guestId = (await b.snap()).me!;
+    // A network drop: the hub socket goes (offline emulation) and so does the P2P link (offline
+    // emulation does not reach WebRTC, so the page's peer connections are closed too).
     await b.context.setOffline(true);
-    await waitFor(
-      'host sees the guest away',
-      async () => !!(await hostLobby(a)).players.find((p) => p.id === guestId && (p.away || !p.connected)),
-      60_000,
-      500,
-    );
-    await new Promise((r) => setTimeout(r, 5000));
-    await b.context.setOffline(false);
+    try {
+      await b.page.evaluate(() => {
+        for (const pc of (window as unknown as { __e2ePeers?: RTCPeerConnection[] }).__e2ePeers ?? []) pc.close();
+      });
+      await waitFor(
+        'host sees the guest away',
+        async () => !!(await hostLobby(a)).players.find((p) => p.id === guestId && (p.away || !p.connected)),
+        60_000,
+        500,
+      );
+      await new Promise((r) => setTimeout(r, 5000));
+    } finally {
+      await b.context.setOffline(false);
+    }
     await waitFor(
       'host sees the guest back',
       async () => !!(await hostLobby(a)).players.find((p) => p.id === guestId && !p.away && p.connected),

@@ -104,6 +104,21 @@ export async function openMpPlayer(
       (window as unknown as { __rmhBalatroTest?: unknown }).__rmhBalatroTest = o;
     }, opts.overrides);
   }
+  // Keep the page's RTCPeerConnections reachable (window.__e2ePeers) so a scenario can drop
+  // the P2P link as a real network failure would (offline emulation does not reach WebRTC).
+  await context.addInitScript(() => {
+    const W = window as unknown as { RTCPeerConnection: typeof RTCPeerConnection; __e2ePeers?: RTCPeerConnection[] };
+    if (W.__e2ePeers || !W.RTCPeerConnection) return;
+    const Native = W.RTCPeerConnection;
+    const peers: RTCPeerConnection[] = [];
+    W.__e2ePeers = peers;
+    W.RTCPeerConnection = class extends Native {
+      constructor(...args: ConstructorParameters<typeof RTCPeerConnection>) {
+        super(...args);
+        peers.push(this);
+      }
+    } as typeof RTCPeerConnection;
+  });
   const page = opts.page ?? (await context.newPage());
   const errors: string[] = [];
   const logs: string[] = [];

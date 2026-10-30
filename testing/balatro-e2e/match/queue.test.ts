@@ -9,6 +9,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { MpPlayer } from '../lib/mp-player';
 import { openMpPlayer } from '../lib/mp-player';
+import { leaveMatch } from '../lib/match-flow';
 import { waitFor } from '../lib/stack';
 import { matchWorld } from './world';
 

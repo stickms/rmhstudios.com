@@ -24,6 +24,8 @@ import { memoryKv } from '../../../lib/balatro/mp/history';
 import { memorySnapshotStore } from '../../../lib/balatro/mp/rejoin/rejoin-store';
 import { cryptoSeed, cryptoSeedString } from '../../../lib/balatro/mp/rng';
 import { MpRuntime } from '../../../lib/balatro/mp/lobby/runtime';
+import { attach as attachQueue } from '../../../lib/balatro/mp/queue/attach';
+import { attach as attachReplay } from '../../../lib/balatro/mp/replay/attach';
 import type { J2LData, J2LType, L2JData, L2JType } from '../../../lib/balatro/mp/bridge-protocol';
 import type { RefMsg } from '../../../lib/balatro/mp/types';
 
@@ -169,6 +171,10 @@ const runtime = new MpRuntime(
   { intent: 'menu', invite: null },
 );
 
+// The same extensions lib/balatro/mp/index.ts loads (matchmaking/party/invites; replays and
+// spectating), so a bot can queue, party up and be watched.
+const detach = [attachQueue(runtime), attachReplay(runtime)];
+
 declare global {
   interface Window {
     __balatroBot?: unknown;
@@ -188,6 +194,7 @@ window.__balatroBot = {
     lua.autoReady = on;
   },
   stop: () => {
+    for (const fn of detach) fn();
     runtime.stop();
     hub.destroy();
   },
