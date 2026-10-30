@@ -139,12 +139,22 @@ message of each kind, minus one-shot sound effects. The latest `modulate` carrie
 the music state, so the music starts in the right place, without a burst of stale
 effects.
 
-**Window.** The page owns the window. `setMode`/`updateMode` always use the
-frame's size, windowed and resizable; displays, desktop size and fullscreen modes
-all report that one size. When the page's `ResizeObserver` writes a new
-`/rmh/size`, the shim resizes and calls Balatro's own `love.resize`. Browser
-fullscreen is a toolbar button, because `requestFullscreen` needs a real user
-gesture and the game only sees a click one frame later.
+**Window and resolution.** The page owns the window. `setMode`/`updateMode` always
+use the frame's size in CSS pixels, windowed, resizable and `highdpi`, as Balatro
+runs on macOS. SDL sizes the canvas at CSS × pixel ratio, and LÖVE scales every
+canvas the game creates by the same ratio, so cards and text are drawn at device
+resolution. The ratio comes from the page (an engine patch routes
+`emscripten_get_device_pixel_ratio` to `Module.rmhPixelRatio`). It is the device's,
+capped at 2, and lowered on very large frames so the buffer stays under
+2560×1440 pixels. Displays, desktop size and fullscreen modes all report the
+frame. When the page's `ResizeObserver` writes a new `/rmh/size` (`w h ratio`),
+the shim re-applies the mode and calls Balatro's own `love.resize`.
+
+**Fullscreen** belongs to the page: the toolbar button fullscreens the game's
+frame, toolbar included. LÖVE only ever has a windowed window, and on every
+resize SDL would turn "not fullscreen" into "exit browser fullscreen", so an
+engine patch makes `emscripten_exit_fullscreen` a no-op while
+`Module.rmhOwnsFullscreen` is set.
 
 **Shaders (WebGL 1 = GLSL ES 1.00).** Appendix A of the ES spec only allows `for`
 loops with constant bounds. One Balatro shader bounds its loop with a local `int`
@@ -237,6 +247,9 @@ scripts/balatro/vendor-lovejs.sh
 pip install fonttools pyoxipng
 python3 -I scripts/balatro/build-game-pack.py
 ```
+
+The vendor script applies three anchored engine patches: export `FS`, page-owned
+fullscreen, and the page's pixel ratio. It fails if an anchor is missing.
 
 The pack builder rewrites `data/balatro-pack/` and `lib/balatro/game-pack.json`
 together. `lib/balatro/__tests__/saves.test.ts` fails if they disagree.

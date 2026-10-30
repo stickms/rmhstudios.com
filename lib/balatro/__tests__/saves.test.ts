@@ -115,13 +115,19 @@ describe('balatro boot', () => {
     expect(patched.startsWith('require "rmh_web";')).toBe(true);
   });
 
-  it('clamps the render size and keeps the aspect', () => {
-    expect(renderSize(1280, 720, 1)).toEqual([1280, 720]);
-    expect(renderSize(1280, 720, 2)).toEqual([2560, 1440]);
-    expect(renderSize(1280, 720, 3)).toEqual([2560, 1440]); // DPR capped at 2
-    const [w, h] = renderSize(3840, 2160, 2);
-    expect(w * h).toBeLessThanOrEqual(2560 * 1440 + 4000);
-    expect(w / h).toBeCloseTo(16 / 9, 2);
+  it('sizes the window in CSS pixels and renders at the device ratio, capped', () => {
+    // Hi-DPI: the buffer is CSS × ratio, so a 2× screen draws at device resolution.
+    expect(renderSize(1280, 720, 2)).toEqual({ w: 1280, h: 720, ratio: 2 });
+    expect(renderSize(1280, 720, 1)).toEqual({ w: 1280, h: 720, ratio: 1 });
+    expect(renderSize(1280, 720, 3)).toEqual({ w: 1280, h: 720, ratio: 2 }); // capped at 2
+    // A very large frame lowers the ratio to stay under the pixel budget, never below 1.
+    const big = renderSize(2560, 1440, 2);
+    expect(big.ratio).toBe(1);
+    const mid = renderSize(1920, 1080, 2);
+    expect(mid.ratio).toBeGreaterThan(1);
+    expect(1920 * 1080 * mid.ratio ** 2).toBeLessThanOrEqual(2560 * 1440 + 10_000);
+    // A zoomed-out page (ratio < 1) keeps its own ratio.
+    expect(renderSize(1280, 720, 0.8).ratio).toBe(0.8);
   });
 });
 

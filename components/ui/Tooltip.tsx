@@ -229,7 +229,9 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
             })
           : children}
       </span>
-      {mounted && createPortal(tooltipContent, document.body)}
+      {/* Into the fullscreen element when there is one: only its subtree is
+          drawn in fullscreen, so a bubble on <body> would never be seen. */}
+      {mounted && createPortal(tooltipContent, document.fullscreenElement ?? document.body)}
     </>
   );
 }

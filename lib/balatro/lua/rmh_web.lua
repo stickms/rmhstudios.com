@@ -10,7 +10,8 @@
 -- Talking to the page: there is no JS bridge in the love.js build, but Lua's `io`
 -- library reaches the whole Emscripten filesystem, so the two sides trade small
 -- files under /rmh (see lib/balatro/runtime.ts):
---   /rmh/size   page → Lua   "<w> <h>" pixel size of the game's frame
+--   /rmh/size   page → Lua   "<w> <h> <ratio>" the game frame in CSS pixels and
+--                            the drawing-buffer pixel ratio
 --   /rmh/dirty  Lua → page   exists when the save directory changed and should be
 --                            flushed to IndexedDB
 
@@ -372,23 +373,25 @@ end
 -- all resolve to it; the page itself provides browser fullscreen.
 ----------------------------------------------------------------------------------
 
-local web_w, web_h = 1280, 720
+-- The window is sized in CSS pixels with highdpi on, as Balatro runs on macOS:
+-- SDL sizes the canvas at CSS × ratio (the page supplies the ratio through the
+-- engine's device-pixel-ratio hook) and LÖVE scales the game's canvases by it.
+local web_w, web_h, web_ratio = 1280, 720, 1
+local applied = nil -- the "w h ratio" last applied with setMode
 local size_check = 0
 
 local function read_size()
   local f = io.open('/rmh/size', 'r')
   if not f then
-    return false
+    return
   end
   local text = f:read('*a')
   f:close()
-  local w, h = text:match('(%d+)%s+(%d+)')
-  w, h = tonumber(w), tonumber(h)
-  if w and h and w > 0 and h > 0 and (w ~= web_w or h ~= web_h) then
-    web_w, web_h = w, h
-    return true
+  local w, h, r = text:match('(%d+)%s+(%d+)%s*([%d%.]*)')
+  w, h, r = tonumber(w), tonumber(h), tonumber(r) or 1
+  if w and h and w > 0 and h > 0 then
+    web_w, web_h, web_ratio = w, h, r
   end
-  return false
 end
 
 local function install_window()
@@ -405,9 +408,10 @@ local function install_window()
     merged.fullscreentype = nil
     merged.borderless = false
     merged.resizable = true
-    merged.highdpi = false
+    merged.highdpi = true
     merged.display = 1
     merged.x, merged.y = nil, nil
+    applied = web_w .. ' ' .. web_h .. ' ' .. web_ratio
     return set_mode(web_w, web_h, merged)
   end
   love.window.setMode = web_mode
@@ -435,11 +439,12 @@ local function follow_size(dt)
     return
   end
   size_check = 0.2
-  if not read_size() then
-    return
-  end
+  read_size()
+  -- Re-apply when the page's size or ratio changed, and also when anything else
+  -- (SDL's own resize handling) left the window at a different size.
   local cw, ch = love.graphics.getDimensions()
-  if cw == web_w and ch == web_h then
+  local want = web_w .. ' ' .. web_h .. ' ' .. web_ratio
+  if want == applied and cw == web_w and ch == web_h then
     return
   end
   love.window.setMode(web_w, web_h, select(3, love.window.getMode()))
