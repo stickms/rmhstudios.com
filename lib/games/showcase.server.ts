@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { cleanShowcase, badgeKey } from '@/lib/games/showcase';
+import { cleanLook, unlocksFromBadges, type Unlocks } from '@/lib/games/customize';
 
 /** What the member owns, as the sets `cleanShowcase` checks against. */
 async function owned(userId: string) {
@@ -36,4 +37,35 @@ export async function getShowcase(userId: string): Promise<{ achievements: strin
     select: { achievementIds: true, badges: true },
   });
   return { achievements: row?.achievementIds ?? [], badges: row?.badges ?? [] };
+}
+
+/** What the member's badges unlock: backgrounds, frames, emoticon titles. */
+export async function getUnlocks(userId: string): Promise<Unlocks> {
+  const badges = await prisma.gameBadge.findMany({
+    where: { userId },
+    select: { gameId: true, foil: true, level: true },
+  });
+  return unlocksFromBadges(badges);
+}
+
+/** Save the chosen background and frame; anything the member has not unlocked becomes "none". */
+export async function saveLook(
+  userId: string,
+  input: { background: unknown; frame: unknown },
+): Promise<{ background: string | null; frame: string | null }> {
+  const clean = cleanLook(input, await getUnlocks(userId));
+  await prisma.gameProfileShowcase.upsert({
+    where: { userId },
+    create: { userId, background: clean.background, frame: clean.frame },
+    update: { background: clean.background, frame: clean.frame },
+  });
+  return clean;
+}
+
+export async function getLook(userId: string): Promise<{ background: string | null; frame: string | null }> {
+  const row = await prisma.gameProfileShowcase.findUnique({
+    where: { userId },
+    select: { background: true, frame: true },
+  });
+  return { background: row?.background ?? null, frame: row?.frame ?? null };
 }

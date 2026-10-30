@@ -50,6 +50,18 @@ export type ShowcaseEditorData = {
   badges: (ProfileBadge & { key: string })[];
 };
 
+export type ProfileLook = {
+  background: { gameId: string; title: string; hue: number; foil: boolean } | null;
+  frame: { gameId: string; title: string; hue: number; level: 3 | 5 } | null;
+};
+
+/** Only on your own profile: what your badges unlock, and what you have chosen. */
+export type LookEditorData = {
+  selected: { background: string | null; frame: string | null };
+  backgrounds: { key: string; title: string; hue: number; foil: boolean }[];
+  frames: { key: string; title: string; hue: number; level: 3 | 5 }[];
+};
+
 export type SteamProfile = {
   id: string;
   handle: string | null;
@@ -89,6 +101,8 @@ export type SteamProfile = {
   nowPlaying: NowPlaying | null;
   /** Only on your own profile: everything you could feature, and what you have chosen. */
   showcaseEditor: ShowcaseEditorData | null;
+  look: ProfileLook;
+  lookEditor: LookEditorData | null;
 };
 
 export type TrendingTitle = TitleRef & { players: number; seconds: number };

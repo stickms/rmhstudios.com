@@ -35,6 +35,8 @@ export type HubData = {
   reviews: ReviewView[];
   /** Cards for this title listed on the market by other members. */
   cardsOnSale: number;
+  /** Titles whose emoticons the viewer has unlocked (a badge for each). */
+  myEmoteTitles: string[];
 };
 
 export type ThreadPostView = {
@@ -61,4 +63,7 @@ export type ThreadPage = {
   posts: ThreadPostView[];
   signedIn: boolean;
   isAdmin: boolean;
+  /** For each author on the page, the titles whose emoticons they own (others' tokens stay text). */
+  authorEmotes: Record<string, string[]>;
+  myEmoteTitles: string[];
 };

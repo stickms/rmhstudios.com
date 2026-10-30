@@ -11,11 +11,12 @@ import { formatPlaytime } from '@/lib/games/format-playtime';
 import { timeAgoShort } from '@/lib/utils';
 import { CommunityNav } from './CommunityNav';
 import { GroupRow, Stars } from './CommunityHome';
+import { EmotePicker } from './EmotePicker';
 import { PersonAvatar } from './SteamPeople';
 import { TitleArt } from './TitleArt';
 import { hubErrorText } from './hub-errors';
 
-function NewThread({ gameId }: { gameId: string }) {
+function NewThread({ gameId, emoteTitles }: { gameId: string; emoteTitles: string[] }) {
   const { t } = useTranslation('games-hub');
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -87,6 +88,7 @@ function NewThread({ gameId }: { gameId: string }) {
         <button type="button" className="stm-btn" onClick={() => setOpen(false)}>
           {t('steam-market-cancel', { defaultValue: 'Cancel' })}
         </button>
+        <EmotePicker titles={emoteTitles} onPick={(tok) => setBody((b) => (b ? `${b} ${tok}` : tok))} />
       </div>
     </form>
   );
@@ -116,7 +118,7 @@ export function HubPage({ data }: { data: HubData }) {
               {t('steam-hub-discussions', { defaultValue: 'Discussions' })}
             </h2>
             {data.signedIn ? (
-              <NewThread gameId={data.gameId} />
+              <NewThread gameId={data.gameId} emoteTitles={data.myEmoteTitles} />
             ) : (
               <p className="stm-web-pad stm-muted">
                 <a className="stm-link" href={`/login?callbackURL=${encodeURIComponent(`/games/hub/${data.gameId}`)}`}>

@@ -2126,3 +2126,74 @@ button.stm-star {
 .stm-showcase-editor legend {
   margin-bottom: 4px;
 }
+
+/* Profile look: a background and an avatar frame unlocked by badges, from the title's hue. */
+.stm-web[data-look-bg] {
+  background:
+    linear-gradient(to bottom, hsl(var(--look-bg-hue) 48% 26%) 0, var(--stm-web-bg) 420px) var(--stm-web-bg);
+}
+.stm-web[data-look-bg='foil'] {
+  background:
+    linear-gradient(115deg, rgba(255, 95, 109, 0.18), rgba(255, 195, 113, 0.14), rgba(123, 228, 149, 0.14), rgba(95, 200, 255, 0.18), rgba(179, 136, 255, 0.18)) top / 100% 420px no-repeat,
+    linear-gradient(to bottom, hsl(var(--look-bg-hue) 48% 26%) 0, var(--stm-web-bg) 420px) var(--stm-web-bg);
+}
+.stm-web[data-look-frame='3'] .stm-pf-avatar {
+  box-shadow: 0 0 0 3px hsl(var(--look-frame-hue) 70% 55%);
+}
+.stm-web[data-look-frame='5'] .stm-pf-avatar {
+  box-shadow:
+    0 0 0 3px hsl(var(--look-frame-hue) 70% 55%),
+    0 0 0 6px var(--stm-web-bg),
+    0 0 0 9px hsl(calc(var(--look-frame-hue) + 40) 80% 72%);
+}
+.stm-look-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--stm-radius);
+}
+.stm-look-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stm-look-editor .stm-subhead {
+  margin: 0;
+}
+.stm-look-editor .stm-input {
+  width: 100%;
+}
+
+/* Emoticons */
+.stm-emote {
+  display: inline-block;
+  vertical-align: -4px;
+  margin-inline: 1px;
+}
+.stm-emote-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 6px;
+}
+.stm-emote-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.stm-emote-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--stm-radius);
+}
+.stm-emote-btn:hover {
+  background: var(--stm-raised);
+}
