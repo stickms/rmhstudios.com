@@ -70,10 +70,13 @@ export class MpRuntime {
   /**
    * Extension hooks (queue/attach.ts). `practiceGuard` returns a lobby_error
    * code that refuses Practice (PR-05: never while searching); `joinHook`
-   * may take over a `ui_join` (true = handled; MM-06 party reclaim).
+   * may take over a `ui_join` (true = handled; MM-06 party reclaim);
+   * `roleEndHook` sees why a role ended before Lua is told (true = it is
+   * handled, no lobby_error; the "Return to lobby" join retry).
    */
   practiceGuard: (() => string | null) | null = null;
   joinHook: ((code: string) => boolean) | null = null;
+  roleEndHook: ((why: string, code: string | null) => boolean) | null = null;
   settings: MpSettings;
   readonly chat: Chat;
   readonly lang: string;
@@ -283,13 +286,14 @@ export class MpRuntime {
   }
 
   private roleEnded(why: string): void {
+    const endedCode = this.role?.code ?? null;
     this.role = null;
     if (why.startsWith('seat-held:')) {
       this.held = { code: why.slice('seat-held:'.length), runId: null };
       this.error('seat-held');
       return;
     }
-    if (why !== 'left') this.error(why);
+    if (why !== 'left' && !this.roleEndHook?.(why, endedCode)) this.error(why);
     // Kicked, closed or refused while a match runs: the match is over for this peer.
     if (this.client && !this.client.result) this.endMatch();
   }

@@ -39,6 +39,16 @@ import { partyQueueBlock, rememberParty, type PartyMemory } from './party';
 /** The old role's delayed hub `leave` (LobbyHost.leave) must reach the hub before the new role's first event. */
 export const ROLE_SWITCH_MS = LEAVE_DRAIN_MS + 200;
 
+/**
+ * "Return to lobby" race (MM-06): a member's join can reach the hub before its
+ * old host has re-claimed the party code (the host first waits out its own
+ * leave drain), and the hub answers `not-found`. The member then joins again,
+ * at most RETURN_RETRY_MAX times, RETURN_RETRY_MS × attempt apart (about 7.5 s
+ * in all), before the error reaches Lua.
+ */
+export const RETURN_RETRY_MAX = 5;
+export const RETURN_RETRY_MS = 500;
+
 const queued = new WeakMap<MpRuntime, QueueClient>();
 
 /** PR-05: whether this session is searching for a match (Practice refuses to start meanwhile). */
@@ -60,6 +70,14 @@ export function attach(runtime: MpRuntime): () => void {
   let cancelReady: (() => void) | null = null;
   let cancelSwitch: (() => void) | null = null;
   let detached = false;
+  /** The party code a "Return to lobby" member is (re)joining, and how often it retried. */
+  let returning: { code: string; attempts: number } | null = null;
+  let cancelRetry: (() => void) | null = null;
+  const stopReturning = () => {
+    cancelRetry?.();
+    cancelRetry = null;
+    returning = null;
+  };
 
   const error = (code: string) => bridge.send('lobby_error', { code: code.slice(0, 32) });
 
@@ -187,6 +205,7 @@ export function attach(runtime: MpRuntime): () => void {
     }),
     // A lobby the player left on purpose ends the casual controller (and any search with it).
     bridge.on('ui_leave', () => {
+      stopReturning();
       stopCasual();
       cancelSwitch?.();
       cancelSwitch = null;
@@ -203,6 +222,7 @@ export function attach(runtime: MpRuntime): () => void {
   // MM-06: the old party host re-hosts its party code; everyone else joins it. Both leave the
   // match lobby first (a host's leave must reach the hub before the next role's first event).
   runtime.joinHook = (code) => {
+    if (returning && returning.code !== code) stopReturning();
     const p = parties.get(runtime);
     if (!p || p.code !== code || !runtime.me) return false;
     if (runtime.role?.code === code) return true;
@@ -213,10 +233,31 @@ export function attach(runtime: MpRuntime): () => void {
         if (runtime.createLobby(p.queueMode, 'party', reclaim)) queue.reset();
       });
     } else {
+      stopReturning();
+      returning = { code, attempts: 0 };
       switchRole(() => {
         if (runtime.joinCode(code, 'player')) queue.reset();
       });
     }
+    return true;
+  };
+
+  // The member side of the race above: a `not-found` for the party code it is returning to
+  // means "not re-hosted yet" — join again, a bounded number of times.
+  runtime.roleEndHook = (why, code) => {
+    const r = returning;
+    if (!r || detached) return false;
+    if (code !== r.code || why !== 'not-found' || r.attempts >= RETURN_RETRY_MAX) {
+      stopReturning();
+      return false;
+    }
+    r.attempts += 1;
+    cancelRetry?.();
+    cancelRetry = sched.after(RETURN_RETRY_MS * r.attempts, () => {
+      cancelRetry = null;
+      if (detached || returning !== r || runtime.role) return;
+      runtime.joinCode(r.code, 'player');
+    });
     return true;
   };
 
@@ -225,6 +266,8 @@ export function attach(runtime: MpRuntime): () => void {
     detached = true;
     if (runtime.practiceGuard) runtime.practiceGuard = null;
     if (runtime.joinHook) runtime.joinHook = null;
+    if (runtime.roleEndHook) runtime.roleEndHook = null;
+    stopReturning();
     cancelSwitch?.();
     stopCasual();
     for (const off of offs.splice(0)) off();
