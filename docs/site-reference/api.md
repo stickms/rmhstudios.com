@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 956 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 960 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -815,7 +815,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/games`
 
-24 routes.
+28 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -825,6 +825,10 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/games/:id/reviews` | `GET` | `app/routes/api/games/$id.reviews.ts` |
 | `/api/games/:id/score` | `POST` | `app/routes/api/games/$id/score.ts` |
 | `/api/games/cards/craft` | `POST` | `app/routes/api/games/cards/craft.ts` |
+| `/api/games/collections/delete` | `POST` | `app/routes/api/games/collections/delete.ts` |
+| `/api/games/collections/import` | `POST` | `app/routes/api/games/collections/import.ts` |
+| `/api/games/collections/item` | `POST` | `app/routes/api/games/collections/item.ts` |
+| `/api/games/collections/rename` | `POST` | `app/routes/api/games/collections/rename.ts` |
 | `/api/games/how-to-play` | `POST` | `app/routes/api/games/how-to-play.ts` |
 | `/api/games/hub/delete` | `POST` | `app/routes/api/games/hub/delete.ts` |
 | `/api/games/hub/moderate` | `POST` | `app/routes/api/games/hub/moderate.ts` |

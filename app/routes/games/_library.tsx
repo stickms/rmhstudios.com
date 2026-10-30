@@ -9,11 +9,16 @@ import { createServerFn } from '@tanstack/react-start';
 import { LibraryFrame } from '@/components/steam/LibraryFrame';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { listRecentGameIds } from '@/lib/playtime/playtime.server';
+import { listCollections } from '@/lib/games/collections.server';
 import type { LibraryKind } from '@/lib/games/library';
 
 const fetchRecents = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await getRequestSession();
-  return { recentIds: session ? await listRecentGameIds(session.user.id) : [] };
+  const userId = session?.user.id;
+  const [recentIds, collections] = userId
+    ? await Promise.all([listRecentGameIds(userId), listCollections(userId)])
+    : [[] as string[], []];
+  return { recentIds, collections, signedIn: !!userId };
 });
 
 export const Route = createFileRoute('/games/_library')({
@@ -25,13 +30,15 @@ export const Route = createFileRoute('/games/_library')({
 });
 
 function LibraryLayout() {
-  const { recentIds } = Route.useLoaderData();
+  const { recentIds, collections, signedIn } = Route.useLoaderData();
   const { kind = 'all' } = Route.useSearch();
   const navigate = useNavigate();
 
   return (
     <LibraryFrame
       recentIds={recentIds}
+      collections={collections}
+      signedIn={signedIn}
       kind={kind}
       onKindChange={(k: LibraryKind) =>
         void navigate({

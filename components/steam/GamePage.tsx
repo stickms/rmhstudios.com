@@ -13,6 +13,7 @@ import { heroSource, isOffSite } from '@/lib/games/library';
 import type { GuideSummary, RatingAgg, ReviewView } from '@/lib/games/reviews';
 import type { TrickView } from '@/lib/trick-week/trick-week';
 import { SteamAchievements } from './SteamAchievements';
+import { CollectionMenu } from './CollectionMenu';
 import { SteamCards } from './SteamCards';
 import { SteamGuides } from './SteamGuides';
 import { SteamCommunity, SteamFriends } from './SteamPeople';
@@ -122,6 +123,7 @@ export function GamePage({ data }: { data: GamePageData }) {
           <Play aria-hidden />
           {data.cta || t('play', { defaultValue: 'Play' })}
         </a>
+        <CollectionMenu gameId={data.gameId} />
         {offSite ? null : (
           <dl className="stm-stats">
             {data.signedIn ? (
