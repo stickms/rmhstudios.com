@@ -244,6 +244,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/bookmarks': 'redirect', // → /saves
   '/drafts': 'personal',
   '/connections/new': 'personal', // signed-in authoring form
+  '/games/community': 'noindex', // Steam-style community home; the viewer's groups ride on it
   '/out': 'noindex', // link-warning interstitial; the destination rides in ?url=
   '/safety/pile-on': 'personal', // the author's one-tap notice from a notification
   '/history': 'personal',
@@ -485,6 +486,8 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/library/albums/$albumId': 'content',
   '/games/$gameId': 'pages', // from the catalog, not the DB
   '/games/$gameId/guides/$guideId': 'content',
+  '/games/profile/$id': null, // a second, noindex view of /u/$userid
+  '/games/groups/$slug': null, // a second, noindex view of /c/$slug
   '/builds/$slug': 'pages', // curated builds mirror the catalog
   '/user-builds/$slug': 'builds',
   '/v/$slug': 'builds',

@@ -37,7 +37,7 @@ export function steamTabFor(pathname: string): 'store' | 'library' | 'community'
   return null;
 }
 
-type SteamNavItem = { to: '/store' | '/games' | '/communities' | '/arcade'; id: ReturnType<typeof steamTabFor>; label: string };
+type SteamNavItem = { to: '/store' | '/games' | '/games/community' | '/arcade'; id: ReturnType<typeof steamTabFor>; label: string };
 
 function SteamTopBar() {
   const { t } = useTranslation('games-hub');
@@ -55,7 +55,7 @@ function SteamTopBar() {
   const items: SteamNavItem[] = [
     { to: '/store', id: 'store', label: t('steam-nav-store', { defaultValue: 'Store' }) },
     { to: '/games', id: 'library', label: t('steam-nav-library', { defaultValue: 'Library' }) },
-    { to: '/communities', id: 'community', label: t('steam-nav-community', { defaultValue: 'Community' }) },
+    { to: '/games/community', id: 'community', label: t('steam-nav-community', { defaultValue: 'Community' }) },
     { to: '/arcade', id: 'arcade', label: t('steam-nav-arcade', { defaultValue: 'Arcade' }) },
   ];
 
@@ -115,7 +115,12 @@ function SteamTopBar() {
 
       <nav className="stm-nav" aria-label={t('steam-nav', { defaultValue: 'Main' })}>
         {items.map((i) => (
-          <Link key={i.to} to={i.to} aria-current={tab === i.id ? 'page' : undefined}>
+          <Link
+            key={i.to}
+            to={i.to}
+            data-tab-current={tab === i.id ? 'true' : undefined}
+            activeProps={{ 'aria-current': tab === i.id ? 'page' : undefined }}
+          >
             {i.label}
           </Link>
         ))}
@@ -123,7 +128,7 @@ function SteamTopBar() {
 
       <div className="stm-user">
         {user ? (
-          <Link to="/profile/$id" params={{ id: user.handle ?? user.id }}>
+          <Link to="/games/profile/$id" params={{ id: user.handle ?? user.id }}>
             {avatar}
             <span>{name}</span>
           </Link>
@@ -166,14 +171,15 @@ function SteamTopBar() {
               key={i.to}
               to={i.to}
               ref={n === 0 ? firstLink : undefined}
-              aria-current={tab === i.id ? 'page' : undefined}
+              data-tab-current={tab === i.id ? 'true' : undefined}
+              activeProps={{ 'aria-current': tab === i.id ? 'page' : undefined }}
             >
               {i.label}
             </Link>
           ))}
           <hr />
           {user ? (
-            <Link to="/profile/$id" params={{ id: user.handle ?? user.id }} className="stm-drawer-user">
+            <Link to="/games/profile/$id" params={{ id: user.handle ?? user.id }} className="stm-drawer-user">
               {avatar}
               <span>{name}</span>
             </Link>

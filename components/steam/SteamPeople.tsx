@@ -22,7 +22,7 @@ function PlayerLine({ player }: { player: PlayerView }) {
   const name = player.name ?? player.handle ?? t('steam-player', { defaultValue: 'Player' });
   return (
     <li>
-      <Link to="/profile/$id" params={{ id: player.handle ?? player.userId }} className="stm-person">
+      <Link to="/games/profile/$id" params={{ id: player.handle ?? player.userId }} className="stm-person">
         <PersonAvatar src={player.image} name={name} />
         <span className="stm-person-body">
           <span className="stm-person-name">{name}</span>
@@ -98,7 +98,7 @@ export function SteamCommunity({
         <ul className="stm-people">
           {communities.map((c) => (
             <li key={c.slug}>
-              <Link to="/c/$slug" params={{ slug: c.slug }} className="stm-person">
+              <Link to="/games/groups/$slug" params={{ slug: c.slug }} className="stm-person">
                 <span className="stm-avatar stm-avatar-fallback" aria-hidden>
                   {c.icon ?? <Users size={16} />}
                 </span>

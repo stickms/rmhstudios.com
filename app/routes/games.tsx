@@ -32,13 +32,9 @@ function SteamNotFound() {
   const { t } = useTranslation('games-hub');
   return (
     <SteamShell>
-      <div className="stm-main" style={{ padding: '48px 24px' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 400, margin: 0 }}>
-          {t('steam-not-found', { defaultValue: 'That page is not in the library.' })}
-        </h1>
-        <p className="stm-muted">
-          {t('steam-not-found-hint', { defaultValue: 'It may have moved, or it never existed.' })}
-        </p>
+      <div className="stm-message">
+        <h1>{t('steam-not-found', { defaultValue: 'That page is not in the library.' })}</h1>
+        <p>{t('steam-not-found-hint', { defaultValue: 'It may have moved, or it never existed.' })}</p>
         <Link to="/games" className="stm-btn stm-btn-blue">
           {t('steam-back-to-library', { defaultValue: 'Back to the library' })}
         </Link>
@@ -51,11 +47,9 @@ function SteamError({ reset }: { reset: () => void }) {
   const { t } = useTranslation('games-hub');
   return (
     <SteamShell>
-      <div className="stm-main" style={{ padding: '48px 24px' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 400, margin: 0 }}>
-          {t('steam-error', { defaultValue: 'Something went wrong.' })}
-        </h1>
-        <p className="stm-muted">{t('steam-error-hint', { defaultValue: 'Try again in a moment.' })}</p>
+      <div className="stm-message">
+        <h1>{t('steam-error', { defaultValue: 'Something went wrong.' })}</h1>
+        <p>{t('steam-error-hint', { defaultValue: 'Try again in a moment.' })}</p>
         <button type="button" className="stm-btn stm-btn-blue" onClick={reset}>
           {t('steam-retry', { defaultValue: 'Try again' })}
         </button>
