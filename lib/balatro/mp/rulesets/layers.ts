@@ -22,8 +22,15 @@
  *   flipped_cards, debuff_played_cards, all_eternal, chips_dollar_cap
  *   (chip_cap: misc_functions.lua mod_chips caps chips at the money held) and
  *   minus_hand_size_per_X_dollar (shrinking_hand: CardArea:update shrinks the
- *   hand by 1 per $10). `no_uncommons` is excluded (EX-18: nothing in
- *   vanilla or the mod implements it).
+ *   hand by 1 per $10).
+ * - EX-18 lifted: the mod declares `no_uncommons` and the Glass cycle
+ *   (`glass_vanilla`, `glass_standard`, `glass_legacy`, `glass_experimental`)
+ *   as flag-only/empty layers. They are implemented natively from what their
+ *   names and the mod's rulesets say (docs/balatro-mp-parity.md EX-18):
+ *   no_uncommons remaps an Uncommon rarity roll to Common (rules/misc_layers.lua)
+ *   and bans the Uncommon Tag; each glass_* layer gives Glass Cards that
+ *   ruleset's treatment, replacing whatever the ruleset chose (`overrides`), and
+ *   only one of them can be active (`group`).
  */
 
 import type { LobbyOptions, ResolvedRuleset } from '../types';
@@ -62,6 +69,18 @@ export interface LayerDef {
   };
   /** May be toggled in private-lobby Advanced options (LY-25). */
   advanced?: boolean;
+  /**
+   * Advanced layers sharing a group are mutually exclusive: the UI clears the
+   * others when one is picked, and sanitizeModifierLayers keeps only the first
+   * of a group (in ADVANCED_LAYERS order).
+   */
+  group?: string;
+  /**
+   * Keys whose bans, silent bans, reworks and spectral bans from earlier in the
+   * chain this layer clears before adding its own lists (a variant selector
+   * that replaces the ruleset's choice, e.g. the Glass cycle).
+   */
+  overrides?: readonly string[];
 }
 
 /* ─── Shared key lists ───────────────────────────────────────────────────── */
@@ -372,6 +391,35 @@ const defs: LayerDef[] = [
   },
   // LY-18 (D-03: ×4 Mult only)
   { name: 'glass_cannon', advanced: true, hook: true, gameModifiers: { mp_glass_cannon_xmult: 4 } },
+  // EX-18 lifted: the Glass cycle. Each picks the Glass Card of the ruleset it
+  // is named after, whatever the lobby's ruleset says (content/enhancements.lua):
+  //   vanilla       X2 Mult, breaks 1 in 4 (no rework)
+  //   standard      X1.5 Mult, breaks 1 in 4 (the standard/classic/wsob rework)
+  //   legacy        Legacy Ranked's Glass (its `classic` layer): X1.5, 1 in 4
+  //   experimental  the Experimental layer's ban (D-23): no Glass Cards, and
+  //                 Justice (whose only effect makes Glass) is banned with them
+  { name: 'glass_vanilla', advanced: true, group: 'glass', overrides: ['m_glass'] },
+  {
+    name: 'glass_standard',
+    advanced: true,
+    group: 'glass',
+    overrides: ['m_glass'],
+    reworked: ['m_glass'],
+  },
+  {
+    name: 'glass_legacy',
+    advanced: true,
+    group: 'glass',
+    overrides: ['m_glass'],
+    reworked: ['m_glass'],
+  },
+  {
+    name: 'glass_experimental',
+    advanced: true,
+    group: 'glass',
+    overrides: ['m_glass'],
+    banned: ['m_glass', 'c_justice'],
+  },
   // LY-19
   { name: 'pressure_timer', timer: { mode: 'pressure', mult: 2 } },
   { name: 'pressure_timer_plus', timer: { pressurePlusHand: 15 } },
@@ -398,6 +446,10 @@ const defs: LayerDef[] = [
   { name: 'shrinking_hand', advanced: true, gameModifiers: { minus_hand_size_per_X_dollar: 10 } },
   // LY-23
   { name: 'gambling_opportunity', advanced: true, banned: ['m_gold', 'm_lucky'] },
+  // EX-18 lifted: no Uncommon Jokers in shops, packs or Judgement — an
+  // Uncommon rarity roll becomes Common (rules/misc_layers.lua) — and the
+  // Uncommon Tag, which exists only to hand one out, is banned.
+  { name: 'no_uncommons', advanced: true, hook: true, banned: ['tag_uncommon'] },
   // LY-24
   { name: 'bigger_shop', advanced: true, hook: true, gameModifiers: { mp_shop_slots_bonus: 1 } },
 ];

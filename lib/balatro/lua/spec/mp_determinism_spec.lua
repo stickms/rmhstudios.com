@@ -418,3 +418,145 @@ describe('chip_cap and shrinking_hand on the real vanilla code (EX-18 lifted)', 
     expect(sizes).eq({ -3, 2 })
   end)
 end)
+
+describe('no_uncommons on the real vanilla pool code (EX-18 lifted)', function()
+  local MP
+  before_each(function()
+    V.install()
+    MP = boot_mp()
+  end)
+  after_each(function()
+    if MP.state.session then MP.session.unmount('test') end
+    MP.hooks.remove_all()
+    V.uninstall()
+  end)
+
+  local function mount(layers, banned)
+    local r = resolved()
+    r.layers = layers
+    r.setupHooks = {}
+    for _, l in ipairs(layers) do if l == 'no_uncommons' then r.setupHooks = { 'no_uncommons' } end end
+    r.banned = banned or {}
+    MP.session.mount('match', { resolved = r, options = {}, runId = 'r', me = 'u1', seed = 'ABCD1234',
+      deck = 'b_red', stake = 1 })
+  end
+
+  local function shop_jokers(seed, n)
+    V.new_run(seed)
+    MP.session.pre_roll()
+    local out = {}
+    for i = 1, n do out[i] = V.roll('Joker', 'sho') end
+    return out
+  end
+
+  local function rarities(cards)
+    local count = { 0, 0, 0, 0 }
+    for _, k in ipairs(cards) do
+      local r = G.P_CENTERS[k].rarity
+      count[r] = count[r] + 1
+    end
+    return count
+  end
+
+  it('vanilla (layer off) rolls Uncommons; with the layer they become Commons, Rares stay', function()
+    mount({ 'standard' })
+    local off = rarities(shop_jokers('ABCD1234', 300))
+    MP.session.unmount('test')
+    mount({ 'standard', 'no_uncommons' }, { 'tag_uncommon' })
+    local on = rarities(shop_jokers('ABCD1234', 300))
+    expect(off[2] > 0).eq(true)
+    expect(on[2]).eq(0)
+    expect(on[1]).eq(off[1] + off[2])  -- every Uncommon roll became a Common
+    expect(on[3]).eq(off[3])           -- the rarity stream stays in step: Rares fall on the same rolls
+    expect(on[4]).eq(0)
+  end)
+
+  it('is deterministic across peers: the same seed gives the same jokers', function()
+    mount({ 'no_uncommons' }, { 'tag_uncommon' })
+    local a = shop_jokers('K7Q2M4P8', 120)
+    local b = shop_jokers('K7Q2M4P8', 120)
+    expect(a).eq(b)
+  end)
+
+  it('remaps an explicit Uncommon roll (the Uncommon Tag 0.9) and leaves Rare and Legendary alone', function()
+    mount({ 'no_uncommons' }, { 'tag_uncommon' })
+    V.new_run('ABCD1234')
+    MP.session.pre_roll()
+    -- The pool key (rarity, append, ante) names the stream the card is drawn from.
+    local _, key = get_current_pool('Joker', 0.9, nil, 'uta')
+    expect(key).eq('Joker1uta1')
+    _, key = get_current_pool('Joker', 0.99, nil, 'wra')
+    expect(key).eq('Joker3wra1')
+    _, key = get_current_pool('Joker', nil, true, 'sou')
+    expect(key:sub(1, 6)).eq('Joker4')
+    _, key = get_current_pool('Tarot', nil, nil, 'ar1')
+    expect(key).eq('Tarotar11')
+    expect(MP.misc.no_uncommons_roll(0.7)).eq(0.7)
+    expect(MP.misc.no_uncommons_roll(0.7000001)).eq(0)
+    expect(MP.misc.no_uncommons_roll(0.95)).eq(0)
+    expect(MP.misc.no_uncommons_roll(0.9500001)).eq(0.9500001)
+  end)
+
+  it('the bundle ban keeps the Uncommon Tag out of the real tag rolls', function()
+    mount({ 'no_uncommons' }, { 'tag_uncommon' })
+    V.new_run('ZZZZ9999')
+    MP.session.pre_roll()
+    expect(G.GAME.banned_keys.tag_uncommon).eq(true)
+    for ante = 1, 8 do
+      G.GAME.round_resets.ante = ante
+      for _ = 1, 20 do expect(get_next_tag_key() ~= 'tag_uncommon').eq(true) end
+    end
+  end)
+end)
+
+describe('the Glass cycle on the real m_glass center (EX-18 lifted)', function()
+  local MP
+  before_each(function()
+    V.install()
+    MP = boot_mp()
+  end)
+  after_each(function()
+    if MP.state.session then MP.session.unmount('test') end
+    MP.hooks.remove_all()
+    V.uninstall()
+  end)
+
+  local function glass_with(layers, banned)
+    local r = resolved()
+    r.layers = layers
+    r.banned = banned or {}
+    MP.session.mount('match', { resolved = r, options = {}, runId = 'r', me = 'u1', seed = 'ABCD1234',
+      deck = 'b_red', stake = 1 })
+    local c = G.P_CENTERS.m_glass.config
+    local out = { c.Xmult, c.extra, c.mp_balanced == true }
+    MP.session.unmount('test')
+    return out
+  end
+
+  it('vanilla Glass is X2, 1 in 4 and comes back exactly after every unmount', function()
+    expect(glass_with({})).eq({ 2, 4, false })
+    expect(glass_with({ 'standard' })).eq({ 1.5, 4, true })
+    expect(glass_with({ 'sandbox' })).eq({ 1.5, 3, true })
+    expect({ G.P_CENTERS.m_glass.config.Xmult, G.P_CENTERS.m_glass.config.extra }).eq({ 2, 4 })
+  end)
+
+  it('glass_vanilla undoes the ruleset rework', function()
+    expect(glass_with({ 'standard', 'glass_vanilla' })).eq({ 2, 4, false })
+    expect(glass_with({ 'standard', 'sandbox', 'glass_vanilla' })).eq({ 2, 4, false })
+  end)
+
+  it('glass_standard and glass_legacy give the standard rework under any ruleset', function()
+    for _, g in ipairs({ 'glass_standard', 'glass_legacy' }) do
+      expect(glass_with({ g })).eq({ 1.5, 4, true })
+      expect(glass_with({ 'sandbox', g })).eq({ 1.5, 4, true })  -- not Sandbox's 1 in 3
+      expect(glass_with({ 'experimental', g })).eq({ 1.5, 4, true })
+    end
+  end)
+
+  it('glass_experimental mounts no rework (its bundle bans Glass)', function()
+    expect(glass_with({ 'standard', 'glass_experimental' }, { 'm_glass', 'c_justice' })).eq({ 2, 4, false })
+    local E = MP.content.enhancements
+    expect(E.glass_variant({ layers = { 'standard', 'glass_legacy' } })).eq('glass_legacy')
+    expect(E.glass_variant({ layers = { 'standard' } })).eq(nil)
+  end)
+end)

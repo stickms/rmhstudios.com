@@ -8,12 +8,7 @@
  */
 
 import { checkLobbyOption, LOBBY_OPTION_KEYS } from '../wire-codec';
-import type {
-  LobbyOptionKey,
-  LobbyOptions,
-  QueueMode,
-  Shape,
-} from '../types';
+import type { LobbyOptionKey, LobbyOptions, QueueMode, Shape } from '../types';
 import { ADVANCED_LAYERS, getLayer } from './layers';
 import { getRuleset, type RulesetDef } from './rulesets';
 
@@ -74,11 +69,20 @@ export function maxPlayersFor(queueMode: QueueMode, kind: 'private' | 'casual' |
 
 /**
  * Keep only Advanced-toggleable layers, in a stable order, deduplicated
- * (LY-25). Ruleset defaults and `traps` are added by resolve(), not here.
+ * (LY-25). Of a mutually exclusive `group` (the Glass cycle) only the first
+ * survives. Ruleset defaults and `traps` are added by resolve(), not here.
  */
 export function sanitizeModifierLayers(layers: readonly string[]): string[] {
   const want = new Set(layers);
-  return ADVANCED_LAYERS.filter((l) => want.has(l));
+  const groups = new Set<string>();
+  return ADVANCED_LAYERS.filter((l) => {
+    if (!want.has(l)) return false;
+    const group = getLayer(l)?.group;
+    if (group === undefined) return true;
+    if (groups.has(group)) return false;
+    groups.add(group);
+    return true;
+  });
 }
 
 /**

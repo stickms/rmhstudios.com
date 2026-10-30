@@ -12,6 +12,10 @@
 --   score_instability    final scoring step: d = chips − mult, clamped, chips += d, mult −= d (D-03)
 --   glass_cannon         final scoring step: mult × 4
 --   shared_pockets       hand, jokers and consumables share 15 slots (hand size = base + 7 − held)
+--   no_uncommons         get_current_pool('Joker'): an Uncommon rarity roll (0.7 < r <= 0.95)
+--                        becomes Common. The roll is drawn exactly as vanilla draws it (same key,
+--                        once), so the seeded streams stay in step across peers; Rare and
+--                        Legendary are untouched. The bundle also bans the Uncommon Tag (EX-18)
 --   economy / esoteric   nothing here: the bundle's gameModifiers carry them (D-39: inflation,
 --                        no_interest, discard_cost, money_per_discard, no_blind_reward.Small/Big,
 --                        booster_ante_scaling, flipped_cards, debuff_played_cards, all_eternal) and
@@ -38,6 +42,13 @@ function M.score_instability(chips, mult)
   local d = chips - mult
   if d > 0 then d = math.min(d, mult - 1) elseif d < 0 then d = math.max(d, -chips) end
   return chips + d, mult - d, d
+end
+
+--- no_uncommons: the rarity roll get_current_pool should use instead of `r` (Common for Uncommon).
+M.NO_UNCOMMONS_FALLBACK = 0 -- any roll <= 0.7 is Common in vanilla's ladder
+function M.no_uncommons_roll(r)
+  if type(r) == 'number' and r > 0.7 and r <= 0.95 then return M.NO_UNCOMMONS_FALLBACK end
+  return r
 end
 
 function M.glass_cannon(chips, mult) return chips, mult * param('mp_glass_cannon_xmult', M.GLASS_CANNON_XMULT) end
@@ -139,6 +150,14 @@ function M.install()
     end
     return orig(key, predict_seed, ...)
   end, o('eeeee'))
+  wrap(_G, 'get_current_pool', function(orig, _type, _rarity, _legendary, _append, ...)
+    if _type == 'Joker' and not _legendary and MP.layer_active('no_uncommons') then
+      -- Vanilla's own draw (common_events.lua get_current_pool), made here so it can be remapped.
+      local r = _rarity or pseudorandom('rarity' .. G.GAME.round_resets.ante .. (_append or ''))
+      return orig(_type, M.no_uncommons_roll(r), _legendary, _append, ...)
+    end
+    return orig(_type, _rarity, _legendary, _append, ...)
+  end, o('no_uncommons'))
   wrap(_G, 'new_round', function(orig, ...)
     local r = orig(...)
     if MP.layer_active('polymorph_spam') then
