@@ -1,9 +1,9 @@
 {
   "version": "1.0.1o-FULL",
   "core": {
-    "file": "core-49e9e2ca0c0a.zip",
-    "bytes": 4968698,
-    "sha256": "49e9e2ca0c0a3248ee01b409fe899f45d22078af86bfb9154a85f951b0629af4"
+    "file": "core-39874557a853.zip",
+    "bytes": 4985120,
+    "sha256": "39874557a853d029911814ea3db78fe909fb7953b21345b5cada51265f031408"
   },
   "audio": {
     "file": "audio-74961b9df2d0.zip",

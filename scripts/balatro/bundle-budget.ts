@@ -23,7 +23,7 @@
  *    contains `__balatroMp` (lib/balatro/mp/test-hooks.ts must sit behind an
  *    `import.meta.env.VITE_BALATRO_MP_TEST === '1'` dynamic import).
  * 4. Packs (lib/balatro/game-pack.json + data/balatro-pack): core ≤ baseline
- *    4 930 572 B + 30 KB; mp (once WS2 adds it) ≤ 1.3 MiB compressed and ≤ 8 MiB
+ *    4 930 572 B + BUDGETS.coreGrowth; mp ≤ BUDGETS.mpPackBytes compressed and ≤ 8 MiB
  *    extracted (from the zip's central directory). The manifest's byte counts must
  *    match the files.
  * KB = 1024 bytes throughout.
@@ -50,7 +50,10 @@ export const BUDGETS = {
   // CJK glyphs each language's MP text needs (folded per language, WS2), and
   // the kept MP art alone is ~1.25 MB after lossless recompression. These match
   // data/balatro-mp/pack-budget.json, which the pack builder enforces.
-  coreGrowth: 40_000,
+  // M1b: +16 422 B, exactly the compressed web platform Lua (rmh_web.lua,
+  // rmh/*.lua, rmh_mp_entry.lua) that moved out of the page bundle's `?raw`
+  // imports and into the core pack (build-game-pack.py PLATFORM_LUA).
+  coreGrowth: 40_000 + 16_422,
   mpPackBytes: 1_800_000,
   mpPackExtracted: 8 * MB,
 } as const;

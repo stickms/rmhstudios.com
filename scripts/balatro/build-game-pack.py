@@ -12,7 +12,8 @@ the multiplayer pack from lib/balatro/lua/mp + data/balatro-mp).
 Output (committed; zip names are content-addressed, so they can be cached
 forever). The packs are NOT under public/: /balatro is signed-in only, so they
 are served by app/routes/api/balatro/pack.$file.ts behind the session check.
-    data/balatro-pack/core-<sha12>.zip      everything but the audio
+    data/balatro-pack/core-<sha12>.zip      everything but the audio, plus the web
+                                            platform Lua (PLATFORM_LUA, lib/balatro/lua)
     data/balatro-pack/audio-<sha12>.zip     resources/sounds
     data/balatro-pack/mp-<sha12>.zip        the multiplayer pack (rmh_mp/**), loaded lazily
     lib/balatro/game-pack.json              {version, core: {file, bytes, sha256}, audio: {…}, mp: {…}}
@@ -72,6 +73,7 @@ OUT_DIR = ROOT / 'data' / 'balatro-pack'
 MANIFEST = ROOT / 'lib' / 'balatro' / 'game-pack.json'
 MP_DATA = ROOT / 'data' / 'balatro-mp'
 MP_LUA = ROOT / 'lib' / 'balatro' / 'lua' / 'mp' / 'rmh_mp'
+PLATFORM_LUA_DIR = ROOT / 'lib' / 'balatro' / 'lua'
 BUDGET = MP_DATA / 'pack-budget.json'
 
 EXCLUDE_DIRS = {'dlls'}
@@ -106,6 +108,22 @@ CORE_PATCHES: list[tuple[str, str, str]] = [
         'elseif RMH_MP and RMH_MP.eval_row_label and RMH_MP.eval_row_label(config, left_text, scale, num_dollars) then'
         " elseif config.name == 'hands' then",
     ),
+]
+
+# The web platform layer, added to the core pack at these paths under /Balatro
+# (lib/balatro/runtime.ts only prefixes `require "rmh_web";` onto main.lua). It used
+# to be bundled into the page as `?raw` strings; in the pack it is cached in
+# IndexedDB and SHA-verified with the game, and the single-player route chunk does
+# not carry ~45 KB of Lua. Editing any of these files therefore changes the core
+# pack: rebuild it with the full build (not --mp-only).
+PLATFORM_LUA: list[tuple[str, str]] = [
+    ('rmh_web.lua', 'rmh_web.lua'),  # the platform shim main.lua requires first
+    ('rmh/u32.lua', 'u32.lua'),  # LuaJIT ports the shim installs
+    ('rmh/bit.lua', 'bit.lua'),
+    ('rmh/luajit_random.lua', 'luajit_random.lua'),
+    ('rmh/json.lua', 'rmh/json.lua'),  # the MP mailbox (docs/balatro-mp.md §8)
+    ('rmh/net.lua', 'rmh/net.lua'),
+    ('rmh_mp_entry.lua', 'rmh_mp_entry.lua'),  # the MULTIPLAYER menu entry
 ]
 
 GLYPHS_MAGIC = b'RMHG'
@@ -571,6 +589,14 @@ def build_core_and_audio(plan: dict[str, set[int] | None]) -> tuple[dict[str, by
     missing = sorted({p for p, _, _ in CORE_PATCHES} - {n for n, _ in files})
     if missing:
         raise SystemExit(f'core patches name files not in data/balatro: {missing}')
+    names = {n for n, _ in files}
+    for name, src in PLATFORM_LUA:
+        if name in names:
+            raise SystemExit(f'platform Lua {name} collides with a data/balatro path')
+        data = (PLATFORM_LUA_DIR / src).read_bytes()
+        files.append((name, data))
+        print(f'{name:60s} {len(data) // 1024:>7} KB (platform layer)', file=sys.stderr)
+    files.sort(key=lambda f: f[0])
     packs = {
         'core': build_zip([f for f in files if not f[0].startswith(AUDIO_DIR)]),
         'audio': build_zip([f for f in files if f[0].startswith(AUDIO_DIR)]),

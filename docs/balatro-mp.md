@@ -85,6 +85,14 @@ The Lua validator checks types, required fields, enums, ranges, lengths (in code
 points) and records. It skips regex patterns and zod refinements, which TypeScript
 checks.
 
+The same run writes `lib/balatro/mp/bridge-schema.gen.ts`, the same descriptors as a
+TypeScript table (plus regex patterns). `lib/balatro/mp/bridge-codec.ts` walks it,
+and the mailbox (`bridge.ts`) validates with it instead of zod. zod v4 classic does
+not tree-shake, and it cost the lazy MP chunk about 80 KB gzip against a 70 KB budget.
+`bridge-protocol.ts` stays the source. `bridge-codec.test.ts` holds the codec to the
+zod verdicts on every fixture, on mutations of them and on the mailbox framing cases.
+Server code and tests keep using the zod schemas.
+
 ```bash
 pnpm balatro:gen-protocol           # regenerate after editing bridge-protocol.ts or types.ts
 pnpm balatro:gen-protocol --check   # CI freshness check (protocol-lua.test.ts asserts it too)
@@ -289,16 +297,19 @@ Every edit to MP Lua therefore changes `mp-<sha>.zip` and its manifest entry.
 Streams test against local builds. **Only WS2 or the orchestrator commits a rebuilt
 pack, at wave merges** (R-14). CI's `--check` and `pack.test.ts` fail on a stale one.
 
-The core pack changes only when the shipped MP localization's characters change.
+The core pack changes when the shipped MP localization's characters change, and
+when the web platform Lua changes. That Lua is `rmh_web.lua`, `rmh/{u32,bit,luajit_random,json,net}.lua`
+and `rmh_mp_entry.lua` (`PLATFORM_LUA` in the builder). It ships in the core at
+those paths and is no longer bundled into the page (merge point M1b).
 `--mp-only` leaves the core as it is, so run the full build after editing
-`data/balatro-mp/localization` or `extra-strings`. A full build takes a few minutes,
+`data/balatro-mp/localization`, `extra-strings` or any of those Lua files. A full build takes a few minutes,
 because it subsets about 60 MB of fonts.
 
 **Budgets** (`data/balatro-mp/pack-budget.json`; the build fails past them):
 
 | Pack | Budget                                        | Plan §6.4                                                                                                                                       |
 | ---- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| core | 4 930 572 B baseline + 40 000 B               | plan +30 KB. Even per-language, the CJK/Hangul MP glyphs cost ~38 KB (folding all MP text into every font cost ~108 KB)                         |
+| core | 4 930 572 B baseline + 56 422 B               | plan +30 KB. Even per-language, the CJK/Hangul MP glyphs cost ~38 KB (folding all MP text into every font cost ~108 KB); +16 422 B (M1b) is exactly the compressed platform Lua moved into the core |
 | mp   | 1 800 000 B compressed, 8 000 000 B extracted | plan 1.3 MB. The used art alone is ~1.25 MB after lossless oxipng (1x + 2x, AS-01) and the localization ~0.1 MB, so 1.3 MB left no room for Lua |
 
 `CORE_PATCHES` in the builder is the anchored patch list for data/balatro Lua, as
@@ -445,7 +456,8 @@ vanilla loads the save. A fresh single-player run deletes the sidecar.
   processes in the conformance test), JS polls every 16 ms and forgets an inbound line
   only once Lua's batch header acks it. Lua sends a header-only batch to ack.
 - Lua drops `s ≤ last`; JS drops Lua duplicates the same way. Both sides validate
-  (zod; `RMH.net.validate`, which the MP pack sets to `protocol.lua`), log and drop.
+  (`bridge-codec.ts`, generated from the zod contract; `RMH.net.validate`, which the
+  MP pack sets to `protocol.lua`), log and drop.
   Handler errors are isolated.
 - JSON: numbers `%.17g`; NaN/±inf are encode errors (scores travel as strings, §0.9);
   a null object field decodes to nil and a null array item to `json.null`; decoded
