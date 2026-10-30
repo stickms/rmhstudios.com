@@ -45,7 +45,8 @@ export const GAME_ASSET_CHANNELS = {
     game: 'tf2',
     kind: 'mdl',
     // 2: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`).
-    builder: 2,
+    // 3: characters carry their ragdoll (the .phy's solids and joint limits, ragdoll.py) in `ragdoll`.
+    builder: 3,
     env: 'TF2_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },
@@ -82,7 +83,8 @@ export const GAME_ASSET_CHANNELS = {
     game: 'hl2',
     kind: 'mdl',
     // 2: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`).
-    builder: 2,
+    // 3: characters carry their ragdoll (the .phy's solids and joint limits, ragdoll.py) in `ragdoll`.
+    builder: 3,
     env: 'HL2_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },
@@ -106,7 +108,8 @@ export const GAME_ASSET_CHANNELS = {
     game: 'portal',
     kind: 'mdl',
     // 2: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`).
-    builder: 2,
+    // 3: characters carry their ragdoll (the .phy's solids and joint limits, ragdoll.py) in `ragdoll`.
+    builder: 3,
     env: 'PORTAL_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },
@@ -140,7 +143,8 @@ export const GAME_ASSET_CHANNELS = {
     // 6: the probe also checks those textures' archive CRCs and decoded colour (outputs unchanged).
     // 7: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`):
     //    the bare forearms were blackened by Pillow's premultiplied resize.
-    builder: 7,
+    // 8: characters carry their ragdoll (the .phy's solids and joint limits, ragdoll.py) in `ragdoll`.
+    builder: 8,
     env: 'CSGO_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },

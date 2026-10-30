@@ -213,6 +213,7 @@ jobs:
           python3 -B -m unittest discover -s scripts/tf2-game -p test_sourcegame.py
           python3 -B -m unittest discover -s scripts/tf2-game -p test_game_particles.py
           python3 -B -m unittest discover -s scripts/tf2-game -p test_menu_ui.py
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_ragdoll.py
           # The real install's lists (informational: the conversions report their own problems).
           CSGO_ROOT=/mnt/csgo python3 -B -m unittest discover -s scripts/tf2-game -p test_csgo.py -k Install \
             || echo "::warning::CS:GO lists from the real install look wrong (test_csgo.Install)"
