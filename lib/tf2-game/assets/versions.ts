@@ -132,7 +132,8 @@ export const GAME_ASSET_CHANNELS = {
     //    FRAMEANIM_VERSION 2 rebuilds the models with frame animations); the sync runs probe-frameanim.py.
     // 4: the frame-animated ref sets the clips' basis, recorded as source.clipFrame (FRAMEANIM_VERSION 3).
     // 5: the sync's probe dumps the bare-arm textures' VTF headers (outputs unchanged).
-    builder: 5,
+    // 6: the probe also checks those textures' archive CRCs and decoded colour (outputs unchanged).
+    builder: 6,
     env: 'CSGO_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },
