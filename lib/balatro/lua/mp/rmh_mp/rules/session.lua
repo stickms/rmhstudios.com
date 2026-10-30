@@ -457,7 +457,13 @@ function S.install_net()
   MP.net.on('rejoin_restore', function(d)
     local sess = MP.state.session
     if sess and sess.runId == d.runId and not S.launch_pending then
-      S.load_snapshot(d.snapshotPath)
+      -- The launch may have just run: its start_run screen wipe is still on screen, and a
+      -- second start_run over it crashes vanilla's wipe_off (G.screenwipe is gone by then).
+      -- Load once no wipe is running (found by E2E-14).
+      MP.net.defer(function()
+        local cur = MP.state.session
+        if cur and cur.runId == d.runId then S.load_snapshot(d.snapshotPath) end
+      end, function() return not (rawget(_G, 'G') and G.screenwipe) end, 'launch')
     else
       S.pending_rejoin = d       -- applied by the pending launch (or the next match_start)
     end

@@ -213,25 +213,23 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
       w.baseUrl,
       { page: b.page, open: false, skipGoto: true },
     );
-    // The page autoloads MP with the rejoin hint; the seat is held — rejoin it.
-    await again.cmd('mp_open', { intent: 'rejoin' }).catch(() => {});
-    // The hub answers the seat query with seat-held (the Reconnect prompt); then Rejoin.
-    await waitFor(
-      'the held seat is rejoined',
-      async () => {
-        if ((await again.snap()).runId === runId) return true;
-        await again.cmd('mp_send', { t: 'ui_seat', d: { op: 'rejoin' } }).catch(() => {});
-        return false;
+    // The page autoloads MP with the rejoin hint (MP.open('rejoin') — opening it again from
+    // here would start a second menu wipe under the restore); the hub answers the seat query
+    // and the Seat held prompt appears: press Rejoin, as a player does.
+    await again.cmd('mp_notice', { i: 1, name: 'seat_held', seconds: 120 }, 150_000);
+    await again.waitSnap((s) => s.runId === runId, 'back in the same match', 240_000);
+    await waitFor('a rejoin restore', async () => ((await inbox(again, 'rejoin_restore')).counts.rejoin_restore ?? 0) > 0, 240_000, 1000).catch(
+      (e: Error) => {
+        throw new Error(`${e.message}\n${again.errors.join('\n')}`);
       },
-      240_000,
-      3000,
     );
-    const restore = await waitFor('a rejoin restore', async () => (await inbox(again, 'rejoin_restore')).list.length > 0, 240_000, 1000)
-      .then(() => true)
-      .catch(() => false);
-    expect(restore).toBe(true);
-    // Play on: the host wins the next PvP rounds.
-    await again.cmd('wait_state', ['BLIND_SELECT', 300], 320_000).catch(() => again.cmd('leave_shop'));
+    // The restored run is the shop the guest reloaded in; play on from there.
+    const st = await again.cmd<{ state: string }>('wait_state', ['SHOP', 300], 320_000).then(
+      () => ({ state: 'SHOP' }),
+      () => again.cmd<{ state: string }>('state'),
+    );
+    expect(st.state).toBe('SHOP');
+    await again.cmd('leave_shop');
     await Promise.all([playAnte(a, { chips: WIN }), playAnte(again, { chips: 0 })]);
     await Promise.all([playAnte(a, { chips: WIN }), playAnte(again, { chips: 0 })]);
     expect(await waitResult(a)).toBe('win');

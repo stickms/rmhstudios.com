@@ -38,6 +38,7 @@
 --                                            whole PvP rounds and antes of a match (e2e)
 --   mp_send{t, d}                            a ui_* message to the session, as a screen sends it
 --   mp_leave{how?}                           leave as a player does (end screen / forfeit / ui_leave)
+--   mp_notice{i, name?}                      press button i of the open notice (Rejoin, Reconnect …)
 --   mp_inbox{t?, since?}                     the session→Lua messages received (tapped at mp_open)
 -- More commands: AP.register(name, fn(args) -> data) (fn runs inside a task).
 
@@ -765,6 +766,20 @@ C.mp_leave = function(a)
   return { in_session = m.in_session() }
 end
 
+--- Presses button i of the open MP notice overlay (Seat held / Reconnect / errors) as a click
+-- does: the overlay closes, then the button's action runs. mp_notice{i, name?}.
+C.mp_notice = function(a)
+  local m = mpg()
+  local name = a.name
+  wait(function()
+    local W = m.ui and m.ui.w
+    local open = W and W.overlay_name and W.overlay_name()
+    return open ~= nil and (not name or open == name)
+  end, tonumber(a.seconds) or 60, 'notice overlay ' .. tostring(name or ''))
+  G.FUNCS.rmh_mp_notice_button({ config = { ref_table = { index = tonumber(a.i or a[1]) or 1 } } })
+  return true
+end
+
 --- MP.state for assertions (lives, result, presence, pvp flags) as plain data.
 C.mp_state = function()
   local m = mpg()
@@ -904,6 +919,8 @@ function AP.install()
     io.stderr:flush()
   end
   love.errorhandler = love.errhand
+  -- With the MP pack loaded (a test build), record what the session tells Lua from now on.
+  if AP.tap_inbox then pcall(AP.tap_inbox) end
   return true
 end
 

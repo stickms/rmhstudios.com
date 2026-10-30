@@ -512,6 +512,22 @@ describe('session lifecycle', function()
     expect(MP.hooks.count('session')).eq(0)
   end)
 
+  it('a rejoin restore after the launch waits for its screen wipe (NET-06, E2E-14)', function()
+    local sess = start_match(MP, { runId = 'runR' })
+    expect(sess.runId).eq('runR')
+    local loads = {}
+    local load = MP.session.load_snapshot
+    MP.session.load_snapshot = function(path) loads[#loads + 1] = path end
+    G.screenwipe = {} -- the launch's start_run is still wiping
+    MP.net.receive('rejoin_restore', { runId = 'runR', snapshotPath = '/rmh/mp/run.jkr', statePath = '/rmh/mp/state.json' })
+    MP.net.frame(0)
+    expect(#loads).eq(0)
+    G.screenwipe = nil
+    MP.net.frame(0)
+    expect(loads).eq({ '/rmh/mp/run.jkr' })
+    MP.session.load_snapshot = load
+  end)
+
   it('go_to_menu leaves the session after the run is deleted', function()
     start_match(MP)
     G.FUNCS.go_to_menu()
