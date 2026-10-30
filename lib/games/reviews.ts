@@ -26,6 +26,8 @@ export const guideUpdateSchema = z.object({
 export interface RatingAgg {
   average: number;
   count: number;
+  /** Reviews of 4 or 5 stars (for the overall label); absent on the batch aggregate. */
+  positive?: number;
 }
 
 export interface ReviewView {
@@ -39,6 +41,10 @@ export interface ReviewView {
   author: { name: string | null; handle: string | null; image: string | null };
   myVote?: boolean | null;
   isMine?: boolean;
+  /** The author's time on record, if their playtime setting lets this viewer see it. */
+  playtimeSeconds?: number | null;
+  /** Awards this review has received, most first. */
+  awards?: { awardId: string; count: number }[];
 }
 
 export interface GuideSummary {

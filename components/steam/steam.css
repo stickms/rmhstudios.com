@@ -2321,3 +2321,50 @@ button.stm-star {
   vertical-align: -2px;
   margin-inline-end: 3px;
 }
+
+/* Review upgrades */
+.stm-recommend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+.stm-recommend[data-kind='recommended'] {
+  color: #66c0f4;
+}
+.stm-recommend[data-kind='not-recommended'] {
+  color: #d94126;
+}
+.stm-recommend[data-kind='mixed'] {
+  color: var(--stm-muted);
+}
+.stm-awards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-awards li {
+  padding: 1px 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--stm-radius);
+  font-size: 12px;
+}
+.stm-award-menu {
+  display: inline-block;
+  margin-inline-start: 12px;
+}
+.stm-award-menu > summary {
+  display: inline-flex;
+  list-style: none;
+  cursor: pointer;
+}
+.stm-award-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.stm-award-menu .stm-collmenu-panel {
+  inset-block-start: calc(100% + 2px);
+  width: 240px;
+}

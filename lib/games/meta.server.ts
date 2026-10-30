@@ -11,6 +11,7 @@ import { apiCache } from '@/lib/cache';
 import { games } from '@/lib/games';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import type { RatingAgg, ReviewView, GuideSummary } from '@/lib/games/reviews';
+import { canViewPlaytime, isPlaytimePrivacy } from '@/lib/playtime/privacy';
 
 export class GameMetaError extends Error {}
 
@@ -23,14 +24,18 @@ const aggKey = (gameId: string) => `game-rating:${gameId}`;
 export async function getRatingAgg(gameId: string): Promise<RatingAgg> {
   const cached = apiCache.get<RatingAgg>(aggKey(gameId));
   if (cached) return cached;
-  const res = await prisma.gameReview.aggregate({
-    where: { gameId },
-    _avg: { stars: true },
-    _count: { _all: true },
-  });
+  const [res, byStars] = await Promise.all([
+    prisma.gameReview.aggregate({
+      where: { gameId },
+      _avg: { stars: true },
+      _count: { _all: true },
+    }),
+    prisma.gameReview.groupBy({ by: ['stars'], where: { gameId, stars: { gte: 4 } }, _count: { _all: true } }),
+  ]);
   const agg: RatingAgg = {
     average: res._avg.stars ? Math.round(res._avg.stars * 10) / 10 : 0,
     count: res._count._all,
+    positive: byStars.reduce((n, r) => n + r._count._all, 0),
   };
   apiCache.set(aggKey(gameId), agg, 60_000);
   return agg;
@@ -74,6 +79,45 @@ export async function listReviews(
       votes: { select: { userId: true, helpful: true } },
     },
   });
+  const ids = reviews.map((r) => r.id);
+  const authorIds = [...new Set(reviews.map((r) => r.userId))];
+  const [plays, followed, awardRows] = await Promise.all([
+    viewerId && authorIds.length
+      ? prisma.gamePlaytime.findMany({
+          where: { gameId, userId: { in: authorIds } },
+          select: { userId: true, totalSeconds: true, user: { select: { playtimePrivacy: true } } },
+        })
+      : Promise.resolve([]),
+    viewerId && authorIds.length
+      ? prisma.follow.findMany({
+          where: { followerId: viewerId, followingId: { in: authorIds } },
+          select: { followingId: true },
+        })
+      : Promise.resolve([]),
+    ids.length
+      ? prisma.contentAward.groupBy({
+          by: ['entityId', 'awardId'],
+          where: { entityType: 'review', entityId: { in: ids }, hidden: false },
+          _count: { awardId: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  const follows = new Set(followed.map((f) => f.followingId));
+  // Time on record is shown only where the author's setting lets this viewer see it.
+  const playtime = new Map<string, number>();
+  for (const p of plays) {
+    const setting = isPlaytimePrivacy(p.user.playtimePrivacy) ? p.user.playtimePrivacy : 'private';
+    if (canViewPlaytime(setting, { viewerId, ownerId: p.userId, viewerFollowsOwner: follows.has(p.userId) })) {
+      playtime.set(p.userId, p.totalSeconds);
+    }
+  }
+  const awardsByReview = new Map<string, { awardId: string; count: number }[]>();
+  for (const a of awardRows) {
+    const list = awardsByReview.get(a.entityId) ?? [];
+    list.push({ awardId: a.awardId, count: a._count.awardId });
+    awardsByReview.set(a.entityId, list);
+  }
+
   const mapped = reviews.map((r): ReviewView => {
     const helpfulCount = r.votes.filter((v) => v.helpful).length;
     const author = resolveUser(r.user);
@@ -88,6 +132,8 @@ export async function listReviews(
       author: { name: author.name, handle: author.handle, image: author.image },
       myVote: viewerId ? (r.votes.find((v) => v.userId === viewerId)?.helpful ?? null) : null,
       isMine: viewerId === r.userId,
+      playtimeSeconds: playtime.get(r.userId) ?? null,
+      awards: (awardsByReview.get(r.id) ?? []).sort((a, b) => b.count - a.count),
     };
   });
   if (sort === 'helpful') mapped.sort((a, b) => b.helpfulCount - a.helpfulCount);
