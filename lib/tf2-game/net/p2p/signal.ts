@@ -19,6 +19,7 @@
 import { z } from 'zod';
 import { TF2_MODES, type Tf2Mode } from '../../data/maps';
 import type { IceServerConfig } from './ice';
+import { zIceServers } from '../../../shared/p2p/ice';
 import {
   BOT_DIFFICULTIES,
   TF2_LIMITS,
@@ -77,30 +78,14 @@ export const P2P_RELAY_LIMITS = {
   MAX_UNRELIABLE_BYTES: 1_300,
 } as const;
 
-/** The two-byte relay header: flags (bit 0 = reliable) · member slot (1…127). */
-export const RELAY_HEADER_BYTES = 2;
-export const RELAY_FLAG_RELIABLE = 1;
+/**
+ * The two-byte relay header: flags (bit 0 = reliable) · member slot (1…127).
+ * Shared with other peer-to-peer apps: lib/shared/p2p/relay.ts.
+ */
+export { RELAY_HEADER_BYTES, RELAY_FLAG_RELIABLE, encodeRelay, decodeRelay } from '../../../shared/p2p/relay';
 
-export function encodeRelay(slot: number, reliable: boolean, payload: Uint8Array): Uint8Array {
-  const out = new Uint8Array(RELAY_HEADER_BYTES + payload.byteLength);
-  out[0] = reliable ? RELAY_FLAG_RELIABLE : 0;
-  out[1] = slot & 0x7f;
-  out.set(payload, RELAY_HEADER_BYTES);
-  return out;
-}
-
-export function decodeRelay(
-  bytes: Uint8Array,
-): { slot: number; reliable: boolean; payload: Uint8Array } | null {
-  if (bytes.byteLength <= RELAY_HEADER_BYTES) return null;
-  const flags = bytes[0];
-  if ((flags & ~RELAY_FLAG_RELIABLE) !== 0) return null;
-  return {
-    reliable: (flags & RELAY_FLAG_RELIABLE) !== 0,
-    slot: bytes[1] & 0x7f,
-    payload: bytes.subarray(RELAY_HEADER_BYTES),
-  };
-}
+/** ICE servers as the hub hands them out (parsed again by the browser before use): lib/shared/p2p/ice.ts. */
+export { zIceServers };
 
 // ─── Payloads ──────────────────────────────────────────────────────────────
 
@@ -353,18 +338,6 @@ export const zP2pSignalIn = z
   .refine((s) => (s.description === undefined) !== (s.candidate === undefined));
 
 export const zP2pRelayStart = z.object({ peerId: peerId.optional() });
-
-const iceUrl = z.string().regex(/^(stun|stuns|turn|turns):[^\s]{1,250}$/);
-/** ICE servers as the hub hands them out (parsed again by the browser before use). */
-export const zIceServers = z
-  .array(
-    z.object({
-      urls: z.union([iceUrl, z.array(iceUrl).min(1).max(8)]),
-      username: z.string().max(256).optional(),
-      credential: z.string().max(256).optional(),
-    }),
-  )
-  .max(8);
 
 export const zP2pHosted = z.object({
   code: roomCode,

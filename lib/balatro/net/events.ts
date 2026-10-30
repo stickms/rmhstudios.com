@@ -34,6 +34,7 @@
 import { z } from 'zod';
 import type { ClientToServer, ServerToClient } from '../../shared/realtime/contract';
 import { BALATRO_LIMITS, BALATRO_RELAY_LIMITS } from './limits';
+import { zIceServers } from '../../shared/p2p/ice';
 
 /* ─── Shared value schemas ───────────────────────────────────────────────── */
 
@@ -62,17 +63,8 @@ export const zCandidate = z.object({
   sdpMLineIndex: z.number().int().min(0).max(64).nullable(),
 });
 
-const iceUrl = z.string().regex(/^(stun|stuns|turn|turns):[^\s]{1,250}$/);
-/** See resolution 2 above: WS1 turns this into a re-export of lib/shared/p2p/ice. */
-export const zIceServers = z
-  .array(
-    z.object({
-      urls: z.union([iceUrl, z.array(iceUrl).min(1).max(8)]),
-      username: z.string().max(256).optional(),
-      credential: z.string().max(256).optional(),
-    }),
-  )
-  .max(8);
+/** Resolution 2 above: the shared schema (lib/shared/p2p/ice.ts), re-exported. */
+export { zIceServers };
 
 export const zRole = z.enum(['player', 'spectator']);
 

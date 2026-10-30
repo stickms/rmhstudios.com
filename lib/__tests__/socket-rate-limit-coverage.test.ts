@@ -35,6 +35,7 @@ import { GCALL_C2S } from '@/lib/groupcall/events';
 import { PARTY_C2S } from '@/lib/party/events';
 import { SPACE_C2S } from '@/lib/spaces/events';
 import { TF2_C2S } from '@/lib/tf2-game/net/events';
+import { BALATRO_C2S_EVENTS } from '@/lib/balatro/net/events';
 
 const CONFIG_PATH = join(process.cwd(), 'server/socket-server/config.ts');
 
@@ -77,6 +78,7 @@ const CONTRACTS: ReadonlyArray<readonly [string, Readonly<Record<string, string>
   ['party', PARTY_C2S],
   ['space', SPACE_C2S],
   ['tf2', TF2_C2S],
+  ['balatro', BALATRO_C2S_EVENTS],
 ];
 
 describe('every inbound socket event is rate limited', () => {
