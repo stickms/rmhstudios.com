@@ -101,7 +101,7 @@ jobs:
       # `python3 -I`, which ignores the user site that a non-root `pip install`
       # writes to, so install into the interpreter's own site-packages.
       - name: Install pack-builder Python deps
-        run: sudo python3 -m pip install --quiet --break-system-packages fonttools pyoxipng && python3 -I -c 'import fontTools, pyoxipng'
+        run: sudo python3 -m pip install --quiet --break-system-packages fonttools pyoxipng && python3 -I -c 'import fontTools, oxipng'
 
       - name: Balatro suite (TS + Lua L1)
         run: pnpm test:balatro
