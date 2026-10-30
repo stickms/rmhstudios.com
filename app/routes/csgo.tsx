@@ -8,7 +8,7 @@ import CsPlayPage from '@/components/csgo-game/CsPlayPage';
 
 function CsgoPage() {
   return (
-    <GameErrorBoundary gameName="Counter-Strike: Dust II">
+    <GameErrorBoundary gameName="Counter-Strike: Global Offensive">
       <CsPlayPage />
     </GameErrorBoundary>
   );

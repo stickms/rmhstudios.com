@@ -228,6 +228,9 @@ export function parseGameMenu(text: string | undefined, env: SceneSource['env'])
     });
 }
 
+/** The console background drawn when the game's list names none (Upward's, TF2's long-standing default). */
+export const DEFAULT_BACKGROUND = 'background_upward';
+
 /** `console/background_<map>` names from chapterbackgrounds.txt (its `chapters` block). */
 export function parseChapterBackgrounds(text: string | undefined): string[] {
   if (!text) return [];

@@ -130,6 +130,7 @@ jobs:
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as csgo_sounds --state-key csgo-game/snd/_state.json --build "$build" --builder "$CSGO_GAME_BUILDER_SOUNDS" $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as csgo_particles --state-key csgo-game/particles/_state.json --build "$build" --builder "$CSGO_GAME_BUILDER_PARTICLES" $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as csgo_ui --state-key csgo-game/ui/_state.json --build "$build" --builder "$CSGO_GAME_BUILDER_UI" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as csgo_menu --state-key csgo-game/menu/_state.json --build "$build" --builder "$CSGO_GAME_BUILDER_MENU" $force
           if grep -q '^run_csgo_.*=true' "$GITHUB_OUTPUT"; then echo "any=true" >> "$GITHUB_OUTPUT"; fi
           rm -f appinfo.txt
 
@@ -211,6 +212,7 @@ jobs:
           python3 -B -m unittest discover -s scripts/tf2-game -p test_sounds.py
           python3 -B -m unittest discover -s scripts/tf2-game -p test_sourcegame.py
           python3 -B -m unittest discover -s scripts/tf2-game -p test_game_particles.py
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_menu_ui.py
           # The real install's lists (informational: the conversions report their own problems).
           CSGO_ROOT=/mnt/csgo python3 -B -m unittest discover -s scripts/tf2-game -p test_csgo.py -k Install \
             || echo "::warning::CS:GO lists from the real install look wrong (test_csgo.Install)"
@@ -293,6 +295,17 @@ jobs:
           FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/csgo_ui.py \
             --root /mnt/csgo --out /mnt/work/csgo-ui --state /mnt/work/csgo-ui-state.json
 
+      - name: Main menu — Panorama's background movie, fonts, icons and words
+        id: csgo_menu
+        if: steps.gate.outputs.run_csgo_menu == 'true' && steps.tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          mkdir -p /mnt/work/csgo-menu
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key csgo-game/menu/_state.json --out /mnt/work/csgo-menu-state.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/menu_ui.py --game csgo \
+            --root /mnt/csgo --out /mnt/work/csgo-menu --state /mnt/work/csgo-menu-state.json
+
       # The game is no longer needed: free the ~33 GB before the uploads.
       - name: Delete the install
         if: always() && steps.gate.outputs.any == 'true'
@@ -303,7 +316,7 @@ jobs:
         if: >-
           steps.csgo_maps.outcome == 'success' || steps.csgo_models.outcome == 'success' ||
           steps.csgo_sounds.outcome == 'success' || steps.csgo_particles.outcome == 'success' ||
-          steps.csgo_ui.outcome == 'success'
+          steps.csgo_ui.outcome == 'success' || steps.csgo_menu.outcome == 'success'
         env:
           TF2_GAME_STORAGE_BUDGET_GB: ${{ vars.TF2_GAME_STORAGE_BUDGET_GB }}
         run: |
@@ -312,7 +325,7 @@ jobs:
           pnpm exec tsx scripts/tf2-game/storage-report.ts report \
             --pending csgo-game/maps/=/mnt/work/csgo-maps --pending csgo-game/mdl/=/mnt/work/csgo-mdl \
             --pending csgo-game/snd/=/mnt/work/csgo-snd --pending csgo-game/particles/=/mnt/work/csgo-particles \
-            --pending csgo-game/ui/=/mnt/work/csgo-ui
+            --pending csgo-game/ui/=/mnt/work/csgo-ui --pending csgo-game/menu/=/mnt/work/csgo-menu
 
       - name: Upload changed maps and their textures (index last)
         if: steps.csgo_maps.outcome == 'success' && steps.storage.outcome == 'success'
@@ -355,14 +368,22 @@ jobs:
             --state-key csgo-game/ui/_state.json --build "${{ steps.gate.outputs.build }}" \
             --builder "$CSGO_GAME_BUILDER_UI" --index index.json --preserve-index icons,lang $force
 
+      - name: Upload changed main menu (index last)
+        if: steps.csgo_menu.outcome == 'success' && steps.storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/csgo-menu --prefix csgo-game/menu/ \
+            --state-key csgo-game/menu/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$CSGO_GAME_BUILDER_MENU" --index index.json $force
+
       - name: Report channel failures
         if: >-
           always() && (steps.tests.outcome == 'failure' || steps.ffmpeg.outcome == 'failure' ||
           steps.csgo_maps.outcome == 'failure' || steps.csgo_models.outcome == 'failure' ||
           steps.csgo_sounds.outcome == 'failure' || steps.csgo_particles.outcome == 'failure' ||
-          steps.csgo_ui.outcome == 'failure')
+          steps.csgo_ui.outcome == 'failure' || steps.csgo_menu.outcome == 'failure')
         run: |
-          echo "::error::A CS:GO channel failed (tests: ${{ steps.tests.outcome }}, ffmpeg: ${{ steps.ffmpeg.outcome }}, maps: ${{ steps.csgo_maps.outcome }}, models: ${{ steps.csgo_models.outcome }}, sounds: ${{ steps.csgo_sounds.outcome }}, particles: ${{ steps.csgo_particles.outcome }}, HUD data: ${{ steps.csgo_ui.outcome }}); the channels that succeeded were published."
+          echo "::error::A CS:GO channel failed (tests: ${{ steps.tests.outcome }}, ffmpeg: ${{ steps.ffmpeg.outcome }}, maps: ${{ steps.csgo_maps.outcome }}, models: ${{ steps.csgo_models.outcome }}, sounds: ${{ steps.csgo_sounds.outcome }}, particles: ${{ steps.csgo_particles.outcome }}, HUD data: ${{ steps.csgo_ui.outcome }}, menu: ${{ steps.csgo_menu.outcome }}); the channels that succeeded were published."
           exit 1
 
       - name: Clean up

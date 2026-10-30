@@ -245,6 +245,29 @@ def probe_textures(fs):
         print("  %s: %d.%d header %d, %dx%d flags %#x frames %d format %d mips %d low %d %dx%d, %d bytes; %s"
               % (os.path.basename(path), major, minor, header, w, h, flags, frames, fmt, mips, low_fmt, low_w,
                  low_h, len(v), " ".join(res)))
+        # Where the bytes came from, whether they match the archive's CRC, and what they decode to.
+        for pak in getattr(fs.fs, "paks", []):
+            try:
+                meta = pak.get_file_meta(path)
+            except Exception:  # noqa: BLE001 - not in this archive
+                continue
+            try:
+                crc_ok = pak.get_file(path).verify()
+            except Exception as e:  # noqa: BLE001
+                crc_ok = "error %s" % e
+            print("    %s: %s crc ok %s" % (os.path.basename(pak.vpk_path), {k: meta[k] for k in sorted(meta)
+                                                                          if k != "preload"}, crc_ok))
+        try:
+            import numpy as np
+            import srctex
+            img = srctex.decode_vtf(v)
+            a = np.asarray(img.convert("RGB")).astype(int)
+            print("    decoded %dx%d mean rgb %s, black %.1f%%" % (img.size[0], img.size[1],
+                  a.mean(axis=(0, 1)).round(1).tolist(), 100.0 * (a.max(axis=2) < 8).mean()))
+            if fmt == 15:  # DXT5: level 0 is the last w*h bytes; its first blocks (alpha 8 + colour 8 each)
+                print("    level-0 blocks %s" % v[len(v) - w * h:len(v) - w * h + 48].hex())
+        except Exception as e:  # noqa: BLE001
+            print("    decode failed: %s" % e)
 
 
 if __name__ == "__main__":
