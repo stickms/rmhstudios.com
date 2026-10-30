@@ -129,6 +129,16 @@ if rawget(_G, 'G') and G.localization then pcall(loc.refresh) end
 
 --- rmh_mp_entry.lua calls MP.open(intent) when the player opens Multiplayer (or at autoload).
 function MP.open(intent)
+  -- The out-of-run UI (WS10) loads the first time Multiplayer opens, not at
+  -- pack load: nothing draws before then, and a UI failure must not take the
+  -- session core down with it.
+  if not (MP.ui and MP.ui.open) and not MP._ui_load_failed then
+    local ok, err = pcall(require, 'rmh_mp.ui.menu')
+    if not ok then
+      MP._ui_load_failed = true
+      MP.log('error', 'ui failed to load: %s', tostring(err))
+    end
+  end
   if MP.ui and MP.ui.open then return MP.ui.open(intent) end
   MP.log('warn', 'MP.open(%s): no menu UI in this pack yet (WS10)', tostring(intent))
   return false
