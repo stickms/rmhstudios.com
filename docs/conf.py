@@ -112,6 +112,10 @@ exclude_patterns = [
     "textbook/**",
     # Node build tooling for the rendered go-migration PDF.
     "go-migration/build/**",
+    # /balatro is signed-in only and kept out of search (licensing), and this
+    # site is public and indexed: the write-up stays in the repo for developers
+    # and is never published.
+    "balatro-wasm.md",
 ]
 
 """Translations.

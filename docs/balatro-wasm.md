@@ -1,24 +1,31 @@
 # Balatro in WebAssembly
 
-`/balatro` runs a player's **own copy** of Balatro in the browser. It is a worked
-example of taking a real desktop game, a LÖVE 11 (Lua) title, to WebAssembly
-without changing a line of the game. This page explains how, and why each piece
-is needed.
+> Not published: `docs/conf.py` excludes this file. `/balatro` is signed-in only
+> and kept out of search, and the docs site is public.
 
-The site ships the engine and a small platform layer. **It never ships the game.**
-The player picks the `Balatro.exe` (Windows) or `Balatro.love` (macOS) they already
-own. The browser reads it on their device and can cache it in their own IndexedDB.
-Nothing is uploaded.
+`/balatro` runs Balatro in the browser for signed-in players, with no download or
+install. It is a worked example of taking a real desktop game, a LÖVE 11 (Lua)
+title, to WebAssembly without changing a line of the game.
 
-| Piece                 | Where                              | What it is                                                                                     |
-| --------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Engine                | `public/balatro/engine/`           | love.js 11.4.1 "compat": LÖVE compiled to WebAssembly with Emscripten (MIT), one small patch   |
-| Vendor script         | `scripts/balatro/vendor-lovejs.sh` | downloads, verifies and patches the engine (re-run to update)                                  |
-| Loader                | `lib/balatro/runtime.ts`           | finds the game in the picked file, fills the virtual filesystem, boots LÖVE, syncs saves       |
-| Zip reader/writer     | `lib/balatro/zip.ts`               | reads fused executables; writes save exports                                                   |
-| Platform layer        | `lib/balatro/lua/rmh_web.lua`      | runs before the game: threads, window, shaders, images, saves, platform flags                  |
-| LuaJIT ports          | `lib/balatro/lua/*.lua`            | `bit` and LuaJIT's `math.random`, bit-exact                                                    |
-| Page                  | `components/balatro/BalatroPage.tsx` · `app/routes/balatro.tsx` | file picker, cache, toolbar (fullscreen, save export/import)      |
+| Piece          | Where                                                     | What it is                                                                                       |
+| -------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Engine         | `public/balatro/engine/`                                  | love.js 11.4.1 "compat": LÖVE compiled to WebAssembly with Emscripten (MIT), one small patch     |
+| Vendor script  | `scripts/balatro/vendor-lovejs.sh`                        | downloads, verifies and patches the engine (re-run to update)                                    |
+| Game source    | `data/balatro/`                                           | the original Lua source and assets (kept out of the Docker image by `.dockerignore`)             |
+| Pack builder   | `scripts/balatro/build-game-pack.py`                      | builds the two game packs from the source (section 6)                                            |
+| Packs          | `data/balatro-pack/` · `lib/balatro/game-pack.json`       | `core-<sha>.zip` (~5 MB) and `audio-<sha>.zip` (~17 MB), content-addressed                       |
+| Pack route     | `app/routes/api/balatro/pack.$file.ts`                    | serves the packs to a session only, `Cache-Control: private, immutable`                          |
+| Loader         | `lib/balatro/runtime.ts`                                  | downloads/caches the packs, fills the virtual filesystem, boots LÖVE, syncs saves                |
+| Cloud saves    | `lib/balatro/cloud-saves.ts`                              | the save directory as one snapshot on the shared `GameSave` table (gameId `balatro`)             |
+| Platform layer | `lib/balatro/lua/rmh_web.lua`                             | runs before the game: threads, deferred audio, window, shaders, images, saves, platform flags    |
+| LuaJIT ports   | `lib/balatro/lua/*.lua`                                   | `bit` and LuaJIT's `math.random`, bit-exact                                                      |
+| Page           | `components/balatro/BalatroPage.tsx` · `app/routes/balatro.tsx` | sign-in gate, boot progress, toolbar (fullscreen, save export/import)                      |
+
+**Access and search.** The route's `beforeLoad` redirects a signed-out visitor to
+`/login`. The packs are not under `public/`: only the auth-checked pack route serves
+them. The page is `noindex, nofollow`, in `EXCLUDED_ROUTES` (no sitemap entry),
+`Disallow`ed in `robots.txt`, not in the games catalog, and skipped by the
+generated site inventory (`scripts/generate-site-reference.ts`).
 
 ## 1. What "compile Balatro to WASM" actually means
 
@@ -39,11 +46,11 @@ filesystem. That build is [love.js](https://github.com/Davidobot/love.js).
 The game half is **not compiled at all**. Lua is interpreted, and the WebAssembly
 build of the Lua VM runs the original `.lua` files as they are.
 
-`Balatro.exe` is a *fused* LÖVE executable: `love.exe` with the game's zip
-appended. Zip readers work from the end of the file (the end-of-central-directory
-record), so `zip.ts` finds that record and computes how many bytes of executable
-come before the zip (`prefix = eocdOffset − cdSize − cdOffset`). It then reads the
-zip in place with the browser's own `DecompressionStream('deflate-raw')`.
+On desktop, `Balatro.exe` is a *fused* LÖVE executable: `love.exe` with the game's
+zip appended. Here the game ships as its own zips (section 6), which `zip.ts` reads
+in place with the browser's own `DecompressionStream('deflate-raw')`. The reader
+also accepts a fused executable: it finds the end-of-central-directory record and
+computes how many bytes come before the zip (`prefix = eocdOffset − cdSize − cdOffset`).
 
 ## 2. Why the "compat" build
 
@@ -65,8 +72,11 @@ script checks the tarball's SHA-256 and fails if the anchor it patches is missin
 
 `bootBalatro()` (in `runtime.ts`):
 
-1. Loads `love.js`, which fetches `love.wasm` (4.7 MB, cached by the browser).
-2. Extracts every file of the game zip.
+1. In parallel: loads `love.js` (which fetches `love.wasm`, 4.7 MB, 1.6 MB
+   compressed), the core pack (from IndexedDB when cached, else the pack route,
+   SHA-256-verified) and the account's save snapshot. The audio pack starts too,
+   but nothing waits on it.
+2. Extracts every file of the core pack.
 3. In Emscripten's `preRun` hook, writes them to `/Balatro/…` in the in-memory
    filesystem. It also writes the platform layer (`rmh_web.lua` and `rmh/*.lua`) and
    prefixes `require "rmh_web";` onto **line 1** of `main.lua`, so no line number
@@ -75,6 +85,11 @@ script checks the tarball's SHA-256 and fails if the anchor it patches is missin
    that directory, so saves land in `/home/web_user/love/Balatro/`, with the same
    layout as `%AppData%\Balatro` (`settings.jkr`, then `1/`, `2/`, `3/` holding each
    profile's `profile.jkr`, `meta.jkr` and `save.jkr`).
+5. Still in `preRun`, after IDBFS has populated the save directory and before the
+   game's first line: if the account snapshot is newer, it replaces the local one.
+6. When the audio pack lands, its files go into `/Balatro/resources/sounds` and
+   `/rmh/audio-ready` is written. The shim then starts Balatro's sound thread
+   (section 4).
 
 Page and Lua share no API in this build, but Lua's `io` library can reach the whole
 Emscripten filesystem. So the two sides trade small files under `/rmh`: the page
@@ -116,6 +131,13 @@ threads that loop on `Channel:demand()`. The shim replaces `love.thread`:
   is therefore written to disk before `push()` returns.
 - `love.timer.sleep` yields inside a thread, and does nothing on the main state:
   the browser paces frames, so a sleep would only spin.
+
+**Deferred audio.** The audio pack arrives after the game starts. Balatro's sound
+thread lists `resources/sounds` once, at startup, so the shim holds that thread
+until `/rmh/audio-ready` exists. Meanwhile its channel keeps only the latest
+message of each kind, minus one-shot sound effects. The latest `modulate` carries
+the music state, so the music starts in the right place, without a burst of stale
+effects.
 
 **Window.** The page owns the window. `setMode`/`updateMode` always use the
 frame's size, windowed and resizable; displays, desktop size and fullscreen modes
@@ -159,9 +181,43 @@ replaces the directory, flushes and reloads. The path rules are unit-tested
 deflated Lua tables, so saves move between desktop and browser unchanged.
 
 The page also calls `navigator.storage.persist()`, so the browser is less likely
-to evict the cached copy and the saves.
+to evict the cached packs and the saves.
 
-## 6. What is not here
+**Account backup.** The save directory is also kept on the account, as one row of
+the shared `GameSave` table (gameId `balatro`, an `UNLISTED_SHARED_SAVE_GAMES` entry
+in `lib/game-saves/registry.ts`, through `/api/game-saves/balatro`). The row holds a
+snapshot of every `.jkr` file with its modification time. A profile's files depend
+on each other (stats, discoveries and the run in progress), so the directory moves
+as a unit rather than file by file. At boot, the newer of the local and account
+snapshots wins; "newer" means the newest file mtime, and `settings.jkr` is rewritten
+on every save. Uploads run 2 s after a save, at most every 10 s, and on tab hide
+(beacon). A snapshot over the table's 500 KB row cap is not uploaded, and the
+player is told.
+
+## 6. Game packs and download size
+
+`scripts/balatro/build-game-pack.py` turns the 89 MB source into two packs. Every
+change is lossless for what the game can display:
+
+| What                       | Source  | Pack     | How                                                                                                                               |
+| -------------------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Windows DLLs               | 9.8 MB  | 0        | dropped: the engine is WebAssembly                                                                                                |
+| Fonts (CJK, Cyrillic)      | 61 MB   | 3.3 MB   | subset to every character in any `.lua` file + ASCII, Latin-1/Ext-A and the punctuation blocks; hinting and layout features kept |
+| GoNoto fonts               | (above) | 0.4 MB   | only draw a console username (`F_DISP_USERNAME`, nil off consoles); Latin core kept so they load                                 |
+| Textures                   | 4.0 MB  | smaller  | oxipng, max level, pixels unchanged                                                                                               |
+| Audio                      | 17 MB   | 17 MB    | already 128 kb/s Vorbis; re-encoding would lose quality. Its own pack, loaded after the game starts                               |
+| Lua, localization, shaders | ~4 MB   | deflated | zip level 9                                                                                                                       |
+
+So the game is playable after **~5 MB of game data plus 1.6 MB of engine**
+(compressed), and a returning visitor downloads nothing: both packs stay in
+IndexedDB, keyed by their content hash.
+
+**Performance.** The LuaJIT PRNG step uses precomputed shift powers and byte-table
+XORs. The render size is clamped to device pixel ratio 2 and 2560×1440 pixels:
+Balatro draws through a full-screen canvas and the CRT shader, so pixels beyond
+that cost frame time and look no sharper.
+
+## 7. What is not here
 
 - **Steam:** achievements sync, cloud saves and the overlay. Unlocks are tracked
   locally, as on any non-Steam build.
@@ -171,11 +227,19 @@ to evict the cached copy and the saves.
   Balatro sorts keys before every random pick (`pseudorandom_element`), so this
   does not affect seeds.
 
-## Updating the engine
+## Updating
 
 ```bash
 scripts/balatro/vendor-lovejs.sh
 ```
+
+```bash
+pip install fonttools pyoxipng
+python3 -I scripts/balatro/build-game-pack.py
+```
+
+The pack builder rewrites `data/balatro-pack/` and `lib/balatro/game-pack.json`
+together. `lib/balatro/__tests__/saves.test.ts` fails if they disagree.
 
 To verify the LuaJIT ports after editing them (needs `luajit` and `lua5.1`): run
 one script of `math.random`/`bit` calls under both interpreters, loading the ports

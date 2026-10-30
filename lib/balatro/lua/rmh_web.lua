@@ -200,9 +200,23 @@ resume = function(thread)
   end
 end
 
+-- The audio pack arrives after the game has started (runtime.ts writes it into
+-- resources/sounds, then /rmh/audio-ready). Balatro's sound thread lists that
+-- directory once at startup, so it is held until the files are there.
+local SOUND_THREAD = 'engine/sound_manager.lua'
+local deferred_sound = nil
+
+local function audio_present()
+  return love.filesystem.getInfo('resources/sounds/music1.ogg') ~= nil
+end
+
 function Thread:start(...)
   if self.co then
     return false
+  end
+  if self.source == SOUND_THREAD and not audio_present() then
+    deferred_sound = { thread = self, args = { ... } }
+    return true
   end
   local env = setmetatable({}, { __index = _G })
   setfenv(self.chunk, env)
@@ -256,7 +270,7 @@ end
 local function install_threads()
   love.thread = love.thread or {}
   love.thread.newThread = function(source)
-    return setmetatable({ chunk = load_thread_chunk(source) }, Thread)
+    return setmetatable({ chunk = load_thread_chunk(source), source = source }, Thread)
   end
   love.thread.getChannel = function(name)
     local channel = named_channels[name]
@@ -275,6 +289,45 @@ install_threads()
 -- `require "love.thread"` inside a thread must keep returning the shim.
 package.preload['love.thread'] = function()
   return love.thread
+end
+
+-- While the sound thread is held, its channel keeps only what still matters
+-- when it starts: the latest message of each kind except one-shot sound
+-- effects (a burst of stale effects on arrival is worse than none). The latest
+-- 'modulate' carries the music state, so the music starts in the right place.
+local function compact_sound_channel()
+  local channel = love.thread.getChannel('sound_request')
+  local latest, order = {}, {}
+  while channel:getCount() > 0 do
+    local msg = channel:pop()
+    local kind = type(msg) == 'table' and msg.type or tostring(msg)
+    if kind ~= 'sound' then
+      if not latest[kind] then
+        order[#order + 1] = kind
+      end
+      latest[kind] = msg
+    end
+  end
+  for _, kind in ipairs(order) do
+    channel.last = channel.last + 1
+    channel.items[channel.last] = latest[kind]
+  end
+end
+
+local function release_sound_thread()
+  if not deferred_sound then
+    return
+  end
+  local f = io.open('/rmh/audio-ready', 'r')
+  if not f then
+    compact_sound_channel()
+    return
+  end
+  f:close()
+  local held = deferred_sound
+  deferred_sound = nil
+  compact_sound_channel()
+  held.thread:start(unpack(held.args))
 end
 
 -- Resume any thread that is waiting on a channel that has items again (a push
@@ -558,6 +611,7 @@ love.event.pump = function(...)
   local now = love.timer.getTime()
   local dt = now - last
   last = now
+  release_sound_thread()
   pump_threads()
   follow_size(dt)
   signal_dirty()

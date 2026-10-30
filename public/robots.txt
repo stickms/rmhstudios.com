@@ -28,6 +28,9 @@ Disallow: /search
 # Per-viewer pages. A signed-out crawler only ever gets the login redirect from
 # these, so fetching them is wasted budget on both sides.
 Disallow: /admin
+
+# Signed-in only and kept out of search on purpose.
+Disallow: /balatro
 Disallow: /analytics
 Disallow: /bookmarks
 Disallow: /drafts

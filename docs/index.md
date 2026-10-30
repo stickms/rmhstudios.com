@@ -35,8 +35,6 @@ Stripe), Socket.io Node hubs, Go microservices built with Bazel, i18next
   CI workflows gate them.
 - {doc}`frontend-webassembly` — globe numerical kernels, build and benchmark
   commands, JavaScript fallbacks, and the Apache policy required for deployment.
-- {doc}`balatro-wasm` — a LÖVE desktop game on WebAssembly: the engine build,
-  the Lua platform layer, LuaJIT parity and IndexedDB saves (`/balatro`).
 - {doc}`README` — the full annotated map of `docs/`, including freshness
   flags for every directory.
 
@@ -60,7 +58,6 @@ codebase-overview
 architecture
 testing
 frontend-webassembly
-balatro-wasm
 performance-slo
 status-page
 design-language

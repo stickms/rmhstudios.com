@@ -10,33 +10,60 @@
 
 local u = require('rmh/u32')
 local floor, frexp = math.floor, math.frexp
-local xor, shl64, shr64, P = u.xor, u.shl64, u.shr64, u.P
+local xor, P = u.xor, u.P
 
 -- State: gen[i] = hi[i], lo[i] for i = 1..4.
 local hi, lo = { 0, 0, 0, 0 }, { 0, 0, 0, 0 }
 
--- TW223 parameters (k, q, s) per word.
+-- TW223 parameters (k, q, s) per word, and the powers of two each shift needs,
+-- precomputed so a step is arithmetic on locals plus the byte-table XORs (a
+-- step runs 11 times per math.randomseed, and Balatro reseeds before every draw).
 local K = { 63, 58, 55, 47 }
 local Q = { 31, 19, 24, 21 }
 local S = { 18, 28, 7, 8 }
+local Q_UP, Q_DOWN, N_BIG, N_DOWN, N_UP, N_HI, MASK, S_UP, S_DOWN = {}, {}, {}, {}, {}, {}, {}, {}, {}
+for i = 1, 4 do
+  local n = K[i] - S[i] -- the right shift
+  Q_UP[i], Q_DOWN[i] = P[Q[i]], P[32 - Q[i]]
+  N_BIG[i] = n >= 32
+  if n >= 32 then
+    N_DOWN[i] = P[n - 32]
+  else
+    N_DOWN[i], N_UP[i], N_HI[i] = P[n], P[32 - n], P[n]
+  end
+  MASK[i] = P[64 - K[i]]
+  S_UP[i], S_DOWN[i] = P[S[i]], P[32 - S[i]]
+end
+local P20, P32 = P[20], P[32]
 
 --- One generator step. Returns the low 52 bits of r as (hi20, lo32).
+-- z = (((z << q) ^ z) >> (k - s)) ^ ((z & (~0 << (64 - k))) << s); r ^= z
 local function step()
   local rh, rl = 0, 0
   for i = 1, 4 do
     local zh, zl = hi[i], lo[i]
-    local k, s = K[i], S[i]
-    -- a = ((z << q) ^ z) >> (k - s)
-    local ah, al = shl64(zh, zl, Q[i])
-    ah, al = shr64(xor(ah, zh), xor(al, zl), k - s)
-    -- b = (z & (~0 << (64 - k))) << s ; 64 - k < 32, so the mask clears only
-    -- low bits of the low word
-    local bh, bl = shl64(zh, zl - zl % P[64 - k], s)
-    zh, zl = xor(ah, bh), xor(al, bl)
+    -- a = (z << q) ^ z
+    local qd = Q_DOWN[i]
+    local ah = xor((zh % qd) * Q_UP[i] + floor(zl / qd), zh)
+    local al = xor((zl % qd) * Q_UP[i], zl)
+    -- a >>= k - s
+    if N_BIG[i] then
+      ah, al = 0, floor(ah / N_DOWN[i])
+    else
+      local nd = N_DOWN[i]
+      ah, al = floor(ah / nd), floor(al / nd) + (ah % N_HI[i]) * N_UP[i]
+    end
+    -- b = (z & mask) << s; 64 - k < 32, so the mask only clears low bits of zl
+    local ml = zl - zl % MASK[i]
+    local sd = S_DOWN[i]
+    local bh = (zh % sd) * S_UP[i] + floor(ml / sd)
+    local bl = (ml % sd) * S_UP[i]
+    zh = ah == 0 and bh or xor(ah, bh)
+    zl = xor(al, bl)
     hi[i], lo[i] = zh, zl
     rh, rl = xor(rh, zh), xor(rl, zl)
   end
-  return rh % P[20], rl
+  return rh % P20, rl
 end
 
 --- IEEE-754 bit pattern of a double as (hi, lo).
@@ -83,7 +110,7 @@ end
 
 local function random(r1, r2)
   local h, l = step()
-  local d = (h * P[32] + l) / P[52]
+  local d = (h * P32 + l) / P[52]
   if r1 then
     r1 = tonumber(r1) or error("bad argument #1 to 'random' (number expected)", 2)
     if r2 then

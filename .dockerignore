@@ -148,3 +148,7 @@ vitest.config.ts
 # Rebuilt with the pinned compiler inside the image.
 lib/wasm/generated
 wasm/.generated
+
+# ─── Balatro source (scripts/balatro/build-game-pack.py reads it; the image
+# only needs the built packs in data/balatro-pack/) ───
+data/balatro/

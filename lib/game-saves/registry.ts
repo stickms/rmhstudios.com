@@ -26,9 +26,22 @@ export const SHARED_SAVE_GAMES = [
   'neon-driftway',
 ] as const;
 
-export type SharedSaveGameId = (typeof SHARED_SAVE_GAMES)[number];
+/**
+ * Games that save on the shared table but are not in the public catalog
+ * (`lib/games.ts`), so `GAME_CAPABILITIES` — which mirrors the catalog — does not
+ * declare them. Same allowlist duty as above; kept apart so the catalog
+ * capability test can stay an exact match.
+ *
+ * `balatro`: /balatro, signed-in only and unlisted. One row holds a snapshot of
+ * the game's whole save directory (lib/balatro/cloud-saves.ts).
+ */
+export const UNLISTED_SHARED_SAVE_GAMES = ['balatro'] as const;
 
-const ALLOWED = new Set<string>(SHARED_SAVE_GAMES);
+export type SharedSaveGameId =
+  | (typeof SHARED_SAVE_GAMES)[number]
+  | (typeof UNLISTED_SHARED_SAVE_GAMES)[number];
+
+const ALLOWED = new Set<string>([...SHARED_SAVE_GAMES, ...UNLISTED_SHARED_SAVE_GAMES]);
 
 export function isSharedSaveGame(id: string): id is SharedSaveGameId {
   return ALLOWED.has(id);

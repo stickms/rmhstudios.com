@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 353 routes. 199 render inside the standard site shell (sidebar, nav, context rail); 154 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 352 routes. 199 render inside the standard site shell (sidebar, nav, context rail); 153 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -231,7 +231,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/altair` | — | public | `app/routes/altair/index.tsx` |
 | `/altair/multiplayer` | — | sign-in | `app/routes/altair/multiplayer/index.tsx` |
 | `/altair/multiplayer/:lobbyId` | — | sign-in | `app/routes/altair/multiplayer/$lobbyId.tsx` |
-| `/balatro` | Balatro in WebAssembly | public | `app/routes/balatro.tsx` |
 | `/black-lives-matter` | Black Lives Matter | public | `app/routes/black-lives-matter.tsx` |
 | `/blog/rss.xml` | RMH Studios — Blog | public | `app/routes/blog.rss[.]xml.ts` |
 | `/breaches` | Breaches | public | `app/routes/breaches.tsx` |
