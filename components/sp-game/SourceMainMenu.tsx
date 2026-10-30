@@ -140,6 +140,9 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
   };
 
   const title = parseGameTitle(channel.files['gameinfo.txt']);
+  // The game's name without an edition's subtitle ("Portal: The First Slice" -> "Portal").
+  const ownName = game === 'hl2' ? t('play_hl2_title', { defaultValue: 'Half-Life 2' }) : t('play_portal_title', { defaultValue: 'Portal' });
+  const shownTitle = title?.title.split(':')[0].trim() || ownName;
   const background = backgroundFor(channel, savedChapter ?? 0, aspect);
   const logoFile = Object.entries(channel.index.images).find(([k]) => /logo/i.test(k) && !k.startsWith('console/'))?.[1];
 
@@ -170,7 +173,7 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
           <img className="gui-logo-image" src={menuAssetUrl(logoFile, game)} alt={title?.title ?? ''} />
         ) : (
           <h1 className="gui-logo" style={font(style.titleFont, 'Verdana, Tahoma, sans-serif', titleSize)}>
-            <span>{title?.title ?? t(game === 'hl2' ? 'play_hl2_title' : 'play_portal_title', { defaultValue: game === 'hl2' ? 'Half-Life 2' : 'Portal' })}</span>
+            <span>{shownTitle}</span>
             {title?.title2 ? <span className="gui-logo-2">{title.title2}</span> : null}
           </h1>
         )}

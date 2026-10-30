@@ -17,7 +17,7 @@
   --pano-go: rgb(76 142 56);
   --pano-go-hover: rgb(96 168 72);
   --pano-go-text: rgb(244 250 240);
-  --pano-font: 'Stratum2', 'Arial Narrow', 'Roboto Condensed', Arial, sans-serif;
+  --pano-font: 'Stratum2', 'notosans', 'Arial Narrow', 'Roboto Condensed', Arial, sans-serif;
 }
 .pano-root {
   position: fixed;

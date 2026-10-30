@@ -187,7 +187,8 @@ export const GAME_ASSET_CHANNELS = {
     game: 'csgo',
     kind: 'menu',
     // 2: a map's background movie (not a preview), Panorama's fonts wherever kept, the logo textures.
-    builder: 2,
+    // 3: Panorama's fonts decoded from .vfont (Stratum2, Noto Sans); the movie's 720p cut.
+    builder: 3,
     env: 'CSGO_GAME_BUILDER_MENU',
     script: 'scripts/tf2-game/menu_ui.py',
   },
