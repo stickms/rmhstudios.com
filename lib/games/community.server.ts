@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { ACHIEVEMENTS } from '@/lib/achievements/catalog';
 import { getProfile } from '@/lib/profile.server';
+import { getFriendActivity, getNowPlayingFor } from '@/lib/games/activity.server';
 import { listCommunities } from '@/lib/communities.server';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { canViewPlaytime, isPlaytimePrivacy } from '@/lib/playtime/privacy';
@@ -65,7 +66,7 @@ export async function getCommunityHome(viewerId: string | null): Promise<Communi
   const since = new Date(Date.now() - TWO_WEEKS_MS);
   const titles = titleIndex();
 
-  const [listed, myMemberships, trendingRows, reviewRows] = await Promise.all([
+  const [listed, myMemberships, trendingRows, reviewRows, friends] = await Promise.all([
     listCommunities({ userId: viewerId }),
     viewerId
       ? prisma.communityMember.findMany({
@@ -98,6 +99,7 @@ export async function getCommunityHome(viewerId: string | null): Promise<Communi
         user: { select: userDisplaySelect },
       },
     }),
+    viewerId ? getFriendActivity(viewerId) : Promise.resolve(null),
   ]);
 
   const trending: TrendingTitle[] = [];
@@ -137,6 +139,7 @@ export async function getCommunityHome(viewerId: string | null): Promise<Communi
     trending,
     reviews,
     myGroups: myMemberships.map((m) => groupRef(m.community)),
+    friends,
   };
 }
 
@@ -263,6 +266,11 @@ export async function getSteamProfile(
       return title ? [{ ...title, level: b.level, foil: b.foil }] : [];
     }),
     reviewCount,
+    nowPlaying: await getNowPlayingFor(
+      viewerId,
+      { id: ownerId, playtimePrivacy: owner?.playtimePrivacy ?? 'private' },
+      viewerFollowsOwner,
+    ),
   };
 }
 

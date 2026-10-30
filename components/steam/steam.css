@@ -2075,3 +2075,37 @@ button.stm-star {
   min-width: 0;
   flex: 1;
 }
+
+/* Friend activity and in-game status */
+.stm-playing {
+  color: #90ba3c;
+}
+.stm-pf-status[data-playing='true'] {
+  color: #90ba3c;
+}
+.stm-pf-avatar:has(+ .stm-pf-summary .stm-pf-status[data-playing='true']) {
+  background: linear-gradient(#90ba3c, #5c7e10);
+}
+.stm-activity-feed {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-activity-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.stm-activity-text .stm-stars {
+  vertical-align: middle;
+}
+.stm-activity-when {
+  white-space: nowrap;
+}
