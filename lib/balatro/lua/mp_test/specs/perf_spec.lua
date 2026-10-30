@@ -99,6 +99,7 @@ describe('perf: MP Lua overhead', function()
     for _ = 1, 2000 do pump() n = n + 1 end
     local ms = (now() - t) * 1000 / n
     results.mailbox_idle_ms = ms
+    report('perf_idle_ms', ms)
     expect(ms <= 0.05 * 2).truthy()
   end)
 
@@ -119,6 +120,7 @@ describe('perf: MP Lua overhead', function()
     results.mp = mp
     results.hook_overhead_ms = overhead
     results.frame_delta_ms = mp.frame - sp.frame
+    report('perf_hooks', { sp = sp, mp = mp, overhead_ms = overhead })
     expect(overhead <= 1.0 * 2).truthy()
   end)
 
@@ -163,8 +165,8 @@ describe('perf: MP Lua overhead', function()
     local ms = spent * 1000 / math.max(1, calls)
     results.mailbox_busy_ms = ms
     results.mailbox_busy_msgs = got
+    report('perf', results)
     expect(got >= 100).truthy()
     expect(ms <= 0.3 * 2).truthy()
-    report('perf', results)
   end)
 end)

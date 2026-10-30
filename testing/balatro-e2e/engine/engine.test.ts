@@ -67,6 +67,7 @@ describe('engine-spec harness (one boot)', () => {
       const s = await first!.runSpecs({ files: [file] });
       Object.assign(reports, s.reports);
       process.stdout.write(`# ${file} (${Math.round((Date.now() - t0) / 1000)} s)\n${toTap(s)}\n`);
+      if (Object.keys(s.reports).length) process.stdout.write(`# reports ${JSON.stringify(s.reports).slice(0, 4000)}\n`);
       expect(s.tests.length).toBeGreaterThan(0);
       expect(failuresOf(s)).toEqual([]);
     }, FILE_TIMEOUT_MS);

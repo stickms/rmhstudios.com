@@ -74,6 +74,9 @@ local function run_specs(args)
 end
 
 function H.run_specs(args)
+  -- Every call starts from the main menu (spec_engine resets only between the files of one
+  -- call; the vitest side runs one file per call).
+  to_main_menu()
   local names = args.files
   if type(names) ~= 'table' or #names == 0 then names = H.list_specs() end
   local files = {}
