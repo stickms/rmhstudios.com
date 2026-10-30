@@ -52,3 +52,8 @@ export function heroSource(
   if (b.thumbnailUrl) return { kind: 'cropped-card', src: b.thumbnailUrl, hue: b.hue };
   return { kind: 'tile', src: null, hue: b.hue };
 }
+
+/** Whether a catalog `href` leaves the site (a Discord invite, say). Such entries never accrue playtime. */
+export function isOffSite(href: string): boolean {
+  return !href.startsWith('/') || href.startsWith('//');
+}

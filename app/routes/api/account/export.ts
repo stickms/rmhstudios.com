@@ -48,6 +48,8 @@ export const Route = createFileRoute('/api/account/export')({
             memories,
             playLimits,
             gameAssists,
+            gamePlaytime,
+            gamePlaytimeDays,
           ] = await Promise.all([
             prisma.user.findUnique({
               where: { id: userId },
@@ -62,6 +64,7 @@ export const Route = createFileRoute('/api/account/export')({
                 image: true,
                 isVerified: true,
                 doctrineTier: true,
+                playtimePrivacy: true,
                 referralCode: true,
                 createdAt: true,
                 updatedAt: true,
@@ -181,6 +184,18 @@ export const Route = createFileRoute('/api/account/export')({
             // set about themselves, so theirs to take with them.
             prisma.userPlayLimits.findUnique({ where: { userId } }),
             prisma.gameAssistPreference.findUnique({ where: { userId } }),
+            // Time played per game and app, and per day: activity the library shows
+            // to other members, so the person can read all of it.
+            prisma.gamePlaytime.findMany({
+              where: { userId },
+              take: CAP,
+              orderBy: { totalSeconds: 'desc' },
+            }),
+            prisma.gamePlaytimeDay.findMany({
+              where: { userId },
+              take: CAP,
+              orderBy: { day: 'desc' },
+            }),
           ]);
 
           const [
@@ -218,6 +233,8 @@ export const Route = createFileRoute('/api/account/export')({
             memory: memories,
             playLimits,
             gameAssists,
+            gamePlaytime,
+            gamePlaytimeDays,
             rmhLadder: {
               preferences: ladderPrefs,
               // Salary expectations, work authorization and EEO answers — the

@@ -44,11 +44,24 @@ export async function recordHeartbeat(
 
   try {
     return await prisma.$transaction(async (tx) => {
-      const row = await tx.gamePlaytime.findUnique({
-        where: { userId_gameId: { userId, gameId } },
-        select: { lastHeartbeatAt: true },
-      });
-      const credit = creditSeconds(row?.lastHeartbeatAt ?? null, now);
+      // One clock per user, not per title: this user's beats run one at a time
+      // (`pg_advisory_xact_lock` is held to the end of the transaction), and the
+      // gap is measured from their latest accepted beat on ANY title. Otherwise two
+      // windows, or a script posting for several titles, would earn several clocks
+      // and inflate the hours shown in "Most played by".
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
+      const [row, latest] = await Promise.all([
+        tx.gamePlaytime.findUnique({
+          where: { userId_gameId: { userId, gameId } },
+          select: { lastHeartbeatAt: true },
+        }),
+        tx.gamePlaytime.findFirst({
+          where: { userId },
+          orderBy: { lastHeartbeatAt: 'desc' },
+          select: { lastHeartbeatAt: true },
+        }),
+      ]);
+      const credit = creditSeconds(latest?.lastHeartbeatAt ?? null, now);
       if (credit === 0) return { credited: 0 };
 
       if (!row) {
@@ -80,7 +93,8 @@ export async function recordHeartbeat(
       return { credited: credit };
     });
   } catch (e) {
-    // Two first-ever beats racing to create the row: the loser is not credited.
+    // Belt and braces: the advisory lock serialises a user's beats, but a lost
+    // create race would still be a beat that must not be credited.
     if (isUniqueViolation(e)) return { credited: 0 };
     throw e;
   }

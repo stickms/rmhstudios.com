@@ -2,7 +2,7 @@
 
 import { GameHub } from '@/components/games/GameHub';
 import type { LibraryExtras } from '@/lib/games/detail-types';
-import { heroSource } from '@/lib/games/library';
+import { heroSource, isOffSite } from '@/lib/games/library';
 import type { GuideSummary, RatingAgg, ReviewView } from '@/lib/games/reviews';
 import type { TrickView } from '@/lib/trick-week/trick-week';
 import { AchievementsSection } from './AchievementsSection';
@@ -44,6 +44,8 @@ export function GameDetail({ data }: { data: GameDetailData }) {
     hue: data.hue,
   });
   const isGame = data.kind === 'game';
+  // An off-site title cannot accrue playtime, so nothing about time or players is shown for it.
+  const offSite = isOffSite(data.playHref);
 
   return (
     <div className="min-w-0 space-y-6">
@@ -53,19 +55,27 @@ export function GameDetail({ data }: { data: GameDetailData }) {
         playHref={data.playHref}
         cta={data.cta}
         tags={data.tags}
+        external={offSite}
       />
-      <ActivityStrip
-        kind={data.kind}
-        activity={extras.activity}
-        achievementsDone={extras.achievements.filter((a) => a.unlocked).length}
-        achievementsTotal={data.signedIn ? extras.achievements.length : 0}
-        agg={data.agg}
-        signedIn={data.signedIn}
-        showRating={isGame}
-      />
+      {offSite ? null : (
+        <ActivityStrip
+          kind={data.kind}
+          activity={extras.activity}
+          achievementsDone={extras.achievements.filter((a) => a.unlocked).length}
+          achievementsTotal={data.signedIn ? extras.achievements.length : 0}
+          agg={data.agg}
+          signedIn={data.signedIn}
+          showRating={isGame}
+        />
+      )}
       <AchievementsSection items={extras.achievements} signedIn={data.signedIn} />
-      <FriendsWhoPlay friends={extras.friends} signedIn={data.signedIn} kind={data.kind} />
-      <CommunitySection communities={extras.communities} topPlayers={extras.topPlayers} />
+      {offSite ? null : (
+        <FriendsWhoPlay friends={extras.friends} signedIn={data.signedIn} kind={data.kind} />
+      )}
+      <CommunitySection
+        communities={extras.communities}
+        topPlayers={offSite ? [] : extras.topPlayers}
+      />
       {isGame ? <GameHub embedded data={data} /> : null}
     </div>
   );

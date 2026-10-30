@@ -188,7 +188,9 @@ function Section({
                   'flex size-11 shrink-0 items-center justify-center rounded-site-sm text-site-text-dim hover:text-site-text',
                   favorite
                     ? 'text-site-accent'
-                    : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+                    : // Revealed on hover where hover exists; always visible (dimmed) on touch,
+                      // where an invisible 44px button would toggle favourites by accident.
+                      '[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100',
                 )}
               >
                 <Star className={cn('size-4', favorite && 'fill-current')} aria-hidden />

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CuratedBuild } from '@/lib/builds/curated';
-import { filterRail, groupRail, heroSource } from '@/lib/games/library';
+import { filterRail, groupRail, heroSource, isOffSite } from '@/lib/games/library';
 
 const build = (over: Partial<CuratedBuild> & { id: string }): CuratedBuild => ({
   slug: over.id,
@@ -62,5 +62,15 @@ describe('heroSource', () => {
       hue: 10,
     });
     expect(heroSource(build({ id: 'a' }))).toEqual({ kind: 'tile', src: null, hue: 10 });
+  });
+});
+
+describe('isOffSite', () => {
+  it('is true for an absolute URL and false for a site path', () => {
+    expect(isOffSite('https://discord.gg/ZdfhdAKVSf')).toBe(true);
+    expect(isOffSite('http://example.com/play')).toBe(true);
+    expect(isOffSite('//cdn.example.com/x')).toBe(true);
+    expect(isOffSite('/altair')).toBe(false);
+    expect(isOffSite('/rmhtube/abc')).toBe(false);
   });
 });

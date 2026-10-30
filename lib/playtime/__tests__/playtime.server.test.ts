@@ -30,6 +30,7 @@ const state = vi.hoisted(() => ({
   days: new Map<string, number>(),
   candidates: [] as unknown[],
   follows: new Set<string>(),
+  locks: new Map<string, Promise<void>>(),
 }));
 
 const prismaMock = vi.hoisted(() => {
@@ -68,6 +69,16 @@ const prismaMock = vi.hoisted(() => {
           return { count: 1 };
         },
       ),
+      // The user's most recent accepted beat across every title.
+      findFirst: vi.fn(async ({ where }: { where: { userId: string } }) => {
+        await Promise.resolve();
+        const mine = [...state.rows.entries()].filter(([k]) => k.startsWith(`${where.userId}:`));
+        if (mine.length === 0) return null;
+        const latest = mine.reduce((a, b) =>
+          b[1].lastHeartbeatAt.getTime() > a[1].lastHeartbeatAt.getTime() ? b : a,
+        );
+        return { lastHeartbeatAt: latest[1].lastHeartbeatAt };
+      }),
       findMany: vi.fn(async () => state.candidates),
     },
     gamePlaytimeDay: {
@@ -112,7 +123,29 @@ const prismaMock = vi.hoisted(() => {
       ),
     },
     user: { update: vi.fn(), findUnique: vi.fn() },
-    $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn(m)),
+    // `pg_advisory_xact_lock(hashtext(userId))`: a second transaction for the same
+    // user waits until the holder's transaction ends, so this user's beats run
+    // one at a time even across different titles.
+    $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => {
+      let release: (() => void) | undefined;
+      const tx = {
+        ...m,
+        $executeRaw: vi.fn(async (_strings: TemplateStringsArray, userId: string) => {
+          const previous = state.locks.get(userId) ?? Promise.resolve();
+          let done!: () => void;
+          const mine = new Promise<void>((resolve) => (done = resolve));
+          state.locks.set(userId, previous.then(() => mine));
+          await previous;
+          release = done;
+          return 0;
+        }),
+      };
+      try {
+        return await fn(tx);
+      } finally {
+        release?.();
+      }
+    }),
   };
   return m;
 });
@@ -134,6 +167,7 @@ beforeEach(() => {
   state.days.clear();
   state.candidates = [];
   state.follows.clear();
+  state.locks.clear();
   vi.clearAllMocks();
 });
 
@@ -174,6 +208,38 @@ describe('recordHeartbeat', () => {
     ]);
     expect([a.credited, b.credited].sort((x, y) => x - y)).toEqual([0, 30]);
     expect(rowOf('u1', 'altair')?.totalSeconds).toBe(30);
+  });
+
+  describe('one clock per user, across titles', () => {
+    const total = () => [...state.rows.values()].reduce((n, r) => n + r.totalSeconds, 0);
+
+    it('credits once when two different titles beat at the same instant', async () => {
+      await recordHeartbeat('u1', 'altair', T0);
+      const [a, b] = await Promise.all([
+        recordHeartbeat('u1', 'altair', after(30)),
+        recordHeartbeat('u1', 'rmhtube', after(30)),
+      ]);
+      expect([a.credited, b.credited].sort((x, y) => x - y)).toEqual([0, 30]);
+      expect(total()).toBe(30 + 30);
+    });
+
+    it('two windows on two titles earn one clock, not two', async () => {
+      await recordHeartbeat('u1', 'altair', T0); // 30
+      await recordHeartbeat('u1', 'rmhtube', after(10)); // 0: 10 s after the last beat
+      await recordHeartbeat('u1', 'altair', after(30)); // 30
+      await recordHeartbeat('u1', 'rmhtube', after(40)); // 0
+      expect(total()).toBe(60);
+    });
+
+    it('credits the real gap when the user moves from one title to another', async () => {
+      await recordHeartbeat('u1', 'altair', T0);
+      expect(await recordHeartbeat('u1', 'rmhtube', after(45))).toEqual({ credited: 45 });
+    });
+
+    it('does not let one user’s beats slow another’s', async () => {
+      await recordHeartbeat('u1', 'altair', T0);
+      expect(await recordHeartbeat('u2', 'altair', after(5))).toEqual({ credited: 30 });
+    });
   });
 
   it('rejects an id that is not a listed on-site title', async () => {

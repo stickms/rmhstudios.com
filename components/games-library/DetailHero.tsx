@@ -18,12 +18,15 @@ export function DetailHero({
   playHref,
   cta,
   tags,
+  external = false,
 }: {
   title: string;
   hero: HeroSource;
   playHref: string;
   cta: string;
   tags: string[];
+  /** The title lives off-site: open it in a new tab. */
+  external?: boolean;
 }) {
   const { t } = useTranslation('games-hub');
   return (
@@ -62,7 +65,10 @@ export function DetailHero({
 
       <div className="flex flex-wrap items-center gap-3">
         <Button asChild variant="signal" size="lg">
-          <a href={playHref}>
+          <a
+            href={playHref}
+            {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          >
             <Play aria-hidden />
             {cta || t('play', { defaultValue: 'Play' })}
           </a>
