@@ -90,6 +90,8 @@ describe('game asset paths', () => {
     expect(gameAssetContentType('maps/x.bsp')).toBe('application/octet-stream');
     expect(gameAssetContentType('maps/x.vtf')).toBeNull();
     expect(gameAssetContentType(`ui/icons/${SHA}.svg`)).toBe('image/svg+xml');
+    expect(gameAssetContentType(`menu/font/${SHA}.ttf`)).toBe('font/ttf');
+    expect(gameAssetContentType(`menu/video/${SHA}.webm`)).toBe('video/webm');
     expect(gameAssetContentType('maps.d/x')).toBeNull();
   });
 
@@ -271,7 +273,7 @@ describe('channels and the sync workflow', () => {
     expect(new Set(keys).size).toBe(keys.length);
     for (const k of keys)
       expect(k).toMatch(
-        /^(tf2|hl2|portal|csgo)-game\/(maps|mdl|tex|snd|particles|ui)\/_state\.json$/,
+        /^(tf2|hl2|portal|csgo)-game\/(maps|mdl|tex|snd|particles|ui|menu)\/_state\.json$/,
       );
   });
 });

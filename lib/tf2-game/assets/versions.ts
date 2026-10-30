@@ -20,9 +20,11 @@ export type GameId = (typeof GAME_IDS)[number];
 
 /**
  * The asset kinds a game's prefix may hold — the first path segment under `<game>-game/`. `ui` is
- * CS:GO's HUD and buy-menu data (sanitised Panorama SVG icons, localisation, default-weapon data).
+ * CS:GO's HUD and buy-menu data (sanitised Panorama SVG icons, localisation, default-weapon data);
+ * `menu` a game's main menu (scripts/tf2-game/menu_ui.py: the GameUI files, backgrounds and fonts of
+ * Half-Life 2 and Portal, CS:GO's Panorama movie, fonts and icons).
  */
-export const GAME_ASSET_KINDS = ['maps', 'mdl', 'tex', 'snd', 'particles', 'ui'] as const;
+export const GAME_ASSET_KINDS = ['maps', 'mdl', 'tex', 'snd', 'particles', 'ui', 'menu'] as const;
 export type GameAssetKind = (typeof GAME_ASSET_KINDS)[number];
 
 export const gameRoot = (game: GameId): string => `${game}-game/`;
@@ -164,6 +166,29 @@ export const GAME_ASSET_CHANNELS = {
     builder: 1,
     env: 'CSGO_GAME_BUILDER_UI',
     script: 'scripts/tf2-game/csgo_ui.py',
+  },
+  // Each game's main menu (menu_ui.py): Source GameUI's files, console backgrounds, chapter pictures,
+  // fonts and words for Half-Life 2 and Portal; Panorama's background movie, fonts and icons for CS:GO.
+  'hl2-menu': {
+    game: 'hl2',
+    kind: 'menu',
+    builder: 1,
+    env: 'HL2_GAME_BUILDER_MENU',
+    script: 'scripts/tf2-game/menu_ui.py',
+  },
+  'portal-menu': {
+    game: 'portal',
+    kind: 'menu',
+    builder: 1,
+    env: 'PORTAL_GAME_BUILDER_MENU',
+    script: 'scripts/tf2-game/menu_ui.py',
+  },
+  'csgo-menu': {
+    game: 'csgo',
+    kind: 'menu',
+    builder: 1,
+    env: 'CSGO_GAME_BUILDER_MENU',
+    script: 'scripts/tf2-game/menu_ui.py',
   },
 } as const satisfies Record<string, GameAssetChannel>;
 
