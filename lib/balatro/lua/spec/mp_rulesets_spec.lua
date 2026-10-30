@@ -150,6 +150,8 @@ describe('real bundles: the layer effects', function()
     expect(m.flipped_cards).eq(4)
     expect(m.debuff_played_cards).eq(true)
     expect(m.all_eternal).eq(true)
+    expect(m.chips_dollar_cap).eq(true)               -- chip_cap (vanilla mod_chips)
+    expect(m.minus_hand_size_per_X_dollar).eq(10)     -- shrinking_hand (vanilla CardArea:update)
     expect(G.GAME.shop.joker_max).eq(3)              -- bigger_shop
     expect({ MP.misc.glass_cannon(30, 4) }).eq({ 30, 16 })
     expect(MP.layer_param('mp_eeeee_chance')).eq(0.4)

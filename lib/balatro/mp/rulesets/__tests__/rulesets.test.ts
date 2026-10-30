@@ -394,6 +394,8 @@ describe('layer contents', () => {
       'flipped_cards',
       'debuff_played_cards',
       'all_eternal',
+      'chip_cap',
+      'shrinking_hand',
       'gambling_opportunity',
       'bigger_shop',
     ]);
@@ -412,6 +414,14 @@ describe('layer contents', () => {
       booster_ante_scaling: true,
       flipped_cards: 4,
     });
+  });
+  it('chip_cap and shrinking_hand are vanilla challenge modifiers (EX-18 lifted)', () => {
+    const r = resolve('ruleset_mp_vanilla', {
+      modifierLayers: ['shrinking_hand', 'chip_cap'],
+    }).resolved;
+    expect(r.gameModifiers).toEqual({ chips_dollar_cap: true, minus_hand_size_per_X_dollar: 10 });
+    expect(r.layers.slice(-2)).toEqual(['chip_cap', 'shrinking_hand']);
+    expect(r.setupHooks).not.toContain('chip_cap');
   });
 });
 

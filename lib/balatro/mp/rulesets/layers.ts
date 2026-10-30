@@ -19,8 +19,11 @@
  *   implements through `G.GAME.modifiers` (verified against data/balatro):
  *   inflation, no_interest, discard_cost, money_per_discard,
  *   no_blind_reward (spartan), booster_ante_scaling (pricey_packs),
- *   flipped_cards, debuff_played_cards, all_eternal. `chip_cap`,
- *   `shrinking_hand` and `no_uncommons` are excluded (EX-18).
+ *   flipped_cards, debuff_played_cards, all_eternal, chips_dollar_cap
+ *   (chip_cap: misc_functions.lua mod_chips caps chips at the money held) and
+ *   minus_hand_size_per_X_dollar (shrinking_hand: CardArea:update shrinks the
+ *   hand by 1 per $10). `no_uncommons` is excluded (EX-18: nothing in
+ *   vanilla or the mod implements it).
  */
 
 import type { LobbyOptions, ResolvedRuleset } from '../types';
@@ -391,6 +394,8 @@ const defs: LayerDef[] = [
   { name: 'flipped_cards', advanced: true, gameModifiers: { flipped_cards: 4 } },
   { name: 'debuff_played_cards', advanced: true, gameModifiers: { debuff_played_cards: true } },
   { name: 'all_eternal', advanced: true, gameModifiers: { all_eternal: true } },
+  { name: 'chip_cap', advanced: true, gameModifiers: { chips_dollar_cap: true } },
+  { name: 'shrinking_hand', advanced: true, gameModifiers: { minus_hand_size_per_X_dollar: 10 } },
   // LY-23
   { name: 'gambling_opportunity', advanced: true, banned: ['m_gold', 'm_lucky'] },
   // LY-24

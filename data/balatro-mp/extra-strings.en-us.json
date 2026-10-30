@@ -137,6 +137,8 @@
       "rmh_mp_ui_layer_flipped_cards": "Flipped Cards",
       "rmh_mp_ui_layer_debuff_played_cards": "Debuffed Played Cards",
       "rmh_mp_ui_layer_all_eternal": "All Eternal",
+      "rmh_mp_ui_layer_chip_cap": "Chip Cap",
+      "rmh_mp_ui_layer_shrinking_hand": "Shrinking Hand",
       "rmh_mp_ui_layer_gambling_opportunity": "Gambling Opportunity",
       "rmh_mp_ui_layer_bigger_shop": "Bigger Shop",
       "rmh_mp_ui_by_code_cap": "BY CODE",
@@ -330,6 +332,9 @@
       "rmh_mp_vote_draw_progress": "Vote for Draw: #1#/#2#",
       "rmh_mp_place": "Place #1#",
       "rmh_mp_best_pvp": "Best PvP score: #1#"
+    },
+    "labels": {
+      "rmh_mp_phantom": "Phantom"
     }
   }
 }

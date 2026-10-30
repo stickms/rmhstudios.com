@@ -15,7 +15,7 @@ import {
   resetBalatroQueueForTests,
   setBalatroSocialStoreForTests,
 } from '../../../../../server/socket-server/handlers/balatro-queue';
-import { attach, isQueued, lastParty } from '../attach';
+import { attach, isQueued, lastParty, RETURN_RETRY_MAX } from '../attach';
 import { activeInviter, Inviter, INVITE_SETTLE_MS } from '../../invites';
 import type { QueueMode } from '../../../net/events';
 
@@ -193,6 +193,85 @@ describe('casual matchmaking end to end', () => {
     m.lua.emit('ui_join', { code: partyCode });
     await w.until(() => h.lua.last('lobby_view')?.state.players.some((p) => p.id === 'bob') === true, 10_000, 'member back');
     expect(m.runtime.role?.kind).toBe('member');
+  });
+
+  /**
+   * A party of two (`ids[0]` hosts, `ids[1]`) matched with `ids[2]` into a Royale that has
+   * started. Fresh names per test: the hub's per-socket rate limits outlive a World.
+   */
+  async function partyMatchStarted(ids: [string, string, string]) {
+    const h = qpeer(ids[0]);
+    const m = qpeer(ids[1]);
+    const solo = qpeer(ids[2]);
+    await w.step(20);
+    h.lua.emit('ui_create_lobby', { queueMode: 'pvp_royale', kind: 'party' });
+    await w.until(() => !!code(h), 5_000, 'party hosted');
+    const partyCode = code(h)!;
+    m.lua.emit('ui_join', { code: partyCode });
+    await w.until(
+      () => h.lua.last('lobby_view')?.state.players.length === 2,
+      10_000,
+      'party joined',
+    );
+    m.lua.emit('ui_ready', { ready: true });
+    await w.until(
+      () =>
+        h.lua.last('lobby_view')?.state.players.every((p) => p.id === ids[0] || p.ready) === true,
+      5_000,
+      'ready',
+    );
+    h.lua.emit('ui_party_queue', { queueMode: 'pvp_royale' });
+    await w.until(() => view(m)?.state === 'searching', 5_000, 'member sees the search');
+    solo.lua.emit('ui_queue', { op: 'join', queueMode: 'pvp_royale' });
+    await w.until(
+      () => solo.lua.last('setup_view')?.kind === 'ruleset_vote',
+      30_000,
+      'ruleset vote',
+    );
+    voteAll([h, m, solo], 'ruleset_mp_vanilla');
+    await w.until(() => solo.lua.last('setup_view')?.kind === 'draft', 30_000, 'draft');
+    await draftAll([h, m, solo]);
+    await w.until(
+      () => [h, m, solo].every((p) => !!p.lua.last('match_start')),
+      30_000,
+      'match start',
+    );
+    return { h, m, solo, partyCode };
+  }
+
+  it('"Return to lobby" clicked by the member before its host re-hosts: the join retries', async () => {
+    const { h, m, partyCode } = await partyMatchStarted(['gina', 'hank', 'ivy']);
+    // Both click at once: the member's join reaches the hub while the code is still unclaimed.
+    m.lua.emit('ui_join', { code: partyCode });
+    h.lua.emit('ui_join', { code: partyCode });
+    await w.until(
+      () => m.lua.last('lobby_view')?.state.code === partyCode,
+      15_000,
+      'member back in the party',
+    );
+    expect(h.runtime.role?.code).toBe(partyCode);
+    expect(h.lua.last('lobby_view')?.state.players.some((p) => p.id === 'hank')).toBe(true);
+    expect(m.runtime.role?.kind).toBe('member');
+    expect(m.runtime.role?.code).toBe(partyCode);
+    expect(m.lua.errors()).not.toContain('not-found');
+  });
+
+  it('a "Return to lobby" whose host never re-hosts gives up after RETURN_RETRY_MAX joins', async () => {
+    const { h, m, partyCode } = await partyMatchStarted(['jack', 'kim', 'liam']);
+    drop(h);
+    const joins = () =>
+      m.hub.emitted.filter(
+        (e) => e.event === 'balatro:p2p:join' && (e.data as { code: string }).code === partyCode,
+      ).length;
+    const before = joins();
+    m.lua.emit('ui_join', { code: partyCode });
+    await w.until(() => m.lua.errors().includes('not-found'), 20_000, 'gave up');
+    expect(joins() - before).toBe(1 + RETURN_RETRY_MAX);
+    expect(m.runtime.role).toBeNull();
+    // A later Return to lobby starts a fresh, equally bounded retry.
+    m.lua.emit('ui_join', { code: partyCode });
+    await w.step(20_000);
+    expect(joins() - before).toBe(2 * (1 + RETURN_RETRY_MAX));
   });
 
   it('a party code taken meanwhile: the old host hosts under a fresh code', async () => {

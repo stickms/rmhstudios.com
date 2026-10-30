@@ -66,6 +66,9 @@ R.KINDS = KINDS
 
 local ORDER_BASE = 1000
 
+-- An MP blind's boss.min: higher than any ante (finite, so it survives copies and JSON).
+R.NEVER_ROLLED_ANTE = 1000000000
+
 -- Fields copied from a def onto its prototype.
 local PROTO_FIELDS = {
   'rarity', 'cost', 'pos', 'soul_pos', 'blueprint_compat', 'eternal_compat', 'perishable_compat',
@@ -102,7 +105,15 @@ local function build_proto(def, order)
     p.debuff = MP.copy(b.debuff or p.debuff or {}, true)
     p.boss_colour = b.boss_colour or p.boss_colour
     p.pos = p.pos or { x = 0, y = 0 }
-    if b.boss and def.pool_boss then p.boss = MP.copy(b.boss, true) end -- never in boss rolls otherwise
+    -- Vanilla reads blind.boss as a table wherever a blind can be a boss (Blind:set_blind's
+    -- self.boss and spin, ease_background_colour_blind's boss.showdown), so every MP blind has
+    -- one. Unless the def asks for boss rolls (pool_boss), it is one get_new_boss never picks:
+    -- not a showdown, and a min ante no run reaches.
+    if b.boss and def.pool_boss then
+      p.boss = MP.copy(b.boss, true)
+    else
+      p.boss = { min = R.NEVER_ROLLED_ANTE, max = R.NEVER_ROLLED_ANTE, showdown = false, mp_never_rolled = true }
+    end
     p.atlas = def.atlas
   elseif def.kind == 'Tag' then
     local t = def.tag or {}

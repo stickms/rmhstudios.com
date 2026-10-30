@@ -271,6 +271,33 @@ end
 
 -- ── Hook installation ───────────────────────────────────────────────────────
 
+-- Vanilla's Charm and Meteor Tags pick the art variant of their Mega pack with an unseeded
+-- `math.random(1, 2)` (tag.lua), the first math.random call of the yep callback. In a session that
+-- one call is answered from the seeded stream 'mp_tag_pack', so peers and replays open the same
+-- pack key. Only that call: vanilla pseudorandom itself calls math.random, so the stand-in removes
+-- itself before answering, and the callback's later (cosmetic) calls are vanilla's again. The
+-- Ethereal Tag's pack is fixed (p_spectral_normal_1) and needs nothing.
+S.SEEDED_TAG_PACKS = { ['Charm Tag'] = true, ['Meteor Tag'] = true }
+S.TAG_PACK_STREAM = 'mp_tag_pack'
+
+function S.seed_tag_pack(func)
+  return function(...)
+    local vanilla = math.random
+    math.random = function(...)
+      math.random = vanilla
+      local a, b = ...
+      if select('#', ...) == 2 and a == 1 and b == 2 and rawget(_G, 'pseudorandom') and rawget(_G, 'pseudoseed') then
+        return pseudorandom(pseudoseed(S.TAG_PACK_STREAM), 1, 2)
+      end
+      return vanilla(...)
+    end
+    local ok, r = pcall(func, ...)
+    math.random = vanilla
+    if not ok then error(r, 0) end
+    return r
+  end
+end
+
 function S.install_session_hooks()
   local wrap = MP.hooks.wrap
   local function o(id) return { group = 'session', optional = true, id = 'session.' .. id } end
@@ -344,6 +371,13 @@ function S.install_session_hooks()
       end
       return orig(e, args, ...)
     end, o('funcs_start_run'))
+  end
+
+  if rawget(_G, 'Tag') and Tag.yep then
+    wrap(Tag, 'yep', function(orig, self, message, colour, func, ...)
+      if S.SEEDED_TAG_PACKS[self.name] and type(func) == 'function' then func = S.seed_tag_pack(func) end
+      return orig(self, message, colour, func, ...)
+    end, o('tag_pack'))
   end
 
   order.install()

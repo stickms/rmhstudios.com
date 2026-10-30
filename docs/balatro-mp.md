@@ -260,6 +260,7 @@ WS6 (Lua core):
   (`*_resample` advances one queue, `nr`/`cashout` are per blind).
 
 ### WS4 (pure match logic)
+
 - Pairing is a true 1-factorisation (stable per-run order + circle method with a BYE slot, bounded search, then reset); A1's adjacent-pair rotation can repeat a pair early for n ≥ 6.
 - Pending death: a player whose ante has passed the pending blind, or who readies for that ante's PvP Boss, counts as having beaten it (prevents stalls on D-06's blind-on-deck key).
 - Any 2-player match outside Manhunt/Teams receives the degenerate `nemesis_pairing`.
@@ -269,20 +270,29 @@ WS6 (Lua core):
 - Teams card targets are `opp[(index + ante − 1) mod |opp|]` (A1 has no rule).
 - The Runner's voucher adds a life only to alive Hunters.
 - Practice reaching ante 9 emits nothing from the referee; the vanilla win screen there is the Lua side's.
-- `chip_cap` and `shrinking_hand` stay excluded (EX-18) although vanilla has `chips_dollar_cap` and `minus_hand_size_per_X_dollar`; cheap to add later.
+- `chip_cap` (`chips_dollar_cap`: vanilla `mod_chips` caps chips at the money held) and `shrinking_hand` (`minus_hand_size_per_X_dollar = 10`: vanilla `CardArea:update` shrinks the hand by 1 per $10) are Advanced layers after `all_eternal`; they were excluded as EX-18 only because the mod's layers are flag-only, but the flags are vanilla challenge modifiers, so no Lua is needed. `no_uncommons` stays excluded (nothing implements it).
 
 ### WS5 (session runtime)
+
 - `hello.rejoin` is set only by a peer whose Lua run is gone (a reload): the host answers with the referee's `rejoined` resync and the 3-minute catch-up clock. A peer whose run is still live (a network drop, a host migration) sends `rejoin: null`; the host replays its outcome log to it instead (deduplicated by `hs`) and reports it `back`.
 - A crash rejoiner counts as caught up at its first `flags` past ante 0 after `rejoin_restore`; it tells the host with a second `player_info` (the wire has no member-to-host presence kind).
 - A deliberate host leave sends its forfeit, the checkpoint and `bye` over P2P and asks the hub to hand over 500 ms later, so the successor's checkpoint already holds the forfeit.
 - Display sync is not filtered by JS: every peer message reaches Lua with its sender, and Lua keeps its target's (report.lua already filters, and `opp_ctx` needs every sender for `mp_from_target`).
+
+### WS11 / wave 3 (in-run UI)
+
+- Enemy location: the shop reports `loc_shop-<next blind key>` (the blind-on-deck rule over `round_resets.blind_states`, the Nemesis blind for a PvP Boss slot; bare `loc_shop` with no blind table), shown as "Shopping before <blind>", and the line carries a small chip of the blind it names (hidden for Selecting / Ready).
+- Nemesis rows: the mod puts full-size rows above your jokers, which in the base game's 16:9 room (0.7 units above y = 0) are off-screen. Standard and Mirrored rows are compact (cards × 0.55) starting at y = −0.6, and while a row has cards your joker and consumable areas move down by ≈0.94 (their bottom stays above the shop at 3.6); they move back when the rows empty, and during Blind Select (vanilla anchors the choices to `G.jokers.T.y`). Classic is unchanged. Phantom copies' tooltips show a "Phantom" badge (`rmh_mp_phantom` label) instead of the eternal one they carry to block selling.
+- The deck picker's preview card is not draggable: `CardArea:set_ranks` (run by `emplace`) made a lone card draggable again, so the flag is set after `emplace` (found by the real-builder spec `mp_ui_deck_preview_spec.lua`).
+
 ### WS8 (content B: sandbox, Extra Credit)
+
 - Clown Car's "initial scoring step" (an SMODS context) is a custom context `mp_initial_scoring` fired from a `Blind.modify_hand` session wrap: after the blind's own change, before any card scores.
 - Lucky 7 and Alloy's "counts as" (SMODS `check_enhancement`) are session wraps on the vanilla card getters: a Lucky 7 card rolls the Lucky +20 Mult (1 in 5) and $20 (1 in 15) like a real Lucky card; with Alloy held, held Gold gives Steel's X1.5 and held Steel pays Gold's $3. Sandbox jokers that test an enhancement (`MP.sandbox.has_enh`) see both.
 - Go Fish and Warlock destroy their cards through vanilla's `destroying_card` pass (so the removal reaches `remove_playing_cards`), right after scoring rather than in `after`. Warlock picks its target at that point.
 - Chain Lightning keeps one count per joker; a Blueprint copy gives the multiplier of the original's current count without advancing it (the mod's shared counter double-counted copies).
 - Hoarder checks `debuff` (the mod checks a field that never exists, `debuffed`), and Magnet's response is accepted only from the nemesis it asked, once per request (D-19).
-- The Investment Tag also pays after the Nemesis blind (`last_blind.name == bl_mp_nemesis`): our Nemesis prototype has no `boss` table, so vanilla's `last_blind.boss` is false there.
+- The Investment Tag also pays after the Nemesis blind (`last_blind.name == bl_mp_nemesis`, kept as a second check; `last_blind.boss` is true there too, since the registry gives every MP blind a never-rolled `boss` table: `showdown = false`, `min = R.NEVER_ROLLED_ANTE`, so vanilla's `Blind:set_blind`, `ease_background_colour_blind` and spin read it and `get_new_boss` never picks it).
 - The per-round globals (Zealot rank, Tuxedo/Farmer suit, Go Fish rank) roll after vanilla's `reset_castle_card`, over sorted suit/rank lists, with the mod's stream keys.
 - The error decoys' tooltip drops the mod's non-ASCII currency glyphs (MP Lua is ASCII; the fonts are subset to loc text).
 - The Sandbox collection order (`MP.sandbox.overview_keys`) shuffles with a private generator, never the game RNG.
@@ -323,10 +333,10 @@ because it subsets about 60 MB of fonts.
 
 **Budgets** (`data/balatro-mp/pack-budget.json`; the build fails past them):
 
-| Pack | Budget                                        | Plan §6.4                                                                                                                                       |
-| ---- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pack | Budget                                        | Plan §6.4                                                                                                                                                                                           |
+| ---- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | core | 4 930 572 B baseline + 56 422 B               | plan +30 KB. Even per-language, the CJK/Hangul MP glyphs cost ~38 KB (folding all MP text into every font cost ~108 KB); +16 422 B (M1b) is exactly the compressed platform Lua moved into the core |
-| mp   | 1 800 000 B compressed, 8 000 000 B extracted | plan 1.3 MB. The used art alone is ~1.25 MB after lossless oxipng (1x + 2x, AS-01) and the localization ~0.1 MB, so 1.3 MB left no room for Lua |
+| mp   | 1 800 000 B compressed, 8 000 000 B extracted | plan 1.3 MB. The used art alone is ~1.25 MB after lossless oxipng (1x + 2x, AS-01) and the localization ~0.1 MB, so 1.3 MB left no room for Lua                                                     |
 
 `CORE_PATCHES` in the builder is the anchored patch list for data/balatro Lua, as
 `(path, anchor, replacement)`. Each anchor must occur exactly once. It holds one
@@ -416,7 +426,7 @@ Applying the bundle follows WS4's conventions (`lib/balatro/mp/rulesets/layers.t
 | `MP.net.send(t, d)`, `MP.net.on(t, fn)`, `MP.net.defer(fn, pred?, queue?)`, `MP.safe_point()`, `MP.net.add_frame_hook(fn)`, `MP.json_array(t)`              | Outbound is validated by `protocol.lua` and flushed once per frame. Use `MP.json_array` for arrays that may be empty                                 |
 | `MP.event(e)`                                                                                                                                               | A GameEvent, sent only in match and practice sessions                                                                                                |
 | `MP.peer.send(kind, d, to?)`, `MP.peer.on(kind, fn(from, d))`, `MP.sync.register(key, {receive})`, `MP.sync.send(obj, data, to?, kind?)`                    | A `receive` returning `{send=…}` replies                                                                                                             |
-| `MP.report.on(t, fn(o))` (also `'presence'`: `fn({t, id, status, graceMsLeft})` per presence frame)                                                                                                                                   | Observers for referee outcomes. UI streams use this, never `MP.net.on('outcome')`                                                                    |
+| `MP.report.on(t, fn(o))` (also `'presence'`: `fn({t, id, status, graceMsLeft})` per presence frame)                                                         | Observers for referee outcomes. UI streams use this, never `MP.net.on('outcome')`                                                                    |
 | `MP.ctx.calculate(ctx, {consumeables, silent})`                                                                                                             | Custom contexts fanned out over jokers and consumables                                                                                               |
 | `MP.registry.define(def)`, `mount`, `unmount`, `is_mp`, `get`, `enabled`, `proto`, `leaked_keys`                                                            | Definition shape and dispatch signatures are documented at the top of `registry/init.lua` and `registry/dispatch.lua`                                |
 | `MP.rules.layer_hook(name, fn(ctx))`, `MP.rules.layer_post_hook(name, fn)`, `MP.rules.ban_source(fn)`                                                       | Run-start hooks for content layers                                                                                                                   |
@@ -507,18 +517,18 @@ engine FS, the CSPRNG) into `lobby/runtime.ts`, which is browser-free: the
 `lib/balatro/mp/__tests__/session/` suite runs whole lobbies on FakeNet channels against
 the real hub handler (`world.test-support.ts`).
 
-| Module | Role |
-| ------ | ---- |
-| `transport/wire-link.ts` | One host-member link: §3.b envelopes as CONTROL frames on a `ReliableLink`; every frame validated (`wire-codec.ts`), per-peer limits 40/s burst 100 (`log` 20/s burst 1024), `kick` never accepted from the wire |
-| `transport/host-star.ts`, `member.ts` | `DirectConnection` per pair (`endOfCandidates: false`), hub relay fallback keyed by `relaySlotOf(peerId)`; members drop host-only kinds that carry `f` |
-| `lobby/lobby-reducer.ts` | The versioned lobby state machine (ready, teams, options through WS4's `sanitizeOptions`, start, kick, return to lobby) |
-| `lobby/lobby-host.ts` | Admission, `hello` version check, `welcome`, lobby broadcast, hub directory `state`, presence (away after 5 s silent, seat grace, catch-up limit), referee wiring, §3.b relay with `f` stamped, chat relay |
-| `lobby/lobby-member.ts` | Join, versioned mirror, queued game events across a link loss, reconnect, promotion hand-off |
-| `match/match-host.ts` | WS4 `refStep` driver: `hs`, checkpoints coalesced to 250 ms, ticks at `wakeAt`, serialised re-entrant inputs |
-| `match/match-member.ts`, `routing.ts` | Every player's controller: `hs` dedupe, targets from outcomes, §3.b routing, WS4 timer model on the monotonic clock, 5 s result watchdog |
-| `migration.ts`, `rejoin/*` | Successor `hs` gap, takeover checkpoint (held or rebuilt); IndexedDB snapshots keyed by `runId` (newest 3) and the rejoin hint |
-| `chat.ts`, `identity.ts`, `history.ts`, `ratelimit.ts` | Chat (sender and receiver 5-burst 1/s, mute; the site block list from GET /api/moderation/block is muted at start, never saved), glyph-bitmap sanitising, local history, token buckets |
-| `wire-codec.ts` | zod-free validation of the wire, the hub's S2C and the client-checked domain types, over descriptors generated into `bridge-schema.gen.ts` |
+| Module                                                 | Role                                                                                                                                                                                                             |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `transport/wire-link.ts`                               | One host-member link: §3.b envelopes as CONTROL frames on a `ReliableLink`; every frame validated (`wire-codec.ts`), per-peer limits 40/s burst 100 (`log` 20/s burst 1024), `kick` never accepted from the wire |
+| `transport/host-star.ts`, `member.ts`                  | `DirectConnection` per pair (`endOfCandidates: false`), hub relay fallback keyed by `relaySlotOf(peerId)`; members drop host-only kinds that carry `f`                                                           |
+| `lobby/lobby-reducer.ts`                               | The versioned lobby state machine (ready, teams, options through WS4's `sanitizeOptions`, start, kick, return to lobby)                                                                                          |
+| `lobby/lobby-host.ts`                                  | Admission, `hello` version check, `welcome`, lobby broadcast, hub directory `state`, presence (away after 5 s silent, seat grace, catch-up limit), referee wiring, §3.b relay with `f` stamped, chat relay       |
+| `lobby/lobby-member.ts`                                | Join, versioned mirror, queued game events across a link loss, reconnect, promotion hand-off                                                                                                                     |
+| `match/match-host.ts`                                  | WS4 `refStep` driver: `hs`, checkpoints coalesced to 250 ms, ticks at `wakeAt`, serialised re-entrant inputs                                                                                                     |
+| `match/match-member.ts`, `routing.ts`                  | Every player's controller: `hs` dedupe, targets from outcomes, §3.b routing, WS4 timer model on the monotonic clock, 5 s result watchdog                                                                         |
+| `migration.ts`, `rejoin/*`                             | Successor `hs` gap, takeover checkpoint (held or rebuilt); IndexedDB snapshots keyed by `runId` (newest 3) and the rejoin hint                                                                                   |
+| `chat.ts`, `identity.ts`, `history.ts`, `ratelimit.ts` | Chat (sender and receiver 5-burst 1/s, mute; the site block list from GET /api/moderation/block is muted at start, never saved), glyph-bitmap sanitising, local history, token buckets                           |
+| `wire-codec.ts`                                        | zod-free validation of the wire, the hub's S2C and the client-checked domain types, over descriptors generated into `bridge-schema.gen.ts`                                                                       |
 
 **No zod in the MP chunk.** zod v4 classic cannot be tree-shaken. Nothing the chunk
 imports may import `wire.ts`, `types.ts`, `events.ts` or `bridge-protocol.ts` at
@@ -567,7 +577,11 @@ to lobby XXXXXX": Lua remembers a party whose next lobby view was another room a
 on the PvP bar; its `ui_join {code}` goes through the runtime's `joinHook`, which (after leaving
 the match lobby) re-hosts the code for the old host (`LobbyHost.create(mode, 'party', {code,
 token})`, the hub's resume path; a code taken meanwhile falls back to a fresh one) and joins it
-for everyone else.
+for everyone else. A member's join can reach the hub before its host has re-claimed the code
+(the host waits out its leave drain first), and the hub answers `not-found`: the runtime's
+`roleEndHook` then joins again, at most `RETURN_RETRY_MAX` (5) times, `RETURN_RETRY_MS` × attempt
+apart (about 7.5 s in all), before `not-found` reaches Lua. Another `ui_join`, `ui_leave` or any
+other end reason stops the retry.
 
 **Invites (LOB-04).** `balatro:invite {code, toUserId}`: only into a room the inviter holds a
 seat in, only to a mutual follow (both directions), at most 20 per minute per account. The hub
@@ -640,6 +654,23 @@ the match in My Replays.
 **Contract additions (WS13).** `ReplayOp` `net_in`; bridge `ui_spectate_list` (L2J) and
 `spectate_view {lobbies, error?}` (J2L).
 
-**Known limits.** Vanilla's Charm/Meteor/Ethereal tags pick their pack with `math.random`
-(unseeded), so a replay that opens one may diverge there (reported as a divergence). A run
-restored from a rejoin snapshot (`manifest {rejoin}`) cannot be played back past that point.
+**Seeded tag packs.** Vanilla's Charm and Meteor Tags pick the art variant of their Mega pack
+with an unseeded `math.random(1, 2)`; in a session the session wrap on `Tag:yep` answers that one
+call from the seeded stream `mp_tag_pack` (rules/session.lua `S.seed_tag_pack`), so peers and
+replays open the same pack. The Ethereal Tag's pack is fixed. Every other `math.random` in the MP
+Lua is either seeded through `pseudoseed` first (rng.shuffle, the Ouija rework) or cosmetic
+(end-screen quips, the error jokers' tooltip text, the ante key, which replays record).
+
+**Known limit: a log continued after a reload-rejoin.** Playback stops at `manifest {rejoin}`
+("the player reloaded mid-match"). It is not a missing marker but a missing log: after a page
+reload the player's Lua starts a new recorder at index 0 (`match_manifest`, `lobby_info`, then
+`manifest {rejoin}`), while the peers already hold that player's old events 0..N. `PlayerLog`
+files events by index, so the new prefix, the marker included, is dropped as duplicates and the
+post-rejoin events only land past N, after a gap of lost progress (the inputs between the last
+snapshot and the crash). The snapshot alone cannot fix this: it is written at save points, does
+not know how far the log got afterwards, and the reloaded peer's own TS lost its copy of the log.
+Playing past a rejoin needs (a) the rejoining peer to learn its last relayed index from the host
+(the host's `Recording` holds it) and continue there, which is a bridge contract change
+(`rejoin_restore` carrying the index) plus a host reply, and (b) the recorder to write the
+snapshot's own log index into each MP snapshot so the marker can say "continue from the state
+after event k" and playback can seek there. Until both exist the stop is the honest result.
