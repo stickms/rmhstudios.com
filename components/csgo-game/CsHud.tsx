@@ -8,7 +8,7 @@
  *   - top centre: the score (T – CT), the round clock or the bomb's countdown, the phase;
  *   - top right: the kill feed;
  *   - centre: the round's result, planting / defusing progress, deathmatch respawn;
- *   - a crosshair at the centre (no weapon is drawn in view yet: render.ts CS_DRAW_VIEWMODEL);
+ *   - a crosshair at the centre;
  *   - a white-out while flashed; the scoreboard while Tab is held.
  *
  * Weapon names are the published short names (`ak47`); no game artwork is drawn here.
