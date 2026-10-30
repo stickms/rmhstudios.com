@@ -782,12 +782,24 @@ sections? }` (`mapRadarSchema`, additive: the other games' manifests do not carr
   animations (`STUDIO_FRAMEANIM`): a header, a flag byte per bone, per-bone constants and fixed-size
   per-frame records (Quaternion48S / Quaternion48 rotations, Vector48 or full-float positions).
   `scripts/tf2-assets/srcanim.py` `decode_frame_anim` reads them — the layout as public model tools
-  document it, refused when the sizes it computes disagree with the header's — and models builder 2
-  rebuilds exactly the models that use them (`FRAMEANIM_VERSION` in their source hash). The run prints how
-  many constant-rotation bones decode near the bind pose, a plausibility check on the real install
-  (`test_frameanim.py` covers the format on synthetic data). The client draws a view model only once its
-  weapon has clips, with the team's default gloves bone-merged onto the weapon; players stay the client's
-  own original figures (lib/csgo-game/client/render.ts).
+  document it, refused when the sizes it computes disagree with the header's. A bone's constants are its
+  compressed rotation, full position, raw rotation and raw position, in that order; a Quaternion48S names
+  its dropped component counting w, x, y, z. `FRAMEANIM_VERSION` is in each such model's source hash, so a
+  decoder change rebuilds exactly those models. The run prints how many constant rotations (compressed and
+  raw) decode near the bind pose, and `scripts/tf2-game/probe-frameanim.py` (a step of the models channel)
+  scores the candidate bit layouts against the install; `test_frameanim.py` covers the format on synthetic
+  data. The clips' basis comes from the model's `ref` sequence (itself a frame animation) and is
+  recorded in the GLB as `source.clipFrame`; the client places such a model by it
+  (`model-asset.ts`) instead of guessing the frame from the bind pose's bounds, which for a view model
+  (arms hanging down in the bind pose) is a quarter turn out. The client draws a view model once its
+  weapon has clips, with the team's arms bone-merged onto the weapon: the default gloves, and for CT
+  the SAS sleeves.
+  Players draw their team's published model (`tm_phoenix` / `ctm_sas`) with the game's layered
+  animation from its anim pack: the `move` blend (walk / run / crouch by pose parameter, direction by
+  `move_yaw`), the weapon's aim matrix as a gesture steered by `body_pitch`, fire / reload / jump
+  one-shots from the networked animation events, and a death pose; the weapon out is bone-merged into
+  the hand (`lib/csgo-game/client/player-model.ts`). A plain team-coloured figure stands in while the
+  model loads.
 - **Models.** MDL v49 and VTF 7.5 read as TF2's do. VMT conditional keys (`srgb?`, `>=dx90?`,
   `GPU>=2?`, negations) are applied as a high-end Windows desktop; `CustomWeapon` (only its
   `$basetexture` — the default finish) and `Character` are converted as VertexLitGeneric with

@@ -2,9 +2,9 @@
  * CS:GO's renderables and first-person view model for the shared entity renderer
  * (EntityRendererOptions.factory, game-profile.ts ProfileViewModel).
  *
- *   - Players are original, team-coloured figures built here (a body, a head, a visor stripe), not the
- *     game's agent characters; they crouch, turn, lean with their aim and fall when they die, and hold
- *     the weapon they have out (its published world model).
+ *   - Players draw their team's published model with the game's layered movement and aim animation
+ *     and the weapon out bone-merged into the hand (player-model.ts); a plain team-coloured figure
+ *     stands in while the model loads.
  *   - Dropped weapons, the planted bomb and thrown grenades draw their published models.
  *   - Smoke clouds and fires run the game's particle systems while the area lasts.
  *   - The view model is the active weapon's published view model, swayed and bobbed with the view.
@@ -37,6 +37,7 @@ import type { ProfileViewModel } from '../../tf2-game/client/game-profile';
 import { CS_GRENADE_KINDS, csWeapon, csWeaponByDefindex, csWeaponTable, hasCsWeaponData } from '../data/weapon-data';
 import { CS_TEAM_CT, CS_TEAM_T } from '../constants';
 import { VM_ACTIVITIES, type CsWeapon } from '../weapons/base';
+import { CsPlayerModel } from './player-model';
 
 /** Team colours of the figures (T sand, CT steel blue) and their visor. */
 const TEAM_BODY: Record<number, number> = { [CS_TEAM_T]: 0xb8925a, [CS_TEAM_CT]: 0x4d6f99 };
@@ -106,8 +107,12 @@ class PlacedModel {
   }
 }
 
-/** A player: an original figure in its team's colours, holding the weapon it has out. */
+/**
+ * A player: its team's model (player-model.ts), with a plain figure in the team's colours standing in
+ * while the model loads or where it is not published.
+ */
 export class CsPlayerFigure implements EntityRenderable {
+  private readonly model = new CsPlayerModel();
   private readonly root = new Group();
   private readonly body: Mesh;
   private readonly head: Mesh;
@@ -135,6 +140,11 @@ export class CsPlayerFigure implements EntityRenderable {
     const alive = num(f, 'lifeState') === LIFE_ALIVE;
     const team = num(f, 'team');
     const local = s.id === ctx.localPlayer && ctx.firstPerson;
+    if (this.model.update(s, ctx, !local && team >= CS_TEAM_T)) {
+      this.root.visible = false;
+      this.weapon.hide();
+      return;
+    }
     if (!this.root.parent) ctx.scene.add(this.root);
     this.root.visible = !local && (alive || this.fall < 1) && team >= CS_TEAM_T;
     if (team !== this.team) {
@@ -180,6 +190,7 @@ export class CsPlayerFigure implements EntityRenderable {
   }
 
   attachment(name: string, out: Matrix4): boolean {
+    if (this.model.attachment(name, out)) return true;
     if (!this.root.visible) return false;
     if (name === 'muzzle' && this.weapon.inst?.root.visible && this.weapon.inst.attachmentMatrix('muzzle_flash', out)) return true;
     out.copy(this.root.matrixWorld);
@@ -187,6 +198,7 @@ export class CsPlayerFigure implements EntityRenderable {
   }
 
   dispose(): void {
+    this.model.dispose();
     this.root.removeFromParent();
     this.body.geometry.dispose();
     this.head.geometry.dispose();
@@ -198,6 +210,28 @@ export class CsPlayerFigure implements EntityRenderable {
   }
 }
 
+let modelNames: Set<string> | null = null;
+let modelLookup: Promise<void> | null = null;
+
+/** The model channel's published names (`mdl/index.json`), or null until the index has loaded. */
+function publishedModels(ctx: RenderContext): Set<string> | null {
+  modelLookup ??= ctx.models.loadIndex().then((index) => {
+    modelNames = new Set(Object.keys(index ?? {}));
+  });
+  return modelNames;
+}
+
+/**
+ * A weapon on the ground draws its `_dropped` model where one is published: the `w_` model is posed for a
+ * hand (its geometry sits off its origin, so alone it hangs in the air), the dropped one lies on its own.
+ */
+function droppedModel(world: string, ctx: RenderContext): string {
+  const names = publishedModels(ctx);
+  if (!names || !world) return '';
+  const dropped = world.replace(/\.mdl$/, '_dropped.mdl');
+  return names.has(dropped) ? dropped : world;
+}
+
 /** A published model at the entity's origin: dropped weapons, the planted bomb, thrown grenades. */
 class CsModelEntity implements EntityRenderable {
   private readonly model = new PlacedModel();
@@ -206,13 +240,13 @@ class CsModelEntity implements EntityRenderable {
 
   constructor(
     readonly id: number,
-    private readonly modelOf: (s: EntityState) => string,
+    private readonly modelOf: (s: EntityState, ctx: RenderContext) => string,
     private readonly fx: EffectSystem | null = null,
     private readonly loopOf: ((s: EntityState) => string) | null = null,
   ) {}
 
   update(s: EntityState, ctx: RenderContext): void {
-    const inst = this.model.ensure(this.modelOf(s), ctx);
+    const inst = this.model.ensure(this.modelOf(s, ctx), ctx);
     stateOrigin(s, this.origin);
     stateAngles(s, this.angles);
     if (inst) this.model.place(this.origin, this.angles);
@@ -279,9 +313,9 @@ export function csEntityFactory(s: EntityState, fx: EffectSystem): EntityRendera
     case 'cs_player':
       return new CsPlayerFigure(s.id);
     case 'cs_dropped_weapon':
-      return new CsModelEntity(s.id, (e) => {
+      return new CsModelEntity(s.id, (e, ctx) => {
         const info = csWeaponByDefindex(num(e.fields, 'defindex')) ?? csWeapon(str(e.fields, 'weaponName'));
-        return info?.worldModel ?? '';
+        return info ? droppedModel(info.worldModel, ctx) : '';
       });
     case 'cs_planted_c4':
       return new CsModelEntity(
@@ -309,26 +343,30 @@ export function csEntityFactory(s: EntityState, fx: EffectSystem): EntityRendera
  */
 export const viewModelAnimated = (inst: ModelInstance): boolean => (inst.animator?.set.sequences.size ?? 0) > 0;
 
+
+
 /**
- * Each team's default gloves (the generic first-person hands, no faction sleeves), from the model channel:
- * T the fingerless gloves, CT the hard-knuckle ones, else bare hands. Resolved once from `mdl/index.json`.
+ * What each team's first-person arms are made of, bone-merged onto the weapon (CS:GO's view models
+ * animate the weapon; the hands follow): the default gloves (T fingerless, CT hard-knuckle, else bare
+ * hands) and, for CT, the SAS sleeves over the forearm, as the game dresses its default factions.
+ * Resolved once from `mdl/index.json`.
  */
-const GLOVE_PREFS: Record<number, RegExp[]> = {
-  [CS_TEAM_T]: [/\/v_glove_fingerless\.mdl$/, /\/v_bare_hands\.mdl$/],
-  [CS_TEAM_CT]: [/\/v_glove_hardknuckle\.mdl$/, /\/v_bare_hands\.mdl$/],
+const ARM_PREFS: Record<number, RegExp[][]> = {
+  [CS_TEAM_T]: [[/\/v_glove_fingerless\.mdl$/, /\/v_bare_hands\.mdl$/]],
+  [CS_TEAM_CT]: [[/\/v_glove_hardknuckle\.mdl$/, /\/v_bare_hands\.mdl$/], [/\/v_sleeve_sas\.mdl$/]],
 };
-let gloveModels: Record<number, string> | null = null;
-let gloveLookup: Promise<void> | null = null;
-function glovesFor(team: number, ctx: RenderContext): string {
-  if (!gloveModels) {
-    gloveLookup ??= ctx.models.loadIndex().then((index) => {
-      const keys = Object.keys(index ?? {});
-      const pick = (res: RegExp[]) => res.map((re) => keys.find((k) => re.test(k))).find(Boolean) ?? '';
-      gloveModels = { [CS_TEAM_T]: pick(GLOVE_PREFS[CS_TEAM_T]), [CS_TEAM_CT]: pick(GLOVE_PREFS[CS_TEAM_CT]) };
-    });
-    return '';
+let armModels: Record<number, string[]> | null = null;
+
+function armsFor(team: number, ctx: RenderContext): string[] {
+  if (!armModels) {
+    const names = publishedModels(ctx);
+    if (!names) return [];
+    const keys = [...names];
+    const pick = (res: RegExp[]) => res.map((re) => keys.find((k) => re.test(k))).find(Boolean) ?? '';
+    const parts = (t: number) => ARM_PREFS[t].map(pick).filter(Boolean);
+    armModels = { [CS_TEAM_T]: parts(CS_TEAM_T), [CS_TEAM_CT]: parts(CS_TEAM_CT) };
   }
-  return gloveModels[team] ?? gloveModels[CS_TEAM_CT] ?? '';
+  return armModels[team] ?? armModels[CS_TEAM_CT] ?? [];
 }
 
 /** How far (units) and how fast the weapon bobs and sways with movement and turning. */
@@ -344,9 +382,9 @@ export class CsViewModel implements ProfileViewModel {
   private readonly scene = new Scene();
   private readonly camera = new PerspectiveCamera(68, 1, SOURCE_UNIT, 2048 * SOURCE_UNIT);
   private readonly model = new PlacedModel();
-  /** The team's gloves, bone-merged onto the weapon (CS:GO's view models animate the weapon; the hands follow). */
-  private gloves: ModelInstance | null = null;
-  private glovesModel = '';
+  /** The team's arms (gloves, sleeves), bone-merged onto the weapon, and the models they were made from. */
+  private arms: ModelInstance[] = [];
+  private armsKey = '';
   private readonly probe = new LightProbe();
   /** The activity playing and its change counter (the weapon's networked vmActivity / vmActivitySeq). */
   private lastAct = -1;
@@ -385,21 +423,21 @@ export class CsViewModel implements ProfileViewModel {
       this.visible = false;
       return;
     }
-    if (fresh) {
-      // A new weapon model: the gloves merge onto its bones again.
-      this.gloves?.dispose();
-      this.gloves = null;
-      this.glovesModel = '';
-    }
-    const glovesModel = glovesFor(typeof me?.team === 'number' ? me.team : CS_TEAM_CT, ctx);
-    if (glovesModel && glovesModel !== this.glovesModel) {
-      const asset = ctx.models.peek(glovesModel);
-      if (asset === undefined) void ctx.models.asset(glovesModel);
-      else {
-        this.gloves?.dispose();
-        this.gloves = asset ? new ModelInstance(asset, { uniforms: inst.uniforms, noAnim: true }) : null;
-        this.glovesModel = glovesModel;
-        if (this.gloves) inst.attach(this.gloves);
+    if (fresh) this.dropArms(); // a new weapon model: the arms merge onto its bones again
+    const parts = armsFor(typeof me?.team === 'number' ? me.team : CS_TEAM_CT, ctx);
+    const key = parts.join('|');
+    if (key && key !== this.armsKey) {
+      const assets = parts.map((m) => ctx.models.peek(m));
+      parts.forEach((m, i) => assets[i] === undefined && void ctx.models.asset(m));
+      if (assets.every((a) => a !== undefined)) {
+        this.dropArms();
+        for (const asset of assets) {
+          if (!asset) continue;
+          const part = new ModelInstance(asset, { uniforms: inst.uniforms, noAnim: true });
+          inst.attach(part);
+          this.arms.push(part);
+        }
+        this.armsKey = key;
       }
     }
     // The weapon's activity (idle, draw, fire, reload, …) as a sequence of its own activity table: a
@@ -458,9 +496,14 @@ export class CsViewModel implements ProfileViewModel {
     return inst.attachmentMatrix(name === 'muzzle' ? '1' : name, out) || inst.attachmentMatrix('muzzle_flash', out);
   }
 
+  private dropArms(): void {
+    for (const part of this.arms) part.dispose();
+    this.arms = [];
+    this.armsKey = '';
+  }
+
   dispose(): void {
-    this.gloves?.dispose();
-    this.gloves = null;
+    this.dropArms();
     this.model.dispose();
   }
 }

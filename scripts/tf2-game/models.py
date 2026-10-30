@@ -920,9 +920,10 @@ def build_body(fs, src, store, want_clips):
         raise srcmodel.ModelError("no geometry")
     bones, skel = skeleton_of(src.mdl)
     clips, seq_meta, activities, weightlists, errors = [], [], {}, [], []
+    fix = None
     if want_clips and src.picks:
-        clips, seq_meta, activities, weightlists, errors = build_animation(
-            fs, src.vm, src.picks, skel, root_fix(src.mdl, bones))
+        fix = root_fix(src.mdl, bones)
+        clips, seq_meta, activities, weightlists, errors = build_animation(fs, src.vm, src.picks, skel, fix)
     skinned = is_skinned(src, bones)
     # materials: one per MDL texture used by any family; primitives use family 0
     tex_ids = src.used_textures()
@@ -980,6 +981,11 @@ def build_body(fs, src, store, want_clips):
         extras.update({"sequences": seq_meta, "activities": activities})
         if weightlists:
             extras["weightlists"] = weightlists
+        if fix is not None and src.frame_anims:
+            # The space the clips pose the skeleton in, as rows of GLB = M · Source model space. The client
+            # places such a model by it rather than guessing the frame from the bind pose's bounds: CS:GO's
+            # view models hold their arms down in the bind pose, which no hull match recovers.
+            extras["source"]["clipFrame"] = [round(float(x), 6) for x in np.asarray(fix).reshape(9)]
     if errors:
         extras["animErrors"] = errors[:50]
     for c in clips:
@@ -1188,8 +1194,9 @@ def main(argv=None):
             "%s %d" % (why, n) for why, n in ANIM_ERRORS.most_common(10)))
     st = srcanim.FRAME_STATS
     if st["clips"]:
-        print("frame animations: %d clips; constant-rotation bones near the bind pose (%.0f deg): %d of %d"
-              % (st["clips"], srcanim.FRAME_CHECK_DEGREES, st["near_bind"], st["const_bones"]))
+        print("frame animations: %d clips; constant rotations near the bind pose (%.0f deg): compressed %d of %d,"
+              " raw %d of %d" % (st["clips"], srcanim.FRAME_CHECK_DEGREES, st["rot2_near"], st["rot2"],
+                                  st["raw_near"], st["raw"]))
     if SHADER_COUNTS:
         print("shaders approximated or not recognised (materials): " + ", ".join(
             "%s %d%s" % (sh, n, " -> " + CSGO_APPROX[sh] if sh in CSGO_APPROX else "")

@@ -444,6 +444,20 @@ describe('GLB frames (model-axes)', () => {
     expect(nearestAxisRotation([0.7, 0.7, 0, -0.7, 0.7, 0, 0, 0, 1])).toBeNull();
   });
 
+  it('a recorded clip frame places the posed root by Source axes, whatever basis the clips use', () => {
+    // CS:GO view models record source.clipFrame (GLB = M · Source): the frame undoes M and applies P.
+    const P = new Matrix4().set(0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1);
+    const M = new Matrix4().makeRotationX(Math.PI / 2).multiply(new Matrix4().makeRotationZ(0.3));
+    const e = M.elements; // column-major → rows of M
+    const rows = [e[0], e[4], e[8], e[1], e[5], e[9], e[2], e[6], e[10]];
+    const forward = new Vector3(10 * S, 2 * S, -3 * S); // a Source-space point, metres
+    const glb = forward.clone().applyMatrix4(M);
+    const three = glb.applyMatrix4(frameMatrixFor(rows));
+    expect(three.distanceTo(forward.clone().applyMatrix4(P))).toBeLessThan(1e-9);
+    // The fallback mapping (M = P) is the identity frame.
+    expect(frameMatrixFor([0, 1, 0, 0, 0, 1, 1, 0, 0]).equals(new Matrix4())).toBe(true);
+  });
+
   it('posed frames: the idle skeleton must fit the hull (an HL2 view model swings its arm, not its frame)', () => {
     // v_portalgun: bind and clips share the (y, z, x) frame; the ref pose holds the root turned
     // 90° about X and the idle turns it forward, which animatedFrame reads as a frame change.

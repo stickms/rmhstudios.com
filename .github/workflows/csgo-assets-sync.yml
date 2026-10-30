@@ -230,6 +230,14 @@ jobs:
             --root /mnt/csgo --game csgo --maps de_dust2 --out /mnt/work/csgo-maps \
             --state /mnt/work/csgo-maps-state.json --prev-index /mnt/work/csgo-maps-prev-index.json
 
+      # A diagnostic for the converter: scores candidate decodings of the view models' frame animations
+      # against the install and prints the table (scripts/tf2-game/probe-frameanim.py). Never fails the job.
+      - name: Probe frame animations (diagnostic)
+        if: steps.gate.outputs.run_csgo_models == 'true'
+        continue-on-error: true
+        timeout-minutes: 10
+        run: python3 -B scripts/tf2-game/probe-frameanim.py --root /mnt/csgo --search csgo
+
       - name: Models — default players and arms, default weapons and equipment, the map's props
         id: csgo_models
         if: steps.gate.outputs.run_csgo_models == 'true' && steps.tests.outcome == 'success'
@@ -360,3 +368,4 @@ jobs:
       - name: Clean up
         if: always()
         run: sudo rm -rf /mnt/work /mnt/csgo "$HOME/Steam" "$HOME/.steam" "$HOME/steamcmd" appinfo.txt 2>/dev/null || true
+
