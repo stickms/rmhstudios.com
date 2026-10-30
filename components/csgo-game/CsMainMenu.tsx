@@ -85,12 +85,17 @@ export default function CsMainMenu({ channel, signedIn, mapName, mapTitle, onOff
   const video = channel?.index.video ? menuAssetUrl(channel.index.video.file, 'csgo') : null;
   const screenshot = useMemo(() => {
     const images = channel?.index.images ?? {};
-    const key = Object.keys(images).find((k) => k.includes(mapName)) ?? Object.keys(images)[0];
+    const keys = Object.keys(images);
+    // The map's screenshot (the largest cut), else Panorama's startup background.
+    const key =
+      keys.find((k) => k.includes(`screenshots/1080p/${mapName}`)) ??
+      keys.find((k) => k.includes('screenshots/') && k.includes(mapName)) ??
+      keys.find((k) => /backgrounds\/startup\.png$/.test(k));
     return key ? menuAssetUrl(images[key], 'csgo') : null;
   }, [channel, mapName]);
   const logo = useMemo(() => {
     const icons = channel?.index.icons ?? {};
-    const key = Object.keys(icons).find((k) => /logo/.test(k));
+    const key = Object.keys(icons).find((k) => /csgologo|counterstrikelogo/.test(k)) ?? Object.keys(icons).find((k) => /\/logo/.test(k));
     return key ? menuAssetUrl(icons[key], 'csgo') : null;
   }, [channel]);
 
