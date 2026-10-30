@@ -3,7 +3,7 @@ import type { GameInfo } from '../types';
 const entry: GameInfo = {
   id: 'csgo',
   order: 250,
-  title: 'Counter-Strike: Dust II',
+  title: 'Counter-Strike: Global Offensive',
   description: 'Dust II in your browser: bomb defusal or deathmatch, against bots or friends.',
   longDescription:
     'Dust II on an independent browser engine, with default loadouts and plain weapons. Play bomb defusal (freeze time, a buy period, the money system, planting and defusing, first to 16) or deathmatch (instant respawns, free weapons). Practise offline against bots, or sign in to host a peer-to-peer match for friends; the match runs in the host’s browser and moves to another player if the host leaves. Keyboard and mouse, gamepad or touch.',

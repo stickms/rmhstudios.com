@@ -1,7 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { createServerFn } from '@tanstack/react-start';
-import { LibraryPane } from '@/components/games-library/LibraryPane';
+import { SteamPane } from '@/components/steam/SteamPane';
 import { GuideView, type GuideData } from '@/components/games/GuideView';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { games } from '@/lib/games';
@@ -30,7 +30,7 @@ const fetchGuide = createServerFn({ method: 'GET' })
     return { gameId: data.gameId, guide };
   });
 
-export const Route = createFileRoute('/_site/games/$gameId_/guides/$guideId')({
+export const Route = createFileRoute('/games/_library/$gameId_/guides/$guideId')({
   /**
    * Player guides are the highest-intent pages on the site — someone searching
    * "how do I beat X" is looking for exactly this — and every one of them was
@@ -111,11 +111,11 @@ function GuidePage() {
   const { t } = useTranslation('games-hub');
   const { gameId, guide } = Route.useLoaderData();
   return (
-    <LibraryPane
+    <SteamPane
       title={guide?.title ?? t('guide-new-title', { defaultValue: 'New guide' })}
       backTo={`/games/${gameId}`}
     >
       <GuideView gameId={gameId} guide={guide} />
-    </LibraryPane>
+    </SteamPane>
   );
 }

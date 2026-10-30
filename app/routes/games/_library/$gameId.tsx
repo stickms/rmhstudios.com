@@ -1,13 +1,12 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { LibraryPane } from '@/components/games-library/LibraryPane';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import { hueFromString } from '@/lib/builds/curated';
 import { getLibraryExtras } from '@/lib/games/detail.server';
 import type { LibraryExtras } from '@/lib/games/detail-types';
-import { GameDetail } from '@/components/games-library/GameDetail';
+import { GamePage } from '@/components/steam/GamePage';
 import { buildMeta, buildCanonical, ogCardPath, noindexHead } from '@/lib/seo';
 import { jsonLdScript, videoGameSchema, breadcrumbSchema } from '@/lib/schema';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
@@ -83,7 +82,7 @@ const fetchHub = createServerFn({ method: 'GET' })
     };
   });
 
-export const Route = createFileRoute('/_site/games/$gameId')({
+export const Route = createFileRoute('/games/_library/$gameId')({
   // Every hub used to emit the same static title with no description, canonical
   // or structured data, so eighteen distinct games were indistinguishable to a
   // crawler — and to anyone sharing a link. Meta is built per game from the
@@ -148,8 +147,6 @@ export const Route = createFileRoute('/_site/games/$gameId')({
 function GameHubPage() {
   const data = Route.useLoaderData();
   return (
-    <LibraryPane>
-      <GameDetail data={data} />
-    </LibraryPane>
+    <GamePage data={data} />
   );
 }

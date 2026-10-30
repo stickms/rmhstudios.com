@@ -3,7 +3,7 @@ import type { GameInfo } from '../types';
 const entry: GameInfo = {
   id: 'half-life-2',
   order: 230,
-  title: 'Half-Life 2 (Demo)',
+  title: 'Half-Life 2',
   description:
     'The opening of Half-Life 2, Point Insertion, on a clean-room browser engine.',
   longDescription:

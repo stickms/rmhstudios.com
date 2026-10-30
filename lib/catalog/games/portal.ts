@@ -3,7 +3,7 @@ import type { GameInfo } from '../types';
 const entry: GameInfo = {
   id: 'portal',
   order: 240,
-  title: 'Portal: First Slice',
+  title: 'Portal',
   description:
     'Portal’s first test chambers, in your browser. Place linked portals and walk through them.',
   longDescription:

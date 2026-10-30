@@ -266,6 +266,12 @@ export const THEME_EXCLUDED_ROUTES = [
   // Daylight-white <html> under a page that has gone dark, which a desktop
   // hides and every phone overscroll reveals.
   '/sohumtracker',
+  // The games library: a literal Steam palette (flat, `--stm-*` in
+  // `components/steam/steam.css`), full page with its own top bar. Every path under
+  // it — `/games`, `/games/$gameId`, the community and profile pages — is the
+  // library, so one prefix covers the tree; a page left under `_site` with a
+  // `/games…` URL would need an entry in THEME_EXCLUDED_EXCEPTIONS.
+  '/games',
   // Discord Activities — the gateway picker, RMHbox and Lights Out, each in
   // Discord's own palette. Full-screen games like every other entry here, but in
   // no catalog because they only make sense inside Discord's iframe. Unlisted,
