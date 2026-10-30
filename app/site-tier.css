@@ -92,6 +92,7 @@
 @source not "../components/worlds";
 @source not "../lib/altair";
 @source not "../lib/audio";
+@source not "../lib/balatro";
 @source not "../lib/breakpoint";
 @source not "../lib/bums-rush";
 @source not "../lib/controller";
