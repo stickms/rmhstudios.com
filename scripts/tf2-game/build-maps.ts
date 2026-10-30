@@ -107,6 +107,7 @@ import {
   type MapTexture,
 } from '../../lib/tf2-game/assets/map-manifest';
 import { GAME_IDS, type GameId } from '../../lib/tf2-game/assets/versions';
+import { ACTOR_CLASSES, DEFAULT_ACTOR_MODELS } from '../../lib/sp-game/ai/actor-models';
 
 // Map files are named by their content, so a builder change renames exactly what it changes;
 // bump the channel's `builder` (lib/tf2-game/assets/versions.ts) to make the workflow rerun it.
@@ -723,7 +724,22 @@ export function readMapBsp(
 
 /** The map's prop models that models.py can convert: it reads the install, not the map's pakfile. */
 export function installedPropModels(fs: GameFileSystem, bsp: BspFile): string[] {
-  return [...collectProps(bsp).keys()].filter((m) => fs.exists(m));
+  return [...collectProps(bsp).keys(), ...collectActorModels(bsp)].filter((m) => fs.exists(m));
+}
+
+/**
+ * The single-player actors' models (the NPCs: lib/sp-game/ai/actor.ts) — the map's `model`, else the
+ * class's default — so the model channel draws them (and their ragdolls). Not props: no collision hulls.
+ */
+export function collectActorModels(bsp: BspFile): string[] {
+  const out = new Set<string>();
+  for (const e of bsp.entities) {
+    const cls = e.classname.toLowerCase();
+    if (!ACTOR_CLASSES.includes(cls)) continue;
+    const model = normalizeGamePath(e.get('model') || DEFAULT_ACTOR_MODELS[cls] || '');
+    if (model.endsWith('.mdl')) out.add(model);
+  }
+  return [...out].sort();
 }
 
 /**

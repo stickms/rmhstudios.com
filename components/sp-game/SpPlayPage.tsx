@@ -23,6 +23,7 @@ import { languageForSite } from '@/lib/tf2-hud/localisation';
 import { clearSave, loadSave, type SpGameId, type SpSave } from '@/lib/tf2-game/client/sp-save';
 import type { TransitionData } from '@/lib/sp-game/level/transition';
 import { cn } from '@/lib/utils';
+import SourceLoadingScreen from './SourceLoadingScreen';
 import SourceMainMenu from './SourceMainMenu';
 import './sp-game.css';
 
@@ -106,6 +107,14 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
               title={chapters[running.map] ?? running.map}
               create={(mount) => createSpClient({ ...mount, game, map: running.map, transition: running.transition })}
               onExit={leave}
+              loadingScreen={(view) => (
+                <SourceLoadingScreen
+                  game={game}
+                  channel={channel}
+                  chapter={Math.max(0, names.indexOf(running.map))}
+                  view={view}
+                />
+              )}
             />
           </div>
         ) : null}

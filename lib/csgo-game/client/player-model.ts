@@ -7,13 +7,19 @@
  *   - gesture slot 0 is the weapon's aim matrix (`rifle_aim`, …), steered by `body_pitch` and blended
  *     between its stand / walk / run / crouch poses by the `aim_blend_*` parameters;
  *   - slot 1 plays the networked animation events (fire, reload, jump);
- *   - a dead player plays a death pose and stays down a few seconds.
+ *   - a dead player's body (corpse.ts) takes the game's death pose for the hit — head or body, standing
+ *     or crouched (ACT_DIE_STAND_HEADSHOT …), turned to the shot by `death_yaw` — and goes limp into a
+ *     ragdoll pushed by the bullet, on the head for a headshot; it lies CORPSE_TIME seconds, and fades at
+ *     once when the player respawns.
  *
  * The weapon out is its world model bone-merged into the hand. Returns false from `update` while the
  * model is loading (or missing), so the caller can draw its stand-in figure.
  */
 import { Matrix4 } from 'three';
+import { isHeadshot } from '../../tf2-game/sim/damage';
 import { LIFE_ALIVE } from '../../tf2-game/sim/entity';
+import type { DeathEvent, EffectEvent } from '../../tf2-game/sim/events';
+import { Corpse } from '../../tf2-game/render/entities/corpse';
 import {
   PLAYERANIMEVENT_ATTACK_PRIMARY,
   PLAYERANIMEVENT_ATTACK_SECONDARY,
@@ -50,10 +56,22 @@ const ANIM_PREFIX: Record<CsWeaponCategory, string> = {
 /** Speeds (units/s) where the walk blend is full and the run blend begins and is full. */
 const WALK_SPEED = 130;
 const RUN_SPEED = 250;
-/** Seconds a body stays down before it is hidden. */
-const CORPSE_TIME = 6;
+/** Seconds a body lies before fading (and the fade); CS:GO keeps them all round, this keeps the frame rate. */
+const CORPSE_TIME = 10;
+const CORPSE_FADE = 1;
+/** Seconds of death pose before the ragdoll takes over. */
+const DEATH_POSE_TIME = 0.2;
+/** The head bone a headshot pushes. */
+const HEAD_BONE = 'head_0';
+const MAX_CORPSES = 2;
 const AIM_SLOT = 0;
 const ACTION_SLOT = 1;
+
+interface V3 {
+  x: number;
+  y: number;
+  z: number;
+}
 
 const tmpOrigin = { x: 0, y: 0, z: 0 };
 const tmpAngles = { x: 0, y: 0, z: 0 };
@@ -70,12 +88,35 @@ export class CsPlayerModel {
   private lastEventSeq = -1;
   private aimSeq = '';
   private dead = false;
-  private deadFor = 0;
+  private readonly corpses: Corpse[] = [];
+  /** The kill notice and the bullet's push, until the body they belong to exists. */
+  private headshot = false;
+  private pendingPush: { force: V3; at: V3 | null } | null = null;
+  private readonly velocity = { x: 0, y: 0, z: 0 };
+  private readonly origin = { x: 0, y: 0, z: 0 };
+  private yaw = 0;
 
   /** Draws the player; false while its model is not ready (the caller shows its stand-in). */
   update(s: EntityState, ctx: RenderContext, visible: boolean): boolean {
     const f = s.fields;
     const team = num(f, 'team');
+    const alive = num(f, 'lifeState') === LIFE_ALIVE;
+    for (let i = this.corpses.length - 1; i >= 0; i--) {
+      if (this.corpses[i].update(ctx, this.probe)) continue;
+      this.corpses[i].dispose();
+      this.corpses.splice(i, 1);
+    }
+    if (!alive) {
+      if (!this.dead) this.die(ctx);
+      this.dead = true;
+      return true;
+    }
+    if (this.dead) {
+      this.dead = false;
+      this.lastEventSeq = num(f, 'animEventSeq');
+      // Respawned: the old body goes at once, so nobody takes it for them.
+      for (const c of this.corpses) c.fadeSoon();
+    }
     const model = CS_PLAYER_MODELS[team] ?? '';
     const inst = this.ensure(model, ctx);
     if (!inst?.animator) {
@@ -83,24 +124,8 @@ export class CsPlayerModel {
       return false;
     }
     const a = inst.animator;
-    const alive = num(f, 'lifeState') === LIFE_ALIVE;
-    if (!alive) {
-      if (!this.dead) {
-        this.dead = true;
-        this.deadFor = 0;
-        a.clearGestures(true);
-        const crouched = this.crouch > 0.5;
-        const pose = a.set.seq(crouched ? 'death_pose_body_crouch' : 'death_pose_body') ?? a.set.seq('death_pose_body');
-        if (pose) a.setSequence(pose, { restart: true });
-      }
-      this.deadFor += ctx.dt;
-    } else if (this.dead) {
-      this.dead = false;
-      this.lastEventSeq = num(f, 'animEventSeq');
-    }
-    const shown = visible && (alive || this.deadFor < CORPSE_TIME);
-    inst.root.visible = shown;
-    if (!shown) {
+    inst.root.visible = visible;
+    if (!visible) {
       if (this.weapon) this.weapon.root.visible = false;
       return true;
     }
@@ -108,45 +133,52 @@ export class CsPlayerModel {
     stateOrigin(s, tmpOrigin);
     const yaw = num(f, 'eyeYaw');
     const pitch = num(f, 'eyePitch');
-    const info = alive ? csWeapon(str(f, 'weaponName')) : null;
+    const info = csWeapon(str(f, 'weaponName'));
     const prefix = info ? ANIM_PREFIX[info.category] : 'pistol';
+    this.velocity.x = num(f, 'vx');
+    this.velocity.y = num(f, 'vy');
+    this.velocity.z = num(f, 'vz');
+    this.origin.x = tmpOrigin.x;
+    this.origin.y = tmpOrigin.y;
+    this.origin.z = tmpOrigin.z;
+    this.yaw = yaw;
 
-    if (alive) {
-      const k = Math.min(1, ctx.dt * 10);
-      const vx = num(f, 'vx');
-      const vy = num(f, 'vy');
-      const speed = Math.hypot(vx, vy);
-      this.crouch += ((bool(f, 'ducked') ? 1 : 0) - this.crouch) * k;
-      this.walk += (Math.min(1, speed / WALK_SPEED) - this.walk) * k;
-      this.run += (Math.max(0, Math.min(1, (speed - WALK_SPEED) / (RUN_SPEED - WALK_SPEED))) - this.run) * k;
-      // Movement: the weapon family's blend, its direction relative to the body.
-      const moveName = prefix === 'knife' || prefix === 'grenade' || prefix === 'c4' ? `move_${prefix}` : 'move';
-      const move = a.set.seq(moveName) ?? a.set.seq('move');
-      if (move && a.main?.seq !== move) a.setSequence(move, { fade: true });
-      if (a.main) a.main.rate = speed > 1 ? Math.max(0.4, speed / RUN_SPEED) : 0.4;
-      const moveYaw = speed > 1 ? angleDiff((Math.atan2(vy, vx) * 180) / Math.PI, yaw) : 0;
-      a.setPoseParam('move_yaw', moveYaw);
-      a.setPoseParam('move_blend_crouch', this.crouch);
-      a.setPoseParam('move_blend_walk', this.walk * (1 - this.run));
-      a.setPoseParam('move_blend_run', this.run);
-      a.setPoseParam('speed', speed);
-      a.setPoseParam('stand', 1 - this.crouch);
-      // The aim matrix of the weapon out.
-      const moving = Math.min(1, this.walk + this.run);
-      a.setPoseParam('body_yaw', 0);
-      a.setPoseParam('body_pitch', -pitch);
-      a.setPoseParam('aim_blend_stand_idle', (1 - this.crouch) * (1 - moving));
-      a.setPoseParam('aim_blend_stand_walk', (1 - this.crouch) * this.walk * (1 - this.run));
-      a.setPoseParam('aim_blend_stand_run', (1 - this.crouch) * this.run);
-      a.setPoseParam('aim_blend_crouch_idle', this.crouch * (1 - moving));
-      a.setPoseParam('aim_blend_crouch_walk', this.crouch * moving);
-      const aimName = `${prefix}_aim`;
-      if (aimName !== this.aimSeq) {
-        this.aimSeq = aimName;
-        a.restartGesture(AIM_SLOT, a.set.seq(aimName) ?? null, aimName, false);
-      }
-      this.playEvent(a, f, prefix, speed > 1);
+    const k = Math.min(1, ctx.dt * 10);
+    const vx = num(f, 'vx');
+    const vy = num(f, 'vy');
+    const speed = Math.hypot(vx, vy);
+    this.crouch += ((bool(f, 'ducked') ? 1 : 0) - this.crouch) * k;
+    this.walk += (Math.min(1, speed / WALK_SPEED) - this.walk) * k;
+    this.run +=
+      (Math.max(0, Math.min(1, (speed - WALK_SPEED) / (RUN_SPEED - WALK_SPEED))) - this.run) * k;
+    // Movement: the weapon family's blend, its direction relative to the body.
+    const moveName =
+      prefix === 'knife' || prefix === 'grenade' || prefix === 'c4' ? `move_${prefix}` : 'move';
+    const move = a.set.seq(moveName) ?? a.set.seq('move');
+    if (move && a.main?.seq !== move) a.setSequence(move, { fade: true });
+    if (a.main) a.main.rate = speed > 1 ? Math.max(0.4, speed / RUN_SPEED) : 0.4;
+    const moveYaw = speed > 1 ? angleDiff((Math.atan2(vy, vx) * 180) / Math.PI, yaw) : 0;
+    a.setPoseParam('move_yaw', moveYaw);
+    a.setPoseParam('move_blend_crouch', this.crouch);
+    a.setPoseParam('move_blend_walk', this.walk * (1 - this.run));
+    a.setPoseParam('move_blend_run', this.run);
+    a.setPoseParam('speed', speed);
+    a.setPoseParam('stand', 1 - this.crouch);
+    // The aim matrix of the weapon out.
+    const moving = Math.min(1, this.walk + this.run);
+    a.setPoseParam('body_yaw', 0);
+    a.setPoseParam('body_pitch', -pitch);
+    a.setPoseParam('aim_blend_stand_idle', (1 - this.crouch) * (1 - moving));
+    a.setPoseParam('aim_blend_stand_walk', (1 - this.crouch) * this.walk * (1 - this.run));
+    a.setPoseParam('aim_blend_stand_run', (1 - this.crouch) * this.run);
+    a.setPoseParam('aim_blend_crouch_idle', this.crouch * (1 - moving));
+    a.setPoseParam('aim_blend_crouch_walk', this.crouch * moving);
+    const aimName = `${prefix}_aim`;
+    if (aimName !== this.aimSeq) {
+      this.aimSeq = aimName;
+      a.restartGesture(AIM_SLOT, a.set.seq(aimName) ?? null, aimName, false);
     }
+    this.playEvent(a, f, prefix, speed > 1);
 
     tmpAngles.x = 0;
     tmpAngles.y = yaw;
@@ -158,6 +190,86 @@ export class CsPlayerModel {
     this.attachWeapon(inst, info?.worldModel ?? '', ctx);
     inst.updateMatrices();
     return true;
+  }
+
+  /** The kill notice: a headshot takes the head's death pose and push. */
+  onDeath(ev: DeathEvent): void {
+    this.headshot = isHeadshot(ev.customKill);
+    const c = this.corpses[this.corpses.length - 1];
+    if (c && c.age < 0.15 && c.animating && this.headshot)
+      this.poseFor(c, true, this.pendingPush?.force ?? null);
+  }
+
+  /** The bullet's push on the body (the sim's ragdoll effect, less the player's own velocity). */
+  onRagdoll(ev: EffectEvent): void {
+    if (!ev.force) return;
+    const push = {
+      force: {
+        x: ev.force.x - this.velocity.x,
+        y: ev.force.y - this.velocity.y,
+        z: ev.force.z - this.velocity.z,
+      },
+      at: ev.start ?? null,
+    };
+    const c = this.corpses[this.corpses.length - 1];
+    if (c && c.age < 0.5) {
+      if (c.animating) this.poseFor(c, this.headshot, push.force);
+      c.setPush(push.force, push.at, this.headshot ? HEAD_BONE : undefined);
+    } else this.pendingPush = push;
+  }
+
+  /** The live body becomes a corpse: the death pose for the hit, then a ragdoll. CS:GO drops the gun. */
+  private die(ctx: RenderContext): void {
+    const inst = this.inst;
+    this.weapon?.dispose();
+    this.weapon = null;
+    this.weaponModel = '';
+    this.inst = null;
+    this.model = '';
+    this.aimSeq = '';
+    if (!inst?.root.visible) {
+      inst?.dispose();
+      this.headshot = false;
+      this.pendingPush = null;
+      return;
+    }
+    // The aim and action layers blend out under the death pose (laid in the action slot).
+    inst.animator?.clearGestures(true);
+    const corpse = new Corpse(inst, {
+      origin: { ...this.origin },
+      yaw: this.yaw,
+      velocity: { ...this.velocity },
+      lifetime: CORPSE_TIME,
+      fade: CORPSE_FADE,
+    });
+    this.poseFor(corpse, this.headshot, this.pendingPush?.force ?? null);
+    if (this.pendingPush)
+      corpse.setPush(
+        this.pendingPush.force,
+        this.pendingPush.at,
+        this.headshot ? HEAD_BONE : undefined,
+      );
+    this.pendingPush = null;
+    this.headshot = false;
+    this.corpses.push(corpse);
+    while (this.corpses.length > MAX_CORPSES) this.corpses.shift()?.dispose();
+    void ctx;
+  }
+
+  /** ACT_DIE_[STAND|CROUCH][_HEADSHOT], turned toward where the shot came from (`death_yaw`). */
+  private poseFor(c: Corpse, headshot: boolean, force: V3 | null): void {
+    const a = c.inst.animator;
+    if (!a) return;
+    const act = `ACT_DIE_${this.crouch > 0.5 ? 'CROUCH' : 'STAND'}${headshot ? '_HEADSHOT' : ''}`;
+    const seq = a.set.selectWeightedSequence(act) ?? a.set.selectWeightedSequence('ACT_DIE_STAND');
+    if (!seq) return;
+    // The shot travels along the force: it came from the opposite way.
+    if (force && Math.hypot(force.x, force.y) > 1e-3)
+      a.setPoseParam(
+        'death_yaw',
+        angleDiff((Math.atan2(-force.y, -force.x) * 180) / Math.PI, this.yaw),
+      );
+    c.playDeath(seq, DEATH_POSE_TIME, true, ACTION_SLOT);
   }
 
   /** The networked animation event (fire, reload, jump) as a one-shot in the action slot. */
@@ -240,6 +352,8 @@ export class CsPlayerModel {
   }
 
   dispose(): void {
+    for (const c of this.corpses) c.dispose();
+    this.corpses.length = 0;
     this.weapon?.dispose();
     this.weapon = null;
     this.weaponModel = '';

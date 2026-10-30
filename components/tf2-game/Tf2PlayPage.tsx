@@ -19,6 +19,7 @@ import { findTf2Map } from '@/lib/tf2-game/data/maps';
 import { HUD_PARAM, parseSelection } from '@/lib/tf2-game/client/custom-hud/selection';
 import { useHudChoice } from './custom-hud/hud-choice';
 import GameCanvas from './GameCanvas';
+import Tf2LoadingScreen from './menus/Tf2LoadingScreen';
 import Tf2MainMenu from './menus/Tf2MainMenu';
 
 export default function Tf2PlayPage() {
@@ -89,6 +90,7 @@ export default function Tf2PlayPage() {
             title={title}
             create={(mount) => createTf2Client({ ...mount, session })}
             onExit={leave}
+            loadingScreen={(view) => <Tf2LoadingScreen view={view} />}
           />
         </div>
       ) : null}

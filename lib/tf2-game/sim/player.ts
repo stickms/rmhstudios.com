@@ -1224,7 +1224,13 @@ export class Player extends Entity implements AttributeOwner {
       entity: this.id,
       team: this.team,
       value: this.playerClass,
-      force: { x: info.force.x + this.velocity.x, y: info.force.y + this.velocity.y, z: info.force.z + this.velocity.z },
+      // Where the blow landed (the bullet's hit, the blast's centre): the part it pushes hardest.
+      start: { x: info.position.x, y: info.position.y, z: info.position.z },
+      force: {
+        x: info.force.x + this.velocity.x,
+        y: info.force.y + this.velocity.y,
+        z: info.force.z + this.velocity.z,
+      },
     });
 
     // Drops: ammo pack with the active weapon's model, the flag.

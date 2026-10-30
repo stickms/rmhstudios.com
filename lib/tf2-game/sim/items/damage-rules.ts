@@ -623,6 +623,8 @@ export function feignDeath(spy: Player, info: DamageInfo): void {
     entity: spy.id,
     team: spy.cond.has(TF_COND.DISGUISED) ? spy.disguiseTeam : spy.team,
     value: spy.cond.has(TF_COND.DISGUISED) ? spy.disguiseClass : spy.playerClass,
+    // Where the blow landed (the bullet's hit, the blast's centre): the part it pushes hardest.
+    start: { x: info.position.x, y: info.position.y, z: info.position.z },
     force: {
       x: info.force.x + spy.velocity.x,
       y: info.force.y + spy.velocity.y,

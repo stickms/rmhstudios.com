@@ -118,6 +118,8 @@ export interface P2pHostPayload {
   botDifficulty: BotDifficulty;
   name: string;
   private?: boolean;
+  /** TF2: respawn a second after dying (the host's match option; the hub only passes it on). */
+  instantRespawn?: boolean;
   /** Reclaim a room after this socket reconnected (the token came with `P2P_HOSTED`). */
   resume?: { code: string; token: string };
 }
@@ -277,9 +279,8 @@ export const zP2pHost = z.object({
   botDifficulty: z.enum(BOT_DIFFICULTIES as [BotDifficulty, ...BotDifficulty[]]),
   name: z.string().max(TF2_LIMITS.ROOM_NAME_MAX_LENGTH * 2),
   private: z.boolean().optional(),
-  resume: z
-    .object({ code: roomCode, token: z.string().regex(/^[A-Za-z0-9]{24}$/) })
-    .optional(),
+  instantRespawn: z.boolean().optional(),
+  resume: z.object({ code: roomCode, token: z.string().regex(/^[A-Za-z0-9]{24}$/) }).optional(),
 });
 
 const playerInfo = z.object({

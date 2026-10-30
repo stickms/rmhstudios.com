@@ -4,11 +4,11 @@
  * bone-merged, team / über skins, the cloak (fade + dissolve, no refraction), disguises
  * (enemies see the disguise class/team/weapon; the spy and his team see him with a
  * disguise-kit tint), the loadout's items (loadout-models.ts: an unlock weapon's own model,
- * cosmetics with paint, styles, body groups and unusual effects), crit glow, burning (particles), and death (a death sequence, gibs on
- * explosive deaths, a corpse kept for a while). The flag a player carries is drawn by the
+ * cosmetics with paint, styles, body groups and unusual effects), crit glow, burning (particles), and death (gibs on
+ * explosive deaths, else the kill's death animation where TF2 has one and then a ragdoll: corpse.ts). The flag a player carries is drawn by the
  * flag renderable at this player's `flag` attachment (`attachment()`).
  */
-import { Matrix4, Quaternion, Vector3 } from 'three';
+import { Matrix4, Vector3 } from 'three';
 import { CLASS_DATA } from '../../data/classes';
 import { playerAnimSuffix, STOCK_WEAPONS, type StockWeapon } from '../../data/weapons';
 import {
@@ -21,12 +21,17 @@ import { FL_INWATER, TF_CLASS_DEMOMAN, TF_TEAM_BLUE, TF_TEAM_RED } from '../../c
 import { TF_COND } from '../../sim/conditions';
 import { LIFE_ALIVE } from '../../sim/entity';
 import {
+  DMG_BURN,
   TF_DMG_CUSTOM_BACKSTAB,
   TF_DMG_CUSTOM_BURNING,
+  TF_DMG_CUSTOM_BURNING_ARROW,
+  TF_DMG_CUSTOM_BURNING_FLARE,
+  TF_DMG_CUSTOM_DECAPITATION,
   TF_DMG_CUSTOM_HEADSHOT,
+  TF_DMG_CUSTOM_HEADSHOT_DECAPITATION,
 } from '../../sim/damage';
-import type { DeathEvent } from '../../sim/events';
-import type { SequenceDesc } from './animator';
+import { TF_DEATH_FEIGN_DEATH, type DeathEvent, type EffectEvent } from '../../sim/events';
+import { Corpse } from './corpse';
 import {
   inCond,
   LightProbe,
@@ -55,7 +60,7 @@ import type { ModelAsset } from './model-asset';
 import { ModelInstance } from './model-instance';
 import { angleNormalize, TFPlayerAnimState, type PlayerAnimInput } from './player-anim-state';
 
-/** Seconds a corpse stays, then fades over CORPSE_FADE (tf_ragdoll / cl_ragdoll_fade_time). */
+/** Seconds a body lies, then fades over CORPSE_FADE (cl_ragdoll_fade_time; sooner when the player respawns). */
 export const CORPSE_TIME = 10;
 export const CORPSE_FADE = 1;
 /** Cloak fade in/out (tf_spy_invis_time, tf_spy_invis_unstealth_time). */
@@ -100,18 +105,17 @@ function classWeapon(
   return def !== undefined ? STOCK_WEAPONS[def] : undefined;
 }
 
-interface Corpse {
-  inst: ModelInstance;
-  weapon: ModelInstance | null;
-  age: number;
-  /** Ragdoll-lite: settle the body to the floor when there is no death sequence. */
-  fall: number;
-  origin: { x: number; y: number; z: number };
-  yaw: number;
+interface CorpseEntry {
+  corpse: Corpse;
+  /** Its death (animation or not) was chosen from the kill notice. */
+  decided: boolean;
+  /** The player was on the ground when they died (death animations play only there). */
+  onGround: boolean;
 }
 
-const tmpV = new Vector3();
-const tmpQ = new Quaternion();
+/** Bodies kept per player (the oldest goes first). */
+const MAX_CORPSES = 2;
+
 const Z_AXIS = new Vector3(0, 0, 1);
 
 export class PlayerRenderable {
@@ -130,8 +134,15 @@ export class PlayerRenderable {
   private invis = 0;
   private barrelAngle = 0;
   private barrelSpeed = 0;
-  private readonly corpses: Corpse[] = [];
+  private readonly corpses: CorpseEntry[] = [];
   private pendingDeath: DeathEvent | null = null;
+  private pendingPush: {
+    force: { x: number; y: number; z: number };
+    at: { x: number; y: number; z: number } | null;
+  } | null = null;
+  /** The live player's velocity and footing (what their body inherits). */
+  private readonly velocity = { x: 0, y: 0, z: 0 };
+  private onGround = true;
   private readonly origin = { x: 0, y: 0, z: 0 };
   private yaw = 0;
   private visible = false;
@@ -209,6 +220,14 @@ export class PlayerRenderable {
     if (life === LIFE_ALIVE && this.lastLife !== LIFE_ALIVE) {
       this.anim.reset(num(f, 'eyeYaw'));
       this.invis = inCond(f, TF_COND.STEALTHED) ? 1 : 0;
+      // Respawned: their old body goes at once, so nobody takes it for them.
+      if (this.lastLife >= 0) for (const c of this.corpses) c.corpse.fadeSoon();
+    }
+    if (life === LIFE_ALIVE) {
+      this.velocity.x = num(f, 'vx');
+      this.velocity.y = num(f, 'vy');
+      this.velocity.z = num(f, 'vz');
+      this.onGround = !!f.onGround;
     }
     this.lastLife = life;
     this.updateCorpses(ctx);
@@ -540,9 +559,30 @@ export class PlayerRenderable {
 
   /** The kill notice for this player (from the event stream). */
   onDeath(ev: DeathEvent, ctx: RenderContext): void {
+    // The Dead Ringer: a body drops while the Spy lives on, cloaked.
+    if (ev.deathFlags & TF_DEATH_FEIGN_DEATH) {
+      this.feignBody(ev, ctx);
+      return;
+    }
     this.pendingDeath = ev;
     const c = this.corpses[this.corpses.length - 1];
-    if (c && c.age < 0.5) this.applyDeath(c, ev, ctx);
+    if (c && c.corpse.age < 0.25 && !c.decided) this.applyDeath(c, ev, ctx);
+  }
+
+  /** The sim's ragdoll push for this player's body (or the feigned one). */
+  onRagdoll(ev: EffectEvent): void {
+    if (!ev.force) return;
+    const push = {
+      force: {
+        x: ev.force.x - this.velocity.x,
+        y: ev.force.y - this.velocity.y,
+        z: ev.force.z - this.velocity.z,
+      },
+      at: ev.start ?? null,
+    };
+    const c = this.corpses[this.corpses.length - 1];
+    if (c && c.corpse.age < 0.5) c.corpse.setPush(push.force, push.at);
+    else this.pendingPush = push;
   }
 
   private die(ctx: RenderContext): void {
@@ -550,90 +590,96 @@ export class PlayerRenderable {
     this.stopItemEffects();
     const inst = this.inst;
     if (!inst || !this.visible) return;
-    const corpse: Corpse = {
-      inst,
-      weapon: this.weapon,
-      age: 0,
-      fall: 0,
+    // TF2 drops the weapon (the ammo pack shows it); the body keeps its cosmetics hidden with it.
+    this.dropWeapon();
+    const corpse = new Corpse(inst, {
       origin: { ...this.origin },
       yaw: this.yaw,
-    };
-    this.corpses.push(corpse);
-    // The live body is rebuilt on respawn (its items stay on the corpse).
+      velocity: { ...this.velocity },
+      lifetime: CORPSE_TIME,
+      fade: CORPSE_FADE,
+    });
+    const entry: CorpseEntry = { corpse, decided: false, onGround: this.onGround };
+    this.corpses.push(entry);
+    // The live body is rebuilt on respawn.
     this.outfit.setVisible(false);
     this.inst = null;
-    this.weapon = null;
-    this.weaponItem = null;
     this.model = '';
     this.weaponModel = '';
     const a = inst.animator;
     if (a) {
-      // Gestures blend out under the death sequence; the corpse animates at full detail.
+      // Gestures blend out under the death sequence; the body animates at full detail.
       a.clearGestures(true);
       a.lod = 0;
       a.setPoseParam('body_yaw', 0);
     }
-    this.applyDeath(corpse, this.pendingDeath, ctx);
+    if (this.pendingDeath) this.applyDeath(entry, this.pendingDeath, ctx);
     this.pendingDeath = null;
-    while (this.corpses.length > 2) this.removeCorpse(0);
+    if (this.pendingPush) corpse.setPush(this.pendingPush.force, this.pendingPush.at);
+    this.pendingPush = null;
+    while (this.corpses.length > MAX_CORPSES) this.removeCorpse(0);
   }
 
-  private applyDeath(c: Corpse, ev: DeathEvent | null, ctx: RenderContext): void {
-    if (ev?.gib && this.effects) {
-      this.effects.gibs(classShortName(ev.victimClass || 1), c.origin, ev, ctx);
+  /**
+   * The death the kill calls for (C_TFRagdoll): gibs for an explosive crit; the class's death
+   * animation for a headshot / decapitation, a backstab or a burning death when the player died on
+   * the ground (CTFPlayerShared::GetSequenceForDeath), physics when it ends; anything else is a
+   * ragdoll at once. A decapitated body loses its head.
+   */
+  private applyDeath(entry: CorpseEntry, ev: DeathEvent, ctx: RenderContext): void {
+    entry.decided = true;
+    const c = entry.corpse;
+    if (ev.gib && this.effects) {
+      this.effects.gibs(classShortName(ev.victimClass || 1), this.corpseOrigin(c), ev, ctx);
       c.inst.root.visible = false;
-      c.age = CORPSE_TIME;
+      c.age = CORPSE_TIME + CORPSE_FADE;
       return;
     }
     const a = c.inst.animator;
-    if (!a) return;
-    const want =
-      ev?.customKill === TF_DMG_CUSTOM_HEADSHOT
-        ? 'headshot'
-        : ev?.customKill === TF_DMG_CUSTOM_BACKSTAB
-          ? 'backstab'
-          : ev?.customKill === TF_DMG_CUSTOM_BURNING || ev?.burning
-            ? 'burning'
-            : 'headshot';
-    const seq = findDeathSequence([...a.set.sequences.values()], want);
-    if (seq) a.setSequence(seq, { restart: true });
-    if (ev?.burning) this.effects?.oneShot('burningplayer_corpse', { pos: c.origin });
+    const name = tf2DeathSequence(ev, entry.onGround);
+    const seq = a && name ? a.set.seq(name) : null;
+    if (seq) c.playDeath(seq);
+    if (isDecapitation(ev.customKill)) c.inst.bone('bip_head')?.scale.setScalar(0.001);
+    if (ev.burning || ev.customKill === TF_DMG_CUSTOM_BURNING)
+      this.effects?.oneShot('burningplayer_corpse', { pos: this.corpseOrigin(c) });
+  }
+
+  private corpseOrigin(c: Corpse): { x: number; y: number; z: number } {
+    return c.ragdoll ? c.ragdoll.centre({ x: 0, y: 0, z: 0 }) : { ...this.origin };
+  }
+
+  /** A Dead Ringer body: a copy of the Spy's pose that ragdolls (he stays, cloaked). */
+  private feignBody(ev: DeathEvent, ctx: RenderContext): void {
+    const live = this.inst;
+    if (!live || !this.visible) return;
+    const copy = new ModelInstance(live.asset, { fog: ctx.lighting?.shared });
+    copy.pos.set(live.pos);
+    copy.quat.set(live.quat);
+    copy.setSkin(live.skin);
+    copy.applyPose();
+    copy.root.matrix.copy(live.root.matrix);
+    copy.updateMatrices();
+    const corpse = new Corpse(copy, {
+      origin: { ...this.origin },
+      yaw: this.yaw,
+      velocity: { ...this.velocity },
+      lifetime: CORPSE_TIME,
+      fade: CORPSE_FADE,
+    });
+    const entry: CorpseEntry = { corpse, decided: false, onGround: this.onGround };
+    this.corpses.push(entry);
+    this.applyDeath(entry, { ...ev, gib: false }, ctx);
+    while (this.corpses.length > MAX_CORPSES) this.removeCorpse(0);
   }
 
   private updateCorpses(ctx: RenderContext): void {
     for (let i = this.corpses.length - 1; i >= 0; i--) {
-      const c = this.corpses[i];
-      c.age += ctx.dt;
-      if (c.age >= CORPSE_TIME + CORPSE_FADE) {
-        this.removeCorpse(i);
-        continue;
-      }
-      const inst = c.inst;
-      if (!inst.root.parent) ctx.scene.add(inst.root);
-      inst.uniforms.uAlpha.value =
-        c.age > CORPSE_TIME ? 1 - (c.age - CORPSE_TIME) / CORPSE_FADE : 1;
-      if (inst.animator?.main?.seq && /death/i.test(inst.animator.main.seq.name)) {
-        inst.place(c.origin, { x: 0, y: c.yaw, z: 0 });
-      } else {
-        // Ragdoll-lite: no death sequence — tip over and settle (gravity on a hinge at the feet).
-        c.fall = Math.min(1, c.fall + ctx.dt * (0.6 + c.fall * 3));
-        inst.place(c.origin, { x: 0, y: c.yaw, z: 0 });
-        tmpV.set(0, 0, 0);
-        tmpQ.setFromAxisAngle(tmpV.set(1, 0, 0), (-Math.PI / 2) * c.fall * c.fall);
-        inst.root.matrix.multiply(new Matrix4().makeRotationFromQuaternion(tmpQ));
-      }
-      if (c.age < 4) {
-        inst.animate(ctx.dt);
-        inst.applyPose();
-      }
-      inst.updateMatrices();
-      this.probe.update(ctx, inst.uniforms, c.origin, 16);
+      if (!this.corpses[i].corpse.update(ctx, this.probe)) this.removeCorpse(i);
     }
   }
 
   private removeCorpse(i: number): void {
-    const c = this.corpses[i];
-    c.inst.dispose();
+    this.corpses[i].corpse.dispose();
     this.corpses.splice(i, 1);
   }
 
@@ -669,11 +715,30 @@ export class PlayerRenderable {
   }
 }
 
-/** A class's death sequence for a kill kind (headshot / backstab / burning), else any. */
-export function findDeathSequence(
-  seqs: readonly SequenceDesc[],
-  kind: string,
-): SequenceDesc | null {
-  const deaths = seqs.filter((s) => /death/i.test(s.name));
-  return deaths.find((s) => s.name.toLowerCase().includes(kind)) ?? deaths[0] ?? null;
+/**
+ * The class's death animation for a kill (CTFPlayerShared::GetSequenceForDeath), or null for a ragdoll at
+ * once: `primary_death_headshot` for a headshot or a decapitation, `primary_death_backstab` for a
+ * backstab, `primary_death_burning` for a death by fire; only on the ground.
+ */
+export function tf2DeathSequence(
+  ev: Pick<DeathEvent, 'customKill' | 'damageType'> | null,
+  onGround: boolean,
+): string | null {
+  if (!ev || !onGround) return null;
+  switch (ev.customKill) {
+    case TF_DMG_CUSTOM_HEADSHOT:
+    case TF_DMG_CUSTOM_HEADSHOT_DECAPITATION:
+    case TF_DMG_CUSTOM_DECAPITATION:
+      return 'primary_death_headshot';
+    case TF_DMG_CUSTOM_BACKSTAB:
+      return 'primary_death_backstab';
+    case TF_DMG_CUSTOM_BURNING:
+    case TF_DMG_CUSTOM_BURNING_FLARE:
+    case TF_DMG_CUSTOM_BURNING_ARROW:
+      return 'primary_death_burning';
+  }
+  return ev.damageType & DMG_BURN ? 'primary_death_burning' : null;
 }
+
+const isDecapitation = (custom: number) =>
+  custom === TF_DMG_CUSTOM_DECAPITATION || custom === TF_DMG_CUSTOM_HEADSHOT_DECAPITATION;

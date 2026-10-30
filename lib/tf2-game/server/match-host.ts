@@ -51,6 +51,8 @@ export interface MatchOptions {
   maxPlayers: number;
   botCount: number;
   botDifficulty: BotDifficulty;
+  /** TF2: the host's instant respawn (back a second after dying; sim/rules.ts `instantRespawn`). */
+  instantRespawn?: boolean;
   /** Room name, sanitised. */
   name: string;
   /** Seed for the match's random streams (`core/random.ts`). */

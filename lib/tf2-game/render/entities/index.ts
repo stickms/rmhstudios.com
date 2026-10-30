@@ -27,7 +27,8 @@ import {
   Vector3,
   type WebGLRenderer,
 } from 'three';
-import type { DeathEvent, SimEvent } from '../../sim/events';
+import type { DeathEvent, EffectEvent, SimEvent } from '../../sim/events';
+import type { RagdollTrace } from './ragdoll';
 import type { SourceCamera } from '../camera';
 import { srcToThree } from '../coords';
 import type { Vec3Like } from '../lighting';
@@ -75,6 +76,9 @@ export interface EntityRendererOptions {
   trace?: FxTrace;
   /** Whether two Source points see each other (local lights on models). */
   lineOfSight?: (a: Vec3Like, b: Vec3Like) => boolean;
+  /** The world ragdolls land on (a box trace) and the gravity they fall by. */
+  ragdollTrace?: RagdollTrace | null;
+  gravity?: number;
   /** The loadout model channel: unlock weapons and cosmetics (null: stock looks only). */
   loadout?: LoadoutModels | null;
   /**
@@ -96,6 +100,8 @@ export interface EntityRenderable {
   dispose(): void;
   /** A player's death (the ragdoll or death pose). */
   onDeath?(ev: DeathEvent, ctx: RenderContext): void;
+  /** The push a body's ragdoll takes (the sim's `ragdoll` effect: force, and where the blow landed). */
+  onRagdoll?(ev: EffectEvent, ctx: RenderContext): void;
 }
 
 export interface FrameInfo {
@@ -150,6 +156,8 @@ export class EntityRenderer {
       lighting: opts.lighting,
       sunVisible: opts.sunVisible,
       lineOfSight: opts.lineOfSight,
+      ragdollTrace: opts.ragdollTrace ?? null,
+      gravity: opts.gravity,
       scene: this.root,
       time: 0,
       dt: 0,
@@ -263,6 +271,11 @@ export class EntityRenderer {
     if (ev.type === 'effect') {
       if (ev.to !== undefined && ev.to !== this.ctx.localPlayer) return;
       if (ev.notTo !== undefined && ev.notTo === this.ctx.localPlayer) return;
+      // A body's ragdoll push goes to its renderable (the effect system draws nothing for it).
+      if (ev.kind === 'ragdoll' && ev.entity !== undefined) {
+        const r = this.renderables.get(ev.entity);
+        if (r && 'onRagdoll' in r) r.onRagdoll?.(ev, this.ctx);
+      }
       this.effects.handle(ev, this.ctx);
     } else if (ev.type === 'death') {
       const d = ev as DeathEvent;

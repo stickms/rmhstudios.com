@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { Info, Lock, LogIn, Plus, Server } from 'lucide-react';
+import { Info, Lock, LogIn, Plus, Server, Timer } from 'lucide-react';
 import { Btn, Field, NumberField, SelectField, TextField, Toggle } from '@/components/tf2-hud/ui';
 import { TF2_MAPS, findTf2Map } from '@/lib/tf2-game/data/maps';
 import { BOT_DIFFICULTIES, TF2_LIMITS, type BotDifficulty } from '@/lib/tf2-game/net/events';
@@ -46,6 +46,7 @@ export default function HostGameCard({
     botCount: 6,
     botDifficulty: 'normal' as BotDifficulty,
     private: false,
+    instantRespawn: false,
   });
   const cap = TF2_LIMITS.P2P_MAX_PLAYERS;
   const maxPlayers = clampInt(room.maxPlayers, TF2_LIMITS.MIN_PLAYERS, cap);
@@ -62,6 +63,7 @@ export default function HostGameCard({
       botDifficulty: room.botDifficulty,
       name: (room.name.trim() || defaultName).slice(0, TF2_LIMITS.ROOM_NAME_MAX_LENGTH),
       private: room.private,
+      instantRespawn: room.instantRespawn,
     };
     onStart({ kind: 'p2p-host', room: common, playerName: accountName });
   };
@@ -157,6 +159,19 @@ export default function HostGameCard({
             <Toggle checked={room.private} onChange={(v) => setRoom({ ...room, private: v })} label={t('play_private', { defaultValue: 'Private (join by code only)' })} />
             <Lock className="size-3.5 text-(--app-text-muted)" aria-hidden />
             {t('play_private', { defaultValue: 'Private (join by code only)' })}
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <Toggle
+              checked={room.instantRespawn}
+              onChange={(v) => setRoom({ ...room, instantRespawn: v })}
+              label={t('play_instant_respawn', {
+                defaultValue: 'Instant respawn (back 1 second after dying)',
+              })}
+            />
+            <Timer className="size-3.5 text-(--app-text-muted)" aria-hidden />
+            {t('play_instant_respawn', {
+              defaultValue: 'Instant respawn (back 1 second after dying)',
+            })}
           </label>
           <p className="flex gap-2 text-xs text-(--app-text-muted)">
             <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />

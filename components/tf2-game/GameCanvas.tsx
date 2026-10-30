@@ -16,7 +16,15 @@
  */
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Check, Expand, Link2, LogOut, MousePointer2, RotateCcw, Shrink, Smartphone } from 'lucide-react';
 import { useLobbyLink } from '@/hooks/useLobbyLink';
@@ -54,6 +62,17 @@ export interface GameCanvasProps {
   sessionId: string;
   /** What "the end" screen offers (Half-Life 2 / Portal demos end at the last published map). */
   onEnded?: () => void;
+  /** The game's own loading screen (its menu art and type); the plain one when absent. */
+  loadingScreen?: (view: LoadingView) => ReactNode;
+}
+
+/** What a game's loading screen shows: the level, how far along, each stage, and a way out. */
+export interface LoadingView {
+  title: string;
+  /** 0…1 overall. */
+  fraction: number;
+  stages: Array<{ id: LoadStage; label: string; pct: number; done: boolean }>;
+  onCancel: () => void;
 }
 
 const subscribeNoop = () => () => {};
@@ -119,7 +138,15 @@ function useErrorText(): (e: ClientError) => string {
   };
 }
 
-export default function GameCanvas({ game, create, onExit, title, onEnded, sessionId }: GameCanvasProps) {
+export default function GameCanvas({
+  game,
+  create,
+  onExit,
+  title,
+  onEnded,
+  sessionId,
+  loadingScreen,
+}: GameCanvasProps) {
   const { t } = useTranslation('c-tf2-game');
   const stageLabels = useStageLabels();
   const errorText = useErrorText();
@@ -262,6 +289,21 @@ export default function GameCanvas({ game, create, onExit, title, onEnded, sessi
     return out;
   }, [touchFirst, roomCode, canFullscreen, fullscreen, invite, fullscreenToggle, t]);
   const stagesShown = LOAD_STAGES.filter((s) => progress?.stages[s].state !== 'skipped');
+  const stagePct = (s: LoadStage) => {
+    const st = progress?.stages[s];
+    return st ? Math.round((st.state === 'done' ? 1 : st.done / Math.max(1, st.total)) * 100) : 0;
+  };
+  const loadingView: LoadingView = {
+    title: progress?.title || title || '',
+    fraction: progress?.fraction ?? 0,
+    stages: stagesShown.map((s) => ({
+      id: s,
+      label: stageLabels[s],
+      pct: stagePct(s),
+      done: progress?.stages[s].state === 'done',
+    })),
+    onCancel: onExit,
+  };
 
   return (
     <div
@@ -363,7 +405,11 @@ export default function GameCanvas({ game, create, onExit, title, onEnded, sessi
         </section>
       ) : null}
 
-      {phase === 'loading' ? (
+      {phase === 'loading' && loadingScreen ? (
+        <div className="tf2g-load-layer" role="status" aria-live="polite">
+          {loadingScreen(loadingView)}
+        </div>
+      ) : phase === 'loading' ? (
         <div className="tf2g-play-screen" role="status" aria-live="polite">
           <p className="text-xs font-semibold uppercase tracking-widest text-(--app-text-dim)">
             {t('play_loading', { defaultValue: 'Loading' })}
@@ -375,7 +421,7 @@ export default function GameCanvas({ game, create, onExit, title, onEnded, sessi
           <ul className="grid w-72 max-w-full gap-1.5 text-xs">
             {stagesShown.map((s) => {
               const st = progress?.stages[s];
-              const pct = st ? Math.round((st.state === 'done' ? 1 : st.done / Math.max(1, st.total)) * 100) : 0;
+              const pct = stagePct(s);
               return (
                 <li key={s} className="flex items-center gap-2" data-state={st?.state ?? 'pending'}>
                   <span className={cn('w-20 shrink-0', st?.state === 'done' ? 'text-(--app-text)' : 'text-(--app-text-muted)')}>

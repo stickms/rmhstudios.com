@@ -26,6 +26,7 @@ import {
 } from 'three';
 import type { Vec3 } from '../../tf2-game/core/vec';
 import { LIFE_ALIVE } from '../../tf2-game/sim/entity';
+import type { DeathEvent, EffectEvent } from '../../tf2-game/sim/events';
 import type { NetRecord } from '../../tf2-game/sim/net-schema';
 import type { Player } from '../../tf2-game/sim/player';
 import { sourceFovToVertical, type SourceCamera } from '../../tf2-game/render/camera';
@@ -37,7 +38,7 @@ import type { ProfileViewModel } from '../../tf2-game/client/game-profile';
 import { CS_GRENADE_KINDS, csWeapon, csWeaponByDefindex, csWeaponTable, hasCsWeaponData } from '../data/weapon-data';
 import { CS_TEAM_CT, CS_TEAM_T } from '../constants';
 import { VM_ACTIVITIES, type CsWeapon } from '../weapons/base';
-import { CsPlayerModel } from './player-model';
+import { CS_PLAYER_MODELS, CsPlayerModel } from './player-model';
 
 /** Team colours of the figures (T sand, CT steel blue) and their visor. */
 const TEAM_BODY: Record<number, number> = { [CS_TEAM_T]: 0xb8925a, [CS_TEAM_CT]: 0x4d6f99 };
@@ -48,15 +49,27 @@ const VISOR = 0x1c1f24;
 /** The planted bomb's model (the C4's own planted variant). */
 const PLANTED_C4 = 'models/weapons/w_c4_planted.mdl';
 
-/** Every published weapon model a match may show (view and world), preloaded with the map. */
+/** The arms the view models wear (ARM_PREFS' first choices and the bare-hands stand-in). */
+const ARM_MODELS = [
+  'models/weapons/v_models/arms/glove_fingerless/v_glove_fingerless.mdl',
+  'models/weapons/v_models/arms/glove_hardknuckle/v_glove_hardknuckle.mdl',
+  'models/weapons/v_models/arms/sas/v_sleeve_sas.mdl',
+  'models/weapons/v_models/arms/bare/v_bare_hands.mdl',
+];
+
+/**
+ * Every published model a match may show, preloaded with the map so the loading screen holds until they
+ * are ready: both teams' player models (with their animations), the arms, every weapon's view and world
+ * model, the planted bomb.
+ */
 export function preloadCsModels(): string[] {
-  if (!hasCsWeaponData()) return [];
-  const out = new Set<string>();
-  for (const w of csWeaponTable().weapons.values()) {
-    if (w.viewModel) out.add(w.viewModel);
-    if (w.worldModel) out.add(w.worldModel);
+  const out = new Set<string>([...Object.values(CS_PLAYER_MODELS), ...ARM_MODELS, PLANTED_C4]);
+  if (hasCsWeaponData()) {
+    for (const w of csWeaponTable().weapons.values()) {
+      if (w.viewModel) out.add(w.viewModel);
+      if (w.worldModel) out.add(w.worldModel);
+    }
   }
-  out.add(PLANTED_C4);
   return [...out].filter((m) => /\.mdl$/i.test(m));
 }
 
@@ -187,6 +200,14 @@ export class CsPlayerFigure implements EntityRenderable {
     tmpA.y = yaw;
     tmpA.z = 0;
     this.weapon.place(tmpV, tmpA);
+  }
+
+  onDeath(ev: DeathEvent): void {
+    this.model.onDeath(ev);
+  }
+
+  onRagdoll(ev: EffectEvent): void {
+    this.model.onRagdoll(ev);
   }
 
   attachment(name: string, out: Matrix4): boolean {

@@ -33,7 +33,13 @@ import { gameAssetUrl } from '../assets/urls';
 import { GAME_MAPS } from '../assets/game-maps';
 import { SOURCE_UNIT } from '../render/coords';
 import { WorldRenderer } from '../render/world-renderer';
-import { EntityRenderer, ModelLibrary, SpViewModelRenderer, type EntityState as RenderEntity } from '../render/entities';
+import {
+  EntityRenderer,
+  ModelLibrary,
+  SpViewModelRenderer,
+  type EntityState as RenderEntity,
+  type NetValue,
+} from '../render/entities';
 import type { AudioEngine } from '../audio/engine';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import { SpWorld, type SpSnapshot } from '@/lib/sp-game/world/sp-world';
@@ -55,6 +61,7 @@ import {
   loadMapPackageForClient,
   ProgressTracker,
   PropDistanceCuller,
+  ragdollTrace,
   RenderCore,
   type ClientMount,
   type ClientStats,
@@ -275,7 +282,16 @@ export class SpClient implements GameClient {
       },
     });
     this.world = world;
-    this.ents = new EntityRenderer({ lighting: world, scene: world.scene, models, particles: null, game: this.game });
+    this.ents = new EntityRenderer({
+      lighting: world,
+      scene: world.scene,
+      models,
+      particles: null,
+      game: this.game,
+      // NPC ragdolls land on the level (HL2's sv_gravity 600).
+      ragdollTrace: ragdollTrace(sim.mapCollision),
+      gravity: 600,
+    });
     if (this.game === 'portal') {
       this.portals = new PortalView(world.scene, { recursion: core.plan.portalRecursion });
       this.gun = new SpViewModelRenderer(PORTALGUN_VIEWMODEL);
@@ -488,6 +504,8 @@ export class SpClient implements GameClient {
           renderAlpha: e.renderAlpha,
           visible: e.visible,
           sequence: e.anim?.sequence ?? '',
+          // An NPC that died: its ragdoll's push and where the blow landed (lib/sp-game/ai/actor.ts).
+          ...ragdollFields(e.extra?.ragdoll),
           ...(e.anim ? { animStart: e.anim.startTime, playbackRate: e.anim.rate } : {}),
         },
       });
@@ -771,3 +789,19 @@ function angleDelta(a: number, b: number): number {
 
 const sunTrace = emptyTrace();
 const occTrace = emptyTrace();
+
+/** An SP actor's `extra.ragdoll` ({ force, at }) as the flat fields the entity renderer reads. */
+function ragdollFields(r: unknown): Record<string, NetValue> {
+  const v = r as { force?: Vec3; at?: Vec3 } | null | undefined;
+  if (!v?.force) return {};
+  const at = v.at ?? { x: 0, y: 0, z: 0 };
+  return {
+    ragdoll: true,
+    ragdollFx: v.force.x,
+    ragdollFy: v.force.y,
+    ragdollFz: v.force.z,
+    ragdollAx: at.x,
+    ragdollAy: at.y,
+    ragdollAz: at.z,
+  };
+}

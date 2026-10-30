@@ -48,6 +48,8 @@ export const WINREASON_WINDIFFLIMIT = 8;
 export const TEAMPLAY_ROUND_WIN_SCORE = 1;
 /** spec_freeze_time + spec_freeze_traveltime in TF (player.cpp) + the 2 s death animation. */
 export const DEATH_ANIM_AND_FREEZECAM = 2.0 + 0.4 + 4.0;
+/** Seconds from death to respawn with the host's instant respawn on. */
+export const INSTANT_RESPAWN_DELAY = 1;
 
 /** The plug-in a game mode implements (CTF, CP, KOTH, PL, Arena). Every hook is optional. */
 export interface GameMode {
@@ -94,6 +96,11 @@ export interface RulesOptions {
   stalemateEnable: boolean;
   /** mp_disable_respawn_times. */
   disableRespawnTimes: boolean;
+  /**
+   * A host's instant respawn: no respawn waves and no death cam wait; the dead are back
+   * INSTANT_RESPAWN_DELAY seconds after dying.
+   */
+  instantRespawn: boolean;
   /** After game over, restart instead of ending (rooms loop forever). */
   loopForever: boolean;
 }
@@ -108,6 +115,7 @@ export const defaultRulesOptions = (): RulesOptions => ({
   maxRounds: 0,
   stalemateEnable: false,
   disableRespawnTimes: false,
+  instantRespawn: false,
   loopForever: true,
 });
 
@@ -409,7 +417,7 @@ export class GameRules {
   /** SDK: CTeamplayRoundBasedRules::GetRespawnWaveMaxLength. */
   respawnWaveMaxLength(team: number, scaleWithNumPlayers = true): number {
     if (this.state !== GR_STATE_RND_RUNNING) return 0;
-    if (this.options.disableRespawnTimes) return 0;
+    if (this.options.disableRespawnTimes || this.options.instantRespawn) return 0;
     const modeTime = this.mode?.respawnWaveTime?.(this, team);
     let time =
       modeTime !== undefined
@@ -423,6 +431,7 @@ export class GameRules {
 
   /** SDK: CTeamplayRoundBasedRules::GetMinTimeWhenPlayerMaySpawn. */
   minTimeWhenPlayerMaySpawn(p: Player): number {
+    if (this.options.instantRespawn) return p.deathTime + INSTANT_RESPAWN_DELAY;
     return p.deathTime + DEATH_ANIM_AND_FREEZECAM + this.respawnWaveMaxLength(p.team, false);
   }
 
@@ -476,8 +485,10 @@ export class GameRules {
 
   /** SDK: CTFPlayer::IsReadyToSpawn (respawn time overrides, death animation). */
   isReadyToSpawn(p: Player): boolean {
-    if (p.lifeState === LIFE_DYING && this.world.curtime < p.deathTime + 2.0) return false;
-    if (p.respawnTimeOverride !== -1 && this.world.curtime < p.deathTime + p.respawnTimeOverride) return false;
+    const dying = this.options.instantRespawn ? INSTANT_RESPAWN_DELAY : 2.0;
+    if (p.lifeState === LIFE_DYING && this.world.curtime < p.deathTime + dying) return false;
+    if (p.respawnTimeOverride !== -1 && this.world.curtime < p.deathTime + p.respawnTimeOverride)
+      return false;
     return true;
   }
 
