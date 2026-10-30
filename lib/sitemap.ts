@@ -490,6 +490,8 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/games/$gameId': 'pages', // from the catalog, not the DB
   '/games/$gameId/guides/$guideId': 'content',
   '/games/profile/$id': null, // a second, noindex view of /u/$userid
+  '/games/hub/$gameId': null, // per-title discussions; the game page and guides stay the indexed ones
+  '/games/hub/$gameId/t/$threadId': null, // user-generated discussions; noindex
   '/games/trades/new/$id': null, // a signed-in composer
   '/games/groups/$slug': null, // a second, noindex view of /c/$slug
   '/builds/$slug': 'pages', // curated builds mirror the catalog

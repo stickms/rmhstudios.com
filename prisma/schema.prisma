@@ -616,6 +616,8 @@ model User {
   cardListingsBought        CardListing[]     @relation("CardBuyer")
   cardTradesSent            CardTrade[]       @relation("CardTradeFrom")
   cardTradesReceived        CardTrade[]       @relation("CardTradeTo")
+  gameThreads               GameThread[]
+  gameThreadPosts           GameThreadPost[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -6008,6 +6010,44 @@ model CardTradeItem {
 
   @@id([tradeId, fromGives, gameId, cardIndex, foil])
   @@map("card_trade_item")
+}
+
+// Per-game Community Hub discussions (design:
+// docs/superpowers/specs/2026-10-30-game-community-hub-design.md). Plain text only.
+// `replyCount` and `lastPostAt` are maintained in the same transaction as the post.
+model GameThread {
+  id         String   @id @default(cuid())
+  gameId     String   @db.VarChar(64)
+  authorId   String
+  title      String   @db.VarChar(120)
+  body       String   @db.VarChar(4000)
+  createdAt  DateTime @default(now())
+  lastPostAt DateTime @default(now())
+  replyCount Int      @default(0)
+  locked     Boolean  @default(false)
+  pinned     Boolean  @default(false)
+
+  author User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  posts  GameThreadPost[]
+
+  @@index([gameId, pinned(sort: Desc), lastPostAt(sort: Desc)])
+  @@index([authorId, createdAt(sort: Desc)])
+  @@map("game_thread")
+}
+
+model GameThreadPost {
+  id        String   @id @default(cuid())
+  threadId  String
+  authorId  String
+  body      String   @db.VarChar(2000)
+  createdAt DateTime @default(now())
+
+  thread GameThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@index([authorId, createdAt(sort: Desc)])
+  @@map("game_thread_post")
 }
 
 // ─── Daily Streak ─────────────────────────────────────────────────────────

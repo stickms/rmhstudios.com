@@ -169,6 +169,9 @@ export function GamePage({ data }: { data: GamePageData }) {
         {offSite ? null : <a href="#friends">{t('steam-friends-short', { defaultValue: 'Friends' })}</a>}
         {isGame ? <a href="#reviews">{t('reviews', { defaultValue: 'Reviews' })}</a> : null}
         {isGame ? <a href="#guides">{t('guides', { defaultValue: 'Player guides' })}</a> : null}
+        <Link to="/games/hub/$gameId" params={{ gameId: data.gameId }}>
+          {t('steam-hub-heading', { defaultValue: 'Community Hub' })}
+        </Link>
         <a href="#community">{t('steam-community', { defaultValue: 'Community' })}</a>
       </nav>
 

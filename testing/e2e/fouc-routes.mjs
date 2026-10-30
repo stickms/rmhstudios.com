@@ -143,6 +143,16 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of a Steam-style profile.',
   },
+  '/games/hub/$gameId/': {
+    path: '/games/hub/isleworks',
+    fidelity: 'content',
+    why: 'A catalog id, so the hub renders its empty-discussions state populated with the sidebar.',
+  },
+  '/games/hub/$gameId/t/$threadId': {
+    path: '/games/hub/isleworks/t/fouc-audit',
+    fidelity: 'shell',
+    why: 'Real game, absent thread: the not-found branch inside the shell.',
+  },
   '/games/trades/new/$id': {
     path: '/games/trades/new/fouc-audit',
     fidelity: 'shell',

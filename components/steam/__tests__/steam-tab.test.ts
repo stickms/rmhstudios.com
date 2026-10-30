@@ -14,6 +14,7 @@ describe('steamTabFor', () => {
     expect(steamTabFor('/games/groups/x')).toBe('community');
     expect(steamTabFor('/games/inventory')).toBe('community');
     expect(steamTabFor('/games/market')).toBe('community');
+    expect(steamTabFor('/games/hub/altair/t/x')).toBe('community');
     expect(steamTabFor('/games/trades/new/abc')).toBe('community');
   });
 
