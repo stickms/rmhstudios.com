@@ -6,7 +6,7 @@
  *   E2E-18: a party of two queues for Royale and is placed in the same lobby as a solo.
  *   LOB-04: `/balatro?lobby=CODE` joins that lobby once the engine runs.
  */
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { MpPlayer } from '../lib/mp-player';
 import { openMpPlayer } from '../lib/mp-player';
 import { waitFor } from '../lib/stack';
@@ -22,6 +22,7 @@ describe.skipIf(w.skip)(w.title('queue, party and invite link (1 browser + bots)
     p = await w.player('searcher');
   }, 600_000);
 
+  afterEach(() => w.cleanup(), 300_000);
   afterAll(() => w.down());
 
   it('E2E-17: casual Nemesis — matched, voted, drafted, started', async () => {

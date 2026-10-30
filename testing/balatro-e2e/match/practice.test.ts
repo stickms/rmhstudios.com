@@ -4,7 +4,7 @@
  * the opponent shown as "???", and the PvP round ends after the last hand with no lives
  * lost; fast-forwarded to ante 8, beating the PvP blind wins the run as vanilla does.
  */
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { MpPlayer } from '../lib/mp-player';
 import { leaveMatch } from '../lib/match-flow';
 import { matchWorld } from './world';
@@ -30,6 +30,7 @@ describe.skipIf(w.skip)(w.title('practice (1 browser)'), () => {
     p = await w.player('practice');
   }, 600_000);
 
+  afterEach(() => w.cleanup(), 300_000);
   afterAll(() => w.down());
 
   for (const ruleset of RULESETS) {

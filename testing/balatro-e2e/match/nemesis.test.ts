@@ -5,7 +5,7 @@
  * and a version mismatch (E2E-21), relay fallback (E2E-15). The same two pages play every
  * test (an engine boot is the expensive part); each test makes its own lobby.
  */
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { MpPlayer } from '../lib/mp-player';
 import { openMpPlayer } from '../lib/mp-player';
 import { hostLobby, playAnte, setupMatch, SHORT, waitResult, leaveMatch } from '../lib/match-flow';
@@ -20,7 +20,9 @@ interface Inbox {
   counts: Record<string, number>;
   size: number;
 }
-const inbox = (p: MpPlayer, t?: string) => p.cmd<Inbox>('mp_inbox', t ? { t } : {});
+const inbox = (p: MpPlayer, t?: string, since = 0) => p.cmd<Inbox>('mp_inbox', t ? { t, since } : { since });
+/** How many messages of type t Lua has received so far (monotonic; the kept list is a ring). */
+const count = async (p: MpPlayer, t: string) => (await inbox(p, t)).counts[t] ?? 0;
 
 
 describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
@@ -33,6 +35,7 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     } = (await w.up({ players: ['host', 'guest'] })) as { players: MpPlayer[] });
   }, 600_000);
 
+  afterEach(() => w.cleanup(), 300_000);
   afterAll(() => w.down());
 
   it('E2E-01: Balanced 1v1 is played to a win and a loss; Return to Lobby resets ready', async () => {
@@ -138,18 +141,18 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
   it('E2E-11: chat reaches the other player, a mute hides it; a unanimous draw vote draws', async () => {
     const { code } = await setupMatch(a, [b], 'pvp_nemesis', { ...SHORT, startingLives: 2 });
     expect(code).toMatch(/^[A-Z0-9]{6}$/);
-    const before = (await inbox(a, 'chat_line')).list.length;
+    const before = await count(a, 'chat_line');
     await b.cmd('mp_send', { t: 'ui_chat', d: { text: 'gl hf' } });
-    await waitFor('chat line at the host', async () => (await inbox(a, 'chat_line')).list.length > before, 60_000, 500);
-    const line = (await inbox(a, 'chat_line')).list.at(-1)!.d;
+    await waitFor('chat line at the host', async () => (await count(a, 'chat_line')) > before, 60_000, 500);
+    const line = (await inbox(a, 'chat_line', before)).list.at(-1)!.d;
     expect(line.text).toBe('gl hf');
     // Mute the guest: the next line is not delivered to Lua.
     const guestId = (await b.snap()).me!;
     await a.cmd('mp_send', { t: 'ui_mute', d: { userId: guestId, on: true } });
-    const muted = (await inbox(a, 'chat_line')).list.length;
+    const muted = await count(a, 'chat_line');
     await b.cmd('mp_send', { t: 'ui_chat', d: { text: 'muted line' } });
     await new Promise((r) => setTimeout(r, 3000));
-    expect((await inbox(a, 'chat_line')).list.slice(muted).map((l) => l.d.text)).not.toContain('muted line');
+    expect((await inbox(a, 'chat_line', muted)).list.map((l) => l.d.text)).not.toContain('muted line');
     // Draw vote (REF-17): both vote → draw for both.
     await a.cmd('vote', { kind: 'draw' });
     await b.cmd('vote', { kind: 'draw' });
@@ -230,16 +233,16 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     const guestId = (await b.snap()).me!;
     await a.cmd('mp_send', { t: 'ui_kick', d: { userId: guestId } });
     await b.waitSnap((s) => s.role === null, 'guest kicked out', 60_000);
-    const mark = (await inbox(b, 'lobby_error')).list.length;
+    const mark = await count(b, 'lobby_error');
     await b.ui('join', { code: lobby });
-    await waitFor('kicked join refused', async () => (await inbox(b, 'lobby_error')).list.length > mark, 60_000, 500);
+    await waitFor('kicked join refused', async () => (await count(b, 'lobby_error')) > mark, 60_000, 500);
     expect((await hostLobby(a)).players.map((p) => p.id)).not.toContain(guestId);
     // A build with another content hash (test override) is refused (LOB-15, D-36).
     const odd = await w.player('oddbuild', { overrides: { contentHash: `${'f'.repeat(24)}-v1` } });
-    const m2 = (await inbox(odd, 'lobby_error')).list.length;
+    const m2 = await count(odd, 'lobby_error');
     await odd.ui('join', { code: lobby });
-    await waitFor('mismatched build refused', async () => (await inbox(odd, 'lobby_error')).list.length > m2, 60_000, 500);
-    const codes = (await inbox(odd, 'lobby_error')).list.slice(m2).map((e) => e.d.code);
+    await waitFor('mismatched build refused', async () => (await count(odd, 'lobby_error')) > m2, 60_000, 500);
+    const codes = (await inbox(odd, 'lobby_error', m2)).list.map((e) => e.d.code);
     expect(codes.join(',')).toMatch(/version|mismatch|hash/);
     await odd.close();
     w.players.splice(w.players.indexOf(odd), 1);

@@ -4,7 +4,7 @@
  * mid-match as a spectator (it receives the logs so far, then live events); after the
  * match the player's My Replays lists it, and opening it plays it back.
  */
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { MpPlayer } from '../lib/mp-player';
 import { leaveMatch, playAnte, setupMatch, waitResult } from '../lib/match-flow';
 import { waitFor } from '../lib/stack';
@@ -25,6 +25,7 @@ describe.skipIf(w.skip)(w.title('spectate and replay (2 browsers + 1 bot)'), () 
     } = (await w.up({ players: ['host', 'watcher'] })) as { players: MpPlayer[] });
   }, 600_000);
 
+  afterEach(() => w.cleanup(), 300_000);
   afterAll(() => w.down());
 
   it('E2E-19: spectate list → mid-match join (full logs) → My Replays playback', async () => {

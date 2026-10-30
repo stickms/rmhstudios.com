@@ -471,6 +471,17 @@ C.profile_digest = function()
   return { unlocked = unlocked, discovered = discovered }
 end
 
+--- Back to the main menu from a run outside any session (vanilla saves the run on the way).
+C.to_menu = function()
+  if G.STAGE ~= G.STAGES.MAIN_MENU then
+    if G.OVERLAY_MENU and G.FUNCS.exit_overlay_menu then G.FUNCS.exit_overlay_menu() end
+    G.SETTINGS.paused = false
+    G.FUNCS.go_to_menu()
+  end
+  wait(function() return G.STAGE == G.STAGES.MAIN_MENU and G.MAIN_MENU_UI ~= nil and not G.screenwipe and AP.idle() end, 120, 'main menu')
+  return AP.snapshot()
+end
+
 C.shop = function() return AP.shop() end
 C.shop_digest = function()
   AP.wait_state('SHOP')
@@ -645,8 +656,10 @@ C.pvp_play = function(a)
     G.FUNCS.play_cards_from_highlighted()
     played = played + 1
     wait(function()
-      return finished() or (AP.idle() and G.STATE ~= G.STATES.HAND_PLAYED and G.STATE ~= G.STATES.DRAW_TO_HAND)
+      return finished() or G.GAME.won or G.STATE == G.STATES.GAME_OVER
+        or (AP.idle() and G.STATE ~= G.STATES.HAND_PLAYED and G.STATE ~= G.STATES.DRAW_TO_HAND)
     end, 120, 'PvP hand scored')
+    if G.GAME.won then break end
   end
   return { played = played, chips = G.GAME.chips, result = result_kind() }
 end
@@ -768,9 +781,17 @@ C.mp_state = function()
   }
 end
 
--- The inbox tap: what the session told Lua, kept for assertions (e2e). Frequent
--- per-frame types are counted, not stored.
-AP.inbox = { list = {}, counts = {}, max = 400 }
+local function json_array_of(t)
+  local J = rawget(_G, 'RMH') and RMH.json
+  if J and J.array then return J.array(t) end
+  return t
+end
+
+-- The inbox tap: what the session told Lua, kept for assertions (e2e). One ring per type (so
+-- a chatty type never evicts a rare one); per-frame types are counted, not stored. Every
+-- entry carries `n`, its type's running count, so a caller waits for `counts[t]` to grow
+-- rather than for a list length (a full ring never grows).
+AP.inbox = { by_type = {}, counts = {}, max = 200 }
 local NOISY = { timer_state = true, mp_pack = true }
 
 function AP.tap_inbox()
@@ -782,23 +803,30 @@ function AP.tap_inbox()
     local box = AP.inbox
     box.counts[t] = (box.counts[t] or 0) + 1
     if not NOISY[t] then
-      box.list[#box.list + 1] = { t = t, d = d, n = box.counts[t] }
-      if #box.list > box.max then table.remove(box.list, 1) end
+      local ring = box.by_type[t]
+      if not ring then ring = {} box.by_type[t] = ring end
+      ring[#ring + 1] = { t = t, d = d, n = box.counts[t] }
+      if #ring > box.max then table.remove(ring, 1) end
     end
     return receive(t, d, msg)
   end
   return true
 end
 
---- mp_inbox{t?, since?} → {list = [{t, d, n}], counts}: messages Lua received of type t (all
--- when absent) after index `since` of the list.
+--- mp_inbox{t?, since?} → {list = [{t, d, n}], counts}: the kept messages Lua received of type
+-- t (every type when absent), only those with n > since.
 C.mp_inbox = function(a)
   AP.tap_inbox()
   local out = {}
-  for i, e in ipairs(AP.inbox.list) do
-    if (not a.t or e.t == a.t) and i > (tonumber(a.since) or 0) then out[#out + 1] = e end
+  local since = tonumber(a.since) or 0
+  local types = {}
+  if a.t then types[1] = a.t else for t in pairs(AP.inbox.by_type) do types[#types + 1] = t end table.sort(types) end
+  for _, t in ipairs(types) do
+    for _, e in ipairs(AP.inbox.by_type[t] or {}) do
+      if e.n > since then out[#out + 1] = e end
+    end
   end
-  return { list = out, counts = AP.inbox.counts, size = #AP.inbox.list }
+  return { list = json_array_of(out), counts = AP.inbox.counts }
 end
 
 --- Opens the MP menu as the MULTIPLAYER button does (the page may have opened the

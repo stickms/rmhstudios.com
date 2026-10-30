@@ -7,7 +7,7 @@
  *   E2E-13 host migration mid-match (the host's page closes).
  * A bot plays every ante: both normal blinds beaten, Ready, one hand of its fixed score.
  */
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { BotPeer } from '../lib/bot';
 import type { MpPlayer } from '../lib/mp-player';
 import { hostLobby, playAnte, setupMatch, waitResult, leaveMatch } from '../lib/match-flow';
@@ -36,6 +36,7 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
     p = await w.player('real');
   }, 600_000);
 
+  afterEach(() => w.cleanup(), 300_000);
   afterAll(() => w.down());
 
   it('E2E-04: Nemesis with 3 — a bye each ante, pairings before Ready, no repeated pair', async () => {
@@ -131,7 +132,8 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
     await p.cmd('win_blind');
     await p.cmd('cash_out');
     const golden = await p.cmd<string>('shop_digest');
-    await p.cmd('wait_idle');
+    // Leaving the run for the menu is when vanilla writes the save we then hold on to.
+    await p.cmd('to_menu');
     await new Promise((r) => setTimeout(r, 3000));
     const save = await p.cmd<Save>('save_info');
     expect(save.exists).toBe(true);

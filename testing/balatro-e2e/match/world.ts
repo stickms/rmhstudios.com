@@ -15,6 +15,7 @@ import { signedInPlayers, type Player } from '../lib/accounts';
 import { openBot, type BotPeer } from '../lib/bot';
 import { chromiumLaunchOptions } from '../lib/chromium';
 import { openMpPlayer, type MpPlayer, type OpenOptions } from '../lib/mp-player';
+import { leaveMatch } from '../lib/match-flow';
 
 /** Software WebGL costs per pixel: real players use a small canvas. */
 export const VIEWPORT = { width: 640, height: 360 };
@@ -70,6 +71,10 @@ export function matchWorld() {
         ...w.players.flatMap((p) => p.luaErrors().map((e) => `${p.label}: ${e}`)),
         ...w.bots.flatMap((b) => b.errors.filter((e) => /pageerror|\[mp\].*(fail|error|invalid)/i.test(e)).map((e) => `${b.label}: ${e}`)),
       ];
+    },
+    /** After each test: every real player out of its match/lobby, whatever the test left. */
+    async cleanup() {
+      for (const p of w.players) await leaveMatch(p).catch(() => {});
     },
     async down() {
       for (const a of w.accounts) await a.context.close().catch(() => {});
