@@ -164,9 +164,11 @@ jobs:
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hl2_maps --state-key hl2-game/maps/_state.json --build "$build_hl2" --builder "$HL2_GAME_BUILDER_MAPS" $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hl2_models --state-key hl2-game/mdl/_state.json --build "$build_hl2" --builder "$HL2_GAME_BUILDER_MODELS" $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hl2_sounds --state-key hl2-game/snd/_state.json --build "$build_hl2" --builder "$HL2_GAME_BUILDER_SOUNDS" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hl2_menu --state-key hl2-game/menu/_state.json --build "$build_hl2" --builder "$HL2_GAME_BUILDER_MENU" $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as portal_maps --state-key portal-game/maps/_state.json --build "$build_portal" --builder "$PORTAL_GAME_BUILDER_MAPS" $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as portal_models --state-key portal-game/mdl/_state.json --build "$build_portal" --builder "$PORTAL_GAME_BUILDER_MODELS" $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as portal_sounds --state-key portal-game/snd/_state.json --build "$build_portal" --builder "$PORTAL_GAME_BUILDER_SOUNDS" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as portal_menu --state-key portal-game/menu/_state.json --build "$build_portal" --builder "$PORTAL_GAME_BUILDER_MENU" $force
           # Which installs this run needs: TF2 for the hub's and tf2-game/ channels, 219 and 410 for theirs.
           if grep -q -E '^run_(models|hud|icons|paintkits|particles|game_[a-z]+)=true' "$GITHUB_OUTPUT"; then echo "tf2=true" >> "$GITHUB_OUTPUT"; fi
           if grep -q -E '^run_hl2_[a-z]+=true' "$GITHUB_OUTPUT"; then echo "hl2=true" >> "$GITHUB_OUTPUT"; fi
@@ -410,6 +412,17 @@ jobs:
             --root /mnt/hl2 --list /mnt/work/hl2-sounds.json --out /mnt/work/hl2-snd \
             --state /mnt/work/hl2-snd-state.json
 
+      - name: HL2 menu — GameUI's files, console backgrounds, chapter pictures, fonts and words
+        id: hl2_menu
+        if: steps.gate.outputs.run_hl2_menu == 'true' && steps.hl2_download.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          mkdir -p /mnt/work/hl2-menu
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key hl2-game/menu/_state.json --out /mnt/work/hl2-menu-state.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/menu_ui.py --game hl2 \
+            --root /mnt/hl2 --out /mnt/work/hl2-menu --state /mnt/work/hl2-menu-state.json
+
       - name: Delete the Half-Life 2 demo install
         if: always() && (steps.gate.outputs.hl2 == 'true')
         run: sudo rm -rf /mnt/hl2
@@ -476,6 +489,17 @@ jobs:
             --root /mnt/portal --list /mnt/work/portal-sounds.json --out /mnt/work/portal-snd \
             --state /mnt/work/portal-snd-state.json
 
+      - name: Portal menu — GameUI's files, console backgrounds, chapter pictures, fonts and words
+        id: portal_menu
+        if: steps.gate.outputs.run_portal_menu == 'true' && steps.portal_download.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          mkdir -p /mnt/work/portal-menu
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key portal-game/menu/_state.json --out /mnt/work/portal-menu-state.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/menu_ui.py --game portal \
+            --root /mnt/portal --out /mnt/work/portal-menu --state /mnt/work/portal-menu-state.json
+
       - name: Delete the Portal install
         if: always() && (steps.gate.outputs.portal == 'true')
         run: sudo rm -rf /mnt/portal "$HOME/Steam" "$HOME/.steam"
@@ -528,7 +552,8 @@ jobs:
           steps.game_particles.outcome == 'success' || steps.game_maps.outcome == 'success' ||
           steps.hl2_maps.outcome == 'success' || steps.hl2_models.outcome == 'success' ||
           steps.hl2_sounds.outcome == 'success' || steps.portal_maps.outcome == 'success' ||
-          steps.portal_models.outcome == 'success' || steps.portal_sounds.outcome == 'success'
+          steps.portal_models.outcome == 'success' || steps.portal_sounds.outcome == 'success' ||
+          steps.hl2_menu.outcome == 'success' || steps.portal_menu.outcome == 'success'
         env:
           TF2_GAME_STORAGE_BUDGET_GB: ${{ vars.TF2_GAME_STORAGE_BUDGET_GB }}
         run: |
@@ -539,6 +564,7 @@ jobs:
             --pending hl2-game/snd/=/mnt/work/hl2-snd \
             --pending portal-game/maps/=/mnt/work/portal-maps --pending portal-game/mdl/=/mnt/work/portal-mdl \
             --pending portal-game/snd/=/mnt/work/portal-snd \
+            --pending hl2-game/menu/=/mnt/work/hl2-menu --pending portal-game/menu/=/mnt/work/portal-menu \
             --pending tf2-hud-base/=/mnt/work/hud
 
       - name: Upload changed game models and textures (index last)
@@ -623,6 +649,22 @@ jobs:
             --state-key portal-game/snd/_state.json --build "${{ steps.gate.outputs.build_portal }}" \
             --builder "$PORTAL_GAME_BUILDER_SOUNDS" --index index.json --preserve-index entries,files $force
 
+      - name: Upload changed HL2 menu (index last)
+        if: steps.hl2_menu.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/hl2-menu --prefix hl2-game/menu/ \
+            --state-key hl2-game/menu/_state.json --build "${{ steps.gate.outputs.build_hl2 }}" \
+            --builder "$HL2_GAME_BUILDER_MENU" --index index.json $force
+
+      - name: Upload changed Portal menu (index last)
+        if: steps.portal_menu.outcome == 'success' && steps.game_storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/portal-menu --prefix portal-game/menu/ \
+            --state-key portal-game/menu/_state.json --build "${{ steps.gate.outputs.build_portal }}" \
+            --builder "$PORTAL_GAME_BUILDER_MENU" --index index.json $force
+
       - name: Report game channel failures
         if: >-
           always() && (steps.game_models.outcome == 'failure' || steps.game_sounds.outcome == 'failure' ||
@@ -631,9 +673,10 @@ jobs:
           steps.hl2_download.outcome == 'failure' || steps.hl2_maps.outcome == 'failure' || steps.hl2_models.outcome == 'failure' ||
           steps.hl2_sounds.outcome == 'failure' ||
           steps.portal_download.outcome == 'failure' || steps.portal_maps.outcome == 'failure' || steps.portal_models.outcome == 'failure' ||
-          steps.portal_sounds.outcome == 'failure')
+          steps.portal_sounds.outcome == 'failure' || steps.hl2_menu.outcome == 'failure' ||
+          steps.portal_menu.outcome == 'failure')
         run: |
-          echo "::error::A game channel failed (tests: ${{ steps.game_tests.outcome }}, ffmpeg: ${{ steps.ffmpeg.outcome }}, models: ${{ steps.game_models.outcome }}, sounds: ${{ steps.game_sounds.outcome }}, particles: ${{ steps.game_particles.outcome }}, maps: ${{ steps.game_maps.outcome }}; HL2 download/maps/models/sounds: ${{ steps.hl2_download.outcome }}/${{ steps.hl2_maps.outcome }}/${{ steps.hl2_models.outcome }}/${{ steps.hl2_sounds.outcome }}; Portal download/maps/models/sounds: ${{ steps.portal_download.outcome }}/${{ steps.portal_maps.outcome }}/${{ steps.portal_models.outcome }}/${{ steps.portal_sounds.outcome }}); the hub's channels were published."
+          echo "::error::A game channel failed (tests: ${{ steps.game_tests.outcome }}, ffmpeg: ${{ steps.ffmpeg.outcome }}, models: ${{ steps.game_models.outcome }}, sounds: ${{ steps.game_sounds.outcome }}, particles: ${{ steps.game_particles.outcome }}, maps: ${{ steps.game_maps.outcome }}; HL2 download/maps/models/sounds: ${{ steps.hl2_download.outcome }}/${{ steps.hl2_maps.outcome }}/${{ steps.hl2_models.outcome }}/${{ steps.hl2_sounds.outcome }}; Portal download/maps/models/sounds: ${{ steps.portal_download.outcome }}/${{ steps.portal_maps.outcome }}/${{ steps.portal_models.outcome }}/${{ steps.portal_sounds.outcome }}; menus HL2/Portal: ${{ steps.hl2_menu.outcome }}/${{ steps.portal_menu.outcome }}); the hub's channels were published."
           exit 1
 
       - name: Clean up
