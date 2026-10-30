@@ -254,7 +254,14 @@
       "rmh_mp_ui_block_disconnected": "A player is not connected",
       "rmh_mp_ui_block_ready": "Waiting for everyone to ready up",
       "k_trap": "Trap",
-      "b_trap_cards": "Trap Cards"
+      "b_trap_cards": "Trap Cards",
+      "rmh_mp_k_cooled": "Cooled!",
+      "rmh_mp_k_too_cold": "Too cold!",
+      "rmh_mp_k_go": "Go!",
+      "rmh_mp_k_awooo": "Awooo!",
+      "rmh_mp_k_minus_hand_size": "-1 Hand Size",
+      "rmh_mp_k_plus_coupon_tag": "+1 Coupon Tag!",
+      "rmh_mp_k_plus_voucher_tag": "+1 Voucher Tag!"
     },
     "v_dictionary": {
       "rmh_mp_invited_by": "#1# invited you",

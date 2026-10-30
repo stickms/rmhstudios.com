@@ -193,28 +193,51 @@ describe('ui collection (HUD-21)', function()
     expect(G.P_CENTERS.j_mp_pacifist).eq(nil)
   end)
 
-  it('sandbox tab: sandbox content plus at most 14 error decoys, in a stable order', function()
+  it('sandbox tab: Content B overview (D-26) - Extra Credit, decoys 1-14, Hanging Chad, idols in the middle', function()
     local tab = U.collection.TABS[9]
-    -- Content B defines the real sandbox jokers and decoys when its modules
-    -- are loaded; stand-ins are defined only for keys that are absent.
-    local function ensure(def)
-      if not MP.registry.get(def.key) then MP.registry.define(def) end
-    end
-    for i = 1, 21 do ensure({ key = 'j_mp_error_' .. i, kind = 'Joker', rarity = 1, pos = { x = 0, y = 0 }, pool = false }) end
-    ensure({ key = 'j_mp_misprint_sandbox', kind = 'Joker', rarity = 1, pos = { x = 0, y = 0 }, gate = { layers = { 'sandbox' } } })
+    local S = MP.sandbox
+    expect(S and S.overview_keys ~= nil).truthy()
     local e = U.collection.entries(tab)
-    expect(#e >= 15).truthy()
-    local errors, seen_sandbox = 0, false
-    for i, x in ipairs(e) do
-      if x.key:find('error', 1, true) then errors = errors + 1 else expect(errors).eq(0) end -- decoys come last
-      if x.key == 'j_mp_misprint_sandbox' then seen_sandbox = true end
+    local keys = {}
+    for i, x in ipairs(e) do keys[i] = x.key end
+    -- Exactly the overview's defined keys, in its (per-boot) order.
+    local want = {}
+    for _, k in ipairs(S.overview_keys()) do if MP.registry.get(k) then want[#want + 1] = k end end
+    expect(keys).eq(want)
+    local errors, ec, misprint = {}, 0, false
+    for _, x in ipairs(e) do
+      local n = x.key:match('^j_mp_error_sandbox_(%d+)$')
+      if n then errors[#errors + 1] = tonumber(n) end
+      if x.def.extra_credit then ec = ec + 1 end
+      if x.key == 'j_mp_misprint_sandbox' then misprint = true end
     end
-    expect(errors).eq(14)
-    expect(seen_sandbox).truthy()
+    table.sort(errors)
+    expect(#errors).eq(14)
+    expect(errors[1]).eq(1)
+    expect(errors[14]).eq(14)
+    expect(ec).eq(#S.EXTRA_CREDIT)
+    expect(misprint).eq(false)                                   -- active sandbox jokers are not the overview
+    local mid = math.floor((#S.EXTRA_CREDIT + 15) / 2) + 1
+    expect(keys[mid]).eq('j_mp_idol_sandbox_zealot')
+    expect(keys[mid + 1]).eq('j_mp_idol_sandbox_collector')
     local again = U.collection.entries(tab)
-    for i = 1, #e do expect(again[i].key).eq(e[i].key) end
+    for i = 1, #e do expect(again[i].key).eq(e[i].key) end         -- stable within a boot
     local jokers = U.collection.entries(U.collection.TABS[1])
     for _, x in ipairs(jokers) do expect(x.key:find('error') == nil and x.key:find('sandbox') == nil).truthy() end
+  end)
+
+  it('sandbox tab without Content B: sandbox defs plus at most 14 error decoys', function()
+    local tab = U.collection.TABS[9]
+    local S = MP.sandbox
+    MP.sandbox = nil
+    MP.registry.define({ key = 'j_mp_error_x1', kind = 'Joker', rarity = 1, pos = { x = 0, y = 0 }, pool = false })
+    local e = U.collection.entries(tab)
+    MP.sandbox = S
+    local errors = 0
+    for _, x in ipairs(e) do
+      if x.key:find('error', 1, true) then errors = errors + 1 else expect(errors).eq(0) end -- decoys come last
+    end
+    expect(errors <= 14 and errors >= 1).truthy()
   end)
 
   it('pages past ten cards and says so when a tab is empty', function()
