@@ -120,8 +120,8 @@ function L.roster_def(model)
     { #players, #spectators }), { scale = 0.3, id = 'mp_roster_counts' }) })
   return { n = G.UIT.ROOT, config = { align = 'cm', colour = TH.col('CLEAR') }, nodes = {
     W.col({
-      W.col(rows, { id = 'mp_roster', minh = 1 }),
-      W.col(footer, { padding = 0.05 }),
+      W.row({ W.col(rows, { id = 'mp_roster', minh = 1 }) }),
+      W.row({ W.col(footer, { padding = 0.05 }) }),
     }, { r = 0.15, padding = 0.15, colour = TH.alpha(TH.col('BLACK'), 0.5) }),
   } }
 end

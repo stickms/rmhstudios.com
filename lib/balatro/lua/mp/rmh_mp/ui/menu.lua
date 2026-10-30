@@ -84,6 +84,23 @@ local function swap_logo(on)
   end
 end
 
+--- Show or hide a vanilla menu object (and the cards of a CardArea) without removing it.
+local function set_visible(obj, on)
+  if not (obj and obj.states) then return end
+  obj.states.visible = on
+  if obj.states.collide then obj.states.collide.can = on end
+  for _, c in ipairs(obj.cards or {}) do if c.states then c.states.visible = on end end
+end
+
+--- The title (logo + its card) stays on the PvP menu; pages with a centre box (pillars, the
+--- lobby roster) hide it, and the profile button under the bar hides on every MP screen.
+local function menu_chrome(screen_has_top, mp_screen)
+  set_visible(G.SPLASH_LOGO, not screen_has_top)
+  set_visible(G.title_top, not screen_has_top)
+  set_visible(G.PROFILE_BUTTON, not mp_screen)
+end
+U.menu_chrome = menu_chrome
+
 --- The vanilla bottom menu, rebuilt (set_main_menu_UI without the profile button event).
 local function restore_vanilla_bar()
   if G.MAIN_MENU_UI and not G.MAIN_MENU_UI.REMOVED then pcall(G.MAIN_MENU_UI.remove, G.MAIN_MENU_UI) end
@@ -118,6 +135,7 @@ function U.render()
   end
   U.boxes.panel = new_box(defs.panel, 'tli', { x = 0.3, y = 0.3 })
   swap_logo(true)
+  menu_chrome(defs.top ~= nil, true)
   U.rendered = name
   return true
 end
@@ -141,6 +159,7 @@ function U.close()
   if U.at_main_menu() then
     restore_vanilla_bar()
     swap_logo(false)
+    menu_chrome(false, false)
   end
   U.rendered = nil
   return true

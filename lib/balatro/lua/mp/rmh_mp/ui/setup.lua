@@ -132,7 +132,7 @@ function S.draft_nodes(v, model)
     if #row == 3 then rows[#rows + 1] = W.row(row, { padding = 0.04 }); row = {} end
   end
   if #row > 0 then rows[#rows + 1] = W.row(row, { padding = 0.04 }) end
-  nodes[#nodes + 1] = W.col(rows, { id = 'mp_draft_tiles' })
+  nodes[#nodes + 1] = W.row({ W.col(rows, { id = 'mp_draft_tiles' }) })
   if v.phase == 'done' then
     nodes[#nodes + 1] = W.row({ W.text(TH.T('k_banpick_selected', 'Selected:') .. ' ' .. U.run_setup.deck_name(v.result), { scale = 0.32 }) })
   elseif my_turn then
