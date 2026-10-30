@@ -224,6 +224,7 @@ jobs:
           python3 -B -m unittest discover -s scripts/tf2-game -p test_sounds.py
           python3 -B -m unittest discover -s scripts/tf2-game -p test_sourcegame.py
           python3 -B -m unittest discover -s scripts/tf2-game -p test_game_particles.py
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_ragdoll.py
 
       - name: Validate particle asset formats
         if: steps.gate.outputs.run_particles == 'true'
