@@ -75,6 +75,8 @@ const prismaMock = vi.hoisted(() => {
 });
 
 vi.mock('@/lib/prisma.server', () => ({ prisma: prismaMock }));
+const reply = vi.hoisted(() => ({ fn: vi.fn(async () => {}) }));
+vi.mock('@/lib/cards/notify.server', () => ({ notifyHubReply: reply.fn }));
 
 import { createPost, createThread, deletePost, deleteThread, moderateThread, HubError } from '@/lib/games/hub.server';
 
@@ -185,5 +187,25 @@ describe('moderateThread', () => {
     await moderateThread({ threadId: id, action: 'unpin' });
     expect(db.threads.get(id)!.pinned).toBe(false);
     expect(await code(moderateThread({ threadId: 'zzz', action: 'pin' }))).toBe('NOT_FOUND');
+  });
+});
+
+describe('reply notification', () => {
+  it('tells the thread author about a reply, with a link target, and not on a refused reply', async () => {
+    reply.fn.mockClear();
+    const { id } = await thread({ title: 'Best build?' });
+    await createPost({ userId: 'u2', threadId: id, body: 'Try the shield' });
+    expect(reply.fn).toHaveBeenCalledWith({
+      threadAuthorId: 'u1',
+      replierId: 'u2',
+      gameId: 'altair',
+      threadId: id,
+      threadTitle: 'Best build?',
+    });
+    reply.fn.mockClear();
+    await code(createPost({ userId: 'u2', threadId: id, body: ' ' }));
+    await moderateThread({ threadId: id, action: 'lock' });
+    await code(createPost({ userId: 'u2', threadId: id, body: 'late' }));
+    expect(reply.fn).not.toHaveBeenCalled();
   });
 });

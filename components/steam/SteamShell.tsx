@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation } from '@tanstack/react-router';
+import { Link, useLocation, useMatch } from '@tanstack/react-router';
 import { Menu, MessageSquare, Plus, Settings, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
@@ -48,6 +48,9 @@ function SteamTopBar() {
   const pathname = useLocation({ select: (l) => l.pathname });
   const { data: session } = useSession();
   const tab = steamTabFor(pathname);
+  // Offers waiting for the viewer, from the /games route loader (absent on error pages).
+  const pending =
+    useMatch({ from: '/games', shouldThrow: false })?.loaderData?.pendingTrades ?? 0;
   const user = session?.user as
     | { id: string; name?: string | null; image?: string | null; handle?: string | null }
     | undefined;
@@ -126,6 +129,7 @@ function SteamTopBar() {
             activeProps={{ 'aria-current': tab === i.id ? 'page' : undefined }}
           >
             {i.label}
+            {i.id === 'community' && pending > 0 ? <PendingBadge n={pending} /> : null}
           </Link>
         ))}
       </nav>
@@ -179,6 +183,7 @@ function SteamTopBar() {
               activeProps={{ 'aria-current': tab === i.id ? 'page' : undefined }}
             >
               {i.label}
+              {i.id === 'community' && pending > 0 ? <PendingBadge n={pending} /> : null}
             </Link>
           ))}
           <hr />
@@ -197,6 +202,20 @@ function SteamTopBar() {
         </nav>
       </div>
     </header>
+  );
+}
+
+/** The count of trade offers waiting, as a small blue pill beside COMMUNITY. */
+export function PendingBadge({ n }: { n: number }) {
+  const { t } = useTranslation('games-hub');
+  return (
+    <span
+      className="stm-nav-badge"
+      role="status"
+      aria-label={t('steam-pending-trades', { defaultValue: 'Pending trade offers: {{n}}', n })}
+    >
+      {n > 9 ? '9+' : n}
+    </span>
   );
 }
 

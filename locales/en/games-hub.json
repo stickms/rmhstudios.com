@@ -210,6 +210,7 @@
   "steam-not-found-hint": "It may have moved, or it never existed.",
   "steam-on-record": "{{time}} on record",
   "steam-past-two-weeks": "{{time}} past two weeks",
+  "steam-pending-trades": "Pending trade offers: {{n}}",
   "steam-play-time": "Play time",
   "steam-player": "Player",
   "steam-playtime-hidden": "This player keeps their playtime private.",

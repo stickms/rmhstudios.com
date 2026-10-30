@@ -19,6 +19,7 @@ import { isTrackableTitle } from '@/lib/games/route-match';
 import { levelFromXp } from '@/lib/xp/levels';
 import { SET_SIZE, cardName } from '@/lib/cards/cards';
 import { lockCards } from '@/lib/cards/cards.server';
+import { notifyCardSold } from '@/lib/cards/notify.server';
 import {
   MAX_CARD_LISTINGS,
   MIN_ACCOUNT_AGE_DAYS,
@@ -156,7 +157,7 @@ export async function buyCard({
   buyerId: string;
   listingId: string;
 }): Promise<BuyResult> {
-  return prisma.$transaction(async (tx) => {
+  const sale = await prisma.$transaction(async (tx) => {
     // The buyer's stack changes (they receive the card), so take their card lock.
     await lockCards(tx, buyerId);
 
@@ -197,8 +198,23 @@ export async function buyCard({
       update: { count: { increment: 1 } },
     });
 
-    return { listingId, price: listing.priceCoins, fee, proceeds };
+    return {
+      result: { listingId, price: listing.priceCoins, fee, proceeds },
+      sellerId: listing.sellerId,
+      gameId: listing.gameId,
+      cardIndex: listing.cardIndex,
+    };
   });
+  // After the commit: tell the seller.
+  await notifyCardSold({
+    sellerId: sale.sellerId,
+    buyerId,
+    listingId,
+    gameId: sale.gameId,
+    cardIndex: sale.cardIndex,
+    proceeds: sale.result.proceeds,
+  });
+  return sale.result;
 }
 
 /** Take a listing down and return the escrowed card. */
