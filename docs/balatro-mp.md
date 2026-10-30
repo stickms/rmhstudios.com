@@ -518,3 +518,52 @@ runtime (types only). The generator lowers their schemas into descriptor tables,
 **Test builds** (`VITE_BALATRO_MP_TEST=1`): the autopilot surface (`test-hooks.ts`),
 `window.__rmhBalatroTest` overrides (`p2p` hooks such as `blockCandidates` for E2E-15,
 `contentHash` for E2E-21), and the `seatGraceMs` option (production pins it at 120 s).
+
+## 10. Matchmaking, party, invites, spectate list (WS12)
+
+Hub: `server/socket-server/handlers/balatro-queue.ts` (events) over the pure book in
+`server/socket-server/balatro/queue.ts`. Client: `lib/balatro/mp/queue/attach.ts`, loaded by
+`index.ts` as an extension of the session runtime, plus `queue/{queue-client,casual,party}.ts`,
+`setup/host-driver.ts` and `invites.ts`; the React friends list is
+`components/balatro/mp/InviteFriends.tsx` in the Invite popover's `friends` slot.
+
+**Casual queue (MM-01/02).** Lua's FIND GAME sends `ui_queue {op:'join'}`; the hub buckets the
+ticket by `queueMode` and content hash and reports `queue:status searching {waiting}` (mirrored to
+Lua as `queue_view`). Matching is oldest first, up to the mode's maximum (Nemesis 2, others 16);
+a full group matches at once, a short one (≥2 players) once its oldest ticket waited 10 s. A group
+always holds at least two tickets. The earliest player gets `matched {role:'host', waiting:n}` and
+creates an ordinary casual lobby (`runtime.createLobby(mode, 'casual')`); the hub watches for that
+room (same account, mode and hash, polled every 100 ms) and then sends the others
+`matched {role:'member', code}`; they join it and re-send READY 6× at 1.2 s. If the host has not
+hosted within 15 s, or drops, the match falls through: solo players queue again at their old place,
+everyone else is told `cancelled`. A ticket whose socket drops is cancelled.
+
+**Setup (MM-03/04/05, D-32).** In a casual lobby the host's `CasualHost` waits until every matched
+player is in and ready (or 20 s with ≥2 ready; a lobby that never reaches 2 is given up after
+45 s), then runs `SetupHostDriver`: ruleset vote → trap vote (Balanced/Expanded only) → draft
+(Small World skips the votes). Views go out through `LobbyHost.publishSetup`; casts and picks come
+in through `LobbyHost.onSetupInput` (a stale `stepId` is ignored). The results become `ruleset`,
+`trapCards`, `deck` and `stake` in the lobby, and the host starts the match.
+
+**Party (MM-06).** A party is a P2P lobby of kind `party` (≤ 8 players). Its host's FIND GAME
+(`ui_party_queue`) is refused until every member is connected and ready
+(`lobby_error party-not-ready`, …); the hub queues the host and every admitted, connected player
+as one ticket (also `queue:join` with `partyCode`, hash-checked) and refuses a party that would
+fill the mode alone (`full`). On a match the hub closes the party room quietly (seats released,
+no `closed` event), because its players are about to sit down in the match. A role switch waits
+`ROLE_SWITCH_MS` after leaving a hosted party, so the old role's delayed hub `leave` cannot land
+on the new room. The party is remembered (`lastParty`) for "Return to lobby XXXXXX".
+
+**Invites (LOB-04).** `balatro:invite {code, toUserId}`: only into a room the inviter holds a
+seat in, only to a mutual follow (both directions), at most 20 per minute per account. The hub
+emits `balatro:invited` to every hub socket of the invitee (Lua shows the `mp_invited` toast with
+`name` and `code`; accepting is `ui_join`), or, when it has none, writes one `SYSTEM`
+notification per lobby per 10 minutes linking to `/balatro?lobby=CODE`. The contract has no
+success acknowledgement, so the client's `Inviter` sends one invite at a time and treats "no
+error within 2.5 s" as sent.
+
+**Spectate list (MM-07).** `balatro:spectate:list` answers from the directory
+(`listSpectatableLobbies`).
+
+**PR-05.** `isQueued(runtime)` (attach.ts) is true while searching; Practice started while
+searching cancels the search.
