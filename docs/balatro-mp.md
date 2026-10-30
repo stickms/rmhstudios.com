@@ -416,7 +416,7 @@ Applying the bundle follows WS4's conventions (`lib/balatro/mp/rulesets/layers.t
 | `MP.net.send(t, d)`, `MP.net.on(t, fn)`, `MP.net.defer(fn, pred?, queue?)`, `MP.safe_point()`, `MP.net.add_frame_hook(fn)`, `MP.json_array(t)`              | Outbound is validated by `protocol.lua` and flushed once per frame. Use `MP.json_array` for arrays that may be empty                                 |
 | `MP.event(e)`                                                                                                                                               | A GameEvent, sent only in match and practice sessions                                                                                                |
 | `MP.peer.send(kind, d, to?)`, `MP.peer.on(kind, fn(from, d))`, `MP.sync.register(key, {receive})`, `MP.sync.send(obj, data, to?, kind?)`                    | A `receive` returning `{send=…}` replies                                                                                                             |
-| `MP.report.on(t, fn(o))`                                                                                                                                    | Observers for referee outcomes. UI streams use this, never `MP.net.on('outcome')`                                                                    |
+| `MP.report.on(t, fn(o))` (also `'presence'`: `fn({t, id, status, graceMsLeft})` per presence frame)                                                                                                                                   | Observers for referee outcomes. UI streams use this, never `MP.net.on('outcome')`                                                                    |
 | `MP.ctx.calculate(ctx, {consumeables, silent})`                                                                                                             | Custom contexts fanned out over jokers and consumables                                                                                               |
 | `MP.registry.define(def)`, `mount`, `unmount`, `is_mp`, `get`, `enabled`, `proto`, `leaked_keys`                                                            | Definition shape and dispatch signatures are documented at the top of `registry/init.lua` and `registry/dispatch.lua`                                |
 | `MP.rules.layer_hook(name, fn(ctx))`, `MP.rules.layer_post_hook(name, fn)`, `MP.rules.ban_source(fn)`                                                       | Run-start hooks for content layers                                                                                                                   |
@@ -517,7 +517,7 @@ the real hub handler (`world.test-support.ts`).
 | `match/match-host.ts` | WS4 `refStep` driver: `hs`, checkpoints coalesced to 250 ms, ticks at `wakeAt`, serialised re-entrant inputs |
 | `match/match-member.ts`, `routing.ts` | Every player's controller: `hs` dedupe, targets from outcomes, §3.b routing, WS4 timer model on the monotonic clock, 5 s result watchdog |
 | `migration.ts`, `rejoin/*` | Successor `hs` gap, takeover checkpoint (held or rebuilt); IndexedDB snapshots keyed by `runId` (newest 3) and the rejoin hint |
-| `chat.ts`, `identity.ts`, `history.ts`, `ratelimit.ts` | Chat (sender and receiver 5-burst 1/s, mute), glyph-bitmap sanitising, local history, token buckets |
+| `chat.ts`, `identity.ts`, `history.ts`, `ratelimit.ts` | Chat (sender and receiver 5-burst 1/s, mute; the site block list from GET /api/moderation/block is muted at start, never saved), glyph-bitmap sanitising, local history, token buckets |
 | `wire-codec.ts` | zod-free validation of the wire, the hub's S2C and the client-checked domain types, over descriptors generated into `bridge-schema.gen.ts` |
 
 **No zod in the MP chunk.** zod v4 classic cannot be tree-shaken. Nothing the chunk
@@ -562,7 +562,12 @@ as one ticket (also `queue:join` with `partyCode`, hash-checked) and refuses a p
 fill the mode alone (`full`). On a match the hub closes the party room quietly (seats released,
 no `closed` event), because its players are about to sit down in the match. A role switch waits
 `ROLE_SWITCH_MS` after leaving a hosted party, so the old role's delayed hub `leave` cannot land
-on the new room. The party is remembered (`lastParty`) for "Return to lobby XXXXXX".
+on the new room. The party is remembered (`lastParty`, with the host's hub token) for "Return
+to lobby XXXXXX": Lua remembers a party whose next lobby view was another room and offers the row
+on the PvP bar; its `ui_join {code}` goes through the runtime's `joinHook`, which (after leaving
+the match lobby) re-hosts the code for the old host (`LobbyHost.create(mode, 'party', {code,
+token})`, the hub's resume path; a code taken meanwhile falls back to a fresh one) and joins it
+for everyone else.
 
 **Invites (LOB-04).** `balatro:invite {code, toUserId}`: only into a room the inviter holds a
 seat in, only to a mutual follow (both directions), at most 20 per minute per account. The hub
@@ -575,5 +580,6 @@ error within 2.5 s" as sent.
 **Spectate list (MM-07).** `balatro:spectate:list` answers from the directory
 (`listSpectatableLobbies`).
 
-**PR-05.** `isQueued(runtime)` (attach.ts) is true while searching; Practice started while
-searching cancels the search.
+**PR-05.** `isQueued(runtime)` (attach.ts) is true while searching; the runtime's
+`practiceGuard` then refuses Practice with `lobby_error practice` (the search keeps running), and
+the Lua menus grey Practice while searching or matched.
