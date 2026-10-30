@@ -146,6 +146,14 @@ function MP.open(intent)
       MP.log('error', 'ui failed to load: %s', tostring(err))
     end
   end
+  -- The in-run UI (WS11) registers its session installers before the first match/practice mounts.
+  if not (MP.ui and MP.ui.run) and not MP._run_ui_load_failed then
+    local ok, err = pcall(require, 'rmh_mp.ui.hud')
+    if not ok then
+      MP._run_ui_load_failed = true
+      MP.log('error', 'in-run ui failed to load: %s', tostring(err))
+    end
+  end
   if MP.ui and MP.ui.open then return MP.ui.open(intent) end
   MP.log('warn', 'MP.open(%s): no menu UI in this pack yet (WS10)', tostring(intent))
   return false

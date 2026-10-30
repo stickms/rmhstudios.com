@@ -3,12 +3,13 @@
  * debugging specs:
  *
  *   pnpm exec tsx testing/balatro-e2e/engine/cli.ts [--filter text] [--spec name ...]
- *     [--shot out.png] [--verbose] [--quiet] [--serve]   (--serve: keep the harness up, print its URL)
- *     [--query mp=1]   (page query: `mp=1` extracts the MP pack so the MP specs run instead of skipping)
+ *     [--shot out.png] [--verbose] [--quiet] [--serve] [--query mp=1]
+ *   --serve: keep the harness up, print its URL; --query: the harness page's query string
+ *   (default `mp=1` when the pack manifest lists an MP pack, so MP specs run; `--query ''` for none).
  *
  * Prints TAP; exit code 1 when a spec fails or the engine does not boot.
  */
-import { openEngine, startEngineStack } from '../lib/engine-driver';
+import { defaultEngineQuery, openEngine, startEngineStack } from '../lib/engine-driver';
 import { toTap } from '../lib/channel';
 
 const argv = process.argv.slice(2);
@@ -23,8 +24,9 @@ async function main(): Promise<number> {
     await new Promise(() => {});
   }
   try {
+    const query = argv.includes('--query') ? (values('query')[0] ?? '') : defaultEngineQuery();
     const engine = await openEngine(stack.browser, stack.server.url, {
-      query: values('query')[0],
+      query,
       verbose: flag('verbose'),
       onLog: flag('quiet') ? undefined : (l) => process.stdout.write(`# ${l.slice(0, 400)}\n`),
     });

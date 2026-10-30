@@ -11,6 +11,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  defaultEngineQuery,
   openEngine,
   startEngineStack,
   type EnginePage,
@@ -24,7 +25,7 @@ let summary: SpecSummary;
 
 beforeAll(async () => {
   stack = await startEngineStack();
-  first = await openEngine(stack.browser, stack.server.url);
+  first = await openEngine(stack.browser, stack.server.url, { query: defaultEngineQuery() });
 }, 300_000);
 
 afterAll(async () => {
@@ -59,7 +60,7 @@ describe('engine-spec harness', () => {
     expect(typeof shop).toBe('string');
     // One software-rendered page at a time: the first boot has done its part.
     await first.close();
-    const second = await openEngine(stack.browser, stack.server.url);
+    const second = await openEngine(stack.browser, stack.server.url, { query: defaultEngineQuery() });
     try {
       const again = await second.runSpecs({
         files: ['engine_smoke_spec'],
