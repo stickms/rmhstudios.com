@@ -1634,3 +1634,69 @@ button.stm-star {
   flex: none;
   width: 100%;
 }
+
+/* Trading cards and inventory */
+.stm-web-single {
+  width: 100%;
+  max-width: 1100px;
+  margin-inline: auto;
+  padding: 24px clamp(12px, 3vw, 24px) 0;
+}
+.stm-cardset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0;
+  padding: 14px;
+  list-style: none;
+}
+.stm-cardset li {
+  position: relative;
+  line-height: 0;
+}
+.stm-card-art {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.stm-cardcount {
+  position: absolute;
+  inset-block-end: 6px;
+  inset-inline-end: 6px;
+  padding: 1px 6px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--stm-bright);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.stm-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  padding: 4px 16px 4px;
+}
+.stm-card-foot > span {
+  color: var(--stm-text);
+}
+.stm-btn[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+.stm-badge-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--stm-blue);
+  border-radius: 50%;
+  color: var(--stm-bright);
+  font-size: 14px;
+  font-weight: 600;
+}
+.stm-badge-chip[data-foil='true'] {
+  border-color: var(--stm-gold);
+  color: var(--stm-gold);
+}

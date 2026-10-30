@@ -604,11 +604,14 @@ model User {
   /// Who may see this user's per-title playtime: 'public' (any signed-in viewer)
   /// | 'followers' (people who follow this user) | 'private' (only them).
   /// Enforced server-side in lib/playtime, never by a client.
-  playtimePrivacy            String                       @default("public") @db.VarChar(10)
+  playtimePrivacy           String            @default("public") @db.VarChar(10)
   /// Set when the one-time "your playtime is visible" notice is dismissed.
-  playtimeNoticeDismissedAt  DateTime?
-  gamePlaytime               GamePlaytime[]
-  gamePlaytimeDays           GamePlaytimeDay[]
+  playtimeNoticeDismissedAt DateTime?
+  gamePlaytime              GamePlaytime[]
+  gamePlaytimeDays          GamePlaytimeDay[]
+  userCards                 UserCard[]
+  cardDrops                 CardDrop[]
+  gameBadges                GameBadge[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -5886,6 +5889,54 @@ model GamePlaytimeDay {
   @@id([userId, gameId, day])
   @@index([userId, day])
   @@map("game_playtime_day")
+}
+
+// ─── Trading cards ────────────────────────────────────────────────────────
+// Rules: lib/cards/cards.ts; design: docs/superpowers/specs/2026-10-30-trading-cards-design.md.
+// Cards drop from playtime (one per 30 min, 3 per title). Composite keys, no
+// surrogate ids: a card is (gameId, cardIndex), and a stack is one row with a count.
+
+model UserCard {
+  userId    String
+  gameId    String   @db.VarChar(64)
+  cardIndex Int      @db.SmallInt
+  foil      Boolean  @default(false)
+  /// Stack size; the migration adds CHECK (count > 0) and a row is deleted at zero.
+  count     Int
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId, cardIndex, foil])
+  @@map("user_card")
+}
+
+/// Idempotency key for drops: a drop is granted once per (user, title, dropIndex).
+model CardDrop {
+  userId    String
+  gameId    String   @db.VarChar(64)
+  dropIndex Int      @db.SmallInt
+  cardIndex Int      @db.SmallInt
+  foil      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId, dropIndex])
+  @@map("card_drop")
+}
+
+model GameBadge {
+  userId    String
+  gameId    String   @db.VarChar(64)
+  foil      Boolean  @default(false)
+  level     Int      @db.SmallInt
+  craftedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId, foil])
+  @@map("game_badge")
 }
 
 // ─── Daily Streak ─────────────────────────────────────────────────────────

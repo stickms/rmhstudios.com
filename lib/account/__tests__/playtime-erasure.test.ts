@@ -43,4 +43,14 @@ describe('anonymizeAccount', () => {
       expect(op?.args).toEqual({ where: { userId: 'user-1' } });
     }
   });
+
+  it('erases trading cards, the drop ledger and badges', async () => {
+    (prismaMock.$transaction as ReturnType<typeof vi.fn>).mockClear();
+    await anonymizeAccount('user-1');
+    const tx = (prismaMock.$transaction as ReturnType<typeof vi.fn>).mock.calls[0][0] as Op[];
+    for (const m of ['userCard', 'cardDrop', 'gameBadge']) {
+      const op = tx.find((o) => o.model === m && o.method === 'deleteMany');
+      expect(op?.args).toEqual({ where: { userId: 'user-1' } });
+    }
+  });
 });

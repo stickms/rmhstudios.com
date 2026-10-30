@@ -200,6 +200,10 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     //     and a tombstone would keep showing in "Most played by" with its hours.
     prisma.gamePlaytime.deleteMany({ where: { userId } }),
     prisma.gamePlaytimeDay.deleteMany({ where: { userId } }),
+    // Trading cards, drop ledger and badges — same reason: the cascade never fires.
+    prisma.userCard.deleteMany({ where: { userId } }),
+    prisma.cardDrop.deleteMany({ where: { userId } }),
+    prisma.gameBadge.deleteMany({ where: { userId } }),
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({
       where: { userId },

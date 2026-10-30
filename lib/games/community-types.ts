@@ -40,6 +40,8 @@ export type ProfileAchievement = {
   unlockedAt: string;
 };
 
+export type ProfileBadge = TitleRef & { level: number; foil: boolean };
+
 export type SteamProfile = {
   id: string;
   handle: string | null;
@@ -73,6 +75,7 @@ export type SteamProfile = {
   } | null;
   friends: PersonRef[];
   groups: GroupRef[];
+  badges: ProfileBadge[];
   reviewCount: number;
 };
 
