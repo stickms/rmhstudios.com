@@ -52,7 +52,8 @@ import {
 import { PlayerRenderable } from './player-renderer';
 import { VIEWMODEL_ENTITY, ViewModelRenderer, type ViewModelInput } from './viewmodel';
 
-export type { EntityState, NetValue, LightingSource } from './common';
+export type { EntityState, NetValue, LightingSource, RenderContext } from './common';
+export { EffectSystem } from './effects';
 export type { ViewModelInput } from './viewmodel';
 export { SpViewModelRenderer, type SpViewModelInput } from './sp-viewmodel';
 export { ModelLibrary } from './model-asset';
@@ -76,6 +77,25 @@ export interface EntityRendererOptions {
   lineOfSight?: (a: Vec3Like, b: Vec3Like) => boolean;
   /** The loadout model channel: unlock weapons and cosmetics (null: stock looks only). */
   loadout?: LoadoutModels | null;
+  /**
+   * Another game's renderables (CS:GO's players, weapons, bomb and grenades), asked first for every
+   * entity type; null falls through to the shared ones.
+   */
+  factory?: (s: EntityState, fx: EffectSystem) => EntityRenderable | null;
+  /**
+   * Another game's first-person view model, for attachments (`muzzle` on the local player): the game
+   * draws it itself and keeps the shared one hidden (`updateViewModel(null)`).
+   */
+  viewModelAttachment?: (name: string, out: Matrix4) => boolean;
+}
+
+/** What a renderable is to the entity renderer: drawn from its state each frame, then disposed. */
+export interface EntityRenderable {
+  update(s: EntityState, ctx: RenderContext): void;
+  attachment(name: string, out: Matrix4): boolean;
+  dispose(): void;
+  /** A player's death (the ragdoll or death pose). */
+  onDeath?(ev: DeathEvent, ctx: RenderContext): void;
 }
 
 export interface FrameInfo {
@@ -92,7 +112,7 @@ export interface FrameInfo {
   camera: Camera;
 }
 
-type Renderable = PlayerRenderable | ModelRenderable | FxEntityRenderable;
+type Renderable = PlayerRenderable | ModelRenderable | FxEntityRenderable | EntityRenderable;
 
 const BUILDING_TYPES = new Set(['sentrygun', 'dispenser', 'teleporter', 'sapper', 'object']);
 const MODEL_TYPES = new Set(['prop', 'entity', 'control_point']);
@@ -222,6 +242,8 @@ export class EntityRenderer {
 
   private create(s: EntityState): Renderable | null {
     const fx = this.effects;
+    const custom = this.opts.factory?.(s, fx);
+    if (custom) return custom;
     if (s.type === 'player') {
       const p = new PlayerRenderable(s.id, fx);
       p.onFootstep = (id, side) => this.onFootstep?.(id, side);
@@ -250,6 +272,7 @@ export class EntityRenderer {
         this.streaks.set(d.attacker, (this.streaks.get(d.attacker) ?? 0) + 1);
       const r = this.renderables.get((ev as DeathEvent).victim);
       if (r instanceof PlayerRenderable) r.onDeath(ev as DeathEvent, this.ctx);
+      else if (r && 'onDeath' in r) r.onDeath?.(ev as DeathEvent, this.ctx);
     }
   }
 
@@ -297,7 +320,7 @@ export class EntityRenderer {
   attachment(id: number, name: string, out: Matrix4): boolean {
     const c = this.ctx;
     if (id === VIEWMODEL_ENTITY || (id === c.localPlayer && c.firstPerson && name === 'muzzle')) {
-      if (this.viewModel.attachment(name, out)) return true;
+      if (this.opts.viewModelAttachment ? this.opts.viewModelAttachment(name, out) : this.viewModel.attachment(name, out)) return true;
     }
     const r = this.renderables.get(id);
     if (r && name && r.attachment(name, out)) return true;

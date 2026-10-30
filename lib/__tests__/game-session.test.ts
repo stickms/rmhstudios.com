@@ -26,6 +26,7 @@ const DIRS: Record<string, string[]> = {
   // Half-Life 2 / Portal: their pages are components/sp-game; the game surface is the shared GameCanvas.
   'half-life-2': ['components/sp-game', 'components/tf2-game'],
   portal: ['components/sp-game', 'components/tf2-game'],
+  csgo: ['components/csgo-game', 'components/tf2-game'],
 };
 
 const EXEMPT: Record<string, string> = {

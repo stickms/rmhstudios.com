@@ -77,6 +77,7 @@
 @source not "../components/tf2-hud";
 @source not "../components/tf2-game";
 @source not "../components/sp-game";
+@source not "../components/csgo-game";
 @source not "../components/security";
 @source not "../components/share";
 @source not "../components/signal-forge";
@@ -126,6 +127,7 @@
 @source not "../lib/tf2-hud";
 @source not "../lib/tf2-game";
 @source not "../lib/sp-game";
+@source not "../lib/csgo-game";
 @source not "../lib/tf2-loadout";
 @source not "../lib/shortcuts";
 @source not "../lib/signal-forge";

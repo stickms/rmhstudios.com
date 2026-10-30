@@ -266,6 +266,20 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     save: 'local-only',
     accessibility: ['remappable-input', 'subtitles', 'reduced-flashing'],
   },
+  // CS:GO (de_dust2) on the same engine (lib/csgo-game, lib/tf2-game/client): offline against bots, or
+  // a peer-to-peer listen server (≤ 12 players, lib/tf2-game/net/events.ts P2P_MAX_PLAYERS).
+  csgo: {
+    genre: ['shooter'],
+    players: ['single', 'online-versus'],
+    maxPlayers: 12,
+    input: { supported: ['keyboard', 'mouse', 'gamepad', 'touch'], required: [] },
+    sessionMinutes: [10, 45],
+    engine: 'webgl',
+    demanding: true,
+    save: 'none',
+    accessibility: ['remappable-input'],
+    descriptors: ['violence'],
+  },
   'neon-driftway': {
     genre: ['racing', 'arcade'],
     players: ['single', 'online-versus'],

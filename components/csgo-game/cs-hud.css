@@ -1,0 +1,295 @@
+/**
+ * The CS:GO HUD (CsHud.tsx): an original layout over the game canvas. Team colours live in a scoped
+ * `--csg-*` group (the full-screen game tier, like `--tf2g-*` in components/tf2-game/tf2-game.css);
+ * everything else uses the TF2 Hub's `--app-*` palette the play page sits in. Text keeps a dark
+ * shadow so it reads over any part of the map.
+ */
+
+.csg-hud {
+  --csg-t: rgb(222 177 102);
+  --csg-ct: rgb(126 170 222);
+  --csg-ink: rgb(244 242 236);
+  --csg-ink-dim: rgb(200 198 190);
+  --csg-panel: rgb(12 14 18 / 0.55);
+  --csg-low: rgb(232 96 80);
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  color: var(--csg-ink);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
+}
+
+.csg-hud :is(button, .csg-buy, .csg-scores) {
+  pointer-events: auto;
+}
+
+.csg-flash {
+  position: absolute;
+  inset: 0;
+  background: rgb(255 255 255);
+}
+
+.csg-top {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 0.5rem);
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.csg-score {
+  min-width: 2.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--app-radius-sm);
+  background: var(--csg-panel);
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.csg-score[data-team='t'] {
+  color: var(--csg-t);
+}
+.csg-score[data-team='ct'] {
+  color: var(--csg-ct);
+}
+.csg-clock {
+  display: grid;
+  justify-items: center;
+  min-width: 5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--app-radius-sm);
+  background: var(--csg-panel);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.csg-clock small {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--csg-ink-dim);
+}
+.csg-bomb-clock {
+  color: var(--csg-low);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+}
+
+.csg-money {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 0.75rem);
+  left: calc(var(--safe-left, 0px) + 0.75rem);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.csg-buy-cue {
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-accent);
+  color: var(--app-accent-fg);
+  font-size: 0.8125rem;
+}
+
+.csg-feed {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 0.75rem);
+  right: calc(var(--safe-right, 0px) + 0.75rem);
+  display: grid;
+  justify-items: end;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+}
+.csg-feed li {
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--app-radius-sm);
+  background: var(--csg-panel);
+}
+.csg-feed li[data-local] {
+  outline: 1px solid var(--csg-ink-dim);
+}
+.csg-feed [data-team='t'] {
+  color: var(--csg-t);
+}
+.csg-feed [data-team='ct'] {
+  color: var(--csg-ct);
+}
+.csg-feed-weapon {
+  color: var(--csg-ink-dim);
+  text-transform: uppercase;
+}
+
+.csg-center {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  translate: -50% 0;
+  padding: 0.5rem 1rem;
+  border-radius: var(--app-radius-sm);
+  background: var(--csg-panel);
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.csg-vitals {
+  position: absolute;
+  bottom: calc(var(--safe-bottom, 0px) + 0.75rem);
+  left: calc(var(--safe-left, 0px) + 0.75rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--app-radius-sm);
+  background: var(--csg-panel);
+}
+.csg-vitals b {
+  font-size: 1.5rem;
+}
+.csg-health[data-low] {
+  color: var(--csg-low);
+}
+.csg-kit {
+  font-size: 0.75rem;
+  color: var(--csg-ink-dim);
+}
+
+.csg-ammo {
+  position: absolute;
+  bottom: calc(var(--safe-bottom, 0px) + 0.75rem);
+  right: calc(var(--safe-right, 0px) + 0.75rem);
+  display: grid;
+  justify-items: end;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--app-radius-sm);
+  background: var(--csg-panel);
+}
+.csg-ammo b {
+  font-size: 1.5rem;
+}
+.csg-weapon-name {
+  font-size: 0.75rem;
+  color: var(--csg-ink-dim);
+}
+.csg-slots {
+  display: grid;
+  justify-items: end;
+  font-size: 0.6875rem;
+  color: var(--csg-ink-dim);
+}
+.csg-slots li[data-active] {
+  color: var(--csg-ink);
+}
+
+/* The buy menu and the scoreboard: panels in the game's own palette, over the view. */
+.csg-buy,
+.csg-scores {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: min(44rem, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  overflow-y: auto;
+  padding: 1rem;
+  border-radius: var(--app-radius);
+  background: color-mix(in srgb, var(--app-bg) 92%, transparent);
+  color: var(--app-text);
+  text-shadow: none;
+}
+.csg-buy header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.csg-buy header h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.csg-buy header span {
+  margin-inline-start: auto;
+  color: var(--app-text-muted);
+  font-size: 0.875rem;
+}
+.csg-buy header button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border-radius: var(--app-radius-sm);
+  font-size: 1.25rem;
+}
+.csg-buy-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+.csg-buy-groups button {
+  min-height: 2.75rem;
+  padding: 0 0.875rem;
+  border-radius: var(--app-radius-sm);
+  border: 1px solid var(--app-border);
+  font-size: 0.8125rem;
+}
+.csg-buy-groups button[aria-pressed='true'] {
+  background: var(--app-accent);
+  color: var(--app-accent-fg);
+  border-color: transparent;
+}
+.csg-buy-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.5rem;
+}
+.csg-buy-items button {
+  display: flex;
+  width: 100%;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface);
+  font-size: 0.875rem;
+}
+.csg-buy-items button:disabled {
+  opacity: 0.45;
+}
+
+.csg-scores section + section {
+  margin-top: 1rem;
+}
+.csg-scores h2 {
+  margin-bottom: 0.375rem;
+  font-weight: 700;
+}
+.csg-scores section[data-team='t'] h2 {
+  color: var(--csg-t);
+}
+.csg-scores section[data-team='ct'] h2 {
+  color: var(--csg-ct);
+}
+.csg-scores table {
+  width: 100%;
+  font-size: 0.8125rem;
+}
+.csg-scores th {
+  text-align: start;
+  color: var(--app-text-muted);
+  font-weight: 500;
+}
+.csg-scores tr[data-local] {
+  font-weight: 700;
+}
+.csg-scores tr[data-dead] {
+  opacity: 0.55;
+}

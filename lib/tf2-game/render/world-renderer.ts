@@ -67,7 +67,7 @@ import {
   type ChunkData,
 } from './world-geometry';
 
-export type GameName = 'tf2' | 'hl2' | 'portal';
+export type GameName = 'tf2' | 'hl2' | 'portal' | 'csgo';
 
 export interface WorldRendererOptions {
   bsp: BspFile;

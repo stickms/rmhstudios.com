@@ -75,6 +75,7 @@ import massiveMarch from './games/massive-march';
 import neonDriftway from './games/neon-driftway';
 import nightrail from './games/nightrail';
 import portal from './games/portal';
+import csgo from './games/csgo';
 import rmhFarmingSim from './games/rmh-farming-sim';
 import rmhbox from './games/rmhbox';
 import rochesterOffensive from './games/rochester-offensive';
@@ -118,6 +119,7 @@ const GAME_MODULES: readonly GameInfo[] = [
   neonDriftway,
   nightrail,
   portal,
+  csgo,
   rmhFarmingSim,
   rmhbox,
   rochesterOffensive,

@@ -336,6 +336,7 @@ const GAME_DIRS: Record<string, string[]> = {
   // Half-Life 2 / Portal mount the shared game surface (components/tf2-game/GameCanvas).
   'half-life-2': ['components/sp-game', 'components/tf2-game'],
   portal: ['components/sp-game', 'components/tf2-game'],
+  csgo: ['components/csgo-game', 'components/tf2-game'],
 };
 
 function catalogGameIds(): string[] {
