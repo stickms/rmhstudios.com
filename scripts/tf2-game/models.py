@@ -54,6 +54,7 @@ from PIL import Image  # noqa: E402
 import convert  # noqa: E402  (material lookup and eye helpers, shared with the loadout converter)
 import glb  # noqa: E402
 import mdlinfo  # noqa: E402
+import ragdoll  # noqa: E402
 import srcanim  # noqa: E402
 import srcmodel  # noqa: E402
 import srctex  # noqa: E402
@@ -61,6 +62,8 @@ from vpkfs import GameFS  # noqa: E402
 
 # Bump when the GLB for the same source would change (renames every model GLB once).
 MODELS_VERSION = 1
+# The `ragdoll` extras' layout (ragdoll.py): a change rebuilds the models that carry one, and only those.
+RAGDOLL_VERSION = 1
 # Bump when the texture encoding changes (renames every texture once).
 TEX_VERSION = 1
 SCALE = 0.01905  # Source units (inches) -> metres
@@ -857,6 +860,9 @@ class Source:
         self.anim_pack = bool(anim_groups)
         self.picks = pick_sequences(self.vm, self.kind) if (self.anim_pack or self.kind != "model") else \
             [k for k in range(len(self.vm.seq)) if self.vm.sequence(k)[1]["anims"]]
+        # The ragdoll (.phy solids and joint limits) of a character; None for props and everything else.
+        self.phy = fs.read(stem + ".phy")
+        self.ragdoll = ragdoll.ragdoll_info(self.phy, [b["name"].lower() for b in mdlinfo.bones(self.mdl)])
 
     def used_textures(self):
         if not self.has_mesh:
@@ -875,6 +881,8 @@ class Source:
             parts += [hashlib.sha1(g.mdl).digest() for g in self.vm.groups[1:]]
             if self.frame_anims:  # a decoder change rebuilds the models that use it, and only those
                 parts.append(b"frameanim%d" % srcanim.FRAMEANIM_VERSION)
+        if self.ragdoll:  # only characters gain the ragdoll, so only they rebuild for it
+            parts += [b"ragdoll%d" % RAGDOLL_VERSION, hashlib.sha1(self.phy).digest()]
         return sha1(*parts, *tex_src)
 
     def anims_src(self):
@@ -940,6 +948,8 @@ def model_extras(src):
     procedural = [{"bone": b["name"].lower(), "type": b["proctype"]} for b in bone_list if b["proctype"]]
     if procedural:
         extras["proceduralBones"] = procedural
+    if src.ragdoll:
+        extras["ragdoll"] = src.ragdoll
     return extras
 
 
