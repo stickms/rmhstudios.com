@@ -179,6 +179,40 @@ export function HubPage({ data }: { data: HubData }) {
         </div>
 
         <aside>
+          <section className="stm-web-card" aria-labelledby="stm-hub-workshop">
+            <h2 id="stm-hub-workshop" className="stm-web-head">
+              {t('steam-hub-workshop', { defaultValue: 'Workshop' })}
+              <span className="stm-count">{data.workshop.length}</span>
+            </h2>
+            {data.workshop.length === 0 ? (
+              <p className="stm-web-pad stm-muted">
+                {t('steam-hub-workshop-empty', { defaultValue: 'Nothing here yet. Build something for this game.' })}
+              </p>
+            ) : (
+              <ul className="stm-people">
+                {data.workshop.map((w) => (
+                  <li key={w.slug}>
+                    <Link to="/user-builds/$slug" params={{ slug: w.slug }} className="stm-person">
+                      <span className="stm-person-body">
+                        <span className="stm-person-name">{w.title}</span>
+                        <span className="stm-person-sub">
+                          {w.author.name} · {t('steam-hub-workshop-likes', { defaultValue: 'Likes: {{n}}', n: w.likes })}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {data.signedIn ? (
+              <p className="stm-web-pad">
+                <a className="stm-link" href={`/user-builds/submit?forGame=${encodeURIComponent(data.gameId)}`}>
+                  {t('steam-hub-workshop-submit', { defaultValue: 'Submit your own' })}
+                </a>
+              </p>
+            ) : null}
+          </section>
+
           <section className="stm-web-card" aria-labelledby="stm-hub-guides">
             <h2 id="stm-hub-guides" className="stm-web-head">
               {t('steam-hub-guides', { defaultValue: 'Player guides' })}

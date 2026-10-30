@@ -40,6 +40,8 @@ export interface Build {
   visibility: 'PUBLIC' | 'UNLISTED' | 'PRIVATE';
   featured: boolean;
   technologies: string[];
+  /** Catalog id of the title this build was made for, if any. */
+  gameId?: string | null;
   likeCount: number;
   commentCount: number;
   viewCount: number;

@@ -256,6 +256,11 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // Games library detail pane + playtime notice (2026-10-30). English-only until the
   // translate pipeline runs on build; remove with it.
   'games-hub': [
+    // Workshop (2026-10-30)
+    'steam-hub-workshop',
+    'steam-hub-workshop-empty',
+    'steam-hub-workshop-likes',
+    'steam-hub-workshop-submit',
     // Store front (2026-10-30)
     'steam-also-played',
     'steam-kind-app',
@@ -1730,7 +1735,13 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'single-elim-tournaments-index',
     'title-tournaments-id',
   ],
-  'c-user-builds': ['view-source-build-card'],
+  'c-user-builds': [
+    'view-source-build-card',
+    // Workshop (2026-10-30)
+    'label-made-for',
+    'made-for-hint',
+    'made-for-none',
+  ],
   'r-strategies': ['leaderboards-index'],
   'r-rmhbox': ['player-count-of-max'],
   'settings-notifications': [

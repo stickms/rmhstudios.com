@@ -17,6 +17,7 @@ import { createBuildSchema } from '@/lib/user-builds-schema';
 import { buildCardSelect } from '@/lib/user-builds-list';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
+import { isTrackableTitle } from '@/lib/games/route-match';
 
 function generateSlug(title: string): string {
   const base = title
@@ -242,11 +243,17 @@ export const Route = createFileRoute('/api/user-builds')({
           demoUrl,
           thumbnailUrl,
           categoryId,
+          gameId,
           technologies,
           tags,
           visibility,
           price,
         } = parsed.data;
+
+        // A build made for a title must name one the catalog has.
+        if (gameId && !isTrackableTitle(gameId)) {
+          return Response.json({ error: 'Unknown game' }, { status: 400 });
+        }
 
         // Generate unique slug
         const baseSlug = generateSlug(title);
@@ -265,6 +272,7 @@ export const Route = createFileRoute('/api/user-builds')({
               demoUrl: demoUrl || null,
               thumbnailUrl: thumbnailUrl || null,
               categoryId: categoryId || null,
+              gameId: gameId || null,
               technologies: technologies || [],
               visibility,
               price: price && price > 0 ? price : null,
