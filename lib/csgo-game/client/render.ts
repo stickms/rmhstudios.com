@@ -302,13 +302,34 @@ export function csEntityFactory(s: EntityState, fx: EffectSystem): EntityRendera
 // ─── View model ──────────────────────────────────────────────────────────────
 
 /**
- * Off for now: the published CS:GO view models carry their sequences, but in a real browser the
- * converted animation does not pose them (the weapon sits in its bind pose across the view), and
- * models.py's CS:GO animation data is the part docs/tf2-game.md lists as verifiable only on the real
- * install. Until it is, the game plays as with CS:GO's `cl_drawviewmodel 0`: the HUD's crosshair, no
- * weapon in view.
+ * The view model is drawn only once the weapon's model carries animation clips. CS:GO stores every view
+ * model's sequences as frame animations, which the converter decodes from models builder 2
+ * (srcanim.py `decode_frame_anim`); a model published before that has none and would sit in its bind pose
+ * across the view, so until it is rebuilt the game plays as with `cl_drawviewmodel 0` (the HUD's crosshair).
  */
-export const CS_DRAW_VIEWMODEL = false;
+export const viewModelAnimated = (inst: ModelInstance): boolean => (inst.animator?.set.sequences.size ?? 0) > 0;
+
+/**
+ * Each team's default gloves (the generic first-person hands, no faction sleeves), from the model channel:
+ * T the fingerless gloves, CT the hard-knuckle ones, else bare hands. Resolved once from `mdl/index.json`.
+ */
+const GLOVE_PREFS: Record<number, RegExp[]> = {
+  [CS_TEAM_T]: [/\/v_glove_fingerless\.mdl$/, /\/v_bare_hands\.mdl$/],
+  [CS_TEAM_CT]: [/\/v_glove_hardknuckle\.mdl$/, /\/v_bare_hands\.mdl$/],
+};
+let gloveModels: Record<number, string> | null = null;
+let gloveLookup: Promise<void> | null = null;
+function glovesFor(team: number, ctx: RenderContext): string {
+  if (!gloveModels) {
+    gloveLookup ??= ctx.models.loadIndex().then((index) => {
+      const keys = Object.keys(index ?? {});
+      const pick = (res: RegExp[]) => res.map((re) => keys.find((k) => re.test(k))).find(Boolean) ?? '';
+      gloveModels = { [CS_TEAM_T]: pick(GLOVE_PREFS[CS_TEAM_T]), [CS_TEAM_CT]: pick(GLOVE_PREFS[CS_TEAM_CT]) };
+    });
+    return '';
+  }
+  return gloveModels[team] ?? gloveModels[CS_TEAM_CT] ?? '';
+}
 
 /** How far (units) and how fast the weapon bobs and sways with movement and turning. */
 const BOB_AMOUNT = 0.6;
@@ -323,6 +344,9 @@ export class CsViewModel implements ProfileViewModel {
   private readonly scene = new Scene();
   private readonly camera = new PerspectiveCamera(68, 1, SOURCE_UNIT, 2048 * SOURCE_UNIT);
   private readonly model = new PlacedModel();
+  /** The team's gloves, bone-merged onto the weapon (CS:GO's view models animate the weapon; the hands follow). */
+  private gloves: ModelInstance | null = null;
+  private glovesModel = '';
   private readonly probe = new LightProbe();
   /** The activity playing and its change counter (the weapon's networked vmActivity / vmActivitySeq). */
   private lastAct = -1;
@@ -347,19 +371,36 @@ export class CsViewModel implements ProfileViewModel {
     frame: { eyeOrigin: Vec3; eyeAngles: Vec3; velocity: Vec3; dt: number; visible: boolean },
     ctx: RenderContext,
   ): void {
-    void me;
     const w = p?.activeWeapon() as CsWeapon | null;
     const info = w ? csWeaponByDefindex(w.defindex) : null;
-    this.visible = CS_DRAW_VIEWMODEL && !!p && !!info && frame.visible;
+    this.visible = !!p && !!info && frame.visible;
     if (!this.visible || !info) {
       this.model.hide();
       return;
     }
     const fresh = this.model.model !== info.viewModel;
     const inst = this.model.ensure(info.viewModel, ctx, this.scene);
-    if (!inst) {
+    if (!inst || !viewModelAnimated(inst)) {
+      this.model.hide();
       this.visible = false;
       return;
+    }
+    if (fresh) {
+      // A new weapon model: the gloves merge onto its bones again.
+      this.gloves?.dispose();
+      this.gloves = null;
+      this.glovesModel = '';
+    }
+    const glovesModel = glovesFor(typeof me?.team === 'number' ? me.team : CS_TEAM_CT, ctx);
+    if (glovesModel && glovesModel !== this.glovesModel) {
+      const asset = ctx.models.peek(glovesModel);
+      if (asset === undefined) void ctx.models.asset(glovesModel);
+      else {
+        this.gloves?.dispose();
+        this.gloves = asset ? new ModelInstance(asset, { uniforms: inst.uniforms, noAnim: true }) : null;
+        this.glovesModel = glovesModel;
+        if (this.gloves) inst.attach(this.gloves);
+      }
     }
     // The weapon's activity (idle, draw, fire, reload, …) as a sequence of its own activity table: a
     // new change counter restarts a one-shot, an idle loops (a model held in its bind pose would sit
@@ -418,6 +459,8 @@ export class CsViewModel implements ProfileViewModel {
   }
 
   dispose(): void {
+    this.gloves?.dispose();
+    this.gloves = null;
     this.model.dispose();
   }
 }

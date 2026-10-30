@@ -34,6 +34,7 @@ so a model or texture whose source is unchanged keeps its name and is neither co
 (`--state` is the channel's published state). See docs/tf2-game.md "Models" for the GLB extras schema.
 """
 import argparse
+import collections
 import hashlib
 import io
 import json
@@ -83,6 +84,8 @@ KNOWN_SHADERS = {"vertexlitgeneric", "unlitgeneric", "lightmappedgeneric", "eyer
 CSGO_APPROX = {"customweapon": "vertexlitgeneric", "character": "vertexlitgeneric",
                "vertexlitgeneric_dx9": "vertexlitgeneric"}
 SHADER_COUNTS = {}  # unrecognised / approximated shader -> materials seen
+# Why animation clips failed to decode, over the whole run (printed in the summary).
+ANIM_ERRORS = collections.Counter()
 
 
 def _csgo_condition(cond):
@@ -764,10 +767,25 @@ def build_animation(fs, vm, picks, skel, fix):
             clips.append(clip_from_desc(g, mdlinfo.animdesc(g.mdl, a), skel, fix, name, fs, post=post))
         except (srcmodel.ModelError, struct.error, ValueError, IndexError) as e:
             errors.append("%s: %s" % (name, e))
+            # The run's summary counts why clips fail (the reason without the clip's name).
+            ANIM_ERRORS[re.sub(r"\d+", "N", str(e))] += 1
     return clips, seq_meta, activities, weightlists, errors
 
 
 # ------------------------------------------------------------------------------------------------- the model
+
+def uses_frame_anims(vm):
+    """Whether any animation of the model (or its includes) is a frame animation (CS:GO's STUDIO_FRAMEANIM)."""
+    for g in vm.groups:
+        for s in g.sequences:
+            for a in s["anims"]:
+                try:
+                    if mdlinfo.animdesc(g.mdl, a)["flags"] & srcanim.DESC_FRAMEANIM:
+                        return True
+                except (srcmodel.ModelError, struct.error, ValueError, IndexError):
+                    continue
+    return False
+
 
 def model_kind(path):
     p = path.lower()
@@ -803,6 +821,7 @@ class Source:
             self.slots = csgo_slots(fs, self.slots)
         self.cap = texture_cap(self.path)
         anim_groups = [g for g in self.vm.groups[1:] if any(s["anims"] for s in g.sequences)]
+        self.frame_anims = uses_frame_anims(self.vm)
         self.anim_pack = bool(anim_groups)
         self.picks = pick_sequences(self.vm, self.kind) if (self.anim_pack or self.kind != "model") else \
             [k for k in range(len(self.vm.seq)) if self.vm.sequence(k)[1]["anims"]]
@@ -822,10 +841,13 @@ class Source:
                  hashlib.sha1(self.vvd or b"").digest(), hashlib.sha1(self.vtx or b"").digest()]
         if not self.anim_pack:  # animations embedded: their includes are part of the source
             parts += [hashlib.sha1(g.mdl).digest() for g in self.vm.groups[1:]]
+            if self.frame_anims:  # a decoder change rebuilds the models that use it, and only those
+                parts.append(b"frameanim%d" % srcanim.FRAMEANIM_VERSION)
         return sha1(*parts, *tex_src)
 
     def anims_src(self):
-        return sha1(b"anims", MODELS_VERSION, *[hashlib.sha1(g.mdl).digest() for g in self.vm.groups])
+        extra = [b"frameanim%d" % srcanim.FRAMEANIM_VERSION] if self.frame_anims else []
+        return sha1(b"anims", MODELS_VERSION, *[hashlib.sha1(g.mdl).digest() for g in self.vm.groups], *extra)
 
 
 def finite(value):
@@ -1161,6 +1183,13 @@ def main(argv=None):
                                        len(made), total / 1048576, tex / 1048576, len(seen)))
     for why, n in sorted(reasons.items(), key=lambda kv: -kv[1])[:10]:
         print("  %5d  %s" % (n, why))
+    if ANIM_ERRORS:
+        print("animation clips not decoded: " + ", ".join(
+            "%s %d" % (why, n) for why, n in ANIM_ERRORS.most_common(10)))
+    st = srcanim.FRAME_STATS
+    if st["clips"]:
+        print("frame animations: %d clips; constant-rotation bones near the bind pose (%.0f deg): %d of %d"
+              % (st["clips"], srcanim.FRAME_CHECK_DEGREES, st["near_bind"], st["const_bones"]))
     if SHADER_COUNTS:
         print("shaders approximated or not recognised (materials): " + ", ".join(
             "%s %d%s" % (sh, n, " -> " + CSGO_APPROX[sh] if sh in CSGO_APPROX else "")

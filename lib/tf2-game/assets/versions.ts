@@ -127,7 +127,8 @@ export const GAME_ASSET_CHANNELS = {
   'csgo-models': {
     game: 'csgo',
     kind: 'mdl',
-    builder: 1,
+    // 2: CS:GO's frame animations decode (every weapon view model's sequences were dropped before).
+    builder: 2,
     env: 'CSGO_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },
