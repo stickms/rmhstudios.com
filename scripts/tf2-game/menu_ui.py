@@ -66,7 +66,30 @@ CSGO_MENU_ICONS = re.compile(
 CSGO_VIDEO_PREFERENCE = ("dust2", "mirage", "inferno", "nuke", "overpass", "vertigo", "ancient", "anubis",
                          "cbble", "train", "sirocco")
 CSGO_VIDEO_SKIP = re.compile(r"(preview|acknowledge|intro|tutorial|trailer|loading)")
-FONT_EXT = (".ttf", ".otf", ".woff", ".woff2")
+FONT_EXT = (".ttf", ".otf", ".woff", ".woff2", ".vfont")
+VFONT_MAGIC = b"VFONT1"
+VFONT_KEY = 167
+
+
+def decode_vfont(data):
+    """Panorama's `.vfont`: a TrueType file with each byte XORed by a rolling key, seeded from a salt kept
+    before the trailing `VFONT1` tag (the format as ValveResourceFormat, an open-source tool, reads it).
+    -> the TrueType bytes."""
+    if len(data) < len(VFONT_MAGIC) + 1 or data[-len(VFONT_MAGIC):] != VFONT_MAGIC:
+        raise ValueError("not a vfont")
+    count = data[-len(VFONT_MAGIC) - 1]
+    end = len(data) - len(VFONT_MAGIC) - count
+    if count < 1 or end < 0:
+        raise ValueError("vfont: bad salt length")
+    key = VFONT_KEY
+    for b in data[end:end + count - 1]:
+        key ^= (b + VFONT_KEY) % 256
+    out = bytearray(end)
+    for i in range(end):
+        c = data[i]
+        out[i] = c ^ key
+        key = (c + VFONT_KEY) % 256
+    return bytes(out)
 
 
 def json_bytes(doc):
@@ -258,7 +281,7 @@ def build_csgo(inst, out, errors):
     def rank(n):
         stem = n.rsplit("/", 1)[-1][:-5]
         pref = next((i for i, k in enumerate(CSGO_VIDEO_PREFERENCE) if stem.startswith(k)), 99)
-        cut = 0 if stem.endswith("720") else 1 if not re.search(r"\d+$", stem) else 2
+        cut = 0 if re.search(r"720p?$", stem) else 1 if not re.search(r"\d+p?$", stem) else 2
         return (pref, cut, stem)
     ranked = sorted(movies, key=rank)
     for n in ranked:
@@ -271,10 +294,21 @@ def build_csgo(inst, out, errors):
     print("  fonts: %s" % ", ".join(font_names[:40]))
     print("  panorama/fonts/: %s" % ", ".join(n.rsplit("/", 1)[-1] for n in inst.names("panorama/fonts/")))
     for n in font_names:
-        if n.endswith(FONT_EXT):
-            raw = inst.read(n)
-            if raw:
+        # Stratum2 (the menu's type, not its mono-digit cut) and Noto Sans for the letters it lacks; the
+        # CJK and Thai Noto families are several MB each and stay out.
+        stem = n.rsplit("/", 1)[-1]
+        if not (re.match(r"stratum2(?!.*monodigit)", stem) or re.match(r"notosans-(regular|bold)\.", stem)):
+            continue
+        raw = inst.read(n)
+        if not raw:
+            continue
+        try:
+            if n.endswith(".vfont"):
+                fonts[n[:-6] + ".ttf"] = out.emit("font", "ttf", decode_vfont(raw))
+            else:
                 fonts[n] = out.emit("font", n.rsplit(".", 1)[1], raw)
+        except ValueError as exc:
+            errors.append({"id": n, "error": str(exc)})
     # The logo and the default background, where Panorama keeps them as textures.
     for n in inst.names("materials/panorama/images/backgrounds/", ".vtf"):
         stem = n.rsplit("/", 1)[-1][:-4]
