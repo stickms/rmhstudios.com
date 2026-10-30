@@ -179,6 +179,7 @@ import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explore
 import { Route as ForestExplorerExploreRouteImport } from './routes/forest-explorer/explore'
 import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
 import { Route as GamesLibraryRouteImport } from './routes/games/_library'
+import { Route as GamesCommunityRouteImport } from './routes/games/community'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
@@ -799,6 +800,8 @@ import { Route as EmbedReplayIdRouteImport } from './routes/embed.replay.$id'
 import { Route as GamesLibraryIndexRouteImport } from './routes/games/_library/index'
 import { Route as GamesLibraryGameIdRouteImport } from './routes/games/_library/$gameId'
 import { Route as GamesLibrarySliceItRouteImport } from './routes/games/_library/slice-it'
+import { Route as GamesGroupsSlugRouteImport } from './routes/games/groups.$slug'
+import { Route as GamesProfileIdRouteImport } from './routes/games/profile.$id'
 import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
@@ -2186,6 +2189,11 @@ const ForestExplorerStoryRoute = ForestExplorerStoryRouteImport.update({
 } as any)
 const GamesLibraryRoute = GamesLibraryRouteImport.update({
   id: '/_library',
+  getParentRoute: () => GamesRoute,
+} as any)
+const GamesCommunityRoute = GamesCommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
   getParentRoute: () => GamesRoute,
 } as any)
 const KowloonKnockoutIndexRoute = KowloonKnockoutIndexRouteImport.update({
@@ -5323,6 +5331,16 @@ const GamesLibrarySliceItRoute = GamesLibrarySliceItRouteImport.update({
   path: '/slice-it',
   getParentRoute: () => GamesLibraryRoute,
 } as any)
+const GamesGroupsSlugRoute = GamesGroupsSlugRouteImport.update({
+  id: '/groups/$slug',
+  path: '/groups/$slug',
+  getParentRoute: () => GamesRoute,
+} as any)
+const GamesProfileIdRoute = GamesProfileIdRouteImport.update({
+  id: '/profile/$id',
+  path: '/profile/$id',
+  getParentRoute: () => GamesRoute,
+} as any)
 const LibraryAlbumsAlbumIdRoute = LibraryAlbumsAlbumIdRouteImport.update({
   id: '/library/albums/$albumId',
   path: '/library/albums/$albumId',
@@ -8384,6 +8402,7 @@ export interface FileRoutesByFullPath {
   '/discord/rmhbox': typeof DiscordRmhboxRoute
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
+  '/games/community': typeof GamesCommunityRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
@@ -8900,6 +8919,8 @@ export interface FileRoutesByFullPath {
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/games/$gameId': typeof GamesLibraryGameIdRoute
   '/games/slice-it': typeof GamesLibrarySliceItRoute
+  '/games/groups/$slug': typeof GamesGroupsSlugRoute
+  '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
@@ -9685,6 +9706,7 @@ export interface FileRoutesByTo {
   '/discord/rmhbox': typeof DiscordRmhboxRoute
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
+  '/games/community': typeof GamesCommunityRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
@@ -10201,6 +10223,8 @@ export interface FileRoutesByTo {
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/games/$gameId': typeof GamesLibraryGameIdRoute
   '/games/slice-it': typeof GamesLibrarySliceItRoute
+  '/games/groups/$slug': typeof GamesGroupsSlugRoute
+  '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
@@ -11014,6 +11038,7 @@ export interface FileRoutesById {
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/games/_library': typeof GamesLibraryRouteWithChildren
+  '/games/community': typeof GamesCommunityRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
@@ -11531,6 +11556,8 @@ export interface FileRoutesById {
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/games/_library/$gameId': typeof GamesLibraryGameIdRoute
   '/games/_library/slice-it': typeof GamesLibrarySliceItRoute
+  '/games/groups/$slug': typeof GamesGroupsSlugRoute
+  '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
@@ -12345,6 +12372,7 @@ export interface FileRouteTypes {
     | '/discord/rmhbox'
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
+    | '/games/community'
     | '/library/$slug'
     | '/news/$slug'
     | '/news/rss.xml'
@@ -12861,6 +12889,8 @@ export interface FileRouteTypes {
     | '/embed/replay/$id'
     | '/games/$gameId'
     | '/games/slice-it'
+    | '/games/groups/$slug'
+    | '/games/profile/$id'
     | '/library/albums/$albumId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
@@ -13646,6 +13676,7 @@ export interface FileRouteTypes {
     | '/discord/rmhbox'
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
+    | '/games/community'
     | '/library/$slug'
     | '/news/$slug'
     | '/news/rss.xml'
@@ -14162,6 +14193,8 @@ export interface FileRouteTypes {
     | '/embed/replay/$id'
     | '/games/$gameId'
     | '/games/slice-it'
+    | '/games/groups/$slug'
+    | '/games/profile/$id'
     | '/library/albums/$albumId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
@@ -14974,6 +15007,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/games/_library'
+    | '/games/community'
     | '/library/$slug'
     | '/news/$slug'
     | '/news/rss.xml'
@@ -15491,6 +15525,8 @@ export interface FileRouteTypes {
     | '/embed/replay/$id'
     | '/games/_library/$gameId'
     | '/games/_library/slice-it'
+    | '/games/groups/$slug'
+    | '/games/profile/$id'
     | '/library/albums/$albumId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
@@ -18152,6 +18188,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/games'
       preLoaderRoute: typeof GamesLibraryRouteImport
+      parentRoute: typeof GamesRoute
+    }
+    '/games/community': {
+      id: '/games/community'
+      path: '/community'
+      fullPath: '/games/community'
+      preLoaderRoute: typeof GamesCommunityRouteImport
       parentRoute: typeof GamesRoute
     }
     '/kowloon-knockout/': {
@@ -22494,6 +22537,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesLibrarySliceItRouteImport
       parentRoute: typeof GamesLibraryRoute
     }
+    '/games/groups/$slug': {
+      id: '/games/groups/$slug'
+      path: '/groups/$slug'
+      fullPath: '/games/groups/$slug'
+      preLoaderRoute: typeof GamesGroupsSlugRouteImport
+      parentRoute: typeof GamesRoute
+    }
+    '/games/profile/$id': {
+      id: '/games/profile/$id'
+      path: '/profile/$id'
+      fullPath: '/games/profile/$id'
+      preLoaderRoute: typeof GamesProfileIdRouteImport
+      parentRoute: typeof GamesRoute
+    }
     '/library/albums/$albumId': {
       id: '/library/albums/$albumId'
       path: '/library/albums/$albumId'
@@ -26829,10 +26886,16 @@ const GamesLibraryRouteWithChildren = GamesLibraryRoute._addFileChildren(
 
 interface GamesRouteChildren {
   GamesLibraryRoute: typeof GamesLibraryRouteWithChildren
+  GamesCommunityRoute: typeof GamesCommunityRoute
+  GamesGroupsSlugRoute: typeof GamesGroupsSlugRoute
+  GamesProfileIdRoute: typeof GamesProfileIdRoute
 }
 
 const GamesRouteChildren: GamesRouteChildren = {
   GamesLibraryRoute: GamesLibraryRouteWithChildren,
+  GamesCommunityRoute: GamesCommunityRoute,
+  GamesGroupsSlugRoute: GamesGroupsSlugRoute,
+  GamesProfileIdRoute: GamesProfileIdRoute,
 }
 
 const GamesRouteWithChildren = GamesRoute._addFileChildren(GamesRouteChildren)

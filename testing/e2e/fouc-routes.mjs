@@ -138,6 +138,16 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Real game, absent guide — the guide shell with its not-found branch.',
   },
+  '/games/profile/$id': {
+    path: '/games/profile/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a Steam-style profile.',
+  },
+  '/games/groups/$slug': {
+    path: '/games/groups/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a Steam-style group page.',
+  },
   '/groups/$id': {
     path: '/groups/fouc-audit',
     fidelity: 'shell',
