@@ -2109,3 +2109,20 @@ button.stm-star {
 .stm-activity-when {
   white-space: nowrap;
 }
+
+/* Profile showcase editor */
+.stm-showcase-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.stm-showcase-editor fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.stm-showcase-editor legend {
+  margin-bottom: 4px;
+}

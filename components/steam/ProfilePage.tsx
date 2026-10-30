@@ -9,6 +9,7 @@ import { AchievementIcon } from './AchievementIcon';
 import { CommunityNav } from './CommunityNav';
 import { GroupRow } from './CommunityHome';
 import { PersonAvatar } from './SteamPeople';
+import { ShowcaseEditor } from './ShowcaseEditor';
 import { TitleArt } from './TitleArt';
 
 /** A player's profile, laid out as steamcommunity.com lays out one. */
@@ -160,6 +161,11 @@ export function ProfilePage({ profile: p, signedIn }: { profile: SteamProfile; s
                 })}
               </span>
             </h2>
+            {p.showcaseEditor ? (
+              <div className="stm-web-pad">
+                <ShowcaseEditor key={p.showcaseEditor.selected.achievements.join() + p.showcaseEditor.selected.badges.join()} data={p.showcaseEditor} />
+              </div>
+            ) : null}
             {p.recentAchievements.length === 0 ? (
               <p className="stm-muted stm-web-pad">
                 {t('steam-no-achievements', { defaultValue: 'No achievements unlocked yet.' })}

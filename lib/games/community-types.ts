@@ -43,6 +43,13 @@ export type ProfileAchievement = {
 
 export type ProfileBadge = TitleRef & { level: number; foil: boolean };
 
+/** What the owner of a profile can pick from when choosing their showcase. */
+export type ShowcaseEditorData = {
+  selected: { achievements: string[]; badges: string[] };
+  achievements: ProfileAchievement[];
+  badges: (ProfileBadge & { key: string })[];
+};
+
 export type SteamProfile = {
   id: string;
   handle: string | null;
@@ -80,6 +87,8 @@ export type SteamProfile = {
   reviewCount: number;
   /** The title they have open this minute, if their setting lets this viewer see it. */
   nowPlaying: NowPlaying | null;
+  /** Only on your own profile: everything you could feature, and what you have chosen. */
+  showcaseEditor: ShowcaseEditorData | null;
 };
 
 export type TrendingTitle = TitleRef & { players: number; seconds: number };

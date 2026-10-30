@@ -510,6 +510,7 @@ import { Route as ApiGameNightIndexRouteImport } from './routes/api/game-night/i
 import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
 import { Route as ApiGamesHowToPlayRouteImport } from './routes/api/games/how-to-play'
 import { Route as ApiGamesPlaytimeRouteImport } from './routes/api/games/playtime'
+import { Route as ApiGamesShowcaseRouteImport } from './routes/api/games/showcase'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiGiftExchangesIndexRouteImport } from './routes/api/gift-exchanges/index'
 import { Route as ApiGlobesetRecordRouteImport } from './routes/api/globeset/record'
@@ -3886,6 +3887,11 @@ const ApiGamesHowToPlayRoute = ApiGamesHowToPlayRouteImport.update({
 const ApiGamesPlaytimeRoute = ApiGamesPlaytimeRouteImport.update({
   id: '/api/games/playtime',
   path: '/api/games/playtime',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesShowcaseRoute = ApiGamesShowcaseRouteImport.update({
+  id: '/api/games/showcase',
+  path: '/api/games/showcase',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
@@ -8832,6 +8838,7 @@ export interface FileRoutesByFullPath {
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/games/playtime': typeof ApiGamesPlaytimeRoute
+  '/api/games/showcase': typeof ApiGamesShowcaseRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
@@ -10161,6 +10168,7 @@ export interface FileRoutesByTo {
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/games/playtime': typeof ApiGamesPlaytimeRoute
+  '/api/games/showcase': typeof ApiGamesShowcaseRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
@@ -11519,6 +11527,7 @@ export interface FileRoutesById {
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/games/playtime': typeof ApiGamesPlaytimeRoute
+  '/api/games/showcase': typeof ApiGamesShowcaseRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
@@ -12877,6 +12886,7 @@ export interface FileRouteTypes {
     | '/api/game-saves/$gameId'
     | '/api/games/how-to-play'
     | '/api/games/playtime'
+    | '/api/games/showcase'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/groupcalls/active'
@@ -14206,6 +14216,7 @@ export interface FileRouteTypes {
     | '/api/game-saves/$gameId'
     | '/api/games/how-to-play'
     | '/api/games/playtime'
+    | '/api/games/showcase'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/groupcalls/active'
@@ -15563,6 +15574,7 @@ export interface FileRouteTypes {
     | '/api/game-saves/$gameId'
     | '/api/games/how-to-play'
     | '/api/games/playtime'
+    | '/api/games/showcase'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/groupcalls/active'
@@ -16706,6 +16718,7 @@ export interface RootRouteChildren {
   ApiGameSavesGameIdRoute: typeof ApiGameSavesGameIdRoute
   ApiGamesHowToPlayRoute: typeof ApiGamesHowToPlayRoute
   ApiGamesPlaytimeRoute: typeof ApiGamesPlaytimeRoute
+  ApiGamesShowcaseRoute: typeof ApiGamesShowcaseRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiGlobesetRecordRoute: typeof ApiGlobesetRecordRoute
   ApiGroupcallsActiveRoute: typeof ApiGroupcallsActiveRoute
@@ -20828,6 +20841,13 @@ declare module '@tanstack/react-router' {
       path: '/api/games/playtime'
       fullPath: '/api/games/playtime'
       preLoaderRoute: typeof ApiGamesPlaytimeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/showcase': {
+      id: '/api/games/showcase'
+      path: '/api/games/showcase'
+      fullPath: '/api/games/showcase'
+      preLoaderRoute: typeof ApiGamesShowcaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/gif/search': {
@@ -29329,6 +29349,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGameSavesGameIdRoute: ApiGameSavesGameIdRoute,
   ApiGamesHowToPlayRoute: ApiGamesHowToPlayRoute,
   ApiGamesPlaytimeRoute: ApiGamesPlaytimeRoute,
+  ApiGamesShowcaseRoute: ApiGamesShowcaseRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
   ApiGlobesetRecordRoute: ApiGlobesetRecordRoute,
   ApiGroupcallsActiveRoute: ApiGroupcallsActiveRoute,

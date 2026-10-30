@@ -616,6 +616,7 @@ model User {
   cardListingsBought        CardListing[]        @relation("CardBuyer")
   cardBuyOrders             CardBuyOrder[]
   gameCollectionItems       GameCollectionItem[]
+  gameProfileShowcase       GameProfileShowcase?
   cardTradesSent            CardTrade[]          @relation("CardTradeFrom")
   cardTradesReceived        CardTrade[]          @relation("CardTradeTo")
   gameThreads               GameThread[]
@@ -5983,6 +5984,20 @@ model GameCollectionItem {
 
   @@id([userId, collection, gameId])
   @@map("game_collection_item")
+}
+
+// The achievements and badges a member chose to feature on their Steam-style
+// profile (at most six of each). Empty means "show my most recent".
+model GameProfileShowcase {
+  userId         String   @id
+  achievementIds String[] @default([])
+  /// "<gameId>:<normal|foil>" keys of badges the member owns.
+  badges         String[] @default([])
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("game_profile_showcase")
 }
 
 enum BuyOrderStatus {
