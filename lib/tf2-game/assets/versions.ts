@@ -42,7 +42,8 @@ export const GAME_ASSET_CHANNELS = {
   'game-models': {
     game: 'tf2',
     kind: 'mdl',
-    builder: 1,
+    // 2: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`).
+    builder: 2,
     env: 'TF2_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },
@@ -78,7 +79,8 @@ export const GAME_ASSET_CHANNELS = {
   'hl2-models': {
     game: 'hl2',
     kind: 'mdl',
-    builder: 1,
+    // 2: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`).
+    builder: 2,
     env: 'HL2_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },
@@ -101,7 +103,8 @@ export const GAME_ASSET_CHANNELS = {
   'portal-models': {
     game: 'portal',
     kind: 'mdl',
-    builder: 1,
+    // 2: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`).
+    builder: 2,
     env: 'PORTAL_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },
@@ -133,7 +136,9 @@ export const GAME_ASSET_CHANNELS = {
     // 4: the frame-animated ref sets the clips' basis, recorded as source.clipFrame (FRAMEANIM_VERSION 3).
     // 5: the sync's probe dumps the bare-arm textures' VTF headers (outputs unchanged).
     // 6: the probe also checks those textures' archive CRCs and decoded colour (outputs unchanged).
-    builder: 6,
+    // 7: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`):
+    //    the bare forearms were blackened by Pillow's premultiplied resize.
+    builder: 7,
     env: 'CSGO_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },

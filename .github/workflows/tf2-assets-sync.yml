@@ -146,7 +146,7 @@ jobs:
           { echo "build=$build"; echo "build_hl2=$build_hl2"; echo "build_portal=$build_portal"; } >> "$GITHUB_OUTPUT"
           force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as models --state-key tf2-models/_state.json --build "$build" $force
-          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hud --state-key tf2-hud-base/_state.json --build "$build" --builder 1 $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hud --state-key tf2-hud-base/_state.json --build "$build" --builder 2 $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as icons --state-key tf2-icons/_state.json --build "$build" --builder 1 $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as paintkits --state-key tf2-paintkits/_state.json --build "$build" --builder 1 $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as particles --state-key tf2-particles/_state.json --build "$build" --builder 1 $force
@@ -518,7 +518,7 @@ jobs:
           force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
           prune=""; [ "${{ inputs.prune }}" = "true" ] && prune="--prune"
           pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/hud --prefix tf2-hud-base/ \
-            --state-key tf2-hud-base/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune $force
+            --state-key tf2-hud-base/_state.json --build "${{ steps.gate.outputs.build }}" --builder 2 $prune $force
 
       # Game channels: nothing goes up past the shared storage budget.
       - name: Game storage guard, all three games (budget TF2_GAME_STORAGE_BUDGET_GB, default 12)

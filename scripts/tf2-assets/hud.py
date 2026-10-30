@@ -18,7 +18,10 @@ TF2's Advanced Options script `cfg/user_default.scr`, and the main menu's
 background lists `scripts/chapterbackgrounds.txt` / `characterbackgrounds.txt`
 (the option pages `resource/OptionsSub*.res` are under resource/ already).
 Files are read as the game reads them: tf/ before hl2/ (gameinfo.txt's search
-order), so TF2's gamemenu.res and kb_act.lst win over Half-Life 2's.
+order: TF2's archives, then its loose files, then Half-Life 2's), so TF2's
+clientscheme.res, gamemenu.res and kb_act.lst win over Half-Life 2's — TF2 ships
+several of its UI files loose under tf/, which an archives-first read let
+Half-Life 2's packed copies shadow. The run prints where each menu file came from.
 Closed captions and the item schema's strings are left out: no HUD reads
 them, and they are the bulk of `resource/`. Only files whose
 content changed since `--state` are written; `wanted.json` lists them all, and
@@ -52,7 +55,7 @@ HL2_MENU_FILES = ["scripts/kb_act.lst"]
 ENGINE_LANGUAGE_PREFIXES = ["valve", "gameui"]
 # resource/ files no HUD reads: closed captions and the war paint / item names.
 SKIP_RESOURCE = re.compile(r"^resource/(?:closecaption_|subtitles_|tf_proto_obj_defs_)", re.I)
-BASE_VERSION = 2  # bump when the selection above changes
+BASE_VERSION = 3  # bump when the selection above changes
 
 
 def wanted_resource(name):
@@ -77,6 +80,44 @@ def game_first(fs):
     fs.paks.sort(key=rank)
     fs._index = None
     return fs
+
+
+# The menu and scheme files whose source the run reports (a Half-Life 2 copy here breaks the menus).
+REPORT_FILES = ["resource/clientscheme.res", "resource/sourcescheme.res", "resource/gamemenu.res",
+                "resource/ui/mainmenuoverride.res", "scripts/chapterbackgrounds.txt",
+                "scripts/characterbackgrounds.txt"]
+
+
+class TfFirst:
+    """The search path TF2 reads with: its archives, then its loose files under tf/, then everything else
+    (Half-Life 2's archives and loose files). GameFS alone reads every archive before any loose file."""
+
+    def __init__(self, fs):
+        self.fs = fs
+        self.root = fs.root
+        self.paks = fs.paks
+        self.tf_paks = [p for p in fs.paks if "/tf/" in getattr(p, "vpk_path", "").replace("\\", "/")]
+        self.origin = {}
+
+    def read(self, name):
+        name = name.replace("\\", "/").lower().lstrip("/")
+        for pak in self.tf_paks:
+            if name in pak:
+                self.origin[name] = os.path.basename(pak.vpk_path)
+                return pak[name].read()
+        path = os.path.join(self.root, "tf", name)
+        if os.path.isfile(path):
+            self.origin[name] = "tf/ (loose)"
+            with open(path, "rb") as fh:
+                return fh.read()
+        data = self.fs.read(name)
+        if data is not None:
+            pak = self.fs.index().get(name)
+            self.origin[name] = os.path.basename(pak.vpk_path) if pak is not None else "loose"
+        return data
+
+    def all_names(self, prefix="", suffix=""):
+        return self.fs.all_names(prefix, suffix)
 
 
 def read_hl2(fs, name):
@@ -115,7 +156,7 @@ def main():
     ap.add_argument("--build", default="unknown")
     args = ap.parse_args()
 
-    fs = game_first(GameFS(args.root))
+    fs = TfFirst(game_first(GameFS(args.root)))
     published = {}
     if args.state and os.path.exists(args.state):
         published = json.load(open(args.state)).get("models", {})
@@ -170,6 +211,8 @@ def main():
         if base:
             take(texture_path(base))
 
+    for n in REPORT_FILES:
+        print("%-38s %s" % (n, fs.origin.get(n, "not found") if n in files else "not found"))
     os.makedirs(args.out, exist_ok=True)
     manifest_rows = []
     wanted, written = {}, 0

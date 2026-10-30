@@ -1,5 +1,5 @@
 /**
- * /portal — Portal: First Slice (test chambers 00–10) on the browser engine,
+ * /portal — Portal (test chambers 00–10) on the browser engine,
  * with the portal gun and recursive portal views.
  */
 'use client';
@@ -13,7 +13,7 @@ export default function PortalPlayPage() {
     <SpPlayPage
       game="portal"
       title={t('play_portal_title', { defaultValue: 'Portal' })}
-      subtitle={t('play_portal_subtitle', { defaultValue: 'First Slice — test chambers 00 to 10 of the Aperture Science Enrichment Center.' })}
+      subtitle={t('play_portal_chambers', { defaultValue: 'Test chambers 00 to 10 of the Aperture Science Enrichment Center.' })}
       chapters={{
         testchmb_a_00: t('play_portal_ch00', { defaultValue: 'Test Chambers 00–01' }),
         testchmb_a_01: t('play_portal_ch01', { defaultValue: 'Test Chambers 02–03' }),
