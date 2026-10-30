@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { ACHIEVEMENTS } from '@/lib/achievements/catalog';
 import { getProfile } from '@/lib/profile.server';
+import { trendingTitles } from '@/lib/games/trending.server';
 import { getFriendActivity, getNowPlayingFor } from '@/lib/games/activity.server';
 import { getLook, getShowcase } from '@/lib/games/showcase.server';
 import { parseBackground, parseFrame, unlocksFromBadges } from '@/lib/games/customize';
@@ -72,7 +73,7 @@ export async function getCommunityHome(viewerId: string | null): Promise<Communi
   const since = new Date(Date.now() - TWO_WEEKS_MS);
   const titles = titleIndex();
 
-  const [listed, myMemberships, trendingRows, reviewRows, friends] = await Promise.all([
+  const [listed, myMemberships, trending24, reviewRows, friends] = await Promise.all([
     listCommunities({ userId: viewerId }),
     viewerId
       ? prisma.communityMember.findMany({
@@ -82,16 +83,7 @@ export async function getCommunityHome(viewerId: string | null): Promise<Communi
           select: { community: { select: GROUP_SELECT } },
         })
       : Promise.resolve([]),
-    // Only players whose setting is `public` count towards a title's trend: a
-    // community-wide number must not leak a follower-only or private player.
-    prisma.gamePlaytimeDay.groupBy({
-      by: ['gameId'],
-      where: { day: { gte: since }, user: { playtimePrivacy: 'public' } },
-      _sum: { seconds: true },
-      _count: { userId: true },
-      orderBy: { _sum: { seconds: 'desc' } },
-      take: 24,
-    }),
+    trendingTitles(),
     prisma.gameReview.findMany({
       where: { body: { not: null } },
       orderBy: { createdAt: 'desc' },
@@ -109,14 +101,10 @@ export async function getCommunityHome(viewerId: string | null): Promise<Communi
   ]);
 
   const trending: TrendingTitle[] = [];
-  for (const row of trendingRows) {
+  for (const row of trending24) {
     const title = titles.get(row.gameId);
     if (!title) continue;
-    trending.push({
-      ...title,
-      players: row._count.userId,
-      seconds: row._sum.seconds ?? 0,
-    });
+    trending.push({ ...title, players: row.players, seconds: row.seconds });
     if (trending.length === 8) break;
   }
 

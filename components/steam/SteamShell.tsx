@@ -24,7 +24,7 @@ export function SteamShell({ children }: { children: React.ReactNode }) {
 
 /** Which top-level tab a pathname belongs to. */
 export function steamTabFor(pathname: string): 'store' | 'library' | 'community' | 'arcade' | null {
-  if (pathname.startsWith('/store')) return 'store';
+  if (pathname.startsWith('/store') || pathname.startsWith('/games/store')) return 'store';
   if (pathname === '/arcade' || pathname.startsWith('/arcade/')) return 'arcade';
   if (
     pathname.startsWith('/games/community') ||
@@ -41,7 +41,7 @@ export function steamTabFor(pathname: string): 'store' | 'library' | 'community'
   return null;
 }
 
-type SteamNavItem = { to: '/store' | '/games' | '/games/community' | '/arcade'; id: ReturnType<typeof steamTabFor>; label: string };
+type SteamNavItem = { to: '/games/store' | '/games' | '/games/community' | '/arcade'; id: ReturnType<typeof steamTabFor>; label: string };
 
 function SteamTopBar() {
   const { t } = useTranslation('games-hub');
@@ -60,7 +60,7 @@ function SteamTopBar() {
   const firstLink = useRef<HTMLAnchorElement>(null);
 
   const items: SteamNavItem[] = [
-    { to: '/store', id: 'store', label: t('steam-nav-store', { defaultValue: 'Store' }) },
+    { to: '/games/store', id: 'store', label: t('steam-nav-store', { defaultValue: 'Store' }) },
     { to: '/games', id: 'library', label: t('steam-nav-library', { defaultValue: 'Library' }) },
     { to: '/games/community', id: 'community', label: t('steam-nav-community', { defaultValue: 'Community' }) },
     { to: '/arcade', id: 'arcade', label: t('steam-nav-arcade', { defaultValue: 'Arcade' }) },

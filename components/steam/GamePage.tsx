@@ -15,9 +15,11 @@ import type { TrickView } from '@/lib/trick-week/trick-week';
 import { SteamAchievements } from './SteamAchievements';
 import { CollectionMenu } from './CollectionMenu';
 import { SteamCards } from './SteamCards';
+import type { AlsoPlayed } from '@/lib/games/store-types';
 import { SteamGuides } from './SteamGuides';
 import { SteamCommunity, SteamFriends } from './SteamPeople';
 import { SteamReviews } from './SteamReviews';
+import { TitleArt } from './TitleArt';
 
 export type GamePageData = {
   gameId: string;
@@ -37,6 +39,7 @@ export type GamePageData = {
   aiEnabled: boolean;
   trickOfTheWeek: TrickView | null;
   extras: LibraryExtras;
+  alsoPlayed: AlsoPlayed[];
 };
 
 /**
@@ -221,6 +224,23 @@ export function GamePage({ data }: { data: GamePageData }) {
               ))}
             </ul>
           </section>
+          {data.alsoPlayed.length > 0 ? (
+            <section className="stm-card" aria-labelledby="stm-also-h">
+              <h2 id="stm-also-h" className="stm-card-head">
+                {t('steam-also-played', { defaultValue: 'Players also played' })}
+              </h2>
+              <ul className="stm-people">
+                {data.alsoPlayed.map((a) => (
+                  <li key={a.id}>
+                    <Link to="/games/$gameId" params={{ gameId: a.id }} className="stm-person">
+                      <TitleArt build={{ title: a.title, thumbnailUrl: a.thumbnailUrl, hue: a.hue }} width={32} height={32} className="stm-art-sm" />
+                      <span className="stm-person-name">{a.title}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
           {offSite ? null : <SteamFriends friends={extras.friends} signedIn={data.signedIn} kind={data.kind} />}
           <SteamCommunity communities={extras.communities} topPlayers={offSite ? [] : extras.topPlayers} />
         </aside>

@@ -181,6 +181,7 @@ import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explore
 import { Route as GamesLibraryRouteImport } from './routes/games/_library'
 import { Route as GamesCommunityRouteImport } from './routes/games/community'
 import { Route as GamesInventoryRouteImport } from './routes/games/inventory'
+import { Route as GamesStoreRouteImport } from './routes/games/store'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
@@ -2229,6 +2230,11 @@ const GamesCommunityRoute = GamesCommunityRouteImport.update({
 const GamesInventoryRoute = GamesInventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
+  getParentRoute: () => GamesRoute,
+} as any)
+const GamesStoreRoute = GamesStoreRouteImport.update({
+  id: '/store',
+  path: '/store',
   getParentRoute: () => GamesRoute,
 } as any)
 const KowloonKnockoutIndexRoute = KowloonKnockoutIndexRouteImport.update({
@@ -8589,6 +8595,7 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/games/community': typeof GamesCommunityRoute
   '/games/inventory': typeof GamesInventoryRoute
+  '/games/store': typeof GamesStoreRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
@@ -9923,6 +9930,7 @@ export interface FileRoutesByTo {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/games/community': typeof GamesCommunityRoute
   '/games/inventory': typeof GamesInventoryRoute
+  '/games/store': typeof GamesStoreRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
@@ -11285,6 +11293,7 @@ export interface FileRoutesById {
   '/games/_library': typeof GamesLibraryRouteWithChildren
   '/games/community': typeof GamesCommunityRoute
   '/games/inventory': typeof GamesInventoryRoute
+  '/games/store': typeof GamesStoreRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
@@ -12649,6 +12658,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/games/community'
     | '/games/inventory'
+    | '/games/store'
     | '/library/$slug'
     | '/news/$slug'
     | '/news/rss.xml'
@@ -13983,6 +13993,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/games/community'
     | '/games/inventory'
+    | '/games/store'
     | '/library/$slug'
     | '/news/$slug'
     | '/news/rss.xml'
@@ -15344,6 +15355,7 @@ export interface FileRouteTypes {
     | '/games/_library'
     | '/games/community'
     | '/games/inventory'
+    | '/games/store'
     | '/library/$slug'
     | '/news/$slug'
     | '/news/rss.xml'
@@ -18590,6 +18602,13 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/games/inventory'
       preLoaderRoute: typeof GamesInventoryRouteImport
+      parentRoute: typeof GamesRoute
+    }
+    '/games/store': {
+      id: '/games/store'
+      path: '/store'
+      fullPath: '/games/store'
+      preLoaderRoute: typeof GamesStoreRouteImport
       parentRoute: typeof GamesRoute
     }
     '/kowloon-knockout/': {
@@ -27486,6 +27505,7 @@ interface GamesRouteChildren {
   GamesLibraryRoute: typeof GamesLibraryRouteWithChildren
   GamesCommunityRoute: typeof GamesCommunityRoute
   GamesInventoryRoute: typeof GamesInventoryRoute
+  GamesStoreRoute: typeof GamesStoreRoute
   GamesGroupsSlugRoute: typeof GamesGroupsSlugRoute
   GamesProfileIdRoute: typeof GamesProfileIdRoute
   GamesMarketIndexRoute: typeof GamesMarketIndexRoute
@@ -27500,6 +27520,7 @@ const GamesRouteChildren: GamesRouteChildren = {
   GamesLibraryRoute: GamesLibraryRouteWithChildren,
   GamesCommunityRoute: GamesCommunityRoute,
   GamesInventoryRoute: GamesInventoryRoute,
+  GamesStoreRoute: GamesStoreRoute,
   GamesGroupsSlugRoute: GamesGroupsSlugRoute,
   GamesProfileIdRoute: GamesProfileIdRoute,
   GamesMarketIndexRoute: GamesMarketIndexRoute,
