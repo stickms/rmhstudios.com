@@ -56,18 +56,19 @@ const VERTICAL_ROUTES: SitemapEntry[] = VERTICALS.flatMap((v) =>
 export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/', changefreq: 'daily', priority: 1.0 },
 
-  // Primary hubs. `/games` and `/apps` are the public catalog indexes; they
-  // were listed here for a long time with nothing behind them, then dropped
-  // when that was found, and now exist. `/create` is the creator half of the
+  // Primary hubs. `/games` is the public catalog index (the library, games and
+  // apps together; `/apps` redirects to it, so it is not listed). It was listed
+  // here for a long time with nothing behind it, then dropped when that was
+  // found, and now exists. `/create` is the creator half of the
   // same catalog and stays listed — and now that its tabs are real routes
   // rather than `?tab=` values, the two public ones are their own URLs with
   // their own canonicals, so they are listed too. (`/create/earnings` is not:
   // it is one viewer's own dashboard — see EXCLUDED_ROUTES.)
   { loc: '/games', changefreq: 'weekly', priority: 0.9 },
+  { loc: '/arcade', changefreq: 'daily', priority: 0.6 },
   { loc: '/daily-mutator', changefreq: 'daily', priority: 0.6 },
   { loc: '/connections', changefreq: 'daily', priority: 0.5 },
   { loc: '/rmhbox-packs', changefreq: 'weekly', priority: 0.4 },
-  { loc: '/apps', changefreq: 'weekly', priority: 0.9 },
   { loc: '/create', changefreq: 'daily', priority: 0.8 },
   { loc: '/create/builds', changefreq: 'daily', priority: 0.7 },
   { loc: '/create/personas', changefreq: 'weekly', priority: 0.6 },
@@ -243,6 +244,11 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/bookmarks': 'redirect', // → /saves
   '/drafts': 'personal',
   '/connections/new': 'personal', // signed-in authoring form
+  '/games/trades': 'personal', // the viewer's own offers
+  '/games/market': 'noindex', // card listings change by the minute and are behind sign-in to act on
+  '/games/store': 'noindex', // discovery page; filters and search make a URL per query
+  '/games/inventory': 'personal', // the viewer's own trading cards and badges
+  '/games/community': 'noindex', // Steam-style community home; the viewer's groups ride on it
   '/out': 'noindex', // link-warning interstitial; the destination rides in ?url=
   '/safety/pile-on': 'personal', // the author's one-tap notice from a notification
   '/history': 'personal',
@@ -357,8 +363,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/user-builds': 'redirect', // → /builds → /games
   '/builds': 'redirect', // → /games
   '/lights-out': 'redirect', // → /daily/lights-out
-  '/arcade': 'redirect', // → /games
-  '/leaderboard': 'redirect', // → /games?sub=leaderboard
+  '/apps': 'redirect', // → /games?kind=app (apps are in the library)
+  '/leaderboard': 'redirect', // → /arcade?sub=leaderboard
   '/events': 'redirect', // → /communities?tab=events
   '/market': 'redirect', // → /store?tab=market
   '/shop': 'redirect', // → /store?tab=shop
@@ -484,6 +490,12 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/library/albums/$albumId': 'content',
   '/games/$gameId': 'pages', // from the catalog, not the DB
   '/games/$gameId/guides/$guideId': 'content',
+  '/games/profile/$id': null, // a second, noindex view of /u/$userid
+  '/games/hub/$gameId': null, // per-title discussions; the game page and guides stay the indexed ones
+  '/games/market/$gameId/$cardIndex': null, // per-card market page; noindex
+  '/games/hub/$gameId/t/$threadId': null, // user-generated discussions; noindex
+  '/games/trades/new/$id': null, // a signed-in composer
+  '/games/groups/$slug': null, // a second, noindex view of /c/$slug
   '/builds/$slug': 'pages', // curated builds mirror the catalog
   '/user-builds/$slug': 'builds',
   '/v/$slug': 'builds',

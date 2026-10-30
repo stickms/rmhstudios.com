@@ -65,10 +65,12 @@ export { rgbExp32ToLinear };
  * reads as bright as its LDR build. Measured as the median luxel ratio LDR/HDR over
  * every face of every published map that has both lumps (render-harness `calibrate`).
  */
-export const HDR_TO_LDR_SCALE: Record<'tf2' | 'hl2' | 'portal', number> = {
+export const HDR_TO_LDR_SCALE: Record<'tf2' | 'hl2' | 'portal' | 'csgo', number> = {
   tf2: 1.0,
   hl2: 1.7,
   portal: 1.55,
+  // Not yet calibrated: CS:GO's de_dust2 ships HDR lighting only (its package has no LDR to measure).
+  csgo: 1.0,
 };
 
 /**

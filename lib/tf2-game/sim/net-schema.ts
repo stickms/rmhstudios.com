@@ -55,8 +55,20 @@ const byType = new Map<string, NetSchema>();
 
 /**
  * Registers a net type. Id ranges: 1–63 core (this file), 64–127 weapons,
- * 128–191 buildings, 192–255 map entities / modes, 256+ anything else.
+ * 128–191 buildings, 192–255 map entities / modes, 256–511 anything else,
+ * 512–575 Counter-Strike: Global Offensive (lib/csgo-game/net-schema.ts).
  */
+/**
+ * The schema types that are players (the client's scoreboard, spectating, prediction and the HUD read
+ * them as players): TF2's `player`, and another game's player schema once it registers it (CS:GO's
+ * `cs_player`).
+ */
+const PLAYER_TYPES = new Set(['player']);
+export function markPlayerSchema(type: string): void {
+  PLAYER_TYPES.add(type);
+}
+export const isPlayerType = (type: string): boolean => PLAYER_TYPES.has(type);
+
 export function registerNetSchema(id: number, type: string, fields: readonly NetFieldDef[]): NetSchema {
   const existing = byId.get(id);
   if (existing) {
@@ -85,6 +97,10 @@ export function createNetRecord(schema: NetSchema): NetRecord {
   for (const f of schema.fields) r[f.name] = f.kind === 'str' ? '' : f.kind === 'bool' ? false : 0;
   return r;
 }
+
+/** A field definition (`priv`: sent to the owning player only). */
+export const netField = (name: string, kind: NetFieldKind, priv = false): NetFieldDef =>
+  priv ? { name, kind, private: true } : { name, kind };
 
 const f = (name: string, kind: NetFieldKind, priv = false): NetFieldDef =>
   priv ? { name, kind, private: true } : { name, kind };
@@ -133,8 +149,8 @@ export const MOVE_STATE_NET_FIELDS: ReadonlyArray<readonly [string, 'f32' | 'i32
 ];
 
 
-/** The private `mv_*` fields for MOVE_STATE_NET_FIELDS. */
-function moveStateFields(): NetFieldDef[] {
+/** The private `mv_*` fields for MOVE_STATE_NET_FIELDS (another game's player record carries them too). */
+export function moveStateFields(): NetFieldDef[] {
   const out: NetFieldDef[] = [];
   for (const [name, kind] of MOVE_STATE_NET_FIELDS) {
     if (kind === 'vec') {
@@ -166,6 +182,9 @@ const BASE_FIELDS: readonly NetFieldDef[] = [
   f('parent', 'i16'),
   f('owner', 'i16'),
 ];
+
+/** The base entity fields, for another game's schemas (its players and entities extend them). */
+export const NET_BASE_FIELDS: readonly NetFieldDef[] = BASE_FIELDS;
 
 /** A generic visible entity (props, pickups, trigger-less point entities with models). */
 export const NET_ENTITY = registerNetSchema(1, 'entity', BASE_FIELDS);

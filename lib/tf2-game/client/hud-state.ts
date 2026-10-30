@@ -15,7 +15,7 @@
  * 3 BLU); classes are ETFClass (1 Scout … 9 Engineer).
  */
 
-export type HudGame = 'tf2' | 'hl2' | 'portal';
+export type HudGame = 'tf2' | 'hl2' | 'portal' | 'csgo';
 
 /** Which ammo display a weapon uses (CTFHudWeaponAmmo). */
 export type HudAmmoKind = 'clip' | 'reserve-only' | 'none';
@@ -474,8 +474,50 @@ export interface HudState {
   loadout?: HudLoadoutAnswer | null;
   /** Network notices (host migration, hosting) — rendered with their own words by the HUD. */
   notices?: HudNotice[];
-  /** The room's administration when this player runs it (peer-to-peer host, dedicated room owner). */
+  /** The room's administration when this player runs it (offline, or the peer-to-peer host). */
   admin?: HudAdmin | null;
+  /** CS:GO's part of the HUD (money, the round, the bomb); absent in the other games. */
+  cs?: HudCs | null;
+}
+
+/** One weapon in a CS:GO player's inventory, for the HUD's slots and the buy menu. */
+export interface HudCsWeapon {
+  slot: number;
+  /** `weapon_ak47`; the short name (`ak47`) keys the localisation and icons. */
+  name: string;
+  short: string;
+  clip: number;
+  reserve: number;
+  active: boolean;
+}
+
+/** CS:GO's HUD state (lib/csgo-game/client/hud.ts). Times are seconds left on the server clock. */
+export interface HudCs {
+  mode: 'de' | 'dm';
+  money: number;
+  armor: number;
+  helmet: boolean;
+  defuser: boolean;
+  hasC4: boolean;
+  /** Buying is open for us now: in a buy zone, inside the buy time (deathmatch: always). */
+  canBuy: boolean;
+  buyTimeLeft: number;
+  /** The round's phase and the clock the HUD shows for it. */
+  phase: 'freeze' | 'live' | 'planted' | 'over' | 'gameover';
+  timeLeft: number | null;
+  round: number;
+  bomb: { timeLeft: number; defusing: boolean; defuseLeft: number | null } | null;
+  /** The round's end: who won and why (CS_WIN_*). */
+  roundWinner: number;
+  winReason: number;
+  /** Flash blindness 0…1 (the white-out's opacity now). */
+  flash: number;
+  planting: boolean;
+  defusing: boolean;
+  /** Deathmatch: seconds until respawn (null while alive), and spawn protection. */
+  respawnIn: number | null;
+  protected: boolean;
+  weapons: HudCsWeapon[];
 }
 
 /** A network notice. `name`: the account it concerns (the new host). */
@@ -502,14 +544,12 @@ export interface HudAdminPlayer {
   successor?: boolean;
   /** A seat held while they reconnect. */
   held?: boolean;
-  /** Dedicated rooms: a signed-in account (ownership can only go to one). */
-  account?: boolean;
 }
 
 export interface HudAdmin {
-  /** `host`: this browser runs the match (offline or peer-to-peer); `owner`: a dedicated room's owner. */
-  role: 'host' | 'owner';
-  /** Peer-to-peer or a hub room (kick / lock / password / say apply); offline has no one to admin. */
+  /** This browser runs the match (offline or peer-to-peer). */
+  role: 'host';
+  /** Peer-to-peer (kick / lock / password / say apply); offline has no one to admin. */
   online: boolean;
   players: HudAdminPlayer[];
   map: string;

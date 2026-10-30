@@ -1,0 +1,395 @@
+name: csgo-assets-sync
+
+# Keeps the browser game's Counter-Strike: Global Offensive channels in object storage current, under
+# csgo-game/: de_dust2's map package (BSP, textures, prop hulls, the bots' nav mesh for the CS hull and
+# the radar overview), its models (ONE default player model per team with its arms, every default
+# weapon's view / world / dropped models, the default knives, C4, the defuse kit, grenades, shells and
+# the map's props — never a weapon finish, sticker, agent or non-default glove), its sounds, particle
+# systems and HUD data (sanitised Panorama icons, localisation, the default weapons' data as JSON).
+# Separate from tf2-assets-sync.yml so that job keeps its own time and disk budget.
+#
+# The CS:GO dedicated server (Steam app 740) downloads ANONYMOUSLY — no Steam account — and shares the
+# game's content depot, so materials and sounds are in it (the "Verify the install" step prints what
+# it found; if texture or sound data is ever missing the channels still build, untextured / silent, and
+# the step warns). ~33 GB: it lives on /mnt for the length of the job and is deleted as soon as the
+# conversions finish (and again on failure). Nothing is committed to the repository.
+#
+# Cost control, as in tf2-assets-sync.yml:
+#   1. Gate: one small GET of each channel's state file, compared with app 740's public build id and
+#      the channel's builder version (lib/tf2-game/assets/versions.ts). Same build → nothing is
+#      downloaded or uploaded.
+#   2. Per-file: outputs are named by a hash of their source; only changed files are uploaded.
+#   3. Compression: changed files are Brotli-compressed before upload.
+#   4. Budget: storage-report.ts sums every game channel (tf2-game/, hl2-game/, portal-game/,
+#      csgo-game/ and the HUD base) from the state files plus this run's output, and fails the publish
+#      past TF2_GAME_STORAGE_BUDGET_GB (default 12 GB). CS:GO's share is ≈0.4–0.65 GB (docs/tf2-game.md).
+#
+# Expected durations on a full rebuild (ubuntu-latest): download 25–40 min, maps ~5 min (≈700
+# texture encodes, nav generation ≤60 s), models 10–25 min, sounds ~3–5 min (≤900 ffmpeg encodes),
+# particles ~3 min, HUD data <1 min, uploads ~5–10 min: ≈ 60–90 min; an incremental run is a fraction
+# of that and an unchanged build downloads nothing.
+#
+# Needs these repository secrets (the job exits with a notice while any is missing):
+#   S3_ENDPOINT, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET, S3_REGION
+
+on:
+  schedule:
+    - cron: '43 6 * * *'
+  workflow_run:
+    workflows: [deploy]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild and re-check everything even if the Steam build is unchanged
+        type: boolean
+        default: false
+      limit:
+        description: Convert at most this many models (testing)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: csgo-assets-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+      S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+      S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      S3_REGION: ${{ secrets.S3_REGION }}
+      S3_FORCE_PATH_STYLE: 'false' # R2 uses virtual-hosted-style addressing (see .env.example)
+    steps:
+      - name: Check configuration
+        id: cfg
+        run: |
+          missing=""
+          for v in S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice title=CS:GO asset sync skipped::Missing repository secrets:$missing"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.cfg.outputs.ready == 'true'
+      - uses: ./.github/actions/setup-deps
+        if: steps.cfg.outputs.ready == 'true'
+
+      - name: Check the bucket is writable (before any download)
+        if: steps.cfg.outputs.ready == 'true'
+        run: pnpm exec tsx scripts/tf2-assets/publish.ts check
+
+      - name: Install SteamCMD
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lib32gcc-s1 lib32stdc++6 curl
+          mkdir -p "$HOME/steamcmd" && cd "$HOME/steamcmd"
+          curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar xz
+
+      - name: Gate on the current Steam build (app 740)
+        id: gate
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          "$HOME/steamcmd/steamcmd.sh" +login anonymous +app_info_update 1 +app_info_print 740 +quit > appinfo.txt 2>&1 || true
+          build=$(python3 - <<'PY'
+          import re
+          t = open("appinfo.txt", errors="replace").read()
+          m = re.search(r"AppID\s*:\s*740\b", t)
+          sec = t[m.end():] if m else ""
+          nxt = re.search(r"AppID\s*:\s*\d+", sec)
+          sec = sec[: nxt.start()] if nxt else sec
+          i = sec.find('"branches"')
+          b = re.search(r'"public"\s*\{[^{}]*?"buildid"\s*"(\d+)"', sec[i:], re.S) if i >= 0 else None
+          print(b.group(1) if b else "")
+          PY
+          )
+          echo "Steam public build: CS:GO dedicated server ${build:-unknown}"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          # Builder versions from lib/tf2-game/assets/versions.ts (one place for both workflows).
+          builders=$(pnpm exec tsx scripts/tf2-game/storage-report.ts builders)
+          eval "$builders"; echo "$builders" >> "$GITHUB_ENV"
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as csgo_maps --state-key csgo-game/maps/_state.json --build "$build" --builder "$CSGO_GAME_BUILDER_MAPS" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as csgo_models --state-key csgo-game/mdl/_state.json --build "$build" --builder "$CSGO_GAME_BUILDER_MODELS" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as csgo_sounds --state-key csgo-game/snd/_state.json --build "$build" --builder "$CSGO_GAME_BUILDER_SOUNDS" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as csgo_particles --state-key csgo-game/particles/_state.json --build "$build" --builder "$CSGO_GAME_BUILDER_PARTICLES" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as csgo_ui --state-key csgo-game/ui/_state.json --build "$build" --builder "$CSGO_GAME_BUILDER_UI" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as csgo_menu --state-key csgo-game/menu/_state.json --build "$build" --builder "$CSGO_GAME_BUILDER_MENU" $force
+          if grep -q '^run_csgo_.*=true' "$GITHUB_OUTPUT"; then echo "any=true" >> "$GITHUB_OUTPUT"; fi
+          rm -f appinfo.txt
+
+      - name: Nothing to do
+        if: steps.cfg.outputs.ready == 'true' && steps.gate.outputs.any != 'true'
+        run: echo "The CS:GO channels are already published for this build — no download, no uploads."
+
+      - name: Make room on the runner
+        if: steps.gate.outputs.any == 'true'
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL
+          sudo mkdir -p /mnt/csgo /mnt/work && sudo chown "$USER" /mnt/csgo /mnt/work
+          df -h / /mnt | cat
+
+      # Anonymous: app 740 is the free dedicated server. ~33 GB, 25–40 minutes.
+      - name: Download CS:GO (dedicated server, app 740)
+        if: steps.gate.outputs.any == 'true'
+        timeout-minutes: 75
+        run: |
+          for i in 1 2 3 4; do
+            "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/csgo +login anonymous +app_update 740 validate +quit \
+              > "$HOME/steam-csgo.log" 2>&1 || true
+            grep -i -E 'success|error|fail|disk' "$HOME/steam-csgo.log" | tail -5
+            [ -f /mnt/csgo/csgo/pak01_dir.vpk ] && [ -f /mnt/csgo/csgo/maps/de_dust2.bsp ] && break
+            echo "attempt $i did not finish; retrying"; df -h /mnt | tail -1; sleep 30
+          done
+          [ -f /mnt/csgo/csgo/pak01_dir.vpk ] || { echo "::error::csgo/pak01_dir.vpk missing after the download"; exit 1; }
+          [ -f /mnt/csgo/csgo/maps/de_dust2.bsp ] || { echo "::error::csgo/maps/de_dust2.bsp missing after the download"; exit 1; }
+          du -sh /mnt/csgo | cat
+
+      - name: Python tools
+        if: steps.gate.outputs.any == 'true'
+        run: pip install --quiet vpk numpy pillow srctools==2.6.2 pyyaml
+
+      # The dedicated server shares the game's content depot: this proves the texture and sound data
+      # is really there (a VPK index without its archives would read as "missing" everywhere).
+      - name: Verify the install's content
+        if: steps.gate.outputs.any == 'true'
+        run: |
+          ls /mnt/csgo/csgo/pak01_*.vpk | wc -l | xargs echo "pak01 archives:"
+          python3 -B - <<'PY'
+          import os, sys
+          sys.path[:0] = ["scripts/tf2-game", "scripts/tf2-assets"]
+          from gamefs import open_game
+          fs = open_game("/mnt/csgo", "csgo")
+          def ok(path):
+              try:
+                  return bool(fs.read(path))
+              except OSError:
+                  return False
+          for kind, prefix, suffix in (("textures", "materials/", ".vtf"), ("sounds", "sound/", ".wav"),
+                                       ("models", "models/", ".mdl"), ("icons", "materials/panorama/images/icons/", ".svg")):
+              names = fs.names(prefix, suffix)
+              sample = names[:: max(1, len(names) // 25)][:25]
+              good = sum(ok(n) for n in sample)
+              print("%-8s %6d listed, %d of %d sampled readable" % (kind, len(names), good, len(sample)))
+              if names and good < len(sample) // 2:
+                  print("::warning title=CS:GO %s data missing::the install lists %s it cannot read — the channel "
+                        "will build without them (docs/tf2-game.md, CS:GO)" % (kind, kind))
+          for p in ("scripts/items/items_game.txt", "resource/csgo_english.txt", "resource/overviews/de_dust2.txt",
+                    "materials/overviews/de_dust2_radar.vtf", "maps/de_dust2.kv"):
+              print("%-45s %s" % (p, "ok" if ok(p) else "MISSING"))
+          PY
+
+      - name: ffmpeg (sounds)
+        id: ffmpeg
+        if: steps.gate.outputs.run_csgo_sounds == 'true'
+        continue-on-error: true
+        run: |
+          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg; }
+          ffmpeg -hide_banner -encoders 2>/dev/null | grep -q libmp3lame || { echo "::error::ffmpeg lacks libmp3lame"; exit 1; }
+
+      - name: Validate the exporters
+        id: tests
+        if: steps.gate.outputs.any == 'true'
+        continue-on-error: true
+        run: |
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_csgo.py
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_sounds.py
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_sourcegame.py
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_game_particles.py
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_menu_ui.py
+          python3 -B -m unittest discover -s scripts/tf2-game -p test_ragdoll.py
+          # The real install's lists (informational: the conversions report their own problems).
+          CSGO_ROOT=/mnt/csgo python3 -B -m unittest discover -s scripts/tf2-game -p test_csgo.py -k Install \
+            || echo "::warning::CS:GO lists from the real install look wrong (test_csgo.Install)"
+
+      # Conversions. continue-on-error: one channel's failure never stops the others' uploads; the job
+      # fails at the end instead (Report channel failures).
+      - name: Maps — de_dust2's BSP, textures, prop hulls, nav mesh (CS hull) and radar
+        id: csgo_maps
+        if: steps.gate.outputs.run_csgo_maps == 'true' && steps.tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 30
+        run: |
+          mkdir -p /mnt/work/csgo-maps
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key csgo-game/maps/_state.json --out /mnt/work/csgo-maps-state.json
+          pnpm exec tsx scripts/tf2-assets/publish.ts get --key csgo-game/maps/index.json --out /mnt/work/csgo-maps-prev-index.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} pnpm exec tsx scripts/tf2-game/build-maps.ts \
+            --root /mnt/csgo --game csgo --maps de_dust2 --out /mnt/work/csgo-maps \
+            --state /mnt/work/csgo-maps-state.json --prev-index /mnt/work/csgo-maps-prev-index.json
+
+      # A diagnostic for the converter: scores candidate decodings of the view models' frame animations
+      # against the install and prints the table (scripts/tf2-game/probe-frameanim.py). Never fails the job.
+      - name: Probe frame animations (diagnostic)
+        if: steps.gate.outputs.run_csgo_models == 'true'
+        continue-on-error: true
+        timeout-minutes: 10
+        run: python3 -B scripts/tf2-game/probe-frameanim.py --root /mnt/csgo --search csgo
+
+      - name: Models — default players and arms, default weapons and equipment, the map's props
+        id: csgo_models
+        if: steps.gate.outputs.run_csgo_models == 'true' && steps.tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 60
+        run: |
+          mkdir -p /mnt/work/csgo-mdl
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key csgo-game/mdl/_state.json --out /mnt/work/csgo-mdl-state.json
+          pnpm exec tsx scripts/tf2-assets/publish.ts get --key csgo-game/mdl/index.json --out /mnt/work/csgo-mdl-prev-index.json
+          python3 -B scripts/tf2-game/csgo-model-list.py --root /mnt/csgo --map de_dust2 \
+            --out /mnt/work/csgo-models.list --report /mnt/work/csgo-models-report.json
+          # Dust II's autocombine props (half its static props) live in the map's own pakfile: written out
+          # as loose csgo/ files the converter reads, and listed.
+          pnpm exec tsx scripts/tf2-game/build-maps.ts --root /mnt/csgo --game csgo --maps de_dust2 \
+            --props-only --props-list-out /mnt/work/csgo-models.list --extract-pak /mnt/csgo/csgo
+          lim=""; [ -n "${{ inputs.limit }}" ] && lim="--limit ${{ inputs.limit }}"
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/models.py \
+            --root /mnt/csgo --search csgo --list /mnt/work/csgo-models.list --out /mnt/work/csgo-mdl \
+            --state /mnt/work/csgo-mdl-state.json --prev-index /mnt/work/csgo-mdl-prev-index.json $lim
+
+      - name: Sounds — weapons, bomb, footsteps, damage, round events, UI, radio, the map's ambience
+        id: csgo_sounds
+        if: >-
+          steps.gate.outputs.run_csgo_sounds == 'true' && steps.ffmpeg.outcome == 'success' &&
+          steps.tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 30
+        run: |
+          mkdir -p /mnt/work/csgo-snd
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key csgo-game/snd/_state.json --out /mnt/work/csgo-snd-state.json
+          python3 -B scripts/tf2-game/sound-list.py --root /mnt/csgo --game csgo --out /mnt/work/csgo-sounds.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/sounds.py --game csgo \
+            --root /mnt/csgo --list /mnt/work/csgo-sounds.json --out /mnt/work/csgo-snd \
+            --state /mnt/work/csgo-snd-state.json
+
+      - name: Particles — muzzle flashes, impacts, blood, explosions, smoke, fire, tracers
+        id: csgo_particles
+        if: steps.gate.outputs.run_csgo_particles == 'true' && steps.tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          mkdir -p /mnt/work/csgo-particles
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key csgo-game/particles/_state.json --out /mnt/work/csgo-particles-state.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/game_particles.py --game csgo \
+            --root /mnt/csgo --out /mnt/work/csgo-particles --state /mnt/work/csgo-particles-state.json
+
+      - name: HUD data — sanitised icons, localisation, default weapon data
+        id: csgo_ui
+        if: steps.gate.outputs.run_csgo_ui == 'true' && steps.tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          mkdir -p /mnt/work/csgo-ui
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key csgo-game/ui/_state.json --out /mnt/work/csgo-ui-state.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/csgo_ui.py \
+            --root /mnt/csgo --out /mnt/work/csgo-ui --state /mnt/work/csgo-ui-state.json
+
+      - name: Main menu — Panorama's background movie, fonts, icons and words
+        id: csgo_menu
+        if: steps.gate.outputs.run_csgo_menu == 'true' && steps.tests.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          mkdir -p /mnt/work/csgo-menu
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key csgo-game/menu/_state.json --out /mnt/work/csgo-menu-state.json
+          FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/menu_ui.py --game csgo \
+            --root /mnt/csgo --out /mnt/work/csgo-menu --state /mnt/work/csgo-menu-state.json
+
+      # The game is no longer needed: free the ~33 GB before the uploads.
+      - name: Delete the install
+        if: always() && steps.gate.outputs.any == 'true'
+        run: sudo rm -rf /mnt/csgo "$HOME/Steam" "$HOME/.steam"
+
+      - name: Game storage guard, every game (budget TF2_GAME_STORAGE_BUDGET_GB, default 12)
+        id: storage
+        if: >-
+          steps.csgo_maps.outcome == 'success' || steps.csgo_models.outcome == 'success' ||
+          steps.csgo_sounds.outcome == 'success' || steps.csgo_particles.outcome == 'success' ||
+          steps.csgo_ui.outcome == 'success' || steps.csgo_menu.outcome == 'success'
+        env:
+          TF2_GAME_STORAGE_BUDGET_GB: ${{ vars.TF2_GAME_STORAGE_BUDGET_GB }}
+        run: |
+          # Every <game>-game/ channel and the HUD base are counted from their state files; these are
+          # counted as they will be after this run's push.
+          pnpm exec tsx scripts/tf2-game/storage-report.ts report \
+            --pending csgo-game/maps/=/mnt/work/csgo-maps --pending csgo-game/mdl/=/mnt/work/csgo-mdl \
+            --pending csgo-game/snd/=/mnt/work/csgo-snd --pending csgo-game/particles/=/mnt/work/csgo-particles \
+            --pending csgo-game/ui/=/mnt/work/csgo-ui --pending csgo-game/menu/=/mnt/work/csgo-menu
+
+      - name: Upload changed maps and their textures (index last)
+        if: steps.csgo_maps.outcome == 'success' && steps.storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          # Published at the game root: maps/ and the tex/ shared with the models (never pruned).
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/csgo-maps --prefix csgo-game/ \
+            --state-key csgo-game/maps/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$CSGO_GAME_BUILDER_MAPS" --index maps/index.json $force
+
+      - name: Upload changed models and textures (index last)
+        if: steps.csgo_models.outcome == 'success' && steps.storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/csgo-mdl --prefix csgo-game/ \
+            --state-key csgo-game/mdl/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$CSGO_GAME_BUILDER_MODELS" --index mdl/index.json $force
+
+      - name: Upload changed sounds (index last)
+        if: steps.csgo_sounds.outcome == 'success' && steps.storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/csgo-snd --prefix csgo-game/snd/ \
+            --state-key csgo-game/snd/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$CSGO_GAME_BUILDER_SOUNDS" --index index.json --preserve-index entries,files $force
+
+      - name: Upload changed particles (index last)
+        if: steps.csgo_particles.outcome == 'success' && steps.storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/csgo-particles --prefix csgo-game/particles/ \
+            --state-key csgo-game/particles/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$CSGO_GAME_BUILDER_PARTICLES" --index index.json --preserve-index systems $force
+
+      - name: Upload changed HUD data (index last)
+        if: steps.csgo_ui.outcome == 'success' && steps.storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/csgo-ui --prefix csgo-game/ui/ \
+            --state-key csgo-game/ui/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$CSGO_GAME_BUILDER_UI" --index index.json --preserve-index icons,lang $force
+
+      - name: Upload changed main menu (index last)
+        if: steps.csgo_menu.outcome == 'success' && steps.storage.outcome == 'success'
+        run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/csgo-menu --prefix csgo-game/menu/ \
+            --state-key csgo-game/menu/_state.json --build "${{ steps.gate.outputs.build }}" \
+            --builder "$CSGO_GAME_BUILDER_MENU" --index index.json $force
+
+      - name: Report channel failures
+        if: >-
+          always() && (steps.tests.outcome == 'failure' || steps.ffmpeg.outcome == 'failure' ||
+          steps.csgo_maps.outcome == 'failure' || steps.csgo_models.outcome == 'failure' ||
+          steps.csgo_sounds.outcome == 'failure' || steps.csgo_particles.outcome == 'failure' ||
+          steps.csgo_ui.outcome == 'failure' || steps.csgo_menu.outcome == 'failure')
+        run: |
+          echo "::error::A CS:GO channel failed (tests: ${{ steps.tests.outcome }}, ffmpeg: ${{ steps.ffmpeg.outcome }}, maps: ${{ steps.csgo_maps.outcome }}, models: ${{ steps.csgo_models.outcome }}, sounds: ${{ steps.csgo_sounds.outcome }}, particles: ${{ steps.csgo_particles.outcome }}, HUD data: ${{ steps.csgo_ui.outcome }}, menu: ${{ steps.csgo_menu.outcome }}); the channels that succeeded were published."
+          exit 1
+
+      - name: Clean up
+        if: always()
+        run: sudo rm -rf /mnt/work /mnt/csgo "$HOME/Steam" "$HOME/.steam" "$HOME/steamcmd" appinfo.txt 2>/dev/null || true
+

@@ -23,6 +23,11 @@ export const CL_SIDESPEED = 450;
 export const CL_UPSPEED = 320;
 
 export type QualityTier = 'auto' | 'low' | 'medium' | 'high';
+/** A per-knob detail level of the Video tab's Advanced section; `auto` follows the Quality tier. */
+export type DetailLevel = 'auto' | 'low' | 'medium' | 'high';
+export const DETAIL_LEVELS: readonly DetailLevel[] = ['auto', 'low', 'medium', 'high'];
+/** `mat_forceaniso` levels (0 = the Quality tier's). */
+export const ANISOTROPY_LEVELS: readonly number[] = [0, 1, 2, 4, 8, 16];
 export type CrosshairStyle = 'cross' | 'dot' | 'circle' | 'cross-dot' | 'none';
 
 export interface GameSettings {
@@ -35,6 +40,20 @@ export interface GameSettings {
   invertY: boolean;
   /** Pointer lock with `unadjustedMovement` (no OS acceleration) where supported. */
   rawInput: boolean;
+  /** `m_filter`: average the mouse over the last two samples (CInput::GetMouseDelta). */
+  mouseFilter: boolean;
+  /**
+   * `m_customaccel` (CInput::ScaleMouse): 0 off; 1 / 2 `pow(delta, exponent) × scale + sensitivity` (2 also
+   * scales by m_yaw / m_pitch); 3 `pow(delta², (exponent − 1) / 2) × sensitivity` — Options → Mouse →
+   * "Mouse acceleration" sets 3, as GameUI does.
+   */
+  mouseAccel: number;
+  /** `m_customaccel_exponent` (GameUI's acceleration slider). */
+  mouseAccelExponent: number;
+  /** `m_customaccel_scale` (modes 1 and 2). */
+  mouseAccelScale: number;
+  /** `m_customaccel_max` (modes 1 and 2; 0 = no limit). */
+  mouseAccelMax: number;
   /** `fov_desired`: TF2 75–90 (default 90); HL2/Portal 75. */
   fov: number;
   /** `viewmodel_fov` (default 54). */
@@ -42,6 +61,20 @@ export interface GameSettings {
   volume: { master: number; sfx: number; voice: number; music: number };
   keybinds: Keybinds;
   quality: QualityTier;
+  /**
+   * The Video tab's Advanced knobs over the Quality tier (applied on the next level load, like the tier):
+   * `mat_viewportscale` (0 = automatic: the frame-time governor), `mat_picmip` (texture detail),
+   * `r_rootlod` (model detail: the props' draw distance), `cl_effects_detail` (the particle budget),
+   * `mat_antialias`, `mat_forceaniso` (0 = the tier's). `auto` follows the tier.
+   */
+  video: {
+    resolutionScale: number;
+    textureDetail: DetailLevel;
+    modelDetail: DetailLevel;
+    effectsDetail: DetailLevel;
+    antialias: 'auto' | 'on' | 'off';
+    anisotropy: number;
+  };
   showFps: boolean;
   /** `closecaption` (HL2/Portal subtitles + sound captions). */
   captions: boolean;
@@ -82,11 +115,17 @@ export const FOV_RANGE: Record<HudGame, { min: number; max: number; def: number 
   tf2: { min: 75, max: 90, def: 90 },
   hl2: { min: 75, max: 90, def: 75 },
   portal: { min: 75, max: 90, def: 75 },
+  // CS:GO's fov_cs_debug is locked at 90 for players; the slider keeps TF2's range.
+  csgo: { min: 75, max: 90, def: 90 },
 };
 export const VIEWMODEL_FOV_RANGE = { min: 54, max: 70, def: 54 };
 export const SENSITIVITY_RANGE = { min: 0.1, max: 20 };
 /** m_yaw / m_pitch magnitudes the settings accept. */
 export const M_YAW_RANGE = { min: 0.001, max: 0.2 };
+/** m_customaccel_exponent (GameUI's slider runs 1–1.4; the console takes more). */
+export const ACCEL_EXPONENT_RANGE = { min: 1, max: 4 };
+/** mat_viewportscale when set by hand (0 = automatic). */
+export const RESOLUTION_SCALE_RANGE = { min: 0.4, max: 1 };
 
 export function defaultSettings(game: HudGame): GameSettings {
   return {
@@ -96,11 +135,17 @@ export function defaultSettings(game: HudGame): GameSettings {
     mPitch: M_PITCH,
     invertY: false,
     rawInput: true,
+    mouseFilter: false,
+    mouseAccel: 0,
+    mouseAccelExponent: 1,
+    mouseAccelScale: 0.04,
+    mouseAccelMax: 0,
     fov: FOV_RANGE[game].def,
     viewmodelFov: VIEWMODEL_FOV_RANGE.def,
-    volume: { master: 0.8, sfx: 1, voice: 1, music: 0.6 },
+    volume: { master: 0.6, sfx: 1, voice: 1, music: 0.6 },
     keybinds: defaultKeybinds(game),
     quality: 'auto',
+    video: { resolutionScale: 0, textureDetail: 'auto', modelDetail: 'auto', effectsDetail: 'auto', antialias: 'auto', anisotropy: 0 },
     showFps: false,
     captions: game !== 'tf2',
     crosshair: { style: 'cross', color: 'rgb(200 255 200)', scale: 1 },
@@ -147,7 +192,9 @@ export function sanitizeSettings(raw: unknown, game: HudGame): GameSettings {
   const ch = isObj(raw.crosshair) ? raw.crosshair : {};
   const gp = isObj(raw.gamepad) ? raw.gamepad : {};
   const tc = isObj(raw.touch) ? raw.touch : {};
+  const vd = isObj(raw.video) ? raw.video : {};
   const fov = FOV_RANGE[game];
+  const scale = numIn(vd.resolutionScale, 0, RESOLUTION_SCALE_RANGE.max, d.video.resolutionScale);
   return {
     version: 1,
     sensitivity: numIn(raw.sensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max, d.sensitivity),
@@ -155,6 +202,11 @@ export function sanitizeSettings(raw: unknown, game: HudGame): GameSettings {
     mPitch: numIn(raw.mPitch, M_YAW_RANGE.min, M_YAW_RANGE.max, d.mPitch),
     invertY: boolOr(raw.invertY, d.invertY),
     rawInput: boolOr(raw.rawInput, d.rawInput),
+    mouseFilter: boolOr(raw.mouseFilter, d.mouseFilter),
+    mouseAccel: Math.trunc(numIn(raw.mouseAccel, 0, 3, d.mouseAccel)),
+    mouseAccelExponent: numIn(raw.mouseAccelExponent, ACCEL_EXPONENT_RANGE.min, ACCEL_EXPONENT_RANGE.max, d.mouseAccelExponent),
+    mouseAccelScale: numIn(raw.mouseAccelScale, 0, 1, d.mouseAccelScale),
+    mouseAccelMax: numIn(raw.mouseAccelMax, 0, 20, d.mouseAccelMax),
     fov: Math.round(numIn(raw.fov, fov.min, fov.max, d.fov)),
     viewmodelFov: Math.round(numIn(raw.viewmodelFov, VIEWMODEL_FOV_RANGE.min, VIEWMODEL_FOV_RANGE.max, d.viewmodelFov)),
     volume: {
@@ -165,6 +217,15 @@ export function sanitizeSettings(raw: unknown, game: HudGame): GameSettings {
     },
     keybinds: sanitizeKeybinds(raw.keybinds, d.keybinds),
     quality: oneOf(raw.quality, ['auto', 'low', 'medium', 'high'] as const, d.quality),
+    video: {
+      // 0 is automatic; a hand-set scale is at least the governor's floor.
+      resolutionScale: scale > 0 ? Math.max(RESOLUTION_SCALE_RANGE.min, scale) : 0,
+      textureDetail: oneOf(vd.textureDetail, DETAIL_LEVELS, d.video.textureDetail),
+      modelDetail: oneOf(vd.modelDetail, DETAIL_LEVELS, d.video.modelDetail),
+      effectsDetail: oneOf(vd.effectsDetail, DETAIL_LEVELS, d.video.effectsDetail),
+      antialias: oneOf(vd.antialias, ['auto', 'on', 'off'] as const, d.video.antialias),
+      anisotropy: ANISOTROPY_LEVELS.includes(vd.anisotropy as number) ? (vd.anisotropy as number) : d.video.anisotropy,
+    },
     showFps: boolOr(raw.showFps, d.showFps),
     captions: boolOr(raw.captions, d.captions),
     crosshair: {
@@ -239,16 +300,47 @@ export function saveSettings(
 
 // ─── Derived values ────────────────────────────────────────────────────────
 
-/** Degrees of yaw / pitch for a mouse movement of (dx, dy) counts (CInput::MouseMove). */
-export function mouseToDegrees(
-  dx: number,
-  dy: number,
-  s: Pick<GameSettings, 'sensitivity' | 'invertY'> & Partial<Pick<GameSettings, 'mYaw' | 'mPitch'>>,
-): { yaw: number; pitch: number } {
+/** The mouse settings `mouseToDegrees` reads (all but sensitivity / invert optional: Source's defaults). */
+export type MouseSettings = Pick<GameSettings, 'sensitivity' | 'invertY'> &
+  Partial<Pick<GameSettings, 'mYaw' | 'mPitch' | 'mouseAccel' | 'mouseAccelExponent' | 'mouseAccelScale' | 'mouseAccelMax'>>;
+
+/**
+ * The counts multiplied by the sensitivity, with `m_customaccel` (CInput::ScaleMouse): 0 plain; 1 and 2
+ * `min(max, pow(|d|, exponent) × scale + sensitivity)` (2 also times m_yaw / m_pitch, which then apply
+ * twice, as in the SDK); 3 `pow(|d|², (exponent − 1) / 2) × sensitivity`.
+ */
+export function scaleMouse(dx: number, dy: number, s: MouseSettings): { x: number; y: number } {
+  const mode = s.mouseAccel ?? 0;
+  const sens = s.sensitivity;
+  const exponent = s.mouseAccelExponent ?? 1;
+  if (mode === 1 || mode === 2) {
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    let accel = Math.pow(dist, exponent) * (s.mouseAccelScale ?? 0.04) + sens;
+    const max = s.mouseAccelMax ?? 0;
+    if (max > 0.0001 && accel > max) accel = max;
+    let x = dx * accel;
+    let y = dy * accel;
+    if (mode === 2) {
+      x *= s.mYaw ?? M_YAW;
+      y *= s.mPitch ?? M_PITCH;
+    }
+    return { x, y };
+  }
+  if (mode === 3) {
+    const exp = Math.max(0, (exponent - 1) / 2);
+    const accel = Math.pow(dx * dx + dy * dy, exp) * sens;
+    return { x: dx * accel, y: dy * accel };
+  }
+  return { x: dx * sens, y: dy * sens };
+}
+
+/** Degrees of yaw / pitch for a mouse movement of (dx, dy) counts (CInput::ScaleMouse + ApplyMouse). */
+export function mouseToDegrees(dx: number, dy: number, s: MouseSettings): { yaw: number; pitch: number } {
+  const m = scaleMouse(dx, dy, s);
   return {
     // Moving right turns right: yaw decreases (Source yaw is counter-clockwise).
-    yaw: -dx * s.sensitivity * (s.mYaw ?? M_YAW),
-    pitch: dy * s.sensitivity * (s.mPitch ?? M_PITCH) * (s.invertY ? -1 : 1),
+    yaw: -m.x * (s.mYaw ?? M_YAW),
+    pitch: m.y * (s.mPitch ?? M_PITCH) * (s.invertY ? -1 : 1),
   };
 }
 

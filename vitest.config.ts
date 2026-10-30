@@ -75,6 +75,8 @@ export default defineConfig({
       // The single-player game layer (HL2 / Portal) is gameplay on the same
       // engine: it runs in the TF2 suite, `pnpm test:tf2` (vitest.tf2.config.ts).
       'lib/sp-game/**',
+      // CS:GO (de_dust2) is gameplay on the same engine too: the TF2 suite runs it.
+      'lib/csgo-game/**',
       // Multiplayer Balatro is gameplay too: its own suite, `pnpm test:balatro`
       // (vitest.balatro.config.ts, which includes exactly these globs), gated by
       // .github/workflows/balatro-mp-tests.yml. The mission-critical Balatro

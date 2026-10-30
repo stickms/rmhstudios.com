@@ -20,6 +20,15 @@ export const GAME_ASSET_TYPES: Record<string, string> = {
   '.mp3': 'audio/mpeg',
   '.bin': 'application/octet-stream',
   '.bsp': 'application/octet-stream',
+  // CS:GO's Panorama icons (`ui/icons/<sha>.svg`), sanitised by scripts/tf2-game/csgo_ui.py and
+  // served with a sandboxing CSP (store.server.ts gameAssetHeaders).
+  '.svg': 'image/svg+xml',
+  // A game's main menu (`menu/…`): the fonts its schemes load and CS:GO's background movie.
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.webm': 'video/webm',
 };
 
 const extension = (path: string): string => {
@@ -28,7 +37,7 @@ const extension = (path: string): string => {
 };
 
 /**
- * `maps|mdl|tex|snd|particles` + `/` + lowercase name characters; no `..`, no empty,
+ * `maps|mdl|tex|snd|particles|ui|menu` + `/` + lowercase name characters; no `..`, no empty,
  * hidden or `_`-prefixed segment (the channels' `_state.json` stays private), and only
  * the file types the game loads.
  */

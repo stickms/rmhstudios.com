@@ -17,6 +17,7 @@ import {
   applyChanges,
   excerptForAi,
   HUD_AI_LIMITS,
+  offeredHudPaths,
   type AppliedChange,
   type HudChange,
   type RejectedChange,
@@ -59,18 +60,6 @@ function Swatch({ value }: { value: string | null }) {
 
 /** "HudPlayerHealth › xpos": the key path without the file's own root block. */
 const label = (c: { path: string[] }): string => c.path.slice(1).join(' › ') || c.path[0];
-
-/** HUD files worth offering to the model: panel layouts, the scheme and the global layout. */
-function offeredPaths(all: string[]): string[] {
-  return all
-    .filter(
-      (p) =>
-        /^resource\/ui\/[^/]+\.res$/i.test(p) ||
-        /^resource\/clientscheme\.res$/i.test(p) ||
-        /^scripts\/hudlayout\.res$/i.test(p),
-    )
-    .slice(0, HUD_AI_LIMITS.paths);
-}
 
 export default function HudAssistant({
   open,
@@ -146,7 +135,7 @@ export default function HudAssistant({
       setStep(known.length ? 'edit' : 'select');
       const picked = known.length
         ? { files: known }
-        : await api.aiSelect({ message, paths: offeredPaths(store.paths()), history });
+        : await api.aiSelect({ message, paths: offeredHudPaths(store.paths()), history });
       if ('unavailable' in picked) {
         unavailable();
         return;

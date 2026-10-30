@@ -192,6 +192,9 @@ const FULLSCREEN_TIER_DIRS = new Set([
   // Half-Life 2 / Portal play pages (chapter select around the shared game canvas),
   // in the same scoped HL2 / Portal variants of that palette.
   'sp-game',
+  // CS:GO (de_dust2) on the same engine: its own in-game HUD and lobby, on the TF2 Hub's
+  // `--app-*` palette with scoped `--csg-*` team colours (components/csgo-game/cs-hud.css).
+  'csgo-game',
   'rmhvibe',
   'shared',
   'studio',
@@ -228,6 +231,9 @@ const FULLSCREEN_TIER_DIRS = new Set([
   // its readers already having. Declares its own `--stk-*` group in
   // `components/sohumtracker/sohumtracker.css`.
   'sohumtracker',
+  // The games library — a literal Steam palette, flat, in `components/steam/steam.css`
+  // (`--stm-*` tokens); no site glass, jelly or `--site-*` surfaces.
+  'steam',
 ]);
 
 /** Top-level route trees that are full-screen experiences, not `_site` pages. */
@@ -239,6 +245,9 @@ const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'daily',
   'discord',
   'dream-rift',
+  // The games library: `games.tsx` + `games/**` — a directory, not flat
+  // `games.community.tsx` files, because the segment is read off the first path part.
+  'games',
   // The marathon planner — see the note beside `dunesday` above.
   'dunesday',
   'forest-explorer',

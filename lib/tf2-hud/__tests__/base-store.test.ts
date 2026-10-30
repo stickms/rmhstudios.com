@@ -7,6 +7,10 @@ describe('isSafeBasePath', () => {
     'resource/ui/hudplayerhealth.res',
     'materials/vgui/hud/health_bg.vtf',
     'scripts/screens/hud_spy.txt',
+    // The browser game's menus: the key lists and TF2's advanced options script.
+    'scripts/kb_act.lst',
+    'hl2/scripts/kb_act.lst',
+    'cfg/user_default.scr',
   ])('accepts %s', (p) => expect(isSafeBasePath(p)).toBe(true));
 
   it.each([

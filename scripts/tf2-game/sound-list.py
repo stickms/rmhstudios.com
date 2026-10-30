@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write the default sound list for sounds.py: what the browser game actually plays.
 
-    sound-list.py --root <install> --out <list.json> [--max-files 1500]
+    sound-list.py --root <install> --out <list.json> [--max-files 1600]
 
 Selects sound-script entries by name, not whole folders, so the list stays lean
 (object storage is shared with the other game channels — see docs/tf2-game.md):
@@ -46,6 +46,20 @@ sound packs included — gamefs.SearchFS):
 Writes {"game", "entries", "paths", "soundscapes": {name: {dsp?, rules}}, "scenes": {file:
 {duration, speak: [...]}}, "captions": {token: {text, color?, sfx?, len?, delay?, norepeat?}}};
 sounds.py publishes the last three as snd/soundscapes.json, snd/scenes.json and snd/captions.json.
+
+    sound-list.py --root <csgo ds install> --game csgo --out <list.json> [--max-files 900]
+
+CS:GO (de_dust2, deathmatch and bomb defusal, default loadouts), chosen by category in priority order
+so the most important sounds survive the --max-files budget (an entry whose files would pass it is
+dropped and counted in the summary): every default weapon's entries (the prefixes its items_game
+`visuals.sound_*` name — fire, draw, clip, bolt …), knives, C4, grenades and the taser; bomb sounds;
+footsteps and impacts of Dust II's surfaces (team-prefixed variants included); player damage, death,
+headshot and kevlar hits, flashbang ringing; round and announcer events (round start / win, bomb
+planted / defused); grenade bounces; UI and buy sounds; a small set of radio commands; and the map's
+own sounds and soundscapes (env_soundscape, `scripts/soundscapes_de_dust2.txt`). Danger Zone, co-op,
+Guardian, hostage, Arms Race and music-kit entries never match, nor does any faction voice pack but
+those of the two player models the model channel picks. Writes {"game", "entries", "paths",
+"soundscapes", "categories": {name: {entries, dropped}}}.
 """
 import argparse
 import json
@@ -385,18 +399,189 @@ def select_sp(fs, game, maps=None):
             "soundscapes": scapes, "scenes": scenes, "captions": captions}
 
 
+# --------------------------------------------------------------------------------------------- CS:GO
+
+CSGO_MAPS = ("de_dust2",)
+CSGO_MAX_FILES = 900
+# Entries no part of the browser game plays (other modes, music kits, store and inventory UI).
+CSGO_EXCLUDE = re.compile(
+    r"survival|danger|^dz_|\.dz_|coop|guardian|hostage|gungame|armsrace|arms_race|skirmish|"
+    r"retake|tablet|drone|parachute|breach|bumpmine|shield|snowball|healthshot|ghost|zombie|"
+    r"halloween|xmas|music|musickit|mvp|store|inventory|crate|case_|sticker|graffiti|spray|"
+    r"vote|overwatch|mission|operation|xp_|level_?up|tournament|scoreboard|chicken", re.I)
+# Faction voice packs (hundreds of lines each): only the picked factions' radio commands are kept.
+CSGO_FACTIONS = ("phoenix", "leet", "balkan", "pirate", "professional", "anarchist", "separatist",
+                 "sas", "fbi", "swat", "gign", "gsg9", "idf", "seal", "st6", "sealteam6")
+CSGO_FACTION_VO = re.compile(r"^(?:player\.|vo\.)?(%s)[._]" % "|".join(CSGO_FACTIONS), re.I)
+# A player model's faction -> its voice pack's name in the sound scripts.
+CSGO_VO_NAME = {"st6": "seal"}
+# Weapon-like prefixes no items_game visual names but the game plays (knives, the bomb, grenades,
+# generic weapon sounds such as the empty click and fire-mode switch).
+CSGO_WEAPON_PREFIXES = ("Weapon_Knife", "Weapon_C4", "C4", "HEGrenade", "Flashbang", "SmokeGrenade",
+                        "Molotov", "IncGrenade", "Inferno", "Decoy", "BaseGrenade", "Weapon_Taser",
+                        "Default", "Weapon", "Weapon_Base")
+CSGO_SURFACES = ("default", "concrete", "metal", "solidmetal", "metalgrate", "metalvent", "metal_box",
+                 "dirt", "sand", "gravel", "grass", "mud", "wood", "wood_box", "wood_crate",
+                 "wood_plank", "wood_solid", "wood_panel", "tile", "glass", "chainlink", "flesh",
+                 "water", "wade", "ladder", "plaster", "carpet", "rubber", "cardboard", "rock",
+                 "brick")
+CSGO_SURFACE_KEYS = ("stepleft", "stepright", "impacthard", "bulletimpact")
+# Category -> pattern over entry names (after CSGO_EXCLUDE); first match wins, in this order.
+CSGO_CATEGORIES = (
+    ("bomb", re.compile(r"^(c4|weapon_c4|bomb\w*|bombsite\w*)\.|^(event|radio|announcer)\.\w*(bomb|defus|"
+                        r"planted|explode)\w*$", re.I)),
+    ("player", re.compile(
+        r"^player\.(death\w*|damage\w*|fall\w*|pain\w*|burn\w*|flashbang\w*|deafen\w*|jump\w*|"
+        r"land\w*|swim\w*|wade\w*|use\w*|pickup\w*|weaponselected|denyweaponselection|ambientunderwater|"
+        r"ladder\w*|headshot\w*|kevlar\w*|helmet\w*|blinded\w*|ear\w*|ring\w*)$|"
+        r"^(flesh|bullets|bulletimpact|kevlar|helmet|headshot|headshotplayer|headshotkevlar)\.\w+$", re.I)),
+    ("round", re.compile(
+        r"^(event|announcer)\.\w+$|^radio\.(ctwin|terwin|t_win|ct_win|rounddraw|round_draw|"
+        r"roundstart\w*|bombpl\w*|bombdef\w*|targetbombed|targetsaved|terroristswin|ctswin|"
+        r"lastround|halftime)\w*$", re.I)),
+    ("ui", re.compile(
+        r"^(uipanorama|ui|buymenu|buy|hud)\.\w*(buy|purchase|money|round|timer|countdown|menu_accept|"
+        r"menu_back|weapon|tab|popup|select|cash|freeze|warmup|hint)\w*$", re.I)),
+    ("radio", re.compile(
+        r"^(?:radio|(?:player\.|vo\.)?(?:%s)(?:[._]radio)?)[._](go|gogogo|letsgo|locknload|moveout|"
+        r"affirm\w*|roger\w*|negative|negatory|enemyspotted|enemy\w*|needbackup|backup|takecover|"
+        r"hold\w*|regroup|sectorclear|clear|inposition|followme|fireinthehole|coverme|reportingin|"
+        r"sticktogether|report\w*|takepoint|getout|thanks|compliment|cheer)\w*$" % "|".join(CSGO_FACTIONS),
+        re.I)),
+)
+CSGO_RADIO_MAX_FILES = 120
+
+
+def _csgo_surface_entries(fs, scripts, refs):
+    """Footstep / impact entries of the map's surfaces and the base set, with CS:GO's team variants
+    (`CT_<entry>`, `T_<entry>`) when the scripts have them."""
+    by_lower = {k.lower(): k for k in scripts}
+    surf = sourcegame.load_surfaces(fs)
+    names = (set(refs["surfaces"]) | set(refs["prop_surfaces"]) | set(CSGO_SURFACES)) & set(surf)
+    out = []
+    for s in sorted(names):
+        for k in CSGO_SURFACE_KEYS:
+            v = surf[s].get(k)
+            if not v:
+                continue
+            for cand in (v, "ct_" + v, "t_" + v):
+                key = by_lower.get(cand.lower())
+                if key and key not in out:
+                    out.append(key)
+    return out
+
+
+def csgo_factions(fs, maps=CSGO_MAPS):
+    """The voice packs of the player models the model channel picks (csgo_items.choose_players)."""
+    import csgo_items
+
+    names = set(fs.names("models/player/custom_player/legacy/", ".mdl"))
+    players = csgo_items.choose_players(names, csgo_items.map_config(fs, maps[0]))
+    out = set()
+    for p in players.values():
+        f = csgo_items.faction(p["name"])
+        if f:
+            out.add(CSGO_VO_NAME.get(f, f))
+    return out
+
+
+def _csgo_excluded(name, factions):
+    if CSGO_EXCLUDE.search(name):
+        return True
+    m = CSGO_FACTION_VO.match(name)
+    return bool(m) and m.group(1).lower() not in factions
+
+
+def select_csgo(fs, maps=CSGO_MAPS, max_files=CSGO_MAX_FILES, scripts=None, items=None, factions=None):
+    """The CS:GO list, by category in priority order within `max_files`."""
+    import csgo_items
+
+    scripts = sounds.load_scripts(fs) if scripts is None else scripts
+    if items is None:
+        ig = csgo_items.load_items_game(fs)
+        items = ig.defaults() if ig else {}
+    factions = {f.lower() for f in (csgo_factions(fs, maps) if factions is None else factions)}
+    excluded = lambda n: _csgo_excluded(n, factions)  # noqa: E731
+    prefixes = [p for p in csgo_items.sound_prefixes(items) if p] + list(CSGO_WEAPON_PREFIXES)
+    weapon = re.compile(r"^(%s)\.\w" % "|".join(re.escape(p) for p in sorted(set(prefixes), key=len, reverse=True)),
+                        re.I)
+    refs = map_refs(fs, "csgo", maps, scripts)
+
+    # Soundscapes: the manifest's and each map's own scripts/soundscapes_<map>.txt.
+    all_scapes = sourcegame.load_soundscapes(fs)
+    for m in maps:
+        raw = fs.read("scripts/soundscapes_%s.txt" % m)
+        if raw:
+            for name, sc in sourcegame.parse_soundscapes(raw.decode("latin-1")).items():
+                all_scapes.setdefault(name, sc)
+    scapes = sourcegame.soundscape_closure(all_scapes, refs["soundscapes"])
+    by_lower = {k.lower(): k for k in scripts}
+    map_entries, paths = set(refs["entries"]), set(refs["paths"])
+    for w in sourcegame.soundscape_waves(scapes):
+        ref = _sound_ref(w, by_lower, fs) if not w.startswith("sound/") else (
+            ("path", w) if fs.exists(w) else None)
+        if ref:
+            (map_entries if ref[0] == "entry" else paths).add(ref[1])
+
+    ordered = [("weapons", sorted(n for n in scripts if weapon.match(n) and not excluded(n))),
+               ("surfaces", _csgo_surface_entries(fs, scripts, refs))]
+    taken = {n for _c, ns in ordered for n in ns}
+    for cat, pattern in CSGO_CATEGORIES:
+        names = sorted(n for n in scripts if n not in taken and pattern.search(n) and not excluded(n))
+        taken.update(names)
+        ordered.append((cat, names))
+    ordered.append(("map", sorted(map_entries - taken)))
+
+    files = {p for p in paths if fs.exists(p)}
+    entries, cats = [], {}
+    for cat, names in ordered:
+        kept = dropped = 0
+        cat_files = set()
+        for n in names:
+            waves = {p for _f, p in sounds.entry_info(scripts[n])["waves"] if fs.exists(p)}
+            if not waves:
+                continue
+            new = waves - files
+            over_cat = cat == "radio" and len(cat_files | new) > CSGO_RADIO_MAX_FILES
+            if len(files) + len(new) > max_files or over_cat:
+                dropped += 1
+                continue
+            files |= new
+            cat_files |= waves
+            entries.append(n)
+            kept += 1
+        cats[cat] = {"entries": kept, "dropped": dropped}
+    return {"game": "csgo", "entries": entries, "paths": sorted(paths), "soundscapes": scapes,
+            "categories": cats, "factions": sorted(factions)}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--root", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--game", choices=("tf2", "hl2", "portal"), default="tf2")
+    ap.add_argument("--game", choices=("tf2", "hl2", "portal", "csgo"), default="tf2")
     ap.add_argument("--max-files", type=int, default=None,
                     help="fail when the selection grows past this many files (storage budget; "
-                         "default 1500 for TF2, 800 for the single-player games)")
+                         "default 1600 for TF2, 800 for the single-player games); CS:GO selects "
+                         "within it (default 900) by priority instead")
     args = ap.parse_args()
-    max_files = args.max_files or (1500 if args.game == "tf2" else 800)
+    max_files = args.max_files or {"tf2": 1600, "csgo": CSGO_MAX_FILES}.get(args.game, 800)
 
     fs = open_game(args.root, args.game)
+    if args.game == "csgo":
+        listing = select_csgo(fs, max_files=max_files)
+        scripts = sounds.load_scripts(fs)
+        names = listing["entries"]
+        files = {p for p in files_of(scripts, names) if fs.exists(p)} | set(listing["paths"])
+        with open(args.out, "w") as fh:
+            json.dump(listing, fh, indent=1)
+        print("sound list (csgo): %d entries, %d distinct files, %d soundscapes; by category: %s" % (
+            len(names), len(files), len(listing["soundscapes"]),
+            ", ".join("%s %d (dropped %d)" % (c, v["entries"], v["dropped"])
+                      for c, v in listing["categories"].items())))
+        if not names:
+            sys.exit("csgo sound list is empty: is the install's sound data present?")
+        return
     if args.game == "tf2":
         scripts = sounds.load_scripts(fs)
         names = select(scripts)

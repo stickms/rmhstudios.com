@@ -6,7 +6,7 @@
  *       workflow to `eval` and append to $GITHUB_ENV, so the builder versions live in one place.
  *   storage-report.ts report [--budget-gb N] [--pending <prefix>=<dir> ...]
  *       Sums the stored size of every game channel of every game (`tf2-game/`, `hl2-game/`,
- *       `portal-game/`; `<game>-game/<kind>/`) from its state file
+ *       `portal-game/`, `csgo-game/`; `<game>-game/<kind>/`) from its state file
  *       (one GET each — never a bucket listing). With --pending, a channel about to be pushed
  *       is counted as it will be after the push (its converter's wanted.json and output dir).
  *       An object two channels publish (the shared `tex/`) is counted once. The other channels the game

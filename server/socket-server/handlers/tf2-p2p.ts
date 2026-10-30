@@ -43,14 +43,18 @@ import { logger } from '../logger';
 import { checkRateLimit } from '../rate-limit';
 import { generateRoomCode, sanitizeString } from '../utils';
 import { findTf2Map } from '../../../lib/tf2-game/data/maps';
-import type { Tf2Mode } from '../../../lib/tf2-game/data/maps';
+import { findGameMap } from '../../../lib/tf2-game/assets/game-maps';
 import {
   TF2_C2S,
   TF2_LIMITS,
   TF2_S2C,
+  CS_ROOM_MODES,
   type BotDifficulty,
+  type CsRoomMode,
   type RoomDetailsPayload,
+  type RoomGame,
   type RoomListEntry,
+  type RoomMode,
   type Tf2ErrorCode,
 } from '../../../lib/tf2-game/net/events';
 import {
@@ -133,8 +137,9 @@ interface P2pRoom {
   hostUserId: string;
   hostName: string;
   name: string;
+  game: RoomGame;
   map: string;
-  mode: Tf2Mode;
+  mode: RoomMode;
   maxPlayers: number;
   botCount: number;
   botDifficulty: BotDifficulty;
@@ -336,6 +341,7 @@ function entry(room: P2pRoom): RoomListEntry {
   return {
     code: room.code,
     name: room.name,
+    ...(room.game === 'tf2' ? {} : { game: room.game }),
     map: room.map,
     mode: room.mode,
     players,
@@ -350,9 +356,25 @@ function entry(room: P2pRoom): RoomListEntry {
   };
 }
 
-/** Public P2P rooms whose host is connected, for `tf2:rooms:list`. */
-export function listPublicP2pRooms(): RoomListEntry[] {
-  return [...p2pRooms.values()].filter((r) => !r.isPrivate && !r.closed && r.hostSocketId).map(entry);
+/** Public P2P rooms of one game whose host is connected, for `tf2:rooms:list`. */
+export function listPublicP2pRooms(game: RoomGame = 'tf2'): RoomListEntry[] {
+  return [...p2pRooms.values()].filter((r) => r.game === game && !r.isPrivate && !r.closed && r.hostSocketId).map(entry);
+}
+
+/**
+ * A published map of a room's game and the mode it plays: TF2's allowlist (each map its own mode), or
+ * CS:GO's maps (de_dust2: bomb defusal or deathmatch). Null: refused.
+ */
+function roomMap(game: RoomGame, name: string, mode: RoomMode | undefined): { name: string; title: string; mode: RoomMode } | 'bad-mode' | null {
+  if (game === 'csgo') {
+    const map = findGameMap('csgo', name);
+    if (!map) return null;
+    const m = mode ?? 'de';
+    return (CS_ROOM_MODES as readonly string[]).includes(m) ? { name: map.name, title: map.title, mode: m as CsRoomMode } : 'bad-mode';
+  }
+  const map = findTf2Map(name);
+  if (!map) return null;
+  return mode && mode !== map.mode ? 'bad-mode' : { name: map.name, title: map.title, mode: map.mode };
 }
 
 export function isP2pRoom(code: string): boolean {
@@ -434,12 +456,13 @@ export function registerTf2P2pHandlers(io: Server, socket: Socket): void {
       return;
     }
 
-    const map = findTf2Map(data.map);
+    const game: RoomGame = data.game ?? 'tf2';
+    const map = roomMap(game, data.map, data.mode);
     if (!map) {
       fail(socket, 'unknown-map', TF2_C2S.P2P_HOST);
       return;
     }
-    if (data.mode && data.mode !== map.mode) {
+    if (map === 'bad-mode') {
       fail(socket, 'bad-mode', TF2_C2S.P2P_HOST);
       return;
     }
@@ -461,6 +484,7 @@ export function registerTf2P2pHandlers(io: Server, socket: Socket): void {
       hostUserId: account.userId,
       hostName: account.name,
       name: sanitizeString(data.name, TF2_LIMITS.ROOM_NAME_MAX_LENGTH) || map.title,
+      game,
       map: map.name,
       mode: map.mode,
       maxPlayers: data.maxPlayers,
@@ -490,7 +514,8 @@ export function registerTf2P2pHandlers(io: Server, socket: Socket): void {
     const room = hostedRoom(TF2_C2S.P2P_UPDATE);
     if (!room) return;
     // The host changed level: the browser lists the room on its new map (published maps only).
-    const moved = g.data.map ? findTf2Map(g.data.map) : null;
+    const found = g.data.map ? roomMap(room.game, g.data.map, room.game === 'csgo' ? room.mode : undefined) : null;
+    const moved = found && found !== 'bad-mode' ? found : null;
     if (moved && moved.name !== room.map) {
       logger.info({ event: 'tf2_p2p_level_changed', code: room.code, from: room.map, to: moved.name });
       room.map = moved.name;
@@ -618,6 +643,7 @@ export function registerTf2P2pHandlers(io: Server, socket: Socket): void {
       code: room.code,
       peerId: member.peerId,
       host: room.hostName,
+      ...(room.game === 'tf2' ? {} : { game: room.game }),
       map: room.map,
       mode: room.mode,
       name: room.name,

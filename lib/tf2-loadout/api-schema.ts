@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { MAX_SEED, TF_CLASSES } from './catalog-types';
 import { LOADOUT_LIMITS } from './api-types';
+import { MATCH_CONTEXT_LIMITS } from './ai-core';
 
 export const visibilitySchema = z.enum(['PRIVATE', 'UNLISTED', 'PUBLIC']);
 export const classSchema = z.enum(TF_CLASSES);
@@ -66,3 +67,35 @@ export const listQuerySchema = z.object({
   mine: z.enum(['true', 'false']).optional(),
   limit: z.coerce.number().int().min(1).max(48).default(24),
 });
+
+/**
+ * `context` on `POST /api/tf2-loadout/ai`: the live match the in-game loadout view sends with a
+ * question. Optional and additive; every field is capped, unknown keys are refused (nothing else —
+ * no player names — can ride along), and the server hands it to the model as quoted data.
+ */
+const contextName = z.string().trim().max(MATCH_CONTEXT_LIMITS.name);
+export const matchContextSchema = z
+  .object({
+    map: contextName.optional(),
+    mode: z.string().trim().max(16).optional(),
+    round: z.string().trim().max(16).optional(),
+    yourClass: classSchema.optional(),
+    team: z.enum(['red', 'blu']).optional(),
+    enemies: z
+      .array(z.object({ cls: classSchema, n: z.number().int().min(1).max(32) }).strict())
+      .max(MATCH_CONTEXT_LIMITS.enemies)
+      .optional(),
+    deaths: z
+      .array(
+        z
+          .object({
+            weapon: contextName.min(1),
+            cls: classSchema.optional(),
+            n: z.number().int().min(1).max(99),
+          })
+          .strict(),
+      )
+      .max(MATCH_CONTEXT_LIMITS.deaths)
+      .optional(),
+  })
+  .strict();

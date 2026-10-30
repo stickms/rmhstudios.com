@@ -24,8 +24,8 @@
  *     that starts from a checkpoint (`restoreSeats`) holds every member's seat
  *     for them to reclaim with their account.
  *
- * The host is authoritative and trusted by its members: P2P is for friends;
- * dedicated rooms remain for public play (docs/tf2-game.md "Peer-to-peer play").
+ * The host is authoritative and trusted by its members (docs/tf2-game.md
+ * "Peer-to-peer play").
  *
  * Environment-agnostic (the page's main thread, Vitest).
  */

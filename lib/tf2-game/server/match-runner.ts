@@ -2,9 +2,9 @@
  * `MatchRunner` — hosts one or more matches on one thread and steps them all
  * on a drift-corrected fixed 66.67 Hz clock.
  *
- * It is the body of the match worker (`./match-worker.server.ts`) and of the
- * pool's in-process dev fallback; it imports nothing from Node or the DOM so
- * the same loop can later run a browser listen server.
+ * It is the body of the browser's listen server (client/net/listen-worker.ts:
+ * offline play and peer-to-peer hosting); it imports nothing from Node or the
+ * DOM, so Vitest runs the same loop.
  *
  * ## The clock
  *

@@ -1,9 +1,8 @@
 /**
- * The TF2 server browser: one list of dedicated rooms (matches on the games
- * hub) and peer-to-peer rooms (a player's browser hosting, marked "Hosted by
- * <name> (P2P)"), with the columns of the game's own browser — name, map,
- * mode, players / max (+ bots), ping, host, type — sortable by any of them,
- * filters (map, mode, type, not full, has humans, hide empty) and a search;
+ * The TF2 server browser: the games players host from their browsers (peer-to-peer — online play has
+ * no hub-hosted rooms; each row says who hosts it), with the columns of the game's own browser —
+ * name, map, mode, players / max (+ bots), host — sortable by any of them, filters (map, mode,
+ * not full, has humans, hide empty) and a search;
  * auto-refresh every 15 s plus Refresh; a details pane (the roster with
  * classes and scores, the round and its time left) with Join and Join as
  * spectator; Quick Play for a mode or map; Favorites and Recent servers on
@@ -11,8 +10,8 @@
  *
  * Browsing is open to everyone; joining needs an account (the hub refuses
  * otherwise), so a visitor's Join is a sign-in link that comes back here.
- * Ping is the hub's round trip for dedicated rooms; a P2P host's is unknown
- * until connected (the browser never sees addresses), so it shows "—".
+ * There is no ping column: a host's round trip is unknown until connected
+ * (the browser never sees addresses).
  *
  * A list read top to bottom, so it scrolls the document (components/CLAUDE.md
  * §12.1); rows are buttons, so keyboards work, and a gamepad moves through
@@ -25,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { ArrowDown, ArrowUp, Eye, Globe, KeyRound, LogIn, RefreshCw, Search, Share2, Server, Star, Users, Zap } from 'lucide-react';
 import { toast } from 'sonner';
-import { Btn, EmptyNote, Field, IconBtn, Pill, SelectField, TextField, Toggle } from '@/components/tf2-hud/ui';
+import { Btn, EmptyNote, Field, IconBtn, SelectField, TextField, Toggle } from '@/components/tf2-hud/ui';
 import { TfTabs } from '@/components/tf2-hud/TfTabs';
 import { useLobbyLink } from '@/hooks/useLobbyLink';
 import { lobbyReturnPath } from '@/lib/lobby-link';
@@ -43,7 +42,6 @@ import {
   quickPlayPick,
   readSaved,
   remember,
-  roomPing,
   savedFrom,
   sortRooms,
   writeSaved,
@@ -215,22 +213,23 @@ export default function ServerBrowser({
     netRef.current?.tf2.listRooms(offset);
   }, [offset]);
 
-  const live = useMemo(() => new Map((rooms ?? []).map((r) => [r.code, r])), [rooms]);
+  const listed = rooms;
+  const live = useMemo(() => new Map((listed ?? []).map((r) => [r.code, r])), [listed]);
   const shown = useMemo(() => {
-    if (!rooms) return [];
+    if (!listed) return [];
     if (view !== 'all') return [];
-    return sortRooms(filterRooms(rooms, filters, mapTitle), sort.key, sort.dir, hubRtt, mapTitle);
-  }, [rooms, view, filters, sort, hubRtt, mapTitle]);
+    return sortRooms(filterRooms(listed, filters, mapTitle), sort.key, sort.dir, mapTitle);
+  }, [listed, view, filters, sort, mapTitle]);
 
-  const join = (r: { code: string; kind: RoomListEntry['kind'] }, spectate = false, saved?: SavedServer, password?: string) => {
+  const join = (r: { code: string }, spectate = false, saved?: SavedServer, password?: string) => {
     if (!signedIn) return;
     const entry = live.get(r.code);
-    const next = remember(recent, entry ? savedFrom(entry) : { ...(saved ?? { name: r.code, map: '', kind: r.kind, code: r.code }), at: Date.now() });
+    const next = remember(recent, entry ? savedFrom(entry) : { ...(saved ?? { name: r.code, map: '', kind: 'p2p', code: r.code }), at: Date.now() });
     setRecent(next);
     writeSaved(RECENT_KEY, next);
     // The spectator choice and the room's password ride the join request itself.
     const pw = password ? { password } : {};
-    onStart(r.kind === 'p2p' ? { kind: 'p2p-join', code: r.code, spectate, ...pw } : { kind: 'online-join', code: r.code, spectate, ...pw });
+    onStart({ kind: 'p2p-join', code: r.code, spectate, ...pw });
   };
 
   const toggleFavorite = (r: RoomListEntry | SavedServer) => {
@@ -241,7 +240,7 @@ export default function ServerBrowser({
   };
 
   const quickPlay = () => {
-    const pick = quickPlayPick(rooms ?? [], quick, hubRtt);
+    const pick = quickPlayPick(listed ?? [], quick);
     if (!pick) {
       setQuickMiss(true);
       return;
@@ -280,14 +279,7 @@ export default function ServerBrowser({
     );
   };
 
-  const kindLabel = (r: RoomListEntry) =>
-    r.kind === 'p2p' ? t('browser_kind_p2p', { defaultValue: 'P2P' }) : t('browser_kind_dedicated', { defaultValue: 'Dedicated' });
-  const hostLabel = (r: RoomListEntry) =>
-    r.kind === 'p2p' && r.host ? t('browser_hosted_by', { defaultValue: 'Hosted by {{name}} (P2P)', name: r.host }) : '—';
-  const pingLabel = (r: RoomListEntry) => {
-    const p = roomPing(r, hubRtt);
-    return p === null ? '—' : t('browser_ping_ms', { defaultValue: '{{ms}} ms', ms: p });
-  };
+  const hostLabel = (r: RoomListEntry) => (r.host ? t('browser_hosted_by_name', { defaultValue: 'Hosted by {{name}}', name: r.host }) : '—');
   const playersLabel = (r: RoomListEntry) =>
     r.bots > 0
       ? t('browser_players_bots', { defaultValue: '{{n}}/{{max}} (+{{bots}} bots)', n: r.players, max: r.maxPlayers, bots: r.bots })
@@ -348,11 +340,23 @@ export default function ServerBrowser({
           signInLink(t('browser_quick_sign_in', { defaultValue: 'Sign in for Quick Play' }))
         )}
         {quickMiss ? (
-          <p className="w-full text-xs text-(--app-text-muted)" role="status">
-            {t('browser_quick_none', {
-              defaultValue: 'No open server matches. Host one above (peer-to-peer or dedicated), or play offline against bots.',
-            })}
-          </p>
+          <div className="flex w-full flex-wrap items-center gap-2" role="status">
+            <p className="text-xs text-(--app-text-muted)">
+              {t('browser_quick_none_host', { defaultValue: 'No open game matches. Host one, or play offline against bots.' })}
+            </p>
+            <Btn
+              size="xs"
+              icon={Server}
+              data-menu-item
+              onClick={() => {
+                const host = document.getElementById('tf2-host-title');
+                host?.scrollIntoView({ block: 'start' });
+                host?.closest('section')?.querySelector<HTMLElement>('input, button')?.focus({ preventScroll: true });
+              }}
+            >
+              {t('host_title', { defaultValue: 'Host a game' })}
+            </Btn>
+          </div>
         ) : null}
       </div>
 
@@ -404,13 +408,6 @@ export default function ServerBrowser({
                 ))}
               </SelectField>
             </Field>
-            <Field label={t('browser_col_type', { defaultValue: 'Type' })}>
-              <SelectField value={filters.kind} onChange={(e) => setFilters({ ...filters, kind: e.target.value as BrowserFilters['kind'] })}>
-                <option value="">{t('browser_any', { defaultValue: 'Any' })}</option>
-                <option value="dedicated">{t('browser_kind_dedicated', { defaultValue: 'Dedicated' })}</option>
-                <option value="p2p">{t('browser_kind_p2p', { defaultValue: 'P2P' })}</option>
-              </SelectField>
-            </Field>
           </div>
           <div className="mb-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
             {(
@@ -453,12 +450,11 @@ export default function ServerBrowser({
                     >
                       <span className="flex min-w-0 items-center gap-2">
                         <span className="min-w-0 flex-1 truncate text-sm font-semibold">{r.name || r.code}</span>
-                        <Pill tone={r.kind === 'p2p' ? 'info' : 'neutral'}>{kindLabel(r)}</Pill>
                       </span>
                       <span className="text-xs text-(--app-text-muted)">
-                        {mapTitle(r.map)} · {modeLabel(r.mode)} · {playersLabel(r)} · {pingLabel(r)}
+                        {mapTitle(r.map)} · {modeLabel(r.mode)} · {playersLabel(r)}
                       </span>
-                      {r.kind === 'p2p' ? <span className="text-xs text-(--app-text-dim)">{hostLabel(r)}</span> : null}
+                      <span className="text-xs text-(--app-text-dim)">{hostLabel(r)}</span>
                     </button>
                   </li>
                 ))}
@@ -471,9 +467,7 @@ export default function ServerBrowser({
                     {sortHeader('map', t('play_map', { defaultValue: 'Map' }))}
                     {sortHeader('mode', t('browser_quick_mode', { defaultValue: 'Mode' }))}
                     {sortHeader('players', t('browser_col_players', { defaultValue: 'Players' }))}
-                    {sortHeader('ping', t('scores_ping', { defaultValue: 'Ping' }), 'w-20')}
                     {sortHeader('host', t('browser_col_host', { defaultValue: 'Host' }))}
-                    {sortHeader('kind', t('browser_col_type', { defaultValue: 'Type' }), 'w-24')}
                   </tr>
                 </thead>
                 <tbody>
@@ -495,11 +489,7 @@ export default function ServerBrowser({
                       <td className="truncate px-2 py-1 text-(--app-text-muted)">{mapTitle(r.map)}</td>
                       <td className="truncate px-2 py-1 text-(--app-text-muted)">{modeLabel(r.mode)}</td>
                       <td className="px-2 py-1 tabular-nums text-(--app-text-muted)">{playersLabel(r)}</td>
-                      <td className="px-2 py-1 tabular-nums text-(--app-text-muted)">{pingLabel(r)}</td>
-                      <td className="truncate px-2 py-1 text-(--app-text-muted)">{r.kind === 'p2p' ? r.host : '—'}</td>
-                      <td className="px-2 py-1">
-                        <Pill tone={r.kind === 'p2p' ? 'info' : 'neutral'}>{kindLabel(r)}</Pill>
-                      </td>
+                      <td className="truncate px-2 py-1 text-(--app-text-muted)">{r.host || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -544,7 +534,7 @@ export default function ServerBrowser({
                 </button>
                 <span className="font-mono text-xs text-(--app-text-dim)">{s.code}</span>
                 {signedIn ? (
-                  <Btn size="xs" variant="secondary" onClick={() => join({ code: s.code, kind: r?.kind ?? s.kind }, false, s)} disabled={!!r && isFull(r)}>
+                  <Btn size="xs" variant="secondary" onClick={() => join({ code: s.code }, false, s)} disabled={!!r && isFull(r)}>
                     {t('play_join', { defaultValue: 'Join' })}
                   </Btn>
                 ) : null}
@@ -563,7 +553,6 @@ export default function ServerBrowser({
           roster={details?.room?.roster ?? null}
           signedIn={signedIn}
           favorite={favorites.some((f) => f.code === selectedRoom.code)}
-          pingLabel={pingLabel(selectedRoom)}
           playersLabel={playersLabel(selectedRoom)}
           mapTitle={mapTitle(selectedRoom.map)}
           modeLabel={modeLabel(selectedRoom.mode)}
@@ -580,8 +569,7 @@ export default function ServerBrowser({
         className="mt-4 flex flex-wrap items-end gap-2 border-t border-(--app-border) pt-4"
         onSubmit={(e) => {
           e.preventDefault();
-          // A code can name either kind of room; the hub tells the client which.
-          if (codeValid && signedIn) onStart({ kind: 'online-join', code: code.trim().toUpperCase() });
+          if (codeValid && signedIn) onStart({ kind: 'p2p-join', code: code.trim().toUpperCase() });
         }}
       >
         <Field label={t('play_code', { defaultValue: 'Join by code' })} className="min-w-40 flex-1">
@@ -612,7 +600,6 @@ function RoomDetails({
   roster,
   signedIn,
   favorite,
-  pingLabel,
   playersLabel,
   mapTitle,
   modeLabel,
@@ -627,7 +614,6 @@ function RoomDetails({
   roster: RoomDetailsPayload['room'] extends infer R ? (R extends { roster: infer P } ? P | null : null) : null;
   signedIn: boolean;
   favorite: boolean;
-  pingLabel: string;
   playersLabel: string;
   mapTitle: string;
   modeLabel: string;
@@ -646,7 +632,7 @@ function RoomDetails({
   return (
     <section className="mt-4 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) p-4" aria-label={t('browser_details', { defaultValue: 'Server details' })} aria-live="polite">
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        {room.kind === 'p2p' ? <Share2 className="size-4 text-(--app-accent-text)" aria-hidden /> : <Server className="size-4 text-(--app-accent-text)" aria-hidden />}
+        <Share2 className="size-4 text-(--app-accent-text)" aria-hidden />
         <h3 className="min-w-0 flex-1 truncate text-base font-semibold">{room.name || room.code}</h3>
         <IconBtn
           icon={Star}
@@ -672,10 +658,6 @@ function RoomDetails({
           <dd className="tabular-nums">{playersLabel}</dd>
         </div>
         <div>
-          <dt className="text-(--app-text-dim)">{t('scores_ping', { defaultValue: 'Ping' })}</dt>
-          <dd className="tabular-nums">{pingLabel}</dd>
-        </div>
-        <div>
           <dt className="text-(--app-text-dim)">{t('browser_round', { defaultValue: 'Round' })}</dt>
           <dd>{round ? round.state.replace(/_/g, ' ') : '—'}</dd>
         </div>
@@ -688,8 +670,8 @@ function RoomDetails({
           <dd className="tabular-nums">{room.teamScores ? `${teamNames[2] ?? 'RED'} ${room.teamScores[0]} · ${teamNames[3] ?? 'BLU'} ${room.teamScores[1]}` : '—'}</dd>
         </div>
         <div>
-          <dt className="text-(--app-text-dim)">{t('browser_col_type', { defaultValue: 'Type' })}</dt>
-          <dd>{room.kind === 'p2p' ? hostLabel : t('browser_kind_dedicated', { defaultValue: 'Dedicated' })}</dd>
+          <dt className="text-(--app-text-dim)">{t('browser_col_host', { defaultValue: 'Host' })}</dt>
+          <dd>{hostLabel}</dd>
         </div>
       </dl>
       {roster === null ? (

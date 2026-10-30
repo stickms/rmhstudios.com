@@ -6,7 +6,9 @@
  * TF2 Default through the custom-HUD pipeline); `&compare=1` puts the game's
  * HUD (left) next to the HUD editor's preview pipeline for the same HUD and
  * state (right), both laid out at 960×540. `&editor=1` opens the in-game HUD
- * editor over the game (inside a memory router, as the editor needs one).
+ * editor over the game (inside a memory router, as the editor needs one). `&menu=pause` is TF2's Esc
+ * menu (the HUD's mainmenuoverride.res), `settings` / `advanced` / `loadout` / `hud` its views;
+ * `?view=mainmenu` is /tf2/play's main menu (menus/Tf2MainMenu). See api.ts for the game's files.
  */
 import { createRoot } from 'react-dom/client';
 import {
@@ -23,6 +25,7 @@ import { SCENARIOS, type ScenarioName } from '@/components/tf2-game/preview/samp
 import { useHudChoice } from '@/components/tf2-game/custom-hud/hud-choice';
 import { harnessHud } from './custom-huds';
 import EditorPane from './EditorPane';
+import Tf2MainMenu from '@/components/tf2-game/menus/Tf2MainMenu';
 import { MENU_FILES, SPECTATOR_FILE } from '@/lib/tf2-game/client/custom-hud/menus';
 import './harness.css';
 
@@ -35,8 +38,8 @@ const menu: HudMenu | undefined =
       ? { kind: 'voice', menu: 0 }
       : menuParam === 'chat'
         ? { kind: 'chat', team: true }
-        : menuParam === 'pause' || menuParam === 'settings' || menuParam === 'hud'
-          ? { kind: 'pause', view: menuParam === 'pause' ? 'menu' : menuParam }
+        : menuParam === 'pause' || menuParam === 'settings' || menuParam === 'hud' || menuParam === 'advanced' || menuParam === 'loadout' || menuParam?.startsWith('settings:')
+          ? { kind: 'pause', view: menuParam === 'pause' ? 'menu' : menuParam! }
           : undefined;
 
 const scenario = (q.get('s') ?? 'soldierCp') as ScenarioName;
@@ -64,6 +67,20 @@ async function main(): Promise<void> {
     if (loaded) await useHudChoice.getState().apply(loaded, { persist: false });
   }
   const root = createRoot(document.getElementById('root')!);
+  if (q.get('view') === 'mainmenu') {
+    const router = createRouter({
+      routeTree: createRootRoute({
+        component: () => (
+          <div className="app-theme tf2hud-theme" style={{ minHeight: '100%' }}>
+            <Tf2MainMenu onStart={() => {}} />
+          </div>
+        ),
+      }),
+      history: createMemoryHistory({ initialEntries: ['/tf2/play'] }),
+    });
+    root.render(<RouterProvider router={router} />);
+    return;
+  }
   const preview = (
     <HudPreview
       scenario={scenario}

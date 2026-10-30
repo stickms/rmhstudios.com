@@ -64,6 +64,9 @@ const catalogEntryShape = {
   color: z.string().min(1),
   tags: z.array(z.string().min(1)).min(1),
   imagePath: z.string().min(1).optional(),
+  /** Wide hero for the library detail pane (about 3:1, 1920x620 WebP). Optional:
+   *  the hero falls back to `imagePath` cropped, then to the hue tile. */
+  bannerPath: z.string().min(1).optional(),
   /** Whether the entry requires a signed-in account to open. */
   authGate: z.boolean(),
   /** Hidden from the public index but reachable by direct link. */

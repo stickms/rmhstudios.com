@@ -7,7 +7,15 @@
 `--list` names one model path per line (`models/player/scout.mdl`; blank lines and `#` comments are
 ignored). `scripts/tf2-game/model-list.py` writes TF2's default list; the map pipeline appends its props.
 Nothing here is TF2-only: point `--root`/`--search` at another Source install (`--search hl2` for the
-Half-Life 2 demo, `--search portal,hl2` for Portal) with its own list.
+Half-Life 2 demo, `--search portal,hl2` for Portal, `--search csgo` for CS:GO) with its own list.
+
+CS:GO (`--search csgo`): MDL v49 and VTF 7.5 read like the others. Its VMTs carry conditional keys
+(`"srgb?$basetexture"`, `">=dx90?$phong"`, `"GPU>=2?$detail"`) — `csgo_material` applies them as a
+high-end Windows desktop does — and two shaders the renderer has no model of: `CustomWeapon` (the
+weapon-finish compositor; only its `$basetexture` is used, the default finish) and `Character`
+(agents). Both are converted as VertexLitGeneric (`extras.approx`) and counted in the run's summary,
+as is every other shader the converter does not recognise; a material without a usable base texture
+is logged in untextured.json like any other.
 
 Output (`--out D`, pushed by `scripts/tf2-assets/publish.ts push --dir D --prefix tf2-game/
 --state-key tf2-game/mdl/_state.json --index mdl/index.json`):
@@ -26,6 +34,7 @@ so a model or texture whose source is unchanged keeps its name and is neither co
 (`--state` is the channel's published state). See docs/tf2-game.md "Models" for the GLB extras schema.
 """
 import argparse
+import collections
 import hashlib
 import io
 import json
@@ -45,6 +54,7 @@ from PIL import Image  # noqa: E402
 import convert  # noqa: E402  (material lookup and eye helpers, shared with the loadout converter)
 import glb  # noqa: E402
 import mdlinfo  # noqa: E402
+import ragdoll  # noqa: E402
 import srcanim  # noqa: E402
 import srcmodel  # noqa: E402
 import srctex  # noqa: E402
@@ -52,6 +62,8 @@ from vpkfs import GameFS  # noqa: E402
 
 # Bump when the GLB for the same source would change (renames every model GLB once).
 MODELS_VERSION = 1
+# The `ragdoll` extras' layout (ragdoll.py): a change rebuilds the models that carry one, and only those.
+RAGDOLL_VERSION = 1
 # Bump when the texture encoding changes (renames every texture once).
 TEX_VERSION = 1
 SCALE = 0.01905  # Source units (inches) -> metres
@@ -64,6 +76,89 @@ EYE_SHADERS = convert.EYE_SHADERS
 CLASSES = ("scout", "soldier", "pyro", "demo", "heavy", "engineer", "medic", "sniper", "spy")
 
 UNTEXTURED = []  # (model, material, why)
+
+# ------------------------------------------------------------------------------------------ CS:GO materials
+
+# Shaders whose materials the renderer draws from the extras as they are.
+KNOWN_SHADERS = {"vertexlitgeneric", "unlitgeneric", "lightmappedgeneric", "eyerefract", "eyes", "teeth",
+                 "refract", "spritecard", "sprite", "worldvertextransition", "unlittwotexture",
+                 "splinerope", "cable", "modulate", "wireframe", "patch"}
+# CS:GO shaders drawn as VertexLitGeneric (their $basetexture, $bumpmap, $phong… mean the same).
+CSGO_APPROX = {"customweapon": "vertexlitgeneric", "character": "vertexlitgeneric",
+               "vertexlitgeneric_dx9": "vertexlitgeneric"}
+SHADER_COUNTS = {}  # unrecognised / approximated shader -> materials seen
+# Why animation clips failed to decode, over the whole run (printed in the summary).
+ANIM_ERRORS = collections.Counter()
+
+
+def _csgo_condition(cond):
+    """A CS:GO VMT key condition (`srgb`, `>=dx90`, `gpu>=2`, `lowfill`, negated with `!`), evaluated
+    as a high-end Windows desktop (sRGB, DX9.5, GPU level 3, CPU level 2, no low-fill path)."""
+    c = cond.strip().lower().replace(" ", "")
+    neg = c.startswith("!")
+    c = c.lstrip("!")
+    m = re.fullmatch(r"(gpu|cpu)(>=|<=|>|<|==)(\d+)", c)
+    if m:
+        level = 3 if m.group(1) == "gpu" else 2
+        n = int(m.group(3))
+        val = {">=": level >= n, "<=": level <= n, ">": level > n, "<": level < n, "==": level == n}[m.group(2)]
+    elif re.fullmatch(r"(>=|<=|>|<)?dx\d+(_20b)?", c):
+        d = re.fullmatch(r"(>=|<=|>|<)?dx(\d+)", c.replace("_20b", ""))
+        lvl = int(d.group(2))
+        lvl = lvl * 10 if lvl < 10 else lvl
+        op = d.group(1) or "=="
+        val = {">=": 95 >= lvl, "<=": 95 <= lvl, ">": 95 > lvl, "<": 95 < lvl, "==": lvl in (90, 95)}[op]
+    else:
+        val = c in ("srgb", "srgb_pc", "hdr", "pc", "win32", "windows")
+    return not val if neg else val
+
+
+def csgo_material(shader, kv):
+    """CS:GO's VMT conditionals applied (`cond?$key` wins over `$key` when the condition holds; when it
+    does not, it is dropped) and its unmodelled shaders mapped. -> (shader, kv, approx or None)"""
+    out = {}
+    cond_keys = []
+    for k, v in kv.items():
+        if "?" in k:
+            cond_keys.append((k, v))
+        else:
+            out[k] = v
+    for k, v in cond_keys:
+        cond, key = k.rsplit("?", 1)
+        if key and all(_csgo_condition(c) for c in cond.split("?")):
+            out[key] = v
+    approx = CSGO_APPROX.get(shader)
+    if approx or shader not in KNOWN_SHADERS:
+        SHADER_COUNTS[shader] = SHADER_COUNTS.get(shader, 0) + 1
+    return (approx or shader), out, approx
+
+
+def csgo_slots(fs, slots):
+    """convert.material_files' slots with csgo_material applied (and the base texture re-read when a
+    conditional changed it)."""
+    out = []
+    for slot in slots:
+        if slot is None:
+            out.append(None)
+            continue
+        vmt_path, shader, kv, vtf_path, vtf, text = slot
+        shader2, kv2, approx = csgo_material(shader, kv)
+        if approx:
+            kv2["%approx_from"] = shader
+        base = kv2.get("$basetexture")
+        path2 = srctex.texture_path(base) if base else None
+        if path2 != vtf_path:
+            try:
+                vtf = fs.read(path2) if path2 else None
+            except OSError:
+                vtf = None
+            vtf_path = path2
+        out.append((vmt_path, shader2, kv2, vtf_path, vtf, text))
+    return out
+
+
+def is_csgo(fs):
+    return bool(getattr(fs, "search", None)) and fs.search[0].lower() == "csgo"
 
 
 # ---------------------------------------------------------------------------------------------------- files
@@ -151,6 +246,8 @@ def _tex_ref(kv, key):
 def material_extras(vmt_path, shader, kv):
     """What the renderer needs to approximate the Source shader, from the VMT."""
     e = {"vmt": vmt_path, "shader": shader}
+    if kv.get("%approx_from"):  # CS:GO: a shader drawn as `shader` (csgo_material)
+        e["approx"] = kv["%approx_from"]
     base = _tex_ref(kv, "$basetexture")
     if base:
         e["texture"] = base
@@ -206,10 +303,39 @@ def material_extras(vmt_path, shader, kv):
     return e
 
 
+# VTF formats that carry an alpha channel (RGBA8888, ABGR8888, IA88, A8, ARGB8888, BGRA8888, DXT3, DXT5).
+ALPHA_FORMATS = {0, 1, 6, 8, 11, 12, 14, 15}
+
+
+def fit(img, cap):
+    """`img` scaled to fit `cap`, colour and alpha each on their own. Pillow scales RGBA premultiplied,
+    which zeroes the colour wherever the alpha is near 0; Source keeps masks (phong, tint, self-illum),
+    not opacity, in most alpha channels, so that blackened textures with a dark mask (CS:GO's bare
+    forearms came out near-black with stray bright texels)."""
+    if max(img.size) <= cap:
+        return img
+    k = cap / max(img.size)
+    size = (max(1, round(img.size[0] * k)), max(1, round(img.size[1] * k)))
+    if img.mode == "RGBA":
+        out = img.convert("RGB").resize(size, Image.LANCZOS)
+        out.putalpha(img.getchannel("A").resize(size, Image.LANCZOS))
+        return out
+    return img.resize(size, Image.LANCZOS)
+
+
+def scaled_alpha(sources, cap):
+    """Whether a texture's encoding changed with `fit`: a VTF with an alpha channel, larger than `cap`.
+    Only those textures take a new name, so the fix re-encodes them and nothing else."""
+    for src in sources:
+        if isinstance(src, bytes) and src[:4] == b"VTF\0" and len(src) >= 64:
+            w, h = struct.unpack_from("<HH", src, 16)
+            if struct.unpack_from("<i", src, 52)[0] in ALPHA_FORMATS and max(w, h) > cap:
+                return True
+    return False
+
+
 def encode_webp(img, cap, keep_alpha):
-    if max(img.size) > cap:
-        img = img.copy()
-        img.thumbnail((cap, cap), Image.LANCZOS)
+    img = fit(img, cap)
     if keep_alpha:
         img = img.convert("RGBA")
         if np.asarray(img)[..., 3].min() == 255:  # nothing to keep
@@ -234,7 +360,8 @@ class TexStore:
         os.makedirs(os.path.join(out, "tex"), exist_ok=True)
 
     def name(self, kind, sources, cap, alpha):
-        return sha1(b"tex", TEX_VERSION, kind, cap, int(alpha), *[hashlib.sha1(s).digest() for s in sources])
+        fix = [b"fit2"] if scaled_alpha(sources, cap) else []
+        return sha1(b"tex", TEX_VERSION, kind, cap, int(alpha), *fix, *[hashlib.sha1(s).digest() for s in sources])
 
     def get(self, kind, sources, cap, alpha, encode):
         """-> relative path `tex/<sha>.webp`, or None when it cannot be made. `encode()` -> webp bytes."""
@@ -322,6 +449,8 @@ def build_material(fs, mdl_path, name, slot, store, cap):
         src.append(b"-")
         return mat, texs, src
     src.append(hashlib.sha1(vtf).digest())
+    if scaled_alpha([vtf], cap):
+        src.append(b"fit2")  # the texture's name changed with `fit`: the model must point at the new one
     try:
         rel = store.get("base", [vtf], cap, keep_alpha,
                         lambda: encode_webp(srctex.decode_vtf(vtf), cap, keep_alpha))
@@ -673,10 +802,25 @@ def build_animation(fs, vm, picks, skel, fix):
             clips.append(clip_from_desc(g, mdlinfo.animdesc(g.mdl, a), skel, fix, name, fs, post=post))
         except (srcmodel.ModelError, struct.error, ValueError, IndexError) as e:
             errors.append("%s: %s" % (name, e))
+            # The run's summary counts why clips fail (the reason without the clip's name).
+            ANIM_ERRORS[re.sub(r"\d+", "N", str(e))] += 1
     return clips, seq_meta, activities, weightlists, errors
 
 
 # ------------------------------------------------------------------------------------------------- the model
+
+def uses_frame_anims(vm):
+    """Whether any animation of the model (or its includes) is a frame animation (CS:GO's STUDIO_FRAMEANIM)."""
+    for g in vm.groups:
+        for s in g.sequences:
+            for a in s["anims"]:
+                try:
+                    if mdlinfo.animdesc(g.mdl, a)["flags"] & srcanim.DESC_FRAMEANIM:
+                        return True
+                except (srcmodel.ModelError, struct.error, ValueError, IndexError):
+                    continue
+    return False
+
 
 def model_kind(path):
     p = path.lower()
@@ -708,11 +852,17 @@ class Source:
         self.has_mesh = self.vvd is not None and self.vtx is not None
         self.info = srcmodel.read_mdl(self.mdl)
         self.slots = convert.material_files(fs, self.info)
+        if is_csgo(fs):
+            self.slots = csgo_slots(fs, self.slots)
         self.cap = texture_cap(self.path)
         anim_groups = [g for g in self.vm.groups[1:] if any(s["anims"] for s in g.sequences)]
+        self.frame_anims = uses_frame_anims(self.vm)
         self.anim_pack = bool(anim_groups)
         self.picks = pick_sequences(self.vm, self.kind) if (self.anim_pack or self.kind != "model") else \
             [k for k in range(len(self.vm.seq)) if self.vm.sequence(k)[1]["anims"]]
+        # The ragdoll (.phy solids and joint limits) of a character; None for props and everything else.
+        self.phy = fs.read(stem + ".phy")
+        self.ragdoll = ragdoll.ragdoll_info(self.phy, [b["name"].lower() for b in mdlinfo.bones(self.mdl)])
 
     def used_textures(self):
         if not self.has_mesh:
@@ -729,10 +879,15 @@ class Source:
                  hashlib.sha1(self.vvd or b"").digest(), hashlib.sha1(self.vtx or b"").digest()]
         if not self.anim_pack:  # animations embedded: their includes are part of the source
             parts += [hashlib.sha1(g.mdl).digest() for g in self.vm.groups[1:]]
+            if self.frame_anims:  # a decoder change rebuilds the models that use it, and only those
+                parts.append(b"frameanim%d" % srcanim.FRAMEANIM_VERSION)
+        if self.ragdoll:  # only characters gain the ragdoll, so only they rebuild for it
+            parts += [b"ragdoll%d" % RAGDOLL_VERSION, hashlib.sha1(self.phy).digest()]
         return sha1(*parts, *tex_src)
 
     def anims_src(self):
-        return sha1(b"anims", MODELS_VERSION, *[hashlib.sha1(g.mdl).digest() for g in self.vm.groups])
+        extra = [b"frameanim%d" % srcanim.FRAMEANIM_VERSION] if self.frame_anims else []
+        return sha1(b"anims", MODELS_VERSION, *[hashlib.sha1(g.mdl).digest() for g in self.vm.groups], *extra)
 
 
 def finite(value):
@@ -793,6 +948,8 @@ def model_extras(src):
     procedural = [{"bone": b["name"].lower(), "type": b["proctype"]} for b in bone_list if b["proctype"]]
     if procedural:
         extras["proceduralBones"] = procedural
+    if src.ragdoll:
+        extras["ragdoll"] = src.ragdoll
     return extras
 
 
@@ -805,9 +962,10 @@ def build_body(fs, src, store, want_clips):
         raise srcmodel.ModelError("no geometry")
     bones, skel = skeleton_of(src.mdl)
     clips, seq_meta, activities, weightlists, errors = [], [], {}, [], []
+    fix = None
     if want_clips and src.picks:
-        clips, seq_meta, activities, weightlists, errors = build_animation(
-            fs, src.vm, src.picks, skel, root_fix(src.mdl, bones))
+        fix = root_fix(src.mdl, bones)
+        clips, seq_meta, activities, weightlists, errors = build_animation(fs, src.vm, src.picks, skel, fix)
     skinned = is_skinned(src, bones)
     # materials: one per MDL texture used by any family; primitives use family 0
     tex_ids = src.used_textures()
@@ -865,6 +1023,11 @@ def build_body(fs, src, store, want_clips):
         extras.update({"sequences": seq_meta, "activities": activities})
         if weightlists:
             extras["weightlists"] = weightlists
+        if fix is not None and src.frame_anims:
+            # The space the clips pose the skeleton in, as rows of GLB = M · Source model space. The client
+            # places such a model by it rather than guessing the frame from the bind pose's bounds: CS:GO's
+            # view models hold their arms down in the bind pose, which no hull match recovers.
+            extras["source"]["clipFrame"] = [round(float(x), 6) for x in np.asarray(fix).reshape(9)]
     if errors:
         extras["animErrors"] = errors[:50]
     for c in clips:
@@ -1068,6 +1231,18 @@ def main(argv=None):
                                        len(made), total / 1048576, tex / 1048576, len(seen)))
     for why, n in sorted(reasons.items(), key=lambda kv: -kv[1])[:10]:
         print("  %5d  %s" % (n, why))
+    if ANIM_ERRORS:
+        print("animation clips not decoded: " + ", ".join(
+            "%s %d" % (why, n) for why, n in ANIM_ERRORS.most_common(10)))
+    st = srcanim.FRAME_STATS
+    if st["clips"]:
+        print("frame animations: %d clips; constant rotations near the bind pose (%.0f deg): compressed %d of %d,"
+              " raw %d of %d" % (st["clips"], srcanim.FRAME_CHECK_DEGREES, st["rot2_near"], st["rot2"],
+                                  st["raw_near"], st["raw"]))
+    if SHADER_COUNTS:
+        print("shaders approximated or not recognised (materials): " + ", ".join(
+            "%s %d%s" % (sh, n, " -> " + CSGO_APPROX[sh] if sh in CSGO_APPROX else "")
+            for sh, n in sorted(SHADER_COUNTS.items(), key=lambda kv: -kv[1])))
     return 0
 
 

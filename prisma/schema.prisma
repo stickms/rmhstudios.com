@@ -601,6 +601,29 @@ model User {
   endorsementsGiven          SkillEndorsement[]           @relation("EndorsementGiven")
   endorsementsReceived       SkillEndorsement[]           @relation("EndorsementReceived")
 
+  /// Who may see this user's per-title playtime: 'public' (any signed-in viewer)
+  /// | 'followers' (people who follow this user) | 'private' (only them).
+  /// Enforced server-side in lib/playtime, never by a client.
+  playtimePrivacy           String               @default("public") @db.VarChar(10)
+  /// Set when the one-time "your playtime is visible" notice is dismissed.
+  playtimeNoticeDismissedAt DateTime?
+  gamePlaytime              GamePlaytime[]
+  gamePlaytimeDays          GamePlaytimeDay[]
+  userCards                 UserCard[]
+  cardDrops                 CardDrop[]
+  gameBadges                GameBadge[]
+  cardListingsSold          CardListing[]        @relation("CardSeller")
+  cardListingsBought        CardListing[]        @relation("CardBuyer")
+  cardBuyOrders             CardBuyOrder[]
+  gameCollectionItems       GameCollectionItem[]
+  gameProfileShowcase       GameProfileShowcase?
+  userGems                  UserGems?
+  gemEntries                GemEntry[]
+  cardTradesSent            CardTrade[]          @relation("CardTradeFrom")
+  cardTradesReceived        CardTrade[]          @relation("CardTradeTo")
+  gameThreads               GameThread[]
+  gameThreadPosts           GameThreadPost[]
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the
@@ -3825,6 +3848,8 @@ model UserBuild {
   technologies Json            @default("[]")
   // Marketplace: coins to unlock the readme/repo/demo (null/0 = free).
   price        Int?
+  /// Catalog id of the game this build was made for (shown in that title's Workshop).
+  gameId       String?         @db.VarChar(64)
   likeCount    Int             @default(0)
   commentCount Int             @default(0)
   viewCount    Int             @default(0)
@@ -3846,6 +3871,7 @@ model UserBuild {
 
   @@index([userId])
   @@index([visibility, publishedAt(sort: Desc)])
+  @@index([gameId, visibility, publishedAt(sort: Desc)])
   @@index([slug])
   @@map("user_build")
 }
@@ -5844,6 +5870,280 @@ model UserAchievement {
   @@map("user_achievement")
 }
 
+// ─── Game playtime ────────────────────────────────────────────────────────
+// Credited by POST /api/games/playtime (lib/playtime/playtime.server.ts): a
+// client heartbeat while a catalog title's page is visible and in use. `gameId`
+// is a catalog id (games and apps share one namespace). One row per user per
+// title; the per-day table backs "last 2 weeks" and the Recent shelf.
+
+model GamePlaytime {
+  userId          String
+  gameId          String   @db.VarChar(64)
+  totalSeconds    Int      @default(0)
+  /// Last accepted heartbeat. The crediting gap is measured from here.
+  lastHeartbeatAt DateTime
+  lastPlayedAt    DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId])
+  @@index([gameId, totalSeconds(sort: Desc)])
+  @@map("game_playtime")
+}
+
+model GamePlaytimeDay {
+  userId  String
+  gameId  String   @db.VarChar(64)
+  /// UTC calendar day.
+  day     DateTime @db.Date
+  seconds Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId, day])
+  @@index([userId, day])
+  @@map("game_playtime_day")
+}
+
+// ─── Trading cards ────────────────────────────────────────────────────────
+// Rules: lib/cards/cards.ts; design: docs/superpowers/specs/2026-10-30-trading-cards-design.md.
+// Cards drop from playtime (one per 30 min, 3 per title). Composite keys, no
+// surrogate ids: a card is (gameId, cardIndex), and a stack is one row with a count.
+
+model UserCard {
+  userId    String
+  gameId    String   @db.VarChar(64)
+  cardIndex Int      @db.SmallInt
+  foil      Boolean  @default(false)
+  /// Stack size; the migration adds CHECK (count > 0) and a row is deleted at zero.
+  count     Int
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId, cardIndex, foil])
+  @@map("user_card")
+}
+
+/// Idempotency key for drops: a drop is granted once per (user, title, dropIndex).
+model CardDrop {
+  userId    String
+  gameId    String   @db.VarChar(64)
+  dropIndex Int      @db.SmallInt
+  cardIndex Int      @db.SmallInt
+  foil      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId, dropIndex])
+  @@map("card_drop")
+}
+
+model GameBadge {
+  userId    String
+  gameId    String   @db.VarChar(64)
+  foil      Boolean  @default(false)
+  level     Int      @db.SmallInt
+  craftedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId, foil])
+  @@map("game_badge")
+}
+
+// A single trading card for sale at a fixed price (Phase C; design:
+// docs/superpowers/specs/2026-10-30-card-market-design.md). The card is held in
+// escrow by the listing: creating it decrements the seller's stack in the same
+// transaction. The price is immutable; reuse the shop market's ListingStatus.
+model CardListing {
+  id         String        @id @default(cuid())
+  sellerId   String
+  gameId     String        @db.VarChar(64)
+  cardIndex  Int           @db.SmallInt
+  foil       Boolean       @default(false)
+  priceCoins Int
+  status     ListingStatus @default(ACTIVE)
+  buyerId    String?
+  createdAt  DateTime      @default(now())
+  closedAt   DateTime?
+
+  seller User  @relation("CardSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer  User? @relation("CardBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
+
+  @@index([status, gameId, cardIndex, foil, priceCoins])
+  @@index([sellerId, status])
+  @@map("card_listing")
+}
+
+// A title in one of the member's game library collections ("favorites" is the reserved
+// built-in one). A collection exists while it holds at least one title.
+model GameCollectionItem {
+  userId     String
+  collection String   @db.VarChar(40)
+  gameId     String   @db.VarChar(64)
+  addedAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, collection, gameId])
+  @@map("game_collection_item")
+}
+
+// The achievements and badges a member chose to feature on their Steam-style
+// profile (at most six of each). Empty means "show my most recent".
+model GameProfileShowcase {
+  userId         String   @id
+  achievementIds String[] @default([])
+  /// "<gameId>:<normal|foil>" keys of badges the member owns.
+  badges         String[] @default([])
+  /// Chosen profile background and avatar frame (keys unlocked by badges; see lib/games/customize.ts).
+  background     String?  @db.VarChar(80)
+  frame          String?  @db.VarChar(80)
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("game_profile_showcase")
+}
+
+// Gems (design: docs/superpowers/specs/2026-10-30-gems-boosters-design.md). A member's
+// balance, never negative, and an append-only entry for every movement so the balance
+// can always be explained. Gems cannot be traded.
+model UserGems {
+  userId    String   @id
+  gems      Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_gems")
+}
+
+model GemEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  delta     Int
+  /// 'unpack' | 'pack' | 'buy'
+  reason    String   @db.VarChar(16)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("gem_entry")
+}
+
+enum BuyOrderStatus {
+  OPEN
+  FILLED
+  CANCELED
+}
+
+// A standing instruction to buy one card for up to `priceCoins`. Custody-free: no
+// coins are held; the balance is checked when it fills, and a fill is the same
+// transaction as a purchase (docs/superpowers/specs/2026-10-30-market-depth-design.md).
+model CardBuyOrder {
+  id              String         @id @default(cuid())
+  buyerId         String
+  gameId          String         @db.VarChar(64)
+  cardIndex       Int            @db.SmallInt
+  foil            Boolean        @default(false)
+  priceCoins      Int
+  status          BuyOrderStatus @default(OPEN)
+  createdAt       DateTime       @default(now())
+  closedAt        DateTime?
+  filledListingId String?
+
+  buyer User @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([gameId, cardIndex, foil, status, priceCoins(sort: Desc)])
+  @@index([buyerId, status])
+  @@map("card_buy_order")
+}
+
+enum CardTradeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELED
+}
+
+// Card-for-card offers (design: docs/superpowers/specs/2026-10-30-card-trades-design.md).
+// Not escrowed: both sides are re-checked, under both users' card locks, when the
+// recipient accepts, which is the only moment cards move.
+model CardTrade {
+  id        String          @id @default(cuid())
+  fromId    String
+  toId      String
+  status    CardTradeStatus @default(PENDING)
+  createdAt DateTime        @default(now())
+  closedAt  DateTime?
+  expiresAt DateTime
+
+  from  User            @relation("CardTradeFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to    User            @relation("CardTradeTo", fields: [toId], references: [id], onDelete: Cascade)
+  items CardTradeItem[]
+
+  @@index([toId, status])
+  @@index([fromId, status])
+  @@map("card_trade")
+}
+
+model CardTradeItem {
+  tradeId   String
+  /// True when the proposer gives this card, false when they ask for it.
+  fromGives Boolean
+  gameId    String  @db.VarChar(64)
+  cardIndex Int     @db.SmallInt
+  foil      Boolean @default(false)
+  qty       Int     @db.SmallInt
+
+  trade CardTrade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  @@id([tradeId, fromGives, gameId, cardIndex, foil])
+  @@map("card_trade_item")
+}
+
+// Per-game Community Hub discussions (design:
+// docs/superpowers/specs/2026-10-30-game-community-hub-design.md). Plain text only.
+// `replyCount` and `lastPostAt` are maintained in the same transaction as the post.
+model GameThread {
+  id         String   @id @default(cuid())
+  gameId     String   @db.VarChar(64)
+  authorId   String
+  title      String   @db.VarChar(120)
+  body       String   @db.VarChar(4000)
+  createdAt  DateTime @default(now())
+  lastPostAt DateTime @default(now())
+  replyCount Int      @default(0)
+  locked     Boolean  @default(false)
+  pinned     Boolean  @default(false)
+
+  author User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  posts  GameThreadPost[]
+
+  @@index([gameId, pinned(sort: Desc), lastPostAt(sort: Desc)])
+  @@index([authorId, createdAt(sort: Desc)])
+  @@map("game_thread")
+}
+
+model GameThreadPost {
+  id        String   @id @default(cuid())
+  threadId  String
+  authorId  String
+  body      String   @db.VarChar(2000)
+  createdAt DateTime @default(now())
+
+  thread GameThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@index([authorId, createdAt(sort: Desc)])
+  @@map("game_thread_post")
+}
+
 // ─── Daily Streak ─────────────────────────────────────────────────────────
 model DailyStreak {
   id            String    @id @default(cuid())
@@ -6160,6 +6460,9 @@ model Community {
   starThreshold     Int      @default(5)
   createdById       String
   createdAt         DateTime @default(now())
+  /// Catalog id of the game/app this community is the home of (shown on that
+  /// title's library page). Set by admins; no owner UI yet.
+  gameId            String?  @db.VarChar(64)
 
   flairsP06            CommunityFlair[]
   starPostsP06         CommunityStarPost[]
@@ -6184,6 +6487,7 @@ model Community {
   groupCalls     GroupCall[]
 
   @@index([memberCount(sort: Desc)])
+  @@index([gameId])
   @@map("community")
 }
 

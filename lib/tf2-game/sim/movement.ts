@@ -1635,9 +1635,9 @@ function airDash(): void {
   st.airDash++;
 }
 
-/** SDK: CTFGameMovement::PreventBunnyJumping — cap jump-off speed at 1.2 × max speed. */
-function preventBunnyJumping(): void {
-  const maxScaled = BUNNYJUMP_MAX_SPEED_FACTOR * st.maxSpeed;
+/** SDK: CTFGameMovement::PreventBunnyJumping — cap jump-off speed at `factor` (TF2 1.2) × max speed. */
+function preventBunnyJumping(factor: number): void {
+  const maxScaled = factor * st.maxSpeed;
   if (maxScaled <= 0) return;
   const v = st.velocity;
   const spd = length(v);
@@ -1718,7 +1718,8 @@ function checkJumpButton(): boolean {
     return true;
   }
 
-  if (P.tfRules) preventBunnyJumping();
+  const bunnyCap = P.bunnyJumpMaxSpeedFactor ?? (P.tfRules ? BUNNYJUMP_MAX_SPEED_FACTOR : 0);
+  if (bunnyCap > 0) preventBunnyJumping(bunnyCap);
 
   if (st.surfaceName) cx.onFootstep?.(st.surfaceName, 1);
   st.jumping = true;
@@ -1728,7 +1729,7 @@ function checkJumpButton(): boolean {
   const groundFactor = st.surfaceName ? surface(st.surfaceName).jumpFactor : 1;
   let jumpMod = st.attrs.jumpHeightMod;
   if (st.attrs.agilityRune) jumpMod *= 1.8;
-  const mul = P.jumpImpulse * jumpMod * groundFactor;
+  const mul = P.jumpImpulse * jumpMod * groundFactor * (cx.jumpImpulseScale ?? 1);
 
   // Ducking sets the speed outright; standing adds to it.
   if (st.ducking || st.flags & FL_DUCKING) st.velocity.z = mul;
@@ -1855,7 +1856,7 @@ function setDuckedEyeOffset(frac: number): void {
 /** SDK: CGameMovement::HandleDuckingSpeedCrop (+ TF loser freeze) — a third of the input when crouched on ground. */
 function handleDuckingSpeedCrop(): void {
   if (!speedCropped && st.flags & FL_DUCKING && onGround()) {
-    const frac = 0.33333333;
+    const frac = P.duckSpeedFraction ?? 0.33333333;
     fmove *= frac;
     smove *= frac;
     umove *= frac;

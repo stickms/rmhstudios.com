@@ -37,31 +37,20 @@
 import { FL_ONGROUND, IN_ATTACK, IN_ATTACK2, IN_JUMP, MASK_OPAQUE, SURF_SKY, TEAM_SPECTATOR, TEAM_UNASSIGNED, TICK_INTERVAL, VEC_DUCK_VIEW_Z } from '../core/constants';
 import { emptyTrace } from '../core/types';
 import type { Vec3 } from '../core/vec';
-import { CLASS_DATA } from '../data/classes';
-import { findTf2Map, type Tf2Mode } from '../data/maps';
 import { gameAssetUrl } from '../assets/urls';
 import { SOURCE_UNIT } from '../render/coords';
 import { WorldRenderer } from '../render/world-renderer';
 import { decodeItemsCached } from '../sim/items/loadout';
 import { EntityRenderer, LoadoutModels, ModelLibrary, ParticleLibrary, type EntityState as RenderEntity } from '../render/entities';
-import { classEyeHeight } from '../sim/class-speeds';
 import { CRIT_BOOST_CONDS, TF_COND } from '../sim/conditions';
 import { LIFE_ALIVE, EF_NODRAW } from '../sim/entity';
 import type { SimEvent } from '../sim/events';
-import type { NetRecord } from '../sim/net-schema';
+import { isPlayerType, type NetRecord } from '../sim/net-schema';
 import { registerAllSimModules } from '../sim/register-all';
 import { GameWorld } from '../sim/world';
 import type { Player } from '../sim/player';
 import { keyKind, type EntityState as NetEntityState } from '../net/snapshot';
-import {
-  TF2_LIMITS,
-  type BotDifficulty,
-  type ChatMessage,
-  type CreateRoomPayload,
-  type JoinedPayload,
-  type RoomAdminPayload,
-  type RoomInfoPayload,
-} from '../net/events';
+import { TF2_LIMITS, type BotDifficulty, type JoinedPayload, type RoomAdminPayload, type RoomGame, type RoomMode } from '../net/events';
 import type { MatchCommand, MatchOptions } from '../server/match-host';
 import type { AudioEngine } from '../audio/engine';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
@@ -80,7 +69,7 @@ import { P2P_SNAPSHOT_MAX_BYTES } from '../net/p2p/wire';
 import type { PeerConnection, PeerRow } from '../net/p2p/control';
 import type { P2pHostPayload, P2pHostedPayload } from '../net/p2p/signal';
 import type { SeatInfo } from '../net/p2p/host-session';
-import type { HudAdmin, HudNotice } from './hud-state';
+import type { HudAdmin, HudGame, HudNotice } from './hud-state';
 import { loadItemCatalog } from './item-catalog';
 import { FixedStep, GameLoop, type FrameInfo } from './loop';
 import {
@@ -93,6 +82,7 @@ import {
   ProgressTracker,
   PropDistanceCuller,
   RenderCore,
+  ragdollTrace,
   wallTrace,
   type ClientMount,
   type ClientStats,
@@ -100,7 +90,7 @@ import {
   type LoadedPackage,
 } from './game-client';
 import { FovState, TF_WEAPON_ZOOM_FOV, TF_ZOOM_RATE, ViewController, type ViewTarget } from './view';
-import { TF_MOVE_PARAMS } from '../sim/movement';
+import { loadClientProfile, TF2_PROFILE, type ClientGameProfile, type ProfileMap, type ProfileViewModel } from './game-profile';
 import { attachConsoleHost, type ConsoleLink } from '../console/runtime';
 import type { ConsoleHost } from '../console/game-console';
 import { indexFromLump, type EntityIndex } from '../console/entity-complete';
@@ -113,19 +103,17 @@ export type Tf2Session =
       difficulty: BotDifficulty;
       maxPlayers: number;
       playerName: string;
+      /** Absent: TF2. CS:GO plays de_dust2 in `mode` 'de' (bomb defusal) or 'dm' (deathmatch). */
+      game?: RoomGame;
+      mode?: RoomMode;
     }
-  | { kind: 'online-create'; room: CreateRoomPayload }
-  /**
-   * By code: a peer-to-peer code switches to `p2p-join` on its own (the hub says which it is).
-   * `spectate` is part of the join request (seated with the spectators, no team switch after it).
-   */
-  | { kind: 'online-join'; code: string; playerName?: string; spectate?: boolean; password?: string }
   /** Host a peer-to-peer match: a listen server in this page, opened to signed-in friends. */
   | { kind: 'p2p-host'; room: P2pHostPayload; playerName: string }
-  | { kind: 'p2p-join'; code: string; spectate?: boolean; password?: string };
+  /** Join a host by code; `spectate` is part of the join request (seated with the spectators). */
+  | { kind: 'p2p-join'; code: string; spectate?: boolean; password?: string; game?: RoomGame };
 
 /** What this client is in its match right now (it can change: a member promoted to host). */
-type Role = 'offline' | 'hub' | 'p2p-host' | 'p2p-member';
+type Role = 'offline' | 'p2p-host' | 'p2p-member';
 
 /** Peer-to-peer and listen-server tuning for the worker: its clock for the room, and checkpoints. */
 const P2P_WORKER_CLOCK = { upkeepMs: 100, checkpointMs: 2_000 } as const;
@@ -172,8 +160,14 @@ interface Transport {
 }
 
 export class Tf2Client implements GameClient {
-  readonly game = 'tf2' as const;
   readonly store: HudStore;
+  /** The game this session plays (TF2's until a CS:GO session's profile has loaded). */
+  private profile: ClientGameProfile = TF2_PROFILE;
+  /** A game's own view model (CS:GO); TF2 uses the entity renderer's. */
+  private gameViewModel: ProfileViewModel | null = null;
+  get game(): HudGame {
+    return this.profile.id === 'csgo' ? 'csgo' : 'tf2';
+  }
   private settings: GameSettings;
   private readonly progress: ProgressTracker;
   private core: RenderCore | null = null;
@@ -226,7 +220,6 @@ export class Tf2Client implements GameClient {
   private peerStats: ReadonlyMap<number, { pingMs?: number; loss?: number }> = new Map();
   private role: Role = 'offline';
   /** A hub room's administration (owner, lock, password), as the hub last said. */
-  private roomInfo: RoomInfoPayload | null = null;
   private notices: HudNotice[] = [];
   /** The newest network transitions (diagnostics: debug() and the smoke tests). */
   private readonly netLog: string[] = [];
@@ -262,22 +255,25 @@ export class Tf2Client implements GameClient {
     cb.onPhase?.('loading');
     try {
       registerAllSimModules();
-      this.core = new RenderCore(this.opts.canvas, this.settings.quality, () =>
+      this.profile = await loadClientProfile(this.sessionGame());
+      await this.profile.prepare();
+      if (this.disposed) return;
+      this.core = new RenderCore(this.opts.canvas, this.settings, () =>
         this.fail(new ClientFailure({ code: 'context-lost', detail: 'WebGL context lost', retryable: true })),
       );
-      this.inputCore = new InputCore(this.opts.inputTarget, 'tf2', () => this.settings, (l) => cb.onLockChange?.(l), this.opts.input);
+      this.inputCore = new InputCore(this.opts.inputTarget, this.game, () => this.settings, (l) => cb.onLockChange?.(l), this.opts.input);
       this.audio = createAudio(
-        'tf2',
+        this.profile.assets,
         this.settings,
         (id) => this.entityPos.get(id) ?? null,
         this.occlusion,
       );
       this.unsubs.push(this.audio.attach());
       this.unsubs.push(this.store.onCommand((c) => this.onHudCommand(c)));
-      this.console = attachConsoleHost(this.store, 'tf2', this.consoleHost());
+      this.console = attachConsoleHost(this.store, this.game, this.consoleHost());
       this.unsubs.push(() => this.console?.detach());
       const title = this.sessionMap();
-      if (title) this.progress.title = findTf2Map(title)?.title ?? title;
+      if (title) this.progress.title = this.findMap(title)?.title ?? title;
       this.progress.begin('sounds');
       void this.audio
         .load()
@@ -290,9 +286,33 @@ export class Tf2Client implements GameClient {
     }
   }
 
+  /** The game the session names (absent: TF2). */
+  private sessionGame(): RoomGame {
+    const s = this.opts.session;
+    return (s.kind === 'p2p-host' ? s.room.game : s.game) ?? 'tf2';
+  }
+
+  /** The session's mode for a map that can play more than one (CS:GO's de_dust2: 'de' or 'dm'). */
+  private sessionMode(): RoomMode | undefined {
+    const s = this.opts.session;
+    return s.kind === 'offline' ? s.mode : s.kind === 'p2p-host' ? s.room.mode : undefined;
+  }
+
+  private findMap(name: string): ProfileMap | null {
+    return this.profile.findMap(name, this.sessionMode() ?? this.roomMode);
+  }
+
+  /** The mode of the room the host admitted us to (a member's session does not name one). */
+  private roomMode: RoomMode | undefined;
+
+  /** The hub's `game` for a room of this session's game (absent for TF2). */
+  private roomGame(): { game?: RoomGame } {
+    return this.profile.id === 'tf2' ? {} : { game: this.profile.id };
+  }
+
   private sessionMap(): string | null {
     const s = this.opts.session;
-    return s.kind === 'offline' ? s.map : s.kind === 'online-create' || s.kind === 'p2p-host' ? s.room.map : null;
+    return s.kind === 'offline' ? s.map : s.kind === 'p2p-host' ? s.room.map : null;
   }
 
   // ─── Transport ───────────────────────────────────────────────────────────
@@ -300,12 +320,12 @@ export class Tf2Client implements GameClient {
   /** `map` (offline only): restart the listen server on this map instead of the session's (`retry`). */
   private connect(map?: string): void {
     // Items beyond stock: prediction and rendering read the item schema (sim/items).
-    void loadItemCatalog();
+    if (this.profile.itemCatalog) void loadItemCatalog();
     const s = this.opts.session;
     if (s.kind === 'offline') {
       this.role = 'offline';
       const mapName = map ?? s.map;
-      const info = findTf2Map(mapName);
+      const info = this.findMap(mapName);
       if (!info) throw new ClientFailure({ code: 'map-missing', detail: `unknown map ${mapName}`, retryable: false });
       const worker = new Worker(new URL('./net/listen-worker.ts', import.meta.url), { type: 'module', name: 'tf2-listen-server' });
       this.worker = worker;
@@ -313,7 +333,7 @@ export class Tf2Client implements GameClient {
       const opts: MatchOptions = {
         matchId: 'LOCAL',
         map: info.name,
-        mode: info.mode as Tf2Mode,
+        ...this.profile.matchOptions(info),
         // A listen server's full complement of slots: the bots fill `botCount`, the console's tf_bot_add the rest.
         maxPlayers: Math.max(s.maxPlayers, TF2_LIMITS.MAX_PLAYERS),
         botCount: s.botCount,
@@ -333,9 +353,10 @@ export class Tf2Client implements GameClient {
         },
       );
       // The item schema: items beyond stock and the equip checks run in the listen server too.
-      void loadItemCatalog().then((catalog) => {
-        if (catalog && !this.disposed) conn.items(catalog);
-      });
+      if (this.profile.itemCatalog)
+        void loadItemCatalog().then((catalog) => {
+          if (catalog && !this.disposed) conn.items(catalog);
+        });
       this.transport = {
         online: false,
         input: (p) => conn.sendInput(p),
@@ -366,103 +387,14 @@ export class Tf2Client implements GameClient {
       void this.connectP2pHost(s).catch(failNet);
       return;
     }
-    if (s.kind === 'p2p-join') {
-      void this.connectP2pJoin(s.code, { spectate: s.spectate, password: s.password }).catch(failNet);
-      return;
-    }
-    void this.connectOnline(s).catch(failNet);
-  }
-
-  private async connectOnline(s: Extract<Tf2Session, { kind: 'online-create' | 'online-join' }>): Promise<void> {
-    const net = await import('../net/client');
-    if (this.disposed) return;
-    this.role = 'hub';
-    await net.connectTf2({
-      onStatus: (status) => {
-        this.connected = status === 'connected';
-        this.opts.callbacks.onConnection?.(status === 'connected' ? 'connected' : status === 'connecting' ? 'connecting' : status === 'reconnecting' ? 'reconnecting' : 'disconnected');
-      },
-      onJoined: (j) => this.onJoined(j),
-      onSnapshot: (d) => this.onSnapshot(d),
-      onEvents: (d) => this.onReliable(d),
-      onChat: (m: ChatMessage) => this.log.onChat(m, this.clientNow),
-      onRoomInfo: (info) => {
-        const was = this.roomInfo?.ownerId ?? null;
-        this.roomInfo = info;
-        // The room just became ours (the owner left, or handed it on).
-        if (this.joined && info.ownerId === this.joined.playerId && was !== info.ownerId && was !== null) this.notice('you-host');
-      },
-      onKicked: (k) => this.fail(new ClientFailure({ code: 'kicked', detail: k.reason, retryable: k.reason !== 'room-closed' && k.reason !== 'kicked' })),
-      onError: (e) => {
-        if (e.code === 'rate-limited' || e.code === 'not-in-room') return;
-        if (e.event === 'tf2:room:admin') {
-          this.console?.console.print(`admin: ${e.code}`, 'error');
-          return;
-        }
-        if (e.code === 'p2p-room' && s.kind === 'online-join' && !this.joined) {
-          // The code names a peer-to-peer room: join its host over WebRTC instead (the spectator choice goes along).
-          net.tf2.leave();
-          void this.connectP2pJoin(s.code, { spectate: s.spectate, password: s.password }).catch((err) => this.fail(err));
-          return;
-        }
-        if (e.code === 'auth-required') {
-          this.fail(new ClientFailure({ code: 'auth-required', detail: e.event ?? 'auth-required', retryable: false }));
-          return;
-        }
-        if (this.joined && e.event !== 'tf2:room:create' && e.event !== 'tf2:room:join') return;
-        this.fail(new ClientFailure({ code: 'room', detail: e.code, retryable: e.code === 'capacity' || e.code === 'unavailable' }));
-      },
-    });
-    if (this.disposed) return;
-    if (s.kind === 'online-create') net.tf2.createRoom(s.room);
-    else net.tf2.joinRoom(s.code, s.playerName, { spectate: s.spectate, password: s.password });
-    const isOwner = () => !!this.joined && this.roomInfo?.ownerId === this.joined.playerId;
-    this.transport = {
-      online: true,
-      input: (p) => void net.tf2.sendInput(p),
-      command: (c) => {
-        if (c.kind === 'team') net.tf2.team(c.team);
-        else if (c.kind === 'class') net.tf2.playerClass(c.cls);
-        else if (c.kind === 'voice') net.tf2.voice(c.menu, c.item);
-        else if (c.kind === 'chat') net.tf2.chat(c.text, c.teamOnly);
-        else if (c.kind === 'extra') net.tf2.extra(c.command, c.args);
-        else if (c.kind === 'loadout') net.tf2.loadout(c.cls, c.slots);
-      },
-      chat: (text, teamOnly) => net.tf2.chat(text, teamOnly),
-      stop: () => {
-        net.tf2.leave();
-        net.disconnectTf2();
-      },
-      pingMs: () => net.tf2.clock()?.rttMs ?? null,
-      // The owner's administration: the hub checks it again (who asks, the map allowlist) and logs it.
-      changeLevel: (map) => {
-        if (isOwner()) net.tf2.roomAdmin({ action: 'changelevel', map });
-      },
-      admin: (action) => {
-        if (!isOwner()) return 'not-owner';
-        net.tf2.roomAdmin(action);
-        return null;
-      },
-      adminView: () => {
-        const info = this.roomInfo;
-        if (!info || !isOwner()) return null;
-        return {
-          role: 'owner',
-          online: true,
-          map: this.pkg?.name ?? this.joined?.map ?? '',
-          locked: info.locked,
-          passworded: info.passworded,
-          players: (info.players ?? []).map((p) => ({ id: p.id, name: p.name, self: p.id === this.joined?.playerId, account: p.account })),
-        };
-      },
-    };
+    void this.connectP2pJoin(s.code, { spectate: s.spectate, password: s.password }).catch(failNet);
   }
 
   // ─── Peer-to-peer ─────────────────────────────────────────────────────────
 
   /** Host: the listen worker (P2P options) plus the controller that opens it to members. */
   private async connectP2pHost(s: Extract<Tf2Session, { kind: 'p2p-host' }>): Promise<void> {
-    const info = findTf2Map(s.room.map);
+    const info = this.findMap(s.room.map);
     if (!info) throw new ClientFailure({ code: 'map-missing', detail: `unknown map ${s.room.map}`, retryable: false });
     const net = await import('../net/client');
     if (this.disposed) return;
@@ -482,14 +414,15 @@ export class Tf2Client implements GameClient {
     const opts: MatchOptions = {
       matchId: 'LOCAL',
       map: info.name,
-      mode: info.mode as Tf2Mode,
+      ...this.profile.matchOptions(info),
       maxPlayers: s.room.maxPlayers,
       botCount: Math.min(s.room.botCount, s.room.maxPlayers - 1),
       botDifficulty: s.room.botDifficulty,
+      instantRespawn: !!s.room.instantRespawn,
       name: s.room.name,
       seed: (Math.random() * 0x7fffffff) | 0,
     };
-    this.startHosting(net, P2pHostController, { ...s.room, mode: info.mode as Tf2Mode }, opts, s.playerName, null);
+    this.startHosting(net, P2pHostController, { ...s.room, ...this.roomGame(), mode: info.mode }, opts, s.playerName, null);
   }
 
   /**
@@ -516,9 +449,10 @@ export class Tf2Client implements GameClient {
       {
         opts,
         playerName,
-        // TF2's join menus (like a hub room), every snapshot one DataChannel datagram, and the room's
-        // clock and migration checkpoints on the worker's own (unthrottled) timers.
-        host: { autoTeam: false, snapshotMaxBytes: P2P_SNAPSHOT_MAX_BYTES, p2p: P2P_WORKER_CLOCK, ...(restore ? { restore } : {}) },
+        // Every snapshot one DataChannel datagram, and the room's clock and migration checkpoints on
+        // the worker's own (unthrottled) timers.
+        // TF2 plays its join menus; CS:GO seats everyone on the smaller team (auto-select, as its own servers do).
+        host: { autoTeam: this.profile.id !== 'tf2', snapshotMaxBytes: P2P_SNAPSHOT_MAX_BYTES, p2p: P2P_WORKER_CLOCK, ...(restore ? { restore } : {}) },
         ...(promoted ? { localPlayerId: promoted.localPlayerId } : {}),
       },
       {
@@ -561,9 +495,10 @@ export class Tf2Client implements GameClient {
         .then((cp) => host?.seatsRestored((cp.seats ?? []).map((x) => ({ playerId: x.hubId, userId: x.userId, name: x.name }))))
         .catch(() => host?.seatsRestored([]));
     }
-    void loadItemCatalog().then((catalog) => {
-      if (catalog && !this.disposed) conn.items(catalog);
-    });
+    if (this.profile.itemCatalog)
+      void loadItemCatalog().then((catalog) => {
+        if (catalog && !this.disposed) conn.items(catalog);
+      });
     const h = host;
     this.transport = {
       online: true,
@@ -689,7 +624,8 @@ export class Tf2Client implements GameClient {
       net,
       code,
       {
-        onAdmitted: () => {
+        onAdmitted: (info) => {
+          this.roomMode = info.mode;
           this.netTrace('admitted');
           this.opts.callbacks.onRoom?.(code);
         },
@@ -781,14 +717,14 @@ export class Tf2Client implements GameClient {
       this.fail(new ClientFailure({ code: 'host-left', detail: 'the host left (no checkpoint to continue from)', retryable: false }));
       return;
     }
-    const info = findTf2Map(joined.map);
+    const info = this.findMap(joined.map);
     if (!info) return;
     this.resetNetState();
     const name = this.snap.roster.get(this.snap.localEntity)?.name ?? hosted.hostName;
     const opts: MatchOptions = {
       matchId: 'LOCAL',
       map: info.name,
-      mode: info.mode as Tf2Mode,
+      ...this.profile.matchOptions(info),
       maxPlayers: joined.maxPlayers,
       botCount: 0,
       botDifficulty: 'normal',
@@ -796,8 +732,9 @@ export class Tf2Client implements GameClient {
       seed: 1,
     };
     const room: P2pHostPayload = {
+      ...this.roomGame(),
       map: info.name,
-      mode: info.mode as Tf2Mode,
+      mode: info.mode,
       maxPlayers: Math.min(joined.maxPlayers, TF2_LIMITS.P2P_MAX_PLAYERS),
       botCount: 0,
       botDifficulty: 'normal',
@@ -863,9 +800,6 @@ export class Tf2Client implements GameClient {
       this.notice('host-migrated', this.pendingMigration);
       this.pendingMigration = null;
     }
-    if (this.transport?.online !== false && (this.opts.session.kind === 'online-create' || this.opts.session.kind === 'online-join') && this.role === 'hub') {
-      this.opts.callbacks.onRoom?.(j.code);
-    }
     if (!sameMatch) {
       // A new player in the match (first join or a reconnect): prediction and interpolation restart.
       this.prediction = null;
@@ -889,22 +823,23 @@ export class Tf2Client implements GameClient {
     this.running = false;
     this.loop?.stop();
     this.opts.callbacks.onPhase?.('loading');
-    this.progress.title = findTf2Map(map)?.title ?? map;
+    this.progress.title = this.findMap(map)?.title ?? map;
     try {
       this.teardownWorld();
-      const pkg = await loadMapPackageForClient('tf2', map, this.progress, this.abort.signal);
+      const assets = this.profile.assets;
+      const pkg = await loadMapPackageForClient(assets, map, this.progress, this.abort.signal);
       if (this.disposed || this.loadingMap !== map) return;
       this.pkg = pkg;
       const loaded = pkg.loaded!;
       this.trace = wallTrace(loaded.collision);
-      const textures = core.textureCache('tf2');
-      const models = new ModelLibrary({ url: (p) => gameAssetUrl(p, 'tf2'), loader: new Tf2GLTFLoader() });
+      const textures = core.textureCache(assets);
+      const models = new ModelLibrary({ url: (p) => gameAssetUrl(p, assets), loader: new Tf2GLTFLoader() });
       this.models = models;
       this.progress.begin('textures');
       const world = new WorldRenderer({
         bsp: pkg.bsp,
         manifest: pkg.manifest,
-        game: 'tf2',
+        game: assets,
         textures,
         models,
         sunVisible: this.sunVisible,
@@ -914,11 +849,15 @@ export class Tf2Client implements GameClient {
         lighting: world,
         scene: world.scene,
         models,
-        particles: new ParticleLibrary((p) => gameAssetUrl(p, 'tf2')),
-        // Unlock weapons and cosmetics from the loadout builder's model channel.
-        loadout: new LoadoutModels(),
-        game: 'tf2',
+        particles: new ParticleLibrary((p) => gameAssetUrl(p, assets)),
+        // Unlock weapons and cosmetics from the loadout builder's model channel (TF2's items).
+        loadout: this.profile.itemCatalog ? new LoadoutModels() : null,
+        game: assets,
+        factory: this.profile.entityFactory,
+        viewModelAttachment: this.profile.createViewModel ? (name, out) => this.gameViewModel?.attachment(name, out) ?? false : undefined,
         sunVisible: this.sunVisible,
+        ragdollTrace: ragdollTrace(loaded.collision),
+        gravity: this.gravity ?? this.profile.moveParams.gravity,
         trace: (a, b) => {
           const tr = emptyTrace();
           loaded.collision.traceLine(a, b, MASK_OPAQUE, null, tr);
@@ -929,6 +868,9 @@ export class Tf2Client implements GameClient {
       const fx = ents.effects as unknown as { maxLiveSystems?: number };
       if ('maxLiveSystems' in fx) fx.maxLiveSystems = core.plan.particleBudget;
       ents.viewModel.fov = this.settings.viewmodelFov;
+      this.gameViewModel?.dispose();
+      this.gameViewModel = this.profile.createViewModel?.(ents.effects) ?? null;
+      this.gameViewModel?.setFov(this.settings.viewmodelFov);
       if (this.gravity !== null) ents.effects.gravity = this.gravity;
       this.ents = ents;
       // Texture progress: the cache's pending count against the most seen.
@@ -937,8 +879,8 @@ export class Tf2Client implements GameClient {
         peak = Math.max(peak, textures.pending);
         this.progress.step('textures', peak - textures.pending, peak);
       }, 200);
-      // Models: every class body and arms, so nobody pops in.
-      const classModels = Object.values(CLASS_DATA).flatMap((c) => [c.model, c.handsModel]).filter(Boolean);
+      // Models: every body and arms the game shows, so nobody pops in.
+      const classModels = this.profile.preloadModels();
       this.progress.begin('models', classModels.length);
       let doneModels = 0;
       const modelLoads = classModels.map((m) =>
@@ -980,6 +922,8 @@ export class Tf2Client implements GameClient {
   };
 
   private teardownWorld(): void {
+    this.gameViewModel?.dispose();
+    this.gameViewModel = null;
     this.ents?.dispose();
     this.ents = null;
     this.world?.dispose();
@@ -1055,18 +999,19 @@ export class Tf2Client implements GameClient {
 
   private ensurePrediction(): void {
     if (this.prediction || !this.pkg || !this.snap.hello || this.snap.localEntity < 0) return;
-    const world = new GameWorld({
-      map: this.pkg.loaded,
-      options: { isServer: false, lagCompensation: false, seed: this.snap.hello.seed },
-    });
+    const info = this.findMap(this.pkg.name) ?? { name: this.pkg.name, title: this.pkg.name, mode: 'ctf' as RoomMode };
+    const world = this.profile.createWorld(
+      { map: this.pkg.loaded, options: { isServer: false, lagCompensation: false, seed: this.snap.hello.seed } },
+      info,
+    );
     const player = world.addPlayer(this.snap.roster.get(this.snap.localEntity)?.name ?? 'me');
     this.clientWorld = world;
     this.localPlayerSim = player;
     if (this.gravity !== null) {
-      player.moveCtx.params = { ...TF_MOVE_PARAMS, gravity: this.gravity };
+      player.moveCtx.params = { ...this.profile.moveParams, gravity: this.gravity };
       world.gravity = this.gravity;
     }
-    this.prediction = new Prediction(world, player, { onEvent: (e) => this.onPredicted(e) });
+    this.prediction = new Prediction(world, player, { onEvent: (e) => this.onPredicted(e), restore: this.profile.restorePlayer });
   }
 
   private onPredicted(e: PredictedSound | PredictedEffect): void {
@@ -1245,8 +1190,10 @@ export class Tf2Client implements GameClient {
     // View.
     const pred = this.prediction;
     const pp = pred?.player;
-    const zoomed = !!pp && alive && pp.cond.has(TF_COND.ZOOMED);
-    this.fov.set(zoomed ? TF_WEAPON_ZOOM_FOV : 0, TF_ZOOM_RATE, this.clientNow);
+    // The game's zoom and punch (CS:GO's scopes and aim punch); TF2's sniper zoom otherwise.
+    const gv = alive ? this.profile.view?.(pp ?? null, me ?? null) : undefined;
+    const zoomed = gv ? gv.zoomFov > 0 || !!gv.hideViewModel : !!pp && alive && pp.cond.has(TF_COND.ZOOMED);
+    this.fov.set(gv ? gv.zoomFov : zoomed ? TF_WEAPON_ZOOM_FOV : 0, gv ? gv.zoomRate : TF_ZOOM_RATE, this.clientNow);
     const origin = pred ? pred.renderOrigin(f.now, tmpOrigin) : { x: num(me, 'ox'), y: num(me, 'oy'), z: num(me, 'oz') };
     const taunting = !!pp && pp.cond.has(TF_COND.TAUNTING);
     const view = this.view.update({
@@ -1256,10 +1203,10 @@ export class Tf2Client implements GameClient {
       spectator,
       first: {
         origin,
-        viewOffsetZ: pp ? pp.move.viewOffsetZ : classEyeHeight(num(me, 'cls')),
+        viewOffsetZ: pp ? pp.move.viewOffsetZ : this.profile.eyeHeight(me ?? null),
         angles: this.viewAngles,
         velocity: pp ? pp.move.velocity : ZERO,
-        punch: pp ? pp.move.punchAngle : ZERO,
+        punch: pp ? (gv?.punch ? addPunch(pp.move.punchAngle, gv.punch) : pp.move.punchAngle) : ZERO,
         onStaticGround: !!pp && (pp.move.flags & FL_ONGROUND) !== 0,
         frametime: dt,
       },
@@ -1282,8 +1229,21 @@ export class Tf2Client implements GameClient {
     for (const ev of this.pendingEvents) ents.handleEvent(ev);
     this.pendingEvents.length = 0;
     const weapon = pp?.activeWeapon() as (ReturnType<Player['activeWeapon']> & { vmActivity?: number; vmActivitySeq?: number }) | null;
+    // A game's own view model (CS:GO) draws instead of TF2's.
+    this.gameViewModel?.update(
+      alive && pp && view.drawViewModel ? pp : null,
+      me ?? null,
+      {
+        eyeOrigin: view.origin,
+        eyeAngles: view.angles,
+        velocity: pp ? pp.move.velocity : ZERO,
+        dt,
+        visible: !zoomed && (this.console?.console.drawViewModel.bool ?? true),
+      },
+      ents.context,
+    );
     ents.updateViewModel(
-      alive && pp && view.drawViewModel
+      !this.gameViewModel && alive && pp && view.drawViewModel
         ? {
             cls: num(me, 'cls'),
             team,
@@ -1311,7 +1271,8 @@ export class Tf2Client implements GameClient {
     world.update(cam, this.clientNow);
     this.culler.cull(world.props?.group, cam.camera, core.plan.propDrawDistance, SOURCE_UNIT);
     world.render(core.renderer, cam);
-    ents.renderViewModel(core.renderer, cam);
+    if (this.gameViewModel) this.gameViewModel.render(core.renderer, cam);
+    else ents.renderViewModel(core.renderer, cam);
 
     this.fps.phase('render', performance.now() - t2);
     // Audio.
@@ -1325,7 +1286,22 @@ export class Tf2Client implements GameClient {
     this.hudAcc += dt;
     if (this.hudAcc >= 1 / HUD_HZ) {
       this.hudAcc = 0;
-      const state = buildHudState(this.hudSource(), this.log, { game: 'tf2', now: this.clientNow, connected: this.connected, fps: this.fps.fps });
+      const state = buildHudState(this.hudSource(), this.log, { game: this.game, now: this.clientNow, connected: this.connected, fps: this.fps.fps });
+      if (this.profile.decorateHud) {
+        const snap = this.snap;
+        this.profile.decorateHud(state, this.prediction?.player ?? null, {
+          serverTime: this.serverTime,
+          entities: (type) => {
+            const out: NetRecord[] = [];
+            snap.forEachEntity((st, rec) => {
+              if (st.schema.type === type) out.push(rec);
+            });
+            return out;
+          },
+          me: snap.localPlayer(),
+          weapons: snap.localWeapons(),
+        });
+      }
       const links = this.transport?.links?.();
       if (links && links.size > 0) {
         // Peer-to-peer: how each human reaches the host, their round trip to it and their loss (the ping column).
@@ -1400,7 +1376,7 @@ export class Tf2Client implements GameClient {
         this.applyBrush(rec);
         return;
       }
-      if (st.key === local && type === 'player') {
+      if (st.key === local && isPlayerType(type)) {
         // The local player: predicted position, our own view angles.
         const own = { ...this.snap.record(st) };
         const pred = this.prediction;
@@ -1453,7 +1429,7 @@ export class Tf2Client implements GameClient {
     const rec = this.records.get(id);
     if (!rec) return null;
     const ducked = !!rec.ducked;
-    const eyeZ = ducked ? VEC_DUCK_VIEW_Z : classEyeHeight(num(rec, 'cls'));
+    const eyeZ = ducked ? VEC_DUCK_VIEW_Z : this.profile.eyeHeight(rec);
     return {
       id,
       eye: { x: num(rec, 'ox'), y: num(rec, 'oy'), z: num(rec, 'oz') + eyeZ },
@@ -1466,7 +1442,7 @@ export class Tf2Client implements GameClient {
   private pickTarget(after: number, team: number): number {
     const ids: number[] = [];
     for (const s of this.renderStates) {
-      if (s.type !== 'player' || s.id === this.snap.localEntity) continue;
+      if (!isPlayerType(s.type) || s.id === this.snap.localEntity) continue;
       if (num(s.fields, 'lifeState') !== LIFE_ALIVE) continue;
       if (team >= 2 && num(s.fields, 'team') !== team) continue;
       ids.push(s.id);
@@ -1495,6 +1471,7 @@ export class Tf2Client implements GameClient {
     this.settings = s;
     this.fov.setDefault(s.fov);
     if (this.ents) this.ents.viewModel.fov = s.viewmodelFov;
+    this.gameViewModel?.setFov(s.viewmodelFov);
     if (this.audio) applyVolumes(this.audio, s);
   }
 
@@ -1547,7 +1524,7 @@ export class Tf2Client implements GameClient {
       timescale: this.timescale,
       /** Every player this client draws, where it draws them (the smoke tests watch others move). */
       players: this.renderStates
-        .filter((r) => r.type === 'player')
+        .filter((r) => isPlayerType(r.type))
         .map((r) => ({ id: r.id, x: num(r.fields, 'ox'), y: num(r.fields, 'oy'), z: num(r.fields, 'oz'), alive: num(r.fields, 'lifeState') === LIFE_ALIVE })),
     };
   }
@@ -1559,7 +1536,7 @@ export class Tf2Client implements GameClient {
     const kind = this.opts.session.kind;
     return {
       // The role can change mid-match (a member promoted to host by a migration).
-      authority: () => (this.role === 'offline' || this.role === 'p2p-host' ? 'listen' : this.role === 'p2p-member' ? 'remote' : 'dedicated'),
+      authority: () => (this.role === 'p2p-member' ? 'remote' : 'listen'),
       stats: () => this.stats(),
       netCounters: () => {
         const st = this.snap.stats;
@@ -1581,7 +1558,7 @@ export class Tf2Client implements GameClient {
       entityIndex: () => this.entityIndex(),
       canvas: () => this.opts.canvas,
       hudRoot: () => this.opts.canvas.parentElement?.querySelector<HTMLElement>('.tf2g-hud') ?? null,
-      mapName: () => this.pkg?.name ?? 'tf2',
+      mapName: () => this.pkg?.name ?? this.profile.id,
       setFpsMax: (fps) => (this.fpsMax = fps),
       setThirdPerson: (on) => (this.thirdPersonCheat = on),
       setViewAngles: (a) => {
@@ -1602,12 +1579,18 @@ export class Tf2Client implements GameClient {
         }
         if (name !== 'sv_gravity') return;
         const g = Number(value);
-        this.gravity = Number.isFinite(g) && g !== TF_MOVE_PARAMS.gravity ? g : null;
-        if (this.localPlayerSim) this.localPlayerSim.moveCtx.params = this.gravity === null ? undefined : { ...TF_MOVE_PARAMS, gravity: this.gravity };
-        // What falls on this side too: the predicting world's projectiles and the renderer's gibs.
-        const grav = this.gravity ?? TF_MOVE_PARAMS.gravity;
+        const base = this.profile.moveParams;
+        this.gravity = Number.isFinite(g) && g !== base.gravity ? g : null;
+        if (this.localPlayerSim)
+          this.localPlayerSim.moveCtx.params =
+            this.gravity === null ? undefined : { ...base, gravity: this.gravity };
+        // What falls on this side too: the predicting world's projectiles and the renderer's gibs and ragdolls.
+        const grav = this.gravity ?? this.profile.moveParams.gravity;
         if (this.clientWorld) this.clientWorld.gravity = grav;
-        if (this.ents) this.ents.effects.gravity = grav;
+        if (this.ents) {
+          this.ents.effects.gravity = grav;
+          this.ents.context.gravity = grav;
+        }
       },
       // changelevel: the listen server (offline, a P2P host) or the hub room's owner moves the match;
       // every client then reloads the level from the new `hello` — one path for all three.
@@ -1620,9 +1603,6 @@ export class Tf2Client implements GameClient {
       },
       retry: () => {
         if (kind === 'offline') this.restartOffline();
-        else if (this.joined && (kind === 'online-create' || kind === 'online-join') && typeof window !== 'undefined') {
-          window.location.assign(`/tf2/play?lobby=${encodeURIComponent(this.joined.code)}`);
-        }
       },
     };
   }
@@ -1659,7 +1639,7 @@ export class Tf2Client implements GameClient {
   private restartOffline(): boolean {
     const s = this.opts.session;
     const map = this.pkg?.name ?? this.sessionMap();
-    if (s.kind !== 'offline' || this.disposed || !map || !findTf2Map(map)) return false;
+    if (s.kind !== 'offline' || this.disposed || !map || !this.findMap(map)) return false;
     try {
       this.transport?.stop();
     } catch {
@@ -1727,6 +1707,14 @@ function num(r: NetRecord | null | undefined, k: string): number {
 
 const ZERO: Vec3 = Object.freeze({ x: 0, y: 0, z: 0 }) as Vec3;
 const tmpOrigin = { x: 0, y: 0, z: 0 };
+const tmpPunch = { x: 0, y: 0, z: 0 };
+/** The movement's punch plus a game's (CS:GO's aim punch), in a scratch vector. */
+function addPunch(a: Vec3, b: Vec3): Vec3 {
+  tmpPunch.x = a.x + b.x;
+  tmpPunch.y = a.y + b.y;
+  tmpPunch.z = a.z + b.z;
+  return tmpPunch;
+}
 const tmpLocal = { x: 0, y: 0, z: 0 };
 const sunTrace = emptyTrace();
 const occTrace = emptyTrace();

@@ -49,7 +49,7 @@ export const STATIC_CARDS: StaticCard[] = [
     subtitle:
       'A social-first home for original games, creative tools, music, learning, and the people making them.',
     stats: [
-      { value: '25', label: 'games', lead: true },
+      { value: '26', label: 'games', lead: true },
       { value: '14', label: 'apps' },
       { value: '16', label: 'languages' },
     ],
@@ -61,7 +61,7 @@ export const STATIC_CARDS: StaticCard[] = [
     title: 'Games, in the browser.',
     subtitle:
       'Party games, puzzles, roguelikes and 3D — multiplayer where it matters, no download anywhere.',
-    stats: [{ value: '25', label: 'to play', lead: true }],
+    stats: [{ value: '26', label: 'to play', lead: true }],
   },
   {
     path: '/apps',

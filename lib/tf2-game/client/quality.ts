@@ -24,7 +24,10 @@
  * WebGL context when given one.
  */
 
-import type { QualityTier } from './settings';
+import type { DetailLevel, GameSettings, QualityTier } from './settings';
+
+/** The Video tab's Advanced knobs (`GameSettings.video`). */
+export type VideoOverrides = GameSettings['video'];
 
 export type DeviceTier = 'desktop' | 'laptop' | 'mobile';
 
@@ -131,10 +134,31 @@ export function deviceTier(d: DeviceInfo): DeviceTier {
   return 'desktop';
 }
 
-/** What to render with: the tier's preset, capped by what the GPU can hold. Pure. */
-export function planQuality(d: DeviceInfo, setting: QualityTier = 'auto'): QualityPlan {
+/** A detail level's tier (`auto`: the Quality tier's own). */
+const levelTier = (level: DetailLevel | undefined, tier: DeviceTier): DeviceTier =>
+  !level || level === 'auto' ? tier : SETTING_TIER[level];
+
+/**
+ * What to render with: the tier's preset, the Video tab's Advanced knobs over it (texture detail →
+ * texture cap, model detail → prop draw distance, effect detail → particle budget, antialiasing,
+ * anisotropic filtering, a fixed resolution scale), capped by what the GPU can hold. Pure.
+ */
+export function planQuality(d: DeviceInfo, setting: QualityTier = 'auto', video?: VideoOverrides): QualityPlan {
   const tier = setting === 'auto' ? deviceTier(d) : SETTING_TIER[setting];
-  const p = TIER_PRESETS[tier];
+  const base = TIER_PRESETS[tier];
+  const p = {
+    ...base,
+    textureCap: TIER_PRESETS[levelTier(video?.textureDetail, tier)].textureCap,
+    propDrawDistance: TIER_PRESETS[levelTier(video?.modelDetail, tier)].propDrawDistance,
+    particleBudget: TIER_PRESETS[levelTier(video?.effectsDetail, tier)].particleBudget,
+    antialias: !video || video.antialias === 'auto' ? base.antialias : video.antialias === 'on',
+    anisotropy: video && video.anisotropy > 0 ? video.anisotropy : base.anisotropy,
+  };
+  // A scale set by hand is held: the governor neither lowers nor raises it.
+  if (video && video.resolutionScale > 0) {
+    p.resolutionScale = video.resolutionScale;
+    p.minResolutionScale = video.resolutionScale;
+  }
   const gpuCap = d.maxTextureSize > 0 ? d.maxTextureSize : p.textureCap;
   // A 2 GB device keeps textures at 512 whatever the tier says (decoded textures are the biggest heap user).
   const memoryCap = d.deviceMemory !== undefined && d.deviceMemory <= 2 ? 512 : p.textureCap;

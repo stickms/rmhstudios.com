@@ -3,6 +3,7 @@
  * net schema's fields — the client's snapshot mirror, or a single-player world writing the
  * same fields), the context renderables draw into, and per-instance lighting.
  */
+import type { RagdollTrace } from './ragdoll';
 import { Matrix4, type Object3D, Vector3, type Vector2, type Vector4 } from 'three';
 import type { BspFile, BspWorldLight } from '../../formats/bsp';
 import { decompressVis, findLeaf } from '../../formats/bsp';
@@ -156,6 +157,10 @@ export interface RenderContext {
   itemDrawBudget?: { left: number };
   /** Whether a sphere of radius `r` (Source units) at a Source point is in the camera frustum. */
   isVisible?: (p: Vec3Like, r?: number) => boolean;
+  /** The world for ragdolls to land on (a box trace, Source units); absent: they fall through. */
+  ragdollTrace?: RagdollTrace | null;
+  /** sv_gravity for ragdolls (Source units/s²; default 800). */
+  gravity?: number;
 }
 
 const lodPos = new Vector3();

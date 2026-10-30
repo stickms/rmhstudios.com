@@ -4,12 +4,14 @@
  * implementation of the same idea):
  *
  *   1. Seeds: the map's spawn points, control points, flags, payload track
- *      nodes, capture zones and pickups, each dropped to the ground.
+ *      nodes, capture zones and pickups (CS:GO: team and deathmatch spawns,
+ *      bomb sites and buy zones), each dropped to the ground.
  *   2. Flood fill: walkable ground is sampled on a `cellSize` (25-unit) grid
  *      with hull traces. From each sample the four neighbours are tried the
  *      way CGameMovement moves a player: a step (≤ 18 up/down), a walk off a
  *      ledge (a drop, ≤ 250), or a crouch-jump up to 64 units (swimming up
- *      out of water higher). Steep ground (normal z < 0.7) and lethal
+ *      out of water higher) — TF2's hull; `opts.hull` sets another game's
+ *      (NAV_HULL_CS: 32 × 72, crouched 54, jump 56, drop 200). Steep ground (normal z < 0.7) and lethal
  *      trigger_hurt volumes are not walkable. Doors, toggled brushes and the
  *      payload cart are ignored while sampling (they move); the areas they
  *      overlap are marked so bots can test them at runtime.
@@ -60,6 +62,8 @@ import {
   NAV_WATER,
   NavMesh,
   POI_AMMO,
+  POI_BOMB_TARGET,
+  POI_BUY_ZONE,
   POI_CAPTURE_AREA,
   POI_CAPTURE_ZONE,
   POI_CONTROL_POINT,
@@ -96,7 +100,51 @@ export const NAV_MIN_NORMAL_Z = 0.7;
 /** trigger_hurt damage at or above which a volume is treated as a pit. */
 export const NAV_LETHAL_HURT = 50;
 
+/**
+ * The player hull and movement limits the samples are tested with. TF2's is the default; another
+ * game on the same engine passes its own (CS:GO: NAV_HULL_CS).
+ */
+export interface NavHull {
+  /** Half the hull width used to test samples. */
+  halfWidth: number;
+  /** Standing hull height. */
+  standHeight: number;
+  /** Crouched hull height; samples need at least this much headroom. */
+  crouchHeight: number;
+  /** sv_stepsize. */
+  step: number;
+  /** Highest (crouch-)jump linked, with margin. */
+  jump: number;
+  /** Deepest drop linked. */
+  drop: number;
+}
+
+export const NAV_HULL_TF: NavHull = {
+  halfWidth: NAV_HALF_WIDTH,
+  standHeight: NAV_STAND_HEIGHT,
+  crouchHeight: NAV_CROUCH_HEIGHT,
+  step: NAV_STEP,
+  jump: NAV_JUMP,
+  drop: NAV_DROP,
+};
+
+/**
+ * Counter-Strike: Global Offensive (cs_shareddefs: VEC_HULL 32 × 32 × 72, VEC_DUCK_HULL 54,
+ * sv_stepsize 18; CS nav_generate's HalfHumanWidth 16). A crouch-jump reaches ~64 units (jump ~55
+ * plus the 9 the duck lifts the feet); 56 leaves margin. Fall damage starts past ~210 units.
+ */
+export const NAV_HULL_CS: NavHull = {
+  halfWidth: 16,
+  standHeight: 72,
+  crouchHeight: 54,
+  step: 18,
+  jump: 56,
+  drop: 200,
+};
+
 export interface NavGenOptions {
+  /** The player hull and movement limits (default NAV_HULL_TF). */
+  hull?: NavHull;
   cellSize?: number;
   /** Largest area side, in cells. */
   maxAreaCells?: number;
@@ -181,6 +229,7 @@ export class NavGenerator {
   private readonly maxCells: number;
   private readonly visRange: number;
   private readonly maxNodes: number;
+  private readonly hull: NavHull;
   private phase = PHASE_SEEDS;
   private mesh: NavMesh | null = null;
 
@@ -230,9 +279,9 @@ export class NavGenerator {
   private readonly tr = emptyTrace();
   private readonly a = vec3();
   private readonly b = vec3();
-  private readonly hullMin = vec3(-NAV_HALF_WIDTH, -NAV_HALF_WIDTH, 0);
-  private readonly crouchMax = vec3(NAV_HALF_WIDTH, NAV_HALF_WIDTH, NAV_CROUCH_HEIGHT);
-  private readonly standMax = vec3(NAV_HALF_WIDTH, NAV_HALF_WIDTH, NAV_STAND_HEIGHT);
+  private readonly hullMin: Vec3;
+  private readonly crouchMax: Vec3;
+  private readonly standMax: Vec3;
   private readonly supportMin = vec3(-8, -8, 0);
   private readonly supportMax = vec3(8, 8, 1);
   private savedSolid: boolean[] = [];
@@ -244,6 +293,10 @@ export class NavGenerator {
     this.maxCells = opts.maxAreaCells ?? 12;
     this.visRange = opts.visRange ?? 5000;
     this.maxNodes = opts.maxNodes ?? 400_000;
+    const h = (this.hull = opts.hull ?? NAV_HULL_TF);
+    this.hullMin = vec3(-h.halfWidth, -h.halfWidth, 0);
+    this.crouchMax = vec3(h.halfWidth, h.halfWidth, h.crouchHeight);
+    this.standMax = vec3(h.halfWidth, h.halfWidth, h.standHeight);
     this.readEntities(bsp.entities);
   }
 
@@ -360,6 +413,28 @@ export class NavGenerator {
             });
           }
           break;
+        // Counter-Strike: Global Offensive. Its teams use the same numbers as TF2's
+        // (2 = Terrorists, 3 = Counter-Terrorists), so the spawn POIs read the same.
+        case 'info_player_terrorist':
+        case 'info_player_counterterrorist':
+        case 'info_deathmatch_spawn':
+          if (origin) {
+            this.seeds.push(origin);
+            this.pois.push({
+              kind: POI_SPAWN,
+              team:
+                cls === 'info_player_terrorist'
+                  ? TF_TEAM_RED
+                  : cls === 'info_player_counterterrorist'
+                    ? TF_TEAM_BLUE
+                    : 0,
+              name,
+              index: -1,
+              pos: origin,
+              area: -1,
+            });
+          }
+          break;
         case 'team_control_point':
           if (origin) {
             this.seeds.push(origin);
@@ -443,6 +518,21 @@ export class NavGenerator {
         case 'func_capturezone':
           this.captureZones.push({ model: m, ...box, team, tag: 0 });
           this.pois.push({ kind: POI_CAPTURE_ZONE, team, name, index: -1, pos: center, area: -1 });
+          this.seeds.push(center);
+          break;
+        case 'func_bomb_target':
+          this.pois.push({
+            kind: POI_BOMB_TARGET,
+            team: 0,
+            name,
+            index: -1,
+            pos: center,
+            area: -1,
+          });
+          this.seeds.push(center);
+          break;
+        case 'func_buyzone':
+          this.pois.push({ kind: POI_BUY_ZONE, team, name, index: -1, pos: center, area: -1 });
           this.seeds.push(center);
           break;
         case 'func_regenerate':
@@ -680,12 +770,12 @@ export class NavGenerator {
     if (this.inVolume(this.resupply, x, y, z + 24)) attr |= NAV_RESUPPLY;
     for (const v of this.blockerVols) {
       if (
-        x + NAV_HALF_WIDTH > v.mins.x &&
-        x - NAV_HALF_WIDTH < v.maxs.x &&
-        y + NAV_HALF_WIDTH > v.mins.y &&
-        y - NAV_HALF_WIDTH < v.maxs.y &&
-        z + NAV_STAND_HEIGHT > v.mins.z &&
-        z + NAV_STEP < v.maxs.z
+        x + this.hull.halfWidth > v.mins.x &&
+        x - this.hull.halfWidth < v.maxs.x &&
+        y + this.hull.halfWidth > v.mins.y &&
+        y - this.hull.halfWidth < v.maxs.y &&
+        z + this.hull.standHeight > v.mins.z &&
+        z + this.hull.step < v.maxs.z
       ) {
         attr |= NAV_DOOR;
         blocker = v.tag;
@@ -786,7 +876,7 @@ export class NavGenerator {
         let type = CONN_WALK;
         // Walk / step / drop: across at step height, then down — standing if
         // the standing hull fits, else crouched (both ends become crouch areas).
-        let h = z + NAV_STEP;
+        let h = z + this.hull.step;
         let crouch = false;
         let f = this.sweep(x, y, h, nx, ny, h, true);
         if (f < 1) {
@@ -795,7 +885,7 @@ export class NavGenerator {
         }
         if (f < 1) {
           crouch = true;
-          h = z + NAV_STEP;
+          h = z + this.hull.step;
           f = this.sweep(x, y, h, nx, ny, h);
           if (f === 0) {
             h = z + 1;
@@ -803,9 +893,9 @@ export class NavGenerator {
           }
         }
         if (f >= 1) {
-          const gz = this.ground(nx, ny, h, z - NAV_DROP);
+          const gz = this.ground(nx, ny, h, z - this.hull.drop);
           if (!Number.isNaN(gz)) {
-            if (gz <= z + NAV_STEP + 0.5 && gz >= z - NAV_STEP - 0.5) type = CONN_WALK;
+            if (gz <= z + this.hull.step + 0.5 && gz >= z - this.hull.step - 0.5) type = CONN_WALK;
             else if (gz < z) type = CONN_DROP;
             else type = CONN_JUMP;
             target = this.addNode(ngx, ngy, gz);
@@ -817,7 +907,7 @@ export class NavGenerator {
         }
         if (target < 0) {
           // Jump (or swim) up, across, down.
-          let jump = NAV_JUMP;
+          let jump = this.hull.jump;
           if (water) {
             let top = z + 8;
             while (top < z + 1024 && this.inWater(x, y, top)) top += 16;
@@ -825,14 +915,14 @@ export class NavGenerator {
           }
           const fu = this.sweep(x, y, z + 1, x, y, z + jump);
           const hz = z + 1 + (jump - 1) * fu;
-          if (fu > 0 && hz - z >= NAV_STEP + 2) {
+          if (fu > 0 && hz - z >= this.hull.step + 2) {
             // Land in the next cell, or the one after (over a lip a hull can't stand on).
             for (let k = 1; k <= 2 && target < 0; k++) {
               const lgx = gx + DIRS_X[d] * k;
               const lgy = gy + DIRS_Y[d] * k;
               const fa = this.sweep(x, y, hz, lgx * c, lgy * c, hz);
               if (fa < 1) break;
-              const gz = this.ground(lgx * c, lgy * c, hz, z - NAV_DROP);
+              const gz = this.ground(lgx * c, lgy * c, hz, z - this.hull.drop);
               if (!Number.isNaN(gz)) {
                 type = CONN_JUMP;
                 target = this.addNode(lgx, lgy, gz);

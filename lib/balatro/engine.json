@@ -1,0 +1,10 @@
+{
+  "love.js": {
+    "bytes": 325565,
+    "sha256": "b65fe65665ef1c06e87d59b19fceb04eebdd26c7ea94ea51c37bf0827f102467"
+  },
+  "love.wasm": {
+    "bytes": 4720726,
+    "sha256": "ecc9e098bb8af918d20fbe3f26d23495c5184ff6b5d203d2e4b27bf17a771d6f"
+  }
+}

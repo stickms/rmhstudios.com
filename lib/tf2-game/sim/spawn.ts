@@ -10,7 +10,7 @@
  */
 
 import { emptyTrace, NO_ENTITY } from '../core/types';
-import { MASK_PLAYERSOLID, TF_TEAM_BLUE, TF_TEAM_RED, VEC_HULL_MAX, VEC_HULL_MIN } from '../core/constants';
+import { MASK_PLAYERSOLID, TF_TEAM_BLUE, TF_TEAM_RED } from '../core/constants';
 import { vec3 } from '../core/vec';
 import { COLLISION_GROUP_PLAYER_MOVEMENT, Entity, type Entity as EntityT } from './entity';
 import { registerEntityClass } from './entity-registry';
@@ -31,8 +31,9 @@ export class TeamSpawn extends Entity {
   /** Match summary spawns are never used for play. */
   matchSummary = 0;
 
-  constructor() {
-    super('info_player_teamspawn');
+  /** Another game's team spawn entity (CS:GO's info_player_terrorist …) reuses this class under its name. */
+  constructor(classname = 'info_player_teamspawn') {
+    super(classname);
   }
 
   override spawn(): void {
@@ -93,18 +94,20 @@ export class SpawnSystem {
     if (spot.spawnMode && spot.spawnMode !== PLAYER_TEAM_SPAWN_MODE_NORMAL) return false;
     if (spot.matchSummary !== 0) return false;
     const filter = this.world.createEntityFilter(player, COLLISION_GROUP_PLAYER_MOVEMENT);
+    // The player's own hull (TF2's 48 × 82; another game's player has its own).
+    const hull = player.hull;
     if (!ignorePlayers) {
       // UTIL_IsSpaceEmpty: nothing solid, players included (teammates too).
-      testMins.x = spot.origin.x + VEC_HULL_MIN.x;
-      testMins.y = spot.origin.y + VEC_HULL_MIN.y;
-      testMins.z = spot.origin.z + VEC_HULL_MIN.z;
-      testMaxs.x = spot.origin.x + VEC_HULL_MAX.x;
-      testMaxs.y = spot.origin.y + VEC_HULL_MAX.y;
-      testMaxs.z = spot.origin.z + VEC_HULL_MAX.z;
+      testMins.x = spot.origin.x + hull.min.x;
+      testMins.y = spot.origin.y + hull.min.y;
+      testMins.z = spot.origin.z + hull.min.z;
+      testMaxs.x = spot.origin.x + hull.max.x;
+      testMaxs.y = spot.origin.y + hull.max.y;
+      testMaxs.z = spot.origin.z + hull.max.z;
       if (this.world.anyPlayerInBox(testMins, testMaxs, player)) return false;
     }
     const mask = MASK_PLAYERSOLID;
-    this.world.traceHull(spot.origin, spot.origin, VEC_HULL_MIN, VEC_HULL_MAX, mask, filter, spawnTrace);
+    this.world.traceHull(spot.origin, spot.origin, hull.min, hull.max, mask, filter, spawnTrace);
     return spawnTrace.fraction === 1 && !spawnTrace.allSolid && !spawnTrace.startSolid;
   }
 

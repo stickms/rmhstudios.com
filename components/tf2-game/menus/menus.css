@@ -1,0 +1,338 @@
+/**
+ * The Source-style menus (main menu, Esc menu, Options, the loadout screen). What the game's files
+ * describe is painted on canvases by the HUD editor's painter; this styles what lies over them (the
+ * transparent hit buttons) and the menus' own fallbacks (a phone's 44 px entry list, the loadout
+ * grid), in TF2's clientscheme colours (`--tf2m-*`, a scoped group like tf2-game.css's `--tf2g-*`).
+ */
+
+.tf2m-menu,
+.tf2m-loadout {
+  --tf2m-tan-light: rgb(235 226 202);
+  --tf2m-tan: rgb(200 187 161);
+  --tf2m-tan-dark: rgb(117 107 94);
+  --tf2m-tan-darker: rgb(46 43 42);
+  --tf2m-ground: rgb(28 26 24);
+  --tf2m-dim: rgb(0 0 0 / 0.6);
+  --tf2m-focus: rgb(235 226 202);
+  --tf2m-font: 'TF2 Build', 'TF2', Impact, 'Arial Narrow', sans-serif;
+  --tf2m-font-small: 'TF2 Secondary', 'Trebuchet MS', Verdana, sans-serif;
+}
+
+/* ══ The main / Esc menu ═══════════════════════════════════════════════ */
+
+.tf2m-menu {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* A plain backdrop where the game's console background is not published. */
+  background: var(--tf2m-ground);
+  color: var(--tf2m-tan-light);
+  font-family: var(--tf2m-font-small);
+  pointer-events: auto;
+}
+.tf2m-menu-ingame {
+  /* Over the HUD's panels (their zpos), under the developer console (30). */
+  z-index: 20;
+  background: var(--tf2m-dim);
+}
+/* The file's screen sits inside the safe area (a notch, the home indicator). */
+.tf2m-stage {
+  position: absolute;
+  top: var(--safe-top, 0px);
+  right: var(--safe-right, 0px);
+  bottom: var(--safe-bottom, 0px);
+  left: var(--safe-left, 0px);
+}
+.tf2m-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.tf2m-hit {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+}
+.tf2m-hit:focus-visible {
+  outline: 2px solid var(--tf2m-focus);
+  outline-offset: 1px;
+}
+.tf2m-hit-name {
+  visibility: hidden;
+  font-size: 11px;
+}
+/* An icon button whose picture is not published says what it is. */
+.tf2m-hit[data-missing] {
+  border: 1px solid var(--tf2m-tan-dark);
+  background: var(--tf2m-tan-darker);
+  color: var(--tf2m-tan-light);
+}
+.tf2m-hit[data-missing] .tf2m-hit-name {
+  visibility: visible;
+  overflow: hidden;
+  max-width: 100%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The phone's list (and the list before the game's files load). */
+.tf2m-list {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 12px);
+  bottom: calc(var(--safe-bottom, 0px) + 12px);
+  left: calc(var(--safe-left, 0px) + 16px);
+  display: flex;
+  width: min(20rem, calc(100% - var(--safe-left, 0px) - var(--safe-right, 0px) - 32px));
+  flex-direction: column;
+  justify-content: safe center;
+  gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.tf2m-list-title {
+  margin: 0 0 8px;
+  color: var(--tf2m-tan-light);
+  font-family: var(--tf2m-font);
+  font-size: 28px;
+  line-height: 1.1;
+  text-transform: uppercase;
+  text-shadow: 2px 2px 0 rgb(0 0 0 / 0.6);
+}
+.tf2m-list-btn {
+  min-height: 44px;
+  flex-shrink: 0;
+  padding: 0 16px;
+  border: 2px solid var(--tf2m-tan-dark);
+  background: rgb(46 43 42 / 0.88);
+  color: var(--tf2m-tan-light);
+  font-family: var(--tf2m-font);
+  font-size: 18px;
+  text-align: start;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.tf2m-list-btn:hover,
+.tf2m-list-btn:focus-visible {
+  border-color: var(--tf2m-tan-light);
+  background: var(--tf2m-tan-dark);
+}
+.tf2m-list-btn:focus-visible {
+  outline: 2px solid var(--tf2m-focus);
+  outline-offset: 2px;
+}
+
+/* ══ The loadout screen ════════════════════════════════════════════════ */
+
+.tf2m-loadout {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  background: var(--tf2m-tan-darker);
+  color: var(--tf2m-tan-light);
+  font-family: var(--tf2m-font-small);
+}
+/* The grid is a page you read top to bottom: the document scrolls (over the game, the layer does). */
+.tf2m-loadout[data-layout='grid'] {
+  position: static;
+  min-height: 100dvh;
+}
+.tf2m-loadout-layer {
+  pointer-events: auto;
+}
+.tf2m-loadout-layer[data-layout='grid'] {
+  position: absolute;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.tf2m-loadout-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: calc(var(--safe-top, 0px) + 8px) calc(var(--safe-right, 0px) + 12px) 8px calc(var(--safe-left, 0px) + 12px);
+  border-bottom: 1px solid var(--tf2m-tan-dark);
+}
+.tf2m-loadout-stage {
+  position: relative;
+  flex: none;
+}
+.tf2m-loadout-model {
+  position: absolute;
+}
+.tf2m-slot {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 44px;
+  overflow: hidden;
+  padding: 4px;
+  border: 1px solid var(--tf2m-tan-dark);
+  background: rgb(0 0 0 / 0.25);
+  color: var(--tf2m-tan-light);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+}
+.tf2m-slot:hover,
+.tf2m-slot[aria-pressed='true'] {
+  border-color: var(--tf2m-tan-light);
+  background: rgb(117 107 94 / 0.35);
+}
+.tf2m-slot:focus-visible {
+  outline: 2px solid var(--tf2m-focus);
+  outline-offset: 1px;
+}
+.tf2m-slot img {
+  max-width: 100%;
+  min-height: 0;
+  flex: 1;
+  object-fit: contain;
+}
+.tf2m-slot-empty {
+  color: var(--tf2m-tan-dark);
+  text-transform: uppercase;
+}
+.tf2m-slot-name {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.tf2m-loadout[data-layout='grid'] .tf2m-slot,
+.tf2m-loadout[data-layout='grid'] .tf2m-loadout-model {
+  position: relative;
+}
+.tf2m-loadout-grid {
+  display: grid;
+  gap: 8px;
+  padding: 12px calc(var(--safe-right, 0px) + 12px) calc(var(--safe-bottom, 0px) + 16px) calc(var(--safe-left, 0px) + 12px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.tf2m-loadout-grid .tf2m-slot {
+  min-height: 72px;
+}
+.tf2m-loadout-grid .tf2m-loadout-model {
+  height: 16rem;
+  grid-column: 1 / -1;
+}
+.tf2m-loadout-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px calc(var(--safe-right, 0px) + 12px) calc(var(--safe-bottom, 0px) + 8px) calc(var(--safe-left, 0px) + 12px);
+  border-top: 1px solid var(--tf2m-tan-dark);
+}
+
+/* ══ Options ═══════════════════════════════════════════════════════════ */
+
+.tf2m-options-section {
+  margin: 8px 0 2px;
+  color: var(--app-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.tf2m-keys {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 4px 8px;
+}
+.tf2m-keys-title {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  color: var(--app-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* The loadout's loading / error line (over the game, or the main menu). */
+.tf2m-loadout-note {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(46 43 42 / 0.92);
+  color: rgb(235 226 202);
+  font-size: 14px;
+  pointer-events: auto;
+}
+
+/* A finger's tab: the class row's short names ("Spy") still get 44 px. */
+@media (pointer: coarse) {
+  .tf2m-loadout-bar [role='tab'] {
+    min-width: 44px;
+  }
+}
+
+/* TF2's loading screen (Tf2LoadingScreen.tsx): the menu backdrop, the loading dialog low on the right. */
+.tf2-load {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.tf2-load-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.tf2-load-dialog {
+  position: absolute;
+  right: calc(var(--safe-right, 0px) + 1.5rem);
+  bottom: calc(var(--safe-bottom, 0px) + 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(calc(100% - 2rem), 28rem);
+  padding: 1rem 1.25rem;
+  background: color-mix(in srgb, var(--app-bg) 92%, transparent);
+  border: 2px solid var(--app-border-bright);
+  border-radius: var(--app-radius);
+  color: var(--app-text);
+  font-family: var(--app-font-body);
+}
+.tf2-load-eyebrow {
+  color: var(--app-text-dim);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.tf2-load-map {
+  font-size: 1.75rem;
+  line-height: 1.1;
+}
+.tf2-load-stage {
+  min-height: 1rem;
+  color: var(--app-text-muted);
+  font-size: 0.75rem;
+}
+.tf2-load-tip {
+  color: var(--app-text-muted);
+  font-size: 0.8125rem;
+}
+.tf2-load-tip-label {
+  color: var(--app-accent-text);
+  font-family: var(--app-font-display);
+  text-transform: uppercase;
+}
+.tf2-load-dialog .tf2g-play-button {
+  align-self: flex-end;
+}

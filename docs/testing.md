@@ -606,8 +606,7 @@ had to keep green — which is how a permanently-red test got to stay that way.
 
 Plus SAST/quality gates that aren't tests but run on PRs: `senior-review.yml`
 (an LLM review gate), `synthetic-perf.yml`, `compose-validate`,
-`prisma-validate`, `prisma-migrate-status`, `build-vibe-packages`, and
-`i18n-translate`.
+`prisma-validate`, `prisma-migrate-status`, and `build-vibe-packages`.
 
 ## Writing a test
 

@@ -35,6 +35,8 @@ export const createBuildSchema = z.object({
   demoUrl: urlSchema,
   thumbnailUrl: imageUrlSchema,
   categoryId: z.string().optional(),
+  // Catalog id of the title this build was made for (its Workshop); '' clears it.
+  gameId: z.string().max(64).optional().or(z.literal('')),
   technologies: z
     .array(z.string().max(50))
     .max(20)

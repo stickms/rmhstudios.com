@@ -14,7 +14,8 @@
 
 import { SRGBColorSpace, WebGLRenderer } from 'three';
 import { emptyTrace } from '../core/types';
-import { MASK_SOLID } from '../core/constants';
+import { MASK_SOLID, MASK_SOLID_BRUSHONLY } from '../core/constants';
+import type { RagdollTrace } from '../render/entities/ragdoll';
 import type { Vec3 } from '../core/vec';
 import { gameAssetUrl } from '../assets/urls';
 import type { GameId } from '../assets/versions';
@@ -209,11 +210,12 @@ export class RenderCore {
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    quality: GameSettings['quality'],
+    settings: Pick<GameSettings, 'quality' | 'video'>,
     private readonly onContextLost: () => void,
   ) {
+    const { quality, video } = settings;
     const probe = detectDevice(null);
-    const early = planQuality(probe, quality);
+    const early = planQuality(probe, quality, video);
     let renderer: WebGLRenderer;
     try {
       renderer = new WebGLRenderer({
@@ -232,7 +234,7 @@ export class RenderCore {
       renderer.dispose();
       throw new ClientFailure({ code: 'webgl', detail: 'WebGL 2 is not available', retryable: false });
     }
-    this.plan = planQuality(this.device, quality);
+    this.plan = planQuality(this.device, quality, video);
     this.governor = new FrameGovernor(this.plan);
     canvas.addEventListener('webglcontextlost', this.onLost, false);
     this.resize();
@@ -437,6 +439,24 @@ export async function loadMapPackageForClient(
 }
 
 // ─── Small shared helpers ───────────────────────────────────────────────────
+
+/** The world ragdolls land on: a box trace `radius` wide through map collision (solid brushes and props). */
+export function ragdollTrace(collision: Pick<LoadedMap['collision'], 'traceHull'>): RagdollTrace {
+  const tr = emptyTrace();
+  const mins = { x: 0, y: 0, z: 0 };
+  const maxs = { x: 0, y: 0, z: 0 };
+  return (start, end, radius) => {
+    mins.x = mins.y = mins.z = -radius;
+    maxs.x = maxs.y = maxs.z = radius;
+    collision.traceHull(start as Vec3, end as Vec3, mins, maxs, MASK_SOLID_BRUSHONLY, null, tr);
+    return {
+      fraction: tr.fraction,
+      endPos: tr.endPos,
+      normal: tr.plane.normal,
+      startSolid: tr.startSolid || tr.allSolid,
+    };
+  };
+}
 
 /** A ±WALL_OFFSET hull trace through map collision for the camera (view.ts WallTrace). */
 export function wallTrace(collision: LoadedMap['collision'], offset = 6) {

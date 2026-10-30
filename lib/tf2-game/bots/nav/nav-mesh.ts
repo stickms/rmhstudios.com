@@ -60,6 +60,10 @@ export const POI_PATH_TRACK = 5;
 export const POI_HEALTH = 6;
 export const POI_AMMO = 7;
 export const POI_RESUPPLY = 8;
+/** CS:GO: a bomb site (func_bomb_target), its centre. */
+export const POI_BOMB_TARGET = 9;
+/** CS:GO: a buy zone (func_buyzone), its centre; `team` is the zone's TeamNum. */
+export const POI_BUY_ZONE = 10;
 
 export interface NavPoi {
   kind: number;

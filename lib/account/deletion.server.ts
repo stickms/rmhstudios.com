@@ -195,6 +195,34 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     prisma.ladderUserPrefs.deleteMany({ where: { userId } }),
     prisma.ladderAnswerBank.deleteMany({ where: { userId } }),
     prisma.ladderResume.deleteMany({ where: { userId } }),
+    // 2b. Per-title playtime. `game_playtime*` cascade from the user row, but step 4
+    //     anonymises that row instead of removing it, so the cascade never fires —
+    //     and a tombstone would keep showing in "Most played by" with its hours.
+    prisma.gamePlaytime.deleteMany({ where: { userId } }),
+    prisma.gamePlaytimeDay.deleteMany({ where: { userId } }),
+    // Trading cards, drop ledger and badges — same reason: the cascade never fires.
+    prisma.userCard.deleteMany({ where: { userId } }),
+    prisma.cardDrop.deleteMany({ where: { userId } }),
+    prisma.gameBadge.deleteMany({ where: { userId } }),
+    // Their live market listings (the escrowed card goes with the rest of the inventory);
+    // finished sales stay as anonymous price history.
+    prisma.cardListing.deleteMany({ where: { sellerId: userId, status: 'ACTIVE' } }),
+    // Gems and their entries.
+    prisma.gemEntry.deleteMany({ where: { userId } }),
+    prisma.userGems.deleteMany({ where: { userId } }),
+    // The achievements and badges they chose to feature.
+    prisma.gameProfileShowcase.deleteMany({ where: { userId } }),
+    // Their library collections and favorites.
+    prisma.gameCollectionItem.deleteMany({ where: { userId } }),
+    // Open buy orders (nothing was held for them, so there is nothing to refund).
+    prisma.cardBuyOrder.deleteMany({ where: { buyerId: userId, status: 'OPEN' } }),
+    // Pending trade offers in either direction; finished trades stay as anonymous history.
+    prisma.cardTrade.deleteMany({
+      where: { status: 'PENDING', OR: [{ fromId: userId }, { toId: userId }] },
+    }),
+    // Community Hub discussions: their replies, then their threads (with everyone's replies).
+    prisma.gameThreadPost.deleteMany({ where: { authorId: userId } }),
+    prisma.gameThread.deleteMany({ where: { authorId: userId } }),
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({
       where: { userId },

@@ -44,6 +44,11 @@ export interface BorderDef {
   right: BorderLayer[];
   top: BorderLayer[];
   bottom: BorderLayer[];
+  /**
+   * `"bordertype" "scalable_image"` (vgui ScalableImageBorder): a nine-slice texture under `vgui/`, its
+   * corners `src_corner_*` texels in the image and `draw_corner_*` units (proportional) on screen.
+   */
+  image?: { name: string; srcCorner: [number, number]; drawCorner: [number, number] };
 }
 
 export interface CustomFontFile {
@@ -169,12 +174,24 @@ export function parseScheme(text: string, env: CondEnv): Scheme {
       const inset = (kvChild(b, 'inset')?.value?.text ?? '0 0 0 0')
         .split(/\s+/)
         .map((n) => Number.parseFloat(n) || 0);
+      const num = (k: string) => Number.parseFloat(kvChild(b, k)?.value?.text ?? '') || 0;
+      const imageName = kvChild(b, 'image')?.value?.text;
+      const scalable = (kvChild(b, 'bordertype')?.value?.text ?? '').toLowerCase() === 'scalable_image';
       scheme.borders.set(lower(b.key.text), {
         inset: [inset[0] ?? 0, inset[1] ?? 0, inset[2] ?? 0, inset[3] ?? 0],
         left: parseLayers(kvChild(b, 'Left')),
         right: parseLayers(kvChild(b, 'Right')),
         top: parseLayers(kvChild(b, 'Top')),
         bottom: parseLayers(kvChild(b, 'Bottom')),
+        ...(scalable && imageName
+          ? {
+              image: {
+                name: imageName,
+                srcCorner: [num('src_corner_width'), num('src_corner_height')] as [number, number],
+                drawCorner: [num('draw_corner_width'), num('draw_corner_height')] as [number, number],
+              },
+            }
+          : {}),
       });
     }
   }

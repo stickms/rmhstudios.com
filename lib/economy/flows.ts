@@ -256,6 +256,14 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     note: 'Escrowed against a site-wide goal; funded goals keep it (a true sink), missed ones refund it.',
   },
   {
+    id: 'gem-purchase',
+    kind: 'sink',
+    surface: 'Buying gems on the games inventory',
+    source: 'lib/cards/gems.server.ts',
+    bounded: false,
+    note: 'One coin per gem, in units of 100, burned in the same transaction that credits the gems. Gems cannot be traded, so they only buy booster packs.',
+  },
+  {
     id: 'scheduled-gift-payment',
     kind: 'sink',
     surface: '/wallet?tab=gifts — a store gift scheduled for a future date',
@@ -440,6 +448,14 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     source: 'lib/market/market.server.ts',
     bounded: false,
     note: 'Buyer to seller, minus a fee that IS destroyed.',
+  },
+  {
+    id: 'card-market-sale',
+    kind: 'transfer',
+    surface: 'The trading-card Community Market',
+    source: 'lib/cards/market.server.ts',
+    bounded: false,
+    note: 'Buyer to seller, minus a 10% fee that IS destroyed. Cards drop only from playtime (3 per title per account) and sellers must be level 3 and a week old.',
   },
   {
     id: 'storefront-sale',

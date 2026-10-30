@@ -236,7 +236,11 @@ def root_fix(base_mdl, bones):
     ref = next((s for s in read_sequences(base_mdl) if s["name"] == "ref"), None)
     if ref is None or not ref["anims"]:
         raise ModelError("no ref sequence")
-    pos, quat = decode_animdesc(base_mdl, bones, read_animdesc(base_mdl, ref["anims"][0]), 1)
+    desc = read_animdesc(base_mdl, ref["anims"][0])
+    if desc["flags"] & DESC_FRAMEANIM:  # CS:GO: the ref is a frame animation too
+        pos, quat, _ = decode_animdesc_ex(base_mdl, bones, desc, 1)
+    else:
+        pos, quat = decode_animdesc(base_mdl, bones, desc, 1)
     root = next(i for i, b in enumerate(bones) if b["parent"] < 0)
     return quat_matrix(bones[root]["quat"]) @ quat_matrix(quat[0, root]).T
 
@@ -376,14 +380,123 @@ def _entries_ex(data, start, nb):
     return out
 
 
+# --- Frame animations (STUDIO_FRAMEANIM, CS:GO's MDL v49) -----------------------------------------------------
+# CS:GO stores many animations (every weapon view model's) as frame animations instead of RLE records: a
+# header, one flag byte per bone, a block of per-bone constants and fixed-size per-frame records. The layout
+# here follows the format as public model tools document it (no engine code); `_frame_layout` checks the
+# sizes it computes against the ones the header declares and refuses the animation when they disagree, so a
+# misread layout is an error, never a garbled clip.
+FRAME_HEADER = 24  # constantsoffset, frameoffset, framelength, unused[3]
+F_RAWPOS, F_RAWROT, F_ANIMPOS, F_ANIMROT = 0x01, 0x02, 0x04, 0x08
+F_FULLANIMPOS, F_CONST_POS2, F_CONST_ROT2, F_ANIM_ROT2 = 0x10, 0x20, 0x40, 0x80
+# Folded into the source hash of every model that has frame animations (scripts/tf2-game/models.py), so a
+# change here rebuilds exactly those models.
+FRAMEANIM_VERSION = 3
+# A plausibility check the converter prints (no install here to test against): of the bones a frame
+# animation holds at a constant rotation, how many sit within FRAME_CHECK_DEGREES of the bind pose. Most
+# such bones (static weapon parts, unanimated fingers) are at rest, so a misdecoded rotation shows up as a
+# low share.
+FRAME_STATS = {"clips": 0, "rot2": 0, "rot2_near": 0, "raw": 0, "raw_near": 0}
+FRAME_CHECK_DEGREES = 15.0
+_Q48S_SHIFT = 16384
+_Q48S_SCALE = 16384.0 * math.sqrt(2.0)  # the three smallest components lie in [-1/sqrt2, 1/sqrt2]
+
+
+def _quat48s(b, o):
+    """Quaternion48S: the three smallest components in 15 bits each. The top bits of the first two words
+    name the dropped (largest) component, counted w, x, y, z; the top bit of the third is its sign. The
+    stored three are the components after it, in x, y, z, w order wrapping round."""
+    a, bb, c = struct.unpack_from("<3H", b, o)
+    dropped = ((((a >> 15) << 1) | (bb >> 15)) + 3) & 3  # w, x, y, z -> an index into (x, y, z, w)
+    va = ((a & 0x7FFF) - _Q48S_SHIFT) / _Q48S_SCALE
+    vb = ((bb & 0x7FFF) - _Q48S_SHIFT) / _Q48S_SCALE
+    vc = ((c & 0x7FFF) - _Q48S_SHIFT) / _Q48S_SCALE
+    vd = math.sqrt(max(0.0, 1.0 - va * va - vb * vb - vc * vc))
+    if c >> 15:
+        vd = -vd
+    q = [0.0, 0.0, 0.0, 0.0]
+    q[(dropped + 1) & 3], q[(dropped + 2) & 3], q[(dropped + 3) & 3], q[dropped] = va, vb, vc, vd
+    return tuple(q)
+
+
+def _check_bind(q, bone, kind):
+    """Counts a constant rotation for FRAME_STATS (`kind` rot2 / raw) and returns it."""
+    dot = min(1.0, abs(sum(x * y for x, y in zip(q, bone["quat"]))))
+    FRAME_STATS[kind] += 1
+    if 2.0 * math.degrees(math.acos(dot)) <= FRAME_CHECK_DEGREES:
+        FRAME_STATS[kind + "_near"] += 1
+    return q
+
+
+def _vec48(b, o):
+    return tuple(_half(h) for h in struct.unpack_from("<3H", b, o))
+
+
+def _frame_layout(data, start, nb):
+    """-> (flags per bone, constants offset, frames offset, frame length): the header at `start`, checked."""
+    if start < 0 or start + FRAME_HEADER + nb > len(data):
+        raise ModelError("frame animation header out of range")
+    const_off, frame_off, frame_len = struct.unpack_from("<3i", data, start)
+    flags = list(data[start + FRAME_HEADER:start + FRAME_HEADER + nb])
+    const_size = sum((6 if f & F_CONST_ROT2 else 0) + (6 if f & F_RAWROT else 0) + (6 if f & F_RAWPOS else 0)
+                     + (12 if f & F_CONST_POS2 else 0) for f in flags)
+    per_frame = sum((6 if f & F_ANIM_ROT2 else 0) + (6 if f & F_ANIMROT else 0) + (6 if f & F_ANIMPOS else 0)
+                    + (12 if f & F_FULLANIMPOS else 0) for f in flags)
+    if per_frame != frame_len:
+        raise ModelError("frame animation: per-frame size %d, header says %d" % (per_frame, frame_len))
+    if const_size and (const_off <= 0 or const_off + const_size > max(frame_off, const_off + const_size)
+                       or (frame_off > const_off and frame_off - const_off < const_size)):
+        raise ModelError("frame animation: constants (%d bytes) overlap the frames" % const_size)
+    return flags, const_off, frame_off, frame_len
+
+
+def decode_frame_anim(data, start, bones, frames, pos, quat):
+    """Fills `pos` / `quat` [frames, bones] from the frame animation whose header is at `start` (bones the
+    animation does not name keep what the arrays hold: the bind pose, or the identity for a delta)."""
+    nb = len(bones)
+    flags, const_off, frame_off, frame_len = _frame_layout(data, start, nb)
+    if start + frame_off + frame_len * frames > len(data):
+        raise ModelError("frame animation: %d frames run past the data" % frames)
+    FRAME_STATS["clips"] += 1
+    o = start + const_off
+    for bone, f in enumerate(flags):
+        # A bone's constants: the compressed rotation, the full position, then the raw rotation and position.
+        if f & F_CONST_ROT2:
+            quat[:, bone] = _check_bind(_quat48s(data, o), bones[bone], "rot2")
+            o += 6
+        if f & F_CONST_POS2:
+            pos[:, bone] = struct.unpack_from("<3f", data, o)
+            o += 12
+        if f & F_RAWROT:
+            quat[:, bone] = _check_bind(_quat48(data, o), bones[bone], "raw")
+            o += 6
+        if f & F_RAWPOS:
+            pos[:, bone] = _vec48(data, o)
+            o += 6
+    for fr in range(frames):
+        o = start + frame_off + fr * frame_len
+        for bone, f in enumerate(flags):
+            if f & F_ANIM_ROT2:
+                quat[fr, bone] = _quat48s(data, o)
+                o += 6
+            if f & F_ANIMROT:
+                quat[fr, bone] = _quat48(data, o)
+                o += 6
+            if f & F_ANIMPOS:
+                pos[fr, bone] = _vec48(data, o)
+                o += 6
+            if f & F_FULLANIMPOS:
+                pos[fr, bone] = struct.unpack_from("<3f", data, o)
+                o += 12
+    return flags
+
+
 def decode_animdesc_ex(mdl, bones, desc, max_frames=None, anim_block=None):
     """-> (pos [frames, bones, 3], quat [frames, bones, 4], delta) local transforms in Source's animation
     space. For a delta animation (`delta` True) the values are offsets: pos is added to the base pose and
     quat composed with it (see SlerpBones: q = d^w * base, or base * d^w for STUDIO_POST), and bones the
     animation does not mention are the identity. `anim_block(block)` returns (bytes, offset of the block's
     data) for an animation stored in a .ani file, or None when it is not available."""
-    if desc["flags"] & DESC_FRAMEANIM:
-        raise ModelError("frame animation")
     delta = bool(desc["flags"] & DESC_DELTA)
     frames = desc["frames"] if max_frames is None else min(desc["frames"], max_frames)
     frames = max(frames, 1)
@@ -396,6 +509,7 @@ def decode_animdesc_ex(mdl, bones, desc, max_frames=None, anim_block=None):
         quat = np.tile(np.array([b["quat"] for b in bones], np.float32), (frames, 1, 1))
     if desc["flags"] & DESC_ALLZEROS:
         return pos, quat, delta
+    frame_anim = bool(desc["flags"] & DESC_FRAMEANIM)
     cache = {}
 
     def locate(block, index, relative_to):
@@ -416,8 +530,24 @@ def decode_animdesc_ex(mdl, bones, desc, max_frames=None, anim_block=None):
             else:
                 block, aindex = desc["block"], desc["index"]
             data, start = locate(block, aindex, desc["at"])
-            cache[index] = (data, _entries_ex(data, start, nb))
+            cache[index] = (data, start if frame_anim else _entries_ex(data, start, nb))
         return cache[index]
+
+    if frame_anim:
+        # Frame animations: one header per section, its frames fixed-size records.
+        if not desc["sections"]:
+            data, start = section(0)
+            decode_frame_anim(data, start, bones, frames, pos, quat)
+            return pos, quat, delta
+        per = desc["sections"]
+        sec, f0 = 0, 0
+        while f0 < frames:
+            data, start = section(sec)
+            n = min(per, frames - f0)
+            decode_frame_anim(data, start, bones, n, pos[f0:f0 + n], quat[f0:f0 + n])
+            f0 += n
+            sec += 1
+        return pos, quat, delta
 
     for f in range(frames):
         local, sec = f, 0

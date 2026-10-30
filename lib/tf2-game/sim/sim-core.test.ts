@@ -548,6 +548,26 @@ describe('players and rules', () => {
     expect(p.health).toBe(p.maxHealth);
   });
 
+  it("a host's instant respawn: back a second after dying, whatever the wave time", () => {
+    const world = roomWorld([], { respawnWaveTime: 10, instantRespawn: true });
+    const p = addPlayer(world, 'p', TF_TEAM_RED, TF_CLASS_MEDIC);
+    addPlayer(world, 'q', TF_TEAM_BLUE, TF_CLASS_MEDIC);
+    startRound(world);
+    runTicks(world, 10, idle);
+    p.commitSuicide();
+    const died = world.curtime;
+    let spawnedAt = -1;
+    for (let i = 0; i < Math.round(5 / TICK_INTERVAL); i++) {
+      world.step();
+      if (p.alive) {
+        spawnedAt = world.curtime;
+        break;
+      }
+    }
+    expect(spawnedAt - died).toBeGreaterThanOrEqual(1 - 1e-6);
+    expect(spawnedAt - died).toBeLessThanOrEqual(1 + TICK_INTERVAL * 3);
+  });
+
   it('class change: instant inside the own respawn room, deferred outside', () => {
     const world = roomWorld();
     const room = world.spawnEntity('func_respawnroom', (e) => {

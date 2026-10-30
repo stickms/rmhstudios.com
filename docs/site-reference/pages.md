@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 352 routes. 199 render inside the standard site shell (sidebar, nav, context rail); 153 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 364 routes. 195 render inside the standard site shell (sidebar, nav, context rail); 169 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -59,8 +59,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/advent` | — | public | `app/routes/_site/advent.tsx` |
 | `/alexdebtcounter` | redirects to `/kaikaidebtcounter` | public | `app/routes/_site/alexdebtcounter.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
-| `/apps` | Apps | public | `app/routes/_site/apps/index.tsx` |
-| `/arcade` | redirects to `/games` | public | `app/routes/_site/arcade.tsx` |
+| `/apps` | redirects to `/games?kind=app` | public | `app/routes/_site/apps/index.tsx` |
+| `/arcade` | Arcade | public | `app/routes/_site/arcade.tsx` |
 | `/blog` | redirects to `/library` | public | `app/routes/_site/blog/index.tsx` |
 | `/blog/:slug` | — | public | `app/routes/_site/blog/$slug.tsx` |
 | `/bookmarks` | redirects to `/saves?tab=saved` | public | `app/routes/_site/bookmarks.tsx` |
@@ -91,10 +91,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/feeds` | Custom feeds | public | `app/routes/_site/feeds.index.tsx` |
 | `/feeds/:id` | Feed | public | `app/routes/_site/feeds.$id.tsx` |
 | `/game-night` | Game Night | public | `app/routes/_site/game-night.tsx` |
-| `/games` | Games | public | `app/routes/_site/games/index.tsx` |
-| `/games/:gameId` | — | public | `app/routes/_site/games/$gameId.tsx` |
-| `/games/:gameId/guides/:guideId` | — | public | `app/routes/_site/games/$gameId_.guides.$guideId.tsx` |
-| `/games/slice-it` | Slice It! — charts, records and uploaders | public | `app/routes/_site/games/slice-it.tsx` |
 | `/groups` | Group Chats | public | `app/routes/_site/groups/index.tsx` |
 | `/groups/:id` | Group Chat | public | `app/routes/_site/groups/$id.tsx` |
 | `/help` | Help & Concierge | public | `app/routes/_site/help.tsx` |
@@ -109,7 +105,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/hunt` | — | public | `app/routes/_site/hunt.tsx` |
 | `/jams` | Game Jams | public | `app/routes/_site/jams.index.tsx` |
 | `/jams/:slug` | Game Jam | public | `app/routes/_site/jams.$slug.tsx` |
-| `/leaderboard` | redirects to `/games?sub=leaderboard` | public | `app/routes/_site/leaderboard.tsx` |
+| `/leaderboard` | redirects to `/arcade?sub=leaderboard` | public | `app/routes/_site/leaderboard.tsx` |
 | `/library` | Library | public | `app/routes/_site/library/index.tsx` |
 | `/lists` | redirects to `/saves?tab=lists` | public | `app/routes/_site/lists/index.tsx` |
 | `/lists/:id` | List | public | `app/routes/_site/lists/$id.tsx` |
@@ -240,6 +236,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
 | `/copyright` | Copyright | public | `app/routes/copyright.tsx` |
 | `/covid` | — | public | `app/routes/covid.tsx` |
+| `/csgo` | — | public | `app/routes/csgo.tsx` |
 | `/daily` | Daily Puzzles | public | `app/routes/daily/index.tsx` |
 | `/daily/alibi` | — | public | `app/routes/daily/alibi.tsx` |
 | `/daily/chainlink` | — | public | `app/routes/daily/chainlink.tsx` |
@@ -263,6 +260,21 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/forest-explorer/explore` | — | public | `app/routes/forest-explorer/explore.tsx` |
 | `/forest-explorer/story` | — | public | `app/routes/forest-explorer/story.tsx` |
 | `/gabriels-horn` | Gabriel | public | `app/routes/gabriels-horn.tsx` |
+| `/games` | redirects to `/arcade` | public | `app/routes/games/_library/index.tsx` |
+| `/games/:gameId` | — | public | `app/routes/games/_library/$gameId.tsx` |
+| `/games/:gameId/guides/:guideId` | — | public | `app/routes/games/_library/$gameId_.guides.$guideId.tsx` |
+| `/games/community` | — | public | `app/routes/games/community.tsx` |
+| `/games/groups/:slug` | — | public | `app/routes/games/groups.$slug.tsx` |
+| `/games/hub/:gameId` | — | public | `app/routes/games/hub.$gameId.index.tsx` |
+| `/games/hub/:gameId/t/:threadId` | — | public | `app/routes/games/hub.$gameId.t.$threadId.tsx` |
+| `/games/inventory` | — | public | `app/routes/games/inventory.tsx` |
+| `/games/market` | — | public | `app/routes/games/market.index.tsx` |
+| `/games/market/:gameId/:cardIndex` | — | public | `app/routes/games/market.$gameId.$cardIndex.tsx` |
+| `/games/profile/:id` | — | public | `app/routes/games/profile.$id.tsx` |
+| `/games/slice-it` | Slice It! — charts, records and uploaders | public | `app/routes/games/_library/slice-it.tsx` |
+| `/games/store` | Store — games and apps | public | `app/routes/games/store.tsx` |
+| `/games/trades` | — | public | `app/routes/games/trades.index.tsx` |
+| `/games/trades/new/:id` | — | public | `app/routes/games/trades.new.$id.tsx` |
 | `/half-life-2` | — | public | `app/routes/half-life-2.tsx` |
 | `/handle` | — | public | `app/routes/handle.ts` |
 | `/house-always-wins` | — | public | `app/routes/house-always-wins.tsx` |

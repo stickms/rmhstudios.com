@@ -266,7 +266,20 @@ function opsFor(
 
   // Border
   const border = borderOf(ctx.scheme, props.get('border') ?? props.get('border_default'));
-  if (border) {
+  if (border?.image) {
+    // A scalable-image border (vgui ScalableImageBorder) paints its nine-slice texture over the panel.
+    const path = imagePath(border.image.name);
+    images.add(path);
+    ops.push({
+      t: 'image',
+      rect,
+      path,
+      nine: {
+        src: border.image.srcCorner,
+        draw: [Math.trunc(border.image.drawCorner[0] * scale), Math.trunc(border.image.drawCorner[1] * scale)],
+      },
+    });
+  } else if (border) {
     const colors = (layers: typeof border.left) =>
       layers.map((l) => resolveColor(ctx.scheme, l.color) ?? { r: 0, g: 0, b: 0, a: 0 });
     ops.push({
@@ -653,7 +666,10 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
       const localRect = (e: KvNode): Rect => {
         const cached = memo.get(e);
         if (cached) return cached;
-        const props = propsFor(e, host.file);
+        // What the game sets at run time can move or size a panel too (the main menu's `if_wider` size).
+        const own = propsFor(e, host.file);
+        const injected = ctx.overridesFor?.(host.file, [...host.keyPath, e.key.text]);
+        const props = injected === undefined ? own : mergeProps(own, propsFromMap(injected));
         let sibling: Rect | undefined;
         const pin = pinOf(props);
         if (pin && !resolving.has(e)) {

@@ -61,10 +61,10 @@ import { captureGameScreenshot } from './screenshot';
 /** What the running game client lends the console (all optional but `authority`). */
 export interface ConsoleHost {
   /**
-   * Who runs the match: `listen` (offline TF2, or this browser hosting peer-to-peer), `dedicated`
-   * (a games-hub room), `remote` (someone else's peer-to-peer room), `sp` (Half-Life 2 / Portal).
+   * Who runs the match: `listen` (offline, or this browser hosting peer-to-peer), `remote`
+   * (someone else's peer-to-peer room), `sp` (Half-Life 2 / Portal).
    */
-  authority(): 'listen' | 'dedicated' | 'remote' | 'sp';
+  authority(): 'listen' | 'remote' | 'sp';
   stats?(): ClientStats;
   netCounters?(): NetCounters | null;
   /** The game canvas (screenshots are taken right after a frame renders: `frame()`). */
@@ -73,13 +73,13 @@ export interface ConsoleHost {
   setThirdPerson?(on: boolean): void;
   setViewAngles?(angles: Vec3): void;
   /**
-   * TF2 `changelevel`: the listen server (offline, a peer-to-peer host) or a hub room's owner moves the
-   * match; every client reloads the level from the new `hello`. False when this session cannot.
+   * TF2 `changelevel`: the listen server (offline, a peer-to-peer host) moves the match; every client
+   * reloads the level from the new `hello`. False when this session cannot.
    */
   changeLevel?(map: string): boolean;
   /** Room administration (kick, ownership, lock, password, a server message); false when refused here. */
   admin?(action: RoomAdminPayload): Promise<boolean> | boolean;
-  /** Whether this player runs the room (a listen server's host, a dedicated room's owner). */
+  /** Whether this player runs the room (a listen server's host). */
   isAdmin?(): boolean;
   /** The room's other players (admin completion: `kick`). */
   players?(): Array<{ id: number; name: string }>;
@@ -469,7 +469,7 @@ export class GameConsole {
   private completeServer(name: string, i: number, argv: readonly string[]): readonly string[] {
     switch (name) {
       case 'give':
-        return i === 1 ? (this.game === 'tf2' ? tf2GiveItems() : SP_GIVE_ITEMS[this.game]) : [];
+        return i === 1 ? (this.game === 'tf2' ? tf2GiveItems() : this.game === 'csgo' ? [] : SP_GIVE_ITEMS[this.game]) : [];
       case 'changelevel':
       case 'map':
         return i === 1 ? this.maps() : [];
@@ -761,12 +761,8 @@ export class GameConsole {
       return;
     }
     const auth = this.host?.authority();
-    const admin = auth === 'listen' || (auth === 'dedicated' && this.host?.isAdmin?.() === true);
-    if (!admin || !this.host?.changeLevel) {
-      this.print(
-        auth === 'dedicated' ? "changelevel: only the room's owner can change its map" : "changelevel: only the host can change the map",
-        'error',
-      );
+    if (auth !== 'listen' || !this.host?.changeLevel) {
+      this.print('changelevel: only the host can change the map', 'error');
       return;
     }
     if (!this.host.changeLevel(map)) this.print('changelevel: this match cannot change map', 'error');
@@ -835,7 +831,7 @@ export class GameConsole {
           return;
         }
         if (!this.host?.isAdmin?.()) {
-          this.print("rcon: only the room's owner (or the host) has rcon here", 'error');
+          this.print('rcon: only the host has rcon here', 'error');
           return;
         }
         if (sub === 'say') {

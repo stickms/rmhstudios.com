@@ -131,6 +131,26 @@ import { onUnlockChargeEnd, unlockOnDamaged, unlockOnKill, unlockPreventsDamage 
 import { aliveDamageModifiers, applyOnHitAttributes, applyOnKillAttributes, damageWeapon, inAirDueToExplosion } from './items/hooks';
 import type { LoadoutSlots } from '../../tf2-loadout/catalog-types';
 import { TF_DEATH_DOMINATION, TF_DEATH_REVENGE, TF_DEATH_ASSISTER_DOMINATION, TF_DEATH_ASSISTER_REVENGE } from './events';
+import { hitboxSet as tfHitboxSet, type Hitbox } from './hitboxes';
+
+/**
+ * A player's collision hulls, standing and crouched. TF2's by default; another game on the engine
+ * (lib/csgo-game) gives its player its own, and spawning, crouching and spawn-point checks use it.
+ */
+export interface PlayerHull {
+  readonly min: Readonly<Vec3>;
+  readonly max: Readonly<Vec3>;
+  readonly duckMin: Readonly<Vec3>;
+  readonly duckMax: Readonly<Vec3>;
+}
+
+/** g_TFViewVectors' hulls. */
+export const TF_PLAYER_HULL: PlayerHull = Object.freeze({
+  min: VEC_HULL_MIN,
+  max: VEC_HULL_MAX,
+  duckMin: VEC_DUCK_HULL_MIN,
+  duckMax: VEC_DUCK_HULL_MAX,
+});
 
 // ─── Constants (tf_shareddefs.h, tf_player.cpp, tf_player_shared.cpp) ─────
 /** TF_REGEN_TIME / TF_REGEN_AMOUNT. */
@@ -449,9 +469,24 @@ export class Player extends Entity implements AttributeOwner {
 
   // ─── Geometry ────────────────────────────────────────────────────────────
 
+  /** The hulls this player moves and spawns with (TF2's; another game's player overrides it). */
+  get hull(): PlayerHull {
+    return TF_PLAYER_HULL;
+  }
+
+  /** Standing eye height (the class's in TF2). */
+  standEyeHeight(): number {
+    return classEyeHeight(this.playerClass);
+  }
+
+  /** The hitboxes bullets test (TF2: the class's set; sim/hitboxes.ts). */
+  hitboxSet(): readonly Hitbox[] {
+    return tfHitboxSet(this.playerClass, this.move.ducked);
+  }
+
   viewOffsetZ(): number {
     if (this.lifeState !== LIFE_ALIVE) return VEC_DEAD_VIEW_Z;
-    return this.move.ducked ? VEC_DUCK_VIEW_Z : classEyeHeight(this.playerClass);
+    return this.move.ducked ? VEC_DUCK_VIEW_Z : this.standEyeHeight();
   }
 
   /** EyePosition(): origin + view offset. */
@@ -729,8 +764,9 @@ export class Player extends Entity implements AttributeOwner {
     const m = this.move;
     this.flags = (this.flags & ~(FL_ONGROUND | FL_DUCKING)) | (m.flags & (FL_ONGROUND | FL_DUCKING));
     this.groundEntity = m.groundEntity;
-    if (m.ducked) this.setSize(VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX);
-    else this.setSize(VEC_HULL_MIN, VEC_HULL_MAX);
+    const hull = this.hull;
+    if (m.ducked) this.setSize(hull.duckMin, hull.duckMax);
+    else this.setSize(hull.min, hull.max);
     this.angles.y = this.eyeAngles.y;
   }
 
@@ -1188,7 +1224,13 @@ export class Player extends Entity implements AttributeOwner {
       entity: this.id,
       team: this.team,
       value: this.playerClass,
-      force: { x: info.force.x + this.velocity.x, y: info.force.y + this.velocity.y, z: info.force.z + this.velocity.z },
+      // Where the blow landed (the bullet's hit, the blast's centre): the part it pushes hardest.
+      start: { x: info.position.x, y: info.position.y, z: info.position.z },
+      force: {
+        x: info.force.x + this.velocity.x,
+        y: info.force.y + this.velocity.y,
+        z: info.force.z + this.velocity.z,
+      },
     });
 
     // Drops: ammo pack with the active weapon's model, the flag.
@@ -1280,7 +1322,8 @@ export class Player extends Entity implements AttributeOwner {
     copy(fresh.origin, spot.origin);
     set(fresh.velocity, 0, 0, 0);
     this.restoreMoveState(fresh);
-    this.move.viewOffsetZ = classEyeHeight(this.playerClass);
+    this.move.viewOffsetZ = this.standEyeHeight();
+    this.setSize(this.hull.min, this.hull.max);
     world.spawns.dropToGround(this);
     copy(this.angles, spot.angles);
     copy(this.eyeAngles, spot.angles);
@@ -1297,7 +1340,7 @@ export class Player extends Entity implements AttributeOwner {
     this.takeDamage = DAMAGE_YES;
     this.effects &= ~EF_NODRAW;
     this.effects |= EF_NOINTERP;
-    this.setSize(VEC_HULL_MIN, VEC_HULL_MAX);
+    this.setSize(this.hull.min, this.hull.max);
     this.cond.clear();
     this.healers.length = 0;
     this.afterburnDuration = 0;

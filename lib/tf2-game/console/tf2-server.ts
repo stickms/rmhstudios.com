@@ -45,6 +45,7 @@ import type { MatchOptions } from '../server/match-host';
 import { createDamageInfo, DMG_PREVENT_PHYSICS_FORCE } from '../sim/damage';
 import { weaponSpecFor } from '../sim/loadout';
 import { TF_MOVE_PARAMS } from '../sim/movement';
+import type { MoveParams } from '../sim/movement-types';
 import type { Player } from '../sim/player';
 import { GR_STATE_PREROUND } from '../sim/rules';
 import { createWeapon } from '../sim/weapon-api';
@@ -64,6 +65,7 @@ import {
   TF2_GIVE_PICKUPS,
   validateCvarValue,
   validateServerArgs,
+  type ConsoleGame,
   type ServerCvarSpec,
 } from './server-commands';
 
@@ -111,7 +113,7 @@ interface Bucket {
 type ConsolePlayer = Player & { buddha?: boolean };
 
 export class Tf2ServerConsole {
-  private readonly values = new Map<string, string>();
+  protected readonly values = new Map<string, string>();
   private readonly buckets = new Map<number, Bucket>();
   private restartAt = -1;
   private fixedClasses = false;
@@ -119,20 +121,45 @@ export class Tf2ServerConsole {
   private readonly trace = emptyTrace();
 
   readonly policy: ServerConsolePolicy;
+  /**
+   * Whose commands and cvars this console serves (server-commands.ts `games`). TF2's by default;
+   * another multiplayer game on the engine subclasses it (lib/csgo-game/console.ts) and adds its own
+   * through `runGame` / `applyGame`.
+   */
+  readonly game: ConsoleGame;
 
   constructor(
-    private readonly host: ConsoleMatchHost,
+    protected readonly host: ConsoleMatchHost,
     policy: ServerConsolePolicy = { kind: 'dedicated' },
+    game: ConsoleGame = 'tf2',
   ) {
     this.policy = { ...policy };
-    for (const c of SERVER_CVARS) if (c.games.includes('tf2')) this.values.set(c.name, serverCvarDefault(c, 'tf2'));
+    this.game = game;
+    for (const c of SERVER_CVARS) if (c.games.includes(game)) this.values.set(c.name, serverCvarDefault(c, game));
     // The match's own settings are the starting values.
     const o = host.options;
-    this.values.set('tf_bot_quota', String(o.botCount));
-    this.values.set('tf_bot_difficulty', String(Math.max(0, DIFFICULTY_WORDS.indexOf(o.botDifficulty))));
-    this.values.set('mp_friendlyfire', host.world.options.friendlyFire ? '1' : '0');
-    this.values.set('mp_timelimit', String(host.world.rules.options.timeLimit));
-    this.values.set('mp_winlimit', String(host.world.rules.options.winLimit));
+    if (game === 'tf2') {
+      this.values.set('tf_bot_quota', String(o.botCount));
+      this.values.set('tf_bot_difficulty', String(Math.max(0, DIFFICULTY_WORDS.indexOf(o.botDifficulty))));
+      this.values.set('mp_winlimit', String(host.world.rules.options.winLimit));
+    }
+    if (this.values.has('mp_friendlyfire')) this.values.set('mp_friendlyfire', host.world.options.friendlyFire ? '1' : '0');
+    if (this.values.has('mp_timelimit')) this.values.set('mp_timelimit', String(host.world.rules.options.timeLimit));
+  }
+
+  /** The movement parameters players use at the default sv_gravity (undefined: TF2's, the movement default). */
+  protected baseMoveParams(): Readonly<MoveParams> | undefined {
+    return undefined;
+  }
+
+  /** A game's own server command (a subclass's); true when handled. Runs before the shared ones. */
+  protected runGame(_hubId: number, _p: Player, _name: string, _args: ReadonlyArray<string | number>): boolean {
+    return false;
+  }
+
+  /** Applies a game's own cvar (a subclass's); true when handled. */
+  protected applyGame(_name: string, _value: string): boolean {
+    return false;
   }
 
   get cheats(): boolean {
@@ -176,7 +203,7 @@ export class Tf2ServerConsole {
 
   // ─── Output ──────────────────────────────────────────────────────────────
 
-  private print(p: Player | null, text: string, level: Level = 'info', extra?: { setang?: Vec3 }): void {
+  protected print(p: Player | null, text: string, level: Level = 'info', extra?: { setang?: Vec3 }): void {
     this.host.world.events.push({ type: 'console', ...(p ? { to: p.id } : {}), text: text.slice(0, 500), level: LEVEL[level], ...(extra ?? {}) });
   }
 
@@ -187,9 +214,9 @@ export class Tf2ServerConsole {
   /** A player joined: their console learns the replicated values that differ from the defaults. */
   playerJoined(p: Player): void {
     for (const c of SERVER_CVARS) {
-      if (!c.games.includes('tf2') || !(c.flags & FCVAR_REPLICATED)) continue;
+      if (!c.games.includes(this.game) || !(c.flags & FCVAR_REPLICATED)) continue;
       const v = this.values.get(c.name)!;
-      if (v !== serverCvarDefault(c, 'tf2')) this.replicate(c.name, v, p);
+      if (v !== serverCvarDefault(c, this.game)) this.replicate(c.name, v, p);
     }
   }
 
@@ -212,17 +239,21 @@ export class Tf2ServerConsole {
     }
     // sv_gravity reaches every player's movement (bots included) and everything that falls
     // (MOVETYPE_FLYGRAVITY: pipes, stickies, syringes, dropped packs — physics.ts physicsToss).
-    const g = Number(this.values.get('sv_gravity') ?? TF_MOVE_PARAMS.gravity);
-    const params = g === TF_MOVE_PARAMS.gravity ? undefined : this.gravityParams(g);
+    const base = this.baseMoveParams();
+    const baseParams = base ?? TF_MOVE_PARAMS;
+    const g = Number(this.values.get('sv_gravity') ?? baseParams.gravity);
+    const params = g === baseParams.gravity ? base : this.gravityParams(g, baseParams);
     w.gravity = g;
     w.forEachPlayer((p) => {
       if (p.moveCtx.params !== params) p.moveCtx.params = params;
     });
   }
 
-  private gravityCache: { g: number; params: typeof TF_MOVE_PARAMS } | null = null;
-  private gravityParams(g: number): typeof TF_MOVE_PARAMS {
-    if (!this.gravityCache || this.gravityCache.g !== g) this.gravityCache = { g, params: Object.freeze({ ...TF_MOVE_PARAMS, gravity: g }) };
+  private gravityCache: { g: number; base: Readonly<MoveParams>; params: Readonly<MoveParams> } | null = null;
+  private gravityParams(g: number, base: Readonly<MoveParams>): Readonly<MoveParams> {
+    if (!this.gravityCache || this.gravityCache.g !== g || this.gravityCache.base !== base) {
+      this.gravityCache = { g, base, params: Object.freeze({ ...base, gravity: g }) };
+    }
     return this.gravityCache.params;
   }
 
@@ -244,8 +275,8 @@ export class Tf2ServerConsole {
    * command (the host then tries the game's own extra commands: build, taunt…).
    */
   handle(hubId: number, player: Player, name: string, rawArgs: ExtraCommandArgs): boolean {
-    const cmdSpec = serverCommandSpec(name, 'tf2');
-    const cvarSpec = cmdSpec ? null : serverCvarSpec(name, 'tf2');
+    const cmdSpec = serverCommandSpec(name, this.game);
+    const cvarSpec = cmdSpec ? null : serverCvarSpec(name, this.game);
     if (!cmdSpec && !cvarSpec) return false;
     if (!this.rateOk(hubId)) return true;
     const words = argWords(rawArgs);
@@ -294,7 +325,7 @@ export class Tf2ServerConsole {
     const cur = this.values.get(spec.name)!;
     if (words.length === 0) {
       const range = spec.min !== undefined || spec.max !== undefined ? ` min. ${spec.min ?? ''} max. ${spec.max ?? ''}` : '';
-      this.print(p, `"${spec.name}" = "${cur}" ( def. "${serverCvarDefault(spec, 'tf2')}" )${range}\n - ${spec.help}`);
+      this.print(p, `"${spec.name}" = "${cur}" ( def. "${serverCvarDefault(spec, this.game)}" )${range}\n - ${spec.help}`);
       return;
     }
     if (spec.name === 'sv_cheats' && this.policy.kind === 'dedicated') {
@@ -331,6 +362,7 @@ export class Tf2ServerConsole {
   private apply(name: string, value: string): void {
     const h = this.host;
     const n = Number(value);
+    if (this.applyGame(name, value)) return;
     switch (name) {
       case 'mp_timelimit':
         h.world.rules.options.timeLimit = n;
@@ -368,7 +400,7 @@ export class Tf2ServerConsole {
       p.buddha = false;
     });
     for (const c of SERVER_CVARS) {
-      if (c.games.includes('tf2') && isCheat(c)) this.setCvar(c, serverCvarDefault(c, 'tf2'));
+      if (c.games.includes(this.game) && isCheat(c)) this.setCvar(c, serverCvarDefault(c, this.game));
     }
   }
 
@@ -376,6 +408,7 @@ export class Tf2ServerConsole {
 
   private run(hubId: number, p: ConsolePlayer, name: string, args: ReadonlyArray<string | number>): void {
     const w = this.host.world;
+    if (this.runGame(hubId, p, name, args)) return;
     switch (name) {
       case 'kill':
       case 'explode':
@@ -478,13 +511,13 @@ export class Tf2ServerConsole {
     }
   }
 
-  private status(p: Player): void {
+  protected status(p: Player): void {
     const h = this.host;
     const o = p.origin;
     const humans = h.humans();
     const bots = h.bots();
     this.print(p, `hostname: ${h.options.name}`);
-    this.print(p, `version : RMH TF2 (Source SDK 2013 rules)`);
+    this.print(p, this.game === 'tf2' ? `version : RMH TF2 (Source SDK 2013 rules)` : `version : RMH ${this.game.toUpperCase()} (browser Source engine)`);
     this.print(p, `map     : ${h.options.map} at: ${Math.round(o.x)} x, ${Math.round(o.y)} y, ${Math.round(o.z)} z`);
     this.print(p, `server  : ${this.policy.kind === 'listen' ? 'listen (your browser)' : 'dedicated (games hub)'}, sv_cheats ${this.values.get('sv_cheats')}`);
     this.print(p, `players : ${humans.length} humans, ${bots.length} bots (${h.options.maxPlayers} max)`);
@@ -496,7 +529,7 @@ export class Tf2ServerConsole {
   }
 
   /** mp_restartgame: scores and the map clock reset, a full-map-reset preround begins. */
-  private restartGame(): void {
+  protected restartGame(): void {
     const rules = this.host.world.rules;
     rules.resetGame();
     rules.transition(GR_STATE_PREROUND);

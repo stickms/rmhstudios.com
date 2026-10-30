@@ -138,6 +138,36 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Real game, absent guide — the guide shell with its not-found branch.',
   },
+  '/games/profile/$id': {
+    path: '/games/profile/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a Steam-style profile.',
+  },
+  '/games/market/$gameId/$cardIndex': {
+    path: '/games/market/isleworks/0',
+    fidelity: 'content',
+    why: 'A catalog id and a real card index, so the card page renders its empty market.',
+  },
+  '/games/hub/$gameId/': {
+    path: '/games/hub/isleworks',
+    fidelity: 'content',
+    why: 'A catalog id, so the hub renders its empty-discussions state populated with the sidebar.',
+  },
+  '/games/hub/$gameId/t/$threadId': {
+    path: '/games/hub/isleworks/t/fouc-audit',
+    fidelity: 'shell',
+    why: 'Real game, absent thread: the not-found branch inside the shell.',
+  },
+  '/games/trades/new/$id': {
+    path: '/games/trades/new/fouc-audit',
+    fidelity: 'shell',
+    why: 'Signed out it redirects to sign-in; the shell is the audited page.',
+  },
+  '/games/groups/$slug': {
+    path: '/games/groups/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a Steam-style group page.',
+  },
   '/groups/$id': {
     path: '/groups/fouc-audit',
     fidelity: 'shell',

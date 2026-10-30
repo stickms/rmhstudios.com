@@ -40,6 +40,7 @@ import { hudTokens } from './CustomHudLayer';
 import { useHudContext } from '../use-hud';
 import { ensureEditorHolds } from './editor-session';
 import { useHudChoice } from './hud-choice';
+import HudQuickAi from '../ai/HudQuickAi';
 
 const ExportDialog = lazy(() => import('../../tf2-hud/ExportDialog'));
 
@@ -289,6 +290,7 @@ export default function HudPauseView({
           </p>
         </div>
       </div>
+      <HudQuickAi onOpenEditor={onEdit} />
 
       <Section title={t('hud_section_default', { defaultValue: 'Default' })}>
         <HudItem

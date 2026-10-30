@@ -1,3 +1,4 @@
+import { isTrackableTitle } from '@/lib/games/route-match';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 /**
@@ -143,6 +144,12 @@ export const Route = createFileRoute('/api/user-builds/$id')({
           if (adminData.position !== undefined) data.position = adminData.position;
         }
 
+        // A build made for a title must name one the catalog has; '' clears it.
+        if (typeof data.gameId === 'string' && data.gameId !== '' && !isTrackableTitle(data.gameId)) {
+          return Response.json({ error: 'Unknown game' }, { status: 400 });
+        }
+        if (data.gameId === '') data.gameId = null;
+
         // Clean up empty URLs
         if (data.repoUrl === '') data.repoUrl = null;
         if (data.demoUrl === '') data.demoUrl = null;
@@ -204,6 +211,7 @@ export const Route = createFileRoute('/api/user-builds/$id')({
           demoUrl: updated.demoUrl,
           visibility: updated.visibility,
           technologies: updated.technologies,
+          gameId: updated.gameId,
           createdAt: updated.createdAt.toISOString(),
           publishedAt: updated.publishedAt?.toISOString() ?? null,
           user: resolveUser(updated.user),

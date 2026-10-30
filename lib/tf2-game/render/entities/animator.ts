@@ -9,7 +9,8 @@
  *     running pose with SlerpBones — per-bone weight × the sequence's weightlist; absolute
  *     sequences slerp toward their pose, delta sequences add translation and compose rotation
  *     d^w · base, or base · d^w when `post` — then its autolayers are accumulated on top
- *     (AddSequenceLayers: cycle- or pose-driven start/peak/tail/end ramps, spline, xfade, noblend).
+ *     (AddSequenceLayers: cycle- or pose-driven start/peak/tail/end ramps, spline, xfade, noblend;
+ *     CS:GO's pose layers with no ramp take the pose parameter itself as their weight).
  *   - `Animator` holds what C_BaseAnimatingOverlay holds: the main sequence and its cycle, the
  *     sequences it is still blending out of (CSequenceTransitioner: a stack of outgoing
  *     sequences that keep playing and fade over MIN(fade-out, the new fade-in) along the SDK
@@ -668,13 +669,24 @@ export function autolayerWeight(
   l: SeqLayer,
   cycle: number,
   weight: number,
-  set: Pick<AnimSet, 'poseIndex'>,
+  set: Pick<AnimSet, 'poseIndex'> & { poseParams?: readonly PoseParamDesc[] },
   pose: ArrayLike<number>,
   out: { cycle: number; weight: number } = { cycle: 0, weight: 0 },
 ): { cycle: number; weight: number } | null {
   let layerCycle = cycle;
   let layerWeight = weight;
-  if (l.start !== l.end) {
+  if (l.flags & STUDIO_AL_POSE && l.start === l.end) {
+    // CS:GO's blend layers (start = end, no ramp): the pose parameter is the weight, 0…1 of its range
+    // (move_blend_crouch, aim_blend_stand_idle…). Source 2013 would play them at full weight.
+    const pi = l.pose !== undefined ? set.poseIndex.get(l.pose) : undefined;
+    if (pi === undefined) return null;
+    const d = set.poseParams?.[pi];
+    let v = pose[pi];
+    if (d && d.end !== d.start) v = (v - d.start) / (d.end - d.start);
+    let s = v < 0 ? 0 : v > 1 ? 1 : v;
+    if (l.flags & STUDIO_AL_SPLINE) s = simpleSpline(s);
+    layerWeight = l.flags & STUDIO_AL_NOBLEND ? s : weight * s;
+  } else if (l.start !== l.end) {
     let s = 1;
     let index: number;
     if (!(l.flags & STUDIO_AL_POSE)) index = cycle;

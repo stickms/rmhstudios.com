@@ -32,7 +32,11 @@ interface GameHubData {
   trickOfTheWeek?: TrickView | null;
 }
 
-export function GameHub({ data }: { data: GameHubData }) {
+/**
+ * `embedded`: rendered inside the library's detail pane, which draws its own hero
+ * and Play button and supplies its own padding.
+ */
+export function GameHub({ data, embedded = false }: { data: GameHubData; embedded?: boolean }) {
   const { t } = useTranslation('games-hub');
   const [reviews, setReviews] = useState(data.reviews);
   const [agg, setAgg] = useState(data.agg);
@@ -94,36 +98,38 @@ export function GameHub({ data }: { data: GameHubData }) {
   }
 
   return (
-    <div className="space-y-6 px-4 pt-4 pb-12">
+    <div className={cn('space-y-6', !embedded && 'px-4 pt-4 pb-12')}>
       {/* Header */}
       {/* Stacks below sm. As a single non-wrapping row — 80px thumb + a
           `min-w-0 flex-1` text column + the Play button — the text column was
           squeezed to about one character wide at 390px, so "No ratings yet"
           rendered one letter per line and the card grew to ~280px tall. */}
-      <Card pane className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-        <div className="flex min-w-0 items-center gap-4">
-          {data.image ? (
-            <img src={data.image} alt="" className="h-20 w-20 shrink-0 rounded-site object-cover" />
-          ) : null}
-          <div className="min-w-0 flex-1">
-            {/* h2: the route's PageLayout already renders the game's title as
-                the page h1, 130px above this one. */}
-            <h2 className="font-display text-lg font-bold text-site-text">{data.title}</h2>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <StarRating value={Math.round(agg.average)} size={16} label={t('rating', { defaultValue: 'Rating' })} />
-              <span className="whitespace-nowrap text-sm text-site-text-muted">
-                {agg.average ? `${agg.average} · ${agg.count}` : t('no-ratings', { defaultValue: 'No ratings yet' })}
-              </span>
+      {!embedded && (
+        <Card pane className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 items-center gap-4">
+            {data.image ? (
+              <img src={data.image} alt="" className="h-20 w-20 shrink-0 rounded-site object-cover" />
+            ) : null}
+            <div className="min-w-0 flex-1">
+              {/* h2: the route's PageLayout already renders the game's title as
+                  the page h1, 130px above this one. */}
+              <h2 className="font-display text-lg font-bold text-site-text">{data.title}</h2>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <StarRating value={Math.round(agg.average)} size={16} label={t('rating', { defaultValue: 'Rating' })} />
+                <span className="whitespace-nowrap text-sm text-site-text-muted">
+                  {agg.average ? `${agg.average} · ${agg.count}` : t('no-ratings', { defaultValue: 'No ratings yet' })}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-        <Button asChild variant="accent" className="shrink-0 sm:ml-auto">
-          <a href={data.playHref}>
-            <Play className="h-4 w-4" aria-hidden />
-            {t('play', { defaultValue: 'Play' })}
-          </a>
-        </Button>
-      </Card>
+          <Button asChild variant="accent" className="shrink-0 sm:ml-auto">
+            <a href={data.playHref}>
+              <Play className="h-4 w-4" aria-hidden />
+              {t('play', { defaultValue: 'Play' })}
+            </a>
+          </Button>
+        </Card>
+      )}
 
       <GameTracker gameId={data.gameId} signedIn={data.signedIn} />
 

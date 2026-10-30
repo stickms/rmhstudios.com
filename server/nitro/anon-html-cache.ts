@@ -90,11 +90,14 @@ import { responseHeaders } from './security-headers';
  *
  *   `/`             app/routes/_site/index.tsx — the shared For-You feed for
  *                   anon (the origin already caches that assembly).
- *   `/games`        app/routes/_site/games/index.tsx — renders the pure
- *                   `listCuratedBuilds()` catalog with a fixed `seed={0}`; no
- *                   session read, no randomness, no loader.
- *   `/apps`         app/routes/_site/apps/index.tsx — the sibling of `/games`,
- *                   same catalog, same fixed seed.
+ *   `/games`        app/routes/games.tsx + games/_library/index.tsx — the library
+ *                   shell and its Home. The layout loader (`fetchRecents`) DOES
+ *                   read the session, but only to list the viewer's recents: it
+ *                   returns `[]` for anyone without one, so the anonymous render
+ *                   is the same bytes for everyone (the rail is the pure
+ *                   `listCuratedBuilds()` catalog, Home's shelf the first eight
+ *                   titles A-Z; no randomness, no per-viewer branch). Re-audit if
+ *                   either loader ever returns anything for a signed-out visitor.
  *   `/news`         app/routes/_site/news/index.tsx — its loader is
  *                   `getAllNewsArticles()` + `getFeaturedNewsArticles()`, both
  *                   viewer-independent (the route says so and takes no session).
@@ -115,6 +118,9 @@ import { responseHeaders } from './security-headers';
  *   `/copyright`    app/routes/copyright.tsx    ┘
  *
  * Deliberately NOT here:
+ *   `/apps`  — app/routes/_site/apps/index.tsx throws `redirect({ to: '/games',
+ *              search: { kind: 'app' } })` in `beforeLoad`: a 3xx, and apps now
+ *              live in the `/games` library.
  *   `/blog`  — app/routes/_site/blog/index.tsx throws `redirect({ to:
  *              '/library' })` in `beforeLoad`. It is a 3xx with no HTML body, so
  *              the content-type gate below would skip it anyway.
@@ -130,7 +136,6 @@ import { responseHeaders } from './security-headers';
 export const CACHEABLE_ANON_PATHS = new Set<string>([
   '/',
   '/games',
-  '/apps',
   '/news',
   '/library',
   '/optimization',
@@ -160,8 +165,8 @@ export const CACHEABLE_ANON_PATHS = new Set<string>([
  *                                           read anywhere in the route.
  *     app/routes/news.rss[.]xml.ts        — `/news/rss.xml`, XML, skipped.
  *
- * Deliberately NOT here: `/games/`. Its subtree (`_site/games/$gameId.tsx` and
- * `_site/games/$gameId_.guides.$guideId.tsx`) IS anon-invariant today — every
+ * Deliberately NOT here: `/games/`. Its subtree (`games/_library/$gameId.tsx` and
+ * `games/_library/$gameId_.guides.$guideId.tsx`) IS anon-invariant today — every
  * query takes a `viewerId` that is `null` for anon, and `listGuides`/`getGuide`
  * then return published rows only. But the pages are built out of live
  * user-generated reviews and guides rather than article content, so the long

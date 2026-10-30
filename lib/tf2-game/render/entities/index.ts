@@ -27,7 +27,8 @@ import {
   Vector3,
   type WebGLRenderer,
 } from 'three';
-import type { DeathEvent, SimEvent } from '../../sim/events';
+import type { DeathEvent, EffectEvent, SimEvent } from '../../sim/events';
+import type { RagdollTrace } from './ragdoll';
 import type { SourceCamera } from '../camera';
 import { srcToThree } from '../coords';
 import type { Vec3Like } from '../lighting';
@@ -52,7 +53,8 @@ import {
 import { PlayerRenderable } from './player-renderer';
 import { VIEWMODEL_ENTITY, ViewModelRenderer, type ViewModelInput } from './viewmodel';
 
-export type { EntityState, NetValue, LightingSource } from './common';
+export type { EntityState, NetValue, LightingSource, RenderContext } from './common';
+export { EffectSystem } from './effects';
 export type { ViewModelInput } from './viewmodel';
 export { SpViewModelRenderer, type SpViewModelInput } from './sp-viewmodel';
 export { ModelLibrary } from './model-asset';
@@ -74,8 +76,32 @@ export interface EntityRendererOptions {
   trace?: FxTrace;
   /** Whether two Source points see each other (local lights on models). */
   lineOfSight?: (a: Vec3Like, b: Vec3Like) => boolean;
+  /** The world ragdolls land on (a box trace) and the gravity they fall by. */
+  ragdollTrace?: RagdollTrace | null;
+  gravity?: number;
   /** The loadout model channel: unlock weapons and cosmetics (null: stock looks only). */
   loadout?: LoadoutModels | null;
+  /**
+   * Another game's renderables (CS:GO's players, weapons, bomb and grenades), asked first for every
+   * entity type; null falls through to the shared ones.
+   */
+  factory?: (s: EntityState, fx: EffectSystem) => EntityRenderable | null;
+  /**
+   * Another game's first-person view model, for attachments (`muzzle` on the local player): the game
+   * draws it itself and keeps the shared one hidden (`updateViewModel(null)`).
+   */
+  viewModelAttachment?: (name: string, out: Matrix4) => boolean;
+}
+
+/** What a renderable is to the entity renderer: drawn from its state each frame, then disposed. */
+export interface EntityRenderable {
+  update(s: EntityState, ctx: RenderContext): void;
+  attachment(name: string, out: Matrix4): boolean;
+  dispose(): void;
+  /** A player's death (the ragdoll or death pose). */
+  onDeath?(ev: DeathEvent, ctx: RenderContext): void;
+  /** The push a body's ragdoll takes (the sim's `ragdoll` effect: force, and where the blow landed). */
+  onRagdoll?(ev: EffectEvent, ctx: RenderContext): void;
 }
 
 export interface FrameInfo {
@@ -92,7 +118,7 @@ export interface FrameInfo {
   camera: Camera;
 }
 
-type Renderable = PlayerRenderable | ModelRenderable | FxEntityRenderable;
+type Renderable = PlayerRenderable | ModelRenderable | FxEntityRenderable | EntityRenderable;
 
 const BUILDING_TYPES = new Set(['sentrygun', 'dispenser', 'teleporter', 'sapper', 'object']);
 const MODEL_TYPES = new Set(['prop', 'entity', 'control_point']);
@@ -130,6 +156,8 @@ export class EntityRenderer {
       lighting: opts.lighting,
       sunVisible: opts.sunVisible,
       lineOfSight: opts.lineOfSight,
+      ragdollTrace: opts.ragdollTrace ?? null,
+      gravity: opts.gravity,
       scene: this.root,
       time: 0,
       dt: 0,
@@ -222,6 +250,8 @@ export class EntityRenderer {
 
   private create(s: EntityState): Renderable | null {
     const fx = this.effects;
+    const custom = this.opts.factory?.(s, fx);
+    if (custom) return custom;
     if (s.type === 'player') {
       const p = new PlayerRenderable(s.id, fx);
       p.onFootstep = (id, side) => this.onFootstep?.(id, side);
@@ -241,6 +271,11 @@ export class EntityRenderer {
     if (ev.type === 'effect') {
       if (ev.to !== undefined && ev.to !== this.ctx.localPlayer) return;
       if (ev.notTo !== undefined && ev.notTo === this.ctx.localPlayer) return;
+      // A body's ragdoll push goes to its renderable (the effect system draws nothing for it).
+      if (ev.kind === 'ragdoll' && ev.entity !== undefined) {
+        const r = this.renderables.get(ev.entity);
+        if (r && 'onRagdoll' in r) r.onRagdoll?.(ev, this.ctx);
+      }
       this.effects.handle(ev, this.ctx);
     } else if (ev.type === 'death') {
       const d = ev as DeathEvent;
@@ -250,6 +285,7 @@ export class EntityRenderer {
         this.streaks.set(d.attacker, (this.streaks.get(d.attacker) ?? 0) + 1);
       const r = this.renderables.get((ev as DeathEvent).victim);
       if (r instanceof PlayerRenderable) r.onDeath(ev as DeathEvent, this.ctx);
+      else if (r && 'onDeath' in r) r.onDeath?.(ev as DeathEvent, this.ctx);
     }
   }
 
@@ -297,7 +333,7 @@ export class EntityRenderer {
   attachment(id: number, name: string, out: Matrix4): boolean {
     const c = this.ctx;
     if (id === VIEWMODEL_ENTITY || (id === c.localPlayer && c.firstPerson && name === 'muzzle')) {
-      if (this.viewModel.attachment(name, out)) return true;
+      if (this.opts.viewModelAttachment ? this.opts.viewModelAttachment(name, out) : this.viewModel.attachment(name, out)) return true;
     }
     const r = this.renderables.get(id);
     if (r && name && r.attachment(name, out)) return true;

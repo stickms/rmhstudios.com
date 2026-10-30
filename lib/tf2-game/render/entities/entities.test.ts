@@ -45,7 +45,15 @@ import {
   translateActivity,
   type PlayerAnimInput,
 } from './player-anim-state';
-import { findDeathSequence } from './player-renderer';
+import { tf2DeathSequence } from './player-renderer';
+import {
+  DMG_BLAST,
+  DMG_BURN,
+  TF_DMG_CUSTOM_BACKSTAB,
+  TF_DMG_CUSTOM_BURNING,
+  TF_DMG_CUSTOM_DECAPITATION,
+  TF_DMG_CUSTOM_HEADSHOT,
+} from '../../sim/damage';
 import { BobState } from './viewmodel';
 
 const ALL = () => true;
@@ -383,6 +391,18 @@ describe('delta layers', () => {
     const always = { seq: 'aim', flags: 0, start: 0, peak: 0, tail: 0, end: 0 };
     expect(autolayerWeight(always, 0.7, 1, set, [0])).toEqual({ cycle: 0.7, weight: 1 });
   });
+
+  it("CS:GO's blend layers (pose-driven, no ramp) weigh by their pose parameter", () => {
+    const set = {
+      poseIndex: new Map([['move_blend_crouch', 0]]),
+      poseParams: [{ name: 'move_blend_crouch', start: 0, end: 1, loop: 0 }],
+    };
+    const crouch = { seq: 'move_c', flags: STUDIO_AL_POSE, pose: 'move_blend_crouch', start: 0, peak: 0, tail: 1, end: 0 };
+    // Standing: the crouch layer is off (it used to play at full weight: everyone looked crouched).
+    expect(autolayerWeight(crouch, 0.4, 1, set, [0])).toBeNull();
+    expect(autolayerWeight(crouch, 0.4, 1, set, [0.25])?.weight).toBeCloseTo(0.25);
+    expect(autolayerWeight(crouch, 0.4, 0.5, set, [1])).toEqual({ cycle: 0.4, weight: 0.5 });
+  });
 });
 
 // --- frames and attachments -------------------------------------------------------------
@@ -442,6 +462,20 @@ describe('GLB frames (model-axes)', () => {
     expect(frame.equals(new Matrix4())).toBe(true);
     expect(nearestAxisRotation([0.9, 0.1, 0, -0.1, 0.9, 0, 0, 0, 1])).toEqual(IDENTITY_ROTATION);
     expect(nearestAxisRotation([0.7, 0.7, 0, -0.7, 0.7, 0, 0, 0, 1])).toBeNull();
+  });
+
+  it('a recorded clip frame places the posed root by Source axes, whatever basis the clips use', () => {
+    // CS:GO view models record source.clipFrame (GLB = M · Source): the frame undoes M and applies P.
+    const P = new Matrix4().set(0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1);
+    const M = new Matrix4().makeRotationX(Math.PI / 2).multiply(new Matrix4().makeRotationZ(0.3));
+    const e = M.elements; // column-major → rows of M
+    const rows = [e[0], e[4], e[8], e[1], e[5], e[9], e[2], e[6], e[10]];
+    const forward = new Vector3(10 * S, 2 * S, -3 * S); // a Source-space point, metres
+    const glb = forward.clone().applyMatrix4(M);
+    const three = glb.applyMatrix4(frameMatrixFor(rows));
+    expect(three.distanceTo(forward.clone().applyMatrix4(P))).toBeLessThan(1e-9);
+    // The fallback mapping (M = P) is the identity frame.
+    expect(frameMatrixFor([0, 1, 0, 0, 0, 1, 1, 0, 0]).equals(new Matrix4())).toBe(true);
   });
 
   it('posed frames: the idle skeleton must fit the hull (an HL2 view model swings its arm, not its frame)', () => {
@@ -534,24 +568,17 @@ describe('effects and objects', () => {
     expect(projectileTrail('models/props/whatever.mdl', 2, false)).toBeNull();
   });
 
-  it('chooses a death sequence by kill kind', () => {
-    const s = (name: string): SequenceDesc => ({
-      name,
-      looping: false,
-      delta: false,
-      post: false,
-      fps: 30,
-      frames: 30,
-      clips: [],
-    });
-    const seqs = [
-      s('stand_PRIMARY'),
-      s('primary_death_backstab'),
-      s('primary_death_headshot'),
-      s('primary_death_burning'),
-    ];
-    expect(findDeathSequence(seqs, 'burning')?.name).toBe('primary_death_burning');
-    expect(findDeathSequence(seqs, 'backstab')?.name).toBe('primary_death_backstab');
-    expect(findDeathSequence([s('idle')], 'headshot')).toBeNull();
+  it('plays a death animation only for the kills TF2 has one for, on the ground', () => {
+    const kill = (customKill: number, damageType = 0) => ({ customKill, damageType });
+    expect(tf2DeathSequence(kill(TF_DMG_CUSTOM_HEADSHOT), true)).toBe('primary_death_headshot');
+    expect(tf2DeathSequence(kill(TF_DMG_CUSTOM_DECAPITATION), true)).toBe('primary_death_headshot');
+    expect(tf2DeathSequence(kill(TF_DMG_CUSTOM_BACKSTAB), true)).toBe('primary_death_backstab');
+    expect(tf2DeathSequence(kill(TF_DMG_CUSTOM_BURNING), true)).toBe('primary_death_burning');
+    expect(tf2DeathSequence(kill(0, DMG_BURN), true)).toBe('primary_death_burning');
+    // A rocket, a bullet, a melee hit: straight to the ragdoll. So is any death in the air.
+    expect(tf2DeathSequence(kill(0, DMG_BLAST), true)).toBeNull();
+    expect(tf2DeathSequence(kill(0), true)).toBeNull();
+    expect(tf2DeathSequence(kill(TF_DMG_CUSTOM_HEADSHOT), false)).toBeNull();
+    expect(tf2DeathSequence(null, true)).toBeNull();
   });
 });

@@ -546,7 +546,7 @@ io.on('connection', (socket) => {
   registerMassiveMarchHandlers(io, socket);
   registerBumsRushHandlers(io, socket);
   registerGlobeSetHandlers(io, socket);
-  // TF2: room manager only — matches run on worker threads (lib/tf2-game/server/pool.server.ts).
+  // TF2: the server browser and P2P signaling — every match runs in a player's browser.
   registerTf2GameHandlers(io, socket);
   // TF2 peer-to-peer rooms: signaling (and a capped relay fallback) only — the match runs in the host's browser.
   registerTf2P2pHandlers(io, socket);

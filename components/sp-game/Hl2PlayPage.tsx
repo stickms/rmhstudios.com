@@ -13,7 +13,7 @@ export default function Hl2PlayPage() {
     <SpPlayPage
       game="hl2"
       title={t('play_hl2_title', { defaultValue: 'Half-Life 2' })}
-      subtitle={t('play_hl2_subtitle', { defaultValue: 'Demo — Point Insertion. Walk off the train into City 17.' })}
+      subtitle={t('play_hl2_point_insertion', { defaultValue: 'Point Insertion. Walk off the train into City 17.' })}
       chapters={{
         d1_trainstation_01: t('play_hl2_ch1', { defaultValue: 'Point Insertion: Arrival' }),
         d1_trainstation_02: t('play_hl2_ch2', { defaultValue: 'Point Insertion: City 17 Plaza' }),

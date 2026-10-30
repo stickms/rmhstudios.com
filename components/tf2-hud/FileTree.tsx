@@ -137,7 +137,10 @@ export default function FileTree() {
 
   const changed = useMemo(() => changedFiles(overlay, baseIndex), [overlay, baseIndex]);
   const allPaths = useMemo(() => {
-    const set = new Set<string>(baseIndex ? baseIndex.files.keys() : []);
+    // The base also carries game files the browser game's menus read (cfg/, hl2/): not HUD files.
+    const set = new Set<string>(
+      baseIndex ? [...baseIndex.files.keys()].filter((p) => (HUD_ROOT_FOLDERS as readonly string[]).includes(p.split('/')[0])) : [],
+    );
     for (const [p, c] of overlay) {
       if (c === null) set.delete(p);
       else set.add(p);

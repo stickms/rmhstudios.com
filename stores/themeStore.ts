@@ -110,6 +110,15 @@ export const APP_ROUTE_THEME_BG: Record<
     system?: boolean;
   }
 > = {
+  // The games library paints Steam's header colour (`--stm-header` in
+  // `components/steam/steam.css`) under the page, and is dark in every case.
+  '/games': {
+    key: 'steam-library-theme',
+    darkFlag: 'dark',
+    defaultDark: true,
+    dark: '#171d25',
+    light: '#171d25',
+  },
   '/slice-it': {
     key: 'slice-it-storage',
     darkFlag: 'isDarkMode',

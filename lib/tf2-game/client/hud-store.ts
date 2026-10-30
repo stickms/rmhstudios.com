@@ -33,8 +33,8 @@ export type HudCommand =
   /** Equip a loadout for a class (the pause menu's Loadout view) — MatchCommand { kind: 'loadout' }. */
   | { kind: 'loadout'; cls: TfClass; slots: LoadoutSlots }
   /**
-   * Room administration (the pause menu's Server view, the console): a peer-to-peer host or a
-   * dedicated room's owner. `transfer` hands the room on (P2P: migrates the match to that player).
+   * Room administration (the pause menu's Server view, the console): the peer-to-peer host.
+   * `transfer` migrates the match to that player.
    */
   | { kind: 'admin'; action: RoomAdminPayload };
 

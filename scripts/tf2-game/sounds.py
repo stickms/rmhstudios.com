@@ -33,8 +33,8 @@ The list is JSON: {"entries": [...], "paths": [...]} or a flat array in which a 
 starting with `sound/` or ending in .wav/.mp3 is a raw path and anything else an entry.
 `scripts/tf2-game/sound-list.py` writes the default one.
 
-`--game hl2|portal` reads a single-player game the way its gameinfo.txt searches (`portal` then
-`hl2`, the sound packs included; gamefs.SearchFS) instead of TF2's tf/-first view. Its list (from
+`--game hl2|portal|csgo` reads a game the way its gameinfo.txt searches (`portal` then `hl2`, the
+sound packs included; CS:GO's `csgo/`; gamefs.SearchFS) instead of TF2's tf/-first view. Its list (from
 `sound-list.py --game …`) also carries the maps' soundscapes, scenes and captions, published
 next to the index (mutable entry points like it, small):
 
@@ -566,7 +566,7 @@ def build(fs, out, entry_names, paths, state=None, ffmpeg="ffmpeg", scripts=None
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--root", required=True, help="game install (the folder holding tf/ and hl2/)")
-    ap.add_argument("--game", choices=("tf2", "hl2", "portal"), default="tf2",
+    ap.add_argument("--game", choices=("tf2", "hl2", "portal", "csgo"), default="tf2",
                     help="which game's search path to read (default tf2)")
     ap.add_argument("--list", required=True, help="sound list JSON (sound-list.py writes the default)")
     ap.add_argument("--out", required=True)

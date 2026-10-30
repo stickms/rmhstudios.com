@@ -49,6 +49,7 @@
 @source not "../components/dunesday";
 @source not "../components/forest-explorer";
 @source not "../components/gabriels-horn";
+@source not "../components/games";
 @source not "../components/house-always-wins";
 @source not "../components/isleworks";
 @source not "../components/kaikai-debt";
@@ -77,11 +78,13 @@
 @source not "../components/tf2-hud";
 @source not "../components/tf2-game";
 @source not "../components/sp-game";
+@source not "../components/csgo-game";
 @source not "../components/security";
 @source not "../components/share";
 @source not "../components/signal-forge";
 @source not "../components/sohumbum";
 @source not "../components/sohumtracker";
+@source not "../components/steam";
 @source not "../components/studio";
 @source not "../components/synapse-storm";
 @source not "../components/temple-of-joy";
@@ -102,6 +105,7 @@
 @source not "../lib/doctrine";
 @source not "../lib/dream-rift";
 @source not "../lib/forest-explorer";
+@source not "../lib/fonts";
 @source not "../lib/gabriels-horn";
 @source not "../lib/game-saves";
 @source not "../lib/globeset";
@@ -126,6 +130,7 @@
 @source not "../lib/tf2-hud";
 @source not "../lib/tf2-game";
 @source not "../lib/sp-game";
+@source not "../lib/csgo-game";
 @source not "../lib/tf2-loadout";
 @source not "../lib/shortcuts";
 @source not "../lib/signal-forge";
@@ -134,6 +139,7 @@
 @source not "../lib/studio";
 @source not "../lib/synapse-storm";
 @source not "../lib/temple-of-joy";
+@source not "../lib/trick-week";
 @source not "../lib/vega";
 @source not "../lib/velum2099";
 @source not "../lib/versecraft";

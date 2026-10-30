@@ -59,6 +59,11 @@ The assistant (top bar, or any ✦ button) never writes files. It proposes key-l
 - **Questions:** "what does this do?" is answered in the summary with no changes.
 - **Fix problems:** the ✦ on a problem asks for a fix to that file.
 - Server: the `edit` stage of `POST /api/tf2-hud/ai` accepts `context`; prompt `tf2-hud-edit` is at version 2.
+- **In game:** the game's quick AI bar (pause menu → HUD, and a dock over the in-game editor) uses the same
+  two stages and the same validators against the HUD in use, plus local presets that produce the same change
+  format — see [the game's docs](tf2-game.md#custom-huds-in-game). Both clients take the files to offer from
+  `offeredHudPaths` (`ai-core.ts`) and can cancel a request (`api.aiSelect` / `api.aiEdit` take an
+  `AbortSignal`).
 
 ## Blocks
 

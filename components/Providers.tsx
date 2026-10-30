@@ -70,6 +70,7 @@ import { AccessMount } from '@/components/access/AccessMount';
 import { DelightMount } from '@/components/delight/DelightMount';
 import { ThemePreviewBar } from '@/components/themes/ThemePreviewBar';
 import { RecentsTracker } from '@/components/site/RecentsTracker';
+import { PlaytimeTracker } from '@/components/site/PlaytimeTracker';
 import { PatchNotesMount } from '@/components/arcade/PatchNotesMount';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { ConfirmProvider } from '@/components/ui/confirm-dialog';
@@ -265,6 +266,12 @@ export const THEME_EXCLUDED_ROUTES = [
   // Daylight-white <html> under a page that has gone dark, which a desktop
   // hides and every phone overscroll reveals.
   '/sohumtracker',
+  // The games library: a literal Steam palette (flat, `--stm-*` in
+  // `components/steam/steam.css`), full page with its own top bar. Every path under
+  // it — `/games`, `/games/$gameId`, the community and profile pages — is the
+  // library, so one prefix covers the tree; a page left under `_site` with a
+  // `/games…` URL would need an entry in THEME_EXCLUDED_EXCEPTIONS.
+  '/games',
   // Discord Activities — the gateway picker, RMHbox and Lights Out, each in
   // Discord's own palette. Full-screen games like every other entry here, but in
   // no catalog because they only make sense inside Discord's iframe. Unlisted,
@@ -927,6 +934,7 @@ export function Providers({
                     <SilentErrorBoundary label="global-chrome">
                       <CommandPaletteMount />
                       <RecentsTracker />
+                      <PlaytimeTracker />
                       <PatchNotesMount />
                       {/* §14: the floating try-before-buy / preview-on-site confirm bar,
                         mounted globally so it survives navigation under a previewed theme. */}

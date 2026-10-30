@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 939 files across 199 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 965 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -531,6 +531,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/cron/webhooks` | `POST` | `app/routes/api/cron/webhooks.ts` |
 
+## `/api/csgo-game`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/csgo-game/assets/*` | `GET` | `app/routes/api/csgo-game/assets/$.ts` |
+
 ## `/api/daily-puzzles`
 
 4 routes.
@@ -807,7 +815,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/games`
 
-9 routes.
+33 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -816,10 +824,34 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/games/:id/review` | `DELETE` `PUT` | `app/routes/api/games/$id.review.ts` |
 | `/api/games/:id/reviews` | `GET` | `app/routes/api/games/$id.reviews.ts` |
 | `/api/games/:id/score` | `POST` | `app/routes/api/games/$id/score.ts` |
+| `/api/games/cards/craft` | `POST` | `app/routes/api/games/cards/craft.ts` |
+| `/api/games/collections/delete` | `POST` | `app/routes/api/games/collections/delete.ts` |
+| `/api/games/collections/import` | `POST` | `app/routes/api/games/collections/import.ts` |
+| `/api/games/collections/item` | `POST` | `app/routes/api/games/collections/item.ts` |
+| `/api/games/collections/rename` | `POST` | `app/routes/api/games/collections/rename.ts` |
+| `/api/games/customize` | `POST` | `app/routes/api/games/customize.ts` |
+| `/api/games/gems/buy` | `POST` | `app/routes/api/games/gems/buy.ts` |
+| `/api/games/gems/pack` | `POST` | `app/routes/api/games/gems/pack.ts` |
+| `/api/games/gems/unpack` | `POST` | `app/routes/api/games/gems/unpack.ts` |
 | `/api/games/how-to-play` | `POST` | `app/routes/api/games/how-to-play.ts` |
+| `/api/games/hub/delete` | `POST` | `app/routes/api/games/hub/delete.ts` |
+| `/api/games/hub/moderate` | `POST` | `app/routes/api/games/hub/moderate.ts` |
+| `/api/games/hub/post` | `POST` | `app/routes/api/games/hub/post.ts` |
+| `/api/games/hub/thread` | `POST` | `app/routes/api/games/hub/thread.ts` |
+| `/api/games/market/buy` | `POST` | `app/routes/api/games/market/buy.ts` |
+| `/api/games/market/cancel` | `POST` | `app/routes/api/games/market/cancel.ts` |
+| `/api/games/market/list` | `POST` | `app/routes/api/games/market/list.ts` |
+| `/api/games/market/order` | `POST` | `app/routes/api/games/market/order.ts` |
+| `/api/games/market/order-cancel` | `POST` | `app/routes/api/games/market/order-cancel.ts` |
+| `/api/games/playtime` | `POST` | `app/routes/api/games/playtime.ts` |
+| `/api/games/showcase` | `POST` | `app/routes/api/games/showcase.ts` |
 | `/api/games/synapse-storm/leaderboard` | `GET` | `app/routes/api/games/synapse-storm/leaderboard.ts` |
 | `/api/games/synapse-storm/save` | `GET` | `app/routes/api/games/synapse-storm/save.ts` |
 | `/api/games/synapse-storm/score` | `POST` | `app/routes/api/games/synapse-storm/score.ts` |
+| `/api/games/trades/accept` | `POST` | `app/routes/api/games/trades/accept.ts` |
+| `/api/games/trades/cancel` | `POST` | `app/routes/api/games/trades/cancel.ts` |
+| `/api/games/trades/decline` | `POST` | `app/routes/api/games/trades/decline.ts` |
+| `/api/games/trades/propose` | `POST` | `app/routes/api/games/trades/propose.ts` |
 
 ## `/api/gif`
 
@@ -1807,7 +1839,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/settings`
 
-5 routes.
+6 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1816,6 +1848,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/settings/email-digest` | `POST` | `app/routes/api/settings/email-digest.ts` |
 | `/api/settings/game-assists` | `GET` `POST` | `app/routes/api/settings/game-assists.ts` |
 | `/api/settings/play-limits` | `GET` `POST` | `app/routes/api/settings/play-limits.ts` |
+| `/api/settings/playtime-privacy` | `GET` `POST` `PUT` | `app/routes/api/settings/playtime-privacy.ts` |
 
 ## `/api/shop`
 

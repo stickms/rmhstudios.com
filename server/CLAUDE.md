@@ -48,10 +48,9 @@ Consequences:
   Hosts ~18 games/apps on one default namespace: Slice It, Neon Driftway,
   Synapse Storm, RMH Type, RMH Study, Altair, Kowloon Knockout, Rochester
   Offensive, **RMHMusic**, casino games (Blackjack/Hold'em/Baccarat/Roulette),
-  Lights Out, Doctrine, Velum, Dream Rift, RMH Farming Sim, RMH TF2 (room
-  manager only — its matches run on `worker_threads` threads spawned from the
-  `dist-server/lib/tf2-game/server/match-worker.server.cjs` bundle; see
-  `docs/tf2-game.md` §Multiplayer hosting).
+  Lights Out, Doctrine, Velum, Dream Rift, RMH Farming Sim, RMH TF2 (server
+  browser and peer-to-peer signaling only — every match runs in a player's
+  browser; see `docs/tf2-game.md` §Multiplayer hosting).
   - **Soft auth**: anonymous connections allowed; a valid Better Auth session
     token attaches `socket.data.userId/userName/avatarUrl`.
   - **Handler contract**: `handlers/<game>.ts` exports

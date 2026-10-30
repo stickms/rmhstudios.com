@@ -32,6 +32,70 @@ export const ASSISTANT_LIMITS = {
   actions: 12,
 } as const;
 
+/**
+ * The live match the in-game loadout view sends with a question (`context` on `POST /api/tf2-loadout/ai`):
+ * built by the game from its own HUD state, never typed by the player, and still sent to the model as
+ * quoted data — a map name can come from a peer-to-peer host. No player names: classes and weapons only.
+ */
+export interface LoadoutMatchContext {
+  /** Map file name ("ctf_2fort"). */
+  map?: string;
+  /** Game mode: ctf, cp, cp_ad, koth, pl, arena. */
+  mode?: string;
+  /** Round state (pregame, running, team_win …). */
+  round?: string;
+  /** The class the player is playing now (the loadout may be for another). */
+  yourClass?: TfClass;
+  team?: 'red' | 'blu';
+  /** The enemy team's classes from the scoreboard, most common first. */
+  enemies?: { cls: TfClass; n: number }[];
+  /** What killed the player recently, most often first. */
+  deaths?: { weapon: string; cls?: TfClass; n: number }[];
+}
+
+export const MATCH_CONTEXT_LIMITS = {
+  /** Characters of a name (map, weapon). */
+  name: 48,
+  enemies: 9,
+  deaths: 8,
+  /** Characters of the whole description sent to the model. */
+  total: 600,
+} as const;
+
+// eslint-disable-next-line no-control-regex -- control characters are removed on purpose
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]+/g;
+/** One line of data: no control characters, no angle brackets (the data frame's tags), capped. */
+const cleanName = (s: string, max: number = MATCH_CONTEXT_LIMITS.name): string =>
+  s.replace(CONTROL_CHARS, ' ').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
+
+/**
+ * The match as the model reads it: a few short lines, capped. The server wraps the result in the
+ * data frame (`asData`); this only makes it small and inert.
+ */
+export function describeMatchContext(ctx: LoadoutMatchContext | undefined): string {
+  if (!ctx) return '';
+  const lines: string[] = [];
+  const map = ctx.map ? cleanName(ctx.map) : '';
+  if (map) lines.push(`Map: ${map}`);
+  const mode = ctx.mode ? cleanName(ctx.mode, 16) : '';
+  if (mode) lines.push(`Mode: ${mode}`);
+  const round = ctx.round ? cleanName(ctx.round, 16) : '';
+  if (round) lines.push(`Round: ${round}`);
+  if (ctx.yourClass) lines.push(`Playing as: ${ctx.yourClass}${ctx.team ? ` (${ctx.team.toUpperCase()})` : ''}`);
+  const enemies = (ctx.enemies ?? [])
+    .slice(0, MATCH_CONTEXT_LIMITS.enemies)
+    .filter((e) => e.n > 0)
+    .map((e) => `${Math.min(32, Math.floor(e.n))} ${e.cls}`);
+  if (enemies.length) lines.push(`Enemy team: ${enemies.join(', ')}`);
+  const deaths = (ctx.deaths ?? [])
+    .slice(0, MATCH_CONTEXT_LIMITS.deaths)
+    .map((d) => ({ ...d, weapon: cleanName(d.weapon) }))
+    .filter((d) => d.weapon && d.n > 0)
+    .map((d) => `${d.weapon}${d.cls ? ` (${d.cls})` : ''} x${Math.min(99, Math.floor(d.n))}`);
+  if (deaths.length) lines.push(`Recently killed by: ${deaths.join(', ')}`);
+  return lines.join('\n').slice(0, MATCH_CONTEXT_LIMITS.total);
+}
+
 export interface AiAction {
   slot: LoadoutSlotKey;
   item: number;
