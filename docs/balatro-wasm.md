@@ -251,6 +251,13 @@ python3 -I scripts/balatro/build-game-pack.py
 The vendor script applies three anchored engine patches: export `FS`, page-owned
 fullscreen, and the page's pixel ratio. It fails if an anchor is missing.
 
+It also writes `lib/balatro/engine.json` (size and SHA-256 of `love.js` and
+`love.wasm`), and the page requests both as `?v=<sha>`. The engine paths are not
+content-hashed and Cloudflare keeps them for hours, so before this a re-vendored
+engine (the fullscreen patch, for one) was not what players ran: the edge served
+the previous `love.js` until it expired. `saves.test.ts` fails if the manifest
+and the files disagree.
+
 The pack builder rewrites `data/balatro-pack/` and `lib/balatro/game-pack.json`
 together. `lib/balatro/__tests__/saves.test.ts` fails if they disagree.
 

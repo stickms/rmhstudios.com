@@ -3,8 +3,9 @@ import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { chooseSnapshot, isSavePath, parseSnapshot, toSnapshot, type SaveFile } from '@/lib/balatro/cloud-saves';
+import engine from '@/lib/balatro/engine.json';
 import pack from '@/lib/balatro/game-pack.json';
-import { patchMain, renderSize, saveImportPath } from '@/lib/balatro/runtime';
+import { engineUrl, patchMain, renderSize, saveImportPath } from '@/lib/balatro/runtime';
 import { crc32, extractEntry, readZip, writeZip } from '@/lib/balatro/zip';
 
 /**
@@ -151,4 +152,17 @@ describe('balatro game packs', () => {
     expect(names.some((n) => n.startsWith('resources/sounds/'))).toBe(false);
     expect(names.some((n) => n.startsWith('dlls/'))).toBe(false);
   });
+});
+
+describe('balatro engine', () => {
+  // The engine's URLs carry its hash; a re-vendored engine without a fresh
+  // engine.json keeps its old URL, and the edge keeps serving the old engine.
+  for (const name of ['love.js', 'love.wasm'] as const) {
+    it(`versions ${name} by the hash of the vendored file`, () => {
+      const data = readFileSync(join(process.cwd(), 'public', 'balatro', 'engine', name));
+      expect(data.length).toBe(engine[name].bytes);
+      expect(createHash('sha256').update(data).digest('hex')).toBe(engine[name].sha256);
+      expect(engineUrl(name)).toBe(`/balatro/engine/${name}?v=${engine[name].sha256.slice(0, 12)}`);
+    });
+  }
 });

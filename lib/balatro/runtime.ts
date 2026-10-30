@@ -23,6 +23,7 @@
  *      account (cloud-saves.ts), restoring the account copy before the game's
  *      first line runs when it is the newer one.
  */
+import engine from './engine.json';
 import pack from './game-pack.json';
 import bitSource from './lua/bit.lua?raw';
 import randomSource from './lua/luajit_random.lua?raw';
@@ -36,6 +37,16 @@ export const PACK_BASE = '/api/balatro/pack/';
 export const GAME_DIR = '/Balatro';
 export const SAVE_ROOT = '/home/web_user/love';
 export const SAVE_DIR = `${SAVE_ROOT}/Balatro`;
+
+/**
+ * An engine file's URL, versioned by its hash (engine.json, written by the vendor
+ * script). The paths are not content-hashed and the edge caches them for hours, so
+ * an unversioned URL kept serving the previous engine after a re-vendor.
+ */
+export function engineUrl(name: string): string {
+  const info = (engine as Record<string, { sha256: string } | undefined>)[name];
+  return info ? `${ENGINE_BASE}${name}?v=${info.sha256.slice(0, 12)}` : `${ENGINE_BASE}${name}`;
+}
 
 /** Rendering above this many pixels costs frame time and looks no sharper. */
 const MAX_PIXELS = 2560 * 1440;
@@ -232,7 +243,7 @@ function loadEngineScript(): Promise<void> {
   if (window.Love) return Promise.resolve();
   engineScript ??= new Promise<void>((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = `${ENGINE_BASE}love.js`;
+    script.src = engineUrl('love.js');
     script.async = true;
     script.onload = () => resolve();
     script.onerror = () => {
@@ -250,7 +261,7 @@ export function prefetchEngine(): void {
   const link = document.createElement('link');
   link.rel = 'preload';
   link.as = 'fetch';
-  link.href = `${ENGINE_BASE}love.wasm`;
+  link.href = engineUrl('love.wasm');
   link.crossOrigin = 'anonymous';
   link.dataset.balatroEngine = '';
   document.head.appendChild(link);
@@ -420,7 +431,7 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
     // fullscreen, and decides the drawing buffer's pixel ratio.
     rmhOwnsFullscreen: true,
     rmhPixelRatio: () => ratio,
-    locateFile: (path) => `${ENGINE_BASE}${path}`,
+    locateFile: (path) => engineUrl(path),
     print: (text) => onLog?.(text, false),
     printErr: (text) => onLog?.(text, true),
     setStatus: () => {},
