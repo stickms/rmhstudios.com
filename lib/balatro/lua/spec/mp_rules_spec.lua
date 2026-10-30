@@ -302,12 +302,16 @@ describe('comeback bonus (FL-17, D-04)', function()
 
   it('adds the comeback row before the bottom row and pays it once', function()
     local rows = {}
-    _G.add_round_eval_row = function(c) rows[#rows + 1] = { name = c.name, dollars = c.dollars } end
+    _G.add_round_eval_row = function(c)
+      -- vanilla's row code does `1.5*config.pitch` for every row but 'bottom'
+      if c.name ~= 'bottom' then assert(type(c.pitch) == 'number', c.name .. ' row without a pitch') end
+      rows[#rows + 1] = { name = c.name, dollars = c.dollars }
+    end
     G.FUNCS.evaluate_round = function() end
     G.FUNCS.toggle_shop, G.FUNCS.reroll_shop = function() end, function() end
     MP.economy.install()
     MP.economy.on_my_lives(2, 1)
-    add_round_eval_row({ name = 'blind1', dollars = 5 })
+    add_round_eval_row({ name = 'blind1', dollars = 5, pitch = 0.95 })
     add_round_eval_row({ name = 'bottom', dollars = 9 })
     add_round_eval_row({ name = 'bottom', dollars = 3 })
     expect(rows).eq({ { name = 'blind1', dollars = 5 }, { name = 'mp_comeback', dollars = 4 },
