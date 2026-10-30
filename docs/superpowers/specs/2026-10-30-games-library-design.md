@@ -105,6 +105,24 @@ Hero art + title, primary `signal` Play button (links to catalog `href`),
 activity strip, then sections: Achievements, Friends who play, Community,
 Reviews and guides, Leaderboard. Reuse `GameHub` internals where they fit.
 
+### Art: card image and banner
+Steam uses two images per title: a portrait capsule for the list and shelves,
+and a wide hero for the game page. The catalog has only the portrait one
+today (`imagePath`, e.g. 800x1193; 29 of 40 entries have it, 11 have none).
+- Add optional `bannerPath` to the shared catalog entry shape in
+  `lib/catalog/types.ts` (the schemas are strict, so it must be declared
+  there), carried through `listCuratedBuilds()` as `bannerUrl`. Wide hero,
+  about 3:1; recommended source 1920x620 WebP.
+- Detail hero fallback chain: `bannerPath`, then `imagePath` cropped
+  (`object-cover`, centred) under a dark scrim, then the existing hue tile.
+  So no title needs a banner to ship, and a title that looks poor cropped is
+  fixed by adding one file and one line.
+- The rail and shelves keep using `imagePath`, falling back to the hue tile.
+- `lib/__tests__/catalog.test.ts` should check that a declared `bannerPath`
+  exists under `public/` and is not larger than a set byte budget.
+- Producing banner art for individual games is content work, not part of the
+  build. Which titles get one first is the owner's call.
+
 ### Data
 - New table `GamePlaytime`: `userId`, `gameId` (catalog id), `totalSeconds`,
   `lastPlayedAt`, unique `(userId, gameId)`.
