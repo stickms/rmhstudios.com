@@ -49,10 +49,6 @@ on:
         description: Convert at most this many models (testing)
         type: string
         default: ''
-      probe:
-        description: Only run the frame-animation probe (scripts/tf2-game/probe-frameanim.py) — no uploads
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -63,9 +59,7 @@ concurrency:
 
 jobs:
   sync:
-    if: >-
-      inputs.probe != true &&
-      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     env:
@@ -236,6 +230,14 @@ jobs:
             --root /mnt/csgo --game csgo --maps de_dust2 --out /mnt/work/csgo-maps \
             --state /mnt/work/csgo-maps-state.json --prev-index /mnt/work/csgo-maps-prev-index.json
 
+      # A diagnostic for the converter: scores candidate decodings of the view models' frame animations
+      # against the install and prints the table (scripts/tf2-game/probe-frameanim.py). Never fails the job.
+      - name: Probe frame animations (diagnostic)
+        if: steps.gate.outputs.run_csgo_models == 'true'
+        continue-on-error: true
+        timeout-minutes: 10
+        run: python3 -B scripts/tf2-game/probe-frameanim.py --root /mnt/csgo --search csgo
+
       - name: Models — default players and arms, default weapons and equipment, the map's props
         id: csgo_models
         if: steps.gate.outputs.run_csgo_models == 'true' && steps.tests.outcome == 'success'
@@ -367,39 +369,3 @@ jobs:
         if: always()
         run: sudo rm -rf /mnt/work /mnt/csgo "$HOME/Steam" "$HOME/.steam" "$HOME/steamcmd" appinfo.txt 2>/dev/null || true
 
-  # A diagnostic for the model converter: scores candidate decodings of CS:GO's frame animations against
-  # the real view models and prints the table. Downloads the install, uploads nothing, needs no secrets.
-  probe:
-    if: inputs.probe == true
-    runs-on: ubuntu-latest
-    timeout-minutes: 120
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install SteamCMD
-        run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq lib32gcc-s1 lib32stdc++6 curl
-          mkdir -p "$HOME/steamcmd" && cd "$HOME/steamcmd"
-          curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar xz
-      - name: Make room on the runner
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL
-          sudo mkdir -p /mnt/csgo && sudo chown "$USER" /mnt/csgo
-      - name: Download CS:GO (dedicated server, app 740)
-        timeout-minutes: 75
-        run: |
-          for i in 1 2 3 4; do
-            "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/csgo +login anonymous +app_update 740 validate +quit \
-              > "$HOME/steam-csgo.log" 2>&1 || true
-            [ -f /mnt/csgo/csgo/pak01_dir.vpk ] && break
-            echo "attempt $i did not finish; retrying"; sleep 30
-          done
-          [ -f /mnt/csgo/csgo/pak01_dir.vpk ] || { echo "::error::csgo/pak01_dir.vpk missing after the download"; exit 1; }
-      - name: Probe
-        run: |
-          pip install --quiet vpk numpy
-          python3 -B scripts/tf2-game/probe-frameanim.py --root /mnt/csgo --search csgo
-      - name: Clean up
-        if: always()
-        run: sudo rm -rf /mnt/csgo "$HOME/Steam" "$HOME/.steam" "$HOME/steamcmd" 2>/dev/null || true

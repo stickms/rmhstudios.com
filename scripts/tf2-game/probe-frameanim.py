@@ -2,7 +2,7 @@
 """Diagnostic for CS:GO's frame animations (STUDIO_FRAMEANIM): scores candidate decodings of the compressed
 rotations (Quaternion48S) and positions against the real view models, so the decoder in
 scripts/tf2-assets/srcanim.py can be settled from data rather than guessed. Nothing is written or uploaded;
-it prints a table (and a few raw samples) to the log. Run by csgo-assets-sync.yml with `probe: true`.
+it prints a table (and a few raw samples) to the log. Run by csgo-assets-sync.yml whenever the models channel rebuilds.
 
 Three measures, none needing a reference decoder:
   valid   the three stored components can be the three smallest of a unit quaternion (sum of squares
