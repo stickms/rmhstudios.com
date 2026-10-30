@@ -1,6 +1,6 @@
 # /games as a Steam-style Library — design
 
-Status: draft for approval. Date: 2026-10-30.
+Status: draft for approval (playtime privacy default settled: public, opt out). Date: 2026-10-30.
 
 ## Intent
 
@@ -128,8 +128,9 @@ today (`imagePath`, e.g. 800x1193; 29 of 40 entries have it, 11 have none).
   `lastPlayedAt`, unique `(userId, gameId)`.
 - New table `GamePlaytimeDay`: `userId`, `gameId`, `day`, `seconds`, unique
   `(userId, gameId, day)`, for "last 2 weeks" and the Recent shelf.
-- Privacy: `User.playtimePrivacy` String default `"following"` (values
-  `public | following | private`), same shape as the existing `callPrivacy`.
+- Privacy: `User.playtimePrivacy` String default `"public"` (values
+  `public | followers | private`), the column shape of the existing
+  `callPrivacy`. The DB default means every existing user starts public too.
 - No new achievements table. Per-title list = catalog filtered by `group`.
 - "Friends who play" = users the viewer follows who have playtime for the
   title and whose privacy allows the viewer. "Community" = Communities whose
@@ -172,10 +173,15 @@ Builder's calls (marked so you can overrule them):
   are for side-by-side review in this session only.
 - **Mobile (my call):** below `md` (768px) the rail is the page and detail
   pushes over it; Home is the first row in the rail.
-- **Playtime privacy:** values `public | followers | private`. "Friends who
-  play" lists people the viewer follows whose setting lets the viewer see them
-  (`followers` = visible to people who follow that user). Default exposure is
-  an owner decision, recorded below once answered.
+- **Playtime privacy (owner decision): public by default, users opt out.**
+  Values `public | followers | private`. "Friends who play" lists people the
+  viewer follows whose setting lets the viewer see them; `followers` means
+  visible to people who follow that user; `public` means any signed-in viewer
+  and the user's public profile.
+- **Opt-out notice (my call):** because existing users become public with no
+  action on their part, the first visit to the library shows a one-time notice
+  that playtime is visible and links straight to the setting. Dismissal is
+  stored per user. Signed-out visitors never see anyone's playtime.
 
 ## Verification
 - Unit tests: heartbeat crediting/caps, privacy filter, catalog-to-route
