@@ -45,9 +45,9 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
     const pairs = new Set<string>();
     for (let ante = 1; ante <= 2; ante++) {
       await playAnte(p, { chips: WIN });
-      const pairing = (await outcomes(p)).filter((o) => o.t === 'nemesis_pairing' && o.ante === ante).at(-1) as
-        | { pairing: Record<string, string> }
-        | undefined;
+      const pairing = (await outcomes(p))
+        .filter((o): o is Outcome & { pairing: Record<string, string> } => o.t === 'nemesis_pairing' && o.ante === ante)
+        .at(-1);
       expect(pairing, `pairing for ante ${ante}`).toBeDefined();
       const map = pairing!.pairing;
       const byes = Object.entries(map).filter(([, v]) => v === '');

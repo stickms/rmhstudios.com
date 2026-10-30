@@ -74,7 +74,7 @@ describe('replay logs across the star (REP-02)', () => {
     const runId = host.lua.last('match_start')?.runId as string;
     for (const p of w.peers) luaLog(p, 0, 120);
     await w.until(
-      () => w.peers.every((p) => w.peers.every((q) => (stores.get(p.id) && svcLog(svc.get(p.id), q.id)) >= 120)),
+      () => w.peers.every((p) => w.peers.every((q) => !!stores.get(p.id) && svcLog(svc.get(p.id), q.id) >= 120)),
       10_000,
       'logs everywhere',
     );
