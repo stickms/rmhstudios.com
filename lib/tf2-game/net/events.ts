@@ -18,7 +18,17 @@
  * relatively; server/CLAUDE.md gotcha 7).
  */
 
-import type { Tf2Mode } from '../data/maps';
+import { TF2_MODES, type Tf2Mode } from '../data/maps';
+
+/** The games a room can play on the shared engine (CS:GO: de_dust2, peer-to-peer like TF2). */
+export type RoomGame = 'tf2' | 'csgo';
+export const ROOM_GAMES: readonly RoomGame[] = ['tf2', 'csgo'];
+/** CS:GO's modes: bomb defusal ('de') and deathmatch ('dm'). */
+export type CsRoomMode = 'de' | 'dm';
+export const CS_ROOM_MODES: readonly CsRoomMode[] = ['de', 'dm'];
+/** A room's mode: a TF2 game mode, or a CS:GO one. */
+export type RoomMode = Tf2Mode | CsRoomMode;
+export const ROOM_MODES: readonly RoomMode[] = [...TF2_MODES, ...CS_ROOM_MODES];
 
 // ─── Event names ───────────────────────────────────────────────────────────
 
@@ -168,6 +178,8 @@ export type RoomAdminPayload =
 /** `tf2:rooms:list` — a page of the server browser. */
 export interface ListRoomsPayload {
   offset?: number;
+  /** The game whose rooms to list (default TF2). */
+  game?: RoomGame;
 }
 
 export interface RoomDetailsRequest {
@@ -197,8 +209,10 @@ export interface RoundInfo {
 export interface RoomListEntry {
   code: string;
   name: string;
+  /** Absent: TF2. */
+  game?: RoomGame;
   map: string;
-  mode: Tf2Mode;
+  mode: RoomMode;
   /** Connected humans. */
   players: number;
   bots: number;
@@ -245,7 +259,7 @@ export interface JoinedPayload {
   /** This client's player id inside the match (the entity index the sim gave it). */
   playerId: number;
   map: string;
-  mode: Tf2Mode;
+  mode: RoomMode;
   name: string;
   maxPlayers: number;
   /** The match's tick when this was sent; pair with `PONG` to sync the clock. */

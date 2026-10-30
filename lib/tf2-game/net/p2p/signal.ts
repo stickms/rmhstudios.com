@@ -17,11 +17,15 @@
  */
 
 import { z } from 'zod';
-import { TF2_MODES, type Tf2Mode } from '../../data/maps';
+
 import type { IceServerConfig } from './ice';
 import {
   BOT_DIFFICULTIES,
+  ROOM_GAMES,
+  ROOM_MODES,
   TF2_LIMITS,
+  type RoomGame,
+  type RoomMode,
   TF2_ROOM_CODE_RE,
   type BotDifficulty,
   type RoomPlayerInfo,
@@ -105,8 +109,10 @@ export function decodeRelay(
 // ─── Payloads ──────────────────────────────────────────────────────────────
 
 export interface P2pHostPayload {
+  /** Absent: TF2. */
+  game?: RoomGame;
   map: string;
-  mode?: Tf2Mode;
+  mode?: RoomMode;
   maxPlayers: number;
   botCount: number;
   botDifficulty: BotDifficulty;
@@ -193,8 +199,9 @@ export interface P2pAdmittedPayload {
   peerId: string;
   /** The host's account name. */
   host: string;
+  game?: RoomGame;
   map: string;
-  mode: Tf2Mode;
+  mode: RoomMode;
   name: string;
   maxPlayers: number;
   /** ICE servers for this account (STUN, then TURN with a short-lived credential). */
@@ -262,8 +269,9 @@ const roomCode = z.string().regex(TF2_ROOM_CODE_RE);
 const peerId = z.string().regex(/^[A-Za-z0-9]{12}$/);
 
 export const zP2pHost = z.object({
+  game: z.enum(ROOM_GAMES as [RoomGame, ...RoomGame[]]).optional(),
   map: z.string().min(1).max(64),
-  mode: z.enum(TF2_MODES as [Tf2Mode, ...Tf2Mode[]]).optional(),
+  mode: z.enum(ROOM_MODES as [RoomMode, ...RoomMode[]]).optional(),
   maxPlayers: z.number().int().min(TF2_LIMITS.MIN_PLAYERS).max(TF2_LIMITS.P2P_MAX_PLAYERS),
   botCount: z.number().int().min(0).max(TF2_LIMITS.P2P_MAX_PLAYERS - 1),
   botDifficulty: z.enum(BOT_DIFFICULTIES as [BotDifficulty, ...BotDifficulty[]]),
@@ -393,8 +401,9 @@ export const zP2pAdmitted = z.object({
   code: roomCode,
   peerId,
   host: z.string().max(64),
+  game: z.enum(ROOM_GAMES as [RoomGame, ...RoomGame[]]).optional(),
   map: z.string().max(64),
-  mode: z.enum(TF2_MODES as [Tf2Mode, ...Tf2Mode[]]),
+  mode: z.enum(ROOM_MODES as [RoomMode, ...RoomMode[]]),
   name: z.string().max(TF2_LIMITS.ROOM_NAME_MAX_LENGTH * 2),
   maxPlayers: z.number().int().min(TF2_LIMITS.MIN_PLAYERS).max(TF2_LIMITS.MAX_PLAYERS),
   ice: zIceServers.optional(),
