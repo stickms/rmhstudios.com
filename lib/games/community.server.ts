@@ -9,7 +9,8 @@ import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { ACHIEVEMENTS } from '@/lib/achievements/catalog';
 import { getProfile } from '@/lib/profile.server';
 import { getFriendActivity, getNowPlayingFor } from '@/lib/games/activity.server';
-import { getShowcase } from '@/lib/games/showcase.server';
+import { getLook, getShowcase } from '@/lib/games/showcase.server';
+import { parseBackground, parseFrame, unlocksFromBadges } from '@/lib/games/customize';
 import { badgeKey } from '@/lib/games/showcase';
 import { listCommunities } from '@/lib/communities.server';
 import { listCuratedBuilds } from '@/lib/builds/curated';
@@ -23,6 +24,8 @@ import type {
   ProfileAchievement,
   ProfileBadge,
   ShowcaseEditorData,
+  LookEditorData,
+  ProfileLook,
   ProfileGame,
   RecentReview,
   SteamGroup,
@@ -157,7 +160,7 @@ export async function getSteamProfile(
   const since = new Date(Date.now() - TWO_WEEKS_MS);
   const titles = titleIndex();
 
-  const [owner, achievementRows, memberships, follows, reviewCount, badgeRows, showcase] = await Promise.all([
+  const [owner, achievementRows, memberships, follows, reviewCount, badgeRows, showcase, lookRow] = await Promise.all([
     prisma.user.findUnique({
       where: { id: ownerId },
       select: { playtimePrivacy: true, profile: { select: { xp: true } } },
@@ -187,6 +190,7 @@ export async function getSteamProfile(
       select: { gameId: true, foil: true, level: true },
     }),
     getShowcase(ownerId),
+    getLook(ownerId),
   ]);
 
   const setting = isPlaytimePrivacy(owner?.playtimePrivacy) ? owner.playtimePrivacy : 'private';
@@ -261,6 +265,31 @@ export async function getSteamProfile(
       }
     : null;
 
+  // Background and frame: only if the member still owns what they chose (badges never go
+  // away, but the rule is cheap to hold at read time too).
+  const unlocks = unlocksFromBadges(badgeRows);
+  const bgChoice = lookRow.background && unlocks.backgrounds.includes(lookRow.background) ? parseBackground(lookRow.background) : null;
+  const frChoice = lookRow.frame && unlocks.frames.includes(lookRow.frame) ? parseFrame(lookRow.frame) : null;
+  const look: ProfileLook = {
+    background: bgChoice && titles.get(bgChoice.gameId) ? { ...bgChoice, title: (titles.get(bgChoice.gameId) as TitleRef).title, hue: (titles.get(bgChoice.gameId) as TitleRef).hue } : null,
+    frame: frChoice && titles.get(frChoice.gameId) ? { ...frChoice, title: (titles.get(frChoice.gameId) as TitleRef).title, hue: (titles.get(frChoice.gameId) as TitleRef).hue } : null,
+  };
+  const lookEditor: LookEditorData | null = profile.isOwnProfile
+    ? {
+        selected: { background: look.background ? lookRow.background : null, frame: look.frame ? lookRow.frame : null },
+        backgrounds: unlocks.backgrounds.flatMap((key) => {
+          const p = parseBackground(key);
+          const t = p && titles.get(p.gameId);
+          return p && t ? [{ key, title: t.title, hue: t.hue, foil: p.foil }] : [];
+        }),
+        frames: unlocks.frames.flatMap((key) => {
+          const p = parseFrame(key);
+          const t = p && titles.get(p.gameId);
+          return p && t ? [{ key, title: t.title, hue: t.hue, level: p.level }] : [];
+        }),
+      }
+    : null;
+
   const lv = levelInfo(owner?.profile?.xp ?? 0);
   return {
     id: ownerId,
@@ -293,6 +322,8 @@ export async function getSteamProfile(
       viewerFollowsOwner,
     ),
     showcaseEditor,
+    look,
+    lookEditor,
   };
 }
 

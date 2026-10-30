@@ -178,6 +178,18 @@ function person(u: AuthorRow): PersonRef {
   return { userId: u.id, handle: u.handle, name: d.name ?? u.handle ?? 'Player', image: d.image ?? null };
 }
 
+/** The titles each of these members holds a badge for, i.e. whose emoticons they own. */
+async function emoteTitlesFor(userIds: string[]): Promise<Record<string, string[]>> {
+  if (userIds.length === 0) return {};
+  const rows = await prisma.gameBadge.findMany({
+    where: { userId: { in: userIds } },
+    select: { userId: true, gameId: true },
+  });
+  const out: Record<string, Set<string>> = {};
+  for (const r of rows) (out[r.userId] ??= new Set()).add(r.gameId);
+  return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, [...v].sort()]));
+}
+
 export async function getHub(
   viewer: { id: string | null; isAdmin: boolean },
   gameId: string,
@@ -187,7 +199,7 @@ export async function getHub(
   if (!title || !isTrackableTitle(gameId)) return null;
   const skip = Math.max(0, page - 1) * PAGE_SIZE;
 
-  const [rows, extras, guides, reviews, onSale] = await Promise.all([
+  const [rows, extras, guides, reviews, onSale, mine] = await Promise.all([
     prisma.gameThread.findMany({
       where: { gameId },
       orderBy: [{ pinned: 'desc' }, { lastPostAt: 'desc' }],
@@ -215,6 +227,7 @@ export async function getHub(
         ...(viewer.id ? { sellerId: { not: viewer.id } } : {}),
       },
     }),
+    viewer.id ? emoteTitlesFor([viewer.id]) : Promise.resolve({} as Record<string, string[]>),
   ]);
 
   const threads: ThreadSummary[] = rows.slice(0, PAGE_SIZE).map((r) => ({
@@ -246,6 +259,7 @@ export async function getHub(
     guides: guides.slice(0, 5),
     reviews: reviews.slice(0, 3),
     cardsOnSale: onSale,
+    myEmoteTitles: viewer.id ? (mine[viewer.id] ?? []) : [],
   };
 }
 
@@ -276,6 +290,8 @@ export async function getThreadPage(
   });
   if (!t || t.gameId !== gameId) return null;
   const author = person(t.author as AuthorRow);
+  const ids = [...new Set([author.userId, ...t.posts.map((p) => p.authorId), ...(viewer.id ? [viewer.id] : [])])];
+  const emotes = await emoteTitlesFor(ids);
   return {
     gameId,
     gameTitle: title.title,
@@ -298,5 +314,7 @@ export async function getThreadPage(
     })),
     signedIn: !!viewer.id,
     isAdmin: viewer.isAdmin,
+    authorEmotes: emotes,
+    myEmoteTitles: viewer.id ? (emotes[viewer.id] ?? []) : [],
   };
 }

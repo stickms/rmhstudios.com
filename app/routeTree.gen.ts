@@ -508,6 +508,7 @@ import { Route as ApiGabrielsHornLeaderboardRouteImport } from './routes/api/gab
 import { Route as ApiGabrielsHornTableReadRouteImport } from './routes/api/gabriels-horn/table-read'
 import { Route as ApiGameNightIndexRouteImport } from './routes/api/game-night/index'
 import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
+import { Route as ApiGamesCustomizeRouteImport } from './routes/api/games/customize'
 import { Route as ApiGamesHowToPlayRouteImport } from './routes/api/games/how-to-play'
 import { Route as ApiGamesPlaytimeRouteImport } from './routes/api/games/playtime'
 import { Route as ApiGamesShowcaseRouteImport } from './routes/api/games/showcase'
@@ -3877,6 +3878,11 @@ const ApiGameNightIndexRoute = ApiGameNightIndexRouteImport.update({
 const ApiGameSavesGameIdRoute = ApiGameSavesGameIdRouteImport.update({
   id: '/api/game-saves/$gameId',
   path: '/api/game-saves/$gameId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesCustomizeRoute = ApiGamesCustomizeRouteImport.update({
+  id: '/api/games/customize',
+  path: '/api/games/customize',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGamesHowToPlayRoute = ApiGamesHowToPlayRouteImport.update({
@@ -8836,6 +8842,7 @@ export interface FileRoutesByFullPath {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
+  '/api/games/customize': typeof ApiGamesCustomizeRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/games/playtime': typeof ApiGamesPlaytimeRoute
   '/api/games/showcase': typeof ApiGamesShowcaseRoute
@@ -10166,6 +10173,7 @@ export interface FileRoutesByTo {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
+  '/api/games/customize': typeof ApiGamesCustomizeRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/games/playtime': typeof ApiGamesPlaytimeRoute
   '/api/games/showcase': typeof ApiGamesShowcaseRoute
@@ -11525,6 +11533,7 @@ export interface FileRoutesById {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
+  '/api/games/customize': typeof ApiGamesCustomizeRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/games/playtime': typeof ApiGamesPlaytimeRoute
   '/api/games/showcase': typeof ApiGamesShowcaseRoute
@@ -12884,6 +12893,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
+    | '/api/games/customize'
     | '/api/games/how-to-play'
     | '/api/games/playtime'
     | '/api/games/showcase'
@@ -14214,6 +14224,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
+    | '/api/games/customize'
     | '/api/games/how-to-play'
     | '/api/games/playtime'
     | '/api/games/showcase'
@@ -15572,6 +15583,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
+    | '/api/games/customize'
     | '/api/games/how-to-play'
     | '/api/games/playtime'
     | '/api/games/showcase'
@@ -16716,6 +16728,7 @@ export interface RootRouteChildren {
   ApiGabrielsHornLeaderboardRoute: typeof ApiGabrielsHornLeaderboardRoute
   ApiGabrielsHornTableReadRoute: typeof ApiGabrielsHornTableReadRoute
   ApiGameSavesGameIdRoute: typeof ApiGameSavesGameIdRoute
+  ApiGamesCustomizeRoute: typeof ApiGamesCustomizeRoute
   ApiGamesHowToPlayRoute: typeof ApiGamesHowToPlayRoute
   ApiGamesPlaytimeRoute: typeof ApiGamesPlaytimeRoute
   ApiGamesShowcaseRoute: typeof ApiGamesShowcaseRoute
@@ -20827,6 +20840,13 @@ declare module '@tanstack/react-router' {
       path: '/api/game-saves/$gameId'
       fullPath: '/api/game-saves/$gameId'
       preLoaderRoute: typeof ApiGameSavesGameIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/customize': {
+      id: '/api/games/customize'
+      path: '/api/games/customize'
+      fullPath: '/api/games/customize'
+      preLoaderRoute: typeof ApiGamesCustomizeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/games/how-to-play': {
@@ -29347,6 +29367,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGabrielsHornLeaderboardRoute: ApiGabrielsHornLeaderboardRoute,
   ApiGabrielsHornTableReadRoute: ApiGabrielsHornTableReadRoute,
   ApiGameSavesGameIdRoute: ApiGameSavesGameIdRoute,
+  ApiGamesCustomizeRoute: ApiGamesCustomizeRoute,
   ApiGamesHowToPlayRoute: ApiGamesHowToPlayRoute,
   ApiGamesPlaytimeRoute: ApiGamesPlaytimeRoute,
   ApiGamesShowcaseRoute: ApiGamesShowcaseRoute,
