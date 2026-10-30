@@ -153,6 +153,27 @@ export async function clearCachedSource(): Promise<void> {
 
 let engineScript: Promise<void> | null = null;
 
+/**
+ * Starts fetching the engine (love.wasm, the large part) while the player is
+ * still on the loader page, so it is in the HTTP cache by the time they press
+ * Play or pick their file.
+ */
+export function prefetchEngine(): void {
+  if (document.querySelector('link[data-balatro-engine]')) return;
+  for (const [file, as] of [
+    ['love.wasm', 'fetch'],
+    ['love.js', 'script'],
+  ] as const) {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = as;
+    link.href = `${ENGINE_BASE}${file}`;
+    if (as === 'fetch') link.crossOrigin = 'anonymous';
+    link.dataset.balatroEngine = '';
+    document.head.appendChild(link);
+  }
+}
+
 function loadEngineScript(): Promise<void> {
   if (window.Love) return Promise.resolve();
   engineScript ??= new Promise<void>((resolve, reject) => {

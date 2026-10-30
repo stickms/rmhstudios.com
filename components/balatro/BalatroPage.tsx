@@ -20,6 +20,7 @@ import {
   clearCachedSource,
   GameSourceError,
   loadCachedSource,
+  prefetchEngine,
   readGameSource,
   storeCachedSource,
   type BalatroSession,
@@ -66,6 +67,7 @@ export default function BalatroPage() {
 
   useEffect(() => {
     let live = true;
+    prefetchEngine();
     void loadCachedSource().then((cached) => live && setStage({ kind: 'pick', cached }));
     return () => {
       live = false;
