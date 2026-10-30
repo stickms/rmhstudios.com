@@ -300,10 +300,39 @@ def material_extras(vmt_path, shader, kv):
     return e
 
 
+# VTF formats that carry an alpha channel (RGBA8888, ABGR8888, IA88, A8, ARGB8888, BGRA8888, DXT3, DXT5).
+ALPHA_FORMATS = {0, 1, 6, 8, 11, 12, 14, 15}
+
+
+def fit(img, cap):
+    """`img` scaled to fit `cap`, colour and alpha each on their own. Pillow scales RGBA premultiplied,
+    which zeroes the colour wherever the alpha is near 0; Source keeps masks (phong, tint, self-illum),
+    not opacity, in most alpha channels, so that blackened textures with a dark mask (CS:GO's bare
+    forearms came out near-black with stray bright texels)."""
+    if max(img.size) <= cap:
+        return img
+    k = cap / max(img.size)
+    size = (max(1, round(img.size[0] * k)), max(1, round(img.size[1] * k)))
+    if img.mode == "RGBA":
+        out = img.convert("RGB").resize(size, Image.LANCZOS)
+        out.putalpha(img.getchannel("A").resize(size, Image.LANCZOS))
+        return out
+    return img.resize(size, Image.LANCZOS)
+
+
+def scaled_alpha(sources, cap):
+    """Whether a texture's encoding changed with `fit`: a VTF with an alpha channel, larger than `cap`.
+    Only those textures take a new name, so the fix re-encodes them and nothing else."""
+    for src in sources:
+        if isinstance(src, bytes) and src[:4] == b"VTF\0" and len(src) >= 64:
+            w, h = struct.unpack_from("<HH", src, 16)
+            if struct.unpack_from("<i", src, 52)[0] in ALPHA_FORMATS and max(w, h) > cap:
+                return True
+    return False
+
+
 def encode_webp(img, cap, keep_alpha):
-    if max(img.size) > cap:
-        img = img.copy()
-        img.thumbnail((cap, cap), Image.LANCZOS)
+    img = fit(img, cap)
     if keep_alpha:
         img = img.convert("RGBA")
         if np.asarray(img)[..., 3].min() == 255:  # nothing to keep
@@ -328,7 +357,8 @@ class TexStore:
         os.makedirs(os.path.join(out, "tex"), exist_ok=True)
 
     def name(self, kind, sources, cap, alpha):
-        return sha1(b"tex", TEX_VERSION, kind, cap, int(alpha), *[hashlib.sha1(s).digest() for s in sources])
+        fix = [b"fit2"] if scaled_alpha(sources, cap) else []
+        return sha1(b"tex", TEX_VERSION, kind, cap, int(alpha), *fix, *[hashlib.sha1(s).digest() for s in sources])
 
     def get(self, kind, sources, cap, alpha, encode):
         """-> relative path `tex/<sha>.webp`, or None when it cannot be made. `encode()` -> webp bytes."""
@@ -416,6 +446,8 @@ def build_material(fs, mdl_path, name, slot, store, cap):
         src.append(b"-")
         return mat, texs, src
     src.append(hashlib.sha1(vtf).digest())
+    if scaled_alpha([vtf], cap):
+        src.append(b"fit2")  # the texture's name changed with `fit`: the model must point at the new one
     try:
         rel = store.get("base", [vtf], cap, keep_alpha,
                         lambda: encode_webp(srctex.decode_vtf(vtf), cap, keep_alpha))

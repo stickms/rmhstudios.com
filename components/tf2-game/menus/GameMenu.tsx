@@ -20,6 +20,7 @@ import {
   buildGameMenu,
   CHAPTER_BACKGROUNDS_FILE,
   CHARACTER_BACKGROUNDS_FILE,
+  DEFAULT_BACKGROUND,
   parseChapterBackgrounds,
   parseCharacterBackgrounds,
   type MenuCommand,
@@ -98,7 +99,7 @@ export default function GameMenu({ source, inGame, entries, onCommand, onBack, t
   const art = useMemo(() => {
     const read = source?.source.readText;
     return {
-      background: pickOf(parseChapterBackgrounds(read?.(CHAPTER_BACKGROUNDS_FILE))),
+      background: pickOf(parseChapterBackgrounds(read?.(CHAPTER_BACKGROUNDS_FILE))) ?? DEFAULT_BACKGROUND,
       character: pickOf(parseCharacterBackgrounds(read?.(CHARACTER_BACKGROUNDS_FILE))),
     };
   }, [source]);
