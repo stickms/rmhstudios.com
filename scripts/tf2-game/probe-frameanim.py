@@ -160,6 +160,7 @@ def main():
     ap.add_argument("--limit", type=int, default=400)
     args = ap.parse_args()
     fs = open_game(args.root, args.search)
+    probe_textures(fs)
     d = collect(fs, args.limit)
     print("models %d, frame-animation clips %d (skipped %d)" % (d["models"], d["clips"], d["skipped"]))
     print("constants: Quaternion48S %d, Quaternion48 %d, Vector48 %d, float pos %d"
@@ -214,6 +215,36 @@ def main():
     for s, bind, name, bone in d["q48s_anim"][:: max(1, len(d["q48s_anim"]) // 6)][:6]:
         print("  %s bone %d bind % .4f % .4f % .4f % .4f" % ((os.path.basename(name), bone) + tuple(bind)))
         print("    " + " ".join("%04x%04x%04x" % w for w in s[:12]))
+
+
+# Textures the published models show garbled (the bare forearms): their VTF headers and resources, to see
+# what the decoder (scripts/tf2-assets/srctex.py) misreads.
+TEXTURE_SAMPLES = ("materials/models/weapons/v_models/arms/bare/bare_arm_133.vtf",
+                   "materials/models/weapons/v_models/arms/bare/bare_arm_55.vtf",
+                   "materials/models/weapons/v_models/arms/glove_hardknuckle/glove_hardknuckle.vtf")
+
+
+def probe_textures(fs):
+    print("\nVTF headers (version, size, flags, frames, format, mips, low-res, resources):")
+    for path in TEXTURE_SAMPLES:
+        try:
+            v = fs.read(path)
+        except OSError:
+            v = None
+        if not v or v[:4] != b"VTF\0":
+            print("  %s: missing" % path)
+            continue
+        major, minor, header = struct.unpack_from("<3I", v, 4)
+        w, h, flags, frames = struct.unpack_from("<HHIH", v, 16)
+        fmt, mips, low_fmt, low_w, low_h = struct.unpack_from("<iBiBB", v, 52)
+        res = []
+        if minor >= 3:
+            for i in range(struct.unpack_from("<I", v, 68)[0]):
+                tag, rflags, at = struct.unpack_from("<3sBI", v, 80 + i * 8)
+                res.append("%s/%d@%d" % (tag.hex(), rflags, at))
+        print("  %s: %d.%d header %d, %dx%d flags %#x frames %d format %d mips %d low %d %dx%d, %d bytes; %s"
+              % (os.path.basename(path), major, minor, header, w, h, flags, frames, fmt, mips, low_fmt, low_w,
+                 low_h, len(v), " ".join(res)))
 
 
 if __name__ == "__main__":

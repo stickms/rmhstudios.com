@@ -343,31 +343,30 @@ export function csEntityFactory(s: EntityState, fx: EffectSystem): EntityRendera
  */
 export const viewModelAnimated = (inst: ModelInstance): boolean => (inst.animator?.set.sequences.size ?? 0) > 0;
 
-/**
- * Off while the frame-animation rotations are being verified: models builder 2 decodes the clips' layout
- * correctly but its compressed-rotation values still pose the arms wrongly, so the view is left clear.
- */
-export const CS_DRAW_VIEWMODEL = false;
+
 
 /**
- * Each team's default gloves (the generic first-person hands, no faction sleeves), from the model channel:
- * T the fingerless gloves, CT the hard-knuckle ones, else bare hands. Resolved once from `mdl/index.json`.
+ * What each team's first-person arms are made of, bone-merged onto the weapon (CS:GO's view models
+ * animate the weapon; the hands follow): the default gloves (T fingerless, CT hard-knuckle, else bare
+ * hands) and, for CT, the SAS sleeves over the forearm, as the game dresses its default factions.
+ * Resolved once from `mdl/index.json`.
  */
-const GLOVE_PREFS: Record<number, RegExp[]> = {
-  [CS_TEAM_T]: [/\/v_glove_fingerless\.mdl$/, /\/v_bare_hands\.mdl$/],
-  [CS_TEAM_CT]: [/\/v_glove_hardknuckle\.mdl$/, /\/v_bare_hands\.mdl$/],
+const ARM_PREFS: Record<number, RegExp[][]> = {
+  [CS_TEAM_T]: [[/\/v_glove_fingerless\.mdl$/, /\/v_bare_hands\.mdl$/]],
+  [CS_TEAM_CT]: [[/\/v_glove_hardknuckle\.mdl$/, /\/v_bare_hands\.mdl$/], [/\/v_sleeve_sas\.mdl$/]],
 };
-let gloveModels: Record<number, string> | null = null;
+let armModels: Record<number, string[]> | null = null;
 
-function glovesFor(team: number, ctx: RenderContext): string {
-  if (!gloveModels) {
+function armsFor(team: number, ctx: RenderContext): string[] {
+  if (!armModels) {
     const names = publishedModels(ctx);
-    if (!names) return '';
+    if (!names) return [];
     const keys = [...names];
     const pick = (res: RegExp[]) => res.map((re) => keys.find((k) => re.test(k))).find(Boolean) ?? '';
-    gloveModels = { [CS_TEAM_T]: pick(GLOVE_PREFS[CS_TEAM_T]), [CS_TEAM_CT]: pick(GLOVE_PREFS[CS_TEAM_CT]) };
+    const parts = (t: number) => ARM_PREFS[t].map(pick).filter(Boolean);
+    armModels = { [CS_TEAM_T]: parts(CS_TEAM_T), [CS_TEAM_CT]: parts(CS_TEAM_CT) };
   }
-  return gloveModels[team] ?? gloveModels[CS_TEAM_CT] ?? '';
+  return armModels[team] ?? armModels[CS_TEAM_CT] ?? [];
 }
 
 /** How far (units) and how fast the weapon bobs and sways with movement and turning. */
@@ -383,9 +382,9 @@ export class CsViewModel implements ProfileViewModel {
   private readonly scene = new Scene();
   private readonly camera = new PerspectiveCamera(68, 1, SOURCE_UNIT, 2048 * SOURCE_UNIT);
   private readonly model = new PlacedModel();
-  /** The team's gloves, bone-merged onto the weapon (CS:GO's view models animate the weapon; the hands follow). */
-  private gloves: ModelInstance | null = null;
-  private glovesModel = '';
+  /** The team's arms (gloves, sleeves), bone-merged onto the weapon, and the models they were made from. */
+  private arms: ModelInstance[] = [];
+  private armsKey = '';
   private readonly probe = new LightProbe();
   /** The activity playing and its change counter (the weapon's networked vmActivity / vmActivitySeq). */
   private lastAct = -1;
@@ -412,7 +411,7 @@ export class CsViewModel implements ProfileViewModel {
   ): void {
     const w = p?.activeWeapon() as CsWeapon | null;
     const info = w ? csWeaponByDefindex(w.defindex) : null;
-    this.visible = CS_DRAW_VIEWMODEL && !!p && !!info && frame.visible;
+    this.visible = !!p && !!info && frame.visible;
     if (!this.visible || !info) {
       this.model.hide();
       return;
@@ -424,21 +423,21 @@ export class CsViewModel implements ProfileViewModel {
       this.visible = false;
       return;
     }
-    if (fresh) {
-      // A new weapon model: the gloves merge onto its bones again.
-      this.gloves?.dispose();
-      this.gloves = null;
-      this.glovesModel = '';
-    }
-    const glovesModel = glovesFor(typeof me?.team === 'number' ? me.team : CS_TEAM_CT, ctx);
-    if (glovesModel && glovesModel !== this.glovesModel) {
-      const asset = ctx.models.peek(glovesModel);
-      if (asset === undefined) void ctx.models.asset(glovesModel);
-      else {
-        this.gloves?.dispose();
-        this.gloves = asset ? new ModelInstance(asset, { uniforms: inst.uniforms, noAnim: true }) : null;
-        this.glovesModel = glovesModel;
-        if (this.gloves) inst.attach(this.gloves);
+    if (fresh) this.dropArms(); // a new weapon model: the arms merge onto its bones again
+    const parts = armsFor(typeof me?.team === 'number' ? me.team : CS_TEAM_CT, ctx);
+    const key = parts.join('|');
+    if (key && key !== this.armsKey) {
+      const assets = parts.map((m) => ctx.models.peek(m));
+      parts.forEach((m, i) => assets[i] === undefined && void ctx.models.asset(m));
+      if (assets.every((a) => a !== undefined)) {
+        this.dropArms();
+        for (const asset of assets) {
+          if (!asset) continue;
+          const part = new ModelInstance(asset, { uniforms: inst.uniforms, noAnim: true });
+          inst.attach(part);
+          this.arms.push(part);
+        }
+        this.armsKey = key;
       }
     }
     // The weapon's activity (idle, draw, fire, reload, …) as a sequence of its own activity table: a
@@ -497,9 +496,14 @@ export class CsViewModel implements ProfileViewModel {
     return inst.attachmentMatrix(name === 'muzzle' ? '1' : name, out) || inst.attachmentMatrix('muzzle_flash', out);
   }
 
+  private dropArms(): void {
+    for (const part of this.arms) part.dispose();
+    this.arms = [];
+    this.armsKey = '';
+  }
+
   dispose(): void {
-    this.gloves?.dispose();
-    this.gloves = null;
+    this.dropArms();
     this.model.dispose();
   }
 }

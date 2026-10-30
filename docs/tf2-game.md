@@ -791,9 +791,9 @@ sections? }` (`mapRadarSchema`, additive: the other games' manifests do not carr
   data. The clips' basis comes from the model's `ref` sequence (itself a frame animation) and is
   recorded in the GLB as `source.clipFrame`; the client places such a model by it
   (`model-asset.ts`) instead of guessing the frame from the bind pose's bounds, which for a view model
-  (arms hanging down in the bind pose) is a quarter turn out. The client keeps the view model off
-  (`CS_DRAW_VIEWMODEL`) until the real clips are verified; it
-  then draws one once its weapon has clips, with the team's default gloves bone-merged onto the weapon.
+  (arms hanging down in the bind pose) is a quarter turn out. The client draws a view model once its
+  weapon has clips, with the team's arms bone-merged onto the weapon: the default gloves, and for CT
+  the SAS sleeves.
   Players draw their team's published model (`tm_phoenix` / `ctm_sas`) with the game's layered
   animation from its anim pack: the `move` blend (walk / run / crouch by pose parameter, direction by
   `move_yaw`), the weapon's aim matrix as a gesture steered by `body_pitch`, fire / reload / jump
