@@ -1,7 +1,7 @@
 /**
  * Balatro multiplayer needs an account — every inbound `balatro:*` event,
  * enforced on the hub (handlers/balatro-p2p.ts and the matchmaking handler,
- * today ../../balatro/queue-placeholder.ts until WS12's handlers/balatro-queue.ts).
+ * ../balatro-queue.ts).
  *
  * Single-player Balatro never touches the hub, so nothing is open: every event
  * a signed-out socket sends is refused with `auth-required` (the binary relay
@@ -15,7 +15,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { registerBalatroP2pHandlers, resetBalatroP2pForTests } from '../balatro-p2p';
-import { registerBalatroQueuePlaceholder } from '../../balatro/queue-placeholder';
+import { registerBalatroQueueHandlers, resetBalatroQueueForTests } from '../balatro-queue';
 import { BALATRO_C2S, BALATRO_C2S_EVENTS, BALATRO_S2C_EVENTS } from '@/lib/balatro/net/events';
 import { encodeRelay } from '@/lib/shared/p2p/relay';
 import { all, makeWorld } from '../../test-support/fake-world';
@@ -56,11 +56,12 @@ const VALID: Record<keyof typeof BALATRO_C2S, unknown> = {
 let world: ReturnType<typeof makeWorld>;
 
 beforeEach(() => {
-  world = makeWorld(registerBalatroP2pHandlers, registerBalatroQueuePlaceholder);
+  world = makeWorld(registerBalatroP2pHandlers, registerBalatroQueueHandlers);
 });
 
 afterEach(() => {
   resetBalatroP2pForTests();
+  resetBalatroQueueForTests();
 });
 
 describe('Balatro multiplayer needs an account', () => {

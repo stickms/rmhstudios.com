@@ -9,7 +9,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleBalatroP2pDisconnect, registerBalatroP2pHandlers, resetBalatroP2pForTests } from '../handlers/balatro-p2p';
-import { registerBalatroQueuePlaceholder } from './queue-placeholder';
+import { registerBalatroQueueHandlers, resetBalatroQueueForTests } from '../handlers/balatro-queue';
 import { balatroHub } from './directory';
 import { all, last, makeWorld, type FakeSocket } from '../test-support/fake-world';
 import { BALATRO_S2C, type BalatroS2CPayload } from '@/lib/balatro/net/events';
@@ -79,7 +79,7 @@ function state(h: FakeSocket, over: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  world = makeWorld(registerBalatroP2pHandlers, registerBalatroQueuePlaceholder);
+  world = makeWorld(registerBalatroP2pHandlers, registerBalatroQueueHandlers);
 });
 
 afterEach(() => {
@@ -92,6 +92,7 @@ afterEach(() => {
   }
   vi.useRealTimers();
   resetBalatroP2pForTests();
+  resetBalatroQueueForTests();
 });
 
 describe('hosting and joining', () => {
@@ -567,7 +568,7 @@ describe('host grace, promotion, resume', () => {
   it('re-claims a code after a hub restart and takes the seats from the host’s first state', () => {
     const { h, hosted } = lobby();
     resetBalatroP2pForTests();
-    world = makeWorld(registerBalatroP2pHandlers, registerBalatroQueuePlaceholder);
+    world = makeWorld(registerBalatroP2pHandlers, registerBalatroQueueHandlers);
     const h2 = connect({ userId: 'u-h', userName: 'Host' });
     world.send(h2, 'balatro:p2p:host', { ...HOST, resume: { code: hosted.code, token: hosted.token } });
     expect(lastOf(h2, 'balatro:p2p:hosted')).toMatchObject({ code: hosted.code, token: hosted.token });
@@ -632,12 +633,4 @@ describe('payload fuzz and the directory', () => {
     expect(lastOf(viewer, 'balatro:spectate:lobbies')!.lobbies.map((l) => l.code)).toEqual([r3.code]);
   });
 
-  it('answers the not-yet-available queue events with invalid', () => {
-    const s = connect();
-    world.send(s, 'balatro:queue:join', { queueMode: 'pvp_nemesis', contentHash: HASH });
-    world.send(s, 'balatro:queue:leave', {});
-    world.send(s, 'balatro:party:queue', { code: 'ABCDEF', queueMode: 'pvp_nemesis' });
-    world.send(s, 'balatro:invite', { code: 'ABCDEF', toUserId: 'u' });
-    expect(errors(s)).toEqual(['invalid', 'invalid', 'invalid', 'invalid']);
-  });
 });
