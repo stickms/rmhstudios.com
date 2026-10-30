@@ -794,7 +794,12 @@ sections? }` (`mapRadarSchema`, additive: the other games' manifests do not carr
   (arms hanging down in the bind pose) is a quarter turn out. The client keeps the view model off
   (`CS_DRAW_VIEWMODEL`) until the real clips are verified; it
   then draws one once its weapon has clips, with the team's default gloves bone-merged onto the weapon.
-  Players stay the client's own original figures (lib/csgo-game/client/render.ts).
+  Players draw their team's published model (`tm_phoenix` / `ctm_sas`) with the game's layered
+  animation from its anim pack: the `move` blend (walk / run / crouch by pose parameter, direction by
+  `move_yaw`), the weapon's aim matrix as a gesture steered by `body_pitch`, fire / reload / jump
+  one-shots from the networked animation events, and a death pose; the weapon out is bone-merged into
+  the hand (`lib/csgo-game/client/player-model.ts`). A plain team-coloured figure stands in while the
+  model loads.
 - **Models.** MDL v49 and VTF 7.5 read as TF2's do. VMT conditional keys (`srgb?`, `>=dx90?`,
   `GPU>=2?`, negations) are applied as a high-end Windows desktop; `CustomWeapon` (only its
   `$basetexture` — the default finish) and `Character` are converted as VertexLitGeneric with
