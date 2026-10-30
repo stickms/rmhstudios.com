@@ -34,7 +34,7 @@ describe.skipIf(w.skip || !on)(w.title(`soak: ${ANTES} antes 1v1 (1 browser + 1 
     for (let i = 0; i < ANTES; i++) {
       const r = await p.cmd<{ result: string | null; ante: number }>('mp_ante', { chips: 1_000_000, reroll: true }, 900_000);
       antes++;
-      expect(r.result, `ante ${i + 1}`).toBeNull();
+      expect(r.result ?? null, `ante ${i + 1}`).toBeNull();
       expect(w.errors(), `after ante ${i + 1}`).toEqual([]);
     }
     const s = await p.cmd<{ ante: number; state: string }>('mp_state');

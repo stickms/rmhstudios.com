@@ -24,6 +24,7 @@
 --   shop_digest()                            canonical text of the shop (determinism checks)
 --   set_ante(n)                              fast-forward to ante n at blind select
 --   save_info()                              the profile's save.jkr: {exists, size, hash}
+--   profile_digest()                         unlocked / discovered center keys (pool inputs)
 --   buy(slot, area?)                         area 'jokers' (default) | 'vouchers'
 --   reroll() / open_pack(slot) / pick(i) / skip_pack() / leave_shop()
 --   use(slot, targets?)                      a consumable in G.consumeables on hand targets
@@ -36,6 +37,7 @@
 --   pvp_ready / pvp_play{chips?, hands?, best?} / pvp_wait_end / pvp_round{…} / mp_ante{…} / mp_state
 --                                            whole PvP rounds and antes of a match (e2e)
 --   mp_send{t, d}                            a ui_* message to the session, as a screen sends it
+--   mp_leave{how?}                           leave as a player does (end screen / forfeit / ui_leave)
 --   mp_inbox{t?, since?}                     the session→Lua messages received (tapped at mp_open)
 -- More commands: AP.register(name, fn(args) -> data) (fn runs inside a task).
 
@@ -454,6 +456,21 @@ C.save_info = function()
   return { exists = true, path = path, size = #data, hash = string.format('%.13f', pseudohash(data)) }
 end
 
+--- The profile state single-player pools read (E2E-20): unlocked and discovered centers, and
+-- the profile's progress counters that unlock conditions read.
+C.profile_digest = function()
+  local unlocked, discovered = {}, {}
+  for k, c in pairs(G.P_CENTERS) do
+    if c.unlocked then unlocked[#unlocked + 1] = k end
+    if c.discovered then discovered[#discovered + 1] = k end
+  end
+  for k, c in pairs(G.P_TAGS or {}) do if c.discovered then discovered[#discovered + 1] = k end end
+  for k, c in pairs(G.P_BLINDS or {}) do if c.discovered then discovered[#discovered + 1] = k end end
+  table.sort(unlocked)
+  table.sort(discovered)
+  return { unlocked = unlocked, discovered = discovered }
+end
+
 C.shop = function() return AP.shop() end
 C.shop_digest = function()
   AP.wait_state('SHOP')
@@ -710,6 +727,29 @@ C.mp_send = function(a)
   local send = m.ui and m.ui.send or m.net.send
   if not send(t, a.d or a[2] or {}) then error('mp_send: ' .. t .. ' refused by the protocol') end
   return true
+end
+
+--- Leaves as a player does (mp_leave{how = 'leave' | 'return_lobby'}): from a match's end
+-- screen (ES.leave: match_left, then the menu), by forfeiting a match still running, or
+-- with ui_leave from a lobby / practice outside a run. Returns once no session is mounted.
+C.mp_leave = function(a)
+  local m = mpg()
+  local how = a.how or a[1] or 'leave'
+  if m.in_session() and G.STAGE == G.STAGES.RUN then
+    if m.is_match() and finished() and m.ui and m.ui.end_screen and m.ui.end_screen.leave then
+      m.ui.end_screen.leave(how)
+    elseif m.is_match() and m.test and m.test.forfeit then
+      m.test.forfeit()
+    elseif G.FUNCS.go_to_menu then
+      G.FUNCS.go_to_menu()
+    end
+    wait(function() return not m.state.session and G.STAGE == G.STAGES.MAIN_MENU and AP.idle() end, 120, 'session unmounted')
+  end
+  if how == 'leave' then
+    local send = m.ui and m.ui.send or m.net.send
+    send('ui_leave', {})
+  end
+  return { in_session = m.in_session() }
 end
 
 --- MP.state for assertions (lives, result, presence, pvp flags) as plain data.

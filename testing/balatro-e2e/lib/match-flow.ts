@@ -131,3 +131,13 @@ export async function waitResult(p: MpPlayer, timeoutMs = 240_000): Promise<stri
   );
   return kind;
 }
+
+/**
+ * Leave as a player does (the autopilot's mp_leave: the end screen's Leave, a forfeit while
+ * a match runs, or ui_leave from a lobby), then wait until the page holds no lobby role and
+ * no session is mounted (so a single-player run after it is vanilla again).
+ */
+export async function leaveMatch(p: MpPlayer, how: 'leave' | 'return_lobby' = 'leave'): Promise<void> {
+  await p.cmd('mp_leave', { how }, 180_000);
+  if (how === 'leave') await p.waitSnap((x) => x.role === null, 'out of the lobby', 120_000);
+}

@@ -6,7 +6,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { MpPlayer } from '../lib/mp-player';
-import { playAnte, setupMatch, waitResult } from '../lib/match-flow';
+import { leaveMatch, playAnte, setupMatch, waitResult } from '../lib/match-flow';
 import { waitFor } from '../lib/stack';
 import { matchWorld } from './world';
 
@@ -58,8 +58,7 @@ describe.skipIf(w.skip)(w.title('spectate and replay (2 browsers + 1 bot)'), () 
     );
 
     // REP-03: My Replays lists the finished match; open → playback.
-    await host.cmd('mp_send', { t: 'ui_leave', d: {} });
-    await host.waitSnap((s) => s.role === null, 'host left', 120_000);
+    await leaveMatch(host);
     await host.cmd('mp_send', { t: 'ui_replay', d: { op: 'list' } });
     let id = '';
     await waitFor(

@@ -8,7 +8,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { MpPlayer } from '../lib/mp-player';
 import { openMpPlayer } from '../lib/mp-player';
-import { hostLobby, playAnte, setupMatch, SHORT, waitResult } from '../lib/match-flow';
+import { hostLobby, playAnte, setupMatch, SHORT, waitResult, leaveMatch } from '../lib/match-flow';
 import { waitFor } from '../lib/stack';
 import { matchWorld } from './world';
 
@@ -22,13 +22,6 @@ interface Inbox {
 }
 const inbox = (p: MpPlayer, t?: string) => p.cmd<Inbox>('mp_inbox', t ? { t } : {});
 
-/** Back to the MP menu after a match (or out of a lobby). */
-async function leave(p: MpPlayer) {
-  const s = await p.snap();
-  if (s.role) await p.cmd('mp_send', { t: 'ui_leave', d: {} }).catch(() => {});
-  await p.waitSnap((x) => x.role === null, 'out of the lobby', 120_000);
-  await p.cmd('wait_state', ['MENU', 120]).catch(() => {});
-}
 
 describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
   let a: MpPlayer;
@@ -53,29 +46,29 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     expect(sa.result).toBe('win');
     expect(sb.result).toBe('lose');
     // The end screen offers Return to Lobby in a private lobby (LOB-17).
-    await a.cmd('mp_send', { t: 'ui_return_lobby', d: {} });
-    await b.cmd('mp_send', { t: 'ui_return_lobby', d: {} });
+    await leaveMatch(a, 'return_lobby');
+    await leaveMatch(b, 'return_lobby');
     await a.waitSnap((s) => !s.lobby?.started && s.code === code, 'host back in the lobby');
     const lobby = await hostLobby(a);
     expect(lobby.code).toBe(code);
     expect(lobby.players.find((p) => p.id !== lobby.hostId)?.ready).toBe(false);
     expect(w.errors()).toEqual([]);
-    await leave(b);
-    await leave(a);
+    await leaveMatch(b);
+    await leaveMatch(a);
   });
 
   it('E2E-02: a PvP tie costs no life; the next ante decides', async () => {
     await setupMatch(a, [b], 'pvp_nemesis', { ...SHORT, startingLives: 1 });
     const [ta, tb] = await Promise.all([playAnte(a, { chips: 5000 }), playAnte(b, { chips: 5000 })]);
-    expect(ta.result).toBeNull();
-    expect(tb.result).toBeNull();
+    expect(ta.result ?? null).toBeNull();
+    expect(tb.result ?? null).toBeNull();
     expect((await a.snap()).lives).toMatchObject({ [(await a.snap()).me!]: 1 });
     await Promise.all([playAnte(a, { chips: 0 }), playAnte(b, { chips: WIN })]);
     expect(await waitResult(a)).toBe('lose');
     expect(await waitResult(b)).toBe('win');
     expect(w.errors()).toEqual([]);
-    await leave(b);
-    await leave(a);
+    await leaveMatch(b);
+    await leaveMatch(a);
   });
 
   it('E2E-10: the ante timer — a press makes the opponent tick, expiry costs a life; a hidden tab keeps the clock', async () => {
@@ -110,8 +103,8 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     });
     expect(w.errors()).toEqual([]);
     await a.cmd('forfeit').catch(() => {});
-    await leave(b);
-    await leave(a);
+    await leaveMatch(b);
+    await leaveMatch(a);
   });
 
   it('E2E-08 / E2E-23: Small World and The Order — same bans, bosses and shops on both peers, purchases diverging', async () => {
@@ -138,8 +131,8 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     expect((await a.cmd<St>('mp_state')).boss).toBe((await b.cmd<St>('mp_state')).boss);
     expect(w.errors()).toEqual([]);
     await a.cmd('forfeit').catch(() => {});
-    await leave(b);
-    await leave(a);
+    await leaveMatch(b);
+    await leaveMatch(a);
   });
 
   it('E2E-11: chat reaches the other player, a mute hides it; a unanimous draw vote draws', async () => {
@@ -163,8 +156,8 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     expect(await waitResult(a)).toBe('draw');
     expect(await waitResult(b)).toBe('draw');
     expect(w.errors()).toEqual([]);
-    await leave(b);
-    await leave(a);
+    await leaveMatch(b);
+    await leaveMatch(a);
   });
 
   it('E2E-12: a member drops for 5 s → away → back, and the match completes', async () => {
@@ -189,8 +182,8 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     expect(await waitResult(a)).toBe('win');
     expect(await waitResult(b)).toBe('lose');
     expect(w.errors()).toEqual([]);
-    await leave(b);
-    await leave(a);
+    await leaveMatch(b);
+    await leaveMatch(a);
   });
 
   it('E2E-14: a member reloads mid-run, rejoins from the snapshot, and the match continues', async () => {
@@ -222,8 +215,8 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     w.players.splice(w.players.indexOf(b), 1, again);
     b = again;
     expect(w.errors()).toEqual([]);
-    await leave(b);
-    await leave(a);
+    await leaveMatch(b);
+    await leaveMatch(a);
   });
 
   it('E2E-21: a kicked member cannot rejoin; a mismatched build is refused', async () => {
@@ -250,7 +243,7 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     expect(codes.join(',')).toMatch(/version|mismatch|hash/);
     await odd.close();
     w.players.splice(w.players.indexOf(odd), 1);
-    await leave(a);
+    await leaveMatch(a);
   });
 
   it('E2E-15: with ICE blocked the pair falls back to the hub relay and plays a full 1v1', async () => {
@@ -266,7 +259,7 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     expect(await waitResult(relayed)).toBe('win');
     expect(await waitResult(a)).toBe('lose');
     expect(w.errors()).toEqual([]);
-    await leave(relayed);
-    await leave(a);
+    await leaveMatch(relayed);
+    await leaveMatch(a);
   });
 });

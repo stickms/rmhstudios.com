@@ -10,7 +10,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { BotPeer } from '../lib/bot';
 import type { MpPlayer } from '../lib/mp-player';
-import { hostLobby, playAnte, setupMatch, waitResult } from '../lib/match-flow';
+import { hostLobby, playAnte, setupMatch, waitResult, leaveMatch } from '../lib/match-flow';
 import { waitFor } from '../lib/stack';
 import { matchWorld } from './world';
 
@@ -21,10 +21,6 @@ type Outcome = { t: string; [k: string]: unknown };
 const outcomes = async (p: MpPlayer): Promise<Outcome[]> =>
   (await p.cmd<{ list: { d: { o: Outcome } }[] }>('mp_inbox', { t: 'outcome' })).list.map((e) => e.d.o);
 
-async function leave(p: MpPlayer) {
-  if ((await p.snap()).role) await p.cmd('mp_send', { t: 'ui_leave', d: {} }).catch(() => {});
-  await p.waitSnap((x) => x.role === null, 'out of the lobby', 120_000);
-}
 
 async function fresh(n: number, scores: string[]): Promise<BotPeer[]> {
   for (const b of w.bots.splice(0)) await b.close().catch(() => {});
@@ -60,7 +56,7 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
     // Two antes, three players: the two real pairings differ.
     expect(pairs.size).toBe(2);
     expect(w.errors()).toEqual([]);
-    await leave(p);
+    await leaveMatch(p);
   });
 
   it('E2E-05: Royale with 4 — rank-and-cut eliminates, the real player places first', async () => {
@@ -75,7 +71,7 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
     expect(win).toBeDefined();
     if (win?.places) expect(win.places[(await p.snap()).me!]).toBe(1);
     expect(w.errors()).toEqual([]);
-    await leave(p);
+    await leaveMatch(p);
   });
 
   it('E2E-06: Manhunt 1+2 — the Runner scoring below the best Hunter is caught', async () => {
@@ -88,7 +84,7 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
     await playAnte(p, { chips: 0 });
     expect(await waitResult(p)).toBe('lose');
     expect(w.errors()).toEqual([]);
-    await leave(p);
+    await leaveMatch(p);
   });
 
   it('E2E-07: Teams 2v2 — the team with the lower sum loses the shared life', async () => {
@@ -124,7 +120,7 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
     const teamLives = (await outcomes(p)).filter((o) => o.t === 'team_lives');
     expect(teamLives.some((o) => o.team_id === 'B' && o.lives === 0)).toBe(true);
     expect(w.errors()).toEqual([]);
-    await leave(p);
+    await leaveMatch(p);
   });
 
   it('E2E-20: a single-player save survives an MP loss, and the same seed deals the same shop after it', async () => {
@@ -144,7 +140,7 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
     await setupMatch(p, bots, 'pvp_nemesis', { pvpStartRound: 1, startingLives: 1, timer: false });
     await playAnte(p, { chips: 0 });
     expect(await waitResult(p)).toBe('lose');
-    await leave(p);
+    await leaveMatch(p);
     const after = await p.cmd<Save>('save_info');
     expect(after).toEqual(save);
     // The same seed in single player again: the same first shop.
@@ -183,6 +179,6 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
     for (let ante = 2; ante <= 5 && !result; ante++) result = (await playAnte(p, { chips: WIN })).result;
     expect(await waitResult(p)).toBe('win');
     expect(w.errors()).toEqual([]);
-    await leave(p);
+    await leaveMatch(p);
   });
 });

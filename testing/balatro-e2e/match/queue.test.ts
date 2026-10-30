@@ -14,10 +14,6 @@ import { matchWorld } from './world';
 
 const w = matchWorld();
 
-async function leave(p: MpPlayer) {
-  if ((await p.snap()).role) await p.cmd('mp_send', { t: 'ui_leave', d: {} }).catch(() => {});
-  await p.waitSnap((x) => x.role === null, 'out of the lobby', 120_000);
-}
 
 describe.skipIf(w.skip)(w.title('queue, party and invite link (1 browser + bots)'), () => {
   let p: MpPlayer;
@@ -57,7 +53,7 @@ describe.skipIf(w.skip)(w.title('queue, party and invite link (1 browser + bots)
     await p.cmd('wait_state', ['BLIND_SELECT', 300], 320_000);
     expect(w.errors()).toEqual([]);
     await p.cmd('forfeit').catch(() => {});
-    await leave(p);
+    await leaveMatch(p);
     await bot.close();
   });
 
@@ -82,7 +78,7 @@ describe.skipIf(w.skip)(w.title('queue, party and invite link (1 browser + bots)
       1000,
     );
     expect(w.errors()).toEqual([]);
-    await leave(p);
+    await leaveMatch(p);
     await mate.close();
     await solo.close();
   });
@@ -98,7 +94,7 @@ describe.skipIf(w.skip)(w.title('queue, party and invite link (1 browser + bots)
     await linked.waitSnap((s) => s.code === code && s.role === 'member', 'joined through the link', 180_000);
     expect(new URL(linked.page.url()).searchParams.get('lobby')).toBeNull();
     expect(w.errors()).toEqual([]);
-    await leave(linked);
+    await leaveMatch(linked);
     await host.close();
   });
 });

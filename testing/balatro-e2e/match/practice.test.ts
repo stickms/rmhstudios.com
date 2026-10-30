@@ -6,15 +6,12 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { MpPlayer } from '../lib/mp-player';
+import { leaveMatch } from '../lib/match-flow';
 import { matchWorld } from './world';
 
 const w = matchWorld();
 const RULESETS = ['ruleset_mp_balanced', 'ruleset_mp_expanded', 'ruleset_mp_vanilla', 'ruleset_mp_smallworld'];
 
-async function toMenu(p: MpPlayer) {
-  await p.cmd('mp_send', { t: 'ui_leave', d: {} }).catch(() => {});
-  await p.waitSnap((s) => s.role === null, 'practice left', 120_000);
-}
 
 /** Small + Big won, cash out, leave the shop. */
 async function normals(p: MpPlayer) {
@@ -58,7 +55,7 @@ describe.skipIf(w.skip)(w.title('practice (1 browser)'), () => {
       const played = await p.cmd<{ played: number }>('pvp_play', { chips: 100 }, 600_000);
       expect(played.played).toBeGreaterThan(0);
       const end = await p.cmd<{ state: string; result: string | null }>('pvp_wait_end', {}, 300_000);
-      expect(end.result).toBeNull();
+      expect(end.result ?? null).toBeNull();
       expect((await p.cmd<{ lives: Record<string, number> }>('mp_state')).lives).toEqual(before.lives);
       expect(w.errors()).toEqual([]);
       if (ruleset === 'ruleset_mp_balanced') {
@@ -75,7 +72,7 @@ describe.skipIf(w.skip)(w.title('practice (1 browser)'), () => {
         const s = await p.cmd<{ won: boolean; ante: number }>('state');
         expect(s.won || s.ante >= 9).toBe(true);
       }
-      await toMenu(p);
+      await leaveMatch(p);
     });
   }
 });
