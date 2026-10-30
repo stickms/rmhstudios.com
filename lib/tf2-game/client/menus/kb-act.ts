@@ -26,7 +26,8 @@ import { bindableActions, FIXED_ACTIONS, rebind, type Action, type Keybinds } fr
 
 /** Where the key list is published (per game: HL2's own file serves Half-Life 2 and Portal). */
 export function kbActFile(game: HudGame): string {
-  return game === 'tf2' ? 'scripts/kb_act.lst' : 'hl2/scripts/kb_act.lst';
+  // CS:GO's list is not in the HUD base: its Keyboard tab lists this game's own actions and words.
+  return game === 'tf2' ? 'scripts/kb_act.lst' : game === 'csgo' ? 'csgo/scripts/kb_act.lst' : 'hl2/scripts/kb_act.lst';
 }
 
 export interface KbActRow {

@@ -7,10 +7,12 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Action } from '@/lib/tf2-game/client/input/actions';
+import type { HudGame } from '@/lib/tf2-game/client/hud-state';
 
-export function useActionLabels(): Record<Action, string> {
+export function useActionLabels(game: HudGame = 'tf2'): Record<Action, string> {
   const { t } = useTranslation('c-tf2-game');
-  return useMemo(() => ({
+  return useMemo(() => {
+    const labels: Record<Action, string> = {
     forward: t('act_forward', { defaultValue: 'Move forward' }),
     back: t('act_back', { defaultValue: 'Move back' }),
     moveleft: t('act_moveleft', { defaultValue: 'Strafe left' }),
@@ -58,5 +60,12 @@ export function useActionLabels(): Record<Action, string> {
     menu_right: '',
     menu_accept: '',
     menu_back: '',
-  }), [t]);
+    };
+    // CS:GO's Shift walks and G drops the weapon out.
+    if (game === 'csgo') {
+      labels.speed = labels.walk;
+      labels.dropitem = t('act_drop_weapon', { defaultValue: 'Drop weapon' });
+    }
+    return labels;
+  }, [t, game]);
 }
