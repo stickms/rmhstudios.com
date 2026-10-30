@@ -13,6 +13,7 @@ import { Route as SiteRouteImport } from './routes/_site'
 import { Route as AdaptiveIntelligenceRouteImport } from './routes/adaptive-intelligence'
 import { Route as AdsDottxtRouteImport } from './routes/ads[.]txt'
 import { Route as AltairRouteImport } from './routes/altair'
+import { Route as BalatroRouteImport } from './routes/balatro'
 import { Route as BlackLivesMatterRouteImport } from './routes/black-lives-matter'
 import { Route as BreachesRouteImport } from './routes/breaches'
 import { Route as BumsRushRouteImport } from './routes/bums-rush'
@@ -889,6 +890,7 @@ import { Route as ApiArcadeRivalIndexRouteImport } from './routes/api/arcade/riv
 import { Route as ApiArcadeTipsIndexRouteImport } from './routes/api/arcade/tips/index'
 import { Route as ApiAwardsIdHideRouteImport } from './routes/api/awards/$id.hide'
 import { Route as ApiBadgeUserIdGameIdRouteImport } from './routes/api/badge/$userId/$gameId'
+import { Route as ApiBalatroPackFileRouteImport } from './routes/api/balatro/pack.$file'
 import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
 import { Route as ApiChatFoldersIdItemsRouteImport } from './routes/api/chat-folders/$id/items'
 import { Route as ApiCommentsCommentIdReactRouteImport } from './routes/api/comments/$commentId/react'
@@ -1347,6 +1349,11 @@ const AdsDottxtRoute = AdsDottxtRouteImport.update({
 const AltairRoute = AltairRouteImport.update({
   id: '/altair',
   path: '/altair',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BalatroRoute = BalatroRouteImport.update({
+  id: '/balatro',
+  path: '/balatro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlackLivesMatterRoute = BlackLivesMatterRouteImport.update({
@@ -5790,6 +5797,11 @@ const ApiBadgeUserIdGameIdRoute = ApiBadgeUserIdGameIdRouteImport.update({
   path: '/api/badge/$userId/$gameId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBalatroPackFileRoute = ApiBalatroPackFileRouteImport.update({
+  id: '/api/balatro/pack/$file',
+  path: '/api/balatro/pack/$file',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiBuildsCoverFileRoute = ApiBuildsCoverFileRouteImport.update({
   id: '/api/builds/cover/$file',
   path: '/api/builds/cover/$file',
@@ -8176,6 +8188,7 @@ export interface FileRoutesByFullPath {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/ads.txt': typeof AdsDottxtRoute
   '/altair': typeof AltairRouteWithChildren
+  '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/breaches': typeof BreachesRoute
   '/bums-rush': typeof BumsRushRoute
@@ -9031,6 +9044,7 @@ export interface FileRoutesByFullPath {
   '/api/arcade/daily/start': typeof ApiArcadeDailyStartRoute
   '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
   '/api/badge/$userId/$gameId': typeof ApiBadgeUserIdGameIdRoute
+  '/api/balatro/pack/$file': typeof ApiBalatroPackFileRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/chat-folders/$id/items': typeof ApiChatFoldersIdItemsRoute
   '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
@@ -9495,6 +9509,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/ads.txt': typeof AdsDottxtRoute
+  '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/breaches': typeof BreachesRoute
   '/bums-rush': typeof BumsRushRoute
@@ -10325,6 +10340,7 @@ export interface FileRoutesByTo {
   '/api/arcade/daily/start': typeof ApiArcadeDailyStartRoute
   '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
   '/api/badge/$userId/$gameId': typeof ApiBadgeUserIdGameIdRoute
+  '/api/balatro/pack/$file': typeof ApiBalatroPackFileRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/chat-folders/$id/items': typeof ApiChatFoldersIdItemsRoute
   '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
@@ -10792,6 +10808,7 @@ export interface FileRoutesById {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/ads.txt': typeof AdsDottxtRoute
   '/altair': typeof AltairRouteWithChildren
+  '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/breaches': typeof BreachesRoute
   '/bums-rush': typeof BumsRushRoute
@@ -11648,6 +11665,7 @@ export interface FileRoutesById {
   '/api/arcade/daily/start': typeof ApiArcadeDailyStartRoute
   '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
   '/api/badge/$userId/$gameId': typeof ApiBadgeUserIdGameIdRoute
+  '/api/balatro/pack/$file': typeof ApiBalatroPackFileRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/chat-folders/$id/items': typeof ApiChatFoldersIdItemsRoute
   '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
@@ -12116,6 +12134,7 @@ export interface FileRouteTypes {
     | '/adaptive-intelligence'
     | '/ads.txt'
     | '/altair'
+    | '/balatro'
     | '/black-lives-matter'
     | '/breaches'
     | '/bums-rush'
@@ -12971,6 +12990,7 @@ export interface FileRouteTypes {
     | '/api/arcade/daily/start'
     | '/api/awards/$id/hide'
     | '/api/badge/$userId/$gameId'
+    | '/api/balatro/pack/$file'
     | '/api/builds/cover/$file'
     | '/api/chat-folders/$id/items'
     | '/api/comments/$commentId/react'
@@ -13435,6 +13455,7 @@ export interface FileRouteTypes {
   to:
     | '/adaptive-intelligence'
     | '/ads.txt'
+    | '/balatro'
     | '/black-lives-matter'
     | '/breaches'
     | '/bums-rush'
@@ -14265,6 +14286,7 @@ export interface FileRouteTypes {
     | '/api/arcade/daily/start'
     | '/api/awards/$id/hide'
     | '/api/badge/$userId/$gameId'
+    | '/api/balatro/pack/$file'
     | '/api/builds/cover/$file'
     | '/api/chat-folders/$id/items'
     | '/api/comments/$commentId/react'
@@ -14731,6 +14753,7 @@ export interface FileRouteTypes {
     | '/adaptive-intelligence'
     | '/ads.txt'
     | '/altair'
+    | '/balatro'
     | '/black-lives-matter'
     | '/breaches'
     | '/bums-rush'
@@ -15587,6 +15610,7 @@ export interface FileRouteTypes {
     | '/api/arcade/daily/start'
     | '/api/awards/$id/hide'
     | '/api/badge/$userId/$gameId'
+    | '/api/balatro/pack/$file'
     | '/api/builds/cover/$file'
     | '/api/chat-folders/$id/items'
     | '/api/comments/$commentId/react'
@@ -16054,6 +16078,7 @@ export interface RootRouteChildren {
   AdaptiveIntelligenceRoute: typeof AdaptiveIntelligenceRoute
   AdsDottxtRoute: typeof AdsDottxtRoute
   AltairRoute: typeof AltairRouteWithChildren
+  BalatroRoute: typeof BalatroRoute
   BlackLivesMatterRoute: typeof BlackLivesMatterRoute
   BreachesRoute: typeof BreachesRoute
   BumsRushRoute: typeof BumsRushRoute
@@ -16600,6 +16625,7 @@ export interface RootRouteChildren {
   ApiArcadeDailyStartRoute: typeof ApiArcadeDailyStartRoute
   ApiAwardsIdHideRoute: typeof ApiAwardsIdHideRoute
   ApiBadgeUserIdGameIdRoute: typeof ApiBadgeUserIdGameIdRoute
+  ApiBalatroPackFileRoute: typeof ApiBalatroPackFileRoute
   ApiBuildsCoverFileRoute: typeof ApiBuildsCoverFileRoute
   ApiCommentsCommentIdReactRoute: typeof ApiCommentsCommentIdReactRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
@@ -16893,6 +16919,13 @@ declare module '@tanstack/react-router' {
       path: '/altair'
       fullPath: '/altair'
       preLoaderRoute: typeof AltairRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/balatro': {
+      id: '/balatro'
+      path: '/balatro'
+      fullPath: '/balatro'
+      preLoaderRoute: typeof BalatroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/black-lives-matter': {
@@ -23027,6 +23060,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBadgeUserIdGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/balatro/pack/$file': {
+      id: '/api/balatro/pack/$file'
+      path: '/api/balatro/pack/$file'
+      fullPath: '/api/balatro/pack/$file'
+      preLoaderRoute: typeof ApiBalatroPackFileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/builds/cover/$file': {
       id: '/api/builds/cover/$file'
       path: '/api/builds/cover/$file'
@@ -28359,6 +28399,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdaptiveIntelligenceRoute: AdaptiveIntelligenceRoute,
   AdsDottxtRoute: AdsDottxtRoute,
   AltairRoute: AltairRouteWithChildren,
+  BalatroRoute: BalatroRoute,
   BlackLivesMatterRoute: BlackLivesMatterRoute,
   BreachesRoute: BreachesRoute,
   BumsRushRoute: BumsRushRoute,
@@ -28906,6 +28947,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiArcadeDailyStartRoute: ApiArcadeDailyStartRoute,
   ApiAwardsIdHideRoute: ApiAwardsIdHideRoute,
   ApiBadgeUserIdGameIdRoute: ApiBadgeUserIdGameIdRoute,
+  ApiBalatroPackFileRoute: ApiBalatroPackFileRoute,
   ApiBuildsCoverFileRoute: ApiBuildsCoverFileRoute,
   ApiCommentsCommentIdReactRoute: ApiCommentsCommentIdReactRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,

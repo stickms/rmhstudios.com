@@ -62,6 +62,16 @@ interface RouteFile {
   isApi: boolean;
 }
 
+/**
+ * Routes kept out of every published inventory. These docs are a public, indexed
+ * site, and listing a route here is how it gets found. Each one also carries
+ * `noindex` and a robots.txt Disallow.
+ *
+ * `balatro`: signed-in only and deliberately unsearchable (licensing); its API
+ * routes go with it.
+ */
+const UNPUBLISHED = [/^balatro$/, /^api\/balatro\//];
+
 /** Route ids that also exist as a directory — `rmhbox.tsx` beside `rmhbox/`. */
 const layoutIds = new Set<string>();
 
@@ -77,6 +87,7 @@ function walk(dir: string, acc: RouteFile[] = []): RouteFile[] {
     const rel = relative(ROUTES, full).replace(/\\/g, '/');
     const id = rel.replace(/\.tsx?$/, '');
     if (id === '__root' || id === 'routeTree.gen') continue;
+    if (UNPUBLISHED.some((re) => re.test(id))) continue;
     acc.push({ id, file: `app/routes/${rel}`, isApi: id === 'api' || id.startsWith(`api/`) });
   }
   return acc;

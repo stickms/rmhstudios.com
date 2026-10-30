@@ -1,0 +1,138 @@
+/* /balatro — the loader page and the game's frame (components/balatro/BalatroPage.tsx).
+ * Full-screen app tier: --app-* tokens only. The game draws its own UI inside the
+ * canvas; this file styles the chrome around it. */
+
+/* The frame is in the document flow, one live viewport tall (vh line for engines
+ * without dvh, then dvh) — no fixed layer at the screen edges. The engine follows
+ * its size through lib/balatro/runtime.ts. */
+.balatro-frame {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--app-bg);
+  overflow: hidden;
+}
+.balatro-frame:fullscreen {
+  height: 100%;
+}
+
+/* The engine sets the canvas's pixel size; CSS sets the size it is shown at. */
+.balatro-canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  outline: none;
+  touch-action: none;
+}
+
+.balatro-boot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: var(--app-bg);
+}
+
+.balatro-meter {
+  display: block;
+  width: min(16rem, 60vw);
+  height: 4px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface);
+  overflow: hidden;
+}
+.balatro-meter > span {
+  display: block;
+  height: 100%;
+  background: var(--app-accent);
+  transform-origin: left center;
+  transition: transform var(--app-duration-fast) var(--app-ease);
+}
+
+/* Small, quiet, out of the game's own corners' way until pointed at. */
+.balatro-toolbar {
+  position: absolute;
+  top: calc(0.5rem + var(--safe-top, 0px));
+  right: calc(0.5rem + var(--safe-right, 0px));
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-scrim);
+  opacity: 0.35;
+  transition: opacity var(--app-duration-fast) var(--app-ease);
+}
+.balatro-toolbar:hover,
+.balatro-toolbar:focus-within {
+  opacity: 1;
+}
+.balatro-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--app-radius-sm);
+  color: var(--app-text);
+}
+.balatro-toolbar button:hover {
+  background: var(--app-surface-hover);
+}
+@media (pointer: coarse) {
+  .balatro-toolbar button {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+
+.balatro-panel {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  background: var(--app-surface);
+}
+
+.balatro-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  border: 1px dashed var(--app-border-bright);
+  border-radius: var(--app-radius);
+  text-align: center;
+  transition: border-color var(--app-duration-fast) var(--app-ease);
+}
+.balatro-drop-active {
+  border-color: var(--app-accent);
+}
+
+.balatro-action {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.125rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--app-text);
+  transition: background-color var(--app-duration-fast) var(--app-ease);
+}
+.balatro-action:hover {
+  background: var(--app-surface-hover);
+}
+.balatro-action-primary {
+  border-color: transparent;
+  background: var(--app-gel-ink);
+  color: var(--app-on-ink);
+}
+.balatro-action-primary:hover {
+  background: var(--app-gel-ink);
+  opacity: 0.9;
+}
