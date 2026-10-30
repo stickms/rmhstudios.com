@@ -84,7 +84,8 @@ export const GAME_ASSET_CHANNELS = {
     kind: 'mdl',
     // 2: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`).
     // 3: characters carry their ragdoll (the .phy's solids and joint limits, ragdoll.py) in `ragdoll`.
-    builder: 3,
+    // 4: the maps' NPCs and actors (build-maps.ts collectActorModels) join the list, drawn and ragdolled.
+    builder: 4,
     env: 'HL2_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },
@@ -109,7 +110,8 @@ export const GAME_ASSET_CHANNELS = {
     kind: 'mdl',
     // 2: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`).
     // 3: characters carry their ragdoll (the .phy's solids and joint limits, ragdoll.py) in `ragdoll`.
-    builder: 3,
+    // 4: the maps' NPCs and actors (build-maps.ts collectActorModels) join the list, drawn and ragdolled.
+    builder: 4,
     env: 'PORTAL_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },

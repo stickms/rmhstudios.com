@@ -25,6 +25,7 @@ import { COLLISION_GROUP_NPC, DAMAGE_YES, MOVETYPE_STEP, SOLID_BBOX } from '../.
 import type { DamageInfo } from '../../tf2-game/sim/damage';
 import { PHYS_GROUP, type PhysBody } from '../physics/physics-world';
 import { registerSp, SpEntity, USE_TOGGLE } from '../entities/base';
+import { DEFAULT_ACTOR_MODELS } from './actor-models';
 
 /** CONTENTS_MONSTER. */
 const CONTENTS_MONSTER = 0x2000000;
@@ -32,19 +33,6 @@ const CONTENTS_MONSTER = 0x2000000;
 export const HULL_HUMAN_MINS = Object.freeze({ x: -13, y: -13, z: 0 });
 export const HULL_HUMAN_MAXS = Object.freeze({ x: 13, y: 13, z: 72 });
 
-/** Default models for classes the map leaves blank. */
-const DEFAULT_MODELS: Record<string, string> = {
-  npc_metropolice: 'models/police.mdl',
-  npc_barney: 'models/barney.mdl',
-  npc_breen: 'models/breen.mdl',
-  npc_kleiner: 'models/kleiner.mdl',
-  npc_vortigaunt: 'models/vortigaunt.mdl',
-  npc_cscanner: 'models/combine_scanner.mdl',
-  npc_strider: 'models/combine_strider.mdl',
-  npc_pigeon: 'models/pigeon.mdl',
-  npc_combine_camera: 'models/combine_camera/combine_camera.mdl',
-  npc_citizen: 'models/humans/group01/male_01.mdl',
-};
 
 export interface MoveGoal {
   pos: Vec3;
@@ -96,7 +84,7 @@ export class SpActor extends SpEntity {
   }
 
   override spawn(): void {
-    if (!this.model) this.model = this.kvString('model') || DEFAULT_MODELS[this.classname] || '';
+    if (!this.model) this.model = this.kvString('model') || DEFAULT_ACTOR_MODELS[this.classname] || '';
     super.spawn();
     this.solid = SOLID_BBOX;
     this.moveType = MOVETYPE_STEP;

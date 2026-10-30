@@ -32,6 +32,7 @@ import { isContentAddressed } from '../../lib/tf2-game/assets/paths';
 import type { GameId } from '../../lib/tf2-game/assets/versions';
 import {
   buildMaps,
+  collectActorModels,
   decodeResourceText,
   GAME_ALWAYS_MODELS,
   GAME_SEARCH,
@@ -72,6 +73,27 @@ describe('map package pieces', () => {
     ]);
     for (const list of Object.values(GAME_ALWAYS_MODELS))
       for (const m of list) expect(m).toMatch(/^models\/[a-z0-9_/]+\.mdl$/);
+  });
+
+  it("lists the maps' NPCs' models: the map's, else the class's default", () => {
+    const ent = (classname: string, model = '') => ({
+      classname,
+      get: (k: string) => (k === 'model' ? model : ''),
+    });
+    const bsp = {
+      entities: [
+        ent('npc_metropolice'),
+        ent('npc_citizen', 'models/Humans/Group01/Female_02.mdl'),
+        ent('generic_actor', 'models/kleiner.mdl'),
+        ent('prop_dynamic', 'models/props_c17/chair.mdl'),
+        ent('npc_unknown'),
+      ],
+    } as unknown as BspFile;
+    expect(collectActorModels(bsp)).toEqual([
+      'models/humans/group01/female_02.mdl',
+      'models/kleiner.mdl',
+      'models/police.mdl',
+    ]);
   });
 
   it('names textures with models.py TEX_VERSION', () => {
