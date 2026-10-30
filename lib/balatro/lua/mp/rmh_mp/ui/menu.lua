@@ -271,7 +271,12 @@ end
 
 -- ── Intents ─────────────────────────────────────────────────────────────────
 
+-- Intents that (re)enter a lobby: a lobby the player left may come back after one of these.
+local ENTERS = { ui_join = true, ui_create_lobby = true, ui_join_clipboard = true, ui_seat = true, ui_queue = true,
+  ui_spectate = true }
+
 function U.send(t, d)
+  if ENTERS[t] then U.model.left_code = nil end
   local ok = MP.net.send(t, d or {})
   if not ok then MP.log('warn', 'ui: %s refused by the protocol', tostring(t)) end
   return ok
@@ -311,6 +316,8 @@ local function on_net_status(d)
 end
 
 local function on_lobby_view(d)
+  -- A view of the lobby the player just left (in flight when they pressed Leave) is dropped.
+  if d.state and U.model.left_code and d.state.code == U.model.left_code then return end
   local had = U.model.lobby
   U.model.lobby = d
   MP.state.lobby = d
@@ -357,6 +364,7 @@ local function on_toast(d) W.toast(d.key, d.vars) end
 
 --- Leave the lobby (after confirm): tell TS, forget the view, back to the PvP menu.
 function U.leave_lobby()
+  U.model.left_code = U.model.lobby and U.model.lobby.state and U.model.lobby.state.code or nil
   U.send('ui_leave', {})
   U.model.lobby = nil
   U.model.setup = nil

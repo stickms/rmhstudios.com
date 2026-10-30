@@ -112,7 +112,7 @@ function W.cycle(args)
   if args.disabled then options = { options[current] or '' }; current = 1 end
   local t = create_option_cycle({
     id = args.id, label = args.label, options = options, current_option = current,
-    opt_callback = args.disabled and nil or args.callback, colour = args.colour or TH.col('RED'),
+    opt_callback = (not args.disabled) and args.callback or nil, colour = args.colour or TH.col('RED'),
     w = args.w or 3.5, scale = args.scale or 0.8, text_scale = args.text_scale, info = args.info,
     mp = args.mp, no_pips = args.no_pips,
   })

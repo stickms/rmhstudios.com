@@ -41,12 +41,9 @@ function RS.deck_name(key)
   return (c and c.name ~= key and c.name) or key
 end
 
-local function stake_keys()
-  local out = {}
-  local pool = G.P_CENTER_POOLS and G.P_CENTER_POOLS.Stake
-  for i = 1, 8 do out[i] = pool and pool[i] and pool[i].key or nil end
-  return out
-end
+-- The vanilla stake keys, in stake order (game.lua P_STAKES).
+RS.STAKE_KEYS = { 'stake_white', 'stake_red', 'stake_green', 'stake_black', 'stake_blue', 'stake_purple', 'stake_orange', 'stake_gold' }
+local function stake_keys() return RS.STAKE_KEYS end
 
 function RS.stake_name(i)
   local key = stake_keys()[i]
