@@ -7,8 +7,9 @@
 -- ability.mp_phantom = true: never in G.jokers, never added to the deck, $0, eternal, not
 -- draggable, and the registry dispatch already skips its effects. The visible copies are kept in
 -- MP.state.phantoms (WS7's LGG/Pizza juice them).
--- Traps: MP.state.traps.nemesis_rows (WS9 fills it: a list of { key, uid?, owner? }) is shown
--- face down in the consumable row.
+-- Traps: WS9's MP.traps.nemesis_row() ({uid, key, owner, mine}) is shown face down in the
+-- consumable row, rebuilt on MP.traps.on_change events (row / held / fired_own); only `mine`
+-- entries keep their hover details.
 --
 -- Layouts (WS10's MP.ui.setting('nemesisLayout'); default Standard):
 --   standard  each Nemesis row sits above your own row, same x and width
@@ -80,16 +81,27 @@ function NR.visible_keys()
   return (id and NR.received[id]) or {}
 end
 
+--- The face-down trap row for my ante nemesis (WS9 MP.traps.nemesis_row(): {uid, key, owner,
+--- mine}); entries whose key is not mounted are dropped.
 function NR.trap_list()
-  local rows = MP.state.traps and MP.state.traps.nemesis_rows
   local out = {}
-  if type(rows) ~= 'table' then return out end
-  for _, t in ipairs(rows) do
-    local key = type(t) == 'table' and t.key or t
-    if type(key) == 'string' and G.P_CENTERS and G.P_CENTERS[key] then out[#out + 1] = key end
+  local T = MP.traps
+  if not (T and T.nemesis_row) then return out end
+  local ok, row = pcall(T.nemesis_row)
+  if not ok or type(row) ~= 'table' then return out end
+  for _, e in ipairs(row) do
+    if type(e) == 'table' and type(e.key) == 'string' and G.P_CENTERS and G.P_CENTERS[e.key] then
+      out[#out + 1] = e
+    end
     if #out >= NR.MAX then break end
   end
   return out
+end
+
+local function trap_sig(list)
+  local parts = {}
+  for i, e in ipairs(list) do parts[i] = tostring(e.uid) .. ':' .. e.key .. (e.mine and '*' or '') end
+  return table.concat(parts, ',')
 end
 
 -- ── Areas ────────────────────────────────────────────────────────────────────
@@ -196,17 +208,23 @@ function NR.rebuild()
     MP.state.phantoms = list
   end
   local traps = NR.trap_list()
-  local ts = sig(traps)
+  local ts = trap_sig(traps)
   if ts ~= NR.trap_sig and alive(a.traps) then
     NR.trap_sig = ts
     clear(a.traps, function(c) return c.ability.mp_trap_display end)
-    for _, k in ipairs(traps) do
-      local c = new_card(a.traps, k)
+    local shown = {}
+    for _, e in ipairs(traps) do
+      local c = new_card(a.traps, e.key)
       if c then
         c.ability.mp_trap_display = true
+        c.ability.mp_trap_uid, c.ability.mp_trap_mine = e.uid, e.mine == true
         c.facing, c.sprite_facing = 'back', 'back'
+        -- Only the trap's owner may read it (A1 5.3.4): no hover details for the others.
+        if not e.mine and c.states and c.states.hover then c.states.hover.can = false end
+        shown[#shown + 1] = c
       end
     end
+    NR.trap_cards = shown
   end
 end
 
@@ -225,8 +243,17 @@ function NR.frame()
   NR.rebuild()
 end
 
+--- WS9 trap events: a nemesis row changed / one of mine fired -> rebuild on the next frame.
+function NR.on_trap_change(ev)
+  if ev == 'row' or ev == 'held' or ev == 'fired_own' then NR.trap_sig = nil end
+end
+
 function NR.install()
   NR.received, NR.sent_sig, NR.areas = {}, nil, nil
+  if MP.traps and MP.traps.on_change and not NR.trap_listening then
+    NR.trap_listening = true
+    MP.traps.on_change(NR.on_trap_change)
+  end
   MP.sync.register(NR.OBJ, { receive = function(from, data, kind)
     if kind ~= 'phantom' then return end
     NR.receive(from, data)

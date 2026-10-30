@@ -37,12 +37,16 @@ function PR.area_for(center)
   return nil
 end
 
---- May this key be given? Inactive sandbox jokers (registered, never pooled) need the toggle.
+--- May this key be given? Vanilla keys always; MP keys through WS8's MP.sandbox.spawnable
+--- (inactive sandbox jokers only with the "Show inactive sandbox cards" toggle, error decoys
+--- never, D-28). Without the sandbox module, unpooled MP jokers need the toggle.
 function PR.allowed(key)
-  local def = MP.registry and MP.registry.get and MP.registry.get(key)
-  if def and def.pool == false and def.kind == 'Joker' and not MP.practice_opts.show_inactive then
-    return false
-  end
+  local R = MP.registry
+  if not (R and R.is_mp and R.is_mp(key)) then return true end
+  local show = MP.practice_opts.show_inactive == true
+  if MP.sandbox and MP.sandbox.spawnable then return MP.sandbox.spawnable(key, show) == true end
+  local def = R.get and R.get(key)
+  if def and def.pool == false and def.kind == 'Joker' and not show then return false end
   return true
 end
 

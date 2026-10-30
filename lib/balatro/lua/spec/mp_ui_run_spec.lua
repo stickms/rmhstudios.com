@@ -684,6 +684,27 @@ describe('Nemesis rows (HUD-06)', function()
     expect(MP.state.phantoms[1].config.center.key).eq('j_joker')
   end)
 
+  it('the trap row shows the nemesis row face down; only mine keep hover details; events rebuild', function()
+    boot()
+    setup_areas()
+    MP.state.ante_nemesis = { 'u2' }
+    MP.ui.nemesis_rows.frame()
+    expect(#(MP.ui.nemesis_rows.trap_cards or {})).eq(0)
+    local k = MP.traps.KEYS[1]
+    MP.traps.receive_held('u2', { cards = { { uid = 'a1', key = k, owner = 'u1' }, { uid = 'b2', key = k, owner = 'u3' } }, fired = {} })
+    MP.ui.nemesis_rows.frame()
+    local cards = MP.ui.nemesis_rows.trap_cards
+    expect(#cards).eq(2)
+    expect(cards[1].facing).eq('back')
+    expect(cards[1].ability.mp_trap_mine).eq(true)
+    expect(cards[2].states.hover.can).eq(false)
+    expect(cards[1].area == MP.ui.nemesis_rows.areas.traps).truthy()
+    -- one fires: the row shrinks
+    MP.traps.receive_held('u2', { cards = { { uid = 'a1', key = k, owner = 'u1' }, { uid = 'b2', key = k, owner = 'u3' } }, fired = { 'b2' } })
+    MP.ui.nemesis_rows.frame()
+    expect(#MP.ui.nemesis_rows.trap_cards).eq(1)
+  end)
+
   it('layouts: standard above own rows, classic one half-width row under the consumables', function()
     boot()
     setup_areas()
@@ -752,6 +773,23 @@ describe('practice tools (PR-03, PR-04)', function()
     for _ = 1, 5 do seq[#seq + 1] = MP.practice.cycle_edition(card) end
     expect(seq).eq({ 'foil', 'holo', 'polychrome', 'negative', 'base' })
     expect(card.area.config.card_limit).eq(4)
+  end)
+
+  it('MP keys go through MP.sandbox.spawnable: inactive only with the toggle, decoys never (D-28)', function()
+    practice()
+    areas()
+    MP.practice_opts.unlimited_slots = true
+    local inactive = MP.sandbox.INACTIVE[1]
+    expect(inactive ~= nil and G.P_CENTERS[inactive] ~= nil).truthy()
+    MP.practice_opts.show_inactive = false
+    expect(select(2, MP.practice.give(inactive))).eq('inactive')
+    MP.practice_opts.show_inactive = true
+    expect(MP.practice.give(inactive) ~= nil).truthy()
+    if G.P_CENTERS.j_mp_error_sandbox_1 then
+      expect(select(2, MP.practice.give('j_mp_error_sandbox_1'))).eq('inactive')
+    end
+    expect(MP.practice.give('j_mp_pacifist') ~= nil).truthy()
+    MP.practice_opts.show_inactive, MP.practice_opts.unlimited_slots = false, false
   end)
 
   it('give-card is refused outside practice', function()
