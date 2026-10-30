@@ -975,6 +975,10 @@ import { Route as ApiGamesIdReviewRouteImport } from './routes/api/games/$id.rev
 import { Route as ApiGamesIdReviewsRouteImport } from './routes/api/games/$id.reviews'
 import { Route as ApiGamesIdScoreRouteImport } from './routes/api/games/$id/score'
 import { Route as ApiGamesCardsCraftRouteImport } from './routes/api/games/cards/craft'
+import { Route as ApiGamesHubDeleteRouteImport } from './routes/api/games/hub/delete'
+import { Route as ApiGamesHubModerateRouteImport } from './routes/api/games/hub/moderate'
+import { Route as ApiGamesHubPostRouteImport } from './routes/api/games/hub/post'
+import { Route as ApiGamesHubThreadRouteImport } from './routes/api/games/hub/thread'
 import { Route as ApiGamesMarketBuyRouteImport } from './routes/api/games/market/buy'
 import { Route as ApiGamesMarketCancelRouteImport } from './routes/api/games/market/cancel'
 import { Route as ApiGamesMarketListRouteImport } from './routes/api/games/market/list'
@@ -1205,6 +1209,7 @@ import { Route as ApiWhenIdIcsRouteImport } from './routes/api/when/$id/ics'
 import { Route as ApiWhenIdLockRouteImport } from './routes/api/when/$id/lock'
 import { Route as ApiWhenIdRespondRouteImport } from './routes/api/when/$id/respond'
 import { Route as ApiWorldsVisitCodeRouteImport } from './routes/api/worlds/visit.$code'
+import { Route as GamesHubGameIdIndexRouteImport } from './routes/games/hub.$gameId.index'
 import { Route as GamesTradesNewIdRouteImport } from './routes/games/trades.new.$id'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
 import { Route as Tf2HudEditorHSlugRouteImport } from './routes/tf2/hud-editor/h.$slug'
@@ -1333,6 +1338,7 @@ import { Route as ApiV1UsersHandlePostsRouteImport } from './routes/api/v1/users
 import { Route as ApiWorldsVisitCodePostcardRouteImport } from './routes/api/worlds/visit.$code.postcard'
 import { Route as ApiWorldsVisitCodeWaterRouteImport } from './routes/api/worlds/visit.$code.water'
 import { Route as GamesLibraryGameIdGuidesGuideIdRouteImport } from './routes/games/_library/$gameId_.guides.$guideId'
+import { Route as GamesHubGameIdTThreadIdRouteImport } from './routes/games/hub.$gameId.t.$threadId'
 import { Route as ApiAdminAlbumsIdSlidesSlideIdRouteImport } from './routes/api/admin/albums/$id/slides/$slideId'
 import { Route as ApiAdminDelightFortunesIdIndexRouteImport } from './routes/api/admin/delight/fortunes/$id/index'
 import { Route as ApiAdminDelightHuntsIdIndexRouteImport } from './routes/api/admin/delight/hunts/$id/index'
@@ -6282,6 +6288,26 @@ const ApiGamesCardsCraftRoute = ApiGamesCardsCraftRouteImport.update({
   path: '/api/games/cards/craft',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGamesHubDeleteRoute = ApiGamesHubDeleteRouteImport.update({
+  id: '/api/games/hub/delete',
+  path: '/api/games/hub/delete',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesHubModerateRoute = ApiGamesHubModerateRouteImport.update({
+  id: '/api/games/hub/moderate',
+  path: '/api/games/hub/moderate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesHubPostRoute = ApiGamesHubPostRouteImport.update({
+  id: '/api/games/hub/post',
+  path: '/api/games/hub/post',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesHubThreadRoute = ApiGamesHubThreadRouteImport.update({
+  id: '/api/games/hub/thread',
+  path: '/api/games/hub/thread',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGamesMarketBuyRoute = ApiGamesMarketBuyRouteImport.update({
   id: '/api/games/market/buy',
   path: '/api/games/market/buy',
@@ -7479,6 +7505,11 @@ const ApiWorldsVisitCodeRoute = ApiWorldsVisitCodeRouteImport.update({
   path: '/api/worlds/visit/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesHubGameIdIndexRoute = GamesHubGameIdIndexRouteImport.update({
+  id: '/hub/$gameId/',
+  path: '/hub/$gameId/',
+  getParentRoute: () => GamesRoute,
+} as any)
 const GamesTradesNewIdRoute = GamesTradesNewIdRouteImport.update({
   id: '/trades/new/$id',
   path: '/trades/new/$id',
@@ -8194,6 +8225,11 @@ const GamesLibraryGameIdGuidesGuideIdRoute =
     path: '/$gameId/guides/$guideId',
     getParentRoute: () => GamesLibraryRoute,
   } as any)
+const GamesHubGameIdTThreadIdRoute = GamesHubGameIdTThreadIdRouteImport.update({
+  id: '/hub/$gameId/t/$threadId',
+  path: '/hub/$gameId/t/$threadId',
+  getParentRoute: () => GamesRoute,
+} as any)
 const ApiAdminAlbumsIdSlidesSlideIdRoute =
   ApiAdminAlbumsIdSlidesSlideIdRouteImport.update({
     id: '/$slideId',
@@ -9243,6 +9279,10 @@ export interface FileRoutesByFullPath {
   '/api/games/$id/reviews': typeof ApiGamesIdReviewsRoute
   '/api/games/$id/score': typeof ApiGamesIdScoreRoute
   '/api/games/cards/craft': typeof ApiGamesCardsCraftRoute
+  '/api/games/hub/delete': typeof ApiGamesHubDeleteRoute
+  '/api/games/hub/moderate': typeof ApiGamesHubModerateRoute
+  '/api/games/hub/post': typeof ApiGamesHubPostRoute
+  '/api/games/hub/thread': typeof ApiGamesHubThreadRoute
   '/api/games/market/buy': typeof ApiGamesMarketBuyRoute
   '/api/games/market/cancel': typeof ApiGamesMarketCancelRoute
   '/api/games/market/list': typeof ApiGamesMarketListRoute
@@ -9509,6 +9549,7 @@ export interface FileRoutesByFullPath {
   '/api/translate/vote/': typeof ApiTranslateVoteIndexRoute
   '/api/versecraft/seeds/': typeof ApiVersecraftSeedsIndexRoute
   '/api/when/$id/': typeof ApiWhenIdIndexRoute
+  '/games/hub/$gameId/': typeof GamesHubGameIdIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/c/$slug/invite/$code': typeof SiteCSlugInviteCodeRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
@@ -9614,6 +9655,7 @@ export interface FileRoutesByFullPath {
   '/api/worlds/visit/$code/postcard': typeof ApiWorldsVisitCodePostcardRoute
   '/api/worlds/visit/$code/water': typeof ApiWorldsVisitCodeWaterRoute
   '/games/$gameId/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
+  '/games/hub/$gameId/t/$threadId': typeof GamesHubGameIdTThreadIdRoute
   '/api/admin/delight/fools/': typeof ApiAdminDelightFoolsIndexRoute
   '/api/admin/delight/fortunes/': typeof ApiAdminDelightFortunesIndexRoute
   '/api/admin/delight/hunts/': typeof ApiAdminDelightHuntsIndexRoute
@@ -10558,6 +10600,10 @@ export interface FileRoutesByTo {
   '/api/games/$id/reviews': typeof ApiGamesIdReviewsRoute
   '/api/games/$id/score': typeof ApiGamesIdScoreRoute
   '/api/games/cards/craft': typeof ApiGamesCardsCraftRoute
+  '/api/games/hub/delete': typeof ApiGamesHubDeleteRoute
+  '/api/games/hub/moderate': typeof ApiGamesHubModerateRoute
+  '/api/games/hub/post': typeof ApiGamesHubPostRoute
+  '/api/games/hub/thread': typeof ApiGamesHubThreadRoute
   '/api/games/market/buy': typeof ApiGamesMarketBuyRoute
   '/api/games/market/cancel': typeof ApiGamesMarketCancelRoute
   '/api/games/market/list': typeof ApiGamesMarketListRoute
@@ -10824,6 +10870,7 @@ export interface FileRoutesByTo {
   '/api/translate/vote': typeof ApiTranslateVoteIndexRoute
   '/api/versecraft/seeds': typeof ApiVersecraftSeedsIndexRoute
   '/api/when/$id': typeof ApiWhenIdIndexRoute
+  '/games/hub/$gameId': typeof GamesHubGameIdIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/c/$slug/invite/$code': typeof SiteCSlugInviteCodeRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
@@ -10929,6 +10976,7 @@ export interface FileRoutesByTo {
   '/api/worlds/visit/$code/postcard': typeof ApiWorldsVisitCodePostcardRoute
   '/api/worlds/visit/$code/water': typeof ApiWorldsVisitCodeWaterRoute
   '/games/$gameId/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
+  '/games/hub/$gameId/t/$threadId': typeof GamesHubGameIdTThreadIdRoute
   '/api/admin/delight/fools': typeof ApiAdminDelightFoolsIndexRoute
   '/api/admin/delight/fortunes': typeof ApiAdminDelightFortunesIndexRoute
   '/api/admin/delight/hunts': typeof ApiAdminDelightHuntsIndexRoute
@@ -11904,6 +11952,10 @@ export interface FileRoutesById {
   '/api/games/$id/reviews': typeof ApiGamesIdReviewsRoute
   '/api/games/$id/score': typeof ApiGamesIdScoreRoute
   '/api/games/cards/craft': typeof ApiGamesCardsCraftRoute
+  '/api/games/hub/delete': typeof ApiGamesHubDeleteRoute
+  '/api/games/hub/moderate': typeof ApiGamesHubModerateRoute
+  '/api/games/hub/post': typeof ApiGamesHubPostRoute
+  '/api/games/hub/thread': typeof ApiGamesHubThreadRoute
   '/api/games/market/buy': typeof ApiGamesMarketBuyRoute
   '/api/games/market/cancel': typeof ApiGamesMarketCancelRoute
   '/api/games/market/list': typeof ApiGamesMarketListRoute
@@ -12170,6 +12222,7 @@ export interface FileRoutesById {
   '/api/translate/vote/': typeof ApiTranslateVoteIndexRoute
   '/api/versecraft/seeds/': typeof ApiVersecraftSeedsIndexRoute
   '/api/when/$id/': typeof ApiWhenIdIndexRoute
+  '/games/hub/$gameId/': typeof GamesHubGameIdIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/_site/c/$slug_/invite/$code': typeof SiteCSlugInviteCodeRoute
   '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
@@ -12275,6 +12328,7 @@ export interface FileRoutesById {
   '/api/worlds/visit/$code/postcard': typeof ApiWorldsVisitCodePostcardRoute
   '/api/worlds/visit/$code/water': typeof ApiWorldsVisitCodeWaterRoute
   '/games/_library/$gameId_/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
+  '/games/hub/$gameId/t/$threadId': typeof GamesHubGameIdTThreadIdRoute
   '/api/admin/delight/fools/': typeof ApiAdminDelightFoolsIndexRoute
   '/api/admin/delight/fortunes/': typeof ApiAdminDelightFortunesIndexRoute
   '/api/admin/delight/hunts/': typeof ApiAdminDelightHuntsIndexRoute
@@ -13249,6 +13303,10 @@ export interface FileRouteTypes {
     | '/api/games/$id/reviews'
     | '/api/games/$id/score'
     | '/api/games/cards/craft'
+    | '/api/games/hub/delete'
+    | '/api/games/hub/moderate'
+    | '/api/games/hub/post'
+    | '/api/games/hub/thread'
     | '/api/games/market/buy'
     | '/api/games/market/cancel'
     | '/api/games/market/list'
@@ -13515,6 +13573,7 @@ export interface FileRouteTypes {
     | '/api/translate/vote/'
     | '/api/versecraft/seeds/'
     | '/api/when/$id/'
+    | '/games/hub/$gameId/'
     | '/admin/blog/$slug/edit'
     | '/c/$slug/invite/$code'
     | '/u/$userid/post/$postid'
@@ -13620,6 +13679,7 @@ export interface FileRouteTypes {
     | '/api/worlds/visit/$code/postcard'
     | '/api/worlds/visit/$code/water'
     | '/games/$gameId/guides/$guideId'
+    | '/games/hub/$gameId/t/$threadId'
     | '/api/admin/delight/fools/'
     | '/api/admin/delight/fortunes/'
     | '/api/admin/delight/hunts/'
@@ -14564,6 +14624,10 @@ export interface FileRouteTypes {
     | '/api/games/$id/reviews'
     | '/api/games/$id/score'
     | '/api/games/cards/craft'
+    | '/api/games/hub/delete'
+    | '/api/games/hub/moderate'
+    | '/api/games/hub/post'
+    | '/api/games/hub/thread'
     | '/api/games/market/buy'
     | '/api/games/market/cancel'
     | '/api/games/market/list'
@@ -14830,6 +14894,7 @@ export interface FileRouteTypes {
     | '/api/translate/vote'
     | '/api/versecraft/seeds'
     | '/api/when/$id'
+    | '/games/hub/$gameId'
     | '/admin/blog/$slug/edit'
     | '/c/$slug/invite/$code'
     | '/u/$userid/post/$postid'
@@ -14935,6 +15000,7 @@ export interface FileRouteTypes {
     | '/api/worlds/visit/$code/postcard'
     | '/api/worlds/visit/$code/water'
     | '/games/$gameId/guides/$guideId'
+    | '/games/hub/$gameId/t/$threadId'
     | '/api/admin/delight/fools'
     | '/api/admin/delight/fortunes'
     | '/api/admin/delight/hunts'
@@ -15909,6 +15975,10 @@ export interface FileRouteTypes {
     | '/api/games/$id/reviews'
     | '/api/games/$id/score'
     | '/api/games/cards/craft'
+    | '/api/games/hub/delete'
+    | '/api/games/hub/moderate'
+    | '/api/games/hub/post'
+    | '/api/games/hub/thread'
     | '/api/games/market/buy'
     | '/api/games/market/cancel'
     | '/api/games/market/list'
@@ -16175,6 +16245,7 @@ export interface FileRouteTypes {
     | '/api/translate/vote/'
     | '/api/versecraft/seeds/'
     | '/api/when/$id/'
+    | '/games/hub/$gameId/'
     | '/_site/admin/blog/$slug/edit'
     | '/_site/c/$slug_/invite/$code'
     | '/_site/u/$userid/post/$postid'
@@ -16280,6 +16351,7 @@ export interface FileRouteTypes {
     | '/api/worlds/visit/$code/postcard'
     | '/api/worlds/visit/$code/water'
     | '/games/_library/$gameId_/guides/$guideId'
+    | '/games/hub/$gameId/t/$threadId'
     | '/api/admin/delight/fools/'
     | '/api/admin/delight/fortunes/'
     | '/api/admin/delight/hunts/'
@@ -16934,6 +17006,10 @@ export interface RootRouteChildren {
   ApiGamesIdReviewsRoute: typeof ApiGamesIdReviewsRoute
   ApiGamesIdScoreRoute: typeof ApiGamesIdScoreRoute
   ApiGamesCardsCraftRoute: typeof ApiGamesCardsCraftRoute
+  ApiGamesHubDeleteRoute: typeof ApiGamesHubDeleteRoute
+  ApiGamesHubModerateRoute: typeof ApiGamesHubModerateRoute
+  ApiGamesHubPostRoute: typeof ApiGamesHubPostRoute
+  ApiGamesHubThreadRoute: typeof ApiGamesHubThreadRoute
   ApiGamesMarketBuyRoute: typeof ApiGamesMarketBuyRoute
   ApiGamesMarketCancelRoute: typeof ApiGamesMarketCancelRoute
   ApiGamesMarketListRoute: typeof ApiGamesMarketListRoute
@@ -23914,6 +23990,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGamesCardsCraftRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/games/hub/delete': {
+      id: '/api/games/hub/delete'
+      path: '/api/games/hub/delete'
+      fullPath: '/api/games/hub/delete'
+      preLoaderRoute: typeof ApiGamesHubDeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/hub/moderate': {
+      id: '/api/games/hub/moderate'
+      path: '/api/games/hub/moderate'
+      fullPath: '/api/games/hub/moderate'
+      preLoaderRoute: typeof ApiGamesHubModerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/hub/post': {
+      id: '/api/games/hub/post'
+      path: '/api/games/hub/post'
+      fullPath: '/api/games/hub/post'
+      preLoaderRoute: typeof ApiGamesHubPostRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/hub/thread': {
+      id: '/api/games/hub/thread'
+      path: '/api/games/hub/thread'
+      fullPath: '/api/games/hub/thread'
+      preLoaderRoute: typeof ApiGamesHubThreadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/games/market/buy': {
       id: '/api/games/market/buy'
       path: '/api/games/market/buy'
@@ -25524,6 +25628,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWorldsVisitCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games/hub/$gameId/': {
+      id: '/games/hub/$gameId/'
+      path: '/hub/$gameId'
+      fullPath: '/games/hub/$gameId/'
+      preLoaderRoute: typeof GamesHubGameIdIndexRouteImport
+      parentRoute: typeof GamesRoute
+    }
     '/games/trades/new/$id': {
       id: '/games/trades/new/$id'
       path: '/trades/new/$id'
@@ -26420,6 +26531,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesLibraryGameIdGuidesGuideIdRouteImport
       parentRoute: typeof GamesLibraryRoute
     }
+    '/games/hub/$gameId/t/$threadId': {
+      id: '/games/hub/$gameId/t/$threadId'
+      path: '/hub/$gameId/t/$threadId'
+      fullPath: '/games/hub/$gameId/t/$threadId'
+      preLoaderRoute: typeof GamesHubGameIdTThreadIdRouteImport
+      parentRoute: typeof GamesRoute
+    }
     '/api/admin/albums/$id/slides/$slideId': {
       id: '/api/admin/albums/$id/slides/$slideId'
       path: '/$slideId'
@@ -27129,6 +27247,8 @@ interface GamesRouteChildren {
   GamesProfileIdRoute: typeof GamesProfileIdRoute
   GamesTradesIndexRoute: typeof GamesTradesIndexRoute
   GamesTradesNewIdRoute: typeof GamesTradesNewIdRoute
+  GamesHubGameIdIndexRoute: typeof GamesHubGameIdIndexRoute
+  GamesHubGameIdTThreadIdRoute: typeof GamesHubGameIdTThreadIdRoute
 }
 
 const GamesRouteChildren: GamesRouteChildren = {
@@ -27140,6 +27260,8 @@ const GamesRouteChildren: GamesRouteChildren = {
   GamesProfileIdRoute: GamesProfileIdRoute,
   GamesTradesIndexRoute: GamesTradesIndexRoute,
   GamesTradesNewIdRoute: GamesTradesNewIdRoute,
+  GamesHubGameIdIndexRoute: GamesHubGameIdIndexRoute,
+  GamesHubGameIdTThreadIdRoute: GamesHubGameIdTThreadIdRoute,
 }
 
 const GamesRouteWithChildren = GamesRoute._addFileChildren(GamesRouteChildren)
@@ -29453,6 +29575,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesIdReviewsRoute: ApiGamesIdReviewsRoute,
   ApiGamesIdScoreRoute: ApiGamesIdScoreRoute,
   ApiGamesCardsCraftRoute: ApiGamesCardsCraftRoute,
+  ApiGamesHubDeleteRoute: ApiGamesHubDeleteRoute,
+  ApiGamesHubModerateRoute: ApiGamesHubModerateRoute,
+  ApiGamesHubPostRoute: ApiGamesHubPostRoute,
+  ApiGamesHubThreadRoute: ApiGamesHubThreadRoute,
   ApiGamesMarketBuyRoute: ApiGamesMarketBuyRoute,
   ApiGamesMarketCancelRoute: ApiGamesMarketCancelRoute,
   ApiGamesMarketListRoute: ApiGamesMarketListRoute,

@@ -71,4 +71,14 @@ describe('anonymizeAccount', () => {
       where: { status: 'PENDING', OR: [{ fromId: 'user-1' }, { toId: 'user-1' }] },
     });
   });
+
+  it('erases the account’s hub replies and threads', async () => {
+    (prismaMock.$transaction as ReturnType<typeof vi.fn>).mockClear();
+    await anonymizeAccount('user-1');
+    const tx = (prismaMock.$transaction as ReturnType<typeof vi.fn>).mock.calls[0][0] as Op[];
+    const post = tx.find((o) => o.model === 'gameThreadPost' && o.method === 'deleteMany');
+    const thread = tx.find((o) => o.model === 'gameThread' && o.method === 'deleteMany');
+    expect(post?.args).toEqual({ where: { authorId: 'user-1' } });
+    expect(thread?.args).toEqual({ where: { authorId: 'user-1' } });
+  });
 });
