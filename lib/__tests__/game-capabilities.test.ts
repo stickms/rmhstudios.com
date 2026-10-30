@@ -44,6 +44,7 @@ const SOURCE_OVERRIDES: Record<string, string[]> = {
   // The Valve games share one browser engine: the SP simulation, the game client and the HUD.
   'half-life-2': ['lib/sp-game', 'lib/tf2-game/client', 'components/sp-game', 'components/tf2-game'],
   portal: ['lib/sp-game', 'lib/tf2-game/client', 'components/sp-game', 'components/tf2-game'],
+  csgo: ['lib/csgo-game', 'lib/tf2-game/client', 'components/csgo-game', 'components/tf2-game'],
 };
 
 /** Every source file that belongs to a game, by convention or override. */

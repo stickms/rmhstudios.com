@@ -58,6 +58,17 @@ const byType = new Map<string, NetSchema>();
  * 128–191 buildings, 192–255 map entities / modes, 256–511 anything else,
  * 512–575 Counter-Strike: Global Offensive (lib/csgo-game/net-schema.ts).
  */
+/**
+ * The schema types that are players (the client's scoreboard, spectating, prediction and the HUD read
+ * them as players): TF2's `player`, and another game's player schema once it registers it (CS:GO's
+ * `cs_player`).
+ */
+const PLAYER_TYPES = new Set(['player']);
+export function markPlayerSchema(type: string): void {
+  PLAYER_TYPES.add(type);
+}
+export const isPlayerType = (type: string): boolean => PLAYER_TYPES.has(type);
+
 export function registerNetSchema(id: number, type: string, fields: readonly NetFieldDef[]): NetSchema {
   const existing = byId.get(id);
   if (existing) {

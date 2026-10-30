@@ -33,7 +33,7 @@ import {
   GR_STATE_STARTGAME,
   GR_STATE_TEAM_WIN,
 } from '../sim/rules';
-import type { NetRecord } from '../sim/net-schema';
+import { isPlayerType, type NetRecord } from '../sim/net-schema';
 import { adaptItemMeters } from './item-meters';
 import {
   TF_DEATH_ASSISTER_DOMINATION,
@@ -351,7 +351,7 @@ export function adaptLocalPlayer(src: HudSource): HudLocalPlayer | null {
   let spectating = null;
   const obsTarget = num(r, 'observerTarget', -1);
   if (!alive && obsTarget > 0 && obsTarget !== src.localEntity) {
-    const t = src.entities.find((e) => e.id === obsTarget && e.type === 'player');
+    const t = src.entities.find((e) => e.id === obsTarget && isPlayerType(e.type));
     if (t) {
       spectating = {
         id: obsTarget,
@@ -488,6 +488,8 @@ export function adaptMatch(src: HudSource): HudMatch {
         players.set(e.id, e.record);
         break;
       default:
+        // Another game's player schema (CS:GO's cs_player).
+        if (isPlayerType(e.type)) players.set(e.id, e.record);
         break;
     }
   }
@@ -585,7 +587,7 @@ export function adaptScoreboard(
   const rows: HudScoreRow[] = [];
   const seen = new Set<number>();
   for (const e of src.entities) {
-    if (e.type !== 'player') continue;
+    if (!isPlayerType(e.type)) continue;
     seen.add(e.id);
     rows.push(scoreRow(src, e.id, e.record, dominated, nemeses));
   }
@@ -869,7 +871,7 @@ export class HudEventLog {
 /** A lookup over a HudSource's player records and roster. */
 export function playerLookup(src: HudSource): HudPlayerLookup {
   const records = new Map<number, NetRecord>();
-  for (const e of src.entities) if (e.type === 'player') records.set(e.id, e.record);
+  for (const e of src.entities) if (isPlayerType(e.type)) records.set(e.id, e.record);
   if (src.localPlayer) records.set(src.localEntity, src.localPlayer);
   return (id) => {
     const r = records.get(id);

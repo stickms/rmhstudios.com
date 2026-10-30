@@ -115,6 +115,8 @@ export const FOV_RANGE: Record<HudGame, { min: number; max: number; def: number 
   tf2: { min: 75, max: 90, def: 90 },
   hl2: { min: 75, max: 90, def: 75 },
   portal: { min: 75, max: 90, def: 75 },
+  // CS:GO's fov_cs_debug is locked at 90 for players; the slider keeps TF2's range.
+  csgo: { min: 75, max: 90, def: 90 },
 };
 export const VIEWMODEL_FOV_RANGE = { min: 54, max: 70, def: 54 };
 export const SENSITIVITY_RANGE = { min: 0.1, max: 20 };

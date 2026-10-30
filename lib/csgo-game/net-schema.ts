@@ -13,6 +13,7 @@ import {
   moveStateFields,
   NET_BASE_FIELDS,
   netField as f,
+  markPlayerSchema,
   registerNetSchema,
 } from '../tf2-game/sim/net-schema';
 
@@ -61,6 +62,9 @@ export const NET_CS_PLAYER = registerNetSchema(512, 'cs_player', [
   f('respawnAt', 'f32', true),
   f('immuneUntil', 'f32', true),
 ]);
+
+// The client reads CS players as players (scoreboard, spectating, prediction, the HUD).
+markPlayerSchema(NET_CS_PLAYER.type);
 
 export const NET_CS_WEAPON = registerNetSchema(513, 'cs_weapon', [
   f('defindex', 'i32'),

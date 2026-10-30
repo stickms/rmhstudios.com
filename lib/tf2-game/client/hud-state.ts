@@ -15,7 +15,7 @@
  * 3 BLU); classes are ETFClass (1 Scout … 9 Engineer).
  */
 
-export type HudGame = 'tf2' | 'hl2' | 'portal';
+export type HudGame = 'tf2' | 'hl2' | 'portal' | 'csgo';
 
 /** Which ammo display a weapon uses (CTFHudWeaponAmmo). */
 export type HudAmmoKind = 'clip' | 'reserve-only' | 'none';
@@ -476,6 +476,48 @@ export interface HudState {
   notices?: HudNotice[];
   /** The room's administration when this player runs it (offline, or the peer-to-peer host). */
   admin?: HudAdmin | null;
+  /** CS:GO's part of the HUD (money, the round, the bomb); absent in the other games. */
+  cs?: HudCs | null;
+}
+
+/** One weapon in a CS:GO player's inventory, for the HUD's slots and the buy menu. */
+export interface HudCsWeapon {
+  slot: number;
+  /** `weapon_ak47`; the short name (`ak47`) keys the localisation and icons. */
+  name: string;
+  short: string;
+  clip: number;
+  reserve: number;
+  active: boolean;
+}
+
+/** CS:GO's HUD state (lib/csgo-game/client/hud.ts). Times are seconds left on the server clock. */
+export interface HudCs {
+  mode: 'de' | 'dm';
+  money: number;
+  armor: number;
+  helmet: boolean;
+  defuser: boolean;
+  hasC4: boolean;
+  /** Buying is open for us now: in a buy zone, inside the buy time (deathmatch: always). */
+  canBuy: boolean;
+  buyTimeLeft: number;
+  /** The round's phase and the clock the HUD shows for it. */
+  phase: 'freeze' | 'live' | 'planted' | 'over' | 'gameover';
+  timeLeft: number | null;
+  round: number;
+  bomb: { timeLeft: number; defusing: boolean; defuseLeft: number | null } | null;
+  /** The round's end: who won and why (CS_WIN_*). */
+  roundWinner: number;
+  winReason: number;
+  /** Flash blindness 0…1 (the white-out's opacity now). */
+  flash: number;
+  planting: boolean;
+  defusing: boolean;
+  /** Deathmatch: seconds until respawn (null while alive), and spawn protection. */
+  respawnIn: number | null;
+  protected: boolean;
+  weapons: HudCsWeapon[];
 }
 
 /** A network notice. `name`: the account it concerns (the new host). */

@@ -469,7 +469,7 @@ export class GameConsole {
   private completeServer(name: string, i: number, argv: readonly string[]): readonly string[] {
     switch (name) {
       case 'give':
-        return i === 1 ? (this.game === 'tf2' ? tf2GiveItems() : SP_GIVE_ITEMS[this.game]) : [];
+        return i === 1 ? (this.game === 'tf2' ? tf2GiveItems() : this.game === 'csgo' ? [] : SP_GIVE_ITEMS[this.game]) : [];
       case 'changelevel':
       case 'map':
         return i === 1 ? this.maps() : [];

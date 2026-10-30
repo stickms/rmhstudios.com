@@ -65,6 +65,11 @@ export interface PredictionOptions {
   snapDistance?: number;
   /** A predicted sound/effect, reported once per command (play it now). */
   onEvent?: (e: PredictedSound | PredictedEffect) => void;
+  /**
+   * Sets the predicted player from its authoritative records (default TF2's
+   * `restorePlayerFromRecords`; another game passes its own, e.g. CS:GO's).
+   */
+  restore?: (player: Player, rec: NetRecord, weapons: ReadonlyArray<{ slot: number; record: NetRecord }>) => void;
 }
 
 export interface AuthoritativeState {
@@ -165,6 +170,7 @@ export class Prediction {
   /** Size of the last correction applied to the current predicted position. */
   lastCorrection = 0;
   snaps = 0;
+  private readonly restore: NonNullable<PredictionOptions['restore']>;
 
   constructor(
     readonly world: GameWorld,
@@ -174,6 +180,7 @@ export class Prediction {
     this.smoothTime = opts.smoothTime ?? PREDICTION_SMOOTH_TIME;
     this.snapDistance = opts.snapDistance ?? PREDICTION_SNAP_DISTANCE;
     this.onEvent = opts.onEvent;
+    this.restore = opts.restore ?? restorePlayerFromRecords;
     // Capture what the shared code emits while we predict.
     world.emitSound = (name: string, o: SoundOptions = {}) => {
       if (this.replaying || this.currentCmd === 0) return;
@@ -268,7 +275,7 @@ export class Prediction {
       if (typeof auth.rules.state === 'number') rules.state = auth.rules.state;
       if (typeof auth.rules.winningTeam === 'number') rules.winningTeam = auth.rules.winningTeam;
     }
-    restorePlayerFromRecords(this.player, auth.player, auth.weapons);
+    this.restore(this.player, auth.player, auth.weapons);
     while (this.entries.length > 0 && this.entries[0].cmd.commandNumber <= auth.ackCmd)
       this.entries.shift();
     this.snapTick = auth.tick;

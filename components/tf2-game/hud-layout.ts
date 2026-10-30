@@ -110,6 +110,8 @@ export const TOUCH_OVERRIDES: Readonly<Record<HudGame, Readonly<Record<string, P
     HudHistoryResource: { ypos: '60' },
   },
   portal: {},
+  // CS:GO draws its own HUD (no .res panels to move).
+  csgo: {},
 };
 
 /**

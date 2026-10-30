@@ -192,6 +192,9 @@ const FULLSCREEN_TIER_DIRS = new Set([
   // Half-Life 2 / Portal play pages (chapter select around the shared game canvas),
   // in the same scoped HL2 / Portal variants of that palette.
   'sp-game',
+  // CS:GO (de_dust2) on the same engine: its own in-game HUD and lobby, on the TF2 Hub's
+  // `--app-*` palette with scoped `--csg-*` team colours (components/csgo-game/cs-hud.css).
+  'csgo-game',
   'rmhvibe',
   'shared',
   'studio',

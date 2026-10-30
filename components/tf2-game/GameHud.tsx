@@ -66,6 +66,8 @@ const HudPauseView = lazy(() => import('./custom-hud/HudPauseView'));
 const HudEditorOverlay = lazy(() => import('./custom-hud/HudEditorOverlay'));
 // The in-game loadout editor loads when first opened (three.js, the item catalog).
 const LoadoutPauseView = lazy(() => import('./tf2/LoadoutPauseView'));
+// CS:GO's own HUD and buy menu: loaded only for a CS:GO match.
+const CsHud = lazy(() => import('@/components/csgo-game/CsHud'));
 
 export type HudMenu =
   | { kind: 'none' }
@@ -422,6 +424,11 @@ function HudBody({
       ) : null}
       {game === 'hl2' && state.hl2 ? <Hl2Hud hl2={state.hl2} alive={(state.hl2.health ?? 0) > 0} /> : null}
       {game === 'portal' && state.portal ? <PortalHud portal={state.portal} fade={state.fade} /> : null}
+      {game === 'csgo' && state.cs ? (
+        <Suspense fallback={null}>
+          <CsHud state={state} store={store} />
+        </Suspense>
+      ) : null}
       {game !== 'tf2' ? <Captions captions={state.captions} /> : null}
       {/* Before every menu, so menus paint above it; its move/look zones stand down while one is open. */}
       {touch && input && shown.kind !== 'pause' && !editorOpen ? (
