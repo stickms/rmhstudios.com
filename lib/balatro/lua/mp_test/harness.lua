@@ -63,6 +63,17 @@ local function to_main_menu()
 end
 
 local function run_specs(args)
+  -- One run at a time: a caller that timed out and asked again must not start a second
+  -- runner over the first one's game state (it fails fast instead).
+  if H.running then error('busy: a spec run is still going (' .. tostring(H.running) .. ')') end
+  H.running = tostring(type(args.files) == 'table' and table.concat(args.files, ',') or 'all')
+  local ok, res = sched.protected(H.run_specs, args)
+  H.running = nil
+  if not ok then error(res, 0) end
+  return res
+end
+
+function H.run_specs(args)
   local names = args.files
   if type(names) ~= 'table' or #names == 0 then names = H.list_specs() end
   local files = {}

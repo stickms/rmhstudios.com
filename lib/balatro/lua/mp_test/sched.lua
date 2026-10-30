@@ -32,6 +32,24 @@ local function need_task(what)
   if not sched.in_task() then error(what .. ' can only be called inside a test task', 3) end
 end
 
+--- pcall for task code that waits: PUC Lua 5.1 cannot yield across pcall, so fn runs in
+-- its own coroutine whose yields are forwarded to the enclosing task. Returns
+-- true, value or false, error (with a traceback).
+function sched.protected(fn, ...)
+  local args = { n = select('#', ...), ... }
+  local co = coroutine.create(function() return fn(unpack(args, 1, args.n)) end)
+  while true do
+    local ok, v = coroutine.resume(co)
+    if not ok then return false, debug.traceback(co, tostring(v)) end
+    if coroutine.status(co) == 'dead' then return true, v end
+    if coroutine.running() then
+      coroutine.yield()
+    else
+      return false, 'protected: the body waited outside a task'
+    end
+  end
+end
+
 function sched.spawn(fn, done)
   local task = { done = done }
   task.co = coroutine.create(function()

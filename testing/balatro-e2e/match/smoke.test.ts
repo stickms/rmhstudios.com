@@ -1,53 +1,33 @@
 /**
- * Match project, wave-1 scaffolding (PLAN §6.3; WS14b adds E2E-01…24 on top):
- * proves the multi-browser stack — the hub and `vite dev` against a throwaway
- * Postgres, N signed-in browser contexts — and that every player's /balatro boots
- * the real game (the pack route serves a signed-in session; no page error).
+ * Match project smoke (PLAN §6.3): the multi-browser stack works — the hub and `vite dev`
+ * against a throwaway Postgres (match/global-setup.ts), signed-in browser contexts — and
+ * every player's /balatro boots the real game (the pack route serves a signed-in session;
+ * no page error).
  *
  *   DATABASE_URL=… BETTER_AUTH_SECRET=<32+> pnpm test:balatro:e2e --project match
  *   BALATRO_E2E_BASE_URL=http://localhost:7997 pnpm test:balatro:e2e --project match   (stack already up)
  *
  * Without a stack it skips, unless BALATRO_E2E_REQUIRE_MATCH=1 (CI), where it fails.
  */
-import { chromium, type Browser } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { signedInPlayers, type Player } from '../lib/accounts';
-import { chromiumLaunchOptions } from '../lib/chromium';
-import { hubReady, stackConfig, startStack, type RunningStack } from '../lib/stack';
+import { hubReady } from '../lib/stack';
+import type { Player } from '../lib/accounts';
+import { matchWorld } from './world';
 
-const cfg = stackConfig();
-const required = process.env.BALATRO_E2E_REQUIRE_MATCH === '1';
+const w = matchWorld();
 const PLAYERS = Number(process.env.BALATRO_E2E_PLAYERS ?? 2);
 
-// The reason rides in the suite name (no stdout writes at module scope: `vitest list
-// --json`, which lib/__tests__/test-discovery.test.ts runs, must stay parseable).
-const skip = cfg.mode === 'unavailable' && !required;
-const title =
-  skip && cfg.mode === 'unavailable' ? `match stack (skipped: ${cfg.reason})` : 'match stack';
-
-describe.skipIf(skip)(title, () => {
-  let stack: RunningStack;
-  let browser: Browser;
+describe.skipIf(w.skip)(w.title('match stack'), () => {
   let players: Player[] = [];
 
   beforeAll(async () => {
-    stack = await startStack(cfg);
-    browser = await chromium.launch(chromiumLaunchOptions());
-    players = await signedInPlayers(
-      browser,
-      stack.baseUrl,
-      Array.from({ length: PLAYERS }, (_, i) => `p${i + 1}`),
-    );
+    players = await w.accountsFor(Array.from({ length: PLAYERS }, (_, i) => `s${i + 1}`));
   }, 600_000);
 
-  afterAll(async () => {
-    for (const p of players) await p.context.close().catch(() => {});
-    await browser?.close().catch(() => {});
-    await stack?.close();
-  });
+  afterAll(() => w.down());
 
   it('has a hub that answers the engine.io handshake', async () => {
-    expect(await hubReady(stack.socketUrl)).toBe(true);
+    expect(await hubReady(w.socketUrl)).toBe(true);
   });
 
   it(`boots /balatro for ${PLAYERS} signed-in players at once`, async () => {
@@ -56,16 +36,15 @@ describe.skipIf(skip)(title, () => {
         const page = await context.newPage();
         const errors: string[] = [];
         page.on('pageerror', (e) => errors.push(e.message));
-        const pack = page.waitForResponse(
-          (r) => /\/api\/balatro\/pack\/core-[0-9a-f]{12}\.zip$/.test(r.url()),
-          {
-            timeout: 300_000,
-          },
-        );
-        await page.goto(`${stack.baseUrl}/balatro`, { timeout: 300_000 });
+        const pack = page.waitForResponse((r) => /\/api\/balatro\/pack\/core-[0-9a-f]{12}\.zip$/.test(r.url()), {
+          timeout: 300_000,
+        });
+        await page.goto(`${w.baseUrl}/balatro`, { timeout: 300_000 });
         const res = await pack;
         await page.waitForSelector('.balatro-frame canvas', { timeout: 300_000 });
-        return { label: account.label, url: page.url(), pack: res.status(), errors };
+        const out = { label: account.label, url: page.url(), pack: res.status(), errors };
+        await page.close();
+        return out;
       }),
     );
     for (const r of results) {

@@ -28,6 +28,10 @@ export function chromiumLaunchOptions(extraArgs: string[] = []): LaunchOptions {
       '--disable-background-timer-throttling',
       '--disable-renderer-backgrounding',
       '--disable-backgrounding-occluded-windows',
+      // Bot-peer pages (lib/bot.ts) are served through Playwright routing, which Chromium's
+      // Local Network Access checks treat as a public origin: their hub requests to
+      // localhost would be refused. The real pages are unaffected either way.
+      '--disable-features=LocalNetworkAccessChecks,BlockInsecurePrivateNetworkRequests,PrivateNetworkAccessSendPreflights',
       ...extraArgs,
     ],
   };

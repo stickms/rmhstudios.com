@@ -68,12 +68,14 @@ export async function signedInPlayers(
   baseUrl: string,
   labels: string[],
   runId = Date.now().toString(36),
+  opts: { viewport?: { width: number; height: number }; offset?: number } = {},
 ): Promise<Player[]> {
   const players: Player[] = [];
   for (const [i, label] of labels.entries()) {
-    const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    // Software WebGL costs per pixel: matches on one machine use a small canvas.
+    const context = await browser.newContext({ viewport: opts.viewport ?? { width: 1280, height: 720 } });
     const account = makeAccount(label, runId);
-    await signUp(context, baseUrl, account, i);
+    await signUp(context, baseUrl, account, i + (opts.offset ?? 0));
     players.push({ account, context });
   }
   return players;

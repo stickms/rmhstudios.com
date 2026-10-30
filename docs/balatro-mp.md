@@ -104,7 +104,7 @@ pnpm balatro:gen-protocol --check   # CI freshness check (protocol-lua.test.ts a
 | ---------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Balatro          | `pnpm test:balatro`     | `lib/balatro/mp`, `lib/shared/p2p`, `server/socket-server/balatro`, `scripts/balatro`, plus the Lua L1 specs |
 | Lua L1 only      | `pnpm test:balatro:lua` | `lua5.1 lib/balatro/lua/spec/runner.lua [--filter text] [files…]` (TAP output)                               |
-| E2E (stub, WS14) | `pnpm test:balatro:e2e` | engine specs in love.wasm; multi-browser matches                                                             |
+| E2E (WS14)       | `pnpm test:balatro:e2e` | `harness` · `engine` (L2 specs in love.wasm) · `match` (real browsers + bot peers; needs Postgres)           |
 | Main (critical)  | `pnpm test`             | hub auth walk, rate-limit coverage, save-path safety, pack manifest                                          |
 
 The Lua specs need **PUC Lua 5.1** (`apt-get install lua5.1`, or set `LUA51=`).
@@ -131,16 +131,22 @@ Shared fixtures live in `lib/balatro/mp/__fixtures__/*.json`.
 files. In them, `{ "$ref": "name" }` points into `types.json` → `objects`, and
 `tsOnly` marks an invalid case that only TypeScript can reject.
 
-CI: `.github/workflows/balatro-mp-tests.yml`. It is path-filtered and installs
-`lua5.1`. Its steps:
+CI: `.github/workflows/balatro-mp-tests.yml`, path-filtered. Job `test` installs `lua5.1`
+and runs the L1 specs, protocol freshness, `test:balatro`, `test:tf2` (the P2P primitives are
+shared), pack freshness (`build-game-pack.py --check`) and the bundle/pack budget
+(`scripts/balatro/bundle-budget.ts`). Job `e2e` runs the three e2e projects against a
+`pgvector/pgvector:pg16` service with `BALATRO_E2E_REQUIRE_MATCH=1`; the nightly schedule (or a
+manual run with `long`) adds every engine spec alone in a fresh boot (`BALATRO_E2E_ISOLATE=1`)
+and the soak (`BALATRO_E2E_SOAK=1`, E2E-24). The e2e layout, the autopilot commands, the bot
+peers and how to run the match project locally are in `testing/balatro-e2e/README.md`.
 
-1. Protocol freshness.
-2. `test:balatro`.
-3. `test:tf2`, because the P2P primitives are shared.
-4. Pack freshness, once WS2 adds `--check`.
-5. The bundle budget, once WS14 adds the script.
-
-The e2e job is a stub.
+Bundle accounting (§6.4): the MP JS budget counts every lazy chunk that holds a Balatro module,
+including the queue and replay extensions `index.ts` loads through an `import.meta.glob` array.
+socket.io-client is not counted: `components/call/CallMount.tsx` loads it (through
+`lib/call/store` → `lib/shared/realtime/client`) for every signed-in viewer on every route, and
+`/balatro` is signed-in only, so the MP chunk only reuses it. The script re-checks that from the
+source on every run and counts the socket.io chunk against MP as soon as the shell stops loading
+it (`sharedSocketIo()`).
 
 ## 4. The MP pack: art, localization, glyphs
 

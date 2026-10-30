@@ -152,6 +152,12 @@ function startMpEntry(run: BootRun, session: BalatroSession) {
   };
   // A rejoin or a continued MP run starts at boot; an invite waits for the page's join.
   if (host.autoload === 'rejoin' || host.autoload === 'sp') run.mp.open(host.autoload);
+  // Test builds only (the e2e match project, testing/balatro-e2e/match): open MP as the
+  // MULTIPLAYER button would, without clicking the canvas. Production drops the block.
+  if (import.meta.env.VITE_BALATRO_MP_TEST === '1') {
+    (window as unknown as { __rmhBalatroOpenMp?: (i: MpIntent) => void }).__rmhBalatroOpenMp = (i) =>
+      run.mp.open(i);
+  }
 }
 
 // One engine per document. A remount (React StrictMode in development, or the
@@ -209,7 +215,9 @@ function attach(
       if (phase !== 'running') emit({ kind: 'booting', phase, progress });
     },
     onLog: (line, isError) => {
-      if (isError) console.warn('[balatro]', line);
+      // Test builds keep the engine's prints too (Lua errors a frame hook swallowed, the e2e
+      // suite's error scan); production keeps only errors.
+      if (isError || import.meta.env.VITE_BALATRO_MP_TEST === '1') console.warn('[balatro]', line);
     },
     onAudioError: () => toast.error(opts.messages.audio),
     mp: opts.mpAutoload

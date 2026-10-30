@@ -1,3 +1,6 @@
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { forwardedFor, makeAccount } from './accounts';
 import { stackConfig, stackProcesses, waitFor } from './stack';
@@ -48,7 +51,11 @@ describe('stackConfig', () => {
 
 describe('stackProcesses', () => {
   it('wires the hub CORS to the app and the app to the hub, in a test build', () => {
-    const cfg = stackConfig({ DATABASE_URL: 'postgres://db', BETTER_AUTH_SECRET: SECRET });
+    const cfg = stackConfig({
+      DATABASE_URL: 'postgres://db',
+      BETTER_AUTH_SECRET: SECRET,
+      BALATRO_E2E_LOG_DIR: mkdtempSync(path.join(tmpdir(), 'stack-unit-')),
+    });
     if (cfg.mode !== 'spawn') throw new Error('expected spawn');
     const [hub, web] = stackProcesses(cfg);
     expect(hub.args).toEqual(['server/socket-server/index.ts']);
@@ -57,7 +64,11 @@ describe('stackProcesses', () => {
       SOCKET_CORS_ORIGIN: 'http://localhost:7997',
       DATABASE_URL: 'postgres://db',
     });
-    expect(web.args).toEqual(['dev', '--port', '7997', '--strictPort']);
+    expect(web.args.slice(0, 5)).toEqual(['dev', '--port', '7997', '--strictPort', '--config']);
+    const wrapper = readFileSync(web.args[5]!, 'utf8');
+    expect(wrapper).toContain('hmr: false');
+    expect(wrapper).toContain('watch: null');
+    expect(wrapper).toMatch(/import base from "file:\/\/.*\/vite\.config\.ts"/);
     expect(web.env).toMatchObject({
       VITE_SOCKET_URL: 'http://localhost:7001',
       VITE_BALATRO_MP_TEST: '1',
