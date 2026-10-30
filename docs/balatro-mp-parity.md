@@ -20,271 +20,278 @@ every box checked.
 
 Open items at generation: **185** checklist lines.
 
+**WS14b sign-off (2026-10-30):** every line but one is checked with the tests that prove it
+(unit and integration tests under `pnpm test:balatro`, Lua L1 specs, in-engine L2 specs under
+`lib/balatro/lua/mp_test/specs/`, and the match e2e scenarios under
+`testing/balatro-e2e/match/`, E2E-xx). Open: **NET-09** (`visibilitychange` → away is not
+implemented; see the item). A scenario reference (E2E-xx) means the scenario passed on the
+local stack (hub + `vite dev` + Postgres, real browsers and bot peers).
+
 ## Lobby (LOB)
 
-- [ ] LOB-01 Create a private lobby from the pillars: Nemesis, Battle Royale, Manhunt, Teams, Party; 2–16 players; code shown and copied to clipboard — WS10, WS5, WS1
-- [ ] LOB-02 Join by code overlay (6 chars, caps, JOIN LOBBY) — WS10, WS5
-- [ ] LOB-03 Join from clipboard — WS10, WS3 (JS reads `navigator.clipboard`)
-- [ ] LOB-04 Invite link `?lobby=CODE` that survives login (`lobbyReturnPath`); friend invites through the hub with notifications for offline friends; React Invite popover — WS12, WS3
-- [ ] LOB-05 Guest Ready/Unready (green↔orange), ready badges, host START enabled iff ≥2 players and every non-host is ready; "Waiting for an opponent..." — WS5, WS10
-- [ ] LOB-06 Lobby Options:
+- [x] LOB-01 Create a private lobby from the pillars: Nemesis, Battle Royale, Manhunt, Teams, Party; 2–16 players; code shown and copied to clipboard — WS10, WS5, WS1 — `lib/balatro/lua/spec/mp_ui_menu_spec.lua`, `lib/balatro/mp/__tests__/session/lobby-flow.test.ts`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-01)
+- [x] LOB-02 Join by code overlay (6 chars, caps, JOIN LOBBY) — WS10, WS5 — `lib/balatro/lua/spec/mp_ui_menu_spec.lua`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-01)
+- [x] LOB-03 Join from clipboard — WS10, WS3 (JS reads `navigator.clipboard`) — `lib/balatro/lua/spec/mp_ui_menu_spec.lua`, `lib/balatro/mp/__tests__/pack-loader.test.ts`
+- [x] LOB-04 Invite link `?lobby=CODE` that survives login (`lobbyReturnPath`); friend invites through the hub with notifications for offline friends; React Invite popover — WS12, WS3 — `testing/balatro-e2e/match/queue.test.ts`, `lib/balatro/mp/queue/__tests__/matchmaking.test.ts`, `server/socket-server/balatro/queue-hub.test.ts`, `lib/balatro/lua/spec/mp_ui_wave3_spec.lua`
+- [x] LOB-05 Guest Ready/Unready (green↔orange), ready badges, host START enabled iff ≥2 players and every non-host is ready; "Waiting for an opponent..." — WS5, WS10 — `lib/balatro/mp/__tests__/session/units.test.ts`, `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-01)
+- [x] LOB-06 Lobby Options: — `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`, `lib/balatro/mp/rulesets/__tests__/rulesets.test.ts`, `testing/balatro-e2e/match/formats.test.ts`
   - ruleset cycle (Vanilla/Balanced/Expanded/Small World/Major League) plus Extra rulesets (D-17)
   - Trap Cards toggle
   - Hunter Lives 7–16
   - Role Hunter/Runner (Runner exclusive)
   - My Team A/B
     — WS10, WS5, WS4
-- [ ] LOB-07 Advanced options: `starting_lives`, `pvp_start_round`, `timer`, `timer_base_seconds`, `timer_increment_seconds`, `timer_forgiveness`, `pvp_countdown_seconds`, `death_on_round_loss`, `gold_on_life_loss`, `no_gold_on_round_loss`, `custom_seed`, `hide_score_until_played`, `normal_bosses`, `different_seeds`, `different_decks`, `random_loadout`, `multiplayer_jokers`, modifier-layer toggles (§2.9). Ruleset `force_lobby_options` overrides them, with the overridden fields shown locked. — WS4, WS10
-- [ ] LOB-08 Host deck+stake box → MP run-setup overlay:
+- [x] LOB-07 Advanced options: `starting_lives`, `pvp_start_round`, `timer`, `timer_base_seconds`, `timer_increment_seconds`, `timer_forgiveness`, `pvp_countdown_seconds`, `death_on_round_loss`, `gold_on_life_loss`, `no_gold_on_round_loss`, `custom_seed`, `hide_score_until_played`, `normal_bosses`, `different_seeds`, `different_decks`, `random_loadout`, `multiplayer_jokers`, modifier-layer toggles (§2.9). Ruleset `force_lobby_options` overrides them, with the overridden fields shown locked. — WS4, WS10 — `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`, `lib/balatro/mp/rulesets/__tests__/rulesets.test.ts`, `lib/balatro/mp/__tests__/session/units.test.ts`
+- [x] LOB-08 Host deck+stake box → MP run-setup overlay: — `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`, `lib/balatro/lua/spec/mp_ui_wave3_spec.lua`, `lib/balatro/lua/spec/mp_ui_deck_preview_spec.lua`
   - New Run and Challenges tabs; button reads "Select"; stake cap
   - MP decks, stakes and challenges visible only for MP-content rulesets or with the "Show MP content anyway" setting
   - guests see it display-only
     — WS10, WS6
-- [ ] LOB-09 Lobby code panel: VIEW CODE (eternal colour) / COPY CODE ("COPIED!") — WS10
-- [ ] LOB-10 Roster grid:
+- [x] LOB-09 Lobby code panel: VIEW CODE (eternal colour) / COPY CODE ("COPIED!") — WS10 — `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`, `lib/balatro/mp/__tests__/pack-loader.test.ts`
+- [x] LOB-10 Roster grid: — `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`
   - avatar Joker cards on the Black Deck back, 4×4 per page with a page cycler
   - tooltip: name, build badge, Muted, Player, Ready/Not Ready
   - per-player overlay: Actions (mute, kick for the host); the "Mods" tab is replaced by build/version info
     — WS10
-- [ ] LOB-11 Kick (no rejoin: hub `kicked` set) and Leave — WS1, WS5, WS10
-- [ ] LOB-12 TAB-hold shortcuts overlay (C copy code, V view code, leave, …) — WS10
-- [ ] LOB-13 Versioned lobby state from the host (`lobby` message, monotonic `version`); resolved options broadcast — WS5
-- [ ] LOB-14 "Seat held" prompt (hub says you hold a seat → Rejoin/Leave) — WS1, WS10
-- [ ] LOB-15 Content/version hash gate (D-36), "Version mismatch" overlay — WS1, WS5, WS10
-- [ ] LOB-16 Lobby Info overlay (HUD button; player grid; lives cache) — WS11
-- [ ] LOB-17 Return to Lobby after a match (private only; resets ready) — WS5, WS11
-- [ ] LOB-18 Pre-run reconnect to the waiting room or Setup (no re-reveal of finished votes) — WS5, WS12
+- [x] LOB-11 Kick (no rejoin: hub `kicked` set) and Leave — WS1, WS5, WS10 — `lib/balatro/mp/__tests__/session/lobby-flow.test.ts`, `server/socket-server/balatro/p2p-hub.test.ts`, `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-21)
+- [x] LOB-12 TAB-hold shortcuts overlay (C copy code, V view code, leave, …) — WS10 — `lib/balatro/lua/spec/mp_ui_misc_spec.lua`
+- [x] LOB-13 Versioned lobby state from the host (`lobby` message, monotonic `version`); resolved options broadcast — WS5 — `lib/balatro/mp/__tests__/session/lobby-flow.test.ts`, `lib/balatro/mp/__tests__/session/units.test.ts`
+- [x] LOB-14 "Seat held" prompt (hub says you hold a seat → Rejoin/Leave) — WS1, WS10 — `lib/balatro/lua/spec/mp_ui_menu_spec.lua`, `server/socket-server/balatro/p2p-hub.test.ts`, `lib/balatro/mp/__tests__/session/resilience.test.ts`
+- [x] LOB-15 Content/version hash gate (D-36), "Version mismatch" overlay — WS1, WS5, WS10 — `lib/balatro/mp/__tests__/session/abuse-chat-practice.test.ts`, `server/socket-server/balatro/p2p-hub.test.ts`, `lib/balatro/lua/spec/mp_ui_menu_spec.lua`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-21)
+- [x] LOB-16 Lobby Info overlay (HUD button; player grid; lives cache) — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`
+- [x] LOB-17 Return to Lobby after a match (private only; resets ready) — WS5, WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-01)
+- [x] LOB-18 Pre-run reconnect to the waiting room or Setup (no re-reveal of finished votes) — WS5, WS12 — `lib/balatro/mp/queue/__tests__/matchmaking.test.ts`, `lib/balatro/lua/spec/mp_ui_wave3_spec.lua`, `lib/balatro/mp/__tests__/session/resilience.test.ts`
 
 ## Matchmaking, party, spectate directory (MM)
 
-- [ ] MM-01 Find Game casual queues: Nemesis 1v1 (2), Royale, Manhunt, Teams, Small World (up to 16); FIND GAME ↔ CANCEL; disabled when offline — WS12, WS10
-- [ ] MM-02 Matchmade lobby status panel ("Waiting for players..."); auto-ready re-sent 6× at 1.2 s; host auto-start — WS12, WS5, WS10
-- [ ] MM-03 Ruleset vote (Vanilla, Major League, Balanced, Expanded):
+- [x] MM-01 Find Game casual queues: Nemesis 1v1 (2), Royale, Manhunt, Teams, Small World (up to 16); FIND GAME ↔ CANCEL; disabled when offline — WS12, WS10 — `lib/balatro/lua/spec/mp_ui_menu_spec.lua`, `lib/balatro/mp/queue/__tests__/matchmaking.test.ts`, `server/socket-server/balatro/queue-hub.test.ts`, `testing/balatro-e2e/match/queue.test.ts` (E2E-17)
+- [x] MM-02 Matchmade lobby status panel ("Waiting for players..."); auto-ready re-sent 6× at 1.2 s; host auto-start — WS12, WS5, WS10 — `lib/balatro/mp/queue/__tests__/units.test.ts`, `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`, `testing/balatro-e2e/match/queue.test.ts` (E2E-17)
+- [x] MM-03 Ruleset vote (Vanilla, Major League, Balanced, Expanded): — `lib/balatro/mp/setup/__tests__/setup.test.ts`, `lib/balatro/mp/queue/__tests__/units.test.ts`, `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`, `testing/balatro-e2e/match/queue.test.ts` (E2E-17)
   - 15 s window, clamped to 5–120 s; Confirm Vote / Random; votes hidden until close
   - closes early when every connected voter has voted
   - lottery roll; reveal with counts and %, a 1.2 s roll at 12 Hz, 3 s reveal
   - "Your turn: vote" / "Vote sent…" / "Your vote" tag
     — WS4 (logic), WS12 (host driver), WS10 (UI)
-- [ ] MM-04 Trap vote (only after Balanced or Expanded rolled) — WS4, WS12, WS10
-- [ ] MM-05 Deck+stake Draft:
+- [x] MM-04 Trap vote (only after Balanced or Expanded rolled) — WS4, WS12, WS10 — `lib/balatro/mp/setup/__tests__/setup.test.ts`, `lib/balatro/mp/queue/__tests__/units.test.ts`, `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`
+- [x] MM-05 Deck+stake Draft: — `lib/balatro/mp/setup/__tests__/setup.test.ts`, `lib/balatro/mp/queue/__tests__/units.test.ts`, `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`, `testing/balatro-e2e/match/queue.test.ts` (E2E-17)
   - 9 tiles, each with a random stake 1..max; MP decks only on Expanded/Small World
   - 2-player schedule: A ban 1, B ban 3, A ban 3, B picks 1 of the last 2
   - N players: 8 rotating single bans
   - 30 s per turn; random on timeout; result written to the lobby
     — WS4, WS12, WS10
-- [ ] MM-06 Party lobby (group queue): host FIND GAME, others READY, queue status panel with cancel, "Return to lobby XXXXXX" row afterwards; up to 8 members — WS12, WS10
-- [ ] MM-07 Spectatable-lobby list (`spectatable` flag) — WS12, WS13
+- [x] MM-06 Party lobby (group queue): host FIND GAME, others READY, queue status panel with cancel, "Return to lobby XXXXXX" row afterwards; up to 8 members — WS12, WS10 — `lib/balatro/mp/queue/__tests__/matchmaking.test.ts`, `server/socket-server/balatro/queue-hub.test.ts`, `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`, `lib/balatro/lua/spec/mp_ui_wave3_spec.lua`, `testing/balatro-e2e/match/queue.test.ts` (E2E-18)
+- [x] MM-07 Spectatable-lobby list (`spectatable` flag) — WS12, WS13 — `server/socket-server/balatro/p2p-hub.test.ts`, `lib/balatro/mp/__tests__/replay/service.test.ts`, `lib/balatro/lua/spec/mp_replay_ui_spec.lua`, `testing/balatro-e2e/match/spectate-replay.test.ts` (E2E-19)
 
 ## Match flow (FL)
 
-- [ ] FL-01 Start:
+- [x] FL-01 Start: — `lib/balatro/mp/__tests__/session/units.test.ts`, `lib/balatro/mp/__tests__/session/lobby-flow.test.ts`, `lib/balatro/lua/spec/mp_hooks_spec.lua`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-01)
   - seed = custom or 8 chars `A–Z0–9`; host stores the pending seed for crash recovery
   - `start_game` carries seed, stake, deck, challenge, resolved options, layers and roster
   - match roster snapshot; `set_ante(0)`; replay header; run started with lobby deck/stake/challenge (or a per-player random loadout)
     — WS5, WS6
-- [ ] FL-02 Run-start application:
+- [x] FL-02 Run-start application: — `lib/balatro/lua/spec/mp_rulesets_spec.lua`, `lib/balatro/lua/spec/mp_rules_spec.lua`, `lib/balatro/lua/spec/mp_hooks_spec.lua`, `lib/balatro/lua/spec/mp_saves_spec.lua`, `lib/balatro/lua/spec/mp_ui_run_spec.lua`
   - reworks loaded before cards are made; bans before the ante-1 boss/voucher/tag rolls (`Back.apply_to_run` wrap)
   - layer `apply_bans` hooks; `game_modifiers` and `starting_params` merged
   - HUD swap; nemesis rows; saving disabled for the profile slot
     — WS6, WS11
-- [ ] FL-03 Attrition blind choice: from `pvp_start_round`, the Boss slot = `bl_mp_nemesis` (substituted in the `Blind:set_blind` wrap; the real slot is kept in `round_resets`). A bye or `normal_bosses` gives a flagged vanilla boss. Recomputed after every cash-out. — WS6
-- [ ] FL-04 Attrition bans: jokers (Mr. Bones, Luchador, Matador, Chicot), vouchers (Hieroglyph, Petroglyph, Director's Cut, Retcon), tag (Boss), bosses (The Wall, Violet Vessel) — WS4 (data), WS6
-- [ ] FL-05 The PvP blind cannot be disabled (`Blind:disable` no-op), except Verdant Leaf's special case — WS6
-- [ ] FL-06 Ready/Unready toggle on the PvP pillar:
+- [x] FL-03 Attrition blind choice: from `pvp_start_round`, the Boss slot = `bl_mp_nemesis` (substituted in the `Blind:set_blind` wrap; the real slot is kept in `round_resets`). A bye or `normal_bosses` gives a flagged vanilla boss. Recomputed after every cash-out. — WS6 — `lib/balatro/lua/spec/mp_hooks_spec.lua`, `lib/balatro/lua/spec/mp_determinism_spec.lua`
+- [x] FL-04 Attrition bans: jokers (Mr. Bones, Luchador, Matador, Chicot), vouchers (Hieroglyph, Petroglyph, Director's Cut, Retcon), tag (Boss), bosses (The Wall, Violet Vessel) — WS4 (data), WS6 — `lib/balatro/mp/rulesets/__tests__/rulesets.test.ts`, `lib/balatro/lua/spec/mp_rulesets_spec.lua`
+- [x] FL-05 The PvP blind cannot be disabled (`Blind:disable` no-op), except Verdant Leaf's special case — WS6 — `lib/balatro/lua/spec/mp_hooks_spec.lua`
+- [x] FL-06 Ready/Unready toggle on the PvP pillar: — `lib/balatro/lua/spec/mp_hooks_spec.lua`, `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`
   - Ready sends `ready_blind{starting_hands}` and sets location `loc_ready`
   - Unready sets `loc_selecting`, pauses own timer, sends `unready_blind`
   - booster Open is disabled while ready
     — WS6, WS11
-- [ ] FL-07 `start_blind`: reset the opponent display (masked), set the opponent's starting hands, stop timers, PvP timer base, `pvp_reached_first`, 3-2-1 countdown (scale 5, red, tarot2, controls locked), then auto-select the PvP blind — WS11, WS6
-- [ ] FL-08 Selecting any blind: new random ante key, `play_hand(0, hands)`, `new_round`, `loc_playing-<blind>` — WS6
-- [ ] FL-09 PvP blind loop:
+- [x] FL-07 `start_blind`: reset the opponent display (masked), set the opponent's starting hands, stop timers, PvP timer base, `pvp_reached_first`, 3-2-1 countdown (scale 5, red, tarot2, controls locked), then auto-select the PvP blind — WS11, WS6 — `lib/balatro/lua/spec/mp_hooks_spec.lua`, `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`
+- [x] FL-08 Selecting any blind: new random ante key, `play_hand(0, hands)`, `new_round`, `loc_playing-<blind>` — WS6 — `lib/balatro/lua/spec/mp_hooks_spec.lua`
+- [x] FL-09 PvP blind loop: — `lib/balatro/lua/spec/mp_hooks_spec.lua`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-01)
   - after each hand: report `play_hand{score, hands_left, skips, lives}` and the display sync
   - keep drawing past `blind.chips` (blind chips set to +inf on the PvP blind)
   - at 0 hands: "Waiting for enemy to finish...", held-in-hand end-of-round effects, discard the hand, wait
   - deck-out → 0 hands reported; play impossible at 0 hands
     — WS6, WS11
-- [ ] FL-10 Hands gained mid-PvP are re-reported (`ease_hands_played` wrap) — WS6
-- [ ] FL-11 `end_pvp` → NEW_ROUND → round eval → shop; the PvP blind counts as the Boss for the ante advance; "lost PvP with N hands left" context (`mp_pvp_loss`) — WS6
-- [ ] FL-12 Stability guards: prevent double round eval, duplicate `end_round`, double emplace/draw_card — WS6
-- [ ] FL-13 Vanilla game over and the ante-8 win suppressed in matches (`win_ante` 999 around `update_new_round`); endless past ante 8 — WS6
-- [ ] FL-14 A failed normal blind:
+- [x] FL-10 Hands gained mid-PvP are re-reported (`ease_hands_played` wrap) — WS6 — `lib/balatro/lua/spec/mp_hooks_spec.lua`
+- [x] FL-11 `end_pvp` → NEW_ROUND → round eval → shop; the PvP blind counts as the Boss for the ante advance; "lost PvP with N hands left" context (`mp_pvp_loss`) — WS6 — `lib/balatro/lua/spec/mp_hooks_spec.lua`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-02)
+- [x] FL-12 Stability guards: prevent double round eval, duplicate `end_round`, double emplace/draw_card — WS6 — `lib/balatro/lua/spec/mp_hooks_spec.lua`
+- [x] FL-13 Vanilla game over and the ante-8 win suppressed in matches (`win_ante` 999 around `update_new_round`); endless past ante 8 — WS6 — `lib/balatro/lua/spec/mp_hooks_spec.lua`, `lib/balatro/lua/spec/mp_saves_spec.lua`
+- [x] FL-14 A failed normal blind: — `lib/balatro/lua/spec/mp_hooks_spec.lua`, `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`
   - costs a life if `death_on_round_loss` (Teams: the shared pool)
   - is treated as beaten; reward paid unless `no_gold_on_round_loss`
   - sends `blind_result{beaten:false}` then `fail_round`
   - the 0-hands edge case (D-07)
     — WS6, WS4
-- [ ] FL-15 `blind_result` for every non-PvP blind (a skip counts as beaten); `set_furthest_blind` formula — WS6
-- [ ] FL-16 The PvP blind always pays $5 (win or lose); no unused-hands money on the PvP blind — WS6
-- [ ] FL-17 Comeback bonus:
+- [x] FL-15 `blind_result` for every non-PvP blind (a skip counts as beaten); `set_furthest_blind` formula — WS6 — `lib/balatro/lua/spec/mp_hooks_spec.lua`
+- [x] FL-16 The PvP blind always pays $5 (win or lose); no unused-hands money on the PvP blind — WS6 — `lib/balatro/lua/spec/mp_hooks_spec.lua`
+- [x] FL-17 Comeback bonus: — `lib/balatro/lua/spec/mp_rules_spec.lua`
   - default $4, or $2 at stake ≥6
   - Major League $4 × total lives lost; Sandbox $3 × (ante−1) with its own row text
   - one payout per arming; arms on a decrease (D-04)
   - "<n> Total Lives Lost" row via the label hook
     — WS6
-- [ ] FL-18 Spend tracking; opponent contexts `opponent_spent_in_shop` (on leaving the shop; a skip appends 0) and `opponent_selling_card` — WS6, WS7
-- [ ] FL-19 At the first PvP draw: launch the stored Asteroids; arm the end-of-PvP marker (Pizza) — WS6, WS7
-- [ ] FL-20 A "Paused RNG" guard is not needed (vanilla is deterministic while paused); verified by a spec — WS6
+- [x] FL-18 Spend tracking; opponent contexts `opponent_spent_in_shop` (on leaving the shop; a skip appends 0) and `opponent_selling_card` — WS6, WS7 — `lib/balatro/lua/spec/mp_hooks_spec.lua`, `lib/balatro/lua/spec/mp_content_a_jokers_spec.lua`
+- [x] FL-19 At the first PvP draw: launch the stored Asteroids; arm the end-of-PvP marker (Pizza) — WS6, WS7 — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`, `lib/balatro/lua/spec/mp_content_a_jokers_spec.lua`
+- [x] FL-20 A "Paused RNG" guard is not needed (vanilla is deterministic while paused); verified by a spec — WS6 — `lib/balatro/lua/spec/mp_determinism_spec.lua`
 
 ## Referee (REF) — WS4 (pure), WS5 (wiring)
 
-- [ ] REF-01 Reset:
+- [x] REF-01 Reset: — `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`, `lib/balatro/mp/referee/__tests__/referee-teams.test.ts`, `testing/balatro-e2e/match/formats.test.ts`
   - `starting_lives`
   - Manhunt: one Runner, the first claimant or else the first player; extra claimants demoted; Runner lives 1, Hunters `manhunt_hunter_lives`
   - Teams: plan or balance; pools A and B = `starting_lives`
   - broadcasts: lives (`*all*` or per player), team lives, team roster, ante-1 pairing / card targets
-- [ ] REF-02 Nemesis pairing: shuffle; odd count gives a bye (not last bye); circle method avoiding used pairs; reset when exhausted; recomputed once per ante, triggered by the first alive `set_ante` above the last computed ante
-- [ ] REF-03 2-player resolution: early trigger, higher score wins, a tie costs nothing, the 0-lives win check
-- [ ] REF-04 N>2 Nemesis resolution: per alive pair; one `end_pvp` per round
-- [ ] REF-05 Royale rank-and-cut (tie-cluster rule; full tie → nobody); A1 examples as golden tests
-- [ ] REF-06 Manhunt round:
+- [x] REF-02 Nemesis pairing: shuffle; odd count gives a bye (not last bye); circle method avoiding used pairs; reset when exhausted; recomputed once per ante, triggered by the first alive `set_ante` above the last computed ante — `lib/balatro/mp/referee/__tests__/referee-n.test.ts`, `lib/balatro/mp/referee/__tests__/units.test.ts`
+- [x] REF-03 2-player resolution: early trigger, higher score wins, a tie costs nothing, the 0-lives win check — `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`
+- [x] REF-04 N>2 Nemesis resolution: per alive pair; one `end_pvp` per round — `lib/balatro/mp/referee/__tests__/referee-n.test.ts`
+- [x] REF-05 Royale rank-and-cut (tie-cluster rule; full tie → nobody); A1 examples as golden tests — `lib/balatro/mp/referee/__tests__/referee-n.test.ts`, `lib/balatro/mp/referee/__tests__/units.test.ts`
+- [x] REF-06 Manhunt round: — `lib/balatro/mp/referee/__tests__/referee-teams.test.ts`, `lib/balatro/mp/referee/__tests__/units.test.ts`
   - a Hunter loses if score < Runner, or ties while the Runner scored > 0
   - the Runner is caught iff best Hunter > Runner
   - the Runner wins at ante 9 or when every Hunter is out
   - `redeem_ante_voucher` by the Runner gives every Hunter +1 life
-- [ ] REF-07 Teams round: sum of alive scores; the strictly lower team loses one shared life, mirrored to each member with `lost=1`; team score board; team card targets per ante
-- [ ] REF-08 Live targets: `royale_target` (safe player sees the next-lower neighbour, unsafe sees the next-higher), `manhunt_target` (top Hunter), re-sent on every score update
-- [ ] REF-09 Life loss: at most one per player per round (blocker re-armed by `new_round`)
-- [ ] REF-10 2-player pending death (A1 §4.6 decision table)
-- [ ] REF-11 N>2 pending deaths with `out_before`, completion rule, places formula (ties share a place, the next place skips)
-- [ ] REF-12 Team pending (Manhunt/Teams); leaves during a pending side are not forfeits
-- [ ] REF-13 Elimination (`eliminated` exactly once; eliminated players ignore `start_blind`/`end_pvp`)
-- [ ] REF-14 `win` variants (`winner_id` / `winner_team_id` / `draw` / `places`); re-sent at +3 s and +8 s and on `result_request`; client 5 s watchdog
-- [ ] REF-15 Forfeit/leave per shape: 2p → `player_won`; ≥3 → lives 0, hands 0; Manhunt Runner/Hunter rules; Teams no-teammate rule; pending-death exemption
-- [ ] REF-16 Seed-change vote: within 300 s of run start; unanimous; `reseed{seed}`; referee reset; same deck/stake, no re-draft
-- [ ] REF-17 Draw vote: unanimous → `win{draw:true}`
-- [ ] REF-18 Lives never trusted from a sender; host-only kinds rejected from non-hosts (receiver filter in WS5)
-- [ ] REF-19 Checkpoint after every entry point (versioned, tagged with `runId`); takeover restore; rebuild without a checkpoint from the lives cache, own blind results and pending info
-- [ ] REF-20 On a player's reconnect: clear their readiness; re-send pairing/card targets, roster, every player's lives, team lives and live targets
-- [ ] REF-21 `fail_pvp_timer` → −1 hand, `timer_hand_lost{player_id}`, re-check resolution
-- [ ] REF-22 SPEEDRUN emission (D-18)
-- [ ] REF-23 After a fail with lives remaining (N>2/Manhunt/Teams): force hands 0 and re-check
-- [ ] REF-24 Practice degenerate referee: no lives, no fails; the PvP round ends after the last hand; ante 9 → vanilla win
+- [x] REF-07 Teams round: sum of alive scores; the strictly lower team loses one shared life, mirrored to each member with `lost=1`; team score board; team card targets per ante — `lib/balatro/mp/referee/__tests__/referee-teams.test.ts`, `lib/balatro/mp/referee/__tests__/units.test.ts`
+- [x] REF-08 Live targets: `royale_target` (safe player sees the next-lower neighbour, unsafe sees the next-higher), `manhunt_target` (top Hunter), re-sent on every score update — `lib/balatro/mp/referee/__tests__/referee-n.test.ts`, `lib/balatro/mp/referee/__tests__/referee-teams.test.ts`, `lib/balatro/mp/referee/__tests__/units.test.ts`
+- [x] REF-09 Life loss: at most one per player per round (blocker re-armed by `new_round`) — `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`, `lib/balatro/mp/referee/__tests__/referee-fuzz.test.ts`
+- [x] REF-10 2-player pending death (A1 §4.6 decision table) — `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`, `lib/balatro/mp/referee/__tests__/units.test.ts`
+- [x] REF-11 N>2 pending deaths with `out_before`, completion rule, places formula (ties share a place, the next place skips) — `lib/balatro/mp/referee/__tests__/referee-n.test.ts`, `lib/balatro/mp/referee/__tests__/units.test.ts`
+- [x] REF-12 Team pending (Manhunt/Teams); leaves during a pending side are not forfeits — `lib/balatro/mp/referee/__tests__/referee-teams.test.ts`, `lib/balatro/mp/referee/__tests__/units.test.ts`
+- [x] REF-13 Elimination (`eliminated` exactly once; eliminated players ignore `start_blind`/`end_pvp`) — `lib/balatro/mp/referee/__tests__/referee-fuzz.test.ts`, `lib/balatro/mp/referee/__tests__/referee-n.test.ts`
+- [x] REF-14 `win` variants (`winner_id` / `winner_team_id` / `draw` / `places`); re-sent at +3 s and +8 s and on `result_request`; client 5 s watchdog — `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`, `lib/balatro/mp/referee/__tests__/referee-fuzz.test.ts`
+- [x] REF-15 Forfeit/leave per shape: 2p → `player_won`; ≥3 → lives 0, hands 0; Manhunt Runner/Hunter rules; Teams no-teammate rule; pending-death exemption — `lib/balatro/mp/__tests__/session/resilience.test.ts`, `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`, `lib/balatro/mp/referee/__tests__/referee-n.test.ts`, `lib/balatro/mp/referee/__tests__/referee-teams.test.ts`
+- [x] REF-16 Seed-change vote: within 300 s of run start; unanimous; `reseed{seed}`; referee reset; same deck/stake, no re-draft — `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`
+- [x] REF-17 Draw vote: unanimous → `win{draw:true}` — `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`, `testing/balatro-e2e/match/nemesis.test.ts`
+- [x] REF-18 Lives never trusted from a sender; host-only kinds rejected from non-hosts (receiver filter in WS5) — `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`
+- [x] REF-19 Checkpoint after every entry point (versioned, tagged with `runId`); takeover restore; rebuild without a checkpoint from the lives cache, own blind results and pending info — `lib/balatro/mp/referee/__tests__/referee-fuzz.test.ts`, `lib/balatro/mp/referee/__tests__/referee-restore.test.ts`
+- [x] REF-20 On a player's reconnect: clear their readiness; re-send pairing/card targets, roster, every player's lives, team lives and live targets — `lib/balatro/mp/__tests__/session/resilience.test.ts`, `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`
+- [x] REF-21 `fail_pvp_timer` → −1 hand, `timer_hand_lost{player_id}`, re-check resolution — `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`
+- [x] REF-22 SPEEDRUN emission (D-18) — `lib/balatro/mp/referee/__tests__/referee-1v1.test.ts`
+- [x] REF-23 After a fail with lives remaining (N>2/Manhunt/Teams): force hands 0 and re-check — `lib/balatro/mp/referee/__tests__/referee-n.test.ts`
+- [x] REF-24 Practice degenerate referee: no lives, no fails; the PvP round ends after the last hand; ante 9 → vanilla win — `lib/balatro/mp/__tests__/session/abuse-chat-practice.test.ts`, `lib/balatro/mp/referee/__tests__/referee-teams.test.ts`, `testing/balatro-e2e/match/practice.test.ts`
 
 ## Timers (TIM) — WS4 (model), WS5 (driver), WS11 (HUD), WS6 (game-speed and animation-flag hooks)
 
-- [ ] TIM-01 Timer box replaces the Round box (keeps the `round_UI_count` id alive); whole seconds above 10, one decimal at or below 9.95; it is a button; orange highlight when pressable; pulses `G.C.IMPORTANT` while running; ">>" variant
-- [ ] TIM-02 Default ante timer:
+- [x] TIM-01 Timer box replaces the Round box (keeps the `round_UI_count` id alive); whole seconds above 10, one decimal at or below 9.95; it is a button; orange highlight when pressable; pulses `G.C.IMPORTANT` while running; ">>" variant — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/mp/timer/__tests__/timer-model.test.ts`
+- [x] TIM-02 Default ante timer: — `lib/balatro/mp/__tests__/session/abuse-chat-practice.test.ts`, `lib/balatro/mp/timer/__tests__/timer-model.test.ts`
   - press rules: ready, >0, not being timered, not during the countdown
   - `ante_timer{time,isPvP}` / `pause_ante_timer{time}`; the receiver adopts the sender's value
   - timpani cue setting: always / once per ante / off
   - tick rules (a ready player who is only being timered does not tick); speed multiplier
   - at 0: forgiveness, else `fail_timer`; a skip gives +60 s under its conditions
   - stopped during disconnect overlays; wall clock (TypeScript `performance.now`)
-- [ ] TIM-03 `pvp_timer` layer: 60 s base, +10 s per hand; press only when ahead, or tied and first; auto-cancel on every score update; ticks only while being timered with hands >0; at 0 → `fail_pvp_timer`
-- [ ] TIM-04 `pressure_timer` (auto-tick, ×2 base, ×2 speed when timered, fail regardless, +60 s on an opponent's skip, orange text) and `pressure_timer_plus` (+15 s per normal hand)
-- [ ] TIM-05 `no_animation_timer` (×2/3 base, no ticking during animations, +60 s on an opponent's skip)
-- [ ] TIM-06 Major League `timer_display_threshold` 180 (delayed announce)
-- [ ] TIM-07 `speedlatro_timer`: separate 147 s clock above the deck; 73.5 s at PvP start with a 4 s grace; ticks only while behind on PvP; ×2 when timered; reset at PvP end; `fail_timer` once
-- [ ] TIM-08 Animation budget (40 s cap, refills at 2.5 s per second) and forced game speed ≥4 while ticking (`Game.update` wrap)
-- [ ] TIM-09 Hidden-tab correctness (the TypeScript clock keeps running; Lua shows the value from the latest `timer_state`)
+- [x] TIM-03 `pvp_timer` layer: 60 s base, +10 s per hand; press only when ahead, or tied and first; auto-cancel on every score update; ticks only while being timered with hands >0; at 0 → `fail_pvp_timer` — `lib/balatro/mp/timer/__tests__/timer-model.test.ts`
+- [x] TIM-04 `pressure_timer` (auto-tick, ×2 base, ×2 speed when timered, fail regardless, +60 s on an opponent's skip, orange text) and `pressure_timer_plus` (+15 s per normal hand) — `lib/balatro/mp/timer/__tests__/timer-model.test.ts`
+- [x] TIM-05 `no_animation_timer` (×2/3 base, no ticking during animations, +60 s on an opponent's skip) — `lib/balatro/mp/timer/__tests__/timer-model.test.ts`
+- [x] TIM-06 Major League `timer_display_threshold` 180 (delayed announce) — `lib/balatro/mp/timer/__tests__/timer-model.test.ts`
+- [x] TIM-07 `speedlatro_timer`: separate 147 s clock above the deck; 73.5 s at PvP start with a 4 s grace; ticks only while behind on PvP; ×2 when timered; reset at PvP end; `fail_timer` once — `lib/balatro/mp/timer/__tests__/timer-model.test.ts`
+- [x] TIM-08 Animation budget (40 s cap, refills at 2.5 s per second) and forced game speed ≥4 while ticking (`Game.update` wrap) — `lib/balatro/lua/spec/mp_hooks_spec.lua`, `lib/balatro/mp/timer/__tests__/timer-model.test.ts`
+- [x] TIM-09 Hidden-tab correctness (the TypeScript clock keeps running; Lua shows the value from the latest `timer_state`) — `lib/balatro/mp/timer/__tests__/timer-model.test.ts`, `testing/balatro-e2e/match/nemesis.test.ts`
 
 ## In-run HUD and screens (HUD)
 
-- [ ] HUD-01 Lives box "X vs Y" (Y = nemesis lives under pairing, else the highest of the others), with a +n/−n popup — WS11
-- [ ] HUD-02 Enemy Location widget (Ready for PvP / Selecting / Shopping before X / Playing X), blind icon, hover popup with the name, " (catching up)"; disabled under Major League — WS11
-- [ ] HUD-03 PvP blind panel:
+- [x] HUD-01 Lives box "X vs Y" (Y = nemesis lives under pairing, else the highest of the others), with a +n/−n popup — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`
+- [x] HUD-02 Enemy Location widget (Ready for PvP / Selecting / Shopping before X / Playing X), blind icon, hover popup with the name, " (catching up)"; disabled under Major League — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/spec/mp_hooks_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`
+- [x] HUD-03 PvP blind panel: — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`, `testing/balatro-e2e/match/practice.test.ts` (E2E-16)
   - name = opponent / "The Royale" / "The Hunters" / "The Runner" / "Team A/B" / "Bye"
   - "Current Enemy score", eased over 3 s, masked "???" until first info; "Enemy hands left: N"
   - `blind_col` art per opponent colour; Manhunt art; showdown art when both are at ≤1 life; boss colour #AC3232
     — WS11
-- [ ] HUD-04 Blind-select Nemesis pillar ("Life or Death" / "Life", "Most chips wins", "????", $5, Ready/Unready red↔green, Bye) — WS11
-- [ ] HUD-05 Next-ante preview shows "????" for the Nemesis — WS11
-- [ ] HUD-06 Nemesis rows:
+- [x] HUD-04 Blind-select Nemesis pillar ("Life or Death" / "Life", "Most chips wins", "????", $5, Ready/Unready red↔green, Bye) — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`
+- [x] HUD-05 Next-ante preview shows "????" for the Nemesis — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`
+- [x] HUD-06 Nemesis rows: — `lib/balatro/lua/spec/mp_ui_run_spec.lua`
   - layouts Standard / Mirrored (reversed, rotated 180°) / Classic (half-width row, voucher shader); a switch to or from Classic applies next run
   - phantom joker copies of the ante nemesis (eternal, $0, unsellable, "Phantom" badge; hidden off-screen store for the others)
   - face-down trap row; hover shows details to the owner only
     — WS11 (+ the WS7/WS9 phantom and trap data)
-- [ ] HUD-07 Sounds: opponent loses a life → holo1+gong; opponent skips → negative+gong (not under Major League) — WS11
-- [ ] HUD-08 Survivor banner during a pending death (8 s) — WS11
-- [ ] HUD-09 Lobby Info button next to Run Info (`minh` 1.2); "Replay settings" in replays — WS11, WS13
-- [ ] HUD-10 Pause menu: Settings · Seed Change (first 300 s) · Vote for Draw (not in practice) · Forfeit (red, "Are you sure?" Yes/No) · Collection; Restart removed; holding R disabled — WS11
-- [ ] HUD-11 Chat: T opens it (not while a text box is focused); bottom-left console; fading lines; colours: incoming cyan, own purple, system yellow; "name: message"; vote k/n lines — WS10 (widget), WS5 (transport)
-- [ ] HUD-12 End screens:
+- [x] HUD-07 Sounds: opponent loses a life → holo1+gong; opponent skips → negative+gong (not under Major League) — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`
+- [x] HUD-08 Survivor banner during a pending death (8 s) — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`
+- [x] HUD-09 Lobby Info button next to Run Info (`minh` 1.2); "Replay settings" in replays — WS11, WS13 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/spec/mp_replay_ui_spec.lua`
+- [x] HUD-10 Pause menu: Settings · Seed Change (first 300 s) · Vote for Draw (not in practice) · Forfeit (red, "Are you sure?" Yes/No) · Collection; Restart removed; holding R disabled — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`
+- [x] HUD-11 Chat: T opens it (not while a text box is focused); bottom-left console; fading lines; colours: incoming cyan, own purple, system yellow; "name: message"; vote k/n lines — WS10 (widget), WS5 (transport) — `lib/balatro/lua/spec/mp_ui_misc_spec.lua`, `lib/balatro/mp/__tests__/session/abuse-chat-practice.test.ts`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-11)
+- [x] HUD-12 End screens: — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-01)
   - backgrounds: green / red / blue; titles YOU WIN! / GAME OVER / DRAW! / OUT OF LIVES (pending variant with its lines)
   - Jimbo quip spot (no Ko-fi line)
   - Nemesis row; player selector over the starters; joker row "<name>'s Jokers" / "left" / "is still playing"
   - View Deck (Nemesis Deck / Your Deck tabs); Roster button (per player: deck, best PvP score, Jokers)
   - buttons: Continue in Singleplayer · Return to Lobby (private only) · Leave Lobby; the pending screen has Leave only
     — WS11
-- [ ] HUD-13 End-of-match exchange:
+- [x] HUD-13 End-of-match exchange: — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/spec/mp_hooks_spec.lua`
   - `player_result` (final, plus an interim joker list on every shop leave)
   - the leaver waits ≤2 s for the echo
   - `nemesis_deck` request/response (`suit-rank-enh-edition-seal;…`)
   - `end_stats` request/response (reroll count, total reroll cost, vouchers)
     — WS6 (collect), WS5 (route), WS11 (show)
-- [ ] HUD-14 Continue in Singleplayer: snapshot conversion — the PvP blind counts as beaten, cards back to the deck, ante +1 if Boss, chips raised to the requirement, state = round eval; PvP blind choices replaced by vanilla ones; the MP pack stays mounted; sidecar `mp.jkr` (R-03) — WS6, WS11
-- [ ] HUD-15 Local match history (wins/losses; draws not counted) feeding avatar goals (D-37) — WS5, WS10
-- [ ] HUD-16 Overlays: Reconnect prompt (Reconnect/Leave), Connection lost, Forfeited notice, Kicked notice, Seat held, Version mismatch, Confirm dialog — WS10
-- [ ] HUD-17 Opponent-disconnected overlay with the grace countdown; own "Connection lost, reconnecting…" (timers stopped) — WS11
-- [ ] HUD-18 MP main menu:
+- [x] HUD-14 Continue in Singleplayer: snapshot conversion — the PvP blind counts as beaten, cards back to the deck, ante +1 if Boss, chips raised to the requirement, state = round eval; PvP blind choices replaced by vanilla ones; the MP pack stays mounted; sidecar `mp.jkr` (R-03) — WS6, WS11 — `lib/balatro/lua/spec/mp_saves_spec.lua`, `lib/balatro/lua/spec/mp_ui_run_spec.lua`
+- [x] HUD-15 Local match history (wins/losses; draws not counted) feeding avatar goals (D-37) — WS5, WS10 — `lib/balatro/mp/__tests__/session/units.test.ts`, `lib/balatro/lua/spec/mp_ui_misc_spec.lua`
+- [x] HUD-16 Overlays: Reconnect prompt (Reconnect/Leave), Connection lost, Forfeited notice, Kicked notice, Seat held, Version mismatch, Confirm dialog — WS10 — `lib/balatro/lua/spec/mp_ui_menu_spec.lua`, `lib/balatro/lua/spec/mp_ui_wave3_spec.lua`
+- [x] HUD-17 Opponent-disconnected overlay with the grace countdown; own "Connection lost, reconnecting…" (timers stopped) — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`
+- [x] HUD-18 MP main menu: — `lib/balatro/lua/spec/mp_ui_menu_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_menu_spec.lua`
   - Multiplayer panel top-left: account name/avatar, status line (white/gold/red plus reason), PvP button / Back
   - PvP menu bar: FIND GAME/CANCEL, PRACTICE, JOIN LOBBY (BY CODE / FROM CLIPBOARD), CREATE LOBBY
   - PvP title logo swap (`pvp_title.png`); LEADERBOARD dropped
     — WS10 (entry button: WS3)
-- [ ] HUD-19 Pillar pages:
+- [x] HUD-19 Pillar pages: — `lib/balatro/lua/spec/mp_ui_menu_spec.lua`
   - Create: Nemesis blue, Royale purple, Manhunt red, Teams green, Party orange
   - Practice: Balanced, Expanded, Vanilla, Small World, plus Extra rulesets
   - Find Game: the Casual tab only
   - name plate, icon, description box, "Players" stat box
     — WS10
-- [ ] HUD-20 MP settings tab: Nemesis layout, timer sound, blind colour (25 previews), avatar joker picker (locked entries as undiscovered; "Avatar Unlocked!" toast), Show MP content anyway, chat enable — WS10
-- [ ] HUD-21 MP collection page (tabs: Jokers, Consumables/Traps, Decks, Blinds, Tags, Vouchers, Stakes, Challenges, Sandbox with error decoys); vanilla tag/blind grids never see MP keys — WS10, WS6
-- [ ] HUD-22 Balanced sticker: badge plus tooltip (`mp_sticker_balanced_<key>` or the generic text); Extra Credit sticker badge — WS7
-- [ ] HUD-23 Misprint anti-peek in the MP collection — WS7
+- [x] HUD-20 MP settings tab: Nemesis layout, timer sound, blind colour (25 previews), avatar joker picker (locked entries as undiscovered; "Avatar Unlocked!" toast), Show MP content anyway, chat enable — WS10 — `lib/balatro/lua/spec/mp_ui_misc_spec.lua`
+- [x] HUD-21 MP collection page (tabs: Jokers, Consumables/Traps, Decks, Blinds, Tags, Vouchers, Stakes, Challenges, Sandbox with error decoys); vanilla tag/blind grids never see MP keys — WS10, WS6 — `lib/balatro/lua/spec/mp_ui_misc_spec.lua`
+- [x] HUD-22 Balanced sticker: badge plus tooltip (`mp_sticker_balanced_<key>` or the generic text); Extra Credit sticker badge — WS7 — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`, `lib/balatro/lua/spec/mp_ui_wave3_spec.lua`
+- [x] HUD-23 Misprint anti-peek in the MP collection — WS7 — `lib/balatro/lua/spec/mp_content_b_jokers_spec.lua`
 
 ## Practice (PR)
 
-- [ ] PR-01 Practice pillars → run setup (deck, stake, optional seed; New Run tab only) — WS10
-- [ ] PR-02 Practice rules: Nemesis shape, Attrition, The Order always on, "???" opponent, PvP from ante 2, no lives/timer/fails, ante 9 → vanilla win, vanilla end screens, clean exit through Main Menu / New Run — WS6, WS4 (REF-24)
-- [ ] PR-03 Give-card: with the Collection open, hover plus key 3 or left click; respects slot limits unless Unlimited Slots — WS11
-- [ ] PR-04 Unlimited Slots and Edition Cycling (Q: base→Foil→Holo→Polychrome→Negative) toggles (D-38) — WS11
-- [ ] PR-05 Practice refuses to start while queued — WS10, WS12
+- [x] PR-01 Practice pillars → run setup (deck, stake, optional seed; New Run tab only) — WS10 — `lib/balatro/lua/spec/mp_ui_menu_spec.lua`, `testing/balatro-e2e/match/practice.test.ts` (E2E-16)
+- [x] PR-02 Practice rules: Nemesis shape, Attrition, The Order always on, "???" opponent, PvP from ante 2, no lives/timer/fails, ante 9 → vanilla win, vanilla end screens, clean exit through Main Menu / New Run — WS6, WS4 (REF-24) — `lib/balatro/mp/__tests__/session/abuse-chat-practice.test.ts`, `lib/balatro/lua/spec/mp_hooks_spec.lua`, `testing/balatro-e2e/match/practice.test.ts` (E2E-16)
+- [x] PR-03 Give-card: with the Collection open, hover plus key 3 or left click; respects slot limits unless Unlimited Slots — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`
+- [x] PR-04 Unlimited Slots and Edition Cycling (Q: base→Foil→Holo→Polychrome→Negative) toggles (D-38) — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`
+- [x] PR-05 Practice refuses to start while queued — WS10, WS12 — `lib/balatro/mp/queue/__tests__/matchmaking.test.ts`, `lib/balatro/lua/spec/mp_ui_menu_spec.lua`, `lib/balatro/lua/spec/mp_ui_wave3_spec.lua`
 
 ## Connectivity (NET)
 
-- [ ] NET-01 Hub signalling: host/join/admit/signal/kick/leave/close/state, resume token — WS1
-- [ ] NET-02 WebRTC direct (STUN; TURN when configured) with the 8 s / 12 s fallback timers → hub relay; connection-kind indicator (Direct / TURN / Relayed) in the Lobby Info overlay — WS1, WS5
-- [ ] NET-03 Identity: hub-vouched `userId`/name/avatar URL; PLAYER_INFO cosmetics (`avatarJoker`, `blindCol`, `lang`) — WS1, WS5
-- [ ] NET-04 Liveness: ping 1 s, link timeout 10 s; "away" after 5 s of silence; 120 s seat grace → forfeit (configurable); `forfeitedSeats` — WS5, WS1
-- [ ] NET-05 Host migration (§0.3) mid-lobby and mid-match, including during a PvP blind and a pending death — WS5, WS1, WS4
-- [ ] NET-06 Crash/reload rejoin (§0.4); "(catching up)"; 3 min catch-up limit → forfeit — WS5, WS6, WS3
-- [ ] NET-07 Network-drop reconnect without a crash: the host replays the missed opponent `hand_result`s; applied at the next safe point (select blind or cash-out) — WS5, WS6
-- [ ] NET-08 Everyone re-sends `trap_held` on any join/rejoin — WS9, WS5
-- [ ] NET-09 Hidden tab: the TypeScript transport keeps heartbeats; Lua drains the backlog on return; `visibilitychange` → away — WS5, WS3
-- [ ] NET-10 Receiver-side per-peer rate limits (40/s, burst 100; log events 20/s, burst 1024); message-size caps; zod validation of every wire message — WS5
-- [ ] NET-11 P2P chat with mute (D-35) — WS5, WS10
-- [ ] NET-12 Hub restart survival: data channels persist; the host re-claims its code; relayed members re-attach — WS1, WS5
+- [x] NET-01 Hub signalling: host/join/admit/signal/kick/leave/close/state, resume token — WS1 — `server/socket-server/balatro/p2p-hub.test.ts`, `server/socket-server/balatro/signal-hub.test.ts`, `server/socket-server/handlers/__tests__/balatro-p2p-auth.test.ts`
+- [x] NET-02 WebRTC direct (STUN; TURN when configured) with the 8 s / 12 s fallback timers → hub relay; connection-kind indicator (Direct / TURN / Relayed) in the Lobby Info overlay — WS1, WS5 — `lib/balatro/mp/__tests__/session/lobby-flow.test.ts`, `server/socket-server/balatro/p2p-hub.test.ts`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-15)
+- [x] NET-03 Identity: hub-vouched `userId`/name/avatar URL; PLAYER_INFO cosmetics (`avatarJoker`, `blindCol`, `lang`) — WS1, WS5 — `server/socket-server/balatro/p2p-hub.test.ts`, `lib/balatro/mp/__tests__/session/units.test.ts`
+- [x] NET-04 Liveness: ping 1 s, link timeout 10 s; "away" after 5 s of silence; 120 s seat grace → forfeit (configurable); `forfeitedSeats` — WS5, WS1 — `lib/balatro/mp/__tests__/session/resilience.test.ts`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-12)
+- [x] NET-05 Host migration (§0.3) mid-lobby and mid-match, including during a PvP blind and a pending death — WS5, WS1, WS4 — `lib/balatro/mp/__tests__/session/resilience.test.ts`, `lib/balatro/mp/referee/__tests__/referee-restore.test.ts`, `server/socket-server/balatro/p2p-hub.test.ts`, `testing/balatro-e2e/match/formats.test.ts` (E2E-13)
+- [x] NET-06 Crash/reload rejoin (§0.4); "(catching up)"; 3 min catch-up limit → forfeit — WS5, WS6, WS3 — `lib/balatro/mp/__tests__/session/resilience.test.ts`, `lib/balatro/lua/spec/mp_saves_spec.lua`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-14)
+- [x] NET-07 Network-drop reconnect without a crash: the host replays the missed opponent `hand_result`s; applied at the next safe point (select blind or cash-out) — WS5, WS6 — `lib/balatro/mp/__tests__/session/resilience.test.ts`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-12)
+- [x] NET-08 Everyone re-sends `trap_held` on any join/rejoin — WS9, WS5 — `lib/balatro/lua/spec/mp_content_c_spec.lua`
+- [ ] NET-09 Hidden tab: the TypeScript transport keeps heartbeats; Lua drains the backlog on return; `visibilitychange` → away — WS5, WS3 — open (WS14b): the transport keeps heartbeats in a hidden tab and Lua is refreshed on return (`MpRuntime.setHidden` → `refresh()`; the TIM-09 clock is proven by `lib/balatro/mp/timer/__tests__/timer-model.test.ts` and E2E-10 in `testing/balatro-e2e/match/nemesis.test.ts`), but `visibilitychange` → away is not implemented: `setHidden(true)` is a no-op, so peers never mark a hidden tab away
+- [x] NET-10 Receiver-side per-peer rate limits (40/s, burst 100; log events 20/s, burst 1024); message-size caps; zod validation of every wire message — WS5 — `lib/balatro/mp/__tests__/session/abuse-chat-practice.test.ts`, `lib/balatro/mp/__tests__/session/units.test.ts`, `lib/balatro/mp/__tests__/wire-codec.test.ts`
+- [x] NET-11 P2P chat with mute (D-35) — WS5, WS10 — `lib/balatro/mp/__tests__/session/abuse-chat-practice.test.ts`, `lib/balatro/mp/__tests__/session/units.test.ts`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-11)
+- [x] NET-12 Hub restart survival: data channels persist; the host re-claims its code; relayed members re-attach — WS1, WS5 — `server/socket-server/balatro/p2p-hub.test.ts`
 
 ## Rulesets and layers (RS / LY) — WS4 (data and resolution), WS6 (application), the content streams (effects)
 
-- [ ] RS-01 Vanilla · RS-02 Balanced · RS-03 Expanded · RS-04 Small World · RS-05 Major League · RS-06 Minor League · RS-07 Sandbox · RS-08 Badlatro · RS-09 Chaos · RS-10 Speedlatro · RS-11 Traditional · RS-12 Legacy Ranked (the `the_order` part only) · RS-13 WSOB · RS-14 Experimental (default modifiers `pvp_timer`, `pressure_timer`) · RS-15 Experimental Legacy (its own bans and reworks)
-- [ ] RS-16 Composition rules (A1 §3.1):
+- [x] RS-01 Vanilla · RS-02 Balanced · RS-03 Expanded · RS-04 Small World · RS-05 Major League · RS-06 Minor League · RS-07 Sandbox · RS-08 Badlatro · RS-09 Chaos · RS-10 Speedlatro · RS-11 Traditional · RS-12 Legacy Ranked (the `the_order` part only) · RS-13 WSOB · RS-14 Experimental (default modifiers `pvp_timer`, `pressure_timer`) · RS-15 Experimental Legacy (its own bans and reworks) — `lib/balatro/mp/rulesets/__tests__/rulesets.test.ts`, `lib/balatro/lua/spec/mp_rulesets_spec.lua`, `lib/balatro/mp/__tests__/rulesets-lua-fixture.test.ts`
+- [x] RS-16 Composition rules (A1 §3.1): — `lib/balatro/mp/rulesets/__tests__/rulesets.test.ts`, `lib/balatro/lua/spec/mp_rulesets_spec.lua`
   - chain order with dedupe
   - array concatenation, dict merge, scalar override
   - hooks run per layer
   - Attrition bans
   - pool isolation (`multiplayer_content` + the `multiplayer_jokers` option)
   - forced lobby options
-- [ ] LY-01 standard · LY-02 ranked (`the_order` only) · LY-03 pvp_timer · LY-04 smallworld (the full cull spec, including the voucher −1, Cavendish↔Gros Michel, upgrade vouchers, tag re-roll as if ante 10, sorted Orbital, replacement of deck vouchers and consumables, `add_joker` resample) · LY-05 majorleague · LY-06 classic · LY-07 wsob · LY-08 badlatro · LY-09 sandbox (idol keep-one, EC bans if a real EC mod is present → n/a) · LY-10 experimental (+1 shop slot, ×1.15 scaling, +$1 reroll increment, 1/3 sticker rolls) · LY-11 traps · LY-12 wraith_rework · LY-13 no_red_seals · LY-14 eeeee · LY-15 polymorph_spam (with the "Transmutations" tooltip) · LY-16 score_instability ("Destabilized") · LY-17 shared_pockets · LY-18 glass_cannon · LY-19 pressure_timer(+plus) · LY-20 no_animation_timer · LY-21 speedlatro_timer · LY-22 economy/esoteric mutators per D-39 · LY-23 gambling_opportunity · LY-24 bigger_shop
-- [ ] LY-25 Runtime modifiers: ruleset `default_modifiers` + `traps`; serialised as `modifier_layers`; private-lobby Advanced toggles for LY-12…LY-18, LY-22…LY-24
-- [ ] OR-01 The Order (`pseudoseed` wrap): key rewrites for boss, halu, pack, nr, cashout, resample
-- [ ] OR-02 Stable shop (`create_card` wrap: rarity → sticker → queue → edition)
-- [ ] OR-03 Sorted poker-hand arrays (To Do List, Orbital, the MP To Do List)
-- [ ] OR-04 Seed prefix applied identically on every peer
-- [ ] OR-05 `tag_uncommon`/`tag_rare` ante-agnostic reworks
-- [ ] OR-06 Deterministic Idol and Mail-In Rebate under The Order
-- [ ] OR-07 Profile-independent pools during sessions (flip unlocked/discovered inside the `get_current_pool` / `get_next_tag_key` calls, then restore)
-- [ ] OR-08 Tutorial treated as complete in sessions
-- [ ] OR-09 The Order forced/disabled per ruleset; always on in Practice
+- [x] LY-01 standard · LY-02 ranked (`the_order` only) · LY-03 pvp_timer · LY-04 smallworld (the full cull spec, including the voucher −1, Cavendish↔Gros Michel, upgrade vouchers, tag re-roll as if ante 10, sorted Orbital, replacement of deck vouchers and consumables, `add_joker` resample) · LY-05 majorleague · LY-06 classic · LY-07 wsob · LY-08 badlatro · LY-09 sandbox (idol keep-one, EC bans if a real EC mod is present → n/a) · LY-10 experimental (+1 shop slot, ×1.15 scaling, +$1 reroll increment, 1/3 sticker rolls) · LY-11 traps · LY-12 wraith_rework · LY-13 no_red_seals · LY-14 eeeee · LY-15 polymorph_spam (with the "Transmutations" tooltip) · LY-16 score_instability ("Destabilized") · LY-17 shared_pockets · LY-18 glass_cannon · LY-19 pressure_timer(+plus) · LY-20 no_animation_timer · LY-21 speedlatro_timer · LY-22 economy/esoteric mutators per D-39 · LY-23 gambling_opportunity · LY-24 bigger_shop — `lib/balatro/mp/rulesets/__tests__/rulesets.test.ts`, `lib/balatro/lua/spec/mp_rulesets_spec.lua`, `lib/balatro/lua/spec/mp_rules_spec.lua`
+- [x] LY-25 Runtime modifiers: ruleset `default_modifiers` + `traps`; serialised as `modifier_layers`; private-lobby Advanced toggles for LY-12…LY-18, LY-22…LY-24 — `lib/balatro/mp/rulesets/__tests__/rulesets.test.ts`, `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`
+- [x] OR-01 The Order (`pseudoseed` wrap): key rewrites for boss, halu, pack, nr, cashout, resample — `lib/balatro/lua/spec/mp_determinism_spec.lua`, `lib/balatro/lua/spec/mp_rules_spec.lua`
+- [x] OR-02 Stable shop (`create_card` wrap: rarity → sticker → queue → edition) — `lib/balatro/lua/spec/mp_determinism_spec.lua`
+- [x] OR-03 Sorted poker-hand arrays (To Do List, Orbital, the MP To Do List) — `lib/balatro/lua/spec/mp_determinism_spec.lua`, `lib/balatro/lua/spec/mp_content_a_jokers_spec.lua`
+- [x] OR-04 Seed prefix applied identically on every peer — `lib/balatro/lua/spec/mp_hooks_spec.lua`
+- [x] OR-05 `tag_uncommon`/`tag_rare` ante-agnostic reworks — `lib/balatro/lua/spec/mp_determinism_spec.lua`
+- [x] OR-06 Deterministic Idol and Mail-In Rebate under The Order — `lib/balatro/lua/spec/mp_determinism_spec.lua`
+- [x] OR-07 Profile-independent pools during sessions (flip unlocked/discovered inside the `get_current_pool` / `get_next_tag_key` calls, then restore) — `lib/balatro/lua/spec/mp_determinism_spec.lua`
+- [x] OR-08 Tutorial treated as complete in sessions — `lib/balatro/lua/spec/mp_hooks_spec.lua`, `lib/balatro/lua/spec/mp_saves_spec.lua`
+- [x] OR-09 The Order forced/disabled per ruleset; always on in Practice — `lib/balatro/mp/rulesets/__tests__/rulesets.test.ts`, `lib/balatro/lua/spec/mp_hooks_spec.lua`
 
 ## Content objects (C) — owners in brackets
 
 Jokers:
 
-- [ ] J-01..J-09 Core PvP jokers [WS7]: Defensive Joker, Skip-Off, Let's Go Gambling (phantom, misfire sync), SPEEDRUN (phantom), Conjoined Joker (phantom), Penny Pincher (unlock at the first PvP draw; index −3), Taxes, Pizza (phantom, sync), Pacifist
-- [ ] J-10..J-15 Standard reworks [WS7]: Hanging Chad, Bloodstone (PvP shared roll queue), Seltzer (8), Turtle Bean (+4 / −1), Golden Ticket, Golden Ticket experimental
-- [ ] J-16..J-17 Takeovers [WS7]: Ice Cream and vanilla Seltzer on `mp_pvp_loss` under `pvp_timer`
-- [ ] J-18..J-19 Experimental [WS7]: The Idol (Rare), To Do List ($5, all hands)
+- [x] J-01..J-09 Core PvP jokers [WS7]: Defensive Joker, Skip-Off, Let's Go Gambling (phantom, misfire sync), SPEEDRUN (phantom), Conjoined Joker (phantom), Penny Pincher (unlock at the first PvP draw; index −3), Taxes, Pizza (phantom, sync), Pacifist — `lib/balatro/lua/spec/mp_content_a_jokers_spec.lua`, `lib/balatro/lua/mp_test/specs/content_a_spec.lua`
+- [x] J-10..J-15 Standard reworks [WS7]: Hanging Chad, Bloodstone (PvP shared roll queue), Seltzer (8), Turtle Bean (+4 / −1), Golden Ticket, Golden Ticket experimental — `lib/balatro/lua/spec/mp_content_a_jokers_spec.lua`, `lib/balatro/lua/mp_test/specs/content_a_spec.lua`
+- [x] J-16..J-17 Takeovers [WS7]: Ice Cream and vanilla Seltzer on `mp_pvp_loss` under `pvp_timer` — `lib/balatro/lua/spec/mp_content_a_jokers_spec.lua`
+- [x] J-18..J-19 Experimental [WS7]: The Idol (Rare), To Do List ($5, all hands) — `lib/balatro/lua/spec/mp_content_a_jokers_spec.lua`, `lib/balatro/lua/mp_test/specs/content_a_spec.lua`
 - [x] J-20..J-31 Sandbox in rotation [WS8]: Misprint, Castle, Mail-in Rebate, Square, Throwback, Vampire, Steel Joker, Baseball Card, Hit the Road, Golden Ticket (sandbox), Zealot Idol, Collector's Idol (mutual bans; weighted `reset_idol_card` hook) — `lib/balatro/lua/spec/mp_content_b_jokers_spec.lua`, `lib/balatro/lua/mp_test/specs/content_b_spec.lua`
 - [x] J-32..J-44 Sandbox inactive [WS8]: Bloodstone, Cloud 9, Constellation, Faceless, Juggler, Loyalty Card, Lucky Cat, Magnet (phantom, request/response), The Order, Photograph, Ride the Bus, Runner, Satellite — `lib/balatro/lua/spec/mp_content_b_jokers_spec.lua`, `lib/balatro/lua/spec/mp_content_b_spec.lua` (D-28 give-card rule)
 - [x] J-45 Error decoys 1–21 (overview only; DynaText flavour; 1–14 shown shuffled) [WS8] — `lib/balatro/lua/spec/mp_content_b_spec.lua`, `lib/balatro/lua/mp_test/specs/content_b_spec.lua`
@@ -292,87 +299,87 @@ Jokers:
 
 Consumables:
 
-- [ ] CN-01 Asteroid (Russian-art variant; queued launch; the receiver lowers its highest visible hand using the priority table) [WS7]
-- [ ] CN-02 Ouija (standard) [WS7]
-- [ ] CN-03 Wraith (rework) [WS7]
+- [x] CN-01 Asteroid (Russian-art variant; queued launch; the receiver lowers its highest visible hand using the priority table) [WS7] — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`, `lib/balatro/lua/mp_test/specs/content_a_spec.lua`
+- [x] CN-02 Ouija (standard) [WS7] — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`, `lib/balatro/lua/mp_test/specs/content_a_spec.lua`
+- [x] CN-03 Wraith (rework) [WS7] — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`, `lib/balatro/lua/mp_test/specs/content_a_spec.lua`
 - [x] CN-04 Ectoplasm (sandbox) [WS8] — `lib/balatro/lua/spec/mp_content_b_spec.lua`, `lib/balatro/lua/mp_test/specs/content_b_spec.lua`
-- [ ] CN-05 Trap consumable type (colours #4F6367 / #AF5070; undiscovered text; no shop rate) [WS9]
-- [ ] CN-06..CN-21 The 16 traps with plant / disguise / fire / pay, Arcane Lock bounce, the trap row, `trap_held`, fired-id reset per ante [WS9]: Glyph of Warding, Symbol, Alarm, Explosive Runes, Sepia Snake Sigil, Fire Trap, Guards and Wards, Magic Mouth, Snare, Arcane Lock, Programmed Illusion (RNG save/restore), Web, Forbiddance, Faithful Hound, Phase Door, Mental Prison
+- [x] CN-05 Trap consumable type (colours #4F6367 / #AF5070; undiscovered text; no shop rate) [WS9] — `lib/balatro/lua/spec/mp_content_c_spec.lua`, `lib/balatro/lua/mp_test/specs/content_c_spec.lua`
+- [x] CN-06..CN-21 The 16 traps with plant / disguise / fire / pay, Arcane Lock bounce, the trap row, `trap_held`, fired-id reset per ante [WS9]: Glyph of Warding, Symbol, Alarm, Explosive Runes, Sepia Snake Sigil, Fire Trap, Guards and Wards, Magic Mouth, Snare, Arcane Lock, Programmed Illusion (RNG save/restore), Web, Forbiddance, Faithful Hound, Phase Door, Mental Prison — `lib/balatro/lua/spec/mp_content_c_spec.lua`, `lib/balatro/lua/mp_test/specs/content_c_spec.lua`
 
 Boosters:
 
-- [ ] BO-01 Giga Standard Pack (weight 0, unskippable, 10 choose 4) [WS9]
-- [ ] BO-02 Trap Pack [WS9]
-- [ ] BO-03 Jumbo Trap Pack [WS9]
-- [ ] (traps-layer ban source for the trap packs) [WS9]
+- [x] BO-01 Giga Standard Pack (weight 0, unskippable, 10 choose 4) [WS9] — `lib/balatro/lua/spec/mp_content_c_spec.lua`, `lib/balatro/lua/mp_test/specs/content_c_spec.lua`
+- [x] BO-02 Trap Pack [WS9] — `lib/balatro/lua/spec/mp_content_c_spec.lua`
+- [x] BO-03 Jumbo Trap Pack [WS9] — `lib/balatro/lua/spec/mp_content_c_spec.lua`
+- [x] (traps-layer ban source for the trap packs) [WS9] — `lib/balatro/lua/spec/mp_content_c_spec.lua`, `lib/balatro/lua/spec/mp_rulesets_spec.lua`
 
 Blinds:
 
-- [ ] BL-01 Your Nemesis (animated chip, `blind_col` reskins, showdown rows, receive-sync semantics) [WS7]
-- [ ] BL-02 The Hunters [WS7]
-- [ ] BL-03 The Runner [WS7]
+- [x] BL-01 Your Nemesis (animated chip, `blind_col` reskins, showdown rows, receive-sync semantics) [WS7] — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`, `lib/balatro/lua/spec/mp_hooks_spec.lua`
+- [x] BL-02 The Hunters [WS7] — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
+- [x] BL-03 The Runner [WS7] — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
 
 Decks:
 
-- [ ] DK-01..DK-08 [WS9]: Violet, Indigo (unskippable unless nothing is usable, the softlock guard; bans Red Card), Orange (Giga pack + 2 Hanged Man), Oracle (cap $50 + interest cap; "MAX" alert), Gradient (±1 rank rules, the face rule for 10 and A, the listed exclusions), Heidelberg, Echo Deck, Cocktail (pool rules, forced/config string, S/H stickers, Edit Deck overlay with shift-force and right-click select-all, deck stickers on the back, asterisk when edited)
+- [x] DK-01..DK-08 [WS9]: Violet, Indigo (unskippable unless nothing is usable, the softlock guard; bans Red Card), Orange (Giga pack + 2 Hanged Man), Oracle (cap $50 + interest cap; "MAX" alert), Gradient (±1 rank rules, the face rule for 10 and A, the listed exclusions), Heidelberg, Echo Deck, Cocktail (pool rules, forced/config string, S/H stickers, Edit Deck overlay with shift-force and right-click select-all, deck stickers on the back, asterisk when edited) — `lib/balatro/lua/spec/mp_content_c_spec.lua`, `lib/balatro/lua/mp_test/specs/content_c_spec.lua`
 
 Enhancement:
 
-- [ ] EN-01 Glass rework (X1.5; 1 in 4, or 1 in 3 in sandbox) [WS7]
+- [x] EN-01 Glass rework (X1.5; 1 in 4, or 1 in 3 in sandbox) [WS7] — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`, `lib/balatro/lua/mp_test/specs/content_a_spec.lua`
 
 Stakes (lobby stake options = a vanilla index plus modifiers) [WS7]:
 
-- [ ] ST-01 Planet
-- [ ] ST-02 Spectral
-- [ ] ST-03 Spectral+
-- [ ] (generic scaling formula for scaling 4 and 5 via a `get_blind_amount` wrap)
+- [x] ST-01 Planet — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
+- [x] ST-02 Spectral — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
+- [x] ST-03 Spectral+ — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
+- [x] (generic scaling formula for scaling 4 and 5 via a `get_blind_amount` wrap) — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
 
 Stickers [WS7]:
 
-- [ ] SK-01 Persistent (sell costs money; +$3 per round)
-- [ ] SK-02 Unreliable
-- [ ] SK-03 Draining
-- [ ] SK-04 Balanced
-- [ ] SK-05 Extra Credit
-- [ ] (the PERSISTENT / UNRELIABLE / DRAINING key lists)
+- [x] SK-01 Persistent (sell costs money; +$3 per round) — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
+- [x] SK-02 Unreliable — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
+- [x] SK-03 Draining — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`, `lib/balatro/lua/mp_test/specs/content_a_spec.lua`
+- [x] SK-04 Balanced — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
+- [x] SK-05 Extra Credit — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`, `lib/balatro/lua/mp_test/specs/content_b_spec.lua`
+- [x] (the PERSISTENT / UNRELIABLE / DRAINING key lists) — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
 
 Tags:
 
 - [x] TG-01 Gambling (sandbox) [WS8] — `lib/balatro/lua/spec/mp_content_b_spec.lua`
 - [x] TG-02 Investment (sandbox) [WS8] — `lib/balatro/lua/spec/mp_content_b_spec.lua`, `lib/balatro/lua/mp_test/specs/content_b_spec.lua`
 - [x] TG-03 Juggle (sandbox, next PvP blind only) [WS8] — `lib/balatro/lua/spec/mp_content_b_spec.lua`
-- [ ] TG-04 Ward (free Jumbo Spectral pack; never in the pool) [WS9]
+- [x] TG-04 Ward (free Jumbo Spectral pack; never in the pool) [WS9] — `lib/balatro/lua/spec/mp_content_c_spec.lua`
 
 Vouchers:
 
-- [ ] VO-01 Hieroglyph (Manhunt) [WS7]
-- [ ] VO-02 Petroglyph (Manhunt) [WS7]
-- [ ] (gated on Manhunt; the Runner broadcast) [WS7]
+- [x] VO-01 Hieroglyph (Manhunt) [WS7] — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
+- [x] VO-02 Petroglyph (Manhunt) [WS7] — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
+- [x] (gated on Manhunt; the Runner broadcast) [WS7] — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`
 
 Challenges:
 
-- [ ] CH-01..CH-22 [WS9]: All Must Go, Blue Ice, Balancing Act (`mp_ante_scaling` 0.25), Chore List, Divination, EEEEE, High Hand, In the Red, Legendaries, Let's Go Gambling, Misprint Deck, Oops! All Jokers, Planet Tycoon, Polymorph Spam, Psychosis, Salvaged Sibyl (`only_medium`, `only_purple_seals`, `no_shop_planets`), From Scratch, Shared Pockets, Skip-Off, Speed, Twin Towers, Vantablack. Rental on challenge jokers; challenge back art; restrictions; challenge preview patch; listed only when MP content is visible.
+- [x] CH-01..CH-22 [WS9]: All Must Go, Blue Ice, Balancing Act (`mp_ante_scaling` 0.25), Chore List, Divination, EEEEE, High Hand, In the Red, Legendaries, Let's Go Gambling, Misprint Deck, Oops! All Jokers, Planet Tycoon, Polymorph Spam, Psychosis, Salvaged Sibyl (`only_medium`, `only_purple_seals`, `no_shop_planets`), From Scratch, Shared Pockets, Skip-Off, Speed, Twin Towers, Vantablack. Rental on challenge jokers; challenge back art; restrictions; challenge preview patch; listed only when MP content is visible. — `lib/balatro/lua/spec/mp_content_c_spec.lua`, `lib/balatro/lua/mp_test/specs/content_c_spec.lua`
 
 ## Assets and localization (AS / LOC) — WS2
 
-- [ ] AS-01 Import the used PNGs, 1x and 2x: Trap, trap_pack, standard_giga, decks, deck_stickers, b_heidelberg, ec_jokers_sandbox, cropped mp_misc (D-27), every used `j_*.png`, c_asteroid(+ru), c_ouija_2, player_blind_row, blind_col, manhunt_hunter/runner rows, stakes-chips, alt_stickers, sticker_balanced, tag_gambling_sandbox, pvp_title
-- [ ] AS-02 oxipng; MP atlas registry (key → file, px, py, frames)
-- [ ] AS-03 Drop dead assets (EX-20)
-- [ ] LOC-01 Convert the 16 MP localization files → `data/balatro-mp/localization/<lang>.json`; map them to the game's language keys; fall back to en-us per key
-- [ ] LOC-02 Our own additional MP strings (`rmh_mp` keys: version mismatch, catching up, fizzled trap, practice toggles, D-21 text, connection kind, invite) — en-us is authoritative, and other languages fall back to en-us unless translated
-- [ ] LOC-03 Merge on every `init_localization` call (`descriptions`, `misc.dictionary`, `v_dictionary`, `labels`, `challenge_names`, `v_text`)
-- [ ] LOC-04 Font subsetting includes MP text (folded into core; budget ≤ +30 KB); a glyph-coverage bitmap per font ships in the MP pack for name/chat sanitising
-- [ ] LOC-05 React-side strings in namespace `c-balatro` with literal `t()` defaults
+- [x] AS-01 Import the used PNGs, 1x and 2x: Trap, trap_pack, standard_giga, decks, deck_stickers, b_heidelberg, ec_jokers_sandbox, cropped mp_misc (D-27), every used `j_*.png`, c_asteroid(+ru), c_ouija_2, player_blind_row, blind_col, manhunt_hunter/runner rows, stakes-chips, alt_stickers, sticker_balanced, tag_gambling_sandbox, pvp_title — `scripts/balatro/__tests__/pack.test.ts`, `lib/balatro/lua/mp_test/specs/content_a_spec.lua`, `lib/balatro/lua/mp_test/specs/content_c_spec.lua`
+- [x] AS-02 oxipng; MP atlas registry (key → file, px, py, frames) — `scripts/balatro/__tests__/pack.test.ts`, `lib/balatro/lua/spec/mp_pack_data_spec.lua`, `lib/balatro/lua/spec/mp_registry_spec.lua`
+- [x] AS-03 Drop dead assets (EX-20) — `scripts/balatro/__tests__/pack.test.ts`
+- [x] LOC-01 Convert the 16 MP localization files → `data/balatro-mp/localization/<lang>.json`; map them to the game's language keys; fall back to en-us per key — `scripts/balatro/__tests__/pack.test.ts`, `lib/balatro/lua/spec/mp_pack_data_spec.lua`
+- [x] LOC-02 Our own additional MP strings (`rmh_mp` keys: version mismatch, catching up, fizzled trap, practice toggles, D-21 text, connection kind, invite) — en-us is authoritative, and other languages fall back to en-us unless translated — `scripts/balatro/__tests__/pack.test.ts`, `lib/balatro/lua/spec/mp_ui_misc_spec.lua`, `lib/balatro/lua/spec/mp_ui_wave3_spec.lua`
+- [x] LOC-03 Merge on every `init_localization` call (`descriptions`, `misc.dictionary`, `v_dictionary`, `labels`, `challenge_names`, `v_text`) — `lib/balatro/lua/spec/mp_registry_spec.lua`, `lib/balatro/lua/spec/mp_pack_data_spec.lua`
+- [x] LOC-04 Font subsetting includes MP text (folded into core; budget ≤ +30 KB); a glyph-coverage bitmap per font ships in the MP pack for name/chat sanitising — `scripts/balatro/__tests__/pack.test.ts`, `lib/balatro/mp/__tests__/session/units.test.ts`
+- [x] LOC-05 React-side strings in namespace `c-balatro` with literal `t()` defaults — `lib/__tests__/i18n-default-drift.test.ts`
 
 ## Replays and spectating (REP) — WS13
 
-- [ ] REP-01 Recorder:
+- [x] REP-01 Recorder: — `lib/balatro/lua/spec/mp_replay_spec.lua`, `lib/balatro/lua/mp_test/specs/replay_spec.lua`
   - opcodes: `match_manifest`, `lobby_info`, `run_info`, `manifest`, `end`, `chk`, `money_delta`, `sell`, `cashout`, `reroll`, `hand_scored`, `buy`, `open_pack`, `voucher`, `use`, `pack_pick`, `pack_skip`, `reorder`, `play`, `discard`, `select_blind`, `skip_blind`, `leave_shop`, `ready_blind`, `set_ante_key`, `hand_result`, `round_dollars`, `net_pizza`, `net_magnet`, `life_lost` (+ `net_trap` for trap effects received)
   - stable card identity refs
-- [ ] REP-02 Streaming to all peers through the host in batches (≤50 events, ~12 KB per frame); unsent events kept across disconnects; full match file (all players) stored in IndexedDB
-- [ ] REP-03 My Replays browser (newest first, Newer/Older); playback driver (seeded run, re-dispatch through the real game functions, wait for the event queue); speeds 1×/2×/4×/fast-forward; seek index from a dry run; POV switch; opponent HUD projected from `hand_result`
-- [ ] REP-04 Spectate: list (MM-07); the host relays live events; a mid-match join gets the full logs so far → fast-forward (better fidelity than the mod)
-- [ ] REP-05 `chk` SHA-256 over canonical JSON; mismatch → "replay may be inaccurate"
+- [x] REP-02 Streaming to all peers through the host in batches (≤50 events, ~12 KB per frame); unsent events kept across disconnects; full match file (all players) stored in IndexedDB — `lib/balatro/mp/__tests__/replay/spectate-flow.test.ts`, `lib/balatro/mp/__tests__/replay/log-store.test.ts`, `testing/balatro-e2e/match/spectate-replay.test.ts` (E2E-19)
+- [x] REP-03 My Replays browser (newest first, Newer/Older); playback driver (seeded run, re-dispatch through the real game functions, wait for the event queue); speeds 1×/2×/4×/fast-forward; seek index from a dry run; POV switch; opponent HUD projected from `hand_result` — `lib/balatro/mp/__tests__/replay/spectate-flow.test.ts`, `lib/balatro/lua/spec/mp_replay_ui_spec.lua`, `lib/balatro/lua/mp_test/specs/replay_spec.lua`, `testing/balatro-e2e/match/spectate-replay.test.ts` (E2E-19)
+- [x] REP-04 Spectate: list (MM-07); the host relays live events; a mid-match join gets the full logs so far → fast-forward (better fidelity than the mod) — `lib/balatro/mp/__tests__/replay/spectate-flow.test.ts`, `lib/balatro/mp/__tests__/replay/service.test.ts`, `lib/balatro/lua/spec/mp_replay_ui_spec.lua`, `testing/balatro-e2e/match/spectate-replay.test.ts` (E2E-19)
+- [x] REP-05 `chk` SHA-256 over canonical JSON; mismatch → "replay may be inaccurate" — `lib/balatro/mp/__tests__/replay/log-store.test.ts`, `lib/balatro/mp/__tests__/replay/spectate-flow.test.ts`, `lib/balatro/lua/mp_test/specs/replay_spec.lua`
 
 ## Excluded (explicit, with reasons)
 
