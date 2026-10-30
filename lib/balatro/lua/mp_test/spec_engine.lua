@@ -206,7 +206,7 @@ function runner.run(files, opts)
     -- Each file starts from the same place (the harness passes "back to the main menu"), so a
     -- spec that leaves a run up (for a screenshot) cannot break the files after it.
     if opts.before_file and i > 1 then
-      local ok, err = pcall(opts.before_file, file)
+      local ok, err = runner.protected(function() return opts.before_file(file) end)
       if not ok then push({ name = file.name .. ' (reset)', ok = false, msg = err_text(err), ms = 0 }) end
     end
     local tests, err = runner.collect(file.name, file.source, env)

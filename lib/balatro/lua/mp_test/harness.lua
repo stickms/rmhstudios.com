@@ -50,12 +50,15 @@ end
 
 --- Between spec files: leave any run (and MP session) for the main menu.
 local function to_main_menu()
-  if not (G and G.STAGES) or G.STAGE == G.STAGES.MAIN_MENU then return end
+  if not (G and G.STAGES) then return end
+  -- Never start a screen wipe over one still running (wipe_off indexes G.screenwipe).
+  sched.wait_until(function() return not G.screenwipe end, 90, 'no screen wipe before leaving the run')
+  if G.STAGE == G.STAGES.MAIN_MENU then return end
   if G.OVERLAY_MENU and G.FUNCS.exit_overlay_menu then G.FUNCS.exit_overlay_menu() end
   G.SETTINGS.paused = false
   G.FUNCS.go_to_menu()
   sched.wait_until(function()
-    return G.STAGE == G.STAGES.MAIN_MENU and G.MAIN_MENU_UI ~= nil and AP.idle()
+    return G.STAGE == G.STAGES.MAIN_MENU and G.MAIN_MENU_UI ~= nil and not G.screenwipe and AP.idle()
   end, 90, 'main menu between spec files')
 end
 
