@@ -285,17 +285,17 @@ Jokers:
 - [ ] J-10..J-15 Standard reworks [WS7]: Hanging Chad, Bloodstone (PvP shared roll queue), Seltzer (8), Turtle Bean (+4 / −1), Golden Ticket, Golden Ticket experimental
 - [ ] J-16..J-17 Takeovers [WS7]: Ice Cream and vanilla Seltzer on `mp_pvp_loss` under `pvp_timer`
 - [ ] J-18..J-19 Experimental [WS7]: The Idol (Rare), To Do List ($5, all hands)
-- [ ] J-20..J-31 Sandbox in rotation [WS8]: Misprint, Castle, Mail-in Rebate, Square, Throwback, Vampire, Steel Joker, Baseball Card, Hit the Road, Golden Ticket (sandbox), Zealot Idol, Collector's Idol (mutual bans; weighted `reset_idol_card` hook)
-- [ ] J-32..J-44 Sandbox inactive [WS8]: Bloodstone, Cloud 9, Constellation, Faceless, Juggler, Loyalty Card, Lucky Cat, Magnet (phantom, request/response), The Order, Photograph, Ride the Bus, Runner, Satellite
-- [ ] J-45 Error decoys 1–21 (overview only; DynaText flavour; 1–14 shown shuffled) [WS8]
-- [ ] J-46..J-71 Extra Credit [WS8]: Forklift, Double Rainbow, Starfruit, Pocket Aces, Warlock, Candy Necklace, Clown College, Monte Haul, Espresso, Traffic Light, Farmer, Werewolf, Tuxedo, Ambrosia, Clown Car, Ship of Theseus, Go Fish, Bobby, Pyromancer, Chain Lightning, Joka Lisa, Joker of the Year, Lucky 7, Coupon Sheet, Hoarder (`ease_dollars` hook), Alloy (inactive). Per-round globals: `tuxedo_card`, `farmer_card`, `fish_rank`.
+- [x] J-20..J-31 Sandbox in rotation [WS8]: Misprint, Castle, Mail-in Rebate, Square, Throwback, Vampire, Steel Joker, Baseball Card, Hit the Road, Golden Ticket (sandbox), Zealot Idol, Collector's Idol (mutual bans; weighted `reset_idol_card` hook) — `lib/balatro/lua/spec/mp_content_b_jokers_spec.lua`, `lib/balatro/lua/mp_test/specs/content_b_spec.lua`
+- [x] J-32..J-44 Sandbox inactive [WS8]: Bloodstone, Cloud 9, Constellation, Faceless, Juggler, Loyalty Card, Lucky Cat, Magnet (phantom, request/response), The Order, Photograph, Ride the Bus, Runner, Satellite — `lib/balatro/lua/spec/mp_content_b_jokers_spec.lua`, `lib/balatro/lua/spec/mp_content_b_spec.lua` (D-28 give-card rule)
+- [x] J-45 Error decoys 1–21 (overview only; DynaText flavour; 1–14 shown shuffled) [WS8] — `lib/balatro/lua/spec/mp_content_b_spec.lua`, `lib/balatro/lua/mp_test/specs/content_b_spec.lua`
+- [x] J-46..J-71 Extra Credit [WS8]: Forklift, Double Rainbow, Starfruit, Pocket Aces, Warlock, Candy Necklace, Clown College, Monte Haul, Espresso, Traffic Light, Farmer, Werewolf, Tuxedo, Ambrosia, Clown Car, Ship of Theseus, Go Fish, Bobby, Pyromancer, Chain Lightning, Joka Lisa, Joker of the Year, Lucky 7, Coupon Sheet, Hoarder (`ease_dollars` hook), Alloy (inactive). Per-round globals: `tuxedo_card`, `farmer_card`, `fish_rank`. — `lib/balatro/lua/spec/mp_content_b_jokers_spec.lua`, `lib/balatro/lua/spec/mp_content_b_spec.lua`, `lib/balatro/lua/mp_test/specs/content_b_spec.lua`
 
 Consumables:
 
 - [ ] CN-01 Asteroid (Russian-art variant; queued launch; the receiver lowers its highest visible hand using the priority table) [WS7]
 - [ ] CN-02 Ouija (standard) [WS7]
 - [ ] CN-03 Wraith (rework) [WS7]
-- [ ] CN-04 Ectoplasm (sandbox) [WS8]
+- [x] CN-04 Ectoplasm (sandbox) [WS8] — `lib/balatro/lua/spec/mp_content_b_spec.lua`, `lib/balatro/lua/mp_test/specs/content_b_spec.lua`
 - [ ] CN-05 Trap consumable type (colours #4F6367 / #AF5070; undiscovered text; no shop rate) [WS9]
 - [ ] CN-06..CN-21 The 16 traps with plant / disguise / fire / pay, Arcane Lock bounce, the trap row, `trap_held`, fired-id reset per ante [WS9]: Glyph of Warding, Symbol, Alarm, Explosive Runes, Sepia Snake Sigil, Fire Trap, Guards and Wards, Magic Mouth, Snare, Arcane Lock, Programmed Illusion (RNG save/restore), Web, Forbiddance, Faithful Hound, Phase Door, Mental Prison
 
@@ -338,9 +338,9 @@ Stickers [WS7]:
 
 Tags:
 
-- [ ] TG-01 Gambling (sandbox) [WS8]
-- [ ] TG-02 Investment (sandbox) [WS8]
-- [ ] TG-03 Juggle (sandbox, next PvP blind only) [WS8]
+- [x] TG-01 Gambling (sandbox) [WS8] — `lib/balatro/lua/spec/mp_content_b_spec.lua`
+- [x] TG-02 Investment (sandbox) [WS8] — `lib/balatro/lua/spec/mp_content_b_spec.lua`, `lib/balatro/lua/mp_test/specs/content_b_spec.lua`
+- [x] TG-03 Juggle (sandbox, next PvP blind only) [WS8] — `lib/balatro/lua/spec/mp_content_b_spec.lua`
 - [ ] TG-04 Ward (free Jumbo Spectral pack; never in the pool) [WS9]
 
 Vouchers:

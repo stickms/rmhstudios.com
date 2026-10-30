@@ -88,11 +88,7 @@ import { registerGlobeSetHandlers, handleGlobeSetDisconnect } from './handlers/g
 import { registerTf2GameHandlers, handleTf2GameDisconnect } from './handlers/tf2-game';
 import { registerTf2P2pHandlers, handleTf2P2pDisconnect } from './handlers/tf2-p2p';
 import { registerBalatroP2pHandlers, handleBalatroP2pDisconnect } from './handlers/balatro-p2p';
-// WS12 swaps this for registerBalatroQueueHandlers / handleBalatroQueueDisconnect from './handlers/balatro-queue'.
-import {
-  registerBalatroQueuePlaceholder,
-  handleBalatroQueuePlaceholderDisconnect,
-} from './balatro/queue-placeholder';
+import { registerBalatroQueueHandlers, handleBalatroQueueDisconnect } from './handlers/balatro-queue';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './handlers/matchmaking';
@@ -557,7 +553,7 @@ io.on('connection', (socket) => {
   // Balatro multiplayer: signalling, relay fallback and the seat directory — the lobby runs in the host's browser.
   registerBalatroP2pHandlers(io, socket);
   // Balatro matchmaking / party / invites / spectate list.
-  registerBalatroQueuePlaceholder(io, socket);
+  registerBalatroQueueHandlers(io, socket);
 
   // Platform expansion (§4, §5): live Spaces + cross-game party.
   registerSpacesHandlers(io, socket);
@@ -603,7 +599,7 @@ io.on('connection', (socket) => {
     handleTf2GameDisconnect(io, socket);
     handleTf2P2pDisconnect(io, socket);
     handleBalatroP2pDisconnect(io, socket);
-    handleBalatroQueuePlaceholderDisconnect(io, socket);
+    handleBalatroQueueDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });

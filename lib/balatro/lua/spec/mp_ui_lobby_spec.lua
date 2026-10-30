@@ -486,19 +486,29 @@ describe('ui lobby: run setup (LOB-08)', function()
   end)
 
   it('MP decks and the MP stake cycle only for MP-content rulesets or with Show MP content', function()
-    MP.registry.define({ key = 'b_mp_violet', kind = 'Back', pos = { x = 0, y = 0 }, atlas = 'mp_decks' })
+    -- Content C defines the real deck when its modules are loaded; define a
+    -- stand-in only when it is absent.
+    if not MP.registry.get('b_mp_violet') then
+      MP.registry.define({ key = 'b_mp_violet', kind = 'Back', pos = { x = 0, y = 0 }, atlas = 'mp_decks' })
+    end
     local view = UH.view()
     view.state.options.ruleset = 'ruleset_mp_vanilla'
     show(view)
     U.run_setup.open('lobby')
     local def = UH.overlay()
     expect(UH.find(def, 'mp_rs_mp_stake')).eq(nil)
-    expect(U.run_setup.st.decks[#U.run_setup.st.decks]).ne('b_mp_violet')
+    local function has_mp_deck()
+      for _, k in ipairs(U.run_setup.st.decks) do
+        if k == 'b_mp_violet' then return true end
+      end
+      return false
+    end
+    expect(has_mp_deck()).eq(false)
     U.settings.set('showMpContent', true)
     U.run_setup.open('lobby')
     def = UH.overlay()
     expect(UH.find(def, 'mp_rs_mp_stake') ~= nil).truthy()
-    expect(U.run_setup.st.decks[#U.run_setup.st.decks]).eq('b_mp_violet')
+    expect(has_mp_deck()).eq(true)
     UH.cycle(def, 'mp_rs_mp_stake', 3)
     UH.click(def, 'mp_rs_select')
     expect(UH.sent('ui_set_deck')[1].d.mpStake).eq('spectral')

@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { Tooltip } from '@/components/ui/Tooltip';
 import type { MpController } from '@/lib/balatro/mp/pack-loader';
 import { ConnectionChip } from './ConnectionChip';
+import { InviteFriends } from './InviteFriends';
 import { InvitePopover } from './InvitePopover';
 import './mp.css';
 
@@ -43,7 +44,13 @@ export default function MpToolbar({
         </Tooltip>
       )}
       {state.code && (
-        <InvitePopover code={state.code} open={state.inviteOpen} onOpenChange={setOpen} container={container} />
+        <InvitePopover
+          code={state.code}
+          open={state.inviteOpen}
+          onOpenChange={setOpen}
+          container={container}
+          friends={state.inviteOpen ? <InviteFriends code={state.code} /> : null}
+        />
       )}
     </>
   );

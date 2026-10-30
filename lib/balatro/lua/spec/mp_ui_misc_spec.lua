@@ -195,11 +195,15 @@ describe('ui collection (HUD-21)', function()
 
   it('sandbox tab: sandbox content plus at most 14 error decoys, in a stable order', function()
     local tab = U.collection.TABS[9]
-    local before = #U.collection.entries(tab)
-    for i = 1, 21 do MP.registry.define({ key = 'j_mp_error_' .. i, kind = 'Joker', rarity = 1, pos = { x = 0, y = 0 }, pool = false }) end
-    MP.registry.define({ key = 'j_mp_misprint_sandbox', kind = 'Joker', rarity = 1, pos = { x = 0, y = 0 }, gate = { layers = { 'sandbox' } } })
+    -- Content B defines the real sandbox jokers and decoys when its modules
+    -- are loaded; stand-ins are defined only for keys that are absent.
+    local function ensure(def)
+      if not MP.registry.get(def.key) then MP.registry.define(def) end
+    end
+    for i = 1, 21 do ensure({ key = 'j_mp_error_' .. i, kind = 'Joker', rarity = 1, pos = { x = 0, y = 0 }, pool = false }) end
+    ensure({ key = 'j_mp_misprint_sandbox', kind = 'Joker', rarity = 1, pos = { x = 0, y = 0 }, gate = { layers = { 'sandbox' } } })
     local e = U.collection.entries(tab)
-    expect(#e).eq(before + 15)
+    expect(#e >= 15).truthy()
     local errors, seen_sandbox = 0, false
     for i, x in ipairs(e) do
       if x.key:find('error', 1, true) then errors = errors + 1 else expect(errors).eq(0) end -- decoys come last
