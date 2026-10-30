@@ -8,17 +8,37 @@
  * follows in the background. Saves live in IndexedDB and are backed up to the
  * account (lib/balatro/cloud-saves.ts); the toolbar also exports and imports them
  * in the desktop layout (%AppData%\Balatro).
+ *
+ * Multiplayer is lazy (docs/balatro-mp.md): until the player presses the game's
+ * MULTIPLAYER button, all this page carries is the small stub below that waits
+ * for Lua's `mp_open`. Then it imports the MP chunk (lib/balatro/mp/pack-loader)
+ * and hands the mailbox over. An invite link (`?lobby=`) or a match to rejoin
+ * starts that at boot, fetching the MP pack alongside the core.
  */
 'use client';
 
 import { ArrowLeft, Download, Maximize, Minimize, Upload } from 'lucide-react';
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { useLobbyInvite, useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { createCloudSaves } from '@/lib/balatro/cloud-saves';
-import { bootBalatro, PackError, prefetchEngine, type BalatroSession, type BootPhase } from '@/lib/balatro/runtime';
+import type { MpController, MpIntent, StubHandover } from '@/lib/balatro/mp/pack-loader';
+import {
+  bootBalatro,
+  MP_REJOIN_HINT_KEY,
+  PackError,
+  prefetchEngine,
+  type BalatroSession,
+  type BootPhase,
+  type MpAutoload,
+  type MpHost,
+} from '@/lib/balatro/runtime';
 import './balatro.css';
+
+const MpToolbar = lazy(() => import('./mp/MpToolbar'));
+const loadMp = () => import('@/lib/balatro/mp/pack-loader');
 
 type Stage =
   | { kind: 'booting'; phase: BootPhase; progress?: number }
@@ -42,12 +62,96 @@ function download(bytes: Uint8Array, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
+/** Lua→JS mailbox batches land here (bridge-protocol.ts BRIDGE_PATHS.OUT; not imported, it pulls zod). */
+const MP_OUT = '/rmh/net/out';
+
+/**
+ * The entry stub: until the MP chunk exists, watch Lua's batches for `mp_open`
+ * (one line scan per batch, and Lua sends nothing in single player). Everything
+ * read after it is kept for the mailbox, which takes over with `handover()`.
+ */
+function watchMpOpen(host: MpHost, onOpen: (intent: MpIntent) => void) {
+  let lastLuaSeq = 0;
+  let opened = false;
+  const backlog: string[] = [];
+  const read = () => {
+    if (!host.fs.analyzePath(MP_OUT).exists) return;
+    const text = new TextDecoder().decode(host.fs.readFile(MP_OUT));
+    host.fs.unlink(MP_OUT);
+    if (opened) return void backlog.push(text);
+    const lines = text.split('\n');
+    lines.forEach((line, i) => {
+      if (opened || !line) return;
+      try {
+        const m = JSON.parse(line) as { s?: unknown; t?: unknown; d?: { intent?: MpIntent } };
+        if (typeof m.s !== 'number') return;
+        lastLuaSeq = m.s;
+        if (m.t !== 'mp_open') return;
+        opened = true;
+        backlog.push(lines.slice(i + 1).join('\n'));
+        onOpen(m.d?.intent ?? 'menu');
+      } catch {
+        /* the mailbox validates; the stub only looks for its cue */
+      }
+    });
+  };
+  let off: () => void;
+  if (host.tracking) off = host.onMove((_from, to) => to === MP_OUT && read());
+  else {
+    const id = window.setInterval(read, 250);
+    off = () => window.clearInterval(id);
+  }
+  return {
+    handover(): StubHandover {
+      off();
+      read();
+      return { lastLuaSeq, backlog: backlog.splice(0) };
+    },
+  };
+}
+
+interface MpRun {
+  controller: Promise<MpController> | null;
+  listener: ((controller: MpController) => void) | null;
+  open: (intent: MpIntent, invite?: string | null) => void;
+}
+
 interface BootRun {
   session: Promise<BalatroSession>;
   stage: Stage;
   listener: ((stage: Stage) => void) | null;
   stopTimer: ReturnType<typeof setTimeout> | null;
   stopped: boolean;
+  mp: MpRun;
+}
+
+function readRejoinHint(): boolean {
+  try {
+    return !!window.localStorage.getItem(MP_REJOIN_HINT_KEY);
+  } catch {
+    return false;
+  }
+}
+
+/** Wires the stub to a booted engine; the MP chunk loads on the first open. */
+function startMpEntry(run: BootRun, session: BalatroSession) {
+  const host = session.mp;
+  const stub = watchMpOpen(host, (intent) => run.mp.open(intent));
+  run.mp.open = (intent, invite = null) => {
+    run.mp.controller ??= loadMp().then((mod) => {
+      const controller = mod.openMultiplayer(host, {
+        handover: stub.handover(),
+        onLog: (line, isError) => {
+          if (isError) console.warn('[balatro]', line);
+        },
+      });
+      run.mp.listener?.(controller);
+      return controller;
+    });
+    void run.mp.controller.then((c) => c.open(intent, invite)).catch((err) => console.error('[balatro] multiplayer failed', err));
+  };
+  // A rejoin or a continued MP run starts at boot; an invite waits for the page's join.
+  if (host.autoload === 'rejoin' || host.autoload === 'sp') run.mp.open(host.autoload);
 }
 
 // One engine per document. A remount (React StrictMode in development, or the
@@ -62,6 +166,8 @@ function attach(
     canvas: HTMLCanvasElement;
     frame: HTMLElement;
     messages: Record<'webgl' | 'signedOut' | 'boot' | 'tooLarge' | 'audio', string>;
+    /** Multiplayer must start at boot: preload its pack with the core. */
+    mpAutoload: MpAutoload | null;
   },
 ): BootRun {
   if (current && !current.stopped) {
@@ -80,6 +186,7 @@ function attach(
     listener,
     stopTimer: null,
     stopped: false,
+    mp: { controller: null, listener: null, open: () => {} },
   };
   current = run;
   const emit = (stage: Stage) => {
@@ -105,11 +212,15 @@ function attach(
       if (isError) console.warn('[balatro]', line);
     },
     onAudioError: () => toast.error(opts.messages.audio),
+    mp: opts.mpAutoload
+      ? { autoload: opts.mpAutoload, files: loadMp().then((mod) => mod.fetchMpPack()) }
+      : undefined,
   });
   run.session.then(
     (session) => {
-      if (run.stopped) session.stop();
-      else emit({ kind: 'running' });
+      if (run.stopped) return session.stop();
+      startMpEntry(run, session);
+      emit({ kind: 'running' });
     },
     (err) => {
       console.error('[balatro] boot failed', err);
@@ -126,8 +237,10 @@ function detach(listener: (stage: Stage) => void) {
   const run = current;
   if (!run || run.listener !== listener) return;
   run.listener = null;
+  run.mp.listener = null;
   run.stopTimer = setTimeout(() => {
     run.stopped = true;
+    void run.mp.controller?.then((c) => c.stop());
     void run.session.then((s) => s.stop());
   }, 0);
 }
@@ -139,6 +252,13 @@ export default function BalatroPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sessionRef = useRef<BalatroSession | null>(null);
   const saveInput = useRef<HTMLInputElement>(null);
+  const runRef = useRef<BootRun | null>(null);
+  const [mp, setMp] = useState<MpController | null>(null);
+  const invite = useLobbyInvite();
+  const inviteRef = useRef(invite);
+
+  // An invite link joins once the engine runs (and drops ?lobby= from the URL).
+  useLobbyInviteJoin(stage.kind === 'running', (code) => runRef.current?.mp.open('invite', code));
 
   useEffect(() => {
     const listener = (next: Stage) => setStage(next);
@@ -152,7 +272,11 @@ export default function BalatroPage() {
         tooLarge: t('cloud_too_large', { defaultValue: 'Your saves are too large to back up to your account.' }),
         audio: t('audio_failed', { defaultValue: 'The sound could not load. Reload the page to try again.' }),
       },
+      mpAutoload: inviteRef.current ? 'invite' : readRejoinHint() ? 'rejoin' : null,
     });
+    runRef.current = run;
+    run.mp.listener = setMp;
+    void run.mp.controller?.then(setMp);
     sessionRef.current = null;
     void run.session.then((session) => {
       sessionRef.current = session;
@@ -290,6 +414,11 @@ export default function BalatroPage() {
                 <Upload className="size-4" aria-hidden />
               </button>
             </Tooltip>
+            {mp && (
+              <Suspense fallback={null}>
+                <MpToolbar controller={mp} container={frameRef.current} />
+              </Suspense>
+            )}
             <input
               ref={saveInput}
               type="file"

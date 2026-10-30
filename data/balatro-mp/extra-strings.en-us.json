@@ -1,0 +1,36 @@
+{
+  "$comment": "Our own multiplayer strings (PLAN LOC-02), merged into the en-us MP localization by scripts/balatro/build-game-pack.py. Same shape as a game localization table. English is authoritative; a translation goes in extra-strings.<lang>.json with the same keys (a key missing there falls back to English). Keys start with rmh_mp_ and must not collide with the mod's keys (the builder fails if they do). Keep the text to characters the game fonts draw: the builder checks every shipped string against the glyph bitmap.",
+  "misc": {
+    "dictionary": {
+      "rmh_mp_version_mismatch": "Version mismatch",
+      "rmh_mp_version_mismatch_hint": "Reload the page to update",
+      "rmh_mp_catching_up": " (catching up)",
+      "rmh_mp_trap_fizzled": "No Nemesis - trap fizzled",
+      "rmh_mp_practice_show_inactive": "Show inactive sandbox cards",
+      "rmh_mp_runner_hunters_gain_life": "Runner: every Hunter gains a life",
+      "rmh_mp_conn_direct": "Direct",
+      "rmh_mp_conn_relayed": "Relayed",
+      "rmh_mp_conn_connecting": "Connecting...",
+      "rmh_mp_conn_away": "Away",
+      "rmh_mp_conn_lost": "Connection lost",
+      "rmh_mp_invite": "Invite",
+      "rmh_mp_invite_copied": "Invite link copied",
+      "rmh_mp_waiting_for_pairing": "Waiting for pairing...",
+      "rmh_mp_pack_loading": "Loading Multiplayer...",
+      "rmh_mp_pack_error": "Multiplayer failed to load",
+      "rmh_mp_needs_mp_content": "This run needs Multiplayer content",
+      "rmh_mp_host_migrating": "Host left - switching host...",
+      "rmh_mp_host_you": "You are now the host",
+      "rmh_mp_replay_inaccurate": "Replay may be inaccurate",
+      "rmh_mp_spectating": "Spectating",
+      "rmh_mp_lobby_full": "Lobby is full",
+      "rmh_mp_kicked": "You were removed from the lobby",
+      "rmh_mp_lobby_not_found": "Lobby not found"
+    },
+    "v_dictionary": {
+      "rmh_mp_invited_by": "#1# invited you",
+      "rmh_mp_player_away": "#1# is away",
+      "rmh_mp_player_forfeit": "#1# forfeited"
+    }
+  }
+}

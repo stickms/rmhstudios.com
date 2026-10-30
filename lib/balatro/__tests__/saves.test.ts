@@ -134,7 +134,7 @@ describe('balatro boot', () => {
 describe('balatro game packs', () => {
   // The route serves exactly these names and the client verifies the hash; a
   // pack rebuilt without its manifest (or the reverse) is a page that never loads.
-  for (const kind of ['core', 'audio'] as const) {
+  for (const kind of ['core', 'audio', 'mp'] as const) {
     it(`ships the ${kind} pack named in game-pack.json`, () => {
       const info = pack[kind];
       const path = join(process.cwd(), 'data', 'balatro-pack', info.file);
@@ -150,5 +150,14 @@ describe('balatro game packs', () => {
     expect(names).toContain('main.lua');
     expect(names.some((n) => n.startsWith('resources/sounds/'))).toBe(false);
     expect(names.some((n) => n.startsWith('dlls/'))).toBe(false);
+  });
+
+  it('keeps the multiplayer pack under rmh_mp/ and out of the core pack', () => {
+    const names = (file: string) =>
+      readZip(new Uint8Array(readFileSync(join(process.cwd(), 'data', 'balatro-pack', file)))).entries.map((e) => e.name);
+    const mp = names(pack.mp.file);
+    expect(mp).toContain('rmh_mp/loc/en-us.lua');
+    expect(mp.every((n) => n.startsWith('rmh_mp/'))).toBe(true);
+    expect(names(pack.core.file).some((n) => n.startsWith('rmh_mp/'))).toBe(false);
   });
 });

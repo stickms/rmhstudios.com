@@ -1,13 +1,18 @@
 {
   "version": "1.0.1o-FULL",
   "core": {
-    "file": "core-2a3045c1e7e7.zip",
-    "bytes": 4930572,
-    "sha256": "2a3045c1e7e79c34961220acd1adc6222fb9baa0d3b82a733e6c17cdce793cc6"
+    "file": "core-49e9e2ca0c0a.zip",
+    "bytes": 4968698,
+    "sha256": "49e9e2ca0c0a3248ee01b409fe899f45d22078af86bfb9154a85f951b0629af4"
   },
   "audio": {
     "file": "audio-74961b9df2d0.zip",
     "bytes": 17483853,
     "sha256": "74961b9df2d01cae65daf04f3db770768fc1f23d7c5abf802d00edeb257129a1"
+  },
+  "mp": {
+    "file": "mp-44375cdcb45a.zip",
+    "bytes": 1450141,
+    "sha256": "44375cdcb45a456e3cca3bb08be8a4b9bce39fe3f04b62fa7ea2b51a7fa47983"
   }
 }

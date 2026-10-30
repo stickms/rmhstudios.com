@@ -1,0 +1,83 @@
+{
+  "descriptions": {
+    "Blind": {
+      "bl_pvp": {
+        "name": "你的對手",
+        "text": [
+          "面對其他玩家，",
+          "得分最多的人贏"
+        ]
+      }
+    }
+  },
+  "misc": {
+    "challenge_names": {
+      "c_multiplayer_1": "多人遊戲"
+    },
+    "dictionary": {
+      "attrition_desc": "每個Boss回合都是玩家之間的比賽, 分數較低的玩家會失去一條命",
+      "attrition_name": "消耗戰",
+      "bl_death": "死",
+      "bl_life": "生",
+      "bl_or": "或",
+      "coming_soon": "即將推出",
+      "connect_player": "已連接玩家：",
+      "connected": "服務已連接",
+      "copy_clipboard": "複製到剪貼簿",
+      "copy_code": "複製程式碼",
+      "create_lobby": "建立大廳",
+      "defeat_enemy": "擊敗對手",
+      "desc": "令你可以與其他人對戰",
+      "discord_msg": "你可以在那裡報告找到的bugs並找到人陪你玩",
+      "discord_name": "Balatro多人Discord",
+      "draft_desc": "雙方玩家會玩三次正常的底注, 然後他們會玩一次底注, 每回合分數較低的人會失去一條命",
+      "draft_name": "選拔戰",
+      "enemy_hands": "對手剩餘的手牌數",
+      "enemy_score": "現在對手的分數",
+      "enter_lobby_code": "輸入大廳代碼",
+      "enter_to_save": "按Enter保存",
+      "enter_username": "輸入用戶名稱",
+      "failed": "失敗了",
+      "host_start": "大廳主開始",
+      "in_lobby": "在大廳",
+      "join_clip": "從剪貼簿貼上",
+      "join_discord": "加入",
+      "join_lobby": "加入大廳",
+      "leave": "離開",
+      "leave_lobby": "離開大廳",
+      "lives": "剩餘命數",
+      "lobby": "大廳",
+      "lobby_options": "大廳設置",
+      "lobby_options_cap": "大廳設置",
+      "lost_life": "失去了一條命",
+      "opts_cb_money": "死後會給錢重新開始",
+      "opts_death_on_loss": "如果非PvP回合輸了會失去一條命",
+      "opts_diff_seeds": "玩家有不同的SEED",
+      "opts_gm": "模式修改效果",
+      "opts_lives": "命數",
+      "opts_no_gold_on_loss": "輸了回合會失去那個盲注的錢",
+      "opts_only_host": "只有大廳主能改這些設置",
+      "opts_start_antes": "一開始正常底注數目",
+      "players": "其他玩家",
+      "ready": "準備下一回合",
+      "reconnect": "重新連線",
+      "return_lobby": "返回大廳",
+      "return_to": "返回",
+      "royale_desc": "類似消耗戰，但有八個玩家且每人只有一條命",
+      "royale_name": "大亂鬥",
+      "set_name": "可以在主選單設置自己的名字（Mods > Multiplayer）",
+      "singleplayer": "單人遊戲",
+      "start": "開始",
+      "start_lobby": "開放大廳",
+      "total_lives_lost": "總共失去的命數（每條命 $4）",
+      "unready": "取消準備",
+      "username": "用戶名稱：",
+      "vanilla_plus_name": "經典+",
+      "view_code": "查看代碼",
+      "vp_desc": "第一個輸的人就輸，沒有PVP的盲注",
+      "wait_enemy": "等待對手完成...",
+      "wait_for": "等待",
+      "warn_service": "警告：無法找到多人伺服器"
+    }
+  }
+}

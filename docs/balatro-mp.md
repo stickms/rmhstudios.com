@@ -407,3 +407,47 @@ In a session:
 Continue in Singleplayer writes the sidecar `<profile>/mp.jkr`. On boot, Continue
 with that sidecar re-mounts the content as session kind `continued` before
 vanilla loads the save. A fresh single-player run deletes the sidecar.
+
+## 8. Mailbox, lazy loading and the page (WS3)
+
+**Mailbox.** Lua (`lib/balatro/lua/rmh/net.lua`, exposed as `RMH.net`; the codec is
+`rmh/json.lua`) and JS (`lib/balatro/mp/bridge.ts`, `Mailbox`) trade NDJSON under
+`/rmh/net`, framed per `bridge-protocol.ts`.
+
+- Lua pumps once per frame from `rmh_web.lua` §9, after `RMH.frame_hooks` (each called
+  as `fn(dt)`, paused or not). It writes its batch to `out.tmp`, renames it to `out`,
+  then reads `in` whole and removes it. While `out` still exists, Lua holds its batch.
+  Idle cost: one failed `io.open` per frame.
+- JS hears the rename through `FS.trackingDelegate.onMovePath` (installed in
+  `runtime.ts`, chaining any existing delegate). Inside that call it reads and unlinks
+  `out`, and writes pending inbound lines to `in` (the in-call reply). Listeners run in
+  a microtask, outside the FS call.
+- `onDeletePath(in)` means Lua consumed the file. Without delegates (and across
+  processes in the conformance test), JS polls every 16 ms and forgets an inbound line
+  only once Lua's batch header acks it. Lua sends a header-only batch to ack.
+- Lua drops `s ≤ last`; JS drops Lua duplicates the same way. Both sides validate
+  (zod; `RMH.net.validate`, which the MP pack sets to `protocol.lua`), log and drop.
+  Handler errors are isolated.
+- JSON: numbers `%.17g`; NaN/±inf are encode errors (scores travel as strings, §0.9);
+  a null object field decodes to nil and a null array item to `json.null`; decoded
+  arrays keep a marker so `[]` re-encodes as `[]`; depth is capped at 64.
+
+**Entry.** `rmh_mp_entry.lua` (core) adds MULTIPLAYER to the main menu bar. A click
+sends `mp_open`, shows a loading overlay fed by `mp_pack`, and on `mp_pack` ready (or
+`/rmh/mp/ready`) runs `require 'rmh_mp'` and `rmh_mp.open(intent)`. Files written after
+boot are visible to LÖVE's `require` (`?.lua` and `?/init.lua`), `love.filesystem`
+and `newImage`, verified in-engine, so no loader fallback exists.
+
+**Lazy JS.** `BalatroPage.tsx` holds a stub that scans Lua's batches for `mp_open`. It
+then imports `lib/balatro/mp/pack-loader.ts`, which takes the mailbox over (last seq
+plus backlog), fetches the MP pack (IndexedDB kind `mp`, then the network), and writes
+it under `rmh_mp/` directories only (`mpPackPath`). It then sends `mp_pack`, and starts
+`index.ts` `startMultiplayer` (WS5; found through `import.meta.glob`, so the chunk
+builds before it exists). Nothing under `lib/balatro/mp/` is in the initial chunk.
+
+**Boot autoload.** An invite (`?lobby=`), a rejoin hint (localStorage
+`rmh-balatro-mp-rejoin`, set by the session runtime while seated) or a
+`<profile>/mp.jkr` sidecar writes `/rmh/mp/autoload`. For an invite or rejoin, the MP
+pack is fetched alongside the core and mounted before the game's first line. Lua then
+loads `rmh_mp` right after `G:start_up`. The login redirect keeps `?lobby=`
+(`lobbyReturnPath`).

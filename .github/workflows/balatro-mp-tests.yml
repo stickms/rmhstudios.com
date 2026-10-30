@@ -23,6 +23,8 @@ on:
       - 'lib/shared/p2p/**'
       - 'data/balatro-mp/**'
       - 'vitest.balatro*'
+      - 'testing/balatro-e2e/**'
+      - 'components/balatro/**'
       - '.github/workflows/balatro-mp-tests.yml'
   push:
     branches: [main]
@@ -35,6 +37,8 @@ on:
       - 'lib/shared/p2p/**'
       - 'data/balatro-mp/**'
       - 'vitest.balatro*'
+      - 'testing/balatro-e2e/**'
+      - 'components/balatro/**'
   workflow_dispatch: {}
 
 concurrency:
@@ -72,6 +76,11 @@ jobs:
       - name: Generated Lua protocol is fresh
         run: pnpm balatro:gen-protocol --check
 
+      # scripts/balatro/__tests__/pack.test.ts and the pack builder need fontTools
+      # (it fails with an install hint rather than skipping).
+      - name: Install pack-builder Python deps
+        run: pip install fonttools pyoxipng
+
       - name: Balatro suite (TS + Lua L1)
         run: pnpm test:balatro
 
@@ -84,7 +93,6 @@ jobs:
       - name: Game pack freshness
         run: |
           if grep -q -- "--check" scripts/balatro/build-game-pack.py; then
-            pip install fonttools pyoxipng
             python3 -I scripts/balatro/build-game-pack.py --check
           else
             echo "build-game-pack.py has no --check yet (WS2); skipping."
@@ -95,15 +103,34 @@ jobs:
         if: hashFiles('scripts/balatro/bundle-budget.ts') != ''
         run: node_modules/.bin/tsx scripts/balatro/bundle-budget.ts
 
-  # End-to-end (PLAN §6.3) — STUB. WS14 fills this job in: headless Chromium,
-  # the engine-spec harness (`--project engine`, a hard gate for the L2 SP
-  # invariance spec) and the match stack (throwaway Postgres + hub + vite dev).
+  # End-to-end (PLAN §6.1, §6.3; WS14). Three vitest projects of
+  # vitest.balatro-e2e.config.ts, cheapest first:
+  #  - harness: unit tests of the e2e machinery (no browser);
+  #  - engine:  Lua L2 — lib/balatro/lua/mp_test/specs/*_spec.lua inside the real
+  #             love.wasm, headless Chromium on SwiftShader, static harness page
+  #             (no DB, no hub). A hard gate;
+  #  - match:   multi-browser matches against a throwaway Postgres + the hub +
+  #             `vite dev` (VITE_BALATRO_MP_TEST=1), signed-in accounts made through
+  #             the sign-up API. BALATRO_E2E_REQUIRE_MATCH=1 turns "no stack" into a
+  #             failure instead of a skip.
   e2e:
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
+      BETTER_AUTH_SECRET: ci-balatro-e2e-not-a-real-secret-000000000
+      BALATRO_E2E_LOG_DIR: ${{ github.workspace }}/balatro-e2e-logs
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Postgres starts in the background while dependencies install (as web-ci.yml's integration job).
+      - name: Start Postgres (background)
+        run: |
+          nohup sh -c 'docker run -d --name pg -p 127.0.0.1:5432:5432 \
+            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=rmh \
+            pgvector/pgvector:pg16' > "$RUNNER_TEMP/pg-start.log" 2>&1 &
 
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
@@ -115,5 +142,36 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Balatro e2e suite
-        run: pnpm test:balatro:e2e
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E machinery (harness project)
+        run: pnpm test:balatro:e2e --project harness
+
+      - name: In-engine specs (engine project)
+        run: pnpm test:balatro:e2e --project engine
+
+      - name: Wait for Postgres
+        run: |
+          for i in $(seq 1 60); do
+            if docker exec pg pg_isready -U postgres -h 127.0.0.1 >/dev/null 2>&1; then echo "postgres ready"; exit 0; fi
+            sleep 1
+          done
+          echo "postgres never became ready"; cat "$RUNNER_TEMP/pg-start.log"; docker logs pg 2>&1 | tail -40 || true
+          exit 1
+
+      - name: Migrate database
+        run: pnpm exec prisma migrate deploy
+
+      - name: Matches (match project)
+        env:
+          BALATRO_E2E_REQUIRE_MATCH: '1'
+        run: pnpm test:balatro:e2e --project match
+
+      - name: Stack logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: balatro-e2e-logs
+          path: balatro-e2e-logs
+          if-no-files-found: ignore

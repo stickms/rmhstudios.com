@@ -13,7 +13,7 @@ title, to WebAssembly without changing a line of the game.
 | Vendor script  | `scripts/balatro/vendor-lovejs.sh`                        | downloads, verifies and patches the engine (re-run to update)                                    |
 | Game source    | `data/balatro/`                                           | the original Lua source and assets (kept out of the Docker image by `.dockerignore`)             |
 | Pack builder   | `scripts/balatro/build-game-pack.py`                      | builds the two game packs from the source (section 6)                                            |
-| Packs          | `data/balatro-pack/` · `lib/balatro/game-pack.json`       | `core-<sha>.zip` (~5 MB) and `audio-<sha>.zip` (~17 MB), content-addressed                       |
+| Packs          | `data/balatro-pack/` · `lib/balatro/game-pack.json`       | `core-<sha>.zip` (~5 MB), `audio-<sha>.zip` (~17 MB) and the lazily loaded multiplayer `mp-<sha>.zip` (~1.5 MB; [balatro-mp.md](./balatro-mp.md) §4, §6), content-addressed |
 | Pack route     | `app/routes/api/balatro/pack.$file.ts`                    | serves the packs to a session only, `Cache-Control: private, immutable`                          |
 | Loader         | `lib/balatro/runtime.ts`                                  | downloads/caches the packs, fills the virtual filesystem, boots LÖVE, syncs saves                |
 | Cloud saves    | `lib/balatro/cloud-saves.ts`                              | the save directory as one snapshot on the shared `GameSave` table (gameId `balatro`)             |
