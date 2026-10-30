@@ -271,6 +271,12 @@ WS6 (Lua core):
 - Practice reaching ante 9 emits nothing from the referee; the vanilla win screen there is the Lua side's.
 - `chip_cap` and `shrinking_hand` stay excluded (EX-18) although vanilla has `chips_dollar_cap` and `minus_hand_size_per_X_dollar`; cheap to add later.
 
+### WS5 (session runtime)
+- `hello.rejoin` is set only by a peer whose Lua run is gone (a reload): the host answers with the referee's `rejoined` resync and the 3-minute catch-up clock. A peer whose run is still live (a network drop, a host migration) sends `rejoin: null`; the host replays its outcome log to it instead (deduplicated by `hs`) and reports it `back`.
+- A crash rejoiner counts as caught up at its first `flags` past ante 0 after `rejoin_restore`; it tells the host with a second `player_info` (the wire has no member-to-host presence kind).
+- A deliberate host leave sends its forfeit, the checkpoint and `bye` over P2P and asks the hub to hand over 500 ms later, so the successor's checkpoint already holds the forfeit.
+- Display sync is not filtered by JS: every peer message reaches Lua with its sender, and Lua keeps its target's (report.lua already filters, and `opp_ctx` needs every sender for `mp_from_target`).
+
 ## 6. Operations
 
 _TODO (WS1, WS14): hub limits and relay budgets, TURN configuration, the bundle
@@ -482,3 +488,33 @@ builds before it exists). Nothing under `lib/balatro/mp/` is in the initial chun
 pack is fetched alongside the core and mounted before the game's first line. Lua then
 loads `rmh_mp` right after `G:start_up`. The login redirect keeps `?lobby=`
 (`lobbyReturnPath`).
+
+## 9. Session runtime (WS5)
+
+`lib/balatro/mp/index.ts` `startMultiplayer` wires the browser seams (the hub client
+`hub-client.ts` on the shared realtime client, WebRTC, IndexedDB, localStorage, the
+engine FS, the CSPRNG) into `lobby/runtime.ts`, which is browser-free: the
+`lib/balatro/mp/__tests__/session/` suite runs whole lobbies on FakeNet channels against
+the real hub handler (`world.test-support.ts`).
+
+| Module | Role |
+| ------ | ---- |
+| `transport/wire-link.ts` | One host-member link: §3.b envelopes as CONTROL frames on a `ReliableLink`; every frame validated (`wire-codec.ts`), per-peer limits 40/s burst 100 (`log` 20/s burst 1024), `kick` never accepted from the wire |
+| `transport/host-star.ts`, `member.ts` | `DirectConnection` per pair (`endOfCandidates: false`), hub relay fallback keyed by `relaySlotOf(peerId)`; members drop host-only kinds that carry `f` |
+| `lobby/lobby-reducer.ts` | The versioned lobby state machine (ready, teams, options through WS4's `sanitizeOptions`, start, kick, return to lobby) |
+| `lobby/lobby-host.ts` | Admission, `hello` version check, `welcome`, lobby broadcast, hub directory `state`, presence (away after 5 s silent, seat grace, catch-up limit), referee wiring, §3.b relay with `f` stamped, chat relay |
+| `lobby/lobby-member.ts` | Join, versioned mirror, queued game events across a link loss, reconnect, promotion hand-off |
+| `match/match-host.ts` | WS4 `refStep` driver: `hs`, checkpoints coalesced to 250 ms, ticks at `wakeAt`, serialised re-entrant inputs |
+| `match/match-member.ts`, `routing.ts` | Every player's controller: `hs` dedupe, targets from outcomes, §3.b routing, WS4 timer model on the monotonic clock, 5 s result watchdog |
+| `migration.ts`, `rejoin/*` | Successor `hs` gap, takeover checkpoint (held or rebuilt); IndexedDB snapshots keyed by `runId` (newest 3) and the rejoin hint |
+| `chat.ts`, `identity.ts`, `history.ts`, `ratelimit.ts` | Chat (sender and receiver 5-burst 1/s, mute), glyph-bitmap sanitising, local history, token buckets |
+| `wire-codec.ts` | zod-free validation of the wire, the hub's S2C and the client-checked domain types, over descriptors generated into `bridge-schema.gen.ts` |
+
+**No zod in the MP chunk.** zod v4 classic cannot be tree-shaken. Nothing the chunk
+imports may import `wire.ts`, `types.ts`, `events.ts` or `bridge-protocol.ts` at
+runtime (types only). The generator lowers their schemas into descriptor tables, and
+`wire-codec.test.ts` / `bridge-codec.test.ts` hold the codecs to zod's verdicts.
+
+**Test builds** (`VITE_BALATRO_MP_TEST=1`): the autopilot surface (`test-hooks.ts`),
+`window.__rmhBalatroTest` overrides (`p2p` hooks such as `blockCandidates` for E2E-15,
+`contentHash` for E2E-21), and the `seatGraceMs` option (production pins it at 120 s).

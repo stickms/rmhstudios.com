@@ -237,6 +237,8 @@ const DIRECT_TIMEOUT_MS = 8_000;
 export class FakeConnector implements PeerConnector {
   /** Make this peer's direct path fail (the relay takes over, E2E-15). */
   blockDirect = false;
+  /** The simulated network path of the links this peer creates as host. */
+  path: { latencyMs: number; jitterMs?: number; loss?: number; reorder?: boolean } = { latencyMs: 5 };
   readonly conns: { host: { unreliable: FakeChannel; reliable: FakeChannel }; member: { unreliable: FakeChannel; reliable: FakeChannel } }[] = [];
 
   constructor(private readonly world: World) {}
@@ -253,7 +255,7 @@ export class FakeConnector implements PeerConnector {
     if (o.role === 'host') {
       const token = `fake-sdp-${++w.sdpSeq}`;
       if (!this.blockDirect) {
-        const conn = fakeConnection(w.net, { latencyMs: 5, seed: w.sdpSeq }, 100);
+        const conn = fakeConnection(w.net, { ...this.path, seed: w.sdpSeq }, 100);
         this.conns.push(conn);
         w.sdp.set(token, conn);
       }
@@ -316,6 +318,7 @@ export interface Peer {
 }
 
 export interface PeerOptions {
+  path?: FakeConnector['path'];
   intent?: StartIntent;
   invite?: string | null;
   contentHash?: string;
@@ -346,6 +349,7 @@ export class World {
     const lua = new FakeLua();
     const connector = new FakeConnector(this);
     connector.blockDirect = o.blockDirect ?? false;
+    if (o.path) connector.path = o.path;
     const kv = o.kv ?? memoryKv();
     const fs = memoryFs();
     const snapshots = o.snapshots ?? memorySnapshotStore();
@@ -412,14 +416,20 @@ export async function flush(): Promise<void> {
 
 export const code = (p: Peer) => p.lua.last('lobby_view')?.state.code ?? null;
 
-export async function lobbyWith(w: World, n: number, opts: { queueMode?: 'pvp_nemesis' | 'pvp_royale' | 'pvp_teams' | 'pvp_manhunt'; blockDirect?: boolean[]; testBuild?: boolean } = {}) {
-  const host = w.peer('alice', { testBuild: opts.testBuild });
+export const NAMES = ['bob', 'carol', 'dave', 'erin', 'frank', 'gina', 'hank', 'ivy', 'jack', 'kim', 'liam', 'mia', 'nick', 'olga', 'pete'];
+
+export async function lobbyWith(
+  w: World,
+  n: number,
+  opts: { queueMode?: 'pvp_nemesis' | 'pvp_royale' | 'pvp_teams' | 'pvp_manhunt'; blockDirect?: boolean[]; testBuild?: boolean; path?: FakeConnector['path'] } = {},
+) {
+  const host = w.peer('alice', { testBuild: opts.testBuild, path: opts.path });
   await w.step(20);
   host.lua.emit('ui_create_lobby', { queueMode: opts.queueMode ?? 'pvp_nemesis', kind: 'private' });
   await w.until(() => !!host.runtime.role?.code && code(host) === host.runtime.role.code, 5_000, 'hosted');
   const members: Peer[] = [];
   for (let i = 1; i < n; i++) {
-    const m = w.peer(['bob', 'carol', 'dave', 'erin', 'frank', 'gina', 'hank'][i - 1] as string, { blockDirect: opts.blockDirect?.[i] });
+    const m = w.peer(NAMES[i - 1] as string, { blockDirect: opts.blockDirect?.[i] });
     await w.step(20);
     m.lua.emit('ui_join', { code: code(host) as string });
     members.push(m);
