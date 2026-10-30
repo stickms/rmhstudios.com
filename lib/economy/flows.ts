@@ -442,6 +442,14 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     note: 'Buyer to seller, minus a fee that IS destroyed.',
   },
   {
+    id: 'card-market-sale',
+    kind: 'transfer',
+    surface: 'The trading-card Community Market',
+    source: 'lib/cards/market.server.ts',
+    bounded: false,
+    note: 'Buyer to seller, minus a 10% fee that IS destroyed. Cards drop only from playtime (3 per title per account) and sellers must be level 3 and a week old.',
+  },
+  {
     id: 'storefront-sale',
     kind: 'transfer',
     surface: 'A creator storefront',

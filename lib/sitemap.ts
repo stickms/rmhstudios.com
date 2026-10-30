@@ -244,6 +244,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/bookmarks': 'redirect', // → /saves
   '/drafts': 'personal',
   '/connections/new': 'personal', // signed-in authoring form
+  '/games/market': 'noindex', // card listings change by the minute and are behind sign-in to act on
   '/games/inventory': 'personal', // the viewer's own trading cards and badges
   '/games/community': 'noindex', // Steam-style community home; the viewer's groups ride on it
   '/out': 'noindex', // link-warning interstitial; the destination rides in ?url=

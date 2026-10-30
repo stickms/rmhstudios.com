@@ -21,6 +21,9 @@ export function CommunityNav() {
       >
         {t('steam-inventory', { defaultValue: 'Inventory' })}
       </Link>
+      <Link to="/games/market" aria-current={pathname === '/games/market' ? 'page' : undefined}>
+        {t('steam-market', { defaultValue: 'Community Market' })}
+      </Link>
       <Link to="/communities">{t('steam-all-groups', { defaultValue: 'All groups' })}</Link>
     </nav>
   );

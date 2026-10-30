@@ -23,6 +23,19 @@ import type {
   TitleCards,
 } from '@/lib/cards/types';
 
+/**
+ * One writer at a time per user's card stacks. Every transaction that changes a
+ * user's `user_card` rows (a drop, a craft, listing, cancelling, receiving a purchase)
+ * takes this first, so a craft that read a count of 1 cannot have a drop or a purchase
+ * raise it before the craft deletes the row.
+ */
+export async function lockCards(
+  tx: { $executeRaw: (q: TemplateStringsArray, ...v: unknown[]) => Promise<number> },
+  userId: string,
+): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'cards:' + userId}))`;
+}
+
 function isUniqueViolation(e: unknown): boolean {
   return (e as { code?: string } | null)?.code === 'P2002';
 }
@@ -55,6 +68,7 @@ export async function grantDueDrops(userId: string, gameId: string): Promise<Gra
       // The drop row goes first: if another request already granted this drop, its
       // primary key refuses the create and the card is never added a second time.
       await prisma.$transaction(async (tx) => {
+        await lockCards(tx, userId);
         await tx.cardDrop.create({ data: { userId, gameId, dropIndex: k, cardIndex, foil } });
         await tx.userCard.upsert({
           where: { userId_gameId_cardIndex_foil: { userId, gameId, cardIndex, foil } },
@@ -147,7 +161,7 @@ export async function craftBadge(
   let result: { level: number; xp: number };
   try {
     result = await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'cards:' + userId}))`;
+      await lockCards(tx, userId);
       const [cards, badge] = await Promise.all([
         tx.userCard.findMany({
           where: { userId, gameId, foil },
