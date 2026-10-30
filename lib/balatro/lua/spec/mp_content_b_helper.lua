@@ -123,10 +123,19 @@ local function patch()
     return ret
   end
   Blind.modify_hand = function(_, _, _, _, mult, chips) return mult, chips, false end
-  _G.Tag = {
+  _G.Tag = setmetatable({
     apply_to_run = function() return 'vanilla' end,
     set_ability = function() end,
-  }
+  }, { __call = function(_, key) return { key = key } end })
+  B.tags_added = {}
+  _G.add_tag = function(t) B.tags_added[#B.tags_added + 1] = t.key end
+  _G.copy_card = function(other)
+    local c = B.pc(other.base.suit, other.base.value, other.config.center.key)
+    c.copied_from = other
+    return c
+  end
+  _G.playing_card_joker_effects = function() end
+  _G.juice_card_until = function() end
   _G.reset_castle_card = function() G.GAME.current_round.castle_card = { suit = 'Spades' } end
   G.GAME.current_round.castle_card = { suit = 'Hearts' }
   G.GAME.current_round.mail_card = { rank = 'Jack', id = 11 }

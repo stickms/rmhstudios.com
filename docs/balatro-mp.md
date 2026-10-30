@@ -271,6 +271,17 @@ WS6 (Lua core):
 - Practice reaching ante 9 emits nothing from the referee; the vanilla win screen there is the Lua side's.
 - `chip_cap` and `shrinking_hand` stay excluded (EX-18) although vanilla has `chips_dollar_cap` and `minus_hand_size_per_X_dollar`; cheap to add later.
 
+### WS8 (content B: sandbox, Extra Credit)
+- Clown Car's "initial scoring step" (an SMODS context) is a custom context `mp_initial_scoring` fired from a `Blind.modify_hand` session wrap: after the blind's own change, before any card scores.
+- Lucky 7 and Alloy's "counts as" (SMODS `check_enhancement`) are session wraps on the vanilla card getters: a Lucky 7 card rolls the Lucky +20 Mult (1 in 5) and $20 (1 in 15) like a real Lucky card; with Alloy held, held Gold gives Steel's X1.5 and held Steel pays Gold's $3. Sandbox jokers that test an enhancement (`MP.sandbox.has_enh`) see both.
+- Go Fish and Warlock destroy their cards through vanilla's `destroying_card` pass (so the removal reaches `remove_playing_cards`), right after scoring rather than in `after`. Warlock picks its target at that point.
+- Chain Lightning keeps one count per joker; a Blueprint copy gives the multiplier of the original's current count without advancing it (the mod's shared counter double-counted copies).
+- Hoarder checks `debuff` (the mod checks a field that never exists, `debuffed`), and Magnet's response is accepted only from the nemesis it asked, once per request (D-19).
+- The Investment Tag also pays after the Nemesis blind (`last_blind.name == bl_mp_nemesis`): our Nemesis prototype has no `boss` table, so vanilla's `last_blind.boss` is false there.
+- The per-round globals (Zealot rank, Tuxedo/Farmer suit, Go Fish rank) roll after vanilla's `reset_castle_card`, over sorted suit/rank lists, with the mod's stream keys.
+- The error decoys' tooltip drops the mod's non-ASCII currency glyphs (MP Lua is ASCII; the fonts are subset to loc text).
+- The Sandbox collection order (`MP.sandbox.overview_keys`) shuffles with a private generator, never the game RNG.
+
 ## 6. Operations
 
 _TODO (WS1, WS14): hub limits and relay budgets, TURN configuration, the bundle
