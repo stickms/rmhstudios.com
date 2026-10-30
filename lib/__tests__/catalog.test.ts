@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readdirSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import * as lucide from 'lucide-react';
 import { games } from '@/lib/games';
@@ -84,6 +84,19 @@ describe('catalog barrel', () => {
     expect(missing).toEqual([]);
   });
 
+  it('bannerPath, when declared, exists under public/ and is at most 400 KB', () => {
+    // The library's detail hero reads `bannerPath`; a typo'd path would render
+    // as a broken wide image on the page the visitor is looking at.
+    const problems = [...games, ...apps]
+      .filter((e) => e.bannerPath)
+      .flatMap((e) => {
+        const file = join(process.cwd(), 'public', e.bannerPath as string);
+        if (!existsSync(file)) return [`${e.id}: ${e.bannerPath} is missing`];
+        return statSync(file).size > 400 * 1024 ? [`${e.id}: ${e.bannerPath} is over 400 KB`] : [];
+      });
+    expect(problems).toEqual([]);
+  });
+
   it('every href is a site path or an absolute URL', () => {
     const bad = [...games, ...apps]
       .filter((e) => !e.href.startsWith('/') && !/^https?:\/\//.test(e.href))
@@ -98,6 +111,11 @@ describe('catalog schema', () => {
     // checks nowhere and would otherwise just never render an image.
     const result = gameEntrySchema.safeParse({ ...games[0], imgPath: '/x.webp' });
     expect(result.success).toBe(false);
+  });
+
+  it('accepts an optional bannerPath on games and apps', () => {
+    expect(gameEntrySchema.safeParse({ ...games[0], bannerPath: '/images/games/x-banner.webp' }).success).toBe(true);
+    expect(appEntrySchema.safeParse({ ...apps[0], bannerPath: '/images/games/y-banner.webp' }).success).toBe(true);
   });
 
   it('rejects a missing required field', () => {
