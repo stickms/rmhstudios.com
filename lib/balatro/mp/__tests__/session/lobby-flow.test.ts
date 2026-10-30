@@ -7,10 +7,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { World, type Peer } from './world.test-support';
-import type { GameEvent } from '../../types';
+import { World, code, ev, lobbyWith as lobbyIn, startMatch as startIn, type Peer } from './world.test-support';
 
 let w: World;
+const lobbyWith = (n: number, o?: Parameters<typeof lobbyIn>[2]) => lobbyIn(w, n, o);
+const startMatch = (h: Peer, m: Peer[], o?: Record<string, unknown>) => startIn(w, h, m, o);
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
@@ -23,40 +24,6 @@ afterEach(() => {
   w.stop();
   vi.useRealTimers();
 });
-
-const code = (p: Peer) => p.lua.last('lobby_view')?.state.code ?? null;
-
-async function lobbyWith(n: number, opts: { queueMode?: 'pvp_nemesis' | 'pvp_royale' | 'pvp_teams' | 'pvp_manhunt'; blockDirect?: boolean[] } = {}) {
-  const host = w.peer('alice');
-  await w.step(20);
-  host.lua.emit('ui_create_lobby', { queueMode: opts.queueMode ?? 'pvp_nemesis', kind: 'private' });
-  await w.until(() => !!host.runtime.role?.code && code(host) === host.runtime.role.code, 5_000, 'hosted');
-  const members: Peer[] = [];
-  for (let i = 1; i < n; i++) {
-    const m = w.peer(['bob', 'carol', 'dave', 'erin', 'frank', 'gina', 'hank'][i - 1] as string, { blockDirect: opts.blockDirect?.[i] });
-    await w.step(20);
-    m.lua.emit('ui_join', { code: code(host) as string });
-    members.push(m);
-  }
-  await w.until(
-    () => members.every((m) => m.lua.last('lobby_view')?.state.players.length === n) && host.lua.last('lobby_view')?.state.players.length === n,
-    30_000,
-    'everyone in the lobby',
-  );
-  return { host, members, all: [host, ...members] };
-}
-
-async function startMatch(host: Peer, members: Peer[], options: Record<string, unknown> = {}) {
-  for (const [key, value] of Object.entries(options)) host.lua.emit('ui_set_option', { key: key as never, value: value as never });
-  for (const m of members) m.lua.emit('ui_ready', { ready: true });
-  await w.until(() => host.lua.last('lobby_view')?.canStart === true, 5_000, 'can start');
-  host.lua.emit('ui_start', {});
-  await w.until(() => [host, ...members].every((p) => !!p.lua.last('match_start')), 5_000, 'match_start everywhere');
-}
-
-function ev(p: Peer, e: GameEvent) {
-  p.lua.emit('ev', { e });
-}
 
 describe('lobby: create, join, ready, start', () => {
   it('a private lobby forms, mirrors versioned state and starts on the host', async () => {

@@ -59,6 +59,8 @@ export const AWAY_AFTER_MS = 5_000;
 export const PRESENCE_POLL_MS = 1_000;
 export const OUTCOME_LOG_MAX = 4_096;
 export const TAIL_MAX = 256;
+/** A deliberate host leave waits this long before the hub hands the room over. */
+export const LEAVE_DRAIN_MS = 500;
 /** A version jump for a successor's first lobby, so members accept it over the old host's. */
 export const LOBBY_VERSION_GAP = 1_000;
 
@@ -751,7 +753,15 @@ export class LobbyHost implements Role {
       this.driver.flush();
     }
     this.star?.broadcast('bye', { reason: 'host-left' });
-    this.ctx.deps.hub.emit('balatro:p2p:leave', {});
+    // The forfeit, its checkpoint and the bye go out over P2P before the hub promotes the
+    // successor (a member drops the old host's link the moment it hears `host-changed`).
+    const star = this.star;
+    this.star = null;
+    const hub = this.ctx.deps.hub;
+    this.ctx.deps.sched.after(LEAVE_DRAIN_MS, () => {
+      hub.emit('balatro:p2p:leave', {});
+      star?.stop();
+    });
     this.end('left');
   }
 

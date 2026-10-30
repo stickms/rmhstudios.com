@@ -28,7 +28,7 @@ import { memoryKv, type KeyValue } from '../../history';
 import { memorySnapshotStore } from '../../rejoin/rejoin-store';
 import { MpRuntime, type StartIntent } from '../../lobby/runtime';
 import { Rng } from '../../rng';
-import type { RefMsg } from '../../types';
+import type { GameEvent, RefMsg } from '../../types';
 
 export const T0 = 1_762_000_000_000;
 export const HASH = `${'a'.repeat(24)}-v1`;
@@ -163,7 +163,7 @@ export class FakeHub implements HubLike {
   private attach(): FakeSocket {
     this.gen += 1;
     const gen = this.gen;
-    const sock = this.world.hub.connect(`${this.userId}-s${gen}`, { userId: this.userId, userName: this.name, avatarUrl: null });
+    const sock = this.world.hub.connect(`${this.userId}-s${++this.world.socketSeq}`, { userId: this.userId, userName: this.name, avatarUrl: null });
     const deliver = (event: string, payload: unknown) => {
       const copy = payload instanceof Uint8Array ? payload.slice() : structuredClone(payload);
       this.world.net.at(this.world.net.now + HUB_LATENCY_MS, () => {
@@ -332,6 +332,7 @@ export class World {
   readonly sched: Scheduler;
   readonly sdp = new Map<string, ReturnType<typeof fakeConnection>>();
   sdpSeq = 0;
+  socketSeq = 0;
   readonly peers: Peer[] = [];
   private readonly rng = new Rng(12345);
 
@@ -406,3 +407,40 @@ export class World {
 export async function flush(): Promise<void> {
   for (let i = 0; i < 5; i++) await Promise.resolve();
 }
+
+/* ─── Scenario helpers ───────────────────────────────────────────────────── */
+
+export const code = (p: Peer) => p.lua.last('lobby_view')?.state.code ?? null;
+
+export async function lobbyWith(w: World, n: number, opts: { queueMode?: 'pvp_nemesis' | 'pvp_royale' | 'pvp_teams' | 'pvp_manhunt'; blockDirect?: boolean[]; testBuild?: boolean } = {}) {
+  const host = w.peer('alice', { testBuild: opts.testBuild });
+  await w.step(20);
+  host.lua.emit('ui_create_lobby', { queueMode: opts.queueMode ?? 'pvp_nemesis', kind: 'private' });
+  await w.until(() => !!host.runtime.role?.code && code(host) === host.runtime.role.code, 5_000, 'hosted');
+  const members: Peer[] = [];
+  for (let i = 1; i < n; i++) {
+    const m = w.peer(['bob', 'carol', 'dave', 'erin', 'frank', 'gina', 'hank'][i - 1] as string, { blockDirect: opts.blockDirect?.[i] });
+    await w.step(20);
+    m.lua.emit('ui_join', { code: code(host) as string });
+    members.push(m);
+  }
+  await w.until(
+    () => members.every((m) => m.lua.last('lobby_view')?.state.players.length === n) && host.lua.last('lobby_view')?.state.players.length === n,
+    30_000,
+    'everyone in the lobby',
+  );
+  return { host, members, all: [host, ...members] };
+}
+
+export async function startMatch(w: World, host: Peer, members: Peer[], options: Record<string, unknown> = {}) {
+  for (const [key, value] of Object.entries(options)) host.lua.emit('ui_set_option', { key: key as never, value: value as never });
+  for (const m of members) m.lua.emit('ui_ready', { ready: true });
+  await w.until(() => host.lua.last('lobby_view')?.canStart === true, 5_000, 'can start');
+  host.lua.emit('ui_start', {});
+  await w.until(() => [host, ...members].every((p) => !!p.lua.last('match_start')), 5_000, 'match_start everywhere');
+}
+
+export function ev(p: Peer, e: GameEvent) {
+  p.lua.emit('ev', { e });
+}
+
