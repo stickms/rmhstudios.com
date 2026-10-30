@@ -103,6 +103,29 @@ function gitShow(ref: string, rel: string): string {
   });
 }
 
+/** A `.server` module's client stub: each exported name (and default) as undefined, like vite.config.ts. */
+export function serverStub(source: string): string {
+  const names = new Set<string>();
+  for (const m of source.matchAll(/export\s+(?:const|let|var|function\*?|class|async\s+function\*?)\s+(\w+)/g)) {
+    names.add(m[1] as string);
+  }
+  for (const m of source.matchAll(/export\s*\{([^}]+)\}/g)) {
+    for (const token of (m[1] as string).split(',')) {
+      const alias = token.trim().split(/\s+as\s+/).pop()?.trim();
+      if (alias && alias !== 'default' && /^\w+$/.test(alias)) names.add(alias);
+    }
+  }
+  return [...[...names].map((n) => `export const ${n} = undefined;`), 'export default undefined;'].join('\n');
+}
+
+/** `import.meta.glob<T>('./a.ts')` (single literal paths, as the MP code uses) → `{ './a.ts': () => import('./a.ts') }`. */
+export function expandGlobs(source: string): string {
+  return source.replace(
+    /import\.meta\.glob(?:<[^>()]*>)?\(\s*(['"])([^'"*]+)\1\s*\)/g,
+    (_m, q: string, p: string) => `{ ${q}${p}${q}: () => import(${q}${p}${q}) }`,
+  );
+}
+
 /** Resolves `@/…`, stubs `.server` modules, loads `?raw` as text, and (with a ref) reads repo files from git. */
 function sitePlugin(ref: string | null): Plugin {
   const inRepo = (p: string) =>
@@ -137,11 +160,24 @@ function sitePlugin(ref: string | null): Plugin {
         contents: read(a.path),
         loader: 'text',
       }));
-      // Same contract as vite.config.ts stubServerFiles(): never in a client bundle.
-      b.onLoad({ filter: /\.server\.[jt]sx?$/ }, () => ({
-        contents: 'export default undefined;',
+      // Same contract as vite.config.ts stubServerFiles(): never in a client bundle, but every
+      // name it exports still resolves (to undefined), so a client module importing one builds.
+      b.onLoad({ filter: /\.server\.[jt]sx?$/ }, (a) => ({
+        contents: serverStub(read(a.path)),
         loader: 'js',
       }));
+      // Vite's import.meta.glob (the MP session behind pack-loader, WS12's queue extension) as
+      // the lazy import() map Vite emits, so esbuild splits and measures those chunks too.
+      b.onLoad({ filter: /[\\/](lib|components)[\\/]balatro[\\/].*\.tsx?$/ }, (a) => {
+        if (!inRepo(a.path)) return undefined;
+        const src = read(a.path);
+        if (!src.includes('import.meta.glob')) return undefined;
+        return {
+          contents: expandGlobs(src),
+          loader: a.path.endsWith('x') ? 'tsx' : 'ts',
+          resolveDir: path.dirname(a.path),
+        };
+      });
       if (ref) {
         b.onLoad({ filter: /\.(tsx?|jsx?|mjs|cjs|json|css)$/ }, (a) => {
           if (!inRepo(a.path)) return undefined;
@@ -175,6 +211,13 @@ export interface BundleReport {
   /** Chunks reached only through dynamic import(). */
   dynamicChunks: ChunkReport[];
   dynamicGzip: number;
+  /**
+   * Lazy chunks holding only site modules (auth client, UI primitives, the jelly runtime,
+   * socket.io …) that the MP toolbar shares with the site shell: the shell already pays for
+   * them on every page, so they are reported but not counted in the MP budget.
+   */
+  sharedChunks?: ChunkReport[];
+  sharedGzip?: number;
   p2pGzip: number;
   forbiddenInStatic: string[];
   testSurfaceLeaks: string[];
@@ -182,6 +225,8 @@ export interface BundleReport {
 
 const isP2p = (input: string) => input.startsWith('lib/shared/p2p/');
 const isMp = (input: string) => input.startsWith('lib/balatro/mp/');
+const isBalatroSource = (input: string) =>
+  input.startsWith('lib/balatro/') || input.startsWith('components/balatro/') || isP2p(input);
 
 /** Splits a metafile into the entry's static closure and the dynamically reached rest (pure). */
 export function classifyChunks(
@@ -199,11 +244,26 @@ export function classifyChunks(
       if (imp.kind === 'import-statement' && !imp.external) visitStatic(imp.path);
   };
   visitStatic(entry);
+  // Only the page's own lazy code is the MP budget: a dynamic import() edge is followed when a
+  // Balatro module (lib/balatro/, components/balatro/, lib/shared/p2p/) makes it. The site
+  // shell's lazy chunks (the per-locale i18n catalogs, …) are not Multiplayer code. A metafile
+  // without input data (unit fixtures) follows every edge.
+  const ownTargets = new Set<string>();
+  const inputs = meta.inputs ?? {};
+  for (const [file, info] of Object.entries(inputs)) {
+    if (!isBalatroSource(file)) continue;
+    for (const imp of info.imports) if (imp.kind === 'dynamic-import' && !imp.external) ownTargets.add(imp.path);
+  }
+  const follow = (imp: Metafile['outputs'][string]['imports'][number]) => {
+    if (imp.kind !== 'dynamic-import' || Object.keys(inputs).length === 0) return true;
+    const ep = outputs[imp.path]?.entryPoint;
+    return ep !== undefined && ownTargets.has(ep);
+  };
   const dynamicSet = new Set<string>();
   const visitAny = (o: string) => {
     if (!outputs[o]) return;
     for (const imp of outputs[o].imports) {
-      if (imp.external || !outputs[imp.path]) continue;
+      if (imp.external || !outputs[imp.path] || !follow(imp)) continue;
       if (!staticSet.has(imp.path) && !dynamicSet.has(imp.path)) {
         dynamicSet.add(imp.path);
         visitAny(imp.path);
@@ -276,7 +336,9 @@ export async function measureBundle(
       };
     };
     const staticChunks = [...staticSet].map(report);
-    const dynamicChunks = [...dynamicSet].map(report);
+    const lazy = [...dynamicSet].map(report);
+    const dynamicChunks = lazy.filter((c) => c.inputs.some(isBalatroSource));
+    const sharedChunks = lazy.filter((c) => !c.inputs.some(isBalatroSource));
     const testSurfaceLeaks = Object.keys(meta.outputs).filter((o) =>
       readFileSync(path.join(ROOT, o), 'utf8').includes('__balatroMp'),
     );
@@ -286,6 +348,8 @@ export async function measureBundle(
       staticGzip: staticChunks.reduce((n, c) => n + c.gzip, 0),
       dynamicChunks,
       dynamicGzip: dynamicChunks.reduce((n, c) => n + c.gzip, 0),
+      sharedChunks,
+      sharedGzip: sharedChunks.reduce((n, c) => n + c.gzip, 0),
       p2pGzip: dynamicChunks.reduce((n, c) => n + c.p2pShareGzip, 0),
       forbiddenInStatic: [
         ...new Set(staticChunks.flatMap((c) => c.inputs.filter((i) => isMp(i) || isP2p(i)))),
@@ -363,7 +427,9 @@ export function evaluate(
     checks.push({
       name: 'MP JS chunks',
       ok: bundle.dynamicGzip <= BUDGETS.mpChunksGzip,
-      detail: `${kb(bundle.dynamicGzip)} gzip over ${bundle.dynamicChunks.length} chunk(s) (budget ${kb(BUDGETS.mpChunksGzip)})`,
+      detail:
+        `${kb(bundle.dynamicGzip)} gzip over ${bundle.dynamicChunks.length} chunk(s) (budget ${kb(BUDGETS.mpChunksGzip)})` +
+        (bundle.sharedChunks?.length ? `; site-shared lazy chunks not counted: ${kb(bundle.sharedGzip ?? 0)} over ${bundle.sharedChunks.length}` : ''),
     });
     checks.push({
       name: 'P2P share of the MP chunks',

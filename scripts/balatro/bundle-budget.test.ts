@@ -4,6 +4,8 @@ import {
   BUDGETS,
   classifyChunks,
   evaluate,
+  expandGlobs,
+  serverStub,
   type Baseline,
   type BundleReport,
   type PackReport,
@@ -58,6 +60,53 @@ describe('classifyChunks', () => {
     expect(() => classifyChunks({ inputs: {}, outputs: {} }, 'x.tsx')).toThrow(
       /no output for entry/,
     );
+  });
+});
+
+describe('classifyChunks with input data', () => {
+  it('follows only the dynamic imports a Balatro module makes', () => {
+    const meta: Metafile = {
+      inputs: {
+        'components/balatro/BalatroPage.tsx': { bytes: 1, imports: [
+          { path: 'lib/balatro/mp/pack-loader.ts', kind: 'dynamic-import', original: '' },
+          { path: 'lib/i18n/config.ts', kind: 'import-statement', original: '' },
+        ] },
+        'lib/i18n/config.ts': { bytes: 1, imports: [{ path: 'lib/i18n/resources.fr.ts', kind: 'dynamic-import', original: '' }] },
+        'lib/balatro/mp/pack-loader.ts': { bytes: 1, imports: [] },
+        'lib/i18n/resources.fr.ts': { bytes: 1, imports: [] },
+      },
+      outputs: {
+        'o/Page.js': out(
+          [
+            { path: 'o/loader.js', kind: 'dynamic-import' },
+            { path: 'o/fr.js', kind: 'dynamic-import' },
+          ],
+          'components/balatro/BalatroPage.tsx',
+        ),
+        'o/loader.js': out([], 'lib/balatro/mp/pack-loader.ts'),
+        'o/fr.js': out([], 'lib/i18n/resources.fr.ts'),
+      },
+    };
+    const { dynamicSet } = classifyChunks(meta, 'components/balatro/BalatroPage.tsx');
+    expect([...dynamicSet]).toEqual(['o/loader.js']);
+  });
+});
+
+describe('build shims', () => {
+  it('stubs every export of a .server module', () => {
+    const stub = serverStub(
+      'export const a = 1;\nexport async function b() {}\nexport class C {}\nconst d = 2, e = 3;\nexport { d, e as f };\nexport default 1;',
+    );
+    for (const n of ['a', 'b', 'C', 'd', 'f']) expect(stub).toContain(`export const ${n} = undefined;`);
+    expect(stub).toContain('export default undefined;');
+    expect(stub).not.toContain('export const e ');
+  });
+
+  it("expands Vite's single-path import.meta.glob into a lazy import map", () => {
+    expect(expandGlobs("const m = import.meta.glob<Mod>('./index.ts');")).toBe(
+      "const m = { './index.ts': () => import('./index.ts') };",
+    );
+    expect(expandGlobs("import.meta.glob('./x/*.ts')")).toBe("import.meta.glob('./x/*.ts')");
   });
 });
 
