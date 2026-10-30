@@ -56,9 +56,10 @@ const VERTICAL_ROUTES: SitemapEntry[] = VERTICALS.flatMap((v) =>
 export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/', changefreq: 'daily', priority: 1.0 },
 
-  // Primary hubs. `/games` and `/apps` are the public catalog indexes; they
-  // were listed here for a long time with nothing behind them, then dropped
-  // when that was found, and now exist. `/create` is the creator half of the
+  // Primary hubs. `/games` is the public catalog index (the library, games and
+  // apps together; `/apps` redirects to it, so it is not listed). It was listed
+  // here for a long time with nothing behind it, then dropped when that was
+  // found, and now exists. `/create` is the creator half of the
   // same catalog and stays listed — and now that its tabs are real routes
   // rather than `?tab=` values, the two public ones are their own URLs with
   // their own canonicals, so they are listed too. (`/create/earnings` is not:
@@ -67,7 +68,6 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/daily-mutator', changefreq: 'daily', priority: 0.6 },
   { loc: '/connections', changefreq: 'daily', priority: 0.5 },
   { loc: '/rmhbox-packs', changefreq: 'weekly', priority: 0.4 },
-  { loc: '/apps', changefreq: 'weekly', priority: 0.9 },
   { loc: '/create', changefreq: 'daily', priority: 0.8 },
   { loc: '/create/builds', changefreq: 'daily', priority: 0.7 },
   { loc: '/create/personas', changefreq: 'weekly', priority: 0.6 },
@@ -358,6 +358,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/builds': 'redirect', // → /games
   '/lights-out': 'redirect', // → /daily/lights-out
   '/arcade': 'redirect', // → /games
+  '/apps': 'redirect', // → /games?kind=app (apps are in the library)
   '/leaderboard': 'redirect', // → /games?sub=leaderboard
   '/events': 'redirect', // → /communities?tab=events
   '/market': 'redirect', // → /store?tab=market

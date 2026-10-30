@@ -31,7 +31,8 @@ import { preloadFont } from '@/lib/fonts/self-hosted';
  * Create tabs remain for the creator surfaces stacked above them.
  */
 export const GAMES_INDEX_PATH = '/games';
-export const APPS_INDEX_PATH = '/apps';
+/** Apps are listed in the games library (`/apps` redirects there). */
+export const APPS_INDEX_PATH = '/games';
 
 /** A `<link>` descriptor, as TanStack's `head().links` accepts it. */
 type LinkTag = Record<string, string>;

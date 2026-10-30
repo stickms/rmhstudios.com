@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { PageLayout } from '@/components/feed/PageLayout';
+import { LibraryPane } from '@/components/games-library/LibraryPane';
 import { GameHub } from '@/components/games/GameHub';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { games } from '@/lib/games';
@@ -120,8 +120,8 @@ export const Route = createFileRoute('/_site/games/$gameId')({
 function GameHubPage() {
   const data = Route.useLoaderData();
   return (
-    <PageLayout title={data.title} backTo="/games">
+    <LibraryPane title={data.title}>
       <GameHub data={data} />
-    </PageLayout>
+    </LibraryPane>
   );
 }

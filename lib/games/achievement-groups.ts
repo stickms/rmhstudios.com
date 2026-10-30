@@ -27,7 +27,7 @@ export const ACHIEVEMENT_GROUP_BY_GAME_ID: Record<string, string> = {
 export const UNMAPPED_ACHIEVEMENT_GROUPS: string[] = ['Casino'];
 
 /** The achievements for one title; empty when the title has none. */
-export function achievementsForTitle<T extends { group: string | null }>(
+export function achievementsForTitle<T extends { group?: string | null }>(
   gameId: string,
   defs: T[],
 ): T[] {
