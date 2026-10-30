@@ -328,6 +328,7 @@ local function release_sound_thread()
   deferred_sound = nil
   compact_sound_channel()
   held.thread:start(unpack(held.args))
+  log('audio pack ready; sound thread started')
 end
 
 -- Resume any thread that is waiting on a channel that has items again (a push
