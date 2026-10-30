@@ -37,6 +37,7 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **Bum's Rush** | [`/bums-rush`](https://rmhstudios.com/bums-rush) | Beta | — | `Party` `Multiplayer` `Physics` `Platformer` |
 | **Half-Life 2 (Demo)** | [`/half-life-2`](https://rmhstudios.com/half-life-2) | Beta | — | `Valve` `FPS` `Single-player` `Beta` |
 | **Portal: First Slice** | [`/portal`](https://rmhstudios.com/portal) | Beta | — | `Valve` `FPS` `Single-player` `Beta` |
+| **Counter-Strike: Dust II** | [`/csgo`](https://rmhstudios.com/csgo) | Beta | — | `Valve` `FPS` `Multiplayer` `Beta` |
 
 ## Detail
 
@@ -189,3 +190,9 @@ Step off the train into City 17. The Half-Life 2 demo’s two Point Insertion ma
 The First Slice of Portal — test chambers 00 to 10 — on an independent browser engine. Fire the blue and orange portals onto walls and floors, look and walk through them (momentum is conserved), carry cubes onto buttons and dodge energy balls. Portals render the view through them, one level deep on phones and two on a desktop. Continue resumes from the last chamber you reached. Keyboard and mouse, gamepad or touch.
 
 **Route:** `/portal` · **Catalog id:** `portal` · **Status:** Beta · **Sign-in:** not required
+
+### Counter-Strike: Dust II
+
+Dust II on an independent browser engine, with default loadouts and plain weapons. Play bomb defusal (freeze time, a buy period, the money system, planting and defusing, first to 16) or deathmatch (instant respawns, free weapons). Practise offline against bots, or sign in to host a peer-to-peer match for friends; the match runs in the host’s browser and moves to another player if the host leaves. Keyboard and mouse, gamepad or touch.
+
+**Route:** `/csgo` · **Catalog id:** `csgo` · **Status:** Beta · **Sign-in:** not required

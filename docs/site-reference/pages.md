@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 352 routes. 199 render inside the standard site shell (sidebar, nav, context rail); 153 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 353 routes. 199 render inside the standard site shell (sidebar, nav, context rail); 154 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -240,6 +240,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
 | `/copyright` | Copyright | public | `app/routes/copyright.tsx` |
 | `/covid` | — | public | `app/routes/covid.tsx` |
+| `/csgo` | — | public | `app/routes/csgo.tsx` |
 | `/daily` | Daily Puzzles | public | `app/routes/daily/index.tsx` |
 | `/daily/alibi` | — | public | `app/routes/daily/alibi.tsx` |
 | `/daily/chainlink` | — | public | `app/routes/daily/chainlink.tsx` |
