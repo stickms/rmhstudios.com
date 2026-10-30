@@ -809,6 +809,13 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // Wrapped: games year (2026-10-30)
+    'home-aria-label',
+    'studio-wordmark',
+    'tile-badges-crafted',
+    'tile-cards-dropped',
+    'tile-time-played',
+    'wrapped-top-games',
     // Globe eversion Settings > Preview on a device that cannot run it (Fix E1,
     // 2026-10-17). English-only until the translate pipeline runs; remove with it.
     'eversion-preview-unavailable',
