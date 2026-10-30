@@ -2226,3 +2226,98 @@ button.stm-star {
   flex-direction: column;
   gap: 6px;
 }
+
+/* Store front */
+.stm-store-search {
+  margin: 0 0 12px;
+}
+.stm-store-search label {
+  position: relative;
+  display: block;
+}
+.stm-store-search svg {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 10px;
+  transform: translateY(-50%);
+  color: var(--stm-muted);
+  pointer-events: none;
+}
+.stm-store-search .stm-input {
+  width: 100%;
+  padding-inline-start: 34px;
+}
+.stm-tagchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+.stm-tagchips a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  background: rgba(103, 193, 245, 0.2);
+  color: #67c1f5;
+  border-radius: var(--stm-radius);
+  font-size: 13px;
+}
+.stm-tagchips a span {
+  color: var(--stm-muted);
+  font-size: 12px;
+}
+.stm-tagchips a:hover,
+.stm-tagchips a[aria-current='page'] {
+  background: rgba(103, 193, 245, 0.4);
+  color: var(--stm-bright);
+}
+.stm-store-hero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 28px;
+  padding: 14px;
+}
+.stm-store-hero-art {
+  width: 200px;
+  max-width: 100%;
+  flex: none;
+}
+.stm-store-hero-art img,
+.stm-store-hero-art .stm-art {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+}
+.stm-store-hero-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 240px;
+}
+.stm-store-hero-body h3 {
+  margin: 0;
+  color: var(--stm-bright);
+  font-size: 24px;
+  font-weight: 300;
+}
+.stm-store-hero-body p {
+  margin: 0;
+}
+.stm-store-hero-body .stm-tags {
+  padding: 0;
+}
+.stm-store-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.stm-inline-icon {
+  display: inline-block;
+  vertical-align: -2px;
+  margin-inline-end: 3px;
+}
