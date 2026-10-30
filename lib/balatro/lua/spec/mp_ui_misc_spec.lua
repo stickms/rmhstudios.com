@@ -194,12 +194,19 @@ describe('ui collection (HUD-21)', function()
   end)
 
   it('sandbox tab: sandbox content plus at most 14 error decoys, in a stable order', function()
+    local tab = U.collection.TABS[9]
+    local before = #U.collection.entries(tab)
     for i = 1, 21 do MP.registry.define({ key = 'j_mp_error_' .. i, kind = 'Joker', rarity = 1, pos = { x = 0, y = 0 }, pool = false }) end
     MP.registry.define({ key = 'j_mp_misprint_sandbox', kind = 'Joker', rarity = 1, pos = { x = 0, y = 0 }, gate = { layers = { 'sandbox' } } })
-    local tab = U.collection.TABS[9]
     local e = U.collection.entries(tab)
-    expect(#e).eq(15)
-    expect(e[1].key).eq('j_mp_misprint_sandbox')
+    expect(#e).eq(before + 15)
+    local errors, seen_sandbox = 0, false
+    for i, x in ipairs(e) do
+      if x.key:find('error', 1, true) then errors = errors + 1 else expect(errors).eq(0) end -- decoys come last
+      if x.key == 'j_mp_misprint_sandbox' then seen_sandbox = true end
+    end
+    expect(errors).eq(14)
+    expect(seen_sandbox).truthy()
     local again = U.collection.entries(tab)
     for i = 1, #e do expect(again[i].key).eq(e[i].key) end
     local jokers = U.collection.entries(U.collection.TABS[1])
@@ -207,12 +214,13 @@ describe('ui collection (HUD-21)', function()
   end)
 
   it('pages past ten cards and says so when a tab is empty', function()
+    local before = #U.collection.entries(U.collection.TABS[1])
     for i = 1, 12 do MP.registry.define({ key = 'j_mp_test_' .. i, kind = 'Joker', rarity = 1, pos = { x = 0, y = 0 } }) end
     local def, n, pages = U.collection.tab_def(U.collection.TABS[1], 1)
-    expect(n).eq(13)
-    expect(pages).eq(2)
+    expect(n).eq(before + 12)
+    expect(pages).eq(math.ceil((before + 12) / U.collection.PER_PAGE))
     expect(UH.find(def, 'mp_coll_pages') ~= nil).truthy()
-    local empty = U.collection.tab_def(U.collection.TABS[5], 1)
+    local empty = U.collection.tab_def({ id = 'none', kinds = {}, rows = true }, 1)
     expect(UH.find(empty, 'mp_coll_empty') ~= nil).truthy()
   end)
 end)
@@ -289,6 +297,30 @@ describe('ui: late result, test surface', function()
     UH.teardown(); boot()
     expect(function() MP.test.ready() end).error('not in a lobby')
     expect(function() MP.test.vote({}) end).error('no setup vote')
+  end)
+end)
+
+describe('ui: MP stakes come from WS7 content (MP.content.stakes.LIST)', function()
+  before_each(boot)
+  after_each(UH.teardown)
+
+  it('lists the content stakes with their names and colours, in order', function()
+    local list = U.run_setup.mp_stakes()
+    expect(#list).eq(#MP.content.stakes.LIST)
+    for i, e in ipairs(MP.content.stakes.LIST) do
+      expect(list[i].id).eq(e.id)
+      expect(list[i].name).eq(MP.content.stakes.name(e))
+      expect(type(list[i].colour)).eq('table')
+    end
+    expect(U.run_setup.mp_stake_name('spectralplus')).eq(MP.content.stakes.name(MP.content.stakes.get('spectralplus')))
+    local stakes = U.collection.entries(U.collection.TABS[7])
+    expect(stakes[1].key).eq('stake_mp_planet')
+  end)
+
+  it('falls back to its own list without the content module', function()
+    MP.content.stakes = nil
+    expect(#U.run_setup.mp_stakes()).eq(3)
+    expect(U.run_setup.mp_stake_name('planet')).eq('Planet Stake')
   end)
 end)
 

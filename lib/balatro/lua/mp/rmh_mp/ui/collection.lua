@@ -55,8 +55,8 @@ end
 function CO.entries(tab)
   local out = {}
   if tab.stakes then
-    for _, s in ipairs((U.run_setup and U.run_setup.MP_STAKES) or {}) do
-      if s.id then out[#out + 1] = { key = 'stake_mp_' .. s.id, kind = 'Stake', name = TH.T(s.key, s.def) } end
+    for _, s in ipairs((U.run_setup and U.run_setup.mp_stakes()) or {}) do
+      out[#out + 1] = { key = s.key, kind = 'Stake', name = s.name }
     end
     return out
   end

@@ -19,12 +19,30 @@ U.run_setup = RS
 
 local F = G.FUNCS
 
+-- Fallback when WS7's MP.content.stakes is not in the pack (its LIST is the source of truth).
 RS.MP_STAKES = {
-  { id = nil, key = 'rmh_mp_ui_stake_none', def = 'None' },
-  { id = 'planet', key = 'rmh_mp_ui_stake_planet', def = 'Planet Stake' },
-  { id = 'spectral', key = 'rmh_mp_ui_stake_spectral', def = 'Spectral Stake' },
-  { id = 'spectralplus', key = 'rmh_mp_ui_stake_spectralplus', def = 'Spectral+ Stake' },
+  { id = 'planet', key = 'rmh_mp_ui_stake_planet', def = 'Planet Stake', colour = 'BLUE' },
+  { id = 'spectral', key = 'rmh_mp_ui_stake_spectral', def = 'Spectral Stake', colour = 'BLACK' },
+  { id = 'spectralplus', key = 'rmh_mp_ui_stake_spectralplus', def = 'Spectral+ Stake', colour = 'BLACK' },
 }
+
+--- The MP stakes as { id, key, name, colour }: MP.content.stakes.LIST (name and colour from it), else
+--- the fallback above.
+function RS.mp_stakes()
+  local S = MP.content and MP.content.stakes
+  local out = {}
+  if S and S.LIST then
+    for _, e in ipairs(S.LIST) do
+      out[#out + 1] = { id = e.id, key = e.key, name = S.name and S.name(e) or e.name_fallback,
+        colour = S.colour and S.colour(e) or TH.col('BLACK') }
+    end
+    return out
+  end
+  for _, s in ipairs(RS.MP_STAKES) do
+    out[#out + 1] = { id = s.id, key = 'stake_mp_' .. s.id, name = TH.T(s.key, s.def), colour = TH.col(s.colour) }
+  end
+  return out
+end
 
 local function desc_name(set, key)
   local d = G.localization and G.localization.descriptions and G.localization.descriptions[set]
@@ -51,8 +69,13 @@ function RS.stake_name(i)
 end
 
 function RS.mp_stake_name(id)
-  for _, s in ipairs(RS.MP_STAKES) do if s.id == id then return TH.T(s.key, s.def) end end
+  for _, s in ipairs(RS.mp_stakes()) do if s.id == id then return s.name end end
   return TH.T('rmh_mp_ui_stake_none', 'None')
+end
+
+function RS.mp_stake_colour(id)
+  for _, s in ipairs(RS.mp_stakes()) do if s.id == id then return s.colour end end
+  return TH.col('MP_PURPLE')
 end
 
 --- May the Multiplayer decks/stakes/challenges be listed for this ruleset?
@@ -144,13 +167,15 @@ local function stake_cycle(st)
 end
 
 local function mp_stake_cycle(st)
-  local names, vals, cur = {}, {}, 1
-  for i, s in ipairs(RS.MP_STAKES) do
-    names[i] = TH.T(s.key, s.def); vals[i] = s.id or false
-    if s.id == st.mpStake then cur = i end
+  local names, vals, cur = { TH.T('rmh_mp_ui_stake_none', 'None') }, { false }, 1
+  for _, s in ipairs(RS.mp_stakes()) do
+    names[#names + 1] = s.name; vals[#vals + 1] = s.id
+    if s.id == st.mpStake then cur = #names end
   end
+  -- The cycle takes the chosen stake's colour (WS7 MP.content.stakes colour).
+  local colour = st.mpStake and RS.mp_stake_colour(st.mpStake) or TH.col('RED')
   return W.cycle({ id = 'mp_rs_mp_stake', label = TH.T('rmh_mp_ui_mp_stake', 'Multiplayer Stake'), options = names,
-    current = cur, callback = 'rmh_mp_rs_cycle', w = 4, mp = { field = 'mpStake', values = vals } })
+    current = cur, callback = 'rmh_mp_rs_cycle', w = 4, colour = colour, mp = { field = 'mpStake', values = vals } })
 end
 
 function RS.new_run_tab(st)
@@ -210,6 +235,7 @@ F.rmh_mp_rs_cycle = function(args)
   if v == false then v = nil end
   RS.st[m.field] = v
   if m.field == 'challenge' then RS.st.tab = 'challenges' end
+  if m.field == 'mpStake' then RS.show() end -- re-colour the cycle
 end
 
 --- Send what the picker holds. Returns the message sent (tests).

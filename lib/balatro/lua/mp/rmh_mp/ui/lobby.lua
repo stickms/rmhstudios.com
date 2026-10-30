@@ -154,7 +154,7 @@ function L.deck_box(view)
   if st.mpStake then line2 = U.run_setup.mp_stake_name(st.mpStake) end
   local host = view.isHost and st.kind == 'private'
   local b = W.button({ id = 'mp_deck_box', label = { line1, line2 }, button = host and 'rmh_mp_deck_box' or 'nil',
-    colour = TH.col('MP_PURPLE'), minw = 2.65, minh = 1.35, scale = 0.38, col = true })
+    colour = st.mpStake and TH.darken(U.run_setup.mp_stake_colour(st.mpStake), 0.1) or TH.col('MP_PURPLE'), minw = 2.65, minh = 1.35, scale = 0.38, col = true })
   return b
 end
 
