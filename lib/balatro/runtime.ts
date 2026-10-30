@@ -64,6 +64,8 @@ interface LoveModule {
   printErr: (text: string) => void;
   preRun: Array<() => void>;
   setStatus: (text: string) => void;
+  rmhOwnsFullscreen: boolean;
+  rmhPixelRatio: () => number;
   FS?: EmscriptenFS;
   pauseMainLoop?: () => void;
   resumeMainLoop?: () => void;
@@ -90,17 +92,21 @@ export function patchMain(source: string): string {
   return `require "rmh_web"; ${source}`;
 }
 
-/** The frame's size in device pixels, clamped to MAX_PIXELS (aspect kept). */
-export function renderSize(cssW: number, cssH: number, dpr: number): [number, number] {
-  let w = Math.max(1, cssW * Math.min(dpr || 1, 2));
-  let h = Math.max(1, cssH * Math.min(dpr || 1, 2));
-  const over = (w * h) / MAX_PIXELS;
-  if (over > 1) {
-    const k = Math.sqrt(over);
-    w /= k;
-    h /= k;
-  }
-  return [Math.round(w), Math.round(h)];
+/**
+ * The window size (CSS pixels) and the pixel ratio the drawing buffer uses.
+ *
+ * LÖVE runs with `highdpi`, as Balatro does on macOS: the window is sized in CSS
+ * pixels, SDL sizes the canvas at CSS × ratio, and LÖVE scales every canvas the
+ * game creates by the same ratio, so text and cards are drawn at device
+ * resolution. The ratio is the device's, capped at 2, and lowered on very large
+ * frames so the buffer stays under MAX_PIXELS (never below 1 on a hi-DPI screen).
+ */
+export function renderSize(cssW: number, cssH: number, dpr: number): { w: number; h: number; ratio: number } {
+  const w = Math.max(1, Math.round(cssW));
+  const h = Math.max(1, Math.round(cssH));
+  const device = dpr > 0 ? dpr : 1;
+  const ratio = Math.max(Math.min(device, 1), Math.min(device, 2, Math.sqrt(MAX_PIXELS / (w * h))));
+  return { w, h, ratio: Math.round(ratio * 1000) / 1000 };
 }
 
 // ── Packs: IndexedDB cache, then the network ──────────────────────────────────
@@ -394,11 +400,13 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
     return flushing;
   };
 
+  let ratio = 1;
   const writeSize = () => {
     if (!fs) return;
-    const [w, h] = renderSize(frame.clientWidth, frame.clientHeight, window.devicePixelRatio);
+    const size = renderSize(frame.clientWidth, frame.clientHeight, window.devicePixelRatio);
+    ratio = size.ratio;
     try {
-      fs.writeFile('/rmh/size', `${w} ${h}`);
+      fs.writeFile('/rmh/size', `${size.w} ${size.h} ${size.ratio}`);
     } catch {
       /* FS not ready */
     }
@@ -408,6 +416,10 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
     arguments: [GAME_DIR],
     INITIAL_MEMORY: 256 * 1024 * 1024,
     canvas,
+    // Engine patches (scripts/balatro/vendor-lovejs.sh): the page owns browser
+    // fullscreen, and decides the drawing buffer's pixel ratio.
+    rmhOwnsFullscreen: true,
+    rmhPixelRatio: () => ratio,
     locateFile: (path) => `${ENGINE_BASE}${path}`,
     print: (text) => onLog?.(text, false),
     printErr: (text) => onLog?.(text, true),

@@ -11,10 +11,11 @@
  */
 'use client';
 
-import { ArrowLeft, Download, Maximize, Upload } from 'lucide-react';
+import { ArrowLeft, Download, Maximize, Minimize, Upload } from 'lucide-react';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { createCloudSaves } from '@/lib/balatro/cloud-saves';
 import { bootBalatro, PackError, prefetchEngine, type BalatroSession, type BootPhase } from '@/lib/balatro/runtime';
 import './balatro.css';
@@ -184,8 +185,17 @@ export default function BalatroPage() {
     }
   };
 
-  const fullscreen = () => {
-    void frameRef.current?.requestFullscreen?.().catch(() => {});
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const sync = () => setIsFullscreen(document.fullscreenElement === frameRef.current);
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    else void frameRef.current?.requestFullscreen?.().catch(() => {});
+    canvasRef.current?.focus();
   };
 
   // Leaving a running engine needs a real navigation: it holds a WebAssembly
@@ -233,26 +243,53 @@ export default function BalatroPage() {
         )}
         {stage.kind === 'running' && (
           <div className="balatro-toolbar" role="toolbar" aria-label={t('toolbar', { defaultValue: 'Game controls' })}>
-            <button type="button" onClick={leave} aria-label={t('leave', { defaultValue: 'Leave' })}>
-              <ArrowLeft className="size-4 rtl-flip" aria-hidden />
-            </button>
-            <button type="button" onClick={fullscreen} aria-label={t('fullscreen', { defaultValue: 'Fullscreen' })}>
-              <Maximize className="size-4" aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={() => void exportSaves()}
-              aria-label={t('export_saves', { defaultValue: 'Export saves' })}
+            <Tooltip content={t('leave_hint', { defaultValue: 'Leave the game. Your progress is saved.' })}>
+              <button type="button" onClick={leave} aria-label={t('leave', { defaultValue: 'Leave' })}>
+                <ArrowLeft className="size-4 rtl-flip" aria-hidden />
+              </button>
+            </Tooltip>
+            <Tooltip
+              content={
+                isFullscreen
+                  ? t('fullscreen_exit_hint', { defaultValue: 'Exit fullscreen (Esc)' })
+                  : t('fullscreen_hint', { defaultValue: 'Play fullscreen' })
+              }
             >
-              <Download className="size-4" aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={() => saveInput.current?.click()}
-              aria-label={t('import_saves', { defaultValue: 'Import saves' })}
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                aria-pressed={isFullscreen}
+                aria-label={t('fullscreen', { defaultValue: 'Fullscreen' })}
+              >
+                {isFullscreen ? <Minimize className="size-4" aria-hidden /> : <Maximize className="size-4" aria-hidden />}
+              </button>
+            </Tooltip>
+            <Tooltip
+              content={t('export_hint', {
+                defaultValue: 'Download your saves as a zip, in the same layout as the desktop game’s save folder.',
+              })}
             >
-              <Upload className="size-4" aria-hidden />
-            </button>
+              <button
+                type="button"
+                onClick={() => void exportSaves()}
+                aria-label={t('export_saves', { defaultValue: 'Export saves' })}
+              >
+                <Download className="size-4" aria-hidden />
+              </button>
+            </Tooltip>
+            <Tooltip
+              content={t('import_hint', {
+                defaultValue: 'Replace your saves with a zip of a Balatro save folder, such as one from the desktop game.',
+              })}
+            >
+              <button
+                type="button"
+                onClick={() => saveInput.current?.click()}
+                aria-label={t('import_saves', { defaultValue: 'Import saves' })}
+              >
+                <Upload className="size-4" aria-hidden />
+              </button>
+            </Tooltip>
             <input
               ref={saveInput}
               type="file"
