@@ -514,6 +514,18 @@ R.define({
 --   ease_ante               the Pizza discards end with the ante
 --   get_current_pool        Penny Pincher is not pooled before the first PvP draw
 
+--- True once per PvP round, at the first frame after the core marked the first PvP draw
+--- (pvp.first_draw_done; the wrap order with the core's own hook does not matter).
+function C.first_pvp_draw_once(tag)
+  local pvp = MP.state.pvp
+  if not pvp.first_draw_done then return false end
+  local token = MP.state.round and MP.state.round.token or 0
+  local field = 'mp_once_' .. tag
+  if pvp[field] == token then return false end
+  pvp[field] = token
+  return true
+end
+
 function C.fire_end_of_pvp()
   MP.state.after_pvp = nil
   return MP.ctx.calculate({ mp_end_of_pvp = true })
@@ -550,10 +562,8 @@ function C.install_core()
 
   if g('Game') then
     wrap(Game, 'update_draw_to_hand', function(orig, self, dt, ...)
-      local pvp = MP.state.pvp
-      local before = pvp.first_draw_done
       local r = orig(self, dt, ...)
-      if not before and MP.state.pvp.first_draw_done then MP.state.after_pvp = true end
+      if C.first_pvp_draw_once('after_pvp') then MP.state.after_pvp = true end
       return r
     end, o('first_draw'))
   end

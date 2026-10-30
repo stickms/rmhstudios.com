@@ -312,9 +312,8 @@ function K.install()
   -- FL-19: launch the stored asteroids right after the core marks the first PvP draw.
   if g('Game') then
     wrap(Game, 'update_draw_to_hand', function(orig, self, dt, ...)
-      local before = MP.state.pvp.first_draw_done
       local r = orig(self, dt, ...)
-      if not before and MP.state.pvp.first_draw_done then K.launch_asteroids() end
+      if C.first_pvp_draw_once('asteroids') then K.launch_asteroids() end
       return r
     end, o('asteroid_launch'))
   end
