@@ -617,6 +617,8 @@ model User {
   cardBuyOrders             CardBuyOrder[]
   gameCollectionItems       GameCollectionItem[]
   gameProfileShowcase       GameProfileShowcase?
+  userGems                  UserGems?
+  gemEntries                GemEntry[]
   cardTradesSent            CardTrade[]          @relation("CardTradeFrom")
   cardTradesReceived        CardTrade[]          @relation("CardTradeTo")
   gameThreads               GameThread[]
@@ -6001,6 +6003,33 @@ model GameProfileShowcase {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("game_profile_showcase")
+}
+
+// Gems (design: docs/superpowers/specs/2026-10-30-gems-boosters-design.md). A member's
+// balance, never negative, and an append-only entry for every movement so the balance
+// can always be explained. Gems cannot be traded.
+model UserGems {
+  userId    String   @id
+  gems      Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_gems")
+}
+
+model GemEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  delta     Int
+  /// 'unpack' | 'pack' | 'buy'
+  reason    String   @db.VarChar(16)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("gem_entry")
 }
 
 enum BuyOrderStatus {

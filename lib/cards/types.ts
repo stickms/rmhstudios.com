@@ -55,4 +55,9 @@ export type InventoryGroup = {
 export type InventoryData = {
   groups: InventoryGroup[];
   totalCards: number;
+  gems: number;
+  /** The viewer's coin balance (for buying gems). */
+  coins: number;
+  /** Titles a booster pack can be opened for. */
+  packTitles: { id: string; title: string }[];
 };

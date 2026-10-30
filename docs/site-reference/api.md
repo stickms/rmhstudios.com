@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 962 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 965 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -815,7 +815,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/games`
 
-30 routes.
+33 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -830,6 +830,9 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/games/collections/item` | `POST` | `app/routes/api/games/collections/item.ts` |
 | `/api/games/collections/rename` | `POST` | `app/routes/api/games/collections/rename.ts` |
 | `/api/games/customize` | `POST` | `app/routes/api/games/customize.ts` |
+| `/api/games/gems/buy` | `POST` | `app/routes/api/games/gems/buy.ts` |
+| `/api/games/gems/pack` | `POST` | `app/routes/api/games/gems/pack.ts` |
+| `/api/games/gems/unpack` | `POST` | `app/routes/api/games/gems/unpack.ts` |
 | `/api/games/how-to-play` | `POST` | `app/routes/api/games/how-to-play.ts` |
 | `/api/games/hub/delete` | `POST` | `app/routes/api/games/hub/delete.ts` |
 | `/api/games/hub/moderate` | `POST` | `app/routes/api/games/hub/moderate.ts` |

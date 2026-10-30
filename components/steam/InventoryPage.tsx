@@ -6,7 +6,9 @@ import { MAX_BADGE_LEVEL } from '@/lib/cards/cards';
 import type { InventoryData } from '@/lib/cards/types';
 import { CardArt } from './CardArt';
 import { CommunityNav } from './CommunityNav';
+import { GemsPanel } from './GemsPanel';
 import { SellCard } from './SellCard';
+import { UnpackCard } from './UnpackCard';
 
 /** The signed-in user's trading cards and badges, grouped by title, as Steam's inventory. */
 export function InventoryPage({ data }: { data: InventoryData }) {
@@ -16,6 +18,7 @@ export function InventoryPage({ data }: { data: InventoryData }) {
       <CommunityNav />
       <div className="stm-web-single">
         <h1 className="stm-web-title">{t('steam-inventory', { defaultValue: 'Inventory' })}</h1>
+        <GemsPanel gems={data.gems} coins={data.coins} packTitles={data.packTitles} />
         {data.groups.length === 0 ? (
           <section className="stm-web-card">
             <p className="stm-web-pad stm-muted">
@@ -68,6 +71,7 @@ export function InventoryPage({ data }: { data: InventoryData }) {
                       {c.count > 1 ? <span className="stm-cardcount">×{c.count}</span> : null}
                       <div className="stm-sell-wrap">
                         <SellCard gameId={g.gameId} cardIndex={c.cardIndex} foil={c.foil} />
+                        <UnpackCard gameId={g.gameId} cardIndex={c.cardIndex} foil={c.foil} />
                       </div>
                     </li>
                   ))}
