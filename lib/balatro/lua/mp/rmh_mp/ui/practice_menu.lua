@@ -20,7 +20,7 @@ PM.extra_index = PM.extra_index or 1
 function PM.extra_list() return TH.ruleset_list(true) end
 
 function PM.def(model)
-  local queued = model.queue and model.queue.state == 'searching'
+  local queued = U.queue_busy(model)
   local pillars = {}
   for i, p in ipairs(TH.PRACTICE) do
     pillars[#pillars + 1] = {
@@ -70,7 +70,7 @@ F.rmh_mp_practice_extra_cycle = function(args)
 end
 
 F.rmh_mp_practice_pick = function(e)
-  if U.model.queue.state == 'searching' then return U.overlays.error('queued') end
+  if U.queue_busy() then return U.overlays.error('queued') end
   local r = e and e.config and e.config.ref_table or {}
   local key = r.ruleset
   if r.extra then

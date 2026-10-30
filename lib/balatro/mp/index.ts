@@ -37,13 +37,14 @@ export type { MpRuntime } from './lobby/runtime';
  * WS12's matchmaking/party/invites module attaches to the running session here
  * (`lib/balatro/mp/queue/attach.ts` exporting `attach(runtime) => detach`): it gets
  * the hub (`runtime.deps.hub`), the mailbox (`runtime.deps.bridge`), `createLobby`,
- * `joinCode` and, as host, `LobbyHost.onSetupInput` / `publishSetup`. A glob, so this
- * chunk builds before that module exists.
+ * `joinCode` and, as host, `LobbyHost.onSetupInput` / `publishSetup`. WS13's replays and
+ * spectating attach the same way (`replay/attach.ts`, which sets `runtime.replayTap`).
+ * A glob, so this chunk builds before those modules exist.
  */
 export interface MpExtension {
   attach(runtime: MpRuntime): () => void;
 }
-const extensions = import.meta.glob<MpExtension>('./queue/attach.ts');
+const extensions = import.meta.glob<MpExtension>(['./queue/attach.ts', './replay/attach.ts']);
 
 interface MpTestOverrides {
   p2p?: P2pTestHooks;
@@ -74,6 +75,14 @@ function randomId(): string {
   return s;
 }
 
+/** The site block list (GET /api/moderation/block → {blocked: string[]}); [] on any failure. */
+async function blockedIds(): Promise<string[]> {
+  const res = await fetch('/api/moderation/block', { credentials: 'same-origin' });
+  if (!res.ok) return [];
+  const body = (await res.json()) as { blocked?: unknown };
+  return Array.isArray(body.blocked) ? body.blocked.filter((x): x is string => typeof x === 'string') : [];
+}
+
 export function startMultiplayer(opts: StartMultiplayerOptions): MpSession {
   const { bridge, session, intent, invite } = opts;
   const overrides = testOverrides();
@@ -99,6 +108,7 @@ export function startMultiplayer(opts: StartMultiplayerOptions): MpSession {
       randomSeed: cryptoSeedString,
       randomInt: cryptoSeed,
       log,
+      blockedIds,
     },
     { intent, invite },
   );

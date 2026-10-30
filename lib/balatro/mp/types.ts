@@ -588,6 +588,11 @@ export const zReplayOp = z.enum([
   'net_magnet',
   'life_lost',
   'net_trap',
+  /**
+   * WS13: a network input as Lua received it (`{k:'outcome'|'peer'|'tail', d}`), so
+   * playback re-applies referee outcomes and peer messages without the other peers.
+   */
+  'net_in',
 ]);
 export type ReplayOp = z.infer<typeof zReplayOp>;
 

@@ -25,6 +25,9 @@ local function stub_game()
       self.name = blind and blind.name or ''
       self.chips = 300 * ((blind and blind.mult) or 0)
       self.dollars = blind and blind.dollars or 0
+      self.boss = blind and not not blind.boss                    -- as vanilla Blind:set_blind
+      G.GAME.last_blind = G.GAME.last_blind or {}
+      G.GAME.last_blind.boss = self.boss
     end,
     disable = function(self) self.disabled = true end,
   }
@@ -149,6 +152,20 @@ describe('PvP blind slot and loop', function()
     expect(MP.pvp.on_pvp_blind()).eq(true)
     G.GAME.blind:disable()
     expect(G.GAME.blind.disabled).eq(nil)                         -- FL-05
+  end)
+
+  it('the Nemesis blind counts as a boss (Chicot, Campfire, Rocket, last_blind.boss)', function()
+    G.GAME.round_resets.ante = 2
+    G.GAME.round_resets.blind = G.P_BLINDS.bl_wall
+    new_round()
+    expect(G.GAME.blind.config.blind.key).eq('bl_mp_nemesis')
+    expect(G.GAME.blind.boss).eq(true)
+    expect(G.GAME.last_blind.boss).eq(true)
+    G.GAME.round_resets.ante = 1                                  -- not a PvP round: vanilla untouched
+    G.GAME.round_resets.blind = G.P_BLINDS.bl_small
+    new_round()
+    expect(G.GAME.blind.boss).eq(false)
+    expect(G.GAME.last_blind.boss).eq(false)
   end)
 
   it('a bye (or normal_bosses) plays the vanilla boss flagged as PvP', function()
@@ -365,6 +382,20 @@ describe('outcomes and peers', function()
     expect(MP.state.ante_nemesis).eq({ 'u2' })
     MP.net.receive('outcome', { hs = 6, o = { t = 'player_lives', player_id = '*all*', lives = 2 } })
     expect(MP.state.lives).eq({ u1 = 2, u2 = 2 })
+  end)
+
+  it('stores presence and notifies only presence observers', function()
+    local seen, star = {}, 0
+    MP.report.on('presence', function(p) seen[#seen + 1] = p.id .. ':' .. p.status end)
+    MP.report.on('presence', function() error('boom') end)          -- a failing observer is isolated
+    MP.report.on('*', function() star = star + 1 end)
+    MP.net.receive('presence', { id = 'u2', status = 'away', graceMsLeft = 5000 })
+    MP.net.receive('presence', { id = 'u2', status = 'back' })
+    expect(MP.state.presence.u2).eq({ status = 'back' })
+    expect(seen).eq({ 'u2:away', 'u2:back' })
+    expect(star).eq(0)
+    MP.report.observers.presence = nil
+    MP.report.observers['*'] = nil
   end)
 
   it('maps win variants to my result once', function()

@@ -15,6 +15,11 @@
  *     (`runtime.joinCode`) and auto-readies. A party role still running is
  *     left first, and the next role waits out the host's leave drain, so the
  *     old role's hub `leave` cannot land on the new room;
+ *   - remembers the party it queued with (its host keeps the hub token), so
+ *     after the match `ui_join {code}` for that party code re-hosts it under
+ *     the same code for its old host ("Return to lobby XXXXXX", MM-06) and
+ *     joins it for everyone else;
+ *   - refuses Practice while searching (`lobby_error practice`, PR-05);
  *   - keeps the session's `Inviter` (invites.ts) registered for the page's
  *     Invite popover, and shows a received invite in Lua as a toast
  *     (`mp_invited`, vars `name`, `code`; accepting is an ordinary `ui_join`).
@@ -107,9 +112,18 @@ export function attach(runtime: MpRuntime): () => void {
     });
   };
 
+  /** Remember the party lobby on screen; its host also keeps the hub token for the reclaim. */
+  const remember = (lobby: LobbyState) => {
+    const role = runtime.role;
+    const token = role?.kind === 'host' ? (role as LobbyHost).hostToken : null;
+    const prev = parties.get(runtime);
+    const keep = prev && prev.code === lobby.code ? prev.token : null;
+    parties.set(runtime, rememberParty(lobby, sched.now(), token ?? keep));
+  };
+
   const onMatched = (m: QueueMatched) => {
     const lobby = runtime.role?.lobby() ?? null;
-    if (lobby?.kind === 'party' && runtime.me) parties.set(runtime, rememberParty(lobby, sched.now()));
+    if (lobby?.kind === 'party' && runtime.me) remember(lobby);
     if (m.role === 'host') {
       switchRole(() => {
         const host = runtime.createLobby(m.queueMode, 'casual');
@@ -168,12 +182,8 @@ export function attach(runtime: MpRuntime): () => void {
       const lobby: LobbyState | null = role?.kind === 'host' ? role.lobby() : null;
       const block = partyQueueBlock(lobby, runtime.me);
       if (block || !lobby) return error(`party-${block ?? 'not-party'}`);
-      parties.set(runtime, rememberParty(lobby, sched.now()));
+      remember(lobby);
       queue.findParty(lobby.code, d.queueMode);
-    }),
-    // PR-05: never queued and practising at once (the runtime starts Practice; the search ends).
-    bridge.on('ui_practice', () => {
-      if (queue.isQueued()) queue.cancel();
     }),
     // A lobby the player left on purpose ends the casual controller (and any search with it).
     bridge.on('ui_leave', () => {
@@ -187,9 +197,34 @@ export function attach(runtime: MpRuntime): () => void {
     }),
   );
 
+  // PR-05: never queued and practising at once — Practice is refused while searching.
+  runtime.practiceGuard = () => (queue.isQueued() ? 'practice' : null);
+
+  // MM-06: the old party host re-hosts its party code; everyone else joins it. Both leave the
+  // match lobby first (a host's leave must reach the hub before the next role's first event).
+  runtime.joinHook = (code) => {
+    const p = parties.get(runtime);
+    if (!p || p.code !== code || !runtime.me) return false;
+    if (runtime.role?.code === code) return true;
+    if (queue.isQueued()) queue.cancel();
+    if (p.hostId === runtime.me && p.token) {
+      const reclaim = { code, token: p.token };
+      switchRole(() => {
+        if (runtime.createLobby(p.queueMode, 'party', reclaim)) queue.reset();
+      });
+    } else {
+      switchRole(() => {
+        if (runtime.joinCode(code, 'player')) queue.reset();
+      });
+    }
+    return true;
+  };
+
   return () => {
     if (detached) return;
     detached = true;
+    if (runtime.practiceGuard) runtime.practiceGuard = null;
+    if (runtime.joinHook) runtime.joinHook = null;
     cancelSwitch?.();
     stopCasual();
     for (const off of offs.splice(0)) off();

@@ -148,6 +148,8 @@ function RS.open(mode, args)
     tab = args.tab or 'new_run',
   }
   if decks[index_of(decks, st.deck)] ~= st.deck then st.deck = decks[1] end
+  local cap = RS.stake_cap(ruleset)
+  st.stake = math.max(1, math.min(cap, math.floor(tonumber(st.stake) or 1)))
   RS.st = st
   return RS.show()
 end
@@ -159,9 +161,87 @@ local function deck_cycle(st)
     current = index_of(st.decks, st.deck), callback = 'rmh_mp_rs_cycle', w = 4, mp = { field = 'deck', values = st.decks } })
 end
 
+--- The highest vanilla stake the picker offers (A1 §1.3: "stake capped by a compat max, else 8"):
+--- 8, lowered to the stakes this game build has, and to a ruleset's max_stake when theme.lua's
+--- ruleset entry sets one.
+RS.MAX_STAKE = 8
+function RS.stake_cap(ruleset)
+  local cap = RS.MAX_STAKE
+  local pool = G.P_CENTER_POOLS and G.P_CENTER_POOLS.Stake
+  if type(pool) == 'table' and #pool > 0 and #pool < cap then cap = #pool end
+  local r = ruleset and TH.ruleset(ruleset)
+  if r and tonumber(r.max_stake) and r.max_stake >= 1 and r.max_stake < cap then cap = math.floor(r.max_stake) end
+  return cap
+end
+
+-- ── The deck preview (the chosen deck face down, D-24 Balanced sticker on MP decks) ──
+
+--- The registry or vanilla center of a deck key.
+function RS.deck_center(key)
+  return (G.P_CENTERS and G.P_CENTERS[key]) or (MP.registry and MP.registry.proto and MP.registry.proto(key)) or nil
+end
+
+--- A one-card area showing the deck back, as vanilla's deck screens do (G.GAME.viewed_back).
+--- The Balanced sticker is drawn through MP.content.decks.draw_balanced (WS9). nil when the game
+--- objects are not available (specs, an early frame).
+function RS.deck_preview(st)
+  local center = RS.deck_center(st.deck)
+  if not (center and rawget(_G, 'Card') and rawget(_G, 'CardArea') and rawget(_G, 'Back') and G.GAME
+    and G.P_CENTERS and G.P_CENTERS.c_base) then return nil end
+  local ok, area = pcall(function()
+    G.GAME.viewed_back = Back(center)
+    local w, h = G.CARD_W * 0.9, G.CARD_H * 0.9
+    local a = CardArea(0, 0, w, h, { card_limit = 1, type = 'deck', highlight_limit = 0 })
+    local card = Card(0, 0, w, h, nil, G.P_CENTERS.c_base, { playing_card = 1, viewed_back = true })
+    card.sprite_facing = 'back'
+    card.facing = 'back'
+    card.states.drag.can = false
+    local D = MP.content and MP.content.decks
+    if D and D.apply_back_sprite then pcall(D.apply_back_sprite, card) end
+    local base_draw = card.draw
+    card.draw = function(self, layer)
+      if base_draw then base_draw(self, layer) end
+      -- In a session the content's Card.draw wrap already draws the sticker.
+      if D and D.draw_balanced and not MP.in_session() then pcall(D.draw_balanced, self, center) end
+    end
+    a:emplace(card)
+    return a
+  end)
+  if not ok then
+    MP.log('warn', 'ui: deck preview %s failed: %s', tostring(st.deck), tostring(area))
+    return nil
+  end
+  RS.preview_area = area
+  return W.col({ { n = G.UIT.O, config = { object = area } } }, { id = 'mp_rs_preview', padding = 0.05 })
+end
+
+--- The Cocktail Deck's "Edit Deck" button (WS9's editor, G.FUNCS.mp_cocktail_edit), or nil.
+function RS.cocktail_button(st)
+  local key = MP.cocktail and MP.cocktail.KEY or 'b_mp_cocktail'
+  if st.deck ~= key or not G.FUNCS.mp_cocktail_edit then return nil end
+  return W.button({ id = 'mp_rs_cocktail_edit', label = TH.T('rmh_mp_ui_edit_deck', 'Edit Deck'), button = 'rmh_mp_rs_cocktail',
+    colour = TH.col('ORANGE'), minw = 2.4, minh = 0.6, scale = 0.4 })
+end
+
+F.rmh_mp_rs_cocktail = function(e)
+  RS.cocktail_open = true
+  return G.FUNCS.mp_cocktail_edit(e)
+end
+
+-- Closing the Cocktail editor opened from this picker comes back to it (cocktail_edit.lua calls
+-- the hook); opened anywhere else it just closes.
+U.cocktail_back = function()
+  if RS.cocktail_open and RS.st and RS.st.mode then
+    RS.cocktail_open = false
+    return RS.show()
+  end
+  RS.cocktail_open = false
+  if G.FUNCS.exit_overlay_menu then G.FUNCS.exit_overlay_menu() end
+end
+
 local function stake_cycle(st)
   local names, vals = {}, {}
-  for i = 1, 8 do names[i] = RS.stake_name(i); vals[i] = i end
+  for i = 1, RS.stake_cap(st.ruleset) do names[i] = RS.stake_name(i); vals[i] = i end
   return W.cycle({ id = 'mp_rs_stake', label = TH.T('rmh_mp_ui_stake', 'Stake'), options = names, current = st.stake,
     callback = 'rmh_mp_rs_cycle', w = 4, mp = { field = 'stake', values = vals } })
 end
@@ -180,9 +260,11 @@ end
 
 function RS.new_run_tab(st)
   local nodes = {
-    W.row({ deck_cycle(st) }, { padding = 0.05 }),
-    W.row({ stake_cycle(st) }, { padding = 0.05 }),
+    W.row({ RS.deck_preview(st), W.col({ deck_cycle(st) }) }, { padding = 0.05 }),
   }
+  local cocktail = RS.cocktail_button(st)
+  if cocktail then nodes[#nodes + 1] = W.row({ cocktail }, { padding = 0.05 }) end
+  nodes[#nodes + 1] = W.row({ stake_cycle(st) }, { padding = 0.05 })
   if st.mp and st.mode == 'lobby' then nodes[#nodes + 1] = W.row({ mp_stake_cycle(st) }, { padding = 0.05 }) end
   if st.mode == 'practice' then
     nodes[#nodes + 1] = W.row({ W.text(TH.T('rmh_mp_ui_seed_optional', 'Seed (optional)'), { scale = 0.35 }) })
@@ -235,7 +317,8 @@ F.rmh_mp_rs_cycle = function(args)
   if v == false then v = nil end
   RS.st[m.field] = v
   if m.field == 'challenge' then RS.st.tab = 'challenges' end
-  if m.field == 'mpStake' then RS.show() end -- re-colour the cycle
+  -- Re-colour the MP stake cycle; a new deck redraws the preview and the Cocktail button.
+  if m.field == 'mpStake' or m.field == 'deck' then RS.show() end
 end
 
 --- Send what the picker holds. Returns the message sent (tests).
@@ -244,7 +327,7 @@ function RS.submit()
   if st.mode == 'practice' then
     local seed = tostring(st.seed.text or ''):upper():gsub('[^A-Z0-9]', ''):sub(1, 8) or ''
     local d = { ruleset = st.ruleset, deck = st.deck, stake = st.stake, seed = seed ~= '' and seed or nil }
-    if U.model.queue.state == 'searching' then U.overlays.error('queued'); return nil end
+    if U.queue_busy() then U.overlays.error('queued'); return nil end
     if U.send('ui_practice', d) then W.close_overlay('run_setup'); return d end
     return nil
   end

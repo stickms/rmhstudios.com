@@ -20,6 +20,10 @@
  *   `forfeit-seat`); a crash-rejoiner has `CATCH_UP_LIMIT_MS` (3 min) to
  *   catch up (`player_info` after its restore marks it caught up).
  * - **Migration.** A promoted member builds its LobbyHost with `adopt`.
+ * - **Reclaim** (MM-06). `create(…, {code, token})` asks the hub for a code
+ *   this player hosted before (a party closed when it was matched), so the
+ *   party can "Return to lobby XXXXXX". When the code is taken meanwhile the
+ *   host falls back to a fresh code instead of failing.
  */
 
 import { BALATRO_LIMITS } from '../../net/limits';
@@ -98,6 +102,10 @@ export class LobbyHost implements Role {
   private migratedFrom: Id | null = null;
   private stopped = false;
   private hubKey = '';
+  /** The hub has confirmed this room at least once (`hosted`). */
+  private confirmed = false;
+  /** Reclaiming a former code that the hub has not confirmed yet. */
+  private reclaiming = false;
   /** WS12's casual-lobby setup driver hooks in here (votes and draft). */
   onSetupInput: ((i: SetupInput) => void) | null = null;
 
@@ -120,8 +128,17 @@ export class LobbyHost implements Role {
       }),
       hub.on('balatro:p2p:error', (d) => {
         if (d.event === 'balatro:p2p:host') {
+          if (this.reclaiming && !this.confirmed && d.code === 'not-host') {
+            // Someone holds the old code now: open the party under a fresh one.
+            this.reclaiming = false;
+            this.code = null;
+            this.token = null;
+            ctx.deps.log('[mp host] reclaim refused; hosting under a new code');
+            this.claim(false);
+            return;
+          }
           ctx.error(d.code);
-          if (!this.code) this.end(d.code);
+          if (!this.confirmed) this.end(d.code);
         }
       }),
       hub.onStatus((s, info) => {
@@ -134,20 +151,31 @@ export class LobbyHost implements Role {
 
   /* ─── Creating / adopting ─── */
 
-  create(queueMode: LobbyState['queueMode'], kind: LobbyState['kind']): void {
+  create(queueMode: LobbyState['queueMode'], kind: LobbyState['kind'], reclaim?: { code: string; token: string }): void {
     const now = this.ctx.deps.sched.now();
     this.state = createLobby({
-      code: 'AAAAAA',
+      code: reclaim?.code ?? 'AAAAAA',
       kind,
       queueMode,
       host: this.hostSeed(now),
     });
-    this.claim(false);
+    if (reclaim) {
+      this.code = reclaim.code;
+      this.token = reclaim.token;
+      this.reclaiming = true;
+    }
+    this.claim(!!reclaim);
+  }
+
+  /** The hub's resume token for this room (null until hosted); a party remembers it for MM-06. */
+  get hostToken(): string | null {
+    return this.token;
   }
 
   /** A promoted member takes over (§0.3): the lobby it held, the match, the newest checkpoint. */
   adopt(p: { code: string; token: string; ice: unknown }, lobby: LobbyState, mem: MatchMemory | null, previousHost: Id): void {
     this.migratedFrom = previousHost;
+    this.confirmed = true;
     this.code = p.code;
     this.token = p.token;
     this.ice = resolveHubIce(p.ice);
@@ -219,9 +247,13 @@ export class LobbyHost implements Role {
 
   private onHostedAgain(code: string, token: string, ice: unknown): void {
     if (this.stopped || !this.state) return;
+    // A reclaimed code is already ours locally: the first `hosted` still publishes the lobby.
+    const first = !this.confirmed;
+    this.confirmed = true;
+    this.reclaiming = false;
     this.token = token;
     this.ice = resolveHubIce(ice);
-    if (this.code !== code) {
+    if (this.code !== code || first) {
       this.code = code;
       this.commit({ ...this.state, code, version: this.state.version + 1 });
     }
@@ -265,7 +297,7 @@ export class LobbyHost implements Role {
 
   private pushHubState(): void {
     const s = this.state;
-    if (!s || !this.code) return;
+    if (!s || !this.code || !this.confirmed) return;
     const succ = s.successorId ? (this.star?.byUser(s.successorId)?.peerId ?? null) : null;
     const payload = {
       open: s.open,
@@ -361,6 +393,7 @@ export class LobbyHost implements Role {
       case 'log':
         if (m.role !== 'player') return;
         this.star?.broadcast('log', env.d as WireData<'log'>, { f: from }, m.peerId);
+        this.ctx.replayTap()?.peerLog(from, env.d as WireData<'log'>);
         return;
       default:
         if (PEER_SET.has(env.k) && m.role === 'player') this.relayPeer(m, env.k as PeerKind, env.d as never, env.to);
@@ -408,6 +441,11 @@ export class LobbyHost implements Role {
       tail,
     });
     if (this.migratedFrom) this.star.send(m.peerId, 'host_changed', { hostId: this.ctx.me, from: 'migration' });
+    if (match && m.role === 'spectator') {
+      // REP-04: a spectator joining a running match gets every replay log so far (WS13).
+      const peer = m.peerId;
+      this.ctx.replayTap()?.catchUp(match.runId, (f, d) => !!this.star?.send(peer, 'log', d, { f }));
+    }
     if (!match || !inMatch || !this.driver) return;
     if (fresh) {
       // A crash rejoin: the referee resyncs this player (REF-20); it has 3 minutes to catch up.

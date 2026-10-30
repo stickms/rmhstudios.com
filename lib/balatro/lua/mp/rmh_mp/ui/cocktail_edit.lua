@@ -20,6 +20,18 @@ K.editor = E
 
 local function g(name) return rawget(_G, name) end
 
+--- A dictionary string (MP localization), else the English fallback.
+local function loc(key, fallback)
+  local d = G and G.localization and G.localization.misc and G.localization.misc.dictionary
+  local s = d and d[key]
+  return type(s) == 'string' and s or fallback
+end
+
+function E.stickers_label(show)
+  return loc('rmh_mp_ui_cocktail_stickers', 'Stickers:') .. ' '
+    .. (show and loc('rmh_mp_ui_cocktail_shown', 'Shown') or loc('rmh_mp_ui_cocktail_hidden', 'Hidden'))
+end
+
 local function forced_count(cfg)
   local n = 0
   for _, v in pairs(cfg.decks) do if v == 2 then n = n + 1 end end
@@ -109,9 +121,9 @@ function E.ui()
     text('k_cocktail_shiftclick', 'Shift-click to foil, foiled decks will always be selected'),
     rows[1], rows[2],
     { n = G.UIT.R, config = { align = 'cm', padding = 0.1 }, nodes = {
-      UIBox_button({ label = { 'Select all' }, button = 'mp_cocktail_select_all', minw = 2.6, minh = 0.6, scale = 0.4,
+      UIBox_button({ label = { loc('rmh_mp_ui_cocktail_select_all', 'Select all') }, button = 'mp_cocktail_select_all', minw = 2.6, minh = 0.6, scale = 0.4,
         colour = G.C.BLUE }),
-      UIBox_button({ label = { 'Stickers: ' .. (E.cfg.show and 'Shown' or 'Hidden') }, button = 'mp_cocktail_toggle_show',
+      UIBox_button({ label = { E.stickers_label(E.cfg.show) }, button = 'mp_cocktail_toggle_show',
         minw = 2.6, minh = 0.6, scale = 0.4, colour = G.C.ORANGE, id = 'mp_cocktail_show' }),
     } },
   }
@@ -141,7 +153,7 @@ if G and G.FUNCS then
   G.FUNCS.mp_cocktail_toggle_show = function(e)
     if not E.cfg then return end
     E.cfg.show = not E.cfg.show
-    local label = 'Stickers: ' .. (E.cfg.show and 'Shown' or 'Hidden')
+    local label = E.stickers_label(E.cfg.show)
     local node = e and e.children and e.children[1] and e.children[1].children and e.children[1].children[1]
     if node and node.config and node.config.text then node.config.text = label end
     if e and e.UIBox and e.UIBox.recalculate then e.UIBox:recalculate() end

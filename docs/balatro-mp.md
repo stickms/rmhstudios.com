@@ -416,7 +416,7 @@ Applying the bundle follows WS4's conventions (`lib/balatro/mp/rulesets/layers.t
 | `MP.net.send(t, d)`, `MP.net.on(t, fn)`, `MP.net.defer(fn, pred?, queue?)`, `MP.safe_point()`, `MP.net.add_frame_hook(fn)`, `MP.json_array(t)`              | Outbound is validated by `protocol.lua` and flushed once per frame. Use `MP.json_array` for arrays that may be empty                                 |
 | `MP.event(e)`                                                                                                                                               | A GameEvent, sent only in match and practice sessions                                                                                                |
 | `MP.peer.send(kind, d, to?)`, `MP.peer.on(kind, fn(from, d))`, `MP.sync.register(key, {receive})`, `MP.sync.send(obj, data, to?, kind?)`                    | A `receive` returning `{send=…}` replies                                                                                                             |
-| `MP.report.on(t, fn(o))`                                                                                                                                    | Observers for referee outcomes. UI streams use this, never `MP.net.on('outcome')`                                                                    |
+| `MP.report.on(t, fn(o))` (also `'presence'`: `fn({t, id, status, graceMsLeft})` per presence frame)                                                                                                                                   | Observers for referee outcomes. UI streams use this, never `MP.net.on('outcome')`                                                                    |
 | `MP.ctx.calculate(ctx, {consumeables, silent})`                                                                                                             | Custom contexts fanned out over jokers and consumables                                                                                               |
 | `MP.registry.define(def)`, `mount`, `unmount`, `is_mp`, `get`, `enabled`, `proto`, `leaked_keys`                                                            | Definition shape and dispatch signatures are documented at the top of `registry/init.lua` and `registry/dispatch.lua`                                |
 | `MP.rules.layer_hook(name, fn(ctx))`, `MP.rules.layer_post_hook(name, fn)`, `MP.rules.ban_source(fn)`                                                       | Run-start hooks for content layers                                                                                                                   |
@@ -517,7 +517,7 @@ the real hub handler (`world.test-support.ts`).
 | `match/match-host.ts` | WS4 `refStep` driver: `hs`, checkpoints coalesced to 250 ms, ticks at `wakeAt`, serialised re-entrant inputs |
 | `match/match-member.ts`, `routing.ts` | Every player's controller: `hs` dedupe, targets from outcomes, §3.b routing, WS4 timer model on the monotonic clock, 5 s result watchdog |
 | `migration.ts`, `rejoin/*` | Successor `hs` gap, takeover checkpoint (held or rebuilt); IndexedDB snapshots keyed by `runId` (newest 3) and the rejoin hint |
-| `chat.ts`, `identity.ts`, `history.ts`, `ratelimit.ts` | Chat (sender and receiver 5-burst 1/s, mute), glyph-bitmap sanitising, local history, token buckets |
+| `chat.ts`, `identity.ts`, `history.ts`, `ratelimit.ts` | Chat (sender and receiver 5-burst 1/s, mute; the site block list from GET /api/moderation/block is muted at start, never saved), glyph-bitmap sanitising, local history, token buckets |
 | `wire-codec.ts` | zod-free validation of the wire, the hub's S2C and the client-checked domain types, over descriptors generated into `bridge-schema.gen.ts` |
 
 **No zod in the MP chunk.** zod v4 classic cannot be tree-shaken. Nothing the chunk
@@ -562,7 +562,12 @@ as one ticket (also `queue:join` with `partyCode`, hash-checked) and refuses a p
 fill the mode alone (`full`). On a match the hub closes the party room quietly (seats released,
 no `closed` event), because its players are about to sit down in the match. A role switch waits
 `ROLE_SWITCH_MS` after leaving a hosted party, so the old role's delayed hub `leave` cannot land
-on the new room. The party is remembered (`lastParty`) for "Return to lobby XXXXXX".
+on the new room. The party is remembered (`lastParty`, with the host's hub token) for "Return
+to lobby XXXXXX": Lua remembers a party whose next lobby view was another room and offers the row
+on the PvP bar; its `ui_join {code}` goes through the runtime's `joinHook`, which (after leaving
+the match lobby) re-hosts the code for the old host (`LobbyHost.create(mode, 'party', {code,
+token})`, the hub's resume path; a code taken meanwhile falls back to a fresh one) and joins it
+for everyone else.
 
 **Invites (LOB-04).** `balatro:invite {code, toUserId}`: only into a room the inviter holds a
 seat in, only to a mutual follow (both directions), at most 20 per minute per account. The hub
@@ -575,5 +580,66 @@ error within 2.5 s" as sent.
 **Spectate list (MM-07).** `balatro:spectate:list` answers from the directory
 (`listSpectatableLobbies`).
 
+**PR-05.** `isQueued(runtime)` (attach.ts) is true while searching; the runtime's
+`practiceGuard` then refuses Practice with `lobby_error practice` (the search keeps running), and
+the Lua menus grey Practice while searching or matched.
+
 **PR-05.** `isQueued(runtime)` (attach.ts) is true while searching; Practice started while
 searching cancels the search.
+
+## 11. Replays and spectating (WS13)
+
+Lua: `rmh_mp/replay/{init,recorder,player}.lua` (loaded by `rmh_mp/init.lua` after every other
+session installer, so the recorder's wraps are the outermost), `rmh_mp/ui/{replay,spectate}.lua`
+(loaded on first use through `MP.ui.replay_open`, the menu's REPLAYS button). TS:
+`lib/balatro/mp/replay/{log,canonical-hash,store,player-feed,service,tap,attach}.ts` and
+`lib/balatro/mp/spectate.ts`, attached to the session like WS12's queue module (the
+`import.meta.glob` in `index.ts`); the lobby roles reach it only through `RoleCtx.replayTap()`.
+
+**Recording (REP-01/02, D-34).** While a match or practice session is mounted, every input the
+player makes through `G.FUNCS` (blind select/skip, play, discard, sort, cash out, reroll, shop,
+packs, consumables, sell) and every network input Lua applies (`net_in {k:'outcome'|'peer'|'tail', d}`)
+is logged as `{i, t, op, d}`; calls the game makes itself (The Hook's discard, buy-and-use,
+tag boosters, the PvP pillar's own re-press) are not. Card refs are `{id = sort_id - the run's
+base, i = position, k = fingerprint}`; `dg` digests (ante, round, money, hands, discards, deck
+size, jokers, consumables) ride on blind select, play, cash out and leave shop. Lua sends
+≤ 50 events / ~12 KB per frame; caps are 20 000 events or 1 MB per player per match (`end
+{result:'cap'}`). The runtime relays each batch to every peer through the host; the host
+also sends a spectator who joins mid-match every log so far, paced under the receiver's `log`
+limit (800 frames at once, then 15/s).
+
+**chk (REP-05).** When a player's log reaches `end`, that player's TS appends `chk {sha256, n}`
+(SHA-256 of the canonical JSON of the events before it: keys sorted, no whitespace; a
+synchronous implementation, because WebCrypto is async and absent outside secure contexts) and
+sends it to the peers. Opening a replay recomputes every log's `chk`; a mismatch shows "Replay
+may be inaccurate".
+
+**Storage.** IndexedDB `rmh-balatro-replays`, store `matches`, keyPath `id` (= runId): the header
+and every player's log this peer received (spectated matches too). The newest 30 by start time
+are kept; damaged rows are skipped and removed. Failures mean "no replays", never an error.
+
+**Playback (REP-03).** `ui_replay {op:'open'}` → `replay_view {playing:{id, pov, pos, len}}` +
+`replay_feed {pov, events}` chunks (≤ 1024 events, ≤ 48 KB). Only the POV's log is fed: its
+`net_in` events re-project the opponents. The driver re-mounts the recorded session (same kind,
+ruleset, roster, seed), launches the run, then re-dispatches inputs once the game is idle and
+re-injects network inputs in log order. Meanwhile live traffic (`outcome`, `peer`, `tail`, timer,
+presence) is blocked, session messages (`ev`, `peer`, `flags`, `log`, `match_left`, ...) are not
+sent, and the player's own button presses are ignored (a played-back run is read-only). Speeds
+1×/2×/4×/fast-forward (0); the seek index is the log's blind selects (ante/slot → event index);
+seeking back restarts and fast-forwards. A missing card, a digest mismatch or a hand scoring
+differently stops playback with "Replay stopped" and the event index and reason.
+
+**Spectating (REP-04, MM-07 view).** The SPECTATE tab asks the hub (`ui_spectate_list` →
+`balatro:spectate:list` → `spectate_view`); WATCH joins as role `spectator`. The spectator's TS
+assembles every player's log (`SpectateFeed`) and opens a live playback (`replay_view` id
+`live:<runId>`) of the first roster player, fast-forwarding while more than 25 events are
+waiting; `ui_replay {op:'pov'}` switches to another player's log from the start. Closing the
+live playback also leaves the lobby. When every player's log has ended, the spectator stores
+the match in My Replays.
+
+**Contract additions (WS13).** `ReplayOp` `net_in`; bridge `ui_spectate_list` (L2J) and
+`spectate_view {lobbies, error?}` (J2L).
+
+**Known limits.** Vanilla's Charm/Meteor/Ethereal tags pick their pack with `math.random`
+(unseeded), so a replay that opens one may diverge there (reported as a divergence). A run
+restored from a rejoin snapshot (`manifest {rejoin}`) cannot be played back past that point.

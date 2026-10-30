@@ -41,7 +41,7 @@ end
 
 function S.time_text(ms)
   local s = math.max(0, math.ceil((ms or 0) / 1000))
-  return TH.T('k_banpick_time_left', 'Time left:') .. ' ' .. tostring(s) .. 's'
+  return TH.T('rmh_mp_ui_banpick_time_left', 'Time left:') .. ' ' .. tostring(s) .. 's'
 end
 
 function S.option_label(kind, id)
@@ -115,7 +115,7 @@ function S.draft_nodes(v, model)
   local me = model.lobby and model.lobby.me
   local my_turn = v.phase == 'voting' and d.actor ~= nil and d.actor == me
   local mine = S.sel.stepId == v.stepId and S.sel or {}
-  local nodes = { W.row({ W.text(TH.T('k_banpick_title', 'DECK BAN'), { scale = 0.45 }) }) }
+  local nodes = { W.row({ W.text(TH.T('rmh_mp_ui_banpick_title', 'DECK BAN'), { scale = 0.45 }) }) }
   local rows, row = {}, {}
   for i, t in ipairs(d.tiles or {}) do
     local name = U.run_setup.deck_name(t.deck)
@@ -125,7 +125,7 @@ function S.draft_nodes(v, model)
     elseif t.state == 'picked' or (v.result and v.result == t.deck) then colour = TH.col('GREEN')
     elseif mine.option == t.deck then colour = TH.col('RED')
     else colour = TH.col('MP_PURPLE') end
-    local label = { name, t.state == 'banned' and TH.T('k_banpick_banned', 'BANNED') or stake }
+    local label = { name, t.state == 'banned' and TH.T('rmh_mp_ui_banpick_banned', 'BANNED') or stake }
     row[#row + 1] = W.button({ id = 'mp_draft_' .. i, label = label,
       button = (my_turn and t.state == 'open' and not mine.sent) and 'rmh_mp_draft_pick' or 'nil',
       ref_table = { key = t.deck }, colour = colour, minw = 2, minh = 0.8, scale = 0.28, col = true })
@@ -134,21 +134,21 @@ function S.draft_nodes(v, model)
   if #row > 0 then rows[#rows + 1] = W.row(row, { padding = 0.04 }) end
   nodes[#nodes + 1] = W.row({ W.col(rows, { id = 'mp_draft_tiles' }) })
   if v.phase == 'done' then
-    nodes[#nodes + 1] = W.row({ W.text(TH.T('k_banpick_selected', 'Selected:') .. ' ' .. U.run_setup.deck_name(v.result), { scale = 0.32 }) })
+    nodes[#nodes + 1] = W.row({ W.text(TH.T('rmh_mp_ui_banpick_selected', 'Selected:') .. ' ' .. U.run_setup.deck_name(v.result), { scale = 0.32 }) })
   elseif my_turn then
     local pick = d.action == 'pick'
     nodes[#nodes + 1] = W.row({
-      W.text(pick and TH.T('k_banpick_pick_turn', 'Your turn: pick your deck') or TH.T('k_banpick_your_turn', 'Your turn: ban a deck'),
+      W.text(pick and TH.T('rmh_mp_ui_banpick_pick_turn', 'Your turn: pick your deck') or TH.T('rmh_mp_ui_banpick_your_turn', 'Your turn: ban a deck'),
         { scale = 0.32, colour = TH.col('STATUS_WAIT') }),
       W.col({}, { minw = 0.2 }),
-      W.button({ id = 'mp_draft_confirm', label = pick and TH.T('k_banpick_confirm_pick', 'Confirm Pick') or TH.T('k_banpick_confirm', 'Confirm Ban'),
+      W.button({ id = 'mp_draft_confirm', label = pick and TH.T('rmh_mp_ui_banpick_confirm_pick', 'Confirm Pick') or TH.T('rmh_mp_ui_banpick_confirm', 'Confirm Ban'),
         button = 'rmh_mp_draft_confirm', colour = TH.col(pick and 'GREEN' or 'RED'), minw = 2, minh = 0.5, scale = 0.3, col = true,
         disabled = mine.option == nil or mine.sent == true }),
     })
-    nodes[#nodes + 1] = W.row({ W.text(TH.T('k_banpick_bans_left', 'Bans left:') .. ' ' .. tostring(d.remaining), { scale = 0.28 }),
+    nodes[#nodes + 1] = W.row({ W.text(TH.T('rmh_mp_ui_banpick_bans_left', 'Bans left:') .. ' ' .. tostring(d.remaining), { scale = 0.28 }),
       W.col({}, { minw = 0.3 }), W.live_text(S.clock, 'text', { scale = 0.28, id = 'mp_setup_clock' }) })
   else
-    nodes[#nodes + 1] = W.row({ W.text(TH.T('k_banpick_their_turn', 'Waiting for opponent...'), { scale = 0.32 }),
+    nodes[#nodes + 1] = W.row({ W.text(TH.T('rmh_mp_ui_banpick_their_turn', 'Waiting for opponent...'), { scale = 0.32 }),
       W.col({}, { minw = 0.3 }), W.live_text(S.clock, 'text', { scale = 0.28, id = 'mp_setup_clock' }) })
   end
   return nodes
@@ -159,7 +159,7 @@ function S.panel(model)
   local v = model.setup
   local nodes
   if not v then
-    nodes = { W.row({ W.text(TH.T('k_waiting_for_players', 'Waiting for players...'), { scale = 0.45, id = 'mp_setup_waiting' }) }) }
+    nodes = { W.row({ W.text(TH.T('rmh_mp_ui_waiting_for_players', 'Waiting for players...'), { scale = 0.45, id = 'mp_setup_waiting' }) }) }
   elseif v.kind == 'draft' then
     nodes = S.draft_nodes(v, model)
   elseif v.phase == 'done' and not v.result then

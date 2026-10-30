@@ -41,6 +41,17 @@ end
 
 local ability_card = nil -- the card whose ability table is being generated (loc_vars)
 
+-- A fresh table: the def's vars (positional and named) with vanilla's named fields over them.
+-- Never mutates either input (a def may return a cached table).
+function D.merge_vars(vars, named)
+  local out = {}
+  for k, v in pairs(vars) do out[k] = v end
+  for k, v in pairs(named) do
+    if type(k) ~= 'number' then out[k] = v end
+  end
+  return out
+end
+
 local BLIND_METHODS = {
   'set_blind', 'defeat', 'disable', 'press_play', 'modify_hand', 'debuff_hand', 'drawn_to_hand',
   'stay_flipped', 'debuff_card', 'get_loc_debuff_text',
@@ -157,14 +168,20 @@ function D.install()
     end, o('set_ability'))
   end
 
+  -- Vanilla passes specific_vars = nil for a card it has no loc_vars branch for, but a perishable
+  -- or stickered card arrives with a table of NAMED fields only ({perish_tally}, {sticker}). Both
+  -- mean "no positional vars": the def's vars fill [1..n] and vanilla's named fields are kept on
+  -- top (they drive the badge tooltips), so an MP joker never renders "#1#".
   wrap(_G, 'generate_card_ui', function(orig, _c, full_UI_table, specific_vars, card_type, badges, ...)
-    if specific_vars == nil and ability_card and _c and ability_card.config
-      and ability_card.config.center == _c then
+    if (specific_vars == nil or (type(specific_vars) == 'table' and specific_vars[1] == nil))
+      and ability_card and _c and ability_card.config and ability_card.config.center == _c then
       local def = def_for_center(_c)
       if def and def.loc_vars then
         local ok, res = pcall(def.loc_vars, ability_card)
         if ok and type(res) == 'table' then
-          specific_vars = res.vars or res
+          local vars = res.vars or res
+          if specific_vars ~= nil then vars = D.merge_vars(vars, specific_vars) end
+          specific_vars = vars
         elseif not ok then
           MP.log('error', 'loc_vars %s failed: %s', tostring(_c.key), tostring(res))
         end

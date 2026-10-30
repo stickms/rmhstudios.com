@@ -96,7 +96,7 @@ function ST.on_history(prev, cur)
     if prev ~= nil then
       local names = {}
       for i, k in ipairs(fresh) do names[i] = ST.joker_name(k) end
-      W.toast('k_avatar_unlocked_title', nil, { default = TH.T('k_avatar_unlocked_title', 'Avatar Unlocked!') .. ' '
+      W.toast('rmh_mp_ui_avatar_unlocked_title', nil, { default = TH.T('rmh_mp_ui_avatar_unlocked_title', 'Avatar Unlocked!') .. ' '
         .. table.concat(names, ', ') })
     end
   end
@@ -138,7 +138,7 @@ function ST.avatar_grid(history)
         card.click = function() if a.unlocked then F.rmh_mp_avatar_pick({ config = { ref_table = { key = a.key } } }) end end
         card.hover = function(self)
           self.config.h_popup = W.player_tooltip({ name = a.unlocked and ST.joker_name(a.key) or '?', role = 'player' },
-            { build = a.goal or TH.T('k_avatar_goal_default', 'Available to everyone') })
+            { build = a.goal or TH.T('rmh_mp_ui_avatar_goal_default', 'Available to everyone') })
           if self.align_h_popup then self.config.h_popup_config = self:align_h_popup() end
           if Node and Node.hover then Node.hover(self) end
         end
@@ -169,8 +169,8 @@ function ST.contents()
   ST.ref = { showMpContent = U.setting('showMpContent') == true, chat = U.setting('chat') ~= false }
   local chip = W.blind_chip(0.8, U.setting('blindCol'))
   return {
-    W.row({ W.text(TH.T('k_multiplayer', 'Multiplayer'), { scale = 0.6 }) }, { padding = 0.05 }),
-    W.row({ W.text(TH.T('k_choose_avatar', 'Choose Avatar'), { scale = 0.4 }) }),
+    W.row({ W.text(TH.T('rmh_mp_ui_multiplayer', 'Multiplayer'), { scale = 0.6 }) }, { padding = 0.05 }),
+    W.row({ W.text(TH.T('rmh_mp_ui_choose_avatar', 'Choose Avatar'), { scale = 0.4 }) }),
     W.row({ ST.avatar_grid(U.model.history) }, { padding = 0.05 }),
     W.row({
       W.col({ W.cycle({ id = 'mp_set_layout', label = TH.T('k_nemesis_layout', 'Nemesis layout'), options = layouts,
@@ -189,7 +189,7 @@ function ST.contents()
     W.row({
       W.col({ W.toggle({ label = TH.T('k_show_mp_content_anyway', 'Show Multiplayer content anyway*'), ref_table = ST.ref,
         ref_value = 'showMpContent', callback = function(v) ST.set('showMpContent', v == true) end, w = 4, id = 'mp_set_show_mp' }) }),
-      W.col({ W.toggle({ label = TH.T('k_chat_section_title', 'Chat'), ref_table = ST.ref, ref_value = 'chat',
+      W.col({ W.toggle({ label = TH.T('rmh_mp_ui_chat_section_title', 'Chat'), ref_table = ST.ref, ref_value = 'chat',
         callback = function(v) ST.set('chat', v == true) end, w = 1.5, id = 'mp_set_chat' }) }),
     }),
   }

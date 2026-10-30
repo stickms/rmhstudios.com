@@ -472,6 +472,7 @@ describe('autoReady and party checks', () => {
     expect(partyQueueBlock({ ...s, players: s.players.map((p) => (p.id === 'm' ? { ...p, away: true } : p)) }, 'h')).toBe('disconnected');
     expect(partyQueueBlock({ ...s, kind: 'private' }, 'h')).toBe('not-party');
     expect(partyQueueBlock(null, 'h')).toBe('not-party');
-    expect(rememberParty(s, 5)).toEqual({ code: 'ABCDEF', hostId: 'h', members: ['h', 'm'], queueMode: 'pvp_royale', at: 5 });
+    expect(rememberParty(s, 5)).toEqual({ code: 'ABCDEF', hostId: 'h', members: ['h', 'm'], queueMode: 'pvp_royale', at: 5, token: null });
+    expect(rememberParty(s, 5, 't'.repeat(24)).token).toBe('t'.repeat(24));
   });
 });

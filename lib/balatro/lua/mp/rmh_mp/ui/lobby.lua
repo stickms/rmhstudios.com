@@ -105,7 +105,7 @@ function L.roster_def(model)
   end
   if #row > 0 then rows[#rows + 1] = W.row(row, { padding = 0.05 }) end
   if #players == 0 then
-    rows[#rows + 1] = W.row({ W.text(TH.T('k_waiting_for_players', 'Waiting for players...'), { scale = 0.45 }) },
+    rows[#rows + 1] = W.row({ W.text(TH.T('rmh_mp_ui_waiting_for_players', 'Waiting for players...'), { scale = 0.45 }) },
       { padding = 0.3, id = 'mp_roster_empty' })
   end
   local footer = {}
@@ -136,12 +136,12 @@ end
 function L.code_panel(view)
   local copied = L.ui.copied_at and now() - L.ui.copied_at < 2
   return W.col({
-    W.col({ W.text(TH.T('k_lobby_code_cap', 'LOBBY CODE'), { scale = 0.3, vert = true }) }, { padding = 0.04 }),
+    W.col({ W.text(TH.T('rmh_mp_ui_lobby_code_cap', 'LOBBY CODE'), { scale = 0.3, vert = true }) }, { padding = 0.04 }),
     W.col({
-      W.button({ id = 'mp_view_code', label = L.ui.show_code and view.state.code or TH.T('b_view_code_cap', 'VIEW CODE'),
+      W.button({ id = 'mp_view_code', label = L.ui.show_code and view.state.code or TH.T('rmh_mp_ui_view_code_cap', 'VIEW CODE'),
         button = 'rmh_mp_view_code', colour = TH.col('GREEN'), minw = 2.4, minh = 0.6, scale = 0.4,
         text_colour = L.ui.show_code and TH.col('ETERNAL') or nil }),
-      W.button({ id = 'mp_copy_code', label = copied and TH.T('k_copied_cap', 'COPIED!') or TH.T('b_copy_code_cap', 'COPY CODE'),
+      W.button({ id = 'mp_copy_code', label = copied and TH.T('rmh_mp_ui_copied_cap', 'COPIED!') or TH.T('rmh_mp_ui_copy_code_cap', 'COPY CODE'),
         button = 'rmh_mp_copy_code', colour = TH.col('MP_PURPLE'), minw = 2.4, minh = 0.6, scale = 0.4 }),
     }, { padding = 0.04 }),
   }, { r = 0.1, padding = 0.05, colour = TH.col('BLACK') })
@@ -159,7 +159,7 @@ function L.deck_box(view)
 end
 
 local function leave_button()
-  return W.button({ id = 'mp_leave_lobby', label = TH.L('b_leave_lobby_cap', { 'LEAVE', 'LOBBY' }), button = 'rmh_mp_leave',
+  return W.button({ id = 'mp_leave_lobby', label = TH.L('rmh_mp_ui_leave_lobby_cap', { 'LEAVE', 'LOBBY' }), button = 'rmh_mp_leave',
     colour = TH.col('RED'), minw = 2.4, minh = 1.35, scale = 0.45, col = true })
 end
 
@@ -169,20 +169,20 @@ local function invite_button()
 end
 
 local function options_button(view)
-  return W.button({ id = 'mp_lobby_options', label = TH.L('b_lobby_options_cap', { 'LOBBY', 'OPTIONS' }),
+  return W.button({ id = 'mp_lobby_options', label = TH.L('rmh_mp_ui_lobby_options_cap', { 'LOBBY', 'OPTIONS' }),
     button = 'rmh_mp_lobby_options', colour = TH.col('ORANGE'), minw = 2.4, minh = 1.35, scale = 0.45, col = true })
 end
 
 local function ready_button(view)
   local me = L.me(view)
   local ready = me and me.ready
-  return W.button({ id = 'mp_ready', label = ready and TH.T('b_unready_cap', 'UNREADY') or TH.T('b_ready_cap', 'READY'),
+  return W.button({ id = 'mp_ready', label = ready and TH.T('rmh_mp_ui_unready_cap', 'UNREADY') or TH.T('rmh_mp_ui_ready_cap', 'READY'),
     button = 'rmh_mp_ready', colour = ready and TH.col('ORANGE') or TH.col('GREEN'), minw = 3.2, minh = 1.35, scale = 0.6,
     col = true, ref_table = { ready = not ready } })
 end
 
 function L.start_label(view)
-  if view.canStart then return TH.L('b_start_game_cap', { 'START', 'GAME' }) end
+  if view.canStart then return TH.L('rmh_mp_ui_start_game_cap', { 'START', 'GAME' }) end
   local players = L.players(view.state)
   if #players < 2 then return TH.L('b_wait_for_players', { 'WAITING FOR', 'PLAYERS' }) end
   return TH.L('b_wait_for_guest_ready', { 'WAITING FOR', 'GUEST TO READY UP' })
@@ -199,24 +199,24 @@ local function party_queue_nodes(view, model)
   if searching then
     return {
       W.col({
-        W.row({ W.text(TH.T('k_group_status_queued', 'Searching as a group...'), { scale = 0.4, colour = TH.col('STATUS_WAIT'),
+        W.row({ W.text(TH.T('rmh_mp_ui_group_status_queued', 'Searching as a group...'), { scale = 0.4, colour = TH.col('STATUS_WAIT'),
           id = 'mp_party_status' }) }),
         W.row({ W.text(TH.queue_mode_name(q.queueMode) .. (q.waiting and ('  (' .. q.waiting .. ')') or ''), { scale = 0.3 }) }),
-        view.isHost and W.row({ W.button({ id = 'mp_party_cancel', label = TH.T('b_group_cancel', 'Cancel'),
+        view.isHost and W.row({ W.button({ id = 'mp_party_cancel', label = TH.T('rmh_mp_ui_group_cancel', 'Cancel'),
           button = 'rmh_mp_queue_cancel', colour = TH.col('RED'), minw = 2, minh = 0.5, scale = 0.35 }) }) or nil,
       }, { r = 0.1, padding = 0.08, colour = TH.col('BLACK'), minw = 3.4 }),
     }
   end
   if not view.isHost then
-    return { W.col({ W.row({ W.text(TH.T('k_group_member_hint', 'The host can queue this lobby for a casual match.'),
+    return { W.col({ W.row({ W.text(TH.T('rmh_mp_ui_group_member_hint', 'The host can queue this lobby for a casual match.'),
       { scale = 0.3 }) }) }, { r = 0.1, padding = 0.08, colour = TH.col('BLACK'), maxw = 3.6 }) }
   end
   local names = {}
   for i, m in ipairs(TH.QUEUE_MODES) do names[i] = TH.T(m.name, m.def) end
   return {
-    W.button({ id = 'mp_party_find', label = { TH.T('b_find_game_cap', 'FIND GAME') }, button = 'rmh_mp_party_queue',
+    W.button({ id = 'mp_party_find', label = { TH.T('rmh_mp_ui_find_game_cap', 'FIND GAME') }, button = 'rmh_mp_party_queue',
       colour = TH.col('BLUE'), minw = 3.2, minh = 1.35, scale = 0.6, col = true, disabled = not view.canStart }),
-    W.col({ W.cycle({ id = 'mp_party_mode', label = TH.T('k_group_mode', 'Casual mode'), options = names,
+    W.col({ W.cycle({ id = 'mp_party_mode', label = TH.T('rmh_mp_ui_group_mode', 'Casual mode'), options = names,
       current = L.ui.party_mode, callback = 'rmh_mp_party_mode', w = 2.6, scale = 0.7, no_pips = true }) }),
   }
 end
@@ -227,7 +227,7 @@ function L.bar_def(model)
   local st = view.state
   local nodes
   if st.kind == 'casual' then
-    local status = U.setup and U.setup.panel(model) or W.text(TH.T('k_waiting_for_players', 'Waiting for players...'))
+    local status = U.setup and U.setup.panel(model) or W.text(TH.T('rmh_mp_ui_waiting_for_players', 'Waiting for players...'))
     nodes = { status, leave_button() }
   elseif st.kind == 'party' then
     nodes = {}
@@ -247,7 +247,7 @@ function L.bar_def(model)
   end
   local extra = {}
   if view.isHost and not view.canStart and view.startBlockReason and st.kind == 'private' then
-    extra[1] = W.row({ W.text(TH.T(view.startBlockReason, view.startBlockReason), { scale = 0.3, colour = TH.col('STATUS_WAIT'),
+    extra[1] = W.row({ W.text(U.overlays.error_text('start-' .. view.startBlockReason), { scale = 0.3, colour = TH.col('STATUS_WAIT'),
       id = 'mp_start_block' }) })
   end
   extra[#extra + 1] = W.panel(nodes, { padding = 0.15, id = 'mp_lobby_bar' })
@@ -264,25 +264,25 @@ function L.player_overlay_contents(model, id)
   if not p then return nil end
   local muted = model.muted[id] == true
   local actions = {
-    W.row({ W.button({ id = 'mp_player_mute', label = muted and TH.T('k_unmute_player', 'Unmute Player') or TH.T('k_mute_player', 'Mute Player'),
+    W.row({ W.button({ id = 'mp_player_mute', label = muted and TH.T('rmh_mp_ui_unmute_player', 'Unmute Player') or TH.T('rmh_mp_ui_mute_player', 'Mute Player'),
       button = 'rmh_mp_player_mute', ref_table = { id = id, on = not muted }, colour = TH.col('MP_PURPLE'), minw = 4, minh = 0.7 }) },
       { padding = 0.05 }),
   }
   if view.isHost and id ~= view.me then
-    actions[#actions + 1] = W.row({ W.button({ id = 'mp_player_kick', label = TH.T('k_kick_player', 'Kick Player'),
+    actions[#actions + 1] = W.row({ W.button({ id = 'mp_player_kick', label = TH.T('rmh_mp_ui_kick_player', 'Kick Player'),
       button = 'rmh_mp_player_kick', ref_table = { id = id }, colour = TH.col('RED'), minw = 4, minh = 0.7 }) }, { padding = 0.05 })
   end
   local info = {
     W.row({ W.text(TH.T('rmh_mp_ui_connection', 'Connection') .. ': ' .. L.conn_label(p), { scale = 0.35 }) }),
     L.team_label(p.team) and W.row({ W.text(L.team_label(p.team), { scale = 0.35 }) }) or nil,
-    W.row({ W.text(p.connected and (p.away and TH.T('rmh_mp_conn_away', 'Away') or TH.T('k_status_connected', 'Connected'))
+    W.row({ W.text(p.connected and (p.away and TH.T('rmh_mp_conn_away', 'Away') or TH.T('rmh_mp_ui_status_connected', 'Connected'))
       or TH.T('rmh_mp_conn_lost', 'Connection lost'), { scale = 0.35 }) }),
     W.row({ W.text(TH.T('rmh_mp_ui_build', 'Build') .. ': ' .. tostring(MP.version), { scale = 0.3, colour = TH.ui_col('TEXT_INACTIVE') }) }),
   }
   return {
     W.row({ W.text(p.name, { scale = 0.6 }) }, { padding = 0.05 }),
     create_tabs({ colour = TH.col('MP_PURPLE'), tabs = {
-      { label = TH.T('k_player_overlay_tab_actions', 'Actions'), chosen = true, tab_definition_function = function()
+      { label = TH.T('rmh_mp_ui_player_overlay_tab_actions', 'Actions'), chosen = true, tab_definition_function = function()
         return { n = G.UIT.ROOT, config = { align = 'cm', colour = TH.col('CLEAR'), padding = 0.1 }, nodes = actions } end },
       { label = TH.T('k_info', 'Info'), tab_definition_function = function()
         return { n = G.UIT.ROOT, config = { align = 'cm', colour = TH.col('CLEAR'), padding = 0.1 }, nodes = info } end },

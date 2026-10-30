@@ -117,7 +117,7 @@ describe('casual matchmaking end to end', () => {
     expect(ps[2].lua.last('match_start')!.roster).toHaveLength(3);
   });
 
-  it('CANCEL ends the search; Practice while queued ends it too (PR-05)', async () => {
+  it('CANCEL ends the search; Practice is refused while queued (PR-05)', async () => {
     const a = qpeer('alice');
     await w.step(20);
     a.lua.emit('ui_queue', { op: 'join', queueMode: 'pvp_royale' });
@@ -130,8 +130,14 @@ describe('casual matchmaking end to end', () => {
     expect(isQueued(a.runtime)).toBe(true);
     a.lua.emit('ui_practice', { ruleset: 'ruleset_mp_balanced', deck: 'b_red', stake: 1 });
     await w.step(20);
-    expect(isQueued(a.runtime)).toBe(false);
-    expect(view(a)?.state).toBe('cancelled');
+    expect(a.lua.errors()).toContain('practice');
+    expect(a.lua.last('practice_start')).toBeUndefined();
+    expect(isQueued(a.runtime)).toBe(true);
+    a.lua.emit('ui_queue', { op: 'leave', queueMode: 'pvp_royale' });
+    await w.step(20);
+    a.lua.emit('ui_practice', { ruleset: 'ruleset_mp_balanced', deck: 'b_red', stake: 1 });
+    await w.step(20);
+    expect(a.lua.last('practice_start')).toBeDefined();
   });
 
   it('a player already in a lobby, or offline, is refused', async () => {
@@ -178,6 +184,36 @@ describe('casual matchmaking end to end', () => {
     // The party host hosts the match lobby (it waited the earliest).
     expect(h.runtime.role?.kind).toBe('host');
     expect(h.runtime.role?.code).not.toBe(partyCode);
+    expect(lastParty(h.runtime)?.token).toBeTruthy();
+    expect(lastParty(m.runtime)?.token).toBeNull();
+    // "Return to lobby XXXXXX" (MM-06): the old host re-hosts the same code; the member joins it.
+    h.lua.emit('ui_join', { code: partyCode });
+    await w.until(() => h.runtime.role?.code === partyCode && h.lua.last('lobby_view')?.state.kind === 'party', 10_000, 'party re-hosted');
+    expect(h.runtime.role?.kind).toBe('host');
+    m.lua.emit('ui_join', { code: partyCode });
+    await w.until(() => h.lua.last('lobby_view')?.state.players.some((p) => p.id === 'bob') === true, 10_000, 'member back');
+    expect(m.runtime.role?.kind).toBe('member');
+  });
+
+  it('a party code taken meanwhile: the old host hosts under a fresh code', async () => {
+    const h = qpeer('alice');
+    await w.step(20);
+    h.lua.emit('ui_create_lobby', { queueMode: 'pvp_royale', kind: 'party' });
+    await w.until(() => !!code(h), 5_000, 'party hosted');
+    const host = h.runtime.role as unknown as { hostToken: string | null; code: string };
+    const reclaim = { code: 'ZZZZZZ', token: host.hostToken as string };
+    // Someone else holds ZZZZZZ? Reclaiming a live room of another host is refused by the hub.
+    const other = qpeer('dave');
+    await w.step(20);
+    other.lua.emit('ui_create_lobby', { queueMode: 'pvp_royale', kind: 'party' });
+    await w.until(() => !!code(other), 5_000, 'other hosted');
+    reclaim.code = code(other)!;
+    h.lua.emit('ui_leave', {});
+    await w.step(800);
+    h.runtime.createLobby('pvp_royale', 'party', reclaim);
+    await w.until(() => !!h.runtime.role?.code && h.runtime.role.code !== reclaim.code && !!h.lua.last('lobby_view'), 10_000, 'fresh code');
+    expect(h.runtime.role?.kind).toBe('host');
+    expect(h.lua.last('lobby_view')?.state.code).toBe(h.runtime.role?.code);
   });
 
   it('the elected host vanishing sends the other player back into the queue', async () => {

@@ -2,7 +2,7 @@
 --
 -- Its own page (the vanilla collection never lists MP keys, PLAN §0.6). Tabs: Jokers,
 -- Consumables (Tarot/Planet/Spectral/Trap), Decks, Blinds, Tags, Vouchers, Stakes, Challenges,
--- Sandbox (the sandbox and Extra Credit cards plus 14 error decoys in a fixed shuffled order).
+-- Sandbox (Content B's overview, MP.sandbox.overview_keys(): Extra Credit, 14 error decoys, Hanging Chad, idols).
 -- Lists come from the registry (MP.registry.defs()) — nothing is mounted: card kinds are drawn
 -- as Cards built straight from their prototypes in a 'title' area (no pools, no RNG touched),
 -- the rest as name rows. A tooltip that fails for an unmounted prototype falls back to its name.
@@ -28,7 +28,7 @@ CO.TABS = {
   { id = 'blinds', label = 'b_blinds', def = 'Blinds', kinds = { Blind = true }, rows = true },
   { id = 'tags', label = 'b_tags', def = 'Tags', kinds = { Tag = true }, rows = true },
   { id = 'vouchers', label = 'b_vouchers', def = 'Vouchers', kinds = { Voucher = true } },
-  { id = 'stakes', label = 'b_stakes', def = 'Stakes', stakes = true, rows = true },
+  { id = 'stakes', label = 'rmh_mp_ui_stakes', def = 'Stakes', stakes = true, rows = true },
   { id = 'challenges', label = 'b_challenges', def = 'Challenges', kinds = { Challenge = true }, rows = true },
   { id = 'sandbox', label = 'k_sandbox', def = 'Sandbox', sandbox = true },
 }
@@ -59,6 +59,23 @@ function CO.entries(tab)
       out[#out + 1] = { key = s.key, kind = 'Stake', name = s.name }
     end
     return out
+  end
+  -- D-26: Content B's overview order (Extra Credit jokers, decoys 1-14 and Hanging Chad shuffled
+  -- once per boot, both idols in the middle), decoys included although they are no_collection.
+  -- Keys without a definition are skipped.
+  local S = MP.sandbox
+  if tab.sandbox and S and S.overview_keys and MP.registry and MP.registry.get then
+    local ok, keys = pcall(S.overview_keys)
+    if ok and type(keys) == 'table' then
+      for _, k in ipairs(keys) do
+        local d = MP.registry.get(k)
+        if d then out[#out + 1] = { key = d.key, kind = d.kind, def = d } end
+      end
+      for _, e in ipairs(out) do e.name = e.name or CO.name(e) end
+      return out
+    end
+    MP.log('warn', 'ui: sandbox overview failed: %s', tostring(keys))
+    out = {}
   end
   local defs = (MP.registry and MP.registry.defs and MP.registry.defs()) or {}
   local errors = {}

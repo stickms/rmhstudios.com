@@ -301,14 +301,14 @@ TH.AVATAR_STARTERS = {
 
 -- goal = { field (history key), n }
 TH.AVATAR_GOALS = {
-  { key = 'j_golden', field = 'wins', n = 1, text = 'k_avatar_goal_counter_wins_one', def = 'Win a game' },
-  { key = 'j_cavendish', field = 'wins', n = 10, text = 'k_avatar_goal_counter_wins', def = 'Win #1# games' },
-  { key = 'j_stuntman', field = 'wins', n = 50, text = 'k_avatar_goal_counter_wins', def = 'Win #1# games' },
-  { key = 'j_baron', field = 'wins', n = 100, text = 'k_avatar_goal_counter_wins', def = 'Win #1# games' },
+  { key = 'j_golden', field = 'wins', n = 1, text = 'rmh_mp_ui_avatar_goal_counter_wins_one', def = 'Win a game' },
+  { key = 'j_cavendish', field = 'wins', n = 10, text = 'rmh_mp_ui_avatar_goal_counter_wins', def = 'Win #1# games' },
+  { key = 'j_stuntman', field = 'wins', n = 50, text = 'rmh_mp_ui_avatar_goal_counter_wins', def = 'Win #1# games' },
+  { key = 'j_baron', field = 'wins', n = 100, text = 'rmh_mp_ui_avatar_goal_counter_wins', def = 'Win #1# games' },
   { key = 'j_duo', field = 'pvpGames', n = 10, text = 'k_avatar_goal_counter_pvpGames', def = 'Play #1# PvP games' },
   { key = 'j_trio', field = 'pvpGames', n = 25, text = 'k_avatar_goal_counter_pvpGames', def = 'Play #1# PvP games' },
   { key = 'j_family', field = 'pvpGames', n = 50, text = 'k_avatar_goal_counter_pvpGames', def = 'Play #1# PvP games' },
-  { key = 'j_hack', field = 'games', n = 5, text = 'k_avatar_goal_counter_games', def = 'Play #1# games' },
+  { key = 'j_hack', field = 'games', n = 5, text = 'rmh_mp_ui_avatar_goal_counter_games', def = 'Play #1# games' },
   { key = 'j_hologram', field = 'streak', n = 3, text = 'k_avatar_goal_counter_bestWinStreak', def = 'Win #1# games in a row' },
   { key = 'j_blueprint', field = 'streak', n = 5, text = 'k_avatar_goal_counter_bestWinStreak', def = 'Win #1# games in a row' },
   { key = 'j_campfire', field = 'days', n = 7, text = 'k_avatar_goal_counter_daysPlayed', def = 'Play on #1# different days' },
@@ -326,7 +326,7 @@ function TH.avatar_goal_text(key)
   for _, g in ipairs(TH.AVATAR_GOALS) do
     if g.key == key then return TH.fill(TH.T(g.text, g.def), { g.n }) end
   end
-  return TH.T('k_avatar_goal_default', 'Available to everyone')
+  return TH.T('rmh_mp_ui_avatar_goal_default', 'Available to everyone')
 end
 
 return TH

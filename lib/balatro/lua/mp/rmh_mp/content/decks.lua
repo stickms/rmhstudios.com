@@ -79,9 +79,8 @@ R.define({
 })
 
 R.define({
+  -- Text: descriptions.Back.b_mp_echodeck in data/balatro-mp/extra-strings.en-us.json.
   key = 'b_mp_echodeck', kind = 'Back', atlas = 'mp_misc', pos = { x = 0, y = 0 }, config = {}, balanced = true,
-  loc = { name = 'Echo Deck', text = { '{C:attention}Retrigger{} all playing cards', '{C:red}X1.2{} base Blind size',
-    'Increases by {C:red}X0.2{} each Ante' } },
   apply = function()
     G.GAME.modifiers.mp_echo = true
     G.GAME.starting_params.ante_scaling = D.ECHO_SCALING

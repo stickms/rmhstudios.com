@@ -28,11 +28,14 @@ import { resolveRuleset } from '../rulesets/resolve';
 import type { PeerKind, WireData } from '../wire';
 import type { GameEvent, Id, LobbyState, PlayerResult, RefCheckpoint, StartedMatch } from '../types';
 import type { HubStatus } from '../transport/types';
+import type { ReplayTap } from '../replay/tap';
 import { DEFAULT_SETTINGS, type MpSettings, type Role, type RoleCtx, type RuntimeDeps } from './context';
 import { LobbyHost } from './lobby-host';
 import { LobbyMember } from './lobby-member';
 
 export const SETTINGS_KEY = 'rmh-balatro-mp-settings';
+/** At most this many site blocks are seeded as chat mutes. */
+export const MAX_SEEDED_MUTES = 512;
 
 export type StartIntent = 'menu' | 'join' | 'rejoin' | 'invite';
 
@@ -61,7 +64,16 @@ export class MpRuntime {
   avatarUrl: string | null = null;
   role: Role | null = null;
   client: MatchClient | null = null;
+  /** WS13 (replay/attach.ts): relayed logs, spectator catch-up and the watched match. */
+  replayTap: ReplayTap | null = null;
   practice: Practice | null = null;
+  /**
+   * Extension hooks (queue/attach.ts). `practiceGuard` returns a lobby_error
+   * code that refuses Practice (PR-05: never while searching); `joinHook`
+   * may take over a `ui_join` (true = handled; MM-06 party reclaim).
+   */
+  practiceGuard: (() => string | null) | null = null;
+  joinHook: ((code: string) => boolean) | null = null;
   settings: MpSettings;
   readonly chat: Chat;
   readonly lang: string;
@@ -75,6 +87,8 @@ export class MpRuntime {
   private localDeck: WireData<'deck_res'> | null = null;
   private localStats: WireData<'stats_res'> | null = null;
   private readonly offs: (() => void)[] = [];
+  /** Ids muted because the site block list has them (not saved with the player's own mutes). */
+  private readonly siteBlocked = new Set<string>();
   private stopped = false;
   private ready: Promise<void>;
 
@@ -107,11 +121,29 @@ export class MpRuntime {
       this.avatarUrl = acct.avatarUrl;
     }
     this.pushNetStatus();
+    if (acct) this.seedBlockedMutes();
     this.deps.bridge.send('history', readHistory(this.deps.kv));
     this.loadGlyphs();
     const { intent, invite } = this.opts;
     if (invite) this.joinCode(invite, 'player');
     else if (intent === 'rejoin' || rejoinHint(this.deps.kv)) this.deps.hub.emit('balatro:seat:query', {});
+  }
+
+  /** Site blocks become chat mutes for this session (never written to the saved mute list). */
+  private seedBlockedMutes(): void {
+    const load = this.deps.blockedIds;
+    if (!load) return;
+    load().then(
+      (ids) => {
+        if (this.stopped || !Array.isArray(ids)) return;
+        for (const id of ids.slice(0, MAX_SEEDED_MUTES)) {
+          if (typeof id !== 'string' || id.length === 0 || id.length > 64) continue;
+          this.siteBlocked.add(id);
+          this.chat.mute(id, true);
+        }
+      },
+      (err) => this.deps.log(`[mp] block list unavailable: ${String(err)}`),
+    );
   }
 
   /* ─── Settings, glyphs, status ─── */
@@ -201,6 +233,7 @@ export class MpRuntime {
       roleEnded: (why) => this.roleEnded(why),
       promoted: (p, lobby) => this.promoted(p, lobby),
       demoted: (code) => this.demoted(code),
+      replayTap: () => this.replayTap,
     };
   }
 
@@ -216,12 +249,16 @@ export class MpRuntime {
     return false;
   }
 
-  createLobby(queueMode: LobbyState['queueMode'], kind: LobbyState['kind']): LobbyHost | null {
+  createLobby(
+    queueMode: LobbyState['queueMode'],
+    kind: LobbyState['kind'],
+    reclaim?: { code: string; token: string },
+  ): LobbyHost | null {
     if (!this.requireAccount()) return null;
     this.dropRole();
     const host = new LobbyHost(this.ctx());
     this.role = host;
-    host.create(queueMode, kind);
+    host.create(queueMode, kind, reclaim);
     return host;
   }
 
@@ -367,6 +404,11 @@ export class MpRuntime {
       this.error('practice-busy');
       return;
     }
+    const block = this.practiceGuard?.() ?? null;
+    if (block) {
+      this.error(block);
+      return;
+    }
     let resolved;
     let options;
     try {
@@ -435,7 +477,13 @@ export class MpRuntime {
     const whenReady = <T>(fn: (d: T) => void) => (d: T) => void this.ready.then(() => !this.stopped && fn(d));
     on.push(
       b.on('ui_create_lobby', whenReady((d) => void this.createLobby(d.queueMode, d.kind))),
-      b.on('ui_join', whenReady((d) => void this.joinCode(d.code, 'player'))),
+      b.on(
+        'ui_join',
+        whenReady((d) => {
+          if (this.joinHook?.(d.code)) return;
+          void this.joinCode(d.code, 'player');
+        }),
+      ),
       b.on('ui_spectate', whenReady((d) => void this.joinCode(d.code, 'spectator'))),
       b.on('ui_leave', () => {
         this.dropRole();
@@ -452,7 +500,7 @@ export class MpRuntime {
       b.on('ui_mute', (d) => {
         const on = d.on ?? !this.chat.muted.has(d.userId);
         this.chat.mute(d.userId, on);
-        this.settings.muted = [...this.chat.muted].slice(-256);
+        this.settings.muted = [...this.chat.muted].filter((id) => !this.siteBlocked.has(id)).slice(-256);
         this.saveSettings();
       }),
       b.on('ui_vote', (d) => this.role?.vote(d.stepId, d.option)),

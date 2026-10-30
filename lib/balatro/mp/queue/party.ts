@@ -36,11 +36,14 @@ export interface PartyMemory {
   members: string[];
   queueMode: LobbyState['queueMode'];
   at: number;
+  /** The party host's hub resume token (host only): re-hosting the same code (MM-06). */
+  token: string | null;
 }
 
 /** What the player remembers about the party it queued with. */
-export function rememberParty(s: LobbyState, at: number): PartyMemory {
+export function rememberParty(s: LobbyState, at: number, token: string | null = null): PartyMemory {
   return {
+    token,
     code: s.code,
     hostId: s.hostId,
     members: s.players.filter((p) => p.role === 'player').map((p) => p.id),
