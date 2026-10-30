@@ -21,10 +21,16 @@ type Listing = {
   closedAt: Date | null;
 };
 
+type Order = {
+  id: string; buyerId: string; gameId: string; cardIndex: number; foil: boolean; priceCoins: number;
+  status: 'OPEN' | 'FILLED' | 'CANCELED'; createdAt: Date; closedAt: Date | null; filledListingId: string | null;
+};
+
 const db = vi.hoisted(() => ({
   cards: new Map<string, number>(),
   listings: new Map<string, Listing>(),
   users: new Map<string, { createdAt: Date; xp: number }>(),
+  orders: new Map<string, Order>(),
   balances: new Map<string, number>(),
   ledger: [] as { from: string; to: string; amount: number; fee: number }[],
   seq: 0,
@@ -36,6 +42,7 @@ function snapshot() {
   return {
     cards: new Map(db.cards),
     listings: new Map([...db.listings].map(([k, v]) => [k, { ...v }])),
+    orders: new Map([...db.orders].map(([k, v]) => [k, { ...v }])),
     balances: new Map(db.balances),
     ledger: [...db.ledger],
   };
@@ -76,15 +83,21 @@ const prismaMock = vi.hoisted(() => {
     cardListing: {
       count: async ({ where }: { where: { sellerId: string; status: string } }) =>
         [...db.listings.values()].filter((l) => l.sellerId === where.sellerId && l.status === where.status).length,
-      findMany: async ({ where }: { where: Partial<Listing> & { closedAt?: unknown } }) =>
-        [...db.listings.values()].filter(
+      findMany: async ({ where, orderBy, take }: { where: Record<string, unknown>; orderBy?: Record<string, 'asc' | 'desc'>[]; take?: number }) => {
+        const w = where as { gameId?: string; cardIndex?: number; foil?: boolean; status?: string; sellerId?: string | { not: string }; priceCoins?: { lte: number } };
+        let rows = [...db.listings.values()].filter(
           (l) =>
-            (where.gameId === undefined || l.gameId === where.gameId) &&
-            (where.cardIndex === undefined || l.cardIndex === where.cardIndex) &&
-            (where.foil === undefined || l.foil === where.foil) &&
-            (where.status === undefined || l.status === where.status) &&
-            (where.sellerId === undefined || l.sellerId === where.sellerId),
-        ),
+            (w.gameId === undefined || l.gameId === w.gameId) &&
+            (w.cardIndex === undefined || l.cardIndex === w.cardIndex) &&
+            (w.foil === undefined || l.foil === w.foil) &&
+            (w.status === undefined || l.status === w.status) &&
+            (w.sellerId === undefined ||
+              (typeof w.sellerId === 'string' ? l.sellerId === w.sellerId : l.sellerId !== w.sellerId.not)) &&
+            (w.priceCoins === undefined || l.priceCoins <= w.priceCoins.lte),
+        );
+        if (orderBy?.[0]?.priceCoins === 'asc') rows = rows.sort((a, b) => a.priceCoins - b.priceCoins || a.createdAt.getTime() - b.createdAt.getTime());
+        return take ? rows.slice(0, take) : rows;
+      },
       findUnique: async ({ where }: { where: { id: string } }) => db.listings.get(where.id) ?? null,
       create: async ({ data }: { data: Omit<Listing, 'id' | 'status' | 'buyerId' | 'createdAt' | 'closedAt'> }) => {
         const l: Listing = { ...data, id: `L${++db.seq}`, status: 'ACTIVE', buyerId: null, createdAt: new Date(), closedAt: null };
@@ -95,6 +108,30 @@ const prismaMock = vi.hoisted(() => {
         const l = db.listings.get(where.id);
         if (!l || l.status !== where.status || (where.sellerId && l.sellerId !== where.sellerId)) return { count: 0 };
         Object.assign(l, data);
+        return { count: 1 };
+      },
+    },
+    cardBuyOrder: {
+      findUnique: async ({ where }: { where: { id: string } }) => db.orders.get(where.id) ?? null,
+      count: async ({ where }: { where: { buyerId: string; status: string } }) =>
+        [...db.orders.values()].filter((o) => o.buyerId === where.buyerId && o.status === where.status).length,
+      create: async ({ data }: { data: Omit<Order, 'id' | 'status' | 'createdAt' | 'closedAt' | 'filledListingId'> }) => {
+        const dup = [...db.orders.values()].find(
+          (o) => o.status === 'OPEN' && o.buyerId === data.buyerId && o.gameId === data.gameId && o.cardIndex === data.cardIndex && o.foil === data.foil,
+        );
+        if (dup) throw Object.assign(new Error('unique'), { code: 'P2002' });
+        const o: Order = { ...data, id: `O${++db.seq}`, status: 'OPEN', createdAt: new Date(), closedAt: null, filledListingId: null };
+        db.orders.set(o.id, o);
+        return o;
+      },
+      findMany: async ({ where }: { where: { gameId: string; cardIndex: number; foil: boolean; status: string; buyerId: { not: string }; priceCoins: { gte: number } } }) =>
+        [...db.orders.values()]
+          .filter((o) => o.gameId === where.gameId && o.cardIndex === where.cardIndex && o.foil === where.foil && o.status === where.status && o.buyerId !== where.buyerId.not && o.priceCoins >= where.priceCoins.gte)
+          .sort((a, b) => b.priceCoins - a.priceCoins || a.createdAt.getTime() - b.createdAt.getTime()),
+      updateMany: async ({ where, data }: { where: { id: string; status: string; buyerId?: string }; data: Partial<Order> }) => {
+        const o = db.orders.get(where.id);
+        if (!o || o.status !== where.status || (where.buyerId && o.buyerId !== where.buyerId)) return { count: 0 };
+        Object.assign(o, data);
         return { count: 1 };
       },
     },
@@ -110,6 +147,7 @@ const prismaMock = vi.hoisted(() => {
       } catch (e) {
         db.cards = before.cards;
         db.listings = before.listings;
+        db.orders = before.orders;
         db.balances = before.balances;
         db.ledger = before.ledger;
         throw e;
@@ -124,13 +162,15 @@ const prismaMock = vi.hoisted(() => {
 
 vi.mock('@/lib/prisma.server', () => ({ prisma: prismaMock }));
 const sold = vi.hoisted(() => ({ fn: vi.fn(async () => {}) }));
-vi.mock('@/lib/cards/notify.server', () => ({ notifyCardSold: sold.fn }));
+const filled = vi.hoisted(() => ({ fn: vi.fn(async () => {}) }));
+vi.mock('@/lib/cards/notify.server', () => ({ notifyCardSold: sold.fn, notifyBuyOrderFilled: filled.fn }));
 vi.mock('@/lib/economy/ledger.server', async () => {
   const actual = await vi.importActual<typeof import('@/lib/economy/ledger-core')>(
     '@/lib/economy/ledger-core',
   );
   return {
     InsufficientFundsError: actual.InsufficientFundsError,
+    getBalance: async (id: string) => db.balances.get(id) ?? 0,
     transferCoins: async (
       from: string,
       to: string,
@@ -147,7 +187,7 @@ vi.mock('@/lib/economy/ledger.server', async () => {
   };
 });
 
-import { buyCard, cancelCard, listCard, MarketError } from '@/lib/cards/market.server';
+import { buyCard, cancelBuyOrder, cancelCard, listCard, MarketError, placeBuyOrder } from '@/lib/cards/market.server';
 
 const SELLER = 'seller';
 const BUYER = 'buyer';
@@ -168,6 +208,7 @@ beforeEach(() => {
   db.cards.clear();
   db.listings.clear();
   db.users.clear();
+  db.orders.clear();
   db.balances.clear();
   db.ledger.length = 0;
   db.seq = 0;
@@ -329,5 +370,126 @@ describe('sale notification', () => {
       cardIndex: 2,
       proceeds: 90,
     });
+  });
+});
+
+describe('buy orders', () => {
+  const bid = (over: Partial<Parameters<typeof placeBuyOrder>[0]> = {}) =>
+    placeBuyOrder({ buyerId: BUYER, gameId: G, cardIndex: 2, foil: false, priceCoins: 200, ...over });
+
+  it('rests with no coins held when nothing is for sale', async () => {
+    const r = await bid();
+    expect(r.filled).toBe(false);
+    expect(db.balances.get(BUYER)).toBe(1000);
+    expect(db.ledger).toHaveLength(0);
+    expect(db.orders.get(r.id)?.status).toBe('OPEN');
+  });
+
+  it('fills at once against the cheapest listing, paying the listing price, not the bid', async () => {
+    await listCard(input({ priceCoins: 120 }));
+    const r = await bid({ priceCoins: 200 });
+    expect(r.filled).toBe(true);
+    expect(db.balances.get(BUYER)).toBe(1000 - 120);
+    expect(db.balances.get(SELLER)).toBe(108);
+    expect(stack(BUYER)).toBe(1);
+    expect(db.orders.get(r.id)).toMatchObject({ status: 'FILLED' });
+    expect(db.orders.get(r.id)?.filledListingId).toBeTruthy();
+  });
+
+  it('does not fill against a listing above the bid, or the buyer’s own listing', async () => {
+    await listCard(input({ priceCoins: 300 }));
+    expect((await bid({ priceCoins: 200 })).filled).toBe(false);
+    db.balances.set(SELLER, 1000);
+    const own = await placeBuyOrder({ buyerId: SELLER, gameId: G, cardIndex: 2, foil: false, priceCoins: 400 });
+    expect(own.filled).toBe(false);
+    expect(db.listings.size).toBe(1);
+  });
+
+  it('a new listing is taken by the highest open bid first, then the oldest', async () => {
+    db.users.set('b2', { createdAt: OLD, xp: 0 });
+    db.users.set('b3', { createdAt: OLD, xp: 0 });
+    db.balances.set('b2', 1000);
+    db.balances.set('b3', 1000);
+    const lo = await bid({ priceCoins: 150 });
+    const hi = await placeBuyOrder({ buyerId: 'b2', gameId: G, cardIndex: 2, foil: false, priceCoins: 180 });
+    const tie = await placeBuyOrder({ buyerId: 'b3', gameId: G, cardIndex: 2, foil: false, priceCoins: 180 });
+    await listCard(input({ priceCoins: 100 }));
+    expect(db.orders.get(hi.id)?.status).toBe('FILLED');
+    expect(db.orders.get(tie.id)?.status).toBe('OPEN');
+    expect(db.orders.get(lo.id)?.status).toBe('OPEN');
+    expect(stack('b2')).toBe(1);
+    expect(db.balances.get('b2')).toBe(900);
+  });
+
+  it('an unaffordable bidder is skipped and keeps their order; the next bidder buys', async () => {
+    db.users.set('b2', { createdAt: OLD, xp: 0 });
+    db.balances.set('b2', 1000);
+    const poor = await bid({ priceCoins: 190 });
+    const next = await placeBuyOrder({ buyerId: 'b2', gameId: G, cardIndex: 2, foil: false, priceCoins: 150 });
+    db.balances.set(BUYER, 5); // spent their coins since placing the order
+    await listCard(input({ priceCoins: 100 }));
+    expect(db.orders.get(poor.id)?.status).toBe('OPEN');
+    expect(db.orders.get(next.id)?.status).toBe('FILLED');
+    expect(db.balances.get(BUYER)).toBe(5);
+  });
+
+  it('conserves coins on a fill: the supply drops by exactly the burned fee', async () => {
+    await listCard(input({ priceCoins: 100 }));
+    const before = totalCoins();
+    await bid({ priceCoins: 100 });
+    expect(totalCoins()).toBe(before - 10);
+  });
+
+  it('notifies the buyer when an order fills, and the seller as for any sale', async () => {
+    filled.fn.mockClear();
+    sold.fn.mockClear();
+    await listCard(input({ priceCoins: 100 }));
+    await bid({ priceCoins: 100 });
+    expect(filled.fn).toHaveBeenCalledWith(expect.objectContaining({ buyerId: BUYER, price: 100 }));
+    expect(sold.fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('enforces bounds, balance, one open order per card and the open-order cap', async () => {
+    expect(await code(bid({ priceCoins: 9 }))).toBe('BAD_PRICE');
+    expect(await code(bid({ priceCoins: 5001 }))).toBe('BAD_PRICE');
+    expect(await code(bid({ priceCoins: 2000 }))).toBe('INSUFFICIENT_COINS');
+    expect(await code(bid({ gameId: 'nope' }))).toBe('NOT_TRADABLE');
+    expect(await code(bid())).toBeNull();
+    expect(await code(bid())).toBe('ALREADY_ORDERED');
+    for (let i = 0; i < 5; i++) await code(placeBuyOrder({ buyerId: BUYER, gameId: G, cardIndex: i === 2 ? 5 : i, foil: i === 4, priceCoins: 50 }));
+    // The cap: fill the rest with distinct cards across titles.
+    for (const g of ['laundry-sort', 'cookgame', 'dream-rift']) {
+      for (let i = 0; i < 6; i++) for (const f of [false, true]) await code(placeBuyOrder({ buyerId: BUYER, gameId: g, cardIndex: i, foil: f, priceCoins: 50 }));
+    }
+    expect(await code(placeBuyOrder({ buyerId: BUYER, gameId: 'void-breaker', cardIndex: 0, foil: false, priceCoins: 50 }))).toBe('TOO_MANY_ORDERS');
+  });
+
+  it('two listings racing for one bid: the bid fills once', async () => {
+    db.cards.set(key('s2', G, 2, false), 1);
+    db.users.set('s2', { createdAt: OLD, xp: 900 });
+    db.balances.set('s2', 0);
+    const o = await bid({ priceCoins: 200 });
+    await Promise.all([listCard(input({ priceCoins: 100 })), listCard(input({ sellerId: 's2', priceCoins: 110 }))]);
+    expect(db.orders.get(o.id)?.status).toBe('FILLED');
+    expect(db.ledger).toHaveLength(1);
+    expect(stack(BUYER)).toBe(1);
+  });
+});
+
+describe('cancelBuyOrder', () => {
+  it('only the buyer cancels, only while open, and nothing moves', async () => {
+    const o = await placeBuyOrder({ buyerId: BUYER, gameId: G, cardIndex: 2, foil: false, priceCoins: 200 });
+    expect(await code(cancelBuyOrder({ buyerId: SELLER, orderId: o.id }))).toBe('NOT_AVAILABLE');
+    await cancelBuyOrder({ buyerId: BUYER, orderId: o.id });
+    expect(db.orders.get(o.id)?.status).toBe('CANCELED');
+    expect(await code(cancelBuyOrder({ buyerId: BUYER, orderId: o.id }))).toBe('NOT_AVAILABLE');
+    expect(db.balances.get(BUYER)).toBe(1000);
+  });
+
+  it('a cancelled order does not fill', async () => {
+    const o = await placeBuyOrder({ buyerId: BUYER, gameId: G, cardIndex: 2, foil: false, priceCoins: 200 });
+    await cancelBuyOrder({ buyerId: BUYER, orderId: o.id });
+    await listCard(input({ priceCoins: 100 }));
+    expect(db.listings.values().next().value?.status).toBe('ACTIVE');
   });
 });

@@ -57,6 +57,7 @@ export const Route = createFileRoute('/api/account/export')({
             cardTrades,
             gameThreads,
             gameThreadPosts,
+            cardBuyOrders,
           ] = await Promise.all([
             prisma.user.findUnique({
               where: { id: userId },
@@ -223,6 +224,7 @@ export const Route = createFileRoute('/api/account/export')({
             // Community Hub discussions the person started or replied in.
             prisma.gameThread.findMany({ where: { authorId: userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
             prisma.gameThreadPost.findMany({ where: { authorId: userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
+            prisma.cardBuyOrder.findMany({ where: { buyerId: userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
           ]);
 
           const [
@@ -269,6 +271,7 @@ export const Route = createFileRoute('/api/account/export')({
             cardTrades,
             gameThreads,
             gameThreadPosts,
+            cardBuyOrders,
             rmhLadder: {
               preferences: ladderPrefs,
               // Salary expectations, work authorization and EEO answers — the

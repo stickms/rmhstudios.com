@@ -10,7 +10,7 @@ const fetchMarket = createServerFn({ method: 'GET' }).handler(async () => {
   return getMarket(session?.user.id ?? null);
 });
 
-export const Route = createFileRoute('/games/market')({
+export const Route = createFileRoute('/games/market/')({
   head: () => noindexHead('Community Market'),
   loader: () => fetchMarket(),
   component: MarketRoute,

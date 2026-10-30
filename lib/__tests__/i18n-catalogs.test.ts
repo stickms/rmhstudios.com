@@ -256,6 +256,28 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // Games library detail pane + playtime notice (2026-10-30). English-only until the
   // translate pipeline runs on build; remove with it.
   'games-hub': [
+    // Market depth: card page, price history, buy orders (2026-10-30)
+    'steam-chart-empty',
+    'steam-chart-label',
+    'steam-cm-bid',
+    'steam-cm-my-order',
+    'steam-cm-no-listings',
+    'steam-cm-no-orders',
+    'steam-cm-order-canceled',
+    'steam-cm-order-filled',
+    'steam-cm-order-note',
+    'steam-cm-order-placed',
+    'steam-cm-orders',
+    'steam-cm-place-order',
+    'steam-cm-sell',
+    'steam-cm-your-bid',
+    'steam-cm-yours',
+    'steam-market-back',
+    'steam-price-high',
+    'steam-price-history',
+    'steam-price-low',
+    'steam-price-median',
+    'steam-price-volume',
     // Trade and hub notifications, pending count (2026-10-30)
     'steam-pending-trades',
     'no-guides-hint',
