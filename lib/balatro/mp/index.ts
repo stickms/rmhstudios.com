@@ -31,6 +31,19 @@ import { cryptoSeed, cryptoSeedString } from './rng';
 import { MpRuntime } from './lobby/runtime';
 
 export type { MpSession, StartMultiplayerOptions } from './pack-loader';
+export type { MpRuntime } from './lobby/runtime';
+
+/**
+ * WS12's matchmaking/party/invites module attaches to the running session here
+ * (`lib/balatro/mp/queue/attach.ts` exporting `attach(runtime) => detach`): it gets
+ * the hub (`runtime.deps.hub`), the mailbox (`runtime.deps.bridge`), `createLobby`,
+ * `joinCode` and, as host, `LobbyHost.onSetupInput` / `publishSetup`. A glob, so this
+ * chunk builds before that module exists.
+ */
+export interface MpExtension {
+  attach(runtime: MpRuntime): () => void;
+}
+const extensions = import.meta.glob<MpExtension>('./queue/attach.ts');
 
 interface MpTestOverrides {
   p2p?: P2pTestHooks;
@@ -92,6 +105,15 @@ export function startMultiplayer(opts: StartMultiplayerOptions): MpSession {
 
   let uninstall: (() => void) | null = null;
   let stopped = false;
+  const detach: (() => void)[] = [];
+  for (const load of Object.values(extensions)) {
+    void load().then(
+      (m) => {
+        if (!stopped) detach.push(m.attach(runtime));
+      },
+      (err) => log(`[mp] extension failed to load: ${String(err)}`, true),
+    );
+  }
   if (import.meta.env.VITE_BALATRO_MP_TEST === '1') {
     void import('./test-hooks').then((m) => {
       if (stopped) return;
@@ -103,6 +125,7 @@ export function startMultiplayer(opts: StartMultiplayerOptions): MpSession {
   return {
     stop() {
       stopped = true;
+      for (const fn of detach.splice(0)) fn();
       runtime.stop();
       hub.destroy();
       uninstall?.();
