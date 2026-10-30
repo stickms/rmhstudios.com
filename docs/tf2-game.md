@@ -782,12 +782,15 @@ sections? }` (`mapRadarSchema`, additive: the other games' manifests do not carr
   animations (`STUDIO_FRAMEANIM`): a header, a flag byte per bone, per-bone constants and fixed-size
   per-frame records (Quaternion48S / Quaternion48 rotations, Vector48 or full-float positions).
   `scripts/tf2-assets/srcanim.py` `decode_frame_anim` reads them — the layout as public model tools
-  document it, refused when the sizes it computes disagree with the header's — and models builder 2
-  rebuilds exactly the models that use them (`FRAMEANIM_VERSION` in their source hash). The run prints how
-  many constant-rotation bones decode near the bind pose, a plausibility check on the real install
-  (`test_frameanim.py` covers the format on synthetic data). The client draws a view model only once its
-  weapon has clips, with the team's default gloves bone-merged onto the weapon; players stay the client's
-  own original figures (lib/csgo-game/client/render.ts).
+  document it, refused when the sizes it computes disagree with the header's. A bone's constants are its
+  compressed rotation, full position, raw rotation and raw position, in that order; a Quaternion48S names
+  its dropped component counting w, x, y, z. `FRAMEANIM_VERSION` is in each such model's source hash, so a
+  decoder change rebuilds exactly those models. The run prints how many constant rotations (compressed and
+  raw) decode near the bind pose, and `scripts/tf2-game/probe-frameanim.py` (a step of the models channel)
+  scores the candidate bit layouts against the install; `test_frameanim.py` covers the format on synthetic
+  data. The client keeps the view model off (`CS_DRAW_VIEWMODEL`) until the real clips are verified; it
+  then draws one once its weapon has clips, with the team's default gloves bone-merged onto the weapon.
+  Players stay the client's own original figures (lib/csgo-game/client/render.ts).
 - **Models.** MDL v49 and VTF 7.5 read as TF2's do. VMT conditional keys (`srgb?`, `>=dx90?`,
   `GPU>=2?`, negations) are applied as a high-end Windows desktop; `CustomWeapon` (only its
   `$basetexture` — the default finish) and `Character` are converted as VertexLitGeneric with

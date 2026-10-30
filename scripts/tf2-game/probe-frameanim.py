@@ -53,8 +53,10 @@ def fields(words, layout):
 LAYOUTS = ["word-ab", "word-ba", "le-i45", "le-i46", "be-i45", "be-i46"]
 
 
-def decode(words, layout, order, place, signed):
+def decode(words, layout, order, place, signed, imap="wxyz"):
     v0, v1, v2, idx, sign = fields(words, layout)
+    if imap == "wxyz":  # the index counts w, x, y, z (srcanim._quat48s); else x, y, z, w
+        idx = (idx + 3) & 3
     vals = [(x - 16384) / (16384.0 * SQRT2) for x in (v0, v1, v2)]
     if order == "rev":
         vals.reverse()
@@ -112,15 +114,15 @@ def collect(fs, limit):
                 if f & srcanim.F_CONST_ROT2:
                     out["q48s_const"].append((struct.unpack_from("<3H", mdl, o), bind["quat"], name, bone))
                     o += 6
+                if f & srcanim.F_CONST_POS2:
+                    out["fpos_const"].append((struct.unpack_from("<3f", mdl, o), bind["pos"]))
+                    o += 12
                 if f & srcanim.F_RAWROT:
                     out["q48_const"].append((srcanim._quat48(mdl, o), bind["quat"]))
                     o += 6
                 if f & srcanim.F_RAWPOS:
                     out["pos_const"].append((srcanim._vec48(mdl, o), bind["pos"]))
                     o += 6
-                if f & srcanim.F_CONST_POS2:
-                    out["fpos_const"].append((struct.unpack_from("<3f", mdl, o), bind["pos"]))
-                    o += 12
             streams = {}
             for fr in range(frames):
                 o = start + frame_off + fr * frame_len
@@ -180,27 +182,29 @@ def main():
     print("Vector48 animated: frame step median %.4f p90 %.4f; distance to bind median %.3f p90 %.3f"
           % (pct(psteps, 0.5), pct(psteps, 0.9), pct(pdist, 0.5), pct(pdist, 0.9)))
 
-    print("\nQuaternion48S candidates (layout order place signed): valid%  bind%  step-median  step-p90")
+    print("\nQuaternion48S candidates (layout index order place signed): valid%  bind%  step-median  step-p90")
+    print("(srcanim._quat48s is word-ab wxyz fwd rot signed)")
     rows = []
-    for layout, order, place, signed in itertools.product(LAYOUTS, ("fwd", "rev"), ("rot", "asc"), (True, False)):
+    for layout, imap, order, place, signed in itertools.product(LAYOUTS, ("wxyz", "xyzw"), ("fwd", "rev"),
+                                                                 ("rot", "asc"), (True, False)):
         valid = near = 0
         for words, bind, _, _ in d["q48s_const"]:
-            q, ok = decode(words, layout, order, place, signed)
+            q, ok = decode(words, layout, order, place, signed, imap)
             valid += ok
             near += angle(q, bind) <= 15
         steps = []
         for s, _, _, _ in d["q48s_anim"]:
-            qs = [decode(w, layout, order, place, signed)[0] for w in s]
+            qs = [decode(w, layout, order, place, signed, imap)[0] for w in s]
             steps.extend(angle(qs[i], qs[i + 1]) for i in range(len(qs) - 1))
         for s, _, _, _ in d["q48s_anim"]:
             for w in s:
-                valid += decode(w, layout, order, place, signed)[1]
+                valid += decode(w, layout, order, place, signed, imap)[1]
         total = len(d["q48s_const"]) + sum(len(s) for s, _, _, _ in d["q48s_anim"])
         n = max(1, len(d["q48s_const"]))
         rows.append((100.0 * near / n, 100.0 * valid / max(1, total), pct(steps, 0.5), pct(steps, 0.9),
-                     "%s %s %s %s" % (layout, order, place, "signed" if signed else "positive")))
-    for bind, valid, med, p90, label in sorted(rows, key=lambda r: (-r[0], r[2])):
-        print("  %-30s %6.1f %6.1f %8.2f %8.2f" % (label, valid, bind, med, p90))
+                     "%s %s %s %s %s" % (layout, imap, order, place, "signed" if signed else "positive")))
+    for bind, valid, med, p90, label in sorted(rows, key=lambda r: (-r[0], r[2]))[:24]:
+        print("  %-36s %6.1f %6.1f %8.2f %8.2f" % (label, valid, bind, med, p90))
 
     print("\nraw Quaternion48S constants (words as hex | bind quaternion | model bone):")
     for words, bind, name, bone in d["q48s_const"][:: max(1, len(d["q48s_const"]) // 40)][:40]:

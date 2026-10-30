@@ -1188,8 +1188,9 @@ def main(argv=None):
             "%s %d" % (why, n) for why, n in ANIM_ERRORS.most_common(10)))
     st = srcanim.FRAME_STATS
     if st["clips"]:
-        print("frame animations: %d clips; constant-rotation bones near the bind pose (%.0f deg): %d of %d"
-              % (st["clips"], srcanim.FRAME_CHECK_DEGREES, st["near_bind"], st["const_bones"]))
+        print("frame animations: %d clips; constant rotations near the bind pose (%.0f deg): compressed %d of %d,"
+              " raw %d of %d" % (st["clips"], srcanim.FRAME_CHECK_DEGREES, st["rot2_near"], st["rot2"],
+                                  st["raw_near"], st["raw"]))
     if SHADER_COUNTS:
         print("shaders approximated or not recognised (materials): " + ", ".join(
             "%s %d%s" % (sh, n, " -> " + CSGO_APPROX[sh] if sh in CSGO_APPROX else "")

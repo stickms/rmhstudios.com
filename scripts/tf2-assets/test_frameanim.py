@@ -19,8 +19,9 @@ def enc_quat48s(q):
         q = [-x for x in q]  # q and -q are the same rotation: keep the dropped one positive, sign bit 0
     rest = [q[(dropped + k) & 3] for k in (1, 2, 3)]
     w = [int(round(v * srcanim._Q48S_SCALE)) + srcanim._Q48S_SHIFT for v in rest]
-    a = (w[0] & 0x7FFF) | ((dropped >> 1) << 15)
-    b = (w[1] & 0x7FFF) | ((dropped & 1) << 15)
+    index = (dropped + 1) & 3  # stored counting w, x, y, z
+    a = (w[0] & 0x7FFF) | ((index >> 1) << 15)
+    b = (w[1] & 0x7FFF) | ((index & 1) << 15)
     c = w[2] & 0x7FFF
     return struct.pack("<3H", a, b, c)
 
@@ -53,6 +54,17 @@ class FrameAnimation(unittest.TestCase):
     def setUp(self):
         self.bones = [{"pos": (0.0, 0.0, 0.0), "quat": (0.0, 0.0, 0.0, 1.0)} for _ in range(3)]
 
+    def test_quaternion48s_index_counts_from_w(self):
+        # Index 0 drops w: the stored three are x, y, z. Index 1 drops x: they are y, z, w.
+        s = srcanim._Q48S_SCALE
+        enc = lambda v: int(round(v * s)) + srcanim._Q48S_SHIFT
+        q = srcanim._quat48s(struct.pack("<3H", enc(0.1), enc(0.2), enc(0.3)), 0)
+        np.testing.assert_allclose(q[:3], (0.1, 0.2, 0.3), atol=1e-4)
+        self.assertGreater(q[3], 0.9)
+        q = srcanim._quat48s(struct.pack("<3H", enc(0.1), enc(0.2) | 0x8000, enc(0.3) | 0x8000), 0)
+        np.testing.assert_allclose(q[1:], (0.1, 0.2, 0.3), atol=1e-4)
+        self.assertLess(q[0], -0.9)
+
     def test_quaternion48s_round_trips(self):
         for q in [(0.1, 0.2, 0.3, 0.9), (-0.7, 0.1, 0.1, 0.7), (0.0, 0.0, 1.0, 0.0), (0.5, -0.5, 0.5, -0.5)]:
             q = norm(q)
@@ -63,8 +75,10 @@ class FrameAnimation(unittest.TestCase):
     def test_constants_and_frames_decode_in_order(self):
         rest = norm((0.2, 0.1, 0.0, 0.97))
         spin = [norm((0.0, 0.0, math.sin(a), math.cos(a))) for a in (0.0, 0.3, 0.6)]
-        flags = [srcanim.F_CONST_ROT2 | srcanim.F_RAWPOS, srcanim.F_ANIMROT | srcanim.F_ANIMPOS, 0]
-        consts = enc_quat48s(rest) + enc_vec48((1.0, 2.0, 3.0))
+        flags = [srcanim.F_CONST_ROT2 | srcanim.F_RAWPOS, srcanim.F_ANIMROT | srcanim.F_ANIMPOS,
+                 srcanim.F_RAWROT | srcanim.F_CONST_POS2]
+        consts = (enc_quat48s(rest) + enc_vec48((1.0, 2.0, 3.0))
+                  + struct.pack("<3f", 4.0, 5.0, 6.0) + enc_quat48(rest))
         frames = [enc_quat48(q) + enc_vec48((float(i), 0.0, -float(i))) for i, q in enumerate(spin)]
         data = b"\0" * 8 + frame_anim(flags, consts, frames)
         pos = np.zeros((3, 3, 3), np.float32)
@@ -75,10 +89,12 @@ class FrameAnimation(unittest.TestCase):
             np.testing.assert_allclose(pos[f, 0], (1.0, 2.0, 3.0))
             self.assertGreater(abs(float(np.dot(quat[f, 1], spin[f]))), 0.999)
             np.testing.assert_allclose(pos[f, 1], (f, 0.0, -f))
-            # A bone with no flags keeps what the arrays held (here the identity / origin).
-            np.testing.assert_allclose(quat[f, 2], (0, 0, 0, 1))
+            # The full position comes before the raw rotation.
+            np.testing.assert_allclose(pos[f, 2], (4.0, 5.0, 6.0))
+            self.assertGreater(abs(float(np.dot(quat[f, 2], rest))), 0.999)
 
     def test_full_positions_and_a_size_mismatch(self):
+        # A bone with no flags keeps what the arrays held (here the origin).
         flags = [srcanim.F_FULLANIMPOS, 0, 0]
         frames = [struct.pack("<3f", 0.5, 1.5, 2.5)]
         data = frame_anim(flags, b"", frames)
@@ -86,6 +102,7 @@ class FrameAnimation(unittest.TestCase):
         quat = np.tile(np.array([0, 0, 0, 1], np.float32), (1, 3, 1))
         srcanim.decode_frame_anim(data, 0, self.bones, 1, pos, quat)
         np.testing.assert_allclose(pos[0, 0], (0.5, 1.5, 2.5))
+        np.testing.assert_allclose(pos[0, 1], (0.0, 0.0, 0.0))
         # The header says 10 bytes a frame, the flags say 12: refused, not misread.
         bad = bytearray(data)
         struct.pack_into("<i", bad, 8, 10)
