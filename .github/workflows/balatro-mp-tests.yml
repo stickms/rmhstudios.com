@@ -97,9 +97,11 @@ jobs:
         run: pnpm balatro:gen-protocol --check
 
       # scripts/balatro/__tests__/pack.test.ts and the pack builder need fontTools
-      # (it fails with an install hint rather than skipping).
+      # (it fails with an install hint rather than skipping). The builder runs as
+      # `python3 -I`, which ignores the user site that a non-root `pip install`
+      # writes to, so install into the interpreter's own site-packages.
       - name: Install pack-builder Python deps
-        run: pip install fonttools pyoxipng
+        run: sudo python3 -m pip install --quiet --break-system-packages fonttools pyoxipng && python3 -I -c 'import fontTools, pyoxipng'
 
       - name: Balatro suite (TS + Lua L1)
         run: pnpm test:balatro
