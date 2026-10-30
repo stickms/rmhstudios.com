@@ -367,6 +367,20 @@ describe('outcomes and peers', function()
     expect(MP.state.lives).eq({ u1 = 2, u2 = 2 })
   end)
 
+  it('stores presence and notifies only presence observers', function()
+    local seen, star = {}, 0
+    MP.report.on('presence', function(p) seen[#seen + 1] = p.id .. ':' .. p.status end)
+    MP.report.on('presence', function() error('boom') end)          -- a failing observer is isolated
+    MP.report.on('*', function() star = star + 1 end)
+    MP.net.receive('presence', { id = 'u2', status = 'away', graceMsLeft = 5000 })
+    MP.net.receive('presence', { id = 'u2', status = 'back' })
+    expect(MP.state.presence.u2).eq({ status = 'back' })
+    expect(seen).eq({ 'u2:away', 'u2:back' })
+    expect(star).eq(0)
+    MP.report.observers.presence = nil
+    MP.report.observers['*'] = nil
+  end)
+
   it('maps win variants to my result once', function()
     local seen = {}
     MP.ui = { show_result = function(r) seen[#seen + 1] = r.kind end }

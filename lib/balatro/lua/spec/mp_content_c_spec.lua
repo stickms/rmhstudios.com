@@ -770,10 +770,18 @@ describe('trap_fired and the trap row (NET-08)', function()
     H.sent_list = {}
     MP.traps.hooks.frame()
     expect(#peers('trap_held')).eq(0)
-    MP.state.presence = { u2 = { status = 'away' } }
+    MP.report.presence({ id = 'u2', status = 'away', graceMsLeft = 1000 })
     MP.traps.hooks.frame()
     expect(#peers('trap_held')).eq(0)
-    MP.state.presence.u2.status = 'back'
+    expect(MP.state.presence.u2.status).eq('away')
+    MP.report.presence({ id = 'u2', status = 'back' })
+    MP.traps.hooks.frame()
+    expect(#peers('trap_held')).eq(1)
+    H.sent_list = {}
+    MP.report.presence({ id = 'u2', status = 'back' })        -- a repeated status is not a return
+    MP.traps.hooks.frame()
+    expect(#peers('trap_held')).eq(0)
+    MP.report.presence({ id = 'u3', status = 'caught_up' })
     MP.traps.hooks.frame()
     expect(#peers('trap_held')).eq(1)
     -- ante change forgets fired ids

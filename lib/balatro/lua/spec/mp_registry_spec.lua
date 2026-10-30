@@ -171,6 +171,36 @@ describe('MP.registry', function()
     _G.Card = nil
   end)
 
+  it('fills MP loc_vars when vanilla passes only named specific_vars (perishable/sticker)', function()
+    local seen = {}
+    _G.Card = { generate_UIBox_ability_table = function(self)
+      return generate_card_ui(self.config.center, nil, self.vanilla_vars, 'Joker', {})
+    end }
+    _G.generate_card_ui = function(_c, _f, specific_vars) seen[#seen + 1] = specific_vars; return 'ui' end
+    local cached = { 7, 'x' }
+    R.define({ key = 'j_mp_vars', kind = 'Joker', loc_vars = function() return { vars = cached } end })
+    R.mount(H.resolved())
+    local card = { config = { center = G.P_CENTERS.j_mp_vars }, ability = {} }
+    Card.generate_UIBox_ability_table(card)                      -- nil -> def vars
+    expect(seen[1]).eq({ 7, 'x' })
+    card.vanilla_vars = { perish_tally = 3 }
+    Card.generate_UIBox_ability_table(card)                      -- named only -> merged
+    expect(seen[2]).eq({ 7, 'x', perish_tally = 3 })
+    card.vanilla_vars = { sticker = 'Gold' }
+    Card.generate_UIBox_ability_table(card)
+    expect(seen[3]).eq({ 7, 'x', sticker = 'Gold' })
+    expect(cached).eq({ 7, 'x' })                                 -- def table never mutated
+    card.vanilla_vars = { 1, 2 }
+    Card.generate_UIBox_ability_table(card)                      -- vanilla positional vars win
+    expect(seen[4]).eq({ 1, 2 })
+    local vcard = { config = { center = G.P_CENTERS.j_joker }, ability = {}, vanilla_vars = { sticker = 'Red' } }
+    Card.generate_UIBox_ability_table(vcard)                      -- vanilla centers untouched
+    expect(seen[5]).eq({ sticker = 'Red' })
+    R.unmount()
+    _G.Card = nil
+    _G.generate_card_ui = nil
+  end)
+
   it('hides MP tags/blinds from the fixed vanilla collection grids', function()
     local seen
     _G.create_UIBox_your_collection_tags = function()

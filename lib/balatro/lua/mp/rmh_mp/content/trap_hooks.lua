@@ -398,34 +398,40 @@ function H.install()
   end
 end
 
--- ── per-frame bookkeeping: ante change, players coming back ────────────────
+-- ── per-frame bookkeeping: ante change; players coming back (presence observer) ─
 
 H.seen_ante = nil
 H.seen_presence = {}
+H.rebroadcast = false
+
+--- MP.report presence observer: a player who is back (or caught up after a rejoin) gets my
+--- trap list again on the next frame (NET-08). Repeated frames with the same status are ignored.
+function H.on_presence(p)
+  if not MP.in_session() then return end
+  if p.status == H.seen_presence[p.id] then return end
+  H.seen_presence[p.id] = p.status
+  if p.status == 'back' or p.status == 'caught_up' then H.rebroadcast = true end
+end
 
 function H.frame()
   if not (MP.in_session() and G.GAME and G.GAME.round_resets) then
     H.seen_ante = nil
     H.seen_presence = {}
+    H.rebroadcast = false
     return
   end
   local ante = G.GAME.round_resets.ante
-  local force = H.seen_ante == nil -- a session (or a rejoin) just started: tell everyone
+  local force = H.seen_ante == nil or H.rebroadcast -- a session (or a rejoin) just started: tell everyone
+  H.rebroadcast = false
   if H.seen_ante ~= nil and ante ~= H.seen_ante then T.new_ante() end
   H.seen_ante = ante
-  for id, p in pairs(MP.state.presence or {}) do
-    local st = p and p.status
-    if st ~= H.seen_presence[id] then
-      H.seen_presence[id] = st
-      if st == 'back' or st == 'caught_up' then force = true end
-    end
-  end
   if force then T.broadcast_held(true) end
 end
 
 if not H.frame_hooked then
   H.frame_hooked = true
   MP.net.add_frame_hook(function() local ok, err = pcall(H.frame); if not ok then MP.log('error', 'trap frame: %s', tostring(err)) end end)
+  if MP.report and MP.report.on then MP.report.on('presence', H.on_presence) end
 end
 
 C.add_installer(H.install)

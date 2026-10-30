@@ -12,6 +12,9 @@
 --   reseed      -> the run restarts with the new seed
 -- Observers: MP.report.on(t, fn(o)) runs after the core handling (UI streams use it; one net
 -- handler per type is the rule, so they must not call MP.net.on('outcome')).
+-- MP.report.on('presence', fn(p)) gets every J2L `presence` frame after MP.state.presence is
+-- updated: p = {t = 'presence', id, status, graceMsLeft}. Presence is not an outcome, so the '*'
+-- observers never see it.
 --
 -- Peer kinds handled here: nemesis_info (enemy display, opponent skips), location, opp_ctx
 -- (custom contexts for MP jokers), deck_req/stats_req (answered), player_result/deck_res/
@@ -297,6 +300,18 @@ function RP.send_local_end_data()
   MP.net.send('stats_local', RP.stats())
 end
 
+-- ── Presence ────────────────────────────────────────────────────────────────
+
+function RP.presence(d)
+  MP.state.presence = MP.state.presence or {}
+  MP.state.presence[d.id] = { status = d.status, graceMsLeft = d.graceMsLeft }
+  local p = { t = 'presence', id = d.id, status = d.status, graceMsLeft = d.graceMsLeft }
+  for _, fn in ipairs(RP.observers.presence or {}) do
+    local ok, err = pcall(fn, p)
+    if not ok then MP.log('error', 'report observer presence failed: %s', tostring(err)) end
+  end
+end
+
 -- ── Tail (NET-07) ───────────────────────────────────────────────────────────
 
 function RP.apply_tail(d)
@@ -320,10 +335,7 @@ function RP.install_net()
       return MP.state_is('BLIND_SELECT', 'ROUND_EVAL', 'SHOP') and not MP.net.blocking_pending()
     end, 'tail')
   end)
-  MP.net.on('presence', function(d)
-    MP.state.presence = MP.state.presence or {}
-    MP.state.presence[d.id] = { status = d.status, graceMsLeft = d.graceMsLeft }
-  end)
+  MP.net.on('presence', RP.presence)
   MP.net.on('host_changed', function(d)
     if MP.state.session then MP.state.session.hostId = d.hostId end
   end)
