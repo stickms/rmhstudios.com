@@ -449,6 +449,9 @@ export class LobbyHost implements Role {
     const cp = this.driver?.latest ?? null;
     const tail: Record<Id, HandResult[]> = {};
     for (const [id, t] of this.tails) if (id !== m.userId && t.results.length) tail[id] = t.results.slice(-TAIL_MAX);
+    // A seated player: where its replay log continues if its page reloaded (its run is not
+    // live; a live run ignores it). docs/balatro-mp.md §11.
+    const logNext = match && inMatch ? this.ctx.replayTap()?.logLength(match.runId, m.userId) : null;
     this.star.send(m.peerId, 'welcome', {
       you: m.userId,
       lobby: this.state as LobbyState,
@@ -456,14 +459,16 @@ export class LobbyHost implements Role {
       checkpoint: match && cp?.runId === match.runId ? cp : null,
       lives: this.driver?.lives() ?? {},
       tail,
+      ...(typeof logNext === 'number' ? { logNext } : {}),
     });
     if (this.migratedFrom) this.star.send(m.peerId, 'host_changed', { hostId: this.ctx.me, from: 'migration' });
     // NET-09: the hidden tabs already announced (a presence is not part of the welcome).
     for (const id of this.hiddenShown) {
       if (id !== m.userId && !this.away.has(id)) this.star.send(m.peerId, 'presence', { id, status: 'away' });
     }
-    if (match && m.role === 'spectator') {
-      // REP-04: a spectator joining a running match gets every replay log so far (WS13).
+    if (match && (m.role === 'spectator' || fresh)) {
+      // REP-04: a spectator joining a running match gets every replay log so far (WS13); so
+      // does a crash rejoiner, whose reload lost its copy of them (its own log included).
       const peer = m.peerId;
       this.ctx.replayTap()?.catchUp(match.runId, (f, d) => !!this.star?.send(peer, 'log', d, { f }));
     }

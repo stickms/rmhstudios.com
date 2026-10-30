@@ -48,6 +48,72 @@ local function draw(n)
   end
 end
 
+-- The toy's save (vanilla's save_run table, in miniature) and Continue path. Loading creates new
+-- cards (new sort ids), as vanilla does.
+local function toy_pack(t, rec)
+  local parts, keys = {}, {}
+  for k in pairs(t) do keys[#keys + 1] = k end
+  table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+  for _, k in ipairs(keys) do
+    local v = t[k]
+    local key = type(k) == 'string' and ('[' .. string.format('%q', k) .. ']') or ('[' .. k .. ']')
+    local val
+    if type(v) == 'table' then val = toy_pack(v, true)
+    elseif type(v) == 'string' then val = string.format('%q', v)
+    else val = tostring(v) end
+    parts[#parts + 1] = key .. '=' .. val
+  end
+  return (rec and '' or 'return ') .. '{' .. table.concat(parts, ',') .. '}'
+end
+
+local function toy_save()
+  local function list(name)
+    local out = {}
+    for _, c in ipairs(G[name].cards) do
+      out[#out + 1] = { center = c.config.center.key, suit = c.base and c.base.suit, value = c.base and c.base.value,
+        cost = c.cost }
+    end
+    return out
+  end
+  local g = G.GAME
+  return { seed = g.pseudorandom.seed, round = g.round, dollars = g.dollars, chips = g.chips,
+    ante = g.round_resets.ante, hands = g.current_round.hands_left, discards = g.current_round.discards_left,
+    on_deck = g.blind_on_deck, state = G.STATE, blind = G.toy_blind, deck = list('deck'), hand = list('hand'),
+    jokers = list('jokers'), shop = list('shop_jokers'), in_shop = G.shop ~= nil, eval = G.round_eval ~= nil,
+    choosing = G.blind_select ~= nil }
+end
+
+local function toy_load(t)
+  local g = G.GAME
+  g.pseudorandom.seed = t.seed
+  g.round, g.dollars, g.chips = t.round, t.dollars, t.chips
+  g.round_resets.ante = t.ante
+  g.current_round.hands_left, g.current_round.discards_left = t.hands, t.discards
+  g.blind_on_deck = t.on_deck
+  G.toy_blind = t.blind
+  G.playing_cards = {}
+  for _, n in ipairs({ 'deck', 'hand', 'jokers', 'shop_jokers' }) do
+    G[n].cards, G[n].highlighted = {}, {}
+    for _, s in ipairs(t[n == 'shop_jokers' and 'shop' or n] or {}) do
+      local c = new_card(s.center, s.suit, s.value)
+      c.cost = s.cost
+      G[n]:emplace(c)
+      if s.suit then G.playing_cards[#G.playing_cards + 1] = c end
+    end
+  end
+  G.shop = t.in_shop and {} or nil
+  G.round_eval = t.eval and {} or nil
+  G.blind_select = t.choosing and {} or nil
+  G.STATE = t.state
+end
+
+--- The redirected save_run: the toy's table through the real MP snapshot writer.
+local function toy_save_run()
+  G.ARGS = G.ARGS or {}
+  G.ARGS.save_run = toy_save()
+  return MP.saves.write_snapshot()
+end
+
 local function install_toy()
   for _, n in ipairs({ 'hand', 'jokers', 'consumeables', 'deck', 'shop_jokers' }) do areaify(G[n]) end
   G.P_CENTERS.c_base.key = 'c_base'
@@ -55,8 +121,10 @@ local function install_toy()
   G.P_CENTERS.j_greedy_joker.key = 'j_greedy_joker'
   G.STATE_COMPLETE = true
   G.STAGE = G.STAGES.RUN
+  _G.STR_PACK = toy_pack
   _G.Game = {
     start_run = function(_, args)
+      if args.savetext then return toy_load(args.savetext) end
       G.GAME.pseudorandom.seed = args.seed
       G.GAME.round, G.GAME.dollars, G.GAME.chips = 0, 4, 0
       G.GAME.round_resets.ante = 1
@@ -521,5 +589,292 @@ describe('replay playback', function()
     expect(G.SETTINGS.GAMESPEED).eq(PL.FF_GAMESPEED)
     PL.close(true)
     expect(G.SETTINGS.GAMESPEED).eq(1)
+  end)
+end)
+
+-- ── A reload rejoin in the log (docs/balatro-mp.md §11) ──────────────────────────────────────
+
+describe('replay across a reload rejoin', function()
+  local files
+
+  local function memio()
+    MP.saves.io = {
+      write = function(p, s) files[p] = s; return true end,
+      read = function(p) return files[p] end,
+      remove = function(p) files[p] = nil end,
+    }
+  end
+
+  local function boot_match()
+    boot()
+    memio()
+  end
+
+  local function match_info(over)
+    local info = { runId = 'runRJ', me = 'u_me', hostId = 'u_opp', seed = SEED, deck = 'b_red', stake = 1,
+      queueMode = 'pvp_nemesis', ruleset = 'ruleset_mp_balanced', resolved = H.resolved({ layers = {} }),
+      options = H.options({ timer = false }), shape = { nemesisPairing = true },
+      roster = { { id = 'u_me', name = 'ME' }, { id = 'u_opp', name = 'OPP' } }, contentHash = 'x' }
+    for k, v in pairs(over or {}) do info[k] = v end
+    return info
+  end
+
+  --- First life of the page: blind 1 won, cashed out, snapshot in the shop, then progress the
+  --- reload loses (a buy, a sell). Returns the log and the snapshot's log index.
+  local function first_life()
+    files = {}
+    boot_match()
+    MP.session.mount('match', match_info())
+    MP.session.launch()
+    G.FUNCS.select_blind({ config = { ref_table = G.P_BLINDS.bl_small } })
+    local guard = 0
+    while G.STATE == G.STATES.SELECTING_HAND and guard < 10 do
+      guard = guard + 1
+      for i = 1, math.min(3, #G.hand.cards) do G.hand:add_to_highlighted(G.hand.cards[i]) end
+      G.FUNCS.play_cards_from_highlighted()
+    end
+    G.FUNCS.cash_out()
+    expect(toy_save_run()).eq(true)
+    local snap_i = RC.i
+    G.FUNCS.buy_from_shop({ config = { ref_table = G.shop_jokers.cards[1] } })
+    G.FUNCS.sell_card({ config = { ref_table = G.jokers.cards[1] } })
+    local log = logged()
+    H.teardown() -- the page reloads: no unmount, no `end`
+    return log, snap_i
+  end
+
+  --- The reloaded page: match_start with logNext, the launch, then the restore; then it plays on.
+  local function second_life(log_next, opts)
+    opts = opts or {}
+    boot_match()
+    MP.session.mount('match', match_info({ logNext = log_next }))
+    if not opts.no_launch then MP.session.launch() end
+    if not opts.no_snapshot then expect(MP.session.load_snapshot()).eq(true) end
+    if G.STATE == G.STATES.SHOP then
+      G.FUNCS.buy_from_shop({ config = { ref_table = G.shop_jokers.cards[2] } })
+      G.FUNCS.toggle_shop()
+    end
+    G.FUNCS.select_blind({ config = { ref_table = G.P_BLINDS.bl_big } })
+    for i = 1, 2 do G.hand:add_to_highlighted(G.hand.cards[i]) end
+    G.FUNCS.play_cards_from_highlighted()
+    local final = toy_state()
+    MP.session.unmount('test')
+    local log = logged()
+    H.teardown()
+    return log, final
+  end
+
+  local function join(old, base, new)
+    local out = {}
+    for k = 1, base do out[k] = old[k] end
+    for _, ev in ipairs(new) do out[#out + 1] = ev end
+    return out
+  end
+
+  local function play_back(feeds, opts)
+    opts = opts or {}
+    boot()
+    G.STATE = G.STATES.MENU
+    PL.open({ id = opts.live and 'live:runRJ' or 'rep-rj', pov = 'u_me', live = opts.live, speed = 0 })
+    for _, f in ipairs(feeds) do
+      PL.feed('u_me', f)
+      frames(800, function() return PL.s.state ~= 'running' or PL.s.pos >= PL.s.n end)
+    end
+    frames(800, function() return PL.s.state ~= 'running' end)
+    return PL.s
+  end
+
+  after_each(function()
+    if PL and PL.s then PL.close(true) end
+    H.teardown()
+  end)
+
+  it('the snapshot records its own log index', function()
+    local _, snap_i = first_life()
+    boot_match()
+    local st = MP.saves.read_state()
+    expect(st.log_i).eq(snap_i)
+    expect(st.runId).eq('runRJ')
+  end)
+
+  it('the rejoined log continues at logNext with the mount and restore markers and the snapshot', function()
+    local old, snap_i = first_life()
+    local new = second_life(#old)
+    expect(new[1].i).eq(#old)
+    expect(new[1].op).eq('manifest')
+    expect(new[1].d).eq({ rejoin = true, v = 2, mount = true, seg = #old })
+    for k, ev in ipairs(new) do expect(ev.i).eq(#old + k - 1) end
+    expect(find(new, 'match_manifest')).eq(nil)
+    expect(find(new, 'lobby_info')).eq(nil)
+    expect(new[2].op).eq('run_info') -- the launch ran before the restore (as live, E2E-14)
+    local restore = new[3]
+    expect(restore.d.restore).eq(true)
+    expect(restore.d.from).eq(snap_i)
+    expect(restore.d.seg).eq(#old)
+    expect(restore.d.z).eq('raw')
+    expect(restore.d.parts >= 1).truthy()
+    local data = {}
+    for j = 1, restore.d.parts do
+      expect(new[3 + j].d.snap).eq(j)
+      data[j] = new[3 + j].d.data
+    end
+    local run, state = REP.unpack_snapshot(REP.decode_blob(table.concat(data), 'raw'))
+    expect(run).eq(files['/rmh/mp/run.jkr'])
+    expect(state).eq(files['/rmh/mp/state.json'])
+  end)
+
+  it('a log without a usable logNext (< 2: no lobby info held) starts at 0 as before', function()
+    local old = first_life()
+    expect(old[1].op).eq('match_manifest')
+    local new = second_life(1)
+    expect(new[1].i).eq(0)
+    expect(new[1].op).eq('match_manifest')
+    local restore
+    for _, ev in ipairs(new) do if ev.op == 'manifest' and ev.d.restore then restore = ev end end
+    expect(restore.d.seg).eq(nil)
+    expect(restore.d.mount).eq(nil)
+  end)
+
+  it('plays a stored log past the rejoin to the identical end state, skipping the lost progress', function()
+    local old, snap_i = first_life()
+    local new, final = second_life(#old)
+    -- The lost progress would diverge if it were played (its sell is tampered): it is skipped.
+    local tampered = false
+    for k = snap_i + 1, #old do
+      if old[k].op == 'sell' then old[k].d.ref.k = 'j_nope'; tampered = true end
+    end
+    expect(tampered).eq(true)
+    local s = play_back({ join(old, #old, new) })
+    expect(s.error).eq(nil)
+    expect(s.state).eq('done')
+    expect(toy_state()).eq(final)
+    expect(PL.s.skips[snap_i]).eq(#old)
+  end)
+
+  it('a live (spectated) feed that played the lost progress first still restores and continues', function()
+    local old = first_life()
+    local new, final = second_life(#old)
+    local s = play_back({ old, new }, { live = true })
+    expect(s.error).eq(nil)
+    expect(s.state).eq('done')
+    expect(toy_state()).eq(final)
+  end)
+
+  it('a rejoin marker over events a peer held past the host drops them and continues there', function()
+    local old, snap_i = first_life()
+    local base = #old - 1 -- the host held one event less than this peer
+    expect(base > snap_i).truthy()
+    local new, final = second_life(base)
+    local s = play_back({ old, new }, { live = true })
+    expect(s.error).eq(nil)
+    expect(s.state).eq('done')
+    expect(toy_state()).eq(final)
+    expect(PL.s.events[base + 1].op).eq('manifest')
+  end)
+
+  it('a rejoin without a snapshot (the run restarted from its seed) plays back', function()
+    local old = first_life()
+    local new, final = second_life(#old, { no_snapshot = true })
+    local s = play_back({ join(old, #old, new) })
+    expect(s.error).eq(nil)
+    expect(s.state).eq('done')
+    expect(toy_state()).eq(final)
+  end)
+
+  it('a restore without a launch first (rejoin_restore before the launch) plays back', function()
+    local old = first_life()
+    local new, final = second_life(#old, { no_launch = true })
+    expect(new[2].d.restore).eq(true)
+    local s = play_back({ join(old, #old, new) })
+    expect(s.error).eq(nil)
+    expect(s.state).eq('done')
+    expect(toy_state()).eq(final)
+  end)
+
+  it('rejoin_restore reads the snapshot on arrival: the launch saving over the files does not matter', function()
+    local old = first_life()
+    local kept_run = files['/rmh/mp/run.jkr']
+    boot_match()
+    MP.session.mount('match', match_info({ logNext = #old }))
+    MP.session.launch()
+    G.screenwipe = {} -- the launch is still wiping: the load waits
+    MP.net.receive('rejoin_restore', { runId = 'runRJ', snapshotPath = '/rmh/mp/run.jkr', statePath = '/rmh/mp/state.json' })
+    expect(toy_save_run()).eq(true) -- the fresh run's blind-select save overwrites the files
+    expect(files['/rmh/mp/run.jkr'] ~= kept_run).truthy()
+    G.screenwipe = nil
+    frames(3)
+    expect(G.STATE).eq(G.STATES.SHOP)
+    local restore
+    for _, ev in ipairs(logged()) do if ev.op == 'manifest' and ev.d.restore then restore = ev end end
+    expect(restore ~= nil).truthy()
+    MP.session.unmount('test')
+  end)
+
+  it('seeking back across the rejoin restarts and reaches the same state', function()
+    local old = first_life()
+    local new, final = second_life(#old)
+    local s = play_back({ join(old, #old, new) })
+    expect(s.state).eq('done')
+    PL.s.state = 'running'
+    PL.seek(0)
+    frames(800, function() return PL.s.state ~= 'running' end)
+    expect(PL.s.state).eq('done')
+    expect(toy_state()).eq(final)
+  end)
+
+  it('stops honestly on a truncated snapshot and on a WS13 marker without a version', function()
+    local old = first_life()
+    local new = second_life(#old)
+    local log = join(old, #old, new)
+    local cut = {}
+    for _, ev in ipairs(log) do
+      if ev.op == 'manifest' and ev.d.snap then break end
+      cut[#cut + 1] = ev
+    end
+    local s = play_back({ cut })
+    expect(s.state).eq('diverged')
+    expect(s.error.msg:find('incomplete', 1, true) ~= nil).truthy()
+    PL.close(true)
+    H.teardown()
+    local legacy = join(old, #old, { { i = #old, t = 1, op = 'manifest', d = { rejoin = true } } })
+    s = play_back({ legacy })
+    expect(s.state).eq('diverged')
+    expect(s.inaccurate).eq(true)
+    expect(s.error.msg:find('reloaded', 1, true) ~= nil).truthy()
+  end)
+
+  it('snapshot blobs: parts never split a UTF-8 character; the love.data path round-trips', function()
+    boot()
+    local s = string.rep('ab\195\169', 50) -- "abé" x 50
+    for _, size in ipairs({ 4, 5, 7, 64 }) do -- ≥ 4: the longest UTF-8 sequence
+      local parts = REP.split_parts(s, size)
+      expect(table.concat(parts)).eq(s)
+      for _, p in ipairs(parts) do
+        local b = p:byte(1)
+        expect(b < 128 or b >= 192).truthy()
+      end
+    end
+    local blob = REP.pack_snapshot('return {}', '{"a":1}')
+    local run, state = REP.unpack_snapshot(blob)
+    expect(run).eq('return {}')
+    expect(state).eq('{"a":1}')
+    expect(REP.unpack_snapshot('5:ab')).eq(nil)
+    -- A stand-in love.data (reversible, not real deflate): the encode path is taken when it exists.
+    local had_love = rawget(_G, 'love')
+    _G.love = had_love or {}
+    local had = love.data
+    love.data = {
+      compress = function(_, _, x) return 'Z' .. x end,
+      decompress = function(_, _, x) return x:sub(2) end,
+      encode = function(_, _, x) return (x:gsub('.', function(c) return string.format('%02x', c:byte()) end)) end,
+      decode = function(_, _, x) return (x:gsub('%x%x', function(h) return string.char(tonumber(h, 16)) end)) end,
+    }
+    local data, z = REP.encode_blob(blob)
+    expect(z).eq('deflate')
+    expect(REP.decode_blob(data, z)).eq(blob)
+    love.data = had
+    _G.love = had_love
+    expect(REP.decode_blob(data, 'deflate')).eq(nil) -- cannot decode here: nil, never an error
+    expect(REP.decode_blob('x', 'zstd')).eq(nil)
   end)
 end)

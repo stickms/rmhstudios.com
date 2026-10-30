@@ -83,6 +83,11 @@ export const WIRE_D = {
     lives: z.record(zId, z.number().int().min(0)),
     tail: z.record(zId, z.array(zHandResult).max(256)),
     logs: z.array(zReplayBatch).max(16).optional(),
+    /**
+     * A crash rejoin: how many events of the rejoiner's own replay log the host
+     * holds (contiguous). Its recorder continues there (docs/balatro-mp.md §11).
+     */
+    logNext: z.number().int().min(0).max(20_000).optional(),
   }),
   /** Full replace; ignored if `version` ≤ the last one. */
   lobby: z.object({ version: z.number().int().min(0), state: zLobbyState }),

@@ -78,6 +78,54 @@ describe('PlayerLog', () => {
   });
 });
 
+describe('PlayerLog across a reload rejoin (§11)', () => {
+  const mount = (i: number, t = 9_000) => ({ i, t, op: 'manifest' as const, d: { rejoin: true, v: 2, mount: true, seg: i } });
+
+  it('the rejoined segment continues after the old events: one contiguous log', () => {
+    const log = new PlayerLog('b');
+    log.add(range(0, 30));
+    expect(log.add([mount(30), ...range(31, 40)])).toEqual({ added: 10, duplicate: 0, dropped: 0 });
+    expect(log.contiguous).toBe(40);
+    expect(log.get(30)?.d.mount).toBe(true);
+  });
+
+  it('a re-sent marker is a duplicate, never a rewind', () => {
+    const log = new PlayerLog('b');
+    log.add([...range(0, 30), mount(30), ...range(31, 40)]);
+    const r = log.add([mount(30), ...range(31, 33)]);
+    expect(r).toEqual({ added: 0, duplicate: 3, dropped: 0 });
+    expect(r.rewound).toBeUndefined();
+    expect(log.contiguous).toBe(40);
+  });
+
+  it('a marker over events this peer held past the host drops them (bytes and counts follow)', () => {
+    const log = new PlayerLog('b');
+    log.add(range(0, 35)); // this peer got 35; the host had 30 when the player rejoined
+    log.add([ev(50)]); // and a stray event past a gap
+    const before = log.bytes;
+    const r = log.add([mount(30), ev(31, 'run_info')]);
+    expect(r.rewound).toBe(30);
+    expect(r.added).toBe(2);
+    expect(log.contiguous).toBe(32);
+    expect(log.count).toBe(32);
+    expect(log.get(31)?.op).toBe('run_info');
+    expect(log.get(50)).toBeUndefined();
+    expect(log.bytes).toBeLessThan(before);
+    expect(log.bytes).toBe(log.events().reduce((n, e) => n + eventSize(e), 0));
+    // Later events of the old life (a slow relay) are now duplicates of the new segment.
+    expect(log.add([ev(32), ev(31)]).duplicate).toBe(1);
+  });
+
+  it('only a rejoin marker may replace a held event', () => {
+    const log = new PlayerLog('b');
+    log.add(range(0, 5));
+    expect(log.add([ev(3, 'manifest', { rejoin: false })]).duplicate).toBe(1);
+    expect(log.add([ev(3, 'discard')]).duplicate).toBe(1);
+    expect(log.contiguous).toBe(5);
+    expect(log.get(3)?.op).toBe('play');
+  });
+});
+
 describe('chunking', () => {
   it('wire batches hold at most 50 events and about 12 KB', () => {
     const events = Array.from({ length: 333 }, (_, i) => ev(i, 'money_delta', { pad: 'y'.repeat(i % 7 === 0 ? 900 : 50) }));

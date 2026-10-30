@@ -194,6 +194,8 @@ function S.mount(kind, info)
     stake = per.stake or info.stake or 1, mpStake = info.mpStake, challenge = info.challenge,
     queueMode = info.queueMode, ruleset = info.ruleset or (info.resolved and info.resolved.key),
     contentHash = info.contentHash,
+    -- A reload rejoin: the index this player's replay log continues at (the host's count of it).
+    log_next = kind == 'match' and tonumber(info.logNext) or nil,
   }
   if kind == 'practice' then
     sess.options.pvpStartRound = 2
@@ -247,21 +249,39 @@ function S.launch(seed)
   return true
 end
 
---- Rejoin: load the MP snapshot through vanilla's Continue path (§0.4).
-function S.load_snapshot(path)
-  local save = saves.read_snapshot(path)
+--- Rejoin: load the MP snapshot through vanilla's Continue path (§0.4). `texts` = {run, state}
+--- read when rejoin_restore arrived (else the files are read now).
+function S.load_snapshot(path, texts)
+  if texts and type(texts.run) == 'string' then return S.restore_raw(texts.run, texts.state) end
+  return S.restore_raw(saves.read_raw(path), saves.read_state_raw())
+end
+
+S.STATE_KEYS = { 'lives', 'team_lives', 'my_team', 'pairing', 'target', 'enemy', 'comeback', 'furthest_blind',
+  'spent', 'stats', 'blind_results', 'highest_pvp_score', 'pincher_unlock', 'pincher_index', 'pizza_discards',
+  'traps', 'ante_key' }
+
+--- Restore a run from the snapshot texts: `run_text` = run.jkr (STR_PACK text), `state_text` =
+--- state.json (optional). Shared by the live rejoin and the replay player's restore marker, so
+--- both land in the same state. `S.restored` hands the texts (and the snapshot's replay log
+--- index) to the replay recorder, which takes them in its Game:start_run wrap. Returns false
+--- when the run text is unreadable.
+function S.restore_raw(run_text, state_text)
+  local save = saves.unpack_sandboxed(run_text)
   if not save then
     MP.log('error', 'session: rejoin snapshot unreadable')
     return false
   end
-  local st = saves.read_state()
+  local st
+  if type(state_text) == 'string' then
+    local ok, t = pcall(MP.card.json.decode, state_text)
+    if ok and type(t) == 'table' then st = t end
+  end
   if st then
-    for _, k in ipairs({ 'lives', 'team_lives', 'my_team', 'pairing', 'target', 'enemy', 'comeback', 'furthest_blind',
-      'spent', 'stats', 'blind_results', 'highest_pvp_score', 'pincher_unlock', 'pincher_index', 'pizza_discards',
-      'traps', 'ante_key' }) do
+    for _, k in ipairs(S.STATE_KEYS) do
       if st[k] ~= nil then MP.state[k] = st[k] end
     end
   end
+  S.restored = { run = run_text, state = st and state_text or nil, log_i = st and tonumber(st.log_i) or nil }
   S.restoring = true
   S.launching = true
   G.FUNCS.start_run(nil, { savetext = save })
@@ -433,7 +453,7 @@ local function deferred_launch()
     if S.pending_rejoin and S.pending_rejoin.runId == MP.state.session.runId then
       local p = S.pending_rejoin
       S.pending_rejoin = nil
-      S.load_snapshot(p.snapshotPath)
+      S.load_snapshot(p.snapshotPath, p.texts)
     else
       S.launch()
     end
@@ -456,16 +476,20 @@ function S.install_net()
   end)
   MP.net.on('rejoin_restore', function(d)
     local sess = MP.state.session
+    -- Read the files now: the launch's own blind-select save_run may overwrite them before the
+    -- deferred load runs (it would then restore the fresh run).
+    local texts = { run = saves.read_raw(d.snapshotPath), state = saves.read_state_raw(d.statePath) }
     if sess and sess.runId == d.runId and not S.launch_pending then
       -- The launch may have just run: its start_run screen wipe is still on screen, and a
       -- second start_run over it crashes vanilla's wipe_off (G.screenwipe is gone by then).
       -- Load once no wipe is running (found by E2E-14).
       MP.net.defer(function()
         local cur = MP.state.session
-        if cur and cur.runId == d.runId then S.load_snapshot(d.snapshotPath) end
+        if cur and cur.runId == d.runId then S.load_snapshot(d.snapshotPath, texts) end
       end, function() return not (rawget(_G, 'G') and G.screenwipe) end, 'launch')
     else
-      S.pending_rejoin = d       -- applied by the pending launch (or the next match_start)
+      -- applied by the pending launch (or the next match_start)
+      S.pending_rejoin = { runId = d.runId, snapshotPath = d.snapshotPath, texts = texts }
     end
   end)
 end

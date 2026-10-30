@@ -132,7 +132,13 @@ end
 
 local function state_snapshot()
   local s = MP.state
+  -- log_i: this player's replay log index when the snapshot was taken (the state is the run
+  -- after events [0, log_i)). A rejoin from it writes the index into its restore marker, so a
+  -- playback can skip the progress the reload lost (replay/recorder.lua, replay/player.lua).
+  local rc = MP.replay and MP.replay.recorder
+  local log_i = (rc and rc.active and not MP.replay.playing) and rc.i or nil
   return {
+    log_i = log_i,
     runId = s.session and s.session.runId, lives = s.lives, team_lives = s.team_lives, my_team = s.my_team,
     pairing = s.pairing, target = s.target, enemy = s.enemy, comeback = s.comeback,
     furthest_blind = s.furthest_blind, spent = s.spent, stats = s.stats, blind_results = s.blind_results,
@@ -162,6 +168,10 @@ end
 function S.read_snapshot(path)
   return unpack_sandboxed(S.io.read(path or P.PATHS.MP_RUN))
 end
+
+--- The snapshot files' text as written (nil when absent): the rejoin path keeps the exact texts.
+function S.read_raw(path) return S.io.read(path or P.PATHS.MP_RUN) end
+function S.read_state_raw(path) return S.io.read(path or P.PATHS.MP_STATE) end
 
 function S.read_state(path)
   local s = S.io.read(path or P.PATHS.MP_STATE)

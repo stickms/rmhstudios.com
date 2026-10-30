@@ -340,110 +340,111 @@ D[216] = {T="object", p={manhunt=D[19],nemesisPairing=D[19],practice=D[19],teamB
 D[217] = {T="object", p={challenge=D[43],contentHash=D[13],deck=D[13],hostId=D[73],layers=D[115],mpStake=D[144],options=D[180],perPlayer=D[200],queueMode=D[128],resolved=D[213],roster=D[215],ruleset=D[13],runId=D[120],seed=D[13],shape=D[216],stake=D[134],startedAt=D[68]}, r={"challenge","contentHash","deck","hostId","layers","mpStake","options","queueMode","resolved","roster","ruleset","runId","seed","shape","stake","startedAt"}, n=true}
 D[218] = {T="object", p={challenge=D[43],code=D[13],deck=D[13],forfeited=D[167],hostId=D[73],kicked=D[168],kind=D[169],mpStake=D[144],open=D[19],options=D[180],players=D[185],queueMode=D[128],setup=D[198],stake=D[134],started=D[217],successorId=D[187],version=D[14]}, r={"challenge","code","deck","forfeited","hostId","kicked","kind","mpStake","open","options","players","queueMode","setup","stake","started","successorId","version"}}
 D[219] = {T="object", p={canStart=D[19],isHost=D[19],me=D[73],startBlockReason=D[47],state=D[218]}, r={"canStart","isHost","me","state"}}
-D[220] = {T="object", p={challenge=D[43],contentHash=D[13],deck=D[13],hostId=D[73],layers=D[115],me=D[73],mpStake=D[144],options=D[180],perPlayer=D[200],queueMode=D[128],resolved=D[213],roster=D[215],ruleset=D[13],runId=D[120],seed=D[13],shape=D[216],stake=D[134],startedAt=D[68]}, r={"challenge","contentHash","deck","hostId","layers","me","mpStake","options","queueMode","resolved","roster","ruleset","runId","seed","shape","stake","startedAt"}}
-D[221] = {T="enum", v={"loading","ready","error"}}
-D[222] = {T="object", p={error=D[205],progress=D[193],status=D[221]}, r={"status"}}
-D[223] = {T="object", p={avatarUrl=D[181],name=D[47]}, r={"avatarUrl","name"}}
-D[224] = {T="enum", v={"connected","connecting","offline"}}
-D[225] = {T="object", p={account=D[223],hub=D[224],reason=D[47]}, r={"account","hub"}}
-D[226] = {T="const", v=1}
-D[227] = {T="const", v="*all*"}
-D[228] = {T="any_of", o={D[73],D[227]}}
-D[229] = {T="const", v="player_lives"}
-D[230] = {T="object", p={lives=D[12],lost=D[226],player_id=D[228],t=D[229]}, r={"lives","player_id","t"}}
-D[231] = {T="const", v="team_lives"}
-D[232] = {T="enum", v={"A","B"}}
-D[233] = {T="object", p={lives=D[12],t=D[231],team_id=D[232]}, r={"lives","t","team_id"}}
-D[234] = {T="object", p={}, r={}, ap=D[151], pn=D[73]}
-D[235] = {T="const", v="team_roster"}
-D[236] = {T="object", p={roster=D[234],t=D[235]}, r={"roster","t"}}
-D[237] = {T="const", v=""}
-D[238] = {T="any_of", o={D[73],D[237]}}
-D[239] = {T="object", p={}, r={}, ap=D[238], pn=D[73]}
-D[240] = {T="const", v="nemesis_pairing"}
-D[241] = {T="object", p={ante=D[14],pairing=D[239],t=D[240]}, r={"ante","pairing","t"}}
-D[242] = {T="const", v="team_card_target"}
-D[243] = {T="object", p={pairing=D[239],t=D[242]}, r={"pairing","t"}}
-D[244] = {T="const", v="royale_target"}
-D[245] = {T="object", p={t=D[244],targets=D[239]}, r={"t","targets"}}
-D[246] = {T="const", v="manhunt_target"}
-D[247] = {T="object", p={t=D[246],target_id=D[238]}, r={"t","target_id"}}
-D[248] = {T="const", v="team_score_board"}
-D[249] = {T="object", p={A=D[13],B=D[13]}, r={"A","B"}}
-D[250] = {T="object", p={t=D[248],team_scores=D[249]}, r={"t","team_scores"}}
-D[251] = {T="object", p={}, r={}, ap=D[3], pn=D[73]}
-D[252] = {T="const", v="start_blind"}
-D[253] = {T="object", p={first_player=D[238],starting_hands=D[251],t=D[252]}, r={"first_player","starting_hands","t"}}
-D[254] = {T="const", v="timer_hand_lost"}
-D[255] = {T="object", p={player_id=D[73],t=D[254]}, r={"player_id","t"}}
-D[256] = {T="const", v="end_pvp"}
-D[257] = {T="object", p={loser_id=D[238],pvp_timer_lost=D[19],t=D[256]}, r={"loser_id","pvp_timer_lost","t"}}
-D[258] = {T="const", v="death_pending"}
-D[259] = {T="object", p={blind_key=D[44],opponent_id=D[73],player_id=D[73],t=D[258],team_id=D[151]}, r={"blind_key","t"}}
-D[260] = {T="const", v="eliminated"}
-D[261] = {T="object", p={player_id=D[73],t=D[260]}, r={"player_id","t"}}
-D[262] = {T="integer", min=1}
-D[263] = {T="object", p={}, r={}, ap=D[262], pn=D[73]}
-D[264] = {T="const", v="win"}
-D[265] = {T="object", p={draw=D[77],places=D[263],t=D[264],winner_id=D[73],winner_team_id=D[151]}, r={"t"}}
-D[266] = {T="const", v="player_won"}
-D[267] = {T="object", p={player_id=D[73],t=D[266]}, r={"player_id","t"}}
-D[268] = {T="const", v="reseed"}
-D[269] = {T="object", p={seed=D[13],t=D[268]}, r={"seed","t"}}
-D[270] = {T="const", v="speedrun"}
-D[271] = {T="object", p={player_id=D[73],t=D[270]}, r={"player_id","t"}}
-D[272] = {T="enum", v={"seed","draw"}}
-D[273] = {T="const", v="vote_progress"}
-D[274] = {T="object", p={k=D[14],kind=D[272],n=D[14],t=D[273]}, r={"k","kind","n","t"}}
-D[275] = {T="union", key="t", m={player_lives=D[230],team_lives=D[233],team_roster=D[236],nemesis_pairing=D[241],team_card_target=D[243],royale_target=D[245],manhunt_target=D[247],team_score_board=D[250],start_blind=D[253],timer_hand_lost=D[255],end_pvp=D[257],death_pending=D[259],eliminated=D[261],win=D[265],player_won=D[267],reseed=D[269],speedrun=D[271],vote_progress=D[274]}}
-D[276] = {T="object", p={hs=D[14],o=D[275]}, r={"hs","o"}}
-D[277] = {T="object", p={d=D[61],from=D[73],k=D[62]}, r={"d","from","k"}}
-D[278] = {T="object", p={d=D[64],from=D[73],k=D[65]}, r={"d","from","k"}}
-D[279] = {T="object", p={d=D[69],from=D[73],k=D[70]}, r={"d","from","k"}}
-D[280] = {T="object", p={d=D[74],from=D[73],k=D[75]}, r={"d","from","k"}}
-D[281] = {T="object", p={d=D[79],from=D[73],k=D[80]}, r={"d","from","k"}}
-D[282] = {T="object", p={d=D[90],from=D[73],k=D[91]}, r={"d","from","k"}}
-D[283] = {T="object", p={d=D[96],from=D[73],k=D[97]}, r={"d","from","k"}}
-D[284] = {T="object", p={d=D[99],from=D[73],k=D[100]}, r={"d","from","k"}}
-D[285] = {T="object", p={d=D[105],from=D[73],k=D[106]}, r={"d","from","k"}}
-D[286] = {T="object", p={d=D[108],from=D[73],k=D[109]}, r={"d","from","k"}}
-D[287] = {T="object", p={d=D[2],from=D[73],k=D[111]}, r={"d","from","k"}}
-D[288] = {T="object", p={d=D[108],from=D[73],k=D[113]}, r={"d","from","k"}}
-D[289] = {T="object", p={d=D[116],from=D[73],k=D[117]}, r={"d","from","k"}}
-D[290] = {T="union", key="k", m={nemesis_info=D[277],location=D[278],timer=D[279],sync=D[280],opp_ctx=D[281],trap_plant=D[282],trap_held=D[283],trap_fired=D[284],player_result=D[285],deck_req=D[286],deck_res=D[287],stats_req=D[288],stats_res=D[289]}}
-D[291] = {T="object", p={deck=D[13],resolved=D[213],seed=D[43],stake=D[134]}, r={"deck","resolved","seed","stake"}}
-D[292] = {T="enum", v={"away","back","catching_up","caught_up","left","forfeited"}}
-D[293] = {T="object", p={graceMsLeft=D[14],id=D[73],status=D[292]}, r={"id","status"}}
-D[294] = {T="enum", v={"idle","searching","matched","cancelled"}}
-D[295] = {T="object", p={queueMode=D[128],state=D[294],waiting=D[14]}, r={"queueMode","state"}}
-D[296] = {T="const", v="/rmh/mp/run.jkr"}
-D[297] = {T="const", v="/rmh/mp/state.json"}
-D[298] = {T="object", p={runId=D[120],snapshotPath=D[296],statePath=D[297]}, r={"runId","snapshotPath","statePath"}}
-D[299] = {T="object", p={events=D[52],pov=D[73]}, r={"events","pov"}}
-D[300] = {T="array", i=D[47], max=16}
-D[301] = {T="enum", v={"win","lose","draw"}, n=true}
-D[302] = {T="object", p={at=D[68],id=D[47],players=D[300],queueMode=D[128],result=D[301],ruleset=D[13]}, r={"at","id","players","queueMode","result","ruleset"}}
-D[303] = {T="array", i=D[302], max=30}
-D[304] = {T="object", p={id=D[47],len=D[50],pos=D[50],pov=D[73]}, r={"id","len","pos","pov"}, n=true}
-D[305] = {T="object", p={list=D[303],playing=D[304],speed=D[50]}, r={}}
-D[306] = {T="object", p={draft=D[191],kind=D[192],msLeft=D[14],options=D[195],phase=D[196],result=D[197],stepId=D[44],voted=D[14],voters=D[14]}, r={"draft","kind","msLeft","options","phase","result","stepId","voted","voters"}}
-D[307] = {T="integer", n=true}
-D[308] = {T="object", p={ante=D[307],code=D[13],players=D[14],queueMode=D[128]}, r={"ante","code","players","queueMode"}}
-D[309] = {T="array", i=D[308], max=50}
-D[310] = {T="object", p={error=D[44],lobbies=D[309]}, r={"lobbies"}}
-D[311] = {T="object", p={ante=D[14],at=D[50],hands_left=D[3],lives=D[12],score=D[13],skips=D[14]}, r={"ante","at","hands_left","score","skips"}}
-D[312] = {T="array", i=D[311], max=256}
-D[313] = {T="object", p={id=D[73],results=D[312]}, r={"id","results"}}
-D[314] = {T="array", i=D[46], max=32}
-D[315] = {T="object", p={args=D[314],cmd=D[47],id=D[47]}, r={"args","cmd","id"}}
-D[316] = {T="enum", v={"normal","orange","important"}}
-D[317] = {T="const", v=">>", n=true}
-D[318] = {T="enum", v={"ante","pvp","speedlatro"}}
-D[319] = {T="object", p={auto=D[19],beingTimered=D[19],color=D[316],display=D[317],mode=D[318],pressable=D[19],ticking=D[19],timering=D[19],value=D[68]}, r={"auto","beingTimered","color","display","mode","pressable","ticking","timering","value"}}
-D[320] = {T="any_of", o={D[205],D[68]}}
-D[321] = {T="object", p={}, r={}, ap=D[320], pn=D[44]}
-D[322] = {T="object", p={key=D[47],vars=D[321]}, r={"key"}}
-D[323] = {T="object", p={k=D[14],kind=D[272],n=D[14]}, r={"k","kind","n"}}
+D[220] = {T="integer", min=0, max=20000}
+D[221] = {T="object", p={challenge=D[43],contentHash=D[13],deck=D[13],hostId=D[73],layers=D[115],logNext=D[220],me=D[73],mpStake=D[144],options=D[180],perPlayer=D[200],queueMode=D[128],resolved=D[213],roster=D[215],ruleset=D[13],runId=D[120],seed=D[13],shape=D[216],stake=D[134],startedAt=D[68]}, r={"challenge","contentHash","deck","hostId","layers","me","mpStake","options","queueMode","resolved","roster","ruleset","runId","seed","shape","stake","startedAt"}}
+D[222] = {T="enum", v={"loading","ready","error"}}
+D[223] = {T="object", p={error=D[205],progress=D[193],status=D[222]}, r={"status"}}
+D[224] = {T="object", p={avatarUrl=D[181],name=D[47]}, r={"avatarUrl","name"}}
+D[225] = {T="enum", v={"connected","connecting","offline"}}
+D[226] = {T="object", p={account=D[224],hub=D[225],reason=D[47]}, r={"account","hub"}}
+D[227] = {T="const", v=1}
+D[228] = {T="const", v="*all*"}
+D[229] = {T="any_of", o={D[73],D[228]}}
+D[230] = {T="const", v="player_lives"}
+D[231] = {T="object", p={lives=D[12],lost=D[227],player_id=D[229],t=D[230]}, r={"lives","player_id","t"}}
+D[232] = {T="const", v="team_lives"}
+D[233] = {T="enum", v={"A","B"}}
+D[234] = {T="object", p={lives=D[12],t=D[232],team_id=D[233]}, r={"lives","t","team_id"}}
+D[235] = {T="object", p={}, r={}, ap=D[151], pn=D[73]}
+D[236] = {T="const", v="team_roster"}
+D[237] = {T="object", p={roster=D[235],t=D[236]}, r={"roster","t"}}
+D[238] = {T="const", v=""}
+D[239] = {T="any_of", o={D[73],D[238]}}
+D[240] = {T="object", p={}, r={}, ap=D[239], pn=D[73]}
+D[241] = {T="const", v="nemesis_pairing"}
+D[242] = {T="object", p={ante=D[14],pairing=D[240],t=D[241]}, r={"ante","pairing","t"}}
+D[243] = {T="const", v="team_card_target"}
+D[244] = {T="object", p={pairing=D[240],t=D[243]}, r={"pairing","t"}}
+D[245] = {T="const", v="royale_target"}
+D[246] = {T="object", p={t=D[245],targets=D[240]}, r={"t","targets"}}
+D[247] = {T="const", v="manhunt_target"}
+D[248] = {T="object", p={t=D[247],target_id=D[239]}, r={"t","target_id"}}
+D[249] = {T="const", v="team_score_board"}
+D[250] = {T="object", p={A=D[13],B=D[13]}, r={"A","B"}}
+D[251] = {T="object", p={t=D[249],team_scores=D[250]}, r={"t","team_scores"}}
+D[252] = {T="object", p={}, r={}, ap=D[3], pn=D[73]}
+D[253] = {T="const", v="start_blind"}
+D[254] = {T="object", p={first_player=D[239],starting_hands=D[252],t=D[253]}, r={"first_player","starting_hands","t"}}
+D[255] = {T="const", v="timer_hand_lost"}
+D[256] = {T="object", p={player_id=D[73],t=D[255]}, r={"player_id","t"}}
+D[257] = {T="const", v="end_pvp"}
+D[258] = {T="object", p={loser_id=D[239],pvp_timer_lost=D[19],t=D[257]}, r={"loser_id","pvp_timer_lost","t"}}
+D[259] = {T="const", v="death_pending"}
+D[260] = {T="object", p={blind_key=D[44],opponent_id=D[73],player_id=D[73],t=D[259],team_id=D[151]}, r={"blind_key","t"}}
+D[261] = {T="const", v="eliminated"}
+D[262] = {T="object", p={player_id=D[73],t=D[261]}, r={"player_id","t"}}
+D[263] = {T="integer", min=1}
+D[264] = {T="object", p={}, r={}, ap=D[263], pn=D[73]}
+D[265] = {T="const", v="win"}
+D[266] = {T="object", p={draw=D[77],places=D[264],t=D[265],winner_id=D[73],winner_team_id=D[151]}, r={"t"}}
+D[267] = {T="const", v="player_won"}
+D[268] = {T="object", p={player_id=D[73],t=D[267]}, r={"player_id","t"}}
+D[269] = {T="const", v="reseed"}
+D[270] = {T="object", p={seed=D[13],t=D[269]}, r={"seed","t"}}
+D[271] = {T="const", v="speedrun"}
+D[272] = {T="object", p={player_id=D[73],t=D[271]}, r={"player_id","t"}}
+D[273] = {T="enum", v={"seed","draw"}}
+D[274] = {T="const", v="vote_progress"}
+D[275] = {T="object", p={k=D[14],kind=D[273],n=D[14],t=D[274]}, r={"k","kind","n","t"}}
+D[276] = {T="union", key="t", m={player_lives=D[231],team_lives=D[234],team_roster=D[237],nemesis_pairing=D[242],team_card_target=D[244],royale_target=D[246],manhunt_target=D[248],team_score_board=D[251],start_blind=D[254],timer_hand_lost=D[256],end_pvp=D[258],death_pending=D[260],eliminated=D[262],win=D[266],player_won=D[268],reseed=D[270],speedrun=D[272],vote_progress=D[275]}}
+D[277] = {T="object", p={hs=D[14],o=D[276]}, r={"hs","o"}}
+D[278] = {T="object", p={d=D[61],from=D[73],k=D[62]}, r={"d","from","k"}}
+D[279] = {T="object", p={d=D[64],from=D[73],k=D[65]}, r={"d","from","k"}}
+D[280] = {T="object", p={d=D[69],from=D[73],k=D[70]}, r={"d","from","k"}}
+D[281] = {T="object", p={d=D[74],from=D[73],k=D[75]}, r={"d","from","k"}}
+D[282] = {T="object", p={d=D[79],from=D[73],k=D[80]}, r={"d","from","k"}}
+D[283] = {T="object", p={d=D[90],from=D[73],k=D[91]}, r={"d","from","k"}}
+D[284] = {T="object", p={d=D[96],from=D[73],k=D[97]}, r={"d","from","k"}}
+D[285] = {T="object", p={d=D[99],from=D[73],k=D[100]}, r={"d","from","k"}}
+D[286] = {T="object", p={d=D[105],from=D[73],k=D[106]}, r={"d","from","k"}}
+D[287] = {T="object", p={d=D[108],from=D[73],k=D[109]}, r={"d","from","k"}}
+D[288] = {T="object", p={d=D[2],from=D[73],k=D[111]}, r={"d","from","k"}}
+D[289] = {T="object", p={d=D[108],from=D[73],k=D[113]}, r={"d","from","k"}}
+D[290] = {T="object", p={d=D[116],from=D[73],k=D[117]}, r={"d","from","k"}}
+D[291] = {T="union", key="k", m={nemesis_info=D[278],location=D[279],timer=D[280],sync=D[281],opp_ctx=D[282],trap_plant=D[283],trap_held=D[284],trap_fired=D[285],player_result=D[286],deck_req=D[287],deck_res=D[288],stats_req=D[289],stats_res=D[290]}}
+D[292] = {T="object", p={deck=D[13],resolved=D[213],seed=D[43],stake=D[134]}, r={"deck","resolved","seed","stake"}}
+D[293] = {T="enum", v={"away","back","catching_up","caught_up","left","forfeited"}}
+D[294] = {T="object", p={graceMsLeft=D[14],id=D[73],status=D[293]}, r={"id","status"}}
+D[295] = {T="enum", v={"idle","searching","matched","cancelled"}}
+D[296] = {T="object", p={queueMode=D[128],state=D[295],waiting=D[14]}, r={"queueMode","state"}}
+D[297] = {T="const", v="/rmh/mp/run.jkr"}
+D[298] = {T="const", v="/rmh/mp/state.json"}
+D[299] = {T="object", p={runId=D[120],snapshotPath=D[297],statePath=D[298]}, r={"runId","snapshotPath","statePath"}}
+D[300] = {T="object", p={events=D[52],pov=D[73]}, r={"events","pov"}}
+D[301] = {T="array", i=D[47], max=16}
+D[302] = {T="enum", v={"win","lose","draw"}, n=true}
+D[303] = {T="object", p={at=D[68],id=D[47],players=D[301],queueMode=D[128],result=D[302],ruleset=D[13]}, r={"at","id","players","queueMode","result","ruleset"}}
+D[304] = {T="array", i=D[303], max=30}
+D[305] = {T="object", p={id=D[47],len=D[50],pos=D[50],pov=D[73]}, r={"id","len","pos","pov"}, n=true}
+D[306] = {T="object", p={list=D[304],playing=D[305],speed=D[50]}, r={}}
+D[307] = {T="object", p={draft=D[191],kind=D[192],msLeft=D[14],options=D[195],phase=D[196],result=D[197],stepId=D[44],voted=D[14],voters=D[14]}, r={"draft","kind","msLeft","options","phase","result","stepId","voted","voters"}}
+D[308] = {T="integer", n=true}
+D[309] = {T="object", p={ante=D[308],code=D[13],players=D[14],queueMode=D[128]}, r={"ante","code","players","queueMode"}}
+D[310] = {T="array", i=D[309], max=50}
+D[311] = {T="object", p={error=D[44],lobbies=D[310]}, r={"lobbies"}}
+D[312] = {T="object", p={ante=D[14],at=D[50],hands_left=D[3],lives=D[12],score=D[13],skips=D[14]}, r={"ante","at","hands_left","score","skips"}}
+D[313] = {T="array", i=D[312], max=256}
+D[314] = {T="object", p={id=D[73],results=D[313]}, r={"id","results"}}
+D[315] = {T="array", i=D[46], max=32}
+D[316] = {T="object", p={args=D[315],cmd=D[47],id=D[47]}, r={"args","cmd","id"}}
+D[317] = {T="enum", v={"normal","orange","important"}}
+D[318] = {T="const", v=">>", n=true}
+D[319] = {T="enum", v={"ante","pvp","speedlatro"}}
+D[320] = {T="object", p={auto=D[19],beingTimered=D[19],color=D[317],display=D[318],mode=D[319],pressable=D[19],ticking=D[19],timering=D[19],value=D[68]}, r={"auto","beingTimered","color","display","mode","pressable","ticking","timering","value"}}
+D[321] = {T="any_of", o={D[205],D[68]}}
+D[322] = {T="object", p={}, r={}, ap=D[321], pn=D[44]}
+D[323] = {T="object", p={key=D[47],vars=D[322]}, r={"key"}}
+D[324] = {T="object", p={k=D[14],kind=D[273],n=D[14]}, r={"k","kind","n"}}
 
 P.SCHEMA = {
   l2j = {
@@ -494,25 +495,25 @@ P.SCHEMA = {
     host_changed = D[165],
     lobby_error = D[166],
     lobby_view = D[219],
-    match_start = D[220],
-    mp_pack = D[222],
-    net_status = D[225],
-    outcome = D[276],
-    peer = D[290],
-    practice_start = D[291],
-    presence = D[293],
-    queue_view = D[295],
-    rejoin_restore = D[298],
-    replay_feed = D[299],
-    replay_view = D[305],
-    setup_view = D[306],
-    spectate_view = D[310],
-    tail = D[313],
-    test_cmd = D[315],
+    match_start = D[221],
+    mp_pack = D[223],
+    net_status = D[226],
+    outcome = D[277],
+    peer = D[291],
+    practice_start = D[292],
+    presence = D[294],
+    queue_view = D[296],
+    rejoin_restore = D[299],
+    replay_feed = D[300],
+    replay_view = D[306],
+    setup_view = D[307],
+    spectate_view = D[311],
+    tail = D[314],
+    test_cmd = D[316],
     timer_cue = D[108],
-    timer_state = D[319],
-    toast = D[322],
-    vote_progress = D[323],
+    timer_state = D[320],
+    toast = D[323],
+    vote_progress = D[324],
   },
 }
 

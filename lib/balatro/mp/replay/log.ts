@@ -6,7 +6,11 @@
  * (everyone else's), possibly repeated after a reconnect and, for a spectator
  * catching up, interleaved with live ones. A `PlayerLog` therefore files
  * events by their index `i`: duplicates are ignored, gaps wait to be filled,
- * and only the contiguous prefix is "playable". Caps per player per match
+ * and only the contiguous prefix is "playable". The one exception is a reload
+ * rejoin: the rejoiner's log continues at the host's count of it with a
+ * `manifest {rejoin}` marker, and a marker landing on an index that holds a
+ * different event drops what was held from there on (docs/balatro-mp.md §11).
+ * Caps per player per match
  * (D-34): 20 000 events or 1 MB of encoded events; past either the log is
  * truncated (later events are dropped and counted).
  *
@@ -70,6 +74,20 @@ export interface AddResult {
   duplicate: number;
   /** Dropped: malformed, over a cap, or past the end. */
   dropped: number;
+  /** A rejoin marker dropped the events held from this index on (see `PlayerLog.add`). */
+  rewound?: number;
+}
+
+/** A reload rejoin's marker (`manifest {rejoin}`; recorder.lua). */
+export function isRejoinMarker(e: ReplayEvent): boolean {
+  return e.op === 'manifest' && e.d.rejoin === true;
+}
+
+/** Two copies of one event (a re-sent batch), as opposed to two events at one index. */
+function sameEvent(a: ReplayEvent, b: ReplayEvent): boolean {
+  return (
+    a.op === b.op && a.t === b.t && a.d.seg === b.d.seg && a.d.mount === b.d.mount && a.d.restore === b.d.restore
+  );
 }
 
 /** One player's log, filed by event index. */
@@ -98,9 +116,17 @@ export class PlayerLog {
         if (isReplayEvent(raw)) this.truncated = true;
         continue;
       }
-      if (this.slots[raw.i] !== undefined) {
-        r.duplicate += 1;
-        continue;
+      const held = this.slots[raw.i];
+      if (held !== undefined) {
+        if (!isRejoinMarker(raw) || sameEvent(held, raw)) {
+          r.duplicate += 1;
+          continue;
+        }
+        // A reload rejoin continues this log at the host's count of it. Events held from
+        // there on are progress the reload lost (this peer got them, the host had not):
+        // the new segment replaces them.
+        this.cut(raw.i);
+        r.rewound = Math.min(r.rewound ?? raw.i, raw.i);
       }
       const size = eventSize(raw);
       if (this.bytes + size > this.limits.maxBytes) {
@@ -115,6 +141,18 @@ export class PlayerLog {
     }
     while (this.slots[this.contiguous] !== undefined) this.contiguous += 1;
     return r;
+  }
+
+  /** Drop every event from index `from` on. */
+  private cut(from: number): void {
+    for (let i = from; i < this.slots.length; i += 1) {
+      const e = this.slots[i];
+      if (e === undefined) continue;
+      this.bytes -= eventSize(e);
+      this.count -= 1;
+    }
+    this.slots.length = Math.min(this.slots.length, from);
+    if (this.contiguous > from) this.contiguous = from;
   }
 
   /** The contiguous events from `from` (default all). */
