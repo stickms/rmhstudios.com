@@ -1,0 +1,121 @@
+/**
+ * The icon for each achievement: a `lucide-react` icon name, so the library can draw
+ * Steam-style square icon tiles instead of emoji. Names only, no imports, so this
+ * stays client- and server-safe; `components/steam/AchievementIcon.tsx` resolves a
+ * name to the component. `lib/achievements/__tests__/icons.test.ts` fails when an
+ * achievement has no icon or a name is not a real lucide icon.
+ */
+
+export const DEFAULT_ACHIEVEMENT_ICON = 'Trophy';
+
+export const ACHIEVEMENT_ICON: Record<string, string> = {
+  // Social
+  'social.first_post': 'PenLine',
+  'social.posts_10': 'MessageCircle',
+  'social.posts_100': 'Megaphone',
+  'social.first_follower': 'UserPlus',
+  'social.followers_50': 'Users',
+  'social.followers_500': 'Trophy',
+  'social.first_like_given': 'Heart',
+  'social.first_comment': 'MessageSquare',
+  'social.first_bookmark': 'Bookmark',
+  'social.profile_complete': 'IdCard',
+  'social.first_repost': 'Repeat2',
+  'social.first_quote': 'Quote',
+  'social.first_poll': 'ChartBar',
+  'social.first_vote': 'Vote',
+  'social.likes_received_100': 'ThumbsUp',
+  'social.likes_received_1000': 'Flower2',
+  'social.comments_50': 'MessagesSquare',
+  'social.viral_post': 'TrendingUp',
+  'social.first_dm': 'Mail',
+  'social.first_mention_received': 'AtSign',
+  'social.followers_5000': 'BadgeCheck',
+  // Creator
+  'creator.first_build': 'Hammer',
+  'creator.builds_10': 'Factory',
+  'creator.first_community': 'Building2',
+  'creator.community_100': 'Radio',
+  'creator.first_paid_post': 'Lock',
+  'creator.first_sale': 'BadgeDollarSign',
+  'creator.first_product': 'Store',
+  'creator.build_likes_50': 'Award',
+  // Economy
+  'economy.first_purchase': 'ShoppingBag',
+  'economy.first_tip_sent': 'Coins',
+  'economy.first_tip_received': 'HeartHandshake',
+  'economy.coins_1000': 'Wallet',
+  'economy.coins_10000': 'Gem',
+  'economy.tips_sent_10': 'Gift',
+  'economy.first_unlock': 'KeyRound',
+  'economy.first_gift_sub': 'Ticket',
+  'economy.first_wheel': 'CircleDot',
+  'economy.shop_collector': 'Shirt',
+  // Special
+  'special.streak_7': 'Flame',
+  'special.streak_30': 'Zap',
+  'special.streak_100': 'Infinity',
+  'special.site_hunter': 'Compass',
+  'special.night_owl': 'Moon',
+  'special.early_bird': 'Bird',
+  'special.level_10': 'ChevronsUp',
+  'special.level_25': 'ShieldCheck',
+  'special.level_50': 'Flag',
+  'special.quest_master': 'Map',
+  'special.completionist': 'ListChecks',
+  'special.weekend_warrior': 'Gamepad2',
+  'special.bookmark_collector': 'Archive',
+  // Games
+  'game.first_ranked': 'Swords',
+  'game.first_music_guess': 'Music',
+  'game.rmhbox.first_game': 'PartyPopper',
+  'game.rmhbox.first_win': 'Medal',
+  'game.rmhbox.wins_25': 'Crown',
+  'game.rmhbox.host': 'Mic',
+  'game.rmhbox.perfect': 'Target',
+  'game.daily.first_solve': 'Lightbulb',
+  'game.daily.solves_30': 'CalendarDays',
+  'game.daily.streak_7': 'CalendarCheck',
+  'game.daily.all_in_day': 'CheckCheck',
+  'game.altair.first_run': 'Rocket',
+  'game.altair.first_victory': 'Star',
+  'game.altair.coop_revives_10': 'Handshake',
+  'game.altair.coop_wins_10': 'UsersRound',
+  'game.slice_it.first_play': 'Music2',
+  'game.slice_it.upload': 'Headphones',
+  'game.slice_it.full_combo': 'Link',
+  'game.slice_it.s_rank': 'Slice',
+  'game.slice_it.ss_rank': 'Diamond',
+  'game.slice_it.expert_fc': 'Skull',
+  'game.slice_it.stacked': 'SlidersHorizontal',
+  'game.slice_it.centurion': 'ListMusic',
+  'game.slice_it.charted': 'PencilRuler',
+  'game.synapse.first_game': 'Brain',
+  'game.temple.first_save': 'Landmark',
+  'game.rmhtype.first_race': 'Keyboard',
+  'game.rmhtype.wpm_100': 'Wind',
+  'game.rmhtube.host_room': 'Tv',
+  'game.rmhmusic.host_room': 'Disc3',
+  'game.rmhstudy.session': 'BookOpen',
+  'game.casino.first_win': 'Dices',
+  'game.casino.high_roller': 'Banknote',
+  'game.casino.blackjack': 'Spade',
+  // Bum's Rush
+  'games.bums_first_clear': 'Hand',
+  'games.bums_world_1': 'Anchor',
+  'games.bums_levels_25': 'Grab',
+  'games.bums_levels_72': 'Layers',
+  'games.bums_objectives_100': 'ClipboardList',
+  'games.bums_parcels_40': 'Package',
+  'games.bums_flawless_10': 'Shield',
+  'games.bums_chain_4': 'Link2',
+  'games.bums_showdown_first': 'Sword',
+  'games.bums_showdown_25': 'Axe',
+  'games.bums_cat': 'Cat',
+  'games.bums_deaths_500': 'Bomb',
+};
+
+/** The lucide icon name for an achievement id; a trophy for an unknown one. */
+export function achievementIconName(id: string): string {
+  return ACHIEVEMENT_ICON[id] ?? DEFAULT_ACHIEVEMENT_ICON;
+}
