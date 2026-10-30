@@ -258,3 +258,163 @@ describe('The Order on real pools', function()
     expect(a).eq(b)
   end)
 end)
+
+describe('MP blinds in the real vanilla boss code', function()
+  local MP
+  before_each(function()
+    V.install()
+    MP = boot_mp()
+    MP.session.mount('match', { resolved = resolved(), options = { multiplayerJokers = true }, runId = 'r',
+      me = 'u1', seed = 'ABCD1234', deck = 'b_red', stake = 1 })
+  end)
+  after_each(function()
+    MP.session.unmount('test')
+    MP.hooks.remove_all()
+    V.uninstall()
+  end)
+
+  it('every MP blind carries a boss table that get_new_boss never rolls', function()
+    local mp_blinds = 0
+    for k, v in pairs(G.P_BLINDS) do
+      if MP.registry.is_mp(k) then
+        mp_blinds = mp_blinds + 1
+        expect(type(v.boss)).eq('table')
+        expect(v.boss.showdown).eq(false)
+      end
+    end
+    expect(mp_blinds > 0).truthy()
+    V.new_run('ABCD1234')
+    for ante = 1, 24 do
+      G.GAME.round_resets.ante = ante
+      local boss = get_new_boss()
+      expect(MP.registry.is_mp(boss)).falsy()
+      expect(G.P_BLINDS[boss].boss ~= nil).truthy()
+    end
+  end)
+
+  it('ease_background_colour_blind on the Nemesis blind uses its boss colour (no crash)', function()
+    V.new_run('ABCD1234')
+    local nemesis = G.P_BLINDS.bl_mp_nemesis
+    local seen
+    _G.ease_colour = function() end
+    _G.ease_background_colour = function(args) seen = args end
+    G.GAME.blind = { name = nemesis.name, change_colour = function() end }
+    ease_background_colour_blind(G.STATES.SELECTING_HAND)
+    expect(seen ~= nil).truthy()
+    expect(seen.special_colour).eq(nemesis.boss_colour)
+    expect(seen.contrast).eq(2)
+  end)
+end)
+
+describe('Charm / Meteor Tag packs are seeded in a session (vanilla math.random(1, 2))', function()
+  local MP
+  local opened
+  local function load_tags()
+    local root = (RMH_SPEC and RMH_SPEC.root) or ''
+    assert(loadfile(root .. 'data/balatro/tag.lua'))()
+  end
+  local function trigger(name)
+    local events = {}
+    G.E_MANAGER = { add_event = function(_, ev) events[#events + 1] = ev end }
+    _G.Event = function(t) return t end
+    _G.stop_use = function() end
+    _G.attention_text = function() end
+    _G.play_sound = function() end
+    G.play = { T = { x = 0, y = 0, w = 1, h = 1 } }
+    G.P_CARDS = { empty = {} }
+    G.CARD_W, G.CARD_H = 2, 3
+    G.CONTROLLER.locks = {}
+    G.FUNCS.use_card = function() end
+    _G.Card = function(_, _, _, _, _, center)
+      opened[#opened + 1] = center and center.key
+      return { start_materialize = function() end }
+    end
+    local tag = setmetatable({ name = name, ID = 1, HUD_tag = { states = {} }, ability = {}, config = { type = 'new_blind_choice' },
+      remove = function() end }, { __index = Tag })
+    tag:apply_to_run({ type = 'new_blind_choice' })
+    for _, ev in ipairs(events) do if ev.func then ev.func() end end
+  end
+  local function packs(math_seed)
+    V.new_run('ABCD1234')
+    math.randomseed(math_seed) -- the unseeded generator is in a different state on every peer
+    opened = {}
+    for _ = 1, 8 do trigger('Charm Tag') end
+    for _ = 1, 8 do trigger('Meteor Tag') end
+    return table.concat(opened, ',')
+  end
+
+  before_each(function()
+    V.install()
+    load_tags()
+    MP = boot_mp()
+  end)
+  after_each(function()
+    if MP.state.session then MP.session.unmount('test') end
+    MP.hooks.remove_all()
+    V.uninstall()
+  end)
+
+  it('two peers (different math.random states) open the same packs; math.random is restored', function()
+    local vanilla_random = math.random
+    MP.session.mount('match', { resolved = resolved(), options = {}, runId = 'r', me = 'u1', seed = 'ABCD1234',
+      deck = 'b_red', stake = 1 })
+    local a = packs(1)
+    local b = packs(987654)
+    expect(a).eq(b)
+    expect(#opened).eq(16)
+    expect(a:find('p_arcana_mega_', 1, true) ~= nil).truthy()
+    expect(a:find('p_celestial_mega_', 1, true) ~= nil).truthy()
+    expect(G.GAME.pseudorandom.mp_tag_pack ~= nil).truthy()
+    expect(math.random == vanilla_random).truthy()
+  end)
+
+  it('outside a session vanilla is untouched (no seeded stream)', function()
+    packs(1)
+    expect(#opened).eq(16)
+    expect(G.GAME.pseudorandom.mp_tag_pack).eq(nil)
+  end)
+end)
+
+describe('chip_cap and shrinking_hand on the real vanilla code (EX-18 lifted)', function()
+  local MP
+  before_each(function()
+    V.install()
+    MP = boot_mp()
+  end)
+  after_each(function()
+    if MP.state.session then MP.session.unmount('test') end
+    MP.hooks.remove_all()
+    V.uninstall()
+  end)
+
+  it('the layers\' modifiers drive vanilla mod_chips and the hand-size poll', function()
+    local r = resolved()
+    r.layers = { 'standard', 'chip_cap', 'shrinking_hand' }
+    r.gameModifiers = { chips_dollar_cap = true, minus_hand_size_per_X_dollar = 10 }
+    MP.session.mount('match', { resolved = r, options = {}, runId = 'r', me = 'u1', seed = 'ABCD1234',
+      deck = 'b_red', stake = 1 })
+    V.new_run('ABCD1234')
+    MP.session.pre_roll()
+    G.GAME.dollars = 23
+    expect(mod_chips(500)).eq(23)                     -- chips capped at the money held
+    G.GAME.dollars = -5
+    expect(mod_chips(500)).eq(0)
+    -- CardArea:update (cardarea.lua) on G.hand: -1 hand size per $10 held
+    local root = (RMH_SPEC and RMH_SPEC.root) or ''
+    assert(loadfile(root .. 'data/balatro/engine/node.lua'))()
+    assert(loadfile(root .. 'data/balatro/engine/moveable.lua'))()
+    assert(loadfile(root .. 'data/balatro/cardarea.lua'))()
+    local sizes = {}
+    local hand = setmetatable({ config = { card_limit = 8 }, cards = {}, highlighted = {} }, { __index = CardArea })
+    hand.change_size = function(self, d) self.config.card_limit = self.config.card_limit + d; sizes[#sizes + 1] = d end
+    G.hand = hand
+    G.CONTROLLER.HID = { controller = false }
+    G.GAME.dollars = 34
+    CardArea.update(hand, 0)
+    expect(hand.config.card_limit).eq(5)
+    G.GAME.dollars = 12
+    CardArea.update(hand, 0)
+    expect(hand.config.card_limit).eq(7)
+    expect(sizes).eq({ -3, 2 })
+  end)
+end)

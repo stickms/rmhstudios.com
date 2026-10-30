@@ -276,6 +276,29 @@ describe('normal blinds, guards and economy', function()
     expect(find_call('end_round')[3]).eq(-1)
   end)
 
+  it('the shop reports loc_shop-<next blind> (HUD-02 "Shopping before ...")', function()
+    local function shop_loc()
+      MP.state.location = nil
+      H.sent_list = {}
+      G.STATE_COMPLETE = false
+      Game.update_shop(G, 0)
+      local loc = H.sent('peer')
+      return loc[#loc] and loc[#loc].d.d.loc
+    end
+    G.GAME.round_resets.ante = 1
+    G.GAME.round_resets.blind_states = { Small = 'Defeated', Big = 'Upcoming', Boss = 'Upcoming' }
+    expect(shop_loc()).eq('loc_shop-bl_big')
+    G.GAME.round_resets.blind_states = { Small = 'Skipped', Big = 'Defeated', Boss = 'Upcoming' }
+    expect(shop_loc()).eq('loc_shop-bl_wall')             -- before PvP starts: the real boss
+    G.GAME.round_resets.ante = 2
+    expect(shop_loc()).eq('loc_shop-bl_mp_nemesis')       -- a PvP Boss slot plays the Nemesis
+    G.GAME.round_resets.blind_states = { Small = 'Upcoming', Big = 'Upcoming', Boss = 'Upcoming' }
+    expect(shop_loc()).eq('loc_shop-bl_small')            -- after a Boss: cash_out reset the states
+    G.GAME.round_resets.blind_choices = nil
+    expect(shop_loc()).eq('loc_shop')
+    G.GAME.round_resets.blind_choices = { Small = 'bl_small', Big = 'bl_big', Boss = 'bl_wall' }
+  end)
+
   it('no_gold_on_round_loss zeroes the reward; D-07 sends nothing for an untouched blind', function()
     MP.state.session.options.noGoldOnRoundLoss = true
     G.GAME.round_resets.blind = G.P_BLINDS.bl_small

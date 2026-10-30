@@ -301,7 +301,8 @@ describe('BL-01..03 blinds', function()
     local n = G.P_BLINDS.bl_mp_nemesis
     expect(n.dollars).eq(5)
     expect(n.mult).eq(1)
-    expect(n.boss).eq(nil)
+    expect(n.boss.showdown).eq(false)                     -- a boss table vanilla can read ...
+    expect(n.boss.min > 1000).truthy()                     -- ... that no boss roll reaches
     expect(n.boss_colour).eq({ 0.675, 0.196, 0.196, 1 })
     expect(n.atlas).eq('mp_player_blind_chip')
     expect(G.P_BLINDS.bl_mp_manhunt_hunter.atlas).eq('mp_manhunt_hunter_blind_chip')

@@ -1466,6 +1466,8 @@
         "flipped_cards",
         "debuff_played_cards",
         "all_eternal",
+        "chip_cap",
+        "shrinking_hand",
         "gambling_opportunity",
         "bigger_shop"
       ],
@@ -1546,6 +1548,8 @@
         "flipped_cards": 4,
         "debuff_played_cards": true,
         "all_eternal": true,
+        "chips_dollar_cap": true,
+        "minus_hand_size_per_X_dollar": 10,
         "mp_shop_slots_bonus": 1
       },
       "startingParams": {},
@@ -1617,6 +1621,8 @@
         "flipped_cards",
         "debuff_played_cards",
         "all_eternal",
+        "chip_cap",
+        "shrinking_hand",
         "gambling_opportunity",
         "bigger_shop"
       ],

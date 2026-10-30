@@ -269,6 +269,37 @@ describe('HUD tree surgery (HUD-01/02/09, TIM-01)', function()
     expect(lives.ref_value).eq('my_lives')
   end)
 
+  it('the Enemy location line carries the chip of the blind it names (hidden when none)', function()
+    boot()
+    G.ANIMATION_ATLAS = { blind_chips = { name = 'blind_chips' }, mp_player_blind_chip = { name = 'mp_chip' } }
+    G.P_BLINDS.bl_big.pos = { x = 0, y = 1 }
+    RU.compute()
+    local def = create_UIBox_HUD()
+    local node = UH.find(def, 'mp_enemy_loc_chip')
+    expect(node ~= nil).truthy()
+    local chip = node.config.object
+    expect(chip == RU.loc_chip).truthy()
+    local function at(loc)
+      MP.state.enemy.location = loc
+      RU.compute(RU.view)
+      RU.sync_loc_chip(RU.view)
+    end
+    at('loc_shop-bl_big')
+    expect(chip.states.visible).eq(true)
+    expect(chip.atlas.name).eq('blind_chips')
+    expect(chip.sprite_pos).eq({ x = 0, y = 1 })
+    at('loc_selecting')
+    expect(chip.states.visible).eq(false)
+    at('loc_playing-bl_mp_nemesis')
+    expect(chip.states.visible).eq(true)
+    expect(chip.atlas.name).eq('mp_chip')                    -- an MP blind draws from its own atlas
+    at('loc_shop-bl_nope')
+    expect(chip.states.visible).eq(false)                    -- an unknown blind shows no chip
+    MP.state.session.resolved.flags.enemyLocationDisabled = true
+    at('loc_shop-bl_big')
+    expect(chip.states.visible).eq(false)
+  end)
+
   it('practice keeps the vanilla Ante and Round boxes', function()
     practice()
     local def = create_UIBox_HUD()
@@ -722,6 +753,118 @@ describe('Nemesis rows (HUD-06)', function()
     expect(a.layout).eq('classic')
     expect(a.jokers == a.traps).truthy()
     expect(a.jokers.T.x).eq(8)
+  end)
+end)
+
+describe('Nemesis rows fit the 16:9 room (HUD-06 layout)', function()
+  after_each(UH.teardown)
+
+  -- Vanilla geometry (game.lua CAI + set_screen_positions): jokers 4.9 x 0.95 cards at y = 0,
+  -- consumables 2.3 cards wide; the room shows 0.7 above y = 0; the shop's top is at 3.6.
+  local function real_areas()
+    G.CARD_W, G.CARD_H = 2.4 * 35 / 41, 2.4 * 47 / 41
+    G.jokers = CardArea(0, 0, 1, 1, { card_limit = 5 })
+    G.jokers.T = { x = 4.76, y = 0, w = 4.9 * G.CARD_W, h = 0.95 * G.CARD_H }
+    G.consumeables = CardArea(0, 0, 1, 1, { card_limit = 2 })
+    G.consumeables.T = { x = 4.76 + 4.9 * G.CARD_W + 0.2, y = 0, w = 2.3 * G.CARD_W, h = 0.95 * G.CARD_H }
+    function CardArea:remove_card(c) for i, x in ipairs(self.cards) do if x == c then table.remove(self.cards, i) end end end
+    function CardArea:hard_set_VT() end
+    G.P_CENTERS.j_mp_speedrun = G.P_CENTERS.j_mp_speedrun or { key = 'j_mp_speedrun', set = 'Joker' }
+  end
+  local NR
+  local function give_nemesis(keys)
+    MP.peer.dispatch({ k = 'sync', from = 'u2', d = { obj = 'mp_phantom_row', kind = 'phantom', data = { keys = keys } } })
+    NR.frame()
+  end
+
+  it('compact rows sit inside the visible top; own rows move down only while a row is shown', function()
+    boot()
+    real_areas()
+    NR = MP.ui.nemesis_rows
+    G.STATE = G.STATES.SELECTING_HAND
+    MP.state.ante_nemesis = { 'u2' }
+    NR.frame()
+    local a = NR.areas
+    expect(a.layout).eq('standard')
+    expect(G.jokers.T.y).eq(0)                                 -- empty rows: nothing moves
+    expect(a.jokers.states.visible).eq(false)
+    give_nemesis({ 'j_mp_speedrun' })
+    local card = MP.state.phantoms[1]
+    expect(card ~= nil).truthy()
+    expect(a.jokers.T.y >= -0.7).truthy()                      -- on screen (ROOM_PADDING_H)
+    expect(a.jokers.T.h).near(0.95 * G.CARD_H * NR.SCALE, 1e-9)
+    expect(a.jokers.config.card_w).near(G.CARD_W * NR.SCALE, 1e-9)
+    expect(a.jokers.states.visible).eq(true)
+    expect(G.jokers.T.y).near(NR.shift(), 1e-9)
+    expect(G.consumeables.T.y).near(NR.shift(), 1e-9)
+    expect(a.jokers.T.y + a.jokers.T.h <= G.jokers.T.y).truthy()  -- the row ends above my jokers
+    expect(G.jokers.T.y + G.jokers.T.h < 3.6).truthy()         -- my jokers stay above the shop
+    expect(a.jokers.T.x).eq(G.jokers.T.x)
+    expect(a.traps.T.x).eq(G.consumeables.T.x)
+    -- Blind Select: hidden, and the own rows are back where vanilla anchors the choices
+    G.STATE = G.STATES.BLIND_SELECT
+    NR.frame()
+    expect(G.jokers.T.y).eq(0)
+    expect(a.jokers.states.visible).eq(false)
+    G.STATE = G.STATES.SELECTING_HAND
+    NR.frame()
+    expect(G.jokers.T.y).near(NR.shift(), 1e-9)
+    -- vanilla set_screen_positions puts the rows at 0 again; the wrap re-applies the shift once
+    G.STAGE = G.STAGES.RUN
+    G.jokers.T.y, G.consumeables.T.y = 0, 0
+    NR.applied = 0
+    NR.placed_shown = nil
+    NR.frame()
+    expect(G.jokers.T.y).near(NR.shift(), 1e-9)
+    -- the nemesis sells its phantom joker: the rows empty and mine move back
+    give_nemesis({})
+    expect(G.jokers.T.y).eq(0)
+    expect(G.consumeables.T.y).eq(0)
+    -- leaving the run removes the rows and leaves the own rows unmoved
+    give_nemesis({ 'j_mp_speedrun' })
+    NR.remove()
+    expect(G.jokers.T.y).eq(0)
+  end)
+
+  it('mirrored: the compact rows swap sides and stay on screen; classic never moves my rows', function()
+    boot()
+    real_areas()
+    NR = MP.ui.nemesis_rows
+    G.STATE = G.STATES.SELECTING_HAND
+    G.SETTINGS.rmh_mp = { nemesisLayout = 'mirrored' }
+    MP.state.ante_nemesis = { 'u2' }
+    give_nemesis({ 'j_mp_speedrun' })
+    local a = NR.areas
+    expect(a.traps.T.x).eq(G.jokers.T.x)
+    expect(a.jokers.T.x + a.jokers.T.w).near(G.consumeables.T.x + G.consumeables.T.w, 1e-9)
+    expect(a.jokers.T.y >= -0.7).truthy()
+    expect(G.jokers.T.y > 0).truthy()
+    UH.teardown()
+    boot()
+    real_areas()
+    NR = MP.ui.nemesis_rows
+    G.STATE = G.STATES.SELECTING_HAND
+    G.SETTINGS.rmh_mp = { nemesisLayout = 'classic' }
+    MP.state.ante_nemesis = { 'u2' }
+    give_nemesis({ 'j_mp_speedrun' })
+    expect(G.jokers.T.y).eq(0)
+    expect(NR.areas.jokers.T.y).near(G.consumeables.T.h + NR.CLASSIC_GAP, 1e-9)
+  end)
+
+  it('phantom copies show a Phantom badge instead of eternal; traps and real jokers do not', function()
+    boot()
+    NR = MP.ui.nemesis_rows
+    local phantom = { ability = { mp_phantom = true, eternal = true } }
+    local ui = NR.decorate(phantom, { badges = { 'eternal' } })
+    expect(ui.badges).eq({ 'rmh_mp_phantom' })
+    expect(G.BADGE_COL.rmh_mp_phantom ~= nil).truthy()
+    expect(NR.decorate(phantom, ui).badges).eq({ 'rmh_mp_phantom' })    -- idempotent
+    local trap = { ability = { mp_phantom = true, mp_trap_display = true } }
+    expect(NR.decorate(trap, { badges = {} }).badges).eq({})
+    local mine = { ability = { eternal = true } }
+    expect(NR.decorate(mine, { badges = { 'eternal' } }).badges).eq({ 'eternal' })
+    -- the label ships in the MP localization
+    expect(G.localization.misc.labels.rmh_mp_phantom).eq('Phantom')
   end)
 end)
 

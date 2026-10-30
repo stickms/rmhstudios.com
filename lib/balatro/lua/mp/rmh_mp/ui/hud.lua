@@ -183,6 +183,14 @@ function RU.location_text(loc)
   return loc
 end
 
+--- The blind a location names ('loc_shop-bl_big' -> 'bl_big'), or nil (no blind, or not loaded).
+function RU.location_blind(loc)
+  if type(loc) ~= 'string' then return nil end
+  local key = loc:match('^[%a_]+%-(.+)$')
+  if key and G.P_BLINDS and G.P_BLINDS[key] then return key end
+  return nil
+end
+
 -- ── Timer text (TIM-01) ─────────────────────────────────────────────────────
 
 --- Whole seconds above 9.95, one decimal at or below it.
@@ -277,8 +285,10 @@ function RU.compute(v, t)
   v.enemy_name = st.target and RU.name_of(st.target) or RU.opponent_title()
   if loc_disabled then
     v.enemy_loc = '-'
+    v.enemy_loc_blind = nil
   else
     v.enemy_loc = RU.location_text(enemy.location)
+    v.enemy_loc_blind = RU.location_blind(enemy.location)
     local pres = st.presence and st.target and st.presence[st.target]
     if pres and pres.status == 'catching_up' then
       v.enemy_loc = v.enemy_loc .. RU.t('rmh_mp_catching_up', ' (catching up)')
@@ -451,6 +461,41 @@ end
 
 RU.timer_fg = RU.timer_fg or { 1, 1, 1, 1 }
 
+RU.LOC_CHIP_SIZE = 0.4
+
+--- The chip sprite of the Enemy location line (one per HUD build; RU.loc_chip is the live one).
+function RU.new_loc_chip()
+  local A = G.ANIMATION_ATLAS
+  if not (A and A.blind_chips and g('AnimatedSprite')) then return nil end
+  local ok, s = pcall(AnimatedSprite, 0, 0, RU.LOC_CHIP_SIZE, RU.LOC_CHIP_SIZE, A.blind_chips, { x = 0, y = 0 })
+  if not ok or not s then return nil end
+  if s.define_draw_steps then
+    pcall(s.define_draw_steps, s, { { shader = 'dissolve', shadow_height = 0.05 }, { shader = 'dissolve' } })
+  end
+  if s.states then s.states.visible = false end
+  s.mp_loc_blind = nil
+  RU.loc_chip = s
+  return s
+end
+
+--- Point the location chip at view.enemy_loc_blind (the blind's own atlas for MP blinds); hide it
+--- when the location names no blind. Cheap when nothing changed.
+function RU.sync_loc_chip(v)
+  local s = RU.loc_chip
+  if not s or s.REMOVED then return end
+  local key = v.enemy_loc_blind
+  if s.states then s.states.visible = key ~= nil end
+  if not key or s.mp_loc_blind == key then return end
+  local proto = G.P_BLINDS and G.P_BLINDS[key]
+  local R = MP.registry
+  local atlas = (R and R.atlas and R.atlas.blind_atlas and R.atlas.blind_atlas(key))
+    or (G.ANIMATION_ATLAS and G.ANIMATION_ATLAS.blind_chips)
+  if not (proto and atlas) then return end
+  s.mp_loc_blind = key
+  s.atlas = atlas
+  if s.set_sprite_pos then pcall(s.set_sprite_pos, s, proto.pos or { x = 0, y = 0 }) end
+end
+
 --- Add the Enemy location line under the round score (HUD-02); chip_UI_count stays where it is.
 function RU.patch_location(def)
   local row = tree.find_id(def, 'row_dollars_chips')
@@ -462,11 +507,20 @@ function RU.patch_location(def)
     label_rows[i] = { n = U.R, config = { align = 'cm', maxw = 1.3 }, nodes = {
       { n = U.T, config = { text = line, scale = 0.3, colour = G.C.UI.TEXT_LIGHT, shadow = true } } } }
   end
+  -- The blind the enemy is at (HUD-02): a small chip before the text, hidden when none is named.
+  local loc_nodes = {}
+  local chip = RU.new_loc_chip()
+  if chip then
+    loc_nodes[#loc_nodes + 1] = { n = U.O, config = { object = chip, id = 'mp_enemy_loc_chip' } }
+    loc_nodes[#loc_nodes + 1] = { n = U.B, config = { w = 0.08, h = 0.1 } }
+  end
+  loc_nodes[#loc_nodes + 1] = { n = U.T, config = { ref_table = RU.view, ref_value = 'enemy_loc', scale = 0.32,
+    colour = gc('WHITE'), shadow = true, id = 'mp_enemy_loc_text' } }
   local loc_row = { n = U.R, config = { align = 'cm', padding = 0.05, id = 'mp_enemy_location' }, nodes = {
     { n = U.C, config = { align = 'cm', minw = 1.3 }, nodes = label_rows },
     { n = U.C, config = { align = 'cm', minw = 3.3, minh = 0.45, r = 0.1, colour = G.C.DYN_UI and G.C.DYN_UI.BOSS_DARK or gc('BLACK'),
       on_demand_tooltip = { text = { { ref_table = RU.view, ref_value = 'enemy_name' } } } }, nodes = {
-      { n = U.T, config = { ref_table = RU.view, ref_value = 'enemy_loc', scale = 0.32, colour = gc('WHITE'), shadow = true, id = 'mp_enemy_loc_text' } },
+      { n = U.R, config = { align = 'cm' }, nodes = loc_nodes },
     } },
   } }
   local old = row.nodes
@@ -653,6 +707,7 @@ function RU.frame(dt)
   local t = now()
   RU.compute(RU.view, t)
   sync_blind_text(RU.view)
+  RU.sync_loc_chip(RU.view)
   if MP.ui.pvp_hud and MP.ui.pvp_hud.frame then MP.ui.pvp_hud.frame(RU.view) end
   if kind == 'match' then
     RU.effects(t)

@@ -5,7 +5,8 @@
 --   add_round_eval_row    the comeback row before 'bottom' (and its dollars added to the total);
 --                         RMH_MP.eval_row_label() labels it through the one-line source hook
 --   ease_dollars          spend tracking (every negative change)
---   Game.update_shop      shop-open snapshot, location loc_shop
+--   Game.update_shop      shop-open snapshot, location loc_shop-<next blind key> (HUD-02:
+--                         "Shopping before Big Blind"; bare loc_shop when no blind is known)
 --   G.FUNCS.toggle_shop   leaving the shop: opp_ctx {opponent_spent_in_shop}, interim player_result
 --   Card.sell_card        opp_ctx {opponent_selling_card}; sells per ante
 --   G.FUNCS.reroll_shop   reroll count and total cost (end-of-match stats)
@@ -13,6 +14,7 @@
 --                         sandbox $3 × (ante − 1)
 
 local MP = require 'rmh_mp.state'
+local att = require 'rmh_mp.rules.attrition'
 
 local E = {}
 MP.economy = E
@@ -29,6 +31,29 @@ function E.comeback_amount()
 end
 
 --- Called by the outcome handler on every change of my lives (D-04: arms only on a decrease).
+--- The blind the player meets after this shop: vanilla's blind_on_deck rule (the first of
+--- Small/Big/Boss not Defeated, Skipped or Hidden; cash_out has already reset the states after a
+--- Boss), resolved through round_resets.blind_choices, or the Nemesis blind for a PvP Boss slot.
+--- nil when the run has no blind table.
+local DONE = { Defeated = true, Skipped = true, Hide = true }
+function E.next_blind_key()
+  local rr = G and G.GAME and G.GAME.round_resets
+  local states, choices = rr and rr.blind_states, rr and rr.blind_choices
+  if type(states) ~= 'table' or type(choices) ~= 'table' then return nil end
+  local slot = 'Boss'
+  if not DONE[states.Small] then slot = 'Small' elseif not DONE[states.Big] then slot = 'Big' end
+  -- A PvP Boss slot plays the Nemesis blind (the real boss stays in blind_choices.Boss).
+  if att.slot_is_pvp(slot, rr.ante) and att.uses_nemesis_blind() then return att.PVP_BLIND end
+  local key = choices[slot]
+  if type(key) ~= 'string' or key == '' then return nil end
+  return key
+end
+
+function E.shop_location()
+  local key = E.next_blind_key()
+  return key and ('loc_shop-' .. key) or 'loc_shop'
+end
+
 function E.on_my_lives(prev, now)
   local cb = MP.state.comeback
   if prev and now and now < prev and prev > 0 then
@@ -128,7 +153,7 @@ function E.install()
     wrap(Game, 'update_shop', function(orig, self, dt, ...)
       if not G.STATE_COMPLETE then
         MP.state.spent.before_shop = MP.state.spent.total or 0
-        if MP.pvp then MP.pvp.set_location('loc_shop') end
+        if MP.pvp then MP.pvp.set_location(E.shop_location()) end
       end
       return orig(self, dt, ...)
     end, o('update_shop'))

@@ -16,6 +16,15 @@
 --   mirrored  rows swap sides and every card is turned 180 degrees in reverse order
 --   classic   one half-width row under the consumables (fixed for the run: a switch to or from
 --             Classic applies from the next run)
+-- Fitting the 16:9 room: vanilla puts your jokers and consumables at y = 0, and the room shows only
+-- ROOM_PADDING_H (0.7) above that, so a full-size row "above" would be off-screen. Standard and
+-- Mirrored rows are therefore compact (cards at NR.SCALE) and start at NR.TOP, inside the top
+-- padding; while a row has cards to show, your joker and consumable areas move down by
+-- NR.shift() (about 0.94: their bottom stays above the shop, whose top is at hand.y - 5.3 = 3.6)
+-- and move back when the rows are empty. During Blind Select the rows hide and nothing moves, as
+-- vanilla anchors the blind choices to G.jokers.T.y when it builds them. Only T moves (the areas
+-- ease there), so your cards stay usable; hit areas follow the cards as everywhere in the game.
+-- Phantom copies' tooltips carry a "Phantom" badge in place of the eternal one.
 --
 --   NR.phantom_keys()          my phantom-flagged joker keys (sorted)
 --   NR.receive(from, data)     sync receiver (also used by specs)
@@ -29,8 +38,13 @@ local NR = MP.ui.nemesis_rows or {}
 MP.ui.nemesis_rows = NR
 
 NR.OBJ = 'mp_phantom_row'
-NR.GAP = 0.25
 NR.MAX = 16
+NR.SCALE = 0.55      -- Standard/Mirrored card scale
+NR.TOP = -0.6        -- top of the compact rows, relative to the own rows' vanilla y (padding 0.7)
+NR.ROW_GAP = 0.1     -- between a compact row and the own row under it
+NR.CLASSIC_GAP = 0.4 -- Classic: below the consumables
+NR.BADGE = 'rmh_mp_phantom'
+NR.BADGE_COLOUR = { 0.42, 0.40, 0.55, 1 }
 
 NR.received = NR.received or {}
 NR.sent_sig = nil
@@ -121,12 +135,20 @@ function NR.create()
   local jl = (G.jokers.config and G.jokers.config.card_limit) or 5
   local cl = (G.consumeables.config and G.consumeables.config.card_limit) or 2
   local a = { layout = layout }
+  local function area(w, h, limit, scale)
+    local c = cfg(limit)
+    c.card_w = G.CARD_W * scale
+    local ar = CardArea(0, 0, w, h, c)
+    ar.T.w, ar.T.h = w, h
+    ar.mp_card_scale = scale
+    return ar
+  end
   if layout == 'classic' then
-    a.jokers = CardArea(0, 0, cw / 2, ch, cfg(cl))
+    a.jokers = area(cw / 2, ch, cl, 1)
     a.traps = a.jokers
   else
-    a.jokers = CardArea(0, 0, jw, jh, cfg(jl))
-    a.traps = CardArea(0, 0, cw, ch, cfg(cl))
+    a.jokers = area(jw, jh * NR.SCALE, jl, NR.SCALE)
+    a.traps = area(cw, ch * NR.SCALE, cl, NR.SCALE)
   end
   a.jokers.mp_nemesis_row = true
   a.traps.mp_nemesis_row = true
@@ -140,6 +162,7 @@ function NR.remove()
   local a = NR.areas
   NR.areas = nil
   MP.state.phantoms = {}
+  NR.unshift()
   if not a then return end
   for _, area in ipairs({ a.jokers, a.traps }) do
     if alive(area) then
@@ -154,24 +177,71 @@ local function place_area(area, x, y)
   if area.hard_set_VT then area:hard_set_VT() end
 end
 
+-- ── Placement ────────────────────────────────────────────────────────────────
+
+NR.applied = NR.applied or 0 -- how far the own joker/consumable areas are moved down right now
+
+--- How far the own rows move down while a compact row is shown.
+function NR.shift()
+  local h = (NR.areas and NR.areas.jokers and NR.areas.jokers.T.h) or 0
+  return math.max(0, NR.TOP + h + NR.ROW_GAP)
+end
+
+local function own_alive() return G.jokers and G.jokers.T and G.consumeables and G.consumeables.T end
+
+local function move_own(to)
+  local d = to - (NR.applied or 0)
+  if d ~= 0 and own_alive() then
+    G.jokers.T.y = G.jokers.T.y + d
+    G.consumeables.T.y = G.consumeables.T.y + d
+  end
+  NR.applied = to
+end
+
+--- Put the own rows back where vanilla placed them.
+function NR.unshift() move_own(0) end
+
+--- A compact row is drawn now: it has cards, and the blind choices are not up.
+function NR.rows_shown()
+  local a = NR.areas
+  if not a or a.layout == 'classic' then return false end
+  if G.STATE and G.STATES and G.STATE == G.STATES.BLIND_SELECT then return false end
+  local n = (alive(a.jokers) and #a.jokers.cards or 0) + (alive(a.traps) and #a.traps.cards or 0)
+  return n > 0
+end
+
 function NR.place()
   local a = NR.areas
-  if not (a and G.jokers and G.consumeables) then return end
+  if not (a and own_alive()) then return end
   if a.layout == 'classic' then
-    place_area(a.jokers, G.consumeables.T.x + G.consumeables.T.w / 2, G.consumeables.T.y + G.consumeables.T.h + 0.4)
-  elseif NR.layout() == 'mirrored' then
-    place_area(a.traps, G.jokers.T.x, G.jokers.T.y - NR.GAP - a.traps.T.h)
-    place_area(a.jokers, G.consumeables.T.x + G.consumeables.T.w - a.jokers.T.w, G.consumeables.T.y - NR.GAP - a.jokers.T.h)
-  else
-    place_area(a.jokers, G.jokers.T.x, G.jokers.T.y - NR.GAP - a.jokers.T.h)
-    place_area(a.traps, G.consumeables.T.x, G.consumeables.T.y - NR.GAP - a.traps.T.h)
+    move_own(0)
+    place_area(a.jokers, G.consumeables.T.x + G.consumeables.T.w / 2,
+      G.consumeables.T.y + G.consumeables.T.h + NR.CLASSIC_GAP)
+    NR.placed_shown = false
+    return
   end
+  local shown = NR.rows_shown()
+  move_own(shown and NR.shift() or 0)
+  local jy = G.jokers.T.y - NR.applied + NR.TOP
+  local cy = G.consumeables.T.y - NR.applied + NR.TOP
+  if NR.layout() == 'mirrored' then
+    place_area(a.traps, G.jokers.T.x, jy)
+    place_area(a.jokers, G.consumeables.T.x + G.consumeables.T.w - a.jokers.T.w, cy)
+  else
+    place_area(a.jokers, G.jokers.T.x, jy)
+    place_area(a.traps, G.consumeables.T.x, cy)
+  end
+  for _, ar in ipairs({ a.jokers, a.traps }) do
+    if alive(ar) and ar.states then ar.states.visible = shown end
+  end
+  NR.placed_shown = shown
 end
 
 local function new_card(area, key)
   local center = G.P_CENTERS[key]
   if not (center and g('Card')) then return nil end
-  local card = Card(area.T.x, area.T.y, G.CARD_W, G.CARD_H, nil, center,
+  local scale = area.mp_card_scale or 1
+  local card = Card(area.T.x, area.T.y, G.CARD_W * scale, G.CARD_H * scale, nil, center,
     { bypass_discovery_center = true, bypass_discovery_ui = true, discover = false })
   card.ability = card.ability or {}
   card.ability.mp_phantom = true
@@ -238,9 +308,27 @@ function NR.frame()
     MP.sync.send(NR.OBJ, { keys = MP.json_array(mine) }, nil, 'phantom')
   end
   if not (NR.areas and alive(NR.areas.jokers)) or NR.areas.jokers_owner ~= G.jokers then
+    if NR.areas and NR.areas.jokers_owner ~= G.jokers then NR.applied = 0 end -- a new run's areas
     if NR.create() then NR.areas.jokers_owner = G.jokers end
   end
   NR.rebuild()
+  if NR.areas and NR.rows_shown() ~= NR.placed_shown then NR.place() end
+end
+
+--- Card.generate_UIBox_ability_table post-step: a phantom copy shows "Phantom" instead of the
+--- eternal badge it carries only to block selling.
+function NR.decorate(card, ui)
+  local ab = card and card.ability
+  if type(ui) ~= 'table' or not (ab and ab.mp_phantom) or ab.mp_trap_display then return ui end
+  ui.badges = ui.badges or {}
+  for i = #ui.badges, 1, -1 do
+    if ui.badges[i] == 'eternal' or ui.badges[i] == NR.BADGE then table.remove(ui.badges, i) end
+  end
+  ui.badges[#ui.badges + 1] = NR.BADGE
+  if g('get_badge_colour') then pcall(get_badge_colour, 'eternal') end -- vanilla fills G.BADGE_COL
+  G.BADGE_COL = G.BADGE_COL or {}
+  if G.BADGE_COL[NR.BADGE] == nil then G.BADGE_COL[NR.BADGE] = NR.BADGE_COLOUR end
+  return ui
 end
 
 --- WS9 trap events: a nemesis row changed / one of mine fired -> rebuild on the next frame.
@@ -250,6 +338,7 @@ end
 
 function NR.install()
   NR.received, NR.sent_sig, NR.areas = {}, nil, nil
+  NR.applied, NR.placed_shown = 0, nil
   if MP.traps and MP.traps.on_change and not NR.trap_listening then
     NR.trap_listening = true
     MP.traps.on_change(NR.on_trap_change)
@@ -262,9 +351,20 @@ function NR.install()
   local function o(id) return { group = 'session', optional = true, id = 'ui.nemesis.' .. id } end
   wrap(_G, 'set_screen_positions', function(orig, ...)
     local r = orig(...)
+    -- vanilla has just put the own rows back at their y: nothing is moved any more
+    if G.STAGES and G.STAGE == G.STAGES.RUN then NR.applied = 0 end
+    NR.placed_shown = nil
     pcall(NR.place)
     return r
   end, o('place'))
+  if rawget(_G, 'Card') and Card.generate_UIBox_ability_table then
+    wrap(Card, 'generate_UIBox_ability_table', function(orig, self, ...)
+      local ui = orig(self, ...)
+      local ok, out = pcall(NR.decorate, self, ui)
+      if ok and out then return out end
+      return ui
+    end, o('badge'))
+  end
   if rawget(_G, 'Game') then
     wrap(Game, 'delete_run', function(orig, self, ...)
       pcall(NR.remove)

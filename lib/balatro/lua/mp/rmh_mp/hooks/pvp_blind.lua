@@ -174,14 +174,8 @@ function PV.install()
       MP.state.pvp.nemesis_blind = nemesis and true or false
       local r = orig(self, nemesis or blind, reset, silent, ...)
       self.mp_pvp = true
-      -- The Nemesis blind takes the Boss slot: vanilla boss-only effects (Chicot, Campfire's reset,
-      -- Rocket, G.GAME.last_blind.boss) must see a boss, but its prototype has no `boss` table
-      -- (it never enters boss rolls).
-      if self.config and self.config.blind and self.config.blind.key == att.PVP_BLIND then
-        self.boss = true
-        G.GAME.last_blind = G.GAME.last_blind or {}
-        G.GAME.last_blind.boss = true
-      end
+      -- The Nemesis blind takes the Boss slot, and vanilla's self.boss / G.GAME.last_blind.boss
+      -- already see a boss: the registry gives every MP blind a never-rolled `boss` table.
       self.chips = PV.INF                 -- keep drawing past any requirement (FL-09)
       self.chip_text = '????'
       self.dollars = 5                    -- FL-16: the PvP blind always pays $5

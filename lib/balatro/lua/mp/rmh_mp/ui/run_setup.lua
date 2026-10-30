@@ -195,7 +195,6 @@ function RS.deck_preview(st)
     local card = Card(0, 0, w, h, nil, G.P_CENTERS.c_base, { playing_card = 1, viewed_back = true })
     card.sprite_facing = 'back'
     card.facing = 'back'
-    card.states.drag.can = false
     local D = MP.content and MP.content.decks
     if D and D.apply_back_sprite then pcall(D.apply_back_sprite, card) end
     local base_draw = card.draw
@@ -205,6 +204,8 @@ function RS.deck_preview(st)
       if D and D.draw_balanced and not MP.in_session() then pcall(D.draw_balanced, self, center) end
     end
     a:emplace(card)
+    -- After emplace: CardArea:set_ranks (run by emplace) makes a lone card draggable again.
+    card.states.drag.can = false
     return a
   end)
   if not ok then

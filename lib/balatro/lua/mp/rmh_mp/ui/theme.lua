@@ -281,6 +281,8 @@ TH.ADVANCED_LAYERS = {
   { name = 'flipped_cards', def = 'Flipped Cards' },
   { name = 'debuff_played_cards', def = 'Debuffed Played Cards' },
   { name = 'all_eternal', def = 'All Eternal' },
+  { name = 'chip_cap', def = 'Chip Cap' },
+  { name = 'shrinking_hand', def = 'Shrinking Hand' },
   { name = 'gambling_opportunity', def = 'Gambling Opportunity' },
   { name = 'bigger_shop', def = 'Bigger Shop' },
 }

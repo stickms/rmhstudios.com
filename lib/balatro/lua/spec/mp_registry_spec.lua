@@ -65,7 +65,7 @@ describe('MP.registry', function()
     for _, v in ipairs(G.P_CENTER_POOLS.Joker) do expect(R.is_mp(v.key)).falsy() end
     expect(G.P_CENTER_POOLS.Tarot_Planet[#G.P_CENTER_POOLS.Tarot_Planet].key).eq('c_mp_asteroid')
     for _, v in ipairs(G.P_CENTER_POOLS.Consumeables) do expect(v.key ~= 'c_mp_trap_alarm').truthy() end
-    expect(G.P_BLINDS.bl_mp_nemesis.boss).eq(nil)      -- never in boss rolls
+    expect(G.P_BLINDS.bl_mp_nemesis.boss.min).eq(R.NEVER_ROLLED_ANTE) -- never in boss rolls
     expect(G.P_CENTERS.m_glass.config.Xmult).eq(1.5)  -- rework swapped in
     expect(G.P_CENTERS.m_glass.config.extra).eq(4)    -- untouched siblings stay
     expect(G.P_CENTERS.m_glass.config.mp_balanced).eq(true)
