@@ -28,8 +28,7 @@
  *     after a hub restart when the code is free (NET-12).
  *
  * The matchmaking / party / invite / spectate-list events are WS12's
- * (handlers/balatro-queue.ts); until it lands, ../balatro/queue-placeholder.ts
- * answers them.
+ * (handlers/balatro-queue.ts).
  *
  * NOTE: server code imports `lib/` RELATIVELY — server/CLAUDE.md gotcha 7.
  */
