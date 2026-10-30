@@ -13,6 +13,7 @@ import { Route as SiteRouteImport } from './routes/_site'
 import { Route as AdaptiveIntelligenceRouteImport } from './routes/adaptive-intelligence'
 import { Route as AdsDottxtRouteImport } from './routes/ads[.]txt'
 import { Route as AltairRouteImport } from './routes/altair'
+import { Route as BalatroRouteImport } from './routes/balatro'
 import { Route as BlackLivesMatterRouteImport } from './routes/black-lives-matter'
 import { Route as BreachesRouteImport } from './routes/breaches'
 import { Route as BumsRushRouteImport } from './routes/bums-rush'
@@ -1347,6 +1348,11 @@ const AdsDottxtRoute = AdsDottxtRouteImport.update({
 const AltairRoute = AltairRouteImport.update({
   id: '/altair',
   path: '/altair',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BalatroRoute = BalatroRouteImport.update({
+  id: '/balatro',
+  path: '/balatro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlackLivesMatterRoute = BlackLivesMatterRouteImport.update({
@@ -8176,6 +8182,7 @@ export interface FileRoutesByFullPath {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/ads.txt': typeof AdsDottxtRoute
   '/altair': typeof AltairRouteWithChildren
+  '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/breaches': typeof BreachesRoute
   '/bums-rush': typeof BumsRushRoute
@@ -9495,6 +9502,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/ads.txt': typeof AdsDottxtRoute
+  '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/breaches': typeof BreachesRoute
   '/bums-rush': typeof BumsRushRoute
@@ -10792,6 +10800,7 @@ export interface FileRoutesById {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/ads.txt': typeof AdsDottxtRoute
   '/altair': typeof AltairRouteWithChildren
+  '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/breaches': typeof BreachesRoute
   '/bums-rush': typeof BumsRushRoute
@@ -12116,6 +12125,7 @@ export interface FileRouteTypes {
     | '/adaptive-intelligence'
     | '/ads.txt'
     | '/altair'
+    | '/balatro'
     | '/black-lives-matter'
     | '/breaches'
     | '/bums-rush'
@@ -13435,6 +13445,7 @@ export interface FileRouteTypes {
   to:
     | '/adaptive-intelligence'
     | '/ads.txt'
+    | '/balatro'
     | '/black-lives-matter'
     | '/breaches'
     | '/bums-rush'
@@ -14731,6 +14742,7 @@ export interface FileRouteTypes {
     | '/adaptive-intelligence'
     | '/ads.txt'
     | '/altair'
+    | '/balatro'
     | '/black-lives-matter'
     | '/breaches'
     | '/bums-rush'
@@ -16054,6 +16066,7 @@ export interface RootRouteChildren {
   AdaptiveIntelligenceRoute: typeof AdaptiveIntelligenceRoute
   AdsDottxtRoute: typeof AdsDottxtRoute
   AltairRoute: typeof AltairRouteWithChildren
+  BalatroRoute: typeof BalatroRoute
   BlackLivesMatterRoute: typeof BlackLivesMatterRoute
   BreachesRoute: typeof BreachesRoute
   BumsRushRoute: typeof BumsRushRoute
@@ -16893,6 +16906,13 @@ declare module '@tanstack/react-router' {
       path: '/altair'
       fullPath: '/altair'
       preLoaderRoute: typeof AltairRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/balatro': {
+      id: '/balatro'
+      path: '/balatro'
+      fullPath: '/balatro'
+      preLoaderRoute: typeof BalatroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/black-lives-matter': {
@@ -28359,6 +28379,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdaptiveIntelligenceRoute: AdaptiveIntelligenceRoute,
   AdsDottxtRoute: AdsDottxtRoute,
   AltairRoute: AltairRouteWithChildren,
+  BalatroRoute: BalatroRoute,
   BlackLivesMatterRoute: BlackLivesMatterRoute,
   BreachesRoute: BreachesRoute,
   BumsRushRoute: BumsRushRoute,

@@ -19,6 +19,8 @@ export default tseslint.config(
       'build/**',
       'node_modules/**',
       'public/vibe-packages/**',
+      // Vendored Emscripten output (love.js — scripts/balatro/vendor-lovejs.sh)
+      'public/balatro/engine/**',
       // Plain JS server files — CommonJS require() is intentional
       'webhook-server.cjs',
       'check_db.js',
