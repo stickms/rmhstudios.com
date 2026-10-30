@@ -17,6 +17,11 @@
 # 3. emscripten_get_device_pixel_ratio asks Module.rmhPixelRatio() when present,
 #    so the page can clamp the drawing-buffer resolution (lib/balatro/runtime.ts).
 #
+# It also writes lib/balatro/engine.json, the size and SHA-256 of both files. The
+# page requests them as love.js?v=<sha> (runtime.ts): the paths are not hashed and
+# Cloudflare keeps them for hours, so without the version a re-vendored engine
+# reaches players only after the old one expires from every cache.
+#
 # Usage: scripts/balatro/vendor-lovejs.sh   (idempotent; commits nothing)
 set -euo pipefail
 
@@ -52,4 +57,13 @@ for old, new in patches:
 open(out, 'w', encoding='utf-8').write(js)
 PY
 cp "$WORK/package/LICENSE" "$OUT/LICENSE.txt"
+python3 -I - "$OUT" "$ROOT/lib/balatro/engine.json" <<'PY'
+import hashlib, json, os, sys
+out, manifest = sys.argv[1], sys.argv[2]
+info = {}
+for name in ('love.js', 'love.wasm'):
+    data = open(os.path.join(out, name), 'rb').read()
+    info[name] = {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+open(manifest, 'w', encoding='utf-8').write(json.dumps(info, indent=2) + '\n')
+PY
 echo "love.js ${VERSION} (compat) → ${OUT#$ROOT/}"
