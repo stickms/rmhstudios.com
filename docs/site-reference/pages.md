@@ -59,7 +59,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/advent` | — | public | `app/routes/_site/advent.tsx` |
 | `/alexdebtcounter` | redirects to `/kaikaidebtcounter` | public | `app/routes/_site/alexdebtcounter.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
-| `/apps` | Apps | public | `app/routes/_site/apps/index.tsx` |
+| `/apps` | redirects to `/games?kind=app` | public | `app/routes/_site/apps/index.tsx` |
 | `/arcade` | redirects to `/games` | public | `app/routes/_site/arcade.tsx` |
 | `/blog` | redirects to `/library` | public | `app/routes/_site/blog/index.tsx` |
 | `/blog/:slug` | — | public | `app/routes/_site/blog/$slug.tsx` |
@@ -91,7 +91,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/feeds` | Custom feeds | public | `app/routes/_site/feeds.index.tsx` |
 | `/feeds/:id` | Feed | public | `app/routes/_site/feeds.$id.tsx` |
 | `/game-night` | Game Night | public | `app/routes/_site/game-night.tsx` |
-| `/games` | Games | public | `app/routes/_site/games/index.tsx` |
+| `/games` | Games and apps | public | `app/routes/_site/games/index.tsx` |
 | `/games/:gameId` | — | public | `app/routes/_site/games/$gameId.tsx` |
 | `/games/:gameId/guides/:guideId` | — | public | `app/routes/_site/games/$gameId_.guides.$guideId.tsx` |
 | `/games/slice-it` | Slice It! — charts, records and uploaders | public | `app/routes/_site/games/slice-it.tsx` |
