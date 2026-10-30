@@ -59,6 +59,9 @@ const HEAD_AIM = [0.1, 0.3, 0.6, 0.85];
 const GRENADE_CHANCE = 0.15;
 /** Perception every this many ticks. */
 const PERCEPTION_TICKS = 3;
+/** Half the CS player hull's width (cs_shareddefs VEC_HULL_MAX.x): the path follower's wall probe. */
+const CS_HALF_WIDTH = 16;
+
 /** Forget an enemy not seen for this long (seconds). */
 const MEMORY = 3;
 
@@ -75,7 +78,7 @@ function lineClear(world: CsWorld, a: Vec3, b: Vec3): boolean {
 export class CsBotBrain implements BotBrain {
   readonly skill: BotSkill;
   readonly level: number;
-  private readonly follower = new PathFollower();
+  private readonly follower = Object.assign(new PathFollower(), { halfWidth: CS_HALF_WIDTH });
   private readonly intent = newMoveIntent();
   private readonly rng: UniformRandomStream;
   private readonly view = vec3();

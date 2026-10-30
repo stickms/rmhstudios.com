@@ -409,6 +409,14 @@ const OFF_PATH_TIME = 0.8;
 const NARROW = 80;
 const EDGE_MIN = { x: -24, y: -24, z: 0 };
 const EDGE_MAX = { x: 24, y: 24, z: 62 };
+/** How far ahead (units) the follower feels for a wall, and the probe's height above a step. */
+const SLIDE_PROBE = 20;
+const SLIDE_STEP = 18;
+const SLIDE_HEIGHT = 36;
+/** A wall at least this steep (normal z) is slid along; below it the floor rises (a slope). */
+const SLIDE_WALL_NZ = 0.7;
+/** The least sideways share of the move worth sliding (head on into a wall: the stuck logic acts). */
+const SLIDE_MIN = 0.02;
 
 /** Distance at which the goal counts as reached. */
 export const GOAL_TOLERANCE = 24;
@@ -443,6 +451,8 @@ export class PathFollower {
   computedAt = -1000;
   /** Repath this often even when nothing went wrong (moving goals); bots stagger it. */
   repathInterval = 2.0;
+  /** Half the player hull's width (TF2 24, CS:GO 16): the wall probe's size. */
+  halfWidth = 24;
   private team = 0;
   private dangerWeight = 1;
   private avoidArea = -1;
@@ -714,6 +724,10 @@ export class PathFollower {
 
     // Jumps: a jump connection near its portal, or a ledge ahead of us.
     const rise = tz - pos.z;
+    // Corners: a straight leg can clip a wall the areas do not show (an area reaches half a cell past
+    // the last spot a player fits, so a strip beside a crate is really a line). Feel ahead with the
+    // player's hull and slide along a wall at full speed rather than grind into it.
+    if (onGround && out.speed > 0 && connType !== CONN_JUMP && rise <= SLIDE_STEP) this.slideAlongWalls(world, pos, out);
     if (onGround && dist < 70 && (connType === CONN_JUMP || rise > 20) && rise > -40) {
       out.jump = true;
       this.jumpHeld = 1;
@@ -761,6 +775,43 @@ export class PathFollower {
       }
     }
     return true;
+  }
+
+  private readonly slideMin = { x: 0, y: 0, z: 0 };
+  private readonly slideMax = { x: 0, y: 0, z: SLIDE_HEIGHT };
+
+  /**
+   * Turns a move into a wall along the wall at full speed (the side the move leans to), from a hull probe
+   * SLIDE_PROBE ahead at step height. Head on into a wall it changes nothing: the stuck logic acts.
+   */
+  private slideAlongWalls(world: GameWorld, pos: Vec3, out: MoveIntent): void {
+    const w = this.halfWidth - 1;
+    this.slideMin.x = this.slideMin.y = -w;
+    this.slideMax.x = this.slideMax.y = w;
+    const a = this.ea;
+    const b = this.eb;
+    a.x = pos.x;
+    a.y = pos.y;
+    a.z = pos.z + SLIDE_STEP;
+    b.x = pos.x + out.dirX * SLIDE_PROBE;
+    b.y = pos.y + out.dirY * SLIDE_PROBE;
+    b.z = a.z;
+    const tr = world.mapCollision.traceHull(a, b, this.slideMin, this.slideMax, MASK_PLAYERSOLID, null, this.etr);
+    if (tr.startSolid || tr.fraction >= 1) return;
+    const n = tr.plane.normal;
+    if (n.z >= SLIDE_WALL_NZ) return;
+    const nl = Math.hypot(n.x, n.y);
+    if (nl < 1e-3) return;
+    const nx = n.x / nl;
+    const ny = n.y / nl;
+    const into = out.dirX * nx + out.dirY * ny;
+    if (into >= 0) return;
+    const sx = out.dirX - nx * into;
+    const sy = out.dirY - ny * into;
+    const sl = Math.hypot(sx, sy);
+    if (sl < SLIDE_MIN) return;
+    out.dirX = sx / sl;
+    out.dirY = sy / sl;
   }
 
   private offPathSince = -1;
