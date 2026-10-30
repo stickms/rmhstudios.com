@@ -7,6 +7,7 @@
 
 .gui-root {
   --gui-u: calc(100dvh / 480);
+  --gui-uw: calc(100vw / 640);
   position: fixed;
   inset: 0;
   overflow: hidden;
@@ -36,6 +37,7 @@
 
 .gui-logo {
   display: flex;
+  font-size: calc(min(var(--gui-u), var(--gui-uw)) * 40);
   flex-direction: column;
   color: var(--gui-menu-armed);
   line-height: 1;
@@ -53,6 +55,7 @@
 
 .gui-menu {
   display: flex;
+  font-size: max(1rem, calc(var(--gui-u) * 12));
   flex-direction: column;
   gap: calc(var(--gui-u) * 4);
 }

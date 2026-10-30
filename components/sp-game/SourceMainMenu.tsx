@@ -150,8 +150,12 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
     else if (a === 'quit') void navigate({ to: '/games' });
   };
 
-  const font = (f: GameUiStyleFont | null, fallback: string): CSSProperties =>
-    f ? { fontFamily: `'${f.family}', ${fallback}`, fontWeight: f.weight || 400, fontSize: `calc(var(--gui-u) * ${f.tall})` } : { fontFamily: fallback };
+  // GameUI sizes fonts in units of a 480-line screen; on a narrow (portrait) screen the title is held to
+  // the width too, and the entries never drop below a readable 16px.
+  const font = (f: GameUiStyleFont | null, fallback: string, size: (tall: number) => string): CSSProperties =>
+    f ? { fontFamily: `'${f.family}', ${fallback}`, fontWeight: f.weight || 400, fontSize: size(f.tall) } : { fontFamily: fallback };
+  const titleSize = (tall: number) => `calc(min(var(--gui-u), var(--gui-uw)) * ${tall})`;
+  const entrySize = (tall: number) => `max(1rem, calc(var(--gui-u) * ${tall}))`;
 
   const listRef = useRef<HTMLUListElement>(null);
   useEffect(() => {
@@ -165,7 +169,7 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
         {logoFile ? (
           <img className="gui-logo-image" src={menuAssetUrl(logoFile, game)} alt={title?.title ?? ''} />
         ) : (
-          <h1 className="gui-logo" style={font(style.titleFont, 'Verdana, Tahoma, sans-serif')}>
+          <h1 className="gui-logo" style={font(style.titleFont, 'Verdana, Tahoma, sans-serif', titleSize)}>
             <span>{title?.title ?? t(game === 'hl2' ? 'play_hl2_title' : 'play_portal_title', { defaultValue: game === 'hl2' ? 'Half-Life 2' : 'Portal' })}</span>
             {title?.title2 ? <span className="gui-logo-2">{title.title2}</span> : null}
           </h1>
@@ -174,7 +178,7 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
           <ul
             ref={listRef}
             className="gui-menu"
-            style={font(style.menuFont, 'Verdana, Tahoma, sans-serif')}
+            style={font(style.menuFont, 'Verdana, Tahoma, sans-serif', entrySize)}
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
