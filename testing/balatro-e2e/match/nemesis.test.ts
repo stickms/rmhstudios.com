@@ -62,7 +62,9 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
 
   it('E2E-02: a PvP tie costs no life; the next ante decides', async () => {
     await setupMatch(a, [b], 'pvp_nemesis', { ...SHORT, startingLives: 1 });
-    const [ta, tb] = await Promise.all([playAnte(a, { chips: 5000 }), playAnte(b, { chips: 5000 })]);
+    // An exact tie: at 1e20 a one-card hand is below the double's resolution, so both
+    // players report the same score whatever cards they hold.
+    const [ta, tb] = await Promise.all([playAnte(a, { chips: 1e20 }), playAnte(b, { chips: 1e20 })]);
     expect(ta.result ?? null).toBeNull();
     expect(tb.result ?? null).toBeNull();
     expect((await a.snap()).lives).toMatchObject({ [(await a.snap()).me!]: 1 });
@@ -213,8 +215,17 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     );
     // The page autoloads MP with the rejoin hint; the seat is held — rejoin it.
     await again.cmd('mp_open', { intent: 'rejoin' }).catch(() => {});
-    await again.cmd('mp_send', { t: 'ui_seat', d: { op: 'rejoin' } }).catch(() => {});
-    await again.waitSnap((s) => s.runId === runId, 'rejoined the same match', 240_000);
+    // The hub answers the seat query with seat-held (the Reconnect prompt); then Rejoin.
+    await waitFor(
+      'the held seat is rejoined',
+      async () => {
+        if ((await again.snap()).runId === runId) return true;
+        await again.cmd('mp_send', { t: 'ui_seat', d: { op: 'rejoin' } }).catch(() => {});
+        return false;
+      },
+      240_000,
+      3000,
+    );
     const restore = await waitFor('a rejoin restore', async () => (await inbox(again, 'rejoin_restore')).list.length > 0, 240_000, 1000)
       .then(() => true)
       .catch(() => false);
@@ -259,20 +270,32 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     await leaveMatch(a);
   });
 
-  it('E2E-15: with ICE blocked the pair falls back to the hub relay and plays a full 1v1', async () => {
+  it('E2E-15: with ICE blocked on both sides the pair falls back to the hub relay and plays a full 1v1', async () => {
+    // Both ends drop their candidates (one blocked side is not enough: the other side's
+    // candidates plus peer-reflexive ones still form a direct path on localhost).
     const relayed = await w.player('relayed', { overrides: { p2p: { blockCandidates: true } } });
-    await setupMatch(a, [relayed], 'pvp_nemesis');
+    const host = await w.bot('relayhost', { score: '10', block: true });
+    await host.ui('ui_create_lobby', { queueMode: 'pvp_nemesis', kind: 'private' });
+    let code = '';
+    await host.waitState((s) => !!(code = s.code ?? ''), 'bot lobby');
+    for (const [k, v] of Object.entries(SHORT)) await host.ui('ui_set_option', { key: k, value: v });
+    await relayed.ui('join', { code });
     await waitFor(
       'the relayed member shows conn=relay',
-      async () => (await hostLobby(a)).players.some((p) => p.conn === 'relay'),
-      120_000,
+      async () => !!(await relayed.snap()).lobby?.players.some((p) => p.conn === 'relay'),
+      180_000,
       1000,
     );
-    await Promise.all([playAnte(a, { chips: 0 }), playAnte(relayed, { chips: WIN })]);
+    await relayed.cmd('ready');
+    const me = (await relayed.snap()).me;
+    await waitFor('ready seen by the host', async () => !!(await relayed.snap()).lobby?.players.find((p) => p.id === me)?.ready, 60_000, 1000);
+    await host.ui('ui_start', {});
+    await relayed.waitSnap((s) => !!s.runId, 'match started over the relay', 300_000);
+    await relayed.cmd('wait_state', ['BLIND_SELECT', 300], 320_000);
+    await playAnte(relayed, { chips: WIN });
     expect(await waitResult(relayed)).toBe('win');
-    expect(await waitResult(a)).toBe('lose');
     expect(w.errors()).toEqual([]);
     await leaveMatch(relayed);
-    await leaveMatch(a);
+    await host.close();
   });
 });

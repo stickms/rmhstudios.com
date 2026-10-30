@@ -156,7 +156,9 @@ const runtime = new MpRuntime(
   {
     bridge: lua,
     hub,
-    connector: webrtcConnector(),
+    // ?block=1: drop every local ICE candidate (with the peer blocking too, no direct path can
+    // form, so the pair falls back to the hub relay — E2E-15).
+    connector: webrtcConnector(new URLSearchParams(location.search).get('block') === '1' ? { blockCandidates: true } : undefined),
     sched: realScheduler(),
     fs: null,
     kv: memoryKv(),

@@ -57,7 +57,7 @@ export interface BotPeer {
   close(): Promise<void>;
 }
 
-export async function openBot(player: Player, baseUrl: string, socketUrl: string, opts: { score?: string } = {}): Promise<BotPeer> {
+export async function openBot(player: Player, baseUrl: string, socketUrl: string, opts: { score?: string; block?: boolean } = {}): Promise<BotPeer> {
   const js = await buildBot(socketUrl);
   const { context, account } = player;
   await context.route(`${baseUrl}${BOT_PATH}*`, (route) => {
@@ -74,7 +74,10 @@ export async function openBot(player: Player, baseUrl: string, socketUrl: string
   page.on('console', (m) => {
     if (/\[mp\]|error/i.test(m.text()) && m.type() !== 'log') errors.push(m.text().slice(0, 800));
   });
-  await page.goto(`${baseUrl}${BOT_PATH}${opts.score ? `?score=${opts.score}` : ''}`);
+  const q = new URLSearchParams();
+  if (opts.score) q.set('score', opts.score);
+  if (opts.block) q.set('block', '1');
+  await page.goto(`${baseUrl}${BOT_PATH}${q.size ? `?${q}` : ''}`);
   await page.waitForFunction(() => !!(window as unknown as { __balatroBot?: unknown }).__balatroBot, undefined, { timeout: 60_000 });
   type Api = Record<string, (...a: unknown[]) => unknown>;
   const call = <T>(fn: string, ...args: unknown[]) =>

@@ -53,7 +53,7 @@ export function matchWorld() {
       w.players.push(p);
       return p;
     },
-    async bot(label: string, opts: { score?: string } = {}): Promise<BotPeer> {
+    async bot(label: string, opts: { score?: string; block?: boolean } = {}): Promise<BotPeer> {
       const [acc] = await w.accountsFor([label]);
       const b = await openBot(acc!, w.baseUrl, w.socketUrl, opts);
       w.bots.push(b);
