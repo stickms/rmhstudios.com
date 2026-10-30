@@ -103,7 +103,7 @@ function OptionRow({ tooltip, children, stacked }: { label?: string; tooltip?: s
 export default function OptionsDialog({ game, settings, onChange, source, initialTab = 'keyboard', initialAdvanced = false, accountName }: OptionsDialogProps) {
   const { t } = useTranslation('c-tf2-game');
   const words = useOptionStrings();
-  const actionLabels = useActionLabels();
+  const actionLabels = useActionLabels(game);
   const [tab, setTab] = useState<OptionsTab>(initialTab);
   const [advanced, setAdvanced] = useState<OptionsTab | null>(initialAdvanced ? initialTab : null);
   const [capturing, setCapturing] = useState<{ action: Action; row: string } | null>(null);

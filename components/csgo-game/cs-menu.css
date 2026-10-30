@@ -1,0 +1,416 @@
+/**
+ * CS:GO's main menu (CsMainMenu.tsx), in the shape of Panorama: a full-bleed background movie under a
+ * dark shade, a narrow icon sidebar, translucent dark panels with thin light edges, Panorama's own type
+ * (Stratum2, registered from the menu channel) and a green GO. The colours are a scoped `--pano-*` group
+ * (the full-screen game tier, like `--csg-*` in cs-hud.css).
+ */
+
+.pano-root {
+  --pano-panel: rgb(16 19 23 / 0.86);
+  --pano-panel-2: rgb(28 33 39 / 0.92);
+  --pano-edge: rgb(255 255 255 / 0.1);
+  --pano-edge-strong: rgb(255 255 255 / 0.22);
+  --pano-text: rgb(236 236 236);
+  --pano-text-dim: rgb(166 172 180);
+  --pano-select: rgb(91 129 173);
+  --pano-go: rgb(76 142 56);
+  --pano-go-hover: rgb(96 168 72);
+  --pano-go-text: rgb(244 250 240);
+  --pano-font: 'Stratum2', 'Arial Narrow', 'Roboto Condensed', Arial, sans-serif;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: rgb(10 12 14);
+  color: var(--pano-text);
+  font-family: var(--pano-font);
+}
+
+.pano-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.pano-bg-still {
+  filter: saturate(0.85);
+}
+.pano-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(0 0 0 / 0.72) 0, rgb(0 0 0 / 0.25) 45%, rgb(0 0 0 / 0.15) 100%);
+  pointer-events: none;
+}
+
+/* ── sidebar ─────────────────────────────────────────────────────────────── */
+
+.pano-sidebar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+  width: calc(var(--safe-left, 0px) + 4.5rem);
+  padding: calc(var(--safe-top, 0px) + 0.75rem) 0 calc(var(--safe-bottom, 0px) + 0.75rem) var(--safe-left, 0px);
+  background: rgb(0 0 0 / 0.55);
+  border-right: 1px solid var(--pano-edge);
+}
+.pano-logo {
+  display: grid;
+  place-items: center;
+  min-height: 3.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.pano-logo img {
+  width: 3rem;
+  height: auto;
+}
+.pano-sidebar-gap {
+  flex: 1;
+}
+.pano-side-btn {
+  display: grid;
+  place-items: center;
+  gap: 0.125rem;
+  min-height: 3.75rem;
+  padding: 0.375rem 0;
+  background: none;
+  border: 0;
+  border-left: 3px solid transparent;
+  color: var(--pano-text-dim);
+  font: inherit;
+  cursor: pointer;
+}
+.pano-side-btn:hover,
+.pano-side-btn:focus-visible,
+.pano-side-btn-on {
+  color: var(--pano-text);
+  background: rgb(255 255 255 / 0.06);
+}
+.pano-side-btn-on {
+  border-left-color: var(--pano-select);
+}
+.pano-side-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pano-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  opacity: 0.85;
+}
+.pano-side-btn:hover .pano-icon,
+.pano-side-btn-on .pano-icon {
+  opacity: 1;
+}
+
+/* ── panels ──────────────────────────────────────────────────────────────── */
+
+.pano-stage {
+  position: absolute;
+  inset: 0 0 0 calc(var(--safe-left, 0px) + 4.5rem);
+  z-index: 1;
+  display: flex;
+  padding: calc(var(--safe-top, 0px) + 1rem) calc(var(--safe-right, 0px) + 1rem) calc(var(--safe-bottom, 0px) + 1rem) 1rem;
+  overflow-y: auto;
+}
+.pano-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: min(100%, 56rem);
+  margin: auto auto auto 0;
+  padding: 1rem;
+  background: var(--pano-panel);
+  border: 1px solid var(--pano-edge);
+}
+.pano-settings {
+  width: min(100%, 60rem);
+}
+.pano-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.pano-panel-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.pano-close {
+  display: grid;
+  place-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  margin-inline-start: auto;
+  background: none;
+  border: 0;
+  color: var(--pano-text-dim);
+  cursor: pointer;
+}
+.pano-close:hover,
+.pano-close:focus-visible {
+  color: var(--pano-text);
+}
+
+/* Mode and "how to play" pickers: a row of flat words, the chosen one underlined. */
+.pano-modes,
+.pano-how {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+}
+.pano-mode,
+.pano-how-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.75rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--pano-text-dim);
+  font: inherit;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.pano-mode {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.pano-how-item {
+  font-size: 0.875rem;
+}
+.pano-mode[aria-checked='true'],
+.pano-how-item[aria-checked='true'] {
+  color: var(--pano-text);
+  border-bottom-color: var(--pano-select);
+}
+.pano-mode:hover,
+.pano-how-item:hover,
+.pano-mode:focus-visible,
+.pano-how-item:focus-visible {
+  color: var(--pano-text);
+}
+
+.pano-maps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.pano-map {
+  position: relative;
+  width: min(100%, 20rem);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--pano-panel-2);
+  border: 2px solid var(--pano-select);
+}
+.pano-map img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pano-map-name {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 1.5rem 0.75rem 0.5rem;
+  background: linear-gradient(transparent, rgb(0 0 0 / 0.8));
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.pano-play-side {
+  display: flex;
+  flex: 1;
+  min-width: 14rem;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.pano-note {
+  color: var(--pano-text-dim);
+  font-size: 0.875rem;
+}
+.pano-field {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--pano-text-dim);
+}
+.pano-field select,
+.pano-field input {
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  background: var(--pano-panel-2);
+  border: 1px solid var(--pano-edge-strong);
+  color: var(--pano-text);
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.pano-go-row {
+  display: flex;
+  justify-content: flex-end;
+}
+.pano-go {
+  min-width: 10rem;
+  min-height: 3rem;
+  padding: 0 2rem;
+  background: var(--pano-go);
+  border: 0;
+  color: var(--pano-go-text);
+  font: inherit;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.pano-go:hover,
+.pano-go:focus-visible {
+  background: var(--pano-go-hover);
+}
+.pano-go:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pano-button,
+.pano-signin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid var(--pano-edge-strong);
+  color: var(--pano-text);
+  font: inherit;
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.pano-button:hover,
+.pano-signin:hover,
+.pano-button:focus-visible,
+.pano-signin:focus-visible {
+  background: rgb(255 255 255 / 0.16);
+}
+.pano-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.pano-signin {
+  width: fit-content;
+}
+.pano-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.75rem;
+  background: none;
+  border: 0;
+  color: var(--pano-text-dim);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+.pano-link:hover {
+  color: var(--pano-text);
+}
+
+.pano-rooms {
+  display: grid;
+  gap: 0.75rem;
+}
+.pano-rooms-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.pano-room-list {
+  display: grid;
+  gap: 0.25rem;
+}
+.pano-room {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--pano-panel-2);
+  border: 1px solid var(--pano-edge);
+}
+.pano-room-name {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.pano-room-name small {
+  color: var(--pano-text-dim);
+}
+.pano-code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--pano-edge);
+}
+
+/* The Options sheet (menus/OptionsDialog.tsx) in Panorama's colours: its controls read --app-*. */
+.pano-skin {
+  --app-bg: var(--pano-panel);
+  --app-bg-subtle: var(--pano-panel-2);
+  --app-surface: rgb(255 255 255 / 0.08);
+  --app-surface-hover: rgb(255 255 255 / 0.14);
+  --app-surface-active: rgb(255 255 255 / 0.2);
+  --app-border: var(--pano-edge);
+  --app-border-bright: var(--pano-edge-strong);
+  --app-text: var(--pano-text);
+  --app-text-muted: var(--pano-text);
+  --app-text-dim: var(--pano-text-dim);
+  --app-accent: var(--pano-select);
+  --app-accent-text: rgb(160 192 228);
+  --app-accent-fg: var(--pano-text);
+  --app-accent-hover: rgb(110 150 196);
+  --tf2-panel: var(--pano-panel);
+  --app-font-display: var(--pano-font);
+  --app-font-body: var(--pano-font);
+  --app-radius: 0;
+  --app-radius-sm: 0;
+}
+
+@media (width < 40rem) {
+  .pano-sidebar {
+    width: calc(var(--safe-left, 0px) + 3.5rem);
+  }
+  .pano-stage {
+    left: calc(var(--safe-left, 0px) + 3.5rem);
+    padding-left: 0.5rem;
+  }
+  .pano-side-label {
+    display: none;
+  }
+  .pano-panel {
+    padding: 0.75rem;
+  }
+}

@@ -167,8 +167,29 @@ const PORTAL_BINDS: Keybinds = {
   walk: ['AltLeft'],
 };
 
+/** CS:GO's config_default.cfg: E uses (plants / defuses, picks up), Shift walks, G drops, F inspects. */
+const CS_BINDS: Keybinds = {
+  ...COMMON,
+  reload: ['KeyR'],
+  use: ['KeyE'],
+  speed: ['ShiftLeft'],
+  slot1: ['Digit1'],
+  slot2: ['Digit2'],
+  slot3: ['Digit3'],
+  slot4: ['Digit4'],
+  slot5: ['Digit5'],
+  lastinv: ['KeyQ'],
+  invprev: ['MWheelUp'],
+  invnext: ['MWheelDown'],
+  showscores: ['Tab'],
+  say: ['KeyY'],
+  say_team: ['KeyU'],
+  inspect: ['KeyF'],
+  dropitem: ['KeyG'],
+};
+
 export function defaultKeybinds(game: HudGame): Keybinds {
-  const src = game === 'hl2' ? HL2_BINDS : game === 'portal' ? PORTAL_BINDS : TF2_BINDS;
+  const src = game === 'hl2' ? HL2_BINDS : game === 'portal' ? PORTAL_BINDS : game === 'csgo' ? CS_BINDS : TF2_BINDS;
   const out: Keybinds = {};
   for (const [a, keys] of Object.entries(src) as Array<[Action, string[]]>) out[a] = [...keys];
   return out;
@@ -178,6 +199,26 @@ export function defaultKeybinds(game: HudGame): Keybinds {
 export function bindableActions(game: HudGame): Action[] {
   const base: Action[] = ['forward', 'back', 'moveleft', 'moveright', 'jump', 'duck', 'attack', 'attack2'];
   if (game === 'portal') return [...base, 'use', 'walk'];
+  if (game === 'csgo')
+    return [
+      ...base,
+      'speed',
+      'reload',
+      'use',
+      'slot1',
+      'slot2',
+      'slot3',
+      'slot4',
+      'slot5',
+      'lastinv',
+      'invprev',
+      'invnext',
+      'showscores',
+      'say',
+      'say_team',
+      'inspect',
+      'dropitem',
+    ];
   if (game === 'hl2')
     return [
       ...base,
