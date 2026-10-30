@@ -13,30 +13,15 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { isTrackableTitle } from '@/lib/games/route-match';
+import { resolveUserDisplay, userDisplaySelect } from '@/lib/user-display';
 import { creditSeconds } from '@/lib/playtime/credit';
-import {
-  canViewPlaytime,
-  isPlaytimePrivacy,
-  type PlaytimePrivacy,
-} from '@/lib/playtime/privacy';
+import type { PlayerView, PlaytimeActivity } from '@/lib/playtime/types';
+import { canViewPlaytime, isPlaytimePrivacy, type PlaytimePrivacy } from '@/lib/playtime/privacy';
+
+export type { PlayerView, PlaytimeActivity };
 
 const DAY_MS = 86_400_000;
 const WINDOW_DAYS = 14;
-
-export type PlaytimeActivity = {
-  totalSeconds: number;
-  last2WeeksSeconds: number;
-  lastPlayedAt: string | null;
-};
-
-export type PlayerView = {
-  userId: string;
-  handle: string | null;
-  name: string | null;
-  image: string | null;
-  totalSeconds: number;
-  last2WeeksSeconds: number;
-};
 
 /** UTC calendar day of `d`, as the `@db.Date` column stores it. */
 function utcDay(d: Date): Date {
@@ -152,6 +137,7 @@ type Candidate = {
     handle: string | null;
     name: string | null;
     image: string | null;
+    profile?: { displayName?: string | null; customImage?: string | null } | null;
     playtimePrivacy: string;
   };
 };
@@ -159,9 +145,7 @@ type Candidate = {
 const CANDIDATE_SELECT = {
   userId: true,
   totalSeconds: true,
-  user: {
-    select: { id: true, handle: true, name: true, image: true, playtimePrivacy: true },
-  },
+  user: { select: { ...userDisplaySelect, playtimePrivacy: true } },
 } as const;
 
 /** Apply the privacy rule to candidates and attach their recent totals. */
@@ -192,8 +176,7 @@ async function visiblePlayers(
     .map((c) => ({
       userId: c.userId,
       handle: c.user.handle,
-      name: c.user.name,
-      image: c.user.image,
+      ...resolveUserDisplay(c.user),
       totalSeconds: c.totalSeconds,
       last2WeeksSeconds: recent.get(c.userId) ?? 0,
     }));

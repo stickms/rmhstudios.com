@@ -38,9 +38,16 @@ export function LibraryRail({
 
   const all = useMemo(() => listCuratedBuilds(), []);
   const visible = useMemo(() => filterRail(all, { kind, search }), [all, kind, search]);
-  const favorites = useMemo(() => visible.filter((b) => favoriteIds.includes(b.id)), [visible, favoriteIds]);
+  const favorites = useMemo(
+    () => visible.filter((b) => favoriteIds.includes(b.id)),
+    [visible, favoriteIds],
+  );
   const { recent, rest } = useMemo(
-    () => groupRail(visible.filter((b) => !favoriteIds.includes(b.id)), recentIds),
+    () =>
+      groupRail(
+        visible.filter((b) => !favoriteIds.includes(b.id)),
+        recentIds,
+      ),
     [visible, favoriteIds, recentIds],
   );
 
@@ -167,13 +174,21 @@ function Section({
                 aria-pressed={favorite}
                 aria-label={
                   favorite
-                    ? t('library-unfavorite', { defaultValue: 'Remove {{title}} from favorites', title: b.title })
-                    : t('library-favorite', { defaultValue: 'Add {{title}} to favorites', title: b.title })
+                    ? t('library-unfavorite', {
+                        defaultValue: 'Remove {{title}} from favorites',
+                        title: b.title,
+                      })
+                    : t('library-favorite', {
+                        defaultValue: 'Add {{title}} to favorites',
+                        title: b.title,
+                      })
                 }
                 onClick={() => toggle(b.id)}
                 className={cn(
                   'flex size-11 shrink-0 items-center justify-center rounded-site-sm text-site-text-dim hover:text-site-text',
-                  favorite ? 'text-site-accent' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+                  favorite
+                    ? 'text-site-accent'
+                    : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
                 )}
               >
                 <Star className={cn('size-4', favorite && 'fill-current')} aria-hidden />

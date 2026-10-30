@@ -48,9 +48,7 @@ const ENTRIES: CatalogRoute[] = [
  */
 export function matchCatalogRoute(pathname: string): CatalogRoute | null {
   if (pathname === '/games' || pathname.startsWith('/games/')) return null;
-  return (
-    ENTRIES.find((e) => pathname === e.href || pathname.startsWith(e.href + '/')) ?? null
-  );
+  return ENTRIES.find((e) => pathname === e.href || pathname.startsWith(e.href + '/')) ?? null;
 }
 
 /** Whether an id names a listed, on-site title — the only kind that accrues playtime. */

@@ -38,10 +38,16 @@ export function groupRail(
   return { recent, rest };
 }
 
-export type HeroSource = { kind: 'banner' | 'cropped-card' | 'tile'; src: string | null; hue: number };
+export type HeroSource = {
+  kind: 'banner' | 'cropped-card' | 'tile';
+  src: string | null;
+  hue: number;
+};
 
 /** Banner, else the portrait card image cropped, else the hue tile. */
-export function heroSource(b: CuratedBuild): HeroSource {
+export function heroSource(
+  b: Pick<CuratedBuild, 'bannerUrl' | 'thumbnailUrl' | 'hue'>,
+): HeroSource {
   if (b.bannerUrl) return { kind: 'banner', src: b.bannerUrl, hue: b.hue };
   if (b.thumbnailUrl) return { kind: 'cropped-card', src: b.thumbnailUrl, hue: b.hue };
   return { kind: 'tile', src: null, hue: b.hue };

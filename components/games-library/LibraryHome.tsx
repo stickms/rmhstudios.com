@@ -74,7 +74,9 @@ export function LibraryHome({
                   height={320}
                   className="aspect-[3/4] w-full rounded-site-sm"
                 />
-                <span className="truncate px-1 pb-1 text-sm font-medium text-site-text">{b.title}</span>
+                <span className="truncate px-1 pb-1 text-sm font-medium text-site-text">
+                  {b.title}
+                </span>
               </Link>
             </li>
           ))}
