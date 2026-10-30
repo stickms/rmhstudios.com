@@ -19,13 +19,14 @@ describe('engine harness build', () => {
     expect(files.every((f) => f.startsWith('rmh_mp_test/') && f.endsWith('.lua'))).toBe(true);
   });
 
-  it('bundles the real runtime with the Lua inlined', async () => {
+  it('bundles the real runtime with the test Lua inlined', async () => {
     const dir = await buildHarness();
     const app = readFileSync(path.join(dir, 'app.js'), 'utf8');
     expect(app).toContain('__balatroEngine');
     expect(app).toContain('rmh_mp_test/autopilot.lua');
     expect(app).toContain('require "rmh_mp_test.harness"');
-    // runtime.ts's own ?raw Lua made it in too.
-    expect(app).toContain('platform layer ready');
+    // The platform Lua ships in the core pack (build-game-pack.py PLATFORM_LUA), not the bundle.
+    expect(app).toContain('core-pack-missing-platform');
+    expect(app).not.toContain('platform layer ready');
   }, 30_000);
 });

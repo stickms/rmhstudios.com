@@ -8,9 +8,9 @@
  *      textures, fonts, ~5 MB) and `audio` (~17 MB). Both are kept in IndexedDB
  *      after the first visit, so later visits start without a download.
  *   2. The core pack is extracted into Emscripten's in-memory filesystem at
- *      /Balatro with the platform layer (`lua/rmh_web.lua` and its LuaJIT ports
- *      under rmh/), and `require "rmh_web";` is prefixed onto main.lua's first
- *      line. LÖVE starts with /Balatro as the game; the directory name is the save
+ *      /Balatro. It carries the platform layer (`lua/rmh_web.lua` and its LuaJIT
+ *      ports under rmh/, added by the pack builder, not bundled into this chunk),
+ *      and `require "rmh_web";` is prefixed onto main.lua's first line. LÖVE starts with /Balatro as the game; the directory name is the save
  *      identity, so saves land in /home/web_user/love/Balatro — the same layout as
  *      %AppData%\Balatro.
  *   3. The audio pack is written into /Balatro/resources/sounds whenever it
@@ -22,7 +22,7 @@
  *      the tab is hidden, and every 30 s — and backs the directory up to the
  *      account (cloud-saves.ts), restoring the account copy before the game's
  *      first line runs when it is the newer one.
- *   5. Multiplayer is lazy (docs/balatro-mp.md, PLAN §0.5). The core carries only
+ *   5. Multiplayer is lazy (docs/balatro-mp.md, PLAN §0.5). The core pack carries only
  *      the mailbox (`lua/rmh/net.lua`, `lua/rmh/json.lua`) and the menu entry
  *      (`lua/rmh_mp_entry.lua`). The MP pack and the MP JS chunk load when the
  *      player opens Multiplayer, or at boot for an invite, a rejoin, or a run that
@@ -31,13 +31,6 @@
  *      `FS.trackingDelegate` move/delete notifications the mailbox runs on.
  */
 import pack from './game-pack.json';
-import bitSource from './lua/bit.lua?raw';
-import randomSource from './lua/luajit_random.lua?raw';
-import shimSource from './lua/rmh_web.lua?raw';
-import u32Source from './lua/u32.lua?raw';
-import jsonSource from './lua/rmh/json.lua?raw';
-import netSource from './lua/rmh/net.lua?raw';
-import mpEntrySource from './lua/rmh_mp_entry.lua?raw';
 import { chooseSnapshot, isSavePath, type CloudSaves, type SaveFile } from './cloud-saves';
 import { extractEntry, readZip, writeZip } from './zip';
 
@@ -453,16 +446,10 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
   const enc = new TextEncoder();
   const main = files.find((f) => f.name === 'main.lua');
   if (!main) throw new Error('core-pack-missing-main');
+  // The platform layer (rmh_web.lua, rmh/*.lua, rmh_mp_entry.lua) ships inside the
+  // core pack (build-game-pack.py PLATFORM_LUA); only the require is added here.
+  if (!files.some((f) => f.name === 'rmh_web.lua')) throw new Error('core-pack-missing-platform');
   main.data = enc.encode(patchMain(new TextDecoder().decode(main.data)));
-  files.push(
-    { name: 'rmh_web.lua', data: enc.encode(shimSource) },
-    { name: 'rmh/u32.lua', data: enc.encode(u32Source) },
-    { name: 'rmh/bit.lua', data: enc.encode(bitSource) },
-    { name: 'rmh/luajit_random.lua', data: enc.encode(randomSource) },
-    { name: 'rmh/json.lua', data: enc.encode(jsonSource) },
-    { name: 'rmh/net.lua', data: enc.encode(netSource) },
-    { name: 'rmh_mp_entry.lua', data: enc.encode(mpEntrySource) },
-  );
   const cloudFiles = await cloudCopy;
   // A failed MP preload is not a failed boot: the MP chunk retries after it.
   const mpFiles = mp?.files ? await mp.files.catch(() => null) : null;

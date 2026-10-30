@@ -1,7 +1,7 @@
 /**
  * Bundles the engine-spec harness page (testing/balatro-e2e/engine/page/entry.ts)
- * with esbuild: the real lib/balatro/runtime.ts (its `?raw` Lua imports and the
- * pack manifest JSON included), plus every file under lib/balatro/lua/mp_test as
+ * with esbuild: the real lib/balatro/runtime.ts (the pack manifest JSON included;
+ * the platform Lua comes from the core pack), plus every file under lib/balatro/lua/mp_test as
  * the virtual module `virtual:balatro-mp-test-lua` — the test driver, the
  * in-engine spec runner and the specs, written into /Balatro/rmh_mp_test by the
  * page. Rebuilt on every run (≈100 ms), so a spec edit needs no step.
