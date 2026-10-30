@@ -310,6 +310,12 @@ export function csEntityFactory(s: EntityState, fx: EffectSystem): EntityRendera
 export const viewModelAnimated = (inst: ModelInstance): boolean => (inst.animator?.set.sequences.size ?? 0) > 0;
 
 /**
+ * Off while the frame-animation rotations are being verified: models builder 2 decodes the clips' layout
+ * correctly but its compressed-rotation values still pose the arms wrongly, so the view is left clear.
+ */
+export const CS_DRAW_VIEWMODEL = false;
+
+/**
  * Each team's default gloves (the generic first-person hands, no faction sleeves), from the model channel:
  * T the fingerless gloves, CT the hard-knuckle ones, else bare hands. Resolved once from `mdl/index.json`.
  */
@@ -373,7 +379,7 @@ export class CsViewModel implements ProfileViewModel {
   ): void {
     const w = p?.activeWeapon() as CsWeapon | null;
     const info = w ? csWeaponByDefindex(w.defindex) : null;
-    this.visible = !!p && !!info && frame.visible;
+    this.visible = CS_DRAW_VIEWMODEL && !!p && !!info && frame.visible;
     if (!this.visible || !info) {
       this.model.hide();
       return;
