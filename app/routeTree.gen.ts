@@ -508,6 +508,7 @@ import { Route as ApiGabrielsHornTableReadRouteImport } from './routes/api/gabri
 import { Route as ApiGameNightIndexRouteImport } from './routes/api/game-night/index'
 import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
 import { Route as ApiGamesHowToPlayRouteImport } from './routes/api/games/how-to-play'
+import { Route as ApiGamesPlaytimeRouteImport } from './routes/api/games/playtime'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiGiftExchangesIndexRouteImport } from './routes/api/gift-exchanges/index'
 import { Route as ApiGlobesetRecordRouteImport } from './routes/api/globeset/record'
@@ -695,6 +696,7 @@ import { Route as ApiSettingsAutoDeleteRouteImport } from './routes/api/settings
 import { Route as ApiSettingsEmailDigestRouteImport } from './routes/api/settings/email-digest'
 import { Route as ApiSettingsGameAssistsRouteImport } from './routes/api/settings/game-assists'
 import { Route as ApiSettingsPlayLimitsRouteImport } from './routes/api/settings/play-limits'
+import { Route as ApiSettingsPlaytimePrivacyRouteImport } from './routes/api/settings/playtime-privacy'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiShopBundleRouteImport } from './routes/api/shop/bundle'
 import { Route as ApiShopDailyRouteImport } from './routes/api/shop/daily'
@@ -3847,6 +3849,11 @@ const ApiGamesHowToPlayRoute = ApiGamesHowToPlayRouteImport.update({
   path: '/api/games/how-to-play',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGamesPlaytimeRoute = ApiGamesPlaytimeRouteImport.update({
+  id: '/api/games/playtime',
+  path: '/api/games/playtime',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
   id: '/api/gif/search',
   path: '/api/gif/search',
@@ -4796,6 +4803,12 @@ const ApiSettingsPlayLimitsRoute = ApiSettingsPlayLimitsRouteImport.update({
   path: '/api/settings/play-limits',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSettingsPlaytimePrivacyRoute =
+  ApiSettingsPlaytimePrivacyRouteImport.update({
+    id: '/api/settings/playtime-privacy',
+    path: '/api/settings/playtime-privacy',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiShopIndexRoute = ApiShopIndexRouteImport.update({
   id: '/api/shop/',
   path: '/api/shop/',
@@ -8633,6 +8646,7 @@ export interface FileRoutesByFullPath {
   '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
+  '/api/games/playtime': typeof ApiGamesPlaytimeRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
@@ -8788,6 +8802,7 @@ export interface FileRoutesByFullPath {
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
+  '/api/settings/playtime-privacy': typeof ApiSettingsPlaytimePrivacyRoute
   '/api/shop/bundle': typeof ApiShopBundleRoute
   '/api/shop/daily': typeof ApiShopDailyRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
@@ -9931,6 +9946,7 @@ export interface FileRoutesByTo {
   '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
+  '/api/games/playtime': typeof ApiGamesPlaytimeRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
@@ -10086,6 +10102,7 @@ export interface FileRoutesByTo {
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
+  '/api/settings/playtime-privacy': typeof ApiSettingsPlaytimePrivacyRoute
   '/api/shop/bundle': typeof ApiShopBundleRoute
   '/api/shop/daily': typeof ApiShopDailyRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
@@ -11258,6 +11275,7 @@ export interface FileRoutesById {
   '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
+  '/api/games/playtime': typeof ApiGamesPlaytimeRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
@@ -11413,6 +11431,7 @@ export interface FileRoutesById {
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
+  '/api/settings/playtime-privacy': typeof ApiSettingsPlaytimePrivacyRoute
   '/api/shop/bundle': typeof ApiShopBundleRoute
   '/api/shop/daily': typeof ApiShopDailyRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
@@ -12585,6 +12604,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
     | '/api/games/how-to-play'
+    | '/api/games/playtime'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/groupcalls/active'
@@ -12740,6 +12760,7 @@ export interface FileRouteTypes {
     | '/api/settings/email-digest'
     | '/api/settings/game-assists'
     | '/api/settings/play-limits'
+    | '/api/settings/playtime-privacy'
     | '/api/shop/bundle'
     | '/api/shop/daily'
     | '/api/shop/equip'
@@ -13883,6 +13904,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
     | '/api/games/how-to-play'
+    | '/api/games/playtime'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/groupcalls/active'
@@ -14038,6 +14060,7 @@ export interface FileRouteTypes {
     | '/api/settings/email-digest'
     | '/api/settings/game-assists'
     | '/api/settings/play-limits'
+    | '/api/settings/playtime-privacy'
     | '/api/shop/bundle'
     | '/api/shop/daily'
     | '/api/shop/equip'
@@ -15209,6 +15232,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
     | '/api/games/how-to-play'
+    | '/api/games/playtime'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/groupcalls/active'
@@ -15364,6 +15388,7 @@ export interface FileRouteTypes {
     | '/api/settings/email-digest'
     | '/api/settings/game-assists'
     | '/api/settings/play-limits'
+    | '/api/settings/playtime-privacy'
     | '/api/shop/bundle'
     | '/api/shop/daily'
     | '/api/shop/equip'
@@ -16321,6 +16346,7 @@ export interface RootRouteChildren {
   ApiGabrielsHornTableReadRoute: typeof ApiGabrielsHornTableReadRoute
   ApiGameSavesGameIdRoute: typeof ApiGameSavesGameIdRoute
   ApiGamesHowToPlayRoute: typeof ApiGamesHowToPlayRoute
+  ApiGamesPlaytimeRoute: typeof ApiGamesPlaytimeRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiGlobesetRecordRoute: typeof ApiGlobesetRecordRoute
   ApiGroupcallsActiveRoute: typeof ApiGroupcallsActiveRoute
@@ -16453,6 +16479,7 @@ export interface RootRouteChildren {
   ApiSettingsEmailDigestRoute: typeof ApiSettingsEmailDigestRoute
   ApiSettingsGameAssistsRoute: typeof ApiSettingsGameAssistsRoute
   ApiSettingsPlayLimitsRoute: typeof ApiSettingsPlayLimitsRoute
+  ApiSettingsPlaytimePrivacyRoute: typeof ApiSettingsPlaytimePrivacyRoute
   ApiShopBundleRoute: typeof ApiShopBundleRoute
   ApiShopDailyRoute: typeof ApiShopDailyRoute
   ApiShopEquipRoute: typeof ApiShopEquipRoute
@@ -20412,6 +20439,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGamesHowToPlayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/games/playtime': {
+      id: '/api/games/playtime'
+      path: '/api/games/playtime'
+      fullPath: '/api/games/playtime'
+      preLoaderRoute: typeof ApiGamesPlaytimeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/gif/search': {
       id: '/api/gif/search'
       path: '/api/gif/search'
@@ -21719,6 +21753,13 @@ declare module '@tanstack/react-router' {
       path: '/api/settings/play-limits'
       fullPath: '/api/settings/play-limits'
       preLoaderRoute: typeof ApiSettingsPlayLimitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/settings/playtime-privacy': {
+      id: '/api/settings/playtime-privacy'
+      path: '/api/settings/playtime-privacy'
+      fullPath: '/api/settings/playtime-privacy'
+      preLoaderRoute: typeof ApiSettingsPlaytimePrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/shop/': {
@@ -28659,6 +28700,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGabrielsHornTableReadRoute: ApiGabrielsHornTableReadRoute,
   ApiGameSavesGameIdRoute: ApiGameSavesGameIdRoute,
   ApiGamesHowToPlayRoute: ApiGamesHowToPlayRoute,
+  ApiGamesPlaytimeRoute: ApiGamesPlaytimeRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
   ApiGlobesetRecordRoute: ApiGlobesetRecordRoute,
   ApiGroupcallsActiveRoute: ApiGroupcallsActiveRoute,
@@ -28791,6 +28833,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSettingsEmailDigestRoute: ApiSettingsEmailDigestRoute,
   ApiSettingsGameAssistsRoute: ApiSettingsGameAssistsRoute,
   ApiSettingsPlayLimitsRoute: ApiSettingsPlayLimitsRoute,
+  ApiSettingsPlaytimePrivacyRoute: ApiSettingsPlaytimePrivacyRoute,
   ApiShopBundleRoute: ApiShopBundleRoute,
   ApiShopDailyRoute: ApiShopDailyRoute,
   ApiShopEquipRoute: ApiShopEquipRoute,
