@@ -97,4 +97,23 @@ describe('anonymizeAccount', () => {
     const op = tx.find((o) => o.model === 'gameCollectionItem' && o.method === 'deleteMany');
     expect(op?.args).toEqual({ where: { userId: 'user-1' } });
   });
+
+  it('erases the chosen profile showcase', async () => {
+    (prismaMock.$transaction as ReturnType<typeof vi.fn>).mockClear();
+    await anonymizeAccount('user-1');
+    const tx = (prismaMock.$transaction as ReturnType<typeof vi.fn>).mock.calls[0][0] as Op[];
+    const op = tx.find((o) => o.model === 'gameProfileShowcase' && o.method === 'deleteMany');
+    expect(op?.args).toEqual({ where: { userId: 'user-1' } });
+  });
+
+  it('erases gems and their entries', async () => {
+    (prismaMock.$transaction as ReturnType<typeof vi.fn>).mockClear();
+    await anonymizeAccount('user-1');
+    const tx = (prismaMock.$transaction as ReturnType<typeof vi.fn>).mock.calls[0][0] as Op[];
+    for (const m of ['gemEntry']) {
+      const op = tx.find((o) => o.model === m && o.method === 'deleteMany');
+      expect(op?.args).toEqual({ where: { userId: 'user-1' } });
+    }
+    expect(tx.find((o) => o.model === 'userGems' && o.method === 'deleteMany')?.args).toEqual({ where: { userId: 'user-1' } });
+  });
 });

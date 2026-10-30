@@ -9,7 +9,9 @@ import type { PersonRef } from '@/lib/games/community-types';
 import type { ThreadPage as ThreadPageData } from '@/lib/games/hub-types';
 import { timeAgoShort } from '@/lib/utils';
 import { CommunityNav } from './CommunityNav';
+import { EmotePicker } from './EmotePicker';
 import { PersonAvatar } from './SteamPeople';
+import { PostText } from './PostText';
 import { hubErrorText } from './hub-errors';
 
 async function post(path: string, body: unknown): Promise<{ ok: boolean; error?: string }> {
@@ -76,7 +78,7 @@ export function ThreadPage({ data }: { data: ThreadPageData }) {
         <article className="stm-web-card stm-post">
           <Author person={th.author} when={th.createdAt} />
           <div className="stm-post-main">
-            <p className="stm-post-text">{th.body}</p>
+            <PostText className="stm-post-text" text={th.body} ownedTitles={data.authorEmotes[th.author.userId] ?? []} />
             <div className="stm-post-tools">
               {th.canDelete ? (
                 <button
@@ -123,7 +125,7 @@ export function ThreadPage({ data }: { data: ThreadPageData }) {
           <article key={p.id} className="stm-web-card stm-post">
             <Author person={p.author} when={p.createdAt} />
             <div className="stm-post-main">
-              <p className="stm-post-text">{p.body}</p>
+              <PostText className="stm-post-text" text={p.body} ownedTitles={data.authorEmotes[p.author.userId] ?? []} />
               {p.canDelete ? (
                 <div className="stm-post-tools">
                   <button
@@ -168,6 +170,7 @@ export function ThreadPage({ data }: { data: ThreadPageData }) {
               <button type="submit" className="stm-btn stm-btn-blue" disabled={busy || reply.trim().length === 0}>
                 {t('steam-hub-post', { defaultValue: 'Post' })}
               </button>
+              <EmotePicker titles={data.myEmoteTitles} onPick={(tok) => setReply((r) => (r ? `${r} ${tok}` : tok))} />
             </div>
           </form>
         ) : (

@@ -94,6 +94,7 @@ export function projectBuildDetail(
     featured: build.featured,
     isCurated: build.isCurated,
     technologies: toStringArray(build.technologies),
+    gameId: build.gameId ?? null,
     likeCount: build.likeCount,
     commentCount: build.commentCount,
     viewCount: build.viewCount,

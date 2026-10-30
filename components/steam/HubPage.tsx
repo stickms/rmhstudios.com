@@ -11,11 +11,12 @@ import { formatPlaytime } from '@/lib/games/format-playtime';
 import { timeAgoShort } from '@/lib/utils';
 import { CommunityNav } from './CommunityNav';
 import { GroupRow, Stars } from './CommunityHome';
+import { EmotePicker } from './EmotePicker';
 import { PersonAvatar } from './SteamPeople';
 import { TitleArt } from './TitleArt';
 import { hubErrorText } from './hub-errors';
 
-function NewThread({ gameId }: { gameId: string }) {
+function NewThread({ gameId, emoteTitles }: { gameId: string; emoteTitles: string[] }) {
   const { t } = useTranslation('games-hub');
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -87,6 +88,7 @@ function NewThread({ gameId }: { gameId: string }) {
         <button type="button" className="stm-btn" onClick={() => setOpen(false)}>
           {t('steam-market-cancel', { defaultValue: 'Cancel' })}
         </button>
+        <EmotePicker titles={emoteTitles} onPick={(tok) => setBody((b) => (b ? `${b} ${tok}` : tok))} />
       </div>
     </form>
   );
@@ -116,7 +118,7 @@ export function HubPage({ data }: { data: HubData }) {
               {t('steam-hub-discussions', { defaultValue: 'Discussions' })}
             </h2>
             {data.signedIn ? (
-              <NewThread gameId={data.gameId} />
+              <NewThread gameId={data.gameId} emoteTitles={data.myEmoteTitles} />
             ) : (
               <p className="stm-web-pad stm-muted">
                 <a className="stm-link" href={`/login?callbackURL=${encodeURIComponent(`/games/hub/${data.gameId}`)}`}>
@@ -177,6 +179,40 @@ export function HubPage({ data }: { data: HubData }) {
         </div>
 
         <aside>
+          <section className="stm-web-card" aria-labelledby="stm-hub-workshop">
+            <h2 id="stm-hub-workshop" className="stm-web-head">
+              {t('steam-hub-workshop', { defaultValue: 'Workshop' })}
+              <span className="stm-count">{data.workshop.length}</span>
+            </h2>
+            {data.workshop.length === 0 ? (
+              <p className="stm-web-pad stm-muted">
+                {t('steam-hub-workshop-empty', { defaultValue: 'Nothing here yet. Build something for this game.' })}
+              </p>
+            ) : (
+              <ul className="stm-people">
+                {data.workshop.map((w) => (
+                  <li key={w.slug}>
+                    <Link to="/user-builds/$slug" params={{ slug: w.slug }} className="stm-person">
+                      <span className="stm-person-body">
+                        <span className="stm-person-name">{w.title}</span>
+                        <span className="stm-person-sub">
+                          {w.author.name} · {t('steam-hub-workshop-likes', { defaultValue: 'Likes: {{n}}', n: w.likes })}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {data.signedIn ? (
+              <p className="stm-web-pad">
+                <a className="stm-link" href={`/user-builds/submit?forGame=${encodeURIComponent(data.gameId)}`}>
+                  {t('steam-hub-workshop-submit', { defaultValue: 'Submit your own' })}
+                </a>
+              </p>
+            ) : null}
+          </section>
+
           <section className="stm-web-card" aria-labelledby="stm-hub-guides">
             <h2 id="stm-hub-guides" className="stm-web-head">
               {t('steam-hub-guides', { defaultValue: 'Player guides' })}

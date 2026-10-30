@@ -33,6 +33,10 @@ async function resolveRecipient(
       const row = await prisma.userBuild.findUnique({ where: { id: entityId }, select: { userId: true } });
       return row?.userId ?? null;
     }
+    case 'review': {
+      const row = await prisma.gameReview.findUnique({ where: { id: entityId }, select: { userId: true } });
+      return row?.userId ?? null;
+    }
     default:
       return null;
   }

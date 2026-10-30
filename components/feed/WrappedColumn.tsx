@@ -12,6 +12,9 @@ import {
  Flame,
  CalendarDays,
  Star,
+ Gamepad2,
+ Layers,
+ Award,
 } from'lucide-react';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { Spinner } from'@/components/ui/spinner';
@@ -33,10 +36,19 @@ interface Wrapped {
  longestStreak: number;
  busiestMonth: string | null;
  topPost: { id: string; content: string; likeCount: number } | null;
+ play?: {
+ seconds: number;
+ titles: number;
+ top: { gameId: string; title: string; seconds: number }[];
+ cardDrops: number;
+ badges: number;
+ } | null;
  blurb: string;
 }
 
 const fmt = (n: number) => n.toLocaleString();
+/** Seconds as hours with one decimal; under an hour, minutes. */
+const hours = (s: number) => (s < 3600 ? `${Math.floor(s / 60)} min` : `${(s / 3600).toFixed(1)} h`);
 
 export function WrappedColumn({
  initialData,
@@ -136,6 +148,31 @@ export function WrappedColumn({
  <p className="text-xs text-site-text-dim">{t('tile-coins-earned', { defaultValue:'Coins earned'})}</p>
  </div>
  </RevealItem>
+ {data.play ? (
+ <>
+ <RevealItem>
+ <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
+ <Gamepad2 className="h-5 w-5 text-site-accent"/>
+ <p className="mt-2 text-2xl font-extrabold text-site-text">{hours(data.play.seconds)}</p>
+ <p className="text-xs text-site-text-dim">{t('tile-time-played', { defaultValue:'Time played'})}</p>
+ </div>
+ </RevealItem>
+ <RevealItem>
+ <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
+ <Layers className="h-5 w-5 text-site-accent"/>
+ <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.play.cardDrops)}</p>
+ <p className="text-xs text-site-text-dim">{t('tile-cards-dropped', { defaultValue:'Cards dropped'})}</p>
+ </div>
+ </RevealItem>
+ <RevealItem>
+ <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
+ <Award className="h-5 w-5 text-site-accent"/>
+ <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.play.badges)}</p>
+ <p className="text-xs text-site-text-dim">{t('tile-badges-crafted', { defaultValue:'Badges crafted'})}</p>
+ </div>
+ </RevealItem>
+ </>
+ ) : null}
  {data.busiestMonth && (
  <RevealItem>
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
@@ -149,6 +186,23 @@ export function WrappedColumn({
  </Reveal>
 
  {/* Top post */}
+ {data.play && data.play.top.length > 0 && (
+ <Reveal>
+ <h2 className="site-section-label mb-3">
+ {t('wrapped-top-games', { defaultValue:'Most played'})}
+ </h2>
+ <ol className="space-y-2">
+ {data.play.top.map((g, i) => (
+ <li key={g.gameId} className="flex items-center justify-between gap-3 rounded-site glass-fill px-4 py-3">
+ <Link to="/games/$gameId" params={{ gameId: g.gameId }} className="text-site-text">
+ {i + 1}. {g.title}
+ </Link>
+ <span className="text-xs text-site-text-dim">{hours(g.seconds)}</span>
+ </li>
+ ))}
+ </ol>
+ </Reveal>
+ )}
  {data.topPost && (
  <Reveal>
  <h2 className="site-section-label mb-3">

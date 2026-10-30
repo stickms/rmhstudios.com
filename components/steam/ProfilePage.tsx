@@ -8,7 +8,9 @@ import { levelBadgeTier } from '@/lib/games/level-badge';
 import { AchievementIcon } from './AchievementIcon';
 import { CommunityNav } from './CommunityNav';
 import { GroupRow } from './CommunityHome';
+import { LookEditor } from './LookEditor';
 import { PersonAvatar } from './SteamPeople';
+import { ShowcaseEditor } from './ShowcaseEditor';
 import { TitleArt } from './TitleArt';
 
 /** A player's profile, laid out as steamcommunity.com lays out one. */
@@ -21,7 +23,17 @@ export function ProfilePage({ profile: p, signedIn }: { profile: SteamProfile; s
   });
 
   return (
-    <div className="stm-web">
+    <div
+      className="stm-web"
+      data-look-bg={p.look.background ? (p.look.background.foil ? 'foil' : 'title') : undefined}
+      data-look-frame={p.look.frame ? String(p.look.frame.level) : undefined}
+      style={
+        {
+          '--look-bg-hue': p.look.background?.hue,
+          '--look-frame-hue': p.look.frame?.hue,
+        } as React.CSSProperties
+      }
+    >
       <CommunityNav />
       <header className="stm-pf-head">
         <div className="stm-pf-avatar" data-online={p.isOnline}>
@@ -70,6 +82,7 @@ export function ProfilePage({ profile: p, signedIn }: { profile: SteamProfile; s
           >
             <div className="stm-bar-fill" style={{ width: `${Math.round(p.levelProgress * 100)}%` }} />
           </div>
+          {p.lookEditor ? <LookEditor key={`${p.lookEditor.selected.background}|${p.lookEditor.selected.frame}`} data={p.lookEditor} /> : null}
           {!p.isOwnProfile && signedIn ? (
             <Link to="/games/trades/new/$id" params={{ id: p.id }} className="stm-btn">
               {t('steam-trade', { defaultValue: 'Trade' })}
@@ -160,6 +173,11 @@ export function ProfilePage({ profile: p, signedIn }: { profile: SteamProfile; s
                 })}
               </span>
             </h2>
+            {p.showcaseEditor ? (
+              <div className="stm-web-pad">
+                <ShowcaseEditor key={p.showcaseEditor.selected.achievements.join() + p.showcaseEditor.selected.badges.join()} data={p.showcaseEditor} />
+              </div>
+            ) : null}
             {p.recentAchievements.length === 0 ? (
               <p className="stm-muted stm-web-pad">
                 {t('steam-no-achievements', { defaultValue: 'No achievements unlocked yet.' })}

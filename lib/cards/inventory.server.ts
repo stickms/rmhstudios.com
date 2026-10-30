@@ -2,14 +2,19 @@ import { prisma } from '@/lib/prisma.server';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { MAX_DROPS_PER_TITLE } from '@/lib/cards/cards';
 import { listBadges, listCards } from '@/lib/cards/cards.server';
+import { getGems } from '@/lib/cards/gems.server';
+import { getBalance } from '@/lib/economy/ledger.server';
+import { isTrackableTitle } from '@/lib/games/route-match';
 import type { InventoryData, InventoryGroup } from '@/lib/cards/types';
 
 /** The viewer's own cards and badges, grouped by title (titles they hold something for). */
 export async function getInventory(userId: string): Promise<InventoryData> {
-  const [stacks, badges, drops] = await Promise.all([
+  const [stacks, badges, drops, gems, coins] = await Promise.all([
     listCards(userId),
     listBadges(userId),
     prisma.cardDrop.groupBy({ by: ['gameId'], where: { userId }, _count: { dropIndex: true } }),
+    getGems(userId),
+    getBalance(userId),
   ]);
   const titles = new Map(listCuratedBuilds().map((b) => [b.id, b]));
   const dropped = new Map(drops.map((d) => [d.gameId, d._count.dropIndex]));
@@ -49,5 +54,11 @@ export async function getInventory(userId: string): Promise<InventoryData> {
   return {
     groups: [...byGame.values()].sort((a, b) => a.title.localeCompare(b.title)),
     totalCards,
+    gems,
+    coins,
+    packTitles: [...titles.values()]
+      .filter((b) => isTrackableTitle(b.id))
+      .map((b) => ({ id: b.id, title: b.title }))
+      .sort((a, b) => a.title.localeCompare(b.title)),
   };
 }

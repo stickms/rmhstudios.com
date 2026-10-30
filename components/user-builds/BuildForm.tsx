@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
 import { Plus, X, AlertCircle } from 'lucide-react';
 import type { Build, BuildCategory } from '@/lib/user-builds-types';
+import { listCuratedBuilds } from '@/lib/builds/curated';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +62,11 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
   const [demoUrl, setDemoUrl] = useState(build?.demoUrl || '');
   const [thumbnailUrl, setThumbnailUrl] = useState(build?.thumbnailUrl || '');
   const [categoryId, setCategoryId] = useState(build?.category?.id || '');
+  // The title this build is for (its Workshop). `?forGame=<id>` pre-selects it.
+  const [gameId, setGameId] = useState(
+    build?.gameId ||
+      (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('forGame') ?? '') : ''),
+  );
   const [technologies, setTechnologies] = useState<string[]>(build?.technologies || []);
   const [tags, setTags] = useState<string[]>(build?.tags || []);
   const [price, setPrice] = useState<string>(build?.price ? String(build.price) : '');
@@ -92,6 +98,8 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         demoUrl: demoUrl || undefined,
         thumbnailUrl: thumbnailUrl || undefined,
         categoryId: categoryId || undefined,
+        // '' clears it on edit; omitted on create when none is chosen.
+        gameId: gameId || (isEditing ? '' : undefined),
         technologies,
         tags,
         visibility,
@@ -204,6 +212,26 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           required
         />
         <p className="text-xs text-site-text-dim">{description.length}/500</p>
+      </div>
+
+      {/* The title this build was made for (its Workshop) */}
+      <div className="space-y-2">
+        <label htmlFor="build-game" className={FIELD_LABEL}>
+          {t('label-made-for', { defaultValue: 'Made for (optional)' })}
+        </label>
+        <Select id="build-game" value={gameId} onChange={(e) => setGameId(e.target.value)}>
+          <option value="">{t('made-for-none', { defaultValue: 'Not made for a particular game' })}</option>
+          {listCuratedBuilds()
+            .filter((b) => b.kind === 'game')
+            .map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.title}
+              </option>
+            ))}
+        </Select>
+        <p className="text-xs text-site-text-dim">
+          {t('made-for-hint', { defaultValue: 'Public builds appear in that game’s Workshop.' })}
+        </p>
       </div>
 
       {/* Category */}

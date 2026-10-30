@@ -8,7 +8,11 @@ import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { ACHIEVEMENTS } from '@/lib/achievements/catalog';
 import { getProfile } from '@/lib/profile.server';
+import { trendingTitles } from '@/lib/games/trending.server';
 import { getFriendActivity, getNowPlayingFor } from '@/lib/games/activity.server';
+import { getLook, getShowcase } from '@/lib/games/showcase.server';
+import { parseBackground, parseFrame, unlocksFromBadges } from '@/lib/games/customize';
+import { badgeKey } from '@/lib/games/showcase';
 import { listCommunities } from '@/lib/communities.server';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { canViewPlaytime, isPlaytimePrivacy } from '@/lib/playtime/privacy';
@@ -20,6 +24,9 @@ import type {
   PersonRef,
   ProfileAchievement,
   ProfileBadge,
+  ShowcaseEditorData,
+  LookEditorData,
+  ProfileLook,
   ProfileGame,
   RecentReview,
   SteamGroup,
@@ -66,7 +73,7 @@ export async function getCommunityHome(viewerId: string | null): Promise<Communi
   const since = new Date(Date.now() - TWO_WEEKS_MS);
   const titles = titleIndex();
 
-  const [listed, myMemberships, trendingRows, reviewRows, friends] = await Promise.all([
+  const [listed, myMemberships, trending24, reviewRows, friends] = await Promise.all([
     listCommunities({ userId: viewerId }),
     viewerId
       ? prisma.communityMember.findMany({
@@ -76,16 +83,7 @@ export async function getCommunityHome(viewerId: string | null): Promise<Communi
           select: { community: { select: GROUP_SELECT } },
         })
       : Promise.resolve([]),
-    // Only players whose setting is `public` count towards a title's trend: a
-    // community-wide number must not leak a follower-only or private player.
-    prisma.gamePlaytimeDay.groupBy({
-      by: ['gameId'],
-      where: { day: { gte: since }, user: { playtimePrivacy: 'public' } },
-      _sum: { seconds: true },
-      _count: { userId: true },
-      orderBy: { _sum: { seconds: 'desc' } },
-      take: 24,
-    }),
+    trendingTitles(),
     prisma.gameReview.findMany({
       where: { body: { not: null } },
       orderBy: { createdAt: 'desc' },
@@ -103,14 +101,10 @@ export async function getCommunityHome(viewerId: string | null): Promise<Communi
   ]);
 
   const trending: TrendingTitle[] = [];
-  for (const row of trendingRows) {
+  for (const row of trending24) {
     const title = titles.get(row.gameId);
     if (!title) continue;
-    trending.push({
-      ...title,
-      players: row._count.userId,
-      seconds: row._sum.seconds ?? 0,
-    });
+    trending.push({ ...title, players: row.players, seconds: row.seconds });
     if (trending.length === 8) break;
   }
 
@@ -154,7 +148,7 @@ export async function getSteamProfile(
   const since = new Date(Date.now() - TWO_WEEKS_MS);
   const titles = titleIndex();
 
-  const [owner, achievementRows, memberships, follows, reviewCount, badgeRows] = await Promise.all([
+  const [owner, achievementRows, memberships, follows, reviewCount, badgeRows, showcase, lookRow] = await Promise.all([
     prisma.user.findUnique({
       where: { id: ownerId },
       select: { playtimePrivacy: true, profile: { select: { xp: true } } },
@@ -180,9 +174,11 @@ export async function getSteamProfile(
     prisma.gameBadge.findMany({
       where: { userId: ownerId },
       orderBy: { craftedAt: 'desc' },
-      take: 12,
+      take: 200,
       select: { gameId: true, foil: true, level: true },
     }),
+    getShowcase(ownerId),
+    getLook(ownerId),
   ]);
 
   const setting = isPlaytimePrivacy(owner?.playtimePrivacy) ? owner.playtimePrivacy : 'private';
@@ -222,11 +218,12 @@ export async function getSteamProfile(
   }
 
   const byId = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));
-  const recentAchievements: ProfileAchievement[] = [];
+  // Every achievement they have unlocked, newest first.
+  const unlocked: ProfileAchievement[] = [];
   for (const row of achievementRows) {
     const def = byId.get(row.achievementId);
     if (!def || !row.unlockedAt) continue;
-    recentAchievements.push({
+    unlocked.push({
       id: def.id,
       name: def.name,
       description: def.description,
@@ -234,8 +231,52 @@ export async function getSteamProfile(
       target: def.target,
       unlockedAt: row.unlockedAt.toISOString(),
     });
-    if (recentAchievements.length === 6) break;
   }
+  const allBadges = badgeRows.flatMap((b): (ProfileBadge & { key: string })[] => {
+    const title = titles.get(b.gameId);
+    return title ? [{ ...title, level: b.level, foil: b.foil, key: badgeKey(b.gameId, b.foil) }] : [];
+  });
+
+  // The showcase they chose, else their most recent. Chosen order is kept.
+  const chosenAch = showcase.achievements.flatMap((id) => unlocked.find((a) => a.id === id) ?? []);
+  const chosenBadges = showcase.badges.flatMap((k) => allBadges.find((b) => b.key === k) ?? []);
+  const recentAchievements = chosenAch.length > 0 ? chosenAch : unlocked.slice(0, 6);
+  const shownBadges = chosenBadges.length > 0 ? chosenBadges : allBadges.slice(0, 12);
+  const showcaseEditor: ShowcaseEditorData | null = profile.isOwnProfile
+    ? {
+        selected: {
+          achievements: chosenAch.map((a) => a.id),
+          badges: chosenBadges.map((b) => b.key),
+        },
+        achievements: unlocked,
+        badges: allBadges,
+      }
+    : null;
+
+  // Background and frame: only if the member still owns what they chose (badges never go
+  // away, but the rule is cheap to hold at read time too).
+  const unlocks = unlocksFromBadges(badgeRows);
+  const bgChoice = lookRow.background && unlocks.backgrounds.includes(lookRow.background) ? parseBackground(lookRow.background) : null;
+  const frChoice = lookRow.frame && unlocks.frames.includes(lookRow.frame) ? parseFrame(lookRow.frame) : null;
+  const look: ProfileLook = {
+    background: bgChoice && titles.get(bgChoice.gameId) ? { ...bgChoice, title: (titles.get(bgChoice.gameId) as TitleRef).title, hue: (titles.get(bgChoice.gameId) as TitleRef).hue } : null,
+    frame: frChoice && titles.get(frChoice.gameId) ? { ...frChoice, title: (titles.get(frChoice.gameId) as TitleRef).title, hue: (titles.get(frChoice.gameId) as TitleRef).hue } : null,
+  };
+  const lookEditor: LookEditorData | null = profile.isOwnProfile
+    ? {
+        selected: { background: look.background ? lookRow.background : null, frame: look.frame ? lookRow.frame : null },
+        backgrounds: unlocks.backgrounds.flatMap((key) => {
+          const p = parseBackground(key);
+          const t = p && titles.get(p.gameId);
+          return p && t ? [{ key, title: t.title, hue: t.hue, foil: p.foil }] : [];
+        }),
+        frames: unlocks.frames.flatMap((key) => {
+          const p = parseFrame(key);
+          const t = p && titles.get(p.gameId);
+          return p && t ? [{ key, title: t.title, hue: t.hue, level: p.level }] : [];
+        }),
+      }
+    : null;
 
   const lv = levelInfo(owner?.profile?.xp ?? 0);
   return {
@@ -255,22 +296,22 @@ export async function getSteamProfile(
     followingCount: profile.followingCount,
     level: lv.level,
     levelProgress: lv.progress,
-    achievementsUnlocked: achievementRows.filter((r) => byId.has(r.achievementId)).length,
+    achievementsUnlocked: unlocked.length,
     achievementsTotal: ACHIEVEMENTS.length,
     recentAchievements,
     games,
     friends: follows.map((f) => personRef(f.following as DisplayUser)),
     groups: memberships.map((m) => groupRef(m.community)),
-    badges: badgeRows.flatMap((b): ProfileBadge[] => {
-      const title = titles.get(b.gameId);
-      return title ? [{ ...title, level: b.level, foil: b.foil }] : [];
-    }),
+    badges: shownBadges.map(({ key: _key, ...b }) => b),
     reviewCount,
     nowPlaying: await getNowPlayingFor(
       viewerId,
       { id: ownerId, playtimePrivacy: owner?.playtimePrivacy ?? 'private' },
       viewerFollowsOwner,
     ),
+    showcaseEditor,
+    look,
+    lookEditor,
   };
 }
 

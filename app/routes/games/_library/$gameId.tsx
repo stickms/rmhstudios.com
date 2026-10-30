@@ -5,6 +5,8 @@ import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import { hueFromString } from '@/lib/builds/curated';
 import { getLibraryExtras } from '@/lib/games/detail.server';
+import { getAlsoPlayed } from '@/lib/games/store.server';
+import type { AlsoPlayed } from '@/lib/games/store-types';
 import type { LibraryExtras } from '@/lib/games/detail-types';
 import { GamePage } from '@/components/steam/GamePage';
 import { buildMeta, buildCanonical, ogCardPath, noindexHead } from '@/lib/seo';
@@ -38,6 +40,8 @@ interface HubPayload {
   trickOfTheWeek: TrickView | null;
   /** The viewer's activity, the title's achievements, friends and community. */
   extras: LibraryExtras;
+  /** Titles people who play this also play (public players, totals only). */
+  alsoPlayed: AlsoPlayed[];
 }
 
 const NO_RATINGS: RatingAgg = { average: 0, count: 0 };
@@ -54,12 +58,13 @@ const fetchHub = createServerFn({ method: 'GET' })
     const kind = game ? 'game' : 'app';
     const session = await getRequestSession();
     const viewerId = session?.user.id ?? null;
-    const [reviews, agg, guides, trickOfTheWeek, extras] = await Promise.all([
+    const [reviews, agg, guides, trickOfTheWeek, extras, alsoPlayed] = await Promise.all([
       kind === 'game' ? listReviews(gameId, viewerId) : [],
       kind === 'game' ? getRatingAgg(gameId) : NO_RATINGS,
       kind === 'game' ? listGuides(gameId, viewerId) : [],
       gameId === 'nightrail' ? getTrickOfTheWeek().catch(() => null) : null,
       getLibraryExtras(viewerId, gameId),
+      getAlsoPlayed(gameId),
     ]);
     return {
       gameId,
@@ -79,6 +84,7 @@ const fetchHub = createServerFn({ method: 'GET' })
       aiEnabled: !!viewerId && aiAvailable(),
       trickOfTheWeek,
       extras,
+      alsoPlayed,
     };
   });
 

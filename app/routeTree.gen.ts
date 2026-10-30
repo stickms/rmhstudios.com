@@ -181,6 +181,7 @@ import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explore
 import { Route as GamesLibraryRouteImport } from './routes/games/_library'
 import { Route as GamesCommunityRouteImport } from './routes/games/community'
 import { Route as GamesInventoryRouteImport } from './routes/games/inventory'
+import { Route as GamesStoreRouteImport } from './routes/games/store'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
@@ -508,8 +509,10 @@ import { Route as ApiGabrielsHornLeaderboardRouteImport } from './routes/api/gab
 import { Route as ApiGabrielsHornTableReadRouteImport } from './routes/api/gabriels-horn/table-read'
 import { Route as ApiGameNightIndexRouteImport } from './routes/api/game-night/index'
 import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
+import { Route as ApiGamesCustomizeRouteImport } from './routes/api/games/customize'
 import { Route as ApiGamesHowToPlayRouteImport } from './routes/api/games/how-to-play'
 import { Route as ApiGamesPlaytimeRouteImport } from './routes/api/games/playtime'
+import { Route as ApiGamesShowcaseRouteImport } from './routes/api/games/showcase'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiGiftExchangesIndexRouteImport } from './routes/api/gift-exchanges/index'
 import { Route as ApiGlobesetRecordRouteImport } from './routes/api/globeset/record'
@@ -979,6 +982,9 @@ import { Route as ApiGamesCollectionsDeleteRouteImport } from './routes/api/game
 import { Route as ApiGamesCollectionsImportRouteImport } from './routes/api/games/collections/import'
 import { Route as ApiGamesCollectionsItemRouteImport } from './routes/api/games/collections/item'
 import { Route as ApiGamesCollectionsRenameRouteImport } from './routes/api/games/collections/rename'
+import { Route as ApiGamesGemsBuyRouteImport } from './routes/api/games/gems/buy'
+import { Route as ApiGamesGemsPackRouteImport } from './routes/api/games/gems/pack'
+import { Route as ApiGamesGemsUnpackRouteImport } from './routes/api/games/gems/unpack'
 import { Route as ApiGamesHubDeleteRouteImport } from './routes/api/games/hub/delete'
 import { Route as ApiGamesHubModerateRouteImport } from './routes/api/games/hub/moderate'
 import { Route as ApiGamesHubPostRouteImport } from './routes/api/games/hub/post'
@@ -2224,6 +2230,11 @@ const GamesCommunityRoute = GamesCommunityRouteImport.update({
 const GamesInventoryRoute = GamesInventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
+  getParentRoute: () => GamesRoute,
+} as any)
+const GamesStoreRoute = GamesStoreRouteImport.update({
+  id: '/store',
+  path: '/store',
   getParentRoute: () => GamesRoute,
 } as any)
 const KowloonKnockoutIndexRoute = KowloonKnockoutIndexRouteImport.update({
@@ -3878,6 +3889,11 @@ const ApiGameSavesGameIdRoute = ApiGameSavesGameIdRouteImport.update({
   path: '/api/game-saves/$gameId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGamesCustomizeRoute = ApiGamesCustomizeRouteImport.update({
+  id: '/api/games/customize',
+  path: '/api/games/customize',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGamesHowToPlayRoute = ApiGamesHowToPlayRouteImport.update({
   id: '/api/games/how-to-play',
   path: '/api/games/how-to-play',
@@ -3886,6 +3902,11 @@ const ApiGamesHowToPlayRoute = ApiGamesHowToPlayRouteImport.update({
 const ApiGamesPlaytimeRoute = ApiGamesPlaytimeRouteImport.update({
   id: '/api/games/playtime',
   path: '/api/games/playtime',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesShowcaseRoute = ApiGamesShowcaseRouteImport.update({
+  id: '/api/games/showcase',
+  path: '/api/games/showcase',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
@@ -6318,6 +6339,21 @@ const ApiGamesCollectionsRenameRoute =
     path: '/api/games/collections/rename',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiGamesGemsBuyRoute = ApiGamesGemsBuyRouteImport.update({
+  id: '/api/games/gems/buy',
+  path: '/api/games/gems/buy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesGemsPackRoute = ApiGamesGemsPackRouteImport.update({
+  id: '/api/games/gems/pack',
+  path: '/api/games/gems/pack',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesGemsUnpackRoute = ApiGamesGemsUnpackRouteImport.update({
+  id: '/api/games/gems/unpack',
+  path: '/api/games/gems/unpack',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGamesHubDeleteRoute = ApiGamesHubDeleteRouteImport.update({
   id: '/api/games/hub/delete',
   path: '/api/games/hub/delete',
@@ -8559,6 +8595,7 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/games/community': typeof GamesCommunityRoute
   '/games/inventory': typeof GamesInventoryRoute
+  '/games/store': typeof GamesStoreRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
@@ -8830,8 +8867,10 @@ export interface FileRoutesByFullPath {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
+  '/api/games/customize': typeof ApiGamesCustomizeRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/games/playtime': typeof ApiGamesPlaytimeRoute
+  '/api/games/showcase': typeof ApiGamesShowcaseRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
@@ -9330,6 +9369,9 @@ export interface FileRoutesByFullPath {
   '/api/games/collections/import': typeof ApiGamesCollectionsImportRoute
   '/api/games/collections/item': typeof ApiGamesCollectionsItemRoute
   '/api/games/collections/rename': typeof ApiGamesCollectionsRenameRoute
+  '/api/games/gems/buy': typeof ApiGamesGemsBuyRoute
+  '/api/games/gems/pack': typeof ApiGamesGemsPackRoute
+  '/api/games/gems/unpack': typeof ApiGamesGemsUnpackRoute
   '/api/games/hub/delete': typeof ApiGamesHubDeleteRoute
   '/api/games/hub/moderate': typeof ApiGamesHubModerateRoute
   '/api/games/hub/post': typeof ApiGamesHubPostRoute
@@ -9888,6 +9930,7 @@ export interface FileRoutesByTo {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/games/community': typeof GamesCommunityRoute
   '/games/inventory': typeof GamesInventoryRoute
+  '/games/store': typeof GamesStoreRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
@@ -10159,8 +10202,10 @@ export interface FileRoutesByTo {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
+  '/api/games/customize': typeof ApiGamesCustomizeRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/games/playtime': typeof ApiGamesPlaytimeRoute
+  '/api/games/showcase': typeof ApiGamesShowcaseRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
@@ -10658,6 +10703,9 @@ export interface FileRoutesByTo {
   '/api/games/collections/import': typeof ApiGamesCollectionsImportRoute
   '/api/games/collections/item': typeof ApiGamesCollectionsItemRoute
   '/api/games/collections/rename': typeof ApiGamesCollectionsRenameRoute
+  '/api/games/gems/buy': typeof ApiGamesGemsBuyRoute
+  '/api/games/gems/pack': typeof ApiGamesGemsPackRoute
+  '/api/games/gems/unpack': typeof ApiGamesGemsUnpackRoute
   '/api/games/hub/delete': typeof ApiGamesHubDeleteRoute
   '/api/games/hub/moderate': typeof ApiGamesHubModerateRoute
   '/api/games/hub/post': typeof ApiGamesHubPostRoute
@@ -11245,6 +11293,7 @@ export interface FileRoutesById {
   '/games/_library': typeof GamesLibraryRouteWithChildren
   '/games/community': typeof GamesCommunityRoute
   '/games/inventory': typeof GamesInventoryRoute
+  '/games/store': typeof GamesStoreRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/news/rss.xml': typeof NewsRssDotxmlRoute
@@ -11517,8 +11566,10 @@ export interface FileRoutesById {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
+  '/api/games/customize': typeof ApiGamesCustomizeRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/games/playtime': typeof ApiGamesPlaytimeRoute
+  '/api/games/showcase': typeof ApiGamesShowcaseRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
@@ -12017,6 +12068,9 @@ export interface FileRoutesById {
   '/api/games/collections/import': typeof ApiGamesCollectionsImportRoute
   '/api/games/collections/item': typeof ApiGamesCollectionsItemRoute
   '/api/games/collections/rename': typeof ApiGamesCollectionsRenameRoute
+  '/api/games/gems/buy': typeof ApiGamesGemsBuyRoute
+  '/api/games/gems/pack': typeof ApiGamesGemsPackRoute
+  '/api/games/gems/unpack': typeof ApiGamesGemsUnpackRoute
   '/api/games/hub/delete': typeof ApiGamesHubDeleteRoute
   '/api/games/hub/moderate': typeof ApiGamesHubModerateRoute
   '/api/games/hub/post': typeof ApiGamesHubPostRoute
@@ -12604,6 +12658,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/games/community'
     | '/games/inventory'
+    | '/games/store'
     | '/library/$slug'
     | '/news/$slug'
     | '/news/rss.xml'
@@ -12875,8 +12930,10 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
+    | '/api/games/customize'
     | '/api/games/how-to-play'
     | '/api/games/playtime'
+    | '/api/games/showcase'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/groupcalls/active'
@@ -13375,6 +13432,9 @@ export interface FileRouteTypes {
     | '/api/games/collections/import'
     | '/api/games/collections/item'
     | '/api/games/collections/rename'
+    | '/api/games/gems/buy'
+    | '/api/games/gems/pack'
+    | '/api/games/gems/unpack'
     | '/api/games/hub/delete'
     | '/api/games/hub/moderate'
     | '/api/games/hub/post'
@@ -13933,6 +13993,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/games/community'
     | '/games/inventory'
+    | '/games/store'
     | '/library/$slug'
     | '/news/$slug'
     | '/news/rss.xml'
@@ -14204,8 +14265,10 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
+    | '/api/games/customize'
     | '/api/games/how-to-play'
     | '/api/games/playtime'
+    | '/api/games/showcase'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/groupcalls/active'
@@ -14703,6 +14766,9 @@ export interface FileRouteTypes {
     | '/api/games/collections/import'
     | '/api/games/collections/item'
     | '/api/games/collections/rename'
+    | '/api/games/gems/buy'
+    | '/api/games/gems/pack'
+    | '/api/games/gems/unpack'
     | '/api/games/hub/delete'
     | '/api/games/hub/moderate'
     | '/api/games/hub/post'
@@ -15289,6 +15355,7 @@ export interface FileRouteTypes {
     | '/games/_library'
     | '/games/community'
     | '/games/inventory'
+    | '/games/store'
     | '/library/$slug'
     | '/news/$slug'
     | '/news/rss.xml'
@@ -15561,8 +15628,10 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
+    | '/api/games/customize'
     | '/api/games/how-to-play'
     | '/api/games/playtime'
+    | '/api/games/showcase'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/groupcalls/active'
@@ -16061,6 +16130,9 @@ export interface FileRouteTypes {
     | '/api/games/collections/import'
     | '/api/games/collections/item'
     | '/api/games/collections/rename'
+    | '/api/games/gems/buy'
+    | '/api/games/gems/pack'
+    | '/api/games/gems/unpack'
     | '/api/games/hub/delete'
     | '/api/games/hub/moderate'
     | '/api/games/hub/post'
@@ -16704,8 +16776,10 @@ export interface RootRouteChildren {
   ApiGabrielsHornLeaderboardRoute: typeof ApiGabrielsHornLeaderboardRoute
   ApiGabrielsHornTableReadRoute: typeof ApiGabrielsHornTableReadRoute
   ApiGameSavesGameIdRoute: typeof ApiGameSavesGameIdRoute
+  ApiGamesCustomizeRoute: typeof ApiGamesCustomizeRoute
   ApiGamesHowToPlayRoute: typeof ApiGamesHowToPlayRoute
   ApiGamesPlaytimeRoute: typeof ApiGamesPlaytimeRoute
+  ApiGamesShowcaseRoute: typeof ApiGamesShowcaseRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiGlobesetRecordRoute: typeof ApiGlobesetRecordRoute
   ApiGroupcallsActiveRoute: typeof ApiGroupcallsActiveRoute
@@ -17099,6 +17173,9 @@ export interface RootRouteChildren {
   ApiGamesCollectionsImportRoute: typeof ApiGamesCollectionsImportRoute
   ApiGamesCollectionsItemRoute: typeof ApiGamesCollectionsItemRoute
   ApiGamesCollectionsRenameRoute: typeof ApiGamesCollectionsRenameRoute
+  ApiGamesGemsBuyRoute: typeof ApiGamesGemsBuyRoute
+  ApiGamesGemsPackRoute: typeof ApiGamesGemsPackRoute
+  ApiGamesGemsUnpackRoute: typeof ApiGamesGemsUnpackRoute
   ApiGamesHubDeleteRoute: typeof ApiGamesHubDeleteRoute
   ApiGamesHubModerateRoute: typeof ApiGamesHubModerateRoute
   ApiGamesHubPostRoute: typeof ApiGamesHubPostRoute
@@ -18525,6 +18602,13 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/games/inventory'
       preLoaderRoute: typeof GamesInventoryRouteImport
+      parentRoute: typeof GamesRoute
+    }
+    '/games/store': {
+      id: '/games/store'
+      path: '/store'
+      fullPath: '/games/store'
+      preLoaderRoute: typeof GamesStoreRouteImport
       parentRoute: typeof GamesRoute
     }
     '/kowloon-knockout/': {
@@ -20816,6 +20900,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGameSavesGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/games/customize': {
+      id: '/api/games/customize'
+      path: '/api/games/customize'
+      fullPath: '/api/games/customize'
+      preLoaderRoute: typeof ApiGamesCustomizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/games/how-to-play': {
       id: '/api/games/how-to-play'
       path: '/api/games/how-to-play'
@@ -20828,6 +20919,13 @@ declare module '@tanstack/react-router' {
       path: '/api/games/playtime'
       fullPath: '/api/games/playtime'
       preLoaderRoute: typeof ApiGamesPlaytimeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/showcase': {
+      id: '/api/games/showcase'
+      path: '/api/games/showcase'
+      fullPath: '/api/games/showcase'
+      preLoaderRoute: typeof ApiGamesShowcaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/gif/search': {
@@ -24113,6 +24211,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGamesCollectionsRenameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/games/gems/buy': {
+      id: '/api/games/gems/buy'
+      path: '/api/games/gems/buy'
+      fullPath: '/api/games/gems/buy'
+      preLoaderRoute: typeof ApiGamesGemsBuyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/gems/pack': {
+      id: '/api/games/gems/pack'
+      path: '/api/games/gems/pack'
+      fullPath: '/api/games/gems/pack'
+      preLoaderRoute: typeof ApiGamesGemsPackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/gems/unpack': {
+      id: '/api/games/gems/unpack'
+      path: '/api/games/gems/unpack'
+      fullPath: '/api/games/gems/unpack'
+      preLoaderRoute: typeof ApiGamesGemsUnpackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/games/hub/delete': {
       id: '/api/games/hub/delete'
       path: '/api/games/hub/delete'
@@ -27386,6 +27505,7 @@ interface GamesRouteChildren {
   GamesLibraryRoute: typeof GamesLibraryRouteWithChildren
   GamesCommunityRoute: typeof GamesCommunityRoute
   GamesInventoryRoute: typeof GamesInventoryRoute
+  GamesStoreRoute: typeof GamesStoreRoute
   GamesGroupsSlugRoute: typeof GamesGroupsSlugRoute
   GamesProfileIdRoute: typeof GamesProfileIdRoute
   GamesMarketIndexRoute: typeof GamesMarketIndexRoute
@@ -27400,6 +27520,7 @@ const GamesRouteChildren: GamesRouteChildren = {
   GamesLibraryRoute: GamesLibraryRouteWithChildren,
   GamesCommunityRoute: GamesCommunityRoute,
   GamesInventoryRoute: GamesInventoryRoute,
+  GamesStoreRoute: GamesStoreRoute,
   GamesGroupsSlugRoute: GamesGroupsSlugRoute,
   GamesProfileIdRoute: GamesProfileIdRoute,
   GamesMarketIndexRoute: GamesMarketIndexRoute,
@@ -29327,8 +29448,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGabrielsHornLeaderboardRoute: ApiGabrielsHornLeaderboardRoute,
   ApiGabrielsHornTableReadRoute: ApiGabrielsHornTableReadRoute,
   ApiGameSavesGameIdRoute: ApiGameSavesGameIdRoute,
+  ApiGamesCustomizeRoute: ApiGamesCustomizeRoute,
   ApiGamesHowToPlayRoute: ApiGamesHowToPlayRoute,
   ApiGamesPlaytimeRoute: ApiGamesPlaytimeRoute,
+  ApiGamesShowcaseRoute: ApiGamesShowcaseRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
   ApiGlobesetRecordRoute: ApiGlobesetRecordRoute,
   ApiGroupcallsActiveRoute: ApiGroupcallsActiveRoute,
@@ -29725,6 +29848,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesCollectionsImportRoute: ApiGamesCollectionsImportRoute,
   ApiGamesCollectionsItemRoute: ApiGamesCollectionsItemRoute,
   ApiGamesCollectionsRenameRoute: ApiGamesCollectionsRenameRoute,
+  ApiGamesGemsBuyRoute: ApiGamesGemsBuyRoute,
+  ApiGamesGemsPackRoute: ApiGamesGemsPackRoute,
+  ApiGamesGemsUnpackRoute: ApiGamesGemsUnpackRoute,
   ApiGamesHubDeleteRoute: ApiGamesHubDeleteRoute,
   ApiGamesHubModerateRoute: ApiGamesHubModerateRoute,
   ApiGamesHubPostRoute: ApiGamesHubPostRoute,

@@ -616,6 +616,9 @@ model User {
   cardListingsBought        CardListing[]        @relation("CardBuyer")
   cardBuyOrders             CardBuyOrder[]
   gameCollectionItems       GameCollectionItem[]
+  gameProfileShowcase       GameProfileShowcase?
+  userGems                  UserGems?
+  gemEntries                GemEntry[]
   cardTradesSent            CardTrade[]          @relation("CardTradeFrom")
   cardTradesReceived        CardTrade[]          @relation("CardTradeTo")
   gameThreads               GameThread[]
@@ -3845,6 +3848,8 @@ model UserBuild {
   technologies Json            @default("[]")
   // Marketplace: coins to unlock the readme/repo/demo (null/0 = free).
   price        Int?
+  /// Catalog id of the game this build was made for (shown in that title's Workshop).
+  gameId       String?         @db.VarChar(64)
   likeCount    Int             @default(0)
   commentCount Int             @default(0)
   viewCount    Int             @default(0)
@@ -3866,6 +3871,7 @@ model UserBuild {
 
   @@index([userId])
   @@index([visibility, publishedAt(sort: Desc)])
+  @@index([gameId, visibility, publishedAt(sort: Desc)])
   @@index([slug])
   @@map("user_build")
 }
@@ -5983,6 +5989,50 @@ model GameCollectionItem {
 
   @@id([userId, collection, gameId])
   @@map("game_collection_item")
+}
+
+// The achievements and badges a member chose to feature on their Steam-style
+// profile (at most six of each). Empty means "show my most recent".
+model GameProfileShowcase {
+  userId         String   @id
+  achievementIds String[] @default([])
+  /// "<gameId>:<normal|foil>" keys of badges the member owns.
+  badges         String[] @default([])
+  /// Chosen profile background and avatar frame (keys unlocked by badges; see lib/games/customize.ts).
+  background     String?  @db.VarChar(80)
+  frame          String?  @db.VarChar(80)
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("game_profile_showcase")
+}
+
+// Gems (design: docs/superpowers/specs/2026-10-30-gems-boosters-design.md). A member's
+// balance, never negative, and an append-only entry for every movement so the balance
+// can always be explained. Gems cannot be traded.
+model UserGems {
+  userId    String   @id
+  gems      Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_gems")
+}
+
+model GemEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  delta     Int
+  /// 'unpack' | 'pack' | 'buy'
+  reason    String   @db.VarChar(16)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("gem_entry")
 }
 
 enum BuyOrderStatus {

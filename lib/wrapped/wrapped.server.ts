@@ -27,6 +27,8 @@ import { prisma } from '@/lib/prisma.server';
 import { levelInfo } from '@/lib/xp/levels';
 import { getStreak } from '@/lib/streak.server';
 import { readWrappedNarrative } from '@/lib/wrapped/narrative.server';
+import { listCuratedBuilds } from '@/lib/builds/curated';
+import { summarizePlay, type PlaySummary } from '@/lib/wrapped/play';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -55,6 +57,8 @@ export interface WrappedStats {
 export interface YearlyWrapped extends WrappedStats {
   year: number;
   topPost: { id: string; content: string; likeCount: number } | null;
+  /** Time played and the cards and badges that came with it; null if there was none. */
+  play: PlaySummary | null;
   blurb: string;
   /**
    * Where `blurb` came from. The UI can treat the two differently (an AI
@@ -143,16 +147,38 @@ export function hasNarratableYear(stats: WrappedStats): boolean {
   return stats.posts + stats.likesReceived + stats.newFollowers > 0;
 }
 
+/** The member's own games year: time per title, cards dropped and badges crafted. */
+async function collectPlay(userId: string, year: number): Promise<PlaySummary | null> {
+  const start = new Date(Date.UTC(year, 0, 1));
+  const end = new Date(Date.UTC(year + 1, 0, 1));
+  const [days, cardDrops, badges] = await Promise.all([
+    prisma.gamePlaytimeDay.groupBy({
+      by: ['gameId'],
+      where: { userId, day: { gte: start, lt: end } },
+      _sum: { seconds: true },
+    }),
+    prisma.cardDrop.count({ where: { userId, createdAt: { gte: start, lt: end } } }),
+    prisma.gameBadge.count({ where: { userId, craftedAt: { gte: start, lt: end } } }),
+  ]);
+  const names = new Map(listCuratedBuilds().map((b) => [b.id, b.title]));
+  return summarizePlay(
+    days.map((d) => ({ gameId: d.gameId, seconds: d._sum.seconds ?? 0 })),
+    names,
+    { cardDrops, badges },
+  );
+}
+
 export async function generateYearlyWrapped(userId: string, year: number): Promise<YearlyWrapped> {
   const range = { gte: new Date(Date.UTC(year, 0, 1)), lt: new Date(Date.UTC(year + 1, 0, 1)) };
 
-  const [stats, topPost] = await Promise.all([
+  const [stats, topPost, play] = await Promise.all([
     collectWrappedStats(userId, year),
     prisma.rMHark.findFirst({
       where: { userId, deletedAt: null, createdAt: range },
       orderBy: { likeCount: 'desc' },
       select: { id: true, content: true, likeCount: true },
     }),
+    collectPlay(userId, year),
   ]);
 
   // A cache read, deliberately: see the module docblock. `readWrappedNarrative`
@@ -163,6 +189,7 @@ export async function generateYearlyWrapped(userId: string, year: number): Promi
     year,
     ...stats,
     topPost: topPost ?? null,
+    play,
     blurb: narrative ?? templatedBlurb(year, stats),
     blurbSource: narrative ? 'ai' : 'template',
   };
