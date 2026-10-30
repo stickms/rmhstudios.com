@@ -22,6 +22,9 @@
 --   set_chips(n) / win_blind()               win_blind: chips to target, play one card, to ROUND_EVAL
 --   cash_out()                               ROUND_EVAL → SHOP
 --   shop_digest()                            canonical text of the shop (determinism checks)
+--   set_ante(n)                              fast-forward to ante n at blind select
+--   save_info()                              the profile's save.jkr: {exists, size, hash}
+--   profile_digest()                         unlocked / discovered center keys (pool inputs)
 --   buy(slot, area?)                         area 'jokers' (default) | 'vouchers'
 --   reroll() / open_pack(slot) / pick(i) / skip_pack() / leave_shop()
 --   use(slot, targets?)                      a consumable in G.consumeables on hand targets
@@ -29,6 +32,14 @@
 --   ready / unready / timer_press / pause_menu(op) / forfeit / vote(kind)
 --                                            MP UI actions: delegated to MP.test (WS10/WS11/WS14b);
 --                                            'mp-unavailable' until those exist
+--   mp{fn, args}                             any MP.test.<fn>(args) (ui, ui_state, draft, hud …)
+--   mp_open{intent?}                         MP.open(intent): the MP menu, as the MULTIPLAYER button
+--   pvp_ready / pvp_play{chips?, hands?, best?} / pvp_wait_end / pvp_round{…} / mp_ante{…} / mp_state
+--                                            whole PvP rounds and antes of a match (e2e)
+--   mp_send{t, d}                            a ui_* message to the session, as a screen sends it
+--   mp_leave{how?}                           leave as a player does (end screen / forfeit / ui_leave)
+--   mp_notice{i, name?}                      press button i of the open notice (Rejoin, Reconnect …)
+--   mp_inbox{t?, since?}                     the session→Lua messages received (tapped at mp_open)
 -- More commands: AP.register(name, fn(args) -> data) (fn runs inside a task).
 
 local sched = require('rmh_mp_test.sched')
@@ -203,6 +214,7 @@ function AP.snapshot()
     s.blind = game.blind and game.blind.config and game.blind.config.blind and game.blind.config.blind.key
     s.blind_chips = game.blind and game.blind.chips
     s.blind_on_deck = game.blind_on_deck
+    s.won = game.won == true
     s.hands_left = game.current_round and game.current_round.hands_left
     s.discards_left = game.current_round and game.current_round.discards_left
     s.hand = area_infos(G.hand)
@@ -425,6 +437,52 @@ C.cash_out = function()
   return AP.snapshot()
 end
 
+--- Fast-forward (test-only): at blind select, jump the run to ante n (as ease_ante would).
+C.set_ante = function(a)
+  AP.wait_state('BLIND_SELECT')
+  local n = tonumber(a.n or a[1])
+  if not n or n < 1 or n > 100 then error('set_ante(n)') end
+  ease_ante(n - G.GAME.round_resets.ante)
+  G.GAME.round_resets.blind_ante = n
+  AP.wait_idle()
+  return AP.snapshot()
+end
+
+--- The profile's single-player save (E2E-20: MP must never touch it): {exists, size, hash}.
+C.save_info = function()
+  local profile = (G.SETTINGS and G.SETTINGS.profile) or 1
+  local path = profile .. '/save.jkr'
+  local data = love.filesystem.read(path)
+  if not data then return { exists = false, path = path } end
+  return { exists = true, path = path, size = #data, hash = string.format('%.13f', pseudohash(data)) }
+end
+
+--- The profile state single-player pools read (E2E-20): unlocked and discovered centers, and
+-- the profile's progress counters that unlock conditions read.
+C.profile_digest = function()
+  local unlocked, discovered = {}, {}
+  for k, c in pairs(G.P_CENTERS) do
+    if c.unlocked then unlocked[#unlocked + 1] = k end
+    if c.discovered then discovered[#discovered + 1] = k end
+  end
+  for k, c in pairs(G.P_TAGS or {}) do if c.discovered then discovered[#discovered + 1] = k end end
+  for k, c in pairs(G.P_BLINDS or {}) do if c.discovered then discovered[#discovered + 1] = k end end
+  table.sort(unlocked)
+  table.sort(discovered)
+  return { unlocked = unlocked, discovered = discovered }
+end
+
+--- Back to the main menu from a run outside any session (vanilla saves the run on the way).
+C.to_menu = function()
+  if G.STAGE ~= G.STAGES.MAIN_MENU then
+    if G.OVERLAY_MENU and G.FUNCS.exit_overlay_menu then G.FUNCS.exit_overlay_menu() end
+    G.SETTINGS.paused = false
+    G.FUNCS.go_to_menu()
+  end
+  wait(function() return G.STAGE == G.STAGES.MAIN_MENU and G.MAIN_MENU_UI ~= nil and not G.screenwipe and AP.idle() end, 120, 'main menu')
+  return AP.snapshot()
+end
+
 C.shop = function() return AP.shop() end
 C.shop_digest = function()
   AP.wait_state('SHOP')
@@ -550,6 +608,252 @@ for _, name in ipairs({ 'ready', 'unready', 'timer_press', 'pause_menu', 'forfei
   end
 end
 
+--- Any MP.test function by name (e2e: ui, ui_state, draft, hud, …): mp{fn='ui', args={op='create'}}.
+C.mp = function(a)
+  local name = a.fn or a[1]
+  if type(name) ~= 'string' or not name:match('^[%w_]+$') then error('mp{fn, args}') end
+  local mp_test = rawget(_G, 'MP') and MP.test and MP.test[name]
+  if type(mp_test) ~= 'function' then error('mp-unavailable: MP.test.' .. name) end
+  local r = mp_test(a.args or a[2] or {})
+  if r == nil then return true end
+  return r
+end
+
+-- ── MP match flow (e2e: the match project drives whole antes with these) ──────
+
+local function mpg()
+  local m = rawget(_G, 'MP')
+  if not (m and m.pvp and m.state) then error('mp-unavailable: no MP session code') end
+  return m
+end
+
+local function result_kind()
+  local m = rawget(_G, 'MP')
+  local r = m and m.state and m.state.result
+  return r and r.kind or nil
+end
+
+--- The match is over for this player (a win/lose/draw/eliminated screen), not pending.
+local function finished()
+  local k = result_kind()
+  return k ~= nil and k ~= 'pending'
+end
+
+--- Plays the PvP blind: `chips` (optional) is written to G.GAME.chips before each hand,
+-- so a test decides who wins; `hands` caps the hands played (default: all); `best`
+-- plays the best hand instead of one card. Returns when no hand is left to play.
+C.pvp_play = function(a)
+  local m = mpg()
+  wait(function()
+    return finished() or (G.STATE == G.STATES.SELECTING_HAND and AP.idle() and m.pvp.on_pvp_blind() and #G.hand.cards > 0)
+  end, tonumber(a.wait) or 240, 'the PvP blind dealt (countdown over)')
+  local chips = a.chips ~= nil and tonumber(a.chips) or nil
+  local hands = tonumber(a.hands) or 1000
+  local played = 0
+  while not finished() and played < hands and G.STATE == G.STATES.SELECTING_HAND and m.pvp.on_pvp_blind()
+    and G.GAME.current_round.hands_left > 0 and #G.hand.cards > 0 do
+    if chips then G.GAME.chips = chips end
+    highlight(hand_cards(a.best and AP.best_indices() or { 1 }))
+    G.FUNCS.play_cards_from_highlighted()
+    played = played + 1
+    wait(function()
+      return finished() or G.GAME.won or G.STATE == G.STATES.GAME_OVER
+        or (AP.idle() and G.STATE ~= G.STATES.HAND_PLAYED and G.STATE ~= G.STATES.DRAW_TO_HAND)
+    end, 120, 'PvP hand scored')
+    if G.GAME.won then break end
+  end
+  return { played = played, chips = G.GAME.chips, result = result_kind() }
+end
+
+--- After the PvP hands: until end_pvp moved the run on (round eval / shop / next blind
+-- select) or the match ended for this player.
+C.pvp_wait_end = function(a)
+  local m = mpg()
+  wait(function()
+    if finished() then return true end
+    if not AP.idle() then return false end
+    local st = G.STATE
+    return not m.pvp.on_pvp_blind() and (st == G.STATES.ROUND_EVAL or st == G.STATES.SHOP or st == G.STATES.BLIND_SELECT)
+      or st == G.STATES.ROUND_EVAL
+  end, tonumber(a.seconds) or 240, 'end of the PvP round')
+  return { state = AP.state_name(), result = result_kind(), lives = m.state.lives, ante = G.GAME.round_resets.ante }
+end
+
+--- Ready on the PvP pillar once the blind select is built and idle (a press before the pillar
+-- exists is lost, as a click would be); waits until the session took it (ready or started).
+C.pvp_ready = function()
+  local m = mpg()
+  AP.wait_state('BLIND_SELECT')
+  if G.GAME.blind_on_deck ~= 'Boss' then error('pvp_ready: the Boss/PvP pillar is not on deck') end
+  if not (m.test and m.test.run_ready) then error('mp-unavailable: MP.test.run_ready') end
+  wait(function() return G.blind_select and blind_box() and AP.idle() end, 60, 'the PvP pillar')
+  for _ = 1, 3 do
+    m.test.run_ready()
+    local ok = sched.protected(wait, function() return m.state.pvp.ready or m.state.pvp.started end, 5, 'ready taken')
+    if ok then return { ready = m.state.pvp.ready, started = m.state.pvp.started } end
+  end
+  error('pvp_ready: Ready was not taken')
+end
+
+--- Ready on the PvP pillar (Boss slot), play it, wait for its end. {chips, hands, best}.
+C.pvp_round = function(a)
+  C.pvp_ready()
+  local played = C.pvp_play(a)
+  local after = C.pvp_wait_end(a)
+  after.played = played.played
+  return after
+end
+
+--- One normal blind: select, win (chips set to target), cash out, leave the shop.
+local function normal_blind(a)
+  C.select_blind()
+  C.win_blind()
+  C.cash_out()
+  if a.reroll then pcall(C.reroll) end
+  C.leave_shop()
+end
+
+--- A whole ante of a match: Small and Big blinds won, then the PvP round
+-- ({chips, hands, best} as pvp_round), then cash out and leave the shop unless the match
+-- ended. Returns {ante, state, result, lives}.
+C.mp_ante = function(a)
+  mpg()
+  AP.wait_state('BLIND_SELECT')
+  while not finished() and G.GAME.blind_on_deck ~= 'Boss' do normal_blind(a) end
+  local r = C.pvp_round(a)
+  if not finished() and G.STATE == G.STATES.ROUND_EVAL then
+    C.cash_out()
+    C.leave_shop()
+  end
+  r.state = AP.state_name()
+  r.result = result_kind()
+  r.ante = G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante
+  return r
+end
+
+--- Sends a Lua→JS UI message as the screens do (ui_chat, ui_kick, ui_mute, ui_spectate,
+-- ui_return_lobby, ui_leave, ui_continue_sp …): mp_send{t, d}. Validated by the protocol.
+C.mp_send = function(a)
+  local m = rawget(_G, 'MP')
+  local t = a.t or a[1]
+  if not (m and m.net and m.net.send) then error('mp-unavailable: MP.net') end
+  if type(t) ~= 'string' or not t:match('^ui_[%w_]+$') then error('mp_send{t = ui_*, d}') end
+  local send = m.ui and m.ui.send or m.net.send
+  if not send(t, a.d or a[2] or {}) then error('mp_send: ' .. t .. ' refused by the protocol') end
+  return true
+end
+
+--- Leaves as a player does (mp_leave{how = 'leave' | 'return_lobby'}): from a match's end
+-- screen (ES.leave: match_left, then the menu), by forfeiting a match still running, or
+-- with ui_leave from a lobby / practice outside a run. Returns once no session is mounted.
+C.mp_leave = function(a)
+  local m = mpg()
+  local how = a.how or a[1] or 'leave'
+  if m.in_session() and G.STAGE == G.STAGES.RUN then
+    if m.is_match() and finished() and m.ui and m.ui.end_screen and m.ui.end_screen.leave then
+      m.ui.end_screen.leave(how)
+    elseif m.is_match() and m.test and m.test.forfeit then
+      m.test.forfeit()
+    elseif G.FUNCS.go_to_menu then
+      G.FUNCS.go_to_menu()
+    end
+    wait(function() return not m.state.session and G.STAGE == G.STAGES.MAIN_MENU and AP.idle() end, 120, 'session unmounted')
+  end
+  if how == 'leave' then
+    local send = m.ui and m.ui.send or m.net.send
+    send('ui_leave', {})
+  end
+  return { in_session = m.in_session() }
+end
+
+--- Presses button i of the open MP notice overlay (Seat held / Reconnect / errors) as a click
+-- does: the overlay closes, then the button's action runs. mp_notice{i, name?}.
+C.mp_notice = function(a)
+  local m = mpg()
+  local name = a.name
+  wait(function()
+    local W = m.ui and m.ui.w
+    local open = W and W.overlay_name and W.overlay_name()
+    return open ~= nil and (not name or open == name)
+  end, tonumber(a.seconds) or 60, 'notice overlay ' .. tostring(name or ''))
+  G.FUNCS.rmh_mp_notice_button({ config = { ref_table = { index = tonumber(a.i or a[1]) or 1 } } })
+  return true
+end
+
+--- MP.state for assertions (lives, result, presence, pvp flags) as plain data.
+C.mp_state = function()
+  local m = mpg()
+  local st = m.state
+  return {
+    result = st.result, lives = st.lives, pvp = { ready = st.pvp.ready, started = st.pvp.started },
+    in_session = m.in_session(), kind = m.session_kind and m.session_kind() or nil,
+    me = st.session and st.session.me or nil, ante = G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante,
+    state = AP.state_name(),
+    -- E2E-08/23: what must agree across peers on the same seed.
+    banned_digest = m.smallworld and m.smallworld.digest and G.GAME and G.GAME.banned_keys and m.smallworld.digest() or nil,
+    boss = G.GAME and G.GAME.round_resets and G.GAME.round_resets.blind_choices and G.GAME.round_resets.blind_choices.Boss or nil,
+    seed = G.GAME and G.GAME.pseudorandom and G.GAME.pseudorandom.seed or nil,
+  }
+end
+
+local function json_array_of(t)
+  local J = rawget(_G, 'RMH') and RMH.json
+  if J and J.array then return J.array(t) end
+  return t
+end
+
+-- The inbox tap: what the session told Lua, kept for assertions (e2e). One ring per type (so
+-- a chatty type never evicts a rare one); per-frame types are counted, not stored. Every
+-- entry carries `n`, its type's running count, so a caller waits for `counts[t]` to grow
+-- rather than for a list length (a full ring never grows).
+AP.inbox = { by_type = {}, counts = {}, max = 200 }
+local NOISY = { timer_state = true, mp_pack = true }
+
+function AP.tap_inbox()
+  local m = rawget(_G, 'MP')
+  if AP.inbox.tapped or not (m and m.net and m.net.receive) then return AP.inbox.tapped == true end
+  AP.inbox.tapped = true
+  local receive = m.net.receive
+  m.net.receive = function(t, d, msg)
+    local box = AP.inbox
+    box.counts[t] = (box.counts[t] or 0) + 1
+    if not NOISY[t] then
+      local ring = box.by_type[t]
+      if not ring then ring = {} box.by_type[t] = ring end
+      ring[#ring + 1] = { t = t, d = d, n = box.counts[t] }
+      if #ring > box.max then table.remove(ring, 1) end
+    end
+    return receive(t, d, msg)
+  end
+  return true
+end
+
+--- mp_inbox{t?, since?} → {list = [{t, d, n}], counts}: the kept messages Lua received of type
+-- t (every type when absent), only those with n > since.
+C.mp_inbox = function(a)
+  AP.tap_inbox()
+  local out = {}
+  local since = tonumber(a.since) or 0
+  local types = {}
+  if a.t then types[1] = a.t else for t in pairs(AP.inbox.by_type) do types[#types + 1] = t end table.sort(types) end
+  for _, t in ipairs(types) do
+    for _, e in ipairs(AP.inbox.by_type[t] or {}) do
+      if e.n > since then out[#out + 1] = e end
+    end
+  end
+  return { list = json_array_of(out), counts = AP.inbox.counts }
+end
+
+--- Opens the MP menu as the MULTIPLAYER button does (the page may have opened the
+-- session from JS, which mounts the pack without calling MP.open).
+C.mp_open = function(a)
+  local MPg = rawget(_G, 'MP')
+  if not (MPg and MPg.open) then error('mp-unavailable: MP.open') end
+  AP.tap_inbox()
+  MPg.open(a.intent or a[1] or 'menu')
+  return MPg.test and MPg.test.ui_state and MPg.test.ui_state() or true
+end
+
 -- ── running commands ─────────────────────────────────────────────────────────
 
 --- Runs a command inside the current task (for specs: AP.run('win_blind')).
@@ -606,6 +910,17 @@ function AP.install()
   end
   local net = rawget(_G, 'RMH') and RMH.net
   if type(net) == 'table' and net.on and net.send then AP.attach(net) end
+  -- Balatro's error screen loops forever, which freezes a browser tab: a test page
+  -- could never see the error. Report it on stderr (the page's console) and stop.
+  -- (The engine-spec harness installs its own handler after this one.)
+  love.errhand = function(msg)
+    local trace = debug.traceback(tostring(msg), 2)
+    io.stderr:write('[mp_test] CRASH ' .. trace:gsub('\n', ' | ') .. '\n')
+    io.stderr:flush()
+  end
+  love.errorhandler = love.errhand
+  -- With the MP pack loaded (a test build), record what the session tells Lua from now on.
+  if AP.tap_inbox then pcall(AP.tap_inbox) end
   return true
 end
 

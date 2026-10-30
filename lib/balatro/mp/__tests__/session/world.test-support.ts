@@ -329,6 +329,8 @@ export interface PeerOptions {
   testBuild?: boolean;
   /** The site block list this account sees (RuntimeDeps.blockedIds). */
   blockedIds?: () => Promise<readonly string[]>;
+  /** The hub socket is not up yet when the runtime boots (a fresh page load); `hub.reconnect()` brings it. */
+  hubOffline?: boolean;
 }
 
 export class World {
@@ -348,6 +350,7 @@ export class World {
 
   peer(id: string, o: PeerOptions = {}): Peer {
     const hub = new FakeHub(this, id, id.toUpperCase());
+    if (o.hubOffline) hub.drop();
     const lua = new FakeLua();
     const connector = new FakeConnector(this);
     connector.blockDirect = o.blockDirect ?? false;

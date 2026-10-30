@@ -85,6 +85,8 @@ export class MpRuntime {
   private checkpoint: RefCheckpoint | null = null;
   private hubStatus: HubStatus;
   private held: { code: string; runId: string | null } | null = null;
+  /** A rejoin seat query waiting for the hub to connect (boot, NET-06). */
+  private seatQueryPending = false;
   private awaitingCatchUp = false;
   private readonly results: Record<Id, PlayerResult> = {};
   private localDeck: WireData<'deck_res'> | null = null;
@@ -129,7 +131,19 @@ export class MpRuntime {
     this.loadGlyphs();
     const { intent, invite } = this.opts;
     if (invite) this.joinCode(invite, 'player');
-    else if (intent === 'rejoin' || rejoinHint(this.deps.kv)) this.deps.hub.emit('balatro:seat:query', {});
+    else if (intent === 'rejoin' || rejoinHint(this.deps.kv)) {
+      // NET-06: the hub drops an emit made before the socket is up (a fresh page load
+      // usually resolves the account first), so the query waits for 'connected'.
+      this.seatQueryPending = true;
+      this.querySeat();
+    }
+  }
+
+  /** Sends the pending seat query once the hub is connected (bindHub retries on connect). */
+  private querySeat(): void {
+    if (!this.seatQueryPending || this.stopped || this.deps.hub.status !== 'connected') return;
+    this.seatQueryPending = false;
+    this.deps.hub.emit('balatro:seat:query', {});
   }
 
   /** Site blocks become chat mutes for this session (never written to the saved mute list). */
@@ -643,6 +657,7 @@ export class MpRuntime {
       hub.onStatus((s, info) => {
         this.hubStatus = s;
         this.pushNetStatus(info.reason);
+        if (s === 'connected') this.querySeat();
       }),
       hub.on('balatro:seat', (d) => {
         if (!d.code) {

@@ -112,7 +112,9 @@ function E.install()
         local n = E.comeback_amount()
         MP.state.comeback.armed = false
         if n > 0 then
-          orig({ name = 'mp_comeback', bonus = true, dollars = n, pitch = config.pitch, disp = MP.state.comeback.count })
+          -- Vanilla's 'bottom' row has no pitch, and a bonus row computes 1.5 * pitch (E2E-14
+          -- crashed the losing player's round evaluation): give the row its own.
+          orig({ name = 'mp_comeback', bonus = true, dollars = n, pitch = config.pitch or 1, disp = MP.state.comeback.count })
           config.dollars = (config.dollars or 0) + n
         end
       end

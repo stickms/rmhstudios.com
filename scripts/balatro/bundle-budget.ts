@@ -118,12 +118,56 @@ export function serverStub(source: string): string {
   return [...[...names].map((n) => `export const ${n} = undefined;`), 'export default undefined;'].join('\n');
 }
 
-/** `import.meta.glob<T>('./a.ts')` (single literal paths, as the MP code uses) → `{ './a.ts': () => import('./a.ts') }`. */
+/**
+ * `import.meta.glob<T>('./a.ts')` and `import.meta.glob<T>(['./a.ts', './b.ts'])` (literal
+ * paths only, as the MP code uses) → `{ './a.ts': () => import('./a.ts'), … }`, the lazy
+ * map Vite emits. A pattern with `*` is left alone (esbuild then measures nothing behind it).
+ */
 export function expandGlobs(source: string): string {
-  return source.replace(
-    /import\.meta\.glob(?:<[^>()]*>)?\(\s*(['"])([^'"*]+)\1\s*\)/g,
-    (_m, q: string, p: string) => `{ ${q}${p}${q}: () => import(${q}${p}${q}) }`,
-  );
+  const entry = (q: string, p: string) => `${q}${p}${q}: () => import(${q}${p}${q})`;
+  return source
+    .replace(
+      /import\.meta\.glob(?:<[^>()]*>)?\(\s*(['"])([^'"*]+)\1\s*\)/g,
+      (_m, q: string, p: string) => `{ ${entry(q, p)} }`,
+    )
+    .replace(
+      /import\.meta\.glob(?:<[^>()]*>)?\(\s*\[((?:\s*(['"])[^'"*]+\2\s*,?)+)\]\s*\)/g,
+      (m, list: string) => {
+        const items = [...list.matchAll(/(['"])([^'"*]+)\1/g)].map((x) =>
+          entry(x[1] as string, x[2] as string),
+        );
+        return items.length ? `{ ${items.join(', ')} }` : m;
+      },
+    );
+}
+
+/**
+ * socket.io-client (with engine.io and its parsers) is not Multiplayer's to pay for: the
+ * site shell loads it for every signed-in viewer — components/call/CallMount.tsx imports
+ * lib/call/store (createRealtimeClient → socket.io-client) as soon as a session exists, on
+ * every route, and /balatro is signed-in only. So when the esbuild split puts it in a lazy
+ * chunk of its own, that chunk is reported as site-shared and not counted. The claim is
+ * re-checked from the source on every run: if the shell stops loading it, the socket.io
+ * chunk counts against the MP budget again (sharedSocketIo() → false).
+ */
+export const SOCKET_IO_INPUT =
+  /node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?(?:socket\.io-client|socket\.io-parser|engine\.io-client|engine\.io-parser|@socket\.io\/component-emitter)\//;
+
+export function sharedSocketIo(
+  read: (rel: string) => string = (rel) => readFileSync(path.join(ROOT, rel), 'utf8'),
+): boolean {
+  try {
+    const mount = read('components/call/CallMount.tsx');
+    const store = read('lib/call/store.ts');
+    const providers = read('components/Providers.tsx');
+    return (
+      /import\(\s*['"]@\/lib\/call\/store['"]\s*\)/.test(mount) &&
+      /@\/lib\/shared\/realtime\/client/.test(store) &&
+      /<CallMount\s*\/>/.test(providers)
+    );
+  } catch {
+    return false;
+  }
 }
 
 /** Resolves `@/…`, stubs `.server` modules, loads `?raw` as text, and (with a ref) reads repo files from git. */
@@ -218,6 +262,12 @@ export interface BundleReport {
    */
   sharedChunks?: ChunkReport[];
   sharedGzip?: number;
+  /**
+   * Where socket.io-client landed: `shared` = the site shell provably loads it
+   * (sharedSocketIo()); `gzip` = the chunk(s) holding it; `inMpChunk` = esbuild inlined it
+   * into a Balatro chunk (then it is counted there, whatever `shared` says).
+   */
+  socketIo?: { shared: boolean; gzip: number; inMpChunk: boolean };
   p2pGzip: number;
   forbiddenInStatic: string[];
   testSurfaceLeaks: string[];
@@ -337,8 +387,15 @@ export async function measureBundle(
     };
     const staticChunks = [...staticSet].map(report);
     const lazy = [...dynamicSet].map(report);
-    const dynamicChunks = lazy.filter((c) => c.inputs.some(isBalatroSource));
-    const sharedChunks = lazy.filter((c) => !c.inputs.some(isBalatroSource));
+    // A lazy chunk with no Balatro module is the site's (socket.io only while the shell
+    // provably loads it: SOCKET_IO_INPUT / sharedSocketIo()).
+    const socketShared = sharedSocketIo();
+    const isShared = (c: ChunkReport) =>
+      !c.inputs.some(isBalatroSource) &&
+      (socketShared || !c.inputs.some((i) => SOCKET_IO_INPUT.test(i)));
+    const dynamicChunks = lazy.filter((c) => !isShared(c));
+    const sharedChunks = lazy.filter(isShared);
+    const socketIoChunks = lazy.filter((c) => c.inputs.some((i) => SOCKET_IO_INPUT.test(i)));
     const testSurfaceLeaks = Object.keys(meta.outputs).filter((o) =>
       readFileSync(path.join(ROOT, o), 'utf8').includes('__balatroMp'),
     );
@@ -350,6 +407,11 @@ export async function measureBundle(
       dynamicGzip: dynamicChunks.reduce((n, c) => n + c.gzip, 0),
       sharedChunks,
       sharedGzip: sharedChunks.reduce((n, c) => n + c.gzip, 0),
+      socketIo: {
+        shared: socketShared,
+        gzip: socketIoChunks.reduce((n, c) => n + c.gzip, 0),
+        inMpChunk: socketIoChunks.some((c) => c.inputs.some(isBalatroSource)),
+      },
       p2pGzip: dynamicChunks.reduce((n, c) => n + c.p2pShareGzip, 0),
       forbiddenInStatic: [
         ...new Set(staticChunks.flatMap((c) => c.inputs.filter((i) => isMp(i) || isP2p(i)))),
@@ -431,6 +493,18 @@ export function evaluate(
         `${kb(bundle.dynamicGzip)} gzip over ${bundle.dynamicChunks.length} chunk(s) (budget ${kb(BUDGETS.mpChunksGzip)})` +
         (bundle.sharedChunks?.length ? `; site-shared lazy chunks not counted: ${kb(bundle.sharedGzip ?? 0)} over ${bundle.sharedChunks.length}` : ''),
     });
+    if (bundle.socketIo && bundle.socketIo.gzip > 0) {
+      const io = bundle.socketIo;
+      checks.push({
+        name: 'socket.io-client accounting',
+        ok: true,
+        detail: io.inMpChunk
+          ? `${kb(io.gzip)} gzip inlined into an MP chunk: counted in the MP total`
+          : io.shared
+            ? `${kb(io.gzip)} gzip in a site-shared chunk (CallMount loads it for every signed-in viewer): not counted`
+            : `${kb(io.gzip)} gzip: the site shell no longer loads it, so it is counted in the MP total`,
+      });
+    }
     checks.push({
       name: 'P2P share of the MP chunks',
       ok: bundle.p2pGzip <= BUDGETS.p2pGzip,

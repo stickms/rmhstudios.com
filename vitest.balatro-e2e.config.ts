@@ -53,6 +53,8 @@ export default defineConfig({
         test: {
           name: 'match',
           include: ['testing/balatro-e2e/match/**/*.test.ts'],
+          // One stack (hub + vite dev + the throwaway Postgres) for every match file.
+          globalSetup: ['testing/balatro-e2e/match/global-setup.ts'],
           exclude: ['**/*.unit.test.ts', '**/node_modules/**'],
           testTimeout: 600_000,
           hookTimeout: 600_000,

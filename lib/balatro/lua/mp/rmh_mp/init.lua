@@ -159,6 +159,22 @@ function MP.open(intent)
   return false
 end
 
+-- Test builds only (VITE_BALATRO_MP_TEST=1): lib/balatro/mp/test-hooks.ts writes the
+-- autopilot and the marker /rmh/test/enabled, then sends test_cmd. The first one
+-- installs the autopilot (which then answers test_cmd itself, replacing this handler)
+-- and is handed over. Production never sends test_cmd, so this costs nothing there.
+MP.net.on('test_cmd', function(d)
+  if type(d) ~= 'table' or type(d.id) ~= 'string' or type(d.cmd) ~= 'string' then return end
+  local ok, AP = pcall(require, 'rmh_mp_test.autopilot')
+  if not (ok and type(AP) == 'table' and AP.install and AP.install()) then
+    MP.log('warn', 'test_cmd without the test driver: %s', tostring(ok and 'no marker' or AP))
+    return
+  end
+  AP.exec(d.id, d.cmd, d.args, function(id, done, data)
+    MP.net.send('test_res', { id = id, ok = done, data = data })
+  end)
+end)
+
 MP._booted = true
 MP.log('info', 'rmh_mp %s ready (%d definitions, %d content modules)', MP.version, #R.defs(), #MP.content_loaded)
 

@@ -96,6 +96,23 @@ describe('mp_test sched', function()
   it('refuses to wait outside a task', function()
     expect(function() sched.wait_frames(1) end).error('inside a test task')
   end)
+  it('protected() catches an error after a wait and returns values (no yield across pcall)', function()
+    local got
+    sched.spawn(function()
+      local ok1, v1 = sched.protected(function(a, b)
+        sched.wait_frames(2)
+        return a + b
+      end, 2, 3)
+      local ok2, e2 = sched.protected(function()
+        sched.wait_frames(1)
+        error('late failure')
+      end)
+      local ok3 = sched.protected(sched.wait_until, function() return false end, 0.5, 'never')
+      return { ok1, v1, ok2, e2:find('late failure', 1, true) ~= nil, ok3 }
+    end, function(ok, v) got = { ok, v } end)
+    drain()
+    expect(got).eq({ true, { true, 5, false, true, false } })
+  end)
   it('starts tasks spawned by a callback on the next tick', function()
     local order = {}
     sched.spawn(function() order[#order + 1] = 'a' end, function()

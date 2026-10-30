@@ -6,6 +6,8 @@ import {
   evaluate,
   expandGlobs,
   serverStub,
+  sharedSocketIo,
+  SOCKET_IO_INPUT,
   type Baseline,
   type BundleReport,
   type PackReport,
@@ -107,6 +109,58 @@ describe('build shims', () => {
       "const m = { './index.ts': () => import('./index.ts') };",
     );
     expect(expandGlobs("import.meta.glob('./x/*.ts')")).toBe("import.meta.glob('./x/*.ts')");
+  });
+
+  it('expands the array form lib/balatro/mp/index.ts uses for its extensions', () => {
+    expect(
+      expandGlobs("const x = import.meta.glob<Ext>(['./queue/attach.ts', './replay/attach.ts']);"),
+    ).toBe(
+      "const x = { './queue/attach.ts': () => import('./queue/attach.ts'), './replay/attach.ts': () => import('./replay/attach.ts') };",
+    );
+    expect(expandGlobs("import.meta.glob(['./a/*.ts'])")).toBe("import.meta.glob(['./a/*.ts'])");
+  });
+});
+
+describe('socket.io accounting', () => {
+  const files =
+    (
+      mount: string,
+      store = "import { createRealtimeClient } from '@/lib/shared/realtime/client';",
+      providers = '<CallMount />',
+    ) =>
+    (rel: string) =>
+      (
+        ({
+          'components/call/CallMount.tsx': mount,
+          'lib/call/store.ts': store,
+          'components/Providers.tsx': providers,
+        }) as Record<string, string>
+      )[rel] ?? '';
+
+  it('is site-shared only while the shell loads it for every signed-in viewer', () => {
+    expect(sharedSocketIo(files("void import('@/lib/call/store').then(init)"))).toBe(true);
+    expect(sharedSocketIo(files('nothing here'))).toBe(false);
+    expect(sharedSocketIo(files("import('@/lib/call/store')", 'no socket'))).toBe(false);
+    expect(sharedSocketIo(files("import('@/lib/call/store')", undefined, 'no mount'))).toBe(false);
+    expect(
+      sharedSocketIo(() => {
+        throw new Error('ENOENT');
+      }),
+    ).toBe(false);
+  });
+
+  it('recognises the socket.io stack in metafile inputs', () => {
+    expect(
+      SOCKET_IO_INPUT.test(
+        '../../node_modules/.pnpm/socket.io-client@4.8.1/node_modules/socket.io-client/build/esm/index.js',
+      ),
+    ).toBe(true);
+    expect(SOCKET_IO_INPUT.test('node_modules/engine.io-parser/build/esm/index.js')).toBe(true);
+    expect(SOCKET_IO_INPUT.test('lib/shared/realtime/client.ts')).toBe(false);
+  });
+
+  it('the real shell loads it today', () => {
+    expect(sharedSocketIo()).toBe(true);
   });
 });
 
