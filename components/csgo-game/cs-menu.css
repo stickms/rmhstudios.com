@@ -402,6 +402,74 @@
   --app-radius-sm: 0;
 }
 
+/* ── loading screen (CsLoadingScreen.tsx) ─────────────────────────────────── */
+
+.pano-load {
+  position: absolute;
+}
+.pano-load-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgb(0 0 0 / 0.55) 0,
+    rgb(0 0 0 / 0) 35%,
+    rgb(0 0 0 / 0) 60%,
+    rgb(0 0 0 / 0.8) 100%
+  );
+}
+.pano-load-info {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 2rem);
+  left: calc(var(--safe-left, 0px) + 2rem);
+  right: calc(var(--safe-right, 0px) + 2rem);
+}
+.pano-load-mode {
+  color: var(--pano-text-dim);
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pano-load-map {
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.pano-load-foot {
+  position: absolute;
+  left: calc(var(--safe-left, 0px) + 2rem);
+  right: calc(var(--safe-right, 0px) + 2rem);
+  bottom: calc(var(--safe-bottom, 0px) + 1.25rem);
+  display: grid;
+  gap: 0.375rem;
+}
+.pano-load-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.pano-load-label {
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pano-load-stage {
+  color: var(--pano-text-dim);
+}
+.pano-load-bar {
+  display: block;
+  height: 3px;
+  background: rgb(255 255 255 / 0.15);
+}
+.pano-load-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--pano-text);
+}
+
 @media (width < 40rem) {
   .pano-sidebar {
     width: calc(var(--safe-left, 0px) + 3.5rem);

@@ -82,6 +82,7 @@ import {
   ProgressTracker,
   PropDistanceCuller,
   RenderCore,
+  ragdollTrace,
   wallTrace,
   type ClientMount,
   type ClientStats,
@@ -417,6 +418,7 @@ export class Tf2Client implements GameClient {
       maxPlayers: s.room.maxPlayers,
       botCount: Math.min(s.room.botCount, s.room.maxPlayers - 1),
       botDifficulty: s.room.botDifficulty,
+      instantRespawn: !!s.room.instantRespawn,
       name: s.room.name,
       seed: (Math.random() * 0x7fffffff) | 0,
     };
@@ -854,6 +856,8 @@ export class Tf2Client implements GameClient {
         factory: this.profile.entityFactory,
         viewModelAttachment: this.profile.createViewModel ? (name, out) => this.gameViewModel?.attachment(name, out) ?? false : undefined,
         sunVisible: this.sunVisible,
+        ragdollTrace: ragdollTrace(loaded.collision),
+        gravity: this.gravity ?? this.profile.moveParams.gravity,
         trace: (a, b) => {
           const tr = emptyTrace();
           loaded.collision.traceLine(a, b, MASK_OPAQUE, null, tr);
@@ -1577,11 +1581,16 @@ export class Tf2Client implements GameClient {
         const g = Number(value);
         const base = this.profile.moveParams;
         this.gravity = Number.isFinite(g) && g !== base.gravity ? g : null;
-        if (this.localPlayerSim) this.localPlayerSim.moveCtx.params = this.gravity === null ? undefined : { ...base, gravity: this.gravity };
-        // What falls on this side too: the predicting world's projectiles and the renderer's gibs.
+        if (this.localPlayerSim)
+          this.localPlayerSim.moveCtx.params =
+            this.gravity === null ? undefined : { ...base, gravity: this.gravity };
+        // What falls on this side too: the predicting world's projectiles and the renderer's gibs and ragdolls.
         const grav = this.gravity ?? this.profile.moveParams.gravity;
         if (this.clientWorld) this.clientWorld.gravity = grav;
-        if (this.ents) this.ents.effects.gravity = grav;
+        if (this.ents) {
+          this.ents.effects.gravity = grav;
+          this.ents.context.gravity = grav;
+        }
       },
       // changelevel: the listen server (offline, a P2P host) or the hub room's owner moves the match;
       // every client then reloads the level from the new `hello` — one path for all three.

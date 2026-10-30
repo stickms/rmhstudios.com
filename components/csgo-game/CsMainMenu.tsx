@@ -39,7 +39,7 @@ export interface CsMainMenuProps {
 const registered = new Set<string>();
 
 /** Registers Panorama's font files: family from the file name (`stratum2-bold.ttf` -> Stratum2, 700). */
-function usePanoramaFonts(channel: MenuChannel | null) {
+export function usePanoramaFonts(channel: MenuChannel | null) {
   useEffect(() => {
     if (!channel || typeof FontFace === 'undefined') return;
     for (const [path, file] of Object.entries(channel.index.fonts)) {
@@ -52,6 +52,17 @@ function usePanoramaFonts(channel: MenuChannel | null) {
       void face.load().then((f) => document.fonts.add(f)).catch(() => undefined);
     }
   }, [channel]);
+}
+
+/** The map's screenshot (the largest cut), else Panorama's startup background. */
+export function mapScreenshot(channel: MenuChannel | null, mapName: string): string | null {
+  const images = channel?.index.images ?? {};
+  const keys = Object.keys(images);
+  const key =
+    keys.find((k) => k.includes(`screenshots/1080p/${mapName}`)) ??
+    keys.find((k) => k.includes('screenshots/') && k.includes(mapName)) ??
+    keys.find((k) => /backgrounds\/startup\.png$/.test(k));
+  return key ? menuAssetUrl(images[key], 'csgo') : null;
 }
 
 /** A Panorama icon by name (the first published of `names`), else the given fallback icon. */
@@ -83,16 +94,7 @@ export default function CsMainMenu({ channel, signedIn, mapName, mapTitle, onOff
   }, []);
 
   const video = channel?.index.video ? menuAssetUrl(channel.index.video.file, 'csgo') : null;
-  const screenshot = useMemo(() => {
-    const images = channel?.index.images ?? {};
-    const keys = Object.keys(images);
-    // The map's screenshot (the largest cut), else Panorama's startup background.
-    const key =
-      keys.find((k) => k.includes(`screenshots/1080p/${mapName}`)) ??
-      keys.find((k) => k.includes('screenshots/') && k.includes(mapName)) ??
-      keys.find((k) => /backgrounds\/startup\.png$/.test(k));
-    return key ? menuAssetUrl(images[key], 'csgo') : null;
-  }, [channel, mapName]);
+  const screenshot = useMemo(() => mapScreenshot(channel, mapName), [channel, mapName]);
   const logo = useMemo(() => {
     const icons = channel?.index.icons ?? {};
     const key = Object.keys(icons).find((k) => /csgologo|counterstrikelogo/.test(k)) ?? Object.keys(icons).find((k) => /\/logo/.test(k));

@@ -749,6 +749,8 @@ export class CsPlayer extends Player {
       entity: this.id,
       team: this.team,
       value: this.playerClass,
+      // Where the blow landed (the bullet's hit, the blast's centre): the part it pushes hardest.
+      start: { x: info.position.x, y: info.position.y, z: info.position.z },
       force: {
         x: info.force.x + this.velocity.x,
         y: info.force.y + this.velocity.y,

@@ -67,6 +67,8 @@ export class SpActor extends SpEntity {
   faceTarget: Entity | null = null;
   yawSpeed = 180;
   dead = false;
+  /** The last damage's push and where it landed (the ragdoll's, on death). */
+  private lastBlow: { force: Vec3; at: Vec3 } | null = null;
   private stuckTicks = 0;
   private shoveAt = 0;
   private cupCopped = false;
@@ -263,6 +265,7 @@ export class SpActor extends SpEntity {
   override onTakeDamage(info: DamageInfo): number {
     if (this.dead || this.takeDamage !== DAMAGE_YES) return 0;
     this.health -= info.damage;
+    this.lastBlow = { force: { ...info.force }, at: { ...info.position } };
     this.fireOutput('OnDamaged', this.sp.entity(info.attacker));
     if (this.health <= 0) this.die(this.sp.entity(info.attacker));
     return info.damage;
@@ -273,6 +276,12 @@ export class SpActor extends SpEntity {
     this.dead = true;
     this.goal = null;
     this.playActivity('ACT_DIESIMPLE');
+    // HL2's NPCs become ragdolls where they die (CBaseCombatCharacter::BecomeRagdoll), pushed by the blow:
+    // the renderer builds the ragdoll from this.
+    this.extra = {
+      ...(this.extra ?? {}),
+      ragdoll: this.lastBlow ?? { force: { x: 0, y: 0, z: 0 }, at: { ...this.origin } },
+    };
     this.fireOutput('OnDeath', attacker);
     this.phys?.setGroups(0, 0);
   }

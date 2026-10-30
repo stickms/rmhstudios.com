@@ -4,7 +4,8 @@
  * in-memory copy.
  *
  * Every live entity's own fields are copied: numbers, strings and booleans
- * as they are, plain objects and arrays (vectors, anim state, lists) deeply,
+ * as they are, plain objects and arrays (vectors, anim state, lists) deeply
+ * (frozen ones — shared constants — by reference),
  * Maps and Sets shallowly, references to entities and other class instances
  * as references, and each output's connection list (spent `timesToFire`
  * connections come back). Entities created after the save are removed on
@@ -65,6 +66,8 @@ function isPlain(v: object): boolean {
 
 function deepCopy(v: unknown, depth = 0): unknown {
   if (v === null || typeof v !== 'object') return v;
+  // Frozen (shared, immutable): by reference.
+  if (Object.isFrozen(v)) return v;
   if (depth > 6) return v;
   if (Array.isArray(v)) return v.map((x) => deepCopy(x, depth + 1));
   if (ArrayBuffer.isView(v)) return (v as unknown as { slice: () => unknown }).slice();
@@ -94,6 +97,18 @@ function restoreEntity(r: EntityRecord): void {
   for (const [k, v] of r.fields) {
     const cur = e[k];
     const val = deepCopy(v);
+    // A frozen object (shared constants: movement parameters) is kept by reference: put the saved one back.
+    if (
+      (val && typeof val === 'object' && Object.isFrozen(val)) ||
+      (cur && typeof cur === 'object' && Object.isFrozen(cur))
+    ) {
+      try {
+        e[k] = val;
+      } catch {
+        // getter-only field
+      }
+      continue;
+    }
     // Readonly vectors are mutated in place (other code holds them).
     if (cur && typeof cur === 'object' && val && typeof val === 'object' && isPlain(cur) && isPlain(val) && !Array.isArray(cur)) {
       for (const kk of Object.keys(cur)) if (!(kk in (val as object))) delete (cur as Record<string, unknown>)[kk];

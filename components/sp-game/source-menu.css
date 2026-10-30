@@ -271,3 +271,35 @@
   border-color: var(--gui-border-bright);
   font-family: Tahoma, Verdana, sans-serif;
 }
+
+/* GameUI's loading dialog (SourceLoadingScreen.tsx): a small frame low on the right over the background. */
+.gui-loading {
+  position: absolute;
+  inset: auto calc(var(--safe-right, 0px) + 1.5rem) calc(var(--safe-bottom, 0px) + 1.5rem) auto;
+  z-index: 2;
+  width: min(calc(100% - 2rem), 26rem);
+  margin: 0;
+}
+.gui-loading-map {
+  color: var(--gui-text-dim);
+  font-size: 0.75rem;
+}
+/* vgui ProgressBar: a sunken track of lit blocks. */
+.gui-progress {
+  display: block;
+  height: 1.125rem;
+  padding: 2px;
+  background: var(--gui-progress-bg);
+  border: 1px solid var(--gui-border-dark);
+  border-right-color: var(--gui-border-bright);
+  border-bottom-color: var(--gui-border-bright);
+}
+.gui-progress > span {
+  display: block;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--gui-progress-fg) 0 0.5rem,
+    transparent 0.5rem 0.625rem
+  );
+}

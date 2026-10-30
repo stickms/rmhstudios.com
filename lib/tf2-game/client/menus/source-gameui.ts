@@ -207,6 +207,9 @@ export function gameUiStyle(channel: MenuChannel): GameUiStyle {
     '--gui-border-dark': colorCss([source], ['Border.Dark'], 'rgba(40,46,34,1)'),
     '--gui-selection': colorCss([source], ['ListPanel.SelectedBgColor', 'SelectionBG'], 'rgba(149,136,49,1)'),
     '--gui-field-bg': colorCss([source], ['TextEntry.BgColor'], 'rgba(62,70,55,1)'),
+    // The loading dialog's bar (vgui ProgressBar: lit blocks over the track).
+    '--gui-progress-fg': colorCss([source], ['ProgressBar.FgColor'], 'rgba(216,222,211,1)'),
+    '--gui-progress-bg': colorCss([source], ['ProgressBar.BgColor'], 'rgba(0,0,0,0.3)'),
   };
   const fontFiles: GameUiStyle['fontFiles'] = [];
   // The schemes name their font files (CustomFontFiles) without the family each holds; the family

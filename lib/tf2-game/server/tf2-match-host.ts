@@ -485,7 +485,9 @@ export class Tf2MatchHost implements MatchHost {
         seed: this.options.seed >>> 0 || 1,
         isServer: true,
         lagCompensation: true,
-        ...(prev ? { friendlyFire: prev.options.friendlyFire, rules: { ...prev.rules.options } } : {}),
+        ...(prev
+          ? { friendlyFire: prev.options.friendlyFire, rules: { ...prev.rules.options } }
+          : { rules: { instantRespawn: !!this.options.instantRespawn } }),
       },
     });
   }

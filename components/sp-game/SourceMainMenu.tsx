@@ -51,7 +51,10 @@ export interface SourceMainMenuProps {
 const registered = new Set<string>();
 
 /** Registers the scheme's font files (once per page) so the title and menu draw in the game's type. */
-function useSchemeFonts(channel: MenuChannel, files: Array<{ family: string; file: string }>) {
+export function useSchemeFonts(
+  channel: MenuChannel,
+  files: Array<{ family: string; file: string }>,
+) {
   const [ready, setReady] = useState(0);
   useEffect(() => {
     let alive = true;

@@ -23,6 +23,7 @@ import {
 } from './common';
 import type { EffectSystem } from './effects';
 import { ModelInstance } from './model-instance';
+import { Ragdoll } from './ragdoll';
 
 /** EF_NODRAW (const.h). */
 export const EF_NODRAW = 0x20;
@@ -31,6 +32,9 @@ const RENDER_NORMAL = 0;
 
 const tmpM = new Matrix4();
 const tmpV = new Vector3();
+/** Seconds an NPC's ragdoll lies before fading (HL2 keeps them; this keeps the frame rate), and the fade. */
+export const NPC_RAGDOLL_TIME = 15;
+export const RAGDOLL_FADE_TIME = 1.5;
 
 /** Any entity drawn from one model (the base of the specific renderables). */
 export class ModelRenderable {
@@ -45,6 +49,11 @@ export class ModelRenderable {
   protected visible = false;
   /** Height above the origin the ambient light is sampled at. */
   protected lightHeight = 16;
+  /** A dead NPC's ragdoll (`updateRagdoll`). */
+  private ragdoll: Ragdoll | null = null;
+  private ragdollFailed = false;
+  private ragdollAge = 0;
+  private readonly ragdollCentre = { x: 0, y: 0, z: 0 };
 
   constructor(
     readonly id: number,
@@ -70,6 +79,9 @@ export class ModelRenderable {
         return null;
       }
       this.inst?.dispose();
+      this.ragdoll?.dispose();
+      this.ragdoll = null;
+      this.ragdollFailed = false;
       this.inst = new ModelInstance(asset, { fog: ctx.lighting?.shared });
       this.model = model;
       this.seqName = '';
@@ -118,6 +130,7 @@ export class ModelRenderable {
         : 1;
     inst.uniforms.uAlpha.value = alpha;
     const scale = num(f, 'modelScale') || 1;
+    if (bool(f, 'ragdoll') && this.updateRagdoll(s, ctx, inst, alpha, scale)) return;
     inst.place(this.origin, this.angles, scale);
     this.animate(s, ctx, inst);
     this.probe.update(ctx, inst.uniforms, this.origin, this.lightHeight);
@@ -128,6 +141,53 @@ export class ModelRenderable {
 
   protected skinOf(s: EntityState): number {
     return num(s.fields, 'skin');
+  }
+
+  /**
+   * A dead NPC (`ragdoll` and its push, `ragdollF*` / `ragdollA*`: HL2's BecomeRagdoll): handed to
+   * physics from the pose it died in, then faded out after NPC_RAGDOLL_TIME. False when the model has
+   * no ragdoll (it keeps playing its death activity).
+   */
+  private updateRagdoll(
+    s: EntityState,
+    ctx: RenderContext,
+    inst: ModelInstance,
+    alpha: number,
+    scale: number,
+  ): boolean {
+    const f = s.fields;
+    if (!this.ragdoll) {
+      if (this.ragdollFailed) return false;
+      inst.place(this.origin, this.angles, scale);
+      inst.updateMatrices();
+      this.ragdoll = Ragdoll.create(inst, {
+        trace: ctx.ragdollTrace ?? null,
+        gravity: ctx.gravity ?? 600,
+      });
+      if (!this.ragdoll) {
+        this.ragdollFailed = true;
+        return false;
+      }
+      this.ragdollAge = 0;
+      this.ragdoll.push(
+        { x: num(f, 'ragdollFx'), y: num(f, 'ragdollFy'), z: num(f, 'ragdollFz') },
+        { x: num(f, 'ragdollAx'), y: num(f, 'ragdollAy'), z: num(f, 'ragdollAz') },
+      );
+    }
+    this.ragdollAge += ctx.dt;
+    const fade =
+      this.ragdollAge > NPC_RAGDOLL_TIME
+        ? 1 - (this.ragdollAge - NPC_RAGDOLL_TIME) / RAGDOLL_FADE_TIME
+        : 1;
+    if (fade <= 0) {
+      this.ragdoll.dispose();
+      this.hide();
+      return true;
+    }
+    inst.uniforms.uAlpha.value = alpha * fade;
+    this.ragdoll.update(ctx.dt);
+    this.probe.update(ctx, inst.uniforms, this.ragdoll.centre(this.ragdollCentre), 8);
+    return true;
   }
 
   /**
@@ -192,6 +252,8 @@ export class ModelRenderable {
 
   dispose(): void {
     this.effects?.stopEntity(this.id);
+    this.ragdoll?.dispose();
+    this.ragdoll = null;
     this.inst?.dispose();
     this.inst = null;
   }

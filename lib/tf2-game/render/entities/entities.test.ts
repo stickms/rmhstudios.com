@@ -45,7 +45,15 @@ import {
   translateActivity,
   type PlayerAnimInput,
 } from './player-anim-state';
-import { findDeathSequence } from './player-renderer';
+import { tf2DeathSequence } from './player-renderer';
+import {
+  DMG_BLAST,
+  DMG_BURN,
+  TF_DMG_CUSTOM_BACKSTAB,
+  TF_DMG_CUSTOM_BURNING,
+  TF_DMG_CUSTOM_DECAPITATION,
+  TF_DMG_CUSTOM_HEADSHOT,
+} from '../../sim/damage';
 import { BobState } from './viewmodel';
 
 const ALL = () => true;
@@ -548,24 +556,17 @@ describe('effects and objects', () => {
     expect(projectileTrail('models/props/whatever.mdl', 2, false)).toBeNull();
   });
 
-  it('chooses a death sequence by kill kind', () => {
-    const s = (name: string): SequenceDesc => ({
-      name,
-      looping: false,
-      delta: false,
-      post: false,
-      fps: 30,
-      frames: 30,
-      clips: [],
-    });
-    const seqs = [
-      s('stand_PRIMARY'),
-      s('primary_death_backstab'),
-      s('primary_death_headshot'),
-      s('primary_death_burning'),
-    ];
-    expect(findDeathSequence(seqs, 'burning')?.name).toBe('primary_death_burning');
-    expect(findDeathSequence(seqs, 'backstab')?.name).toBe('primary_death_backstab');
-    expect(findDeathSequence([s('idle')], 'headshot')).toBeNull();
+  it('plays a death animation only for the kills TF2 has one for, on the ground', () => {
+    const kill = (customKill: number, damageType = 0) => ({ customKill, damageType });
+    expect(tf2DeathSequence(kill(TF_DMG_CUSTOM_HEADSHOT), true)).toBe('primary_death_headshot');
+    expect(tf2DeathSequence(kill(TF_DMG_CUSTOM_DECAPITATION), true)).toBe('primary_death_headshot');
+    expect(tf2DeathSequence(kill(TF_DMG_CUSTOM_BACKSTAB), true)).toBe('primary_death_backstab');
+    expect(tf2DeathSequence(kill(TF_DMG_CUSTOM_BURNING), true)).toBe('primary_death_burning');
+    expect(tf2DeathSequence(kill(0, DMG_BURN), true)).toBe('primary_death_burning');
+    // A rocket, a bullet, a melee hit: straight to the ragdoll. So is any death in the air.
+    expect(tf2DeathSequence(kill(0, DMG_BLAST), true)).toBeNull();
+    expect(tf2DeathSequence(kill(0), true)).toBeNull();
+    expect(tf2DeathSequence(kill(TF_DMG_CUSTOM_HEADSHOT), false)).toBeNull();
+    expect(tf2DeathSequence(null, true)).toBeNull();
   });
 });

@@ -282,3 +282,57 @@
     min-width: 44px;
   }
 }
+
+/* TF2's loading screen (Tf2LoadingScreen.tsx): the menu backdrop, the loading dialog low on the right. */
+.tf2-load {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.tf2-load-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.tf2-load-dialog {
+  position: absolute;
+  right: calc(var(--safe-right, 0px) + 1.5rem);
+  bottom: calc(var(--safe-bottom, 0px) + 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(calc(100% - 2rem), 28rem);
+  padding: 1rem 1.25rem;
+  background: color-mix(in srgb, var(--app-bg) 92%, transparent);
+  border: 2px solid var(--app-border-bright);
+  border-radius: var(--app-radius);
+  color: var(--app-text);
+  font-family: var(--app-font-body);
+}
+.tf2-load-eyebrow {
+  color: var(--app-text-dim);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.tf2-load-map {
+  font-size: 1.75rem;
+  line-height: 1.1;
+}
+.tf2-load-stage {
+  min-height: 1rem;
+  color: var(--app-text-muted);
+  font-size: 0.75rem;
+}
+.tf2-load-tip {
+  color: var(--app-text-muted);
+  font-size: 0.8125rem;
+}
+.tf2-load-tip-label {
+  color: var(--app-accent-text);
+  font-family: var(--app-font-display);
+  text-transform: uppercase;
+}
+.tf2-load-dialog .tf2g-play-button {
+  align-self: flex-end;
+}

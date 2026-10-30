@@ -293,7 +293,13 @@ snapshots **10.8 s** after the close (WebRTC again, over TURN), was told "Host m
 | `/portal`      | `components/sp-game/PortalPlayPage.tsx` | `sp-client.ts` + `portal-view.ts` (recursive portal views)    |
 
 All three mount `components/tf2-game/GameCanvas.tsx`: the canvas, the HUD (`GameHud`), loading progress per
-stage, errors with retry, pointer lock, fullscreen and the phone's rotate hint. A client owns exactly one
+stage, errors with retry, pointer lock, fullscreen and the phone's rotate hint. Each game passes its own
+loading screen (`loadingScreen`): TF2's menu backdrop with a loading dialog and one of the game's tips
+(`menus/Tf2LoadingScreen.tsx`), HL2's and Portal's chapter background with GameUI's loading dialog
+(`sp-game/SourceLoadingScreen.tsx`), CS:GO's map screenshot in Panorama's type (`csgo-game/CsLoadingScreen.tsx`).
+The loading screen holds until every body the match shows has loaded (`preloadModels`: TF2's classes and arms,
+CS:GO's team models, arms and weapons). A TF2 host can turn on instant respawn (`instantRespawn`: back
+`INSTANT_RESPAWN_DELAY` (1 s) after dying, no respawn waves). A client owns exactly one
 `requestAnimationFrame` (`client/loop.ts`, paused while the tab is hidden) and runs everything on it.
 
 - **TF2** (`tf2-client.ts`): `connectTf2` → create/join (or the listen-server worker, `net/listen-worker.ts`, which
@@ -1244,8 +1250,19 @@ snapshot mirror and a single-player world feed it the same way, plus the simulat
   over the networked (interpolated, per render frame) record (activity selection, the SDK acttables per
   activity role — `acttables.ts`, transcribed from tf_weaponbase.cpp — 9-way move blend, feet-yaw lag with
   45° turn-in-place steps, `animEvent` gestures; move_x / move_y approach their goal at 6 /s and
-  body_yaw / body_pitch at 720°/s), team / über skins, cloak, disguises, crit glow, burning, death sequences, gibs and
-  corpses.
+  body_yaw / body_pitch at 720°/s), team / über skins, cloak, disguises, crit glow, burning, deaths and gibs.
+- **Deaths and ragdolls** (`corpse.ts`, `ragdoll.ts`): a dead player's body plays the game's death animation
+  for that kind of death where it has one, then goes to physics from the pose it ends in. TF2: the class's
+  `primary_death_headshot` (headshots, decapitations — the head goes), `_backstab` or `_burning` on the ground
+  (CTFPlayerShared::GetSequenceForDeath), anything else a ragdoll at once, explosive crits gibs, the Dead
+  Ringer a ragdoll copy. CS:GO: `ACT_DIE_[STAND|CROUCH][_HEADSHOT]` laid over the last pose, turned to the shot
+  by `death_yaw`, for 0.2 s. HL2's NPCs: a ragdoll at once (the actor's `extra.ragdoll`). The killing blow's
+  push (the sim's `ragdoll` effect: force and where it landed) goes to the part nearest the hit (the head for a
+  CS:GO headshot). The ragdoll comes from the model's .phy (`ragdoll` extras: solids, masses, joint limits —
+  scripts/tf2-game/ragdoll.py), else the hitbox bones with loose joints: Verlet particles per solid kept rigid
+  by shape matching, joint limits about the child's axes, joints and tips colliding with the map as box
+  traces; fixed 1/60 s steps, asleep once still, at most `MAX_AWAKE` simulating. Bodies lie 10 s (NPCs 15 s)
+  and fade; a player's body fades in 0.3 s when they respawn.
 - **View model** (`viewmodel.ts`, `vm-anim.ts`): arms + c_model, the weapon's `vmActivity` → item
   `vmActivities` → the role's s_viewmodelacttable row (the minigun's and medigun's PREFIRE/POSTFIRE) → arms
   sequence; the change counter restarts a one-shot like the parity flag, a looping sequence re-sent (spin,

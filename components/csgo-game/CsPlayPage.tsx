@@ -18,6 +18,7 @@ import { loadMenuChannel, type MenuChannel } from '@/lib/tf2-game/client/menus/s
 import { createTf2Client, type Tf2Session } from '@/lib/tf2-game/client/tf2-client';
 import { TF2_LIMITS, type BotDifficulty, type CsRoomMode } from '@/lib/tf2-game/net/events';
 import { languageForSite } from '@/lib/tf2-hud/localisation';
+import CsLoadingScreen from './CsLoadingScreen';
 import CsMainMenu from './CsMainMenu';
 import '@/components/tf2-game/play.css';
 
@@ -50,6 +51,12 @@ export default function CsPlayPage() {
     setSession(s);
   }, []);
   const leave = useCallback(() => setSession(null), []);
+  const modeLabel = (s: Tf2Session) => {
+    const mode = s.kind === 'offline' ? s.mode : s.kind === 'p2p-host' ? s.room.mode : null;
+    if (mode === 'dm') return t('cs_mode_dm', { defaultValue: 'Deathmatch' });
+    if (mode === 'de') return t('cs_mode_de', { defaultValue: 'Bomb defusal' });
+    return t('play_joining', { defaultValue: 'Joining server' });
+  };
   useLobbyInviteJoin(signedIn, (code) => start({ kind: 'p2p-join', code, game: 'csgo' }));
 
   const offline = (mode: CsRoomMode, difficulty: BotDifficulty) =>
@@ -91,6 +98,15 @@ export default function CsPlayPage() {
             title={t('csgo_title', { defaultValue: 'Counter-Strike: Global Offensive' })}
             create={(mount) => createTf2Client({ ...mount, session })}
             onExit={leave}
+            loadingScreen={(view) => (
+              <CsLoadingScreen
+                channel={channel}
+                mapName={MAP}
+                mapTitle={MAP_TITLE}
+                modeLabel={modeLabel(session)}
+                view={view}
+              />
+            )}
           />
         </div>
       ) : null}
