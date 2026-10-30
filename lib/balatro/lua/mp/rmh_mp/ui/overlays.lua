@@ -206,7 +206,8 @@ function O.error(code)
   end
   local e = O.ERRORS[base]
   local text = e and TH.T(e[1], e[2]) or TH.TV('rmh_mp_ui_err_generic', 'Something went wrong (#1#)', { base })
-  return W.toast(e and e[1] or 'rmh_mp_ui_err_generic', nil, { default = text, colour = TH.col('RED') })
+  if e then return W.toast(e[1], nil, { default = text, colour = TH.col('RED') }) end
+  return W.toast('rmh_mp_ui_err_generic', { base }, { default = text, colour = TH.col('RED') })
 end
 
 -- ── Late result (a match that ended while the player was at the menu) ──────

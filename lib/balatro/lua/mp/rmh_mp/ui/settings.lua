@@ -147,9 +147,10 @@ function ST.avatar_grid(history)
       node = W.col({ W.row({ { n = G.UIT.O, config = { object = area } } }) },
         { r = 0.1, padding = 0.03, colour = a.key == current and TH.col('GREEN') or TH.col('CLEAR'), id = 'mp_avatar_' .. a.key })
     else
-      node = W.button({ id = 'mp_avatar_' .. a.key, label = a.unlocked and ST.joker_name(a.key) or '?',
+      node = W.col({ W.button({ label = a.unlocked and ST.joker_name(a.key) or '?',
         button = a.unlocked and 'rmh_mp_avatar_pick' or 'nil', ref_table = { key = a.key },
-        colour = a.key == current and TH.col('GREEN') or TH.col('GREY'), minw = 1.2, minh = 0.6, scale = 0.25, col = true })
+        colour = a.key == current and TH.col('GREEN') or TH.col('GREY'), minw = 1.2, minh = 0.6, scale = 0.25 }) },
+        { id = 'mp_avatar_' .. a.key })
     end
     node.config.mp_avatar = a.key
     node.config.mp_locked = (not a.unlocked) or nil
