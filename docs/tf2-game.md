@@ -725,7 +725,7 @@ stored size of every channel of every game from its state file — no bucket
 listing — plus what this run would add (an object two channels publish, like a shared
 `tex/` file, counted once), and fails the publish past the budget. Run it locally
 (with the S3 variables) to see the footprint. Keep lists lean: `sound-list.py
---max-files` (default 1,500) fails a selection that grows, and
+--max-files` (default 1,600) fails a selection that grows, and
 `particle-systems.txt` names only systems the game spawns.
 
 Local runs: `python3 -B scripts/tf2-game/sound-list.py --root <install> --out list.json`,

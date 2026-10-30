@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write the default sound list for sounds.py: what the browser game actually plays.
 
-    sound-list.py --root <install> --out <list.json> [--max-files 1500]
+    sound-list.py --root <install> --out <list.json> [--max-files 1600]
 
 Selects sound-script entries by name, not whole folders, so the list stays lean
 (object storage is shared with the other game channels — see docs/tf2-game.md):
@@ -562,10 +562,10 @@ def main():
     ap.add_argument("--game", choices=("tf2", "hl2", "portal", "csgo"), default="tf2")
     ap.add_argument("--max-files", type=int, default=None,
                     help="fail when the selection grows past this many files (storage budget; "
-                         "default 1500 for TF2, 800 for the single-player games); CS:GO selects "
+                         "default 1600 for TF2, 800 for the single-player games); CS:GO selects "
                          "within it (default 900) by priority instead")
     args = ap.parse_args()
-    max_files = args.max_files or {"tf2": 1500, "csgo": CSGO_MAX_FILES}.get(args.game, 800)
+    max_files = args.max_files or {"tf2": 1600, "csgo": CSGO_MAX_FILES}.get(args.game, 800)
 
     fs = open_game(args.root, args.game)
     if args.game == "csgo":
