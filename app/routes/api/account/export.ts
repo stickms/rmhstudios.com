@@ -53,6 +53,12 @@ export const Route = createFileRoute('/api/account/export')({
             userCards,
             cardDrops,
             gameBadges,
+            cardListings,
+            cardTrades,
+            gameThreads,
+            gameThreadPosts,
+            cardBuyOrders,
+            gameCollectionItems,
           ] = await Promise.all([
             prisma.user.findUnique({
               where: { id: userId },
@@ -203,6 +209,24 @@ export const Route = createFileRoute('/api/account/export')({
             prisma.userCard.findMany({ where: { userId }, take: CAP }),
             prisma.cardDrop.findMany({ where: { userId }, take: CAP }),
             prisma.gameBadge.findMany({ where: { userId }, take: CAP }),
+            // Card market listings as seller or buyer.
+            prisma.cardListing.findMany({
+              where: { OR: [{ sellerId: userId }, { buyerId: userId }] },
+              take: CAP,
+              orderBy: { createdAt: 'desc' },
+            }),
+            // Card trade offers sent or received, with their items.
+            prisma.cardTrade.findMany({
+              where: { OR: [{ fromId: userId }, { toId: userId }] },
+              take: CAP,
+              orderBy: { createdAt: 'desc' },
+              include: { items: true },
+            }),
+            // Community Hub discussions the person started or replied in.
+            prisma.gameThread.findMany({ where: { authorId: userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
+            prisma.gameThreadPost.findMany({ where: { authorId: userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
+            prisma.cardBuyOrder.findMany({ where: { buyerId: userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
+            prisma.gameCollectionItem.findMany({ where: { userId }, take: CAP }),
           ]);
 
           const [
@@ -245,6 +269,12 @@ export const Route = createFileRoute('/api/account/export')({
             userCards,
             cardDrops,
             gameBadges,
+            cardListings,
+            cardTrades,
+            gameThreads,
+            gameThreadPosts,
+            cardBuyOrders,
+            gameCollectionItems,
             rmhLadder: {
               preferences: ladderPrefs,
               // Salary expectations, work authorization and EEO answers — the

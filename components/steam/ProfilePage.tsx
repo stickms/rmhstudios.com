@@ -37,8 +37,16 @@ export function ProfilePage({ profile: p, signedIn }: { profile: SteamProfile; s
             {[p.handle ? `@${p.handle}` : null, p.pronouns, p.location].filter(Boolean).join(' · ')}
           </p>
           <p className="stm-pf-bio">{p.bio ?? ''}</p>
-          <p className="stm-pf-status" data-online={p.isOnline}>
-            {p.isOnline
+          <p className="stm-pf-status" data-online={p.isOnline} data-playing={p.nowPlaying ? 'true' : undefined}>
+            {p.nowPlaying ? (
+              <>
+                {t('steam-status-playing', { defaultValue: 'Currently In-Game' })}
+                {': '}
+                <Link to="/games/$gameId" params={{ gameId: p.nowPlaying.gameId }} className="stm-link">
+                  {p.nowPlaying.title}
+                </Link>
+              </>
+            ) : p.isOnline
               ? t('steam-status-online', { defaultValue: 'Currently Online' })
               : t('steam-status-offline', { defaultValue: 'Currently Offline' })}
             {' · '}
@@ -62,6 +70,11 @@ export function ProfilePage({ profile: p, signedIn }: { profile: SteamProfile; s
           >
             <div className="stm-bar-fill" style={{ width: `${Math.round(p.levelProgress * 100)}%` }} />
           </div>
+          {!p.isOwnProfile && signedIn ? (
+            <Link to="/games/trades/new/$id" params={{ id: p.id }} className="stm-btn">
+              {t('steam-trade', { defaultValue: 'Trade' })}
+            </Link>
+          ) : null}
           {!p.isOwnProfile ? (
             <Link
               to="/u/$userid"

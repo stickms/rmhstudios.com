@@ -1700,3 +1700,412 @@ button.stm-star {
   border-color: var(--stm-gold);
   color: var(--stm-gold);
 }
+
+/* Market */
+.stm-market-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.stm-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--stm-gold);
+}
+.stm-market-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-market-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-market-row .stm-person-body {
+  flex: 1;
+  min-width: 140px;
+}
+.stm-market-price {
+  color: var(--stm-bright);
+  white-space: nowrap;
+}
+.stm-market-filter {
+  margin-inline-start: auto;
+}
+.stm-input {
+  min-height: 32px;
+  padding: 4px 8px;
+  background: var(--stm-input);
+  border: 1px solid var(--stm-line);
+  border-radius: var(--stm-radius);
+  color: var(--stm-text);
+  font: inherit;
+}
+.stm-input:focus-visible {
+  outline: 2px solid var(--stm-blue);
+  outline-offset: 0;
+}
+.stm-sell-wrap {
+  margin-top: 8px;
+  width: 112px;
+  line-height: 1.4;
+}
+.stm-sell-open {
+  width: 100%;
+}
+.stm-sell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stm-sell .stm-input {
+  width: 100%;
+}
+.stm-sell-note {
+  font-size: 12px;
+}
+.stm-sell-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* Trades */
+.stm-cardset-tight {
+  gap: 8px;
+  padding: 8px 0 0;
+}
+.stm-trade-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-trade {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 24px;
+  padding: 14px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-trade > .stm-person {
+  width: 180px;
+  padding-inline: 0;
+}
+.stm-trade-sides {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+  min-width: 220px;
+}
+.stm-trade-sides .stm-subhead {
+  margin: 0;
+}
+.stm-trade-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.stm-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.4;
+}
+.stm-pick[data-picked='true'] .stm-card-art {
+  outline: 2px solid var(--stm-blue);
+  outline-offset: 2px;
+}
+.stm-pick-ctl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  color: var(--stm-text);
+  font-size: 12px;
+}
+.stm-pick-ctl .stm-btn {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 6px;
+}
+
+/* Paragraphs that introduce a card get the same gap the cards have between them. */
+.stm-web-single > p {
+  margin: 0 0 16px;
+}
+.stm-web-single > p:last-child {
+  margin-bottom: 0;
+}
+.stm-web-single > .stm-web-title + p {
+  margin-top: -4px;
+}
+
+/* Community hub and discussions */
+.stm-art-lg {
+  width: 72px;
+  height: auto;
+  aspect-ratio: 2 / 3;
+  flex: none;
+  object-fit: cover;
+}
+.stm-hub-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+.stm-hub-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stm-hub-form .stm-subhead {
+  margin: 0;
+}
+.stm-hub-form .stm-input {
+  width: 100%;
+}
+.stm-thread-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-thread {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-thread:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.stm-thread-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.stm-thread-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--stm-bright);
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.stm-thread-body .stm-person-sub {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.stm-thread-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--stm-muted);
+  font-size: 13px;
+}
+.stm-pager {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-post {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding: 14px;
+}
+.stm-post-author {
+  width: 200px;
+  max-width: 100%;
+}
+.stm-post-author .stm-person {
+  padding-inline: 0;
+}
+.stm-post-main {
+  flex: 1;
+  min-width: 220px;
+}
+.stm-post-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.stm-post-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.stm-replies-head {
+  margin: 20px 0 8px;
+}
+
+/* Count of trade offers waiting, beside COMMUNITY and Trade Offers. */
+.stm-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-inline-start: 6px;
+  padding: 0 5px;
+  background: var(--stm-blue);
+  border-radius: 9px;
+  color: var(--stm-bright);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+/* Card market page */
+.stm-cardhead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 28px;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+.stm-cardhead .stm-web-title {
+  margin-bottom: 4px;
+}
+.stm-cardhead > div {
+  min-width: 220px;
+  flex: 1;
+}
+.stm-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 8px 14px;
+}
+.stm-chart-axis {
+  fill: var(--stm-muted);
+  font-size: 11px;
+}
+.stm-cm-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 767px) {
+  .stm-cm-cols {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+.stm-order-mine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-cm-sell {
+  max-width: 200px;
+}
+.stm-cm-sell .stm-sell,
+.stm-cm-sell .stm-sell-open {
+  width: 100%;
+}
+
+/* Collections menu on the game page */
+.stm-collmenu {
+  position: relative;
+}
+.stm-collmenu > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  cursor: pointer;
+}
+.stm-collmenu > summary::-webkit-details-marker {
+  display: none;
+}
+.stm-collmenu-panel {
+  position: absolute;
+  z-index: 20;
+  inset-block-start: calc(100% + 4px);
+  inset-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 260px;
+  max-width: calc(100vw - 32px);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--stm-hover);
+  border-radius: var(--stm-radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.stm-collmenu-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 4px;
+  color: var(--stm-text);
+  overflow-wrap: anywhere;
+}
+.stm-collmenu-new {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-collmenu-new .stm-input {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Friend activity and in-game status */
+.stm-playing {
+  color: #90ba3c;
+}
+.stm-pf-status[data-playing='true'] {
+  color: #90ba3c;
+}
+.stm-pf-avatar:has(+ .stm-pf-summary .stm-pf-status[data-playing='true']) {
+  background: linear-gradient(#90ba3c, #5c7e10);
+}
+.stm-activity-feed {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-activity-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.stm-activity-text .stm-stars {
+  vertical-align: middle;
+}
+.stm-activity-when {
+  white-space: nowrap;
+}

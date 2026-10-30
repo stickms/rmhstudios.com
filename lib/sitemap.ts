@@ -244,6 +244,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/bookmarks': 'redirect', // → /saves
   '/drafts': 'personal',
   '/connections/new': 'personal', // signed-in authoring form
+  '/games/trades': 'personal', // the viewer's own offers
+  '/games/market': 'noindex', // card listings change by the minute and are behind sign-in to act on
   '/games/inventory': 'personal', // the viewer's own trading cards and badges
   '/games/community': 'noindex', // Steam-style community home; the viewer's groups ride on it
   '/out': 'noindex', // link-warning interstitial; the destination rides in ?url=
@@ -488,6 +490,10 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/games/$gameId': 'pages', // from the catalog, not the DB
   '/games/$gameId/guides/$guideId': 'content',
   '/games/profile/$id': null, // a second, noindex view of /u/$userid
+  '/games/hub/$gameId': null, // per-title discussions; the game page and guides stay the indexed ones
+  '/games/market/$gameId/$cardIndex': null, // per-card market page; noindex
+  '/games/hub/$gameId/t/$threadId': null, // user-generated discussions; noindex
+  '/games/trades/new/$id': null, // a signed-in composer
   '/games/groups/$slug': null, // a second, noindex view of /c/$slug
   '/builds/$slug': 'pages', // curated builds mirror the catalog
   '/user-builds/$slug': 'builds',

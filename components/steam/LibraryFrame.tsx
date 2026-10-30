@@ -1,6 +1,7 @@
 'use client';
 
 import { useLocation } from '@tanstack/react-router';
+import type { Collection } from '@/lib/games/collections';
 import type { LibraryKind } from '@/lib/games/library';
 import { LibraryList } from './LibraryList';
 import { PlaytimeNotice } from './PlaytimeNotice';
@@ -11,11 +12,15 @@ import { PlaytimeNotice } from './PlaytimeNotice';
  */
 export function LibraryFrame({
   recentIds,
+  collections,
+  signedIn,
   kind,
   onKindChange,
   children,
 }: {
   recentIds: string[];
+  collections: Collection[];
+  signedIn: boolean;
   kind: LibraryKind;
   onKindChange: (k: LibraryKind) => void;
   children: React.ReactNode;
@@ -30,6 +35,8 @@ export function LibraryFrame({
         kind={kind}
         onKindChange={onKindChange}
         recentIds={recentIds}
+        collections={collections}
+        signedIn={signedIn}
         activeId={activeId}
         onIndex={onIndex}
       />

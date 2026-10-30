@@ -6,7 +6,8 @@ import { House, Search, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { listCuratedBuilds, type CuratedBuild } from '@/lib/builds/curated';
 import { filterRail, groupRail, type LibraryKind } from '@/lib/games/library';
-import { useLibraryFavorites } from '@/hooks/useLibraryFavorites';
+import { useLibraryCollections } from '@/hooks/useLibraryCollections';
+import { FAVORITES, type Collection } from '@/lib/games/collections';
 import { TitleArt } from './TitleArt';
 
 /**
@@ -18,18 +19,25 @@ export function LibraryList({
   kind,
   onKindChange,
   recentIds,
+  collections: serverCollections,
+  signedIn,
   activeId,
   onIndex,
 }: {
   kind: LibraryKind;
   onKindChange: (k: LibraryKind) => void;
   recentIds: string[];
+  collections: Collection[];
+  signedIn: boolean;
   activeId: string | null;
   onIndex: boolean;
 }) {
   const { t } = useTranslation('games-hub');
   const [search, setSearch] = useState('');
-  const { ids: favoriteIds, toggle } = useLibraryFavorites();
+  const { collections, toggle: toggleIn } = useLibraryCollections(serverCollections, signedIn);
+  const favoriteIds = useMemo(() => collections.find((c) => c.name === FAVORITES)?.ids ?? [], [collections]);
+  const toggle = (id: string) => void toggleIn(FAVORITES, id);
+  const custom = collections.filter((c) => c.name !== FAVORITES);
 
   const all = useMemo(() => listCuratedBuilds(), []);
   const visible = useMemo(() => filterRail(all, { kind, search }), [all, kind, search]);
@@ -88,6 +96,10 @@ export function LibraryList({
 
       <div className="stm-list">
         <Section label={t('steam-section-favorites', { defaultValue: 'Favorites' })} items={favorites} {...{ activeId, favoriteIds, toggle }} />
+        {custom.map((c) => {
+          const items = visible.filter((b) => c.ids.includes(b.id)).sort((a, b) => a.title.localeCompare(b.title));
+          return <Section key={c.name} label={c.name} items={items} {...{ activeId, favoriteIds, toggle }} />;
+        })}
         <Section label={t('steam-section-recent', { defaultValue: 'Recent' })} items={recent} {...{ activeId, favoriteIds, toggle }} />
         <Section label={restLabel} items={rest} {...{ activeId, favoriteIds, toggle }} />
         {visible.length === 0 ? (

@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 357 routes. 195 render inside the standard site shell (sidebar, nav, context rail); 162 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 363 routes. 195 render inside the standard site shell (sidebar, nav, context rail); 168 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -265,9 +265,15 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/games/:gameId/guides/:guideId` | — | public | `app/routes/games/_library/$gameId_.guides.$guideId.tsx` |
 | `/games/community` | — | public | `app/routes/games/community.tsx` |
 | `/games/groups/:slug` | — | public | `app/routes/games/groups.$slug.tsx` |
+| `/games/hub/:gameId` | — | public | `app/routes/games/hub.$gameId.index.tsx` |
+| `/games/hub/:gameId/t/:threadId` | — | public | `app/routes/games/hub.$gameId.t.$threadId.tsx` |
 | `/games/inventory` | — | public | `app/routes/games/inventory.tsx` |
+| `/games/market` | — | public | `app/routes/games/market.index.tsx` |
+| `/games/market/:gameId/:cardIndex` | — | public | `app/routes/games/market.$gameId.$cardIndex.tsx` |
 | `/games/profile/:id` | — | public | `app/routes/games/profile.$id.tsx` |
 | `/games/slice-it` | Slice It! — charts, records and uploaders | public | `app/routes/games/_library/slice-it.tsx` |
+| `/games/trades` | — | public | `app/routes/games/trades.index.tsx` |
+| `/games/trades/new/:id` | — | public | `app/routes/games/trades.new.$id.tsx` |
 | `/half-life-2` | — | public | `app/routes/half-life-2.tsx` |
 | `/handle` | — | public | `app/routes/handle.ts` |
 | `/house-always-wins` | — | public | `app/routes/house-always-wins.tsx` |

@@ -1,6 +1,7 @@
 /** Client-safe shapes for the Steam-style community pages (home, profile, group). */
 
 import type { AchievementTier } from '@/lib/achievements/catalog';
+import type { FriendActivity, NowPlaying } from '@/lib/games/activity-types';
 
 /** A title as the community pages show it: enough for card art and a link. */
 export type TitleRef = {
@@ -77,6 +78,8 @@ export type SteamProfile = {
   groups: GroupRef[];
   badges: ProfileBadge[];
   reviewCount: number;
+  /** The title they have open this minute, if their setting lets this viewer see it. */
+  nowPlaying: NowPlaying | null;
 };
 
 export type TrendingTitle = TitleRef & { players: number; seconds: number };
@@ -98,6 +101,8 @@ export type CommunityHomeData = {
   reviews: RecentReview[];
   /** The viewer's own groups, newest first. */
   myGroups: GroupRef[];
+  /** Who the viewer follows is in a game, and what they have been up to; null when signed out. */
+  friends: FriendActivity | null;
 };
 
 export type GroupMember = PersonRef & { role: string };

@@ -6,6 +6,7 @@ import { MAX_BADGE_LEVEL } from '@/lib/cards/cards';
 import type { InventoryData } from '@/lib/cards/types';
 import { CardArt } from './CardArt';
 import { CommunityNav } from './CommunityNav';
+import { SellCard } from './SellCard';
 
 /** The signed-in user's trading cards and badges, grouped by title, as Steam's inventory. */
 export function InventoryPage({ data }: { data: InventoryData }) {
@@ -65,6 +66,9 @@ export function InventoryPage({ data }: { data: InventoryData }) {
                         width={112}
                       />
                       {c.count > 1 ? <span className="stm-cardcount">×{c.count}</span> : null}
+                      <div className="stm-sell-wrap">
+                        <SellCard gameId={g.gameId} cardIndex={c.cardIndex} foil={c.foil} />
+                      </div>
                     </li>
                   ))}
                 </ul>

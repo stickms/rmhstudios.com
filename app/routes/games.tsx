@@ -8,12 +8,23 @@
  */
 
 import { createFileRoute, Link, Outlet } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
+import { getRequestSession } from '@/lib/auth-session.server';
+import { countPendingTrades } from '@/lib/cards/trades.server';
 import { useTranslation } from 'react-i18next';
 import { SteamShell } from '@/components/steam/SteamShell';
 import steamCss from '@/components/steam/steam.css?url';
 
+/** What the Steam frame shows about the viewer on every page: offers waiting for them. */
+const fetchShellState = createServerFn({ method: 'GET' }).handler(async () => {
+  const session = await getRequestSession();
+  return { pendingTrades: session ? await countPendingTrades(session.user.id) : 0 };
+});
+
 export const Route = createFileRoute('/games')({
   head: () => ({ links: [{ rel: 'stylesheet', href: steamCss }] }),
+  loader: () => fetchShellState(),
+  staleTime: 30_000,
   component: GamesShell,
   notFoundComponent: SteamNotFound,
   errorComponent: SteamError,

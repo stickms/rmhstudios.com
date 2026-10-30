@@ -204,6 +204,20 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     prisma.userCard.deleteMany({ where: { userId } }),
     prisma.cardDrop.deleteMany({ where: { userId } }),
     prisma.gameBadge.deleteMany({ where: { userId } }),
+    // Their live market listings (the escrowed card goes with the rest of the inventory);
+    // finished sales stay as anonymous price history.
+    prisma.cardListing.deleteMany({ where: { sellerId: userId, status: 'ACTIVE' } }),
+    // Their library collections and favorites.
+    prisma.gameCollectionItem.deleteMany({ where: { userId } }),
+    // Open buy orders (nothing was held for them, so there is nothing to refund).
+    prisma.cardBuyOrder.deleteMany({ where: { buyerId: userId, status: 'OPEN' } }),
+    // Pending trade offers in either direction; finished trades stay as anonymous history.
+    prisma.cardTrade.deleteMany({
+      where: { status: 'PENDING', OR: [{ fromId: userId }, { toId: userId }] },
+    }),
+    // Community Hub discussions: their replies, then their threads (with everyone's replies).
+    prisma.gameThreadPost.deleteMany({ where: { authorId: userId } }),
+    prisma.gameThread.deleteMany({ where: { authorId: userId } }),
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({
       where: { userId },
