@@ -391,6 +391,18 @@ describe('delta layers', () => {
     const always = { seq: 'aim', flags: 0, start: 0, peak: 0, tail: 0, end: 0 };
     expect(autolayerWeight(always, 0.7, 1, set, [0])).toEqual({ cycle: 0.7, weight: 1 });
   });
+
+  it("CS:GO's blend layers (pose-driven, no ramp) weigh by their pose parameter", () => {
+    const set = {
+      poseIndex: new Map([['move_blend_crouch', 0]]),
+      poseParams: [{ name: 'move_blend_crouch', start: 0, end: 1, loop: 0 }],
+    };
+    const crouch = { seq: 'move_c', flags: STUDIO_AL_POSE, pose: 'move_blend_crouch', start: 0, peak: 0, tail: 1, end: 0 };
+    // Standing: the crouch layer is off (it used to play at full weight: everyone looked crouched).
+    expect(autolayerWeight(crouch, 0.4, 1, set, [0])).toBeNull();
+    expect(autolayerWeight(crouch, 0.4, 1, set, [0.25])?.weight).toBeCloseTo(0.25);
+    expect(autolayerWeight(crouch, 0.4, 0.5, set, [1])).toEqual({ cycle: 0.4, weight: 0.5 });
+  });
 });
 
 // --- frames and attachments -------------------------------------------------------------

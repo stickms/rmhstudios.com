@@ -1005,8 +1005,9 @@ pnpm exec tsx scripts/tf2-assets/publish.ts push --dir out --prefix hl2-game/ \
   512 cap name, which is what a prop gets), so a texture is stored once across maps and models.
 - **Props**: every static prop model and every `prop_*`, `item_*` and `physics_cannister` entity model;
   their collision (the `.phy`'s first solid, via `world/prop-collision.ts`) is `maps/<sha>.hulls.bin`.
-  `--props-list-out` / `--props-only` append the models models.py can read (not pakfile-only ones) to its
-  list, so every prop gets a GLB, plus the game's `GAME_ALWAYS_MODELS` — models the client draws that no
+  `--props-list-out` / `--props-only` append the models models.py can read to its list (`--extract-pak <dir>`:
+  the maps' embedded models and materials too, written there as loose files — CS:GO's `autocombine` props,
+  half of Dust II's), so every prop gets a GLB, plus the game's `GAME_ALWAYS_MODELS` — models the client draws that no
   map names (Portal: `v_portalgun` / `w_portalgun`).
 - **Incremental**: files are named by their content (textures by their source), so with `--state` an
   unchanged map writes nothing and decodes no texture, but is still listed in `wanted.json`. A map that
@@ -1073,7 +1074,9 @@ offline player's choice). The SDK's NextBot / TFBot code (`game/server/NextBot`,
   `CTFNavMesh::ComputeBlockedAreas`: a bare closed door or solid toggled brush blocks everyone, a
   trigger-opened door only the team its filter keeps out). An unreachable goal paths to the closest
   area (bots wait at setup gates). `PathFollower` steers to the portals (each leg stays inside one
-  convex area, narrow ramps walked down the middle), jumps and crouch-jumps at jump connections,
+  convex area, narrow ramps walked down the middle; a leg that clips a wall the areas hide — they reach half
+  a cell past the last spot a player fits — slides along it at full speed, felt with the player's hull
+  `halfWidth` ahead), jumps and crouch-jumps at jump connections,
   crouches through crouch areas, swims up, walks off perches the mesh does not know, and repaths when
   stuck or off the path. A world's bots share three searches a tick.
 - **Brain** (`bots/brain/`). Perception every third tick: a vision cone and line of sight (pre-culled by
@@ -1235,7 +1238,7 @@ snapshot mirror and a single-player world feed it the same way, plus the simulat
   per-instance tint, screen-door fade and a noise dissolve (cloak). Untextured materials (a dedicated
   server install) draw their team colour.
 - **Animation** (`animator.ts`): bone_setup.cpp's AccumulatePose over the clips — blend grids with pose
-  keys, autolayers (aim matrices), weightlists, delta layers, gesture slots, autoplay sequences and events
+  keys, autolayers (aim matrices; CS:GO's pose layers with no ramp weigh by their pose parameter), weightlists, delta layers, gesture slots, autoplay sequences and events
   (footsteps). Sequence changes go through a CSequenceTransitioner port: the outgoing sequence keeps
   advancing and blends out over MIN(its `fadeOut`, the new `fadeIn`) (default 0.2 s) along the SDK's
   GetFadeout spline; up to 3 outgoing sequences stack (newest accumulated first, so a change during a change

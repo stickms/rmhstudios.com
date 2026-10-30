@@ -252,8 +252,10 @@ jobs:
           pnpm exec tsx scripts/tf2-assets/publish.ts get --key csgo-game/mdl/index.json --out /mnt/work/csgo-mdl-prev-index.json
           python3 -B scripts/tf2-game/csgo-model-list.py --root /mnt/csgo --map de_dust2 \
             --out /mnt/work/csgo-models.list --report /mnt/work/csgo-models-report.json
+          # Dust II's autocombine props (half its static props) live in the map's own pakfile: written out
+          # as loose csgo/ files the converter reads, and listed.
           pnpm exec tsx scripts/tf2-game/build-maps.ts --root /mnt/csgo --game csgo --maps de_dust2 \
-            --props-only --props-list-out /mnt/work/csgo-models.list
+            --props-only --props-list-out /mnt/work/csgo-models.list --extract-pak /mnt/csgo/csgo
           lim=""; [ -n "${{ inputs.limit }}" ] && lim="--limit ${{ inputs.limit }}"
           FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/models.py \
             --root /mnt/csgo --search csgo --list /mnt/work/csgo-models.list --out /mnt/work/csgo-mdl \

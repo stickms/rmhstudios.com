@@ -146,7 +146,9 @@ export const GAME_ASSET_CHANNELS = {
     // 7: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`):
     //    the bare forearms were blackened by Pillow's premultiplied resize.
     // 8: characters carry their ragdoll (the .phy's solids and joint limits, ragdoll.py) in `ragdoll`.
-    builder: 8,
+    // 9: the map's own pakfile props (Dust II's autocombine models, half its static props) are extracted
+    //    and converted (build-maps.ts --extract-pak); the buildings they make were missing.
+    builder: 9,
     env: 'CSGO_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },

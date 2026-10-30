@@ -5,6 +5,7 @@
  *       [--maps a,b | --maps-file <file>] [--state state.json] [--prev-index maps/index.json]
  *       [--props-list-out <file>] [--sizes] [--force] [--nav | --no-nav]
  *   pnpm exec tsx scripts/tf2-game/build-maps.ts --root <install> --game … --props-only --props-list-out <file>
+ *     [--extract-pak <dir>]   (also write the maps' embedded models/materials there and list them)
  *       Only appends the maps' prop models to the list (the model channel runs this every time).
  *
  * Without --maps / --maps-file it builds the game's published list (lib/tf2-game/assets/game-maps.ts:
@@ -768,16 +769,51 @@ export function alwaysModels(fs: GameFileSystem, game: GameId): string[] {
 }
 
 /**
+ * Writes a map's embedded models and materials (its pakfile: CS:GO's `autocombine` props — static props
+ * merged at compile time — and any custom model) under `dir` as loose files, where the model converter
+ * reads them; files already there stay. Returns the models it holds.
+ */
+export function extractPakModels(bsp: BspFile, dir: string): Set<string> {
+  const pak = openPakfile(bsp);
+  const models = new Set<string>();
+  for (const name of pak.entries.keys()) {
+    if (!/^(?:models|materials)\//.test(name) || name.includes('..')) continue;
+    const dest = path.join(dir, name);
+    if (!existsSync(dest)) {
+      const data = pak.read(name);
+      if (!data) continue;
+      mkdirSync(path.dirname(dest), { recursive: true });
+      writeFileSync(dest, data);
+    }
+    if (name.endsWith('.mdl')) models.add(name);
+  }
+  return models;
+}
+
+/**
  * Appends every map's installed prop models to `listFile` (models.py's list), without building
  * anything — so the model channel includes map props even on a run that does not rebuild maps.
+ * `extractDir`: also write each map's embedded models and materials there (`extractPakModels`, the
+ * game's loose directory) and list the props that only the map carries.
  */
-export function listMapProps(root: string, game: GameId, maps: string[], listFile: string): number {
+export function listMapProps(
+  root: string,
+  game: GameId,
+  maps: string[],
+  listFile: string,
+  extractDir?: string,
+): number {
   const fs = openGameFileSystem(root, game);
   const all = new Set<string>(alwaysModels(fs, game));
   for (const name of maps) {
     try {
-      for (const m of installedPropModels(fs, parseBsp(readMapBsp(root, game, fs, name))))
-        all.add(m);
+      const bsp = parseBsp(readMapBsp(root, game, fs, name));
+      for (const m of installedPropModels(fs, bsp)) all.add(m);
+      if (extractDir) {
+        const embedded = extractPakModels(bsp, extractDir);
+        for (const m of [...collectProps(bsp).keys(), ...collectActorModels(bsp)])
+          if (embedded.has(m)) all.add(m);
+      }
     } catch (e) {
       process.stderr.write(`props: skipping ${name}: ${(e as Error).message}\n`);
     }
@@ -1319,7 +1355,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     process.stderr.write(
       'usage: build-maps.ts --root <install> --game tf2|hl2|portal|csgo --out <dir> [--maps a,b | --maps-file f] ' +
         '[--state state.json] [--prev-index index.json] [--props-list-out file] [--sizes] [--force] [--nav | --no-nav]\n' +
-        '       build-maps.ts --root <install> --game … --props-only --props-list-out <file> [--maps …]\n',
+        '       build-maps.ts --root <install> --game … --props-only --props-list-out <file> [--maps …] [--extract-pak <dir>]\n',
     );
     return 2;
   }
@@ -1332,7 +1368,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   else maps = GAME_MAPS[game].map((m) => m.name);
   maps = [...new Set(maps.map((m) => m.trim().replace(/\.bsp$/i, '')).filter(Boolean))];
   if (propsOnly) {
-    const n = listMapProps(root, game, maps, flags.get('props-list-out')!);
+    const n = listMapProps(root, game, maps, flags.get('props-list-out')!, flags.get('extract-pak'));
     process.stdout.write(`props (${game}): ${n} models from ${maps.length} maps\n`);
     return 0;
   }

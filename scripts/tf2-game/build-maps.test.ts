@@ -34,6 +34,7 @@ import {
   buildMaps,
   collectActorModels,
   decodeResourceText,
+  extractPakModels,
   GAME_ALWAYS_MODELS,
   GAME_SEARCH,
   NAV_HULL_BY_GAME,
@@ -73,6 +74,50 @@ describe('map package pieces', () => {
     ]);
     for (const list of Object.values(GAME_ALWAYS_MODELS))
       for (const m of list) expect(m).toMatch(/^models\/[a-z0-9_/]+\.mdl$/);
+  });
+
+  it("writes a map's embedded models and materials out as loose files and names its models", () => {
+    // A stored zip (local headers, central directory, end record) of three entries.
+    const files: Array<[string, string]> = [
+      ['models/props/autocombine/de_dust2/_autocombine_a_1.mdl', 'IDST'],
+      ['materials/models/props/autocombine/a.vmt', '"VertexLitGeneric" {}'],
+      ['sound/ambient/x.wav', 'RIFF'],
+    ];
+    const out: number[] = [];
+    const u16 = (v: number) => out.push(v & 0xff, (v >> 8) & 0xff);
+    const u32 = (v: number) => out.push(v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >>> 24) & 0xff);
+    const str = (t: string) => {
+      for (let i = 0; i < t.length; i++) out.push(t.charCodeAt(i));
+    };
+    // Fields as [bytes, value]: 2- and 4-byte little-endian integers.
+    const put = (...fields: Array<[2 | 4, number]>) => {
+      for (const [n, v] of fields) (n === 2 ? u16 : u32)(v);
+    };
+    const at: number[] = [];
+    for (const [name, body] of files) {
+      at.push(out.length);
+      put([4, 0x04034b50], [2, 20], [2, 0], [2, 0], [2, 0], [2, 0], [4, 0], [4, body.length], [4, body.length]);
+      put([2, name.length], [2, 0]);
+      str(name);
+      str(body);
+    }
+    const cd = out.length;
+    files.forEach(([name, body], i) => {
+      put([4, 0x02014b50], [2, 20], [2, 20], [2, 0], [2, 0], [2, 0], [2, 0], [4, 0], [4, body.length], [4, body.length]);
+      put([2, name.length], [2, 0], [2, 0], [2, 0], [2, 0], [4, 0], [4, at[i]]);
+      str(name);
+    });
+    put([4, 0x06054b50], [2, 0], [2, 0], [2, files.length], [2, files.length], [4, out.length - cd], [4, cd], [2, 0]);
+    const dir = mkdtempSync(path.join(os.tmpdir(), 'pak-'));
+    try {
+      const models = extractPakModels({ pakfile: new Uint8Array(out) } as unknown as BspFile, dir);
+      expect([...models]).toEqual(['models/props/autocombine/de_dust2/_autocombine_a_1.mdl']);
+      expect(readFileSync(path.join(dir, files[0][0]), 'utf8')).toBe('IDST');
+      expect(readFileSync(path.join(dir, files[1][0]), 'utf8')).toBe('"VertexLitGeneric" {}');
+      expect(existsSync(path.join(dir, files[2][0]))).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("lists the maps' NPCs' models: the map's, else the class's default", () => {
