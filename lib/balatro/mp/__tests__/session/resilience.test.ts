@@ -98,6 +98,26 @@ describe('reload rejoin (NET-06)', () => {
     await w.until(() => bob2.lua.outcomesOf('start_blind').length > 0, 5_000, 'start_blind after rejoin');
   });
 
+  it('queries the held seat once the hub connects, when the account resolved first (fresh page load)', async () => {
+    const { host, members } = await lobbyWith(w, 2);
+    const [bob] = members as [Peer];
+    await startMatch(w, host, members, { seatGraceMs: 60_000 });
+    const runId = bob.lua.last('match_start')?.runId as string;
+    bob.runtime.stop();
+    bob.hub.drop();
+    bob.connector.kill();
+    await w.until(() => presences(host, 'bob').includes('away'), 10_000, 'away');
+    // The reloaded page: the session resolves the account before its hub socket is up.
+    const bob2 = w.peer('bob', { intent: 'rejoin', kv: bob.kv, snapshots: bob.snapshots, hubOffline: true });
+    await w.until(() => false, 1_000, 'settle').catch(() => {});
+    expect(bob2.lua.errors()).not.toContain('seat-held');
+    expect(bob2.hub.emitted.filter((e) => e.event === 'balatro:seat:query')).toEqual([]);
+    bob2.hub.reconnect();
+    await w.until(() => bob2.lua.errors().includes('seat-held'), 5_000, 'seat prompt after the hub connected');
+    bob2.lua.emit('ui_seat', { op: 'rejoin' });
+    await w.until(() => bob2.lua.last('match_start')?.runId === runId, 10_000, 'back in the same run');
+  });
+
   it('abandoning the held seat clears the hint and the snapshot', async () => {
     const { host, members } = await lobbyWith(w, 2);
     const [bob] = members as [Peer];
