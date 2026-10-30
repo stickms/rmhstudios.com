@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 943 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 946 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -815,7 +815,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/games`
 
-11 routes.
+14 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -826,6 +826,9 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/games/:id/score` | `POST` | `app/routes/api/games/$id/score.ts` |
 | `/api/games/cards/craft` | `POST` | `app/routes/api/games/cards/craft.ts` |
 | `/api/games/how-to-play` | `POST` | `app/routes/api/games/how-to-play.ts` |
+| `/api/games/market/buy` | `POST` | `app/routes/api/games/market/buy.ts` |
+| `/api/games/market/cancel` | `POST` | `app/routes/api/games/market/cancel.ts` |
+| `/api/games/market/list` | `POST` | `app/routes/api/games/market/list.ts` |
 | `/api/games/playtime` | `POST` | `app/routes/api/games/playtime.ts` |
 | `/api/games/synapse-storm/leaderboard` | `GET` | `app/routes/api/games/synapse-storm/leaderboard.ts` |
 | `/api/games/synapse-storm/save` | `GET` | `app/routes/api/games/synapse-storm/save.ts` |

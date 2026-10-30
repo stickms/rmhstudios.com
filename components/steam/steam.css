@@ -1700,3 +1700,78 @@ button.stm-star {
   border-color: var(--stm-gold);
   color: var(--stm-gold);
 }
+
+/* Market */
+.stm-market-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.stm-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--stm-gold);
+}
+.stm-market-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-market-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-market-row .stm-person-body {
+  flex: 1;
+  min-width: 140px;
+}
+.stm-market-price {
+  color: var(--stm-bright);
+  white-space: nowrap;
+}
+.stm-market-filter {
+  margin-inline-start: auto;
+}
+.stm-input {
+  min-height: 32px;
+  padding: 4px 8px;
+  background: var(--stm-input);
+  border: 1px solid var(--stm-line);
+  border-radius: var(--stm-radius);
+  color: var(--stm-text);
+  font: inherit;
+}
+.stm-input:focus-visible {
+  outline: 2px solid var(--stm-blue);
+  outline-offset: 0;
+}
+.stm-sell-wrap {
+  margin-top: 8px;
+  width: 112px;
+  line-height: 1.4;
+}
+.stm-sell-open {
+  width: 100%;
+}
+.stm-sell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stm-sell .stm-input {
+  width: 100%;
+}
+.stm-sell-note {
+  font-size: 12px;
+}
+.stm-sell-actions {
+  display: flex;
+  gap: 6px;
+}

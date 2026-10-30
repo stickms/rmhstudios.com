@@ -53,4 +53,12 @@ describe('anonymizeAccount', () => {
       expect(op?.args).toEqual({ where: { userId: 'user-1' } });
     }
   });
+
+  it('removes the account’s live market listings, and only the active ones', async () => {
+    (prismaMock.$transaction as ReturnType<typeof vi.fn>).mockClear();
+    await anonymizeAccount('user-1');
+    const tx = (prismaMock.$transaction as ReturnType<typeof vi.fn>).mock.calls[0][0] as Op[];
+    const op = tx.find((o) => o.model === 'cardListing' && o.method === 'deleteMany');
+    expect(op?.args).toEqual({ where: { sellerId: 'user-1', status: 'ACTIVE' } });
+  });
 });

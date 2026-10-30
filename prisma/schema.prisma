@@ -612,6 +612,8 @@ model User {
   userCards                 UserCard[]
   cardDrops                 CardDrop[]
   gameBadges                GameBadge[]
+  cardListingsSold          CardListing[]     @relation("CardSeller")
+  cardListingsBought        CardListing[]     @relation("CardBuyer")
 
   @@index([isBot])
   @@index([followerCount])
@@ -5937,6 +5939,30 @@ model GameBadge {
 
   @@id([userId, gameId, foil])
   @@map("game_badge")
+}
+
+// A single trading card for sale at a fixed price (Phase C; design:
+// docs/superpowers/specs/2026-10-30-card-market-design.md). The card is held in
+// escrow by the listing: creating it decrements the seller's stack in the same
+// transaction. The price is immutable; reuse the shop market's ListingStatus.
+model CardListing {
+  id         String        @id @default(cuid())
+  sellerId   String
+  gameId     String        @db.VarChar(64)
+  cardIndex  Int           @db.SmallInt
+  foil       Boolean       @default(false)
+  priceCoins Int
+  status     ListingStatus @default(ACTIVE)
+  buyerId    String?
+  createdAt  DateTime      @default(now())
+  closedAt   DateTime?
+
+  seller User  @relation("CardSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer  User? @relation("CardBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
+
+  @@index([status, gameId, cardIndex, foil, priceCoins])
+  @@index([sellerId, status])
+  @@map("card_listing")
 }
 
 // ─── Daily Streak ─────────────────────────────────────────────────────────
