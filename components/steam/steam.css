@@ -1775,3 +1775,76 @@ button.stm-star {
   display: flex;
   gap: 6px;
 }
+
+/* Trades */
+.stm-cardset-tight {
+  gap: 8px;
+  padding: 8px 0 0;
+}
+.stm-trade-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-trade {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 24px;
+  padding: 14px;
+  border-top: 1px solid var(--stm-line);
+}
+.stm-trade > .stm-person {
+  width: 180px;
+  padding-inline: 0;
+}
+.stm-trade-sides {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+  min-width: 220px;
+}
+.stm-trade-sides .stm-subhead {
+  margin: 0;
+}
+.stm-trade-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.stm-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.4;
+}
+.stm-pick[data-picked='true'] .stm-card-art {
+  outline: 2px solid var(--stm-blue);
+  outline-offset: 2px;
+}
+.stm-pick-ctl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  color: var(--stm-text);
+  font-size: 12px;
+}
+.stm-pick-ctl .stm-btn {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 6px;
+}
+
+/* Paragraphs that introduce a card get the same gap the cards have between them. */
+.stm-web-single > p {
+  margin: 0 0 16px;
+}
+.stm-web-single > p:last-child {
+  margin-bottom: 0;
+}
+.stm-web-single > .stm-web-title + p {
+  margin-top: -4px;
+}

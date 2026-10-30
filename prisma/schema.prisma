@@ -614,6 +614,8 @@ model User {
   gameBadges                GameBadge[]
   cardListingsSold          CardListing[]     @relation("CardSeller")
   cardListingsBought        CardListing[]     @relation("CardBuyer")
+  cardTradesSent            CardTrade[]       @relation("CardTradeFrom")
+  cardTradesReceived        CardTrade[]       @relation("CardTradeTo")
 
   @@index([isBot])
   @@index([followerCount])
@@ -5963,6 +5965,49 @@ model CardListing {
   @@index([status, gameId, cardIndex, foil, priceCoins])
   @@index([sellerId, status])
   @@map("card_listing")
+}
+
+enum CardTradeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELED
+}
+
+// Card-for-card offers (design: docs/superpowers/specs/2026-10-30-card-trades-design.md).
+// Not escrowed: both sides are re-checked, under both users' card locks, when the
+// recipient accepts, which is the only moment cards move.
+model CardTrade {
+  id        String          @id @default(cuid())
+  fromId    String
+  toId      String
+  status    CardTradeStatus @default(PENDING)
+  createdAt DateTime        @default(now())
+  closedAt  DateTime?
+  expiresAt DateTime
+
+  from  User            @relation("CardTradeFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to    User            @relation("CardTradeTo", fields: [toId], references: [id], onDelete: Cascade)
+  items CardTradeItem[]
+
+  @@index([toId, status])
+  @@index([fromId, status])
+  @@map("card_trade")
+}
+
+model CardTradeItem {
+  tradeId   String
+  /// True when the proposer gives this card, false when they ask for it.
+  fromGives Boolean
+  gameId    String  @db.VarChar(64)
+  cardIndex Int     @db.SmallInt
+  foil      Boolean @default(false)
+  qty       Int     @db.SmallInt
+
+  trade CardTrade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  @@id([tradeId, fromGives, gameId, cardIndex, foil])
+  @@map("card_trade_item")
 }
 
 // ─── Daily Streak ─────────────────────────────────────────────────────────

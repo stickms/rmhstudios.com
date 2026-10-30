@@ -207,6 +207,10 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // Their live market listings (the escrowed card goes with the rest of the inventory);
     // finished sales stay as anonymous price history.
     prisma.cardListing.deleteMany({ where: { sellerId: userId, status: 'ACTIVE' } }),
+    // Pending trade offers in either direction; finished trades stay as anonymous history.
+    prisma.cardTrade.deleteMany({
+      where: { status: 'PENDING', OR: [{ fromId: userId }, { toId: userId }] },
+    }),
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({
       where: { userId },
