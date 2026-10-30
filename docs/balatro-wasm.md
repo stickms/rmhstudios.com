@@ -229,6 +229,9 @@ that cost frame time and look no sharper.
 
 ## 7. What is not here
 
+- **Multiplayer** is its own layer on top of this port, loaded only when a player
+  opens it: see [`balatro-mp.md`](balatro-mp.md) (architecture, interfaces, tests)
+  and [`balatro-mp-parity.md`](balatro-mp-parity.md) (feature parity tracker).
 - **Steam:** achievements sync, cloud saves and the overlay. Unlocks are tracked
   locally, as on any non-Steam build.
 - **Desktop video settings** (resolution, monitor, vsync). The page frame decides

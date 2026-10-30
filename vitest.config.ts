@@ -75,6 +75,17 @@ export default defineConfig({
       // The single-player game layer (HL2 / Portal) is gameplay on the same
       // engine: it runs in the TF2 suite, `pnpm test:tf2` (vitest.tf2.config.ts).
       'lib/sp-game/**',
+      // Multiplayer Balatro is gameplay too: its own suite, `pnpm test:balatro`
+      // (vitest.balatro.config.ts, which includes exactly these globs), gated by
+      // .github/workflows/balatro-mp-tests.yml. The mission-critical Balatro
+      // tests (lib/balatro/__tests__/saves.test.ts, the hub auth walk under
+      // server/socket-server/handlers/__tests__/) stay here.
+      'lib/balatro/mp/**',
+      'lib/shared/p2p/**',
+      'server/socket-server/balatro/**',
+      'scripts/balatro/**',
+      // Its browser end-to-end suite: `pnpm test:balatro:e2e` (vitest.balatro-e2e.config.ts).
+      'testing/balatro-e2e/**',
     ],
     environment: 'node',
     globals: true,

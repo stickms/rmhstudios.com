@@ -1,0 +1,39 @@
+{
+  "$comment": "MP atlas registry. STUB from WS0 so WS6 can code against the format in wave 1; WS2 owns this file and replaces it with the full registry from its importer (scripts/balatro/import-mp-assets.py). Format: docs/balatro-mp.md section 'Atlas registry'. While stub is true (or an entry's file is not in the pack), the Lua side draws the entry from the vanilla atlas named in 'placeholder' at pos (0,0).",
+  "version": 1,
+  "stub": true,
+  "atlases": {
+    "mp_j_pacifist": {
+      "file": "j_pacifist.png",
+      "px": 71,
+      "py": 95,
+      "kind": "card",
+      "frames": null,
+      "placeholder": "Joker"
+    },
+    "mp_Trap": {
+      "file": "Trap.png",
+      "px": 71,
+      "py": 95,
+      "kind": "card",
+      "frames": null,
+      "placeholder": "Tarot"
+    },
+    "mp_player_blind_chip": {
+      "file": "player_blind_row.png",
+      "px": 34,
+      "py": 34,
+      "kind": "animation",
+      "frames": 21,
+      "placeholder": "blind_chips"
+    },
+    "mp_tag_gambling_sandbox": {
+      "file": "tag_gambling_sandbox.png",
+      "px": 34,
+      "py": 34,
+      "kind": "tag",
+      "frames": null,
+      "placeholder": "tags"
+    }
+  }
+}

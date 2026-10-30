@@ -1,0 +1,910 @@
+{
+  "kinds": {
+    "hello": {
+      "valid": [
+        {
+          "contentHash": "0123456789abcdef01234567-v1",
+          "protocol": 1,
+          "info": {
+            "avatarJoker": "j_joker",
+            "blindCol": 3,
+            "lang": "en-us"
+          },
+          "rejoin": null
+        },
+        {
+          "contentHash": "0123456789abcdef01234567-v1",
+          "protocol": 1,
+          "info": {
+            "avatarJoker": "j_joker",
+            "blindCol": 3,
+            "lang": "en-us"
+          },
+          "rejoin": {
+            "runId": "r7f3a91c2"
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "blindCol 0",
+          "d": {
+            "contentHash": "0123456789abcdef01234567-v1",
+            "protocol": 1,
+            "info": {
+              "avatarJoker": "j_joker",
+              "blindCol": 0,
+              "lang": "en-us"
+            },
+            "rejoin": null
+          }
+        }
+      ]
+    },
+    "welcome": {
+      "valid": [
+        {
+          "you": "u_bob",
+          "lobby": {
+            "$ref": "lobbyState"
+          },
+          "match": null,
+          "checkpoint": null,
+          "lives": {},
+          "tail": {}
+        },
+        {
+          "you": "u_spec",
+          "lobby": {
+            "$ref": "lobbyStateStarted"
+          },
+          "match": {
+            "$ref": "startedMatch"
+          },
+          "checkpoint": {
+            "$ref": "checkpoint"
+          },
+          "lives": {
+            "u_alice": 4,
+            "u_bob": 3
+          },
+          "tail": {
+            "u_alice": [
+              {
+                "$ref": "handResult"
+              }
+            ]
+          },
+          "logs": [
+            {
+              "id": "u_alice",
+              "runId": "r7f3a91c2",
+              "events": [
+                {
+                  "$ref": "replayEvent"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "invalid": [
+        {
+          "why": "lobby missing",
+          "d": {
+            "you": "u_bob",
+            "match": null,
+            "checkpoint": null,
+            "lives": {},
+            "tail": {}
+          }
+        }
+      ]
+    },
+    "lobby": {
+      "valid": [
+        {
+          "version": 3,
+          "state": {
+            "$ref": "lobbyState"
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "negative version",
+          "d": {
+            "version": -1,
+            "state": {
+              "$ref": "lobbyState"
+            }
+          }
+        }
+      ]
+    },
+    "player_info": {
+      "valid": [
+        {
+          "avatarJoker": "j_joker",
+          "blindCol": 3,
+          "lang": "en-us"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "blindCol 26",
+          "d": {
+            "avatarJoker": "j_joker",
+            "blindCol": 26,
+            "lang": "en-us"
+          }
+        }
+      ]
+    },
+    "ready": {
+      "valid": [
+        {
+          "ready": true
+        }
+      ],
+      "invalid": [
+        {
+          "why": "not bool",
+          "d": {
+            "ready": "yes"
+          }
+        }
+      ]
+    },
+    "set_team": {
+      "valid": [
+        {
+          "team": "RUNNER"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "team C",
+          "d": {
+            "team": "C"
+          }
+        }
+      ]
+    },
+    "kick": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "leave": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "setup": {
+      "valid": [
+        {
+          "step": {
+            "$ref": "setupView"
+          }
+        },
+        {
+          "step": {
+            "$ref": "setupDraft"
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "step missing",
+          "d": {}
+        }
+      ]
+    },
+    "vote_cast": {
+      "valid": [
+        {
+          "stepId": "s1",
+          "option": "ruleset_mp_balanced"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "option missing",
+          "d": {
+            "stepId": "s1"
+          }
+        }
+      ]
+    },
+    "draft_choose": {
+      "valid": [
+        {
+          "stepId": "s3",
+          "key": "b_red"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "key missing",
+          "d": {
+            "stepId": "s3"
+          }
+        }
+      ]
+    },
+    "start_game": {
+      "valid": [
+        {
+          "$ref": "startedMatch"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "empty",
+          "d": {}
+        }
+      ]
+    },
+    "reseed": {
+      "valid": [
+        {
+          "runId": "r7f3a91c2",
+          "seed": "QWER5678"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "lowercase seed",
+          "d": {
+            "runId": "r",
+            "seed": "abc"
+          },
+          "tsOnly": true
+        }
+      ]
+    },
+    "chat": {
+      "valid": [
+        {
+          "text": "gl hf"
+        },
+        {
+          "text": "Alice voted for a draw (1/2)",
+          "system": true
+        }
+      ],
+      "invalid": [
+        {
+          "why": "too long",
+          "d": {
+            "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          }
+        },
+        {
+          "why": "system false",
+          "d": {
+            "text": "x",
+            "system": false
+          }
+        }
+      ]
+    },
+    "game": {
+      "valid": [
+        {
+          "e": {
+            "t": "ready_blind",
+            "starting_hands": 4
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "unknown event",
+          "d": {
+            "e": {
+              "t": "nope"
+            }
+          }
+        }
+      ]
+    },
+    "outcome": {
+      "valid": [
+        {
+          "o": {
+            "t": "end_pvp",
+            "loser_id": "u_bob",
+            "pvp_timer_lost": true
+          },
+          "hs": 17
+        }
+      ],
+      "invalid": [
+        {
+          "why": "hs missing",
+          "d": {
+            "o": {
+              "t": "end_pvp",
+              "loser_id": "",
+              "pvp_timer_lost": false
+            }
+          }
+        }
+      ]
+    },
+    "checkpoint": {
+      "valid": [
+        {
+          "runId": "r7f3a91c2",
+          "version": 4,
+          "blob": {
+            "$ref": "checkpoint"
+          },
+          "lobby": {
+            "$ref": "lobbyStateStarted"
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "blob missing",
+          "d": {
+            "runId": "r",
+            "version": 1,
+            "lobby": {
+              "$ref": "lobbyState"
+            }
+          }
+        }
+      ]
+    },
+    "nemesis_info": {
+      "valid": [
+        {
+          "score": "5000",
+          "hands_left": 2,
+          "skips": 0,
+          "lives": 3
+        }
+      ],
+      "invalid": [
+        {
+          "why": "lives missing",
+          "d": {
+            "score": "5000",
+            "hands_left": 2,
+            "skips": 0
+          }
+        }
+      ]
+    },
+    "location": {
+      "valid": [
+        {
+          "loc": "loc_playing-bl_small"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "loc too long",
+          "d": {
+            "loc": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          }
+        }
+      ]
+    },
+    "timer": {
+      "valid": [
+        {
+          "op": "start",
+          "time": 150,
+          "isPvP": false
+        },
+        {
+          "op": "pause",
+          "time": 42.5,
+          "isPvP": true
+        }
+      ],
+      "invalid": [
+        {
+          "why": "op",
+          "d": {
+            "op": "stop",
+            "time": 1,
+            "isPvP": false
+          }
+        }
+      ]
+    },
+    "sync": {
+      "valid": [
+        {
+          "obj": "j_mp_pizza",
+          "kind": "sync",
+          "data": {
+            "discards": 2
+          }
+        },
+        {
+          "obj": "j_mp_lets_go_gambling",
+          "kind": "phantom",
+          "data": {
+            "op": "add"
+          },
+          "to": "u_bob"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "kind",
+          "d": {
+            "obj": "j_mp_pizza",
+            "kind": "other",
+            "data": {}
+          }
+        }
+      ]
+    },
+    "opp_ctx": {
+      "valid": [
+        {
+          "ctx": {
+            "opponent_spent_in_shop": 12
+          }
+        },
+        {
+          "ctx": {
+            "opponent_selling_card": true
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "selling false",
+          "d": {
+            "ctx": {
+              "opponent_selling_card": false
+            }
+          }
+        }
+      ]
+    },
+    "trap_plant": {
+      "valid": [
+        {
+          "card": {
+            "$ref": "safeCard"
+          },
+          "owner": "u_alice",
+          "uid": "t1"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "card missing",
+          "d": {
+            "owner": "u_alice",
+            "uid": "t1"
+          }
+        }
+      ]
+    },
+    "trap_held": {
+      "valid": [
+        {
+          "cards": [
+            {
+              "uid": "t1",
+              "key": "c_mp_trap_alarm",
+              "owner": "u_alice"
+            }
+          ],
+          "fired": []
+        }
+      ],
+      "invalid": [
+        {
+          "why": "fired missing",
+          "d": {
+            "cards": []
+          }
+        }
+      ]
+    },
+    "trap_fired": {
+      "valid": [
+        {
+          "owner": "u_alice",
+          "key": "c_mp_trap_alarm",
+          "uid": "t1",
+          "payload": {
+            "dollars": 3
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "payload missing",
+          "d": {
+            "owner": "u_alice",
+            "key": "c_mp_trap_alarm",
+            "uid": "t1"
+          }
+        }
+      ]
+    },
+    "player_result": {
+      "valid": [
+        {
+          "$ref": "playerResult"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "jokers missing",
+          "d": {
+            "deck_back": "b_red",
+            "highest_pvp_score": "0",
+            "interim": true
+          }
+        }
+      ]
+    },
+    "deck_req": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "deck_res": {
+      "valid": [
+        {
+          "cards": "H-A-m_glass-e_foil-Red;S-10---"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "too long",
+          "d": {
+            "cards": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          }
+        }
+      ]
+    },
+    "stats_req": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "stats_res": {
+      "valid": [
+        {
+          "reroll_count": 5,
+          "reroll_cost_total": 27,
+          "vouchers": ["v_overstock_norm"]
+        }
+      ],
+      "invalid": [
+        {
+          "why": "negative rerolls",
+          "d": {
+            "reroll_count": -1,
+            "reroll_cost_total": 0,
+            "vouchers": []
+          }
+        }
+      ]
+    },
+    "log": {
+      "valid": [
+        {
+          "runId": "r7f3a91c2",
+          "batch": [
+            {
+              "$ref": "replayEvent"
+            }
+          ]
+        }
+      ],
+      "invalid": [
+        {
+          "why": "batch over 50",
+          "d": {
+            "runId": "r",
+            "batch": [
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              },
+              {
+                "$ref": "replayEvent"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "presence": {
+      "valid": [
+        {
+          "id": "u_bob",
+          "status": "away",
+          "graceMsLeft": 115000
+        },
+        {
+          "id": "u_bob",
+          "status": "caught_up"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "status",
+          "d": {
+            "id": "u_bob",
+            "status": "gone"
+          }
+        }
+      ]
+    },
+    "host_changed": {
+      "valid": [
+        {
+          "hostId": "u_bob",
+          "from": "migration"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "from",
+          "d": {
+            "hostId": "u_bob",
+            "from": "coup"
+          }
+        }
+      ]
+    },
+    "bye": {
+      "valid": [
+        {
+          "reason": "leave"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "reason missing",
+          "d": {}
+        }
+      ]
+    }
+  },
+  "envelopes": {
+    "valid": [
+      {
+        "v": 1,
+        "k": "ready",
+        "s": 0,
+        "d": {
+          "ready": true
+        }
+      },
+      {
+        "v": 1,
+        "k": "chat",
+        "s": 9,
+        "f": "u_bob",
+        "to": "*",
+        "d": {
+          "text": "hi"
+        }
+      },
+      {
+        "v": 1,
+        "k": "timer",
+        "s": 3,
+        "to": "u_alice",
+        "d": {
+          "op": "start",
+          "time": 150,
+          "isPvP": false
+        }
+      }
+    ],
+    "invalid": [
+      {
+        "why": "v 2",
+        "d": {
+          "v": 2,
+          "k": "ready",
+          "s": 0,
+          "d": {
+            "ready": true
+          }
+        }
+      },
+      {
+        "why": "unknown kind",
+        "d": {
+          "v": 1,
+          "k": "teleport",
+          "s": 0,
+          "d": {}
+        }
+      },
+      {
+        "why": "negative seq",
+        "d": {
+          "v": 1,
+          "k": "ready",
+          "s": -1,
+          "d": {
+            "ready": true
+          }
+        }
+      },
+      {
+        "why": "bad d",
+        "d": {
+          "v": 1,
+          "k": "ready",
+          "s": 0,
+          "d": {
+            "ready": 1
+          }
+        }
+      },
+      {
+        "why": "d not object",
+        "d": {
+          "v": 1,
+          "k": "leave",
+          "s": 0,
+          "d": "x"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,1215 @@
+{
+  "objects": {
+    "lobbyOptions": {
+      "ruleset": "ruleset_mp_balanced",
+      "gamemode": "gamemode_mp_attrition",
+      "trapCards": false,
+      "manhuntHunterLives": 7,
+      "startingLives": 4,
+      "pvpStartRound": 2,
+      "timer": true,
+      "timerBaseSeconds": 150,
+      "timerIncrementSeconds": 60,
+      "timerForgiveness": 0,
+      "pvpCountdownSeconds": 3,
+      "deathOnRoundLoss": true,
+      "goldOnLifeLoss": true,
+      "noGoldOnRoundLoss": false,
+      "customSeed": "random",
+      "theOrder": true,
+      "hideScoreUntilPlayed": false,
+      "normalBosses": false,
+      "differentSeeds": false,
+      "differentDecks": false,
+      "randomLoadout": false,
+      "multiplayerJokers": true,
+      "modifierLayers": [],
+      "seatGraceMs": 120000
+    },
+    "resolved": {
+      "key": "ruleset_mp_balanced",
+      "layers": ["standard", "pvp_timer"],
+      "multiplayerContent": true,
+      "banned": ["j_mr_bones", "v_hieroglyph"],
+      "bannedSilent": [],
+      "included": ["j_mp_pacifist"],
+      "reworked": ["j_hanging_chad"],
+      "spectralBannedEnhancements": [],
+      "stickers": ["mp_sticker_balanced"],
+      "gameModifiers": {
+        "no_interest": false,
+        "discard_cost": 1
+      },
+      "startingParams": {},
+      "setupHooks": ["standard"],
+      "flags": {
+        "theOrder": true,
+        "enemyLocationDisabled": false,
+        "timerDisplayThreshold": null,
+        "comeback": "default"
+      },
+      "timer": {
+        "enabled": true,
+        "base": 150,
+        "increment": 60,
+        "forgiveness": 0,
+        "pvpBase": 60,
+        "pvpHandIncrement": 10,
+        "mode": "default",
+        "pressurePlusHand": 0,
+        "countdown": 3,
+        "mult": 1
+      }
+    },
+    "startedMatch": {
+      "runId": "r7f3a91c2",
+      "seed": "ABCD1234",
+      "stake": 1,
+      "mpStake": null,
+      "deck": "b_red",
+      "challenge": null,
+      "queueMode": "pvp_nemesis",
+      "shape": {
+        "nemesisPairing": true,
+        "manhunt": false,
+        "teamBased": false
+      },
+      "ruleset": "ruleset_mp_balanced",
+      "layers": ["standard", "pvp_timer"],
+      "options": {
+        "$ref": "lobbyOptions"
+      },
+      "resolved": {
+        "$ref": "resolved"
+      },
+      "roster": [
+        {
+          "id": "u_alice",
+          "name": "Alice",
+          "blindCol": 1,
+          "avatarJoker": "j_joker"
+        },
+        {
+          "id": "u_bob",
+          "name": "Bob",
+          "blindCol": 5,
+          "avatarJoker": "j_greedy_joker"
+        }
+      ],
+      "startedAt": 1761800000000,
+      "hostId": "u_alice",
+      "contentHash": "0123456789abcdef01234567-v1"
+    },
+    "setupView": {
+      "stepId": "s1",
+      "kind": "ruleset_vote",
+      "phase": "voting",
+      "msLeft": 15000,
+      "options": [
+        {
+          "id": "ruleset_mp_vanilla"
+        },
+        {
+          "id": "ruleset_mp_balanced"
+        }
+      ],
+      "voted": 1,
+      "voters": 2,
+      "result": null,
+      "draft": null
+    },
+    "setupDraft": {
+      "stepId": "s3",
+      "kind": "draft",
+      "phase": "voting",
+      "msLeft": 30000,
+      "options": [],
+      "voted": 0,
+      "voters": 2,
+      "result": null,
+      "draft": {
+        "tiles": [
+          {
+            "deck": "b_red",
+            "stake": 3,
+            "state": "open"
+          },
+          {
+            "deck": "b_blue",
+            "stake": 1,
+            "state": "banned"
+          },
+          {
+            "deck": "b_mp_violet",
+            "stake": 8,
+            "state": "open"
+          }
+        ],
+        "actor": "u_bob",
+        "action": "ban",
+        "remaining": 3
+      }
+    },
+    "lobbyState": {
+      "code": "ABC234",
+      "kind": "private",
+      "queueMode": "pvp_nemesis",
+      "hostId": "u_alice",
+      "successorId": "u_bob",
+      "version": 3,
+      "open": true,
+      "players": [
+        {
+          "id": "u_alice",
+          "name": "Alice",
+          "avatarUrl": null,
+          "avatarJoker": "j_joker",
+          "blindCol": 1,
+          "joinedAt": 1761799900000,
+          "ready": false,
+          "connected": true,
+          "away": false,
+          "catchingUp": false,
+          "role": "player",
+          "conn": "direct"
+        },
+        {
+          "id": "u_bob",
+          "name": "Bob",
+          "avatarUrl": null,
+          "avatarJoker": "j_joker",
+          "blindCol": 5,
+          "joinedAt": 1761799950000,
+          "ready": true,
+          "connected": true,
+          "away": false,
+          "catchingUp": false,
+          "role": "player",
+          "conn": "direct"
+        }
+      ],
+      "options": {
+        "$ref": "lobbyOptions"
+      },
+      "deck": "b_red",
+      "stake": 1,
+      "mpStake": null,
+      "challenge": null,
+      "started": null,
+      "setup": null,
+      "kicked": [],
+      "forfeited": {}
+    },
+    "lobbyStateStarted": {
+      "code": "ABC234",
+      "kind": "private",
+      "queueMode": "pvp_nemesis",
+      "hostId": "u_alice",
+      "successorId": "u_bob",
+      "version": 7,
+      "open": false,
+      "players": [
+        {
+          "id": "u_alice",
+          "name": "Alice",
+          "avatarUrl": null,
+          "avatarJoker": "j_joker",
+          "blindCol": 1,
+          "joinedAt": 1761799900000,
+          "ready": false,
+          "connected": true,
+          "away": false,
+          "catchingUp": false,
+          "role": "player",
+          "conn": "direct"
+        },
+        {
+          "id": "u_bob",
+          "name": "Bob",
+          "avatarUrl": null,
+          "avatarJoker": "j_joker",
+          "blindCol": 5,
+          "joinedAt": 1761799950000,
+          "ready": true,
+          "connected": true,
+          "away": false,
+          "catchingUp": false,
+          "role": "player",
+          "conn": "direct"
+        }
+      ],
+      "options": {
+        "$ref": "lobbyOptions"
+      },
+      "deck": "b_red",
+      "stake": 1,
+      "mpStake": null,
+      "challenge": null,
+      "started": {
+        "$ref": "startedMatch"
+      },
+      "setup": {
+        "$ref": "setupView"
+      },
+      "kicked": ["u_eve"],
+      "forfeited": {
+        "u_carl": "r7f3a91c2"
+      }
+    },
+    "checkpoint": {
+      "v": 1,
+      "runId": "r7f3a91c2",
+      "seq": 4,
+      "players": {
+        "u_alice": {
+          "score": "1234.5",
+          "highest": "1234.5",
+          "hands": 3,
+          "lives": 4,
+          "skips": 0,
+          "ante": 2,
+          "furthest": 6,
+          "played": 1,
+          "ready": 1,
+          "first": 0,
+          "blocker": 0,
+          "forfeited": 0,
+          "startingHands": 4
+        },
+        "u_bob": {
+          "score": "1e+308",
+          "highest": "1e+308",
+          "hands": 3,
+          "lives": 3,
+          "skips": 0,
+          "ante": 2,
+          "furthest": 6,
+          "played": 1,
+          "ready": 0,
+          "first": 0,
+          "blocker": 0,
+          "forfeited": 0,
+          "startingHands": 4
+        }
+      },
+      "pairing": {
+        "u_alice": "u_bob",
+        "u_bob": "u_alice"
+      },
+      "pairingAnte": 2,
+      "usedPairs": ["u_alice|u_bob"],
+      "lastBye": null,
+      "teamLives": {},
+      "teamCardTargets": {},
+      "eliminated": [],
+      "pending": [
+        {
+          "playerId": "u_bob",
+          "blindKey": "3:Big",
+          "outBefore": []
+        }
+      ],
+      "teamPending": null,
+      "blindResults": {
+        "1:Small": {
+          "u_alice": "B",
+          "u_bob": "B"
+        },
+        "1:Big": {
+          "u_alice": "B",
+          "u_bob": "F"
+        }
+      },
+      "votes": {
+        "seed": [],
+        "draw": ["u_alice"]
+      },
+      "lastOutcome": {
+        "t": "player_lives",
+        "player_id": "u_bob",
+        "lives": 3,
+        "lost": 1
+      },
+      "winSentAt": [],
+      "rngState": 12345,
+      "startedAt": 1761800000000
+    },
+    "handResult": {
+      "ante": 2,
+      "score": "inf",
+      "hands_left": 2,
+      "skips": 1,
+      "at": 120500
+    },
+    "playerResult": {
+      "jokers": [
+        {
+          "key": "j_mp_pacifist",
+          "edition": null,
+          "eternal": false,
+          "perishable": false
+        }
+      ],
+      "deck_back": "b_red",
+      "highest_pvp_score": "98765",
+      "interim": false
+    },
+    "safeCard": {
+      "key": "c_mp_trap_alarm",
+      "edition": null
+    },
+    "replayEvent": {
+      "i": 0,
+      "t": 0,
+      "op": "select_blind",
+      "d": {
+        "blind": "Small"
+      }
+    }
+  },
+  "gameEvent": {
+    "valid": [
+      {
+        "t": "set_ante",
+        "ante": 0
+      },
+      {
+        "t": "new_round"
+      },
+      {
+        "t": "ready_blind",
+        "starting_hands": 4
+      },
+      {
+        "t": "unready_blind"
+      },
+      {
+        "t": "play_hand",
+        "score": "12345.678",
+        "hands_left": 3,
+        "skips": 0,
+        "lives": 4
+      },
+      {
+        "t": "play_hand",
+        "score": "-inf",
+        "hands_left": 0,
+        "skips": 2
+      },
+      {
+        "t": "skip",
+        "skips": 1,
+        "score": "0",
+        "hands_left": 4
+      },
+      {
+        "t": "blind_result",
+        "ante": 1,
+        "blind": "Small",
+        "beaten": true
+      },
+      {
+        "t": "fail_round"
+      },
+      {
+        "t": "fail_timer"
+      },
+      {
+        "t": "fail_pvp_timer"
+      },
+      {
+        "t": "furthest_blind",
+        "value": 6
+      },
+      {
+        "t": "redeem_ante_voucher"
+      },
+      {
+        "t": "forfeit"
+      },
+      {
+        "t": "seed_vote"
+      },
+      {
+        "t": "draw_vote"
+      },
+      {
+        "t": "result_request"
+      }
+    ],
+    "invalid": [
+      {
+        "why": "unknown variant",
+        "d": {
+          "t": "teleport"
+        }
+      },
+      {
+        "why": "missing score",
+        "d": {
+          "t": "play_hand",
+          "hands_left": 1,
+          "skips": 0
+        }
+      },
+      {
+        "why": "non-integer ante",
+        "d": {
+          "t": "set_ante",
+          "ante": 1.5
+        }
+      },
+      {
+        "why": "blind slot",
+        "d": {
+          "t": "blind_result",
+          "ante": 1,
+          "blind": "Huge",
+          "beaten": true
+        }
+      },
+      {
+        "why": "score is not %.17g",
+        "d": {
+          "t": "play_hand",
+          "score": "lots",
+          "hands_left": 1,
+          "skips": 0
+        },
+        "tsOnly": true
+      }
+    ]
+  },
+  "refMsg": {
+    "valid": [
+      {
+        "t": "player_lives",
+        "player_id": "*all*",
+        "lives": 4
+      },
+      {
+        "t": "player_lives",
+        "player_id": "u_bob",
+        "lives": 2,
+        "lost": 1
+      },
+      {
+        "t": "team_lives",
+        "team_id": "A",
+        "lives": 3
+      },
+      {
+        "t": "team_roster",
+        "roster": {
+          "u_alice": "A",
+          "u_bob": "B"
+        }
+      },
+      {
+        "t": "nemesis_pairing",
+        "pairing": {
+          "u_alice": "u_bob",
+          "u_bob": "u_alice",
+          "u_carl": ""
+        },
+        "ante": 2
+      },
+      {
+        "t": "team_card_target",
+        "pairing": {
+          "u_alice": "u_bob"
+        }
+      },
+      {
+        "t": "royale_target",
+        "targets": {
+          "u_alice": "u_bob",
+          "u_bob": ""
+        }
+      },
+      {
+        "t": "manhunt_target",
+        "target_id": ""
+      },
+      {
+        "t": "team_score_board",
+        "team_scores": {
+          "A": "100",
+          "B": "2.5e+20"
+        }
+      },
+      {
+        "t": "start_blind",
+        "first_player": "u_alice",
+        "starting_hands": {
+          "u_alice": 4,
+          "u_bob": 5
+        }
+      },
+      {
+        "t": "timer_hand_lost",
+        "player_id": "u_bob"
+      },
+      {
+        "t": "end_pvp",
+        "loser_id": "",
+        "pvp_timer_lost": false
+      },
+      {
+        "t": "death_pending",
+        "player_id": "u_bob",
+        "opponent_id": "u_alice",
+        "blind_key": "3:Big"
+      },
+      {
+        "t": "death_pending",
+        "team_id": "RUNNER",
+        "blind_key": "4:Small"
+      },
+      {
+        "t": "eliminated",
+        "player_id": "u_carl"
+      },
+      {
+        "t": "win",
+        "winner_id": "u_alice"
+      },
+      {
+        "t": "win",
+        "draw": true
+      },
+      {
+        "t": "win",
+        "winner_team_id": "HUNTER",
+        "places": {
+          "u_alice": 1,
+          "u_bob": 2
+        }
+      },
+      {
+        "t": "player_won",
+        "player_id": "u_alice"
+      },
+      {
+        "t": "reseed",
+        "seed": "ZZ99XX11"
+      },
+      {
+        "t": "speedrun",
+        "player_id": "u_bob"
+      },
+      {
+        "t": "vote_progress",
+        "kind": "draw",
+        "k": 1,
+        "n": 2
+      }
+    ],
+    "invalid": [
+      {
+        "why": "unknown variant",
+        "d": {
+          "t": "explode"
+        }
+      },
+      {
+        "why": "negative lives",
+        "d": {
+          "t": "player_lives",
+          "player_id": "u_a",
+          "lives": -1
+        }
+      },
+      {
+        "why": "team_id not A/B",
+        "d": {
+          "t": "team_lives",
+          "team_id": "HUNTER",
+          "lives": 1
+        }
+      },
+      {
+        "why": "lost must be 1",
+        "d": {
+          "t": "player_lives",
+          "player_id": "u_a",
+          "lives": 1,
+          "lost": 2
+        }
+      }
+    ]
+  },
+  "refInput": {
+    "valid": [
+      {
+        "t": "reset",
+        "at": 0,
+        "match": {
+          "$ref": "startedMatch"
+        },
+        "rngSeed": 42
+      },
+      {
+        "t": "event",
+        "at": 10,
+        "from": "u_bob",
+        "e": {
+          "t": "new_round"
+        }
+      },
+      {
+        "t": "presence",
+        "at": 20,
+        "id": "u_bob",
+        "status": "grace_expired"
+      },
+      {
+        "t": "tick",
+        "at": 3000
+      },
+      {
+        "t": "restore",
+        "at": 4000,
+        "checkpoint": {
+          "$ref": "checkpoint"
+        },
+        "present": ["u_alice"]
+      }
+    ],
+    "invalid": [
+      {
+        "why": "unknown status",
+        "d": {
+          "t": "presence",
+          "at": 1,
+          "id": "u",
+          "status": "asleep"
+        }
+      },
+      {
+        "why": "missing at",
+        "d": {
+          "t": "tick"
+        }
+      }
+    ]
+  },
+  "startedMatch": {
+    "valid": [
+      {
+        "$ref": "startedMatch"
+      }
+    ],
+    "invalid": [
+      {
+        "why": "roster missing",
+        "d": {
+          "runId": "r"
+        }
+      }
+    ]
+  },
+  "lobbyState": {
+    "valid": [
+      {
+        "$ref": "lobbyState"
+      },
+      {
+        "$ref": "lobbyStateStarted"
+      }
+    ],
+    "invalid": [
+      {
+        "why": "blindCol 26",
+        "d": {
+          "code": "ABC234",
+          "kind": "private",
+          "queueMode": "pvp_nemesis",
+          "hostId": "u_alice",
+          "successorId": "u_bob",
+          "version": 3,
+          "open": true,
+          "players": [
+            {
+              "id": "u",
+              "name": "U",
+              "avatarUrl": null,
+              "avatarJoker": "j_joker",
+              "blindCol": 26,
+              "joinedAt": 1,
+              "ready": false,
+              "connected": true,
+              "away": false,
+              "catchingUp": false,
+              "role": "player",
+              "conn": "direct"
+            }
+          ],
+          "options": {
+            "$ref": "lobbyOptions"
+          },
+          "deck": "b_red",
+          "stake": 1,
+          "mpStake": null,
+          "challenge": null,
+          "started": null,
+          "setup": null,
+          "kicked": [],
+          "forfeited": {}
+        }
+      }
+    ]
+  },
+  "lobbyOptions": {
+    "valid": [
+      {
+        "$ref": "lobbyOptions"
+      },
+      {
+        "ruleset": "ruleset_mp_balanced",
+        "gamemode": "gamemode_mp_attrition",
+        "trapCards": false,
+        "manhuntHunterLives": 16,
+        "startingLives": 4,
+        "pvpStartRound": 2,
+        "timer": true,
+        "timerBaseSeconds": 150,
+        "timerIncrementSeconds": 60,
+        "timerForgiveness": 0,
+        "pvpCountdownSeconds": 3,
+        "deathOnRoundLoss": true,
+        "goldOnLifeLoss": true,
+        "noGoldOnRoundLoss": false,
+        "customSeed": "SEED42",
+        "theOrder": true,
+        "hideScoreUntilPlayed": false,
+        "normalBosses": false,
+        "differentSeeds": false,
+        "differentDecks": false,
+        "randomLoadout": false,
+        "multiplayerJokers": true,
+        "modifierLayers": ["glass_cannon", "no_red_seals"],
+        "seatGraceMs": 120000
+      }
+    ],
+    "invalid": [
+      {
+        "why": "hunter lives 6",
+        "d": {
+          "ruleset": "ruleset_mp_balanced",
+          "gamemode": "gamemode_mp_attrition",
+          "trapCards": false,
+          "manhuntHunterLives": 6,
+          "startingLives": 4,
+          "pvpStartRound": 2,
+          "timer": true,
+          "timerBaseSeconds": 150,
+          "timerIncrementSeconds": 60,
+          "timerForgiveness": 0,
+          "pvpCountdownSeconds": 3,
+          "deathOnRoundLoss": true,
+          "goldOnLifeLoss": true,
+          "noGoldOnRoundLoss": false,
+          "customSeed": "random",
+          "theOrder": true,
+          "hideScoreUntilPlayed": false,
+          "normalBosses": false,
+          "differentSeeds": false,
+          "differentDecks": false,
+          "randomLoadout": false,
+          "multiplayerJokers": true,
+          "modifierLayers": [],
+          "seatGraceMs": 120000
+        }
+      },
+      {
+        "why": "gamemode",
+        "d": {
+          "ruleset": "ruleset_mp_balanced",
+          "gamemode": "gamemode_mp_survival",
+          "trapCards": false,
+          "manhuntHunterLives": 7,
+          "startingLives": 4,
+          "pvpStartRound": 2,
+          "timer": true,
+          "timerBaseSeconds": 150,
+          "timerIncrementSeconds": 60,
+          "timerForgiveness": 0,
+          "pvpCountdownSeconds": 3,
+          "deathOnRoundLoss": true,
+          "goldOnLifeLoss": true,
+          "noGoldOnRoundLoss": false,
+          "customSeed": "random",
+          "theOrder": true,
+          "hideScoreUntilPlayed": false,
+          "normalBosses": false,
+          "differentSeeds": false,
+          "differentDecks": false,
+          "randomLoadout": false,
+          "multiplayerJokers": true,
+          "modifierLayers": [],
+          "seatGraceMs": 120000
+        }
+      },
+      {
+        "why": "lowercase custom seed",
+        "d": {
+          "ruleset": "ruleset_mp_balanced",
+          "gamemode": "gamemode_mp_attrition",
+          "trapCards": false,
+          "manhuntHunterLives": 7,
+          "startingLives": 4,
+          "pvpStartRound": 2,
+          "timer": true,
+          "timerBaseSeconds": 150,
+          "timerIncrementSeconds": 60,
+          "timerForgiveness": 0,
+          "pvpCountdownSeconds": 3,
+          "deathOnRoundLoss": true,
+          "goldOnLifeLoss": true,
+          "noGoldOnRoundLoss": false,
+          "customSeed": "abc",
+          "theOrder": true,
+          "hideScoreUntilPlayed": false,
+          "normalBosses": false,
+          "differentSeeds": false,
+          "differentDecks": false,
+          "randomLoadout": false,
+          "multiplayerJokers": true,
+          "modifierLayers": [],
+          "seatGraceMs": 120000
+        },
+        "tsOnly": true
+      }
+    ]
+  },
+  "resolvedRuleset": {
+    "valid": [
+      {
+        "$ref": "resolved"
+      }
+    ],
+    "invalid": [
+      {
+        "why": "timer mode",
+        "d": {
+          "key": "ruleset_mp_balanced",
+          "layers": ["standard", "pvp_timer"],
+          "multiplayerContent": true,
+          "banned": ["j_mr_bones", "v_hieroglyph"],
+          "bannedSilent": [],
+          "included": ["j_mp_pacifist"],
+          "reworked": ["j_hanging_chad"],
+          "spectralBannedEnhancements": [],
+          "stickers": ["mp_sticker_balanced"],
+          "gameModifiers": {
+            "no_interest": false,
+            "discard_cost": 1
+          },
+          "startingParams": {},
+          "setupHooks": ["standard"],
+          "flags": {
+            "theOrder": true,
+            "enemyLocationDisabled": false,
+            "timerDisplayThreshold": null,
+            "comeback": "default"
+          },
+          "timer": {
+            "enabled": true,
+            "base": 150,
+            "increment": 60,
+            "forgiveness": 0,
+            "pvpBase": 60,
+            "pvpHandIncrement": 10,
+            "mode": "turbo",
+            "pressurePlusHand": 0,
+            "countdown": 3,
+            "mult": 1
+          }
+        }
+      }
+    ]
+  },
+  "checkpoint": {
+    "valid": [
+      {
+        "$ref": "checkpoint"
+      }
+    ],
+    "invalid": [
+      {
+        "why": "v must be 1",
+        "d": {
+          "v": 2,
+          "runId": "r7f3a91c2",
+          "seq": 4,
+          "players": {
+            "u_alice": {
+              "score": "1234.5",
+              "highest": "1234.5",
+              "hands": 3,
+              "lives": 4,
+              "skips": 0,
+              "ante": 2,
+              "furthest": 6,
+              "played": 1,
+              "ready": 1,
+              "first": 0,
+              "blocker": 0,
+              "forfeited": 0,
+              "startingHands": 4
+            },
+            "u_bob": {
+              "score": "1e+308",
+              "highest": "1e+308",
+              "hands": 3,
+              "lives": 3,
+              "skips": 0,
+              "ante": 2,
+              "furthest": 6,
+              "played": 1,
+              "ready": 0,
+              "first": 0,
+              "blocker": 0,
+              "forfeited": 0,
+              "startingHands": 4
+            }
+          },
+          "pairing": {
+            "u_alice": "u_bob",
+            "u_bob": "u_alice"
+          },
+          "pairingAnte": 2,
+          "usedPairs": ["u_alice|u_bob"],
+          "lastBye": null,
+          "teamLives": {},
+          "teamCardTargets": {},
+          "eliminated": [],
+          "pending": [
+            {
+              "playerId": "u_bob",
+              "blindKey": "3:Big",
+              "outBefore": []
+            }
+          ],
+          "teamPending": null,
+          "blindResults": {
+            "1:Small": {
+              "u_alice": "B",
+              "u_bob": "B"
+            },
+            "1:Big": {
+              "u_alice": "B",
+              "u_bob": "F"
+            }
+          },
+          "votes": {
+            "seed": [],
+            "draw": ["u_alice"]
+          },
+          "lastOutcome": {
+            "t": "player_lives",
+            "player_id": "u_bob",
+            "lives": 3,
+            "lost": 1
+          },
+          "winSentAt": [],
+          "rngState": 12345,
+          "startedAt": 1761800000000
+        }
+      },
+      {
+        "why": "played 2",
+        "d": {
+          "v": 1,
+          "runId": "r7f3a91c2",
+          "seq": 4,
+          "players": {
+            "u_a": {
+              "score": "1",
+              "highest": "1",
+              "hands": 3,
+              "lives": 1,
+              "skips": 0,
+              "ante": 2,
+              "furthest": 6,
+              "played": 2,
+              "ready": 0,
+              "first": 0,
+              "blocker": 0,
+              "forfeited": 0,
+              "startingHands": 4
+            }
+          },
+          "pairing": {
+            "u_alice": "u_bob",
+            "u_bob": "u_alice"
+          },
+          "pairingAnte": 2,
+          "usedPairs": ["u_alice|u_bob"],
+          "lastBye": null,
+          "teamLives": {},
+          "teamCardTargets": {},
+          "eliminated": [],
+          "pending": [
+            {
+              "playerId": "u_bob",
+              "blindKey": "3:Big",
+              "outBefore": []
+            }
+          ],
+          "teamPending": null,
+          "blindResults": {
+            "1:Small": {
+              "u_alice": "B",
+              "u_bob": "B"
+            },
+            "1:Big": {
+              "u_alice": "B",
+              "u_bob": "F"
+            }
+          },
+          "votes": {
+            "seed": [],
+            "draw": ["u_alice"]
+          },
+          "lastOutcome": {
+            "t": "player_lives",
+            "player_id": "u_bob",
+            "lives": 3,
+            "lost": 1
+          },
+          "winSentAt": [],
+          "rngState": 12345,
+          "startedAt": 1761800000000
+        }
+      }
+    ]
+  },
+  "setupView": {
+    "valid": [
+      {
+        "$ref": "setupView"
+      },
+      {
+        "$ref": "setupDraft"
+      }
+    ],
+    "invalid": [
+      {
+        "why": "phase",
+        "d": {
+          "stepId": "s1",
+          "kind": "ruleset_vote",
+          "phase": "later",
+          "msLeft": 15000,
+          "options": [
+            {
+              "id": "ruleset_mp_vanilla"
+            },
+            {
+              "id": "ruleset_mp_balanced"
+            }
+          ],
+          "voted": 1,
+          "voters": 2,
+          "result": null,
+          "draft": null
+        }
+      }
+    ]
+  },
+  "safeCard": {
+    "valid": [
+      {
+        "$ref": "safeCard"
+      },
+      {
+        "key": "c_base",
+        "front": {
+          "suit": "Hearts",
+          "rank": "Ace"
+        },
+        "seal": "Red",
+        "enhancement": "m_glass",
+        "edition": "foil",
+        "extra": {
+          "bonus": 30
+        }
+      }
+    ],
+    "invalid": [
+      {
+        "why": "edition",
+        "d": {
+          "key": "j_joker",
+          "edition": "golden"
+        }
+      },
+      {
+        "why": "rank",
+        "d": {
+          "key": "c_base",
+          "front": {
+            "suit": "Hearts",
+            "rank": "1"
+          }
+        }
+      }
+    ]
+  },
+  "replayEvent": {
+    "valid": [
+      {
+        "$ref": "replayEvent"
+      }
+    ],
+    "invalid": [
+      {
+        "why": "op",
+        "d": {
+          "i": 0,
+          "t": 0,
+          "op": "cheat",
+          "d": {}
+        }
+      }
+    ]
+  },
+  "handResult": {
+    "valid": [
+      {
+        "$ref": "handResult"
+      }
+    ],
+    "invalid": [
+      {
+        "why": "negative hands",
+        "d": {
+          "ante": 2,
+          "score": "inf",
+          "hands_left": -1,
+          "skips": 1,
+          "at": 120500
+        }
+      }
+    ]
+  },
+  "playerResult": {
+    "valid": [
+      {
+        "$ref": "playerResult"
+      }
+    ],
+    "invalid": [
+      {
+        "why": "interim missing",
+        "d": {
+          "jokers": [],
+          "deck_back": "b_red",
+          "highest_pvp_score": "0"
+        }
+      }
+    ]
+  }
+}

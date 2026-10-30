@@ -91,12 +91,14 @@ function collectedBy(config: string): string[] {
 
 describe('test discovery', () => {
   const onDisk = walk(ROOT).sort();
-  // Four subprocesses, once for the file — each `vitest list` costs ~400ms.
+  // Six subprocesses, once for the file — each `vitest list` costs ~400ms.
   const main = collectedBy('vitest.config.ts');
   const epic = collectedBy('vitest.epic.config.ts');
   const integration = collectedBy('vitest.integration.config.ts');
   const tf2 = collectedBy('vitest.tf2.config.ts');
-  const collected = new Set([...main, ...epic, ...integration, ...tf2]);
+  const balatro = collectedBy('vitest.balatro.config.ts');
+  const balatroE2e = collectedBy('vitest.balatro-e2e.config.ts');
+  const collected = new Set([...main, ...epic, ...integration, ...tf2, ...balatro, ...balatroE2e]);
   const excused = new Set(UNCOLLECTED_BY_DESIGN.map((entry) => entry.file));
 
   it('finds test files at all — guards the walker itself', () => {
@@ -136,5 +138,27 @@ describe('test discovery', () => {
     expect(epic.length).toBeGreaterThan(0);
     expect(epic.every((file) => file.startsWith('scripts/epic/'))).toBe(true);
     expect(main.some((file) => file.startsWith('scripts/epic/'))).toBe(false);
+  });
+
+  it('runs multiplayer Balatro from its own configs, and never twice', () => {
+    // vitest.balatro.config.ts includes exactly the globs vitest.config.ts
+    // excludes for it, and the e2e suite (browsers, a hub, Postgres) is separate
+    // again. A file collected by two suites runs twice and, worse, means the
+    // main suite's mission-critical scope has quietly grown.
+    const balatroRoots = [
+      'lib/balatro/mp/',
+      'lib/shared/p2p/',
+      'server/socket-server/balatro/',
+      'scripts/balatro/',
+    ];
+    expect(balatro).toContain('lib/balatro/mp/__tests__/lua-specs.test.ts');
+    expect(balatro.every((file) => balatroRoots.some((root) => file.startsWith(root)))).toBe(true);
+    expect(main.filter((file) => balatroRoots.some((root) => file.startsWith(root)))).toEqual([]);
+    expect(balatroE2e.every((file) => file.startsWith('testing/balatro-e2e/'))).toBe(true);
+    expect(main.some((file) => file.startsWith('testing/balatro-e2e/'))).toBe(false);
+    const both = balatro.filter(
+      (file) => main.includes(file) || tf2.includes(file) || balatroE2e.includes(file),
+    );
+    expect(both).toEqual([]);
   });
 });
