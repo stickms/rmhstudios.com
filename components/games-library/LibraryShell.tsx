@@ -4,6 +4,7 @@ import { useLocation } from '@tanstack/react-router';
 import type { LibraryKind } from '@/lib/games/library';
 import { cn } from '@/lib/utils';
 import { LibraryRail } from './LibraryRail';
+import { PlaytimeNotice } from './PlaytimeNotice';
 
 /**
  * The two-pane library: the rail on the left, the routed page on the right. On
@@ -35,7 +36,10 @@ export function LibraryShell({
         onIndex={onIndex}
         className={cn(!onIndex && 'hidden md:flex')}
       />
-      <div className="min-w-0">{children}</div>
+      <div className="min-w-0">
+        <PlaytimeNotice />
+        {children}
+      </div>
     </div>
   );
 }

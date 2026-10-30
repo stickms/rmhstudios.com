@@ -3,6 +3,7 @@ import {
   PLAYTIME_PRIVACY_VALUES,
   canViewPlaytime,
   isPlaytimePrivacy,
+  shouldShowNotice,
   type PlaytimePrivacy,
 } from '@/lib/playtime/privacy';
 
@@ -45,5 +46,23 @@ describe('isPlaytimePrivacy', () => {
     expect(isPlaytimePrivacy('public')).toBe(true);
     expect(isPlaytimePrivacy('following')).toBe(false);
     expect(isPlaytimePrivacy(null)).toBe(false);
+  });
+});
+
+describe('shouldShowNotice', () => {
+  const base = { signedIn: true, noticeDismissed: false, privacy: 'public' as PlaytimePrivacy };
+
+  it('shows once to a signed-in user whose playtime is public and who has not dismissed it', () => {
+    expect(shouldShowNotice(base)).toBe(true);
+  });
+
+  it('never shows to a signed-out visitor or after dismissal', () => {
+    expect(shouldShowNotice({ ...base, signedIn: false })).toBe(false);
+    expect(shouldShowNotice({ ...base, noticeDismissed: true })).toBe(false);
+  });
+
+  it('does not tell someone their playtime is visible when they already narrowed it', () => {
+    expect(shouldShowNotice({ ...base, privacy: 'followers' })).toBe(false);
+    expect(shouldShowNotice({ ...base, privacy: 'private' })).toBe(false);
   });
 });

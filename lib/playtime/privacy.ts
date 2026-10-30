@@ -25,3 +25,17 @@ export function canViewPlaytime(
   if (setting === 'followers') return ctx.viewerFollowsOwner;
   return false;
 }
+
+/**
+ * Whether to show the one-time "your playtime is visible" notice. Playtime is
+ * public by default, so an existing user becomes visible without having done
+ * anything; this tells them once, with a way to change it. Someone who has
+ * already narrowed the setting does not need telling.
+ */
+export function shouldShowNotice(s: {
+  signedIn: boolean;
+  noticeDismissed: boolean;
+  privacy: PlaytimePrivacy;
+}): boolean {
+  return s.signedIn && !s.noticeDismissed && s.privacy === 'public';
+}
