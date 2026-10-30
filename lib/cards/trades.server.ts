@@ -15,6 +15,7 @@ import { listCuratedBuilds } from '@/lib/builds/curated';
 import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { isTrackableTitle } from '@/lib/games/route-match';
 import { lockCards } from '@/lib/cards/cards.server';
+import { notifyTradeOffered, notifyTradeResolved } from '@/lib/cards/notify.server';
 import {
   MAX_PENDING_PER_PROPOSER,
   expiresAtFrom,
@@ -98,7 +99,7 @@ export async function proposeTrade(input: {
     throw new TradeError('MISSING_CARDS', 'You do not hold those cards');
   }
 
-  return prisma.cardTrade.create({
+  const trade = await prisma.cardTrade.create({
     data: {
       fromId,
       toId,
@@ -111,6 +112,8 @@ export async function proposeTrade(input: {
       },
     },
   });
+  await notifyTradeOffered({ actorId: fromId, userId: toId, tradeId: trade.id });
+  return trade;
 }
 
 async function move(
@@ -131,7 +134,7 @@ async function move(
 }
 
 export async function acceptTrade({ userId, tradeId }: { userId: string; tradeId: string }): Promise<void> {
-  await prisma.$transaction(async (tx) => {
+  const proposerId = await prisma.$transaction(async (tx) => {
     const trade = await tx.cardTrade.findUnique({ where: { id: tradeId }, include: { items: true } });
     if (!trade) throw new TradeError('NOT_FOUND', 'Offer not found', 404);
     if (trade.toId !== userId) throw new TradeError('FORBIDDEN', 'This offer is not yours to accept', 403);
@@ -157,7 +160,10 @@ export async function acceptTrade({ userId, tradeId }: { userId: string; tradeId
       if (i.fromGives) await move(tx, fresh.fromId, fresh.toId, item);
       else await move(tx, fresh.toId, fresh.fromId, item);
     }
+    return fresh.fromId;
   });
+  // After the commit: tell the proposer.
+  await notifyTradeResolved({ actorId: userId, userId: proposerId, tradeId, outcome: 'accepted' });
 }
 
 async function resolve(
@@ -173,6 +179,12 @@ async function resolve(
     data: { status, closedAt: new Date() },
   });
   if (res.count === 0) throw new TradeError('NOT_AVAILABLE', 'That offer can no longer be changed', 409);
+  if (status === 'DECLINED') {
+    const t = await prisma.cardTrade.findUnique({ where: { id: who.tradeId }, select: { fromId: true } });
+    if (t) {
+      await notifyTradeResolved({ actorId: who.userId, userId: t.fromId, tradeId: who.tradeId, outcome: 'declined' });
+    }
+  }
 }
 
 export const declineTrade = ({ userId, tradeId }: { userId: string; tradeId: string }) =>
@@ -180,6 +192,13 @@ export const declineTrade = ({ userId, tradeId }: { userId: string; tradeId: str
 
 export const cancelTrade = ({ userId, tradeId }: { userId: string; tradeId: string }) =>
   resolve({ tradeId, userId, as: 'from' }, 'CANCELED');
+
+/** Offers waiting on this user: pending and not yet expired (for the Community tab's count). */
+export async function countPendingTrades(userId: string): Promise<number> {
+  return prisma.cardTrade.count({
+    where: { toId: userId, status: 'PENDING', expiresAt: { gt: new Date() } },
+  });
+}
 
 /** The viewer's incoming and outgoing offers and their recent history. */
 export async function listTrades(userId: string): Promise<TradeData> {

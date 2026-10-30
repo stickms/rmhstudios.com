@@ -256,6 +256,8 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // Games library detail pane + playtime notice (2026-10-30). English-only until the
   // translate pipeline runs on build; remove with it.
   'games-hub': [
+    // Trade and hub notifications, pending count (2026-10-30)
+    'steam-pending-trades',
     'no-guides-hint',
     'no-reviews-hint',
     'guide-body-guide-view',

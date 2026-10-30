@@ -9,6 +9,7 @@ import { listCuratedBuilds } from '@/lib/builds/curated';
 import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { isTrackableTitle } from '@/lib/games/route-match';
 import { getLibraryExtras } from '@/lib/games/detail.server';
+import { notifyHubReply } from '@/lib/cards/notify.server';
 import { listGuides, listReviews } from '@/lib/games/meta.server';
 import {
   MAX_POSTS_PER_HOUR,
@@ -85,10 +86,10 @@ export async function createPost(input: {
   const v = validatePost(input.body);
   if (!v.ok) throw new HubError('BAD_INPUT');
   await assertNotBanned(input.userId);
-  return prisma.$transaction(async (tx) => {
+  const made = await prisma.$transaction(async (tx) => {
     const thread = await tx.gameThread.findUnique({
       where: { id: input.threadId },
-      select: { id: true, locked: true },
+      select: { id: true, locked: true, authorId: true, gameId: true, title: true },
     });
     if (!thread) throw new HubError('NOT_FOUND');
     if (thread.locked) throw new HubError('LOCKED');
@@ -105,8 +106,17 @@ export async function createPost(input: {
       where: { id: thread.id },
       data: { replyCount: { increment: 1 }, lastPostAt: new Date() },
     });
-    return { id: post.id };
+    return { id: post.id, thread };
   });
+  // After the commit: tell the thread's author (never about their own reply).
+  await notifyHubReply({
+    threadAuthorId: made.thread.authorId,
+    replierId: input.userId,
+    gameId: made.thread.gameId,
+    threadId: made.thread.id,
+    threadTitle: made.thread.title,
+  });
+  return { id: made.id };
 }
 
 export async function deleteThread(input: {

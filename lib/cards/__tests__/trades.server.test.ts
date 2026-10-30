@@ -101,6 +101,14 @@ const prismaMock = vi.hoisted(() => {
 });
 
 vi.mock('@/lib/prisma.server', () => ({ prisma: prismaMock }));
+const notify = vi.hoisted(() => ({
+  offered: vi.fn(async () => {}),
+  resolved: vi.fn(async () => {}),
+}));
+vi.mock('@/lib/cards/notify.server', () => ({
+  notifyTradeOffered: notify.offered,
+  notifyTradeResolved: notify.resolved,
+}));
 
 import { acceptTrade, cancelTrade, declineTrade, proposeTrade, TradeError } from '@/lib/cards/trades.server';
 
@@ -264,5 +272,42 @@ describe('decline and cancel', () => {
     expect(total()).toBe(before);
     const accepted = db.trades.get(t.id)?.status === 'ACCEPTED';
     expect(held(A, 1)).toBe(accepted ? 1 : 0);
+  });
+});
+
+describe('notifications', () => {
+  beforeEach(() => {
+    notify.offered.mockClear();
+    notify.resolved.mockClear();
+  });
+
+  it('tells the recipient about an offer, and nobody about a refused one', async () => {
+    const t = await proposeTrade(offer());
+    expect(notify.offered).toHaveBeenCalledWith({ actorId: A, userId: B, tradeId: t.id });
+    notify.offered.mockClear();
+    await code(proposeTrade(offer({ give: [item(4)] })));
+    expect(notify.offered).not.toHaveBeenCalled();
+  });
+
+  it('tells the proposer when their offer is accepted or declined, only when it really was', async () => {
+    const t = await proposeTrade(offer());
+    await code(acceptTrade({ userId: A, tradeId: t.id }));
+    expect(notify.resolved).not.toHaveBeenCalled();
+    await acceptTrade({ userId: B, tradeId: t.id });
+    expect(notify.resolved).toHaveBeenCalledWith({ actorId: B, userId: A, tradeId: t.id, outcome: 'accepted' });
+    notify.resolved.mockClear();
+    const t2 = await proposeTrade(offer({ give: [item(0)], ask: [] }));
+    await declineTrade({ userId: B, tradeId: t2.id });
+    expect(notify.resolved).toHaveBeenCalledWith({ actorId: B, userId: A, tradeId: t2.id, outcome: 'declined' });
+    notify.resolved.mockClear();
+    await code(declineTrade({ userId: B, tradeId: t2.id }));
+    expect(notify.resolved).not.toHaveBeenCalled();
+  });
+
+  it('a failed accept (missing card) notifies no one', async () => {
+    const t = await proposeTrade(offer());
+    db.cards.delete(key(B, G, 1, false));
+    await code(acceptTrade({ userId: B, tradeId: t.id }));
+    expect(notify.resolved).not.toHaveBeenCalled();
   });
 });

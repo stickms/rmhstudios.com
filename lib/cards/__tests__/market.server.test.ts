@@ -123,6 +123,8 @@ const prismaMock = vi.hoisted(() => {
 });
 
 vi.mock('@/lib/prisma.server', () => ({ prisma: prismaMock }));
+const sold = vi.hoisted(() => ({ fn: vi.fn(async () => {}) }));
+vi.mock('@/lib/cards/notify.server', () => ({ notifyCardSold: sold.fn }));
 vi.mock('@/lib/economy/ledger.server', async () => {
   const actual = await vi.importActual<typeof import('@/lib/economy/ledger-core')>(
     '@/lib/economy/ledger-core',
@@ -306,5 +308,26 @@ describe('cancelCard', () => {
     expect(stack(SELLER) + stack(BUYER)).toBe(2);
     const sold = db.listings.get(l.id)?.status === 'SOLD';
     expect(db.ledger).toHaveLength(sold ? 1 : 0);
+  });
+});
+
+describe('sale notification', () => {
+  it('tells the seller what sold and what they received, and only on a real sale', async () => {
+    sold.fn.mockClear();
+    const l = await listCard(input({ priceCoins: 100 }));
+    db.balances.set(BUYER, 50);
+    await code(buyCard({ buyerId: BUYER, listingId: l.id }));
+    expect(sold.fn).not.toHaveBeenCalled();
+    db.balances.set(BUYER, 1000);
+    await buyCard({ buyerId: BUYER, listingId: l.id });
+    expect(sold.fn).toHaveBeenCalledTimes(1);
+    expect(sold.fn).toHaveBeenCalledWith({
+      sellerId: SELLER,
+      buyerId: BUYER,
+      listingId: l.id,
+      gameId: G,
+      cardIndex: 2,
+      proceeds: 90,
+    });
   });
 });
