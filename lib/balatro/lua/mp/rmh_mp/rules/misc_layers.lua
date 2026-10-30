@@ -168,7 +168,12 @@ function M.install()
     end, o('final_scoring'))
   end
   if MP.layer_active('shared_pockets') then
-    MP.net.add_frame_hook(function() if MP.in_session() and MP.layer_active('shared_pockets') then M.shared_pockets_update() end end)
+    -- One hook for the whole boot: add_frame_hook dedupes by identity, and a fresh closure per
+    -- mount added another per-frame hook every session (found by WS14b's perf_spec).
+    M.pockets_frame = M.pockets_frame or function()
+      if MP.in_session() and MP.layer_active('shared_pockets') then M.shared_pockets_update() end
+    end
+    MP.net.add_frame_hook(M.pockets_frame)
   end
 end
 
