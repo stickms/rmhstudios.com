@@ -35,6 +35,7 @@ import {
   type PongPayload,
   type RoomAdminPayload,
   type RoomDetailsPayload,
+  type RoomGame,
   type RoomListEntry,
   type RoomsPayload,
 } from './events';
@@ -141,7 +142,7 @@ function emit(event: string, data?: unknown, queue = false): boolean {
 
 /** Typed senders. `queue` holds an intent across a blip; positional/timed traffic never queues. */
 export const tf2 = {
-  listRooms: (offset = 0) => emit(TF2_C2S.LIST_ROOMS, { offset }),
+  listRooms: (offset = 0, game: RoomGame = 'tf2') => emit(TF2_C2S.LIST_ROOMS, game === 'tf2' ? { offset } : { offset, game }),
   roomDetails: (code: string) => emit(TF2_C2S.ROOM_DETAILS, { code }),
   /** The round trip to the hub, measured with one ping (the browser's ping column). */
   measureHubRtt: (timeoutMs = 3000): Promise<number | null> =>

@@ -3,14 +3,16 @@
  * import.meta.url), { type: 'module' })`, then `connectListenServer(worker, …)`
  * (./listen-server.ts). It hosts one match — offline against bots, or a
  * peer-to-peer host's match with remote players (./p2p-host.ts) — reading the
- * map package from the site's asset API. A peer-to-peer host's worker also
+ * map package from the site's asset API. A CS:GO match (`MatchOptions.game`)
+ * loads lib/csgo-game on demand, which registers its host with the engine,
+ * and reads its map and weapon data from CS:GO's asset tree. A peer-to-peer host's worker also
  * writes the migration checkpoints (sim/checkpoint) and keeps the room's
  * clock; a promoted successor's worker starts the match from one.
  *
  * Everything but the message plumbing lives in `ListenServer`.
  */
 
-import { GAME_ASSET_API } from '../../assets/urls';
+import { gameAssetApi } from '../../assets/urls';
 import {
   createTf2MatchHost,
   levelLoader,
@@ -28,7 +30,7 @@ interface WorkerScope {
 }
 
 const scope = globalThis as unknown as WorkerScope;
-const loader = httpObjectLoader(GAME_ASSET_API);
+const loaders = { tf2: httpObjectLoader(gameAssetApi('tf2')), csgo: httpObjectLoader(gameAssetApi('csgo')) };
 
 /**
  * The bots module's brain (TFBotBrain), when it is present: a module under
@@ -60,14 +62,34 @@ function findBotBrain(): Promise<BotBrainFactory | undefined> {
   return brainPromise;
 }
 
-/** The worker's checkpoint catalog (every simulation module, by path), built on the first checkpoint. */
+/**
+ * The worker's checkpoint catalog (every simulation module, by path), built on the first checkpoint:
+ * TF2's, or CS:GO's (which knows its classes too). A worker hosts one game.
+ */
 let catalogPromise: Promise<import('../../sim/checkpoint/catalog').ModuleCatalog> | null = null;
-const catalog = () => (catalogPromise ??= import('./checkpoint-catalog').then((m) => m.checkpointCatalog()));
+const catalog = (game: 'tf2' | 'csgo') =>
+  (catalogPromise ??=
+    game === 'csgo'
+      ? import('../../../csgo-game/checkpoint-catalog').then((m) => m.csCheckpointCatalog())
+      : import('./checkpoint-catalog').then((m) => m.checkpointCatalog()));
+let workerGame: 'tf2' | 'csgo' = 'tf2';
 
 const server = new ListenServer(
   async (opts, host, controls) => {
+    const game = opts.game === 'csgo' ? 'csgo' : 'tf2';
+    workerGame = game;
+    const loader = loaders[game];
+    // CS:GO: its module registers the 'csgo' host (and its entities, schemas and bots) with the engine.
+    if (game === 'csgo') {
+      const cs = await import('../../../csgo-game');
+      // Installed before anything builds a CS player (a migrated match's restore included).
+      if (!cs.hasCsWeaponData()) cs.setCsWeaponData(await cs.loadCsWeaponData(loader));
+    }
     const deps = {
-      botBrain: await findBotBrain(),
+      // CS:GO's host always plays its own bots.
+      botBrain: game === 'csgo' ? undefined : await findBotBrain(),
+      // CS:GO's weapon data (ui/index.json → its items document).
+      loader,
       // Offline: straight into the game (the team and class menus still work);
       // a peer-to-peer host plays TF2's join menus like a hub room.
       autoTeam: host.autoTeam ?? true,
@@ -81,7 +103,7 @@ const server = new ListenServer(
     const loadMap = (map: string) => loadMapPackage(loader, map);
     if (host.restore) {
       // Host migration: the match from the previous host's checkpoint, on the same map.
-      const [{ unpackCheckpoint }, cat] = await Promise.all([import('../../sim/checkpoint/pack'), catalog()]);
+      const [{ unpackCheckpoint }, cat] = await Promise.all([import('../../sim/checkpoint/pack'), catalog(game)]);
       const cp = await unpackCheckpoint(new Uint8Array(host.restore));
       registerAllSimModules();
       const map = await loadMap(opts.map);
@@ -94,7 +116,7 @@ const server = new ListenServer(
     // Peer-to-peer hosting: the match written down for the successor, packed here (off the page).
     checkpointer: async (host) => {
       if (!(host instanceof Tf2MatchHost)) return null;
-      const [{ packCheckpoint }, cat] = await Promise.all([import('../../sim/checkpoint/pack'), catalog()]);
+      const [{ packCheckpoint }, cat] = await Promise.all([import('../../sim/checkpoint/pack'), catalog(workerGame)]);
       const cp = host.checkpoint(cat);
       const packed = await packCheckpoint(cp);
       const data = packed.buffer.byteLength === packed.byteLength ? (packed.buffer as ArrayBuffer) : (packed.slice().buffer as ArrayBuffer);

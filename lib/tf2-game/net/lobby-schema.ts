@@ -24,7 +24,7 @@ import { classSchema, slotsSchema } from '../../tf2-loadout/api-schema';
 
 /** `tf2:rooms:list` — an optional page offset (anything else, or nothing, lists the first page). */
 export const zListRooms = z
-  .object({ offset: z.number().int().min(0).max(100_000).optional() })
+  .object({ offset: z.number().int().min(0).max(100_000).optional(), game: z.enum(['tf2', 'csgo']).optional() })
   .catch({});
 
 export const zRoomDetails = z.object({

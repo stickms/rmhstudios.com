@@ -153,6 +153,26 @@ describe('hosting and the browser', () => {
     expect(listPublicP2pRooms()).toEqual([]);
   });
 
+  it('hosts CS:GO rooms on its own maps and modes, listed apart from TF2', () => {
+    const h = connect({ userId: 'u-cs', userName: 'Phoenix' });
+    world.send(h, TF2_C2S.P2P_HOST, { ...HOST, game: 'csgo', map: 'ctf_2fort' });
+    world.send(h, TF2_C2S.P2P_HOST, { ...HOST, game: 'csgo', map: 'de_dust2', mode: 'ctf' });
+    expect(errors(h)).toEqual(['unknown-map', 'bad-mode']);
+    const cs = host(h, { game: 'csgo', map: 'de_dust2', mode: 'dm', maxPlayers: 10 });
+    host(connect(), { map: 'cp_dustbowl' });
+    const viewer = connect({});
+    world.send(viewer, TF2_C2S.LIST_ROOMS, { game: 'csgo' });
+    const page = last<RoomsPayload>(viewer, TF2_S2C.ROOMS)!;
+    expect(page.rooms.map((r) => [r.code, r.game, r.map, r.mode])).toEqual([[cs.code, 'csgo', 'de_dust2', 'dm']]);
+    world.send(viewer, TF2_C2S.LIST_ROOMS, {});
+    const tf2 = last<RoomsPayload>(viewer, TF2_S2C.ROOMS)!;
+    expect(tf2.rooms.map((r) => [r.map, r.game])).toEqual([['cp_dustbowl', undefined]]);
+    // A member is admitted to the CS room with its game and mode.
+    const m = connect();
+    joinAdmitted(h, m, cs.code);
+    expect(last<P2pAdmittedPayload>(m, TF2_S2C.P2P_ADMITTED)).toMatchObject({ game: 'csgo', map: 'de_dust2', mode: 'dm' });
+  });
+
   it('closing the room tells every member; the host’s socket dropping does after a 30 s grace, unless it resumes', () => {
     vi.useFakeTimers();
     const h = connect({ userId: 'u-host', userName: 'Host' });

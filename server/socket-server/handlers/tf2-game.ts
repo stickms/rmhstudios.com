@@ -27,6 +27,7 @@ import {
   TF2_LIMITS,
   TF2_S2C,
   type PongPayload,
+  type RoomGame,
   type RoomDetailsPayload,
   type RoomsPayload,
   type Tf2ErrorCode,
@@ -37,9 +38,9 @@ function fail(socket: Socket, code: Tf2ErrorCode, event?: string): void {
   socket.emit(TF2_S2C.ERROR, { code, event });
 }
 
-/** One page of the server browser (`BROWSE_CAP` rooms from `offset`), busiest first. Never an address. */
-export function listPublicTf2Rooms(offset = 0): RoomsPayload {
-  const all = listPublicP2pRooms().sort((a, b) => b.players - a.players || a.code.localeCompare(b.code));
+/** One page of one game's server browser (`BROWSE_CAP` rooms from `offset`), busiest first. Never an address. */
+export function listPublicTf2Rooms(offset = 0, game: RoomGame = 'tf2'): RoomsPayload {
+  const all = listPublicP2pRooms(game).sort((a, b) => b.players - a.players || a.code.localeCompare(b.code));
   const start = Math.max(0, Math.min(offset, all.length));
   return { rooms: all.slice(start, start + TF2_LIMITS.BROWSE_CAP), total: all.length, offset: start };
 }
@@ -75,7 +76,7 @@ export function registerTf2GameHandlers(_io: Server, socket: Socket): void {
   socket.on(TF2_C2S.LIST_ROOMS, (payload: unknown) => {
     const data = gate(TF2_C2S.LIST_ROOMS, zListRooms, payload, false);
     if (data === null) return;
-    socket.emit(TF2_S2C.ROOMS, listPublicTf2Rooms(data.offset ?? 0));
+    socket.emit(TF2_S2C.ROOMS, listPublicTf2Rooms(data.offset ?? 0, data.game ?? 'tf2'));
   });
 
   socket.on(TF2_C2S.ROOM_DETAILS, (payload: unknown) => {
