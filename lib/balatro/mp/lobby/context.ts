@@ -113,6 +113,8 @@ export interface Role {
   hostIntent(i: HostIntent): void;
   /** Lua says the run is live again (first flags after a rejoin restore). */
   caughtUp(): void;
+  /** NET-09: this tab was hidden or shown (the peers see a display-only "away"). */
+  setHidden(hidden: boolean): void;
   leave(): void;
   stop(): void;
 }

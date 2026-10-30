@@ -15,6 +15,10 @@
  *   timer is suspended, and after `RECONNECT_AFTER_MS` the member asks the hub
  *   to join again, unless the hub announced a new host first (then the new
  *   host's admission reconnects it).
+ * - Hidden tab (NET-09): a player tells the host `visibility` on every change
+ *   and again after each `welcome` (a new link or a new host knows nothing);
+ *   the host debounces and announces it. A `presence away` without
+ *   `graceMsLeft` is that display-only away: the timer is not suspended for it.
  */
 
 import type { IceServerConfig } from '../../../shared/p2p/ice-core';
@@ -51,6 +55,8 @@ export class LobbyMember implements Role {
   private reconnectTimer: (() => void) | null = null;
   private stopped = false;
   private leaving = false;
+  /** NET-09: this tab is hidden. */
+  private hidden = false;
   private rejoinRunId: string | null;
   readonly role: 'player' | 'spectator';
 
@@ -212,7 +218,11 @@ export class LobbyMember implements Role {
         const d = env.d as WireData<'presence'>;
         bridge.send('presence', d);
         const c = this.ctx.client();
-        if (c && d.id === c.routing.target) c.suspend(d.status === 'away');
+        // Only a graced (link) away suspends the timer; a hidden tab's away is display only (NET-09).
+        if (c && d.id === c.routing.target) c.suspend(d.status === 'away' && d.graceMsLeft !== undefined);
+        // The host heard us again after a silent link: a visibility change sent into the
+        // silence may be lost, so say where the tab stands now (NET-09).
+        if (d.id === this.ctx.me && d.status === 'back') this.sendVisibility();
         return;
       }
       case 'host_changed':
@@ -273,6 +283,9 @@ export class LobbyMember implements Role {
     // What Lua reported while the link was down.
     const pending = this.pendingGame.splice(0);
     for (const e of pending) this.link?.send('game', { e });
+    // NET-09: a new link (or a new host) does not know whether this tab is hidden; a change
+    // made while the link was down never reached the host either.
+    this.sendVisibility();
   }
 
   /* ─── Role API ─── */
@@ -327,6 +340,17 @@ export class LobbyMember implements Role {
 
   hostIntent(_i: HostIntent): void {
     /* members cannot change the lobby */
+  }
+
+  setHidden(hidden: boolean): void {
+    if (this.hidden === hidden) return;
+    this.hidden = hidden;
+    this.sendVisibility();
+  }
+
+  private sendVisibility(): void {
+    if (this.role !== 'player' || !this.welcomed) return;
+    this.link?.send('visibility', { hidden: this.hidden });
   }
 
   /** After a rejoin restore the run is live: `player_info` tells the host we caught up. */

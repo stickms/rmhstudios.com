@@ -95,6 +95,8 @@ export class MpRuntime {
   /** Ids muted because the site block list has them (not saved with the player's own mutes). */
   private readonly siteBlocked = new Set<string>();
   private stopped = false;
+  /** NET-09: the page's tab is hidden (handed to every new role). */
+  private hidden = false;
   private ready: Promise<void>;
 
   constructor(
@@ -276,6 +278,7 @@ export class MpRuntime {
     const host = new LobbyHost(this.ctx());
     this.role = host;
     host.create(queueMode, kind, reclaim);
+    if (this.hidden) host.setHidden(true);
     return host;
   }
 
@@ -285,6 +288,7 @@ export class MpRuntime {
     this.dropRole();
     const m = new LobbyMember(this.ctx(), { code, role, rejoinRunId });
     this.role = m;
+    if (this.hidden) m.setHidden(true);
     return m;
   }
 
@@ -321,6 +325,7 @@ export class MpRuntime {
       : null;
     this.deps.log(`[mp] promoted to host of ${p.code}`);
     host.adopt(p, lobby, mem, lobby.hostId);
+    if (this.hidden) host.setHidden(true);
   }
 
   private demoted(code: string): void {
@@ -328,6 +333,7 @@ export class MpRuntime {
     this.role = null;
     old?.stop();
     this.role = new LobbyMember(this.ctx(), { code, role: 'player', rejoinRunId: null });
+    if (this.hidden) this.role.setHidden(true);
   }
 
   /* ─── The match on this peer ─── */
@@ -682,9 +688,16 @@ export class MpRuntime {
     void this.ready.then(() => !this.stopped && this.joinCode(code, 'player'));
   }
 
+  /**
+   * NET-09: the page's tab was hidden or shown. The role tells the peers (a display-only
+   * "away" after 2 s; the link and the run keep going). On return Lua drains its backlog;
+   * re-send what it shows.
+   */
   setHidden(hidden: boolean): void {
-    if (hidden || this.stopped) return;
-    // Lua drains its backlog on return; re-send what it shows.
+    if (this.stopped) return;
+    this.hidden = hidden;
+    this.role?.setHidden(hidden);
+    if (hidden) return;
     this.currentClient()?.refresh();
     const l = this.role?.lobby();
     if (l) this.ctx().view(l, this.role?.kind === 'host', null);

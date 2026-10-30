@@ -19,6 +19,15 @@
  *   to come back before their seat is forfeited (referee `grace_expired`, hub
  *   `forfeit-seat`); a crash-rejoiner has `CATCH_UP_LIMIT_MS` (3 min) to
  *   catch up (`player_info` after its restore marks it caught up).
+ * - **Hidden tabs** (NET-09): a player whose tab has been hidden for
+ *   `HIDDEN_AWAY_AFTER_MS` (a member's `visibility`, or the host's own tab) is
+ *   announced `presence away` WITHOUT `graceMsLeft`, and `back` once shown. It
+ *   is display only: the link is alive and the run keeps going, so no seat
+ *   grace starts, the referee is not told, and members do not suspend their
+ *   timers for it (they do for a graced away). It lives apart from the
+ *   link-silence `away` map: a link-away on top of it shows the graced away,
+ *   and when the link returns while the tab is still hidden the display-only
+ *   away is shown again. The hidden player itself is never told about it.
  * - **Migration.** A promoted member builds its LobbyHost with `adopt`.
  * - **Reclaim** (MM-06). `create(…, {code, token})` asks the hub for a code
  *   this player hosted before (a party closed when it was matched), so the
@@ -62,6 +71,8 @@ import type { HostIntent, MatchMemory, Role, RoleCtx } from './context';
 
 export const AWAY_AFTER_MS = 5_000;
 export const PRESENCE_POLL_MS = 1_000;
+/** NET-09: a tab hidden this long is announced away (alt-tabbing stays quiet). */
+export const HIDDEN_AWAY_AFTER_MS = 2_000;
 export const OUTCOME_LOG_MAX = 4_096;
 export const TAIL_MAX = 256;
 /** A deliberate host leave waits this long before the hub hands the room over. */
@@ -94,6 +105,9 @@ export class LobbyHost implements Role {
   private readonly offs: (() => void)[] = [];
   private readonly away = new Map<Id, Away>();
   private readonly catchUp = new Map<Id, () => void>();
+  /** NET-09: hidden tabs waiting out the debounce (cancel), and the ones announced away. */
+  private readonly hiddenPending = new Map<Id, () => void>();
+  private readonly hiddenShown = new Set<Id>();
   private readonly tails = new Map<Id, { ante: number; results: HandResult[] }>();
   private outLog: { to: '*' | Id; msg: RefMsg; hs: number }[] = [];
   /** Members (userIds) that said hello on the current link. */
@@ -390,6 +404,9 @@ export class LobbyHost implements Role {
       case 'chat':
         if (m.role !== 'player' && m.role !== 'spectator') return;
         return this.relayChat(from, (env.d as WireData<'chat'>).text);
+      case 'visibility':
+        if (m.role !== 'player') return;
+        return this.onVisibility(from, (env.d as WireData<'visibility'>).hidden);
       case 'log':
         if (m.role !== 'player') return;
         this.star?.broadcast('log', env.d as WireData<'log'>, { f: from }, m.peerId);
@@ -441,6 +458,10 @@ export class LobbyHost implements Role {
       tail,
     });
     if (this.migratedFrom) this.star.send(m.peerId, 'host_changed', { hostId: this.ctx.me, from: 'migration' });
+    // NET-09: the hidden tabs already announced (a presence is not part of the welcome).
+    for (const id of this.hiddenShown) {
+      if (id !== m.userId && !this.away.has(id)) this.star.send(m.peerId, 'presence', { id, status: 'away' });
+    }
     if (match && m.role === 'spectator') {
       // REP-04: a spectator joining a running match gets every replay log so far (WS13).
       const peer = m.peerId;
@@ -506,10 +527,55 @@ export class LobbyHost implements Role {
     this.commit(patchPlayer(this.state, id, { away: false, connected: true }));
     this.presence(id, 'back');
     this.driver?.presence(id, 'back');
+    // The link is back but the tab is still hidden: the display-only away again (NET-09).
+    if (this.hiddenShown.has(id)) this.hiddenPresence(id, 'away');
+  }
+
+  /* ─── Hidden tabs (NET-09) ─── */
+
+  /** A player's tab was hidden or shown: a member's `visibility`, or the host's own (setHidden). */
+  private onVisibility(id: Id, hidden: boolean): void {
+    if (this.stopped || !this.state) return;
+    if (!hidden) return this.clearHidden(id, true);
+    if (this.hiddenPending.has(id) || this.hiddenShown.has(id)) return;
+    const cancel = this.ctx.deps.sched.after(HIDDEN_AWAY_AFTER_MS, () => {
+      this.hiddenPending.delete(id);
+      this.showHidden(id);
+    });
+    this.hiddenPending.set(id, cancel);
+  }
+
+  private showHidden(id: Id): void {
+    const s = this.state;
+    if (this.stopped || !s || !player(s, id)) return;
+    if (s.started && s.forfeited[id] === s.started.runId) return;
+    this.hiddenShown.add(id);
+    // A link-away already shows (with its grace); back() re-shows this one when the link returns.
+    if (!this.away.has(id)) this.hiddenPresence(id, 'away');
+  }
+
+  /** Forget a hidden tab; `announce` tells everyone it is back (unless a link-away still shows). */
+  private clearHidden(id: Id, announce: boolean): void {
+    this.hiddenPending.get(id)?.();
+    this.hiddenPending.delete(id);
+    if (this.hiddenShown.delete(id) && announce && !this.away.has(id)) this.hiddenPresence(id, 'back');
+  }
+
+  /** A display-only presence: never a grace, never to the hidden player itself. */
+  private hiddenPresence(id: Id, status: 'away' | 'back'): void {
+    const d: WireData<'presence'> = { id, status };
+    this.star?.broadcast('presence', d, undefined, this.star.byUser(id)?.peerId);
+    if (id !== this.ctx.me) this.ctx.deps.bridge.send('presence', d);
+  }
+
+  /** The host's own tab (MpRuntime.setHidden). */
+  setHidden(hidden: boolean): void {
+    if (this.ctx.me) this.onVisibility(this.ctx.me, hidden);
   }
 
   private graceExpired(id: Id): void {
     this.away.delete(id);
+    this.clearHidden(id, false);
     if (!this.state) return;
     const started = this.state.started;
     if (!started || this.driver?.over) {
@@ -523,6 +589,7 @@ export class LobbyHost implements Role {
     const s = this.state;
     if (!s?.started) return;
     const runId = s.started.runId;
+    this.clearHidden(id, false);
     this.driver?.presence(id, why);
     this.commit(patchPlayer(markForfeited(s, id, runId), id, { connected: false, catchingUp: false }));
     this.ctx.deps.hub.emit('balatro:p2p:forfeit-seat', { userId: id, runId });
@@ -557,6 +624,7 @@ export class LobbyHost implements Role {
   private left(id: Id): void {
     if (!this.state) return;
     this.cancelAway(id);
+    this.clearHidden(id, false);
     const m = this.star?.byUser(id);
     if (this.state.started && !this.driver?.over && this.state.started.roster.some((r) => r.id === id)) {
       this.forfeitSeat(id, 'left');
@@ -763,6 +831,7 @@ export class LobbyHost implements Role {
           this.star?.drop(m.peerId, 'kicked');
         }
         this.cancelAway(i.userId);
+        this.clearHidden(i.userId, false);
         if (s.started && !this.driver?.over && s.started.roster.some((r) => r.id === i.userId)) {
           this.driver?.presence(i.userId, 'left');
         }
@@ -819,6 +888,9 @@ export class LobbyHost implements Role {
     this.away.clear();
     for (const c of this.catchUp.values()) c();
     this.catchUp.clear();
+    for (const c of this.hiddenPending.values()) c();
+    this.hiddenPending.clear();
+    this.hiddenShown.clear();
     for (const off of this.offs.splice(0)) off();
     this.star?.stop();
     this.star = null;
