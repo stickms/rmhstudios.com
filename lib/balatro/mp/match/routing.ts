@@ -9,7 +9,8 @@
  * - `team_card_target`→ card target (traps, Magnet) = my card partner.
  *
  * Kinds (`P>H>T`) go to the target(s); `P>H>A` to everyone; `trap_fired` to
- * the trap's owner; `deck_res`/`stats_res` back to whoever asked; `sync` to
+ * the trap's owner; a Manhunt Runner's `trap_plant` to every Hunter still in
+ * the match (A1 §5.3); `deck_res`/`stats_res` back to whoever asked; `sync` to
  * its own `to`, else everyone for a phantom, else the target. Receivers keep
  * what concerns them (Lua filters display sync by its target). Browser-free.
  */
@@ -69,6 +70,11 @@ export class Routing {
     }
   }
 
+  /** Every Hunter (roster order) not known to be out of lives. */
+  private hunters(): Id[] {
+    return this.roster.filter((id) => this.teams[id] === 'HUNTER' && (this.lives[id] ?? 1) > 0);
+  }
+
   /** A received request: remember who to answer. */
   noteRequest(kind: 'deck_req' | 'stats_req', from: Id): void {
     this.askers[kind === 'deck_req' ? 'deck' : 'stats'].add(from);
@@ -82,6 +88,7 @@ export class Routing {
       case 'trap_fired':
         return typeof d.owner === 'string' && d.owner !== this.me ? [d.owner] : [];
       case 'trap_plant':
+        if (this.teams[this.me] === 'RUNNER') return this.hunters();
         return this.cardTarget ? [this.cardTarget] : tgt;
       case 'deck_res':
       case 'stats_res': {

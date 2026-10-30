@@ -255,6 +255,22 @@ describe('routing (§3.b)', () => {
   });
 });
 
+describe('routing: Manhunt traps (A1 §5.3)', () => {
+  it('sends a Runner trap to every live Hunter, a Hunter trap to its target', () => {
+    const runner = new Routing('r', ['h1', 'r', 'h2', 'h3']);
+    runner.apply({ t: 'team_roster', roster: { h1: 'HUNTER', r: 'RUNNER', h2: 'HUNTER', h3: 'HUNTER' } });
+    runner.apply({ t: 'manhunt_target', target_id: 'h2' });
+    expect(runner.route('trap_plant', {})).toEqual(['h1', 'h2', 'h3']);
+    expect(runner.route('timer', {})).toEqual(['h2']);
+    runner.apply({ t: 'player_lives', player_id: 'h3', lives: 0, lost: 1 });
+    expect(runner.route('trap_plant', {})).toEqual(['h1', 'h2']);
+    const hunter = new Routing('h1', ['h1', 'r', 'h2']);
+    hunter.apply({ t: 'team_roster', roster: { h1: 'HUNTER', r: 'RUNNER', h2: 'HUNTER' } });
+    hunter.apply({ t: 'manhunt_target', target_id: 'r' });
+    expect(hunter.route('trap_plant', {})).toEqual(['r']);
+  });
+});
+
 describe('referee driver', () => {
   function driver(match = makeMatch({ n: 2 }), firstHs = 0) {
     const net = new FakeNet();
