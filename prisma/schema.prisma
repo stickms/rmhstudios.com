@@ -3848,6 +3848,8 @@ model UserBuild {
   technologies Json            @default("[]")
   // Marketplace: coins to unlock the readme/repo/demo (null/0 = free).
   price        Int?
+  /// Catalog id of the game this build was made for (shown in that title's Workshop).
+  gameId       String?         @db.VarChar(64)
   likeCount    Int             @default(0)
   commentCount Int             @default(0)
   viewCount    Int             @default(0)
@@ -3869,6 +3871,7 @@ model UserBuild {
 
   @@index([userId])
   @@index([visibility, publishedAt(sort: Desc)])
+  @@index([gameId, visibility, publishedAt(sort: Desc)])
   @@index([slug])
   @@map("user_build")
 }

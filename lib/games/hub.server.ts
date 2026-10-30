@@ -10,6 +10,7 @@ import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 import { isTrackableTitle } from '@/lib/games/route-match';
 import { getLibraryExtras } from '@/lib/games/detail.server';
 import { notifyHubReply } from '@/lib/cards/notify.server';
+import { listWorkshop } from '@/lib/games/workshop.server';
 import { listGuides, listReviews } from '@/lib/games/meta.server';
 import {
   MAX_POSTS_PER_HOUR,
@@ -199,7 +200,7 @@ export async function getHub(
   if (!title || !isTrackableTitle(gameId)) return null;
   const skip = Math.max(0, page - 1) * PAGE_SIZE;
 
-  const [rows, extras, guides, reviews, onSale, mine] = await Promise.all([
+  const [rows, extras, guides, reviews, onSale, mine, workshop] = await Promise.all([
     prisma.gameThread.findMany({
       where: { gameId },
       orderBy: [{ pinned: 'desc' }, { lastPostAt: 'desc' }],
@@ -228,6 +229,7 @@ export async function getHub(
       },
     }),
     viewer.id ? emoteTitlesFor([viewer.id]) : Promise.resolve({} as Record<string, string[]>),
+    listWorkshop(gameId, 6),
   ]);
 
   const threads: ThreadSummary[] = rows.slice(0, PAGE_SIZE).map((r) => ({
@@ -260,6 +262,7 @@ export async function getHub(
     reviews: reviews.slice(0, 3),
     cardsOnSale: onSale,
     myEmoteTitles: viewer.id ? (mine[viewer.id] ?? []) : [],
+    workshop,
   };
 }
 

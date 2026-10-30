@@ -4,6 +4,7 @@ import type { GuideSummary, ReviewView } from '@/lib/games/reviews';
 import type { DetailCommunity } from '@/lib/games/detail-types';
 import type { PersonRef } from '@/lib/games/community-types';
 import type { PlayerView } from '@/lib/playtime/types';
+import type { WorkshopItem } from '@/lib/games/workshop-types';
 
 export type ThreadSummary = {
   id: string;
@@ -37,6 +38,8 @@ export type HubData = {
   cardsOnSale: number;
   /** Titles whose emoticons the viewer has unlocked (a badge for each). */
   myEmoteTitles: string[];
+  /** Public member builds made for this title. */
+  workshop: WorkshopItem[];
 };
 
 export type ThreadPostView = {
