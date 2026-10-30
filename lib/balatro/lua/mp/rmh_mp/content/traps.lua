@@ -681,17 +681,8 @@ for i, key in ipairs(T.KEYS) do
   CN.render_as_other(key)
 end
 
--- Text and colours for the new consumable set (the pack's loc wins for the descriptions).
-if R.loc then
-  R.loc.add('en-us', {
-    descriptions = { Other = { undiscovered_trap = { name = '??? Trap Card',
-      text = { 'Drafted by an', 'opponent - reacts', 'to something you do' } } } },
-    misc = {
-      dictionary = { k_trap = 'Trap', b_trap_cards = 'Trap Cards' },
-      v_dictionary = { rmh_mp_trap_triggered = '#1# Triggered!' },
-    },
-  })
-end
+-- Colours for the new consumable set. Its text (k_trap, b_trap_cards, undiscovered_trap,
+-- rmh_mp_trap_triggered) ships in data/balatro-mp/extra-strings.en-us.json, so it is translatable.
 
 function T.install_colours()
   if not (G and G.C) then return end

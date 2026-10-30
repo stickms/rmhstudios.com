@@ -254,13 +254,13 @@ function W.player_tooltip(player, info)
     W.row({ W.text(player.name or '?', { scale = 0.45 }) }, { padding = 0.04 }),
   }
   if info.build then rows[#rows + 1] = W.row({ W.text(info.build, { scale = 0.28, colour = TH.ui_col('TEXT_INACTIVE') }) }) end
-  if info.muted then rows[#rows + 1] = W.badge(TH.T('k_muted_label', 'Muted'), TH.col('RED')) end
+  if info.muted then rows[#rows + 1] = W.badge(TH.T('rmh_mp_ui_muted_label', 'Muted'), TH.col('RED')) end
   if info.host then rows[#rows + 1] = W.badge(TH.T('rmh_mp_ui_host', 'Host'), TH.col('GOLD')) end
   rows[#rows + 1] = W.badge(player.role == 'spectator' and TH.T('rmh_mp_spectating', 'Spectating') or TH.T('rmh_mp_ui_player', 'Player'),
     TH.col('MP_PURPLE'))
   if info.show_ready then
-    rows[#rows + 1] = player.ready and W.badge(TH.T('k_ready', 'Ready'), TH.col('GREEN'))
-      or W.badge(TH.T('k_not_ready', 'Not Ready'), TH.col('RED'))
+    rows[#rows + 1] = player.ready and W.badge(TH.T('rmh_mp_ui_ready', 'Ready'), TH.col('GREEN'))
+      or W.badge(TH.T('rmh_mp_ui_not_ready', 'Not Ready'), TH.col('RED'))
   end
   if player.away or player.connected == false then
     rows[#rows + 1] = W.badge(TH.T('rmh_mp_conn_away', 'Away'), TH.col('ORANGE'))

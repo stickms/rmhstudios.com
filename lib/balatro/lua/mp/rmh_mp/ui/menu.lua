@@ -192,22 +192,75 @@ end
 -- ── The Multiplayer panel (top left, HUD-18) ────────────────────────────────
 
 local STATUS = {
-  connected = { key = 'k_status_connected', def = 'Connected', col = 'STATUS_OK' },
-  connecting = { key = 'k_status_connecting', def = 'Connecting...', col = 'STATUS_WAIT' },
-  offline = { key = 'k_status_offline', def = 'Offline', col = 'STATUS_BAD' },
+  connected = { key = 'rmh_mp_ui_status_connected', def = 'Connected', col = 'STATUS_OK' },
+  connecting = { key = 'rmh_mp_ui_status_connecting', def = 'Connecting...', col = 'STATUS_WAIT' },
+  offline = { key = 'rmh_mp_ui_status_offline', def = 'Offline', col = 'STATUS_BAD' },
 }
 
 function U.status(model)
   model = model or U.model
   local st = STATUS[model.net.hub] or STATUS.connecting
   if model.queue and model.queue.state == 'searching' and model.net.hub == 'connected' then
-    return TH.T('k_status_queueing', 'Queueing'), TH.col('STATUS_WAIT')
+    return TH.T('rmh_mp_ui_status_queueing', 'Queueing'), TH.col('STATUS_WAIT')
   end
   return TH.T(st.key, st.def), TH.col(st.col)
 end
 
 function U.online(model)
   return (model or U.model).net.hub == 'connected'
+end
+
+-- Why the hub is offline (net_status.reason: the realtime client's reasons). Unknown reasons (a
+-- socket.io message, "attempt 3") read as the generic retry line.
+U.OFFLINE_REASONS = {
+  ['protocol-outdated'] = { 'rmh_mp_version_mismatch_hint', 'Reload the page to update' },
+  ['io server disconnect'] = { 'rmh_mp_ui_offline_server', 'Disconnected by the server' },
+  ['io client disconnect'] = { 'rmh_mp_ui_offline_closed', 'Disconnected' },
+}
+
+function U.offline_text(reason)
+  local r = U.OFFLINE_REASONS[tostring(reason or '')]
+  if r then return TH.T(r[1], r[2]) end
+  return TH.T('rmh_mp_ui_offline_retry', 'Trying to reconnect...')
+end
+
+--- Searching or matched (the search is still the player's state until the match lobby opens).
+function U.queue_busy(model)
+  local q = (model or U.model).queue or {}
+  return q.state == 'searching' or q.state == 'matched'
+end
+
+--- The queue_view status line over the PvP bar: SEARCHING... <mode> (n waiting) | MATCH FOUND.
+function U.queue_line(q)
+  q = q or U.model.queue or {}
+  local text
+  if q.state == 'searching' then
+    text = TH.T('rmh_mp_ui_searching_cap', 'SEARCHING...') .. ' ' .. TH.queue_mode_name(q.queueMode)
+      .. (q.waiting and ('  (' .. tostring(q.waiting) .. ')') or '')
+  elseif q.state == 'matched' then
+    text = TH.T('rmh_mp_ui_match_found_cap', 'MATCH FOUND!') .. ' ' .. TH.queue_mode_name(q.queueMode)
+  else
+    return nil
+  end
+  return W.row({ W.text(text, { scale = 0.35, colour = TH.col(q.state == 'matched' and 'STATUS_OK' or 'STATUS_WAIT'),
+    id = 'mp_queue_status' }) }, { padding = 0.05 })
+end
+
+--- The invite row in the Multiplayer panel (mp_invited toast, WS12): "<name> invited you" + Join.
+local function invite_rows(model)
+  local inv = model.invite
+  if not inv then return nil end
+  return W.col({
+    W.row({ W.text(TH.TV('rmh_mp_invited_by', '#1# invited you', { inv.name }), { scale = 0.3, id = 'mp_invite_text' }) },
+      { padding = 0.03 }),
+    W.row({
+      W.button({ id = 'mp_invite_join', label = TH.T('rmh_mp_ui_invite_join', 'Join'), button = 'rmh_mp_invite_join',
+        colour = TH.col('GREEN'), minw = 1.2, minh = 0.5, scale = 0.33, col = true, disabled = not U.online(model) }),
+      W.col({}, { minw = 0.1 }),
+      W.button({ id = 'mp_invite_dismiss', label = TH.T('rmh_mp_ui_invite_dismiss', 'Dismiss'), button = 'rmh_mp_invite_dismiss',
+        colour = TH.col('GREY'), minw = 1.2, minh = 0.5, scale = 0.33, col = true }),
+    }, { padding = 0.03 }),
+  }, { r = 0.1, padding = 0.06, colour = TH.col('BLACK'), id = 'mp_invite' })
 end
 
 function U.panel_def(model)
@@ -218,7 +271,7 @@ function U.panel_def(model)
   local reason = model.net.hub == 'offline' and model.net.reason
   return { n = G.UIT.ROOT, config = { align = 'cm', colour = TH.col('CLEAR') }, nodes = {
     W.panel({
-      W.row({ W.text(TH.T('k_multiplayer', 'Multiplayer'), { scale = 0.5 }) }, { padding = 0.05 }),
+      W.row({ W.text(TH.T('rmh_mp_ui_multiplayer', 'Multiplayer'), { scale = 0.5 }) }, { padding = 0.05 }),
       W.row({ W.button({ id = 'mp_account', label = name, button = 'rmh_mp_settings', minw = 2.3, minh = 0.55, scale = 0.35,
         colour = TH.lighten(TH.col('GREY'), 0.6), text_colour = TH.ui_col('TEXT_DARK') }) }, { padding = 0.04 }),
       W.row({ W.button({ id = 'mp_collection', label = TH.T('b_collection', 'Collection'), button = 'rmh_mp_collection',
@@ -226,7 +279,8 @@ function U.panel_def(model)
       W.row({ W.button({ id = 'mp_back', label = TH.T('b_back', 'Back'), button = 'rmh_mp_back', colour = TH.col('ORANGE'),
         minw = 2.3, minh = 0.55, scale = 0.4 }) }, { padding = 0.04 }),
       W.row({ W.text(status, { scale = 0.33, colour = scol, id = 'mp_status' }) }, { padding = 0.03 }),
-      reason and W.row({ W.text(TH.T('k_offline_' .. tostring(reason), tostring(reason)), { scale = 0.25, colour = scol }) }) or nil,
+      reason and W.row({ W.text(U.offline_text(reason), { scale = 0.25, colour = scol, id = 'mp_offline_reason' }) }) or nil,
+      model.invite and W.row({ invite_rows(model) }, { padding = 0.04 }) or nil,
     }, { col = true, padding = 0.12, minw = 2.6 }),
   } }
 end
@@ -236,42 +290,46 @@ end
 local function pvp_bar(model)
   local online = U.online(model)
   local q = model.queue or {}
-  local searching = q.state == 'searching'
+  local matched = q.state == 'matched'
+  -- "searching" greys everything that would enter another lobby or a run (PR-05, MM-01).
+  local searching = q.state == 'searching' or matched
   local find
-  if searching then
-    find = W.button({ id = 'mp_find_game', label = { TH.T('b_cancel_search_cap', 'CANCEL') }, button = 'rmh_mp_queue_cancel',
+  if q.state == 'searching' then
+    find = W.button({ id = 'mp_find_game', label = { TH.T('rmh_mp_ui_cancel_search_cap', 'CANCEL') }, button = 'rmh_mp_queue_cancel',
       colour = TH.col('RED'), minw = 3.65, minh = 1.55, scale = 0.6, col = true })
   else
-    find = W.button({ id = 'mp_find_game', label = { TH.T('b_find_game_cap', 'FIND GAME') }, button = 'rmh_mp_find_game',
-      colour = TH.col('BLUE'), minw = 3.65, minh = 1.55, scale = 0.6, col = true, disabled = not online })
+    find = W.button({ id = 'mp_find_game', label = { TH.T('rmh_mp_ui_find_game_cap', 'FIND GAME') }, button = 'rmh_mp_find_game',
+      colour = TH.col('BLUE'), minw = 3.65, minh = 1.55, scale = 0.6, col = true, disabled = not online or matched })
   end
-  local search_line = searching and W.row({
-    W.text(TH.T('b_searching_cap', 'SEARCHING...') .. ' ' .. TH.queue_mode_name(q.queueMode)
-      .. (q.waiting and ('  (' .. tostring(q.waiting) .. ')') or ''), { scale = 0.35, colour = TH.col('STATUS_WAIT'),
-        id = 'mp_queue_status' }),
+  local search_line = U.queue_line(q)
+  local party = (not searching and not model.lobby) and model.party or nil
+  local party_row = party and W.row({
+    W.button({ id = 'mp_party_return', label = TH.TV('rmh_mp_ui_return_party', 'Return to lobby #1#', { party.code }),
+      button = 'rmh_mp_party_return', colour = TH.col('ORANGE'), minw = 5, minh = 0.6, scale = 0.4, disabled = not online }),
   }, { padding = 0.05 }) or nil
   return { n = G.UIT.ROOT, config = { align = 'cm', colour = TH.col('CLEAR') }, nodes = {
     W.col({
       search_line,
+      party_row,
       W.panel({
         find,
         W.col({
-          W.button({ id = 'mp_replays', label = { TH.T('b_replay_cap', 'REPLAYS') }, button = 'rmh_mp_replays',
+          W.button({ id = 'mp_replays', label = { TH.T('rmh_mp_ui_replay_cap', 'REPLAYS') }, button = 'rmh_mp_replays',
             colour = TH.col('TEAL'), minw = 2.65, minh = 0.65, scale = 0.45 }),
-          W.button({ id = 'mp_practice', label = { TH.T('b_practice_cap', 'PRACTICE') }, button = 'rmh_mp_practice',
+          W.button({ id = 'mp_practice', label = { TH.T('rmh_mp_ui_practice_cap', 'PRACTICE') }, button = 'rmh_mp_practice',
             colour = TH.col('ORANGE'), minw = 2.65, minh = 0.65, scale = 0.45, disabled = searching }),
         }, { padding = 0.05 }),
         W.col({
-          W.col({ W.text(TH.T('k_join_lobby_cap', 'JOIN LOBBY'), { scale = 0.35, vert = true }) }, { padding = 0.05 }),
+          W.col({ W.text(TH.T('rmh_mp_ui_join_lobby_cap', 'JOIN LOBBY'), { scale = 0.35, vert = true }) }, { padding = 0.05 }),
           W.col({
-            W.button({ id = 'mp_join_code', label = { TH.T('b_by_code_cap', 'BY CODE') }, button = 'rmh_mp_join_code',
+            W.button({ id = 'mp_join_code', label = { TH.T('rmh_mp_ui_by_code_cap', 'BY CODE') }, button = 'rmh_mp_join_code',
               colour = TH.col('RED'), minw = 3.65, minh = 0.6, scale = 0.4, disabled = not online or searching }),
-            W.button({ id = 'mp_join_clipboard', label = { TH.T('b_from_clipboard_cap', 'FROM CLIPBOARD') },
+            W.button({ id = 'mp_join_clipboard', label = { TH.T('rmh_mp_ui_from_clipboard_cap', 'FROM CLIPBOARD') },
               button = 'rmh_mp_join_clipboard', colour = TH.col('MP_PURPLE'), minw = 3.65, minh = 0.6, scale = 0.4,
               disabled = not online or searching }),
           }, { padding = 0.05 }),
         }, { r = 0.1, padding = 0.05, colour = TH.col('BLACK') }),
-        W.button({ id = 'mp_create_lobby', label = TH.L('b_create_lobby_cap', { 'CREATE', 'LOBBY' }), button = 'rmh_mp_create',
+        W.button({ id = 'mp_create_lobby', label = TH.L('rmh_mp_ui_create_lobby_cap', { 'CREATE', 'LOBBY' }), button = 'rmh_mp_create',
           colour = TH.col('GREEN'), minw = 3.65, minh = 1.55, scale = 0.6, col = true, disabled = not online or searching }),
       }, { padding = 0.2 }),
     }, { align = 'bm' }),
@@ -312,9 +370,29 @@ F.rmh_mp_to_pvp = function() U.go('pvp') end
 F.rmh_mp_find_game = function() U.go('find') end
 F.rmh_mp_create = function() U.go('create') end
 F.rmh_mp_practice = function()
-  if U.model.queue.state == 'searching' then return W.toast('rmh_mp_ui_practice_queued', nil,
+  if U.queue_busy() then return W.toast('rmh_mp_ui_practice_queued', nil,
     { default = "You can't start a run while searching for a match" }) end
   U.go('practice')
+end
+--- MM-06: back to the party this player queued with. TS re-hosts the code for its old host and
+--- joins it for everyone else (queue/attach.ts joinHook).
+F.rmh_mp_party_return = function()
+  local p = U.model.party
+  if not p or U.queue_busy() then return false end
+  return U.send('ui_join', { code = p.code })
+end
+F.rmh_mp_invite_join = function()
+  local inv = U.model.invite
+  if not inv then return false end
+  if U.queue_busy() then return U.overlays and U.overlays.error('queued') end
+  U.model.invite = nil
+  local ok = U.send('ui_join', { code = inv.code })
+  U.changed()
+  return ok
+end
+F.rmh_mp_invite_dismiss = function()
+  U.model.invite = nil
+  U.changed()
 end
 F.rmh_mp_queue_cancel = function()
   U.send('ui_queue', { op = 'leave', queueMode = U.model.queue.queueMode or 'pvp_nemesis' })
@@ -340,6 +418,14 @@ local function on_lobby_view(d)
   local had = U.model.lobby
   U.model.lobby = d
   MP.state.lobby = d
+  -- MM-06: a party that went straight into another lobby was matched (the hub closed it): keep
+  -- its code for "Return to lobby XXXXXX". Back in that party, it is the lobby on screen again.
+  local hs = had and had.state
+  if hs and hs.kind == 'party' and d.state and d.state.code ~= hs.code and d.state.kind ~= 'party' then
+    U.model.party = { code = hs.code, host = had.isHost and true or false }
+  elseif d.state and d.state.kind == 'party' then
+    U.model.party = nil
+  end
   -- Setup comes in the lobby state or as its own setup_view; a setup_view for this lobby survives
   -- a lobby_view without one.
   local code = d.state and d.state.code
@@ -379,7 +465,23 @@ local function on_history(d)
   U.changed()
 end
 
-local function on_toast(d) W.toast(d.key, d.vars) end
+--- A friend's invite (queue/attach.ts: key mp_invited, vars {name, code}): a toast now, and a
+--- Join row in the Multiplayer panel until joined, dismissed or replaced by a newer invite.
+function U.invited(vars)
+  vars = vars or {}
+  local code = U.overlays and U.overlays.clean_code(vars.code) or tostring(vars.code or '')
+  if #code ~= 6 then return false end
+  local name = tostring(vars.name or '?')
+  U.model.invite = { name = name, code = code }
+  W.toast('rmh_mp_invited_by', { name })
+  U.changed()
+  return true
+end
+
+local function on_toast(d)
+  if d.key == 'mp_invited' then return U.invited(d.vars) end
+  W.toast(d.key, d.vars)
+end
 
 --- Leave the lobby (after confirm): tell TS, forget the view, back to the PvP menu.
 function U.leave_lobby()

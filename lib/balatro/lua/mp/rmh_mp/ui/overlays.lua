@@ -31,11 +31,11 @@ end
 function O.join_code()
   O.join.code = ''
   return W.overlay({ name = 'join_code', contents = {
-    W.row({ W.text(TH.T('k_lobby_code_cap', 'LOBBY CODE'), { scale = 0.5 }) }, { padding = 0.1 }),
+    W.row({ W.text(TH.T('rmh_mp_ui_lobby_code_cap', 'LOBBY CODE'), { scale = 0.5 }) }, { padding = 0.1 }),
     W.row({ create_text_input({ id = 'mp_code_input', w = 4, h = 0.6, max_length = 6, all_caps = true,
       prompt_text = TH.T('k_enter_lobby_code', 'Enter Lobby Code'), ref_table = O.join, ref_value = 'code',
       callback = function() F.rmh_mp_join_submit() end }) }, { padding = 0.1 }),
-    W.row({ W.button({ id = 'mp_join_submit', label = TH.T('k_join_lobby_cap', 'JOIN LOBBY'), button = 'rmh_mp_join_submit',
+    W.row({ W.button({ id = 'mp_join_submit', label = TH.T('rmh_mp_ui_join_lobby_cap', 'JOIN LOBBY'), button = 'rmh_mp_join_submit',
       colour = TH.col('GREEN'), minw = 4, minh = 0.7 }) }, { padding = 0.1 }),
   } })
 end
@@ -93,7 +93,7 @@ function O.notice(args)
     lines[#lines + 1] = W.row({ W.text(l, { scale = 0.4 }) }, { padding = 0.03 })
   end
   local buttons = {}
-  local list = args.buttons or { { label = TH.T('k_ok', 'OK'), colour = TH.col('ORANGE') } }
+  local list = args.buttons or { { label = TH.T('rmh_mp_ui_ok', 'OK'), colour = TH.col('ORANGE') } }
   for i, b in ipairs(list) do
     if i > 1 then buttons[#buttons + 1] = W.col({}, { minw = 0.3 }) end
     buttons[#buttons + 1] = W.button({ id = 'mp_notice_' .. i, label = b.label, button = 'rmh_mp_notice_button',
@@ -118,7 +118,7 @@ end
 -- ── Prompts (HUD-16, LOB-14, LOB-15) ────────────────────────────────────────
 
 function O.reconnect()
-  return O.notice({ name = 'reconnect', title = TH.T('k_reconnect_prompt_title', 'Reconnect?'),
+  return O.notice({ name = 'reconnect', title = TH.T('rmh_mp_ui_reconnect_prompt_title', 'Reconnect?'),
     lines = { TH.T('rmh_mp_ui_reconnect_1', 'You are still in a match.'),
       TH.T('rmh_mp_ui_reconnect_2', 'Reconnect to pick up where you left off, or leave to forfeit.') },
     buttons = {
@@ -130,10 +130,10 @@ end
 function O.seat_held(code)
   local line = code and TH.TV('rmh_mp_ui_seat_held_code', 'You still hold a seat in lobby #1#', { code })
     or TH.T('rmh_mp_ui_seat_held_body', 'You still hold a seat in another game')
-  return O.notice({ name = 'seat_held', title = TH.T('k_seat_held_title', 'Seat Still Held'), lines = { line },
+  return O.notice({ name = 'seat_held', title = TH.T('rmh_mp_ui_seat_held_title', 'Seat Still Held'), lines = { line },
     buttons = {
-      { label = TH.T('b_seat_held_rejoin', 'Rejoin'), colour = TH.col('GREEN'), fn = function() U.send('ui_seat', { op = 'rejoin' }) end },
-      { label = TH.T('b_seat_held_leave', 'Leave it'), colour = TH.col('RED'), fn = function() U.send('ui_seat', { op = 'abandon' }) end },
+      { label = TH.T('rmh_mp_ui_seat_held_rejoin', 'Rejoin'), colour = TH.col('GREEN'), fn = function() U.send('ui_seat', { op = 'rejoin' }) end },
+      { label = TH.T('rmh_mp_ui_seat_held_leave', 'Leave it'), colour = TH.col('RED'), fn = function() U.send('ui_seat', { op = 'abandon' }) end },
     } })
 end
 
@@ -153,26 +153,32 @@ local function to_menu()
 end
 
 function O.kicked()
-  return O.notice({ name = 'kicked', title = TH.T('k_kicked_title', 'Removed from Lobby'),
-    lines = { TH.T('k_player_kicked_you', 'The host removed you from the lobby.') },
-    buttons = { { label = TH.T('k_ok', 'OK'), fn = to_menu } } })
+  return O.notice({ name = 'kicked', title = TH.T('rmh_mp_ui_kicked_title', 'Removed from Lobby'),
+    lines = { TH.T('rmh_mp_ui_player_kicked_you', 'The host removed you from the lobby.') },
+    buttons = { { label = TH.T('rmh_mp_ui_ok', 'OK'), fn = to_menu } } })
 end
 
 function O.forfeited()
-  return O.notice({ name = 'forfeited', title = TH.T('k_forfeited_title', 'Match Forfeited'),
-    lines = { TH.T('k_forfeited_body', 'You forfeited this match.') },
-    buttons = { { label = TH.T('k_forfeited_menu', 'Main Menu'), fn = to_menu } } })
+  return O.notice({ name = 'forfeited', title = TH.T('rmh_mp_ui_forfeited_title', 'Match Forfeited'),
+    lines = { TH.T('rmh_mp_ui_forfeited_body', 'You forfeited this match.') },
+    buttons = { { label = TH.T('rmh_mp_ui_forfeited_menu', 'Main Menu'), fn = to_menu } } })
 end
 
 function O.connection_lost()
-  return O.notice({ name = 'connection_lost', title = TH.T('k_connection_lost_title', 'Connection Lost'),
+  return O.notice({ name = 'connection_lost', title = TH.T('rmh_mp_ui_connection_lost_title', 'Connection Lost'),
     lines = { TH.T('rmh_mp_ui_connection_lost_body', 'The connection to the lobby was lost.') },
-    buttons = { { label = TH.T('k_connection_lost_menu', 'Main Menu'), fn = to_menu } } })
+    buttons = { { label = TH.T('rmh_mp_ui_connection_lost_menu', 'Main Menu'), fn = to_menu } } })
 end
 
 -- ── lobby_error codes ───────────────────────────────────────────────────────
--- Hub codes (net/events.ts zHubErrorCode + zAdmitReason), the clipboard/offline codes the page
--- sends (pack-loader.ts), and the session's own. Unknown codes show a generic line with the code.
+-- Every code a `lobby_error` can carry, each with its own translatable line:
+--   hub (net/events.ts zHubErrorCode, zAdmitReason, the close reasons);
+--   page (pack-loader.ts): clipboard-empty, clipboard-denied, offline;
+--   session (lobby/runtime.ts, lobby-host.ts): practice-busy, invalid, start-<startBlock>;
+--   matchmaking (queue/attach.ts, WS12): practice, in-lobby, no-players, party-<partyQueueBlock>;
+--   UI guard: queued.
+-- version-mismatch, seat-held, kicked, forfeited and the lost-lobby codes (O.LOST) open a dialog
+-- instead. An unknown code still shows a generic line with the code.
 
 O.ERRORS = {
   ['auth-required'] = { 'rmh_mp_ui_err_auth', 'Sign in to play Multiplayer' },
@@ -182,13 +188,41 @@ O.ERRORS = {
   ['rate-limited'] = { 'rmh_mp_ui_err_rate', 'Too fast - try again in a moment' },
   ['invalid'] = { 'rmh_mp_ui_err_invalid', 'That request was refused' },
   ['room-limit'] = { 'rmh_mp_ui_err_room_limit', 'Too many lobbies are open right now' },
-  ['not-host'] = { 'k_opts_only_host', 'Only the Lobby Host can change these options' },
+  ['not-host'] = { 'rmh_mp_ui_err_not_host', 'Only the lobby host can do that' },
   ['host-refused'] = { 'rmh_mp_ui_err_refused', 'The host did not let you in' },
   ['clipboard-empty'] = { 'rmh_mp_ui_err_clipboard_empty', 'No lobby code on the clipboard' },
   ['clipboard-denied'] = { 'rmh_mp_ui_err_clipboard_denied', 'The browser blocked the clipboard' },
   ['offline'] = { 'rmh_mp_ui_err_offline', 'Not connected to the Multiplayer service' },
-  ['queued'] = { 'k_queue_guard_desc', "You can't start a run or join a lobby while searching for a match." },
+  ['queued'] = { 'rmh_mp_ui_queue_guard_desc', "You can't start a run or join a lobby while searching for a match." },
+  ['practice'] = { 'rmh_mp_ui_err_practice', "Practice and a match search can't run at the same time" },
+  ['practice-busy'] = { 'rmh_mp_ui_err_practice_busy', 'Leave the lobby to start Practice' },
+  ['in-lobby'] = { 'rmh_mp_ui_err_in_lobby', 'Leave the lobby before searching for a match' },
+  ['no-players'] = { 'rmh_mp_ui_err_no_players', 'Nobody else joined the match' },
+  ['party-not-ready'] = { 'rmh_mp_ui_err_party_not_ready', 'Everyone in the party must be ready' },
+  ['party-not-host'] = { 'rmh_mp_ui_err_party_not_host', 'Only the party host can search for a match' },
+  ['party-disconnected'] = { 'rmh_mp_ui_err_party_disconnected', 'A party member is not connected' },
+  ['party-too-many'] = { 'rmh_mp_ui_err_party_too_many', 'The party has too many players' },
+  ['party-started'] = { 'rmh_mp_ui_err_party_started', 'The party is already in a game' },
+  ['party-not-party'] = { 'rmh_mp_ui_err_party_not_party', 'Only a party lobby can search together' },
+  ['start-started'] = { 'rmh_mp_ui_block_started', 'The game has already started' },
+  ['start-setup'] = { 'rmh_mp_ui_block_setup', 'The match setup is still running' },
+  ['start-players'] = { 'rmh_mp_ui_block_players', 'Waiting for more players' },
+  ['start-disconnected'] = { 'rmh_mp_ui_block_disconnected', 'A player is not connected' },
+  ['start-ready'] = { 'rmh_mp_ui_block_ready', 'Waiting for everyone to ready up' },
 }
+
+--- Codes that mean "the lobby is gone for you": hub close reasons, the host's room closed, a
+--- member's link dropped.
+O.LOST = { ['host-lost'] = true, ['host-closed'] = true, ['expired'] = true, ['connection-lost'] = true,
+  ['closed'] = true, ['disconnected'] = true }
+
+--- The translated line for a lobby_error code and its key (the generic line for unknown codes).
+function O.error_text(code)
+  local base = tostring(code or ''):match('^([^:]*)') or ''
+  local e = O.ERRORS[base]
+  if e then return TH.T(e[1], e[2]), e[1] end
+  return TH.TV('rmh_mp_ui_err_generic', 'Something went wrong (#1#)', { base }), 'rmh_mp_ui_err_generic'
+end
 
 --- Show what a lobby_error code means. Codes may carry a lobby code: 'seat-held:ABC234'.
 function O.error(code)
@@ -201,13 +235,12 @@ function O.error(code)
   if base == 'seat-held' then return O.seat_held(arg ~= '' and arg or nil) end
   if base == 'kicked' then return O.kicked() end
   if base == 'forfeited' then return O.forfeited() end
-  if base == 'host-lost' or base == 'host-closed' or base == 'expired' or base == 'connection-lost' then
-    return O.connection_lost()
+  if O.LOST[base] then return O.connection_lost() end
+  local text, key = O.error_text(base)
+  if key == 'rmh_mp_ui_err_generic' then
+    return W.toast(key, { base }, { default = text, colour = TH.col('RED') })
   end
-  local e = O.ERRORS[base]
-  local text = e and TH.T(e[1], e[2]) or TH.TV('rmh_mp_ui_err_generic', 'Something went wrong (#1#)', { base })
-  if e then return W.toast(e[1], nil, { default = text, colour = TH.col('RED') }) end
-  return W.toast('rmh_mp_ui_err_generic', { base }, { default = text, colour = TH.col('RED') })
+  return W.toast(key, nil, { default = text, colour = TH.col('RED') })
 end
 
 -- ── Late result (a match that ended while the player was at the menu) ──────
@@ -216,12 +249,12 @@ local function late_result(o)
   if not U.at_main_menu() then return end
   local me = MP.state.session and MP.state.session.me or (U.model.lobby and U.model.lobby.me)
   local line
-  if o.draw then line = TH.T('k_ranked_result_drew', 'It was a draw.')
-  elseif o.winner_id and o.winner_id == me then line = TH.T('k_ranked_result_won', 'You won.')
+  if o.draw then line = TH.T('rmh_mp_ui_ranked_result_drew', 'It was a draw.')
+  elseif o.winner_id and o.winner_id == me then line = TH.T('rmh_mp_ui_ranked_result_won', 'You won.')
   elseif o.places and me and o.places[me] then
-    line = TH.T('k_late_result_place', 'You finished in place') .. ' ' .. tostring(o.places[me])
-  else line = TH.T('k_ranked_result_lost', 'You lost.') end
-  W.toast('k_late_result_ended', nil, { default = TH.T('rmh_mp_ui_late_result', 'The match you left has ended.') .. ' ' .. line })
+    line = TH.T('rmh_mp_ui_late_result_place', 'You finished in place') .. ' ' .. tostring(o.places[me])
+  else line = TH.T('rmh_mp_ui_ranked_result_lost', 'You lost.') end
+  W.toast('mp_late_result', nil, { default = TH.T('rmh_mp_ui_late_result', 'The match you left has ended.') .. ' ' .. line })
 end
 
 if MP.report and MP.report.on then MP.report.on('win', late_result) end

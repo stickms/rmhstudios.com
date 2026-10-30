@@ -1,5 +1,27 @@
 {
-  "$comment": "Our own multiplayer strings (PLAN LOC-02), merged into the en-us MP localization by scripts/balatro/build-game-pack.py. Same shape as a game localization table. English is authoritative; a translation goes in extra-strings.<lang>.json with the same keys (a key missing there falls back to English). Keys start with rmh_mp_ and must not collide with the mod's keys (the builder fails if they do). Keep the text to characters the game fonts draw: the builder checks every shipped string against the glyph bitmap.",
+  "$comment": "Our own multiplayer strings (PLAN LOC-02), merged into the en-us MP localization by scripts/balatro/build-game-pack.py. Same shape as a game localization table. English is authoritative; a translation goes in extra-strings.<lang>.json with the same keys (a key missing there falls back to English). Keys start with rmh_mp_ (except names the engine derives, such as k_trap for the Trap set, b_trap_cards, undiscovered_trap, and content descriptions such as Back.b_mp_echodeck) and must not collide with the mod's keys (the builder fails if they do). Keep the text to characters the game fonts draw: the builder checks every shipped string against the glyph bitmap.",
+  "descriptions": {
+    "Back": {
+      "b_mp_echodeck": {
+        "name": "Echo Deck",
+        "text": [
+          "{C:attention}Retrigger{} all playing cards",
+          "{C:red}X1.2{} base Blind size",
+          "Increases by {C:red}X0.2{} each Ante"
+        ]
+      }
+    },
+    "Other": {
+      "undiscovered_trap": {
+        "name": "??? Trap Card",
+        "text": [
+          "Drafted by an",
+          "opponent - reacts",
+          "to something you do"
+        ]
+      }
+    }
+  },
   "misc": {
     "dictionary": {
       "rmh_mp_version_mismatch": "Version mismatch",
@@ -116,7 +138,123 @@
       "rmh_mp_ui_layer_debuff_played_cards": "Debuffed Played Cards",
       "rmh_mp_ui_layer_all_eternal": "All Eternal",
       "rmh_mp_ui_layer_gambling_opportunity": "Gambling Opportunity",
-      "rmh_mp_ui_layer_bigger_shop": "Bigger Shop"
+      "rmh_mp_ui_layer_bigger_shop": "Bigger Shop",
+      "rmh_mp_ui_by_code_cap": "BY CODE",
+      "rmh_mp_ui_cancel_search_cap": "CANCEL",
+      "rmh_mp_ui_copy_code_cap": "COPY CODE",
+      "rmh_mp_ui_create_lobby_cap": [
+        "CREATE",
+        "LOBBY"
+      ],
+      "rmh_mp_ui_find_game_cap": "FIND GAME",
+      "rmh_mp_ui_from_clipboard_cap": "FROM CLIPBOARD",
+      "rmh_mp_ui_group_cancel": "Cancel",
+      "rmh_mp_ui_leave_lobby_cap": [
+        "LEAVE",
+        "LOBBY"
+      ],
+      "rmh_mp_ui_lobby_options_cap": [
+        "LOBBY",
+        "OPTIONS"
+      ],
+      "rmh_mp_ui_practice_cap": "PRACTICE",
+      "rmh_mp_ui_ready_cap": "READY",
+      "rmh_mp_ui_replay_cap": "REPLAYS",
+      "rmh_mp_ui_searching_cap": "SEARCHING...",
+      "rmh_mp_ui_seat_held_leave": "Leave it",
+      "rmh_mp_ui_seat_held_rejoin": "Rejoin",
+      "rmh_mp_ui_stakes": "Stakes",
+      "rmh_mp_ui_start_game_cap": [
+        "START",
+        "GAME"
+      ],
+      "rmh_mp_ui_unready_cap": "UNREADY",
+      "rmh_mp_ui_view_code_cap": "VIEW CODE",
+      "rmh_mp_ui_avatar_goal_counter_games": "Play #1# games",
+      "rmh_mp_ui_avatar_goal_counter_wins": "Win #1# games",
+      "rmh_mp_ui_avatar_goal_counter_wins_one": "Win a game",
+      "rmh_mp_ui_avatar_goal_default": "Available to everyone",
+      "rmh_mp_ui_avatar_unlocked_title": "Avatar Unlocked!",
+      "rmh_mp_ui_banpick_banned": "BANNED",
+      "rmh_mp_ui_banpick_bans_left": "Bans left:",
+      "rmh_mp_ui_banpick_confirm": "Confirm Ban",
+      "rmh_mp_ui_banpick_confirm_pick": "Confirm Pick",
+      "rmh_mp_ui_banpick_pick_turn": "Your turn: pick your deck",
+      "rmh_mp_ui_banpick_selected": "Selected:",
+      "rmh_mp_ui_banpick_their_turn": "Waiting for opponent...",
+      "rmh_mp_ui_banpick_time_left": "Time left:",
+      "rmh_mp_ui_banpick_title": "DECK BAN",
+      "rmh_mp_ui_banpick_your_turn": "Your turn: ban a deck",
+      "rmh_mp_ui_casual_cap": "CASUAL",
+      "rmh_mp_ui_chat_section_title": "Chat",
+      "rmh_mp_ui_choose_avatar": "Choose Avatar",
+      "rmh_mp_ui_connection_lost_menu": "Main Menu",
+      "rmh_mp_ui_connection_lost_title": "Connection Lost",
+      "rmh_mp_ui_copied_cap": "COPIED!",
+      "rmh_mp_ui_draw_vote": "Vote for Draw",
+      "rmh_mp_ui_forfeited_body": "You forfeited this match.",
+      "rmh_mp_ui_forfeited_menu": "Main Menu",
+      "rmh_mp_ui_forfeited_title": "Match Forfeited",
+      "rmh_mp_ui_group_member_hint": "The host can queue this lobby for a casual match.",
+      "rmh_mp_ui_group_mode": "Casual mode",
+      "rmh_mp_ui_group_status_queued": "Searching as a group...",
+      "rmh_mp_ui_join_lobby_cap": "JOIN LOBBY",
+      "rmh_mp_ui_kick_player": "Kick Player",
+      "rmh_mp_ui_kicked_title": "Removed from Lobby",
+      "rmh_mp_ui_late_result_place": "You finished in place",
+      "rmh_mp_ui_lobby_code_cap": "LOBBY CODE",
+      "rmh_mp_ui_multiplayer": "Multiplayer",
+      "rmh_mp_ui_mute_player": "Mute Player",
+      "rmh_mp_ui_muted_label": "Muted",
+      "rmh_mp_ui_not_ready": "Not Ready",
+      "rmh_mp_ui_ok": "OK",
+      "rmh_mp_ui_party": "Party",
+      "rmh_mp_ui_party_desc_1": "Queue Casual",
+      "rmh_mp_ui_party_desc_2": "together",
+      "rmh_mp_ui_player_kicked_you": "The host removed you from the lobby.",
+      "rmh_mp_ui_player_overlay_tab_actions": "Actions",
+      "rmh_mp_ui_queue_guard_desc": "You can't start a run or join a lobby while searching for a match.",
+      "rmh_mp_ui_ranked_result_drew": "It was a draw.",
+      "rmh_mp_ui_ranked_result_lost": "You lost.",
+      "rmh_mp_ui_ranked_result_won": "You won.",
+      "rmh_mp_ui_ready": "Ready",
+      "rmh_mp_ui_reconnect_prompt_title": "Reconnect?",
+      "rmh_mp_ui_seat_held_title": "Seat Still Held",
+      "rmh_mp_ui_status_connected": "Connected",
+      "rmh_mp_ui_status_connecting": "Connecting...",
+      "rmh_mp_ui_status_offline": "Offline",
+      "rmh_mp_ui_status_queueing": "Queueing",
+      "rmh_mp_ui_unmute_player": "Unmute Player",
+      "rmh_mp_ui_waiting_for_players": "Waiting for players...",
+      "rmh_mp_ui_offline_server": "Disconnected by the server",
+      "rmh_mp_ui_offline_closed": "Disconnected",
+      "rmh_mp_ui_offline_retry": "Trying to reconnect...",
+      "rmh_mp_ui_match_found_cap": "MATCH FOUND!",
+      "rmh_mp_ui_invite_join": "Join",
+      "rmh_mp_ui_invite_dismiss": "Dismiss",
+      "rmh_mp_ui_edit_deck": "Edit Deck",
+      "rmh_mp_ui_cocktail_select_all": "Select all",
+      "rmh_mp_ui_cocktail_stickers": "Stickers:",
+      "rmh_mp_ui_cocktail_shown": "Shown",
+      "rmh_mp_ui_cocktail_hidden": "Hidden",
+      "rmh_mp_ui_err_not_host": "Only the lobby host can do that",
+      "rmh_mp_ui_err_practice": "Practice and a match search can't run at the same time",
+      "rmh_mp_ui_err_practice_busy": "Leave the lobby to start Practice",
+      "rmh_mp_ui_err_in_lobby": "Leave the lobby before searching for a match",
+      "rmh_mp_ui_err_no_players": "Nobody else joined the match",
+      "rmh_mp_ui_err_party_not_ready": "Everyone in the party must be ready",
+      "rmh_mp_ui_err_party_not_host": "Only the party host can search for a match",
+      "rmh_mp_ui_err_party_disconnected": "A party member is not connected",
+      "rmh_mp_ui_err_party_too_many": "The party has too many players",
+      "rmh_mp_ui_err_party_started": "The party is already in a game",
+      "rmh_mp_ui_err_party_not_party": "Only a party lobby can search together",
+      "rmh_mp_ui_block_started": "The game has already started",
+      "rmh_mp_ui_block_setup": "The match setup is still running",
+      "rmh_mp_ui_block_players": "Waiting for more players",
+      "rmh_mp_ui_block_disconnected": "A player is not connected",
+      "rmh_mp_ui_block_ready": "Waiting for everyone to ready up",
+      "k_trap": "Trap",
+      "b_trap_cards": "Trap Cards"
     },
     "v_dictionary": {
       "rmh_mp_invited_by": "#1# invited you",
@@ -128,7 +266,9 @@
       "rmh_mp_ui_lobby_counts": "#1# players  #2# spectators",
       "rmh_mp_ui_seat_held_code": "You still hold a seat in lobby #1#",
       "rmh_mp_ui_kick_confirm": "Kick #1#? They cannot rejoin.",
-      "rmh_mp_ui_err_generic": "Something went wrong (#1#)"
+      "rmh_mp_ui_err_generic": "Something went wrong (#1#)",
+      "rmh_mp_ui_return_party": "Return to lobby #1#",
+      "rmh_mp_trap_triggered": "#1# Triggered!"
     }
   }
 }

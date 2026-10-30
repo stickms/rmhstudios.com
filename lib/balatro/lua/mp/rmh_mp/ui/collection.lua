@@ -28,7 +28,7 @@ CO.TABS = {
   { id = 'blinds', label = 'b_blinds', def = 'Blinds', kinds = { Blind = true }, rows = true },
   { id = 'tags', label = 'b_tags', def = 'Tags', kinds = { Tag = true }, rows = true },
   { id = 'vouchers', label = 'b_vouchers', def = 'Vouchers', kinds = { Voucher = true } },
-  { id = 'stakes', label = 'b_stakes', def = 'Stakes', stakes = true, rows = true },
+  { id = 'stakes', label = 'rmh_mp_ui_stakes', def = 'Stakes', stakes = true, rows = true },
   { id = 'challenges', label = 'b_challenges', def = 'Challenges', kinds = { Challenge = true }, rows = true },
   { id = 'sandbox', label = 'k_sandbox', def = 'Sandbox', sandbox = true },
 }

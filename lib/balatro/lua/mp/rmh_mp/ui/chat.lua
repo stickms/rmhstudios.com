@@ -143,7 +143,7 @@ end
 
 MP.net.on('chat_line', function(d) CH.add(d) end)
 MP.net.on('vote_progress', function(d)
-  local label = d.kind == 'seed' and TH.T('rmh_mp_ui_vote_seed', 'Vote to change seed') or TH.T('k_draw_vote', 'Vote for Draw')
+  local label = d.kind == 'seed' and TH.T('rmh_mp_ui_vote_seed', 'Vote to change seed') or TH.T('rmh_mp_ui_draw_vote', 'Vote for Draw')
   CH.system(label .. ': ' .. tostring(d.k) .. '/' .. tostring(d.n))
 end)
 

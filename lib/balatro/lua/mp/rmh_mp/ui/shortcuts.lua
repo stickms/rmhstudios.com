@@ -22,8 +22,8 @@ function SC.list(model)
   local out = {}
   local function add(key, label, def, fn) out[#out + 1] = { key = key, label = TH.T(label, def), run = fn } end
   if view.state.kind ~= 'casual' then
-    add('c', 'b_copy_code_cap', 'COPY CODE', F.rmh_mp_copy_code)
-    add('v', 'b_view_code_cap', 'VIEW CODE', F.rmh_mp_view_code)
+    add('c', 'rmh_mp_ui_copy_code_cap', 'COPY CODE', F.rmh_mp_copy_code)
+    add('v', 'rmh_mp_ui_view_code_cap', 'VIEW CODE', F.rmh_mp_view_code)
   end
   if not view.isHost and view.state.kind ~= 'casual' then add('r', 'b_ready', 'Ready', F.rmh_mp_ready) end
   if view.state.kind == 'private' then add('o', 'k_lobby_options', 'Lobby Options', F.rmh_mp_lobby_options) end
