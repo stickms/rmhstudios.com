@@ -15,7 +15,8 @@
 --   run_info       {seed, deck, stake, challenge}       every fresh Game:start_run (a reseed adds one)
 --   manifest       {rejoin = true}                      the run was restored from a snapshot
 --   select_blind   {slot, key, dg}    skip_blind {slot}
---   play / discard {cards = [ref], dg?}                 reorder {area, cards = [ref]} before them
+--   play / discard {cards = [ref], dg?}                 reorder {area, cards = [ref]} before them,
+--                                                       or {area = 'hand', sort} (the sort buttons)
 --   cashout {dg}   reroll {cost}      leave_shop {dg}
 --   buy {ref, id?} voucher {ref}      open_pack {ref}   use {area, ref, targets}
 --   pack_pick {ref, targets}          pack_skip {}      sell {area, ref}
@@ -176,6 +177,8 @@ function RC.flush()
     for k = #batch, 1, -1 do table.insert(RC.pending, 1, batch[k]) end
     return 0
   end
+  -- Observers of the sent log (in-engine specs; nothing in production).
+  if RC.on_batch then pcall(RC.on_batch, batch) end
   return #batch
 end
 
@@ -294,6 +297,9 @@ function RC.install()
     local function input(name, op, build)
       if not F[name] then return end
       wrap(F, name, function(orig, e, ...)
+        if REP.internal(name, e, ...) then return orig(e, ...) end
+        -- A played-back run is read-only: only the driver presses its buttons.
+        if REP.playing and not REP.driving then return end
         if rec_on() then
           local ok, err = pcall(function()
             local d, before = build(e)
@@ -339,10 +345,15 @@ function RC.install()
       return { ref = REP.ref(card), area = REP.area_name(card.area) }, note_orders
     end)
     input('skip_booster', 'pack_skip', function() return {} end)
+    -- The hand's sort buttons change where later draws land: recorded as a reorder with the method.
+    input('sort_hand_suit', 'reorder', function() return { area = 'hand', sort = 'suit desc' } end)
+    input('sort_hand_value', 'reorder', function() return { area = 'hand', sort = 'desc' } end)
 
     -- use_card is several inputs: redeem a voucher, open a booster, pick from a pack, use a consumable.
     if F.use_card then
       wrap(F, 'use_card', function(orig, e, ...)
+        if REP.internal('use_card', e, ...) then return orig(e, ...) end
+        if REP.playing and not REP.driving then return end
         if rec_on() then
           local ok, err = pcall(function()
             local card = card_of(e)
@@ -385,6 +396,19 @@ function RC.install()
     if REP.playing and REP.BLOCK_OUT[t] then return true end
     return orig(t, d)
   end, o('net_send'))
+end
+
+--- Calls the game makes itself (not inputs): never recorded, never blocked during playback.
+---   select_blind after start_blind (the PvP pillar re-press), The Hook's discard (2nd arg true),
+---   use_card from buy-and-use (mute), from a loaded save action (nosave) or of a tag's booster.
+function REP.internal(name, e, a2, a3)
+  if name == 'select_blind' then return MP.state.pvp ~= nil and MP.state.pvp.started == true end
+  if name == 'discard_cards_from_highlighted' then return a2 == true end
+  if name == 'use_card' then
+    local card = card_of(e)
+    return a2 == true or a3 == true or (card ~= nil and card.from_tag == true)
+  end
+  return false
 end
 
 --- Live traffic a playback must not apply (it re-applies the recorded copies instead).

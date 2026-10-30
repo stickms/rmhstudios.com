@@ -42,6 +42,29 @@ function REP.is_live_id(id)
   return type(id) == 'string' and id:sub(1, 5) == 'live:'
 end
 
+--- Load the replay/spectate UI (ui/replay.lua, ui/spectate.lua) once WS10's widgets exist.
+function REP.load_ui()
+  if not (MP.ui and MP.ui.w and MP.ui.register_refresh) then return nil end
+  local ok, err = pcall(require, 'rmh_mp.ui.spectate')
+  if not ok then MP.log('error', 'replay: spectate ui failed to load: %s', tostring(err)) end
+  local ok2, rv = pcall(require, 'rmh_mp.ui.replay')
+  if not ok2 then
+    MP.log('error', 'replay: replay ui failed to load: %s', tostring(rv))
+    return nil
+  end
+  return rv
+end
+
+-- ui/menu.lua's REPLAYS button calls MP.ui.replay_open when it exists (the UI loads on first use).
+MP.ui = MP.ui or {}
+if not MP.ui.replay_open then
+  MP.ui.replay_open = function()
+    local rv = REP.load_ui()
+    if rv and rv.open then return rv.open('replays') end
+    return false
+  end
+end
+
 MP.net.on('replay_view', function(d)
   if d.list then
     REP.view.list = d.list
@@ -53,6 +76,7 @@ MP.net.on('replay_view', function(d)
     REP.view.playing = p
     local s = PL.s
     if not s or s.id ~= p.id or s.pov ~= p.pov then
+      REP.load_ui()
       PL.open({ id = p.id, pov = p.pov, live = REP.is_live_id(p.id), speed = REP.view.speed or 1 })
     end
     changed('playback')

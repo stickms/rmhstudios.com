@@ -251,6 +251,10 @@ end
 OPS.reorder = function(_, ev)
   local area = REP.area(ev.d.area)
   if not area then return nil, 'no area ' .. tostring(ev.d.area) end
+  if ev.d.sort then
+    if area.sort then area:sort(ev.d.sort) end
+    return true
+  end
   local cards, why = PL.resolve(area, ev.d.cards)
   if not cards then return nil, why end
   local rest = {}
@@ -547,7 +551,9 @@ function PL.step()
     diverge(s, ev, 'unknown op')
     return false
   end
+  REP.driving = true
   local ok, r, why = pcall(fn, s, ev)
+  REP.driving = false
   if not ok then
     diverge(s, ev, r)
     return false
