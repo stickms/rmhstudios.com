@@ -62,6 +62,11 @@ export function ProfilePage({ profile: p, signedIn }: { profile: SteamProfile; s
           >
             <div className="stm-bar-fill" style={{ width: `${Math.round(p.levelProgress * 100)}%` }} />
           </div>
+          {!p.isOwnProfile && signedIn ? (
+            <Link to="/games/trades/new/$id" params={{ id: p.id }} className="stm-btn">
+              {t('steam-trade', { defaultValue: 'Trade' })}
+            </Link>
+          ) : null}
           {!p.isOwnProfile ? (
             <Link
               to="/u/$userid"

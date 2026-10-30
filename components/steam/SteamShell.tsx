@@ -29,7 +29,10 @@ export function steamTabFor(pathname: string): 'store' | 'library' | 'community'
   if (
     pathname.startsWith('/games/community') ||
     pathname.startsWith('/games/profile') ||
-    pathname.startsWith('/games/groups')
+    pathname.startsWith('/games/groups') ||
+    pathname.startsWith('/games/inventory') ||
+    pathname.startsWith('/games/market') ||
+    pathname.startsWith('/games/trades')
   ) {
     return 'community';
   }

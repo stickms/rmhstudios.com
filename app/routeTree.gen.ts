@@ -804,6 +804,7 @@ import { Route as GamesLibraryGameIdRouteImport } from './routes/games/_library/
 import { Route as GamesLibrarySliceItRouteImport } from './routes/games/_library/slice-it'
 import { Route as GamesGroupsSlugRouteImport } from './routes/games/groups.$slug'
 import { Route as GamesProfileIdRouteImport } from './routes/games/profile.$id'
+import { Route as GamesTradesIndexRouteImport } from './routes/games/trades.index'
 import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
@@ -980,6 +981,10 @@ import { Route as ApiGamesMarketListRouteImport } from './routes/api/games/marke
 import { Route as ApiGamesSynapseStormLeaderboardRouteImport } from './routes/api/games/synapse-storm/leaderboard'
 import { Route as ApiGamesSynapseStormSaveRouteImport } from './routes/api/games/synapse-storm/save'
 import { Route as ApiGamesSynapseStormScoreRouteImport } from './routes/api/games/synapse-storm/score'
+import { Route as ApiGamesTradesAcceptRouteImport } from './routes/api/games/trades/accept'
+import { Route as ApiGamesTradesCancelRouteImport } from './routes/api/games/trades/cancel'
+import { Route as ApiGamesTradesDeclineRouteImport } from './routes/api/games/trades/decline'
+import { Route as ApiGamesTradesProposeRouteImport } from './routes/api/games/trades/propose'
 import { Route as ApiGiftExchangesIdIndexRouteImport } from './routes/api/gift-exchanges/$id/index'
 import { Route as ApiGiftExchangesIdDrawRouteImport } from './routes/api/gift-exchanges/$id/draw'
 import { Route as ApiGiftExchangesIdGiftRouteImport } from './routes/api/gift-exchanges/$id/gift'
@@ -1200,6 +1205,7 @@ import { Route as ApiWhenIdIcsRouteImport } from './routes/api/when/$id/ics'
 import { Route as ApiWhenIdLockRouteImport } from './routes/api/when/$id/lock'
 import { Route as ApiWhenIdRespondRouteImport } from './routes/api/when/$id/respond'
 import { Route as ApiWorldsVisitCodeRouteImport } from './routes/api/worlds/visit.$code'
+import { Route as GamesTradesNewIdRouteImport } from './routes/games/trades.new.$id'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
 import { Route as Tf2HudEditorHSlugRouteImport } from './routes/tf2/hud-editor/h.$slug'
 import { Route as Tf2HudEditorSTokenRouteImport } from './routes/tf2/hud-editor/s.$token'
@@ -5357,6 +5363,11 @@ const GamesProfileIdRoute = GamesProfileIdRouteImport.update({
   path: '/profile/$id',
   getParentRoute: () => GamesRoute,
 } as any)
+const GamesTradesIndexRoute = GamesTradesIndexRouteImport.update({
+  id: '/trades/',
+  path: '/trades/',
+  getParentRoute: () => GamesRoute,
+} as any)
 const LibraryAlbumsAlbumIdRoute = LibraryAlbumsAlbumIdRouteImport.update({
   id: '/library/albums/$albumId',
   path: '/library/albums/$albumId',
@@ -6304,6 +6315,26 @@ const ApiGamesSynapseStormScoreRoute =
     path: '/api/games/synapse-storm/score',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiGamesTradesAcceptRoute = ApiGamesTradesAcceptRouteImport.update({
+  id: '/api/games/trades/accept',
+  path: '/api/games/trades/accept',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesTradesCancelRoute = ApiGamesTradesCancelRouteImport.update({
+  id: '/api/games/trades/cancel',
+  path: '/api/games/trades/cancel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesTradesDeclineRoute = ApiGamesTradesDeclineRouteImport.update({
+  id: '/api/games/trades/decline',
+  path: '/api/games/trades/decline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesTradesProposeRoute = ApiGamesTradesProposeRouteImport.update({
+  id: '/api/games/trades/propose',
+  path: '/api/games/trades/propose',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGiftExchangesIdIndexRoute = ApiGiftExchangesIdIndexRouteImport.update({
   id: '/api/gift-exchanges/$id/',
   path: '/api/gift-exchanges/$id/',
@@ -7447,6 +7478,11 @@ const ApiWorldsVisitCodeRoute = ApiWorldsVisitCodeRouteImport.update({
   id: '/api/worlds/visit/$code',
   path: '/api/worlds/visit/$code',
   getParentRoute: () => rootRouteImport,
+} as any)
+const GamesTradesNewIdRoute = GamesTradesNewIdRouteImport.update({
+  id: '/trades/new/$id',
+  path: '/trades/new/$id',
+  getParentRoute: () => GamesRoute,
 } as any)
 const RmhboxMinigamesMinigameIdHistoryRoute =
   RmhboxMinigamesMinigameIdHistoryRouteImport.update({
@@ -9085,6 +9121,7 @@ export interface FileRoutesByFullPath {
   '/api/when/': typeof ApiWhenIndexRoute
   '/api/wishlist/': typeof ApiWishlistIndexRoute
   '/games/': typeof GamesLibraryIndexRoute
+  '/games/trades/': typeof GamesTradesIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
@@ -9212,6 +9249,10 @@ export interface FileRoutesByFullPath {
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
+  '/api/games/trades/accept': typeof ApiGamesTradesAcceptRoute
+  '/api/games/trades/cancel': typeof ApiGamesTradesCancelRoute
+  '/api/games/trades/decline': typeof ApiGamesTradesDeclineRoute
+  '/api/games/trades/propose': typeof ApiGamesTradesProposeRoute
   '/api/gift-exchanges/$id/draw': typeof ApiGiftExchangesIdDrawRoute
   '/api/gift-exchanges/$id/gift': typeof ApiGiftExchangesIdGiftRoute
   '/api/gift-exchanges/$id/join': typeof ApiGiftExchangesIdJoinRoute
@@ -9398,6 +9439,7 @@ export interface FileRoutesByFullPath {
   '/api/when/$id/lock': typeof ApiWhenIdLockRoute
   '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
   '/api/worlds/visit/$code': typeof ApiWorldsVisitCodeRouteWithChildren
+  '/games/trades/new/$id': typeof GamesTradesNewIdRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/tf2/hud-editor/h/$slug': typeof Tf2HudEditorHSlugRoute
   '/tf2/hud-editor/s/$token': typeof Tf2HudEditorSTokenRoute
@@ -10394,6 +10436,7 @@ export interface FileRoutesByTo {
   '/api/wheel': typeof ApiWheelIndexRoute
   '/api/when': typeof ApiWhenIndexRoute
   '/api/wishlist': typeof ApiWishlistIndexRoute
+  '/games/trades': typeof GamesTradesIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
   '/strategies/profile': typeof StrategiesProfileIndexRoute
@@ -10521,6 +10564,10 @@ export interface FileRoutesByTo {
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
+  '/api/games/trades/accept': typeof ApiGamesTradesAcceptRoute
+  '/api/games/trades/cancel': typeof ApiGamesTradesCancelRoute
+  '/api/games/trades/decline': typeof ApiGamesTradesDeclineRoute
+  '/api/games/trades/propose': typeof ApiGamesTradesProposeRoute
   '/api/gift-exchanges/$id/draw': typeof ApiGiftExchangesIdDrawRoute
   '/api/gift-exchanges/$id/gift': typeof ApiGiftExchangesIdGiftRoute
   '/api/gift-exchanges/$id/join': typeof ApiGiftExchangesIdJoinRoute
@@ -10707,6 +10754,7 @@ export interface FileRoutesByTo {
   '/api/when/$id/lock': typeof ApiWhenIdLockRoute
   '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
   '/api/worlds/visit/$code': typeof ApiWorldsVisitCodeRouteWithChildren
+  '/games/trades/new/$id': typeof GamesTradesNewIdRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/tf2/hud-editor/h/$slug': typeof Tf2HudEditorHSlugRoute
   '/tf2/hud-editor/s/$token': typeof Tf2HudEditorSTokenRoute
@@ -11734,6 +11782,7 @@ export interface FileRoutesById {
   '/api/when/': typeof ApiWhenIndexRoute
   '/api/wishlist/': typeof ApiWishlistIndexRoute
   '/games/_library/': typeof GamesLibraryIndexRoute
+  '/games/trades/': typeof GamesTradesIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
@@ -11861,6 +11910,10 @@ export interface FileRoutesById {
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
+  '/api/games/trades/accept': typeof ApiGamesTradesAcceptRoute
+  '/api/games/trades/cancel': typeof ApiGamesTradesCancelRoute
+  '/api/games/trades/decline': typeof ApiGamesTradesDeclineRoute
+  '/api/games/trades/propose': typeof ApiGamesTradesProposeRoute
   '/api/gift-exchanges/$id/draw': typeof ApiGiftExchangesIdDrawRoute
   '/api/gift-exchanges/$id/gift': typeof ApiGiftExchangesIdGiftRoute
   '/api/gift-exchanges/$id/join': typeof ApiGiftExchangesIdJoinRoute
@@ -12047,6 +12100,7 @@ export interface FileRoutesById {
   '/api/when/$id/lock': typeof ApiWhenIdLockRoute
   '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
   '/api/worlds/visit/$code': typeof ApiWorldsVisitCodeRouteWithChildren
+  '/games/trades/new/$id': typeof GamesTradesNewIdRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/tf2/hud-editor/h/$slug': typeof Tf2HudEditorHSlugRoute
   '/tf2/hud-editor/s/$token': typeof Tf2HudEditorSTokenRoute
@@ -13073,6 +13127,7 @@ export interface FileRouteTypes {
     | '/api/when/'
     | '/api/wishlist/'
     | '/games/'
+    | '/games/trades/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/strategies/profile/'
@@ -13200,6 +13255,10 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
+    | '/api/games/trades/accept'
+    | '/api/games/trades/cancel'
+    | '/api/games/trades/decline'
+    | '/api/games/trades/propose'
     | '/api/gift-exchanges/$id/draw'
     | '/api/gift-exchanges/$id/gift'
     | '/api/gift-exchanges/$id/join'
@@ -13386,6 +13445,7 @@ export interface FileRouteTypes {
     | '/api/when/$id/lock'
     | '/api/when/$id/respond'
     | '/api/worlds/visit/$code'
+    | '/games/trades/new/$id'
     | '/rmhbox/minigames/$minigameId/history'
     | '/tf2/hud-editor/h/$slug'
     | '/tf2/hud-editor/s/$token'
@@ -14382,6 +14442,7 @@ export interface FileRouteTypes {
     | '/api/wheel'
     | '/api/when'
     | '/api/wishlist'
+    | '/games/trades'
     | '/rmhbox/minigames'
     | '/secret/cursed-logic'
     | '/strategies/profile'
@@ -14509,6 +14570,10 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
+    | '/api/games/trades/accept'
+    | '/api/games/trades/cancel'
+    | '/api/games/trades/decline'
+    | '/api/games/trades/propose'
     | '/api/gift-exchanges/$id/draw'
     | '/api/gift-exchanges/$id/gift'
     | '/api/gift-exchanges/$id/join'
@@ -14695,6 +14760,7 @@ export interface FileRouteTypes {
     | '/api/when/$id/lock'
     | '/api/when/$id/respond'
     | '/api/worlds/visit/$code'
+    | '/games/trades/new/$id'
     | '/rmhbox/minigames/$minigameId/history'
     | '/tf2/hud-editor/h/$slug'
     | '/tf2/hud-editor/s/$token'
@@ -15721,6 +15787,7 @@ export interface FileRouteTypes {
     | '/api/when/'
     | '/api/wishlist/'
     | '/games/_library/'
+    | '/games/trades/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/strategies/profile/'
@@ -15848,6 +15915,10 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
+    | '/api/games/trades/accept'
+    | '/api/games/trades/cancel'
+    | '/api/games/trades/decline'
+    | '/api/games/trades/propose'
     | '/api/gift-exchanges/$id/draw'
     | '/api/gift-exchanges/$id/gift'
     | '/api/gift-exchanges/$id/join'
@@ -16034,6 +16105,7 @@ export interface FileRouteTypes {
     | '/api/when/$id/lock'
     | '/api/when/$id/respond'
     | '/api/worlds/visit/$code'
+    | '/games/trades/new/$id'
     | '/rmhbox/minigames/$minigameId/history'
     | '/tf2/hud-editor/h/$slug'
     | '/tf2/hud-editor/s/$token'
@@ -16868,6 +16940,10 @@ export interface RootRouteChildren {
   ApiGamesSynapseStormLeaderboardRoute: typeof ApiGamesSynapseStormLeaderboardRoute
   ApiGamesSynapseStormSaveRoute: typeof ApiGamesSynapseStormSaveRoute
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
+  ApiGamesTradesAcceptRoute: typeof ApiGamesTradesAcceptRoute
+  ApiGamesTradesCancelRoute: typeof ApiGamesTradesCancelRoute
+  ApiGamesTradesDeclineRoute: typeof ApiGamesTradesDeclineRoute
+  ApiGamesTradesProposeRoute: typeof ApiGamesTradesProposeRoute
   ApiGiftExchangesIdDrawRoute: typeof ApiGiftExchangesIdDrawRoute
   ApiGiftExchangesIdGiftRoute: typeof ApiGiftExchangesIdGiftRoute
   ApiGiftExchangesIdJoinRoute: typeof ApiGiftExchangesIdJoinRoute
@@ -22641,6 +22717,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesProfileIdRouteImport
       parentRoute: typeof GamesRoute
     }
+    '/games/trades/': {
+      id: '/games/trades/'
+      path: '/trades'
+      fullPath: '/games/trades/'
+      preLoaderRoute: typeof GamesTradesIndexRouteImport
+      parentRoute: typeof GamesRoute
+    }
     '/library/albums/$albumId': {
       id: '/library/albums/$albumId'
       path: '/library/albums/$albumId'
@@ -23871,6 +23954,34 @@ declare module '@tanstack/react-router' {
       path: '/api/games/synapse-storm/score'
       fullPath: '/api/games/synapse-storm/score'
       preLoaderRoute: typeof ApiGamesSynapseStormScoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/trades/accept': {
+      id: '/api/games/trades/accept'
+      path: '/api/games/trades/accept'
+      fullPath: '/api/games/trades/accept'
+      preLoaderRoute: typeof ApiGamesTradesAcceptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/trades/cancel': {
+      id: '/api/games/trades/cancel'
+      path: '/api/games/trades/cancel'
+      fullPath: '/api/games/trades/cancel'
+      preLoaderRoute: typeof ApiGamesTradesCancelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/trades/decline': {
+      id: '/api/games/trades/decline'
+      path: '/api/games/trades/decline'
+      fullPath: '/api/games/trades/decline'
+      preLoaderRoute: typeof ApiGamesTradesDeclineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/trades/propose': {
+      id: '/api/games/trades/propose'
+      path: '/api/games/trades/propose'
+      fullPath: '/api/games/trades/propose'
+      preLoaderRoute: typeof ApiGamesTradesProposeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/gift-exchanges/$id/': {
@@ -25412,6 +25523,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/worlds/visit/$code'
       preLoaderRoute: typeof ApiWorldsVisitCodeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/games/trades/new/$id': {
+      id: '/games/trades/new/$id'
+      path: '/trades/new/$id'
+      fullPath: '/games/trades/new/$id'
+      preLoaderRoute: typeof GamesTradesNewIdRouteImport
+      parentRoute: typeof GamesRoute
     }
     '/rmhbox/minigames/$minigameId/history': {
       id: '/rmhbox/minigames/$minigameId/history'
@@ -27009,6 +27127,8 @@ interface GamesRouteChildren {
   GamesMarketRoute: typeof GamesMarketRoute
   GamesGroupsSlugRoute: typeof GamesGroupsSlugRoute
   GamesProfileIdRoute: typeof GamesProfileIdRoute
+  GamesTradesIndexRoute: typeof GamesTradesIndexRoute
+  GamesTradesNewIdRoute: typeof GamesTradesNewIdRoute
 }
 
 const GamesRouteChildren: GamesRouteChildren = {
@@ -27018,6 +27138,8 @@ const GamesRouteChildren: GamesRouteChildren = {
   GamesMarketRoute: GamesMarketRoute,
   GamesGroupsSlugRoute: GamesGroupsSlugRoute,
   GamesProfileIdRoute: GamesProfileIdRoute,
+  GamesTradesIndexRoute: GamesTradesIndexRoute,
+  GamesTradesNewIdRoute: GamesTradesNewIdRoute,
 }
 
 const GamesRouteWithChildren = GamesRoute._addFileChildren(GamesRouteChildren)
@@ -29337,6 +29459,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesSynapseStormLeaderboardRoute: ApiGamesSynapseStormLeaderboardRoute,
   ApiGamesSynapseStormSaveRoute: ApiGamesSynapseStormSaveRoute,
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,
+  ApiGamesTradesAcceptRoute: ApiGamesTradesAcceptRoute,
+  ApiGamesTradesCancelRoute: ApiGamesTradesCancelRoute,
+  ApiGamesTradesDeclineRoute: ApiGamesTradesDeclineRoute,
+  ApiGamesTradesProposeRoute: ApiGamesTradesProposeRoute,
   ApiGiftExchangesIdDrawRoute: ApiGiftExchangesIdDrawRoute,
   ApiGiftExchangesIdGiftRoute: ApiGiftExchangesIdGiftRoute,
   ApiGiftExchangesIdJoinRoute: ApiGiftExchangesIdJoinRoute,

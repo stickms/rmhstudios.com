@@ -61,4 +61,14 @@ describe('anonymizeAccount', () => {
     const op = tx.find((o) => o.model === 'cardListing' && o.method === 'deleteMany');
     expect(op?.args).toEqual({ where: { sellerId: 'user-1', status: 'ACTIVE' } });
   });
+
+  it('removes pending trade offers in either direction', async () => {
+    (prismaMock.$transaction as ReturnType<typeof vi.fn>).mockClear();
+    await anonymizeAccount('user-1');
+    const tx = (prismaMock.$transaction as ReturnType<typeof vi.fn>).mock.calls[0][0] as Op[];
+    const op = tx.find((o) => o.model === 'cardTrade' && o.method === 'deleteMany');
+    expect(op?.args).toEqual({
+      where: { status: 'PENDING', OR: [{ fromId: 'user-1' }, { toId: 'user-1' }] },
+    });
+  });
 });

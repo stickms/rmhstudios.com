@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 358 routes. 195 render inside the standard site shell (sidebar, nav, context rail); 163 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 360 routes. 195 render inside the standard site shell (sidebar, nav, context rail); 165 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -269,6 +269,8 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/games/market` | — | public | `app/routes/games/market.tsx` |
 | `/games/profile/:id` | — | public | `app/routes/games/profile.$id.tsx` |
 | `/games/slice-it` | Slice It! — charts, records and uploaders | public | `app/routes/games/_library/slice-it.tsx` |
+| `/games/trades` | — | public | `app/routes/games/trades.index.tsx` |
+| `/games/trades/new/:id` | — | public | `app/routes/games/trades.new.$id.tsx` |
 | `/half-life-2` | — | public | `app/routes/half-life-2.tsx` |
 | `/handle` | — | public | `app/routes/handle.ts` |
 | `/house-always-wins` | — | public | `app/routes/house-always-wins.tsx` |

@@ -143,6 +143,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of a Steam-style profile.',
   },
+  '/games/trades/new/$id': {
+    path: '/games/trades/new/fouc-audit',
+    fidelity: 'shell',
+    why: 'Signed out it redirects to sign-in; the shell is the audited page.',
+  },
   '/games/groups/$slug': {
     path: '/games/groups/fouc-audit',
     fidelity: 'shell',

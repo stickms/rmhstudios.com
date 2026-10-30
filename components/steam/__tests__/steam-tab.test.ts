@@ -12,6 +12,9 @@ describe('steamTabFor', () => {
     expect(steamTabFor('/games/community')).toBe('community');
     expect(steamTabFor('/games/profile/abc')).toBe('community');
     expect(steamTabFor('/games/groups/x')).toBe('community');
+    expect(steamTabFor('/games/inventory')).toBe('community');
+    expect(steamTabFor('/games/market')).toBe('community');
+    expect(steamTabFor('/games/trades/new/abc')).toBe('community');
   });
 
   it('maps store and arcade, and ignores everything else', () => {
