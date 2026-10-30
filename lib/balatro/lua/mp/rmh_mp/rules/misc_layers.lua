@@ -12,8 +12,12 @@
 --   score_instability    final scoring step: d = chips − mult, clamped, chips += d, mult −= d (D-03)
 --   glass_cannon         final scoring step: mult × 4
 --   shared_pockets       hand, jokers and consumables share 15 slots (hand size = base + 7 − held)
---   economy / esoteric   vanilla G.GAME.modifiers (D-39): inflation, no_interest, discard_tax,
---                        frugal, spartan, pricey_packs, flipped_cards, debuff_played_cards, all_eternal
+--   economy / esoteric   nothing here: the bundle's gameModifiers carry them (D-39: inflation,
+--                        no_interest, discard_cost, money_per_discard, no_blind_reward.Small/Big,
+--                        booster_ante_scaling, flipped_cards, debuff_played_cards, all_eternal) and
+--                        session.apply_modifiers writes them into G.GAME.modifiers
+-- Numbers come from the bundle's `mp_` params (MP.layer_param), the constants below are fallbacks:
+--   mp_shop_slots_bonus, mp_eeeee_chance, mp_shared_slots, mp_glass_cannon_xmult
 
 local MP = require 'rmh_mp.state'
 local rng = require 'rmh_mp.util.rng'
@@ -21,27 +25,14 @@ local rng = require 'rmh_mp.util.rng'
 local M = {}
 MP.misc = M
 
-M.EEEEE_P = 0.4
-M.SHARED_SLOTS = 15
+M.EEEEE_P = 0.4           -- mp_eeeee_chance
+M.SHARED_SLOTS = 15       -- mp_shared_slots
 M.SHARED_HAND_BONUS = 7
+M.GLASS_CANNON_XMULT = 4  -- mp_glass_cannon_xmult
+M.SHOP_SLOTS_BONUS = 1     -- mp_shop_slots_bonus
 
-M.MODIFIER_LAYERS = {
-  inflation = function(m) m.inflation = true end,
-  no_interest = function(m) m.no_interest = true end,
-  discard_tax = function(m) m.discard_cost = 1 end,
-  discard_cost = function(m) m.discard_cost = 1 end,
-  frugal = function(m) m.money_per_discard = 1 end,
-  money_per_discard = function(m) m.money_per_discard = 1 end,
-  spartan = function(m)
-    m.no_blind_reward = m.no_blind_reward or {}
-    m.no_blind_reward.Small, m.no_blind_reward.Big = true, true
-  end,
-  no_blind_reward = function(m) M.MODIFIER_LAYERS.spartan(m) end,
-  pricey_packs = function(m) m.booster_ante_scaling = true end,
-  flipped_cards = function(m) m.flipped_cards = 4 end,
-  debuff_played_cards = function(m) m.debuff_played_cards = true end,
-  all_eternal = function(m) m.all_eternal = true end,
-}
+local function param(name, default) return tonumber(MP.layer_param(name, default)) or default end
+
 
 function M.score_instability(chips, mult)
   local d = chips - mult
@@ -49,7 +40,7 @@ function M.score_instability(chips, mult)
   return chips + d, mult - d, d
 end
 
-function M.glass_cannon(chips, mult) return chips, mult * 4 end
+function M.glass_cannon(chips, mult) return chips, mult * param('mp_glass_cannon_xmult', M.GLASS_CANNON_XMULT) end
 
 -- ── polymorph ───────────────────────────────────────────────────────────────
 
@@ -100,8 +91,9 @@ local pockets = nil
 function M.shared_pockets_start()
   if not (G.hand and G.jokers and G.consumeables) then return end
   pockets = { base = G.hand.config.card_limit, last = nil }
-  G.jokers.config.card_limit = M.SHARED_SLOTS
-  G.consumeables.config.card_limit = M.SHARED_SLOTS
+  local slots = param('mp_shared_slots', M.SHARED_SLOTS)
+  G.jokers.config.card_limit = slots
+  G.consumeables.config.card_limit = slots
   M.shared_pockets_update()
 end
 
@@ -123,11 +115,8 @@ function M.shared_pockets_stop() pockets = nil end
 function M.register(rules)
   rules.layer_hook('bigger_shop', function()
     G.GAME.shop = G.GAME.shop or { joker_max = 2 }
-    G.GAME.shop.joker_max = (G.GAME.shop.joker_max or 2) + 1
+    G.GAME.shop.joker_max = (G.GAME.shop.joker_max or 2) + param('mp_shop_slots_bonus', M.SHOP_SLOTS_BONUS)
   end)
-  for name, fn in pairs(M.MODIFIER_LAYERS) do
-    rules.layer_hook(name, function() fn(G.GAME.modifiers) end)
-  end
   rules.layer_post_hook('shared_pockets', M.shared_pockets_start)
 end
 
@@ -144,7 +133,7 @@ function M.install()
     if predict_seed == nil and key ~= 'seed' and type(key) == 'string' and MP.layer_active('eeeee') then
       local g = G.GAME
       local salt = tostring(g.round_resets.ante) .. tostring(g.pseudorandom.seed or '')
-      if pseudohash(key .. '_eeeee' .. salt) < M.EEEEE_P then
+      if pseudohash(key .. '_eeeee' .. salt) < param('mp_eeeee_chance', M.EEEEE_P) then
         return (pseudohash(key .. '_eeeee_v' .. salt) + (g.pseudorandom.hashed_seed or 0)) / 2
       end
     end

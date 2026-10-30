@@ -21,8 +21,8 @@
 --               |'Challenge'|'Rework'|'Enhancement'
 --   rarity, cost, pos, atlas, soul_pos, config, blueprint_compat, eternal_compat, perishable_compat
 --   gate = { isolation = true } | { layers = {...} } | { include = function(session) end }
---          (default { isolation = true }: pooled when the ruleset has multiplayerContent and the
---          multiplayerJokers lobby option is not off — A2 §0.1)
+--          (default { isolation = true }: pooled when resolved.multiplayerContent and the
+--          multiplayerJokers lobby option are both true — WS4 mpContentPooled, A2 §0.1)
 --   pool = false            never pooled (blinds always; inactive sandbox; error decoys)
 --   no_collection, phantom, balanced, extra_credit
 --   silent_replaces         vanilla key the TS bundle silently bans for this rework (informational)
@@ -202,8 +202,8 @@ function R.gate_open(def, resolved, session)
   end
   if gate.isolation then
     local opts = session and session.options
-    local mpj = not (opts and opts.multiplayerJokers == false)
-    return resolved.multiplayerContent == true and mpj
+    -- mpContentPooled (WS4 resolve.ts): resolved.multiplayerContent && options.multiplayerJokers.
+    return resolved.multiplayerContent == true and opts ~= nil and opts.multiplayerJokers == true
   end
   return false
 end

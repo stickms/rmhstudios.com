@@ -213,7 +213,8 @@ if any shipped MP string is missing from its language's bitmap.
 ### Atlas registry
 
 `data/balatro-mp/atlases.json` maps an atlas key to an entry. The pack also ships
-it as the Lua table `rmh_mp/data/atlases.lua`, with `frames` omitted when null.
+it as the Lua table `rmh_mp/data/atlases.lua`: the flat `atlases` map (no `version` or
+`stub`), with `frames` omitted when null. `registry/atlas.lua` accepts both shapes.
 
 | Field         | Meaning                                                                                                                                                                                                                                                                                                                  |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -339,7 +340,7 @@ A gate opens when any of these holds:
 - `gate.include(session)` returns true;
 - one of `gate.layers` is active;
 - the default `isolation` gate: `multiplayerContent` and the `multiplayerJokers`
-  option are both on.
+  option are both `true` (a missing option counts as off, as in TS).
 
 `pool = false` keys are registered but never pooled.
 
@@ -354,12 +355,30 @@ match_start / practice_start  -> MP.session.mount(kind, info) -> MP.session.laun
 Game:start_run (wrap)          seed gets The Order '*' prefix; pre-roll pending
 Back:apply_to_run (wrap)       run seed in effect -> bans (banned ∪ bannedSilent ∪ Attrition
                                ∪ ban sources) -> gameModifiers -> MP stake -> layer hooks
-                               (setupHooks order, then active layers with a hook; deduped)
+                               (resolved.setupHooks only, in order; deduped)
                                -> Small World starting-voucher fix -> vanilla apply
 get_starting_params (wrap)     resolved.startingParams merged into the base
 after start_run                layer post hooks; set_ante 0
 go_to_menu / New Run           MP.session.unmount() (after delete_run)
 ```
+
+Applying the bundle follows WS4's conventions (`lib/balatro/mp/rulesets/layers.ts`):
+
+- `gameModifiers` go into `G.GAME.modifiers`; a dotted key is a nested path
+  (`no_blind_reward.Small` sets `modifiers.no_blind_reward.Small`).
+- `mp_` keys are not modifiers. They are layer-hook parameters, read with
+  `MP.layer_param(name, default)` (also `ctx.params`): `mp_smallworld_cull`,
+  `mp_shop_slots_bonus`, `mp_ante_scaling_mult`, `mp_reroll_increment_bonus`,
+  `mp_sticker_chance`, `mp_eeeee_chance`, `mp_shared_slots`, `mp_glass_cannon_xmult`.
+- `setupHooks` alone decides which layer hooks run. A registered hook on an active
+  layer that is not listed is logged and skipped (the layer lacks `hook: true`).
+- The isolation gate is `multiplayerContent && options.multiplayerJokers`
+  (`mpContentPooled`). `practice_start` carries no options, so practice mounts with
+  `multiplayerJokers = true`, the default the practice bundle was resolved with.
+- `lib/balatro/lua/spec/mp_rulesets_spec.lua` applies every real bundle in
+  `lib/balatro/mp/__fixtures__/rulesets-resolved.json`;
+  `rulesets-lua-fixture.test.ts` keeps that file equal to `resolveRuleset()` output
+  (`RMH_UPDATE_FIXTURES=1` regenerates it).
 
 ### Internal API (PLAN §3.d, implemented)
 

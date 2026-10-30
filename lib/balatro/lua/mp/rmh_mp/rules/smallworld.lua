@@ -7,7 +7,7 @@
 --             prerequisite-free (an upgrade voucher with `requires` is decided by its base).
 --             Cavendish is never a member: it is banned iff Gros Michel is banned.
 --   cull    = sort by key, shuffle with stream '<group>_mp_smallworld', ban the first
---             round(0.75 × n) (Vouchers: one fewer, never below 0).
+--             round(f × n), f = the bundle's mp_smallworld_cull (0.75) (Vouchers: one fewer, ≥ 0).
 --   then    = every upgrade voucher whose base voucher is banned is banned too.
 -- In-run replacements (session wraps, active while the layer is on):
 --   Tag:init       a banned tag is re-rolled (as if ante 10 under The Order); bounded retries
@@ -51,6 +51,7 @@ end
 --- Run the cull into `banned` (default G.GAME.banned_keys). Returns the list of keys it banned.
 function SW.cull(banned)
   banned = banned or G.GAME.banned_keys
+  local frac = tonumber(MP.layer_param('mp_smallworld_cull', SW.CULL_FRACTION)) or SW.CULL_FRACTION
   local newly = {}
   for _, g in ipairs(SW.groups()) do
     local keys = {}
@@ -59,7 +60,7 @@ function SW.cull(banned)
     end
     table.sort(keys)
     local n = #keys
-    local cut = round(SW.CULL_FRACTION * n)
+    local cut = round(frac * n)
     if g.name == 'Voucher' then cut = math.max(0, cut - 1) end
     local shuffled = rng.shuffle(keys, g.name .. '_mp_smallworld')
     for i = 1, math.min(cut, n) do

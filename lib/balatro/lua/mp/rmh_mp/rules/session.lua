@@ -11,11 +11,23 @@
 --   Back:apply_to_run (session wrap, BEFORE the deck applies — i.e. before the ante-1 boss,
 --     voucher and tag rolls, FL-02):
 --       run seed in effect -> bans (banned ∪ bannedSilent ∪ Attrition ∪ ban sources) ->
---       gameModifiers -> MP stake -> layer hooks (setupHooks order, then built-in layers that are
---       active but not listed) -> Small World starting-voucher fix -> vanilla apply
+--       gameModifiers -> MP stake -> layer hooks (resolved.setupHooks, in that order) ->
+--       Small World starting-voucher fix -> vanilla apply
 --   get_starting_params (session wrap): resolved.startingParams merged into the base values
 --   after Game:start_run: layer post hooks; `set_ante 0` reported (FL-01)
 --   go_to_menu / a non-MP G.FUNCS.start_run -> MP.session.unmount() (registry restored exactly)
+--
+-- Bundle conventions (WS4, lib/balatro/mp/rulesets/layers.ts header — this file must match them):
+--   * gameModifiers: merged into G.GAME.modifiers. A key with a dot is a nested path:
+--     'no_blind_reward.Small' = true -> G.GAME.modifiers.no_blind_reward.Small = true.
+--   * gameModifiers keys starting `mp_` are NOT modifiers: they are parameters for the layer
+--     hooks (MP.layer_param(name, default); ctx.params), e.g. mp_smallworld_cull = 0.75.
+--   * setupHooks lists, in chain order, every layer whose Lua module must run; it is the only
+--     source of the hook order (a layer not listed has no hook, even if one is registered).
+--   * banned ∪ bannedSilent already carry Attrition's bans and the trap packs (unless `traps` is in
+--     the chain); Lua re-applies both as a guard so an older bundle cannot leak them.
+--   * the MP-content pool gate is resolved.multiplayerContent && options.multiplayerJokers
+--     (registry.gate_open).
 --
 -- Rules API for content streams (§3.d):
 --   MP.rules.layer_hook(name, fn(ctx))       run once at run start when layer `name` is active;
@@ -60,7 +72,9 @@ end)
 local S = MP.session or {}
 MP.session = S
 
---- Layer names whose hooks run at run start, deduplicated, in order (setupHooks first).
+--- Layer names whose hooks run at run start: resolved.setupHooks, deduplicated, in order.
+--- An active layer with a registered hook that the bundle does not list is contract drift with
+--- WS4's layers.ts (`hook: true` missing): it is logged and NOT run.
 function S.hook_order(resolved, hooks)
   hooks = hooks or RULES._hooks
   local out, seen = {}, {}
@@ -68,9 +82,38 @@ function S.hook_order(resolved, hooks)
     if not seen[n] then seen[n] = true; out[#out + 1] = n end
   end
   for _, n in ipairs(resolved.layers or {}) do
-    if not seen[n] and hooks[n] then seen[n] = true; out[#out + 1] = n end
+    if not seen[n] and hooks[n] then
+      seen[n] = true
+      MP.log('warn', 'layer %s has a Lua hook but is not in setupHooks; not run', n)
+    end
   end
   return out
+end
+
+--- Apply a gameModifiers bundle to `mods` (WS4 conventions above). Returns the mp_ params.
+function S.apply_modifiers(mods, gm)
+  local params = {}
+  local keys = {}
+  for k in pairs(gm or {}) do keys[#keys + 1] = k end
+  table.sort(keys)
+  for _, k in ipairs(keys) do
+    local v = gm[k]
+    if k:sub(1, 3) == 'mp_' then
+      params[k] = v
+    elseif k:find('.', 1, true) then
+      local t = mods
+      local parts = {}
+      for part in k:gmatch('[^.]+') do parts[#parts + 1] = part end
+      for i = 1, #parts - 1 do
+        if type(t[parts[i]]) ~= 'table' then t[parts[i]] = {} end
+        t = t[parts[i]]
+      end
+      if #parts > 0 then t[parts[#parts]] = v end
+    else
+      mods[k] = v
+    end
+  end
+  return params
 end
 
 local function run_hooks(tbl, names, ctx)
@@ -109,16 +152,17 @@ function S.pre_roll(back)
     g.pseudorandom.hashed_seed = pseudohash(seed)
   end
   for _, k in ipairs(S.ban_list(sess, resolved)) do g.banned_keys[k] = true end
-  for k, v in pairs(resolved.gameModifiers or {}) do g.modifiers[k] = v end
+  local params = S.apply_modifiers(g.modifiers, resolved.gameModifiers)
   if sess and sess.mpStake then stakes.apply(sess.mpStake) end
-  local ctx = { session = sess, resolved = resolved, seed = seed, back = back }
+  local ctx = { session = sess, resolved = resolved, seed = seed, back = back, params = params }
   run_hooks(RULES._hooks, S.hook_order(resolved), ctx)
   return ctx
 end
 
 function S.post_start()
   local resolved = MP.resolved()
-  local ctx = { session = MP.state.session, resolved = resolved, seed = S.run_seed }
+  local ctx = { session = MP.state.session, resolved = resolved, seed = S.run_seed,
+    params = S.apply_modifiers({}, resolved.gameModifiers) }
   run_hooks(RULES._post, S.hook_order(resolved, RULES._post), ctx)
   -- challenges.toml: vanilla stores custom rule values in modifiers; mp_ante_scaling feeds the blinds.
   local m = G.GAME.modifiers
@@ -370,8 +414,10 @@ function S.install_net()
   MP.net.on('practice_start', function(d)
     S.mount('practice', { resolved = d.resolved, deck = d.deck, stake = d.stake, seed = d.seed,
       shape = { nemesisPairing = true, manhunt = false, teamBased = false, practice = true },
+      -- practice_start carries no options: the practice bundle is resolved from the defaults
+      -- (applyPracticeOptions), so multiplayerJokers is the default `true`.
       options = { pvpStartRound = 2, theOrder = true, startingLives = 1, deathOnRoundLoss = false,
-        goldOnLifeLoss = false, timer = false } })
+        goldOnLifeLoss = false, timer = false, multiplayerJokers = true } })
     deferred_launch()
   end)
   MP.net.on('rejoin_restore', function(d)

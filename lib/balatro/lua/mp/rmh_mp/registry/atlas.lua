@@ -1,8 +1,10 @@
 -- rmh_mp/registry/atlas.lua — MP atlases (PLAN §0.7, docs/balatro-mp.md §4, C §2.4).
 --
--- Registry format (data/balatro-mp/atlases.json, owned by WS2):
---   { version, stub?, atlases = { mp_<name> = { file, px, py, kind = 'card'|'animation'|'tag'|'asset',
---                                              frames, placeholder, variants? = { [lang] = file } } } }
+-- Registry format (owned by WS2, docs/balatro-mp.md §4 "Atlas registry"). Two shapes are accepted:
+--   * the pack's generated rmh_mp/data/atlases.lua: a FLAT map
+--       { mp_<name> = { file, px, py, kind = 'card'|'animation'|'tag'|'asset', frames?, placeholder,
+--                       variants? = { [lang] = file } } }      (`frames` omitted when null)
+--   * the JSON file data/balatro-mp/atlases.json, decoded: { version, stub?, atlases = <that map> }
 -- (`asset` = drawn directly from G.ASSET_ATLAS: stake chips, the PvP title.)
 -- Card content uses separate atlases (never an extended Joker sheet: WebGL1's 4096 px limit);
 -- the PvP blind sites read G.ANIMATION_ATLAS[<atlas>] (WS11 uses MP.registry.atlas.blind_atlas);
@@ -30,20 +32,58 @@ A.registry = A.registry or { atlases = {}, stub = true }
 A.loaded = A.loaded or {}      -- key -> 'image' | 'placeholder'
 A._tag_pos = A._tag_pos or {}
 
+local KINDS = { card = true, animation = true, tag = true, asset = true }
+
+-- One registry entry is valid when its required fields have the right types; optional fields
+-- (`frames`, `variants`, `placeholder`) are checked only when present.
+local function valid_entry(key, e)
+  if type(key) ~= 'string' or not key:match('^mp_') or type(e) ~= 'table' then return false end
+  if type(e.file) ~= 'string' or type(e.px) ~= 'number' or type(e.py) ~= 'number' or not KINDS[e.kind] then
+    return false
+  end
+  if e.frames ~= nil and type(e.frames) ~= 'number' then return false end
+  if e.placeholder ~= nil and type(e.placeholder) ~= 'string' then return false end
+  if e.variants ~= nil then
+    if type(e.variants) ~= 'table' then return false end
+    for lang, file in pairs(e.variants) do
+      if type(lang) ~= 'string' or type(file) ~= 'string' then return false end
+    end
+  end
+  return true
+end
+
+--- Normalise either accepted shape to { stub, version, atlases }; nil when it is neither.
+function A.normalize(tbl)
+  if type(tbl) ~= 'table' then return nil end
+  if tbl.atlases ~= nil then
+    if type(tbl.atlases) ~= 'table' then return nil end
+    return { version = tbl.version, stub = tbl.stub == true, atlases = tbl.atlases }
+  end
+  -- Flat map: every key must look like an atlas key (a stray scalar means it is something else).
+  local atlases = {}
+  for key, e in pairs(tbl) do
+    if type(key) ~= 'string' or type(e) ~= 'table' then return nil end
+    atlases[key] = e
+  end
+  return { stub = false, atlases = atlases }
+end
+
 function A.set_registry(tbl)
-  if type(tbl) ~= 'table' or type(tbl.atlases) ~= 'table' then
+  local reg = A.normalize(tbl)
+  if not reg then
     MP.log('warn', 'atlas: bad registry; keeping the previous one')
     return false
   end
-  for key, e in pairs(tbl.atlases) do
-    if type(key) ~= 'string' or not key:match('^mp_') or type(e) ~= 'table' or type(e.file) ~= 'string'
-      or type(e.px) ~= 'number' or type(e.py) ~= 'number'
-      or (e.kind ~= 'card' and e.kind ~= 'animation' and e.kind ~= 'tag' and e.kind ~= 'asset') then
+  local atlases = {}
+  for key, e in pairs(reg.atlases) do
+    if valid_entry(key, e) then
+      atlases[key] = e
+    else
       MP.log('warn', 'atlas: bad entry %s ignored', tostring(key))
-      tbl.atlases[key] = nil
     end
   end
-  A.registry = tbl
+  reg.atlases = atlases
+  A.registry = reg
   return true
 end
 

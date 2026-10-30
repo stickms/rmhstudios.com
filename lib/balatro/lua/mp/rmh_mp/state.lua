@@ -182,6 +182,14 @@ function MP.layer_active(name)
   return cache[name] == true
 end
 
+--- A layer-hook parameter: an `mp_` key of resolved.gameModifiers (WS4 convention, e.g.
+--- mp_smallworld_cull = 0.75). `default` when the bundle does not carry it.
+function MP.layer_param(name, default)
+  local v = (MP.resolved().gameModifiers or {})[name]
+  if v == nil then return default end
+  return v
+end
+
 --- Shared shallow/deep copy helpers (no metatables).
 function MP.copy(t, deep, seen)
   if type(t) ~= 'table' then return t end

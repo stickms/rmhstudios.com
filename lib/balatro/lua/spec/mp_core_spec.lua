@@ -266,3 +266,56 @@ describe('binding to the WS3 mailbox (rmh/net + rmh/json)', function()
     expect(got).eq('u9')
   end)
 end)
+
+-- M1 fix 3: the real rmh_mp_entry.lua registers the mp_pack handler before rmh_mp loads; binding
+-- rmh_mp must leave every P.ENTRY_J2L type with the entry (rmh/net keeps one handler per type).
+describe('binding next to the real rmh_mp_entry.lua', function()
+  local MP, web, P
+  before_each(function()
+    package.loaded['rmh/json'], package.loaded['rmh/net'], package.loaded['rmh_mp_entry'] = nil, nil, nil
+    web = { json = require('rmh/json'), net = require('rmh/net'), frame_hooks = {} }
+    web.net.queue, web.net.handlers = {}, {}
+    web.net.log = function() end
+    _G.RMH_WEB = web
+    _G.G = { FUNCS = {}, UIT = { R = 'R', C = 'C', T = 'T' }, C = { UI = { TEXT_LIGHT = { 1, 1, 1, 1 } } } }
+    _G.create_UIBox_main_menu_buttons = function() return { nodes = {} } end
+    _G.Game = { start_up = function() end }
+    require 'rmh_mp_entry'
+    web.entry_handlers = {}
+    P = require 'rmh_mp.protocol'
+    for _, t in ipairs(P.ENTRY_J2L) do web.entry_handlers[t] = web.net.handlers[t] end
+    _G.Game, _G.create_UIBox_main_menu_buttons = nil, nil
+    MP = H.boot()
+  end)
+  after_each(function()
+    H.teardown()
+    _G.RMH_WEB = nil
+    package.loaded['rmh_mp_entry'] = nil
+  end)
+
+  it('keeps every entry-level J2L handler and binds every other J2L type', function()
+    expect(#P.ENTRY_J2L > 0).truthy()
+    local entry = {}
+    for _, t in ipairs(P.ENTRY_J2L) do
+      entry[t] = true
+      expect(type(web.entry_handlers[t])).eq('function')
+      expect(web.net.handlers[t] == web.entry_handlers[t]).truthy()
+    end
+    for t in pairs(P.J2L) do
+      if not entry[t] then expect(type(web.net.handlers[t])).eq('function') end
+    end
+  end)
+
+  it('still leaves them alone after a second bind', function()
+    MP.net.bind()
+    for _, t in ipairs(P.ENTRY_J2L) do expect(web.net.handlers[t] == web.entry_handlers[t]).truthy() end
+  end)
+
+  it('an inbound mp_pack line reaches the entry, not the MP dispatcher', function()
+    local mp_saw = false
+    MP.net.on('mp_pack', function() mp_saw = true end)
+    web.net.dispatch('{"s":1,"t":"mp_pack","d":{"status":"loading","progress":0.42}}')
+    expect(web.mp_entry.st.text).eq('LOADING 42%')
+    expect(mp_saw).eq(false)
+  end)
+end)

@@ -13,19 +13,25 @@ local E = {}
 MP.experimental = E
 
 E.STICKERS = { 'persistent', 'unreliable', 'draining' }
-E.STICKER_P = 1 / 3
-E.ANTE_SCALING = 1.15
-E.REROLL_EXTRA = 1
+-- Fallbacks; the bundle's `mp_` params (WS4 layers.ts `experimental`) win.
+E.STICKER_P = 1 / 3       -- mp_sticker_chance
+E.ANTE_SCALING = 1.15     -- mp_ante_scaling_mult
+E.REROLL_EXTRA = 1        -- mp_reroll_increment_bonus
+E.SHOP_SLOTS = 1          -- mp_shop_slots_bonus
+
+local function param(name, default) return tonumber(MP.layer_param(name, default)) or default end
 
 function E.apply(ctx)
   local g = G.GAME
   g.shop = g.shop or { joker_max = 2 }
-  g.shop.joker_max = (g.shop.joker_max or 2) + 1
-  g.starting_params.ante_scaling = (g.starting_params.ante_scaling or 1) * E.ANTE_SCALING
-  g.modifiers.mp_reroll_extra = (g.modifiers.mp_reroll_extra or 0) + E.REROLL_EXTRA
+  g.shop.joker_max = (g.shop.joker_max or 2) + param('mp_shop_slots_bonus', E.SHOP_SLOTS)
+  g.starting_params.ante_scaling = (g.starting_params.ante_scaling or 1) * param('mp_ante_scaling_mult', E.ANTE_SCALING)
+  -- mp_reroll_extra is run state (saved with G.GAME, so a rejoin keeps it), not a bundle param.
+  g.modifiers.mp_reroll_extra = (g.modifiers.mp_reroll_extra or 0) + param('mp_reroll_increment_bonus', E.REROLL_EXTRA)
+  local p = param('mp_sticker_chance', E.STICKER_P)
   local enabled = {}
   for _, fam in ipairs(E.STICKERS) do
-    if pseudorandom(pseudoseed('experimental_' .. fam)) < E.STICKER_P then
+    if pseudorandom(pseudoseed('experimental_' .. fam)) < p then
       g.modifiers['mp_sticker_' .. fam] = true
       enabled[#enabled + 1] = fam
     end

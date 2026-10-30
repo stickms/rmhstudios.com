@@ -79,11 +79,11 @@ describe('Small World cull (real pools)', function()
     expect(MP.smallworld.digest() ~= a).truthy()
   end)
 
-  it('runs once per run even if the layer is listed twice', function()
+  it('runs once per run even if the layer is listed twice; only setupHooks decides', function()
     local calls = 0
     MP.rules.layer_hook('twice', function() calls = calls + 1 end)
     local order = MP.session.hook_order({ setupHooks = { 'twice', 'twice' }, layers = { 'twice', 'smallworld' } })
-    expect(order).eq({ 'twice', 'smallworld' })
+    expect(order).eq({ 'twice' })   -- smallworld is active but unlisted: WS4 lists every hooked layer
   end)
 end)
 
@@ -139,7 +139,7 @@ describe('resolved bundle application (pre-roll)', function()
     _G.get_starting_params = nil
   end)
 
-  it('runs layer hooks in setupHooks order, then active layers, with the run seed in effect', function()
+  it('runs layer hooks in setupHooks order only, with the run seed in effect', function()
     local seen = {}
     MP.rules.layer_hook('alpha', function(ctx) seen[#seen + 1] = 'alpha:' .. ctx.seed end)
     MP.rules.layer_hook('beta', function() seen[#seen + 1] = 'beta' end)
@@ -153,7 +153,9 @@ describe('resolved bundle application (pre-roll)', function()
   end)
 
   it('experimental: +1 shop slot, ×1.15 blinds, +$1 reroll steps, seeded 1/3 stickers', function()
-    mount(H.resolved({ layers = { 'experimental' } }))
+    local EXP = { layers = { 'experimental' }, setupHooks = { 'experimental' }, gameModifiers = {
+      mp_shop_slots_bonus = 1, mp_ante_scaling_mult = 1.15, mp_reroll_increment_bonus = 1, mp_sticker_chance = 1 / 3 } }
+    mount(H.resolved(EXP))
     MP.session.run_seed = 'EXP00001'
     MP.session.pre_roll()
     expect(G.GAME.shop.joker_max).eq(3)
@@ -179,7 +181,7 @@ describe('resolved bundle application (pre-roll)', function()
     G.GAME = H.fake.install().GAME
     G.GAME.shop = { joker_max = 2 }
     G.GAME.starting_params.ante_scaling = 1
-    mount(H.resolved({ layers = { 'experimental' } }))
+    mount(H.resolved(EXP))
     MP.session.run_seed = 'EXP00001'
     MP.session.pre_roll()
     for _, f in ipairs(MP.experimental.STICKERS) do
@@ -188,8 +190,10 @@ describe('resolved bundle application (pre-roll)', function()
     MP.session.unmount('t')
   end)
 
-  it('modifier layers map to the vanilla modifiers (D-39)', function()
-    mount(H.resolved({ layers = { 'spartan', 'frugal', 'pricey_packs', 'bigger_shop' } }))
+  it('modifier layers map to the vanilla modifiers through gameModifiers (D-39, dot paths)', function()
+    mount(H.resolved({ layers = { 'spartan', 'frugal', 'pricey_packs', 'bigger_shop' }, setupHooks = { 'bigger_shop' },
+      gameModifiers = { ['no_blind_reward.Small'] = true, ['no_blind_reward.Big'] = true, money_per_discard = 1,
+        booster_ante_scaling = true, mp_shop_slots_bonus = 1 } }))
     MP.session.pre_roll()
     local m = G.GAME.modifiers
     expect(m.no_blind_reward).eq({ Small = true, Big = true })
