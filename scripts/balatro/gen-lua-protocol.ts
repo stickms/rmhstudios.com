@@ -44,6 +44,12 @@ import { PEER_KINDS, WIRE_KINDS } from '../../lib/balatro/mp/wire';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const PROTOCOL_LUA_PATH = join(ROOT, 'lib/balatro/lua/mp/rmh_mp/protocol.lua');
+/**
+ * The same descriptors for the browser: `lib/balatro/mp/bridge-codec.ts` walks them
+ * so the lazy MP chunk validates the mailbox without bundling zod (~80 KB gzip of
+ * zod v4 classic). bridge-protocol.ts stays the source; this file is derived.
+ */
+export const PROTOCOL_TS_PATH = join(ROOT, 'lib/balatro/mp/bridge-schema.gen.ts');
 
 /* ─── JSON Schema → Lua descriptor ───────────────────────────────────────── */
 
@@ -54,13 +60,22 @@ type Desc =
   | { T: 'any' }
   | { T: 'null' }
   | { T: 'boolean'; n?: true }
-  | { T: 'string'; min?: number; max?: number; n?: true }
+  | { T: 'string'; min?: number; max?: number; pat?: string; n?: true }
   | { T: 'number' | 'integer'; min?: number; max?: number; xmin?: number; xmax?: number; n?: true }
   | { T: 'const'; v: string | number | boolean; n?: true }
   | { T: 'enum'; v: (string | number)[]; n?: true }
   | { T: 'array'; i: Desc; min?: number; max?: number; n?: true }
   | { T: 'tuple'; i: Desc[]; n?: true }
-  | { T: 'object'; p: [string, Desc][]; r: string[]; ap?: Desc | false; pn?: Desc; n?: true }
+  | {
+      T: 'object';
+      p: [string, Desc][];
+      r: string[];
+      ap?: Desc | false;
+      pn?: Desc;
+      n?: true;
+      /** The schema's own key order (zod's output order); `p` is sorted for Lua. */
+      ord?: string[];
+    }
   | { T: 'any_of'; o: Desc[]; n?: true }
   | { T: 'union'; key: string; m: [string, Desc][]; n?: true };
 
@@ -111,7 +126,12 @@ function lower(s: unknown): Desc {
     case 'boolean':
       return { T: 'boolean' };
     case 'string':
-      return clean({ T: 'string', min: num(js.minLength), max: num(js.maxLength) });
+      return clean({
+        T: 'string',
+        min: num(js.minLength),
+        max: num(js.maxLength),
+        pat: typeof js.pattern === 'string' ? js.pattern : undefined,
+      });
     case 'number':
     case 'integer':
       return clean({
@@ -137,7 +157,7 @@ function lower(s: unknown): Desc {
         .sort()
         .map((k) => [k, lower(props[k])] as [string, Desc]);
       const r = ((js.required ?? []) as string[]).slice().sort();
-      const desc: Desc = { T: 'object', p, r };
+      const desc: Desc = { T: 'object', p, r, ord: Object.keys(props) };
       if (js.additionalProperties === false) desc.ap = false;
       else if (js.additionalProperties !== undefined && js.additionalProperties !== true) {
         desc.ap = lower(js.additionalProperties);
@@ -392,6 +412,124 @@ export function generateProtocolLua(): string {
   return out.join('\n');
 }
 
+/* ─── TypeScript emission (the browser's copy of the descriptors) ────────── */
+
+/** JSON form of a descriptor for `bridge-codec.ts`: sub-descriptors are indices into `D`. */
+class JsEmitter {
+  private readonly index = new Map<string, number>();
+  readonly defs: string[] = [];
+
+  ref(d: Desc): number {
+    const src = JSON.stringify(this.json(d));
+    let i = this.index.get(src);
+    if (i === undefined) {
+      i = this.defs.length;
+      this.defs.push(src);
+      this.index.set(src, i);
+    }
+    return i;
+  }
+
+  private json(d: Desc): Record<string, unknown> {
+    const o: Record<string, unknown> = { T: d.T };
+    switch (d.T) {
+      case 'any':
+      case 'null':
+      case 'boolean':
+        break;
+      case 'string':
+      case 'number':
+      case 'integer':
+        for (const key of ['min', 'max', 'xmin', 'xmax', 'pat'] as const) {
+          const v = (d as Record<string, unknown>)[key];
+          if (v !== undefined) o[key] = v;
+        }
+        break;
+      case 'const':
+      case 'enum':
+        o.v = d.v;
+        break;
+      case 'array':
+        o.i = this.ref(d.i);
+        if (d.min !== undefined) o.min = d.min;
+        if (d.max !== undefined) o.max = d.max;
+        break;
+      case 'tuple':
+        o.i = d.i.map((x) => this.ref(x));
+        break;
+      case 'object':
+        o.p = Object.fromEntries(
+          (d.ord ?? d.p.map(([k]) => k)).map((k) => [k, this.ref(d.p.find(([pk]) => pk === k)![1])]),
+        );
+        o.r = d.r;
+        if (d.ap === false) o.ap = false;
+        else if (d.ap) o.ap = this.ref(d.ap);
+        if (d.pn) o.pn = this.ref(d.pn);
+        break;
+      case 'any_of':
+        o.o = d.o.map((x) => this.ref(x));
+        break;
+      case 'union':
+        o.key = d.key;
+        o.m = Object.fromEntries(d.m.map(([k, v]) => [k, this.ref(v)]));
+        break;
+    }
+    if ('n' in d && d.n) o.n = true;
+    return o;
+  }
+}
+
+/** The whole bridge-schema.gen.ts source. Deterministic. */
+export function generateProtocolTs(): string {
+  const em = new JsEmitter();
+  const table = (schemas: Record<string, z.ZodType>) =>
+    Object.keys(schemas)
+      .sort()
+      .map((t) => `    ${JSON.stringify(t)}: ${em.ref(descOf(schemas[t]))},`);
+  const l2j = table(L2J);
+  const j2l = table(J2L);
+  const constBlock = (name: string, doc: string, values: Record<string, string | number>) => [
+    `/** ${doc} */`,
+    `export const ${name} = {`,
+    ...Object.entries(values).map(([k, v]) => `  ${k}: ${JSON.stringify(v)},`),
+    '} as const;',
+  ];
+  return [
+    '// GENERATED FILE — do not edit by hand.',
+    '// Source: lib/balatro/mp/bridge-protocol.ts (PLAN §3.c), via scripts/balatro/gen-lua-protocol.ts,',
+    '// which writes the same descriptors to rmh_mp/protocol.lua. Regenerate with',
+    '// `pnpm balatro:gen-protocol`; lib/balatro/mp/__tests__/protocol-lua.test.ts fails when stale.',
+    '// Walked by bridge-codec.ts, the zod-free validator the lazy MP chunk uses. Unlike Lua it',
+    '// also checks regex patterns (`pat`).',
+    '',
+    "import type { SchemaDesc } from './bridge-codec';",
+    '',
+    ...constBlock('BRIDGE_PATHS', 'Same values as bridge-protocol.ts BRIDGE_PATHS.', BRIDGE_PATHS),
+    '',
+    ...constBlock('BRIDGE_LIMITS', 'Same values as bridge-protocol.ts BRIDGE_LIMITS.', BRIDGE_LIMITS),
+    '',
+    '/** Message type → index into D, per direction. */',
+    "export const SCHEMA: Readonly<Record<'l2j' | 'j2l', Readonly<Record<string, number>>>> = {",
+    '  l2j: {',
+    ...l2j,
+    '  },',
+    '  j2l: {',
+    ...j2l,
+    '  },',
+    '};',
+    '',
+    '/**',
+    ' * Shared descriptors. T = kind; n = nullable; p/r = properties/required; ap = record',
+    ' * values or false; pn = key schema; i = items; o = options; key/m = discriminated union;',
+    ' * pat = regex source. Sub-descriptors are indices into D.',
+    ' */',
+    'export const D: readonly SchemaDesc[] = [',
+    ...em.defs.map((src) => `  ${src},`),
+    '];',
+    '',
+  ].join('\n');
+}
+
 /** The hand-written validator appended to the generated tables. */
 const VALIDATOR_LUA = String.raw`-- ── Validator ──────────────────────────────────────────────────────────────
 
@@ -572,23 +710,31 @@ return P
 
 function main(): void {
   const check = process.argv.includes('--check');
-  const next = generateProtocolLua();
-  let current: string;
-  try {
-    current = readFileSync(PROTOCOL_LUA_PATH, 'utf8');
-  } catch {
-    current = '';
-  }
-  if (check) {
-    if (current !== next) {
-      console.error('protocol.lua is stale — run `pnpm balatro:gen-protocol`.');
-      process.exit(1);
+  const outputs: [string, string][] = [
+    [PROTOCOL_LUA_PATH, generateProtocolLua()],
+    [PROTOCOL_TS_PATH, generateProtocolTs()],
+  ];
+  let stale = false;
+  for (const [path, next] of outputs) {
+    let current: string;
+    try {
+      current = readFileSync(path, 'utf8');
+    } catch {
+      current = '';
     }
-    process.stdout.write('protocol.lua is up to date.\n');
-    return;
+    if (check) {
+      if (current !== next) {
+        console.error(`${path} is stale — run \`pnpm balatro:gen-protocol\`.`);
+        stale = true;
+      }
+      continue;
+    }
+    if (current !== next) writeFileSync(path, next);
+    process.stdout.write(`wrote ${path}\n`);
   }
-  if (current !== next) writeFileSync(PROTOCOL_LUA_PATH, next);
-  process.stdout.write(`wrote ${PROTOCOL_LUA_PATH}\n`);
+  if (!check) return;
+  if (stale) process.exit(1);
+  process.stdout.write('protocol.lua and bridge-schema.gen.ts are up to date.\n');
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
