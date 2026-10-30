@@ -256,6 +256,21 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // Games library detail pane + playtime notice (2026-10-30). English-only until the
   // translate pipeline runs on build; remove with it.
   'games-hub': [
+    // Gems and booster packs (2026-10-30)
+    'steam-gems',
+    'steam-gems-bought',
+    'steam-gems-buy',
+    'steam-gems-buy-note',
+    'steam-gems-confirm',
+    'steam-gems-open',
+    'steam-gems-opened',
+    'steam-gems-option',
+    'steam-gems-pack',
+    'steam-gems-pack-note',
+    'steam-gems-title',
+    'steam-gems-units',
+    'steam-gems-unpack',
+    'steam-gems-unpacked',
     // Profile customization and emoticons (2026-10-30)
     'steam-emotes',
     'steam-look-background',

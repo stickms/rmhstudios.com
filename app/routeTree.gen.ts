@@ -981,6 +981,9 @@ import { Route as ApiGamesCollectionsDeleteRouteImport } from './routes/api/game
 import { Route as ApiGamesCollectionsImportRouteImport } from './routes/api/games/collections/import'
 import { Route as ApiGamesCollectionsItemRouteImport } from './routes/api/games/collections/item'
 import { Route as ApiGamesCollectionsRenameRouteImport } from './routes/api/games/collections/rename'
+import { Route as ApiGamesGemsBuyRouteImport } from './routes/api/games/gems/buy'
+import { Route as ApiGamesGemsPackRouteImport } from './routes/api/games/gems/pack'
+import { Route as ApiGamesGemsUnpackRouteImport } from './routes/api/games/gems/unpack'
 import { Route as ApiGamesHubDeleteRouteImport } from './routes/api/games/hub/delete'
 import { Route as ApiGamesHubModerateRouteImport } from './routes/api/games/hub/moderate'
 import { Route as ApiGamesHubPostRouteImport } from './routes/api/games/hub/post'
@@ -6330,6 +6333,21 @@ const ApiGamesCollectionsRenameRoute =
     path: '/api/games/collections/rename',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiGamesGemsBuyRoute = ApiGamesGemsBuyRouteImport.update({
+  id: '/api/games/gems/buy',
+  path: '/api/games/gems/buy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesGemsPackRoute = ApiGamesGemsPackRouteImport.update({
+  id: '/api/games/gems/pack',
+  path: '/api/games/gems/pack',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGamesGemsUnpackRoute = ApiGamesGemsUnpackRouteImport.update({
+  id: '/api/games/gems/unpack',
+  path: '/api/games/gems/unpack',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGamesHubDeleteRoute = ApiGamesHubDeleteRouteImport.update({
   id: '/api/games/hub/delete',
   path: '/api/games/hub/delete',
@@ -9344,6 +9362,9 @@ export interface FileRoutesByFullPath {
   '/api/games/collections/import': typeof ApiGamesCollectionsImportRoute
   '/api/games/collections/item': typeof ApiGamesCollectionsItemRoute
   '/api/games/collections/rename': typeof ApiGamesCollectionsRenameRoute
+  '/api/games/gems/buy': typeof ApiGamesGemsBuyRoute
+  '/api/games/gems/pack': typeof ApiGamesGemsPackRoute
+  '/api/games/gems/unpack': typeof ApiGamesGemsUnpackRoute
   '/api/games/hub/delete': typeof ApiGamesHubDeleteRoute
   '/api/games/hub/moderate': typeof ApiGamesHubModerateRoute
   '/api/games/hub/post': typeof ApiGamesHubPostRoute
@@ -10674,6 +10695,9 @@ export interface FileRoutesByTo {
   '/api/games/collections/import': typeof ApiGamesCollectionsImportRoute
   '/api/games/collections/item': typeof ApiGamesCollectionsItemRoute
   '/api/games/collections/rename': typeof ApiGamesCollectionsRenameRoute
+  '/api/games/gems/buy': typeof ApiGamesGemsBuyRoute
+  '/api/games/gems/pack': typeof ApiGamesGemsPackRoute
+  '/api/games/gems/unpack': typeof ApiGamesGemsUnpackRoute
   '/api/games/hub/delete': typeof ApiGamesHubDeleteRoute
   '/api/games/hub/moderate': typeof ApiGamesHubModerateRoute
   '/api/games/hub/post': typeof ApiGamesHubPostRoute
@@ -12035,6 +12059,9 @@ export interface FileRoutesById {
   '/api/games/collections/import': typeof ApiGamesCollectionsImportRoute
   '/api/games/collections/item': typeof ApiGamesCollectionsItemRoute
   '/api/games/collections/rename': typeof ApiGamesCollectionsRenameRoute
+  '/api/games/gems/buy': typeof ApiGamesGemsBuyRoute
+  '/api/games/gems/pack': typeof ApiGamesGemsPackRoute
+  '/api/games/gems/unpack': typeof ApiGamesGemsUnpackRoute
   '/api/games/hub/delete': typeof ApiGamesHubDeleteRoute
   '/api/games/hub/moderate': typeof ApiGamesHubModerateRoute
   '/api/games/hub/post': typeof ApiGamesHubPostRoute
@@ -13395,6 +13422,9 @@ export interface FileRouteTypes {
     | '/api/games/collections/import'
     | '/api/games/collections/item'
     | '/api/games/collections/rename'
+    | '/api/games/gems/buy'
+    | '/api/games/gems/pack'
+    | '/api/games/gems/unpack'
     | '/api/games/hub/delete'
     | '/api/games/hub/moderate'
     | '/api/games/hub/post'
@@ -14725,6 +14755,9 @@ export interface FileRouteTypes {
     | '/api/games/collections/import'
     | '/api/games/collections/item'
     | '/api/games/collections/rename'
+    | '/api/games/gems/buy'
+    | '/api/games/gems/pack'
+    | '/api/games/gems/unpack'
     | '/api/games/hub/delete'
     | '/api/games/hub/moderate'
     | '/api/games/hub/post'
@@ -16085,6 +16118,9 @@ export interface FileRouteTypes {
     | '/api/games/collections/import'
     | '/api/games/collections/item'
     | '/api/games/collections/rename'
+    | '/api/games/gems/buy'
+    | '/api/games/gems/pack'
+    | '/api/games/gems/unpack'
     | '/api/games/hub/delete'
     | '/api/games/hub/moderate'
     | '/api/games/hub/post'
@@ -17125,6 +17161,9 @@ export interface RootRouteChildren {
   ApiGamesCollectionsImportRoute: typeof ApiGamesCollectionsImportRoute
   ApiGamesCollectionsItemRoute: typeof ApiGamesCollectionsItemRoute
   ApiGamesCollectionsRenameRoute: typeof ApiGamesCollectionsRenameRoute
+  ApiGamesGemsBuyRoute: typeof ApiGamesGemsBuyRoute
+  ApiGamesGemsPackRoute: typeof ApiGamesGemsPackRoute
+  ApiGamesGemsUnpackRoute: typeof ApiGamesGemsUnpackRoute
   ApiGamesHubDeleteRoute: typeof ApiGamesHubDeleteRoute
   ApiGamesHubModerateRoute: typeof ApiGamesHubModerateRoute
   ApiGamesHubPostRoute: typeof ApiGamesHubPostRoute
@@ -24153,6 +24192,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGamesCollectionsRenameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/games/gems/buy': {
+      id: '/api/games/gems/buy'
+      path: '/api/games/gems/buy'
+      fullPath: '/api/games/gems/buy'
+      preLoaderRoute: typeof ApiGamesGemsBuyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/gems/pack': {
+      id: '/api/games/gems/pack'
+      path: '/api/games/gems/pack'
+      fullPath: '/api/games/gems/pack'
+      preLoaderRoute: typeof ApiGamesGemsPackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/games/gems/unpack': {
+      id: '/api/games/gems/unpack'
+      path: '/api/games/gems/unpack'
+      fullPath: '/api/games/gems/unpack'
+      preLoaderRoute: typeof ApiGamesGemsUnpackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/games/hub/delete': {
       id: '/api/games/hub/delete'
       path: '/api/games/hub/delete'
@@ -29767,6 +29827,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesCollectionsImportRoute: ApiGamesCollectionsImportRoute,
   ApiGamesCollectionsItemRoute: ApiGamesCollectionsItemRoute,
   ApiGamesCollectionsRenameRoute: ApiGamesCollectionsRenameRoute,
+  ApiGamesGemsBuyRoute: ApiGamesGemsBuyRoute,
+  ApiGamesGemsPackRoute: ApiGamesGemsPackRoute,
+  ApiGamesGemsUnpackRoute: ApiGamesGemsUnpackRoute,
   ApiGamesHubDeleteRoute: ApiGamesHubDeleteRoute,
   ApiGamesHubModerateRoute: ApiGamesHubModerateRoute,
   ApiGamesHubPostRoute: ApiGamesHubPostRoute,

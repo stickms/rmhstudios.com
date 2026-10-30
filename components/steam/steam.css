@@ -2197,3 +2197,32 @@ button.stm-star {
 .stm-emote-btn:hover {
   background: var(--stm-raised);
 }
+
+/* Gems panel */
+.stm-gems-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  padding: 14px;
+}
+.stm-gems-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.stm-gems-box .stm-subhead,
+.stm-gems-box p {
+  margin: 0;
+}
+.stm-gems-row {
+  width: 100%;
+}
+.stm-gems-row .stm-input {
+  width: 100%;
+}
+.stm-sell-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
