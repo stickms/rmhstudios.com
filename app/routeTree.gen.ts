@@ -97,6 +97,7 @@ import { Route as SiteEmojiPacksRouteImport } from './routes/_site/emoji-packs'
 import { Route as SiteEventsRouteImport } from './routes/_site/events'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteGameNightRouteImport } from './routes/_site/game-night'
+import { Route as SiteGamesRouteImport } from './routes/_site/games'
 import { Route as SiteHelpRouteImport } from './routes/_site/help'
 import { Route as SiteHistoryRouteImport } from './routes/_site/history'
 import { Route as SiteHuntRouteImport } from './routes/_site/hunt'
@@ -508,6 +509,7 @@ import { Route as ApiGabrielsHornTableReadRouteImport } from './routes/api/gabri
 import { Route as ApiGameNightIndexRouteImport } from './routes/api/game-night/index'
 import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
 import { Route as ApiGamesHowToPlayRouteImport } from './routes/api/games/how-to-play'
+import { Route as ApiGamesPlaytimeRouteImport } from './routes/api/games/playtime'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiGiftExchangesIndexRouteImport } from './routes/api/gift-exchanges/index'
 import { Route as ApiGlobesetRecordRouteImport } from './routes/api/globeset/record'
@@ -695,6 +697,7 @@ import { Route as ApiSettingsAutoDeleteRouteImport } from './routes/api/settings
 import { Route as ApiSettingsEmailDigestRouteImport } from './routes/api/settings/email-digest'
 import { Route as ApiSettingsGameAssistsRouteImport } from './routes/api/settings/game-assists'
 import { Route as ApiSettingsPlayLimitsRouteImport } from './routes/api/settings/play-limits'
+import { Route as ApiSettingsPlaytimePrivacyRouteImport } from './routes/api/settings/playtime-privacy'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiShopBundleRouteImport } from './routes/api/shop/bundle'
 import { Route as ApiShopDailyRouteImport } from './routes/api/shop/daily'
@@ -1775,6 +1778,11 @@ const SiteGameNightRoute = SiteGameNightRouteImport.update({
   path: '/game-night',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteGamesRoute = SiteGamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteHelpRoute = SiteHelpRouteImport.update({
   id: '/help',
   path: '/help',
@@ -2714,19 +2722,19 @@ const SiteFeedsIdRoute = SiteFeedsIdRouteImport.update({
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteGamesIndexRoute = SiteGamesIndexRouteImport.update({
-  id: '/games/',
-  path: '/games/',
-  getParentRoute: () => SiteRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => SiteGamesRoute,
 } as any)
 const SiteGamesGameIdRoute = SiteGamesGameIdRouteImport.update({
-  id: '/games/$gameId',
-  path: '/games/$gameId',
-  getParentRoute: () => SiteRoute,
+  id: '/$gameId',
+  path: '/$gameId',
+  getParentRoute: () => SiteGamesRoute,
 } as any)
 const SiteGamesSliceItRoute = SiteGamesSliceItRouteImport.update({
-  id: '/games/slice-it',
-  path: '/games/slice-it',
-  getParentRoute: () => SiteRoute,
+  id: '/slice-it',
+  path: '/slice-it',
+  getParentRoute: () => SiteGamesRoute,
 } as any)
 const SiteGroupsIndexRoute = SiteGroupsIndexRouteImport.update({
   id: '/groups/',
@@ -3847,6 +3855,11 @@ const ApiGamesHowToPlayRoute = ApiGamesHowToPlayRouteImport.update({
   path: '/api/games/how-to-play',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGamesPlaytimeRoute = ApiGamesPlaytimeRouteImport.update({
+  id: '/api/games/playtime',
+  path: '/api/games/playtime',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
   id: '/api/gif/search',
   path: '/api/gif/search',
@@ -4796,6 +4809,12 @@ const ApiSettingsPlayLimitsRoute = ApiSettingsPlayLimitsRouteImport.update({
   path: '/api/settings/play-limits',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSettingsPlaytimePrivacyRoute =
+  ApiSettingsPlaytimePrivacyRouteImport.update({
+    id: '/api/settings/playtime-privacy',
+    path: '/api/settings/playtime-privacy',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiShopIndexRoute = ApiShopIndexRouteImport.update({
   id: '/api/shop/',
   path: '/api/shop/',
@@ -7403,9 +7422,9 @@ const SiteCSlugInviteCodeRoute = SiteCSlugInviteCodeRouteImport.update({
 } as any)
 const SiteGamesGameIdGuidesGuideIdRoute =
   SiteGamesGameIdGuidesGuideIdRouteImport.update({
-    id: '/games/$gameId_/guides/$guideId',
-    path: '/games/$gameId/guides/$guideId',
-    getParentRoute: () => SiteRoute,
+    id: '/$gameId_/guides/$guideId',
+    path: '/$gameId/guides/$guideId',
+    getParentRoute: () => SiteGamesRoute,
   } as any)
 const SiteUUseridPostPostidRoute = SiteUUseridPostPostidRouteImport.update({
   id: '/u/$userid/post/$postid',
@@ -8283,6 +8302,7 @@ export interface FileRoutesByFullPath {
   '/events': typeof SiteEventsRoute
   '/explore': typeof SiteExploreRoute
   '/game-night': typeof SiteGameNightRoute
+  '/games': typeof SiteGamesRouteWithChildren
   '/help': typeof SiteHelpRoute
   '/history': typeof SiteHistoryRoute
   '/hunt': typeof SiteHuntRoute
@@ -8633,6 +8653,7 @@ export interface FileRoutesByFullPath {
   '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
+  '/api/games/playtime': typeof ApiGamesPlaytimeRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
@@ -8788,6 +8809,7 @@ export interface FileRoutesByFullPath {
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
+  '/api/settings/playtime-privacy': typeof ApiSettingsPlaytimePrivacyRoute
   '/api/shop/bundle': typeof ApiShopBundleRoute
   '/api/shop/daily': typeof ApiShopDailyRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
@@ -9931,6 +9953,7 @@ export interface FileRoutesByTo {
   '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
+  '/api/games/playtime': typeof ApiGamesPlaytimeRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
@@ -10086,6 +10109,7 @@ export interface FileRoutesByTo {
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
+  '/api/settings/playtime-privacy': typeof ApiSettingsPlaytimePrivacyRoute
   '/api/shop/bundle': typeof ApiShopBundleRoute
   '/api/shop/daily': typeof ApiShopDailyRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
@@ -10907,6 +10931,7 @@ export interface FileRoutesById {
   '/_site/events': typeof SiteEventsRoute
   '/_site/explore': typeof SiteExploreRoute
   '/_site/game-night': typeof SiteGameNightRoute
+  '/_site/games': typeof SiteGamesRouteWithChildren
   '/_site/help': typeof SiteHelpRoute
   '/_site/history': typeof SiteHistoryRoute
   '/_site/hunt': typeof SiteHuntRoute
@@ -11258,6 +11283,7 @@ export interface FileRoutesById {
   '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
+  '/api/games/playtime': typeof ApiGamesPlaytimeRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
@@ -11413,6 +11439,7 @@ export interface FileRoutesById {
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
+  '/api/settings/playtime-privacy': typeof ApiSettingsPlaytimePrivacyRoute
   '/api/shop/bundle': typeof ApiShopBundleRoute
   '/api/shop/daily': typeof ApiShopDailyRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
@@ -12235,6 +12262,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/explore'
     | '/game-night'
+    | '/games'
     | '/help'
     | '/history'
     | '/hunt'
@@ -12585,6 +12613,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
     | '/api/games/how-to-play'
+    | '/api/games/playtime'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/groupcalls/active'
@@ -12740,6 +12769,7 @@ export interface FileRouteTypes {
     | '/api/settings/email-digest'
     | '/api/settings/game-assists'
     | '/api/settings/play-limits'
+    | '/api/settings/playtime-privacy'
     | '/api/shop/bundle'
     | '/api/shop/daily'
     | '/api/shop/equip'
@@ -13883,6 +13913,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
     | '/api/games/how-to-play'
+    | '/api/games/playtime'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/groupcalls/active'
@@ -14038,6 +14069,7 @@ export interface FileRouteTypes {
     | '/api/settings/email-digest'
     | '/api/settings/game-assists'
     | '/api/settings/play-limits'
+    | '/api/settings/playtime-privacy'
     | '/api/shop/bundle'
     | '/api/shop/daily'
     | '/api/shop/equip'
@@ -14858,6 +14890,7 @@ export interface FileRouteTypes {
     | '/_site/events'
     | '/_site/explore'
     | '/_site/game-night'
+    | '/_site/games'
     | '/_site/help'
     | '/_site/history'
     | '/_site/hunt'
@@ -15209,6 +15242,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
     | '/api/games/how-to-play'
+    | '/api/games/playtime'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/groupcalls/active'
@@ -15364,6 +15398,7 @@ export interface FileRouteTypes {
     | '/api/settings/email-digest'
     | '/api/settings/game-assists'
     | '/api/settings/play-limits'
+    | '/api/settings/playtime-privacy'
     | '/api/shop/bundle'
     | '/api/shop/daily'
     | '/api/shop/equip'
@@ -16321,6 +16356,7 @@ export interface RootRouteChildren {
   ApiGabrielsHornTableReadRoute: typeof ApiGabrielsHornTableReadRoute
   ApiGameSavesGameIdRoute: typeof ApiGameSavesGameIdRoute
   ApiGamesHowToPlayRoute: typeof ApiGamesHowToPlayRoute
+  ApiGamesPlaytimeRoute: typeof ApiGamesPlaytimeRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiGlobesetRecordRoute: typeof ApiGlobesetRecordRoute
   ApiGroupcallsActiveRoute: typeof ApiGroupcallsActiveRoute
@@ -16453,6 +16489,7 @@ export interface RootRouteChildren {
   ApiSettingsEmailDigestRoute: typeof ApiSettingsEmailDigestRoute
   ApiSettingsGameAssistsRoute: typeof ApiSettingsGameAssistsRoute
   ApiSettingsPlayLimitsRoute: typeof ApiSettingsPlayLimitsRoute
+  ApiSettingsPlaytimePrivacyRoute: typeof ApiSettingsPlaytimePrivacyRoute
   ApiShopBundleRoute: typeof ApiShopBundleRoute
   ApiShopDailyRoute: typeof ApiShopDailyRoute
   ApiShopEquipRoute: typeof ApiShopEquipRoute
@@ -17533,6 +17570,13 @@ declare module '@tanstack/react-router' {
       path: '/game-night'
       fullPath: '/game-night'
       preLoaderRoute: typeof SiteGameNightRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/games': {
+      id: '/_site/games'
+      path: '/games'
+      fullPath: '/games'
+      preLoaderRoute: typeof SiteGamesRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/help': {
@@ -18846,24 +18890,24 @@ declare module '@tanstack/react-router' {
     }
     '/_site/games/': {
       id: '/_site/games/'
-      path: '/games'
+      path: '/'
       fullPath: '/games/'
       preLoaderRoute: typeof SiteGamesIndexRouteImport
-      parentRoute: typeof SiteRoute
+      parentRoute: typeof SiteGamesRoute
     }
     '/_site/games/$gameId': {
       id: '/_site/games/$gameId'
-      path: '/games/$gameId'
+      path: '/$gameId'
       fullPath: '/games/$gameId'
       preLoaderRoute: typeof SiteGamesGameIdRouteImport
-      parentRoute: typeof SiteRoute
+      parentRoute: typeof SiteGamesRoute
     }
     '/_site/games/slice-it': {
       id: '/_site/games/slice-it'
-      path: '/games/slice-it'
+      path: '/slice-it'
       fullPath: '/games/slice-it'
       preLoaderRoute: typeof SiteGamesSliceItRouteImport
-      parentRoute: typeof SiteRoute
+      parentRoute: typeof SiteGamesRoute
     }
     '/_site/groups/': {
       id: '/_site/groups/'
@@ -20412,6 +20456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGamesHowToPlayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/games/playtime': {
+      id: '/api/games/playtime'
+      path: '/api/games/playtime'
+      fullPath: '/api/games/playtime'
+      preLoaderRoute: typeof ApiGamesPlaytimeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/gif/search': {
       id: '/api/gif/search'
       path: '/api/gif/search'
@@ -21719,6 +21770,13 @@ declare module '@tanstack/react-router' {
       path: '/api/settings/play-limits'
       fullPath: '/api/settings/play-limits'
       preLoaderRoute: typeof ApiSettingsPlayLimitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/settings/playtime-privacy': {
+      id: '/api/settings/playtime-privacy'
+      path: '/api/settings/playtime-privacy'
+      fullPath: '/api/settings/playtime-privacy'
+      preLoaderRoute: typeof ApiSettingsPlaytimePrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/shop/': {
@@ -25209,10 +25267,10 @@ declare module '@tanstack/react-router' {
     }
     '/_site/games/$gameId_/guides/$guideId': {
       id: '/_site/games/$gameId_/guides/$guideId'
-      path: '/games/$gameId/guides/$guideId'
+      path: '/$gameId/guides/$guideId'
       fullPath: '/games/$gameId/guides/$guideId'
       preLoaderRoute: typeof SiteGamesGameIdGuidesGuideIdRouteImport
-      parentRoute: typeof SiteRoute
+      parentRoute: typeof SiteGamesRoute
     }
     '/_site/u/$userid/post/$postid': {
       id: '/_site/u/$userid/post/$postid'
@@ -26303,6 +26361,24 @@ const SiteDeveloperRouteRouteChildren: SiteDeveloperRouteRouteChildren = {
 const SiteDeveloperRouteRouteWithChildren =
   SiteDeveloperRouteRoute._addFileChildren(SiteDeveloperRouteRouteChildren)
 
+interface SiteGamesRouteChildren {
+  SiteGamesGameIdRoute: typeof SiteGamesGameIdRoute
+  SiteGamesSliceItRoute: typeof SiteGamesSliceItRoute
+  SiteGamesIndexRoute: typeof SiteGamesIndexRoute
+  SiteGamesGameIdGuidesGuideIdRoute: typeof SiteGamesGameIdGuidesGuideIdRoute
+}
+
+const SiteGamesRouteChildren: SiteGamesRouteChildren = {
+  SiteGamesGameIdRoute: SiteGamesGameIdRoute,
+  SiteGamesSliceItRoute: SiteGamesSliceItRoute,
+  SiteGamesIndexRoute: SiteGamesIndexRoute,
+  SiteGamesGameIdGuidesGuideIdRoute: SiteGamesGameIdGuidesGuideIdRoute,
+}
+
+const SiteGamesRouteWithChildren = SiteGamesRoute._addFileChildren(
+  SiteGamesRouteChildren,
+)
+
 interface SiteRmhladderJobsRouteChildren {
   SiteRmhladderJobsJobIdRoute: typeof SiteRmhladderJobsJobIdRoute
 }
@@ -26380,6 +26456,7 @@ interface SiteRouteChildren {
   SiteEventsRoute: typeof SiteEventsRoute
   SiteExploreRoute: typeof SiteExploreRoute
   SiteGameNightRoute: typeof SiteGameNightRoute
+  SiteGamesRoute: typeof SiteGamesRouteWithChildren
   SiteHelpRoute: typeof SiteHelpRoute
   SiteHistoryRoute: typeof SiteHistoryRoute
   SiteHuntRoute: typeof SiteHuntRoute
@@ -26421,8 +26498,6 @@ interface SiteRouteChildren {
   SiteConnectionsNewRoute: typeof SiteConnectionsNewRoute
   SiteExchangeIdRoute: typeof SiteExchangeIdRoute
   SiteFeedsIdRoute: typeof SiteFeedsIdRoute
-  SiteGamesGameIdRoute: typeof SiteGamesGameIdRoute
-  SiteGamesSliceItRoute: typeof SiteGamesSliceItRoute
   SiteGroupsIdRoute: typeof SiteGroupsIdRoute
   SiteHomesManageRoute: typeof SiteHomesManageRoute
   SiteHomesRentSplitRoute: typeof SiteHomesRentSplitRoute
@@ -26477,7 +26552,6 @@ interface SiteRouteChildren {
   SiteConnectionsIndexRoute: typeof SiteConnectionsIndexRoute
   SiteExchangeIndexRoute: typeof SiteExchangeIndexRoute
   SiteFeedsIndexRoute: typeof SiteFeedsIndexRoute
-  SiteGamesIndexRoute: typeof SiteGamesIndexRoute
   SiteGroupsIndexRoute: typeof SiteGroupsIndexRoute
   SiteHomesIndexRoute: typeof SiteHomesIndexRoute
   SiteJamsIndexRoute: typeof SiteJamsIndexRoute
@@ -26508,7 +26582,6 @@ interface SiteRouteChildren {
   SiteNewsStoriesSlugRoute: typeof SiteNewsStoriesSlugRoute
   SiteUUseridIndexRoute: typeof SiteUUseridIndexRoute
   SiteCSlugInviteCodeRoute: typeof SiteCSlugInviteCodeRoute
-  SiteGamesGameIdGuidesGuideIdRoute: typeof SiteGamesGameIdGuidesGuideIdRoute
   SiteUUseridPostPostidRoute: typeof SiteUUseridPostPostidRoute
 }
 
@@ -26532,6 +26605,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteEventsRoute: SiteEventsRoute,
   SiteExploreRoute: SiteExploreRoute,
   SiteGameNightRoute: SiteGameNightRoute,
+  SiteGamesRoute: SiteGamesRouteWithChildren,
   SiteHelpRoute: SiteHelpRoute,
   SiteHistoryRoute: SiteHistoryRoute,
   SiteHuntRoute: SiteHuntRoute,
@@ -26573,8 +26647,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteConnectionsNewRoute: SiteConnectionsNewRoute,
   SiteExchangeIdRoute: SiteExchangeIdRoute,
   SiteFeedsIdRoute: SiteFeedsIdRoute,
-  SiteGamesGameIdRoute: SiteGamesGameIdRoute,
-  SiteGamesSliceItRoute: SiteGamesSliceItRoute,
   SiteGroupsIdRoute: SiteGroupsIdRoute,
   SiteHomesManageRoute: SiteHomesManageRoute,
   SiteHomesRentSplitRoute: SiteHomesRentSplitRoute,
@@ -26629,7 +26701,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteConnectionsIndexRoute: SiteConnectionsIndexRoute,
   SiteExchangeIndexRoute: SiteExchangeIndexRoute,
   SiteFeedsIndexRoute: SiteFeedsIndexRoute,
-  SiteGamesIndexRoute: SiteGamesIndexRoute,
   SiteGroupsIndexRoute: SiteGroupsIndexRoute,
   SiteHomesIndexRoute: SiteHomesIndexRoute,
   SiteJamsIndexRoute: SiteJamsIndexRoute,
@@ -26660,7 +26731,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteNewsStoriesSlugRoute: SiteNewsStoriesSlugRoute,
   SiteUUseridIndexRoute: SiteUUseridIndexRoute,
   SiteCSlugInviteCodeRoute: SiteCSlugInviteCodeRoute,
-  SiteGamesGameIdGuidesGuideIdRoute: SiteGamesGameIdGuidesGuideIdRoute,
   SiteUUseridPostPostidRoute: SiteUUseridPostPostidRoute,
 }
 
@@ -28659,6 +28729,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGabrielsHornTableReadRoute: ApiGabrielsHornTableReadRoute,
   ApiGameSavesGameIdRoute: ApiGameSavesGameIdRoute,
   ApiGamesHowToPlayRoute: ApiGamesHowToPlayRoute,
+  ApiGamesPlaytimeRoute: ApiGamesPlaytimeRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
   ApiGlobesetRecordRoute: ApiGlobesetRecordRoute,
   ApiGroupcallsActiveRoute: ApiGroupcallsActiveRoute,
@@ -28791,6 +28862,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSettingsEmailDigestRoute: ApiSettingsEmailDigestRoute,
   ApiSettingsGameAssistsRoute: ApiSettingsGameAssistsRoute,
   ApiSettingsPlayLimitsRoute: ApiSettingsPlayLimitsRoute,
+  ApiSettingsPlaytimePrivacyRoute: ApiSettingsPlaytimePrivacyRoute,
   ApiShopBundleRoute: ApiShopBundleRoute,
   ApiShopDailyRoute: ApiShopDailyRoute,
   ApiShopEquipRoute: ApiShopEquipRoute,

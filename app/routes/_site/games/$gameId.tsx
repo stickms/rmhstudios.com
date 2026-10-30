@@ -1,10 +1,14 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { PageLayout } from '@/components/feed/PageLayout';
-import { GameHub } from '@/components/games/GameHub';
+import { LibraryPane } from '@/components/games-library/LibraryPane';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { games } from '@/lib/games';
-import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
+import { apps } from '@/lib/apps';
+import { hueFromString } from '@/lib/builds/curated';
+import { getLibraryExtras } from '@/lib/games/detail.server';
+import type { LibraryExtras } from '@/lib/games/detail-types';
+import { GameDetail } from '@/components/games-library/GameDetail';
+import { buildMeta, buildCanonical, ogCardPath, noindexHead } from '@/lib/seo';
 import { jsonLdScript, videoGameSchema, breadcrumbSchema } from '@/lib/schema';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
 import { aiAvailable } from '@/lib/devplatform/ai.server';
@@ -15,11 +19,16 @@ import type { TrickView } from '@/lib/trick-week/trick-week';
 
 interface HubPayload {
   gameId: string;
+  /** Apps share the namespace (`/games/$gameId`) but have no reviews or guides. */
+  kind: 'game' | 'app';
   title: string;
+  cta: string;
   description: string;
   tags: string[];
   playHref: string;
   image: string | null;
+  bannerUrl: string | null;
+  hue: number;
   agg: RatingAgg;
   reviews: ReviewView[];
   guides: GuideSummary[];
@@ -28,34 +37,49 @@ interface HubPayload {
   aiEnabled: boolean;
   /** R21: last week's winning Nightrail trick (Nightrail hub only). */
   trickOfTheWeek: TrickView | null;
+  /** The viewer's activity, the title's achievements, friends and community. */
+  extras: LibraryExtras;
 }
+
+const NO_RATINGS: RatingAgg = { average: 0, count: 0 };
 
 const fetchHub = createServerFn({ method: 'GET' })
   .validator((gameId: string) => gameId)
   .handler(async ({ data: gameId }): Promise<HubPayload> => {
+    // Games first (an unlisted one is still reachable by direct link), then
+    // apps; a hidden app is not a page.
     const game = games.find((g) => g.id === gameId);
-    if (!game) throw notFound();
+    const app = game ? undefined : apps.find((a) => a.id === gameId && !a.hidden);
+    const entry = game ?? app;
+    if (!entry) throw notFound();
+    const kind = game ? 'game' : 'app';
     const session = await getRequestSession();
     const viewerId = session?.user.id ?? null;
-    const [reviews, agg, guides, trickOfTheWeek] = await Promise.all([
-      listReviews(gameId, viewerId),
-      getRatingAgg(gameId),
-      listGuides(gameId, viewerId),
+    const [reviews, agg, guides, trickOfTheWeek, extras] = await Promise.all([
+      kind === 'game' ? listReviews(gameId, viewerId) : [],
+      kind === 'game' ? getRatingAgg(gameId) : NO_RATINGS,
+      kind === 'game' ? listGuides(gameId, viewerId) : [],
       gameId === 'nightrail' ? getTrickOfTheWeek().catch(() => null) : null,
+      getLibraryExtras(viewerId, gameId),
     ]);
     return {
       gameId,
-      title: game.title,
-      description: game.description,
-      tags: game.tags,
-      playHref: game.href,
-      image: game.imagePath ?? null,
+      kind,
+      title: entry.title,
+      cta: entry.cta,
+      description: entry.description,
+      tags: entry.tags,
+      playHref: entry.href,
+      image: entry.imagePath ?? null,
+      bannerUrl: entry.bannerPath ?? null,
+      hue: hueFromString(entry.id),
       agg,
       reviews,
       guides,
       signedIn: !!viewerId,
       aiEnabled: !!viewerId && aiAvailable(),
       trickOfTheWeek,
+      extras,
     };
   });
 
@@ -68,51 +92,55 @@ export const Route = createFileRoute('/_site/games/$gameId')({
   // `loaderData` is annotated explicitly: the head option is evaluated while the
   // route's own type is still being inferred, so without this it resolves to
   // `never` and every field access errors.
-  head: ({ loaderData, params }: { loaderData?: HubPayload; params: { gameId: string } }) => ({
-    meta: buildMeta({
-      title: loaderData
-        ? `${loaderData.title} — reviews, guides & leaderboard | RMH Studios`
-        : 'Game hub | RMH Studios',
-      description: loaderData?.description ?? '',
-      path: `/games/${params.gameId}`,
-      // The hub's own card — title, tagline, rating, review and guide counts —
-      // rather than the game's key art, which told a recipient nothing about
-      // the page they were being sent to. The art is still what the JSON-LD
-      // below advertises, because that IS a picture of the game.
-      image: ogCardPath('game', params.gameId),
-      imageAlt: loaderData
-        ? `${loaderData.title} on RMH Studios — rating, reviews and guides.`
-        : undefined,
-      type: 'article',
-    }),
-    links: [buildCanonical(`/games/${params.gameId}`)],
-    scripts: loaderData
-      ? [
-          jsonLdScript([
-            videoGameSchema({
-              name: loaderData.title,
-              description: loaderData.description,
-              path: `/games/${params.gameId}`,
-              image: loaderData.image ?? undefined,
-              genres: loaderData.tags,
-              // Omitted below the threshold: a zero-count aggregateRating is
-              // invalid structured data and invalidates the whole block.
-              rating:
-                loaderData.agg.count > 0
-                  ? { value: loaderData.agg.average, count: loaderData.agg.count }
-                  : undefined,
-            }),
-            breadcrumbSchema([
-              // `/games` is not a route — it 404s. The browser lives on
-              // `/create`, and a breadcrumb that points at a dead URL is
-              // dropped from the rich result along with everything after it.
-              { name: 'Games', path: GAMES_INDEX_PATH },
-              { name: loaderData.title, path: `/games/${params.gameId}` },
-            ]),
-          ]),
-        ]
-      : [],
-  }),
+  head: ({ loaderData, params }: { loaderData?: HubPayload; params: { gameId: string } }) =>
+    // An app's page is not indexed in v1: no reviews, guides or card of its own.
+    loaderData?.kind === 'app'
+      ? noindexHead(loaderData.title)
+      : {
+          meta: buildMeta({
+            title: loaderData
+              ? `${loaderData.title} — reviews, guides & leaderboard | RMH Studios`
+              : 'Game hub | RMH Studios',
+            description: loaderData?.description ?? '',
+            path: `/games/${params.gameId}`,
+            // The hub's own card — title, tagline, rating, review and guide counts —
+            // rather than the game's key art, which told a recipient nothing about
+            // the page they were being sent to. The art is still what the JSON-LD
+            // below advertises, because that IS a picture of the game.
+            image: ogCardPath('game', params.gameId),
+            imageAlt: loaderData
+              ? `${loaderData.title} on RMH Studios — rating, reviews and guides.`
+              : undefined,
+            type: 'article',
+          }),
+          links: [buildCanonical(`/games/${params.gameId}`)],
+          scripts: loaderData
+            ? [
+                jsonLdScript([
+                  videoGameSchema({
+                    name: loaderData.title,
+                    description: loaderData.description,
+                    path: `/games/${params.gameId}`,
+                    image: loaderData.image ?? undefined,
+                    genres: loaderData.tags,
+                    // Omitted below the threshold: a zero-count aggregateRating is
+                    // invalid structured data and invalidates the whole block.
+                    rating:
+                      loaderData.agg.count > 0
+                        ? { value: loaderData.agg.average, count: loaderData.agg.count }
+                        : undefined,
+                  }),
+                  breadcrumbSchema([
+                    // The library index. A breadcrumb that points at a URL that does
+                    // not resolve is dropped from the rich result along with
+                    // everything after it.
+                    { name: 'Games', path: GAMES_INDEX_PATH },
+                    { name: loaderData.title, path: `/games/${params.gameId}` },
+                  ]),
+                ]),
+              ]
+            : [],
+        },
   loader: ({ params }) => fetchHub({ data: params.gameId }),
   component: GameHubPage,
 });
@@ -120,8 +148,8 @@ export const Route = createFileRoute('/_site/games/$gameId')({
 function GameHubPage() {
   const data = Route.useLoaderData();
   return (
-    <PageLayout title={data.title} backTo="/games">
-      <GameHub data={data} />
-    </PageLayout>
+    <LibraryPane>
+      <GameDetail data={data} />
+    </LibraryPane>
   );
 }

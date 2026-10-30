@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { Suspense } from 'react';
 
-import { PageLayout } from '@/components/feed/PageLayout';
+import { LibraryPane } from '@/components/games-library/LibraryPane';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
 import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
@@ -73,10 +73,10 @@ export const Route = createFileRoute('/_site/games/slice-it')({
 function SliceItHubPage() {
   const data = Route.useLoaderData();
   return (
-    <PageLayout title="Slice It!" backTo="/games">
+    <LibraryPane title="Slice It!">
       <Suspense fallback={null}>
         <SliceItHub data={data} />
       </Suspense>
-    </PageLayout>
+    </LibraryPane>
   );
 }

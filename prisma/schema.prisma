@@ -601,6 +601,15 @@ model User {
   endorsementsGiven          SkillEndorsement[]           @relation("EndorsementGiven")
   endorsementsReceived       SkillEndorsement[]           @relation("EndorsementReceived")
 
+  /// Who may see this user's per-title playtime: 'public' (any signed-in viewer)
+  /// | 'followers' (people who follow this user) | 'private' (only them).
+  /// Enforced server-side in lib/playtime, never by a client.
+  playtimePrivacy            String                       @default("public") @db.VarChar(10)
+  /// Set when the one-time "your playtime is visible" notice is dismissed.
+  playtimeNoticeDismissedAt  DateTime?
+  gamePlaytime               GamePlaytime[]
+  gamePlaytimeDays           GamePlaytimeDay[]
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the
@@ -5844,6 +5853,41 @@ model UserAchievement {
   @@map("user_achievement")
 }
 
+// ─── Game playtime ────────────────────────────────────────────────────────
+// Credited by POST /api/games/playtime (lib/playtime/playtime.server.ts): a
+// client heartbeat while a catalog title's page is visible and in use. `gameId`
+// is a catalog id (games and apps share one namespace). One row per user per
+// title; the per-day table backs "last 2 weeks" and the Recent shelf.
+
+model GamePlaytime {
+  userId          String
+  gameId          String   @db.VarChar(64)
+  totalSeconds    Int      @default(0)
+  /// Last accepted heartbeat. The crediting gap is measured from here.
+  lastHeartbeatAt DateTime
+  lastPlayedAt    DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId])
+  @@index([gameId, totalSeconds(sort: Desc)])
+  @@map("game_playtime")
+}
+
+model GamePlaytimeDay {
+  userId  String
+  gameId  String   @db.VarChar(64)
+  /// UTC calendar day.
+  day     DateTime @db.Date
+  seconds Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId, day])
+  @@index([userId, day])
+  @@map("game_playtime_day")
+}
+
 // ─── Daily Streak ─────────────────────────────────────────────────────────
 model DailyStreak {
   id            String    @id @default(cuid())
@@ -6160,6 +6204,9 @@ model Community {
   starThreshold     Int      @default(5)
   createdById       String
   createdAt         DateTime @default(now())
+  /// Catalog id of the game/app this community is the home of (shown on that
+  /// title's library page). Set by admins; no owner UI yet.
+  gameId            String?  @db.VarChar(64)
 
   flairsP06            CommunityFlair[]
   starPostsP06         CommunityStarPost[]
@@ -6184,6 +6231,7 @@ model Community {
   groupCalls     GroupCall[]
 
   @@index([memberCount(sort: Desc)])
+  @@index([gameId])
   @@map("community")
 }
 

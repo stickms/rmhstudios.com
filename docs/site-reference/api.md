@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 940 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 942 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -815,7 +815,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/games`
 
-9 routes.
+10 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -825,6 +825,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/games/:id/reviews` | `GET` | `app/routes/api/games/$id.reviews.ts` |
 | `/api/games/:id/score` | `POST` | `app/routes/api/games/$id/score.ts` |
 | `/api/games/how-to-play` | `POST` | `app/routes/api/games/how-to-play.ts` |
+| `/api/games/playtime` | `POST` | `app/routes/api/games/playtime.ts` |
 | `/api/games/synapse-storm/leaderboard` | `GET` | `app/routes/api/games/synapse-storm/leaderboard.ts` |
 | `/api/games/synapse-storm/save` | `GET` | `app/routes/api/games/synapse-storm/save.ts` |
 | `/api/games/synapse-storm/score` | `POST` | `app/routes/api/games/synapse-storm/score.ts` |
@@ -1815,7 +1816,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/settings`
 
-5 routes.
+6 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1824,6 +1825,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/settings/email-digest` | `POST` | `app/routes/api/settings/email-digest.ts` |
 | `/api/settings/game-assists` | `GET` `POST` | `app/routes/api/settings/game-assists.ts` |
 | `/api/settings/play-limits` | `GET` `POST` | `app/routes/api/settings/play-limits.ts` |
+| `/api/settings/playtime-privacy` | `GET` `POST` `PUT` | `app/routes/api/settings/playtime-privacy.ts` |
 
 ## `/api/shop`
 

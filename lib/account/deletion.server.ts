@@ -195,6 +195,11 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     prisma.ladderUserPrefs.deleteMany({ where: { userId } }),
     prisma.ladderAnswerBank.deleteMany({ where: { userId } }),
     prisma.ladderResume.deleteMany({ where: { userId } }),
+    // 2b. Per-title playtime. `game_playtime*` cascade from the user row, but step 4
+    //     anonymises that row instead of removing it, so the cascade never fires —
+    //     and a tombstone would keep showing in "Most played by" with its hours.
+    prisma.gamePlaytime.deleteMany({ where: { userId } }),
+    prisma.gamePlaytimeDay.deleteMany({ where: { userId } }),
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({
       where: { userId },

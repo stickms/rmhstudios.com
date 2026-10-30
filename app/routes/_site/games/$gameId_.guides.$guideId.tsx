@@ -1,7 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { createServerFn } from '@tanstack/react-start';
-import { PageLayout } from '@/components/feed/PageLayout';
+import { LibraryPane } from '@/components/games-library/LibraryPane';
 import { GuideView, type GuideData } from '@/components/games/GuideView';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { games } from '@/lib/games';
@@ -111,11 +111,11 @@ function GuidePage() {
   const { t } = useTranslation('games-hub');
   const { gameId, guide } = Route.useLoaderData();
   return (
-    <PageLayout
+    <LibraryPane
       title={guide?.title ?? t('guide-new-title', { defaultValue: 'New guide' })}
       backTo={`/games/${gameId}`}
     >
       <GuideView gameId={gameId} guide={guide} />
-    </PageLayout>
+    </LibraryPane>
   );
 }

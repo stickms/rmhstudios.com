@@ -23,6 +23,8 @@ export type CuratedBuild = {
   longDescription: string;
   /** Thumbnail image path, or null. */
   thumbnailUrl: string | null;
+  /** Wide hero image for the library detail pane, or null. */
+  bannerUrl: string | null;
   /** Where the build actually lives (the playable/usable page). */
   href: string;
   cta: string;
@@ -33,7 +35,8 @@ export type CuratedBuild = {
   hue: number;
 };
 
-function hueFromString(s: string): number {
+/** A stable 0-359 hue for an id, for art fallbacks. */
+export function hueFromString(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
   return h;
@@ -54,6 +57,7 @@ export function listCuratedBuilds(): CuratedBuild[] {
       description: g.description,
       longDescription: g.longDescription,
       thumbnailUrl: g.imagePath ?? null,
+      bannerUrl: g.bannerPath ?? null,
       href: g.href,
       cta: g.cta,
       tags: g.tags,
@@ -71,6 +75,7 @@ export function listCuratedBuilds(): CuratedBuild[] {
       description: a.description,
       longDescription: a.longDescription,
       thumbnailUrl: a.imagePath ?? null,
+      bannerUrl: a.bannerPath ?? null,
       href: a.href,
       cta: a.cta,
       tags: a.tags,
