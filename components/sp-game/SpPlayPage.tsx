@@ -1,9 +1,10 @@
 /**
- * The Half-Life 2 / Portal play page: the game's main menu (New game,
- * Continue from the last level reached, chapter select) and the game itself
- * in the shared GameCanvas. "Continue" is a level start saved in localStorage
- * (lib/tf2-game/client/sp-save.ts); a level the asset channel has not
- * published shows as unavailable.
+ * The Half-Life 2 / Portal play page: the game's main menu and the game itself in the shared
+ * GameCanvas. The menu is GameUI's own (SourceMainMenu: the game's background, title, gamemenu.res,
+ * New Game and Options dialogs, from the `<game>-menu` channel); before that channel is published, a
+ * plain menu with the same choices stands in. "Continue" / Load Game is a level start saved in
+ * localStorage (lib/tf2-game/client/sp-save.ts); a level the asset channel has not published shows as
+ * unavailable.
  */
 'use client';
 
@@ -17,9 +18,12 @@ import { GAME_MAPS } from '@/lib/tf2-game/assets/game-maps';
 import { fetchGameJson } from '@/lib/tf2-game/assets/urls';
 import type { MapIndex } from '@/lib/tf2-game/assets/map-manifest';
 import { createSpClient } from '@/lib/tf2-game/client/sp-client';
+import { loadMenuChannel, type MenuChannel } from '@/lib/tf2-game/client/menus/source-gameui';
+import { languageForSite } from '@/lib/tf2-hud/localisation';
 import { clearSave, loadSave, type SpGameId, type SpSave } from '@/lib/tf2-game/client/sp-save';
 import type { TransitionData } from '@/lib/sp-game/level/transition';
 import { cn } from '@/lib/utils';
+import SourceMainMenu from './SourceMainMenu';
 import './sp-game.css';
 
 export interface SpPlayPageProps {
@@ -43,6 +47,16 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
   const [save, setSave] = useState<SpSave | null>(null);
   const [published, setPublished] = useState<Set<string> | null>(null);
   const [running, setRunning] = useState<Running | null>(null);
+  // The game's own GameUI (null until its menu channel loads; undefined: not published).
+  const [channel, setChannel] = useState<MenuChannel | null | undefined>(null);
+  useEffect(() => {
+    let alive = true;
+    const language = languageForSite(document.documentElement.lang || 'en', () => true);
+    void loadMenuChannel(game, language).then((c) => alive && setChannel(c ?? undefined));
+    return () => {
+      alive = false;
+    };
+  }, [game]);
 
   useEffect(() => {
     setSave(loadSave(game, names));
@@ -64,6 +78,40 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
 
   const theme = game === 'hl2' ? 'tf2hud-theme tf2g-hl2-theme' : 'tf2hud-theme tf2g-portal-theme';
   const savedTitle = save ? (chapters[save.map] ?? save.map) : '';
+
+  if (channel) {
+    const list = maps.map((m) => ({ map: m.name, title: chapters[m.name] ?? m.title, available: available(m.name) }));
+    const savedAt = save && available(save.map) ? Math.max(0, names.indexOf(save.map)) : null;
+    return (
+      <AppShell appClassName={theme}>
+        <main className="app-viewport">
+          <SourceMainMenu
+            game={game}
+            channel={channel}
+            chapters={list}
+            savedChapter={savedAt}
+            onNewGame={(i) => {
+              clearSave(game);
+              const map = list[i]?.map;
+              if (map) start(map, null);
+            }}
+            onLoadGame={() => save && start(save.map, save.transition)}
+          />
+        </main>
+        {running ? (
+          <div className="tf2g-play-layer" key={running.run}>
+            <GameCanvas
+              game={game}
+              sessionId={game === 'hl2' ? 'half-life-2' : 'portal'}
+              title={chapters[running.map] ?? running.map}
+              create={(mount) => createSpClient({ ...mount, game, map: running.map, transition: running.transition })}
+              onExit={leave}
+            />
+          </div>
+        ) : null}
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell appClassName={theme}>

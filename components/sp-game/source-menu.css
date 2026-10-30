@@ -1,0 +1,266 @@
+/**
+ * Half-Life 2's and Portal's GameUI main menu (SourceMainMenu.tsx). Colours come from the game's own
+ * schemes as `--gui-*` custom properties (source-gameui.ts gameUiStyle); sizes follow GameUI's
+ * proportional units (`--gui-u`: one unit of a 480-line screen). VGUI is square and bevelled, so the
+ * dialogs draw a 1px bright / dark edge rather than a rounded panel.
+ */
+
+.gui-root {
+  --gui-u: calc(100dvh / 480);
+  --gui-uw: calc(100vw / 640);
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  color: var(--gui-text);
+  font-family: Tahoma, Verdana, sans-serif;
+}
+
+.gui-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.gui-main {
+  position: absolute;
+  left: max(calc(var(--safe-left, 0px) + 1rem), calc(var(--gui-u) * 76));
+  bottom: max(calc(var(--safe-bottom, 0px) + 1rem), calc(var(--gui-u) * 54));
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--gui-u) * 24);
+}
+
+.gui-logo {
+  display: flex;
+  font-size: calc(min(var(--gui-u), var(--gui-uw)) * 40);
+  flex-direction: column;
+  color: var(--gui-menu-armed);
+  line-height: 1;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-shadow: 0 0 calc(var(--gui-u) * 2) rgb(0 0 0 / 0.6);
+}
+.gui-logo-2 {
+  font-size: 0.5em;
+}
+.gui-logo-image {
+  max-width: min(60vw, calc(var(--gui-u) * 320));
+  height: auto;
+}
+
+.gui-menu {
+  display: flex;
+  font-size: max(1rem, calc(var(--gui-u) * 12));
+  flex-direction: column;
+  gap: calc(var(--gui-u) * 4);
+}
+.gui-menu-item {
+  display: block;
+  min-height: 2.75rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gui-menu-text);
+  font: inherit;
+  text-align: start;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.gui-menu-item:hover,
+.gui-menu-item:focus-visible {
+  color: var(--gui-menu-armed);
+}
+.gui-menu-item:active {
+  color: var(--gui-menu-depressed);
+}
+.gui-menu-item:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.gui-menu-item:focus-visible {
+  outline: 2px solid var(--gui-menu-armed);
+  outline-offset: 2px;
+}
+
+/* ── VGUI frames ───────────────────────────────────────────────────────────── */
+
+.gui-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  padding: calc(var(--safe-top, 0px) + 1rem) calc(var(--safe-right, 0px) + 1rem) calc(var(--safe-bottom, 0px) + 1rem)
+    calc(var(--safe-left, 0px) + 1rem);
+  overflow-y: auto;
+}
+.gui-frame {
+  display: flex;
+  flex-direction: column;
+  /* margin: auto centres the frame and, unlike a flex centre, never pushes a tall one off the top. */
+  margin: auto;
+  width: min(100%, 44rem);
+  max-height: 100%;
+  background: var(--gui-frame-bg);
+  border: 1px solid var(--gui-border-bright);
+  border-right-color: var(--gui-border-dark);
+  border-bottom-color: var(--gui-border-dark);
+  color: var(--gui-text);
+  font-size: 0.8125rem;
+}
+.gui-frame-options {
+  width: min(100%, 52rem);
+}
+.gui-frame-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.375rem 0.5rem 0.375rem 0.75rem;
+}
+.gui-frame-title h2 {
+  color: var(--gui-frame-title);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.gui-frame-close {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  background: none;
+  border: 0;
+  color: var(--gui-text);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+.gui-frame-close:hover,
+.gui-frame-close:focus-visible {
+  color: var(--gui-button-armed-text);
+}
+.gui-frame-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+  padding: 0.5rem 0.75rem 0.75rem;
+  overflow-y: auto;
+}
+.gui-frame-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.gui-button {
+  min-height: 2.75rem;
+  min-width: 7rem;
+  padding: 0 0.875rem;
+  background: var(--gui-button-bg);
+  border: 1px solid var(--gui-border-bright);
+  border-right-color: var(--gui-border-dark);
+  border-bottom-color: var(--gui-border-dark);
+  color: var(--gui-button-text);
+  font: inherit;
+  cursor: pointer;
+}
+.gui-button:hover,
+.gui-button:focus-visible {
+  background: var(--gui-button-armed-bg);
+  color: var(--gui-button-armed-text);
+}
+.gui-button:active {
+  border-color: var(--gui-border-dark);
+  border-right-color: var(--gui-border-bright);
+  border-bottom-color: var(--gui-border-bright);
+}
+.gui-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* The New Game dialog: chapter pictures in a row that scrolls sideways. */
+.gui-chapters {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(9.5rem, 1fr);
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+.gui-chapter {
+  display: flex;
+  width: 100%;
+  min-height: 2.75rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.375rem;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--gui-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.gui-chapter[aria-pressed='true'] {
+  border-color: var(--gui-selection);
+  background: color-mix(in srgb, var(--gui-selection) 18%, transparent);
+}
+.gui-chapter:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.gui-chapter-pic,
+.gui-chapter-blank {
+  display: block;
+  width: 100%;
+  aspect-ratio: 152 / 86;
+  overflow: hidden;
+  background: var(--gui-field-bg);
+}
+/* GameUI's chapter pictures are 152x86 in the top-left of a 256x128 texture. */
+.gui-chapter-pic img {
+  display: block;
+  width: calc(100% * 256 / 152);
+  max-width: none;
+  height: auto;
+}
+.gui-chapter-n {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--gui-text-dim);
+}
+.gui-chapter-title {
+  font-weight: 700;
+}
+.gui-chapter-note {
+  font-size: 0.6875rem;
+  color: var(--gui-text-dim);
+}
+
+/* The Options property sheet (menus/OptionsDialog.tsx) in the scheme's colours: the TF2 Hub controls it
+   is built from read the --app-* tokens, so the frame re-points them at the scheme's. */
+.gui-skin {
+  --app-bg: var(--gui-frame-bg);
+  --app-bg-subtle: var(--gui-field-bg);
+  --app-surface: var(--gui-button-bg);
+  --app-surface-hover: var(--gui-button-armed-bg);
+  --app-surface-active: var(--gui-button-armed-bg);
+  --app-border: var(--gui-border-dark);
+  --app-border-bright: var(--gui-border-bright);
+  --app-text: var(--gui-text);
+  --app-text-muted: var(--gui-text);
+  --app-text-dim: var(--gui-text-dim);
+  --app-accent: var(--gui-selection);
+  --app-accent-text: var(--gui-button-armed-text);
+  --app-accent-fg: var(--gui-text);
+  --app-accent-hover: var(--gui-selection);
+  --tf2-panel: var(--gui-frame-bg);
+  --app-font-display: Tahoma, Verdana, sans-serif;
+  --app-font-body: Tahoma, Verdana, sans-serif;
+  --app-radius: 0;
+  --app-radius-sm: 0;
+  color: var(--gui-text);
+}
