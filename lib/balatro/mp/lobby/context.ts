@@ -9,6 +9,7 @@ import type { Chat } from '../chat';
 import type { KeyValue } from '../history';
 import type { MatchClient } from '../match/match-member';
 import type { SnapshotStore } from '../rejoin/rejoin-store';
+import type { ReplayTap } from '../replay/tap';
 import type { GameEvent, Id, LobbyState, RefCheckpoint, StartedMatch } from '../types';
 import type { PeerKind, WireData } from '../wire';
 import type { BridgeLike, FsLike, HubLike, PeerConnector, Scheduler } from '../transport/types';
@@ -85,6 +86,8 @@ export interface RoleCtx {
   promoted(p: { code: string; token: string; ice: unknown }, lobby: LobbyState): void;
   /** This host was replaced (hub `host-changed` naming someone else). */
   demoted(code: string): void;
+  /** WS13's replay/spectate seam (replay/attach.ts), or null when it is not loaded. */
+  replayTap(): ReplayTap | null;
 }
 
 /** What a role offers the runtime (the MatchClient calls through these). */

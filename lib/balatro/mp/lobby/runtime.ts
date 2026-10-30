@@ -28,6 +28,7 @@ import { resolveRuleset } from '../rulesets/resolve';
 import type { PeerKind, WireData } from '../wire';
 import type { GameEvent, Id, LobbyState, PlayerResult, RefCheckpoint, StartedMatch } from '../types';
 import type { HubStatus } from '../transport/types';
+import type { ReplayTap } from '../replay/tap';
 import { DEFAULT_SETTINGS, type MpSettings, type Role, type RoleCtx, type RuntimeDeps } from './context';
 import { LobbyHost } from './lobby-host';
 import { LobbyMember } from './lobby-member';
@@ -61,6 +62,8 @@ export class MpRuntime {
   avatarUrl: string | null = null;
   role: Role | null = null;
   client: MatchClient | null = null;
+  /** WS13 (replay/attach.ts): relayed logs, spectator catch-up and the watched match. */
+  replayTap: ReplayTap | null = null;
   practice: Practice | null = null;
   settings: MpSettings;
   readonly chat: Chat;
@@ -201,6 +204,7 @@ export class MpRuntime {
       roleEnded: (why) => this.roleEnded(why),
       promoted: (p, lobby) => this.promoted(p, lobby),
       demoted: (code) => this.demoted(code),
+      replayTap: () => this.replayTap,
     };
   }
 

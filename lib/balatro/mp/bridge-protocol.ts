@@ -203,6 +203,8 @@ export const L2J_MP = {
   ui_return_lobby: z.object({}),
   ui_continue_sp: z.object({}),
   ui_spectate: z.object({ code: zCode }),
+  /** WS13: ask the hub for the spectatable lobbies (answered with `spectate_view`). */
+  ui_spectate_list: z.object({}),
   ui_replay: z.object({
     op: z.enum(['list', 'open', 'speed', 'seek', 'pov', 'close']),
     id: z.string().max(64).optional(),
@@ -310,6 +312,20 @@ export const J2L_MP = {
     speed: z.number().min(0).optional(),
   }),
   replay_feed: z.object({ pov: zId, events: z.array(zReplayEvent).max(1024) }),
+  /** WS13: the hub's spectatable lobbies (MM-07), or `error` when the list is unavailable. */
+  spectate_view: z.object({
+    lobbies: z
+      .array(
+        z.object({
+          code: zCode,
+          queueMode: zQueueMode,
+          players: z.number().int().min(0),
+          ante: z.number().int().nullable(),
+        }),
+      )
+      .max(50),
+    error: z.string().max(32).optional(),
+  }),
   history: z.object({
     wins: z.number().int().min(0),
     losses: z.number().int().min(0),
