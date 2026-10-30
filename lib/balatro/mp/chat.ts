@@ -12,7 +12,7 @@
  * Browser-free.
  */
 
-import { WIRE_LIMITS } from './wire';
+import { WIRE_LIMITS } from './wire-codec';
 import { KeyedBuckets, RATE_LIMITS, TokenBucket } from './ratelimit';
 import { sanitizeText } from './identity';
 

@@ -22,11 +22,11 @@
  *   (the ban wins).
  */
 
-import {
-  zResolvedRuleset,
-  type LobbyOptionKey,
-  type LobbyOptions,
-  type ResolvedRuleset,
+import { requireResolvedRuleset } from '../wire-codec';
+import type {
+  LobbyOptionKey,
+  LobbyOptions,
+  ResolvedRuleset,
 } from '../types';
 import {
   ATTRITION_BANS,
@@ -204,7 +204,7 @@ export function resolveDef(rs: RulesetDef, input: ResolveInput): ResolveResult {
     },
   };
   // The frozen schema is the contract with Lua: fail loudly here, never on the wire.
-  return { resolved: zResolvedRuleset.parse(resolved), options, locked: forced.locked };
+  return { resolved: requireResolvedRuleset(resolved), options, locked: forced.locked };
 }
 
 /** RS-16 pool isolation: MP-original content is pooled only with both gates on. */

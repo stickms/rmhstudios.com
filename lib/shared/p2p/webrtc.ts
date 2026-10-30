@@ -26,7 +26,7 @@
  */
 
 import type { ChannelLike, ChannelPair } from './channel';
-import { hasTurn, type IceServerConfig } from './ice';
+import { hasTurn, type IceServerConfig } from './ice-core';
 import { encodeRelay } from './relay';
 
 export type { ChannelPair } from './channel';

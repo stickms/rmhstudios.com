@@ -17,8 +17,9 @@
  *   host's admission reconnects it).
  */
 
-import { resolveIceServers, type IceServerConfig } from '../../../shared/p2p';
-import { WIRE_PROTOCOL, PEER_KINDS, type Envelope, type PeerKind, type WireData } from '../wire';
+import type { IceServerConfig } from '../../../shared/p2p/ice-core';
+import type { Envelope, PeerKind, WireData } from '../wire';
+import { PEER_KINDS, resolveHubIce, WIRE_PROTOCOL } from '../wire-codec';
 import type { BalatroS2CPayload } from '../../net/events';
 import { MemberLink } from '../transport/member';
 import type { GameEvent, Id, LobbyState, RefCheckpoint, Team } from '../types';
@@ -68,7 +69,7 @@ export class LobbyMember implements Role {
         this.hostId = d.hostUserId;
       }),
       hub.on('balatro:p2p:admitted', (d) => {
-        if (d.code === this.code) this.connect(d.hostPeerId, resolveIceServers(d.ice));
+        if (d.code === this.code) this.connect(d.hostPeerId, resolveHubIce(d.ice));
       }),
       hub.on('balatro:p2p:rejected', (d) => {
         if (d.code === this.code) this.end(d.reason);

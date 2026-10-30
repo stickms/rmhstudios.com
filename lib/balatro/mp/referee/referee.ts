@@ -46,17 +46,17 @@
  */
 
 import { Rng, hashString, randomSeedString, rngSeed } from '../rng';
-import {
-  zRefCheckpoint,
-  type Id,
-  type PendingDeath,
-  type RefCheckpoint,
-  type RefInput,
-  type RefMsg,
-  type RefOutput,
-  type RefStep,
-  type StartedMatch,
-  type Team,
+import { parseRefCheckpoint, requireRefCheckpoint } from '../wire-codec';
+import type {
+  Id,
+  PendingDeath,
+  RefCheckpoint,
+  RefInput,
+  RefMsg,
+  RefOutput,
+  RefStep,
+  StartedMatch,
+  Team,
 } from '../types';
 import { assignManhuntRoles, manhuntRound, manhuntTarget } from './manhunt';
 import { computePairing } from './pairing';
@@ -245,7 +245,7 @@ export function refRebuild(match: StartedMatch, info: RebuildInfo): RefCheckpoin
     ctx.computeTargets(ante, false);
   }
   cp.rngState = ctx.rng.state;
-  return zRefCheckpoint.parse(cp);
+  return requireRefCheckpoint(cp);
 }
 
 function clampLives(n: number): number {
@@ -1250,6 +1250,5 @@ export function refStep(state: RefState | null, input: RefInput): RefStep<RefSta
 
 /** Validate an untrusted checkpoint (e.g. from a peer before a takeover). */
 export function parseCheckpoint(raw: unknown): RefCheckpoint | null {
-  const r = zRefCheckpoint.safeParse(raw);
-  return r.success ? r.data : null;
+  return parseRefCheckpoint(raw);
 }

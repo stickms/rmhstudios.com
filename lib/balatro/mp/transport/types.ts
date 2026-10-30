@@ -8,7 +8,9 @@
  * (BridgeLike) and the engine's Emscripten FS (FsLike).
  */
 
-import type { ChannelPair, IceCandidateLike, IceServerConfig, SessionDescriptionLike, SignalOut } from '../../../shared/p2p';
+import type { ChannelPair } from '../../../shared/p2p/channel';
+import type { IceServerConfig } from '../../../shared/p2p/ice-core';
+import type { IceCandidateLike, SessionDescriptionLike, SignalOut } from '../../../shared/p2p/webrtc';
 import type {
   BalatroC2SEvent,
   BalatroC2SPayload,

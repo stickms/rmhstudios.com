@@ -20,7 +20,7 @@
 
 import pack from '../game-pack.json';
 import { MP_PROTOCOL_VERSION, BALATRO_LIMITS } from '../net/limits';
-import type { P2pTestHooks } from '../../shared/p2p';
+import type { P2pTestHooks } from '../../shared/p2p/webrtc';
 import type { MpSession, StartMultiplayerOptions } from './pack-loader';
 import { createHubClient } from './hub-client';
 import { webrtcConnector } from './transport/connector';

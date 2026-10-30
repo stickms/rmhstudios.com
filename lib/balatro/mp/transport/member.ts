@@ -8,8 +8,11 @@
  * dropped; anything else without `f` came from the host itself.
  */
 
-import { relaySlotOf, type IceServerConfig, type RelayPair } from '../../../shared/p2p';
-import { isHostOnly, type Envelope, type WireData, type WireKind } from '../wire';
+import { relaySlotOf } from '../../../shared/p2p/relay';
+import type { IceServerConfig } from '../../../shared/p2p/ice-core';
+import type { RelayPair } from '../../../shared/p2p/webrtc';
+import type { Envelope, WireData, WireKind } from '../wire';
+import { isHostOnly } from '../wire-codec';
 import { hubRelayPair, readRelay, signalPayload } from './peer-admission';
 import type { HubLike, PeerAttempt, PeerConnector, Scheduler } from './types';
 import { WireLink, type ConnKind } from './wire-link';

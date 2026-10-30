@@ -11,7 +11,8 @@
  * when a relayed frame from that member arrives first.
  */
 
-import { decodeRelay, relayPair, type RelayPair, type SignalOut } from '../../../shared/p2p';
+import { decodeRelay } from '../../../shared/p2p/relay';
+import { relayPair, type RelayPair, type SignalOut } from '../../../shared/p2p/webrtc';
 import { BALATRO_LIMITS } from '../../net/limits';
 import type { HubLike, HubOut } from './types';
 

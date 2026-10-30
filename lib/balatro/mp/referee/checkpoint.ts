@@ -6,7 +6,8 @@
  * the `runId`, so a previous match's checkpoint is never adopted.
  */
 
-import { zRefCheckpoint, type Id, type RefCheckpoint, type StartedMatch } from '../types';
+import type { Id, RefCheckpoint, StartedMatch } from '../types';
+import { parseRefCheckpoint } from '../wire-codec';
 import { refFromCheckpoint, type RefState } from './referee';
 
 export { refFromCheckpoint, refRebuild, parseCheckpoint, refCreate } from './referee';
@@ -19,8 +20,7 @@ export function serializeCheckpoint(cp: RefCheckpoint): string {
 /** Parse + validate a serialised checkpoint; null on any error. */
 export function deserializeCheckpoint(text: string): RefCheckpoint | null {
   try {
-    const r = zRefCheckpoint.safeParse(JSON.parse(text));
-    return r.success ? r.data : null;
+    return parseRefCheckpoint(JSON.parse(text));
   } catch {
     return null;
   }

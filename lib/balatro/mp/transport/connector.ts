@@ -9,7 +9,7 @@
  * E2E-15; relayOnly proves TURN). Browser only.
  */
 
-import { DirectConnection, type P2pTestHooks } from '../../../shared/p2p';
+import { DirectConnection, type P2pTestHooks } from '../../../shared/p2p/webrtc';
 import type { PeerAttempt, PeerConnectOptions, PeerConnector } from './types';
 
 export function webrtcConnector(hooks?: P2pTestHooks): PeerConnector {

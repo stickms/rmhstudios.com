@@ -16,7 +16,8 @@
  */
 
 import { rejoinHint, setRejoinHint } from '../rejoin/catchup';
-import { BRIDGE_PATHS, type J2LData, type L2JData } from '../bridge-protocol';
+import type { J2LData, L2JData } from '../bridge-protocol';
+import { BRIDGE_PATHS } from '../bridge-codec';
 import { Chat } from '../chat';
 import { glyphsFor, guessLang, parseGlyphs, type GlyphTable } from '../identity';
 import { kvGet, kvSet, readHistory, recordResult } from '../history';

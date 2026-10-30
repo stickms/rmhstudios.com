@@ -14,7 +14,8 @@
  * what concerns them (Lua filters display sync by its target). Browser-free.
  */
 
-import { WIRE_META, type PeerKind } from '../wire';
+import type { PeerKind } from '../wire';
+import { WIRE_META } from '../wire-codec';
 import type { Id, RefMsg, Team } from '../types';
 
 export type Route = '*' | Id[];

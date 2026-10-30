@@ -7,12 +7,12 @@
  * reported as `locked` so the UI shows them locked (LOB-07).
  */
 
-import {
-  zLobbyOptions,
-  type LobbyOptionKey,
-  type LobbyOptions,
-  type QueueMode,
-  type Shape,
+import { checkLobbyOption, LOBBY_OPTION_KEYS } from '../wire-codec';
+import type {
+  LobbyOptionKey,
+  LobbyOptions,
+  QueueMode,
+  Shape,
 } from '../types';
 import { ADVANCED_LAYERS, getLayer } from './layers';
 import { getRuleset, type RulesetDef } from './rulesets';
@@ -91,12 +91,11 @@ export function sanitizeOptions(
 ): LobbyOptions {
   const out: LobbyOptions = { ...base, modifierLayers: [...base.modifierLayers] };
   if (!input || typeof input !== 'object') return out;
-  const shape = zLobbyOptions.shape;
   const rec = input as Record<string, unknown>;
-  for (const key of Object.keys(shape) as LobbyOptionKey[]) {
+  for (const key of LOBBY_OPTION_KEYS) {
     if (!(key in rec)) continue;
-    const parsed = shape[key].safeParse(rec[key]);
-    if (parsed.success) (out as Record<string, unknown>)[key] = parsed.data;
+    const parsed = checkLobbyOption(key, rec[key]);
+    if (parsed.ok) (out as Record<string, unknown>)[key] = parsed.v;
   }
   if (!getRuleset(out.ruleset)) out.ruleset = base.ruleset;
   out.modifierLayers = sanitizeModifierLayers(out.modifierLayers);

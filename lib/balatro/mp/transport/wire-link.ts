@@ -13,8 +13,11 @@
  * owner noticing: `attach` replaces the ReliableLink and keeps the sequence.
  */
 
-import { ReliableLink, decodeControl, encodeControl, type ChannelPair, type ReliableLinkCloseReason } from '../../../shared/p2p';
-import { LOCAL_ONLY_KINDS, WIRE_LIMITS, validateEnvelope, type Envelope, type WireData, type WireKind } from '../wire';
+import { ReliableLink, type ReliableLinkCloseReason } from '../../../shared/p2p/reliable-link';
+import { decodeControl, encodeControl } from '../../../shared/p2p/wire';
+import type { ChannelPair } from '../../../shared/p2p/channel';
+import type { Envelope, WireData, WireKind } from '../wire';
+import { isLocalOnly, validateEnvelope, WIRE_LIMITS } from '../wire-codec';
 import { PeerLimiter } from '../ratelimit';
 import type { Scheduler } from './types';
 
@@ -111,7 +114,7 @@ export class WireLink {
     if (typeof kind === 'string' && !this.limiter.allow(kind)) return this.drop('rate', kind);
     const r = validateEnvelope(raw);
     if (!r.ok) return this.drop('decode', `${r.error} ${r.kind ?? ''} ${r.detail ?? ''}`.trim());
-    if (LOCAL_ONLY_KINDS.has(r.env.k)) return this.drop('local', r.env.k);
+    if (isLocalOnly(r.env.k)) return this.drop('local', r.env.k);
     this.stats.received += 1;
     this.opts.onEnvelope(r.env);
   }

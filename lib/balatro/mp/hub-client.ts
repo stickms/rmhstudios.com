@@ -19,7 +19,8 @@ import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';
-import { BALATRO_S2C, type BalatroS2CEvent, type BalatroS2CPayload } from '../net/events';
+import type { BalatroS2CEvent, BalatroS2CPayload } from '../net/events';
+import { parseS2C, S2C_EVENTS } from './wire-codec';
 import type { HubLike, HubStatus } from './transport/types';
 
 type Listener = (d: unknown) => void;
@@ -40,15 +41,14 @@ export function createHubClient(log?: (msg: string) => void): HubLike {
   const dispatch = (event: string, raw: unknown) => {
     const set = listeners.get(event);
     if (!set || set.size === 0) return;
-    const schema = (BALATRO_S2C as Record<string, { safeParse(v: unknown): { success: boolean; data?: unknown } }>)[event];
-    const parsed = schema?.safeParse(raw);
-    if (!parsed?.success) {
+    const parsed = parseS2C(event as BalatroS2CEvent, raw);
+    if (parsed === null) {
       log?.(`[mp hub] dropped malformed ${event}`);
       return;
     }
     for (const fn of [...set]) {
       try {
-        fn(parsed.data);
+        fn(parsed);
       } catch (err) {
         log?.(`[mp hub] ${event} listener failed: ${String(err)}`);
       }
@@ -56,7 +56,7 @@ export function createHubClient(log?: (msg: string) => void): HubLike {
   };
 
   const bind = (socket: Socket) => {
-    for (const event of Object.keys(BALATRO_S2C)) socket.on(event, (payload: unknown) => dispatch(event, payload));
+    for (const event of S2C_EVENTS) socket.on(event, (payload: unknown) => dispatch(event, payload));
   };
 
   const client: RealtimeClient = createRealtimeClient({

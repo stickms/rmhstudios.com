@@ -40,7 +40,23 @@ import {
   zReplayOp,
   zTeam,
 } from '../../lib/balatro/mp/types';
-import { PEER_KINDS, WIRE_KINDS } from '../../lib/balatro/mp/wire';
+import {
+  LOCAL_ONLY_KINDS,
+  PEER_KINDS,
+  WIRE_D,
+  WIRE_KINDS,
+  WIRE_LIMITS,
+  WIRE_META,
+  WIRE_PROTOCOL,
+  zEnvelope,
+} from '../../lib/balatro/mp/wire';
+import { BALATRO_S2C } from '../../lib/balatro/net/events';
+import {
+  zLobbyOptions,
+  zRefCheckpoint,
+  zResolvedRuleset,
+} from '../../lib/balatro/mp/types';
+import { zIceServers } from '../../lib/shared/p2p/ice';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const PROTOCOL_LUA_PATH = join(ROOT, 'lib/balatro/lua/mp/rmh_mp/protocol.lua');
@@ -50,6 +66,8 @@ export const PROTOCOL_LUA_PATH = join(ROOT, 'lib/balatro/lua/mp/rmh_mp/protocol.
  * zod v4 classic). bridge-protocol.ts stays the source; this file is derived.
  */
 export const PROTOCOL_TS_PATH = join(ROOT, 'lib/balatro/mp/bridge-schema.gen.ts');
+/** S2C events carried as bytes: validated by hand in wire-codec.ts (zod's `instanceof` has no JSON Schema). */
+export const BINARY_S2C = ['balatro:p2p:relay'] as const;
 
 /* ─── JSON Schema → Lua descriptor ───────────────────────────────────────── */
 
@@ -488,6 +506,7 @@ export function generateProtocolTs(): string {
       .map((t) => `    ${JSON.stringify(t)}: ${em.ref(descOf(schemas[t]))},`);
   const l2j = table(L2J);
   const j2l = table(J2L);
+  const wire = wireSection(em);
   const constBlock = (name: string, doc: string, values: Record<string, string | number>) => [
     `/** ${doc} */`,
     `export const ${name} = {`,
@@ -518,6 +537,7 @@ export function generateProtocolTs(): string {
     '  },',
     '};',
     '',
+    ...wire,
     '/**',
     ' * Shared descriptors. T = kind; n = nullable; p/r = properties/required; ap = record',
     ' * values or false; pn = key schema; i = items; o = options; key/m = discriminated union;',
@@ -528,6 +548,70 @@ export function generateProtocolTs(): string {
     '];',
     '',
   ].join('\n');
+}
+
+/**
+ * The P2P wire, hub S2C and domain-type tables (WS5's wire-codec.ts), emitted into
+ * bridge-schema.gen.ts with the bridge's own emitter so LobbyState, StartedMatch and
+ * the rest are stored once for both codecs.
+ */
+function wireSection(em: JsEmitter): string[] {
+  const table = (schemas: Record<string, z.ZodType>, skip: readonly string[] = []) =>
+    Object.keys(schemas)
+      .filter((k) => !skip.includes(k))
+      .sort()
+      .map((t) => `  ${JSON.stringify(t)}: ${em.ref(descOf(schemas[t]))},`);
+  const envelope = em.ref(descOf(zEnvelope));
+  const wire = table(WIRE_D as unknown as Record<string, z.ZodType>);
+  const s2c = table(BALATRO_S2C as unknown as Record<string, z.ZodType>, BINARY_S2C);
+  const types: [string, z.ZodType][] = [
+    ['refCheckpoint', zRefCheckpoint],
+    ['resolvedRuleset', zResolvedRuleset],
+    ['lobbyOptions', zLobbyOptions],
+    ['iceServers', zIceServers],
+  ];
+  const typeRefs = types.map(([k, schema]) => `  ${k}: ${em.ref(descOf(schema))},`);
+  const meta = WIRE_KINDS.map(
+    (k) => `  ${k}: { dir: ${JSON.stringify(WIRE_META[k].dir)}, hostOnly: ${WIRE_META[k].hostOnly} },`,
+  );
+  return [
+    '/* ─── P2P wire (§3.b), hub S2C (§3.a) and domain types: WS5 wire-codec.ts ─── */',
+    '',
+    `export const WIRE_PROTOCOL = ${WIRE_PROTOCOL};`,
+    '',
+    '/** Same values as wire.ts WIRE_LIMITS. */',
+    'export const WIRE_LIMITS = {',
+    ...Object.entries(WIRE_LIMITS).map(([k, v]) => `  ${k}: ${v},`),
+    '} as const;',
+    '',
+    '/** Same values as wire.ts WIRE_META. */',
+    'export const WIRE_META = {',
+    ...meta,
+    '} as const;',
+    '',
+    `export const LOCAL_ONLY_KINDS: readonly string[] = ${JSON.stringify([...LOCAL_ONLY_KINDS].sort())};`,
+    '',
+    `export const PEER_KINDS = ${JSON.stringify(PEER_KINDS)} as const;`,
+    '',
+    '/** The envelope (`zEnvelope`); `d` is checked per kind with WIRE. */',
+    `export const ENVELOPE = ${envelope};`,
+    '',
+    '/** Wire kind → index into D (the `d` schema). */',
+    'export const WIRE: Readonly<Record<string, number>> = {',
+    ...wire,
+    '};',
+    '',
+    `/** Hub S2C event → index into D (binary events — ${BINARY_S2C.join(', ')} — are checked by hand). */`,
+    'export const S2C: Readonly<Record<string, number>> = {',
+    ...s2c,
+    '};',
+    '',
+    '/** Domain types the client validates without zod. */',
+    'export const TYPES = {',
+    ...typeRefs,
+    '} as const;',
+    '',
+  ];
 }
 
 /** The hand-written validator appended to the generated tables. */

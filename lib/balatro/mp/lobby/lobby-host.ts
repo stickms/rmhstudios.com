@@ -24,8 +24,9 @@
 
 import { BALATRO_LIMITS } from '../../net/limits';
 import type { BalatroS2CPayload } from '../../net/events';
-import { resolveIceServers, type IceServerConfig } from '../../../shared/p2p';
-import { isHostOnly, PEER_KINDS, WIRE_META, WIRE_PROTOCOL, type Envelope, type PeerKind, type WireData } from '../wire';
+import type { IceServerConfig } from '../../../shared/p2p/ice-core';
+import type { Envelope, PeerKind, WireData } from '../wire';
+import { isHostOnly, PEER_KINDS, resolveHubIce, WIRE_META, WIRE_PROTOCOL } from '../wire-codec';
 import { maxPlayersFor } from '../rulesets/options';
 import { sanitizeName, sanitizeText } from '../identity';
 import { RefereeDriver } from '../match/match-host';
@@ -149,7 +150,7 @@ export class LobbyHost implements Role {
     this.migratedFrom = previousHost;
     this.code = p.code;
     this.token = p.token;
-    this.ice = resolveIceServers(p.ice);
+    this.ice = resolveHubIce(p.ice);
     let s: LobbyState = {
       ...lobby,
       hostId: this.ctx.me,
@@ -219,7 +220,7 @@ export class LobbyHost implements Role {
   private onHostedAgain(code: string, token: string, ice: unknown): void {
     if (this.stopped || !this.state) return;
     this.token = token;
-    this.ice = resolveIceServers(ice);
+    this.ice = resolveHubIce(ice);
     if (this.code !== code) {
       this.code = code;
       this.commit({ ...this.state, code, version: this.state.version + 1 });

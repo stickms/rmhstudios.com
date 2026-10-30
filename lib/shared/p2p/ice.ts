@@ -14,17 +14,10 @@
  */
 
 import { z } from 'zod';
+import { copyIceServers as copy, DEFAULT_ICE_SERVERS, type IceServerConfig } from './ice-core';
 
-export interface IceServerConfig {
-  urls: string | string[];
-  username?: string;
-  credential?: string;
-}
-
-/** Google's and Cloudflare's public STUN servers. */
-export const DEFAULT_ICE_SERVERS: readonly IceServerConfig[] = [
-  { urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] },
-];
+// The zod-free pieces live in ./ice-core.ts (the browser transport imports them from there).
+export { DEFAULT_ICE_SERVERS, hasTurn, copyIceServers, type IceServerConfig } from './ice-core';
 
 const iceUrl = z.string().regex(/^(stun|stuns|turn|turns):[^\s]{1,250}$/);
 
@@ -38,10 +31,6 @@ export const zIceServers = z
     }),
   )
   .max(8);
-
-function copy(list: readonly IceServerConfig[]): IceServerConfig[] {
-  return list.map((s) => ({ ...s, urls: Array.isArray(s.urls) ? [...s.urls] : s.urls }));
-}
 
 /**
  * The configured ICE servers: `raw` is an env value (a JSON array of
@@ -74,11 +63,6 @@ export function resolveIceServers(
   const hub = fromHub === undefined ? null : zIceServers.safeParse(fromHub);
   if (hub?.success && hub.data.length > 0) return hub.data;
   return copy(fallback);
-}
-
-/** Whether a list has a TURN server (the wait before the hub relay is longer then). */
-export function hasTurn(servers: readonly IceServerConfig[]): boolean {
-  return servers.some((s) => (Array.isArray(s.urls) ? s.urls : [s.urls]).some((u) => /^turns?:/.test(u)));
 }
 
 /**

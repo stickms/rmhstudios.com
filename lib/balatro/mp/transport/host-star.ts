@@ -8,12 +8,13 @@
  */
 
 import type { Envelope, WireData, WireKind } from '../wire';
-import { relaySlotOf, type RelayPair } from '../../../shared/p2p';
+import { relaySlotOf } from '../../../shared/p2p/relay';
+import type { RelayPair } from '../../../shared/p2p/webrtc';
 import type { BalatroS2CPayload } from '../../net/events';
 import { hubRelayPair, readRelay, signalPayload } from './peer-admission';
 import type { HubLike, PeerAttempt, PeerConnector, Scheduler } from './types';
 import { WireLink, type ConnKind } from './wire-link';
-import type { IceServerConfig } from '../../../shared/p2p';
+import type { IceServerConfig } from '../../../shared/p2p/ice-core';
 
 export interface StarMember {
   peerId: string;

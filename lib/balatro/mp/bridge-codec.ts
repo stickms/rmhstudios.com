@@ -70,9 +70,9 @@ function fail(path: string, msg: string): never {
   throw new Invalid(`${path}: ${msg}`);
 }
 
-/** Validates `v` against `D[i]`; returns the parsed value (unknown object keys stripped). */
-function parseAt(i: number, v: unknown, path: string): unknown {
-  const d = D[i];
+/** Validates `v` against `T[i]`; returns the parsed value (unknown object keys stripped). */
+function parseAt(i: number, v: unknown, path: string, T: readonly SchemaDesc[] = D): unknown {
+  const d = T[i];
   if (d.T === 'any') return v;
   if (v === null) return d.T === 'null' || d.n ? null : fail(path, `expected ${d.T}, got null`);
   // `undefined` reaches here only for a present-but-undefined value or a top-level call.
@@ -105,12 +105,12 @@ function parseAt(i: number, v: unknown, path: string): unknown {
       if (!Array.isArray(v)) return fail(path, 'expected array');
       if (d.min !== undefined && v.length < d.min) fail(path, `fewer than ${d.min} items`);
       if (d.max !== undefined && v.length > d.max) fail(path, `more than ${d.max} items`);
-      return v.map((x, j) => parseAt(d.i, x, `${path}[${j}]`));
+      return v.map((x, j) => parseAt(d.i, x, `${path}[${j}]`, T));
     }
     case 'tuple':
       if (!Array.isArray(v) || v.length !== d.i.length)
         return fail(path, `expected ${d.i.length} items`);
-      return d.i.map((sub, j) => parseAt(sub, v[j], `${path}[${j}]`));
+      return d.i.map((sub, j) => parseAt(sub, v[j], `${path}[${j}]`, T));
     case 'object': {
       if (!isPlainObject(v)) return fail(path, 'expected object');
       const out: Record<string, unknown> = {};
@@ -120,14 +120,14 @@ function parseAt(i: number, v: unknown, path: string): unknown {
           if (d.r.includes(k)) fail(`${path}.${k}`, 'required');
           continue;
         }
-        out[k] = parseAt(sub, v[k], `${path}.${k}`);
+        out[k] = parseAt(sub, v[k], `${path}.${k}`, T);
       }
       if (d.ap !== undefined || d.pn !== undefined) {
         for (const k of Object.keys(v)) {
           if (own(d.p, k)) continue;
           if (d.ap === false) fail(`${path}.${k}`, 'unknown key');
-          if (d.pn !== undefined) parseAt(d.pn, k, `${path}[key ${k}]`);
-          out[k] = d.ap === undefined ? v[k] : parseAt(d.ap, v[k], `${path}.${k}`);
+          if (d.pn !== undefined) parseAt(d.pn, k, `${path}[key ${k}]`, T);
+          out[k] = d.ap === undefined ? v[k] : parseAt(d.ap, v[k], `${path}.${k}`, T);
         }
       }
       return out;
@@ -137,13 +137,13 @@ function parseAt(i: number, v: unknown, path: string): unknown {
       const tag = v[d.key];
       if (typeof tag !== 'string' || !own(d.m, tag))
         return fail(`${path}.${d.key}`, `unknown variant ${String(tag)}`);
-      return parseAt(d.m[tag], v, path);
+      return parseAt(d.m[tag], v, path, T);
     }
     case 'any_of': {
       let first: unknown;
       for (const o of d.o) {
         try {
-          return parseAt(o, v, path);
+          return parseAt(o, v, path, T);
         } catch (e) {
           first ??= e;
         }
@@ -154,8 +154,21 @@ function parseAt(i: number, v: unknown, path: string): unknown {
 }
 
 function check(i: number, v: unknown, path: string): { ok: true; v: unknown } | { ok: false; detail: string } {
+  return checkDesc(D, i, v, path);
+}
+
+/**
+ * Validate `v` against descriptor `i` of any generated table (`bridge-schema.gen.ts`
+ * `D`, `wire-schema.gen.ts` `D`): the parsed value, or why it failed. Never throws.
+ */
+export function checkDesc(
+  table: readonly SchemaDesc[],
+  i: number,
+  v: unknown,
+  path = '$',
+): { ok: true; v: unknown } | { ok: false; detail: string } {
   try {
-    return { ok: true, v: parseAt(i, v, path) };
+    return { ok: true, v: parseAt(i, v, path, table) };
   } catch (e) {
     if (e instanceof Invalid) return { ok: false, detail: e.message };
     throw e;
