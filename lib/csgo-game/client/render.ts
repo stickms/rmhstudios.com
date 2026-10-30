@@ -198,6 +198,28 @@ export class CsPlayerFigure implements EntityRenderable {
   }
 }
 
+let modelNames: Set<string> | null = null;
+let modelLookup: Promise<void> | null = null;
+
+/** The model channel's published names (`mdl/index.json`), or null until the index has loaded. */
+function publishedModels(ctx: RenderContext): Set<string> | null {
+  modelLookup ??= ctx.models.loadIndex().then((index) => {
+    modelNames = new Set(Object.keys(index ?? {}));
+  });
+  return modelNames;
+}
+
+/**
+ * A weapon on the ground draws its `_dropped` model where one is published: the `w_` model is posed for a
+ * hand (its geometry sits off its origin, so alone it hangs in the air), the dropped one lies on its own.
+ */
+function droppedModel(world: string, ctx: RenderContext): string {
+  const names = publishedModels(ctx);
+  if (!names || !world) return '';
+  const dropped = world.replace(/\.mdl$/, '_dropped.mdl');
+  return names.has(dropped) ? dropped : world;
+}
+
 /** A published model at the entity's origin: dropped weapons, the planted bomb, thrown grenades. */
 class CsModelEntity implements EntityRenderable {
   private readonly model = new PlacedModel();
@@ -206,13 +228,13 @@ class CsModelEntity implements EntityRenderable {
 
   constructor(
     readonly id: number,
-    private readonly modelOf: (s: EntityState) => string,
+    private readonly modelOf: (s: EntityState, ctx: RenderContext) => string,
     private readonly fx: EffectSystem | null = null,
     private readonly loopOf: ((s: EntityState) => string) | null = null,
   ) {}
 
   update(s: EntityState, ctx: RenderContext): void {
-    const inst = this.model.ensure(this.modelOf(s), ctx);
+    const inst = this.model.ensure(this.modelOf(s, ctx), ctx);
     stateOrigin(s, this.origin);
     stateAngles(s, this.angles);
     if (inst) this.model.place(this.origin, this.angles);
@@ -279,9 +301,9 @@ export function csEntityFactory(s: EntityState, fx: EffectSystem): EntityRendera
     case 'cs_player':
       return new CsPlayerFigure(s.id);
     case 'cs_dropped_weapon':
-      return new CsModelEntity(s.id, (e) => {
+      return new CsModelEntity(s.id, (e, ctx) => {
         const info = csWeaponByDefindex(num(e.fields, 'defindex')) ?? csWeapon(str(e.fields, 'weaponName'));
-        return info?.worldModel ?? '';
+        return info ? droppedModel(info.worldModel, ctx) : '';
       });
     case 'cs_planted_c4':
       return new CsModelEntity(
@@ -324,15 +346,14 @@ const GLOVE_PREFS: Record<number, RegExp[]> = {
   [CS_TEAM_CT]: [/\/v_glove_hardknuckle\.mdl$/, /\/v_bare_hands\.mdl$/],
 };
 let gloveModels: Record<number, string> | null = null;
-let gloveLookup: Promise<void> | null = null;
+
 function glovesFor(team: number, ctx: RenderContext): string {
   if (!gloveModels) {
-    gloveLookup ??= ctx.models.loadIndex().then((index) => {
-      const keys = Object.keys(index ?? {});
-      const pick = (res: RegExp[]) => res.map((re) => keys.find((k) => re.test(k))).find(Boolean) ?? '';
-      gloveModels = { [CS_TEAM_T]: pick(GLOVE_PREFS[CS_TEAM_T]), [CS_TEAM_CT]: pick(GLOVE_PREFS[CS_TEAM_CT]) };
-    });
-    return '';
+    const names = publishedModels(ctx);
+    if (!names) return '';
+    const keys = [...names];
+    const pick = (res: RegExp[]) => res.map((re) => keys.find((k) => re.test(k))).find(Boolean) ?? '';
+    gloveModels = { [CS_TEAM_T]: pick(GLOVE_PREFS[CS_TEAM_T]), [CS_TEAM_CT]: pick(GLOVE_PREFS[CS_TEAM_CT]) };
   }
   return gloveModels[team] ?? gloveModels[CS_TEAM_CT] ?? '';
 }
