@@ -33,6 +33,7 @@ CREATE INDEX "game_playtime_gameId_totalSeconds_idx" ON "game_playtime"("gameId"
 CREATE INDEX "game_playtime_day_userId_day_idx" ON "game_playtime_day"("userId", "day");
 
 -- CreateIndex
+-- migration-safety: acknowledged[create-index-not-concurrent] "community" is a small table (communities, not posts) and "gameId" is NULL for every existing row, so the plain build is instant
 CREATE INDEX "community_gameId_idx" ON "community"("gameId");
 
 -- AddForeignKey

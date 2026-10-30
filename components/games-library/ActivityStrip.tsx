@@ -37,7 +37,7 @@ export function ActivityStrip({
         ? t('detail-today', { defaultValue: 'Today' })
         : last.key === 'yesterday'
           ? t('detail-yesterday', { defaultValue: 'Yesterday' })
-          : t('detail-days-ago', { defaultValue: '{{count}} days ago', count: last.days });
+          : t('detail-days-ago-n', { defaultValue: '{{n}} days ago', n: last.days });
 
   return (
     <section

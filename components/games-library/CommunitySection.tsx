@@ -50,7 +50,7 @@ export function CommunitySection({
                   {c.name}
                 </span>
                 <span className="font-mono text-xs text-site-text-muted">
-                  {t('detail-members', { defaultValue: '{{count}} members', count: c.memberCount })}
+                  {t('detail-members-count', { defaultValue: 'Members: {{n}}', n: c.memberCount })}
                 </span>
               </Link>
             </li>
