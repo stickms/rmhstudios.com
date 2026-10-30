@@ -28,15 +28,15 @@ import type { Vec3 } from '../../tf2-game/core/vec';
 import { LIFE_ALIVE } from '../../tf2-game/sim/entity';
 import type { NetRecord } from '../../tf2-game/sim/net-schema';
 import type { Player } from '../../tf2-game/sim/player';
-import type { SourceCamera } from '../../tf2-game/render/camera';
+import { sourceFovToVertical, type SourceCamera } from '../../tf2-game/render/camera';
 import { SOURCE_UNIT, srcToThree } from '../../tf2-game/render/coords';
 import type { EffectSystem, EntityRenderable, EntityState, RenderContext } from '../../tf2-game/render/entities';
-import { bool, num, stateAngles, stateOrigin, str } from '../../tf2-game/render/entities/common';
+import { bool, LightProbe, num, stateAngles, stateOrigin, str } from '../../tf2-game/render/entities/common';
 import { ModelInstance } from '../../tf2-game/render/entities/model-instance';
 import type { ProfileViewModel } from '../../tf2-game/client/game-profile';
 import { CS_GRENADE_KINDS, csWeapon, csWeaponByDefindex, csWeaponTable, hasCsWeaponData } from '../data/weapon-data';
 import { CS_TEAM_CT, CS_TEAM_T } from '../constants';
-import type { CsWeapon } from '../weapons/base';
+import { VM_ACTIVITIES, type CsWeapon } from '../weapons/base';
 
 /** Team colours of the figures (T sand, CT steel blue) and their visor. */
 const TEAM_BODY: Record<number, number> = { [CS_TEAM_T]: 0xb8925a, [CS_TEAM_CT]: 0x4d6f99 };
@@ -312,8 +312,12 @@ const SWAY_LAG = 8;
  */
 export class CsViewModel implements ProfileViewModel {
   private readonly scene = new Scene();
-  private readonly camera = new PerspectiveCamera(68, 1, 0.01, 100);
+  private readonly camera = new PerspectiveCamera(68, 1, SOURCE_UNIT, 2048 * SOURCE_UNIT);
   private readonly model = new PlacedModel();
+  private readonly probe = new LightProbe();
+  /** The activity playing and its change counter (the weapon's networked vmActivity / vmActivitySeq). */
+  private lastAct = -1;
+  private lastSeq = -1;
   private fov = 68;
   private bob = 0;
   private swayYaw = 0;
@@ -342,10 +346,24 @@ export class CsViewModel implements ProfileViewModel {
       this.model.hide();
       return;
     }
+    const fresh = this.model.model !== info.viewModel;
     const inst = this.model.ensure(info.viewModel, ctx, this.scene);
     if (!inst) {
       this.visible = false;
       return;
+    }
+    // The weapon's activity (idle, draw, fire, reload, …) as a sequence of its own activity table: a
+    // new change counter restarts a one-shot, an idle loops (a model held in its bind pose would sit
+    // across the view).
+    const a = inst.animator;
+    const act = (w as CsWeapon & { vmActivity?: number }).vmActivity ?? 0;
+    const seqNo = (w as CsWeapon & { vmActivitySeq?: number }).vmActivitySeq ?? 0;
+    if (a && (fresh || act !== this.lastAct || seqNo !== this.lastSeq)) {
+      const name = VM_ACTIVITIES[act] ?? 'ACT_VM_IDLE';
+      const seq = a.set.selectWeightedSequence(name) ?? a.set.selectWeightedSequence('ACT_VM_IDLE') ?? a.set.sequences.values().next().value ?? null;
+      a.setSequence(seq, { restart: seqNo !== this.lastSeq || fresh, fade: !fresh });
+      this.lastAct = act;
+      this.lastSeq = seqNo;
     }
     const speed = Math.hypot(frame.velocity.x, frame.velocity.y);
     this.bob += frame.dt * BOB_RATE * Math.min(1, speed / 250);
@@ -360,6 +378,8 @@ export class CsViewModel implements ProfileViewModel {
     tmpA.y = this.swayYaw;
     tmpA.z = Math.sin(this.bob) * amp;
     inst.place(tmpV, tmpA, 1);
+    // Lit like the world at the eye (the ambient cube, the sun); unlit it draws black.
+    this.probe.update(ctx, inst.uniforms, frame.eyeOrigin, 0);
     if (inst.animator) inst.animate(frame.dt);
     inst.applyPose();
     inst.updateMatrices();
@@ -368,8 +388,9 @@ export class CsViewModel implements ProfileViewModel {
   render(renderer: WebGLRenderer, cam: SourceCamera): void {
     if (!this.visible) return;
     const c = this.camera;
-    c.fov = this.fov;
+    c.fov = sourceFovToVertical(this.fov);
     c.aspect = cam.camera.aspect;
+    c.layers.enable(1);
     c.position.copy(cam.camera.position);
     c.quaternion.copy(cam.camera.quaternion);
     c.updateProjectionMatrix();
