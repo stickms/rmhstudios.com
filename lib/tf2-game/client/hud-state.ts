@@ -474,7 +474,7 @@ export interface HudState {
   loadout?: HudLoadoutAnswer | null;
   /** Network notices (host migration, hosting) — rendered with their own words by the HUD. */
   notices?: HudNotice[];
-  /** The room's administration when this player runs it (peer-to-peer host, dedicated room owner). */
+  /** The room's administration when this player runs it (offline, or the peer-to-peer host). */
   admin?: HudAdmin | null;
 }
 
@@ -502,14 +502,12 @@ export interface HudAdminPlayer {
   successor?: boolean;
   /** A seat held while they reconnect. */
   held?: boolean;
-  /** Dedicated rooms: a signed-in account (ownership can only go to one). */
-  account?: boolean;
 }
 
 export interface HudAdmin {
-  /** `host`: this browser runs the match (offline or peer-to-peer); `owner`: a dedicated room's owner. */
-  role: 'host' | 'owner';
-  /** Peer-to-peer or a hub room (kick / lock / password / say apply); offline has no one to admin. */
+  /** This browser runs the match (offline or peer-to-peer). */
+  role: 'host';
+  /** Peer-to-peer (kick / lock / password / say apply); offline has no one to admin. */
   online: boolean;
   players: HudAdminPlayer[];
   map: string;

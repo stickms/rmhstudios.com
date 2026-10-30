@@ -68,8 +68,12 @@ for (const q of [
   's=soldierCp&menu=voice&touch=1',
   's=engineerCtf&touch=1',
   's=spyDisguise&touch=1',
-  // The pause menu and its HUD view (pick / edit / export a HUD).
+  // The Esc menu (the HUD's mainmenuoverride.res), Options, the loadout screen, and the HUD view (pick /
+  // edit / export a HUD).
   's=soldierCp&menu=pause&touch=1',
+  's=soldierCp&menu=settings:keyboard&touch=1',
+  's=soldierCp&menu=advanced&touch=1',
+  's=soldierCp&menu=loadout&touch=1',
   's=soldierCp&menu=hud&touch=1',
   's=soldierCp&menu=hud&touch=1&hud=moved',
   // Team and class select drawn from a HUD that restyles them (their hit layer over the HUD's canvas).
@@ -86,10 +90,16 @@ for (const q of [
     await page.waitForTimeout(500);
     const r = await page.evaluate(() => {
       const touch = document.querySelector('.tf2g-touch');
-      // Enabled buttons only (a disabled one takes no taps); each is scrolled into view first, as a
-      // player scrolls a long menu (the pause menu's HUD view) to reach it.
+      // Enabled, reachable buttons only (a disabled one takes no taps; an inert or invisible one — a
+      // collapsed tab strip kept only to be measured — cannot be tapped); each is scrolled into view
+      // first, as a player scrolls a long menu (the pause menu's HUD view) to reach it.
       const items = [...document.querySelectorAll('button')].filter(
-        (b) => !touch?.contains(b) && !b.disabled && b.getBoundingClientRect().width > 0,
+        (b) =>
+          !touch?.contains(b) &&
+          !b.disabled &&
+          !b.closest('[inert]') &&
+          getComputedStyle(b).visibility !== 'hidden' &&
+          b.getBoundingClientRect().width > 0,
       );
       let ok = 0,
         blocked = 0;

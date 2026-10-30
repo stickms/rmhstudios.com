@@ -1,20 +1,18 @@
 /**
  * RMH TF2 — the hub's event names, payload shapes and wire limits.
  *
- * Imported by BOTH sides: the browser client (`./client.ts`) and the room
- * manager on the games hub (`server/socket-server/handlers/tf2-game.ts`). Never
+ * Imported by BOTH sides: the browser client (`./client.ts`) and the games hub
+ * (`server/socket-server/handlers/tf2-game.ts` and `tf2-p2p.ts`). Never
  * inline one of these strings — server/CLAUDE.md §Client connection
  * conventions. Every client-to-server name needs a rule in
  * `SOCKET_RATE_LIMITS` (server/socket-server/config.ts), which
  * lib/__tests__/socket-rate-limit-coverage.test.ts enforces.
  *
- * Two planes:
- *   - **Binary hot path.** `tf2:input` (client → hub → match worker) and
- *     `tf2:snapshot` / `tf2:events` (match worker → hub → clients). The hub
- *     treats all three as opaque bytes; their formats belong to the simulation
- *     (`lib/tf2-game/net/` snapshot/input codecs).
- *   - **JSON control plane.** Rooms, team/class choice, chat, voice commands,
- *     clock sync — validated by `./lobby-schema.ts`.
+ * The hub carries no game traffic of its own — every match runs in a browser
+ * (offline, or a peer-to-peer host's listen server). It lists the P2P rooms,
+ * keeps their hosts' doors, answers the browser's pings, and signals (plus
+ * the relay fallback) for P2P play. JSON payloads are validated by
+ * `./lobby-schema.ts` and `./p2p/signal.ts`.
  *
  * Environment-agnostic and free of `@/` specifiers (the hub bundle imports it
  * relatively; server/CLAUDE.md gotcha 7).
@@ -27,34 +25,11 @@ import type { Tf2Mode } from '../data/maps';
 /** Client → server. */
 export const TF2_C2S = {
   LIST_ROOMS: 'tf2:rooms:list',
-  CREATE_ROOM: 'tf2:room:create',
-  JOIN_ROOM: 'tf2:room:join',
-  LEAVE: 'tf2:room:leave',
-  /** Binary: packed user commands for the player's match. */
-  INPUT: 'tf2:input',
-  CHAT: 'tf2:chat:send',
-  TEAM: 'tf2:team',
-  CLASS: 'tf2:class',
-  VOICE: 'tf2:voice',
-  /**
-   * A generic game command (`build 2 0`, `destroy 1`, `disguise 8 3`, `taunt` …):
-   * MatchCommand { kind: 'extra' }, validated by `zExtraCommand` (./lobby-schema.ts).
-   */
-  EXTRA: 'tf2:extra',
-  /**
-   * Equip a loadout for a class (the pause menu's Loadout view): MatchCommand { kind: 'loadout' },
-   * shape-checked by `zLoadout` (./lobby-schema.ts), checked against the item catalog in the match.
-   */
-  LOADOUT: 'tf2:loadout',
-  /** Clock sync — answered by `TF2_S2C.PONG`. */
+  /** The hub's round trip (the browser's ping column) — answered by `TF2_S2C.PONG`. */
   PING: 'tf2:ping',
   /** One room's details for the server browser (players, round) — answered by `TF2_S2C.ROOM_DETAILS`. */
   ROOM_DETAILS: 'tf2:room:details',
-  /**
-   * Room administration (`RoomAdminPayload`): a dedicated room's owner — kick, hand ownership on,
-   * change the map (allowlist), lock, password, a server message — or a peer-to-peer host (lock,
-   * password). Checked on the hub (who is asking, the allowlist) and logged.
-   */
+  /** A peer-to-peer host's door (`RoomAdminPayload`: lock, password), checked on the hub and logged. */
   ROOM_ADMIN: 'tf2:room:admin',
 
   // ── Peer-to-peer play (docs/tf2-game.md "Peer-to-peer play") ──────────────
@@ -87,14 +62,6 @@ export const TF2_C2S = {
 /** Server → client. */
 export const TF2_S2C = {
   ROOMS: 'tf2:rooms',
-  JOINED: 'tf2:joined',
-  /** Binary, unreliable (volatile): the simulation's snapshot stream. */
-  SNAPSHOT: 'tf2:snapshot',
-  /** Binary, reliable: a batch of the simulation's reliable events. */
-  EVENTS: 'tf2:events',
-  CHAT: 'tf2:chat',
-  /** You are out of the room (room closed, map failed to load, worker crashed). */
-  KICKED: 'tf2:kicked',
   ERROR: 'tf2:error',
   PONG: 'tf2:pong',
   ROOM_DETAILS: 'tf2:room:details',
@@ -118,8 +85,6 @@ export const TF2_S2C = {
   P2P_PROMOTED: 'tf2:p2p:promoted',
   /** To every other member: the match moves to a new host; you are being re-admitted. */
   P2P_MIGRATING: 'tf2:p2p:migrating',
-  /** A dedicated room's administration as its players see it: who owns it, locked, password. */
-  ROOM_INFO: 'tf2:room:info',
 } as const;
 
 export type Tf2C2SEvent = (typeof TF2_C2S)[keyof typeof TF2_C2S];
@@ -185,31 +150,11 @@ export const CLASS_CHOICES: readonly ClassChoice[] = [
   'random',
 ];
 
-export interface CreateRoomPayload {
-  map: string;
-  /** Defaults to the map's own mode; anything else is refused for now. */
-  mode?: Tf2Mode;
-  maxPlayers: number;
-  botCount: number;
-  botDifficulty: BotDifficulty;
-  /** Room (server) name shown in the browser. */
-  name: string;
-  /** Hidden from the browser; join by code only. */
-  private?: boolean;
-  /** Display name for a signed-out player; signed-in players use their account name. */
-  playerName?: string;
-}
-
-export interface JoinRoomPayload {
-  code: string;
-  playerName?: string;
-  /** Join as a spectator: decided with the join (the match seats you with the spectators). */
-  spectate?: boolean;
-  /** The room's password, when it has one. */
-  password?: string;
-}
-
-/** `tf2:room:admin` — a room owner's (or a peer-to-peer host's) administration. */
+/**
+ * The administration a room's host runs (the HUD's admin view). Kicks, the map and messages are
+ * the host's own match; `lock` and `password` are also sent to the hub (`tf2:room:admin`), which
+ * keeps the door.
+ */
 export type RoomAdminPayload =
   | { action: 'kick'; playerId: number }
   | { action: 'transfer'; playerId: number }
@@ -219,44 +164,6 @@ export type RoomAdminPayload =
   | { action: 'password'; password: string }
   /** A line in everyone's chat from the server (rcon's `say`). */
   | { action: 'say'; text: string };
-
-/** `tf2:room:info` — the room's administration, for every player in it. */
-export interface RoomInfoPayload {
-  code: string;
-  /** The owner's player id in the room (null: nobody). */
-  ownerId: number | null;
-  ownerName: string | null;
-  locked: boolean;
-  passworded: boolean;
-  /** The room's humans (player id, name, signed in) — the owner's kick and hand-on list. */
-  players?: Array<{ id: number; name: string; account: boolean }>;
-}
-
-export interface ChatPayload {
-  text: string;
-  /** `say_team`. */
-  teamOnly?: boolean;
-}
-
-export interface TeamPayload {
-  team: TeamChoice;
-}
-
-export interface ClassPayload {
-  cls: ClassChoice;
-}
-
-/** `voicemenu <menu> <item>` — three menus of eight lines each. */
-export interface VoicePayload {
-  menu: 0 | 1 | 2;
-  item: number;
-}
-
-/** `tf2:extra` — a console verb and its arguments (net/extra-commands.ts). */
-export interface ExtraCommandPayload {
-  command: string;
-  args: ReadonlyArray<number | string | boolean>;
-}
 
 /** `tf2:rooms:list` — a page of the server browser. */
 export interface ListRoomsPayload {
@@ -276,8 +183,8 @@ export interface PingPayload {
 
 export type RoomState = 'loading' | 'running';
 
-/** Where a match runs: on the hub's match workers, or in a player's browser (a listen server). */
-export type RoomKind = 'dedicated' | 'p2p';
+/** Where a match runs: always a player's browser (a listen server), reached peer to peer. */
+export type RoomKind = 'p2p';
 
 /** The round as the server browser shows it. */
 export interface RoundInfo {
@@ -358,13 +265,6 @@ export interface ChatMessage {
   at: number;
 }
 
-export type KickReason = 'room-closed' | 'map-failed' | 'server-error' | 'server-restart' | 'kicked';
-
-export interface KickedPayload {
-  code: string;
-  reason: KickReason;
-}
-
 export type Tf2ErrorCode =
   | 'rate-limited'
   | 'bad-payload'
@@ -378,8 +278,6 @@ export type Tf2ErrorCode =
   | 'unavailable'
   /** Multiplayer needs a signed-in account (offline play does not). */
   | 'auth-required'
-  /** `tf2:room:join` named a peer-to-peer room: join it with `tf2:p2p:join`. */
-  | 'p2p-room'
   /** The host removed this account from its room. */
   | 'kicked'
   /** Only the room's host may do that. */
@@ -404,6 +302,4 @@ export interface PongPayload {
   t: number;
   /** Server epoch ms when the pong left. */
   serverTime: number;
-  /** The match's current tick, estimated from its last frame; null outside a match. */
-  tick: number | null;
 }

@@ -110,9 +110,7 @@ COPY server ./server/
 COPY lib ./lib/
 
 # Only the Node services still served by compose (socket/rmhbox/rmhtube +
-# ladder-worker + homes-worker + jobs) are bundled here, plus the TF2 match
-# worker: the socket hub spawns it as a worker_threads thread
-# (lib/tf2-game/server/pool.server.ts) and refuses TF2 matches without it.
+# ladder-worker + homes-worker + jobs) are bundled here.
 # recap, status, discord-bot, doctrine-worker, vibe-worker and bot-worker were
 # migrated to the Go supervisor/status binaries (built in the go-builder stage),
 # so their Node entrypoints are no longer compiled or shipped.
@@ -123,7 +121,6 @@ RUN pnpm exec esbuild \
     server/ladder-worker/index.ts \
     server/homes-worker/index.ts \
     server/jobs/index.ts \
-    lib/tf2-game/server/match-worker.server.ts \
     --bundle --platform=node --target=node24 \
     --outdir=dist-server --outbase=. \
     --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true \
@@ -134,8 +131,7 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhtube/index.cjs && \
     test -f dist-server/server/ladder-worker/index.cjs && \
     test -f dist-server/server/homes-worker/index.cjs && \
-    test -f dist-server/server/jobs/index.cjs && \
-    test -f dist-server/lib/tf2-game/server/match-worker.server.cjs
+    test -f dist-server/server/jobs/index.cjs
 
 # ── Stage 2b: Pre-build the hosted vibe packages (cached as a layer) ──────────
 # scripts/build-vibe-packages.ts bundles the ~14 "hosted" vibe libs (three, pixi,

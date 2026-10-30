@@ -209,11 +209,12 @@ export class RenderCore {
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    quality: GameSettings['quality'],
+    settings: Pick<GameSettings, 'quality' | 'video'>,
     private readonly onContextLost: () => void,
   ) {
+    const { quality, video } = settings;
     const probe = detectDevice(null);
-    const early = planQuality(probe, quality);
+    const early = planQuality(probe, quality, video);
     let renderer: WebGLRenderer;
     try {
       renderer = new WebGLRenderer({
@@ -232,7 +233,7 @@ export class RenderCore {
       renderer.dispose();
       throw new ClientFailure({ code: 'webgl', detail: 'WebGL 2 is not available', retryable: false });
     }
-    this.plan = planQuality(this.device, quality);
+    this.plan = planQuality(this.device, quality, video);
     this.governor = new FrameGovernor(this.plan);
     canvas.addEventListener('webglcontextlost', this.onLost, false);
     this.resize();

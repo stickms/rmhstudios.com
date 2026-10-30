@@ -7,7 +7,15 @@
 `--list` names one model path per line (`models/player/scout.mdl`; blank lines and `#` comments are
 ignored). `scripts/tf2-game/model-list.py` writes TF2's default list; the map pipeline appends its props.
 Nothing here is TF2-only: point `--root`/`--search` at another Source install (`--search hl2` for the
-Half-Life 2 demo, `--search portal,hl2` for Portal) with its own list.
+Half-Life 2 demo, `--search portal,hl2` for Portal, `--search csgo` for CS:GO) with its own list.
+
+CS:GO (`--search csgo`): MDL v49 and VTF 7.5 read like the others. Its VMTs carry conditional keys
+(`"srgb?$basetexture"`, `">=dx90?$phong"`, `"GPU>=2?$detail"`) — `csgo_material` applies them as a
+high-end Windows desktop does — and two shaders the renderer has no model of: `CustomWeapon` (the
+weapon-finish compositor; only its `$basetexture` is used, the default finish) and `Character`
+(agents). Both are converted as VertexLitGeneric (`extras.approx`) and counted in the run's summary,
+as is every other shader the converter does not recognise; a material without a usable base texture
+is logged in untextured.json like any other.
 
 Output (`--out D`, pushed by `scripts/tf2-assets/publish.ts push --dir D --prefix tf2-game/
 --state-key tf2-game/mdl/_state.json --index mdl/index.json`):
@@ -64,6 +72,87 @@ EYE_SHADERS = convert.EYE_SHADERS
 CLASSES = ("scout", "soldier", "pyro", "demo", "heavy", "engineer", "medic", "sniper", "spy")
 
 UNTEXTURED = []  # (model, material, why)
+
+# ------------------------------------------------------------------------------------------ CS:GO materials
+
+# Shaders whose materials the renderer draws from the extras as they are.
+KNOWN_SHADERS = {"vertexlitgeneric", "unlitgeneric", "lightmappedgeneric", "eyerefract", "eyes", "teeth",
+                 "refract", "spritecard", "sprite", "worldvertextransition", "unlittwotexture",
+                 "splinerope", "cable", "modulate", "wireframe", "patch"}
+# CS:GO shaders drawn as VertexLitGeneric (their $basetexture, $bumpmap, $phong… mean the same).
+CSGO_APPROX = {"customweapon": "vertexlitgeneric", "character": "vertexlitgeneric",
+               "vertexlitgeneric_dx9": "vertexlitgeneric"}
+SHADER_COUNTS = {}  # unrecognised / approximated shader -> materials seen
+
+
+def _csgo_condition(cond):
+    """A CS:GO VMT key condition (`srgb`, `>=dx90`, `gpu>=2`, `lowfill`, negated with `!`), evaluated
+    as a high-end Windows desktop (sRGB, DX9.5, GPU level 3, CPU level 2, no low-fill path)."""
+    c = cond.strip().lower().replace(" ", "")
+    neg = c.startswith("!")
+    c = c.lstrip("!")
+    m = re.fullmatch(r"(gpu|cpu)(>=|<=|>|<|==)(\d+)", c)
+    if m:
+        level = 3 if m.group(1) == "gpu" else 2
+        n = int(m.group(3))
+        val = {">=": level >= n, "<=": level <= n, ">": level > n, "<": level < n, "==": level == n}[m.group(2)]
+    elif re.fullmatch(r"(>=|<=|>|<)?dx\d+(_20b)?", c):
+        d = re.fullmatch(r"(>=|<=|>|<)?dx(\d+)", c.replace("_20b", ""))
+        lvl = int(d.group(2))
+        lvl = lvl * 10 if lvl < 10 else lvl
+        op = d.group(1) or "=="
+        val = {">=": 95 >= lvl, "<=": 95 <= lvl, ">": 95 > lvl, "<": 95 < lvl, "==": lvl in (90, 95)}[op]
+    else:
+        val = c in ("srgb", "srgb_pc", "hdr", "pc", "win32", "windows")
+    return not val if neg else val
+
+
+def csgo_material(shader, kv):
+    """CS:GO's VMT conditionals applied (`cond?$key` wins over `$key` when the condition holds; when it
+    does not, it is dropped) and its unmodelled shaders mapped. -> (shader, kv, approx or None)"""
+    out = {}
+    cond_keys = []
+    for k, v in kv.items():
+        if "?" in k:
+            cond_keys.append((k, v))
+        else:
+            out[k] = v
+    for k, v in cond_keys:
+        cond, key = k.rsplit("?", 1)
+        if key and all(_csgo_condition(c) for c in cond.split("?")):
+            out[key] = v
+    approx = CSGO_APPROX.get(shader)
+    if approx or shader not in KNOWN_SHADERS:
+        SHADER_COUNTS[shader] = SHADER_COUNTS.get(shader, 0) + 1
+    return (approx or shader), out, approx
+
+
+def csgo_slots(fs, slots):
+    """convert.material_files' slots with csgo_material applied (and the base texture re-read when a
+    conditional changed it)."""
+    out = []
+    for slot in slots:
+        if slot is None:
+            out.append(None)
+            continue
+        vmt_path, shader, kv, vtf_path, vtf, text = slot
+        shader2, kv2, approx = csgo_material(shader, kv)
+        if approx:
+            kv2["%approx_from"] = shader
+        base = kv2.get("$basetexture")
+        path2 = srctex.texture_path(base) if base else None
+        if path2 != vtf_path:
+            try:
+                vtf = fs.read(path2) if path2 else None
+            except OSError:
+                vtf = None
+            vtf_path = path2
+        out.append((vmt_path, shader2, kv2, vtf_path, vtf, text))
+    return out
+
+
+def is_csgo(fs):
+    return bool(getattr(fs, "search", None)) and fs.search[0].lower() == "csgo"
 
 
 # ---------------------------------------------------------------------------------------------------- files
@@ -151,6 +240,8 @@ def _tex_ref(kv, key):
 def material_extras(vmt_path, shader, kv):
     """What the renderer needs to approximate the Source shader, from the VMT."""
     e = {"vmt": vmt_path, "shader": shader}
+    if kv.get("%approx_from"):  # CS:GO: a shader drawn as `shader` (csgo_material)
+        e["approx"] = kv["%approx_from"]
     base = _tex_ref(kv, "$basetexture")
     if base:
         e["texture"] = base
@@ -708,6 +799,8 @@ class Source:
         self.has_mesh = self.vvd is not None and self.vtx is not None
         self.info = srcmodel.read_mdl(self.mdl)
         self.slots = convert.material_files(fs, self.info)
+        if is_csgo(fs):
+            self.slots = csgo_slots(fs, self.slots)
         self.cap = texture_cap(self.path)
         anim_groups = [g for g in self.vm.groups[1:] if any(s["anims"] for s in g.sequences)]
         self.anim_pack = bool(anim_groups)
@@ -1068,6 +1161,10 @@ def main(argv=None):
                                        len(made), total / 1048576, tex / 1048576, len(seen)))
     for why, n in sorted(reasons.items(), key=lambda kv: -kv[1])[:10]:
         print("  %5d  %s" % (n, why))
+    if SHADER_COUNTS:
+        print("shaders approximated or not recognised (materials): " + ", ".join(
+            "%s %d%s" % (sh, n, " -> " + CSGO_APPROX[sh] if sh in CSGO_APPROX else "")
+            for sh, n in sorted(SHADER_COUNTS.items(), key=lambda kv: -kv[1])))
     return 0
 
 

@@ -3,3 +3,10 @@
 @source '../../../components/tf2-game';
 @source '../../../components/tf2-hud/ui.tsx';
 @source '../../../components/tf2-hud/TfTabs.tsx';
+/* The page primitives the app's globals.css gives the play page (the harness loads no globals). */
+.app-viewport {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

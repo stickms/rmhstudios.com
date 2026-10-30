@@ -1,9 +1,10 @@
 /**
  * The seam between the network tier and the simulation.
  *
- * The hub (`server/socket-server/handlers/tf2-game.ts`) owns rooms and sockets;
- * the match worker (`./match-worker.server.ts`, driven by `./match-runner.ts`)
- * owns the clock; a `MatchHost` owns everything about the game itself. The
+ * The listen server (client/net/listen-server.ts, with the peer-to-peer host
+ * session for remote players) owns seats and transports; the listen worker
+ * (driven by `./match-runner.ts`) owns the clock; a `MatchHost` owns
+ * everything about the game itself. The
  * runner calls a host in exactly this order of concerns and nothing else:
  *
  *   - `addPlayer` / `removePlayer` as humans arrive and leave (bots are the
@@ -26,8 +27,21 @@ import type { BotDifficulty, ClassChoice, TeamChoice } from '../net/events';
 import type { ExtraCommandArgs } from '../net/extra-commands';
 import type { LoadoutSlots, TfClass } from '../../tf2-loadout/catalog-types';
 
+/**
+ * The game a match plays. TF2 is the default; another game on the engine registers its host with
+ * `registerMatchGame` (./game-registry.ts). Every match runs in a browser's listen server.
+ */
+export type MatchGame = 'tf2' | 'csgo';
+
 /** What a match is created with. Validated by the hub before it gets here. */
 export interface MatchOptions {
+  /** The game ('tf2' when absent). */
+  game?: MatchGame;
+  /**
+   * The game's own mode when `game` is not TF2 (CS:GO: 'de' bomb defusal, 'dm' deathmatch);
+   * `mode` keeps TF2's meaning (the hub and the protocol's `hello` type it).
+   */
+  variant?: string;
   /** Unique per process (the room code); used in logs and the runner's routing. */
   matchId: string;
   /** A name on `TF2_MAPS`. The host loads its package (async — object storage). */

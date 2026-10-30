@@ -329,28 +329,13 @@ export const config = {
     'br:hostHandoff': { max: 10, windowMs: 60_000 },
     'br:ping': { max: 120, windowMs: 60_000 },
     'br:leave': { max: 20, windowMs: 60_000 },
-    // RMH TF2 (docs/tf2-game.md). `tf2:input` is the hot path: a client sends
-    // one packet per 15 ms tick (~4,000/min), so 5,000 leaves headroom for a
-    // burst after a stall without letting one socket flood its match worker.
-    // `tf2:ping` is clock sync (a few per second while joining, then ~1/s).
-    // The rest are a human pressing a key.
+    // RMH TF2 (docs/tf2-game.md). Every match runs in a browser; the hub lists
+    // the P2P rooms, answers the browser's pings and keeps a host's door.
     'tf2:rooms:list': { max: 30, windowMs: 60_000 },
-    'tf2:room:create': { max: 6, windowMs: 60_000 },
-    'tf2:room:join': { max: 20, windowMs: 60_000 },
-    'tf2:room:leave': { max: 20, windowMs: 60_000 },
-    'tf2:input': { max: 5000, windowMs: 60_000 },
-    'tf2:chat:send': { max: 40, windowMs: 60_000 },
-    'tf2:team': { max: 30, windowMs: 60_000 },
-    'tf2:class': { max: 60, windowMs: 60_000 },
-    'tf2:voice': { max: 60, windowMs: 60_000 },
-    // Build / destroy / disguise / taunt: a few per second at most, even mid-fight.
-    'tf2:extra': { max: 120, windowMs: 60_000 },
-    // Equipping a loadout from the pause menu: a person clicking "Equip".
-    'tf2:loadout': { max: 20, windowMs: 60_000 },
     'tf2:ping': { max: 240, windowMs: 60_000 },
     // The server browser's details pane: a click per room, plus its refresh.
     'tf2:room:details': { max: 60, windowMs: 60_000 },
-    // A room owner's administration (kick, map, lock, password, a server message): a person at a menu.
+    // A P2P host's door (lock, password): a person at a menu.
     'tf2:room:admin': { max: 30, windowMs: 60_000 },
     // Peer-to-peer play (docs/tf2-game.md "Peer-to-peer play"): the hub only
     // signals. `update` is the host's digest every couple of seconds. `admit`

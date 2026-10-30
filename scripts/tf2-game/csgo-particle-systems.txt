@@ -1,0 +1,34 @@
+# CS:GO particle systems the browser game spawns (game_particles.py --game csgo exports these).
+# One root system per line; children are followed automatically. A line with * or ? is a pattern
+# over the game's system names (case-insensitive, at most 40 systems each). The default weapons'
+# own effects (muzzle flashes 1st/3rd person, heat, brass, tracers) are added from items_game.txt.
+# Storage is shared with every game channel (docs/tf2-game.md, "Storage budget"): keep it to what
+# deathmatch and bomb defusal on de_dust2 show.
+
+# Muzzle flashes, smoke and brass the weapons' visuals may not name
+weapon_muzzle_flash_*
+weapon_muzzle_smoke*
+weapon_shell_casing_*
+weapon_tracers*
+
+# Bullet impacts per surface (impact_<surface>, and their cheap variants)
+impact_*
+
+# Blood (hits, headshots)
+blood_impact_*
+
+# Explosions: HE grenade and C4
+explosion_hegrenade*
+explosion_c4*
+explosion_basic
+
+# Grenades: smoke volume, molotov / incendiary fire, flashbang, decoy
+explosion_smokegrenade*
+molotov_*
+incgrenade_*
+weapon_molotov_*
+flashbang*
+weapon_decoy_*
+
+# The bomb's blinking light
+c4_timer_light*

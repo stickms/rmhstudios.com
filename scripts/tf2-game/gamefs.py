@@ -151,12 +151,14 @@ def _fix_archive_names(pak):
     pak._make_vpkfile_path = archive_path
 
 
-# Each single-player game's search directories, as its gameinfo.txt lists them.
-GAME_SEARCH = {"hl2": ("hl2",), "portal": ("portal", "hl2")}
+# Each game's search directories, as its gameinfo.txt lists them (CS:GO: csgo/pak01_dir.vpk and loose
+# csgo/ files; the dedicated server ships the whole content depot under csgo/).
+GAME_SEARCH = {"hl2": ("hl2",), "portal": ("portal", "hl2"), "csgo": ("csgo",)}
 
 
 def open_game(root, game):
-    """The file system a game's converters read: TF2 tf/-first (GameFirst), the others SearchFS."""
+    """The file system a game's converters read: TF2 tf/-first (GameFirst), the others SearchFS
+    (hl2, portal, csgo)."""
     from vpkfs import GameFS
 
     if game == "tf2":

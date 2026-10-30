@@ -520,13 +520,15 @@ export class WorldCapture {
       for (let slot = 0; slot < WEAPON_SLOTS; slot++) {
         const w = p.weapons[slot];
         if (!w) continue;
-        const rec = this.record(NET_WEAPON);
+        // A weapon may carry its own schema (another game's prediction state); TF2's use NET_WEAPON.
+        const weaponSchema = w.netSchema?.() ?? NET_WEAPON;
+        const rec = this.record(weaponSchema);
         w.writeNet(rec);
         // A new weapon object in the slot is a new serial (defindex change re-creates it).
         add(
           weaponKey(p.id, slot),
           1 + (Math.abs(w.defindex) % 0x7fff),
-          NET_WEAPON,
+          weaponSchema,
           rec,
           p.id,
           true,

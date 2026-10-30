@@ -4,7 +4,7 @@
  * tests validate every manifest against them) plus the inferred TypeScript types, and
  * the `maps/<sha>.hulls.bin` codec.
  *
- * Storage layout per game (`tf2-game/`, `hl2-game/`, `portal-game/`), served at
+ * Storage layout per game (`tf2-game/`, `hl2-game/`, `portal-game/`, `csgo-game/`), served at
  * `/api/<game>-game/assets/<path>`:
  *   - `maps/index.json` (mutable, short cache): `MapIndex`.
  *   - `maps/<sha>.json`: `MapManifest` (content-addressed, immutable).
@@ -13,6 +13,9 @@
  *     lib/tf2-game/formats/bsp.ts `parseBsp`.
  *   - `maps/<sha>.hulls.bin`: prop collision hulls (see `parseHullsBin`).
  *   - `tex/<sha>.webp`: shared with the model channel (same names, deduplicated).
+ *   - CS:GO only: the manifest's optional `radar` (the map overview: `resource/overviews/<map>.txt`
+ *     and `materials/overviews/<map>_radar.vtf` as `tex/<sha>.webp`); `worldToRadar` maps a world
+ *     position onto it.
  *
  * Pure and environment-agnostic (browser, workers, Node).
  */
@@ -90,11 +93,69 @@ export const mapPropSchema = z.object({
 });
 export type MapProp = z.infer<typeof mapPropSchema>;
 
+const texFile = z.string().regex(/^tex\/[a-f0-9]{40}\.webp$/);
+
+/**
+ * A map overview (CS:GO's radar): `resource/overviews/<map>.txt` gives the world position of the
+ * image's top-left corner (`pos_x`, `pos_y`) and the world units per pixel of the 1024-pixel source
+ * (`scale`); `materials/overviews/<map>_radar.vtf` is the image. A map with vertical sections
+ * (`verticalsections`) has one image per section (`<map>_<section>_radar.vtf`), chosen by altitude.
+ */
+export const mapRadarSchema = z.object({
+  file: texFile,
+  w: z.number().int().positive(),
+  h: z.number().int().positive(),
+  posX: z.number(),
+  posY: z.number(),
+  scale: z.number().positive(),
+  /** The pixel size `scale` refers to (the overview's source width, 1024). */
+  size: z.number().int().positive(),
+  /** Overview keys the HUD may use: `rotate` (the image is turned), `zoom`. */
+  rotate: z.boolean().optional(),
+  zoom: z.number().optional(),
+  sections: z
+    .array(
+      z.object({
+        name: z.string(),
+        altitudeMin: z.number(),
+        altitudeMax: z.number(),
+        /** Absent for the default section (it uses `file`) or when its image is missing. */
+        file: texFile.optional(),
+      }),
+    )
+    .optional(),
+});
+export type MapRadar = z.infer<typeof mapRadarSchema>;
+
+/**
+ * A world position on the radar, in 0..1 of the image (u right, v down) — the overview's own
+ * transform (pixel = ((x − pos_x) / scale, (pos_y − y) / scale) in the 1024 source), so it holds at
+ * any stored size. Outside 0..1 the point is off the image.
+ */
+export function worldToRadar(
+  radar: Pick<MapRadar, 'posX' | 'posY' | 'scale' | 'size'>,
+  x: number,
+  y: number,
+): { u: number; v: number } {
+  const span = radar.scale * radar.size;
+  return { u: (x - radar.posX) / span, v: (radar.posY - y) / span };
+}
+
+/** The inverse of `worldToRadar` (z is not on the radar). */
+export function radarToWorld(
+  radar: Pick<MapRadar, 'posX' | 'posY' | 'scale' | 'size'>,
+  u: number,
+  v: number,
+): { x: number; y: number } {
+  const span = radar.scale * radar.size;
+  return { x: radar.posX + u * span, y: radar.posY - v * span };
+}
+
 const mapFile = (ext: string) => z.string().regex(new RegExp(`^maps/[a-f0-9]{64}\\.${ext}$`));
 
 export const mapManifestSchema = z.object({
   v: z.literal(1),
-  game: z.enum(['tf2', 'hl2', 'portal']),
+  game: z.enum(['tf2', 'hl2', 'portal', 'csgo']),
   map: z.string(),
   bsp: mapFile('bsp'),
   bspBytes: z.number().int().positive(),
@@ -109,6 +170,8 @@ export const mapManifestSchema = z.object({
   hulls: mapFile('hulls\\.bin').nullable(),
   nav: mapFile('nav\\.bin').nullable(),
   water: z.array(z.unknown()).optional(),
+  /** CS:GO: the map overview (radar image and its world transform). Absent for the other games. */
+  radar: mapRadarSchema.optional(),
 });
 export type MapManifest = z.infer<typeof mapManifestSchema>;
 
@@ -119,7 +182,7 @@ export const mapIndexSchema = z.object({
     z.object({
       manifest: mapFile('json'),
       title: z.string(),
-      /** TF2: the game mode (lib/tf2-game/data/maps.ts); HL2 / Portal: 'sp'. */
+      /** TF2: the game mode (lib/tf2-game/data/maps.ts); HL2 / Portal: 'sp'; CS:GO: 'de'. */
       mode: z.string(),
       /** Raw bytes of the package: BSP + hulls + manifest + its textures. */
       bytes: z.number().int().nonnegative(),

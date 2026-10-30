@@ -10,34 +10,24 @@
  * gets a line in OPEN with its reason.
  *
  * This sits in the main suite (not `pnpm test:tf2`) because it is an auth
- * boundary: a regression lets anonymous sockets into rooms, chat and the
- * peer-to-peer relay.
+ * boundary: a regression lets anonymous sockets host, join, signal and use
+ * the peer-to-peer relay.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { registerTf2GameHandlers, resetTf2GameForTests } from '../tf2-game';
+import { registerTf2GameHandlers } from '../tf2-game';
 import { registerTf2P2pHandlers, resetTf2P2pForTests } from '../tf2-p2p';
 import { TF2_C2S, TF2_S2C, type ErrorPayload } from '@/lib/tf2-game/net/events';
 import { encodeRelay } from '@/lib/tf2-game/net/p2p/signal';
-import { MatchPool, setMatchPool } from '@/lib/tf2-game/server/pool.server';
-import { EchoMatchHost } from '@/lib/tf2-game/server/echo-host';
 import { all, makeWorld } from '../../tf2/helpers';
 
-/** Public on purpose: the server browser, its details pane, clock sync, and leaving. */
-const OPEN = new Set<string>([TF2_C2S.LIST_ROOMS, TF2_C2S.ROOM_DETAILS, TF2_C2S.PING, TF2_C2S.LEAVE]);
-/** Binary hot paths: refused silently (an error per packet would double a flood). */
-const SILENT = new Set<string>([TF2_C2S.INPUT, TF2_C2S.P2P_RELAY]);
+/** Public on purpose: the server browser, its details pane, and the ping column. */
+const OPEN = new Set<string>([TF2_C2S.LIST_ROOMS, TF2_C2S.ROOM_DETAILS, TF2_C2S.PING]);
+/** Binary hot path: refused silently (an error per packet would double a flood). */
+const SILENT = new Set<string>([TF2_C2S.P2P_RELAY]);
 
 /** A payload that would pass each event's schema, so only the account can refuse it. */
 const VALID: Record<string, unknown> = {
-  [TF2_C2S.CREATE_ROOM]: { map: 'ctf_2fort', maxPlayers: 4, botCount: 1, botDifficulty: 'normal', name: 'x' },
-  [TF2_C2S.JOIN_ROOM]: { code: 'ABCDEF' },
-  [TF2_C2S.CHAT]: { text: 'hi' },
-  [TF2_C2S.TEAM]: { team: 'red' },
-  [TF2_C2S.CLASS]: { cls: 'scout' },
-  [TF2_C2S.VOICE]: { menu: 0, item: 0 },
-  [TF2_C2S.EXTRA]: { command: 'taunt', args: [] },
-  [TF2_C2S.LOADOUT]: { cls: 'scout', slots: {} },
   [TF2_C2S.P2P_HOST]: { map: 'ctf_2fort', maxPlayers: 4, botCount: 1, botDifficulty: 'normal', name: 'x' },
   [TF2_C2S.P2P_UPDATE]: { state: 'running', players: [], teamScores: [0, 0], round: null },
   [TF2_C2S.P2P_CLOSE]: {},
@@ -49,24 +39,17 @@ const VALID: Record<string, unknown> = {
   [TF2_C2S.P2P_RELAY_START]: {},
   [TF2_C2S.P2P_SUCCESSOR]: { peerId: null },
   [TF2_C2S.ROOM_ADMIN]: { action: 'lock', locked: true },
-  [TF2_C2S.INPUT]: new Uint8Array([1, 2, 3]),
   [TF2_C2S.P2P_RELAY]: encodeRelay(1, false, new Uint8Array([1])),
 };
 
 let world: ReturnType<typeof makeWorld>;
-let pool: MatchPool;
 
 beforeEach(() => {
   world = makeWorld(registerTf2GameHandlers, registerTf2P2pHandlers);
-  pool = new MatchPool({ workerPath: null, allowInProcess: true, factory: async (o) => new EchoMatchHost(o), maxMatches: 2 });
-  setMatchPool(pool);
 });
 
 afterEach(() => {
   resetTf2P2pForTests(world.io);
-  resetTf2GameForTests(world.io);
-  pool.shutdown();
-  setMatchPool(null);
 });
 
 describe('TF2 multiplayer needs an account', () => {

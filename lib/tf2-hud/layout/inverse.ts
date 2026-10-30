@@ -19,9 +19,11 @@ const fmt = (n: number): string => String(Math.round(n));
  */
 export function shiftPosition(raw: string | undefined, deltaVirtual: number): string {
   const dim = parseDim(raw);
-  if (dim.align === 'end') return `r${fmt(dim.value - deltaVirtual)}`;
-  if (dim.align === 'center') return `c${fmt(dim.value + deltaVirtual)}`;
-  return fmt(dim.value + deltaVirtual);
+  // An operator chain's tail (`c-34+273` → `+273`) is kept: only the first term moves.
+  const tail = dim.more ? (/^[rc]?[sp]?[-+]?\d*\.?\d+(.*)$/i.exec((raw ?? '').trim())?.[1] ?? '') : '';
+  if (dim.align === 'end') return `r${fmt(dim.value - deltaVirtual)}${tail}`;
+  if (dim.align === 'center') return `c${fmt(dim.value + deltaVirtual)}${tail}`;
+  return `${fmt(dim.value + deltaVirtual)}${tail}`;
 }
 
 /** Grow a size component (`wide`/`tall`) by `deltaVirtual`. `f` values shrink as the panel grows. */

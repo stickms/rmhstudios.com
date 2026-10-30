@@ -281,6 +281,16 @@ export interface MoveParams {
    * HL2_DLL with one client): a share of the forward move added to the jump.
    */
   hl2JumpBoost: boolean;
+  /**
+   * The share of the input kept while crouched on the ground (HandleDuckingSpeedCrop). Omitted:
+   * the base movement's one third. CS:GO walks crouched at 34 % (lib/csgo-game/movement.ts).
+   */
+  duckSpeedFraction?: number;
+  /**
+   * Caps the speed a ground jump leaves with at this × the player's max speed (PreventBunnyJumping).
+   * Omitted: TF2's 1.2 under `tfRules`, no cap otherwise. CS:GO caps at 1.1 (sv_enablebunnyhopping 0).
+   */
+  bunnyJumpMaxSpeedFactor?: number;
 }
 
 /** Everything `playerMove` needs from the outside world for one tick. */
@@ -289,6 +299,11 @@ export interface MoveContext {
   params?: MoveParams;
   /** HL2 sprint state for the jump boost (CHLMoveData::m_bIsSprinting). */
   sprinting?: boolean;
+  /**
+   * Multiplies this tick's ground jump impulse (default 1). CS:GO's stamina lowers a jump made
+   * soon after another (lib/csgo-game/movement.ts); the game keeps it current before each move.
+   */
+  jumpImpulseScale?: number;
   world: CollisionWorld;
   /** Simulation time at this tick (gpGlobals->curtime). */
   curtime: number;

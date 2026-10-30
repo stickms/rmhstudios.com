@@ -216,17 +216,13 @@ describe('commands and routing', () => {
     expect(t.con.serverEvent({ type: 'death' })).toBe(false);
   });
 
-  it("changelevel moves a listen server's match, a hub room's for its owner only", () => {
+  it("changelevel moves a listen server's match; a peer-to-peer member's console cannot", () => {
     const maps: string[] = [];
     const listen = setup('tf2', { changeLevel: (m) => (maps.push(m), true) });
     listen.con.submit('changelevel cp_dustbowl; changelevel de_dust2');
     expect(maps).toEqual(['cp_dustbowl']);
     expect(listen.out().at(-1)).toContain('not a published map');
-    const hub = setup('tf2', { authority: () => 'dedicated', changeLevel: (m) => (maps.push(m), true), isAdmin: () => false });
-    hub.con.submit('changelevel cp_dustbowl');
-    expect(hub.out().at(-1)).toContain("only the room's owner");
-    const owner = setup('tf2', { authority: () => 'dedicated', changeLevel: (m) => (maps.push(m), true), isAdmin: () => true });
-    owner.con.submit('map koth_viaduct');
+    listen.con.submit('map koth_viaduct');
     expect(maps).toEqual(['cp_dustbowl', 'koth_viaduct']);
     // A peer-to-peer member is not the host.
     const member = setup('tf2', { authority: () => 'remote', changeLevel: () => true });
@@ -237,7 +233,6 @@ describe('commands and routing', () => {
   it('room administration: kick by name or #id, sv_password, sv_lock, rcon say — through the host', async () => {
     const actions: unknown[] = [];
     const t = setup('tf2', {
-      authority: () => 'dedicated',
       isAdmin: () => true,
       admin: (a) => (actions.push(a), true),
       players: () => [
@@ -258,9 +253,9 @@ describe('commands and routing', () => {
     ]);
     // An ambiguous prefix is refused, with the names.
     expect(t.out().some((l) => l.includes('no player "pyr"'))).toBe(true);
-    const notOwner = setup('tf2', { authority: () => 'dedicated', isAdmin: () => false, admin: (a) => (actions.push(a), true) });
+    const notOwner = setup('tf2', { authority: () => 'remote', isAdmin: () => false, admin: (a) => (actions.push(a), true) });
     notOwner.con.submit('rcon say hi');
-    expect(notOwner.out().at(-1)).toContain('only the room');
+    expect(notOwner.out().at(-1)).toContain('only the host');
   });
 
   it("ent_fire completes the map's names, classnames and each target's inputs", async () => {

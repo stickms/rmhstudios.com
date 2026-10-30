@@ -12,9 +12,13 @@
 
 import type { HudGame } from '../client/hud-state';
 import {
+  ACCEL_EXPONENT_RANGE,
+  ANISOTROPY_LEVELS,
   defaultSettings,
   FOV_RANGE,
   M_YAW_RANGE,
+  RESOLUTION_SCALE_RANGE,
+  type DetailLevel,
   SENSITIVITY_RANGE,
   VIEWMODEL_FOV_RANGE,
   type CrosshairStyle,
@@ -22,7 +26,7 @@ import {
   type QualityTier,
 } from '../client/settings';
 import type { ConsoleCore } from './core';
-import { FCVAR_ARCHIVE, FCVAR_CLIENTDLL, formatNumber, type ConVar, type CvarDef } from './cvar';
+import { ConVar, FCVAR_ARCHIVE, FCVAR_CLIENTDLL, formatNumber, type CvarDef } from './cvar';
 
 export interface SettingsAccess {
   get(): GameSettings;
@@ -38,6 +42,11 @@ interface Mapping {
 
 const CROSSHAIR_STYLES: readonly CrosshairStyle[] = ['cross', 'cross-dot', 'dot', 'circle'];
 const QUALITY: readonly QualityTier[] = ['auto', 'low', 'medium', 'high'];
+/** A detail knob's cvar values, as Source numbers them (0 high … 2 low), plus `auto` (the Quality tier). */
+const DETAIL_VALUES = ['auto', '0', '1', '2'] as const;
+const DETAIL_OF: Readonly<Record<string, DetailLevel>> = { auto: 'auto', '0': 'high', '1': 'medium', '2': 'low' };
+const DETAIL_VALUE: Readonly<Record<DetailLevel, string>> = { auto: 'auto', high: '0', medium: '1', low: '2' };
+const ANTIALIAS_VALUES = ['auto', '0', '4'] as const;
 const RGB_RE = /^rgb\((\d{1,3}) (\d{1,3}) (\d{1,3})\)$/;
 
 function rgb(s: GameSettings): [number, number, number] {
@@ -60,6 +69,11 @@ function mappings(game: HudGame): Mapping[] {
     read: (s) => s.volume[key],
     write: (s, cv) => ({ ...s, volume: { ...s.volume, [key]: cv.float } }),
   });
+  const detail = (name: string, key: 'textureDetail' | 'modelDetail' | 'effectsDetail', help: string): Mapping => ({
+    def: { name, type: 'string', values: DETAIL_VALUES, strict: true, help },
+    read: (s) => DETAIL_VALUE[s.video[key]],
+    write: (s, cv) => ({ ...s, video: { ...s.video, [key]: DETAIL_OF[cv.string] ?? 'auto' } }),
+  });
   const list: Mapping[] = [
     {
       def: { name: 'sensitivity', type: 'float', min: SENSITIVITY_RANGE.min, max: SENSITIVITY_RANGE.max, help: 'Mouse sensitivity.' },
@@ -80,6 +94,38 @@ function mappings(game: HudGame): Mapping[] {
       def: { name: 'm_rawinput', type: 'bool', help: 'Raw mouse input (pointer lock without OS acceleration where the browser allows).' },
       read: (s) => s.rawInput,
       write: (s, cv) => ({ ...s, rawInput: cv.bool }),
+    },
+    {
+      def: { name: 'm_filter', type: 'bool', help: 'Mouse filtering (average the mouse over 2 frames).' },
+      read: (s) => s.mouseFilter,
+      write: (s, cv) => ({ ...s, mouseFilter: cv.bool }),
+    },
+    {
+      def: {
+        name: 'm_customaccel',
+        type: 'int',
+        min: 0,
+        max: 3,
+        help: 'Custom mouse acceleration: 0 off; 1 pow(delta, exponent) × scale + sensitivity; 2 the same × m_yaw / m_pitch; 3 pow(delta², (exponent − 1) / 2) × sensitivity.',
+        values: ['0', '1', '2', '3'],
+      },
+      read: (s) => s.mouseAccel,
+      write: (s, cv) => ({ ...s, mouseAccel: cv.int }),
+    },
+    {
+      def: { name: 'm_customaccel_exponent', type: 'float', min: ACCEL_EXPONENT_RANGE.min, max: ACCEL_EXPONENT_RANGE.max, help: 'Mouse move is raised to this power before being scaled.' },
+      read: (s) => s.mouseAccelExponent,
+      write: (s, cv) => ({ ...s, mouseAccelExponent: cv.float }),
+    },
+    {
+      def: { name: 'm_customaccel_scale', type: 'float', min: 0, max: 1, help: 'Custom mouse acceleration value (modes 1 and 2).' },
+      read: (s) => s.mouseAccelScale,
+      write: (s, cv) => ({ ...s, mouseAccelScale: cv.float }),
+    },
+    {
+      def: { name: 'm_customaccel_max', type: 'float', min: 0, max: 20, help: 'Max mouse move scale factor, 0 for no limit (modes 1 and 2).' },
+      read: (s) => s.mouseAccelMax,
+      write: (s, cv) => ({ ...s, mouseAccelMax: cv.float }),
     },
     {
       def: { name: 'fov_desired', type: 'int', min: fov.min, max: fov.max, help: `Sets the base field-of-view (${fov.min}–${fov.max}).` },
@@ -104,6 +150,44 @@ function mappings(game: HudGame): Mapping[] {
       def: { name: 'mat_quality', type: 'int', min: 0, max: 3, help: 'Graphics quality tier: 0 auto, 1 low, 2 medium, 3 high (applies on the next load).' },
       read: (s) => QUALITY.indexOf(s.quality),
       write: (s, cv) => ({ ...s, quality: QUALITY[cv.int] ?? 'auto' }),
+    },
+    {
+      def: {
+        name: 'mat_viewportscale',
+        type: 'float',
+        min: 0,
+        max: RESOLUTION_SCALE_RANGE.max,
+        help: `Render resolution scale, ${RESOLUTION_SCALE_RANGE.min}–${RESOLUTION_SCALE_RANGE.max}; 0 = automatic (the frame-time governor). Applies on the next load.`,
+      },
+      read: (s) => s.video.resolutionScale,
+      write: (s, cv) => ({
+        ...s,
+        video: { ...s.video, resolutionScale: cv.float > 0 ? Math.max(RESOLUTION_SCALE_RANGE.min, cv.float) : 0 },
+      }),
+    },
+    detail('mat_picmip', 'textureDetail', 'Texture detail: 0 high, 1 medium, 2 low, auto = the quality tier (applies on the next load).'),
+    detail('r_rootlod', 'modelDetail', 'Model detail (how far props are drawn): 0 high, 1 medium, 2 low, auto = the quality tier (next load).'),
+    detail('cl_effects_detail', 'effectsDetail', 'Effect detail (live particle systems): 0 high, 1 medium, 2 low, auto = the quality tier (next load).'),
+    {
+      def: { name: 'mat_antialias', type: 'string', values: ANTIALIAS_VALUES, strict: true, help: 'Antialiasing: 0 off, 4 multisample, auto = the quality tier (applies on the next load).' },
+      read: (s) => (s.video.antialias === 'auto' ? 'auto' : s.video.antialias === 'on' ? '4' : '0'),
+      write: (s, cv) => ({ ...s, video: { ...s.video, antialias: cv.string === 'auto' ? 'auto' : cv.string === '0' ? 'off' : 'on' } }),
+    },
+    {
+      def: {
+        name: 'mat_forceaniso',
+        type: 'int',
+        min: 0,
+        max: 16,
+        values: ANISOTROPY_LEVELS.map(String),
+        help: 'Anisotropic filtering: 1, 2, 4, 8 or 16 samples; 0 = the quality tier (applies on the next load).',
+      },
+      read: (s) => s.video.anisotropy,
+      write: (s, cv) => {
+        // The nearest level at or below the value (0 stays automatic).
+        const v = [...ANISOTROPY_LEVELS].reverse().find((l) => l <= cv.int) ?? 0;
+        return { ...s, video: { ...s.video, anisotropy: v } };
+      },
     },
     {
       def: { name: 'closecaption', type: 'bool', help: 'Closed captions (subtitles and sound captions).' },
@@ -217,6 +301,40 @@ function mappings(game: HudGame): Mapping[] {
 /** The settings-backed cvar names of a game (tests, docs). */
 export function settingsCvarNames(game: HudGame): string[] {
   return mappings(game).map((m) => m.def.name);
+}
+
+/** A settings-backed cvar's definition (type, range, the values it takes, help), or null. */
+export function settingsCvarDef(game: HudGame, name: string): Omit<CvarDef, 'default' | 'flags' | 'onChange'> | null {
+  return mappings(game).find((m) => m.def.name === name)?.def ?? null;
+}
+
+function bareCvar(m: Mapping, s: GameSettings): ConVar {
+  const v = m.read(s);
+  return new ConVar({ ...m.def, default: typeof v === 'boolean' ? (v ? '1' : '0') : v });
+}
+
+/**
+ * A settings-backed cvar's value for a settings record, exactly as the console shows it (`m_pitch` →
+ * "-0.022" when inverted). The Options dialog reads every control through this, so the dialog and the
+ * console cannot disagree. Null for a name that is not settings-backed in this game.
+ */
+export function readSettingsCvar(game: HudGame, settings: GameSettings, name: string): string | null {
+  const m = mappings(game).find((x) => x.def.name === name);
+  return m ? bareCvar(m, settings).string : null;
+}
+
+/**
+ * The settings record after `name value` — the same parse, clamp and write as typing it in the console
+ * (ConVar::SetValue, then the mapping). Unknown names and refused values leave the record as it was.
+ */
+export function writeSettingsCvar(game: HudGame, settings: GameSettings, name: string, value: string | number | boolean): GameSettings {
+  const maps = mappings(game);
+  const m = maps.find((x) => x.def.name === name);
+  if (!m) return settings;
+  const cv = bareCvar(m, settings);
+  const r = cv.set(value, true);
+  if (!r.ok || !r.changed) return settings;
+  return m.write(settings, cv);
 }
 
 export interface SettingsCvars {

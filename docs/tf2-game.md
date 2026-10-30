@@ -30,9 +30,10 @@ storage, like the loadout builder's models (see [TF2 Hub](tf2-hub.md)).
 | `lib/tf2-game/audio/`                       | Sound playback over `getAudioContext()`: the mixer, attenuation and channel rules, soundscapes, scenes, captions.                                                                                                                                                                         |
 | `lib/tf2-game/client/`                      | The browser game loop: input, local "listen server" worker for offline play, connection to the hub for online play; the HL2 / Portal client (see [Playing](#playing-the-clients)).                                                                                                        |
 | `components/tf2-game/`                      | React UI: the play page, HUD, menus (team, class, scoreboard, settings).                                                                                                                                                                                                                  |
-| `lib/tf2-game/server/`                      | Match hosting: the `MatchHost` contract the simulation implements (`match-host.ts`), its one entry point `createTf2Match` (`create-match.ts`), the fixed-step loop (`match-runner.ts`), the worker entry (`match-worker.server.ts`) and the hub's thread pool (`pool.server.ts`).         |
-| `server/socket-server/handlers/tf2-game.ts` | Room manager on the hub (`tf2:*` events, `lib/tf2-game/net/events.ts`). Each match runs on a `worker_threads` worker (`lib/tf2-game/server/match-worker.server.ts`) so the hub's event loop never simulates. `tf2-p2p.ts` beside it signals for [peer-to-peer](#peer-to-peer-play) rooms. |
+| `lib/tf2-game/server/`                      | Match hosting: the `MatchHost` contract the simulation implements (`match-host.ts`), the game registry (`game-registry.ts`), and the fixed-step loop (`match-runner.ts`) the browser's listen server runs. |
+| `server/socket-server/handlers/tf2-game.ts` | The server browser, a P2P host's door and pings on the hub (`tf2:*` events, `lib/tf2-game/net/events.ts`); the hub never simulates. `tf2-p2p.ts` beside it signals for [peer-to-peer](#peer-to-peer-play) rooms. |
 | `scripts/tf2-game/`                         | Asset pipeline: map packages, materials, props, sounds, view models, particles.                                                                                                                                                                                                           |
+| `lib/csgo-game/`                            | CS:GO (de_dust2: bomb defusal and deathmatch) on the same engine — see [CS:GO (Dust II)](#csgo-dust-ii) "The simulation".                                                                                                                                                                 |
 
 ## Conventions
 
@@ -52,77 +53,54 @@ storage, like the loadout builder's models (see [TF2 Hub](tf2-hub.md)).
 
 ## Multiplayer hosting
 
-A match runs on a worker thread in the games hub's process, never on the hub's
-event loop. The pieces, outermost first:
+**Every match runs in a player's browser.** Offline play is a listen server in a worker
+(`client/net/listen-server.ts`); online play is peer-to-peer: a signed-in player hosts the same listen
+server and friends connect to it over WebRTC ([Peer-to-peer play](#peer-to-peer-play)). The games hub
+never simulates and carries no game traffic of its own — there are no hub-hosted (dedicated) rooms. It
+lists the P2P rooms for the server browser, answers the browser's pings, keeps a host's door, and
+signals (plus a capped relay fallback) for P2P play. The pieces inside a listen server, outermost first:
 
-- **Room manager** (`server/socket-server/handlers/tf2-game.ts`): rooms, codes,
-  the map allowlist (`data/maps.ts`), payload validation, chat delivery, and the
-  relay — unreliable packets go out as volatile `tf2:snapshot`, reliable ones as
-  `tf2:events`. A room whose last player drops is held 30 s for a rejoin.
-- **Pool** (`server/pool.server.ts`): up to `TF2_MAX_WORKERS` threads (default
-  1), `TF2_MAX_MATCHES` matches (default 4), 24 humans per match, a heap cap per
-  thread (`TF2_WORKER_HEAP_MB`, default 256). A thread that crashes or stops
-  heartbeating for 10 s is terminated, its rooms are closed with
-  `server-error`, and a replacement is spawned after a backoff. A bundled hub
-  without the worker bundle refuses matches; running from source (tsx, Vitest)
-  it runs them in-process instead.
-- **Runner** (`server/match-runner.ts`): hosts several matches on one thread at
-  a drift-corrected 66.67 Hz (at most 5 catch-up ticks per wakeup; the rest of a
-  backlog is dropped and logged), one `postMessage` per tick with the buffers
-  transferred. A listen server's runner can be paced by `host_timescale`
-  (`setTimescale`, 0.1–10; each tick is still 15 ms of game time).
-- **Host** (`server/match-host.ts`): what the simulation implements.
-  `create-match.ts` is the only place a game is chosen; today it returns
-  `EchoMatchHost`, a transport test double.
+- **Runner** (`server/match-runner.ts`): hosts the match at a drift-corrected 66.67 Hz (at most 5 catch-up
+  ticks per wakeup; the rest of a backlog is dropped and logged), one `postMessage` per tick with the
+  buffers transferred. It can be paced by `host_timescale` (`setTimescale`, 0.1–10; each tick is still
+  15 ms of game time).
+- **Host** (`server/match-host.ts`): what the simulation implements — `Tf2MatchHost`
+  (`server/tf2-match-host.ts`), or another game's host registered with `registerMatchGame`
+  (`server/game-registry.ts`; CS:GO). `EchoMatchHost` is the transport test double.
 
-The worker is its own esbuild entry in both `package.json` `build` and the
-Dockerfile `server-builder` stage (which asserts the output exists).
+**The host administers the room** — the pause menu's **Server** view or the console (`kick`, `kickid`,
+`changelevel` / `map`, `sv_lock`, `sv_password`, `rcon say …`):
 
-**Room owners.** Every dedicated room has an owner: the account that created it. The owner can hand it
-on (Make owner), and when the owner leaves, the oldest remaining signed-in player inherits it (none: the
-room waits for the owner's account to come back). Everyone in the room hears `tf2:room:info` (owner,
-lock, password set, the players) on every change. The owner administers the room with
-`tf2:room:admin` (`zRoomAdmin`, 30/min) — the pause menu's **Server** view or the console (`kick`,
-`kickid`, `changelevel` / `map`, `sv_lock`, `sv_password`, `rcon say …`):
-
-- `kick` — the player is removed (`tf2:kicked` reason `kicked`) and the account refused for the room's life;
-- `transfer` — another signed-in player owns the room;
-- `changelevel` — any published map (`findTf2Map`); the pool asks the match worker (`ToWorker
-changelevel`) and `Tf2MatchHost.changeLevel` loads the package while the match plays on, then builds a
-  new world on it that keeps the tick count running (`GameWorldInit.startTick`) and puts every human back
-  on their seat — the same player id, team, class and loadouts (TF2 resets scores on a level change);
-  bots are dealt again. Each client gets a new `hello` naming the map: it shows the loading screen,
-  reloads the level, and resyncs from a full snapshot. The browser lists the room on its new map from the
-  match's summary;
-- `lock` / `password` — new accounts are refused (`locked`) or asked for the password (`password`,
-  compared in constant time; the browser shows the room as locked / passworded,
-  `JoinRoomPayload.password`); anyone who has played in the room rejoins freely;
+- `kick` — the member is removed and the account refused for the room's life (by the hub too);
+- `transfer` (Make host) — the match migrates to that player's browser;
+- `changelevel` — any published map (`findTf2Map`): `Tf2MatchHost.changeLevel` loads the package while the
+  match plays on, then builds a new world on it that keeps the tick count running
+  (`GameWorldInit.startTick`) and puts every human back on their seat — the same player id, team, class
+  and loadouts (TF2 resets scores on a level change); bots are dealt again. Each client gets a new `hello`
+  naming the map: it shows the loading screen, reloads the level, and resyncs from a full snapshot;
+- `lock` / `password` — sent to the hub (`tf2:room:admin`, `zRoomAdmin`, 30/min), which keeps the door:
+  new accounts are refused (`locked`) or asked for the password (`password`, compared in constant time);
+  anyone who has played in the room rejoins freely;
 - `say` — a line in everyone's chat from `Console` (no speaker: a system line).
 
 The match settings — `mp_timelimit`, `mp_winlimit`, `tf_bot_quota`, `tf_bot_difficulty`, `mp_restartgame`
-— are the console's server cvars: the hub tells the match who owns the room (`ToWorker owner` →
-`Tf2ServerConsole.setOwner`) and the match lets only that player change them. **Cheats stay off in a
-dedicated room whoever owns it** (`sv_cheats` is locked to 0 there). Every admin action is checked on the
-hub (who asks, the map allowlist) and logged (`tf2_room_admin`, `tf2_room_owner`,
-`tf2_room_level_changed`; never a password). Tests: `server/socket-server/tf2/room-admin-migration.test.ts`.
+— are the console's server cvars, which the host changes. Tests:
+`server/socket-server/tf2/room-admin-migration.test.ts`.
 
-**Joining as a spectator** is part of the join (`JoinRoomPayload.spectate`, `PlayerInfo.spectate`; P2P:
-`P2pJoinPayload.spectate` through the hub-vouched join request): the match seats the player with the
-spectators, with no team switch after joining.
+**Joining as a spectator** is part of the join (`P2pJoinPayload.spectate` through the hub-vouched join
+request, `PlayerInfo.spectate`): the match seats the player with the spectators, with no team switch after
+joining.
 
 ## Peer-to-peer play
 
-Besides dedicated rooms on the hub, a signed-in player can **host a match from their own browser** and
-friends connect to it directly over WebRTC — Source's listen server: the host plays on its own server
-with no transport latency, everyone else is a client. The hub only **signals**; it never simulates a P2P
-match and carries none of its traffic unless a member cannot connect directly.
+A signed-in player can **host a match from their own browser** and friends connect to it directly over
+WebRTC — Source's listen server: the host plays on its own server with no transport latency, everyone else
+is a client. The hub only **signals**; it never simulates a P2P match and carries none of its traffic
+unless a member cannot connect directly.
 
 **The match outlives its host** (host migration, below): when the host leaves or drops, it carries on in
-another player's browser. P2P is for friends — the host is authoritative and could cheat; dedicated rooms
-remain for public play.
-**Hosting shares the host's IP address with the players who join** (WebRTC's nature: ICE candidates carry
-addresses); the host form warns about it. The hub never lists, logs or exposes an address — candidates
-pass through it only to the one peer they are meant for.
+another player's browser. The host is authoritative (as in any listen server). The hub never lists, logs or
+exposes an address — ICE candidates pass through it only to the one peer they are meant for.
 
 ```
 host page                                   hub (signaling only)                 member page
@@ -134,15 +112,15 @@ P2pHostController / P2pHostSession ◄──┼──── tf2:p2p:join-request
    no direct path in 8 s → tf2:p2p:relay:start → tf2:p2p:relay (opaque, capped) ◄──► RelayChannel
 ```
 
-- **Same bytes as the hub.** Input packets, snapshots and reliable batches are exactly the hub path's
+- **Same bytes as offline.** Input packets, snapshots and reliable batches are exactly the listen worker's
   (`usercmd-codec`, `snapshot`, `protocol`), plus a one-byte tag (`net/p2p/wire.ts`). The client runs the
   same `SnapshotClient` / `Prediction` / interpolation; `Tf2Client` reaches its match through one
-  `Transport` shape over hub sockets, the local listen worker, or a P2P link.
+  `Transport` shape over the local listen worker or a P2P link.
 - **Host** (`client/net/p2p-host.ts`): the listen worker (`listen-server.ts`) runs `Tf2MatchHost` with
   TF2's join menus and `snapshotMaxBytes` 1100, and takes remote players (`peer-add` / `peer-input` /
   `peer-command` / `peer-resync`, routed out per player as `peer-frame`). `P2pHostSession`
   (`net/p2p/host-session.ts`) is the room manager: seats by account, validation exactly as the hub
-  (input ≤ 512 bytes and 5,000/min per member; every command through the hub's zod schemas and per-kind
+  (input ≤ 512 bytes and 5,000/min per member; every command through the zod schemas and per-kind
   rates; chat cleaned and capped; the match's command budget still applies), chat routing (team chat by the
   team the match reports), kick, and the connection type of every human for the scoreboard (Host / Direct
   / Relayed). Max players ≤ 12 (the host uploads a snapshot stream per member).
@@ -155,8 +133,8 @@ maxRetransmits: 0`, negotiated id 0) and `reliable` (ordered, id 1). Backpressur
   pings every second (five quick ones first); 10 s of silence ends the link. The host answers pings with its
   match tick, so the member's `TickClock` syncs as over the hub; RTT (min-filtered), jitter (RFC 3550 over
   round trips) and loss (pings unanswered after 2 s, last 60) feed the ping column and diagnostics.
-- **Two channels, one order.** On the hub a snapshot never overtakes the reliable packet that defines its
-  strings; over two DataChannels it can. `SnapshotClient` holds a snapshot that names an undefined string
+- **Two channels, one order.** Over one ordered stream a snapshot never overtakes the reliable packet that
+  defines its strings; over two DataChannels it can. `SnapshotClient` holds a snapshot that names an undefined string
   (it is not acknowledged, so the host keeps its baseline) and retries it after the next reliable packet;
   a snapshot older than the newest one (the unreliable channel reorders) is skipped before decoding.
 - **Signaling** (`server/socket-server/handlers/tf2-p2p.ts`, contract `net/p2p/signal.ts`, events in
@@ -167,8 +145,7 @@ maxRetransmits: 0`, negotiated id 0) and `reliable` (ordered, id 1). Backpressur
   and one admitted member of the same room (SDP ≤ 16 KB, candidate ≤ 512 chars); `kick` (refused at the
   hub too, for the room's life); `leave`; `close`. A room is hidden when its host's hub connection drops
   and closed (`host-left`) after 30 s unless the host reclaims it with its token — the DataChannels do not
-  need the hub once connected. Codes share the dedicated rooms' alphabet and registry; `tf2:room:join` on a
-  P2P code answers `p2p-room` and the client switches to the P2P path, so one invite link works for both.
+  need the hub once connected. An invite link (`?lobby=CODE`) and join by code go straight to `tf2:p2p:join`.
 - **ICE, in order: STUN → TURN → the hub relay.** The hub hands every account its ICE servers with its
   room (`P2pHostedPayload.ice`, `P2pAdmittedPayload.ice`): STUN (`STUN_URLS`, default public STUN), then
   — when the deployment runs a TURN server (`TURN_URL`, `TURN_SECRET`: the same self-hosted coturn the
@@ -191,8 +168,8 @@ maxRetransmits: 0`, negotiated id 0) and `reliable` (ordered, id 1). Backpressur
 - **Seats and rejoin.** A member whose link drops keeps its seat (player, team, class, score) for 30 s;
   the client rejoins by code on its own and the host resyncs the seat (`MatchHost.resyncPlayer`: a full
   snapshot, server info and roster again, command numbers from 1). Kicked accounts are refused. The host's
-  door — lock and password (pause menu → Server, `tf2:room:admin`) — is kept by the hub, as for dedicated
-  rooms; a member that played here passes it.
+  door — lock and password (pause menu → Server, `tf2:room:admin`) — is kept by the hub; a member that
+  played here passes it.
 - **Host migration.** The host session names a **successor** (`P2pHostSession.successor()`: a member that
   allows it — `P2pJoinPayload.canHost`, default yes — on a Direct or TURN link, lowest round trip
   first; a checkpoint is too big for the hub relay's budget) and tells the hub (`tf2:p2p:successor`). The
@@ -245,23 +222,22 @@ maxRetransmits: 0`, negotiated id 0) and `reliable` (ordered, id 1). Backpressur
   RFC 3550 jitter from transit times, and choke as the sender reports it — snapshots the host had to drop
   before sending because the member's channel was backed up (`net/p2p/loss.ts` `SequenceMeter`). A
   member's `net_graph` shows them (loss, choke, jitter); the host's `peers` rows carry each member's round
-  trip and input loss, so the scoreboard's ping column shows the host's measured ping and a loss tag. (A
-  hub room's choke stays 0: the hub's volatile emits drop silently.)
-- **Accounts.** Every multiplayer action — dedicated rooms, P2P hosting and joining, signaling, the relay,
-  loadout equips in a match — needs a signed-in account; the hub answers `auth-required` otherwise
+  trip and input loss, so the scoreboard's ping column shows the host's measured ping and a loss tag.
+- **Accounts.** Every multiplayer action — P2P hosting and joining, signaling, the relay, a host's door —
+  needs a signed-in account; the hub answers `auth-required` otherwise
   (`server/socket-server/handlers/__tests__/tf2-multiplayer-auth.test.ts` walks every `TF2_C2S` event).
-  Browsing, room details and clock sync stay public. Players are named by their account. The lobby shows a
+  Browsing, room details and the ping stay public. Players are named by their account. The lobby shows a
   sign-in prompt that returns through `lobbyReturnPath()`, so `?lobby=CODE` survives the login; a socket
   that connected signed out reconnects after sign-in (`reauthenticateTf2`).
 
-**Server browser** (`components/tf2-game/ServerBrowser.tsx`, logic `client/server-browser.ts`): one list of
-dedicated and P2P rooms ("Hosted by <name> (P2P)"), columns name / map / mode / players (+ bots) / ping /
-host / type, sortable; filters (map, mode, type, not full, has players, hide empty) and search; refresh
+**Server browser** (`components/tf2-game/ServerBrowser.tsx`, logic `client/server-browser.ts`): the
+public P2P rooms ("Hosted by <name>"), columns name / map / mode / players (+ bots) / host, sortable;
+filters (map, mode, not full, has players, hide empty) and search; refresh
 every 15 s and on demand; a details pane (roster with classes and scores, round state, time left) with Join
 and Join as spectator; Quick Play for a mode or map (else an offer to host or play offline); Favorites and
 Recent (this device's `localStorage`); join by code; `?lobby=CODE`. `tf2:rooms:list {offset}` returns pages
-of 100 with the total; `tf2:room:details {code}` the pane. Ping is the hub's round trip for dedicated rooms
-and "—" for P2P rooms (the browser never learns a host's address). Rows are buttons (keyboard), and a
+of 100 with the total; `tf2:room:details {code}` the pane. There is no ping column (the browser never
+learns a host's address); the header shows the round trip to the hub. Rows are buttons (keyboard), and a
 gamepad's d-pad / A / B move through them (`use-lobby-gamepad.ts`, a 100 ms poll while a pad is connected).
 
 Measured (`TF2_P2P_REPORT=1 pnpm test:tf2 lib/tf2-game/net/p2p`: host + 3 members + 8 wandering bots = 12
@@ -431,6 +407,28 @@ this device's drafts, the account's saved HUDs, the workshop, or a pasted share 
   and rebases it by the time held (`RenderClock.hold` / `release`) and keeps its prediction, whose pending
   commands are still the server's next ones. `client/net/pause-resume.test.ts`: after a 5 s pause while
   walking, every correction stays under 1 unit.
+- **Quick AI** (`components/tf2-game/ai/HudQuickAi.tsx`, in the pause menu's HUD view and as a small dock
+  over the in-game editor): a one-line "Ask AI" prompt ("bigger health, centre it", "minimal competitive
+  HUD") and chips chosen for your class, weapon and screen (`lib/tf2-game/client/ai/suggestions.ts`: a Medic
+  gets "Bigger Über meter", a Sniper "Charge meter by the crosshair" — "Bow charge" with the Huntsman — a
+  Demoman the stickies, a Spy the cloak, a phone with touch controls "Keep clear of touch buttons", an
+  ultrawide screen "Pull the HUD in from the edges"). It works on the HUD in use through the editor's store
+  (`ensureEditorHolds`: the TF2 Default becomes a new draft, a workshop HUD a copy — never someone else's
+  cloud HUD), asks the editor's own endpoint (`POST /api/tf2-hud/ai`, select → edit; a chip names its files,
+  so "select" is skipped) with a note about the player as `context` data (class, weapon, screen size, touch
+  buttons — `hudQuickContext`, no names), dry-runs the proposed changes with `applyChanges` and shows a
+  compact diff plus a live preview (the game's renderer, drawn once). **Apply & test in game** is one step
+  in the editor's history, saved to the draft and drawn by the game at once; **Undo** steps that history
+  back (while nothing else changed since); **Open in editor** goes deeper. Requests can be cancelled (the
+  button, or Esc in the field), a double tap is one request, `{ unavailable: true }` says so and offers the
+  chip's preset instead.
+  - **Local presets** (signed out, or the AI unavailable; `lib/tf2-game/client/ai/hud-presets.ts`): bigger
+    health / ammo / Über (every panel of the file scaled about its anchors, `r120` stays bottom-anchored, a
+    bigger font of the same face from the HUD's own scheme), minimal (class portrait, max health and the
+    ammo background hidden), meters by the crosshair, ammo by the crosshair, keep clear of touch buttons
+    (the bottom-right cluster lifted 200 units, once). They read the HUD's own files, touch only panels that
+    exist and produce the assistant's change format, so they go through the same validator and undo the
+    same way. Tests: `lib/tf2-game/client/ai/quick-ai.test.ts` (tf2 suite).
 - Harness: `shoot.ts` adds `custom-*` shots and `compare-*` (game HUD beside the editor's pipeline, same
   HUD and state; for a menu, the editor's preview of that menu's file), including `custom-menus-*` /
   `compare-menus-*` for the scoreboard, team and class menus, the spectator GUI and the freeze cam
@@ -478,8 +476,7 @@ is `components/tf2-game/console/Console.tsx` (mounted once by `GameHud`) with `N
 ### Where each command runs
 
 Client commands run in the browser; server commands are forwarded as `HudCommand { kind: 'extra' }` → the TF2
-client's transport (`tf2:extra` to a hub room — rate-limited 120/min and shaped by `zExtraCommand` — or the
-listen-server / peer-to-peer worker) or the single-player client's world, and **validated again on the
+client's transport (the listen-server worker, or the peer-to-peer host — shaped by `zExtraCommand`) or the single-player client's world, and **validated again on the
 server** (`server-commands.ts`: every argument's type and range, printable text, at most 8 × 64 characters)
 before `console/tf2-server.ts` (in `Tf2MatchHost.onCommand`, between ticks; 20 commands burst, 8/s per
 player) or `console/sp-server.ts` runs them. Replies come back as `console` events and replicated cvars as
@@ -488,15 +485,13 @@ player) or `console/sp-server.ts` runs them. Replies come back as `console` even
 | Game        | Client (browser)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Server (match host / single-player world)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | All         | `echo` `help` `find` `cvarlist` `toggle` `incrementvar` `alias` `exec` `host_writeconfig` `history` `clear` `wait` · `toggleconsole` `showconsole` `hideconsole` · `bind` `unbind` `unbindall` `bind_toggle` `key_listboundkeys` · `cfg_edit` `cfg_list` `cfg_delete` · `net_graph 0–4` `cl_showfps` `cl_showpos` `fps_max` `r_drawviewmodel` `hud_fastswitch` `developer` `screenshot` / `jpeg` (the game view and its HUD as a PNG) · `+`/`-` actions, `slot1–9` `invnext` `invprev` `lastinv` `messagemode(2)` · `impulse 100` · `disconnect` `quit` `retry` · the settings cvars                                     | player: `kill` `explode` `status` `getpos` · cheats: `noclip` `god` `buddha` `notarget` `impulse 101` `give <item>` `setpos x y [z]` `setang p y [r]` `hurtme [n]` `ent_fire <target> [input] [value] [delay]` (`!picker` = what you look at) · `sv_cheats` (host)                                                                                                                                                                                                                                                                                                                                                                                       |
-| TF2         | `say` `say_team` `jointeam` `joinclass` `voicemenu` `voice_menu_1–3` `build` `destroy` `disguise` `lastdisguise` `taunt` `dropitem` `changeclass` `changeteam` (the HUD's own commands — the hub's zod schemas) · `thirdperson` / `firstperson` (cheat, checked against the replicated `sv_cheats`) · `changelevel` / `map` (the listen server's host — offline or peer-to-peer — or a hub room's owner; everyone reloads the level from the new `hello`, keeping their seats) · `kick <name\|#id>` `kickid` `sv_password` `sv_lock` `rcon <say …\|command>` (the owner / the host: `tf2:room:admin`) · `connect <code>` | player: `ping` · host: `mp_restartgame <s>` `mp_timelimit` `mp_winlimit` `mp_friendlyfire` `sv_gravity` (replicated: players' movement, everything MOVETYPE_FLYGRAVITY — pipes, stickies, syringes, dropped packs, each by its own gravity scale — the bots' grenade aim, the client's gibs) · cheats, listen server only: `host_timescale 0.1–10` (the runner's pace; replicated: the client's ticks and clock follow) `tf_bot_add [n] [class] [red\|blue\|auto] [difficulty] [name] [noquota]` (any order, as CTFBot's; a class sticks) `tf_bot_kick` / `tf_bot_kill <name\|class\|team\|all>` `tf_bot_quota` `tf_bot_difficulty` `tf_bot_force_class` |
+| TF2         | `say` `say_team` `jointeam` `joinclass` `voicemenu` `voice_menu_1–3` `build` `destroy` `disguise` `lastdisguise` `taunt` `dropitem` `changeclass` `changeteam` (the HUD's own commands — the hub's zod schemas) · `thirdperson` / `firstperson` (cheat, checked against the replicated `sv_cheats`) · `changelevel` / `map` (the listen server's host — offline or peer-to-peer; everyone reloads the level from the new `hello`, keeping their seats) · `kick <name\|#id>` `kickid` `sv_password` `sv_lock` `rcon <say …\|command>` (the host; lock and password also to the hub, `tf2:room:admin`) · `connect <code>` | player: `ping` · host: `mp_restartgame <s>` `mp_timelimit` `mp_winlimit` `mp_friendlyfire` `sv_gravity` (replicated: players' movement, everything MOVETYPE_FLYGRAVITY — pipes, stickies, syringes, dropped packs, each by its own gravity scale — the bots' grenade aim, the client's gibs) · cheats, listen server only: `host_timescale 0.1–10` (the runner's pace; replicated: the client's ticks and clock follow) `tf_bot_add [n] [class] [red\|blue\|auto] [difficulty] [name] [noquota]` (any order, as CTFBot's; a class sticks) `tf_bot_kick` / `tf_bot_kill <name\|class\|team\|all>` `tf_bot_quota` `tf_bot_difficulty` `tf_bot_force_class` |
 | HL2, Portal | `say` (prints)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | player: `save` / `load` (the checkpoint) · host: `changelevel` / `map` (published maps only) · cheats: `host_timescale` (the client's fixed step), `impulse 101` (HL2: the suit, health and armor — the demo has no weapons; Portal: the dual portal gun) · Portal: `portal_place <0\|1> [x y z p y r]`, `sv_portal_placement_never_fail`                                                                                                                                                                                                                                                                                                                |
 
 While it is open the game sees no input (`input.suspended`), and Half-Life 2 / Portal pause, as Source's
 single-player does (TF2 never pauses for it).
 
-**Permissions.** A dedicated hub room is administered by its **owner** (see [Room owners](#multiplayer-hosting)):
-the hub tells the match who that is, and only they may change the match settings — never cheats:
-`sv_cheats` is locked to 0 there and the cheat cvars (`host_timescale`) with it. A listen server — offline play, or this browser hosting
+**Permissions.** A listen server — offline play, or this browser hosting
 peer-to-peer — is administered by its host (`LISTEN_PLAYER_ID`): only they set server cvars, add bots or
 restart, and with `sv_cheats 1` every player there may cheat, as on a Source listen server. `sv_cheats 0`
 ends everyone's noclip / god / buddha / notarget and resets the cheat cvars. Single-player is always its own
@@ -523,8 +518,7 @@ every class the simulation registers; Half-Life 2 / Portal: the world itself. A 
 `case` labels of its class's `acceptInput` chain (lower-case, as the I/O system compares them) after the
 spelling the map's own outputs use (`gate_door,Open`).
 
-**Gaps.** `net_graph`'s choke in a hub room is always 0 (the hub's volatile emits drop silently; a
-peer-to-peer link measures it); `ent_text` / `ent_bbox` are not implemented; runtime-spawned entities have no
+**Gaps.** `ent_text` / `ent_bbox` are not implemented; runtime-spawned entities have no
 names to complete.
 
 ## Items and loadouts
@@ -536,15 +530,26 @@ one. As in TF2 a change applies at the next respawn or resupply, or at once insi
 the view says which. Bots stay stock; at hard and expert each held slot may carry a fully simulated unlock
 (`sim/items/bots.ts`, from the match's seeded random stream).
 
-- **Command.** Online: `tf2:loadout` `{ cls, slots }` (`net/lobby-schema.ts` `zLoadout`, the saved-loadout
-  slot schema; 20/min in `server/socket-server/config.ts`) → the match command `{ kind: 'loadout' }`;
-  offline the same command goes to the listen server. `sim/items/command.ts` checks it like a saved loadout
+- **Quick AI** (`components/tf2-game/ai/LoadoutQuickAi.tsx`, at the top of the Loadout view): a prompt and
+  chips from the live match (`loadoutSuggestions`: "Counter the Sniper Rifle" once it has killed you twice,
+  "Counter their Sniper" for the enemy team's most common class, "Rocket-jump set" / "Sticky-jump set",
+  "What's good on cp_granary?", festive and Halloween looks). Signed in it asks `POST /api/tf2-loadout/ai`
+  with `context` — the match as data (`matchContextFrom`: map, mode, round, your class and team, the enemy
+  classes from the scoreboard, what killed you by weapon and class from a session death log that outlives the
+  kill feed; no player names, capped by `matchContextSchema`, quoted to the model in its own `MATCH` data
+  frame; prompt `tf2-loadout-assistant` v2). Signed out, or when the AI is unavailable, the item-name matcher
+  (`heuristicSuggest`) answers locally with each chip's own words. Equips are catalog-checked on the server;
+  **Equip** puts them into the class's draft under the game's rules (`applyLoadoutActions` → `equipInto`,
+  so a clashing cosmetic is replaced) and sends it through the view's own `loadout` command — the
+  respawn/resupply rule applies and the match's answer is shown; **Undo** restores (and resends) the
+  loadout before.
+- **Command.** `{ cls, slots }` (`net/lobby-schema.ts` `zLoadout`, the saved-loadout slot schema) → the
+  match command `{ kind: 'loadout' }`, to the listen server offline or over the P2P link to the host. `sim/items/command.ts` checks it like a saved loadout
   (`lib/tf2-loadout/validate.ts` `slotProblem` — class, slot, equip regions, duplicates — plus the game's
   rules, `checkGameLoadout`) and answers the owner with a `loadout` event: `applied`, `pending` or
   `refused` + reason. The private NET_PLAYER fields `loadoutPending` / `inSpawnRoom` drive the view's status.
-- **Catalog.** The hub reads the stored catalog row (`lib/tf2-game/server/item-catalog.server.ts`, every 10
-  min) and posts it to every match worker (`{ t: 'items' }`); the browser fetches
-  `/api/tf2-loadout/catalog` for the listen server and for prediction. Both call `setItemCatalog`
+- **Catalog.** The browser fetches `/api/tf2-loadout/catalog` for the listen server (`{ t: 'items' }`) and
+  for prediction. Both call `setItemCatalog`
   (`sim/items/registry.ts`). Without a catalog everyone is stock.
 - **What an item does** (`sim/items/resolve.ts`): a weapon's `item_class` (after TranslateWeaponEntForClass)
   picks the stock implementation, or an unlock script that refines one (`data/unlock-scripts.ts`, generated
@@ -663,14 +668,15 @@ in `lib/tf2-game/assets/versions.ts`; the workflow reads them from there.
 | `hl2-maps`, `hl2-models`       | `hl2-game/maps/`, `hl2-game/mdl/`, `hl2-game/tex/`          | `build-maps.ts --game hl2`, `models.py --search hl2` (Half-Life 2 demo, app 219)              | `maps/index.json`, `mdl/index.json` |
 | `portal-maps`, `portal-models` | `portal-game/maps/`, `portal-game/mdl/`, `portal-game/tex/` | `build-maps.ts --game portal`, `models.py --search portal,hl2` (Portal: First Slice, app 410) | `maps/index.json`, `mdl/index.json` |
 | `hl2-sounds`, `portal-sounds`  | `hl2-game/snd/`, `portal-game/snd/`                         | `sound-list.py --game hl2\|portal` → `sounds.py --game hl2\|portal` (ffmpeg)                  | `snd/index.json`                    |
+| `csgo-*` (five channels)       | `csgo-game/<kind>/`, shared `csgo-game/tex/`                | `csgo-assets-sync.yml` (app 740), see [CS:GO (Dust II)](#csgo-dust-ii)                        | each kind's `index.json`            |
 
 `GET /api/tf2-game/assets/<kind>/<file>` serves them (`lib/tf2-game/assets/store.server.ts`,
 paths checked by `paths.ts`): content-addressed files are immutable for a year,
 index files revalidate after five minutes, Brotli passes through. In the
 browser, `lib/tf2-game/assets/urls.ts` builds the URLs and loads the indexes.
-The scheme is `<game>-game/<kind>/`: `GET /api/hl2-game/assets/…` and
-`GET /api/portal-game/assets/…` serve the other two games with the same code (a `game`
-argument). Files named by a content hash (64 hex, or the model channel's 40) are the
+The scheme is `<game>-game/<kind>/`: `GET /api/hl2-game/assets/…`,
+`GET /api/portal-game/assets/…` and `GET /api/csgo-game/assets/…` serve the other games with the
+same code (a `game` argument). Files named by a content hash (64 hex, or the model channel's 40) are the
 immutable ones, including multi-part extensions such as `<sha>.hulls.bin`.
 
 - **Sounds.** `snd/index.json` is `{ v, entries: { <script name>: { waves: [sha…],
@@ -715,7 +721,7 @@ sfx?, len?, delay?, norepeat?}}}` — English captions, `<clr>` / `<I>` / `<B>` 
 custom HUDs and the HUD editor read; `COUNTED_CHANNELS` in `versions.ts`),
 `TF2_GAME_STORAGE_BUDGET_GB` (a repository variable; default 12 GB, R2).
 Before any game upload, `scripts/tf2-game/storage-report.ts report` sums the
-stored size of every channel of all three games from its state file — no bucket
+stored size of every channel of every game from its state file — no bucket
 listing — plus what this run would add (an object two channels publish, like a shared
 `tex/` file, counted once), and fails the publish past the budget. Run it locally
 (with the S3 variables) to see the footprint. Keep lists lean: `sound-list.py
@@ -730,6 +736,208 @@ particle exporter records the textures it could not read and carries on; the
 sound exporter reports every file as missing. Exporter tests:
 `python3 -B -m unittest discover -s scripts/tf2-game -p 'test_sounds.py'` and
 `-p test_game_particles.py` (the latter needs `vpk numpy pillow srctools==2.6.2`).
+
+### CS:GO (Dust II)
+
+Counter-Strike: Global Offensive runs on the same browser Source engine with one map, `de_dust2`
+(`CSGO_MAPS` in `lib/tf2-game/assets/game-maps.ts`, mode `de`; deathmatch plays the same package),
+default loadouts and **skinless** weapons: no weapon finishes, stickers, agents or gloves beyond the
+defaults. Its assets live under `csgo-game/` and are served by `GET /api/csgo-game/assets/…`
+(`app/routes/api/csgo-game/assets/$.ts`, the same thin route as HL2's and Portal's).
+
+**Where they come from.** `.github/workflows/csgo-assets-sync.yml` — separate from
+`tf2-assets-sync.yml` so that job keeps its time and disk budget — downloads the CS:GO dedicated
+server (Steam app 740) **anonymously** (`+login anonymous +app_update 740`, no Steam account), ≈33 GB
+into `/mnt/csgo`, with retries. It shares the game's content depot, so materials and sounds are in
+it; the "Verify the install's content" step samples textures, sounds, models and Panorama icons and
+warns if their data is missing (the channels still build, untextured or silent, and say so in their
+logs). The install cannot be fetched in a development container, so **this pipeline only runs in CI**;
+every converter is unit-tested on synthetic files (`test_csgo.py`, and the TS suites below).
+Triggers and gating mirror the TF2 job: after `deploy` on main, daily at 06:43 UTC, or by hand
+(`force`, `limit`); the gate compares app 740's public build id and each channel's builder version
+(`CSGO_GAME_BUILDER_*` in `versions.ts`) with the channel's state file, so an unchanged build
+downloads nothing. Expected durations on a full rebuild: download 25–40 min, maps ~5 min, models
+10–25 min, sounds 3–5 min, particles ~3 min, HUD data under a minute, uploads 5–10 min (≈60–90 min);
+the install is deleted as soon as the conversions finish (and on failure).
+
+| Channel          | What it holds                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Built by                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `csgo-maps`      | de_dust2's package as for every game ([Maps](#maps)): searched map pakfile → `csgo/pak01_dir.vpk` → loose `csgo/`; the bots' nav mesh generated for the **CS hull** (`NAV_HULL_CS`: 32 × 32 × 72, crouched 54, step 18, jump 56, drop 200; T / CT / deathmatch spawns, bomb sites and buy zones as POIs); and the manifest's optional **`radar`**                                                                                                                                      | `build-maps.ts --game csgo --maps de_dust2`                                     |
+| `csgo-models`    | ONE default player model per team (the first `maps/de_dust2.kv` lists that the install has, else the classic factions) and its arms (the map's `<team>_arms`, the default `t_gloves` / `ct_gloves`, the faction's sleeves, bare hands); every default weapon's view, world, dropped and magazine models from `items_game.txt` (prefabs resolved), both default knives, C4 carried and planted, the defuse kit, every grenade's held / dropped / thrown models, shells; Dust II's props | `csgo-model-list.py` + `build-maps.ts --props-only` → `models.py --search csgo` |
+| `csgo-sounds`    | ≤ 900 files, by priority: the default weapons' entries (every entry under the prefixes their `visuals.sound_*` name), knives, C4, grenades, taser; bomb; footsteps and impacts of the map's surfaces (with `CT_` / `T_` variants); player damage, death, headshot, kevlar, flashbang ringing; round and announcer events; UI and buy; a few radio commands (the picked factions' voice packs only); the map's ambient sounds and soundscapes                                           | `sound-list.py --game csgo` → `sounds.py --game csgo`                           |
+| `csgo-particles` | muzzle flashes (and every effect the default weapons' visuals name), shell ejection, tracers, impacts per surface, blood, HE and C4 explosions, the smoke volume, molotov / incendiary fire, flashbang, decoy, the bomb's light — `csgo-particle-systems.txt` (patterns allowed), ≤ 220 roots                                                                                                                                                                                          | `game_particles.py --game csgo`                                                 |
+| `csgo-ui`        | `ui/index.json` → sanitised Panorama SVG icons (`icons/<sha>.svg`: the default items' equipment icons and the HUD's `icons/ui/*`), localisation (`lang/<sha>.json`: every `resource/csgo_<language>.txt`, UTF-16, filtered to the HUD's tokens), and the default weapons' data (`data/<sha>.json`)                                                                                                                                                                                     | `csgo_ui.py`                                                                    |
+
+- **Radar.** `resource/overviews/de_dust2.txt` (`pos_x`, `pos_y`, `scale`, `rotate`, `zoom`,
+  `verticalsections`) and `materials/overviews/de_dust2_radar.vtf` (→ `tex/<sha>.webp`, alpha
+  kept) become the manifest's `radar: { file, w, h, posX, posY, scale, size: 1024, rotate?, zoom?,
+sections? }` (`mapRadarSchema`, additive: the other games' manifests do not carry it). Use
+  `worldToRadar(radar, x, y)` / `radarToWorld` (map-manifest.ts): `u = (x − posX) / (scale · 1024)`,
+  `v = (posY − y) / (scale · 1024)`, so it holds at any stored size.
+- **BSP v21.** `lib/tf2-game/formats/bsp.ts` reads CS:GO's maps with the SDK's lump_t order (only
+  L4D2's v21 reorders it), v1 leafs, static props v10 (76 bytes) and v11 (80, uniform scale),
+  `dworldlight_t` v1 (100 bytes, `shadow_cast_offset`) and the `byte bevel, byte thin` brush side —
+  each with a synthetic test in `bsp.test.ts`.
+- **Models.** MDL v49 and VTF 7.5 read as TF2's do. VMT conditional keys (`srgb?`, `>=dx90?`,
+  `GPU>=2?`, negations) are applied as a high-end Windows desktop; `CustomWeapon` (only its
+  `$basetexture` — the default finish) and `Character` are converted as VertexLitGeneric with
+  `extras.approx` naming the real shader; the run prints every approximated or unknown shader.
+  Texture caps: 1024 px for players, arms and weapons, 512 px for props.
+- **Particles.** CS:GO's PCFs go through srctools; a PCF or system it cannot read is logged and
+  skipped, and the run prints the operator functions the exported graphs use. Operators the browser's
+  `ParticleSimulation` does not implement stay in the bundle and are skipped at run time (they appear
+  in `effect.unsupported`).
+- **Weapon data — chosen: compact JSON, not the raw KeyValues.** `items_game.txt` is ≈6 MB of paint
+  kits, stickers and other items; `csgo_items.compact` extracts the default weapons (and kevlar,
+  assault suit, defuse kit) with their prefab chains merged — prices, clip sizes, damage, spread,
+  speeds, sound and effect names, models — into `data/<sha>.json` (tens of KB), plus old-style
+  `scripts/weapon_*.txt` if an install still ships them. The simulation parses it at run time; none
+  of Valve's text is copied into the repository, and the localisation is loaded the same way.
+- **SVG safety.** Icons are sanitised when published (`csgo_ui.sanitize_svg`: no script,
+  foreignObject, iframe / object / embed, animation or `on*` attributes, no `href` / `url()` /
+  `@import` outside the document, no DOCTYPE or entities; links unwrapped) and served with
+  `Content-Security-Policy: default-src 'none'; …; sandbox` (`SVG_ASSET_CSP`).
+
+**Storage estimate** (counted against the shared `TF2_GAME_STORAGE_BUDGET_GB` by the same guard,
+which both workflows run over every `<game>-game/` channel): map package ≈ 60–90 MB (stripped BSP
+≈ 10–15 MB after Brotli, ≈ 500–700 textures ≈ 45–70 MB, nav and radar ≈ 2 MB); models ≈ 250–450 MB
+(≈ 150 player / arms / weapon models with their animation packs, ≈ 300 Dust II props, shared `tex/`);
+sounds ≈ 20–40 MB; particles ≈ 20–60 MB; HUD data ≈ 2–3 MB — **≈ 0.4–0.65 GB in all**.
+
+Local checks: `python3 -B -m unittest discover -s scripts/tf2-game -p test_csgo.py` (items_game
+resolution, the model, sound and particle lists, CS:GO materials, the SVG sanitiser, localisation,
+the HUD channel end to end, the workflow; `CSGO_ROOT=<install>` adds the real lists) and
+`pnpm exec vitest run --config vitest.tf2.config.ts lib/tf2-game/assets scripts/tf2-game
+lib/tf2-game/formats lib/tf2-game/bots` (asset paths and the route, the manifest's `radar`, storage
+counting, BSP v21, the nav hull).
+
+**Only CI can verify** (first run on the real install): that app 740 still downloads anonymously and
+carries the texture and sound data; the real `maps/de_dust2.kv` / `items_game.txt` names (player
+models, gloves, the sound-script and particle-system names the lists match by pattern); that
+srctools reads every CS:GO PCF; MDL v49 animation details (CS:GO's `.ani` blocks, zero-frame data)
+in `models.py`; and the actual sizes above.
+
+#### The simulation (`lib/csgo-game/`)
+
+Clean-room: there is no CS:GO source code in the SDK, and the leaked code was not used. Rules come from
+public behaviour and documentation — the Valve Developer Community's CS:GO cvar list and entity pages,
+the game's published defaults, and the community's well-known measurements (the CS:GO wiki's weapon and
+equipment pages, Liquipedia's economy tables, the published grenade-trajectory analyses). Every
+constant names its source in a comment; **weapon numbers are read at run time from the `csgo-ui`
+channel's compact items_game JSON** (`ui/index.json` → `weapons`), never committed.
+
+**Reuse, not a copy.** CS:GO runs on the shared simulation: `CsWorld extends GameWorld`,
+`CsPlayer extends Player`, `CsGameRules extends GameRules`, `CsMatchHost extends Tf2MatchHost`,
+`CsServerConsole extends Tf2ServerConsole`, and its bots drive the shared nav mesh, A* and
+`PathFollower`. The engine was generalised (small, additive seams; TF2 / HL2 / Portal behave as before):
+
+| Seam                                                                                                       | What it lets another game do                                                                                       |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `MoveParams.duckSpeedFraction`, `.bunnyJumpMaxSpeedFactor`, `MoveContext.jumpImpulseScale` (movement)      | CS's 34 % crouch speed, its 1.1 × bunny-hop cap, stamina lowering a jump                                           |
+| `Player.hull`, `.standEyeHeight()`, `.hitboxSet()`; `buildHitboxSet` / `traceHitboxSet` (hitboxes)         | another body: CS's 32 × 72 hull (54 crouched), eyes 64 / 46, its hitboxes; spawns check the player's own hull      |
+| `GameWorld.createPlayer` / `createRules` / `createSpawnSystem`; `traceAttackWith` (`hitTeammates`, `skip`) | a world with its own players, rules and spawn picking; bullets that hit teammates (friendly fire) and pass a wall  |
+| `TeamSpawn(classname)`                                                                                     | info_player_terrorist / counterterrorist / info_deathmatch_spawn are TeamSpawns                                    |
+| `Weapon.netSchema?()` (snapshot capture)                                                                   | a weapon's own prediction record (`cs_weapon`)                                                                     |
+| `NET_BASE_FIELDS`, `netField`, `moveStateFields()`; ids 512–575                                            | CS's schemas (`cs_player`, `cs_weapon`, `cs_rules`, `cs_planted_c4`, `cs_grenade`, `cs_area`, `cs_dropped_weapon`) |
+| `configureNavGeneration(world, { hull })` (bot manager)                                                    | runtime nav generation with NAV_HULL_CS                                                                            |
+| `ConsoleGame 'csgo'`, `Tf2ServerConsole(game)`, `runGame` / `applyGame` / `baseMoveParams`                 | CS's commands and cvars in the shared table and console (permissions, rates, replication, the shared cheats)       |
+| `MatchOptions.game` / `.variant`, `server/game-registry.ts`, the `Tf2MatchHost` hooks (below)              | a game's host on the unchanged runner, listen server, P2P session, checkpoints and migration                       |
+
+The host hooks: `createWorld`, `installMode`, `createConsole`, `findLevel`, `decorateBot`, `playerScore`,
+`helloMode`, `joinTeam` / `joinClass`, `roundTimeLeft`, and `restore` building the class it is called
+on; `createTf2MatchHost({ game: 'csgo' })` and `Tf2MatchHost.restore` of a CS checkpoint dispatch to the
+registered factory.
+
+What is where:
+
+- **Movement** (`movement.ts`): `CS_MOVE_PARAMS` on the shared `playerMove` — sv_accelerate 5.5,
+  sv_friction 5.2, sv_airaccelerate 12, sv_stopspeed 80, sv_gravity 800, sv_maxspeed 320, a jump impulse
+  of √(2·800·57) ≈ 301.99 (the measured 57-unit apex; the engine's half-step gravity peaks ≈ 54.7),
+  crouch-jumping (base CGameMovement rules), the 1.1 × bunny-hop cap (sv_enablebunnyhopping 0). The max
+  speed is the active weapon's `max player speed` (`… alt` scoped), × 0.52 walking, × the tagging slow
+  (`flinch velocity modifier large / small`, recovering at 1 /s), × the stamina penalty: sv_staminamax 80,
+  sv_staminajumpcost 0.08 (× the impulse), sv_staminalandcost 0.05 (× the landing speed),
+  sv_staminarecoveryrate 60 /s, taking (100 − stamina) % off speed and jump. Fall damage is the SDK's
+  multiplay rule (580 → 1024). Footsteps only when running. Ladders are not in the shared movement
+  (de_dust2 has none).
+- **Players** (`player.ts`): 100 health, kevlar / helmet, money, the defuse kit, the bomb; slots primary,
+  pistol, knife, a grenade pouch (one weapon carrying every kind with a count; `slot4` again cycles), the
+  C4. Damage: hit groups (head ×4, stomach ×1.25, chest / arms ×1, legs ×0.75), then armor by the weapon's
+  `armor ratio` (health takes ratio / 2, armor loses half the rest; the head needs a helmet; legs never),
+  friendly fire with ff_damage_reduction_bullets 0.33 / _grenade 0.85 / _other 0.4, deathmatch spawn
+  protection (mp_respawn_immunitytime 2, ended by firing), assists past 40 damage. Death drops the best
+  gun and the bomb (`cs_dropped_weapon`, picked up by walking over it into an empty slot); `drop` (G) too.
+  `restoreCsPlayerFromRecords` restores a predicting client's player and weapons from its records.
+- **Weapons** (`weapons/`): `CsGun` (every firearm, data-driven: cycle and alt cycle, automatic or
+  semi-automatic, clip and per-weapon reserve, whole-clip reloads at the community-measured times and
+  shell-by-shell for the Nova / XM1014 / Sawed-Off, scopes with `zoom levels` / `zoom fov` / `zoom time`,
+  the bolt-action rescope), `CsKnife` (slash 40 / 25 / 90 from behind, stab 65 / 180: the CS:GO wiki),
+  `CsGrenadePouch` + `CsGrenadeProjectile` + `CsArea`, `CsC4` + `PlantedC4`. Accuracy (`combat.ts`):
+  inaccuracy from items_game (stand / crouch / move — ramping from 34 % to 95 % of the speed — / jump /
+  land / fire, in thousandths of a radian), the fire penalty recovering to 10 % over `recovery time *`,
+  the scoped values settling in over `zoom time`; the shot's offsets (an inaccuracy disc plus a spread
+  disc per pellet) from the command's seeded stream. Recoil: a spray pattern generated from
+  `recoil angle` / `magnitude` / their variances / `recoil seed` (a clean-room seeded random walk), kicking the
+  aim punch, which decays by weapon_recoil_vel_decay 4.5, weapon_recoil_decay2_exp 8 and _lin 18 and moves
+  the shot by weapon_recoil_scale 2 (the view shows view_recoil_tracking 0.45 of it); the recoil index and
+  the penalty are networked, so the host and a predicting client fire the same spray. Damage ×
+  `range modifier` ^ (distance / 500). **Penetration**: power `penetration` × 24 units of a modifier-1
+  material (per-material modifiers by material-name keywords, as the manifest has no `$surfaceprop`),
+  2 surfaces per point of power, 75 % kept plus a thickness loss.
+- **Grenades**: carry limits (ammo_grenade_limit_total 4, flashbangs 2, every other kind 1, molotov and
+  incendiary shared), throws by strength (full / medium / lob), gravity × 0.4, elasticity 0.45; HE from
+  its `damage` / `range` with a Gaussian falloff (σ = radius / 3) through armor; flashbang blindness by
+  view angle, distance (full to 300, none past 1500) and line of sight, up to ≈ 4.9 s; smoke 18 s, 144
+  units, blocking sight (`smokeBlocksLine`: the bots, the flash) and putting out fires; molotov /
+  incendiary fire (inferno_flame_lifetime 7, inferno_damage 40, inferno_max_range 150,
+  molotov_throw_detonate_time 2); the decoy's fake shots.
+- **Rules** (`rules.ts`, `economy.ts`): the shared round machine with PREROUND as the freeze time
+  (mp_freezetime 15), RND_RUNNING the round (mp_roundtime 1.92), TEAM_WIN the restart delay
+  (mp_round_restart_delay 7), a CleanUpMap every round and no humiliation. Bomb defusal: the C4 to a
+  random Terrorist, planting inside a func_bomb_target in 3.2 s, mp_c4timer 40 with quickening beeps,
+  defusing in 10 s / 5 s with a kit, the explosion (info_map_parameters' bombradius, reach 3.5 ×), the
+  wins (elimination, bomb, defuse, time → CTs), MR15 (first to 16, 15–15 a draw) with the halftime switch.
+  Money: start 800, max 16000, kill rewards from `kill award`, wins 3250 / 3500, the loss ladder 1400 →
+  3400 (a win takes one step off), +800 to Terrorists who lose with the bomb planted, nothing for
+  Terrorists alive at a time-out, +300 plant / defuse, −300 a teamkill; `buy` checked on the host (zone or
+  mp_buy_anywhere, mp_buytime 20 past the freeze, team items, money, carry rules; a helmet alone $350).
+  Deathmatch: random spawns (info_deathmatch_spawn, away from enemies), respawn after 2 s, free for all
+  (mp_teammates_are_enemies), free buys, a rifle and armor by default, 10-minute matches, points.
+- **Map entities** (`entities.ts`): info_player_terrorist / counterterrorist, info_deathmatch_spawn,
+  func_bomb_target, func_buyzone, info_map_parameters, the `cs_gamerules` proxy; everything else
+  de_dust2 places (func_door(_rotating), prop_dynamic, the trigger, env and logic entities) is the shared engine's.
+- **Bots** (`bots/cs-bot-brain.ts`): buy by money, take a site together, plant, hold the bomb, fetch a
+  dropped one; CTs split, rotate to the bomb, defuse when clear; deathmatch hunts. Sight by field of view
+  and line of sight (smoke and flashes blind), the shared `BotSkill` reaction / aim error / turn rate,
+  head aim and spray control by difficulty, counter-strafing, bursts, the occasional HE or flashbang.
+- **Console** (`console.ts`): mp_roundtime, mp_freezetime, mp_buytime, mp_maxrounds, mp_startmoney,
+  mp_maxmoney, mp_c4timer, mp_round_restart_delay, mp_buy_anywhere, mp_teammates_are_enemies,
+  mp_respawn_immunitytime, bot_quota, bot_difficulty; buy, drop, bot_add / _t / _ct, bot_kick, bot_kill;
+  cheats god, give <weapon>, impulse 101 (money, armor, ammo), plus the shared ones (noclip, setpos …).
+- **Host** (`server/cs-match-host.ts`): `createCsMatchHost` (weapon data from `CsMatchDeps.weaponData`
+  or `loader`, else already installed with `setCsWeaponData`), `CSGO_MATCH_FACTORY` registered as
+  'csgo'; `checkpoint-catalog.ts` is the migration catalog that knows CS's classes.
+
+**For the client** (not in this module): a CS listen worker passes `game: 'csgo'`, `variant` and the
+csgo asset loader, installs the weapon data on both ends, imports `lib/csgo-game` (it registers the
+schemas and the factory) and writes checkpoints with `csCheckpointCatalog()`; prediction restores with
+`restoreCsPlayerFromRecords`; the view adds `aimPunch × VIEW_RECOIL_TRACKING`.
+
+Tests (`pnpm exec vitest run --config vitest.tf2.config.ts lib/csgo-game`): movement numbers (speeds by
+weapon, walk / crouch, the apex, stamina, crouch-jump, the hop cap), damage by hit group through armor,
+range falloff, inaccuracy, the spray identical on host and predicting client, a wallbang in a box world,
+the round flow and economy (freeze → buy → live → end → restart, the loss ladder, time-outs, kill
+rewards, friendly fire), halftime and the match end, buy validation, the C4 (plant timing and cancel, the
+defuse with and without a kit, the explosion), deathmatch respawns and protection, grenades (HE falloff
+and walls, flash by angle, smoke duration and sight, the molotov and a smoke putting it out, throw
+strengths, carry limits), the weapon data and de_dust2's entity classes on a synthetic lump, 5 v 5 bots on
+a synthetic two-site map for six minutes (plants, defuses, both sides winning), a checkpoint round trip
+through `Tf2MatchHost.restore`, a member playing through the P2P host session over the fake channels, and
+the console.
+
+**Gaps:** no ladders (shared movement), no burst fire (Glock / FAMAS), no silencer toggle, no Zeus, the
+R8's alt fire, bullets do not penetrate players, dead CTs do not drop their kit, the defuse is not
+predicted (the host holds the defuser still), and the penetration materials are classified by name.
 
 ## Maps
 

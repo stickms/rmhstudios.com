@@ -20,6 +20,8 @@ export default defineConfig({
       'server/socket-server/tf2/**/*.test.ts',
       // The single-player layer (Half-Life 2 demo, Portal: First Slice) on the same engine.
       'lib/sp-game/**/*.test.ts',
+      // Counter-Strike: Global Offensive (de_dust2) on the same engine.
+      'lib/csgo-game/**/*.test.ts',
     ],
     testTimeout: 60_000,
     pool: 'threads',

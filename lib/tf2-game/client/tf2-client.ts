@@ -53,15 +53,7 @@ import { registerAllSimModules } from '../sim/register-all';
 import { GameWorld } from '../sim/world';
 import type { Player } from '../sim/player';
 import { keyKind, type EntityState as NetEntityState } from '../net/snapshot';
-import {
-  TF2_LIMITS,
-  type BotDifficulty,
-  type ChatMessage,
-  type CreateRoomPayload,
-  type JoinedPayload,
-  type RoomAdminPayload,
-  type RoomInfoPayload,
-} from '../net/events';
+import { TF2_LIMITS, type BotDifficulty, type JoinedPayload, type RoomAdminPayload } from '../net/events';
 import type { MatchCommand, MatchOptions } from '../server/match-host';
 import type { AudioEngine } from '../audio/engine';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
@@ -114,18 +106,13 @@ export type Tf2Session =
       maxPlayers: number;
       playerName: string;
     }
-  | { kind: 'online-create'; room: CreateRoomPayload }
-  /**
-   * By code: a peer-to-peer code switches to `p2p-join` on its own (the hub says which it is).
-   * `spectate` is part of the join request (seated with the spectators, no team switch after it).
-   */
-  | { kind: 'online-join'; code: string; playerName?: string; spectate?: boolean; password?: string }
   /** Host a peer-to-peer match: a listen server in this page, opened to signed-in friends. */
   | { kind: 'p2p-host'; room: P2pHostPayload; playerName: string }
+  /** Join a host by code; `spectate` is part of the join request (seated with the spectators). */
   | { kind: 'p2p-join'; code: string; spectate?: boolean; password?: string };
 
 /** What this client is in its match right now (it can change: a member promoted to host). */
-type Role = 'offline' | 'hub' | 'p2p-host' | 'p2p-member';
+type Role = 'offline' | 'p2p-host' | 'p2p-member';
 
 /** Peer-to-peer and listen-server tuning for the worker: its clock for the room, and checkpoints. */
 const P2P_WORKER_CLOCK = { upkeepMs: 100, checkpointMs: 2_000 } as const;
@@ -226,7 +213,6 @@ export class Tf2Client implements GameClient {
   private peerStats: ReadonlyMap<number, { pingMs?: number; loss?: number }> = new Map();
   private role: Role = 'offline';
   /** A hub room's administration (owner, lock, password), as the hub last said. */
-  private roomInfo: RoomInfoPayload | null = null;
   private notices: HudNotice[] = [];
   /** The newest network transitions (diagnostics: debug() and the smoke tests). */
   private readonly netLog: string[] = [];
@@ -262,7 +248,7 @@ export class Tf2Client implements GameClient {
     cb.onPhase?.('loading');
     try {
       registerAllSimModules();
-      this.core = new RenderCore(this.opts.canvas, this.settings.quality, () =>
+      this.core = new RenderCore(this.opts.canvas, this.settings, () =>
         this.fail(new ClientFailure({ code: 'context-lost', detail: 'WebGL context lost', retryable: true })),
       );
       this.inputCore = new InputCore(this.opts.inputTarget, 'tf2', () => this.settings, (l) => cb.onLockChange?.(l), this.opts.input);
@@ -292,7 +278,7 @@ export class Tf2Client implements GameClient {
 
   private sessionMap(): string | null {
     const s = this.opts.session;
-    return s.kind === 'offline' ? s.map : s.kind === 'online-create' || s.kind === 'p2p-host' ? s.room.map : null;
+    return s.kind === 'offline' ? s.map : s.kind === 'p2p-host' ? s.room.map : null;
   }
 
   // ─── Transport ───────────────────────────────────────────────────────────
@@ -366,96 +352,7 @@ export class Tf2Client implements GameClient {
       void this.connectP2pHost(s).catch(failNet);
       return;
     }
-    if (s.kind === 'p2p-join') {
-      void this.connectP2pJoin(s.code, { spectate: s.spectate, password: s.password }).catch(failNet);
-      return;
-    }
-    void this.connectOnline(s).catch(failNet);
-  }
-
-  private async connectOnline(s: Extract<Tf2Session, { kind: 'online-create' | 'online-join' }>): Promise<void> {
-    const net = await import('../net/client');
-    if (this.disposed) return;
-    this.role = 'hub';
-    await net.connectTf2({
-      onStatus: (status) => {
-        this.connected = status === 'connected';
-        this.opts.callbacks.onConnection?.(status === 'connected' ? 'connected' : status === 'connecting' ? 'connecting' : status === 'reconnecting' ? 'reconnecting' : 'disconnected');
-      },
-      onJoined: (j) => this.onJoined(j),
-      onSnapshot: (d) => this.onSnapshot(d),
-      onEvents: (d) => this.onReliable(d),
-      onChat: (m: ChatMessage) => this.log.onChat(m, this.clientNow),
-      onRoomInfo: (info) => {
-        const was = this.roomInfo?.ownerId ?? null;
-        this.roomInfo = info;
-        // The room just became ours (the owner left, or handed it on).
-        if (this.joined && info.ownerId === this.joined.playerId && was !== info.ownerId && was !== null) this.notice('you-host');
-      },
-      onKicked: (k) => this.fail(new ClientFailure({ code: 'kicked', detail: k.reason, retryable: k.reason !== 'room-closed' && k.reason !== 'kicked' })),
-      onError: (e) => {
-        if (e.code === 'rate-limited' || e.code === 'not-in-room') return;
-        if (e.event === 'tf2:room:admin') {
-          this.console?.console.print(`admin: ${e.code}`, 'error');
-          return;
-        }
-        if (e.code === 'p2p-room' && s.kind === 'online-join' && !this.joined) {
-          // The code names a peer-to-peer room: join its host over WebRTC instead (the spectator choice goes along).
-          net.tf2.leave();
-          void this.connectP2pJoin(s.code, { spectate: s.spectate, password: s.password }).catch((err) => this.fail(err));
-          return;
-        }
-        if (e.code === 'auth-required') {
-          this.fail(new ClientFailure({ code: 'auth-required', detail: e.event ?? 'auth-required', retryable: false }));
-          return;
-        }
-        if (this.joined && e.event !== 'tf2:room:create' && e.event !== 'tf2:room:join') return;
-        this.fail(new ClientFailure({ code: 'room', detail: e.code, retryable: e.code === 'capacity' || e.code === 'unavailable' }));
-      },
-    });
-    if (this.disposed) return;
-    if (s.kind === 'online-create') net.tf2.createRoom(s.room);
-    else net.tf2.joinRoom(s.code, s.playerName, { spectate: s.spectate, password: s.password });
-    const isOwner = () => !!this.joined && this.roomInfo?.ownerId === this.joined.playerId;
-    this.transport = {
-      online: true,
-      input: (p) => void net.tf2.sendInput(p),
-      command: (c) => {
-        if (c.kind === 'team') net.tf2.team(c.team);
-        else if (c.kind === 'class') net.tf2.playerClass(c.cls);
-        else if (c.kind === 'voice') net.tf2.voice(c.menu, c.item);
-        else if (c.kind === 'chat') net.tf2.chat(c.text, c.teamOnly);
-        else if (c.kind === 'extra') net.tf2.extra(c.command, c.args);
-        else if (c.kind === 'loadout') net.tf2.loadout(c.cls, c.slots);
-      },
-      chat: (text, teamOnly) => net.tf2.chat(text, teamOnly),
-      stop: () => {
-        net.tf2.leave();
-        net.disconnectTf2();
-      },
-      pingMs: () => net.tf2.clock()?.rttMs ?? null,
-      // The owner's administration: the hub checks it again (who asks, the map allowlist) and logs it.
-      changeLevel: (map) => {
-        if (isOwner()) net.tf2.roomAdmin({ action: 'changelevel', map });
-      },
-      admin: (action) => {
-        if (!isOwner()) return 'not-owner';
-        net.tf2.roomAdmin(action);
-        return null;
-      },
-      adminView: () => {
-        const info = this.roomInfo;
-        if (!info || !isOwner()) return null;
-        return {
-          role: 'owner',
-          online: true,
-          map: this.pkg?.name ?? this.joined?.map ?? '',
-          locked: info.locked,
-          passworded: info.passworded,
-          players: (info.players ?? []).map((p) => ({ id: p.id, name: p.name, self: p.id === this.joined?.playerId, account: p.account })),
-        };
-      },
-    };
+    void this.connectP2pJoin(s.code, { spectate: s.spectate, password: s.password }).catch(failNet);
   }
 
   // ─── Peer-to-peer ─────────────────────────────────────────────────────────
@@ -862,9 +759,6 @@ export class Tf2Client implements GameClient {
       // Back in after a host migration, on our seat with the new host.
       this.notice('host-migrated', this.pendingMigration);
       this.pendingMigration = null;
-    }
-    if (this.transport?.online !== false && (this.opts.session.kind === 'online-create' || this.opts.session.kind === 'online-join') && this.role === 'hub') {
-      this.opts.callbacks.onRoom?.(j.code);
     }
     if (!sameMatch) {
       // A new player in the match (first join or a reconnect): prediction and interpolation restart.
@@ -1559,7 +1453,7 @@ export class Tf2Client implements GameClient {
     const kind = this.opts.session.kind;
     return {
       // The role can change mid-match (a member promoted to host by a migration).
-      authority: () => (this.role === 'offline' || this.role === 'p2p-host' ? 'listen' : this.role === 'p2p-member' ? 'remote' : 'dedicated'),
+      authority: () => (this.role === 'p2p-member' ? 'remote' : 'listen'),
       stats: () => this.stats(),
       netCounters: () => {
         const st = this.snap.stats;
@@ -1620,9 +1514,6 @@ export class Tf2Client implements GameClient {
       },
       retry: () => {
         if (kind === 'offline') this.restartOffline();
-        else if (this.joined && (kind === 'online-create' || kind === 'online-join') && typeof window !== 'undefined') {
-          window.location.assign(`/tf2/play?lobby=${encodeURIComponent(this.joined.code)}`);
-        }
       },
     };
   }

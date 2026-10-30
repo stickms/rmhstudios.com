@@ -31,7 +31,7 @@ import {
 } from '../../core/constants';
 import type { UserCmd } from '../../core/types';
 import type { QAngle } from '../../core/vec';
-import { CL_FORWARDSPEED, CL_SIDESPEED, PITCH_LIMIT, mouseToDegrees, type GameSettings } from '../settings';
+import { CL_FORWARDSPEED, CL_SIDESPEED, PITCH_LIMIT, mouseToDegrees, type GameSettings, type MouseSettings } from '../settings';
 import { slotOf, type HeldAction, type ImpulseAction } from './actions';
 
 /** in_buttons.h bits the core constants do not name yet. */
@@ -72,6 +72,9 @@ export interface InputState {
   /** Raw mouse counts since the last command. */
   mouseDx: number;
   mouseDy: number;
+  /** The previous look sample's counts (`m_filter` averages over two samples). */
+  mousePrevX: number;
+  mousePrevY: number;
   /** Look in degrees since the last command (+yaw turns left, +pitch looks down — Source's axes). */
   lookYaw: number;
   lookPitch: number;
@@ -93,6 +96,8 @@ export function createInputState(): InputState {
     analog: { key: { x: 0, y: 0 }, pad: { x: 0, y: 0 }, touch: { x: 0, y: 0 } },
     mouseDx: 0,
     mouseDy: 0,
+    mousePrevX: 0,
+    mousePrevY: 0,
     lookYaw: 0,
     lookPitch: 0,
     weaponSelect: 0,
@@ -176,9 +181,26 @@ export interface WeaponContext {
   last: number;
 }
 
-/** Applies the pending look to `viewAngles` (mutated and returned). Pitch clamps to ±89 (cl_pitchup/down). */
-export function applyLook(state: InputState, viewAngles: QAngle, settings: Pick<GameSettings, 'sensitivity' | 'invertY'>): QAngle {
-  const m = mouseToDegrees(state.mouseDx, state.mouseDy, settings);
+/** The settings the look reads. */
+export type LookSettings = MouseSettings & Partial<Pick<GameSettings, 'mouseFilter'>>;
+
+/**
+ * Applies the pending look to `viewAngles` (mutated and returned). Pitch clamps to ±89 (cl_pitchup/down).
+ * With `m_filter` the counts are averaged with the previous sample's (CInput::GetMouseDelta).
+ */
+export function applyLook(state: InputState, viewAngles: QAngle, settings: LookSettings, frameSample = true): QAngle {
+  let dx = state.mouseDx;
+  let dy = state.mouseDy;
+  // One filter sample per rendered frame (the client's frame call); a command's own call adds none.
+  if (frameSample) {
+    if (settings.mouseFilter) {
+      dx = (dx + state.mousePrevX) * 0.5;
+      dy = (dy + state.mousePrevY) * 0.5;
+    }
+    state.mousePrevX = state.mouseDx;
+    state.mousePrevY = state.mouseDy;
+  }
+  const m = mouseToDegrees(dx, dy, settings);
   viewAngles.y = normalizeYaw(viewAngles.y + m.yaw + state.lookYaw);
   viewAngles.x = clamp(viewAngles.x + m.pitch + state.lookPitch, -PITCH_LIMIT, PITCH_LIMIT);
   viewAngles.z = 0;
@@ -194,11 +216,11 @@ export function applyLook(state: InputState, viewAngles: QAngle, settings: Pick<
 export function buildUserCmd(
   state: InputState,
   viewAngles: QAngle,
-  settings: Pick<GameSettings, 'sensitivity' | 'invertY'>,
+  settings: LookSettings,
   weapons?: WeaponContext,
   out: Partial<UserCmd> = {},
 ): UserCmd {
-  applyLook(state, viewAngles, settings);
+  applyLook(state, viewAngles, settings, false);
   let buttons = 0;
   let mx = 0;
   let my = 0;

@@ -1,5 +1,5 @@
 /**
- * BSP v19–21 reader (TF2 ships v20). Struct layouts follow public/bspfile.h and
+ * BSP v19–21 reader (TF2 ships v20, CS:GO v21). Struct layouts follow public/bspfile.h and
  * public/gamebspfile.h of the Source SDK 2013. Hot data the collision code walks
  * (planes, nodes, leafs, brushes, brush sides) is kept as typed arrays
  * (structure-of-arrays); the rest is plain objects.
@@ -7,6 +7,12 @@
  * Every lump may be LZMA-compressed (lump_t.fourCC = uncompressed size, data
  * starts with Valve's "LZMA" header); TF2's shipped maps compress nearly all of
  * them, and game lumps are compressed one by one (GAMELUMPFLAG_COMPRESSED).
+ *
+ * CS:GO's v21 (de_dust2) keeps lump_t in the SDK order (fileofs, filelen, version, fourCC — only
+ * Left 4 Dead 2's v21 reorders it, which is not read here) and differs in three structs: leafs are
+ * v1 (32 bytes, ambient light in its own lumps), static props are v10 (76 bytes: + FlagsEx) or v11
+ * (80: + uniform scale), dworldlight_t v1 carries `shadow_cast_offset` (100 bytes), and a brush
+ * side's last short is `byte bevel, byte thin`.
  */
 
 import type { Vec3 } from '../core/vec';
@@ -632,15 +638,30 @@ function readModels(b: Uint8Array): BspModel[] {
   return out;
 }
 
-function readWorldLights(b: Uint8Array): BspWorldLight[] {
+/**
+ * dworldlight_t. Lump version 0 (TF2, HL2, Portal) is 88 bytes; version 1 (CS:GO's BSP v21) adds
+ * `Vector shadow_cast_offset` after `normal` (100 bytes). The size is checked against the lump's
+ * length too, as for leafs, so a mislabelled lump still parses.
+ */
+export function readWorldLights(b: Uint8Array, lumpVersion = 0): BspWorldLight[] {
+  let size = lumpVersion >= 1 ? 100 : 88;
+  if (b.length % size !== 0) {
+    if (b.length % 100 === 0 && b.length % 88 !== 0) size = 100;
+    else if (b.length % 88 === 0 && b.length % 100 !== 0) size = 88;
+  }
   const r = new BinaryReader(b);
   const out: BspWorldLight[] = [];
-  const count = Math.floor(b.length / 88);
+  const count = Math.floor(b.length / size);
   for (let i = 0; i < count; i++) {
+    r.seek(i * size);
+    const origin = v3(r);
+    const intensity = v3(r);
+    const normal = v3(r);
+    if (size === 100) r.skip(12); // shadow_cast_offset
     out.push({
-      origin: v3(r),
-      intensity: v3(r),
-      normal: v3(r),
+      origin,
+      intensity,
+      normal,
       cluster: r.i32(),
       type: r.i32(),
       style: r.i32(),
@@ -676,7 +697,11 @@ function readBrushes(b: Uint8Array): BspBrushes {
   return out;
 }
 
-function readBrushSides(b: Uint8Array): BspBrushSides {
+/**
+ * dbrushside_t (8 bytes). BSP v19/v20: `short bevel`; CS:GO's v21: `byte bevel; byte thin` — read
+ * as a short there, a "thin" side would look like a bevel and traces would skip it.
+ */
+export function readBrushSides(b: Uint8Array, bspVersion = 20): BspBrushSides {
   const count = Math.floor(b.length / 8);
   const view = viewOf(b);
   const out: BspBrushSides = {
@@ -690,7 +715,7 @@ function readBrushSides(b: Uint8Array): BspBrushSides {
     out.planeNum[i] = view.getUint16(i * 8, true);
     out.texInfo[i] = view.getInt16(i * 8 + 2, true);
     out.dispInfo[i] = view.getInt16(i * 8 + 4, true);
-    out.bevel[i] = view.getInt16(i * 8 + 6, true);
+    out.bevel[i] = bspVersion >= 21 ? view.getUint8(i * 8 + 6) : view.getInt16(i * 8 + 6, true);
   }
   return out;
 }
@@ -1097,12 +1122,12 @@ export function parseBsp(bytes: Uint8Array): BspFile {
     edges: readU16(L(LUMP.EDGES)),
     surfEdges: readI32(L(LUMP.SURFEDGES)),
     models: readModels(L(LUMP.MODELS)),
-    worldLights: readWorldLights(L(LUMP.WORLDLIGHTS)),
-    worldLightsHdr: readWorldLights(L(LUMP.WORLDLIGHTS_HDR)),
+    worldLights: readWorldLights(L(LUMP.WORLDLIGHTS), lumps[LUMP.WORLDLIGHTS].version),
+    worldLightsHdr: readWorldLights(L(LUMP.WORLDLIGHTS_HDR), lumps[LUMP.WORLDLIGHTS_HDR].version),
     leafFaces: readU16(L(LUMP.LEAFFACES)),
     leafBrushes: readU16(L(LUMP.LEAFBRUSHES)),
     brushes: readBrushes(L(LUMP.BRUSHES)),
-    brushSides: readBrushSides(L(LUMP.BRUSHSIDES)),
+    brushSides: readBrushSides(L(LUMP.BRUSHSIDES), version),
     dispInfos: readDispInfos(L(LUMP.DISPINFO)),
     dispVerts: readDispVerts(L(LUMP.DISP_VERTS)),
     dispTris: readU16(L(LUMP.DISP_TRIS)),

@@ -17,12 +17,15 @@ export const BASE_TYPES: Record<string, string> = {
   res: 'text/plain; charset=utf-8',
   txt: 'text/plain; charset=utf-8',
   menu: 'text/plain; charset=utf-8',
+  // The game's key list and option script, for the browser game's menus.
+  lst: 'text/plain; charset=utf-8',
+  scr: 'text/plain; charset=utf-8',
   vmt: 'text/plain; charset=utf-8',
   vtf: 'application/octet-stream',
   json: 'application/json',
 };
 
-const SAFE_PATH = /^(?:[a-z0-9_][a-z0-9_.\- ]*\/)*[a-z0-9_][a-z0-9_.\- ]*\.(res|txt|menu|vmt|vtf|json)$/i;
+const SAFE_PATH = /^(?:[a-z0-9_][a-z0-9_.\- ]*\/)*[a-z0-9_][a-z0-9_.\- ]*\.(res|txt|menu|lst|scr|vmt|vtf|json)$/i;
 
 /** Rejects traversal, odd characters and anything that is not a HUD file type. */
 export function isSafeBasePath(path: string): boolean {

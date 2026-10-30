@@ -9,7 +9,7 @@ import type { GameId } from './versions';
 
 export const GAME_ASSET_API = '/api/tf2-game/assets/';
 
-/** The API root of a game's assets: `/api/tf2-game/assets/`, `/api/hl2-game/assets/`, `/api/portal-game/assets/`. */
+/** The API root of a game's assets: `/api/tf2-game/assets/`, `/api/hl2-game/assets/`, `/api/portal-game/assets/`, `/api/csgo-game/assets/`. */
 export const gameAssetApi = (game: GameId = 'tf2'): string => `/api/${game}-game/assets/`;
 
 export function gameAssetUrl(path: string, game: GameId = 'tf2'): string {
@@ -48,6 +48,30 @@ export interface GameParticleIndex {
   /** Textures the exporting install lacked (empty on CI). */
   missingTextures: Record<string, string>;
 }
+
+/**
+ * `ui/index.json` — written by scripts/tf2-game/csgo_ui.py (CS:GO). Paths are relative to `ui/`.
+ * The game parses the data at run time; nothing of it is copied into the repository.
+ */
+export interface GameUiIndex {
+  v: 1;
+  /** `equipment/<name>` / `ui/<name>` (the Panorama icon's path under `icons/`) → `icons/<sha>.svg`. */
+  icons: Record<string, string>;
+  /** Language (`english`, `german`, …) → `lang/<sha>.json`: `{ v, lang, tokens: { TOKEN: text } }`. */
+  lang: Record<string, string>;
+  /**
+   * `data/<sha>.json`: `{ v, items: { weapon_ak47: { defindex, prefabs, …resolved items_game keys } },
+   * scripts: { <weapon script name>: KeyValues as JSON } }` — the default weapons only.
+   */
+  weapons: string | null;
+}
+
+export const loadUiIndex = (game: GameId = 'csgo') =>
+  fetchGameJson<GameUiIndex>('ui/index.json', game);
+
+/** An icon, language table or data file named in `ui/index.json`. */
+export const uiAssetUrl = (path: string, game: GameId = 'csgo'): string =>
+  gameAssetUrl(`ui/${path}`, game);
 
 export const soundUrl = (sha: string, game: GameId = 'tf2'): string =>
   gameAssetUrl(`snd/${sha.endsWith('.mp3') ? sha : sha + '.mp3'}`, game);

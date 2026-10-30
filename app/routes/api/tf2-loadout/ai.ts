@@ -2,13 +2,15 @@
  * POST /api/tf2-loadout/ai — ask the loadout assistant for themes, suggestions and counters. Returns a
  * short reply and a list of equips that have already been checked against the catalog, or
  * `{ unavailable: true }` when the model cannot be reached (the browser then matches names itself).
+ * The in-game loadout view adds `context` — the live match (map, mode, enemy classes, what killed you),
+ * built by the game, capped by `matchContextSchema` and quoted to the model as data.
  * Signed-in only, rate limited and budgeted like every AI call on the site.
  */
 
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { apiError, defineHandler } from '@/lib/api/handler.server';
-import { classSchema, slotsSchema } from '@/lib/tf2-loadout/api-schema';
+import { classSchema, matchContextSchema, slotsSchema } from '@/lib/tf2-loadout/api-schema';
 import { ASSISTANT_LIMITS } from '@/lib/tf2-loadout/ai-core';
 import { askLoadoutAssistant } from '@/lib/tf2-loadout/ai.server';
 import { getCatalogObject } from '@/lib/tf2-loadout/catalog.server';
@@ -26,6 +28,8 @@ const schema = z.object({
     )
     .max(ASSISTANT_LIMITS.history)
     .default([]),
+  /** The live match, from the in-game loadout view (optional; capped; sent to the model as data). */
+  context: matchContextSchema.optional(),
 });
 
 export const Route = createFileRoute('/api/tf2-loadout/ai')({
@@ -41,6 +45,7 @@ export const Route = createFileRoute('/api/tf2-loadout/ai')({
           slots: body.slots,
           message: body.message,
           history: body.history,
+          match: body.context,
         });
         if (!result.ok) return Response.json({ unavailable: true, reason: result.reason });
         return Response.json({ reply: result.reply, actions: result.actions, dropped: result.dropped });

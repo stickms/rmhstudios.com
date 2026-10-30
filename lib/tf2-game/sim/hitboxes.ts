@@ -47,6 +47,14 @@ export interface Hitbox {
 /** Torso width multiplier per class (heavy and soldier/demo are broader). */
 const WIDTH: readonly number[] = [1, 0.9, 0.95, 1.05, 1.05, 1, 1.35, 1, 0.95, 1];
 
+/**
+ * A hitbox set for a body with standing (or crouched) eye height `eye` and torso width `width`
+ * (another game on the engine builds its own: lib/csgo-game uses CS:GO's eye heights).
+ */
+export function buildHitboxSet(eye: number, width: number, crouched: boolean): Hitbox[] {
+  return buildSet(eye, width, crouched);
+}
+
 function buildSet(eye: number, width: number, crouched: boolean): Hitbox[] {
   const w = width;
   const head = crouched ? eye + 2 : eye + 3;
@@ -125,6 +133,18 @@ export function traceHitboxes(
   end: Vec3,
   out: HitboxTraceResult,
 ): boolean {
+  return traceHitboxSet(origin, yaw, hitboxSet(classIndex, ducked), start, end, out);
+}
+
+/** `traceHitboxes` against an explicit set (Player.hitboxSet: a game with its own bodies). */
+export function traceHitboxSet(
+  origin: Vec3,
+  yaw: number,
+  boxes: readonly Hitbox[],
+  start: Vec3,
+  end: Vec3,
+  out: HitboxTraceResult,
+): boolean {
   const rad = (yaw * Math.PI) / 180;
   const c = Math.cos(rad);
   const s = Math.sin(rad);
@@ -140,7 +160,6 @@ export function traceHitboxes(
   const ldy = -ex * s + ey * c - lsy;
   const ldz = end.z - origin.z - lsz;
 
-  const boxes = hitboxSet(classIndex, ducked);
   let best = 2;
   let bestGroup = 0;
   let bestAxis = 0;

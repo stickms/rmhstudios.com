@@ -192,6 +192,10 @@ const MAX_START_LATENCY = 1.5;
 /** Source units → metres for Web Audio (render/coords.ts). */
 const UNIT = 0.01905;
 const SMOOTH = 0.03;
+/** Fixed mix headroom (−6 dB) before the output limiter. */
+const MIX_HEADROOM = 0.5;
+/** Output limiter threshold: peaks above this are held down rather than clipping. */
+const LIMITER_THRESHOLD_DB = -6;
 
 export function isMobileDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
@@ -382,7 +386,25 @@ export class AudioEngine {
     if (!ctx) return;
     this.master = ctx.createGain();
     this.master.gain.value = this.volumes.master;
-    this.master.connect(ctx.destination);
+    // Source mixes with headroom; played straight to full scale, a few
+    // overlapping gunshots and explosions are far too loud and clip. A fixed
+    // headroom gain plus a limiter keeps the mix at a comfortable level
+    // whatever the user's own volume setting.
+    const headroom = ctx.createGain();
+    headroom.gain.value = MIX_HEADROOM;
+    this.master.connect(headroom);
+    if (typeof ctx.createDynamicsCompressor === 'function') {
+      const limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.value = LIMITER_THRESHOLD_DB;
+      limiter.knee.value = 0;
+      limiter.ratio.value = 20;
+      limiter.attack.value = 0.003;
+      limiter.release.value = 0.25;
+      headroom.connect(limiter);
+      limiter.connect(ctx.destination);
+    } else {
+      headroom.connect(ctx.destination);
+    }
     this.duck = ctx.createGain();
     this.duck.gain.value = 1;
     this.duck.connect(this.master);

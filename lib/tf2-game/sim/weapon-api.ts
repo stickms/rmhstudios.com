@@ -21,7 +21,7 @@ import type { UserCmd, TraceResult, TraceFilter } from '../core/types';
 import type { Vec3 } from '../core/vec';
 import type { UniformRandomStream } from '../core/random';
 import { IN_ATTACK, IN_ATTACK2, IN_RELOAD } from '../core/constants';
-import type { NetRecord } from './net-schema';
+import type { NetRecord, NetSchema } from './net-schema';
 import type { DamageInfo, RadiusDamageInfo } from './damage';
 import type { Entity } from './entity';
 import type { EffectEvent } from './events';
@@ -197,7 +197,12 @@ export interface Weapon {
   readonly attributes?: AttributeSet;
   /** `provide_on_active`: provides its attributes to the owner only while it is out. */
   readonly provideOnActive?: boolean;
-  /** Writes the prediction state into a NET_WEAPON record. */
+  /**
+   * The record type the weapon writes (default NET_WEAPON). Another game's weapons carry their own
+   * prediction state (lib/csgo-game: recoil index, inaccuracy, zoom) in their own schema.
+   */
+  netSchema?(): NetSchema;
+  /** Writes the prediction state into a NET_WEAPON record (or `netSchema()`'s). */
   writeNet(out: NetRecord): void;
   /** Restores prediction state from a NET_WEAPON record (client). */
   readNet(rec: NetRecord): void;

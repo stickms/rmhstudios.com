@@ -55,6 +55,9 @@ import { useHudChoice } from './custom-hud/hud-choice';
 import TouchOverlay, { type TouchAction } from './touch/TouchOverlay';
 import Console, { useConsoleEntry, useConsoleOpen } from './console/Console';
 import ServerAdminView from './ServerAdminView';
+import GameMenu from './menus/GameMenu';
+import { useMenuSource } from './menus/use-menu-source';
+import type { MenuCommand, MenuEntry } from '@/lib/tf2-game/client/menus/game-menu';
 import NetNotices from './NetNotices';
 import './tf2-game.css';
 
@@ -321,19 +324,70 @@ function HudBody({
         render: () => <ServerAdminView />,
       });
     }
-    // Loadout: the builder's slots, picker and 3D player; Equip sends it to the match.
-    views.push({
-      id: 'loadout',
-      label: t('loadout', { defaultValue: 'Loadout' }),
-      wide: true,
-      render: () => (
-        <Suspense fallback={<p className="text-sm text-(--app-text-muted)">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
-          <LoadoutPauseView />
-        </Suspense>
-      ),
-    });
     return views;
   }, [tf2, t, editorUsed, setEditorOpen, hasAdmin]);
+
+  // TF2's Esc menu: the HUD's mainmenuoverride.res / gamemenu.res with this match's entries (menus/GameMenu).
+  const menuSource = useMenuSource(game);
+  const canClass = tf2 && !!local && local.team >= 2;
+  const escEntries = useMemo<MenuEntry[]>(() => {
+    if (!tf2) return [];
+    const list: MenuEntry[] = [{ command: 'resume', token: '#GameUI_GameMenu_ResumeGame', text: t('resume', { defaultValue: 'Resume game' }), image: 'glyph_multiplayer' }];
+    if (editorUsed) list.push({ command: 'editor', text: t('hud_back_to_editor', { defaultValue: 'Back to the HUD editor' }), image: 'glyph_workshop_edit' });
+    if (hasAdmin) list.push({ command: 'server', text: t('admin_server', { defaultValue: 'Server' }), image: 'glyph_server' });
+    list.push({ command: 'team', token: '#Valve_Change_Team', text: t('change_team', { defaultValue: 'Change team' }), image: 'glyph_coop' });
+    if (canClass) list.push({ command: 'class', token: '#Valve_Change_Class', text: t('change_class', { defaultValue: 'Change class' }), image: 'glyph_items' });
+    list.push(
+      { command: 'loadout', token: '#MMenu_CharacterSetup', text: t('loadout', { defaultValue: 'Loadout' }), image: 'glyph_items' },
+      { command: 'hud', text: t('hud', { defaultValue: 'HUD' }), image: 'glyph_steamworkshop' },
+      { command: 'options', token: '#GameUI_GameMenu_Options', text: t('settings', { defaultValue: 'Options' }), image: 'glyph_options' },
+      { command: 'advanced', token: '#MMenu_Tooltip_AdvOptions', text: t('menu_advanced_options', { defaultValue: 'Advanced options' }), image: 'glyph_options' },
+    );
+    if (devConsole.enabled) list.push({ command: 'console', token: '#GameUI_Console', text: t('console', { defaultValue: 'Console' }), image: 'glyph_server' });
+    list.push({ command: 'disconnect', token: '#GameUI_GameMenu_Disconnect', text: t('disconnect', { defaultValue: 'Disconnect' }), image: 'glyph_disconnect' });
+    return list;
+  }, [tf2, t, editorUsed, hasAdmin, canClass, devConsole.enabled]);
+  const onEscCommand = useCallback(
+    (c: MenuCommand) => {
+      switch (c) {
+        case 'resume':
+          setMenu(NONE);
+          break;
+        case 'editor':
+          setMenu(NONE);
+          setEditorOpen(true);
+          break;
+        case 'team':
+          setMenu({ kind: 'team' });
+          break;
+        case 'class':
+          setMenu({ kind: 'class' });
+          break;
+        case 'console':
+          setMenu(NONE);
+          devConsole.open();
+          break;
+        case 'disconnect':
+          onDisconnect();
+          break;
+        case 'options':
+          setMenu({ kind: 'pause', view: 'settings' });
+          break;
+        case 'advanced':
+        case 'loadout':
+        case 'hud':
+        case 'server':
+          setMenu({ kind: 'pause', view: c });
+          break;
+        default:
+          break;
+      }
+    },
+    [setEditorOpen, devConsole, onDisconnect],
+  );
+  const toEscMenu = useCallback(() => setMenu({ kind: 'pause', view: 'menu' }), []);
+  const escMenuOpen = tf2 && shown.kind === 'pause' && shown.view === 'menu';
+  const loadoutOpen = tf2 && shown.kind === 'pause' && shown.view === 'loadout';
 
   // Menus a custom HUD restyles (it ships their .res) are drawn from it, as in TF2; the rest stay the game's.
   const hudMenus = customHud?.menus;
@@ -442,9 +496,25 @@ function HudBody({
       {settings.showFps ? (
         <span className="tf2g-fps">{t('fps', { defaultValue: '{{n}} fps', n: Math.round(state.fps) })}</span>
       ) : null}
+      {escMenuOpen ? (
+        <GameMenu
+          source={menuSource}
+          inGame
+          entries={escEntries}
+          onCommand={onEscCommand}
+          onBack={() => setMenu(NONE)}
+          title={t('paused', { defaultValue: 'Paused' })}
+          subscribeImpulses={store.onImpulse as (fn: (a: string) => void) => () => void}
+        />
+      ) : null}
+      {loadoutOpen ? (
+        <Suspense fallback={<p className="tf2m-loadout-note">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
+          <LoadoutPauseView onClose={toEscMenu} />
+        </Suspense>
+      ) : null}
       <PauseMenu
         key={shown.kind === 'pause' ? shown.view : 'closed'}
-        open={shown.kind === 'pause'}
+        open={shown.kind === 'pause' && !escMenuOpen && !loadoutOpen}
         game={game}
         settings={settings}
         onSettings={onSettingsChange}
@@ -452,6 +522,7 @@ function HudBody({
         onChangeTeam={tf2 ? () => setMenu({ kind: 'team' }) : undefined}
         onChangeClass={tf2 && local && local.team >= 2 ? () => setMenu({ kind: 'class' }) : undefined}
         onDisconnect={onDisconnect}
+        onBackToMenu={tf2 ? toEscMenu : undefined}
         views={
           devConsole.enabled
             ? [

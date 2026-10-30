@@ -164,28 +164,42 @@ export const api = {
       },
     });
   },
-  /** The HUD assistant: which files a request touches, then key-level changes to them. */
-  aiSelect(body: {
-    message: string;
-    paths: string[];
-    history: { role: 'user' | 'assistant'; content: string }[];
-  }): Promise<{ files: string[] } | { unavailable: true; reason: string }> {
+  /**
+   * The HUD assistant: which files a request touches, then key-level changes to them. `signal` cancels
+   * a request the player no longer wants (the in-game quick bar).
+   */
+  aiSelect(
+    body: {
+      message: string;
+      paths: string[];
+      history: { role: 'user' | 'assistant'; content: string }[];
+    },
+    signal?: AbortSignal,
+  ): Promise<{ files: string[] } | { unavailable: true; reason: string }> {
     return request('/api/tf2-hud/ai', {
       method: 'POST',
       ...json({ stage: 'select', ...body }),
+      signal,
     });
   },
-  aiEdit(body: {
-    message: string;
-    files: { path: string; text: string }[];
-    history: { role: 'user' | 'assistant'; content: string }[];
-    /** What the player has selected, so "this" in the request means something. */
-    context?: string;
-  }): Promise<
+  aiEdit(
+    body: {
+      message: string;
+      files: { path: string; text: string }[];
+      history: { role: 'user' | 'assistant'; content: string }[];
+      /** What the player has selected, so "this" in the request means something. */
+      context?: string;
+    },
+    signal?: AbortSignal,
+  ): Promise<
     | { summary: string; changes: HudChange[]; malformed: number }
     | { unavailable: true; reason: string }
   > {
-    return request('/api/tf2-hud/ai', { method: 'POST', ...json({ stage: 'edit', ...body }) });
+    return request('/api/tf2-hud/ai', {
+      method: 'POST',
+      ...json({ stage: 'edit', ...body }),
+      signal,
+    });
   },
   async fetchFile(
     source: { hud: string } | { token: string },

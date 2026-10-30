@@ -1,12 +1,10 @@
 /**
- * The server browser's logic (components/tf2-game/ServerBrowser.tsx): one list
- * of dedicated (hub) and peer-to-peer rooms — filtered, searched, sorted by
- * any column — Quick Play's pick, and the favorites / recent servers this
- * device remembers.
+ * The server browser's logic (components/tf2-game/ServerBrowser.tsx): the
+ * public peer-to-peer rooms — filtered, searched, sorted by any column — Quick
+ * Play's pick, and the favorites / recent servers this device remembers.
  *
- * Ping: a dedicated room's is the round trip to the games hub (every match
- * runs there); a peer-to-peer room's is unknown until connected (the browser
- * never learns a host's address), so it sorts last and shows "—".
+ * There is no ping column: a room runs in its host's browser, and the browser
+ * never learns a host's address, so its round trip is unknown until connected.
  *
  * Pure, except the two storage helpers (localStorage, every access guarded).
  */
@@ -14,14 +12,13 @@
 import type { Tf2Mode } from '../data/maps';
 import type { RoomKind, RoomListEntry } from '../net/events';
 
-export type SortKey = 'name' | 'map' | 'mode' | 'players' | 'ping' | 'host' | 'kind';
+export type SortKey = 'name' | 'map' | 'mode' | 'players' | 'host';
 export type SortDir = 'asc' | 'desc';
 
 export interface BrowserFilters {
   search: string;
   map: string;
   mode: Tf2Mode | '';
-  kind: RoomKind | '';
   /** Hide rooms with no free seat. */
   notFull: boolean;
   /** Only rooms with at least one human. */
@@ -34,7 +31,6 @@ export const DEFAULT_FILTERS: BrowserFilters = {
   search: '',
   map: '',
   mode: '',
-  kind: '',
   notFull: false,
   hasHumans: false,
   hideEmpty: false,
@@ -42,11 +38,6 @@ export const DEFAULT_FILTERS: BrowserFilters = {
 
 /** Seats taken (humans + bots — a human joining replaces a bot, but the browser counts what it sees). */
 export const isFull = (r: RoomListEntry): boolean => r.players >= r.maxPlayers;
-
-/** The ping to show for a room, ms, or null ("—"). */
-export function roomPing(r: RoomListEntry, hubRttMs: number | null): number | null {
-  return r.kind === 'dedicated' && hubRttMs !== null ? Math.round(hubRttMs) : null;
-}
 
 export function filterRooms(
   rooms: readonly RoomListEntry[],
@@ -57,7 +48,6 @@ export function filterRooms(
   return rooms.filter((r) => {
     if (f.map && r.map !== f.map) return false;
     if (f.mode && r.mode !== f.mode) return false;
-    if (f.kind && r.kind !== f.kind) return false;
     if (f.notFull && isFull(r)) return false;
     if (f.hasHumans && r.players <= 0) return false;
     if (f.hideEmpty && r.players + r.bots <= 0) return false;
@@ -73,7 +63,6 @@ export function sortRooms(
   rooms: readonly RoomListEntry[],
   key: SortKey,
   dir: SortDir,
-  hubRttMs: number | null,
   mapTitle: (name: string) => string = (n) => n,
 ): RoomListEntry[] {
   const sign = dir === 'asc' ? 1 : -1;
@@ -90,17 +79,6 @@ export function sortRooms(
         return a.players - b.players || a.bots - b.bots;
       case 'host':
         return text(a.host ?? '', b.host ?? '');
-      case 'kind':
-        return text(a.kind, b.kind);
-      case 'ping': {
-        // Unknown pings sort last whichever way.
-        const pa = roomPing(a, hubRttMs);
-        const pb = roomPing(b, hubRttMs);
-        if (pa === null && pb === null) return 0;
-        if (pa === null) return 1 * sign;
-        if (pb === null) return -1 * sign;
-        return pa - pb;
-      }
     }
   };
   return [...rooms].sort((a, b) => sign * cmp(a, b) || a.code.localeCompare(b.code));
@@ -113,20 +91,17 @@ export interface QuickPlayWish {
 
 /**
  * Quick Play: the best public room that has a seat, for the wished mode / map.
- * Running rooms with the most humans first (a match worth joining), then
- * dedicated over peer-to-peer (the hub's ping is known; a P2P host's upload is
- * the bottleneck), then the lower ping. Null → offer to host or play offline.
+ * Running rooms with the most humans first (a match worth joining). Null →
+ * offer to host or play offline.
  */
-export function quickPlayPick(rooms: readonly RoomListEntry[], wish: QuickPlayWish, hubRttMs: number | null): RoomListEntry | null {
+export function quickPlayPick(rooms: readonly RoomListEntry[], wish: QuickPlayWish): RoomListEntry | null {
   const candidates = rooms.filter(
     (r) => !isFull(r) && (!wish.mode || r.mode === wish.mode) && (!wish.map || r.map === wish.map),
   );
   if (candidates.length === 0) return null;
   const score = (r: RoomListEntry) =>
     (r.state === 'running' ? 1000 : 0) +
-    Math.min(r.players, 23) * 20 +
-    (r.kind === 'dedicated' ? 10 : 0) -
-    Math.min(200, roomPing(r, hubRttMs) ?? 100) / 20;
+    Math.min(r.players, 23) * 20;
   return [...candidates].sort((a, b) => score(b) - score(a) || a.code.localeCompare(b.code))[0];
 }
 
@@ -162,7 +137,8 @@ export function readSaved(key: string, storage: Pick<Storage, 'getItem'> | null 
           CODE_RE.test((s as SavedServer).code) &&
           typeof (s as SavedServer).name === 'string' &&
           typeof (s as SavedServer).map === 'string' &&
-          ((s as SavedServer).kind === 'dedicated' || (s as SavedServer).kind === 'p2p') &&
+          // Saved before dedicated rooms were removed: those codes are gone.
+          (s as SavedServer).kind === 'p2p' &&
           typeof (s as SavedServer).at === 'number',
       )
       .map((s) => ({ code: s.code, name: s.name.slice(0, 80), map: s.map.slice(0, 64), kind: s.kind, at: s.at }))

@@ -214,7 +214,28 @@ function drawImage(
   // Multiplied in: the panel's own fade (animations, `alpha`) is already on the context.
   g.globalAlpha *= tex.alpha * (op.tint && op.tint.a < 255 ? op.tint.a / 255 : 1);
   if (tex.additive) g.globalCompositeOperation = 'lighter';
-  if (op.native) {
+  if (op.nine) {
+    // ScalableImageBorder: corners at their own size, edges and centre stretched.
+    const [sw, sh] = op.nine.src;
+    const [dw0, dh0] = op.nine.draw;
+    const dw = Math.min(dw0, w / 2);
+    const dh = Math.min(dh0, h / 2);
+    const iw = img.width;
+    const ih = img.height;
+    const xs = [0, sw, iw - sw, iw];
+    const ys = [0, sh, ih - sh, ih];
+    const xd = [x, x + dw, x + w - dw, x + w];
+    const yd = [y, y + dh, y + h - dh, y + h];
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const sW = xs[c + 1] - xs[c];
+        const sH = ys[r + 1] - ys[r];
+        const dW = xd[c + 1] - xd[c];
+        const dH = yd[r + 1] - yd[r];
+        if (sW > 0 && sH > 0 && dW > 0 && dH > 0) g.drawImage(src, xs[c], ys[r], sW, sH, xd[c], yd[r], dW, dH);
+      }
+    }
+  } else if (op.native) {
     // Natural size, anchored top-left, clipped to the panel — an ImagePanel without `scaleImage`.
     g.beginPath();
     g.rect(x, y, w, h);

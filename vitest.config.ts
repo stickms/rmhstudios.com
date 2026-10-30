@@ -75,6 +75,8 @@ export default defineConfig({
       // The single-player game layer (HL2 / Portal) is gameplay on the same
       // engine: it runs in the TF2 suite, `pnpm test:tf2` (vitest.tf2.config.ts).
       'lib/sp-game/**',
+      // CS:GO (de_dust2) is gameplay on the same engine too: the TF2 suite runs it.
+      'lib/csgo-game/**',
     ],
     environment: 'node',
     globals: true,

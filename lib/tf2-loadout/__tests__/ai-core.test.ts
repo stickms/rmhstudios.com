@@ -130,3 +130,36 @@ describe('wordsOf', () => {
     expect(wordsOf('Give me the spooky spooky hat!')).toEqual(['spooky', 'hat']);
   });
 });
+
+describe('describeMatchContext', async () => {
+  const { describeMatchContext, MATCH_CONTEXT_LIMITS } = await import('../ai-core');
+
+  it('is a few short lines, empty for no context', () => {
+    expect(describeMatchContext(undefined)).toBe('');
+    expect(describeMatchContext({})).toBe('');
+    expect(
+      describeMatchContext({
+        map: 'koth_harvest',
+        mode: 'koth',
+        yourClass: 'pyro',
+        team: 'blu',
+        enemies: [{ cls: 'spy', n: 2 }],
+        deaths: [{ weapon: 'Knife', cls: 'spy', n: 3 }],
+      }),
+    ).toBe(
+      'Map: koth_harvest\nMode: koth\nPlaying as: pyro (BLU)\nEnemy team: 2 spy\nRecently killed by: Knife (spy) x3',
+    );
+  });
+
+  it('strips control characters and tags, and caps every part and the whole', () => {
+    const out = describeMatchContext({
+      map: `ctf\u0000<script>\n${'m'.repeat(100)}`,
+      deaths: Array.from({ length: 20 }, (_, i) => ({ weapon: `${'w'.repeat(80)}${i}`, n: 500 })),
+    });
+    expect(out).not.toMatch(/[<>]/);
+    expect(out).not.toContain('\u0000');
+    expect(out.split('\n')[0].length).toBeLessThanOrEqual('Map: '.length + MATCH_CONTEXT_LIMITS.name);
+    expect(out.length).toBeLessThanOrEqual(MATCH_CONTEXT_LIMITS.total);
+    expect(out).not.toContain('x500');
+  });
+});

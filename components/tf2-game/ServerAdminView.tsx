@@ -1,11 +1,10 @@
 /**
- * The pause menu's **Server** view (TF2): the room's administration for the player who runs it —
- * the peer-to-peer host (this browser runs the match) or a dedicated room's owner (the hub checks
- * every action again and logs it). Reachable from the pause menu on every device, touch included.
+ * The pause menu's **Server** view (TF2): the room's administration for the player who runs it — the
+ * peer-to-peer host (this browser runs the match; the hub keeps its door). Reachable from the pause
+ * menu on every device, touch included.
  *
  *   - Players: each human with how they reach the host (Direct / TURN / Relayed, ping, loss), and
- *     Kick (refused for the room's life) and Make host (peer-to-peer: the match moves to their
- *     browser) / Make owner (a hub room);
+ *     Kick (refused for the room's life) and Make host (the match moves to their browser);
  *   - the map (`changelevel` among the published maps — everyone reloads it and keeps their seat);
  *   - the match settings (the console's mp_timelimit, mp_winlimit, tf_bot_quota, tf_bot_difficulty);
  *   - the door: lock to new players, a password for new players;
@@ -61,7 +60,6 @@ function AdminBody({ map, setMap }: { map: string; setMap: (m: string) => void }
   const [say, setSay] = useState('');
   const send = (cmd: Parameters<typeof store.send>[0]) => store.send(cmd);
   const extra = (command: string, value: string | number) => send({ kind: 'extra', command, args: [String(value)] });
-  const p2p = admin.role === 'host' && admin.online;
   const others = admin.players.filter((p) => !p.self);
 
   return (
@@ -84,19 +82,15 @@ function AdminBody({ map, setMap }: { map: string; setMap: (m: string) => void }
                   <span className="text-xs text-(--app-text-dim)">
                     <ConnectionLabel p={p} />
                   </span>
-                  {(p2p ? p.canHost : p.account) ? (
+                  {p.canHost ? (
                     <Btn
                       size="xs"
                       variant="ghost"
                       icon={Crown}
                       onClick={() => send({ kind: 'admin', action: { action: 'transfer', playerId: p.id } })}
-                      aria-label={
-                        p2p
-                          ? t('admin_make_host_named', { defaultValue: 'Make {{name}} the host', name: p.name })
-                          : t('admin_make_owner_named', { defaultValue: 'Make {{name}} the owner', name: p.name })
-                      }
+                      aria-label={t('admin_make_host_named', { defaultValue: 'Make {{name}} the host', name: p.name })}
                     >
-                      {p2p ? t('admin_make_host', { defaultValue: 'Make host' }) : t('admin_make_owner', { defaultValue: 'Make owner' })}
+                      {t('admin_make_host', { defaultValue: 'Make host' })}
                     </Btn>
                   ) : null}
                   <Btn
@@ -112,7 +106,7 @@ function AdminBody({ map, setMap }: { map: string; setMap: (m: string) => void }
               ))}
             </ul>
           )}
-          {p2p ? (
+          {admin.online ? (
             <p className="text-xs text-(--app-text-dim)">
               {t('admin_migration_note', {
                 defaultValue: 'If you leave, the match moves to the next host (it keeps going for everyone else).',
@@ -238,7 +232,7 @@ function AdminBody({ map, setMap }: { map: string; setMap: (m: string) => void }
           </Field>
         </section>
       ) : null}
-      {p2p && others.some((p) => p.canHost) ? (
+      {admin.online && others.some((p) => p.canHost) ? (
         <p className="flex items-center gap-2 text-xs text-(--app-text-dim)">
           <LogOut className="size-4" aria-hidden />
           {t('admin_leave_note', { defaultValue: 'Leave from the menu and the next host takes over.' })}

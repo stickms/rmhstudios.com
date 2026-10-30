@@ -165,7 +165,7 @@ export class SpClient implements GameClient {
     if (this.started) return;
     this.started = true;
     try {
-      this.core = new RenderCore(this.opts.canvas, this.settings.quality, () =>
+      this.core = new RenderCore(this.opts.canvas, this.settings, () =>
         this.fail(new ClientFailure({ code: 'context-lost', detail: 'WebGL context lost', retryable: true })),
       );
       this.inputCore = new InputCore(this.opts.inputTarget, this.game, () => this.settings, (l) => this.opts.callbacks.onLockChange?.(l), this.opts.input);

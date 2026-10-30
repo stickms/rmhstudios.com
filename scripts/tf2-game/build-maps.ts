@@ -1,14 +1,14 @@
 /**
  * The browser games' map channel: Source BSP → map package (lib/tf2-game/assets/map-manifest.ts).
  *
- *   pnpm exec tsx scripts/tf2-game/build-maps.ts --root <install> --game tf2|hl2|portal --out <dir>
+ *   pnpm exec tsx scripts/tf2-game/build-maps.ts --root <install> --game tf2|hl2|portal|csgo --out <dir>
  *       [--maps a,b | --maps-file <file>] [--state state.json] [--prev-index maps/index.json]
  *       [--props-list-out <file>] [--sizes] [--force] [--nav | --no-nav]
  *   pnpm exec tsx scripts/tf2-game/build-maps.ts --root <install> --game … --props-only --props-list-out <file>
  *       Only appends the maps' prop models to the list (the model channel runs this every time).
  *
  * Without --maps / --maps-file it builds the game's published list (lib/tf2-game/assets/game-maps.ts:
- * TF2's hub allowlist, the HL2 demo's six maps, Portal: First Slice's seven).
+ * TF2's hub allowlist, the HL2 demo's six maps, Portal: First Slice's seven, CS:GO's de_dust2).
  *
  * Output (`--out D`, pushed by `scripts/tf2-assets/publish.ts push --dir D --prefix <game>-game/
  * --state-key <game>-game/maps/_state.json --index maps/index.json`):
@@ -28,8 +28,16 @@
  * holds is neither written nor (for textures) decoded: an unchanged map writes nothing, but is
  * still listed in wanted.json. --props-list-out appends every prop model path (one per line) for
  * models.py, plus the game's GAME_ALWAYS_MODELS (models the client draws that no map names). Each TF2 map also gets the bots' navigation mesh, `maps/<sha>.nav.bin`
- * (lib/tf2-game/bots/nav; on by default for tf2, --nav forces it for other games, --no-nav
- * skips it), generated from the BSP and the prop hulls within NAV_TIME_BUDGET_MS.
+ * (lib/tf2-game/bots/nav; on by default for tf2 and csgo, --nav forces it for other games, --no-nav
+ * skips it), generated from the BSP and the prop hulls within NAV_TIME_BUDGET_MS, with the game's
+ * player hull (NAV_HULL_BY_GAME: CS:GO's 32 × 72, crouched 54).
+ *
+ * CS:GO (`--game csgo`, the dedicated server's `csgo/`): searched as its gameinfo.txt does — the
+ * map's own pakfile, then `csgo/pak01_dir.vpk`, then loose `csgo/` files. Its BSPs are v21 with
+ * LZMA lumps (lib/tf2-game/formats/bsp.ts). The manifest also carries the map overview as `radar`
+ * (`resource/overviews/<map>.txt` + `materials/overviews/<map>_radar.vtf` → `tex/<sha>.webp`;
+ * map-manifest.ts `worldToRadar`). World shaders the renderer does not know by name (CS:GO's
+ * `lightmapped_4wayblend`, …) keep their name and their `$basetexture`.
  */
 import { createHash } from 'node:crypto';
 import {
@@ -83,7 +91,8 @@ import {
   type PropCollisionModel,
 } from '../../lib/tf2-game/world/prop-collision';
 import { MapCollision } from '../../lib/tf2-game/world/map-collision';
-import { NavGenerator } from '../../lib/tf2-game/bots/nav/generate';
+import { NAV_HULL_CS, NavGenerator, type NavHull } from '../../lib/tf2-game/bots/nav/generate';
+import { parseKeyValuesBlock } from '../../lib/tf2-game/formats/keyvalues';
 import { encodeNavMesh } from '../../lib/tf2-game/bots/nav/serialize';
 import { findGameMap, GAME_MAPS } from '../../lib/tf2-game/assets/game-maps';
 import {
@@ -93,6 +102,7 @@ import {
   type MapIndex,
   type MapManifest,
   type MapMaterial,
+  type MapRadar,
   type MapSky,
   type MapTexture,
 } from '../../lib/tf2-game/assets/map-manifest';
@@ -124,6 +134,12 @@ export const GAME_SEARCH: Record<GameId, { vpks: string[]; loose: string[]; maps
     vpks: ['portal/portal_pak', 'hl2/hl2_textures', 'hl2/hl2_misc'],
     loose: ['portal', 'hl2'],
     maps: 'portal/maps',
+  },
+  // CS:GO's dedicated server (app 740): one archive set, pak01_dir.vpk + pak01_NNN.vpk.
+  csgo: {
+    vpks: ['csgo/pak01'],
+    loose: ['csgo'],
+    maps: 'csgo/maps',
   },
 };
 
@@ -720,7 +736,15 @@ export const GAME_ALWAYS_MODELS: Record<GameId, readonly string[]> = {
   tf2: [],
   hl2: [],
   portal: ['models/weapons/v_portalgun.mdl', 'models/weapons/w_portalgun.mdl'],
+  // CS:GO's players, arms, weapons and equipment come from scripts/tf2-game/csgo-model-list.py.
+  csgo: [],
 };
+
+/** The player hull each game's bots walk with (the generator's default is TF2's). */
+export const NAV_HULL_BY_GAME: Partial<Record<GameId, NavHull>> = { csgo: NAV_HULL_CS };
+
+/** Games whose maps have overviews (`resource/overviews/<map>.txt`) published as the manifest's `radar`. */
+export const RADAR_GAMES: ReadonlySet<GameId> = new Set<GameId>(['csgo']);
 
 /** The game's always-included models that the install has (what models.py can read). */
 export function alwaysModels(fs: GameFileSystem, game: GameId): string[] {
@@ -744,6 +768,156 @@ export function listMapProps(root: string, game: GameId, maps: string[], listFil
   }
   if (all.size) appendFileSync(listFile, [...all].sort().join('\n') + '\n');
   return all.size;
+}
+
+// --- map overview (CS:GO radar) -----------------------------------------------------------------
+
+/** The overview images are authored at 1024 px; `scale` is world units per pixel of that size. */
+export const OVERVIEW_SIZE = 1024;
+
+export interface Overview {
+  /** `material` (default `overviews/<map>`), without `materials/` and `_radar`. */
+  material: string;
+  posX: number;
+  posY: number;
+  scale: number;
+  rotate: boolean;
+  zoom: number | null;
+  sections: Array<{ name: string; altitudeMin: number; altitudeMax: number }>;
+}
+
+/** Text of a resource file: UTF-16 (with a BOM) or Latin-1. */
+export function decodeResourceText(bytes: Uint8Array): string {
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe)
+    return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff)
+    return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+  return new TextDecoder('latin1').decode(bytes);
+}
+
+/**
+ * `resource/overviews/<map>.txt` (KeyValues: `"<map>" { "material" "overviews/<map>" "pos_x" "…"
+ * "pos_y" "…" "scale" "…" "rotate" "0|1" "zoom" "…" "verticalsections" { "<name>" { "AltitudeMin"
+ * "…" "AltitudeMax" "…" } } }`). Null when it has no usable position or scale.
+ */
+export function parseOverview(text: string, map: string): Overview | null {
+  const block = parseKeyValuesBlock(text);
+  if (!block) return null;
+  const num = (k: string) => {
+    const v = parseFloat(block.getString(k, ''));
+    return Number.isFinite(v) ? v : null;
+  };
+  const posX = num('pos_x');
+  const posY = num('pos_y');
+  const scale = num('scale');
+  if (posX === null || posY === null || scale === null || scale <= 0) return null;
+  const material =
+    normalizeGamePath(block.getString('material', `overviews/${map}`))
+      .replace(/^materials\//, '')
+      .replace(/\.(vmt|vtf)$/, '') || `overviews/${map}`;
+  const sections: Overview['sections'] = [];
+  for (const s of block.get('verticalsections')?.children ?? []) {
+    if (!s.isBlock) continue;
+    sections.push({
+      name: s.key.toLowerCase(),
+      altitudeMin: s.getNumber('AltitudeMin', -Infinity),
+      altitudeMax: s.getNumber('AltitudeMax', Infinity),
+    });
+  }
+  const zoom = num('zoom');
+  return {
+    material,
+    posX,
+    posY,
+    scale,
+    rotate: (num('rotate') ?? 0) !== 0,
+    zoom,
+    sections: sections.map((s) => ({
+      ...s,
+      altitudeMin: Number.isFinite(s.altitudeMin) ? s.altitudeMin : -65536,
+      altitudeMax: Number.isFinite(s.altitudeMax) ? s.altitudeMax : 65536,
+    })),
+  };
+}
+
+/**
+ * The radar image of an overview (`materials/<material>_radar.vtf`, a section's
+ * `<material>_<section>_radar.vtf`) planned as a texture at the overview size (kept with alpha:
+ * the area outside the map is transparent).
+ */
+function planRadarTexture(fs: GameFileSystem, material: string): TexResult {
+  const vtfPath = `materials/${material}_radar.vtf`;
+  const vtf = fs.read(vtfPath);
+  if (!vtf) return { missing: `${vtfPath} is not in the game files` };
+  let header: VtfHeader;
+  try {
+    header = parseVtfHeader(vtf);
+  } catch (e) {
+    return { missing: `${vtfPath}: ${(e as Error).message}` };
+  }
+  const keepAlpha = formatHasAlpha(header);
+  const { mip, w, h } = textureSize(header, OVERVIEW_SIZE);
+  const key = texName(vtf, keepAlpha, OVERVIEW_SIZE, 'radar');
+  return {
+    tex: {
+      id: `${material}_radar${keepAlpha ? '@alpha' : ''}`,
+      rel: `tex/${key}.webp`,
+      key,
+      vtfPath,
+      vtf,
+      mip,
+      w,
+      h,
+      keepAlpha,
+      header,
+    },
+  };
+}
+
+/** The manifest's `radar` for a map (and the textures to encode), or null without an overview. */
+export function resolveRadar(
+  fs: GameFileSystem,
+  map: string,
+): { radar: MapRadar | null; textures: PlannedTexture[]; missing: string[] } {
+  const raw = fs.read(`resource/overviews/${map}.txt`);
+  if (!raw) return { radar: null, textures: [], missing: [`resource/overviews/${map}.txt: none`] };
+  const ov = parseOverview(decodeResourceText(raw), map);
+  if (!ov)
+    return {
+      radar: null,
+      textures: [],
+      missing: [`resource/overviews/${map}.txt: no pos_x/pos_y/scale`],
+    };
+  const main = planRadarTexture(fs, ov.material);
+  if ('missing' in main) return { radar: null, textures: [], missing: [`radar: ${main.missing}`] };
+  const textures = [main.tex];
+  const missing: string[] = [];
+  const radar: MapRadar = {
+    file: main.tex.rel,
+    w: main.tex.w,
+    h: main.tex.h,
+    posX: ov.posX,
+    posY: ov.posY,
+    scale: ov.scale,
+    size: OVERVIEW_SIZE,
+  };
+  if (ov.rotate) radar.rotate = true;
+  if (ov.zoom !== null) radar.zoom = ov.zoom;
+  if (ov.sections.length) {
+    radar.sections = ov.sections.map((s) => {
+      const out: NonNullable<MapRadar['sections']>[number] = { ...s };
+      if (s.name !== 'default') {
+        const t = planRadarTexture(fs, `${ov.material}_${s.name}`);
+        if ('missing' in t) missing.push(`radar section ${s.name}: ${t.missing}`);
+        else {
+          textures.push(t.tex);
+          out.file = t.tex.rel;
+        }
+      }
+      return out;
+    });
+  }
+  return { radar, textures, missing };
 }
 
 // --- the build (packages) --------------------------------------------------------------------
@@ -819,7 +993,7 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
   const index: MapIndex = { v: 1, maps: {} };
   const texBytes = new Map<string, number>(); // rel → bytes (encoded this run, or stored)
   const propsOut = new Set<string>(alwaysModels(fs, o.game));
-  const wantNav = o.nav ?? o.game === 'tf2';
+  const wantNav = o.nav ?? (o.game === 'tf2' || o.game === 'csgo');
 
   const unchanged = (rel: string, src: string) => !o.force && state[rel]?.src === src;
   const writeFile = (rel: string, src: string, data: Uint8Array): boolean => {
@@ -871,6 +1045,15 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
         const skyRes = resolveSky(fs, bsp, planned);
         for (const why of skyRes.missing)
           untexturedAll.push({ map: name, material: 'skybox', why });
+        // The overview (CS:GO's radar); its textures encode with the map's (a failed one drops it).
+        let radar: MapRadar | null = null;
+        if (RADAR_GAMES.has(o.game)) {
+          const r = resolveRadar(fs, name);
+          radar = r.radar;
+          planned.push(...r.textures);
+          for (const why of r.missing) untexturedAll.push({ map: name, material: 'radar', why });
+          if (!radar) log(`${name}: no radar (${r.missing.join('; ')})`);
+        }
 
         // Props and their collision hulls.
         const propSolids = collectProps(bsp);
@@ -897,7 +1080,7 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
           const t = Date.now();
           const collision = new MapCollision(bsp);
           addBspStaticProps(collision, bsp, (m) => collisionModels.get(m.toLowerCase()) ?? null);
-          const gen = new NavGenerator(bsp, collision);
+          const gen = new NavGenerator(bsp, collision, { hull: NAV_HULL_BY_GAME[o.game] });
           while (!gen.step(20_000)) {
             if (Date.now() - t > NAV_TIME_BUDGET_MS)
               throw new Error(`nav generation over its ${NAV_TIME_BUDGET_MS / 1000} s budget`);
@@ -937,6 +1120,7 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
           props,
           hulls: hullsSha ? `maps/${hullsSha}.hulls.bin` : null,
           nav: navSha ? `maps/${navSha}.nav.bin` : null,
+          ...(radar ? { radar } : {}),
         };
 
         // Write what the state does not hold yet.
@@ -990,6 +1174,15 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
           for (const f of SKY_FACES)
             if (manifest.sky.faces[f] && !manifest.textures[manifest.sky.faces[f]!])
               delete manifest.sky.faces[f];
+        // The radar's images are in `textures` too (so they encode and count with the map); one that
+        // failed to encode takes its section's file, or the whole radar, with it.
+        if (manifest.radar) {
+          const files = new Set(Object.values(manifest.textures).map((t) => t.file));
+          if (!files.has(manifest.radar.file)) delete manifest.radar;
+          else
+            for (const s of manifest.radar.sections ?? [])
+              if (s.file && !files.has(s.file)) delete s.file;
+        }
 
         const json = JSON.stringify(manifest);
         const manifestSha = sha256(json);
@@ -1003,7 +1196,9 @@ export async function buildMaps(o: BuildOptions): Promise<BuildResult> {
         index.maps[name] = {
           manifest: manifestRel,
           title: entry?.title ?? name,
-          mode: entry?.mode ?? (o.game === 'tf2' ? (name.split('_')[0] ?? 'tf2') : 'sp'),
+          mode:
+            entry?.mode ??
+            (o.game === 'tf2' || o.game === 'csgo' ? (name.split('_')[0] ?? o.game) : 'sp'),
           bytes:
             bspData.length +
             (hullsBin?.length ?? 0) +
@@ -1106,7 +1301,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   const propsOnly = bare.has('props-only');
   if (!root || !GAME_IDS.includes(game) || (propsOnly ? !flags.get('props-list-out') : !out)) {
     process.stderr.write(
-      'usage: build-maps.ts --root <install> --game tf2|hl2|portal --out <dir> [--maps a,b | --maps-file f] ' +
+      'usage: build-maps.ts --root <install> --game tf2|hl2|portal|csgo --out <dir> [--maps a,b | --maps-file f] ' +
         '[--state state.json] [--prev-index index.json] [--props-list-out file] [--sizes] [--force] [--nav | --no-nav]\n' +
         '       build-maps.ts --root <install> --game … --props-only --props-list-out <file> [--maps …]\n',
     );
@@ -1138,7 +1333,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     propsListOut: flags.get('props-list-out'),
     force: bare.has('force') || process.env.FORCE === '1',
     sizes: bare.has('sizes'),
-    // Default on for TF2 (its bots need it); --nav forces it, --no-nav skips it.
+    // Default on for TF2 and CS:GO (their bots need it); --nav forces it, --no-nav skips it.
     nav: bare.has('no-nav') ? false : bare.has('nav') ? true : undefined,
   });
   const made = Object.values(result.wanted).filter((w) => w.bytes !== undefined);
