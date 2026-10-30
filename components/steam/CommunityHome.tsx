@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import type { CommunityHomeData, GroupRef } from '@/lib/games/community-types';
 import { formatPlaytime } from '@/lib/games/format-playtime';
 import { CommunityNav } from './CommunityNav';
+import { ActivityFeed, InGameCard } from './FriendActivity';
 import { PersonAvatar } from './SteamPeople';
 import { TitleArt } from './TitleArt';
 
@@ -49,6 +50,8 @@ export function CommunityHome({ data }: { data: CommunityHomeData }) {
       <div className="stm-web-cols">
         <div>
           <h1 className="stm-web-title">{t('steam-community-home', { defaultValue: 'Community Home' })}</h1>
+
+          {data.friends ? <ActivityFeed events={data.friends.events} /> : null}
 
           <section aria-labelledby="stm-trending" className="stm-web-card">
             <h2 id="stm-trending" className="stm-web-head">
@@ -116,6 +119,7 @@ export function CommunityHome({ data }: { data: CommunityHomeData }) {
         </div>
 
         <aside>
+          {data.friends ? <InGameCard friends={data.friends} /> : null}
           {data.signedIn ? (
             <section aria-labelledby="stm-my-groups" className="stm-web-card">
               <h2 id="stm-my-groups" className="stm-web-head">

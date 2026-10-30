@@ -256,6 +256,19 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // Games library detail pane + playtime notice (2026-10-30). English-only until the
   // translate pipeline runs on build; remove with it.
   'games-hub': [
+    // Friend activity and in-game status (2026-10-30)
+    'steam-act-achievement',
+    'steam-act-badge',
+    'steam-act-badge-tail',
+    'steam-act-played',
+    'steam-act-played-tail',
+    'steam-act-review',
+    'steam-act-thread',
+    'steam-friend-activity',
+    'steam-friend-activity-empty',
+    'steam-in-game',
+    'steam-in-game-empty',
+    'steam-status-playing',
     // Library collections (2026-10-30)
     'steam-collections-add',
     'steam-collections-create',
