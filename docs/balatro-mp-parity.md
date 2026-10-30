@@ -20,11 +20,12 @@ every box checked.
 
 Open items at generation: **185** checklist lines.
 
-**WS14b sign-off (2026-10-30):** every line but one is checked with the tests that prove it
+**WS14b sign-off (2026-10-30):** every line is checked with the tests that prove it
 (unit and integration tests under `pnpm test:balatro`, Lua L1 specs, in-engine L2 specs under
 `lib/balatro/lua/mp_test/specs/`, and the match e2e scenarios under
-`testing/balatro-e2e/match/`, E2E-xx). Open: **NET-09** (`visibilitychange` → away is not
-implemented; see the item). A scenario reference (E2E-xx) means the scenario passed on the
+`testing/balatro-e2e/match/`, E2E-xx). **NET-09** (`visibilitychange` → away), the last open
+line, was closed afterwards with a frozen-contract addition: the member→host wire kind
+`visibility` (see the item). A scenario reference (E2E-xx) means the scenario passed on the
 local stack (hub + `vite dev` + Postgres, real browsers and bot peers).
 
 ## Lobby (LOB)
@@ -257,7 +258,7 @@ local stack (hub + `vite dev` + Postgres, real browsers and bot peers).
 - [x] NET-06 Crash/reload rejoin (§0.4); "(catching up)"; 3 min catch-up limit → forfeit — WS5, WS6, WS3 — `lib/balatro/mp/__tests__/session/resilience.test.ts`, `lib/balatro/lua/spec/mp_saves_spec.lua`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-14)
 - [x] NET-07 Network-drop reconnect without a crash: the host replays the missed opponent `hand_result`s; applied at the next safe point (select blind or cash-out) — WS5, WS6 — `lib/balatro/mp/__tests__/session/resilience.test.ts`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-12)
 - [x] NET-08 Everyone re-sends `trap_held` on any join/rejoin — WS9, WS5 — `lib/balatro/lua/spec/mp_content_c_spec.lua`
-- [ ] NET-09 Hidden tab: the TypeScript transport keeps heartbeats; Lua drains the backlog on return; `visibilitychange` → away — WS5, WS3 — open (WS14b): the transport keeps heartbeats in a hidden tab and Lua is refreshed on return (`MpRuntime.setHidden` → `refresh()`; the TIM-09 clock is proven by `lib/balatro/mp/timer/__tests__/timer-model.test.ts` and E2E-10 in `testing/balatro-e2e/match/nemesis.test.ts`), but `visibilitychange` → away is not implemented: `setHidden(true)` is a no-op, so peers never mark a hidden tab away
+- [x] NET-09 Hidden tab: the TypeScript transport keeps heartbeats; Lua drains the backlog on return; `visibilitychange` → away — WS5, WS3 — the transport keeps heartbeats in a hidden tab and Lua is refreshed on return (`MpRuntime.setHidden` → `refresh()`; the TIM-09 clock is proven by `lib/balatro/mp/timer/__tests__/timer-model.test.ts` and E2E-10 in `testing/balatro-e2e/match/nemesis.test.ts`). `visibilitychange` → away: `MpRuntime.setHidden` hands the state to the role; a member sends the new member→host wire kind `visibility {hidden}` (on change, after each `welcome`, and when the host says it is `back`), the host's own tab goes straight in. The host announces a tab hidden ≥ `HIDDEN_AWAY_AFTER_MS` (2 s) as a display-only `presence away` without `graceMsLeft` (no seat grace, no referee presence, members do not suspend their timers; the hidden player is not told; joiners learn it at hello) and `back` when shown; it is kept apart from the link-silence `away` map, so a silent link still gets the graced away on top and the display-only away returns when the link does. Tests: `lib/balatro/mp/__tests__/session/hidden-tab.test.ts` (member hidden → peers see away without grace and no forfeit past the seat grace, visible → back; debounce; hidden + link loss → graced away and forfeit; link back while hidden → back then away; shown during a silent link → back; spectators not announced; host's own hidden tab, and a host hidden before anyone joined), `lib/balatro/lua/spec/mp_ui_run_spec.lua` ("banner: a hidden tab (NET-09) …"), `visibility` fixtures in `lib/balatro/mp/__fixtures__/wire.json` (contracts + wire-codec tests)
 - [x] NET-10 Receiver-side per-peer rate limits (40/s, burst 100; log events 20/s, burst 1024); message-size caps; zod validation of every wire message — WS5 — `lib/balatro/mp/__tests__/session/abuse-chat-practice.test.ts`, `lib/balatro/mp/__tests__/session/units.test.ts`, `lib/balatro/mp/__tests__/wire-codec.test.ts`
 - [x] NET-11 P2P chat with mute (D-35) — WS5, WS10 — `lib/balatro/mp/__tests__/session/abuse-chat-practice.test.ts`, `lib/balatro/mp/__tests__/session/units.test.ts`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-11)
 - [x] NET-12 Hub restart survival: data channels persist; the host re-claims its code; relayed members re-attach — WS1, WS5 — `server/socket-server/balatro/p2p-hub.test.ts`

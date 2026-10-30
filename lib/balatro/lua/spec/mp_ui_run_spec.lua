@@ -639,6 +639,24 @@ describe('HUD effects and banners (HUD-07/08/17)', function()
     expect(seen).truthy()
   end)
 
+  it('banner: a hidden tab (NET-09) is an away without a countdown, cleared by back', function()
+    boot()
+    MP.net.receive('presence', { id = 'u2', status = 'away' })
+    expect(RU.banner_text(10)).eq('P2 is away')
+    expect(RU.banner_text(500)).eq('P2 is away')
+    expect(MP.ui.lobby_info.rows()[2].status).eq('away')
+    -- The link also went silent: the graced away (with its countdown) shows on top.
+    MP.net.receive('presence', { id = 'u2', status = 'away', graceMsLeft = 60000 })
+    expect(RU.banner_text(501)).eq('P2 is away - 60s')
+    -- The link is back while the tab is still hidden: back, then the display-only away again.
+    MP.net.receive('presence', { id = 'u2', status = 'back' })
+    MP.net.receive('presence', { id = 'u2', status = 'away' })
+    expect(RU.banner_text(502)).eq('P2 is away')
+    MP.net.receive('presence', { id = 'u2', status = 'back' })
+    expect(RU.banner_text(503)).eq('')
+    expect(MP.ui.lobby_info.rows()[2].status).eq('back')
+  end)
+
   it('Lobby Info lists every player with lives, location and status', function()
     boot(3)
     MP.state.lives = { u1 = 4, u2 = 2, u3 = 0 }

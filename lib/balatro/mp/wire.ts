@@ -168,6 +168,12 @@ export const WIRE_D = {
     status: z.enum(['away', 'back', 'catching_up', 'caught_up', 'left', 'forfeited']),
     graceMsLeft: z.number().int().min(0).optional(),
   }),
+  /**
+   * NET-09: the sender's tab was hidden (`true`) or shown again (`false`). Display only:
+   * the host announces a hidden player as `presence away` (no grace) after 2 s and
+   * `back` on return; the seat grace stays tied to link silence.
+   */
+  visibility: z.object({ hidden: z.boolean() }),
   /** Sent by the new host. */
   host_changed: z.object({ hostId: zId, from: z.literal('migration') }),
   /** Polite close. */
@@ -214,6 +220,7 @@ export const WIRE_META: { readonly [K in WireKind]: { dir: WireDirection; hostOn
   stats_res: { dir: 'P>H>T', hostOnly: false },
   log: { dir: 'P>H>A', hostOnly: false },
   presence: { dir: 'H>A', hostOnly: true },
+  visibility: { dir: 'M>H', hostOnly: false },
   host_changed: { dir: 'H>A', hostOnly: true },
   bye: { dir: 'any', hostOnly: false },
 };

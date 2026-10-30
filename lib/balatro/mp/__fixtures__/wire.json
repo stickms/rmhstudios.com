@@ -790,6 +790,28 @@
         }
       ]
     },
+    "visibility": {
+      "valid": [
+        {
+          "hidden": true
+        },
+        {
+          "hidden": false
+        }
+      ],
+      "invalid": [
+        {
+          "why": "hidden missing",
+          "d": {}
+        },
+        {
+          "why": "hidden not a boolean",
+          "d": {
+            "hidden": "yes"
+          }
+        }
+      ]
+    },
     "host_changed": {
       "valid": [
         {
