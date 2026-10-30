@@ -100,8 +100,12 @@ export class SpectateFeed {
     if (!this.match || runId !== this.match.runId) return;
     const log = this.logs.get(from);
     if (!log) return; // not a seated player of this match
-    log.add(batch);
-    if (from === this.pov) this.flush();
+    const r = log.add(batch);
+    if (from !== this.pov) return;
+    // A rejoin marker replaced events already fed: feed again from there (Lua drops its copies
+    // the same way, replay/player.lua PL.feed).
+    if (r.rewound !== undefined && r.rewound < this.fed) this.fed = r.rewound;
+    this.flush();
   }
 
   /** Watch another player (from the start of their log). */

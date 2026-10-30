@@ -128,6 +128,97 @@ describe('replays: record and play back (in-engine)', function()
     expect(G.SETTINGS.GAMESPEED ~= PL.FF_GAMESPEED or PL.saved_gamespeed == nil).truthy()
   end)
 
+  it('a log continued after a reload rejoin plays back past the rejoin (docs/balatro-mp.md §11)', function()
+    AP.run('prepare')
+    leave()
+    local files = {}
+    local real_io = MP.saves.io
+    MP.saves.io = {
+      write = function(p, s) files[p] = s; return true end,
+      read = function(p) return files[p] end,
+      remove = function(p) files[p] = nil end,
+    }
+    local log = {}
+    RC.on_batch = function(batch) for _, ev in ipairs(batch) do log[#log + 1] = ev end end
+    local function info(over)
+      local t = {
+        runId = 'rL2rejoin', me = 'u_rec', hostId = 'u_opp', seed = SEED, deck = 'b_red', stake = 1,
+        queueMode = 'pvp_nemesis', ruleset = 'ruleset_mp_test', resolved = resolved(), contentHash = 'x',
+        shape = { nemesisPairing = true, manhunt = false, teamBased = false },
+        roster = { { id = 'u_rec', name = 'REC' }, { id = 'u_opp', name = 'OPP' } },
+        options = { pvpStartRound = 2, theOrder = true, multiplayerJokers = false, timer = false, startingLives = 4 },
+      }
+      for k, v in pairs(over or {}) do t[k] = v end
+      return t
+    end
+
+    -- First life: the small blind, cash out; the shop's save writes the MP snapshot.
+    MP.session.mount('match', info())
+    MP.session.launch(SEED)
+    AP.run('wait_state', { 'BLIND_SELECT' })
+    AP.run('select_blind')
+    expect(beat_blind().state).eq('ROUND_EVAL')
+    AP.run('cash_out')
+    AP.run('shop')
+    AP.run('wait_idle')
+    wait_until(function() return files['/rmh/mp/run.jkr'] ~= nil end, 120, 'shop snapshot')
+    -- Progress the reload loses: a reroll.
+    AP.run('reroll')
+    AP.run('wait_idle')
+    wait_frames(10)
+    local base = #log
+    -- What the session runtime keeps in IndexedDB: the last snapshot before the reload.
+    local kept = { run = files['/rmh/mp/run.jkr'], state = files['/rmh/mp/state.json'] }
+    local snap_i = MP.card.json.decode(kept.state).log_i
+    expect(type(snap_i)).eq('number')
+    expect(snap_i <= base).truthy()
+    -- The tab reloads: no `end` (the recorder just stops), the session is gone.
+    RC.active = false
+    MP.session.unmount('test')
+
+    -- Second life: match_start with logNext, the launch (its blind-select save overwrites the
+    -- files), then the runtime writes the kept snapshot back and sends rejoin_restore (as live).
+    MP.session.mount('match', info({ logNext = base }))
+    MP.session.launch(SEED)
+    AP.run('wait_state', { 'BLIND_SELECT' })
+    AP.run('wait_idle')
+    files['/rmh/mp/run.jkr'], files['/rmh/mp/state.json'] = kept.run, kept.state
+    MP.net.receive('rejoin_restore', { runId = 'rL2rejoin', snapshotPath = '/rmh/mp/run.jkr',
+      statePath = '/rmh/mp/state.json' })
+    AP.run('wait_state', { 'SHOP' })
+    AP.run('wait_idle')
+    AP.run('leave_shop')
+    AP.run('select_blind')
+    AP.run('play', { 'best' })
+    AP.run('wait_idle')
+    local recorded = end_state()
+    MP.session.unmount('test')
+    wait_frames(10)
+    RC.on_batch = nil
+    MP.saves.io = real_io
+
+    expect(log[base + 1].i).eq(base)
+    expect(log[base + 1].d.mount).eq(true)
+    local restore
+    for k = base + 1, #log do if log[k].op == 'manifest' and log[k].d.restore then restore = log[k] end end
+    expect(restore ~= nil).truthy()
+    expect(restore.d.from).eq(snap_i)
+    expect(restore.d.seg).eq(base)
+    report('rejoin_snapshot', tostring(restore.d.z) .. ' ' .. tostring(restore.d.len) .. ' chars in '
+      .. tostring(restore.d.parts) .. ' parts (run.jkr ' .. #kept.run .. ' bytes)')
+    for k, ev in ipairs(log) do expect(ev.i).eq(k - 1) end
+
+    expect(PL.open({ id = 'spec-rejoin', pov = 'u_rec', speed = 0 })).truthy()
+    PL.feed('u_rec', log)
+    wait_until(function() return PL.s and PL.s.state ~= 'running' and PL.s.state ~= 'loading' end, 600, 'playback ended')
+    local st = PL.status()
+    expect(st.error and (tostring(st.error.at) .. ' ' .. st.error.op .. ': ' .. st.error.msg) or 'ok').eq('ok')
+    expect(st.state).eq('done')
+    if snap_i < base then expect(PL.s.skips[snap_i]).eq(base) end
+    AP.run('wait_idle')
+    expect(end_state()).eq(recorded)
+  end)
+
   it('a tampered log stops with a divergence error, not a crash', function()
     AP.run('prepare')
     leave()

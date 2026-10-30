@@ -244,7 +244,7 @@ export class MpRuntime {
       },
       error: (code) => this.error(code),
       client: () => this.client,
-      beginMatch: (match, how) => this.beginMatch(match, how),
+      beginMatch: (match, how, logNext) => this.beginMatch(match, how, logNext),
       heldCheckpoint: () => this.checkpoint,
       holdCheckpoint: (cp) => {
         if (!this.checkpoint || cp.runId !== this.checkpoint.runId || cp.seq > this.checkpoint.seq) this.checkpoint = cp;
@@ -338,7 +338,7 @@ export class MpRuntime {
 
   /* ─── The match on this peer ─── */
 
-  private beginMatch(match: StartedMatch, how: 'start' | 'rejoin' | 'live'): void {
+  private beginMatch(match: StartedMatch, how: 'start' | 'rejoin' | 'live', logNext?: number): void {
     const me = this.me as Id;
     if (how === 'live' && this.client?.match.runId === match.runId) return;
     if (how === 'rejoin') {
@@ -368,7 +368,10 @@ export class MpRuntime {
       log: (m) => this.deps.log(m),
     });
     setRejoinHint(this.deps.kv, match.runId);
-    this.deps.bridge.send('match_start', { ...match, me });
+    // A reload rejoin: Lua's replay recorder continues this player's log at the host's count
+    // of it, after the events the peers already hold (docs/balatro-mp.md §11).
+    const resume = how === 'rejoin' && logNext !== undefined ? { logNext } : {};
+    this.deps.bridge.send('match_start', { ...match, me, ...resume });
     if (how === 'rejoin') void this.restoreSnapshot(match.runId);
   }
 

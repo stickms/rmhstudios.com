@@ -12,7 +12,10 @@
  *     later peer events re-save it (debounced). A match left without an `end`
  *     is saved when the next one starts or the session stops.
  *   - Host: a spectator joining mid-match gets every log so far (`catchUp`),
- *     paced under the receiver's `log` rate limit.
+ *     paced under the receiver's `log` rate limit; so does a crash rejoiner
+ *     (its own log included: the reload lost this peer's copy), whose
+ *     `welcome.logNext` (`logLength`) tells its recorder where its log
+ *     continues (docs/balatro-mp.md §11).
  * Playback (REP-03/05): `ui_replay list|open|pov|speed|seek|close` — the list
  * from the store, a stored match opened for one POV (`replay_view.playing` +
  * `replay_feed`), hash-checked (a mismatch shows "may be inaccurate").
@@ -136,11 +139,20 @@ export class ReplayService implements ReplayTap {
       return;
     }
     const rec = this.recording();
-    if (!rec || rec.match.runId !== d.runId || from === rec.me) return;
+    if (!rec || rec.match.runId !== d.runId) return;
     const log = rec.logs.get(from);
     if (!log) return;
     log.add(d.batch);
-    if (rec.finished) this.scheduleResave(rec);
+    // A crash rejoiner's own log before the reload comes back in the host's catch-up; the
+    // events Lua records now continue after it (docs/balatro-mp.md §11).
+    if (from === rec.me && !rec.chkSent && log.ended()) this.finishOwn(rec);
+    else if (rec.finished) this.scheduleResave(rec);
+  }
+
+  logLength(runId: string, id: Id): number | null {
+    const rec = this.rec;
+    if (!rec || rec.match.runId !== runId) return null;
+    return rec.logs.get(id)?.contiguous ?? null;
   }
 
   private scheduleResave(rec: Recording): void {

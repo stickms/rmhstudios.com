@@ -48,6 +48,8 @@ local function new_session(opts)
     id = opts.id, pov = opts.pov, live = opts.live == true, events = {}, n = 0, pos = 0, speed = opts.speed or 1,
     state = 'loading', error = nil, mounted = false, run_started = false, last_t = 0, last_clock = REP.clock(),
     wait = nil, wait_since = nil, live_scores = {}, target = nil, inaccurate = false,
+    info = nil,  -- the lobby_info the session was mounted with (a rejoin's mount marker re-mounts it)
+    skips = {},  -- [from] = seg: a rejoin restored the snapshot taken at `from`; [from, seg) was lost
   }
 end
 
@@ -69,16 +71,57 @@ PL.diverge = diverge
 
 -- ── Feeding ─────────────────────────────────────────────────────────────────
 
+local function is_rejoin(ev)
+  return ev.op == 'manifest' and type(ev.d) == 'table' and ev.d.rejoin == true
+end
+
+--- Two copies of the same event (a re-sent batch), as opposed to a different event at that index.
+local function same_event(a, b)
+  local da, db = type(a.d) == 'table' and a.d or {}, type(b.d) == 'table' and b.d or {}
+  return a.op == b.op and a.t == b.t and da.seg == db.seg and da.mount == db.mount and da.restore == db.restore
+end
+
+--- [from] = seg for every restore marker whose snapshot predates its segment.
+local function index_skips(s)
+  s.skips = {}
+  for k = 1, s.n do
+    local ev = s.events[k]
+    local d = ev.d
+    if is_rejoin(ev) and d.restore and tonumber(d.from) and tonumber(d.seg) and d.from < d.seg then
+      if not s.skips[d.from] or s.skips[d.from] < d.seg then s.skips[d.from] = d.seg end
+    end
+  end
+end
+PL.index_skips = index_skips
+
 --- Add events of `pov` (ignored unless it is the open session's POV). Returns the contiguous count.
+--- A rejoin marker that lands on an index already holding a different event starts a new log
+--- segment there (the old events from that index on were progress the reload lost, held by a
+--- peer that got further than the host): they are dropped, and if the playback already ran
+--- past that index it continues at the marker.
 function PL.feed(pov, events)
   local s = PL.s
   if not s or pov ~= s.pov then return 0 end
+  local cut
   for _, ev in ipairs(events or {}) do
     if type(ev) == 'table' and type(ev.i) == 'number' and ev.i >= 0 and ev.i % 1 == 0 and type(ev.op) == 'string' then
-      if s.events[ev.i + 1] == nil then s.events[ev.i + 1] = ev end
+      local held = s.events[ev.i + 1]
+      if held ~= nil and is_rejoin(ev) and not same_event(held, ev) then
+        for k in pairs(s.events) do if k > ev.i then s.events[k] = nil end end
+        held = nil
+        if s.n > ev.i then s.n = ev.i end
+        cut = math.min(cut or ev.i, ev.i)
+      end
+      if held == nil then s.events[ev.i + 1] = ev end
     end
   end
+  if cut and s.pos > cut then
+    s.pos = cut
+    s.wait, s.wait_since = nil, nil
+    if s.state == 'done' then s.state = 'running' end
+  end
   while s.events[s.n + 1] ~= nil do s.n = s.n + 1 end
+  index_skips(s)
   if s.state == 'loading' and s.n > 0 then s.state = 'running' end
   if PL.on_change then pcall(PL.on_change, s) end
   return s.n
@@ -209,10 +252,71 @@ PL.OPS = OPS
 local RC_NET = (REP.recorder and REP.recorder.NET_KINDS) or { outcome = true, peer = true, tail = true }
 
 OPS.match_manifest = function() return true end
-OPS.manifest = function(_, ev)
-  if ev.d and ev.d.rejoin then
-    PL.s.inaccurate = true
+
+local function mount(s, info)
+  info = MP.copy(info, true)
+  info.perPlayer = nil
+  info.logNext = nil
+  REP.playing = true
+  MP.session.mount(info.kind, info)
+  local sess = MP.state.session
+  sess.replay = { id = s.id, live = s.live }
+  s.mounted = true
+end
+
+--- The snapshot a restore marker at position `at` (1-based) carries: run text, state text.
+local function restore_blob(s, at, d)
+  local n = tonumber(d.parts) or 0
+  if n < 1 then return nil, 'the snapshot is not in the log' end
+  local chunks = {}
+  for j = 1, n do
+    local p = s.events[at + j]
+    if at + j > s.n or not p then
+      if s.live then return 'wait' end
+      return nil, 'the snapshot is incomplete (log truncated)'
+    end
+    local pd = p.d or {}
+    if p.op ~= 'manifest' or pd.snap ~= j or type(pd.data) ~= 'string' then return nil, 'snapshot part ' .. j .. ' missing' end
+    chunks[j] = pd.data
+  end
+  local data = table.concat(chunks)
+  if d.len and #data ~= d.len then return nil, 'the snapshot is damaged' end
+  local blob = REP.decode_blob(data, d.z)
+  if not blob then return nil, 'the snapshot cannot be decoded (' .. tostring(d.z) .. ')' end
+  local run, state = REP.unpack_snapshot(blob)
+  if not run then return nil, 'the snapshot is damaged' end
+  return run, state
+end
+
+--- A reload rejoin (recorder.lua): `mount` re-mounts the session as the reloaded page did,
+--- `restore` loads the snapshot the marker carries, as the live rejoin did. A WS13 marker (no `v`)
+--- carries nothing to continue from: playback stops there, as it always did.
+OPS.manifest = function(s, ev)
+  local d = ev.d or {}
+  if d.snap then return true end -- a snapshot part (read by its restore marker)
+  if not d.rejoin then return true end
+  if (tonumber(d.v) or 1) < 2 then
+    s.inaccurate = true
     return nil, 'the player reloaded mid-match; the rest of this log cannot be played back'
+  end
+  if G and G.screenwipe then return 'wait' end -- a launch is still wiping (as the live rejoin waits)
+  if d.mount then
+    if not s.info then return nil, 'rejoin before lobby_info' end
+    mount(s, s.info)
+    s.run_started = false -- the next run_info launches the run again
+    s.live_scores = {}
+    return true
+  end
+  if d.restore then
+    local run, state = restore_blob(s, s.pos + 1, d)
+    if run == 'wait' then return 'wait' end
+    if not run then return nil, state end
+    if not s.mounted then return nil, 'rejoin before lobby_info' end
+    if not MP.session.restore_raw(run, state) then return nil, 'the snapshot is unreadable' end
+    s.run_started = true
+    s.live_scores = {}
+    s.wait = function() return PL.idle() and not (G and G.screenwipe) end
+    return true
   end
   return true
 end
@@ -220,12 +324,8 @@ end
 OPS.lobby_info = function(s, ev)
   local info = MP.copy(ev.d or {}, true)
   if info.kind ~= 'match' and info.kind ~= 'practice' then return nil, 'unknown session kind ' .. tostring(info.kind) end
-  info.perPlayer = nil
-  REP.playing = true
-  MP.session.mount(info.kind, info)
-  local sess = MP.state.session
-  sess.replay = { id = s.id, live = s.live }
-  s.mounted = true
+  s.info = MP.copy(info, true)
+  mount(s, info)
   return true
 end
 
@@ -513,6 +613,7 @@ function PL.seek(pos)
     PL.close(true)
     PL.s = new_session(keep)
     PL.s.events, PL.s.n, PL.s.state = keep.events, keep.n, keep.n > 0 and 'running' or 'loading'
+    index_skips(PL.s)
     REP.playing = true
   end
   PL.s.seek_to = pos
@@ -541,6 +642,13 @@ function PL.step()
       return false
     end
     s.wait, s.wait_since = nil, nil
+  end
+  -- A later rejoin restored the snapshot taken here: what came between was lost on the reload.
+  local skip_to = s.skips and s.skips[s.pos]
+  if skip_to and skip_to > s.pos and skip_to <= s.n then
+    s.pos = skip_to
+    s.last_t = (s.events[skip_to] and s.events[skip_to].t) or s.last_t
+    if PL.on_change then pcall(PL.on_change, s) end
   end
   local ev = s.events[s.pos + 1]
   if not ev or s.pos >= s.n then return false end
