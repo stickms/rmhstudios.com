@@ -672,8 +672,9 @@ for i, key in ipairs(T.KEYS) do
     config = {}, gate = { layers = { 'traps' } },
     loc = { name = T.NAMES[key], text = { 'When your Nemesis ...' } },
     can_use = trap_can_use,
+    -- vanilla use_card takes the card out of the pack before calling use: can_use guarded it
     use = function(card)
-      if not trap_can_use(card) then return nil end
+      if card.ability and card.ability.mp_trap_hidden then return nil end
       return T.plant(card)
     end,
   })
@@ -698,6 +699,9 @@ function T.install_colours()
   G.C.SECONDARY_SET = G.C.SECONDARY_SET or {}
   G.C.SET.Trap = T.COLOUR
   G.C.SECONDARY_SET.Trap = T.DARK_PINK
+  -- Vanilla Card:set_sprites draws a consumable from G.ASSET_ATLAS[<set>] before the MP atlas
+  -- post-step runs: give the new set an entry (the Trap sheet, else the Tarot sheet).
+  if G.ASSET_ATLAS then G.ASSET_ATLAS.Trap = G.ASSET_ATLAS.mp_Trap or G.ASSET_ATLAS.Tarot end
 end
 
 -- Net (one handler per peer kind; nobody else owns these).
