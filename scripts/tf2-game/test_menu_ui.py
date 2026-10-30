@@ -59,5 +59,28 @@ class SourceMenu(unittest.TestCase):
                 self.assertTrue(os.path.isfile(os.path.join(out, rel)), rel)
 
 
+def encode_vfont(plain, salt=b"\x05\x09\x2a"):
+    """The inverse of menu_ui.decode_vfont, for building test data."""
+    key = menu_ui.VFONT_KEY
+    for b in salt:
+        key ^= (b + menu_ui.VFONT_KEY) % 256
+    out = bytearray()
+    for p in plain:
+        c = p ^ key
+        out.append(c)
+        key = (c + menu_ui.VFONT_KEY) % 256
+    return bytes(out) + salt + bytes([len(salt) + 1]) + menu_ui.VFONT_MAGIC
+
+
+class VFont(unittest.TestCase):
+    def test_round_trips(self):
+        plain = bytes(range(256)) * 3 + b"\0\1\0\0glyf"
+        self.assertEqual(menu_ui.decode_vfont(encode_vfont(plain)), plain)
+
+    def test_refuses_other_files(self):
+        with self.assertRaises(ValueError):
+            menu_ui.decode_vfont(b"\0\1\0\0 a TrueType file")
+
+
 if __name__ == "__main__":
     unittest.main()
