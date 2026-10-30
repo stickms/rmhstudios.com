@@ -33,7 +33,7 @@ import type { Player } from '../../sim/player';
 import { HealthKit, AmmoPack, TFPowerup } from '../../sim/pickups';
 import { objectives, teamMayCapturePoint } from '../../sim/entities';
 import type { TriggerAreaCapture } from '../../sim/entities';
-import { NavGenerator } from '../nav/generate';
+import { NavGenerator, type NavGenOptions } from '../nav/generate';
 import {
   NAV_BLUE_SPAWN,
   NAV_CROUCH,
@@ -69,6 +69,15 @@ export function provideNavMesh(world: GameWorld, mesh: NavMesh): void {
   if (key) navCache.set(key, mesh);
   const m = managers.get(world);
   if (m) m.setMesh(mesh);
+}
+
+/**
+ * How a world's bots generate a mesh when its package has none (default: TF2's hull). Another game
+ * on the engine passes its own (lib/csgo-game: `{ hull: NAV_HULL_CS }`) before its first bot thinks.
+ */
+const navGenOptions = new WeakMap<GameWorld, NavGenOptions>();
+export function configureNavGeneration(world: GameWorld, opts: NavGenOptions): void {
+  navGenOptions.set(world, opts);
 }
 
 /** Forgets every cached mesh (tests). */
@@ -212,7 +221,7 @@ export class BotManager {
     this.world = world;
     const cached = cachedNavMesh(world);
     if (cached) this.setMesh(cached);
-    else if (world.map) this.generator = new NavGenerator(world.map.bsp, world.map.collision);
+    else if (world.map) this.generator = new NavGenerator(world.map.bsp, world.map.collision, navGenOptions.get(world));
   }
 
   setMesh(mesh: NavMesh): void {

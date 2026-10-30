@@ -1,6 +1,6 @@
 /**
- * Messages between the hub's match pool (`./pool.server.ts`) and a match
- * worker (`./match-worker.server.ts` → `./match-runner.ts`).
+ * Messages between a page and its listen worker (client/net/listen-server.ts
+ * → `./match-runner.ts`).
  *
  * Structured-clone shapes only (no classes, no functions). Binary payloads
  * travel as `ArrayBuffer`s in the transfer list, so an input packet or a

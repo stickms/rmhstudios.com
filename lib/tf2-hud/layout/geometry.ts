@@ -42,11 +42,18 @@ export interface Dim {
    * own size (`cs-0.5` centres it), `p` a fraction of the parent's.
    */
   of?: 'self' | 'parent';
+  /** Sizes only (`ComputeWide` / `ComputeTall`): `o1.6` is 1.6 × the panel's other dimension. */
+  ofOther?: boolean;
+  /**
+   * Positions only: the rest of an operator chain (`c-34+273`, `rs1-18`) — `ComputePos` parses each
+   * `+` / `-` term as a position of its own and adds or subtracts it.
+   */
+  more?: Array<{ sign: 1 | -1; dim: Dim }>;
 }
 
-export function parseDim(raw: string | undefined): Dim {
+export function parseDim(raw: string | undefined, depth = 0): Dim {
   const s = (raw ?? '').trim();
-  const m = /^([rcf]?)([sp]?)(-?\d*\.?\d+)?/i.exec(s);
+  const m = /^([rcfo]?)([sp]?)([-+]?\d*\.?\d+)?/i.exec(s);
   const prefix = (m?.[1] ?? '').toLowerCase();
   const rel = (m?.[2] ?? '').toLowerCase();
   const value = m?.[3] === undefined ? 0 : Number.parseFloat(m[3]);
@@ -55,8 +62,14 @@ export function parseDim(raw: string | undefined): Dim {
     align: prefix === 'r' ? 'end' : prefix === 'c' ? 'center' : 'start',
     fill: prefix === 'f',
   };
+  if (prefix === 'o') dim.ofOther = true;
   if (rel === 's') dim.of = 'self';
   else if (rel === 'p') dim.of = 'parent';
+  // The operator chain: `+n` / `-n` after the first term (bounded: files are hostile input).
+  const rest = s.slice(m?.[0].length ?? 0);
+  if (depth < 8 && (rest[0] === '+' || rest[0] === '-') && m?.[3] !== undefined) {
+    dim.more = [{ sign: rest[0] === '-' ? -1 : 1, dim: parseDim(rest.slice(1), depth + 1) }];
+  }
   return dim;
 }
 
@@ -78,9 +91,10 @@ export function resolveAxis(dim: Dim, parentExtent: number, scale: number, ownEx
       : dim.of === 'parent'
         ? Math.trunc(parentExtent * dim.value)
         : scaled(dim.value, scale);
-  if (dim.align === 'end') return parentExtent - v;
-  if (dim.align === 'center') return Math.trunc(parentExtent / 2) + v;
-  return v;
+  const pos = dim.align === 'end' ? parentExtent - v : dim.align === 'center' ? Math.trunc(parentExtent / 2) + v : v;
+  let out = pos;
+  for (const term of dim.more ?? []) out += term.sign * resolveAxis(term.dim, parentExtent, scale, ownExtent);
+  return out;
 }
 
 /** Resolve a size component against the parent's extent. */
@@ -139,8 +153,14 @@ export interface LayoutInput {
 
 /** Local → parent-relative rectangle (origin = parent's top-left). */
 export function layoutRect({ props, parent, scale, sibling }: LayoutInput): Rect {
-  const w = resolveSize(parseDim(props.get('wide')), parent.w, scale);
-  const h = resolveSize(parseDim(props.get('tall')), parent.h, scale);
+  const wd = parseDim(props.get('wide'));
+  const hd = parseDim(props.get('tall'));
+  let w = resolveSize(wd, parent.w, scale);
+  let h = resolveSize(hd, parent.h, scale);
+  // `o`: one dimension from the other (both `o` is an error in the engine: 0).
+  if (wd.ofOther && hd.ofOther) w = h = 0;
+  else if (wd.ofOther) w = Math.max(0, Math.trunc(h * wd.value));
+  else if (hd.ofOther) h = Math.max(0, Math.trunc(w * hd.value));
   const pin = pinOf(props);
   const xd = parseDim(props.get('xpos'));
   const yd = parseDim(props.get('ypos'));

@@ -11,6 +11,7 @@ import path from 'node:path';
 import { createServer } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { chromium } from 'playwright';
+import { harnessApi } from './api';
 
 const ROOT = path.resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
@@ -75,24 +76,13 @@ const VIEWS: Array<{ name: string; query: string; size: { width: number; height:
   { name: 'tf2-pause-hud', query: 's=soldierCp&menu=hud&hud=moved', size: DESKTOP },
   { name: 'tf2-hud-editor-overlay', query: 's=medicPayload&hud=moved&editor=1', size: DESKTOP },
   { name: 'phone-landscape-pause-hud', query: 's=soldierCp&menu=hud&touch=1', size: { width: 844, height: 390 }, mobile: true },
+  // The Source-style menus (menus/): the main menu, Options, the Esc menu, the loadout screen. With the game's files:
+  // HARNESS_HUD_BASE / HARNESS_CATALOG (api.ts); menus-shoot.ts takes them on phones too, with an audit.
+  { name: 'menu-main', query: 'view=mainmenu', size: DESKTOP },
+  { name: 'menu-esc', query: 's=soldierCp&menu=pause', size: DESKTOP },
+  { name: 'menu-options', query: 's=soldierCp&menu=settings', size: DESKTOP },
+  { name: 'menu-loadout', query: 's=soldierCp&menu=loadout', size: DESKTOP },
 ];
-
-/** No API here: `/api/*` answers 404 (not the SPA fallback), so the HUD code takes its offline paths. */
-function noApi() {
-  return {
-    name: 'harness-no-api',
-    configureServer(server: { middlewares: { use: (fn: (req: { url?: string }, res: { statusCode: number; end: () => void }, next: () => void) => void) => void } }) {
-      server.middlewares.use((req, res, next) => {
-        if (req.url?.startsWith('/api/')) {
-          res.statusCode = 404;
-          res.end();
-          return;
-        }
-        next();
-      });
-    },
-  };
-}
 
 function findChromium(): string | undefined {
   const base = process.env.PLAYWRIGHT_BROWSERS_PATH ?? '/opt/pw-browsers';
@@ -110,7 +100,7 @@ async function main(): Promise<void> {
     root: import.meta.dirname,
     configFile: false,
     publicDir: path.join(ROOT, 'public'),
-    plugins: [tailwindcss(), noApi()],
+    plugins: [tailwindcss(), harnessApi()],
     resolve: { alias: { '@': ROOT } },
     esbuild: { jsx: 'automatic' },
     server: { port: 0, host: '127.0.0.1', fs: { allow: [ROOT] }, hmr: false },

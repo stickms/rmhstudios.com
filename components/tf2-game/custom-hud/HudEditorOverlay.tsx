@@ -25,6 +25,7 @@ import Tf2HudEditor from '../../tf2-hud/Tf2HudEditor';
 import { ensureEditorHolds } from './editor-session';
 import { editorContainer, PointerLockMemo } from '@/lib/tf2-game/client/custom-hud/editor-portal';
 import { useHudChoice } from './hud-choice';
+import HudQuickAi from '../ai/HudQuickAi';
 
 export default function HudEditorOverlay({ store }: { store: HudStore }) {
   const { t } = useTranslation('c-tf2-game');
@@ -121,6 +122,7 @@ export default function HudEditorOverlay({ store }: { store: HudStore }) {
               {t('hud_editor_loading', { defaultValue: 'Opening the HUD editor…' })}
             </p>
           )}
+          {ready ? <HudQuickAi variant="editor" /> : null}
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

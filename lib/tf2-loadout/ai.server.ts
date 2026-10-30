@@ -13,9 +13,11 @@ import {
   ASSISTANT_LIMITS,
   describeCandidates,
   describeLoadout,
+  describeMatchContext,
   selectCandidates,
   validateActions,
   type AiAction,
+  type LoadoutMatchContext,
 } from './ai-core';
 
 export interface AssistantTurn {
@@ -45,6 +47,8 @@ export async function askLoadoutAssistant(a: {
   slots: LoadoutSlots;
   message: string;
   history: readonly AssistantTurn[];
+  /** The live match from the in-game view. Game-built, but quoted as data like the player's words. */
+  match?: LoadoutMatchContext;
 }): Promise<AssistantResult> {
   if (!isAiConfigured()) return { ok: false, reason: 'unconfigured' };
   await assertAiBudget(a.userId);
@@ -63,11 +67,14 @@ export async function askLoadoutAssistant(a: {
     `player: ${a.message}`,
   ].join('\n');
 
+  // A map name can come from a peer-to-peer host, so the match goes inside a data frame of its own.
+  const match = describeMatchContext(a.match);
+
   try {
     const answer = await runTaskJson(
       'concierge',
       systemFor(TF2_LOADOUT_ASSISTANT),
-      `${context}\n\nCONVERSATION:\n${asData(conversation)}`,
+      `${context}${match ? `\n\nMATCH:\n${asData(match)}` : ''}\n\nCONVERSATION:\n${asData(conversation)}`,
       parseAnswer,
       {
         userId: a.userId,

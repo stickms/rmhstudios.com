@@ -1,23 +1,18 @@
 /**
- * Start a server for friends: **peer-to-peer** (the match runs in this browser
- * as a listen server, friends connect to it directly over WebRTC — no server
- * of ours simulates it) or **dedicated** (a match on the games hub). Both need
- * a signed-in account; a visitor sees a sign-in prompt that returns here with
- * any invite intact (`lobbyReturnPath`).
- *
- * The P2P form says what hosting means: it shares the host's IP address with
- * the players who join (WebRTC's nature), the match moves to another player's
- * browser when the host leaves (host migration), and 12 players at most (the
- * host uploads a snapshot stream to every member).
+ * Host a game for friends: the match runs in this browser as a listen server and friends connect to it
+ * directly over WebRTC (peer-to-peer: online play has no hub-hosted rooms). It needs a signed-in
+ * account; a visitor sees a sign-in prompt that returns here with any invite intact
+ * (`lobbyReturnPath`). The form says what hosting means: the match moves to another player's browser
+ * when the host leaves (host migration), and 12 players at most (the host uploads a snapshot stream to
+ * every member).
  */
 'use client';
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { Info, Lock, LogIn, Plus, Server, Share2, TriangleAlert } from 'lucide-react';
+import { Info, Lock, LogIn, Plus, Server } from 'lucide-react';
 import { Btn, Field, NumberField, SelectField, TextField, Toggle } from '@/components/tf2-hud/ui';
-import { TfTabs } from '@/components/tf2-hud/TfTabs';
 import { TF2_MAPS, findTf2Map } from '@/lib/tf2-game/data/maps';
 import { BOT_DIFFICULTIES, TF2_LIMITS, type BotDifficulty } from '@/lib/tf2-game/net/events';
 import { lobbyReturnPath } from '@/lib/lobby-link';
@@ -44,7 +39,6 @@ export default function HostGameCard({
   difficultyLabel: (d: BotDifficulty) => string;
 }) {
   const { t } = useTranslation('c-tf2-game');
-  const [kind, setKind] = useState<'p2p' | 'dedicated'>('p2p');
   const [room, setRoom] = useState({
     name: '',
     map: TF2_MAPS[0]?.name ?? 'ctf_2fort',
@@ -53,7 +47,7 @@ export default function HostGameCard({
     botDifficulty: 'normal' as BotDifficulty,
     private: false,
   });
-  const cap = kind === 'p2p' ? TF2_LIMITS.P2P_MAX_PLAYERS : TF2_LIMITS.MAX_PLAYERS;
+  const cap = TF2_LIMITS.P2P_MAX_PLAYERS;
   const maxPlayers = clampInt(room.maxPlayers, TF2_LIMITS.MIN_PLAYERS, cap);
   const defaultName = t('play_room_default_name', { defaultValue: '{{name}}’s server', name: accountName });
 
@@ -69,8 +63,7 @@ export default function HostGameCard({
       name: (room.name.trim() || defaultName).slice(0, TF2_LIMITS.ROOM_NAME_MAX_LENGTH),
       private: room.private,
     };
-    if (kind === 'p2p') onStart({ kind: 'p2p-host', room: common, playerName: accountName });
-    else onStart({ kind: 'online-create', room: { ...common, playerName: accountName } });
+    onStart({ kind: 'p2p-host', room: common, playerName: accountName });
   };
 
   const card = 'rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-5';
@@ -108,21 +101,10 @@ export default function HostGameCard({
             submit();
           }}
         >
-          <TfTabs
-            aria-label={t('host_kind', { defaultValue: 'Where the match runs' })}
-            value={kind}
-            onChange={(id) => setKind(id as 'p2p' | 'dedicated')}
-            tabs={[
-              { id: 'p2p', label: t('host_kind_p2p', { defaultValue: 'Peer-to-peer' }), icon: Share2 },
-              { id: 'dedicated', label: t('host_kind_dedicated', { defaultValue: 'Dedicated' }), icon: Server },
-            ]}
-          />
           <p className="text-sm text-(--app-text-muted)">
-            {kind === 'p2p'
-              ? t('host_p2p_body', {
-                  defaultValue: 'The match runs in your browser and your friends connect to you directly. You play with no lag; keep this tab open.',
-                })
-              : t('host_dedicated_body', { defaultValue: 'The match runs on our games server. It keeps going when you leave while others play.' })}
+            {t('host_p2p_body', {
+              defaultValue: 'The match runs in your browser and your friends connect to you directly. You play with no lag; keep this tab open.',
+            })}
           </p>
           <Field label={t('play_room_name', { defaultValue: 'Server name' })}>
             <TextField
@@ -176,24 +158,14 @@ export default function HostGameCard({
             <Lock className="size-3.5 text-(--app-text-muted)" aria-hidden />
             {t('play_private', { defaultValue: 'Private (join by code only)' })}
           </label>
-          {kind === 'p2p' ? (
-            <ul className="grid gap-2 text-xs text-(--app-text-muted)">
-              <li className="flex gap-2 rounded-(--app-radius-sm) bg-(--app-warning-dim) p-2 text-(--app-warning)">
-                <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                {t('host_p2p_ip_warning', {
-                  defaultValue: 'Hosting peer-to-peer shares your IP address with players who join. Host for people you know.',
-                })}
-              </li>
-              <li className="flex gap-2">
-                <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                {t('host_p2p_migration', {
-                  defaultValue: "If you leave, the match moves to another player's browser and goes on. Up to 12 players.",
-                })}
-              </li>
-            </ul>
-          ) : null}
+          <p className="flex gap-2 text-xs text-(--app-text-muted)">
+            <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+            {t('host_p2p_migration', {
+              defaultValue: "If you leave, the match moves to another player's browser and goes on. Up to 12 players.",
+            })}
+          </p>
           <Btn type="submit" variant="primary" size="md" icon={Plus} disabled={!hubReady} data-menu-item className="w-full justify-center sm:w-fit">
-            {kind === 'p2p' ? t('host_p2p_start', { defaultValue: 'Host a P2P game' }) : t('play_create', { defaultValue: 'Create server' })}
+            {t('host_start', { defaultValue: 'Host the game' })}
           </Btn>
         </form>
       )}

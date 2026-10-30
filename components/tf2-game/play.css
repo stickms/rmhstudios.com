@@ -120,6 +120,28 @@
   background: var(--app-surface-hover);
 }
 
+/* One-time Ctrl+W hint for browsers without Keyboard Lock (CloseGuardHint). */
+.tf2g-play-hint {
+  position: absolute;
+  z-index: 44;
+  bottom: calc(var(--safe-bottom, 0px) + 1rem);
+  left: 50%;
+  translate: -50% 0;
+  display: grid;
+  gap: 0.5rem;
+  width: min(32rem, calc(100% - 2rem));
+  padding: 0.75rem 1rem;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface);
+  color: var(--app-text);
+  font-size: 0.8125rem;
+}
+.tf2g-play-hint-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .tf2g-play-banner {
   position: absolute;
   z-index: 45;

@@ -39,6 +39,8 @@ import { cn } from '@/lib/utils';
 import GameHud from './GameHud';
 import P2pHostPlayers from './P2pHostPlayers';
 import type { TouchAction } from './touch/TouchOverlay';
+import { useCloseGuard } from './use-close-guard';
+import CloseGuardHint from './CloseGuardHint';
 import './play.css';
 
 export interface GameCanvasProps {
@@ -190,6 +192,9 @@ export default function GameCanvas({ game, create, onExit, title, onEnded, sessi
     onPause: game === 'tf2' ? undefined : () => store.dispatchImpulse('menu'),
   });
 
+  // Ctrl (TF2's crouch) + W would close the tab mid-match.
+  useCloseGuard(running);
+
   useEffect(() => {
     const onFs = () => setFullscreen(isFullscreen());
     document.addEventListener('fullscreenchange', onFs);
@@ -299,6 +304,7 @@ export default function GameCanvas({ game, create, onExit, title, onEnded, sessi
           </span>
         </button>
       ) : null}
+      {running && !touchFirst ? <CloseGuardHint settings={settings} onSettingsChange={onSettingsChange} /> : null}
       {running && connection === 'reconnecting' ? (
         <div className="tf2g-play-banner" role="status">
           {t('play_reconnecting', { defaultValue: 'Connection lost — reconnecting…' })}

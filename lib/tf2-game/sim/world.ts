@@ -91,7 +91,7 @@ import { SpawnSystem } from './spawn';
 import { LagCompensation } from './lagcomp';
 import { BaseProjectile, isTossMoveType, physicsToss } from './physics';
 import { radiusDamage, createDamageInfo, copyDamageInfo, type DamageInfo, type RadiusDamageInfo } from './damage';
-import { createHitboxTraceResult, traceHitboxes } from './hitboxes';
+import { createHitboxTraceResult, traceHitboxSet } from './hitboxes';
 import type { FireBulletsParams, SoundOptions, SpawnProjectileParams, WeaponHost } from './weapon-api';
 import type { NetSchema } from './net-schema';
 import { BaseObject } from './building-api';
@@ -360,9 +360,9 @@ export class GameWorld implements CollisionWorld, WeaponHost {
     this.mapEntities = this.map ? this.map.entities : (init.entities ?? []);
     this.random = new UniformRandomStream(this.options.seed);
     this.io = new IoSystem(this.ioHost());
-    this.rules = new GameRules(this, this.options.rules);
+    this.rules = this.createRules(this.options.rules);
     this.rules.mode = init.mode ?? null;
-    this.spawns = new SpawnSystem(this);
+    this.spawns = this.createSpawnSystem();
     this.lagcomp = new LagCompensation(this);
     this.lagcomp.enabled = this.options.lagCompensation;
     this.filterRing = [0, 1, 2, 3, 4, 5, 6, 7].map(() => new EntityTraceFilter(this));
@@ -379,6 +379,24 @@ export class GameWorld implements CollisionWorld, WeaponHost {
     this.addEntityAt(this.worldEntity, 0);
     this.spawnMapEntities();
     this.rules.mode?.init?.(this.rules);
+  }
+
+  /**
+   * The game rules this world runs (TF2's round machine). Another game on the engine overrides it
+   * (lib/csgo-game's CsGameRules). Called from the constructor: it must not read subclass fields.
+   */
+  protected createRules(options: Partial<RulesOptions>): GameRules {
+    return new GameRules(this, options);
+  }
+
+  /** The spawn-point service (TF2's info_player_teamspawn rules); overridable like `createRules`. */
+  protected createSpawnSystem(): SpawnSystem {
+    return new SpawnSystem(this);
+  }
+
+  /** A new player entity for `addPlayer` (TF2's Player; another game's world makes its own). */
+  protected createPlayer(name: string): Player {
+    return new Player(name);
   }
 
   private ioHost(): IoHost {
@@ -582,7 +600,7 @@ export class GameWorld implements CollisionWorld, WeaponHost {
       }
     }
     if (id < 0) throw new Error('server full');
-    const p = new Player(name);
+    const p = this.createPlayer(name);
     p.isBot = !!opts.bot;
     if (p.isBot) p.flags |= FL_FAKECLIENT;
     p.userId = opts.userId;
@@ -928,9 +946,31 @@ export class GameWorld implements CollisionWorld, WeaponHost {
     return this.traceAttackNow(attacker, start, end, out);
   }
 
-  private traceAttackNow(attacker: Player, start: Vec3, end: Vec3, out: TraceResult): TraceResult {
+  /**
+   * `traceAttack` without lag compensation (the caller rewinds, if it wants to, around a whole
+   * burst), with a game's own rules: `hitTeammates` tests teammates' hitboxes too (friendly fire,
+   * CS:GO), `skip` passes through one more entity (a bullet that already went through it).
+   */
+  traceAttackWith(
+    attacker: Player,
+    start: Vec3,
+    end: Vec3,
+    out: TraceResult,
+    opts: { hitTeammates?: boolean; skip?: number } = {},
+  ): TraceResult {
+    return this.traceAttackNow(attacker, start, end, out, opts.hitTeammates === true, opts.skip ?? NO_ENTITY);
+  }
+
+  private traceAttackNow(
+    attacker: Player,
+    start: Vec3,
+    end: Vec3,
+    out: TraceResult,
+    hitTeammates = false,
+    skip = NO_ENTITY,
+  ): TraceResult {
     const f = this.entityFilterObject(attacker, COLLISION_GROUP_NONE);
-    f.ignoreTeam = attacker.team;
+    f.ignoreTeam = hitTeammates ? 0 : attacker.team;
     f.ignorePlayers = true;
     // Map + non-player boxes (buildings) first.
     this.traceHull(start, end, ZERO, ZERO, MASK_SHOT & ~CONTENTS_HITBOX, f.fn, out);
@@ -941,9 +981,9 @@ export class GameWorld implements CollisionWorld, WeaponHost {
     let best = out.fraction;
     for (let i = 1; i <= MAX_PLAYERS; i++) {
       const e = this.entities[i];
-      if (!e || e.removed || e === attacker) continue;
+      if (!e || e.removed || e === attacker || i === skip) continue;
       const p = e as Player;
-      if (p.lifeState !== LIFE_ALIVE || p.team === attacker.team) continue;
+      if (p.lifeState !== LIFE_ALIVE || (!hitTeammates && p.team === attacker.team)) continue;
       // Broad phase: the hull expanded a little (hitboxes poke out of it when animating).
       boxScratchMins.x = p.origin.x + p.mins.x - 8;
       boxScratchMins.y = p.origin.y + p.mins.y - 8;
@@ -952,7 +992,7 @@ export class GameWorld implements CollisionWorld, WeaponHost {
       boxScratchMaxs.y = p.origin.y + p.maxs.y + 8;
       boxScratchMaxs.z = p.origin.z + p.maxs.z + 12;
       if (!segmentHitsBox(start, dx, dy, dz, boxScratchMins, boxScratchMaxs, best)) continue;
-      if (!traceHitboxes(p.origin, p.eyeAngles.y, p.playerClass, p.move.ducked, start, end, hbResult)) continue;
+      if (!traceHitboxSet(p.origin, p.eyeAngles.y, p.hitboxSet(), start, end, hbResult)) continue;
       if (hbResult.fraction >= best) continue;
       best = hbResult.fraction;
       out.fraction = best;

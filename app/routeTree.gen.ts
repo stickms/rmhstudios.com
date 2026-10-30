@@ -925,6 +925,7 @@ import { Route as ApiContextNotesIdIndexRouteImport } from './routes/api/context
 import { Route as ApiContextNotesIdRateRouteImport } from './routes/api/context-notes/$id/rate'
 import { Route as ApiCreatorRedeemIndexRouteImport } from './routes/api/creator/redeem/index'
 import { Route as ApiCreatorsIdJoinRouteImport } from './routes/api/creators/$id/join'
+import { Route as ApiCsgoGameAssetsSplatRouteImport } from './routes/api/csgo-game/assets/$'
 import { Route as ApiDeveloperKeysIndexRouteImport } from './routes/api/developer/keys/index'
 import { Route as ApiDeveloperKeysIdRouteImport } from './routes/api/developer/keys/$id'
 import { Route as ApiDiscoveryTrendingTagRouteImport } from './routes/api/discovery/trending/$tag'
@@ -5996,6 +5997,11 @@ const ApiCreatorsIdJoinRoute = ApiCreatorsIdJoinRouteImport.update({
   path: '/api/creators/$id/join',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCsgoGameAssetsSplatRoute = ApiCsgoGameAssetsSplatRouteImport.update({
+  id: '/api/csgo-game/assets/$',
+  path: '/api/csgo-game/assets/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDeveloperKeysIndexRoute = ApiDeveloperKeysIndexRouteImport.update({
   id: '/api/developer/keys/',
   path: '/api/developer/keys/',
@@ -9075,6 +9081,7 @@ export interface FileRoutesByFullPath {
   '/api/connections/grids/$id': typeof ApiConnectionsGridsIdRouteWithChildren
   '/api/context-notes/$id/rate': typeof ApiContextNotesIdRateRoute
   '/api/creators/$id/join': typeof ApiCreatorsIdJoinRoute
+  '/api/csgo-game/assets/$': typeof ApiCsgoGameAssetsSplatRoute
   '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRouteWithChildren
   '/api/discovery/trending/$tag': typeof ApiDiscoveryTrendingTagRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
@@ -10371,6 +10378,7 @@ export interface FileRoutesByTo {
   '/api/connections/grids/$id': typeof ApiConnectionsGridsIdRouteWithChildren
   '/api/context-notes/$id/rate': typeof ApiContextNotesIdRateRoute
   '/api/creators/$id/join': typeof ApiCreatorsIdJoinRoute
+  '/api/csgo-game/assets/$': typeof ApiCsgoGameAssetsSplatRoute
   '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRouteWithChildren
   '/api/discovery/trending/$tag': typeof ApiDiscoveryTrendingTagRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
@@ -11696,6 +11704,7 @@ export interface FileRoutesById {
   '/api/connections/grids/$id': typeof ApiConnectionsGridsIdRouteWithChildren
   '/api/context-notes/$id/rate': typeof ApiContextNotesIdRateRoute
   '/api/creators/$id/join': typeof ApiCreatorsIdJoinRoute
+  '/api/csgo-game/assets/$': typeof ApiCsgoGameAssetsSplatRoute
   '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRouteWithChildren
   '/api/discovery/trending/$tag': typeof ApiDiscoveryTrendingTagRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
@@ -13021,6 +13030,7 @@ export interface FileRouteTypes {
     | '/api/connections/grids/$id'
     | '/api/context-notes/$id/rate'
     | '/api/creators/$id/join'
+    | '/api/csgo-game/assets/$'
     | '/api/developer/keys/$id'
     | '/api/discovery/trending/$tag'
     | '/api/doctrine/admin/disclosures'
@@ -14317,6 +14327,7 @@ export interface FileRouteTypes {
     | '/api/connections/grids/$id'
     | '/api/context-notes/$id/rate'
     | '/api/creators/$id/join'
+    | '/api/csgo-game/assets/$'
     | '/api/developer/keys/$id'
     | '/api/discovery/trending/$tag'
     | '/api/doctrine/admin/disclosures'
@@ -15641,6 +15652,7 @@ export interface FileRouteTypes {
     | '/api/connections/grids/$id'
     | '/api/context-notes/$id/rate'
     | '/api/creators/$id/join'
+    | '/api/csgo-game/assets/$'
     | '/api/developer/keys/$id'
     | '/api/discovery/trending/$tag'
     | '/api/doctrine/admin/disclosures'
@@ -16654,6 +16666,7 @@ export interface RootRouteChildren {
   ApiConnectionsGridsIdRoute: typeof ApiConnectionsGridsIdRouteWithChildren
   ApiContextNotesIdRateRoute: typeof ApiContextNotesIdRateRoute
   ApiCreatorsIdJoinRoute: typeof ApiCreatorsIdJoinRoute
+  ApiCsgoGameAssetsSplatRoute: typeof ApiCsgoGameAssetsSplatRoute
   ApiDeveloperKeysIdRoute: typeof ApiDeveloperKeysIdRouteWithChildren
   ApiDiscoveryTrendingTagRoute: typeof ApiDiscoveryTrendingTagRoute
   ApiDoctrineAdminDisclosuresRoute: typeof ApiDoctrineAdminDisclosuresRoute
@@ -23305,6 +23318,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCreatorsIdJoinRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/csgo-game/assets/$': {
+      id: '/api/csgo-game/assets/$'
+      path: '/api/csgo-game/assets/$'
+      fullPath: '/api/csgo-game/assets/$'
+      preLoaderRoute: typeof ApiCsgoGameAssetsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/developer/keys/': {
       id: '/api/developer/keys/'
       path: '/api/developer/keys'
@@ -28979,6 +28999,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConnectionsGridsIdRoute: ApiConnectionsGridsIdRouteWithChildren,
   ApiContextNotesIdRateRoute: ApiContextNotesIdRateRoute,
   ApiCreatorsIdJoinRoute: ApiCreatorsIdJoinRoute,
+  ApiCsgoGameAssetsSplatRoute: ApiCsgoGameAssetsSplatRoute,
   ApiDeveloperKeysIdRoute: ApiDeveloperKeysIdRouteWithChildren,
   ApiDiscoveryTrendingTagRoute: ApiDiscoveryTrendingTagRoute,
   ApiDoctrineAdminDisclosuresRoute: ApiDoctrineAdminDisclosuresRoute,

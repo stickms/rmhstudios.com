@@ -6,6 +6,8 @@ import {
   LUMP,
   parseBsp,
   parseStaticProps,
+  readBrushSides,
+  readWorldLights,
   rgbExp32ToLinear,
   texInfoMaterial,
   visTest,
@@ -63,6 +65,81 @@ describe('bsp helpers', () => {
     expect(p.skin).toBe(2);
     expect(p.fadeMaxDist).toBe(1500);
     expect(p.flags).toBe(0x110);
+  });
+
+  // CS:GO (BSP v21, de_dust2): StaticPropLump_t v10 is 76 bytes (… DiffuseModulation, bDisableX360,
+  // FlagsEx) and v11 adds a uniform scale (80 bytes).
+  const csgoProps = (version: 10 | 11) => {
+    const size = version === 10 ? 76 : 80;
+    const name = 'models/props/de_dust/hr_dust/dust_crates/dust_crate_style_01_32x32x32.mdl';
+    const buf = new Uint8Array(4 + 128 + 4 + 4 + size);
+    const v = new DataView(buf.buffer);
+    v.setInt32(0, 1, true);
+    for (let i = 0; i < name.length; i++) buf[4 + i] = name.charCodeAt(i);
+    v.setInt32(132, 0, true); // no leafs
+    v.setInt32(136, 1, true);
+    const o = 140;
+    v.setFloat32(o, -100, true);
+    v.setFloat32(o + 4, 200, true);
+    v.setFloat32(o + 8, 8, true);
+    v.setUint8(o + 30, 6); // solid
+    v.setUint8(o + 31, 0x04); // flags (u8 in CS:GO's layout)
+    v.setInt32(o + 32, 1, true); // skin
+    v.setFloat32(o + 56, 1, true); // forced fade scale
+    buf.set([1, 2, 3, 4], o + 60); // cpu/gpu levels
+    buf.set([200, 150, 100, 255], o + 64); // diffuse modulation
+    v.setUint32(o + 72, 0x2, true); // FlagsEx
+    if (version === 11) v.setFloat32(o + 76, 1.5, true);
+    return parseStaticProps(buf, version)!;
+  };
+
+  it.each([10, 11] as const)('parses a synthetic CS:GO v%i static prop lump', (version) => {
+    const lump = csgoProps(version);
+    expect(lump.recordSize).toBe(version === 10 ? 76 : 80);
+    const p = lump.props[0];
+    expect(p.origin).toEqual({ x: -100, y: 200, z: 8 });
+    expect(p.solid).toBe(6);
+    expect(p.skin).toBe(1);
+    expect([p.minCpuLevel, p.maxCpuLevel, p.minGpuLevel, p.maxGpuLevel]).toEqual([1, 2, 3, 4]);
+    expect(p.diffuseModulation).toEqual([200, 150, 100, 255]);
+    expect(p.flags).toBe(0x04 | (0x2 << 8));
+    expect(p.uniformScale).toBe(version === 11 ? 1.5 : 1);
+  });
+
+  it('reads a v21 brush side bevel as one byte (the next is CS:GO\'s "thin")', () => {
+    const b = new Uint8Array(16);
+    const v = new DataView(b.buffer);
+    v.setUint16(0, 5, true);
+    b[6] = 0; // bevel
+    b[7] = 1; // thin
+    v.setUint16(8, 6, true);
+    b[14] = 1; // bevel
+    expect([...readBrushSides(b, 21).bevel]).toEqual([0, 1]);
+    // v20 reads the whole short (TF2: 0 or 1).
+    expect([...readBrushSides(b, 20).bevel]).toEqual([256, 1]);
+  });
+
+  it("reads dworldlight_t v0 (88 bytes) and CS:GO's v1 (100: + shadow_cast_offset)", () => {
+    for (const [version, size] of [
+      [0, 88],
+      [1, 100],
+    ] as const) {
+      const b = new Uint8Array(size * 2);
+      const v = new DataView(b.buffer);
+      for (let i = 0; i < 2; i++) {
+        const o = i * size;
+        v.setFloat32(o, 10 + i, true); // origin.x
+        v.setFloat32(o + 24, 1, true); // normal.x
+        const after = o + (size === 100 ? 48 : 36);
+        v.setInt32(after, 7, true); // cluster
+        v.setInt32(after + 4, 2, true); // type: spotlight
+        v.setFloat32(after + 24, 512, true); // radius
+      }
+      const lights = readWorldLights(b, version);
+      expect(lights).toHaveLength(2);
+      expect(lights.map((l) => l.origin.x)).toEqual([10, 11]);
+      expect(lights.every((l) => l.cluster === 7 && l.type === 2 && l.radius === 512)).toBe(true);
+    }
   });
 });
 

@@ -52,6 +52,18 @@ export interface RejectedChange {
   reason: 'unknown-file' | 'bad-change' | 'not-a-value' | 'missing' | 'broke-file';
 }
 
+/** HUD files worth offering to the model: panel layouts, the scheme and the global layout. */
+export function offeredHudPaths(all: readonly string[]): string[] {
+  return all
+    .filter(
+      (p) =>
+        /^resource\/ui\/[^/]+\.res$/i.test(p) ||
+        /^resource\/clientscheme\.res$/i.test(p) ||
+        /^scripts\/hudlayout\.res$/i.test(p),
+    )
+    .slice(0, HUD_AI_LIMITS.paths);
+}
+
 /** Keep only paths the editor offered, in the order given, without repeats. */
 export function validateSelection(raw: unknown, allowed: ReadonlySet<string>): string[] {
   if (!Array.isArray(raw)) return [];

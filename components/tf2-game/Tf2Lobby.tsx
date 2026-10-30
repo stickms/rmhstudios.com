@@ -1,12 +1,11 @@
 /**
- * The TF2 lobby: play offline against bots (a listen server in a worker, no
- * account needed); host a game for friends — peer-to-peer from this browser
- * or dedicated on the games hub (HostGameCard); or find one in the server
- * browser (ServerBrowser: dedicated and P2P rooms, Quick Play, favorites,
- * join by code). Online play needs a signed-in account. Choosing any of them
- * hands a `Tf2Session` to the play page, which mounts the game. Lives in the
- * TF2 Hub's palette (AppShell `tf2hud-theme`), with the hub's own controls
- * (components/tf2-hud/ui).
+ * The TF2 lobby screens the main menu (menus/Tf2MainMenu.tsx) opens: **Find a Game** — host a game for
+ * friends from this browser, peer-to-peer (HostGameCard), or find one in the server browser
+ * (ServerBrowser: the games players host, Quick Play, favorites, join by code) —
+ * and **Offline practice** against bots (a listen server in a worker, no account needed). Online play
+ * needs a signed-in account. Choosing any of them hands a `Tf2Session` to the play page, which mounts
+ * the game. A page of its own (the document scrolls), in the TF2 Hub's palette (AppShell
+ * `tf2hud-theme`), with the hub's own controls (components/tf2-hud/ui).
  */
 'use client';
 
@@ -43,7 +42,16 @@ function writeName(name: string): void {
 
 const clampInt = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(v)));
 
-export default function Tf2Lobby({ onStart }: { onStart: (session: Tf2Session) => void }) {
+export default function Tf2Lobby({
+  onStart,
+  view,
+  onBack,
+}: {
+  onStart: (session: Tf2Session) => void;
+  view: 'find' | 'offline';
+  /** Back to the main menu. */
+  onBack: () => void;
+}) {
   const { t } = useTranslation('c-tf2-game');
   const { data: session } = useSession();
   const user = (session as { user?: { id?: string | null; name?: string | null } } | null)?.user;
@@ -56,7 +64,11 @@ export default function Tf2Lobby({ onStart }: { onStart: (session: Tf2Session) =
   const onHubStatus = useCallback((s: string) => setHubStatus(s), []);
   const [name, setName] = useState('');
   useEffect(() => setName(readName()), []);
-  const playerName = (name.trim() || accountName || t('play_default_name', { defaultValue: 'Player' })).slice(0, 32);
+  const playerName = (
+    name.trim() ||
+    accountName ||
+    t('play_default_name', { defaultValue: 'Player' })
+  ).slice(0, 32);
 
   const difficultyLabel = (d: BotDifficulty) =>
     ({
@@ -81,73 +93,116 @@ export default function Tf2Lobby({ onStart }: { onStart: (session: Tf2Session) =
 
   return (
     <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
-      <Tf2Header title={t('play_title', { defaultValue: 'Play Team Fortress 2' })} backLabel={t('play_back_hub', { defaultValue: 'Hub' })} backHref="/tf2" />
-      <main className="mx-auto grid w-full max-w-5xl grid-cols-[minmax(0,1fr)] gap-4 py-6 pr-[calc(1rem_+_var(--safe-right))] pl-[calc(1rem_+_var(--safe-left))] lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <section className={card} aria-labelledby="tf2-offline-title">
-          <div className="mb-4 flex items-center gap-2">
-            <Bot className="size-5 text-(--app-accent-text)" aria-hidden />
-            <h2 id="tf2-offline-title" className="tf2hud-title text-2xl">
-              {t('play_offline_title', { defaultValue: 'Offline practice' })}
-            </h2>
-          </div>
-          <p className="mb-4 text-sm text-(--app-text-muted)">
-            {t('play_offline_body', {
-              defaultValue: 'A match against bots that runs entirely in your browser. No account or connection needed once the map has loaded.',
-            })}
-          </p>
-          <div className="grid gap-3">
-            <Field label={t('play_name', { defaultValue: 'Your name' })}>
-              <TextField value={name} maxLength={32} placeholder={accountName || t('play_default_name', { defaultValue: 'Player' })} onChange={(e) => setName(e.target.value)} />
-            </Field>
-            <Field label={t('play_map', { defaultValue: 'Map' })}>
-              <SelectField value={offMap} onChange={(e) => setOffMap(e.target.value)}>
-                {TF2_MAPS.map((m) => (
-                  <option key={m.name} value={m.name}>
-                    {m.title}
-                  </option>
-                ))}
-              </SelectField>
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={t('play_bots', { defaultValue: 'Bots' })}>
-                <NumberField label={t('play_bots', { defaultValue: 'Bots' })} value={offBots} min={0} max={TF2_LIMITS.MAX_BOTS} onChange={(v) => setOffBots(clampInt(v, 0, TF2_LIMITS.MAX_BOTS))} />
+      <Tf2Header
+        title={
+          view === 'find'
+            ? t('menu_find_title', { defaultValue: 'Find a game' })
+            : t('play_offline_title', { defaultValue: 'Offline practice' })
+        }
+        backLabel={t('menu_back', { defaultValue: 'Main menu' })}
+        backHref="/tf2/play"
+        onBack={onBack}
+      />
+      <main className="mx-auto grid w-full max-w-5xl grid-cols-[minmax(0,1fr)] gap-4 py-6 pr-[calc(1rem_+_var(--safe-right))] pl-[calc(1rem_+_var(--safe-left))]">
+        {view === 'offline' ? (
+          <section className={card} aria-labelledby="tf2-offline-title">
+            <div className="mb-4 flex items-center gap-2">
+              <Bot className="size-5 text-(--app-accent-text)" aria-hidden />
+              <h2 id="tf2-offline-title" className="tf2hud-title text-2xl">
+                {t('play_offline_title', { defaultValue: 'Offline practice' })}
+              </h2>
+            </div>
+            <p className="mb-4 text-sm text-(--app-text-muted)">
+              {t('play_offline_body', {
+                defaultValue:
+                  'A match against bots that runs entirely in your browser. No account or connection needed once the map has loaded.',
+              })}
+            </p>
+            <div className="grid gap-3">
+              <Field label={t('play_name', { defaultValue: 'Your name' })}>
+                <TextField
+                  value={name}
+                  maxLength={32}
+                  placeholder={accountName || t('play_default_name', { defaultValue: 'Player' })}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </Field>
-              <Field label={t('play_difficulty', { defaultValue: 'Difficulty' })}>
-                <SelectField value={offDiff} onChange={(e) => setOffDiff(e.target.value as BotDifficulty)}>
-                  {BOT_DIFFICULTIES.map((d) => (
-                    <option key={d} value={d}>
-                      {difficultyLabel(d)}
+              <Field label={t('play_map', { defaultValue: 'Map' })}>
+                <SelectField value={offMap} onChange={(e) => setOffMap(e.target.value)}>
+                  {TF2_MAPS.map((m) => (
+                    <option key={m.name} value={m.name}>
+                      {m.title}
                     </option>
                   ))}
                 </SelectField>
               </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t('play_bots', { defaultValue: 'Bots' })}>
+                  <NumberField
+                    label={t('play_bots', { defaultValue: 'Bots' })}
+                    value={offBots}
+                    min={0}
+                    max={TF2_LIMITS.MAX_BOTS}
+                    onChange={(v) => setOffBots(clampInt(v, 0, TF2_LIMITS.MAX_BOTS))}
+                  />
+                </Field>
+                <Field label={t('play_difficulty', { defaultValue: 'Difficulty' })}>
+                  <SelectField
+                    value={offDiff}
+                    onChange={(e) => setOffDiff(e.target.value as BotDifficulty)}
+                  >
+                    {BOT_DIFFICULTIES.map((d) => (
+                      <option key={d} value={d}>
+                        {difficultyLabel(d)}
+                      </option>
+                    ))}
+                  </SelectField>
+                </Field>
+              </div>
+              <Btn
+                variant="primary"
+                size="md"
+                icon={Bot}
+                className="mt-1 w-full justify-center"
+                onClick={() =>
+                  start({
+                    kind: 'offline',
+                    map: offMap,
+                    botCount: offBots,
+                    difficulty: offDiff,
+                    maxPlayers: Math.max(2, offBots + 1),
+                    playerName,
+                  })
+                }
+              >
+                {t('play_offline_start', { defaultValue: 'Play offline' })}
+              </Btn>
             </div>
-            <Btn
-              variant="primary"
-              size="md"
-              icon={Bot}
-              className="mt-1 w-full justify-center"
-              onClick={() =>
-                start({ kind: 'offline', map: offMap, botCount: offBots, difficulty: offDiff, maxPlayers: Math.max(2, offBots + 1), playerName })
-              }
-            >
-              {t('play_offline_start', { defaultValue: 'Play offline' })}
-            </Btn>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
-        <HostGameCard
-          signedIn={signedIn}
-          accountName={accountName || playerName}
-          hubReady={hubStatus === 'connected'}
-          invite={invite}
-          onStart={start}
-          difficultyLabel={difficultyLabel}
-        />
+        {view === 'find' ? (
+          <>
+            <HostGameCard
+              signedIn={signedIn}
+              accountName={accountName || playerName}
+              hubReady={hubStatus === 'connected'}
+              invite={invite}
+              onStart={start}
+              difficultyLabel={difficultyLabel}
+            />
 
-        <ServerBrowser signedIn={signedIn} userId={userId} invite={invite} onStart={start} onStatus={onHubStatus} />
+            <ServerBrowser
+              signedIn={signedIn}
+              userId={userId}
+              invite={invite}
+              onStart={start}
+              onStatus={onHubStatus}
+            />
+          </>
+        ) : null}
 
-        <p className="text-center text-xs text-(--app-text-dim) lg:col-span-2">
+        <p className="text-center text-xs text-(--app-text-dim)">
           {t('play_legal', {
             defaultValue:
               'An independent, clean-room engine. Team Fortress 2 and its content are trademarks and property of Valve Corporation; this fan project is not affiliated with Valve.',

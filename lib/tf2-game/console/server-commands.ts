@@ -25,12 +25,16 @@ import { BOT_DIFFICULTIES } from '../net/events';
 import { EXTRA_COMMAND_MAX_ARGS } from '../net/extra-commands';
 import { atof, FCVAR_CHEAT, FCVAR_GAMEDLL, FCVAR_NOTIFY, FCVAR_REPLICATED } from './cvar';
 
-export type ConsoleGame = 'tf2' | 'hl2' | 'portal';
+export type ConsoleGame = 'tf2' | 'hl2' | 'portal' | 'csgo';
 export type ServerAccess = 'player' | 'cheat' | 'host';
 
-const ALL: readonly ConsoleGame[] = ['tf2', 'hl2', 'portal'];
+const ALL: readonly ConsoleGame[] = ['tf2', 'hl2', 'portal', 'csgo'];
 const SP: readonly ConsoleGame[] = ['hl2', 'portal'];
 const TF2: readonly ConsoleGame[] = ['tf2'];
+/** The multiplayer games (TF2 and CS:GO): shared match settings. */
+const MP: readonly ConsoleGame[] = ['tf2', 'csgo'];
+/** Counter-Strike: Global Offensive (lib/csgo-game/console.ts runs these). */
+const CS: readonly ConsoleGame[] = ['csgo'];
 
 /** coordsize.h MAX_COORD_FLOAT. */
 export const MAX_COORD = 16384;
@@ -106,14 +110,14 @@ export const SERVER_COMMANDS: readonly ServerCommandSpec[] = [
   { name: 'kill', games: ALL, access: 'player', args: [], help: 'Kills the player with generic damage.' },
   { name: 'explode', games: ALL, access: 'player', args: [], help: 'Kills the player with explosive damage.' },
   { name: 'status', games: ALL, access: 'player', args: [], help: 'Display map and connection status.' },
-  { name: 'ping', games: TF2, access: 'player', args: [], help: 'Display ping to the server.' },
+  { name: 'ping', games: MP, access: 'player', args: [], help: 'Display ping to the server.' },
   { name: 'getpos', games: ALL, access: 'player', args: [], help: 'Dump position and angles to the console.' },
   { name: 'save', games: SP, access: 'player', args: [{ kind: 'word', name: 'name', optional: true, re: NAME_RE }], help: 'Saves a checkpoint (the quick save).' },
   { name: 'load', games: SP, access: 'player', args: [{ kind: 'word', name: 'name', optional: true, re: NAME_RE }], help: 'Loads the last checkpoint.' },
   // ── The listen server's host ─────────────────────────────────────────────
   {
     name: 'mp_restartgame',
-    games: TF2,
+    games: MP,
     access: 'host',
     args: [{ kind: 'int', name: 'seconds', min: 0, max: 60 }],
     help: 'Restarts the game after <seconds> (scores reset).',
@@ -205,6 +209,14 @@ export const SERVER_COMMANDS: readonly ServerCommandSpec[] = [
     ],
     help: 'Debug: place portal 0 (blue) / 1 (orange) where you look, or at <x y z pitch yaw roll>.',
   },
+  // ── Counter-Strike: Global Offensive (lib/csgo-game/console.ts) ─────────
+  { name: 'buy', games: CS, access: 'player', args: [{ kind: 'word', name: 'item', re: NAME_RE }], help: 'Buy an item: buy <ak47|m4a1|awp|vest|vesthelm|defuser|hegrenade|…> (in a buy zone, in buy time).' },
+  { name: 'drop', games: CS, access: 'player', args: [], help: 'Drop the active weapon (or the bomb).' },
+  { name: 'bot_add', games: CS, access: 'host', args: [{ kind: 'word', name: 'ct|t', optional: true, values: ['t', 'ct'] }, { kind: 'word', name: 'difficulty', optional: true, values: ['easy', 'normal', 'hard', 'expert'] }], help: 'Add a bot: bot_add [t|ct] [easy|normal|hard|expert].' },
+  { name: 'bot_add_t', games: CS, access: 'host', args: [{ kind: 'word', name: 'difficulty', optional: true, values: ['easy', 'normal', 'hard', 'expert'] }], help: 'Add a bot to the Terrorists.' },
+  { name: 'bot_add_ct', games: CS, access: 'host', args: [{ kind: 'word', name: 'difficulty', optional: true, values: ['easy', 'normal', 'hard', 'expert'] }], help: 'Add a bot to the Counter-Terrorists.' },
+  { name: 'bot_kick', games: CS, access: 'host', args: [{ kind: 'text', name: 'name|all|t|ct', optional: true }], help: 'Kick bots: bot_kick [name|all|t|ct] (all when omitted).' },
+  { name: 'bot_kill', games: CS, access: 'host', args: [{ kind: 'text', name: 'name|all|t|ct', optional: true }], help: 'Kill bots: bot_kill [name|all|t|ct].' },
 ];
 
 export const SERVER_CVARS: readonly ServerCvarSpec[] = [
@@ -219,9 +231,9 @@ export const SERVER_CVARS: readonly ServerCvarSpec[] = [
   },
   {
     name: 'sv_gravity',
-    games: TF2,
+    games: MP,
     type: 'float',
-    default: { tf2: 800 },
+    default: { tf2: 800, csgo: 800 },
     min: 0,
     max: 4000,
     flags: FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED,
@@ -241,7 +253,7 @@ export const SERVER_CVARS: readonly ServerCvarSpec[] = [
   },
   {
     name: 'mp_timelimit',
-    games: TF2,
+    games: MP,
     type: 'int',
     default: 0,
     min: 0,
@@ -263,7 +275,7 @@ export const SERVER_CVARS: readonly ServerCvarSpec[] = [
   },
   {
     name: 'mp_friendlyfire',
-    games: TF2,
+    games: MP,
     type: 'bool',
     default: 0,
     flags: FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED,
@@ -302,6 +314,20 @@ export const SERVER_CVARS: readonly ServerCvarSpec[] = [
     access: 'host',
     help: 'If set to a class name, all TFBots will respawn as that class.',
   },
+  // ── Counter-Strike: Global Offensive (defaults: CS:GO's competitive values; lib/csgo-game/constants.ts) ──
+  { name: 'mp_roundtime', games: CS, type: 'float', default: 1.92, min: 1, max: 60, flags: FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, access: 'host', help: 'How many minutes each round takes (1.92 = 1:55).' },
+  { name: 'mp_freezetime', games: CS, type: 'int', default: 15, min: 0, max: 60, flags: FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, access: 'host', help: 'How many seconds to keep players frozen when the round starts.' },
+  { name: 'mp_buytime', games: CS, type: 'int', default: 20, min: 0, max: 600, flags: FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, access: 'host', help: 'How many seconds after the freeze time players can buy.' },
+  { name: 'mp_maxrounds', games: CS, type: 'int', default: 30, min: 0, max: 99, flags: FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, access: 'host', help: 'Max number of rounds to play before the game ends (teams switch at half).' },
+  { name: 'mp_startmoney', games: CS, type: 'int', default: 800, min: 0, max: 16000, flags: FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, access: 'host', help: 'Amount of money each player gets when they reset.' },
+  { name: 'mp_maxmoney', games: CS, type: 'int', default: 16000, min: 0, max: 65535, flags: FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, access: 'host', help: 'Maximum amount of money allowed in a player\'s account.' },
+  { name: 'mp_c4timer', games: CS, type: 'int', default: 40, min: 10, max: 90, flags: FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, access: 'host', help: 'How long from when the C4 is armed until it blows.' },
+  { name: 'mp_round_restart_delay', games: CS, type: 'float', default: 7, min: 0, max: 14, flags: FCVAR_GAMEDLL | FCVAR_NOTIFY, access: 'host', help: 'Seconds between the end of a round and the next round.' },
+  { name: 'mp_buy_anywhere', games: CS, type: 'bool', default: 0, flags: FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, access: 'host', help: 'When set, players can buy anywhere, not only in buy zones.' },
+  { name: 'mp_teammates_are_enemies', games: CS, type: 'bool', default: 0, flags: FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, access: 'host', help: 'Deathmatch: teammates are enemies (free for all; on by default in deathmatch).' },
+  { name: 'mp_respawn_immunitytime', games: CS, type: 'float', default: 2, min: 0, max: 10, flags: FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, access: 'host', help: 'Deathmatch: seconds a respawned player is immune to damage.' },
+  { name: 'bot_quota', games: CS, type: 'int', default: 0, min: 0, max: 32, flags: FCVAR_GAMEDLL, access: 'host', help: 'Determines the total number of bots in the game (fill mode: bots leave room for humans).' },
+  { name: 'bot_difficulty', games: CS, type: 'int', default: 1, min: 0, max: 3, flags: FCVAR_GAMEDLL, access: 'host', help: 'Defines the skill of bots joining the game.  Values are: 0=easy, 1=normal, 2=hard, 3=expert.' },
   {
     name: 'sv_portal_placement_never_fail',
     games: ['portal'],

@@ -11,6 +11,7 @@
  */
 
 import { parseKv } from './kv/parse';
+import { evalCond, PC_ENV } from './scheme/cond';
 
 export interface TfLanguage {
   /** The `<language>` in `tf_<language>.txt`. */
@@ -53,6 +54,19 @@ export const TF_LANGUAGES: readonly TfLanguage[] = [
 
 export const languageFilePath = (id: string): string => `resource/tf_${id}.txt`;
 
+/**
+ * The game's language files besides `tf_<language>.txt`, published with the HUD base for the menus:
+ * the engine's `valve_<language>.txt` (key names, `#Valve_*` actions) and GameUI's
+ * `gameui_<language>.txt` (`#GameUI_*`: the options dialog, the game menu). Read before `tf_`, which
+ * wins where both define a token (the engine adds TF's file last).
+ */
+export const ENGINE_LANGUAGE_PREFIXES = ['valve', 'gameui'] as const;
+
+/** Every game language file of `id`, in the order they are layered (later wins). */
+export function gameLanguageFiles(id: string): string[] {
+  return [...ENGINE_LANGUAGE_PREFIXES.map((p) => `resource/${p}_${id}.txt`), languageFilePath(id)];
+}
+
 /** Valve ships these as UTF-16LE with a BOM; accept UTF-8 (with or without BOM) too. */
 export function decodeLocalisation(bytes: Uint8Array): string {
   if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
@@ -85,7 +99,9 @@ export function parseLocalisation(text: string): ParsedLanguage {
     if (k === 'language' && c.value) language = c.value.text.toLowerCase();
     if (k === 'tokens' && c.children) {
       for (const t of c.children) {
-        if (t.value) tokens.set(t.key.text.toLowerCase().replace(/^#/, ''), unescape(t.value.text));
+        // A token's `[$X360]` variant is not the PC's.
+        if (!t.value || !evalCond(t.cond?.text, PC_ENV)) continue;
+        tokens.set(t.key.text.toLowerCase().replace(/^#/, ''), unescape(t.value.text));
       }
     }
   }
@@ -212,7 +228,8 @@ export interface TokenLayers {
 
 /**
  * `#Token` → text, each token from the first of: the HUD's own `resource/*_<language>.txt`, then its
- * `*_english.txt`, the game's `tf_<language>.txt`, the game's `tf_english.txt`, and `fallback`. The
+ * `*_english.txt`, the game's `tf_<language>.txt` (then `gameui_` and `valve_`), the game's
+ * `tf_english.txt` (then `gameui_english` and `valve_english`), and `fallback`. The
  * engine does the same: every file is added to one table, later files winning, the chosen language
  * over English.
  */
@@ -221,8 +238,8 @@ export function layeredTokens(src: TokenLayers): Map<string, string> {
   const add = (bytes: Uint8Array | undefined) => {
     if (bytes) for (const [k, v] of parseLanguageBytes(bytes).tokens) out.set(k, v);
   };
-  add(src.readGame(languageFilePath(DEFAULT_LANGUAGE)));
-  if (src.language !== DEFAULT_LANGUAGE) add(src.readGame(languageFilePath(src.language)));
+  for (const p of gameLanguageFiles(DEFAULT_LANGUAGE)) add(src.readGame(p));
+  if (src.language !== DEFAULT_LANGUAGE) for (const p of gameLanguageFiles(src.language)) add(src.readGame(p));
   if (src.readHud && src.hudPaths) {
     for (const p of hudLanguageFiles(src.hudPaths, src.language)) add(src.readHud(p));
   }

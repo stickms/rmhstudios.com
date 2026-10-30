@@ -62,6 +62,11 @@ export interface ImageOp {
    * stretching to it. This is what an `ImagePanel` does unless `scaleImage` is set.
    */
   native?: boolean;
+  /**
+   * A nine-slice (a scalable-image border): `src` corner size in texels, `draw` corner size in pixels;
+   * the corners keep their size, the edges and the centre stretch.
+   */
+  nine?: { src: [number, number]; draw: [number, number] };
 }
 
 /** Content that only exists at runtime (3D models, avatars, lists). */

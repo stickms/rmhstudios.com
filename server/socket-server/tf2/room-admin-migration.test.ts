@@ -1,6 +1,6 @@
 /**
- * The hub's half of host migration, TURN credentials, room doors and room
- * ownership (server/socket-server/handlers/tf2-p2p.ts, tf2-game.ts), against
+ * The hub's half of host migration, TURN credentials and room doors
+ * (server/socket-server/handlers/tf2-p2p.ts, tf2-game.ts), against
  * the fake socket.io world:
  *
  *   - a P2P host names a successor; when the host leaves (on purpose, or its
@@ -10,26 +10,15 @@
  *     room waits for its new host is held, not refused;
  *   - every account gets ICE servers with a TURN credential minted for it
  *     (expiring, HMAC'd — never a static one) when TURN is configured;
- *   - a P2P host's lock and password keep new accounts out (rejoins pass);
- *   - a dedicated room has an owner (its creator; handed on; inherited by the
- *     oldest signed-in player), who may kick (refused for the room's life),
- *     change the map (allowlist), lock it, set a password and speak as the
- *     server — and nobody else may; a spectator's join seats them as one.
+ *   - a P2P host's lock and password keep new accounts out (rejoins pass),
+ *     and only the socket hosting the room may set them.
  */
 
 import { createHmac } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleTf2P2pDisconnect, registerTf2P2pHandlers, resetTf2P2pForTests } from '../handlers/tf2-p2p';
-import { handleTf2GameDisconnect, registerTf2GameHandlers, resetTf2GameForTests } from '../handlers/tf2-game';
-import {
-  TF2_C2S,
-  TF2_S2C,
-  type ChatMessage,
-  type ErrorPayload,
-  type JoinedPayload,
-  type KickedPayload,
-  type RoomInfoPayload,
-} from '@/lib/tf2-game/net/events';
+import { registerTf2GameHandlers } from '../handlers/tf2-game';
+import { TF2_C2S, TF2_S2C, type ErrorPayload } from '@/lib/tf2-game/net/events';
 import {
   P2P_LIMITS,
   type P2pAdmittedPayload,
@@ -38,41 +27,13 @@ import {
   type P2pMigratingPayload,
   type P2pPromotedPayload,
 } from '@/lib/tf2-game/net/p2p/signal';
-import { MatchPool, setMatchPool } from '@/lib/tf2-game/server/pool.server';
-import { EchoMatchHost } from '@/lib/tf2-game/server/echo-host';
-import type { MatchHost, MatchOptions, PlayerInfo } from '@/lib/tf2-game/server/match-host';
-import { all, last, makeWorld, until, type FakeSocket } from './helpers';
+import { all, last, makeWorld, type FakeSocket } from './helpers';
 
 process.env.LOG_LEVEL = 'silent';
 
 const HOST = { map: 'ctf_2fort', maxPlayers: 8, botCount: 2, botDifficulty: 'normal', name: 'Friends' };
-const ROOM = { map: 'ctf_2fort', maxPlayers: 8, botCount: 1, botDifficulty: 'normal', name: 'Public' };
-
-/** An echo host that records what the hub asked of the match. */
-class RecordingHost extends EchoMatchHost {
-  static last: RecordingHost | null = null;
-  readonly added: Array<{ id: number; info: PlayerInfo }> = [];
-  readonly levels: string[] = [];
-  readonly owners: Array<number | null> = [];
-  constructor(o: MatchOptions) {
-    super(o);
-    RecordingHost.last = this;
-  }
-  override addPlayer(id: number, info: PlayerInfo): void {
-    this.added.push({ id, info });
-    super.addPlayer(id, info);
-  }
-  async changeLevel(map: string): Promise<boolean> {
-    this.levels.push(map);
-    return true;
-  }
-  setOwner(id: number | null): void {
-    this.owners.push(id);
-  }
-}
 
 let world: ReturnType<typeof makeWorld>;
-let pool: MatchPool;
 let nextId = 0;
 
 function connect(data?: Record<string, unknown>): FakeSocket {
@@ -101,17 +62,12 @@ const env = { ...process.env };
 
 beforeEach(() => {
   world = makeWorld(registerTf2GameHandlers, registerTf2P2pHandlers);
-  pool = new MatchPool({ workerPath: null, allowInProcess: true, factory: async (o) => new RecordingHost(o) as MatchHost, maxMatches: 3 });
-  setMatchPool(pool);
 });
 
 afterEach(() => {
   vi.useRealTimers();
   process.env = { ...env };
   resetTf2P2pForTests(world.io);
-  resetTf2GameForTests(world.io);
-  pool.shutdown();
-  setMatchPool(null);
 });
 
 describe('host migration (P2P)', () => {
@@ -232,77 +188,14 @@ describe("a P2P host's door", () => {
     const spec = connect({ userId: 'u-a', userName: 'A' });
     world.send(spec, TF2_C2S.P2P_JOIN, { code, spectate: true });
     expect(last<P2pJoinRequest>(h, TF2_S2C.P2P_JOIN_REQUEST)?.spectate).toBe(true);
-  });
-});
-
-describe('dedicated rooms: the owner', () => {
-  async function room(owner: FakeSocket): Promise<string> {
-    world.send(owner, TF2_C2S.CREATE_ROOM, ROOM);
-    await until(() => !!last<JoinedPayload>(owner, TF2_S2C.JOINED), 2_000, 'joined');
-    return last<JoinedPayload>(owner, TF2_S2C.JOINED)!.code;
-  }
-
-  it('the creator owns the room and administers it; nobody else may', async () => {
-    const o = connect({ userId: 'u-owner', userName: 'Owner' });
-    const code = await room(o);
-    const info = last<RoomInfoPayload>(o, TF2_S2C.ROOM_INFO)!;
-    expect(info).toMatchObject({ code, ownerName: 'Owner', locked: false, passworded: false });
-    const match = RecordingHost.last!;
-    await until(() => match.owners.length > 0, 2_000, 'owner set in the match');
-    expect(match.owners.at(-1)).toBe(info.ownerId);
-
-    const p = connect({ userId: 'u-p', userName: 'Pat' });
-    world.send(p, TF2_C2S.JOIN_ROOM, { code, spectate: true });
-    await until(() => match.added.length === 2, 2_000, 'second player');
-    expect(match.added[1].info).toMatchObject({ name: 'Pat', spectate: true });
-    // Not the owner: refused.
-    world.send(p, TF2_C2S.ROOM_ADMIN, { action: 'lock', locked: true });
-    expect(errors(p)).toEqual(['not-owner']);
-
-    // The owner's actions.
-    world.send(o, TF2_C2S.ROOM_ADMIN, { action: 'changelevel', map: 'not_a_map' });
-    expect(errors(o)).toEqual(['unknown-map']);
-    world.send(o, TF2_C2S.ROOM_ADMIN, { action: 'changelevel', map: 'cp_dustbowl' });
-    await until(() => match.levels.length === 1, 2_000, 'level change');
-    expect(match.levels).toEqual(['cp_dustbowl']);
-    world.send(o, TF2_C2S.ROOM_ADMIN, { action: 'say', text: 'gg\u0007 all' });
-    expect(last<ChatMessage>(p, TF2_S2C.CHAT)).toMatchObject({ from: 0, name: 'Console', text: 'gg all' });
-    world.send(o, TF2_C2S.ROOM_ADMIN, { action: 'password', password: 'pw' });
-    world.send(o, TF2_C2S.ROOM_ADMIN, { action: 'lock', locked: true });
-    expect(last<RoomInfoPayload>(p, TF2_S2C.ROOM_INFO)).toMatchObject({ locked: true, passworded: true });
-    const n = connect({ userId: 'u-n', userName: 'N' });
-    world.send(n, TF2_C2S.JOIN_ROOM, { code, password: 'pw' });
-    expect(errors(n)).toEqual(['locked']);
-    world.send(o, TF2_C2S.ROOM_ADMIN, { action: 'lock', locked: false });
-    world.send(n, TF2_C2S.JOIN_ROOM, { code });
-    expect(errors(n)).toEqual(['locked', 'password']);
-
-    // Kick: out, and refused for the room's life.
-    const patId = last<JoinedPayload>(p, TF2_S2C.JOINED)!.playerId;
-    world.send(o, TF2_C2S.ROOM_ADMIN, { action: 'kick', playerId: patId });
-    expect(last<KickedPayload>(p, TF2_S2C.KICKED)).toEqual({ code, reason: 'kicked' });
-    world.send(p, TF2_C2S.JOIN_ROOM, { code, password: 'pw' });
-    expect(errors(p)).toContain('kicked');
-  });
-
-  it('hands ownership on, and the oldest signed-in player inherits it when the owner leaves', async () => {
-    const o = connect({ userId: 'u-owner', userName: 'Owner' });
-    const code = await room(o);
-    const a = connect({ userId: 'u-a', userName: 'A' });
-    const b = connect({ userId: 'u-b', userName: 'B' });
-    world.send(a, TF2_C2S.JOIN_ROOM, { code });
-    world.send(b, TF2_C2S.JOIN_ROOM, { code });
-    const aId = last<JoinedPayload>(a, TF2_S2C.JOINED)!.playerId;
-    const bId = last<JoinedPayload>(b, TF2_S2C.JOINED)!.playerId;
-    world.send(o, TF2_C2S.ROOM_ADMIN, { action: 'transfer', playerId: bId });
-    expect(last<RoomInfoPayload>(a, TF2_S2C.ROOM_INFO)?.ownerId).toBe(bId);
-    // The old owner is now an ordinary player.
-    world.send(o, TF2_C2S.ROOM_ADMIN, { action: 'lock', locked: true });
-    expect(errors(o)).toEqual(['not-owner']);
-    // B leaves: the oldest remaining signed-in player (the creator, here again an ordinary player) inherits.
-    handleTf2GameDisconnect(world.io, b as never);
-    const after = last<RoomInfoPayload>(a, TF2_S2C.ROOM_INFO)!;
-    const oId = last<JoinedPayload>(o, TF2_S2C.JOINED)!.playerId;
-    expect(after.ownerId).toBe(Math.min(oId, aId));
+    // Only the socket hosting the room keeps its door; anyone else is refused (and signed out first).
+    world.send(a, TF2_C2S.ROOM_ADMIN, { action: 'lock', locked: false });
+    expect(errors(a)).toEqual(['not-owner']);
+    const visitor = connect({});
+    world.send(visitor, TF2_C2S.ROOM_ADMIN, { action: 'lock', locked: false });
+    expect(errors(visitor)).toEqual(['auth-required']);
+    // The kicks, the map and messages are the host's own match: the hub takes only the door.
+    world.send(h, TF2_C2S.ROOM_ADMIN, { action: 'kick', playerId: 2 });
+    expect(errors(h)).toEqual(['bad-payload']);
   });
 });

@@ -370,6 +370,8 @@ describe('mixer', () => {
       'FakeGain',
       'FakeGain',
       'FakeGain',
+      // Mix headroom (−6 dB); the fake context has no limiter, so it goes straight to the output.
+      'FakeGain',
       'FakeNode',
     ]);
     const gain = src.outputs[0].outputs[0] as unknown as { gain: { value: number } };
