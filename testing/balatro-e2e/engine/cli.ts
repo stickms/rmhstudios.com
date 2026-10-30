@@ -4,6 +4,7 @@
  *
  *   pnpm exec tsx testing/balatro-e2e/engine/cli.ts [--filter text] [--spec name ...]
  *     [--shot out.png] [--verbose] [--quiet] [--serve]   (--serve: keep the harness up, print its URL)
+ *     [--query mp=1]   (page query: `mp=1` extracts the MP pack so the MP specs run instead of skipping)
  *
  * Prints TAP; exit code 1 when a spec fails or the engine does not boot.
  */
@@ -23,6 +24,7 @@ async function main(): Promise<number> {
   }
   try {
     const engine = await openEngine(stack.browser, stack.server.url, {
+      query: values('query')[0],
       verbose: flag('verbose'),
       onLog: flag('quiet') ? undefined : (l) => process.stdout.write(`# ${l.slice(0, 400)}\n`),
     });

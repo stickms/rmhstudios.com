@@ -187,9 +187,13 @@ export class LobbyMember implements Role {
       case 'start_game': {
         const match = env.d as WireData<'start_game'>;
         if (this.role === 'player' && match.roster.some((r) => r.id === this.ctx.me)) this.ctx.beginMatch(match, 'start');
+        else if (this.role === 'spectator') this.ctx.replayTap()?.spectate(match);
         return;
       }
       case 'reseed':
+        return;
+      case 'log':
+        this.ctx.replayTap()?.peerLog(from, env.d as WireData<'log'>);
         return;
       case 'outcome': {
         const d = env.d as WireData<'outcome'>;
@@ -264,6 +268,7 @@ export class LobbyMember implements Role {
         c.suspend(false);
       }
     }
+    if (match && this.role === 'spectator') this.ctx.replayTap()?.spectate(match);
     this.rejoinRunId = null;
     // What Lua reported while the link was down.
     const pending = this.pendingGame.splice(0);

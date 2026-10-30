@@ -583,3 +583,63 @@ error within 2.5 s" as sent.
 **PR-05.** `isQueued(runtime)` (attach.ts) is true while searching; the runtime's
 `practiceGuard` then refuses Practice with `lobby_error practice` (the search keeps running), and
 the Lua menus grey Practice while searching or matched.
+
+**PR-05.** `isQueued(runtime)` (attach.ts) is true while searching; Practice started while
+searching cancels the search.
+
+## 11. Replays and spectating (WS13)
+
+Lua: `rmh_mp/replay/{init,recorder,player}.lua` (loaded by `rmh_mp/init.lua` after every other
+session installer, so the recorder's wraps are the outermost), `rmh_mp/ui/{replay,spectate}.lua`
+(loaded on first use through `MP.ui.replay_open`, the menu's REPLAYS button). TS:
+`lib/balatro/mp/replay/{log,canonical-hash,store,player-feed,service,tap,attach}.ts` and
+`lib/balatro/mp/spectate.ts`, attached to the session like WS12's queue module (the
+`import.meta.glob` in `index.ts`); the lobby roles reach it only through `RoleCtx.replayTap()`.
+
+**Recording (REP-01/02, D-34).** While a match or practice session is mounted, every input the
+player makes through `G.FUNCS` (blind select/skip, play, discard, sort, cash out, reroll, shop,
+packs, consumables, sell) and every network input Lua applies (`net_in {k:'outcome'|'peer'|'tail', d}`)
+is logged as `{i, t, op, d}`; calls the game makes itself (The Hook's discard, buy-and-use,
+tag boosters, the PvP pillar's own re-press) are not. Card refs are `{id = sort_id - the run's
+base, i = position, k = fingerprint}`; `dg` digests (ante, round, money, hands, discards, deck
+size, jokers, consumables) ride on blind select, play, cash out and leave shop. Lua sends
+≤ 50 events / ~12 KB per frame; caps are 20 000 events or 1 MB per player per match (`end
+{result:'cap'}`). The runtime relays each batch to every peer through the host; the host
+also sends a spectator who joins mid-match every log so far, paced under the receiver's `log`
+limit (800 frames at once, then 15/s).
+
+**chk (REP-05).** When a player's log reaches `end`, that player's TS appends `chk {sha256, n}`
+(SHA-256 of the canonical JSON of the events before it: keys sorted, no whitespace; a
+synchronous implementation, because WebCrypto is async and absent outside secure contexts) and
+sends it to the peers. Opening a replay recomputes every log's `chk`; a mismatch shows "Replay
+may be inaccurate".
+
+**Storage.** IndexedDB `rmh-balatro-replays`, store `matches`, keyPath `id` (= runId): the header
+and every player's log this peer received (spectated matches too). The newest 30 by start time
+are kept; damaged rows are skipped and removed. Failures mean "no replays", never an error.
+
+**Playback (REP-03).** `ui_replay {op:'open'}` → `replay_view {playing:{id, pov, pos, len}}` +
+`replay_feed {pov, events}` chunks (≤ 1024 events, ≤ 48 KB). Only the POV's log is fed: its
+`net_in` events re-project the opponents. The driver re-mounts the recorded session (same kind,
+ruleset, roster, seed), launches the run, then re-dispatches inputs once the game is idle and
+re-injects network inputs in log order. Meanwhile live traffic (`outcome`, `peer`, `tail`, timer,
+presence) is blocked, session messages (`ev`, `peer`, `flags`, `log`, `match_left`, ...) are not
+sent, and the player's own button presses are ignored (a played-back run is read-only). Speeds
+1×/2×/4×/fast-forward (0); the seek index is the log's blind selects (ante/slot → event index);
+seeking back restarts and fast-forwards. A missing card, a digest mismatch or a hand scoring
+differently stops playback with "Replay stopped" and the event index and reason.
+
+**Spectating (REP-04, MM-07 view).** The SPECTATE tab asks the hub (`ui_spectate_list` →
+`balatro:spectate:list` → `spectate_view`); WATCH joins as role `spectator`. The spectator's TS
+assembles every player's log (`SpectateFeed`) and opens a live playback (`replay_view` id
+`live:<runId>`) of the first roster player, fast-forwarding while more than 25 events are
+waiting; `ui_replay {op:'pov'}` switches to another player's log from the start. Closing the
+live playback also leaves the lobby. When every player's log has ended, the spectator stores
+the match in My Replays.
+
+**Contract additions (WS13).** `ReplayOp` `net_in`; bridge `ui_spectate_list` (L2J) and
+`spectate_view {lobbies, error?}` (J2L).
+
+**Known limits.** Vanilla's Charm/Meteor/Ethereal tags pick their pack with `math.random`
+(unseeded), so a replay that opens one may diverge there (reported as a divergence). A run
+restored from a rejoin snapshot (`manifest {rejoin}`) cannot be played back past that point.

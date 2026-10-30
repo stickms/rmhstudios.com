@@ -261,7 +261,36 @@
       "rmh_mp_k_awooo": "Awooo!",
       "rmh_mp_k_minus_hand_size": "-1 Hand Size",
       "rmh_mp_k_plus_coupon_tag": "+1 Coupon Tag!",
-      "rmh_mp_k_plus_voucher_tag": "+1 Voucher Tag!"
+      "rmh_mp_k_plus_voucher_tag": "+1 Voucher Tag!",
+      "rmh_mp_replay_mine": "MY REPLAYS",
+      "rmh_mp_replay_spectate": "SPECTATE",
+      "rmh_mp_replay_watch": "WATCH",
+      "rmh_mp_replay_loading": "Loading...",
+      "rmh_mp_replay_none": "No replays yet. Finished matches are kept here.",
+      "rmh_mp_replay_newer": "Newer",
+      "rmh_mp_replay_older": "Older",
+      "rmh_mp_replay_win": "Win",
+      "rmh_mp_replay_loss": "Loss",
+      "rmh_mp_replay_draw": "Draw",
+      "rmh_mp_replay_title": "REPLAY",
+      "rmh_mp_replay_live": "LIVE",
+      "rmh_mp_replay_done": "Finished",
+      "rmh_mp_replay_diverged_short": "Stopped",
+      "rmh_mp_replay_diverged": "Replay stopped",
+      "rmh_mp_replay_missing": "That replay is no longer saved.",
+      "rmh_mp_replay_keep": "Keep watching",
+      "rmh_mp_replay_close": "CLOSE REPLAY",
+      "rmh_mp_replay_settings": "REPLAY SETTINGS",
+      "rmh_mp_replay_speed": "Speed",
+      "rmh_mp_replay_ff": "FAST",
+      "rmh_mp_replay_pov": "Watching",
+      "rmh_mp_replay_seek": "Jump to",
+      "rmh_mp_spectate_lobby": "In lobby",
+      "rmh_mp_spectate_none": "No matches to watch right now.",
+      "rmh_mp_spectate_refresh": "REFRESH",
+      "rmh_mp_spectate_offline": "Offline: the lobby list needs a connection.",
+      "rmh_mp_spectate_timeout": "The lobby list did not answer. Try again.",
+      "rmh_mp_spectate_joining": "Joining as a spectator..."
     },
     "v_dictionary": {
       "rmh_mp_invited_by": "#1# invited you",
@@ -275,7 +304,11 @@
       "rmh_mp_ui_kick_confirm": "Kick #1#? They cannot rejoin.",
       "rmh_mp_ui_err_generic": "Something went wrong (#1#)",
       "rmh_mp_ui_return_party": "Return to lobby #1#",
-      "rmh_mp_trap_triggered": "#1# Triggered!"
+      "rmh_mp_trap_triggered": "#1# Triggered!",
+      "rmh_mp_replay_diverged_at": "The replay diverged at event #1# (#2#).",
+      "rmh_mp_replay_seek_label": "Ante #1# #2#",
+      "rmh_mp_spectate_ante": "Ante #1#",
+      "rmh_mp_spectate_players": "#1# players"
     }
   }
 }

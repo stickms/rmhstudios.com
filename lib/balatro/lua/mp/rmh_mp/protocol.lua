@@ -55,6 +55,7 @@ P.L2J = {
   ui_set_team = "ui_set_team",
   ui_settings = "ui_settings",
   ui_spectate = "ui_spectate",
+  ui_spectate_list = "ui_spectate_list",
   ui_start = "ui_start",
   ui_vote = "ui_vote",
 }
@@ -79,6 +80,7 @@ P.J2L = {
   replay_feed = "replay_feed",
   replay_view = "replay_view",
   setup_view = "setup_view",
+  spectate_view = "spectate_view",
   tail = "tail",
   test_cmd = "test_cmd",
   timer_cue = "timer_cue",
@@ -95,7 +97,7 @@ P.ENUM = {
   refMsg = { "player_lives", "team_lives", "team_roster", "nemesis_pairing", "team_card_target", "royale_target", "manhunt_target", "team_score_board", "start_blind", "timer_hand_lost", "end_pvp", "death_pending", "eliminated", "win", "player_won", "reseed", "speedrun", "vote_progress" },
   peerKind = { "nemesis_info", "location", "timer", "sync", "opp_ctx", "trap_plant", "trap_held", "trap_fired", "player_result", "deck_req", "deck_res", "stats_req", "stats_res" },
   wireKind = { "hello", "welcome", "lobby", "player_info", "ready", "set_team", "kick", "leave", "setup", "vote_cast", "draft_choose", "start_game", "reseed", "chat", "game", "outcome", "checkpoint", "nemesis_info", "location", "timer", "sync", "opp_ctx", "trap_plant", "trap_held", "trap_fired", "player_result", "deck_req", "deck_res", "stats_req", "stats_res", "log", "presence", "host_changed", "bye" },
-  replayOp = { "match_manifest", "lobby_info", "run_info", "manifest", "end", "chk", "money_delta", "sell", "cashout", "reroll", "hand_scored", "buy", "open_pack", "voucher", "use", "pack_pick", "pack_skip", "reorder", "play", "discard", "select_blind", "skip_blind", "leave_shop", "ready_blind", "set_ante_key", "hand_result", "round_dollars", "net_pizza", "net_magnet", "life_lost", "net_trap" },
+  replayOp = { "match_manifest", "lobby_info", "run_info", "manifest", "end", "chk", "money_delta", "sell", "cashout", "reroll", "hand_scored", "buy", "open_pack", "voucher", "use", "pack_pick", "pack_skip", "reorder", "play", "discard", "select_blind", "skip_blind", "leave_shop", "ready_blind", "set_ante_key", "hand_result", "round_dollars", "net_pizza", "net_magnet", "life_lost", "net_trap", "net_in" },
 }
 
 P.PATHS = {
@@ -167,7 +169,7 @@ D[45] = {T="object", p={animBusy=D[19],ante=D[14],blindKey=D[43],countdown=D[19]
 D[46] = {T="any"}
 D[47] = {T="string", max=64}
 D[48] = {T="object", p={}, r={}, ap=D[46], pn=D[47]}
-D[49] = {T="enum", v={"match_manifest","lobby_info","run_info","manifest","end","chk","money_delta","sell","cashout","reroll","hand_scored","buy","open_pack","voucher","use","pack_pick","pack_skip","reorder","play","discard","select_blind","skip_blind","leave_shop","ready_blind","set_ante_key","hand_result","round_dollars","net_pizza","net_magnet","life_lost","net_trap"}}
+D[49] = {T="enum", v={"match_manifest","lobby_info","run_info","manifest","end","chk","money_delta","sell","cashout","reroll","hand_scored","buy","open_pack","voucher","use","pack_pick","pack_skip","reorder","play","discard","select_blind","skip_blind","leave_shop","ready_blind","set_ante_key","hand_result","round_dollars","net_pizza","net_magnet","life_lost","net_trap","net_in"}}
 D[50] = {T="number", min=0}
 D[51] = {T="object", p={d=D[48],i=D[14],op=D[49],t=D[50]}, r={"d","i","op","t"}}
 D[52] = {T="array", i=D[51], max=1024}
@@ -425,19 +427,23 @@ D[303] = {T="array", i=D[302], max=30}
 D[304] = {T="object", p={id=D[47],len=D[50],pos=D[50],pov=D[73]}, r={"id","len","pos","pov"}, n=true}
 D[305] = {T="object", p={list=D[303],playing=D[304],speed=D[50]}, r={}}
 D[306] = {T="object", p={draft=D[191],kind=D[192],msLeft=D[14],options=D[195],phase=D[196],result=D[197],stepId=D[44],voted=D[14],voters=D[14]}, r={"draft","kind","msLeft","options","phase","result","stepId","voted","voters"}}
-D[307] = {T="object", p={ante=D[14],at=D[50],hands_left=D[3],lives=D[12],score=D[13],skips=D[14]}, r={"ante","at","hands_left","score","skips"}}
-D[308] = {T="array", i=D[307], max=256}
-D[309] = {T="object", p={id=D[73],results=D[308]}, r={"id","results"}}
-D[310] = {T="array", i=D[46], max=32}
-D[311] = {T="object", p={args=D[310],cmd=D[47],id=D[47]}, r={"args","cmd","id"}}
-D[312] = {T="enum", v={"normal","orange","important"}}
-D[313] = {T="const", v=">>", n=true}
-D[314] = {T="enum", v={"ante","pvp","speedlatro"}}
-D[315] = {T="object", p={auto=D[19],beingTimered=D[19],color=D[312],display=D[313],mode=D[314],pressable=D[19],ticking=D[19],timering=D[19],value=D[68]}, r={"auto","beingTimered","color","display","mode","pressable","ticking","timering","value"}}
-D[316] = {T="any_of", o={D[205],D[68]}}
-D[317] = {T="object", p={}, r={}, ap=D[316], pn=D[44]}
-D[318] = {T="object", p={key=D[47],vars=D[317]}, r={"key"}}
-D[319] = {T="object", p={k=D[14],kind=D[272],n=D[14]}, r={"k","kind","n"}}
+D[307] = {T="integer", n=true}
+D[308] = {T="object", p={ante=D[307],code=D[13],players=D[14],queueMode=D[128]}, r={"ante","code","players","queueMode"}}
+D[309] = {T="array", i=D[308], max=50}
+D[310] = {T="object", p={error=D[44],lobbies=D[309]}, r={"lobbies"}}
+D[311] = {T="object", p={ante=D[14],at=D[50],hands_left=D[3],lives=D[12],score=D[13],skips=D[14]}, r={"ante","at","hands_left","score","skips"}}
+D[312] = {T="array", i=D[311], max=256}
+D[313] = {T="object", p={id=D[73],results=D[312]}, r={"id","results"}}
+D[314] = {T="array", i=D[46], max=32}
+D[315] = {T="object", p={args=D[314],cmd=D[47],id=D[47]}, r={"args","cmd","id"}}
+D[316] = {T="enum", v={"normal","orange","important"}}
+D[317] = {T="const", v=">>", n=true}
+D[318] = {T="enum", v={"ante","pvp","speedlatro"}}
+D[319] = {T="object", p={auto=D[19],beingTimered=D[19],color=D[316],display=D[317],mode=D[318],pressable=D[19],ticking=D[19],timering=D[19],value=D[68]}, r={"auto","beingTimered","color","display","mode","pressable","ticking","timering","value"}}
+D[320] = {T="any_of", o={D[205],D[68]}}
+D[321] = {T="object", p={}, r={}, ap=D[320], pn=D[44]}
+D[322] = {T="object", p={key=D[47],vars=D[321]}, r={"key"}}
+D[323] = {T="object", p={k=D[14],kind=D[272],n=D[14]}, r={"k","kind","n"}}
 
 P.SCHEMA = {
   l2j = {
@@ -476,6 +482,7 @@ P.SCHEMA = {
     ui_set_team = D[152],
     ui_settings = D[156],
     ui_spectate = D[131],
+    ui_spectate_list = D[108],
     ui_start = D[108],
     ui_vote = D[157],
   },
@@ -499,12 +506,13 @@ P.SCHEMA = {
     replay_feed = D[299],
     replay_view = D[305],
     setup_view = D[306],
-    tail = D[309],
-    test_cmd = D[311],
+    spectate_view = D[310],
+    tail = D[313],
+    test_cmd = D[315],
     timer_cue = D[108],
-    timer_state = D[315],
-    toast = D[318],
-    vote_progress = D[319],
+    timer_state = D[319],
+    toast = D[322],
+    vote_progress = D[323],
   },
 }
 

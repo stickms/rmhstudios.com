@@ -393,6 +393,7 @@ export class LobbyHost implements Role {
       case 'log':
         if (m.role !== 'player') return;
         this.star?.broadcast('log', env.d as WireData<'log'>, { f: from }, m.peerId);
+        this.ctx.replayTap()?.peerLog(from, env.d as WireData<'log'>);
         return;
       default:
         if (PEER_SET.has(env.k) && m.role === 'player') this.relayPeer(m, env.k as PeerKind, env.d as never, env.to);
@@ -440,6 +441,11 @@ export class LobbyHost implements Role {
       tail,
     });
     if (this.migratedFrom) this.star.send(m.peerId, 'host_changed', { hostId: this.ctx.me, from: 'migration' });
+    if (match && m.role === 'spectator') {
+      // REP-04: a spectator joining a running match gets every replay log so far (WS13).
+      const peer = m.peerId;
+      this.ctx.replayTap()?.catchUp(match.runId, (f, d) => !!this.star?.send(peer, 'log', d, { f }));
+    }
     if (!match || !inMatch || !this.driver) return;
     if (fresh) {
       // A crash rejoin: the referee resyncs this player (REF-20); it has 3 minutes to catch up.

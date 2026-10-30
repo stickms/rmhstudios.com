@@ -123,6 +123,13 @@ report.install_net()
 timer.install_net()
 MP.net.install_frame_hook()
 
+-- Replays and spectating (WS13). Loaded after every other session installer, so the recorder's
+-- wraps are the outermost ones (they see the player's inputs before anything else does).
+do
+  local ok, err = pcall(require, 'rmh_mp.replay')
+  if not ok then MP.log('error', 'replay failed to load: %s', tostring(err)) end
+end
+
 -- The pack usually loads after Game:start_up: install the art and merge the text now.
 if rawget(_G, 'G') and G.ASSET_ATLAS then pcall(atlas.install) end
 if rawget(_G, 'G') and G.localization then pcall(loc.refresh) end
