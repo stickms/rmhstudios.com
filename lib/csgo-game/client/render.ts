@@ -2,9 +2,9 @@
  * CS:GO's renderables and first-person view model for the shared entity renderer
  * (EntityRendererOptions.factory, game-profile.ts ProfileViewModel).
  *
- *   - Players are original, team-coloured figures built here (a body, a head, a visor stripe), not the
- *     game's agent characters; they crouch, turn, lean with their aim and fall when they die, and hold
- *     the weapon they have out (its published world model).
+ *   - Players draw their team's published model with the game's layered movement and aim animation
+ *     and the weapon out bone-merged into the hand (player-model.ts); a plain team-coloured figure
+ *     stands in while the model loads.
  *   - Dropped weapons, the planted bomb and thrown grenades draw their published models.
  *   - Smoke clouds and fires run the game's particle systems while the area lasts.
  *   - The view model is the active weapon's published view model, swayed and bobbed with the view.
@@ -37,6 +37,7 @@ import type { ProfileViewModel } from '../../tf2-game/client/game-profile';
 import { CS_GRENADE_KINDS, csWeapon, csWeaponByDefindex, csWeaponTable, hasCsWeaponData } from '../data/weapon-data';
 import { CS_TEAM_CT, CS_TEAM_T } from '../constants';
 import { VM_ACTIVITIES, type CsWeapon } from '../weapons/base';
+import { CsPlayerModel } from './player-model';
 
 /** Team colours of the figures (T sand, CT steel blue) and their visor. */
 const TEAM_BODY: Record<number, number> = { [CS_TEAM_T]: 0xb8925a, [CS_TEAM_CT]: 0x4d6f99 };
@@ -106,8 +107,12 @@ class PlacedModel {
   }
 }
 
-/** A player: an original figure in its team's colours, holding the weapon it has out. */
+/**
+ * A player: its team's model (player-model.ts), with a plain figure in the team's colours standing in
+ * while the model loads or where it is not published.
+ */
 export class CsPlayerFigure implements EntityRenderable {
+  private readonly model = new CsPlayerModel();
   private readonly root = new Group();
   private readonly body: Mesh;
   private readonly head: Mesh;
@@ -135,6 +140,11 @@ export class CsPlayerFigure implements EntityRenderable {
     const alive = num(f, 'lifeState') === LIFE_ALIVE;
     const team = num(f, 'team');
     const local = s.id === ctx.localPlayer && ctx.firstPerson;
+    if (this.model.update(s, ctx, !local && team >= CS_TEAM_T)) {
+      this.root.visible = false;
+      this.weapon.hide();
+      return;
+    }
     if (!this.root.parent) ctx.scene.add(this.root);
     this.root.visible = !local && (alive || this.fall < 1) && team >= CS_TEAM_T;
     if (team !== this.team) {
@@ -180,6 +190,7 @@ export class CsPlayerFigure implements EntityRenderable {
   }
 
   attachment(name: string, out: Matrix4): boolean {
+    if (this.model.attachment(name, out)) return true;
     if (!this.root.visible) return false;
     if (name === 'muzzle' && this.weapon.inst?.root.visible && this.weapon.inst.attachmentMatrix('muzzle_flash', out)) return true;
     out.copy(this.root.matrixWorld);
@@ -187,6 +198,7 @@ export class CsPlayerFigure implements EntityRenderable {
   }
 
   dispose(): void {
+    this.model.dispose();
     this.root.removeFromParent();
     this.body.geometry.dispose();
     this.head.geometry.dispose();
