@@ -34,6 +34,7 @@
 
 /* Full-screen games and apps — components/ and lib/ directories no site page imports. */
 @source not "../components/altair";
+@source not "../components/balatro";
 @source not "../components/blm";
 @source not "../components/breaches";
 @source not "../components/breakpoint";
@@ -91,6 +92,7 @@
 @source not "../components/worlds";
 @source not "../lib/altair";
 @source not "../lib/audio";
+@source not "../lib/balatro";
 @source not "../lib/breakpoint";
 @source not "../lib/bums-rush";
 @source not "../lib/controller";

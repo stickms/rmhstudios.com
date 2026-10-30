@@ -393,6 +393,9 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/eversion-lab': 'admin',
   '/rmh-internal-affairs': 'noindex', // internal microsite
   '/secret': 'noindex', // easter eggs — indexing them defeats the point
+  // Signed-in only and deliberately unsearchable (licensing): also disallowed in
+  // robots.txt and `noindex, nofollow` in its head.
+  '/balatro': 'auth-gated',
   // One tabletop group's scheduling board. Unlisted rather than permissioned:
   // anyone with the link may read it, so keeping it out of the sitemap (and its
   // own `noindex, nofollow`) is the whole of its obscurity.
