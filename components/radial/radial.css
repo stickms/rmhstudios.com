@@ -353,6 +353,12 @@ body:has(.radial-shell) .call-banner {
     padding-top: env(safe-area-inset-top, 0px);
     padding-inline: max(1rem, var(--safe-left, 0px)) max(1rem, var(--safe-right, 0px));
     border-radius: 0;
+    /* Solid on a phone (owner, 2026-10-31): the bar is the strip iOS Safari tints behind the clock and battery from
+       the fixed/sticky layer it finds at the top edge, so it is filled with the opaque surface colour (white in the
+       light themes, the theme's own graphite in the dark ones) and the status area reads as one with it instead of a
+       translucent slab over whatever scrolls beneath. The shader's rim still draws over the fill and marks the lower
+       edge; the degraded tiers already render this exact colour. Narrow screens only: the capsule above stays glass. */
+    background-color: var(--site-surface-opaque);
     /* The role's hairline border would draw a box around the full-bleed bar; the shader's rim (or, before it
        arrives, the CSS twin) already marks its lower edge. */
     border-inline-width: 0;
