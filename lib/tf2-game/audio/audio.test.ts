@@ -8,11 +8,17 @@ import { soundlevelToAttenuation } from '../data/sounds';
 import {
   attnToSndlvl,
   audibleRadius,
+  CSGO_FALLOFF,
   distanceGain,
+  falloffProfileFor,
   fullVolumeRadius,
+  profileAudibleRadius,
+  profileDistanceGain,
   SND_GAIN_MIN,
+  SOURCE_FALLOFF,
   sndlvlToAttn,
   sndlvlToDistMult,
+  soundlevelForRadius,
 } from './attenuation';
 import { BufferCache, decodedBytes } from './buffer-cache';
 import { captionDuration, reduceCaption } from './captions';
@@ -29,6 +35,7 @@ import {
 import { crc32 } from './crc32';
 import { AudioEngine, normalizeSoundPath, OCCLUSION_GAIN, VOICE_DUCK_GAIN } from './engine';
 import { chainOf, FakeAudioContext, FakeBuffer, flush } from './fake-audio.test-support';
+import { EntityLoopSounds, LateStartFilter, LOOP_RETRY_INTERVAL } from './loops';
 import { sceneCrc } from './scene-image';
 import {
   parseSoundscapes,
@@ -183,6 +190,72 @@ describe('attenuation (SNDLVL)', () => {
     expect(distanceGain(0, 1e6)).toBe(1);
     expect(audibleRadius(0)).toBe(Infinity);
   });
+
+  it('gives ambient_generic radii their level (ComputeSoundlevel: 40 dB at the radius)', () => {
+    expect(soundlevelForRadius(1250)).toBe(70); // the default radius
+    expect(soundlevelForRadius(36)).toBe(40);
+    expect(soundlevelForRadius(0)).toBe(0);
+    expect(soundlevelForRadius(1250, true)).toBe(0); // "play everywhere"
+  });
+});
+
+describe('falloff profiles', () => {
+  const db = (g: number) => 20 * Math.log10(g);
+
+  it('leaves TF2, HL2 and Portal on the plain curve', () => {
+    for (const game of ['tf2', 'hl2', 'portal'])
+      expect(falloffProfileFor(game)).toBe(SOURCE_FALLOFF);
+    for (const d of [0, 500, 3000, 20000])
+      expect(profileDistanceGain(SOURCE_FALLOFF, 75, d)).toBe(distanceGain(75, d));
+  });
+
+  it('CS:GO: footsteps fade out by ~1100 units, gunfire carries across the map, quieter', () => {
+    const P = falloffProfileFor('csgo');
+    expect(P).toBe(CSGO_FALLOFF);
+    // Footsteps (75 dB): full near, clearly down at 800, silent past 1100.
+    expect(profileDistanceGain(P, 75, 150)).toBe(1);
+    expect(profileDistanceGain(P, 75, 800)).toBeLessThan(distanceGain(75, 800) * 0.8);
+    expect(profileDistanceGain(P, 75, 1100)).toBe(0);
+    expect(profileDistanceGain(P, 75, 3000)).toBe(0);
+    expect(profileAudibleRadius(P, 75)).toBe(1100);
+    // Foley (65 dB: reloads, draws): gone sooner.
+    expect(profileDistanceGain(P, 65, 800)).toBe(0);
+    // Gunfire (79 dB): the plain curve — audible map-wide, falling with distance.
+    const shot = (d: number) => profileDistanceGain(P, 79, d);
+    expect(shot(200)).toBe(1);
+    expect(db(shot(1000))).toBeCloseTo(-9.9, 0);
+    expect(db(shot(4000))).toBeCloseTo(-21.9, 0);
+    expect(shot(6000)).toBeGreaterThan(0.03);
+    expect(shot(1000)).toBeGreaterThan(shot(2000));
+    // Explosions keep the curve too.
+    expect(profileDistanceGain(P, 140, 5000)).toBe(distanceGain(140, 5000));
+    // Never rises with distance.
+    for (const lvl of [60, 65, 75, 79]) {
+      let last = 1;
+      for (let d = 0; d < 5000; d += 37) {
+        const g = profileDistanceGain(P, lvl, d);
+        expect(g).toBeLessThanOrEqual(last + 1e-12);
+        last = g;
+      }
+    }
+  });
+
+  it('is what the CS:GO mixer applies', async () => {
+    const { ctx, audio } = engine({ game: 'csgo' });
+    await warm(audio, A, B);
+    audio.emit({ name: 'Weapon_Test.Single', pos: { x: 800, y: 0, z: 0 } });
+    const gain = ctx.sources[0].outputs[0].outputs[0] as unknown as { gain: { value: number } };
+    expect(gain.gain.value).toBeCloseTo(profileDistanceGain(CSGO_FALLOFF, 75, 800), 9);
+    expect(gain.gain.value).toBeLessThan(distanceGain(75, 800));
+    expect(audio.distanceGain(79, 3000)).toBeCloseTo(distanceGain(79, 3000), 9); // a shot carries
+    // A footstep across the map is culled outright; a TF2 one plays.
+    expect(audio.emit({ name: 'Default.StepLeft', pos: { x: 3000, y: 0, z: 0 } })).toBeNull();
+    const tf2 = engine({ game: 'tf2' });
+    await warm(tf2.audio, B);
+    expect(
+      tf2.audio.emit({ name: 'Default.StepLeft', pos: { x: 3000, y: 0, z: 0 } }),
+    ).not.toBeNull();
+  });
 });
 
 describe('channels', () => {
@@ -227,6 +300,37 @@ describe('channels', () => {
     expect(ctx.live()).toHaveLength(4);
     audio.emit({ name: 'Test.Auto', entity: 5, stop: true, channel: CHAN_AUTO });
     expect(audio.stats().playing).toBe(2);
+  });
+
+  it('stops a named sound on whatever channel its script plays it (the minigun fire loop)', async () => {
+    const { ctx, audio } = engine();
+    audio.setIndex({
+      ...INDEX,
+      entries: {
+        ...INDEX.entries,
+        // Weapon_Minigun.Fire: a CHAN_STATIC loop the weapon code stops as a CHAN_WEAPON sound.
+        'Test.StaticLoop': {
+          waves: [C],
+          volume: [1, 1],
+          pitch: [100, 100],
+          soundlevel: 94,
+          channel: CHAN_STATIC,
+        },
+      },
+    });
+    await warm(audio, C);
+    const h = audio.emit({ name: 'Test.StaticLoop', entity: 4, channel: CHAN_WEAPON });
+    expect(h?.looping).toBe(true);
+    audio.emit({ name: 'Test.StaticLoop', entity: 5 });
+    audio.emit({ name: 'Test.StaticLoop', entity: 4, channel: CHAN_WEAPON, stop: true });
+    expect(ctx.sources[0].stopped).toBe(true);
+    expect(ctx.sources[1].stopped).toBe(false); // another entity's
+    expect(h?.playing).toBe(false);
+    // An unnamed stop still matches by channel only.
+    audio.emit({ name: '', entity: 5, channel: CHAN_WEAPON, stop: true });
+    expect(ctx.sources[1].stopped).toBe(false);
+    audio.emit({ name: '', entity: 5, channel: CHAN_STATIC, stop: true });
+    expect(ctx.sources[1].stopped).toBe(true);
   });
 
   it('keeps loops and statics until stopped', async () => {
@@ -377,6 +481,9 @@ describe('mixer', () => {
     const gain = src.outputs[0].outputs[0] as unknown as { gain: { value: number } };
     expect(gain.gain.value).toBeCloseTo(distanceGain(75, 404.8), 6);
     expect(ctx.panners[0].panningModel).toBe('HRTF');
+    // The panner's own distance model is neutral (linear with no rolloff: gain 1 everywhere),
+    // so the Source curve on the gain node is the only attenuation.
+    expect(ctx.panners[0].distanceModel).toBe('linear');
     expect(ctx.panners[0].rolloffFactor).toBe(0);
     // Source x forward → Web Audio z; metres.
     expect(ctx.panners[0].positionZ.value).toBeCloseTo(404.8 * 0.01905, 6);
@@ -569,6 +676,85 @@ describe('mixer', () => {
     expect(audio.emit({ name: 'Weapon_Test.Single' })).toBeNull();
     audio.update();
     audio.dispose();
+  });
+});
+
+describe('state-driven loops', () => {
+  async function setup() {
+    const e = engine();
+    await warm(e.audio, B, C);
+    let now = 0;
+    const loops = new EntityLoopSounds({ emit: (ev) => e.audio.emit(ev) });
+    return {
+      ...e,
+      loops,
+      at: (t: number) => (now = t),
+      get now() {
+        return now;
+      },
+    };
+  }
+
+  it('starts, swaps and stops with the wanted loop', async () => {
+    const { ctx, loops } = await setup();
+    loops.update([[3, 'Test.Loop']], 0);
+    loops.update([[3, 'Test.Loop']], 0.1); // unchanged: not restarted
+    expect(ctx.live()).toHaveLength(1);
+    const first = ctx.sources[0];
+    loops.update([[3, 'Test.Static']], 0.2); // the state moved on (spin → fire)
+    expect(first.stopped).toBe(true);
+    expect(ctx.live()).toHaveLength(1);
+    loops.update([[3, '']], 0.3); // released
+    expect(ctx.live()).toHaveLength(0);
+    expect(loops.size).toBe(0);
+  });
+
+  it('silences an entity that is no longer reported (gone, out of the game)', async () => {
+    const { ctx, loops } = await setup();
+    loops.update(
+      [
+        [3, 'Test.Loop'],
+        [4, 'Test.Loop'],
+      ],
+      0,
+    );
+    expect(ctx.live()).toHaveLength(2);
+    loops.update([[4, 'Test.Loop']], 0.1);
+    expect(ctx.sources[0].stopped).toBe(true);
+    expect(ctx.live()).toHaveLength(1);
+    loops.stopAll();
+    expect(ctx.live()).toHaveLength(0);
+  });
+
+  it('retries a loop that did not start, but not a one-shot that ended', async () => {
+    const e = engine();
+    let index = false;
+    const loops = new EntityLoopSounds({ emit: (ev) => (index ? e.audio.emit(ev) : null) });
+    loops.update([[3, 'Test.Loop']], 0); // the index is not loaded yet
+    await warm(e.audio, B, C);
+    index = true;
+    loops.update([[3, 'Test.Loop']], LOOP_RETRY_INTERVAL / 2);
+    expect(e.ctx.live()).toHaveLength(0);
+    loops.update([[3, 'Test.Loop']], LOOP_RETRY_INTERVAL);
+    expect(e.ctx.live()).toHaveLength(1);
+    // A wave without loop points plays once for as long as the state wants it.
+    loops.update([[5, 'Test.Static']], 1);
+    e.ctx.sources[1].finish();
+    loops.update([[5, 'Test.Static']], 3);
+    expect(e.ctx.sources).toHaveLength(2);
+  });
+
+  it('drops a start that arrives after the stop that ended it', () => {
+    const f = new LateStartFilter(1 / 66);
+    expect(f.admits(7, 'WeaponMedigun.HealingWorld', 100)).toBe(true);
+    f.stopped(7, 'WeaponMedigun.HealingWorld', 102); // reliable: here first
+    expect(f.admits(7, 'weaponmedigun.healingworld', 101)).toBe(false); // the snapshot's start, late
+    expect(f.admits(7, 'WeaponMedigun.HealingWorld', 102)).toBe(true); // stop-then-start in a tick
+    expect(f.admits(7, 'WeaponMedigun.HealingWorld', 140)).toBe(true);
+    expect(f.admits(8, 'WeaponMedigun.HealingWorld', 101)).toBe(true);
+    // Forgotten after a while.
+    f.stopped(9, 'X', 102 + 66 * 5);
+    expect(f.admits(7, 'WeaponMedigun.HealingWorld', 101)).toBe(true);
   });
 });
 

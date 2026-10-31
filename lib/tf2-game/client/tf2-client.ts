@@ -53,10 +53,11 @@ import { keyKind, type EntityState as NetEntityState } from '../net/snapshot';
 import { TF2_LIMITS, type BotDifficulty, type JoinedPayload, type RoomAdminPayload, type RoomGame, type RoomMode } from '../net/events';
 import type { MatchCommand, MatchOptions } from '../server/match-host';
 import type { AudioEngine } from '../audio/engine';
+import { EntityLoopSounds, LateStartFilter } from '../audio/loops';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import { buildHudState, HudEventLog, hudSourceFromSnapshot, playerLookup, type HudSource } from './hud-adapter';
 import type { HudCommand, HudStore } from './hud-store';
-import type { GameSettings } from './settings';
+import { zoomSensitivityScale, type GameSettings } from './settings';
 import { buildUserCmd, drainImpulses, heldButtons, applyLook, type WeaponContext } from './input';
 import { InputSender } from './net/input';
 import { InterpolationBuffer, RenderClock } from './net/interpolation';
@@ -175,6 +176,11 @@ export class Tf2Client implements GameClient {
   private loop: GameLoop | null = null;
   private transport: Transport | null = null;
   private audio: AudioEngine | null = null;
+  /** Every player's weapon loop from replicated state (audio/loops.ts). */
+  private loops: EntityLoopSounds | null = null;
+  private readonly loopWants: Array<[number, string]> = [];
+  /** Drops loop starts that arrive after their (reliable) stop. */
+  private readonly lateStarts = new LateStartFilter(TICK_INTERVAL);
   private world: WorldRenderer | null = null;
   private ents: EntityRenderer | null = null;
   private models: ModelLibrary | null = null;
@@ -269,6 +275,8 @@ export class Tf2Client implements GameClient {
         this.occlusion,
       );
       this.unsubs.push(this.audio.attach());
+      const audio = this.audio;
+      this.loops = new EntityLoopSounds({ emit: (ev) => audio.emit(ev) });
       this.unsubs.push(this.store.onCommand((c) => this.onHudCommand(c)));
       this.console = attachConsoleHost(this.store, this.game, this.consoleHost());
       this.unsubs.push(() => this.console?.detach());
@@ -932,6 +940,8 @@ export class Tf2Client implements GameClient {
     this.pkg = null;
     this.brushCache.clear();
     this.records.clear();
+    this.loops?.stopAll();
+    this.lateStarts.clear();
   }
 
   private startLoop(): void {
@@ -1018,7 +1028,8 @@ export class Tf2Client implements GameClient {
     const local = this.snap.localEntity;
     const simId = this.localPlayerSim?.id;
     if (e.type === 'sound') {
-      const ent = e.opts.entity === undefined || e.opts.entity === simId ? local : e.opts.entity;
+      // Our own sounds are ours; a sound at a bare position stays positional (not "local").
+      const ent = e.opts.entity === simId ? local : e.opts.entity;
       this.audio?.emit({ name: e.name, entity: ent, pos: e.opts.pos, volume: e.opts.volume, pitch: e.opts.pitch, channel: e.opts.channel });
     } else {
       const fx = { ...e.effect, type: 'effect' as const };
@@ -1038,7 +1049,11 @@ export class Tf2Client implements GameClient {
     if (r.notTo !== undefined && r.notTo === local) return;
     if (ev.type === 'sound') {
       if (r.team !== undefined && r.team !== num(me, 'team')) return;
-      this.audio?.emit({ name: ev.name, entity: ev.entity, pos: ev.pos, volume: ev.volume, pitch: ev.pitch, channel: ev.channel, stop: ev.stop });
+      // Stops are reliable and go out ahead of the snapshot a start rides in: a start older than
+      // the stop that ended it would otherwise loop forever.
+      if (ev.stop) this.lateStarts.stopped(ev.entity, ev.name, e.tick);
+      if (ev.stop || this.lateStarts.admits(ev.entity, ev.name, e.tick))
+        this.audio?.emit({ name: ev.name, entity: ev.entity, pos: ev.pos, volume: ev.volume, pitch: ev.pitch, channel: ev.channel, stop: ev.stop, soundlevel: ev.soundlevel });
     } else if (ev.type === 'teleport') {
       this.interp.teleported(ev.player);
     }
@@ -1152,7 +1167,9 @@ export class Tf2Client implements GameClient {
     this.inputCore.poll(dt);
     for (const a of drainImpulses(input)) this.store.dispatchImpulse(a);
 
-    // Look every frame (smooth at any refresh rate); the commands carry the angles.
+    // Look every frame (smooth at any refresh rate); the commands carry the angles. Zoomed (the sniper
+    // scope, CS:GO's scopes) the look scales with the FOV in use, following the zoom's lerp.
+    input.lookScale = zoomSensitivityScale(this.fov.current(this.clientNow), this.settings.fov, this.settings.zoomSensitivityRatio);
     applyLook(input, this.viewAngles, this.settings);
     input.mouseDx = input.mouseDy = input.lookYaw = input.lookPitch = 0;
 
@@ -1280,6 +1297,7 @@ export class Tf2Client implements GameClient {
     if (this.audio) {
       this.audio.setLocalEntity(local >= 0 ? local : null);
       this.audio.setListener(view.origin, view.angles);
+      this.updateLoops(local, pp ?? null);
       this.audio.update();
     }
 
@@ -1361,6 +1379,30 @@ export class Tf2Client implements GameClient {
     };
   }
 
+  /**
+   * Every player's weapon loop from replicated state (C_TFMinigun::WeaponSoundUpdate's way): ours
+   * from the predicted weapon, everyone else's from their record's `weaponLoop`. A player who is
+   * gone, dead or switched weapon is silenced on this frame whatever packets were lost. Remote
+   * state is the newest snapshot's (OnDataChanged's, like the sound events), not the interpolated
+   * one, so the loop keeps time with the shots it belongs to.
+   */
+  private updateLoops(local: number, predicted: Player | null): void {
+    const loops = this.loops;
+    if (!loops) return;
+    const wants = this.loopWants;
+    wants.length = 0;
+    this.snap.forEachEntity((st: NetEntityState, rec: NetRecord) => {
+      if (!isPlayerType(st.schema.type)) return;
+      if (st.key === local && predicted) {
+        wants.push([st.key, predicted.weaponLoopSound()]);
+        return;
+      }
+      const name = rec.weaponLoop;
+      wants.push([st.key, typeof name === 'string' && num(rec, 'lifeState') === LIFE_ALIVE ? name : '']);
+    });
+    loops.update(wants, this.clientNow);
+  }
+
   private buildRenderStates(renderTime: number, nowMs: number): void {
     const out: RenderEntity[] = [];
     const local = this.snap.localEntity;
@@ -1375,6 +1417,13 @@ export class Tf2Client implements GameClient {
       const type = st.schema.type;
       if (type === 'brush') {
         this.applyBrush(rec);
+        // Doors, trains and lifts sound from their middle, and follow it while they move.
+        const m = this.pkg?.bsp.models[num(rec, 'bspModel')];
+        this.entityPos.set(st.key, {
+          x: num(rec, 'ox') + (m ? (m.mins.x + m.maxs.x) * 0.5 : 0),
+          y: num(rec, 'oy') + (m ? (m.mins.y + m.maxs.y) * 0.5 : 0),
+          z: num(rec, 'oz') + (m ? (m.mins.z + m.maxs.z) * 0.5 : 0),
+        });
         return;
       }
       if (st.key === local && isPlayerType(type)) {

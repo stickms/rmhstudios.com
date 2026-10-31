@@ -632,12 +632,24 @@ export class PhysicsWorld {
 
   /** A fixed box collider (portal frames, invisible blockers); returns a remover. */
   addStaticBox(mins: Vec3, maxs: Vec3, membership: number, filter = 0xffff): () => void {
-    const hx = ((maxs.x - mins.x) / 2) * METRES_PER_UNIT;
-    const hy = ((maxs.y - mins.y) / 2) * METRES_PER_UNIT;
-    const hz = ((maxs.z - mins.z) / 2) * METRES_PER_UNIT;
-    const desc = this.R.ColliderDesc.cuboid(Math.max(hx, 1e-3), Math.max(hy, 1e-3), Math.max(hz, 1e-3))
-      .setTranslation(((mins.x + maxs.x) / 2) * METRES_PER_UNIT, ((mins.y + maxs.y) / 2) * METRES_PER_UNIT, ((mins.z + maxs.z) / 2) * METRES_PER_UNIT)
+    const centre = { x: (mins.x + maxs.x) / 2, y: (mins.y + maxs.y) / 2, z: (mins.z + maxs.z) / 2 };
+    const half = { x: (maxs.x - mins.x) / 2, y: (maxs.y - mins.y) / 2, z: (maxs.z - mins.z) / 2 };
+    return this.addStaticOrientedBox(centre, half, null, membership, filter);
+  }
+
+  /**
+   * A fixed box collider turned by `rotation` (unit quaternion, null = axis-aligned): the frame
+   * of a portal whose rectangle is not aligned with the world axes. Returns a remover.
+   */
+  addStaticOrientedBox(centre: Vec3, half: Vec3, rotation: Quat | null, membership: number, filter = 0xffff): () => void {
+    const desc = this.R.ColliderDesc.cuboid(
+      Math.max(half.x * METRES_PER_UNIT, 1e-3),
+      Math.max(half.y * METRES_PER_UNIT, 1e-3),
+      Math.max(half.z * METRES_PER_UNIT, 1e-3),
+    )
+      .setTranslation(centre.x * METRES_PER_UNIT, centre.y * METRES_PER_UNIT, centre.z * METRES_PER_UNIT)
       .setCollisionGroups(groups(membership, filter));
+    if (rotation) desc.setRotation({ x: rotation.x, y: rotation.y, z: rotation.z, w: rotation.w });
     const c = this.world.createCollider(desc, this.staticBody);
     return () => this.world.removeCollider(c, true);
   }

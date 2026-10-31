@@ -18,6 +18,7 @@ import {
   detectAxisRotation,
   frameMatrixFor,
   IDENTITY_ROTATION,
+  impliedBindRotation,
   nearestAxisRotation,
   PERM_SOURCE_TO_GL,
 } from '../model-axes';
@@ -476,6 +477,46 @@ describe('GLB frames (model-axes)', () => {
     expect(three.distanceTo(forward.clone().applyMatrix4(P))).toBeLessThan(1e-9);
     // The fallback mapping (M = P) is the identity frame.
     expect(frameMatrixFor([0, 1, 0, 0, 0, 1, 1, 0, 0]).equals(new Matrix4())).toBe(true);
+  });
+
+  it("a hull symmetric under a turn takes the skeleton's word for the yaw (Portal's round elevator)", () => {
+    // models/props/round_elevator_body.mdl and _doors.mdl as published: Source-axes meshes (metres),
+    // the scene_root bone bound 90° about X, idle clips that hold it at identity (the converter's
+    // (y, z, x) fallback: these props have no `ref` sequence).
+    const rest = [Math.SQRT1_2, 0, 0, Math.SQRT1_2];
+    const idle = [0, 0, 0, 1];
+    const implied = impliedBindRotation(rest, idle)!;
+    // GLB x = Source y, GLB y = −Source x: the mesh is a quarter turn short of model space.
+    expect(implied).toEqual([0, 1, 0, -1, 0, 0, 0, 0, 1]);
+    const body = {
+      hull: { min: [-98.5858 * S, -100.309 * S, -1.7223 * S], max: [103.4078 * S, 99.6862 * S, 142.9492 * S] },
+      glb: { min: [-1.84785, -1.84785, -0.0328], max: [1.854201, 1.854207, 2.68238] },
+    } as unknown as { hull: Parameters<typeof detectAxisRotation>[0]; glb: Parameters<typeof detectAxisRotation>[1] };
+    const doors = {
+      hull: { min: [-109.4765 * S, -45.6795 * S, -0.4456 * S], max: [45.6795 * S, 109.4765 * S, 161.9556 * S] },
+      glb: { min: [0, 0, -0.00366], max: [1.77927, 1.77927, 1.98573] },
+    } as unknown as typeof body;
+    // The round body fits all four yaws equally; the doors fit three rotations equally, one of
+    // them lying on its side. Without the skeleton the body faced 90° off its collision and the
+    // doors fell over; with it both match the model space their hulls and .phy are in.
+    expect(detectAxisRotation(body.hull, body.glb)).toEqual(IDENTITY_ROTATION);
+    expect(detectAxisRotation(doors.hull, doors.glb)).not.toEqual(implied);
+    expect(detectAxisRotation(body.hull, body.glb, implied)).toEqual(implied);
+    expect(detectAxisRotation(doors.hull, doors.glb, implied)).toEqual(implied);
+    // A preference never beats a clearly better fit (a character's Y-up bind pose).
+    expect(detectAxisRotation(hull, { min: [-0.29, 0.27, -0.3], max: [0.29, 1.34, 0.08] }, implied)).toEqual(PERM_SOURCE_TO_GL);
+    // The posed model then needs no further turn: three = P · Source exactly.
+    const bind = frameMatrixFor(implied);
+    const frame = animatedFrame(bind, rest, idle);
+    expect(frame.equals(new Matrix4())).toBe(true);
+    // A door-top point (GLB bind) lands upright, a quarter turn on: Source (−y, x, z).
+    const posed = new Vector3(0.1, 0.2, 1.9).applyMatrix4(new Matrix4().makeRotationX(-Math.PI / 2)).applyMatrix4(frame);
+    const src = [posed.z, posed.x, posed.y];
+    expect(src[0]).toBeCloseTo(-0.2, 6);
+    expect(src[1]).toBeCloseTo(0.1, 6);
+    expect(src[2]).toBeCloseTo(1.9, 6);
+    // Agreeing roots say nothing.
+    expect(impliedBindRotation(rest, rest)).toBeNull();
   });
 
   it('posed frames: the idle skeleton must fit the hull (an HL2 view model swings its arm, not its frame)', () => {

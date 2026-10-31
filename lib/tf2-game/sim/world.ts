@@ -765,13 +765,26 @@ export class GameWorld implements CollisionWorld, WeaponHost {
       type: 'sound',
       name,
       entity: opts.entity,
-      pos: opts.pos ? { x: opts.pos.x, y: opts.pos.y, z: opts.pos.z } : undefined,
+      pos: opts.pos ? { x: opts.pos.x, y: opts.pos.y, z: opts.pos.z } : this.soundOrigin(opts.entity),
       volume: opts.volume,
       pitch: opts.pitch,
       channel: opts.channel ?? 0,
       notTo: opts.predictedBy,
       to: opts.to,
     });
+  }
+
+  /**
+   * Where an entity's sound starts, sent with it (as Source's sound messages carry an origin): a
+   * client that does not have the entity — out of its PVS, or a point entity that is never
+   * networked — still attenuates it from there instead of playing it everywhere at full volume.
+   * Players are in every snapshot, so their sounds go without (the client follows them anyway).
+   */
+  private soundOrigin(entity: number | undefined): Vec3 | undefined {
+    if (!entity) return undefined;
+    const e = this.entity(entity);
+    if (!e || e.isPlayer()) return undefined;
+    return e.worldSpaceCenter({ x: 0, y: 0, z: 0 });
   }
 
   emitEffect(effect: Omit<EffectEvent, 'type'>): void {

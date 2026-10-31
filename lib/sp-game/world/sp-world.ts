@@ -20,7 +20,7 @@
  */
 
 import { emptyTrace, NO_ENTITY, WORLD_ENTITY, type TraceFilter, type TraceResult } from '../../tf2-game/core/types';
-import { FL_ONGROUND, MASK_PLAYERSOLID, TICK_INTERVAL } from '../../tf2-game/core/constants';
+import { FL_ONGROUND, MASK_PLAYERSOLID, MOVETYPE_NOCLIP, MOVETYPE_NONE, TICK_INTERVAL } from '../../tf2-game/core/constants';
 import { copy, vec3, type Vec3 } from '../../tf2-game/core/vec';
 import { UniformRandomStream } from '../../tf2-game/core/random';
 import type { BspFile } from '../../tf2-game/formats/bsp';
@@ -39,6 +39,7 @@ import { anglesFromMat, matFromAngles, matMul, matMulVec, matTMulVec } from '../
 import { loadRapier, PhysicsWorld, PHYS_GROUP, PROP_FILTER, type PhysBody, type Rapier } from '../physics/physics-world';
 import { SpPlayer, type Holdable, type SpUserCmd } from '../player/sp-player';
 import { SpCollision } from './collision';
+import { findFreeSpace } from './free-space';
 import type { SpEvent } from './events';
 import type { TransitionData } from '../level/transition';
 import { captureCheckpoint, restoreCheckpoint, type Checkpoint } from '../level/checkpoint';
@@ -875,6 +876,9 @@ export class SpWorld {
       if (e && !e.removed && e.syncFromBody && !b.removed) e.syncFromBody();
     }
     if (this.game === 'portal') this.portals.updateBodies();
+    // Something that is not the player's own move (an animated or parented prop, a snap of a
+    // mover, a portal that closed around it) may have left it inside a solid: push it out.
+    this.resolvePlayerOverlap();
 
     // 4. Touches.
     this.updateTouches();
@@ -893,6 +897,55 @@ export class SpWorld {
   private riderEnt = NO_ENTITY;
   private readonly riderPos = vec3();
   private riderCarried = false;
+
+  /** Whether the player's hull fits at `origin` (with portal carving, like its movement). */
+  playerFits(origin: Vec3, filter: TraceFilter = this.player.traceFilter): boolean {
+    const p = this.player;
+    const c = this.collision;
+    const was = c.carving;
+    c.carving = true;
+    c.traceHull(origin, origin, p.mins, p.maxs, MASK_PLAYERSOLID, filter, fitTrace);
+    c.carving = was;
+    return !fitTrace.startSolid;
+  }
+
+  /**
+   * Moves the player to the nearest position its hull fits (lib/sp-game/world/free-space.ts),
+   * trying `prefer` first; returns false (and leaves it) when nothing within `maxDist` fits.
+   */
+  unstickPlayer(prefer: Vec3 | null = null, maxDist = 64, filter: TraceFilter = this.player.traceFilter): boolean {
+    const p = this.player;
+    const at = findFreeSpace(p.origin, (o) => this.playerFits(o, filter), { prefer, maxDist });
+    if (!at) return false;
+    if (at.x !== p.origin.x || at.y !== p.origin.y || at.z !== p.origin.z) {
+      copy(p.move.origin, at);
+      copy(p.origin, at);
+      p.move.gameMoved = true;
+      p.syncBodies();
+    }
+    return true;
+  }
+
+  /** Players move themselves out of rigid bodies (vphysics pushes them): only the rest counts as stuck. */
+  private readonly overlapFilter: TraceFilter = (id, mask) => {
+    const b = this.bodiesByEntity.get(id);
+    if (b && b.kind === 'dynamic') return false;
+    return this.player.traceFilter(id, mask);
+  };
+
+  /**
+   * The player inside the world or a non-dynamic solid after the tick's movers and props moved:
+   * out along the motion of what it is stuck in (up when that is still), nearest first.
+   */
+  private resolvePlayerOverlap(): void {
+    const p = this.player;
+    if (p.dead || p.removed || p.ladder || p.move.moveType === MOVETYPE_NOCLIP || p.move.moveType === MOVETYPE_NONE) return;
+    if (this.playerFits(p.origin, this.overlapFilter)) return;
+    const hit = fitTrace.entity;
+    const v = vec3();
+    if (hit > 0) this.entityVelocity(hit, v);
+    this.unstickPlayer(v.x !== 0 || v.y !== 0 || v.z !== 0 ? v : null, 96, this.overlapFilter);
+  }
 
   /**
    * The player standing on something that moved this tick without moveBrush
@@ -1083,6 +1136,7 @@ const mvTo = vec3();
 const mvM0 = new Float64Array(9);
 const mvM1 = new Float64Array(9);
 const mvTrace = emptyTrace();
+const fitTrace = emptyTrace();
 const fpA = new Float64Array(9);
 const fpB = new Float64Array(9);
 const fpBT = new Float64Array(9);

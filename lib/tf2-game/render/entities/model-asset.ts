@@ -19,7 +19,7 @@ import {
 } from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
-import { animatedFrame, checkPosedFrame, frameMatrixFor, modelFrame } from '../model-axes';
+import { animatedFrame, checkPosedFrame, frameMatrixFor, impliedBindRotation, modelFrame } from '../model-axes';
 import type { LoadedModel, ModelProvider } from '../props';
 import { Animator, AnimSet, type PoseParamDesc, type RawClip, type SequenceDesc } from './animator';
 import { materialTemplate, type MaterialTemplate } from './model-material';
@@ -159,11 +159,13 @@ export class ModelAsset {
         : undefined;
       const track = root >= 0 ? clip?.rot[root] : null;
       if (seq && track && !clip?.delta) {
-        const guess = animatedFrame(
-          this.frame,
-          this.restQuat.subarray(root * 4, root * 4 + 4),
-          track.values.subarray(0, 4),
-        );
+        const rootBind = this.restQuat.subarray(root * 4, root * 4 + 4);
+        const rootPosed = track.values.subarray(0, 4);
+        // A hull symmetric under a turn (Portal's round elevator) cannot say which way the bind
+        // pose faces; the skeleton can: prefer the rotation the idle root implies on a tie.
+        const implied = impliedBindRotation(rootBind, rootPosed);
+        if (implied) this.frame = modelFrame(scene, implied).matrix;
+        const guess = animatedFrame(this.frame, rootBind, rootPosed);
         const src = this.extras.source;
         this.frame =
           guess !== this.frame && src?.hullMin?.length === 3 && src.hullMax?.length === 3

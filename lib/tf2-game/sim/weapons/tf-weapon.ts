@@ -198,7 +198,15 @@ export abstract class TFWeapon extends BaseWeapon {
     o.world.emitSound(name, { entity: o.id, channel: CHAN_WEAPON, predictedBy: o.isBot ? undefined : o.id });
   }
 
-  /** Stops a looping sound this weapon started on the owner. */
+  /**
+   * The looping sound the weapon's state wants on its owner ('' for none) — replicated on the
+   * player record and played by every client (Weapon.loopSound). Loops never go out as events.
+   */
+  loopSound(): string {
+    return '';
+  }
+
+  /** Stops a sound this weapon started on the owner (the server's; reliable). */
   stopSound(name: string | undefined, channel = CHAN_WEAPON): void {
     const o = this.owner;
     if (!o || !name || !o.world.isServer) return;

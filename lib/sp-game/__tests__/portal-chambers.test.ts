@@ -12,6 +12,8 @@ import { vec3 } from '../../tf2-game/core/vec';
 import { portalRoot } from '../sp-root.test-support';
 import { Driver, loadWorld } from '../sp-driver.test-support';
 import { frameForward } from '../portal/portal-math';
+import { emptyTrace } from '../../tf2-game/core/types';
+import { MASK_PLAYERSOLID } from '../../tf2-game/core/constants';
 
 describe.skipIf(!portalRoot())('testchmb_a_00 puzzle', () => {
   it('walks through the scripted portals, solves the cube/button puzzle and reaches the elevator changelevel', async () => {
@@ -74,6 +76,47 @@ describe.skipIf(!portalRoot())('testchmb_a_00 puzzle', () => {
     const cl = d.events.find((e) => e.type === 'changelevel');
     expect(cl && cl.type === 'changelevel' && cl.map).toBe('testchmb_a_01');
     expect(cl && cl.type === 'changelevel' && cl.landmark).toBe('a00-a01_landmark_elevator');
+  }, 300_000);
+});
+
+describe.skipIf(!portalRoot())('the arrival elevator of testchmb_a_01', () => {
+  it('rides in from testchmb_a_00, is never left inside the lift as it settles, and lets the player out', async () => {
+    const d = new Driver(await loadWorld('portal', 'testchmb_a_00'));
+    const w = d.w;
+    d.idle(1);
+    // Into the departing lift (standing on its floor) and up to the changelevel.
+    const trig = d.entity('a00-a01_trigger_elevator_move')!;
+    const tc = trig.worldSpaceCenter(vec3());
+    const down = emptyTrace();
+    w.collision.traceHull(vec3(tc.x, tc.y, tc.z + 20), vec3(tc.x, tc.y, tc.z - 300), w.player.mins, w.player.maxs, MASK_PLAYERSOLID, w.player.traceFilter, down);
+    w.teleportEntity(w.player, vec3(down.endPos.x, down.endPos.y, down.endPos.z + 1), null, vec3());
+    expect(d.idle(60, () => d.events.some((e) => e.type === 'changelevel'))).toBe(true);
+    const cl = d.events.find((e) => e.type === 'changelevel');
+    if (!cl || cl.type !== 'changelevel') throw new Error('no changelevel');
+    w.dispose();
+
+    // The new map places the lift on its path 0.1 s in; the player arriving inside it must not
+    // stay embedded in its floor while it does (it used to, for most of a second).
+    const d2 = new Driver(await loadWorld('portal', 'testchmb_a_01', { loadType: 'transition', transition: cl.transition }));
+    const w2 = d2.w;
+    const p = w2.player;
+    const tr = emptyTrace();
+    let stuck = 0;
+    for (let i = 0; i < Math.round(4 / w2.tick); i++) {
+      d2.tick();
+      w2.collision.traceHull(p.origin, p.origin, p.mins, p.maxs, MASK_PLAYERSOLID, p.traceFilter, tr);
+      if (tr.startSolid) stuck++;
+    }
+    expect(stuck).toBe(0);
+    const body = d2.entity('a00-a01_elevator_body_model')!;
+    expect(p.move.groundEntity).toBe(body.id);
+    // The doors opened and stopped colliding; the lift's opening faces the chamber.
+    const doors = d2.entity('a00-a01_elevator_door_model') as unknown as { anim: { sequence: string } | null; collisionOn: boolean };
+    expect(doors.anim?.sequence).toBe('open');
+    expect(doors.collisionOn).toBe(false);
+    const start = vec3(p.origin.x, p.origin.y, p.origin.z);
+    const out = d2.walkTo(vec3(start.x - 170, start.y - 10, start.z), { radius: 12, timeout: 5 });
+    expect(out.reached).toBe(true);
   }, 300_000);
 });
 

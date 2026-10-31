@@ -41,6 +41,7 @@ import {
   type NetValue,
 } from '../render/entities';
 import type { AudioEngine } from '../audio/engine';
+import { soundlevelForRadius } from '../audio/attenuation';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import { SpWorld, type SpSnapshot } from '@/lib/sp-game/world/sp-world';
 import type { SpEvent } from '@/lib/sp-game/world/events';
@@ -49,7 +50,7 @@ import type { TransitionData } from '@/lib/sp-game/level/transition';
 import { adaptHl2Suit, adaptPortalGun, captionStyle, HudEventLog } from './hud-adapter';
 import { emptyHudState, type HudFade } from './hud-state';
 import type { HudCommand, HudStore } from './hud-store';
-import type { GameSettings } from './settings';
+import { zoomSensitivityScale, type GameSettings } from './settings';
 import { applyLook, buildUserCmd, drainImpulses, heldButtons } from './input';
 import { FixedStep, GameLoop, type FrameInfo } from './loop';
 import {
@@ -396,6 +397,8 @@ export class SpClient implements GameClient {
       this.store.dispatchImpulse(a);
     }
     if (!this.paused) {
+      // Any zoom that narrows the view FOV (env_zoom) slows the look with the FOV in use (CHud::Think).
+      input.lookScale = zoomSensitivityScale(this.fov.current(this.clientNow), this.settings.fov, this.settings.zoomSensitivityRatio);
       applyLook(input, this.viewAngles, this.settings);
     }
     input.mouseDx = input.mouseDy = input.lookYaw = input.lookPitch = 0;
@@ -602,6 +605,9 @@ export class SpClient implements GameClient {
           pitch: ev.pitch,
           stop: ev.stop,
           loop: ev.loop,
+          // ambient_generic's radius is a raw wave's level (a script entry keeps its own).
+          soundlevel:
+            ev.radius !== undefined && /\.(wav|mp3|ogg)$/i.test(ev.name) ? soundlevelForRadius(ev.radius) : undefined,
         });
         break;
       case 'caption':
