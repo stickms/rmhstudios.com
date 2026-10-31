@@ -666,6 +666,20 @@ export class LobbyHost implements Role {
         if (this.state) this.commit(reseedLobby(this.state, seed));
         this.tails.clear();
       },
+      // HUD-24: the hub tells roster players who left how it ended (once per run; a successor too).
+      onOver: (o) => {
+        // A 1v1 forfeit ends as `player_won`.
+        const w: Partial<Extract<RefMsg, { t: 'win' }>> = o.t === 'win' ? o : o.t === 'player_won' ? { winner_id: o.player_id } : {};
+        if (!w.winner_id && o.t !== 'win') return;
+        const ps = this.driver?.state?.cp.players ?? {};
+        const team = w.winner_team_id;
+        this.ctx.deps.hub.emit('balatro:match:result', {
+          runId: match.runId,
+          draw: !!w.draw,
+          winners: w.winner_id ? [w.winner_id] : Object.keys(ps).filter((id) => team && ps[id]?.team === team),
+          places: w.places ?? {},
+        });
+      },
       log: (msg) => this.ctx.deps.log(`[mp referee] ${msg}`, true),
     });
   }

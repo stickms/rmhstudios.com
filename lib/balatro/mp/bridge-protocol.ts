@@ -36,7 +36,7 @@
  */
 
 import { z } from 'zod';
-import { zCode, zQueueCounts, zQueueMode } from '../net/events';
+import { zCode, zLateResult, zQueueCounts, zQueueMode } from '../net/events';
 import {
   zBlindCol,
   zGameEvent,
@@ -297,6 +297,8 @@ export const J2L_MP = {
     stake: zStake,
     seed: zSeed.nullable(),
   }),
+  /** HUD-24: a match this player left has ended (the hub's `balatro:match:result`). */
+  late_result: zLateResult,
   /** The same union as §3.f outputs. */
   outcome: z.object({ o: zRefMsg, hs: z.number().int().min(0) }),
   /** Already filtered for "from my current target" where §3.b says so. */

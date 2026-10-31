@@ -761,6 +761,79 @@ describe('late result toast (A19: a match that ended while this player was at th
   it('nothing in a run (the end screen shows the result there)', function()
     expect(late({ t = 'win', winner_id = 'u1' }, 'RUN')).eq(nil)
   end)
+
+  it('the referee re-sending the win toasts once', function()
+    boot(3)
+    G.STAGE = G.STAGES.MAIN_MENU
+    MP.net.receive('outcome', { hs = 50, o = { t = 'win', winner_id = 'u1' } })
+    MP.net.receive('outcome', { hs = 51, o = { t = 'win', winner_id = 'u1' } })
+    local n = 0
+    for _, t in ipairs(MP.ui.toasts) do if t.key == 'mp_late_result' then n = n + 1 end end
+    expect(n).eq(1)
+  end)
+end)
+
+describe('late result from the hub (HUD-24: no session mounted, the player left)', function()
+  after_each(UH.teardown)
+
+  local function toasts()
+    local out = {}
+    for _, t in ipairs(MP.ui.toasts) do if t.key == 'mp_late_result' then out[#out + 1] = t.text end end
+    return out
+  end
+
+  local function menu_boot()
+    MP, G = UH.boot()
+    expect(MP.state.session == nil).truthy()
+  end
+
+  it('at the main menu: one toast per result, worded as the mod does', function()
+    menu_boot()
+    expect(UH.recv('late_result', { runId = 'r1', r = 'won' })).truthy()
+    UH.recv('late_result', { runId = 'r2', r = 'draw' })
+    UH.recv('late_result', { runId = 'r3', r = 'lost', place = 3 })
+    UH.recv('late_result', { runId = 'r4', r = 'lost' })
+    expect(toasts()).eq({
+      'The match you left has ended. You won.',
+      'The match you left has ended. It was a draw.',
+      'The match you left has ended. You finished in place 3',
+      'The match you left has ended. You lost.',
+    })
+  end)
+
+  it('the same run is shown once', function()
+    menu_boot()
+    UH.recv('late_result', { runId = 'r1', r = 'won' })
+    UH.recv('late_result', { runId = 'r1', r = 'won' })
+    expect(#toasts()).eq(1)
+  end)
+
+  it('during a run nothing shows; it waits for the next main menu', function()
+    menu_boot()
+    G.STAGE = G.STAGES.RUN
+    UH.recv('late_result', { runId = 'r1', r = 'lost', place = 2 })
+    set_main_menu_UI() -- still in the run (a menu redraw elsewhere): keeps waiting
+    expect(toasts()).eq({})
+    G.STAGE = G.STAGES.MAIN_MENU
+    set_main_menu_UI()
+    expect(toasts()).eq({ 'The match you left has ended. You finished in place 2' })
+    set_main_menu_UI()
+    expect(#toasts()).eq(1)
+  end)
+
+  it('at most three wait (the newest); malformed notices are dropped by the protocol', function()
+    menu_boot()
+    G.STAGE = G.STAGES.RUN
+    for i = 1, 5 do UH.recv('late_result', { runId = 'r' .. i, r = 'lost', place = i + 1 }) end
+    expect(UH.recv('late_result', { runId = 'bad', r = 'left' })).falsy()
+    G.STAGE = G.STAGES.MAIN_MENU
+    set_main_menu_UI()
+    expect(toasts()).eq({
+      'The match you left has ended. You finished in place 4',
+      'The match you left has ended. You finished in place 5',
+      'The match you left has ended. You finished in place 6',
+    })
+  end)
 end)
 
 -- ── Nemesis rows ────────────────────────────────────────────────────────────

@@ -52,6 +52,8 @@ const VALID: Record<keyof typeof BALATRO_C2S, unknown> = {
   'balatro:invite': { code: 'ABCDEF', toUserId: 'u' },
   'balatro:spectate:list': {},
   'balatro:queue:counts': {},
+  'balatro:match:result': { runId: 'run1', draw: false, winners: [], places: {} },
+  'balatro:match:pending': {},
 };
 
 let world: ReturnType<typeof makeWorld>;
