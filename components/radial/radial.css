@@ -1719,7 +1719,9 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
      LiquidGlobe from the same constants its projection and hit test use, so the
      circle you aim at is exactly the circle that locks, and the pins stay glued
      to the wireframe they are supposed to be standing on. */
-  --globe-size: min(86vw, 48dvh, 30rem);
+  /* `svh`, not `dvh`: the small viewport height does not change while Safari's toolbar grows and shrinks, so the
+     globe's layout size (and everything measured from it, RadialHub `measureDock`) holds still through the animation. */
+  --globe-size: min(86vw, 48svh, 30rem);
   /* Clears the foot capsule, which is absolutely positioned at the overlay's
      bottom edge. The overlay centres this element's MARGIN box, so the globe
      rides up by half of this rather than being pushed off the top — enough to
@@ -2406,7 +2408,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
      would take (`--dock-dy` is the same number at every shift). */
   top: calc(50% + var(--vv-shift, 0px) / 2);
   left: 50%;
-  width: min(86vw, 48dvh, 30rem);
+  width: min(86vw, 48svh, 30rem);
   translate: -50% -50%;
   z-index: calc(var(--z-floating) - 1);
   display: grid;
