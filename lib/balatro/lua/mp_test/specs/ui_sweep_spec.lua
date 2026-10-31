@@ -825,20 +825,29 @@ end
 
 describe('sweep: every MP item', function()
 
-  it('jokers: given, played with, through the shop, sold', function()
-    practice()
-    AP.run('select_blind')
-    -- every giveable MP joker (the error decoys are never spawnable: MP.practice.allowed says so),
-    -- in batches of 8 so a scored hand stays a few seconds even on software WebGL: each batch is
-    -- given, scores a hand (or its round ends and it sees the shop), and is sold
+  -- Every giveable MP joker (the error decoys are never spawnable: MP.practice.allowed says so), in
+  -- batches of 8 so a scored hand stays a few seconds even on software WebGL: each batch is given,
+  -- scores a hand (or its round ends and it sees the shop), and is sold. Two runs (two halves) keep
+  -- one run's memory small.
+  local function joker_keys()
     local keys = {}
     for _, d in ipairs(defs_of(function(d) return d.kind == 'Joker' and MP.practice.allowed(d.key) end)) do
       keys[#keys + 1] = d.key
     end
-    for first = 1, #keys, 8 do
+    return keys
+  end
+
+  local function jokers_sweep(half)
+    practice()
+    AP.run('select_blind')
+    local keys = joker_keys()
+    local mid = math.floor(#keys / 2 / 8) * 8
+    local from, to = 1, mid
+    if half == 2 then from, to = mid + 1, #keys end
+    for first = from, to, 8 do
       if G.STATE == G.STATES.SHOP then try('leave shop', AP.run, 'leave_shop') end
       if G.STATE == G.STATES.BLIND_SELECT then try('select blind', AP.run, 'select_blind') end
-      for i = first, math.min(#keys, first + 7) do give(keys[i]) end
+      for i = first, math.min(to, first + 7) do give(keys[i]) end
       settle(4)
       hover_cards('jokers held')
       if G.STATE == G.STATES.SELECTING_HAND and G.GAME.current_round.hands_left > 1 then
@@ -852,7 +861,16 @@ describe('sweep: every MP item', function()
     end
     settle(10)
     leave()
-    clean('jokers given played with through the sho')
+  end
+
+  it('jokers (first half): given, played with, through the shop, sold', function()
+    jokers_sweep(1)
+    clean('jokers first half')
+  end)
+
+  it('jokers (second half): given, played with, through the shop, sold', function()
+    jokers_sweep(2)
+    clean('jokers second half')
   end)
 
   it('consumables: used with a hand, with nothing highlighted, and with no hand at all', function()
