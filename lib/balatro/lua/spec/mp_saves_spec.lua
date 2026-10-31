@@ -186,3 +186,157 @@ describe('save guards', function()
     expect(MP.state.session).eq(nil)
   end)
 end)
+
+-- The profile's challenge bookkeeping. The stand-ins below do what vanilla's do with the
+-- profile (state_events.lua win_game, misc_functions.lua set_challenge_unlock and
+-- set_profile_progress): count over G.CHALLENGES, mark the run's challenge completed.
+describe('save guards: the profile challenge progress', function()
+  local MP, profile
+  local function stub_profile()
+    stub_game()
+    G.PROFILES = { { challenge_progress = { completed = {} }, challenges_unlocked = 5, progress = {} } }
+    _G.set_challenge_unlock = function()
+      local p = G.PROFILES[G.SETTINGS.profile]
+      local done = 0
+      for _, v in ipairs(G.CHALLENGES) do if p.challenge_progress.completed[v.id] then done = done + 1 end end
+      p.challenges_unlocked = math.min(#G.CHALLENGES, done + 5)
+    end
+    _G.set_profile_progress = function()
+      local p = G.PROFILES[G.SETTINGS.profile]
+      local tally, of = 0, 0
+      for _, v in ipairs(G.CHALLENGES) do
+        of = of + 1
+        if p.challenge_progress.completed[v.id] then tally = tally + 1 end
+      end
+      p.progress.challenges = { tally = tally, of = of }
+    end
+    _G.win_game = function()
+      set_profile_progress()
+      if G.GAME.challenge then
+        G.PROFILES[G.SETTINGS.profile].challenge_progress.completed[G.GAME.challenge] = true
+        set_challenge_unlock()
+      end
+      return 'won'
+    end
+  end
+
+  before_each(function()
+    MP = H.boot({ before = stub_profile })
+    H.transport()
+    stub_fs(MP)
+    MP.session.launcher = function() return true end
+    profile = G.PROFILES[1]
+    -- vanilla's list has 6 here; MP adds two while mounted
+    G.CHALLENGES = {}
+    for i = 1, 6 do G.CHALLENGES[i] = { id = 'c_v' .. i } end
+    G.CHALLENGES[7] = { id = 'c_mp_a', rmh_mp = true }
+    G.CHALLENGES[8] = { id = 'c_mp_b', rmh_mp = true }
+  end)
+  after_each(H.teardown)
+
+  it('counts only vanilla challenges, and leaves G.CHALLENGES as it was (same table, same order)', function()
+    local list = G.CHALLENGES
+    local before = {}
+    for i, c in ipairs(list) do before[i] = c end
+    profile.challenge_progress.completed = { c_v1 = true, c_mp_a = true }
+    set_profile_progress()
+    expect(profile.progress.challenges).eq({ tally = 1, of = 6 })
+    set_challenge_unlock()
+    expect(profile.challenges_unlocked).eq(6)
+    expect(G.CHALLENGES == list).eq(true)
+    expect(#list).eq(8)
+    for i, c in ipairs(before) do expect(list[i] == c).eq(true) end
+  end)
+
+  it('restores G.CHALLENGES when the wrapped call fails', function()
+    local list = G.CHALLENGES
+    expect(function()
+      MP.saves.with_vanilla_challenges(function()
+        expect(#G.CHALLENGES).eq(6)
+        error('boom')
+      end)
+    end).error('boom')
+    expect(#list).eq(8)
+    expect(list[8].id).eq('c_mp_b')
+  end)
+
+  it('a won MP challenge is never marked completed, in a session or out of one', function()
+    G.GAME.challenge = 'c_mp_a'
+    expect(win_game()).eq('won')
+    expect(profile.challenge_progress.completed).eq({})
+    expect(profile.challenges_unlocked).eq(5)
+    MP.session.mount('practice', { resolved = H.resolved(), deck = 'b_red', stake = 1 })
+    expect(win_game()).eq('won')
+    expect(profile.challenge_progress.completed).eq({})
+    MP.session.unmount('t')
+  end)
+
+  it('a vanilla challenge won in a match or practice is not recorded; outside a session it is', function()
+    G.GAME.challenge = 'c_v2'
+    MP.session.mount('match', match_info())
+    win_game()
+    expect(profile.challenge_progress.completed.c_v2).eq(nil)
+    expect(profile.challenges_unlocked).eq(5)
+    MP.session.unmount('t')
+    win_game()
+    expect(profile.challenge_progress.completed.c_v2).eq(true)
+    expect(profile.challenges_unlocked).eq(6)
+    expect(profile.progress.challenges).eq({ tally = 0, of = 6 })
+  end)
+
+  it('a run continued in single player records its vanilla challenge (the save is the profile again)', function()
+    G.GAME.challenge = 'c_v3'
+    MP.session.mount('match', match_info())
+    _G.get_blind_amount = function() return 300 end
+    MP.saves.continue_singleplayer()
+    win_game()
+    expect(profile.challenge_progress.completed.c_v3).eq(true)
+    MP.session.unmount('t')
+    _G.get_blind_amount = nil
+  end)
+
+  it('discovery tallies leave out MP centers, so mounted MP content never unlocks a vanilla deck', function()
+    -- vanilla: count discovered centers, then the discover_amount unlocks read the total
+    local unlocked = {}
+    _G.set_discover_tallies = nil
+    G.P_CENTERS = {
+      j_joker = { set = 'Joker', discovered = true }, c_pluto = { set = 'Planet', consumeable = true, discovered = true },
+      j_mp_taxes = { set = 'Joker', discovered = true, rmh_mp = true },
+      c_mp_asteroid = { set = 'Planet', consumeable = true, discovered = true, rmh_mp = true },
+      j_mp_hidden = { set = 'Joker', discovered = true, rmh_mp = true, omit = true },
+      b_mp_violet = { set = 'Back', discovered = true, unlocked = true, rmh_mp = true },
+    }
+    local function tallies()
+      local n = 0
+      for _, v in pairs(G.P_CENTERS) do if not v.omit and v.discovered then n = n + 1 end end
+      if n >= 3 then unlocked[#unlocked + 1] = 'b_blue' end
+      return n
+    end
+    expect(MP.saves.without_mp_centers(tallies)).eq(2)
+    expect(unlocked).eq({})
+    -- every flag is back, the MP center that was omitted already stays omitted
+    expect(G.P_CENTERS.j_mp_taxes.omit).eq(nil)
+    expect(G.P_CENTERS.b_mp_violet.omit).eq(nil)
+    expect(G.P_CENTERS.j_mp_hidden.omit).eq(true)
+    -- and when the tally raises, too
+    expect(function() MP.saves.without_mp_centers(function() error('tally failed') end) end).error('tally failed')
+    expect(G.P_CENTERS.c_mp_asteroid.omit).eq(nil)
+    expect(tallies()).eq(5)
+  end)
+
+  it('set_discover_tallies is wrapped at boot (the vanilla function sees no MP center)', function()
+    local seen
+    MP = H.boot({ before = function()
+      stub_profile()
+      _G.set_discover_tallies = function()
+        seen = {}
+        for k, v in pairs(G.P_CENTERS) do if not v.omit then seen[#seen + 1] = k end end
+        table.sort(seen)
+      end
+    end })
+    G.P_CENTERS = { j_joker = { set = 'Joker' }, j_mp_taxes = { set = 'Joker', rmh_mp = true } }
+    set_discover_tallies()
+    expect(seen).eq({ 'j_joker' })
+    expect(G.P_CENTERS.j_mp_taxes.omit).eq(nil)
+  end)
+end)
