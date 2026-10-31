@@ -22,6 +22,8 @@ export default defineConfig({
       'lib/sp-game/**/*.test.ts',
       // Counter-Strike: Global Offensive (de_dust2) on the same engine.
       'lib/csgo-game/**/*.test.ts',
+      // Harmonic: the original story shooter on the same engine (docs/plans/harmonic/).
+      'lib/harmonic-game/**/*.test.ts',
     ],
     testTimeout: 60_000,
     pool: 'threads',

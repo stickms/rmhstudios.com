@@ -1,0 +1,33 @@
+.harmonic-root .harmonic-title-screen {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--app-density-gap);
+  padding: var(--app-density-padding);
+  background: var(--app-bg);
+  color: var(--app-text);
+  text-align: center;
+}
+.harmonic-root .harmonic-title {
+  font-family: var(--app-font-display);
+  font-size: 3rem;
+  letter-spacing: 0.04em;
+}
+.harmonic-root .harmonic-tagline {
+  color: var(--app-text-muted);
+}
+.harmonic-root .harmonic-note {
+  font-family: var(--app-font-mono);
+  font-size: 0.75rem;
+  color: var(--app-accent);
+}
+.harmonic-root .harmonic-back {
+  color: var(--app-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.harmonic-root .harmonic-back:hover {
+  color: var(--app-text);
+}

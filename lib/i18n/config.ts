@@ -106,6 +106,8 @@ export const NAMESPACES = [
   "f-deepseek",
   "f-oncall",
   "f-dev-ai",
+  // Harmonic (original story shooter).
+  "harmonic",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

@@ -5,7 +5,7 @@ Statuses: `todo` · `claimed` · `review` · `done` · `blocked`.
 
 | WP   | Title                    | Status | Owner | Branch | Updated | Notes |
 | ---- | ------------------------ | ------ | ----- | ------ | ------- | ----- |
-| H0.1 | Scaffold                 | todo   |       |        |         |       |
+| H0.1 | Scaffold                 | done   | claude session_016uyGesPDPJvwhcY5petQ6h | claude/determined-volta-dvrs5r | 2026-10-31 | Route uses `noindexHead` from `lib/seo`; `i18n:resources` not run (game namespaces load lazily, not bundled). |
 | H0.2 | Level compiler           | todo   |       |        |         |       |
 | H0.3 | Procedural assets        | todo   |       |        |         |       |
 | H0.4 | Dev level and client     | todo   |       |        |         |       |
