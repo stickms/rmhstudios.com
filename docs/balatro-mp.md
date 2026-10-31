@@ -683,6 +683,18 @@ error within 2.5 s" as sent.
 **Spectate list (MM-07).** `balatro:spectate:list` answers from the directory
 (`listSpectatableLobbies`).
 
+**Find Game counts (audit A12).** While Find Game is on screen and the hub is up, Lua
+(`ui/pillars.lua`) sends `ui_queue_counts` every 5 s; `attach.ts` forwards it as
+`balatro:queue:counts` and mirrors the answer to Lua as `queue_counts` (live text, no re-render).
+The hub answers every casual mode with `queued` (players on tickets, across content hashes) and
+`inGame` (seats held in `casual` rooms), computed at most once a second for everyone
+(`COUNTS_TTL_MS`); 30 asks a minute per socket.
+
+**Queue guard (audit A18).** While searching or matched, `G.FUNCS.start_run` (New Run,
+Continue, Challenges, restart), CREATE, an invite's Join and the menu shortcuts open
+"Matchmaking In Progress" (`ui/queue_guard.lua`): Leave Queue & Continue (leaves, then replays
+the action), Leave Queue, Stay Queued. MP's own launches (`S.launching`) and session runs pass.
+
 **PR-05.** `isQueued(runtime)` (attach.ts) is true while searching; the runtime's
 `practiceGuard` then refuses Practice with `lobby_error practice` (the search keeps running), and
 the Lua menus grey Practice while searching or matched.

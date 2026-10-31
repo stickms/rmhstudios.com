@@ -1,7 +1,8 @@
 -- rmh_mp/ui/menu.lua — WS10 root of the out-of-run UI (PLAN §4 WS10; HUD-18, LOB-01…03, MM-01/02).
 --
 -- `require 'rmh_mp.ui.menu'` loads every WS10 module (theme, widgets, pillars, practice_menu,
--- lobby, lobby_options, run_setup, setup, chat, overlays, settings, collection, shortcuts), binds
+-- lobby, lobby_options, run_setup, setup, chat, overlays, settings, collection, shortcuts, queue_guard,
+-- credits, order_info), binds
 -- the J2L view models and defines MP.ui.open(intent) (called by MP.open from rmh_mp_entry.lua).
 --
 -- Model: everything drawn is a pure view of the last messages from TypeScript, kept in
@@ -276,6 +277,8 @@ function U.panel_def(model)
         colour = TH.lighten(TH.col('GREY'), 0.6), text_colour = TH.ui_col('TEXT_DARK') }) }, { padding = 0.04 }),
       W.row({ W.button({ id = 'mp_collection', label = TH.T('b_collection', 'Collection'), button = 'rmh_mp_collection',
         colour = TH.col('PALE_GREEN'), minw = 2.3, minh = 0.55, scale = 0.35 }) }, { padding = 0.04 }),
+      W.row({ W.button({ id = 'mp_credits', label = TH.T('rmh_mp_ui_credits', 'Credits'), button = 'rmh_mp_credits',
+        colour = TH.col('MP_PURPLE'), minw = 2.3, minh = 0.55, scale = 0.35 }) }, { padding = 0.04 }),
       W.row({ W.button({ id = 'mp_back', label = TH.T('b_back', 'Back'), button = 'rmh_mp_back', colour = TH.col('ORANGE'),
         minw = 2.3, minh = 0.55, scale = 0.4 }) }, { padding = 0.04 }),
       W.row({ W.text(status, { scale = 0.33, colour = scol, id = 'mp_status' }) }, { padding = 0.03 }),
@@ -384,7 +387,7 @@ end
 F.rmh_mp_invite_join = function()
   local inv = U.model.invite
   if not inv then return false end
-  if U.queue_busy() then return U.overlays and U.overlays.error('queued') end
+  if U.queue_guard and U.queue_guard(F.rmh_mp_invite_join) then return false end
   U.model.invite = nil
   local ok = U.send('ui_join', { code = inv.code })
   U.changed()
@@ -538,7 +541,7 @@ end
 U.MODULES = {
   'rmh_mp.ui.overlays', 'rmh_mp.ui.pillars', 'rmh_mp.ui.practice_menu', 'rmh_mp.ui.run_setup',
   'rmh_mp.ui.lobby', 'rmh_mp.ui.lobby_options', 'rmh_mp.ui.setup', 'rmh_mp.ui.chat', 'rmh_mp.ui.settings',
-  'rmh_mp.ui.collection', 'rmh_mp.ui.shortcuts',
+  'rmh_mp.ui.collection', 'rmh_mp.ui.shortcuts', 'rmh_mp.ui.queue_guard', 'rmh_mp.ui.credits', 'rmh_mp.ui.order_info',
 }
 for _, name in ipairs(U.MODULES) do
   local ok, err = pcall(require, name)
@@ -614,6 +617,8 @@ local OVERLAYS = {
   join_code = function() return U.overlays.join_code() end,
   run_setup = function(a) return U.run_setup.open(a.mode or 'lobby', a) end,
   shortcuts = function() return U.shortcuts.open() end,
+  credits = function() return U.credits.open() end,
+  the_order = function() return U.order_info.open() end,
 }
 
 local OPS = {
