@@ -106,6 +106,16 @@ KEEP: dict[str, dict] = {
     'alt_stickers.png': {'key': 'mp_alt_stickers', 'size': CARD, 'kind': 'card', 'placeholder': 'stickers'},
     'sticker_balanced.png': {'key': 'mp_sticker_balanced', 'size': CARD, 'kind': 'card', 'placeholder': 'stickers'},
     'pvp_title.png': {'key': 'mp_pvp_title', 'size': (333, 216), 'kind': 'asset', 'placeholder': 'balatro'},
+    # EX-17 lifted: the Nemesis sticker (Advanced layer `nemesis_sticker`).
+    'sticker_nemesis.png': {'key': 'mp_sticker_nemesis', 'size': CARD, 'kind': 'card', 'placeholder': 'stickers'},
+    # EX-16 lifted: the alt stakes' chips.
+    'alt_mp_stakes.png': {'key': 'mp_alt_mp_stakes', 'size': (29, 29), 'kind': 'asset', 'placeholder': 'chips'},
+}
+# EX-14 lifted: art of an optional pack, written to <out>/<pack>/{1x,2x}/ (not the MP pack's
+# folders) and registered with `pack`, so the builder ships it in that pack. The Release ruleset's
+# Joker sheet is ~1.45 MB raw: far past what is left of the MP pack's budget.
+OPTIONAL_PACK: dict[str, dict] = {
+    'release_jokers.png': {'key': 'mp_release_jokers', 'size': CARD, 'kind': 'card', 'placeholder': 'Joker', 'pack': 'release'},
 }
 # Every j_*.png but the unreferenced j_copycat is a one-sprite joker sheet.
 JOKER_PLACEHOLDER = 'Joker'
@@ -115,13 +125,10 @@ VARIANT_FILES = {v for spec in KEEP.values() for v in spec.get('variants', {}).v
 
 # EX-20: unreferenced or dead. The ec_other_sandbox sheet is replaced by mp_misc.png.
 DROP = {
-    'release_jokers.png',  # only the commented-out Release ruleset (EX-14)
     'j_copycat.png',  # unreferenced
     'stickers.png',  # unreferenced (1x only)
     'pvp_title_base_left.png',  # unreferenced (1x only)
     'pvp_title_base_right.png',
-    'sticker_nemesis.png',  # EX-17: registered, never applied
-    'alt_mp_stakes.png',  # EX-16: alt stakes
     'modicon.png',  # Steamodded mod badge
 }
 DROP_PREFIXES = ('alt_t_',)  # the Malverk alternate trap textures
@@ -406,6 +413,8 @@ def classify(name: str) -> str:
         return 'drop'
     if name in COMPOSED_FROM:
         return 'compose'
+    if name in OPTIONAL_PACK:
+        return 'optional'
     if name in KEEP or name in VARIANT_FILES:
         return 'keep'
     if name.startswith('j_') and name.endswith('.png'):
@@ -416,6 +425,8 @@ def classify(name: str) -> str:
 def registry_entry(name: str) -> tuple[str, dict]:
     if name in KEEP:
         spec = KEEP[name]
+    elif name in OPTIONAL_PACK:
+        spec = OPTIONAL_PACK[name]
     else:  # a one-sprite joker
         spec = {'key': 'mp_' + name[:-4], 'size': CARD, 'kind': 'card', 'placeholder': JOKER_PLACEHOLDER}
     entry = {
@@ -428,6 +439,8 @@ def registry_entry(name: str) -> tuple[str, dict]:
     }
     if 'variants' in spec:
         entry['variants'] = dict(sorted(spec['variants'].items()))
+    if 'pack' in spec:
+        entry['pack'] = spec['pack']
     return spec['key'], entry
 
 
@@ -443,24 +456,26 @@ def import_assets(mod: Path, out: Path, sources: dict) -> dict:
     unknown = [n for n in names if classify(n) == 'unknown']
     if unknown:
         raise SystemExit(f'unclassified mod assets (add to KEEP or DROP): {unknown}')
-    for scale in ('1x', '2x'):
-        d = out / scale
-        d.mkdir(parents=True, exist_ok=True)
-        for old in d.glob('*.png'):
-            old.unlink()
+    packs = sorted({spec['pack'] for spec in OPTIONAL_PACK.values()})
+    for base in [out, *(out / p for p in packs)]:
+        for scale in ('1x', '2x'):
+            d = base / scale
+            d.mkdir(parents=True, exist_ok=True)
+            for old in d.glob('*.png'):
+                old.unlink()
 
     atlases: dict[str, dict] = {}
 
-    def write(name: str, png1: bytes, png2: bytes) -> None:
+    def write(name: str, png1: bytes, png2: bytes, base: Path = out) -> None:
         (w1, h1), (w2, h2) = png_size(png1), png_size(png2)
         if (w2, h2) != (2 * w1, 2 * h1):
             raise SystemExit(f'{name}: 2x is {w2}x{h2}, expected {2 * w1}x{2 * h1}')
-        (out / '1x' / name).write_bytes(optimise(png1))
-        (out / '2x' / name).write_bytes(optimise(png2))
+        (base / '1x' / name).write_bytes(optimise(png1))
+        (base / '2x' / name).write_bytes(optimise(png2))
 
     for name in names:
         kind = classify(name)
-        if kind != 'keep':
+        if kind not in ('keep', 'optional'):
             continue
         p1, p2 = src1 / name, src2 / name
         if not p1.exists() or not p2.exists():
@@ -468,7 +483,7 @@ def import_assets(mod: Path, out: Path, sources: dict) -> dict:
         b1, b2 = p1.read_bytes(), p2.read_bytes()
         sources[f'1x/{name}'] = hashlib.sha256(b1).hexdigest()
         sources[f'2x/{name}'] = hashlib.sha256(b2).hexdigest()
-        write(name, b1, b2)
+        write(name, b1, b2, out / OPTIONAL_PACK[name]['pack'] if kind == 'optional' else out)
         if name not in VARIANT_FILES:
             key, entry = registry_entry(name)
             atlases[key] = entry
@@ -524,7 +539,9 @@ def import_localization(mod: Path, out: Path, sources: dict) -> list[str]:
 ATLAS_COMMENT = (
     'MP atlas registry, generated by scripts/balatro/import-mp-assets.py (do not edit by hand; '
     'change the importer and re-run it). Format: docs/balatro-mp.md section "Atlas registry". '
-    'Files live in data/balatro-mp/{1x,2x}/ and ship in the mp pack at rmh_mp/assets/{1x,2x}/; '
+    'Files live in data/balatro-mp/{1x,2x}/ and ship in the mp pack at rmh_mp/assets/{1x,2x}/ '
+    '(an entry with `pack` lives in data/balatro-mp/<pack>/{1x,2x}/ and ships in that optional pack '
+    'at the same rmh_mp/assets path); '
     'the builder also emits this registry as the Lua table rmh_mp/data/atlases.lua.'
 )
 

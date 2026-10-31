@@ -8,10 +8,11 @@
  *
  * Where each is reachable (D-17): the five player-facing rulesets are in
  * the private picker; the ten dormant ones form the "Extra rulesets"
- * sub-cycle (private Lobby Options and Practice). Release is EX-14.
+ * sub-cycle (private Lobby Options and Practice). Release (EX-14 lifted) is an
+ * extra ruleset whose art is the optional `release` pack (`packs`).
  */
 
-import type { LobbyOptions } from '../types';
+import type { LobbyOptions, OptionalPack } from '../types';
 import type { LayerDef } from './layers';
 
 export interface RulesetDef extends Pick<
@@ -35,6 +36,8 @@ export interface RulesetDef extends Pick<
   forceOptions?: Partial<LobbyOptions>;
   /** Extra-rulesets sub-cycle (D-17) rather than the main picker. */
   extra: boolean;
+  /** Optional content packs every seated peer must hold before the match starts (EX-14). */
+  packs?: readonly OptionalPack[];
 }
 
 const defs: RulesetDef[] = [
@@ -168,6 +171,15 @@ const defs: RulesetDef[] = [
     reworked: ['j_mp_hanging_chad', 'j_mp_lets_go_gambling'],
     extra: true,
   },
+  // RS-17 (EX-14 lifted): Release — the game as of 1.0.0. Its card art is a separate lazy pack.
+  {
+    key: 'ruleset_mp_release',
+    short: 'release',
+    layers: ['release'],
+    multiplayerContent: false,
+    extra: true,
+    packs: ['release'],
+  },
 ];
 
 export const RULESETS: Readonly<Record<string, RulesetDef>> = Object.freeze(
@@ -191,6 +203,11 @@ export const PRIVATE_RULESETS = [
 
 /** D-17: the "Extra rulesets" sub-cycle (private Lobby Options and Practice). */
 export const EXTRA_RULESETS: readonly string[] = defs.filter((d) => d.extra).map((d) => d.key);
+
+/** The optional packs a ruleset needs (EX-14); [] for an unknown key. */
+export function requiredPacks(rulesetKey: string): readonly OptionalPack[] {
+  return getRuleset(rulesetKey)?.packs ?? [];
+}
 
 /** MM-03: the casual ruleset vote, in panel order. */
 export const CASUAL_VOTE_RULESETS = [

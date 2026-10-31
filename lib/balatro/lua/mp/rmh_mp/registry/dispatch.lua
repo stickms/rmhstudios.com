@@ -29,6 +29,10 @@ local R = require 'rmh_mp.registry'
 local D = {}
 R.dispatch = D
 
+-- A rework's calc returns D.SKIP to stop the vanilla behaviour for that context (the mod's
+-- `return nil, true`): the card returns nothing.
+D.SKIP = D.SKIP or setmetatable({}, { __tostring = function() return 'dispatch.SKIP' end })
+
 local function def_for_center(center)
   if not center or not center.key then return nil end
   return R.get(center.key)
@@ -72,6 +76,7 @@ function D.install()
         end
         if not self.debuff then
           local r = def.calc(self, context)
+          if r == D.SKIP then return nil end
           if r ~= nil then return r end
         end
       elseif self.ability and self.ability.mp_phantom then
@@ -129,9 +134,10 @@ function D.install()
       return orig(self, ...)
     end, o('open'))
 
-    -- Card.update runs for every card every frame: only wrap it when some def needs it.
+    -- Card.update runs for every card every frame: only wrap it when a def this session enabled
+    -- needs it (today only the Release ruleset's Swashbuckler).
     local any_update = false
-    for _, d in ipairs(R.defs()) do if d.update then any_update = true end end
+    for _, d in ipairs(R.defs()) do if d.update and R.enabled(d.key) then any_update = true end end
     if any_update then wrap(Card, 'update', function(orig, self, dt, ...)
       local r = orig(self, dt, ...)
       local def = card_def(self)
@@ -233,10 +239,19 @@ function D.install_display(o)
   -- mean "no positional vars": the def's vars fill [1..n] and vanilla's named fields are kept on
   -- top (they drive the badge tooltips), so an MP joker never renders "#1#".
   wrap(_G, 'generate_card_ui', function(orig, _c, full_UI_table, specific_vars, card_type, badges, ...)
-    if (specific_vars == nil or (type(specific_vars) == 'table' and specific_vars[1] == nil))
-      and ability_card and _c and ability_card.config and ability_card.config.center == _c then
-      local def = def_for_center(_c)
-      if def and def.loc_vars then
+    local def = _c and ability_card and ability_card.config and ability_card.config.center == _c
+      and def_for_center(_c) or nil
+    -- An MP card's vars fill in for the missing ones; a rework's (`loc_vars` on a Rework def, its
+    -- text swapped by `rework.loc`) replace vanilla's positional vars outright.
+    local rework_vars = def and def.kind == 'Rework' and def.loc_vars
+    if (rework_vars or specific_vars == nil or (type(specific_vars) == 'table' and specific_vars[1] == nil))
+      and def then
+      if specific_vars ~= nil and rework_vars then
+        local named = {}
+        for k, v in pairs(specific_vars) do if type(k) ~= 'number' then named[k] = v end end
+        specific_vars = named
+      end
+      if def.loc_vars then
         local ok, res = pcall(def.loc_vars, ability_card)
         if ok and type(res) == 'table' then
           local vars = res.vars or res

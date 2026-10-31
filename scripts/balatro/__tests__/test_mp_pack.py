@@ -11,6 +11,7 @@ oxipng are imported lazily by the scripts and are not touched here.
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 import os
 import shutil
@@ -18,6 +19,7 @@ import struct
 import subprocess
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -135,10 +137,16 @@ class ComposeTests(unittest.TestCase):
 
 class ClassifyTests(unittest.TestCase):
     def test_prune_list(self):
-        for dead in ('release_jokers.png', 'j_copycat.png', 'alt_t_web.png', 'modicon.png', 'sticker_nemesis.png'):
+        for dead in ('j_copycat.png', 'alt_t_web.png', 'modicon.png'):
             self.assertEqual(imp.classify(dead), 'drop', dead)
-        for kept in ('Trap.png', 'j_pizza.png', 'c_asteroid_ru.png', 'blind_col.png', 'pvp_title.png'):
+        # EX-16 and EX-17 lifted: shipped in the MP pack
+        for kept in ('Trap.png', 'j_pizza.png', 'c_asteroid_ru.png', 'blind_col.png', 'pvp_title.png',
+                     'sticker_nemesis.png', 'alt_mp_stakes.png'):
             self.assertEqual(imp.classify(kept), 'keep', kept)
+        # EX-14 lifted: the Release Joker sheet goes to its own optional pack
+        self.assertEqual(imp.classify('release_jokers.png'), 'optional')
+        key, entry = imp.registry_entry('release_jokers.png')
+        self.assertEqual((key, entry['pack'], entry['placeholder']), ('mp_release_jokers', 'release', 'Joker'))
         self.assertEqual(imp.classify('ec_other_sandbox.png'), 'compose')
         self.assertEqual(imp.classify('brand_new_sheet.png'), 'unknown')
 
@@ -239,14 +247,27 @@ class LocBuilderTests(unittest.TestCase):
     def test_dead_content_is_dropped(self):
         t = {
             'descriptions': {
-                'Joker': {'j_mp_8ball_release': {'name': 'x'}, 'j_mp_idol': {'name': 'x'}, 'j_mp_baron': {'name': 'B'}, 'j_mp_pizza': {'name': 'P'}},
-                'Stake': {'stake_mp_plastic': {'name': 'x'}, 'stake_mp_planet': {'name': 'Planet'}},
+                'Joker': {'j_mp_8ball_release': {'name': 'R'}, 'j_mp_idol': {'name': 'x'}, 'j_mp_baron': {'name': 'B'}, 'j_mp_pizza': {'name': 'P'}},
+                'Stake': {'stake_mp_plastic': {'name': 'Pl'}, 'stake_mp_planet': {'name': 'Planet'}},
             }
         }
+        # The Release text (EX-14) and the alt stakes (EX-16) ship now; only A2 §14's dead keys go.
         self.assertEqual(
             bld.drop_dead(t),
-            {'descriptions': {'Joker': {'j_mp_baron': {'name': 'B'}, 'j_mp_pizza': {'name': 'P'}}, 'Stake': {'stake_mp_planet': {'name': 'Planet'}}}},
+            {'descriptions': {'Joker': {'j_mp_8ball_release': {'name': 'R'}, 'j_mp_baron': {'name': 'B'}, 'j_mp_pizza': {'name': 'P'}},
+                              'Stake': {'stake_mp_plastic': {'name': 'Pl'}, 'stake_mp_planet': {'name': 'Planet'}}}},
         )
+
+    def test_optional_pack_is_its_own_zip(self):
+        data, extracted = bld.build_optional('release')
+        names = sorted(zipfile.ZipFile(io.BytesIO(data)).namelist())
+        self.assertEqual(names, ['rmh_mp/assets/1x/release_jokers.png', 'rmh_mp/assets/2x/release_jokers.png'])
+        self.assertEqual(extracted, sum(len(d) for _, d in bld.optional_assets('release', bld.read_json(bld.MP_DATA / 'atlases.json'))))
+        self.assertEqual(bld.build_optional('release')[0], data)  # deterministic
+        _, mp_files = bld.mp_assets()
+        self.assertFalse(any(n.endswith('release_jokers.png') for n, _ in mp_files))
+        with self.assertRaises(SystemExit):
+            bld.build_optional('nope')
 
     def test_fallback_glyphs_only_where_missing(self):
         covered = {ord(c) for c in "abc'"}

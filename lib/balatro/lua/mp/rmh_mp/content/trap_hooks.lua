@@ -151,6 +151,10 @@ local function seal_watch(card, call)
   return a, b
 end
 
+--- A seal's consumable made inside `call()` is what Magic Mouth steals (also used by the Release
+--- ruleset's Blue Seal, content/release.lua, which makes its Planet outside vanilla's pass).
+H.seal_watch = seal_watch
+
 -- Forbiddance state lives on the trap card (saved with the run).
 local function armed_forbiddance()
   for _, t in ipairs(T.hidden(T.FORBIDDANCE)) do

@@ -35,6 +35,7 @@ import {
   zId,
   zKey,
   zLobbyState,
+  zOptionalPack,
   zRefCheckpoint,
   zRefMsg,
   zReplayBatch,
@@ -63,6 +64,8 @@ const zPlayerInfo = z.object({
   avatarJoker: zKey,
   blindCol: zBlindCol,
   lang: z.string().max(16),
+  /** Optional packs this peer has mounted (EX-14); a later `player_info` updates it. */
+  packs: z.array(zOptionalPack).max(4).optional(),
 });
 
 /** `d` schema per kind. */

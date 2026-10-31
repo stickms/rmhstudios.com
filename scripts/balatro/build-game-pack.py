@@ -16,7 +16,9 @@ are served by app/routes/api/balatro/pack.$file.ts behind the session check.
                                             platform Lua (PLATFORM_LUA, lib/balatro/lua)
     data/balatro-pack/audio-<sha12>.zip     resources/sounds
     data/balatro-pack/mp-<sha12>.zip        the multiplayer pack (rmh_mp/**), loaded lazily
-    lib/balatro/game-pack.json              {version, core: {file, bytes, sha256}, audio: {…}, mp: {…}}
+    data/balatro-pack/release-<sha12>.zip   the Release ruleset's art (EX-14), an optional pack
+                                            fetched only when a lobby picks that ruleset
+    lib/balatro/game-pack.json              {version, core: {file, bytes, sha256}, audio: {…}, mp: {…}, release: {…}}
 
 The game boots on the core pack alone. The audio pack follows in the background,
 and lib/balatro/lua/rmh_web.lua starts Balatro's sound thread once it lands, so
@@ -51,6 +53,13 @@ The mp pack (all under rmh_mp/, extracted to /Balatro/rmh_mp/):
     rmh_mp/data/atlases.lua       data/balatro-mp/atlases.json as a Lua table
     rmh_mp/loc/<lang>.lua         generated Lua tables (see build_loc)
     rmh_mp/glyphs.bin             per-font codepoint bitmap (see glyph_bitmap)
+    rmh_mp/data/packs.lua         {release = {file, sha256}}: the optional packs this mp pack
+                                  expects, so the mp pack's hash (and the lobby content hash,
+                                  D-36) changes whenever an optional pack does
+
+An optional pack (OPTIONAL_PACKS, today only `release`) holds the art of the atlas entries that
+carry `pack = '<name>'`, from data/balatro-mp/<name>/{1x,2x}/, at the same rmh_mp/assets/{1x,2x}/
+paths. It is built with the mp pack (also by --mp-only) and has its own budget.
 
 Budgets (data/balatro-mp/pack-budget.json) fail the build and --check.
 """
@@ -75,6 +84,7 @@ MP_DATA = ROOT / 'data' / 'balatro-mp'
 MP_LUA = ROOT / 'lib' / 'balatro' / 'lua' / 'mp' / 'rmh_mp'
 PLATFORM_LUA_DIR = ROOT / 'lib' / 'balatro' / 'lua'
 BUDGET = MP_DATA / 'pack-budget.json'
+OPTIONAL_PACKS = ('release',)
 
 EXCLUDE_DIRS = {'dlls'}
 STORED = {'.ogg', '.png'}
@@ -365,16 +375,11 @@ def read_json(path: Path):
 
 
 # Mod localization for content this port does not ship (PLAN §2.13), dropped from every
-# language so it neither ships nor pulls glyphs into the core fonts: the Release ruleset
-# (EX-14), alt stakes (EX-16), and entries A2 §14 found no live object for (j_broken,
-# j_mp_idol, j_to_the_moon_mp, the m_gold balanced note). Baron, Mime and the White Deck
-# (EX-15) ship since that exclusion was lifted (rmh_mp/content/{jokers/rarity_shifted,white_deck}.lua).
-DEAD_LOC = re.compile(
-    r'_release$'
-    r'|^(j_mp_idol|j_broken|j_to_the_moon_mp)$'
-    r'|^mp_sticker_balanced_m_gold$'
-    r'|^stake_mp_(plastic|pebble|ferrite|pyrite|crystal|jade|antimatter)$'
-)
+# language so it neither ships nor pulls glyphs into the core fonts: entries A2 §14 found no live
+# object for (j_broken, j_mp_idol, the m_gold balanced note). Baron, Mime and the White Deck
+# (EX-15), the Release ruleset's text (EX-14), the alt stakes and Plastic's To the Moon (EX-16)
+# ship since those exclusions were lifted.
+DEAD_LOC = re.compile(r'^(j_mp_idol|j_broken)$|^mp_sticker_balanced_m_gold$')
 
 
 def drop_dead(t: dict) -> dict:
@@ -502,16 +507,38 @@ def mp_lua_files() -> list[tuple[str, bytes]]:
     return files
 
 
+def pack_assets(base: Path) -> list[tuple[str, bytes]]:
+    files = []
+    for scale in ('1x', '2x'):
+        for path in sorted((base / scale).glob('*.png')):
+            files.append((f'rmh_mp/assets/{scale}/{path.name}', path.read_bytes()))
+    return files
+
+
+def optional_assets(pack: str, registry: dict) -> list[tuple[str, bytes]]:
+    """The art of an optional pack: every atlas entry with `pack == <pack>` must be there."""
+    files = pack_assets(MP_DATA / pack)
+    shipped = {n for n, _ in files}
+    for key, entry in registry['atlases'].items():
+        if entry.get('pack') != pack:
+            continue
+        for scale in ('1x', '2x'):
+            if f'rmh_mp/assets/{scale}/{entry["file"]}' not in shipped:
+                raise SystemExit(f'atlas {key}: {pack}/{scale}/{entry["file"]} is missing from data/balatro-mp')
+    return files
+
+
 def mp_assets() -> tuple[dict, list[tuple[str, bytes]]]:
     registry = read_json(MP_DATA / 'atlases.json')
     if registry.get('stub'):
         raise SystemExit('data/balatro-mp/atlases.json is still the stub; run scripts/balatro/import-mp-assets.py')
-    files = []
-    for scale in ('1x', '2x'):
-        for path in sorted((MP_DATA / scale).glob('*.png')):
-            files.append((f'rmh_mp/assets/{scale}/{path.name}', path.read_bytes()))
+    files = pack_assets(MP_DATA)
     shipped = {n for n, _ in files}
     for key, entry in registry['atlases'].items():
+        if entry.get('pack'):
+            if entry['pack'] not in OPTIONAL_PACKS:
+                raise SystemExit(f'atlas {key}: unknown optional pack {entry["pack"]!r}')
+            continue
         for file in [entry['file'], *entry.get('variants', {}).values()]:
             for scale in ('1x', '2x'):
                 if f'rmh_mp/assets/{scale}/{file}' not in shipped:
@@ -519,14 +546,30 @@ def mp_assets() -> tuple[dict, list[tuple[str, bytes]]]:
     return registry, files
 
 
-def build_mp(game_langs: dict[str, int], font_files: list[str], plan: dict[str, set[int] | None]):
-    """Returns (zip bytes, extracted bytes, report lines)."""
+def build_optional(pack: str) -> tuple[bytes, int]:
+    """An optional pack's zip and extracted size."""
+    files = optional_assets(pack, read_json(MP_DATA / 'atlases.json'))
+    if not files:
+        raise SystemExit(f'optional pack {pack} is empty')
+    files.sort(key=lambda f: f[0])
+    return build_zip(files), sum(len(d) for _, d in files)
+
+
+def build_mp(
+    game_langs: dict[str, int],
+    font_files: list[str],
+    plan: dict[str, set[int] | None],
+    optional: dict[str, dict] | None = None,
+):
+    """Returns (zip bytes, extracted bytes, report lines). `optional` is {pack: manifest entry}."""
     report: list[str] = []
     registry, assets = mp_assets()
     tables = build_loc(sorted(game_langs), report)
     files = mp_lua_files() + assets
     atl = {k: {f: v for f, v in e.items() if v is not None} for k, e in registry['atlases'].items()}
     files.append(('rmh_mp/data/atlases.lua', lua_module('Generated from data/balatro-mp/atlases.json by build-game-pack.py.', atl)))
+    packs = {k: {'file': v['file'], 'sha256': v['sha256']} for k, v in sorted((optional or {}).items())}
+    files.append(('rmh_mp/data/packs.lua', lua_module('The optional packs this mp pack expects (build-game-pack.py).', packs)))
 
     # Glyph bitmap: what each shipped font actually maps.
     unique: list[str] = []
@@ -635,7 +678,14 @@ def main(argv: list[str] | None = None) -> int:
         packs, raw_total = build_core_and_audio(plan)
         built.update(packs)
         print(f'{raw_total / 1e6:.1f} MB source', file=sys.stderr)
-    mp_zip, mp_extracted, report = build_mp(game_langs, font_files, plan)
+    optional: dict[str, dict] = {}
+    optional_extracted: dict[str, int] = {}
+    for kind in OPTIONAL_PACKS:
+        data, extracted = build_optional(kind)
+        built[kind] = data
+        optional[kind] = entry(kind, data)
+        optional_extracted[kind] = extracted
+    mp_zip, mp_extracted, report = build_mp(game_langs, font_files, plan, optional)
     built['mp'] = mp_zip
     summary: dict[str, int] = {}
     for line in report:
@@ -660,9 +710,15 @@ def main(argv: list[str] | None = None) -> int:
         errors.append(f'mp pack {len(mp_zip)} B is over its budget {budget["mpMaxBytes"]} B')
     if mp_extracted > budget['mpMaxExtractedBytes']:
         errors.append(f'mp pack extracts to {mp_extracted} B, over {budget["mpMaxExtractedBytes"]} B')
+    for kind in OPTIONAL_PACKS:
+        cap, cap_x = budget[f'{kind}MaxBytes'], budget[f'{kind}MaxExtractedBytes']
+        if len(built[kind]) > cap:
+            errors.append(f'{kind} pack {len(built[kind])} B is over its budget {cap} B')
+        if optional_extracted[kind] > cap_x:
+            errors.append(f'{kind} pack extracts to {optional_extracted[kind]} B, over {cap_x} B')
 
     manifest: dict = {'version': (SRC / 'version.jkr').read_text(encoding='utf-8').splitlines()[0].strip()}
-    for kind in ('core', 'audio', 'mp'):
+    for kind in ('core', 'audio', 'mp', *OPTIONAL_PACKS):
         if kind in built:
             manifest[kind] = entry(kind, built[kind])
         elif kind in old_manifest:
@@ -681,7 +737,7 @@ def main(argv: list[str] | None = None) -> int:
         if old_manifest.get('version') != manifest['version']:
             stale.append('version')
         if not args.mp_only:
-            expected = {manifest[k]['file'] for k in ('core', 'audio', 'mp')}
+            expected = {manifest[k]['file'] for k in ('core', 'audio', 'mp', *OPTIONAL_PACKS)}
             extra = sorted(p.name for p in OUT_DIR.glob('*.zip') if p.name not in expected)
             if extra:
                 stale.append(f'unreferenced zips in data/balatro-pack: {extra}')
@@ -701,7 +757,7 @@ def main(argv: list[str] | None = None) -> int:
     out_manifest = (args.out / 'game-pack.json') if args.out else MANIFEST
     out_dir.mkdir(parents=True, exist_ok=True)
     for old in out_dir.glob('*.zip'):
-        if args.mp_only and not old.name.startswith('mp-'):
+        if args.mp_only and not old.name.startswith(tuple(f'{k}-' for k in ('mp', *OPTIONAL_PACKS))):
             continue
         old.unlink()
     for kind, data in built.items():

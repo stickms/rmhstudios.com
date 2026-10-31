@@ -108,6 +108,22 @@ export const GAME_VERSION: string = pack.version;
 export const MP_PACK: PackInfo | null = (pack as { mp?: PackInfo }).mp ?? null;
 
 /**
+ * Optional packs a ruleset may need on top of the MP pack (EX-14: `release`, the Release ruleset's
+ * art). Fetched only when a lobby picks such a ruleset, cached in IndexedDB like the others.
+ */
+export type OptionalPackKind = 'release';
+export const OPTIONAL_PACK_KINDS: readonly OptionalPackKind[] = ['release'];
+
+export function optionalPackInfo(kind: OptionalPackKind): PackInfo | null {
+  return (pack as Partial<Record<OptionalPackKind, PackInfo>>)[kind] ?? null;
+}
+
+/** Where an optional pack's mounted marker lives (Lua and the session runtime read it). */
+export function optionalPackMarker(kind: OptionalPackKind): string {
+  return `/rmh/mp/packs/${kind}`;
+}
+
+/**
  * Why multiplayer starts at boot (`/rmh/mp/autoload`): an invite link, a match
  * to rejoin, or `sp` — a run continued in single player from a match, whose save
  * needs the MP content mounted (the `<profile>/mp.jkr` sidecar marks it).
@@ -156,6 +172,29 @@ export function mountMpFiles(
   }
   mkdirp(fs, '/rmh/mp');
   fs.writeFile('/rmh/mp/ready', version);
+  return n;
+}
+
+/**
+ * Writes an optional pack's files (all under rmh_mp/, like the MP pack's) and its marker. Unlike
+ * mountMpFiles it never touches `/rmh/mp/ready`: the MP pack is already mounted.
+ */
+export function mountOptionalFiles(
+  fs: Pick<EmscriptenFS, 'mkdir' | 'writeFile' | 'analyzePath'>,
+  kind: OptionalPackKind,
+  files: { name: string; data: Uint8Array }[],
+  version: string,
+): number {
+  let n = 0;
+  for (const file of files) {
+    const path = mpPackPath(file.name);
+    if (!path) continue;
+    mkdirp(fs, path.slice(0, path.lastIndexOf('/')));
+    fs.writeFile(path, file.data);
+    n += 1;
+  }
+  mkdirp(fs, '/rmh/mp/packs');
+  fs.writeFile(optionalPackMarker(kind), version);
   return n;
 }
 
@@ -265,7 +304,7 @@ export class PackError extends Error {
 
 /** One pack's bytes: from IndexedDB if present, else downloaded and verified. */
 export async function loadPack(
-  kind: 'core' | 'audio' | 'mp',
+  kind: 'core' | 'audio' | 'mp' | OptionalPackKind,
   info: PackInfo,
   onProgress?: (fraction: number) => void,
 ): Promise<Uint8Array> {

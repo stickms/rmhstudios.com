@@ -59,6 +59,8 @@ MP.CONTENT_MODULES = {
   'rmh_mp.hooks.practice',
   -- EX-15 lifted (appended, so every earlier definition keeps its registry order).
   'rmh_mp.content.jokers.rarity_shifted', 'rmh_mp.content.white_deck',
+  -- EX-14/16/17 and the Judgement rework lifted (appended for the same reason).
+  'rmh_mp.content.release', 'rmh_mp.content.alt_stakes', 'rmh_mp.content.judgement',
 }
 MP.content_loaded = {}
 
@@ -104,6 +106,8 @@ R.on_mount = function()
     end
   end
   report.reset()
+  -- EX-14: the optional release pack may have been mounted after the MP pack loaded its art.
+  if MP.content.release and MP.content.release.on_mount then pcall(MP.content.release.on_mount) end
 end
 
 -- Core wraps (always on).

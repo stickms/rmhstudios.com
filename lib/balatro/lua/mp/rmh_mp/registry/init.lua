@@ -30,7 +30,10 @@
 --                           stake, Voucher requires, Tag min_ante/requires, Blind boss_colour)
 --   blind = { dollars, mult, boss_colour, debuff, vars, ... hook functions (see dispatch.lua) }
 --   tag = { config, apply = fn, ... }
---   rework = { center = 'm_glass', props = { config = {...} }, table = 'P_CENTERS'|'P_TAGS'|'P_BLINDS' }
+--   rework = { center = 'm_glass', props = { config = {...} }, table = 'P_CENTERS'|'P_TAGS'|'P_BLINDS'
+--              |'P_SEALS'|'P_STAKES', loc = { set, key, target? }, virtual = true? }
+--            (a `rarity` prop moves a Joker between the rarity pools; `loc` shows another
+--            description while mounted; `virtual` swaps nothing — poker hands, run-start effects)
 --   challenge = { id?, rules, jokers, consumeables, vouchers, deck, restrictions }
 --   loc = { name = '...', text = {...} } (en-us; the pack's loc tables win when present)
 --   behaviour hooks: calc, loc_vars, update, add, remove, dollar_bonus, use, can_use, open, apply,
@@ -258,6 +261,54 @@ local function restore_props(saved)
   end
 end
 
+-- ── Rework text ─────────────────────────────────────────────────────────────
+-- `rework.loc = { set, key }`: while mounted, the center's description IS the entry `key` of
+-- descriptions[set] (the mod's `loc_key`), e.g. j_8_ball reads j_mp_8ball_release. The vanilla
+-- entry is put back at unmount, and the swap is re-applied after every init_localization (a
+-- language change reloads G.localization). `set` may also be 'Other' with a seal's info key.
+
+local function desc_table(set)
+  local d = G and G.localization and G.localization.descriptions
+  return d and d[set]
+end
+
+function R.swap_loc(m, center, loc)
+  m.loc_swaps = m.loc_swaps or {}
+  local entry = { set = loc.set, target = loc.target or center, key = loc.key }
+  m.loc_swaps[#m.loc_swaps + 1] = entry
+  R.apply_loc_swap(entry)
+end
+
+function R.apply_loc_swap(e)
+  local t = desc_table(e.set)
+  if not (t and t[e.key]) then return false end
+  if e.table == t and t[e.target] == t[e.key] then return true end -- already swapped here
+  e.original, e.had = t[e.target], t[e.target] ~= nil
+  e.table = t
+  t[e.target] = t[e.key]
+  return true
+end
+
+--- Re-apply every swap of the mounted session (after init_localization rebuilt the tables, or
+--- replaced an entry): a swap still in place is left alone, so its saved original survives.
+function R.reapply_loc_swaps()
+  local m = R._mounted
+  if not (m and m.loc_swaps) then return end
+  for _, e in ipairs(m.loc_swaps) do R.apply_loc_swap(e) end
+end
+
+function R.restore_loc(m)
+  for i = #(m.loc_swaps or {}), 1, -1 do
+    local e = m.loc_swaps[i]
+    local t = desc_table(e.set)
+    -- Only undo a swap this table still shows (a reload already restored the vanilla text).
+    if t and e.table == t and t[e.target] == t[e.key] then
+      if e.had then t[e.target] = e.original else t[e.target] = nil end
+    end
+  end
+  m.loc_swaps = nil
+end
+
 -- ── Mount / unmount ─────────────────────────────────────────────────────────
 
 local function pools_for(proto, def)
@@ -297,11 +348,28 @@ function R.mount(resolved, session)
       if def.kind == 'Rework' then
         if R.gate_open(def, resolved, session) then
           local rw = def.rework
-          local tbl = G[rw.table or 'P_CENTERS']
+          local tbl = (not rw.virtual) and G[rw.table or 'P_CENTERS'] or nil
           local target = tbl and tbl[rw.center]
-          if target then
+          if rw.virtual then
+            -- Nothing to swap (a poker hand, a run-start effect): the def is reachable through
+            -- R.get(center) while mounted and its module reads it from there.
+            m.reworks[#m.reworks + 1] = { def = def, saved = {} }
+            m.reworks_by_center[rw.center] = def
+            m.enabled[def.key] = true
+          elseif target then
             local saved = {}
+            local old_rarity = target.rarity
             apply_props(target, rw.props or {}, saved, rw.center)
+            -- A rarity change moves the Joker between the rarity pools (restored at unmount with
+            -- every other pool array).
+            if target.set == 'Joker' and target.rarity ~= old_rarity and G.P_JOKER_RARITY_POOLS then
+              local from, to = G.P_JOKER_RARITY_POOLS[old_rarity], G.P_JOKER_RARITY_POOLS[target.rarity]
+              if from then
+                for i = #from, 1, -1 do if from[i] == target then table.remove(from, i) end end
+              end
+              if to then pools.append(to, target) end
+            end
+            if rw.loc then R.swap_loc(m, rw.center, rw.loc) end
             if def.balanced then
               target.config = target.config or {}
               saved[#saved + 1] = { target = target.config, key = 'mp_balanced', value = target.config.mp_balanced,
@@ -354,6 +422,7 @@ function R.unmount()
   if not m then return false end
   if R.on_unmount then pcall(R.on_unmount) end
   for i = #m.reworks, 1, -1 do restore_props(m.reworks[i].saved) end
+  R.restore_loc(m)
   for i = #m.added, 1, -1 do
     local a = m.added[i]
     if a.tbl[a.key] == R._protos[a.key] then a.tbl[a.key] = nil end

@@ -1,5 +1,5 @@
 {
-  "$comment": "Every content key the reference mod (BalatroMultiplayerPvP) registers, or defines in a comment block, with its native counterpart. Generated once from the mod checkout by scanning every SMODS/MPAPI/PVP constructor (Joker, Consumable, Tag, Blind, Voucher, Back, Stake, Sticker, Booster, Challenge, Layer, Ruleset, ReworkCenter) and take_ownership call; loop-defined keys are expanded. spec/mp_content_inventory_spec.lua (objects, stickers, stakes, reworks) and lib/balatro/mp/rulesets/__tests__/mod-inventory.test.ts (layers, rulesets) fail when a native counterpart is missing. `excluded` lists what has none, each with the docs/balatro-mp-parity.md EX id that says why (\"inert\": commented out with no effect to port). Update it with the mod.",
+  "$comment": "Every content key the reference mod (BalatroMultiplayerPvP) registers, or defines in a comment block, with its native counterpart. Generated once from the mod checkout by scanning every SMODS/MPAPI/PVP constructor (Joker, Consumable, Tag, Blind, Voucher, Back, Stake, Sticker, Booster, Challenge, Layer, Ruleset, ReworkCenter) and take_ownership call; loop-defined keys are expanded. spec/mp_content_inventory_spec.lua (objects, stickers, stakes, reworks) and lib/balatro/mp/rulesets/__tests__/mod-inventory.test.ts (layers, rulesets) fail when a native counterpart is missing. `excluded` lists what has none (empty since EX-14, EX-16, EX-17 and the Judgement rework were lifted), each with the docs/balatro-mp-parity.md EX id that says why (\"inert\": commented out with no effect to port). Update it with the mod.",
   "mod": {
     "name": "BalatroMultiplayerPvP",
     "commit": "c26b549"
@@ -959,6 +959,12 @@
       "mod": "mp_sticker_extra_credit",
       "source": "objects/stickers/extra_credit.lua",
       "native": "mp_sticker_extra_credit"
+    },
+    {
+      "mod": "mp_sticker_nemesis",
+      "source": "objects/stickers/nemesis.lua",
+      "native": "mp_sticker_nemesis",
+      "note": "never enabled in the mod; EX-17 lifted (Advanced layer nemesis_sticker)"
     }
   ],
   "stakes": [
@@ -976,6 +982,48 @@
       "mod": "stake_mp_spectralplus",
       "source": "objects/stakes/02_spectralplus.lua",
       "native": "stake_mp_spectralplus"
+    },
+    {
+      "mod": "stake_mp_plastic",
+      "source": "objects/stakes/1_plastic.lua",
+      "native": "stake_mp_plastic",
+      "note": "behind alt_stakes = false in the mod; EX-16 lifted"
+    },
+    {
+      "mod": "stake_mp_pebble",
+      "source": "objects/stakes/2_pebble.lua",
+      "native": "stake_mp_pebble",
+      "note": "behind alt_stakes = false in the mod; EX-16 lifted"
+    },
+    {
+      "mod": "stake_mp_ferrite",
+      "source": "objects/stakes/3_ferrite.lua",
+      "native": "stake_mp_ferrite",
+      "note": "behind alt_stakes = false in the mod; EX-16 lifted"
+    },
+    {
+      "mod": "stake_mp_pyrite",
+      "source": "objects/stakes/4_pyrite.lua",
+      "native": "stake_mp_pyrite",
+      "note": "behind alt_stakes = false in the mod; EX-16 lifted"
+    },
+    {
+      "mod": "stake_mp_jade",
+      "source": "objects/stakes/5_jade.lua",
+      "native": "stake_mp_jade",
+      "note": "behind alt_stakes = false in the mod; EX-16 lifted"
+    },
+    {
+      "mod": "stake_mp_crystal",
+      "source": "objects/stakes/6_crystal.lua",
+      "native": "stake_mp_crystal",
+      "note": "behind alt_stakes = false in the mod; EX-16 lifted"
+    },
+    {
+      "mod": "stake_mp_antimatter",
+      "source": "objects/stakes/7_antimatter.lua",
+      "native": "stake_mp_antimatter",
+      "note": "behind alt_stakes = false in the mod; EX-16 lifted"
     }
   ],
   "reworks": [
@@ -1002,6 +1050,475 @@
       "layers": ["pvp_timer"],
       "source": "objects/jokers/standard/seltzer.lua",
       "native": "rw_mp_selzer_takeover"
+    },
+    {
+      "mod": "j_greedy_joker",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_greedy_joker",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_lusty_joker",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_lusty_joker",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_wrathful_joker",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_wrathful_joker",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_gluttenous_joker",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_gluttenous_joker",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_mad",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_mad",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_clever",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_clever",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_banner",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_banner",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_8_ball",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_8_ball",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_fibonacci",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_fibonacci",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_steel_joker",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_steel_joker",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_gros_michel",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_gros_michel",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_odd_todd",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_odd_todd",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_runner",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_runner",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_sixth_sense",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_sixth_sense",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_hiker",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_hiker",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_todo_list",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_todo_list",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_madness",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_madness",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_square",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_square",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_seance",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_seance",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_riff_raff",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_riff_raff",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_vampire",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_vampire",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_vagabond",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_vagabond",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_cloud_9",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_cloud_9",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_midas_mask",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_midas_mask",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_luchador",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_luchador",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_reserved_parking",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_reserved_parking",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_mail",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_mail",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_lucky_cat",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_lucky_cat",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_trading",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_trading",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_smiley",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_smiley",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_campfire",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_campfire",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_ticket",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_ticket",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_swashbuckler",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_swashbuckler",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_hanging_chad",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_hanging_chad",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_bloodstone",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_bloodstone",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_onyx_agate",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_onyx_agate",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_glass",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_glass",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_flower_pot",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_flower_pot",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_wee",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_wee",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_stuntman",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_stuntman",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_invisible",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_invisible",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_burnt",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_burnt",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "j_yorick",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_j_yorick",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "c_magician",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_c_magician",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "tag_uncommon",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_tag_uncommon",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "tag_rare",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_tag_rare",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "tag_negative",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_tag_negative",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "tag_foil",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_tag_foil",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "tag_holo",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_tag_holo",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "tag_polychrome",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_tag_polychrome",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "tag_investment",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_tag_investment",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "Blue",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_blue",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "Straight",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_straight",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "c_saturn",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_c_saturn",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "Straight Flush",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_straight_flush",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "c_neptune",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_c_neptune",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "Flush House",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_flush_house",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "c_ceres",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_c_ceres",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "Flush Five",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_flush_five",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "c_eris",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_c_eris",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "stake_green",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_stake_green",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "stake_purple",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_stake_purple",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "stake_orange",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_stake_orange",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "stake_gold",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_stake_gold",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "bl_arm",
+      "layers": ["release"],
+      "source": "rulesets/release.lua",
+      "native": "rw_mp_release_bl_arm",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "c_judgement",
+      "layers": ["judgement_rework"],
+      "source": "objects/consumables/judgement.lua",
+      "native": "rw_mp_judgement",
+      "note": "commented out in the mod; an Advanced layer here"
+    },
+    {
+      "mod": "j_to_the_moon",
+      "layers": [],
+      "source": "objects/stakes/1_plastic.lua",
+      "native": "rw_mp_to_the_moon_plastic",
+      "note": "take_ownership behind alt_stakes = false; with an alt stake here (EX-16 lifted)"
     }
   ],
   "layers": [
@@ -1204,6 +1721,24 @@
       "mod": "wsob",
       "source": "layers/wsob.lua",
       "native": "wsob"
+    },
+    {
+      "mod": "release",
+      "source": "layers/release.lua",
+      "native": "release",
+      "note": "commented out in the mod; EX-14 lifted"
+    },
+    {
+      "mod": "mp_sticker_nemesis",
+      "source": "objects/stickers/nemesis.lua",
+      "native": "nemesis_sticker",
+      "note": "the toggle that enables the sticker (EX-17); the mod has no layer for it"
+    },
+    {
+      "mod": "c_judgement",
+      "source": "objects/consumables/judgement.lua",
+      "native": "judgement_rework",
+      "note": "the toggle for the Judgement rework; the mod had no layer for it"
     }
   ],
   "rulesets": [
@@ -1281,85 +1816,13 @@
       "mod": "wsob",
       "source": "rulesets/wsob.lua",
       "native": "ruleset_mp_wsob"
+    },
+    {
+      "mod": "release",
+      "source": "rulesets/release.lua",
+      "native": "ruleset_mp_release",
+      "note": "commented out in the mod; EX-14 lifted"
     }
   ],
-  "excluded": [
-    {
-      "mod": "release",
-      "kind": "Layer",
-      "source": "layers/release.lua",
-      "ex": "EX-14",
-      "reason": "commented out in the mod, with the Release ruleset"
-    },
-    {
-      "mod": "c_judgement",
-      "kind": "Rework",
-      "source": "objects/consumables/judgement.lua",
-      "ex": "inert",
-      "reason": "commented out in the mod (\"gotta redefine the logic\"): Judgement stays vanilla there and here"
-    },
-    {
-      "mod": "release",
-      "kind": "Ruleset",
-      "source": "rulesets/release.lua",
-      "ex": "EX-14",
-      "reason": "the whole file is commented out in the mod, with its 65 ReworkCenter calls and release_jokers.png"
-    },
-    {
-      "mod": "stake_mp_plastic",
-      "kind": "Stake",
-      "source": "objects/stakes/1_plastic.lua",
-      "ex": "EX-16",
-      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
-    },
-    {
-      "mod": "stake_mp_pebble",
-      "kind": "Stake",
-      "source": "objects/stakes/2_pebble.lua",
-      "ex": "EX-16",
-      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
-    },
-    {
-      "mod": "stake_mp_ferrite",
-      "kind": "Stake",
-      "source": "objects/stakes/3_ferrite.lua",
-      "ex": "EX-16",
-      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
-    },
-    {
-      "mod": "stake_mp_pyrite",
-      "kind": "Stake",
-      "source": "objects/stakes/4_pyrite.lua",
-      "ex": "EX-16",
-      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
-    },
-    {
-      "mod": "stake_mp_jade",
-      "kind": "Stake",
-      "source": "objects/stakes/5_jade.lua",
-      "ex": "EX-16",
-      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
-    },
-    {
-      "mod": "stake_mp_crystal",
-      "kind": "Stake",
-      "source": "objects/stakes/6_crystal.lua",
-      "ex": "EX-16",
-      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
-    },
-    {
-      "mod": "stake_mp_antimatter",
-      "kind": "Stake",
-      "source": "objects/stakes/7_antimatter.lua",
-      "ex": "EX-16",
-      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
-    },
-    {
-      "mod": "mp_sticker_nemesis",
-      "kind": "Sticker",
-      "source": "objects/stickers/nemesis.lua",
-      "ex": "EX-17",
-      "reason": "needs_enable_flag and no layer, stake or ruleset ever enables it: it never reaches a card"
-    }
-  ]
+  "excluded": []
 }
