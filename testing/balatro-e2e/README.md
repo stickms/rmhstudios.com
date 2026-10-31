@@ -14,6 +14,7 @@ pnpm test:balatro:e2e --project harness
 pnpm test:balatro:e2e --project engine
 BALATRO_E2E_ISOLATE=1 pnpm test:balatro:e2e --project engine   # + every spec file alone in a fresh boot
 pnpm exec tsx testing/balatro-e2e/engine/cli.ts [--filter text] [--spec name] [--shot out.png] [--serve]
+pnpm exec tsx testing/balatro-e2e/engine/sweep.ts [--chunk id ...] [--list]   # the full UI sweep, chunked
 pnpm test:balatro:e2e --project match [testing/balatro-e2e/match/<file>.test.ts]
 BALATRO_E2E_SOAK=1 pnpm test:balatro:e2e --project match testing/balatro-e2e/match/soak.test.ts
 ```
@@ -60,6 +61,21 @@ tags and Bosses of antes 1–2 for three seeds) must be identical before MP ever
 loaded after every content spec mounted and unmounted its sessions, and after one more practice
 mount/unmount. `BALATRO_E2E_ISOLATE=1` adds every file alone in a fresh boot (order
 independence). `perf_spec` reports the MP Lua budgets (§6.4) and the vitest output prints them.
+
+The full UI sweep (`mp_test/specs/ui_sweep_full.lua`: every Collection card hovered, every
+button of every MP screen and overlay clicked, every MP item given and used) is not a `*_spec`
+file: one boot cannot hold it (the page runs out of memory on software WebGL), so
+`engine/sweep.ts` runs it chunk by chunk, each chunk in a fresh boot, and prints every chunk's
+time. The chunks are the Lua file's `CHUNKS` table (`lib/sweep-chunks.ts` reads it;
+`lib/sweep-chunks.unit.test.ts` fails when a sweep test is in no chunk or the nightly job is
+gone). CI runs it in the `e2e-sweep` job, nightly and on a `long` dispatch only; every PR runs
+its quick form, `ui_sweep_spec.lua`, in the engine project.
+
+The challenge specs (`ui_run_challenges_a_spec.lua`, `ui_run_challenges_b_spec.lua`, both loading
+`mp_test/challenges_body.lua`) start every Multiplayer challenge, check it against its
+definition (`mp_test/challenge_check.lua`, L1-tested in `spec/mp_challenge_check_spec.lua`),
+exercise its special rule and play its first ante, then the win/loss paths and the vanilla
+challenges with MP loaded.
 
 A spec is plain Lua with the L1 API (`describe/it/expect`) plus `wait_frames`, `wait_until`,
 `sleep`, `AP` (the autopilot) and `report(key, value)` — reports come back to vitest. A Lua

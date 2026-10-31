@@ -14,12 +14,17 @@
 -- click raises synchronously, and MP hook errors from the MP log, are collected and asserted empty,
 -- so one run reports every crash. Counts come back as reports (`sweep_*`).
 --
--- Two ways to run it:
+-- Three ways to run it:
 --   * ui_sweep_spec.lua (the engine project, every CI run) loads this file in QUICK mode: the
 --     collections in the menu and in a practice run (the Collection > Consumables crash) and
---     every MP menu screen's buttons (a few minutes in CI).
---   * the whole sweep (about an hour on software WebGL):
---       pnpm exec tsx testing/balatro-e2e/engine/cli.ts --spec ui_sweep_full [--filter text]
+--     every MP menu screen's buttons, hovering every MP card but one vanilla card per screen
+--     (a few minutes in CI).
+--   * the whole sweep, chunk by chunk, each chunk in a fresh boot (one boot for all of it runs out
+--     of page memory on software WebGL: "Target crashed"); the nightly CI job runs this:
+--       pnpm exec tsx testing/balatro-e2e/engine/sweep.ts [--chunk id ...]
+--     CHUNKS below is the list: every test belongs to exactly one chunk (lib/sweep-chunks.unit.test.ts)
+--     and carries the tag ` [sweep:<id>]` in its name, which the driver filters on.
+--   * by hand: pnpm exec tsx testing/balatro-e2e/engine/cli.ts --spec ui_sweep_full [--filter text]
 --     (not a *_spec file, so the engine project does not pick it up). FULL below (false) further
 --     clicks repeated (callback, target) pairs on every screen instead of once per phase.
 
@@ -33,9 +38,36 @@ local QUICK_TESTS = {
   ['leaves the MP menu cleanly'] = true,
   ['summary: counts, buttons and every error seen'] = true,
 }
+-- The chunks of the whole sweep (testing/balatro-e2e/engine/sweep.ts runs each in a fresh boot).
+-- CHUNKS BEGIN
+local CHUNKS = {
+  { id = 'collections-menu', tests = { 'menu: every vanilla and MP collection page, every card hovered' } },
+  { id = 'collections-practice', tests = { 'practice run: the same, mid-run' } },
+  { id = 'collections-match', tests = { 'match run: the same, mid-run' } },
+  { id = 'mp-menu', tests = { 'every screen: every button', 'every overlay: every button, every tab',
+    'leaves the MP menu cleanly' } },
+  { id = 'in-run-practice', tests = { 'practice: HUD, pause, settings, run/deck info, blind select, hand buttons' } },
+  { id = 'in-run-match', tests = { 'match: the same plus lobby info' } },
+  { id = 'end-screens', tests = { 'match end screens: every button' } },
+  { id = 'jokers-1', tests = { 'jokers (first half): given, played with, through the shop, sold' } },
+  { id = 'jokers-2', tests = { 'jokers (second half): given, played with, through the shop, sold' } },
+  { id = 'consumables', tests = { 'consumables: used with a hand, with nothing highlighted, and with no hand at all' } },
+  { id = 'traps', tests = { 'traps: planted on me by the nemesis and fired; held and offered from a trap pack' } },
+  { id = 'vouchers-tags', tests = { 'vouchers: redeemed from the shop', 'tags: every MP tag added and triggered' } },
+  { id = 'decks', tests = { 'decks: a run on every MP deck plays a round' } },
+  { id = 'stakes', tests = { 'MP stakes: a run at every MP stake' } },
+  { id = 'blinds', tests = { 'blinds: every non-PvP MP blind as the boss' } },
+}
+-- CHUNKS END
+local CHUNK_OF = {}
+for _, c in ipairs(CHUNKS) do
+  for _, t in ipairs(c.tests) do CHUNK_OF[t] = c.id end
+end
+
 local it_ = it
 local function it(name, fn)
   if QUICK and not QUICK_TESTS[name] then return end
+  if not QUICK and CHUNK_OF[name] then name = name .. ' [sweep:' .. CHUNK_OF[name] .. ']' end
   return it_(name, fn)
 end
 
@@ -1109,16 +1141,25 @@ describe('sweep: every MP item', function()
   end)
 end)
 
+-- One summary per chunk (it runs last in a chunk's filtered run) and one for the whole file.
+local function summary()
+  report('sweep_counts', count)
+  local bl = {}
+  for k, v in pairs(seen_buttons) do bl[#bl + 1] = k .. '=' .. v end
+  table.sort(bl)
+  report('sweep_buttons', bl)
+  harvest_log('end')
+  for _, m in ipairs(found) do all_found[#all_found + 1] = m end
+  report('sweep_errors', all_found)
+  expect(found).eq({}) -- (each test already failed on its own errors; this catches the summary's)
+end
+
+describe('sweep: chunk summaries', function()
+  for _, c in ipairs(CHUNKS) do
+    if not QUICK then it_('summary [sweep:' .. c.id .. ']', summary) end
+  end
+end)
+
 describe('sweep: report', function()
-  it('summary: counts, buttons and every error seen', function()
-    report('sweep_counts', count)
-    local bl = {}
-    for k, v in pairs(seen_buttons) do bl[#bl + 1] = k .. '=' .. v end
-    table.sort(bl)
-    report('sweep_buttons', bl)
-    harvest_log('end')
-    for _, m in ipairs(found) do all_found[#all_found + 1] = m end
-    report('sweep_errors', all_found)
-    expect(found).eq({}) -- (each test already failed on its own errors; this catches the summary's)
-  end)
+  it('summary: counts, buttons and every error seen', summary)
 end)

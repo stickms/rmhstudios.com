@@ -28,6 +28,8 @@
 #     through the sign-up API. A harness unit test fails when a match file is in no shard
 #     or when this matrix and the shard list differ, so no scenario can drop out of CI.
 #     BALATRO_E2E_REQUIRE_MATCH=1 turns "no stack" into a failure instead of a skip.
+#   - e2e-sweep (nightly and `long` only, never on a PR): the full in-engine UI sweep, chunk
+#     by chunk in fresh boots (testing/balatro-e2e/engine/sweep.ts). Not part of the aggregate.
 #   - e2e: the aggregate — green only when e2e-engine and every e2e-match shard are. It
 #     keeps the name of the old single job: require this one in branch protection.
 # Speed: every engine page runs the autopilot's turbo (testing/balatro-e2e/lib/turbo.ts:
@@ -170,6 +172,36 @@ jobs:
         env:
           BALATRO_E2E_ISOLATE: ${{ env.LONG == 'true' && '1' || '' }}
         run: pnpm test:balatro:e2e --project engine
+
+  # The full in-engine UI sweep (lib/balatro/lua/mp_test/specs/ui_sweep_full.lua: every
+  # Collection card hovered, every button of every MP screen and overlay clicked, every MP item
+  # given and used), nightly and on a `long` dispatch only: it never blocks a PR (the PR run has
+  # its quick form, ui_sweep_spec, in e2e-engine). One engine boot cannot hold the whole sweep
+  # (the page runs out of memory), so testing/balatro-e2e/engine/sweep.ts runs it chunk by chunk,
+  # each in a fresh boot, and prints every chunk's time. Turbo stays on: the sweep looks for
+  # crashes, and the real-speed path is e2e-engine's long run.
+  e2e-sweep:
+    if: github.event_name == 'schedule' || inputs.long == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup-deps
+
+      - name: Restore Playwright's Chromium
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-shell-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps --only-shell chromium
+
+      - name: Full UI sweep (every chunk in a fresh boot)
+        run: node_modules/.bin/tsx testing/balatro-e2e/engine/sweep.ts
 
   # Multi-browser matches, one shard per runner. The list below must equal the keys of
   # MATCH_SHARDS in testing/balatro-e2e/shards.ts (testing/balatro-e2e/lib/shards.unit.test.ts).

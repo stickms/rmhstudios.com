@@ -8,6 +8,10 @@
 --   * remove_save   -> no-op (an MP game over would otherwise delete <profile>/save.jkr)
 --   * the save thread's channel drops any 'save_run' push and re-applies the player's real
 --     tutorial flags to 'save_settings' pushes (OR-08 forces them on in sessions)
+-- The profile's bookkeeping (always on, see below): set_discover_tallies counts vanilla's centers
+-- only (so mounted MP content never unlocks a deck), set_profile_progress and
+-- set_challenge_unlock count vanilla's challenges only, and win_game never marks an MP challenge,
+-- nor any challenge won in a match or practice, completed in the profile.
 -- Continue in Singleplayer (HUD-14) turns the session into kind 'continued': saving goes back to
 -- the profile and a sidecar <profile>/mp.jkr records what the save needs, so boot loads the MP
 -- pack and re-mounts the content before Continue (rules/session.lua).
@@ -201,10 +205,94 @@ function S.remove_sidecar()
   pcall(S.lfs.remove, S.sidecar_path())
 end
 
+-- ── The profile's challenge bookkeeping ─────────────────────────────────────
+-- While MP content is mounted, G.CHALLENGES also lists the MP challenges, and vanilla's profile
+-- bookkeeping reads it: set_profile_progress counts `progress.challenges` over it and
+-- set_challenge_unlock sets `challenges_unlocked` = completed + 5 out of it. And win_game marks
+-- the run's challenge completed in the profile (then saves) for any challenge run, seeded or not.
+-- So an MP challenge won in practice (the ante-8 win), or a match's referee win, wrote `c_mp_*`
+-- into the single-player profile, and every count was taken over 42 challenges, not vanilla's 20.
+-- The profile only ever sees vanilla's list, and a session that keeps away from the profile
+-- (match, practice) records no completion at all; nor does an MP challenge anywhere.
+
+function S.is_mp_challenge(id)
+  return type(id) == 'string' and id:sub(1, 5) == 'c_mp_'
+end
+
+--- Run fn(...) with G.CHALLENGES holding only vanilla's challenges (same table, restored after).
+function S.with_vanilla_challenges(fn, ...)
+  local list = rawget(_G, 'G') and G.CHALLENGES
+  local has_mp = false
+  if type(list) == 'table' then
+    for _, c in ipairs(list) do if type(c) == 'table' and c.rmh_mp then has_mp = true; break end end
+  end
+  if not has_mp then return fn(...) end
+  local all = {}
+  for i, c in ipairs(list) do all[i] = c end
+  for i = #all, 1, -1 do list[i] = nil end
+  for _, c in ipairs(all) do if not c.rmh_mp then list[#list + 1] = c end end
+  local res = { pcall(fn, ...) }
+  for i = #list, 1, -1 do list[i] = nil end
+  for i, c in ipairs(all) do list[i] = c end
+  if not res[1] then error(res[2], 0) end
+  return unpack(res, 2, table.maxn(res))
+end
+
+--- Run fn(...) with every MP center left out of vanilla's discovery tallies (`omit`, which
+--- set_discover_tallies skips; restored after). The tallies feed the profile's unlocks
+--- (check_for_unlock 'discover_amount': Blue/Yellow/Green/Black Deck at 20/50/75/100 discovered,
+--- Cartomancer, Astronomer), and set_discover_tallies also runs when no seeded run guards them:
+--- vanilla's main menu event and discover_card. A session mounted while the menu is still being
+--- built (a practice or match start arriving during Main Menu's transition) counted the ~200
+--- registered, discovered MP centers there and unlocked those decks in the single-player profile.
+function S.without_mp_centers(fn, ...)
+  local centers = rawget(_G, 'G') and G.P_CENTERS
+  if type(centers) ~= 'table' then return fn(...) end
+  local hidden = {}
+  for _, c in pairs(centers) do
+    if type(c) == 'table' and c.rmh_mp and not c.omit then
+      c.omit = true
+      hidden[#hidden + 1] = c
+    end
+  end
+  if #hidden == 0 then return fn(...) end
+  local res = { pcall(fn, ...) }
+  for _, c in ipairs(hidden) do c.omit = nil end
+  if not res[1] then error(res[2], 0) end
+  return unpack(res, 2, table.maxn(res))
+end
+
+--- May this run's challenge be marked completed in the profile?
+function S.records_challenge(id)
+  if not id then return true end
+  if S.is_mp_challenge(id) then return false end
+  return not S.kind_blocks_profile()
+end
+
 -- ── Wraps ───────────────────────────────────────────────────────────────────
 
 function S.install_core()
   local wrap = MP.hooks.wrap
+  for _, name in ipairs({ 'set_profile_progress', 'set_challenge_unlock' }) do
+    wrap(_G, name, function(orig, ...)
+      return S.with_vanilla_challenges(orig, ...)
+    end, { id = 'saves.' .. name, optional = true })
+  end
+  wrap(_G, 'set_discover_tallies', function(orig, ...)
+    return S.without_mp_centers(orig, ...)
+  end, { id = 'saves.set_discover_tallies', optional = true })
+  wrap(_G, 'win_game', function(orig, ...)
+    local id = G.GAME and G.GAME.challenge
+    local p = G.PROFILES and G.SETTINGS and G.PROFILES[G.SETTINGS.profile]
+    local cp = p and p.challenge_progress
+    if not (cp and cp.completed) or S.records_challenge(id) then return orig(...) end
+    local had, unlocked = cp.completed[id], p.challenges_unlocked
+    local res = { pcall(orig, ...) }
+    cp.completed[id] = had
+    p.challenges_unlocked = unlocked
+    if not res[1] then error(res[2], 0) end
+    return unpack(res, 2, table.maxn(res))
+  end, { id = 'saves.win_game', optional = true })
   wrap(_G, 'save_run', function(orig, ...)
     if not S.kind_blocks_profile() then return orig(...) end
     -- Let vanilla build the table, then keep it out of the profile and write the MP slot.
