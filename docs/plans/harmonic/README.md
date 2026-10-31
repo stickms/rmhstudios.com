@@ -49,6 +49,9 @@ ledger merges cleanly.
 - Branch: whatever branch your session was given; otherwise `harmonic/<wp-id>`.
 - Commits: `harmonic(<WP>): <what and why>`. Every commit passes `pnpm check:consistency`
   (repo `CLAUDE.md`). Game tests: `pnpm test:tf2 lib/harmonic-game`.
+- **Typecheck:** if the full `tsc --noEmit` is killed for memory (it needs ~14 GB), run
+  `pnpm exec tsc -p tsconfig.harmonic.json` (Harmonic plus everything it imports, ~2 min) and,
+  only then, commit with `RMH_SKIP_COMMIT_GATE=1`, saying so in the message. CI runs the full check.
 - Before opening the PR: set the row to `review`, fill "Notes" with anything the next
   session must know (a deviation, a new interface, a follow-up WP you added).
 - After merge the row is `done`. A merge reviewer may flip it in the merge commit.
