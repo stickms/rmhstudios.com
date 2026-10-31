@@ -24,7 +24,7 @@ import { SnapshotClient } from '../../client/net/snapshot-client';
 import { P2pHostSession, PEER_RATE_LIMITS, type HostMatchPort } from './host-session';
 import { PeerLink, UNRELIABLE_HIGH_WATER } from './link';
 import { P2pPeerClient, type PeerEndReason } from './peer-client';
-import type { PeerRow } from './control';
+import { zHostToPeer, type PeerRow } from './control';
 import { FakeNet, fakeConnection, type PathConfig } from './fake-channel.test-support';
 import { encodeControl, P2P_SNAPSHOT_MAX_BYTES, tagged, TAG_INPUT, TAG_SNAPSHOT, UNRELIABLE_MAX_BYTES } from './wire';
 
@@ -722,5 +722,14 @@ describe('PeerLink over channels that are already open', () => {
     await Promise.resolve();
     expect(opened).toBe(link);
     expect(link.isOpen).toBe(true);
+  });
+});
+
+describe('the joined message', () => {
+  it("validates any room's mode, CS:GO's included (a member that drops it never starts)", () => {
+    const info = { code: 'ABCDEF', playerId: 2, map: 'de_dust2', name: 'room', maxPlayers: 10, serverTick: 1, tickInterval: 1 / 66 };
+    for (const mode of ['ctf', 'de', 'dm'])
+      expect(zHostToPeer.safeParse({ t: 'joined', info: { ...info, mode } }).success).toBe(true);
+    expect(zHostToPeer.safeParse({ t: 'joined', info: { ...info, mode: 'nonsense' } }).success).toBe(false);
   });
 });
