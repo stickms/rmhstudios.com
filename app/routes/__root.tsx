@@ -596,6 +596,20 @@ export const Route = createRootRoute({
           href: geistLatinWoff2,
           crossOrigin: 'anonymous',
         },
+        // The jelly haze tile (--jelly-tile in jelly-material.css) is painted into
+        // every glass slab's background stack. It is a CSS-referenced image, so
+        // Chrome fetches it at Low priority — behind the ~160 low-priority module
+        // preloads. On a throttled phone it landed at ~5 s, and because the
+        // signed-out compose card is the first slab with real area, its first paint
+        // became the page's LCP (0.96 s -> 5.3 s). 4 KB at high priority removes
+        // that tail. Same-origin image: no crossOrigin.
+        {
+          rel: 'preload',
+          as: 'image',
+          type: 'image/webp',
+          href: '/jelly/haze-tile.webp',
+          fetchPriority: 'high',
+        },
         { rel: 'stylesheet', href: appCss },
       ],
       scripts: [

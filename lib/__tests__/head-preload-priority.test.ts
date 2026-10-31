@@ -47,6 +47,19 @@ describe('deprioritizeModulePreloads', () => {
   });
 });
 
+describe('the jelly haze tile is preloaded at high priority', () => {
+  // Without it the tile queues behind the module preloads and its first paint
+  // (inside the first glass slab) becomes a ~5 s LCP on slow phones.
+  it('the root head preloads the tile the stylesheet references', () => {
+    const root = readFileSync(resolve(__dirname, '../../app/routes/__root.tsx'), 'utf8');
+    const css = readFileSync(resolve(__dirname, '../../app/jelly-material.css'), 'utf8');
+    const url = css.match(/--jelly-tile:\s*url\('([^']+)'\)/)?.[1];
+    expect(url).toBe('/jelly/haze-tile.webp');
+    expect(root).toContain(`href: '${url}'`);
+    expect(root).toMatch(/as: 'image',[\s\S]{0,120}fetchPriority: 'high'/);
+  });
+});
+
 describe('the root shell renders SiteHeadContent', () => {
   it('does not use the stock HeadContent', () => {
     const src = readFileSync(resolve(__dirname, '../../app/routes/__root.tsx'), 'utf8');
