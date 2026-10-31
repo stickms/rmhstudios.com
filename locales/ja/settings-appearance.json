@@ -139,5 +139,6 @@
   "jelly-motion-still": "静止",
   "pause-ambient-motion": "アンビエントな動きを一時停止",
   "pause-ambient-motion-off": "ゼリーの面がひとりでに動くのを止めます。",
-  "pause-ambient-motion-on": "一時停止中。タップで再開します。"
+  "pause-ambient-motion-on": "一時停止中。タップで再開します。",
+  "jelly-motion-preview": "プレビュー：このカードにカーソルを合わせるか押して、動きを確認できます。"
 }

@@ -139,5 +139,6 @@
   "jelly-motion-still": "Fermo",
   "pause-ambient-motion": "Metti in pausa il movimento ambientale",
   "pause-ambient-motion-off": "Impedisce alle superfici di gelatina di muoversi da sole.",
-  "pause-ambient-motion-on": "In pausa. Tocca per riprendere."
+  "pause-ambient-motion-on": "In pausa. Tocca per riprendere.",
+  "jelly-motion-preview": "Anteprima: passa il cursore o premi questa scheda per vedere come si muove."
 }

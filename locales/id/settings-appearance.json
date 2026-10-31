@@ -139,5 +139,6 @@
   "jelly-motion-still": "Diam",
   "pause-ambient-motion": "Jeda gerakan ambien",
   "pause-ambient-motion-off": "Menghentikan permukaan jeli bergerak sendiri.",
-  "pause-ambient-motion-on": "Dijeda. Ketuk untuk melanjutkan."
+  "pause-ambient-motion-on": "Dijeda. Ketuk untuk melanjutkan.",
+  "jelly-motion-preview": "Pratinjau: arahkan kursor atau tekan kartu ini untuk melihat gerakannya."
 }

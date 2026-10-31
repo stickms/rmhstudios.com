@@ -140,5 +140,6 @@
   "jelly-motion-still": "Still",
   "pause-ambient-motion": "Pause ambient motion",
   "pause-ambient-motion-off": "Stops the jelly surfaces moving on their own.",
-  "pause-ambient-motion-on": "Paused. Tap to resume."
+  "pause-ambient-motion-on": "Paused. Tap to resume.",
+  "jelly-motion-preview": "Preview: hover or press this card to see how it moves."
 }

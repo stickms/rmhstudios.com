@@ -283,6 +283,16 @@ export function AppearancePanel() {
             if (isJellyMotion(id)) setJellyMotion(id);
           }}
         />
+        {/* Live preview: an ordinary glass card, so it shows exactly what the
+            chosen level does to every surface. Hover or press it. */}
+        <div className="glass-fill rounded-site p-4 text-center" data-testid="jelly-motion-preview">
+          <p className="text-sm text-site-text">
+            {t('jelly-motion-preview', {
+              defaultValue: 'Preview: hover or press this card to see how it moves.',
+            })}
+          </p>
+          <p className="mt-1 font-mono text-xs text-site-text-muted">{jellyMotionLabels[store.jellyMotion]}</p>
+        </div>
       </Section>
 
       <Section

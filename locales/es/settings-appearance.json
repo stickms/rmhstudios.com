@@ -139,5 +139,6 @@
   "jelly-motion-still": "Quieto",
   "pause-ambient-motion": "Pausar movimiento ambiental",
   "pause-ambient-motion-off": "Detiene el movimiento propio de las superficies de gelatina.",
-  "pause-ambient-motion-on": "En pausa. Toca para reanudar."
+  "pause-ambient-motion-on": "En pausa. Toca para reanudar.",
+  "jelly-motion-preview": "Vista previa: pasa el cursor o pulsa esta tarjeta para ver cómo se mueve."
 }

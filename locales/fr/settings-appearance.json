@@ -139,5 +139,6 @@
   "jelly-motion-still": "Immobile",
   "pause-ambient-motion": "Mettre en pause le mouvement ambiant",
   "pause-ambient-motion-off": "Empêche les surfaces de gelée de bouger d’elles-mêmes.",
-  "pause-ambient-motion-on": "En pause. Touchez pour reprendre."
+  "pause-ambient-motion-on": "En pause. Touchez pour reprendre.",
+  "jelly-motion-preview": "Aperçu : survolez ou appuyez sur cette carte pour voir comment elle bouge."
 }

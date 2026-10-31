@@ -139,5 +139,6 @@
   "jelly-motion-still": "Ruhig",
   "pause-ambient-motion": "Umgebungsbewegung pausieren",
   "pause-ambient-motion-off": "Stoppt die Eigenbewegung der Geleeoberflächen.",
-  "pause-ambient-motion-on": "Pausiert. Tippen zum Fortsetzen."
+  "pause-ambient-motion-on": "Pausiert. Tippen zum Fortsetzen.",
+  "jelly-motion-preview": "Vorschau: Fahre über diese Karte oder drücke sie, um die Bewegung zu sehen."
 }

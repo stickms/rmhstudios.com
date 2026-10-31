@@ -139,5 +139,6 @@
   "jelly-motion-still": "静止",
   "pause-ambient-motion": "暂停环境动态",
   "pause-ambient-motion-off": "让果冻表面停止自行运动。",
-  "pause-ambient-motion-on": "已暂停。轻触以恢复。"
+  "pause-ambient-motion-on": "已暂停。轻触以恢复。",
+  "jelly-motion-preview": "预览：悬停或按下此卡片，查看它的动效。"
 }

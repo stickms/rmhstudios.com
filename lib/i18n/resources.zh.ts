@@ -6,6 +6,7 @@ import zhBuilds from "@/locales/zh/builds.json";
 import zhCAdmin from "@/locales/zh/c-admin.json";
 import zhCAltair from "@/locales/zh/c-altair.json";
 import zhCAwards from "@/locales/zh/c-awards.json";
+import zhCBalatro from "@/locales/zh/c-balatro.json";
 import zhCBlog from "@/locales/zh/c-blog.json";
 import zhCBuilds from "@/locales/zh/c-builds.json";
 import zhCBumsRush from "@/locales/zh/c-bums-rush.json";
@@ -59,6 +60,7 @@ import zhCStatus from "@/locales/zh/c-status.json";
 import zhCStudio from "@/locales/zh/c-studio.json";
 import zhCSynapseStorm from "@/locales/zh/c-synapse-storm.json";
 import zhCTempleOfJoy from "@/locales/zh/c-temple-of-joy.json";
+import zhCTf2Game from "@/locales/zh/c-tf2-game.json";
 import zhCTf2Hud from "@/locales/zh/c-tf2-hud.json";
 import zhCTournaments from "@/locales/zh/c-tournaments.json";
 import zhCUi from "@/locales/zh/c-ui.json";
@@ -106,6 +108,7 @@ const zhResources = {
   "c-admin": zhCAdmin,
   "c-altair": zhCAltair,
   "c-awards": zhCAwards,
+  "c-balatro": zhCBalatro,
   "c-blog": zhCBlog,
   "c-builds": zhCBuilds,
   "c-bums-rush": zhCBumsRush,
@@ -159,6 +162,7 @@ const zhResources = {
   "c-studio": zhCStudio,
   "c-synapse-storm": zhCSynapseStorm,
   "c-temple-of-joy": zhCTempleOfJoy,
+  "c-tf2-game": zhCTf2Game,
   "c-tf2-hud": zhCTf2Hud,
   "c-tournaments": zhCTournaments,
   "c-ui": zhCUi,

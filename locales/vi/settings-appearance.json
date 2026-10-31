@@ -139,5 +139,6 @@
   "jelly-motion-still": "Tĩnh",
   "pause-ambient-motion": "Tạm dừng chuyển động nền",
   "pause-ambient-motion-off": "Dừng việc các bề mặt thạch tự chuyển động.",
-  "pause-ambient-motion-on": "Đã tạm dừng. Chạm để tiếp tục."
+  "pause-ambient-motion-on": "Đã tạm dừng. Chạm để tiếp tục.",
+  "jelly-motion-preview": "Xem trước: di chuột hoặc nhấn vào thẻ này để xem nó chuyển động."
 }

@@ -139,5 +139,6 @@
   "jelly-motion-still": "स्थिर",
   "pause-ambient-motion": "परिवेशी गति रोकें",
   "pause-ambient-motion-off": "जेली सतहों का अपने आप हिलना रोकता है।",
-  "pause-ambient-motion-on": "रोका गया। फिर शुरू करने के लिए टैप करें।"
+  "pause-ambient-motion-on": "रोका गया। फिर शुरू करने के लिए टैप करें।",
+  "jelly-motion-preview": "पूर्वावलोकन: यह कार्ड कैसे हिलता है, देखने के लिए इस पर होवर करें या दबाएँ।"
 }
