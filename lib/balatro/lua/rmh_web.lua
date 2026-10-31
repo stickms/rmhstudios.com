@@ -15,8 +15,9 @@
 --   /rmh/dirty  Lua → page   exists when the save directory changed and should be
 --                            flushed to IndexedDB
 --   /rmh/text   Lua → page   "<hooked 0|1>\n<x> <y> <w> <h>": whether a text field has
---                            the keyboard and where the open menu's field is (CSS px),
---                            so a tap on it can raise the phone's keyboard (§10)
+--                            the keyboard and where the open menu's field is (fractions
+--                            of the window, so it holds at any render scale), so a tap
+--                            on it can raise the phone's keyboard (§10)
 --   /rmh/net/*  both ways    the multiplayer mailbox (§9, rmh/net.lua)
 --   /rmh/mp/*   page → Lua   the multiplayer pack's ready and autoload markers
 
@@ -470,6 +471,14 @@ local function install_window()
   end
 end
 
+-- With a fractional pixel ratio LÖVE reports the window as pixels / dpi scale, which rounding
+-- leaves a pixel short (1311 / 1.0242 = 1279.99 → 1279 for a 1280 window): the size looks
+-- wrong, and re-applying the mode cannot fix it, but rebuilds every canvas the game owns.
+-- Done every 0.2 s that is a frame a second (Windows display scaling and browser zoom are
+-- fractional ratios). So a size within a pixel is right, and a size that stays wrong is
+-- re-applied twice, then left alone until the page asks for something else.
+local reapplied = 0
+
 local function follow_size(dt)
   size_check = size_check - dt
   if size_check > 0 then
@@ -477,12 +486,16 @@ local function follow_size(dt)
   end
   size_check = 0.2
   read_size()
-  -- Re-apply when the page's size or ratio changed, and also when anything else
-  -- (SDL's own resize handling) left the window at a different size.
   local cw, ch = love.graphics.getDimensions()
   local want = web_w .. ' ' .. web_h .. ' ' .. web_ratio
-  if want == applied and cw == web_w and ch == web_h then
-    return
+  if want == applied then
+    -- Re-apply only when SDL's own resize handling left the window clearly elsewhere.
+    if (math.abs(cw - web_w) <= 1 and math.abs(ch - web_h) <= 1) or reapplied >= 2 then
+      return
+    end
+    reapplied = reapplied + 1
+  else
+    reapplied = 0
   end
   love.window.setMode(web_w, web_h, select(3, love.window.getMode()))
   -- Balatro's resize handler re-lays the room and rebuilds its canvas; it needs
@@ -701,7 +714,10 @@ local function publish_text_field(dt)
       -- Nodes sit in the room, which Balatro centres in the window (love.resize).
       local s = G.TILESCALE * G.TILESIZE
       local ox, oy = G.ROOM and G.ROOM.T.x or 0, G.ROOM and G.ROOM.T.y or 0
-      rect = string.format('%d %d %d %d', (node.T.x + ox) * s, (node.T.y + oy) * s, node.T.w * s, node.T.h * s)
+      local ww, wh = love.graphics.getDimensions()
+      if ww > 0 and wh > 0 then
+        rect = string.format('%.5f %.5f %.5f %.5f', (node.T.x + ox) * s / ww, (node.T.y + oy) * s / wh, node.T.w * s / ww, node.T.h * s / wh)
+      end
     end
   end
   local hooked = (G and G.CONTROLLER and G.CONTROLLER.text_input_hook) and '1' or '0'

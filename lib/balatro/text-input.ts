@@ -16,7 +16,7 @@
 
 export const TEXT_FILE = '/rmh/text';
 
-/** A rectangle in CSS pixels, relative to the game's frame. */
+/** A rectangle as fractions of the game's window (0–1), so it holds at any render scale. */
 export interface FieldRect {
   x: number;
   y: number;
@@ -39,10 +39,13 @@ export function parseTextState(text: string): TextState {
   return { hooked: first.trim() === '1', field };
 }
 
-/** Whether a point (frame-relative CSS px) is on the field, with a finger-sized margin. */
-export function hitsField(field: FieldRect | null, x: number, y: number, slop = 12): boolean {
+/**
+ * Whether a point (fractions of the canvas) is on the field, with a finger-sized margin
+ * (`slopX`/`slopY`, also fractions: 12 CSS px over the canvas's size).
+ */
+export function hitsField(field: FieldRect | null, x: number, y: number, slopX = 0.01, slopY = 0.01): boolean {
   if (!field) return false;
-  return x >= field.x - slop && x <= field.x + field.w + slop && y >= field.y - slop && y <= field.y + field.h + slop;
+  return x >= field.x - slopX && x <= field.x + field.w + slopX && y >= field.y - slopY && y <= field.y + field.h + slopY;
 }
 
 export interface KeySpec {
@@ -165,7 +168,7 @@ export function createKeyQueue(): { press(spec: KeySpec): void; stop(): void } {
 }
 
 export interface TextInputOptions {
-  /** The game's frame (the touch point is made relative to it). */
+  /** The game's frame (the keyboard's hidden input lives in it). */
   frame: HTMLElement;
   canvas: HTMLCanvasElement;
   /** Reads the Emscripten file Lua publishes (`TEXT_FILE`), or null while absent. */
@@ -211,8 +214,19 @@ export function attachTextInput({ frame, canvas, read }: TextInputOptions): () =
     const touch = e.changedTouches[0];
     if (!touch) return;
     const state = parseTextState(read() ?? '');
-    const box = frame.getBoundingClientRect();
-    if (!hitsField(state.field, touch.clientX - box.left, touch.clientY - box.top)) return;
+    const box = canvas.getBoundingClientRect();
+    if (!box.width || !box.height) return;
+    const slop = 12;
+    if (
+      !hitsField(
+        state.field,
+        (touch.clientX - box.left) / box.width,
+        (touch.clientY - box.top) / box.height,
+        slop / box.width,
+        slop / box.height,
+      )
+    )
+      return;
     // Inside the tap's own handler: the only place iOS raises the keyboard from.
     input.focus({ preventScroll: true });
     watch();

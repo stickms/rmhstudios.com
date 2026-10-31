@@ -224,10 +224,13 @@ export function renderSize(
   const h = Math.max(1, Math.round(cssH));
   const device = dpr > 0 ? dpr : 1;
   const ratio = Math.max(Math.min(device, 1), Math.min(device, 2, Math.sqrt(MAX_PIXELS / (w * h))));
-  // The governor's scale may take the ratio down to 1 and no lower: below it SDL's drawable
-  // and the window disagree about the size, and the platform layer re-applies the mode forever.
+  // The scale may take the ratio down to 1 and no lower. Below it SDL snaps the window back to
+  // the canvas's CSS size and the platform layer fights it (a half-size window measured 3 fps).
   const floor = Math.min(device, 1);
-  return { w, h, ratio: Math.round(Math.max(floor, ratio * scale) * 1000) / 1000 };
+  if (scale >= 1) return { w, h, ratio: Math.round(ratio * 1000) / 1000 };
+  // A lowered ratio snaps to quarter steps (1.5, 1.25, 1): odd fractions are what LÖVE's
+  // pixels / dpi-scale rounding trips over.
+  return { w, h, ratio: Math.max(floor, Math.round(ratio * scale * 4) / 4) };
 }
 
 // ── Packs: IndexedDB cache, then the network ──────────────────────────────────

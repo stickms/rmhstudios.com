@@ -35,11 +35,11 @@ async function typeIntoField(engine: EnginePage, tap: (x: number, y: number) => 
   const { page } = engine;
   await engine.call('open_text_input');
   const field = await waitForField(page);
-  const frame = (await page.evaluate(() => {
-    const r = document.getElementById('frame')!.getBoundingClientRect();
-    return { x: r.left, y: r.top };
-  })) as { x: number; y: number };
-  await tap(frame.x + field.x + field.w / 2, frame.y + field.y + field.h / 2);
+  const box = (await page.evaluate(() => {
+    const r = document.getElementById('canvas')!.getBoundingClientRect();
+    return { x: r.left, y: r.top, w: r.width, h: r.height };
+  })) as { x: number; y: number; w: number; h: number };
+  await tap(box.x + (field.x + field.w / 2) * box.w, box.y + (field.y + field.h / 2) * box.h);
   await expect.poll(() => focusedClass(page), { timeout: 5000 }).toBe('balatro-text-input');
 
   await page.keyboard.type('ab1');

@@ -7,10 +7,15 @@
  * usual cases.
  *
  * Fed one requestAnimationFrame interval at a time; answers with a new scale (a
- * multiplier on the pixel ratio) when frames have been slow for long enough to be
- * sure, else null. Downscale-only: a resolution change rebuilds the game's canvas,
- * which is a visible hitch, so going back up to test whether the load has passed would
- * cost more than it could save. Steps are small, patient and bounded.
+ * multiplier on the pixel count, see `renderSize`) when frames have been slow for long
+ * enough to be sure, else null. Downscale-only: a resolution change rebuilds the
+ * game's canvas, which is a visible hitch, so going back up to test whether the load has
+ * passed would cost more than it could save. Gentle steps while the game is nearly
+ * smooth (a laptop a little short), a big one when it is crawling (a browser drawing
+ * the canvas in software can take a second a frame).
+ *
+ * A frame that long is a measurement, not a stall: the page tells the governor about
+ * hidden tabs itself (`hold()`), so no interval is thrown away for being long.
  */
 
 /** Median frame time above this (under ~44 fps) is slow. */
@@ -21,9 +26,11 @@ export const WINDOW_MS = 1000;
 /** Ignored after boot and after every change: the canvas rebuild and shader compiles are not load. */
 export const WARMUP_MS = 4000;
 export const STEP = 0.8;
-export const MIN_SCALE = 0.6;
-/** An interval longer than this is a stalled or hidden tab, not a measurement. */
-const STALL_MS = 250;
+/** Median frame time above this (under ~12 fps) takes the big step. */
+export const CRAWL_MS = 80;
+export const CRAWL_STEP = 0.5;
+/** Below 0.5 of a 2x ratio the buffer is already one pixel per CSS pixel (renderSize floors it there). */
+export const MIN_SCALE = 0.5;
 
 export interface RenderGovernor {
   /** One frame interval in ms; returns the new scale when it should change. */
@@ -44,14 +51,12 @@ export function createGovernor(): RenderGovernor {
   let windowMs = 0;
   let frames: number[] = [];
   let slow = 0;
-  let stalled = false;
 
   const reset = (warmup: number) => {
     warm = warmup;
     windowMs = 0;
     frames = [];
     slow = 0;
-    stalled = false;
   };
 
   return {
@@ -62,10 +67,6 @@ export function createGovernor(): RenderGovernor {
       reset(WARMUP_MS);
     },
     push(dt) {
-      if (dt > STALL_MS) {
-        stalled = true;
-        return null;
-      }
       if (warm > 0) {
         warm -= dt;
         return null;
@@ -73,13 +74,13 @@ export function createGovernor(): RenderGovernor {
       frames.push(dt);
       windowMs += dt;
       if (windowMs < WINDOW_MS) return null;
-      const slowWindow = !stalled && median(frames) > SLOW_FRAME_MS;
+      const typical = median(frames);
       frames = [];
       windowMs = 0;
-      stalled = false;
-      slow = slowWindow ? slow + 1 : 0;
+      slow = typical > SLOW_FRAME_MS ? slow + 1 : 0;
       if (slow < SLOW_WINDOWS || scale <= MIN_SCALE) return null;
-      scale = Math.max(MIN_SCALE, Math.round(scale * STEP * 1000) / 1000);
+      const step = typical > CRAWL_MS ? CRAWL_STEP : STEP;
+      scale = Math.max(MIN_SCALE, Math.round(scale * step * 1000) / 1000);
       reset(WARMUP_MS);
       return scale;
     },

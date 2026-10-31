@@ -259,10 +259,19 @@ near 15 ms. What the page does about it:
   spend about 4 ms and hand the frame back (`pace_audio_loading`). A few single big files
   still cost 60–80 ms in one frame.
 - *The render governor* (`lib/balatro/render-governor.ts`): if the median frame stays over
-  22.5 ms for two seconds, the pixel ratio steps down by 20 %, never below 1 (below it SDL's
-  drawable and the window disagree and the platform layer re-applies the mode every 0.2 s,
-  which measured as 2 fps). Downscale-only: a change rebuilds the canvas. It matters for
-  hi-DPI screens and does nothing at ratio 1.
+  22.5 ms for two seconds, the pixel ratio steps down (20 %, or straight to the floor when
+  frames take over 80 ms), snapped to quarter steps, never below 1. Downscale-only: a change
+  rebuilds the canvas. It matters for hi-DPI screens and does nothing at ratio 1. A frame
+  that long is a measurement, not a stall (the page `hold()`s it for a hidden tab).
+- *No re-apply loop.* `follow_size` re-applies the display mode when the window is not the
+  size the page asked for. With a fractional ratio LÖVE reports pixels / dpi scale, which
+  rounding leaves a pixel short (1311 / 1.0242 gives 1279 for a 1280 window), so the size
+  looked wrong forever, and `setMode` rebuilds every canvas the game owns: the mode was
+  re-applied every 0.2 s and the game ran at about a frame a second (reproduced in Firefox
+  by a governor step to ratio 1.024). A size within a pixel is right now, and a size that
+  stays wrong is re-applied twice and then left alone until the page asks for another.
+  Ratios below 1, and a window smaller than the canvas's CSS box, do not work either: SDL
+  snaps the window back to the CSS size and the loop fought it (3 fps at half size).
 - *`powerPreference: 'high-performance'`* on the WebGL context (a dual-GPU laptop otherwise
   gives the game the integrated chip).
 - Tried and dropped: Lua GC tuning (`setpause` 150–400, `setstepmul` 100, manual stepping).
