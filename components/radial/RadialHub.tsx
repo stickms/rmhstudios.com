@@ -447,12 +447,15 @@ export function RadialHub() {
     const half = stage.offsetWidth / 2;
     const rect = orb.getBoundingClientRect();
     if (rect.width === 0) return;
-    hub.style.setProperty('--dock-dx', `${rect.left + rect.width / 2 - (box.left + x + half)}px`);
+    // Horizontally the orb and the dock are both centred on the screen (`left: 50%`), so the globe is moved only by
+    // where its sphere sits inside the dock's own layout. Taken from the orb's live rect, any transient offset (a
+    // press, a transition, a neighbour) would be held until the next resize.
+    hub.style.setProperty('--dock-dx', `${dock.offsetWidth / 2 - (x + half)}px`);
     hub.style.setProperty('--dock-dy', `${rect.top + rect.height / 2 - (box.top + y + half)}px`);
     hub.style.setProperty('--dock-scale', String(rect.width / stage.offsetWidth));
     hub.style.setProperty('--dock-ox', `${stage.offsetLeft + half}px`);
     // The orb's centre inside the dock's box: where the sun behind the docked globe is centred.
-    hub.style.setProperty('--sun-x', `${rect.left + rect.width / 2 - box.left}px`);
+    hub.style.setProperty('--sun-x', `${dock.offsetWidth / 2}px`);
     hub.style.setProperty('--sun-y', `${rect.top + rect.height / 2 - box.top}px`);
     hub.style.setProperty('--dock-oy', `${stage.offsetTop + half}px`);
   }, []);

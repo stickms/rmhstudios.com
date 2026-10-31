@@ -73,7 +73,7 @@ export default function QotdCard() {
 
   return (
     <section
-      className="glass-fill rounded-site mx-3 mb-3 flex items-start gap-3 px-4 py-3"
+      className="glass-fill rounded-site flex items-start gap-3 p-[var(--rad-card-pad)]"
       aria-label={t('qotd-card-label', { defaultValue: 'Question of the day' })}
     >
       <MessageCircleQuestion className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />

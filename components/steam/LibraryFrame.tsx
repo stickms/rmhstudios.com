@@ -42,7 +42,11 @@ export function LibraryFrame({
       />
       <main className="stm-main">
         <PlaytimeNotice />
-        {children}
+        {/* Keyed by page so a different game remounts the pane and fades up (`.stm-enter`);
+            the list beside it stays mounted, so it keeps its scroll and selection. */}
+        <div key={pathname} className="stm-enter">
+          {children}
+        </div>
       </main>
     </div>
   );
