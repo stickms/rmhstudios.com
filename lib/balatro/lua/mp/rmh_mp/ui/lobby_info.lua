@@ -1,14 +1,18 @@
 -- rmh_mp/ui/lobby_info.lua — the Lobby Info overlay opened from the HUD button (HUD-09, LOB-16/17).
 --
--- One row per player who started the match: name (with Host), team, lives, where they are
--- (Enemy-location text), and connection (Away / Catching up / Left). A player's row opens WS10's
--- per-player overlay (Mute / Kick / Info) when the out-of-run UI is loaded; without it a Mute toggle
--- sends ui_mute directly. The rows are a pure model (LI.rows()) so specs can check them.
+-- As the mod (the API's lobby card grid + PvP's player_status_provider.lua): one card per player
+-- who started the match, their avatar Joker on the Black Deck back, 4 per row, with the name (and
+-- Host) under it, then lives (and team), where they are (Enemy-location text) and connection
+-- (Away / Catching up / Left / Forfeited). A player out of the run (0 lives, or forfeited) is drawn
+-- debuffed. Clicking another player's card opens WS10's per-player overlay (Mute / Kick / Info) when
+-- the out-of-run UI is loaded; without it a Mute toggle sends ui_mute directly. The cards come from
+-- a pure model (LI.rows()) so specs can check them.
 --
---   LI.rows()    -> { { id, name, host, me, team, lives, location, status }, ... }
+--   LI.rows()    -> { { id, name, host, me, team, lives, location, status, out, avatarJoker }, ... }
 --   LI.open()    shows the overlay (G.FUNCS.mp_lobby_info)
 
 local MP = require 'rmh_mp.state'
+local W = require 'rmh_mp.ui.widgets'
 
 MP.ui = MP.ui or {}
 local LI = MP.ui.lobby_info or {}
@@ -34,7 +38,9 @@ function LI.rows()
     if r.team and (r.team == 'A' or r.team == 'B') then lives = st.team_lives[r.team] end
     out[#out + 1] = {
       id = id, name = t.name_of(id), host = id == s.hostId, me = id == s.me, team = r.team,
-      lives = lives, location = t.location_text(loc), status = status,
+      lives = lives, location = t.location_text(loc), status = status, avatarJoker = r.avatarJoker,
+      -- player_status_provider.lua: lives <= 0 is out of the run (a forfeit too), drawn debuffed.
+      out = (lives ~= nil and lives <= 0) or status == 'forfeited',
     }
   end
   return out
@@ -53,22 +59,51 @@ function LI.status_text(status)
   return RU().t(s[1], s[2]), s[3]
 end
 
+LI.COLS = 4
+LI.SCALE = 0.55
+
+--- One player's card: the avatar Joker (debuffed when out), name, lives/team, location, status.
+function LI.card(p)
+  local t = RU()
+  local w, h = (G.CARD_W or 2.1) * LI.SCALE, (G.CARD_H or 2.8) * LI.SCALE
+  local card_node
+  if rawget(_G, 'CardArea') then
+    local area = CardArea(0, 0, w, h, { card_limit = 1, type = 'title', highlight_limit = 0 })
+    local card = W.avatar_card({ id = p.id, name = p.name, avatarJoker = p.avatarJoker },
+      { scale = LI.SCALE, on_click = function() if not p.me then LI.player(p.id) end end })
+    if card then
+      card.debuff = p.out == true
+      area:emplace(card)
+    end
+    card_node = { n = G.UIT.O, config = { object = area } }
+  else
+    card_node = W.col({}, { minw = w, minh = h })
+  end
+  local status, col = LI.status_text(p.status)
+  local lives = (p.lives and tostring(p.lives) or '-') .. (p.team and ('  ' .. tostring(p.team)) or '')
+  local name = p.name .. (p.host and (' (' .. t.t('rmh_mp_ui_host', 'Host') .. ')') or '')
+  local function line(text, scale, colour)
+    return W.row({ { n = G.UIT.T, config = { text = text, scale = scale, colour = colour, shadow = true } } },
+      { maxw = w + 0.6 })
+  end
+  local nodes = {
+    W.row({ card_node }),
+    line(name, 0.3, p.me and t.MP_PURPLE or G.C.WHITE),
+    line(lives, 0.35, p.out and G.C.UI.TEXT_INACTIVE or G.C.RED),
+    line(p.location or '', 0.26, G.C.UI.TEXT_LIGHT),
+  }
+  if status and status ~= '' then nodes[#nodes + 1] = line(status, 0.26, col and G.C[col] or G.C.WHITE) end
+  return W.col(nodes, { padding = 0.05, minw = w + 0.4, id = 'mp_lobby_info_' .. tostring(p.id) })
+end
+
 function LI.def()
   local t = RU()
-  local rows = {}
+  local rows, row = {}, {}
   for _, p in ipairs(LI.rows()) do
-    local status, col = LI.status_text(p.status)
-    local name = p.name .. (p.host and (' (' .. t.t('rmh_mp_ui_host', 'Host') .. ')') or '')
-    local row = { n = G.UIT.R, config = { align = 'cm', padding = 0.06, r = 0.1, minw = 10, colour = p.me and t.MP_PURPLE or G.C.BLACK,
-      button = (not p.me) and 'mp_lobby_info_player' or nil, hover = not p.me, ref_table = { id = p.id } }, nodes = {
-      { n = G.UIT.C, config = { align = 'cl', minw = 3.2 }, nodes = { { n = G.UIT.T, config = { text = name, scale = 0.4, colour = G.C.WHITE, shadow = true } } } },
-      { n = G.UIT.C, config = { align = 'cm', minw = 1 }, nodes = { { n = G.UIT.T, config = { text = p.team and tostring(p.team) or '', scale = 0.33, colour = G.C.UI.TEXT_LIGHT } } } },
-      { n = G.UIT.C, config = { align = 'cm', minw = 1.2 }, nodes = { { n = G.UIT.T, config = { text = p.lives and tostring(p.lives) or '-', scale = 0.45, colour = G.C.RED, shadow = true } } } },
-      { n = G.UIT.C, config = { align = 'cl', minw = 3.2 }, nodes = { { n = G.UIT.T, config = { text = p.location, scale = 0.32, colour = G.C.UI.TEXT_LIGHT } } } },
-      { n = G.UIT.C, config = { align = 'cm', minw = 1.4 }, nodes = { { n = G.UIT.T, config = { text = status, scale = 0.32, colour = col and G.C[col] or G.C.WHITE } } } },
-    } }
-    rows[#rows + 1] = row
+    row[#row + 1] = LI.card(p)
+    if #row == LI.COLS then rows[#rows + 1] = W.row(row, { padding = 0.05 }); row = {} end
   end
+  if #row > 0 then rows[#rows + 1] = W.row(row, { padding = 0.05 }) end
   local title = table.concat(t.tl('ml_lobby_info', { 'Lobby', 'Info' }), ' ')
   table.insert(rows, 1, { n = G.UIT.R, config = { align = 'cm', padding = 0.1 }, nodes = {
     { n = G.UIT.T, config = { text = title, scale = 0.6, colour = G.C.WHITE, shadow = true } } } })

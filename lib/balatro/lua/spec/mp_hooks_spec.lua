@@ -498,6 +498,63 @@ describe('outcomes and peers', function()
   end)
 end)
 
+describe('different_decks / random_loadout at launch (C15, LOB-07)', function()
+  local MP
+  before_each(function()
+    MP = boot()
+    for _, k in ipairs({ 'b_plasma', 'b_green' }) do G.P_CENTERS[k] = { set = 'Back', order = 2, name = k } end
+    _G.Back = function(center) return { effect = { center = center } } end
+  end)
+  after_each(function()
+    MP.loadout = nil
+    _G.Back = nil
+    H.teardown()
+  end)
+
+  -- Mount as player `me` of a match the host set to b_red, stake 2, a challenge; launch for real.
+  local function launch(me, options, over)
+    local o = H.options()
+    for k, v in pairs(options or {}) do o[k] = v end
+    local info = { me = me, options = o, deck = 'b_red', stake = 2, challenge = 'c_omelette_1' }
+    for k, v in pairs(over or {}) do info[k] = v end
+    start_match(MP, info)
+    MP.session.launcher = nil
+    calls = {}
+    expect(MP.session.launch()).eq(true)
+    local c = find_call('funcs_start_run')
+    local args = c and c[3] or {}
+    return G.GAME.viewed_back.effect.center.name, args.stake, args.challenge and args.challenge.id
+  end
+
+  it('different_decks off: every player plays the host deck, whatever it picked', function()
+    MP.loadout = { deck = 'b_plasma', stake = 5 }
+    expect({ launch('u2', { differentDecks = false }) }).eq({ 'Red Deck', 2, 'c_omelette_1' })
+  end)
+
+  it('different_decks on: a player plays its own pick and no challenge; with no pick, the host deck', function()
+    MP.loadout = { deck = 'b_plasma', stake = 5 }
+    expect({ launch('u2', { differentDecks = true }) }).eq({ 'b_plasma', 5 })
+    MP.session.unmount('t')
+    MP.loadout = nil
+    expect({ launch('u2', { differentDecks = true }) }).eq({ 'Red Deck', 2, 'c_omelette_1' })
+  end)
+
+  it('a random loadout (perPlayer, rolled by the host) wins over the pick, for this player only', function()
+    MP.loadout = { deck = 'b_plasma', stake = 5 }
+    local per = { u1 = { deck = 'b_green', stake = 7 }, u2 = { deck = 'b_plasma', stake = 1 } }
+    expect({ launch('u1', { differentDecks = true, randomLoadout = true }, { perPlayer = per }) })
+      .eq({ 'b_green', 7 })
+    expect(MP.state.session.deck).eq('b_green')
+  end)
+
+  it('practice ignores a lobby pick', function()
+    MP.loadout = { deck = 'b_plasma', stake = 5 }
+    MP.session.mount('practice', { resolved = H.resolved(), options = { differentDecks = true }, seed = 'S',
+      deck = 'b_red', stake = 1 })
+    expect(MP.state.session.deck).eq('b_red')
+  end)
+end)
+
 describe('session lifecycle', function()
   local MP
   before_each(function() MP = boot() end)

@@ -5,9 +5,11 @@
 -- picks, then sends
 --   lobby host:   ui_set_deck{deck, stake, mpStake?, challenge?}           button "Select"
 --   practice:     ui_practice{ruleset, deck, stake, seed?}                  button "Start"
+--   lobby guest:  MP.loadout = {deck, stake} (Lobby Options "Players have different decks", C15;
+--                 read by MP.session.mount, nothing sent: as in the mod, each player applies its own)
 -- MP decks (b_mp_*), MP stakes and MP challenges are listed only for rulesets with Multiplayer
--- content, or with the "Show Multiplayer content anyway" setting. Guests never open it (the deck
--- box is display only).
+-- content, or with the "Show Multiplayer content anyway" setting. Guests open it ('loadout') only
+-- while different decks are on and the loadout is not random; their deck box is display only otherwise.
 
 local MP = require 'rmh_mp.state'
 local TH = require 'rmh_mp.ui.theme'
@@ -130,10 +132,14 @@ end
 -- The picker's working state (one at a time).
 RS.st = RS.st or {}
 
---- Open the picker. mode 'lobby' (host) | 'practice' (args.ruleset).
+--- Open the picker. mode 'lobby' (host) | 'loadout' (guest, C15) | 'practice' (args.ruleset).
 function RS.open(mode, args)
   args = args or {}
   local lobby = U.model.lobby and U.model.lobby.state
+  if mode == 'loadout' then
+    local own = MP.loadout or lobby or {}
+    args.deck, args.stake = args.deck or own.deck, args.stake or own.stake
+  end
   local ruleset = args.ruleset or (lobby and lobby.options.ruleset) or 'ruleset_mp_balanced'
   -- Practice mounts MP content for the MP rulesets, so their decks are offered there.
   local mp = RS.mp_visible(ruleset)
@@ -298,7 +304,7 @@ function RS.contents(st)
   st = st or RS.st
   local header = W.row({ W.text(st.mode == 'practice' and (TH.T('b_practice', 'Practice') .. ': ' .. TH.ruleset_name(st.ruleset))
     or TH.T('b_sc_choose_deck', 'Choose Deck/Stake'), { scale = 0.55 }) }, { padding = 0.05 })
-  if st.mode == 'practice' then return { header, W.row({ { n = G.UIT.O, config = {
+  if st.mode ~= 'lobby' then return { header, W.row({ { n = G.UIT.O, config = {
     object = UIBox({ definition = RS.new_run_tab(st), config = { offset = { x = 0, y = 0 } } }) } } }) } end
   return { header, create_tabs({ snap_to_nav = true, colour = TH.col('BOOSTER'), tabs = {
     { label = TH.T('b_new_run', 'New Run'), chosen = st.tab ~= 'challenges', tab_definition_function = function() return RS.new_run_tab(RS.st) end },
@@ -331,6 +337,12 @@ function RS.submit()
     if U.queue_busy() then U.overlays.error('queued'); return nil end
     if U.send('ui_practice', d) then W.close_overlay('run_setup'); return d end
     return nil
+  end
+  if st.mode == 'loadout' then
+    MP.loadout = { deck = st.deck, stake = st.stake }
+    W.close_overlay('run_setup')
+    U.changed()
+    return MP.loadout
   end
   local d = { deck = st.deck, stake = st.stake, mpStake = st.mpStake, challenge = nil }
   if st.tab == 'challenges' and st.challenge then
