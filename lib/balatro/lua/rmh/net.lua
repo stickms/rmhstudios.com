@@ -6,12 +6,25 @@
 -- {"h":1,"ack":<last JS seq applied>,"fr":<frame>}; a header-only batch acks.
 -- In: JS keeps IN current; Lua reads it whole, removes it, drops s <= last, then
 -- validates (N.validate, set by the MP pack) and calls the one handler per type.
+--
+-- Cost per frame (PLAN §6.4 budgets: idle <= 0.05 ms, busy <= 0.3 ms at 50 msg/s). On
+-- Emscripten's MEMFS a failed io.open throws and catches a JS ErrnoError, which alone costs
+-- about 0.1 ms, so an idle frame opens nothing:
+--   * IN_SIG is a signal file Lua keeps open: JS makes it non-empty whenever it writes IN, and
+--     an idle frame is one seek on that handle. Lua empties it before reading IN. A writer
+--     that never signals is still read every POLL_EVERY frames; without IN_SIG (no /rmh/net)
+--     Lua polls IN every frame as before and retries IN_SIG every SIG_RETRY frames.
+--   * A batch with messages goes out the frame they were sent; an ack-only batch (header only)
+--     at most every ACK_EVERY frames: JS only needs acks to prune lines it would otherwise
+--     rewrite (polling mode), and Lua drops repeated seqs anyway.
 local J = require('rmh/json')
 
 local N = {
-  OUT_TMP = '/rmh/net/out.tmp', OUT = '/rmh/net/out', IN = '/rmh/net/in',
+  OUT_TMP = '/rmh/net/out.tmp', OUT = '/rmh/net/out', IN = '/rmh/net/in', IN_SIG = '/rmh/net/in.sig',
   LINE_MAX = 65536, BATCH_MAX = 262144, QUEUE_MAX = 4096,
+  POLL_EVERY = 30, SIG_RETRY = 60, ACK_EVERY = 8,
   seq = 0, last = 0, acked = 0, frame = 0, queue = {}, handlers = {},
+  ack_frame = 0, sig = nil, sig_retry_at = 0,
   validate = nil, -- function(t, d) -> ok, err
 }
 
@@ -49,7 +62,7 @@ end
 
 function N.flush()
   local q = N.queue
-  if #q == 0 and N.acked == N.last then return 0 end
+  if #q == 0 and (N.acked == N.last or N.frame - N.ack_frame < N.ACK_EVERY) then return 0 end
   if exists(N.OUT) then return 0 end
   local parts = { J.encode({ h = 1, ack = N.last, fr = N.frame }) }
   local size, n = #parts[1] + 1, 0
@@ -64,6 +77,7 @@ function N.flush()
   f:close()
   if not ok or not os.rename(N.OUT_TMP, N.OUT) then return 0 end
   N.acked = N.last
+  N.ack_frame = N.frame
   local rest = {}
   for i = n + 1, #q do rest[#rest + 1] = q[i] end
   N.queue = rest
@@ -100,7 +114,50 @@ function N.dispatch(line)
   return true
 end
 
+--- The handle on IN_SIG, opened (and created when missing) on first use. nil while it cannot be.
+local function sig_handle()
+  if N.sig then return N.sig end
+  if N.frame < N.sig_retry_at then return nil end
+  N.sig_retry_at = N.frame + N.SIG_RETRY
+  local f = io.open(N.IN_SIG, 'rb')
+  if not f then
+    local c = io.open(N.IN_SIG, 'ab')
+    if not c then return nil end
+    c:close()
+    f = io.open(N.IN_SIG, 'rb')
+    if not f then return nil end
+  end
+  N.sig = f
+  return f
+end
+
+--- Whether IN may hold something this frame (consumes the signal).
+function N.pending()
+  local f = sig_handle()
+  if not f then return true end
+  local size = f:seek('end')
+  if not size then
+    f:close()
+    N.sig = nil
+    return true
+  end
+  if size > 0 then
+    -- Empty the signal before reading IN: a write that lands while IN is read signals again.
+    local w = io.open(N.IN_SIG, 'wb')
+    if w then w:close() end
+    return true
+  end
+  return N.frame % N.POLL_EVERY == 0
+end
+
+--- Drop the IN_SIG handle (tests that move the paths; a full reset).
+function N.reset_signal()
+  if N.sig then pcall(N.sig.close, N.sig) end
+  N.sig, N.sig_retry_at = nil, 0
+end
+
 function N.receive()
+  if not N.pending() then return 0 end
   local f = io.open(N.IN, 'rb')
   if not f then return 0 end
   local text = f:read('*a') or ''

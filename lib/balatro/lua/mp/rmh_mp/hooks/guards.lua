@@ -82,10 +82,15 @@ function GD.install()
   end, o('localize'))
 
   if rawget(_G, 'Moveable') then
+    -- Hundreds of calls a frame: a hot layer (no pcall per call).
+    local align = o('align')
+    align.hot = true
     wrap(Moveable, 'align_to_major', function(orig, self, ...)
-      if not (self.role and self.role.major and self.role.major.T and self.T) then return end
+      local role = self.role
+      local major = role and role.major
+      if not (major and major.T and self.T) then return end
       return orig(self, ...)
-    end, o('align'))
+    end, align)
   end
 end
 

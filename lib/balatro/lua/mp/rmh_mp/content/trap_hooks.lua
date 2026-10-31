@@ -415,8 +415,9 @@ end
 
 function H.frame()
   if not (MP.in_session() and G.GAME and G.GAME.round_resets) then
+    -- Runs every frame outside a session too: reset without allocating a table each frame.
     H.seen_ante = nil
-    H.seen_presence = {}
+    if H.seen_presence == nil or next(H.seen_presence) ~= nil then H.seen_presence = {} end
     H.rebroadcast = false
     return
   end
