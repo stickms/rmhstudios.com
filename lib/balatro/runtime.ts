@@ -33,6 +33,7 @@
 import engine from './engine.json';
 import pack from './game-pack.json';
 import { chooseSnapshot, isSavePath, type CloudSaves, type SaveFile } from './cloud-saves';
+import { createGovernor } from './render-governor';
 import { extractEntry, readZip, writeZip } from './zip';
 
 export const ENGINE_BASE = '/balatro/engine/';
@@ -170,14 +171,24 @@ export function patchMain(source: string): string {
  * pixels, SDL sizes the canvas at CSS × ratio, and LÖVE scales every canvas the
  * game creates by the same ratio, so text and cards are drawn at device
  * resolution. The ratio is the device's, capped at 2, and lowered on very large
- * frames so the buffer stays under MAX_PIXELS (never below 1 on a hi-DPI screen).
+ * frames so the buffer stays under MAX_PIXELS (never below 1 on a hi-DPI screen),
+ * then multiplied by `scale`, which only the render governor (render-governor.ts)
+ * lowers, when the machine cannot keep up at full resolution.
  */
-export function renderSize(cssW: number, cssH: number, dpr: number): { w: number; h: number; ratio: number } {
+export function renderSize(
+  cssW: number,
+  cssH: number,
+  dpr: number,
+  scale = 1,
+): { w: number; h: number; ratio: number } {
   const w = Math.max(1, Math.round(cssW));
   const h = Math.max(1, Math.round(cssH));
   const device = dpr > 0 ? dpr : 1;
   const ratio = Math.max(Math.min(device, 1), Math.min(device, 2, Math.sqrt(MAX_PIXELS / (w * h))));
-  return { w, h, ratio: Math.round(ratio * 1000) / 1000 };
+  // The governor's scale may take the ratio down to 1 and no lower: below it SDL's drawable
+  // and the window disagree about the size, and the platform layer re-applies the mode forever.
+  const floor = Math.min(device, 1);
+  return { w, h, ratio: Math.round(Math.max(floor, ratio * scale) * 1000) / 1000 };
 }
 
 // ── Packs: IndexedDB cache, then the network ──────────────────────────────────
@@ -509,9 +520,16 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
   };
 
   let ratio = 1;
+  let scale = 1;
   const writeSize = () => {
     if (!fs) return;
-    const size = renderSize(frame.clientWidth, frame.clientHeight, window.devicePixelRatio);
+    // The canvas's own box: the page insets it from the frame by the device's safe areas.
+    const size = renderSize(
+      canvas.clientWidth || frame.clientWidth,
+      canvas.clientHeight || frame.clientHeight,
+      window.devicePixelRatio,
+      scale,
+    );
     ratio = size.ratio;
     try {
       fs.writeFile('/rmh/size', `${size.w} ${size.h} ${size.ratio}`);
@@ -519,6 +537,14 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
       /* FS not ready */
     }
   };
+
+  // The engine asks for a plain WebGL context. A laptop with two GPUs gives that one to
+  // the integrated chip unless the page says otherwise, and the game is fill-bound.
+  const getContext = canvas.getContext.bind(canvas) as (type: string, attrs?: unknown) => unknown;
+  (canvas as unknown as { getContext: typeof getContext }).getContext = (type, attrs) =>
+    type === 'webgl' || type === 'experimental-webgl' || type === 'webgl2'
+      ? getContext(type, { ...(attrs as object), powerPreference: 'high-performance' })
+      : getContext(type, attrs);
 
   const module: Partial<LoveModule> = {
     arguments: [GAME_DIR],
@@ -602,8 +628,33 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
     (err) => onAudioError?.(err),
   );
 
-  const observer = new ResizeObserver(writeSize);
+  // Frame pacing: lower the pixel ratio when frames stay slow (render-governor.ts).
+  const governor = createGovernor();
+  const observer = new ResizeObserver(() => {
+    governor.hold();
+    writeSize();
+  });
   observer.observe(frame);
+  observer.observe(canvas);
+  let lastFrame = 0;
+  let sampler = 0;
+  const sample = (now: number) => {
+    sampler = requestAnimationFrame(sample);
+    if (document.visibilityState === 'hidden') {
+      lastFrame = 0;
+      return;
+    }
+    if (lastFrame) {
+      const next = governor.push(now - lastFrame);
+      if (next !== null) {
+        scale = next;
+        onLog?.(`render scale ${next}`, false);
+        writeSize();
+      }
+    }
+    lastFrame = now;
+  };
+  sampler = requestAnimationFrame(sample);
 
   const saveFiles = () => (fs ? readSaveFiles(fs) : []);
   // The shim marks writes; flush them promptly, and anyway every 30 s.
@@ -658,6 +709,7 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
       void flushSaves();
       cloud?.flush(saveFiles);
       observer.disconnect();
+      cancelAnimationFrame(sampler);
       window.clearInterval(poll);
       window.clearInterval(slow);
       document.removeEventListener('visibilitychange', onHide);

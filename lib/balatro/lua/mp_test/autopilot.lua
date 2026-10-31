@@ -324,6 +324,24 @@ C.state = function() return AP.snapshot() end
 C.wait_state = function(a) return AP.wait_state(a.name or a[1], a.seconds or a[2]) end
 C.wait_idle = function(a) return AP.wait_idle(a.seconds or a[1]) end
 
+-- Opens a menu holding one text field, as the seed and lobby-code screens do (the phone
+-- keyboard path, lib/balatro/text-input.ts, is tested against it).
+C.open_text_input = function()
+  AP_TEXT = { value = '' }
+  G.FUNCS.overlay_menu({
+    definition = create_UIBox_generic_options({
+      contents = {
+        create_text_input({ w = 4, h = 0.6, max_length = 8, all_caps = true, prompt_text = 'CODE', ref_table = AP_TEXT, ref_value = 'value' }),
+      },
+    }),
+  })
+  return true
+end
+
+C.text_value = function()
+  return { value = AP_TEXT and AP_TEXT.value or '', hooked = G.CONTROLLER.text_input_hook ~= nil }
+end
+
 C.speed = function(a)
   local n = tonumber(a.n or a[1]) or 4
   G.SETTINGS.GAMESPEED = n
