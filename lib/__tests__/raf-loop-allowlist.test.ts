@@ -349,6 +349,10 @@ const ALLOW = new Set<string>([
   'hooks/useScrollRestoration.ts',
   'hooks/useSpatialParallax.ts',
   'lib/altair/engine/game-loop.ts',
+  // Balatro: the render governor's frame sampler runs while the engine does and is cancelled in
+  // stop(); the phone keyboard's key queue is a one-shot chain that ends when the queue is empty.
+  'lib/balatro/runtime.ts',
+  'lib/balatro/text-input.ts',
   'lib/dream-rift/net/session.ts',
   'lib/emoji/use-emoji-insert.ts',
   'lib/emoji/use-emoji-shortcodes.tsx',

@@ -16,14 +16,90 @@
 .balatro-frame:fullscreen {
   height: 100%;
 }
+/* While a phone keyboard is up the game lays itself out in what is left above it
+ * (lib/balatro/text-input.ts sets --balatro-vvh from the visual viewport). */
+.balatro-frame[data-keyboard] {
+  height: var(--balatro-vvh);
+}
 
-/* The engine sets the canvas's pixel size; CSS sets the size it is shown at. */
+/* The hidden field that raises the phone keyboard: it never shows or holds text.
+ * 16px, because iOS zooms the page for anything smaller when it is focused. */
+.balatro-text-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  font-size: 16px;
+  pointer-events: none;
+  caret-color: transparent;
+}
+
+/* A phone is held, not clicked: no text selection or callout from a long press, no tap
+ * flash, and no pull-to-refresh or rubber band under the game. */
+.balatro-frame {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+html:has(.balatro-page),
+html:has(.balatro-page) body {
+  overscroll-behavior: none;
+}
+
+/* The engine sets the canvas's pixel size; CSS sets the size it is shown at. The game is
+ * drawn inside the device's safe areas (notch, rounded corners, home indicator): the
+ * frame's own background shows in the strips, and the engine sizes itself to this box
+ * (lib/balatro/runtime.ts measures the canvas, not the frame). */
 .balatro-canvas {
+  position: absolute;
+  top: var(--safe-top, 0px);
+  right: var(--safe-right, 0px);
+  bottom: var(--safe-bottom, 0px);
+  left: var(--safe-left, 0px);
   display: block;
-  width: 100% !important;
-  height: 100% !important;
+  width: calc(100% - var(--safe-left, 0px) - var(--safe-right, 0px)) !important;
+  height: calc(100% - var(--safe-top, 0px) - var(--safe-bottom, 0px)) !important;
   outline: none;
   touch-action: none;
+}
+
+/* Portrait on a phone: the table is drawn square, so say once that sideways is bigger. */
+.balatro-hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(1rem + var(--safe-bottom, 0px));
+  display: flex;
+  max-width: calc(100% - 2rem);
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-scrim);
+  color: var(--app-text);
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  transform: translateX(-50%);
+}
+.balatro-hint button {
+  display: inline-flex;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  margin: -0.5rem -0.5rem -0.5rem 0;
+  border-radius: var(--app-radius-sm);
+  color: var(--app-text-dim);
+}
+@media (orientation: landscape), (pointer: fine) {
+  .balatro-hint {
+    display: none;
+  }
 }
 
 .balatro-boot {
@@ -83,6 +159,9 @@
   background: var(--app-surface-hover);
 }
 @media (pointer: coarse) {
+  .balatro-toolbar {
+    opacity: 0.6;
+  }
   .balatro-toolbar button {
     width: 2.75rem;
     height: 2.75rem;
