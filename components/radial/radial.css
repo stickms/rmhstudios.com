@@ -42,8 +42,10 @@
   --rad-col-wide: 52rem;
   /* Card interior padding + the gap between stacked cards — same reasoning as
      the gutters: compact on phones, roomy once there is space to spend. */
-  --rad-card-pad: clamp(0.9rem, 3.5vw, 1.6rem);
-  --rad-card-gap: clamp(0.875rem, 2vw, 1.25rem);
+  /* Feed cards (posts, question of the day, fortune, the caught-up divider) all pad with this one token, so they
+     line up and breathe alike; the QOTD and fortune cards used to carry their own tighter paddings. */
+  --rad-card-pad: clamp(1.25rem, 5vw, 1.75rem);
+  --rad-card-gap: clamp(1rem, 3vw, 1.5rem);
 
   /* ── The desktop frame ──────────────────────────────────────────────────
      Mobile is one column and none of this applies (both rails are display:none,
@@ -2893,7 +2895,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   --evert-rest-opacity: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--rad-3);
+  gap: var(--rad-4);
   padding: var(--rad-card-pad);
   border-radius: var(--site-radius, 22px);
   /* L1 material (see globals.css §glass): the feed is the most-repeated surface
