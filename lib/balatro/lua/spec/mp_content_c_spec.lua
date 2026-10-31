@@ -35,8 +35,10 @@ local function stubs()
     CH.calls[#CH.calls + 1] = { 'vanilla_open', self.ability.name }
     G.GAME.pack_choices = self.config.center.config.choose or 1
   end
+  -- The shipped Blue Seal (core-patches.json): a 1 in 2 roll on its own 'blue_seal' stream, only with room.
   Card.get_end_of_round_effect = function(self)
-    if self.seal == 'Blue' and #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit then
+    if self.seal == 'Blue' and #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit
+      and pseudorandom('blue_seal') < G.GAME.probabilities.normal / 2 then
       G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1
       G.E_MANAGER:add_event(Event({ trigger = 'before', func = function()
         local p = new_card(nil, G.P_CENTERS.c_mercury)
@@ -557,6 +559,7 @@ describe('CN-06..21 the 16 traps', function()
   it('Magic Mouth: a Blue seal makes a Planet -> it is taken and given to the owner', function()
     setup()
     planted('c_mp_trap_magic_mouth')
+    CH.roll({ blue_seal = 0.1 })
     local c = playing('Hearts', 5)
     c.seal = 'Blue'
     G.hand:emplace(c)
@@ -569,6 +572,20 @@ describe('CN-06..21 the 16 traps', function()
     T.receive_fired('u1', f)
     MP.net.run_deferred()
     expect(G.consumeables.cards[#G.consumeables.cards].config.center.key).eq('c_mercury')
+  end)
+
+  it('Magic Mouth stays hidden when the Blue Seal misses its 1 in 2 roll', function()
+    setup()
+    planted('c_mp_trap_magic_mouth')
+    CH.roll({ blue_seal = 0.6 })
+    local c = playing('Hearts', 5)
+    c.seal = 'Blue'
+    G.hand:emplace(c)
+    local n = #G.consumeables.cards
+    c:get_end_of_round_effect()
+    flush()
+    expect(#G.consumeables.cards).eq(n)
+    expect(T.find_hidden('c_mp_trap_magic_mouth') ~= nil).truthy()
   end)
 
   it('Magic Mouth stays hidden when the seal made nothing (no room)', function()

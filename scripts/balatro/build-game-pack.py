@@ -95,20 +95,25 @@ BASE_RANGES = [
 ]
 
 # Anchored source patches applied to data/balatro Lua as it goes into the core
-# pack: (path, anchor, replacement). Each anchor must occur exactly once, or the
-# build fails, as does a patch whose file is not in the source. Streams request
-# entries through WS2 (PLAN WS6).
-CORE_PATCHES: list[tuple[str, str, str]] = [
-    # WS6: the round-eval row label for MP rows (the comeback bonus). The hook is
-    # nil outside multiplayer, so single player takes the vanilla branches. Same
-    # line, so line numbers in error traces are unchanged.
-    (
-        'functions/common_events.lua',
-        "elseif config.name == 'hands' then",
-        'elseif RMH_MP and RMH_MP.eval_row_label and RMH_MP.eval_row_label(config, left_text, scale, num_dollars) then'
-        " elseif config.name == 'hands' then",
-    ),
-]
+# pack: (path, anchor, replacement), in order. Each anchor must occur exactly once,
+# or the build fails, as does a patch whose file is not in the source. The list is
+# data (scripts/balatro/core-patches.json, each entry with its id and why) so the
+# L1 Lua specs load the base game through exactly the same patches
+# (lib/balatro/lua/spec/core_patches.lua). It holds WS6's MP eval-row hook and the
+# owner's balance changes (Blue Stake, Blue Seal, Gold Seal) with their text in
+# every shipped language.
+CORE_PATCHES_JSON = Path(__file__).resolve().parent / 'core-patches.json'
+
+
+def read_core_patches(path: Path = CORE_PATCHES_JSON) -> list[tuple[str, str, str]]:
+    data = json.loads(path.read_text(encoding='utf-8'))
+    ids = [p['id'] for p in data['patches']]
+    if len(ids) != len(set(ids)):
+        raise SystemExit(f'{path.name}: duplicate patch ids')
+    return [(p['path'], p['anchor'], p['replacement']) for p in data['patches']]
+
+
+CORE_PATCHES: list[tuple[str, str, str]] = read_core_patches()
 
 # The web platform layer, added to the core pack at these paths under /Balatro
 # (lib/balatro/runtime.ts only prefixes `require "rmh_web";` onto main.lua). It used
@@ -141,11 +146,13 @@ def base_codepoints() -> set[int]:
 
 
 def lua_codepoints() -> set[int]:
-    """Every character in every Lua file: all the text the game can draw."""
+    """Every character in every Lua file, as patched: all the text the game can draw."""
     cps: set[int] = set()
     for path in SRC.rglob('*.lua'):
         text = path.read_bytes().decode('utf-8', errors='ignore')
         cps.update(ord(c) for c in text if ord(c) >= 0x20)
+    for _, _, replacement in CORE_PATCHES:
+        cps.update(ord(c) for c in replacement if ord(c) >= 0x20)
     return cps
 
 
