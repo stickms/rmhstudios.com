@@ -692,9 +692,7 @@
   inset: 0;
   z-index: 50;
 }
-.stm-drawer[hidden] {
-  display: none;
-}
+
 .stm-drawer-backdrop {
   position: absolute;
   inset: 0;
@@ -2367,4 +2365,119 @@ button.stm-star {
 .stm-award-menu .stm-collmenu-panel {
   inset-block-start: calc(100% + 2px);
   width: 240px;
+}
+
+
+/* ─── Motion ──────────────────────────────────────────────────────────────────
+ * Brief and minimal: opacity and transform only (nothing that reflows), about 160ms, on
+ * one ease that starts and ends softly. Enters use transitions with @starting-style, so
+ * a menu closed while it is still opening turns around from where it is. No keyframes
+ * and nothing repeats. */
+
+.steam {
+  --stm-ease: cubic-bezier(0.65, 0, 0.35, 1);
+  --stm-dur: 160ms;
+}
+
+/* The phone drawer stays mounted (closed it is `inert`, so it is unfocusable) and
+ * slides in with its backdrop; visibility waits for the slide-out to finish. */
+.stm-drawer {
+  visibility: hidden;
+  pointer-events: none;
+  transition: visibility 0s linear var(--stm-dur);
+}
+.stm-drawer[data-open='true'] {
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+.stm-drawer-backdrop {
+  opacity: 0;
+  transition: opacity var(--stm-dur) var(--stm-ease);
+}
+.stm-drawer[data-open='true'] .stm-drawer-backdrop {
+  opacity: 1;
+}
+.stm-drawer-panel {
+  transform: translateX(-100%);
+  transition: transform calc(var(--stm-dur) * 1.4) var(--stm-ease);
+}
+html[dir='rtl'] .stm-drawer-panel {
+  transform: translateX(100%);
+}
+.stm-drawer[data-open='true'] .stm-drawer-panel {
+  transform: none;
+}
+
+/* Small menus (collections, emoticons, awards) ease in from just above. */
+.stm-collmenu[open] > .stm-collmenu-panel {
+  transition:
+    opacity var(--stm-dur) var(--stm-ease),
+    transform var(--stm-dur) var(--stm-ease);
+}
+@starting-style {
+  .stm-collmenu[open] > .stm-collmenu-panel {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* A new page, or a different game in the same pane, fades up a few pixels. */
+.stm-enter,
+.stm-web,
+.stm-message {
+  transition:
+    opacity var(--stm-dur) var(--stm-ease),
+    transform var(--stm-dur) var(--stm-ease);
+}
+@starting-style {
+  .stm-enter,
+  .stm-web,
+  .stm-message {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* Progress bars fill from empty. */
+.stm-bar-fill {
+  transition: width calc(var(--stm-dur) * 3) var(--stm-ease);
+}
+@starting-style {
+  .stm-bar-fill {
+    width: 0;
+  }
+}
+
+/* Hover, selection and focus changes ease instead of snapping. */
+.stm-row,
+.stm-home-row,
+.stm-btn,
+.stm-nav a,
+.stm-subnav a,
+.stm-hubnav a,
+.stm-drawer-panel > a,
+.stm-kinds button,
+.stm-person,
+.stm-thread,
+.stm-activity-row,
+.stm-tagchips a,
+.stm-star,
+.stm-helpful,
+.stm-fav,
+.stm-search,
+.stm-input,
+.stm-textarea {
+  transition:
+    background-color var(--stm-dur) var(--stm-ease),
+    color var(--stm-dur) var(--stm-ease),
+    border-color var(--stm-dur) var(--stm-ease),
+    box-shadow var(--stm-dur) var(--stm-ease),
+    opacity var(--stm-dur) var(--stm-ease);
+}
+.stm-capsule {
+  transition: transform var(--stm-dur) var(--stm-ease);
+}
+.stm-capsule:hover {
+  transform: translateY(-2px);
 }

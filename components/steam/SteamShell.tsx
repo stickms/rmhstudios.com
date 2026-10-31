@@ -148,7 +148,7 @@ function SteamTopBar() {
       </div>
 
       {/* Phones: the row collapses into this drawer, as in Steam's mobile app. */}
-      <div id="stm-drawer" className="stm-drawer" data-open={open ? 'true' : 'false'} hidden={!open}>
+      <div id="stm-drawer" className="stm-drawer" data-open={open ? 'true' : 'false'} inert={!open}>
         <button
           type="button"
           className="stm-drawer-backdrop"
