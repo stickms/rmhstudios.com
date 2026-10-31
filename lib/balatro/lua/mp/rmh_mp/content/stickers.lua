@@ -150,7 +150,7 @@ function K.round_end_cost(card)
   ab.mp_extra_sell_price = (ab.mp_extra_sell_price or 0) + K.PERSISTENT_ROUND_COST
   if card.set_cost then card:set_cost() end
   G.E_MANAGER:add_event(Event({ func = function()
-    C.status(card, C.loc('k_val_up', 'Value Up!'), G.C.RED)
+    C.status(card, C.loc('k_cost_up', 'Cost Up'), G.C.RED) -- the mod's wording (1_persistent.lua)
     return true
   end }))
 end

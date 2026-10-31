@@ -8,8 +8,11 @@
 --   Stay Queued             (the back button) close, still searching
 -- G.FUNCS.start_run is wrapped (New Run, Continue, Challenges and the in-run restart all go
 -- through it); MP's own launches (a match or practice run, S.launching) and anything inside a
--- session pass. Create Lobby, an invite's Join and the main-menu shortcuts call MP.ui.queue_guard
--- themselves.
+-- session pass. Every other way out of the search calls MP.ui.queue_guard itself, as the mod's
+-- guard_queued call sites: CREATE on a Create Lobby pillar (flow.lua create), Join by code and
+-- Join from clipboard (flow.lua join), an invite's Join, the party return (party.lua), a practice
+-- run's START (practice_mode.lua), replay WATCH (playback_launch.lua) and the menu shortcuts.
+-- The buttons themselves stay live while searching (the mod greys none of them).
 --
 --   MP.ui.queue_guard(replay) -> true when blocked (the overlay is up and `replay` is kept)
 

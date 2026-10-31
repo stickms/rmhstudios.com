@@ -46,8 +46,11 @@ F.rmh_mp_join_submit = function()
     W.toast('rmh_mp_ui_code_invalid', nil, { default = 'A lobby code has 6 characters' })
     return false
   end
-  U.send('ui_join', { code = code })
   W.close_overlay('join_code')
+  -- While searching the join waits behind the queue guard (A18; the mod's pvp_join_lobby).
+  local function join() return U.send('ui_join', { code = code }) end
+  if U.queue_guard and U.queue_guard(join) then return false end
+  join()
   return true
 end
 
@@ -248,24 +251,30 @@ end
 -- ── Late result (HUD-24: a match the player left has ended) ─────────────────
 -- Two ways in: a `win` that reaches a still-mounted session while the player is at the main menu,
 -- and the hub's `late_result` for a player who left the match (Leave, a forfeit, a closed tab).
--- The toast shows only at the main menu: a hub result that lands during a run (a new match, a
--- single-player run) waits there until the next main menu (set_main_menu_UI). One toast per run
--- id; at most LATE_MAX wait.
+-- Like the API's ui/late_result_notice.lua it is a yellow (system) chat line, worded as the mod's
+-- describe(): "[MultiplayerAPI] The match you left has ended." plus " You finished in place N"
+-- when the place is known (the mod's server places every player: a win or a shared first, a
+-- draw, is place 1). Ranked rating change is out of scope. The chat console draws at the main
+-- menu too (ui/chat.lua). The line is added only at the main menu: a hub result that lands
+-- during a run (a new match, a single-player run) waits there until the next main menu
+-- (set_main_menu_UI). One line per run id; at most LATE_MAX wait.
 
 local LATE_MAX = 3
 O.late_queue = O.late_queue or {}
 O.late_seen = O.late_seen or {}
 
-local function late_toast(line)
-  W.toast('mp_late_result', nil, { default = TH.T('rmh_mp_ui_late_result', 'The match you left has ended.') .. ' ' .. line })
+--- The mod's describe(content): r = 'won' | 'draw' | 'lost', place = the finishing place or nil.
+function O.late_line(r, place)
+  local line = TH.T('rmh_mp_ui_late_result', '[MultiplayerAPI] The match you left has ended.')
+  if r == 'won' or r == 'draw' then place = 1 end
+  if tonumber(place) then
+    line = line .. ' ' .. TH.T('rmh_mp_ui_late_result_place', 'You finished in place') .. ' ' .. tostring(place)
+  end
+  return line
 end
 
---- The second half of the toast: r = 'won' | 'draw' | 'lost', place = the finishing place or nil.
-function O.late_line(r, place)
-  if r == 'draw' then return TH.T('rmh_mp_ui_ranked_result_drew', 'It was a draw.') end
-  if r == 'won' then return TH.T('rmh_mp_ui_ranked_result_won', 'You won.') end
-  if place then return TH.T('rmh_mp_ui_late_result_place', 'You finished in place') .. ' ' .. tostring(place) end
-  return TH.T('rmh_mp_ui_ranked_result_lost', 'You lost.')
+local function late_notice(r, place)
+  if U.chat and U.chat.system then return U.chat.system(O.late_line(r, place)) end
 end
 
 --- Show what waits, if the player is at the main menu now.
@@ -273,7 +282,7 @@ function O.late_flush()
   if #O.late_queue == 0 or not U.at_main_menu() then return end
   local q = O.late_queue
   O.late_queue = {}
-  for i = 1, #q do late_toast(O.late_line(q[i].r, q[i].place)) end
+  for i = 1, #q do late_notice(q[i].r, q[i].place) end
 end
 
 --- The hub's notice (J2L `late_result`): { runId, r, place? }.
@@ -300,7 +309,7 @@ local function late_win(o)
   elseif o.winner_id and o.winner_id == me then r = 'won'
   elseif o.winner_team_id and o.winner_team_id == MP.state.my_team then r = 'won'
   elseif o.places and me and o.places[me] then place = o.places[me] end
-  late_toast(O.late_line(r, place))
+  late_notice(r, place)
 end
 
 if MP.report and MP.report.on then MP.report.on('win', late_win) end

@@ -187,8 +187,11 @@ function ST.contents()
       }),
     }, { padding = 0.05 }),
     W.row({
+      -- the mod's tooltip for the asterisk
       W.col({ W.toggle({ label = TH.T('k_show_mp_content_anyway', 'Show Multiplayer content anyway*'), ref_table = ST.ref,
-        ref_value = 'showMpContent', callback = function(v) ST.set('showMpContent', v == true) end, w = 4, id = 'mp_set_show_mp' }) }),
+        ref_value = 'showMpContent', callback = function(v) ST.set('showMpContent', v == true) end, w = 4, id = 'mp_set_show_mp' }) },
+        { id = 'mp_set_show_mp_tip', on_demand_tooltip = { text = {
+          TH.T('k_applies_singleplayer_vanilla_rulesets', '*Applies in singleplayer and vanilla rulesets') } } }),
       W.col({ W.toggle({ label = TH.T('rmh_mp_ui_chat_section_title', 'Chat'), ref_table = ST.ref, ref_value = 'chat',
         callback = function(v) ST.set('chat', v == true) end, w = 1.5, id = 'mp_set_chat' }) }),
     }),

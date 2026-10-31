@@ -187,13 +187,110 @@ describe('in-run view model (HUD-01/02/03, TIM-01)', function()
     expect(RU.compute({}).timer_text).eq('12')
   end)
 
-  it('timer box colours: orange when pressable, IMPORTANT text when asked', function()
+  it('timer box colours as the mod: IMPORTANT box with light text when pressable; IMPORTANT text when asked', function()
     boot()
     local fg, bg = RU.timer_colours({ timer_pressable = true, timer_colour = 'important', timer_running = false }, 0)
-    expect(bg).eq(G.C.ORANGE)
+    expect(bg).eq(G.C.IMPORTANT)
+    expect(fg).eq(G.C.UI.TEXT_LIGHT)
+    fg, bg = RU.timer_colours({ timer_colour = 'important' }, 0)
     expect(fg).eq(G.C.IMPORTANT)
+    expect(bg ~= G.C.IMPORTANT).truthy()
     fg = RU.timer_colours({ timer_colour = 'orange' }, 0)
     expect(fg).eq(G.C.ORANGE)
+  end)
+
+  it('a running timer pulses the TEXT (mp_timer_accelerated), never the box', function()
+    boot()
+    local dark = select(2, RU.timer_colours({}, 0))
+    local imp = G.C.IMPORTANT
+    local seen_light = false
+    for i = 0, 19 do
+      local t = 7 + i / 20
+      local fg, bg = RU.timer_colours({ timer_running = true, timer_pressable = true }, t)
+      expect(bg).eq(dark)                                  -- the box keeps its colour
+      if math.abs(fg[1] - imp[1]) + math.abs(fg[2] - imp[2]) + math.abs(fg[3] - imp[3]) > 0.1 then seen_light = true end
+    end
+    expect(seen_light).truthy()
+    -- most of each second it is IMPORTANT; the start of the second is the light stop
+    local mid = RU.timer_pulse(3.5)
+    expect({ mid[1], mid[2], mid[3] }).eq({ imp[1], imp[2], imp[3] })
+    local start = RU.timer_pulse(3.0)
+    expect(start[2] > imp[2]).truthy()
+    -- the light stop is the mod's mix_colours(WHITE, IMPORTANT, 0.55): 55% white
+    for i = 1, 3 do expect(math.abs(start[i] - (0.55 + 0.45 * imp[i])) < 1e-9).truthy() end
+  end)
+
+  describe('Speedlatro clock text (the mod\'s mp_speedlatro_timer_accelerated)', function()
+    local function near(a, b) return math.abs(a[1] - b[1]) + math.abs(a[2] - b[2]) + math.abs(a[3] - b[3]) < 1e-6 end
+    local function flash()
+      local imp = G.C.IMPORTANT
+      return { 0.55 * imp[1] + 0.45, 0.55 * imp[2] + 0.45, 0.55 * imp[3] + 0.45 }
+    end
+    local function sv(over)
+      local v = { timer_mode = 'speedlatro', timer_value = 100, timer_timered = true, timer_on_pvp = false,
+        timer_ready = false, timer_running = false, timer_pressable = false }
+      for k, x in pairs(over or {}) do v[k] = x end
+      return v
+    end
+
+    it('five stops: white x4, then mix_colours(IMPORTANT, WHITE, 0.55); cosine-eased, one-second cycle', function()
+      boot()
+      local w = { 1, 1, 1 }
+      expect(near(RU.speedlatro_pulse(0), w)).truthy()
+      expect(near(RU.speedlatro_pulse(0.3), w)).truthy()
+      expect(near(RU.speedlatro_pulse(0.8 - 1e-9), flash())).truthy()
+      expect(near(RU.speedlatro_pulse(1.8 - 1e-9), flash())).truthy()
+      local f = flash()
+      local mid = { (f[1] + 1) / 2, (f[2] + 1) / 2, (f[3] + 1) / 2 }
+      expect(near(RU.speedlatro_pulse(0.7), mid)).truthy()   -- white easing into the flash
+      expect(near(RU.speedlatro_pulse(0.9), mid)).truthy()   -- and back to white
+    end)
+
+    it('its phase is the clock: -(value) / 2; 0 while ready; white unless timered off the PvP blind with time left', function()
+      boot()
+      local dark = select(2, RU.timer_colours({}, 0))
+      local fg, bg = RU.timer_colours(sv({ timer_value = 10.2 }), 0)   -- -5.1 % 1 = 0.9
+      expect(near(fg, RU.speedlatro_pulse(0.9))).truthy()
+      expect(near(fg, { 1, 1, 1 })).falsy()
+      expect(bg).eq(dark)
+      expect(near(RU.timer_colours(sv({ timer_value = 10 }), 0), { 1, 1, 1 })).truthy()
+      expect(near(RU.timer_colours(sv({ timer_value = 10.4, timer_ready = true }), 0), { 1, 1, 1 })).truthy()
+      for _, o in ipairs({ { timer_timered = false }, { timer_on_pvp = true }, { timer_value = 0 } }) do
+        o.timer_running = true
+        expect(RU.timer_colours(sv(o), 0)).eq(G.C.WHITE)
+      end
+      -- not the ante timer's pulse, even while ticking (the mod's speedlatro clock is white then)
+      expect(RU.timer_colours(sv({ timer_timered = false, timer_running = true, timer_colour = 'important' }), 0.0))
+        .eq(G.C.WHITE)
+      -- pressable keeps the timer box look
+      fg, bg = RU.timer_colours(sv({ timer_pressable = true, timer_timered = false }), 0)
+      expect(bg).eq(G.C.IMPORTANT)
+    end)
+
+    it('between 10 Hz updates a ticking clock carries on at x2 (at most one interval)', function()
+      boot()
+      RU.speed_seen = { value = nil, at = 0 }
+      local v = sv({ timer_value = 10.7, timer_running = true })
+      local a = RU.speedlatro_colour(v, 50)            -- phase -5.35 % 1 = 0.65
+      expect(near(a, RU.speedlatro_pulse(0.65))).truthy()
+      local b = RU.speedlatro_colour(v, 50.05)         -- carried on to 10.6: phase 0.7
+      expect(near(b, RU.speedlatro_pulse(0.7))).truthy()
+      local c = RU.speedlatro_colour(v, 51)            -- capped at 0.1 s: 10.5 -> 0.75
+      expect(near(c, RU.speedlatro_pulse(0.75))).truthy()
+    end)
+
+    it('the view carries mode, value, timered, on-PvP and ready from timer_state', function()
+      boot()
+      MP.state.timer = { value = 73.5, mode = 'speedlatro', ticking = true, beingTimered = true, timering = false,
+        pressable = false, auto = false, color = 'important', display = '>>' }
+      MP.state.pvp.ready = false
+      local v = RU.compute({}, 0)
+      expect(v.timer_text).eq('>> 74')
+      expect(v.timer_mode).eq('speedlatro')
+      expect(v.timer_value).eq(73.5)
+      expect(v.timer_timered).eq(true)
+      expect(v.timer_ready).eq(false)
+    end)
   end)
 
   it('enemy score: masked until the first info, then eased over 3 s; hands left', function()
@@ -319,7 +416,7 @@ describe('HUD tree surgery (HUD-01/02/09, TIM-01)', function()
     RU.compute()
     local e = { config = {} }
     G.FUNCS.mp_timer_ui(e)
-    expect(e.config.colour).eq(G.C.ORANGE)
+    expect(e.config.colour).eq(G.C.IMPORTANT)
   end)
 
   it('the PvP blind panel is repointed at the view', function()
@@ -464,7 +561,7 @@ describe('pause menu (HUD-10, D-38)', function()
     MP.ui.pause.run_started = 0
     local def = create_UIBox_options()
     local b = ids(def)
-    expect(b.settings and b.mp_vote_seed and b.mp_vote_draw and b.mp_forfeit_ask and b.your_collection).truthy()
+    expect(b.settings and b.mp_vote_seed and b.mp_vote_draw and b.mp_forfeit and b.your_collection).truthy()
     expect(b.setup_run).eq(nil)
     expect(b.go_to_menu).eq(nil)
     G.TIMERS.REAL = 301
@@ -495,16 +592,17 @@ describe('pause menu (HUD-10, D-38)', function()
     expect(MP.ui.pause.last_progress).eq('Vote for Draw: 1/2')
   end)
 
-  it('forfeit asks first, then reports forfeit and leaves to the menu', function()
+  it('forfeit at once, as the mod (no "Are you sure?"): reports forfeit and leaves to the menu (E23)', function()
     boot()
     local left = 0
     G.FUNCS.go_to_menu = function() left = left + 1 end
-    G.FUNCS.mp_forfeit_ask()
-    expect(texts_of(UH.overlays[#UH.overlays]):find('Are you sure?', 1, true) ~= nil).truthy()
-    expect(#H.events('forfeit')).eq(0)
-    G.FUNCS.mp_forfeit_yes()
+    local n = #UH.overlays
+    G.FUNCS.mp_forfeit()
+    expect(#UH.overlays).eq(n)                          -- no confirmation overlay
     expect(#H.events('forfeit')).eq(1)
     expect(left).eq(1)
+    expect(G.FUNCS.mp_forfeit_ask).eq(nil)
+    expect(MP.ui.pause.confirm_def).eq(nil)
   end)
 
   it('practice: seed change and forfeit (to the menu) as the mod, the practice toggles, no draw vote', function()
@@ -519,7 +617,7 @@ describe('pause menu (HUD-10, D-38)', function()
     expect(node(def, 'mp_pause_forfeit').config.button).eq('go_to_menu')
     expect(b.mp_vote_seed).truthy()
     expect(b.mp_vote_draw).eq(nil)
-    expect(b.mp_forfeit_ask).eq(nil)
+    expect(b.mp_forfeit).eq(nil)
     -- Seed Change restarts the practice run on a fresh seed (a solo vote is unanimous); no event.
     local launched
     MP.session.launcher = function(sess) launched = sess.seed end
@@ -631,6 +729,25 @@ describe('HUD effects and banners (HUD-07/08/17)', function()
     expect(sounds).eq({ 'negative', 'gong' })
   end)
 
+  it('own lives change -> highlight2 (0.685, 0.2) + generic1, lost or gained (N4)', function()
+    boot()
+    local calls = {}
+    _G.play_sound = function(name, per, vol) calls[#calls + 1] = { name, per, vol } end
+    RU.effects()
+    expect(#calls).eq(0)
+    MP.net.receive('outcome', { hs = 2, o = { t = 'player_lives', player_id = 'u1', lives = 3 } })
+    local fired = RU.effects()
+    expect(fired[1]).eq('my_lives')
+    expect(calls).eq({ { 'highlight2', 0.685, 0.2 }, { 'generic1' } })
+    calls = {}
+    expect(#RU.effects()).eq(0)                     -- edge-triggered: once per change
+    expect(#calls).eq(0)
+    MP.state.lives.u1 = 5
+    expect(RU.effects()[1]).eq('my_lives')
+    expect(calls[1][1]).eq('highlight2')
+    expect(calls[2][1]).eq('generic1')
+  end)
+
   it('no skip sound under Major League', function()
     boot(2, { resolved = H.resolved({ key = 'ruleset_mp_majorleague' }) })
     RU.effects()
@@ -732,80 +849,103 @@ end)
 
 -- ── Late result (A19) ───────────────────────────────────────────────────────
 
-describe('late result toast (A19: a match that ended while this player was at the menu)', function()
+local ENDED = '[MultiplayerAPI] The match you left has ended.'
+
+--- The late-result chat lines (system kind), oldest first; fails if one came as a toast.
+local function late_lines()
+  for _, t in ipairs(MP.ui.toasts) do expect(t.key ~= 'mp_late_result').truthy() end
+  local out = {}
+  for _, l in ipairs(MP.ui.chat.lines) do
+    if l.text:find(ENDED, 1, true) then
+      expect(l.kind).eq('system')
+      expect({ l.colour[1], l.colour[2], l.colour[3] }).eq({ 1, 1, 0 }) -- the API's COLOUR_SYSTEM
+      out[#out + 1] = l.text
+    end
+  end
+  return out
+end
+
+describe('late result chat line (A19: a match that ended while this player was at the menu)', function()
   after_each(UH.teardown)
 
   local function late(o, stage)
     boot(3)
+    MP.ui.chat.lines = {}
     G.STAGE = G.STAGES[stage or 'MAIN_MENU']
     G.ROOM_ATTACH = G.ROOM_ATTACH or {}
-    local U = MP.ui
-    local n = #U.toasts
     MP.net.receive('outcome', { hs = 50, o = o })
-    local last = U.toasts[#U.toasts]
-    if #U.toasts == n or not last or last.key ~= 'mp_late_result' then return nil end
-    return last.text
+    return late_lines()[1]
   end
 
-  it('says the match ended and how: won, draw, place, lost', function()
-    expect(late({ t = 'win', winner_id = 'u1' })).eq('The match you left has ended. You won.')
+  it("is a chat line worded as the mod's describe(): ended, then the place (a win or a draw is place 1)", function()
+    expect(late({ t = 'win', winner_id = 'u1' })).eq(ENDED .. ' You finished in place 1')
     UH.teardown()
-    expect(late({ t = 'win', draw = true })).eq('The match you left has ended. It was a draw.')
+    expect(late({ t = 'win', draw = true })).eq(ENDED .. ' You finished in place 1')
     UH.teardown()
     expect(late({ t = 'win', winner_id = 'u2', places = { u2 = 1, u3 = 2, u1 = 3 } }))
-      .eq('The match you left has ended. You finished in place 3')
+      .eq(ENDED .. ' You finished in place 3')
     UH.teardown()
-    expect(late({ t = 'win', winner_id = 'u2' })).eq('The match you left has ended. You lost.')
+    expect(late({ t = 'win', winner_id = 'u2' })).eq(ENDED)
   end)
 
   it('nothing in a run (the end screen shows the result there)', function()
     expect(late({ t = 'win', winner_id = 'u1' }, 'RUN')).eq(nil)
   end)
 
-  it('the referee re-sending the win toasts once', function()
+  it('the referee re-sending the win adds one line', function()
     boot(3)
+    MP.ui.chat.lines = {}
     G.STAGE = G.STAGES.MAIN_MENU
     MP.net.receive('outcome', { hs = 50, o = { t = 'win', winner_id = 'u1' } })
     MP.net.receive('outcome', { hs = 51, o = { t = 'win', winner_id = 'u1' } })
-    local n = 0
-    for _, t in ipairs(MP.ui.toasts) do if t.key == 'mp_late_result' then n = n + 1 end end
-    expect(n).eq(1)
+    expect(#late_lines()).eq(1)
   end)
 end)
 
 describe('late result from the hub (HUD-24: no session mounted, the player left)', function()
   after_each(UH.teardown)
 
-  local function toasts()
-    local out = {}
-    for _, t in ipairs(MP.ui.toasts) do if t.key == 'mp_late_result' then out[#out + 1] = t.text end end
-    return out
-  end
-
   local function menu_boot()
     MP, G = UH.boot()
+    MP.ui.chat.lines = {}
     expect(MP.state.session == nil).truthy()
   end
 
-  it('at the main menu: one toast per result, worded as the mod does', function()
+  it('at the main menu: one chat line per result, worded as the mod does', function()
     menu_boot()
     expect(UH.recv('late_result', { runId = 'r1', r = 'won' })).truthy()
     UH.recv('late_result', { runId = 'r2', r = 'draw' })
     UH.recv('late_result', { runId = 'r3', r = 'lost', place = 3 })
     UH.recv('late_result', { runId = 'r4', r = 'lost' })
-    expect(toasts()).eq({
-      'The match you left has ended. You won.',
-      'The match you left has ended. It was a draw.',
-      'The match you left has ended. You finished in place 3',
-      'The match you left has ended. You lost.',
+    expect(late_lines()).eq({
+      ENDED .. ' You finished in place 1',
+      ENDED .. ' You finished in place 1',
+      ENDED .. ' You finished in place 3',
+      ENDED,
     })
+  end)
+
+  it('the chat console draws the line at the main menu, out of any lobby', function()
+    menu_boot()
+    G.STAGE = G.STAGES.MAIN_MENU
+    G.ROOM_ATTACH = G.ROOM_ATTACH or {}
+    UH.recv('late_result', { runId = 'r1', r = 'lost', place = 2 })
+    expect(MP.ui.model.lobby).eq(nil)
+    UH.frame()
+    expect(MP.ui.chat.box ~= nil).truthy()
+    local v = MP.ui.chat.visible()
+    expect(v[#v].text).eq(ENDED .. ' You finished in place 2')
+    -- the box torn down under it (a stage change) is drawn again
+    MP.ui.chat.box.REMOVED = true
+    UH.frame()
+    expect(MP.ui.chat.box.REMOVED).falsy()
   end)
 
   it('the same run is shown once', function()
     menu_boot()
     UH.recv('late_result', { runId = 'r1', r = 'won' })
     UH.recv('late_result', { runId = 'r1', r = 'won' })
-    expect(#toasts()).eq(1)
+    expect(#late_lines()).eq(1)
   end)
 
   it('during a run nothing shows; it waits for the next main menu', function()
@@ -813,12 +953,12 @@ describe('late result from the hub (HUD-24: no session mounted, the player left)
     G.STAGE = G.STAGES.RUN
     UH.recv('late_result', { runId = 'r1', r = 'lost', place = 2 })
     set_main_menu_UI() -- still in the run (a menu redraw elsewhere): keeps waiting
-    expect(toasts()).eq({})
+    expect(late_lines()).eq({})
     G.STAGE = G.STAGES.MAIN_MENU
     set_main_menu_UI()
-    expect(toasts()).eq({ 'The match you left has ended. You finished in place 2' })
+    expect(late_lines()).eq({ ENDED .. ' You finished in place 2' })
     set_main_menu_UI()
-    expect(#toasts()).eq(1)
+    expect(#late_lines()).eq(1)
   end)
 
   it('at most three wait (the newest); malformed notices are dropped by the protocol', function()
@@ -828,10 +968,10 @@ describe('late result from the hub (HUD-24: no session mounted, the player left)
     expect(UH.recv('late_result', { runId = 'bad', r = 'left' })).falsy()
     G.STAGE = G.STAGES.MAIN_MENU
     set_main_menu_UI()
-    expect(toasts()).eq({
-      'The match you left has ended. You finished in place 4',
-      'The match you left has ended. You finished in place 5',
-      'The match you left has ended. You finished in place 6',
+    expect(late_lines()).eq({
+      ENDED .. ' You finished in place 4',
+      ENDED .. ' You finished in place 5',
+      ENDED .. ' You finished in place 6',
     })
   end)
 end)
@@ -1030,6 +1170,63 @@ describe('Nemesis rows fit the 16:9 room (HUD-06 layout)', function()
     give_nemesis({ 'j_mp_speedrun' })
     expect(G.jokers.T.y).eq(0)
     expect(NR.areas.jokers.T.y).near(G.consumeables.T.h + NR.CLASSIC_GAP, 1e-9)
+  end)
+
+  it('Classic: a phantom copy draws the voucher shader in place of the base shader (N3)', function()
+    boot()
+    real_areas()
+    NR = MP.ui.nemesis_rows
+    G.STATE = G.STATES.SELECTING_HAND
+    G.SETTINGS.rmh_mp = { nemesisLayout = 'classic' }
+    MP.state.ante_nemesis = { 'u2' }
+    give_nemesis({ 'j_mp_speedrun' })
+    local card = MP.state.phantoms[1]
+    local drawn = {}
+    local sprite = { draw_shader = function(_, shader, _, args) drawn[#drawn + 1] = { shader, args } end }
+    card.children.center = sprite
+    card.ARGS = { send_to_shader = { 1, 2 } }
+    -- vanilla's Card:draw: the shadow (with a height), the base shader, then an edition
+    local function vanilla_draw(c)
+      c.children.center:draw_shader('dissolve', 0.2)
+      c.children.center:draw_shader('dissolve')
+      c.children.center:draw_shader('foil', nil, c.ARGS.send_to_shader)
+      return 'drawn'
+    end
+    expect(NR.classic_look(card)).truthy()
+    expect(NR.draw_card(vanilla_draw, card)).eq('drawn')
+    expect(drawn[1][1]).eq('dissolve')                   -- the shadow pass is untouched
+    expect(drawn[2][1]).eq('voucher')
+    expect(drawn[2][2]).eq(card.ARGS.send_to_shader)
+    expect(drawn[3][1]).eq('foil')
+    expect(rawget(sprite, 'draw_shader') ~= nil).truthy()  -- the sprite's own method is back
+    -- dissolving: the base shader stays (it draws the dissolve), the look on top
+    drawn = {}
+    card.dissolve = 0.5
+    NR.draw_card(vanilla_draw, card)
+    expect({ drawn[2][1], drawn[3][1] }).eq({ 'dissolve', 'voucher' })
+    card.dissolve = 0
+    -- an error inside the draw still restores the sprite
+    expect(pcall(NR.draw_card, function() error('boom') end, card)).eq(false)
+    drawn = {}
+    vanilla_draw(card)
+    expect(drawn[2][1]).eq('dissolve')
+  end)
+
+  it('Standard layout, traps and own jokers keep the base shader (N3)', function()
+    boot()
+    real_areas()
+    NR = MP.ui.nemesis_rows
+    G.STATE = G.STATES.SELECTING_HAND
+    MP.state.ante_nemesis = { 'u2' }
+    give_nemesis({ 'j_mp_speedrun' })
+    local card = MP.state.phantoms[1]
+    expect(NR.classic_look(card)).falsy()
+    local seen
+    card.children.center = { draw_shader = function(_, shader) seen = shader end }
+    NR.draw_card(function(c) c.children.center:draw_shader('dissolve') end, card)
+    expect(seen).eq('dissolve')
+    expect(NR.classic_look({ area = NR.areas.jokers, ability = { mp_phantom = true, mp_trap_display = true } })).falsy()
+    expect(NR.classic_look({ area = G.jokers, ability = {} })).falsy()
   end)
 
   it('phantom copies show a Phantom badge instead of eternal; traps and real jokers do not', function()

@@ -275,9 +275,15 @@ function RU.compute(v, t)
     v.timer_pressable = ts.pressable == true
     v.timer_running = ts.ticking == true
     v.timer_colour = ts.color or 'normal'
+    v.timer_mode = ts.mode
+    v.timer_value = value
+    v.timer_timered = ts.beingTimered == true
+    v.timer_on_pvp = (MP.pvp and MP.pvp.on_pvp_blind and MP.pvp.on_pvp_blind()) and true or false
+    v.timer_ready = (pvp and pvp.ready) == true
   else
     v.timer_text = '--'
     v.timer_pressable, v.timer_running, v.timer_colour = false, false, 'normal'
+    v.timer_mode, v.timer_value, v.timer_timered, v.timer_on_pvp, v.timer_ready = nil, 0, false, false, false
   end
 
   -- Enemy location (HUD-02)
@@ -581,7 +587,67 @@ local function mix(a, b, k)
   return { a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k, 1 }
 end
 
---- Colours of the timer box for the current view (pure; exposed for specs).
+--- The game's mix_colours(C1, C2, p): p of C1 and 1 - p of C2.
+local function mix_colours(c1, c2, p) return mix(c2, c1, p) end
+RU.mix_colours = mix_colours
+
+--- A one-second SMODS gradient over `stops` at phase t: equal segments with the default cosine
+--- ("trig") easing between neighbouring stops, the last easing back to the first.
+function RU.gradient(stops, t)
+  local n = #stops
+  local x = (tonumber(t) or 0) % 1
+  if x ~= x then x = 0 end
+  local i = math.ceil(x * n)
+  if i == 0 then i = 1 end
+  local a, b = stops[i], stops[i == n and 1 or i + 1]
+  local k = (x % (1 / n)) * n
+  local e = 0.5 * (1 - math.cos(k * math.pi))
+  return { a[1] + e * (b[1] - a[1]), a[2] + e * (b[2] - a[2]), a[3] + e * (b[3] - a[3]), 1 }
+end
+
+--- The mod's `mp_timer_accelerated` text gradient (ui/game/timer.lua): over each second the text
+--- runs a light orange (mix_colours(WHITE, IMPORTANT, 0.55)) -> IMPORTANT, holds IMPORTANT, and
+--- eases back.
+function RU.timer_pulse(t)
+  local imp = gc('IMPORTANT', { 1, 0.6, 0, 1 })
+  return RU.gradient({ mix_colours(gc('WHITE', { 1, 1, 1, 1 }), imp, 0.55), imp, imp, imp, imp }, t)
+end
+
+RU.SPEEDLATRO_SPEEDUP = 2 -- the speedlatro_timer layer's timer_speedup_multiplier (timer-model.ts)
+
+--- The mod's `mp_speedlatro_timer_accelerated` text gradient (ui/game/timer.lua): WHITE for four
+--- of its five stops, then mix_colours(IMPORTANT, WHITE, 0.55), cosine-eased, one-second cycle.
+function RU.speedlatro_pulse(phase)
+  local w = gc('WHITE', { 1, 1, 1, 1 })
+  local imp = gc('IMPORTANT', { 1, 0.6, 0, 1 })
+  return RU.gradient({ w, w, w, w, mix_colours(imp, w, 0.55) }, phase)
+end
+
+RU.speed_seen = RU.speed_seen or { value = nil, at = 0 }
+
+--- The Speedlatro clock's text, as the mod's mp_update_speedlatro_timer: the gradient while being
+--- timered (the clock runs x2) off the PvP blind with time left, G.C.WHITE otherwise. The gradient's
+--- phase is the clock itself, -(value) / speedup, or 0 while ready (the mod's ready_blind). The value
+--- arrives at 10 Hz; between two updates a ticking clock is carried on at the timered rate (at most
+--- one update interval) so the colour moves per frame as the mod's per-frame clock does.
+function RU.speedlatro_colour(v, t)
+  local white = gc('WHITE', { 1, 1, 1, 1 })
+  local value = tonumber(v.timer_value) or 0
+  if not (v.timer_timered and not v.timer_on_pvp and value > 0) then return white end
+  local seen = RU.speed_seen
+  t = tonumber(t) or 0
+  if seen.value ~= value then seen.value, seen.at = value, t end
+  local est = value
+  if v.timer_running then
+    est = math.max(0, value - math.min(math.max(t - seen.at, 0), 0.1) * RU.SPEEDLATRO_SPEEDUP)
+  end
+  local phase = v.timer_ready and 0 or -est
+  return RU.speedlatro_pulse(phase / RU.SPEEDLATRO_SPEEDUP)
+end
+
+--- Colours of the timer box for the current view (pure; exposed for specs). As the mod's
+--- set_timer_box: running, the box stays dark and the TEXT pulses; pressable (the opponent can be
+--- timered), an IMPORTANT box with light text.
 function RU.timer_colours(v, t)
   v = v or RU.view
   t = t or now()
@@ -590,10 +656,14 @@ function RU.timer_colours(v, t)
   if v.timer_colour == 'orange' then fg = gc('ORANGE', fg) end
   if v.timer_colour == 'important' then fg = gc('IMPORTANT', fg) end
   local bg = RU.timer_dark or gc('BLACK', { 0, 0, 0, 1 })
-  if v.timer_pressable then bg = gc('ORANGE', bg) end
-  if v.timer_running then
-    local pulse = 0.5 + 0.5 * math.sin(t * 6)
-    bg = mix(bg, gc('IMPORTANT', { 1, 0.6, 0, 1 }), 0.35 * pulse)
+  if v.timer_mode == 'speedlatro' and not v.timer_pressable then
+    -- Speedlatro: the clock's own text colours (white, or its gradient while timered)
+    fg = RU.speedlatro_colour(v, t)
+  elseif v.timer_running then
+    fg = RU.timer_pulse(t)
+  elseif v.timer_pressable then
+    bg = gc('IMPORTANT', bg)
+    fg = (G.C and G.C.UI and G.C.UI.TEXT_LIGHT) or white
   end
   return fg, bg
 end
@@ -634,7 +704,12 @@ function RU.effects(t)
   local opp = RU.opponent_lives()
   local target = st.target
   if p.target == target then
-    if p.my and my and my ~= p.my then fired[#fired + 1] = 'my_lives'; lives_popup(my - p.my, true) end
+    if p.my and my and my ~= p.my then
+      -- the mod's PVP.UI.ease_lives: the +n / -n popup with highlight2 + generic1, either way
+      fired[#fired + 1] = 'my_lives'
+      lives_popup(my - p.my, true)
+      sound('highlight2', 0.685, 0.2); sound('generic1')
+    end
     if p.opp and opp and opp ~= p.opp then
       fired[#fired + 1] = 'opp_lives'
       lives_popup(opp - p.opp, false)

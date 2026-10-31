@@ -102,6 +102,9 @@ describe('score preview in a practice run', function()
     expect(G.GAME.current_round.hands_left).eq(hands)
     wait_frames(2)
     expect(G.HUD:get_UIE_by_ID('mp_preview_l') ~= nil).truthy()
+    -- as the mod: no money readout, and the button is always red
+    expect(G.HUD:get_UIE_by_ID('mp_preview_dollars')).eq(nil)
+    expect(G.HUD:get_UIE_by_ID('mp_preview_button').config.colour).eq(G.C.RED)
     local chips0 = G.GAME.chips
     local s = AP.run('play', { idx })
     expect(s.chips - chips0).eq(d.score.exact)

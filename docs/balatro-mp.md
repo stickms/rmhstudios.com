@@ -320,6 +320,15 @@ WS6 (Lua core):
   when the ruleset has MP content (RS-16 isolation; the mod's pool always lists them).
 - Pause menu: Practice's Seed Change restarts the practice run on a fresh seed. The mod shows the
   button there too, but its vote needs a lobby, so it does nothing.
+- D-40 (re-audit N2): the MP decks are in the Cocktail Deck's pool and editor and in the
+  `random_loadout` pool. The mod's own code drops them by accident: `get_cocktail_decks` whitelists
+  `v.mod.id` against the key `Multiplayer`, but the mod ships as `MultiplayerPvP`
+  (`objects/decks/ZZ_cocktail.lua:6-17,145-168`, `networking/action_handlers.lua:277-303`; the same
+  stale id disables its `back_multiplayer` DrawStep, `objects/decks/_decks.lua:13`). Ours keeps the
+  evident intent (the mod's Cocktail sticker atlas has the MP-deck columns): `content/cocktail.lua`
+  `K.all_decks`, `lobby/lobby-reducer.ts` `buildMatch`. `random_loadout` adds the MP decks and
+  Cocktail only where the ruleset has MP content (RS-16), so a non-MP ruleset never rolls Cocktail,
+  where the mod adds Cocktail in every ruleset.
 
 ### WS4 (pure match logic)
 

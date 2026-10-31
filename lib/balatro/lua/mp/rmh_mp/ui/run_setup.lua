@@ -334,8 +334,15 @@ function RS.submit()
   if st.mode == 'practice' then
     local seed = tostring(st.seed.text or ''):upper():gsub('[^A-Z0-9]', ''):sub(1, 8) or ''
     local d = { ruleset = st.ruleset, deck = st.deck, stake = st.stake, seed = seed ~= '' and seed or nil }
-    if U.queue_busy() then U.overlays.error('queued'); return nil end
-    if U.send('ui_practice', d) then W.close_overlay('run_setup'); return d end
+    -- While searching, starting the practice run opens the queue guard (A18; the mod's
+    -- _start_practice); Leave Queue & Continue sends it.
+    local function start() return U.send('ui_practice', d) end
+    if U.queue_busy() then
+      W.close_overlay('run_setup')
+      U.queue_guard(start)
+      return nil
+    end
+    if start() then W.close_overlay('run_setup'); return d end
     return nil
   end
   if st.mode == 'loadout' then

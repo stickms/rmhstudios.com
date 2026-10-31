@@ -25,6 +25,9 @@
 -- vanilla anchors the blind choices to G.jokers.T.y when it builds them. Only T moves (the areas
 -- ease there), so your cards stay usable; hit areas follow the cards as everywhere in the game.
 -- Phantom copies' tooltips carry a "Phantom" badge in place of the eternal one.
+-- Classic look (the mod's lib/phantom.lua mp_classic_phantom_look): in the Classic layout a phantom
+-- copy draws the old phantom shader ("voucher") in place of the base shader; a dissolving copy keeps
+-- the base shader (it draws the dissolve). A look only: no edition, badge or value changes.
 --
 --   NR.phantom_keys()          my phantom-flagged joker keys (sorted)
 --   NR.receive(from, data)     sync receiver (also used by specs)
@@ -331,6 +334,36 @@ function NR.decorate(card, ui)
   return ui
 end
 
+--- A phantom copy in the Classic layout's shared Nemesis row (traps excluded).
+function NR.classic_look(card)
+  local a = NR.areas
+  local ab = card and card.ability
+  return a ~= nil and a.layout == 'classic' and card.area ~= nil and card.area == a.jokers and ab ~= nil
+    and ab.mp_phantom == true and not ab.mp_trap_display
+end
+
+--- Card.draw for the Classic look: while vanilla draws the card, its base shader call on the
+--- center sprite (draw_shader('dissolve') with no further arguments) becomes the voucher shader.
+--- Other draws (the shadow passes a height, editions name their shader) are untouched.
+function NR.draw_card(orig, card, ...)
+  local center = card and card.children and card.children.center
+  if not (center and NR.classic_look(card)) or card.vortex then return orig(card, ...) end
+  local own = rawget(center, 'draw_shader')
+  local base = center.draw_shader
+  local dissolving = (tonumber(card.dissolve) or 0) > 0
+  center.draw_shader = function(spr, shader, ...)
+    if shader == 'dissolve' and select('#', ...) == 0 then
+      if dissolving then base(spr, 'dissolve') end
+      return base(spr, 'voucher', nil, card.ARGS and card.ARGS.send_to_shader)
+    end
+    return base(spr, shader, ...)
+  end
+  local res = { pcall(orig, card, ...) }
+  center.draw_shader = own
+  if not res[1] then error(res[2], 0) end
+  return unpack(res, 2, table.maxn(res))
+end
+
 --- WS9 trap events: a nemesis row changed / one of mine fired -> rebuild on the next frame.
 function NR.on_trap_change(ev)
   if ev == 'row' or ev == 'held' or ev == 'fired_own' then NR.trap_sig = nil end
@@ -364,6 +397,9 @@ function NR.install()
       if ok and out then return out end
       return ui
     end, o('badge'))
+  end
+  if rawget(_G, 'Card') and Card.draw then
+    wrap(Card, 'draw', function(orig, self, ...) return NR.draw_card(orig, self, ...) end, o('classic_look'))
   end
   if rawget(_G, 'Game') then
     wrap(Game, 'delete_run', function(orig, self, ...)

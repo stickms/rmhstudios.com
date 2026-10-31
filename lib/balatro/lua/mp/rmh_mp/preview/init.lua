@@ -2,8 +2,9 @@
 --
 -- The mod's opt-in preview ("Preview is a PvP feature", compatibility/Preview): a "Calculate Score"
 -- button under the hand's chips × mult shows what the selected hand would score — min - max when a
--- random effect is involved, one number otherwise — and the money it would make. The numbers come
--- from preview/sim.lua, which runs the game's own scoring in a transaction that changes nothing
+-- random effect is involved, one number otherwise. Like the mod, the HUD shows the score only (its
+-- money node, FN.PRE.get_dollars_node, is never defined, so no money readout) and the button is
+-- always red; the customization is the two texts. The numbers come from preview/sim.lua, which runs the game's own scoring in a transaction that changes nothing
 -- and draws from no stream.
 --
 -- When it shows (all of): the player's setting (off by default) · a match or practice session ·
@@ -25,8 +26,8 @@
 --   MP.preview.stop(no_interrupt) clear (and cancel)
 --   MP.preview.delay_cost()       -> delay, cost (seconds)
 --   MP.preview.data / .text       last result / the HUD strings
---   MP.preview.setting(name) / set(name, value)   preview, preview_text, preview_button, preview_colour
---   MP.preview.settings_row()     the Multiplayer settings row (toggle, texts, colour)
+--   MP.preview.setting(name) / set(name, value)   preview, preview_text, preview_button
+--   MP.preview.settings_row()     the Multiplayer settings row (toggle, the two texts)
 --   MP.preview.hud_nodes()        the HUD rows (score + button)
 
 local MP = require 'rmh_mp.state'
@@ -36,8 +37,7 @@ local PV = MP.preview or {}
 MP.preview = PV
 PV.sim = SIM
 
-PV.DEFAULTS = { preview = false, preview_text = '', preview_button = '', preview_colour = 'RED' }
-PV.COLOURS = { 'RED', 'BLUE', 'GREEN', 'PURPLE', 'ORANGE', 'GOLD' }
+PV.DEFAULTS = { preview = false, preview_text = '', preview_button = '' }
 PV.MAX_TEXT = 25
 
 -- The mod's layer scalars (layers/*.lua): [mode] = { delay, cost }.
@@ -48,7 +48,7 @@ PV.TIMER = {
   speedlatro = { 5, 0 },
 }
 
-PV.text = PV.text or { l = '', m = '', r = '', dollars = '' }
+PV.text = PV.text or { l = '', m = '', r = '' }
 PV.data = nil
 PV.state = 'idle' -- 'idle' | 'calculating' | 'shown'
 
@@ -70,7 +70,6 @@ end
 local function valid(name, v)
   if name == 'preview' then return type(v) == 'boolean' end
   if name == 'preview_text' or name == 'preview_button' then return type(v) == 'string' and #v <= PV.MAX_TEXT end
-  if name == 'preview_colour' then return MP.set_of(PV.COLOURS)[v] == true end
   return false
 end
 
@@ -117,8 +116,8 @@ end
 
 -- ── The calculation ─────────────────────────────────────────────────────────
 
-local function set_text(l, m, r, d)
-  PV.text.l, PV.text.m, PV.text.r, PV.text.dollars = l or '', m or '', r or '', d or ''
+local function set_text(l, m, r)
+  PV.text.l, PV.text.m, PV.text.r = l or '', m or '', r or ''
 end
 
 local function fmt(n)
@@ -126,32 +125,24 @@ local function fmt(n)
   return tostring(n)
 end
 
---- The mod's money text: '+N' / '-N', a range when min ~= max, nothing for none.
-local function money(d)
-  if not d then return '' end
-  local function s(n) return (n >= 0 and '+$' or '-$') .. math.abs(n) end
-  if d.min == d.max then return d.min == 0 and '' or s(d.min) end
-  return s(d.min) .. ' / ' .. s(d.max)
-end
-
 function PV.render()
   if PV.state == 'calculating' then
-    set_text('', ' ' .. PV.label('text') .. ' ', '', '')
+    set_text('', ' ' .. PV.label('text') .. ' ', '')
   elseif PV.state == 'shown' then
     local d = PV.data
     if not d then
-      set_text(' ?????? ', '', '', '')
+      set_text(' ?????? ', '', '')
     elseif d.score.min ~= d.score.max then
-      set_text(fmt(d.score.min), ' - ', fmt(d.score.max), money(d.dollars))
+      set_text(fmt(d.score.min), ' - ', fmt(d.score.max))
     else
-      set_text(fmt(d.score.min), '', '', money(d.dollars))
+      set_text(fmt(d.score.min), '', '')
     end
   else
-    set_text('', '', '', '')
+    set_text('', '', '')
   end
 end
 
---- Would `chips` win the blind now? (the mod's is_enough_to_win: juice and money colour)
+--- Would `chips` win the blind now? (the mod's is_enough_to_win: juice and the money colour)
 function PV.enough(chips)
   if not (chips and G.GAME and G.GAME.blind) then return false end
   local st = G.STATES
@@ -202,14 +193,14 @@ end
 
 -- ── HUD ─────────────────────────────────────────────────────────────────────
 
-PV.text_ids = { mp_preview_l = 'l', mp_preview_m = 'm', mp_preview_r = 'r', mp_preview_dollars = 'dollars' }
+PV.text_ids = { mp_preview_l = 'l', mp_preview_m = 'm', mp_preview_r = 'r' }
 
 local function text_node(id, maxw)
   local cfg = { id = id, func = 'rmh_mp_preview_text' }
   local key = PV.text_ids[id]
   if rawget(_G, 'DynaText') then
     cfg.object = DynaText({ string = { { ref_table = PV.text, ref_value = key } }, colours = { G.C.UI.TEXT_LIGHT },
-      shadow = true, float = true, scale = id == 'mp_preview_dollars' and 0.4 or 0.5, maxw = maxw })
+      shadow = true, float = true, scale = 0.5, maxw = maxw })
     return { n = G.UIT.O, config = cfg }
   end
   cfg.ref_table, cfg.ref_value, cfg.scale, cfg.colour = PV.text, key, 0.5, G.C.UI.TEXT_LIGHT
@@ -217,16 +208,14 @@ local function text_node(id, maxw)
 end
 
 function PV.hud_nodes()
-  local colour = G.C[PV.setting('preview_colour')] or G.C.RED
   local score = { n = G.UIT.R, config = { id = 'mp_preview_wrap', align = 'cm', padding = 0.1 }, nodes = {
     { n = G.UIT.C, config = { id = 'mp_preview_score', align = 'cm', minh = 0.5 }, nodes = {
       text_node('mp_preview_l', 2), text_node('mp_preview_m', 4), text_node('mp_preview_r', 2),
-      text_node('mp_preview_dollars', 2),
     } },
   } }
   local button = { n = G.UIT.R, config = { id = 'mp_preview_button_wrap', align = 'cm', padding = 0.1 }, nodes = {
     { n = G.UIT.C, config = { id = 'mp_preview_button', button = 'rmh_mp_preview_calculate', align = 'cm', minh = 0.42,
-      padding = 0.05, minw = 3, maxw = 4.5, r = 0.02, colour = colour, hover = true, shadow = true }, nodes = {
+      padding = 0.05, minw = 3, maxw = 4.5, r = 0.02, colour = G.C.RED, hover = true, shadow = true }, nodes = {
       { n = G.UIT.R, config = { align = 'cm' }, nodes = {
         { n = G.UIT.T, config = { text = PV.label('button'), colour = G.C.UI.TEXT_LIGHT, shadow = true, scale = 0.36 } },
       } },
@@ -252,7 +241,7 @@ local F = G and G.FUNCS or {}
 
 F.rmh_mp_preview_calculate = function() PV.calculate() end
 
--- Per-frame text update (the mod's fn_pre_score_UI_set): re-render on change, money colour and a
+-- Per-frame text update (the mod's fn_pre_score_UI_set): re-render on change; the money colour and a
 -- wobble when the shown score would win the blind.
 F.rmh_mp_preview_text = function(e)
   local key = PV.text_ids[e.config.id]
@@ -262,9 +251,7 @@ F.rmh_mp_preview_text = function(e)
   e.config.mp_last = txt
   local d = PV.data
   local juice, colour = false, G.C.UI.TEXT_LIGHT
-  if key == 'dollars' then
-    colour = d and d.dollars.min < 0 and G.C.RED or G.C.MONEY
-  elseif PV.state == 'calculating' then
+  if PV.state == 'calculating' then
     juice = key == 'm'
   elseif PV.state == 'shown' and d then
     local n = key == 'r' and d.score.max or d.score.min
@@ -289,10 +276,6 @@ function PV.settings_row()
   local W = MP.ui.w
   PV.ref = { preview = PV.setting('preview') == true, preview_text = PV.setting('preview_text'),
     preview_button = PV.setting('preview_button') }
-  local names = {}
-  for i, c in ipairs(PV.COLOURS) do names[i] = c:sub(1, 1) .. c:sub(2):lower() end
-  local current = 1
-  for i, c in ipairs(PV.COLOURS) do if c == PV.setting('preview_colour') then current = i end end
   local function input(value, prompt, colour)
     if not rawget(_G, 'create_text_input') then return nil end
     return create_text_input({ w = 3, h = 0.5, max_length = PV.MAX_TEXT, prompt_text = prompt,
@@ -300,25 +283,30 @@ function PV.settings_row()
       hooked_colour = darken and darken(colour, 0.3) or colour, keyboard_offset = -3,
       callback = function() PV.set(value, tostring(PV.ref[value] or ''):sub(1, PV.MAX_TEXT)) end })
   end
+  -- The mod's config tab: the toggle's tooltip carries the description and the credit, and under it
+  -- a grey "*Credit to @Fantom, @Divvy" and "*Requires a restart to take effect" (the HUD rows are
+  -- built with the run's HUD, so a change shows from the next run).
+  local inactive = TH.ui_col('TEXT_INACTIVE')
   return W.row({
-    W.col({ W.toggle({ label = TH.T('b_preview_integration', 'Enable Score Preview'), ref_table = PV.ref,
-      ref_value = 'preview', callback = function(v) PV.set('preview', v == true) end, w = 3, id = 'mp_set_preview',
-      info = { TH.T('k_preview_integration_desc', 'This will enable score preview before playing a hand') } }) }),
+    W.col({
+      W.row({ W.toggle({ label = TH.T('b_preview_integration', 'Enable Score Preview'), ref_table = PV.ref,
+        ref_value = 'preview', callback = function(v) PV.set('preview', v == true) end, w = 3, id = 'mp_set_preview' }) },
+        { id = 'mp_set_preview_tip', on_demand_tooltip = { text = {
+          TH.T('k_preview_integration_desc', 'This will enable score preview before playing a hand'),
+          TH.T('k_preview_credit', '*Credit to @Fantom, @Divvy') } } }),
+      W.row({ W.text(TH.T('k_preview_credit', '*Credit to @Fantom, @Divvy'), { scale = 0.25, colour = inactive,
+        id = 'mp_set_preview_credit' }) }),
+      W.row({ W.text(TH.T('k_requires_restart', '*Requires a restart to take effect'), { scale = 0.25, colour = inactive,
+        id = 'mp_set_preview_restart' }) }),
+    }),
     W.col({
       W.row({ W.text(TH.T('k_customize_preview', 'Customize Preview Text:'), { scale = 0.3 }) }),
       W.row({ input('preview_text', 'CALCULATING', TH.col('BLACK')) }, { id = 'mp_set_preview_text' }),
-      W.row({ input('preview_button', 'Calculate Score', G.C[PV.setting('preview_colour')] or TH.col('RED')) },
+      W.row({ input('preview_button', 'Calculate Score', TH.col('RED')) },
         { id = 'mp_set_preview_button' }),
       W.row({ W.text(TH.T('k_enter_to_save', 'Press enter to save'), { scale = 0.25 }) }),
     }, { padding = 0.05 }),
-    W.col({ W.cycle({ id = 'mp_set_preview_colour', label = TH.T('rmh_mp_ui_preview_colour', 'Preview button'),
-      options = names, current = current, callback = 'rmh_mp_preview_colour', w = 1.6, scale = 0.7, no_pips = true }) }),
   }, { padding = 0.05, id = 'mp_set_preview_row' })
-end
-
-F.rmh_mp_preview_colour = function(args)
-  local c = args and PV.COLOURS[args.to_key]
-  if c then PV.set('preview_colour', c) end
 end
 
 -- ── Session wraps ───────────────────────────────────────────────────────────

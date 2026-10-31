@@ -331,22 +331,39 @@ describe('availability: setting, preview_disabled, forced rulesets', function()
     expect(PV.active()).falsy()
   end)
 
-  it('customization (B07): texts, button colour, validated and saved', function()
+  it('customization (B07): the two texts only, validated and saved; the button is always red', function()
     boot()
     expect(PV.label('button')).eq('Calculate Score')
     expect(PV.label('text')).eq('CALCULATING')
     expect(PV.set('preview_button', 'Go')).truthy()
     expect(PV.set('preview_text', 'Thinking')).truthy()
     expect(PV.set('preview_text', string.rep('x', 26))).falsy()
-    expect(PV.set('preview_colour', 'BLUE')).truthy()
-    expect(PV.set('preview_colour', 'NEON')).falsy()
+    -- the mod's customization is text-only: no button colour setting
+    expect(PV.set('preview_colour', 'BLUE')).falsy()
     expect(PV.label('button')).eq('Go')
     expect(PV.label('text')).eq('Thinking')
     local def = hud_def()
     PV.patch_hud(def)
     local btn = tree().find_button(def, 'rmh_mp_preview_calculate')
-    expect(btn.config.colour).eq(G.C.BLUE)
+    expect(btn.config.colour).eq(G.C.RED)
     expect(btn.nodes[1].nodes[1].config.text).eq('Go')
+  end)
+
+  it("no money readout: the HUD rows carry the score and the button only (the mod's money node is dead code)", function()
+    boot()
+    local def = hud_def()
+    expect(PV.patch_hud(def)).truthy()
+    expect(tree().find_id(def, 'mp_preview_dollars')).eq(nil)
+    local score = tree().find_id(def, 'mp_preview_score')
+    local ids = {}
+    for i, n in ipairs(score.nodes) do ids[i] = n.config.id end
+    expect(ids).eq({ 'mp_preview_l', 'mp_preview_m', 'mp_preview_r' })
+    deal({ cards = HAND5, sel = { 1, 2 }, jokers = { 'j_bull' } })
+    PV.calculate()
+    expect(PV.state).eq('shown')
+    expect(PV.data.dollars ~= nil).truthy()
+    expect(PV.text.dollars).eq(nil)
+    for _, v in pairs(PV.text) do expect(tostring(v):find('%$')).eq(nil) end
   end)
 end)
 
@@ -472,21 +489,33 @@ describe('Multiplayer settings: the Score Preview row', function()
   end)
   after_each(function() UH.teardown() end)
 
-  it('toggle, the two texts and the button colour; each stored in the profile settings', function()
+  it("the settings row carries the mod's credit line, restart note and tooltip", function()
+    MP.ui.settings.open()
+    local def = UH.overlay()
+    expect(UH.find(def, 'mp_set_preview_credit').config.text).eq('*Credit to @Fantom, @Divvy')
+    expect(UH.find(def, 'mp_set_preview_restart').config.text).eq('*Requires a restart to take effect')
+    expect(UH.find(def, 'mp_set_preview_credit').config.colour).eq(G.C.UI.TEXT_INACTIVE)
+    local tip = UH.find(def, 'mp_set_preview_tip').config.on_demand_tooltip.text
+    expect(tip).eq({ 'This will enable score preview before playing a hand', '*Credit to @Fantom, @Divvy' })
+    -- and "Show Multiplayer content anyway*" explains its asterisk the same way
+    expect(UH.find(def, 'mp_set_show_mp_tip').config.on_demand_tooltip.text)
+      .eq({ '*Applies in singleplayer and vanilla rulesets' })
+  end)
+
+  it('toggle and the two texts (no colour cycle); each stored in the profile settings', function()
     PV = MP.preview
     expect(PV ~= nil).truthy()
     MP.ui.settings.open()
     local def = UH.overlay()
-    for _, id in ipairs({ 'mp_set_preview', 'mp_set_preview_text', 'mp_set_preview_button', 'mp_set_preview_colour' }) do
+    for _, id in ipairs({ 'mp_set_preview', 'mp_set_preview_text', 'mp_set_preview_button' }) do
       expect(UH.find(def, id) ~= nil).truthy()
     end
+    expect(UH.find(def, 'mp_set_preview_colour')).eq(nil)
     expect(UH.has_text(def, 'Enable Score Preview')).truthy()
     expect(PV.setting('preview')).eq(false)
     expect(UH.toggle(def, 'mp_set_preview')).eq(true)
     expect(G.SETTINGS.rmh_mp.preview).eq(true)
-    UH.cycle(def, 'mp_set_preview_colour', 2)
-    expect(PV.setting('preview_colour')).eq('BLUE')
-    expect(UH.saved >= 2).truthy()
+    expect(UH.saved >= 1).truthy()
     -- The old rows are all still there.
     for _, id in ipairs({ 'mp_set_layout', 'mp_set_timer_sound', 'mp_set_show_mp', 'mp_set_chat' }) do
       expect(UH.find(def, id) ~= nil).truthy()

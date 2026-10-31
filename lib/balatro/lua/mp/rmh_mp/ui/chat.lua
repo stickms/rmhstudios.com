@@ -5,7 +5,8 @@
 -- while a text box has focus, not with chat disabled in the MP settings); Enter sends
 -- ui_chat{text}; Escape closes. Works in the lobby and in a run. Muted senders are dropped here
 -- too (TS already filters; mute is local, D-35). vote_progress lines print here
--- ("Vote to change seed: k/n", "Vote for Draw: k/n").
+-- ("Vote to change seed: k/n", "Vote for Draw: k/n"), and the late result (HUD-24, ui/overlays.lua)
+-- as a system line at the main menu, as the API's late_result_notice.lua.
 
 local MP = require 'rmh_mp.state'
 local TH = require 'rmh_mp.ui.theme'
@@ -153,7 +154,9 @@ U.tick[#U.tick + 1] = function()
   local fading = false
   for _, l in ipairs(CH.visible(t)) do if l.colour[4] < 1 then fading = true; break end end
   local count = #CH.visible(t)
-  if CH.dirty or fading or count ~= (CH.last_count or 0) then
+  -- (a stage change, e.g. back to the main menu, can tear the box down under shown lines)
+  local lost = count > 0 and CH.box ~= nil and CH.box.REMOVED
+  if CH.dirty or fading or lost or count ~= (CH.last_count or 0) then
     CH.last_count = count
     if CH.box or count > 0 or CH.open_input then pcall(CH.render) end
   end
