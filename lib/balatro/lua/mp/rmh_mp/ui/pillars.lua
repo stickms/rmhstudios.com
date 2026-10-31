@@ -3,7 +3,9 @@
 --
 -- Create: Nemesis (blue), Battle Royale (purple), Manhunt (red), Teams (green), Party (orange).
 --   CREATE -> ui_create_lobby{queueMode, kind='private'} ; Party -> {queueMode='pvp_nemesis', kind='party'}
--- Find Game (the Casual tab only; ranked is EX-01): one pillar per casual queue.
+-- Find Game (the Casual tab only; ranked is EX-01): the mod's four casual pillars, Nemesis
+--   ("One Nemesis, head to head"), Battle Royale, Teams, Small World (red). No Manhunt: the mod
+--   leaves it to Create Lobby (find_game.lua CASUAL_MODES).
 --   FIND -> ui_queue{op='join', queueMode} and back to the PvP menu, which shows CANCEL and the status.
 --   Each pillar shows the live In Queue / In Game counts (A12) and a "Uses The Order" card (A13).
 --   CREATE while searching opens the queue guard (A18, queue_guard.lua).
@@ -56,7 +58,7 @@ end
 
 P.POLL_S = 5
 P.counts = P.counts or {}
-for _, q in ipairs(TH.QUEUE_MODES) do P.counts[q.mode] = P.counts[q.mode] or { queued = '-', inGame = '-' } end
+for _, q in ipairs(TH.FIND_MODES) do P.counts[q.mode] = P.counts[q.mode] or { queued = '-', inGame = '-' } end
 
 --- Seconds (G.TIMERS.REAL in the game; specs may replace it).
 function P.clock()
@@ -110,17 +112,17 @@ function P.order_card(mode)
 end
 
 -- Every casual queue plays with The Order (the mod's casual pillars all set uses_order).
-P.USES_ORDER = { pvp_nemesis = true, pvp_royale = true, pvp_manhunt = true, pvp_teams = true, pvp_smallworld = true }
+P.USES_ORDER = { pvp_nemesis = true, pvp_royale = true, pvp_teams = true, pvp_smallworld = true }
 
 function P.find_def(model)
   local online = U.online(model)
   local pillars = {}
-  for i, q in ipairs(TH.QUEUE_MODES) do
+  for _, q in ipairs(TH.FIND_MODES) do
     pillars[#pillars + 1] = {
       id = 'mp_find_' .. q.mode, button = 'rmh_mp_queue_join', ref = { queueMode = q.mode },
       button_label = TH.T('rmh_mp_ui_find_game_cap', 'FIND GAME'), colour = TH.col(q.colour), name = TH.T(q.name, q.def),
-      desc = { TH.T(q.d1, q.d1d), TH.T(q.d2, q.d2d) }, stat_node = P.count_box(q.mode),
-      extra = P.USES_ORDER[q.mode] and P.order_card(q.mode) or nil, disabled = not online, chip_row = i,
+      desc = { TH.T(q.cd1 or q.d1, q.cd1d or q.d1d), TH.T(q.cd2 or q.d2, q.cd2d or q.d2d) }, stat_node = P.count_box(q.mode),
+      extra = P.USES_ORDER[q.mode] and P.order_card(q.mode) or nil, disabled = not online, chip_row = q.row,
     }
   end
   return root({ W.col({

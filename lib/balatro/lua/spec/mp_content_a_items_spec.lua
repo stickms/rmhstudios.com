@@ -35,6 +35,22 @@ describe('CN-01 Asteroid', function()
     expect(MP.state.pvp.asteroids).eq(0)
   end)
 
+  it("the hand text labels the amount 'Amt.' as the mod (k_amount_short), on use and at launch", function()
+    local shown = {}
+    _G.update_hand_text = function(_, vals) shown[#shown + 1] = vals end
+    local a = CH.card('c_mp_asteroid', G.consumeables)
+    a:use_consumeable(G.consumeables)
+    expect(shown[1].handname).eq('Asteroids')
+    expect(shown[1].chips).eq('Amt.')
+    shown = {}
+    MP.state.pvp.asteroids = 2
+    CH.pvp(true)
+    expect(MP.content.consumables.launch_asteroids()).eq(2)
+    expect(shown[1].chips).eq('Amt.')
+    expect(shown[1].mult).eq(2)
+    _G.update_hand_text = nil
+  end)
+
   it('keeps the asteroids on a bye', function()
     MP.state.pvp.asteroids = 1
     MP.state.pvp.bye = true
@@ -205,6 +221,18 @@ describe('SK stickers', function()
     expect(anc.ability.mp_sticker_draining).eq(nil)
     local rw = CH.card('j_mp_hanging_chad', G.jokers)   -- reworks are not listed
     expect(MP.content.stickers.of(rw)).eq({ 'mp_sticker_balanced' })
+  end)
+
+  it("Persistent: the round-end popup says 'Cost Up' as the mod (k_cost_up), and the price rises", function()
+    local msgs = {}
+    _G.card_eval_status_text = function(_, _, _, _, _, extra) msgs[#msgs + 1] = extra end
+    local chad = CH.card('j_hanging_chad', G.jokers)
+    local before = MP.content.stickers.sell_price(chad)
+    MP.content.stickers.round_end_cost(chad)
+    flush()
+    expect(msgs[1].message).eq('Cost Up')
+    expect(MP.content.stickers.sell_price(chad) > before).truthy()
+    _G.card_eval_status_text = nil
   end)
 
   it('Unreliable: no calculation at all on the final hand', function()

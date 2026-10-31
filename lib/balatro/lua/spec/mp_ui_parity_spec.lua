@@ -159,7 +159,7 @@ describe('ui find game counts (A12)', function()
     expect(UH.has_text(top, 'In Queue')).truthy()
     expect(UH.has_text(top, 'In Game')).truthy()
     expect(UH.find(top, 'mp_find_pvp_nemesis_stat')).eq(nil)
-    for _, q in ipairs(U.theme.QUEUE_MODES) do
+    for _, q in ipairs(U.theme.FIND_MODES) do
       expect(UH.find(top, 'mp_find_' .. q.mode .. '_queued') ~= nil).truthy()
       expect(UH.find(top, 'mp_find_' .. q.mode .. '_ingame') ~= nil).truthy()
     end
@@ -209,6 +209,46 @@ describe('ui find game counts (A12)', function()
   end)
 end)
 
+describe("ui find game pillars: the mod's casual set (N1)", function()
+  before_each(boot)
+  after_each(UH.teardown)
+
+  it('Nemesis, Battle Royale, Teams, Small World in that order; no Manhunt pillar or count box', function()
+    U.go('find'); UH.frame()
+    local top = U.boxes.top.definition
+    local order = {}
+    UH.walk(top, function(n)
+      local id = n.config and n.config.id
+      if type(id) == 'string' and id:match('^mp_find_pvp_[a-z]+$') then order[#order + 1] = id end
+    end)
+    expect(order).eq({ 'mp_find_pvp_nemesis', 'mp_find_pvp_royale', 'mp_find_pvp_teams', 'mp_find_pvp_smallworld' })
+    expect(UH.find(top, 'mp_find_pvp_manhunt_queued')).eq(nil)
+    expect(UH.find(top, 'mp_find_pvp_manhunt_order')).eq(nil)
+    expect(U.pillars.counts.pvp_manhunt).eq(nil)
+    -- the hub still counts its manhunt queue (older lobbies); that count is ignored here
+    U.pillars.on_counts({ counts = { { queueMode = 'pvp_manhunt', queued = 4, inGame = 4 } } })
+    expect(U.pillars.counts.pvp_manhunt).eq(nil)
+  end)
+
+  it("Nemesis reads the mod's casual text; Create keeps its own text and Manhunt", function()
+    U.go('find'); UH.frame()
+    local top = U.boxes.top.definition
+    expect(UH.has_text(top, 'One Nemesis,')).truthy()
+    expect(UH.has_text(top, 'head to head')).truthy()
+    expect(UH.has_text(top, 'Hunters team up')).falsy()
+    U.go('create'); UH.frame()
+    top = U.boxes.top.definition
+    expect(UH.has_text(top, 'Face a different')).truthy()
+    expect(UH.find(top, 'mp_create_pvp_manhunt') ~= nil).truthy()
+  end)
+
+  it('Small World is red, as the mod; Manhunt is flagged Create-only', function()
+    expect(U.theme.queue_mode('pvp_smallworld').colour).eq('RED')
+    expect(U.theme.queue_mode('pvp_manhunt').find).eq(false)
+    expect(#U.theme.FIND_MODES).eq(4)
+  end)
+end)
+
 describe('ui The Order explainer (A13)', function()
   before_each(boot)
   after_each(UH.teardown)
@@ -224,7 +264,7 @@ describe('ui The Order explainer (A13)', function()
     load_desc()
     U.go('find'); UH.frame()
     local top = U.boxes.top.definition
-    for _, q in ipairs(U.theme.QUEUE_MODES) do expect(UH.enabled(top, 'mp_find_' .. q.mode .. '_order')).truthy() end
+    for _, q in ipairs(U.theme.FIND_MODES) do expect(UH.enabled(top, 'mp_find_' .. q.mode .. '_order')).truthy() end
     expect(UH.has_text(top, 'The Order')).truthy()
     U.order_info.st.page, U.order_info.st.tab = 5, 3
     UH.click(top, 'mp_find_pvp_teams_order')
@@ -341,5 +381,82 @@ describe('ui queue guard (A18)', function()
     expect(select(2, UH.overlay())).eq('queue_guard')
     UH.click((UH.overlay()), 'mp_qguard_leave_play')
     expect(UH.sent('ui_create_lobby')[1].d).eq({ queueMode = 'pvp_teams', kind = 'private' })
+  end)
+
+  -- The rest of the mod's guard_queued call sites (re-audit): Join by code / from clipboard
+  -- (flow.lua join), practice START (practice_mode.lua), the party return (party.lua) and replay
+  -- playback (playback_launch.lua). None of the menu buttons is greyed while searching.
+  it('the PvP menu buttons stay live while searching', function()
+    searching()
+    UH.frame()
+    local b = G.MAIN_MENU_UI.definition
+    for _, id in ipairs({ 'mp_practice', 'mp_join_code', 'mp_join_clipboard', 'mp_create_lobby', 'mp_replays' }) do
+      expect(UH.enabled(b, id)).truthy()
+    end
+    UH.click(b, 'mp_create_lobby')
+    expect(U.screen).eq('create')
+  end)
+
+  it('Join by code while searching: the guard; Leave Queue & Continue joins that code', function()
+    searching()
+    U.overlays.join_code()
+    U.overlays.join.code = 'abc 234'
+    expect(G.FUNCS.rmh_mp_join_submit()).eq(false)
+    expect(#UH.sent('ui_join')).eq(0)
+    expect(select(2, UH.overlay())).eq('queue_guard')
+    UH.click((UH.overlay()), 'mp_qguard_leave_play')
+    expect(UH.sent('ui_queue')[1].d).eq({ op = 'leave', queueMode = 'pvp_royale' })
+    expect(UH.sent('ui_join')[1].d).eq({ code = 'ABC234' })
+  end)
+
+  it('Join from clipboard while searching: the guard; Leave Queue sends nothing else', function()
+    searching()
+    UH.frame()
+    UH.click(G.MAIN_MENU_UI.definition, 'mp_join_clipboard')
+    expect(#UH.sent('ui_join_clipboard')).eq(0)
+    UH.click((UH.overlay()), 'mp_qguard_leave')
+    expect(#UH.sent('ui_join_clipboard')).eq(0)
+    expect(U.queue_busy()).falsy()
+    UH.click(G.MAIN_MENU_UI.definition, 'mp_join_clipboard')
+    expect(#UH.sent('ui_join_clipboard')).eq(1)
+  end)
+
+  it('practice START while searching: the guard; Leave Queue & Continue starts that practice run', function()
+    U.go('practice'); UH.frame()
+    searching()
+    UH.click(U.boxes.top.definition, 'mp_practice_ruleset_mp_vanilla')
+    expect(select(2, UH.overlay())).eq('run_setup')
+    U.run_setup.st.seed.text = 'zz9'
+    expect(U.run_setup.submit()).eq(nil)
+    expect(#UH.sent('ui_practice')).eq(0)
+    expect(select(2, UH.overlay())).eq('queue_guard')
+    UH.click((UH.overlay()), 'mp_qguard_leave_play')
+    local p = UH.sent('ui_practice')[1].d
+    expect(p.ruleset).eq('ruleset_mp_vanilla')
+    expect(p.seed).eq('ZZ9')
+  end)
+
+  it('replay WATCH while searching: the guard; Stay Queued plays nothing, Leave & Continue plays it', function()
+    require 'rmh_mp.ui.replay'
+    searching()
+    local e = { config = { ref_table = { id = 'r42' } } }
+    G.FUNCS.rmh_mp_replay_watch(e)
+    expect(#UH.sent('ui_replay')).eq(0)
+    UH.click((UH.overlay()), 'overlay_menu_back_button')
+    expect(#UH.sent('ui_replay')).eq(0)
+    expect(U.queue_busy()).truthy()
+    G.FUNCS.rmh_mp_replay_watch(e)
+    UH.click((UH.overlay()), 'mp_qguard_leave_play')
+    expect(UH.sent('ui_replay')[1].d).eq({ op = 'open', id = 'r42' })
+  end)
+
+  it('party return while searching: the guard; Leave Queue & Continue rejoins the party', function()
+    U.model.party = { code = 'PARTY2', host = true }
+    searching()
+    UH.frame()
+    UH.click(G.MAIN_MENU_UI.definition, 'mp_party_return')
+    expect(#UH.sent('ui_join')).eq(0)
+    UH.click((UH.overlay()), 'mp_qguard_leave_play')
+    expect(UH.sent('ui_join')[1].d).eq({ code = 'PARTY2' })
   end)
 end)

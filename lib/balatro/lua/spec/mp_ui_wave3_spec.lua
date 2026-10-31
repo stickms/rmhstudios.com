@@ -1,4 +1,4 @@
--- WS10 wave-3 fixes: queue_view drawing (searching / matched), Practice greyed while searching, the
+-- WS10 wave-3 fixes: queue_view drawing (searching / matched), Practice live while searching (A18 guard), the
 -- mp_invited Join row, every lobby_error code localized, the party "Return to lobby XXXXXX" row
 -- (MM-06), the deck picker's preview / Balanced sticker / Cocktail "Edit Deck" / stake cap, and
 -- the string inventory (every k_/b_ key the UI reads is shipped localization).
@@ -22,33 +22,36 @@ describe('ui wave 3: queue_view', function()
   before_each(boot)
   after_each(UH.teardown)
 
-  it('draws the search status and CANCEL; matched shows MATCH FOUND and keeps everything greyed', function()
+  it('draws the search status and CANCEL; matched shows MATCH FOUND; the other buttons stay live (A18)', function()
     UH.recv('queue_view', { state = 'searching', queueMode = 'pvp_nemesis', waiting = 2 })
     local b = bar()
     expect(UH.has_text(b, 'SEARCHING...')).truthy()
     expect(UH.has_text(b, '(2)')).truthy()
     expect(UH.enabled(b, 'mp_find_game')).truthy()               -- it is CANCEL now
-    expect(UH.enabled(b, 'mp_practice')).falsy()
+    expect(UH.enabled(b, 'mp_practice')).truthy()
     UH.recv('queue_view', { state = 'matched', queueMode = 'pvp_nemesis' })
     b = bar()
     expect(UH.has_text(b, 'MATCH FOUND!')).truthy()
     expect(UH.enabled(b, 'mp_find_game')).falsy()
-    expect(UH.enabled(b, 'mp_practice')).falsy()
-    expect(UH.enabled(b, 'mp_create_lobby')).falsy()
+    -- The mod greys none of these: what they would start opens the queue guard instead.
+    for _, id in ipairs({ 'mp_practice', 'mp_create_lobby', 'mp_join_code', 'mp_join_clipboard' }) do
+      expect(UH.enabled(b, id)).truthy()
+    end
     G.FUNCS.rmh_mp_practice()
-    expect(U.screen).eq('pvp')
-    expect(U.toasts[#U.toasts].key).eq('rmh_mp_ui_practice_queued')
+    expect(U.screen).eq('practice')
+    U.go('pvp')
     UH.recv('queue_view', { state = 'cancelled', queueMode = 'pvp_nemesis' })
     b = bar()
     expect(UH.find(b, 'mp_queue_status')).eq(nil)
     expect(UH.enabled(b, 'mp_practice')).truthy()
   end)
 
-  it('the Practice pillars and run setup refuse while matched', function()
+  it('the run setup does not start practice while matched (the queue guard holds it)', function()
     UH.recv('queue_view', { state = 'matched', queueMode = 'pvp_royale' })
     U.run_setup.open('practice', { ruleset = 'ruleset_mp_balanced' })
     expect(U.run_setup.submit()).eq(nil)
     expect(#UH.sent('ui_practice')).eq(0)
+    expect(select(2, UH.overlay())).eq('queue_guard')
   end)
 end)
 
@@ -183,13 +186,16 @@ describe('ui wave 3: party Return to lobby (MM-06)', function()
     expect(U.model.party).eq(nil)
   end)
 
-  it('no row while searching, in a lobby, or for a party left on purpose', function()
+  it('no row in a lobby or for a party left on purpose; while searching it opens the queue guard (A18)', function()
     party_then_casual()
     expect(UH.find(bar(), 'mp_party_return')).eq(nil)                 -- still in the casual lobby
     U.leave_lobby()
     UH.recv('queue_view', { state = 'searching', queueMode = 'pvp_nemesis' })
-    expect(UH.find(bar(), 'mp_party_return')).eq(nil)
+    expect(UH.find(bar(), 'mp_party_return') ~= nil).truthy()
     expect(G.FUNCS.rmh_mp_party_return()).eq(false)
+    expect(#UH.sent('ui_join')).eq(0)
+    expect(select(2, UH.overlay())).eq('queue_guard')
+    UH.click((UH.overlay()), 'overlay_menu_back_button')               -- Stay Queued
     UH.recv('queue_view', { state = 'cancelled', queueMode = 'pvp_nemesis' })
     UH.recv('lobby_view', UH.view({ players = 2, state = { kind = 'party', code = 'OTHER2' } }))
     U.leave_lobby()

@@ -52,7 +52,7 @@ R.define({
     pvp.asteroids = (pvp.asteroids or 0) + 1
     if g('update_hand_text') then
       update_hand_text({ sound = 'button', volume = 0.7, pitch = 0.8, delay = 0.3 },
-        { handname = C.loc('k_asteroids', 'Asteroids'), chips = '', mult = pvp.asteroids - 1 })
+        { handname = C.loc('k_asteroids', 'Asteroids'), chips = C.loc('k_amount_short', 'Amt.'), mult = pvp.asteroids - 1 })
       G.E_MANAGER:add_event(Event({ trigger = 'after', delay = 0.2, func = function()
         C.sound('tarot1', 0.9 + pvp.asteroids / 10, 1)
         if by.juice_up then by:juice_up(0.8, 0.5) end
@@ -77,7 +77,7 @@ function K.launch_asteroids()
   pvp.asteroids = 0
   if g('update_hand_text') then
     update_hand_text({ sound = 'button', volume = 0.7, pitch = 0.8, delay = 0.3 },
-      { handname = C.loc('k_asteroids', 'Asteroids'), chips = '', mult = n })
+      { handname = C.loc('k_asteroids', 'Asteroids'), chips = C.loc('k_amount_short', 'Amt.'), mult = n })
     update_hand_text({ sound = 'button', volume = 0.7, pitch = 1.1, delay = 0.6 },
       { mult = 0, chips = 0, handname = '', level = '' })
   end

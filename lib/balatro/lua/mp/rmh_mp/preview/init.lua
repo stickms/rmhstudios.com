@@ -300,10 +300,22 @@ function PV.settings_row()
       hooked_colour = darken and darken(colour, 0.3) or colour, keyboard_offset = -3,
       callback = function() PV.set(value, tostring(PV.ref[value] or ''):sub(1, PV.MAX_TEXT)) end })
   end
+  -- The mod's config tab: the toggle's tooltip carries the description and the credit, and under it
+  -- a grey "*Credit to @Fantom, @Divvy" and "*Requires a restart to take effect" (the HUD rows are
+  -- built with the run's HUD, so a change shows from the next run).
+  local inactive = TH.ui_col('TEXT_INACTIVE')
   return W.row({
-    W.col({ W.toggle({ label = TH.T('b_preview_integration', 'Enable Score Preview'), ref_table = PV.ref,
-      ref_value = 'preview', callback = function(v) PV.set('preview', v == true) end, w = 3, id = 'mp_set_preview',
-      info = { TH.T('k_preview_integration_desc', 'This will enable score preview before playing a hand') } }) }),
+    W.col({
+      W.row({ W.toggle({ label = TH.T('b_preview_integration', 'Enable Score Preview'), ref_table = PV.ref,
+        ref_value = 'preview', callback = function(v) PV.set('preview', v == true) end, w = 3, id = 'mp_set_preview' }) },
+        { id = 'mp_set_preview_tip', on_demand_tooltip = { text = {
+          TH.T('k_preview_integration_desc', 'This will enable score preview before playing a hand'),
+          TH.T('k_preview_credit', '*Credit to @Fantom, @Divvy') } } }),
+      W.row({ W.text(TH.T('k_preview_credit', '*Credit to @Fantom, @Divvy'), { scale = 0.25, colour = inactive,
+        id = 'mp_set_preview_credit' }) }),
+      W.row({ W.text(TH.T('k_requires_restart', '*Requires a restart to take effect'), { scale = 0.25, colour = inactive,
+        id = 'mp_set_preview_restart' }) }),
+    }),
     W.col({
       W.row({ W.text(TH.T('k_customize_preview', 'Customize Preview Text:'), { scale = 0.3 }) }),
       W.row({ input('preview_text', 'CALCULATING', TH.col('BLACK')) }, { id = 'mp_set_preview_text' }),

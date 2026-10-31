@@ -3,7 +3,8 @@
 -- create_UIBox_options is wrapped while a session is mounted and the stage is a run:
 --   match     Settings · Seed Change (blue; greyed out, not removed, after the first 300 s of the
 --             run, as the mod's pvp_run_options.lua) · Vote for Draw (blue) ·
---             Forfeit (red, then "Are you sure?" Yes/No) · Collection (the API's pause_menu_extra_rows)
+--             Forfeit (red, at once as the mod: its only step between is the ranked contest modal,
+--             out of scope) · Collection (the API's pause_menu_extra_rows)
 --   practice  Settings · Seed Change (same window: restarts the practice run on a fresh seed) ·
 --             Forfeit (red, straight to the main menu, as the mod) · Collection · Unlimited Slots /
 --             Edition Cycling (Q) / Show inactive sandbox cards toggles (D-38, D-28; hooks/practice.lua)
@@ -55,7 +56,7 @@ function PZ.items()
     list[#list + 1] = { id = 'mp_pause_draw', label = t('rmh_mp_vote_draw', 'Vote for Draw'), button = 'mp_vote_draw', colour = 'BLUE' }
   end
   list[#list + 1] = { id = 'mp_pause_forfeit', label = t('b_pvp_forfeit', 'Forfeit'),
-    button = match and 'mp_forfeit_ask' or 'go_to_menu', colour = 'RED' }
+    button = match and 'mp_forfeit' or 'go_to_menu', colour = 'RED' }
   list[#list + 1] = { id = 'your_collection', label = loc('b_collection', 'Collection'), button = 'your_collection' }
   return list
 end
@@ -83,18 +84,6 @@ function PZ.build()
     contents[#contents + 1] = create_toggle({ label = t('rmh_mp_practice_show_inactive', 'Show inactive sandbox cards'), ref_table = o, ref_value = 'show_inactive', w = 4 })
   end
   return create_UIBox_generic_options({ contents = contents })
-end
-
-function PZ.confirm_def()
-  local t = RU().t
-  return create_UIBox_generic_options({ back_func = 'options', no_back = true, contents = {
-    { n = G.UIT.R, config = { align = 'cm', padding = 0.1 }, nodes = {
-      { n = G.UIT.T, config = { text = t('k_are_you_sure', 'Are you sure?'), scale = 0.6, colour = G.C.WHITE, shadow = true } } } },
-    { n = G.UIT.R, config = { align = 'cm', padding = 0.1 }, nodes = {
-      UIBox_button({ id = 'mp_forfeit_yes', col = true, label = { t('k_yes', 'Yes') }, button = 'mp_forfeit_yes', colour = G.C.RED, minw = 2.5 }),
-      UIBox_button({ id = 'mp_forfeit_no', col = true, label = { t('k_no', 'No') }, button = 'options', colour = G.C.GREY or G.C.BLACK, minw = 2.5 }),
-    } },
-  } })
 end
 
 PZ.votes_sent = PZ.votes_sent or {}
@@ -137,11 +126,7 @@ function PZ.install()
     G.FUNCS.mp_vote_draw = function()
       if PZ.vote('draw') and G.FUNCS.exit_overlay_menu then G.FUNCS.exit_overlay_menu() end
     end
-    G.FUNCS.mp_forfeit_ask = function()
-      G.SETTINGS.paused = true
-      G.FUNCS.overlay_menu({ definition = PZ.confirm_def() })
-    end
-    G.FUNCS.mp_forfeit_yes = function() PZ.forfeit() end
+    G.FUNCS.mp_forfeit = function() PZ.forfeit() end
   end
   local wrap = MP.hooks.wrap
   wrap(_G, 'create_UIBox_options', function(orig, ...)

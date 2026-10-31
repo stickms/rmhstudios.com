@@ -152,6 +152,8 @@ describe('ui (in engine)', function()
     U.go('find')
     settle()
     expect(top('mp_find_pvp_smallworld') ~= nil).truthy()
+    expect(top('mp_find_pvp_teams') ~= nil).truthy()
+    expect(top('mp_find_pvp_manhunt')).eq(nil)   -- the mod's casual set has no Manhunt (N1)
     expect(ui_errors()).eq({})
   end)
 

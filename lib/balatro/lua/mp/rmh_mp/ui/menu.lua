@@ -294,8 +294,8 @@ local function pvp_bar(model)
   local online = U.online(model)
   local q = model.queue or {}
   local matched = q.state == 'matched'
-  -- "searching" greys everything that would enter another lobby or a run (PR-05, MM-01).
-  local searching = q.state == 'searching' or matched
+  -- While searching, PRACTICE, JOIN and CREATE stay live: what they would start (a practice run,
+  -- a join, a new lobby, the party return) opens the queue guard instead (A18, PR-05, MM-01).
   local find
   if q.state == 'searching' then
     find = W.button({ id = 'mp_find_game', label = { TH.T('rmh_mp_ui_cancel_search_cap', 'CANCEL') }, button = 'rmh_mp_queue_cancel',
@@ -305,7 +305,7 @@ local function pvp_bar(model)
       colour = TH.col('BLUE'), minw = 3.65, minh = 1.55, scale = 0.6, col = true, disabled = not online or matched })
   end
   local search_line = U.queue_line(q)
-  local party = (not searching and not model.lobby) and model.party or nil
+  local party = (not model.lobby) and model.party or nil
   local party_row = party and W.row({
     W.button({ id = 'mp_party_return', label = TH.TV('rmh_mp_ui_return_party', 'Return to lobby #1#', { party.code }),
       button = 'rmh_mp_party_return', colour = TH.col('ORANGE'), minw = 5, minh = 0.6, scale = 0.4, disabled = not online }),
@@ -320,20 +320,20 @@ local function pvp_bar(model)
           W.button({ id = 'mp_replays', label = { TH.T('rmh_mp_ui_replay_cap', 'REPLAYS') }, button = 'rmh_mp_replays',
             colour = TH.col('TEAL'), minw = 2.65, minh = 0.65, scale = 0.45 }),
           W.button({ id = 'mp_practice', label = { TH.T('rmh_mp_ui_practice_cap', 'PRACTICE') }, button = 'rmh_mp_practice',
-            colour = TH.col('ORANGE'), minw = 2.65, minh = 0.65, scale = 0.45, disabled = searching }),
+            colour = TH.col('ORANGE'), minw = 2.65, minh = 0.65, scale = 0.45 }),
         }, { padding = 0.05 }),
         W.col({
           W.col({ W.text(TH.T('rmh_mp_ui_join_lobby_cap', 'JOIN LOBBY'), { scale = 0.35, vert = true }) }, { padding = 0.05 }),
           W.col({
             W.button({ id = 'mp_join_code', label = { TH.T('rmh_mp_ui_by_code_cap', 'BY CODE') }, button = 'rmh_mp_join_code',
-              colour = TH.col('RED'), minw = 3.65, minh = 0.6, scale = 0.4, disabled = not online or searching }),
+              colour = TH.col('RED'), minw = 3.65, minh = 0.6, scale = 0.4, disabled = not online }),
             W.button({ id = 'mp_join_clipboard', label = { TH.T('rmh_mp_ui_from_clipboard_cap', 'FROM CLIPBOARD') },
               button = 'rmh_mp_join_clipboard', colour = TH.col('MP_PURPLE'), minw = 3.65, minh = 0.6, scale = 0.4,
-              disabled = not online or searching }),
+              disabled = not online }),
           }, { padding = 0.05 }),
         }, { r = 0.1, padding = 0.05, colour = TH.col('BLACK') }),
         W.button({ id = 'mp_create_lobby', label = TH.L('rmh_mp_ui_create_lobby_cap', { 'CREATE', 'LOBBY' }), button = 'rmh_mp_create',
-          colour = TH.col('GREEN'), minw = 3.65, minh = 1.55, scale = 0.6, col = true, disabled = not online or searching }),
+          colour = TH.col('GREEN'), minw = 3.65, minh = 1.55, scale = 0.6, col = true, disabled = not online }),
       }, { padding = 0.2 }),
     }, { align = 'bm' }),
   } }
@@ -372,16 +372,15 @@ end
 F.rmh_mp_to_pvp = function() U.go('pvp') end
 F.rmh_mp_find_game = function() U.go('find') end
 F.rmh_mp_create = function() U.go('create') end
-F.rmh_mp_practice = function()
-  if U.queue_busy() then return W.toast('rmh_mp_ui_practice_queued', nil,
-    { default = "You can't start a run while searching for a match" }) end
-  U.go('practice')
-end
+-- Practice opens its page while searching too; starting the run is what the queue guard blocks
+-- (run_setup.lua RS.submit), as the mod's _start_practice.
+F.rmh_mp_practice = function() U.go('practice') end
 --- MM-06: back to the party this player queued with. TS re-hosts the code for its old host and
---- joins it for everyone else (queue/attach.ts joinHook).
+--- joins it for everyone else (queue/attach.ts joinHook). While searching: the queue guard.
 F.rmh_mp_party_return = function()
   local p = U.model.party
-  if not p or U.queue_busy() then return false end
+  if not p then return false end
+  if U.queue_guard and U.queue_guard(F.rmh_mp_party_return) then return false end
   return U.send('ui_join', { code = p.code })
 end
 F.rmh_mp_invite_join = function()
@@ -400,7 +399,10 @@ end
 F.rmh_mp_queue_cancel = function()
   U.send('ui_queue', { op = 'leave', queueMode = U.model.queue.queueMode or 'pvp_nemesis' })
 end
-F.rmh_mp_join_clipboard = function() U.send('ui_join_clipboard', {}) end
+F.rmh_mp_join_clipboard = function()
+  if U.queue_guard and U.queue_guard(F.rmh_mp_join_clipboard) then return false end
+  return U.send('ui_join_clipboard', {})
+end
 F.rmh_mp_join_code = function() if U.overlays then U.overlays.join_code() end end
 F.rmh_mp_settings = function() if U.settings then U.settings.open() end end
 F.rmh_mp_replays = function()

@@ -143,6 +143,8 @@ F.rmh_mp_replay_older = function() RV.page = RV.page + 1; RV.open() end
 F.rmh_mp_replay_watch = function(e)
   local id = e and e.config and e.config.ref_table and e.config.ref_table.id
   if not id then return end
+  -- While searching, playback waits behind the queue guard (A18; the mod's _start_playback).
+  if U.queue_guard and U.queue_guard(function() return F.rmh_mp_replay_watch(e) end) then return end
   W.close_overlay('mp_replays')
   if U.close then pcall(U.close) end
   REP.watch(id)

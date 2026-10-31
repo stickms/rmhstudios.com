@@ -46,8 +46,11 @@ F.rmh_mp_join_submit = function()
     W.toast('rmh_mp_ui_code_invalid', nil, { default = 'A lobby code has 6 characters' })
     return false
   end
-  U.send('ui_join', { code = code })
   W.close_overlay('join_code')
+  -- While searching the join waits behind the queue guard (A18; the mod's pvp_join_lobby).
+  local function join() return U.send('ui_join', { code = code }) end
+  if U.queue_guard and U.queue_guard(join) then return false end
+  join()
   return true
 end
 

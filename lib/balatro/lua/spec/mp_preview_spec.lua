@@ -472,6 +472,19 @@ describe('Multiplayer settings: the Score Preview row', function()
   end)
   after_each(function() UH.teardown() end)
 
+  it("the settings row carries the mod's credit line, restart note and tooltip", function()
+    MP.ui.settings.open()
+    local def = UH.overlay()
+    expect(UH.find(def, 'mp_set_preview_credit').config.text).eq('*Credit to @Fantom, @Divvy')
+    expect(UH.find(def, 'mp_set_preview_restart').config.text).eq('*Requires a restart to take effect')
+    expect(UH.find(def, 'mp_set_preview_credit').config.colour).eq(G.C.UI.TEXT_INACTIVE)
+    local tip = UH.find(def, 'mp_set_preview_tip').config.on_demand_tooltip.text
+    expect(tip).eq({ 'This will enable score preview before playing a hand', '*Credit to @Fantom, @Divvy' })
+    -- and "Show Multiplayer content anyway*" explains its asterisk the same way
+    expect(UH.find(def, 'mp_set_show_mp_tip').config.on_demand_tooltip.text)
+      .eq({ '*Applies in singleplayer and vanilla rulesets' })
+  end)
+
   it('toggle, the two texts and the button colour; each stored in the profile settings', function()
     PV = MP.preview
     expect(PV ~= nil).truthy()
