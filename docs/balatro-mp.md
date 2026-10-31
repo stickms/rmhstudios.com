@@ -478,6 +478,19 @@ In a session:
   flags back into `save_settings` pushes (OR-08 forces the tutorial complete in
   sessions).
 
+The profile's own bookkeeping never sees MP content, in a session or not (MP
+content can be mounted while vanilla's main menu builds, where no seeded run
+guards the unlocks):
+
+- `set_discover_tallies` leaves the MP centers out, so they never count toward
+  the `discover_amount` unlocks (Blue, Yellow, Green and Black Deck,
+  Cartomancer, Astronomer).
+- `set_profile_progress` and `set_challenge_unlock` count vanilla's challenges
+  only.
+- `win_game` never marks an MP challenge completed, nor any challenge won in a
+  match or practice; a run continued in single player records its vanilla
+  challenge as vanilla does.
+
 Continue in Singleplayer writes the sidecar `<profile>/mp.jkr`. On boot, Continue
 with that sidecar re-mounts the content as session kind `continued` before
 vanilla loads the save. A fresh single-player run deletes the sidecar.
