@@ -1,7 +1,7 @@
 /**
  * Frame-pacing probe for /balatro (not a test; a measuring tool):
  *
- *   pnpm exec tsx testing/balatro-e2e/perf-probe.ts [--browser chromium|firefox] [--secs 12] [--size 1280x720]
+ *   pnpm exec tsx testing/balatro-e2e/perf-probe.ts [--browser chromium|firefox] [--secs 12] [--size 1280x720] [--scale 1] [--dpr 2] [--frame WxH]
  *
  * Boots the real engine in the engine-spec harness (software WebGL on a CI box, so the
  * absolute numbers are slow; compare runs against each other, not against a GPU), then
@@ -20,6 +20,10 @@ const arg = (k: string, d: string) => {
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d;
 };
 const kind = arg('browser', 'chromium');
+const scale = arg('scale', '1');
+/** A fractional frame size (what browser zoom or a 125% display produces): `--frame 1279.6x719.6`. */
+const fractional = arg('frame', '');
+const dpr = Number(arg('dpr', '1'));
 const secs = Number(arg('secs', '12'));
 const [vw, vh] = arg('size', '1280x720').split('x').map(Number);
 
@@ -68,7 +72,7 @@ async function main() {
         })
       : await chromium.launch(chromiumLaunchOptions());
   try {
-    const engine = await openEngine(browser, server.url, { query: '', timeoutMs: 240_000, initScript: CPU_TIMER });
+    const engine = await openEngine(browser, server.url, { query: `scale=${scale}`, timeoutMs: 240_000, initScript: CPU_TIMER, contextOptions: { deviceScaleFactor: dpr } });
     await engine.page.setViewportSize({ width: vw, height: vh });
     // A string, not a function: tsx's keepNames helper (`__name`) does not exist in the page.
     const script = (ms: number) => `(async () => {
@@ -103,6 +107,12 @@ async function main() {
       process.stdout.write(
         `${kind} ${label.padEnd(8)} ${s.frames} frames  ${s.fps.toFixed(1)} fps  mean ${s.mean.toFixed(1)}ms  median ${s.median.toFixed(1)}  p95 ${s.p95.toFixed(1)}  p99 ${s.p99.toFixed(1)}  max ${s.max.toFixed(1)}  >2x ${s.over2x}  >4x ${s.over4x}\n`,
       );
+    if (fractional) {
+      const [fw, fh] = fractional.split('x');
+      await engine.page.evaluate(
+        `(() => { const f = document.getElementById('frame'); f.style.width = '${fw}px'; f.style.height = '${fh}px'; })()`,
+      );
+    }
     await engine.page.waitForTimeout(3000);
     // Frames over 40 ms since page load: the engine's start-up and, in time, the audio pack's arrival.
     const long = (await engine.page.evaluate('window.__long')) as number[][];
@@ -117,7 +127,7 @@ async function main() {
     printCpu('run', await cpu());
     const st = await engine.pageState();
     const all = (await engine.page.evaluate('window.__balatroEngine.state.logs')) as string[];
-    process.stdout.write(`${kind} engine log: ${all.filter((l) => /audio|sound|thread|scale|TMP/i.test(l)).join(' | ')}\n`);
+    process.stdout.write(`${kind} engine log: ${all.filter((l) => /scale|rmh_web/i.test(l)).join(' | ')}\n`);
     if (st.status !== 'ready' || engine.errors.length) process.stdout.write(`${kind} state ${st.status} ${st.error}\n${st.logs.slice(-15).join('\n')}\n${engine.errors.join('\n')}\n`);
     await engine.close();
   } finally {

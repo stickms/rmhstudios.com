@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createGovernor, MIN_SCALE, STEP, WARMUP_MS } from '../render-governor';
+import { CRAWL_STEP, createGovernor, MIN_SCALE, STEP, WARMUP_MS } from '../render-governor';
 import { renderSize } from '../runtime';
 
 /** Feeds `seconds` of frames at `ms` each; returns every scale the governor asked for. */
@@ -36,11 +36,10 @@ describe('render governor', () => {
     expect(Math.min(...steps)).toBeGreaterThanOrEqual(MIN_SCALE);
   });
 
-  it('ignores a stall (a hidden tab) rather than reading it as slow', () => {
+  it('reads a crawl (a frame a second) as a measurement, and takes the big step', () => {
     const g = createGovernor();
-    feed(g, 16.7, WARMUP_MS / 1000 + 1);
-    expect(g.push(2000)).toBeNull();
-    expect(feed(g, 16.7, 10)).toEqual([]);
+    const steps = feed(g, 1000, 20);
+    expect(steps).toEqual([CRAWL_STEP]); // straight to the floor, and no further
   });
 
   it('a short dip is not enough', () => {
@@ -59,9 +58,11 @@ describe('render governor', () => {
 });
 
 describe('renderSize with a governor scale', () => {
-  it('lowers a hi-DPI ratio and never goes under 1', () => {
-    expect(renderSize(1280, 720, 2, 0.8).ratio).toBe(1.6);
-    expect(renderSize(1280, 720, 2, 0.4).ratio).toBe(1);
-    expect(renderSize(1280, 720, 1, 0.6).ratio).toBe(1);
+  it('lowers a hi-DPI ratio, and never goes under one buffer pixel per CSS pixel', () => {
+    expect(renderSize(1280, 720, 2, 0.8)).toEqual({ w: 1280, h: 720, ratio: 1.5 });
+    expect(renderSize(1280, 720, 2, 0.64)).toEqual({ w: 1280, h: 720, ratio: 1.25 });
+    expect(renderSize(1280, 720, 2, 0.5)).toEqual({ w: 1280, h: 720, ratio: 1 });
+    expect(renderSize(1280, 720, 2, 0.1)).toEqual({ w: 1280, h: 720, ratio: 1 });
+    expect(renderSize(1280, 720, 1, 0.6)).toEqual({ w: 1280, h: 720, ratio: 1 });
   });
 });

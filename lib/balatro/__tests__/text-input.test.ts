@@ -3,7 +3,7 @@ import { hitsField, keyForChar, keyForNamed, parseTextState } from '../text-inpu
 
 describe('parseTextState', () => {
   it('reads the hook flag and the field', () => {
-    expect(parseTextState('1\n10 20 300 40')).toEqual({ hooked: true, field: { x: 10, y: 20, w: 300, h: 40 } });
+    expect(parseTextState('1\n0.1 0.2 0.3 0.04')).toEqual({ hooked: true, field: { x: 0.1, y: 0.2, w: 0.3, h: 0.04 } });
   });
   it('has no field when none is open or the line is bad', () => {
     expect(parseTextState('0\n')).toEqual({ hooked: false, field: null });
@@ -13,12 +13,14 @@ describe('parseTextState', () => {
 });
 
 describe('hitsField', () => {
-  const field = { x: 100, y: 100, w: 200, h: 50 };
+  const field = { x: 0.4, y: 0.4, w: 0.2, h: 0.05 };
   it('hits inside and within the finger margin only', () => {
-    expect(hitsField(field, 150, 120)).toBe(true);
-    expect(hitsField(field, 92, 120)).toBe(true);
-    expect(hitsField(field, 60, 120)).toBe(false);
-    expect(hitsField(null, 150, 120)).toBe(false);
+    expect(hitsField(field, 0.5, 0.42)).toBe(true);
+    expect(hitsField(field, 0.395, 0.42)).toBe(true);
+    expect(hitsField(field, 0.3, 0.42)).toBe(false);
+    expect(hitsField(field, 0.5, 0.42, 0, 0)).toBe(true);
+    expect(hitsField(field, 0.395, 0.42, 0, 0)).toBe(false);
+    expect(hitsField(null, 0.5, 0.42)).toBe(false);
   });
 });
 
