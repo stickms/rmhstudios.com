@@ -78,6 +78,12 @@ export interface InputState {
   /** Look in degrees since the last command (+yaw turns left, +pitch looks down — Source's axes). */
   lookYaw: number;
   lookPitch: number;
+  /**
+   * The zoom's look scale (`zoomSensitivityScale`; 1 unzoomed), set by the client each frame from the
+   * FOV in use. The mouse turns with `sensitivity × lookScale`; gamepad and touch look degrees are
+   * multiplied by it too, as Source scales the joystick's look while zoomed.
+   */
+  lookScale: number;
   /** 1-based weapon slot asked for since the last command (0 = none). */
   weaponSelect: number;
   /** Relative weapon switches asked for (resolved against the loadout by buildUserCmd). */
@@ -105,6 +111,7 @@ export function createInputState(): InputState {
     mousePrevY: 0,
     lookYaw: 0,
     lookPitch: 0,
+    lookScale: 1,
     weaponSelect: 0,
     weaponStep: null,
     impulses: [],
@@ -192,7 +199,8 @@ export type LookSettings = MouseSettings & Partial<Pick<GameSettings, 'mouseFilt
 
 /**
  * Applies the pending look to `viewAngles` (mutated and returned). Pitch clamps to ±89 (cl_pitchup/down).
- * With `m_filter` the counts are averaged with the previous sample's (CInput::GetMouseDelta).
+ * With `m_filter` the counts are averaged with the previous sample's (CInput::GetMouseDelta). While
+ * zoomed, `state.lookScale` scales the sensitivity and the look degrees.
  */
 export function applyLook(state: InputState, viewAngles: QAngle, settings: LookSettings, frameSample = true): QAngle {
   let dx = state.mouseDx;
@@ -206,9 +214,10 @@ export function applyLook(state: InputState, viewAngles: QAngle, settings: LookS
     state.mousePrevX = state.mouseDx;
     state.mousePrevY = state.mouseDy;
   }
-  const m = mouseToDegrees(dx, dy, settings);
-  viewAngles.y = normalizeYaw(viewAngles.y + m.yaw + state.lookYaw);
-  viewAngles.x = clamp(viewAngles.x + m.pitch + state.lookPitch, -PITCH_LIMIT, PITCH_LIMIT);
+  const scale = state.lookScale > 0 ? state.lookScale : 1;
+  const m = mouseToDegrees(dx, dy, settings, settings.sensitivity * scale);
+  viewAngles.y = normalizeYaw(viewAngles.y + m.yaw + state.lookYaw * scale);
+  viewAngles.x = clamp(viewAngles.x + m.pitch + state.lookPitch * scale, -PITCH_LIMIT, PITCH_LIMIT);
   viewAngles.z = 0;
   return viewAngles;
 }

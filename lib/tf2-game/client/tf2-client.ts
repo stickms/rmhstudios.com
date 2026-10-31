@@ -57,7 +57,7 @@ import { EntityLoopSounds, LateStartFilter } from '../audio/loops';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import { buildHudState, HudEventLog, hudSourceFromSnapshot, playerLookup, type HudSource } from './hud-adapter';
 import type { HudCommand, HudStore } from './hud-store';
-import type { GameSettings } from './settings';
+import { zoomSensitivityScale, type GameSettings } from './settings';
 import { buildUserCmd, drainImpulses, heldButtons, applyLook, type WeaponContext } from './input';
 import { InputSender } from './net/input';
 import { InterpolationBuffer, RenderClock } from './net/interpolation';
@@ -1167,7 +1167,9 @@ export class Tf2Client implements GameClient {
     this.inputCore.poll(dt);
     for (const a of drainImpulses(input)) this.store.dispatchImpulse(a);
 
-    // Look every frame (smooth at any refresh rate); the commands carry the angles.
+    // Look every frame (smooth at any refresh rate); the commands carry the angles. Zoomed (the sniper
+    // scope, CS:GO's scopes) the look scales with the FOV in use, following the zoom's lerp.
+    input.lookScale = zoomSensitivityScale(this.fov.current(this.clientNow), this.settings.fov, this.settings.zoomSensitivityRatio);
     applyLook(input, this.viewAngles, this.settings);
     input.mouseDx = input.mouseDy = input.lookYaw = input.lookPitch = 0;
 
