@@ -42,5 +42,7 @@
   "phase_download": "Downloading",
   "phase_starting": "Starting",
   "phase_unpacking": "Unpacking",
+  "rotate_hint": "Turn your phone sideways for a bigger table.",
+  "rotate_hint_dismiss": "Dismiss",
   "toolbar": "Game controls"
 }

@@ -13,7 +13,9 @@
  * 1. The single-player route chunk: an esbuild build of components/balatro/BalatroPage.tsx
  *    (shell packages external — SHELL_EXTERNALS —, code splitting, minified, `@/` resolved, CSS ignored) — the
  *    entry chunk plus every chunk it imports statically, gzipped. Its delta vs the
- *    recorded pre-MP baseline must be ≤ 2.5 KB. No module under lib/balatro/mp/ or
+ *    recorded pre-MP baseline must be ≤ 2.5 KB for multiplayer, plus 2.5 KB for the
+ *    single-player features added since (680cb73a: render governor and the phone
+ *    keyboard — not MP code). No module under lib/balatro/mp/ or
  *    lib/shared/p2p/ may be in that static closure (type-only imports vanish).
  * 2. The MP JS chunk: every chunk reachable from the entry only through dynamic
  *    `import()` (the MP toolbar, the pack loader and everything behind them), gzipped
@@ -43,17 +45,19 @@ export const ENTRY_REL = 'components/balatro/BalatroPage.tsx';
 const KB = 1024;
 const MB = 1024 * KB;
 export const BUDGETS = {
-  spEntryDeltaGzip: 2.5 * KB,
+  // 2.5 KB for MP's hooks in the page + 2.5 KB for later single-player features (680cb73a).
+  spEntryDeltaGzip: (2.5 + 2.5) * KB,
   mpChunksGzip: 70 * KB,
   p2pGzip: 15 * KB,
   // Raised at merge point M1 (orchestrator): the core grows ~37 KB for the
   // CJK glyphs each language's MP text needs (folded per language, WS2), and
   // the kept MP art alone is ~1.25 MB after lossless recompression. These match
   // data/balatro-mp/pack-budget.json, which the pack builder enforces.
+  // +2 000 B: platform Lua since (signalled mailbox, phone keyboard / smoother frames).
   // M1b: +16 422 B, exactly the compressed web platform Lua (rmh_web.lua,
   // rmh/*.lua, rmh_mp_entry.lua) that moved out of the page bundle's `?raw`
   // imports and into the core pack (build-game-pack.py PLATFORM_LUA).
-  coreGrowth: 40_000 + 16_422,
+  coreGrowth: 40_000 + 16_422 + 2_000,
   mpPackBytes: 1_800_000,
   mpPackExtracted: 8 * MB,
 } as const;
