@@ -15,6 +15,7 @@
   "join-room": "加入房间",
   "join-room-to-queue": "Join a room to queue",
   "listener-count_other": "{{count}} 位听众",
+  "listening-count_other": "{{count}} listening",
   "loading": "Loading…",
   "loading-rooms": "正在加载房间...",
   "mini-close": "停止并关闭",
@@ -44,8 +45,9 @@
   "search-spotify-placeholder": "搜索 Spotify...",
   "searching": "搜索中...",
   "sign-in-to-guess": "登录以猜测。",
+  "sleep-timer-off": "睡眠定时器已关闭。点击设置。",
+  "sleep-timer-on": "睡眠定时器：剩余 {{time}}。点击更改。",
   "solves-plays": "{{solves}} 已解决 · {{plays}} 次游玩",
   "song-title-placeholder": "歌曲名称……",
-  "your-playlists": "Your playlists",
-  "listening-count_other": "{{count}} listening"
+  "your-playlists": "Your playlists"
 }

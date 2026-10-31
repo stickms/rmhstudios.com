@@ -6,6 +6,7 @@ import frBuilds from "@/locales/fr/builds.json";
 import frCAdmin from "@/locales/fr/c-admin.json";
 import frCAltair from "@/locales/fr/c-altair.json";
 import frCAwards from "@/locales/fr/c-awards.json";
+import frCBalatro from "@/locales/fr/c-balatro.json";
 import frCBlog from "@/locales/fr/c-blog.json";
 import frCBuilds from "@/locales/fr/c-builds.json";
 import frCBumsRush from "@/locales/fr/c-bums-rush.json";
@@ -59,6 +60,7 @@ import frCStatus from "@/locales/fr/c-status.json";
 import frCStudio from "@/locales/fr/c-studio.json";
 import frCSynapseStorm from "@/locales/fr/c-synapse-storm.json";
 import frCTempleOfJoy from "@/locales/fr/c-temple-of-joy.json";
+import frCTf2Game from "@/locales/fr/c-tf2-game.json";
 import frCTf2Hud from "@/locales/fr/c-tf2-hud.json";
 import frCTournaments from "@/locales/fr/c-tournaments.json";
 import frCUi from "@/locales/fr/c-ui.json";
@@ -104,6 +106,7 @@ const frResources = {
   "c-admin": frCAdmin,
   "c-altair": frCAltair,
   "c-awards": frCAwards,
+  "c-balatro": frCBalatro,
   "c-blog": frCBlog,
   "c-builds": frCBuilds,
   "c-bums-rush": frCBumsRush,
@@ -157,6 +160,7 @@ const frResources = {
   "c-studio": frCStudio,
   "c-synapse-storm": frCSynapseStorm,
   "c-temple-of-joy": frCTempleOfJoy,
+  "c-tf2-game": frCTf2Game,
   "c-tf2-hud": frCTf2Hud,
   "c-tournaments": frCTournaments,
   "c-ui": frCUi,

@@ -6,6 +6,7 @@ import viBuilds from "@/locales/vi/builds.json";
 import viCAdmin from "@/locales/vi/c-admin.json";
 import viCAltair from "@/locales/vi/c-altair.json";
 import viCAwards from "@/locales/vi/c-awards.json";
+import viCBalatro from "@/locales/vi/c-balatro.json";
 import viCBlog from "@/locales/vi/c-blog.json";
 import viCBuilds from "@/locales/vi/c-builds.json";
 import viCBumsRush from "@/locales/vi/c-bums-rush.json";
@@ -59,6 +60,7 @@ import viCStatus from "@/locales/vi/c-status.json";
 import viCStudio from "@/locales/vi/c-studio.json";
 import viCSynapseStorm from "@/locales/vi/c-synapse-storm.json";
 import viCTempleOfJoy from "@/locales/vi/c-temple-of-joy.json";
+import viCTf2Game from "@/locales/vi/c-tf2-game.json";
 import viCTf2Hud from "@/locales/vi/c-tf2-hud.json";
 import viCTournaments from "@/locales/vi/c-tournaments.json";
 import viCUi from "@/locales/vi/c-ui.json";
@@ -104,6 +106,7 @@ const viResources = {
   "c-admin": viCAdmin,
   "c-altair": viCAltair,
   "c-awards": viCAwards,
+  "c-balatro": viCBalatro,
   "c-blog": viCBlog,
   "c-builds": viCBuilds,
   "c-bums-rush": viCBumsRush,
@@ -157,6 +160,7 @@ const viResources = {
   "c-studio": viCStudio,
   "c-synapse-storm": viCSynapseStorm,
   "c-temple-of-joy": viCTempleOfJoy,
+  "c-tf2-game": viCTf2Game,
   "c-tf2-hud": viCTf2Hud,
   "c-tournaments": viCTournaments,
   "c-ui": viCUi,

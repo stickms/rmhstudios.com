@@ -6,6 +6,7 @@ import itBuilds from "@/locales/it/builds.json";
 import itCAdmin from "@/locales/it/c-admin.json";
 import itCAltair from "@/locales/it/c-altair.json";
 import itCAwards from "@/locales/it/c-awards.json";
+import itCBalatro from "@/locales/it/c-balatro.json";
 import itCBlog from "@/locales/it/c-blog.json";
 import itCBuilds from "@/locales/it/c-builds.json";
 import itCBumsRush from "@/locales/it/c-bums-rush.json";
@@ -59,6 +60,7 @@ import itCStatus from "@/locales/it/c-status.json";
 import itCStudio from "@/locales/it/c-studio.json";
 import itCSynapseStorm from "@/locales/it/c-synapse-storm.json";
 import itCTempleOfJoy from "@/locales/it/c-temple-of-joy.json";
+import itCTf2Game from "@/locales/it/c-tf2-game.json";
 import itCTf2Hud from "@/locales/it/c-tf2-hud.json";
 import itCTournaments from "@/locales/it/c-tournaments.json";
 import itCUi from "@/locales/it/c-ui.json";
@@ -104,6 +106,7 @@ const itResources = {
   "c-admin": itCAdmin,
   "c-altair": itCAltair,
   "c-awards": itCAwards,
+  "c-balatro": itCBalatro,
   "c-blog": itCBlog,
   "c-builds": itCBuilds,
   "c-bums-rush": itCBumsRush,
@@ -157,6 +160,7 @@ const itResources = {
   "c-studio": itCStudio,
   "c-synapse-storm": itCSynapseStorm,
   "c-temple-of-joy": itCTempleOfJoy,
+  "c-tf2-game": itCTf2Game,
   "c-tf2-hud": itCTf2Hud,
   "c-tournaments": itCTournaments,
   "c-ui": itCUi,

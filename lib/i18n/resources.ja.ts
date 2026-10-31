@@ -6,6 +6,7 @@ import jaBuilds from "@/locales/ja/builds.json";
 import jaCAdmin from "@/locales/ja/c-admin.json";
 import jaCAltair from "@/locales/ja/c-altair.json";
 import jaCAwards from "@/locales/ja/c-awards.json";
+import jaCBalatro from "@/locales/ja/c-balatro.json";
 import jaCBlog from "@/locales/ja/c-blog.json";
 import jaCBuilds from "@/locales/ja/c-builds.json";
 import jaCBumsRush from "@/locales/ja/c-bums-rush.json";
@@ -59,6 +60,7 @@ import jaCStatus from "@/locales/ja/c-status.json";
 import jaCStudio from "@/locales/ja/c-studio.json";
 import jaCSynapseStorm from "@/locales/ja/c-synapse-storm.json";
 import jaCTempleOfJoy from "@/locales/ja/c-temple-of-joy.json";
+import jaCTf2Game from "@/locales/ja/c-tf2-game.json";
 import jaCTf2Hud from "@/locales/ja/c-tf2-hud.json";
 import jaCTournaments from "@/locales/ja/c-tournaments.json";
 import jaCUi from "@/locales/ja/c-ui.json";
@@ -104,6 +106,7 @@ const jaResources = {
   "c-admin": jaCAdmin,
   "c-altair": jaCAltair,
   "c-awards": jaCAwards,
+  "c-balatro": jaCBalatro,
   "c-blog": jaCBlog,
   "c-builds": jaCBuilds,
   "c-bums-rush": jaCBumsRush,
@@ -157,6 +160,7 @@ const jaResources = {
   "c-studio": jaCStudio,
   "c-synapse-storm": jaCSynapseStorm,
   "c-temple-of-joy": jaCTempleOfJoy,
+  "c-tf2-game": jaCTf2Game,
   "c-tf2-hud": jaCTf2Hud,
   "c-tournaments": jaCTournaments,
   "c-ui": jaCUi,

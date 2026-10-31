@@ -6,6 +6,7 @@ import ruBuilds from "@/locales/ru/builds.json";
 import ruCAdmin from "@/locales/ru/c-admin.json";
 import ruCAltair from "@/locales/ru/c-altair.json";
 import ruCAwards from "@/locales/ru/c-awards.json";
+import ruCBalatro from "@/locales/ru/c-balatro.json";
 import ruCBlog from "@/locales/ru/c-blog.json";
 import ruCBuilds from "@/locales/ru/c-builds.json";
 import ruCBumsRush from "@/locales/ru/c-bums-rush.json";
@@ -59,6 +60,7 @@ import ruCStatus from "@/locales/ru/c-status.json";
 import ruCStudio from "@/locales/ru/c-studio.json";
 import ruCSynapseStorm from "@/locales/ru/c-synapse-storm.json";
 import ruCTempleOfJoy from "@/locales/ru/c-temple-of-joy.json";
+import ruCTf2Game from "@/locales/ru/c-tf2-game.json";
 import ruCTf2Hud from "@/locales/ru/c-tf2-hud.json";
 import ruCTournaments from "@/locales/ru/c-tournaments.json";
 import ruCUi from "@/locales/ru/c-ui.json";
@@ -104,6 +106,7 @@ const ruResources = {
   "c-admin": ruCAdmin,
   "c-altair": ruCAltair,
   "c-awards": ruCAwards,
+  "c-balatro": ruCBalatro,
   "c-blog": ruCBlog,
   "c-builds": ruCBuilds,
   "c-bums-rush": ruCBumsRush,
@@ -157,6 +160,7 @@ const ruResources = {
   "c-studio": ruCStudio,
   "c-synapse-storm": ruCSynapseStorm,
   "c-temple-of-joy": ruCTempleOfJoy,
+  "c-tf2-game": ruCTf2Game,
   "c-tf2-hud": ruCTf2Hud,
   "c-tournaments": ruCTournaments,
   "c-ui": ruCUi,

@@ -7,6 +7,7 @@ import { Play, Pause, SkipForward, Volume2, VolumeX, Search, Users, Music, Music
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';
 import { formatDuration } from '@/lib/rmhmusic/utils';
+import SleepTimerButton from './SleepTimerButton';
 
 export default function PlayerBar() {
   const { currentTrack, playback, settings, isSearchOpen, isChatOpen, isGuessOpen, setSearchOpen, setChatOpen, setGuessOpen, updateSettings } = useRmhMusicStore();
@@ -127,6 +128,7 @@ export default function PlayerBar() {
 
         {/* Action buttons */}
         <div className="flex items-center gap-1">
+          <SleepTimerButton />
           <button
             onClick={() => setSearchOpen(!isSearchOpen)}
             className="p-2 rounded-(--app-radius-sm) transition-colors"
