@@ -28,6 +28,7 @@ import {
 } from '../../tf2-game/sim/player';
 import type { EntityState, RenderContext } from '../../tf2-game/render/entities';
 import { bool, LightProbe, num, stateOrigin, str } from '../../tf2-game/render/entities/common';
+import type { SequenceDesc } from '../../tf2-game/render/entities/animator';
 import { ModelInstance } from '../../tf2-game/render/entities/model-instance';
 import { CS_TEAM_CT, CS_TEAM_T } from '../constants';
 import { csWeapon, type CsWeaponCategory } from '../data/weapon-data';
@@ -85,6 +86,8 @@ export class CsPlayerModel {
   private crouch = 0;
   private walk = 0;
   private run = 0;
+  /** The movement blend's cycle, driven by the distance walked (see `moveCycleRate`). */
+  private moveCycle = 0;
   private lastEventSeq = -1;
   private aimSeq = '';
   private dead = false;
@@ -156,12 +159,23 @@ export class CsPlayerModel {
       prefix === 'knife' || prefix === 'grenade' || prefix === 'c4' ? `move_${prefix}` : 'move';
     const move = a.set.seq(moveName) ?? a.set.seq('move');
     if (move && a.main?.seq !== move) a.setSequence(move, { fade: true });
-    if (a.main) a.main.rate = speed > 1 ? Math.max(0.4, speed / RUN_SPEED) : 0.4;
     const moveYaw = speed > 1 ? angleDiff((Math.atan2(vy, vx) * 180) / Math.PI, yaw) : 0;
     a.setPoseParam('move_yaw', moveYaw);
-    a.setPoseParam('move_blend_crouch', this.crouch);
-    a.setPoseParam('move_blend_walk', this.walk * (1 - this.run));
-    a.setPoseParam('move_blend_run', this.run);
+    const wCrouch = this.crouch;
+    const wWalk = (1 - this.crouch) * this.walk * (1 - this.run);
+    const wRun = (1 - this.crouch) * this.run;
+    a.setPoseParam('move_blend_crouch', wCrouch);
+    a.setPoseParam('move_blend_walk', wWalk);
+    a.setPoseParam('move_blend_run', wRun);
+    // The blend is not a looping sequence (`move` is a_move_align): its crouch / walk / run layers take
+    // its cycle, which CS:GO's anim state sets itself from the distance walked. Do the same, so the
+    // feet keep pace with the ground at any speed and the legs never stop at the end of the cycle.
+    if (move && a.main?.seq === move) {
+      this.moveCycle =
+        (this.moveCycle + ctx.dt * moveCycleRate(a, move, speed, wCrouch, wWalk, wRun)) % 1;
+      a.main.rate = 0;
+      a.main.cycle = this.moveCycle;
+    }
     a.setPoseParam('speed', speed);
     a.setPoseParam('stand', 1 - this.crouch);
     // The aim matrix of the weapon out.
@@ -367,3 +381,40 @@ export class CsPlayerModel {
 function angleDiff(a: number, b: number): number {
   return ((((a - b) % 360) + 540) % 360) - 180;
 }
+
+/**
+ * Cycles per second of a movement blend at `speed` (units/s): the distance one cycle of each of its
+ * pose-weighted layers covers — the layer's ground speed in the current direction (its move_yaw cells)
+ * times its length — blended by the layer weights, as CS:GO scales the move layer's playback by
+ * velocity over the sequence's ground speed.
+ */
+function moveCycleRate(
+  a: NonNullable<ModelInstance['animator']>,
+  move: SequenceDesc,
+  speed: number,
+  crouch: number,
+  walk: number,
+  run: number,
+): number {
+  if (speed < 1) return 0;
+  let dist = 0;
+  let total = 0;
+  for (const l of move.layers ?? []) {
+    const w =
+      l.pose === 'move_blend_crouch'
+        ? crouch
+        : l.pose === 'move_blend_walk'
+          ? walk
+          : l.pose === 'move_blend_run'
+            ? run
+            : 0;
+    const seq = w > 0 ? a.set.seq(l.seq) : null;
+    if (!seq) continue;
+    const perCycle = a.groundSpeed(seq) * (Math.max(1, seq.frames - 1) / (seq.fps || 30));
+    if (perCycle <= 1) continue;
+    dist += perCycle * w;
+    total += w;
+  }
+  return total > 0 && dist > 0 ? speed / (dist / total) : 0;
+}
+
