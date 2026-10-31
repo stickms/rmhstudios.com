@@ -1164,8 +1164,9 @@ export class Tf2Client implements GameClient {
     const team = num(me, 'team');
     const spectator = !me || team === TEAM_SPECTATOR || team === TEAM_UNASSIGNED;
 
-    // The join menus take the mouse: give the pointer back while one is up.
-    if (me && (team === TEAM_UNASSIGNED || (team >= 2 && num(me, 'cls') === 0)) && this.inputCore.km.locked) this.inputCore.km.unlock();
+    // The join menus and cursor panels (the buy menu) take the mouse: give the pointer back while one is up.
+    const joining = !!me && (team === TEAM_UNASSIGNED || (team >= 2 && num(me, 'cls') === 0));
+    if ((joining || input.cursor) && this.inputCore.km.locked) this.inputCore.km.unlock();
 
     // Spectator / death buttons (spec_next, spec_mode).
     const buttons = heldButtons(input);

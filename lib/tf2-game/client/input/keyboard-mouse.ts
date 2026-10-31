@@ -119,8 +119,8 @@ export class KeyboardMouseInput {
 
   private onMouseDown = (e: MouseEvent): void => {
     if (!this.locked) {
-      // The first click captures the pointer; it is not a shot.
-      if (e.button === 0 && !this.opts.state.suspended) void this.lock();
+      // The first click captures the pointer; it is not a shot. Not while a HUD panel has the cursor.
+      if (e.button === 0 && !this.opts.state.suspended && !this.opts.state.cursor) void this.lock();
       return;
     }
     e.preventDefault();
