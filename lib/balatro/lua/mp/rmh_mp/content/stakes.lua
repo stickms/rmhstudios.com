@@ -13,6 +13,15 @@
 --                         has no effect of its own since the balance change, core-patches.json)
 --   stake_mp_spectral      (1,0) #000000: Planet + rentals, scaling 4
 --   stake_mp_spectralplus  (2,0) #000000, shiny: Spectral, scaling 5
+-- EX-16 lifted — the mod's alt stakes (behind its `alt_stakes = false`), a chain from White Stake,
+-- each applying the ones before it (stakes_apply.lua has the effects); atlas mp_alt_mp_stakes:
+--   stake_mp_plastic     (1,0) #FF9696  interest $1 per $10
+--   stake_mp_pebble      (2,0) #949494  + scaling +1
+--   stake_mp_ferrite     (3,0) #B2B2B2  + Persistent Jokers
+--   stake_mp_pyrite      (4,0) #F2D955  + reroll cost +$1 more per reroll
+--   stake_mp_jade        (0,1) #3EA93C  + scaling +1
+--   stake_mp_crystal     (1,1) #BCF9FF  shiny  + Unreliable Jokers
+--   stake_mp_antimatter  (2,1) #4F6367  shiny  + Draining Jokers
 -- Text: descriptions.Stake.<key> from the MP localization; chips: atlas mp_stakes_chips (29x29).
 
 local MP = require 'rmh_mp.state'
@@ -28,6 +37,21 @@ S.LIST = {
     pos = { x = 1, y = 0 }, colour = { 0, 0, 0, 1 }, shiny = false, applies = 'planet' },
   { key = 'stake_mp_spectralplus', id = 'spectralplus', name_fallback = 'Spectral+ Stake', atlas = 'mp_stakes_chips',
     pos = { x = 2, y = 0 }, colour = { 0, 0, 0, 1 }, shiny = true, applies = 'spectral' },
+  -- EX-16: the alt stakes, after the three live ones (the lobby picker lists them in this order).
+  { key = 'stake_mp_plastic', id = 'plastic', name_fallback = 'Plastic Stake', atlas = 'mp_alt_mp_stakes',
+    pos = { x = 1, y = 0 }, colour = { 1, 0.588, 0.588, 1 }, shiny = false, applies = nil, alt = true },
+  { key = 'stake_mp_pebble', id = 'pebble', name_fallback = 'Pebble Stake', atlas = 'mp_alt_mp_stakes',
+    pos = { x = 2, y = 0 }, colour = { 0.580, 0.580, 0.580, 1 }, shiny = false, applies = 'plastic', alt = true },
+  { key = 'stake_mp_ferrite', id = 'ferrite', name_fallback = 'Ferrite Stake', atlas = 'mp_alt_mp_stakes',
+    pos = { x = 3, y = 0 }, colour = { 0.698, 0.698, 0.698, 1 }, shiny = false, applies = 'pebble', alt = true },
+  { key = 'stake_mp_pyrite', id = 'pyrite', name_fallback = 'Pyrite Stake', atlas = 'mp_alt_mp_stakes',
+    pos = { x = 4, y = 0 }, colour = { 0.949, 0.851, 0.333, 1 }, shiny = false, applies = 'ferrite', alt = true },
+  { key = 'stake_mp_jade', id = 'jade', name_fallback = 'Jade Stake', atlas = 'mp_alt_mp_stakes',
+    pos = { x = 0, y = 1 }, colour = { 0.243, 0.663, 0.235, 1 }, shiny = false, applies = 'pyrite', alt = true },
+  { key = 'stake_mp_crystal', id = 'crystal', name_fallback = 'Crystal Stake', atlas = 'mp_alt_mp_stakes',
+    pos = { x = 1, y = 1 }, colour = { 0.737, 0.976, 1, 1 }, shiny = true, applies = 'jade', alt = true },
+  { key = 'stake_mp_antimatter', id = 'antimatter', name_fallback = 'Antimatter Stake', atlas = 'mp_alt_mp_stakes',
+    pos = { x = 2, y = 1 }, colour = { 0.310, 0.388, 0.404, 1 }, shiny = true, applies = 'crystal', alt = true },
 }
 
 local by = {}

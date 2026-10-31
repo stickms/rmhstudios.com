@@ -25,8 +25,9 @@ import { MatchClient, type ResultKind } from '../match/match-member';
 import { RefereeDriver } from '../match/match-host';
 import { defaultOptionsFor, shapeFor } from '../rulesets/options';
 import { resolveRuleset } from '../rulesets/resolve';
+import { requiredPacks } from '../rulesets/rulesets';
 import type { PeerKind, WireData } from '../wire';
-import type { GameEvent, Id, LobbyState, PlayerResult, RefCheckpoint, StartedMatch } from '../types';
+import type { GameEvent, Id, LobbyState, OptionalPack, PlayerResult, RefCheckpoint, StartedMatch } from '../types';
 import type { HubStatus } from '../transport/types';
 import type { ReplayTap } from '../replay/tap';
 import { DEFAULT_SETTINGS, type MpSettings, type Role, type RoleCtx, type RuntimeDeps } from './context';
@@ -242,7 +243,9 @@ export class MpRuntime {
       chat: this.chat,
       lang: this.lang,
       glyphs: () => this.glyphs(),
+      packs: () => this.deps.packs?.held() ?? [],
       view: (state, isHost, block) => {
+        this.syncPacks(state);
         const d: { state: LobbyState; me: Id; isHost: boolean; canStart: boolean; startBlockReason?: string } = {
           state,
           me: this.me as Id,
@@ -268,6 +271,32 @@ export class MpRuntime {
 
   private error(code: string): void {
     this.deps.bridge.send('lobby_error', { code: code.slice(0, 32) });
+  }
+
+  /**
+   * EX-14: the lobby's ruleset needs optional packs (the Release art): fetch the ones this peer
+   * lacks, once, and tell the host (player_info `packs`); a pack this peer holds but the lobby
+   * does not show for it yet is announced too. Nothing is fetched for a ruleset that needs none.
+   */
+  private readonly packLoads = new Set<OptionalPack>();
+  private syncPacks(state: LobbyState): void {
+    const store = this.deps.packs;
+    if (!store || !this.me) return;
+    const mine = state.players.find((p) => p.id === this.me);
+    if (!mine || mine.role !== 'player') return;
+    for (const kind of requiredPacks(state.options.ruleset)) {
+      if (store.has(kind) || this.packLoads.has(kind)) continue;
+      this.packLoads.add(kind);
+      void store.ensure(kind).then((ok) => {
+        this.packLoads.delete(kind);
+        if (this.stopped) return;
+        if (ok) this.role?.playerInfo();
+        else this.error('pack-failed');
+      });
+    }
+    const held = store.held();
+    const shown = [...(mine.packs ?? [])].sort().join(',');
+    if (held.length && held.join(',') !== shown && !this.client) this.role?.playerInfo();
   }
 
   /* ─── Roles ─── */
@@ -444,6 +473,18 @@ export class MpRuntime {
     const block = this.practiceGuard?.() ?? null;
     if (block) {
       this.error(block);
+      return;
+    }
+    // EX-14: a ruleset with an optional pack (Release) starts once the pack is mounted.
+    const missing = requiredPacks(d.ruleset).filter((k) => !this.deps.packs?.has(k));
+    if (missing.length) {
+      const store = this.deps.packs;
+      if (!store) return this.error('pack-failed');
+      void Promise.all(missing.map((k) => store.ensure(k))).then((oks) => {
+        if (this.stopped) return;
+        if (oks.every(Boolean)) this.startPractice(d);
+        else this.error('pack-failed');
+      });
       return;
     }
     let resolved;

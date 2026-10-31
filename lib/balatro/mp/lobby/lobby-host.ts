@@ -68,6 +68,7 @@ import {
   startBlock,
   startLobby,
   withSuccessor,
+  packsPatch,
 } from './lobby-reducer';
 import type { HostIntent, MatchMemory, Role, RoleCtx } from './context';
 
@@ -379,7 +380,9 @@ export class LobbyHost implements Role {
       case 'player_info': {
         const d = env.d as WireData<'player_info'>;
         if (!this.state) return;
-        this.commit(patchPlayer(this.state, from, { avatarJoker: d.avatarJoker, blindCol: d.blindCol }));
+        this.commit(
+          patchPlayer(this.state, from, { avatarJoker: d.avatarJoker, blindCol: d.blindCol, ...packsPatch(d.packs) }),
+        );
         if (this.catchUp.has(from)) this.caughtUpFor(from);
         return;
       }
@@ -442,7 +445,7 @@ export class LobbyHost implements Role {
       joinedAt: known?.joinedAt ?? now,
       conn: this.star.connKind(m),
     });
-    s = patchPlayer(s, m.userId, { avatarJoker: d.info.avatarJoker, blindCol: d.info.blindCol });
+    s = patchPlayer(s, m.userId, { avatarJoker: d.info.avatarJoker, blindCol: d.info.blindCol, ...packsPatch(d.info.packs) });
     const match = s.started;
     const inMatch = !!match && match.roster.some((r) => r.id === m.userId);
     const fresh = inMatch && d.rejoin !== null && d.rejoin.runId === match?.runId;
@@ -797,6 +800,7 @@ export class LobbyHost implements Role {
       patchPlayer(this.state, this.ctx.me, {
         avatarJoker: this.ctx.settings.avatarJoker,
         blindCol: this.ctx.settings.blindCol,
+        ...packsPatch(this.ctx.packs()),
       }),
     );
   }

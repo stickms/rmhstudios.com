@@ -170,9 +170,11 @@ runtime and copies none of its code.
 | `pack-budget.json`         | the size budgets the builder and the pack test enforce                                                  |
 | `import-sources.json`      | provenance: the mod version and a SHA-256 for every source file                                         |
 
-**Pruned (EX-20).** The importer drops `release_jokers`, `j_copycat`, `stickers`,
-`pvp_title_base_*`, `sticker_nemesis`, `alt_t_*`, `alt_mp_stakes` and `modicon`.
-It fails on any mod PNG it has not classified. Two sheets are rebuilt:
+**Pruned (EX-20).** The importer drops `j_copycat`, `stickers`, `pvp_title_base_*`,
+`alt_t_*` and `modicon`. It fails on any mod PNG it has not classified.
+`sticker_nemesis` (EX-17) and `alt_mp_stakes` (EX-16) ship in the MP pack;
+`release_jokers` (EX-14) goes to `data/balatro-mp/release/{1x,2x}/` and ships in the
+optional Release pack (§4 "Optional packs"). Two sheets are rebuilt:
 
 - `mp_misc.png` (2×1) holds the only two used cells of `ec_other_sandbox.png`
   (D-27): the Echo Deck at (0,0), from (2,0), and the Extra Credit sticker at (1,0),
@@ -198,10 +200,11 @@ into `rmh_mp/loc/<lang>.lua` in the pack:
 - **Dropped translations fall back to English.** That covers a key English lacks
   (the mod's stale keys), a different shape, or a `#n#` placeholder English does not
   fill. `--verbose` lists them all.
-- **Excluded content is dropped from every language**, so it neither ships nor pulls
-  glyphs into the fonts. That is the Release ruleset (EX-14), the alt stakes (EX-16),
-  and `j_broken`, `j_mp_idol`, `j_to_the_moon_mp` and the `m_gold` balanced note
-  (A2 §14). Baron, Mime and the White Deck ship since EX-15 was lifted.
+- **Dead text is dropped from every language**, so it neither ships nor pulls glyphs
+  into the fonts: `j_broken`, `j_mp_idol` and the `m_gold` balanced note (A2 §14).
+  The Release ruleset's `*_release` entries (EX-14), the alt stakes and
+  `j_to_the_moon_mp` (EX-16) ship since those exclusions were lifted, as do Baron,
+  Mime and the White Deck (EX-15).
 - **Missing typographic punctuation is replaced.** `’`, `“”`, `…` and similar marks
   that a language's font lacks become their ASCII form (the mod's French uses `’`,
   which `m6x11plus` cannot draw).
@@ -230,6 +233,33 @@ TypeScript (WS5 `identity.ts`) picks the bitmap for the current language. It the
 replaces anything else in a player name or chat line with `?`. The builder fails
 if any shipped MP string is missing from its language's bitmap.
 
+### Optional packs (EX-14)
+
+The Release ruleset's art, `release_jokers.png` (the whole 1.0.0 Joker sheet, ~1.45 MB raw,
+688 000 B after lossless oxipng at 1x + 2x), does not fit what is left of the MP pack's budget.
+It is its own content-addressed pack, `data/balatro-pack/release-<sha12>.zip`
+(`lib/balatro/game-pack.json` → `release`), built with the MP pack (also by `--mp-only`), with
+its own budget (`releaseMaxBytes` / `releaseMaxExtractedBytes` in `pack-budget.json`,
+`releasePackBytes` in `scripts/balatro/bundle-budget.ts`). It holds the files at the MP pack's
+own paths (`rmh_mp/assets/{1x,2x}/release_jokers.png`). The MP pack carries
+`rmh_mp/data/packs.lua` (`{release = {file, sha256}}`), so a change to the Release art changes
+the MP pack's hash and with it the lobby content hash (D-36): peers on different art never meet.
+
+Loading (`lib/balatro/mp/optional-packs.ts`, wired in `index.ts`):
+
+1. Nothing fetches it until a ruleset lists it (`RulesetDef.packs`, `requiredPacks()`): the
+   lobby's ruleset (each lobby view) or a Practice run's.
+2. Then each seated peer fetches it once (IndexedDB cache kind `release`, then the auth-gated
+   `/api/balatro/pack/$file` route, sha-256 verified), mounts it (`mountOptionalFiles`, marker
+   `/rmh/mp/packs/release`) and tells the host (`hello.info.packs` / `player_info.packs`, kept
+   as `LobbyPlayer.packs`). A failed download is a `pack-failed` lobby error; the next lobby view
+   retries.
+3. The host cannot start while a seated player lacks a required pack (`startBlock` →
+   `start-packs`, "Waiting for every player to download the ruleset art"). Practice on Release
+   starts once the pack is mounted.
+4. In Lua, mounting a Release session reloads `mp_release_jokers` from the pack
+   (`atlas.reload`); the reworked Mad, Clever, 8 Ball and Square Joker draw from it.
+
 ### Atlas registry
 
 `data/balatro-mp/atlases.json` maps an atlas key to an entry. The pack also ships
@@ -244,6 +274,7 @@ it as the Lua table `rmh_mp/data/atlases.lua`: the flat `atlases` map (no `versi
 | `frames`      | Frame count for `animation`; `null` otherwise                                                                                                                                                                                                                                                                            |
 | `placeholder` | Vanilla atlas to draw from if the file is not loaded                                                                                                                                                                                                                                                                     |
 | `variants`    | Optional `{lang: file}` art for one language (only `mp_c_asteroid` has one, for `ru`)                                                                                                                                                                                                                                    |
+| `pack`        | Optional: the file ships in that optional pack, from `data/balatro-mp/<pack>/{1x,2x}/`, not in the MP pack (only `mp_release_jokers`, pack `release`). Until the pack is mounted the atlas is an alias of its `placeholder`; `atlas.reload(key)` loads it then (the release layer does on mount)                         |
 
 The key is `mp_<file stem>`, so `j_pizza.png` becomes `mp_j_pizza`. The four
 blind-chip sheets are the exception. They keep the mod's names:
@@ -299,6 +330,26 @@ WS6 (Lua core):
 - Nemesis rows: the mod puts full-size rows above your jokers, which in the base game's 16:9 room (0.7 units above y = 0) are off-screen. Standard and Mirrored rows are compact (cards × 0.55) starting at y = −0.6, and while a row has cards your joker and consumable areas move down by ≈0.94 (their bottom stays above the shop at 3.6); they move back when the rows empty, and during Blind Select (vanilla anchors the choices to `G.jokers.T.y`). Classic is unchanged. Phantom copies' tooltips show a "Phantom" badge (`rmh_mp_phantom` label) instead of the eternal one they carry to block selling.
 - The deck picker's preview card is not draggable: `CardArea:set_ranks` (run by `emplace`) made a lone card draggable again, so the flag is set after `emplace` (found by the real-builder spec `mp_ui_deck_preview_spec.lua`).
 
+### EX-14, EX-16, EX-17 and the Judgement rework (lifted; all opt-in)
+
+- Release ruleset (`content/release.lua`): written from the mod's 65 ReworkCenter entries and their
+  text. Where an entry only changes numbers, the vanilla code runs on the 1.0.0 numbers; where it
+  changes behaviour, a rework `calc` returns `dispatch.SKIP` for the contexts it takes over (the
+  mod's `return nil, true`). Yorick counts discard actions on the first card of each discard.
+  The Blue Seal ignores the owner's 1-in-2 balance change (1.0.0 had none) and makes a random
+  Planet. Magic Mouth still steals that Planet (the release wrap goes through trap_hooks' `seal_watch`). Release + an MP stake: the MP stake's scaling past 3 uses the generic
+  curve; its Perishables/Rentals survive Orange/Gold.
+- Alt stakes: Plastic's interest is the mod's text ("$1 of interest per $10", same cap in dollars
+  earned), which its code never implemented (it only switched vanilla interest off). To the
+  Moon's bonus scales with the step; Seed Money and Money Tree read as they are (the cap in dollars
+  earned is unchanged).
+- Nemesis sticker: the mod gives it no behaviour (art, `hide_badge`, an enable flag nothing sets).
+  Here it marks cards received from the Nemesis, while the `nemesis_sticker` Advanced layer is on.
+- Judgement rework: the mod's version fed a joker-override queue that no longer exists. Here it uses
+  The Order's own queues: Judgement's Joker is the shop's next roll, stickered rolls are held for
+  the shop (`G.GAME.mp_held_jokers`, `order.take_held`). An Advanced layer, since the mod never
+  enabled it.
+
 ### WS8 (content B: sandbox, Extra Credit)
 
 - Clown Car's "initial scoring step" (an SMODS context) is a custom context `mp_initial_scoring` fired from a `Blind.modify_hand` session wrap: after the blind's own change, before any card scores.
@@ -347,10 +398,11 @@ because it subsets about 60 MB of fonts.
 
 **Budgets** (`data/balatro-mp/pack-budget.json`; the build fails past them):
 
-| Pack | Budget                                        | Plan §6.4                                                                                                                                                                                           |
-| ---- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| core | 4 930 572 B baseline + 56 422 B               | plan +30 KB. Even per-language, the CJK/Hangul MP glyphs cost ~38 KB (folding all MP text into every font cost ~108 KB); +16 422 B (M1b) is exactly the compressed platform Lua moved into the core |
-| mp   | 1 800 000 B compressed, 8 000 000 B extracted | plan 1.3 MB. The used art alone is ~1.25 MB after lossless oxipng (1x + 2x, AS-01) and the localization ~0.1 MB, so 1.3 MB left no room for Lua                                                     |
+| Pack    | Budget                                        | Plan §6.4                                                                                                                                                                                           |
+| ------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| core    | 4 930 572 B baseline + 56 422 B               | plan +30 KB. Even per-language, the CJK/Hangul MP glyphs cost ~38 KB (folding all MP text into every font cost ~108 KB); +16 422 B (M1b) is exactly the compressed platform Lua moved into the core |
+| mp      | 1 800 000 B compressed, 8 000 000 B extracted | plan 1.3 MB. The used art alone is ~1.25 MB after lossless oxipng (1x + 2x, AS-01) and the localization ~0.1 MB, so 1.3 MB left no room for Lua                                                     |
+| release | 750 000 B compressed, 750 000 B extracted     | EX-14: the Release Joker sheet alone (688 000 B); fetched only when a lobby picks Release                                                                                                           |
 
 `CORE_PATCHES` in the builder is the anchored patch list for data/balatro Lua, as
 `(path, anchor, replacement)`, read from `scripts/balatro/core-patches.json` (each

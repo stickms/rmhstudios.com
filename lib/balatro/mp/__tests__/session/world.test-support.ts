@@ -27,6 +27,7 @@ import type { BridgeLike, FsLike, HubLike, HubStatus, PeerAttempt, PeerConnectOp
 import { memoryKv, type KeyValue } from '../../history';
 import { memorySnapshotStore } from '../../rejoin/rejoin-store';
 import { MpRuntime, type StartIntent } from '../../lobby/runtime';
+import type { OptionalPackStore } from '../../optional-packs';
 import { Rng } from '../../rng';
 import type { GameEvent, RefMsg } from '../../types';
 
@@ -392,6 +393,8 @@ export interface PeerOptions {
   blockedIds?: () => Promise<readonly string[]>;
   /** The hub socket is not up yet when the runtime boots (a fresh page load); `hub.reconnect()` brings it. */
   hubOffline?: boolean;
+  /** EX-14: the optional pack store (RuntimeDeps.packs); absent = this peer can fetch none. */
+  packs?: OptionalPackStore;
 }
 
 export class World {
@@ -437,6 +440,7 @@ export class World {
         randomInt: () => this.rng.int(0x7fffffff),
         log: (m) => logs.push(m),
         ...(o.blockedIds ? { blockedIds: o.blockedIds } : {}),
+        ...(o.packs ? { packs: o.packs } : {}),
       },
       { intent: o.intent ?? 'menu', invite: o.invite ?? null, lang: 'en-us' },
     );

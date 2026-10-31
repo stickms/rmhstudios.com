@@ -29,6 +29,8 @@ import { localKv } from './history';
 import { idbSnapshotStore } from './rejoin/rejoin-store';
 import { cryptoSeed, cryptoSeedString } from './rng';
 import { MpRuntime } from './lobby/runtime';
+import { createOptionalPacks } from './optional-packs';
+import { loadPack, mountOptionalFiles, optionalPackInfo, optionalPackMarker, unpackPack } from '../runtime';
 
 export type { MpSession, StartMultiplayerOptions } from './pack-loader';
 export type { MpRuntime } from './lobby/runtime';
@@ -109,6 +111,25 @@ export function startMultiplayer(opts: StartMultiplayerOptions): MpSession {
       randomInt: cryptoSeed,
       log,
       blockedIds,
+      // EX-14: optional packs (the Release ruleset's art), fetched only when a ruleset needs one.
+      packs: createOptionalPacks({
+        mounted: (kind) => {
+          try {
+            return !!session.fs.analyzePath(optionalPackMarker(kind)).exists;
+          } catch {
+            return false;
+          }
+        },
+        fetch: async (kind) => {
+          const info = optionalPackInfo(kind);
+          if (!info) throw new Error(`${kind}-pack-missing`);
+          return unpackPack(await loadPack(kind, info));
+        },
+        mount: (kind, files) => {
+          mountOptionalFiles(session.fs, kind, files, optionalPackInfo(kind)?.sha256.slice(0, 12) ?? 'dev');
+        },
+        log,
+      }),
     },
     { intent, invite },
   );

@@ -452,6 +452,23 @@ const defs: LayerDef[] = [
   { name: 'no_uncommons', advanced: true, hook: true, banned: ['tag_uncommon'] },
   // LY-24
   { name: 'bigger_shop', advanced: true, hook: true, gameModifiers: { mp_shop_slots_bonus: 1 } },
+  // EX-17 lifted: the mod registers mp_sticker_nemesis (art, no badge, needs an enable flag) and
+  // never enables it. Here this toggle enables it: every card a player receives from their
+  // Nemesis (Magnet's copy, a Magic Mouth steal) carries the sticker (content/stickers.lua).
+  { name: 'nemesis_sticker', advanced: true },
+  // Judgement rework (commented out in the mod, meant for every standard ruleset but Minor
+  // League): under The Order, Judgement's Joker is rolled exactly as a shop Joker is, and a roll
+  // that would carry a shop sticker is kept for the next shop instead (content/judgement.lua).
+  { name: 'judgement_rework', advanced: true },
+  // EX-14 lifted: the Release ruleset's layer (rulesets/release.lua in the mod, commented out
+  // there): the 1.0.0 values of 65 cards, tags, a seal, poker hands, stakes and a boss
+  // (content/release.lua, rules/release.lua). Its art is the optional `release` pack.
+  {
+    name: 'release',
+    multiplayerContent: false,
+    hook: true,
+    stickers: [STICKER_BALANCED],
+  },
 ];
 
 export const LAYERS: Readonly<Record<string, LayerDef>> = Object.freeze(

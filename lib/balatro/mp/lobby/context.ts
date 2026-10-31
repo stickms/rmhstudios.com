@@ -10,7 +10,8 @@ import type { KeyValue } from '../history';
 import type { MatchClient } from '../match/match-member';
 import type { SnapshotStore } from '../rejoin/rejoin-store';
 import type { ReplayTap } from '../replay/tap';
-import type { GameEvent, Id, LobbyState, RefCheckpoint, StartedMatch } from '../types';
+import type { OptionalPackStore } from '../optional-packs';
+import type { GameEvent, Id, LobbyState, OptionalPack, RefCheckpoint, StartedMatch } from '../types';
 import type { PeerKind, WireData } from '../wire';
 import type { BridgeLike, FsLike, HubLike, PeerConnector, Scheduler } from '../transport/types';
 
@@ -57,6 +58,11 @@ export interface RuntimeDeps {
    * block list, so this is its own request, made once per session.
    */
   blockedIds?(): Promise<readonly string[]>;
+  /**
+   * EX-14: optional content packs (the Release ruleset's art). Absent = this peer can fetch none
+   * (tests that do not care; such a peer never holds one, so a ruleset needing one cannot start).
+   */
+  packs?: OptionalPackStore;
 }
 
 /** Everything a fresh boot or a promotion carries into a role. */
@@ -76,6 +82,8 @@ export interface RoleCtx {
   glyphs(): Uint8Array | null;
   /** The player's language key (player_info). */
   lang: string;
+  /** EX-14: the optional packs this peer has mounted (player_info / hello `packs`). */
+  packs(): OptionalPack[];
   /** Lua's lobby screen. */
   view(state: LobbyState, isHost: boolean, block?: string | null): void;
   error(code: string): void;

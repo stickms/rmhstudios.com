@@ -41,6 +41,8 @@ const budget = z
     coreGrowthMaxBytes: z.number().int().nonnegative(),
     mpMaxBytes: z.number().int().positive(),
     mpMaxExtractedBytes: z.number().int().positive(),
+    releaseMaxBytes: z.number().int().positive(),
+    releaseMaxExtractedBytes: z.number().int().positive(),
   })
   .parse(JSON.parse(readFileSync(join(MP, 'pack-budget.json'), 'utf8')));
 
@@ -53,6 +55,8 @@ const zAtlas = z
     frames: z.number().int().positive().nullable(),
     placeholder: z.string().min(1),
     variants: z.record(z.string(), z.string().regex(/^[\w-]+\.png$/)).optional(),
+    /** EX-14: the file ships in this optional pack (data/balatro-mp/<pack>/), not the MP pack. */
+    pack: z.enum(['release']).optional(),
   })
   .strict();
 const registry = z
@@ -94,9 +98,10 @@ describe('MP atlas registry', () => {
 
   it('maps every entry to a 1x and a 2x file, the 2x exactly twice the 1x, on whole cells', () => {
     for (const [key, a] of Object.entries(registry.atlases)) {
+      const dir = a.pack ? join(MP, a.pack) : MP;
       for (const file of [a.file, ...Object.values(a.variants ?? {})]) {
-        const one = pngSize(readFileSync(join(MP, '1x', file)));
-        const two = pngSize(readFileSync(join(MP, '2x', file)));
+        const one = pngSize(readFileSync(join(dir, '1x', file)));
+        const two = pngSize(readFileSync(join(dir, '2x', file)));
         expect(two, `${key} ${file}`).toEqual({ w: one.w * 2, h: one.h * 2 });
         expect(one.w % a.px, `${key} width`).toBe(0);
         expect(one.h % a.py, `${key} height`).toBe(0);
@@ -115,7 +120,9 @@ describe('MP atlas registry', () => {
 
   it('ships no PNG the registry does not name, and none of the EX-20 dead weight', () => {
     const named = new Set(
-      Object.values(registry.atlases).flatMap((a) => [a.file, ...Object.values(a.variants ?? {})]),
+      Object.values(registry.atlases)
+        .filter((a) => !a.pack)
+        .flatMap((a) => [a.file, ...Object.values(a.variants ?? {})]),
     );
     for (const scale of ['1x', '2x']) {
       const files = readdirSync(join(MP, scale));
@@ -129,8 +136,6 @@ describe('MP atlas registry', () => {
         'stickers.png',
         'pvp_title_base_left.png',
         'pvp_title_base_right.png',
-        'sticker_nemesis.png',
-        'alt_mp_stakes.png',
         'modicon.png',
         'icon.png',
         'ec_other_sandbox.png',
@@ -152,6 +157,26 @@ describe('MP atlas registry', () => {
       kind: 'card',
     });
     expect(pngSize(readFileSync(join(MP, '1x', 'mp_misc.png')))).toEqual({ w: 142, h: 95 });
+  });
+});
+
+describe('optional pack art (EX-14, EX-16, EX-17 lifted)', () => {
+  it('the Release Joker sheet is the only optional-pack entry; the Nemesis sticker and alt stake chips ship in the MP pack', () => {
+    const optional = Object.entries(registry.atlases).filter(([, a]) => a.pack);
+    expect(optional.map(([k, a]) => `${k}:${a.pack}`)).toEqual(['mp_release_jokers:release']);
+    expect(registry.atlases.mp_release_jokers).toMatchObject({
+      file: 'release_jokers.png',
+      px: 71,
+      py: 95,
+      kind: 'card',
+      placeholder: 'Joker',
+    });
+    // the vanilla Joker sheet's layout: 10 x 16 cells
+    expect(pngSize(readFileSync(join(MP, 'release', '1x', 'release_jokers.png')))).toEqual({ w: 710, h: 1520 });
+    expect(registry.atlases.mp_sticker_nemesis).toMatchObject({ file: 'sticker_nemesis.png', kind: 'card' });
+    expect(registry.atlases.mp_alt_mp_stakes).toMatchObject({ file: 'alt_mp_stakes.png', px: 29, py: 29, kind: 'asset' });
+    expect(readdirSync(join(MP, 'release', '1x'))).toEqual(['release_jokers.png']);
+    expect(readdirSync(join(MP, 'release', '2x'))).toEqual(['release_jokers.png']);
   });
 });
 
@@ -190,6 +215,44 @@ describe('MP pack', () => {
   });
 });
 
+/* ─── The optional Release pack (EX-14) ──────────────────────────────────── */
+
+const releaseInfo = (pack as { release?: { file: string; bytes: number; sha256: string } }).release;
+
+describe('Release pack (EX-14: a separate lazy pack)', () => {
+  it('is in the manifest, content-addressed, and within its own budget', () => {
+    expect(releaseInfo, 'game-pack.json has no release entry: rebuild the packs').toBeDefined();
+    if (!releaseInfo) return;
+    expect(releaseInfo.file).toBe(`release-${releaseInfo.sha256.slice(0, 12)}.zip`);
+    const buf = readFileSync(join(PACKS, releaseInfo.file));
+    expect(buf.length).toBe(releaseInfo.bytes);
+    expect(releaseInfo.bytes).toBeLessThanOrEqual(budget.releaseMaxBytes);
+    const zip = readZip(new Uint8Array(buf));
+    expect(zip.entries.reduce((n, e) => n + e.size, 0)).toBeLessThanOrEqual(budget.releaseMaxExtractedBytes);
+  });
+
+  it('holds exactly the release art, stored, byte for byte, at the MP pack\'s asset paths', async () => {
+    if (!releaseInfo) throw new Error('no release pack');
+    const zip = readZip(new Uint8Array(readFileSync(join(PACKS, releaseInfo.file))));
+    expect(zip.entries.map((e) => e.name)).toEqual([
+      'rmh_mp/assets/1x/release_jokers.png',
+      'rmh_mp/assets/2x/release_jokers.png',
+    ]);
+    for (const e of zip.entries) {
+      expect(e.method, e.name).toBe(0);
+      const scale = e.name.split('/')[2];
+      expect(Buffer.from(await extractEntry(zip, e)).equals(readFileSync(join(MP, 'release', scale, 'release_jokers.png')))).toBe(true);
+    }
+  });
+
+  it('is not in the MP pack, which names it (so the MP hash and the lobby content hash follow it)', async () => {
+    if (!releaseInfo) throw new Error('no release pack');
+    expect(mpZip.entries.some((e) => e.name.endsWith('/release_jokers.png'))).toBe(false);
+    const loaded = loadLocUnderLua(new Map([['packs', await mpFile('rmh_mp/data/packs.lua')]])).get('packs') as Loc;
+    expect(loaded).toEqual({ release: { file: releaseInfo.file, sha256: releaseInfo.sha256 } });
+  });
+});
+
 describe('MP pack freshness and determinism (python3 + fontTools)', () => {
   if (!pythonReady) {
     it('needs python3 with fontTools', () => {
@@ -215,7 +278,8 @@ describe('MP pack freshness and determinism (python3 + fontTools)', () => {
           encoding: 'utf8',
         });
         expect(run.status, run.stderr).toBe(0);
-        return JSON.parse(readFileSync(join(dir, 'game-pack.json'), 'utf8')).mp.sha256 as string;
+        const m = JSON.parse(readFileSync(join(dir, 'game-pack.json'), 'utf8'));
+        return `${m.mp.sha256}/${m.release.sha256}` as string;
       });
       expect(shas[0]).toBe(shas[1]);
     } finally {
@@ -389,13 +453,21 @@ describe('MP localization (lua5.1)', () => {
     expect(enLeaves.get('.descriptions.Joker.j_mp_pizza')).toEqual(
       leaves(modEn).get('.descriptions.Joker.j_mp_pizza'),
     );
-    // Content this port excludes (EX-14, EX-16) does not ship; EX-15 (Baron, Mime, White) does.
-    for (const path of enLeaves.keys())
-      expect(path).not.toMatch(/_release$|j_mp_idol$|stake_mp_plastic$/);
+    // Content with no native object (A2 §14) does not ship; EX-14..17 lifted content does.
+    for (const path of enLeaves.keys()) expect(path).not.toMatch(/j_mp_idol$|\.j_broken$/);
     for (const key of [
       '.descriptions.Joker.j_mp_baron',
       '.descriptions.Joker.j_mp_mime',
       '.descriptions.Back.b_mp_white',
+      '.descriptions.Joker.j_mp_8ball_release',
+      '.descriptions.Tag.tag_mp_rare_release',
+      '.descriptions.Other.mp_blue_seal_release',
+      '.descriptions.Stake.stake_mp_gold_release',
+      '.descriptions.Stake.stake_mp_plastic',
+      '.descriptions.Stake.stake_mp_antimatter',
+      '.descriptions.Joker.j_to_the_moon_mp',
+      '.misc.dictionary.k_release',
+      '.misc.dictionary.rmh_mp_ui_release_description',
     ])
       expect(enLeaves.has(key), key).toBe(true);
     for (const [lang, table] of loc) {

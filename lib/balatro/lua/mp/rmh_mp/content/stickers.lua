@@ -12,6 +12,9 @@
 --   mp_sticker_balanced    every card whose center carries config.mp_balanced (reworks): badge plus
 --                          tooltip `mp_sticker_balanced_<key>` when the loc has it, else the generic one
 --   mp_sticker_extra_credit  Extra Credit jokers (def.extra_credit): badge only
+--   mp_sticker_nemesis     (EX-17 lifted; Advanced layer `nemesis_sticker`) a card received from
+--                          the Nemesis — Magnet's copy, a Magic Mouth steal — carries it
+--                          (K.mark_nemesis). Art only: no badge, no tooltip (the mod's hide_badge)
 -- The lists name vanilla keys (plus three MP jokers); the reworks are not listed, as in the mod.
 -- The experimental layer hook (WS6 rules/experimental.lua) turns each family on with p = 1/3.
 --
@@ -71,7 +74,11 @@ K.SPRITES = {
   mp_sticker_draining = { atlas = 'mp_alt_stickers', pos = { x = 2, y = 0 } },
   mp_sticker_balanced = { atlas = 'mp_sticker_balanced', pos = { x = 0, y = 0 } },
   mp_sticker_extra_credit = { atlas = 'mp_misc', pos = { x = 1, y = 0 } },
+  mp_sticker_nemesis = { atlas = 'mp_sticker_nemesis', pos = { x = 0, y = 0 } },
 }
+-- Drawn but never listed as a badge or a tooltip.
+K.HIDE_BADGE = { mp_sticker_nemesis = true }
+K.NEMESIS_LAYER = 'nemesis_sticker'
 
 local function is_phantom(card) return card.ability and card.ability.mp_phantom end
 
@@ -85,7 +92,23 @@ function K.of(card)
   end
   if ab.mp_balanced then out[#out + 1] = 'mp_sticker_balanced' end
   if ab.mp_extra_credit then out[#out + 1] = 'mp_sticker_extra_credit' end
+  if ab.mp_sticker_nemesis then out[#out + 1] = 'mp_sticker_nemesis' end
   return out
+end
+
+--- The stickers that show a badge (K.of without the hidden ones).
+function K.badges_of(card)
+  local out = {}
+  for _, s in ipairs(K.of(card)) do if not K.HIDE_BADGE[s] then out[#out + 1] = s end end
+  return out
+end
+
+--- A card that came from the Nemesis gets the Nemesis sticker while the layer is on. Returns
+--- whether it did. Saved with the card (an ability flag).
+function K.mark_nemesis(card)
+  if not (card and card.ability and MP.layer_active(K.NEMESIS_LAYER)) then return false end
+  card.ability.mp_sticker_nemesis = true
+  return true
 end
 
 -- ── apply ───────────────────────────────────────────────────────────────────
@@ -142,7 +165,7 @@ end
 --- Tooltip entries (generate_card_ui info queue items) for a card's stickers.
 function K.tooltips(card)
   local out = {}
-  for _, s in ipairs(K.of(card)) do
+  for _, s in ipairs(K.badges_of(card)) do
     if s == 'mp_sticker_balanced' then
       local key = card.config and card.config.center and ('mp_sticker_balanced_' .. tostring(card.config.center.key))
       if key and other_desc(key) then out[#out + 1] = { key = key, set = 'Other' }
@@ -166,7 +189,7 @@ end
 --- generate_UIBox_ability_table post-step: badges (labels from misc.labels) and tooltips.
 function K.decorate(card, ui)
   if type(ui) ~= 'table' then return ui end
-  local stickers = K.of(card)
+  local stickers = K.badges_of(card)
   if #stickers == 0 then return ui end
   ui.badges = ui.badges or {}
   if card.ability.mp_persistent_eternal then

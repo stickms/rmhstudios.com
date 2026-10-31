@@ -13,11 +13,23 @@
  *   2. optionally (`?mp=1`, once the manifest has an `mp` pack) extracts the MP
  *      pack into /Balatro before the game starts;
  *   3. runs the page side of the file channel (testing/balatro-e2e/lib/channel.ts)
- *      and exposes it as `window.__balatroEngine` for Playwright.
+ *      and exposes it as `window.__balatroEngine` for Playwright;
+ *   4. answers a spec's request for an optional pack (EX-14: Lua writes the kind to
+ *      /rmh/test/want_pack) through the production chain the session runtime uses
+ *      (createOptionalPacks → loadPack → unpackPack → mountOptionalFiles), so the
+ *      Release ruleset's art is fetched and mounted exactly as in a lobby.
  * Built by testing/balatro-e2e/lib/build-harness.ts, served by static-server.ts.
  */
 import pack from '../../../../lib/balatro/game-pack.json';
-import { bootBalatro } from '../../../../lib/balatro/runtime';
+import {
+  bootBalatro,
+  loadPack,
+  mountOptionalFiles,
+  optionalPackInfo,
+  optionalPackMarker,
+  unpackPack,
+} from '../../../../lib/balatro/runtime';
+import { createOptionalPacks } from '../../../../lib/balatro/mp/optional-packs';
 import { attachTextInput, TEXT_FILE } from '../../../../lib/balatro/text-input';
 import { extractEntry, readZip } from '../../../../lib/balatro/zip';
 import luaFiles from 'virtual:balatro-mp-test-lua';
@@ -183,7 +195,32 @@ function handle(msg: HarnessMessage) {
   }
 }
 
+const WANT_PACK = '/rmh/test/want_pack';
+const optionalPacks = createOptionalPacks({
+  mounted: (kind) => !!fs?.analyzePath(optionalPackMarker(kind)).exists,
+  fetch: async (kind) => {
+    const info = optionalPackInfo(kind);
+    if (!info) throw new Error(`lib/balatro/game-pack.json has no ${kind} pack`);
+    return unpackPack(await loadPack(kind, info));
+  },
+  mount: (kind, files) => {
+    if (fs) mountOptionalFiles(fs, kind, files, optionalPackInfo(kind)?.sha256.slice(0, 12) ?? 'dev');
+  },
+  log: (m, isError) => log(`${isError ? 'ERR ' : ''}${m}`),
+});
+
+function pollPackRequest() {
+  if (!fs || !fs.analyzePath(WANT_PACK).exists) return;
+  const kind = String(fs.readFile(WANT_PACK, { encoding: 'utf8' })).trim();
+  fs.unlink(WANT_PACK);
+  if (kind !== 'release') return log(`ERR unknown optional pack ${kind}`);
+  void optionalPacks.ensure(kind).then((ok) => {
+    if (!ok && fs) fs.writeFile('/rmh/test/pack_error', kind);
+  });
+}
+
 function poll() {
+  pollPackRequest();
   if (!fs || !fs.analyzePath(CHANNEL.RES).exists) return;
   const text = fs.readFile(CHANNEL.RES, { encoding: 'utf8' }) as string;
   fs.unlink(CHANNEL.RES);

@@ -66,6 +66,9 @@ end
 --- The (b) one-line hook in add_round_eval_row's label chain (requested from WS2's patch list):
 ---   elseif RMH_MP and RMH_MP.eval_row_label(config, left_text, scale, num_dollars) then
 function E.eval_row_label(config, left_text, scale, num_dollars)
+  if config and config.name == 'mp_interest' and MP.stakes and MP.stakes.eval_row_label then
+    return MP.stakes.eval_row_label(config, left_text, scale)
+  end
   if not (config and config.name == 'mp_comeback') then return false end
   local mode = (MP.resolved().flags or {}).comeback or 'default'
   local text

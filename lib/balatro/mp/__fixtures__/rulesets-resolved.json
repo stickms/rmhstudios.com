@@ -1442,6 +1442,79 @@
     },
     "mpContentPooled": true
   },
+  "ruleset_mp_release": {
+    "resolved": {
+      "key": "ruleset_mp_release",
+      "layers": ["release"],
+      "multiplayerContent": false,
+      "banned": [
+        "j_mr_bones",
+        "j_luchador",
+        "j_matador",
+        "j_chicot",
+        "v_hieroglyph",
+        "v_petroglyph",
+        "v_directors_cut",
+        "v_retcon",
+        "tag_boss",
+        "bl_wall",
+        "bl_final_vessel"
+      ],
+      "bannedSilent": ["p_mp_trap_normal", "p_mp_trap_jumbo"],
+      "included": [],
+      "reworked": [],
+      "spectralBannedEnhancements": [],
+      "stickers": ["mp_sticker_balanced"],
+      "gameModifiers": {},
+      "startingParams": {},
+      "setupHooks": ["release"],
+      "flags": {
+        "theOrder": true,
+        "enemyLocationDisabled": false,
+        "timerDisplayThreshold": null,
+        "comeback": "default"
+      },
+      "timer": {
+        "enabled": true,
+        "base": 150,
+        "increment": 60,
+        "forgiveness": 0,
+        "pvpBase": null,
+        "pvpHandIncrement": 0,
+        "mode": "default",
+        "pressurePlusHand": 0,
+        "countdown": 3,
+        "mult": 1
+      }
+    },
+    "options": {
+      "ruleset": "ruleset_mp_release",
+      "gamemode": "gamemode_mp_attrition",
+      "trapCards": false,
+      "manhuntHunterLives": 7,
+      "startingLives": 4,
+      "pvpStartRound": 2,
+      "timer": true,
+      "timerBaseSeconds": 150,
+      "timerIncrementSeconds": 60,
+      "timerForgiveness": 0,
+      "pvpCountdownSeconds": 3,
+      "deathOnRoundLoss": true,
+      "goldOnLifeLoss": true,
+      "noGoldOnRoundLoss": false,
+      "customSeed": "random",
+      "theOrder": true,
+      "hideScoreUntilPlayed": false,
+      "normalBosses": false,
+      "differentSeeds": false,
+      "differentDecks": false,
+      "randomLoadout": false,
+      "multiplayerJokers": true,
+      "modifierLayers": [],
+      "seatGraceMs": 120000
+    },
+    "mpContentPooled": false
+  },
   "balanced+traps+advanced": {
     "resolved": {
       "key": "ruleset_mp_balanced",
@@ -1471,7 +1544,9 @@
         "shrinking_hand",
         "gambling_opportunity",
         "no_uncommons",
-        "bigger_shop"
+        "bigger_shop",
+        "nemesis_sticker",
+        "judgement_rework"
       ],
       "multiplayerContent": true,
       "banned": [
@@ -1632,7 +1707,9 @@
         "shrinking_hand",
         "gambling_opportunity",
         "no_uncommons",
-        "bigger_shop"
+        "bigger_shop",
+        "nemesis_sticker",
+        "judgement_rework"
       ],
       "seatGraceMs": 120000
     },

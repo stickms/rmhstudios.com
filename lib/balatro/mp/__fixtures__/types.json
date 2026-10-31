@@ -365,6 +365,57 @@
       "d": {
         "blind": "Small"
       }
+    },
+    "lobbyStateRelease": {
+      "code": "ABC234",
+      "kind": "private",
+      "queueMode": "pvp_nemesis",
+      "hostId": "u_alice",
+      "successorId": "u_bob",
+      "version": 3,
+      "open": true,
+      "players": [
+        {
+          "id": "u_alice",
+          "name": "Alice",
+          "avatarUrl": null,
+          "avatarJoker": "j_joker",
+          "blindCol": 1,
+          "joinedAt": 1761799900000,
+          "ready": false,
+          "connected": true,
+          "away": false,
+          "catchingUp": false,
+          "role": "player",
+          "conn": "direct",
+          "packs": ["release"]
+        },
+        {
+          "id": "u_bob",
+          "name": "Bob",
+          "avatarUrl": null,
+          "avatarJoker": "j_joker",
+          "blindCol": 5,
+          "joinedAt": 1761799950000,
+          "ready": true,
+          "connected": true,
+          "away": false,
+          "catchingUp": false,
+          "role": "player",
+          "conn": "direct"
+        }
+      ],
+      "options": {
+        "$ref": "lobbyOptions"
+      },
+      "deck": "b_red",
+      "stake": 1,
+      "mpStake": "antimatter",
+      "challenge": null,
+      "started": null,
+      "setup": null,
+      "kicked": [],
+      "forfeited": {}
     }
   },
   "gameEvent": {
@@ -716,6 +767,9 @@
       },
       {
         "$ref": "lobbyStateStarted"
+      },
+      {
+        "$ref": "lobbyStateRelease"
       }
     ],
     "invalid": [
@@ -751,6 +805,113 @@
           "deck": "b_red",
           "stake": 1,
           "mpStake": null,
+          "challenge": null,
+          "started": null,
+          "setup": null,
+          "kicked": [],
+          "forfeited": {}
+        }
+      },
+      {
+        "why": "unknown optional pack (EX-14)",
+        "d": {
+          "code": "ABC234",
+          "kind": "private",
+          "queueMode": "pvp_nemesis",
+          "hostId": "u_alice",
+          "successorId": "u_bob",
+          "version": 3,
+          "open": true,
+          "players": [
+            {
+              "id": "u_alice",
+              "name": "Alice",
+              "avatarUrl": null,
+              "avatarJoker": "j_joker",
+              "blindCol": 1,
+              "joinedAt": 1761799900000,
+              "ready": false,
+              "connected": true,
+              "away": false,
+              "catchingUp": false,
+              "role": "player",
+              "conn": "direct",
+              "packs": ["nope"]
+            },
+            {
+              "id": "u_bob",
+              "name": "Bob",
+              "avatarUrl": null,
+              "avatarJoker": "j_joker",
+              "blindCol": 5,
+              "joinedAt": 1761799950000,
+              "ready": true,
+              "connected": true,
+              "away": false,
+              "catchingUp": false,
+              "role": "player",
+              "conn": "direct"
+            }
+          ],
+          "options": {
+            "$ref": "lobbyOptions"
+          },
+          "deck": "b_red",
+          "stake": 1,
+          "mpStake": null,
+          "challenge": null,
+          "started": null,
+          "setup": null,
+          "kicked": [],
+          "forfeited": {}
+        }
+      },
+      {
+        "why": "unknown mpStake (EX-16 added seven, no more)",
+        "d": {
+          "code": "ABC234",
+          "kind": "private",
+          "queueMode": "pvp_nemesis",
+          "hostId": "u_alice",
+          "successorId": "u_bob",
+          "version": 3,
+          "open": true,
+          "players": [
+            {
+              "id": "u_alice",
+              "name": "Alice",
+              "avatarUrl": null,
+              "avatarJoker": "j_joker",
+              "blindCol": 1,
+              "joinedAt": 1761799900000,
+              "ready": false,
+              "connected": true,
+              "away": false,
+              "catchingUp": false,
+              "role": "player",
+              "conn": "direct"
+            },
+            {
+              "id": "u_bob",
+              "name": "Bob",
+              "avatarUrl": null,
+              "avatarJoker": "j_joker",
+              "blindCol": 5,
+              "joinedAt": 1761799950000,
+              "ready": true,
+              "connected": true,
+              "away": false,
+              "catchingUp": false,
+              "role": "player",
+              "conn": "direct"
+            }
+          ],
+          "options": {
+            "$ref": "lobbyOptions"
+          },
+          "deck": "b_red",
+          "stake": 1,
+          "mpStake": "diamond",
           "challenge": null,
           "started": null,
           "setup": null,

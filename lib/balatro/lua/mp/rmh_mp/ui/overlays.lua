@@ -209,6 +209,8 @@ O.ERRORS = {
   ['start-players'] = { 'rmh_mp_ui_block_players', 'Waiting for more players' },
   ['start-disconnected'] = { 'rmh_mp_ui_block_disconnected', 'A player is not connected' },
   ['start-ready'] = { 'rmh_mp_ui_block_ready', 'Waiting for everyone to ready up' },
+  ['start-packs'] = { 'rmh_mp_ui_block_packs', 'Waiting for every player to download the ruleset art' },
+  ['pack-failed'] = { 'rmh_mp_ui_err_pack_failed', 'Could not download the ruleset art. Try again' },
 }
 
 --- Codes that mean "the lobby is gone for you": hub close reasons, the host's room closed, a

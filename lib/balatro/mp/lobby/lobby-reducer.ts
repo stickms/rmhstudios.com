@@ -14,6 +14,7 @@
 import { VANILLA_DECKS } from '../setup/draft';
 import { resolveRuleset } from '../rulesets/resolve';
 import { defaultOptionsFor, sanitizeOptions, shapeFor } from '../rulesets/options';
+import { requiredPacks } from '../rulesets/rulesets';
 import { Rng } from '../rng';
 import type {
   Id,
@@ -21,6 +22,7 @@ import type {
   LobbyOptionKey,
   LobbyPlayer,
   LobbyState,
+  OptionalPack,
   QueueMode,
   RosterEntry,
   StartedMatch,
@@ -123,6 +125,12 @@ export function removePlayer(s: LobbyState, id: Id): LobbyState {
   return bump(s, { players: s.players.filter((p) => p.id !== id) });
 }
 
+/** A player patch for the optional packs a peer reports (sorted, deduplicated; absent when none). */
+export function packsPatch(packs: readonly OptionalPack[] | undefined): Pick<LobbyPlayer, 'packs'> {
+  const list = [...new Set(packs ?? [])].sort();
+  return { packs: list.length ? list : undefined };
+}
+
 export function patchPlayer(s: LobbyState, id: Id, patch: Partial<LobbyPlayer>): LobbyState {
   const cur = player(s, id);
   if (!cur) return s;
@@ -211,7 +219,23 @@ export function withSuccessor(s: LobbyState): LobbyState {
   return s.successorId === id ? s : bump(s, { successorId: id });
 }
 
-export type StartBlock = 'started' | 'setup' | 'players' | 'ready' | 'disconnected';
+export type StartBlock = 'started' | 'setup' | 'players' | 'ready' | 'disconnected' | 'packs';
+
+/**
+ * EX-14: the seated players still missing an optional pack the lobby's ruleset needs (the
+ * Release ruleset's art). Spectators never need one.
+ */
+export function missingPacks(s: LobbyState): { id: Id; packs: string[] }[] {
+  const need = requiredPacks(s.options.ruleset);
+  if (need.length === 0) return [];
+  const out: { id: Id; packs: string[] }[] = [];
+  for (const p of seated(s)) {
+    const have = new Set(p.packs ?? []);
+    const missing = need.filter((k) => !have.has(k));
+    if (missing.length) out.push({ id: p.id, packs: missing });
+  }
+  return out;
+}
 
 /** LOB-05: START is enabled iff ≥2 seated players are here and every non-host one is ready. */
 export function startBlock(s: LobbyState): StartBlock | null {
@@ -221,6 +245,7 @@ export function startBlock(s: LobbyState): StartBlock | null {
   if (ps.length < 2) return 'players';
   if (ps.some((p) => !p.connected || p.away)) return 'disconnected';
   if (ps.some((p) => p.id !== s.hostId && !p.ready)) return 'ready';
+  if (missingPacks(s).length > 0) return 'packs';
   return null;
 }
 

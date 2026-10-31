@@ -5,7 +5,9 @@
 --       { mp_<name> = { file, px, py, kind = 'card'|'animation'|'tag'|'asset', frames?, placeholder,
 --                       variants? = { [lang] = file } } }      (`frames` omitted when null)
 --   * the JSON file data/balatro-mp/atlases.json, decoded: { version, stub?, atlases = <that map> }
--- (`asset` = drawn directly from G.ASSET_ATLAS: stake chips, the PvP title.)
+-- (`asset` = drawn directly from G.ASSET_ATLAS: stake chips, the PvP title.) An entry may carry
+-- `pack = '<name>'`: its file ships in that optional pack (EX-14's `release`), not the MP pack; it
+-- is a placeholder alias until the pack is mounted (atlas.reload).
 -- Card content uses separate atlases (never an extended Joker sheet: WebGL1's 4096 px limit);
 -- the PvP blind sites read G.ANIMATION_ATLAS[<atlas>] (WS11 uses MP.registry.atlas.blind_atlas);
 -- `tag` atlases are pasted under tags.png so the vanilla tag call sites draw them unchanged.
@@ -176,6 +178,20 @@ function A.install()
   return n
 end
 
+--- Load one `card`/`asset` atlas again (its file may have arrived after install: an optional pack,
+--- e.g. the Release ruleset's `release` pack). Returns true when it is now an image.
+function A.reload(key)
+  local e = A.registry.atlases[key]
+  if not (e and G and G.ASSET_ATLAS) or e.kind == 'tag' or e.kind == 'animation' then return false end
+  local s = scale()
+  local path = A.root .. s .. 'x/' .. e.file
+  local img = (not A.registry.stub) and file_exists(path) and new_image(path, s)
+  if not img then return false end
+  G.ASSET_ATLAS[key] = { name = key, image = img, px = e.px, py = e.py, frames = e.frames }
+  A.loaded[key] = 'image'
+  return true
+end
+
 --- Card.set_sprites post-step for an MP prototype with an `atlas`.
 function A.apply_card(card, center)
   local key = center.atlas
@@ -240,7 +256,15 @@ function A.set_sprites_hook(orig, self, center, front, ...)
   local mp = type(center) == 'table' and center.rmh_mp
   if mp then ensure_set_atlas(center) end
   local r = orig(self, center, front, ...)
-  if mp then A.apply_card(self, center) end
+  if mp then
+    A.apply_card(self, center)
+  elseif type(center) == 'table' and type(center.atlas) == 'string' and A.registry.atlases[center.atlas]
+    and A.loaded[center.atlas] == 'image' then
+    -- A vanilla center a mounted rework points at MP art (the Release ruleset's sheet): vanilla
+    -- builds a new Joker's sprite from G.ASSET_ATLAS[set] and only reads `atlas` on a re-set.
+    -- Without the image (a placeholder alias of the vanilla sheet) the vanilla sprite stays.
+    A.apply_card(self, center)
+  end
   return r
 end
 
