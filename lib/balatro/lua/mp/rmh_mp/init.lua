@@ -17,6 +17,7 @@ require 'rmh_mp.util.fmt'
 require 'rmh_mp.util.rng'
 require 'rmh_mp.util.tree'
 require 'rmh_mp.util.codec'
+local guard = require 'rmh_mp.util.guard'
 require 'rmh_mp.net'
 local R = require 'rmh_mp.registry'
 require 'rmh_mp.registry.pools'
@@ -107,6 +108,7 @@ end
 
 -- Core wraps (always on).
 atlas.install_core_wrap()
+guard.install()
 loc.install_core_wrap()
 saves.install_core()
 session.install_core()
@@ -156,6 +158,8 @@ function MP.open(intent)
       MP.log('error', 'in-run ui failed to load: %s', tostring(err))
     end
   end
+  -- every MP callback the UI just defined is guarded before the first click (util/guard.lua)
+  pcall(guard.scan)
   if MP.ui and MP.ui.open then return MP.ui.open(intent) end
   MP.log('warn', 'MP.open(%s): no menu UI in this pack yet (WS10)', tostring(intent))
   return false

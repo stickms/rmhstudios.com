@@ -11,6 +11,7 @@
 local MP = require 'rmh_mp.state'
 local R = require 'rmh_mp.registry'
 local C = require 'rmh_mp.content.jokers.core'
+local Dsp = require 'rmh_mp.registry.dispatch'
 
 local V = {}
 MP.content.vouchers = V
@@ -90,7 +91,12 @@ function V.install()
     end, o('apply'))
   end
 
-  wrap(_G, 'generate_card_ui', function(orig, _c, full, vars, card_type, badges, hide_desc, main_start, main_end, ...)
+  V.install_text(o)
+end
+
+--- The text wrap: installed with the session, and by the display scope (the MP collection).
+function V.install_text(o)
+  MP.hooks.wrap(_G, 'generate_card_ui', function(orig, _c, full, vars, card_type, badges, hide_desc, main_start, main_end, ...)
     if _c and V.TEXT_FROM[_c.key] and _c.set ~= 'Other' and V.alias_text(_c.key) then
       local first = full == nil
       return orig(proxy(_c), full, vars or { (_c.config and _c.config.extra) or 1 }, card_type, badges, hide_desc,
@@ -99,6 +105,7 @@ function V.install()
     return orig(_c, full, vars, card_type, badges, hide_desc, main_start, main_end, ...)
   end, o('text'))
 end
+Dsp.add_display_installer(V.install_text)
 
 C.add_installer(V.install)
 
