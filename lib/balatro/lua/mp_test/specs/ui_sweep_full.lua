@@ -72,10 +72,14 @@ local function harvest_log(where)
   log_mark = #ring
 end
 
-local TRACE = not QUICK -- print each step ('[sweep] …' in the engine log) to find a hang or a crash site
+-- Print each step ('[sweep] …' in the engine log) to find a hang or a crash site: the engine
+-- project's watchdog shows the last log lines when a file runs too long. QUICK leaves out the
+-- hovers (hundreds of lines).
 local function trace(where)
-  if not TRACE then return end
-  if where:find('hover', 1, true) then return print('[sweep] ' .. where) end
+  if where:find('hover', 1, true) then
+    if QUICK then return end
+    return print('[sweep] ' .. where)
+  end
   -- memory with every step: a leak shows up as a climb, an out-of-memory page as the last line
   local tex = love.graphics and love.graphics.getStats and love.graphics.getStats()
   print(string.format('[sweep] %s [lua %.1f MB, tex %.0f MB, cards %d, moveables %d]', where, collectgarbage('count') / 1024,
@@ -91,9 +95,11 @@ local function try(where, fn, ...)
   if not ok then
     local msg = tostring(err):match('^[^\n]*')
     -- An autopilot step times out on wall-clock seconds; on a loaded machine (software WebGL) the
-    -- game can simply be slow. Only a game that does not settle within ten more minutes is a finding.
+    -- game can simply be slow. Only a game that does not settle within ten more minutes is a finding
+    -- (one more minute in QUICK, which runs inside the CI engine job's budget: fail fast there).
     if fn == AP.run and msg:find('timeout', 1, true) then
-      local settled = sched.protected(wait_until, function() return AP.idle() end, 600, 'settle after ' .. where)
+      local settled = sched.protected(wait_until, function() return AP.idle() end, QUICK and 60 or 600,
+        'settle after ' .. where)
       if settled then trace('slow: ' .. where); return false, err end
     end
     note(where, msg)
@@ -288,6 +294,7 @@ end
 -- A tooltip is built per (phase, center, edition/seal, area kind); the same one again adds nothing
 -- but frames, so each combination is hovered once per phase (menu / practice / match).
 local hovered = {}
+local quick_vanilla = {} -- QUICK: screens where a vanilla card was hovered
 local function hover_cards(where)
   local list = {}
   for _, c in ipairs(G.I.CARD or {}) do list[#list + 1] = c end
@@ -298,7 +305,13 @@ local function hover_cards(where)
       local sig = table.concat({ phase, key, tostring(c.edition and c.edition.type), tostring(c.seal),
         tostring(c.ability.set), area, tostring(c.debuff) }, '|')
       if c.playing_card then sig = phase .. '|playing|' .. area end
-      if not hovered[sig] then
+      -- QUICK (every PR): every MP center's tooltip, and one vanilla card per screen (the vanilla
+      -- tooltips run the same MP wraps; the full sweep hovers them all, nightly).
+      local center = c.config and c.config.center
+      if QUICK and not (center and center.rmh_mp) and not c.playing_card then
+        if quick_vanilla[where] then sig = nil else quick_vanilla[where] = true end
+      end
+      if sig and not hovered[sig] then
         hovered[sig] = true
         if count.hovers % 40 == 0 and collectgarbage('count') / 1024 > SWEEP_HEAP_MB then collectgarbage('collect') end
         count.hovers = count.hovers + 1

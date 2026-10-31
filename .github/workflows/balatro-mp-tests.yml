@@ -136,10 +136,14 @@ jobs:
   # the header).
   e2e-engine:
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ (github.event_name == 'schedule' || inputs.long == true) && 150 || 30 }}
+    timeout-minutes: ${{ (github.event_name == 'schedule' || inputs.long == true) && 150 || 40 }}
     env:
       NODE_OPTIONS: --max-old-space-size=8192
       LONG: ${{ github.event_name == 'schedule' || inputs.long == true }}
+      # Per spec file (engine.test.ts): a file still running after this fails with the engine's
+      # last log lines and the files after it get a fresh boot, well before the job timeout would
+      # cancel the run with no output. The long run (turbo off) keeps the 20-minute default.
+      BALATRO_E2E_SPEC_TIMEOUT_MS: ${{ (github.event_name == 'schedule' || inputs.long == true) && '' || '600000' }}
       # Empty = the default turbo (testing/balatro-e2e/lib/turbo.ts); the long run: off.
       BALATRO_E2E_TURBO: ${{ (github.event_name == 'schedule' || inputs.long == true) && 'off' || '' }}
     steps:
