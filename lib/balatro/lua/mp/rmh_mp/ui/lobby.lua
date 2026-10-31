@@ -263,7 +263,8 @@ local function party_queue_nodes(view, model)
       { scale = 0.3 }) }) }, { r = 0.1, padding = 0.08, colour = TH.col('BLACK'), maxw = 3.6 }) }
   end
   local names = {}
-  for i, m in ipairs(TH.QUEUE_MODES) do names[i] = TH.T(m.name, m.def) end
+  -- A party queues the same casual modes Find Game offers (the mod's group find game).
+  for i, m in ipairs(TH.FIND_MODES) do names[i] = TH.T(m.name, m.def) end
   return {
     W.button({ id = 'mp_party_find', label = { TH.T('rmh_mp_ui_find_game_cap', 'FIND GAME') }, button = 'rmh_mp_party_queue',
       colour = TH.col('BLUE'), minw = 3.2, minh = 1.35, scale = 0.6, col = true, disabled = not view.canStart }),
@@ -374,7 +375,7 @@ F.rmh_mp_deck_box = function()
 end
 F.rmh_mp_party_mode = function(args) L.ui.party_mode = args and args.to_key or 1 end
 F.rmh_mp_party_queue = function()
-  local m = TH.QUEUE_MODES[L.ui.party_mode] or TH.QUEUE_MODES[1]
+  local m = TH.FIND_MODES[L.ui.party_mode] or TH.FIND_MODES[1]
   U.send('ui_party_queue', { queueMode = m.mode })
 end
 F.rmh_mp_player_mute = function(e)

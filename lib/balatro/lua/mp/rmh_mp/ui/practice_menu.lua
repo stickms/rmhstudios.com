@@ -3,7 +3,8 @@
 -- Pillars: Balanced (blue), Expanded (purple), Vanilla (green), Small World (red), plus an
 -- "Extra rulesets" pillar with its own cycle over the D-17 extras. START opens the run setup
 -- (deck, stake, optional seed) which sends ui_practice{ruleset, deck, stake, seed?}.
--- Practice is local and works offline; it is refused while queued (PR-05).
+-- Practice is local and works offline. While searching the pillars stay live; the run setup's
+-- START opens the queue guard (A18, PR-05; run_setup.lua RS.submit).
 
 local MP = require 'rmh_mp.state'
 local TH = require 'rmh_mp.ui.theme'
@@ -20,14 +21,13 @@ PM.extra_index = PM.extra_index or 1
 function PM.extra_list() return TH.ruleset_list(true) end
 
 function PM.def(model)
-  local queued = U.queue_busy(model)
   local pillars = {}
   for i, p in ipairs(TH.PRACTICE) do
     pillars[#pillars + 1] = {
       id = 'mp_practice_' .. p.key, button = 'rmh_mp_practice_pick', ref = { ruleset = p.key },
       button_label = TH.T('b_start', 'START'), colour = TH.col(p.colour), name = TH.ruleset_name(p.key),
       desc = { TH.T(p.d1, p.d1d), TH.T(p.d2, p.d2d) },
-      stat_label = TH.T('b_players', 'Players'), stat_value = '1', disabled = queued, chip_row = i,
+      stat_label = TH.T('b_players', 'Players'), stat_value = '1', chip_row = i,
     }
   end
   local extras = PM.extra_list()
@@ -37,7 +37,7 @@ function PM.def(model)
   local cur = extras[PM.extra_index]
   local extra_pillar = W.col({
     W.row({ W.button({ id = 'mp_practice_extra', label = TH.T('b_start', 'START'), button = 'rmh_mp_practice_pick',
-      ref_table = { extra = true }, colour = TH.col('GOLD'), minw = 2.6, minh = 0.65, scale = 0.45, disabled = queued }) },
+      ref_table = { extra = true }, colour = TH.col('GOLD'), minw = 2.6, minh = 0.65, scale = 0.45 }) },
       { padding = 0.07 }),
     W.row({ W.text(TH.T('rmh_mp_ui_extra_rulesets', 'Extra rulesets'), { scale = 0.4 }) }, { padding = 0.05 }),
     W.row({ W.cycle({ id = 'mp_practice_extra_cycle', options = names, current = PM.extra_index,
@@ -70,7 +70,6 @@ F.rmh_mp_practice_extra_cycle = function(args)
 end
 
 F.rmh_mp_practice_pick = function(e)
-  if U.queue_busy() then return U.overlays.error('queued') end
   local r = e and e.config and e.config.ref_table or {}
   local key = r.ruleset
   if r.extra then

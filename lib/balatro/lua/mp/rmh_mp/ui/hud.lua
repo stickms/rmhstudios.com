@@ -581,7 +581,25 @@ local function mix(a, b, k)
   return { a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k, 1 }
 end
 
---- Colours of the timer box for the current view (pure; exposed for specs).
+--- The mod's `mp_timer_accelerated` text gradient (ui/game/timer.lua): over each second the text
+--- runs a light orange (white mixed 55% into IMPORTANT) -> IMPORTANT, holds IMPORTANT, and eases
+--- back, with the gradient's cosine ("trig") easing between stops.
+function RU.timer_pulse(t)
+  local imp = gc('IMPORTANT', { 1, 0.6, 0, 1 })
+  local stops = { mix(gc('WHITE', { 1, 1, 1, 1 }), imp, 0.55), imp, imp, imp, imp }
+  local n = #stops
+  local x = (tonumber(t) or 0) % 1
+  local i = math.ceil(x * n)
+  if i == 0 then i = 1 end
+  local a, b = stops[i], stops[i == n and 1 or i + 1]
+  local k = (x % (1 / n)) * n
+  local e = 0.5 * (1 - math.cos(k * math.pi))
+  return { a[1] + e * (b[1] - a[1]), a[2] + e * (b[2] - a[2]), a[3] + e * (b[3] - a[3]), 1 }
+end
+
+--- Colours of the timer box for the current view (pure; exposed for specs). As the mod's
+--- set_timer_box: running, the box stays dark and the TEXT pulses; pressable (the opponent can be
+--- timered), an IMPORTANT box with light text.
 function RU.timer_colours(v, t)
   v = v or RU.view
   t = t or now()
@@ -590,10 +608,11 @@ function RU.timer_colours(v, t)
   if v.timer_colour == 'orange' then fg = gc('ORANGE', fg) end
   if v.timer_colour == 'important' then fg = gc('IMPORTANT', fg) end
   local bg = RU.timer_dark or gc('BLACK', { 0, 0, 0, 1 })
-  if v.timer_pressable then bg = gc('ORANGE', bg) end
   if v.timer_running then
-    local pulse = 0.5 + 0.5 * math.sin(t * 6)
-    bg = mix(bg, gc('IMPORTANT', { 1, 0.6, 0, 1 }), 0.35 * pulse)
+    fg = RU.timer_pulse(t)
+  elseif v.timer_pressable then
+    bg = gc('IMPORTANT', bg)
+    fg = (G.C and G.C.UI and G.C.UI.TEXT_LIGHT) or white
   end
   return fg, bg
 end
@@ -634,7 +653,12 @@ function RU.effects(t)
   local opp = RU.opponent_lives()
   local target = st.target
   if p.target == target then
-    if p.my and my and my ~= p.my then fired[#fired + 1] = 'my_lives'; lives_popup(my - p.my, true) end
+    if p.my and my and my ~= p.my then
+      -- the mod's PVP.UI.ease_lives: the +n / -n popup with highlight2 + generic1, either way
+      fired[#fired + 1] = 'my_lives'
+      lives_popup(my - p.my, true)
+      sound('highlight2', 0.685, 0.2); sound('generic1')
+    end
     if p.opp and opp and opp ~= p.opp then
       fired[#fired + 1] = 'opp_lives'
       lives_popup(opp - p.opp, false)

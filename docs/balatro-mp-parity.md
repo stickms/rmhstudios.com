@@ -47,6 +47,7 @@ not rely on this tracker is in [§Audit](#audit) at the end, with what has been 
     — WS10, WS5, WS4
 - [x] LOB-07 Advanced options: `starting_lives`, `pvp_start_round`, `timer`, `timer_base_seconds`, `timer_increment_seconds`, `timer_forgiveness`, `pvp_countdown_seconds`, `death_on_round_loss`, `gold_on_life_loss`, `no_gold_on_round_loss`, `custom_seed`, `hide_score_until_played`, `normal_bosses`, `different_seeds`, `different_decks`, `random_loadout`, `multiplayer_jokers`, modifier-layer toggles (§2.9). Ruleset `force_lobby_options` overrides them, with the overridden fields shown locked. — WS4, WS10 — `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`, `lib/balatro/mp/rulesets/__tests__/rulesets.test.ts`, `lib/balatro/mp/__tests__/session/units.test.ts`
   - `different_decks` / `random_loadout` behave as the mod's `lobby_start_run` (audit C15): off, every player plays the host's deck, stake and challenge (`random_loadout` alone does nothing); on, each player plays the deck and stake it picked (a guest's deck box opens the run setup, New Run tab only; nothing picked = the host's), with no challenge; with `random_loadout` too, the host rolls each player a deck from the Cocktail pool (the 15 vanilla decks, plus the 7 MP decks and the Cocktail Deck when the ruleset has MP content) and a stake 1–8, seeded by the run seed (the player's own one with `different_seeds`) and the player id, so a fixed seed always gives the same loadouts — `lib/balatro/mp/__tests__/session/units.test.ts` ("different_decks / random_loadout"), `lib/balatro/lua/spec/mp_hooks_spec.lua` ("different_decks / random_loadout at launch": the deck, stake and challenge each player's Lua actually starts), `lib/balatro/lua/spec/mp_ui_lobby_spec.lua` ("a guest picks its own deck")
+  - D-40 (docs/balatro-mp.md §5; re-audit N2): the Cocktail Deck's pool and editor and the `random_loadout` pool include the MP decks. The mod's code excludes them by accident: `get_cocktail_decks` keeps a Back only if `mod_whitelist[v.mod.id]`, keyed `Multiplayer`, while the shipped mod id is `MultiplayerPvP` (`MultiplayerPvP.json`), so every MP deck drops out (`objects/decks/ZZ_cocktail.lua:6-17,145-168`; the same stale id disables its `back_multiplayer` DrawStep, `objects/decks/_decks.lua:13`), and its random_loadout pool is the vanilla decks plus Cocktail (`networking/action_handlers.lua:277-303`). Ours follows the evident intent (its Cocktail sticker atlas has the MP-deck columns): `content/cocktail.lua:39,98-118`, `lobby/lobby-reducer.ts:277-293`; random_loadout adds the MP decks (and Cocktail) only where the ruleset has MP content (RS-16), so it never offers Cocktail in a non-MP ruleset
   - D-15 (docs/balatro-mp.md §5): `different_seeds`, `different_decks`, `random_loadout`, `normal_bosses` and `multiplayer_jokers` sit on the Advanced tab. The mod's Lobby Options screen shows none of them (they keep their `core.lua` defaults there and no ruleset sets them), so the Advanced tab is the only way to reach them; their behaviour is the mod's
 - [x] LOB-08 Host deck+stake box → MP run-setup overlay: — `lib/balatro/lua/spec/mp_ui_lobby_spec.lua`, `lib/balatro/lua/spec/mp_ui_wave3_spec.lua`, `lib/balatro/lua/spec/mp_ui_deck_preview_spec.lua`
   - New Run and Challenges tabs; button reads "Select"; stake cap
@@ -204,13 +205,14 @@ not rely on this tracker is in [§Audit](#audit) at the end, with what has been 
 - [x] HUD-05 Next-ante preview shows "????" for the Nemesis — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`
 - [x] HUD-06 Nemesis rows: — `lib/balatro/lua/spec/mp_ui_run_spec.lua`
   - layouts Standard / Mirrored (reversed, rotated 180°) / Classic (half-width row, voucher shader); a switch to or from Classic applies next run
+  - N3 (re-audit) Classic phantom look, the mod's `lib/phantom.lua:212-232` (`mp_classic_phantom_look` + `should_draw_base_shader`): in the Classic layout a phantom copy draws the `voucher` shader in place of the base shader (`ui/nemesis_rows.lua` `NR.draw_card`, a `Card.draw` wrap; a dissolving copy keeps the base shader; traps, Standard / Mirrored rows and your own jokers untouched) — `mp_ui_run_spec.lua` ("Classic: a phantom copy draws the voucher shader …", "Standard layout, traps and own jokers keep the base shader")
   - phantom joker copies of the ante nemesis (eternal, $0, unsellable, "Phantom" badge; hidden off-screen store for the others)
   - face-down trap row; hover shows details to the owner only
     — WS11 (+ the WS7/WS9 phantom and trap data)
-- [x] HUD-07 Sounds: opponent loses a life → holo1+gong; opponent skips → negative+gong (not under Major League) — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`
+- [x] HUD-07 Sounds: opponent loses a life → holo1+gong; opponent skips → negative+gong (not under Major League); your own lives change (lost or gained) → highlight2 (pitch 0.685, volume 0.2) + generic1 with the +n / −n popup, as the mod's `PVP.UI.ease_lives` (`ui/game/functions.lua:425-458`; re-audit N4) — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua` ("own lives change -> highlight2 …")
 - [x] HUD-08 Survivor banner during a pending death (8 s) — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`
 - [x] HUD-09 Lobby Info button next to Run Info (`minh` 1.2); "Replay settings" in replays — WS11, WS13 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/spec/mp_replay_ui_spec.lua`
-- [x] HUD-10 Pause menu as the mod's `ui/pvp_run_options.lua` (audit E23): Settings · Seed Change (blue for the first 300 s, then shown greyed out and inert) · Vote for Draw (not in practice) · Forfeit (red; in a match "Are you sure?" Yes/No, in practice straight to the main menu) · Collection (the API's `pause_menu_extra_rows`; its Mods button has no counterpart). In practice Seed Change restarts the run on a fresh seed (the mod's button there finds no lobby and does nothing). Restart removed; holding R disabled — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`
+- [x] HUD-10 Pause menu as the mod's `ui/pvp_run_options.lua` (audit E23): Settings · Seed Change (blue for the first 300 s, then shown greyed out and inert) · Vote for Draw (not in practice) · Forfeit (red; at once, in a match and in practice, as the mod: its only step between is the ranked contest modal, out of scope; re-audit E23 residual) · Collection (the API's `pause_menu_extra_rows`; its Mods button has no counterpart). In practice Seed Change restarts the run on a fresh seed (the mod's button there finds no lobby and does nothing). Restart removed; holding R disabled — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`
 - [x] HUD-11 Chat: T opens it (not while a text box is focused); bottom-left console; fading lines; colours: incoming cyan, own purple, system yellow; "name: message"; vote k/n lines — WS10 (widget), WS5 (transport) — `lib/balatro/lua/spec/mp_ui_misc_spec.lua`, `lib/balatro/mp/__tests__/session/abuse-chat-practice.test.ts`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-11)
 - [x] HUD-12 End screens: — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`, `testing/balatro-e2e/match/nemesis.test.ts` (E2E-01)
   - backgrounds: green / red / blue; titles YOU WIN! / GAME OVER / DRAW! / OUT OF LIVES (pending variant with its lines)
@@ -235,12 +237,14 @@ not rely on this tracker is in [§Audit](#audit) at the end, with what has been 
   - PvP title logo swap (`pvp_title.png`); LEADERBOARD dropped
     — WS10 (entry button: WS3)
 - [x] HUD-19 Pillar pages: — `lib/balatro/lua/spec/mp_ui_menu_spec.lua`
-  - Create: Nemesis blue, Royale purple, Manhunt red, Teams green, Party orange
+  - Create: Nemesis blue ("Face a different / Nemesis every ante"), Royale purple, Manhunt red, Teams green, Party orange
+  - Find Game: the mod's `CASUAL_MODES` (`ui/main_menu/find_game.lua:75-86`; re-audit N1): Nemesis blue ("One Nemesis, / head to head"), Battle Royale purple, Teams green, Small World red. Manhunt is Create Lobby only (the mod: "left reachable only via Create Lobby"); a party's casual queue offers the same four. The hub still accepts a `pvp_manhunt` ticket and still counts it; Find Game shows four count boxes and ignores the Manhunt count — `mp_ui_parity_spec.lua` ("ui find game pillars: the mod's casual set (N1)"), `mp_ui_menu_spec.lua`, `mp_ui_lobby_spec.lua`, `mp_test/specs/ui_menu_spec.lua`
   - Practice: Balanced, Expanded, Vanilla, Small World, plus Extra rulesets
   - Find Game: the Casual tab only; live In Queue / In Game counts per mode, polled every 5 s while the page is open (`ui_queue_counts` → hub `balatro:queue:counts`, aggregate counters; audit A12), and a "Uses The Order" card opening the explainer overlay with the mod's text (audit A13) — `lib/balatro/lua/spec/mp_ui_parity_spec.lua`, `server/socket-server/balatro/queue-hub.test.ts`, `lib/balatro/mp/queue/__tests__/matchmaking.test.ts`
   - name plate, icon, description box, "Players" stat box (Create)
     — WS10
-- [x] HUD-20 MP settings tab: Nemesis layout, timer sound, blind colour (25 previews), avatar joker picker (locked entries as undiscovered; "Avatar Unlocked!" toast), Show MP content anyway, chat enable — WS10 — `lib/balatro/lua/spec/mp_ui_misc_spec.lua`
+- [x] HUD-20 MP settings tab: Nemesis layout, timer sound, blind colour (25 previews), avatar joker picker (locked entries as undiscovered; "Avatar Unlocked!" toast), Show MP content anyway (with the mod's "*Applies in singleplayer and vanilla rulesets" tooltip), chat enable — WS10 — `lib/balatro/lua/spec/mp_ui_misc_spec.lua`, `lib/balatro/lua/spec/mp_preview_spec.lua`
+  - Score Preview row (re-audit residual of B06): as the mod's `ui/smods_menu/config_tab.lua`, the toggle's tooltip is the description plus "*Credit to @Fantom, @Divvy", and a grey line under it carries "*Credit to @Fantom, @Divvy" and "*Requires a restart to take effect" (`k_preview_credit`, `k_requires_restart`; ours builds the preview rows with the run's HUD, so a change shows from the next run) — `mp_preview_spec.lua` ("the settings row carries the mod's credit line …")
 - [x] HUD-21 MP collection page (tabs: Jokers, Consumables/Traps, Decks, Blinds, Tags, Vouchers, Stakes, Challenges, Sandbox with error decoys); vanilla tag/blind grids never see MP keys — WS10, WS6 — `lib/balatro/lua/spec/mp_ui_misc_spec.lua`
 - [x] HUD-22 Balanced sticker: badge plus tooltip (`mp_sticker_balanced_<key>` or the generic text); Extra Credit sticker badge — WS7 — `lib/balatro/lua/spec/mp_content_a_items_spec.lua`, `lib/balatro/lua/spec/mp_ui_wave3_spec.lua`
 - [x] HUD-23 Misprint anti-peek in the MP collection — WS7 — `lib/balatro/lua/spec/mp_content_b_jokers_spec.lua`
@@ -254,7 +258,7 @@ not rely on this tracker is in [§Audit](#audit) at the end, with what has been 
 - [x] PR-02 Practice rules: Nemesis shape, Attrition, The Order always on, "???" opponent, PvP from ante 2, no lives/timer/fails, ante 9 → vanilla win, vanilla end screens, clean exit through Forfeit (to the main menu) / New Run — WS6, WS4 (REF-24) — `lib/balatro/mp/__tests__/session/abuse-chat-practice.test.ts`, `lib/balatro/lua/spec/mp_hooks_spec.lua`, `testing/balatro-e2e/match/practice.test.ts` (E2E-16)
 - [x] PR-03 Give-card: with the Collection open, hover plus key 3 or left click; respects slot limits unless Unlimited Slots — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`
 - [x] PR-04 Unlimited Slots and Edition Cycling (Q: base→Foil→Holo→Polychrome→Negative) toggles (D-38) — WS11 — `lib/balatro/lua/spec/mp_ui_run_spec.lua`, `lib/balatro/lua/mp_test/specs/ui_run_spec.lua`
-- [x] PR-05 Practice refuses to start while queued; the queue guard (audit A18) also stops vanilla New Run / Continue / Challenge / restart, Create Lobby, an invite's Join and the menu shortcuts while searching: Leave Queue & Continue / Leave Queue / Stay Queued — WS10, WS12 — `lib/balatro/lua/spec/mp_ui_parity_spec.lua`, `lib/balatro/mp/queue/__tests__/matchmaking.test.ts`, `lib/balatro/lua/spec/mp_ui_menu_spec.lua`, `lib/balatro/lua/spec/mp_ui_wave3_spec.lua`
+- [x] PR-05 The queue guard (audit A18, the API's `queue_guard_overlay.lua`): while searching (or matched and still joining), every way out of the search opens "Matchmaking In Progress" with Leave Queue & Continue (leave, then replay the action) / Leave Queue / Stay Queued — vanilla New Run / Continue / Challenge / restart (`G.FUNCS.start_run`), CREATE on a Create Lobby pillar, Join by code and Join from clipboard, an invite's Join, the party return, a practice run's START, replay WATCH, and the menu shortcuts (the mod's `guard_queued` sites: `pvp_api/flow.lua:97,134`, `lib/practice_mode.lua:53`, `group/party.lua:70`, `lib/playback_launch.lua:42`). As the mod, no PvP-menu button is greyed out while searching (re-audit A18 remainder) — WS10, WS12 — `lib/balatro/lua/spec/mp_ui_parity_spec.lua` ("ui queue guard (A18)"), `lib/balatro/mp/queue/__tests__/matchmaking.test.ts`, `lib/balatro/lua/spec/mp_ui_menu_spec.lua`, `lib/balatro/lua/spec/mp_ui_wave3_spec.lua`
 
 ## Connectivity (NET)
 
@@ -451,6 +455,28 @@ Since the audit:
 - The other rows and items were taken up by their own work, tracked in their lines: Score
   Preview (EX-12, M03), credits and MULTIPLAYER badges (B08, B09), Find Game live counts and The
   Order explainer (HUD-19), main-menu shortcuts (LOB-12), the queue guard (PR-05).
+
+Re-audit (2026-10-31, mod c26b549 against `origin/main` @ 33083315): of the 10 earlier findings 9
+were resolved and 1 (A18) partly; it found 4 new gaps (N1–N4) and residuals. Closed since:
+
+- **A18 remainder**: Practice START, Join by code / from clipboard, the party return and replay
+  WATCH go through the queue guard too, and the PvP-menu buttons are no longer greyed out while
+  searching (PR-05).
+- **N1**: Find Game offers the mod's four casual pillars (no Manhunt; Nemesis "One Nemesis, head
+  to head"; Small World red) (HUD-19).
+- **N2**: the Cocktail / random_loadout pool keeps the MP decks, recorded as D-40 (LOB-07).
+- **N3**: Classic layout phantom look, the voucher shader (HUD-06).
+- **N4**: own lives change plays highlight2 + generic1 (HUD-07).
+- **E23 residual**: Forfeit no longer asks "Are you sure?" (HUD-10).
+- **B06 residual**: the Score Preview settings row has the mod's credit line and restart note
+  (HUD-20).
+- Cosmetic notes: a running timer pulses its text with the mod's `mp_timer_accelerated` gradient
+  and keeps a dark box; a pressable timer is an IMPORTANT box with light text (TIM, `ui/hud.lua`
+  `RU.timer_colours`); the Persistent sticker's round-end popup says "Cost Up" (`k_cost_up`); the
+  Asteroid hand text labels the amount "Amt." (`k_amount_short`); "Show Multiplayer content anyway*"
+  has the mod's tooltip. Still different by choice: the Preview money readout and button colour
+  cycle (B06 residuals a, b), the Speedlatro timer's own text gradient, A16's in-lobby shortcut
+  list, and the late-result toast's form (A19).
 
 Paths under "Ours" are relative to `lib/balatro/lua/mp/rmh_mp/` (Lua) or `lib/balatro/mp/` (TS)
 unless absolute. Status counts (156 features): **IMPLEMENTED+TESTED 132 · IMPLEMENTED-UNTESTED 1 ·

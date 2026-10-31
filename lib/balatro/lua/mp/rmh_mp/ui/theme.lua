@@ -211,27 +211,36 @@ TH.PRACTICE = {
 }
 
 -- ── Queue modes (the Create / Find Game pillars, HUD-19) ────────────────────
+-- Find Game (and a party's casual queue) offers the mod's CASUAL_MODES: Nemesis, Battle Royale,
+-- Teams, Small World (ui/main_menu/find_game.lua). Manhunt is Create Lobby only (find = false);
+-- the hub still takes a pvp_manhunt ticket. A casual pillar may word its text differently (cd1/cd2).
 
 TH.QUEUE_MODES = {
   { mode = 'pvp_nemesis', name = 'rmh_mp_ui_mode_nemesis', def = 'Nemesis', colour = 'BLUE',
     d1 = 'rmh_mp_ui_mode_nemesis_d1', d1d = 'Face a different', d2 = 'rmh_mp_ui_mode_nemesis_d2', d2d = 'Nemesis every ante',
-    players = '2-16', casual_players = '2' },
+    cd1 = 'rmh_mp_ui_mode_nemesis_casual_d1', cd1d = 'One Nemesis,', cd2 = 'rmh_mp_ui_mode_nemesis_casual_d2',
+    cd2d = 'head to head', players = '2-16', casual_players = '2' },
   { mode = 'pvp_royale', name = 'rmh_mp_ui_mode_royale', def = 'Battle Royale', colour = 'PURPLE',
     d1 = 'rmh_mp_ui_mode_royale_d1', d1d = 'Free for all;', d2 = 'rmh_mp_ui_mode_royale_d2', d2d = 'bottom half lose',
     players = '2-16', casual_players = '3-16' },
   { mode = 'pvp_manhunt', name = 'rmh_mp_ui_mode_manhunt', def = 'Manhunt', colour = 'RED',
     d1 = 'rmh_mp_ui_mode_manhunt_d1', d1d = 'Hunters team up', d2 = 'rmh_mp_ui_mode_manhunt_d2', d2d = 'to stop a Runner',
-    players = '2-16', casual_players = '3-16' },
+    players = '2-16', casual_players = '3-16', find = false },
   { mode = 'pvp_teams', name = 'rmh_mp_ui_mode_teams', def = 'Teams', colour = 'GREEN',
     d1 = 'rmh_mp_ui_mode_teams_d1', d1d = 'Team vs team;', d2 = 'rmh_mp_ui_mode_teams_d2', d2d = 'best score wins',
     players = '2-16', casual_players = '4-16' },
-  { mode = 'pvp_smallworld', name = 'k_smallworld', def = 'Small World', colour = 'ORANGE',
+  { mode = 'pvp_smallworld', name = 'k_smallworld', def = 'Small World', colour = 'RED',
     d1 = 'rmh_mp_ui_mode_smallworld_d1', d1d = '75% of cards are', d2 = 'rmh_mp_ui_mode_smallworld_d2', d2d = 'banned at random',
     players = '2-16', casual_players = '2-16', casual_only = true },
 }
 
 local QM_BY_MODE = {}
-for _, q in ipairs(TH.QUEUE_MODES) do QM_BY_MODE[q.mode] = q end
+TH.FIND_MODES = {}
+for i, q in ipairs(TH.QUEUE_MODES) do
+  QM_BY_MODE[q.mode] = q
+  q.row = i -- the pillar's chip art row, the same on Create and Find Game
+  if q.find ~= false then TH.FIND_MODES[#TH.FIND_MODES + 1] = q end
+end
 function TH.queue_mode(mode) return QM_BY_MODE[mode] end
 function TH.queue_mode_name(mode)
   local q = QM_BY_MODE[mode]

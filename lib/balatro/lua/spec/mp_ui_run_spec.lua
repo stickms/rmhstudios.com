@@ -187,13 +187,35 @@ describe('in-run view model (HUD-01/02/03, TIM-01)', function()
     expect(RU.compute({}).timer_text).eq('12')
   end)
 
-  it('timer box colours: orange when pressable, IMPORTANT text when asked', function()
+  it('timer box colours as the mod: IMPORTANT box with light text when pressable; IMPORTANT text when asked', function()
     boot()
     local fg, bg = RU.timer_colours({ timer_pressable = true, timer_colour = 'important', timer_running = false }, 0)
-    expect(bg).eq(G.C.ORANGE)
+    expect(bg).eq(G.C.IMPORTANT)
+    expect(fg).eq(G.C.UI.TEXT_LIGHT)
+    fg, bg = RU.timer_colours({ timer_colour = 'important' }, 0)
     expect(fg).eq(G.C.IMPORTANT)
+    expect(bg ~= G.C.IMPORTANT).truthy()
     fg = RU.timer_colours({ timer_colour = 'orange' }, 0)
     expect(fg).eq(G.C.ORANGE)
+  end)
+
+  it('a running timer pulses the TEXT (mp_timer_accelerated), never the box', function()
+    boot()
+    local dark = select(2, RU.timer_colours({}, 0))
+    local imp = G.C.IMPORTANT
+    local seen_light = false
+    for i = 0, 19 do
+      local t = 7 + i / 20
+      local fg, bg = RU.timer_colours({ timer_running = true, timer_pressable = true }, t)
+      expect(bg).eq(dark)                                  -- the box keeps its colour
+      if math.abs(fg[1] - imp[1]) + math.abs(fg[2] - imp[2]) + math.abs(fg[3] - imp[3]) > 0.1 then seen_light = true end
+    end
+    expect(seen_light).truthy()
+    -- most of each second it is IMPORTANT; the start of the second is the light stop
+    local mid = RU.timer_pulse(3.5)
+    expect({ mid[1], mid[2], mid[3] }).eq({ imp[1], imp[2], imp[3] })
+    local start = RU.timer_pulse(3.0)
+    expect(start[2] > imp[2]).truthy()
   end)
 
   it('enemy score: masked until the first info, then eased over 3 s; hands left', function()
@@ -319,7 +341,7 @@ describe('HUD tree surgery (HUD-01/02/09, TIM-01)', function()
     RU.compute()
     local e = { config = {} }
     G.FUNCS.mp_timer_ui(e)
-    expect(e.config.colour).eq(G.C.ORANGE)
+    expect(e.config.colour).eq(G.C.IMPORTANT)
   end)
 
   it('the PvP blind panel is repointed at the view', function()
@@ -464,7 +486,7 @@ describe('pause menu (HUD-10, D-38)', function()
     MP.ui.pause.run_started = 0
     local def = create_UIBox_options()
     local b = ids(def)
-    expect(b.settings and b.mp_vote_seed and b.mp_vote_draw and b.mp_forfeit_ask and b.your_collection).truthy()
+    expect(b.settings and b.mp_vote_seed and b.mp_vote_draw and b.mp_forfeit and b.your_collection).truthy()
     expect(b.setup_run).eq(nil)
     expect(b.go_to_menu).eq(nil)
     G.TIMERS.REAL = 301
@@ -495,16 +517,17 @@ describe('pause menu (HUD-10, D-38)', function()
     expect(MP.ui.pause.last_progress).eq('Vote for Draw: 1/2')
   end)
 
-  it('forfeit asks first, then reports forfeit and leaves to the menu', function()
+  it('forfeit at once, as the mod (no "Are you sure?"): reports forfeit and leaves to the menu (E23)', function()
     boot()
     local left = 0
     G.FUNCS.go_to_menu = function() left = left + 1 end
-    G.FUNCS.mp_forfeit_ask()
-    expect(texts_of(UH.overlays[#UH.overlays]):find('Are you sure?', 1, true) ~= nil).truthy()
-    expect(#H.events('forfeit')).eq(0)
-    G.FUNCS.mp_forfeit_yes()
+    local n = #UH.overlays
+    G.FUNCS.mp_forfeit()
+    expect(#UH.overlays).eq(n)                          -- no confirmation overlay
     expect(#H.events('forfeit')).eq(1)
     expect(left).eq(1)
+    expect(G.FUNCS.mp_forfeit_ask).eq(nil)
+    expect(MP.ui.pause.confirm_def).eq(nil)
   end)
 
   it('practice: seed change and forfeit (to the menu) as the mod, the practice toggles, no draw vote', function()
@@ -519,7 +542,7 @@ describe('pause menu (HUD-10, D-38)', function()
     expect(node(def, 'mp_pause_forfeit').config.button).eq('go_to_menu')
     expect(b.mp_vote_seed).truthy()
     expect(b.mp_vote_draw).eq(nil)
-    expect(b.mp_forfeit_ask).eq(nil)
+    expect(b.mp_forfeit).eq(nil)
     -- Seed Change restarts the practice run on a fresh seed (a solo vote is unanimous); no event.
     local launched
     MP.session.launcher = function(sess) launched = sess.seed end
@@ -629,6 +652,25 @@ describe('HUD effects and banners (HUD-07/08/17)', function()
     fired = RU.effects()
     expect(fired[1]).eq('opp_skip')
     expect(sounds).eq({ 'negative', 'gong' })
+  end)
+
+  it('own lives change -> highlight2 (0.685, 0.2) + generic1, lost or gained (N4)', function()
+    boot()
+    local calls = {}
+    _G.play_sound = function(name, per, vol) calls[#calls + 1] = { name, per, vol } end
+    RU.effects()
+    expect(#calls).eq(0)
+    MP.net.receive('outcome', { hs = 2, o = { t = 'player_lives', player_id = 'u1', lives = 3 } })
+    local fired = RU.effects()
+    expect(fired[1]).eq('my_lives')
+    expect(calls).eq({ { 'highlight2', 0.685, 0.2 }, { 'generic1' } })
+    calls = {}
+    expect(#RU.effects()).eq(0)                     -- edge-triggered: once per change
+    expect(#calls).eq(0)
+    MP.state.lives.u1 = 5
+    expect(RU.effects()[1]).eq('my_lives')
+    expect(calls[1][1]).eq('highlight2')
+    expect(calls[2][1]).eq('generic1')
   end)
 
   it('no skip sound under Major League', function()
@@ -1030,6 +1072,63 @@ describe('Nemesis rows fit the 16:9 room (HUD-06 layout)', function()
     give_nemesis({ 'j_mp_speedrun' })
     expect(G.jokers.T.y).eq(0)
     expect(NR.areas.jokers.T.y).near(G.consumeables.T.h + NR.CLASSIC_GAP, 1e-9)
+  end)
+
+  it('Classic: a phantom copy draws the voucher shader in place of the base shader (N3)', function()
+    boot()
+    real_areas()
+    NR = MP.ui.nemesis_rows
+    G.STATE = G.STATES.SELECTING_HAND
+    G.SETTINGS.rmh_mp = { nemesisLayout = 'classic' }
+    MP.state.ante_nemesis = { 'u2' }
+    give_nemesis({ 'j_mp_speedrun' })
+    local card = MP.state.phantoms[1]
+    local drawn = {}
+    local sprite = { draw_shader = function(_, shader, _, args) drawn[#drawn + 1] = { shader, args } end }
+    card.children.center = sprite
+    card.ARGS = { send_to_shader = { 1, 2 } }
+    -- vanilla's Card:draw: the shadow (with a height), the base shader, then an edition
+    local function vanilla_draw(c)
+      c.children.center:draw_shader('dissolve', 0.2)
+      c.children.center:draw_shader('dissolve')
+      c.children.center:draw_shader('foil', nil, c.ARGS.send_to_shader)
+      return 'drawn'
+    end
+    expect(NR.classic_look(card)).truthy()
+    expect(NR.draw_card(vanilla_draw, card)).eq('drawn')
+    expect(drawn[1][1]).eq('dissolve')                   -- the shadow pass is untouched
+    expect(drawn[2][1]).eq('voucher')
+    expect(drawn[2][2]).eq(card.ARGS.send_to_shader)
+    expect(drawn[3][1]).eq('foil')
+    expect(rawget(sprite, 'draw_shader') ~= nil).truthy()  -- the sprite's own method is back
+    -- dissolving: the base shader stays (it draws the dissolve), the look on top
+    drawn = {}
+    card.dissolve = 0.5
+    NR.draw_card(vanilla_draw, card)
+    expect({ drawn[2][1], drawn[3][1] }).eq({ 'dissolve', 'voucher' })
+    card.dissolve = 0
+    -- an error inside the draw still restores the sprite
+    expect(pcall(NR.draw_card, function() error('boom') end, card)).eq(false)
+    drawn = {}
+    vanilla_draw(card)
+    expect(drawn[2][1]).eq('dissolve')
+  end)
+
+  it('Standard layout, traps and own jokers keep the base shader (N3)', function()
+    boot()
+    real_areas()
+    NR = MP.ui.nemesis_rows
+    G.STATE = G.STATES.SELECTING_HAND
+    MP.state.ante_nemesis = { 'u2' }
+    give_nemesis({ 'j_mp_speedrun' })
+    local card = MP.state.phantoms[1]
+    expect(NR.classic_look(card)).falsy()
+    local seen
+    card.children.center = { draw_shader = function(_, shader) seen = shader end }
+    NR.draw_card(function(c) c.children.center:draw_shader('dissolve') end, card)
+    expect(seen).eq('dissolve')
+    expect(NR.classic_look({ area = NR.areas.jokers, ability = { mp_phantom = true, mp_trap_display = true } })).falsy()
+    expect(NR.classic_look({ area = G.jokers, ability = {} })).falsy()
   end)
 
   it('phantom copies show a Phantom badge instead of eternal; traps and real jokers do not', function()
