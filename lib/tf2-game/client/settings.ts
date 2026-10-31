@@ -54,6 +54,11 @@ export interface GameSettings {
   mouseAccelScale: number;
   /** `m_customaccel_max` (modes 1 and 2; 0 = no limit). */
   mouseAccelMax: number;
+  /**
+   * `zoom_sensitivity_ratio` (CS:GO: `zoom_sensitivity_ratio_mouse`), default 1: the extra factor on the
+   * zoomed look, on top of the FOV ratio (`zoomSensitivityScale`).
+   */
+  zoomSensitivityRatio: number;
   /** `fov_desired`: TF2 75–90 (default 90); HL2/Portal 75. */
   fov: number;
   /** `viewmodel_fov` (default 54). */
@@ -124,6 +129,8 @@ export const SENSITIVITY_RANGE = { min: 0.1, max: 20 };
 export const M_YAW_RANGE = { min: 0.001, max: 0.2 };
 /** m_customaccel_exponent (GameUI's slider runs 1–1.4; the console takes more). */
 export const ACCEL_EXPONENT_RANGE = { min: 1, max: 4 };
+/** zoom_sensitivity_ratio (Source leaves it unbounded; 0 would freeze the zoomed view). */
+export const ZOOM_SENSITIVITY_RATIO_RANGE = { min: 0.01, max: 10 };
 /** mat_viewportscale when set by hand (0 = automatic). */
 export const RESOLUTION_SCALE_RANGE = { min: 0.4, max: 1 };
 
@@ -140,6 +147,7 @@ export function defaultSettings(game: HudGame): GameSettings {
     mouseAccelExponent: 1,
     mouseAccelScale: 0.04,
     mouseAccelMax: 0,
+    zoomSensitivityRatio: 1,
     fov: FOV_RANGE[game].def,
     viewmodelFov: VIEWMODEL_FOV_RANGE.def,
     volume: { master: 0.6, sfx: 1, voice: 1, music: 0.6 },
@@ -207,6 +215,7 @@ export function sanitizeSettings(raw: unknown, game: HudGame): GameSettings {
     mouseAccelExponent: numIn(raw.mouseAccelExponent, ACCEL_EXPONENT_RANGE.min, ACCEL_EXPONENT_RANGE.max, d.mouseAccelExponent),
     mouseAccelScale: numIn(raw.mouseAccelScale, 0, 1, d.mouseAccelScale),
     mouseAccelMax: numIn(raw.mouseAccelMax, 0, 20, d.mouseAccelMax),
+    zoomSensitivityRatio: numIn(raw.zoomSensitivityRatio, ZOOM_SENSITIVITY_RATIO_RANGE.min, ZOOM_SENSITIVITY_RATIO_RANGE.max, d.zoomSensitivityRatio),
     fov: Math.round(numIn(raw.fov, fov.min, fov.max, d.fov)),
     viewmodelFov: Math.round(numIn(raw.viewmodelFov, VIEWMODEL_FOV_RANGE.min, VIEWMODEL_FOV_RANGE.max, d.viewmodelFov)),
     volume: {
@@ -309,9 +318,8 @@ export type MouseSettings = Pick<GameSettings, 'sensitivity' | 'invertY'> &
  * `min(max, pow(|d|, exponent) × scale + sensitivity)` (2 also times m_yaw / m_pitch, which then apply
  * twice, as in the SDK); 3 `pow(|d|², (exponent − 1) / 2) × sensitivity`.
  */
-export function scaleMouse(dx: number, dy: number, s: MouseSettings): { x: number; y: number } {
+export function scaleMouse(dx: number, dy: number, s: MouseSettings, sens = s.sensitivity): { x: number; y: number } {
   const mode = s.mouseAccel ?? 0;
-  const sens = s.sensitivity;
   const exponent = s.mouseAccelExponent ?? 1;
   if (mode === 1 || mode === 2) {
     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -334,14 +342,30 @@ export function scaleMouse(dx: number, dy: number, s: MouseSettings): { x: numbe
   return { x: dx * sens, y: dy * sens };
 }
 
-/** Degrees of yaw / pitch for a mouse movement of (dx, dy) counts (CInput::ScaleMouse + ApplyMouse). */
-export function mouseToDegrees(dx: number, dy: number, s: MouseSettings): { yaw: number; pitch: number } {
-  const m = scaleMouse(dx, dy, s);
+/**
+ * Degrees of yaw / pitch for a mouse movement of (dx, dy) counts (CInput::ScaleMouse + ApplyMouse).
+ * `sens` is the sensitivity in effect — `s.sensitivity`, or the zoomed one (`× zoomSensitivityScale`),
+ * which ScaleMouse reads from gHUD.GetSensitivity() in its place, accelerated modes included.
+ */
+export function mouseToDegrees(dx: number, dy: number, s: MouseSettings, sens = s.sensitivity): { yaw: number; pitch: number } {
+  const m = scaleMouse(dx, dy, s, sens);
   return {
     // Moving right turns right: yaw decreases (Source yaw is counter-clockwise).
     yaw: -m.x * (s.mYaw ?? M_YAW),
     pitch: m.y * (s.mPitch ?? M_PITCH) * (s.invertY ? -1 : 1),
   };
+}
+
+/**
+ * The look scale while zoomed (CHud::Think, Source SDK 2013 hud.cpp): when the FOV in use is below the
+ * default, the sensitivity becomes `sensitivity × (fov / default_fov) × zoom_sensitivity_ratio`, and
+ * the HUD's sensitivity is 0 (plain `sensitivity`) otherwise. `fov` is the player's current, lerped
+ * FOV (C_BasePlayer::GetFOV), so the scale follows a zoom in or out frame by frame. Applies to TF2's
+ * sniper scope, CS:GO's scopes and HL2's suit / crossbow zoom alike — they all go through the view FOV.
+ */
+export function zoomSensitivityScale(fov: number, defaultFov: number, ratio = 1): number {
+  if (!(fov > 0) || !(defaultFov > 0) || fov >= defaultFov) return 1;
+  return (fov / defaultFov) * ratio;
 }
 
 /** Whether the developer console is on for this device (`devConsole` auto: keyboard yes, touch-first no). */
