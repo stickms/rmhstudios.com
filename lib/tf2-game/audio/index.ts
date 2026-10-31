@@ -11,3 +11,4 @@ export * from './captions';
 export * from './scene-image';
 export * from './soundscapes';
 export * from './engine';
+export * from './loops';

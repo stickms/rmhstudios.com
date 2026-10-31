@@ -1668,6 +1668,14 @@
 /* ══ App-tier menus (pause, settings: the TF2 Hub's Modal and controls) ═══ */
 
 
+/* CS:GO's HUD and the shared panels over it (chat, captions, notices) set in Panorama's Stratum2, as the
+   game's own HUD is, not in TF2's faces (the font is registered from the menu channel: usePanoramaFonts). */
+.tf2g-hud[data-game='csgo'] {
+  --tf2g-font-build: 'Stratum2', 'notosans', 'Arial Narrow', 'Roboto Condensed', Arial, sans-serif;
+  --tf2g-font: 'Stratum2', 'notosans', 'Arial Narrow', 'Roboto Condensed', Arial, sans-serif;
+  --tf2g-font-small: 'Stratum2', 'notosans', 'Arial Narrow', 'Roboto Condensed', Arial, sans-serif;
+}
+
 /* HL2 and Portal recolour the TF2 Hub palette for their pause menus. */
 .tf2hud-theme.tf2g-hl2-theme {
   --app-bg: #1c1a17;
@@ -1887,7 +1895,7 @@
   border-radius: 50%;
   background: var(--touch-fill);
   color: var(--touch-ink);
-  font: 600 calc(12px * var(--touch-scale)) / 1 'TF2 Build', system-ui, sans-serif;
+  font: 600 calc(12px * var(--touch-scale)) / 1 var(--tf2g-font-build, 'TF2 Build'), system-ui, sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   touch-action: none;

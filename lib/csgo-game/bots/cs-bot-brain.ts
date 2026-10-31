@@ -7,8 +7,11 @@
  *     grenade or two), through the host-validated buy command;
  *   - bomb defusal: Terrorists take one site (A or B) together, the carrier plants, everyone holds the
  *     bomb; a dropped bomb is fetched; Counter-Terrorists split over the sites, rotate to the bomb once it
- *     is down and defuse it when nobody is in sight;
- *   - deathmatch: hunt the nearest enemy;
+ *     is down and defuse it when nobody is in sight. Each bot plays the round its own way, as CS:GO's
+ *     do: it leaves after its own short delay, takes its own route (through a waypoint of its own
+ *     between spawn and the site, so a team spreads over the map's lanes), holds its own spot near the
+ *     site or the bomb, and now and then a Terrorist lurks at the other site until the bomb is down;
+ *   - deathmatch: hunt the nearest enemy in reach, else roam the map;
  *   - fighting: sight through a field of view and line of sight (smoke and flashes blind it), a reaction
  *     time, aim error and turn rate by difficulty (the shared `BotSkill` table), the head for the better
  *     bots, spray control (pulling down against the aim punch), counter-strafing to shoot, bursts and
@@ -34,6 +37,7 @@ import { SLOT_PDA, SLOT_PDA2, SLOT_PRIMARY, SLOT_SECONDARY } from '../../tf2-gam
 import type { GameWorld } from '../../tf2-game/sim/world';
 import type { BotDifficulty } from '../../tf2-game/net/events';
 import { getBotManager } from '../../tf2-game/bots/brain/manager';
+import { NAV_CROUCH, NAV_DEEP_WATER, NAV_WATER } from '../../tf2-game/bots/nav/nav-mesh';
 import { botSkill, type BotSkill } from '../../tf2-game/bots/brain/difficulty';
 import { applyMoveIntent, newMoveIntent, PathFollower } from '../../tf2-game/bots/path';
 import type { BotBrain } from '../../tf2-game/server/tf2-match-host';
@@ -64,6 +68,16 @@ const CS_HALF_WIDTH = 16;
 
 /** Forget an enemy not seen for this long (seconds). */
 const MEMORY = 3;
+/** How far from a site or the bomb (units) each bot picks its own spot to hold. */
+const HOLD_MIN = 60;
+const HOLD_MAX = 250;
+/** How much longer than the straight line (×) a route through a bot's waypoint may be, by side. */
+const T_DETOUR = 1.2;
+const CT_DETOUR = 1.5;
+/** Seconds a bot may spend reaching its route's waypoint before heading straight on. */
+const VIA_TIMEOUT = 25;
+/** Deathmatch: chase the nearest enemy within this range (units); farther, roam. */
+const DM_HUNT_RANGE = 1500;
 
 const tr = emptyTrace();
 const eye = vec3();
@@ -98,6 +112,18 @@ export class CsBotBrain implements BotBrain {
   /** 0 = A, 1 = B (the site this bot heads for this round). */
   private site = -1;
   private siteRound = -1;
+  /** This round's own way to play it: the waypoint on the way out, where to hold, when to leave. */
+  private via: Vec3 | null = null;
+  private hold: Vec3 | null = null;
+  /** What `hold` was picked around (re-picked when that moves, e.g. to the planted bomb). */
+  private readonly holdAround = vec3();
+  private lurk = false;
+  private departAt = 0;
+  /** Give up on the waypoint after this (curtime): routes must not cost the round. */
+  private viaUntil = 0;
+  /** Deathmatch roaming: a random spot, until reached or the time is up. */
+  private roam: Vec3 | null = null;
+  private roamUntil = 0;
   private grenadeUntil = -1;
   private grenadeStage = 0;
   private readonly goal = vec3();
@@ -418,14 +444,17 @@ export class CsBotBrain implements BotBrain {
     if (rules.csMode === 'dm') return this.hunt(world, p);
     const targets = world.bombTargets();
     if (targets.length === 0) return this.hunt(world, p);
-    if (this.siteRound !== rules.roundsPlayed) {
-      this.siteRound = rules.roundsPlayed;
+    if (this.siteRound !== rules.roundSerial) {
+      this.siteRound = rules.roundSerial;
       // Terrorists agree on a site per round (from the round number); CTs split by their id.
       this.site =
         p.team === CS_TEAM_T
           ? (rules.roundsPlayed * 7 + 3) % targets.length
           : p.id % targets.length;
+      this.planRound(world, p, targets);
     }
+    // Everyone leaves on their own beat after the freeze time.
+    if (t < this.departAt) return false;
     const site = targets[Math.min(this.site, targets.length - 1)];
     const siteCenter = site.worldSpaceCenter(vec3());
     const c4 = rules.plantedC4 && !rules.plantedC4.removed ? rules.plantedC4 : null;
@@ -439,7 +468,7 @@ export class CsBotBrain implements BotBrain {
           this.turnToward(60, this.view.y);
           return false;
         }
-        this.setGoal(siteCenter);
+        this.routeTo(p, siteCenter);
         return true;
       }
       // A dropped bomb: the nearest Terrorist fetches it.
@@ -448,9 +477,18 @@ export class CsBotBrain implements BotBrain {
         this.setGoal(dropped.origin);
         return true;
       }
-      const hold = c4 ? c4.origin : siteCenter;
-      if (Math.hypot(hold.x - p.origin.x, hold.y - p.origin.y) < 220) return false;
-      this.setGoal(hold);
+      // The bomb down: each holds a spot of its own around it.
+      if (c4) return this.holdNear(world, p, c4.origin);
+      // A lurker waits at the other site until the bomb is down; the others take the site with the
+      // carrier, each by its own route.
+      if (this.lurk && targets.length > 1)
+        return this.holdNear(
+          world,
+          p,
+          targets[(this.site + 1) % targets.length].worldSpaceCenter(vec3()),
+        );
+      if (Math.hypot(siteCenter.x - p.origin.x, siteCenter.y - p.origin.y) < 220) return false;
+      this.routeTo(p, siteCenter);
       return true;
     }
 
@@ -473,10 +511,97 @@ export class CsBotBrain implements BotBrain {
       this.setGoal(c4.origin);
       return true;
     }
-    if (Math.hypot(siteCenter.x - p.origin.x, siteCenter.y - p.origin.y) < 200) return false;
-    this.setGoal(siteCenter);
-    void t;
+    return this.holdNear(world, p, siteCenter);
+  }
+
+  /**
+   * The round's plan for this bot: when it leaves after the freeze time (a Counter-Terrorist within
+   * 2.5 s, a Terrorist within 1 s so the attack arrives together, the bomb carrier at once), the
+   * waypoint its route goes through (a random walkable spot a quarter to three quarters of the way to the site,
+   * not far off the line — a different lane for different bots), and for a Terrorist without the
+   * bomb, every other round one of them lurking at the other site (`isLurker`).
+   */
+  private planRound(
+    world: CsWorld,
+    p: CsPlayer,
+    targets: ReturnType<CsWorld['bombTargets']>,
+  ): void {
+    const rules = world.csRules;
+    // The bomb carrier goes at once; the others leave on their own beat.
+    this.departAt =
+      Math.max(world.curtime, rules.freezeEndsAt) +
+      (p.hasC4() ? 0 : this.rng.randomFloat(0, p.team === CS_TEAM_T ? 1 : 2.5));
+    this.hold = null;
+    this.lurk = targets.length > 1 && isLurker(world, p);
+    const site = targets[Math.min(this.site, targets.length - 1)].worldSpaceCenter(vec3());
+    const from = p.origin;
+    const d = Math.hypot(site.x - from.x, site.y - from.y);
+    // Terrorists' lanes stay close to the shortest way, so the attack arrives together.
+    const detour = p.team === CS_TEAM_T ? T_DETOUR : CT_DETOUR;
+    this.via = this.randomSpot(world, (x, y) => {
+      const toSite = Math.hypot(site.x - x, site.y - y);
+      const fromHere = Math.hypot(x - from.x, y - from.y);
+      return toSite > 0.25 * d && toSite < 0.75 * d && fromHere + toSite < detour * d;
+    });
+    this.viaUntil = this.departAt + VIA_TIMEOUT;
+  }
+
+  /** Walks to `target` through this round's waypoint (until it is reached, or found unreachable). */
+  private routeTo(p: CsPlayer, target: Vec3): void {
+    const via = this.via;
+    const f = this.follower;
+    // Dropped once reached, once the search finds it unreachable, or when it takes too long.
+    const unreachable =
+      via !== null && f.hasPath && !f.path.reachedGoal && f.goal.x === via.x && f.goal.y === via.y;
+    if (
+      via &&
+      !unreachable &&
+      p.world.curtime < this.viaUntil &&
+      Math.hypot(via.x - p.origin.x, via.y - p.origin.y) > 160
+    ) {
+      this.setGoal(via);
+      return;
+    }
+    this.via = null;
+    this.setGoal(target);
+  }
+
+  /** Goes to (and stays at) this bot's own spot HOLD_MIN–HOLD_MAX units from `around`; true while walking there. */
+  private holdNear(world: CsWorld, p: CsPlayer, around: Vec3): boolean {
+    if (!this.hold || Math.hypot(around.x - this.holdAround.x, around.y - this.holdAround.y) > 64) {
+      this.holdAround.x = around.x;
+      this.holdAround.y = around.y;
+      this.holdAround.z = around.z;
+      this.hold = this.randomSpot(world, (x, y, z) => {
+        const r = Math.hypot(x - around.x, y - around.y);
+        return r > HOLD_MIN && r < HOLD_MAX && Math.abs(z - around.z) < 160;
+      }) ?? { x: around.x, y: around.y, z: around.z };
+    }
+    const hold = this.hold;
+    if (Math.hypot(hold.x - p.origin.x, hold.y - p.origin.y) < 48) {
+      this.via = null;
+      return false;
+    }
+    this.routeTo(p, hold);
     return true;
+  }
+
+  /** A random walkable spot (a nav area's centre: no crouch-only or water areas) that `ok` accepts. */
+  private randomSpot(
+    world: CsWorld,
+    ok: (x: number, y: number, z: number) => boolean,
+  ): Vec3 | null {
+    const mesh = getBotManager(world).mesh;
+    if (!mesh || mesh.areaCount === 0) return null;
+    const out = vec3();
+    for (let i = 0; i < 96; i++) {
+      const a = this.rng.randomInt(0, mesh.areaCount - 1);
+      if (mesh.attrs[a] & (NAV_CROUCH | NAV_WATER | NAV_DEEP_WATER)) continue;
+      if (mesh.areaSize(a) < 24 * 24) continue;
+      mesh.center(a, out);
+      if (ok(out.x, out.y, out.z)) return out;
+    }
+    return null;
   }
 
   private hunt(world: CsWorld, p: CsPlayer): boolean {
@@ -495,8 +620,27 @@ export class CsBotBrain implements BotBrain {
       }
     });
     const target = best as Player | null;
-    if (!target) return false;
-    this.setGoal(this.target >= 0 ? this.lastSeenPos : target.origin);
+    if (target && (this.target >= 0 || bestD < DM_HUNT_RANGE)) {
+      this.roam = null;
+      this.setGoal(this.target >= 0 ? this.lastSeenPos : target.origin);
+      return true;
+    }
+    // Nobody near: roam to a spot of its own, a new one when reached or after a while.
+    const t = world.curtime;
+    if (
+      !this.roam ||
+      t > this.roamUntil ||
+      Math.hypot(this.roam.x - p.origin.x, this.roam.y - p.origin.y) < 96
+    ) {
+      this.roam = this.randomSpot(world as CsWorld, () => true);
+      this.roamUntil = t + this.rng.randomFloat(8, 16);
+    }
+    if (!this.roam) {
+      if (!target) return false;
+      this.setGoal(target.origin);
+      return true;
+    }
+    this.setGoal(this.roam);
     return true;
   }
 
@@ -513,6 +657,22 @@ export class CsBotBrain implements BotBrain {
     this.goal.y = p.y;
     this.goal.z = p.z;
   }
+}
+
+/**
+ * Every other round, one Terrorist bot without the bomb (a different one each time, from three
+ * Terrorists up) lurks at the other site: one, so the attack keeps its numbers.
+ */
+function isLurker(world: CsWorld, p: CsPlayer): boolean {
+  const round = world.csRules.roundsPlayed;
+  if (p.team !== CS_TEAM_T || p.hasC4() || round % 2 === 0) return false;
+  const ts: number[] = [];
+  world.forEachPlayer((o) => {
+    if (o.team === CS_TEAM_T && o.alive && !(o as CsPlayer).hasC4()) ts.push(o.id);
+  });
+  if (ts.length < 3) return false;
+  ts.sort((a, b) => a - b);
+  return ts[(round * 5) % ts.length] === p.id;
 }
 
 /** The host's bot factory for CS matches. */

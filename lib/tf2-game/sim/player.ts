@@ -419,7 +419,8 @@ export class Player extends Entity implements AttributeOwner {
         if (!airDash) this.doAnimationEvent(PLAYERANIMEVENT_JUMP);
       },
       onFootstep: (surface: string, volume: number) => {
-        if (!this.world.isServer) return;
+        // Predicted: the owner's client plays its own steps (the server leaves them out with
+        // predictedBy); a client world that is not predicting drops it in emitSound.
         this.world.emitSound(`Player.Footstep.${surface}`, {
           entity: this.id,
           volume,
@@ -560,6 +561,12 @@ export class Player extends Entity implements AttributeOwner {
 
   activeWeapon(): Weapon | null {
     return this.activeSlot >= 0 ? this.weapons[this.activeSlot] : null;
+  }
+
+  /** The active weapon's looping sound while alive ('' for none): the record's `weaponLoop`. */
+  weaponLoopSound(): string {
+    if (!this.alive) return '';
+    return this.activeWeapon()?.loopSound?.() ?? '';
   }
 
   /** Gives a weapon into its slot, replacing what was there. */
@@ -1473,6 +1480,7 @@ export class Player extends Entity implements AttributeOwner {
     const w = this.activeWeapon();
     out.activeWeapon = w ? w.defindex : -1;
     out.activeSlot = this.activeSlot;
+    out.weaponLoop = this.weaponLoopSound();
     out.animEvent = this.animEvent;
     out.animEventSeq = this.animEventSeq;
     out.disguiseTeam = this.disguiseTeam;
