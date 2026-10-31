@@ -15,6 +15,7 @@ import { chromiumLaunchOptions } from './chromium';
 import { zSpecSummary, type SpecResult, type SpecSummary } from './channel';
 import { REPO_ROOT, startStaticServer, type StaticServer } from './static-server';
 import { readFileSync } from 'node:fs';
+import { turboOn, turboSetting, type Turbo } from './turbo';
 import path from 'node:path';
 
 /**
@@ -94,6 +95,8 @@ export async function openEngine(
     query?: string;
     timeoutMs?: number;
     verbose?: boolean;
+    /** The autopilot's turbo (lib/turbo.ts; default from BALATRO_E2E_TURBO). */
+    turbo?: Turbo;
     /** Receives the page's log lines (engine prints, spec results) about once a second. */
     onLog?: (line: string) => void;
   } = {},
@@ -194,6 +197,9 @@ export async function openEngine(
     if (!r.ok) throw new CommandError(cmd, r.data);
     return r.data as T;
   };
+
+  const turbo = opts.turbo ?? turboSetting();
+  if (turboOn(turbo)) await call('turbo', turbo);
 
   return {
     page,

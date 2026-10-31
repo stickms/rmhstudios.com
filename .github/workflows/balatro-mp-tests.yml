@@ -12,19 +12,33 @@
 # The mission-critical slices (hub auth walk, rate-limit coverage, saves) stay in
 # web-ci.yml's main suite.
 #
-# Job `e2e` (vitest.balatro-e2e.config.ts, cheapest project first):
-#   - harness: unit tests of the e2e machinery (no browser);
-#   - engine:  Lua L2 — every lib/balatro/lua/mp_test/specs/*_spec.lua inside the real
-#              love.wasm in headless Chromium (SwiftShader), static harness page, no DB
-#              or hub; one boot for all files plus a second boot without the MP pack
-#              (single-player golden seeds). A hard gate;
-#   - match:   multi-browser matches and bot-peer lobbies against the Postgres service,
-#              the socket hub and `vite dev` (VITE_BALATRO_MP_TEST=1) with accounts made
-#              through the sign-up API. BALATRO_E2E_REQUIRE_MATCH=1 turns "no stack" into
-#              a failure instead of a skip.
-# The nightly schedule (and a manual run with `long: true`) adds the slow checks:
-# every engine spec file alone in a fresh boot (BALATRO_E2E_ISOLATE=1) and the
-# 30-minute-equivalent autopilot soak (BALATRO_E2E_SOAK=1, E2E-24).
+# The e2e suite (vitest.balatro-e2e.config.ts) runs as parallel jobs, each on its own
+# runner, alongside `test` rather than after it (the wall clock is the slowest job, not
+# the sum of all of them):
+#   - e2e-engine: the harness project (unit tests of the e2e machinery, no browser), then
+#     the engine project — Lua L2, every lib/balatro/lua/mp_test/specs/*_spec.lua inside
+#     the real love.wasm in headless Chromium (SwiftShader) on a static harness page, no
+#     DB or hub; one boot for all files plus a second boot without the MP pack
+#     (single-player golden seeds). A hard gate. It stays ONE job on purpose: every spec
+#     file must be green after the files before it in the same boot, and the golden seeds
+#     are compared after every content spec mounted and unmounted its sessions.
+#   - e2e-match (matrix): the match project — multi-browser matches and bot-peer lobbies —
+#     split into shards (testing/balatro-e2e/shards.ts). Each shard has its own Postgres
+#     service, socket hub and `vite dev` (VITE_BALATRO_MP_TEST=1), with accounts made
+#     through the sign-up API. A harness unit test fails when a match file is in no shard
+#     or when this matrix and the shard list differ, so no scenario can drop out of CI.
+#     BALATRO_E2E_REQUIRE_MATCH=1 turns "no stack" into a failure instead of a skip.
+#   - e2e: the aggregate — green only when e2e-engine and every e2e-match shard are. It
+#     keeps the name of the old single job: require this one in branch protection.
+# Speed: every engine page runs the autopilot's turbo (testing/balatro-e2e/lib/turbo.ts:
+# 8 game updates per frame and a draw every 4th frame; a Lua `wait_frames` still gets full
+# frames). Software WebGL spends almost all of a frame drawing and Balatro advances at most
+# 0.1 s of game time per frame, so turbo fast-forwards the animations ~5x without touching
+# game logic or RNG. Every scenario runs on every PR, the 12-ante soak (E2E-24) included.
+# The nightly schedule (and a manual run with `long: true`) runs the same jobs with turbo
+# off (real-speed frames, so the fast path is never the only one: the soak then takes its
+# "30 minutes of play") plus every engine spec file alone in a fresh boot
+# (BALATRO_E2E_ISOLATE=1).
 # Path-filtered so unrelated PRs don't pay for it.
 # ─────────────────────────────────────────────────────────────────────────────
 name: balatro-mp-tests
@@ -63,7 +77,7 @@ on:
   workflow_dispatch:
     inputs:
       long:
-        description: 'Also run every engine spec alone and the 30-minute soak'
+        description: 'Real-speed frames (turbo off) and every engine spec alone in a fresh boot'
         type: boolean
         default: false
 
@@ -118,16 +132,61 @@ jobs:
       - name: Bundle and pack budget
         run: node_modules/.bin/tsx scripts/balatro/bundle-budget.ts
 
-  e2e:
-    needs: test
+  # Lua L2 in the real engine: the harness project, then the engine project (one job, see
+  # the header).
+  e2e-engine:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: ${{ (github.event_name == 'schedule' || inputs.long == true) && 150 || 30 }}
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+      LONG: ${{ github.event_name == 'schedule' || inputs.long == true }}
+      # Empty = the default turbo (testing/balatro-e2e/lib/turbo.ts); the long run: off.
+      BALATRO_E2E_TURBO: ${{ (github.event_name == 'schedule' || inputs.long == true) && 'off' || '' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup-deps
+
+      # The headless shell is all the suite launches (chromium.launch, headless). The
+      # download is cached by the lockfile (it pins Playwright); --with-deps still installs
+      # the shared libraries the runner image lacks.
+      - name: Restore Playwright's Chromium
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-shell-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps --only-shell chromium
+
+      - name: E2E machinery (harness project)
+        run: pnpm test:balatro:e2e --project harness
+
+      - name: In-engine specs (engine project)
+        env:
+          BALATRO_E2E_ISOLATE: ${{ env.LONG == 'true' && '1' || '' }}
+        run: pnpm test:balatro:e2e --project engine
+
+  # Multi-browser matches, one shard per runner. The list below must equal the keys of
+  # MATCH_SHARDS in testing/balatro-e2e/shards.ts (testing/balatro-e2e/lib/shards.unit.test.ts).
+  e2e-match:
+    name: e2e-match (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ (github.event_name == 'schedule' || inputs.long == true) && 120 || 30 }}
+    strategy:
+      # Every shard reports, so one red run shows every broken scenario.
+      fail-fast: false
+      matrix:
+        shard: [nemesis-soak, nemesis-resilience, formats-spectate, migration, practice-queue]
     env:
       NODE_OPTIONS: --max-old-space-size=8192
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
       BETTER_AUTH_SECRET: ci-balatro-e2e-not-a-real-secret-000000000
       BALATRO_E2E_LOG_DIR: ${{ github.workspace }}/balatro-e2e-logs
-      LONG: ${{ github.event_name == 'schedule' || inputs.long == true }}
+      BALATRO_E2E_REQUIRE_MATCH: '1'
+      BALATRO_E2E_TURBO: ${{ (github.event_name == 'schedule' || inputs.long == true) && 'off' || '' }}
+      # E2E-24, the 12-ante soak, on every run: ~2 minutes with turbo, ~30 at real speed (nightly).
+      BALATRO_E2E_SOAK: '1'
     # Postgres as a service container (as web-ci.yml's eversion job): pgvector image, so the
     # embeddings migration applies as in production.
     services:
@@ -146,30 +205,61 @@ jobs:
 
       - uses: ./.github/actions/setup-deps
 
+      - name: Restore Playwright's Chromium
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-shell-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+
       - name: Install Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps --only-shell chromium
 
-      - name: E2E machinery (harness project)
-        run: pnpm test:balatro:e2e --project harness
-
-      - name: In-engine specs (engine project)
-        env:
-          BALATRO_E2E_ISOLATE: ${{ env.LONG == 'true' && '1' || '' }}
-        run: pnpm test:balatro:e2e --project engine
+      # Vite's dependency pre-bundle for `vite dev`: restored, the first /balatro page load
+      # skips the optimizer run. Vite checks its own lockfile/config hash and re-optimizes
+      # when it differs, so a partial key match is safe.
+      - name: Restore the Vite dep pre-bundle
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: node_modules/.vite/deps
+          key: vite-deps-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'vite.config.ts') }}
+          restore-keys: |
+            vite-deps-v1-${{ runner.os }}-
 
       - name: Migrate database
         run: pnpm exec prisma migrate deploy
 
-      - name: Matches (match project)
+      - name: Matches (${{ matrix.shard }})
         env:
-          BALATRO_E2E_REQUIRE_MATCH: '1'
-          BALATRO_E2E_SOAK: ${{ env.LONG == 'true' && '1' || '' }}
-        run: pnpm test:balatro:e2e --project match
+          SHARD: ${{ matrix.shard }}
+        run: |
+          files=$(node_modules/.bin/tsx testing/balatro-e2e/shards.ts "$SHARD")
+          echo "shard $SHARD: $files"
+          # shellcheck disable=SC2086 # one argument per file
+          pnpm test:balatro:e2e --project match $files
 
       - name: Stack logs (on failure)
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: balatro-e2e-logs
+          name: balatro-e2e-logs-${{ matrix.shard }}
           path: balatro-e2e-logs
           if-no-files-found: ignore
+
+  # The aggregate e2e result, under the old single job's name: it fails when e2e-engine or
+  # any e2e-match shard failed, was cancelled or was skipped.
+  e2e:
+    needs: [e2e-engine, e2e-match]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every e2e job passed
+        env:
+          ENGINE: ${{ needs.e2e-engine.result }}
+          MATCH: ${{ needs.e2e-match.result }}
+        run: |
+          echo "e2e-engine: $ENGINE; e2e-match (every shard): $MATCH"
+          if [ "$ENGINE" != success ] || [ "$MATCH" != success ]; then
+            echo "::error::Balatro e2e failed (engine: $ENGINE, match: $MATCH)"
+            exit 1
+          fi
