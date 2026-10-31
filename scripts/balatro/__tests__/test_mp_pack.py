@@ -290,6 +290,40 @@ class CorePatchTests(unittest.TestCase):
         self.assertIn(b'RMH_MP.eval_row_label(config, left_text, scale, num_dollars)', out)
         self.assertEqual(out.count(b'\n'), src.count(b'\n'))
 
+    def test_every_patch_applies_and_code_keeps_its_line_numbers(self):
+        src_dir = SCRIPTS.parents[1] / 'data' / 'balatro'
+        for path in sorted({p for p, _, _ in bld.CORE_PATCHES}):
+            src = (src_dir / path).read_bytes()
+            out = bld.apply_patches(path, src)
+            self.assertNotEqual(out, src, path)
+            if not path.startswith('localization/'):
+                self.assertEqual(out.count(b'\n'), src.count(b'\n'), path)
+
+    def test_balance_patches_cover_every_shipped_language(self):
+        src_dir = SCRIPTS.parents[1] / 'data' / 'balatro' / 'localization'
+        langs = sorted(p.stem for p in src_dir.glob('*.lua'))
+        self.assertEqual(len(langs), 15)
+        patched = {p for p, _, _ in bld.CORE_PATCHES}
+        for lang in langs:
+            self.assertIn(f'localization/{lang}.lua', patched)
+
+    def test_patch_text_needs_no_new_glyphs(self):
+        # The replacements' characters are folded into the font subset; they should all be
+        # drawn already, so the balance text costs the core pack no font growth.
+        vanilla = bld.base_codepoints()
+        for path in bld.SRC.rglob('*.lua'):
+            vanilla.update(ord(c) for c in path.read_text(encoding='utf-8', errors='ignore'))
+        for _, _, replacement in bld.CORE_PATCHES:
+            self.assertEqual({c for c in replacement if ord(c) >= 0x20 and ord(c) not in vanilla}, set())
+
+    def test_duplicate_patch_ids_fail(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'p.json'
+            entry = {'id': 'x', 'why': '', 'path': 'a.lua', 'anchor': 'A', 'replacement': 'B'}
+            path.write_text(json.dumps({'patches': [entry, entry]}), encoding='utf-8')
+            with self.assertRaises(SystemExit):
+                bld.read_core_patches(path)
+
 
 class GlyphBitmapTests(unittest.TestCase):
     def test_format(self):

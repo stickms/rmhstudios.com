@@ -352,9 +352,13 @@ because it subsets about 60 MB of fonts.
 | mp   | 1 800 000 B compressed, 8 000 000 B extracted | plan 1.3 MB. The used art alone is ~1.25 MB after lossless oxipng (1x + 2x, AS-01) and the localization ~0.1 MB, so 1.3 MB left no room for Lua                                                     |
 
 `CORE_PATCHES` in the builder is the anchored patch list for data/balatro Lua, as
-`(path, anchor, replacement)`. Each anchor must occur exactly once. It holds one
-entry, WS6's eval-row label hook in `functions/common_events.lua` (same line,
-`RMH_MP.eval_row_label`, nil outside multiplayer).
+`(path, anchor, replacement)`, read from `scripts/balatro/core-patches.json` (each
+entry has an `id` and a `why`). Each anchor must occur exactly once. The L1 specs load
+the base game through the same list (`lib/balatro/lua/spec/core_patches.lua`, used by
+`spec/mp_vanilla.lua`), so they test what ships. It holds WS6's eval-row label hook in
+`functions/common_events.lua` (same line, `RMH_MP.eval_row_label`, nil outside
+multiplayer) and the owner's balance changes, which apply to single player and
+multiplayer alike (see [balatro-wasm.md](./balatro-wasm.md) §4, "Balance changes").
 A stream requests further entries through WS2.
 
 ## 7. Lua MP core (WS6)

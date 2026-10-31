@@ -172,6 +172,25 @@ can't do: Quit and the Video tab are hidden. `https` (crash reports and high
 scores, both off) and `luasteam` get stubs. Since `getOS()` is never Windows or
 OS X, the game never loads Steam and tracks unlocks itself.
 
+**Balance changes.** The platform layer leaves game rules alone, but the owner made
+three balance changes. They go in as anchored build-time patches
+(`scripts/balatro/core-patches.json`, applied by the pack builder; `data/balatro`
+stays untouched) and apply to single player and multiplayer alike:
+
+- **Blue Stake** no longer removes a discard. Vanilla took one at Blue Stake and every
+  stake above it; every other stake effect is unchanged. Its description now reads "No
+  additional effect".
+- **Blue Seal** creates its Planet card with a 1 in 2 chance, rolled on its own seeded
+  stream (`'blue_seal'`), so a run stays deterministic per seed and multiplayer peers
+  stay in sync. The chance scales with `G.GAME.probabilities.normal`, like every other
+  "1 in N" (Oops! All 6s makes it certain). It rolls only when there is room.
+- **Gold Seal** earns $4 when played and scoring (was $3).
+
+The odds and the payout live on the seal prototypes (`G.P_SEALS.Blue.config.odds`,
+`G.P_SEALS.Gold.config.dollars`). Every shipped language (15) gets the new text, and the
+Blue Seal tooltip shows the chance. `lib/balatro/lua/spec/balance_spec.lua` checks all
+three on the real game code and the text in every language.
+
 ## 5. Save persistence
 
 love.js mounts `/home/web_user/love` on **IDBFS**, Emscripten's IndexedDB-backed

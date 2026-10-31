@@ -1,0 +1,376 @@
+{
+  "$comment": "Anchored source patches applied to data/balatro Lua as it goes into the core pack (CORE_PATCHES in scripts/balatro/build-game-pack.py). The L1 specs load the base game through the same list (lib/balatro/lua/spec/core_patches.lua). data/balatro is the licensed source and stays read-only, so every change to game rules or game text is an entry here: {id, why, path, anchor, replacement}, applied in order. Each anchor must occur exactly once in its file, or the build fails. Code entries keep the line count, so error traces keep their line numbers. Text entries cover every language in data/balatro/localization and keep its formatting codes.",
+  "patches": [
+    {
+      "id": "mp-eval-row-label",
+      "why": "WS6: the round-eval row label for MP rows (the comeback bonus). The hook is nil outside multiplayer, so single player takes the vanilla branches. Same line, so line numbers in error traces are unchanged.",
+      "path": "functions/common_events.lua",
+      "anchor": "elseif config.name == 'hands' then",
+      "replacement": "elseif RMH_MP and RMH_MP.eval_row_label and RMH_MP.eval_row_label(config, left_text, scale, num_dollars) then elseif config.name == 'hands' then"
+    },
+    {
+      "id": "balance-seal-config-gold",
+      "why": "Balance change (owner): a Gold Seal earns $4 (was $3). The amount lives on the seal prototype, so the payout reads one number.",
+      "path": "game.lua",
+      "anchor": "Gold =      {order = 1,  discovered = false, set = \"Seal\"},",
+      "replacement": "Gold =      {order = 1,  discovered = false, set = \"Seal\", config = {dollars = 4}},"
+    },
+    {
+      "id": "balance-seal-config-blue",
+      "why": "Balance change (owner): a Blue Seal creates its Planet card with a 1 in 2 chance (odds on the prototype, scaled by G.GAME.probabilities.normal like every 1 in N).",
+      "path": "game.lua",
+      "anchor": "Blue =      {order = 3,  discovered = false, set = \"Seal\"},",
+      "replacement": "Blue =      {order = 3,  discovered = false, set = \"Seal\", config = {odds = 2}},"
+    },
+    {
+      "id": "balance-blue-stake-discard",
+      "why": "Balance change (owner): Blue Stake (and so every stake above it) no longer removes a discard; the other stake effects are untouched. Same line, so no line number moves.",
+      "path": "game.lua",
+      "anchor": "if self.GAME.stake >= 5 then self.GAME.starting_params.discards = self.GAME.starting_params.discards - 1 end",
+      "replacement": "-- rmh balance: Blue Stake no longer removes a discard (vanilla took one from stake 5 up)"
+    },
+    {
+      "id": "balance-blue-seal-chance",
+      "why": "Balance change (owner): the Blue Seal rolls its own seeded stream ('blue_seal'), only when there is room, so a run stays deterministic per seed and multiplayer peers stay in sync. Same line.",
+      "path": "card.lua",
+      "anchor": "if self.seal == 'Blue' and #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit then",
+      "replacement": "if self.seal == 'Blue' and #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit and pseudorandom('blue_seal') < G.GAME.probabilities.normal/G.P_SEALS.Blue.config.odds then"
+    },
+    {
+      "id": "balance-gold-seal-dollars",
+      "why": "Balance change (owner): the Gold Seal payout comes from the prototype ($4). Same line.",
+      "path": "card.lua",
+      "anchor": "ret = ret +  3",
+      "replacement": "ret = ret +  G.P_SEALS.Gold.config.dollars"
+    },
+    {
+      "id": "balance-blue-seal-text-trance",
+      "why": "Balance change (owner): the Blue Seal tooltip on Trance shows the chance (#1# in #2#). Same line.",
+      "path": "functions/common_events.lua",
+      "anchor": "elseif _c.name == 'Trance' then info_queue[#info_queue+1] = {key = 'blue_seal', set = 'Other'}",
+      "replacement": "elseif _c.name == 'Trance' then info_queue[#info_queue+1] = {key = 'blue_seal', set = 'Other', vars = {''..(G.GAME and G.GAME.probabilities and G.GAME.probabilities.normal or 1), G.P_SEALS.Blue.config.odds}}"
+    },
+    {
+      "id": "balance-blue-seal-text-badge",
+      "why": "Balance change (owner): the Blue Seal tooltip on a sealed card (hand, deck view, collection) shows the chance (#1# in #2#). Same line.",
+      "path": "functions/common_events.lua",
+      "anchor": "if v == 'blue_seal' then info_queue[#info_queue+1] = {key = 'blue_seal', set = 'Other'} end",
+      "replacement": "if v == 'blue_seal' then info_queue[#info_queue+1] = {key = 'blue_seal', set = 'Other', vars = {''..(G.GAME and G.GAME.probabilities and G.GAME.probabilities.normal or 1), G.P_SEALS.Blue.config.odds}} end"
+    },
+    {
+      "id": "balance-loc-blue-seal-de",
+      "why": "Balance change (owner): Blue Seal text (de): a #1# in #2# chance.",
+      "path": "localization/de.lua",
+      "anchor": "            blue_seal={\n                name=\"Blaues Siegel\",\n                text={\n                    \"Erschafft die {C:planet}Planeten{}-Karte\",\n                    \"für die letzte gespielte {C:attention}Pokerhand{}\",\n                    \"der Runde, wenn sie {C:attention}auf der Hand{} ist.\",\n                    \"{C:inactive}(Muss Platz haben)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"Blaues Siegel\",\n                text={\n                    \"{C:green}#1#-zu-#2#{}-Chance, die\",\n                    \"{C:planet}Planeten{}-Karte für die letzte\",\n                    \"gespielte {C:attention}Pokerhand{} der Runde\",\n                    \"zu erschaffen, wenn sie {C:attention}auf der Hand{} ist\",\n                    \"{C:inactive}(Muss Platz haben)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-de",
+      "why": "Balance change (owner): Gold Seal text (de): $4.",
+      "path": "localization/de.lua",
+      "anchor": "            gold_seal={\n                name=\"Goldenes Siegel\",\n                text={\n                    \"Verdiene {C:money}3 ${}, wenn diese\",\n                    \"Karte gespielt wird\",\n                    \"und punktet\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"Goldenes Siegel\",\n                text={\n                    \"Verdiene {C:money}4 ${}, wenn diese\",\n                    \"Karte gespielt wird\",\n                    \"und punktet\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-de",
+      "why": "Balance change (owner): Blue Stake text (de): no discard penalty any more.",
+      "path": "localization/de.lua",
+      "anchor": "            stake_blue={\n                name=\"Blauer Einsatz\",\n                text={\n                    \"{C:red}-1{} Abwurf\",\n                    \"{s:0.8}Gilt für alle vorherigen Einsätze\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"Blauer Einsatz\",\n                text={\n                    \"{C:inactive}Kein zusätzlicher Effekt\",\n                    \"{s:0.8}Gilt für alle vorherigen Einsätze\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-en-us",
+      "why": "Balance change (owner): Blue Seal text (en-us): a #1# in #2# chance.",
+      "path": "localization/en-us.lua",
+      "anchor": "            blue_seal={\n                name=\"Blue Seal\",\n                text={\n                    \"Creates the {C:planet}Planet{} card\",\n                    \"for final played {C:attention}poker hand{}\",\n                    \"of round if {C:attention}held{} in hand\",\n                    \"{C:inactive}(Must have room)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"Blue Seal\",\n                text={\n                    \"{C:green}#1# in #2#{} chance to create\",\n                    \"the {C:planet}Planet{} card for final\",\n                    \"played {C:attention}poker hand{} of round\",\n                    \"if {C:attention}held{} in hand\",\n                    \"{C:inactive}(Must have room)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-en-us",
+      "why": "Balance change (owner): Gold Seal text (en-us): $4.",
+      "path": "localization/en-us.lua",
+      "anchor": "            gold_seal={\n                name=\"Gold Seal\",\n                text={\n                    \"Earn {C:money}$3{} when this\",\n                    \"card is played\",\n                    \"and scores\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"Gold Seal\",\n                text={\n                    \"Earn {C:money}$4{} when this\",\n                    \"card is played\",\n                    \"and scores\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-en-us",
+      "why": "Balance change (owner): Blue Stake text (en-us): no discard penalty any more.",
+      "path": "localization/en-us.lua",
+      "anchor": "            stake_blue={\n                name=\"Blue Stake\",\n                text={\n                    \"{C:red}-1{} Discard\",\n                    \"{s:0.8}Applies all previous Stakes\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"Blue Stake\",\n                text={\n                    \"{C:inactive}No additional effect\",\n                    \"{s:0.8}Applies all previous Stakes\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-es_419",
+      "why": "Balance change (owner): Blue Seal text (es_419): a #1# in #2# chance.",
+      "path": "localization/es_419.lua",
+      "anchor": "            blue_seal={\n                name=\"Sello azul\",\n                text={\n                    \"Crea la carta de {C:planet}planeta{}\",\n                    \"para la última {C:attention}mano de póker{}\",\n                    \"de la ronda jugada si {C:attention}la tienes{} en la mano\",\n                    \"{C:inactive}(Debe haber espacio)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"Sello azul\",\n                text={\n                    \"{C:green}#1# en #2#{} probabilidades de crear\",\n                    \"la carta de {C:planet}planeta{} para la última\",\n                    \"{C:attention}mano de póker{} jugada de la ronda\",\n                    \"si {C:attention}la tienes{} en la mano\",\n                    \"{C:inactive}(Debe haber espacio)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-es_419",
+      "why": "Balance change (owner): Gold Seal text (es_419): $4.",
+      "path": "localization/es_419.lua",
+      "anchor": "            gold_seal={\n                name=\"Sello de oro\",\n                text={\n                    \"Gana {C:money}3 ${} cuando\",\n                    \"se juega esta carta\",\n                    \"y anota puntos\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"Sello de oro\",\n                text={\n                    \"Gana {C:money}4 ${} cuando\",\n                    \"se juega esta carta\",\n                    \"y anota puntos\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-es_419",
+      "why": "Balance change (owner): Blue Stake text (es_419): no discard penalty any more.",
+      "path": "localization/es_419.lua",
+      "anchor": "            stake_blue={\n                name=\"Pozo azul\",\n                text={\n                    \"{C:red}-1{} descarte\",\n                    \"{s:0.8}Se aplica a todos los pozos anteriores\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"Pozo azul\",\n                text={\n                    \"{C:inactive}Sin efecto adicional\",\n                    \"{s:0.8}Se aplica a todos los pozos anteriores\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-es_ES",
+      "why": "Balance change (owner): Blue Seal text (es_ES): a #1# in #2# chance.",
+      "path": "localization/es_ES.lua",
+      "anchor": "            blue_seal={\n                name=\"Sello azul\",\n                text={\n                    \"Crea la carta de {C:planet}planeta{}\",\n                    \"para la última {C:attention}mano de póker{} jugada\",\n                    \"de la ronda si la {C:attention}tienes{} en la mano\",\n                    \"{C:inactive}(Debe haber espacio)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"Sello azul\",\n                text={\n                    \"{C:green}#1# en #2#{} probabilidades de crear\",\n                    \"la carta de {C:planet}planeta{} para la última\",\n                    \"{C:attention}mano de póker{} jugada de la ronda\",\n                    \"si la {C:attention}tienes{} en la mano\",\n                    \"{C:inactive}(Debe haber espacio)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-es_ES",
+      "why": "Balance change (owner): Gold Seal text (es_ES): $4.",
+      "path": "localization/es_ES.lua",
+      "anchor": "            gold_seal={\n                name=\"Sello de oro\",\n                text={\n                    \"Gana {C:money}$3{} cuando\",\n                    \"se juega esta carta\",\n                    \"y anota\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"Sello de oro\",\n                text={\n                    \"Gana {C:money}$4{} cuando\",\n                    \"se juega esta carta\",\n                    \"y anota\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-es_ES",
+      "why": "Balance change (owner): Blue Stake text (es_ES): no discard penalty any more.",
+      "path": "localization/es_ES.lua",
+      "anchor": "            stake_blue={\n                name=\"Pozo azul\",\n                text={\n                    \"{C:red}-1{} descarte\",\n                    \"{s:0.8}Se aplica a todos los pozos anteriores\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"Pozo azul\",\n                text={\n                    \"{C:inactive}Sin efecto adicional\",\n                    \"{s:0.8}Se aplica a todos los pozos anteriores\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-fr",
+      "why": "Balance change (owner): Blue Seal text (fr): a #1# in #2# chance.",
+      "path": "localization/fr.lua",
+      "anchor": "            blue_seal={\n                name=\"Sceau bleu\",\n                text={\n                    \"Crée une carte {C:planet}Planète{}\",\n                    \"pour la dernière {C:attention}main de poker{} jouée\",\n                    \"de la manche si vous {C:attention}l'avez{} en main\",\n                    \"{C:inactive}(Selon la place disponible)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"Sceau bleu\",\n                text={\n                    \"{C:green}#1# chance(s) sur #2#{} de créer\",\n                    \"une carte {C:planet}Planète{} pour la dernière\",\n                    \"{C:attention}main de poker{} jouée de la manche\",\n                    \"si vous {C:attention}l'avez{} en main\",\n                    \"{C:inactive}(Selon la place disponible)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-fr",
+      "why": "Balance change (owner): Gold Seal text (fr): $4.",
+      "path": "localization/fr.lua",
+      "anchor": "            gold_seal={\n                name=\"Sceau d'or\",\n                text={\n                    \"Gagnez {C:money}3 ${} lorsque cette\",\n                    \"carte est jouée\",\n                    \"et marque\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"Sceau d'or\",\n                text={\n                    \"Gagnez {C:money}4 ${} lorsque cette\",\n                    \"carte est jouée\",\n                    \"et marque\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-fr",
+      "why": "Balance change (owner): Blue Stake text (fr): no discard penalty any more.",
+      "path": "localization/fr.lua",
+      "anchor": "            stake_blue={\n                name=\"Mise bleue\",\n                text={\n                    \"{C:red}-1{} défausse\",\n                    \"{s:0.8}Applique toutes les mises précédentes\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"Mise bleue\",\n                text={\n                    \"{C:inactive}Aucun effet supplémentaire\",\n                    \"{s:0.8}Applique toutes les mises précédentes\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-id",
+      "why": "Balance change (owner): Blue Seal text (id): a #1# in #2# chance.",
+      "path": "localization/id.lua",
+      "anchor": "            blue_seal={\n                name=\"Blue Seal\",\n                text={\n                    \"Membuat kartu {C:planet}Planet{}\",\n                    \"untuk {C:attention}poker hand{}\",\n                    \"terakhir yang dimainkan pada babak tersebut jika {C:attention}ada{} di hand\",\n                    \"{C:inactive}(Harus memiliki tempat)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"Blue Seal\",\n                text={\n                    \"{C:green}#1# dalam #2#{} peluang untuk membuat\",\n                    \"kartu {C:planet}Planet{} untuk {C:attention}poker hand{}\",\n                    \"terakhir yang dimainkan pada babak tersebut\",\n                    \"jika {C:attention}ada{} di hand\",\n                    \"{C:inactive}(Harus memiliki tempat)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-id",
+      "why": "Balance change (owner): Gold Seal text (id): $4.",
+      "path": "localization/id.lua",
+      "anchor": "            gold_seal={\n                name=\"Gold Seal\",\n                text={\n                    \"Dapatkan {C:money}$3{} saat kartu\",\n                    \"ini dimainkan\",\n                    \"dan menang\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"Gold Seal\",\n                text={\n                    \"Dapatkan {C:money}$4{} saat kartu\",\n                    \"ini dimainkan\",\n                    \"dan menang\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-id",
+      "why": "Balance change (owner): Blue Stake text (id): no discard penalty any more.",
+      "path": "localization/id.lua",
+      "anchor": "            stake_blue={\n                name=\"Blue Stake\",\n                text={\n                    \"{C:red}-1{} Discard\",\n                    \"{s:0.8}Memakai semua Stake sebelumnya\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"Blue Stake\",\n                text={\n                    \"{C:inactive}Tidak ada efek tambahan\",\n                    \"{s:0.8}Memakai semua Stake sebelumnya\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-it",
+      "why": "Balance change (owner): Blue Seal text (it): a #1# in #2# chance.",
+      "path": "localization/it.lua",
+      "anchor": "            blue_seal={\n                name=\"Sigillo blu\",\n                text={\n                    \"Crea la carta {C:planet}Pianeta{}\",\n                    \"per l'ultima {C:attention}mano di poker{} giocata\",\n                    \"nel round se {C:attention}tenuta{} in mano\",\n                    \"{C:inactive}(Serve spazio)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"Sigillo blu\",\n                text={\n                    \"{C:green}#1# probabilità su #2#{} di creare\",\n                    \"la carta {C:planet}Pianeta{} per l'ultima\",\n                    \"{C:attention}mano di poker{} giocata nel round\",\n                    \"se {C:attention}tenuta{} in mano\",\n                    \"{C:inactive}(Serve spazio)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-it",
+      "why": "Balance change (owner): Gold Seal text (it): $4.",
+      "path": "localization/it.lua",
+      "anchor": "            gold_seal={\n                name=\"Sigillo d'oro\",\n                text={\n                    \"Guadagni {C:money}$3{} quando questa\",\n                    \"carta è giocata\",\n                    \"e assegna punti\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"Sigillo d'oro\",\n                text={\n                    \"Guadagni {C:money}$4{} quando questa\",\n                    \"carta è giocata\",\n                    \"e assegna punti\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-it",
+      "why": "Balance change (owner): Blue Stake text (it): no discard penalty any more.",
+      "path": "localization/it.lua",
+      "anchor": "            stake_blue={\n                name=\"Puntata blu\",\n                text={\n                    \"{C:red}-1{} scarto\",\n                    \"{s:0.8}Applica tutte le puntate precedenti\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"Puntata blu\",\n                text={\n                    \"{C:inactive}Nessun effetto aggiuntivo\",\n                    \"{s:0.8}Applica tutte le puntate precedenti\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-ja",
+      "why": "Balance change (owner): Blue Seal text (ja): a #1# in #2# chance.",
+      "path": "localization/ja.lua",
+      "anchor": "            blue_seal={\n                name=\"ブルーシール\",\n                text={\n                    \"ハンドにこのシールが{C:attention}ある{}場合、\",\n                    \"ラウンドの最後にプレイした{C:attention}ポーカーハンド{}\",\n                    \"の{C:planet}惑星{}カードを作る\",\n                    \"{C:inactive}（空きが必要）\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"ブルーシール\",\n                text={\n                    \"ハンドにこのシールが{C:attention}ある{}場合、\",\n                    \"{C:green}#2#分の#1#{} の確率で\",\n                    \"ラウンドの最後にプレイした{C:attention}ポーカーハンド{}\",\n                    \"の{C:planet}惑星{}カードを作る\",\n                    \"{C:inactive}（空きが必要）\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-ja",
+      "why": "Balance change (owner): Gold Seal text (ja): $4.",
+      "path": "localization/ja.lua",
+      "anchor": "            gold_seal={\n                name=\"ゴールドシール\",\n                text={\n                    \"このカードがプレイされた時\",\n                    \"{C:money}$3{} を得て\",\n                    \"スコアする\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"ゴールドシール\",\n                text={\n                    \"このカードがプレイされた時\",\n                    \"{C:money}$4{} を得て\",\n                    \"スコアする\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-ja",
+      "why": "Balance change (owner): Blue Stake text (ja): no discard penalty any more.",
+      "path": "localization/ja.lua",
+      "anchor": "            stake_blue={\n                name=\"ブルーステーク\",\n                text={\n                    \"ディスカード {C:red}-1{}\",\n                    \"{s:0.8}以前のすべてのステークに適用\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"ブルーステーク\",\n                text={\n                    \"{C:inactive}追加効果なし\",\n                    \"{s:0.8}以前のすべてのステークに適用\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-ko",
+      "why": "Balance change (owner): Blue Seal text (ko): a #1# in #2# chance.",
+      "path": "localization/ko.lua",
+      "anchor": "            blue_seal={\n                name=\"블루 봉인\",\n                text={\n                    \"핸드에 {C:attention}있을{} 경우\",\n                    \"라운드에서 마지막으로 플레이한 {C:attention}포커 핸드{}에\",\n                    \"{C:planet}행성{} 카드를 생성\",\n                    \"{C:inactive}(공간이 있어야 합니다)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"블루 봉인\",\n                text={\n                    \"핸드에 {C:attention}있을{} 경우\",\n                    \"{C:green}#1# / #2#{} 의 확률로\",\n                    \"라운드에서 마지막으로 플레이한 {C:attention}포커 핸드{}에\",\n                    \"{C:planet}행성{} 카드를 생성\",\n                    \"{C:inactive}(공간이 있어야 합니다)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-ko",
+      "why": "Balance change (owner): Gold Seal text (ko): $4.",
+      "path": "localization/ko.lua",
+      "anchor": "            gold_seal={\n                name=\"골드 봉인\",\n                text={\n                    \"이 카드를 플레이하면\",\n                    \"{C:money}$3{}를 획득합니다\",\n                    \"및 점수\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"골드 봉인\",\n                text={\n                    \"이 카드를 플레이하면\",\n                    \"{C:money}$4{}를 획득합니다\",\n                    \"및 점수\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-ko",
+      "why": "Balance change (owner): Blue Stake text (ko): no discard penalty any more.",
+      "path": "localization/ko.lua",
+      "anchor": "            stake_blue={\n                name=\"블루 스테이크\",\n                text={\n                    \"{C:red}-1{} 버리기\",\n                    \"{s:0.8}이전 스테이크를 모두 적용합니다\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"블루 스테이크\",\n                text={\n                    \"{C:inactive}추가 효과 없음\",\n                    \"{s:0.8}이전 스테이크를 모두 적용합니다\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-nl",
+      "why": "Balance change (owner): Blue Seal text (nl): a #1# in #2# chance.",
+      "path": "localization/nl.lua",
+      "anchor": "            blue_seal={\n                name=\"Blauw zegel\",\n                text={\n                    \"Creëert de {C:planet}planeet{}-kaart\",\n                    \"voor laatste gespeelde {C:attention}pokerhand{}\",\n                    \"van ronde indien in hand {C:attention}gehouden{}\",\n                    \"{C:inactive}(Moet ruimte voor zijn)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"Blauw zegel\",\n                text={\n                    \"Een kans van {C:green}#1# op #2#{} om de\",\n                    \"{C:planet}planeet{}-kaart te creëren voor\",\n                    \"laatste gespeelde {C:attention}pokerhand{} van\",\n                    \"ronde indien in hand {C:attention}gehouden{}\",\n                    \"{C:inactive}(Moet ruimte voor zijn)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-nl",
+      "why": "Balance change (owner): Gold Seal text (nl): $4.",
+      "path": "localization/nl.lua",
+      "anchor": "            gold_seal={\n                name=\"Gouden zegel\",\n                text={\n                    \"Verdien {C:money}$ 3{} als deze\",\n                    \"kaart wordt gespeeld\",\n                    \"en scoort\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"Gouden zegel\",\n                text={\n                    \"Verdien {C:money}$ 4{} als deze\",\n                    \"kaart wordt gespeeld\",\n                    \"en scoort\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-nl",
+      "why": "Balance change (owner): Blue Stake text (nl): no discard penalty any more.",
+      "path": "localization/nl.lua",
+      "anchor": "            stake_blue={\n                name=\"Blauwe inzet\",\n                text={\n                    \"{C:red}-1{} weggooimogelijkheid\",\n                    \"{s:0.8}Past alle eerdere inzetten toe\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"Blauwe inzet\",\n                text={\n                    \"{C:inactive}Geen extra effect\",\n                    \"{s:0.8}Past alle eerdere inzetten toe\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-pl",
+      "why": "Balance change (owner): Blue Seal text (pl): a #1# in #2# chance.",
+      "path": "localization/pl.lua",
+      "anchor": "            blue_seal={\n                name=\"Niebieska Pieczęć\",\n                text={\n                    \"Tworzy kartę {C:planet}Planety{}\",\n                    \"za ostatni zagrany {C:attention}układ pokerowy{}\",\n                    \"w rundzie, jeśli {C:attention}jest na ręce{}\",\n                    \"{C:inactive}(wymaga miejsca)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"Niebieska Pieczęć\",\n                text={\n                    \"{C:green}#1# na #2#{} szans na stworzenie\",\n                    \"karty {C:planet}Planety{} za ostatni zagrany\",\n                    \"{C:attention}układ pokerowy{} w rundzie,\",\n                    \"jeśli {C:attention}jest na ręce{}\",\n                    \"{C:inactive}(wymaga miejsca)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-pl",
+      "why": "Balance change (owner): Gold Seal text (pl): $4.",
+      "path": "localization/pl.lua",
+      "anchor": "            gold_seal={\n                name=\"Złota Pieczęć\",\n                text={\n                    \"Zdobywasz {C:money}$3{}, gdy ta\",\n                    \"karta zostanie zagrana\",\n                    \"i zdobywa punkty\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"Złota Pieczęć\",\n                text={\n                    \"Zdobywasz {C:money}$4{}, gdy ta\",\n                    \"karta zostanie zagrana\",\n                    \"i zdobywa punkty\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-pl",
+      "why": "Balance change (owner): Blue Stake text (pl): no discard penalty any more.",
+      "path": "localization/pl.lua",
+      "anchor": "            stake_blue={\n                name=\"Niebieska stawka\",\n                text={\n                    \"{C:red}-1{} zrzutka\",\n                    \"{s:0.8}Działa na wszystkie poprzednie stawki\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"Niebieska stawka\",\n                text={\n                    \"{C:inactive}Brak dodatkowego efektu\",\n                    \"{s:0.8}Działa na wszystkie poprzednie stawki\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-pt_BR",
+      "why": "Balance change (owner): Blue Seal text (pt_BR): a #1# in #2# chance.",
+      "path": "localization/pt_BR.lua",
+      "anchor": "            blue_seal={\n                name=\"Selo Azul\",\n                text={\n                    \"Cria a carta de {C:planet}Planeta{}\",\n                    \"por {C:attention}mão de pôquer{} final jogada\",\n                    \"da rodada se {C:attention}contida{} na mão\",\n                    \"{C:inactive}(Deve ter espaço)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"Selo Azul\",\n                text={\n                    \"Chance de {C:green}#1# em #2#{} de criar\",\n                    \"a carta de {C:planet}Planeta{} da última\",\n                    \"{C:attention}mão de pôquer{} jogada da rodada\",\n                    \"se {C:attention}contida{} na mão\",\n                    \"{C:inactive}(Deve ter espaço)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-pt_BR",
+      "why": "Balance change (owner): Gold Seal text (pt_BR): $4.",
+      "path": "localization/pt_BR.lua",
+      "anchor": "            gold_seal={\n                name=\"Selo Dourado\",\n                text={\n                    \"Ganhe {C:money}$3{} quando esta\",\n                    \"carta é jogada\",\n                    \"e pontua\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"Selo Dourado\",\n                text={\n                    \"Ganhe {C:money}$4{} quando esta\",\n                    \"carta é jogada\",\n                    \"e pontua\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-pt_BR",
+      "why": "Balance change (owner): Blue Stake text (pt_BR): no discard penalty any more.",
+      "path": "localization/pt_BR.lua",
+      "anchor": "            stake_blue={\n                name=\"Aposta Azul\",\n                text={\n                    \"{C:red}-1{} Descarte\",\n                    \"{s:0.8}Aplica todas as Apostas anteriores\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"Aposta Azul\",\n                text={\n                    \"{C:inactive}Nenhum efeito adicional\",\n                    \"{s:0.8}Aplica todas as Apostas anteriores\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-ru",
+      "why": "Balance change (owner): Blue Seal text (ru): a #1# in #2# chance.",
+      "path": "localization/ru.lua",
+      "anchor": "            blue_seal={\n                name=\"Синяя печать\",\n                text={\n                    \"Создает карту {C:planet}планеты{}\",\n                    \"для последней разыгранной {C:attention}покерной руки{}\",\n                    \"раунда, если {C:attention}есть{} в руке\",\n                    \"{C:inactive}(Должно быть место)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"Синяя печать\",\n                text={\n                    \"Шанс {C:green}#1# из #2#{} создать\",\n                    \"карту {C:planet}планеты{} для последней\",\n                    \"разыгранной {C:attention}покерной руки{}\",\n                    \"раунда, если {C:attention}есть{} в руке\",\n                    \"{C:inactive}(Должно быть место)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-ru",
+      "why": "Balance change (owner): Gold Seal text (ru): $4.",
+      "path": "localization/ru.lua",
+      "anchor": "            gold_seal={\n                name=\"Золотая печать\",\n                text={\n                    \"Получите {C:money}$3{}, когда\",\n                    \"разыгрывается эта карта\",\n                    \"и подсчитывается\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"Золотая печать\",\n                text={\n                    \"Получите {C:money}$4{}, когда\",\n                    \"разыгрывается эта карта\",\n                    \"и подсчитывается\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-ru",
+      "why": "Balance change (owner): Blue Stake text (ru): no discard penalty any more.",
+      "path": "localization/ru.lua",
+      "anchor": "            stake_blue={\n                name=\"Синяя ставка\",\n                text={\n                    \"{C:red}-1{} сброс\",\n                    \"{s:0.8}Применяет все предыдущие ставки\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"Синяя ставка\",\n                text={\n                    \"{C:inactive}Без дополнительного эффекта\",\n                    \"{s:0.8}Применяет все предыдущие ставки\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-zh_CN",
+      "why": "Balance change (owner): Blue Seal text (zh_CN): a #1# in #2# chance.",
+      "path": "localization/zh_CN.lua",
+      "anchor": "            blue_seal={\n                name=\"蓝色蜡封\",\n                text={\n                    \"如果在回合结束时\",\n                    \"这张牌还{C:attention}留在{}手牌中\",\n                    \"会生成最后一手牌型的{C:planet}星球牌{}\",\n                    \"{C:inactive}（必须有空位）\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"蓝色蜡封\",\n                text={\n                    \"如果在回合结束时\",\n                    \"这张牌还{C:attention}留在{}手牌中\",\n                    \"有{C:green}#1#/#2#{}的几率\",\n                    \"生成最后一手牌型的{C:planet}星球牌{}\",\n                    \"{C:inactive}（必须有空位）\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-zh_CN",
+      "why": "Balance change (owner): Gold Seal text (zh_CN): $4.",
+      "path": "localization/zh_CN.lua",
+      "anchor": "            gold_seal={\n                name=\"金色蜡封\",\n                text={\n                    \"这张牌被打出\",\n                    \"并计分时\",\n                    \"获得{C:money}$3{}\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"金色蜡封\",\n                text={\n                    \"这张牌被打出\",\n                    \"并计分时\",\n                    \"获得{C:money}$4{}\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-zh_CN",
+      "why": "Balance change (owner): Blue Stake text (zh_CN): no discard penalty any more.",
+      "path": "localization/zh_CN.lua",
+      "anchor": "            stake_blue={\n                name=\"蓝注\",\n                text={\n                    \"弃牌次数{C:red}-1{}\",\n                    \"{s:0.8}之前所有赌注也都起效\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"蓝注\",\n                text={\n                    \"{C:inactive}无额外效果\",\n                    \"{s:0.8}之前所有赌注也都起效\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-seal-zh_TW",
+      "why": "Balance change (owner): Blue Seal text (zh_TW): a #1# in #2# chance.",
+      "path": "localization/zh_TW.lua",
+      "anchor": "            blue_seal={\n                name=\"藍色封蠟章\",\n                text={\n                    \"若{C:attention}持於{}手中，產生回合中\",\n                    \"最後打出{C:attention}牌型{}的\",\n                    \"{C:planet}行星{}牌\",\n                    \"{C:inactive}(必須有空位)\",\n                },\n",
+      "replacement": "            blue_seal={\n                name=\"藍色封蠟章\",\n                text={\n                    \"若{C:attention}持於{}手中，\",\n                    \"有{C:green}#1#/#2#{}的機率\",\n                    \"產生回合中最後打出{C:attention}牌型{}的\",\n                    \"{C:planet}行星{}牌\",\n                    \"{C:inactive}(必須有空位)\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-gold-seal-zh_TW",
+      "why": "Balance change (owner): Gold Seal text (zh_TW): $4.",
+      "path": "localization/zh_TW.lua",
+      "anchor": "            gold_seal={\n                name=\"金色封蠟章\",\n                text={\n                    \"打出這張牌\",\n                    \"且此牌計分，\",\n                    \"獲得{C:money}$3{}\",\n                },\n",
+      "replacement": "            gold_seal={\n                name=\"金色封蠟章\",\n                text={\n                    \"打出這張牌\",\n                    \"且此牌計分，\",\n                    \"獲得{C:money}$4{}\",\n                },\n"
+    },
+    {
+      "id": "balance-loc-blue-stake-zh_TW",
+      "why": "Balance change (owner): Blue Stake text (zh_TW): no discard penalty any more.",
+      "path": "localization/zh_TW.lua",
+      "anchor": "            stake_blue={\n                name=\"藍色賭注\",\n                text={\n                    \"{C:red}-1{}棄牌次數\",\n                    \"{s:0.8}適用於所有先前的賭注\",\n                },\n",
+      "replacement": "            stake_blue={\n                name=\"藍色賭注\",\n                text={\n                    \"{C:inactive}無額外效果\",\n                    \"{s:0.8}適用於所有先前的賭注\",\n                },\n"
+    }
+  ]
+}
