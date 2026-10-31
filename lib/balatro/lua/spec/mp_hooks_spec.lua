@@ -16,8 +16,13 @@ local function stub_game()
     update_shop = function() end,
     update_round_eval = function() G.STATE_COMPLETE = true; calls[#calls + 1] = { 'round_eval' } end,
     update = function() calls[#calls + 1] = { 'update', G.SETTINGS.GAMESPEED } end,
-    start_run = function(self, args) calls[#calls + 1] = { 'start_run', args and args.seed } end,
+    start_run = function(self, args)
+      calls[#calls + 1] = { 'start_run', args and args.seed }
+      -- As vanilla: a Continue checks the continue_game unlock before G.GAME becomes the save's.
+      if args and args.savetext then check_for_unlock({ type = 'continue_game' }) end
+    end,
   }
+  _G.check_for_unlock = function(args) calls[#calls + 1] = { 'check_for_unlock', args.type } end
   _G.Blind = {
     set_blind = function(self, blind, reset)
       if reset then return end
@@ -526,6 +531,23 @@ describe('session lifecycle', function()
     MP.net.frame(0)
     expect(loads).eq({ '/rmh/mp/run.jkr' })
     MP.session.load_snapshot = load
+  end)
+
+  it('a restore from the menu does not unlock Throwback over the restored run (E2E-14)', function()
+    start_match(MP, { runId = 'runR' })
+    -- A reloaded page restores before any launch: G.GAME is the menu's unseeded game object.
+    G.GAME.seeded = nil
+    calls = {}
+    expect(MP.session.restore_raw('return {STATE=5}', nil)).eq(true)
+    expect(find_call('funcs_start_run') ~= nil).truthy()
+    -- G.FUNCS.start_run queues Game:start_run; run it as that event does.
+    Game.start_run(G, { savetext = { STATE = 5 } })
+    expect(find_call('start_run') ~= nil).truthy()
+    expect(find_call('check_for_unlock')).eq(nil)
+    expect(MP.session.restoring).eq(nil)
+    -- Outside a restore the check is vanilla's.
+    check_for_unlock({ type = 'continue_game' })
+    expect(find_call('check_for_unlock')).eq({ 'check_for_unlock', 'continue_game' })
   end)
 
   it('go_to_menu leaves the session after the run is deleted', function()
