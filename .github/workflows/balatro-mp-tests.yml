@@ -120,6 +120,10 @@ jobs:
 
   e2e:
     needs: test
+    # Paused on pull requests while the faster, sharded e2e layout is being
+    # finished (it takes over an hour as one job). It still runs on main, nightly
+    # and on demand; restore PR runs when the optimized version lands.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
