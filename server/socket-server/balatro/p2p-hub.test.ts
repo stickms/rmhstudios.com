@@ -302,6 +302,53 @@ describe('kick, leave, close, forfeit', () => {
     host(h);
   });
 
+  it('a match ended, returned to its lobby and then left frees both seats: each can create at once', () => {
+    const h = connect({ userId: 'u-host', userName: 'Host' });
+    const { code } = host(h);
+    const m = connect({ userId: 'u-guest', userName: 'Guest' });
+    joinAdmitted(h, m, code);
+    state(h, { started: true, runId: 'run-e2e01', members: ['u-host', 'u-guest'], summary: { players: 2, ante: 1 } });
+    // Return to Lobby: the host re-declares the room as an open, unstarted lobby.
+    state(h, { started: false, runId: null, members: ['u-host', 'u-guest'], summary: { players: 2, ante: null } });
+    world.send(m, 'balatro:p2p:leave', {});
+    world.send(h, 'balatro:p2p:leave', {});
+    expect(balatroHub.room(code)).toBeNull();
+    for (const s of [h, m]) {
+      world.send(s, 'balatro:seat:query', {});
+      expect(lastOf(s, 'balatro:seat')?.code).toBeNull();
+    }
+    expect(host(h).code).not.toBe(code);
+    expect(host(m).code).toMatch(BALATRO_LIMITS.CODE_RE);
+    expect(errors(h)).toEqual([]);
+    expect(errors(m)).toEqual([]);
+  });
+
+  it('per socket the hub acts in arrival order: a claim that overtakes the host’s own leave is seat-held', () => {
+    // Why the session runtime holds every emit behind a host's drained leave (lobby/hub-gate.ts).
+    const h = connect({ userId: 'u-host', userName: 'Host' });
+    const { code } = host(h);
+    world.send(h, 'balatro:p2p:host', HOST);
+    expect(lastOf(h, 'balatro:p2p:error')).toEqual({ event: 'balatro:p2p:host', code: 'seat-held', heldCode: code });
+    world.send(h, 'balatro:p2p:leave', {});
+    expect(host(h).code).not.toBe(code);
+  });
+
+  it('a crashed (disconnected) seated member keeps the seat: a create elsewhere is seat-held, the rejoin is admitted', () => {
+    const h = connect();
+    const { code } = host(h);
+    const m = connect({ userId: 'u-crash', userName: 'Crash' });
+    joinAdmitted(h, m, code);
+    state(h, { started: true, runId: 'run-c', members: ['u-crash'] });
+    disconnect(m);
+    const back = connect({ userId: 'u-crash', userName: 'Crash' });
+    world.send(back, 'balatro:p2p:host', HOST);
+    expect(lastOf(back, 'balatro:p2p:error')).toEqual({ event: 'balatro:p2p:host', code: 'seat-held', heldCode: code });
+    world.send(back, 'balatro:seat:query', {});
+    expect(lastOf(back, 'balatro:seat')).toMatchObject({ code, runId: 'run-c', started: true });
+    join(back, code);
+    expect(lastOf(h, 'balatro:p2p:join-request')).toMatchObject({ userId: 'u-crash', rejoin: true });
+  });
+
   it('a pending member that disconnects is reported as disconnected', () => {
     const h = connect();
     const { code } = host(h);

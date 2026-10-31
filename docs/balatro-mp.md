@@ -290,6 +290,7 @@ WS6 (Lua core):
 - `hello.rejoin` is set only by a peer whose Lua run is gone (a reload): the host answers with the referee's `rejoined` resync and the 3-minute catch-up clock. A peer whose run is still live (a network drop, a host migration) sends `rejoin: null`; the host replays its outcome log to it instead (deduplicated by `hs`) and reports it `back`.
 - A crash rejoiner counts as caught up at its first `flags` past ante 0 after `rejoin_restore`; it tells the host with a second `player_info` (the wire has no member-to-host presence kind).
 - A deliberate host leave sends its forfeit, the checkpoint and `bye` over P2P and asks the hub to hand over 500 ms later, so the successor's checkpoint already holds the forfeit.
+- Seats across a Leave: a deliberate Leave gives the seat up at once; only a crash or a dropped socket keeps it for the rejoin (`seat-held` + the Seat-held prompt). Because the host's hub `leave` waits out that 500 ms drain, the roles emit through the runtime's `HubGate` (`lobby/hub-gate.ts`): every hub emit made during the drain (Create, Join, the seat prompt) is queued and sent right after the `leave`, so the hub never sees the next claim while the old room still holds the seat. A host refused before its room exists ends with `seat-held:<code>` like a member, so the prompt can Rejoin that room.
 - Display sync is not filtered by JS: every peer message reaches Lua with its sender, and Lua keeps its target's (report.lua already filters, and `opp_ctx` needs every sender for `mp_from_target`).
 
 ### WS11 / wave 3 (in-run UI)
