@@ -562,3 +562,88 @@ describe('spectate list', () => {
     expect(last(v, 'balatro:spectate:lobbies')).toEqual({ lobbies: [{ code, queueMode: 'pvp_royale', players: 1, ante: null }] });
   });
 });
+
+/* ─── Find Game counts (A12) ─────────────────────────────────────────────── */
+
+describe('queue counts (A12)', () => {
+  type Counts = S2C['balatro:queue:counts'];
+  const ask = (s: FakeSocket): Counts => {
+    world.send(s, 'balatro:queue:counts', {});
+    return last<Counts>(s, 'balatro:queue:counts')!;
+  };
+  const of = (c: Counts, mode: string) => c.counts.find((x) => x.queueMode === mode);
+
+  it('answers every casual mode, zeros included', () => {
+    const c = ask(connect());
+    expect(c.counts.map((x) => x.queueMode)).toEqual(['pvp_nemesis', 'pvp_royale', 'pvp_manhunt', 'pvp_teams', 'pvp_smallworld']);
+    expect(c.counts.every((x) => x.queued === 0 && x.inGame === 0)).toBe(true);
+  });
+
+  it('In Queue counts searching players per mode across builds; a party counts each member', () => {
+    queue(connect(), 'pvp_royale', HASH);
+    queue(connect(), 'pvp_royale', OTHER);
+    queue(connect(), 'pvp_teams');
+    const host = connect();
+    const code = hostParty(host, [connect(), connect()]);
+    world.send(host, 'balatro:party:queue', { code, queueMode: 'pvp_manhunt' });
+    const c = ask(connect());
+    expect(of(c, 'pvp_royale')).toEqual({ queueMode: 'pvp_royale', queued: 2, inGame: 0 });
+    expect(of(c, 'pvp_teams')!.queued).toBe(1);
+    expect(of(c, 'pvp_manhunt')!.queued).toBe(3);
+    expect(of(c, 'pvp_nemesis')!.queued).toBe(0);
+  });
+
+  it('In Game counts the seats of matchmade (casual) rooms only, not private or party lobbies', () => {
+    const a = connect();
+    const b = connect();
+    queue(a);
+    queue(b);
+    const code = hostCasual(a);
+    world.send(b, 'balatro:p2p:join', { code, contentHash: HASH });
+    const req = last<S2C['balatro:p2p:join-request']>(a, 'balatro:p2p:join-request')!;
+    world.send(a, 'balatro:p2p:admit', { peerId: req.peerId, accept: true });
+    const p = connect();
+    world.send(p, 'balatro:p2p:host', { kind: 'private', queueMode: 'pvp_nemesis', maxPlayers: 4, contentHash: HASH, spectatable: true });
+    hostParty(connect(), [connect()]);
+    vi.advanceTimersByTime(1_000);
+    const c = ask(connect());
+    expect(of(c, 'pvp_nemesis')).toEqual({ queueMode: 'pvp_nemesis', queued: 0, inGame: 2 });
+    expect(of(c, 'pvp_royale')!.inGame).toBe(0);
+  });
+
+  it('one computation per second serves every asker', () => {
+    const v = connect();
+    expect(of(ask(v), 'pvp_teams')!.queued).toBe(0);
+    queue(connect(), 'pvp_teams');
+    expect(of(ask(connect()), 'pvp_teams')!.queued).toBe(0); // cached
+    vi.advanceTimersByTime(1_000);
+    expect(of(ask(v), 'pvp_teams')!.queued).toBe(1);
+  });
+
+  it('needs an account and is rate limited', () => {
+    const anon = world.connect('qsock-anon', {});
+    world.send(anon, 'balatro:queue:counts', {});
+    expect(last(anon, 'balatro:queue:counts')).toBeUndefined();
+    expect(errors(anon)).toEqual(['auth-required']);
+    const s = connect();
+    for (let i = 0; i < 40; i += 1) world.send(s, 'balatro:queue:counts', {});
+    expect(all(s, 'balatro:queue:counts').length).toBe(30);
+    expect(errors(s)).toContain('rate-limited');
+  });
+
+  it('QueueBook.waitingByMode sums players per mode', () => {
+    const book = new QueueBook();
+    book.add({ queueMode: 'pvp_royale', contentHash: HASH, enqueuedAt: 1, players: [{ userId: 'a', socketId: 's-a' }], partyCode: null });
+    book.add({
+      queueMode: 'pvp_royale',
+      contentHash: OTHER,
+      enqueuedAt: 2,
+      players: [
+        { userId: 'b', socketId: 's-b' },
+        { userId: 'c', socketId: 's-c' },
+      ],
+      partyCode: 'ABC234',
+    });
+    expect([...book.waitingByMode()]).toEqual([['pvp_royale', 3]]);
+  });
+});

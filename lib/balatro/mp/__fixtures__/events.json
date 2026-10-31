@@ -315,6 +315,10 @@
     "balatro:spectate:list": {
       "valid": [{}],
       "invalid": []
+    },
+    "balatro:queue:counts": {
+      "valid": [{}],
+      "invalid": []
     }
   },
   "s2c": {
@@ -634,6 +638,128 @@
           "d": {
             "code": "ABC234",
             "fromUserId": "u_alice"
+          }
+        }
+      ]
+    },
+    "balatro:queue:counts": {
+      "valid": [
+        {
+          "counts": []
+        },
+        {
+          "counts": [
+            {
+              "queueMode": "pvp_nemesis",
+              "queued": 3,
+              "inGame": 12
+            },
+            {
+              "queueMode": "pvp_smallworld",
+              "queued": 0,
+              "inGame": 0
+            }
+          ]
+        }
+      ],
+      "invalid": [
+        {
+          "why": "negative",
+          "d": {
+            "counts": [
+              {
+                "queueMode": "pvp_nemesis",
+                "queued": -1,
+                "inGame": 0
+              }
+            ]
+          }
+        },
+        {
+          "why": "fractional",
+          "d": {
+            "counts": [
+              {
+                "queueMode": "pvp_nemesis",
+                "queued": 1.5,
+                "inGame": 0
+              }
+            ]
+          }
+        },
+        {
+          "why": "mode",
+          "d": {
+            "counts": [
+              {
+                "queueMode": "pvp_ranked",
+                "queued": 1,
+                "inGame": 0
+              }
+            ]
+          }
+        },
+        {
+          "why": "inGame missing",
+          "d": {
+            "counts": [
+              {
+                "queueMode": "pvp_teams",
+                "queued": 1
+              }
+            ]
+          }
+        },
+        {
+          "why": "too many",
+          "d": {
+            "counts": [
+              {
+                "queueMode": "pvp_teams",
+                "queued": 1,
+                "inGame": 0
+              },
+              {
+                "queueMode": "pvp_teams",
+                "queued": 1,
+                "inGame": 0
+              },
+              {
+                "queueMode": "pvp_teams",
+                "queued": 1,
+                "inGame": 0
+              },
+              {
+                "queueMode": "pvp_teams",
+                "queued": 1,
+                "inGame": 0
+              },
+              {
+                "queueMode": "pvp_teams",
+                "queued": 1,
+                "inGame": 0
+              },
+              {
+                "queueMode": "pvp_teams",
+                "queued": 1,
+                "inGame": 0
+              },
+              {
+                "queueMode": "pvp_teams",
+                "queued": 1,
+                "inGame": 0
+              },
+              {
+                "queueMode": "pvp_teams",
+                "queued": 1,
+                "inGame": 0
+              },
+              {
+                "queueMode": "pvp_teams",
+                "queued": 1,
+                "inGame": 0
+              }
+            ]
           }
         }
       ]

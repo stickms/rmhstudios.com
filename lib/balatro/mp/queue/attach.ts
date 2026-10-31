@@ -20,6 +20,8 @@
  *     the same code for its old host ("Return to lobby XXXXXX", MM-06) and
  *     joins it for everyone else;
  *   - refuses Practice while searching (`lobby_error practice`, PR-05);
+ *   - forwards Find Game's count requests (`ui_queue_counts`, sent by Lua every 5 s while the
+ *     page is open) to the hub and its answer back as `queue_counts` (A12);
  *   - keeps the session's `Inviter` (invites.ts) registered for the page's
  *     Invite popover, and shows a received invite in Lua as a toast
  *     (`mp_invited`, vars `name`, `code`; accepting is an ordinary `ui_join`).
@@ -211,6 +213,12 @@ export function attach(runtime: MpRuntime): () => void {
       cancelSwitch = null;
       if (queue.isQueued()) queue.cancel();
     }),
+    // A12: Find Game's live counts. Lua polls while the page is open; the hub answers with
+    // aggregate counters, mirrored as they came (the hub client validated them).
+    bridge.on('ui_queue_counts', () => {
+      if (hub.status === 'connected') hub.emit('balatro:queue:counts', {});
+    }),
+    hub.on('balatro:queue:counts', (d) => bridge.send('queue_counts', d)),
     hub.on('balatro:invited', (d) => {
       bridge.send('toast', { key: 'mp_invited', vars: { name: d.fromName.slice(0, 64), code: d.code } });
     }),
