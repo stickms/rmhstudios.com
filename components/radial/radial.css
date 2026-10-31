@@ -42,8 +42,10 @@
   --rad-col-wide: 52rem;
   /* Card interior padding + the gap between stacked cards — same reasoning as
      the gutters: compact on phones, roomy once there is space to spend. */
-  --rad-card-pad: clamp(0.9rem, 3.5vw, 1.6rem);
-  --rad-card-gap: clamp(0.875rem, 2vw, 1.25rem);
+  /* Feed cards (posts, question of the day, fortune, the caught-up divider) all pad with this one token, so they
+     line up and breathe alike; the QOTD and fortune cards used to carry their own tighter paddings. */
+  --rad-card-pad: clamp(1.25rem, 5vw, 1.75rem);
+  --rad-card-gap: clamp(1rem, 3vw, 1.5rem);
 
   /* ── The desktop frame ──────────────────────────────────────────────────
      Mobile is one column and none of this applies (both rails are display:none,
@@ -353,6 +355,12 @@ body:has(.radial-shell) .call-banner {
     padding-top: env(safe-area-inset-top, 0px);
     padding-inline: max(1rem, var(--safe-left, 0px)) max(1rem, var(--safe-right, 0px));
     border-radius: 0;
+    /* Solid on a phone (owner, 2026-10-31): the bar is the strip iOS Safari tints behind the clock and battery from
+       the fixed/sticky layer it finds at the top edge, so it is filled with the opaque surface colour (white in the
+       light themes, the theme's own graphite in the dark ones) and the status area reads as one with it instead of a
+       translucent slab over whatever scrolls beneath. The shader's rim still draws over the fill and marks the lower
+       edge; the degraded tiers already render this exact colour. Narrow screens only: the capsule above stays glass. */
+    background-color: var(--site-surface-opaque);
     /* The role's hairline border would draw a box around the full-bleed bar; the shader's rim (or, before it
        arrives, the CSS twin) already marks its lower edge. */
     border-inline-width: 0;
@@ -2392,7 +2400,11 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
      what iOS Safari can read as the page's edge (it shifts fixed layers by about 10px while its toolbar collapses),
      and it filled the strip behind its tab bar with one flat colour. This is under 90% of the width and far from
      both edges. */
-  top: 50%;
+  /* `--vv-shift` (written on `.radial-hub` by useViewportShift) is the orb's own correction for Safari's toolbar:
+     the orb's `bottom` takes all of it, the centre of the container takes half. Applying it here too means the dock
+     and the orb change in the same style recalc, so the globe cannot trail the tab bar by the frame a re-measure
+     would take (`--dock-dy` is the same number at every shift). */
+  top: calc(50% + var(--vv-shift, 0px) / 2);
   left: 50%;
   width: min(86vw, 48dvh, 30rem);
   translate: -50% -50%;
@@ -2883,7 +2895,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   --evert-rest-opacity: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--rad-3);
+  gap: var(--rad-4);
   padding: var(--rad-card-pad);
   border-radius: var(--site-radius, 22px);
   /* L1 material (see globals.css §glass): the feed is the most-repeated surface

@@ -11,7 +11,7 @@ export function CaughtUpDivider() {
     <div
       role="separator"
       aria-label={t('caught-up-aria', { defaultValue: 'You are caught up. Older posts follow.' })}
-      className="mx-auto flex w-full max-w-xl items-center gap-3 px-4 py-4 text-site-text-muted"
+      className="flex w-full items-center gap-3 px-[var(--rad-card-pad)] py-4 text-site-text-muted"
     >
       <span className="h-px flex-1 bg-site-border" aria-hidden />
       <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
