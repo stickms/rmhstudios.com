@@ -134,11 +134,17 @@ files. In them, `{ "$ref": "name" }` points into `types.json` → `objects`, and
 CI: `.github/workflows/balatro-mp-tests.yml`, path-filtered. Job `test` installs `lua5.1`
 and runs the L1 specs, protocol freshness, `test:balatro`, `test:tf2` (the P2P primitives are
 shared), pack freshness (`build-game-pack.py --check`) and the bundle/pack budget
-(`scripts/balatro/bundle-budget.ts`). Job `e2e` runs the three e2e projects against a
-`pgvector/pgvector:pg16` service with `BALATRO_E2E_REQUIRE_MATCH=1`; the nightly schedule (or a
-manual run with `long`) adds every engine spec alone in a fresh boot (`BALATRO_E2E_ISOLATE=1`)
-and the soak (`BALATRO_E2E_SOAK=1`, E2E-24). The e2e layout, the autopilot commands, the bot
-peers and how to run the match project locally are in `testing/balatro-e2e/README.md`.
+(`scripts/balatro/bundle-budget.ts`). The e2e suite runs as parallel jobs next to it:
+`e2e-engine` (the harness and engine projects, one engine boot), `e2e-match` — a matrix over
+the shards of `testing/balatro-e2e/shards.ts`, each with its own `pgvector/pgvector:pg16`
+service, hub and `vite dev`, with `BALATRO_E2E_REQUIRE_MATCH=1` — and the aggregate `e2e`, which
+fails if any of them did (the check to require). Engine pages run the autopilot's turbo
+(`testing/balatro-e2e/lib/turbo.ts`), and every scenario runs on every PR, the 12-ante soak
+(E2E-24) included. The nightly schedule (or a manual run with `long`) runs the same jobs at
+real-speed frames (`BALATRO_E2E_TURBO=off`) plus every engine spec alone in a fresh boot
+(`BALATRO_E2E_ISOLATE=1`). The e2e layout, turbo, the shards, the
+autopilot commands, the bot peers and how to run the match project locally are in
+`testing/balatro-e2e/README.md`.
 
 Bundle accounting (§6.4): the MP JS budget counts every lazy chunk that holds a Balatro module,
 including the queue and replay extensions `index.ts` loads through an `import.meta.glob` array.
@@ -193,9 +199,9 @@ into `rmh_mp/loc/<lang>.lua` in the pack:
   (the mod's stale keys), a different shape, or a `#n#` placeholder English does not
   fill. `--verbose` lists them all.
 - **Excluded content is dropped from every language**, so it neither ships nor pulls
-  glyphs into the fonts. That is the Release ruleset (EX-14), Baron, Mime and the
-  White Deck (EX-15), the alt stakes (EX-16), and `j_broken`, `j_mp_idol`,
-  `j_to_the_moon_mp` and the `m_gold` balanced note (A2 §14).
+  glyphs into the fonts. That is the Release ruleset (EX-14), the alt stakes (EX-16),
+  and `j_broken`, `j_mp_idol`, `j_to_the_moon_mp` and the `m_gold` balanced note
+  (A2 §14). Baron, Mime and the White Deck ship since EX-15 was lifted.
 - **Missing typographic punctuation is replaced.** `’`, `“”`, `…` and similar marks
   that a language's font lacks become their ASCII form (the mod's French uses `’`,
   which `m6x11plus` cannot draw).
@@ -346,9 +352,13 @@ because it subsets about 60 MB of fonts.
 | mp   | 1 800 000 B compressed, 8 000 000 B extracted | plan 1.3 MB. The used art alone is ~1.25 MB after lossless oxipng (1x + 2x, AS-01) and the localization ~0.1 MB, so 1.3 MB left no room for Lua                                                     |
 
 `CORE_PATCHES` in the builder is the anchored patch list for data/balatro Lua, as
-`(path, anchor, replacement)`. Each anchor must occur exactly once. It holds one
-entry, WS6's eval-row label hook in `functions/common_events.lua` (same line,
-`RMH_MP.eval_row_label`, nil outside multiplayer).
+`(path, anchor, replacement)`, read from `scripts/balatro/core-patches.json` (each
+entry has an `id` and a `why`). Each anchor must occur exactly once. The L1 specs load
+the base game through the same list (`lib/balatro/lua/spec/core_patches.lua`, used by
+`spec/mp_vanilla.lua`), so they test what ships. It holds WS6's eval-row label hook in
+`functions/common_events.lua` (same line, `RMH_MP.eval_row_label`, nil outside
+multiplayer) and the owner's balance changes, which apply to single player and
+multiplayer alike (see [balatro-wasm.md](./balatro-wasm.md) §4, "Balance changes").
 A stream requests further entries through WS2.
 
 ## 7. Lua MP core (WS6)

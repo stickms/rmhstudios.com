@@ -3,8 +3,8 @@
  * driven by the autopilot) plus bot peers (testing/balatro-e2e/bot: the real session
  * runtime and WebRTC with a scripted player, no engine) to fill the lobby:
  *   E2E-04 Nemesis rotation with 3 · E2E-05 Royale with 4 · E2E-06 Manhunt 1+2 ·
- *   E2E-07 Teams 2v2 · E2E-20 single-player save and seed untouched by an MP loss ·
- *   E2E-13 host migration mid-match (the host's page closes).
+ *   E2E-07 Teams 2v2 · E2E-20 single-player save and seed untouched by an MP loss.
+ * E2E-13 (host migration) is in host-migration.test.ts, on another CI shard.
  * A bot plays every ante: both normal blinds beaten, Ready, one hand of its fixed score.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -19,8 +19,9 @@ const WIN = 1_000_000;
 
 type Outcome = { t: string; [k: string]: unknown };
 const outcomes = async (p: MpPlayer): Promise<Outcome[]> =>
-  (await p.cmd<{ list: { d: { o: Outcome } }[] }>('mp_inbox', { t: 'outcome' })).list.map((e) => e.d.o);
-
+  (await p.cmd<{ list: { d: { o: Outcome } }[] }>('mp_inbox', { t: 'outcome' })).list.map(
+    (e) => e.d.o,
+  );
 
 async function fresh(n: number, scores: string[]): Promise<BotPeer[]> {
   for (const b of w.bots.splice(0)) await b.close().catch(() => {});
@@ -46,7 +47,10 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
     for (let ante = 1; ante <= 2; ante++) {
       await playAnte(p, { chips: WIN });
       const pairing = (await outcomes(p))
-        .filter((o): o is Outcome & { pairing: Record<string, string> } => o.t === 'nemesis_pairing' && o.ante === ante)
+        .filter(
+          (o): o is Outcome & { pairing: Record<string, string> } =>
+            o.t === 'nemesis_pairing' && o.ante === ante,
+        )
         .at(-1);
       expect(pairing, `pairing for ante ${ante}`).toBeDefined();
       const map = pairing!.pairing;
@@ -64,11 +68,15 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
     const bots = await fresh(3, ['300', '200', '100']);
     await setupMatch(p, bots, 'pvp_royale', { pvpStartRound: 1, startingLives: 1, timer: false });
     let result: string | null = null;
-    for (let ante = 1; ante <= 4 && !result; ante++) result = (await playAnte(p, { chips: WIN })).result;
+    for (let ante = 1; ante <= 4 && !result; ante++)
+      result = (await playAnte(p, { chips: WIN })).result;
     expect(await waitResult(p)).toBe('win');
-    const eliminated = (await outcomes(p)).filter((o) => o.t === 'eliminated').map((o) => o.player_id);
+    const eliminated = (await outcomes(p))
+      .filter((o) => o.t === 'eliminated')
+      .map((o) => o.player_id);
     expect(new Set(eliminated).size).toBe(3);
-    const win = (await outcomes(p)).find((o) => o.t === 'win') as { places?: Record<string, number> } | undefined;
+    const win = (await outcomes(p)).find((o) => o.t === 'win') as
+      { places?: Record<string, number> } | undefined;
     expect(win).toBeDefined();
     if (win?.places) expect(win.places[(await p.snap()).me!]).toBe(1);
     expect(w.errors()).toEqual([]);
@@ -77,7 +85,11 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
 
   it('E2E-06: Manhunt 1+2 — the Runner scoring below the best Hunter is caught', async () => {
     const bots = await fresh(2, ['500', '400']);
-    await setupMatch(p, bots, 'pvp_manhunt', { pvpStartRound: 1, manhuntHunterLives: 7, timer: false });
+    await setupMatch(p, bots, 'pvp_manhunt', {
+      pvpStartRound: 1,
+      manhuntHunterLives: 7,
+      timer: false,
+    });
     const lobby = await hostLobby(p);
     const me = (await p.snap()).me!;
     const runner = lobby.players.find((x) => x.team === 'RUNNER')?.id ?? me;
@@ -96,9 +108,15 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
       await p.ui('create', { queueMode: 'pvp_teams', kind: 'private' });
       return (await p.waitSnap((s) => !!s.code, 'lobby')).code!;
     })();
-    for (const [k, v] of Object.entries({ pvpStartRound: 1, startingLives: 1, timer: false })) await p.ui('option', { key: k, value: v });
+    for (const [k, v] of Object.entries({ pvpStartRound: 1, startingLives: 1, timer: false }))
+      await p.ui('option', { key: k, value: v });
     for (const b of bots) await b.ui('ui_join', { code });
-    await waitFor('4 players', async () => (await hostLobby(p)).players.length === 4, 180_000, 1000);
+    await waitFor(
+      '4 players',
+      async () => (await hostLobby(p)).players.length === 4,
+      180_000,
+      1000,
+    );
     await p.cmd('mp_send', { t: 'ui_set_team', d: { team: 'A' } });
     await bots[0]!.ui('ui_set_team', { team: 'A' });
     await bots[1]!.ui('ui_set_team', { team: 'B' });
@@ -107,12 +125,20 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
       'teams set',
       async () => {
         const l = await hostLobby(p);
-        return l.players.filter((x) => x.team === 'A').length === 2 && l.players.filter((x) => x.team === 'B').length === 2;
+        return (
+          l.players.filter((x) => x.team === 'A').length === 2 &&
+          l.players.filter((x) => x.team === 'B').length === 2
+        );
       },
       60_000,
       1000,
     );
-    await waitFor('bots ready', async () => (await hostLobby(p)).players.filter((x) => x.ready).length >= 3, 60_000, 1000);
+    await waitFor(
+      'bots ready',
+      async () => (await hostLobby(p)).players.filter((x) => x.ready).length >= 3,
+      60_000,
+      1000,
+    );
     await p.ui('start');
     await p.waitSnap((s) => !!s.runId, 'teams match started', 300_000);
     await p.cmd('wait_state', ['BLIND_SELECT', 300], 320_000);
@@ -152,35 +178,5 @@ describe.skipIf(w.skip)(w.title('formats (1 browser + bots)'), () => {
     await p.cmd('cash_out');
     expect(await p.cmd<string>('shop_digest')).toBe(golden);
     expect(w.errors()).toEqual([]);
-  });
-
-  it('E2E-13: the host closes mid-match → the successor takes over → the match completes', async () => {
-    const bots = await fresh(2, ['100', '50']);
-    // A bot hosts; the real player is a member (and, joining first, the successor).
-    const host = bots[0]!;
-    await host.ui('ui_create_lobby', { queueMode: 'pvp_nemesis', kind: 'private' });
-    let code = '';
-    await host.waitState((s) => !!(code = s.code ?? ''), 'bot lobby');
-    for (const [k, v] of Object.entries({ pvpStartRound: 1, startingLives: 2, timer: false })) await host.ui('ui_set_option', { key: k, value: v });
-    await p.ui('join', { code });
-    await p.waitSnap((s) => s.code === code && s.role === 'member', 'joined the bot lobby');
-    await bots[1]!.ui('ui_join', { code });
-    await waitFor('3 players', async () => ((await p.snap()).lobby?.players.length ?? 0) === 3, 120_000, 1000);
-    await p.cmd('ready');
-    await waitFor('all ready', async () => (await p.snap()).lobby!.players.filter((x) => x.ready).length >= 2, 60_000, 1000);
-    await host.ui('ui_start', {});
-    await p.waitSnap((s) => !!s.runId, 'match started', 300_000);
-    await p.cmd('wait_state', ['BLIND_SELECT', 300], 320_000);
-    await playAnte(p, { chips: WIN });
-    // The host's page goes away mid-match.
-    await host.close();
-    await p.waitSnap((s) => s.role === 'host', 'the real player promoted to host', 120_000);
-    const changed = (await p.cmd<{ list: unknown[] }>('mp_inbox', { t: 'host_changed' })).list;
-    expect(changed.length).toBeGreaterThan(0);
-    let result: string | null = null;
-    for (let ante = 2; ante <= 5 && !result; ante++) result = (await playAnte(p, { chips: WIN })).result;
-    expect(await waitResult(p)).toBe('win');
-    expect(w.errors()).toEqual([]);
-    await leaveMatch(p);
   });
 });

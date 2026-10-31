@@ -1,13 +1,12 @@
 /**
  * Nemesis 1v1 between two real browsers over the local hub (PLAN §6.3): the match loop,
- * end screens and Return to Lobby (E2E-01), a PvP tie (E2E-02), chat and the draw vote
- * (E2E-11), a member's network drop (E2E-12), a member's reload and rejoin (E2E-14), kick
- * and a version mismatch (E2E-21), relay fallback (E2E-15). The same two pages play every
- * test (an engine boot is the expensive part); each test makes its own lobby.
+ * end screens and Return to Lobby (E2E-01), a PvP tie (E2E-02), the ante timer (E2E-10),
+ * Small World and The Order (E2E-08/23), chat and the draw vote (E2E-11). The same two pages
+ * play every test (an engine boot is the expensive part); each test makes its own lobby.
+ * Drops, reloads, kicks and the relay are in nemesis-resilience.test.ts (another CI shard).
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { MpPlayer } from '../lib/mp-player';
-import { openMpPlayer } from '../lib/mp-player';
 import { hostLobby, playAnte, setupMatch, SHORT, waitResult, leaveMatch } from '../lib/match-flow';
 import { waitFor } from '../lib/stack';
 import { matchWorld } from './world';
@@ -20,10 +19,10 @@ interface Inbox {
   counts: Record<string, number>;
   size: number;
 }
-const inbox = (p: MpPlayer, t?: string, since = 0) => p.cmd<Inbox>('mp_inbox', t ? { t, since } : { since });
+const inbox = (p: MpPlayer, t?: string, since = 0) =>
+  p.cmd<Inbox>('mp_inbox', t ? { t, since } : { since });
 /** How many messages of type t Lua has received so far (monotonic; the kept list is a ring). */
 const count = async (p: MpPlayer, t: string) => (await inbox(p, t)).counts[t] ?? 0;
-
 
 describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
   let a: MpPlayer;
@@ -64,7 +63,10 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     await setupMatch(a, [b], 'pvp_nemesis', { ...SHORT, startingLives: 1 });
     // An exact tie: at 1e20 a one-card hand is below the double's resolution, so both
     // players report the same score whatever cards they hold.
-    const [ta, tb] = await Promise.all([playAnte(a, { chips: 1e20 }), playAnte(b, { chips: 1e20 })]);
+    const [ta, tb] = await Promise.all([
+      playAnte(a, { chips: 1e20 }),
+      playAnte(b, { chips: 1e20 }),
+    ]);
     expect(ta.result ?? null).toBeNull();
     expect(tb.result ?? null).toBeNull();
     expect((await a.snap()).lives).toMatchObject({ [(await a.snap()).me!]: 1 });
@@ -96,16 +98,32 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     await a.cmd('pvp_ready');
     // The guest's tab goes hidden while it is being timed (TIM-09: the TS clock keeps running).
     await b.page.evaluate(() => {
-      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
       document.dispatchEvent(new Event('visibilitychange'));
     });
     // The press needs the timer the session pushes after Ready (TIM-02 press rules).
-    await waitFor('the host timer is pressable', async () => !!(await a.mp<{ timer_pressable?: boolean }>('hud')).timer_pressable, 60_000, 500);
+    await waitFor(
+      'the host timer is pressable',
+      async () => !!(await a.mp<{ timer_pressable?: boolean }>('hud')).timer_pressable,
+      60_000,
+      500,
+    );
     const pressed = await a.cmd<{ sent: boolean }>('timer_press');
     expect(pressed.sent).toBe(true);
-    await waitFor('the guest loses a life to the timer', async () => (await a.snap()).lives[guestId] === 1, 120_000, 1000);
+    await waitFor(
+      'the guest loses a life to the timer',
+      async () => (await a.snap()).lives[guestId] === 1,
+      120_000,
+      1000,
+    );
     await b.page.evaluate(() => {
-      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
       document.dispatchEvent(new Event('visibilitychange'));
     });
     expect(w.errors()).toEqual([]);
@@ -115,7 +133,11 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
   });
 
   it('E2E-08 / E2E-23: Small World and The Order — same bans, bosses and shops on both peers, purchases diverging', async () => {
-    await setupMatch(a, [b], 'pvp_smallworld', { pvpStartRound: 2, startingLives: 1, timer: false });
+    await setupMatch(a, [b], 'pvp_smallworld', {
+      pvpStartRound: 2,
+      startingLives: 1,
+      timer: false,
+    });
     type St = { banned_digest: string | null; boss: string | null; seed: string | null };
     const [sa, sb] = [await a.cmd<St>('mp_state'), await b.cmd<St>('mp_state')];
     expect(sa.banned_digest).toBeTruthy();
@@ -131,7 +153,14 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     const [s1a, s1b] = await Promise.all([shop(a), shop(b)]);
     expect(s1a).toBe(s1b);
     // Diverge: the host buys the first joker it can afford, the guest buys nothing.
-    for (const slot of [1, 2]) if (await a.cmd('buy', [slot]).then(() => true, () => false)) break;
+    for (const slot of [1, 2])
+      if (
+        await a.cmd('buy', [slot]).then(
+          () => true,
+          () => false,
+        )
+      )
+        break;
     await Promise.all([a.cmd('leave_shop'), b.cmd('leave_shop')]);
     const [s2a, s2b] = await Promise.all([shop(a), shop(b)]);
     expect(s2a).toBe(s2b);
@@ -147,7 +176,12 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     expect(code).toMatch(/^[A-Z0-9]{6}$/);
     const before = await count(a, 'chat_line');
     await b.cmd('mp_send', { t: 'ui_chat', d: { text: 'gl hf' } });
-    await waitFor('chat line at the host', async () => (await count(a, 'chat_line')) > before, 60_000, 500);
+    await waitFor(
+      'chat line at the host',
+      async () => (await count(a, 'chat_line')) > before,
+      60_000,
+      500,
+    );
     const line = (await inbox(a, 'chat_line', before)).list.at(-1)!.d;
     expect(line.text).toBe('gl hf');
     // Mute the guest: the next line is not delivered to Lua.
@@ -156,7 +190,9 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     const muted = await count(a, 'chat_line');
     await b.cmd('mp_send', { t: 'ui_chat', d: { text: 'muted line' } });
     await new Promise((r) => setTimeout(r, 3000));
-    expect((await inbox(a, 'chat_line', muted)).list.map((l) => l.d.text)).not.toContain('muted line');
+    expect((await inbox(a, 'chat_line', muted)).list.map((l) => l.d.text)).not.toContain(
+      'muted line',
+    );
     // Draw vote (REF-17): both vote → draw for both.
     await a.cmd('vote', { kind: 'draw' });
     await b.cmd('vote', { kind: 'draw' });
@@ -165,135 +201,5 @@ describe.skipIf(w.skip)(w.title('nemesis 1v1 (2 browsers)'), () => {
     expect(w.errors()).toEqual([]);
     await leaveMatch(b);
     await leaveMatch(a);
-  });
-
-  it('E2E-12: a member drops for 5 s → away → back, and the match completes', async () => {
-    await setupMatch(a, [b], 'pvp_nemesis', { ...SHORT, startingLives: 1 });
-    const guestId = (await b.snap()).me!;
-    // A network drop: the hub socket goes (offline emulation) and so does the P2P link (offline
-    // emulation does not reach WebRTC, so the page's peer connections are closed too).
-    await b.context.setOffline(true);
-    try {
-      await b.page.evaluate(() => {
-        for (const pc of (window as unknown as { __e2ePeers?: RTCPeerConnection[] }).__e2ePeers ?? []) pc.close();
-      });
-      await waitFor(
-        'host sees the guest away',
-        async () => !!(await hostLobby(a)).players.find((p) => p.id === guestId && (p.away || !p.connected)),
-        60_000,
-        500,
-      );
-      await new Promise((r) => setTimeout(r, 5000));
-    } finally {
-      await b.context.setOffline(false);
-    }
-    await waitFor(
-      'host sees the guest back',
-      async () => !!(await hostLobby(a)).players.find((p) => p.id === guestId && !p.away && p.connected),
-      120_000,
-      1000,
-    );
-    await Promise.all([playAnte(a, { chips: WIN }), playAnte(b, { chips: 0 })]);
-    expect(await waitResult(a)).toBe('win');
-    expect(await waitResult(b)).toBe('lose');
-    expect(w.errors()).toEqual([]);
-    await leaveMatch(b);
-    await leaveMatch(a);
-  });
-
-  it('E2E-14: a member reloads mid-run, rejoins from the snapshot, and the match continues', async () => {
-    const { runId } = await setupMatch(a, [b], 'pvp_nemesis', { ...SHORT, startingLives: 2 });
-    // Into the first shop, then reload.
-    await b.cmd('select_blind');
-    await b.cmd('win_blind');
-    await b.cmd('cash_out');
-    await b.page.reload();
-    const again = await openMpPlayer(
-      { account: { label: 'guest', email: '', name: '', password: '' }, context: b.context },
-      w.baseUrl,
-      { page: b.page, open: false, skipGoto: true },
-    );
-    // The page autoloads MP with the rejoin hint (MP.open('rejoin') — opening it again from
-    // here would start a second menu wipe under the restore); the hub answers the seat query
-    // and the Seat held prompt appears: press Rejoin, as a player does.
-    await again.cmd('mp_notice', { i: 1, name: 'seat_held', seconds: 120 }, 150_000);
-    await again.waitSnap((s) => s.runId === runId, 'back in the same match', 240_000);
-    await waitFor('a rejoin restore', async () => ((await inbox(again, 'rejoin_restore')).counts.rejoin_restore ?? 0) > 0, 240_000, 1000).catch(
-      (e: Error) => {
-        throw new Error(`${e.message}\n${again.errors.join('\n')}`);
-      },
-    );
-    // The restored run is the shop the guest reloaded in; play on from there.
-    const st = await again.cmd<{ state: string }>('wait_state', ['SHOP', 300], 320_000).then(
-      () => ({ state: 'SHOP' }),
-      () => again.cmd<{ state: string }>('state'),
-    );
-    expect(st.state).toBe('SHOP');
-    await again.cmd('leave_shop');
-    await Promise.all([playAnte(a, { chips: WIN }), playAnte(again, { chips: 0 })]);
-    await Promise.all([playAnte(a, { chips: WIN }), playAnte(again, { chips: 0 })]);
-    expect(await waitResult(a)).toBe('win');
-    expect(await waitResult(again)).toBe('lose');
-    w.players.splice(w.players.indexOf(b), 1, again);
-    b = again;
-    expect(w.errors()).toEqual([]);
-    await leaveMatch(b);
-    await leaveMatch(a);
-  });
-
-  it('E2E-21: a kicked member cannot rejoin; a mismatched build is refused', async () => {
-    const lobby = await (async () => {
-      await a.ui('create', { queueMode: 'pvp_nemesis', kind: 'private' });
-      const s = await a.waitSnap((x) => !!x.code, 'lobby');
-      return s.code!;
-    })();
-    await b.ui('join', { code: lobby });
-    await waitFor('guest seated', async () => (await hostLobby(a)).players.length === 2, 120_000, 500);
-    const guestId = (await b.snap()).me!;
-    await a.cmd('mp_send', { t: 'ui_kick', d: { userId: guestId } });
-    await b.waitSnap((s) => s.role === null, 'guest kicked out', 60_000);
-    const mark = await count(b, 'lobby_error');
-    await b.ui('join', { code: lobby });
-    await waitFor('kicked join refused', async () => (await count(b, 'lobby_error')) > mark, 60_000, 500);
-    expect((await hostLobby(a)).players.map((p) => p.id)).not.toContain(guestId);
-    // A build with another content hash (test override) is refused (LOB-15, D-36).
-    const odd = await w.player('oddbuild', { overrides: { contentHash: `${'f'.repeat(24)}-v1` } });
-    const m2 = await count(odd, 'lobby_error');
-    await odd.ui('join', { code: lobby });
-    await waitFor('mismatched build refused', async () => (await count(odd, 'lobby_error')) > m2, 60_000, 500);
-    const codes = (await inbox(odd, 'lobby_error', m2)).list.map((e) => e.d.code);
-    expect(codes.join(',')).toMatch(/version|mismatch|hash/);
-    await odd.close();
-    w.players.splice(w.players.indexOf(odd), 1);
-    await leaveMatch(a);
-  });
-
-  it('E2E-15: with ICE blocked on both sides the pair falls back to the hub relay and plays a full 1v1', async () => {
-    // Both ends drop their candidates (one blocked side is not enough: the other side's
-    // candidates plus peer-reflexive ones still form a direct path on localhost).
-    const relayed = await w.player('relayed', { overrides: { p2p: { blockCandidates: true } } });
-    const host = await w.bot('relayhost', { score: '10', block: true });
-    await host.ui('ui_create_lobby', { queueMode: 'pvp_nemesis', kind: 'private' });
-    let code = '';
-    await host.waitState((s) => !!(code = s.code ?? ''), 'bot lobby');
-    for (const [k, v] of Object.entries(SHORT)) await host.ui('ui_set_option', { key: k, value: v });
-    await relayed.ui('join', { code });
-    await waitFor(
-      'the relayed member shows conn=relay',
-      async () => !!(await relayed.snap()).lobby?.players.some((p) => p.conn === 'relay'),
-      180_000,
-      1000,
-    );
-    await relayed.cmd('ready');
-    const me = (await relayed.snap()).me;
-    await waitFor('ready seen by the host', async () => !!(await relayed.snap()).lobby?.players.find((p) => p.id === me)?.ready, 60_000, 1000);
-    await host.ui('ui_start', {});
-    await relayed.waitSnap((s) => !!s.runId, 'match started over the relay', 300_000);
-    await relayed.cmd('wait_state', ['BLIND_SELECT', 300], 320_000);
-    await playAnte(relayed, { chips: WIN });
-    expect(await waitResult(relayed)).toBe('win');
-    expect(w.errors()).toEqual([]);
-    await leaveMatch(relayed);
-    await host.close();
   });
 });

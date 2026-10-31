@@ -113,6 +113,20 @@ describe('mp_test sched', function()
     drain()
     expect(got).eq({ true, { true, 5, false, true, false } })
   end)
+  it('marks the frames a wait_frames covers as full frames, and only those', function()
+    local start = sched.frame
+    local seen = {}
+    sched.spawn(function()
+      sched.wait_frames(3)
+    end)
+    for _ = 1, 6 do
+      sched.tick()
+      seen[#seen + 1] = sched.full_frames()
+    end
+    expect(sched.frame - start).eq(6)
+    -- The task starts on tick 1 and ends on tick 4 (three yields): frames 1..4 are covered.
+    expect(seen).eq({ true, true, true, true, false, false })
+  end)
   it('starts tasks spawned by a callback on the next tick', function()
     local order = {}
     sched.spawn(function() order[#order + 1] = 'a' end, function()
@@ -280,6 +294,47 @@ describe('mp_test autopilot', function()
       expect(seen).eq({ 'best' })
     end, function(ok, v) if not ok then error(v) end end)
     drain()
+  end)
+
+  it('turbo runs n updates and every k-th draw per frame, and full frames inside wait_frames', function()
+    local saved = love
+    local updates, draws = 0, 0
+    love = { update = function() updates = updates + 1 end, draw = function() draws = draws + 1 end }
+    local function frame()
+      love.update(0.1)
+      love.draw()
+      sched.tick()
+    end
+    local got
+    sched.spawn(function() return AP.run('turbo', { 4, 3 }) end, function(ok, v) got = { ok, v } end)
+    frame()
+    expect(got).eq({ true, { updates = 4, draw_every = 3 } })
+    updates, draws = 0, 0
+    for _ = 1, 6 do frame() end
+    expect(updates).eq(24)
+    expect(draws).eq(2)
+    -- A spec waiting frames sees full frames: one update and one draw each.
+    sched.spawn(function() sched.wait_frames(2) end)
+    frame() -- the task starts and yields (frame 1 of 2)
+    updates, draws = 0, 0
+    frame()
+    expect({ updates, draws }).eq({ 1, 1 })
+    for _ = 1, 3 do frame() end
+    updates = 0
+    frame()
+    expect(updates).eq(4)
+    -- {1, 1} is off; out-of-range values are refused.
+    sched.spawn(function() return AP.run('turbo', { updates = 1, draw_every = 1 }) end)
+    frame()
+    updates, draws = 0, 0
+    frame()
+    expect({ updates, draws }).eq({ 1, 1 })
+    local bad
+    sched.spawn(function() return AP.run('turbo', { 0 }) end, function(ok, v) bad = { ok, v } end)
+    drain()
+    expect(bad[1]).eq(false)
+    expect(bad[2]:find('turbo{', 1, true) ~= nil).truthy()
+    love = saved
   end)
 
   it('validates seeds and command arguments', function()

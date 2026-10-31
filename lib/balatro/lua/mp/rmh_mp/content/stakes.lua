@@ -9,7 +9,8 @@
 --   MP.content.stakes.get(id_or_key)
 --   MP.content.stakes.current()   the entry of the running session's mpStake (nil without one)
 --
---   stake_mp_planet        (0,0) Planet colour: Red + scaling 3 + Black + Orange (no Blue, no Gold)
+--   stake_mp_planet        (0,0) Planet colour: Red + scaling 3 + Black + Orange (no Gold; Blue
+--                         has no effect of its own since the balance change, core-patches.json)
 --   stake_mp_spectral      (1,0) #000000: Planet + rentals, scaling 4
 --   stake_mp_spectralplus  (2,0) #000000, shiny: Spectral, scaling 5
 -- Text: descriptions.Stake.<key> from the MP localization; chips: atlas mp_stakes_chips (29x29).
