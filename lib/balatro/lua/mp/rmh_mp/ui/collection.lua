@@ -114,6 +114,57 @@ end
 
 CO.st = CO.st or { tab = 'jokers', page = 1 }
 
+-- MP cards draw with the display wraps (art, loc_vars, the Trap set) even with no session mounted.
+local function with_display(fn, ...)
+  local D = MP.registry and MP.registry.dispatch
+  if D and D.with_display then return D.with_display(fn, ...) end
+  return fn(...)
+end
+CO.with_display = with_display
+
+--- The atlas vanilla Card:set_sprites will index for this prototype (nil = it would crash).
+function CO.sprite_atlas(proto)
+  local A = G.ASSET_ATLAS or {}
+  if not proto.set then return nil end
+  if proto.set == 'Joker' or proto.consumeable or proto.set == 'Voucher' then
+    return A[proto.atlas or proto.set] or A[proto.set]
+  end
+  return A[proto.atlas or 'centers'] or A.centers
+end
+
+-- Card:init registers the card (and its shadow and sprites) in G.MOVEABLES before set_ability
+-- runs; if it raises there, the half-built card stays registered and the next frame's
+-- Card:update indexes its nil ability. Remove everything the failed constructor registered.
+local function discard_since(mark)
+  local list = G.MOVEABLES or {}
+  local dead = {}
+  for i = mark + 1, #list do dead[#dead + 1] = list[i] end
+  for i = #dead, 1, -1 do
+    local m = dead[i]
+    if m and not m.REMOVED then
+      local ok = pcall(Moveable.remove, m)
+      if not ok then
+        for j = #list, 1, -1 do if list[j] == m then table.remove(list, j) end end
+        m.REMOVED = true
+      end
+    end
+  end
+end
+
+--- Build a collection Card for an MP prototype. Returns ok, card|err; never leaves a broken card.
+function CO.build_card(proto, w, h)
+  if not CO.sprite_atlas(proto) then
+    -- The Trap set's atlas is installed by the display scope: resolve it there first.
+    local has = with_display(function() return CO.sprite_atlas(proto) ~= nil end)
+    if not has then return false, 'no atlas for ' .. tostring(proto.key) end
+  end
+  local mark = #(G.MOVEABLES or {})
+  local ok, card = pcall(with_display, Card, 0, 0, w, h, nil, proto,
+    { bypass_discovery_center = true, bypass_discovery_ui = true, discover = false })
+  if not ok then discard_since(mark) end
+  return ok, card
+end
+
 function CO.card_node(e)
   local proto = MP.registry and MP.registry.proto and MP.registry.proto(e.key)
   if not (proto and rawget(_G, 'Card') and rawget(_G, 'CardArea')) then
@@ -122,13 +173,14 @@ function CO.card_node(e)
   end
   local w, h = (G.CARD_W or 2.1) * 0.75, (G.CARD_H or 2.8) * 0.75
   local area = CardArea(0, 0, w, h, { card_limit = 1, type = 'title', highlight_limit = 0 })
-  local ok, card = pcall(Card, 0, 0, w, h, nil, proto, { bypass_discovery_center = true, bypass_discovery_ui = true, discover = false })
+  local ok, card = CO.build_card(proto, w, h)
   if ok and card then
     card.states.drag.can = false
     local base_hover = card.hover
     card.hover = function(self)
-      local hok = pcall(base_hover, self)
+      local hok, herr = pcall(with_display, base_hover, self)
       if not hok then
+        MP.log('warn', 'ui: collection tooltip %s failed: %s', e.key, tostring(herr))
         self.config.h_popup = W.player_tooltip({ name = e.name, role = 'player' }, { build = e.key })
         if self.align_h_popup then self.config.h_popup_config = self:align_h_popup() end
         if Node and Node.hover then pcall(Node.hover, self) end

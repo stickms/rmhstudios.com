@@ -80,15 +80,6 @@ function D.install()
       return orig(self, context, ...)
     end, o('calculate_joker'))
 
-    wrap(Card, 'generate_UIBox_ability_table', function(orig, self, ...)
-      local prev = ability_card
-      ability_card = self
-      local ok, res = pcall(orig, self, ...)
-      ability_card = prev
-      if not ok then error(res, 0) end
-      return res
-    end, o('ability_table'))
-
     wrap(Card, 'use_consumeable', function(orig, self, area, copier, ...)
       local def = card_def(self)
       if def and def.use and def.kind ~= 'Rework' then
@@ -148,12 +139,6 @@ function D.install()
       return r
     end, o('update')) end
 
-    wrap(Card, 'set_sprites', function(orig, self, _center, _front, ...)
-      local r = orig(self, _center, _front, ...)
-      if _center and _center.rmh_mp and R.atlas then R.atlas.apply_card(self, _center) end
-      return r
-    end, o('set_sprites'))
-
     wrap(Card, 'set_ability', function(orig, self, center, initial, delay_sprites, ...)
       local r = orig(self, center, initial, delay_sprites, ...)
       if center and self.ability then
@@ -168,27 +153,7 @@ function D.install()
     end, o('set_ability'))
   end
 
-  -- Vanilla passes specific_vars = nil for a card it has no loc_vars branch for, but a perishable
-  -- or stickered card arrives with a table of NAMED fields only ({perish_tally}, {sticker}). Both
-  -- mean "no positional vars": the def's vars fill [1..n] and vanilla's named fields are kept on
-  -- top (they drive the badge tooltips), so an MP joker never renders "#1#".
-  wrap(_G, 'generate_card_ui', function(orig, _c, full_UI_table, specific_vars, card_type, badges, ...)
-    if (specific_vars == nil or (type(specific_vars) == 'table' and specific_vars[1] == nil))
-      and ability_card and _c and ability_card.config and ability_card.config.center == _c then
-      local def = def_for_center(_c)
-      if def and def.loc_vars then
-        local ok, res = pcall(def.loc_vars, ability_card)
-        if ok and type(res) == 'table' then
-          local vars = res.vars or res
-          if specific_vars ~= nil then vars = D.merge_vars(vars, specific_vars) end
-          specific_vars = vars
-        elseif not ok then
-          MP.log('error', 'loc_vars %s failed: %s', tostring(_c.key), tostring(res))
-        end
-      end
-    end
-    return orig(_c, full_UI_table, specific_vars, card_type, badges, ...)
-  end, o('generate_card_ui'))
+  D.install_display(o)
 
   if rawget(_G, 'Back') then
     wrap(Back, 'apply_to_run', function(orig, self, ...)
@@ -238,6 +203,90 @@ function D.install()
       return r
     end, o('tag_set_ability'))
   end
+end
+
+-- ── Display wraps ───────────────────────────────────────────────────────────
+-- What drawing an MP card needs: its art (set_sprites -> the MP atlas) and its text (loc_vars
+-- through generate_card_ui). A mounted session installs them with every other dispatch wrap.
+-- The Multiplayer collection draws MP cards with NO session mounted, so it runs each card build
+-- and each tooltip inside D.with_display: the same wraps (plus every content module's display
+-- installer: the Trap set's atlas and colours, the Other-set text alias) installed in the
+-- 'display' group for that one synchronous call. Without them vanilla takes its own branches for
+-- an MP center (a Planet with no hand_type, a {V:1} text with no colours, a 'Trap' set with no
+-- atlas) and raises — and a Card that raises inside Card:init stays registered half-built, so the
+-- next frame's Card:update crashed the game (the Collection > Consumables crash).
+
+function D.install_display(o)
+  local wrap = MP.hooks.wrap
+  if rawget(_G, 'Card') then
+    wrap(Card, 'generate_UIBox_ability_table', function(orig, self, ...)
+      local prev = ability_card
+      ability_card = self
+      local ok, res = pcall(orig, self, ...)
+      ability_card = prev
+      if not ok then error(res, 0) end
+      return res
+    end, o('ability_table'))
+
+    wrap(Card, 'set_sprites', function(orig, self, _center, _front, ...)
+      local r = orig(self, _center, _front, ...)
+      if _center and _center.rmh_mp and R.atlas then R.atlas.apply_card(self, _center) end
+      return r
+    end, o('set_sprites'))
+  end
+
+  -- Vanilla passes specific_vars = nil for a card it has no loc_vars branch for, but a perishable
+  -- or stickered card arrives with a table of NAMED fields only ({perish_tally}, {sticker}). Both
+  -- mean "no positional vars": the def's vars fill [1..n] and vanilla's named fields are kept on
+  -- top (they drive the badge tooltips), so an MP joker never renders "#1#".
+  wrap(_G, 'generate_card_ui', function(orig, _c, full_UI_table, specific_vars, card_type, badges, ...)
+    if (specific_vars == nil or (type(specific_vars) == 'table' and specific_vars[1] == nil))
+      and ability_card and _c and ability_card.config and ability_card.config.center == _c then
+      local def = def_for_center(_c)
+      if def and def.loc_vars then
+        local ok, res = pcall(def.loc_vars, ability_card)
+        if ok and type(res) == 'table' then
+          local vars = res.vars or res
+          if specific_vars ~= nil then vars = D.merge_vars(vars, specific_vars) end
+          specific_vars = vars
+        elseif not ok then
+          MP.log('error', 'loc_vars %s failed: %s', tostring(_c.key), tostring(res))
+        end
+      end
+    end
+    return orig(_c, full_UI_table, specific_vars, card_type, badges, ...)
+  end, o('generate_card_ui'))
+end
+
+D.display_installers = D.display_installers or {}
+--- Register fn(o) (o(id) -> wrap opts of the scope's group), run by every display scope. A
+--- content module's session installer installs the same wraps with its own opts.
+function D.add_display_installer(fn)
+  for _, f in ipairs(D.display_installers) do if f == fn then return end end
+  D.display_installers[#D.display_installers + 1] = fn
+end
+
+local unpack_ = unpack or table.unpack
+
+--- Run fn(...) with the display wraps installed (group 'display'), then remove them. A mounted
+--- session already has them (group 'session'), so then fn simply runs. Re-entrant.
+function D.with_display(fn, ...)
+  if D._display_active or R.mounted() then return fn(...) end
+  D._display_active = true
+  local function opts(prefix)
+    return function(id) return { group = 'display', optional = true, id = prefix .. id } end
+  end
+  local ok, err = pcall(D.install_display, opts('display.dispatch.'))
+  if not ok then MP.log('error', 'display wraps failed: %s', tostring(err)) end
+  for i, inst in ipairs(D.display_installers) do
+    local iok, ierr = pcall(inst, opts('display.' .. i .. '.'))
+    if not iok then MP.log('error', 'display installer failed: %s', tostring(ierr)) end
+  end
+  local r = { pcall(fn, ...) }
+  MP.hooks.remove_group('display')
+  D._display_active = nil
+  if not r[1] then error(r[2], 0) end
+  return unpack_(r, 2, table.maxn(r))
 end
 
 --- Custom-context fan-out (MP.ctx.calculate, §3.d): every joker (and consumable) sees `ctx`;

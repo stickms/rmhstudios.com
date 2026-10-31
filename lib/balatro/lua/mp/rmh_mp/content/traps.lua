@@ -694,6 +694,8 @@ function T.install_colours()
   -- post-step runs: give the new set an entry (the Trap sheet, else the Tarot sheet).
   if G.ASSET_ATLAS then G.ASSET_ATLAS.Trap = G.ASSET_ATLAS.mp_Trap or G.ASSET_ATLAS.Tarot end
 end
+-- The MP collection builds Trap cards with no session mounted: its display scope needs the set too.
+require('rmh_mp.registry.dispatch').add_display_installer(function() T.install_colours() end)
 
 -- Net (one handler per peer kind; nobody else owns these).
 MP.peer.on('trap_plant', function(from, d) T.receive_plant(from, d) end)

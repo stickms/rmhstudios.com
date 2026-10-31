@@ -23,6 +23,7 @@
 local MP = require 'rmh_mp.state'
 local R = require 'rmh_mp.registry'
 local C = require 'rmh_mp.content.jokers.core'
+local Dsp = require 'rmh_mp.registry.dispatch'
 
 local K = {}
 MP.content.consumables = K
@@ -291,11 +292,10 @@ function K.alias_text(center)
   return true
 end
 
-function K.install()
-  local wrap = MP.hooks.wrap
-  local function o(id) return { group = 'session', optional = true, id = 'content.consumables.' .. id } end
-
-  wrap(_G, 'generate_card_ui', function(orig, _c, full_UI_table, specific_vars, ...)
+--- The text wrap: installed with the session, and by the display scope (the MP collection draws
+--- these cards with no session mounted; vanilla's Planet branch indexes a nil hand_type).
+function K.install_text(o)
+  MP.hooks.wrap(_G, 'generate_card_ui', function(orig, _c, full_UI_table, specific_vars, ...)
     if _c and _c.key and K.TEXT_KEYS[_c.key] and _c.set ~= 'Other' and K.alias_text(_c) then
       if specific_vars == nil then
         local def = R.get(_c.key)
@@ -308,6 +308,13 @@ function K.install()
     end
     return orig(_c, full_UI_table, specific_vars, ...)
   end, o('text'))
+end
+Dsp.add_display_installer(K.install_text)
+
+function K.install()
+  local wrap = MP.hooks.wrap
+  local function o(id) return { group = 'session', optional = true, id = 'content.consumables.' .. id } end
+  K.install_text(o)
 
   -- FL-19: launch the stored asteroids right after the core marks the first PvP draw.
   if g('Game') then
