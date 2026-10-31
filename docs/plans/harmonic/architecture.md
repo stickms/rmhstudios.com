@@ -89,8 +89,32 @@ numFaces`, `leafFaces` + `leafs.firstLeafFace/numLeafFaces`, `leafs.cluster = 0`
   (`brushModelIndex` from `model "*N"`), plus `entityText` serialised for anything that
   reads the raw lump. Always emit `worldspawn` first.
 
-`compileLevel(src) → { bsp: BspFile; manifest: MapManifest; textures: ProceduralTextureSet; stats }`.
-Determinism: same source → byte-identical arrays (tests compare hashes).
+`compileLevel(src, opts?: { materials?: MaterialLookup }) → { bsp: BspFile; manifest: MapManifest;
+materials: Map<string, MaterialInfo>; stats: { brushes, faces, leaves, ms } }` (H0.2 as built; there is no
+`ProceduralTextureSet` — textures come from the H0.3 lookup via `MaterialInfo.texture`).
+Determinism: same source → byte-identical arrays (tests compare hashes; `stats.ms` excluded).
+
+Corrections found while building it (all implemented in `compiler/`):
+
+- **Planes** are created in pairs (`i^1` = negated; axial pairs list the +axis plane first). Node planes are
+  +axis planes; brush sides and faces use the side's outward plane (`face.side = 0`).
+- **Bevels:** axial bevel planes are added only where a side does not already supply that axis (so an AABB gets
+  none), plus Source's edge bevels for non-axial edges; bevel sides come after the real sides and carry the
+  brush's first texinfo.
+- **Faces** are emitted for every non-bevel side except `nodraw`/`sky` materials, `playerclip`/`ladder`
+  contents and `trigger_*` entities; they are wound clockwise about the outward normal (the renderer reverses
+  to three.js). `styles` is `[255,255,255,255]`, `dispInfo -1`. Faces of one model are contiguous (world first).
+- **kd-tree:** a brush straddles a split only if it strictly crosses it (touching goes to one side); `Uint16`
+  fields (`planeNum`, `leafBrushes`, `firstLeafBrush`, leaf-face lists, vertexes/edges) cap a level at 65,535 of
+  each — `compileLevel` throws a "level too large" error beyond that. Water/slime brushes force cell splits on
+  their bounds so `leafs.contents` (read by the renderer for underwater fog) is exact; other leaf contents are
+  the OR of brushes that fully contain the cell. The world always has a real node 0 (`headNode 0`).
+- **Manifest:** `textures` is keyed by `MaterialInfo.texture.id`; `materials[name].base` is that id; `bsp` is
+  `maps/<64-hex digest>.bsp` (non-cryptographic digest of the geometry); `sky` is `null` unless `src.sky`.
+- **Entities:** `fog` becomes an `env_fog_controller` (color 0–255); brush entities get `model "*N"` in order;
+  `origin` on a brush entity offsets the whole model (brushes are authored in world coordinates).
+- **DSL additions:** `PlaneSource.face` (per-plane material), `FogSource`, helpers `waterBox`, `wedge`, `ramp`,
+  `prism`/`cylinderish`; `uShift`/`vShift` are in texels, `uScale`/`vScale` multiply `unitsPerRepeat`.
 
 ## 4. Assets (H0.3, H2.4)
 
