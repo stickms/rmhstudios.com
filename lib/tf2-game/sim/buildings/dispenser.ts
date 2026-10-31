@@ -161,6 +161,9 @@ export class ObjectDispenser extends TFBaseObject {
   override onRemove(): void {
     this.resetHealingTargets();
     this.removeTrigger();
+    // The idle hum loops: a destroyed or removed dispenser must not leave it behind.
+    if (this.world.isServer)
+      this.world.events.push({ type: 'sound', name: 'Building_Dispenser.Idle', entity: this.id, channel: 0, stop: true });
     super.onRemove();
   }
 

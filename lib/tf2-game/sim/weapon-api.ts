@@ -193,6 +193,13 @@ export interface Weapon {
   onOwnerDeath(): void;
   /** Movement speed multiplier while active (GetSpeedMod). */
   speedMod(): number;
+  /**
+   * The looping sound the weapon's state plays on its owner while it is active ('' for none):
+   * the SDK's client-side envelope sounds (C_TFMinigun::WeaponSoundUpdate, the flamethrower's
+   * fire and pilot loops). It is replicated on the player record (`weaponLoop`) and every client
+   * plays it from there (audio/loops.ts) — never as start/stop events, which can be lost.
+   */
+  loopSound?(): string;
   /** The item's attributes (sim/items), read by the attribute hooks; empty for a stock weapon. */
   readonly attributes?: AttributeSet;
   /** `provide_on_active`: provides its attributes to the owner only while it is out. */

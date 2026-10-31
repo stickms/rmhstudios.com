@@ -41,6 +41,7 @@ import {
   type NetValue,
 } from '../render/entities';
 import type { AudioEngine } from '../audio/engine';
+import { soundlevelForRadius } from '../audio/attenuation';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import { SpWorld, type SpSnapshot } from '@/lib/sp-game/world/sp-world';
 import type { SpEvent } from '@/lib/sp-game/world/events';
@@ -602,6 +603,9 @@ export class SpClient implements GameClient {
           pitch: ev.pitch,
           stop: ev.stop,
           loop: ev.loop,
+          // ambient_generic's radius is a raw wave's level (a script entry keeps its own).
+          soundlevel:
+            ev.radius !== undefined && /\.(wav|mp3|ogg)$/i.test(ev.name) ? soundlevelForRadius(ev.radius) : undefined,
         });
         break;
       case 'caption':

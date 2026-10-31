@@ -17,6 +17,25 @@
  * scripts' ATTN_* constants are written in; ATTN_TO_SNDLVL turns those into levels (the sound
  * exporter does that), and the curve above is what the engine then applies to the level.
  *
+ * ## Falloff profiles (CS:GO)
+ *
+ * TF2, HL2 and Portal attenuate by the curve alone. CS:GO's sound entries are
+ * `"soundentry_version" "2"`: their distance behaviour comes from operator stacks
+ * (`scripts/sound_operator_stacks.txt`, imported per entry), which the sound exporter does not
+ * evaluate — scripts/tf2-game/sounds.py keeps only each entry's `soundlevel` (gunfire 79 dB,
+ * footsteps and bounces 75, foley 60–65). On the plain curve those levels carry far too far for
+ * the quiet sounds: a 75 dB footstep is still at −14 dB at 1000 units and only silent past
+ * ~40 000, so a whole map of footsteps is audible. A `FalloffProfile` therefore multiplies the
+ * curve by a smooth fade to silence for sounds at or under a level (`FalloffBand`), chosen per
+ * game (`falloffProfileFor`). CSGO_FALLOFF's numbers are tuned to the ranges players measure in
+ * CS:GO, not read from Valve data: footsteps fade between 600 and 1100 units, foley (draws,
+ * reloads, pins) between 350 and 800; gunfire (79 dB) and louder keep the plain curve, so a shot
+ * is heard across the map but clearly quieter with distance (−10 dB at 1000 units, −22 dB at
+ * 4000).
+ *
+ * `soundlevelForRadius` is ambient_generic's radius → level (ComputeSoundlevel in the SDK's
+ * game/server/sound.cpp: 40 dB at the radius), for raw wave paths that have no script level.
+ *
  * Pure: no Web Audio here.
  */
 
@@ -79,4 +98,76 @@ export function fullVolumeRadius(soundlevel: number): number {
 export function audibleRadius(soundlevel: number): number {
   const m = sndlvlToDistMult(soundlevel);
   return m > 0 ? 2 / (SND_GAIN_MIN * m) : Infinity;
+}
+
+/** soundlevel_t from an ambient_generic radius (SDK ComputeSoundlevel): 40 dB at `radius` units. */
+export function soundlevelForRadius(radius: number, everywhere = false): number {
+  if (!(radius > 0) || everywhere) return SNDLVL_NONE;
+  return Math.trunc(40 + 20 * Math.log10(radius / SND_REFDIST));
+}
+
+/** A fade to silence between two distances for sounds at or under a level (see the header). */
+export interface FalloffBand {
+  /** The band covers sounds of at most this level (dB); the first matching band applies. */
+  readonly maxSoundlevel: number;
+  /** Units: full curve gain up to here… */
+  readonly fadeStart: number;
+  /** …and silent from here. */
+  readonly fadeEnd: number;
+}
+
+export interface FalloffProfile {
+  /** Ascending by `maxSoundlevel`; louder sounds than every band keep the plain curve. */
+  readonly bands: readonly FalloffBand[];
+}
+
+/** The plain Source curve (TF2, HL2, Portal). */
+export const SOURCE_FALLOFF: FalloffProfile = { bands: [] };
+
+/** CS:GO's operator-stack falloff, approximated (see the header): quiet sounds stop carrying. */
+export const CSGO_FALLOFF: FalloffProfile = {
+  bands: [
+    // Foley: weapon draws, reloads, bolt pulls, pin pulls, item pickups (60–65 dB).
+    { maxSoundlevel: 70, fadeStart: 350, fadeEnd: 800 },
+    // Footsteps, ladder steps, grenade bounces, landings (75 dB).
+    { maxSoundlevel: 77, fadeStart: 600, fadeEnd: 1100 },
+  ],
+};
+
+/** The profile a game's sounds attenuate by. */
+export function falloffProfileFor(game: string): FalloffProfile {
+  return game === 'csgo' ? CSGO_FALLOFF : SOURCE_FALLOFF;
+}
+
+function bandFor(profile: FalloffProfile, soundlevel: number): FalloffBand | null {
+  if (!soundlevel) return null;
+  for (const b of profile.bands) if (soundlevel <= b.maxSoundlevel) return b;
+  return null;
+}
+
+/** The profile's extra factor (0..1) at `dist`: 1 before the band's fade, 0 after it. */
+export function falloffFade(profile: FalloffProfile, soundlevel: number, dist: number): number {
+  const b = bandFor(profile, soundlevel);
+  if (!b || dist <= b.fadeStart) return 1;
+  if (dist >= b.fadeEnd) return 0;
+  // Smoothstep: no corner in loudness where the fade begins or ends.
+  const t = (dist - b.fadeStart) / (b.fadeEnd - b.fadeStart);
+  return 1 - t * t * (3 - 2 * t);
+}
+
+/** The distance gain under a profile: the Source curve times the profile's fade. */
+export function profileDistanceGain(
+  profile: FalloffProfile,
+  soundlevel: number,
+  dist: number,
+): number {
+  const g = distanceGain(soundlevel, dist);
+  return g > 0 ? g * falloffFade(profile, soundlevel, dist) : 0;
+}
+
+/** Distance past which a sound is silent under a profile (units). */
+export function profileAudibleRadius(profile: FalloffProfile, soundlevel: number): number {
+  const b = bandFor(profile, soundlevel);
+  const r = audibleRadius(soundlevel);
+  return b ? Math.min(r, b.fadeEnd) : r;
 }

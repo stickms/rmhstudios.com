@@ -23,6 +23,7 @@ import { MEDIGUN } from '../../data/weapons';
 import { TF_COND } from '../conditions';
 import { COLLISION_GROUP_NONE, type Entity } from '../entity';
 import type { NetRecord } from '../net-schema';
+import { CHAN_AUTO } from '../events';
 import type { Player } from '../player';
 import type { WeaponSpec } from '../weapon-api';
 import { ACT, MEDIGUN_TARGET_CHECK_INTERVAL, PLAYERANIMEVENT_ATTACK_POST, PLAYERANIMEVENT_ATTACK_PRE } from './constants';
@@ -116,6 +117,8 @@ export class Medigun extends TFWeapon {
   override onOwnerDeath(): void {
     super.onOwnerDeath();
     this.removeHealingTarget(true);
+    // TFPlayer.CritBoostOn loops (its wave has loop points) until it is stopped.
+    if (this.chargeRelease) this.stopSound('TFPlayer.CritBoostOn', CHAN_AUTO);
     this.chargeRelease = false;
     this.chargeLevel = 0;
     this.readyNotified = false;
@@ -392,6 +395,7 @@ export class Medigun extends TFWeapon {
       this.releaseStartedAt = 0;
       this.readyNotified = false;
       this.detachedIds.fill(NO_ENTITY);
+      if (this.chargeType() === 1) this.stopSound('TFPlayer.CritBoostOn', CHAN_AUTO);
       o.world.emitSound(this.chargeType() === 1 ? 'TFPlayer.CritBoostOff' : 'TFPlayer.InvulnerableOff', { entity: o.id });
       o.world.emitEffect({ kind: 'particle', system: this.chargedEffectName(), pos: { x: o.origin.x, y: o.origin.y, z: o.origin.z }, entity: o.id, value: 0 });
     }

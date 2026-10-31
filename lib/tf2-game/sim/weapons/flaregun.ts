@@ -183,6 +183,14 @@ export class FlareGunRevenge extends FlareGun {
     return super.deploy();
   }
 
+  /**
+   * The charge loop (WPN_DOUBLE, Weapon_ManMelter.altfire_lp) while +attack2 holds the charge —
+   * CTFFlareGun::StartCharge / StopCharge's client loop.
+   */
+  override loopSound(): string {
+    return this.chargeBeginTime > 0 ? (this.sounds.double_shot ?? '') : '';
+  }
+
   /** SDK: CTFFlareGun_Revenge::Holster. */
   override holster(next: Parameters<TFWeaponGun['holster']>[0]): boolean {
     const o = this.owner;
@@ -203,10 +211,8 @@ export class FlareGunRevenge extends FlareGun {
   override secondaryAttack(_cmd: UserCmd): void {
     if (this.nextSecondaryAttack > this.t) return;
     if (!this.owner) return;
-    if (this.chargeBeginTime === 0) {
-      this.chargeBeginTime = this.t;
-      this.weaponSound('double_shot');
-    }
+    // The charge loop is loopSound(): every client plays it while the charge runs.
+    if (this.chargeBeginTime === 0) this.chargeBeginTime = this.t;
     this.nextSecondaryAttack = this.t + 0.5;
   }
 
