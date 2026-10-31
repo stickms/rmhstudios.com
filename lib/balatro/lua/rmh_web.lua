@@ -613,7 +613,7 @@ end
 ----------------------------------------------------------------------------------
 -- 9. Multiplayer mailbox (PLAN §3.c). RMH.net trades NDJSON with the page through
 -- /rmh/net (rmh/net.lua; the page half is lib/balatro/mp/bridge.ts). Idle, it
--- costs one failed io.open a frame. RMH.frame_hooks (fn(dt)) run every frame before it,
+-- opens nothing (one seek on in.sig, rmh/net.lua). RMH.frame_hooks (fn(dt)) run every frame before it,
 -- paused or not. The MP pack itself loads only when Multiplayer is opened.
 ----------------------------------------------------------------------------------
 

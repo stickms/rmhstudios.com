@@ -103,6 +103,7 @@ P.ENUM = {
 P.PATHS = {
   GLYPHS = "/Balatro/rmh_mp/glyphs.bin",
   IN = "/rmh/net/in",
+  IN_SIG = "/rmh/net/in.sig",
   MP_AUTOLOAD = "/rmh/mp/autoload",
   MP_READY = "/rmh/mp/ready",
   MP_RUN = "/rmh/mp/run.jkr",

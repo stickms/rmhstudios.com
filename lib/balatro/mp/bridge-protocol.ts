@@ -67,6 +67,11 @@ export const BRIDGE_PATHS = {
   OUT: '/rmh/net/out',
   /** JS→Lua. JS rewrites the whole file on every append; Lua reads then `os.remove`s it. */
   IN: '/rmh/net/in',
+  /**
+   * JS→Lua "IN changed": JS writes it non-empty whenever it writes IN; Lua keeps it open, checks
+   * its size once a frame (no failed open on an idle frame) and empties it before reading IN.
+   */
+  IN_SIG: '/rmh/net/in.sig',
   /** JS writes `<version>` once the MP pack's files are in /Balatro/rmh_mp/…. */
   MP_READY: '/rmh/mp/ready',
   /** JS writes it during preRun when MP must start at boot. */

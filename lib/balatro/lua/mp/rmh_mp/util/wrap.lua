@@ -5,6 +5,9 @@
 --               Defaults to the hook function itself, so re-running an installer is a no-op.
 --   opts.group  a group name ('core' default, 'session' for wraps that exist only while a
 --               session is mounted); MP.hooks.remove_group(g) removes every layer of it.
+--   opts.hot    for slots called hundreds of times a frame (Moveable.align_to_major): the layer
+--               runs without error isolation (no pcall): an error it raises travels like one
+--               raised by the original. Only for small hooks that cannot fail.
 --   h.remove()  removes this layer.
 --
 -- Layers stack: the last installed layer runs first and its `orig` is the next layer down,
@@ -30,45 +33,110 @@ local function pack(...) return { n = select('#', ...), ... } end
 
 local DOWNSTREAM = {} -- marker table wrapping errors raised below a layer
 
+-- The layer chain runs on hot paths (Card:draw, Game:update, ... once per card per frame while a
+-- session is mounted), so a call allocates nothing: every layer owns one `next` function (built
+-- when it is installed), whether a layer called its `next` is a flag per call depth, and up to
+-- four arguments are kept in locals for the error path (more are packed, rare).
+--
+-- Layers carry an install sequence number (ascending along rec.layers); a layer's `next` runs the
+-- topmost layer installed before it that is still there, so removing layers while a call is
+-- running (S.unmount from inside G.FUNCS.start_run) never re-enters a layer or skips the rest.
 local call_layer
+local depth = 0      -- nesting of layer calls in progress (any slot)
+local called = {}    -- called[d]: the layer running at depth d has called its next
+local layer_seq = 0
 
-call_layer = function(rec, i, ...)
-  if i == 0 then return rec.orig(...) end
-  local layer = rec.layers[i]
-  local called = false
-  local function next_fn(...)
-    called = true
-    local r = pack(pcall(call_layer, rec, i - 1, ...))
-    if not r[1] then
-      local err = r[2]
-      if type(err) == 'table' and err[DOWNSTREAM] then error(err, 0) end
-      error({ [DOWNSTREAM] = true, err = err }, 0)
-    end
-    return unpack(r, 2, r.n)
+local function as_down(err)
+  if type(err) == 'table' and err[DOWNSTREAM] then return err end
+  return { [DOWNSTREAM] = true, err = err }
+end
+
+--- Re-raise an error from below `layer`: unwrapped when no protected layer above will see it
+--- (the real error leaves the dispatcher unchanged).
+local function raise_down(rec, layer, err)
+  err = as_down(err)
+  local layers = rec.layers
+  for j = #layers, 1, -1 do
+    local l = layers[j]
+    if l.seq <= layer.seq then break end
+    if not l.hot then error(err, 0) end
   end
-  local outermost = (i == #rec.layers)
-  local function raise_down(err)
-    if type(err) ~= 'table' or not err[DOWNSTREAM] then err = { [DOWNSTREAM] = true, err = err } end
-    if outermost then error(err.err, 0) end -- the real error leaves the dispatcher unchanged
-    error(err, 0)
+  error(err.err, 0)
+end
+
+--- Run the chain below the layer with sequence number `seq`.
+local function call_below(rec, seq, ...)
+  local layers = rec.layers
+  for j = #layers, 1, -1 do
+    local l = layers[j]
+    if l.seq < seq then return call_layer(rec, l, ...) end
   end
-  local r = pack(pcall(layer.fn, next_fn, ...))
-  if r[1] then return unpack(r, 2, r.n) end
-  local err = r[2]
-  if type(err) == 'table' and err[DOWNSTREAM] then raise_down(err) end
+  return rec.orig(...)
+end
+
+local function after_next(ok, ...)
+  if ok then return ... end
+  error(as_down((...)), 0)
+end
+
+local function make_next(rec, layer)
+  local seq = layer.seq
+  if layer.hot then
+    return function(...) return call_below(rec, seq, ...) end
+  end
+  return function(...)
+    called[depth] = true
+    return after_next(pcall(call_below, rec, seq, ...))
+  end
+end
+
+local function after_retry(rec, layer, ok, ...)
+  if ok then return ... end
+  raise_down(rec, layer, (...))
+end
+
+--- `layer` raised `err`: below-layer errors go up unchanged; its own error is logged and the
+--- rest of the chain runs with the same arguments, unless the layer already called it.
+local function recover(rec, layer, err, did_call, n, a1, a2, a3, a4, extra)
+  if type(err) == 'table' and err[DOWNSTREAM] then raise_down(rec, layer, err) end
   rec.errors = (rec.errors or 0) + 1
   MP.log('error', 'hook %s.%s [%s] failed: %s', tostring(rec.owner_name), rec.name,
     tostring(layer.id_name or '?'), tostring(err))
-  if called then return end
-  local r2 = pack(pcall(call_layer, rec, i - 1, ...))
-  if not r2[1] then raise_down(r2[2]) end
-  return unpack(r2, 2, r2.n)
+  if did_call then return end
+  local s = layer.seq
+  if extra then return after_retry(rec, layer, pcall(call_below, rec, s, unpack(extra, 1, extra.n))) end
+  if n == 0 then return after_retry(rec, layer, pcall(call_below, rec, s)) end
+  if n == 1 then return after_retry(rec, layer, pcall(call_below, rec, s, a1)) end
+  if n == 2 then return after_retry(rec, layer, pcall(call_below, rec, s, a1, a2)) end
+  if n == 3 then return after_retry(rec, layer, pcall(call_below, rec, s, a1, a2, a3)) end
+  return after_retry(rec, layer, pcall(call_below, rec, s, a1, a2, a3, a4))
+end
+
+local function finish(rec, layer, d, n, a1, a2, a3, a4, extra, ok, ...)
+  local did_call = called[d]
+  called[d] = false
+  depth = d - 1
+  if ok then return ... end
+  return recover(rec, layer, (...), did_call, n, a1, a2, a3, a4, extra)
+end
+
+call_layer = function(rec, layer, ...)
+  if layer.hot then return layer.fn(layer.next, ...) end
+  local d = depth + 1
+  depth = d
+  called[d] = false
+  local n = select('#', ...)
+  local a1, a2, a3, a4 = ...
+  local extra = n > 4 and pack(...) or nil
+  return finish(rec, layer, d, n, a1, a2, a3, a4, extra, pcall(layer.fn, layer.next, ...))
 end
 
 local function make_dispatcher(rec)
   return function(...)
-    if #rec.layers == 0 then return rec.orig(...) end
-    return call_layer(rec, #rec.layers, ...)
+    local layers = rec.layers
+    local top = layers[#layers]
+    if not top then return rec.orig(...) end
+    return call_layer(rec, top, ...)
   end
 end
 
@@ -94,10 +162,12 @@ function W.wrap(owner, name, fn, opts)
   local rec = by_owner[name]
   if rec and owner[name] ~= rec.dispatcher then
     -- Someone replaced the slot after us. Our layers keep running inside the old dispatcher
-    -- only if it is still reachable; start a new record on top of the current value.
+    -- only if it is still reachable; start a new record on top of the current value. The old
+    -- record stays in `all` while it has layers (remove_group still finds them).
     rec.stale = true
-    rec = nil
     by_owner[name] = nil
+    if #rec.layers == 0 then drop_rec(rec) end
+    rec = nil
   end
   if not rec then
     local current = owner[name]
@@ -120,7 +190,10 @@ function W.wrap(owner, name, fn, opts)
       return layer.handle
     end
   end
-  local layer = { id = id, id_name = opts.id and tostring(opts.id) or nil, fn = fn, group = opts.group or 'core' }
+  layer_seq = layer_seq + 1
+  local layer = { id = id, id_name = opts.id and tostring(opts.id) or nil, fn = fn, group = opts.group or 'core',
+    seq = layer_seq, hot = opts.hot == true }
+  layer.next = make_next(rec, layer)
   layer.handle = {
     remove = function() return W.unwrap(owner, name, id) end,
     owner = owner, name = name, id = id,
@@ -129,9 +202,16 @@ function W.wrap(owner, name, fn, opts)
   return layer.handle
 end
 
+--- Forget a record whose last layer is gone. Its dispatcher, if someone replaced the slot on top
+--- of it, stays reachable only through them, as a pass-through to the original; it is not
+--- tracked any more, so records never pile up across mounts.
 local function drop_rec(rec)
   if rec.owner[rec.name] == rec.dispatcher then rec.owner[rec.name] = rec.orig end
-  if slots[rec.owner] and slots[rec.owner][rec.name] == rec then slots[rec.owner][rec.name] = nil end
+  local by_owner = slots[rec.owner]
+  if by_owner and by_owner[rec.name] == rec then
+    by_owner[rec.name] = nil
+    if next(by_owner) == nil then slots[rec.owner] = nil end
+  end
   for i = #all, 1, -1 do if all[i] == rec then table.remove(all, i) end end
 end
 
@@ -142,7 +222,7 @@ function W.unwrap(owner, name, id)
   for i, layer in ipairs(rec.layers) do
     if layer.id == id then
       table.remove(rec.layers, i)
-      if #rec.layers == 0 and rec.owner[rec.name] == rec.dispatcher then drop_rec(rec) end
+      if #rec.layers == 0 then drop_rec(rec) end
       return true
     end
   end
@@ -160,7 +240,7 @@ function W.remove_group(group)
         n = n + 1
       end
     end
-    if #rec.layers == 0 and rec.owner[rec.name] == rec.dispatcher then drop_rec(rec) end
+    if #rec.layers == 0 then drop_rec(rec) end
   end
   return n
 end
@@ -187,6 +267,17 @@ function W.original(owner, name)
   local rec = slots[owner] and slots[owner][name]
   if rec then return rec.orig end
   return owner[name]
+end
+
+--- Bookkeeping sizes, for leak checks: records (wrapped slots, live or stale) and layers.
+function W.stats()
+  local layers, owners, slots_n = 0, 0, 0
+  for _, rec in ipairs(all) do layers = layers + #rec.layers end
+  for _, by_owner in pairs(slots) do
+    owners = owners + 1
+    for _ in pairs(by_owner) do slots_n = slots_n + 1 end
+  end
+  return { records = #all, layers = layers, owners = owners, slots = slots_n }
 end
 
 function W.count(group)

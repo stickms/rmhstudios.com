@@ -12,6 +12,7 @@ export const BRIDGE_PATHS = {
   OUT_TMP: "/rmh/net/out.tmp",
   OUT: "/rmh/net/out",
   IN: "/rmh/net/in",
+  IN_SIG: "/rmh/net/in.sig",
   MP_READY: "/rmh/mp/ready",
   MP_AUTOLOAD: "/rmh/mp/autoload",
   MP_RUN: "/rmh/mp/run.jkr",
