@@ -6,9 +6,10 @@
  * Relay framing (lib/shared/p2p/relay.ts): the hub stamps the member's slot
  * on member → host frames and routes host → member frames by the slot the
  * host writes, which it reads off the member's peer id (`relaySlotOf`, WS1
- * hand-off). Only members start the relay (`balatro:p2p:relay:start`); the
- * host switches a member to the relay when its own direct attempt fails or
- * when a relayed frame from that member arrives first.
+ * hand-off). Only members start the relay (`balatro:p2p:relay:start`), and
+ * the hub forwards nothing for a member before it did; so the host switches
+ * a member to the relay when that member's first relayed frame arrives (its
+ * own failed direct attempt only stops trying).
  */
 
 import { decodeRelay } from '../../../shared/p2p/relay';

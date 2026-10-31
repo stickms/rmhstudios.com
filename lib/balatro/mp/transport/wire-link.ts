@@ -1,7 +1,8 @@
 /**
  * One host ↔ member link speaking the §3.b wire: envelopes as CONTROL frames
  * (tag + JSON) on a `ReliableLink`, which fragments above 16 KB, pings on the
- * unreliable channel, applies backpressure and times out after 10 s.
+ * unreliable channel, applies backpressure and times out after 10 s (on the hub
+ * relay after `RELAY_LINK_TIMEOUT_MS`: a relay close never reaches the other end).
  *
  * Receiving is defensive (NET-10, I-05): frames that are not CONTROL JSON,
  * fail the envelope or per-kind zod schema (`validateEnvelope`), exceed the
@@ -22,6 +23,19 @@ import { PeerLimiter } from '../ratelimit';
 import type { Scheduler } from './types';
 
 export type ConnKind = 'direct' | 'turn' | 'relay';
+
+/**
+ * The silence after which a link on the hub relay closes. A DataChannel's 10 s timeout
+ * (LINK_TIMEOUT_MS) finds a dead network path, and its close reaches the other end. A relay
+ * link has no path of its own: it rides the two hub sockets, whose loss the hub reports
+ * (`member-away` / `member-left` to the host, host loss or a socket reconnect to a member),
+ * and closing one end never reaches the other. Silence on a relay is therefore a stalled page,
+ * and closing on it left the other end sending into a dead link: what it sent was lost (E2E-15:
+ * the relayed member's Ready, so the PvP round never started). The relay's own liveness bound
+ * is the hub's socket.io heartbeat (25 s ping interval + 20 s ping timeout), so a relay link
+ * outlives it: a page silent for longer than this has lost its socket as well.
+ */
+export const RELAY_LINK_TIMEOUT_MS = 60_000;
 
 export interface WireLinkStats {
   sent: number;
@@ -62,7 +76,7 @@ export class WireLink {
       unreliable: pair.unreliable,
       reliable: pair.reliable,
       now: () => this.opts.sched.mono(),
-      timeoutMs: this.opts.timeoutMs,
+      timeoutMs: kind === 'relay' ? RELAY_LINK_TIMEOUT_MS : this.opts.timeoutMs,
       maxMessageBytes: WIRE_LIMITS.MAX_MESSAGE_BYTES,
       onMessage: (bytes) => this.onBytes(bytes),
       onOpen: () => {

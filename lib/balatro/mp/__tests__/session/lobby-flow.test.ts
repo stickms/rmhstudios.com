@@ -126,6 +126,53 @@ describe('lobby: create, join, ready, start', () => {
     expect(bob.lua.outcomesOf('win')[0]?.winner_id).toBe('bob');
   });
 
+  it('keeps the relay link when the member falls back long after the host gave up on the direct path', async () => {
+    // E2E-15 on a starved CI runner: the member's 8 s direct timer fired ~30 s late. The hub only
+    // relays for a member that asked (relay:start), so a host link opened at its own timeout heard
+    // nothing, timed out before the member arrived, and every rejoin repeated it.
+    const host = w.peer('alice');
+    await w.step(20);
+    host.lua.emit('ui_create_lobby', { queueMode: 'pvp_nemesis', kind: 'private' });
+    await w.until(() => !!host.runtime.role?.code && code(host) === host.runtime.role.code, 5_000, 'hosted');
+    host.connector.blockDirect = true;
+    const bob = w.peer('bob', { blockDirect: true });
+    bob.connector.directTimeoutMs = 30_000;
+    await w.step(20);
+    bob.lua.emit('ui_join', { code: code(host) as string });
+    // Past the host's own direct timeout, before bob's: the host opened no relay link (the hub
+    // would drop every frame of it until bob asks for the relay).
+    await w.step(20_000, 50);
+    expect(host.hub.emitted.filter((e) => e.event === 'balatro:p2p:relay')).toHaveLength(0);
+    expect(bob.hub.emitted.filter((e) => e.event === 'balatro:p2p:relay:start')).toHaveLength(0);
+    await w.until(() => bob.lua.last('lobby_view')?.state.players.length === 2, 45_000, 'bob welcomed over the relay');
+    expect(host.lua.last('lobby_view')?.state.players.find((p) => p.id === 'bob')?.conn).toBe('relay');
+    // And it stays up: no link timeout, no rejoin.
+    const joins = bob.hub.emitted.filter((e) => e.event === 'balatro:p2p:join').length;
+    await w.step(30_000, 50);
+    expect(bob.hub.emitted.filter((e) => e.event === 'balatro:p2p:join').length).toBe(joins);
+    expect(bob.runtime.role?.kind).toBe('member');
+  });
+
+  it('a relayed member whose page stalls for 20 s loses nothing it sends when it resumes', async () => {
+    // E2E-15 on CI: the relayed page stalled past the 10 s link timeout. The host closed its end,
+    // but a relay close never reaches the member (a DataChannel's does), so the member's link
+    // stayed open for another timeout and its Ready for the PvP blind went into the dead link:
+    // the host never started the round.
+    const { host, members } = await lobbyWith(2, { blockDirect: [false, true] });
+    const [bob] = members as [Peer];
+    expect(host.lua.last('lobby_view')?.state.players.find((p) => p.id === 'bob')?.conn).toBe('relay');
+    await startMatch(host, members, {});
+    for (const p of [host, bob]) ev(p, { t: 'set_ante', ante: 1 });
+    ev(host, { t: 'ready_blind', starting_hands: 4 });
+    await w.step(1_000);
+    bob.hub.freeze(true);
+    await w.step(20_000, 50);
+    bob.hub.freeze(false);
+    ev(bob, { t: 'ready_blind', starting_hands: 4 });
+    await w.until(() => bob.lua.outcomesOf('start_blind').length === 1, 30_000, 'start_blind after the stall');
+    expect(host.lua.outcomesOf('start_blind')).toHaveLength(1);
+  });
+
   it('a kicked player is gone and cannot come back', async () => {
     const { host, members } = await lobbyWith(2);
     const [bob] = members as [Peer];
