@@ -1,10 +1,12 @@
 -- rmh_mp/ui/pause.lua — the pause menu in a session run (HUD-10, PR-04, D-38).
 --
 -- create_UIBox_options is wrapped while a session is mounted and the stage is a run:
---   match     Settings · Seed Change (first 300 s of the run, blue) · Vote for Draw (blue) ·
---             Forfeit (red, then "Are you sure?" Yes/No) · Collection
---   practice  Settings · Main Menu · Collection · Unlimited Slots / Edition Cycling (Q) /
---             Show inactive sandbox cards toggles (D-38, D-28; read by hooks/practice.lua)
+--   match     Settings · Seed Change (blue; greyed out, not removed, after the first 300 s of the
+--             run, as the mod's pvp_run_options.lua) · Vote for Draw (blue) ·
+--             Forfeit (red, then "Are you sure?" Yes/No) · Collection (the API's pause_menu_extra_rows)
+--   practice  Settings · Seed Change (same window: restarts the practice run on a fresh seed) ·
+--             Forfeit (red, straight to the main menu, as the mod) · Collection · Unlimited Slots /
+--             Edition Cycling (Q) / Show inactive sandbox cards toggles (D-38, D-28; hooks/practice.lua)
 -- Restart is gone in both (holding R is disabled by the core, hooks/guards.lua).
 -- Votes are game events (seed_vote / draw_vote) the referee counts; their k/n progress comes back
 -- as vote_progress outcomes and is shown as a toast (and in the chat when the chat UI is there).
@@ -45,24 +47,33 @@ function PZ.items()
     return fb
   end
   local list = { { id = 'mp_pause_settings', label = loc('b_settings', 'Settings'), button = 'settings' } }
-  if MP.is_match() then
-    if PZ.run_age() <= PZ.SEED_VOTE_WINDOW then
-      list[#list + 1] = { id = 'mp_pause_seed', label = t('rmh_mp_seed_change', 'Seed Change'), button = 'mp_vote_seed', colour = 'BLUE' }
-    end
+  local match = MP.is_match()
+  local seed = { id = 'mp_pause_seed', label = t('rmh_mp_seed_change', 'Seed Change'), button = 'mp_vote_seed', colour = 'BLUE' }
+  if PZ.run_age() > PZ.SEED_VOTE_WINDOW then seed.button, seed.disabled = nil, true end
+  list[#list + 1] = seed
+  if match then
     list[#list + 1] = { id = 'mp_pause_draw', label = t('rmh_mp_vote_draw', 'Vote for Draw'), button = 'mp_vote_draw', colour = 'BLUE' }
-    list[#list + 1] = { id = 'mp_pause_forfeit', label = t('b_pvp_forfeit', 'Forfeit'), button = 'mp_forfeit_ask', colour = 'RED' }
-  else
-    list[#list + 1] = { id = 'mp_pause_menu', label = loc('b_main_menu', 'Main Menu'), button = 'go_to_menu' }
   end
+  list[#list + 1] = { id = 'mp_pause_forfeit', label = t('b_pvp_forfeit', 'Forfeit'),
+    button = match and 'mp_forfeit_ask' or 'go_to_menu', colour = 'RED' }
   list[#list + 1] = { id = 'your_collection', label = loc('b_collection', 'Collection'), button = 'your_collection' }
   return list
+end
+
+function PZ.strip(n)
+  if type(n) ~= 'table' then return end
+  if n.config then n.config.button = nil end
+  for _, c in ipairs(n.nodes or {}) do PZ.strip(c) end
 end
 
 function PZ.build()
   local contents = {}
   for _, it in ipairs(PZ.items()) do
-    contents[#contents + 1] = UIBox_button({ id = it.id, label = { it.label }, button = it.button, minw = 5,
-      colour = it.colour and G.C[it.colour] or nil })
+    local node = UIBox_button({ id = it.id, label = { it.label }, button = it.button, minw = 5,
+      colour = it.disabled and G.C.UI.BACKGROUND_INACTIVE or it.colour and G.C[it.colour] or nil })
+    -- Greyed out and inert: UIBox_button falls back to exit_overlay_menu for a nil button.
+    if it.disabled then PZ.strip(node) end
+    contents[#contents + 1] = node
   end
   if MP.is_practice() then
     local t = RU().t
@@ -89,8 +100,10 @@ end
 PZ.votes_sent = PZ.votes_sent or {}
 
 function PZ.vote(kind)
-  if not MP.is_match() then return false end
   if kind == 'seed' and PZ.run_age() > PZ.SEED_VOTE_WINDOW then return false end
+  -- Practice is solo: its one vote is unanimous, so the run restarts on a fresh seed.
+  if kind == 'seed' and MP.is_practice() then return MP.session.launch('') == true end
+  if not MP.is_match() then return false end
   local ev = kind == 'seed' and 'seed_vote' or 'draw_vote'
   MP.event({ t = ev })
   PZ.votes_sent[kind] = (PZ.votes_sent[kind] or 0) + 1

@@ -29,6 +29,7 @@ import {
   successorOf,
   type PlayerSeed,
 } from '../../lobby/lobby-reducer';
+import { MP_DECKS, VANILLA_DECKS } from '../../setup/draft';
 import { Routing } from '../../match/routing';
 import { RefereeDriver } from '../../match/match-host';
 import { HS_MIGRATION_GAP, successorHs, takeoverCheckpoint } from '../../migration';
@@ -209,6 +210,7 @@ describe('lobby reducer', () => {
   it('builds a valid StartedMatch with the forced options and per-player loadouts', () => {
     let s = setReady(base(), 'm', true);
     s = setOption(s, 'ruleset', 'ruleset_mp_majorleague', { testBuild: false });
+    s = setOption(s, 'differentDecks', true, { testBuild: false });
     s = setOption(s, 'randomLoadout', true, { testBuild: false });
     const m = buildMatch(s, { runId: 'r1', seed: 'ZZZZ1234', rngSeed: 7, now: T0, contentHash: `${'a'.repeat(24)}-v1` });
     expect(zStartedMatch.safeParse(m).success).toBe(true);
@@ -228,6 +230,78 @@ describe('lobby reducer', () => {
     expect(back.started).toBeNull();
     expect(back.open).toBe(true);
     expect(kick(back, 'm').kicked).toEqual(['m']);
+  });
+});
+
+describe('different_decks / random_loadout (C15, LOB-07)', () => {
+  const inp = { runId: 'r1', seed: 'ZZZZ1234', rngSeed: 7, now: T0, contentHash: `${'a'.repeat(24)}-v1` };
+  const COCKTAIL: readonly string[] = [...VANILLA_DECKS, ...MP_DECKS];
+  type Flag = 'differentDecks' | 'randomLoadout' | 'differentSeeds';
+  const lobby = (opts: Partial<Record<Flag, boolean>>, ruleset = 'ruleset_mp_expanded') => {
+    let s = createLobby({ code: 'ABCDEF', kind: 'private', queueMode: 'pvp_royale', host: seed('h', 1) });
+    for (let i = 0; i < 6; i++) s = addPlayer(s, seed(`m${i}`, 2 + i));
+    s = setOption(s, 'ruleset', ruleset, { testBuild: false });
+    for (const [k, v] of Object.entries(opts)) s = setOption(s, k as Flag, v, { testBuild: false });
+    return setDeck(s, { deck: 'b_plasma', stake: 3, mpStake: null, challenge: null });
+  };
+
+  it('different_decks off: everyone plays the host deck, random_loadout alone does nothing', () => {
+    for (const o of [{}, { randomLoadout: true }]) {
+      const m = buildMatch(lobby(o), inp);
+      expect(m.perPlayer).toBeUndefined();
+      expect([m.deck, m.stake]).toEqual(['b_plasma', 3]);
+    }
+  });
+
+  it('different_decks without random_loadout: no host-chosen decks (each player applies its own pick)', () => {
+    const m = buildMatch(lobby({ differentDecks: true }), inp);
+    expect(m.perPlayer).toBeUndefined();
+    expect(m.options.differentDecks).toBe(true);
+    const seeds = buildMatch(lobby({ differentDecks: true, differentSeeds: true }), inp);
+    for (const e of Object.values(seeds.perPlayer ?? {})) expect(e.deck).toBeUndefined();
+  });
+
+  it('random_loadout rolls each player a Cocktail-pool deck and a stake, fixed by seed and player', () => {
+    const s = lobby({ differentDecks: true, randomLoadout: true });
+    const a = buildMatch(s, inp);
+    expect(zStartedMatch.safeParse(a).success).toBe(true);
+    const per = a.perPlayer ?? {};
+    expect(Object.keys(per)).toHaveLength(7);
+    for (const e of Object.values(per)) {
+      expect(COCKTAIL).toContain(e.deck);
+      expect(e.stake).toBeGreaterThanOrEqual(1);
+      expect(e.stake).toBeLessThanOrEqual(8);
+      expect(e.seed).toBeUndefined();
+    }
+    // Same seed: same loadouts, whatever the host's CSPRNG state; another seed: others.
+    expect(buildMatch(s, { ...inp, rngSeed: 99 }).perPlayer).toEqual(per);
+    expect(buildMatch(s, { ...inp, seed: 'QQQQ0000' }).perPlayer).not.toEqual(per);
+    // The roll is per player: not everyone gets the same loadout.
+    expect(new Set(Object.values(per).map((e) => `${e.deck}/${e.stake}`)).size).toBeGreaterThan(1);
+  });
+
+  it('the pool holds the MP decks with MP content and only vanilla decks without', () => {
+    const decks = (ruleset: string) => {
+      const seen = new Set<string>();
+      for (let i = 0; i < 40; i++) {
+        const m = buildMatch(lobby({ differentDecks: true, randomLoadout: true }, ruleset), { ...inp, seed: `S${i}` });
+        for (const e of Object.values(m.perPlayer ?? {})) seen.add(e.deck ?? '');
+      }
+      return seen;
+    };
+    const mp = decks('ruleset_mp_expanded');
+    expect([...mp].some((k) => k.startsWith('b_mp_'))).toBe(true);
+    for (const k of mp) expect(COCKTAIL).toContain(k);
+    const vanilla: readonly string[] = VANILLA_DECKS;
+    for (const k of decks('ruleset_mp_vanilla')) expect(vanilla).toContain(k);
+  });
+
+  it("with different seeds each player's roll follows its own seed", () => {
+    const m = buildMatch(lobby({ differentDecks: true, randomLoadout: true, differentSeeds: true }), inp);
+    for (const e of Object.values(m.perPlayer ?? {})) {
+      expect(e.seed).toMatch(/^[A-Z0-9]{8}$/);
+      expect(e.deck).toBeDefined();
+    }
   });
 });
 

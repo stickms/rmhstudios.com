@@ -556,6 +556,54 @@ describe('ui lobby: Lobby Options', function()
   end)
 end)
 
+describe('ui lobby: a guest picks its own deck with different decks (C15)', function()
+  before_each(boot)
+  after_each(function() MP.loadout = nil; UH.teardown() end)
+
+  local function guest(options)
+    local view = UH.view({ me = 'u_alice', isHost = false })
+    view.state.hostId = 'u_bob'
+    for k, v in pairs(options or {}) do view.state.options[k] = v end
+    return view
+  end
+
+  it('off (the default) or with a random loadout: the guest deck box stays display only', function()
+    expect(UH.enabled(show(guest()), 'mp_deck_box')).falsy()
+    local bar = show(guest({ differentDecks = true, randomLoadout = true }))
+    expect(UH.enabled(bar, 'mp_deck_box')).falsy()
+    -- Even called directly (a stale button), a guest without the option opens nothing.
+    G.FUNCS.rmh_mp_deck_box()
+    expect(UH.overlay()).eq(nil)
+  end)
+
+  it('on: the box opens the picker (no Challenges tab, no MP stake); Select keeps the pick locally', function()
+    local bar = show(guest({ differentDecks = true }))
+    expect(UH.enabled(bar, 'mp_deck_box')).truthy()
+    UH.click(bar, 'mp_deck_box')
+    local def, name = UH.overlay()
+    expect(name).eq('run_setup')
+    expect(U.run_setup.st.mode).eq('loadout')
+    expect(UH.find(def, 'mp_rs_challenge')).eq(nil)
+    expect(UH.find(def, 'mp_rs_mp_stake')).eq(nil)
+    UH.cycle(def, 'mp_rs_deck', 2)
+    UH.cycle(def, 'mp_rs_stake', 4)
+    UH.click(def, 'mp_rs_select')
+    expect(MP.loadout).eq({ deck = 'b_blue', stake = 4 })
+    -- Nothing goes to the host: the player's Lua applies its own pick at launch (session.lua).
+    expect(#UH.sent('ui_set_deck')).eq(0)
+    local view = guest({ differentDecks = true })
+    view.state.version = view.state.version + 1
+    bar = show(view)
+    expect(UH.has_text(bar, 'Blue Deck')).truthy()
+  end)
+
+  it('a new lobby forgets the pick', function()
+    MP.loadout = { deck = 'b_blue', stake = 4 }
+    U.lobby_reset()
+    expect(MP.loadout).eq(nil)
+  end)
+end)
+
 describe('ui lobby: run setup (LOB-08)', function()
   before_each(boot)
   after_each(UH.teardown)

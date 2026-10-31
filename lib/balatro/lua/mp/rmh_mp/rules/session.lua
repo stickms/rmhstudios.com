@@ -182,6 +182,11 @@ function S.mount(kind, info)
   MP.state_reset()
   local me = info.me
   local per = info.perPlayer and me and info.perPlayer[me] or {}
+  -- C15 (the mod's lobby_start_run): with different decks on, a player plays the deck and stake
+  -- it picked in the lobby (MP.loadout, ui/run_setup.lua; none picked = the host's), and a
+  -- random loadout (perPlayer, rolled by the host) wins over both. Either drops the host's challenge.
+  local own = kind == 'match' and info.options and info.options.differentDecks == true and MP.loadout or nil
+  if per.deck then own = { deck = per.deck, stake = per.stake } end
   local roster = {}
   for _, r in ipairs(info.roster or {}) do
     roster[r.id] = { name = r.name, team = r.team, blindCol = r.blindCol, avatarJoker = r.avatarJoker }
@@ -190,8 +195,8 @@ function S.mount(kind, info)
     kind = kind, runId = info.runId or ('practice-' .. tostring(os.time())), me = me, hostId = info.hostId,
     resolved = info.resolved or MP.EMPTY_RESOLVED, options = info.options or {},
     shape = shape_of(info.shape or (kind == 'practice' and { nemesisPairing = true, practice = true })),
-    roster = roster, seed = per.seed or info.seed, deck = per.deck or info.deck or 'b_red',
-    stake = per.stake or info.stake or 1, mpStake = info.mpStake, challenge = info.challenge,
+    roster = roster, seed = per.seed or info.seed, deck = own and own.deck or info.deck or 'b_red',
+    stake = own and own.stake or info.stake or 1, mpStake = info.mpStake, challenge = not own and info.challenge or nil,
     queueMode = info.queueMode, ruleset = info.ruleset or (info.resolved and info.resolved.key),
     contentHash = info.contentHash,
     -- A reload rejoin: the index this player's replay log continues at (the host's count of it).

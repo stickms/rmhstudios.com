@@ -6,7 +6,8 @@
 --        player = the per-player overlay (Mute; Kick for the host; connection info)
 --   bar  by lobby kind and role:
 --        private host    START GAME · LOBBY OPTIONS · deck box (run setup) · code panel · INVITE · LEAVE
---        private member  READY/UNREADY · LOBBY OPTIONS · deck box (display) · code panel · INVITE · LEAVE
+--        private member  READY/UNREADY · LOBBY OPTIONS · deck box (display; with different decks
+--                        and no random loadout, the player's own pick: run setup 'loadout', C15) · …
 --        party host      FIND GAME (+ casual mode cycle) / queue status + CANCEL · code panel · INVITE · LEAVE
 --        party member    READY/UNREADY · queue status · code panel · LEAVE
 --        casual          one status panel (setup vote / draft, else "Waiting for players...") · LEAVE
@@ -33,6 +34,7 @@ function U.lobby_reset()
   L.ui.show_code = false
   L.ui.copied_at = nil
   L.ui.auto_ready = nil
+  MP.loadout = nil
 end
 
 local function now()
@@ -188,12 +190,20 @@ function L.code_panel(view)
   }, { r = 0.1, padding = 0.05, colour = TH.col('BLACK') })
 end
 
+--- C15: a guest picks its own deck while different decks are on and the loadout is not random.
+function L.own_pick(view)
+  local o = view.state.options or {}
+  return not view.isHost and view.state.kind == 'private' and o.differentDecks == true and o.randomLoadout ~= true
+end
+
 function L.deck_box(view)
   local st = view.state
-  local line1 = st.challenge and U.run_setup.challenge_name(st.challenge) or U.run_setup.deck_name(st.deck)
-  local line2 = U.run_setup.stake_name(st.stake)
+  local own = L.own_pick(view) and MP.loadout
+  local line1 = own and U.run_setup.deck_name(own.deck)
+    or st.challenge and U.run_setup.challenge_name(st.challenge) or U.run_setup.deck_name(st.deck)
+  local line2 = U.run_setup.stake_name(own and own.stake or st.stake)
   if st.mpStake then line2 = U.run_setup.mp_stake_name(st.mpStake) end
-  local host = view.isHost and st.kind == 'private'
+  local host = (view.isHost and st.kind == 'private') or L.own_pick(view)
   local b = W.button({ id = 'mp_deck_box', label = { line1, line2 }, button = host and 'rmh_mp_deck_box' or 'nil',
     colour = st.mpStake and TH.darken(U.run_setup.mp_stake_colour(st.mpStake), 0.1) or TH.col('MP_PURPLE'), minw = 2.65, minh = 1.35, scale = 0.38, col = true })
   return b
@@ -358,7 +368,10 @@ end
 F.rmh_mp_invite = function() U.send('ui_invite', {}) end
 F.rmh_mp_leave = function() U.confirm_leave() end
 F.rmh_mp_lobby_options = function() if U.lobby_options then U.lobby_options.open() end end
-F.rmh_mp_deck_box = function() if U.model.lobby and U.model.lobby.isHost then U.run_setup.open('lobby') end end
+F.rmh_mp_deck_box = function()
+  local v = U.model.lobby
+  if v and v.isHost then U.run_setup.open('lobby') elseif v and L.own_pick(v) then U.run_setup.open('loadout') end
+end
 F.rmh_mp_party_mode = function(args) L.ui.party_mode = args and args.to_key or 1 end
 F.rmh_mp_party_queue = function()
   local m = TH.QUEUE_MODES[L.ui.party_mode] or TH.QUEUE_MODES[1]
