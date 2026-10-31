@@ -1,0 +1,46 @@
+# Harmonic — status ledger
+
+Protocol: [`README.md`](README.md) §1. One row per work package; edit only your row.
+Statuses: `todo` · `claimed` · `review` · `done` · `blocked`.
+
+| WP   | Title                    | Status | Owner | Branch | Updated | Notes |
+| ---- | ------------------------ | ------ | ----- | ------ | ------- | ----- |
+| H0.1 | Scaffold                 | todo   |       |        |         |       |
+| H0.2 | Level compiler           | todo   |       |        |         |       |
+| H0.3 | Procedural assets        | todo   |       |        |         |       |
+| H0.4 | Dev level and client     | todo   |       |        |         |       |
+| H1.1 | Combat core              | todo   |       |        |         |       |
+| H1.2 | Cold and shelters        | todo   |       |        |         |       |
+| H1.3 | Weapons                  | todo   |       |        |         |       |
+| H1.4 | HUD, pause, saves        | todo   |       |        |         |       |
+| H2.1 | Phase layers             | todo   |       |        |         |       |
+| H2.2 | Enemy AI + Meridian      | todo   |       |        |         |       |
+| H2.3 | The Unstrung             | todo   |       |        |         |       |
+| H2.4 | Procedural models        | todo   |       |        |         |       |
+| H2.5 | The Tuner                | todo   |       |        |         |       |
+| H3.1 | Dialogue + subtitles     | todo   |       |        |         |       |
+| H3.2 | Chapter flags + endings  | todo   |       |        |         |       |
+| H3.3 | Audio                    | todo   |       |        |         |       |
+| H4.1 | Ch1 Whiteout             | todo   |       |        |         |       |
+| H4.2 | Ch2 Listening Post       | todo   |       |        |         |       |
+| H4.3 | Ch3 Still Point          | todo   |       |        |         |       |
+| H4.4 | Ch4 Below Decks, 1971    | todo   |       |        |         |       |
+| H4.5 | Ch5 The Long Corridor    | todo   |       |        |         |       |
+| H4.6 | Ch6 Drive Room           | todo   |       |        |         |       |
+| H4.7 | Ch7 Harmonic (endings)   | todo   |       |        |         |       |
+| H5.1 | Lightmap bake            | todo   |       |        |         |       |
+| H5.2 | Face culling + PVS-lite  | todo   |       |        |         |       |
+| H5.3 | Phones/touch             | todo   |       |        |         |       |
+| H5.4 | Performance pass         | todo   |       |        |         |       |
+| H6.1 | Catalog + SEO            | todo   |       |        |         |       |
+| H6.2 | As-built docs + credits  | todo   |       |        |         |       |
+| H9.1 | Own SpGame id (optional) | todo   |       |        |         |       |
+
+## Notes
+
+- Engine recon (2026-10-31): the `'hl2' | 'portal'` switches that H9.1 would audit include
+  `sp-assets.ts:137`, `console/server-commands.ts:98`, `console/sp-server.ts:63,210,253,258`,
+  `sp-player.ts:125-131,337,371-372,576`, `sp-world.ts:237,852,878`, `sp-client.ts:296,678`,
+  `input/gamepad.ts:101`, `input/actions.ts:192,201,222`, `SpPlayPage.tsx:80,106,209`,
+  `SourceMainMenu.tsx:147`, `GameHud.tsx:428-429,618`, `hud-layout.ts:164`,
+  `use-game-skin.ts:22,32`, `TouchOverlay.tsx:253,274,293`.
