@@ -14,18 +14,28 @@
 -- mailbox is fed 50 messages a second of a 60 fps game and must stay within 0.3 ms per frame;
 -- an idle pump within 0.05 ms (it opens nothing: one seek on in.sig); and 10 session
 -- mount/unmount cycles change no census count (MP tables, wraps, frame hooks, engine instance
--- lists), grow the collected heap by at most 10% and SP/MP Lua time by at most 1.2x.
+-- lists), grow the collected heap by at most 10%, the SP/MP Lua instructions per frame by at
+-- most 5% (exact: a count hook) and the SP/MP Lua time per frame by at most 1.3x each, 1.2x
+-- together (`sample`: a fast-tail estimate over a frame-sized reference loop, which a loaded
+-- machine moves far less than a mean).
 -- Measured on the WS14b machine (2026-10-30), before -> after the allocation-free wrap chain
 -- and in.sig (perf_spec alone / after every other spec in one boot):
 --   SP update+pump 8.1 / 17.7 ms -> 8.3 / 12.0 ms; MP 10.4 / 17.2 ms -> 8.1 / 12.1 ms
 --   MP/SP Lua 1.29x / 0.97x -> 0.97x / 1.00x; idle pump 0.062 / 0.095 ms -> 0.003 / 0.015 ms
 --   busy (60 fps-shaped) 0.158 / 0.206 ms -> 0.147 / 0.179 ms; 10 cycles: census unchanged,
 --   heap +0.8%, SP 1.14x / MP 1.07x (SwiftShader noise; the counts are the proof).
+-- The growth time ratio was a plain mean of 240 frames on each side until 2026-10-31, and that
+-- statistic swung 0.44-1.66 between runs on an unchanged build while other engines shared the
+-- machine (sd(log) 0.15-0.36); see the growth test for what replaced it and why.
 
 local has_mp, MP = pcall(require, 'rmh_mp')
 
 local SEED = 'RMHPERF1'
 local FRAMES = 240
+-- Frames per side of the growth check's time samples. Much of their noise is the sampling
+-- error of a fast-tail quantile (a bootstrap of one 240-frame sample spreads as much as
+-- separate samples do), which 480 frames halves in variance for ~40 s more per sample.
+local GROWTH_FRAMES = 480
 
 local function now() return love.timer.getTime() end
 
@@ -54,6 +64,88 @@ local function measure(n)
   if not ok then error(err, 0) end
   frames = math.max(1, frames)
   return { update = upd * 1000 / frames, pump = pump * 1000 / frames, frame = wall * 1000 / frames, frames = frames }
+end
+
+--- A fixed, allocation-free piece of Lua CPU work (no tables or strings, so no GC), ~8 ms on
+-- SwiftShader, timed on every sampled frame right after the game's own Lua. Its fast floor
+-- (5th percentile) is the machine's speed at that moment, free of preemption (8.0-8.5 ms in
+-- every sample measured, whatever the load), so dividing by it cancels a slower core, CPU
+-- frequency or a throttled tab without importing the preemption noise that its q10 or mean
+-- carry (a q10 reference jumped to 11-14 ms in a loaded sample and failed a clean run).
+local REF_ITERS = 500000
+local ref_sink = 0
+local function ref_work()
+  local x = 0
+  for i = 1, REF_ITERS do x = (x + i * 7) % 1000003 end
+  ref_sink = x
+end
+
+--- The p-quantile (nearest rank) of a list.
+local function quantile(xs, p)
+  local s = {}
+  for k = 1, #xs do s[k] = xs[k] end
+  table.sort(s)
+  if #s == 0 then return 0 end
+  return s[math.max(1, math.min(#s, math.floor((#s - 1) * p + 0.5) + 1))]
+end
+
+local function mean(xs)
+  local s = 0
+  for k = 1, #xs do s = s + xs[k] end
+  return s / math.max(1, #xs)
+end
+
+-- Lua VM instructions are counted in steps of this many (a count hook).
+local INSTR_STEP = 1000
+
+--- Lua cost per frame of love.update + love.event.pump (where the frame hooks and the mailbox
+-- pump run) over n frames, measured three ways:
+--   instr  median Lua VM instructions per frame (count hook on the thread running the frame):
+--          the work itself, which no other process on the machine can change;
+--   cost   the 10th-percentile frame's Lua time over the reference's floor. On a shared
+--          machine a frame is only ever made SLOWER by a neighbour (preemption, a full core),
+--          so the fast tail is the frame's own cost, and per-frame work a leak adds moves the
+--          whole distribution, its fast tail included;
+--   raw    the plain mean (what `measure` reports, and what the growth check used to compare),
+--          reported only.
+local function sample(n)
+  local lua_f, ref_f, ins_f = {}, {}, {}
+  local cur, ins = 0, 0
+  local hook = function() ins = ins + INSTR_STEP end
+  local h0, m0, c0 = debug.gethook()
+  local u0, p0 = love.update, love.event.pump
+  love.event.pump = function(...)
+    debug.sethook(hook, '', INSTR_STEP)
+    local t = now()
+    local r = p0(...)
+    cur = cur + (now() - t)
+    debug.sethook(h0, m0, c0)
+    return r
+  end
+  love.update = function(...)
+    debug.sethook(hook, '', INSTR_STEP)
+    local t = now()
+    local r = u0(...)
+    local dt = now() - t
+    debug.sethook(h0, m0, c0)
+    lua_f[#lua_f + 1] = (cur + dt) * 1000
+    ins_f[#ins_f + 1] = ins
+    cur, ins = 0, 0
+    local t2 = now()
+    ref_work()
+    ref_f[#ref_f + 1] = (now() - t2) * 1000
+    return r
+  end
+  local ok, err = AP.sched.protected(wait_frames, n)
+  love.update, love.event.pump = u0, p0
+  debug.sethook(h0, m0, c0)
+  if not ok then error(err, 0) end
+  if #lua_f < n / 2 then error(string.format('sample: %d frames, wanted %d', #lua_f, n), 0) end
+  local lua10, ref05 = quantile(lua_f, 0.1), quantile(ref_f, 0.05)
+  return {
+    frames = #lua_f, instr = quantile(ins_f, 0.5), lua_q10_ms = lua10, ref_q05_ms = ref05,
+    cost = lua10 / math.max(1e-6, ref05), raw_ms = mean(lua_f),
+  }
 end
 
 local function resolved()
@@ -192,10 +284,10 @@ describe('perf: MP Lua overhead', function()
     local before = census()
     collectgarbage('collect')
     local heap0 = collectgarbage('count')
-    local sp0 = measure(FRAMES)
+    local sp0 = sample(GROWTH_FRAMES)
     mount_match()
     to_hand()
-    local mp0 = measure(FRAMES)
+    local mp0 = sample(GROWTH_FRAMES)
     for _ = 1, CYCLES do
       mount_match()
       to_hand()
@@ -207,17 +299,22 @@ describe('perf: MP Lua overhead', function()
     local after = census()
     collectgarbage('collect')
     local heap1 = collectgarbage('count')
-    local sp1 = measure(FRAMES)
+    local sp1 = sample(GROWTH_FRAMES)
     mount_match()
     to_hand()
-    local mp1 = measure(FRAMES)
-    local lua = function(m) return m.update + m.pump end
+    local mp1 = sample(GROWTH_FRAMES)
+    local q = function(a, b) return a / math.max(1e-6, b) end
     local g = {
       cycles = CYCLES, before = before, after = after,
       sp_before = sp0, sp_after = sp1, mp_before = mp0, mp_after = mp1,
-      sp_growth = lua(sp1) / math.max(1e-6, lua(sp0)),
-      mp_growth = lua(mp1) / math.max(1e-6, lua(mp0)),
-      lua_ratio_after = lua(mp1) / math.max(1e-6, lua(sp1)),
+      sp_growth = q(sp1.cost, sp0.cost),
+      mp_growth = q(mp1.cost, mp0.cost),
+      lua_ratio_after = q(mp1.cost, sp1.cost),
+      -- One leftover per-frame cost slows SP and MP alike; their geometric mean halves the noise.
+      both_growth = math.sqrt(q(sp1.cost, sp0.cost) * q(mp1.cost, mp0.cost)),
+      sp_instr_growth = q(sp1.instr, sp0.instr), mp_instr_growth = q(mp1.instr, mp0.instr),
+      -- The plain-mean ratios (the statistic this check used to assert), reported only.
+      sp_growth_raw = q(sp1.raw_ms, sp0.raw_ms), mp_growth_raw = q(mp1.raw_ms, mp0.raw_ms),
       heap_before_kb = heap0, heap_after_kb = heap1, heap_growth = heap1 / math.max(1, heap0),
     }
     results.growth = g
@@ -225,10 +322,32 @@ describe('perf: MP Lua overhead', function()
     for k, v in pairs(before) do
       if k ~= 'log_ring' and after[k] ~= v then error(string.format('%s grew from %s to %s over %d cycles', k, tostring(v), tostring(after[k]), CYCLES), 0) end
     end
-    expect(g.heap_growth <= 1.10).truthy()
-    expect(g.sp_growth <= 1.2).truthy() -- SwiftShader noise is ~±10%; before the fix 1.85
-    expect(g.mp_growth <= 1.2).truthy()
-    expect(g.lua_ratio_after <= 1.3).truthy()
+    local bounds = {}
+    local function at_most(k, limit)
+      if g[k] > limit then bounds[#bounds + 1] = string.format('%s %.3f > %.2f', k, g[k], limit) end
+    end
+    at_most('heap_growth', 1.10)
+    -- The work: instructions per frame do not depend on the machine (1.000 in every pair measured,
+    -- loaded or not), so the bound is tight. Any per-frame Lua that a cycle leaves behind (a frame
+    -- hook, a wrap, a handler that runs every frame) fails it, however noisy the timing is.
+    at_most('sp_instr_growth', 1.05)
+    at_most('mp_instr_growth', 1.05)
+    -- The time, for per-frame cost that is not Lua instructions (C calls made every frame).
+    -- On unchanged builds, on a 4-core machine at load 4-16 (one to three engines plus another
+    -- agent's builds), the old plain-mean ratio ranged 0.57-1.66 (sd(log) 0.15-0.36: it failed
+    -- 1.2 on noise in 3 of 15 runs and passed a real 30% leak at 1.12 / 1.17). The fast-tail
+    -- ratio ranged 0.84-1.29 per side at 240 frames, 0.84-1.18 at 480, and 0.93-1.16 for the
+    -- SP/MP geometric mean; the limits sit above all of that. A Lua leak adding 30% per frame
+    -- measured 1.30-1.66 per side, 1.47-1.50 together (and fails the instruction bound 4-7x);
+    -- a C-only one (sized to 30% by a timing calibration, which the instruction bound cannot
+    -- see) 1.02-1.61, 1.04 and 1.40 together in two runs: timing is the backstop for large
+    -- non-Lua growth, not a 30% detector on a loaded machine. Before the allocation-free wrap
+    -- chain this ratio was 1.85.
+    at_most('sp_growth', 1.3)
+    at_most('mp_growth', 1.3)
+    at_most('both_growth', 1.2)
+    at_most('lua_ratio_after', 1.3)
+    if #bounds > 0 then error(table.concat(bounds, '; '), 0) end
   end)
 
   it('mailbox busy cost at 50 messages a second', function()
