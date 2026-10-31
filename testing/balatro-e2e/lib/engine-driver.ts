@@ -9,7 +9,13 @@
  *   await engine.call('start_run', { seed: 'ABC' }); // any autopilot command
  *   await engine.close(); await stack.close();
  */
-import { chromium, type Browser, type BrowserContext, type BrowserContextOptions, type Page } from 'playwright';
+import {
+  chromium,
+  type Browser,
+  type BrowserContext,
+  type BrowserContextOptions,
+  type Page,
+} from 'playwright';
 import { buildHarness } from './build-harness';
 import { chromiumLaunchOptions } from './chromium';
 import { zSpecSummary, type SpecResult, type SpecSummary } from './channel';
@@ -105,7 +111,10 @@ export async function openEngine(
     contextOptions?: BrowserContextOptions;
   } = {},
 ): Promise<EnginePage> {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, ...opts.contextOptions });
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 720 },
+    ...opts.contextOptions,
+  });
   if (opts.initScript) await context.addInitScript({ content: opts.initScript });
   const page = await context.newPage();
   const errors: string[] = [];
@@ -141,7 +150,10 @@ export async function openEngine(
     page.evaluate(() => {
       const s = (window as unknown as { __balatroEngine: { state: PageState } }).__balatroEngine
         .state;
-      return { ...s, logs: s.logs.slice(-200), specs: [...s.specs], phases: [...s.phases] };
+      // The engine's frame-time warnings ('LONG DT @ …', several per slow frame) would fill
+      // the tail a failure report shows.
+      const logs = s.logs.filter((l) => !l.startsWith('LONG DT')).slice(-200);
+      return { ...s, logs, specs: [...s.specs], phases: [...s.phases] };
     });
 
   // An uncaught page error while booting (an FS error in a preRun step, say)
