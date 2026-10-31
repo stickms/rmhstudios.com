@@ -230,6 +230,33 @@ local function generated_seed()
   return 'PRACTICE'
 end
 
+--- A run start (or a menu) is still in flight: its screen wipe is up and its no_delete events
+--- (delete_run, start_run or main_menu) are queued; a clear_queue cannot remove them.
+function S.wipe_busy()
+  return rawget(_G, 'G') ~= nil and (G.screenwipe ~= nil or (G.CONTROLLER and G.CONTROLLER.locks
+    and G.CONTROLLER.locks.wipe) == true)
+end
+
+--- MP starts runs on network messages (match start, rejoin, practice restart, replay open), which
+--- can arrive while the previous transition is still in flight (Leave on the end screen and the
+--- host starting the next match at once). Starting a run then interleaves the two transitions: the
+--- menu's queued main_menu lands on the new run (an overlay and a paused game). Launch once the
+--- wipe is gone instead. Returns true when the launch was deferred.
+function S.defer_past_wipe(sess)
+  if not S.wipe_busy() then return false end
+  if S.launch_waiting then S.launch_waiting = sess; return true end
+  S.launch_waiting = sess
+  G.E_MANAGER:add_event(Event({ no_delete = true, blockable = false, blocking = false, pause_force = true,
+    func = function()
+      if S.wipe_busy() then return false end
+      local waiting = S.launch_waiting
+      S.launch_waiting = nil
+      if waiting and MP.state.session == waiting then S.launch() end
+      return true
+    end }))
+  return true
+end
+
 --- Start (or restart, with `seed`) the session's run through the normal start_run path.
 function S.launch(seed)
   local sess = MP.state.session
@@ -237,6 +264,7 @@ function S.launch(seed)
   if seed then sess.seed = seed end
   if not sess.seed or sess.seed == '' then sess.seed = generated_seed() end
   if S.launcher then return S.launcher(sess) end
+  if S.defer_past_wipe(sess) then return true end
   local center = G.P_CENTERS[sess.deck] or G.P_CENTERS.b_red
   if rawget(_G, 'Back') then G.GAME.viewed_back = Back(center) end
   local challenge

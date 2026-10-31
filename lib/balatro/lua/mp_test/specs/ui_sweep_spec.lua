@@ -31,6 +31,7 @@ local phase = 'menu'          -- menu | practice | match (what the hover dedupe 
 
 local function note(where, err)
   local msg = where .. ': ' .. tostring(err):sub(1, 300)
+  print('[sweep-note] ' .. msg)
   for _, m in ipairs(found) do if m == msg then return end end
   found[#found + 1] = msg
 end
@@ -49,12 +50,31 @@ local function harvest_log(where)
 end
 
 local TRACE = true -- print each step ('[sweep] …' in the engine log) to find a hang or a crash site
-local function trace(where) if TRACE then print('[sweep] ' .. where) end end
+local function trace(where)
+  if not TRACE then return end
+  if where:find('hover', 1, true) then return print('[sweep] ' .. where) end
+  -- memory with every step: a leak shows up as a climb, an out-of-memory page as the last line
+  local tex = love.graphics and love.graphics.getStats and love.graphics.getStats()
+  print(string.format('[sweep] %s [lua %.1f MB, tex %.0f MB, cards %d, moveables %d]', where, collectgarbage('count') / 1024,
+    tex and (tex.texturememory or 0) / 1048576 or -1, #(G.I and G.I.CARD or {}), #(G.MOVEABLES or {})))
+end
 
+-- Protected AND able to wait: steps that wait frames (opening a screen, AP.run) cannot run under
+-- pcall in Lua 5.1 (no yield across it); the scheduler's protected() runs them in a coroutine.
+local sched = require('rmh_mp_test.sched')
 local function try(where, fn, ...)
   trace(where)
-  local ok, err = pcall(fn, ...)
-  if not ok then note(where, err) end
+  local ok, err = sched.protected(fn, ...)
+  if not ok then
+    local msg = tostring(err):match('^[^\n]*')
+    -- An autopilot step times out on wall-clock seconds; on a loaded machine (software WebGL) the
+    -- game can simply be slow. Only a game that does not settle within ten more minutes is a finding.
+    if fn == AP.run and msg:find('timeout', 1, true) then
+      local settled = sched.protected(wait_until, function() return AP.idle() end, 600, 'settle after ' .. where)
+      if settled then trace('slow: ' .. where); return false, err end
+    end
+    note(where, msg)
+  end
   return ok, err
 end
 
@@ -127,8 +147,16 @@ local function to_menu()
   wait_until(function() return G.STAGE == G.STAGES.MAIN_MENU and G.MAIN_MENU_UI ~= nil and not G.screenwipe end, 60, 'menu')
 end
 
+-- MP.open loads the out-of-run and in-run UI the first time Multiplayer opens; a spec that mounts
+-- a session directly loads them the same way (else the HUD, pause menu and end screens are absent).
+local function load_ui()
+  require('rmh_mp.ui.menu')
+  require('rmh_mp.ui.hud')
+end
+
 local function practice(opts)
   opts = opts or {}
+  load_ui()
   phase = 'practice'
   AP.run('prepare')
   leave()
@@ -141,11 +169,22 @@ local function practice(opts)
     options = { pvpStartRound = 2, theOrder = true, multiplayerJokers = true, timer = false },
   })
   MP.session.launch(SEED)
-  AP.run('wait_state', { 'BLIND_SELECT' })
+  -- A run launched while the previous transition (Main Menu from the pause menu) was still in
+  -- flight used to get that transition's leftovers on top (an overlay, a paused game);
+  -- session.launch now waits for the wipe. A paused overlay on the new run is a finding.
+  -- A deck may open a pack before the first blind (Orange: a free Giga Standard Pack).
+  wait_until(function()
+    if G.OVERLAY_MENU and G.SETTINGS.paused and G.STAGE == G.STAGES.RUN and G.STATE == G.STATES.BLIND_SELECT then
+      note('a new practice run', 'started under a paused overlay')
+      close_overlay()
+    end
+    return AP.idle() and (G.STATE == G.STATES.BLIND_SELECT or (G.pack_cards ~= nil and #G.pack_cards.cards > 0))
+  end, 120, 'blind select (or a starting pack)')
 end
 
 local function match(opts)
   opts = opts or {}
+  load_ui()
   phase = 'match'
   AP.run('prepare')
   leave()
@@ -241,6 +280,23 @@ end
 
 --- Click every button of the box get_box() returns after open() — each from a freshly opened
 --- screen — then restore with back(). `max` bounds very long lists (cycles repeat their arrows).
+-- What a click does is decided by its callback and the target it names (the toggle's field, the
+-- cycle's callback and direction, the node id): the same pair again on another screen of the same
+-- phase adds nothing but minutes. FULL = true clicks every node of every screen (exhaustive run).
+local FULL = false
+local clicked = {}
+local function signature(b)
+  local cfg = b.node.config
+  local ref = cfg.ref_table
+  local extra = ''
+  if b.button == 'option_cycle' and type(ref) == 'table' then
+    extra = tostring(ref.opt_callback) .. ':' .. tostring(cfg.ref_value)
+  elseif type(ref) == 'table' then
+    extra = tostring(ref.ref_value or ref.id or ref.key or ref.ruleset or ref.option or '')
+  end
+  return table.concat({ phase, b.button, tostring(b.id), extra }, '#')
+end
+
 local function sweep(where, open, get_box, back, opts)
   opts = opts or {}
   local ok = try(where .. ' open', open)
@@ -250,7 +306,9 @@ local function sweep(where, open, get_box, back, opts)
   count.screens = count.screens + 1
   local n = 0
   for i, b in ipairs(list) do
-    if not deny(b) and not (opts.skip and opts.skip[b.button]) then
+    local sig = signature(b)
+    if not deny(b) and not (opts.skip and opts.skip[b.button]) and (FULL or opts.all or not clicked[sig]) then
+      clicked[sig] = true
       if i > 1 then try(where .. ' reopen', open); settle(2) end
       local now = buttons_of(get_box())
       local cur = now[i]
@@ -425,7 +483,7 @@ local function view(n, over)
   over = over or {}
   version = version + 1
   local players = {}
-  for i = 1, n do players[i] = player(i, { team = over.teams and ((i % 2) + 1) or nil }) end
+  for i = 1, n do players[i] = player(i, { team = over.teams and (i % 2 == 0 and 'B' or 'A') or nil }) end
   local opts = {}
   for k, v in pairs(OPTIONS) do opts[k] = v end
   for k, v in pairs(over.options or {}) do opts[k] = v end
@@ -453,6 +511,8 @@ local function restore(screen, lobby, extra)
   if MP.state.session or G.STAGE ~= G.STAGES.MAIN_MENU then to_menu() end
   if U.screen == nil or not U.boxes.panel then MP.open('menu'); settle(2) end
   if lobby then recv('lobby_view', lobby) else U.model.lobby = nil; MP.state.lobby = nil end
+  -- a queue a click joined would disable the practice pillars: every screen starts idle
+  recv('queue_view', { state = 'idle', queueMode = 'pvp_nemesis' })
   if extra then extra() end
   U.go(screen)
   settle(3)
@@ -513,7 +573,6 @@ describe('sweep: MP menu', function()
       recv('setup_view', { stepId = 'e3', kind = 'draft', phase = 'voting', msLeft = 30000, options = {}, voted = 0, voters = 2,
         draft = { tiles = tiles, actor = 'u_p1', action = 'ban', remaining = 1 } })
     end)
-    recv('setup_view', nil)
     harvest_log('mp screens')
     clean('every screen every button')
   end)
@@ -552,11 +611,13 @@ describe('sweep: MP menu', function()
     local list = {}
     for i = 1, 8 do
       list[i] = { id = 'r' .. i, at = 1761799900000 + i, players = { 'Alice', 'Bob' }, queueMode = 'pvp_nemesis',
-        result = i % 2 == 0 and 'win' or 'loss', ruleset = 'ruleset_mp_balanced', concat = i == 3 }
+        result = ({ 'win', 'lose', 'draw' })[i % 3 + 1], ruleset = 'ruleset_mp_balanced' }
+      if i == 3 then list[i].result = nil end
     end
     recv('replay_view', { list = list })
     sweep_overlay('replays', function() U.replay_open() end)
-    recv('spectate_view', { lobbies = { { code = 'AAA222', ante = 3, players = { 'A', 'B' }, queueMode = 'pvp_nemesis' } } })
+    recv('spectate_view', { lobbies = { { code = 'AAA222', ante = 3, players = 2, queueMode = 'pvp_nemesis' },
+      { code = 'BBB333', ante = nil, players = 4, queueMode = 'pvp_royale' } } })
     sweep_overlay('spectate', function() U.replay.open('spectate') end)
     recv('spectate_view', { lobbies = {}, error = 'timeout' })
     sweep_overlay('spectate error', function() U.replay.open('spectate') end)
@@ -590,7 +651,8 @@ local function idle() return AP.idle == nil or AP.idle() end
 
 --- What keeps the game busy: controller locks, the state, the blocking events (by source line).
 local function busy_reason()
-  local out = { 'state=' .. tostring(G.STATE), 'complete=' .. tostring(G.STATE_COMPLETE) }
+  local out = { 'state=' .. tostring(G.STATE), 'complete=' .. tostring(G.STATE_COMPLETE),
+    'paused=' .. tostring(G.SETTINGS.paused), 'overlay=' .. tostring(G.OVERLAY_MENU ~= nil) }
   if G.CONTROLLER.locked then out[#out + 1] = 'locked' end
   for k, v in pairs(G.CONTROLLER.locks or {}) do if v then out[#out + 1] = 'lock:' .. tostring(k) end end
   local q = G.E_MANAGER.queues and G.E_MANAGER.queues.base or {}
@@ -611,16 +673,16 @@ end
 --- Wait until the game is idle; a game that never settles is a finding (an unresponsive game),
 --- noted with what holds it, and the sweep goes on.
 local function wait_idle(why, seconds)
-  local ok = pcall(wait_until, function() return idle() end, seconds or 120, why or 'idle')
+  local ok = sched.protected(wait_until, function() return idle() end, seconds or 600, why or 'idle')
   if not ok then note('never idle after ' .. tostring(why), busy_reason()) end
   return ok
 end
 
 --- (Re)enter a practice/match run at blind select when a click left it.
-local function ensure(kind)
+local function ensure(kind, state)
   close_overlay()
   local ok_stage = G.STAGE == G.STAGES.RUN and MP.state.session and MP.state.session.kind == kind
-    and not MP.state.result and G.STATE ~= G.STATES.GAME_OVER
+    and not MP.state.result and G.STATE ~= G.STATES.GAME_OVER and (not state or G.STATE == G.STATES[state])
   if not ok_stage then
     if kind == 'practice' then practice() else match() end
   end
@@ -644,14 +706,19 @@ local function in_run_sweep(kind)
   end
   -- the blind choices (select / skip / reroll), each from a fresh blind select
   sweep(kind .. ' blind select', function()
-    ensure(kind)
+    ensure(kind, 'BLIND_SELECT')
     wait_until(function() return G.blind_select and idle() end, 30, 'blind select')
   end, function() return G.blind_select end, function() wait_idle(); ensure(kind) end)
   -- the hand: play / discard / sort with a hand highlighted
-  ensure(kind)
-  AP.run('select_blind')
+  local function at_hand()
+    if G.STATE ~= G.STATES.SELECTING_HAND or not MP.state.session then
+      ensure(kind, 'BLIND_SELECT')
+      AP.run('select_blind')
+    end
+  end
+  at_hand()
   sweep(kind .. ' hand buttons', function()
-    if G.STATE ~= G.STATES.SELECTING_HAND or not MP.state.session then ensure(kind); AP.run('select_blind') end
+    at_hand()
     wait_idle()
     G.hand:unhighlight_all()
     for i = 1, math.min(2, #G.hand.cards) do G.hand:add_to_highlighted(G.hand.cards[i]) end
@@ -665,19 +732,19 @@ local function end_screen_sweep()
     outcome({ t = 'win', winner_id = 'u_me' })
     wait_until(function() return G.OVERLAY_MENU ~= nil end, 30, 'end screen')
   end
-  sweep('end screen win', open, function() return G.OVERLAY_MENU end, function() leave(); to_menu() end, { hover = true })
+  sweep('end screen win', open, function() return G.OVERLAY_MENU end, function() leave(); to_menu() end, { hover = true, all = true })
   sweep('end screen pending', function()
     match()
     outcome({ t = 'death_pending', player_id = 'u_me', blind_key = 'bl_small' })
     wait_until(function() return G.OVERLAY_MENU ~= nil end, 30, 'pending screen')
-  end, function() return G.OVERLAY_MENU end, function() leave(); to_menu() end, { hover = true })
+  end, function() return G.OVERLAY_MENU end, function() leave(); to_menu() end, { hover = true, all = true })
   sweep('end screen loss', function()
     match()
     outcome({ t = 'player_lives', player_id = 'u_me', lives = 0, lost = 4 })
     outcome({ t = 'lose', loser_id = 'u_me', winner_id = 'u_them' })
     outcome({ t = 'win', winner_id = 'u_them' })
     wait_until(function() return G.OVERLAY_MENU ~= nil end, 30, 'loss screen')
-  end, function() return G.OVERLAY_MENU end, function() leave(); to_menu() end, { hover = true })
+  end, function() return G.OVERLAY_MENU end, function() leave(); to_menu() end, { hover = true, all = true })
   harvest_log('end screens')
 end
 
@@ -737,7 +804,7 @@ local function sell_all(area, where)
     if not c.REMOVED and c.area == area then
       c.ability.eternal = nil
       try('sell ' .. where .. ' ' .. tostring(c.config.center.key), G.FUNCS.sell_card, { config = { ref_table = c } })
-      wait_idle('sold ' .. tostring(c.config.center.key), 30)
+      wait_idle('sold ' .. tostring(c.config.center.key), 300)
     end
   end
   wait_idle('sold ' .. where)
@@ -761,16 +828,26 @@ describe('sweep: every MP item', function()
   it('jokers: given, played with, through the shop, sold', function()
     practice()
     AP.run('select_blind')
-    for _, d in ipairs(defs_of(function(d) return d.kind == 'Joker' end)) do give(d.key) end
-    settle(10)
-    hover_cards('jokers held')
-    play_round()
-    if G.STATE == G.STATES.SHOP then
-      G.GAME.dollars = 500
-      try('reroll', AP.run, 'reroll')
-      sell_all(G.jokers, 'jokers')
-      try('leave shop', AP.run, 'leave_shop')
-    else
+    -- every giveable MP joker (the error decoys are never spawnable: MP.practice.allowed says so),
+    -- in batches of 8 so a scored hand stays a few seconds even on software WebGL: each batch is
+    -- given, scores a hand (or its round ends and it sees the shop), and is sold
+    local keys = {}
+    for _, d in ipairs(defs_of(function(d) return d.kind == 'Joker' and MP.practice.allowed(d.key) end)) do
+      keys[#keys + 1] = d.key
+    end
+    for first = 1, #keys, 8 do
+      if G.STATE == G.STATES.SHOP then try('leave shop', AP.run, 'leave_shop') end
+      if G.STATE == G.STATES.BLIND_SELECT then try('select blind', AP.run, 'select_blind') end
+      for i = first, math.min(#keys, first + 7) do give(keys[i]) end
+      settle(4)
+      hover_cards('jokers held')
+      if G.STATE == G.STATES.SELECTING_HAND and G.GAME.current_round.hands_left > 1 then
+        try('play best', AP.run, 'play', { 'best' })
+      else
+        play_round()
+      end
+      if G.STATE == G.STATES.ROUND_EVAL then try('cash out', AP.run, 'cash_out') end
+      if G.STATE == G.STATES.SHOP then G.GAME.dollars = 500; try('reroll', AP.run, 'reroll') end
       sell_all(G.jokers, 'jokers')
     end
     settle(10)
@@ -914,6 +991,13 @@ describe('sweep: every MP item', function()
       if ok then
         count.used = count.used + 1
         hover_cards('deck ' .. d.key)
+        if G.pack_cards and #G.pack_cards.cards > 0 and G.STATE ~= G.STATES.BLIND_SELECT then
+          try('pick from the starting pack', AP.run, 'pick', { 1 })
+          if G.pack_cards and #G.pack_cards.cards > 0 and G.STATE ~= G.STATES.BLIND_SELECT then
+            try('skip the starting pack', function() G.FUNCS.skip_booster({ config = {} }) end)
+          end
+          wait_idle('starting pack closed')
+        end
         play_round()
         if G.STATE == G.STATES.SHOP then try('leave shop', AP.run, 'leave_shop') end
       end
@@ -924,7 +1008,8 @@ describe('sweep: every MP item', function()
   end)
 
   it('MP stakes: a run at every MP stake', function()
-    local stakes = (MP.ui.run_setup and MP.ui.run_setup.mp_stakes and MP.ui.run_setup.mp_stakes()) or {}
+    local stakes = (MP.content.stakes and MP.content.stakes.LIST) or {}
+    expect(#stakes > 0).truthy()
     for _, s in ipairs(stakes) do
       local ok = try('mp stake ' .. tostring(s.key), function()
         AP.run('prepare')

@@ -268,3 +268,38 @@ describe('screen wipe guard (a run started during a wipe)', function()
     expect(offs).eq(2)
   end)
 end)
+
+describe('session launch during a screen wipe', function()
+  before_each(function() MP = CH.boot() end)
+  after_each(CH.teardown)
+
+  it('waits for the wipe to finish, then starts the run once', function()
+    local starts = 0
+    G.FUNCS.start_run = function() starts = starts + 1 end
+    MP.session.launcher = nil
+    MP.session.mount('practice', { resolved = CH.H.resolved({ layers = { 'standard' } }), deck = 'b_red', stake = 1,
+      seed = 'ABCD1234', me = 'u1', shape = { practice = true, nemesisPairing = true }, options = {} })
+    G.screenwipe = { busy = true }
+    expect(MP.session.launch()).eq(true)
+    expect(MP.session.launch()).eq(true) -- a second message while waiting: still one start
+    for _ = 1, 20 do CH.H.fake.advance(1 / 60) end
+    expect(starts).eq(0)
+    G.screenwipe = nil
+    CH.H.fake.flush(20)
+    expect(starts).eq(1)
+  end)
+
+  it('drops the deferred start when the session is gone', function()
+    local starts = 0
+    G.FUNCS.start_run = function() starts = starts + 1 end
+    MP.session.launcher = nil
+    MP.session.mount('practice', { resolved = CH.H.resolved({ layers = { 'standard' } }), deck = 'b_red', stake = 1,
+      seed = 'ABCD1234', me = 'u1', shape = { practice = true, nemesisPairing = true }, options = {} })
+    G.screenwipe = { busy = true }
+    MP.session.launch()
+    MP.session.unmount('test')
+    G.screenwipe = nil
+    CH.H.fake.flush(20)
+    expect(starts).eq(0)
+  end)
+end)
