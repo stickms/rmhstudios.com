@@ -17,14 +17,17 @@ class MemFs implements MailboxFs {
   files = new Map<string, Uint8Array>();
   moveFns = new Set<(from: string, to: string) => void>();
   deleteFns = new Set<(path: string) => void>();
-  writes = 0;
   readFile(path: string) {
     const f = this.files.get(path);
     if (!f) throw new Error(`ENOENT ${path}`);
     return f;
   }
+  /** Writes of `in` (the signal file is counted apart). */
+  writes = 0;
+  signals = 0;
   writeFile(path: string, data: string) {
-    this.writes += 1;
+    if (path === BRIDGE_PATHS.IN_SIG) this.signals += 1;
+    else this.writes += 1;
     this.files.set(path, enc.encode(data));
   }
   unlink(path: string) {
@@ -246,6 +249,9 @@ describe('Mailbox — JS to Lua', () => {
     expect(fs.analyzePath(BRIDGE_PATHS.IN).exists).toBe(false); // coalesced in a microtask
     q.run();
     expect(fs.writes).toBe(1);
+    // Every write of `in` raises the signal Lua checks instead of opening `in` each frame.
+    expect(fs.signals).toBe(1);
+    expect(dec.decode(fs.readFile(BRIDGE_PATHS.IN_SIG))).toBe('1');
     lua.pump();
     expect(lua.got.map((m) => m.s)).toEqual([1, 2]);
     expect(mb.stats.pending).toBe(0); // onDeletePath = consumed

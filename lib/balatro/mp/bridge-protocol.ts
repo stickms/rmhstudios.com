@@ -30,7 +30,9 @@
  * 5. **View-model shapes the PLAN leaves open** (`queue_view.state`,
  *    `replay_view.list` items, `ui_settings` enums, `toast.vars`) are
  *    defined below with the smallest field set the UI streams need.
- * 6. **`match_start`** = StartedMatch (which already carries `resolved`) plus `me`.
+ * 6. **`match_start`** = StartedMatch (which already carries `resolved`) plus `me`,
+ *    plus `logNext` on a reload rejoin: the host's count of this player's
+ *    replay log, where Lua's recorder continues (docs/balatro-mp.md §11).
  */
 
 import { z } from 'zod';
@@ -67,6 +69,11 @@ export const BRIDGE_PATHS = {
   OUT: '/rmh/net/out',
   /** JS→Lua. JS rewrites the whole file on every append; Lua reads then `os.remove`s it. */
   IN: '/rmh/net/in',
+  /**
+   * JS→Lua "IN changed": JS writes it non-empty whenever it writes IN; Lua keeps it open, checks
+   * its size once a frame (no failed open on an idle frame) and empties it before reading IN.
+   */
+  IN_SIG: '/rmh/net/in.sig',
   /** JS writes `<version>` once the MP pack's files are in /Balatro/rmh_mp/…. */
   MP_READY: '/rmh/mp/ready',
   /** JS writes it during preRun when MP must start at boot. */
@@ -275,7 +282,11 @@ export const J2L_MP = {
     k: z.number().int().min(0),
     n: z.number().int().min(0),
   }),
-  match_start: zStartedMatch.extend({ me: zId }),
+  match_start: zStartedMatch.extend({
+    me: zId,
+    /** Reload rejoin: the replay log continues at this index (the host's count of it). */
+    logNext: z.number().int().min(0).max(20_000).optional(),
+  }),
   practice_start: z.object({
     resolved: zResolvedRuleset,
     deck: zKey,

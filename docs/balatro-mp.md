@@ -480,14 +480,20 @@ vanilla loads the save. A fresh single-player run deletes the sidecar.
 - Lua pumps once per frame from `rmh_web.lua` §9, after `RMH.frame_hooks` (each called
   as `fn(dt)`, paused or not). It writes its batch to `out.tmp`, renames it to `out`,
   then reads `in` whole and removes it. While `out` still exists, Lua holds its batch.
-  Idle cost: one failed `io.open` per frame.
+  Lua opens nothing on an idle frame (a failed `io.open` on MEMFS throws and catches a
+  JS `ErrnoError`, ~0.1 ms): JS writes `in.sig` non-empty whenever it writes `in`, Lua
+  keeps `in.sig` open, checks its size once a frame (one seek), empties it and only then
+  reads `in`. An unsignalled `in` is still read every 30th frame; without `in.sig` Lua
+  polls `in` every frame. A header-only (ack) batch goes out at most every 8 frames;
+  batches with messages go out the frame they are sent.
 - JS hears the rename through `FS.trackingDelegate.onMovePath` (installed in
   `runtime.ts`, chaining any existing delegate). Inside that call it reads and unlinks
   `out`, and writes pending inbound lines to `in` (the in-call reply). Listeners run in
   a microtask, outside the FS call.
 - `onDeletePath(in)` means Lua consumed the file. Without delegates (and across
   processes in the conformance test), JS polls every 16 ms and forgets an inbound line
-  only once Lua's batch header acks it. Lua sends a header-only batch to ack.
+  only once Lua's batch header acks it. Lua sends a header-only batch to ack (at most
+  every 8 frames).
 - Lua drops `s ≤ last`; JS drops Lua duplicates the same way. Both sides validate
   (`bridge-codec.ts`, generated from the zod contract; `RMH.net.validate`, which the
   MP pack sets to `protocol.lua`), log and drop.
@@ -668,16 +674,43 @@ replays open the same pack. The Ethereal Tag's pack is fixed. Every other `math.
 Lua is either seeded through `pseudoseed` first (rng.shuffle, the Ouija rework) or cosmetic
 (end-screen quips, the error jokers' tooltip text, the ante key, which replays record).
 
-**Known limit: a log continued after a reload-rejoin.** Playback stops at `manifest {rejoin}`
-("the player reloaded mid-match"). It is not a missing marker but a missing log: after a page
-reload the player's Lua starts a new recorder at index 0 (`match_manifest`, `lobby_info`, then
-`manifest {rejoin}`), while the peers already hold that player's old events 0..N. `PlayerLog`
-files events by index, so the new prefix, the marker included, is dropped as duplicates and the
-post-rejoin events only land past N, after a gap of lost progress (the inputs between the last
-snapshot and the crash). The snapshot alone cannot fix this: it is written at save points, does
-not know how far the log got afterwards, and the reloaded peer's own TS lost its copy of the log.
-Playing past a rejoin needs (a) the rejoining peer to learn its last relayed index from the host
-(the host's `Recording` holds it) and continue there, which is a bridge contract change
-(`rejoin_restore` carrying the index) plus a host reply, and (b) the recorder to write the
-snapshot's own log index into each MP snapshot so the marker can say "continue from the state
-after event k" and playback can seek there. Until both exist the stop is the honest result.
+**A log continued after a reload rejoin.** A page reload starts a new Lua, whose recorder used
+to restart at index 0 while the peers already held the player's events 0..N, so the new prefix
+was dropped as duplicates and playback stopped at the bare `manifest {rejoin}`. Now the log
+continues where the peers have it, and the markers carry what playback needs:
+
+1. *The count.* A crash rejoiner's `welcome` carries `logNext` = how many events of its log the
+   host holds contiguously (`ReplayTap.logLength`; any seated player's welcome does, a live run
+   ignores it). The runtime passes it on as `match_start.logNext` (`beginMatch(match, 'rejoin',
+   logNext)`). The host also runs the spectator catch-up for the rejoiner, so its TS gets back
+   every log so far, its own included (`peerLog` accepts the own id; the `chk` waits until the
+   own log is contiguous through `end`).
+2. *The mount marker.* With `logNext ≥ 2` (the host holds the manifest and the lobby info) the
+   recorder starts at that index with `manifest {rejoin, v:2, mount, seg}` instead of
+   `match_manifest` + `lobby_info`. A fresh launch (the restore arrived after it) still records
+   `run_info`.
+3. *The restore marker.* Every MP snapshot's `state.json` records `log_i`, the log index it was
+   taken at (the state is the run after events `[0, log_i)`). A restore (`S.restore_raw`, shared
+   by `rejoin_restore` and playback) records `manifest {rejoin, v:2, restore, from: log_i, seg,
+   parts, z, len}` before the run loads, followed by `parts` events `manifest {snap: j, data}`
+   carrying `"<#state>:<state.json><run.jkr>"`, deflated and base64-encoded through `love.data`
+   (`z:'deflate'`; `'raw'` text cut on UTF-8 boundaries where `love.data` is missing), ≤ 6 KB
+   per part. In-engine a shop snapshot of 62 KB travels as about 9 KB in 2 parts.
+4. *Playback.* `mount` re-mounts the session from the log's `lobby_info` as the reloaded page
+   did (the next `run_info` launches again); `restore` reassembles the snapshot and restores it
+   through `S.restore_raw`, as the live rejoin did (a live feed waits for missing parts; a
+   stored log missing them stops with "snapshot incomplete"). Reaching index `from` of a known
+   restore marker with `from < seg` jumps to `seg`: `[from, seg)` is the progress the reload
+   lost. A spectator that already played it simply restores over it.
+5. *Overlap.* If a peer holds events of the old life past the host's count (it got them, the
+   host had not, e.g. after a host migration), the marker lands on an index holding a different
+   event: `PlayerLog.add` (TS) and `PL.feed` (Lua) drop everything from that index on and file
+   the marker (`AddResult.rewound`; a spectator feeds Lua again from there; a playback past it
+   continues at the marker). A re-sent identical marker is a plain duplicate.
+
+A log without rejoins is byte-identical to before, and a stored WS13 log whose marker has no
+`v` still stops there ("the player reloaded mid-match"). `rejoin_restore` now reads the snapshot
+files when it arrives: the launch's own blind-select `save_run` used to be able to overwrite
+them before the deferred load ran. **Contract change:** optional `welcome.logNext` (wire) and
+`match_start.logNext` (bridge; protocol.lua regenerated). Remaining limit: a peer that missed
+part of the old log for good (it was never relayed to it) keeps that gap.

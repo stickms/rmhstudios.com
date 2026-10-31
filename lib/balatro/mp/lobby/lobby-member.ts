@@ -267,7 +267,7 @@ export class LobbyMember implements Role {
       if (c0 && c0.match.runId === match.runId) {
         this.ctx.beginMatch(match, 'live');
       } else if (!d.lobby.forfeited[this.ctx.me]) {
-        this.ctx.beginMatch(match, 'rejoin');
+        this.ctx.beginMatch(match, 'rejoin', d.logNext);
       }
       const c = this.ctx.client();
       if (c) {

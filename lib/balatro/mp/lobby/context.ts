@@ -81,8 +81,11 @@ export interface RoleCtx {
   error(code: string): void;
   /** The running match on this peer (null outside one). */
   client(): MatchClient | null;
-  /** Start (or adopt, for a rejoin/migration) the local match; `fresh` = boot the Lua run. */
-  beginMatch(match: StartedMatch, how: 'start' | 'rejoin' | 'live'): void;
+  /**
+   * Start (or adopt, for a rejoin/migration) the local match; `fresh` = boot the Lua run.
+   * `logNext` (a rejoin): where this player's replay log continues (welcome.logNext).
+   */
+  beginMatch(match: StartedMatch, how: 'start' | 'rejoin' | 'live', logNext?: number): void;
   /** The newest checkpoint held for the running match. */
   heldCheckpoint(): RefCheckpoint | null;
   holdCheckpoint(cp: RefCheckpoint): void;

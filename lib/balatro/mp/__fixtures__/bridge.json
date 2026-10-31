@@ -938,7 +938,8 @@
           "startedAt": 1761800000000,
           "hostId": "u_alice",
           "contentHash": "0123456789abcdef01234567-v1",
-          "me": "u_bob"
+          "me": "u_bob",
+          "logNext": 30
         }
       ],
       "invalid": [

@@ -351,6 +351,15 @@ function RU.banner_text(t)
     return RU.t('rmh_mp_reconnecting', 'Connection lost, reconnecting...')
   end
   t = t or now()
+  -- Per frame: list (and sort) the players only when someone else is away.
+  local any_away = false
+  for id, p in pairs(pres) do
+    if id ~= me() and p and p.status == 'away' then any_away = true break end
+  end
+  if not any_away then
+    if st.pvp.waiting then return RU.t('k_wait_enemy', 'Waiting for enemy to finish...') end
+    return ''
+  end
   local ids = {}
   for id in pairs(pres) do ids[#ids + 1] = id end
   table.sort(ids)
@@ -659,8 +668,11 @@ function RU.effects(t)
     end
   end
   p.my, p.opp, p.target, p.skips, p.pending, p.host = my, opp, target, st.enemy.skips or 0, pend, host
-  p.presence = {}
-  for id, pr in pairs(st.presence or {}) do p.presence[id] = pr.status end
+  -- Updated in place (this runs every frame).
+  local seen = p.presence or {}
+  p.presence = seen
+  for id in pairs(seen) do if not (st.presence and st.presence[id]) then seen[id] = nil end end
+  for id, pr in pairs(st.presence or {}) do seen[id] = pr.status end
   return fired
 end
 

@@ -42,24 +42,26 @@ function T.anim_busy()
   return MP.net.blocking_pending() and MP.state_is('HAND_PLAYED', 'DRAW_TO_HAND', 'NEW_ROUND', 'SELECTING_HAND')
 end
 
-function T.flags()
+--- The flags payload. `out` (optional) is filled in place and returned (the per-frame reporter
+--- reuses one scratch table and copies it only when something changed).
+function T.flags(out)
   local pvp = MP.state.pvp
   local g = G.GAME or {}
   local b = g.blind
   local key = b and b.config and b.config.blind and b.config.blind.key or nil
-  local f = {
-    state = state_name():sub(1, 32),
-    onPvp = (MP.pvp and MP.pvp.on_pvp_blind()) and true or false,
-    ready = pvp.ready == true,
-    countdown = pvp.countdown == true,
-    animBusy = T.anim_busy() and true or false,
-    paused = (G.SETTINGS and G.SETTINGS.paused) and true or false,
-    inShop = MP.state_is('SHOP'),
-    roundEval = MP.state_is('ROUND_EVAL'),
-    handsLeft = math.max(0, (g.current_round and g.current_round.hands_left) or 0),
-    ante = math.max(0, (g.round_resets and g.round_resets.ante) or 0),
-  }
-  if key then f.blindKey = key end
+  local f = out or {}
+  local name = state_name()
+  f.state = #name > 32 and name:sub(1, 32) or name
+  f.onPvp = (MP.pvp and MP.pvp.on_pvp_blind()) and true or false
+  f.ready = pvp.ready == true
+  f.countdown = pvp.countdown == true
+  f.animBusy = T.anim_busy() and true or false
+  f.paused = (G.SETTINGS and G.SETTINGS.paused) and true or false
+  f.inShop = MP.state_is('SHOP')
+  f.roundEval = MP.state_is('ROUND_EVAL')
+  f.handsLeft = math.max(0, (g.current_round and g.current_round.hands_left) or 0)
+  f.ante = math.max(0, (g.round_resets and g.round_resets.ante) or 0)
+  f.blindKey = key
   return f
 end
 
@@ -70,12 +72,16 @@ local function same(a, b)
   return true
 end
 
+local scratch = {}
+
 function T.report_flags()
   if not MP.is_match() then return false end
-  local f = T.flags()
+  local f = T.flags(scratch)
   if same(f, MP.state.flags_sent) then return false end
-  MP.state.flags_sent = f
-  MP.net.send('flags', f)
+  local copy = {}
+  for k, v in pairs(f) do copy[k] = v end
+  MP.state.flags_sent = copy
+  MP.net.send('flags', copy)
   return true
 end
 

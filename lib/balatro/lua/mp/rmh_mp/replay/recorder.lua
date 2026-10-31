@@ -13,7 +13,18 @@
 --   lobby_info     {kind, me, hostId, runId, resolved, options, shape, roster, queueMode, ruleset,
 --                   contentHash, seed, deck, stake, mpStake, challenge}   what MP.session.mount needs
 --   run_info       {seed, deck, stake, challenge}       every fresh Game:start_run (a reseed adds one)
---   manifest       {rejoin = true}                      the run was restored from a snapshot
+--   manifest       a reload rejoin (v = 2; a WS13 log's bare {rejoin = true} cannot be played past):
+--     {rejoin, v, mount = true, seg}       the session mounted again after a reload. The log
+--                                          continues at `seg` = match_start.logNext (the host's
+--                                          count of this player's log), not at 0, so the peers
+--                                          file the new events after the old ones.
+--     {rejoin, v, restore = true, from?, seg?, parts, z?, len?}   the run was restored from a
+--                                          snapshot taken after event `from` (state.json log_i);
+--                                          the next `parts` events {snap = j, data} carry it
+--                                          ("<#state>:<state><run.jkr>", deflate+base64 when
+--                                          love.data has it, z = 'deflate', else z = 'raw').
+--                                          Playback restores exactly that; it may skip the lost
+--                                          progress [from, seg).
 --   select_blind   {slot, key, dg}    skip_blind {slot}
 --   play / discard {cards = [ref], dg?}                 reorder {area, cards = [ref]} before them,
 --                                                       or {area = 'hand', sort} (the sort buttons)
@@ -129,6 +140,7 @@ local function reset()
   RC.t0 = REP.clock()
   RC.order = {}
   RC.result_seen = nil
+  RC.resume = nil
 end
 if RC.i == nil then reset() end
 RC.reset = reset
@@ -208,14 +220,120 @@ function RC.lobby_info(sess)
   }
 end
 
---- Start a fresh log for the mounted session (called by the session installer).
+--- Start a fresh log for the mounted session (called by the session installer). A reload rejoin
+--- (`sess.log_next`, from match_start.logNext: the host's count of this player's log, ≥ 2 so it
+--- holds the manifest and the lobby info) continues the log there instead, opening the new
+--- segment with the mount marker.
 function RC.begin(sess)
   reset()
   if not sess or (sess.kind ~= 'match' and sess.kind ~= 'practice') then return false end
   RC.active = true
+  local base = sess.log_next
+  if sess.kind == 'match' and type(base) == 'number' and base >= 2 and base % 1 == 0 and base < RC.LIMIT_EVENTS then
+    RC.i = base
+    RC.resume = { base = base }
+    RC.record('manifest', { rejoin = true, v = RC.REJOIN_V, mount = true, seg = base })
+    return true
+  end
   RC.record('match_manifest', { schema = RC.SCHEMA, runId = sess.runId, kind = sess.kind, me = sess.me })
   RC.record('lobby_info', RC.lobby_info(sess))
   return true
+end
+
+-- ── Rejoin restore marker ───────────────────────────────────────────────────
+
+--- Snapshot data per part event (characters; base64 or raw text cut on UTF-8 boundaries).
+RC.SNAP_PART = 6 * 1024
+--- Version of the rejoin markers (a `manifest {rejoin}` without `v` is the WS13 marker that
+--- playback cannot pass).
+RC.REJOIN_V = 2
+
+local function love_data()
+  local l = rawget(_G, 'love')
+  local d = l and l.data
+  if d and d.compress and d.decompress and d.encode and d.decode then return d end
+  return nil
+end
+
+--- Encode a snapshot blob: deflate + base64 when love.data has them, else the raw text.
+function REP.encode_blob(s)
+  local d = love_data()
+  if d then
+    local ok, z = pcall(d.compress, 'string', 'deflate', s, 9)
+    if ok and type(z) == 'string' then
+      local ok2, b = pcall(d.encode, 'string', 'base64', z)
+      if ok2 and type(b) == 'string' then return b, 'deflate' end
+    end
+  end
+  return s, 'raw'
+end
+
+--- The inverse of encode_blob; nil when it cannot be decoded here.
+function REP.decode_blob(data, z)
+  if z == 'raw' then return data end
+  if z ~= 'deflate' then return nil end
+  local d = love_data()
+  if not d then return nil end
+  local ok, raw = pcall(d.decode, 'string', 'base64', data)
+  if not ok or type(raw) ~= 'string' then return nil end
+  local ok2, s = pcall(d.decompress, 'string', 'deflate', raw)
+  if ok2 and type(s) == 'string' then return s end
+  return nil
+end
+
+--- Split `s` into parts of ≤ `size` bytes, never inside a UTF-8 sequence.
+function REP.split_parts(s, size)
+  local out, pos, n = {}, 1, #s
+  while pos <= n do
+    local stop = math.min(n, pos + size - 1)
+    while stop < n and stop > pos do
+      local b = s:byte(stop + 1)
+      if b < 128 or b >= 192 then break end -- the next byte starts a character
+      stop = stop - 1
+    end
+    out[#out + 1] = s:sub(pos, stop)
+    pos = stop + 1
+  end
+  return out
+end
+
+--- The blob a restore marker carries: "<#state>:<state><run>".
+function REP.pack_snapshot(run, state)
+  state = state or ''
+  return tostring(#state) .. ':' .. state .. run
+end
+
+function REP.unpack_snapshot(blob)
+  if type(blob) ~= 'string' then return nil end
+  local len, rest = blob:match('^(%d+):(.*)$')
+  len = tonumber(len)
+  if not len or len > #rest then return nil end
+  local state = len > 0 and rest:sub(1, len) or nil
+  return rest:sub(len + 1), state
+end
+
+--- The run was restored from a snapshot (Game:start_run with savetext): record the restore marker
+--- and the snapshot itself, so playback can restore the identical state. `from` = the snapshot's
+--- log index (state.json log_i), `seg` = where this rejoin's log segment starts.
+function RC.record_restore(args)
+  local sess = MP.session or {}
+  local got = sess.restored
+  sess.restored = nil
+  local run, state, from = got and got.run, got and got.state, got and got.log_i
+  if type(run) ~= 'string' and rawget(_G, 'STR_PACK') then
+    local ok, s = pcall(STR_PACK, args.savetext)
+    if ok then run = s end
+  end
+  local d = { rejoin = true, v = RC.REJOIN_V, restore = true, from = from, seg = RC.resume and RC.resume.base or nil }
+  local parts = {}
+  if type(run) == 'string' then
+    local data, z = REP.encode_blob(REP.pack_snapshot(run, state))
+    d.z, d.len = z, #data
+    parts = REP.split_parts(data, RC.SNAP_PART)
+  end
+  d.parts = #parts
+  RC.record('manifest', d)
+  for j, p in ipairs(parts) do RC.record('manifest', { snap = j, data = p }) end
 end
 
 --- Stop recording; `result` closes the log with `end`.
@@ -276,11 +394,13 @@ function RC.install()
       args = args or {}
       REP.base_sort = (G and G.sort_id) or 0
       RC.order = { hand = '', jokers = '', consumeables = '' }
+      -- The restore marker goes before the run loads (anything the load reports comes after it).
+      if args.savetext then
+        if rec_on() then RC.record_restore(args) elseif MP.session then MP.session.restored = nil end
+      end
       local r = orig(self, args, ...)
       if rec_on() then
-        if args.savetext then
-          RC.record('manifest', { rejoin = true })
-        else
+        if not args.savetext then
           local s = MP.state.session or {}
           local g = G.GAME or {}
           RC.record('run_info', { seed = (g.pseudorandom and g.pseudorandom.seed) or s.seed, deck = s.deck,

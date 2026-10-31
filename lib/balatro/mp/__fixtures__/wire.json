@@ -54,6 +54,19 @@
           "tail": {}
         },
         {
+          "you": "u_bob",
+          "lobby": {
+            "$ref": "lobbyStateStarted"
+          },
+          "match": {
+            "$ref": "startedMatch"
+          },
+          "checkpoint": null,
+          "lives": {},
+          "tail": {},
+          "logNext": 30
+        },
+        {
           "you": "u_spec",
           "lobby": {
             "$ref": "lobbyStateStarted"
@@ -97,6 +110,20 @@
             "checkpoint": null,
             "lives": {},
             "tail": {}
+          }
+        },
+        {
+          "why": "logNext negative",
+          "d": {
+            "you": "u_bob",
+            "lobby": {
+              "$ref": "lobbyState"
+            },
+            "match": null,
+            "checkpoint": null,
+            "lives": {},
+            "tail": {},
+            "logNext": -1
           }
         }
       ]
