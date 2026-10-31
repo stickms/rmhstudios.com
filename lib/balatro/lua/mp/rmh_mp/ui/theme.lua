@@ -259,6 +259,7 @@ TH.ADVANCED_OPTIONS = {
   { key = 'noGoldOnRoundLoss', kind = 'toggle', label = 'b_opts_no_gold_on_loss', def = "Don't get blind rewards on round loss" },
   { key = 'theOrder', kind = 'toggle', label = 'b_opts_the_order', def = 'Enable The Order' },
   { key = 'hideScoreUntilPlayed', kind = 'toggle', label = 'b_opts_hide_score', def = 'Hide opponent score until you play' },
+  { key = 'previewDisabled', kind = 'toggle', label = 'b_opts_disable_preview', def = 'Disable Score Preview' },
   { key = 'normalBosses', kind = 'toggle', label = 'b_opts_normal_bosses', def = 'Enable Boss Blind effects' },
   { key = 'differentSeeds', kind = 'toggle', label = 'b_opts_diff_seeds', def = 'Players have different seeds' },
   { key = 'differentDecks', kind = 'toggle', label = 'b_opts_player_diff_deck', def = 'Players have different decks' },

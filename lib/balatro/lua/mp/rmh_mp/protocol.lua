@@ -92,7 +92,7 @@ P.J2L = {
 P.ENUM = {
   queueMode = { "pvp_nemesis", "pvp_royale", "pvp_manhunt", "pvp_teams", "pvp_smallworld" },
   team = { "A", "B", "HUNTER", "RUNNER" },
-  lobbyOptionKey = { "ruleset", "gamemode", "trapCards", "manhuntHunterLives", "startingLives", "pvpStartRound", "timer", "timerBaseSeconds", "timerIncrementSeconds", "timerForgiveness", "pvpCountdownSeconds", "deathOnRoundLoss", "goldOnLifeLoss", "noGoldOnRoundLoss", "customSeed", "theOrder", "hideScoreUntilPlayed", "normalBosses", "differentSeeds", "differentDecks", "randomLoadout", "multiplayerJokers", "modifierLayers", "seatGraceMs" },
+  lobbyOptionKey = { "ruleset", "gamemode", "trapCards", "manhuntHunterLives", "startingLives", "pvpStartRound", "timer", "timerBaseSeconds", "timerIncrementSeconds", "timerForgiveness", "pvpCountdownSeconds", "deathOnRoundLoss", "goldOnLifeLoss", "noGoldOnRoundLoss", "customSeed", "theOrder", "hideScoreUntilPlayed", "previewDisabled", "normalBosses", "differentSeeds", "differentDecks", "randomLoadout", "multiplayerJokers", "modifierLayers", "seatGraceMs" },
   gameEvent = { "set_ante", "new_round", "ready_blind", "unready_blind", "play_hand", "skip", "blind_result", "fail_round", "fail_timer", "fail_pvp_timer", "furthest_blind", "redeem_ante_voucher", "forfeit", "seed_vote", "draw_vote", "result_request" },
   refMsg = { "player_lives", "team_lives", "team_roster", "nemesis_pairing", "team_card_target", "royale_target", "manhunt_target", "team_score_board", "start_blind", "timer_hand_lost", "end_pvp", "death_pending", "eliminated", "win", "player_won", "reseed", "speedrun", "vote_progress" },
   peerKind = { "nemesis_info", "location", "timer", "sync", "opp_ctx", "trap_plant", "trap_held", "trap_fired", "player_result", "deck_req", "deck_res", "stats_req", "stats_res" },
@@ -244,7 +244,7 @@ D[119] = {T="union", key="k", m={nemesis_info=D[63],location=D[66],timer=D[71],s
 D[120] = {T="string", min=1, max=32}
 D[121] = {T="object", p={runId=D[120]}, r={"runId"}}
 D[122] = {T="object", p={data=D[46],id=D[47],ok=D[19]}, r={"id","ok"}}
-D[123] = {T="enum", v={"press","skip","hand_played","opp_skip"}}
+D[123] = {T="enum", v={"press","skip","hand_played","opp_skip","preview"}}
 D[124] = {T="object", p={op=D[123]}, r={"op"}}
 D[125] = {T="string", max=500}
 D[126] = {T="object", p={text=D[125]}, r={"text"}}
@@ -267,7 +267,7 @@ D[142] = {T="enum", v={"rejoin","abandon"}}
 D[143] = {T="object", p={op=D[142]}, r={"op"}}
 D[144] = {T="enum", v={"planet","spectral","spectralplus","plastic","pebble","ferrite","pyrite","jade","crystal","antimatter"}, n=true}
 D[145] = {T="object", p={challenge=D[43],deck=D[13],mpStake=D[144],stake=D[134]}, r={"deck","stake"}}
-D[146] = {T="enum", v={"ruleset","gamemode","trapCards","manhuntHunterLives","startingLives","pvpStartRound","timer","timerBaseSeconds","timerIncrementSeconds","timerForgiveness","pvpCountdownSeconds","deathOnRoundLoss","goldOnLifeLoss","noGoldOnRoundLoss","customSeed","theOrder","hideScoreUntilPlayed","normalBosses","differentSeeds","differentDecks","randomLoadout","multiplayerJokers","modifierLayers","seatGraceMs"}}
+D[146] = {T="enum", v={"ruleset","gamemode","trapCards","manhuntHunterLives","startingLives","pvpStartRound","timer","timerBaseSeconds","timerIncrementSeconds","timerForgiveness","pvpCountdownSeconds","deathOnRoundLoss","goldOnLifeLoss","noGoldOnRoundLoss","customSeed","theOrder","hideScoreUntilPlayed","previewDisabled","normalBosses","differentSeeds","differentDecks","randomLoadout","multiplayerJokers","modifierLayers","seatGraceMs"}}
 D[147] = {T="string", max=40}
 D[148] = {T="array", i=D[147], max=32}
 D[149] = {T="any_of", o={D[68],D[19],D[47],D[148]}}
@@ -301,7 +301,7 @@ D[176] = {T="integer", min=1, max=20}
 D[177] = {T="integer", min=1000, max=600000}
 D[178] = {T="integer", min=1, max=3600}
 D[179] = {T="integer", min=0, max=3600}
-D[180] = {T="object", p={customSeed=D[171],deathOnRoundLoss=D[19],differentDecks=D[19],differentSeeds=D[19],gamemode=D[172],goldOnLifeLoss=D[19],hideScoreUntilPlayed=D[19],manhuntHunterLives=D[173],modifierLayers=D[174],multiplayerJokers=D[19],noGoldOnRoundLoss=D[19],normalBosses=D[19],pvpCountdownSeconds=D[175],pvpStartRound=D[176],randomLoadout=D[19],ruleset=D[13],seatGraceMs=D[177],startingLives=D[176],theOrder=D[19],timer=D[19],timerBaseSeconds=D[178],timerForgiveness=D[175],timerIncrementSeconds=D[179],trapCards=D[19]}, r={"customSeed","deathOnRoundLoss","differentDecks","differentSeeds","gamemode","goldOnLifeLoss","hideScoreUntilPlayed","manhuntHunterLives","modifierLayers","multiplayerJokers","noGoldOnRoundLoss","normalBosses","pvpCountdownSeconds","pvpStartRound","randomLoadout","ruleset","seatGraceMs","startingLives","theOrder","timer","timerBaseSeconds","timerForgiveness","timerIncrementSeconds","trapCards"}}
+D[180] = {T="object", p={customSeed=D[171],deathOnRoundLoss=D[19],differentDecks=D[19],differentSeeds=D[19],gamemode=D[172],goldOnLifeLoss=D[19],hideScoreUntilPlayed=D[19],manhuntHunterLives=D[173],modifierLayers=D[174],multiplayerJokers=D[19],noGoldOnRoundLoss=D[19],normalBosses=D[19],previewDisabled=D[19],pvpCountdownSeconds=D[175],pvpStartRound=D[176],randomLoadout=D[19],ruleset=D[13],seatGraceMs=D[177],startingLives=D[176],theOrder=D[19],timer=D[19],timerBaseSeconds=D[178],timerForgiveness=D[175],timerIncrementSeconds=D[179],trapCards=D[19]}, r={"customSeed","deathOnRoundLoss","differentDecks","differentSeeds","gamemode","goldOnLifeLoss","hideScoreUntilPlayed","manhuntHunterLives","modifierLayers","multiplayerJokers","noGoldOnRoundLoss","normalBosses","previewDisabled","pvpCountdownSeconds","pvpStartRound","randomLoadout","ruleset","seatGraceMs","startingLives","theOrder","timer","timerBaseSeconds","timerForgiveness","timerIncrementSeconds","trapCards"}}
 D[181] = {T="string", max=512, n=true}
 D[182] = {T="enum", v={"direct","turn","relay"}}
 D[183] = {T="const", v="release"}
