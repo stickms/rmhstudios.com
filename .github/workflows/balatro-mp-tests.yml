@@ -135,6 +135,9 @@ jobs:
   # Lua L2 in the real engine: the harness project, then the engine project (one job, see
   # the header).
   e2e-engine:
+    # Paused on pull requests until a real run of this sharded layout confirms
+    # its timing (owner's call); it runs on main, nightly and on demand.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: ${{ (github.event_name == 'schedule' || inputs.long == true) && 150 || 30 }}
     env:
@@ -170,6 +173,9 @@ jobs:
   # Multi-browser matches, one shard per runner. The list below must equal the keys of
   # MATCH_SHARDS in testing/balatro-e2e/shards.ts (testing/balatro-e2e/lib/shards.unit.test.ts).
   e2e-match:
+    # Paused on pull requests until a real run of this sharded layout confirms
+    # its timing (owner's call); it runs on main, nightly and on demand.
+    if: github.event_name != 'pull_request'
     name: e2e-match (${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: ${{ (github.event_name == 'schedule' || inputs.long == true) && 120 || 30 }}
@@ -249,7 +255,7 @@ jobs:
   # any e2e-match shard failed, was cancelled or was skipped.
   e2e:
     needs: [e2e-engine, e2e-match]
-    if: always()
+    if: always() && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
