@@ -4,7 +4,8 @@
  *
  *   - bottom left: health and armour (a helmet mark), the defuse kit or the bomb when carried;
  *   - bottom right: the weapon out, its magazine and reserve, and the inventory's slots;
- *   - top left: money, and "Buy" while buying is open (B opens the buy menu);
+ *   - top left: money, and "Buy" while buying is open (B opens the buy menu, which frees the cursor
+ *     while it is up, as CS:GO's does; closing it with B or its × captures the pointer again);
  *   - top centre: the score (T – CT), the round clock or the bomb's countdown, the phase;
  *   - top right: the kill feed;
  *   - centre: the round's result, planting / defusing progress, deathmatch respawn;
@@ -15,10 +16,11 @@
  */
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { HudCs, HudState } from '@/lib/tf2-game/client/hud-state';
 import type { HudStore } from '@/lib/tf2-game/client/hud-store';
+import type { InputState } from '@/lib/tf2-game/client/input/input-state';
 import { BUY_GROUPS, buyCatalog, type BuyGroupId } from '@/lib/csgo-game/client/buy-catalog';
 import { csWeapon, hasCsWeaponData } from '@/lib/csgo-game/data/weapon-data';
 import { CS_TEAM_CT, CS_TEAM_T, CS_WIN_BOMB_DEFUSED, CS_WIN_TARGET_BOMBED, CS_WIN_TARGET_SAVED } from '@/lib/csgo-game/constants';
@@ -36,18 +38,54 @@ const typing = (e: KeyboardEvent): boolean => {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
 };
 
-export default function CsHud({ state, store }: { state: HudState; store: HudStore }) {
+export default function CsHud({
+  state,
+  store,
+  input,
+  onCapture,
+}: {
+  state: HudState;
+  store: HudStore;
+  input?: InputState;
+  onCapture?: () => void;
+}) {
   const { t } = useTranslation('c-tf2-game');
   const cs = state.cs;
   const local = state.local;
   const [buyOpen, setBuyOpen] = useState(false);
   const [scores, setScores] = useState(false);
+  const canBuy = !!cs?.canBuy;
+  const shown = buyOpen && canBuy && !!local;
+  const live = useRef({ shown, canBuy, onCapture });
+
+  // The menu is clicked: the input layer gives the pointer back while it is up (tf2-client), and
+  // a click on the game does not capture it again.
+  useEffect(() => {
+    live.current = { shown, canBuy, onCapture };
+    if (input) input.cursor = shown;
+  }, [input, shown, canBuy, onCapture]);
+  useEffect(
+    () => () => {
+      if (input) input.cursor = false;
+    },
+    [input],
+  );
+
+  /** Closed by the player (B, the ×): back to aiming, as the key or click is a gesture that may capture. */
+  const closeBuy = useCallback(() => {
+    setBuyOpen(false);
+    if (input) input.cursor = false;
+    live.current.onCapture?.();
+  }, [input]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (typing(e)) return;
-      if (e.code === 'KeyB' && !e.repeat) setBuyOpen((o) => !o);
-      else if (e.code === 'Escape') setBuyOpen(false);
+      if (e.code === 'KeyB' && !e.repeat) {
+        // Only opens while buying is open (else it would pop up on its own on entering a buy zone).
+        if (live.current.shown) closeBuy();
+        else if (live.current.canBuy) setBuyOpen(true);
+      } else if (e.code === 'Escape') setBuyOpen(false);
       else if (e.code === 'Tab') {
         e.preventDefault();
         setScores(true);
@@ -62,10 +100,9 @@ export default function CsHud({ state, store }: { state: HudState; store: HudSto
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };
-  }, []);
+  }, [closeBuy]);
 
   // The menu closes itself when buying closes (buy time over, left the zone, died).
-  const canBuy = !!cs?.canBuy;
   useEffect(() => {
     if (!canBuy) setBuyOpen(false);
   }, [canBuy]);
@@ -78,7 +115,7 @@ export default function CsHud({ state, store }: { state: HudState; store: HudSto
 
   return (
     <div className="csg-hud" data-team={local?.team ?? 0}>
-      {alive && !scores && !buyOpen ? <span className="csg-crosshair" aria-hidden /> : null}
+      {alive && !scores && !shown ? <span className="csg-crosshair" aria-hidden /> : null}
       {cs.flash > 0 ? <div className="csg-flash" style={{ opacity: cs.flash }} aria-hidden /> : null}
 
       <div className="csg-top">
@@ -150,8 +187,8 @@ export default function CsHud({ state, store }: { state: HudState; store: HudSto
         </>
       ) : null}
 
-      {buyOpen && cs.canBuy && local ? (
-        <BuyMenu team={local.team} cs={cs} onBuy={(cmd) => store.send({ kind: 'extra', command: 'buy', args: [cmd] })} onClose={() => setBuyOpen(false)} />
+      {shown && local ? (
+        <BuyMenu team={local.team} cs={cs} onBuy={(cmd) => store.send({ kind: 'extra', command: 'buy', args: [cmd] })} onClose={closeBuy} />
       ) : null}
       {scores ? <Scoreboard state={state} /> : null}
     </div>
