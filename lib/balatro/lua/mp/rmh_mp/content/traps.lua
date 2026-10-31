@@ -576,6 +576,7 @@ T.SPEC = {
       if card then
         if card.add_to_deck then card:add_to_deck() end
         G.consumeables:emplace(card)
+        if MP.content.stickers then MP.content.stickers.mark_nemesis(card) end
       end
     end,
   },

@@ -63,10 +63,15 @@ describe('mod inventory: every mod content key has a native counterpart', functi
     for _, k in ipairs({ 'Joker', 'Planet', 'Spectral', 'Trap', 'Booster', 'Back', 'Blind', 'Tag', 'Voucher', 'Challenge' }) do
       expect(kinds[k] and k).eq(k)
     end
-    expect(#INV.stickers).eq(5)
-    expect(#INV.stakes).eq(3)
-    expect(#INV.layers >= 40).truthy()
-    expect(#INV.rulesets).eq(15)
+    expect(#INV.stickers).eq(6)
+    expect(#INV.stakes).eq(10)
+    expect(#INV.layers >= 43).truthy()
+    expect(#INV.rulesets).eq(16)
+    -- EX-14 (65 Release reworks), EX-16, EX-17 and the Judgement rework: nothing is excluded.
+    expect(#INV.excluded).eq(0)
+    local release = 0
+    for _, e in ipairs(INV.reworks) do if e.layers[1] == 'release' then release = release + 1 end end
+    expect(release).eq(65)
   end)
 
   it('objects: each mod key is a registry def of the same kind (the diff is empty)', function()

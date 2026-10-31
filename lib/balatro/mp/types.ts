@@ -54,7 +54,31 @@ export const zSeed = z.string().regex(/^[A-Z0-9]{1,8}$/);
 export const zRunId = z.string().min(1).max(32);
 export const zBlindCol = z.number().int().min(1).max(25);
 export const zStake = z.number().int().min(1).max(8);
-export const zMpStake = z.enum(['planet', 'spectral', 'spectralplus']);
+/**
+ * The MP stake on top of the vanilla stake index. The first three are the mod's live stakes; the
+ * seven after them are its `alt_stakes` (EX-16 lifted: off by default, picked in the lobby like
+ * the others — plastic … antimatter, each applying the ones before it).
+ */
+export const MP_STAKES = [
+  'planet',
+  'spectral',
+  'spectralplus',
+  'plastic',
+  'pebble',
+  'ferrite',
+  'pyrite',
+  'jade',
+  'crystal',
+  'antimatter',
+] as const;
+export const zMpStake = z.enum(MP_STAKES);
+export type MpStake = z.infer<typeof zMpStake>;
+/**
+ * An optional content pack a ruleset needs beyond the MP pack (EX-14: the Release ruleset's art,
+ * `release-<sha>.zip`). Every seated peer must hold it before the host can start.
+ */
+export const zOptionalPack = z.enum(['release']);
+export type OptionalPack = z.infer<typeof zOptionalPack>;
 export const zBlindSlot = z.enum(['Small', 'Big', 'Boss']);
 
 export const zShape = z.object({
@@ -473,6 +497,8 @@ export const zLobbyPlayer = z.object({
   catchingUp: z.boolean(),
   role: z.enum(['player', 'spectator']),
   conn: z.enum(['direct', 'turn', 'relay']),
+  /** Optional packs this peer has mounted (EX-14; absent = none). */
+  packs: z.array(zOptionalPack).max(4).optional(),
 });
 export type LobbyPlayer = z.infer<typeof zLobbyPlayer>;
 

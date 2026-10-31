@@ -38,7 +38,7 @@ describe('mod inventory: layers and rulesets', () => {
   });
 
   it('every mod ruleset is a native ruleset (the diff is empty)', () => {
-    expect(inventory.rulesets.length).toBe(15);
+    expect(inventory.rulesets.length).toBe(16);
     const missing = inventory.rulesets
       .filter((e) => !RULESET_KEYS.includes(e.native))
       .map((e) => e.mod);
@@ -52,13 +52,9 @@ describe('mod inventory: layers and rulesets', () => {
     expect(RULESET_KEYS.filter((k) => !rulesets.has(k))).toEqual([]);
   });
 
-  it('only the Release ruleset and layer are excluded (EX-14), and they are not defined', () => {
-    const ex = inventory.excluded.filter((e) => e.kind === 'Ruleset' || e.kind === 'Layer');
-    expect(ex.map((e) => `${e.kind}:${e.mod}:${e.ex}`).sort()).toEqual([
-      'Layer:release:EX-14',
-      'Ruleset:release:EX-14',
-    ]);
-    expect(LAYER_NAMES).not.toContain('release');
-    expect(RULESET_KEYS).not.toContain('ruleset_mp_release');
+  it('nothing is excluded any more: Release (EX-14), the alt stakes (EX-16), the Nemesis sticker (EX-17) and the Judgement rework are native', () => {
+    expect(inventory.excluded).toEqual([]);
+    expect(LAYER_NAMES).toContain('release');
+    expect(RULESET_KEYS).toContain('ruleset_mp_release');
   });
 });

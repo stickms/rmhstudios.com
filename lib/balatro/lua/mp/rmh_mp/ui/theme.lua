@@ -165,6 +165,9 @@ TH.RULESETS = {
     mp = true, extra = true, forced = { theOrder = true } },
   { key = 'ruleset_mp_experimental_legacy', name = 'k_experimental_legacy', def = 'Experimental (Classic)',
     desc = 'k_experimental_legacy_description', mp = true, extra = true, forced = { theOrder = true } },
+  -- RS-17 (EX-14 lifted): its art is the optional `release` pack (the lobby fetches it).
+  { key = 'ruleset_mp_release', name = 'k_release', def = 'Release Ver.', desc = 'rmh_mp_ui_release_description',
+    mp = false, extra = true, pack = 'release' },
 }
 
 local RS_BY_KEY = {}
@@ -291,6 +294,8 @@ TH.ADVANCED_LAYERS = {
   { name = 'gambling_opportunity', def = 'Gambling Opportunity' },
   { name = 'no_uncommons', def = 'No Uncommons' },
   { name = 'bigger_shop', def = 'Bigger Shop' },
+  { name = 'nemesis_sticker', def = 'Nemesis Sticker' },
+  { name = 'judgement_rework', def = 'Judgement rework' },
 }
 
 function TH.layer_label(name)

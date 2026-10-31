@@ -26,9 +26,14 @@ import type { Envelope, PeerKind, WireData } from '../wire';
 import { PEER_KINDS, resolveHubIce, WIRE_PROTOCOL } from '../wire-codec';
 import type { BalatroS2CPayload } from '../../net/events';
 import { MemberLink } from '../transport/member';
-import type { GameEvent, Id, LobbyState, RefCheckpoint, Team } from '../types';
+import type { GameEvent, Id, LobbyState, OptionalPack, RefCheckpoint, Team } from '../types';
 import { startBlock } from './lobby-reducer';
 import type { HostIntent, Role, RoleCtx } from './context';
+
+/** `packs` for hello / player_info: absent when this peer holds none (EX-14). */
+function packsInfo(packs: readonly OptionalPack[]): { packs?: OptionalPack[] } {
+  return packs.length ? { packs: [...packs] } : {};
+}
 
 export const RECONNECT_AFTER_MS = 3_000;
 export const PENDING_GAME_MAX = 256;
@@ -154,7 +159,12 @@ export class LobbyMember implements Role {
     this.link.send('hello', {
       contentHash: this.ctx.deps.contentHash,
       protocol: WIRE_PROTOCOL,
-      info: { avatarJoker: this.ctx.settings.avatarJoker, blindCol: this.ctx.settings.blindCol, lang: this.ctx.lang.slice(0, 16) },
+      info: {
+        avatarJoker: this.ctx.settings.avatarJoker,
+        blindCol: this.ctx.settings.blindCol,
+        lang: this.ctx.lang.slice(0, 16),
+        ...packsInfo(this.ctx.packs()),
+      },
       // Only a peer whose run is gone asks for the rejoin resync; a live run just reconnects.
       rejoin: runId && !(live && live.match.runId === runId) ? { runId } : null,
     });
@@ -327,6 +337,7 @@ export class LobbyMember implements Role {
       avatarJoker: this.ctx.settings.avatarJoker,
       blindCol: this.ctx.settings.blindCol,
       lang: this.ctx.lang.slice(0, 16),
+      ...packsInfo(this.ctx.packs()),
     });
   }
 

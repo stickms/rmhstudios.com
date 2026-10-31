@@ -185,6 +185,7 @@ const bundle = (o: Partial<BundleReport>): BundleReport => ({
 const packs = (o: Partial<PackReport> = {}): PackReport => ({
   core: { bytes: 4_930_572, fileBytes: 4_930_572 },
   mp: null,
+  release: null,
   ...o,
 });
 const failing = (checks: ReturnType<typeof evaluate>) =>
@@ -212,7 +213,14 @@ describe('evaluate', () => {
       bytes: baseline.corePackBytes + BUDGETS.coreGrowth,
       fileBytes: baseline.corePackBytes + BUDGETS.coreGrowth,
     };
-    expect(failing(evaluate(atLimit, packs({ core: coreAt, mp: mpAt }), baseline))).toEqual([]);
+    const releaseAt = {
+      bytes: BUDGETS.releasePackBytes,
+      fileBytes: BUDGETS.releasePackBytes,
+      extracted: BUDGETS.releasePackExtracted,
+    };
+    expect(
+      failing(evaluate(atLimit, packs({ core: coreAt, mp: mpAt, release: releaseAt }), baseline)),
+    ).toEqual([]);
 
     const over = bundle({
       staticGzip: baseline.spEntryGzip + BUDGETS.spEntryDeltaGzip + 1,
@@ -227,7 +235,14 @@ describe('evaluate', () => {
       extracted: BUDGETS.mpPackExtracted + 1,
     };
     const coreOver = { bytes: baseline.corePackBytes + BUDGETS.coreGrowth + 1, fileBytes: null };
-    expect(failing(evaluate(over, packs({ core: coreOver, mp: mpOver }), baseline))).toEqual([
+    const releaseOver = {
+      bytes: BUDGETS.releasePackBytes + 1,
+      fileBytes: null,
+      extracted: BUDGETS.releasePackExtracted + 1,
+    };
+    expect(
+      failing(evaluate(over, packs({ core: coreOver, mp: mpOver, release: releaseOver }), baseline)),
+    ).toEqual([
       'single-player route chunk delta',
       'no MP/P2P module in the single-player chunk',
       'MP JS chunks',
@@ -238,7 +253,17 @@ describe('evaluate', () => {
       'MP pack compressed',
       'MP pack manifest matches its file',
       'MP pack extracted',
+      'Release pack compressed',
+      'Release pack manifest matches its file',
+      'Release pack extracted',
     ]);
+  });
+
+  it('EX-14: once the MP pack exists the Release pack must too (the builder makes both)', () => {
+    const mp = { bytes: 10, fileBytes: 10, extracted: 10 };
+    expect(failing(evaluate(null, packs({ mp }), baseline))).toEqual(['Release pack']);
+    const release = { bytes: 5, fileBytes: 5, extracted: 5 };
+    expect(failing(evaluate(null, packs({ mp, release }), baseline))).toEqual([]);
   });
 
   it('treats a missing MP pack file as a failure, not a pass', () => {
@@ -247,7 +272,11 @@ describe('evaluate', () => {
       packs({ mp: { bytes: 10, fileBytes: null, extracted: null } }),
       baseline,
     );
-    expect(failing(checks)).toEqual(['MP pack manifest matches its file', 'MP pack extracted']);
+    expect(failing(checks)).toEqual([
+      'MP pack manifest matches its file',
+      'MP pack extracted',
+      'Release pack',
+    ]);
   });
 
   it('a shrinking chunk is fine', () => {

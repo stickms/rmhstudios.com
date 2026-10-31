@@ -380,9 +380,13 @@ describe('ST-01..03 stakes', function()
   before_each(function() setup() end)
   after_each(CH.teardown)
 
-  it('lists the three MP stakes in order, matching the modifiers WS6 applies', function()
+  it('lists the three MP stakes, then the seven alt stakes (EX-16), matching the modifiers WS6 applies', function()
     local S = MP.content.stakes
-    expect(#S.LIST).eq(3)
+    expect(#S.LIST).eq(10)
+    local ids = {}
+    for i, e in ipairs(S.LIST) do ids[i] = e.id end
+    expect(ids).eq({ 'planet', 'spectral', 'spectralplus', 'plastic', 'pebble', 'ferrite', 'pyrite', 'jade',
+      'crystal', 'antimatter' })
     expect(S.get('spectral').key).eq('stake_mp_spectral')
     expect(S.get('stake_mp_spectralplus').shiny).eq(true)
     expect(S.check()).eq(true)

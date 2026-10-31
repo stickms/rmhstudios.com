@@ -125,7 +125,10 @@ function L.install_core_wrap()
         local ok, err = pcall(L.merge_into, G.localization, lang)
         if not ok then MP.log('error', 'loc merge failed: %s', tostring(err)) end
       end
-      return orig(...)
+      local r = orig(...)
+      -- A mounted session's rework text (`rework.loc`) survives a language change.
+      if R.reapply_loc_swaps then pcall(R.reapply_loc_swaps) end
+      return r
     end, { id = 'loc.init_localization', optional = true })
   end
 end

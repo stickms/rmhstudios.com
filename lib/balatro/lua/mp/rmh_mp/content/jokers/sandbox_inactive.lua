@@ -302,7 +302,8 @@ MP.sync.register(S.MAGNET, {
       MP.state.magnet_pending = nil
       if data.card and MP.card and MP.card.build and G.jokers then
         local ok, err = pcall(MP.card.build, data.card, G.jokers)
-        if not ok then MP.log('warn', 'magnet: could not rebuild the copy: %s', tostring(err)) end
+        if not ok then MP.log('warn', 'magnet: could not rebuild the copy: %s', tostring(err))
+        elseif MP.content.stickers then MP.content.stickers.mark_nemesis(err) end
       end
     end
   end,

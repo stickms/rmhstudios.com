@@ -118,9 +118,11 @@ describe('MP art: atlas registry files', function()
     for key, e in pairs(registry()) do
       local files = { e.file }
       for _, v in pairs(e.variants or {}) do files[#files + 1] = v end
+      -- An optional pack's art (EX-14 `release`) lives in data/balatro-mp/<pack>/.
+      local dir = MP_DATA .. (e.pack and (e.pack .. '/') or '')
       for _, file in ipairs(files) do
-        local w1, h1 = png_size(MP_DATA .. '1x/' .. file)
-        local w2, h2 = png_size(MP_DATA .. '2x/' .. file)
+        local w1, h1 = png_size(dir .. '1x/' .. file)
+        local w2, h2 = png_size(dir .. '2x/' .. file)
         if not (w1 and w2) then bad[#bad + 1] = key .. ': ' .. file .. ' missing'
         elseif w2 ~= 2 * w1 or h2 ~= 2 * h1 then bad[#bad + 1] = key .. ': 2x is not double 1x'
         elseif w1 % e.px ~= 0 or h1 % e.py ~= 0 then

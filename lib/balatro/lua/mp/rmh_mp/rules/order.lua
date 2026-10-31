@@ -67,14 +67,14 @@ end
 
 -- ── create_card (stable shop) ───────────────────────────────────────────────
 
-local function stable_joker(_type, area, legendary, _rarity, key_append)
+local function stable_joker(_type, area, legendary, _rarity, key_append, as_shop)
   local pool, pool_key = get_current_pool(_type, _rarity, legendary, key_append)
   local et, per, rent, ed
   local key = 'UNAVAILABLE'
   local it = 0
   while key == 'UNAVAILABLE' do
     et, per, rent, ed = nil, nil, nil, nil
-    if area == G.pack_cards or area == G.shop_jokers then
+    if as_shop or area == G.pack_cards or area == G.shop_jokers then
       local poll = pseudorandom('_etper' .. pool_key)
       local mods = G.GAME.modifiers
       if mods.enable_eternals_in_shop and poll > 0.7 then
@@ -125,7 +125,14 @@ local function order_create_card(orig, _type, area, legendary, _rarity, skip_mat
       append = nil
     end
     if _type == 'Joker' and not forced_key then
-      local key, et, per, rent, ed = stable_joker(_type, area or G.jokers, legendary, _rarity, append)
+      local key, et, per, rent, ed
+      local held = (not legendary and not _rarity and (area == G.shop_jokers or area == G.pack_cards))
+        and O.take_held() or nil
+      if held then
+        key, et, per, rent, ed = held.key, held.et, held.per, held.rent, held.ed
+      else
+        key, et, per, rent, ed = stable_joker(_type, area or G.jokers, legendary, _rarity, append)
+      end
       -- Only Order's own edition roll applies: vanilla's roll would queue a juice event for an
       -- edition that apply_stickers then replaces, and that event crashes on the nil edition.
       local poll = poll_edition
@@ -143,6 +150,41 @@ local function order_create_card(orig, _type, area, legendary, _rarity, skip_mat
   if not ok then error(card, 0) end
   return card
 end
+
+-- ── Held shop rolls (the Judgement rework) ──────────────────────────────────
+-- G.GAME.mp_held_jokers: Joker rolls taken out of the shop queue ahead of the shop (Judgement
+-- under The Order, content/judgement.lua) that the shop still has to show, in order. The next
+-- shop or pack Joker without a forced rarity takes the first one instead of rolling. Saved with
+-- the run (plain data).
+
+function O.held() return (G.GAME and G.GAME.mp_held_jokers) or {} end
+
+function O.hold(roll)
+  G.GAME.mp_held_jokers = G.GAME.mp_held_jokers or {}
+  local h = G.GAME.mp_held_jokers
+  h[#h + 1] = { key = roll.key, et = roll.et or nil, per = roll.per or nil, rent = roll.rent or nil, ed = roll.ed }
+end
+
+function O.take_held()
+  local h = G.GAME and G.GAME.mp_held_jokers
+  if not (h and h[1]) then return nil end
+  local first = table.remove(h, 1)
+  if G.P_CENTERS[first.key] == nil then return O.take_held() end
+  return first
+end
+
+--- One Joker rolled exactly as the shop rolls its next one (ante 0 queues, sticker polls first),
+--- without creating a card: { key, et, per, rent, ed }.
+function O.roll_shop_joker()
+  local rr = G.GAME.round_resets
+  local real = rr.ante
+  rr.ante = 0
+  local ok, key, et, per, rent, ed = pcall(stable_joker, 'Joker', G.shop_jokers, nil, nil, nil, true)
+  rr.ante = real
+  if not ok then error(key, 0) end
+  return { key = key, et = et, per = per, rent = rent, ed = ed }
+end
+O.apply_stickers = apply_stickers
 
 -- ── Idol / Mail-In Rebate (OR-06) ───────────────────────────────────────────
 

@@ -49,6 +49,7 @@ import {
   RULESET_KEYS,
   TRAP_VOTE_RULESETS,
   getRuleset,
+  requiredPacks,
   type RulesetDef,
 } from '../rulesets';
 
@@ -215,12 +216,22 @@ const GOLDEN: Record<
     hooks: [],
     locked: ['theOrder'],
   },
+  // RS-17 (EX-14 lifted): nothing forced (The Order keeps its reset-to-on default).
+  ruleset_mp_release: {
+    chain: ['release'],
+    mp: false,
+    order: true,
+    comeback: 'default',
+    timer: {},
+    hooks: ['release'],
+    locked: [],
+  },
 };
 
-describe('every ruleset (RS-01…RS-15)', () => {
+describe('every ruleset (RS-01…RS-15, RS-17)', () => {
   it('the golden table covers every registered ruleset', () => {
     expect(Object.keys(GOLDEN).sort()).toEqual([...RULESET_KEYS].sort());
-    expect(RULESET_KEYS).toHaveLength(15);
+    expect(RULESET_KEYS).toHaveLength(16);
   });
 
   for (const [key, g] of Object.entries(GOLDEN)) {
@@ -403,6 +414,8 @@ describe('layer contents', () => {
       'gambling_opportunity',
       'no_uncommons',
       'bigger_shop',
+      'nemesis_sticker',
+      'judgement_rework',
     ]);
     expect(getLayer('nope')).toBeUndefined();
     expect(getLayer('toString')).toBeUndefined();
@@ -608,7 +621,33 @@ describe('composition rules (RS-16)', () => {
     expect(applyPracticeOptions(opts()).timer).toBe(false);
   });
   it('rejects unknown rulesets', () => {
-    expect(() => resolve('ruleset_mp_release')).toThrow(UnknownRulesetError);
+    expect(() => resolve('ruleset_mp_nope')).toThrow(UnknownRulesetError);
+  });
+  it('Release (EX-14): needs the release pack, pools no MP content, shows the Balanced sticker', () => {
+    const r = resolve('ruleset_mp_release').resolved;
+    expect(requiredPacks('ruleset_mp_release')).toEqual(['release']);
+    expect(r.multiplayerContent).toBe(false);
+    expect(r.stickers).toEqual(['mp_sticker_balanced']);
+    expect(r.setupHooks).toEqual(['release']);
+    for (const k of RULESET_KEYS.filter((k) => k !== 'ruleset_mp_release')) {
+      expect(requiredPacks(k)).toEqual([]);
+    }
+    expect(requiredPacks('ruleset_mp_nope')).toEqual([]);
+  });
+  it('the nemesis_sticker and judgement_rework Advanced layers (EX-17, Judgement rework)', () => {
+    const r = resolve('ruleset_mp_balanced', {
+      modifierLayers: ['judgement_rework', 'nemesis_sticker'],
+    }).resolved;
+    expect(r.layers.slice(-2)).toEqual(['nemesis_sticker', 'judgement_rework']);
+    // Neither runs a run-start hook: the sticker and the Judgement roll are behaviour gates.
+    expect(r.setupHooks).not.toContain('nemesis_sticker');
+    expect(r.setupHooks).not.toContain('judgement_rework');
+    // Off by default: no ruleset brings them in.
+    for (const k of RULESET_KEYS) {
+      const chain = resolve(k).resolved.layers;
+      expect(chain).not.toContain('nemesis_sticker');
+      expect(chain).not.toContain('judgement_rework');
+    }
   });
   it('options carry the Advanced timer/lives values into the resolved timer', () => {
     const r = resolve('ruleset_mp_expanded', {
@@ -700,8 +739,9 @@ describe('options', () => {
       'ruleset_mp_smallworld',
       'ruleset_mp_majorleague',
     ]);
-    expect(EXTRA_RULESETS).toHaveLength(10);
-    expect(new Set([...PRIVATE_RULESETS, ...EXTRA_RULESETS]).size).toBe(15);
+    expect(EXTRA_RULESETS).toHaveLength(11);
+    expect(EXTRA_RULESETS[EXTRA_RULESETS.length - 1]).toBe('ruleset_mp_release');
+    expect(new Set([...PRIVATE_RULESETS, ...EXTRA_RULESETS]).size).toBe(16);
     expect([...CASUAL_VOTE_RULESETS]).toEqual([
       'ruleset_mp_vanilla',
       'ruleset_mp_majorleague',

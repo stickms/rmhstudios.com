@@ -60,6 +60,11 @@ export const BUDGETS = {
   coreGrowth: 40_000 + 16_422 + 2_000,
   mpPackBytes: 1_800_000,
   mpPackExtracted: 8 * MB,
+  // EX-14: the optional Release pack (release_jokers.png at 1x + 2x, ~688 KB after lossless
+  // oxipng), fetched only when a lobby picks the Release ruleset, so it has its own budget (the
+  // MP pack has ~90 KB left). Matches data/balatro-mp/pack-budget.json releaseMax*.
+  releasePackBytes: 750_000,
+  releasePackExtracted: 750_000,
 } as const;
 
 export interface Baseline {
@@ -435,9 +440,13 @@ export interface PackInfo {
   sha256?: string;
 }
 
+type ZipPackReport = { bytes: number; fileBytes: number | null; extracted: number | null };
+
 export interface PackReport {
   core: { bytes: number; fileBytes: number | null };
-  mp: { bytes: number; fileBytes: number | null; extracted: number | null } | null;
+  mp: ZipPackReport | null;
+  /** EX-14: the optional Release pack. */
+  release: ZipPackReport | null;
 }
 
 export function measurePacks(
@@ -449,16 +458,19 @@ export function measurePacks(
     return existsSync(p) ? readFileSync(p).length : null;
   };
   const core = manifest.core as PackInfo;
-  const mp = manifest.mp as PackInfo | undefined;
-  let mpReport: PackReport['mp'] = null;
-  if (mp) {
-    const p = path.join(packDir, mp.file);
+  const zipReport = (info: PackInfo | undefined): ZipPackReport | null => {
+    if (!info) return null;
+    const p = path.join(packDir, info.file);
     const extracted = existsSync(p)
       ? readZip(new Uint8Array(readFileSync(p))).entries.reduce((n, e) => n + e.size, 0)
       : null;
-    mpReport = { bytes: mp.bytes, fileBytes: fileBytes(mp), extracted };
-  }
-  return { core: { bytes: core.bytes, fileBytes: fileBytes(core) }, mp: mpReport };
+    return { bytes: info.bytes, fileBytes: fileBytes(info), extracted };
+  };
+  return {
+    core: { bytes: core.bytes, fileBytes: fileBytes(core) },
+    mp: zipReport(manifest.mp as PackInfo | undefined),
+    release: zipReport(manifest.release as PackInfo | undefined),
+  };
 }
 
 // ── verdict ──────────────────────────────────────────────────────────────────
@@ -552,6 +564,27 @@ export function evaluate(
         packs.mp.extracted === null
           ? 'file missing'
           : `${packs.mp.extracted} B (budget ${BUDGETS.mpPackExtracted} B)`,
+    });
+  }
+  // EX-14: the Release pack is required once the MP pack names it (the builder always makes it).
+  if (!packs.release) {
+    checks.push({ name: 'Release pack', ok: !packs.mp, detail: 'missing from the manifest (rebuild the packs)' });
+  } else {
+    const r = packs.release;
+    checks.push({
+      name: 'Release pack compressed',
+      ok: r.bytes <= BUDGETS.releasePackBytes,
+      detail: `${r.bytes} B (budget ${BUDGETS.releasePackBytes} B)`,
+    });
+    checks.push({
+      name: 'Release pack manifest matches its file',
+      ok: r.fileBytes === r.bytes,
+      detail: r.fileBytes === null ? 'file missing' : `${r.fileBytes} B on disk`,
+    });
+    checks.push({
+      name: 'Release pack extracted',
+      ok: r.extracted !== null && r.extracted <= BUDGETS.releasePackExtracted,
+      detail: r.extracted === null ? 'file missing' : `${r.extracted} B (budget ${BUDGETS.releasePackExtracted} B)`,
     });
   }
   return checks;
