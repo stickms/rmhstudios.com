@@ -6,6 +6,7 @@ import arBuilds from "@/locales/ar/builds.json";
 import arCAdmin from "@/locales/ar/c-admin.json";
 import arCAltair from "@/locales/ar/c-altair.json";
 import arCAwards from "@/locales/ar/c-awards.json";
+import arCBalatro from "@/locales/ar/c-balatro.json";
 import arCBlog from "@/locales/ar/c-blog.json";
 import arCBuilds from "@/locales/ar/c-builds.json";
 import arCBumsRush from "@/locales/ar/c-bums-rush.json";
@@ -59,6 +60,7 @@ import arCStatus from "@/locales/ar/c-status.json";
 import arCStudio from "@/locales/ar/c-studio.json";
 import arCSynapseStorm from "@/locales/ar/c-synapse-storm.json";
 import arCTempleOfJoy from "@/locales/ar/c-temple-of-joy.json";
+import arCTf2Game from "@/locales/ar/c-tf2-game.json";
 import arCTf2Hud from "@/locales/ar/c-tf2-hud.json";
 import arCTournaments from "@/locales/ar/c-tournaments.json";
 import arCUi from "@/locales/ar/c-ui.json";
@@ -106,6 +108,7 @@ const arResources = {
   "c-admin": arCAdmin,
   "c-altair": arCAltair,
   "c-awards": arCAwards,
+  "c-balatro": arCBalatro,
   "c-blog": arCBlog,
   "c-builds": arCBuilds,
   "c-bums-rush": arCBumsRush,
@@ -159,6 +162,7 @@ const arResources = {
   "c-studio": arCStudio,
   "c-synapse-storm": arCSynapseStorm,
   "c-temple-of-joy": arCTempleOfJoy,
+  "c-tf2-game": arCTf2Game,
   "c-tf2-hud": arCTf2Hud,
   "c-tournaments": arCTournaments,
   "c-ui": arCUi,

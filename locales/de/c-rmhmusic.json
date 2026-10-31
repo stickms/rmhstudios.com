@@ -16,6 +16,8 @@
   "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} Zuhörer",
   "listener-count_other": "{{count}} Zuhörer",
+  "listening-count_one": "{{count}} listening",
+  "listening-count_other": "{{count}} listening",
   "loading": "Loading…",
   "loading-rooms": "Räume werden geladen...",
   "mini-close": "Stoppen und schließen",
@@ -46,9 +48,9 @@
   "search-spotify-placeholder": "Spotify durchsuchen...",
   "searching": "Suche läuft...",
   "sign-in-to-guess": "Melde dich an, um zu raten.",
+  "sleep-timer-off": "Einschlaf-Timer aus. Zum Einstellen klicken.",
+  "sleep-timer-on": "Einschlaf-Timer: noch {{time}}. Zum Ändern klicken.",
   "solves-plays": "{{solves}} gelöst · {{plays}} gespielt",
   "song-title-placeholder": "Songtitel...",
-  "your-playlists": "Your playlists",
-  "listening-count_one": "{{count}} listening",
-  "listening-count_other": "{{count}} listening"
+  "your-playlists": "Your playlists"
 }

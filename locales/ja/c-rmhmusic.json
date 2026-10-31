@@ -15,6 +15,7 @@
   "join-room": "ルーム参加",
   "join-room-to-queue": "Join a room to queue",
   "listener-count_other": "{{count}} リスナー",
+  "listening-count_other": "{{count}} listening",
   "loading": "Loading…",
   "loading-rooms": "ルームを読み込み中...",
   "mini-close": "停止して閉じる",
@@ -44,8 +45,9 @@
   "search-spotify-placeholder": "Spotifyを検索...",
   "searching": "検索中...",
   "sign-in-to-guess": "推測するにはサインインしてください。",
+  "sleep-timer-off": "スリープタイマーはオフです。クリックして設定。",
+  "sleep-timer-on": "スリープタイマー：残り {{time}}。クリックして変更。",
   "solves-plays": "{{solves}} 解決 · {{plays}} プレイ",
   "song-title-placeholder": "曲名...",
-  "your-playlists": "Your playlists",
-  "listening-count_other": "{{count}} listening"
+  "your-playlists": "Your playlists"
 }

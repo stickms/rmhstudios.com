@@ -50,6 +50,8 @@
   "search-spotify-placeholder": "Search Spotify...",
   "searching": "Searching...",
   "sign-in-to-guess": "Sign in to guess.",
+  "sleep-timer-off": "Sleep timer off. Click to set.",
+  "sleep-timer-on": "Sleep timer: {{time}} left. Click to change.",
   "solves-plays": "{{solves}} solved · {{plays}} plays",
   "song-title-placeholder": "Song title...",
   "your-playlists": "Your playlists"

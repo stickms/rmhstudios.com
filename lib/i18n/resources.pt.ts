@@ -6,6 +6,7 @@ import ptBuilds from "@/locales/pt/builds.json";
 import ptCAdmin from "@/locales/pt/c-admin.json";
 import ptCAltair from "@/locales/pt/c-altair.json";
 import ptCAwards from "@/locales/pt/c-awards.json";
+import ptCBalatro from "@/locales/pt/c-balatro.json";
 import ptCBlog from "@/locales/pt/c-blog.json";
 import ptCBuilds from "@/locales/pt/c-builds.json";
 import ptCBumsRush from "@/locales/pt/c-bums-rush.json";
@@ -59,6 +60,7 @@ import ptCStatus from "@/locales/pt/c-status.json";
 import ptCStudio from "@/locales/pt/c-studio.json";
 import ptCSynapseStorm from "@/locales/pt/c-synapse-storm.json";
 import ptCTempleOfJoy from "@/locales/pt/c-temple-of-joy.json";
+import ptCTf2Game from "@/locales/pt/c-tf2-game.json";
 import ptCTf2Hud from "@/locales/pt/c-tf2-hud.json";
 import ptCTournaments from "@/locales/pt/c-tournaments.json";
 import ptCUi from "@/locales/pt/c-ui.json";
@@ -104,6 +106,7 @@ const ptResources = {
   "c-admin": ptCAdmin,
   "c-altair": ptCAltair,
   "c-awards": ptCAwards,
+  "c-balatro": ptCBalatro,
   "c-blog": ptCBlog,
   "c-builds": ptCBuilds,
   "c-bums-rush": ptCBumsRush,
@@ -157,6 +160,7 @@ const ptResources = {
   "c-studio": ptCStudio,
   "c-synapse-storm": ptCSynapseStorm,
   "c-temple-of-joy": ptCTempleOfJoy,
+  "c-tf2-game": ptCTf2Game,
   "c-tf2-hud": ptCTf2Hud,
   "c-tournaments": ptCTournaments,
   "c-ui": ptCUi,

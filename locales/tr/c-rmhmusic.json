@@ -16,6 +16,8 @@
   "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} dinleyici",
   "listener-count_other": "{{count}} dinleyici",
+  "listening-count_one": "{{count}} listening",
+  "listening-count_other": "{{count}} listening",
   "loading": "Loading…",
   "loading-rooms": "Odalar yükleniyor...",
   "mini-close": "Durdur ve kapat",
@@ -46,9 +48,9 @@
   "search-spotify-placeholder": "Spotify'da ara...",
   "searching": "Aranıyor...",
   "sign-in-to-guess": "Tahmin etmek için giriş yap.",
+  "sleep-timer-off": "Uyku zamanlayıcısı kapalı. Ayarlamak için tıklayın.",
+  "sleep-timer-on": "Uyku zamanlayıcısı: {{time}} kaldı. Değiştirmek için tıklayın.",
   "solves-plays": "{{solves}} çözüldü · {{plays}} oynandı",
   "song-title-placeholder": "Şarkı adı...",
-  "your-playlists": "Your playlists",
-  "listening-count_one": "{{count}} listening",
-  "listening-count_other": "{{count}} listening"
+  "your-playlists": "Your playlists"
 }

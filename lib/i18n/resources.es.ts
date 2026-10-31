@@ -6,6 +6,7 @@ import esBuilds from "@/locales/es/builds.json";
 import esCAdmin from "@/locales/es/c-admin.json";
 import esCAltair from "@/locales/es/c-altair.json";
 import esCAwards from "@/locales/es/c-awards.json";
+import esCBalatro from "@/locales/es/c-balatro.json";
 import esCBlog from "@/locales/es/c-blog.json";
 import esCBuilds from "@/locales/es/c-builds.json";
 import esCBumsRush from "@/locales/es/c-bums-rush.json";
@@ -59,6 +60,7 @@ import esCStatus from "@/locales/es/c-status.json";
 import esCStudio from "@/locales/es/c-studio.json";
 import esCSynapseStorm from "@/locales/es/c-synapse-storm.json";
 import esCTempleOfJoy from "@/locales/es/c-temple-of-joy.json";
+import esCTf2Game from "@/locales/es/c-tf2-game.json";
 import esCTf2Hud from "@/locales/es/c-tf2-hud.json";
 import esCTournaments from "@/locales/es/c-tournaments.json";
 import esCUi from "@/locales/es/c-ui.json";
@@ -104,6 +106,7 @@ const esResources = {
   "c-admin": esCAdmin,
   "c-altair": esCAltair,
   "c-awards": esCAwards,
+  "c-balatro": esCBalatro,
   "c-blog": esCBlog,
   "c-builds": esCBuilds,
   "c-bums-rush": esCBumsRush,
@@ -157,6 +160,7 @@ const esResources = {
   "c-studio": esCStudio,
   "c-synapse-storm": esCSynapseStorm,
   "c-temple-of-joy": esCTempleOfJoy,
+  "c-tf2-game": esCTf2Game,
   "c-tf2-hud": esCTf2Hud,
   "c-tournaments": esCTournaments,
   "c-ui": esCUi,

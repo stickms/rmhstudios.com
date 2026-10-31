@@ -16,6 +16,8 @@
   "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} श्रोता",
   "listener-count_other": "{{count}} श्रोता",
+  "listening-count_one": "{{count}} listening",
+  "listening-count_other": "{{count}} listening",
   "loading": "Loading…",
   "loading-rooms": "कक्ष लोड हो रहे हैं...",
   "mini-close": "रोकें और बंद करें",
@@ -46,9 +48,9 @@
   "search-spotify-placeholder": "Spotify खोजें...",
   "searching": "खोज रहे हैं...",
   "sign-in-to-guess": "अनुमान लगाने के लिए साइन इन करें।",
+  "sleep-timer-off": "स्लीप टाइमर बंद है। सेट करने के लिए क्लिक करें।",
+  "sleep-timer-on": "स्लीप टाइमर: {{time}} शेष। बदलने के लिए क्लिक करें।",
   "solves-plays": "{{solves}} हल · {{plays}} बार चला",
   "song-title-placeholder": "गीत का शीर्षक...",
-  "your-playlists": "Your playlists",
-  "listening-count_one": "{{count}} listening",
-  "listening-count_other": "{{count}} listening"
+  "your-playlists": "Your playlists"
 }

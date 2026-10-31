@@ -6,6 +6,7 @@ import deBuilds from "@/locales/de/builds.json";
 import deCAdmin from "@/locales/de/c-admin.json";
 import deCAltair from "@/locales/de/c-altair.json";
 import deCAwards from "@/locales/de/c-awards.json";
+import deCBalatro from "@/locales/de/c-balatro.json";
 import deCBlog from "@/locales/de/c-blog.json";
 import deCBuilds from "@/locales/de/c-builds.json";
 import deCBumsRush from "@/locales/de/c-bums-rush.json";
@@ -59,6 +60,7 @@ import deCStatus from "@/locales/de/c-status.json";
 import deCStudio from "@/locales/de/c-studio.json";
 import deCSynapseStorm from "@/locales/de/c-synapse-storm.json";
 import deCTempleOfJoy from "@/locales/de/c-temple-of-joy.json";
+import deCTf2Game from "@/locales/de/c-tf2-game.json";
 import deCTf2Hud from "@/locales/de/c-tf2-hud.json";
 import deCTournaments from "@/locales/de/c-tournaments.json";
 import deCUi from "@/locales/de/c-ui.json";
@@ -104,6 +106,7 @@ const deResources = {
   "c-admin": deCAdmin,
   "c-altair": deCAltair,
   "c-awards": deCAwards,
+  "c-balatro": deCBalatro,
   "c-blog": deCBlog,
   "c-builds": deCBuilds,
   "c-bums-rush": deCBumsRush,
@@ -157,6 +160,7 @@ const deResources = {
   "c-studio": deCStudio,
   "c-synapse-storm": deCSynapseStorm,
   "c-temple-of-joy": deCTempleOfJoy,
+  "c-tf2-game": deCTf2Game,
   "c-tf2-hud": deCTf2Hud,
   "c-tournaments": deCTournaments,
   "c-ui": deCUi,

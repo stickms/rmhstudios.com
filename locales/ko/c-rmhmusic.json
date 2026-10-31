@@ -15,6 +15,7 @@
   "join-room": "방 참가",
   "join-room-to-queue": "Join a room to queue",
   "listener-count_other": "청취자 {{count}}명",
+  "listening-count_other": "{{count}} listening",
   "loading": "Loading…",
   "loading-rooms": "방 불러오는 중...",
   "mini-close": "정지 후 닫기",
@@ -44,8 +45,9 @@
   "search-spotify-placeholder": "Spotify 검색...",
   "searching": "검색 중...",
   "sign-in-to-guess": "추측하려면 로그인하세요.",
+  "sleep-timer-off": "수면 타이머가 꺼져 있습니다. 클릭하여 설정하세요.",
+  "sleep-timer-on": "수면 타이머: {{time}} 남음. 클릭하여 변경하세요.",
   "solves-plays": "{{solves}}회 해결 · {{plays}}회 재생",
   "song-title-placeholder": "노래 제목...",
-  "your-playlists": "Your playlists",
-  "listening-count_other": "{{count}} listening"
+  "your-playlists": "Your playlists"
 }

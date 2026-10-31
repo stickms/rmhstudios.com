@@ -15,6 +15,7 @@
   "join-room": "Gabung Ruangan",
   "join-room-to-queue": "Join a room to queue",
   "listener-count_other": "{{count}} pendengar",
+  "listening-count_other": "{{count}} listening",
   "loading": "Loading…",
   "loading-rooms": "Memuat ruangan...",
   "mini-close": "Hentikan dan tutup",
@@ -44,8 +45,9 @@
   "search-spotify-placeholder": "Cari di Spotify...",
   "searching": "Mencari...",
   "sign-in-to-guess": "Masuk untuk menebak.",
+  "sleep-timer-off": "Timer tidur mati. Klik untuk mengatur.",
+  "sleep-timer-on": "Timer tidur: sisa {{time}}. Klik untuk mengubah.",
   "solves-plays": "{{solves}} terpecahkan · {{plays}} pemutaran",
   "song-title-placeholder": "Judul lagu...",
-  "your-playlists": "Your playlists",
-  "listening-count_other": "{{count}} listening"
+  "your-playlists": "Your playlists"
 }

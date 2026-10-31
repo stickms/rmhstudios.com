@@ -6,6 +6,7 @@ import trBuilds from "@/locales/tr/builds.json";
 import trCAdmin from "@/locales/tr/c-admin.json";
 import trCAltair from "@/locales/tr/c-altair.json";
 import trCAwards from "@/locales/tr/c-awards.json";
+import trCBalatro from "@/locales/tr/c-balatro.json";
 import trCBlog from "@/locales/tr/c-blog.json";
 import trCBuilds from "@/locales/tr/c-builds.json";
 import trCBumsRush from "@/locales/tr/c-bums-rush.json";
@@ -59,6 +60,7 @@ import trCStatus from "@/locales/tr/c-status.json";
 import trCStudio from "@/locales/tr/c-studio.json";
 import trCSynapseStorm from "@/locales/tr/c-synapse-storm.json";
 import trCTempleOfJoy from "@/locales/tr/c-temple-of-joy.json";
+import trCTf2Game from "@/locales/tr/c-tf2-game.json";
 import trCTf2Hud from "@/locales/tr/c-tf2-hud.json";
 import trCTournaments from "@/locales/tr/c-tournaments.json";
 import trCUi from "@/locales/tr/c-ui.json";
@@ -104,6 +106,7 @@ const trResources = {
   "c-admin": trCAdmin,
   "c-altair": trCAltair,
   "c-awards": trCAwards,
+  "c-balatro": trCBalatro,
   "c-blog": trCBlog,
   "c-builds": trCBuilds,
   "c-bums-rush": trCBumsRush,
@@ -157,6 +160,7 @@ const trResources = {
   "c-studio": trCStudio,
   "c-synapse-storm": trCSynapseStorm,
   "c-temple-of-joy": trCTempleOfJoy,
+  "c-tf2-game": trCTf2Game,
   "c-tf2-hud": trCTf2Hud,
   "c-tournaments": trCTournaments,
   "c-ui": trCUi,

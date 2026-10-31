@@ -6,6 +6,7 @@ import idBuilds from "@/locales/id/builds.json";
 import idCAdmin from "@/locales/id/c-admin.json";
 import idCAltair from "@/locales/id/c-altair.json";
 import idCAwards from "@/locales/id/c-awards.json";
+import idCBalatro from "@/locales/id/c-balatro.json";
 import idCBlog from "@/locales/id/c-blog.json";
 import idCBuilds from "@/locales/id/c-builds.json";
 import idCBumsRush from "@/locales/id/c-bums-rush.json";
@@ -59,6 +60,7 @@ import idCStatus from "@/locales/id/c-status.json";
 import idCStudio from "@/locales/id/c-studio.json";
 import idCSynapseStorm from "@/locales/id/c-synapse-storm.json";
 import idCTempleOfJoy from "@/locales/id/c-temple-of-joy.json";
+import idCTf2Game from "@/locales/id/c-tf2-game.json";
 import idCTf2Hud from "@/locales/id/c-tf2-hud.json";
 import idCTournaments from "@/locales/id/c-tournaments.json";
 import idCUi from "@/locales/id/c-ui.json";
@@ -104,6 +106,7 @@ const idResources = {
   "c-admin": idCAdmin,
   "c-altair": idCAltair,
   "c-awards": idCAwards,
+  "c-balatro": idCBalatro,
   "c-blog": idCBlog,
   "c-builds": idCBuilds,
   "c-bums-rush": idCBumsRush,
@@ -157,6 +160,7 @@ const idResources = {
   "c-studio": idCStudio,
   "c-synapse-storm": idCSynapseStorm,
   "c-temple-of-joy": idCTempleOfJoy,
+  "c-tf2-game": idCTf2Game,
   "c-tf2-hud": idCTf2Hud,
   "c-tournaments": idCTournaments,
   "c-ui": idCUi,
