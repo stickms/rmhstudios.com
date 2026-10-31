@@ -395,7 +395,7 @@
       "rmh_mp_ui_reconnect_2": "Reconnect to pick up where you left off, or leave to forfeit.",
       "rmh_mp_ui_seat_held_body": "You still hold a seat in another game",
       "rmh_mp_ui_connection_lost_body": "The connection to the lobby was lost.",
-      "rmh_mp_ui_late_result": "The match you left has ended.",
+      "rmh_mp_ui_late_result": "[MultiplayerAPI] The match you left has ended.",
       "rmh_mp_ui_err_auth": "Sign in to play Multiplayer",
       "rmh_mp_ui_err_started": "That game has already started",
       "rmh_mp_ui_err_rate": "Too fast - try again in a moment",

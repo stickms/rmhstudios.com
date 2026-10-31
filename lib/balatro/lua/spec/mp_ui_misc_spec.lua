@@ -256,32 +256,61 @@ describe('ui shortcuts (LOB-12)', function()
   before_each(boot)
   after_each(UH.teardown)
 
-  it('TAB in a private lobby shows the list; a key runs it; release closes', function()
+  local function keys()
+    local out = {}
+    for i, s in ipairs(U.shortcuts.list(U.model)) do out[i] = s.key end
+    return out
+  end
+
+  it('A16: in a lobby exactly C / V / L, as the mod (host or guest, any lobby kind)', function()
+    for _, kind in ipairs({ 'private', 'party', 'casual' }) do
+      for _, guest in ipairs({ false, true }) do
+        lobby({ state = { kind = kind }, me = guest and 'u_bob' or nil, isHost = guest and false or nil })
+        expect(keys()).eq({ 'c', 'v', 'l' })
+        expect(U.shortcuts.on_key_press('tab')).truthy()
+        local def, name = UH.overlay()
+        expect(name).eq('shortcuts')
+        for _, k in ipairs({ 'r', 'o', 'i', 'j' }) do expect(UH.find(def, 'mp_sc_' .. k)).eq(nil) end
+        expect(UH.has_text(def, 'COPY CODE')).truthy()
+        expect(UH.has_text(def, 'VIEW CODE')).truthy()
+        expect(UH.has_text(def, 'Leave Lobby')).truthy()
+        U.shortcuts.close()
+      end
+    end
+  end)
+
+  it('A16: C copies the code, V shows MULTIPLAYER and the code, L leaves at once; release closes', function()
     lobby()
     expect(U.shortcuts.on_key_press('tab')).truthy()
-    local def, name = UH.overlay()
-    expect(name).eq('shortcuts')
-    expect(UH.find(def, 'mp_sc_c') ~= nil).truthy()
-    expect(UH.find(def, 'mp_sc_o') ~= nil).truthy()
-    expect(UH.find(def, 'mp_sc_r')).eq(nil)   -- the host has START, not READY
     expect(U.shortcuts.on_key_press('c')).truthy()
     expect(#UH.sent('ui_copy_code')).eq(1)
     expect(G.OVERLAY_MENU).eq(nil)
     U.shortcuts.open()
-    U.shortcuts.close()
-    expect(G.OVERLAY_MENU).eq(nil)
+    expect(U.shortcuts.on_key_press('v')).truthy()
+    local def, name = UH.overlay()
+    expect(name).eq('view_code')
+    expect(UH.has_text(def, 'MULTIPLAYER')).truthy()
+    expect(UH.find(def, 'mp_sc_code').config.text).eq(U.model.lobby.state.code)
+    G.FUNCS.exit_overlay_menu()
+    U.shortcuts.open()
+    expect(U.shortcuts.on_key_press('l')).truthy()
+    expect(#UH.sent('ui_leave')).eq(1)          -- no "Leave the lobby?" step
+    expect(U.model.lobby).eq(nil)
+    expect(UH.overlay()).eq(nil)
   end)
 
-  it('a guest gets R (ready); not on the vanilla menu; not over another overlay', function()
+  it('not on the vanilla menu; not over another overlay; not in a run', function()
     U.close()
     expect(U.shortcuts.open()).falsy()
     lobby({ me = 'u_bob', isHost = false })
     U.settings.open()
     expect(U.shortcuts.open()).falsy()
     G.FUNCS.exit_overlay_menu()
-    U.shortcuts.open()
-    expect(U.shortcuts.on_key_press('r')).truthy()
-    expect(UH.sent('ui_ready')[1].d).eq({ ready = false }) -- Bob is ready in the fixture
+    expect(U.shortcuts.open()).truthy()
+    U.shortcuts.close()
+    G.STAGE = G.STAGES.RUN
+    expect(U.shortcuts.open()).falsy()
+    G.STAGE = G.STAGES.MAIN_MENU
   end)
 
   it('A16: on the PvP menu out of a lobby: V join from clipboard, J join by code, C create lobby', function()
@@ -339,13 +368,16 @@ describe('ui: late result, test surface', function()
   before_each(boot)
   after_each(UH.teardown)
 
-  it('a win outcome while at the menu leaves a notice', function()
+  it('a win outcome while at the menu leaves a chat line, not a toast', function()
     lobby()
-    local n = #U.toasts
+    local n, lines = #U.toasts, #U.chat.lines
     MP.report.apply = MP.report.apply -- (the core handles the outcome first)
     for _, fn in ipairs(MP.report.observers.win or {}) do fn({ t = 'win', winner_id = 'u_alice' }) end
-    expect(#U.toasts).eq(n + 1)
-    expect(U.toasts[#U.toasts].text:find('You won.', 1, true) ~= nil).truthy()
+    expect(#U.toasts).eq(n)
+    expect(#U.chat.lines).eq(lines + 1)
+    local l = U.chat.lines[#U.chat.lines]
+    expect(l.kind).eq('system')
+    expect(l.text).eq('[MultiplayerAPI] The match you left has ended. You finished in place 1')
   end)
 
   it('MP.test.ready / unready in a lobby; ui ops; unknown ops fail loudly', function()

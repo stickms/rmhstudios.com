@@ -173,6 +173,18 @@ describe('in-run UI: match run', function()
       pressable = true, auto = false, color = 'normal', display = nil })
     wait_frames(2)
     expect(RU.view.timer_text).eq('43')
+    -- Speedlatro: the clock text is white, and the mod's speedlatro gradient while timered
+    MP.net.receive('timer_state', { value = 10.2, mode = 'speedlatro', ticking = false, beingTimered = false,
+      timering = false, pressable = false, auto = false, color = 'normal', display = '>>' })
+    wait_frames(2)
+    expect(RU.view.timer_text).eq('>> 10')
+    expect({ RU.timer_fg[1], RU.timer_fg[2], RU.timer_fg[3] }).eq({ G.C.WHITE[1], G.C.WHITE[2], G.C.WHITE[3] })
+    MP.net.receive('timer_state', { value = 10.2, mode = 'speedlatro', ticking = false, beingTimered = true,
+      timering = false, pressable = false, auto = false, color = 'normal', display = '>>' })
+    wait_frames(2)
+    local want = RU.speedlatro_pulse(0.9) -- -(10.2) / 2 % 1
+    for i = 1, 3 do expect(math.abs(RU.timer_fg[i] - want[i]) < 1e-6).truthy() end
+    expect(RU.timer_fg[3] < 0.99).truthy()
     expect(RU.view.my_lives).eq('4')
     outcome({ t = 'player_lives', player_id = 'u_them', lives = 3, lost = 1 })
     wait_frames(2)
