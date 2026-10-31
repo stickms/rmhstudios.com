@@ -17,13 +17,14 @@
  */
 'use client';
 
-import { ArrowLeft, Download, Maximize, Minimize, Upload } from 'lucide-react';
+import { ArrowLeft, Download, Maximize, Minimize, RotateCw, Upload, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { useLobbyInvite, useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { createCloudSaves } from '@/lib/balatro/cloud-saves';
+import { attachTextInput, TEXT_FILE } from '@/lib/balatro/text-input';
 import type { MpController, MpIntent, StubHandover } from '@/lib/balatro/mp/pack-loader';
 import {
   bootBalatro,
@@ -286,11 +287,25 @@ export default function BalatroPage() {
     run.mp.listener = setMp;
     void run.mp.controller?.then(setMp);
     sessionRef.current = null;
+    let detachText: (() => void) | null = null;
+    let gone = false;
     void run.session.then((session) => {
       sessionRef.current = session;
       canvasRef.current?.focus();
+      if (gone || !canvasRef.current || !frameRef.current) return;
+      // Phones: a tap on a text field raises the keyboard (lib/balatro/text-input.ts).
+      const { fs } = session.mp;
+      detachText = attachTextInput({
+        frame: frameRef.current,
+        canvas: canvasRef.current,
+        read: () => (fs.analyzePath(TEXT_FILE).exists ? new TextDecoder().decode(fs.readFile(TEXT_FILE)) : null),
+      });
     });
-    return () => detach(listener);
+    return () => {
+      gone = true;
+      detachText?.();
+      detach(listener);
+    };
   }, [t]);
 
   const exportSaves = async () => {
@@ -319,7 +334,15 @@ export default function BalatroPage() {
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   useEffect(() => {
-    const sync = () => setIsFullscreen(document.fullscreenElement === frameRef.current);
+    const sync = () => {
+      const on = document.fullscreenElement === frameRef.current;
+      setIsFullscreen(on);
+      // The table is wider than tall: hold a phone sideways while it fills the screen
+      // (Android; iOS has no element fullscreen on iPhone and no lock, and ignores both).
+      const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+      if (on) void orientation?.lock?.('landscape').catch(() => {});
+      else orientation?.unlock?.();
+    };
     document.addEventListener('fullscreenchange', sync);
     return () => document.removeEventListener('fullscreenchange', sync);
   }, []);
@@ -327,6 +350,25 @@ export default function BalatroPage() {
   const toggleFullscreen = () => {
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
     else void frameRef.current?.requestFullscreen?.().catch(() => {});
+    canvasRef.current?.focus();
+  };
+
+  // A phone held upright gets a square table; say once that sideways is bigger. CSS shows
+  // the hint only on a touch screen in portrait (balatro.css), so this only remembers a dismissal.
+  const [hintGone, setHintGone] = useState(() => {
+    try {
+      return typeof window !== 'undefined' && !!window.sessionStorage.getItem('rmh-balatro-rotate-hint');
+    } catch {
+      return false;
+    }
+  });
+  const dismissHint = () => {
+    setHintGone(true);
+    try {
+      window.sessionStorage.setItem('rmh-balatro-rotate-hint', '1');
+    } catch {
+      /* private mode: it shows again next visit */
+    }
     canvasRef.current?.focus();
   };
 
@@ -371,6 +413,15 @@ export default function BalatroPage() {
               <ArrowLeft className="size-4 rtl-flip" aria-hidden />
               {t('back', { defaultValue: 'Games' })}
             </a>
+          </div>
+        )}
+        {stage.kind === 'running' && !hintGone && (
+          <div className="balatro-hint" role="status">
+            <RotateCw className="size-4 shrink-0" aria-hidden />
+            <span>{t('rotate_hint', { defaultValue: 'Turn your phone sideways for a bigger table.' })}</span>
+            <button type="button" onClick={dismissHint} aria-label={t('rotate_hint_dismiss', { defaultValue: 'Dismiss' })}>
+              <X className="size-4" aria-hidden />
+            </button>
           </div>
         )}
         {stage.kind === 'running' && (

@@ -14,6 +14,9 @@
 --                            the drawing-buffer pixel ratio
 --   /rmh/dirty  Lua → page   exists when the save directory changed and should be
 --                            flushed to IndexedDB
+--   /rmh/text   Lua → page   "<hooked 0|1>\n<x> <y> <w> <h>": whether a text field has
+--                            the keyboard and where the open menu's field is (CSS px),
+--                            so a tap on it can raise the phone's keyboard (§10)
 --   /rmh/net/*  both ways    the multiplayer mailbox (§9, rmh/net.lua)
 --   /rmh/mp/*   page → Lua   the multiplayer pack's ready and autoload markers
 
@@ -213,6 +216,35 @@ local function audio_present()
   return love.filesystem.getInfo('resources/sounds/music1.ogg') ~= nil
 end
 
+-- Balatro's sound thread opens every sound file (about a hundred, decoded in full unless
+-- they are music) in one go at its start. On desktop that is a thread behind the loading
+-- screen; here it is a coroutine on the one thread that draws, and it starts while the
+-- player is already playing (the audio pack arrives after the game). Run in one piece it
+-- freezes the game for seconds, so each source it opens may spend a few milliseconds
+-- and then hands the frame back; the sound requests that arrive meanwhile wait in their
+-- channel, as they do on desktop.
+local AUDIO_SLICE = 0.004
+
+local function pace_audio_loading(env)
+  if not (love.audio and love.audio.newSource and love.timer) then
+    return
+  end
+  local slice_start = nil
+  local audio = setmetatable({
+    newSource = function(...)
+      slice_start = slice_start or love.timer.getTime()
+      local source = love.audio.newSource(...)
+      if current and love.timer.getTime() - slice_start > AUDIO_SLICE then
+        current.sleeping = true
+        coroutine.yield()
+        slice_start = love.timer.getTime()
+      end
+      return source
+    end,
+  }, { __index = love.audio })
+  env.love = setmetatable({ audio = audio }, { __index = love })
+end
+
 function Thread:start(...)
   if self.co then
     return false
@@ -222,6 +254,9 @@ function Thread:start(...)
     return true
   end
   local env = setmetatable({}, { __index = _G })
+  if self.source == SOUND_THREAD then
+    pace_audio_loading(env)
+  end
   setfenv(self.chunk, env)
   local chunk = self.chunk
   self.error = nil
@@ -641,6 +676,48 @@ local function run_frame_hooks(dt)
 end
 
 ----------------------------------------------------------------------------------
+-- 10. Text fields. Balatro types into a field through keypressed events (a tap hooks
+-- the field, Controller:key_press_update feeds it) and never asks the OS for a
+-- keyboard, so a phone shows none. The page owns a hidden <input> (lib/balatro/
+-- text-input.ts) that must be focused inside the tap's own event handler, long
+-- before Lua has seen the tap — so Lua publishes where the menu's field is, and
+-- whether it is hooked, whenever either changes (ten checks a second, and only
+-- while a menu is open).
+----------------------------------------------------------------------------------
+
+local text_check, text_last = 0, nil
+
+local function publish_text_field(dt)
+  text_check = text_check - dt
+  if text_check > 0 then
+    return
+  end
+  text_check = 0.1
+  local rect = ''
+  local overlay = G and G.OVERLAY_MENU
+  if overlay and overlay.get_UIE_by_ID and G.TILESCALE and G.TILESIZE then
+    local ok, node = pcall(overlay.get_UIE_by_ID, overlay, 'text_input')
+    if ok and node and node.T and not (node.states and node.states.visible == false) then
+      -- Nodes sit in the room, which Balatro centres in the window (love.resize).
+      local s = G.TILESCALE * G.TILESIZE
+      local ox, oy = G.ROOM and G.ROOM.T.x or 0, G.ROOM and G.ROOM.T.y or 0
+      rect = string.format('%d %d %d %d', (node.T.x + ox) * s, (node.T.y + oy) * s, node.T.w * s, node.T.h * s)
+    end
+  end
+  local hooked = (G and G.CONTROLLER and G.CONTROLLER.text_input_hook) and '1' or '0'
+  local text = hooked .. '\n' .. rect
+  if text == text_last then
+    return
+  end
+  text_last = text
+  local f = io.open('/rmh/text', 'w')
+  if f then
+    f:write(text)
+    f:close()
+  end
+end
+
+----------------------------------------------------------------------------------
 -- 8. One per-frame hook. Balatro's love.run calls love.event.pump() every frame.
 ----------------------------------------------------------------------------------
 
@@ -660,6 +737,7 @@ love.event.pump = function(...)
   release_sound_thread()
   pump_threads()
   follow_size(dt)
+  publish_text_field(dt)
   signal_dirty()
   run_frame_hooks(dt)
   return pump(...)
