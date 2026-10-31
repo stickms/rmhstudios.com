@@ -1,9 +1,9 @@
 {
   "version": "1.0.1o-FULL",
   "core": {
-    "file": "core-39874557a853.zip",
-    "bytes": 4985120,
-    "sha256": "39874557a853d029911814ea3db78fe909fb7953b21345b5cada51265f031408"
+    "file": "core-8289ab10eeef.zip",
+    "bytes": 4986316,
+    "sha256": "8289ab10eeefda5784584d64cfcaeafb385f8e661581538a067c04248e1d66f5"
   },
   "audio": {
     "file": "audio-74961b9df2d0.zip",
@@ -11,8 +11,8 @@
     "sha256": "74961b9df2d01cae65daf04f3db770768fc1f23d7c5abf802d00edeb257129a1"
   },
   "mp": {
-    "file": "mp-789e60922e60.zip",
-    "bytes": 1661123,
-    "sha256": "789e60922e605354c299057dea939b7df2ff20fee2f73aa8ba1468126c22c001"
+    "file": "mp-8dda3983bcb7.zip",
+    "bytes": 1669165,
+    "sha256": "8dda3983bcb7f692a32cb8e42eede688aeb286cb374a3e1332aa9c95ddfb3cea"
   }
 }

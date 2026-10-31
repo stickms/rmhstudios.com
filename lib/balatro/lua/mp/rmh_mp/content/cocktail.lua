@@ -3,9 +3,9 @@
 --   b_mp_cocktail   "Copies all effects of 3 other decks at random".
 --
 -- Pool (D-24): every vanilla deck except the Challenge Deck, plus the MP decks except Cocktail itself
--- and White (not shipped), in `order`. A per-player config gives each deck a state: 0 off, 1 in the
--- pool (default), 2 forced (at most 3 forced; extra forced decks are just in the pool), plus a
--- show/hide flag for the deck stickers. Pick: the forced decks first, then the rest of the pool
+-- (White is in it since EX-15 was lifted; it keeps sticker column 18), in `order`. A per-player
+-- config gives each deck a state: 0 off, 1 in the pool (default), 2 forced (at most 3 forced; extra
+-- forced decks are just in the pool), plus a show/hide flag for the deck stickers. Pick: the forced decks first, then the rest of the pool
 -- shuffled with the run's 'mp_cocktail' stream, up to 3. Each picked deck is applied in turn
 -- (vanilla config effects through the ORIGINAL Back.apply_to_run, so session wraps do not run twice;
 -- MP decks also run their own apply), and every Back.trigger_effect call is delegated to each picked
@@ -36,7 +36,7 @@ local function g(name) return rawget(_G, name) end
 K.KEY = 'b_mp_cocktail'
 K.PICKS = 3
 K.MAX_FORCED = 3
-K.EXCLUDE = { b_challenge = true, b_mp_cocktail = true, b_mp_white = true }
+K.EXCLUDE = { b_challenge = true, b_mp_cocktail = true }
 K.STICKER_COL = {
   b_red = 0, b_blue = 1, b_yellow = 2, b_green = 3, b_black = 4, b_magic = 5, b_nebula = 6, b_ghost = 7,
   b_abandoned = 8, b_checkered = 9, b_zodiac = 10, b_painted = 11, b_anaglyph = 12, b_plasma = 13, b_erratic = 14,

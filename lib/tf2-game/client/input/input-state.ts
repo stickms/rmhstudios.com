@@ -88,6 +88,11 @@ export interface InputState {
   menuOpen: boolean;
   /** Text entry or the pause menu has the keyboard: the game sees no keys. */
   suspended: boolean;
+  /**
+   * A HUD panel is clicked with the cursor (CS:GO's buy menu): the pointer is released while it is
+   * up and a click does not capture it again; the movement keys still play.
+   */
+  cursor: boolean;
 }
 
 export function createInputState(): InputState {
@@ -105,6 +110,7 @@ export function createInputState(): InputState {
     impulses: [],
     menuOpen: false,
     suspended: false,
+    cursor: false,
   };
 }
 

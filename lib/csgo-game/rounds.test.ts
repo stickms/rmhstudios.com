@@ -262,6 +262,37 @@ describe('buying', () => {
     w.teleportEntity(ct, { x: 0, y: 0, z: 100 }, null, null);
     expect(ct.buy('vest')).toMatch(/not in a buy zone/);
   });
+
+  it('prices the assault suit by what is worn: $1000, the helmet alone $350, the vest alone $650', () => {
+    const w = worldWith({ freezeTime: 10 });
+    const { ts } = teams(w, 1, 1);
+    stepUntil(w, () => w.rules.state === GR_STATE_PREROUND);
+    const t = ts[0];
+    t.money = 5000;
+    expect(t.buy('vesthelm')).toBeNull();
+    expect(t.money).toBe(4000);
+    t.helmet = false;
+    expect(t.buy('vesthelm')).toBeNull();
+    expect(t.money).toBe(3650);
+    t.armor = 40;
+    expect(t.buy('vesthelm')).toBeNull();
+    expect(t.money).toBe(3000);
+    expect(t.armor).toBe(100);
+    expect(t.helmet).toBe(true);
+  });
+
+  it('a player joining after the match start gets the start money, once', () => {
+    const w = worldWith({ freezeTime: 10 });
+    teams(w, 1, 1);
+    stepUntil(w, () => w.rules.state === GR_STATE_PREROUND);
+    const late = w.addPlayer('late') as CsPlayer;
+    expect(late.money).toBe(0);
+    late.requestTeam(CS_TEAM_CT);
+    expect(late.money).toBe(800);
+    late.money = 100;
+    late.requestTeam(CS_TEAM_T);
+    expect(late.money).toBe(100);
+  });
 });
 
 describe('the bomb', () => {

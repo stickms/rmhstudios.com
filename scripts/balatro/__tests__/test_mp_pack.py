@@ -239,13 +239,13 @@ class LocBuilderTests(unittest.TestCase):
     def test_dead_content_is_dropped(self):
         t = {
             'descriptions': {
-                'Joker': {'j_mp_8ball_release': {'name': 'x'}, 'j_mp_baron': {'name': 'x'}, 'j_mp_pizza': {'name': 'P'}},
+                'Joker': {'j_mp_8ball_release': {'name': 'x'}, 'j_mp_idol': {'name': 'x'}, 'j_mp_baron': {'name': 'B'}, 'j_mp_pizza': {'name': 'P'}},
                 'Stake': {'stake_mp_plastic': {'name': 'x'}, 'stake_mp_planet': {'name': 'Planet'}},
             }
         }
         self.assertEqual(
             bld.drop_dead(t),
-            {'descriptions': {'Joker': {'j_mp_pizza': {'name': 'P'}}, 'Stake': {'stake_mp_planet': {'name': 'Planet'}}}},
+            {'descriptions': {'Joker': {'j_mp_baron': {'name': 'B'}, 'j_mp_pizza': {'name': 'P'}}, 'Stake': {'stake_mp_planet': {'name': 'Planet'}}}},
         )
 
     def test_fallback_glyphs_only_where_missing(self):

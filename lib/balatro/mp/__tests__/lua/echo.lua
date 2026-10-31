@@ -7,7 +7,7 @@ local root, dir, count = arg[1], arg[2], tonumber(arg[3])
 package.path = root .. '/lib/balatro/lua/?.lua;' .. package.path
 local N = require('rmh/net')
 local J = require('rmh/json')
-N.OUT_TMP, N.OUT, N.IN = dir .. '/rmh/net/out.tmp', dir .. '/rmh/net/out', dir .. '/rmh/net/in'
+N.OUT_TMP, N.OUT, N.IN, N.IN_SIG = dir .. '/rmh/net/out.tmp', dir .. '/rmh/net/out', dir .. '/rmh/net/in', dir .. '/rmh/net/in.sig'
 N.log = function(m) io.stderr:write(m, '\n') end
 local stop, sent = false, 0
 N.on('toast', function(d)

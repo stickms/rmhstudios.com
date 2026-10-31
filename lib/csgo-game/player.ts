@@ -130,6 +130,8 @@ const useEye = vec3();
 
 export class CsPlayer extends Player {
   money = 0;
+  /** Has the host handed this player the start money (on first joining a side)? */
+  private startMoneyGiven = false;
   armor = 0;
   helmet = false;
   defuser = false;
@@ -597,6 +599,22 @@ export class CsPlayer extends Player {
   override requestClass(cls: number): void {
     void cls;
     super.requestClass(CS_PLAYER_CLASS);
+  }
+
+  /**
+   * Joining a side for the first time brings mp_startmoney, as in CS:GO, so a player or bot that
+   * arrives after the match start does not play with $0. Switching sides later keeps the money.
+   */
+  override requestTeam(team: number): void {
+    if (
+      this.world.isServer &&
+      !this.startMoneyGiven &&
+      (team === CS_TEAM_T || team === CS_TEAM_CT)
+    ) {
+      this.startMoneyGiven = true;
+      this.money = this.cs.csRules.settings.startMoney;
+    }
+    super.requestTeam(team);
   }
 
   override spawnPlayer(): boolean {

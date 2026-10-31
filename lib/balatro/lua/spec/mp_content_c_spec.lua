@@ -1072,7 +1072,7 @@ describe('DK-08 Cocktail', function()
     expect(K.parse(nil).show).eq(true)
   end)
 
-  it('the pool holds vanilla and MP decks but never Cocktail, White or the Challenge Deck (D-24)', function()
+  it('the pool holds vanilla and MP decks (White too, EX-15 lifted) but never Cocktail or the Challenge Deck (D-24)', function()
     setup()
     local keys = {}
     for _, c in ipairs(MP.content.cocktail.all_decks(true)) do keys[c.key] = true end

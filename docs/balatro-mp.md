@@ -199,9 +199,9 @@ into `rmh_mp/loc/<lang>.lua` in the pack:
   (the mod's stale keys), a different shape, or a `#n#` placeholder English does not
   fill. `--verbose` lists them all.
 - **Excluded content is dropped from every language**, so it neither ships nor pulls
-  glyphs into the fonts. That is the Release ruleset (EX-14), Baron, Mime and the
-  White Deck (EX-15), the alt stakes (EX-16), and `j_broken`, `j_mp_idol`,
-  `j_to_the_moon_mp` and the `m_gold` balanced note (A2 §14).
+  glyphs into the fonts. That is the Release ruleset (EX-14), the alt stakes (EX-16),
+  and `j_broken`, `j_mp_idol`, `j_to_the_moon_mp` and the `m_gold` balanced note
+  (A2 §14). Baron, Mime and the White Deck ship since EX-15 was lifted.
 - **Missing typographic punctuation is replaced.** `’`, `“”`, `…` and similar marks
   that a language's font lacks become their ASCII form (the mod's French uses `’`,
   which `m6x11plus` cannot draw).
@@ -486,14 +486,20 @@ vanilla loads the save. A fresh single-player run deletes the sidecar.
 - Lua pumps once per frame from `rmh_web.lua` §9, after `RMH.frame_hooks` (each called
   as `fn(dt)`, paused or not). It writes its batch to `out.tmp`, renames it to `out`,
   then reads `in` whole and removes it. While `out` still exists, Lua holds its batch.
-  Idle cost: one failed `io.open` per frame.
+  Lua opens nothing on an idle frame (a failed `io.open` on MEMFS throws and catches a
+  JS `ErrnoError`, ~0.1 ms): JS writes `in.sig` non-empty whenever it writes `in`, Lua
+  keeps `in.sig` open, checks its size once a frame (one seek), empties it and only then
+  reads `in`. An unsignalled `in` is still read every 30th frame; without `in.sig` Lua
+  polls `in` every frame. A header-only (ack) batch goes out at most every 8 frames;
+  batches with messages go out the frame they are sent.
 - JS hears the rename through `FS.trackingDelegate.onMovePath` (installed in
   `runtime.ts`, chaining any existing delegate). Inside that call it reads and unlinks
   `out`, and writes pending inbound lines to `in` (the in-call reply). Listeners run in
   a microtask, outside the FS call.
 - `onDeletePath(in)` means Lua consumed the file. Without delegates (and across
   processes in the conformance test), JS polls every 16 ms and forgets an inbound line
-  only once Lua's batch header acks it. Lua sends a header-only batch to ack.
+  only once Lua's batch header acks it. Lua sends a header-only batch to ack (at most
+  every 8 frames).
 - Lua drops `s ≤ last`; JS drops Lua duplicates the same way. Both sides validate
   (`bridge-codec.ts`, generated from the zod contract; `RMH.net.validate`, which the
   MP pack sets to `protocol.lua`), log and drop.

@@ -256,7 +256,7 @@ export default function GameCanvas({
   const [menuBusy, setMenuBusy] = useState(false);
   useEffect(() => {
     if (!running) return;
-    const id = window.setInterval(() => setMenuBusy(input.menuOpen || input.suspended), 200);
+    const id = window.setInterval(() => setMenuBusy(input.menuOpen || input.suspended || input.cursor), 200);
     return () => window.clearInterval(id);
   }, [input, running]);
   const showPlayPrompt = running && !touchFirst && !locked && !choosing && !menuBusy;
@@ -333,6 +333,7 @@ export default function GameCanvas({
           onSettingsChange={onSettingsChange}
           onDisconnect={onExit}
           touchActions={touchActions}
+          onCapture={play}
         />
       ) : null}
 

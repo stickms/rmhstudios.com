@@ -90,6 +90,8 @@ export interface GameHudProps {
   layout?: HudLayout;
   /** Page controls the touch controls carry in their top row (full screen, the invite link). */
   touchActions?: readonly TouchAction[];
+  /** Captures the pointer again (a cursor panel, the buy menu, closed by a key or a click). */
+  onCapture?: () => void;
   /** Previews: start with a menu open / the scoreboard held / the touch overlay on. */
   initialMenu?: HudMenu;
   forceScores?: boolean;
@@ -118,6 +120,7 @@ function HudBody({
   touch,
   store,
   touchActions,
+  onCapture,
 }: Omit<GameHudProps, 'layout' | 'forceTouch'> & { touch: boolean }) {
   const { t } = useTranslation('c-tf2-game');
   const state = useHudState();
@@ -426,7 +429,7 @@ function HudBody({
       {game === 'portal' && state.portal ? <PortalHud portal={state.portal} fade={state.fade} /> : null}
       {game === 'csgo' && state.cs ? (
         <Suspense fallback={null}>
-          <CsHud state={state} store={store} />
+          <CsHud state={state} store={store} input={input} onCapture={onCapture} />
         </Suspense>
       ) : null}
       {game !== 'tf2' ? <Captions captions={state.captions} /> : null}

@@ -359,12 +359,13 @@ def read_json(path: Path):
 
 # Mod localization for content this port does not ship (PLAN §2.13), dropped from every
 # language so it neither ships nor pulls glyphs into the core fonts: the Release ruleset
-# (EX-14), Baron/Mime/White Deck (EX-15), alt stakes (EX-16), and entries A2 §14 found
-# no live object for (j_broken, j_mp_idol, j_to_the_moon_mp, the m_gold balanced note).
+# (EX-14), alt stakes (EX-16), and entries A2 §14 found no live object for (j_broken,
+# j_mp_idol, j_to_the_moon_mp, the m_gold balanced note). Baron, Mime and the White Deck
+# (EX-15) ship since that exclusion was lifted (rmh_mp/content/{jokers/rarity_shifted,white_deck}.lua).
 DEAD_LOC = re.compile(
     r'_release$'
-    r'|^(j_mp_baron|j_mp_mime|j_mp_idol|j_broken|j_to_the_moon_mp|b_mp_white)$'
-    r'|^mp_sticker_balanced_(m_gold|j_mp_baron|j_mp_mime)$'
+    r'|^(j_mp_idol|j_broken|j_to_the_moon_mp)$'
+    r'|^mp_sticker_balanced_m_gold$'
     r'|^stake_mp_(plastic|pebble|ferrite|pyrite|crystal|jade|antimatter)$'
 )
 
