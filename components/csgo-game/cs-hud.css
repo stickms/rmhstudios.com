@@ -206,8 +206,7 @@
   color: var(--csg-ink);
 }
 
-/* The buy menu and the scoreboard: panels in the game's own palette, over the view. */
-.csg-buy,
+/* The scoreboard: a panel in the game's own palette, over the view. */
 .csg-scores {
   position: absolute;
   top: 50%;
@@ -222,64 +221,193 @@
   color: var(--app-text);
   text-shadow: none;
 }
-.csg-buy header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+
+/*
+ * The buy menu: CS:GO's radial wheel — a dark translucent ring of wedges around a hub, the hovered
+ * wedge lit in our team's colour. It covers the view (a click beside the wheel is not a shot, and a
+ * right click anywhere goes back) and sizes itself to the smaller side of the HUD.
+ */
+.csg-hud[data-team='2'] {
+  --csg-team: var(--csg-t);
 }
-.csg-buy header h2 {
-  font-size: 1.125rem;
+.csg-hud[data-team='3'] {
+  --csg-team: var(--csg-ct);
+}
+.csg-buy {
+  --csg-wedge: rgb(12 14 18 / 0.72);
+  --csg-wedge-edge: rgb(255 255 255 / 0.12);
+  /* Resolved by the children, against this container. */
+  --wheel: min(34rem, 100cqw, calc(100cqh - 4rem));
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: calc(var(--safe-top, 0px) + 0.5rem) calc(var(--safe-right, 0px) + 1rem) calc(var(--safe-bottom, 0px) + 0.5rem)
+    calc(var(--safe-left, 0px) + 1rem);
+  text-shadow: none;
+  user-select: none;
+}
+.csg-wheel {
+  position: relative;
+  width: var(--wheel);
+  height: var(--wheel);
+  container-type: inline-size;
+}
+.csg-wheel svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.csg-wheel-hub {
+  fill: rgb(12 14 18 / 0.86);
+  stroke: color-mix(in srgb, var(--csg-team, var(--csg-ink)) 45%, transparent);
+  stroke-width: 1.5;
+}
+.csg-wheel-wedge {
+  fill: var(--csg-wedge);
+  stroke: var(--csg-wedge-edge);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  transition: fill 120ms ease-out;
+}
+.csg-wheel-slice {
+  cursor: pointer;
+}
+/* The focus ring is the wedge's own edge (below), not the global ring's bounding box. */
+.csg-wheel .csg-wheel-slice:focus-visible {
+  outline: none;
+}
+.csg-wheel-slice[data-hover] .csg-wheel-wedge {
+  fill: color-mix(in srgb, var(--csg-team, var(--app-accent)) 88%, transparent);
+  stroke: var(--csg-team, var(--app-accent));
+}
+.csg-wheel-slice:focus-visible .csg-wheel-wedge {
+  stroke: var(--csg-ink);
+  stroke-width: 3;
+}
+.csg-wheel-slice[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+.csg-wheel-slice[aria-disabled='true'][data-hover] .csg-wheel-wedge {
+  fill: rgb(40 42 48 / 0.82);
+  stroke: var(--csg-wedge-edge);
+}
+.csg-wheel-text {
+  pointer-events: none;
+}
+.csg-wheel-text text {
+  fill: var(--csg-ink);
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.csg-wheel-text .csg-wheel-key {
+  fill: var(--csg-ink-dim);
+  font-size: 9px;
+  font-weight: 600;
+}
+.csg-wheel-text .csg-wheel-price {
+  fill: var(--csg-ink-dim);
+  font-size: 9px;
+  font-weight: 600;
+}
+.csg-wheel-slice[data-hover] .csg-wheel-text text {
+  fill: rgb(12 14 18);
+}
+.csg-wheel-slice[aria-disabled='true'] .csg-wheel-text {
+  opacity: 0.42;
+}
+.csg-wheel-slice[aria-disabled='true'] .csg-wheel-text .csg-wheel-price,
+.csg-wheel-slice[aria-disabled='true'][data-hover] .csg-wheel-text .csg-wheel-price {
+  fill: var(--csg-low);
+}
+.csg-wheel-slice[aria-disabled='true'][data-hover] .csg-wheel-text text:not(.csg-wheel-price) {
+  fill: var(--csg-ink);
+}
+
+/* The hub's readout, over the SVG's hub circle (40% of the wheel, as the ring's inner edge is). */
+.csg-wheel-centre {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: 36cqi;
+  height: 36cqi;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6cqi;
+  text-align: center;
+  pointer-events: none;
+}
+.csg-wheel-heading {
+  max-width: 100%;
+  color: var(--csg-team, var(--csg-ink-dim));
+  font-size: max(0.6875rem, 3cqi);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.csg-wheel-item {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: max(0.75rem, 3.6cqi);
   font-weight: 700;
 }
-.csg-buy header span {
-  margin-inline-start: auto;
-  color: var(--app-text-muted);
-  font-size: 0.875rem;
+.csg-wheel-money {
+  font-size: max(1.125rem, 6cqi);
+  font-weight: 700;
+  line-height: 1.1;
 }
-.csg-buy header button {
+.csg-wheel-money[data-short] {
+  color: var(--csg-low);
+}
+.csg-wheel-time {
+  color: var(--csg-ink-dim);
+  font-size: max(0.6875rem, 2.8cqi);
+}
+.csg-wheel-back {
+  pointer-events: auto;
+  min-height: 2.75rem;
+  margin-top: 0.4cqi;
+  padding: 0 0.875rem;
+  border-radius: var(--app-radius-sm);
+  background: rgb(255 255 255 / 0.1);
+  color: var(--csg-ink);
+  font-size: max(0.75rem, 2.8cqi);
+  font-weight: 600;
+}
+.csg-wheel-back:hover {
+  background: rgb(255 255 255 / 0.18);
+}
+.csg-wheel-close {
+  position: absolute;
+  top: 0;
+  right: 0;
   min-width: 2.75rem;
   min-height: 2.75rem;
   border-radius: var(--app-radius-sm);
+  background: var(--csg-wedge);
+  color: var(--csg-ink);
   font-size: 1.25rem;
 }
-.csg-buy-groups {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-  margin-bottom: 0.75rem;
+.csg-wheel-close:hover {
+  background: rgb(40 42 48 / 0.9);
 }
-.csg-buy-groups button {
-  min-height: 2.75rem;
-  padding: 0 0.875rem;
+.csg-wheel-hint {
+  max-width: var(--wheel);
+  padding: 0.25rem 0.75rem;
   border-radius: var(--app-radius-sm);
-  border: 1px solid var(--app-border);
-  font-size: 0.8125rem;
-}
-.csg-buy-groups button[aria-pressed='true'] {
-  background: var(--app-accent);
-  color: var(--app-accent-fg);
-  border-color: transparent;
-}
-.csg-buy-items {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
-  gap: 0.5rem;
-}
-.csg-buy-items button {
-  display: flex;
-  width: 100%;
-  min-height: 2.75rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0 0.75rem;
-  border-radius: var(--app-radius-sm);
-  background: var(--app-surface);
-  font-size: 0.875rem;
-}
-.csg-buy-items button:disabled {
-  opacity: 0.45;
+  background: var(--csg-panel);
+  color: var(--csg-ink-dim);
+  font-size: 0.75rem;
+  text-align: center;
 }
 
 .csg-scores section + section {
