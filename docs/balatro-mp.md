@@ -302,6 +302,25 @@ WS6 (Lua core):
   shuffle are not reproduced; vouchers and shuffles use the rewritten keys only
   (`*_resample` advances one queue, `nr`/`cashout` are per blind).
 
+### Lobby options and the pause menu (audit C15, E23, C17)
+
+- D-15: `different_seeds`, `different_decks`, `random_loadout`, `normal_bosses` and
+  `multiplayer_jokers` are Advanced lobby options. The mod's Lobby Options screen exposes none of
+  them (they keep their `core.lua` defaults and no ruleset sets them), so this is the one way to
+  reach them; what they do is the mod's. `legacy_smallworld`, `disable_live_and_timer_hud`,
+  `forced_config`, `weekly` and the `cocktail` lobby option are excluded (EX-19).
+- `different_decks` (the mod's `lobby_start_run` / `copy_host_deck`): a player's own pick stays in
+  its Lua (`MP.loadout`, set by the run setup's `loadout` mode, cleared with each new lobby) and is
+  applied by `MP.session.mount`, as each mod client applies its own `PVP.LOBBY.deck`; nothing
+  goes over the wire. A guest picks a deck and a stake only (no challenge, no MP stake: the host's
+  MP stake applies to everyone), and a per-player deck drops the host's challenge.
+- `random_loadout` is rolled by the host (`buildMatch` → `perPlayer`), not by each client: each
+  player's deck and stake come from `hashString(<run seed>:loadout:<player id>)`, the analogue of
+  the mod's `pseudohash(seed .. "_mp_random_" .. username)`. The MP decks join the pool only
+  when the ruleset has MP content (RS-16 isolation; the mod's pool always lists them).
+- Pause menu: Practice's Seed Change restarts the practice run on a fresh seed. The mod shows the
+  button there too, but its vote needs a lobby, so it does nothing.
+
 ### WS4 (pure match logic)
 
 - Pairing is a true 1-factorisation (stable per-run order + circle method with a BYE slot, bounded search, then reset); A1's adjacent-pair rotation can repeat a pair early for n ≥ 6.
@@ -339,8 +358,11 @@ WS6 (Lua core):
   The Blue Seal ignores the owner's 1-in-2 balance change (1.0.0 had none) and makes a random
   Planet. Magic Mouth still steals that Planet (the release wrap goes through trap_hooks' `seal_watch`). Release + an MP stake: the MP stake's scaling past 3 uses the generic
   curve; its Perishables/Rentals survive Orange/Gold.
-- Alt stakes: Plastic's interest is the mod's text ("$1 of interest per $10", same cap in dollars
-  earned), which its code never implemented (it only switched vanilla interest off). To the
+- Alt stakes: Plastic's interest is the mod's: its `lovely/stakes.toml` switches vanilla interest
+  off and adds its own cash-out row (`mp_modified_interest`) paying
+  `interest_amount × min(floor($ / 10), cap / 10)`, i.e. $1 per $10 with the same cap in dollars
+  earned, and ours pays the same (an earlier version of this line said the mod never implemented
+  it; the independent audit, docs/balatro-mp-parity.md §Audit, found the row). To the
   Moon's bonus scales with the step; Seed Money and Money Tree read as they are (the cap in dollars
   earned is unchanged).
 - Nemesis sticker: the mod gives it no behaviour (art, `hide_badge`, an enable flag nothing sets).
@@ -682,6 +704,18 @@ error within 2.5 s" as sent.
 
 **Spectate list (MM-07).** `balatro:spectate:list` answers from the directory
 (`listSpectatableLobbies`).
+
+**Find Game counts (audit A12).** While Find Game is on screen and the hub is up, Lua
+(`ui/pillars.lua`) sends `ui_queue_counts` every 5 s; `attach.ts` forwards it as
+`balatro:queue:counts` and mirrors the answer to Lua as `queue_counts` (live text, no re-render).
+The hub answers every casual mode with `queued` (players on tickets, across content hashes) and
+`inGame` (seats held in `casual` rooms), computed at most once a second for everyone
+(`COUNTS_TTL_MS`); 30 asks a minute per socket.
+
+**Queue guard (audit A18).** While searching or matched, `G.FUNCS.start_run` (New Run,
+Continue, Challenges, restart), CREATE, an invite's Join and the menu shortcuts open
+"Matchmaking In Progress" (`ui/queue_guard.lua`): Leave Queue & Continue (leaves, then replays
+the action), Leave Queue, Stay Queued. MP's own launches (`S.launching`) and session runs pass.
 
 **PR-05.** `isQueued(runtime)` (attach.ts) is true while searching; the runtime's
 `practiceGuard` then refuses Practice with `lobby_error practice` (the search keeps running), and

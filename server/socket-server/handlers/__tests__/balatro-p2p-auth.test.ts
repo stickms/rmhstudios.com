@@ -51,6 +51,7 @@ const VALID: Record<keyof typeof BALATRO_C2S, unknown> = {
   'balatro:party:queue': { code: 'ABCDEF', queueMode: 'pvp_nemesis' },
   'balatro:invite': { code: 'ABCDEF', toUserId: 'u' },
   'balatro:spectate:list': {},
+  'balatro:queue:counts': {},
 };
 
 let world: ReturnType<typeof makeWorld>;

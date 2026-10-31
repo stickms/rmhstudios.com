@@ -309,6 +309,7 @@ local DENY = {
   wishlist_steam = true, louisf_insta = true, demo_survey = true, loc_survey = true, go_to_demo_cta = true,
   show_main_cta = true, start_tutorial = true, profile_select = true, language_selection = true,
   start_setup_run = true, start_challenge_run = true, test_framework = true,
+  rmh_mp_credits_link = true,
 }
 -- option_cycle callbacks that touch the window or the language
 local DENY_CYCLE = {
@@ -549,7 +550,7 @@ local OPTIONS = {
   ruleset = 'ruleset_mp_balanced', gamemode = 'gamemode_mp_attrition', trapCards = true, manhuntHunterLives = 7,
   startingLives = 4, pvpStartRound = 2, timer = true, timerBaseSeconds = 150, timerIncrementSeconds = 60, timerForgiveness = 0,
   pvpCountdownSeconds = 3, deathOnRoundLoss = true, goldOnLifeLoss = true, noGoldOnRoundLoss = false, customSeed = 'random',
-  theOrder = true, hideScoreUntilPlayed = false, normalBosses = false, differentSeeds = false, differentDecks = false,
+  theOrder = true, hideScoreUntilPlayed = false, previewDisabled = false, normalBosses = false, differentSeeds = false, differentDecks = false,
   randomLoadout = false, multiplayerJokers = true, modifierLayers = {}, seatGraceMs = 120000,
 }
 
@@ -679,6 +680,15 @@ describe('sweep: MP menu', function()
     sweep_overlay('join code', function() U.overlays.join_code() end)
     sweep_overlay('leave confirm', function() U.confirm_leave() end)
     sweep_overlay('shortcuts', function() U.shortcuts.open() end)
+    sweep_overlay('credits', function() U.credits.open() end)
+    for page = 1, #U.order_info.PAGES do
+      sweep_overlay('the order page ' .. page, function() U.order_info.open(); G.FUNCS.rmh_mp_order_page({ to_key = page }) end)
+    end
+    sweep_overlay('queue guard', function()
+      recv('queue_view', { state = 'searching', queueMode = 'pvp_nemesis' })
+      U.queue_guard(function() end)
+    end, function() recv('queue_view', { state = 'idle', queueMode = 'pvp_nemesis' }) end)
+    recv('queue_view', { state = 'idle', queueMode = 'pvp_nemesis' })
     for _, code in ipairs({ 'version-mismatch', 'seat-held:SWP234', 'kicked', 'clipboard-empty', 'lobby-full', 'bogus' }) do
       sweep_overlay('notice ' .. code, function() recv('lobby_error', { code = code }) end)
     end

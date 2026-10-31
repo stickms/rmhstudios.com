@@ -453,6 +453,11 @@ describe('pause menu (HUD-10, D-38)', function()
     return out
   end
 
+  -- The button node carrying `id` (UIBox_button puts the id on the button node).
+  local function node(def, id)
+    return UH.find_all(def, function(x) return x.config and x.config.id == id end)[1]
+  end
+
   it('match: settings, seed change (first 300 s), vote for draw, forfeit, collection; no restart', function()
     boot()
     G.TIMERS.REAL = 100
@@ -463,9 +468,18 @@ describe('pause menu (HUD-10, D-38)', function()
     expect(b.setup_run).eq(nil)
     expect(b.go_to_menu).eq(nil)
     G.TIMERS.REAL = 301
-    b = ids(create_UIBox_options())
+    def = create_UIBox_options()
+    b = ids(def)
     expect(b.mp_vote_seed).eq(nil)
     expect(b.mp_vote_draw).truthy()
+    -- E23: after the window Seed Change stays, greyed out and inert (the mod's disableable button).
+    local seed = node(def, 'mp_pause_seed')
+    expect(seed ~= nil).truthy()
+    expect(seed.config.button).eq(nil)
+    expect(seed.config.colour).eq(G.C.UI.BACKGROUND_INACTIVE)
+    local order = {}
+    for _, it in ipairs(MP.ui.pause.items()) do order[#order + 1] = it.id end
+    expect(order).eq({ 'mp_pause_settings', 'mp_pause_seed', 'mp_pause_draw', 'mp_pause_forfeit', 'your_collection' })
   end)
 
   it('votes are game events; progress is shown', function()
@@ -493,13 +507,30 @@ describe('pause menu (HUD-10, D-38)', function()
     expect(left).eq(1)
   end)
 
-  it('practice: main menu and the practice toggles, no votes', function()
+  it('practice: seed change and forfeit (to the menu) as the mod, the practice toggles, no draw vote', function()
     practice()
+    G.TIMERS.REAL = 10
+    MP.ui.pause.run_started = 0
     local def = create_UIBox_options()
     local b = ids(def)
-    expect(b.go_to_menu).truthy()
+    local order = {}
+    for _, it in ipairs(MP.ui.pause.items()) do order[#order + 1] = it.id end
+    expect(order).eq({ 'mp_pause_settings', 'mp_pause_seed', 'mp_pause_forfeit', 'your_collection' })
+    expect(node(def, 'mp_pause_forfeit').config.button).eq('go_to_menu')
+    expect(b.mp_vote_seed).truthy()
     expect(b.mp_vote_draw).eq(nil)
     expect(b.mp_forfeit_ask).eq(nil)
+    -- Seed Change restarts the practice run on a fresh seed (a solo vote is unanimous); no event.
+    local launched
+    MP.session.launcher = function(sess) launched = sess.seed end
+    G.FUNCS.mp_vote_seed()
+    expect(launched ~= nil and launched ~= 'PRACTICE').truthy()
+    expect(#H.events('seed_vote')).eq(0)
+    G.TIMERS.REAL = 400
+    expect(node(create_UIBox_options(), 'mp_pause_seed').config.button).eq(nil)
+    launched = nil
+    G.FUNCS.mp_vote_seed()
+    expect(launched).eq(nil)
     local t = texts_of(def)
     expect(t:find('Unlimited Slots', 1, true) ~= nil).truthy()
     expect(t:find('Edition Cycling', 1, true) ~= nil).truthy()
@@ -670,6 +701,65 @@ describe('HUD effects and banners (HUD-07/08/17)', function()
     expect(rows[3].status).eq('away')
     expect(MP.ui.lobby_info.open()).eq(true)
     expect(texts_of(UH.overlays[#UH.overlays]):find('Lobby Info', 1, true) ~= nil).truthy()
+  end)
+
+  it('Lobby Info shows player cards as the mod; anyone at 0 lives (or forfeited) is debuffed (C17)', function()
+    boot(3)
+    MP.state.lives = { u1 = 4, u2 = 0, u3 = 2 }
+    MP.state.presence = { u3 = { status = 'forfeited' } }
+    local rows = MP.ui.lobby_info.rows()
+    expect({ rows[1].out, rows[2].out, rows[3].out }).eq({ false, true, true })
+    expect(MP.ui.lobby_info.open()).eq(true)
+    local def = UH.overlays[#UH.overlays]
+    local debuffed = {}
+    for _, id in ipairs({ 'u1', 'u2', 'u3' }) do
+      local cell = UH.find(def, 'mp_lobby_info_' .. id)
+      expect(cell ~= nil).truthy()
+      local obj = UH.find_all(cell, function(x) return x.config and x.config.object and x.config.object.cards end)[1]
+      local card = obj.config.object.cards[1]
+      expect(card.mp_player.id).eq(id)
+      debuffed[#debuffed + 1] = card.debuff
+    end
+    expect(debuffed).eq({ false, true, true })
+    -- Clicking another player's card opens the per-player actions (here: the mute fallback).
+    local cell = UH.find(def, 'mp_lobby_info_u2')
+    local card = UH.find_all(cell, function(x) return x.config and x.config.object and x.config.object.cards end)[1]
+      .config.object.cards[1]
+    card:click()
+    expect(MP.ui.lobby_info.muted.u2).eq(true)
+  end)
+end)
+
+-- ── Late result (A19) ───────────────────────────────────────────────────────
+
+describe('late result toast (A19: a match that ended while this player was at the menu)', function()
+  after_each(UH.teardown)
+
+  local function late(o, stage)
+    boot(3)
+    G.STAGE = G.STAGES[stage or 'MAIN_MENU']
+    G.ROOM_ATTACH = G.ROOM_ATTACH or {}
+    local U = MP.ui
+    local n = #U.toasts
+    MP.net.receive('outcome', { hs = 50, o = o })
+    local last = U.toasts[#U.toasts]
+    if #U.toasts == n or not last or last.key ~= 'mp_late_result' then return nil end
+    return last.text
+  end
+
+  it('says the match ended and how: won, draw, place, lost', function()
+    expect(late({ t = 'win', winner_id = 'u1' })).eq('The match you left has ended. You won.')
+    UH.teardown()
+    expect(late({ t = 'win', draw = true })).eq('The match you left has ended. It was a draw.')
+    UH.teardown()
+    expect(late({ t = 'win', winner_id = 'u2', places = { u2 = 1, u3 = 2, u1 = 3 } }))
+      .eq('The match you left has ended. You finished in place 3')
+    UH.teardown()
+    expect(late({ t = 'win', winner_id = 'u2' })).eq('The match you left has ended. You lost.')
+  end)
+
+  it('nothing in a run (the end screen shows the result there)', function()
+    expect(late({ t = 'win', winner_id = 'u1' }, 'RUN')).eq(nil)
   end)
 end)
 

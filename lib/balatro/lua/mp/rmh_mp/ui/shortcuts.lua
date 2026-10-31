@@ -2,7 +2,9 @@
 -- key (HUD-11). One wrap each on Controller.key_press_update / key_release_update (group 'ui').
 --
 -- In a lobby, holding TAB shows SHORTCUTS: C copy code, V view code, R ready/unready (guests),
--- O lobby options, I invite, L leave. A listed key runs its action; releasing TAB closes it.
+-- O lobby options, I invite, L leave. On the PvP menu screens out of a lobby (online): V join
+-- from the clipboard, J join by code, C create lobby (A16). A listed key runs its action;
+-- releasing TAB closes it.
 -- T opens chat (in a lobby or an MP session) unless a text box has focus.
 
 local MP = require 'rmh_mp.state'
@@ -15,12 +17,32 @@ U.shortcuts = SC
 
 local F = G.FUNCS
 
---- The shortcuts for the current lobby view: { key, label, run }.
+--- The PvP menu out of a lobby (A16, the mod's `elseif connected`): V join from the clipboard,
+--- J join by code, C create a lobby (the Create Lobby page). A search running meanwhile opens the
+--- queue guard instead (queue_guard.lua).
+local function guarded(fn)
+  return function()
+    if U.queue_guard and U.queue_guard(fn) then return end
+    return fn()
+  end
+end
+SC.MENU = {
+  { 'v', 'b_join_lobby_clipboard', 'Join From Clipboard', guarded(function() return F.rmh_mp_join_clipboard() end) },
+  { 'j', 'b_join_lobby', 'Join Lobby', guarded(function() return F.rmh_mp_join_code() end) },
+  { 'c', 'b_create_lobby', 'Create Lobby', guarded(function() return F.rmh_mp_create() end) },
+}
+
+--- The shortcuts for the current lobby view, or for the PvP menu: { key, label, run }.
 function SC.list(model)
   local view = model.lobby
-  if not view then return {} end
   local out = {}
   local function add(key, label, def, fn) out[#out + 1] = { key = key, label = TH.T(label, def), run = fn } end
+  if not view then
+    if U.screen and U.screen ~= 'lobby' and model.net and model.net.hub == 'connected' then
+      for _, s in ipairs(SC.MENU) do add(s[1], s[2], s[3], s[4]) end
+    end
+    return out
+  end
   if view.state.kind ~= 'casual' then
     add('c', 'rmh_mp_ui_copy_code_cap', 'COPY CODE', F.rmh_mp_copy_code)
     add('v', 'rmh_mp_ui_view_code_cap', 'VIEW CODE', F.rmh_mp_view_code)
@@ -47,7 +69,9 @@ end
 
 function SC.open()
   if SC.is_open or G.OVERLAY_MENU then return false end
-  if not (U.screen == 'lobby' and U.model.lobby and U.at_main_menu()) then return false end
+  if not U.at_main_menu() then return false end
+  local in_lobby = U.screen == 'lobby' and U.model.lobby
+  if not in_lobby and (U.model.lobby or #SC.list(U.model) == 0) then return false end
   SC.is_open = true
   W.overlay({ name = 'shortcuts', no_back = true, contents = SC.contents(U.model) })
   return true

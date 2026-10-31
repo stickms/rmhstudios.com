@@ -192,6 +192,8 @@ function ST.contents()
       W.col({ W.toggle({ label = TH.T('rmh_mp_ui_chat_section_title', 'Chat'), ref_table = ST.ref, ref_value = 'chat',
         callback = function(v) ST.set('chat', v == true) end, w = 1.5, id = 'mp_set_chat' }) }),
     }),
+    -- Score Preview (B06/B07): preview/init.lua owns the row and its settings.
+    MP.preview and MP.preview.settings_row and MP.preview.settings_row() or nil,
   }
 end
 

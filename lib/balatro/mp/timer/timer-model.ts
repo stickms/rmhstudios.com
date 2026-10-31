@@ -38,6 +38,11 @@
  *   unstarted the display shows the threshold; a press above it is only
  *   announced when the clock falls to it (with the threshold value).
  *
+ * - Score Preview cost (M03, the mod's layer `preview_calculate_cost`): a
+ *   calculation outside PvP costs 3.5 s under pressure / no_animation (free
+ *   otherwise), only while nobody is timering, not consumed, and only above
+ *   max(10 s, cost) — it never kills the clock.
+ *
  * Reconstruction: the PvP timer's receiver does not adopt the presser's
  * value (each player's PvP clock is their own budget, +10 s per own hand);
  * the ante timer's receiver does (TIM-02).
@@ -55,6 +60,9 @@ export const TIMER_CONSTANTS = {
   SPEEDLATRO_SPEEDUP: 2,
   /** TIM-01: whole seconds above this, one decimal at or below. */
   DECIMAL_BELOW: 9.95,
+  /** M03: a Score Preview calculation's cost (pressure / no_animation) and the floor it keeps. */
+  PREVIEW_COST: 3.5,
+  PREVIEW_FLOOR: 10,
 } as const;
 
 export type CueMode = 'always' | 'once' | 'off';
@@ -138,6 +146,8 @@ export type TimerInput =
   | { t: 'skip' }
   | { t: 'opp_skip' }
   | { t: 'hand_played' }
+  /** A Score Preview calculation (M03). */
+  | { t: 'preview' }
   | { t: 'pvp_start' }
   | { t: 'pvp_end' }
   | { t: 'score'; me: number; them: number; first: boolean; gotInfo?: boolean }
@@ -445,6 +455,21 @@ export function timerStep(state: TimerModelState, input: TimerInput): TimerStep 
       if (pvpTimerActive(s)) s.value += s.cfg.pvpHandIncrement;
       else if (!s.onPvp && s.cfg.mode === 'pressure') s.value += s.cfg.pressurePlusHand;
       break;
+    case 'preview': {
+      const cost =
+        s.cfg.mode === 'pressure' || s.cfg.mode === 'no_animation' ? TIMER_CONSTANTS.PREVIEW_COST : 0;
+      if (
+        cost > 0 &&
+        s.cfg.enabled &&
+        !s.onPvp &&
+        !s.timering &&
+        !s.beingTimered &&
+        !s.consumed &&
+        s.value > Math.max(TIMER_CONSTANTS.PREVIEW_FLOOR, cost)
+      )
+        s.value -= cost;
+      break;
+    }
     case 'pvp_start':
       s.onPvp = true;
       s.pvpEnded = false;

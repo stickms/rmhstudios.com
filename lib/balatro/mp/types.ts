@@ -11,7 +11,8 @@
  *    camelCase (`trapCards`, `seatGraceMs`). Every field here is camelCase;
  *    the A1 name is in the comment next to it. `queue_mode`, `back`/`stake`/
  *    `challenge` live on LobbyState, not in the options. `preview_disabled`
- *    is dropped (EX-12/D-40), as are the EX-19 options. `gamemode` is fixed
+ *    is `previewDisabled` (M03: the Score Preview ships; EX-12 was wrong); the
+ *    EX-19 options are dropped. `gamemode` is fixed
  *    to Attrition (the only content profile, A1 §2.1).
  * 2. **Shape.** `Shape` gains `practice?: boolean` because §3.f's rules say
  *    "Practice runs refStep with `shape.practice=true`".
@@ -126,6 +127,8 @@ export const zLobbyOptions = z.object({
   theOrder: z.boolean(),
   /** `hide_score_until_played` (D-02, default off) */
   hideScoreUntilPlayed: z.boolean(),
+  /** `preview_disabled` — no Score Preview in this match (forced by Major League, Sandbox). */
+  previewDisabled: z.boolean(),
   /** `normal_bosses` (D-15) */
   normalBosses: z.boolean(),
   /** `different_seeds` (D-15) */

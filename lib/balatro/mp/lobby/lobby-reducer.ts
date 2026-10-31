@@ -11,11 +11,11 @@
  * `seatGraceMs` is accepted only in test builds (PLAN §6.3).
  */
 
-import { VANILLA_DECKS } from '../setup/draft';
+import { MP_DECKS, VANILLA_DECKS } from '../setup/draft';
 import { resolveRuleset } from '../rulesets/resolve';
 import { defaultOptionsFor, sanitizeOptions, shapeFor } from '../rulesets/options';
 import { requiredPacks } from '../rulesets/rulesets';
-import { Rng } from '../rng';
+import { Rng, hashString } from '../rng';
 import type {
   Id,
   LobbyKind,
@@ -270,8 +270,15 @@ export function buildMatch(s: LobbyState, inp: StartInputs): StartedMatch {
     if (p.team) e.team = p.team;
     return e;
   });
+  // C15 (the mod's lobby_start_run): `differentDecks` off, everyone plays the host's deck; on,
+  // each guest plays its own pick, which its Lua applies (session.lua `S.mount`). Only with
+  // `differentDecks` does `randomLoadout` roll each player a deck from the Cocktail pool (the MP
+  // decks only where MP content is on, RS-16) and a stake, seeded by the run seed and the player.
+  const loadout = options.differentDecks && options.randomLoadout;
+  const banned = new Set([...resolved.banned, ...resolved.bannedSilent]);
+  const pool = [...VANILLA_DECKS, ...(resolved.multiplayerContent ? MP_DECKS : [])].filter((k) => !banned.has(k));
   let perPlayer: StartedMatch['perPlayer'];
-  if (options.differentSeeds || options.differentDecks || options.randomLoadout) {
+  if (options.differentSeeds || loadout) {
     perPlayer = {};
     for (const p of players) {
       const entry: NonNullable<StartedMatch['perPlayer']>[string] = {};
@@ -280,8 +287,11 @@ export function buildMatch(s: LobbyState, inp: StartInputs): StartedMatch {
         for (let i = 0; i < 8; i++) ps += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[rng.int(36)];
         entry.seed = ps;
       }
-      if (options.differentDecks || options.randomLoadout) entry.deck = rng.pick(VANILLA_DECKS) ?? 'b_red';
-      if (options.randomLoadout) entry.stake = rng.range(1, 8);
+      if (loadout) {
+        const own = Rng.fromSeed(hashString(`${entry.seed ?? seed}:loadout:${p.id}`));
+        entry.deck = own.pick(pool) ?? 'b_red';
+        entry.stake = own.range(1, 8);
+      }
       perPlayer[p.id] = entry;
     }
   }

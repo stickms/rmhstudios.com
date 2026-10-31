@@ -462,6 +462,50 @@ describe('no-animation timer (TIM-05)', () => {
   });
 });
 
+describe('Score Preview cost (M03, layers preview_calculate_cost)', () => {
+  it('pressure and no_animation: 3.5 s per calculation outside PvP, idle clock only', () => {
+    for (const layers of [['pressure_timer'], ['no_animation_timer']]) {
+      const c = new Clock(cfgLayers(layers));
+      const v = c.s.value;
+      expect(c.in({ t: 'preview' })).toEqual([]);
+      expect(c.s.value).toBe(v - TIMER_CONSTANTS.PREVIEW_COST);
+      // Being timered or timering: free (the mod's timer_started / nemesis_timer_started).
+      c.in({ t: 'remote', op: 'start', time: 50, isPvP: false });
+      c.in({ t: 'preview' });
+      expect(c.s.value).toBe(50);
+    }
+  });
+  it('never takes the clock to or below max(10 s, cost); never on the PvP blind; never when consumed', () => {
+    const c = new Clock(cfgLayers(['pressure_timer']));
+    c.s = { ...c.s, value: 10 };
+    c.in({ t: 'preview' });
+    expect(c.s.value).toBe(10);
+    c.s = { ...c.s, value: 13 };
+    c.in({ t: 'preview' });
+    expect(c.s.value).toBe(9.5);
+    c.in({ t: 'pvp_start' });
+    const pv = c.s.value;
+    c.in({ t: 'preview' });
+    expect(c.s.value).toBe(pv);
+    const d = new Clock(cfgLayers(['pressure_timer']));
+    d.s = { ...d.s, consumed: true, value: 100 };
+    d.in({ t: 'preview' });
+    expect(d.s.value).toBe(100);
+  });
+  it('default ante timer, speedlatro and a disabled timer: free', () => {
+    for (const cfg of [
+      cfgFor('ruleset_mp_balanced'),
+      cfgLayers(['speedlatro_timer']),
+      cfgLayers(['pressure_timer'], { timer: false }),
+    ]) {
+      const c = new Clock(cfg);
+      const v = c.s.value;
+      c.in({ t: 'preview' });
+      expect(c.s.value).toBe(v);
+    }
+  });
+});
+
 describe('Major League display threshold (TIM-06)', () => {
   it('shows the threshold while above it and unstarted; a press above it is announced at the threshold', () => {
     const c = new Clock({ ...cfgFor('ruleset_mp_majorleague'), base: 240 });
