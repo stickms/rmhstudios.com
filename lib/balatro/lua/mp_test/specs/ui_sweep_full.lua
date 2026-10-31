@@ -115,11 +115,17 @@ local function clean(where)
   expect(f).eq({})
 end
 
+-- The game collects garbage a step per frame (nuGC: 0.3 ms, a full collect only past 300 MB). The
+-- sweep builds hundreds of tooltips and screens per minute of software-WebGL frames, far more
+-- garbage per frame than a player makes, so the heap would climb toward the wasm page's limit
+-- ("Not enough memory"). Collect when it passes what a player's session reaches.
+local SWEEP_HEAP_MB = 96
 local function settle(n)
   while #echoes > 0 do
     local e = table.remove(echoes, 1)
     pcall(e)
   end
+  if collectgarbage('count') / 1024 > SWEEP_HEAP_MB then collectgarbage('collect') end
   wait_frames(n or 3)
 end
 
@@ -294,6 +300,7 @@ local function hover_cards(where)
       if c.playing_card then sig = phase .. '|playing|' .. area end
       if not hovered[sig] then
         hovered[sig] = true
+        if count.hovers % 40 == 0 and collectgarbage('count') / 1024 > SWEEP_HEAP_MB then collectgarbage('collect') end
         count.hovers = count.hovers + 1
         try('hover ' .. where .. ' ' .. key, function() c:hover(); c:stop_hover() end)
       end
