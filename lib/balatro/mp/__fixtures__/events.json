@@ -319,6 +319,135 @@
     "balatro:queue:counts": {
       "valid": [{}],
       "invalid": []
+    },
+    "balatro:match:result": {
+      "valid": [
+        {
+          "runId": "run1",
+          "draw": false,
+          "winners": ["u_alice"],
+          "places": {}
+        },
+        {
+          "runId": "run2",
+          "draw": true,
+          "winners": [],
+          "places": {
+            "u_alice": 1,
+            "u_bob": 1
+          }
+        },
+        {
+          "runId": "run3",
+          "draw": false,
+          "winners": ["u_alice", "u_carol"],
+          "places": {
+            "u_alice": 1,
+            "u_bob": 2,
+            "u_carol": 1,
+            "u_dave": 3
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "empty runId",
+          "d": {
+            "runId": "",
+            "draw": false,
+            "winners": [],
+            "places": {}
+          }
+        },
+        {
+          "why": "place 0",
+          "d": {
+            "runId": "run1",
+            "draw": false,
+            "winners": [],
+            "places": {
+              "u_bob": 0
+            }
+          }
+        },
+        {
+          "why": "place 17",
+          "d": {
+            "runId": "run1",
+            "draw": false,
+            "winners": [],
+            "places": {
+              "u_bob": 17
+            }
+          }
+        },
+        {
+          "why": "too many winners",
+          "d": {
+            "runId": "run1",
+            "draw": false,
+            "winners": [
+              "u0",
+              "u1",
+              "u2",
+              "u3",
+              "u4",
+              "u5",
+              "u6",
+              "u7",
+              "u8",
+              "u9",
+              "u10",
+              "u11",
+              "u12",
+              "u13",
+              "u14",
+              "u15",
+              "u16"
+            ],
+            "places": {}
+          }
+        },
+        {
+          "why": "too many places",
+          "d": {
+            "runId": "run1",
+            "draw": false,
+            "winners": [],
+            "places": {
+              "u0": 1,
+              "u1": 1,
+              "u2": 1,
+              "u3": 1,
+              "u4": 1,
+              "u5": 1,
+              "u6": 1,
+              "u7": 1,
+              "u8": 1,
+              "u9": 1,
+              "u10": 1,
+              "u11": 1,
+              "u12": 1,
+              "u13": 1,
+              "u14": 1,
+              "u15": 1,
+              "u16": 1
+            }
+          }
+        },
+        {
+          "why": "no draw flag",
+          "d": {
+            "runId": "run1",
+            "winners": [],
+            "places": {}
+          }
+        }
+      ]
+    },
+    "balatro:match:pending": {
+      "valid": [{}],
+      "invalid": []
     }
   },
   "s2c": {
@@ -1092,6 +1221,51 @@
                 "ante": null
               }
             ]
+          }
+        }
+      ]
+    },
+    "balatro:match:result": {
+      "valid": [
+        {
+          "runId": "run1",
+          "r": "won"
+        },
+        {
+          "runId": "run1",
+          "r": "draw"
+        },
+        {
+          "runId": "run1",
+          "r": "lost"
+        },
+        {
+          "runId": "run1",
+          "r": "lost",
+          "place": 3
+        }
+      ],
+      "invalid": [
+        {
+          "why": "unknown result",
+          "d": {
+            "runId": "run1",
+            "r": "forfeit"
+          }
+        },
+        {
+          "why": "place 0",
+          "d": {
+            "runId": "run1",
+            "r": "lost",
+            "place": 0
+          }
+        },
+        {
+          "why": "runId too long",
+          "d": {
+            "runId": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+            "r": "won"
           }
         }
       ]

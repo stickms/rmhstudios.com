@@ -85,6 +85,22 @@ export const zQueueCounts = z.object({
     .max(8),
 });
 
+/**
+ * HUD-24: the result of a finished match, for one player who had left it (Leave, forfeit, a closed
+ * tab). The hub works it out per receiver from the host's `balatro:match:result` and sends it to
+ * that account only (handlers/balatro-p2p.ts); the page hands it to Lua as `late_result`.
+ */
+export const zLateResult = z.object({
+  runId: z.string().min(1).max(32),
+  r: z.enum(['won', 'draw', 'lost']),
+  /** The finishing place, when the ruleset ranks players and this one did not win. */
+  place: z.number().int().min(1).max(BALATRO_LIMITS.MAX_PLAYERS).optional(),
+});
+
+const zPlaces = z
+  .record(zUserId, z.number().int().min(1).max(BALATRO_LIMITS.MAX_PLAYERS))
+  .refine((p) => Object.keys(p).length <= BALATRO_LIMITS.MAX_PLAYERS, 'too many places');
+
 /** A relay frame as the server sees it (`Buffer` is a `Uint8Array`). */
 const zRelayIn = z
   .instanceof(Uint8Array)
@@ -174,6 +190,19 @@ export const BALATRO_C2S = {
   'balatro:spectate:list': z.object({}),
   /** Find Game's per-mode counts (A12); answered with the S2C event of the same name. */
   'balatro:queue:counts': z.object({}),
+  /**
+   * HUD-24, the room's current host only: the match `runId` of this room ended. The hub sends each
+   * roster player no longer in the room their own `balatro:match:result` (once per run).
+   */
+  'balatro:match:result': z.object({
+    runId: z.string().min(1).max(32),
+    draw: z.boolean(),
+    /** The winning player, or every player of the winning team. */
+    winners: z.array(zUserId).max(BALATRO_LIMITS.MAX_PLAYERS),
+    places: zPlaces,
+  }),
+  /** HUD-24: deliver results queued for this account, and push later ones to this socket. */
+  'balatro:match:pending': z.object({}),
 } as const satisfies Record<string, z.ZodType>;
 
 /* ─── S2C (hub → client) ─────────────────────────────────────────────────── */
@@ -236,6 +265,8 @@ export const BALATRO_S2C = {
   }),
   'balatro:invited': z.object({ code: zCode, fromUserId: zUserId, fromName: z.string().max(64) }),
   'balatro:queue:counts': zQueueCounts,
+  /** HUD-24: a match this account left has ended (only ever sent to that account). */
+  'balatro:match:result': zLateResult,
   'balatro:spectate:lobbies': z.object({
     lobbies: z
       .array(

@@ -25,7 +25,11 @@
  *     successor (the host-named one, else the earliest-joined connected
  *     player) or closes (`host-lost`). A deliberate `leave` promotes at once;
  *   - lets a host `resume` its room after a socket blip, and re-claim its code
- *     after a hub restart when the code is free (NET-12).
+ *     after a hub restart when the code is free (NET-12);
+ *   - carries late results (HUD-24, balatro/results.ts): the room's current
+ *     host reports a finished run once; each player the hub seated for that
+ *     run and who is no longer in the room gets their own line, pushed to the
+ *     Balatro pages that asked (`balatro:match:pending`) or queued briefly.
  *
  * The matchmaking / party / invite / spectate-list events are WS12's
  * (handlers/balatro-queue.ts).
@@ -58,6 +62,7 @@ import {
   lastPeerOf,
   newRoomMeta,
   playerCount,
+  recordRoster,
   rememberPeer,
   resetBalatroDirectoryForTests,
   seat,
@@ -69,6 +74,7 @@ import {
   type BalatroMember,
   type BalatroRoom,
 } from '../balatro/directory';
+import { enqueue, listen, listenersOf, resetLateResultsForTests, resultFor, take, unlisten } from '../balatro/results';
 
 /** The events this handler binds (the rest of BALATRO_C2S belongs to the queue handler). */
 export const BALATRO_P2P_C2S_EVENTS = [
@@ -84,6 +90,8 @@ export const BALATRO_P2P_C2S_EVENTS = [
   'balatro:p2p:leave',
   'balatro:p2p:close',
   'balatro:seat:query',
+  'balatro:match:result',
+  'balatro:match:pending',
 ] as const;
 type P2pEvent = (typeof BALATRO_P2P_C2S_EVENTS)[number];
 
@@ -445,6 +453,7 @@ export function registerBalatroP2pHandlers(io: Server, socket: Socket): void {
         room.meta.reclaimed = false;
         for (const userId of state.members) if (userId && !room.kicked.has(userId)) seat(room, userId);
       }
+      if (state.started && state.runId) recordRoster(room, state.runId, state.members);
     },
 
     'balatro:p2p:kick': (data) => {
@@ -522,6 +531,41 @@ export function registerBalatroP2pHandlers(io: Server, socket: Socket): void {
       closeRoom(io, room, 'host-closed');
     },
 
+    'balatro:match:result': (data) => {
+      const event = 'balatro:match:result';
+      const me = account(event);
+      if (!me) return;
+      // Only the room's current host (the successor after a migration) speaks for its runs.
+      const room = hosted(event);
+      if (!room) return;
+      const roster = room.meta.rosters.get(data.runId);
+      if (!roster) return fail(socket, event, 'not-found');
+      if (roster.sent) return;
+      roster.sent = true;
+      // Players still in the room (linked, or re-admitted after a migration) get it over P2P.
+      const inRoom = new Set<string>();
+      for (const m of room.members.values()) if (m.socketId && m.role === 'player') inRoom.add(m.account.userId);
+      let sent = 0;
+      for (const userId of roster.users) {
+        if (userId === me.userId || inRoom.has(userId)) continue;
+        const notice = resultFor(data, userId);
+        const sockets = listenersOf(userId);
+        if (sockets.length === 0) enqueue(userId, notice, Date.now());
+        for (const id of sockets) emitTo(io, id, 'balatro:match:result', notice);
+        sent += 1;
+      }
+      logger.info({ event: 'balatro_late_results', code: room.code, sent });
+    },
+
+    'balatro:match:pending': () => {
+      const me = account('balatro:match:pending');
+      if (!me) return;
+      listen(me.userId, socket.id);
+      for (const notice of take(me.userId, Date.now())) {
+        socket.emit(BALATRO_S2C_EVENTS['balatro:match:result'], notice satisfies BalatroS2CPayload<'balatro:match:result'>);
+      }
+    },
+
     'balatro:seat:query': () => {
       const me = account('balatro:seat:query');
       if (!me) return;
@@ -547,6 +591,8 @@ export function registerBalatroP2pHandlers(io: Server, socket: Socket): void {
 
 /** The socket went: a host's room is held for its grace; a member's seat stays, its entry may not. */
 export function handleBalatroP2pDisconnect(io: Server, socket: Socket): void {
+  const acct = balatroAccount(socket);
+  if (acct) unlisten(acct.userId, socket.id);
   const mine = balatroHub.memberOf(socket.id);
   if (mine) {
     const { room, member } = mine;
@@ -565,6 +611,7 @@ export function handleBalatroP2pDisconnect(io: Server, socket: Socket): void {
 /** Test seam: forget every room, seat and timer. */
 export function resetBalatroP2pForTests(): void {
   resetBalatroDirectoryForTests();
+  resetLateResultsForTests();
   timeoutBound = false;
   setBalatroHostTimeoutHandler(null);
 }

@@ -284,7 +284,7 @@
           "text": "gg"
         },
         {
-          "text": "été — café"
+          "text": "\u00e9t\u00e9 \u2014 caf\u00e9"
         }
       ],
       "invalid": [
@@ -1103,6 +1103,36 @@
             "deck": "b_red",
             "stake": 1,
             "seed": null
+          }
+        }
+      ]
+    },
+    "late_result": {
+      "valid": [
+        {
+          "runId": "run1",
+          "r": "won"
+        },
+        {
+          "runId": "run1",
+          "r": "lost",
+          "place": 2
+        }
+      ],
+      "invalid": [
+        {
+          "why": "unknown result",
+          "d": {
+            "runId": "run1",
+            "r": "left"
+          }
+        },
+        {
+          "why": "place 17",
+          "d": {
+            "runId": "run1",
+            "r": "lost",
+            "place": 17
           }
         }
       ]
