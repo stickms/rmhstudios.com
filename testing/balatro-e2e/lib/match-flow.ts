@@ -31,41 +31,18 @@ export async function lobbyCode(host: Peer, timeoutMs = 120_000): Promise<string
   }
 }
 
-const seatHeldCount = async (p: MpPlayer): Promise<number> =>
-  (await p.cmd<{ list: { d: { code?: string } }[] }>('mp_inbox', { t: 'lobby_error' })).list.filter(
-    (x) => x.d.code === 'seat-held',
-  ).length;
-
 /**
- * Create a private lobby and return its code. A real player whose account still holds a seat
- * from the previous scenario's match (the hub keeps it for the seat grace after a match that
- * ended with Return to Lobby + Leave) gets `seat-held`; it then does what a player does on the
- * "Seat held" prompt — Leave (ui_seat abandon) — and creates again. Logged, so it stays
- * visible.
+ * Create a private lobby and return its code. The previous scenario's account has just
+ * left its lobby (often within the host's leave drain); the session sends that leave
+ * before this create, so the hub has released the seat and the create is accepted —
+ * a `seat-held` refusal here is the bug this proves fixed, and fails the test.
  */
 export async function create(host: Peer, queueMode: string): Promise<string> {
   if (isBot(host)) {
     await host.ui('ui_create_lobby', { queueMode, kind: 'private' });
     return lobbyCode(host);
   }
-  const before = await seatHeldCount(host);
   await host.ui('create', { queueMode, kind: 'private' });
-  let held = false;
-  await waitFor(
-    `${host.label}: a lobby code or seat-held`,
-    async () => {
-      if ((await host.snap()).code) return true;
-      held = (await seatHeldCount(host)) > before;
-      return held;
-    },
-    120_000,
-    500,
-  ).catch(() => {});
-  if (held) {
-    process.stdout.write(`# ${host.label}: create refused with seat-held; leaving the held seat and creating again\n`);
-    await host.cmd('mp_send', { t: 'ui_seat', d: { op: 'abandon' } });
-    await host.ui('create', { queueMode, kind: 'private' });
-  }
   return lobbyCode(host);
 }
 

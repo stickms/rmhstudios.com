@@ -100,12 +100,12 @@ pnpm balatro:gen-protocol --check   # CI freshness check (protocol-lua.test.ts a
 
 ## 3. Tests
 
-| Suite            | Command                 | What                                                                                                         |
-| ---------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Balatro          | `pnpm test:balatro`     | `lib/balatro/mp`, `lib/shared/p2p`, `server/socket-server/balatro`, `scripts/balatro`, plus the Lua L1 specs |
-| Lua L1 only      | `pnpm test:balatro:lua` | `lua5.1 lib/balatro/lua/spec/runner.lua [--filter text] [files…]` (TAP output)                               |
-| E2E (WS14)       | `pnpm test:balatro:e2e` | `harness` · `engine` (L2 specs in love.wasm) · `match` (real browsers + bot peers; needs Postgres)           |
-| Main (critical)  | `pnpm test`             | hub auth walk, rate-limit coverage, save-path safety, pack manifest                                          |
+| Suite           | Command                 | What                                                                                                         |
+| --------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Balatro         | `pnpm test:balatro`     | `lib/balatro/mp`, `lib/shared/p2p`, `server/socket-server/balatro`, `scripts/balatro`, plus the Lua L1 specs |
+| Lua L1 only     | `pnpm test:balatro:lua` | `lua5.1 lib/balatro/lua/spec/runner.lua [--filter text] [files…]` (TAP output)                               |
+| E2E (WS14)      | `pnpm test:balatro:e2e` | `harness` · `engine` (L2 specs in love.wasm) · `match` (real browsers + bot peers; needs Postgres)           |
+| Main (critical) | `pnpm test`             | hub auth walk, rate-limit coverage, save-path safety, pack manifest                                          |
 
 The Lua specs need **PUC Lua 5.1** (`apt-get install lua5.1`, or set `LUA51=`).
 `lua-specs.test.ts` fails with an install hint without it and never skips.
@@ -290,6 +290,7 @@ WS6 (Lua core):
 - `hello.rejoin` is set only by a peer whose Lua run is gone (a reload): the host answers with the referee's `rejoined` resync and the 3-minute catch-up clock. A peer whose run is still live (a network drop, a host migration) sends `rejoin: null`; the host replays its outcome log to it instead (deduplicated by `hs`) and reports it `back`.
 - A crash rejoiner counts as caught up at its first `flags` past ante 0 after `rejoin_restore`; it tells the host with a second `player_info` (the wire has no member-to-host presence kind).
 - A deliberate host leave sends its forfeit, the checkpoint and `bye` over P2P and asks the hub to hand over 500 ms later, so the successor's checkpoint already holds the forfeit.
+- Seats across a Leave: a deliberate Leave gives the seat up at once; only a crash or a dropped socket keeps it for the rejoin (`seat-held` + the Seat-held prompt). Because the host's hub `leave` waits out that 500 ms drain, the roles emit through the runtime's `HubGate` (`lobby/hub-gate.ts`): every hub emit made during the drain (Create, Join, the seat prompt) is queued and sent right after the `leave`, so the hub never sees the next claim while the old room still holds the seat. A host refused before its room exists ends with `seat-held:<code>` like a member, so the prompt can Rejoin that room.
 - Display sync is not filtered by JS: every peer message reaches Lua with its sender, and Lua keeps its target's (report.lua already filters, and `opp_ctx` needs every sender for `mp_from_target`).
 
 ### WS11 / wave 3 (in-run UI)
@@ -540,18 +541,18 @@ engine FS, the CSPRNG) into `lobby/runtime.ts`, which is browser-free: the
 `lib/balatro/mp/__tests__/session/` suite runs whole lobbies on FakeNet channels against
 the real hub handler (`world.test-support.ts`).
 
-| Module                                                 | Role                                                                                                                                                                                                             |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `transport/wire-link.ts`                               | One host-member link: §3.b envelopes as CONTROL frames on a `ReliableLink`; every frame validated (`wire-codec.ts`), per-peer limits 40/s burst 100 (`log` 20/s burst 1024), `kick` never accepted from the wire |
-| `transport/host-star.ts`, `member.ts`                  | `DirectConnection` per pair (`endOfCandidates: false`), hub relay fallback keyed by `relaySlotOf(peerId)`; members drop host-only kinds that carry `f`                                                           |
-| `lobby/lobby-reducer.ts`                               | The versioned lobby state machine (ready, teams, options through WS4's `sanitizeOptions`, start, kick, return to lobby)                                                                                          |
-| `lobby/lobby-host.ts`                                  | Admission, `hello` version check, `welcome`, lobby broadcast, hub directory `state`, presence (away after 5 s silent, seat grace, catch-up limit), referee wiring, §3.b relay with `f` stamped, chat relay       |
-| `lobby/lobby-member.ts`                                | Join, versioned mirror, queued game events across a link loss, reconnect, promotion hand-off                                                                                                                     |
-| `match/match-host.ts`                                  | WS4 `refStep` driver: `hs`, checkpoints coalesced to 250 ms, ticks at `wakeAt`, serialised re-entrant inputs                                                                                                     |
-| `match/match-member.ts`, `routing.ts`                  | Every player's controller: `hs` dedupe, targets from outcomes, §3.b routing, WS4 timer model on the monotonic clock, 5 s result watchdog                                                                         |
-| `migration.ts`, `rejoin/*`                             | Successor `hs` gap, takeover checkpoint (held or rebuilt); IndexedDB snapshots keyed by `runId` (newest 3) and the rejoin hint                                                                                   |
-| `chat.ts`, `identity.ts`, `history.ts`, `ratelimit.ts` | Chat (sender and receiver 5-burst 1/s, mute; the site block list from GET /api/moderation/block is muted at start, never saved), glyph-bitmap sanitising, local history, token buckets                           |
-| `wire-codec.ts`                                        | zod-free validation of the wire, the hub's S2C and the client-checked domain types, over descriptors generated into `bridge-schema.gen.ts`                                                                       |
+| Module                                                 | Role                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `transport/wire-link.ts`                               | One host-member link: §3.b envelopes as CONTROL frames on a `ReliableLink`; every frame validated (`wire-codec.ts`), per-peer limits 40/s burst 100 (`log` 20/s burst 1024), `kick` never accepted from the wire                                                                                         |
+| `transport/host-star.ts`, `member.ts`                  | `DirectConnection` per pair (`endOfCandidates: false`), hub relay fallback keyed by `relaySlotOf(peerId)` (the member starts it; the host moves on its first relayed frame; a relay link times out after 60 s, since its close never reaches the other end); members drop host-only kinds that carry `f` |
+| `lobby/lobby-reducer.ts`                               | The versioned lobby state machine (ready, teams, options through WS4's `sanitizeOptions`, start, kick, return to lobby)                                                                                                                                                                                  |
+| `lobby/lobby-host.ts`                                  | Admission, `hello` version check, `welcome`, lobby broadcast, hub directory `state`, presence (away after 5 s silent, seat grace, catch-up limit), referee wiring, §3.b relay with `f` stamped, chat relay                                                                                               |
+| `lobby/lobby-member.ts`                                | Join, versioned mirror, queued game events across a link loss, reconnect, promotion hand-off                                                                                                                                                                                                             |
+| `match/match-host.ts`                                  | WS4 `refStep` driver: `hs`, checkpoints coalesced to 250 ms, ticks at `wakeAt`, serialised re-entrant inputs                                                                                                                                                                                             |
+| `match/match-member.ts`, `routing.ts`                  | Every player's controller: `hs` dedupe, targets from outcomes, §3.b routing, WS4 timer model on the monotonic clock, 5 s result watchdog                                                                                                                                                                 |
+| `migration.ts`, `rejoin/*`                             | Successor `hs` gap, takeover checkpoint (held or rebuilt); IndexedDB snapshots keyed by `runId` (newest 3) and the rejoin hint                                                                                                                                                                           |
+| `chat.ts`, `identity.ts`, `history.ts`, `ratelimit.ts` | Chat (sender and receiver 5-burst 1/s, mute; the site block list from GET /api/moderation/block is muted at start, never saved), glyph-bitmap sanitising, local history, token buckets                                                                                                                   |
+| `wire-codec.ts`                                        | zod-free validation of the wire, the hub's S2C and the client-checked domain types, over descriptors generated into `bridge-schema.gen.ts`                                                                                                                                                               |
 
 **No zod in the MP chunk.** zod v4 classic cannot be tree-shaken. Nothing the chunk
 imports may import `wire.ts`, `types.ts`, `events.ts` or `bridge-protocol.ts` at
@@ -689,30 +690,30 @@ to restart at index 0 while the peers already held the player's events 0..N, so 
 was dropped as duplicates and playback stopped at the bare `manifest {rejoin}`. Now the log
 continues where the peers have it, and the markers carry what playback needs:
 
-1. *The count.* A crash rejoiner's `welcome` carries `logNext` = how many events of its log the
+1. _The count._ A crash rejoiner's `welcome` carries `logNext` = how many events of its log the
    host holds contiguously (`ReplayTap.logLength`; any seated player's welcome does, a live run
    ignores it). The runtime passes it on as `match_start.logNext` (`beginMatch(match, 'rejoin',
-   logNext)`). The host also runs the spectator catch-up for the rejoiner, so its TS gets back
+logNext)`). The host also runs the spectator catch-up for the rejoiner, so its TS gets back
    every log so far, its own included (`peerLog` accepts the own id; the `chk` waits until the
    own log is contiguous through `end`).
-2. *The mount marker.* With `logNext ≥ 2` (the host holds the manifest and the lobby info) the
+2. _The mount marker._ With `logNext ≥ 2` (the host holds the manifest and the lobby info) the
    recorder starts at that index with `manifest {rejoin, v:2, mount, seg}` instead of
    `match_manifest` + `lobby_info`. A fresh launch (the restore arrived after it) still records
    `run_info`.
-3. *The restore marker.* Every MP snapshot's `state.json` records `log_i`, the log index it was
+3. _The restore marker._ Every MP snapshot's `state.json` records `log_i`, the log index it was
    taken at (the state is the run after events `[0, log_i)`). A restore (`S.restore_raw`, shared
    by `rejoin_restore` and playback) records `manifest {rejoin, v:2, restore, from: log_i, seg,
-   parts, z, len}` before the run loads, followed by `parts` events `manifest {snap: j, data}`
+parts, z, len}` before the run loads, followed by `parts` events `manifest {snap: j, data}`
    carrying `"<#state>:<state.json><run.jkr>"`, deflated and base64-encoded through `love.data`
    (`z:'deflate'`; `'raw'` text cut on UTF-8 boundaries where `love.data` is missing), ≤ 6 KB
    per part. In-engine a shop snapshot of 62 KB travels as about 9 KB in 2 parts.
-4. *Playback.* `mount` re-mounts the session from the log's `lobby_info` as the reloaded page
+4. _Playback._ `mount` re-mounts the session from the log's `lobby_info` as the reloaded page
    did (the next `run_info` launches again); `restore` reassembles the snapshot and restores it
    through `S.restore_raw`, as the live rejoin did (a live feed waits for missing parts; a
    stored log missing them stops with "snapshot incomplete"). Reaching index `from` of a known
    restore marker with `from < seg` jumps to `seg`: `[from, seg)` is the progress the reload
    lost. A spectator that already played it simply restores over it.
-5. *Overlap.* If a peer holds events of the old life past the host's count (it got them, the
+5. _Overlap._ If a peer holds events of the old life past the host's count (it got them, the
    host had not, e.g. after a host migration), the marker lands on an index holding a different
    event: `PlayerLog.add` (TS) and `PL.feed` (Lua) drop everything from that index on and file
    the marker (`AddResult.rewound`; a spectator feeds Lua again from there; a playback past it

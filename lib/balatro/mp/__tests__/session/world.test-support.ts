@@ -65,6 +65,33 @@ export function fakeScheduler(net: FakeNet): Scheduler {
   };
 }
 
+/** A peer's view of the shared clock: while its page is frozen, its timer callbacks wait. */
+export function frozenScheduler(base: Scheduler, hub: () => FakeHub): Scheduler {
+  const run = (fn: () => void) => {
+    const h = hub();
+    if (h.frozen) h.heldTimers.push(fn);
+    else fn();
+  };
+  return {
+    now: base.now,
+    mono: base.mono,
+    after: (ms, fn) => base.after(ms, () => run(fn)),
+    every(ms, fn) {
+      // A frozen page's interval fires once when it thaws, not once per missed period.
+      let waiting = false;
+      return base.every(ms, () => {
+        if (waiting) return;
+        if (!hub().frozen) return fn();
+        waiting = true;
+        run(() => {
+          waiting = false;
+          fn();
+        });
+      });
+    },
+  };
+}
+
 /* ─── Fake Lua ───────────────────────────────────────────────────────────── */
 
 export class FakeLua implements BridgeLike {
@@ -167,7 +194,9 @@ export class FakeHub implements HubLike {
     const deliver = (event: string, payload: unknown) => {
       const copy = payload instanceof Uint8Array ? payload.slice() : structuredClone(payload);
       this.world.net.at(this.world.net.now + HUB_LATENCY_MS, () => {
-        if (this.gen === gen && this.status === 'connected') this.dispatch(event, copy);
+        if (this.gen !== gen || this.status !== 'connected') return;
+        if (this.held) this.held.push(() => this.dispatch(event, copy));
+        else this.dispatch(event, copy);
       });
     };
     const s = sock as unknown as { emit: (e: string, p: unknown) => void; volatile: { emit: (e: string, p: unknown) => void } };
@@ -183,8 +212,35 @@ export class FakeHub implements HubLike {
     for (const fn of [...(this.listeners.get(event) ?? [])]) fn(parsed.data);
   }
 
+  /** While frozen, what arrives waits for the page (and nothing it would send leaves). */
+  private held: (() => void)[] | null = null;
+
+  /** The page's timers held with it (`frozenScheduler`); they run after the held messages. */
+  readonly heldTimers: (() => void)[] = [];
+
+  get frozen(): boolean {
+    return this.held !== null;
+  }
+
+  /**
+   * The page stalls (one long frame on a starved machine): its socket stays up at the hub, but
+   * nothing reaches the page, it sends nothing and its timers wait (`frozenScheduler`). On
+   * `freeze(false)` the page handles what queued up, socket messages first, then its timers.
+   */
+  freeze(on: boolean): void {
+    if (on) {
+      this.held ??= [];
+      return;
+    }
+    const held = this.held ?? [];
+    this.held = null;
+    for (const fn of held) fn();
+    for (const fn of this.heldTimers.splice(0)) fn();
+  }
+
   emit(event: BalatroC2SEvent, data: unknown): void {
     if (this.status !== 'connected') return;
+    if (this.held) return;
     this.emitted.push({ event, data });
     const sock = this.socket;
     const payload = data instanceof Uint8Array ? data.slice() : structuredClone(data);
@@ -237,6 +293,11 @@ const DIRECT_TIMEOUT_MS = 8_000;
 export class FakeConnector implements PeerConnector {
   /** Make this peer's direct path fail (the relay takes over, E2E-15). */
   blockDirect = false;
+  /**
+   * When this peer gives up on the direct path. A starved page (CI: three engine pages on four
+   * cores) runs its timer late, so the two ends of a pair can fall back seconds apart.
+   */
+  directTimeoutMs = DIRECT_TIMEOUT_MS;
   /** The simulated network path of the links this peer creates as host. */
   path: { latencyMs: number; jitterMs?: number; loss?: number; reorder?: boolean } = { latencyMs: 5 };
   readonly conns: { host: { unreliable: FakeChannel; reliable: FakeChannel }; member: { unreliable: FakeChannel; reliable: FakeChannel } }[] = [];
@@ -251,7 +312,7 @@ export class FakeConnector implements PeerConnector {
       done = true;
       o.onFailed('timeout');
     };
-    w.net.at(w.net.now + DIRECT_TIMEOUT_MS, fail);
+    w.net.at(w.net.now + this.directTimeoutMs, fail);
     if (o.role === 'host') {
       const token = `fake-sdp-${++w.sdpSeq}`;
       if (!this.blockDirect) {
@@ -365,7 +426,7 @@ export class World {
         bridge: lua,
         hub,
         connector,
-        sched: this.sched,
+        sched: frozenScheduler(this.sched, () => hub),
         fs,
         kv,
         snapshots,
