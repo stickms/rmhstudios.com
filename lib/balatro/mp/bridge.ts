@@ -14,7 +14,9 @@
  *
  * **JS → Lua.** `send` validates (bridge-codec.ts), numbers the line, and queues it. A
  * microtask (or the rename above) rewrites `in` with every line Lua has not
- * consumed, capped at 256 KB; the rest waits. Lua reads `in` whole, removes it
+ * consumed, capped at 256 KB; the rest waits, and makes `in.sig` non-empty (Lua checks
+ * that open file's size each frame and reads `in` only after a signal, or every 30th
+ * frame as a safety net). Lua reads `in` whole, removes it
  * (`onDeletePath` → consumed) and drops `s ≤ last`, so a rewrite that repeats a
  * line is harmless. Lua acks the last applied seq in its next batch header.
  *
@@ -102,7 +104,7 @@ export interface MailboxStats {
 export class Mailbox {
   readonly tracking: boolean;
   private readonly fs: MailboxFs;
-  private readonly paths: { OUT: string; IN: string };
+  private readonly paths: { OUT: string; IN: string; IN_SIG: string };
   private readonly listeners = new Map<string, Set<Listener>>();
   private readonly anyListeners = new Set<(msg: L2JMessage) => void>();
   private readonly sendListeners = new Map<string, Set<SendListener>>();
@@ -124,7 +126,7 @@ export class Mailbox {
     this.opts = opts;
     this.fs = opts.fs;
     const root = opts.root ?? '';
-    this.paths = { OUT: root + BRIDGE_PATHS.OUT, IN: root + BRIDGE_PATHS.IN };
+    this.paths = { OUT: root + BRIDGE_PATHS.OUT, IN: root + BRIDGE_PATHS.IN, IN_SIG: root + BRIDGE_PATHS.IN_SIG };
     this.defer = opts.defer ?? ((fn) => queueMicrotask(fn));
     this.counters.lastLuaSeq = opts.lastLuaSeq ?? 0;
     const hooks = opts.hooks;
@@ -240,6 +242,8 @@ export class Mailbox {
     this.written.push(...this.queued.splice(0, moved));
     try {
       this.fs.writeFile(this.paths.IN, this.written.map((l) => `${l.text}\n`).join(''));
+      // Lua reads IN only when the signal is non-empty (rmh/net.lua: an idle frame opens nothing).
+      this.fs.writeFile(this.paths.IN_SIG, '1');
     } catch (err) {
       this.log(`writing the inbox failed: ${String(err)}`);
     }

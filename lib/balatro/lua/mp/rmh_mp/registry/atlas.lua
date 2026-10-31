@@ -14,6 +14,7 @@
 --   atlas.install()              load images into G.ASSET_ATLAS / G.ANIMATION_ATLAS; re-run after
 --                                every Game:set_render_settings (texture scaling change)
 --   atlas.apply_card(card, center)  Card.set_sprites post-step: point the sprites at the MP atlas
+--                                (installed as an always-on core wrap by install_core_wrap)
 --   atlas.blind_atlas(key)       the animation atlas for a blind prototype (falls back to blind_chips)
 --   atlas.tag_pos(key)           the pos of a `tag`-kind atlas inside the extended tags sheet
 --   atlas.root                   pack folder ('rmh_mp/assets/'), images at <root><scale>x/<file>
@@ -171,6 +172,7 @@ function A.install()
     end
     n = n + 1
   end
+  A.refresh_set_aliases()
   return n
 end
 
@@ -203,7 +205,46 @@ end
 
 function A.tag_pos(key) return A._tag_pos[key] end
 
---- Core wrap: append our atlases after every set_render_settings run.
+-- A card set an MP prototype introduces (the Trap consumables) has no vanilla atlas, but vanilla
+-- Card:set_sprites builds every Joker/consumable/Voucher sprite from G.ASSET_ATLAS[<set>] before
+-- our post-step runs; a nil atlas there raises inside Card:init. Such a set is pointed at the
+-- prototype's own atlas (the post-step then sets the right cell). Re-pointed on every install,
+-- since set_render_settings replaces the atlas tables.
+A._set_alias = A._set_alias or {}   -- set -> atlas key
+
+local function ensure_set_atlas(center)
+  local set, key = center.set, center.atlas
+  if not (center.consumeable and set and key and G and G.ASSET_ATLAS) then return end
+  if G.ASSET_ATLAS[set] ~= nil and A._set_alias[set] == nil then return end
+  local atlas = G.ASSET_ATLAS[A._set_alias[set] or key]
+  if atlas then
+    A._set_alias[set] = A._set_alias[set] or key
+    G.ASSET_ATLAS[set] = atlas
+  end
+end
+A.ensure_set_atlas = ensure_set_atlas
+
+function A.refresh_set_aliases()
+  local defs = R.defs and R.defs() or {}
+  for _, def in ipairs(defs) do
+    local proto = R.proto and R.proto(def.key)
+    if proto then ensure_set_atlas(proto) end
+  end
+end
+
+--- Card.set_sprites post-step for every MP prototype, always on (not only while a session is
+--- mounted): the Multiplayer collection, the lobby's deck/joker previews and practice setup all
+--- build Cards from unmounted prototypes. Without it vanilla draws an MP joker from the Joker
+--- sheet at the MP def's pos (the plain Joker for every single-sprite MP joker).
+function A.set_sprites_hook(orig, self, center, front, ...)
+  local mp = type(center) == 'table' and center.rmh_mp
+  if mp then ensure_set_atlas(center) end
+  local r = orig(self, center, front, ...)
+  if mp then A.apply_card(self, center) end
+  return r
+end
+
+--- Core wraps: append our atlases after every set_render_settings run; draw MP cards from them.
 function A.install_core_wrap()
   if rawget(_G, 'Game') then
     MP.hooks.wrap(Game, 'set_render_settings', function(orig, self, ...)
@@ -211,6 +252,9 @@ function A.install_core_wrap()
       A.install()
       return r
     end, { id = 'atlas.render_settings', optional = true })
+  end
+  if rawget(_G, 'Card') then
+    MP.hooks.wrap(Card, 'set_sprites', A.set_sprites_hook, { id = 'atlas.set_sprites', optional = true })
   end
 end
 

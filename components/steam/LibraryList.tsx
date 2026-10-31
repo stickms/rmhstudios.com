@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { House, Search, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { listCuratedBuilds, type CuratedBuild } from '@/lib/builds/curated';
 import { filterRail, groupRail, type LibraryKind } from '@/lib/games/library';
+import { useKeepScroll } from '@/hooks/useKeepScroll';
 import { useLibraryCollections } from '@/hooks/useLibraryCollections';
 import { FAVORITES, type Collection } from '@/lib/games/collections';
 import { TitleArt } from './TitleArt';
@@ -34,6 +35,8 @@ export function LibraryList({
 }) {
   const { t } = useTranslation('games-hub');
   const [search, setSearch] = useState('');
+  const listRef = useRef<HTMLDivElement>(null);
+  useKeepScroll(listRef);
   const { collections, toggle: toggleIn } = useLibraryCollections(serverCollections, signedIn);
   const favoriteIds = useMemo(() => collections.find((c) => c.name === FAVORITES)?.ids ?? [], [collections]);
   const toggle = (id: string) => void toggleIn(FAVORITES, id);
@@ -94,7 +97,7 @@ export function LibraryList({
         </div>
       </div>
 
-      <div className="stm-list">
+      <div className="stm-list" ref={listRef}>
         <Section label={t('steam-section-favorites', { defaultValue: 'Favorites' })} items={favorites} {...{ activeId, favoriteIds, toggle }} />
         {custom.map((c) => {
           const items = visible.filter((b) => c.ids.includes(b.id)).sort((a, b) => a.title.localeCompare(b.title));

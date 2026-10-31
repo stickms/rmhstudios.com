@@ -72,111 +72,146 @@ local function utf8(cp)
   return char(0xF0 + floor(cp / 262144), 0x80 + floor(cp / 4096) % 64, 0x80 + floor(cp / 64) % 64, 0x80 + cp % 64)
 end
 
-function J.decode(s)
-  if type(s) ~= 'string' then error('json: expected a string', 0) end
-  local pos, depth = 1, 0
-  local function err(m) error(fmt('json: %s at byte %d', m, pos), 0) end
-  local function ws() pos = find(s, '[^ \t\r\n]', pos) or #s + 1 end
-  local function hex(at)
-    local h = sub(s, at, at + 3)
-    return find(h, '^%x%x%x%x$') and tonumber(h, 16)
+-- The decoder keeps its cursor in module locals (S, P, D) instead of per-call closures: the
+-- mailbox decodes every inbound line on the frame it arrives (PLAN §6.4 busy budget), and a
+-- string without escapes is one find + one sub. decode calls no user code, so it never re-enters.
+local S, P, D = nil, 1, 0
+
+local function derr(m) error(fmt('json: %s at byte %d', m, P), 0) end
+
+local function ws()
+  local c = byte(S, P)
+  if c == 32 or c == 9 or c == 10 or c == 13 then P = find(S, '[^ \t\r\n]', P) or #S + 1 end
+end
+
+local function hex(at)
+  local h = sub(S, at, at + 3)
+  return find(h, '^%x%x%x%x$') and tonumber(h, 16)
+end
+
+local function dstr()
+  local start = P + 1
+  local _, b = find(S, '^[^"\\%z\1-\31]*"', start)
+  if b then
+    P = b + 1
+    return sub(S, start, b - 1)
   end
-  local function str()
-    local buf = {}
-    pos = pos + 1
-    while true do
-      local a, b = find(s, '^[^"\\%z\1-\31]+', pos)
-      if a then buf[#buf + 1] = sub(s, a, b); pos = b + 1 end
-      local c = sub(s, pos, pos)
-      if c == '"' then pos = pos + 1; return concat(buf) end
-      if c == '' then err('unterminated string') end
-      if c ~= '\\' then err('control character in string') end
-      local e = sub(s, pos + 1, pos + 1)
-      if e == 'u' then
-        local cp = hex(pos + 2) or err('bad \\u escape')
-        pos = pos + 6
-        if cp >= 0xD800 and cp <= 0xDBFF then
-          local lo = sub(s, pos, pos + 1) == '\\u' and hex(pos + 2)
-          if lo and lo >= 0xDC00 and lo <= 0xDFFF then
-            cp, pos = 0x10000 + (cp - 0xD800) * 0x400 + (lo - 0xDC00), pos + 6
-          else cp = 0xFFFD end
-        elseif cp >= 0xDC00 and cp <= 0xDFFF then cp = 0xFFFD end
-        buf[#buf + 1] = utf8(cp)
-      else
-        buf[#buf + 1] = UNESC[e] or err('bad escape')
-        pos = pos + 2
-      end
-    end
-  end
-  local function digits(at)
-    local _, e = find(s, '^%d+', at)
-    return e or err('bad number')
-  end
-  local function num()
-    local st = pos
-    if sub(s, pos, pos) == '-' then pos = pos + 1 end
-    if sub(s, pos, pos) == '0' then pos = pos + 1
-    elseif find(s, '^[1-9]', pos) then pos = digits(pos) + 1
-    else err('bad number') end
-    if sub(s, pos, pos) == '.' then pos = digits(pos + 1) + 1 end
-    if find(s, '^[eE]', pos) then
-      pos = pos + 1
-      if find(s, '^[-+]', pos) then pos = pos + 1 end
-      pos = digits(pos) + 1
-    end
-    return tonumber(sub(s, st, pos - 1))
-  end
-  local value
-  local function list(close, item)
-    depth = depth + 1
-    if depth > J.MAX_DEPTH then err('too deep') end
-    pos = pos + 1
-    ws()
-    if sub(s, pos, pos) == close then pos = pos + 1
+  local buf = {}
+  P = start
+  while true do
+    local a, e2 = find(S, '^[^"\\%z\1-\31]+', P)
+    if a then buf[#buf + 1] = sub(S, a, e2); P = e2 + 1 end
+    local c = sub(S, P, P)
+    if c == '"' then P = P + 1; return concat(buf) end
+    if c == '' then derr('unterminated string') end
+    if c ~= '\\' then derr('control character in string') end
+    local e = sub(S, P + 1, P + 1)
+    if e == 'u' then
+      local cp = hex(P + 2) or derr('bad \\u escape')
+      P = P + 6
+      if cp >= 0xD800 and cp <= 0xDBFF then
+        local lo = sub(S, P, P + 1) == '\\u' and hex(P + 2)
+        if lo and lo >= 0xDC00 and lo <= 0xDFFF then
+          cp, P = 0x10000 + (cp - 0xD800) * 0x400 + (lo - 0xDC00), P + 6
+        else cp = 0xFFFD end
+      elseif cp >= 0xDC00 and cp <= 0xDFFF then cp = 0xFFFD end
+      buf[#buf + 1] = utf8(cp)
     else
-      while true do
-        item()
-        ws()
-        local c = sub(s, pos, pos)
-        pos = pos + 1
-        if c == close then break end
-        if c ~= ',' then pos = pos - 1; err("expected ',' or '" .. close .. "'") end
-      end
+      buf[#buf + 1] = UNESC[e] or derr('bad escape')
+      P = P + 2
     end
-    depth = depth - 1
   end
-  value = function()
-    ws()
-    local c = sub(s, pos, pos)
-    if c == '{' then
-      local t = {}
-      list('}', function()
+end
+
+local function digits(at)
+  local _, e = find(S, '^%d+', at)
+  return e or derr('bad number')
+end
+
+local function dnum()
+  local st = P
+  if byte(S, P) == 45 then P = P + 1 end
+  local c = byte(S, P)
+  if c == 48 then P = P + 1
+  elseif c and c >= 49 and c <= 57 then P = digits(P) + 1
+  else derr('bad number') end
+  c = byte(S, P)
+  if c == 46 then P = digits(P + 1) + 1; c = byte(S, P) end
+  if c == 101 or c == 69 then
+    P = P + 1
+    c = byte(S, P)
+    if c == 45 or c == 43 then P = P + 1 end
+    P = digits(P) + 1
+  end
+  return tonumber(sub(S, st, P - 1))
+end
+
+local dvalue
+
+--- After an item of a list: ',' continues (true), `close` ends it (false).
+local function more(close, closech)
+  ws()
+  local c = byte(S, P)
+  P = P + 1
+  if c == close then return false end
+  if c ~= 44 then P = P - 1; derr("expected ',' or '" .. closech .. "'") end
+  return true
+end
+
+local function enter()
+  D = D + 1
+  if D > J.MAX_DEPTH then derr('too deep') end
+  P = P + 1
+  ws()
+end
+
+dvalue = function()
+  ws()
+  local c = byte(S, P)
+  if c == 123 then -- {
+    enter()
+    local t = {}
+    if byte(S, P) == 125 then P = P + 1
+    else
+      repeat
         ws()
-        if sub(s, pos, pos) ~= '"' then err('expected a key') end
-        local k = str()
+        if byte(S, P) ~= 34 then derr('expected a key') end
+        local k = dstr()
         ws()
-        if sub(s, pos, pos) ~= ':' then err("expected ':'") end
-        pos = pos + 1
-        local v = value()
+        if byte(S, P) ~= 58 then derr("expected ':'") end
+        P = P + 1
+        local v = dvalue()
         if v == J.null then v = nil end
         t[k] = v
-      end)
-      return t
-    elseif c == '[' then
-      local t = J.array()
-      list(']', function() t[#t + 1] = value() end)
-      return t
-    elseif c == '"' then return str()
-    elseif c == '-' or find(c, '^%d') then return num()
-    elseif sub(s, pos, pos + 3) == 'true' then pos = pos + 4; return true
-    elseif sub(s, pos, pos + 4) == 'false' then pos = pos + 5; return false
-    elseif sub(s, pos, pos + 3) == 'null' then pos = pos + 4; return J.null
+      until not more(125, '}')
     end
-    err(c == '' and 'unexpected end' or 'unexpected ' .. fmt('%q', c))
+    D = D - 1
+    return t
+  elseif c == 91 then -- [
+    enter()
+    local t = J.array()
+    if byte(S, P) == 93 then P = P + 1
+    else
+      repeat t[#t + 1] = dvalue() until not more(93, ']')
+    end
+    D = D - 1
+    return t
+  elseif c == 34 then return dstr()
+  elseif c == 45 or (c and c >= 48 and c <= 57) then return dnum()
+  elseif c == 116 and sub(S, P, P + 3) == 'true' then P = P + 4; return true
+  elseif c == 102 and sub(S, P, P + 4) == 'false' then P = P + 5; return false
+  elseif c == 110 and sub(S, P, P + 3) == 'null' then P = P + 4; return J.null
   end
-  local v = value()
+  derr(c == nil and 'unexpected end' or 'unexpected ' .. fmt('%q', char(c)))
+end
+
+function J.decode(s)
+  if type(s) ~= 'string' then error('json: expected a string', 0) end
+  S, P, D = s, 1, 0
+  local v = dvalue()
   ws()
-  if pos <= #s then err('trailing data') end
+  if P <= #S then derr('trailing data') end
+  S = nil
   return v
 end
 

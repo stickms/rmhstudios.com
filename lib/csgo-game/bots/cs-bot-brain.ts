@@ -93,6 +93,7 @@ export class CsBotBrain implements BotBrain {
   private nextAimUpdate = 0;
   private shotsThisBurst = 0;
   private burstPauseUntil = 0;
+  /** The round (CsGameRules.roundSerial) this bot last bought in. */
   private boughtRound = -1;
   /** 0 = A, 1 = B (the site this bot heads for this round). */
   private site = -1;
@@ -131,7 +132,7 @@ export class CsBotBrain implements BotBrain {
     // The freeze time: buy, look around.
     if (
       rules.state === GR_STATE_PREROUND ||
-      (rules.inBuyTime() && this.boughtRound !== rules.roundsPlayed)
+      (rules.inBuyTime() && this.boughtRound !== rules.roundSerial)
     )
       this.buy(world, p);
 
@@ -179,20 +180,24 @@ export class CsBotBrain implements BotBrain {
 
   private buy(world: CsWorld, p: CsPlayer): void {
     const rules = world.csRules;
-    if (this.boughtRound === rules.roundsPlayed || !p.inBuyZone() || !rules.inBuyTime()) return;
-    this.boughtRound = rules.roundsPlayed;
+    if (this.boughtRound === rules.roundSerial || !p.inBuyZone() || !rules.inBuyTime()) return;
+    this.boughtRound = rules.roundSerial;
     if (rules.csMode === 'dm') return;
     const team = p.team;
     const has = (slot: number) => p.weapons[slot] !== null;
     const price = (name: string) => csWeapon(name)?.price ?? Infinity;
-    if (!has(SLOT_PRIMARY)) {
+    // No primary, or one short of a rifle (an SMG, a shotgun kept from an eco): buy up when it can.
+    const primary = p.weapons[SLOT_PRIMARY] as CsWeapon | null;
+    const category = primary?.info.category;
+    if (category !== 'rifle' && category !== 'sniper') {
       const awp = 'weapon_awp';
       if (this.level >= 2 && p.money >= price(awp) + 1000 && this.rng.randomFloat() < 0.2)
         p.buy(awp);
       else if (p.money >= price(TEAM_RIFLE[team]) + 650) p.buy(TEAM_RIFLE[team]);
-      else if (p.money >= price(TEAM_SMG[team]) + 650 && p.money >= 2000) p.buy(TEAM_SMG[team]);
+      else if (!primary && p.money >= price(TEAM_SMG[team]) + 650 && p.money >= 2000)
+        p.buy(TEAM_SMG[team]);
     }
-    if (p.armor < 100 && p.money >= 1000 && has(SLOT_PRIMARY)) p.buy('vesthelm');
+    if ((p.armor < 100 || !p.helmet) && p.money >= 1000 && has(SLOT_PRIMARY)) p.buy('vesthelm');
     else if (p.armor < 100 && p.money >= 650) p.buy('vest');
     if (team === CS_TEAM_CT && !p.defuser && p.money >= 400 + 300) p.buy('defuser');
     if (p.money >= 300) p.buy('hegrenade');
