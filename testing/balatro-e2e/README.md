@@ -131,4 +131,4 @@ Without a stack the project skips; `BALATRO_E2E_REQUIRE_MATCH=1` (CI) makes that
 Playwright's own build, or `CHROME_PATH=/path/to/chrome` (as `scripts/epic/browser.ts`).
 WebGL runs on SwiftShader (`lib/chromium.ts`). One 1280×720 engine page keeps about three CPU
 cores busy; a boot takes 20–90 s. `BALATRO_E2E_BOOT_TIMEOUT_MS` (default 240 000) bounds it,
-`BALATRO_E2E_SPEC_TIMEOUT_MS` (default 1 200 000) each engine spec file.
+`BALATRO_E2E_SPEC_TIMEOUT_MS` (default 1 200 000; CI's PR run: 600 000) each engine spec file: 30 s before it, a file still running fails with the engine's last log lines and the files after it run in a fresh boot. While a file runs, the engine project prints each test's result as it lands (`#   [elapsed] ok …`), so a slow file shows where it is.
