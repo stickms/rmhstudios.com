@@ -175,10 +175,15 @@ lines: [{ speaker, key, defaultValue, durationMs }], then?: Output[] }`, fired b
 
 ## 7. Client and UI (H0.4, H1.4, H6)
 
-- `client/harmonic-client.ts` follows `sp-client.ts` `loadLevel` (`sp-client.ts:230-300`)
-  but builds `{ bsp, manifest }` with `compileLevel` instead of `loadMapPackageForClient`,
-  uses the procedural `TextureCache` and `ModelLibrary`, and adds the Harmonic HUD
-  state. It mounts through `components/tf2-game/GameCanvas.tsx` like HL2 does.
+- `client/harmonic-client.ts` does **not** copy `sp-client.ts`: H0.4 added an optional
+  `content: SpContent` seam to `createSpClient` (levels, `SpAssets`, texture cache, level list and
+  `features` switches for the sound channel, suit HUD and saves; defaults keep HL2/Portal
+  identical — `docs/tf2-game.md`, "Injected content"). Harmonic's content compiles the level with
+  `compileLevel`, serves the procedural `TextureCache` and `createHarmonicAssets()`, and
+  turns every channel feature off. Later WPs add their Harmonic HUD state and `ModelLibrary`
+  through the same seam (extend `SpContent`, additively). It mounts through
+  `components/tf2-game/GameCanvas.tsx` with `game="hl2"` and `remoteAssets={false}` (the pause menu
+  and Options then fetch no HL2 menu channel).
 - `components/harmonic-game/HarmonicPlayPage.tsx`: main menu (New game, Continue, Chapters,
   Options, Credits), loading screen, pause menu, HUD (health, cold, ammo, Tuner charge,
   subtitles). `AppShell` + `--app-*` tokens; one signal button per view.
@@ -197,3 +202,10 @@ lines: [{ speaker, key, defaultValue, durationMs }], then?: Output[] }`, fired b
   fractions; `pointContents`; brush entity models; determinism hash.
 - Browser checks (not in CI): `scripts/harmonic/play-smoke.ts` (H0.4) — Playwright opens
   `/harmonic`, starts the dev level, screenshots.
+  Run it against `vite dev` (port 7005): `pnpm exec tsx scripts/harmonic/play-smoke.ts <out-dir>`, with
+  `CHROMIUM_PATH` pointing at a Chromium when Playwright's pinned build is not installed. It drives the
+  game through `window.__rmhGame` (dev builds): `sv_cheats 1` + `setpos`/`setang` give the tour of the level,
+  and it asserts the pit hurts and death respawns at the start. Pages render only with a database and auth
+  env (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `.env.example.minimum`): a throwaway local
+  Postgres is enough. `pnpm db:push` refuses to run for an agent (its `--accept-data-loss`), so load the
+  schema with `prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script | psql`.
