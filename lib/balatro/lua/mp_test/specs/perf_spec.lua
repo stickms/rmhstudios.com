@@ -132,7 +132,18 @@ local function census()
 end
 
 describe('perf: MP Lua overhead', function()
+  -- These measure real frames: the e2e turbo (several updates per frame, a draw
+  -- every Nth) would skew the ratios and leave the draw-built tables (DRAW_HASH)
+  -- counted on a frame that did not draw. Turn it off here, restore it after.
+  local saved
+  before_each(function()
+    saved = { AP.turbo.updates, AP.turbo.draw_every }
+    AP.run('turbo', { updates = 1, draw_every = 1 })
+  end)
   after_each(leave)
+  after_each(function()
+    if saved then AP.run('turbo', { updates = saved[1], draw_every = saved[2] }) end
+  end)
 
   it('mailbox pump idle cost', function()
     local n = 0
