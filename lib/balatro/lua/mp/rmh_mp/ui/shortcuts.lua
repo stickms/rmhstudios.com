@@ -1,10 +1,11 @@
 -- rmh_mp/ui/shortcuts.lua — WS10 keyboard: the TAB-hold shortcuts overlay (LOB-12) and the chat
 -- key (HUD-11). One wrap each on Controller.key_press_update / key_release_update (group 'ui').
 --
--- In a lobby, holding TAB shows SHORTCUTS: C copy code, V view code, R ready/unready (guests),
--- O lobby options, I invite, L leave. On the PvP menu screens out of a lobby (online): V join
--- from the clipboard, J join by code, C create lobby (A16). A listed key runs its action;
--- releasing TAB closes it.
+-- As the mod's ui/shortcuts_menu.lua (A16), and only at the main menu: in any lobby (private,
+-- party or matchmade) holding TAB shows SHORTCUTS: C copy code, V view code (a MULTIPLAYER
+-- message with the code), L leave (at once, as the mod's leave from the menu). On the PvP menu
+-- screens out of a lobby (online): V join from the clipboard, J join by code, C create lobby. A
+-- listed key runs its action; releasing TAB closes it.
 -- T opens chat (in a lobby or an MP session) unless a text box has focus.
 
 local MP = require 'rmh_mp.state'
@@ -43,27 +44,37 @@ function SC.list(model)
     end
     return out
   end
-  if view.state.kind ~= 'casual' then
-    add('c', 'rmh_mp_ui_copy_code_cap', 'COPY CODE', F.rmh_mp_copy_code)
-    add('v', 'rmh_mp_ui_view_code_cap', 'VIEW CODE', F.rmh_mp_view_code)
-  end
-  if not view.isHost and view.state.kind ~= 'casual' then add('r', 'b_ready', 'Ready', F.rmh_mp_ready) end
-  if view.state.kind == 'private' then add('o', 'k_lobby_options', 'Lobby Options', F.rmh_mp_lobby_options) end
-  if view.state.kind ~= 'casual' then add('i', 'rmh_mp_invite', 'Invite', F.rmh_mp_invite) end
-  add('l', 'b_leave_lobby', 'Leave Lobby', F.rmh_mp_leave)
+  add('c', 'b_copy_code', 'COPY CODE', SC.copy_code)
+  add('v', 'b_view_code', 'VIEW CODE', SC.view_code)
+  add('l', 'b_leave_lobby', 'Leave Lobby', function() return U.leave_lobby() end)
   return out
 end
 
+--- C: copy the lobby code (the lobby's COPY CODE button).
+function SC.copy_code() return F.rmh_mp_copy_code() end
+
+--- V: the mod's overlay_message(code): "MULTIPLAYER" over the code, with a Back button.
+function SC.view_code()
+  local view = U.model.lobby
+  local code = view and view.state and view.state.code
+  return W.overlay({ name = 'view_code', contents = {
+    W.row({ W.text('MULTIPLAYER', { scale = 0.8 }) }, { padding = 0.2 }),
+    W.row({ W.text(tostring(code or ''), { scale = 0.6, id = 'mp_sc_code' }) }, { padding = 0.1 }),
+  } })
+end
+
 function SC.contents(model)
-  local rows = { W.row({ W.text(TH.T('k_sc_title', 'SHORTCUTS'), { scale = 0.6 }) }, { padding = 0.05 }) }
+  -- The mod's rows: the key letter on a purple chip, the label after it, on an L_BLACK row.
+  local rows = { W.row({ W.text(TH.T('k_sc_title', 'SHORTCUTS'), { scale = 0.5 }) }, { padding = 0.08 }) }
   for _, s in ipairs(SC.list(model)) do
     rows[#rows + 1] = W.row({
-      W.col({ W.text(s.key:upper(), { scale = 0.45, colour = TH.col('GOLD') }) }, { minw = 0.8, r = 0.1, colour = TH.col('BLACK'), padding = 0.05 }),
-      W.col({}, { minw = 0.2 }),
-      W.col({ W.text(s.label, { scale = 0.4 }) }, { minw = 3.5, align = 'cl' }),
-    }, { padding = 0.03, id = 'mp_sc_' .. s.key })
+      W.col({ W.row({ W.text(s.key:upper(), { scale = 0.4 }) }, { minw = 0.6, r = 0.05, colour = TH.col('PURPLE'), padding = 0.04 }) },
+        { minw = 1 }),
+      W.col({ W.text(' ' .. s.label, { scale = 0.38, shadow = false }) }, { minw = 3.5, align = 'cl' }),
+    }, { padding = 0.04, r = 0.08, colour = TH.col('L_BLACK'), id = 'mp_sc_' .. s.key })
   end
-  rows[#rows + 1] = W.row({ W.text(TH.T('k_sc_hint', 'Press key or release TAB to close'), { scale = 0.28, colour = TH.ui_col('TEXT_INACTIVE') }) })
+  rows[#rows + 1] = W.row({ W.text(TH.T('k_sc_hint', 'Press key or release TAB to close'), { scale = 0.3, colour = TH.ui_col('TEXT_INACTIVE'), shadow = false }) },
+    { padding = 0.06 })
   return rows
 end
 

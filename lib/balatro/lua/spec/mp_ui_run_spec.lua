@@ -216,6 +216,81 @@ describe('in-run view model (HUD-01/02/03, TIM-01)', function()
     expect({ mid[1], mid[2], mid[3] }).eq({ imp[1], imp[2], imp[3] })
     local start = RU.timer_pulse(3.0)
     expect(start[2] > imp[2]).truthy()
+    -- the light stop is the mod's mix_colours(WHITE, IMPORTANT, 0.55): 55% white
+    for i = 1, 3 do expect(math.abs(start[i] - (0.55 + 0.45 * imp[i])) < 1e-9).truthy() end
+  end)
+
+  describe('Speedlatro clock text (the mod\'s mp_speedlatro_timer_accelerated)', function()
+    local function near(a, b) return math.abs(a[1] - b[1]) + math.abs(a[2] - b[2]) + math.abs(a[3] - b[3]) < 1e-6 end
+    local function flash()
+      local imp = G.C.IMPORTANT
+      return { 0.55 * imp[1] + 0.45, 0.55 * imp[2] + 0.45, 0.55 * imp[3] + 0.45 }
+    end
+    local function sv(over)
+      local v = { timer_mode = 'speedlatro', timer_value = 100, timer_timered = true, timer_on_pvp = false,
+        timer_ready = false, timer_running = false, timer_pressable = false }
+      for k, x in pairs(over or {}) do v[k] = x end
+      return v
+    end
+
+    it('five stops: white x4, then mix_colours(IMPORTANT, WHITE, 0.55); cosine-eased, one-second cycle', function()
+      boot()
+      local w = { 1, 1, 1 }
+      expect(near(RU.speedlatro_pulse(0), w)).truthy()
+      expect(near(RU.speedlatro_pulse(0.3), w)).truthy()
+      expect(near(RU.speedlatro_pulse(0.8 - 1e-9), flash())).truthy()
+      expect(near(RU.speedlatro_pulse(1.8 - 1e-9), flash())).truthy()
+      local f = flash()
+      local mid = { (f[1] + 1) / 2, (f[2] + 1) / 2, (f[3] + 1) / 2 }
+      expect(near(RU.speedlatro_pulse(0.7), mid)).truthy()   -- white easing into the flash
+      expect(near(RU.speedlatro_pulse(0.9), mid)).truthy()   -- and back to white
+    end)
+
+    it('its phase is the clock: -(value) / 2; 0 while ready; white unless timered off the PvP blind with time left', function()
+      boot()
+      local dark = select(2, RU.timer_colours({}, 0))
+      local fg, bg = RU.timer_colours(sv({ timer_value = 10.2 }), 0)   -- -5.1 % 1 = 0.9
+      expect(near(fg, RU.speedlatro_pulse(0.9))).truthy()
+      expect(near(fg, { 1, 1, 1 })).falsy()
+      expect(bg).eq(dark)
+      expect(near(RU.timer_colours(sv({ timer_value = 10 }), 0), { 1, 1, 1 })).truthy()
+      expect(near(RU.timer_colours(sv({ timer_value = 10.4, timer_ready = true }), 0), { 1, 1, 1 })).truthy()
+      for _, o in ipairs({ { timer_timered = false }, { timer_on_pvp = true }, { timer_value = 0 } }) do
+        o.timer_running = true
+        expect(RU.timer_colours(sv(o), 0)).eq(G.C.WHITE)
+      end
+      -- not the ante timer's pulse, even while ticking (the mod's speedlatro clock is white then)
+      expect(RU.timer_colours(sv({ timer_timered = false, timer_running = true, timer_colour = 'important' }), 0.0))
+        .eq(G.C.WHITE)
+      -- pressable keeps the timer box look
+      fg, bg = RU.timer_colours(sv({ timer_pressable = true, timer_timered = false }), 0)
+      expect(bg).eq(G.C.IMPORTANT)
+    end)
+
+    it('between 10 Hz updates a ticking clock carries on at x2 (at most one interval)', function()
+      boot()
+      RU.speed_seen = { value = nil, at = 0 }
+      local v = sv({ timer_value = 10.7, timer_running = true })
+      local a = RU.speedlatro_colour(v, 50)            -- phase -5.35 % 1 = 0.65
+      expect(near(a, RU.speedlatro_pulse(0.65))).truthy()
+      local b = RU.speedlatro_colour(v, 50.05)         -- carried on to 10.6: phase 0.7
+      expect(near(b, RU.speedlatro_pulse(0.7))).truthy()
+      local c = RU.speedlatro_colour(v, 51)            -- capped at 0.1 s: 10.5 -> 0.75
+      expect(near(c, RU.speedlatro_pulse(0.75))).truthy()
+    end)
+
+    it('the view carries mode, value, timered, on-PvP and ready from timer_state', function()
+      boot()
+      MP.state.timer = { value = 73.5, mode = 'speedlatro', ticking = true, beingTimered = true, timering = false,
+        pressable = false, auto = false, color = 'important', display = '>>' }
+      MP.state.pvp.ready = false
+      local v = RU.compute({}, 0)
+      expect(v.timer_text).eq('>> 74')
+      expect(v.timer_mode).eq('speedlatro')
+      expect(v.timer_value).eq(73.5)
+      expect(v.timer_timered).eq(true)
+      expect(v.timer_ready).eq(false)
+    end)
   end)
 
   it('enemy score: masked until the first info, then eased over 3 s; hands left', function()
@@ -774,80 +849,103 @@ end)
 
 -- ── Late result (A19) ───────────────────────────────────────────────────────
 
-describe('late result toast (A19: a match that ended while this player was at the menu)', function()
+local ENDED = '[MultiplayerAPI] The match you left has ended.'
+
+--- The late-result chat lines (system kind), oldest first; fails if one came as a toast.
+local function late_lines()
+  for _, t in ipairs(MP.ui.toasts) do expect(t.key ~= 'mp_late_result').truthy() end
+  local out = {}
+  for _, l in ipairs(MP.ui.chat.lines) do
+    if l.text:find(ENDED, 1, true) then
+      expect(l.kind).eq('system')
+      expect({ l.colour[1], l.colour[2], l.colour[3] }).eq({ 1, 1, 0 }) -- the API's COLOUR_SYSTEM
+      out[#out + 1] = l.text
+    end
+  end
+  return out
+end
+
+describe('late result chat line (A19: a match that ended while this player was at the menu)', function()
   after_each(UH.teardown)
 
   local function late(o, stage)
     boot(3)
+    MP.ui.chat.lines = {}
     G.STAGE = G.STAGES[stage or 'MAIN_MENU']
     G.ROOM_ATTACH = G.ROOM_ATTACH or {}
-    local U = MP.ui
-    local n = #U.toasts
     MP.net.receive('outcome', { hs = 50, o = o })
-    local last = U.toasts[#U.toasts]
-    if #U.toasts == n or not last or last.key ~= 'mp_late_result' then return nil end
-    return last.text
+    return late_lines()[1]
   end
 
-  it('says the match ended and how: won, draw, place, lost', function()
-    expect(late({ t = 'win', winner_id = 'u1' })).eq('The match you left has ended. You won.')
+  it("is a chat line worded as the mod's describe(): ended, then the place (a win or a draw is place 1)", function()
+    expect(late({ t = 'win', winner_id = 'u1' })).eq(ENDED .. ' You finished in place 1')
     UH.teardown()
-    expect(late({ t = 'win', draw = true })).eq('The match you left has ended. It was a draw.')
+    expect(late({ t = 'win', draw = true })).eq(ENDED .. ' You finished in place 1')
     UH.teardown()
     expect(late({ t = 'win', winner_id = 'u2', places = { u2 = 1, u3 = 2, u1 = 3 } }))
-      .eq('The match you left has ended. You finished in place 3')
+      .eq(ENDED .. ' You finished in place 3')
     UH.teardown()
-    expect(late({ t = 'win', winner_id = 'u2' })).eq('The match you left has ended. You lost.')
+    expect(late({ t = 'win', winner_id = 'u2' })).eq(ENDED)
   end)
 
   it('nothing in a run (the end screen shows the result there)', function()
     expect(late({ t = 'win', winner_id = 'u1' }, 'RUN')).eq(nil)
   end)
 
-  it('the referee re-sending the win toasts once', function()
+  it('the referee re-sending the win adds one line', function()
     boot(3)
+    MP.ui.chat.lines = {}
     G.STAGE = G.STAGES.MAIN_MENU
     MP.net.receive('outcome', { hs = 50, o = { t = 'win', winner_id = 'u1' } })
     MP.net.receive('outcome', { hs = 51, o = { t = 'win', winner_id = 'u1' } })
-    local n = 0
-    for _, t in ipairs(MP.ui.toasts) do if t.key == 'mp_late_result' then n = n + 1 end end
-    expect(n).eq(1)
+    expect(#late_lines()).eq(1)
   end)
 end)
 
 describe('late result from the hub (HUD-24: no session mounted, the player left)', function()
   after_each(UH.teardown)
 
-  local function toasts()
-    local out = {}
-    for _, t in ipairs(MP.ui.toasts) do if t.key == 'mp_late_result' then out[#out + 1] = t.text end end
-    return out
-  end
-
   local function menu_boot()
     MP, G = UH.boot()
+    MP.ui.chat.lines = {}
     expect(MP.state.session == nil).truthy()
   end
 
-  it('at the main menu: one toast per result, worded as the mod does', function()
+  it('at the main menu: one chat line per result, worded as the mod does', function()
     menu_boot()
     expect(UH.recv('late_result', { runId = 'r1', r = 'won' })).truthy()
     UH.recv('late_result', { runId = 'r2', r = 'draw' })
     UH.recv('late_result', { runId = 'r3', r = 'lost', place = 3 })
     UH.recv('late_result', { runId = 'r4', r = 'lost' })
-    expect(toasts()).eq({
-      'The match you left has ended. You won.',
-      'The match you left has ended. It was a draw.',
-      'The match you left has ended. You finished in place 3',
-      'The match you left has ended. You lost.',
+    expect(late_lines()).eq({
+      ENDED .. ' You finished in place 1',
+      ENDED .. ' You finished in place 1',
+      ENDED .. ' You finished in place 3',
+      ENDED,
     })
+  end)
+
+  it('the chat console draws the line at the main menu, out of any lobby', function()
+    menu_boot()
+    G.STAGE = G.STAGES.MAIN_MENU
+    G.ROOM_ATTACH = G.ROOM_ATTACH or {}
+    UH.recv('late_result', { runId = 'r1', r = 'lost', place = 2 })
+    expect(MP.ui.model.lobby).eq(nil)
+    UH.frame()
+    expect(MP.ui.chat.box ~= nil).truthy()
+    local v = MP.ui.chat.visible()
+    expect(v[#v].text).eq(ENDED .. ' You finished in place 2')
+    -- the box torn down under it (a stage change) is drawn again
+    MP.ui.chat.box.REMOVED = true
+    UH.frame()
+    expect(MP.ui.chat.box.REMOVED).falsy()
   end)
 
   it('the same run is shown once', function()
     menu_boot()
     UH.recv('late_result', { runId = 'r1', r = 'won' })
     UH.recv('late_result', { runId = 'r1', r = 'won' })
-    expect(#toasts()).eq(1)
+    expect(#late_lines()).eq(1)
   end)
 
   it('during a run nothing shows; it waits for the next main menu', function()
@@ -855,12 +953,12 @@ describe('late result from the hub (HUD-24: no session mounted, the player left)
     G.STAGE = G.STAGES.RUN
     UH.recv('late_result', { runId = 'r1', r = 'lost', place = 2 })
     set_main_menu_UI() -- still in the run (a menu redraw elsewhere): keeps waiting
-    expect(toasts()).eq({})
+    expect(late_lines()).eq({})
     G.STAGE = G.STAGES.MAIN_MENU
     set_main_menu_UI()
-    expect(toasts()).eq({ 'The match you left has ended. You finished in place 2' })
+    expect(late_lines()).eq({ ENDED .. ' You finished in place 2' })
     set_main_menu_UI()
-    expect(#toasts()).eq(1)
+    expect(#late_lines()).eq(1)
   end)
 
   it('at most three wait (the newest); malformed notices are dropped by the protocol', function()
@@ -870,10 +968,10 @@ describe('late result from the hub (HUD-24: no session mounted, the player left)
     expect(UH.recv('late_result', { runId = 'bad', r = 'left' })).falsy()
     G.STAGE = G.STAGES.MAIN_MENU
     set_main_menu_UI()
-    expect(toasts()).eq({
-      'The match you left has ended. You finished in place 4',
-      'The match you left has ended. You finished in place 5',
-      'The match you left has ended. You finished in place 6',
+    expect(late_lines()).eq({
+      ENDED .. ' You finished in place 4',
+      ENDED .. ' You finished in place 5',
+      ENDED .. ' You finished in place 6',
     })
   end)
 end)
