@@ -202,7 +202,7 @@ export function RankedColumn({
  <div>
  <ColumnHeader icon={Swords} title={t('ranked', { defaultValue:'Ranked'})} />
 
- <div className="space-y-6 p-4">
+ <div className="space-y-6 py-4">
  {signedIn && (
  <>
  {/* Issue a challenge */}

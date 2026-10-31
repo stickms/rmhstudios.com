@@ -89,7 +89,7 @@ export function WalletPage({
         )
       ) : (
         <>
-          <div className="glass-pane mx-3 flex flex-wrap items-center justify-between gap-3 p-4">
+          <div className="glass-pane flex flex-wrap items-center justify-between gap-3 p-4">
             <div>
               <p className="text-xs text-site-text-muted">
                 {t('wallet-balance', { defaultValue: 'Balance' })}

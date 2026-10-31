@@ -115,7 +115,7 @@ export function WrappedColumn({
  screens={2.6}
  />
 
- <div className="space-y-6 px-4 pt-4 pb-12">
+ <div className="space-y-6 pt-4 pb-12">
  {/* Level badge — leads the below-fold content. */}
  <Reveal>
  <div className="flex items-center gap-3 rounded-site glass-fill px-4 py-3">

@@ -105,8 +105,8 @@ function CreateLayout() {
             'Generate shareable pages, dive into our games and apps, and craft AI personas — your whole creative toolkit in one place.',
         })}
       >
-        {/* `.cstudio-screen` stays as the wrapper: it declares `--studio-gutter`
-            and the sticky-group height every `.cstudio-*` descendant reads. What
+        {/* `.cstudio-screen` stays as the wrapper: it declares
+            the sticky-group height every `.cstudio-*` descendant reads. What
             it no longer carries is a bespoke hero — the page title is the shared
             `PageLayout` header now, the same one /predictions and /developer use,
             so Create stops being the one page with its own headline scale. */}

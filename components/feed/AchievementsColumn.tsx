@@ -130,18 +130,18 @@ export function AchievementsColumn({
  {/* hideHeader === embedded in JourneyColumn/ProfileColumn, which supply
  the page header (and the drawer button); only the stats survive. */}
  {hideHeader ? (
- <div className="px-4 pt-4">{Stats}</div>
+ <div className="pt-4">{Stats}</div>
  ) : (
  <>
  <ColumnHeader
  icon={Trophy}
  title={t('achievements-header', { defaultValue:'Achievements'})}
  />
- <div className="px-4 pt-4">{Stats}</div>
+ <div className="pt-4">{Stats}</div>
  </>
  )}
 
- <div className="space-y-6 px-4 pt-4 pb-12">
+ <div className="space-y-6 pt-4 pb-12">
  {CATEGORY_ORDER.map((cat) => {
  const list = data.achievements.filter((a) => a.category === cat);
  if (list.length === 0) return null;

@@ -533,6 +533,15 @@ body:has(.radial-shell) .call-banner {
     margin-top: var(--rad-5);
   }
 }
+/* One page gutter, owned by the frame. `.radial-frame` already insets every page by `--rad-gutter`, and the page
+   title sits exactly on it, so a page wrapper that adds its own `px-3`/`px-4` indents its content a SECOND time
+   (cards at 32px against a title at 16px on a phone; 44 pages in the 2026-10-31 audit, docs/ui-audit-2026-10-31.md).
+   Pages used to be taught to add that padding, so the wrapper is neutralised here once instead of in ~100 files:
+   only the inline padding goes, the wrapper's vertical padding and measure stay. Unlayered on purpose, so it beats
+   Tailwind's layered utilities without `!important`. New pages should not add inline padding to this wrapper. */
+.radial-shell:not([data-home]) [data-slot='page-content'] > :where(.px-3, .px-4) {
+  padding-inline: 0;
+}
 /* Home leads with the feed itself, so it needs no title block above the fold —
    only the frame's gutters. The wheel owns its own top/bottom breathing room. */
 .radial-shell[data-home] .radial-shell__main {

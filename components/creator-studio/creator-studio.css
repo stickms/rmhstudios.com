@@ -5,7 +5,6 @@
  */
 
 .cstudio-screen {
-  --studio-gutter: 1rem; /* the standard page inset (px-4) */
   /* The sticky LiquidTabs sheet is the primary group for this custom column. */
   --site-sticky-primary-height: 3rem;
 }
@@ -29,10 +28,17 @@
    this sticky element (the mobile-Safari sticky+overflow bug). */
 /* ── Tab body ────────────────────────────────────────────────────────────── */
 .cstudio-body {
-  padding: 1rem var(--studio-gutter) 3rem; /* px-4 pt-4 pb-12 */
+  /* Vertical only: the shell frame already supplies the page gutter and the title sits on it, so an inline inset
+     here put the tab content at 32px against a 16px title (/create, /v, /creator-studio, /create/earnings). */
+  padding: 1rem 0 3rem; /* pt-4 pb-12 */
 }
 
 /* The Pages tab brings its own hero, so it shouldn't double up the top padding. */
 .cstudio-body--pages {
   padding-top: 0;
+}
+/* The shared RMHVibe hero pads itself inline for its own full-screen app; inside the page frame that is a second
+   gutter (the prompt dock sat at 48px on /create and /v against a 16px title), so it takes none here. */
+.cstudio-body .vibe-gallery__hero {
+  padding-inline: 0;
 }

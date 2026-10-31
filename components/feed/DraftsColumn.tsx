@@ -138,7 +138,7 @@ export function DraftsColumn({
  />
  </Reveal>
  ) : (
- <div className="space-y-6 px-4 pt-4 pb-12">
+ <div className="space-y-6 pt-4 pb-12">
  <Section
  title={t('section-scheduled', { defaultValue:'Scheduled'})}
  icon={CalendarClock}

@@ -866,7 +866,8 @@ _preference_, published as `--main-target`; on a wide screen the shell grants th
 column a larger floor (`--rad-measure`) so a desktop window is not held to a
 2019-era constant, and `min(100%, …)` keeps either from overflowing its track.
 `wide` pages take the whole content track. Inner content is
-usually `px-4 pt-4 pb-12 max-w-2xl mx-auto`; the column always carries
+usually `pt-4 pb-12 max-w-2xl mx-auto` with no inline `px-*` (the frame owns the
+page gutter; see `docs/page-consistency.md` §2); the column always carries
 `pb-dock` and **no `border-r`** — there is no app-frame edge. Repeated content
 floats as spaced cards (`space-y-3 px-3`); hairline `divide-y` rhythm lives
 _inside_ container cards, not between page-level sections.
