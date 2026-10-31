@@ -1,0 +1,1365 @@
+{
+  "$comment": "Every content key the reference mod (BalatroMultiplayerPvP) registers, or defines in a comment block, with its native counterpart. Generated once from the mod checkout by scanning every SMODS/MPAPI/PVP constructor (Joker, Consumable, Tag, Blind, Voucher, Back, Stake, Sticker, Booster, Challenge, Layer, Ruleset, ReworkCenter) and take_ownership call; loop-defined keys are expanded. spec/mp_content_inventory_spec.lua (objects, stickers, stakes, reworks) and lib/balatro/mp/rulesets/__tests__/mod-inventory.test.ts (layers, rulesets) fail when a native counterpart is missing. `excluded` lists what has none, each with the docs/balatro-mp-parity.md EX id that says why (\"inert\": commented out with no effect to port). Update it with the mod.",
+  "mod": {
+    "name": "BalatroMultiplayerPvP",
+    "commit": "c26b549"
+  },
+  "objects": [
+    {
+      "mod": "b_mp_violet",
+      "kind": "Back",
+      "source": "objects/decks/00_violet.lua",
+      "native": "b_mp_violet"
+    },
+    {
+      "mod": "b_mp_indigo",
+      "kind": "Back",
+      "source": "objects/decks/01_indigo.lua",
+      "native": "b_mp_indigo"
+    },
+    {
+      "mod": "b_mp_orange",
+      "kind": "Back",
+      "source": "objects/decks/02_orange.lua",
+      "native": "b_mp_orange"
+    },
+    {
+      "mod": "b_mp_white",
+      "kind": "Back",
+      "source": "objects/decks/09_white.lua",
+      "native": "b_mp_white",
+      "note": "commented out in the mod; EX-15 lifted"
+    },
+    {
+      "mod": "b_mp_oracle",
+      "kind": "Back",
+      "source": "objects/decks/AA_oracle.lua",
+      "native": "b_mp_oracle"
+    },
+    {
+      "mod": "b_mp_gradient",
+      "kind": "Back",
+      "source": "objects/decks/BB_gradient.lua",
+      "native": "b_mp_gradient"
+    },
+    {
+      "mod": "b_mp_heidelberg",
+      "kind": "Back",
+      "source": "objects/decks/CC_heidelberg.lua",
+      "native": "b_mp_heidelberg"
+    },
+    {
+      "mod": "b_mp_echodeck",
+      "kind": "Back",
+      "source": "objects/decks/EC_echo_deck.lua",
+      "native": "b_mp_echodeck"
+    },
+    {
+      "mod": "b_mp_cocktail",
+      "kind": "Back",
+      "source": "objects/decks/ZZ_cocktail.lua",
+      "native": "b_mp_cocktail"
+    },
+    {
+      "mod": "bl_mp_manhunt_hunter",
+      "kind": "Blind",
+      "source": "objects/blinds/manhunt.lua",
+      "native": "bl_mp_manhunt_hunter"
+    },
+    {
+      "mod": "bl_mp_manhunt_runner",
+      "kind": "Blind",
+      "source": "objects/blinds/manhunt.lua",
+      "native": "bl_mp_manhunt_runner"
+    },
+    {
+      "mod": "bl_mp_nemesis",
+      "kind": "Blind",
+      "source": "objects/blinds/nemesis.lua",
+      "native": "bl_mp_nemesis"
+    },
+    {
+      "mod": "p_mp_standard_giga",
+      "kind": "Booster",
+      "source": "objects/boosters/standard_giga.lua",
+      "native": "p_mp_standard_giga"
+    },
+    {
+      "mod": "p_mp_trap_normal",
+      "kind": "Booster",
+      "source": "objects/boosters/traps.lua",
+      "native": "p_mp_trap_normal"
+    },
+    {
+      "mod": "p_mp_trap_jumbo",
+      "kind": "Booster",
+      "source": "objects/boosters/traps.lua",
+      "native": "p_mp_trap_jumbo"
+    },
+    {
+      "mod": "c_mp_all_must_go",
+      "kind": "Challenge",
+      "source": "objects/challenges/all_must_go.lua",
+      "native": "c_mp_all_must_go"
+    },
+    {
+      "mod": "c_mp_bacon",
+      "kind": "Challenge",
+      "source": "objects/challenges/bacon.lua",
+      "native": "c_mp_bacon"
+    },
+    {
+      "mod": "c_mp_balancing_act",
+      "kind": "Challenge",
+      "source": "objects/challenges/balancing_act.lua",
+      "native": "c_mp_balancing_act"
+    },
+    {
+      "mod": "c_mp_chore_list",
+      "kind": "Challenge",
+      "source": "objects/challenges/chore_list.lua",
+      "native": "c_mp_chore_list"
+    },
+    {
+      "mod": "c_mp_divination",
+      "kind": "Challenge",
+      "source": "objects/challenges/divination.lua",
+      "native": "c_mp_divination"
+    },
+    {
+      "mod": "c_mp_mp_eeeee",
+      "kind": "Challenge",
+      "source": "objects/challenges/eeeee.lua",
+      "native": "c_mp_eeeee",
+      "note": "D-22: the mod key \"mp_eeeee\" gets a second mp_ prefix; the native id drops it"
+    },
+    {
+      "mod": "c_mp_high_hand",
+      "kind": "Challenge",
+      "source": "objects/challenges/high_hand.lua",
+      "native": "c_mp_high_hand"
+    },
+    {
+      "mod": "c_mp_in_the_red",
+      "kind": "Challenge",
+      "source": "objects/challenges/in_the_red.lua",
+      "native": "c_mp_in_the_red"
+    },
+    {
+      "mod": "c_mp_legendaries",
+      "kind": "Challenge",
+      "source": "objects/challenges/legendaries.lua",
+      "native": "c_mp_legendaries"
+    },
+    {
+      "mod": "c_mp_lets_go_gambling",
+      "kind": "Challenge",
+      "source": "objects/challenges/lets_go_gambling.lua",
+      "native": "c_mp_lets_go_gambling"
+    },
+    {
+      "mod": "c_mp_misprint_deck",
+      "kind": "Challenge",
+      "source": "objects/challenges/misprint_deck.lua",
+      "native": "c_mp_misprint_deck"
+    },
+    {
+      "mod": "c_mp_oops_all_jokers",
+      "kind": "Challenge",
+      "source": "objects/challenges/oops_all_jokers.lua",
+      "native": "c_mp_oops_all_jokers"
+    },
+    {
+      "mod": "c_mp_planet_tycoon",
+      "kind": "Challenge",
+      "source": "objects/challenges/planet_tycoon.lua",
+      "native": "c_mp_planet_tycoon"
+    },
+    {
+      "mod": "c_mp_polymorph_spam",
+      "kind": "Challenge",
+      "source": "objects/challenges/polymorph_spam.lua",
+      "native": "c_mp_polymorph_spam"
+    },
+    {
+      "mod": "c_mp_psychosis",
+      "kind": "Challenge",
+      "source": "objects/challenges/psychosis.lua",
+      "native": "c_mp_psychosis"
+    },
+    {
+      "mod": "c_mp_salvaged_sibyl",
+      "kind": "Challenge",
+      "source": "objects/challenges/salvaged_sibyl.lua",
+      "native": "c_mp_salvaged_sibyl"
+    },
+    {
+      "mod": "c_mp_scratch",
+      "kind": "Challenge",
+      "source": "objects/challenges/scratch.lua",
+      "native": "c_mp_scratch"
+    },
+    {
+      "mod": "c_mp_shared_pockets",
+      "kind": "Challenge",
+      "source": "objects/challenges/shared_pockets.lua",
+      "native": "c_mp_shared_pockets"
+    },
+    {
+      "mod": "c_mp_skip_off",
+      "kind": "Challenge",
+      "source": "objects/challenges/skip_off.lua",
+      "native": "c_mp_skip_off"
+    },
+    {
+      "mod": "c_mp_speed",
+      "kind": "Challenge",
+      "source": "objects/challenges/speed.lua",
+      "native": "c_mp_speed"
+    },
+    {
+      "mod": "c_mp_twin_towers",
+      "kind": "Challenge",
+      "source": "objects/challenges/twin_towers.lua",
+      "native": "c_mp_twin_towers"
+    },
+    {
+      "mod": "c_mp_vantablack",
+      "kind": "Challenge",
+      "source": "objects/challenges/vantablack.lua",
+      "native": "c_mp_vantablack"
+    },
+    {
+      "mod": "c_mp_asteroid",
+      "kind": "Planet",
+      "source": "objects/consumables/asteroid.lua",
+      "native": "c_mp_asteroid"
+    },
+    {
+      "mod": "c_mp_ouija_standard",
+      "kind": "Spectral",
+      "source": "objects/consumables/ouija.lua",
+      "native": "c_mp_ouija_standard"
+    },
+    {
+      "mod": "c_mp_ectoplasm_sandbox",
+      "kind": "Spectral",
+      "source": "objects/consumables/sandbox/ectoplasm.lua",
+      "native": "c_mp_ectoplasm_sandbox"
+    },
+    {
+      "mod": "c_mp_trap_glyph_of_warding",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_glyph_of_warding"
+    },
+    {
+      "mod": "c_mp_trap_symbol",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_symbol"
+    },
+    {
+      "mod": "c_mp_trap_alarm",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_alarm"
+    },
+    {
+      "mod": "c_mp_trap_explosive_runes",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_explosive_runes"
+    },
+    {
+      "mod": "c_mp_trap_sepia_snake_sigil",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_sepia_snake_sigil"
+    },
+    {
+      "mod": "c_mp_trap_fire_trap",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_fire_trap"
+    },
+    {
+      "mod": "c_mp_trap_guards_and_wards",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_guards_and_wards"
+    },
+    {
+      "mod": "c_mp_trap_magic_mouth",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_magic_mouth"
+    },
+    {
+      "mod": "c_mp_trap_snare",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_snare"
+    },
+    {
+      "mod": "c_mp_trap_arcane_lock",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_arcane_lock"
+    },
+    {
+      "mod": "c_mp_trap_programmed_illusion",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_programmed_illusion"
+    },
+    {
+      "mod": "c_mp_trap_web",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_web"
+    },
+    {
+      "mod": "c_mp_trap_forbiddance",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_forbiddance"
+    },
+    {
+      "mod": "c_mp_trap_faithful_hound",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_faithful_hound"
+    },
+    {
+      "mod": "c_mp_trap_phase_door",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_phase_door"
+    },
+    {
+      "mod": "c_mp_trap_mental_prison",
+      "kind": "Trap",
+      "source": "objects/consumables/traps.lua",
+      "native": "c_mp_trap_mental_prison"
+    },
+    {
+      "mod": "c_mp_wraith",
+      "kind": "Spectral",
+      "source": "objects/consumables/wraith.lua",
+      "native": "c_mp_wraith"
+    },
+    {
+      "mod": "j_mp_conjoined_joker",
+      "kind": "Joker",
+      "source": "objects/jokers/conjoined_joker.lua",
+      "native": "j_mp_conjoined_joker"
+    },
+    {
+      "mod": "j_mp_defensive_joker",
+      "kind": "Joker",
+      "source": "objects/jokers/defensive_joker.lua",
+      "native": "j_mp_defensive_joker"
+    },
+    {
+      "mod": "j_mp_baron",
+      "kind": "Joker",
+      "source": "objects/jokers/experimental/baron_uncommon.lua",
+      "native": "j_mp_baron",
+      "note": "commented out in the mod; EX-15 lifted"
+    },
+    {
+      "mod": "j_mp_idol_rare",
+      "kind": "Joker",
+      "source": "objects/jokers/experimental/idol_rare.lua",
+      "native": "j_mp_idol_rare"
+    },
+    {
+      "mod": "j_mp_mime",
+      "kind": "Joker",
+      "source": "objects/jokers/experimental/mime_rare.lua",
+      "native": "j_mp_mime",
+      "note": "commented out in the mod; EX-15 lifted"
+    },
+    {
+      "mod": "j_mp_todo_list",
+      "kind": "Joker",
+      "source": "objects/jokers/experimental/todo_list.lua",
+      "native": "j_mp_todo_list"
+    },
+    {
+      "mod": "j_mp_lets_go_gambling",
+      "kind": "Joker",
+      "source": "objects/jokers/lets_go_gambling.lua",
+      "native": "j_mp_lets_go_gambling"
+    },
+    {
+      "mod": "j_mp_pacifist",
+      "kind": "Joker",
+      "source": "objects/jokers/pacifist.lua",
+      "native": "j_mp_pacifist"
+    },
+    {
+      "mod": "j_mp_penny_pincher",
+      "kind": "Joker",
+      "source": "objects/jokers/penny_pincher.lua",
+      "native": "j_mp_penny_pincher"
+    },
+    {
+      "mod": "j_mp_pizza",
+      "kind": "Joker",
+      "source": "objects/jokers/pizza.lua",
+      "native": "j_mp_pizza"
+    },
+    {
+      "mod": "j_mp_baseball_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/baseball.lua",
+      "native": "j_mp_baseball_sandbox"
+    },
+    {
+      "mod": "j_mp_bloodstone_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/bloodstone.lua",
+      "native": "j_mp_bloodstone_sandbox"
+    },
+    {
+      "mod": "j_mp_castle_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/castle.lua",
+      "native": "j_mp_castle_sandbox"
+    },
+    {
+      "mod": "j_mp_cloud_9_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/cloud_9.lua",
+      "native": "j_mp_cloud_9_sandbox"
+    },
+    {
+      "mod": "j_mp_constellation_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/constellation.lua",
+      "native": "j_mp_constellation_sandbox"
+    },
+    {
+      "mod": "j_mp_error_sandbox_1",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_1"
+    },
+    {
+      "mod": "j_mp_error_sandbox_2",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_2"
+    },
+    {
+      "mod": "j_mp_error_sandbox_3",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_3"
+    },
+    {
+      "mod": "j_mp_error_sandbox_4",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_4"
+    },
+    {
+      "mod": "j_mp_error_sandbox_5",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_5"
+    },
+    {
+      "mod": "j_mp_error_sandbox_6",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_6"
+    },
+    {
+      "mod": "j_mp_error_sandbox_7",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_7"
+    },
+    {
+      "mod": "j_mp_error_sandbox_8",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_8"
+    },
+    {
+      "mod": "j_mp_error_sandbox_9",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_9"
+    },
+    {
+      "mod": "j_mp_error_sandbox_10",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_10"
+    },
+    {
+      "mod": "j_mp_error_sandbox_11",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_11"
+    },
+    {
+      "mod": "j_mp_error_sandbox_12",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_12"
+    },
+    {
+      "mod": "j_mp_error_sandbox_13",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_13"
+    },
+    {
+      "mod": "j_mp_error_sandbox_14",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_14"
+    },
+    {
+      "mod": "j_mp_error_sandbox_15",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_15"
+    },
+    {
+      "mod": "j_mp_error_sandbox_16",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_16"
+    },
+    {
+      "mod": "j_mp_error_sandbox_17",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_17"
+    },
+    {
+      "mod": "j_mp_error_sandbox_18",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_18"
+    },
+    {
+      "mod": "j_mp_error_sandbox_19",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_19"
+    },
+    {
+      "mod": "j_mp_error_sandbox_20",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_20"
+    },
+    {
+      "mod": "j_mp_error_sandbox_21",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/error.lua",
+      "native": "j_mp_error_sandbox_21"
+    },
+    {
+      "mod": "j_mp_alloy_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/alloy.lua",
+      "native": "j_mp_alloy_sandbox"
+    },
+    {
+      "mod": "j_mp_ambrosia_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/ambrosia.lua",
+      "native": "j_mp_ambrosia_sandbox"
+    },
+    {
+      "mod": "j_mp_bobby_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/bobby.lua",
+      "native": "j_mp_bobby_sandbox"
+    },
+    {
+      "mod": "j_mp_candynecklace_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/candynecklace.lua",
+      "native": "j_mp_candynecklace_sandbox"
+    },
+    {
+      "mod": "j_mp_chainlightning_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/chainlightning.lua",
+      "native": "j_mp_chainlightning_sandbox"
+    },
+    {
+      "mod": "j_mp_clowncar_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/clowncar.lua",
+      "native": "j_mp_clowncar_sandbox"
+    },
+    {
+      "mod": "j_mp_clowncollege_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/clowncollege.lua",
+      "native": "j_mp_clowncollege_sandbox"
+    },
+    {
+      "mod": "j_mp_couponsheet_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/couponsheet.lua",
+      "native": "j_mp_couponsheet_sandbox"
+    },
+    {
+      "mod": "j_mp_doublerainbow_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/doublerainbow.lua",
+      "native": "j_mp_doublerainbow_sandbox"
+    },
+    {
+      "mod": "j_mp_espresso_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/espresso.lua",
+      "native": "j_mp_espresso_sandbox"
+    },
+    {
+      "mod": "j_mp_farmer_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/farmer.lua",
+      "native": "j_mp_farmer_sandbox"
+    },
+    {
+      "mod": "j_mp_forklift_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/forklift.lua",
+      "native": "j_mp_forklift_sandbox"
+    },
+    {
+      "mod": "j_mp_gofish_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/gofish.lua",
+      "native": "j_mp_gofish_sandbox"
+    },
+    {
+      "mod": "j_mp_hoarder_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/hoarder.lua",
+      "native": "j_mp_hoarder_sandbox"
+    },
+    {
+      "mod": "j_mp_jokalisa_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/jokalisa.lua",
+      "native": "j_mp_jokalisa_sandbox"
+    },
+    {
+      "mod": "j_mp_jokeroftheyear_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/jokeroftheyear.lua",
+      "native": "j_mp_jokeroftheyear_sandbox"
+    },
+    {
+      "mod": "j_mp_lucky7_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/lucky7.lua",
+      "native": "j_mp_lucky7_sandbox"
+    },
+    {
+      "mod": "j_mp_montehaul_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/montehaul.lua",
+      "native": "j_mp_montehaul_sandbox"
+    },
+    {
+      "mod": "j_mp_pocketaces_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/pocketaces.lua",
+      "native": "j_mp_pocketaces_sandbox"
+    },
+    {
+      "mod": "j_mp_pyromancer_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/pyromancer.lua",
+      "native": "j_mp_pyromancer_sandbox"
+    },
+    {
+      "mod": "j_mp_shipoftheseus_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/shipoftheseus.lua",
+      "native": "j_mp_shipoftheseus_sandbox"
+    },
+    {
+      "mod": "j_mp_starfruit_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/starfruit.lua",
+      "native": "j_mp_starfruit_sandbox"
+    },
+    {
+      "mod": "j_mp_trafficlight_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/trafficlight.lua",
+      "native": "j_mp_trafficlight_sandbox"
+    },
+    {
+      "mod": "j_mp_tuxedo_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/tuxedo.lua",
+      "native": "j_mp_tuxedo_sandbox"
+    },
+    {
+      "mod": "j_mp_warlock_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/warlock.lua",
+      "native": "j_mp_warlock_sandbox"
+    },
+    {
+      "mod": "j_mp_werewolf_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/extra-credit/werewolf.lua",
+      "native": "j_mp_werewolf_sandbox"
+    },
+    {
+      "mod": "j_mp_faceless_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/faceless.lua",
+      "native": "j_mp_faceless_sandbox"
+    },
+    {
+      "mod": "j_mp_golden_ticket_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/golden_ticket.lua",
+      "native": "j_mp_golden_ticket_sandbox"
+    },
+    {
+      "mod": "j_mp_hit_the_road_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/hit_the_road.lua",
+      "native": "j_mp_hit_the_road_sandbox"
+    },
+    {
+      "mod": "j_mp_idol_sandbox_zealot",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/idol.lua",
+      "native": "j_mp_idol_sandbox_zealot"
+    },
+    {
+      "mod": "j_mp_idol_sandbox_collector",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/idol.lua",
+      "native": "j_mp_idol_sandbox_collector"
+    },
+    {
+      "mod": "j_mp_juggler_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/juggler.lua",
+      "native": "j_mp_juggler_sandbox"
+    },
+    {
+      "mod": "j_mp_loyalty_card_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/loyalty_card.lua",
+      "native": "j_mp_loyalty_card_sandbox"
+    },
+    {
+      "mod": "j_mp_lucky_cat_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/lucky_cat.lua",
+      "native": "j_mp_lucky_cat_sandbox"
+    },
+    {
+      "mod": "j_mp_magnet_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/magnet_sandbox.lua",
+      "native": "j_mp_magnet_sandbox"
+    },
+    {
+      "mod": "j_mp_mail_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/mail.lua",
+      "native": "j_mp_mail_sandbox"
+    },
+    {
+      "mod": "j_mp_misprint_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/misprint.lua",
+      "native": "j_mp_misprint_sandbox"
+    },
+    {
+      "mod": "j_mp_order_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/order.lua",
+      "native": "j_mp_order_sandbox"
+    },
+    {
+      "mod": "j_mp_photograph_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/photograph.lua",
+      "native": "j_mp_photograph_sandbox"
+    },
+    {
+      "mod": "j_mp_ride_the_bus_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/ride_the_bus.lua",
+      "native": "j_mp_ride_the_bus_sandbox"
+    },
+    {
+      "mod": "j_mp_runner_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/runner.lua",
+      "native": "j_mp_runner_sandbox"
+    },
+    {
+      "mod": "j_mp_satellite_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/satellite.lua",
+      "native": "j_mp_satellite_sandbox"
+    },
+    {
+      "mod": "j_mp_square_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/square.lua",
+      "native": "j_mp_square_sandbox"
+    },
+    {
+      "mod": "j_mp_steel_joker_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/steel_joker.lua",
+      "native": "j_mp_steel_joker_sandbox"
+    },
+    {
+      "mod": "j_mp_throwback_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/throwback.lua",
+      "native": "j_mp_throwback_sandbox"
+    },
+    {
+      "mod": "j_mp_vampire_sandbox",
+      "kind": "Joker",
+      "source": "objects/jokers/sandbox/vampire.lua",
+      "native": "j_mp_vampire_sandbox"
+    },
+    {
+      "mod": "j_mp_skip_off",
+      "kind": "Joker",
+      "source": "objects/jokers/skip_off.lua",
+      "native": "j_mp_skip_off"
+    },
+    {
+      "mod": "j_mp_speedrun",
+      "kind": "Joker",
+      "source": "objects/jokers/speedrun.lua",
+      "native": "j_mp_speedrun"
+    },
+    {
+      "mod": "j_mp_bloodstone",
+      "kind": "Joker",
+      "source": "objects/jokers/standard/bloodstone.lua",
+      "native": "j_mp_bloodstone"
+    },
+    {
+      "mod": "j_mp_hanging_chad",
+      "kind": "Joker",
+      "source": "objects/jokers/standard/hanging_chad.lua",
+      "native": "j_mp_hanging_chad"
+    },
+    {
+      "mod": "j_mp_seltzer",
+      "kind": "Joker",
+      "source": "objects/jokers/standard/seltzer.lua",
+      "native": "j_mp_seltzer"
+    },
+    {
+      "mod": "j_mp_ticket",
+      "kind": "Joker",
+      "source": "objects/jokers/standard/ticket.lua",
+      "native": "j_mp_ticket"
+    },
+    {
+      "mod": "j_mp_ticket_experimental",
+      "kind": "Joker",
+      "source": "objects/jokers/standard/ticket.lua",
+      "native": "j_mp_ticket_experimental"
+    },
+    {
+      "mod": "j_mp_turtle_bean",
+      "kind": "Joker",
+      "source": "objects/jokers/standard/turtle_bean.lua",
+      "native": "j_mp_turtle_bean"
+    },
+    {
+      "mod": "j_mp_taxes",
+      "kind": "Joker",
+      "source": "objects/jokers/taxes.lua",
+      "native": "j_mp_taxes"
+    },
+    {
+      "mod": "tag_mp_gambling_sandbox",
+      "kind": "Tag",
+      "source": "objects/tags/gambling_sandbox.lua",
+      "native": "tag_mp_gambling_sandbox"
+    },
+    {
+      "mod": "tag_mp_investment_sandbox",
+      "kind": "Tag",
+      "source": "objects/tags/investment_sandbox.lua",
+      "native": "tag_mp_investment_sandbox"
+    },
+    {
+      "mod": "tag_mp_juggle_sandbox",
+      "kind": "Tag",
+      "source": "objects/tags/juggle_sandbox.lua",
+      "native": "tag_mp_juggle_sandbox"
+    },
+    {
+      "mod": "tag_mp_ward",
+      "kind": "Tag",
+      "source": "objects/tags/ward.lua",
+      "native": "tag_mp_ward"
+    },
+    {
+      "mod": "v_mp_hieroglyph_manhunt",
+      "kind": "Voucher",
+      "source": "objects/vouchers/manhunt_vouchers.lua",
+      "native": "v_mp_hieroglyph_manhunt"
+    },
+    {
+      "mod": "v_mp_petroglyph_manhunt",
+      "kind": "Voucher",
+      "source": "objects/vouchers/manhunt_vouchers.lua",
+      "native": "v_mp_petroglyph_manhunt"
+    }
+  ],
+  "stickers": [
+    {
+      "mod": "mp_sticker_persistent",
+      "source": "objects/stickers/1_persistent.lua",
+      "native": "mp_sticker_persistent"
+    },
+    {
+      "mod": "mp_sticker_unreliable",
+      "source": "objects/stickers/2_unreliable.lua",
+      "native": "mp_sticker_unreliable"
+    },
+    {
+      "mod": "mp_sticker_draining",
+      "source": "objects/stickers/3_draining.lua",
+      "native": "mp_sticker_draining"
+    },
+    {
+      "mod": "mp_sticker_balanced",
+      "source": "objects/stickers/balanced.lua",
+      "native": "mp_sticker_balanced"
+    },
+    {
+      "mod": "mp_sticker_extra_credit",
+      "source": "objects/stickers/extra_credit.lua",
+      "native": "mp_sticker_extra_credit"
+    }
+  ],
+  "stakes": [
+    {
+      "mod": "stake_mp_planet",
+      "source": "objects/stakes/00_planet.lua",
+      "native": "stake_mp_planet"
+    },
+    {
+      "mod": "stake_mp_spectral",
+      "source": "objects/stakes/01_spectral.lua",
+      "native": "stake_mp_spectral"
+    },
+    {
+      "mod": "stake_mp_spectralplus",
+      "source": "objects/stakes/02_spectralplus.lua",
+      "native": "stake_mp_spectralplus"
+    }
+  ],
+  "reworks": [
+    {
+      "mod": "m_glass",
+      "layers": ["standard", "classic", "wsob"],
+      "source": "objects/enhancements/mp_glass.lua",
+      "native": "rw_mp_glass"
+    },
+    {
+      "mod": "m_glass",
+      "layers": ["sandbox"],
+      "source": "objects/enhancements/mp_glass.lua",
+      "native": "rw_mp_glass_sandbox"
+    },
+    {
+      "mod": "j_ice_cream",
+      "layers": ["pvp_timer"],
+      "source": "objects/jokers/standard/ice_cream.lua",
+      "native": "rw_mp_ice_cream_takeover"
+    },
+    {
+      "mod": "j_selzer",
+      "layers": ["pvp_timer"],
+      "source": "objects/jokers/standard/seltzer.lua",
+      "native": "rw_mp_selzer_takeover"
+    }
+  ],
+  "layers": [
+    {
+      "mod": "badlatro",
+      "source": "layers/badlatro.lua",
+      "native": "badlatro"
+    },
+    {
+      "mod": "gambling_opportunity",
+      "source": "layers/ban_mutators.lua",
+      "native": "gambling_opportunity"
+    },
+    {
+      "mod": "no_uncommons",
+      "source": "layers/ban_mutators.lua",
+      "native": "no_uncommons"
+    },
+    {
+      "mod": "classic",
+      "source": "layers/classic.lua",
+      "native": "classic"
+    },
+    {
+      "mod": "inflation",
+      "source": "layers/economy_mutators.lua",
+      "native": "inflation"
+    },
+    {
+      "mod": "no_interest",
+      "source": "layers/economy_mutators.lua",
+      "native": "no_interest"
+    },
+    {
+      "mod": "discard_tax",
+      "source": "layers/economy_mutators.lua",
+      "native": "discard_tax"
+    },
+    {
+      "mod": "frugal",
+      "source": "layers/economy_mutators.lua",
+      "native": "frugal"
+    },
+    {
+      "mod": "spartan",
+      "source": "layers/economy_mutators.lua",
+      "native": "spartan"
+    },
+    {
+      "mod": "pricey_packs",
+      "source": "layers/economy_mutators.lua",
+      "native": "pricey_packs"
+    },
+    {
+      "mod": "eeeee",
+      "source": "layers/eeeee.lua",
+      "native": "eeeee"
+    },
+    {
+      "mod": "flipped_cards",
+      "source": "layers/esoteric_mutators.lua",
+      "native": "flipped_cards"
+    },
+    {
+      "mod": "debuff_played_cards",
+      "source": "layers/esoteric_mutators.lua",
+      "native": "debuff_played_cards"
+    },
+    {
+      "mod": "all_eternal",
+      "source": "layers/esoteric_mutators.lua",
+      "native": "all_eternal"
+    },
+    {
+      "mod": "chip_cap",
+      "source": "layers/esoteric_mutators.lua",
+      "native": "chip_cap"
+    },
+    {
+      "mod": "shrinking_hand",
+      "source": "layers/esoteric_mutators.lua",
+      "native": "shrinking_hand"
+    },
+    {
+      "mod": "experimental",
+      "source": "layers/experimental.lua",
+      "native": "experimental"
+    },
+    {
+      "mod": "glass_cannon",
+      "source": "layers/glass_cannon.lua",
+      "native": "glass_cannon"
+    },
+    {
+      "mod": "glass_vanilla",
+      "source": "layers/glass_variants.lua",
+      "native": "glass_vanilla"
+    },
+    {
+      "mod": "glass_standard",
+      "source": "layers/glass_variants.lua",
+      "native": "glass_standard"
+    },
+    {
+      "mod": "glass_legacy",
+      "source": "layers/glass_variants.lua",
+      "native": "glass_legacy"
+    },
+    {
+      "mod": "glass_experimental",
+      "source": "layers/glass_variants.lua",
+      "native": "glass_experimental"
+    },
+    {
+      "mod": "majorleague",
+      "source": "layers/majorleague.lua",
+      "native": "majorleague"
+    },
+    {
+      "mod": "no_animation_timer",
+      "source": "layers/no_anim_timer.lua",
+      "native": "no_animation_timer"
+    },
+    {
+      "mod": "no_red_seals",
+      "source": "layers/no_red_seals.lua",
+      "native": "no_red_seals"
+    },
+    {
+      "mod": "polymorph_spam",
+      "source": "layers/polymorph_spam.lua",
+      "native": "polymorph_spam"
+    },
+    {
+      "mod": "pressure_timer",
+      "source": "layers/pressure_timer.lua",
+      "native": "pressure_timer"
+    },
+    {
+      "mod": "pressure_timer_plus",
+      "source": "layers/pressure_timer.lua",
+      "native": "pressure_timer_plus"
+    },
+    {
+      "mod": "pvp_timer",
+      "source": "layers/pvp_timer.lua",
+      "native": "pvp_timer"
+    },
+    {
+      "mod": "ranked",
+      "source": "layers/ranked.lua",
+      "native": "ranked"
+    },
+    {
+      "mod": "sandbox",
+      "source": "layers/sandbox.lua",
+      "native": "sandbox"
+    },
+    {
+      "mod": "score_instability",
+      "source": "layers/score_instability.lua",
+      "native": "score_instability"
+    },
+    {
+      "mod": "shared_pockets",
+      "source": "layers/shared_pockets.lua",
+      "native": "shared_pockets"
+    },
+    {
+      "mod": "bigger_shop",
+      "source": "layers/shop_mutators.lua",
+      "native": "bigger_shop"
+    },
+    {
+      "mod": "smallworld",
+      "source": "layers/smallworld.lua",
+      "native": "smallworld"
+    },
+    {
+      "mod": "speedlatro_timer",
+      "source": "layers/speedlatro_timer.lua",
+      "native": "speedlatro_timer"
+    },
+    {
+      "mod": "standard",
+      "source": "layers/standard.lua",
+      "native": "standard"
+    },
+    {
+      "mod": "traps",
+      "source": "layers/traps.lua",
+      "native": "traps"
+    },
+    {
+      "mod": "wraith_rework",
+      "source": "layers/wraith_rework.lua",
+      "native": "wraith_rework"
+    },
+    {
+      "mod": "wsob",
+      "source": "layers/wsob.lua",
+      "native": "wsob"
+    }
+  ],
+  "rulesets": [
+    {
+      "mod": "badlatro",
+      "source": "rulesets/badlatro.lua",
+      "native": "ruleset_mp_badlatro"
+    },
+    {
+      "mod": "balanced",
+      "source": "rulesets/balanced.lua",
+      "native": "ruleset_mp_balanced"
+    },
+    {
+      "mod": "chaos",
+      "source": "rulesets/chaos.lua",
+      "native": "ruleset_mp_chaos"
+    },
+    {
+      "mod": "expanded",
+      "source": "rulesets/expanded.lua",
+      "native": "ruleset_mp_expanded"
+    },
+    {
+      "mod": "experimental",
+      "source": "rulesets/experimental/experimental.lua",
+      "native": "ruleset_mp_experimental"
+    },
+    {
+      "mod": "experimental_legacy",
+      "source": "rulesets/experimental/experimental_legacy.lua",
+      "native": "ruleset_mp_experimental_legacy"
+    },
+    {
+      "mod": "legacy_ranked",
+      "source": "rulesets/legacy_ranked.lua",
+      "native": "ruleset_mp_legacy_ranked"
+    },
+    {
+      "mod": "majorleague",
+      "source": "rulesets/majorleague.lua",
+      "native": "ruleset_mp_majorleague"
+    },
+    {
+      "mod": "minorleague",
+      "source": "rulesets/minorleague.lua",
+      "native": "ruleset_mp_minorleague"
+    },
+    {
+      "mod": "sandbox",
+      "source": "rulesets/sandbox.lua",
+      "native": "ruleset_mp_sandbox"
+    },
+    {
+      "mod": "smallworld",
+      "source": "rulesets/smallworld.lua",
+      "native": "ruleset_mp_smallworld"
+    },
+    {
+      "mod": "speedlatro",
+      "source": "rulesets/speedlatro.lua",
+      "native": "ruleset_mp_speedlatro"
+    },
+    {
+      "mod": "traditional",
+      "source": "rulesets/traditional.lua",
+      "native": "ruleset_mp_traditional"
+    },
+    {
+      "mod": "vanilla",
+      "source": "rulesets/vanilla.lua",
+      "native": "ruleset_mp_vanilla"
+    },
+    {
+      "mod": "wsob",
+      "source": "rulesets/wsob.lua",
+      "native": "ruleset_mp_wsob"
+    }
+  ],
+  "excluded": [
+    {
+      "mod": "release",
+      "kind": "Layer",
+      "source": "layers/release.lua",
+      "ex": "EX-14",
+      "reason": "commented out in the mod, with the Release ruleset"
+    },
+    {
+      "mod": "c_judgement",
+      "kind": "Rework",
+      "source": "objects/consumables/judgement.lua",
+      "ex": "inert",
+      "reason": "commented out in the mod (\"gotta redefine the logic\"): Judgement stays vanilla there and here"
+    },
+    {
+      "mod": "release",
+      "kind": "Ruleset",
+      "source": "rulesets/release.lua",
+      "ex": "EX-14",
+      "reason": "the whole file is commented out in the mod, with its 65 ReworkCenter calls and release_jokers.png"
+    },
+    {
+      "mod": "stake_mp_plastic",
+      "kind": "Stake",
+      "source": "objects/stakes/1_plastic.lua",
+      "ex": "EX-16",
+      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
+    },
+    {
+      "mod": "stake_mp_pebble",
+      "kind": "Stake",
+      "source": "objects/stakes/2_pebble.lua",
+      "ex": "EX-16",
+      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
+    },
+    {
+      "mod": "stake_mp_ferrite",
+      "kind": "Stake",
+      "source": "objects/stakes/3_ferrite.lua",
+      "ex": "EX-16",
+      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
+    },
+    {
+      "mod": "stake_mp_pyrite",
+      "kind": "Stake",
+      "source": "objects/stakes/4_pyrite.lua",
+      "ex": "EX-16",
+      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
+    },
+    {
+      "mod": "stake_mp_jade",
+      "kind": "Stake",
+      "source": "objects/stakes/5_jade.lua",
+      "ex": "EX-16",
+      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
+    },
+    {
+      "mod": "stake_mp_crystal",
+      "kind": "Stake",
+      "source": "objects/stakes/6_crystal.lua",
+      "ex": "EX-16",
+      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
+    },
+    {
+      "mod": "stake_mp_antimatter",
+      "kind": "Stake",
+      "source": "objects/stakes/7_antimatter.lua",
+      "ex": "EX-16",
+      "reason": "behind PVP.EXPERIMENTAL.alt_stakes = false: never registered by the mod"
+    },
+    {
+      "mod": "mp_sticker_nemesis",
+      "kind": "Sticker",
+      "source": "objects/stickers/nemesis.lua",
+      "ex": "EX-17",
+      "reason": "needs_enable_flag and no layer, stake or ruleset ever enables it: it never reaches a card"
+    }
+  ]
+}

@@ -193,9 +193,9 @@ into `rmh_mp/loc/<lang>.lua` in the pack:
   (the mod's stale keys), a different shape, or a `#n#` placeholder English does not
   fill. `--verbose` lists them all.
 - **Excluded content is dropped from every language**, so it neither ships nor pulls
-  glyphs into the fonts. That is the Release ruleset (EX-14), Baron, Mime and the
-  White Deck (EX-15), the alt stakes (EX-16), and `j_broken`, `j_mp_idol`,
-  `j_to_the_moon_mp` and the `m_gold` balanced note (A2 §14).
+  glyphs into the fonts. That is the Release ruleset (EX-14), the alt stakes (EX-16),
+  and `j_broken`, `j_mp_idol`, `j_to_the_moon_mp` and the `m_gold` balanced note
+  (A2 §14). Baron, Mime and the White Deck ship since EX-15 was lifted.
 - **Missing typographic punctuation is replaced.** `’`, `“”`, `…` and similar marks
   that a language's font lacks become their ASCII form (the mod's French uses `’`,
   which `m6x11plus` cannot draw).

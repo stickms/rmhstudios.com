@@ -389,9 +389,15 @@ describe('MP localization (lua5.1)', () => {
     expect(enLeaves.get('.descriptions.Joker.j_mp_pizza')).toEqual(
       leaves(modEn).get('.descriptions.Joker.j_mp_pizza'),
     );
-    // Content this port excludes (EX-14..16) does not ship.
+    // Content this port excludes (EX-14, EX-16) does not ship; EX-15 (Baron, Mime, White) does.
     for (const path of enLeaves.keys())
-      expect(path).not.toMatch(/_release$|j_mp_baron$|b_mp_white$|stake_mp_plastic$/);
+      expect(path).not.toMatch(/_release$|j_mp_idol$|stake_mp_plastic$/);
+    for (const key of [
+      '.descriptions.Joker.j_mp_baron',
+      '.descriptions.Joker.j_mp_mime',
+      '.descriptions.Back.b_mp_white',
+    ])
+      expect(enLeaves.has(key), key).toBe(true);
     for (const [lang, table] of loc) {
       if (lang === 'en-us') continue;
       for (const [path, value] of leaves(table)) {

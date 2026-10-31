@@ -314,7 +314,8 @@
       "rmh_mp_shopping": "Shopping",
       "rmh_mp_ui_catching_up": "Catching up",
       "rmh_mp_ui_left": "Left",
-      "rmh_mp_ui_forfeited": "Forfeited"
+      "rmh_mp_ui_forfeited": "Forfeited",
+      "rmh_mp_white_waiting": "Shown from the first PvP Blind"
     },
     "v_dictionary": {
       "rmh_mp_invited_by": "#1# invited you",
@@ -336,7 +337,8 @@
       "rmh_mp_vote_seed_progress": "Vote to change seed: #1#/#2#",
       "rmh_mp_vote_draw_progress": "Vote for Draw: #1#/#2#",
       "rmh_mp_place": "Place #1#",
-      "rmh_mp_best_pvp": "Best PvP score: #1#"
+      "rmh_mp_best_pvp": "Best PvP score: #1#",
+      "rmh_mp_white_as_of": "At the PvP Blind of Ante #1#"
     },
     "labels": {
       "rmh_mp_phantom": "Phantom"
