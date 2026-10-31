@@ -138,7 +138,7 @@ jobs:
   # the header).
   e2e-engine:
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ (github.event_name == 'schedule' || inputs.long == true) && 150 || 40 }}
+    timeout-minutes: ${{ (github.event_name == 'schedule' || inputs.long == true) && 150 || 50 }}
     env:
       NODE_OPTIONS: --max-old-space-size=8192
       LONG: ${{ github.event_name == 'schedule' || inputs.long == true }}

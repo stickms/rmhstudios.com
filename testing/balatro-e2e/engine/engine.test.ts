@@ -37,6 +37,13 @@ const SPEC_FILES = readdirSync(path.join(MP_TEST_DIR, 'specs'))
 
 /** Per spec file: software-rendered runs on a shared CI runner. */
 const FILE_TIMEOUT_MS = Number(process.env.BALATRO_E2E_SPEC_TIMEOUT_MS || 1_200_000);
+/**
+ * Spec files that measure many real (non-turbo) frames get a multiple of the budget:
+ * perf_spec samples 480 frames per side for each of its four tests, and a frame is
+ * ~100 ms under SwiftShader on a CI runner.
+ */
+const SLOW_FILES: Record<string, number> = { perf_spec: 2 };
+const fileTimeout = (file: string) => FILE_TIMEOUT_MS * (SLOW_FILES[file] ?? 1);
 /** The harness gives up on a spec file this long before vitest's own timeout, so it can say why. */
 const WATCHDOG_MARGIN_MS = 30_000;
 
@@ -133,7 +140,7 @@ describe('engine-spec harness (one boot)', () => {
         process.stdout.write(`# [${stamp()}] ${file} …\n`);
         let s: SpecSummary;
         try {
-          s = await runFile(first ?? (await reopen()), file, FILE_TIMEOUT_MS - WATCHDOG_MARGIN_MS);
+          s = await runFile(first ?? (await reopen()), file, fileTimeout(file) - WATCHDOG_MARGIN_MS);
         } catch (e) {
           // The page is stuck in this file (or gone): the next file gets a fresh boot.
           lostBoot = true;
@@ -150,7 +157,7 @@ describe('engine-spec harness (one boot)', () => {
         expect(s.tests.length).toBeGreaterThan(0);
         expect(failuresOf(s)).toEqual([]);
       },
-      FILE_TIMEOUT_MS,
+      fileTimeout(file),
     );
   }
 
