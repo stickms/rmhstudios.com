@@ -36,7 +36,7 @@
  */
 
 import { z } from 'zod';
-import { zCode, zQueueMode } from '../net/events';
+import { zCode, zQueueCounts, zQueueMode } from '../net/events';
 import {
   zBlindCol,
   zGameEvent,
@@ -195,6 +195,8 @@ export const L2J_MP = {
   ui_mute: z.object({ userId: zId, on: z.boolean().optional() }),
   ui_queue: z.object({ op: z.enum(['join', 'leave']), queueMode: zQueueMode }),
   ui_party_queue: z.object({ queueMode: zQueueMode }),
+  /** Find Game asks for the live per-mode counts (A12; Lua polls while the page is open). */
+  ui_queue_counts: z.object({}),
   ui_vote: z.object({ stepId: z.string().max(32), option: z.string().max(64) }),
   ui_draft: z.object({ stepId: z.string().max(32), key: zKey }),
   ui_chat: z.object({ text: zText }),
@@ -271,6 +273,8 @@ export const J2L_MP = {
     queueMode: zQueueMode,
     waiting: z.number().int().min(0).optional(),
   }),
+  /** The hub's answer to `ui_queue_counts` (A12). */
+  queue_counts: zQueueCounts,
   chat_line: z.object({
     from: zId,
     name: z.string().max(64),

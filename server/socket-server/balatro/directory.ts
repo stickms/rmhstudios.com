@@ -177,6 +177,19 @@ export function listSpectatableLobbies(): BalatroLobbyListing[] {
   }));
 }
 
+/**
+ * Players seated in matchmade (casual) rooms, per mode (Find Game's In Game, A12): the hub's own
+ * seat count, so a host cannot inflate it.
+ */
+export function casualSeatsByMode(): Map<QueueMode, number> {
+  const out = new Map<QueueMode, number>();
+  for (const r of balatroHub.rooms.values()) {
+    if (r.closed || r.meta.kind !== 'casual') continue;
+    out.set(r.meta.queueMode, (out.get(r.meta.queueMode) ?? 0) + r.meta.seats.size);
+  }
+  return out;
+}
+
 /** Test seam: forget every room and seat. */
 export function resetBalatroDirectoryForTests(): void {
   balatroHub.reset();

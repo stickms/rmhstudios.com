@@ -68,6 +68,23 @@ export { zIceServers };
 
 export const zRole = z.enum(['player', 'spectator']);
 
+/**
+ * Find Game's live counts (A12): per casual queue mode, players searching and players seated in
+ * a matchmade (casual) lobby. Aggregate counters only; the hub answers `balatro:queue:counts`
+ * with one entry per mode, and the page mirrors it to Lua as `queue_counts`.
+ */
+export const zQueueCounts = z.object({
+  counts: z
+    .array(
+      z.object({
+        queueMode: zQueueMode,
+        queued: z.number().int().min(0).max(1_000_000),
+        inGame: z.number().int().min(0).max(1_000_000),
+      }),
+    )
+    .max(8),
+});
+
 /** A relay frame as the server sees it (`Buffer` is a `Uint8Array`). */
 const zRelayIn = z
   .instanceof(Uint8Array)
@@ -155,6 +172,8 @@ export const BALATRO_C2S = {
   'balatro:party:queue': z.object({ code: zCode, queueMode: zQueueMode }),
   'balatro:invite': z.object({ code: zCode, toUserId: z.string().max(64) }),
   'balatro:spectate:list': z.object({}),
+  /** Find Game's per-mode counts (A12); answered with the S2C event of the same name. */
+  'balatro:queue:counts': z.object({}),
 } as const satisfies Record<string, z.ZodType>;
 
 /* ─── S2C (hub → client) ─────────────────────────────────────────────────── */
@@ -216,6 +235,7 @@ export const BALATRO_S2C = {
     waiting: z.number().int().optional(),
   }),
   'balatro:invited': z.object({ code: zCode, fromUserId: zUserId, fromName: z.string().max(64) }),
+  'balatro:queue:counts': zQueueCounts,
   'balatro:spectate:lobbies': z.object({
     lobbies: z
       .array(

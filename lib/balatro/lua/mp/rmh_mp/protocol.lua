@@ -46,6 +46,7 @@ P.L2J = {
   ui_party_queue = "ui_party_queue",
   ui_practice = "ui_practice",
   ui_queue = "ui_queue",
+  ui_queue_counts = "ui_queue_counts",
   ui_ready = "ui_ready",
   ui_replay = "ui_replay",
   ui_return_lobby = "ui_return_lobby",
@@ -75,6 +76,7 @@ P.J2L = {
   peer = "peer",
   practice_start = "practice_start",
   presence = "presence",
+  queue_counts = "queue_counts",
   queue_view = "queue_view",
   rejoin_restore = "rejoin_restore",
   replay_feed = "replay_feed",
@@ -418,36 +420,40 @@ D[293] = {T="union", key="k", m={nemesis_info=D[280],location=D[281],timer=D[282
 D[294] = {T="object", p={deck=D[13],resolved=D[215],seed=D[43],stake=D[134]}, r={"deck","resolved","seed","stake"}}
 D[295] = {T="enum", v={"away","back","catching_up","caught_up","left","forfeited"}}
 D[296] = {T="object", p={graceMsLeft=D[14],id=D[73],status=D[295]}, r={"id","status"}}
-D[297] = {T="enum", v={"idle","searching","matched","cancelled"}}
-D[298] = {T="object", p={queueMode=D[128],state=D[297],waiting=D[14]}, r={"queueMode","state"}}
-D[299] = {T="const", v="/rmh/mp/run.jkr"}
-D[300] = {T="const", v="/rmh/mp/state.json"}
-D[301] = {T="object", p={runId=D[120],snapshotPath=D[299],statePath=D[300]}, r={"runId","snapshotPath","statePath"}}
-D[302] = {T="object", p={events=D[52],pov=D[73]}, r={"events","pov"}}
-D[303] = {T="array", i=D[47], max=16}
-D[304] = {T="enum", v={"win","lose","draw"}, n=true}
-D[305] = {T="object", p={at=D[68],id=D[47],players=D[303],queueMode=D[128],result=D[304],ruleset=D[13]}, r={"at","id","players","queueMode","result","ruleset"}}
-D[306] = {T="array", i=D[305], max=30}
-D[307] = {T="object", p={id=D[47],len=D[50],pos=D[50],pov=D[73]}, r={"id","len","pos","pov"}, n=true}
-D[308] = {T="object", p={list=D[306],playing=D[307],speed=D[50]}, r={}}
-D[309] = {T="object", p={draft=D[193],kind=D[194],msLeft=D[14],options=D[197],phase=D[198],result=D[199],stepId=D[44],voted=D[14],voters=D[14]}, r={"draft","kind","msLeft","options","phase","result","stepId","voted","voters"}}
-D[310] = {T="integer", n=true}
-D[311] = {T="object", p={ante=D[310],code=D[13],players=D[14],queueMode=D[128]}, r={"ante","code","players","queueMode"}}
-D[312] = {T="array", i=D[311], max=50}
-D[313] = {T="object", p={error=D[44],lobbies=D[312]}, r={"lobbies"}}
-D[314] = {T="object", p={ante=D[14],at=D[50],hands_left=D[3],lives=D[12],score=D[13],skips=D[14]}, r={"ante","at","hands_left","score","skips"}}
-D[315] = {T="array", i=D[314], max=256}
-D[316] = {T="object", p={id=D[73],results=D[315]}, r={"id","results"}}
-D[317] = {T="array", i=D[46], max=32}
-D[318] = {T="object", p={args=D[317],cmd=D[47],id=D[47]}, r={"args","cmd","id"}}
-D[319] = {T="enum", v={"normal","orange","important"}}
-D[320] = {T="const", v=">>", n=true}
-D[321] = {T="enum", v={"ante","pvp","speedlatro"}}
-D[322] = {T="object", p={auto=D[19],beingTimered=D[19],color=D[319],display=D[320],mode=D[321],pressable=D[19],ticking=D[19],timering=D[19],value=D[68]}, r={"auto","beingTimered","color","display","mode","pressable","ticking","timering","value"}}
-D[323] = {T="any_of", o={D[207],D[68]}}
-D[324] = {T="object", p={}, r={}, ap=D[323], pn=D[44]}
-D[325] = {T="object", p={key=D[47],vars=D[324]}, r={"key"}}
-D[326] = {T="object", p={k=D[14],kind=D[275],n=D[14]}, r={"k","kind","n"}}
+D[297] = {T="integer", min=0, max=1000000}
+D[298] = {T="object", p={inGame=D[297],queueMode=D[128],queued=D[297]}, r={"inGame","queueMode","queued"}}
+D[299] = {T="array", i=D[298], max=8}
+D[300] = {T="object", p={counts=D[299]}, r={"counts"}}
+D[301] = {T="enum", v={"idle","searching","matched","cancelled"}}
+D[302] = {T="object", p={queueMode=D[128],state=D[301],waiting=D[14]}, r={"queueMode","state"}}
+D[303] = {T="const", v="/rmh/mp/run.jkr"}
+D[304] = {T="const", v="/rmh/mp/state.json"}
+D[305] = {T="object", p={runId=D[120],snapshotPath=D[303],statePath=D[304]}, r={"runId","snapshotPath","statePath"}}
+D[306] = {T="object", p={events=D[52],pov=D[73]}, r={"events","pov"}}
+D[307] = {T="array", i=D[47], max=16}
+D[308] = {T="enum", v={"win","lose","draw"}, n=true}
+D[309] = {T="object", p={at=D[68],id=D[47],players=D[307],queueMode=D[128],result=D[308],ruleset=D[13]}, r={"at","id","players","queueMode","result","ruleset"}}
+D[310] = {T="array", i=D[309], max=30}
+D[311] = {T="object", p={id=D[47],len=D[50],pos=D[50],pov=D[73]}, r={"id","len","pos","pov"}, n=true}
+D[312] = {T="object", p={list=D[310],playing=D[311],speed=D[50]}, r={}}
+D[313] = {T="object", p={draft=D[193],kind=D[194],msLeft=D[14],options=D[197],phase=D[198],result=D[199],stepId=D[44],voted=D[14],voters=D[14]}, r={"draft","kind","msLeft","options","phase","result","stepId","voted","voters"}}
+D[314] = {T="integer", n=true}
+D[315] = {T="object", p={ante=D[314],code=D[13],players=D[14],queueMode=D[128]}, r={"ante","code","players","queueMode"}}
+D[316] = {T="array", i=D[315], max=50}
+D[317] = {T="object", p={error=D[44],lobbies=D[316]}, r={"lobbies"}}
+D[318] = {T="object", p={ante=D[14],at=D[50],hands_left=D[3],lives=D[12],score=D[13],skips=D[14]}, r={"ante","at","hands_left","score","skips"}}
+D[319] = {T="array", i=D[318], max=256}
+D[320] = {T="object", p={id=D[73],results=D[319]}, r={"id","results"}}
+D[321] = {T="array", i=D[46], max=32}
+D[322] = {T="object", p={args=D[321],cmd=D[47],id=D[47]}, r={"args","cmd","id"}}
+D[323] = {T="enum", v={"normal","orange","important"}}
+D[324] = {T="const", v=">>", n=true}
+D[325] = {T="enum", v={"ante","pvp","speedlatro"}}
+D[326] = {T="object", p={auto=D[19],beingTimered=D[19],color=D[323],display=D[324],mode=D[325],pressable=D[19],ticking=D[19],timering=D[19],value=D[68]}, r={"auto","beingTimered","color","display","mode","pressable","ticking","timering","value"}}
+D[327] = {T="any_of", o={D[207],D[68]}}
+D[328] = {T="object", p={}, r={}, ap=D[327], pn=D[44]}
+D[329] = {T="object", p={key=D[47],vars=D[328]}, r={"key"}}
+D[330] = {T="object", p={k=D[14],kind=D[275],n=D[14]}, r={"k","kind","n"}}
 
 P.SCHEMA = {
   l2j = {
@@ -477,6 +483,7 @@ P.SCHEMA = {
     ui_party_queue = D[133],
     ui_practice = D[135],
     ui_queue = D[137],
+    ui_queue_counts = D[108],
     ui_ready = D[138],
     ui_replay = D[141],
     ui_return_lobby = D[108],
@@ -505,18 +512,19 @@ P.SCHEMA = {
     peer = D[293],
     practice_start = D[294],
     presence = D[296],
-    queue_view = D[298],
-    rejoin_restore = D[301],
-    replay_feed = D[302],
-    replay_view = D[308],
-    setup_view = D[309],
-    spectate_view = D[313],
-    tail = D[316],
-    test_cmd = D[318],
+    queue_counts = D[300],
+    queue_view = D[302],
+    rejoin_restore = D[305],
+    replay_feed = D[306],
+    replay_view = D[312],
+    setup_view = D[313],
+    spectate_view = D[317],
+    tail = D[320],
+    test_cmd = D[322],
     timer_cue = D[108],
-    timer_state = D[322],
-    toast = D[325],
-    vote_progress = D[326],
+    timer_state = D[326],
+    toast = D[329],
+    vote_progress = D[330],
   },
 }
 
