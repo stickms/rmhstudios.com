@@ -10,11 +10,17 @@
 -- Those budgets are milliseconds on a player's machine. CI and the e2e machine draw with
 -- SwiftShader on shared cores, where a frame takes ~100 ms instead of ~16, so the absolute
 -- numbers are reported, and what is asserted is machine-independent: the MP match costs at
--- most 2x single player's Lua time per frame and at most 10% more frame time, a busy mailbox
--- stays under 1.5x the 0.3 ms budget per frame, and an idle pump under 0.5 ms (a gross
--- regression guard: one failed io.open on MEMFS).
--- Measured on the WS14b machine (2026-10-30): SP update+pump 11.5 ms, MP 19.4 ms (+7.9 ms,
--- 1.69x), frame 102.9 → 107.1 ms (+4.1%), idle pump 0.118 ms, busy 0.34 ms at 50 msg/s.
+-- most 1.3x single player's Lua time per frame and at most 10% more frame time; the busy
+-- mailbox is fed 50 messages a second of a 60 fps game and must stay within 0.3 ms per frame;
+-- an idle pump within 0.05 ms (it opens nothing: one seek on in.sig); and 10 session
+-- mount/unmount cycles change no census count (MP tables, wraps, frame hooks, engine instance
+-- lists), grow the collected heap by at most 10% and SP/MP Lua time by at most 1.2x.
+-- Measured on the WS14b machine (2026-10-30), before -> after the allocation-free wrap chain
+-- and in.sig (perf_spec alone / after every other spec in one boot):
+--   SP update+pump 8.1 / 17.7 ms -> 8.3 / 12.0 ms; MP 10.4 / 17.2 ms -> 8.1 / 12.1 ms
+--   MP/SP Lua 1.29x / 0.97x -> 0.97x / 1.00x; idle pump 0.062 / 0.095 ms -> 0.003 / 0.015 ms
+--   busy (60 fps-shaped) 0.158 / 0.206 ms -> 0.147 / 0.179 ms; 10 cycles: census unchanged,
+--   heap +0.8%, SP 1.14x / MP 1.07x (SwiftShader noise; the counts are the proof).
 
 local has_mp, MP = pcall(require, 'rmh_mp')
 
