@@ -469,9 +469,16 @@ export function RadialHub() {
     const raf = requestAnimationFrame(measureDock);
     const onResize = () => measureDock();
     window.addEventListener('resize', onResize);
+    // Whatever resizes the dock or the globe in it (a viewport unit, a font, the globe chunk landing) re-poses the
+    // globe on the orb in the same frame, rather than leaving it at the pose measured for the old size.
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(onResize);
+    if (dockRef.current) ro?.observe(dockRef.current);
+    const stage = globeRef.current?.querySelector('.radial-globe__stage');
+    if (stage) ro?.observe(stage);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', onResize);
+      ro?.disconnect();
     };
   }, [inPlace, dockReady, measureDock]);
   // The globe is docked while the menu is closed and the orb has its footprint: measure again when it lands.

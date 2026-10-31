@@ -9,7 +9,7 @@
  *   await engine.call('start_run', { seed: 'ABC' }); // any autopilot command
  *   await engine.close(); await stack.close();
  */
-import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
+import { chromium, type Browser, type BrowserContext, type BrowserContextOptions, type Page } from 'playwright';
 import { buildHarness } from './build-harness';
 import { chromiumLaunchOptions } from './chromium';
 import { zSpecSummary, type SpecResult, type SpecSummary } from './channel';
@@ -99,9 +99,14 @@ export async function openEngine(
     turbo?: Turbo;
     /** Receives the page's log lines (engine prints, spec results) about once a second. */
     onLog?: (line: string) => void;
+    /** Script run in every document before the page's own (the perf probe's timers). */
+    initScript?: string;
+    /** Extra browser-context options (`hasTouch` for the phone keyboard test). */
+    contextOptions?: BrowserContextOptions;
   } = {},
 ): Promise<EnginePage> {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, ...opts.contextOptions });
+  if (opts.initScript) await context.addInitScript({ content: opts.initScript });
   const page = await context.newPage();
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
