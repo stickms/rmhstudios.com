@@ -111,6 +111,11 @@
 /* ─── Top bar ─────────────────────────────────────────────────────────────── */
 
 .stm-topbar {
+  /* Stays at the top while the page scrolls, as Steam's does. Its dark ground matches the
+     strip behind a phone's status bar; the drawer inside it is `fixed`, so it is unaffected. */
+  position: sticky;
+  top: 0;
+  z-index: 40;
   background: var(--stm-header);
   display: flex;
   align-items: center;
@@ -256,9 +261,9 @@
 
 .stm-side {
   position: sticky;
-  top: 0;
+  top: var(--stm-header-h);
   align-self: start;
-  height: 100dvh;
+  height: calc(100dvh - var(--stm-header-h));
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -2480,4 +2485,9 @@ html[dir='rtl'] .stm-drawer-panel {
 }
 .stm-capsule:hover {
   transform: translateY(-2px);
+}
+
+/* In-page links (Achievements, Reviews, ...) land below the pinned header, not under it. */
+.steam [id] {
+  scroll-margin-top: calc(var(--stm-header-h) + 8px);
 }
