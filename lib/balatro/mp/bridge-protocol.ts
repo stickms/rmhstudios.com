@@ -224,7 +224,7 @@ export const L2J_MP = {
   peer: peerL2J,
   /** Only when changed. */
   flags: zFlags,
-  timer_input: z.object({ op: z.enum(['press', 'skip', 'hand_played', 'opp_skip']) }),
+  timer_input: z.object({ op: z.enum(['press', 'skip', 'hand_played', 'opp_skip', 'preview']) }),
   /** run.jkr and state.json written. */
   snapshot: z.object({ runId: zRunId }),
   log: z.object({ batch: z.array(zReplayEvent).max(1024) }),

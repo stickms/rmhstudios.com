@@ -302,7 +302,7 @@ export class MatchClient {
     this.timerInput({ t: 'flags', flags });
   }
 
-  luaTimerInput(op: 'press' | 'skip' | 'hand_played' | 'opp_skip'): void {
+  luaTimerInput(op: 'press' | 'skip' | 'hand_played' | 'opp_skip' | 'preview'): void {
     this.timerInput({ t: op });
   }
 

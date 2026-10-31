@@ -746,6 +746,7 @@ end
 RU.modules = {
   'rmh_mp.ui.countdown', 'rmh_mp.ui.pvp_hud', 'rmh_mp.ui.blind_select', 'rmh_mp.ui.nemesis_rows',
   'rmh_mp.ui.pause', 'rmh_mp.ui.end_screen', 'rmh_mp.ui.lobby_info',
+  'rmh_mp.preview', -- Score Preview (M03): its HUD rows, button and invalidation wraps
 }
 for _, name in ipairs(RU.modules) do load(name) end
 

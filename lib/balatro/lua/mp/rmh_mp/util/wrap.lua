@@ -269,6 +269,22 @@ function W.original(owner, name)
   return owner[name]
 end
 
+--- Replace the function BELOW every layer of a slot (the vanilla original) and return the one it
+--- replaced; call again with that value to put it back. Layers keep running on top. An unwrapped
+--- slot is simply assigned. The score preview (preview/sim.lua) uses it to count `ease_dollars`
+--- calls while every MP layer above vanilla still applies.
+function W.swap_original(owner, name, fn)
+  local rec = slots[owner] and slots[owner][name]
+  if rec and owner[name] == rec.dispatcher then
+    local old = rec.orig
+    rec.orig = fn
+    return old
+  end
+  local old = owner[name]
+  owner[name] = fn
+  return old
+end
+
 --- Bookkeeping sizes, for leak checks: records (wrapped slots, live or stale) and layers.
 function W.stats()
   local layers, owners, slots_n = 0, 0, 0

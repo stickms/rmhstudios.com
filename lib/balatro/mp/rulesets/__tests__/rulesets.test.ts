@@ -124,7 +124,7 @@ const GOLDEN: Record<
     comeback: 'majorleague',
     timer: { base: 180, forgiveness: 0 },
     hooks: [],
-    locked: ['timerBaseSeconds', 'timerForgiveness', 'theOrder'],
+    locked: ['timerBaseSeconds', 'timerForgiveness', 'theOrder', 'previewDisabled'],
   },
   ruleset_mp_minorleague: {
     chain: [],
@@ -142,7 +142,7 @@ const GOLDEN: Record<
     comeback: 'sandbox',
     timer: {},
     hooks: ['sandbox'],
-    locked: ['theOrder', 'startingLives'],
+    locked: ['theOrder', 'startingLives', 'previewDisabled'],
   },
   ruleset_mp_badlatro: {
     chain: ['badlatro'],
@@ -687,6 +687,18 @@ describe('options', () => {
     expect(shapeFor('pvp_manhunt')).toMatchObject({ manhunt: true });
     expect(shapeFor('pvp_teams')).toMatchObject({ teamBased: true });
     expect(shapeFor('pvp_nemesis', true).practice).toBe(true);
+  });
+  it('previewDisabled (M03): off by default, forced on by Major League and Sandbox only', () => {
+    expect(DEFAULT_LOBBY_OPTIONS.previewDisabled).toBe(false);
+    for (const key of ['ruleset_mp_majorleague', 'ruleset_mp_sandbox']) {
+      const { options, locked } = resolve(key, { previewDisabled: false });
+      expect(options.previewDisabled).toBe(true);
+      expect(locked).toContain('previewDisabled');
+    }
+    for (const key of ['ruleset_mp_balanced', 'ruleset_mp_minorleague', 'ruleset_mp_experimental']) {
+      expect(resolve(key, { previewDisabled: true }).options.previewDisabled).toBe(true);
+      expect(resolve(key).options.previewDisabled).toBe(false);
+    }
   });
   it('defaults: Balanced except Small World; max players', () => {
     expect(defaultRulesetFor('pvp_royale')).toBe('ruleset_mp_balanced');

@@ -72,7 +72,7 @@ const defs: RulesetDef[] = [
     short: 'majorleague',
     layers: ['majorleague'],
     multiplayerContent: false,
-    forceOptions: { timerBaseSeconds: 180, timerForgiveness: 0, theOrder: false },
+    forceOptions: { timerBaseSeconds: 180, timerForgiveness: 0, theOrder: false, previewDisabled: true },
     extra: false,
   },
   // RS-06
@@ -89,7 +89,7 @@ const defs: RulesetDef[] = [
     key: 'ruleset_mp_sandbox',
     short: 'sandbox',
     layers: ['sandbox'],
-    forceOptions: { theOrder: true, startingLives: 4 },
+    forceOptions: { theOrder: true, startingLives: 4, previewDisabled: true },
     extra: true,
   },
   // RS-08

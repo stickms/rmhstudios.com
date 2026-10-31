@@ -549,7 +549,7 @@ local OPTIONS = {
   ruleset = 'ruleset_mp_balanced', gamemode = 'gamemode_mp_attrition', trapCards = true, manhuntHunterLives = 7,
   startingLives = 4, pvpStartRound = 2, timer = true, timerBaseSeconds = 150, timerIncrementSeconds = 60, timerForgiveness = 0,
   pvpCountdownSeconds = 3, deathOnRoundLoss = true, goldOnLifeLoss = true, noGoldOnRoundLoss = false, customSeed = 'random',
-  theOrder = true, hideScoreUntilPlayed = false, normalBosses = false, differentSeeds = false, differentDecks = false,
+  theOrder = true, hideScoreUntilPlayed = false, previewDisabled = false, normalBosses = false, differentSeeds = false, differentDecks = false,
   randomLoadout = false, multiplayerJokers = true, modifierLayers = {}, seatGraceMs = 120000,
 }
 
