@@ -19,7 +19,7 @@ import { createTf2Client, type Tf2Session } from '@/lib/tf2-game/client/tf2-clie
 import { TF2_LIMITS, type BotDifficulty, type CsRoomMode } from '@/lib/tf2-game/net/events';
 import { languageForSite } from '@/lib/tf2-hud/localisation';
 import CsLoadingScreen from './CsLoadingScreen';
-import CsMainMenu from './CsMainMenu';
+import CsMainMenu, { usePanoramaFonts } from './CsMainMenu';
 import '@/components/tf2-game/play.css';
 
 const MAP = CSGO_MAPS[0]?.name ?? 'de_dust2';
@@ -45,6 +45,8 @@ export default function CsPlayPage() {
       alive = false;
     };
   }, []);
+  // Stratum2 for the HUD too (an invite link can start a match without the menu ever showing).
+  usePanoramaFonts(channel);
 
   const start = useCallback((s: Tf2Session) => {
     setRun((n) => n + 1);
