@@ -45,6 +45,8 @@ export interface SoundEvent extends Recipients {
   channel: number;
   /** Stop a looping sound on this entity/channel instead of starting one. */
   stop?: boolean;
+  /** Replaces the sound's level (dB) — a raw wave path's, which has no script (ambient_generic radius). */
+  soundlevel?: number;
 }
 
 export type EffectKind =

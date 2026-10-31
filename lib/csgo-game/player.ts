@@ -232,8 +232,8 @@ export class CsPlayer extends Player {
   /** Footsteps only when running: shift-walking and crouch-walking are silent in CS:GO. */
   private footstep(surface: string, volume: number): void {
     if (this.buttons & IN_SPEED || this.move.ducked) return;
-    if (!this.world.isServer) return;
-    this.makeNoise(FOOTSTEP_NOISE_RANGE);
+    if (this.world.isServer) this.makeNoise(FOOTSTEP_NOISE_RANGE);
+    // Predicted: the owner's client plays its own steps (the server leaves them out).
     this.world.emitSound(
       `${this.team === CS_TEAM_T ? 'T' : 'CT'}_${capitalize(surface || 'default')}.StepLeft`,
       {

@@ -18,10 +18,15 @@
  *  - Channels: a new sound on an entity's channel replaces the one playing there (not
  *    CHAN_AUTO; CHAN_STATIC, CHAN_STREAM and loops are never replaced) — channels.ts.
  *  - Distance: Source's sound-level curve (attenuation.ts), applied per frame from the listener
- *    to the sound — which follows its entity's interpolated position (`entityPosition`). Panning
- *    is a PannerNode (HRTF on desktop, equal-power on mobile) with its own distance model off.
- *    SNDLVL_NONE sounds and the local player's own sounds are not spatialised.
- *  - Loops use the wave's loop points from the index and play until stopped or replaced.
+ *    to the sound — which follows its entity's interpolated position (`entityPosition`), or the
+ *    event's position while the entity is unknown here (out of the PVS) — times the game's
+ *    falloff profile (CS:GO's quiet sounds stop carrying). Panning is a PannerNode (HRTF on
+ *    desktop, equal-power on mobile) whose own distance model is neutral (linear, rolloff 0: gain
+ *    1 at every distance), so nothing attenuates twice. SNDLVL_NONE sounds and the local player's
+ *    own sounds are not spatialised.
+ *  - Loops use the wave's loop points from the index and play until stopped or replaced. A stop
+ *    by name matches the entity's sound of that name on any channel: the script, not the event,
+ *    says which channel it plays on (CBaseEntity::StopSound looks the channel up the same way).
  *  - Volume groups master / sfx / voice / music / ui; speech ducks effects by 6 dB.
  *  - Occlusion: a throttled caller-supplied trace; a blocked sound is low-passed and 6 dB down.
  *  - At most `maxVoices` (48) voices: the quietest one is stolen, never the local player's for
@@ -48,7 +53,12 @@ import {
 import type { GameId } from '../assets/versions';
 import { angleVectors, vec3, type QAngle, type Vec3 } from '../core/vec';
 import { SURFACE_SOUNDS } from '../data/sounds';
-import { distanceGain, SNDLVL_NORM } from './attenuation';
+import {
+  falloffProfileFor,
+  profileDistanceGain,
+  SNDLVL_NORM,
+  type FalloffProfile,
+} from './attenuation';
 import { BufferCache } from './buffer-cache';
 import { captionDuration, type Caption, type CaptionDocument, type CaptionEvent } from './captions';
 import {
@@ -107,6 +117,8 @@ export interface VoiceHandle {
   stop(): void;
   setVolume(volume: number): void;
   readonly playing: boolean;
+  /** Whether it loops (until stopped) rather than ending by itself. */
+  readonly looping: boolean;
 }
 
 export interface AudioEngineOptions {
@@ -131,6 +143,8 @@ export interface AudioEngineOptions {
   loadDocument?: (name: 'soundscapes' | 'scenes' | 'captions') => Promise<unknown>;
   /** Initial group volumes (0..1); default 1. */
   volumes?: Partial<Record<VolumeGroup, number>>;
+  /** Distance falloff on top of the Source curve; default the game's (`falloffProfileFor`). */
+  falloff?: FalloffProfile;
   random?: () => number;
 }
 
@@ -236,6 +250,7 @@ export class AudioEngine {
   private readonly ctx: AudioContext | null;
   private readonly opts: AudioEngineOptions;
   private readonly rand: () => number;
+  private readonly falloff: FalloffProfile;
   private index: SoundIndex | null = null;
   private entriesLower = new Map<string, [string, SoundEntry]>();
   private pathOfSha = new Map<string, string>();
@@ -270,6 +285,7 @@ export class AudioEngine {
     const budget = this.mobile ? AUDIO_BUDGETS.mobile : AUDIO_BUDGETS.desktop;
     this.maxVoices = options.maxVoices ?? budget.maxVoices;
     this.rand = options.random ?? Math.random;
+    this.falloff = options.falloff ?? falloffProfileFor(this.game);
     this.ctx = options.context === undefined ? getAudioContext() : options.context;
     this.volumes = Object.fromEntries(
       VOLUME_GROUPS.map((g) => [g, clamp01(options.volumes?.[g] ?? 1)]),
@@ -509,7 +525,7 @@ export class AudioEngine {
     const spatial = soundlevel > 0 && !local && pos !== null;
     const group = ev.group ?? soundGroupOf(channel, path);
     const distance = spatial && pos ? dist(pos, this.listenerPos) : 0;
-    const audibility = volume * (spatial ? distanceGain(soundlevel, distance) : 1);
+    const audibility = volume * (spatial ? this.distanceGain(soundlevel, distance) : 1);
     // Out of earshot: a one-shot is culled (a loop may come into range).
     if (!looping && spatial && audibility <= 0) return null;
 
@@ -581,8 +597,13 @@ export class AudioEngine {
   }
 
   /**
-   * Stop sounds of an entity on a channel (CHAN_AUTO / CHAN_REPLACE: any), optionally by name;
-   * with no entity, the positional sounds of that name.
+   * Stop sounds of an entity on a channel (CHAN_AUTO / CHAN_REPLACE: any), or by name on any of
+   * its channels; with no entity, the positional sounds of that name.
+   *
+   * A named stop ignores the channel: a script entry plays on its script's channel whatever the
+   * emitter passed (`Weapon_Minigun.Fire` is CHAN_STATIC though the weapon stops it as a
+   * CHAN_WEAPON sound), and Source's StopSound(entity, name) takes the channel from the script
+   * too — matching the event's channel left such loops playing forever.
    */
   stopSound(entity: number | null, channel: number, name?: string): void {
     const n = name?.toLowerCase();
@@ -590,7 +611,9 @@ export class AudioEngine {
     if (entity === null && !n) return;
     for (const v of this.voices) {
       if (v.state === 'ended') continue;
-      if (entity === null ? v.entity !== null : !stopMatches(v, entity, channel)) continue;
+      if (entity === null) {
+        if (v.entity !== null) continue;
+      } else if (n ? v.entity !== entity : !stopMatches(v, entity, channel)) continue;
       if (n && v.name.toLowerCase() !== n) continue;
       this.endVoice(v);
     }
@@ -853,6 +876,11 @@ export class AudioEngine {
     return null;
   }
 
+  /** The distance gain (0..1) of a sound of `soundlevel` dB `dist` units away, under the profile. */
+  distanceGain(soundlevel: number, dist: number): number {
+    return profileDistanceGain(this.falloff, soundlevel, dist);
+  }
+
   /** Make room for one more voice; false when the new one should be dropped. */
   private makeRoom(audibility: number, local: boolean): boolean {
     const alive = this.voices.filter((v) => v.state !== 'ended');
@@ -875,7 +903,7 @@ export class AudioEngine {
   }
 
   private audibility(v: Voice): number {
-    const d = v.spatial ? distanceGain(v.soundlevel, v.distance) : 1;
+    const d = v.spatial ? this.distanceGain(v.soundlevel, v.distance) : 1;
     return v.volume * d * (v.occluded ? OCCLUSION_GAIN : 1);
   }
 
@@ -938,7 +966,7 @@ export class AudioEngine {
     const ctx = this.ctx;
     if (!ctx || !v.gain) return;
     const now = ctx.currentTime;
-    const d = v.spatial ? distanceGain(v.soundlevel, v.distance) : 1;
+    const d = v.spatial ? this.distanceGain(v.soundlevel, v.distance) : 1;
     const g = v.volume * d * (v.occluded ? OCCLUSION_GAIN : 1);
     if (immediate) v.gain.gain.value = g;
     else v.gain.gain.setTargetAtTime(g, now, SMOOTH);
@@ -965,7 +993,7 @@ export class AudioEngine {
     if (!v.caption || !this.captionListeners.size) return;
     const c = this.captions[v.caption];
     if (!c) return;
-    if (v.spatial && distanceGain(v.soundlevel, v.distance) < CAPTION_MIN_GAIN) return;
+    if (v.spatial && this.distanceGain(v.soundlevel, v.distance) < CAPTION_MIN_GAIN) return;
     const now = this.ctx?.currentTime ?? 0;
     if (c.norepeat) {
       const last = this.captionShown.get(v.caption);
@@ -1044,6 +1072,9 @@ export class AudioEngine {
       },
       get playing() {
         return v.state !== 'ended';
+      },
+      get looping() {
+        return v.looping;
       },
     };
   }

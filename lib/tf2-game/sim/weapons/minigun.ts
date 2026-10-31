@@ -6,7 +6,10 @@
  * second of spin (GetProjectileDamage / GetWeaponSpread with
  * TF_MINIGUN_PENALTY_PERIOD). Can't holster while spun up. Sounds follow
  * WeaponSoundUpdate: wind up, fire loop (crit loop), spin loop, wind down,
- * empty.
+ * empty. The loops (fire, crit fire, spin, empty) are `loopSound()` — the
+ * player record carries it and every client plays it from the replicated
+ * weapon state, as the SDK's client does; only the wind-up and wind-down
+ * one-shots are (predicted) sound events.
  */
 
 import { IN_ATTACK, IN_ATTACK2 } from '../../core/constants';
@@ -45,7 +48,7 @@ export class Minigun extends TFWeaponGun {
   startedWindUpAt = -1;
   /** m_bCritShot (crit fire loop). */
   critShot = false;
-  /** The sound category currently playing (m_iMinigunSoundCur), '' = none. */
+  /** The sound category the state last wanted (m_iMinigunSoundCur), '' = none. */
   private soundCur: WeaponSoundCategory | '' = '';
 
   constructor(spec: WeaponSpec) {
@@ -230,7 +233,30 @@ export class Minigun extends TFWeaponGun {
     this.updateSound();
   }
 
-  /** SDK: CTFMinigun::WeaponSoundUpdate (server-side events: loops start and stop). */
+  /** The looping half of WeaponSoundUpdate: fire (crit fire), spin and empty loop by state. */
+  override loopSound(): string {
+    const cat = Minigun.loopCategory(this.weaponState, this.critShot);
+    return cat ? (this.sounds[cat] ?? '') : '';
+  }
+
+  private static loopCategory(state: number, crit: boolean): WeaponSoundCategory | '' {
+    switch (state) {
+      case AC_STATE_FIRING:
+        return crit ? 'burst' : 'double_shot';
+      case AC_STATE_SPINNING:
+        return 'special3';
+      case AC_STATE_DRYFIRE:
+        return 'empty';
+      default:
+        return '';
+    }
+  }
+
+  /**
+   * SDK: CTFMinigun::WeaponSoundUpdate — the one-shot half (wind up, wind down) as predicted
+   * events; a one-shot is cut when the state moves on (m_pSoundCur is replaced). The loops are
+   * `loopSound()`, played by every client from the replicated state.
+   */
   updateSound(): void {
     let want: WeaponSoundCategory | '' = '';
     switch (this.weaponState) {
@@ -251,9 +277,14 @@ export class Minigun extends TFWeaponGun {
         break;
     }
     if (want === this.soundCur) return;
-    if (this.soundCur !== '') this.stopSound(this.sounds[this.soundCur]);
+    const prev = this.soundCur;
     this.soundCur = want;
-    if (want !== '') this.weaponSound(want);
+    if (prev !== '' && !Minigun.isLoop(prev)) this.stopSound(this.sounds[prev]);
+    if (want !== '' && !Minigun.isLoop(want)) this.weaponSound(want);
+  }
+
+  private static isLoop(cat: WeaponSoundCategory): boolean {
+    return cat === 'double_shot' || cat === 'burst' || cat === 'special3' || cat === 'empty';
   }
 
   protected override writeWeaponNet(out: NetRecord): void {

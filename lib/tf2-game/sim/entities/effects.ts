@@ -30,6 +30,7 @@ import { EF_NODRAW, type Entity, FSOLID_NOT_SOLID, SOLID_BBOX, SOLID_NONE } from
 import { registerEntityClass } from '../entity-registry';
 import type { NetRecord, NetSchema } from '../net-schema';
 import { MapEntity, atof, atoi } from './base';
+import { soundlevelForRadius } from '../../audio/attenuation';
 import { NET_AMBIENT, NET_FOG, NET_FX, NET_OBSERVER_POINT, NET_PROP } from './net';
 import type { LoadedMap } from '../map-loader';
 import type { PropCollisionModel } from '../../world/prop-collision';
@@ -100,6 +101,8 @@ export class AmbientGeneric extends MapEntity {
       pitch: this.pitch,
       channel: 6,
       stop: stop || undefined,
+      // A raw wave has no script level: the radius gives it (CAmbientGeneric's m_iSoundLevel).
+      soundlevel: !stop && /\.(wav|mp3|ogg)$/i.test(this.sound) ? soundlevelForRadius(this.radius, everywhere) : undefined,
     });
   }
 

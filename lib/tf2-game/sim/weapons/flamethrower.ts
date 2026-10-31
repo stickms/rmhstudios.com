@@ -518,7 +518,6 @@ export class Flamethrower extends TFWeaponGun {
   /** Last time a flame hit someone (hit sound / HUD). */
   hitTargetTime = 0;
   private readonly deflectFn = (): void => this.deflectProjectilesNow();
-  private pilotOn = false;
 
   constructor(spec: WeaponSpec) {
     super(spec);
@@ -550,7 +549,23 @@ export class Flamethrower extends TFWeaponGun {
     return o && o.team === TF_TEAM_BLUE ? 'new_flame_crit_blue' : 'new_flame_crit_red';
   }
 
-  /** SDK: CTFFlameThrower::SetWeaponState — with the start/stop sounds and particle events. */
+  /**
+   * The fire loop (crit fire loop) while flaming, the pilot light while idle with fuel — the SDK
+   * client's StartFlame / StartPilotLight from the networked state (C_TFFlameThrower::
+   * OnDataChanged). Replicated on the player record and played by every client.
+   */
+  override loopSound(): string {
+    const s = this.weaponState;
+    if (s === FT_STATE_STARTFIRING || s === FT_STATE_FIRING)
+      return this.sounds[this.critFire ? 'burst' : 'special1'] ?? '';
+    if (s === FT_STATE_IDLE && this.reserve() > 0) return this.sounds.special2 ?? '';
+    return '';
+  }
+
+  /**
+   * SDK: CTFFlameThrower::SetWeaponState — with the start and wind-down one-shots and the
+   * particle events. The loops are `loopSound()`.
+   */
   setWeaponState(state: number): void {
     if (this.weaponState === state) return;
     const o = this.owner;
@@ -560,37 +575,17 @@ export class Flamethrower extends TFWeaponGun {
     if (!o) return;
     if (flaming && !wasFlaming) {
       this.weaponSound('single_shot');
-      this.weaponSound(this.critFire ? 'burst' : 'special1');
       o.world.emitEffect({ kind: 'particle', system: this.flameEffectName(), pos: { ...o.origin }, entity: o.id, attachment: 'muzzle', value: 1 });
     } else if (!flaming && wasFlaming) {
-      this.stopSound(this.sounds.special1);
-      this.stopSound(this.sounds.burst);
+      // StopFlame: the start sound goes with the loop, the wind-down plays.
+      this.stopSound(this.sounds.single_shot);
       this.weaponSound('special3');
       o.world.emitEffect({ kind: 'particle', system: this.flameEffectName(), pos: { ...o.origin }, entity: o.id, attachment: 'muzzle', value: 0 });
     }
   }
 
-  override deploy(): boolean {
-    const ok = super.deploy();
-    this.startPilotLight();
-    return ok;
-  }
-
-  private startPilotLight(): void {
-    if (this.pilotOn) return;
-    this.pilotOn = true;
-    this.weaponSound('special2');
-  }
-
-  private stopPilotLight(): void {
-    if (!this.pilotOn) return;
-    this.pilotOn = false;
-    this.stopSound(this.sounds.special2);
-  }
-
   override holster(next: Parameters<TFWeaponGun['holster']>[0]): boolean {
     this.setWeaponState(FT_STATE_IDLE);
-    this.stopPilotLight();
     this.flameManager?.stopFiring();
     this.minBurstTime = 0;
     return super.holster(next);
@@ -599,7 +594,6 @@ export class Flamethrower extends TFWeaponGun {
   override onOwnerDeath(): void {
     super.onOwnerDeath();
     this.setWeaponState(FT_STATE_IDLE);
-    this.stopPilotLight();
     this.flameManager?.stopFiring();
   }
 
