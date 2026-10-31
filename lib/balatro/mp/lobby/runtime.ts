@@ -30,6 +30,7 @@ import type { GameEvent, Id, LobbyState, PlayerResult, RefCheckpoint, StartedMat
 import type { HubStatus } from '../transport/types';
 import type { ReplayTap } from '../replay/tap';
 import { DEFAULT_SETTINGS, type MpSettings, type Role, type RoleCtx, type RuntimeDeps } from './context';
+import { HubGate } from './hub-gate';
 import { LobbyHost } from './lobby-host';
 import { LobbyMember } from './lobby-member';
 
@@ -98,11 +99,20 @@ export class MpRuntime {
   /** NET-09: the page's tab is hidden (handed to every new role). */
   private hidden = false;
   private ready: Promise<void>;
+  /**
+   * The hub as the roles see it: a host's drained `leave` goes out before any later
+   * emit (Create / Join / the seat prompt), or the hub would still see the old seat.
+   */
+  private readonly hubGate: HubGate;
+  private readonly roleDeps: RuntimeDeps;
 
   constructor(
     readonly deps: RuntimeDeps,
     private readonly opts: { intent: StartIntent; invite: string | null; lang?: string },
   ) {
+    this.hubGate = new HubGate(deps.hub, deps.sched);
+    // Every other dep reads through to `deps` itself (a live view, not a copy).
+    this.roleDeps = Object.create(deps, { hub: { value: this.hubGate, enumerable: true } }) as RuntimeDeps;
     this.settings = this.loadSettings();
     this.lang = opts.lang ?? guessLang();
     this.chat = new Chat({ now: () => deps.sched.mono(), glyphs: () => this.glyphs() });
@@ -145,7 +155,7 @@ export class MpRuntime {
   private querySeat(): void {
     if (!this.seatQueryPending || this.stopped || this.deps.hub.status !== 'connected') return;
     this.seatQueryPending = false;
-    this.deps.hub.emit('balatro:seat:query', {});
+    this.hubGate.emit('balatro:seat:query', {});
   }
 
   /** Site blocks become chat mutes for this session (never written to the saved mute list). */
@@ -224,7 +234,7 @@ export class MpRuntime {
 
   private ctx(): RoleCtx {
     return {
-      deps: this.deps,
+      deps: this.roleDeps,
       me: this.me as Id,
       name: this.name,
       avatarUrl: this.avatarUrl,
@@ -649,7 +659,7 @@ export class MpRuntime {
     const held = this.held;
     this.held = null;
     if (op === 'abandon') {
-      this.deps.hub.emit('balatro:p2p:leave', {});
+      this.hubGate.emit('balatro:p2p:leave', {});
       const runId = held?.runId ?? rejoinHint(this.deps.kv);
       if (runId) void this.deps.snapshots?.delete(runId);
       setRejoinHint(this.deps.kv, null);
