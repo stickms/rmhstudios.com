@@ -3,8 +3,9 @@
 -- The sweep itself lives in ui_sweep_full.lua (read its header). This file runs the part of it
 -- that guards what broke and what players reach most: every Collection page and tooltip in the
 -- menu and in a practice run (the Collection > Consumables crash) and every MP menu screen's
--- buttons. The whole sweep (overlays, in-run, end screens, every MP item used):
---   pnpm exec tsx testing/balatro-e2e/engine/cli.ts --spec ui_sweep_full
+-- buttons (every MP card hovered, one vanilla card per screen). The whole sweep (every card,
+-- overlays, in-run, end screens, every MP item used), chunk by chunk in fresh boots (nightly CI):
+--   pnpm exec tsx testing/balatro-e2e/engine/sweep.ts
 
 local env = getfenv(1)
 env.RMH_SWEEP_QUICK = true
