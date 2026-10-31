@@ -8,7 +8,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { BotPeer } from '../lib/bot';
 import type { MpPlayer } from '../lib/mp-player';
-import { playAnte } from '../lib/match-flow';
+import { admitted, playAnte } from '../lib/match-flow';
 import { waitFor } from '../lib/stack';
 import { matchWorld } from './world';
 
@@ -17,7 +17,9 @@ const BOTS = Number(process.env.BALATRO_E2E_BOTS ?? 15);
 
 type Outcome = { t: string; [k: string]: unknown };
 const outcomes = async (p: MpPlayer): Promise<Outcome[]> =>
-  (await p.cmd<{ list: { d: { o: Outcome } }[] }>('mp_inbox', { t: 'outcome' })).list.map((e) => e.d.o);
+  (await p.cmd<{ list: { d: { o: Outcome } }[] }>('mp_inbox', { t: 'outcome' })).list.map(
+    (e) => e.d.o,
+  );
 
 describe.skipIf(w.skip)(w.title(`large lobby (1 browser + ${BOTS} bots)`), () => {
   let p: MpPlayer;
@@ -35,19 +37,41 @@ describe.skipIf(w.skip)(w.title(`large lobby (1 browser + ${BOTS} bots)`), () =>
     await host.ui('ui_create_lobby', { queueMode: 'pvp_nemesis', kind: 'private' });
     let code = '';
     await host.waitState((s) => !!(code = s.code ?? ''), 'bot lobby');
-    for (const [k, v] of Object.entries({ pvpStartRound: 1, startingLives: 4, timer: false })) await host.ui('ui_set_option', { key: k, value: v });
+    for (const [k, v] of Object.entries({ pvpStartRound: 1, startingLives: 4, timer: false }))
+      await host.ui('ui_set_option', { key: k, value: v });
     // The real player joins first, so it is the successor.
     await p.ui('join', { code });
-    await p.waitSnap((s) => s.code === code && s.role === 'member', 'joined', 120_000);
+    // Admitted before the bots join: the successor is the earliest-admitted player.
+    await p.waitSnap(
+      (s) => s.code === code && s.role === 'member' && admitted(s),
+      'admitted',
+      120_000,
+    );
     for (const b of bots.slice(1)) await b.ui('ui_join', { code });
-    await waitFor('the room is full', async () => ((await p.snap()).lobby?.players.length ?? 0) === BOTS + 1, 300_000, 2000);
+    await waitFor(
+      'the room is full',
+      async () => ((await p.snap()).lobby?.players.length ?? 0) === BOTS + 1,
+      300_000,
+      2000,
+    );
     await p.cmd('ready');
-    await waitFor('all ready', async () => (await p.snap()).lobby!.players.filter((x) => x.ready).length >= BOTS, 120_000, 2000);
+    await waitFor(
+      'all ready',
+      async () => (await p.snap()).lobby!.players.filter((x) => x.ready).length >= BOTS,
+      120_000,
+      2000,
+    );
     await host.ui('ui_start', {});
     await p.waitSnap((s) => !!s.runId, 'match started', 300_000);
     await p.cmd('wait_state', ['BLIND_SELECT', 300], 320_000);
-    await waitFor('ante-1 pairing', async () => (await outcomes(p)).some((o) => o.t === 'nemesis_pairing' && o.ante === 1), 120_000, 1000);
-    const pairing = (await outcomes(p)).find((o) => o.t === 'nemesis_pairing' && o.ante === 1)!.pairing as Record<string, string>;
+    await waitFor(
+      'ante-1 pairing',
+      async () => (await outcomes(p)).some((o) => o.t === 'nemesis_pairing' && o.ante === 1),
+      120_000,
+      1000,
+    );
+    const pairing = (await outcomes(p)).find((o) => o.t === 'nemesis_pairing' && o.ante === 1)!
+      .pairing as Record<string, string>;
     expect(Object.keys(pairing).length).toBe(BOTS + 1);
     if ((BOTS + 1) % 2 === 0) expect(Object.values(pairing).filter((v) => v === '').length).toBe(0);
     for (const [x, y] of Object.entries(pairing)) if (y) expect(pairing[y]).toBe(x);
@@ -56,7 +80,12 @@ describe.skipIf(w.skip)(w.title(`large lobby (1 browser + ${BOTS} bots)`), () =>
     await host.close();
     await p.waitSnap((s) => s.role === 'host', 'the real player promoted', 180_000);
     await playAnte(p, { chips: 1_000_000 });
-    await waitFor('ante-2 pairing from the new host', async () => (await outcomes(p)).some((o) => o.t === 'nemesis_pairing' && o.ante === 2), 180_000, 1000);
+    await waitFor(
+      'ante-2 pairing from the new host',
+      async () => (await outcomes(p)).some((o) => o.t === 'nemesis_pairing' && o.ante === 2),
+      180_000,
+      1000,
+    );
     const live = bots.slice(1);
     const states = await Promise.all(live.map((b) => b.state<{ runId: string | null }>()));
     expect(states.every((s) => s.runId === states[0]!.runId)).toBe(true);

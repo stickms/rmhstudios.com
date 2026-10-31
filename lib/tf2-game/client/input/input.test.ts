@@ -11,7 +11,8 @@ import {
   IN_RELOAD,
   IN_SCORE,
 } from '../../core/constants';
-import { defaultSettings, M_YAW } from '../settings';
+import { defaultSettings, M_YAW, zoomSensitivityScale } from '../settings';
+import { FovState, TF_WEAPON_ZOOM_FOV, TF_ZOOM_RATE } from '../view';
 import {
   bindingIndex,
   defaultKeybinds,
@@ -22,6 +23,7 @@ import {
 } from './actions';
 import { applyGamepad, mapGamepad, PAD, stickResponse, type GamepadLike } from './gamepad';
 import {
+  applyLook,
   buildUserCmd,
   createInputState,
   drainImpulses,
@@ -278,5 +280,71 @@ describe('touch', () => {
     expect(isTouchFirst({ coarsePointer: true, anyFinePointer: false, hoverNone: true, maxTouchPoints: 5 })).toBe(true);
     expect(isTouchFirst({ coarsePointer: true, anyFinePointer: true, hoverNone: false, maxTouchPoints: 10 })).toBe(false);
     expect(isTouchFirst({ coarsePointer: false, anyFinePointer: true, hoverNone: false, maxTouchPoints: 0 })).toBe(false);
+  });
+});
+
+describe('zoom sensitivity (CHud::Think: sensitivity × fov / default_fov × zoom_sensitivity_ratio)', () => {
+  it('is 1 at or above the default FOV and the FOV ratio below it', () => {
+    expect(zoomSensitivityScale(90, 90)).toBe(1);
+    expect(zoomSensitivityScale(100, 90)).toBe(1);
+    // TF2's sniper scope (fov 20 against fov_desired 90).
+    expect(zoomSensitivityScale(TF_WEAPON_ZOOM_FOV, 90)).toBeCloseTo(20 / 90, 9);
+    // CS:GO's AWP levels (40 / 10) and a 75° HL2 player in a 25° env_zoom.
+    expect(zoomSensitivityScale(40, 90)).toBeCloseTo(4 / 9, 9);
+    expect(zoomSensitivityScale(10, 90)).toBeCloseTo(1 / 9, 9);
+    expect(zoomSensitivityScale(25, 75)).toBeCloseTo(1 / 3, 9);
+    // zoom_sensitivity_ratio multiplies only while zoomed.
+    expect(zoomSensitivityScale(45, 90, 1.5)).toBeCloseTo(0.75, 9);
+    expect(zoomSensitivityScale(90, 90, 1.5)).toBe(1);
+    // A missing FOV never zeroes the look.
+    expect(zoomSensitivityScale(0, 90)).toBe(1);
+  });
+
+  it('follows the FOV lerp through a zoom in and out', () => {
+    const fov = new FovState(90);
+    fov.set(TF_WEAPON_ZOOM_FOV, TF_ZOOM_RATE, 0);
+    const mid = zoomSensitivityScale(fov.current(TF_ZOOM_RATE / 2), 90);
+    expect(mid).toBeLessThan(1);
+    expect(mid).toBeGreaterThan(20 / 90);
+    expect(zoomSensitivityScale(fov.current(TF_ZOOM_RATE * 2), 90)).toBeCloseTo(20 / 90, 9);
+    fov.set(0, TF_ZOOM_RATE, 10);
+    expect(zoomSensitivityScale(fov.current(10 + TF_ZOOM_RATE * 2), 90)).toBe(1);
+  });
+
+  it('scales the mouse turn by the look scale', () => {
+    const plain = createInputState();
+    plain.mouseDx = 100;
+    const a = applyLook(plain, angles(), settings);
+    const zoomed = createInputState();
+    zoomed.mouseDx = 100;
+    zoomed.lookScale = zoomSensitivityScale(TF_WEAPON_ZOOM_FOV, 90);
+    const b = applyLook(zoomed, angles(), settings);
+    expect(a.y).toBeCloseTo(-100 * settings.sensitivity * M_YAW, 9);
+    expect(b.y).toBeCloseTo(a.y * (20 / 90), 9);
+    // The command path scales the same way.
+    const cmdState = createInputState();
+    cmdState.mouseDy = 50;
+    cmdState.lookScale = 0.5;
+    expect(buildUserCmd(cmdState, angles(), settings).viewAngles.x).toBeCloseTo(50 * settings.sensitivity * M_YAW * 0.5, 9);
+  });
+
+  it('feeds the zoomed sensitivity into m_customaccel, as ScaleMouse reads gHUD.GetSensitivity()', () => {
+    // Mode 1: pow(|d|, exp) × scale + sensitivity — only the sensitivity term takes the zoom.
+    const accel = { ...settings, mouseAccel: 1, mouseAccelExponent: 1, mouseAccelScale: 0.04 };
+    const s = createInputState();
+    s.mouseDx = 10;
+    s.lookScale = 0.5;
+    const y = applyLook(s, angles(), accel).y;
+    expect(y).toBeCloseTo(-10 * (10 * 0.04 + settings.sensitivity * 0.5) * M_YAW, 9);
+  });
+
+  it('scales gamepad and touch look degrees too', () => {
+    const s = createInputState();
+    s.lookYaw = 10;
+    s.lookPitch = -4;
+    s.lookScale = 0.25;
+    const a = applyLook(s, angles(), settings);
+    expect(a.y).toBeCloseTo(2.5, 9);
+    expect(a.x).toBeCloseTo(-1, 9);
   });
 });

@@ -45,6 +45,8 @@ import { sanitizeName, sanitizeText } from '../identity';
 import { RefereeDriver } from '../match/match-host';
 import { successorHs, takeoverCheckpoint } from '../migration';
 import { HostStar, type StarMember } from '../transport/host-star';
+import type { HubLike } from '../transport/types';
+import { HubGate } from './hub-gate';
 import type { GameEvent, HandResult, Id, LobbyState, RefMsg, StartedMatch, Team } from '../types';
 import {
   addPlayer,
@@ -151,8 +153,10 @@ export class LobbyHost implements Role {
             this.claim(false);
             return;
           }
-          ctx.error(d.code);
-          if (!this.confirmed) this.end(d.code);
+          // Refused before the room existed: the role ends and the runtime tells Lua once,
+          // with the held room's code so the Seat-held prompt can Rejoin it.
+          if (this.confirmed) ctx.error(d.code);
+          else this.end(d.code === 'seat-held' && d.heldCode ? `seat-held:${d.heldCode}` : d.code);
         }
       }),
       hub.onStatus((s, info) => {
@@ -870,11 +874,15 @@ export class LobbyHost implements Role {
     // successor (a member drops the old host's link the moment it hears `host-changed`).
     const star = this.star;
     this.star = null;
-    const hub = this.ctx.deps.hub;
-    this.ctx.deps.sched.after(LEAVE_DRAIN_MS, () => {
+    const send = (hub: HubLike) => {
       hub.emit('balatro:p2p:leave', {});
       star?.stop();
-    });
+    };
+    // Through the session's HubGate: whatever the player does next (Create, Join) reaches
+    // the hub after this leave, not before it while the seat is still held here.
+    const hub = this.ctx.deps.hub;
+    if (hub instanceof HubGate) hub.after(LEAVE_DRAIN_MS, send);
+    else this.ctx.deps.sched.after(LEAVE_DRAIN_MS, () => send(hub));
     this.end('left');
   }
 

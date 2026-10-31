@@ -183,10 +183,14 @@ export abstract class CsWeapon implements Weapon {
     this.vmActivitySeq = (this.vmActivitySeq + 1) & 255;
   }
 
-  /** A weapon sound, already played by the owner's prediction (so not sent back to them). */
+  /**
+   * A weapon sound, played by the owner's prediction (so not sent back to them). On the client the
+   * prediction captures world.emitSound (client/net/prediction.ts); a client world that is not
+   * predicting drops it.
+   */
   protected sound(name: string): void {
     const o = this.owner;
-    if (!o || !name || !o.world.isServer) return;
+    if (!o || !name) return;
     o.world.emitSound(name, {
       entity: o.id,
       channel: CHAN_WEAPON,

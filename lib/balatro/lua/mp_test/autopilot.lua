@@ -16,6 +16,8 @@
 --   wait_idle(seconds?)
 --   speed(n)                                 game speed (default 4) + reduced motion
 --   prepare()                                speed 4, reduced motion, tutorial treated as done
+--   turbo{updates?, draw_every?}             fast-forward: `updates` game updates per frame (same dt
+--                                            each) and a draw every `draw_every` frames; {1, 1} = off
 --   start_run{seed, stake?, deck?}           from anywhere: a fresh seeded run, at BLIND_SELECT
 --   select_blind() / skip_blind()            the blind on deck
 --   play(indices | 'best') / discard(indices)  1-based hand positions
@@ -324,11 +326,68 @@ C.state = function() return AP.snapshot() end
 C.wait_state = function(a) return AP.wait_state(a.name or a[1], a.seconds or a[2]) end
 C.wait_idle = function(a) return AP.wait_idle(a.seconds or a[1]) end
 
+-- Opens a menu holding one text field, as the seed and lobby-code screens do (the phone
+-- keyboard path, lib/balatro/text-input.ts, is tested against it).
+C.open_text_input = function()
+  AP_TEXT = { value = '' }
+  G.FUNCS.overlay_menu({
+    definition = create_UIBox_generic_options({
+      contents = {
+        create_text_input({ w = 4, h = 0.6, max_length = 8, all_caps = true, prompt_text = 'CODE', ref_table = AP_TEXT, ref_value = 'value' }),
+      },
+    }),
+  })
+  return true
+end
+
+C.text_value = function()
+  return { value = AP_TEXT and AP_TEXT.value or '', hooked = G.CONTROLLER.text_input_hook ~= nil }
+end
+
 C.speed = function(a)
   local n = tonumber(a.n or a[1]) or 4
   G.SETTINGS.GAMESPEED = n
   G.SETTINGS.reduced_motion = true
   return n
+end
+
+-- Turbo (test-only fast-forward). On software WebGL a frame costs ~100 ms and nearly all of it
+-- is the draw; the game advances at most 0.1 s of game time per frame (main.lua caps dt), so
+-- a scripted run spends minutes in animations. Turbo calls love.update `updates` times per
+-- frame with the frame's dt (the game sees time pass faster, as at a higher game speed; RNG
+-- and game logic are untouched: seeded results are identical) and draws every `draw_every`-th
+-- frame. Commands and specs still poll once per frame (sched ticks in love.event.pump's frame
+-- hooks or once after the updates). While a task is inside wait_frames every frame is a full
+-- one (sched.full_frames), so "wait n frames and let it draw" and perf measurements see real
+-- frames.
+AP.turbo = { updates = 1, draw_every = 1, frame = 0, installed = false }
+
+local function install_turbo()
+  local T = AP.turbo
+  if T.installed then return end
+  T.installed = true
+  local update, draw = love.update, love.draw
+  love.update = function(...)
+    local n = sched.full_frames() and 1 or T.updates
+    local r
+    for _ = 1, n do r = update(...) end
+    return r
+  end
+  love.draw = function(...)
+    T.frame = T.frame + 1
+    if T.draw_every <= 1 or sched.full_frames() or T.frame % T.draw_every == 0 then
+      return draw(...)
+    end
+  end
+end
+
+C.turbo = function(a)
+  local updates = math.floor(tonumber(a.updates or a[1]) or 1)
+  local every = math.floor(tonumber(a.draw_every or a[2]) or 1)
+  if updates < 1 or updates > 64 or every < 1 or every > 64 then error('turbo{updates 1..64, draw_every 1..64}') end
+  if updates > 1 or every > 1 then install_turbo() end
+  AP.turbo.updates, AP.turbo.draw_every = updates, every
+  return { updates = updates, draw_every = every }
 end
 
 C.prepare = function()
@@ -666,11 +725,14 @@ C.pvp_play = function(a)
 end
 
 --- After the PvP hands: until end_pvp moved the run on (round eval / shop / next blind
--- select) or the match ended for this player.
+-- select), the match ended for this player, or the run itself was won (a practice run's
+-- ante-8 PvP blind wins as vanilla does: the win screen, with no end of the round after it).
 C.pvp_wait_end = function(a)
   local m = mpg()
   wait(function()
     if finished() then return true end
+    -- The win screen is up (an endless run that went on has closed it; G.GAME.won stays set).
+    if G.GAME and G.GAME.won and G.OVERLAY_MENU then return true end
     if not AP.idle() then return false end
     local st = G.STATE
     return not m.pvp.on_pvp_blind() and (st == G.STATES.ROUND_EVAL or st == G.STATES.SHOP or st == G.STATES.BLIND_SELECT)

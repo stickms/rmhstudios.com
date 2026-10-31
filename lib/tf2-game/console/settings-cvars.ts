@@ -21,6 +21,7 @@ import {
   type DetailLevel,
   SENSITIVITY_RANGE,
   VIEWMODEL_FOV_RANGE,
+  ZOOM_SENSITIVITY_RATIO_RANGE,
   type CrosshairStyle,
   type GameSettings,
   type QualityTier,
@@ -126,6 +127,18 @@ function mappings(game: HudGame): Mapping[] {
       def: { name: 'm_customaccel_max', type: 'float', min: 0, max: 20, help: 'Max mouse move scale factor, 0 for no limit (modes 1 and 2).' },
       read: (s) => s.mouseAccelMax,
       write: (s, cv) => ({ ...s, mouseAccelMax: cv.float }),
+    },
+    {
+      // CS:GO split the SDK's zoom_sensitivity_ratio into _mouse and _joystick; one ratio drives both here.
+      def: {
+        name: game === 'csgo' ? 'zoom_sensitivity_ratio_mouse' : 'zoom_sensitivity_ratio',
+        type: 'float',
+        min: ZOOM_SENSITIVITY_RATIO_RANGE.min,
+        max: ZOOM_SENSITIVITY_RATIO_RANGE.max,
+        help: 'Additional mouse sensitivity scale factor applied when FOV is zoomed in.',
+      },
+      read: (s) => s.zoomSensitivityRatio,
+      write: (s, cv) => ({ ...s, zoomSensitivityRatio: cv.float }),
     },
     {
       def: { name: 'fov_desired', type: 'int', min: fov.min, max: fov.max, help: `Sets the base field-of-view (${fov.min}–${fov.max}).` },

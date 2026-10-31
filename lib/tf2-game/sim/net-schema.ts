@@ -245,6 +245,8 @@ export const NET_PLAYER = registerNetSchema(5, 'player', [
   f('observerTarget', 'i16'),
   /** What the player has equipped, public (sim/items/loadout.ts encodeItems): every client renders it. */
   f('items', 'str'),
+  /** The active weapon's looping sound (Weapon.loopSound: the minigun's spin, the flamethrower's fire), '' for none. */
+  f('weaponLoop', 'str'),
   // ---- private (owner only) ----
   ...moveStateFields(),
   f('ammo1', 'i16', true),

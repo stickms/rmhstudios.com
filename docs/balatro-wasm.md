@@ -172,6 +172,25 @@ can't do: Quit and the Video tab are hidden. `https` (crash reports and high
 scores, both off) and `luasteam` get stubs. Since `getOS()` is never Windows or
 OS X, the game never loads Steam and tracks unlocks itself.
 
+**Balance changes.** The platform layer leaves game rules alone, but the owner made
+three balance changes. They go in as anchored build-time patches
+(`scripts/balatro/core-patches.json`, applied by the pack builder; `data/balatro`
+stays untouched) and apply to single player and multiplayer alike:
+
+- **Blue Stake** no longer removes a discard. Vanilla took one at Blue Stake and every
+  stake above it; every other stake effect is unchanged. Its description now reads "No
+  additional effect".
+- **Blue Seal** creates its Planet card with a 1 in 2 chance, rolled on its own seeded
+  stream (`'blue_seal'`), so a run stays deterministic per seed and multiplayer peers
+  stay in sync. The chance scales with `G.GAME.probabilities.normal`, like every other
+  "1 in N" (Oops! All 6s makes it certain). It rolls only when there is room.
+- **Gold Seal** earns $4 when played and scoring (was $3).
+
+The odds and the payout live on the seal prototypes (`G.P_SEALS.Blue.config.odds`,
+`G.P_SEALS.Gold.config.dollars`). Every shipped language (15) gets the new text, and the
+Blue Seal tooltip shows the chance. `lib/balatro/lua/spec/balance_spec.lua` checks all
+three on the real game code and the text in every language.
+
 ## 5. Save persistence
 
 love.js mounts `/home/web_user/love` on **IDBFS**, Emscripten's IndexedDB-backed
@@ -227,7 +246,47 @@ XORs. The render size is clamped to device pixel ratio 2 and 2560×1440 pixels:
 Balatro draws through a full-screen canvas and the CRT shader, so pixels beyond
 that cost frame time and look no sharper.
 
-## 7. What is not here
+**Frame pacing.** Measured with `testing/balatro-e2e/perf-probe.ts` (boots the real
+engine in Chromium or Firefox and times the frame callbacks; under Xvfb for Firefox, whose
+headless mode has no WebGL here). Software rendering distorts frame totals, so read the
+`cpu/frame` lines: Lua and wasm cost about 1 ms on the menu and 4–5 ms in a run, with p99
+near 15 ms. What the page does about it:
+
+- *The sound thread is time-sliced.* Balatro's sound manager opens about ninety sound
+  files in one go at its start; here that is a coroutine on the drawing thread, and it starts
+  while the player is already playing (the audio pack arrives after the game). Unpaced it
+  froze the game for the whole load. `rmh_web.lua` now lets each `love.audio.newSource`
+  spend about 4 ms and hand the frame back (`pace_audio_loading`). A few single big files
+  still cost 60–80 ms in one frame.
+- *The render governor* (`lib/balatro/render-governor.ts`): if the median frame stays over
+  22.5 ms for two seconds, the pixel ratio steps down by 20 %, never below 1 (below it SDL's
+  drawable and the window disagree and the platform layer re-applies the mode every 0.2 s,
+  which measured as 2 fps). Downscale-only: a change rebuilds the canvas. It matters for
+  hi-DPI screens and does nothing at ratio 1.
+- *`powerPreference: 'high-performance'`* on the WebGL context (a dual-GPU laptop otherwise
+  gives the game the integrated chip).
+- Tried and dropped: Lua GC tuning (`setpause` 150–400, `setstepmul` 100, manual stepping).
+  The default was the best of them; stepping broke the main loop.
+
+## 7. Phones
+
+- **Keyboard.** Balatro types into a field through `keypressed` events and never asks the
+  OS for a keyboard, and SDL on Emscripten has no text-input element, so a tap on a field
+  showed no keyboard on iOS and Android. `lib/balatro/text-input.ts` owns a hidden `<input>`;
+  iOS only raises its keyboard for a `focus()` inside the tap's own handler, which Lua cannot
+  have seen yet, so `rmh_web.lua` §10 publishes the open menu's field rectangle (and whether
+  a field is hooked) to `/rmh/text`, and the `touchend` handler focuses the input when the
+  touch is on it. What is typed becomes keydown/keyup pairs on the document (one key per two
+  frames, in order: Balatro reads its pressed-key table in hash order once a frame), and the
+  frame shrinks to the visual viewport while the keyboard is up. Covered by
+  `testing/balatro-e2e/engine/text-input.test.ts` (Chromium with touch; Firefox with
+  `BALATRO_E2E_FIREFOX=1` under `xvfb-run`).
+- **Layout.** The canvas is inset by the device's safe areas and the engine sizes itself to
+  the canvas box. Long-press selection, the callout, tap flash, pull-to-refresh and rubber
+  banding are off on this page. Upright phones get a dismissible "turn sideways" hint, and
+  fullscreen asks for a landscape lock where the browser allows it (Android).
+
+## 8. What is not here
 
 - **Multiplayer** is its own layer on top of this port, loaded only when a player
   opens it: see [`balatro-mp.md`](balatro-mp.md) (architecture, interfaces, tests)

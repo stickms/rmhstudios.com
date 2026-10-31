@@ -57,6 +57,8 @@ MP.CONTENT_MODULES = {
   'rmh_mp.content.traps', 'rmh_mp.content.trap_hooks', 'rmh_mp.content.boosters', 'rmh_mp.content.decks',
   'rmh_mp.content.cocktail', 'rmh_mp.content.challenges',
   'rmh_mp.hooks.practice',
+  -- EX-15 lifted (appended, so every earlier definition keeps its registry order).
+  'rmh_mp.content.jokers.rarity_shifted', 'rmh_mp.content.white_deck',
 }
 MP.content_loaded = {}
 

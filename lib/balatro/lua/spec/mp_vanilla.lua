@@ -1,8 +1,9 @@
 -- The REAL base game's prototype/pool/RNG code under plain lua5.1, for the WS6 determinism specs
 -- (golden-seed isolation, OR-07 profile independence, The Order). Not a spec itself.
 --
--- Loads data/balatro/{engine/object,functions/misc_functions,functions/common_events,game}.lua —
--- top-level code there only defines functions — then builds G with Game:init_item_prototypes
+-- Loads data/balatro/{engine/object,functions/misc_functions,functions/common_events,game}.lua as the
+-- core pack ships them (the anchored patches of scripts/balatro/core-patches.json applied, via
+-- spec/core_patches.lua) — top-level code there only defines functions — then builds G with Game:init_item_prototypes
 -- (meta.jkr replaced by `opts.meta`) and G.GAME with Game:init_game_object. Rolls go through the
 -- game's own get_current_pool / pseudoseed / pseudorandom_element / get_new_boss /
 -- get_next_tag_key / get_next_voucher_key, mirroring create_card's pool path.
@@ -16,11 +17,11 @@
 local V = {}
 
 local root = (RMH_SPEC and RMH_SPEC.root) or ''
-local BASE = root .. 'data/balatro/'
+
+local P = require 'spec.core_patches'
 
 local function load_into_globals(path)
-  local fn = assert(loadfile(path))
-  fn()
+  P.loadfile(path)()
 end
 
 local function noop() end
@@ -38,10 +39,10 @@ end
 function V.install(opts)
   opts = opts or {}
   install_luajit_random()
-  load_into_globals(BASE .. 'engine/object.lua')
-  load_into_globals(BASE .. 'functions/misc_functions.lua')
-  load_into_globals(BASE .. 'functions/common_events.lua')
-  load_into_globals(BASE .. 'game.lua')
+  load_into_globals('engine/object.lua')
+  load_into_globals('functions/misc_functions.lua')
+  load_into_globals('functions/common_events.lua')
+  load_into_globals('game.lua')
   -- Platform stubs init_item_prototypes touches.
   local meta = opts.meta or {}
   _G.love = {

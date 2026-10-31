@@ -9,9 +9,15 @@
  */
 
 import { z } from 'zod';
-import { TF2_MODES, type Tf2Mode } from '../../data/maps';
 import type { MatchCommand } from '../../server/match-host';
-import { TF2_LIMITS, TF2_ROOM_CODE_RE, type ChatMessage, type JoinedPayload } from '../events';
+import {
+  ROOM_MODES,
+  TF2_LIMITS,
+  TF2_ROOM_CODE_RE,
+  type ChatMessage,
+  type JoinedPayload,
+  type RoomMode,
+} from '../events';
 import { zChat, zClass, zExtraCommand, zLoadout, zTeam, zVoice } from '../lobby-schema';
 
 /**
@@ -48,7 +54,8 @@ const zJoined = z.object({
   code: z.string().regex(TF2_ROOM_CODE_RE),
   playerId: z.number().int().min(1).max(10_000),
   map: z.string().max(64),
-  mode: z.enum(TF2_MODES as [Tf2Mode, ...Tf2Mode[]]),
+  // Any room's mode: a CS:GO room's ('de', 'dm') too, or its members drop the `joined` and never start.
+  mode: z.enum(ROOM_MODES as [RoomMode, ...RoomMode[]]),
   name: z.string().max(TF2_LIMITS.ROOM_NAME_MAX_LENGTH * 2),
   maxPlayers: z.number().int().min(TF2_LIMITS.MIN_PLAYERS).max(TF2_LIMITS.MAX_PLAYERS),
   serverTick: z.number().int().min(0),

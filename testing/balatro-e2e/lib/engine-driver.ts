@@ -9,12 +9,13 @@
  *   await engine.call('start_run', { seed: 'ABC' }); // any autopilot command
  *   await engine.close(); await stack.close();
  */
-import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
+import { chromium, type Browser, type BrowserContext, type BrowserContextOptions, type Page } from 'playwright';
 import { buildHarness } from './build-harness';
 import { chromiumLaunchOptions } from './chromium';
 import { zSpecSummary, type SpecResult, type SpecSummary } from './channel';
 import { REPO_ROOT, startStaticServer, type StaticServer } from './static-server';
 import { readFileSync } from 'node:fs';
+import { turboOn, turboSetting, type Turbo } from './turbo';
 import path from 'node:path';
 
 /**
@@ -94,11 +95,18 @@ export async function openEngine(
     query?: string;
     timeoutMs?: number;
     verbose?: boolean;
+    /** The autopilot's turbo (lib/turbo.ts; default from BALATRO_E2E_TURBO). */
+    turbo?: Turbo;
     /** Receives the page's log lines (engine prints, spec results) about once a second. */
     onLog?: (line: string) => void;
+    /** Script run in every document before the page's own (the perf probe's timers). */
+    initScript?: string;
+    /** Extra browser-context options (`hasTouch` for the phone keyboard test). */
+    contextOptions?: BrowserContextOptions;
   } = {},
 ): Promise<EnginePage> {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, ...opts.contextOptions });
+  if (opts.initScript) await context.addInitScript({ content: opts.initScript });
   const page = await context.newPage();
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -194,6 +202,9 @@ export async function openEngine(
     if (!r.ok) throw new CommandError(cmd, r.data);
     return r.data as T;
   };
+
+  const turbo = opts.turbo ?? turboSetting();
+  if (turboOn(turbo)) await call('turbo', turbo);
 
   return {
     page,

@@ -18,6 +18,7 @@
  */
 import pack from '../../../../lib/balatro/game-pack.json';
 import { bootBalatro } from '../../../../lib/balatro/runtime';
+import { attachTextInput, TEXT_FILE } from '../../../../lib/balatro/text-input';
 import { extractEntry, readZip } from '../../../../lib/balatro/zip';
 import luaFiles from 'virtual:balatro-mp-test-lua';
 import {
@@ -215,7 +216,10 @@ const drain = () => {
   fresh = [];
   return out;
 };
-const api = { state, call, drain };
+/** What Lua published for the phone keyboard (lib/balatro/text-input.ts). */
+const text = () =>
+  fs && fs.analyzePath(TEXT_FILE).exists ? (fs.readFile(TEXT_FILE, { encoding: 'utf8' }) as string) : null;
+const api = { state, call, drain, text };
 (window as unknown as { __balatroEngine: typeof api }).__balatroEngine = api;
 
 window.setInterval(poll, 25);
@@ -224,9 +228,12 @@ const t0 = performance.now();
 void (async () => {
   try {
     await loadMpPack();
+    const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+    const frame = document.getElementById('frame')!;
+    attachTextInput({ frame, canvas, read: text });
     await bootBalatro({
-      canvas: document.getElementById('canvas') as HTMLCanvasElement,
-      frame: document.getElementById('frame')!,
+      canvas,
+      frame,
       cloud: null,
       onPhase: (p) => {
         if (p === 'start' || p === 'running')

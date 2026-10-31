@@ -42,7 +42,10 @@ export class MemberLink {
       sched: o.sched,
       onEnvelope: (env) => this.onEnvelope(env),
       onOpen: () => o.onOpen(),
-      onClose: (reason) => o.onClose(reason),
+      onClose: (reason) => {
+        o.log?.(`link to the host closed (${reason})`);
+        o.onClose(reason);
+      },
       onDrop: (why, detail) => o.log?.(`drop from host: ${why} ${detail ?? ''}`),
     });
     this.offs.push(

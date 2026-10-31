@@ -183,7 +183,7 @@ describe('MP art: every MP object resolves to an existing cell', function()
     local VANILLA_ART = {
       j_mp_hanging_chad = true, j_mp_bloodstone = true, j_mp_seltzer = true, j_mp_turtle_bean = true,
       j_mp_ticket = true, j_mp_ticket_experimental = true, j_mp_idol_rare = true, j_mp_todo_list = true,
-      j_mp_golden_ticket_sandbox = true, c_mp_wraith = true, c_mp_ectoplasm_sandbox = true,
+      j_mp_golden_ticket_sandbox = true, j_mp_mime = true, j_mp_baron = true, c_mp_wraith = true, c_mp_ectoplasm_sandbox = true,
       v_mp_hieroglyph_manhunt = true, v_mp_petroglyph_manhunt = true,
       tag_mp_investment_sandbox = true, tag_mp_juggle_sandbox = true, tag_mp_ward = true,
     }

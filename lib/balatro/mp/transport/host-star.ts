@@ -1,8 +1,10 @@
 /**
  * The host's side of the star (PLAN §0.1): one WireLink per admitted member,
  * each on a DirectConnection (the host makes the offer) or, failing that, the
- * hub relay. Identity comes only from the hub's join request (userId, name,
- * avatar) — a member's claimed `f` is never trusted (TF2 pattern).
+ * hub relay — which the member starts, so the host's link moves to it on the
+ * member's first relayed frame, never on the host's own timeout. Identity
+ * comes only from the hub's join request (userId, name, avatar) — a member's
+ * claimed `f` is never trusted (TF2 pattern).
  *
  * This module only moves envelopes; what they mean is lobby-host.ts's job.
  */
@@ -92,6 +94,7 @@ export class HostStar {
         this.o.onOpen(m);
       },
       onClose: (reason) => {
+        this.o.log?.(`member ${m.userId} link closed (${reason})`);
         if (this.members.get(m.peerId) === m) this.o.onClose(m, reason);
       },
       onDrop: (why, detail) => this.o.log?.(`drop from ${m.userId}: ${why} ${detail ?? ''}`),
@@ -110,7 +113,15 @@ export class HostStar {
         m.link.attach(pair, kind);
       },
       onFailed: () => {
-        if (this.members.get(m.peerId) === m && !m.relay) this.toRelay(m);
+        // No direct path: the member falls back too, and its first relayed frame moves this
+        // link to the relay (the hub's relay handler above). Not before: the hub relays only
+        // for a member that asked (relay:start), so a relay link opened now would hear nothing
+        // until the member's own timer fires — seconds later on a starved page — and would time
+        // out first, leaving a dead link that every rejoin repeated (E2E-15 on CI).
+        if (this.members.get(m.peerId) !== m || m.relay) return;
+        m.attempt?.close();
+        m.attempt = null;
+        this.o.log?.(`member ${m.userId}: no direct path; waiting for its relay`);
       },
     });
     return m;
