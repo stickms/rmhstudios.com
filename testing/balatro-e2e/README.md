@@ -18,6 +18,30 @@ pnpm test:balatro:e2e --project match [testing/balatro-e2e/match/<file>.test.ts]
 BALATRO_E2E_SOAK=1 pnpm test:balatro:e2e --project match testing/balatro-e2e/match/soak.test.ts
 ```
 
+## Speed: turbo and the CI shards
+
+Every engine page (the harness page and each real player) runs the autopilot's **turbo**
+(`autopilot.lua` `turbo{updates, draw_every}`, set by `lib/turbo.ts`): 8 game updates per frame
+with that frame's dt, and a draw every 4th frame. On SwiftShader a frame costs ~100 ms, almost
+all of it drawing, and Balatro advances at most 0.1 s of game time per frame (main.lua caps
+dt), so a scripted run is mostly waiting for animations; turbo fast-forwards them about 5x
+without touching game logic or RNG (seeded results are identical). While a Lua task is inside
+`wait_frames(n)` every frame is a full one (one update, one draw: `sched.full_frames()`), so a
+spec that lets the engine lay out and draw, and `perf_spec`'s per-frame measurements, see real
+frames. Commands still poll once per frame. Network, the hub and the PvP timers run on the
+page's clock and are unaffected. `BALATRO_E2E_TURBO=off` (or `UxD`, e.g. `16x2`) changes it;
+the nightly CI run uses `off`, so the real-speed path keeps being tested.
+
+CI (`.github/workflows/balatro-mp-tests.yml`) runs the e2e suite as parallel jobs next to
+`test`: `e2e-engine` (harness + engine, one boot: specs are order-checked and the golden seeds
+compared within it), `e2e-match` — a matrix over the shards in `shards.ts`, each with its own
+Postgres, hub and `vite dev` — and the aggregate `e2e`, which fails if any of them did.
+`lib/shards.unit.test.ts` fails when a match file is in no shard or the workflow matrix and
+`MATCH_SHARDS` differ. Run one shard locally with
+`pnpm test:balatro:e2e --project match $(pnpm exec tsx testing/balatro-e2e/shards.ts formats)`.
+CI sets `BALATRO_E2E_SOAK=1` on every run: the 12-ante soak takes about 2 minutes with turbo
+(a 3-ante run locally: 0.4 min) and its "30 minutes" at real speed, nightly.
+
 ## Engine-spec harness
 
 `engine/page/entry.ts` boots the game exactly as `/balatro` does (`lib/balatro/runtime.ts`,
@@ -70,16 +94,18 @@ context on `/balatro`, 640×360 to keep software WebGL cheap) and bot peers (`li
 engine, served on the app's origin through Playwright routing), and drives them with
 `lib/match-flow.ts`.
 
-| File                      | Scenarios                                                           |
-| ------------------------- | ------------------------------------------------------------------- |
-| `smoke.test.ts`           | the stack, N signed-in boots                                        |
-| `nemesis.test.ts`         | E2E-01, 02, 11, 12, 14, 15, 21 (two real browsers)                  |
-| `formats.test.ts`         | E2E-04 Nemesis×3, 05 Royale×4, 06 Manhunt 1+2, 07 Teams 2v2, 13     |
-| `practice.test.ts`        | E2E-16 (every standard practice ruleset; ante 8 → the vanilla win)  |
-| `queue.test.ts`           | E2E-17 casual queue + setup, E2E-18 party, LOB-04 invite link       |
-| `spectate-replay.test.ts` | E2E-19 spectate list, mid-match spectator, My Replays playback      |
-| `large.test.ts`           | E2E-22 (1 real + 15 bots; `BALATRO_E2E_BOTS`)                       |
-| `soak.test.ts`            | E2E-24 (`BALATRO_E2E_SOAK=1`; `BALATRO_E2E_SOAK_ANTES`, default 12) |
+| File                         | Scenarios                                                                |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| `smoke.test.ts`              | the stack, N signed-in boots                                             |
+| `nemesis.test.ts`            | E2E-01, 02, 10, 08/23, 11 (two real browsers)                            |
+| `nemesis-resilience.test.ts` | E2E-12 drop, 14 reload-rejoin, 21 kick/mismatch, 15 relay (two browsers) |
+| `formats.test.ts`            | E2E-04 Nemesis×3, 05 Royale×4, 06 Manhunt 1+2, 07 Teams 2v2, 20          |
+| `host-migration.test.ts`     | E2E-13 (the host's page closes mid-match; 1 browser + bots)              |
+| `practice.test.ts`           | E2E-16 (every standard practice ruleset; ante 8 → the vanilla win)       |
+| `queue.test.ts`              | E2E-17 casual queue + setup, E2E-18 party, LOB-04 invite link            |
+| `spectate-replay.test.ts`    | E2E-19 spectate list, mid-match spectator, My Replays playback           |
+| `large.test.ts`              | E2E-22 (1 real + 15 bots; `BALATRO_E2E_BOTS`)                            |
+| `soak.test.ts`               | E2E-24 (`BALATRO_E2E_SOAK=1`; `BALATRO_E2E_SOAK_ANTES`, default 12)      |
 
 ### Local requirements
 

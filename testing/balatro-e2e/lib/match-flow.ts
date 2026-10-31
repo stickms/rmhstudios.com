@@ -19,12 +19,53 @@ export async function lobbyCode(host: Peer, timeoutMs = 120_000): Promise<string
     await host.waitState((s) => !!(code = s.code ?? ''), 'lobby code', timeoutMs);
     return code;
   }
-  return (await host.waitSnap((s) => !!s.code && s.role === 'host', 'lobby code', timeoutMs)).code!;
+  try {
+    return (await host.waitSnap((s) => !!s.code && s.role === 'host', 'lobby code', timeoutMs)).code!;
+  } catch (e) {
+    // Why the hub or the runtime refused (seat-held, rate-limited …): what Lua was told.
+    const refused = await host
+      .cmd<{ list: { d: unknown }[] }>('mp_inbox', { t: 'lobby_error' })
+      .then((r) => JSON.stringify(r.list.map((x) => x.d)))
+      .catch(() => '?');
+    throw new Error(`${(e as Error).message}\nlobby_error messages: ${refused}`, { cause: e });
+  }
 }
 
+const seatHeldCount = async (p: MpPlayer): Promise<number> =>
+  (await p.cmd<{ list: { d: { code?: string } }[] }>('mp_inbox', { t: 'lobby_error' })).list.filter(
+    (x) => x.d.code === 'seat-held',
+  ).length;
+
+/**
+ * Create a private lobby and return its code. A real player whose account still holds a seat
+ * from the previous scenario's match (the hub keeps it for the seat grace after a match that
+ * ended with Return to Lobby + Leave) gets `seat-held`; it then does what a player does on the
+ * "Seat held" prompt — Leave (ui_seat abandon) — and creates again. Logged, so it stays
+ * visible.
+ */
 export async function create(host: Peer, queueMode: string): Promise<string> {
-  if (isBot(host)) await host.ui('ui_create_lobby', { queueMode, kind: 'private' });
-  else await host.ui('create', { queueMode, kind: 'private' });
+  if (isBot(host)) {
+    await host.ui('ui_create_lobby', { queueMode, kind: 'private' });
+    return lobbyCode(host);
+  }
+  const before = await seatHeldCount(host);
+  await host.ui('create', { queueMode, kind: 'private' });
+  let held = false;
+  await waitFor(
+    `${host.label}: a lobby code or seat-held`,
+    async () => {
+      if ((await host.snap()).code) return true;
+      held = (await seatHeldCount(host)) > before;
+      return held;
+    },
+    120_000,
+    500,
+  ).catch(() => {});
+  if (held) {
+    process.stdout.write(`# ${host.label}: create refused with seat-held; leaving the held seat and creating again\n`);
+    await host.cmd('mp_send', { t: 'ui_seat', d: { op: 'abandon' } });
+    await host.ui('create', { queueMode, kind: 'private' });
+  }
   return lobbyCode(host);
 }
 
@@ -35,11 +76,27 @@ export async function setOptions(host: Peer, options: Record<string, unknown>): 
   }
 }
 
-export async function join(p: Peer, code: string, role: 'player' | 'spectator' = 'player'): Promise<void> {
+export async function join(
+  p: Peer,
+  code: string,
+  role: 'player' | 'spectator' = 'player',
+): Promise<void> {
   if (isBot(p)) await p.ui(role === 'player' ? 'ui_join' : 'ui_spectate', { code });
   else if (role === 'player') await p.ui('join', { code });
-  else await p.cmd('mp', { fn: 'ui', args: { op: 'spectate', code } }).catch(async () => p.page.evaluate(() => 0));
+  else
+    await p
+      .cmd('mp', { fn: 'ui', args: { op: 'spectate', code } })
+      .catch(async () => p.page.evaluate(() => 0));
 }
+
+/**
+ * The host has admitted this player: it is in the lobby's player list. `role === 'member'`
+ * holds as soon as the join is sent; a scenario that depends on join ORDER (the successor is
+ * the earliest-admitted player) must wait for this before anyone else joins, or a bot's
+ * faster join can be admitted first.
+ */
+export const admitted = (s: MpSnap): boolean =>
+  !!s.me && !!s.lobby?.players.some((x) => x.id === s.me);
 
 /** The host's lobby state (from the session runtime snapshot). */
 export async function hostLobby(host: Peer): Promise<NonNullable<MpSnap['lobby']>> {
@@ -51,7 +108,9 @@ export async function hostLobby(host: Peer): Promise<NonNullable<MpSnap['lobby']
 export async function waitPlayers(host: Peer, n: number, timeoutMs = 180_000): Promise<void> {
   await waitFor(
     `${n} players in the lobby`,
-    async () => (await hostLobby(host).catch(() => null))?.players.filter((p) => p.role === 'player').length === n,
+    async () =>
+      (await hostLobby(host).catch(() => null))?.players.filter((p) => p.role === 'player')
+        .length === n,
     timeoutMs,
     1000,
   );
@@ -66,7 +125,10 @@ export async function waitReady(host: Peer, timeoutMs = 120_000): Promise<void> 
     'everyone ready',
     async () => {
       const l = await hostLobby(host).catch(() => null);
-      return !!l && l.players.filter((p) => p.role === 'player' && p.id !== l.hostId).every((p) => p.ready);
+      return (
+        !!l &&
+        l.players.filter((p) => p.role === 'player' && p.id !== l.hostId).every((p) => p.ready)
+      );
     },
     timeoutMs,
     1000,
@@ -112,7 +174,11 @@ export interface AnteResult {
 }
 
 /** One ante for a real player: two normal blinds, the PvP round with `chips`, the shop. */
-export function playAnte(p: MpPlayer, opts: { chips?: number; hands?: number } = {}, timeoutMs = 600_000) {
+export function playAnte(
+  p: MpPlayer,
+  opts: { chips?: number; hands?: number } = {},
+  timeoutMs = 600_000,
+) {
   return p.cmd<AnteResult>('mp_ante', opts, timeoutMs);
 }
 
@@ -137,7 +203,10 @@ export async function waitResult(p: MpPlayer, timeoutMs = 240_000): Promise<stri
  * a match runs, or ui_leave from a lobby), then wait until the page holds no lobby role and
  * no session is mounted (so a single-player run after it is vanilla again).
  */
-export async function leaveMatch(p: MpPlayer, how: 'leave' | 'return_lobby' = 'leave'): Promise<void> {
+export async function leaveMatch(
+  p: MpPlayer,
+  how: 'leave' | 'return_lobby' = 'leave',
+): Promise<void> {
   await p.cmd('mp_leave', { how }, 180_000);
   if (how === 'leave') await p.waitSnap((x) => x.role === null, 'out of the lobby', 120_000);
 }

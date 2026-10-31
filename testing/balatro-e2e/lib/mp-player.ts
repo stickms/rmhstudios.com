@@ -16,6 +16,7 @@
 import type { BrowserContext, Page } from 'playwright';
 import type { Player } from './accounts';
 import { waitFor } from './stack';
+import { turboOn, turboSetting } from './turbo';
 
 export const MP_BOOT_TIMEOUT_MS = Number(process.env.BALATRO_E2E_BOOT_TIMEOUT_MS ?? 300_000);
 
@@ -31,7 +32,16 @@ export interface MpSnap {
     hostId: string;
     successorId: string | null;
     version: number;
-    players: { id: string; name: string; ready: boolean; connected: boolean; away: boolean; role: string; conn: string; team?: string }[];
+    players: {
+      id: string;
+      name: string;
+      ready: boolean;
+      connected: boolean;
+      away: boolean;
+      role: string;
+      conn: string;
+      team?: string;
+    }[];
     options: Record<string, unknown>;
     started: { runId: string; seed: string; [k: string]: unknown } | null;
     setup: unknown;
@@ -53,7 +63,11 @@ export interface MpPlayer {
   errors: string[];
   /** Every console line of the page (bounded). */
   logs: string[];
-  cmd<T = unknown>(cmd: string, args?: unknown[] | Record<string, unknown>, timeoutMs?: number): Promise<T>;
+  cmd<T = unknown>(
+    cmd: string,
+    args?: unknown[] | Record<string, unknown>,
+    timeoutMs?: number,
+  ): Promise<T>;
   /** MP.test.<fn>(args) through the autopilot's `mp` command. */
   mp<T = unknown>(fn: string, args?: Record<string, unknown>, timeoutMs?: number): Promise<T>;
   /** MP.test.ui{op, ...}: drive an out-of-run screen action. */
@@ -71,7 +85,14 @@ export interface UiState {
   overlay?: string;
   hub?: string;
   queue?: string;
-  lobby?: { code: string; kind: string; isHost: boolean; canStart: boolean; players: number; version: number };
+  lobby?: {
+    code: string;
+    kind: string;
+    isHost: boolean;
+    canStart: boolean;
+    players: number;
+    version: number;
+  };
   setup?: { kind: string; phase: string; stepId: string };
   toasts?: number;
 }
@@ -107,7 +128,10 @@ export async function openMpPlayer(
   // Keep the page's RTCPeerConnections reachable (window.__e2ePeers) so a scenario can drop
   // the P2P link as a real network failure would (offline emulation does not reach WebRTC).
   await context.addInitScript(() => {
-    const W = window as unknown as { RTCPeerConnection: typeof RTCPeerConnection; __e2ePeers?: RTCPeerConnection[] };
+    const W = window as unknown as {
+      RTCPeerConnection: typeof RTCPeerConnection;
+      __e2ePeers?: RTCPeerConnection[];
+    };
     if (W.__e2ePeers || !W.RTCPeerConnection) return;
     const Native = W.RTCPeerConnection;
     const peers: RTCPeerConnection[] = [];
@@ -126,38 +150,57 @@ export async function openMpPlayer(
   page.on('console', (m) => {
     const text = m.text();
     if (logs.length > 4000) logs.splice(0, 1000);
-    logs.push(text.slice(0, 600));
+    // Balatro prints LONG DT on every slow update (all of them on software WebGL): noise that
+    // would crowd the useful lines out of a failure's console tail.
+    if (!text.startsWith('[balatro] LONG DT')) logs.push(text.slice(0, 600));
     if (FATAL_LINE.test(text)) errors.push(text.slice(0, 1500));
   });
   const debug = (m: string) => {
     if (process.env.BALATRO_E2E_DEBUG) process.stdout.write(`[${account.label}] ${m}\n`);
   };
-  if (!opts.skipGoto) await page.goto(`${baseUrl}${opts.path ?? '/balatro'}`, { timeout: MP_BOOT_TIMEOUT_MS });
+  if (!opts.skipGoto)
+    await page.goto(`${baseUrl}${opts.path ?? '/balatro'}`, { timeout: MP_BOOT_TIMEOUT_MS });
   debug('page loaded');
 
-  const cmd = async <T>(c: string, args: unknown[] | Record<string, unknown> = [], timeoutMs = 120_000): Promise<T> =>
+  const cmd = async <T>(
+    c: string,
+    args: unknown[] | Record<string, unknown> = [],
+    timeoutMs = 120_000,
+  ): Promise<T> =>
     page.evaluate(
       ([c2, a, t]) =>
-        (window as unknown as { __balatroMp: { cmd(c: string, a: unknown, t: number): Promise<unknown> } }).__balatroMp.cmd(
-          c2 as string,
-          a,
-          t as number,
-        ),
+        (
+          window as unknown as {
+            __balatroMp: { cmd(c: string, a: unknown, t: number): Promise<unknown> };
+          }
+        ).__balatroMp.cmd(c2 as string, a, t as number),
       [c, args, timeoutMs] as const,
     ) as Promise<T>;
 
   if (opts.open !== false) {
-    await page.waitForFunction(() => typeof (window as unknown as { __rmhBalatroOpenMp?: unknown }).__rmhBalatroOpenMp === 'function', undefined, {
+    await page.waitForFunction(
+      () =>
+        typeof (window as unknown as { __rmhBalatroOpenMp?: unknown }).__rmhBalatroOpenMp ===
+        'function',
+      undefined,
+      {
+        timeout: MP_BOOT_TIMEOUT_MS,
+        polling: 500,
+      },
+    );
+    debug('engine running; opening MP');
+    await page.evaluate(() =>
+      (window as unknown as { __rmhBalatroOpenMp(i: string): void }).__rmhBalatroOpenMp('menu'),
+    );
+  }
+  await page.waitForFunction(
+    () => !!(window as unknown as { __balatroMp?: unknown }).__balatroMp,
+    undefined,
+    {
       timeout: MP_BOOT_TIMEOUT_MS,
       polling: 500,
-    });
-    debug('engine running; opening MP');
-    await page.evaluate(() => (window as unknown as { __rmhBalatroOpenMp(i: string): void }).__rmhBalatroOpenMp('menu'));
-  }
-  await page.waitForFunction(() => !!(window as unknown as { __balatroMp?: unknown }).__balatroMp, undefined, {
-    timeout: MP_BOOT_TIMEOUT_MS,
-    polling: 500,
-  });
+    },
+  );
   // The driver is written when the hooks install; the Lua side picks it up on the MP
   // pack's init. Wait until a round trip answers.
   await waitFor(
@@ -171,16 +214,26 @@ export async function openMpPlayer(
   );
   debug('autopilot answers');
   await cmd('speed', [4]).catch(() => {});
+  // Fast-forward animations (lib/turbo.ts); BALATRO_E2E_TURBO=off for real-speed frames.
+  const turbo = turboSetting();
+  if (turboOn(turbo)) await cmd('turbo', turbo);
   // The page opened the session from JS, which mounts the pack without MP.open: open
   // the menu as the MULTIPLAYER button would, so the UI test surface (MP.test.ui) exists.
   if (opts.open !== false) await cmd('mp_open', { intent: 'menu' });
 
   const snap = () =>
-    page.evaluate(() => (window as unknown as { __balatroMp: { state(): unknown } }).__balatroMp.state()) as Promise<MpSnap>;
+    page.evaluate(() =>
+      (window as unknown as { __balatroMp: { state(): unknown } }).__balatroMp.state(),
+    ) as Promise<MpSnap>;
   const mp = <T>(fn: string, args: Record<string, unknown> = {}, timeoutMs?: number) =>
     cmd<T>('mp', { fn, args }, timeoutMs);
   const uiState = () => mp<UiState>('ui_state');
-  const poll = async <S>(read: () => Promise<S>, pred: (s: S) => boolean, what: string, timeoutMs: number) => {
+  const poll = async <S>(
+    read: () => Promise<S>,
+    pred: (s: S) => boolean,
+    what: string,
+    timeoutMs: number,
+  ) => {
     let last: S | undefined;
     await waitFor(
       `${account.label}: ${what}`,
@@ -191,7 +244,9 @@ export async function openMpPlayer(
       timeoutMs,
       500,
     ).catch((e: Error) => {
-      throw new Error(`${e.message}\nlast: ${JSON.stringify(last)?.slice(0, 2000)}\nerrors: ${errors.join('\n')}`);
+      throw new Error(
+        `${e.message}\nlast: ${JSON.stringify(last)?.slice(0, 2000)}\nerrors: ${errors.join('\n')}\nlast console lines:\n${logs.slice(-40).join('\n')}`,
+      );
     });
     return last as S;
   };
@@ -207,7 +262,8 @@ export async function openMpPlayer(
     ui: (op, args = {}) => mp<UiState>('ui', { op, ...args }),
     uiState,
     snap,
-    waitSnap: (pred, what = 'session state', timeoutMs = 120_000) => poll(snap, pred, what, timeoutMs),
+    waitSnap: (pred, what = 'session state', timeoutMs = 120_000) =>
+      poll(snap, pred, what, timeoutMs),
     waitUi: (pred, what = 'ui state', timeoutMs = 120_000) => poll(uiState, pred, what, timeoutMs),
     luaErrors: () => errors.filter((e) => !/favicon|AudioContext|audio/i.test(e)),
     close: () => page.close(),

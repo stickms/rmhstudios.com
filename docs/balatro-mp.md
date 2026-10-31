@@ -134,11 +134,17 @@ files. In them, `{ "$ref": "name" }` points into `types.json` → `objects`, and
 CI: `.github/workflows/balatro-mp-tests.yml`, path-filtered. Job `test` installs `lua5.1`
 and runs the L1 specs, protocol freshness, `test:balatro`, `test:tf2` (the P2P primitives are
 shared), pack freshness (`build-game-pack.py --check`) and the bundle/pack budget
-(`scripts/balatro/bundle-budget.ts`). Job `e2e` runs the three e2e projects against a
-`pgvector/pgvector:pg16` service with `BALATRO_E2E_REQUIRE_MATCH=1`; the nightly schedule (or a
-manual run with `long`) adds every engine spec alone in a fresh boot (`BALATRO_E2E_ISOLATE=1`)
-and the soak (`BALATRO_E2E_SOAK=1`, E2E-24). The e2e layout, the autopilot commands, the bot
-peers and how to run the match project locally are in `testing/balatro-e2e/README.md`.
+(`scripts/balatro/bundle-budget.ts`). The e2e suite runs as parallel jobs next to it:
+`e2e-engine` (the harness and engine projects, one engine boot), `e2e-match` — a matrix over
+the shards of `testing/balatro-e2e/shards.ts`, each with its own `pgvector/pgvector:pg16`
+service, hub and `vite dev`, with `BALATRO_E2E_REQUIRE_MATCH=1` — and the aggregate `e2e`, which
+fails if any of them did (the check to require). Engine pages run the autopilot's turbo
+(`testing/balatro-e2e/lib/turbo.ts`), and every scenario runs on every PR, the 12-ante soak
+(E2E-24) included. The nightly schedule (or a manual run with `long`) runs the same jobs at
+real-speed frames (`BALATRO_E2E_TURBO=off`) plus every engine spec alone in a fresh boot
+(`BALATRO_E2E_ISOLATE=1`). The e2e layout, turbo, the shards, the
+autopilot commands, the bot peers and how to run the match project locally are in
+`testing/balatro-e2e/README.md`.
 
 Bundle accounting (§6.4): the MP JS budget counts every lazy chunk that holds a Balatro module,
 including the queue and replay extensions `index.ts` loads through an `import.meta.glob` array.

@@ -5,7 +5,8 @@
 -- that the frame hook resumes once per frame (sched.tick()).
 --
 --   sched.spawn(fn, done)          start a task; done(ok, value_or_error) when it ends
---   sched.wait_frames(n)           yield n frames (inside a task)
+--   sched.wait_frames(n)           yield n frames (inside a task); while one waits, frames are
+--                                  full frames (sched.full_frames(): the autopilot's turbo is off)
 --   sched.wait_until(pred, s, why) yield until pred() is truthy; errors 'timeout: why'
 --                                  after s seconds of the injected clock (default 30)
 --   sched.sleep(s)                 yield for s seconds
@@ -14,7 +15,7 @@
 --   sched.in_task()                true inside a task
 -- Errors raised inside a task end it with done(false, message-with-traceback).
 
-local sched = { tasks = {}, frame = 0 }
+local sched = { tasks = {}, frame = 0, full_until = 0 }
 
 sched.clock = function()
   if love and love.timer and love.timer.getTime then return love.timer.getTime() end
@@ -61,7 +62,17 @@ end
 
 function sched.wait_frames(n)
   need_task('wait_frames')
-  for _ = 1, math.max(1, n or 1) do coroutine.yield() end
+  n = math.max(1, n or 1)
+  -- A spec that waits frames wants what a player's frames do (one update, one draw each:
+  -- "let the engine lay out, update and draw"), so the autopilot's turbo pauses until the
+  -- wait is over. A frame count, not a counter, so an abandoned task cannot pin it.
+  sched.full_until = math.max(sched.full_until, sched.frame + n)
+  for _ = 1, n do coroutine.yield() end
+end
+
+--- True while some task is inside wait_frames (see there).
+function sched.full_frames()
+  return sched.frame <= sched.full_until
 end
 
 function sched.wait_until(pred, timeout, why)
