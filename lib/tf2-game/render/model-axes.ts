@@ -71,11 +71,17 @@ export interface Bounds3 {
 
 const sameRot = (a: AxisRotation, b: AxisRotation) => a.every((v, i) => v === b[i]);
 
+/** Fit errors this close count as a tie (a hull symmetric under some of the rotations). */
+const FIT_TIE = 1e-3;
+
 /**
  * Picks the rotation R (GLB = R · Source) whose image of the hull (metres) best matches the
  * GLB's bind bounds. Error: the summed min/max mismatch per axis, relative to the box size.
+ * A hull symmetric under a turn (a round lift, a square crate) fits several rotations equally;
+ * `prefer` — the rotation the model's own skeleton implies, see `impliedBindRotation` — then
+ * wins that tie, ahead of the fixed preference order.
  */
-export function detectAxisRotation(hull: Bounds3, glb: Bounds3): AxisRotation {
+export function detectAxisRotation(hull: Bounds3, glb: Bounds3, prefer: AxisRotation | null = null): AxisRotation {
   const size = Math.hypot(
     hull.max[0] - hull.min[0],
     hull.max[1] - hull.min[1],
@@ -89,6 +95,8 @@ export function detectAxisRotation(hull: Bounds3, glb: Bounds3): AxisRotation {
   if (!(size > 1e-6) || !(gsize > 1e-6)) return PERM_SOURCE_TO_GL;
   let best: AxisRotation = PERM_SOURCE_TO_GL;
   let bestErr = Infinity;
+  let bestRaw = Infinity;
+  let preferRaw = Infinity;
   const norm = Math.max(size, gsize);
   for (const r of AXIS_ROTATIONS) {
     let err = 0;
@@ -105,15 +113,48 @@ export function detectAxisRotation(hull: Bounds3, glb: Bounds3): AxisRotation {
       err += Math.abs(lo - glb.min[row]) + Math.abs(hi - glb.max[row]);
     }
     err /= norm;
+    const raw = err;
+    if (prefer && sameRot(r, prefer)) preferRaw = raw;
     // Preference order on near-ties (symmetric models): the character mapping, then Source axes.
     if (sameRot(r, PERM_SOURCE_TO_GL)) err -= 0.02;
     else if (sameRot(r, IDENTITY_ROTATION)) err -= 0.01;
     if (err < bestErr) {
       bestErr = err;
+      bestRaw = raw;
       best = r;
     }
   }
-  return best;
+  return prefer && preferRaw <= bestRaw + FIT_TIE ? prefer : best;
+}
+
+/**
+ * The bind rotation (GLB = R · Source) a skinned model's idle pose implies when the converter
+ * re-expressed its clips with the (y, z, x) fallback (models with no `ref` sequence, the usual
+ * case for props): the clip root is then P · Source while the bind root is R · Source, so the
+ * idle root turned against the bind root, R2 = posed · bindᵀ, gives R = R2ᵀ · P. Null when the
+ * two roots agree (nothing to learn) or differ by no axis rotation.
+ */
+export function impliedBindRotation(rootBind: ArrayLike<number>, rootPosed: ArrayLike<number>): AxisRotation | null {
+  const qa = quatMatrix(rootPosed);
+  const qb = quatMatrix(rootBind);
+  const m = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  for (let i = 0; i < 3; i++)
+    for (let j = 0; j < 3; j++) {
+      let s = 0;
+      for (let k = 0; k < 3; k++) s += qa[i * 3 + k] * qb[j * 3 + k];
+      m[i * 3 + j] = s;
+    }
+  const r2 = nearestAxisRotation(m);
+  if (!r2 || sameRot(r2, IDENTITY_ROTATION)) return null;
+  const p = PERM_SOURCE_TO_GL;
+  const out = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  for (let i = 0; i < 3; i++)
+    for (let j = 0; j < 3; j++) {
+      let s = 0;
+      for (let k = 0; k < 3; k++) s += r2[k * 3 + i] * p[k * 3 + j]; // R2ᵀ · P
+      out[i * 3 + j] = s;
+    }
+  return AXIS_ROTATIONS.find((a) => sameRot(a, out as unknown as AxisRotation)) ?? null;
 }
 
 /**
@@ -159,11 +200,12 @@ export function bindBounds(root: Object3D): Bounds3 | null {
 
 /**
  * The GLB → three model space matrix for a loaded model (cached per scene). `scene.userData`
- * is the GLB's scene extras.
+ * is the GLB's scene extras. `prefer` breaks a tie between rotations the hull fits equally
+ * (`detectAxisRotation`); a frame found with it is not cached.
  */
-export function modelFrame(scene: Object3D): { rotation: AxisRotation; matrix: Matrix4 } {
+export function modelFrame(scene: Object3D, prefer: AxisRotation | null = null): { rotation: AxisRotation; matrix: Matrix4 } {
   const cached = frames.get(scene);
-  if (cached) return cached;
+  if (cached && (!prefer || sameRot(cached.rotation, prefer))) return cached;
   const ex = (scene.userData ?? {}) as SourceExtras;
   const hmin = ex.source?.hullMin;
   const hmax = ex.source?.hullMax;
@@ -176,10 +218,11 @@ export function modelFrame(scene: Object3D): { rotation: AxisRotation; matrix: M
         max: [hmax[0] * SCALE, hmax[1] * SCALE, hmax[2] * SCALE],
       },
       bounds,
+      prefer,
     );
   }
   const entry = { rotation, matrix: frameMatrixFor(rotation) };
-  frames.set(scene, entry);
+  if (!prefer) frames.set(scene, entry);
   return entry;
 }
 

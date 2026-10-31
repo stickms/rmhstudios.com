@@ -16,13 +16,21 @@
  * - Passage: the player and physics objects whose centre crosses a portal's
  *   plane (front to back) inside its rectangle come out of the partner with
  *   position, orientation and velocity mapped through the pair's transform
- *   (portal-math.ts) — speed is conserved.
+ *   (portal-math.ts) — speed is conserved, except that a portal facing up
+ *   throws what comes out of it upward at a minimum speed (prop_portal.cpp's
+ *   floor exit velocities). The player comes out where its hull fits: the
+ *   mapped position, else pushed out along the exit's normal, else the nearest
+ *   free spot (world/free-space.ts) — never inside the world.
  * - Walls behind open portals: for box traces made with carving on (player
  *   movement), a box inside a portal's mouth is traced against the map with
  *   its hull cut at the portal plane, plus the hole's frame; for rigid bodies,
  *   the static colliders behind an open portal move to a "wall" collision
  *   group that a body travelling through that portal ignores, and frame boxes
- *   only travellers collide with line the hole.
+ *   only travellers collide with line the hole. This holds for every portal,
+ *   whatever its orientation: a floor or ceiling portal's rectangle turns with
+ *   the shot, so its frame is a set of turned boxes (plane sets for the trace,
+ *   oriented colliders for the physics). A passage that closes with the player
+ *   in its hole puts the player back on the portal's side.
  * - `traceThroughPortals`: line traces (the gun, energy balls, the renderer's
  *   picking) continue out of the partner portal.
  * - Fizzlers call `fizzleGunPortals`; func_portal_detector queries
@@ -30,12 +38,14 @@
  */
 
 import { emptyTrace, WORLD_ENTITY, type TraceFilter, type TraceResult } from '../../tf2-game/core/types';
-import { CONTENTS_SOLID, IN_ATTACK, IN_ATTACK2, MASK_PLAYERSOLID, MASK_SOLID_BRUSHONLY } from '../../tf2-game/core/constants';
+import { CONTENTS_SOLID, IN_ATTACK, IN_ATTACK2, MASK_SOLID_BRUSHONLY } from '../../tf2-game/core/constants';
 import { angleVectors, copy, normalize, vec3, vectorAngles, type Vec3 } from '../../tf2-game/core/vec';
 import type { Entity } from '../../tf2-game/sim/entity';
 import { PHYS_GROUP, PROP_FILTER, type PhysBody } from '../physics/physics-world';
 import type { PortalCarve } from '../world/collision';
-import { clipBoxToAabb } from '../world/convex-trace';
+import { clipBoxToPlaneSet } from '../world/convex-trace';
+import { findFreeSpace } from '../world/free-space';
+import { quatFromMat } from '../math';
 import type { SpWorld } from '../world/sp-world';
 import type { SpPlayer } from '../player/sp-player';
 import {
@@ -92,17 +102,32 @@ export interface PortalState {
   fromGun: boolean;
 }
 
+/**
+ * One side of the hole behind an open portal: a box in the portal's frame (any
+ * orientation — floor and ceiling portals turn with the shot), as the plane set
+ * the player's box trace clips against and the oriented box the physics frame is.
+ */
+export interface FrameBox {
+  /** World bounds. */
+  mins: Vec3;
+  maxs: Vec3;
+  centre: Vec3;
+  /** Half extents along the portal's forward, left and up axes. */
+  half: Vec3;
+  /** Planes (nx, ny, nz, dist) — the six faces, then the world-axis bevels when the box is turned. */
+  planes: Float64Array;
+  bevel: Uint8Array;
+  count: number;
+}
+
 interface Passage {
   portal: PortalEntity;
   partner: PortalEntity;
   transform: PortalTransform;
-  /** Normal / left / up world axes when axis-aligned (−1 otherwise). */
-  axisN: number;
-  signN: number;
-  axisL: number;
-  axisU: number;
-  /** Frame boxes (world AABBs) behind the hole. */
-  frames: Array<{ mins: Vec3; maxs: Vec3 }>;
+  /** The portal's normal (out of the surface). */
+  normal: Vec3;
+  /** Frame boxes behind the hole. */
+  frames: FrameBox[];
   /** Physics slot (0/1) for linkage 0, −1 otherwise. */
   slot: number;
 }
@@ -115,15 +140,39 @@ export const PORTAL_SHOT_RANGE = 8192;
 const FRAME_DEPTH = 128;
 const FRAME_THICKNESS = 64;
 const MAX_FIT_SLIDE = 64;
+/**
+ * SDK prop_portal.cpp: the least upward speed out of a portal facing up (forward.z > 0.7071) —
+ * the player always clears a floor portal it comes out of, so walking into a wall portal whose
+ * partner is on the floor pops you out instead of dropping you straight back in.
+ */
+export const MIN_FLOOR_EXIT_SPEED_PLAYER = 300;
+/** …for objects, and for objects passing floor to floor. */
+export const MIN_FLOOR_EXIT_SPEED = 50;
+export const MIN_FLOOR_TO_FLOOR_EXIT_SPEED = 225;
+/** A portal faces up (a floor portal) past this forward.z. */
+const FLOOR_PORTAL_Z = 0.7071;
 
 const AXES: Array<'x' | 'y' | 'z'> = ['x', 'y', 'z'];
 
-function axisOf(v: Vec3): { axis: number; sign: number } {
-  for (let i = 0; i < 3; i++) {
-    const c = v[AXES[i]];
-    if (Math.abs(c) > 0.999) return { axis: i, sign: c > 0 ? 1 : -1 };
+/** The axis a direction lies along most (0 x, 1 y, 2 z). */
+function dominantAxis(v: Vec3): number {
+  const ax = Math.abs(v.x);
+  const ay = Math.abs(v.y);
+  const az = Math.abs(v.z);
+  return ax >= ay && ax >= az ? 0 : ay >= az ? 1 : 2;
+}
+
+/** min / max over the box [mins, maxs] of n · h (the box's support along n). */
+function boxSupport(n: Vec3, mins: Vec3, maxs: Vec3): { lo: number; hi: number } {
+  let lo = 0;
+  let hi = 0;
+  for (const k of AXES) {
+    const p = n[k] * mins[k];
+    const q = n[k] * maxs[k];
+    lo += Math.min(p, q);
+    hi += Math.max(p, q);
   }
-  return { axis: -1, sign: 0 };
+  return { lo, hi };
 }
 
 export class PortalService implements PortalCarve {
@@ -206,6 +255,18 @@ export class PortalService implements PortalCarve {
 
   /** Rebuilds the open passages and the physics walls behind them. */
   refresh(): void {
+    // The player standing in a hole (its hull partly behind the surface) when that passage closes
+    // or moves would be left inside the wall: it comes out on the portal's side.
+    const player = this.world.player as SpPlayer | undefined;
+    const inMouth = player && !player.dead && this.passages.length > 0 ? this.passageAt(player.origin, player.mins, player.maxs) : null;
+    this.rebuild();
+    if (player && inMouth && !this.world.playerFits(player.origin)) {
+      this.world.unstickPlayer(frameForward(inMouth.frame), 96);
+      this.resetPlayerTracking();
+    }
+  }
+
+  private rebuild(): void {
     const phys = this.world.physics;
     for (const r of this.regrouped) {
       phys.restoreStatic(r.pieces);
@@ -220,25 +281,17 @@ export class PortalService implements PortalCarve {
       // Only the newest open portal of a colour forms the passage.
       const newest = this.portals.filter((q) => q.activated && q.linkage === p.linkage && q.which === p.which && !q.removed).sort((a, b) => b.openedAt - a.openedAt)[0];
       if (newest !== p) continue;
-      const fwd = frameForward(p.frame);
-      const n = axisOf(fwd);
-      const l = axisOf(frameLeft(p.frame));
-      const u = axisOf(frameUp(p.frame));
       const passage: Passage = {
         portal: p,
         partner,
         transform: portalTransform(p.frame, partner.frame),
-        axisN: n.axis,
-        signN: n.sign,
-        axisL: l.axis,
-        axisU: u.axis,
-        frames: [],
+        normal: frameForward(p.frame),
+        frames: frameBoxes(p.frame),
         slot: p.linkage === 0 ? p.which : -1,
       };
-      if (n.axis >= 0 && l.axis >= 0 && u.axis >= 0) passage.frames = this.frameBoxes(p.frame);
       out.push(passage);
       // Physics: walls behind, frames for travellers.
-      if (passage.slot >= 0 && passage.frames.length > 0) {
+      if (passage.slot >= 0) {
         const tunnel = this.tunnelBox(p.frame);
         const wallGroup = passage.slot === 0 ? PHYS_GROUP.PORTAL_WALL_0 : PHYS_GROUP.PORTAL_WALL_1;
         const frameGroup = passage.slot === 0 ? PHYS_GROUP.PORTAL_FRAME_0 : PHYS_GROUP.PORTAL_FRAME_1;
@@ -247,51 +300,17 @@ export class PortalService implements PortalCarve {
             mins.x < tunnel.maxs.x && maxs.x > tunnel.mins.x && mins.y < tunnel.maxs.y && maxs.y > tunnel.mins.y && mins.z < tunnel.maxs.z && maxs.z > tunnel.mins.z,
           wallGroup,
         );
-        const removers = passage.frames.map((f) => phys.addStaticBox(f.mins, f.maxs, frameGroup, PHYS_GROUP.PROP));
+        const rot = quatFromMat(p.frame.m, { x: 0, y: 0, z: 0, w: 1 });
+        const removers = passage.frames.map((f) => phys.addStaticOrientedBox(f.centre, f.half, rot, frameGroup, PHYS_GROUP.PROP));
         this.regrouped.push({ pieces, removers });
       }
     }
     this.passages = out;
   }
 
-  /** The region just behind an open portal (shrunk inside the rectangle). */
+  /** The region just behind an open portal (shrunk inside the rectangle), as world bounds. */
   private tunnelBox(fr: PortalFrame): { mins: Vec3; maxs: Vec3 } {
-    return this.localBox(fr, -64, -0.5, -PORTAL_HALF_WIDTH + 2, PORTAL_HALF_WIDTH - 2, -PORTAL_HALF_HEIGHT + 2, PORTAL_HALF_HEIGHT - 2);
-  }
-
-  /** The hole's four sides behind the wall, as world AABBs (axis-aligned portals). */
-  private frameBoxes(fr: PortalFrame): Array<{ mins: Vec3; maxs: Vec3 }> {
-    const W = PORTAL_HALF_WIDTH;
-    const H = PORTAL_HALF_HEIGHT;
-    const T = FRAME_THICKNESS;
-    const D = -FRAME_DEPTH;
-    return [
-      this.localBox(fr, D, 0, W, W + T, -H - T, H + T),
-      this.localBox(fr, D, 0, -W - T, -W, -H - T, H + T),
-      this.localBox(fr, D, 0, -W, W, H, H + T),
-      this.localBox(fr, D, 0, -W, W, -H - T, -H),
-    ];
-  }
-
-  /** World AABB of a box in the portal's frame: forward [f0,f1], left [l0,l1], up [u0,u1]. */
-  private localBox(fr: PortalFrame, f0: number, f1: number, l0: number, l1: number, u0: number, u1: number): { mins: Vec3; maxs: Vec3 } {
-    const mins = vec3(Infinity, Infinity, Infinity);
-    const maxs = vec3(-Infinity, -Infinity, -Infinity);
-    const m = fr.m;
-    for (const f of [f0, f1])
-      for (const l of [l0, l1])
-        for (const u of [u0, u1]) {
-          const x = fr.origin.x + m[0] * f + m[1] * l + m[2] * u;
-          const y = fr.origin.y + m[3] * f + m[4] * l + m[5] * u;
-          const z = fr.origin.z + m[6] * f + m[7] * l + m[8] * u;
-          mins.x = Math.min(mins.x, x);
-          mins.y = Math.min(mins.y, y);
-          mins.z = Math.min(mins.z, z);
-          maxs.x = Math.max(maxs.x, x);
-          maxs.y = Math.max(maxs.y, y);
-          maxs.z = Math.max(maxs.z, z);
-        }
-    return { mins, maxs };
+    return localBox(fr, -64, -0.5, -PORTAL_HALF_WIDTH + 2, PORTAL_HALF_WIDTH - 2, -PORTAL_HALF_HEIGHT + 2, PORTAL_HALF_HEIGHT - 2);
   }
 
   /** Open passages (for tests / the renderer). */
@@ -301,17 +320,26 @@ export class PortalService implements PortalCarve {
 
   // ─── PortalCarve ─────────────────────────────────────────────────────────
 
+  /**
+   * A box inside a portal's mouth traces the map with its hull cut at the portal plane, so the
+   * wall (or floor, or ceiling) behind the hole does not stop it. The cut is along the world
+   * axis the portal's normal lies along most: for floor, ceiling and wall portals that is the
+   * normal itself, whatever way the rectangle is turned on its surface; for a portal on a slope
+   * the cut keeps every corner of the shortened box in front of the plane.
+   */
   carveHull(start: Vec3, end: Vec3, mins: Vec3, maxs: Vec3, hullMins: Vec3, hullMaxs: Vec3): number {
+    const hx = (maxs.x - mins.x) / 2;
+    const hy = (maxs.y - mins.y) / 2;
+    const hz = (maxs.z - mins.z) / 2;
     for (let i = 0; i < this.passages.length; i++) {
       const ps = this.passages[i];
-      if (ps.frames.length === 0) continue;
       const fr = ps.portal.frame;
-      const k = AXES[ps.axisN];
-      const kl = AXES[ps.axisL];
-      const ku = AXES[ps.axisU];
-      const extL = (maxs[kl] - mins[kl]) / 2;
-      const extU = (maxs[ku] - mins[ku]) / 2;
-      // The start must be in the mouth (the frame boxes keep the rest of the move inside it).
+      const n = ps.normal;
+      // The start must be in the mouth (the frame boxes keep the rest of the move inside it):
+      // the box's footprint on the portal plane lies inside the rectangle.
+      const m = fr.m;
+      const extL = Math.abs(m[1]) * hx + Math.abs(m[4]) * hy + Math.abs(m[7]) * hz;
+      const extU = Math.abs(m[2]) * hx + Math.abs(m[5]) * hy + Math.abs(m[8]) * hz;
       cc.x = start.x + (mins.x + maxs.x) / 2;
       cc.y = start.y + (mins.y + maxs.y) / 2;
       cc.z = start.z + (mins.z + maxs.z) / 2;
@@ -319,17 +347,26 @@ export class PortalService implements PortalCarve {
       if (Math.abs(c.left) + extL > PORTAL_HALF_WIDTH + 0.5 || Math.abs(c.up) + extU > PORTAL_HALF_HEIGHT + 0.5) continue;
       const dS = planeDistance(fr, start);
       const dE = planeDistance(fr, end);
-      const s = ps.signN;
-      const front = s > 0 ? maxs[k] : -mins[k];
-      const back = s > 0 ? mins[k] : -maxs[k];
+      const sup = boxSupport(n, mins, maxs);
       const near = Math.min(dS, dE);
-      if (near + back > 1) continue; // not reaching the wall
-      if (Math.max(dS, dE) + front < 0) continue;
-      const nb = Math.min(Math.max(back, 0.05 - near), front - 0.5);
+      if (near + sup.lo > 1) continue; // not reaching the wall
+      if (Math.max(dS, dE) + sup.hi < 0) continue; // wholly behind it
+      // Cut along the dominant axis so that n · h ≥ 0.05 − near over the whole shortened box; on
+      // a slope one axis may not be enough (it keeps 0.5 units of the box): then the next.
       copy(hullMins, mins);
       copy(hullMaxs, maxs);
-      if (s > 0) hullMins[k] = nb;
-      else hullMaxs[k] = -nb;
+      const first = dominantAxis(n);
+      for (let j = 0; j < 3; j++) {
+        const k = AXES[(first + j) % 3];
+        const nk = n[k];
+        if (Math.abs(nk) < 1e-6) continue;
+        const lo = boxSupport(n, hullMins, hullMaxs).lo;
+        if (near + lo >= 0.05 - 1e-9) break;
+        const rest = lo - Math.min(nk * hullMins[k], nk * hullMaxs[k]);
+        const bound = (0.05 - near - rest) / nk;
+        if (nk > 0) hullMins[k] = Math.min(Math.max(hullMins[k], bound), hullMaxs[k] - 0.5);
+        else hullMaxs[k] = Math.max(Math.min(hullMaxs[k], bound), hullMins[k] + 0.5);
+      }
       return i;
     }
     return -1;
@@ -339,9 +376,15 @@ export class PortalService implements PortalCarve {
     const ps = this.passages[portal];
     if (!ps) return;
     for (const f of ps.frames) {
-      clipBoxToAabb(f.mins, f.maxs, start, end, mins, maxs, WORLD_ENTITY, CONTENTS_SOLID, out);
+      clipBoxToPlaneSet(f.planes, f.bevel, f.count, start, end, mins, maxs, WORLD_ENTITY, CONTENTS_SOLID, '', out);
       if (out.allSolid) return;
     }
+  }
+
+  /** The open portal whose mouth a box at `origin` is in (its hull is carved there), or null. */
+  passageAt(origin: Vec3, mins: Vec3, maxs: Vec3): PortalEntity | null {
+    const i = this.carveHull(origin, origin, mins, maxs, ch0, ch1);
+    return i >= 0 ? this.passages[i].portal : null;
   }
 
   // ─── Passage for the player and bodies ──────────────────────────────────────
@@ -403,20 +446,10 @@ export class PortalService implements PortalCarve {
     nc.x += L.x * dl + U.x * du;
     nc.y += L.y * dl + U.y * du;
     nc.z += L.z * dl + U.z * du;
-    const no = { x: nc.x - off.x, y: nc.y - off.y, z: nc.z - off.z };
-    // Make sure it fits; push out along the exit's normal when it doesn't.
-    const out = frameForward(ps.partner.frame);
-    const trace = emptyTrace();
-    const c = this.world.collision;
-    c.carving = true;
-    for (let i = 0; i < 24; i++) {
-      c.traceHull(no, no, p.mins, p.maxs, MASK_PLAYERSOLID, p.traceFilter, trace);
-      if (!trace.startSolid) break;
-      no.x += out.x * 2;
-      no.y += out.y * 2;
-      no.z += out.z * 2;
-    }
-    c.carving = false;
+    const out = frameForward(pf);
+    // A floor portal always throws the player clear of itself (SDK prop_portal.cpp).
+    if (out.z > FLOOR_PORTAL_Z && nv.z < MIN_FLOOR_EXIT_SPEED_PLAYER) nv.z = MIN_FLOOR_EXIT_SPEED_PLAYER;
+    const no = this.exitPosition(p, pf, { x: nc.x - off.x, y: nc.y - off.y, z: nc.z - off.z }, out);
     p.placeAt(no, ang, nv);
     if (p.held && p.held.phys) {
       // The held object comes along at the same offset from the eyes.
@@ -434,6 +467,30 @@ export class PortalService implements PortalCarve {
       speedOut: Math.hypot(nv.x, nv.y, nv.z),
       tick: this.world.tickCount,
     };
+  }
+
+  /**
+   * Where the player comes out: the mapped position when its hull fits there (inside the exit's
+   * mouth the wall behind is carved away, so a hull still half in the hole fits); else the hull
+   * pushed along the exit's normal until it lies wholly in front of the exit plane; else the
+   * nearest free spot around that. Never a position inside the world.
+   */
+  private exitPosition(p: SpPlayer, pf: PortalFrame, mapped: Vec3, out: Vec3): Vec3 {
+    const w = this.world;
+    if (w.playerFits(mapped)) return mapped;
+    // In front of the plane: the hull's back corner on it, plus a margin.
+    const back = boxSupport(out, p.mins, p.maxs).lo;
+    const need = 0.5 - back - planeDistance(pf, mapped);
+    const front = { ...mapped };
+    for (let d = 2; d < need + 2; d += 2) {
+      const t = Math.min(d, need);
+      front.x = mapped.x + out.x * t;
+      front.y = mapped.y + out.y * t;
+      front.z = mapped.z + out.z * t;
+      if (w.playerFits(front)) return front;
+    }
+    const near = findFreeSpace(need > 0 ? front : mapped, (o) => w.playerFits(o), { prefer: out, maxDist: 64 });
+    return near ?? (need > 0 ? front : mapped);
   }
 
   /** Rigid bodies: passage groups and teleports. */
@@ -494,6 +551,10 @@ export class PortalService implements PortalCarve {
     const nq = transformQuat(tr, q, { x: 0, y: 0, z: 0, w: 1 });
     const nv = transformVector(tr, v, vec3());
     const nav = transformVector(tr, av, vec3());
+    if (ps.partner.frame.m[6] > FLOOR_PORTAL_Z) {
+      const min = ps.portal.frame.m[6] > FLOOR_PORTAL_Z ? MIN_FLOOR_TO_FLOOR_EXIT_SPEED : MIN_FLOOR_EXIT_SPEED;
+      if (nv.z < min) nv.z = min;
+    }
     b.setPose(no, null, nq);
     b.setVelocity(nv);
     b.setAngularVelocity(nav);
@@ -791,6 +852,88 @@ export class PortalService implements PortalCarve {
   }
 }
 
+/** World bounds of a box in the portal's frame: forward [f0,f1], left [l0,l1], up [u0,u1]. */
+function localBox(fr: PortalFrame, f0: number, f1: number, l0: number, l1: number, u0: number, u1: number): { mins: Vec3; maxs: Vec3 } {
+  const mins = vec3(Infinity, Infinity, Infinity);
+  const maxs = vec3(-Infinity, -Infinity, -Infinity);
+  const m = fr.m;
+  for (const f of [f0, f1])
+    for (const l of [l0, l1])
+      for (const u of [u0, u1]) {
+        const x = fr.origin.x + m[0] * f + m[1] * l + m[2] * u;
+        const y = fr.origin.y + m[3] * f + m[4] * l + m[5] * u;
+        const z = fr.origin.z + m[6] * f + m[7] * l + m[8] * u;
+        mins.x = Math.min(mins.x, x);
+        mins.y = Math.min(mins.y, y);
+        mins.z = Math.min(mins.z, z);
+        maxs.x = Math.max(maxs.x, x);
+        maxs.y = Math.max(maxs.y, y);
+        maxs.z = Math.max(maxs.z, z);
+      }
+  return { mins, maxs };
+}
+
+/** A box in the portal's frame as a trace plane set (faces, plus axial bevels when it is turned) and its oriented extents. */
+function orientedBox(fr: PortalFrame, f0: number, f1: number, l0: number, l1: number, u0: number, u1: number): FrameBox {
+  const { mins, maxs } = localBox(fr, f0, f1, l0, l1, u0, u1);
+  const m = fr.m;
+  const cf = (f0 + f1) / 2;
+  const cl = (l0 + l1) / 2;
+  const cu = (u0 + u1) / 2;
+  const centre = vec3(
+    fr.origin.x + m[0] * cf + m[1] * cl + m[2] * cu,
+    fr.origin.y + m[3] * cf + m[4] * cl + m[5] * cu,
+    fr.origin.z + m[6] * cf + m[7] * cl + m[8] * cu,
+  );
+  const half = vec3((f1 - f0) / 2, (l1 - l0) / 2, (u1 - u0) / 2);
+  const axisAligned = [0, 1, 2].every((c) => Math.abs(m[c]) > 0.9999 || Math.abs(m[3 + c]) > 0.9999 || Math.abs(m[6 + c]) > 0.9999);
+  const count = axisAligned ? 6 : 12;
+  const planes = new Float64Array(count * 4);
+  const bevel = new Uint8Array(count);
+  const halves = [half.x, half.y, half.z];
+  let i = 0;
+  for (let c = 0; c < 3; c++) {
+    const nx = m[c];
+    const ny = m[3 + c];
+    const nz = m[6 + c];
+    const d = nx * centre.x + ny * centre.y + nz * centre.z;
+    for (const s of [1, -1]) {
+      planes[i * 4] = nx * s;
+      planes[i * 4 + 1] = ny * s;
+      planes[i * 4 + 2] = nz * s;
+      planes[i * 4 + 3] = d * s + halves[c];
+      i++;
+    }
+  }
+  if (!axisAligned) {
+    // vbsp's axial bevels: a swept box does not snag on the turned box's edges.
+    for (let c = 0; c < 3; c++) {
+      const k = AXES[c];
+      for (const s of [1, -1]) {
+        planes[i * 4 + c] = s;
+        planes[i * 4 + 3] = s > 0 ? maxs[k] : -mins[k];
+        bevel[i] = 1;
+        i++;
+      }
+    }
+  }
+  return { mins, maxs, centre, half, planes, bevel, count };
+}
+
+/** The hole's four sides behind the wall, in the portal's frame (any orientation). */
+export function frameBoxes(fr: PortalFrame): FrameBox[] {
+  const W = PORTAL_HALF_WIDTH;
+  const H = PORTAL_HALF_HEIGHT;
+  const T = FRAME_THICKNESS;
+  const D = -FRAME_DEPTH;
+  return [
+    orientedBox(fr, D, 0, W, W + T, -H - T, H + T),
+    orientedBox(fr, D, 0, -W - T, -W, -H - T, H + T),
+    orientedBox(fr, D, 0, -W, W, H, H + T),
+    orientedBox(fr, D, 0, -W, W, -H - T, -H),
+  ];
+}
+
 function centerOf(e: Entity, out: Vec3): Vec3 {
   out.x = e.origin.x + (e.mins.x + e.maxs.x) / 2;
   out.y = e.origin.y + (e.mins.y + e.maxs.y) / 2;
@@ -799,6 +942,8 @@ function centerOf(e: Entity, out: Vec3): Vec3 {
 }
 
 const cc = vec3();
+const ch0 = vec3();
+const ch1 = vec3();
 const tF = vec3();
 const tR = vec3();
 const tU = vec3();
