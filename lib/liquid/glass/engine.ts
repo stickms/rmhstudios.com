@@ -224,6 +224,18 @@ const WORKER_WAIT_MS = 5000;
  * `data-liquid-canvas="on"` and the static coat, edge and carrier step aside. A cross-fade, never a swap.
  */
 const ENTER_MS = 450;
+/**
+ * How far past the viewport (as a share of its height, above and below) a surface is already admitted. A rim is a
+ * canvas that fades in over {@link ENTER_MS} after its worker's first frame, so a surface admitted only as it arrives
+ * (the old 120px) was still fading in when a fast scroll had carried it to the middle of the screen. Admitted this far
+ * ahead, it has landed before it is seen. The rim budget still caps the number; see {@link OFFSCREEN_ORDER}.
+ */
+const PRELOAD_MARGIN = '150% 120px';
+/**
+ * Added to the registration order of an admitted-ahead surface, so the budget goes to what is on screen first and
+ * the preloaded ones fill what is left, within each role. Larger than any real registration order.
+ */
+const OFFSCREEN_ORDER = 1_000_000;
 
 /** Places beyond the haze budget a surface that already holds a slot may fall before it gives the slot up. */
 const HAZE_SLOT_SLACK = 4;
@@ -651,7 +663,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       invalidateRects();
       scheduleReconcile();
     },
-    { rootMargin: '120px' },
+    { rootMargin: PRELOAD_MARGIN },
   );
   const sizes = new win.ResizeObserver((records) => {
     for (const r of records) {
@@ -1226,6 +1238,11 @@ export function installLiquidGlass(doc: Document = document): () => void {
       if (s.haze) s.hazeFresh = true;
     }
   };
+  /** Is the surface inside the viewport itself (not only the preload margin)? From the rect the observer handed over. */
+  const onScreen = (s: Surface) => {
+    const r = s.rect;
+    return !!r && r.bottom > 0 && r.top < win.innerHeight && r.right > 0 && r.left < win.innerWidth;
+  };
   const reconcile = () => {
     if (disposed) return;
     if (off()) {
@@ -1240,7 +1257,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
           id: s.id,
           s,
           role: s.role,
-          order: s.order,
+          order: s.order + (onScreen(s) ? 0 : OFFSCREEN_ORDER),
           visible: s.visible && s.el.isConnected,
           width: s.width,
           height: s.height,
