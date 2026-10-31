@@ -239,7 +239,7 @@ export function FlashcardsColumn({
         </div>
       )}
 
-      <div className="space-y-6 p-4">
+      <div className="space-y-6 py-4">
         {mine.length > 0 && (
           <Reveal as="section">
             <h2 className="site-section-label mb-2">

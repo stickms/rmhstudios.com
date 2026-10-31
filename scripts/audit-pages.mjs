@@ -129,6 +129,17 @@ function inPage() {
   const tabs = first("[data-slot='liquid-tabs-sheet']");
   const search = first("[data-slot='search-field']");
   const card = q('.glass-fill');
+  // The first page-level card, at least 60% of the screen wide so a chip or a small tile never counts. Its left edge
+  // against the heading's is the double-gutter signature: the frame insets the page once (`--rad-gutter`) and the title
+  // sits on it, so a card that starts further in has had a second gutter added by a wrapper (docs/ui-audit-2026-10-31.md).
+  const surface = [...document.querySelectorAll('.glass-fill, .glass-pane')].find((el) => {
+    if (
+      el.parentElement?.closest('.glass-fill, .glass-pane, .glass-overlay, [role=dialog], dialog')
+    )
+      return false;
+    const r = el.getBoundingClientRect();
+    return r.width >= W * 0.6 && r.top < 2400 && !!el.closest('main');
+  });
   return {
     ios: document.documentElement.classList.contains('ios-webkit'),
     edges,
@@ -137,6 +148,7 @@ function inPage() {
       heading: heading ? box(heading.querySelector('h1, h2') || heading) : null,
       tabs: box(tabs),
       search: box(search),
+      surface: box(surface),
       tabAppearance: q("[data-slot='liquid-tabs']")?.getAttribute('data-tab-appearance') ?? null,
       cardRadius: card ? getComputedStyle(card).borderTopLeftRadius : null,
     },
@@ -158,6 +170,16 @@ function anatomyFindings(a, width) {
       const max = Math.max(...lefts.map(([, v]) => v));
       if (max - min > tol + 16)
         out.push(`left edges differ: ${lefts.map(([k, v]) => `${k}=${v}`).join(' ')}`);
+    }
+    // A card more than a few px inside the heading's left edge: a second page gutter. The right edge is checked too,
+    // so a card that is merely narrower than the column on one side is reported as what it is.
+    if (a.heading && a.surface) {
+      const inL = a.surface.l - a.heading.l;
+      const inR = width - a.surface.r - a.heading.l;
+      if (inL > tol + 6 && inR > tol + 6)
+        out.push(
+          `first card is inset ${inL}px from the heading (double page gutter: a wrapper adds px-* inside the frame)`,
+        );
     }
     if (
       a.tabs &&

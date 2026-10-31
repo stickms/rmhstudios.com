@@ -88,7 +88,7 @@ export function RecapColumn({
  screens={2.6}
  />
 
- <div className="space-y-6 px-4 pt-4 pb-12">
+ <div className="space-y-6 pt-4 pb-12">
  {/* Stat grid */}
  <Reveal>
  <h2 className="site-section-label mb-3">

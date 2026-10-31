@@ -79,7 +79,7 @@ export function SpacesColumn() {
   };
 
   return (
-    <div className="space-y-[var(--site-section-gap)] px-3 pt-3 pb-12">
+    <div className="space-y-[var(--site-section-gap)] pt-3 pb-12">
       <section className="glass-pane space-y-3 rounded-site p-5">
         <p className="text-sm text-site-text-muted">
           {t('spaces-subtitle', {
