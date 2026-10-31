@@ -363,6 +363,20 @@ function S.install_session_hooks()
     end, o('pre_roll'))
   end
 
+  -- A rejoin or replay restore loads the snapshot through vanilla's Continue path, and
+  -- Game:start_run checks the `continue_game` unlock (Throwback) before it swaps G.GAME for the
+  -- saved game. When the restore starts from the menu (a reloaded page whose rejoin_restore
+  -- arrived before the launch ran), G.GAME is still the menu's unseeded object, so on a profile
+  -- without Throwback the check unlocks it. Game:start_run then queues unlock_notify(), which
+  -- opens vanilla's unlock overlay over the restored run and pauses the game until someone
+  -- clicks it. While paused, TOTAL-timer events stop, including the one that releases
+  -- G.CONTROLLER.locks.load, so the restored shop never takes input (E2E-14). Session runs are
+  -- seeded and seeded runs never unlock, and a restore is not the player continuing a run.
+  wrap(_G, 'check_for_unlock', function(orig, args, ...)
+    if S.restoring and type(args) == 'table' and args.type == 'continue_game' then return end
+    return orig(args, ...)
+  end, o('restore_unlock'))
+
   wrap(_G, 'get_starting_params', function(orig, ...)
     local p = orig(...)
     if type(p) == 'table' then
