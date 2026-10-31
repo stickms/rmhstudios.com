@@ -5,8 +5,8 @@
 > builds on is [`balatro-wasm.md`](balatro-wasm.md); feature parity with the
 > reference multiplayer mod is tracked in [`balatro-mp-parity.md`](balatro-mp-parity.md).
 
-**Status: skeleton (WS0, wave 0).** The frozen interfaces, test scaffolding and CI
-exist. Sections marked _TODO (WSn)_ are written by that workstream as it lands.
+**Status: as built.** Every workstream has landed; each section below describes the code as
+it is.
 
 Multiplayer adds PvP to `/balatro` without a game server. Players connect
 peer-to-peer in a star around the lobby host. The site's socket hub only signals,
@@ -32,8 +32,70 @@ permission.
 | Generated protocol   | `lib/balatro/lua/mp/rmh_mp/protocol.lua`               | WS0 (gen) |
 | MP assets, loc       | `data/balatro-mp/**`                                   | WS2       |
 
-_TODO (WS1, WS3, WS5, WS6): topology, host migration, rejoin snapshots, lazy MP
-pack and content isolation, as built._
+**Topology.** A star around the lobby host. `transport/host-star.ts` holds one
+`DirectConnection` (`lib/shared/p2p/webrtc.ts`) per member; `transport/member.ts` holds the
+member's one link to the host. Each pair carries two negotiated DataChannels (id 0 unreliable,
+pings only; id 1 reliable, every message) under a `ReliableLink` (`lib/shared/p2p/reliable-link.ts`:
+16 KB fragments, ≤ 1 MiB a message, 10 s timeout). The host makes the offer; candidates trickle
+through the hub (`balatro:p2p:signal`, routed only between the host and an admitted member).
+Members never talk to each other: the host relays §3.b traffic with `f` stamped.
+
+**Relay fallback.** When no pair connects within `DIRECT_TIMEOUT_MS` (8 s; `TURN_TIMEOUT_MS`
+12 s when the ICE list has a TURN server) or the connection fails, the member sends
+`balatro:p2p:relay:start` and swaps in a `RelayChannel`; the host moves that link to the relay on
+the member's first relayed frame. Frames carry a 2-byte header (`lib/shared/p2p/relay.ts`: flags,
+slot); the slot is the last two hex characters of the member's 12-character peer id
+(`peerIdWithSlot` / `relaySlotOf`), so no extra round trip tells the host where to address it.
+The hub (`SignalHub.relay` in `server/socket-server/p2p/signal-hub.ts`) checks and meters each
+frame (§6).
+
+**The hub** (`server/socket-server/handlers/balatro-p2p.ts` over `balatro/directory.ts`) carries
+no game traffic. It vouches for each joiner's account, gates on the content hash
+(`version-mismatch`), kicks, forfeits, capacity and one seat per account (`seat-held`), and keeps
+the seat directory: a seat survives a dropped socket; the host's own 120 s seat grace decides.
+Late results (`balatro/results.ts`, HUD-24): the room's current host reports a finished run once
+(`balatro:match:result`); each roster player no longer in the room gets their own line, pushed to
+pages that asked (`balatro:match:pending`) or queued 10 min (≤ 4 per account).
+
+**Host migration** (`lib/balatro/mp/migration.ts`, `lobby/lobby-host.ts` `adopt`). The host
+names a successor in every `balatro:p2p:state` (`successorOf`: the earliest-joined connected,
+non-away, non-forfeited seated player). When the host's socket drops, the hub waits
+`MIGRATE_GRACE_MS` (2 s) if a player can succeed, else `HOST_GRACE_MS` (30 s), then sends
+`promote` to the successor, `host-changed` to everyone else, and re-sends every connected
+member's join request to the new host; with nobody to promote the room closes (`host-lost`). A
+deliberate Leave sends its forfeit, checkpoint and `bye` over P2P and asks the hub to hand over
+`LEAVE_DRAIN_MS` (500 ms) later; `lobby/hub-gate.ts` `HubGate` queues every hub emit made during
+that drain so the hub sees `leave` first. The new host restores the referee from the newest
+`checkpoint` broadcast it holds, or rebuilds one from its own caches (`takeoverCheckpoint`,
+REF-19), and numbers its outcomes from `successorHs` (last seen `hs` + `HS_MIGRATION_GAP`,
+10 000) so no peer drops them as duplicates. A host that hears `host-changed` while it still hosts
+demotes itself and rejoins. A host whose socket only blipped `resume`s its room with its token,
+and can re-claim its code after a hub restart (NET-12).
+
+**Rejoin snapshots.** In a match, Lua's `save_run` (`rmh_mp/hooks/saves.lua`) writes
+`/rmh/mp/run.jkr` and `/rmh/mp/state.json`, touches `/rmh/mp/snap` and sends `snapshot`; the
+runtime copies both into IndexedDB (`rejoin/rejoin-store.ts`: database `rmh-balatro-mp`, keyed by
+`runId`, newest `SNAPSHOT_KEEP` = 3). The localStorage hint `rmh-balatro-mp-rejoin` (the runId) is
+set while the player holds a seat in a running match. After a reload, boot preloads the MP pack,
+the session asks `balatro:seat:query`, and on a rejoin `runtime.ts` `restoreSnapshot` writes the
+files back and sends `rejoin_restore`; `rules/session.lua` loads them through vanilla's Continue
+path (`S.load_snapshot`). No snapshot means the run restarts from its seed. The rejoiner catches
+up within `CATCH_UP_LIMIT_MS` (3 min, `rejoin/catchup.ts`) or is forfeited. `hello.rejoin` versus
+a live-run reconnect is in §5 (WS5).
+
+**Lazy MP pack.** Single player loads no MP code or content. `BalatroPage.tsx` `watchMpOpen`
+scans Lua's mailbox batches for `mp_open` (the MULTIPLAYER button in `rmh_mp_entry.lua`) and only
+then imports `pack-loader.ts`, which fetches and writes the MP pack and starts `index.ts`
+(details in §8). Optional art packs load the same way, only when a ruleset needs them
+(`optional-packs.ts`, §4 "Optional packs").
+
+**Content isolation.** MP prototypes enter vanilla's tables and pools only while a session is
+mounted (`MP.registry.mount`), and `unmount()` (on `go_to_menu` or New Run) restores every pool in
+place (§7 "Isolation"). Saves, unlocks and profile tallies never see MP content (§7 "Save
+guards"). `lib/balatro/lua/mp_test/specs/sp_invariance_spec.lua` proves it in the real engine:
+golden single-player digests (first three shops, Small/Big tags and bosses for antes 1 and 2, three
+seeds) are equal with no MP pack, with `rmh_mp` loaded after sessions mounted and unmounted, and
+after one more practice mount/unmount (E2E-20).
 
 ## 2. Frozen interfaces
 
@@ -284,7 +346,7 @@ guarantee). The widest is `deck_stickers` at 3550 px.
 
 ## 5. Deviations from the mod
 
-_TODO (WS4–WS9): one line per deviation._ Plan decisions D-04 (the comeback bonus
+Plan decisions D-04 (the comeback bonus
 arms only on a lives decrease), D-18 (SPEEDRUN emission rebuilt by the host) and
 D-22 (`c_mp_eeeee`) start the list.
 
@@ -395,8 +457,75 @@ WS6 (Lua core):
 
 ## 6. Operations
 
-_TODO (WS1, WS14): hub limits and relay budgets, TURN configuration, the bundle
-budget baseline._
+### Hub limits
+
+`lib/balatro/net/limits.ts` (frozen; a change is a plan amendment):
+
+| `BALATRO_LIMITS`                          | Value                                                                 |
+| ----------------------------------------- | --------------------------------------------------------------------- |
+| `MAX_PLAYERS` · `MAX_SPECTATORS`          | 16 · 8 per lobby; `PARTY_MAX` 8                                       |
+| `MAX_ROOMS`                               | 1 000 rooms on the hub                                                |
+| `SDP_MAX_LENGTH` · `CANDIDATE_MAX_LENGTH` | 16 384 · 512 characters                                               |
+| `HOST_GRACE_MS` · `MIGRATE_GRACE_MS`      | 30 s (nobody can take over) · 2 s (a successor exists)                |
+| `SEAT_GRACE_MS` · `CATCH_UP_LIMIT_MS`     | 120 s (a dropped player's seat) · 180 s (a crash rejoiner's catch-up) |
+| `INVITES_PER_MIN`                         | 20 per account                                                        |
+| `MP_PROTOCOL_VERSION`                     | 1; the tail of the content hash `<core sha12><mp sha12>-v<n>` (D-36)  |
+
+Every `balatro:*` event has a per-socket rule in `server/socket-server/config.ts` (the rule map is
+also the event allowlist). Per minute: `p2p:host` 10, `p2p:join` 20, `p2p:admit` 240,
+`p2p:signal` 1 200, `p2p:relay:start` 20, `p2p:relay` 12 000, `p2p:state` 240, `p2p:kick` 30,
+`p2p:forfeit-seat` 60, `p2p:leave` 20, `p2p:close` 10, `seat:query` 30, `match:result` 10,
+`match:pending` 20. The WS12 events (§10) are `queue:join` 20, `queue:leave` 30, `party:queue`
+10, `invite` 20, `spectate:list` 30 and `queue:counts` 30. A limited event answers
+`rate-limited`, except `p2p:relay`, which drops silently.
+
+### Relay budgets
+
+`BALATRO_RELAY_LIMITS`, metered per relayed member and direction by `SignalHub.spend`
+(`server/socket-server/p2p/signal-hub.ts`):
+
+- at most `MAX_PEERS_PER_ROOM` (15) members on the relay per room (`full` past it);
+- a token bucket of `BYTES_PER_SEC` 8 KiB/s with a `BURST_BYTES` 64 KiB burst;
+- frames above `MAX_PACKET_BYTES` (16 KiB + 64 B) are dropped. Unreliable frames (pings) are
+  dropped above 1 300 B (`RELAY_MAX_UNRELIABLE_BYTES`), past the bucket, and while the receiver
+  has more than 16 frames waiting (`RELAY_UNRELIABLE_BACKLOG` in `balatro-p2p.ts`);
+- reliable frames always pass and run a debt; past `MAX_DEBT_BYTES` (1 MiB) the member is cut off
+  the relay (`rate-limited`).
+
+Over P2P each host-member link also limits its peer (40 messages/s, burst 100; §9).
+
+### ICE and TURN
+
+The hub mints each account's ICE list (`iceFor` in `balatro-p2p.ts` → `buildIceServers` in
+`lib/call/ice.ts`, trimmed by `clampIceServers` to ≤ 8 servers × ≤ 8 URLs) and hands it out with
+the room. The browser takes it through `resolveHubIce` (`wire-codec.ts`, the zod-free
+`resolveIceServers`) and falls back to `DEFAULT_ICE_SERVERS` (Google's and Cloudflare's public
+STUN) when it is missing or invalid. The env vars are the voice-call ones in `.env.example`:
+
+- `STUN_URLS`: comma-separated STUN URLs (default: the two public servers above);
+- `TURN_URL`: comma-separated TURN URLs (e.g. `turn:…:3478,turns:…:443`);
+- `TURN_SECRET`: coturn's `static-auth-secret`. With both TURN vars set, each list carries a
+  coturn REST credential (`<expiry>:<userId>`, HMAC-SHA1) valid for `TURN_CREDENTIAL_TTL_SEC`
+  (600 s). The secret never reaches a browser.
+
+A pair with no direct path moves to the hub relay after 8 s without TURN, 12 s with it (§1).
+
+### Bundle budget
+
+`scripts/balatro/bundle-budget.ts` (CI step "Bundle and pack budget"; KB = 1 024 B) checks:
+
+| Budget                              | Limit                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| Single-player route chunk (gzip)    | baseline + 5 KB (2.5 KB for MP's hooks + 2.5 KB of later SP features)     |
+| MP lazy chunks (gzip, summed)       | 70 KB, of which `lib/shared/p2p` ≤ 15 KB                                  |
+| Static closure of `BalatroPage.tsx` | no module under `lib/balatro/mp/` or `lib/shared/p2p/`                    |
+| Test surface                        | no `__balatroMp` in any output without `VITE_BALATRO_MP_TEST`             |
+| Packs                               | as `pack-budget.json` (below); the manifest's byte counts match the files |
+
+The baseline is `scripts/balatro/bundle-budget.json`: `spEntryGzip` 29 683 B and
+`corePackBytes` 4 930 572 B, recorded at `146548fd` (2026-10-30). Move it only on purpose
+(`bundle-budget.ts --record --ref <commit>`) and say why in the commit message. How
+socket.io-client is counted is in §3.
 
 ### Pack rebuilds (WS2)
 
@@ -429,11 +558,11 @@ because it subsets about 60 MB of fonts.
 
 **Budgets** (`data/balatro-mp/pack-budget.json`; the build fails past them):
 
-| Pack    | Budget                                        | Plan §6.4                                                                                                                                                                                           |
-| ------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| core    | 4 930 572 B baseline + 56 422 B               | plan +30 KB. Even per-language, the CJK/Hangul MP glyphs cost ~38 KB (folding all MP text into every font cost ~108 KB); +16 422 B (M1b) is exactly the compressed platform Lua moved into the core |
-| mp      | 1 800 000 B compressed, 8 000 000 B extracted | plan 1.3 MB. The used art alone is ~1.25 MB after lossless oxipng (1x + 2x, AS-01) and the localization ~0.1 MB, so 1.3 MB left no room for Lua                                                     |
-| release | 750 000 B compressed, 750 000 B extracted     | EX-14: the Release Joker sheet alone (688 000 B); fetched only when a lobby picks Release                                                                                                           |
+| Pack    | Budget                                        | Plan §6.4                                                                                                                                                                                                                            |
+| ------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| core    | 4 930 572 B baseline + 58 422 B               | plan +30 KB. Even per-language, the CJK/Hangul MP glyphs cost ~38 KB (folding all MP text into every font cost ~108 KB); +16 422 B (M1b) is exactly the compressed platform Lua moved into the core; +2 000 B for platform Lua since |
+| mp      | 1 800 000 B compressed, 8 000 000 B extracted | plan 1.3 MB. The used art alone is ~1.25 MB after lossless oxipng (1x + 2x, AS-01) and the localization ~0.1 MB, so 1.3 MB left no room for Lua                                                                                      |
+| release | 750 000 B compressed, 750 000 B extracted     | EX-14: the Release Joker sheet alone (688 000 B); fetched only when a lobby picks Release                                                                                                                                            |
 
 `CORE_PATCHES` in the builder is the anchored patch list for data/balatro Lua, as
 `(path, anchor, replacement)`, read from `scripts/balatro/core-patches.json` (each
