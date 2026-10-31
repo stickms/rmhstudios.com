@@ -104,6 +104,8 @@ export class CsGameRules extends GameRules {
   bombPlantedThisRound = false;
   roundWinner = TEAM_UNASSIGNED;
   roundWinReason = 0;
+  /** Counts round starts (warmup's included): one buy per round for bots, also across the match start. */
+  roundSerial = 0;
   /** Consecutive losses per team (the loss bonus ladder). */
   readonly lossStreak = [0, 0, 0, 0];
   halftimePending = false;
@@ -367,6 +369,7 @@ export class CsDefuseMode implements GameMode {
 
   onRoundStart(rules: GameRules): void {
     const cs = rules as CsGameRules;
+    cs.roundSerial++;
     cs.applySettings();
     cs.plantedC4 = null;
     cs.bombPlantedThisRound = false;

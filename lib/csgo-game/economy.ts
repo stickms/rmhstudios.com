@@ -174,6 +174,8 @@ export function checkBuy(name: string, ctx: BuyContext): BuyResult {
       if (ctx.armor >= CS_MAX_ARMOR && (!item.helmet || ctx.helmet))
         return { ok: false, reason: 'you already have armor' };
       if (item.helmet && ctx.armor >= CS_MAX_ARMOR && !ctx.helmet) price = HELMET_ONLY_PRICE;
+      // A helmet already on and the vest worn down: only the vest is paid for (CS:GO's assault suit).
+      else if (item.helmet && ctx.helmet) price = resolveBuyItem('vest')?.price ?? price;
       break;
     case 'defuser':
       if (ctx.team !== CS_TEAM_CT)
