@@ -690,11 +690,9 @@ function T.install_colours()
   G.C.SECONDARY_SET = G.C.SECONDARY_SET or {}
   G.C.SET.Trap = T.COLOUR
   G.C.SECONDARY_SET.Trap = T.DARK_PINK
-  -- Vanilla Card:set_sprites draws a consumable from G.ASSET_ATLAS[<set>] before the MP atlas
-  -- post-step runs: give the new set an entry (the Trap sheet, else the Tarot sheet).
-  if G.ASSET_ATLAS then G.ASSET_ATLAS.Trap = G.ASSET_ATLAS.mp_Trap or G.ASSET_ATLAS.Tarot end
+  -- (the set's atlas, G.ASSET_ATLAS.Trap, is aliased by registry/atlas.lua at every install)
 end
--- The MP collection builds Trap cards with no session mounted: its display scope needs the set too.
+-- The MP collection shows Trap cards with no session mounted: their badges need the set's colours.
 require('rmh_mp.registry.dispatch').add_display_installer(function() T.install_colours() end)
 
 -- Net (one handler per peer kind; nobody else owns these).

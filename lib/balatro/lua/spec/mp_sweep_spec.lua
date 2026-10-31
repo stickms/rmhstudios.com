@@ -176,24 +176,21 @@ describe('mp sweep (L1): every definition, stub and edge inputs', function()
   end)
 end)
 
--- The Multiplayer collection draws MP cards with no session mounted (the Collection > Consumables
--- crash: a Trap card's set had no atlas, so Card:init raised half-way and the half-built card
--- crashed the next frame). Its display scope installs the drawing wraps for one call only.
+-- The Multiplayer collection draws MP cards with no session mounted; its display scope installs
+-- the text wraps (loc_vars, the Other-set alias, the Trap colours) for one call only.
 describe('display scope (the MP collection outside a session)', function()
   before_each(function() MP = CH.boot() end)
   after_each(CH.teardown)
 
-  it('installs the art/text wraps and the Trap set for the call, and removes the wraps after', function()
+  it('installs the text wraps and the Trap colours for the call, and removes the wraps after', function()
     local D = MP.registry.dispatch
-    G.ASSET_ATLAS = { Tarot = { name = 'Tarot' }, mp_Trap = { name = 'mp_Trap' } }
     expect(MP.registry.mounted()).falsy()
     local before = MP.hooks.count('display')
     local inside = D.with_display(function()
-      return { gcu = MP.hooks.is_wrapped(_G, 'generate_card_ui'), atlas = G.ASSET_ATLAS.Trap,
-        colour = G.C.SET and G.C.SET.Trap, n = MP.hooks.count('display') }
+      return { gcu = MP.hooks.is_wrapped(_G, 'generate_card_ui'), colour = G.C.SET and G.C.SET.Trap,
+        n = MP.hooks.count('display') }
     end)
     expect(inside.gcu).truthy()
-    expect(inside.atlas.name).eq('mp_Trap')
     expect(inside.colour ~= nil).truthy()
     expect(inside.n > before).truthy()
     expect(MP.hooks.count('display')).eq(0)
@@ -217,5 +214,57 @@ describe('display scope (the MP collection outside a session)', function()
     local D = MP.registry.dispatch
     expect(function() D.with_display(function() error('boom') end) end).error('boom')
     expect(MP.hooks.count('display')).eq(0)
+  end)
+end)
+
+describe('ui callback guard (last resort, util/guard.lua)', function()
+  before_each(function() MP = CH.boot() end)
+  after_each(CH.teardown)
+
+  it('guards MP callbacks only, logs a failure once and keeps the game running', function()
+    local GD = MP.guard
+    local calls = 0
+    G.FUNCS.rmh_mp_sweep_boom = function() calls = calls + 1; error('boom') end
+    G.FUNCS.mp_sweep_ok = function(e) return e * 2 end
+    local vanilla = function() error('vanilla') end
+    G.FUNCS.sweep_vanilla = vanilla
+    expect(GD.scan() >= 2).truthy()
+    expect(G.FUNCS.sweep_vanilla).eq(vanilla)
+    expect(G.FUNCS.mp_sweep_ok(21)).eq(42)
+    G.FUNCS.rmh_mp_sweep_boom({})
+    G.FUNCS.rmh_mp_sweep_boom({})
+    expect(calls).eq(2)
+    expect(GD.failures.rmh_mp_sweep_boom).eq(2)
+    local logged = 0
+    for _, l in ipairs(MP.log_ring) do
+      if l.level == 'error' and l.msg:find('rmh_mp_sweep_boom', 1, true) then logged = logged + 1 end
+    end
+    expect(logged).eq(1)
+    -- idempotent: a guarded callback is not wrapped twice; a redefined one is guarded again
+    expect(GD.scan()).eq(0)
+    G.FUNCS.mp_sweep_ok = function() return 'new' end
+    expect(GD.scan()).eq(1)
+    expect(G.FUNCS.mp_sweep_ok()).eq('new')
+    expect(GD.original(G.FUNCS.mp_sweep_ok)() ).eq('new')
+  end)
+end)
+
+describe('screen wipe guard (a run started during a wipe)', function()
+  before_each(function() MP = CH.boot() end)
+  after_each(CH.teardown)
+
+  it('keeps one wipe_off per wipe', function()
+    local offs = 0
+    G.FUNCS.wipe_on = function() if G.screenwipe then return end; G.screenwipe = { id = 'w' .. offs } end
+    G.FUNCS.wipe_off = function() offs = offs + 1 end
+    MP.guard.install_wipe_guard()
+    -- start_run, then a second start_run before the wipe is gone (vanilla: two wipe_offs)
+    G.FUNCS.wipe_on(); G.FUNCS.wipe_off()
+    G.FUNCS.wipe_on(); G.FUNCS.wipe_off()
+    expect(offs).eq(1)
+    -- the wipe ends; the next one gets its own wipe_off
+    G.screenwipe = nil
+    G.FUNCS.wipe_on(); G.FUNCS.wipe_off()
+    expect(offs).eq(2)
   end)
 end)

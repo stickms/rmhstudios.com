@@ -154,9 +154,10 @@ end
 --- Build a collection Card for an MP prototype. Returns ok, card|err; never leaves a broken card.
 function CO.build_card(proto, w, h)
   if not CO.sprite_atlas(proto) then
-    -- The Trap set's atlas is installed by the display scope: resolve it there first.
-    local has = with_display(function() return CO.sprite_atlas(proto) ~= nil end)
-    if not has then return false, 'no atlas for ' .. tostring(proto.key) end
+    -- A set with no atlas (registry/atlas.lua aliases the Trap set) would raise inside Card:init.
+    local A = MP.registry and MP.registry.atlas
+    if A and A.ensure_set_atlas then pcall(A.ensure_set_atlas, proto) end
+    if not CO.sprite_atlas(proto) then return false, 'no atlas for ' .. tostring(proto.key) end
   end
   local mark = #(G.MOVEABLES or {})
   local ok, card = pcall(with_display, Card, 0, 0, w, h, nil, proto,

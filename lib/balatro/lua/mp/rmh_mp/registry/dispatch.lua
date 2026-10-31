@@ -206,15 +206,13 @@ function D.install()
 end
 
 -- ── Display wraps ───────────────────────────────────────────────────────────
--- What drawing an MP card needs: its art (set_sprites -> the MP atlas) and its text (loc_vars
--- through generate_card_ui). A mounted session installs them with every other dispatch wrap.
+-- What drawing an MP card's text needs: loc_vars through generate_card_ui (its art is an always-on
+-- core wrap, registry/atlas.lua). A mounted session installs these with every other dispatch wrap.
 -- The Multiplayer collection draws MP cards with NO session mounted, so it runs each card build
 -- and each tooltip inside D.with_display: the same wraps (plus every content module's display
--- installer: the Trap set's atlas and colours, the Other-set text alias) installed in the
--- 'display' group for that one synchronous call. Without them vanilla takes its own branches for
--- an MP center (a Planet with no hand_type, a {V:1} text with no colours, a 'Trap' set with no
--- atlas) and raises — and a Card that raises inside Card:init stays registered half-built, so the
--- next frame's Card:update crashed the game (the Collection > Consumables crash).
+-- installer: the Trap set's colours, the Other-set text alias) installed in the 'display' group
+-- for that one synchronous call. Without them vanilla takes its own branches for an MP center (a
+-- Planet with no hand_type indexes G.GAME.hands[nil]; a {V:1} text with no colours) and raises.
 
 function D.install_display(o)
   local wrap = MP.hooks.wrap
@@ -227,12 +225,7 @@ function D.install_display(o)
       if not ok then error(res, 0) end
       return res
     end, o('ability_table'))
-
-    wrap(Card, 'set_sprites', function(orig, self, _center, _front, ...)
-      local r = orig(self, _center, _front, ...)
-      if _center and _center.rmh_mp and R.atlas then R.atlas.apply_card(self, _center) end
-      return r
-    end, o('set_sprites'))
+    -- (the art — Card.set_sprites -> the MP atlas — is an always-on core wrap: registry/atlas.lua)
   end
 
   -- Vanilla passes specific_vars = nil for a card it has no loc_vars branch for, but a perishable

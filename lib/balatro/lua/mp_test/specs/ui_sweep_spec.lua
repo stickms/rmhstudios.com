@@ -67,7 +67,7 @@ local function clean(where)
   harvest_log(where)
   local f = found
   found = {}
-  for _, m in ipairs(f) do all_found[#all_found + 1] = m end
+  for _, m in ipairs(f) do all_found[#all_found + 1] = m; print('[sweep-error] ' .. m) end
   if #f > 0 then report('errors ' .. where, f) end
   expect(f).eq({})
 end
@@ -588,8 +588,32 @@ end)
 
 local function idle() return AP.idle == nil or AP.idle() end
 
-local function wait_idle(why)
-  wait_until(function() return idle() end, 60, why or 'idle')
+--- What keeps the game busy: controller locks, the state, the blocking events (by source line).
+local function busy_reason()
+  local out = { 'state=' .. tostring(G.STATE), 'complete=' .. tostring(G.STATE_COMPLETE) }
+  if G.CONTROLLER.locked then out[#out + 1] = 'locked' end
+  for k, v in pairs(G.CONTROLLER.locks or {}) do if v then out[#out + 1] = 'lock:' .. tostring(k) end end
+  local q = G.E_MANAGER.queues and G.E_MANAGER.queues.base or {}
+  local n, srcs = 0, {}
+  for _, ev in ipairs(q) do
+    if ev.blocking then
+      n = n + 1
+      local info = type(ev.func) == 'function' and debug and debug.getinfo and debug.getinfo(ev.func, 'S')
+      local src = info and (info.short_src .. ':' .. tostring(info.linedefined)) or '?'
+      srcs[src] = (srcs[src] or 0) + 1
+    end
+  end
+  out[#out + 1] = 'blocking=' .. n
+  for src, c in pairs(srcs) do out[#out + 1] = src .. 'x' .. c end
+  return table.concat(out, ' ')
+end
+
+--- Wait until the game is idle; a game that never settles is a finding (an unresponsive game),
+--- noted with what holds it, and the sweep goes on.
+local function wait_idle(why, seconds)
+  local ok = pcall(wait_until, function() return idle() end, seconds or 120, why or 'idle')
+  if not ok then note('never idle after ' .. tostring(why), busy_reason()) end
+  return ok
 end
 
 --- (Re)enter a practice/match run at blind select when a click left it.
@@ -699,7 +723,7 @@ local function use(card, where)
   if ok and can then
     count.used = count.used + 1
     try('use ' .. where, G.FUNCS.use_card, { config = { ref_table = card } })
-    wait_until(function() return idle() end, 60, 'used ' .. where)
+    wait_idle('used ' .. where)
     settle(2)
     return true
   end
@@ -713,9 +737,10 @@ local function sell_all(area, where)
     if not c.REMOVED and c.area == area then
       c.ability.eternal = nil
       try('sell ' .. where .. ' ' .. tostring(c.config.center.key), G.FUNCS.sell_card, { config = { ref_table = c } })
+      wait_idle('sold ' .. tostring(c.config.center.key), 30)
     end
   end
-  wait_until(function() return idle() end, 60, 'sold')
+  wait_idle('sold ' .. where)
   settle(4)
 end
 
@@ -829,7 +854,7 @@ describe('sweep: every MP item', function()
               end
               try('pick ' .. key, G.FUNCS.use_card, { config = { ref_table = first } })
             end
-            wait_until(function() return idle() end, 60, 'picked')
+            wait_idle('picked ' .. key)
             if G.STATE ~= G.STATES.SHOP and G.pack_cards then try('skip pack', G.FUNCS.skip_booster, { config = {} }) end
             wait_until(function() return G.STATE == G.STATES.SHOP and idle() end, 60, 'back in shop')
             count.used = count.used + 1
@@ -857,7 +882,7 @@ describe('sweep: every MP item', function()
       if ok then
         hover_cards('voucher ' .. d.key)
         try('redeem ' .. d.key, G.FUNCS.use_card, { config = { ref_table = card } })
-        wait_until(function() return idle() end, 60, 'redeemed')
+        wait_idle('redeemed ' .. d.key)
         count.used = count.used + 1
       end
     end
