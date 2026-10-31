@@ -154,6 +154,25 @@ describe('casual matchmaking end to end', () => {
     expect(b.lua.errors()).toContain('offline');
   });
 
+  it("Find Game's live counts (A12): ui_queue_counts reaches the hub, queue_counts comes back; nothing when offline", async () => {
+    const a = qpeer('alice');
+    const b = qpeer('bob');
+    await w.step(20);
+    b.lua.emit('ui_queue', { op: 'join', queueMode: 'pvp_teams' });
+    await w.step(20);
+    a.lua.emit('ui_queue_counts', {});
+    await w.step(20);
+    const c = a.lua.last('queue_counts');
+    expect(c?.counts).toHaveLength(5);
+    expect(c?.counts.find((x) => x.queueMode === 'pvp_teams')).toEqual({ queueMode: 'pvp_teams', queued: 1, inGame: 0 });
+    expect(b.lua.all('queue_counts')).toHaveLength(0); // only the asker is answered
+    a.hub.status = 'offline';
+    a.lua.emit('ui_queue_counts', {});
+    await w.step(20);
+    expect(a.lua.all('queue_counts')).toHaveLength(1);
+    expect(a.lua.errors()).toEqual([]);
+  });
+
   it('a party of two and a solo player land in one Royale lobby (MM-06, E2E-18)', async () => {
     const h = qpeer('alice');
     const m = qpeer('bob');

@@ -31,6 +31,7 @@ export const DEFAULT_LOBBY_OPTIONS: Readonly<LobbyOptions> = Object.freeze({
   customSeed: 'random',
   theOrder: true,
   hideScoreUntilPlayed: false,
+  previewDisabled: false,
   normalBosses: false,
   differentSeeds: false,
   differentDecks: false,

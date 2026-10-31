@@ -131,6 +131,15 @@ export class QueueBook {
     return this.byUser.size;
   }
 
+  /** Players waiting per mode, across content hashes (Find Game's In Queue, A12). */
+  waitingByMode(): Map<QueueMode, number> {
+    const out = new Map<QueueMode, number>();
+    for (const list of this.buckets.values()) {
+      for (const t of list) out.set(t.queueMode, (out.get(t.queueMode) ?? 0) + t.players.length);
+    }
+    return out;
+  }
+
   /** The oldest-first group the bucket would match now, or null. */
   private group(list: readonly QueueTicket[], now: number): QueueTicket[] | null {
     const oldest = list[0];

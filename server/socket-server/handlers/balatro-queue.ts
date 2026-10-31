@@ -34,6 +34,9 @@
  *      notification row linking to `/balatro?lobby=CODE` (once per lobby per
  *      10 minutes).
  *   5. **Spectate list** (MM-07): spectatable rooms whose host is connected.
+ *   6. **Counts** (A12): `queue:counts` answers, per casual mode, the players
+ *      searching and the players seated in matchmade rooms. Aggregate
+ *      counters only, computed at most once per `COUNTS_TTL_MS` for everyone.
  *
  * NOTE: server code imports `lib/` RELATIVELY — server/CLAUDE.md gotcha 7.
  */
@@ -49,11 +52,12 @@ import {
   type BalatroS2CEvent,
   type BalatroS2CPayload,
   type QueueMode,
+  zQueueMode,
 } from '../../../lib/balatro/net/events';
 import { BALATRO_LIMITS } from '../../../lib/balatro/net/limits';
 import { LOBBY_LINK_PARAM } from '../../../lib/lobby-link';
 import { balatroAccount, pickBalatroEvents } from './balatro-p2p';
-import { balatroHub, listSpectatableLobbies, seatOf, unseatAll, type BalatroRoom } from '../balatro/directory';
+import { balatroHub, casualSeatsByMode, listSpectatableLobbies, seatOf, unseatAll, type BalatroRoom } from '../balatro/directory';
 import {
   InviteBudget,
   NotifyDedupe,
@@ -71,6 +75,7 @@ export const BALATRO_QUEUE_C2S_EVENTS = [
   'balatro:party:queue',
   'balatro:invite',
   'balatro:spectate:list',
+  'balatro:queue:counts',
 ] as const;
 type QueueEvent = (typeof BALATRO_QUEUE_C2S_EVENTS)[number];
 
@@ -174,6 +179,28 @@ function announceBucket(queueMode: QueueMode, contentHash: string): void {
     if (t.queueMode !== queueMode || t.contentHash !== contentHash) continue;
     for (const p of t.players) status(p.socketId, { state: 'searching', queueMode, waiting });
   }
+}
+
+/* ─── Find Game counts (A12) ─────────────────────────────────────────────── */
+
+/** Every client polls every 5 s while Find Game is open: one computation serves them all. */
+export const COUNTS_TTL_MS = 1_000;
+let countsCache: { at: number; value: BalatroS2CPayload<'balatro:queue:counts'> } | null = null;
+
+/** In Queue / In Game per casual mode (every mode, zeros included). */
+export function balatroQueueCounts(now: number = Date.now()): BalatroS2CPayload<'balatro:queue:counts'> {
+  if (countsCache && now - countsCache.at < COUNTS_TTL_MS && now >= countsCache.at) return countsCache.value;
+  const queued = book.waitingByMode();
+  const inGame = casualSeatsByMode();
+  const value = {
+    counts: zQueueMode.options.map((queueMode) => ({
+      queueMode,
+      queued: queued.get(queueMode) ?? 0,
+      inGame: inGame.get(queueMode) ?? 0,
+    })),
+  };
+  countsCache = { at: now, value };
+  return value;
 }
 
 /* ─── Tickets ────────────────────────────────────────────────────────────── */
@@ -479,6 +506,11 @@ export function registerBalatroQueueHandlers(io: Server, socket: Socket): void {
         lobbies: listSpectatableLobbies(),
       } satisfies BalatroS2CPayload<'balatro:spectate:lobbies'>);
     },
+
+    'balatro:queue:counts': () => {
+      if (!account('balatro:queue:counts')) return;
+      socket.emit(BALATRO_S2C_EVENTS['balatro:queue:counts'], balatroQueueCounts());
+    },
   };
 
   bindEvents(socket, QUEUE_EVENTS, handlers, {
@@ -513,6 +545,7 @@ export function resetBalatroQueueForTests(): void {
   dedupe.clear();
   pending.clear();
   userSockets.clear();
+  countsCache = null;
   if (wakeTimer) clearTimeout(wakeTimer);
   if (pollTimer) clearInterval(pollTimer);
   wakeTimer = null;

@@ -143,7 +143,8 @@ function W.blind_chip(size, row)
   return s
 end
 
---- One pillar (A3 §1.3): button, outlined name plate, icon, description box, stat box.
+--- One pillar (A3 §1.3): button, outlined name plate, icon, description box, stat box
+--- (`stat_label`/`stat_value`, or a node of its own in `stat_node`), then an optional `extra` node.
 function W.pillar(p)
   local col = p.colour or TH.col('BLUE')
   local dark = TH.darken(col, 0.3)
@@ -160,11 +161,13 @@ function W.pillar(p)
     W.row({ icon and { n = uit('O'), config = { object = icon } } or W.col({}, { minw = 1.2, minh = 1.2 }) },
       { minh = 1.3 }),
     W.row(desc, { r = 0.1, padding = 0.08, minw = 2.4, minh = 0.9, colour = TH.col('BLACK'), emboss = 0.05 }),
-    p.stat_label and W.row({
+    p.stat_node,
+    p.stat_label and not p.stat_node and W.row({
       W.col({ W.row({ W.text(p.stat_label, { scale = 0.3 }) }),
         W.row({ W.text(p.stat_value or '', { scale = 0.45, colour = TH.col('MONEY'), id = p.id and (p.id .. '_stat') }) }) },
         { r = 0.1, padding = 0.06, minw = 2.4, colour = TH.col('BLACK'), emboss = 0.05 }),
     }, { padding = 0.05 }) or nil,
+    p.extra,
   }, { r = 0.15, padding = 0.12, colour = TH.alpha(TH.col('BLACK'), 0.6), emboss = 0.05, id = p.id and (p.id .. '_pillar') })
 end
 

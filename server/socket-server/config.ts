@@ -381,6 +381,8 @@ export const config = {
     'balatro:party:queue': { max: 10, windowMs: 60_000 },
     'balatro:invite': { max: 20, windowMs: 60_000 },
     'balatro:spectate:list': { max: 30, windowMs: 60_000 },
+    // Find Game's live counts (A12): Lua polls every 5 s while the page is open (12/min).
+    'balatro:queue:counts': { max: 30, windowMs: 60_000 },
     // ─── High-frequency relay / movement events ───
     // Movement + per-frame update events were previously unmetered (the rate
     // limiter returns true for events with no rule), so a single socket could
