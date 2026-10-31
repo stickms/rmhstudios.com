@@ -44,6 +44,11 @@ export interface BalatroRoomMeta {
   peerUsers: Map<string, string>;
   /** Re-created by a host's `resume` after a hub restart: its first `state` re-declares the seats. */
   reclaimed: boolean;
+  /**
+   * HUD-24: per started run (newest last, bounded), the accounts the hub had seated while the host
+   * declared it started (spectators never hold a seat), and whether its result went out.
+   */
+  rosters: Map<string, { users: Set<string>; sent: boolean }>;
 }
 
 export interface BalatroMemberMeta {
@@ -55,6 +60,8 @@ export type BalatroRoom = HubRoom<BalatroRoomMeta, BalatroMemberMeta>;
 export type BalatroMember = HubMember<BalatroMemberMeta>;
 
 const PEER_USERS_MAX = 256;
+/** Runs per room whose roster the hub remembers (a lobby replays a few matches). */
+export const ROSTERS_MAX = 4;
 
 let onHostTimeout: ((room: BalatroRoom) => void) | null = null;
 
@@ -86,6 +93,7 @@ export function newRoomMeta(init: Pick<BalatroRoomMeta, 'kind' | 'queueMode' | '
     forfeited: new Set(),
     peerUsers: new Map(),
     reclaimed: false,
+    rosters: new Map(),
   };
 }
 
@@ -131,6 +139,21 @@ export function lastPeerOf(room: BalatroRoom, userId: string): string | null {
   let found: string | null = null;
   for (const [peerId, id] of room.meta.peerUsers) if (id === userId) found = peerId;
   return found;
+}
+
+/**
+ * HUD-24: the host says `runId` is running with `members` seated; the ones the hub itself seated
+ * join that run's roster (a host cannot add an account it never admitted).
+ */
+export function recordRoster(room: BalatroRoom, runId: string, members: readonly string[]): void {
+  const rosters = room.meta.rosters;
+  let r = rosters.get(runId);
+  if (!r) {
+    r = { users: new Set(), sent: false };
+    rosters.set(runId, r);
+    while (rosters.size > ROSTERS_MAX) rosters.delete(rosters.keys().next().value as string);
+  }
+  for (const userId of members) if (room.meta.seats.has(userId)) r.users.add(userId);
 }
 
 function forfeitKey(runId: string, userId: string): string {

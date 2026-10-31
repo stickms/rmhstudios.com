@@ -163,7 +163,8 @@ describe('practice (PR-02, REF-24)', () => {
     await w.until(() => p.lua.outcomesOf('end_pvp').length === 1, 2_000, 'end_pvp');
     expect(p.lua.outcomesOf('end_pvp')[0]).toEqual({ t: 'end_pvp', loser_id: '', pvp_timer_lost: false });
     expect(p.lua.outcomesOf('player_lives').every((o) => o.lives > 0)).toBe(true);
-    expect(p.hub.emitted.filter((e) => e.event !== 'balatro:seat:query')).toEqual([]);
+    // No game traffic: only the page-level asks (the seat query, HUD-24's pending results).
+    expect(p.hub.emitted.filter((e) => e.event !== 'balatro:seat:query' && e.event !== 'balatro:match:pending')).toEqual([]);
     p.lua.emit('match_left', { how: 'leave' });
     expect(p.lua.last('history')).toMatchObject({ games: 1, pvpGames: 0 });
   });

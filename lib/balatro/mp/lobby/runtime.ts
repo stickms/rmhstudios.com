@@ -9,7 +9,7 @@
  * snapshots (`snapshot`) and `match_left`. Runtime → Lua: `net_status`,
  * `lobby_view`, `lobby_error`, `match_start`/`practice_start`, `outcome`,
  * `peer`, `timer_state`, `presence`, `chat_line`, `rejoin_restore`, `tail`,
- * `end_data`, `history`, `glyphs`.
+ * `end_data`, `history`, `glyphs`, `late_result`.
  *
  * Browser-free: index.ts supplies the browser seams (hub client, WebRTC,
  * IndexedDB, localStorage, the engine FS); the tests supply in-memory ones.
@@ -139,6 +139,7 @@ export class MpRuntime {
       this.avatarUrl = acct.avatarUrl;
     }
     this.pushNetStatus();
+    this.askResults();
     if (acct) this.seedBlockedMutes();
     this.deps.bridge.send('history', readHistory(this.deps.kv));
     this.loadGlyphs();
@@ -157,6 +158,11 @@ export class MpRuntime {
     if (!this.seatQueryPending || this.stopped || this.deps.hub.status !== 'connected') return;
     this.seatQueryPending = false;
     this.hubGate.emit('balatro:seat:query', {});
+  }
+
+  /** HUD-24: results of matches this account left, queued at the hub; later ones come pushed. */
+  private askResults(): void {
+    if (this.me && !this.stopped && this.deps.hub.status === 'connected') this.hubGate.emit('balatro:match:pending', {});
   }
 
   /** Site blocks become chat mutes for this session (never written to the saved mute list). */
@@ -717,7 +723,14 @@ export class MpRuntime {
       hub.onStatus((s, info) => {
         this.hubStatus = s;
         this.pushNetStatus(info.reason);
-        if (s === 'connected') this.querySeat();
+        if (s === 'connected') {
+          this.querySeat();
+          this.askResults();
+        }
+      }),
+      // Lua shows it at the main menu (queued through a run); a match still mounted here has its own end.
+      hub.on('balatro:match:result', (d) => {
+        if (this.client?.match.runId !== d.runId) this.deps.bridge.send('late_result', d);
       }),
       hub.on('balatro:seat', (d) => {
         if (!d.code) {
