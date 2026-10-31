@@ -50,6 +50,7 @@ import type { TouchAction } from './touch/TouchOverlay';
 import { useCloseGuard } from './use-close-guard';
 import CloseGuardHint from './CloseGuardHint';
 import './play.css';
+import { RemoteAssetsContext } from './menus/remote-assets';
 
 export interface GameCanvasProps {
   game: HudGame;
@@ -64,6 +65,8 @@ export interface GameCanvasProps {
   onEnded?: () => void;
   /** The game's own loading screen (its menu art and type); the plain one when absent. */
   loadingScreen?: (view: LoadingView) => ReactNode;
+  /** False for a game with no published asset channels (Harmonic): its menus fetch nothing. Default true. */
+  remoteAssets?: boolean;
 }
 
 /** What a game's loading screen shows: the level, how far along, each stage, and a way out. */
@@ -146,6 +149,7 @@ export default function GameCanvas({
   onEnded,
   sessionId,
   loadingScreen,
+  remoteAssets = true,
 }: GameCanvasProps) {
   const { t } = useTranslation('c-tf2-game');
   const stageLabels = useStageLabels();
@@ -325,16 +329,18 @@ export default function GameCanvas({
       />
 
       {running ? (
-        <GameHud
-          game={game}
-          store={store}
-          input={input}
-          settings={settings}
-          onSettingsChange={onSettingsChange}
-          onDisconnect={onExit}
-          touchActions={touchActions}
-          onCapture={play}
-        />
+        <RemoteAssetsContext.Provider value={remoteAssets}>
+          <GameHud
+            game={game}
+            store={store}
+            input={input}
+            settings={settings}
+            onSettingsChange={onSettingsChange}
+            onDisconnect={onExit}
+            touchActions={touchActions}
+            onCapture={play}
+          />
+        </RemoteAssetsContext.Provider>
       ) : null}
 
       {/* Over the HUD (and its fades), never while one of its menus has the keys or the cursor. */}

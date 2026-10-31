@@ -10,6 +10,7 @@ import type { HudGame } from '@/lib/tf2-game/client/hud-state';
 import type { LoadedHud } from '@/lib/tf2-game/client/custom-hud/source';
 import { prepareMenus, type MenuSource } from '@/lib/tf2-game/client/menus/source';
 import { useHudChoice } from '../custom-hud/hud-choice';
+import { useRemoteAssets } from './remote-assets';
 
 const byHud = new WeakMap<LoadedHud, Map<HudGame, Promise<MenuSource>>>();
 const byGame = new Map<HudGame, Promise<MenuSource>>();
@@ -34,7 +35,9 @@ export function useMenuSource(game: HudGame): MenuSource | null {
     if (game === 'tf2') useHudChoice.getState().init();
   }, [game]);
   const [source, setSource] = useState<MenuSource | null>(null);
+  const remote = useRemoteAssets();
   useEffect(() => {
+    if (!remote) return undefined;
     let alive = true;
     void load(hud, game).then((s) => {
       if (alive) setSource(s);
@@ -42,7 +45,7 @@ export function useMenuSource(game: HudGame): MenuSource | null {
     return () => {
       alive = false;
     };
-  }, [hud, game]);
+  }, [hud, game, remote]);
   return source;
 }
 

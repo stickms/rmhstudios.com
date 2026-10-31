@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { HudGame } from '@/lib/tf2-game/client/hud-state';
 import { emptyMenuChannel, gameUiStyle, loadMenuChannel, type MenuChannel } from '@/lib/tf2-game/client/menus/source-gameui';
+import { useRemoteAssets } from './remote-assets';
 import '../../sp-game/source-menu.css';
 import '../../csgo-game/cs-menu.css';
 
@@ -19,7 +20,8 @@ export interface GameSkin {
 
 export function useGameSkin(game: HudGame): GameSkin {
   const [channel, setChannel] = useState<MenuChannel | null>(null);
-  const source = game === 'hl2' || game === 'portal';
+  const remote = useRemoteAssets();
+  const source = remote && (game === 'hl2' || game === 'portal');
   useEffect(() => {
     if (!source) return undefined;
     let alive = true;

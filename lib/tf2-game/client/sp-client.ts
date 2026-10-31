@@ -69,17 +69,52 @@ import {
   type GameClient,
 } from './game-client';
 import { createHttpSpAssets } from './sp-assets';
+import type { TextureCache } from '../render/texture-cache';
+import type { MapManifest, HullTable } from '../assets/map-manifest';
+import type { BspFile } from '../formats/bsp';
+import type { SpAssets } from '@/lib/sp-game/assets';
 import { makeSave, writeSave, type SpGameId } from './sp-save';
 import { FovState, StairSmoother, calcFirstPerson } from './view';
 import { PortalView } from './portal-view';
 import { attachConsoleHost, type ConsoleLink } from '../console/runtime';
 import { SpServerConsole } from '../console/sp-server';
 
+/** One level's data, however it was produced (a published package, or compiled in the browser). */
+export interface SpLevelData {
+  bsp: BspFile;
+  manifest: MapManifest;
+  hulls: HullTable | null;
+  title?: string;
+}
+
+/**
+ * Content that does not come from the HL2/Portal asset channels (an additive seam: omit it and the
+ * client is the HL2/Portal client, unchanged). Harmonic injects its compiled levels, procedural
+ * textures and `SpAssets` here and still runs the `game: 'hl2'` simulation.
+ */
+export interface SpContent {
+  /** Maps this content offers (the console's changelevel and the "is the next map published" check). */
+  maps: readonly { name: string; title: string }[];
+  loadLevel(map: string, progress: ProgressTracker, signal: AbortSignal): Promise<SpLevelData>;
+  createAssets(level: SpLevelData, signal: AbortSignal): Promise<SpAssets>;
+  /** The world's texture cache (the default is the channels' HTTP cache). */
+  createTextures(core: RenderCore): TextureCache;
+  /**
+   * What the HL2/Portal channels give that this content does not: all default to false for
+   * injected content, so nothing is fetched or shown from a game install.
+   * `audio`: the sound channel; `suitHud`: the HEV suit HUD state; `saves`: level-start saves in
+   * the game's localStorage slot.
+   */
+  features?: { audio?: boolean; suitHud?: boolean; saves?: boolean };
+}
+
 export interface SpClientOptions extends ClientMount {
   game: SpGameId;
   map: string;
   /** Entering the map from a saved transition (Continue). */
   transition?: TransitionData | null;
+  /** Injected content (see `SpContent`); absent = the published HL2/Portal packages. */
+  content?: SpContent;
 }
 
 const HUD_HZ = 20;
@@ -152,11 +187,11 @@ export class SpClient implements GameClient {
     this.mapName = opts.map;
     this.transition = opts.transition ?? null;
     this.fov = new FovState(opts.settings.fov);
-    this.progress = new ProgressTracker((p) => opts.callbacks.onProgress?.(p), ['connect']);
+    this.progress = new ProgressTracker((p) => opts.callbacks.onProgress?.(p), opts.content && !opts.content.features?.audio ? ['connect', 'sounds'] : ['connect']);
     this.spConsole = new SpServerConsole(opts.game, {
       print: (text, level) => this.console?.console.print(text, level),
       cvar: (name, value) => this.console?.serverEvent({ type: 'cvar', name, value } as { type: string }),
-      maps: () => GAME_MAPS[this.game].map((m) => m.name),
+      maps: () => this.mapList().map((m) => m.name),
       changeLevel: (map) => this.consoleChangeLevel(map),
       setViewAngles: (a) => {
         this.viewAngles.x = a.x;
@@ -169,6 +204,15 @@ export class SpClient implements GameClient {
     return this.opts.input;
   }
 
+  private feature(name: 'audio' | 'suitHud' | 'saves'): boolean {
+    const c = this.opts.content;
+    return c ? !!c.features?.[name] : true;
+  }
+
+  private mapList(): readonly { name: string; title: string }[] {
+    return this.opts.content?.maps ?? GAME_MAPS[this.game];
+  }
+
   async start(): Promise<void> {
     if (this.started) return;
     this.started = true;
@@ -177,15 +221,20 @@ export class SpClient implements GameClient {
         this.fail(new ClientFailure({ code: 'context-lost', detail: 'WebGL context lost', retryable: true })),
       );
       this.inputCore = new InputCore(this.opts.inputTarget, this.game, () => this.settings, (l) => this.opts.callbacks.onLockChange?.(l), this.opts.input);
-      this.audio = createAudio(this.game as GameId, this.settings, (id) => this.entityPos.get(id) ?? null, this.occlusion);
-      this.unsubs.push(this.audio.attach());
-      this.unsubs.push(
-        this.audio.onCaption((c) => {
-          if (!this.settings.captions) return;
-          const st = captionStyle(c.text);
-          this.log.pushCaption({ text: c.text.replace(/<[^>]+>/g, ''), color: c.color ?? st.color, sfx: c.sfx || st.sfx, duration: c.duration }, this.clientNow + c.delay);
-        }),
-      );
+      const audio = this.feature('audio')
+        ? createAudio(this.game as GameId, this.settings, (id) => this.entityPos.get(id) ?? null, this.occlusion)
+        : null;
+      this.audio = audio;
+      if (audio) {
+        this.unsubs.push(audio.attach());
+        this.unsubs.push(
+          audio.onCaption((c) => {
+            if (!this.settings.captions) return;
+            const st = captionStyle(c.text);
+            this.log.pushCaption({ text: c.text.replace(/<[^>]+>/g, ''), color: c.color ?? st.color, sfx: c.sfx || st.sfx, duration: c.duration }, this.clientNow + c.delay);
+          }),
+        );
+      }
       this.unsubs.push(this.store.onCommand((c) => this.onHudCommand(c)));
       this.console = attachConsoleHost(this.store, this.game, {
         authority: () => 'sp',
@@ -208,11 +257,13 @@ export class SpClient implements GameClient {
       });
       this.unsubs.push(() => this.console?.detach());
       this.spConsole.replicateAll();
-      this.progress.begin('sounds');
-      void this.audio
-        .load()
-        .catch(() => {})
-        .finally(() => this.progress.finish('sounds'));
+      if (audio) {
+        this.progress.begin('sounds');
+        void audio
+          .load()
+          .catch(() => {})
+          .finally(() => this.progress.finish('sounds'));
+      }
       await this.loadLevel(this.mapName, this.transition);
     } catch (e) {
       this.fail(e);
@@ -234,19 +285,24 @@ export class SpClient implements GameClient {
     this.loop?.stop();
     this.opts.callbacks.onPhase?.('loading');
     this.teardownLevel();
-    const entry = GAME_MAPS[this.game].find((m) => m.name === map);
+    const entry = this.mapList().find((m) => m.name === map);
     this.progress.title = entry?.title ?? map;
-    const pkg = await loadMapPackageForClient(this.game, map, this.progress, this.abort.signal, { collision: false });
+    const content = this.opts.content;
+    const pkg: SpLevelData = content
+      ? await content.loadLevel(map, this.progress, this.abort.signal)
+      : await loadMapPackageForClient(this.game, map, this.progress, this.abort.signal, { collision: false });
     if (this.disposed) return;
     this.progress.begin('models');
-    const assets = await createHttpSpAssets({
-      game: this.game,
-      manifest: pkg.manifest,
-      bsp: pkg.bsp,
-      hulls: pkg.hulls,
-      signal: this.abort.signal,
-      onModel: (d, t) => this.progress.step('models', d, t),
-    });
+    const assets = content
+      ? await content.createAssets(pkg, this.abort.signal)
+      : await createHttpSpAssets({
+          game: this.game,
+          manifest: pkg.manifest,
+          bsp: pkg.bsp,
+          hulls: pkg.hulls,
+          signal: this.abort.signal,
+          onModel: (d, t) => this.progress.step('models', d, t),
+        });
     if (this.disposed) return;
     this.progress.begin('world');
     const sim = await SpWorld.create({
@@ -266,7 +322,7 @@ export class SpClient implements GameClient {
     this.mapName = map;
     this.transition = transition;
     this.progress.finish('world');
-    const textures = core.textureCache(this.game);
+    const textures = content ? content.createTextures(core) : core.textureCache(this.game);
     const models = new ModelLibrary({ url: (p) => gameAssetUrl(p, this.game), loader: new Tf2GLTFLoader() });
     this.progress.begin('textures');
     const world = new WorldRenderer({
@@ -320,7 +376,7 @@ export class SpClient implements GameClient {
     this.curOrigin.z = this.prevOrigin.z = snap.player.origin.z;
     this.stairs.reset();
     this.checkpoints = 0;
-    writeSave(makeSave(this.game, map, transition, 0));
+    if (this.feature('saves')) writeSave(makeSave(this.game, map, transition, 0));
     this.changing = false;
     this.startLoop();
   }
@@ -356,7 +412,7 @@ export class SpClient implements GameClient {
   private changeLevel(map: string, transition: TransitionData): void {
     if (this.changing) return;
     this.changing = true;
-    const published = GAME_MAPS[this.game].some((m) => m.name === map);
+    const published = this.mapList().some((m) => m.name === map);
     if (!published) {
       // The demo ends here (the rest of the game is not published).
       this.running = false;
@@ -364,7 +420,7 @@ export class SpClient implements GameClient {
       this.opts.callbacks.onPhase?.('ended');
       return;
     }
-    writeSave(makeSave(this.game, map, transition, 0));
+    if (this.feature('saves')) writeSave(makeSave(this.game, map, transition, 0));
     void this.loadLevel(map, transition).catch((e) => this.fail(e));
   }
 
@@ -560,7 +616,7 @@ export class SpClient implements GameClient {
 
   /** The console's changelevel / map / retry: a published map from its start (the demo's rule). */
   private consoleChangeLevel(map: string): boolean {
-    if (this.disposed || !GAME_MAPS[this.game].some((m) => m.name === map)) return false;
+    if (this.disposed || !this.mapList().some((m) => m.name === map)) return false;
     this.changing = true;
     void this.loadLevel(map, null).catch((e) => this.fail(e));
     return true;
@@ -635,7 +691,7 @@ export class SpClient implements GameClient {
         break;
       case 'autosave':
         this.checkpoints++;
-        writeSave(makeSave(this.game, this.mapName, this.transition, this.checkpoints));
+        if (this.feature('saves')) writeSave(makeSave(this.game, this.mapName, this.transition, this.checkpoints));
         break;
       case 'changelevel':
         this.changeLevel(ev.map, ev.transition);
@@ -676,19 +732,21 @@ export class SpClient implements GameClient {
     state.fps = this.fps.fps;
     const p = snap.player;
     if (this.game === 'hl2') {
-      state.hl2 = adaptHl2Suit({
-        hasSuit: p.hasSuit,
-        health: p.health,
-        armor: p.armor,
-        suitPower: p.suitPower,
-        sprinting: p.sprinting,
-        flashlightOn: p.flashlight,
-        underwater: false,
-        weaponName: '',
-        clip: -1,
-        reserve: 0,
-        altAmmo: -1,
-      });
+      if (this.feature('suitHud')) {
+        state.hl2 = adaptHl2Suit({
+          hasSuit: p.hasSuit,
+          health: p.health,
+          armor: p.armor,
+          suitPower: p.suitPower,
+          sprinting: p.sprinting,
+          flashlightOn: p.flashlight,
+          underwater: false,
+          weaponName: '',
+          clip: -1,
+          reserve: 0,
+          altAmmo: -1,
+        });
+      }
     } else {
       const g = p.portalgun;
       state.portal = adaptPortalGun({

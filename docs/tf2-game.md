@@ -316,6 +316,16 @@ CS:GO's team models, arms and weapons). A TF2 host can turn on instant respawn (
   player; a map that is not published ends the demo), checkpoints (death reloads them inside the world) and
   Continue (`client/sp-save.ts`: the last level start in localStorage). The manifest has no `%noportal` or
   `$surfaceprop` yet, so Portal refuses portals on metal / glass / tool materials by name.
+- **Injected content (`SpContent`, the seam Harmonic uses):** `createSpClient` takes an optional
+  `content: SpContent` (`sp-client.ts`) in place of the published HL2/Portal package: `loadLevel(map, progress,
+signal)` returns `{ bsp, manifest, hulls }`, `createAssets(level)` the `SpAssets`, `createTextures(core)` the
+  world's `TextureCache`, and `maps` is the level list the console and `changelevel` check instead of
+  `GAME_MAPS`. `features` (`audio`, `suitHud`, `saves`, all off for injected content) gate what the channels
+  give HL2/Portal: the sound channel, the HEV-suit HUD state and the level-start saves in the HL2 localStorage
+  slot. With `content` omitted every branch is the old one, so HL2 and Portal behave identically.
+  `GameCanvas` takes `remoteAssets={false}` for a game without asset channels: the pause menu and Options skip
+  the menu-channel and HUD-base fetches (`menus/remote-assets.ts`). Harmonic (`lib/harmonic-game/client/`) compiles
+  its levels in the browser and runs the `'hl2'` simulation; see `docs/plans/harmonic/architecture.md` §7.
 - **Quality** (`client/quality.ts`): desktop / laptop / mobile from WebGL2, the texture limit, memory, cores,
   the GPU name and touch; each sets resolution scale, DPR cap, texture cap, anisotropy, particle budget, prop
   draw distance and portal recursion (2 desktop, 1 phone). A frame-time governor lowers the resolution scale
