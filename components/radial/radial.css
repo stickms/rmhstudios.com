@@ -2392,7 +2392,11 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
      what iOS Safari can read as the page's edge (it shifts fixed layers by about 10px while its toolbar collapses),
      and it filled the strip behind its tab bar with one flat colour. This is under 90% of the width and far from
      both edges. */
-  top: 50%;
+  /* `--vv-shift` (written on `.radial-hub` by useViewportShift) is the orb's own correction for Safari's toolbar:
+     the orb's `bottom` takes all of it, the centre of the container takes half. Applying it here too means the dock
+     and the orb change in the same style recalc, so the globe cannot trail the tab bar by the frame a re-measure
+     would take (`--dock-dy` is the same number at every shift). */
+  top: calc(50% + var(--vv-shift, 0px) / 2);
   left: 50%;
   width: min(86vw, 48dvh, 30rem);
   translate: -50% -50%;
