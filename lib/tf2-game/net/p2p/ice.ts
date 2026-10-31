@@ -16,31 +16,21 @@
  * that cannot connect directly falls back to the games hub's relay
  * (`signal.ts` P2P_RELAY_LIMITS).
  *
+ * The parser and schema live in lib/shared/p2p/ice.ts (shared with other
+ * peer-to-peer apps); this file keeps TF2's defaults and env name.
+ *
  * Environment-agnostic (the browser reads the env; tests call the parser).
  */
 
-import { z } from 'zod';
+import {
+  DEFAULT_ICE_SERVERS,
+  parseIceServers as parseSharedIceServers,
+  type IceServerConfig,
+} from '../../../shared/p2p/ice';
 
-export interface IceServerConfig {
-  urls: string | string[];
-  username?: string;
-  credential?: string;
-}
+export type { IceServerConfig };
 
-export const DEFAULT_TF2_ICE_SERVERS: readonly IceServerConfig[] = [
-  { urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] },
-];
-
-const url = z.string().regex(/^(stun|stuns|turn|turns):[^\s]{1,250}$/);
-const zIceServers = z
-  .array(
-    z.object({
-      urls: z.union([url, z.array(url).min(1).max(8)]),
-      username: z.string().max(256).optional(),
-      credential: z.string().max(256).optional(),
-    }),
-  )
-  .max(8);
+export const DEFAULT_TF2_ICE_SERVERS: readonly IceServerConfig[] = DEFAULT_ICE_SERVERS;
 
 /**
  * The configured ICE servers: `raw` is the env value. Unset, empty or invalid
@@ -48,12 +38,5 @@ const zIceServers = z
  * STUN beats not connecting at all). `[]` is honoured: host candidates only.
  */
 export function parseIceServers(raw: unknown): IceServerConfig[] {
-  if (typeof raw !== 'string' || raw.trim() === '') return DEFAULT_TF2_ICE_SERVERS.map((s) => ({ ...s }));
-  try {
-    const parsed = zIceServers.safeParse(JSON.parse(raw));
-    if (parsed.success) return parsed.data;
-  } catch {
-    /* fall through */
-  }
-  return DEFAULT_TF2_ICE_SERVERS.map((s) => ({ ...s }));
+  return parseSharedIceServers(raw, DEFAULT_TF2_ICE_SERVERS);
 }

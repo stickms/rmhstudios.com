@@ -1,0 +1,175 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Multiplayer Balatro (native P2P PvP on /balatro) — PLAN §6, docs/balatro-mp.md.
+#
+# Job `test` (no browser):
+#   - the Lua L1 specs under PUC Lua 5.1 (`pnpm test:balatro:lua`; also inside
+#     `pnpm test:balatro` through lib/balatro/mp/__tests__/lua-specs.test.ts, which
+#     FAILS without lua5.1, so this job installs it);
+#   - `pnpm test:balatro` (vitest.balatro.config.ts: lib/balatro/mp, the shared P2P
+#     transport lib/shared/p2p, the hub's Balatro directory, scripts/balatro);
+#   - `pnpm test:tf2` (the P2P primitives are shared with TF2, PLAN §0.12);
+#   - generated-protocol and game-pack freshness, and the bundle/pack budget (§6.4).
+# The mission-critical slices (hub auth walk, rate-limit coverage, saves) stay in
+# web-ci.yml's main suite.
+#
+# Job `e2e` (vitest.balatro-e2e.config.ts, cheapest project first):
+#   - harness: unit tests of the e2e machinery (no browser);
+#   - engine:  Lua L2 — every lib/balatro/lua/mp_test/specs/*_spec.lua inside the real
+#              love.wasm in headless Chromium (SwiftShader), static harness page, no DB
+#              or hub; one boot for all files plus a second boot without the MP pack
+#              (single-player golden seeds). A hard gate;
+#   - match:   multi-browser matches and bot-peer lobbies against the Postgres service,
+#              the socket hub and `vite dev` (VITE_BALATRO_MP_TEST=1) with accounts made
+#              through the sign-up API. BALATRO_E2E_REQUIRE_MATCH=1 turns "no stack" into
+#              a failure instead of a skip.
+# The nightly schedule (and a manual run with `long: true`) adds the slow checks:
+# every engine spec file alone in a fresh boot (BALATRO_E2E_ISOLATE=1) and the
+# 30-minute-equivalent autopilot soak (BALATRO_E2E_SOAK=1, E2E-24).
+# Path-filtered so unrelated PRs don't pay for it.
+# ─────────────────────────────────────────────────────────────────────────────
+name: balatro-mp-tests
+
+on:
+  pull_request:
+    paths:
+      - 'lib/balatro/**'
+      - 'scripts/balatro/**'
+      - 'server/socket-server/handlers/balatro-*'
+      - 'server/socket-server/balatro/**'
+      - 'server/socket-server/p2p/**'
+      - 'lib/shared/p2p/**'
+      - 'data/balatro-mp/**'
+      - 'data/balatro-pack/**'
+      - 'vitest.balatro*'
+      - 'testing/balatro-e2e/**'
+      - 'components/balatro/**'
+      - '.github/workflows/balatro-mp-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'lib/balatro/**'
+      - 'scripts/balatro/**'
+      - 'server/socket-server/handlers/balatro-*'
+      - 'server/socket-server/balatro/**'
+      - 'server/socket-server/p2p/**'
+      - 'lib/shared/p2p/**'
+      - 'data/balatro-mp/**'
+      - 'data/balatro-pack/**'
+      - 'vitest.balatro*'
+      - 'testing/balatro-e2e/**'
+      - 'components/balatro/**'
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+    inputs:
+      long:
+        description: 'Also run every engine spec alone and the 30-minute soak'
+        type: boolean
+        default: false
+
+concurrency:
+  group: balatro-mp-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # pnpm + Node 24.21.0 + node_modules (cached by lockfile + schema), as web-ci.yml.
+      - uses: ./.github/actions/setup-deps
+
+      # PUC Lua 5.1 — the same VM family as love.js — for the L1 specs.
+      - name: Install lua5.1
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lua5.1 > /dev/null && lua5.1 -v
+
+      - name: Lua L1 specs
+        run: pnpm test:balatro:lua
+
+      - name: Generated Lua protocol is fresh
+        run: pnpm balatro:gen-protocol --check
+
+      # scripts/balatro/__tests__/pack.test.ts and the pack builder need fontTools
+      # (it fails with an install hint rather than skipping). The builder runs as
+      # `python3 -I`, which ignores the user site that a non-root `pip install`
+      # writes to, so install into the interpreter's own site-packages.
+      - name: Install pack-builder Python deps
+        run: sudo python3 -m pip install --quiet --break-system-packages fonttools pyoxipng && python3 -I -c 'import fontTools, oxipng'
+
+      - name: Balatro suite (TS + Lua L1)
+        run: pnpm test:balatro
+
+      # The shared P2P primitives moved out of TF2 (lib/shared/p2p); TF2 must stay green.
+      - name: TF2 suite
+        run: pnpm test:tf2
+
+      - name: Game pack freshness
+        run: python3 -I scripts/balatro/build-game-pack.py --check
+
+      # PLAN §6.4: SP route delta, MP chunks (socket.io-client is site-shared: see the
+      # script's SOCKET_IO_INPUT note), test surface absent, pack sizes.
+      - name: Bundle and pack budget
+        run: node_modules/.bin/tsx scripts/balatro/bundle-budget.ts
+
+  e2e:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
+      BETTER_AUTH_SECRET: ci-balatro-e2e-not-a-real-secret-000000000
+      BALATRO_E2E_LOG_DIR: ${{ github.workspace }}/balatro-e2e-logs
+      LONG: ${{ github.event_name == 'schedule' || inputs.long == true }}
+    # Postgres as a service container (as web-ci.yml's eversion job): pgvector image, so the
+    # embeddings migration applies as in production.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rmh
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup-deps
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E machinery (harness project)
+        run: pnpm test:balatro:e2e --project harness
+
+      - name: In-engine specs (engine project)
+        env:
+          BALATRO_E2E_ISOLATE: ${{ env.LONG == 'true' && '1' || '' }}
+        run: pnpm test:balatro:e2e --project engine
+
+      - name: Migrate database
+        run: pnpm exec prisma migrate deploy
+
+      - name: Matches (match project)
+        env:
+          BALATRO_E2E_REQUIRE_MATCH: '1'
+          BALATRO_E2E_SOAK: ${{ env.LONG == 'true' && '1' || '' }}
+        run: pnpm test:balatro:e2e --project match
+
+      - name: Stack logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: balatro-e2e-logs
+          path: balatro-e2e-logs
+          if-no-files-found: ignore

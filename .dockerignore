@@ -152,3 +152,6 @@ wasm/.generated
 # ─── Balatro source (scripts/balatro/build-game-pack.py reads it; the image
 # only needs the built packs in data/balatro-pack/) ───
 data/balatro/
+# Multiplayer pack sources (scripts/balatro/build-game-pack.py builds them into
+# data/balatro-pack/mp-<sha>.zip, which is all the image needs).
+data/balatro-mp/

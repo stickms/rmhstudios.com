@@ -8,9 +8,9 @@
  *      textures, fonts, ~5 MB) and `audio` (~17 MB). Both are kept in IndexedDB
  *      after the first visit, so later visits start without a download.
  *   2. The core pack is extracted into Emscripten's in-memory filesystem at
- *      /Balatro with the platform layer (`lua/rmh_web.lua` and its LuaJIT ports
- *      under rmh/), and `require "rmh_web";` is prefixed onto main.lua's first
- *      line. LÖVE starts with /Balatro as the game; the directory name is the save
+ *      /Balatro. It carries the platform layer (`lua/rmh_web.lua` and its LuaJIT
+ *      ports under rmh/, added by the pack builder, not bundled into this chunk),
+ *      and `require "rmh_web";` is prefixed onto main.lua's first line. LÖVE starts with /Balatro as the game; the directory name is the save
  *      identity, so saves land in /home/web_user/love/Balatro — the same layout as
  *      %AppData%\Balatro.
  *   3. The audio pack is written into /Balatro/resources/sounds whenever it
@@ -22,13 +22,16 @@
  *      the tab is hidden, and every 30 s — and backs the directory up to the
  *      account (cloud-saves.ts), restoring the account copy before the game's
  *      first line runs when it is the newer one.
+ *   5. Multiplayer is lazy (docs/balatro-mp.md, PLAN §0.5). The core pack carries only
+ *      the mailbox (`lua/rmh/net.lua`, `lua/rmh/json.lua`) and the menu entry
+ *      (`lua/rmh_mp_entry.lua`). The MP pack and the MP JS chunk load when the
+ *      player opens Multiplayer, or at boot for an invite, a rejoin, or a run that
+ *      was continued from a match (`BootOptions.mp`, the `<profile>/mp.jkr`
+ *      sidecar). `BalatroSession.mp` hands the MP chunk the filesystem and the
+ *      `FS.trackingDelegate` move/delete notifications the mailbox runs on.
  */
 import engine from './engine.json';
 import pack from './game-pack.json';
-import bitSource from './lua/bit.lua?raw';
-import randomSource from './lua/luajit_random.lua?raw';
-import shimSource from './lua/rmh_web.lua?raw';
-import u32Source from './lua/u32.lua?raw';
 import { chooseSnapshot, isSavePath, type CloudSaves, type SaveFile } from './cloud-saves';
 import { extractEntry, readZip, writeZip } from './zip';
 
@@ -64,6 +67,8 @@ interface EmscriptenFS {
   isDir(mode: number): boolean;
   analyzePath(path: string): { exists: boolean };
   syncfs(populate: boolean, callback: (err: unknown) => void): void;
+  /** Emscripten's synchronous FS notifications (present in this love.js build). */
+  trackingDelegate?: Record<string, ((...args: string[]) => void) | undefined>;
 }
 
 interface LoveModule {
@@ -97,6 +102,61 @@ export interface PackInfo {
 }
 
 export const GAME_VERSION: string = pack.version;
+
+/** The MP pack's manifest entry; WS2 adds it to game-pack.json. */
+export const MP_PACK: PackInfo | null = (pack as { mp?: PackInfo }).mp ?? null;
+
+/**
+ * Why multiplayer starts at boot (`/rmh/mp/autoload`): an invite link, a match
+ * to rejoin, or `sp` — a run continued in single player from a match, whose save
+ * needs the MP content mounted (the `<profile>/mp.jkr` sidecar marks it).
+ */
+export type MpAutoload = 'invite' | 'rejoin' | 'sp';
+
+/**
+ * localStorage key the MP session runtime sets (to the runId) while the player
+ * holds a seat in a running match, and clears when the match ends. Boot reads it
+ * to preload the MP pack for a rejoin without loading any MP code first.
+ */
+export const MP_REJOIN_HINT_KEY = 'rmh-balatro-mp-rejoin';
+
+const MP_DIRS = ['/rmh/net', '/rmh/mp'];
+
+/** True when a profile has the sidecar of a run continued from a match. */
+export function hasMpSidecar(exists: (path: string) => boolean): boolean {
+  return ['1', '2', '3'].some((p) => exists(`${SAVE_DIR}/${p}/mp.jkr`));
+}
+
+/**
+ * Where an MP pack entry is written, or null to refuse it. MP files always live
+ * under an `rmh_mp/` directory (`rmh_mp/**`, `resources/textures/2x/rmh_mp/…`),
+ * so the pack can never replace a game file or reach outside /Balatro.
+ */
+export function mpPackPath(name: string): string | null {
+  if (!/^[A-Za-z0-9_\-./]+$/.test(name) || name.startsWith('/') || name.endsWith('/')) return null;
+  const parts = name.split('/');
+  if (parts.some((p) => p === '' || p === '.' || p === '..') || !parts.slice(0, -1).includes('rmh_mp')) return null;
+  return `${GAME_DIR}/${name}`;
+}
+
+/** Writes the MP pack's files into the game directory, then the ready marker. */
+export function mountMpFiles(
+  fs: Pick<EmscriptenFS, 'mkdir' | 'writeFile' | 'analyzePath'>,
+  files: { name: string; data: Uint8Array }[],
+  version: string,
+): number {
+  let n = 0;
+  for (const file of files) {
+    const path = mpPackPath(file.name);
+    if (!path) continue;
+    mkdirp(fs, path.slice(0, path.lastIndexOf('/')));
+    fs.writeFile(path, file.data);
+    n += 1;
+  }
+  mkdirp(fs, '/rmh/mp');
+  fs.writeFile('/rmh/mp/ready', version);
+  return n;
+}
 
 /** main.lua with the platform layer required first, on the same line. */
 export function patchMain(source: string): string {
@@ -194,7 +254,7 @@ export class PackError extends Error {
 
 /** One pack's bytes: from IndexedDB if present, else downloaded and verified. */
 export async function loadPack(
-  kind: 'core' | 'audio',
+  kind: 'core' | 'audio' | 'mp',
   info: PackInfo,
   onProgress?: (fraction: number) => void,
 ): Promise<Uint8Array> {
@@ -221,7 +281,7 @@ export async function loadPack(
   return out;
 }
 
-async function unpack(bytes: Uint8Array, onProgress?: (fraction: number) => void) {
+export async function unpackPack(bytes: Uint8Array, onProgress?: (fraction: number) => void) {
   const archive = readZip(bytes);
   const entries = archive.entries.filter((e) => !e.name.endsWith('/'));
   const files: { name: string; data: Uint8Array }[] = [];
@@ -296,6 +356,28 @@ export interface BootOptions {
   onLog?: (line: string, isError: boolean) => void;
   /** The audio pack failed to load (the game keeps running, silent). */
   onAudioError?: (err: unknown) => void;
+  /**
+   * Start multiplayer at boot. `files` is the MP pack, fetched in parallel with
+   * the core (`lib/balatro/mp/pack-loader.ts`); when it arrives in time it is in
+   * the filesystem before the game's first line, else the MP chunk mounts it
+   * after boot. Absent for a plain single-player boot.
+   */
+  mp?: { autoload: MpAutoload; files?: Promise<{ name: string; data: Uint8Array }[] | null> };
+}
+
+/** What the lazy MP chunk gets from the running engine. */
+export interface MpHost {
+  fs: EmscriptenFS;
+  /** False when the engine has no FS.trackingDelegate: the mailbox polls. */
+  tracking: boolean;
+  /** Called synchronously inside every FS rename; returns an unsubscribe. */
+  onMove(fn: (from: string, to: string) => void): () => void;
+  /** Called synchronously inside every FS unlink/rmdir; returns an unsubscribe. */
+  onDelete(fn: (path: string) => void): () => void;
+  /** Why MP started at boot (written to /rmh/mp/autoload), or null. */
+  autoload: MpAutoload | null;
+  /** The MP pack was mounted during boot. */
+  mounted: boolean;
 }
 
 export interface BalatroSession {
@@ -309,9 +391,10 @@ export interface BalatroSession {
   resume(): void;
   /** Stops the frame loop and audio for good (the page is being left). */
   stop(): void;
+  mp: MpHost;
 }
 
-function mkdirp(fs: EmscriptenFS, path: string) {
+function mkdirp(fs: Pick<EmscriptenFS, 'mkdir' | 'analyzePath'>, path: string) {
   let at = '';
   for (const part of path.split('/').filter(Boolean)) {
     at += `/${part}`;
@@ -357,7 +440,7 @@ export function saveImportPath(name: string): string | null {
 }
 
 export async function bootBalatro(options: BootOptions): Promise<BalatroSession> {
-  const { canvas, frame, cloud, onPhase, onLog, onAudioError } = options;
+  const { canvas, frame, cloud, onPhase, onLog, onAudioError, mp } = options;
   trackAudioContexts();
 
   // Everything the boot waits on starts at once.
@@ -366,22 +449,21 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
   const cloudCopy = cloud ? cloud.read() : Promise.resolve(null);
   const corePack = loadPack('core', pack.core, (f) => onPhase?.('download', f));
   // The audio follows in the background; nothing waits on it.
-  const audioFiles = loadPack('audio', pack.audio).then((bytes) => unpack(bytes));
+  const audioFiles = loadPack('audio', pack.audio).then((bytes) => unpackPack(bytes));
 
   const coreBytes = await corePack;
   onPhase?.('unpack', 0);
-  const files = await unpack(coreBytes, (f) => onPhase?.('unpack', f));
+  const files = await unpackPack(coreBytes, (f) => onPhase?.('unpack', f));
   const enc = new TextEncoder();
   const main = files.find((f) => f.name === 'main.lua');
   if (!main) throw new Error('core-pack-missing-main');
+  // The platform layer (rmh_web.lua, rmh/*.lua, rmh_mp_entry.lua) ships inside the
+  // core pack (build-game-pack.py PLATFORM_LUA); only the require is added here.
+  if (!files.some((f) => f.name === 'rmh_web.lua')) throw new Error('core-pack-missing-platform');
   main.data = enc.encode(patchMain(new TextDecoder().decode(main.data)));
-  files.push(
-    { name: 'rmh_web.lua', data: enc.encode(shimSource) },
-    { name: 'rmh/u32.lua', data: enc.encode(u32Source) },
-    { name: 'rmh/bit.lua', data: enc.encode(bitSource) },
-    { name: 'rmh/luajit_random.lua', data: enc.encode(randomSource) },
-  );
   const cloudFiles = await cloudCopy;
+  // A failed MP preload is not a failed boot: the MP chunk retries after it.
+  const mpFiles = mp?.files ? await mp.files.catch(() => null) : null;
   await engine;
 
   onPhase?.('start');
@@ -409,6 +491,21 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
       }
     });
     return flushing;
+  };
+
+  const moveFns = new Set<(from: string, to: string) => void>();
+  const deleteFns = new Set<(path: string) => void>();
+  let tracking = false;
+  let autoload: MpAutoload | null = mp?.autoload ?? null;
+  let mounted = false;
+  const fanOut = <A extends unknown[]>(fns: Set<(...a: A) => void>, args: A) => {
+    for (const fn of fns) {
+      try {
+        fn(...args);
+      } catch (err) {
+        onLog?.(`fs hook failed: ${String(err)}`, true);
+      }
+    }
   };
 
   let ratio = 1;
@@ -449,10 +546,35 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
         }
         files.length = 0;
         mkdirp(fs, '/rmh');
+        for (const dir of MP_DIRS) mkdirp(fs, dir);
         writeSize();
+        // The mailbox runs on these (PLAN §3.c); existing delegates keep working.
+        const delegate = fs.trackingDelegate;
+        if (delegate && typeof delegate === 'object') {
+          tracking = true;
+          const prevMove = delegate.onMovePath;
+          const prevDelete = delegate.onDeletePath;
+          delegate.onMovePath = (from: string, to: string) => {
+            prevMove?.(from, to);
+            if (moveFns.size) fanOut(moveFns, [from, to]);
+          };
+          delegate.onDeletePath = (path: string) => {
+            prevDelete?.(path);
+            if (deleteFns.size) fanOut(deleteFns, [path]);
+          };
+        }
         if (cloudFiles && chooseSnapshot(readSaveFiles(fs), cloudFiles) === 'cloud') {
           replaceSaveFiles(fs, cloudFiles);
           void flushSaves();
+        }
+        const live = fs;
+        if (!autoload && hasMpSidecar((p) => live.analyzePath(p).exists)) autoload = 'sp';
+        if (autoload) {
+          if (mpFiles) {
+            mountMpFiles(fs, mpFiles, MP_PACK?.sha256.slice(0, 12) ?? 'dev');
+            mounted = true;
+          }
+          fs.writeFile('/rmh/mp/autoload', autoload);
         }
       },
     ],
@@ -463,6 +585,9 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
 
   const m = module as LoveModule;
   let stopped = false;
+  // Assigned in preRun, which has run by now.
+  const engineFs = fs as EmscriptenFS | null;
+  if (!engineFs) throw new Error('engine-missing-fs-export');
 
   void audioFiles.then(
     (sounds) => {
@@ -540,6 +665,20 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
       m.pauseMainLoop?.();
       for (const ctx of audioContexts) void ctx.close().catch(() => {});
       audioContexts.clear();
+    },
+    mp: {
+      fs: engineFs,
+      tracking,
+      onMove(fn) {
+        moveFns.add(fn);
+        return () => void moveFns.delete(fn);
+      },
+      onDelete(fn) {
+        deleteFns.add(fn);
+        return () => void deleteFns.delete(fn);
+      },
+      autoload,
+      mounted,
     },
   };
 }

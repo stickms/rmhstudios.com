@@ -1,0 +1,974 @@
+{
+  "c2s": {
+    "balatro:p2p:host": {
+      "valid": [
+        {
+          "kind": "private",
+          "queueMode": "pvp_nemesis",
+          "maxPlayers": 2,
+          "contentHash": "0123456789abcdef01234567-v1",
+          "spectatable": true
+        },
+        {
+          "kind": "casual",
+          "queueMode": "pvp_royale",
+          "maxPlayers": 16,
+          "contentHash": "0123456789abcdef01234567-v1",
+          "spectatable": false,
+          "resume": {
+            "code": "ABC234",
+            "token": "TTTTTTTTTTTTTTTTTTTTTTTT"
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "maxPlayers 17",
+          "d": {
+            "kind": "private",
+            "queueMode": "pvp_nemesis",
+            "maxPlayers": 17,
+            "contentHash": "0123456789abcdef01234567-v1",
+            "spectatable": true
+          }
+        },
+        {
+          "why": "bad hash",
+          "d": {
+            "kind": "private",
+            "queueMode": "pvp_nemesis",
+            "maxPlayers": 2,
+            "contentHash": "nope",
+            "spectatable": true
+          }
+        }
+      ]
+    },
+    "balatro:p2p:join": {
+      "valid": [
+        {
+          "code": "ABC234",
+          "contentHash": "0123456789abcdef01234567-v1"
+        },
+        {
+          "code": "ZZZ999",
+          "contentHash": "0123456789abcdef01234567-v1",
+          "role": "spectator"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "code has I",
+          "d": {
+            "code": "ABCDEI",
+            "contentHash": "0123456789abcdef01234567-v1"
+          }
+        },
+        {
+          "why": "role",
+          "d": {
+            "code": "ABC234",
+            "contentHash": "0123456789abcdef01234567-v1",
+            "role": "host"
+          }
+        }
+      ]
+    },
+    "balatro:p2p:admit": {
+      "valid": [
+        {
+          "peerId": "pA1b2C3d4E5f",
+          "accept": true
+        },
+        {
+          "peerId": "pA1b2C3d4E5f",
+          "accept": false,
+          "reason": "full"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "short peer id",
+          "d": {
+            "peerId": "abc",
+            "accept": true
+          }
+        },
+        {
+          "why": "reason",
+          "d": {
+            "peerId": "pA1b2C3d4E5f",
+            "accept": false,
+            "reason": "rude"
+          }
+        }
+      ]
+    },
+    "balatro:p2p:signal": {
+      "valid": [
+        {
+          "to": "pA1b2C3d4E5f",
+          "description": {
+            "type": "offer",
+            "sdp": "v=0"
+          }
+        },
+        {
+          "candidate": {
+            "candidate": "candidate:1 1 UDP 1 1.2.3.4 5 typ host",
+            "sdpMid": "0",
+            "sdpMLineIndex": 0
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "both description and candidate",
+          "d": {
+            "description": {
+              "type": "offer",
+              "sdp": "v=0"
+            },
+            "candidate": {
+              "candidate": "c",
+              "sdpMid": null,
+              "sdpMLineIndex": null
+            }
+          }
+        },
+        {
+          "why": "neither",
+          "d": {
+            "to": "pA1b2C3d4E5f"
+          }
+        }
+      ]
+    },
+    "balatro:p2p:relay:start": {
+      "valid": [{}],
+      "invalid": [
+        {
+          "why": "not an object",
+          "d": "x"
+        }
+      ]
+    },
+    "balatro:p2p:state": {
+      "valid": [
+        {
+          "open": true,
+          "started": false,
+          "runId": null,
+          "members": ["u_alice", "u_bob"],
+          "successor": "pZ9y8X7w6V5u",
+          "spectatable": true,
+          "summary": {
+            "players": 2,
+            "ante": null
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "members too long",
+          "d": {
+            "open": true,
+            "started": false,
+            "runId": null,
+            "members": [
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u",
+              "u"
+            ],
+            "successor": null,
+            "spectatable": true,
+            "summary": {
+              "players": 2,
+              "ante": null
+            }
+          }
+        }
+      ]
+    },
+    "balatro:p2p:kick": {
+      "valid": [
+        {
+          "peerId": "pA1b2C3d4E5f"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "missing",
+          "d": {}
+        }
+      ]
+    },
+    "balatro:p2p:forfeit-seat": {
+      "valid": [
+        {
+          "userId": "u_bob",
+          "runId": "r7f3a91c2"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "runId too long",
+          "d": {
+            "userId": "u",
+            "runId": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+          }
+        }
+      ]
+    },
+    "balatro:p2p:leave": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "balatro:p2p:close": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "balatro:seat:query": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "balatro:queue:join": {
+      "valid": [
+        {
+          "queueMode": "pvp_teams",
+          "contentHash": "0123456789abcdef01234567-v1"
+        },
+        {
+          "queueMode": "pvp_nemesis",
+          "contentHash": "0123456789abcdef01234567-v1",
+          "partyCode": "PARTY2"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "queue mode",
+          "d": {
+            "queueMode": "ranked",
+            "contentHash": "0123456789abcdef01234567-v1"
+          }
+        }
+      ]
+    },
+    "balatro:queue:leave": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "balatro:party:queue": {
+      "valid": [
+        {
+          "code": "PARTY2",
+          "queueMode": "pvp_smallworld"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "missing mode",
+          "d": {
+            "code": "PARTY2"
+          }
+        }
+      ]
+    },
+    "balatro:invite": {
+      "valid": [
+        {
+          "code": "ABC234",
+          "toUserId": "u_dave"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "missing user",
+          "d": {
+            "code": "ABC234"
+          }
+        }
+      ]
+    },
+    "balatro:spectate:list": {
+      "valid": [{}],
+      "invalid": []
+    }
+  },
+  "s2c": {
+    "balatro:p2p:hosted": {
+      "valid": [
+        {
+          "code": "ABC234",
+          "token": "TTTTTTTTTTTTTTTTTTTTTTTT",
+          "peerId": "pA1b2C3d4E5f",
+          "ice": [
+            {
+              "urls": ["stun:stun.l.google.com:19302"]
+            },
+            {
+              "urls": "turn:turn.example.org:3478",
+              "username": "u",
+              "credential": "p"
+            }
+          ]
+        }
+      ],
+      "invalid": [
+        {
+          "why": "ice url",
+          "d": {
+            "code": "ABC234",
+            "token": "TTTTTTTTTTTTTTTTTTTTTTTT",
+            "peerId": "pA1b2C3d4E5f",
+            "ice": [
+              {
+                "urls": "http://x"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "balatro:p2p:join-request": {
+      "valid": [
+        {
+          "peerId": "pZ9y8X7w6V5u",
+          "userId": "u_bob",
+          "name": "Bob",
+          "avatarUrl": null,
+          "role": "player",
+          "rejoin": false
+        }
+      ],
+      "invalid": [
+        {
+          "why": "rejoin missing",
+          "d": {
+            "peerId": "pZ9y8X7w6V5u",
+            "userId": "u_bob",
+            "name": "Bob",
+            "avatarUrl": null,
+            "role": "player"
+          }
+        }
+      ]
+    },
+    "balatro:p2p:joining": {
+      "valid": [
+        {
+          "code": "ABC234",
+          "peerId": "pZ9y8X7w6V5u",
+          "hostUserId": "u_alice"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "missing host",
+          "d": {
+            "code": "ABC234",
+            "peerId": "pZ9y8X7w6V5u"
+          }
+        }
+      ]
+    },
+    "balatro:p2p:admitted": {
+      "valid": [
+        {
+          "code": "ABC234",
+          "ice": [],
+          "hostPeerId": "pA1b2C3d4E5f"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "missing ice",
+          "d": {
+            "code": "ABC234",
+            "hostPeerId": "pA1b2C3d4E5f"
+          }
+        }
+      ]
+    },
+    "balatro:p2p:rejected": {
+      "valid": [
+        {
+          "code": "ABC234",
+          "reason": "host-refused"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "reason too long",
+          "d": {
+            "code": "ABC234",
+            "reason": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          }
+        }
+      ]
+    },
+    "balatro:p2p:signal": {
+      "valid": [
+        {
+          "from": "pA1b2C3d4E5f",
+          "description": {
+            "type": "answer",
+            "sdp": "v=0"
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "from missing",
+          "d": {
+            "description": {
+              "type": "answer",
+              "sdp": "v=0"
+            }
+          }
+        }
+      ]
+    },
+    "balatro:p2p:member-left": {
+      "valid": [
+        {
+          "peerId": "pZ9y8X7w6V5u",
+          "userId": "u_bob",
+          "reason": "kicked"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "reason",
+          "d": {
+            "peerId": "pZ9y8X7w6V5u",
+            "userId": "u_bob",
+            "reason": "bored"
+          }
+        }
+      ]
+    },
+    "balatro:p2p:member-away": {
+      "valid": [
+        {
+          "peerId": "pZ9y8X7w6V5u",
+          "away": true
+        }
+      ],
+      "invalid": [
+        {
+          "why": "away missing",
+          "d": {
+            "peerId": "pZ9y8X7w6V5u"
+          }
+        }
+      ]
+    },
+    "balatro:p2p:host-changed": {
+      "valid": [
+        {
+          "code": "ABC234",
+          "hostPeerId": "pZ9y8X7w6V5u",
+          "hostUserId": "u_bob"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "missing",
+          "d": {
+            "code": "ABC234"
+          }
+        }
+      ]
+    },
+    "balatro:p2p:promote": {
+      "valid": [
+        {
+          "code": "ABC234",
+          "token": "TTTTTTTTTTTTTTTTTTTTTTTT",
+          "ice": [
+            {
+              "urls": ["stun:stun.l.google.com:19302"]
+            },
+            {
+              "urls": "turn:turn.example.org:3478",
+              "username": "u",
+              "credential": "p"
+            }
+          ]
+        }
+      ],
+      "invalid": [
+        {
+          "why": "short token",
+          "d": {
+            "code": "ABC234",
+            "token": "t",
+            "ice": []
+          }
+        }
+      ]
+    },
+    "balatro:p2p:closed": {
+      "valid": [
+        {
+          "code": "ABC234",
+          "reason": "host-lost"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "reason",
+          "d": {
+            "code": "ABC234",
+            "reason": "boom"
+          }
+        }
+      ]
+    },
+    "balatro:p2p:error": {
+      "valid": [
+        {
+          "event": "balatro:p2p:join",
+          "code": "seat-held",
+          "heldCode": "XYZ789"
+        },
+        {
+          "event": "balatro:p2p:host",
+          "code": "rate-limited"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "code",
+          "d": {
+            "event": "x",
+            "code": "teapot"
+          }
+        }
+      ]
+    },
+    "balatro:seat": {
+      "valid": [
+        {
+          "code": null,
+          "hostOnline": false,
+          "runId": null,
+          "started": false
+        },
+        {
+          "code": "ABC234",
+          "hostOnline": true,
+          "runId": "r7f3a91c2",
+          "started": true
+        }
+      ],
+      "invalid": [
+        {
+          "why": "started missing",
+          "d": {
+            "code": null,
+            "hostOnline": false,
+            "runId": null
+          }
+        }
+      ]
+    },
+    "balatro:queue:status": {
+      "valid": [
+        {
+          "state": "searching",
+          "queueMode": "pvp_nemesis",
+          "waiting": 3
+        },
+        {
+          "state": "matched",
+          "queueMode": "pvp_nemesis",
+          "code": "ABC234",
+          "role": "host"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "state",
+          "d": {
+            "state": "lost",
+            "queueMode": "pvp_nemesis"
+          }
+        }
+      ]
+    },
+    "balatro:invited": {
+      "valid": [
+        {
+          "code": "ABC234",
+          "fromUserId": "u_alice",
+          "fromName": "Alice"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "name missing",
+          "d": {
+            "code": "ABC234",
+            "fromUserId": "u_alice"
+          }
+        }
+      ]
+    },
+    "balatro:spectate:lobbies": {
+      "valid": [
+        {
+          "lobbies": []
+        },
+        {
+          "lobbies": [
+            {
+              "code": "ABC234",
+              "queueMode": "pvp_royale",
+              "players": 7,
+              "ante": 3
+            }
+          ]
+        }
+      ],
+      "invalid": [
+        {
+          "why": "too many",
+          "d": {
+            "lobbies": [
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              },
+              {
+                "code": "ABC234",
+                "queueMode": "pvp_royale",
+                "players": 7,
+                "ante": null
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

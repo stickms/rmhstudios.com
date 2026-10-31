@@ -1,0 +1,44 @@
+/* The friends list in the Balatro Invite popover (InviteFriends.tsx).
+ * Full-screen app tier: --app-* tokens only, like ./mp.css. */
+
+.balatro-invite-friends {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.balatro-invite-friends-title {
+  font-family: var(--app-font-mono);
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+}
+.balatro-invite-friends-empty {
+  font-size: 0.875rem;
+  color: var(--app-text-dim);
+}
+.balatro-invite-friends-list {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+.balatro-invite-friend {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+.balatro-invite-friend-avatar {
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface);
+  object-fit: cover;
+}
+.balatro-invite-friend-name {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--app-text);
+}

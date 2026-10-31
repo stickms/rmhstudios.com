@@ -355,6 +355,32 @@ export const config = {
     'tf2:p2p:relay': { max: 30_000, windowMs: 60_000 },
     // Host migration: the host names its successor when the best candidate changes (a few a minute).
     'tf2:p2p:successor': { max: 30, windowMs: 60_000 },
+    // Balatro multiplayer (docs/balatro-mp.md; contract lib/balatro/net/events.ts):
+    // the hub signals, relays as a fallback and keeps the seat directory.
+    // `host` includes resumes after a socket blip. `admit`, `signal` and
+    // `state` scale with a 16-seat lobby (a host answers 15 players and 8
+    // spectators, each a trickle of ICE candidates, and re-admits everyone on a
+    // migration; `state` follows every lobby change). `relay` is the fallback
+    // hot path — a host relaying several members' pings and messages; the byte
+    // budget per relayed member (8 KB/s, BALATRO_RELAY_LIMITS) is the real limit.
+    'balatro:p2p:host': { max: 10, windowMs: 60_000 },
+    'balatro:p2p:join': { max: 20, windowMs: 60_000 },
+    'balatro:p2p:admit': { max: 240, windowMs: 60_000 },
+    'balatro:p2p:signal': { max: 1200, windowMs: 60_000 },
+    'balatro:p2p:relay:start': { max: 20, windowMs: 60_000 },
+    'balatro:p2p:relay': { max: 12_000, windowMs: 60_000 },
+    'balatro:p2p:state': { max: 240, windowMs: 60_000 },
+    'balatro:p2p:kick': { max: 30, windowMs: 60_000 },
+    'balatro:p2p:forfeit-seat': { max: 60, windowMs: 60_000 },
+    'balatro:p2p:leave': { max: 20, windowMs: 60_000 },
+    'balatro:p2p:close': { max: 10, windowMs: 60_000 },
+    'balatro:seat:query': { max: 30, windowMs: 60_000 },
+    // Matchmaking, party, invites, spectate list (WS12; handlers/balatro-queue.ts).
+    'balatro:queue:join': { max: 20, windowMs: 60_000 },
+    'balatro:queue:leave': { max: 30, windowMs: 60_000 },
+    'balatro:party:queue': { max: 10, windowMs: 60_000 },
+    'balatro:invite': { max: 20, windowMs: 60_000 },
+    'balatro:spectate:list': { max: 30, windowMs: 60_000 },
     // ─── High-frequency relay / movement events ───
     // Movement + per-frame update events were previously unmetered (the rate
     // limiter returns true for events with no rule), so a single socket could

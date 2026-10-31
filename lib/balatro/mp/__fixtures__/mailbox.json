@@ -1,0 +1,217 @@
+{
+  "_doc": "Shared NDJSON cases for the mailbox (WS3): j2l is read by lib/balatro/lua/spec/mailbox_spec.lua against rmh/net.lua; l2j by lib/balatro/mp/__tests__/bridge.test.ts against bridge.ts. Regenerate by hand; keep d free of empty arrays and nulls in applied.",
+  "j2l": [
+    {
+      "name": "in order, one batch",
+      "handlers": [
+        "toast"
+      ],
+      "text": "{\"s\":1,\"t\":\"toast\",\"d\":{\"key\":\"a\"}}\n{\"s\":2,\"t\":\"toast\",\"d\":{\"key\":\"b\",\"vars\":{\"n\":3}}}\n",
+      "applied": [
+        {
+          "s": 1,
+          "t": "toast",
+          "d": {
+            "key": "a"
+          }
+        },
+        {
+          "s": 2,
+          "t": "toast",
+          "d": {
+            "key": "b",
+            "vars": {
+              "n": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "duplicates and replays are dropped",
+      "handlers": [
+        "toast"
+      ],
+      "text": "{\"s\":1,\"t\":\"toast\",\"d\":{\"key\":\"a\"}}\n{\"s\":1,\"t\":\"toast\",\"d\":{\"key\":\"a\"}}\n{\"s\":3,\"t\":\"toast\",\"d\":{\"key\":\"c\"}}\n{\"s\":2,\"t\":\"toast\",\"d\":{\"key\":\"late\"}}\n",
+      "applied": [
+        {
+          "s": 1,
+          "t": "toast",
+          "d": {
+            "key": "a"
+          }
+        },
+        {
+          "s": 3,
+          "t": "toast",
+          "d": {
+            "key": "c"
+          }
+        }
+      ]
+    },
+    {
+      "name": "malformed lines are skipped",
+      "handlers": [
+        "toast"
+      ],
+      "text": "{\"s\":1,\"t\":\"toast\",\"d\":{\"key\":\"a\"}\n\nnull\n{\"s\":2,\"t\":\"toast\",\"d\":{\"key\":\"b\"}}\n{\"s\":3,\"t\":\"nope\",\"d\":{}}\n{\"s\":4}\n",
+      "applied": [
+        {
+          "s": 2,
+          "t": "toast",
+          "d": {
+            "key": "b"
+          }
+        }
+      ]
+    },
+    {
+      "name": "unicode and escapes survive",
+      "handlers": [
+        "chat_line"
+      ],
+      "text": "{\"s\":1,\"t\":\"chat_line\",\"d\":{\"from\":\"u1\",\"name\":\"Zoë 🃏 漢\",\"text\":\"line1\\nline2 \\\"q\\\" \\\\   \\u0001\",\"kind\":\"in\"}}\n",
+      "applied": [
+        {
+          "s": 1,
+          "t": "chat_line",
+          "d": {
+            "from": "u1",
+            "name": "Zoë 🃏 漢",
+            "text": "line1\nline2 \"q\" \\   \u0001",
+            "kind": "in"
+          }
+        }
+      ]
+    },
+    {
+      "name": "numbers keep their doubles",
+      "handlers": [
+        "vote_progress",
+        "timer_state"
+      ],
+      "text": "{\"s\":1,\"t\":\"vote_progress\",\"d\":{\"kind\":\"seed\",\"k\":0,\"n\":9007199254740991}}\n{\"s\":2,\"t\":\"timer_state\",\"d\":{\"value\":0.1,\"mode\":\"pvp\",\"ticking\":true,\"beingTimered\":false,\"timering\":false,\"pressable\":true,\"auto\":false,\"color\":\"normal\",\"display\":null}}\n",
+      "applied": [
+        {
+          "s": 1,
+          "t": "vote_progress",
+          "d": {
+            "kind": "seed",
+            "k": 0,
+            "n": 9007199254740991
+          }
+        },
+        {
+          "s": 2,
+          "t": "timer_state",
+          "d": {
+            "value": 0.1,
+            "mode": "pvp",
+            "ticking": true,
+            "beingTimered": false,
+            "timering": false,
+            "pressable": true,
+            "auto": false,
+            "color": "normal"
+          }
+        }
+      ]
+    },
+    {
+      "name": "no trailing newline and CRLF-free",
+      "handlers": [
+        "timer_cue"
+      ],
+      "text": "{\"s\":5,\"t\":\"timer_cue\",\"d\":{}}",
+      "applied": [
+        {
+          "s": 5,
+          "t": "timer_cue",
+          "d": {}
+        }
+      ]
+    }
+  ],
+  "l2j": [
+    {
+      "name": "header then messages",
+      "text": "{\"h\":1,\"ack\":4,\"fr\":9}\n{\"s\":1,\"t\":\"mp_open\",\"d\":{\"intent\":\"menu\"}}\n{\"s\":2,\"t\":\"ui_ready\",\"d\":{\"ready\":true}}\n",
+      "header": {
+        "h": 1,
+        "ack": 4,
+        "fr": 9
+      },
+      "messages": [
+        {
+          "s": 1,
+          "t": "mp_open"
+        },
+        {
+          "s": 2,
+          "t": "ui_ready"
+        }
+      ],
+      "dropped": 0
+    },
+    {
+      "name": "header-only ack batch",
+      "text": "{\"h\":1,\"ack\":12,\"fr\":30}\n",
+      "header": {
+        "h": 1,
+        "ack": 12,
+        "fr": 30
+      },
+      "messages": [],
+      "dropped": 0
+    },
+    {
+      "name": "empty table data reads as {}",
+      "text": "{\"h\":1,\"ack\":0,\"fr\":1}\n{\"d\":[],\"s\":1,\"t\":\"ui_start\"}\n",
+      "header": {
+        "h": 1,
+        "ack": 0,
+        "fr": 1
+      },
+      "messages": [
+        {
+          "s": 1,
+          "t": "ui_start"
+        }
+      ],
+      "dropped": 0
+    },
+    {
+      "name": "bad lines dropped, good kept",
+      "text": "{\"h\":1,\"ack\":0,\"fr\":2}\n{oops\n{\"s\":1,\"t\":\"ui_ready\",\"d\":{\"ready\":1}}\n{\"s\":2,\"t\":\"zzz\",\"d\":{}}\n{\"s\":3,\"t\":\"ui_chat\",\"d\":{\"text\":\"hé\"}}\n",
+      "header": {
+        "h": 1,
+        "ack": 0,
+        "fr": 2
+      },
+      "messages": [
+        {
+          "s": 3,
+          "t": "ui_chat"
+        }
+      ],
+      "dropped": 3
+    },
+    {
+      "name": "nullable field may be absent",
+      "text": "{\"h\":1,\"ack\":0,\"fr\":3}\n{\"s\":1,\"t\":\"ui_set_deck\",\"d\":{\"deck\":\"b_red\",\"stake\":1}}\n",
+      "header": {
+        "h": 1,
+        "ack": 0,
+        "fr": 3
+      },
+      "messages": [
+        {
+          "s": 1,
+          "t": "ui_set_deck"
+        }
+      ],
+      "dropped": 0
+    }
+  ]
+}

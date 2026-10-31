@@ -77,6 +77,17 @@ export default defineConfig({
       'lib/sp-game/**',
       // CS:GO (de_dust2) is gameplay on the same engine too: the TF2 suite runs it.
       'lib/csgo-game/**',
+      // Multiplayer Balatro is gameplay too: its own suite, `pnpm test:balatro`
+      // (vitest.balatro.config.ts, which includes exactly these globs), gated by
+      // .github/workflows/balatro-mp-tests.yml. The mission-critical Balatro
+      // tests (lib/balatro/__tests__/saves.test.ts, the hub auth walk under
+      // server/socket-server/handlers/__tests__/) stay here.
+      'lib/balatro/mp/**',
+      'lib/shared/p2p/**',
+      'server/socket-server/balatro/**',
+      'scripts/balatro/**',
+      // Its browser end-to-end suite: `pnpm test:balatro:e2e` (vitest.balatro-e2e.config.ts).
+      'testing/balatro-e2e/**',
     ],
     environment: 'node',
     globals: true,

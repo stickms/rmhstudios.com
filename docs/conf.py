@@ -116,6 +116,9 @@ exclude_patterns = [
     # site is public and indexed: the write-up stays in the repo for developers
     # and is never published.
     "balatro-wasm.md",
+    # Multiplayer for the same unlisted route: same reasoning.
+    "balatro-mp.md",
+    "balatro-mp-parity.md",
 ]
 
 """Translations.

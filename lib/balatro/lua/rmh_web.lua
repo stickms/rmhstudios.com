@@ -14,6 +14,8 @@
 --                            the drawing-buffer pixel ratio
 --   /rmh/dirty  Lua → page   exists when the save directory changed and should be
 --                            flushed to IndexedDB
+--   /rmh/net/*  both ways    the multiplayer mailbox (§9, rmh/net.lua)
+--   /rmh/mp/*   page → Lua   the multiplayer pack's ready and autoload markers
 
 local RMH = { dirty = false }
 _G.RMH_WEB = RMH
@@ -502,6 +504,14 @@ end
 local original_require = require
 function require(name, ...)
   local result = original_require(name, ...)
+  -- challenges is the game's last file: everything the Multiplayer entry wraps exists.
+  if name == 'challenges' and not RMH.mp_entry_loaded then
+    RMH.mp_entry_loaded = true
+    local ok, err = pcall(original_require, 'rmh_mp_entry')
+    if not ok then
+      log('multiplayer entry failed: ' .. tostring(err))
+    end
+  end
   if name == 'globals' and Game and Game.set_globals and not RMH.flags_hooked then
     RMH.flags_hooked = true
     local set_globals = Game.set_globals
@@ -601,6 +611,36 @@ local function install_shaders()
 end
 
 ----------------------------------------------------------------------------------
+-- 9. Multiplayer mailbox (PLAN §3.c). RMH.net trades NDJSON with the page through
+-- /rmh/net (rmh/net.lua; the page half is lib/balatro/mp/bridge.ts). Idle, it
+-- costs one failed io.open a frame. RMH.frame_hooks (fn(dt)) run every frame before it,
+-- paused or not. The MP pack itself loads only when Multiplayer is opened.
+----------------------------------------------------------------------------------
+
+RMH.json = require('rmh/json')
+RMH.net = require('rmh/net')
+package.loaded['rmh.json'], package.loaded['rmh.net'] = RMH.json, RMH.net
+RMH.frame_hooks = {}
+-- PLAN §3.d calls this table RMH (RMH.net, RMH.frame_hooks); the MP pack finds it there.
+rawset(_G, 'RMH', RMH)
+
+local hook_errors = 0
+local function run_frame_hooks(dt)
+  for _, fn in ipairs(RMH.frame_hooks) do
+    local ok, err = pcall(fn, dt)
+    if not ok and hook_errors < 20 then
+      hook_errors = hook_errors + 1
+      log('frame hook failed: ' .. tostring(err))
+    end
+  end
+  local ok, err = pcall(RMH.net.pump)
+  if not ok and hook_errors < 20 then
+    hook_errors = hook_errors + 1
+    log('mailbox failed: ' .. tostring(err))
+  end
+end
+
+----------------------------------------------------------------------------------
 -- 8. One per-frame hook. Balatro's love.run calls love.event.pump() every frame.
 ----------------------------------------------------------------------------------
 
@@ -621,6 +661,7 @@ love.event.pump = function(...)
   pump_threads()
   follow_size(dt)
   signal_dirty()
+  run_frame_hooks(dt)
   return pump(...)
 end
 

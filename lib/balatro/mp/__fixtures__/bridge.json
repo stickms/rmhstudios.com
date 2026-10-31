@@ -1,0 +1,1540 @@
+{
+  "l2j": {
+    "mp_open": {
+      "valid": [
+        {
+          "intent": "menu"
+        },
+        {
+          "intent": "rejoin"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "intent",
+          "d": {
+            "intent": "party"
+          }
+        }
+      ]
+    },
+    "mp_log": {
+      "valid": [
+        {
+          "level": "warn",
+          "msg": "hook error in Card.calculate_joker"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "level",
+          "d": {
+            "level": "fatal",
+            "msg": "x"
+          }
+        }
+      ]
+    },
+    "ui_create_lobby": {
+      "valid": [
+        {
+          "queueMode": "pvp_manhunt",
+          "kind": "private"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "casual is hub-made",
+          "d": {
+            "queueMode": "pvp_manhunt",
+            "kind": "casual"
+          }
+        }
+      ]
+    },
+    "ui_join": {
+      "valid": [
+        {
+          "code": "ABC234"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "code missing",
+          "d": {}
+        },
+        {
+          "why": "lowercase code",
+          "d": {
+            "code": "abc234"
+          },
+          "tsOnly": true
+        }
+      ]
+    },
+    "ui_join_clipboard": {
+      "valid": [{}, []],
+      "invalid": []
+    },
+    "ui_copy_code": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "ui_invite": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "ui_leave": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "ui_ready": {
+      "valid": [
+        {
+          "ready": true
+        }
+      ],
+      "invalid": [
+        {
+          "why": "number",
+          "d": {
+            "ready": 1
+          }
+        }
+      ]
+    },
+    "ui_set_option": {
+      "valid": [
+        {
+          "key": "startingLives",
+          "value": 2
+        },
+        {
+          "key": "trapCards",
+          "value": true
+        },
+        {
+          "key": "ruleset",
+          "value": "ruleset_mp_vanilla"
+        },
+        {
+          "key": "modifierLayers",
+          "value": ["glass_cannon"]
+        }
+      ],
+      "invalid": [
+        {
+          "why": "unknown key",
+          "d": {
+            "key": "cheats",
+            "value": true
+          }
+        }
+      ]
+    },
+    "ui_set_team": {
+      "valid": [
+        {
+          "team": "A"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "team",
+          "d": {
+            "team": "X"
+          }
+        }
+      ]
+    },
+    "ui_set_deck": {
+      "valid": [
+        {
+          "deck": "b_red",
+          "stake": 2,
+          "mpStake": null,
+          "challenge": null
+        },
+        {
+          "deck": "b_mp_violet",
+          "stake": 8,
+          "mpStake": "spectral"
+        },
+        {
+          "deck": "b_red",
+          "stake": 1,
+          "challenge": "c_mp_eeeee"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "stake 9",
+          "d": {
+            "deck": "b_red",
+            "stake": 9
+          }
+        }
+      ]
+    },
+    "ui_start": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "ui_kick": {
+      "valid": [
+        {
+          "userId": "u_bob"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "userId missing",
+          "d": {}
+        }
+      ]
+    },
+    "ui_mute": {
+      "valid": [
+        {
+          "userId": "u_bob",
+          "on": true
+        }
+      ],
+      "invalid": [
+        {
+          "why": "on not bool",
+          "d": {
+            "userId": "u_bob",
+            "on": "yes"
+          }
+        }
+      ]
+    },
+    "ui_queue": {
+      "valid": [
+        {
+          "op": "join",
+          "queueMode": "pvp_nemesis"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "op",
+          "d": {
+            "op": "pause",
+            "queueMode": "pvp_nemesis"
+          }
+        }
+      ]
+    },
+    "ui_party_queue": {
+      "valid": [
+        {
+          "queueMode": "pvp_teams"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "mode",
+          "d": {
+            "queueMode": "pvp_ranked"
+          }
+        }
+      ]
+    },
+    "ui_vote": {
+      "valid": [
+        {
+          "stepId": "s1",
+          "option": "ruleset_mp_expanded"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "stepId missing",
+          "d": {
+            "option": "x"
+          }
+        }
+      ]
+    },
+    "ui_draft": {
+      "valid": [
+        {
+          "stepId": "s3",
+          "key": "b_blue"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "key missing",
+          "d": {
+            "stepId": "s3"
+          }
+        }
+      ]
+    },
+    "ui_chat": {
+      "valid": [
+        {
+          "text": "gg"
+        },
+        {
+          "text": "été — café"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "501 chars",
+          "d": {
+            "text": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+          }
+        }
+      ]
+    },
+    "ui_practice": {
+      "valid": [
+        {
+          "ruleset": "ruleset_mp_balanced",
+          "deck": "b_red",
+          "stake": 1,
+          "seed": null
+        },
+        {
+          "ruleset": "ruleset_mp_sandbox",
+          "deck": "b_red",
+          "stake": 4
+        }
+      ],
+      "invalid": [
+        {
+          "why": "stake 0",
+          "d": {
+            "ruleset": "ruleset_mp_balanced",
+            "deck": "b_red",
+            "stake": 0
+          }
+        }
+      ]
+    },
+    "ui_settings": {
+      "valid": [
+        {
+          "nemesisLayout": "classic"
+        },
+        {
+          "avatarJoker": "j_joker",
+          "blindCol": 25,
+          "timerSound": "once",
+          "showMpContent": true,
+          "chat": false
+        }
+      ],
+      "invalid": [
+        {
+          "why": "layout",
+          "d": {
+            "nemesisLayout": "sideways"
+          }
+        },
+        {
+          "why": "blindCol 0",
+          "d": {
+            "blindCol": 0
+          }
+        }
+      ]
+    },
+    "ui_return_lobby": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "ui_continue_sp": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "ui_spectate": {
+      "valid": [
+        {
+          "code": "ABC234"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "missing",
+          "d": {}
+        }
+      ]
+    },
+    "ui_spectate_list": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "ui_replay": {
+      "valid": [
+        {
+          "op": "list"
+        },
+        {
+          "op": "seek",
+          "value": 12.5
+        },
+        {
+          "op": "open",
+          "id": "m_123"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "op",
+          "d": {
+            "op": "delete"
+          }
+        }
+      ]
+    },
+    "ui_seat": {
+      "valid": [
+        {
+          "op": "rejoin"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "op",
+          "d": {
+            "op": "steal"
+          }
+        }
+      ]
+    },
+    "ev": {
+      "valid": [
+        {
+          "e": {
+            "t": "set_ante",
+            "ante": 0
+          }
+        },
+        {
+          "e": {
+            "t": "new_round"
+          }
+        },
+        {
+          "e": {
+            "t": "ready_blind",
+            "starting_hands": 4
+          }
+        },
+        {
+          "e": {
+            "t": "unready_blind"
+          }
+        },
+        {
+          "e": {
+            "t": "play_hand",
+            "score": "12345.678",
+            "hands_left": 3,
+            "skips": 0,
+            "lives": 4
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "unknown event",
+          "d": {
+            "e": {
+              "t": "warp"
+            }
+          }
+        },
+        {
+          "why": "e missing",
+          "d": {}
+        }
+      ]
+    },
+    "peer": {
+      "valid": [
+        {
+          "k": "nemesis_info",
+          "d": {
+            "score": "5000",
+            "hands_left": 2,
+            "skips": 0,
+            "lives": 3
+          }
+        },
+        {
+          "k": "deck_req",
+          "d": {}
+        },
+        {
+          "k": "trap_plant",
+          "d": {
+            "card": {
+              "$ref": "safeCard"
+            },
+            "owner": "u_alice",
+            "uid": "t1"
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "host-only kind",
+          "d": {
+            "k": "outcome",
+            "d": {
+              "o": {
+                "t": "new_round"
+              },
+              "hs": 1
+            }
+          }
+        },
+        {
+          "why": "bad d for kind",
+          "d": {
+            "k": "timer",
+            "d": {
+              "op": "start"
+            }
+          }
+        }
+      ]
+    },
+    "flags": {
+      "valid": [
+        {
+          "state": "SELECTING_HAND",
+          "onPvp": true,
+          "ready": true,
+          "countdown": false,
+          "animBusy": false,
+          "paused": false,
+          "inShop": false,
+          "roundEval": false,
+          "handsLeft": 3,
+          "ante": 2,
+          "blindKey": "bl_mp_nemesis"
+        },
+        {
+          "state": "SELECTING_HAND",
+          "onPvp": true,
+          "ready": true,
+          "countdown": false,
+          "animBusy": false,
+          "paused": false,
+          "inShop": false,
+          "roundEval": false,
+          "handsLeft": 3,
+          "ante": 2
+        }
+      ],
+      "invalid": [
+        {
+          "why": "handsLeft missing",
+          "d": {
+            "state": "SELECTING_HAND",
+            "onPvp": true,
+            "ready": true,
+            "countdown": false,
+            "animBusy": false,
+            "paused": false,
+            "inShop": false,
+            "roundEval": false,
+            "ante": 2,
+            "blindKey": "bl_mp_nemesis"
+          }
+        }
+      ]
+    },
+    "timer_input": {
+      "valid": [
+        {
+          "op": "press"
+        },
+        {
+          "op": "opp_skip"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "op",
+          "d": {
+            "op": "release"
+          }
+        }
+      ]
+    },
+    "snapshot": {
+      "valid": [
+        {
+          "runId": "r7f3a91c2"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "empty runId",
+          "d": {
+            "runId": ""
+          }
+        }
+      ]
+    },
+    "log": {
+      "valid": [
+        {
+          "batch": [
+            {
+              "$ref": "replayEvent"
+            }
+          ]
+        },
+        {
+          "batch": []
+        }
+      ],
+      "invalid": [
+        {
+          "why": "not array",
+          "d": {
+            "batch": {
+              "op": "buy"
+            }
+          }
+        }
+      ]
+    },
+    "match_left": {
+      "valid": [
+        {
+          "how": "continue_sp"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "how",
+          "d": {
+            "how": "rage_quit"
+          }
+        }
+      ]
+    },
+    "deck_res_local": {
+      "valid": [
+        {
+          "cards": "H-A-m_glass-e_foil-Red"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "cards missing",
+          "d": {}
+        }
+      ]
+    },
+    "stats_local": {
+      "valid": [
+        {
+          "reroll_count": 1,
+          "reroll_cost_total": 5,
+          "vouchers": []
+        }
+      ],
+      "invalid": [
+        {
+          "why": "vouchers missing",
+          "d": {
+            "reroll_count": 1,
+            "reroll_cost_total": 5
+          }
+        }
+      ]
+    },
+    "test_res": {
+      "valid": [
+        {
+          "id": "q1",
+          "ok": true,
+          "data": {
+            "state": "SHOP"
+          }
+        },
+        {
+          "id": "q2",
+          "ok": false
+        }
+      ],
+      "invalid": [
+        {
+          "why": "ok missing",
+          "d": {
+            "id": "q1"
+          }
+        }
+      ]
+    }
+  },
+  "j2l": {
+    "mp_pack": {
+      "valid": [
+        {
+          "status": "loading",
+          "progress": 0.5
+        },
+        {
+          "status": "error",
+          "error": "network"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "progress 2",
+          "d": {
+            "status": "loading",
+            "progress": 2
+          }
+        }
+      ]
+    },
+    "net_status": {
+      "valid": [
+        {
+          "hub": "connected",
+          "account": {
+            "name": "Alice",
+            "avatarUrl": null
+          }
+        },
+        {
+          "hub": "offline",
+          "reason": "auth-required",
+          "account": {
+            "name": "",
+            "avatarUrl": "https://cdn.example/a.png"
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "account missing",
+          "d": {
+            "hub": "connected"
+          }
+        }
+      ]
+    },
+    "lobby_view": {
+      "valid": [
+        {
+          "state": {
+            "$ref": "lobbyState"
+          },
+          "me": "u_bob",
+          "isHost": false,
+          "canStart": false,
+          "startBlockReason": "not-ready"
+        },
+        {
+          "state": {
+            "$ref": "lobbyStateStarted"
+          },
+          "me": "u_alice",
+          "isHost": true,
+          "canStart": true
+        }
+      ],
+      "invalid": [
+        {
+          "why": "state missing",
+          "d": {
+            "me": "u_bob",
+            "isHost": false,
+            "canStart": false
+          }
+        }
+      ]
+    },
+    "lobby_error": {
+      "valid": [
+        {
+          "code": "version-mismatch"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "code missing",
+          "d": {}
+        }
+      ]
+    },
+    "toast": {
+      "valid": [
+        {
+          "key": "k_mp_trap_fizzled"
+        },
+        {
+          "key": "k_mp_catching_up",
+          "vars": {
+            "name": "Bob",
+            "n": 3
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "var type",
+          "d": {
+            "key": "k",
+            "vars": {
+              "a": true
+            }
+          }
+        }
+      ]
+    },
+    "setup_view": {
+      "valid": [
+        {
+          "$ref": "setupView"
+        },
+        {
+          "$ref": "setupDraft"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "kind",
+          "d": {
+            "stepId": "s1",
+            "kind": "poll",
+            "phase": "voting",
+            "msLeft": 15000,
+            "options": [
+              {
+                "id": "ruleset_mp_vanilla"
+              },
+              {
+                "id": "ruleset_mp_balanced"
+              }
+            ],
+            "voted": 1,
+            "voters": 2,
+            "result": null,
+            "draft": null
+          }
+        }
+      ]
+    },
+    "queue_view": {
+      "valid": [
+        {
+          "state": "searching",
+          "queueMode": "pvp_nemesis",
+          "waiting": 1
+        },
+        {
+          "state": "idle",
+          "queueMode": "pvp_royale"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "state",
+          "d": {
+            "state": "x",
+            "queueMode": "pvp_royale"
+          }
+        }
+      ]
+    },
+    "chat_line": {
+      "valid": [
+        {
+          "from": "u_bob",
+          "name": "Bob",
+          "text": "hi",
+          "kind": "in"
+        },
+        {
+          "from": "u_alice",
+          "name": "",
+          "text": "Bob voted for a draw",
+          "kind": "system"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "kind",
+          "d": {
+            "from": "u",
+            "name": "U",
+            "text": "x",
+            "kind": "shout"
+          }
+        }
+      ]
+    },
+    "vote_progress": {
+      "valid": [
+        {
+          "kind": "seed",
+          "k": 1,
+          "n": 2
+        }
+      ],
+      "invalid": [
+        {
+          "why": "n missing",
+          "d": {
+            "kind": "seed",
+            "k": 1
+          }
+        }
+      ]
+    },
+    "match_start": {
+      "valid": [
+        {
+          "runId": "r7f3a91c2",
+          "seed": "ABCD1234",
+          "stake": 1,
+          "mpStake": null,
+          "deck": "b_red",
+          "challenge": null,
+          "queueMode": "pvp_nemesis",
+          "shape": {
+            "nemesisPairing": true,
+            "manhunt": false,
+            "teamBased": false
+          },
+          "ruleset": "ruleset_mp_balanced",
+          "layers": ["standard", "pvp_timer"],
+          "options": {
+            "$ref": "lobbyOptions"
+          },
+          "resolved": {
+            "$ref": "resolved"
+          },
+          "roster": [
+            {
+              "id": "u_alice",
+              "name": "Alice",
+              "blindCol": 1,
+              "avatarJoker": "j_joker"
+            },
+            {
+              "id": "u_bob",
+              "name": "Bob",
+              "blindCol": 5,
+              "avatarJoker": "j_greedy_joker"
+            }
+          ],
+          "startedAt": 1761800000000,
+          "hostId": "u_alice",
+          "contentHash": "0123456789abcdef01234567-v1",
+          "me": "u_bob"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "me missing",
+          "d": {
+            "$ref": "startedMatch"
+          }
+        }
+      ]
+    },
+    "practice_start": {
+      "valid": [
+        {
+          "resolved": {
+            "$ref": "resolved"
+          },
+          "deck": "b_red",
+          "stake": 1,
+          "seed": null
+        },
+        {
+          "resolved": {
+            "$ref": "resolved"
+          },
+          "deck": "b_red",
+          "stake": 3,
+          "seed": "PRAC7"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "resolved missing",
+          "d": {
+            "deck": "b_red",
+            "stake": 1,
+            "seed": null
+          }
+        }
+      ]
+    },
+    "outcome": {
+      "valid": [
+        {
+          "o": {
+            "t": "player_lives",
+            "player_id": "*all*",
+            "lives": 4
+          },
+          "hs": 0
+        },
+        {
+          "o": {
+            "t": "player_lives",
+            "player_id": "u_bob",
+            "lives": 2,
+            "lost": 1
+          },
+          "hs": 1
+        },
+        {
+          "o": {
+            "t": "team_lives",
+            "team_id": "A",
+            "lives": 3
+          },
+          "hs": 2
+        },
+        {
+          "o": {
+            "t": "team_roster",
+            "roster": {
+              "u_alice": "A",
+              "u_bob": "B"
+            }
+          },
+          "hs": 3
+        },
+        {
+          "o": {
+            "t": "nemesis_pairing",
+            "pairing": {
+              "u_alice": "u_bob",
+              "u_bob": "u_alice",
+              "u_carl": ""
+            },
+            "ante": 2
+          },
+          "hs": 4
+        },
+        {
+          "o": {
+            "t": "team_card_target",
+            "pairing": {
+              "u_alice": "u_bob"
+            }
+          },
+          "hs": 5
+        },
+        {
+          "o": {
+            "t": "royale_target",
+            "targets": {
+              "u_alice": "u_bob",
+              "u_bob": ""
+            }
+          },
+          "hs": 6
+        },
+        {
+          "o": {
+            "t": "manhunt_target",
+            "target_id": ""
+          },
+          "hs": 7
+        },
+        {
+          "o": {
+            "t": "team_score_board",
+            "team_scores": {
+              "A": "100",
+              "B": "2.5e+20"
+            }
+          },
+          "hs": 8
+        },
+        {
+          "o": {
+            "t": "start_blind",
+            "first_player": "u_alice",
+            "starting_hands": {
+              "u_alice": 4,
+              "u_bob": 5
+            }
+          },
+          "hs": 9
+        },
+        {
+          "o": {
+            "t": "timer_hand_lost",
+            "player_id": "u_bob"
+          },
+          "hs": 10
+        },
+        {
+          "o": {
+            "t": "end_pvp",
+            "loser_id": "",
+            "pvp_timer_lost": false
+          },
+          "hs": 11
+        },
+        {
+          "o": {
+            "t": "death_pending",
+            "player_id": "u_bob",
+            "opponent_id": "u_alice",
+            "blind_key": "3:Big"
+          },
+          "hs": 12
+        },
+        {
+          "o": {
+            "t": "death_pending",
+            "team_id": "RUNNER",
+            "blind_key": "4:Small"
+          },
+          "hs": 13
+        },
+        {
+          "o": {
+            "t": "eliminated",
+            "player_id": "u_carl"
+          },
+          "hs": 14
+        },
+        {
+          "o": {
+            "t": "win",
+            "winner_id": "u_alice"
+          },
+          "hs": 15
+        },
+        {
+          "o": {
+            "t": "win",
+            "draw": true
+          },
+          "hs": 16
+        },
+        {
+          "o": {
+            "t": "win",
+            "winner_team_id": "HUNTER",
+            "places": {
+              "u_alice": 1,
+              "u_bob": 2
+            }
+          },
+          "hs": 17
+        },
+        {
+          "o": {
+            "t": "player_won",
+            "player_id": "u_alice"
+          },
+          "hs": 18
+        },
+        {
+          "o": {
+            "t": "reseed",
+            "seed": "ZZ99XX11"
+          },
+          "hs": 19
+        },
+        {
+          "o": {
+            "t": "speedrun",
+            "player_id": "u_bob"
+          },
+          "hs": 20
+        },
+        {
+          "o": {
+            "t": "vote_progress",
+            "kind": "draw",
+            "k": 1,
+            "n": 2
+          },
+          "hs": 21
+        }
+      ],
+      "invalid": [
+        {
+          "why": "unknown msg",
+          "d": {
+            "o": {
+              "t": "nuke"
+            },
+            "hs": 1
+          }
+        },
+        {
+          "why": "negative hs",
+          "d": {
+            "o": {
+              "t": "eliminated",
+              "player_id": "u"
+            },
+            "hs": -1
+          }
+        }
+      ]
+    },
+    "peer": {
+      "valid": [
+        {
+          "k": "location",
+          "from": "u_bob",
+          "d": {
+            "loc": "loc_shop"
+          }
+        },
+        {
+          "k": "stats_res",
+          "from": "u_bob",
+          "d": {
+            "reroll_count": 0,
+            "reroll_cost_total": 0,
+            "vouchers": []
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "from missing",
+          "d": {
+            "k": "location",
+            "d": {
+              "loc": "loc_shop"
+            }
+          }
+        }
+      ]
+    },
+    "timer_state": {
+      "valid": [
+        {
+          "value": 150,
+          "mode": "ante",
+          "ticking": false,
+          "beingTimered": false,
+          "timering": false,
+          "pressable": true,
+          "auto": false,
+          "color": "orange",
+          "display": null
+        },
+        {
+          "value": 150,
+          "mode": "pvp",
+          "ticking": true,
+          "beingTimered": false,
+          "timering": false,
+          "pressable": true,
+          "auto": false,
+          "color": "important",
+          "display": ">>"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "display",
+          "d": {
+            "value": 150,
+            "mode": "ante",
+            "ticking": false,
+            "beingTimered": false,
+            "timering": false,
+            "pressable": true,
+            "auto": false,
+            "color": "orange",
+            "display": "<<"
+          }
+        }
+      ]
+    },
+    "timer_cue": {
+      "valid": [{}],
+      "invalid": []
+    },
+    "presence": {
+      "valid": [
+        {
+          "id": "u_bob",
+          "status": "catching_up"
+        },
+        {
+          "id": "u_bob",
+          "status": "away",
+          "graceMsLeft": 110000
+        }
+      ],
+      "invalid": [
+        {
+          "why": "status",
+          "d": {
+            "id": "u_bob",
+            "status": "nap"
+          }
+        }
+      ]
+    },
+    "host_changed": {
+      "valid": [
+        {
+          "hostId": "u_bob"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "hostId missing",
+          "d": {}
+        }
+      ]
+    },
+    "rejoin_restore": {
+      "valid": [
+        {
+          "runId": "r7f3a91c2",
+          "snapshotPath": "/rmh/mp/run.jkr",
+          "statePath": "/rmh/mp/state.json"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "other path",
+          "d": {
+            "runId": "r",
+            "snapshotPath": "/Balatro/1/save.jkr",
+            "statePath": "/rmh/mp/state.json"
+          }
+        }
+      ]
+    },
+    "tail": {
+      "valid": [
+        {
+          "id": "u_alice",
+          "results": [
+            {
+              "$ref": "handResult"
+            }
+          ]
+        }
+      ],
+      "invalid": [
+        {
+          "why": "results missing",
+          "d": {
+            "id": "u_alice"
+          }
+        }
+      ]
+    },
+    "end_data": {
+      "valid": [
+        {
+          "players": {
+            "u_alice": {
+              "$ref": "playerResult"
+            }
+          }
+        },
+        {
+          "players": {},
+          "deck": {
+            "cards": "H-A---"
+          },
+          "stats": {
+            "reroll_count": 2,
+            "reroll_cost_total": 10,
+            "vouchers": ["v_hone"]
+          }
+        }
+      ],
+      "invalid": [
+        {
+          "why": "players missing",
+          "d": {}
+        }
+      ]
+    },
+    "replay_view": {
+      "valid": [
+        {
+          "list": [
+            {
+              "id": "m_1",
+              "at": 1761800000000,
+              "queueMode": "pvp_nemesis",
+              "ruleset": "ruleset_mp_balanced",
+              "players": ["Alice", "Bob"],
+              "result": "win"
+            }
+          ]
+        },
+        {
+          "playing": {
+            "id": "m_1",
+            "pov": "u_alice",
+            "pos": 10,
+            "len": 300
+          },
+          "speed": 2
+        },
+        {
+          "playing": null
+        }
+      ],
+      "invalid": [
+        {
+          "why": "speed negative",
+          "d": {
+            "speed": -1
+          }
+        }
+      ]
+    },
+    "replay_feed": {
+      "valid": [
+        {
+          "pov": "u_alice",
+          "events": [
+            {
+              "$ref": "replayEvent"
+            }
+          ]
+        }
+      ],
+      "invalid": [
+        {
+          "why": "pov missing",
+          "d": {
+            "events": []
+          }
+        }
+      ]
+    },
+    "spectate_view": {
+      "valid": [
+        {
+          "lobbies": [
+            {
+              "code": "ABC234",
+              "queueMode": "pvp_nemesis",
+              "players": 2,
+              "ante": 3
+            },
+            {
+              "code": "XYZ789",
+              "queueMode": "pvp_royale",
+              "players": 5,
+              "ante": null
+            }
+          ]
+        },
+        {
+          "lobbies": [],
+          "error": "offline"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "lobbies missing",
+          "d": {}
+        },
+        {
+          "why": "bad queue mode",
+          "d": {
+            "lobbies": [
+              {
+                "code": "abc",
+                "queueMode": "pvp_unknown",
+                "players": 2,
+                "ante": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "history": {
+      "valid": [
+        {
+          "wins": 3,
+          "losses": 2,
+          "games": 5,
+          "pvpGames": 5,
+          "streak": 1,
+          "days": 2
+        }
+      ],
+      "invalid": [
+        {
+          "why": "days missing",
+          "d": {
+            "wins": 3,
+            "losses": 2,
+            "games": 5,
+            "pvpGames": 5,
+            "streak": 1
+          }
+        }
+      ]
+    },
+    "glyphs": {
+      "valid": [
+        {
+          "fontKey": "m6x11plus",
+          "path": "/Balatro/rmh_mp/glyphs.bin"
+        }
+      ],
+      "invalid": [
+        {
+          "why": "path",
+          "d": {
+            "fontKey": "x",
+            "path": "/tmp/g.bin"
+          }
+        }
+      ]
+    },
+    "test_cmd": {
+      "valid": [
+        {
+          "id": "c1",
+          "cmd": "give",
+          "args": ["j_mp_pizza"]
+        },
+        {
+          "id": "c2",
+          "cmd": "state",
+          "args": []
+        }
+      ],
+      "invalid": [
+        {
+          "why": "args not array",
+          "d": {
+            "id": "c1",
+            "cmd": "give",
+            "args": "j"
+          }
+        }
+      ]
+    }
+  }
+}

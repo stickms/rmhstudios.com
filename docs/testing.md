@@ -202,6 +202,15 @@ different build number than the pinned Playwright version, and
 is the same variable `scripts/perf/canvas2d-probe.mjs` reads; both epic launch
 sites go through `scripts/epic/browser.ts`.
 
+#### Game suites (`vitest.tf2.config.ts`, `vitest.balatro.config.ts`)
+
+Gameplay tests for the browser games run in their own suites, which the main
+config excludes glob for glob: `pnpm test:tf2` (TF2, HL2, Portal) and
+`pnpm test:balatro` (multiplayer Balatro, including its Lua specs, which need
+`lua5.1` and fail without it). `pnpm test:balatro:e2e` is the Balatro browser
+suite. Their workflows (`tf2-game-tests.yml`, `balatro-mp-tests.yml`) are
+path-filtered.
+
 ### 3. Go tests (Bazel)
 
 `make test` from the repo root runs `bazelisk test --build_tests_only
