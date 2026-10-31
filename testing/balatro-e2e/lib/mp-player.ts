@@ -20,6 +20,21 @@ import { turboOn, turboSetting } from './turbo';
 
 export const MP_BOOT_TIMEOUT_MS = Number(process.env.BALATRO_E2E_BOOT_TIMEOUT_MS ?? 300_000);
 
+/** How long a command waits for its answer when the caller names no timeout. */
+export const CMD_TIMEOUT_MS = 120_000;
+
+/**
+ * Commands whose own Lua waits add up to more than CMD_TIMEOUT_MS
+ * (lib/balatro/lua/mp_test/autopilot.lua, AP.default_wait = 120 s per wait). The page must
+ * outwait the Lua side: the Lua timeout names what it waited for ("timeout: state SHOP (now
+ * SHOP)"), while a page timeout only says the command took too long, and a slow but correct
+ * command would fail. leave_shop waits for the shop (120 s), the next-round button (120 s)
+ * and blind select (120 s).
+ */
+export const CMD_BUDGET_MS: Readonly<Record<string, number>> = {
+  leave_shop: 3 * 120_000 + 20_000,
+};
+
 /** The session runtime's snapshot (lib/balatro/mp/lobby/runtime.ts RuntimeSnapshot). */
 export interface MpSnap {
   me: string | null;
@@ -165,7 +180,7 @@ export async function openMpPlayer(
   const cmd = async <T>(
     c: string,
     args: unknown[] | Record<string, unknown> = [],
-    timeoutMs = 120_000,
+    timeoutMs = CMD_BUDGET_MS[c] ?? CMD_TIMEOUT_MS,
   ): Promise<T> =>
     page.evaluate(
       ([c2, a, t]) =>
