@@ -139,5 +139,6 @@
   "jelly-motion-still": "정지",
   "pause-ambient-motion": "주변 움직임 일시 중지",
   "pause-ambient-motion-off": "젤리 표면이 스스로 움직이지 않게 합니다.",
-  "pause-ambient-motion-on": "일시 중지됨. 탭하여 다시 시작하세요."
+  "pause-ambient-motion-on": "일시 중지됨. 탭하여 다시 시작하세요.",
+  "jelly-motion-preview": "미리보기: 이 카드에 마우스를 올리거나 눌러 움직임을 확인하세요."
 }

@@ -139,5 +139,6 @@
   "jelly-motion-still": "ساكن",
   "pause-ambient-motion": "إيقاف الحركة المحيطة مؤقتًا",
   "pause-ambient-motion-off": "يوقف تحرك أسطح الهلام من تلقاء نفسها.",
-  "pause-ambient-motion-on": "متوقف مؤقتًا. اضغط للاستئناف."
+  "pause-ambient-motion-on": "متوقف مؤقتًا. اضغط للاستئناف.",
+  "jelly-motion-preview": "معاينة: مرّر المؤشر فوق هذه البطاقة أو اضغط عليها لترى كيف تتحرك."
 }

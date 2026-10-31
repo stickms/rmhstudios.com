@@ -139,5 +139,6 @@
   "jelly-motion-still": "Durgun",
   "pause-ambient-motion": "Ortam hareketini duraklat",
   "pause-ambient-motion-off": "Jöle yüzeylerin kendi kendine hareket etmesini durdurur.",
-  "pause-ambient-motion-on": "Duraklatıldı. Devam etmek için dokunun."
+  "pause-ambient-motion-on": "Duraklatıldı. Devam etmek için dokunun.",
+  "jelly-motion-preview": "Önizleme: Nasıl hareket ettiğini görmek için bu karta gelin veya basın."
 }

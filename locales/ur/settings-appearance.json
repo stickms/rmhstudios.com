@@ -139,5 +139,6 @@
   "jelly-motion-still": "ساکن",
   "pause-ambient-motion": "محیطی حرکت روکیں",
   "pause-ambient-motion-off": "جیلی سطحوں کی خود بخود حرکت روکتا ہے۔",
-  "pause-ambient-motion-on": "روکا گیا۔ دوبارہ شروع کرنے کے لیے تھپتھپائیں۔"
+  "pause-ambient-motion-on": "روکا گیا۔ دوبارہ شروع کرنے کے لیے تھپتھپائیں۔",
+  "jelly-motion-preview": "پیش نظارہ: اس کارڈ پر ہوور کریں یا دبائیں تاکہ دیکھ سکیں کہ یہ کیسے حرکت کرتا ہے۔"
 }
