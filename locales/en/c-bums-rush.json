@@ -169,6 +169,7 @@
   "mode.sub": "Everything here plays with a controller, a keyboard, or two thumbs.",
   "nav.back": "Back",
   "nav.back-map": "World map",
+  "net.host-left": "The host left, so this run ended. Back to the map.",
   "objective.clock": "Finish inside par time",
   "objective.flawless": "Clear it without dying once",
   "objective.haul_one": "Carry every relic to the goal",
