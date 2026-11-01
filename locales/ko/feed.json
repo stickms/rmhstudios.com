@@ -1456,6 +1456,11 @@
   "your-ratings": "내 평점",
   "your-top-post": "내 인기 게시물",
   "your-year-on-rmh": "RMH에서의 회원님의 한 해",
+  "muted-duration-label": "뮤트 기간",
+  "muted-duration-forever": "제거할 때까지",
+  "muted-duration-day": "1일",
+  "muted-duration-week": "1주",
+  "muted-duration-month": "30일",
   "activity-title": "게시 활동",
   "activity-summary": "최근 {{weeks}}주간 게시물: {{total}}"
 }

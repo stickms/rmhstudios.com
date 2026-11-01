@@ -1501,6 +1501,11 @@
   "your-ratings": "आपकी रेटिंग",
   "your-top-post": "आपकी शीर्ष पोस्ट",
   "your-year-on-rmh": "RMH पर आपका वर्ष",
+  "muted-duration-label": "कितने समय के लिए म्यूट करें",
+  "muted-duration-forever": "जब तक मैं हटा न दूँ",
+  "muted-duration-day": "1 दिन",
+  "muted-duration-week": "1 सप्ताह",
+  "muted-duration-month": "30 दिन",
   "activity-title": "पोस्टिंग गतिविधि",
   "activity-summary": "पिछले {{weeks}} सप्ताहों में पोस्ट: {{total}}"
 }

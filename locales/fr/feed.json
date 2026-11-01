@@ -1546,6 +1546,11 @@
   "your-ratings": "Vos évaluations",
   "your-top-post": "Votre meilleure publication",
   "your-year-on-rmh": "Votre année sur RMH",
+  "muted-duration-label": "Durée du masquage",
+  "muted-duration-forever": "Jusqu'à ce que je le retire",
+  "muted-duration-day": "1 jour",
+  "muted-duration-week": "1 semaine",
+  "muted-duration-month": "30 jours",
   "activity-title": "Activité de publication",
   "activity-summary": "Publications des {{weeks}} dernières semaines : {{total}}"
 }

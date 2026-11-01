@@ -1456,6 +1456,11 @@
   "your-ratings": "Đánh giá của bạn",
   "your-top-post": "Bài viết hàng đầu của bạn",
   "your-year-on-rmh": "Năm của bạn trên RMH",
+  "muted-duration-label": "Thời gian ẩn",
+  "muted-duration-forever": "Cho đến khi tôi xóa",
+  "muted-duration-day": "1 ngày",
+  "muted-duration-week": "1 tuần",
+  "muted-duration-month": "30 ngày",
   "activity-title": "Hoạt động đăng bài",
   "activity-summary": "Bài đăng trong {{weeks}} tuần qua: {{total}}"
 }

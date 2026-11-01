@@ -1456,6 +1456,11 @@
   "your-ratings": "您的评分",
   "your-top-post": "你的置顶帖子",
   "your-year-on-rmh": "你在RMH的一年",
+  "muted-duration-label": "静音时长",
+  "muted-duration-forever": "直到我移除",
+  "muted-duration-day": "1 天",
+  "muted-duration-week": "1 周",
+  "muted-duration-month": "30 天",
   "activity-title": "发帖活动",
   "activity-summary": "过去 {{weeks}} 周的帖子数：{{total}}"
 }
