@@ -11,6 +11,19 @@ import { TEAM_COLORS } from '@/lib/kowloon-knockout/game/config';
 
 export default function MultiplayerLobby() {
     const { t } = useTranslation('c-kowloon-knockout');
+
+    // The hub and client report fixed English phrases; show them in the player's language.
+    const errorText = (message: string): string => {
+        switch (message) {
+            case 'Disconnected': return t('err-disconnected', { defaultValue: 'Connection lost. The match could not be resumed.' });
+            case 'Host left the room': return t('err-host-left', { defaultValue: 'The host left, so the match has ended.' });
+            case 'Room closed': return t('err-room-closed', { defaultValue: 'That match has already ended.' });
+            case 'Room not found': return t('err-room-not-found', { defaultValue: 'Room not found.' });
+            case 'Room is full': return t('err-room-full', { defaultValue: 'That room is full.' });
+            case 'Match already in progress': return t('err-in-progress', { defaultValue: 'That match has already started.' });
+            default: return message;
+        }
+    };
     const {
         selectedClass, setSelectedClass, resetMultiplayer, setPhase,
         lobbySeats, localSeat, isHost, mode, playerCount, roomCode, isPublic, mpError, setMpError,
@@ -239,7 +252,7 @@ export default function MultiplayerLobby() {
                 )}
             </AnimatePresence>
 
-            {mpError && <div className="lobby-error">{mpError}</div>}
+            {mpError && <div className="lobby-error" role="alert">{errorText(mpError)}</div>}
 
             {!inRoom && (
                 <motion.button className="neon-button neon-button-back" onClick={handleBack} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>

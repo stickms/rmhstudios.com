@@ -18,6 +18,19 @@ const GameView = lazy(() => import('@/components/kowloon-knockout/arena/GameView
 export default function KowloonKnockout() {
   const { t } = useTranslation("c-kowloon-knockout");
   const { phase, setPhase } = useGameStore();
+  const netReconnecting = useGameStore((st) => st.netReconnecting);
+  const offlineSeats = useGameStore((st) => st.offlineSeats);
+  const localSeat = useGameStore((st) => st.localSeat);
+  const inFight = phase === 'fight' || phase === 'countdown';
+  // The fight is host-authoritative, so what a player can usefully be told depends on who dropped.
+  let netNotice: string | null = null;
+  if (inFight && netReconnecting) {
+    netNotice = t('net-reconnecting', { defaultValue: 'Connection lost. Reconnecting to the match...' });
+  } else if (inFight && offlineSeats.includes(0) && localSeat !== 0) {
+    netNotice = t('net-host-offline', { defaultValue: 'The host lost connection. Waiting for them to return...' });
+  } else if (inFight && offlineSeats.some((x) => x !== localSeat)) {
+    netNotice = t('net-peer-offline', { defaultValue: 'A player lost connection. A CPU takes their place if they do not return.' });
+  }
   // Session contract: screen on through a fight. A fight has no pause (online
   // rounds can't stop), so there is no onPause.
   useGameSession({ id: 'kowloon-knockout', active: phase === 'fight' || phase === 'countdown' });
@@ -32,6 +45,11 @@ export default function KowloonKnockout() {
 
   return (
     <div className="kowloon-knockout">
+      {netNotice && (
+        <div className="kk-net-notice" role="status" aria-live="polite">
+          {netNotice}
+        </div>
+      )}
       <div className="app-container">
         <AnimatePresence mode="wait">
           {phase === 'menu' && (
