@@ -88,6 +88,12 @@ interface Seat {
   /** Running report from this player's client. Reset at every match start. */
   report: ScoreReport;
   done: boolean;
+  /**
+   * False while the player's socket is gone mid-match. The seat is held (score
+   * and place intact) so a dropped connection can resume the same race instead
+   * of being unseated and locked out by `match-in-progress`.
+   */
+  connected: boolean;
 }
 
 interface Lobby {
@@ -103,6 +109,12 @@ interface Lobby {
   difficulty: Difficulty;
   state: 'waiting' | 'countdown' | 'playing' | 'results';
   seats: Map<string, Seat>;
+  /**
+   * Live socket id -> seat key, for a player who rejoined on a NEW socket
+   * mid-match. The seat key (the original socket id) stays the player's
+   * identity everywhere clients already look: roster, scores, host.
+   */
+  alias: Map<string, string>;
   seed: number;
   startedAt: number;
   deadline: number;
@@ -253,6 +265,7 @@ function createLobby(options: {
     difficulty: options.difficulty,
     state: 'waiting',
     seats: new Map(),
+    alias: new Map(),
     seed: 0,
     startedAt: 0,
     deadline: 0,
@@ -272,9 +285,23 @@ function createLobby(options: {
  */
 function seat(io: Server, socket: Socket, lobby: Lobby): boolean {
   const who = identity(socket);
-  const existing = lobby.seats.get(socket.id);
+  const existing = lobby.seats.get(keyOf(lobby, socket.id));
 
   if (!existing) {
+    // Reconnecting mid-match: take the held seat back by user id.
+    if (lobby.state === 'playing') {
+      for (const [key, held] of lobby.seats) {
+        if (held.connected || held.userId !== who.userId) continue;
+        held.connected = true;
+        lobby.alias.set(socket.id, key);
+        socketLobby.set(socket.id, lobby.code);
+        socket.join(roomName(lobby.code));
+        touch(lobby);
+        socket.emit(S2C.JOINED, { code: lobby.code, socketId: key });
+        broadcastLobby(io, lobby);
+        return true;
+      }
+    }
     if (lobby.seats.size >= MAX_LOBBY_PLAYERS) {
       fail(socket, 'lobby-full');
       return false;
@@ -291,6 +318,7 @@ function seat(io: Server, socket: Socket, lobby: Lobby): boolean {
       ready: false,
       report: emptyReport(),
       done: false,
+      connected: true,
     });
   }
 
@@ -305,12 +333,12 @@ function seat(io: Server, socket: Socket, lobby: Lobby): boolean {
   socketLobby.set(socket.id, lobby.code);
   socket.join(roomName(lobby.code));
   touch(lobby);
-  socket.emit(S2C.JOINED, { code: lobby.code, socketId: socket.id });
+  socket.emit(S2C.JOINED, { code: lobby.code, socketId: keyOf(lobby, socket.id) });
   broadcastLobby(io, lobby);
   return true;
 }
 
-function unseat(io: Server, socketId: string): void {
+function unseat(io: Server, socketId: string, options: { hold?: boolean } = {}): void {
   const code = socketLobby.get(socketId);
   socketLobby.delete(socketId);
   if (!code) return;
@@ -323,7 +351,20 @@ function unseat(io: Server, socketId: string): void {
   const lobby = lobbies.get(code);
   if (!lobby) return;
 
-  lobby.seats.delete(socketId);
+  const key = keyOf(lobby, socketId);
+  lobby.alias.delete(socketId);
+
+  // A dropped connection mid-race keeps its seat; only an explicit leave frees it.
+  const held = lobby.seats.get(key);
+  if (options.hold && held && !held.done && lobby.state === 'playing') {
+    held.connected = false;
+    touch(lobby);
+    if (allDone(lobby)) finishMatch(io, lobby);
+    else broadcastLobby(io, lobby);
+    return;
+  }
+
+  lobby.seats.delete(key);
   touch(lobby);
 
   if (lobby.seats.size === 0) {
@@ -331,7 +372,7 @@ function unseat(io: Server, socketId: string): void {
     return;
   }
 
-  if (lobby.hostSocketId === socketId) {
+  if (lobby.hostSocketId === key) {
     const next = lobby.seats.keys().next().value;
     if (next) {
       lobby.hostSocketId = next;
@@ -347,9 +388,15 @@ function unseat(io: Server, socketId: string): void {
   }
 }
 
+/** The seat key a live socket plays under (itself, unless it rejoined mid-match). */
+function keyOf(lobby: Lobby, socketId: string): string {
+  return lobby.alias.get(socketId) ?? socketId;
+}
+
 function allDone(lobby: Lobby): boolean {
   if (lobby.seats.size === 0) return true;
-  for (const s of lobby.seats.values()) if (!s.done) return false;
+  // A held (disconnected) seat is not waited on; the deadline settles it.
+  for (const s of lobby.seats.values()) if (!s.done && s.connected) return false;
   return true;
 }
 
@@ -465,6 +512,14 @@ function finishMatch(io: Server, lobby: Lobby): void {
   void persistVersusResults(standings).catch((error) => {
     logger.error({ event: 'laundry_versus_persist_failed', error: String(error) });
   });
+
+  // Seats still held for a connection that never came back are released now;
+  // they are in the standings above.
+  for (const [key, s] of [...lobby.seats]) if (!s.connected) lobby.seats.delete(key);
+  if (!lobby.seats.has(lobby.hostSocketId)) {
+    const next = lobby.seats.keys().next().value;
+    if (next) lobby.hostSocketId = next;
+  }
 
   // Straight back to a joinable lobby so a rematch is one click.
   lobby.state = 'waiting';
@@ -620,7 +675,7 @@ export function registerLaundrySortHandlers(io: Server, socket: Socket): void {
       fail(socket, 'not-in-lobby');
       return null;
     }
-    if (lobby.hostSocketId !== socket.id) {
+    if (lobby.hostSocketId !== keyOf(lobby, socket.id)) {
       fail(socket, 'host-only');
       return null;
     }
@@ -728,7 +783,7 @@ export function registerLaundrySortHandlers(io: Server, socket: Socket): void {
     if (!checkRateLimit(socket.id, C2S.READY)) return fail(socket, 'rate-limited');
     const lobby = myLobby();
     if (!lobby || lobby.state !== 'waiting') return;
-    const s = lobby.seats.get(socket.id);
+    const s = lobby.seats.get(keyOf(lobby, socket.id));
     if (!s) return;
     s.ready = (payload as { ready?: unknown } | undefined)?.ready !== false;
     touch(lobby);
@@ -739,7 +794,7 @@ export function registerLaundrySortHandlers(io: Server, socket: Socket): void {
     if (!checkRateLimit(socket.id, C2S.REMATCH)) return fail(socket, 'rate-limited');
     const lobby = myLobby();
     if (!lobby || lobby.state !== 'waiting') return;
-    const s = lobby.seats.get(socket.id);
+    const s = lobby.seats.get(keyOf(lobby, socket.id));
     if (!s) return;
     s.ready = true;
     touch(lobby);
@@ -790,7 +845,7 @@ export function registerLaundrySortHandlers(io: Server, socket: Socket): void {
     if (!checkRateLimit(socket.id, C2S.SCORE)) return;
     const lobby = myLobby();
     if (!lobby || lobby.state !== 'playing') return;
-    const s = lobby.seats.get(socket.id);
+    const s = lobby.seats.get(keyOf(lobby, socket.id));
     if (!s || s.done) return;
     s.report = sanitizeReport(payload);
   });
@@ -799,7 +854,7 @@ export function registerLaundrySortHandlers(io: Server, socket: Socket): void {
     if (!checkRateLimit(socket.id, C2S.FINISH)) return;
     const lobby = myLobby();
     if (!lobby || lobby.state !== 'playing') return;
-    const s = lobby.seats.get(socket.id);
+    const s = lobby.seats.get(keyOf(lobby, socket.id));
     if (!s || s.done) return;
     s.report = sanitizeReport(payload);
     s.done = true;
@@ -808,5 +863,5 @@ export function registerLaundrySortHandlers(io: Server, socket: Socket): void {
 }
 
 export function handleLaundrySortDisconnect(io: Server, socket: Socket): void {
-  unseat(io, socket.id);
+  unseat(io, socket.id, { hold: true });
 }
