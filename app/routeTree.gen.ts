@@ -181,7 +181,10 @@ import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explore
 import { Route as GamesLibraryRouteImport } from './routes/games/_library'
 import { Route as GamesCommunitiesRouteImport } from './routes/games/communities'
 import { Route as GamesCommunityRouteImport } from './routes/games/community'
+import { Route as GamesDailyRouteImport } from './routes/games/daily'
 import { Route as GamesInventoryRouteImport } from './routes/games/inventory'
+import { Route as GamesMarketplaceRouteImport } from './routes/games/marketplace'
+import { Route as GamesMembershipRouteImport } from './routes/games/membership'
 import { Route as GamesShopRouteImport } from './routes/games/shop'
 import { Route as GamesStoreRouteImport } from './routes/games/store'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
@@ -2238,9 +2241,24 @@ const GamesCommunityRoute = GamesCommunityRouteImport.update({
   path: '/community',
   getParentRoute: () => GamesRoute,
 } as any)
+const GamesDailyRoute = GamesDailyRouteImport.update({
+  id: '/daily',
+  path: '/daily',
+  getParentRoute: () => GamesRoute,
+} as any)
 const GamesInventoryRoute = GamesInventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
+  getParentRoute: () => GamesRoute,
+} as any)
+const GamesMarketplaceRoute = GamesMarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
+  getParentRoute: () => GamesRoute,
+} as any)
+const GamesMembershipRoute = GamesMembershipRouteImport.update({
+  id: '/membership',
+  path: '/membership',
   getParentRoute: () => GamesRoute,
 } as any)
 const GamesShopRoute = GamesShopRouteImport.update({
@@ -8633,7 +8651,10 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/games/communities': typeof GamesCommunitiesRoute
   '/games/community': typeof GamesCommunityRoute
+  '/games/daily': typeof GamesDailyRoute
   '/games/inventory': typeof GamesInventoryRoute
+  '/games/marketplace': typeof GamesMarketplaceRoute
+  '/games/membership': typeof GamesMembershipRoute
   '/games/shop': typeof GamesShopRoute
   '/games/store': typeof GamesStoreRoute
   '/library/$slug': typeof LibrarySlugRoute
@@ -9974,7 +9995,10 @@ export interface FileRoutesByTo {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/games/communities': typeof GamesCommunitiesRoute
   '/games/community': typeof GamesCommunityRoute
+  '/games/daily': typeof GamesDailyRoute
   '/games/inventory': typeof GamesInventoryRoute
+  '/games/marketplace': typeof GamesMarketplaceRoute
+  '/games/membership': typeof GamesMembershipRoute
   '/games/shop': typeof GamesShopRoute
   '/games/store': typeof GamesStoreRoute
   '/library/$slug': typeof LibrarySlugRoute
@@ -11343,7 +11367,10 @@ export interface FileRoutesById {
   '/games/_library': typeof GamesLibraryRouteWithChildren
   '/games/communities': typeof GamesCommunitiesRoute
   '/games/community': typeof GamesCommunityRoute
+  '/games/daily': typeof GamesDailyRoute
   '/games/inventory': typeof GamesInventoryRoute
+  '/games/marketplace': typeof GamesMarketplaceRoute
+  '/games/membership': typeof GamesMembershipRoute
   '/games/shop': typeof GamesShopRoute
   '/games/store': typeof GamesStoreRoute
   '/library/$slug': typeof LibrarySlugRoute
@@ -12714,7 +12741,10 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/games/communities'
     | '/games/community'
+    | '/games/daily'
     | '/games/inventory'
+    | '/games/marketplace'
+    | '/games/membership'
     | '/games/shop'
     | '/games/store'
     | '/library/$slug'
@@ -14055,7 +14085,10 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/games/communities'
     | '/games/community'
+    | '/games/daily'
     | '/games/inventory'
+    | '/games/marketplace'
+    | '/games/membership'
     | '/games/shop'
     | '/games/store'
     | '/library/$slug'
@@ -15423,7 +15456,10 @@ export interface FileRouteTypes {
     | '/games/_library'
     | '/games/communities'
     | '/games/community'
+    | '/games/daily'
     | '/games/inventory'
+    | '/games/marketplace'
+    | '/games/membership'
     | '/games/shop'
     | '/games/store'
     | '/library/$slug'
@@ -18680,11 +18716,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesCommunityRouteImport
       parentRoute: typeof GamesRoute
     }
+    '/games/daily': {
+      id: '/games/daily'
+      path: '/daily'
+      fullPath: '/games/daily'
+      preLoaderRoute: typeof GamesDailyRouteImport
+      parentRoute: typeof GamesRoute
+    }
     '/games/inventory': {
       id: '/games/inventory'
       path: '/inventory'
       fullPath: '/games/inventory'
       preLoaderRoute: typeof GamesInventoryRouteImport
+      parentRoute: typeof GamesRoute
+    }
+    '/games/marketplace': {
+      id: '/games/marketplace'
+      path: '/marketplace'
+      fullPath: '/games/marketplace'
+      preLoaderRoute: typeof GamesMarketplaceRouteImport
+      parentRoute: typeof GamesRoute
+    }
+    '/games/membership': {
+      id: '/games/membership'
+      path: '/membership'
+      fullPath: '/games/membership'
+      preLoaderRoute: typeof GamesMembershipRouteImport
       parentRoute: typeof GamesRoute
     }
     '/games/shop': {
@@ -27625,7 +27682,10 @@ interface GamesRouteChildren {
   GamesLibraryRoute: typeof GamesLibraryRouteWithChildren
   GamesCommunitiesRoute: typeof GamesCommunitiesRoute
   GamesCommunityRoute: typeof GamesCommunityRoute
+  GamesDailyRoute: typeof GamesDailyRoute
   GamesInventoryRoute: typeof GamesInventoryRoute
+  GamesMarketplaceRoute: typeof GamesMarketplaceRoute
+  GamesMembershipRoute: typeof GamesMembershipRoute
   GamesShopRoute: typeof GamesShopRoute
   GamesStoreRoute: typeof GamesStoreRoute
   GamesGroupsSlugRoute: typeof GamesGroupsSlugRoute
@@ -27642,7 +27702,10 @@ const GamesRouteChildren: GamesRouteChildren = {
   GamesLibraryRoute: GamesLibraryRouteWithChildren,
   GamesCommunitiesRoute: GamesCommunitiesRoute,
   GamesCommunityRoute: GamesCommunityRoute,
+  GamesDailyRoute: GamesDailyRoute,
   GamesInventoryRoute: GamesInventoryRoute,
+  GamesMarketplaceRoute: GamesMarketplaceRoute,
+  GamesMembershipRoute: GamesMembershipRoute,
   GamesShopRoute: GamesShopRoute,
   GamesStoreRoute: GamesStoreRoute,
   GamesGroupsSlugRoute: GamesGroupsSlugRoute,

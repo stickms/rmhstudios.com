@@ -22,6 +22,9 @@ describe('steamTabFor', () => {
     expect(steamTabFor('/store')).toBe('store');
     expect(steamTabFor('/games/store')).toBe('store');
     expect(steamTabFor('/games/shop')).toBe('store');
+    expect(steamTabFor('/games/daily')).toBe('store');
+    expect(steamTabFor('/games/membership')).toBe('store');
+    expect(steamTabFor('/games/marketplace')).toBe('store');
     expect(steamTabFor('/games/communities')).toBe('community');
     expect(steamTabFor('/arcade')).toBe('arcade');
     expect(steamTabFor('/arcade/leaderboard')).toBe('arcade');
