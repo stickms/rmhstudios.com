@@ -281,7 +281,8 @@
       "source-map-js@<1.2.2": ">=1.2.2"
     },
     "patchedDependencies": {
-      "@discord/embedded-app-sdk@2.5.0": "patches/@discord__embedded-app-sdk@2.5.0.patch"
+      "@discord/embedded-app-sdk@2.5.0": "patches/@discord__embedded-app-sdk@2.5.0.patch",
+      "@react-three/drei@10.7.9": "patches/@react-three__drei@10.7.9.patch"
     }
   }
 }

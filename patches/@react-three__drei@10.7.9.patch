@@ -1,0 +1,33 @@
+diff --git a/web/Html.js b/web/Html.js
+index 81d68b7f4e9893a7d0b436a398bb38883d333374..aa9c5deabcf72198d212ff7421d99d4b84bfe4fe 100644
+--- a/web/Html.js
++++ b/web/Html.js
+@@ -140,7 +140,9 @@ const Html = /* @__PURE__ */React.forwardRef(({
+   }, [occlude]);
+   React.useLayoutEffect(() => {
+     if (group.current) {
+-      const currentRoot = root.current = ReactDOM.createRoot(el);
++      // Reuse a root whose deferred unmount (below) has not run yet — StrictMode re-runs this effect immediately.
++      const currentRoot = root.current = el.__pendingRoot || ReactDOM.createRoot(el);
++      el.__pendingRoot = null;
+       scene.updateMatrixWorld();
+       if (transform) {
+         el.style.cssText = `position:absolute;top:0;left:0;pointer-events:none;overflow:hidden;`;
+@@ -153,7 +155,16 @@ const Html = /* @__PURE__ */React.forwardRef(({
+       }
+       return () => {
+         if (target) target.removeChild(el);
+-        currentRoot.unmount();
++        // Deferred: R3F tears Html down inside react-dom's commit when its Canvas unmounts, and a
++        // synchronous root.unmount() there logs "Attempted to synchronously unmount a root while
++        // React was already rendering". A re-run of the effect before the microtask adopts the root.
++        el.__pendingRoot = currentRoot;
++        queueMicrotask(() => {
++          if (el.__pendingRoot === currentRoot) {
++            el.__pendingRoot = null;
++            currentRoot.unmount();
++          }
++        });
+       };
+     }
+   }, [target, transform]);
