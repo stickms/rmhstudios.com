@@ -14,7 +14,8 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
-import { Calendar } from 'lucide-react';
+import { readingTimeMinutes } from '@/lib/reading-time';
+import { Calendar, Clock } from 'lucide-react';
 
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AdSlot } from '@/components/ads/AdSlot';
@@ -112,6 +113,7 @@ function BlogPost() {
 
   const tags = (post.tags as string[] | undefined) ?? [];
   const image = post.image as string | undefined;
+  const minutes = readingTimeMinutes(post.content as string);
 
   return (
     <PageLayout
@@ -134,6 +136,12 @@ function BlogPost() {
             <Calendar className="size-4" aria-hidden />
             {post.date as string}
           </span>
+          {minutes > 0 ? (
+            <span className="inline-flex items-center gap-2 font-mono text-sm text-site-text-muted">
+              <Clock className="size-4" aria-hidden />
+              {t('blog-reading-time', { defaultValue: '{{minutes}} min read', minutes })}
+            </span>
+          ) : null}
           {tags.map((tag) => (
             <Badge key={tag}>#{tag}</Badge>
           ))}

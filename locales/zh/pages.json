@@ -217,5 +217,6 @@
   "warming-up-the-model": "模型预热中。",
   "welcome-back": "欢迎回来",
   "writing-the-code": "编写代码。",
-  "post-view-on-rmh": "View on RMH Studios"
+  "post-view-on-rmh": "View on RMH Studios",
+  "blog-reading-time": "阅读约 {{minutes}} 分钟"
 }
