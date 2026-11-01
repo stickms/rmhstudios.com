@@ -65,7 +65,7 @@ export default function AltairHeader({
             <Link
               to="/games"
               onClick={goBack}
-              className="text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
+              className="inline-flex min-h-11 min-w-11 items-center -ml-2 pl-2 text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
             >
               <span className="flex items-center gap-1.5">
                 <ArrowLeft size={16} className="shrink-0 rtl-flip" aria-hidden />
@@ -78,7 +78,7 @@ export default function AltairHeader({
               type="button"
               onClick={handleBack}
               data-altair-sfx="menu_back"
-              className="text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
+              className="inline-flex min-h-11 min-w-11 items-center -ml-2 pl-2 text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
             >
               <span className="flex items-center gap-1.5">
                 <ArrowLeft size={16} className="shrink-0 rtl-flip" aria-hidden />
