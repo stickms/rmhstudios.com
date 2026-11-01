@@ -29,7 +29,7 @@ export function ProgressScreen() {
   useEffect(() => {
     if (!isLoggedIn) return;
     setLoading(true);
-    fetch('/api/versecraft/progress')
+    fetch('/api/versecraft/progress', { signal: AbortSignal.timeout?.(10000) })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.progress) setDbProgress(data.progress);

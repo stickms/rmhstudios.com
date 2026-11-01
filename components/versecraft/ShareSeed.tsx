@@ -21,9 +21,11 @@ export function ShareSeed({ seed, compact = false }: { seed: string; compact?: b
       } else {
         // Fallback for non-secure contexts.
         const ta = document.createElement('textarea');
-        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-        document.body.appendChild(ta); ta.select();
-        document.execCommand('copy'); document.body.removeChild(ta);
+        // iOS needs the field editable (not readonly) and an explicit range.
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; ta.style.fontSize = '16px';
+        document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+        const ok = document.execCommand('copy'); document.body.removeChild(ta);
+        if (!ok) throw new Error('copy-failed');
       }
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
@@ -42,7 +44,7 @@ export function ShareSeed({ seed, compact = false }: { seed: string; compact?: b
         color: '#e8e0d0',
         padding: compact ? '4px 8px' : '8px 14px',
         fontSize: compact ? 11 : 14,
-        minHeight: compact ? undefined : 40,
+        minHeight: compact ? 32 : 44,
       }}
       title="Copy seed to share this version"
     >

@@ -58,7 +58,7 @@ export function MainMenu() {
       if (loadGame(0)) { if (!cancelled) { setHasSave(true); setChecking(false); } return; }
       if (isLoggedIn) {
         try {
-          const res = await fetch('/api/versecraft/save');
+          const res = await fetch('/api/versecraft/save', { signal: AbortSignal.timeout?.(10000) });
           if (res.ok) { const d = await res.json(); if (!cancelled && d?.saveData) setHasSave(true); }
         } catch { /* ignore */ }
       }
