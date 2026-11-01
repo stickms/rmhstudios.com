@@ -1603,5 +1603,6 @@
   "muted-import": "Импорт",
   "muted-import-done": "Импортировано слов: {{added}}.",
   "muted-import-none": "Нет новых слов для импорта.",
-  "muted-import-failed": "Не удалось прочитать файл."
+  "muted-import-failed": "Не удалось прочитать файл.",
+  "message-edit-length": "{{used}}/{{max}}"
 }

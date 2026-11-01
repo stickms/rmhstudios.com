@@ -1468,5 +1468,6 @@
   "muted-import": "Nhập",
   "muted-import-done": "Đã nhập {{added}} từ.",
   "muted-import-none": "Không có từ mới để nhập.",
-  "muted-import-failed": "Không thể đọc tệp đó."
+  "muted-import-failed": "Không thể đọc tệp đó.",
+  "message-edit-length": "{{used}}/{{max}}"
 }

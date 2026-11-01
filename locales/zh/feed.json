@@ -1468,5 +1468,6 @@
   "muted-import": "导入",
   "muted-import-done": "已导入 {{added}} 个词。",
   "muted-import-none": "没有可导入的新词。",
-  "muted-import-failed": "无法读取该文件。"
+  "muted-import-failed": "无法读取该文件。",
+  "message-edit-length": "{{used}}/{{max}}"
 }
