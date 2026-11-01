@@ -20,6 +20,7 @@ import { markGamePlaying } from '@/lib/game-capabilities';
 import { useIsleworks } from '@/lib/isleworks/store';
 import { codeFromLocation } from '@/lib/worlds/schema';
 
+import { WebGLUnavailable, useWebGLSupport } from '@/components/shared/WebGLUnavailable';
 import { BuildPalette } from './hud/BuildPalette';
 import { Rail } from './hud/Rail';
 import { IsleVisit } from './hud/IsleVisit';
@@ -42,6 +43,7 @@ export default function IsleworksGame() {
   const [visitCode, setVisitCode] = useState<string | null | undefined>(undefined);
   useEffect(() => setVisitCode(codeFromLocation('isleworks')), []);
   const rigRef = useRef<RigHandle | null>(null);
+  const webgl = useWebGLSupport();
 
   /* Game keys. The camera's Q/E/WASD are handled inside the rig. */
   useEffect(() => {
@@ -114,6 +116,8 @@ export default function IsleworksGame() {
     node?.addEventListener('contextmenu', onContextMenu as EventListener);
     return () => node?.removeEventListener('contextmenu', onContextMenu as EventListener);
   }, []);
+
+  if (!webgl) return <WebGLUnavailable gameName="Isleworks" />;
 
   return (
     <div className="isw">

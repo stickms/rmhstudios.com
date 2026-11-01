@@ -146,6 +146,7 @@ export function NeonDriftwayGame() {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [webglReady, setWebglReady] = useState(true);
   const [rendererEpoch, setRendererEpoch] = useState(0);
+  const [contextLost, setContextLost] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('fixed');
   const [gyroStatus, setGyroStatus] = useState<GyroStatus>('unavailable');
   const [canOfferHeadLook, setCanOfferHeadLook] = useState(false);
@@ -333,8 +334,12 @@ export function NeonDriftwayGame() {
       event.preventDefault();
       const game = gameRef.current;
       if (game && game.state === 'playing') game.state = 'paused' as GameState;
+      setContextLost(true);
     };
-    const onRestored = () => setRendererEpoch((n) => n + 1);
+    const onRestored = () => {
+      setContextLost(false);
+      setRendererEpoch((n) => n + 1);
+    };
     canvas.addEventListener('webglcontextlost', onLost);
     canvas.addEventListener('webglcontextrestored', onRestored);
 
@@ -796,6 +801,23 @@ export function NeonDriftwayGame() {
         onPointerUp={handleCanvasPointerUp}
         style={{ touchAction: 'none' }}
       />
+
+      {contextLost && (
+        <div role="alert" className="absolute inset-0 z-[70] flex flex-col items-center justify-center gap-3 bg-black/80 px-6 text-center">
+          <p className="max-w-xs text-sm text-white/80">
+            {t('context-lost', {
+              defaultValue: 'The browser reset the graphics. They should come back on their own.',
+            })}
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="min-h-11 rounded bg-white/15 px-4 py-2 text-sm font-bold text-white"
+          >
+            {t('context-lost-reload', { defaultValue: 'Reload' })}
+          </button>
+        </div>
+      )}
 
       <NeonDriftwayHud ref={hudRef} stereo={viewMode === 'vr'} visible={playing && !photoMode} />
 

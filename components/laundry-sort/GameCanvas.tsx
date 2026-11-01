@@ -19,6 +19,8 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
+import { WebGLUnavailable, useWebGLSupport } from '@/components/shared/WebGLUnavailable';
+
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import type * as THREE from 'three';
 import AdaptiveQuality from '@/components/render/AdaptiveQuality';
@@ -97,6 +99,7 @@ export function GameCanvas({
   onContextRestored,
 }: Props) {
   const { quality, dpr, downscale } = useRenderQuality();
+  const webgl = useWebGLSupport();
 
   const handleCreated = useCallback(
     ({ gl }: { gl: THREE.WebGLRenderer }) => {
@@ -116,6 +119,8 @@ export function GameCanvas({
     },
     [onContextLost, onContextRestored],
   );
+
+  if (!webgl) return <WebGLUnavailable gameName="Laundry Sort" />;
 
   return (
     <Canvas
