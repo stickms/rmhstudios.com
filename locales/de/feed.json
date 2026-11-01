@@ -1500,5 +1500,10 @@
   "your-personas": "Deine Personas",
   "your-ratings": "Deine Bewertungen",
   "your-top-post": "Dein Top-Beitrag",
-  "your-year-on-rmh": "Dein Jahr auf RMH"
+  "your-year-on-rmh": "Dein Jahr auf RMH",
+  "muted-duration-label": "Wie lange stummschalten",
+  "muted-duration-forever": "Bis ich es entferne",
+  "muted-duration-day": "1 Tag",
+  "muted-duration-week": "1 Woche",
+  "muted-duration-month": "30 Tage"
 }

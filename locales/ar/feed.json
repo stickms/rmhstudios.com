@@ -1680,5 +1680,10 @@
   "your-personas": "شخصياتك",
   "your-ratings": "تقييماتك",
   "your-top-post": "أفضل منشور لك",
-  "your-year-on-rmh": "عامك في RMH"
+  "your-year-on-rmh": "عامك في RMH",
+  "muted-duration-label": "مدة الكتم",
+  "muted-duration-forever": "حتى أزيله",
+  "muted-duration-day": "يوم واحد",
+  "muted-duration-week": "أسبوع واحد",
+  "muted-duration-month": "30 يومًا"
 }

@@ -3186,6 +3186,9 @@ model UserProfile {
   // Reader content control: feed posts whose text contains any of these words
   // are hidden from this user (case-insensitive substring match). Opt-in.
   mutedWords            String[]  @default([])
+  // Optional deadlines for muted words: { [word]: epochMs }. A word with no entry is
+  // muted until removed (lib/feed/muted-expiry.ts).
+  mutedWordExpiries     Json      @default("{}")
   profileSongSpotifyId  String?   @db.VarChar(50)
   profileSongTitle      String?   @db.VarChar(200)
   profileSongArtist     String?   @db.VarChar(200)

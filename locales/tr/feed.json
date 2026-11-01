@@ -1500,5 +1500,10 @@
   "your-personas": "Kişilikleriniz",
   "your-ratings": "Değerlendirmeleriniz",
   "your-top-post": "En iyi gönderiniz",
-  "your-year-on-rmh": "RMH'deki yılınız"
+  "your-year-on-rmh": "RMH'deki yılınız",
+  "muted-duration-label": "Ne kadar süre sessize alınsın",
+  "muted-duration-forever": "Ben kaldırana kadar",
+  "muted-duration-day": "1 gün",
+  "muted-duration-week": "1 hafta",
+  "muted-duration-month": "30 gün"
 }

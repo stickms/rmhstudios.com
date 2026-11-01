@@ -1545,5 +1545,10 @@
   "your-personas": "Tus personas",
   "your-ratings": "Tus valoraciones",
   "your-top-post": "Tu mejor publicación",
-  "your-year-on-rmh": "Tu año en RMH"
+  "your-year-on-rmh": "Tu año en RMH",
+  "muted-duration-label": "Duración del silencio",
+  "muted-duration-forever": "Hasta que lo quite",
+  "muted-duration-day": "1 día",
+  "muted-duration-week": "1 semana",
+  "muted-duration-month": "30 días"
 }
