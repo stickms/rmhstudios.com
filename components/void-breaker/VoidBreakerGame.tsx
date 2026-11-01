@@ -34,6 +34,24 @@ import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
 import { saveGame, loadGame, deleteSave, getSaveInfo } from '@/lib/void-breaker/saveSystem';
 import { ABILITY_COOLDOWNS } from '@/lib/void-breaker/abilityProgression';
 
+/** localStorage that never throws (Safari private mode / blocked site data). */
+const safeStore = {
+  getItem(key: string): string | null {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* preference only */
+    }
+  },
+};
+
 /** Background music track path */
 const MUSIC_SRC = asset('/music/VoidBreaker/cold coffee - lofi rap beat (FREE FOR PROFIT USE).mp3');
 
@@ -110,20 +128,20 @@ export function VoidBreakerGame() {
   // Load persisted settings + check for existing save
   useEffect(() => {
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
-    const storedMuted = localStorage.getItem('vb-muted');
+    const storedMuted = safeStore.getItem('vb-muted');
     if (storedMuted === 'true') setMuted(true);
-    const storedVol = localStorage.getItem('vb-music-volume');
+    const storedVol = safeStore.getItem('vb-music-volume');
     if (storedVol !== null) {
       const v = parseInt(storedVol, 10);
       if (!isNaN(v) && v >= 0 && v <= 100) setMusicVolume(v);
     }
-    const storedSfx = localStorage.getItem('vb-sfx-volume');
+    const storedSfx = safeStore.getItem('vb-sfx-volume');
     if (storedSfx !== null) {
       const v = parseInt(storedSfx, 10);
       if (!isNaN(v) && v >= 0 && v <= 100) setSfxVolume(v);
     }
-    if (localStorage.getItem('vb-render-3d') === 'false') setUse3D(false);
-    const storedFx = localStorage.getItem('vb-reduced-fx');
+    if (safeStore.getItem('vb-render-3d') === 'false') setUse3D(false);
+    const storedFx = safeStore.getItem('vb-reduced-fx');
     // Default to the cheap path under reduced motion OR on a low-end device.
     // `canvasGlowEnabled` folds in `html.perf-lite` — the same class that already
     // disables the glass blur, the aurora parallax and the liquid layer — so this
@@ -131,12 +149,12 @@ export function VoidBreakerGame() {
     // signal as the rest of the site instead of on reduced motion alone. An
     // explicit user choice still wins.
     setReducedFx(storedFx !== null ? storedFx === 'true' : !canvasGlowEnabled());
-    const storedChar = localStorage.getItem('vb-character');
+    const storedChar = safeStore.getItem('vb-character');
     if (isCharacterId(storedChar)) setCharacterId(storedChar);
-    const storedWeapon = localStorage.getItem('vb-weapon');
+    const storedWeapon = safeStore.getItem('vb-weapon');
     if (isWeaponId(storedWeapon)) setWeaponId(storedWeapon);
     try {
-      const storedMods = JSON.parse(localStorage.getItem('vb-mods') ?? '[]');
+      const storedMods = JSON.parse(safeStore.getItem('vb-mods') ?? '[]');
       if (Array.isArray(storedMods)) setActiveMods(storedMods.filter(isModifierId));
     } catch { /* ignore */ }
     // The Forge's progression is resolved by `cloud` below, not read here —
@@ -315,7 +333,7 @@ export function VoidBreakerGame() {
     if (!rendererRef.current) {
       // Renderer preference (persisted): 3D WebGL by default, or 2D if the
       // player picked it / if WebGL init fails.
-      const want3D = localStorage.getItem('vb-render-3d') !== 'false';
+      const want3D = safeStore.getItem('vb-render-3d') !== 'false';
       if (want3D) {
         try {
           rendererRef.current = new VoidBreakerRenderer3D(canvas);
@@ -606,14 +624,14 @@ export function VoidBreakerGame() {
   const toggleMute = useCallback(() => {
     setMuted(prev => {
       const next = !prev;
-      localStorage.setItem('vb-muted', String(next));
+      safeStore.setItem('vb-muted', String(next));
       return next;
     });
   }, []);
 
   const setVolume = useCallback((v: number) => {
     setMusicVolume(v);
-    localStorage.setItem('vb-music-volume', String(v));
+    safeStore.setItem('vb-music-volume', String(v));
   }, []);
 
   // Apply the reduced-effects setting to the live renderer whenever it changes.
@@ -624,14 +642,14 @@ export function VoidBreakerGame() {
 
   const handleSetReducedFx = useCallback((on: boolean) => {
     setReducedFx(on);
-    localStorage.setItem('vb-reduced-fx', on ? 'true' : 'false');
+    safeStore.setItem('vb-reduced-fx', on ? 'true' : 'false');
   }, []);
 
   const handleToggleModifier = useCallback((id: ModifierId) => {
     sfxRef.current?.play('uiClick');
     setActiveMods(prev => {
       const next = prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id];
-      localStorage.setItem('vb-mods', JSON.stringify(next));
+      safeStore.setItem('vb-mods', JSON.stringify(next));
       return next;
     });
   }, []);
@@ -645,13 +663,13 @@ export function VoidBreakerGame() {
         setMeta(next);
         sfxRef.current?.play('unlock');
         setCharacterId(id);
-        localStorage.setItem('vb-character', id);
+        safeStore.setItem('vb-character', id);
       }
       return;
     }
     sfxRef.current?.play('uiClick');
     setCharacterId(id);
-    localStorage.setItem('vb-character', id);
+    safeStore.setItem('vb-character', id);
   }, [meta]);
 
   const handleSelectWeapon = useCallback((id: WeaponId) => {
@@ -663,24 +681,24 @@ export function VoidBreakerGame() {
         setMeta(next);
         sfxRef.current?.play('unlock');
         setWeaponId(id);
-        localStorage.setItem('vb-weapon', id);
+        safeStore.setItem('vb-weapon', id);
       }
       return;
     }
     sfxRef.current?.play('uiClick');
     setWeaponId(id);
-    localStorage.setItem('vb-weapon', id);
+    safeStore.setItem('vb-weapon', id);
   }, [meta]);
 
   /** Switch renderer (persisted) — reloads so the canvas gets a fresh context. */
   const handleSetRenderer = useCallback((to3D: boolean) => {
-    localStorage.setItem('vb-render-3d', to3D ? 'true' : 'false');
+    safeStore.setItem('vb-render-3d', to3D ? 'true' : 'false');
     window.location.reload();
   }, []);
 
   const setSfx = useCallback((v: number) => {
     setSfxVolume(v);
-    localStorage.setItem('vb-sfx-volume', String(v));
+    safeStore.setItem('vb-sfx-volume', String(v));
     // Play a sample blip so the player hears the new level as they drag.
     sfxRef.current?.unlock();
     sfxRef.current?.setVolume((v / 100) * MASTER_VOLUME);

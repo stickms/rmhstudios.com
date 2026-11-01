@@ -61,34 +61,54 @@ const STORAGE_KEY_USER_ID = 'ss_mp_userId';
 const STORAGE_KEY_DISPLAY_NAME = 'ss_mp_displayName';
 const STORAGE_KEY_LOBBY_CODE = 'ss_mp_lobbyCode';
 
+/** Storage can throw (Safari private mode, blocked site data); never let it break multiplayer. */
+function readStore(key: string): string | null {
+    try {
+        return localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+function writeStore(key: string, value: string | null): void {
+    try {
+        if (value === null) localStorage.removeItem(key);
+        else localStorage.setItem(key, value);
+    } catch {
+        /* convenience only */
+    }
+}
+
+let memoryUserId = '';
+
 export function getStoredUserId(): string {
     if (typeof window === 'undefined') return '';
-    let id = localStorage.getItem(STORAGE_KEY_USER_ID);
+    let id = readStore(STORAGE_KEY_USER_ID) || memoryUserId;
     if (!id) {
         id = 'guest-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-        localStorage.setItem(STORAGE_KEY_USER_ID, id);
+        writeStore(STORAGE_KEY_USER_ID, id);
     }
+    memoryUserId = id;
     return id;
 }
 
 export function getStoredDisplayName(): string {
     if (typeof window === 'undefined') return 'Player';
-    return localStorage.getItem(STORAGE_KEY_DISPLAY_NAME) || '';
+    return readStore(STORAGE_KEY_DISPLAY_NAME) || '';
 }
 
 export function setStoredDisplayName(name: string): void {
-    if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY_DISPLAY_NAME, name);
+    if (typeof window !== 'undefined') writeStore(STORAGE_KEY_DISPLAY_NAME, name);
 }
 
 export function getStoredLobbyCode(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(STORAGE_KEY_LOBBY_CODE);
+    return readStore(STORAGE_KEY_LOBBY_CODE);
 }
 
 export function setStoredLobbyCode(code: string | null): void {
     if (typeof window === 'undefined') return;
-    if (code) localStorage.setItem(STORAGE_KEY_LOBBY_CODE, code);
-    else localStorage.removeItem(STORAGE_KEY_LOBBY_CODE);
+    writeStore(STORAGE_KEY_LOBBY_CODE, code || null);
 }
 
 export class SynapseStormMultiplayerClient {

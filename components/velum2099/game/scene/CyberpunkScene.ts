@@ -297,7 +297,23 @@ export class CyberpunkScene {
         this.renderer.toneMapping = ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 2.8;
         this.renderer.shadowMap.enabled = false;
-        window.addEventListener('resize', () => this._onResize());
+        this._resizeHandler = () => this._onResize();
+        window.addEventListener('resize', this._resizeHandler);
+        // iOS fires `resize` late on rotation; orientationchange covers it.
+        window.addEventListener('orientationchange', this._resizeHandler);
+    }
+
+    /** Detach window listeners and release the GL context (iOS caps live contexts). */
+    releaseRenderer() {
+        if (this._resizeHandler) {
+            window.removeEventListener('resize', this._resizeHandler);
+            window.removeEventListener('orientationchange', this._resizeHandler);
+            this._resizeHandler = null;
+        }
+        if (this.renderer) {
+            this.renderer.dispose();
+            this.renderer.forceContextLoss?.();
+        }
     }
 
     _initScene() { this.scene = new Scene(); }

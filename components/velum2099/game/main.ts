@@ -945,8 +945,8 @@ export class App {
 
         // Dispose Three.js resources
         if (this.scene) {
-            const renderer = this.scene.getRenderer();
-            if (renderer) renderer.dispose();
+            if (typeof this.scene.releaseRenderer === 'function') this.scene.releaseRenderer();
+            else this.scene.getRenderer()?.dispose();
         }
 
         // Unbind vehicle keyboard listeners
