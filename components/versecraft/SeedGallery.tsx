@@ -232,7 +232,7 @@ export function PublishSeedButton({ seed }: { seed: string }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs transition hover:brightness-125"
+        className="inline-flex items-center gap-1.5 rounded px-2 py-1 pointer-coarse:min-h-11 text-xs transition hover:brightness-125"
         style={{
           backgroundColor: 'rgba(196,163,90,0.12)',
           border: '1px solid rgba(196,163,90,0.3)',

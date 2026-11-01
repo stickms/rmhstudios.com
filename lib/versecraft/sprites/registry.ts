@@ -32,7 +32,7 @@ export interface SpritePack {
   hairStyle: string;
   /** UI accent hex derived from hair/outfit. */
   accent: string;
-  /** File extension for this pack's images (webp for composited packs). */
+  /** File extension for this pack's images. Every shipped set is .webp; the default used to be png, so the eight legacy packs 404'd. */
   ext?: 'png' | 'webp';
   /** Canonical Emotion → sprite filename (no extension). */
   emotions: Record<Emotion, string>;
@@ -171,7 +171,7 @@ export function spriteUrl(packId: string, emotion: Emotion = 'neutral'): string 
   const pack = PACK_BY_ID.get(packId);
   if (!pack) return null;
   const file = pack.emotions[emotion] ?? pack.emotions.neutral;
-  return `${BASE}/${pack.dir}/${file}.${pack.ext ?? 'png'}`;
+  return `${BASE}/${pack.dir}/${file}.${pack.ext ?? 'webp'}`;
 }
 
 /** Every distinct sprite-file URL for a pack — used to preload so expression
@@ -180,5 +180,5 @@ export function packSpriteUrls(packId: string): string[] {
   const pack = PACK_BY_ID.get(packId);
   if (!pack) return [];
   const files = new Set(Object.values(pack.emotions));
-  return [...files].map((f) => `${BASE}/${pack.dir}/${f}.${pack.ext ?? 'png'}`);
+  return [...files].map((f) => `${BASE}/${pack.dir}/${f}.${pack.ext ?? 'webp'}`);
 }
