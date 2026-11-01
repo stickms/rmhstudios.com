@@ -19,5 +19,6 @@
   "tip-dialog-title": "发送小费",
   "tip-error": "无法发送小费",
   "tip-sign-in": "请登录以打赏。",
-  "tip-success": "给{{recipient}}打赏了{{amount}}个金币！"
+  "tip-success": "给{{recipient}}打赏了{{amount}}个金币！",
+  "tip-max-hint": "单次打赏上限：{{max}}"
 }

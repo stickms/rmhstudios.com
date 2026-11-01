@@ -20,5 +20,6 @@
   "tip-error": "Could not send tip",
   "tip-invalid": "That tip amount isn't allowed.",
   "tip-sign-in": "Please sign in to tip.",
-  "tip-success": "Tipped {{amount}} coins{{recipient}}!"
+  "tip-success": "Tipped {{amount}} coins{{recipient}}!",
+  "tip-max-hint": "Maximum per tip: {{max}}"
 }

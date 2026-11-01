@@ -19,5 +19,6 @@
   "tip-dialog-title": "Invia una mancia",
   "tip-error": "Impossibile inviare la mancia",
   "tip-sign-in": "Accedi per lasciare una mancia.",
-  "tip-success": "Inviate {{amount}} monete{{recipient}} come mancia!"
+  "tip-success": "Inviate {{amount}} monete{{recipient}} come mancia!",
+  "tip-max-hint": "Massimo per mancia: {{max}}"
 }

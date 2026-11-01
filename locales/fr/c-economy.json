@@ -19,5 +19,6 @@
   "tip-dialog-title": "Envoyer un pourboire",
   "tip-error": "Impossible d'envoyer le pourboire",
   "tip-sign-in": "Veuillez vous connecter pour donner un pourboire.",
-  "tip-success": "{{amount}} pièces envoyées{{recipient}} !"
+  "tip-success": "{{amount}} pièces envoyées{{recipient}} !",
+  "tip-max-hint": "Maximum par pourboire : {{max}}"
 }

@@ -19,5 +19,6 @@
   "tip-dialog-title": "أرسل إكرامية",
   "tip-error": "تعذر إرسال الإكرامية",
   "tip-sign-in": "يرجى تسجيل الدخول للإكرامية.",
-  "tip-success": "أرسل {{amount}} عملة كإكرامية{{recipient}}!"
+  "tip-success": "أرسل {{amount}} عملة كإكرامية{{recipient}}!",
+  "tip-max-hint": "الحد الأقصى لكل إكرامية: {{max}}"
 }

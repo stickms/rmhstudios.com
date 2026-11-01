@@ -19,5 +19,6 @@
   "tip-dialog-title": "Enviar uma gorjeta",
   "tip-error": "Não foi possível enviar a gorjeta",
   "tip-sign-in": "Faça login para dar gorjeta.",
-  "tip-success": "Deu gorjeta de {{amount}} moedas{{recipient}}!"
+  "tip-success": "Deu gorjeta de {{amount}} moedas{{recipient}}!",
+  "tip-max-hint": "Máximo por gorjeta: {{max}}"
 }

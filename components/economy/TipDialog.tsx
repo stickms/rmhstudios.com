@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { toast } from 'sonner';
-import { TIP_MIN, TIP_NOTE_MAX, tipSchema, type TipEntityType } from '@/lib/economy/tip-schema';
+import { TIP_MAX, TIP_MIN, TIP_NOTE_MAX, tipSchema, type TipEntityType } from '@/lib/economy/tip-schema';
+import { parseTipAmount } from '@/lib/economy/tip-amount';
 
 interface TipDialogProps {
   open: boolean;
@@ -23,7 +24,7 @@ const QUICK_AMOUNTS = [5, 10, 25, 50, 100];
 
 /** Reusable "tip jar" dialog — sends coins to another user. */
 export function TipDialog({ open, onOpenChange, recipientId, recipientName, entityType, entityId }: TipDialogProps) {
-  const { t } = useTranslation("c-economy");
+  const { t, i18n } = useTranslation("c-economy");
   const [amount, setAmount] = useState(10);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -95,11 +96,15 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
           {t("custom-amount", { defaultValue: "Custom amount" })}
           <Input
             type="number"
-            min={1}
+            min={TIP_MIN}
+            max={TIP_MAX}
             value={amount}
-            onChange={(e) => setAmount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+            onChange={(e) => setAmount(parseTipAmount(e.target.value))}
             className="mt-1 h-auto px-3 py-2"
           />
+          <span className="mt-1 block text-site-text-dim">
+            {t("tip-max-hint", { defaultValue: "Maximum per tip: {{max}}", max: TIP_MAX.toLocaleString(i18n.language) })}
+          </span>
         </label>
 
         <Textarea

@@ -19,5 +19,6 @@
   "tip-dialog-title": "ٹپ بھیجیں",
   "tip-error": "ٹپ نہیں بھیجی جا سکی",
   "tip-sign-in": "براہ کرم ٹپ دینے کے لیے سائن ان کریں۔",
-  "tip-success": "{{recipient}} کو {{amount}} سکے ٹپ کیے گئے!"
+  "tip-success": "{{recipient}} کو {{amount}} سکے ٹپ کیے گئے!",
+  "tip-max-hint": "فی ٹپ زیادہ سے زیادہ: {{max}}"
 }

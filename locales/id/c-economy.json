@@ -19,5 +19,6 @@
   "tip-dialog-title": "Kirim tip",
   "tip-error": "Gagal mengirim tip",
   "tip-sign-in": "Silakan masuk untuk memberi tip.",
-  "tip-success": "Berhasil memberi tip {{amount}} koin{{recipient}}!"
+  "tip-success": "Berhasil memberi tip {{amount}} koin{{recipient}}!",
+  "tip-max-hint": "Maksimum per tip: {{max}}"
 }

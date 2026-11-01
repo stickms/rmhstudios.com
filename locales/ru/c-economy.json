@@ -19,5 +19,6 @@
   "tip-dialog-title": "Отправить чаевые",
   "tip-error": "Не удалось отправить чаевые",
   "tip-sign-in": "Пожалуйста, войдите, чтобы отправить чаевые.",
-  "tip-success": "Отправлено {{amount}} монет{{recipient}}!"
+  "tip-success": "Отправлено {{amount}} монет{{recipient}}!",
+  "tip-max-hint": "Максимум за один донат: {{max}}"
 }
