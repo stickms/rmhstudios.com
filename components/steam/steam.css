@@ -1144,6 +1144,18 @@
   align-items: center;
   gap: 12px;
 }
+.stm-write-count {
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+}
+.stm-write-count[data-full='true'] {
+  color: var(--stm-danger);
+}
+.stm-sort {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .stm-stars {
   display: inline-flex;
   gap: 2px;
