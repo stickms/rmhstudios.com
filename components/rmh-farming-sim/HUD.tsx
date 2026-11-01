@@ -109,9 +109,11 @@ export default function HUD() {
                         </button>
                     )}
                 </div>
+                {/* Inside the top bar so it wraps with it: on a phone the bar is
+                    two or three rows tall and a banner pinned at a fixed top
+                    offset sat on top of the season / energy chips. */}
+                <FestivalBanner />
             </div>
-
-            <FestivalBanner />
 
             {/* hotbar */}
             <div className="rfs-hotbar">

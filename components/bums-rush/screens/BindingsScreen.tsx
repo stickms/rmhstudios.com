@@ -206,7 +206,7 @@ export function BindingsScreen({
               setConflicts(null);
               onProfileChange(event.currentTarget.value as DeviceProfileKind);
             }}
-            className="mt-1 w-full rounded-bum border-2 border-bum-ink bg-bum-surface px-3 py-2 text-sm text-bum-ink"
+            className="mt-1 w-full rounded-bum border-2 border-bum-ink bg-bum-surface px-3 py-2 min-h-11 text-base sm:text-sm text-bum-ink"
           >
             {PROFILE_ORDER.map((kind) => (
               <option key={kind} value={kind}>

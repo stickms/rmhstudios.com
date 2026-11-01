@@ -56,12 +56,12 @@ export function DesktopControlsGate({
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-black px-6 text-center">
-      <Monitor className="h-12 w-12 text-site-text-dim" />
+      <Monitor className="h-12 w-12 text-white/55" />
       <div className="space-y-2">
         <h1 className="text-xl font-semibold text-white">
           {gameName} needs a keyboard &amp; mouse
         </h1>
-        <p className="max-w-xs text-sm text-site-text-muted">
+        <p className="max-w-xs text-sm text-white/75">
           This experience uses mouse-look and keyboard controls that aren&apos;t available on a
           touchscreen. For the best experience, open it on a desktop or laptop.
         </p>
@@ -69,13 +69,13 @@ export function DesktopControlsGate({
       <div className="flex flex-col items-center gap-3">
         <a
           href={backTo}
-          className="rounded-full bg-site-accent px-5 py-2.5 text-sm font-semibold text-site-accent-fg transition-colors hover:bg-site-accent-hover"
+          className="inline-flex min-h-11 items-center rounded-full bg-white/90 px-5 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-white"
         >
           Go back
         </a>
         <button
           onClick={() => setOverride(true)}
-          className="text-xs text-site-text-dim underline-offset-4 hover:text-site-text-muted hover:underline"
+          className="min-h-11 px-3 text-sm text-white/70 underline-offset-4 hover:text-white hover:underline"
         >
           Continue anyway
         </button>

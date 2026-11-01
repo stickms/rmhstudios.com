@@ -40,7 +40,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
     }, [capturing, bindings, input, sfx, setBindings]);
 
     return (
-        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0612] to-[#120a20] p-6">
+        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0612] to-[#120a20] px-6 pb-6 pt-[calc(3.5rem+var(--safe-top))] sm:pt-6">
             <h2 className="dr-serif mb-5 text-2xl font-semibold tracking-[0.1em] text-[color:var(--dr-gold)]">Settings</h2>
 
             <div className="mx-auto w-full max-w-md space-y-6">

@@ -108,7 +108,7 @@ export function SettingsScreen({
               onChange={(event) =>
                 onPatch({ touchScheme: event.currentTarget.value as GameSettings['touchScheme'] })
               }
-              className="mt-1 w-full rounded-bum border-2 border-bum-ink bg-bum-surface px-3 py-2 text-sm text-bum-ink"
+              className="mt-1 w-full rounded-bum border-2 border-bum-ink bg-bum-surface px-3 py-2 min-h-11 text-base sm:text-sm text-bum-ink"
             >
               <option value="auto-grab">
                 {t('settings.touch-auto', { defaultValue: 'Auto-Grab — one thumb per arm (recommended)' })}
@@ -138,7 +138,7 @@ export function SettingsScreen({
               onChange={(event) =>
                 onPatch({ padBrand: event.currentTarget.value as GameSettings['padBrand'] })
               }
-              className="mt-1 w-full rounded-bum border-2 border-bum-ink bg-bum-surface px-3 py-2 text-sm text-bum-ink"
+              className="mt-1 w-full rounded-bum border-2 border-bum-ink bg-bum-surface px-3 py-2 min-h-11 text-base sm:text-sm text-bum-ink"
             >
               {PAD_BRANDS.map((brand) => (
                 <option key={brand} value={brand}>
@@ -291,7 +291,7 @@ export function SettingsScreen({
               onChange={(event) =>
                 onPatch({ catAfterWipes: Number(event.currentTarget.value) as GameSettings['catAfterWipes'] })
               }
-              className="mt-1 w-full rounded-bum border-2 border-bum-ink bg-bum-surface px-3 py-2 text-sm text-bum-ink"
+              className="mt-1 w-full rounded-bum border-2 border-bum-ink bg-bum-surface px-3 py-2 min-h-11 text-base sm:text-sm text-bum-ink"
             >
               <option value="3">{t('settings.cat-3', { defaultValue: 'Three splats' })}</option>
               <option value="6">{t('settings.cat-6', { defaultValue: 'Six splats' })}</option>

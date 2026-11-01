@@ -34,7 +34,7 @@ export function PhoneControllerHost({ sink }: { sink: ControllerSink }) {
   }, [open, sink]);
 
   return (
-    <div data-floating="feature-overlay" className="absolute bottom-3 left-3 z-30">
+    <div data-floating="feature-overlay" className="absolute bottom-3 left-3 z-30 max-sm:hidden pointer-coarse:hidden">
       {open ? (
         <div className="glass-overlay w-56 space-y-2 rounded-site p-4 text-center text-site-text">
           <button
