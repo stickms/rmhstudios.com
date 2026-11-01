@@ -172,6 +172,9 @@
 
 /* ASCII art styling */
 .velum2099-root .ascii-art {
+    white-space: pre;
+    max-width: 100%;
+    overflow-x: auto;
     color: #f0f;
     text-shadow: 0 0 10px #f0f, 0 0 20px rgba(255, 0, 255, 0.4);
     font-size: 14px;
