@@ -24,10 +24,17 @@ export function SteamShell({ children }: { children: React.ReactNode }) {
 
 /** Which top-level tab a pathname belongs to. */
 export function steamTabFor(pathname: string): 'store' | 'library' | 'community' | 'arcade' | null {
-  if (pathname.startsWith('/store') || pathname.startsWith('/games/store')) return 'store';
+  if (
+    pathname.startsWith('/store') ||
+    pathname.startsWith('/games/store') ||
+    pathname.startsWith('/games/shop')
+  ) {
+    return 'store';
+  }
   if (pathname === '/arcade' || pathname.startsWith('/arcade/')) return 'arcade';
   if (
     pathname.startsWith('/games/community') ||
+    pathname.startsWith('/games/communities') ||
     pathname.startsWith('/games/profile') ||
     pathname.startsWith('/games/groups') ||
     pathname.startsWith('/games/inventory') ||
