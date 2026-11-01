@@ -62,7 +62,7 @@ interface GameBackLinkProps {
 }
 
 const TONES = {
-  dark: 'border-zinc-800 bg-black/50 text-zinc-500 hover:text-white',
+  dark: 'border-zinc-800 bg-black/50 text-zinc-400 hover:text-white',
   // Opacity-modified black/white rather than a palette step, so this reads
   // correctly on any light ground without importing that game's tokens.
   // Mid-tone coloured grounds (Massive March's teal): the dark chip's zinc-500
