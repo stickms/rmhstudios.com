@@ -8,6 +8,7 @@ import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';
 import { formatDuration } from '@/lib/rmhmusic/utils';
 import SleepTimerButton from './SleepTimerButton';
+import { isTypingTarget } from '@/lib/shortcuts/registry';
 
 export default function PlayerBar() {
   const { currentTrack, playback, settings, isSearchOpen, isChatOpen, isGuessOpen, setSearchOpen, setChatOpen, setGuessOpen, updateSettings } = useRmhMusicStore();
@@ -45,6 +46,29 @@ export default function PlayerBar() {
   function handleMuteToggle() {
     updateSettings({ muted: !settings.muted });
   }
+
+  // Space toggles play/pause and M toggles mute. Ignored while typing in a field
+  // (search, chat, guess) and with modifiers held; Space is also left alone on a
+  // focused button/link, where the browser already activates it.
+  const handlePlayPauseRef = useRef(handlePlayPause);
+  const handleMuteToggleRef = useRef(handleMuteToggle);
+  handlePlayPauseRef.current = handlePlayPause;
+  handleMuteToggleRef.current = handleMuteToggle;
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isTypingTarget(e.target)) return;
+      if (e.key === ' ') {
+        if (e.target instanceof HTMLElement && /^(BUTTON|A)$/.test(e.target.tagName)) return;
+        e.preventDefault();
+        handlePlayPauseRef.current();
+      } else if (e.key.toLowerCase() === 'm') {
+        handleMuteToggleRef.current();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   return (
     <div className="fixed inset-x-3 bottom-[calc(var(--safe-bottom)+0.5rem)] z-50 overflow-hidden rounded-(--app-radius) border" style={{ borderColor: 'color-mix(in srgb, var(--app-text) 10%, transparent)' }}>
@@ -86,6 +110,7 @@ export default function PlayerBar() {
         <div className="flex items-center gap-2">
           <button
             onClick={handlePlayPause}
+            aria-keyshortcuts="Space"
             className="p-2 rounded-full transition-colors hover:opacity-80"
             style={{ color: 'var(--app-text)' }}
             disabled={!currentTrack}
@@ -111,6 +136,7 @@ export default function PlayerBar() {
           <button
             className="p-1"
             onClick={handleMuteToggle}
+            aria-keyshortcuts="M"
             style={{ color: 'var(--app-text-muted)' }}
           >
             {settings.muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
