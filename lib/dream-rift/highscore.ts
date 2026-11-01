@@ -18,8 +18,13 @@ export function hiScoreKey(character: PlayerId, difficulty: Difficulty): string 
 
 /** Read a character's stored personal best for a difficulty (0 if none). */
 export function loadHiScore(character: PlayerId, difficulty: Difficulty): number {
-    if (typeof localStorage === 'undefined') return 0;
-    return Number(localStorage.getItem(hiScoreKey(character, difficulty)) || 0);
+    try {
+        if (typeof localStorage === 'undefined') return 0;
+        const n = Number(localStorage.getItem(hiScoreKey(character, difficulty)) || 0);
+        return Number.isFinite(n) ? n : 0;
+    } catch {
+        return 0;
+    }
 }
 
 /**
@@ -29,7 +34,11 @@ export function loadHiScore(character: PlayerId, difficulty: Difficulty): number
 export function saveHiScore(character: PlayerId, difficulty: Difficulty, score: number): number {
     const prev = loadHiScore(character, difficulty);
     if (score > prev && typeof localStorage !== 'undefined') {
-        localStorage.setItem(hiScoreKey(character, difficulty), String(score));
+        try {
+            localStorage.setItem(hiScoreKey(character, difficulty), String(score));
+        } catch {
+            /* storage blocked */
+        }
         return score;
     }
     return prev;

@@ -97,22 +97,38 @@ export interface DreamRiftState {
     reset: () => void;
 }
 
+/** localStorage that never throws (Safari private mode, blocked site data). */
+function readStore(key: string): string | null {
+    try {
+        return typeof localStorage === 'undefined' ? null : localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+function writeStore(key: string, value: string): void {
+    try {
+        if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
+    } catch {
+        /* storage blocked: the preference lasts for this session only */
+    }
+}
 function loadPref(key: string, fallback: number): number {
-    if (typeof localStorage === 'undefined') return fallback;
-    const v = localStorage.getItem(key);
-    return v == null ? fallback : Number(v);
+    const v = readStore(key);
+    const n = v == null ? NaN : Number(v);
+    return Number.isFinite(n) ? n : fallback;
 }
 function loadBool(key: string, fallback: boolean): boolean {
-    if (typeof localStorage === 'undefined') return fallback;
-    const v = localStorage.getItem(key);
+    const v = readStore(key);
     return v == null ? fallback : v === '1';
 }
 function validChar(raw: string | null): PlayerId {
     return raw && (PLAYER_IDS as string[]).includes(raw) ? (raw as PlayerId) : 'bllm';
 }
+function validDifficulty(raw: string | null): Difficulty {
+    return raw === 'easy' || raw === 'normal' || raw === 'hard' || raw === 'lunatic' ? raw : 'normal';
+}
 function savePref(key: string, v: number | boolean): void {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(key, typeof v === 'boolean' ? (v ? '1' : '0') : String(v));
+    writeStore(key, typeof v === 'boolean' ? (v ? '1' : '0') : String(v));
 }
 
 export const useDreamRift = create<DreamRiftState>((set) => ({
@@ -124,8 +140,8 @@ export const useDreamRift = create<DreamRiftState>((set) => ({
     selfSocketId: null,
     errorMsg: null,
 
-    difficulty: (typeof localStorage !== 'undefined' && (localStorage.getItem('dr.difficulty') as Difficulty)) || 'normal',
-    selectedChar: validChar(typeof localStorage !== 'undefined' ? localStorage.getItem('dr.char') : null),
+    difficulty: validDifficulty(readStore('dr.difficulty')),
+    selectedChar: validChar(readStore('dr.char')),
 
     dialogue: null,
     stageBanner: null,
@@ -148,12 +164,11 @@ export const useDreamRift = create<DreamRiftState>((set) => ({
     setSelf: (selfSocketId) => set({ selfSocketId }),
     setError: (errorMsg) => set({ errorMsg }),
     setDifficulty: (difficulty) => {
-        savePref('dr.difficulty', false);
-        if (typeof localStorage !== 'undefined') localStorage.setItem('dr.difficulty', difficulty);
+        writeStore('dr.difficulty', difficulty);
         set({ difficulty });
     },
     setSelectedChar: (selectedChar) => {
-        if (typeof localStorage !== 'undefined') localStorage.setItem('dr.char', selectedChar);
+        writeStore('dr.char', selectedChar);
         set({ selectedChar });
     },
     setDialogue: (dialogue) => set({ dialogue }),
