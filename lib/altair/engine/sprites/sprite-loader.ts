@@ -78,7 +78,15 @@ export function preloadAllSprites(
   let settled = 0;
   const total = entries.length;
 
-  return new Promise<void>((resolve) => {
+  return new Promise<void>((resolveRaw) => {
+    // A stalled request (flaky mobile network, never fires onload/onerror) must
+    // not leave the player on the loading screen forever: after the deadline we
+    // start anyway and unfinished sheets fall back to vector rendering.
+    const deadline = setTimeout(() => resolveRaw(), 20000);
+    const resolve = () => {
+      clearTimeout(deadline);
+      resolveRaw();
+    };
     if (total === 0) {
       resolve();
       return;

@@ -356,6 +356,25 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     return markGamePlaying();
   }, [phase]);
 
+  // Auto-pause when the tab/app is backgrounded (phone call, app switch, tab
+  // change) so the run isn't lost to a frozen-then-resumed loop, and release
+  // any held movement so the player doesn't run off on return.
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState !== 'hidden') return;
+      const world = worldRef.current;
+      if (world) {
+        world.inputState.keys.clear();
+        setMobileInput(world.inputState, 0, 0);
+      }
+      if (useAltairGameStore.getState().phase === 'playing') {
+        useAltairGameStore.getState().togglePause();
+      }
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
+  }, []);
+
   // Pause/unpause the game loop based on phase
   useEffect(() => {
     const loop = loopRef.current;
@@ -453,7 +472,9 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     <div
       ref={rootRef}
       className="fixed inset-0 bg-(--altair-hud-scrim) overflow-hidden"
-      style={{ width: '100vw', height: '100dvh' }}
+      // touch-action none + no overscroll: stops pull-to-refresh, double-tap
+      // zoom and page pan while a run is live on iOS/Android.
+      style={{ width: '100vw', height: '100dvh', touchAction: 'none', overscrollBehavior: 'none' }}
     >
       <canvas
         data-jelly-zone="playfield"

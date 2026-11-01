@@ -286,7 +286,9 @@ export const useAltairMetaStore = create<AltairMetaState>()(
 
       loadFromServer: async () => {
         try {
-          const res = await fetch('/api/altair/meta');
+          const res = await fetch('/api/altair/meta', {
+            signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(10000) : undefined,
+          });
           if (!res.ok) return; // not logged in or server error — use localStorage
           const { data } = await res.json();
           if (!data) return; // no server data yet — first time
