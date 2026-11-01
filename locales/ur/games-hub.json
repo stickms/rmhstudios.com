@@ -37,5 +37,6 @@
   "guide-new-title": "New guide",
   "reviews-sort": "جائزے ترتیب دیں",
   "sort-helpful": "سب سے مفید",
-  "sort-recent": "تازہ ترین"
+  "sort-recent": "تازہ ترین",
+  "review-length": "{{used}}/{{max}}"
 }

@@ -37,5 +37,6 @@
   "guide-new-title": "New guide",
   "reviews-sort": "Urutkan ulasan",
   "sort-helpful": "Paling membantu",
-  "sort-recent": "Terbaru"
+  "sort-recent": "Terbaru",
+  "review-length": "{{used}}/{{max}}"
 }

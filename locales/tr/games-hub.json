@@ -37,5 +37,6 @@
   "guide-new-title": "New guide",
   "reviews-sort": "Yorumları sırala",
   "sort-helpful": "En faydalı",
-  "sort-recent": "En yeni"
+  "sort-recent": "En yeni",
+  "review-length": "{{used}}/{{max}}"
 }

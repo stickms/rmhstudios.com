@@ -4,9 +4,12 @@
  */
 import { z } from 'zod';
 
+/** Longest review body. The page truncates to this and shows a counter near it. */
+export const REVIEW_BODY_MAX = 2000;
+
 export const reviewUpsertSchema = z.object({
   stars: z.number().int().min(1).max(5),
-  body: z.string().trim().max(2000).nullable().optional(),
+  body: z.string().trim().max(REVIEW_BODY_MAX).nullable().optional(),
 });
 
 export const reviewVoteSchema = z.object({ helpful: z.boolean() });

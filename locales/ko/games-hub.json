@@ -37,5 +37,6 @@
   "guide-new-title": "New guide",
   "reviews-sort": "리뷰 정렬",
   "sort-helpful": "도움순",
-  "sort-recent": "최신순"
+  "sort-recent": "최신순",
+  "review-length": "{{used}}/{{max}}"
 }
