@@ -82,8 +82,42 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
             setSelectedNames(existing.resultJson.selectedNames ?? []);
             setCurrentRound(5);
             setCompleted(true);
+            return;
         }
+        // Resume a half-played puzzle: leaving mid-way used to throw the
+        // rounds away and let the player re-guess them with the answers seen.
+        try {
+            const raw = localStorage.getItem(`rmh-outcast-progress:${dateKey}`);
+            const saved = raw ? JSON.parse(raw) : null;
+            if (
+                saved &&
+                Array.isArray(saved.correctRounds) &&
+                Array.isArray(saved.selectedNames) &&
+                saved.correctRounds.length > 0 &&
+                saved.correctRounds.length <= 5 &&
+                saved.correctRounds.length === saved.selectedNames.length
+            ) {
+                const n = saved.correctRounds.length;
+                setCorrectRounds(saved.correctRounds);
+                setSelectedNames(saved.selectedNames);
+                setCurrentRound(n - 1);
+                setRoundRevealed(true);
+                setSelectedName(saved.selectedNames[n - 1]);
+            }
+        } catch { /* storage unavailable: start fresh */ }
     }, [dateKey]);
+
+    // Persist each answered round (never the empty initial state, which would
+    // clobber the saved progress before the restore above has applied).
+    useEffect(() => {
+        if (completed || correctRounds.length === 0) return;
+        try {
+            localStorage.setItem(
+                `rmh-outcast-progress:${dateKey}`,
+                JSON.stringify({ correctRounds, selectedNames }),
+            );
+        } catch { /* ignore */ }
+    }, [dateKey, completed, correctRounds, selectedNames]);
 
     const session = useSession();
 
@@ -124,6 +158,9 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
         } else {
             // All 5 rounds done
             setCompleted(true);
+            try {
+                localStorage.removeItem(`rmh-outcast-progress:${dateKey}`);
+            } catch { /* ignore */ }
             const score = computeOutcastScore(correctRounds);
             saveResultWithSync('outcast', dateKey, {
                 puzzleDate: dateKey,
