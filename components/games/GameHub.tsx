@@ -16,7 +16,7 @@ import { StarRating } from './StarRating';
 import { HowToPlay } from './HowToPlay';
 import { GameTracker } from '@/components/arcade/GameTracker';
 import { NightrailTrickBoard } from './NightrailTrickBoard';
-import type { ReviewView, RatingAgg, GuideSummary } from '@/lib/games/reviews';
+import { REVIEW_BODY_MAX, type ReviewView, type RatingAgg, type GuideSummary } from '@/lib/games/reviews';
 import type { TrickView } from '@/lib/trick-week/trick-week';
 
 interface GameHubData {
@@ -151,11 +151,19 @@ export function GameHub({ data, embedded = false }: { data: GameHubData; embedde
           <StarRating value={stars} onRate={setStars} label={t('your-rating', { defaultValue: 'Your rating' })} />
           <Textarea
             value={body}
-            onChange={(e) => setBody(e.target.value.slice(0, 2000))}
+            onChange={(e) => setBody(e.target.value.slice(0, REVIEW_BODY_MAX))}
             placeholder={t('review-placeholder', { defaultValue: 'Share your thoughts (optional)' })}
             rows={3}
           />
-          <div className="flex justify-end">
+          <div className="flex items-center justify-end gap-3">
+            {body.length >= REVIEW_BODY_MAX * 0.9 ? (
+              <p
+                aria-live="polite"
+                className={cn('font-mono text-xs', body.length >= REVIEW_BODY_MAX ? 'text-site-danger' : 'text-site-text-muted')}
+              >
+                {t('review-length', { defaultValue: '{{used}}/{{max}}', used: body.length, max: REVIEW_BODY_MAX })}
+              </p>
+            ) : null}
             <Button size="sm" variant="accent" onClick={submit} loading={saving}>
               {mine ? t('update', { defaultValue: 'Update' }) : t('post', { defaultValue: 'Post' })}
             </Button>

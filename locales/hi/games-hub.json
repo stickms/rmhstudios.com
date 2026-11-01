@@ -37,5 +37,6 @@
   "guide-new-title": "New guide",
   "reviews-sort": "समीक्षाएँ क्रमबद्ध करें",
   "sort-helpful": "सबसे उपयोगी",
-  "sort-recent": "नवीनतम"
+  "sort-recent": "नवीनतम",
+  "review-length": "{{used}}/{{max}}"
 }

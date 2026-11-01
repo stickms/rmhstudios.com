@@ -37,5 +37,6 @@
   "guide-new-title": "New guide",
   "reviews-sort": "レビューの並べ替え",
   "sort-helpful": "参考になった順",
-  "sort-recent": "新着順"
+  "sort-recent": "新着順",
+  "review-length": "{{used}}/{{max}}"
 }

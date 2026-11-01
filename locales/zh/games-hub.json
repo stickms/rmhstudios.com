@@ -37,5 +37,6 @@
   "guide-new-title": "New guide",
   "reviews-sort": "评论排序",
   "sort-helpful": "最有帮助",
-  "sort-recent": "最新"
+  "sort-recent": "最新",
+  "review-length": "{{used}}/{{max}}"
 }

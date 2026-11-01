@@ -37,5 +37,6 @@
   "guide-new-title": "New guide",
   "reviews-sort": "Trier les avis",
   "sort-helpful": "Les plus utiles",
-  "sort-recent": "Les plus récents"
+  "sort-recent": "Les plus récents",
+  "review-length": "{{used}}/{{max}}"
 }
