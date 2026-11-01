@@ -20,7 +20,9 @@ export const Route = createFileRoute('/api/games/synapse-storm/save')({
         });
 
         if (!player) {
-            return Response.json(null, { status: 404 });
+            // No row yet is a normal state for a first-time player, not an error: a
+            // 404 here shows as a red failed request in every new player's console.
+            return Response.json(null);
         }
 
         return Response.json(player);
