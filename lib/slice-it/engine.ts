@@ -745,14 +745,17 @@ export class GameEngine {
 
   update(): void {
     const store = useSliceItStore.getState();
-    if (store.status !== 'PLAYING' || store.isPaused) return;
+    // A replay is a viewer inside the song library, not a run: it must never need
+    // (or flip) the global `status`, because `MENU` is what keeps the library — and
+    // the very dialog the viewer lives in — mounted. See `setRunStatus`.
+    if ((store.status !== 'PLAYING' && this.replayInput === null) || store.isPaused) return;
 
     const currentTime = this.now();
     const duration = this.audioManager.getDuration();
 
     if (!this.finished && duration > 0 && currentTime >= duration) {
       this.finished = true;
-      store.setStatus('FINISHED');
+      this.setRunStatus('FINISHED');
       this.audioManager.stop();
       if (this.inMultiplayer) this.publish(true);
       return;
@@ -1267,7 +1270,19 @@ export class GameEngine {
     // of them; what the results screen needs to say "you failed" — and why —
     // is the flag on this engine, which it already holds. See
     // `getRunStats().failed`/`.failReason`.
-    useSliceItStore.getState().setStatus('FINISHED');
+    this.setRunStatus('FINISHED');
+  }
+
+  /**
+   * Move the global run status — except during a replay, which is watched from the
+   * song library (status `MENU`) and must leave the screen it is on alone. Flipping
+   * to `PLAYING` unmounted the library, its dialog and the viewer a frame after the
+   * viewer opened; flipping to `FINISHED` at the end of the track would have thrown
+   * the results screen over somebody else's leaderboard.
+   */
+  private setRunStatus(status: 'FINISHED'): void {
+    if (this.replayInput !== null) return;
+    useSliceItStore.getState().setStatus(status);
   }
 
   /**
@@ -1495,13 +1510,12 @@ export class GameEngine {
     if (log === null) return;
 
     const target = Math.max(0, seconds);
-    // `update` refuses to run unless the store says a run is live, which is
-    // correct for a game and wrong for a scrub: seeking a *paused* replay is the
-    // normal case. The two flags are forced for the duration of the
-    // re-simulation and put back exactly as they were.
+    // `update` refuses to run while the store says paused, which is correct for a
+    // game and wrong for a scrub: seeking a *paused* replay is the normal case. The
+    // flag is forced for the duration of the re-simulation and put back exactly as
+    // it was. (The run status is not touched: `update` lets a replay through.)
     const before = useSliceItStore.getState();
     const wasPaused = before.isPaused;
-    const wasStatus = before.status;
 
     // `reset` clears the cursor and every counter. It does not clear the log —
     // in playback the log is the input device, not run state.
@@ -1509,9 +1523,7 @@ export class GameEngine {
     this.replayCursor = 0;
     this.replayTime = 0;
 
-    const store = useSliceItStore.getState();
-    store.setStatus('PLAYING');
-    store.setIsPaused(false);
+    useSliceItStore.getState().setIsPaused(false);
 
     // Step the clock to each logged input in turn, so the miss sweep and the
     // hold accrual see the same sequence of times they saw live. Landing
@@ -1527,7 +1539,6 @@ export class GameEngine {
     this.update();
 
     const after = useSliceItStore.getState();
-    if (wasStatus !== 'PLAYING') after.setStatus(wasStatus);
     if (wasPaused) after.setIsPaused(true);
   }
 

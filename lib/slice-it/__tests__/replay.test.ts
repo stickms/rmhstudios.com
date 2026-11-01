@@ -329,6 +329,25 @@ describe('playback (R4)', () => {
     expect(useSliceItStore.getState().isPaused).toBe(true);
     expect(viewer.getRunStats().notesResolved).toBeGreaterThan(0);
   });
+
+  it('plays and scrubs a replay without ever leaving the song library (status MENU)', async () => {
+    // The viewer is a dialog inside the library, and the library only stays
+    // mounted while the global status is MENU. A replay that flipped it to PLAYING
+    // (or FINISHED at the end of the track) unmounted the viewer a frame after it
+    // opened, so no leaderboard replay could be watched.
+    const log = (await playRun([3])).getReplayLog();
+    const viewer = await freshEngine(chart());
+    viewer.loadReplay(log);
+    useSliceItStore.getState().setStatus('MENU');
+
+    for (let at = 0; at <= 12; at += 1 / 60) viewer.advanceReplay(at);
+    expect(viewer.getRunStats().notesResolved).toBe(8);
+    expect(useSliceItStore.getState().status).toBe('MENU');
+
+    viewer.seekReplay(4);
+    expect(useSliceItStore.getState().status).toBe('MENU');
+    expect(viewer.getRunStats().notesResolved).toBeGreaterThan(0);
+  });
 });
 
 /* ─── Server-side verification ───────────────────────────────────────────── */

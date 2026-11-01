@@ -131,7 +131,6 @@ export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
     // agreed to have their own modifier selection rewritten.
     const store = useSliceItStore.getState();
     const previousModifiers = store.modifiers;
-    const previousStatus = store.status;
     const previousSongId = store.songId;
 
     const engine = new GameEngine();
@@ -149,7 +148,6 @@ export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
         if (disposed) return;
 
         useSliceItStore.getState().setModifiers(modsFromReplay(payload.mods));
-        useSliceItStore.getState().setStatus('PLAYING');
         useSliceItStore.getState().setIsPaused(true);
 
         await engine.loadMap({ ...map, id: payload.track, audioUrl: song.audioUrl });
@@ -172,7 +170,6 @@ export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
       engineRef.current = null;
       const current = useSliceItStore.getState();
       current.setModifiers(previousModifiers);
-      current.setStatus(previousStatus);
       current.setSongId(previousSongId);
       current.setIsPaused(false);
     };
@@ -296,21 +293,23 @@ export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
 
   const togglePlay = useCallback(() => {
     const audio = AudioManager.getInstance();
-    setPlaying((was) => {
-      const next = !was;
-      useSliceItStore.getState().setIsPaused(!next);
-      if (next) {
-        virtualRef.current = {
-          at: engineRef.current?.getReplayTime() ?? 0,
-          since: performance.now(),
-        };
-        if (audioSyncedRef.current) audio.play();
-      } else if (audioSyncedRef.current) {
-        audio.pause();
-      }
-      return next;
-    });
-  }, []);
+    // Side effects live out here, not inside a `setPlaying` updater: the updater
+    // runs during render, and writing the Zustand store from it updated
+    // MainMenu / GameCanvas mid-render ("Cannot update a component while
+    // rendering a different component").
+    const next = !playing;
+    setPlaying(next);
+    useSliceItStore.getState().setIsPaused(!next);
+    if (next) {
+      virtualRef.current = {
+        at: engineRef.current?.getReplayTime() ?? 0,
+        since: performance.now(),
+      };
+      if (audioSyncedRef.current) audio.play();
+    } else if (audioSyncedRef.current) {
+      audio.pause();
+    }
+  }, [playing]);
 
   const scrub = useCallback((seconds: number) => {
     const engine = engineRef.current;
