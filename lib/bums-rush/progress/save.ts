@@ -29,7 +29,11 @@
  * already implies (`bums-rush:profile:v1`) and treats the second name in the
  * doc as describing the *shape*, not a second `localStorage.setItem` call.
  */
-import { createCloudSave, type CloudTransport } from '@/lib/game-saves/cloud-save';
+import {
+  createCloudSave,
+  readJsonWithDeadline,
+  type CloudTransport,
+} from '@/lib/game-saves/cloud-save';
 import {
   untranslated,
   type MonotonicCounters,
@@ -220,9 +224,7 @@ export function parseProfile(raw: unknown): Profile | null {
  */
 const profileTransport: CloudTransport = {
   async read() {
-    const res = await fetch(PROFILE_ENDPOINT);
-    if (!res.ok) return null;
-    return res.json();
+    return readJsonWithDeadline(PROFILE_ENDPOINT);
   },
 
   async write(payload) {
