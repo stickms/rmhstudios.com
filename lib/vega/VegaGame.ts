@@ -57,14 +57,26 @@ export class VegaGame {
     }
     
     // Also listen to window resize as fallback
-    window.addEventListener('resize', () => this.handleResize());
-    this.canvas.addEventListener('mousedown', (e) => this.handleInput(e));
-    this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+    // Bound once so destroy() can really remove them (anonymous arrows leaked a
+    // resize listener per mount, each holding a dead game). Pointer events cover
+    // mouse, touch and pen; `touch-action: none` stops scroll/zoom stealing taps.
+    window.addEventListener('resize', this.onResize);
+    this.canvas.style.touchAction = 'none';
+    this.canvas.addEventListener('pointerdown', this.onPointerDown);
+    this.canvas.addEventListener('pointermove', this.onPointerMove);
   }
+
+  private onResize = () => this.handleResize();
+  private onPointerDown = (e: PointerEvent) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    this.handleMouseMove(e);
+    this.handleInput(e);
+  };
+  private onPointerMove = (e: PointerEvent) => this.handleMouseMove(e);
   
   private lastMousePos: {x: number, y: number} | null = null;
   
-  private handleMouseMove(e: MouseEvent) {
+  private handleMouseMove(e: MouseEvent | PointerEvent) {
       const rect = this.canvas.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
@@ -114,7 +126,7 @@ export class VegaGame {
     if (!this.animationId) this.draw();
   }
   
-  private handleInput(e: MouseEvent) {
+  private handleInput(e: MouseEvent | PointerEvent) {
     // Check if transitioning or paused
     const state = useGameStore.getState();
     if (state.isTransitioning) return;
@@ -355,7 +367,9 @@ export class VegaGame {
         return;
     }
 
-    const deltaTime = timestamp - this.lastTime;
+    // Clamp: a backgrounded tab resumes with a multi-second gap that would
+    // otherwise teleport every enemy to the end of the path.
+    const deltaTime = Math.min(timestamp - this.lastTime, 100);
     this.lastTime = timestamp;
     
     this.update(deltaTime);
@@ -449,6 +463,8 @@ export class VegaGame {
   public destroy() {
     this.stop();
     this.resizeObserver.disconnect();
-    window.removeEventListener('resize', () => this.handleResize());
+    window.removeEventListener('resize', this.onResize);
+    this.canvas.removeEventListener('pointerdown', this.onPointerDown);
+    this.canvas.removeEventListener('pointermove', this.onPointerMove);
   }
 }

@@ -7,7 +7,8 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -24,7 +25,9 @@ import { useGameStore } from '@/lib/versecraft/store';
 import { scoreLineArrangePoem } from '@/lib/versecraft/scoring';
 import type { LineArrangePuzzleData, PoemLine } from '@/lib/versecraft/types';
 
-function SortableLine({ line, index }: { line: PoemLine; index: number }) {
+function SortableLine({
+  line, index, total, onMove,
+}: { line: PoemLine; index: number; total: number; onMove: (from: number, to: number) => void }) {
   const { t } = useTranslation("c-versecraft");
   const {
     attributes,
@@ -39,6 +42,8 @@ function SortableLine({ line, index }: { line: PoemLine; index: number }) {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 10 : 0,
+    // Let a quick swipe scroll the page; a press-and-hold (TouchSensor delay) starts the drag.
+    touchAction: 'manipulation' as const,
   };
 
   return (
@@ -91,8 +96,34 @@ function SortableLine({ line, index }: { line: PoemLine; index: number }) {
           {line.text}
         </p>
 
-        {/* Drag indicator */}
-        <span style={{ color: '#555' }}>⠿</span>
+        {/* Tap-to-move fallback: drag is awkward on small touch screens */}
+        <div
+          className="flex flex-col"
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            aria-label={t("move-line-up", { defaultValue: "Move line up" })}
+            disabled={index === 0}
+            onClick={() => onMove(index, index - 1)}
+            className="flex size-11 items-center justify-center text-base disabled:opacity-25"
+            style={{ color: '#c4a35a', touchAction: 'manipulation' }}
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            aria-label={t("move-line-down", { defaultValue: "Move line down" })}
+            disabled={index === total - 1}
+            onClick={() => onMove(index, index + 1)}
+            className="flex size-11 items-center justify-center text-base disabled:opacity-25"
+            style={{ color: '#c4a35a', touchAction: 'manipulation' }}
+          >
+            ▼
+          </button>
+        </div>
       </motion.div>
     </div>
   );
@@ -105,7 +136,8 @@ export function LineArrangePuzzle() {
   const puzzle = currentPuzzle as LineArrangePuzzleData | null;
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
@@ -128,6 +160,11 @@ export function LineArrangePuzzle() {
       const newIndex = arrangedLineIds.indexOf(over.id as string);
       setArrangedLineIds(arrayMove(arrangedLineIds, oldIndex, newIndex));
     }
+  }, [arrangedLineIds, setArrangedLineIds]);
+
+  const handleMove = useCallback((from: number, to: number) => {
+    if (to < 0 || to >= arrangedLineIds.length) return;
+    setArrangedLineIds(arrayMove(arrangedLineIds, from, to));
   }, [arrangedLineIds, setArrangedLineIds]);
 
   const handleSubmit = useCallback(() => {
@@ -176,7 +213,7 @@ export function LineArrangePuzzle() {
               strategy={verticalListSortingStrategy}
             >
               {arrangedLines.map((line, i) => (
-                <SortableLine key={line.id} line={line} index={i} />
+                <SortableLine key={line.id} line={line} index={i} total={arrangedLines.length} onMove={handleMove} />
               ))}
             </SortableContext>
           </DndContext>
@@ -194,7 +231,7 @@ export function LineArrangePuzzle() {
         <div className="max-w-2xl mx-auto flex justify-end">
           <button
             onClick={handleSubmit}
-            className="px-8 py-2.5 rounded text-base font-semibold transition-colors"
+            className="min-h-11 px-8 py-2.5 rounded text-base font-semibold transition-colors"
             style={{
               backgroundColor: 'rgba(196, 163, 90, 0.3)',
               border: '1px solid rgba(196, 163, 90, 0.6)',

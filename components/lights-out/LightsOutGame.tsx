@@ -8,6 +8,7 @@ import {
     formatDateKey,
     createSeededRng,
 } from '@/lib/lights-out/seed';
+import { getTodayEST } from '@/lib/daily-puzzles/seed';
 import { getDailyShape, getShapeLabel, isActiveCell } from '@/lib/lights-out/shapes';
 import {
     generatePuzzle,
@@ -49,7 +50,9 @@ import {
 
 export function LightsOutGame() {
     const { t } = useTranslation("c-lights-out");
-    const todayKey = formatDateKey(new Date());
+    // Same EST drop day as the hub, leaderboard and every other daily mode; the
+    // visitor's local date disagreed with the hub for part of every day.
+    const todayKey = formatDateKey(getTodayEST());
 
     // Selected date — defaults to today, can switch to past puzzles
     const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
@@ -162,7 +165,7 @@ export function LightsOutGame() {
     const pastPuzzles = useMemo(() => {
         const entries: { dateKey: string; shapeLabel: string; save: ReturnType<typeof loadSave> }[] = [];
         for (let i = 1; i <= 14; i++) {
-            const d = new Date();
+            const d = getTodayEST();
             d.setDate(d.getDate() - i);
             const dk = formatDateKey(d);
             const s = getDateSeed(d);
@@ -281,7 +284,7 @@ export function LightsOutGame() {
             : '';
 
     const cellBase =
-        'rounded-site-sm transition-colors duration-site-fast disabled:cursor-default';
+        'touch-manipulation rounded-site-sm transition-colors duration-site-fast disabled:cursor-default';
     const cellState = (on: boolean) =>
         on ? 'bg-site-warning text-site-warning-fg' : 'border border-site-border bg-site-bg-subtle';
     const hintRing = 'ring-2 ring-site-accent ring-offset-2 ring-offset-site-surface animate-pulse';

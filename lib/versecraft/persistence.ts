@@ -33,7 +33,11 @@ export function loadGame(slotId: number): SaveFile | null {
 }
 
 export function deleteSave(slotId: number): void {
-  localStorage.removeItem(`${SAVE_KEY_PREFIX}${slotId}`);
+  try {
+    localStorage.removeItem(`${SAVE_KEY_PREFIX}${slotId}`);
+  } catch {
+    /* private mode / blocked storage */
+  }
 }
 
 export function getAllSaves(): (SaveFile | null)[] {
@@ -104,6 +108,7 @@ export async function dbSave(state: GameState): Promise<boolean> {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout?.(20000),
     });
     return res.ok;
   } catch {
@@ -113,7 +118,7 @@ export async function dbSave(state: GameState): Promise<boolean> {
 
 export async function dbLoad(): Promise<DbLoadResponse | null> {
   try {
-    const res = await fetch('/api/versecraft/save');
+    const res = await fetch('/api/versecraft/save', { signal: AbortSignal.timeout?.(20000) });
     if (!res.ok) return null;
     return await res.json() as DbLoadResponse;
   } catch {

@@ -217,22 +217,36 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
     setNudgesLeft((n) => Math.max(0, n - 1));
   }, [holding, failed, nudgesLeft]);
 
-  const handlePointerDown = useCallback(() => setHolding(true), []);
-  const handlePointerUp = useCallback(() => {
+  // Only the pointer that started the hold may end it. On a phone the Brace
+  // button is tapped with a SECOND finger while the first keeps holding; that
+  // tap's pointerup used to bubble to the window listener and fail the hold, so
+  // the minigame could not be won on touch.
+  const holdPointerRef = useRef<number | null>(null);
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    holdPointerRef.current = e.pointerId;
+    setHolding(true);
+  }, []);
+  const handlePointerUp = useCallback((e?: React.PointerEvent) => {
+    if (e && holdPointerRef.current !== null && e.pointerId !== holdPointerRef.current) return;
     if (!holding || progress >= 1 || failed) return;
     setHolding(false);
     fail();
   }, [holding, progress, failed, fail]);
 
   useEffect(() => {
-    const up = () => {
+    const up = (e: PointerEvent) => {
+      if (holdPointerRef.current !== null && e.pointerId !== holdPointerRef.current) return;
       setHolding((h) => {
         if (h) fail();
         return false;
       });
     };
     window.addEventListener('pointerup', up);
-    return () => window.removeEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    return () => {
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+    };
   }, [fail]);
 
   useEffect(() => {
@@ -277,7 +291,8 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
-          className="rounded-xl border-2 border-cyan-500/60 bg-cyan-500/20 px-6 py-3 font-mono font-bold text-cyan-200"
+          onContextMenu={(e) => e.preventDefault()}
+          className="min-h-12 touch-none select-none rounded-xl border-2 border-cyan-500/60 bg-cyan-500/20 px-6 py-3 font-mono font-bold text-cyan-200"
         >
           {holding ? t("hold-active", { defaultValue: "Holding…" }) : t("hold-idle", { defaultValue: "Hold" })}
         </button>
@@ -285,7 +300,7 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
           type="button"
           onClick={handleNudge}
           disabled={!holding || failed || nudgesLeft <= 0}
-          className="rounded-xl border-2 border-amber-500/50 bg-amber-500/10 px-4 py-3 font-mono text-amber-200 disabled:opacity-40"
+          className="min-h-12 touch-manipulation rounded-xl border-2 border-amber-500/50 bg-amber-500/10 px-4 py-3 font-mono text-amber-200 disabled:opacity-40"
         >
           {t("brace-btn", { defaultValue: "Brace ({{count}})", count: nudgesLeft })}
         </button>

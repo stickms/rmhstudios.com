@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { StarRating } from '@/components/games/StarRating';
+import { fetchWithTimeout } from '@/lib/versecraft/gen/client';
 import { useGameStore } from '@/lib/versecraft/store';
 import type { SeedListingView } from '@/lib/versecraft/seed-gallery';
 
@@ -38,7 +39,7 @@ export function SeedGalleryButton() {
   const load = useCallback(async (which: Sort) => {
     setFailed(false);
     try {
-      const res = await fetch(`/api/versecraft/seeds?sort=${which}`);
+      const res = await fetchWithTimeout(`/api/versecraft/seeds?sort=${which}`, {}, 15000);
       if (!res.ok) throw new Error(String(res.status));
       setRows(((await res.json()) as { listings: SeedListingView[] }).listings);
     } catch {
@@ -51,12 +52,17 @@ export function SeedGalleryButton() {
   }, [open, sort, load]);
 
   const rate = async (row: SeedListingView, stars: number) => {
-    const res = await fetch('/api/versecraft/seeds/rate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ listingId: row.id, stars }),
-    });
-    if (!res.ok) {
+    let res: Response | null = null;
+    try {
+      res = await fetchWithTimeout('/api/versecraft/seeds/rate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingId: row.id, stars }),
+      }, 15000);
+    } catch {
+      res = null;
+    }
+    if (!res || !res.ok) {
       toast.error(t('gallery-rate-error', { defaultValue: 'Could not save your rating.' }));
       return;
     }
@@ -189,11 +195,11 @@ export function PublishSeedButton({ seed }: { seed: string }) {
   const publish = async () => {
     setBusy(true);
     try {
-      const res = await fetch('/api/versecraft/seeds', {
+      const res = await fetchWithTimeout('/api/versecraft/seeds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed, title }),
-      });
+        body: JSON.stringify({ seed, title: title.trim() }),
+      }, 15000);
       if (res.ok) {
         toast.success(t('publish-done', { defaultValue: 'Published to the seed gallery.' }));
         setOpen(false);

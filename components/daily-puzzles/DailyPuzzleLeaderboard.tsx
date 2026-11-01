@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -95,6 +95,8 @@ export function DailyPuzzleLeaderboard({
     }
   }, [gameMode, dateKey]);
 
+  const retries = useRef(0);
+
   const submitScore = useCallback(async () => {
     if (!session.data || submitted) return;
 
@@ -131,14 +133,20 @@ export function DailyPuzzleLeaderboard({
             }
           : { gameMode, dateKey, score, resultJson, timeSeconds };
 
-      await fetch('/api/daily-puzzles/score', {
+      const res = await fetch('/api/daily-puzzles/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      // Server hiccup / rate limit: allow a couple of retries so a flaky mobile
+      // connection does not silently lose the score.
+      if (!res.ok && (res.status >= 500 || res.status === 429)) throw new Error(String(res.status));
       fetchLeaderboard();
     } catch {
-      /* ignore */
+      if (retries.current < 3) {
+        retries.current += 1;
+        setTimeout(() => setSubmitted(false), 4000 * retries.current);
+      }
     }
   }, [
     session.data,
