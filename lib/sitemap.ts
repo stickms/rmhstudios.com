@@ -246,6 +246,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/connections/new': 'personal', // signed-in authoring form
   '/games/trades': 'personal', // the viewer's own offers
   '/games/market': 'noindex', // card listings change by the minute and are behind sign-in to act on
+  '/games/shop': 'noindex', // Steam-framed copy of the /store coin shop; /store is the indexed page
+  '/games/communities': 'noindex', // Steam-framed copy of the /communities directory; /communities is indexed
   '/games/store': 'noindex', // discovery page; filters and search make a URL per query
   '/games/inventory': 'personal', // the viewer's own trading cards and badges
   '/games/community': 'noindex', // Steam-style community home; the viewer's groups ride on it

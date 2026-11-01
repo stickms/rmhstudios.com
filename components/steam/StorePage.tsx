@@ -49,7 +49,7 @@ export function StorePage({ data }: { data: StoreData }) {
       <div className="stm-web-single">
         <div className="stm-market-head">
           <h1 className="stm-web-title">{t('steam-nav-store', { defaultValue: 'Store' })}</h1>
-          <Link to="/store" className="stm-link">
+          <Link to="/games/shop" className="stm-link">
             {t('steam-store-coin-shop', { defaultValue: 'Coin shop' })}
           </Link>
         </div>
