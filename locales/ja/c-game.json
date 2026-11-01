@@ -88,6 +88,8 @@
   "err-too-few": "Not everyone is ready yet.",
   "exit-game": "ゲームを終了",
   "expert": "エキスパート",
+  "farm-resume-failed": "Reconnected, but you can no longer visit that farm. You are on your own farm.",
+  "farm-resumed": "Reconnected. You are back on the farm you were visiting.",
   "final-score": "最終スコア",
   "finished": "終了",
   "game-modifiers": "ゲームモディファイア",
