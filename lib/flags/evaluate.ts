@@ -12,7 +12,8 @@ export interface FlagRecord {
   rolloutPercent: number;
 }
 
-export const FLAG_KEY_PATTERN = /^[a-z][a-z0-9_.-]{1,63}$/;
+// Defined in ./key (client-safe) and re-exported so server callers keep one import.
+export { FLAG_KEY_PATTERN } from './key';
 
 /**
  * Stable 0–99 bucket for (flag, user). Salted with the key so one user is not in

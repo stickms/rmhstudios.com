@@ -412,5 +412,19 @@
   "audit-filter-to": "至",
   "audit-export-csv": "导出 CSV",
   "audit-clear-filters": "清除筛选",
-  "audit-no-match": "没有符合这些筛选条件的操作。"
+  "audit-no-match": "没有符合这些筛选条件的操作。",
+  "flags-title": "功能开关",
+  "flags-card-title": "功能开关",
+  "flags-card-description": "无需发布，即可对一定比例的用户开启功能。",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "小写字母、数字、点、短横线或下划线，且以字母开头。",
+  "flags-description-placeholder": "它控制什么？",
+  "flags-create": "创建开关",
+  "flags-rollout": "灰度 %",
+  "flags-enabled": "已启用",
+  "flags-delete": "删除",
+  "flags-delete-title": "删除此开关？",
+  "flags-delete-description": "所有检查它的代码都会将其视为关闭。",
+  "flags-empty": "暂无开关。",
+  "flags-save-failed": "无法保存该开关。"
 }

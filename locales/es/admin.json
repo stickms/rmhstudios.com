@@ -434,5 +434,19 @@
   "audit-filter-to": "Hasta",
   "audit-export-csv": "Exportar CSV",
   "audit-clear-filters": "Borrar filtros",
-  "audit-no-match": "Ninguna acción coincide con estos filtros."
+  "audit-no-match": "Ninguna acción coincide con estos filtros.",
+  "flags-title": "Indicadores de funciones",
+  "flags-card-title": "Indicadores de funciones",
+  "flags-card-description": "Activa funciones para un porcentaje de usuarios sin desplegar.",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "Minúsculas, dígitos, puntos, guiones o guiones bajos, empezando por una letra.",
+  "flags-description-placeholder": "¿Qué controla?",
+  "flags-create": "Crear indicador",
+  "flags-rollout": "Despliegue %",
+  "flags-enabled": "Activado",
+  "flags-delete": "Eliminar",
+  "flags-delete-title": "¿Eliminar este indicador?",
+  "flags-delete-description": "Todo lo que lo consulte lo tratará como desactivado.",
+  "flags-empty": "Aún no hay indicadores.",
+  "flags-save-failed": "No se pudo guardar el indicador."
 }
