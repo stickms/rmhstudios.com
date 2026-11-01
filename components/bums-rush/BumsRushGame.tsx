@@ -38,6 +38,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 import { ConnectionBanner } from '@/components/shared/ConnectionStatus';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -152,6 +153,27 @@ export function BumsRushGame({ initialRoomCode }: Props) {
     // restart the level on every ping.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [start]);
+
+  // The hub elects a new host the moment the old one leaves (`br:hostChanged`),
+  // but a running level cannot change hands: the host owns the simulation and
+  // the guests only interpolate its snapshots. Without this the guest stares at
+  // a frozen frame, silently, for as long as they care to wait. Say so and put
+  // them back on the map; the lobby stays theirs to reopen. Only a message that
+  // arrives DURING a level counts — `hostChanged` is sticky state.
+  const hostChanged = lobby.state.hostChanged;
+  const handledHostChange = useRef(hostChanged);
+  useEffect(() => {
+    if (hostChanged === handledHostChange.current) return;
+    handledHostChange.current = hostChanged;
+    if (!hostChanged || screen.kind !== 'playing' || !netStart) return;
+    toast.info(
+      t('net.host-left', { defaultValue: 'The host left, so this run ended. Back to the map.' }),
+    );
+    lobby.leave();
+    setNetStart(null);
+    go({ kind: 'world-map' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hostChanged]);
 
   const connectLobby = useCallback(async () => {
     return lobby.connect({
