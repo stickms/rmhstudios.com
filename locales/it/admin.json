@@ -434,5 +434,19 @@
   "audit-filter-to": "Al",
   "audit-export-csv": "Esporta CSV",
   "audit-clear-filters": "Cancella filtri",
-  "audit-no-match": "Nessuna azione corrisponde a questi filtri."
+  "audit-no-match": "Nessuna azione corrisponde a questi filtri.",
+  "flags-title": "Flag delle funzionalità",
+  "flags-card-title": "Flag delle funzionalità",
+  "flags-card-description": "Attiva funzionalità per una percentuale di utenti senza deploy.",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "Minuscole, cifre, punti, trattini o trattini bassi, iniziando con una lettera.",
+  "flags-description-placeholder": "Cosa controlla?",
+  "flags-create": "Crea flag",
+  "flags-rollout": "Rollout %",
+  "flags-enabled": "Attivo",
+  "flags-delete": "Elimina",
+  "flags-delete-title": "Eliminare questo flag?",
+  "flags-delete-description": "Tutto ciò che lo controlla lo tratterà come disattivato.",
+  "flags-empty": "Nessun flag per ora.",
+  "flags-save-failed": "Impossibile salvare il flag."
 }
