@@ -1500,5 +1500,10 @@
   "your-personas": "آپ کے پرسوناز",
   "your-ratings": "آپ کی ریٹنگز",
   "your-top-post": "آپ کی ٹاپ پوسٹ",
-  "your-year-on-rmh": "RMH پر آپ کا سال"
+  "your-year-on-rmh": "RMH پر آپ کا سال",
+  "muted-duration-label": "کتنی دیر کے لیے خاموش کریں",
+  "muted-duration-forever": "جب تک میں ہٹا نہ دوں",
+  "muted-duration-day": "1 دن",
+  "muted-duration-week": "1 ہفتہ",
+  "muted-duration-month": "30 دن"
 }

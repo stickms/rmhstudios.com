@@ -1455,5 +1455,10 @@
   "your-personas": "あなたのペルソナ",
   "your-ratings": "あなたの評価",
   "your-top-post": "あなたのトップ投稿",
-  "your-year-on-rmh": "RMHでのあなたの1年"
+  "your-year-on-rmh": "RMHでのあなたの1年",
+  "muted-duration-label": "ミュートする期間",
+  "muted-duration-forever": "削除するまで",
+  "muted-duration-day": "1日",
+  "muted-duration-week": "1週間",
+  "muted-duration-month": "30日"
 }

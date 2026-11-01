@@ -15,6 +15,7 @@
  */
 
 import { Prisma } from '@prisma/client';
+import { activeMutedWords, nextExpiry, parseExpiries } from '@/lib/feed/muted-expiry';
 import { prisma } from '../prisma.server';
 import type { FeedItem, FeedFilter, FeedPoll } from '../feed-types';
 import type { ResolvedUser } from '../user-display';
@@ -800,10 +801,15 @@ export async function getMutedWords(userId: string): Promise<string[]> {
   if (cached) return cached;
   const profile = await prisma.userProfile.findUnique({
     where: { userId },
-    select: { mutedWords: true },
+    select: { mutedWords: true, mutedWordExpiries: true },
   });
-  const words = profile?.mutedWords ?? [];
-  apiCache.set(mutedWordsKey(userId), words, MUTED_WORDS_TTL_MS);
+  const now = Date.now();
+  const expiries = parseExpiries(profile?.mutedWordExpiries);
+  const words = activeMutedWords(profile?.mutedWords ?? [], expiries, now);
+  // Never cache past the next deadline, so a timed mute lifts on time.
+  const next = nextExpiry(words, expiries);
+  const ttl = next === null ? MUTED_WORDS_TTL_MS : Math.max(1_000, Math.min(MUTED_WORDS_TTL_MS, next - now));
+  apiCache.set(mutedWordsKey(userId), words, ttl);
   return words;
 }
 

@@ -1569,5 +1569,10 @@
   "your-personas": "Your personas",
   "your-ratings": "Your ratings",
   "your-top-post": "Your top post",
-  "your-year-on-rmh": "Your year on RMH"
+  "your-year-on-rmh": "Your year on RMH",
+  "muted-duration-label": "How long to mute",
+  "muted-duration-forever": "Until I remove it",
+  "muted-duration-day": "1 day",
+  "muted-duration-week": "1 week",
+  "muted-duration-month": "30 days"
 }

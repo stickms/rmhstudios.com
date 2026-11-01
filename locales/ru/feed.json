@@ -1590,5 +1590,10 @@
   "your-personas": "Ваши персонажи",
   "your-ratings": "Ваши оценки",
   "your-top-post": "Ваш лучший пост",
-  "your-year-on-rmh": "Ваш год на RMH"
+  "your-year-on-rmh": "Ваш год на RMH",
+  "muted-duration-label": "На какой срок скрыть",
+  "muted-duration-forever": "Пока я не удалю",
+  "muted-duration-day": "1 день",
+  "muted-duration-week": "1 неделя",
+  "muted-duration-month": "30 дней"
 }
