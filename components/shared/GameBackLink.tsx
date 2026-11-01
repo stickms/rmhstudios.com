@@ -58,13 +58,16 @@ interface GameBackLinkProps {
    * hover. `tone` is the two-line fix, and `dark` stays the default so no
    * existing caller changes.
    */
-  tone?: 'dark' | 'light';
+  tone?: 'dark' | 'light' | 'inverse';
 }
 
 const TONES = {
   dark: 'border-zinc-800 bg-black/50 text-zinc-500 hover:text-white',
   // Opacity-modified black/white rather than a palette step, so this reads
   // correctly on any light ground without importing that game's tokens.
+  // Mid-tone coloured grounds (Massive March's teal): the dark chip's zinc-500
+  // ink is ~2:1 there, so this keeps the dark chip and lifts the ink to white.
+  inverse: 'border-white/40 bg-black/45 text-white/95 hover:text-white',
   light: 'border-black/25 bg-white/55 text-black/65 hover:text-black',
 } as const;
 

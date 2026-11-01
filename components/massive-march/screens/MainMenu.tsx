@@ -66,7 +66,7 @@ export function MainMenu({ connecting }: { connecting: boolean }) {
 
   return (
     <div className="app-page relative" style={{ background: LAND.waterDeep }}>
-      <GameBackLink to="/games" />
+      <GameBackLink to="/games" tone="inverse" />
 
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-5 px-5 pt-[calc(4rem+var(--safe-top))] pb-10">
         <header className="text-center" style={{ color: BOARD }}>
