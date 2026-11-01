@@ -171,7 +171,7 @@ export function SteamReviews({
           <Stars value={stars} onRate={setStars} label={t('your-rating', { defaultValue: 'Your rating' })} />
           <textarea
             className="stm-textarea"
-            rows={3}
+            rows={4}
             value={body}
             maxLength={REVIEW_BODY_MAX}
             onChange={(e) => setBody(e.target.value)}
