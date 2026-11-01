@@ -102,6 +102,7 @@
   "orphans-heading_one": "{{count}} highlight no longer matches the text",
   "orphans-heading_other": "{{count}} highlights no longer match the text",
   "orphans-hint": "The passage was edited or removed. We list these rather than guess where they belong.",
+  "outline-title": "Contents",
   "pace-ahead": "{{n}} {{unit}} ahead of pace",
   "pace-behind": "{{n}} {{unit}} behind pace",
   "pace-done": "Goal reached. Well read.",

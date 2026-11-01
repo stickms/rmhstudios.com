@@ -208,3 +208,8 @@
 .rf-textview__body p {
   margin-block: 0 1em;
 }
+
+/* Outline links land below the sticky chrome. */
+.rf-article :is(h2, h3)[id] {
+  scroll-margin-top: 6rem;
+}
