@@ -817,7 +817,7 @@ export function VoidBreakerGame() {
           {/* Top bar */}
           <div className="flex justify-between items-start">
             {/* Score + multiplier */}
-            <div className="bg-black/70 rounded px-2 py-1 sm:px-3 sm:py-1.5 border border-[#00f5ff]/20 backdrop-blur-sm">
+            <div className="mt-12 pointer-coarse:mt-14 bg-black/70 rounded px-2 py-1 sm:px-3 sm:py-1.5 border border-[#00f5ff]/20 backdrop-blur-sm">
               <div className="text-[#00f5ff] font-mono text-xs sm:text-sm font-bold tracking-wider drop-shadow-[0_0_8px_rgba(0,245,255,0.8)]">
                 {hud.score.toLocaleString().padStart(7, '0')}
               </div>
