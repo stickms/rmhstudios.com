@@ -6,7 +6,7 @@
  * (reuses the existing /api/dream-rift/score endpoint; requires sign-in).
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSession } from '@/components/Providers';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
@@ -29,10 +29,12 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
     // Auto-submit the personal score once, as soon as we have a result and a
     // signed-in user — no username prompt; the leaderboard is keyed to the
     // account (the server derives the display name from the user's handle/name).
-    const [scoreSubmitted, setScoreSubmitted] = useState(false);
+    // A ref, not state: `session.data.user` gets a new identity on every session refetch, which
+    // re-ran this effect before the state flip rendered and posted the score twice.
+    const scoreSubmittedFor = useRef<unknown>(null);
     useEffect(() => {
-        if (!result || scoreSubmitted || !session.data?.user) return;
-        setScoreSubmitted(true);
+        if (!result || scoreSubmittedFor.current === result || !session.data?.user) return;
+        scoreSubmittedFor.current = result;
         setSubmitState('saving');
         fetch('/api/dream-rift/score', {
             method: 'POST',
@@ -60,7 +62,6 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
                 setSubmitState('error');
                 setSubmitMsg('Network error saving score.');
             });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [result, session.data?.user]);
 
     // The host of a co-op run submits the squad's combined-score / time-survived
