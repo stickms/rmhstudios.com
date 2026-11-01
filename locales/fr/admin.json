@@ -434,5 +434,19 @@
   "audit-filter-to": "Au",
   "audit-export-csv": "Exporter en CSV",
   "audit-clear-filters": "Effacer les filtres",
-  "audit-no-match": "Aucune action ne correspond à ces filtres."
+  "audit-no-match": "Aucune action ne correspond à ces filtres.",
+  "flags-title": "Drapeaux de fonctionnalités",
+  "flags-card-title": "Drapeaux de fonctionnalités",
+  "flags-card-description": "Activez des fonctionnalités pour un pourcentage d'utilisateurs sans déploiement.",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "Minuscules, chiffres, points, tirets ou tirets bas, en commençant par une lettre.",
+  "flags-description-placeholder": "Que contrôle-t-il ?",
+  "flags-create": "Créer un drapeau",
+  "flags-rollout": "Déploiement %",
+  "flags-enabled": "Activé",
+  "flags-delete": "Supprimer",
+  "flags-delete-title": "Supprimer ce drapeau ?",
+  "flags-delete-description": "Tout ce qui le consulte le considérera comme désactivé.",
+  "flags-empty": "Aucun drapeau pour l'instant.",
+  "flags-save-failed": "Impossible d'enregistrer le drapeau."
 }

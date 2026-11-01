@@ -53,6 +53,40 @@ export interface CloudTransport {
 }
 
 /**
+ * How long a cloud read may take before the game stops waiting for it.
+ *
+ * Every game gate holds its loading screen until {@link CloudSave.resolve}
+ * settles, and `resolve` awaits the cloud read. A request that is accepted but
+ * never answered (a stalled mobile connection, a proxy that swallows it, a
+ * server stuck mid-deploy) has no error to catch, so without a deadline the
+ * player sits on "Opening the doors…" forever. Past the deadline the read
+ * rejects, `readCloud` treats that like being offline, and the local copy is
+ * played.
+ */
+export const CLOUD_READ_TIMEOUT_MS = 8_000;
+
+/**
+ * GET `url` and parse the JSON body, or reject once {@link CLOUD_READ_TIMEOUT_MS}
+ * has passed. The timer covers the body read too, not just the headers. Returns
+ * `null` for a non-2xx response. (`AbortSignal.timeout` is avoided on purpose: it
+ * is missing from Safari before 16.)
+ */
+export async function readJsonWithDeadline(
+  url: string,
+  timeoutMs: number = CLOUD_READ_TIMEOUT_MS,
+): Promise<unknown> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) return null;
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
  * The standard envelope: `{ saveData }` in both directions.
  *
  * `keepalive` on the ordinary write too, so a save already in flight when the
@@ -61,9 +95,7 @@ export interface CloudTransport {
 export function jsonTransport(endpoint: string): CloudTransport {
   return {
     async read() {
-      const res = await fetch(endpoint);
-      if (!res.ok) return null;
-      const json = (await res.json()) as { saveData?: unknown } | null;
+      const json = (await readJsonWithDeadline(endpoint)) as { saveData?: unknown } | null;
       return json?.saveData ?? null;
     },
 

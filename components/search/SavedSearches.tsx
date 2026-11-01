@@ -107,22 +107,20 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
       </div>
 
       {showTips ? (
-        <p className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-site-text-muted">
-          {OPERATOR_EXAMPLES.map((op, i) => (
-            <span key={op} className="inline-flex items-center gap-2">
-              {i > 0 ? <span aria-hidden>·</span> : null}
-              <button
-                type="button"
-                onClick={() => void copyOperator(op)}
-                aria-label={t('operator-copy', { defaultValue: 'Copy {{operator}}', operator: op })}
-                title={t('operator-copy', { defaultValue: 'Copy {{operator}}', operator: op })}
-                className="font-mono underline-offset-2 hover:text-site-text hover:underline"
-              >
-                {op}
-              </button>
-            </span>
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-site-text-muted">
+          {OPERATOR_EXAMPLES.map((op) => (
+            <button
+              key={op}
+              type="button"
+              onClick={() => void copyOperator(op)}
+              aria-label={t('operator-copy', { defaultValue: 'Copy {{operator}}', operator: op })}
+              title={t('operator-copy', { defaultValue: 'Copy {{operator}}', operator: op })}
+              className="glass-fill rounded-full px-3 py-1.5 font-mono text-site-text hover:text-site-accent"
+            >
+              {op}
+            </button>
           ))}
-        </p>
+        </div>
       ) : null}
 
       {saved.length > 0 ? (

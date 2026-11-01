@@ -99,13 +99,13 @@ export default function TokenGenerator() {
     <div className="space-y-6">
       {/* Generate New Token */}
       <div className="space-y-3">
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <input
             type="text"
             placeholder={t("token-name-placeholder", { defaultValue: "Token name (optional)" })}
             value={tokenName}
             onChange={(e) => setTokenName(e.target.value)}
-            className="flex-1 px-3 py-2 glass-inset rounded-site-sm text-site-text text-sm outline-none focus:border-site-border-bright transition-colors"
+            className="min-w-0 flex-1 basis-48 px-3 py-2 glass-inset rounded-site-sm text-site-text text-base sm:text-sm outline-none focus:border-site-border-bright transition-colors"
             maxLength={100}
           />
           <Button
@@ -147,7 +147,7 @@ export default function TokenGenerator() {
             <CopyButton value={newToken} label={t("copy-token-label", { defaultValue: "Copy token" })} variant="outline" className="shrink-0" />
           </div>
           <p className="text-xs text-site-text-dim mt-2">
-            {t("token-auth-instruction-pre", { defaultValue: "Run" })} <code className="text-site-accent">rmhcode login --token YOUR_TOKEN</code> {t("token-auth-instruction-post", { defaultValue: "to authenticate." })}
+            {t("token-auth-instruction-pre", { defaultValue: "Run" })} <code className="break-all text-site-accent">rmhcode login --token YOUR_TOKEN</code> {t("token-auth-instruction-post", { defaultValue: "to authenticate." })}
           </p>
         </div>
       )}

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { normalizeCover } from '@/lib/slice-it/cover-image';
+import { isHeicCover, normalizeCover } from '@/lib/slice-it/cover-image';
 import { toast } from 'sonner';
 import {
   Heart,
@@ -1382,9 +1382,14 @@ function UploadForm({ onDone }: { onDone: () => void }) {
     const picked = await normalizeCover(raw);
     if (!picked) {
       toast.error(
-        ts('cover-format-unsupported', {
-          defaultValue: 'That image format is not supported. Use JPEG, PNG or WebP.',
-        }),
+        isHeicCover(raw)
+          ? ts('cover-heic-unsupported', {
+              defaultValue:
+                "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
+            })
+          : ts('cover-format-unsupported', {
+              defaultValue: 'That image format is not supported. Use JPEG, PNG or WebP.',
+            }),
       );
       input.value = '';
       return;

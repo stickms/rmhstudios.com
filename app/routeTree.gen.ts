@@ -256,6 +256,7 @@ import { Route as SiteAdminCanvasRouteImport } from './routes/_site/admin/canvas
 import { Route as SiteAdminDeepseekRouteImport } from './routes/_site/admin/deepseek'
 import { Route as SiteAdminDelightRouteImport } from './routes/_site/admin/delight'
 import { Route as SiteAdminEconomyRouteImport } from './routes/_site/admin/economy'
+import { Route as SiteAdminFlagsRouteImport } from './routes/_site/admin/flags'
 import { Route as SiteAdminInsightsRouteImport } from './routes/_site/admin/insights'
 import { Route as SiteAdminLibraryRouteImport } from './routes/_site/admin/library'
 import { Route as SiteAdminLibraryQuotaRouteImport } from './routes/_site/admin/library-quota'
@@ -2611,6 +2612,11 @@ const SiteAdminDelightRoute = SiteAdminDelightRouteImport.update({
 const SiteAdminEconomyRoute = SiteAdminEconomyRouteImport.update({
   id: '/economy',
   path: '/economy',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminFlagsRoute = SiteAdminFlagsRouteImport.update({
+  id: '/flags',
+  path: '/flags',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminInsightsRoute = SiteAdminInsightsRouteImport.update({
@@ -8709,6 +8715,7 @@ export interface FileRoutesByFullPath {
   '/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/admin/delight': typeof SiteAdminDelightRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
+  '/admin/flags': typeof SiteAdminFlagsRoute
   '/admin/insights': typeof SiteAdminInsightsRoute
   '/admin/library': typeof SiteAdminLibraryRoute
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
@@ -10050,6 +10057,7 @@ export interface FileRoutesByTo {
   '/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/admin/delight': typeof SiteAdminDelightRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
+  '/admin/flags': typeof SiteAdminFlagsRoute
   '/admin/insights': typeof SiteAdminInsightsRoute
   '/admin/library': typeof SiteAdminLibraryRoute
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
@@ -11420,6 +11428,7 @@ export interface FileRoutesById {
   '/_site/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/_site/admin/delight': typeof SiteAdminDelightRoute
   '/_site/admin/economy': typeof SiteAdminEconomyRoute
+  '/_site/admin/flags': typeof SiteAdminFlagsRoute
   '/_site/admin/insights': typeof SiteAdminInsightsRoute
   '/_site/admin/library': typeof SiteAdminLibraryRoute
   '/_site/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
@@ -12790,6 +12799,7 @@ export interface FileRouteTypes {
     | '/admin/deepseek'
     | '/admin/delight'
     | '/admin/economy'
+    | '/admin/flags'
     | '/admin/insights'
     | '/admin/library'
     | '/admin/library-quota'
@@ -14131,6 +14141,7 @@ export interface FileRouteTypes {
     | '/admin/deepseek'
     | '/admin/delight'
     | '/admin/economy'
+    | '/admin/flags'
     | '/admin/insights'
     | '/admin/library'
     | '/admin/library-quota'
@@ -15500,6 +15511,7 @@ export interface FileRouteTypes {
     | '/_site/admin/deepseek'
     | '/_site/admin/delight'
     | '/_site/admin/economy'
+    | '/_site/admin/flags'
     | '/_site/admin/insights'
     | '/_site/admin/library'
     | '/_site/admin/library-quota'
@@ -19199,6 +19211,13 @@ declare module '@tanstack/react-router' {
       path: '/economy'
       fullPath: '/admin/economy'
       preLoaderRoute: typeof SiteAdminEconomyRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/flags': {
+      id: '/_site/admin/flags'
+      path: '/flags'
+      fullPath: '/admin/flags'
+      preLoaderRoute: typeof SiteAdminFlagsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/insights': {
@@ -27062,6 +27081,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminDeepseekRoute: typeof SiteAdminDeepseekRoute
   SiteAdminDelightRoute: typeof SiteAdminDelightRoute
   SiteAdminEconomyRoute: typeof SiteAdminEconomyRoute
+  SiteAdminFlagsRoute: typeof SiteAdminFlagsRoute
   SiteAdminInsightsRoute: typeof SiteAdminInsightsRoute
   SiteAdminLibraryRoute: typeof SiteAdminLibraryRoute
   SiteAdminLibraryQuotaRoute: typeof SiteAdminLibraryQuotaRoute
@@ -27101,6 +27121,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminDeepseekRoute: SiteAdminDeepseekRoute,
   SiteAdminDelightRoute: SiteAdminDelightRoute,
   SiteAdminEconomyRoute: SiteAdminEconomyRoute,
+  SiteAdminFlagsRoute: SiteAdminFlagsRoute,
   SiteAdminInsightsRoute: SiteAdminInsightsRoute,
   SiteAdminLibraryRoute: SiteAdminLibraryRoute,
   SiteAdminLibraryQuotaRoute: SiteAdminLibraryQuotaRoute,

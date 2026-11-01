@@ -412,5 +412,19 @@
   "audit-filter-to": "Sampai",
   "audit-export-csv": "Ekspor CSV",
   "audit-clear-filters": "Hapus filter",
-  "audit-no-match": "Tidak ada aksi yang cocok dengan filter ini."
+  "audit-no-match": "Tidak ada aksi yang cocok dengan filter ini.",
+  "flags-title": "Feature flag",
+  "flags-card-title": "Feature flag",
+  "flags-card-description": "Aktifkan fitur untuk sebagian pengguna tanpa deploy.",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "Huruf kecil, angka, titik, tanda hubung, atau garis bawah, diawali huruf.",
+  "flags-description-placeholder": "Apa yang dikendalikannya?",
+  "flags-create": "Buat flag",
+  "flags-rollout": "Rollout %",
+  "flags-enabled": "Aktif",
+  "flags-delete": "Hapus",
+  "flags-delete-title": "Hapus flag ini?",
+  "flags-delete-description": "Semua yang memeriksanya akan menganggapnya mati.",
+  "flags-empty": "Belum ada flag.",
+  "flags-save-failed": "Tidak dapat menyimpan flag."
 }

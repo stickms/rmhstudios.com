@@ -445,5 +445,19 @@
   "audit-filter-to": "По",
   "audit-export-csv": "Экспорт в CSV",
   "audit-clear-filters": "Сбросить фильтры",
-  "audit-no-match": "Нет действий, подходящих под фильтры."
+  "audit-no-match": "Нет действий, подходящих под фильтры.",
+  "flags-title": "Флаги функций",
+  "flags-card-title": "Флаги функций",
+  "flags-card-description": "Включайте функции для части пользователей без деплоя.",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "Строчные буквы, цифры, точки, дефисы или подчёркивания, начиная с буквы.",
+  "flags-description-placeholder": "Чем он управляет?",
+  "flags-create": "Создать флаг",
+  "flags-rollout": "Раскатка %",
+  "flags-enabled": "Включён",
+  "flags-delete": "Удалить",
+  "flags-delete-title": "Удалить этот флаг?",
+  "flags-delete-description": "Всё, что его проверяет, будет считать его выключенным.",
+  "flags-empty": "Флагов пока нет.",
+  "flags-save-failed": "Не удалось сохранить флаг."
 }

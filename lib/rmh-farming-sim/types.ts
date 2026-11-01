@@ -27,6 +27,8 @@ export interface ToolDef {
 export type ToolCatalog = Record<ToolId, ToolDef>;
 
 export interface Welcome {
+    /** Set when HELLO asked to resume a visited farm: whether that worked. */
+    resume?: 'ok' | 'failed';
     userId: string;
     name: string;
     crops: CropDef[];

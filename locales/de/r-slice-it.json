@@ -137,6 +137,7 @@
   "course-requires": "Course: {{min}}–{{max}} songs, one shared gauge",
   "course-running": "Course in progress",
   "cover-format-unsupported": "Dieses Bildformat wird nicht unterstützt. Verwende JPEG, PNG oder WebP.",
+  "cover-heic-unsupported": "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
   "daily-board": "Today's Board",
   "daily-board-empty": "Nobody has played yet. Go first.",
   "daily-challenge": "Daily Challenge",

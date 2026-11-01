@@ -428,5 +428,19 @@
   "audit-filter-to": "To",
   "audit-export-csv": "Export CSV",
   "audit-clear-filters": "Clear filters",
-  "audit-no-match": "No actions match these filters."
+  "audit-no-match": "No actions match these filters.",
+  "flags-title": "Feature flags",
+  "flags-card-title": "Feature flags",
+  "flags-card-description": "Turn features on for a percentage of users without a deploy.",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "Lowercase letters, digits, dots, dashes or underscores, starting with a letter.",
+  "flags-description-placeholder": "What does it gate?",
+  "flags-create": "Create flag",
+  "flags-rollout": "Rollout %",
+  "flags-enabled": "Enabled",
+  "flags-delete": "Delete",
+  "flags-delete-title": "Delete this flag?",
+  "flags-delete-description": "Anything that checks it will treat it as off.",
+  "flags-empty": "No flags yet.",
+  "flags-save-failed": "Could not save the flag."
 }

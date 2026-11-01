@@ -671,7 +671,15 @@ function removeFromCurrentFarm(socket: Socket, opts: { notifyKick?: boolean } = 
 }
 
 // ── Handlers ───────────────────────────────────────────────────────
-async function onHello(socket: Socket): Promise<void> {
+/**
+ * `payload.resume` is the code of the farm a visiting player was in when their
+ * connection dropped. Every reconnect re-sends HELLO, and without this a
+ * visitor always came back on their own farm. The visited farm is only
+ * re-entered when it still exists and the player is still one of its members
+ * (a kick or a deleted farm must not be bypassed by a stale code); otherwise
+ * they land at home and the welcome says so (`resume: 'failed'`).
+ */
+async function onHello(socket: Socket, payload?: unknown): Promise<void> {
   const userId = socket.data.userId as string | undefined;
   const name = (socket.data.userName as string) || 'Farmer';
   if (!userId) {
@@ -689,9 +697,26 @@ async function onHello(socket: Socket): Promise<void> {
       markDirty(farm);
     }
   }
-  socketState.set(socket.id, { userId, name, farmId: farm.id });
+  let target = farm;
+  let resume: 'ok' | 'failed' | undefined;
+  const resumeCode = String((payload as { resume?: unknown } | null | undefined)?.resume ?? '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 16);
+  if (resumeCode && resumeCode !== farm.code) {
+    const visited = await loadFarmByCode(resumeCode);
+    if (socket.disconnected) return;
+    if (visited && visited.ownerUserId !== userId && isMember(visited, userId)) {
+      target = visited;
+      resume = 'ok';
+    } else {
+      resume = 'failed';
+    }
+  }
+  socketState.set(socket.id, { userId, name, farmId: target.id });
 
   socket.emit(S2C.WELCOME, {
+    resume,
     userId,
     name,
     crops: CROPS,
@@ -703,7 +728,7 @@ async function onHello(socket: Socket): Promise<void> {
     maxEnergy: MAX_ENERGY,
     actionRange: ACTION_RANGE,
   });
-  placeInFarm(socket, farm, userId, name);
+  placeInFarm(socket, target, userId, name);
 }
 
 function currentFarm(
@@ -1330,8 +1355,8 @@ export function registerRmhFarmingSimHandlers(io: Server, socket: Socket): void 
   startPresenceLoop();
   startSaveLoop();
   startFarmGc();
-  socket.on(C2S.HELLO, () => {
-    void onHello(socket);
+  socket.on(C2S.HELLO, (p) => {
+    void onHello(socket, p);
   });
   socket.on(C2S.MOVE, (p) => onMove(socket, p));
   socket.on(C2S.TILL, (p) => onTill(socket, p));

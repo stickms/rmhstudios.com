@@ -233,6 +233,14 @@ function AdminDashboardPage() {
             })}
           />
 
+          <AdminHubCard
+            to="/admin/flags"
+            title={t('flags-card-title', { defaultValue: 'Feature flags' })}
+            description={t('flags-card-description', {
+              defaultValue: 'Turn features on for a percentage of users without a deploy.',
+            })}
+          />
+
           <AdminSafetyLink />
           <AdminQotdLink />
           <AdminDelightLink />

@@ -423,5 +423,19 @@
   "audit-filter-to": "Bis",
   "audit-export-csv": "CSV exportieren",
   "audit-clear-filters": "Filter zurücksetzen",
-  "audit-no-match": "Keine Aktionen entsprechen diesen Filtern."
+  "audit-no-match": "Keine Aktionen entsprechen diesen Filtern.",
+  "flags-title": "Feature-Flags",
+  "flags-card-title": "Feature-Flags",
+  "flags-card-description": "Funktionen ohne Deployment für einen Prozentsatz der Nutzer aktivieren.",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "Kleinbuchstaben, Ziffern, Punkte, Bindestriche oder Unterstriche, beginnend mit einem Buchstaben.",
+  "flags-description-placeholder": "Was steuert es?",
+  "flags-create": "Flag erstellen",
+  "flags-rollout": "Rollout %",
+  "flags-enabled": "Aktiviert",
+  "flags-delete": "Löschen",
+  "flags-delete-title": "Dieses Flag löschen?",
+  "flags-delete-description": "Alles, was es abfragt, behandelt es als aus.",
+  "flags-empty": "Noch keine Flags.",
+  "flags-save-failed": "Das Flag konnte nicht gespeichert werden."
 }
