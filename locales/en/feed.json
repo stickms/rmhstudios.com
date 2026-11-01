@@ -1574,5 +1574,7 @@
   "muted-duration-forever": "Until I remove it",
   "muted-duration-day": "1 day",
   "muted-duration-week": "1 week",
-  "muted-duration-month": "30 days"
+  "muted-duration-month": "30 days",
+  "activity-title": "Posting activity",
+  "activity-summary": "Posts in the last {{weeks}} weeks: {{total}}"
 }

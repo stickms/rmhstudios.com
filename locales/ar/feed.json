@@ -1685,5 +1685,7 @@
   "muted-duration-forever": "حتى أزيله",
   "muted-duration-day": "يوم واحد",
   "muted-duration-week": "أسبوع واحد",
-  "muted-duration-month": "30 يومًا"
+  "muted-duration-month": "30 يومًا",
+  "activity-title": "نشاط النشر",
+  "activity-summary": "المنشورات في آخر {{weeks}} أسبوعًا: {{total}}"
 }

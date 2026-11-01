@@ -1505,5 +1505,7 @@
   "muted-duration-forever": "جب تک میں ہٹا نہ دوں",
   "muted-duration-day": "1 دن",
   "muted-duration-week": "1 ہفتہ",
-  "muted-duration-month": "30 دن"
+  "muted-duration-month": "30 دن",
+  "activity-title": "پوسٹنگ کی سرگرمی",
+  "activity-summary": "پچھلے {{weeks}} ہفتوں میں پوسٹس: {{total}}"
 }

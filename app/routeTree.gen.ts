@@ -1073,6 +1073,7 @@ import { Route as ApiPredictionsIdDevilsAdvocateRouteImport } from './routes/api
 import { Route as ApiPredictionsIdTradeRouteImport } from './routes/api/predictions/$id/trade'
 import { Route as ApiProfileLinksIdIndexRouteImport } from './routes/api/profile-links/$id/index'
 import { Route as ApiProfileLinksIdVerifyRouteImport } from './routes/api/profile-links/$id/verify'
+import { Route as ApiProfileIdActivityRouteImport } from './routes/api/profile/$id/activity'
 import { Route as ApiProfileIdCardRouteImport } from './routes/api/profile/$id/card'
 import { Route as ApiProfileIdEndorsementsRouteImport } from './routes/api/profile/$id/endorsements'
 import { Route as ApiProfileIdFollowRouteImport } from './routes/api/profile/$id/follow'
@@ -6822,6 +6823,11 @@ const ApiProfileLinksIdVerifyRoute = ApiProfileLinksIdVerifyRouteImport.update({
   path: '/api/profile-links/$id/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProfileIdActivityRoute = ApiProfileIdActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => ApiProfileIdRoute,
+} as any)
 const ApiProfileIdCardRoute = ApiProfileIdCardRouteImport.update({
   id: '/card',
   path: '/card',
@@ -9446,6 +9452,7 @@ export interface FileRoutesByFullPath {
   '/api/predictions/$id/devils-advocate': typeof ApiPredictionsIdDevilsAdvocateRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
   '/api/profile-links/$id/verify': typeof ApiProfileLinksIdVerifyRoute
+  '/api/profile/$id/activity': typeof ApiProfileIdActivityRoute
   '/api/profile/$id/card': typeof ApiProfileIdCardRoute
   '/api/profile/$id/endorsements': typeof ApiProfileIdEndorsementsRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
@@ -10780,6 +10787,7 @@ export interface FileRoutesByTo {
   '/api/predictions/$id/devils-advocate': typeof ApiPredictionsIdDevilsAdvocateRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
   '/api/profile-links/$id/verify': typeof ApiProfileLinksIdVerifyRoute
+  '/api/profile/$id/activity': typeof ApiProfileIdActivityRoute
   '/api/profile/$id/card': typeof ApiProfileIdCardRoute
   '/api/profile/$id/endorsements': typeof ApiProfileIdEndorsementsRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
@@ -12145,6 +12153,7 @@ export interface FileRoutesById {
   '/api/predictions/$id/devils-advocate': typeof ApiPredictionsIdDevilsAdvocateRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
   '/api/profile-links/$id/verify': typeof ApiProfileLinksIdVerifyRoute
+  '/api/profile/$id/activity': typeof ApiProfileIdActivityRoute
   '/api/profile/$id/card': typeof ApiProfileIdCardRoute
   '/api/profile/$id/endorsements': typeof ApiProfileIdEndorsementsRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
@@ -13509,6 +13518,7 @@ export interface FileRouteTypes {
     | '/api/predictions/$id/devils-advocate'
     | '/api/predictions/$id/trade'
     | '/api/profile-links/$id/verify'
+    | '/api/profile/$id/activity'
     | '/api/profile/$id/card'
     | '/api/profile/$id/endorsements'
     | '/api/profile/$id/follow'
@@ -14843,6 +14853,7 @@ export interface FileRouteTypes {
     | '/api/predictions/$id/devils-advocate'
     | '/api/predictions/$id/trade'
     | '/api/profile-links/$id/verify'
+    | '/api/profile/$id/activity'
     | '/api/profile/$id/card'
     | '/api/profile/$id/endorsements'
     | '/api/profile/$id/follow'
@@ -16207,6 +16218,7 @@ export interface FileRouteTypes {
     | '/api/predictions/$id/devils-advocate'
     | '/api/predictions/$id/trade'
     | '/api/profile-links/$id/verify'
+    | '/api/profile/$id/activity'
     | '/api/profile/$id/card'
     | '/api/profile/$id/endorsements'
     | '/api/profile/$id/follow'
@@ -24848,6 +24860,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProfileLinksIdVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/profile/$id/activity': {
+      id: '/api/profile/$id/activity'
+      path: '/activity'
+      fullPath: '/api/profile/$id/activity'
+      preLoaderRoute: typeof ApiProfileIdActivityRouteImport
+      parentRoute: typeof ApiProfileIdRoute
+    }
     '/api/profile/$id/card': {
       id: '/api/profile/$id/card'
       path: '/card'
@@ -27931,6 +27950,7 @@ const ApiProfileIdGuestbookRouteWithChildren =
   )
 
 interface ApiProfileIdRouteChildren {
+  ApiProfileIdActivityRoute: typeof ApiProfileIdActivityRoute
   ApiProfileIdCardRoute: typeof ApiProfileIdCardRoute
   ApiProfileIdEndorsementsRoute: typeof ApiProfileIdEndorsementsRoute
   ApiProfileIdFollowRoute: typeof ApiProfileIdFollowRoute
@@ -27950,6 +27970,7 @@ interface ApiProfileIdRouteChildren {
 }
 
 const ApiProfileIdRouteChildren: ApiProfileIdRouteChildren = {
+  ApiProfileIdActivityRoute: ApiProfileIdActivityRoute,
   ApiProfileIdCardRoute: ApiProfileIdCardRoute,
   ApiProfileIdEndorsementsRoute: ApiProfileIdEndorsementsRoute,
   ApiProfileIdFollowRoute: ApiProfileIdFollowRoute,

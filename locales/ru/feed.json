@@ -1595,5 +1595,7 @@
   "muted-duration-forever": "Пока я не удалю",
   "muted-duration-day": "1 день",
   "muted-duration-week": "1 неделя",
-  "muted-duration-month": "30 дней"
+  "muted-duration-month": "30 дней",
+  "activity-title": "Активность публикаций",
+  "activity-summary": "Публикаций за последние {{weeks}} нед.: {{total}}"
 }

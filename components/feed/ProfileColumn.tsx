@@ -32,6 +32,7 @@ type ProfileTab ='rmharks'|'likes'|'achievements'|'guestbook'|'shelves'|'kudos';
 
 // Plan U15 — loaded the first time the tab is opened, never on a plain profile view.
 const GuestbookPanel = lazy(() => import('@/components/profile/GuestbookPanel'));
+const ProfileActivityHeatmap = lazy(() => import('@/components/profile/ProfileActivityHeatmap'));
 // P13 reading (L7) — the shelves panel is lazy; only the tiny tab hook ships here.
 // P11 gifting (G4) — kudos panel and the birthday chip load only when needed.
 const KudosPanel = lazy(() => import('@/components/gifting/KudosPanel'));
@@ -493,6 +494,12 @@ export function ProfileColumn({
  status: profile.status ?? null,
  }}
  />
+ </div>
+
+ <div className="px-4 pt-4">
+ <Suspense fallback={null}>
+ <ProfileActivityHeatmap userId={profile.id} />
+ </Suspense>
  </div>
 
  {/* Tab bar → shared LiquidTabs (§5.4). handleTabChange keeps the lazy

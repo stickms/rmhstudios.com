@@ -1460,5 +1460,7 @@
   "muted-duration-forever": "Sampai saya hapus",
   "muted-duration-day": "1 hari",
   "muted-duration-week": "1 minggu",
-  "muted-duration-month": "30 hari"
+  "muted-duration-month": "30 hari",
+  "activity-title": "Aktivitas posting",
+  "activity-summary": "Postingan dalam {{weeks}} minggu terakhir: {{total}}"
 }

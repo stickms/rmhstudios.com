@@ -1460,5 +1460,7 @@
   "muted-duration-forever": "削除するまで",
   "muted-duration-day": "1日",
   "muted-duration-week": "1週間",
-  "muted-duration-month": "30日"
+  "muted-duration-month": "30日",
+  "activity-title": "投稿アクティビティ",
+  "activity-summary": "過去 {{weeks}} 週間の投稿数：{{total}}"
 }

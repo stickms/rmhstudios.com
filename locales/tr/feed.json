@@ -1505,5 +1505,7 @@
   "muted-duration-forever": "Ben kaldırana kadar",
   "muted-duration-day": "1 gün",
   "muted-duration-week": "1 hafta",
-  "muted-duration-month": "30 gün"
+  "muted-duration-month": "30 gün",
+  "activity-title": "Paylaşım etkinliği",
+  "activity-summary": "Son {{weeks}} haftadaki gönderiler: {{total}}"
 }

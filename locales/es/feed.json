@@ -1550,5 +1550,7 @@
   "muted-duration-forever": "Hasta que lo quite",
   "muted-duration-day": "1 día",
   "muted-duration-week": "1 semana",
-  "muted-duration-month": "30 días"
+  "muted-duration-month": "30 días",
+  "activity-title": "Actividad de publicación",
+  "activity-summary": "Publicaciones en las últimas {{weeks}} semanas: {{total}}"
 }
