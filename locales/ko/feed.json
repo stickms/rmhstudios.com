@@ -1469,5 +1469,7 @@
   "muted-import-done": "{{added}}개 단어를 가져왔습니다.",
   "muted-import-none": "가져올 새 단어가 없습니다.",
   "muted-import-failed": "파일을 읽을 수 없습니다.",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

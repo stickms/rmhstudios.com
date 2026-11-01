@@ -1514,5 +1514,7 @@
   "muted-import-done": "{{added}} शब्द आयात किए गए।",
   "muted-import-none": "आयात करने के लिए कोई नया शब्द नहीं।",
   "muted-import-failed": "वह फ़ाइल पढ़ी नहीं जा सकी।",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }
