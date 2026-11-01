@@ -202,7 +202,7 @@ export function SteamReviews({
             <button
               key={key}
               type="button"
-              className={sort === key ? 'stm-btn' : 'stm-btn stm-btn-ghost'}
+              className={sort === key ? 'stm-btn stm-btn-blue' : 'stm-btn stm-btn-ghost'}
               aria-pressed={sort === key}
               onClick={() => {
                 setSort(key);
