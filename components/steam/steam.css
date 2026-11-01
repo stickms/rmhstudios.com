@@ -1452,7 +1452,8 @@ button.stm-star {
 }
 .stm-group-title {
   min-width: 0;
-  flex: 1;
+  /* a 200px floor lets the header's action wrap below the name on a phone */
+  flex: 1 1 200px;
 }
 .stm-group-title h1 {
   margin: 0;
@@ -2581,28 +2582,33 @@ html[dir='rtl'] .stm-drawer-panel {
 
 /* ─── Group discussion (/games/groups/$slug) ──────────────────────────────── */
 
-.stm-posts {
+.stm-gposts {
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.stm-post {
+.stm-gpost {
   padding: 10px 14px;
   border-top: 1px solid var(--stm-line, rgba(255, 255, 255, 0.06));
 }
-.stm-post:first-child {
+.stm-gpost:first-child {
   border-top: 0;
 }
-.stm-post .stm-person {
+.stm-gpost .stm-person {
   padding-inline: 0;
 }
-.stm-post-text {
+.stm-gpost-text {
   margin: 4px 0 0;
   color: var(--stm-text, inherit);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.stm-post-meta {
+.stm-gpost-meta {
   margin: 6px 0 0;
   font-size: 12px;
+}
+.stm-shop .stm-input {
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 12px;
 }

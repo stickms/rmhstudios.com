@@ -99,11 +99,11 @@ export function GroupPage({
               <h2 id="stm-group-news" className="stm-web-head">
                 {t('steam-group-announcements', { defaultValue: 'Announcements' })}
               </h2>
-              <ul className="stm-posts">
+              <ul className="stm-gposts">
                 {announcements.map((a) => (
-                  <li key={a.id} className="stm-post">
-                    <p className="stm-post-text">{a.body}</p>
-                    <p className="stm-muted stm-post-meta">
+                  <li key={a.id} className="stm-gpost">
+                    <p className="stm-gpost-text">{a.body}</p>
+                    <p className="stm-muted stm-gpost-meta">
                       {a.author.name ?? a.author.handle ?? ''} · {new Date(a.createdAt).toLocaleDateString()}
                     </p>
                   </li>
@@ -121,9 +121,9 @@ export function GroupPage({
                 {t('steam-group-no-posts', { defaultValue: 'No posts yet.' })}
               </p>
             ) : (
-              <ul className="stm-posts">
+              <ul className="stm-gposts">
                 {posts.map((p) => (
-                  <li key={p.id} className="stm-post">
+                  <li key={p.id} className="stm-gpost">
                     <Link
                       to="/games/profile/$id"
                       params={{ id: p.author.handle ?? p.author.id }}
@@ -135,8 +135,8 @@ export function GroupPage({
                         <span className="stm-person-sub">{new Date(p.createdAt).toLocaleString()}</span>
                       </span>
                     </Link>
-                    <p className="stm-post-text">{p.content}</p>
-                    <p className="stm-muted stm-post-meta">
+                    <p className="stm-gpost-text">{p.content}</p>
+                    <p className="stm-muted stm-gpost-meta">
                       {t('steam-group-post-counts', {
                         defaultValue: 'Likes: {{likes}} · Replies: {{replies}}',
                         likes: p.likeCount,
