@@ -102,6 +102,9 @@
     border-radius: 8px;
     font-size: 13px;
 }
+.rfs-connect > div {
+    margin-top: 12px;
+}
 .rfs-connect.rfs-error {
     color: #ffb4a8;
     border: 1px solid #a14a3a;
@@ -122,9 +125,11 @@
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: wrap;
 }
 .rfs-own-code {
-    flex: 1;
+    flex: 1 1 8rem;
+    min-width: 0;
     background: rgba(0, 0, 0, 0.3);
     padding: 10px 12px;
     border-radius: 8px;
@@ -142,6 +147,7 @@
     cursor: pointer;
     font-size: 13px;
     white-space: nowrap;
+    min-height: 44px;
     transition: transform 0.08s, filter 0.08s;
 }
 .rfs-big-btn:hover {
@@ -155,7 +161,8 @@
     cursor: not-allowed;
 }
 .rfs-join-input {
-    flex: 1;
+    flex: 1 1 8rem;
+    min-width: 0;
     background: rgba(0, 0, 0, 0.3);
     border: 2px solid var(--rfs-wood-light);
     border-radius: 8px;
@@ -274,6 +281,12 @@
     height: 100%;
     background: linear-gradient(90deg, #ffd24a, #7bd14a);
     transition: width 0.2s;
+}
+.rfs-festival {
+    position: absolute;
+    top: 56px;
+    left: 0;
+    pointer-events: none;
 }
 .rfs-topbtns {
     display: flex;
@@ -713,9 +726,40 @@
     }
 }
 
+/* Wider than a phone the corner back link sits level with the bar, so the bar
+   starts to its right instead of under it. */
+@media (min-width: 641px) {
+    .rfs-topbar {
+        left: 160px;
+    }
+}
+
 @media (max-width: 640px) {
     .rfs-hint {
         display: none;
+    }
+    /* Clear the corner back link (44px at 12px) that otherwise covers the farm name. */
+    .rfs-topbar {
+        top: 58px;
+    }
+    .rfs-festival {
+        position: static;
+        flex-basis: 100%;
+        white-space: normal;
+    }
+    /* The walk stick owns the bottom-left; the chat moves to the right of it
+       and shrinks so it never sits on the stick or the hotbar. */
+    .rfs-chat {
+        left: auto;
+        right: 10px;
+        bottom: calc(96px + var(--safe-bottom));
+        width: min(200px, calc(100vw - 150px));
+    }
+    .rfs-chat.collapsed {
+        width: 104px;
+    }
+    .rfs-chat-log {
+        height: 76px;
     }
     .rfs-farmname {
         max-width: 110px;

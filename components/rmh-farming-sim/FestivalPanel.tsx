@@ -33,7 +33,6 @@ function useFestival() {
   return info;
 }
 
-const BANNER_STYLE = { position: 'absolute', top: 66, left: 10, pointerEvents: 'none' } as const;
 
 /** R8: today's festival and contest score, or a countdown to the next one. */
 export function FestivalBanner() {
@@ -44,7 +43,7 @@ export function FestivalBanner() {
 
   if (def && fest) {
     return (
-      <div data-floating="feature-overlay" className="rfs-stat" style={BANNER_STYLE}>
+      <div data-floating="feature-overlay" className="rfs-stat rfs-festival">
         {t('fest-banner', {
           defaultValue: '{{name}} - festival harvest today: {{score}}g',
           name: def.name,
@@ -57,8 +56,8 @@ export function FestivalBanner() {
   return (
     <div
       data-floating="feature-overlay"
-      className="rfs-stat"
-      style={{ ...BANNER_STYLE, opacity: 0.8 }}
+      className="rfs-stat rfs-festival"
+      style={{ opacity: 0.8 }}
     >
       {t('fest-next', {
         defaultValue: 'Next festival: {{name}} in {{count}} days',
