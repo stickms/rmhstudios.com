@@ -130,7 +130,7 @@ export default function CommentsPanel() {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: 320, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="fixed right-0 top-0 bottom-[calc(81px+var(--safe-bottom))] z-40 flex w-80 max-w-full flex-col overflow-hidden pt-[var(--safe-top)] backdrop-blur-xl border-l"
+          className="fixed right-0 top-0 bottom-[calc(174px+var(--safe-bottom))] min-[360px]:bottom-[calc(134px+var(--safe-bottom))] sm:bottom-[calc(86px+var(--safe-bottom))] z-40 flex w-80 max-w-full flex-col overflow-hidden pt-[var(--safe-top)] backdrop-blur-xl border-l"
           style={{ background: 'color-mix(in srgb, var(--app-bg) 90%, transparent)', borderColor: BORDER }}
         >
           <div className="px-4 py-3 border-b flex items-center gap-2" style={{ borderColor: BORDER }}>
