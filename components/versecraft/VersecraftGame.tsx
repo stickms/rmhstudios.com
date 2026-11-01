@@ -160,7 +160,7 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
         <Link
           to="/games"
           onClick={goBack}
-          className="absolute top-[calc(1rem+var(--safe-top))] left-[calc(1rem+var(--safe-left))] z-50 flex items-center gap-1.5 px-3 py-2 rounded text-xs transition hover:brightness-125"
+          className="absolute top-[calc(1rem+var(--safe-top))] left-[calc(1rem+var(--safe-left))] z-50 flex items-center gap-1.5 px-3 py-2 min-h-11 rounded text-xs transition hover:brightness-125"
           style={{
             backgroundColor: 'rgba(26, 21, 32, 0.8)',
             border: '1px solid rgba(196, 163, 90, 0.15)',
