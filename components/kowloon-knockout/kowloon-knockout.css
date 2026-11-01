@@ -155,7 +155,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  justify-content: safe center;
   position: relative;
+  overflow-y: auto;
+  padding: 72px 16px 16px;
+  box-sizing: border-box;
 }
 
 .kowloon-knockout .menu-bg {
@@ -333,8 +337,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 40px;
+  gap: clamp(20px, 5vh, 40px);
   z-index: 10;
+  max-width: 100%;
 }
 
 .kowloon-knockout .title-container {
@@ -353,24 +358,24 @@
 }
 
 .kowloon-knockout .title-kowloon {
-  font-size: 48px;
+  font-size: clamp(28px, 11vw, 48px);
   color: var(--neon-pink);
   text-shadow:
     0 0 10px var(--neon-pink),
     0 0 20px var(--neon-pink),
     0 0 40px var(--neon-pink),
     0 0 80px var(--neon-pink);
-  letter-spacing: 8px;
+  letter-spacing: 0.16em;
 }
 
 .kowloon-knockout .title-knockout {
-  font-size: 36px;
+  font-size: clamp(22px, 8.5vw, 36px);
   color: var(--neon-yellow);
   text-shadow:
     0 0 10px var(--neon-yellow),
     0 0 20px var(--neon-yellow),
     0 0 40px var(--neon-yellow);
-  letter-spacing: 12px;
+  letter-spacing: 0.3em;
 }
 
 .kowloon-knockout .title-subtitle {
@@ -396,8 +401,9 @@
 }
 
 .kowloon-knockout .menu-footer {
-  position: absolute;
-  bottom: 30px;
+  position: relative;
+  margin-top: 24px;
+  flex-shrink: 0;
   font-size: 10px;
   color: var(--text-dim);
   animation: blink 1.5s ease-in-out infinite;
