@@ -1577,5 +1577,10 @@
   "muted-duration-month": "30 days",
   "activity-title": "Posting activity",
   "activity-summary": "Posts in the last {{weeks}} weeks: {{total}}",
-  "activity-streak": "Current streak: {{current}} days · Longest: {{longest}} days"
+  "activity-streak": "Current streak: {{current}} days · Longest: {{longest}} days",
+  "muted-export": "Export",
+  "muted-import": "Import",
+  "muted-import-done": "Imported {{added}} words.",
+  "muted-import-none": "No new words to import.",
+  "muted-import-failed": "Could not read that file."
 }

@@ -1463,5 +1463,10 @@
   "muted-duration-month": "30 天",
   "activity-title": "发帖活动",
   "activity-summary": "过去 {{weeks}} 周的帖子数：{{total}}",
-  "activity-streak": "当前连续 {{current}} 天 · 最长 {{longest}} 天"
+  "activity-streak": "当前连续 {{current}} 天 · 最长 {{longest}} 天",
+  "muted-export": "导出",
+  "muted-import": "导入",
+  "muted-import-done": "已导入 {{added}} 个词。",
+  "muted-import-none": "没有可导入的新词。",
+  "muted-import-failed": "无法读取该文件。"
 }

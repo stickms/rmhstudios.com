@@ -1508,5 +1508,10 @@
   "muted-duration-month": "30 दिन",
   "activity-title": "पोस्टिंग गतिविधि",
   "activity-summary": "पिछले {{weeks}} सप्ताहों में पोस्ट: {{total}}",
-  "activity-streak": "मौजूदा सिलसिला: {{current}} दिन · सबसे लंबा: {{longest}} दिन"
+  "activity-streak": "मौजूदा सिलसिला: {{current}} दिन · सबसे लंबा: {{longest}} दिन",
+  "muted-export": "निर्यात",
+  "muted-import": "आयात",
+  "muted-import-done": "{{added}} शब्द आयात किए गए।",
+  "muted-import-none": "आयात करने के लिए कोई नया शब्द नहीं।",
+  "muted-import-failed": "वह फ़ाइल पढ़ी नहीं जा सकी।"
 }

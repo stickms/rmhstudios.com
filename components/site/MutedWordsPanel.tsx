@@ -7,13 +7,14 @@
  * /settings/privacy. Auto-saves on add/remove.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { VolumeX, Plus, X } from 'lucide-react';
+import { VolumeX, Plus, X, Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { mergeImportedWords, serializeMutedWords } from '@/lib/feed/muted-import';
 import { MUTE_DURATIONS, type MuteDuration, type MutedExpiries } from '@/lib/feed/muted-expiry';
 
 const MAX_WORDS = 100;
@@ -114,6 +115,34 @@ export function MutedWordsPanel() {
     void persist(next, previous, nextExpiries, previousExpiries);
   };
 
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const exportWords = () => {
+    const url = URL.createObjectURL(new Blob([serializeMutedWords(words)], { type: 'text/plain' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'muted-words.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importWords = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const { words: merged, added } = mergeImportedWords(words, await file.text());
+      if (added === 0) {
+        toast.info(t('muted-import-none', { defaultValue: 'No new words to import.' }));
+        return;
+      }
+      const previous = words;
+      setWords(merged); // optimistic
+      void persist(merged, previous, expiries, expiries);
+      toast.success(t('muted-import-done', { defaultValue: 'Imported {{added}} words.', added }));
+    } catch {
+      toast.error(t('muted-import-failed', { defaultValue: 'Could not read that file.' }));
+    }
+  };
+
   const removeWord = (w: string) => {
     const previous = words;
     const previousExpiries = expiries;
@@ -165,6 +194,29 @@ export function MutedWordsPanel() {
           <Plus className="h-4 w-4" aria-hidden />
           {t('muted-add', { defaultValue: 'Add' })}
         </Button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" size="sm" onClick={exportWords} disabled={words.length === 0} className="gap-2">
+          <Download className="h-4 w-4" aria-hidden />
+          {t('muted-export', { defaultValue: 'Export' })}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()} disabled={saving} className="gap-2">
+          <Upload className="h-4 w-4" aria-hidden />
+          {t('muted-import', { defaultValue: 'Import' })}
+        </Button>
+        <input
+          ref={fileInput}
+          type="file"
+          accept=".txt,.csv,.json,text/plain,application/json"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden
+          onChange={(e) => {
+            void importWords(e.target.files?.[0]);
+            e.target.value = '';
+          }}
+        />
       </div>
 
       {!loading && words.length === 0 ? (

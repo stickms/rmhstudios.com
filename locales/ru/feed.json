@@ -1598,5 +1598,10 @@
   "muted-duration-month": "30 дней",
   "activity-title": "Активность публикаций",
   "activity-summary": "Публикаций за последние {{weeks}} нед.: {{total}}",
-  "activity-streak": "Текущая серия: {{current}} дн. · Самая длинная: {{longest}} дн."
+  "activity-streak": "Текущая серия: {{current}} дн. · Самая длинная: {{longest}} дн.",
+  "muted-export": "Экспорт",
+  "muted-import": "Импорт",
+  "muted-import-done": "Импортировано слов: {{added}}.",
+  "muted-import-none": "Нет новых слов для импорта.",
+  "muted-import-failed": "Не удалось прочитать файл."
 }

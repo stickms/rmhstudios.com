@@ -1508,5 +1508,10 @@
   "muted-duration-month": "30 Tage",
   "activity-title": "Beitragsaktivität",
   "activity-summary": "Beiträge in den letzten {{weeks}} Wochen: {{total}}",
-  "activity-streak": "Aktuelle Serie: {{current}} Tage · Längste: {{longest}} Tage"
+  "activity-streak": "Aktuelle Serie: {{current}} Tage · Längste: {{longest}} Tage",
+  "muted-export": "Exportieren",
+  "muted-import": "Importieren",
+  "muted-import-done": "{{added}} Wörter importiert.",
+  "muted-import-none": "Keine neuen Wörter zum Importieren.",
+  "muted-import-failed": "Die Datei konnte nicht gelesen werden."
 }

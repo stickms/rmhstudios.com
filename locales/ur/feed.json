@@ -1508,5 +1508,10 @@
   "muted-duration-month": "30 دن",
   "activity-title": "پوسٹنگ کی سرگرمی",
   "activity-summary": "پچھلے {{weeks}} ہفتوں میں پوسٹس: {{total}}",
-  "activity-streak": "موجودہ سلسلہ: {{current}} دن · طویل ترین: {{longest}} دن"
+  "activity-streak": "موجودہ سلسلہ: {{current}} دن · طویل ترین: {{longest}} دن",
+  "muted-export": "برآمد کریں",
+  "muted-import": "درآمد کریں",
+  "muted-import-done": "{{added}} الفاظ درآمد کیے گئے۔",
+  "muted-import-none": "درآمد کرنے کے لیے کوئی نیا لفظ نہیں۔",
+  "muted-import-failed": "وہ فائل پڑھی نہیں جا سکی۔"
 }

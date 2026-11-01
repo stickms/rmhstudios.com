@@ -1463,5 +1463,10 @@
   "muted-duration-month": "30日",
   "activity-title": "投稿アクティビティ",
   "activity-summary": "過去 {{weeks}} 週間の投稿数：{{total}}",
-  "activity-streak": "現在の連続記録：{{current}} 日 · 最長：{{longest}} 日"
+  "activity-streak": "現在の連続記録：{{current}} 日 · 最長：{{longest}} 日",
+  "muted-export": "エクスポート",
+  "muted-import": "インポート",
+  "muted-import-done": "{{added}} 語をインポートしました。",
+  "muted-import-none": "インポートする新しい語はありません。",
+  "muted-import-failed": "ファイルを読み込めませんでした。"
 }
