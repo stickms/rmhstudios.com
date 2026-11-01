@@ -286,6 +286,9 @@ function createLobby(options: {
 function seat(io: Server, socket: Socket, lobby: Lobby): boolean {
   const who = identity(socket);
   const existing = lobby.seats.get(keyOf(lobby, socket.id));
+  // Connection-state recovery can return the same socket id: the held seat is
+  // then found directly, so it must be marked present again here.
+  if (existing && !existing.connected) existing.connected = true;
 
   if (!existing) {
     // Reconnecting mid-match: take the held seat back by user id.
