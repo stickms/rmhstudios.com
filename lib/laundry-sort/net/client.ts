@@ -83,7 +83,10 @@ function registerHandlers(socket: Socket): void {
     const s = store();
     s.setSelfSocketId(data.socketId);
     s.setMode('versus');
-    s.setScreen('lobby');
+    // A reconnect mid-race is re-seated by the hub (same seat, same socketId
+    // as far as the roster is concerned) — keep playing instead of dropping
+    // the player into a lobby that is not the match they were in.
+    if (s.screen !== 'playing') s.setScreen('lobby');
   });
 
   socket.on(S2C.BROWSE_RESULT, (lobbies: PublicLobbyInfo[]) =>
