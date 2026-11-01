@@ -59,7 +59,7 @@ export function SpellPracticeMenu({
   );
 
   return (
-    <div className="relative flex min-h-full flex-col gap-4 bg-gradient-to-b from-[#0a0612] to-[#120a20] p-6">
+    <div className="relative flex min-h-full flex-col gap-4 bg-gradient-to-b from-[#0a0612] to-[#120a20] px-6 pb-6 pt-[calc(3.5rem+var(--safe-top))] sm:pt-6">
       <h2 className="dr-serif text-2xl font-semibold tracking-[0.1em] text-[color:var(--dr-gold)]">
         {t('dr-practice-title', { defaultValue: 'Spell Practice' })}
       </h2>

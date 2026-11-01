@@ -51,14 +51,14 @@ function Btn({ children, onClick, variant = 'primary', disabled, className }: { 
 
 function DiffPicker({ value, onChange, disabled }: { value: Difficulty; onChange: (d: Difficulty) => void; disabled?: boolean }) {
     return (
-        <div className="flex gap-2">
+        <div className="flex min-w-0 gap-2">
             {DIFFICULTIES.map((d) => (
                 <button
                     key={d}
                     type="button"
                     disabled={disabled}
                     onClick={() => onChange(d)}
-                    className="dr-serif flex-1 rounded-sm border px-2 py-2 pointer-coarse:min-h-11 text-xs font-semibold uppercase tracking-[0.18em] transition disabled:opacity-40"
+                    className="dr-serif flex-1 rounded-sm border min-w-0 px-1 py-2 pointer-coarse:min-h-11 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.06em] sm:tracking-[0.18em] transition disabled:opacity-40"
                     style={{
                         borderColor: value === d ? DIFF_COLOR[d] : 'rgba(231,205,140,0.22)',
                         background: value === d ? `${DIFF_COLOR[d]}22` : 'transparent',
@@ -195,7 +195,7 @@ export function CharacterSelect({ onStart, onBack }: { onStart: (char: PlayerId,
     const { sfx } = useRuntime();
 
     return (
-        <div className="relative flex min-h-full flex-col overflow-hidden bg-gradient-to-b from-[#0a0612] to-[#120a20] p-6">
+        <div className="relative flex min-h-full flex-col overflow-hidden bg-gradient-to-b from-[#0a0612] to-[#120a20] px-6 pb-6 pt-[calc(3.5rem+var(--safe-top))] sm:pt-6">
             <MenuBackdrop className="opacity-40" />
             <h2 className="dr-rise dr-serif relative mb-1 text-2xl font-semibold tracking-[0.1em] text-[color:var(--dr-gold)]">Choose Your Dreamer</h2>
             <p className="dr-rise dr-serif-body relative mb-5 text-sm italic text-[color:var(--dr-cream-dim)]" style={{ animationDelay: '0.06s' }}>Pick a character and a difficulty, then dive into the rift.</p>
@@ -248,14 +248,14 @@ export function LobbyBrowser({ onBack }: { onBack: () => void }) {
     useLobbyInviteJoin(connection === 'connected', (code) => joinLobby(code.toUpperCase()));
 
     return (
-        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0612] to-[#120a20] p-6">
+        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0612] to-[#120a20] px-6 pb-6 pt-[calc(3.5rem+var(--safe-top))] sm:pt-6">
             <div className="mb-4 flex items-center justify-between">
                 <h2 className="dr-serif text-2xl font-semibold tracking-[0.1em] text-[color:var(--dr-gold)]">Multiplayer Lobbies</h2>
                 <span className="text-xs text-[color:var(--dr-cream-dim)]">{connection === 'connected' ? '● online' : connection}</span>
             </div>
             {errorMsg && <div className="mb-3 rounded-sm border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">{errorMsg}</div>}
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid min-w-0 gap-4 [&>*]:min-w-0 md:grid-cols-2">
                 <div className="dr-frame rounded-sm p-4">
                     <div className="dr-serif mb-2 text-sm font-semibold tracking-wide text-[color:var(--dr-gold)]">Quick Play</div>
                     <p className="mb-3 text-xs text-[color:var(--dr-cream-dim)]">Jump into the first open public lobby, or start a new one.</p>
@@ -282,7 +282,7 @@ export function LobbyBrowser({ onBack }: { onBack: () => void }) {
                         value={code}
                         onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
                         placeholder="ENTER CODE"
-                        className="flex-1 rounded-sm border border-[rgba(231,205,140,0.25)] bg-black/40 px-3 py-2 font-mono uppercase tracking-widest text-[color:var(--dr-cream)] placeholder:text-[color:var(--dr-cream-faint)]"
+                        className="min-w-0 flex-1 rounded-sm text-base border border-[rgba(231,205,140,0.25)] bg-black/40 px-3 py-2 font-mono uppercase tracking-widest text-[color:var(--dr-cream)] placeholder:text-[color:var(--dr-cream-faint)]"
                     />
                     <Btn onClick={() => code && joinLobby(code)} disabled={code.length < 4}>
                         Join
@@ -346,7 +346,7 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
     if (!lobby) return null;
 
     return (
-        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0612] to-[#120a20] p-6">
+        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0612] to-[#120a20] px-6 pb-6 pt-[calc(3.5rem+var(--safe-top))] sm:pt-6">
             <div className="mb-4 flex items-center justify-between">
                 <div>
                     <h2 className="dr-serif text-2xl font-semibold tracking-[0.1em] text-[color:var(--dr-gold)]">Lobby</h2>
