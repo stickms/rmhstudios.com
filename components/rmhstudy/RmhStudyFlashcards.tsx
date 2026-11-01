@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { isTypingTarget } from '@/lib/shortcuts/registry';
+import { summarizeGrades } from '@/lib/rmhstudy/session-summary';
 import { useTranslation } from 'react-i18next';
 import { Layers, Loader2, ArrowLeft, ExternalLink, RotateCw } from 'lucide-react';
 import { toast } from '@/lib/rmhstudy/toast-store';
@@ -50,6 +51,7 @@ export default function RmhStudyFlashcards() {
   const [revealed, setRevealed] = useState(false);
   const [grading, setGrading] = useState(false);
   const [done, setDone] = useState(false);
+  const [grades, setGrades] = useState<number[]>([]);
 
   const loadDecks = useCallback(async () => {
     setLoading(true);
@@ -88,6 +90,7 @@ export default function RmhStudyFlashcards() {
       setIndex(0);
       setRevealed(false);
       setDone(false);
+      setGrades([]);
     } catch {
       toast.error(t("could-not-load-cards", { defaultValue: "Could not load cards" }));
     }
@@ -97,6 +100,7 @@ export default function RmhStudyFlashcards() {
     const card = cards[index];
     if (!card || grading) return;
     setGrading(true);
+    setGrades((prev) => [...prev, g]);
     try {
       await fetch(`/api/study/cards/${card.id}/review`, {
         method: 'POST',
@@ -146,6 +150,7 @@ export default function RmhStudyFlashcards() {
     setIndex(0);
     setRevealed(false);
     setDone(false);
+    setGrades([]);
     loadDecks();
   }, [loadDecks]);
 
@@ -168,6 +173,7 @@ export default function RmhStudyFlashcards() {
   // ── Review session ──────────────────────────────────────────────
   if (activeDeck) {
     const card = cards[index];
+    const summary = summarizeGrades(grades);
     return (
       <div className="p-4 max-w-2xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
@@ -187,6 +193,16 @@ export default function RmhStudyFlashcards() {
             <Layers className="h-8 w-8 mx-auto text-(--app-accent)" />
             <p className="font-semibold">{t("session-complete", { defaultValue: "Session complete!" })}</p>
             <p className="text-sm text-(--app-text-muted)">{t("session-reviewed", { defaultValue: "You reviewed {{count}} card.", count: cards.length })}</p>
+            {summary.total > 0 && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">
+                  {t("session-recalled", { defaultValue: "Recalled: {{percent}}%", percent: summary.recalledPercent })}
+                </p>
+                <p className="font-mono text-xs text-(--app-text-muted)">
+                  {GRADES.map((g) => `${t(`grade-${g.grade}`, { defaultValue: g.label })} ${summary.counts[g.grade]}`).join(' · ')}
+                </p>
+              </div>
+            )}
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => startReview(activeDeck)}

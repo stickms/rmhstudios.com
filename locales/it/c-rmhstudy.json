@@ -104,5 +104,6 @@
   "work-duration": "Durata lavoro: {{minutes}} min",
   "apps": "Apps",
   "kbd-hint-reveal": "Premi Spazio per rivelare",
-  "kbd-hint-grade": "Premi 1–4 per valutare: Ancora, Difficile, Bene, Facile"
+  "kbd-hint-grade": "Premi 1–4 per valutare: Ancora, Difficile, Bene, Facile",
+  "session-recalled": "Ricordato: {{percent}}%"
 }

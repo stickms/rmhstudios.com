@@ -98,5 +98,6 @@
   "work-duration": "कार्य अवधि: {{minutes}} मिनट",
   "apps": "Apps",
   "kbd-hint-reveal": "उत्तर देखने के लिए Space दबाएँ",
-  "kbd-hint-grade": "ग्रेड देने के लिए 1–4 दबाएँ: फिर से, कठिन, अच्छा, आसान"
+  "kbd-hint-grade": "ग्रेड देने के लिए 1–4 दबाएँ: फिर से, कठिन, अच्छा, आसान",
+  "session-recalled": "याद रहा: {{percent}}%"
 }

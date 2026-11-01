@@ -98,5 +98,6 @@
   "work-duration": "Çalışma Süresi: {{minutes}} dk",
   "apps": "Apps",
   "kbd-hint-reveal": "Göstermek için Boşluk tuşuna basın",
-  "kbd-hint-grade": "Puanlamak için 1–4 tuşlarına basın: Tekrar, Zor, İyi, Kolay"
+  "kbd-hint-grade": "Puanlamak için 1–4 tuşlarına basın: Tekrar, Zor, İyi, Kolay",
+  "session-recalled": "Hatırlanan: %{{percent}}"
 }

@@ -104,5 +104,6 @@
   "work-duration": "Duración de trabajo: {{minutes}} min",
   "apps": "Apps",
   "kbd-hint-reveal": "Pulsa Espacio para revelar",
-  "kbd-hint-grade": "Pulsa 1–4 para calificar: Otra vez, Difícil, Bien, Fácil"
+  "kbd-hint-grade": "Pulsa 1–4 para calificar: Otra vez, Difícil, Bien, Fácil",
+  "session-recalled": "Recordado: {{percent}} %"
 }
