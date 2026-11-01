@@ -21,6 +21,8 @@ export async function fetchDailyPuzzle<T>(
     try {
         const res = await fetch(
             `/api/daily-puzzles/puzzle?gameMode=${encodeURIComponent(gameMode)}&date=${encodeURIComponent(dateKey)}`,
+            // A stalled mobile connection must not leave the puzzle on its loading screen.
+            { signal: AbortSignal.timeout?.(12000) },
         );
         if (res.ok) {
             const json = await res.json();

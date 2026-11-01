@@ -44,6 +44,7 @@ import {
   loadSave as loadLightsOutSave,
   loadHistory as loadLightsOutHistory,
 } from '@/lib/lights-out/persistence';
+import { useClipboard } from '@/hooks/useClipboard';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useCelebration } from '@/hooks/useCelebration';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
@@ -160,7 +161,9 @@ export function DailyPuzzlesHub() {
   const celebrate = useCelebration();
   const session = useSession();
 
-  const today = useMemo(() => getTodayEST(), []);
+  // State, not a one-shot memo: a tab left open past the drop must roll to the new puzzle.
+  const [today, setToday] = useState(() => getTodayEST());
+  const { copy } = useClipboard();
   const todayKey = useMemo(() => formatDateKey(today), [today]);
   const puzzleNumber = useMemo(() => getPuzzleNumber(today), [today]);
   const dateLabel = useMemo(
@@ -205,10 +208,20 @@ export function DailyPuzzlesHub() {
   // Live countdown to the next drop (client-only, so the ticking text can't cause a
   // hydration mismatch).
   useEffect(() => {
-    const tick = () => setCountdown(formatCountdown(msToNextEstMidnight()));
+    const tick = () => {
+      setCountdown(formatCountdown(msToNextEstMidnight()));
+      const fresh = getTodayEST();
+      setToday((cur) => (formatDateKey(cur) === formatDateKey(fresh) ? cur : fresh));
+    };
     tick();
     const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
+    // Timers are throttled/suspended in background tabs and on locked phones.
+    const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
   const solvedToday = useMemo(
@@ -277,13 +290,9 @@ export function DailyPuzzlesHub() {
     ]
       .filter((l) => l !== null)
       .join('\n');
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success(t('copied', { defaultValue: 'Copied!' }));
-    } catch {
-      toast.error(t('copy-failed', { defaultValue: 'Could not copy to clipboard.' }));
-    }
-  }, [statusMap, streak, pointsToday, puzzleNumber, solvedToday, t]);
+    if (await copy(text)) toast.success(t('copied', { defaultValue: 'Copied!' }));
+    else toast.error(t('copy-failed', { defaultValue: 'Could not copy to clipboard.' }));
+  }, [statusMap, streak, pointsToday, puzzleNumber, solvedToday, t, copy]);
 
   const visibleModes = useMemo(() => {
     if (filter === 'todo') return DESK_MODES.filter((m) => !statusMap[m.id]?.completed);

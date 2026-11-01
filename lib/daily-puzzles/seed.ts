@@ -34,14 +34,17 @@ export function getTodayEST(): Date {
 }
 
 /** Puzzle numbering: days since launch */
-const LAUNCH_DATE = new Date('2026-04-01');
+// Local-midnight construction: `new Date('2026-04-01')` is UTC midnight, which
+// formats as 03-31 west of UTC and shifted every puzzle number by one there.
+const LAUNCH_DATE = new Date(2026, 3, 1);
 
 export function getPuzzleNumber(date: Date): number {
     const dateStr = formatDateKey(date);
     const launchStr = formatDateKey(LAUNCH_DATE);
     const d = new Date(dateStr + 'T00:00:00');
     const l = new Date(launchStr + 'T00:00:00');
-    return Math.floor((d.getTime() - l.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    // round, not floor: across a DST change local midnights are 23h/25h apart.
+    return Math.round((d.getTime() - l.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 }
 
 /** Shuffle array in-place using seeded RNG (Fisher-Yates) */

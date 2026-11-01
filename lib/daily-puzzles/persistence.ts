@@ -26,7 +26,10 @@ function loadState(): DailyPuzzlesState {
     if (typeof window === 'undefined') return { version: 1, results: {} };
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) return JSON.parse(raw);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object' && parsed.results) return parsed;
+        }
     } catch { /* ignore */ }
     return { version: 1, results: {} };
 }
@@ -144,10 +147,18 @@ export function saveResultWithSync(
             body.score = result.score;
         }
 
-        fetch('/api/daily-puzzles/score', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        }).catch(() => { /* ignore */ });
+        // One retry: a flaky mobile connection otherwise silently drops the score/streak.
+        const send = () =>
+            fetch('/api/daily-puzzles/score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+                keepalive: true,
+            }).then((r) => {
+                if (!r.ok && r.status >= 500) throw new Error(String(r.status));
+            });
+        send().catch(() => {
+            setTimeout(() => { send().catch(() => { /* give up; local copy is kept */ }); }, 4000);
+        });
     }
 }
