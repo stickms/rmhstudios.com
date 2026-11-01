@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { bucketByDay, heatLevel, windowDays, windowStart, HEATMAP_WEEKS } from '@/lib/profile/activity';
+import {
+  bucketByDay,
+  heatLevel,
+  postingStreaks,
+  windowDays,
+  windowStart,
+  HEATMAP_WEEKS,
+} from '@/lib/profile/activity';
 
 const NOW = new Date('2026-11-01T15:30:00Z');
 
@@ -36,5 +43,16 @@ describe('profile activity heatmap', () => {
     expect(heatLevel(6, 10)).toBe(3);
     expect(heatLevel(10, 10)).toBe(4);
     expect(heatLevel(5, 0)).toBe(0);
+  });
+
+  it('computes current and longest streaks', () => {
+    const d = (...c: number[]) => c.map((count) => ({ count }));
+    expect(postingStreaks([])).toEqual({ current: 0, longest: 0 });
+    expect(postingStreaks(d(0, 0, 0))).toEqual({ current: 0, longest: 0 });
+    expect(postingStreaks(d(1, 1, 0, 1, 1, 1))).toEqual({ current: 3, longest: 3 });
+    // An empty today does not break a streak that ran through yesterday.
+    expect(postingStreaks(d(0, 1, 1, 0))).toEqual({ current: 2, longest: 2 });
+    // ...but two empty days do.
+    expect(postingStreaks(d(1, 1, 1, 0, 0))).toEqual({ current: 0, longest: 3 });
   });
 });

@@ -60,3 +60,26 @@ export function windowDays(
   }
   return days;
 }
+
+/**
+ * Posting streaks over the heatmap window. `days` is oldest-first, as returned
+ * by {@link windowDays}. The current streak counts back from today, but an empty
+ * today does not zero it — the day is not over — so it counts back from
+ * yesterday instead.
+ */
+export function postingStreaks(days: Array<{ count: number }>): { current: number; longest: number } {
+  let longest = 0;
+  let run = 0;
+  for (const d of days) {
+    run = d.count > 0 ? run + 1 : 0;
+    if (run > longest) longest = run;
+  }
+  let i = days.length - 1;
+  if (i >= 0 && days[i]!.count === 0) i--;
+  let current = 0;
+  while (i >= 0 && days[i]!.count > 0) {
+    current++;
+    i--;
+  }
+  return { current, longest };
+}

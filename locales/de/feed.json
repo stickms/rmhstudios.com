@@ -1507,5 +1507,6 @@
   "muted-duration-week": "1 Woche",
   "muted-duration-month": "30 Tage",
   "activity-title": "Beitragsaktivität",
-  "activity-summary": "Beiträge in den letzten {{weeks}} Wochen: {{total}}"
+  "activity-summary": "Beiträge in den letzten {{weeks}} Wochen: {{total}}",
+  "activity-streak": "Aktuelle Serie: {{current}} Tage · Längste: {{longest}} Tage"
 }

@@ -1462,5 +1462,6 @@
   "muted-duration-week": "1 tuần",
   "muted-duration-month": "30 ngày",
   "activity-title": "Hoạt động đăng bài",
-  "activity-summary": "Bài đăng trong {{weeks}} tuần qua: {{total}}"
+  "activity-summary": "Bài đăng trong {{weeks}} tuần qua: {{total}}",
+  "activity-streak": "Chuỗi hiện tại: {{current}} ngày · Dài nhất: {{longest}} ngày"
 }

@@ -1462,5 +1462,6 @@
   "muted-duration-week": "1주",
   "muted-duration-month": "30일",
   "activity-title": "게시 활동",
-  "activity-summary": "최근 {{weeks}}주간 게시물: {{total}}"
+  "activity-summary": "최근 {{weeks}}주간 게시물: {{total}}",
+  "activity-streak": "현재 연속 {{current}}일 · 최장 {{longest}}일"
 }

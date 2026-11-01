@@ -1552,5 +1552,6 @@
   "muted-duration-week": "1 semana",
   "muted-duration-month": "30 días",
   "activity-title": "Actividad de publicación",
-  "activity-summary": "Publicaciones en las últimas {{weeks}} semanas: {{total}}"
+  "activity-summary": "Publicaciones en las últimas {{weeks}} semanas: {{total}}",
+  "activity-streak": "Racha actual: {{current}} días · La más larga: {{longest}} días"
 }
