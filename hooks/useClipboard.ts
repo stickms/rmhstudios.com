@@ -28,25 +28,37 @@ export function useClipboard({ resetMs = 2000 }: { resetMs?: number } = {}) {
 
   const copy = useCallback(
     async (text: string): Promise<boolean> => {
-      let ok = false;
+      let ok: boolean;
+      const legacyCopy = (): boolean => {
+        const el = document.createElement('textarea');
+        el.value = text;
+        el.setAttribute('readonly', '');
+        el.style.position = 'fixed';
+        el.style.opacity = '0';
+        document.body.appendChild(el);
+        el.select();
+        try {
+          return document.execCommand('copy');
+        } finally {
+          document.body.removeChild(el);
+        }
+      };
       try {
         if (navigator?.clipboard?.writeText) {
           await navigator.clipboard.writeText(text);
           ok = true;
         } else {
           // Fallback for insecure contexts / older browsers.
-          const el = document.createElement('textarea');
-          el.value = text;
-          el.setAttribute('readonly', '');
-          el.style.position = 'fixed';
-          el.style.opacity = '0';
-          document.body.appendChild(el);
-          el.select();
-          ok = document.execCommand('copy');
-          document.body.removeChild(el);
+          ok = legacyCopy();
         }
       } catch {
-        ok = false;
+        // writeText rejects when the permission is denied or the document lost
+        // focus; execCommand can still succeed inside the same user gesture.
+        try {
+          ok = legacyCopy();
+        } catch {
+          ok = false;
+        }
       }
 
       if (ok) {
