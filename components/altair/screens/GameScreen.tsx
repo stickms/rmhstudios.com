@@ -27,13 +27,29 @@ import LevelUpScreen from '@/components/altair/screens/LevelUpScreen';
 import PauseOverlay from '@/components/altair/screens/PauseOverlay';
 import MobileDPad from '@/components/altair/mobile/MobileDPad';
 import MobileControls from '@/components/altair/mobile/MobileControls';
+import { WebGLUnavailable, useWebGLSupport } from '@/components/shared/WebGLUnavailable';
 
 interface GameScreenProps {
   onQuit: () => void;
   onSettings: () => void;
 }
 
-export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
+// Altair renders through WebGL. A browser that cannot start it (Firefox here,
+// blocklisted GPUs) used to throw 'WebGL not supported' into the generic
+// "Game crashed" boundary; show the shared, actionable message instead.
+export default function GameScreen(props: GameScreenProps) {
+  const webglSupported = useWebGLSupport();
+  if (!webglSupported) {
+    return (
+      <div className="fixed inset-0">
+        <WebGLUnavailable gameName="Altair" />
+      </div>
+    );
+  }
+  return <GameScreenInner {...props} />;
+}
+
+function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
   const { t } = useTranslation("c-altair");
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
