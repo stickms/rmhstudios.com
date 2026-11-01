@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 965 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 966 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1405,12 +1405,13 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/profile`
 
-30 routes.
+31 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/profile` | `PATCH` | `app/routes/api/profile.ts` |
 | `/api/profile/:id` | `GET` | `app/routes/api/profile/$id.ts` |
+| `/api/profile/:id/activity` | `GET` | `app/routes/api/profile/$id/activity.ts` |
 | `/api/profile/:id/card` | `GET` | `app/routes/api/profile/$id/card.ts` |
 | `/api/profile/:id/endorsements` | `GET` `PUT` | `app/routes/api/profile/$id/endorsements.ts` |
 | `/api/profile/:id/follow` | `POST` | `app/routes/api/profile/$id/follow.ts` |
