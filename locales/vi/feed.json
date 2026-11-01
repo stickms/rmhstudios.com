@@ -1455,5 +1455,7 @@
   "your-personas": "Nhân vật của bạn",
   "your-ratings": "Đánh giá của bạn",
   "your-top-post": "Bài viết hàng đầu của bạn",
-  "your-year-on-rmh": "Năm của bạn trên RMH"
+  "your-year-on-rmh": "Năm của bạn trên RMH",
+  "activity-title": "Hoạt động đăng bài",
+  "activity-summary": "Bài đăng trong {{weeks}} tuần qua: {{total}}"
 }

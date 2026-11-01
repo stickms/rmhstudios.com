@@ -1455,5 +1455,7 @@
   "your-personas": "Persona Anda",
   "your-ratings": "Penilaian Anda",
   "your-top-post": "Postingan teratas Anda",
-  "your-year-on-rmh": "Tahun Anda di RMH"
+  "your-year-on-rmh": "Tahun Anda di RMH",
+  "activity-title": "Aktivitas posting",
+  "activity-summary": "Postingan dalam {{weeks}} minggu terakhir: {{total}}"
 }

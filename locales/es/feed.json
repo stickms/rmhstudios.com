@@ -1545,5 +1545,7 @@
   "your-personas": "Tus personas",
   "your-ratings": "Tus valoraciones",
   "your-top-post": "Tu mejor publicación",
-  "your-year-on-rmh": "Tu año en RMH"
+  "your-year-on-rmh": "Tu año en RMH",
+  "activity-title": "Actividad de publicación",
+  "activity-summary": "Publicaciones en las últimas {{weeks}} semanas: {{total}}"
 }

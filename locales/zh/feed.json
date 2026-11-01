@@ -1455,5 +1455,7 @@
   "your-personas": "您的人格特质",
   "your-ratings": "您的评分",
   "your-top-post": "你的置顶帖子",
-  "your-year-on-rmh": "你在RMH的一年"
+  "your-year-on-rmh": "你在RMH的一年",
+  "activity-title": "发帖活动",
+  "activity-summary": "过去 {{weeks}} 周的帖子数：{{total}}"
 }

@@ -1500,5 +1500,7 @@
   "your-personas": "Deine Personas",
   "your-ratings": "Deine Bewertungen",
   "your-top-post": "Dein Top-Beitrag",
-  "your-year-on-rmh": "Dein Jahr auf RMH"
+  "your-year-on-rmh": "Dein Jahr auf RMH",
+  "activity-title": "Beitragsaktivität",
+  "activity-summary": "Beiträge in den letzten {{weeks}} Wochen: {{total}}"
 }

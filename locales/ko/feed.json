@@ -1455,5 +1455,7 @@
   "your-personas": "내 페르소나",
   "your-ratings": "내 평점",
   "your-top-post": "내 인기 게시물",
-  "your-year-on-rmh": "RMH에서의 회원님의 한 해"
+  "your-year-on-rmh": "RMH에서의 회원님의 한 해",
+  "activity-title": "게시 활동",
+  "activity-summary": "최근 {{weeks}}주간 게시물: {{total}}"
 }

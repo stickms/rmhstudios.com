@@ -1680,5 +1680,7 @@
   "your-personas": "شخصياتك",
   "your-ratings": "تقييماتك",
   "your-top-post": "أفضل منشور لك",
-  "your-year-on-rmh": "عامك في RMH"
+  "your-year-on-rmh": "عامك في RMH",
+  "activity-title": "نشاط النشر",
+  "activity-summary": "المنشورات في آخر {{weeks}} أسبوعًا: {{total}}"
 }

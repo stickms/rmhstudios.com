@@ -1590,5 +1590,7 @@
   "your-personas": "Ваши персонажи",
   "your-ratings": "Ваши оценки",
   "your-top-post": "Ваш лучший пост",
-  "your-year-on-rmh": "Ваш год на RMH"
+  "your-year-on-rmh": "Ваш год на RMH",
+  "activity-title": "Активность публикаций",
+  "activity-summary": "Публикаций за последние {{weeks}} нед.: {{total}}"
 }
