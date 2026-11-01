@@ -39,6 +39,19 @@ describe('searchCatalog', () => {
     expect(page[0]?.href).toBe('/settings/security');
   });
 
+  it('finds the settings sub-pages by what they are for', () => {
+    const cases: Array<[string, string]> = [
+      ['close friends', '/settings/circle'],
+      ['appeal', '/settings/account-status'],
+      ['content preferences', '/settings/content'],
+      ['profile customization', '/settings/profile'],
+    ];
+    for (const [query, href] of cases) {
+      const { page } = searchCatalog(q(query), { signedIn: true });
+      expect(page.map((p) => p.href), query).toContain(href);
+    }
+  });
+
   it('hides auth-gated destinations from signed-out visitors', () => {
     const signedOut = searchCatalog(q('passkey'), { signedIn: false });
     expect(signedOut.page.some((p) => p.href === '/settings/security')).toBe(false);
