@@ -619,7 +619,7 @@
   "plan-starter-name": "HARD-R",
   "plan-starter-period": "/mo",
   "plan-starter-tagline": "Everything unlocked — and the keys.",
-  "play-limits-break-days_one": "{{count}} days",
+  "play-limits-break-days_one": "{{count}} day",
   "play-limits-break-days_other": "{{count}} days",
   "play-limits-break-hint": "A break refuses every stake until it ends. It cannot be cut short, but the rest of the site is unchanged.",
   "play-limits-break-label": "Take a break",
