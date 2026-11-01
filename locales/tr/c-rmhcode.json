@@ -11,5 +11,7 @@
   "token-generated-notice": "Token oluşturuldu! Şimdi kopyalayın - bir daha gösterilmeyecek.",
   "token-name-placeholder": "Token adı (isteğe bağlı)",
   "unnamed-token": "Adsız token",
-  "your-tokens": "Token'larınız"
+  "your-tokens": "Token'larınız",
+  "expires-soon": "Yakında sona erecek",
+  "expires-date": "Bitiş: {{date}}"
 }

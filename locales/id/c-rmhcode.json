@@ -11,5 +11,7 @@
   "token-generated-notice": "Token berhasil dibuat! Salin sekarang - tidak akan ditampilkan lagi.",
   "token-name-placeholder": "Nama token (opsional)",
   "unnamed-token": "Token tanpa nama",
-  "your-tokens": "Token Anda"
+  "your-tokens": "Token Anda",
+  "expires-soon": "Segera kedaluwarsa",
+  "expires-date": "Kedaluwarsa {{date}}"
 }

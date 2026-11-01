@@ -11,5 +11,7 @@
   "token-generated-notice": "Token đã được tạo! Hãy sao chép ngay - nó sẽ không được hiển thị lại.",
   "token-name-placeholder": "Tên token (không bắt buộc)",
   "unnamed-token": "Token không tên",
-  "your-tokens": "Token của bạn"
+  "your-tokens": "Token của bạn",
+  "expires-soon": "Sắp hết hạn",
+  "expires-date": "Hết hạn {{date}}"
 }

@@ -11,5 +11,7 @@
   "token-generated-notice": "Jeton généré ! Copiez-le maintenant – il ne sera plus affiché.",
   "token-name-placeholder": "Nom du jeton (facultatif)",
   "unnamed-token": "Jeton sans nom",
-  "your-tokens": "Vos jetons"
+  "your-tokens": "Vos jetons",
+  "expires-soon": "Expire bientôt",
+  "expires-date": "Expire le {{date}}"
 }

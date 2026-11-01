@@ -11,5 +11,7 @@
   "token-generated-notice": "¡Token generado! Cópialo ahora; no se mostrará de nuevo.",
   "token-name-placeholder": "Nombre del token (opcional)",
   "unnamed-token": "Token sin nombre",
-  "your-tokens": "Tus Tokens"
+  "your-tokens": "Tus Tokens",
+  "expires-soon": "Caduca pronto",
+  "expires-date": "Caduca el {{date}}"
 }

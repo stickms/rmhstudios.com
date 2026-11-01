@@ -11,5 +11,7 @@
   "token-generated-notice": "Токен сгенерирован! Скопируйте его сейчас — он больше не будет показан.",
   "token-name-placeholder": "Имя токена (необязательно)",
   "unnamed-token": "Токен без имени",
-  "your-tokens": "Ваши токены"
+  "your-tokens": "Ваши токены",
+  "expires-soon": "Скоро истекает",
+  "expires-date": "Истекает {{date}}"
 }

@@ -11,5 +11,7 @@
   "token-generated-notice": "토큰이 생성되었습니다! 지금 복사하세요. 다시 표시되지 않습니다.",
   "token-name-placeholder": "토큰 이름 (선택 사항)",
   "unnamed-token": "이름 없는 토큰",
-  "your-tokens": "내 토큰"
+  "your-tokens": "내 토큰",
+  "expires-soon": "곧 만료",
+  "expires-date": "만료일 {{date}}"
 }

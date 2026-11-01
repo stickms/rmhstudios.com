@@ -11,5 +11,7 @@
   "token-generated-notice": "トークンが生成されました！今すぐコピーしてください。再表示されることはありません。",
   "token-name-placeholder": "トークン名（任意）",
   "unnamed-token": "無名のトークン",
-  "your-tokens": "あなたのトークン"
+  "your-tokens": "あなたのトークン",
+  "expires-soon": "まもなく期限切れ",
+  "expires-date": "有効期限 {{date}}"
 }

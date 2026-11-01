@@ -11,5 +11,7 @@
   "token-generated-notice": "टोकन जनरेट हो गया! इसे अभी कॉपी करें - यह दोबारा नहीं दिखाया जाएगा।",
   "token-name-placeholder": "टोकन का नाम (वैकल्पिक)",
   "unnamed-token": "बिना नाम का टोकन",
-  "your-tokens": "आपके टोकन"
+  "your-tokens": "आपके टोकन",
+  "expires-soon": "जल्द समाप्त होगा",
+  "expires-date": "{{date}} को समाप्त"
 }
