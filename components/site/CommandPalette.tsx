@@ -37,7 +37,6 @@ import {
   Gem,
   Gamepad2,
   Keyboard,
-  Sparkles,
   LayoutGrid,
   PenSquare,
   Flame,
