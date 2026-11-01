@@ -76,14 +76,14 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-wrap gap-2" role="group" aria-label={t("tip-amount-group-label", { defaultValue: "Tip amount" })}>
+        <div className="grid grid-cols-5 gap-2" role="group" aria-label={t("tip-amount-group-label", { defaultValue: "Tip amount" })}>
           {QUICK_AMOUNTS.map((a) => (
             <button
               key={a}
               onClick={() => setAmount(a)}
               aria-pressed={amount === a}
               data-jelly
-              className={`rounded-site-sm border px-3 py-1.5 text-sm font-semibold transition-colors ${
+              className={`rounded-site-sm border px-1 py-2 text-sm font-semibold transition-colors ${
                 amount === a ? 'border-site-accent bg-site-accent-dim text-site-text' : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
               }`}
             >
