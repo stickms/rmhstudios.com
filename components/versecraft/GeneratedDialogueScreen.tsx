@@ -546,7 +546,7 @@ export function GeneratedDialogueScreen() {
               aria-label={label}
               className="flex items-center gap-1.5 rounded transition-transform active:scale-95"
               style={{
-                minHeight: 40,
+                minHeight: 44,
                 padding: '6px 12px',
                 backgroundColor: 'rgba(26,21,32,0.72)',
                 border: '1px solid rgba(196,163,90,0.15)',
