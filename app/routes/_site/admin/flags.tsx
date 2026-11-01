@@ -193,8 +193,8 @@ function FlagRow({
 
   return (
     <li className="flex flex-wrap items-center gap-3 px-4 py-3">
-      <div className="min-w-0 flex-1">
-        <code className="font-mono text-sm text-site-accent">{flag.key}</code>
+      <div className="min-w-0 basis-full sm:flex-1 sm:basis-0">
+        <code className="break-all font-mono text-sm text-site-accent">{flag.key}</code>
         {flag.description ? (
           <p className="truncate text-xs text-site-text-muted">{flag.description}</p>
         ) : null}
