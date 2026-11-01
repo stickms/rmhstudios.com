@@ -19,6 +19,7 @@
  * (`testing/e2e/fouc.mjs`) hears it as a `hydration` finding with the stack
  * attached. See docs/fouc-audit-2026-10-06.md.
  */
+import '@/lib/zod-jitless';
 import { StrictMode, startTransition } from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { StartClient } from '@tanstack/react-start/client';
