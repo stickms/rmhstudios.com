@@ -24,6 +24,8 @@ import { buildGlossaryMatcher, rehypeGlossary } from '@/lib/reading/glossary';
 import { useDocBundle } from '@/lib/reading/client';
 import { useReadingRuler } from '@/lib/reading/ruler';
 import type { GlossaryTermView, ReadingDocKind } from '@/lib/reading/schema';
+import { extractOutline } from '@/lib/reading/outline';
+import { ArticleOutline } from './ArticleOutline';
 import { ReadingToolbar } from './ReadingToolbar';
 import { FootnoteList, FootnoteRef, GlossaryContext, GlossaryTermLink } from './ArticleNotes';
 import './reading.css';
@@ -46,6 +48,7 @@ export function ArticleBody({
   const ref = useRef<HTMLDivElement>(null);
   const [ruler] = useReadingRuler();
   const { body, notes } = useMemo(() => extractFootnotes(content), [content]);
+  const outline = useMemo(() => extractOutline(body), [body]);
   const bundle = useDocBundle(kind, slug, idle);
 
   const glossary = bundle.data?.glossary ?? EMPTY;
@@ -101,6 +104,7 @@ export function ArticleBody({
       <div className="max-w-2xl">
         <ReadingToolbar />
       </div>
+      <ArticleOutline items={outline} containerRef={ref} />
       <div
         ref={ref}
         className="rf-article max-w-2xl break-words"
