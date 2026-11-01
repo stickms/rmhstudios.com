@@ -150,7 +150,7 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
               step={0.05}
               value={musicMuted ? 0 : musicVol}
               onChange={handleMusicVol}
-              className="h-1 flex-1 cursor-pointer appearance-none rounded-lg bg-neutral-700 accent-[#d4a054]"
+              className="h-1 flex-1 cursor-pointer accent-[#d4a054]"
             />
             <span className="w-7 text-right font-mono text-xs text-[#6b6155]">
               {musicMuted ? "—" : Math.round(musicVol * 100)}
@@ -176,7 +176,7 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
               step={0.05}
               value={sfxMuted ? 0 : sfxVol}
               onChange={handleSfxVol}
-              className="h-1 flex-1 cursor-pointer appearance-none rounded-lg bg-neutral-700 accent-[#5fd2a0]"
+              className="h-1 flex-1 cursor-pointer accent-[#5fd2a0]"
             />
             <span className="w-7 text-right font-mono text-xs text-[#6b6155]">
               {sfxMuted ? "—" : Math.round(sfxVol * 100)}

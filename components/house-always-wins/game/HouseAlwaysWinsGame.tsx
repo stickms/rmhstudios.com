@@ -1,7 +1,8 @@
 "use client";
 
 import { useGameSession } from "@/hooks/useGameSession";
-import { useRef, useEffect, useState, useCallback, type CSSProperties } from "react";
+import { useRef, useEffect, useState, useCallback, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { GameEngine, type StoreAccess } from "@/lib/house-always-wins/engine/GameEngine";
 import { IntroScene } from "@/lib/house-always-wins/scenes/IntroScene";
 import { WorldScene } from "@/lib/house-always-wins/scenes/WorldScene";
@@ -27,7 +28,11 @@ export function HouseAlwaysWinsGame() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [ending, setEnding] = useState<string | null>(null);
   const [pokerOpen, setPokerOpen] = useState(false);
+  // The letterbox around the stage. The touch pad lives THERE, not on the stage:
+  // in portrait the 400x256 stage is a ~260px strip and thumbs + buttons covered half of it.
+  const [padHost, setPadHost] = useState<HTMLElement | null>(null);
   const toastId = useRef(0);
+  const inHost = (node: ReactNode) => (padHost ? createPortal(node, padHost) : node);
   const menuOpenRef = useRef(false);
 
   const handleChoice = useCallback((action: string) => {
@@ -49,6 +54,10 @@ export function HouseAlwaysWinsGame() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [dialogue, ending, pokerOpen]);
+
+  useEffect(() => {
+    setPadHost(canvasRef.current?.closest<HTMLElement>(".app-stage-fit") ?? null);
+  }, []);
 
   useEffect(() => {
     menuOpenRef.current = menuOpen;
@@ -152,14 +161,16 @@ export function HouseAlwaysWinsGame() {
       )}
 
       {!menuOpen && !pokerOpen && !ending && !dialogue && (
-        <TouchPad onMenu={() => setMenuOpen(true)} />
+        <TouchPad host={padHost} onMenu={() => setMenuOpen(true)} />
       )}
 
-      <MenuOverlay open={menuOpen} onClose={() => setMenuOpen(false)} />
+      {/* Full-screen panels go in the letterbox, not the stage: in portrait the
+          stage is a ~260px strip and the pause menu / poker table were clipped to it. */}
+      {inHost(<MenuOverlay open={menuOpen} onClose={() => setMenuOpen(false)} />)}
 
-      {pokerOpen && <PokerGame onClose={closePoker} />}
+      {pokerOpen && inHost(<PokerGame onClose={closePoker} />)}
 
-      {ending && <EndingOverlay endingId={ending} />}
+      {ending && inHost(<EndingOverlay endingId={ending} />)}
     </div>
   );
 }

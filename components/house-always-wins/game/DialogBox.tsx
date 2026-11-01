@@ -53,7 +53,7 @@ export function DialogBox({ dialogue, onChoice, onAdvance }: DialogBoxProps) {
   if (!line) return null;
 
   return (
-    <div className="absolute bottom-[max(2rem,var(--safe-bottom))] left-1/2 -translate-x-1/2 w-[90%] max-w-[600px] pointer-events-auto">
+    <div className="absolute z-20 bottom-[max(2rem,var(--safe-bottom))] left-1/2 -translate-x-1/2 w-[90%] max-w-[600px] pointer-events-auto">
       <div className="bg-[rgba(10,10,10,0.94)] border border-[#2a2520] rounded-lg px-5 py-4 shadow-2xl">
         {/* Speaker */}
         <div className="text-[#d4a054] text-xs font-mono tracking-[0.2em] uppercase mb-2">
