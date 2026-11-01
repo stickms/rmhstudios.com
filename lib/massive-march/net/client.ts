@@ -18,6 +18,7 @@
 
 'use client';
 
+import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
@@ -71,7 +72,7 @@ export function storedCode(): string | null {
   }
 }
 
-export async function connectMassiveMarch(): Promise<Socket> {
+async function connectMassiveMarchInner(): Promise<Socket> {
   if (client) {
     client.reconnectNow();
     return client.socket;
@@ -286,3 +287,6 @@ export const mm = {
 export function tickAge(): number {
   return live.lastTickAt === 0 ? Infinity : performance.now() - live.lastTickAt;
 }
+
+/** Concurrent callers share one in-flight connect (see single-flight.ts). */
+export const connectMassiveMarch = singleFlight(connectMassiveMarchInner);

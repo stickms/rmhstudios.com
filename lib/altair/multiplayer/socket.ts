@@ -7,6 +7,7 @@
 
 'use client';
 
+import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import { io, Socket } from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';
 import { authClient } from '@/lib/auth-client';
@@ -24,7 +25,7 @@ let socket: Socket | null = null;
  * Gets the current auth session token, creates a Socket.io connection,
  * and sets up event listeners for state synchronization.
  */
-export async function connectToAltair(): Promise<Socket> {
+async function connectToAltairInner(): Promise<Socket> {
   if (socket?.connected) return socket;
 
   // Tear down stale socket
@@ -190,3 +191,6 @@ export function emit(event: string, data?: unknown): void {
     socket.emit(event, data);
   }
 }
+
+/** Concurrent callers share one in-flight connect (see single-flight.ts). */
+export const connectToAltair = singleFlight(connectToAltairInner);

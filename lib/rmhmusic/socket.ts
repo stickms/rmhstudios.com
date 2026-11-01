@@ -8,6 +8,7 @@
 
 'use client';
 
+import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
@@ -22,7 +23,7 @@ const store = () => useRmhMusicStore.getState();
 /** Beyond this the listener is audibly behind the room, so snap rather than drift. */
 const MAX_DRIFT_MS = 2000;
 
-export async function connectToRmhMusic(): Promise<Socket> {
+async function connectToRmhMusicInner(): Promise<Socket> {
   if (client) {
     client.reconnectNow();
     return client.socket;
@@ -124,3 +125,6 @@ export function disconnectFromRmhMusic(): void {
 export function emit(event: string, data?: unknown, options?: { queue?: boolean }): boolean {
   return client?.emit(event, data, options) ?? false;
 }
+
+/** Concurrent callers share one in-flight connect (see single-flight.ts). */
+export const connectToRmhMusic = singleFlight(connectToRmhMusicInner);
