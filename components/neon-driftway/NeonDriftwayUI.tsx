@@ -278,7 +278,7 @@ export function NeonDriftwayUI({
             </div>
           )}
 
-          <div className="text-[10px] sm:text-xs text-zinc-600 space-y-1">
+          <div className="text-[11px] sm:text-xs text-zinc-400 space-y-1">
             <p className="hidden sm:block">{t("keyboard-controls", { defaultValue: "W/↑ accelerate · A/D or ←/→ steer · S/↓ brake · Shift boost · C recenter view · Esc pause" })}</p>
             <p className="sm:hidden">{t("touch-controls-hint", { defaultValue: "Touch controls appear during gameplay" })}</p>
           </div>
