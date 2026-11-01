@@ -9,6 +9,7 @@ import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';
 import { formatDuration } from '@/lib/rmhmusic/utils';
 import SleepTimerButton from './SleepTimerButton';
 import { isTypingTarget } from '@/lib/shortcuts/registry';
+import { VOLUME_STEP, stepVolume } from '@/lib/rmhmusic/volume';
 
 export default function PlayerBar() {
   const { currentTrack, playback, settings, isSearchOpen, isChatOpen, isGuessOpen, setSearchOpen, setChatOpen, setGuessOpen, updateSettings } = useRmhMusicStore();
@@ -52,8 +53,10 @@ export default function PlayerBar() {
   // focused button/link, where the browser already activates it.
   const handlePlayPauseRef = useRef(handlePlayPause);
   const handleMuteToggleRef = useRef(handleMuteToggle);
+  const handleVolumeChangeRef = useRef(handleVolumeChange);
   handlePlayPauseRef.current = handlePlayPause;
   handleMuteToggleRef.current = handleMuteToggle;
+  handleVolumeChangeRef.current = handleVolumeChange;
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -64,6 +67,14 @@ export default function PlayerBar() {
         handlePlayPauseRef.current();
       } else if (e.key.toLowerCase() === 'm') {
         handleMuteToggleRef.current();
+      } else if (e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        // Shift+Up/Down nudges the volume 5%. Shift keeps plain arrows free to
+        // scroll the queue and chat; the volume slider itself is an input, so
+        // its own arrow keys never reach here.
+        e.preventDefault();
+        const { settings: s } = useRmhMusicStore.getState();
+        const delta = e.key === 'ArrowUp' ? VOLUME_STEP : -VOLUME_STEP;
+        handleVolumeChangeRef.current(stepVolume(s.muted ? 0 : s.volume, delta));
       }
     }
     window.addEventListener('keydown', onKeyDown);
@@ -148,6 +159,7 @@ export default function PlayerBar() {
             step="0.01"
             value={settings.muted ? 0 : settings.volume}
             onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+            aria-keyshortcuts="Shift+ArrowUp Shift+ArrowDown"
             className="w-20 accent-purple-500"
           />
         </div>
