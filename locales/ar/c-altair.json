@@ -234,5 +234,6 @@
   "keyboard-hint-level-up-screen_one": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
   "keyboard-hint-level-up-screen_two": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
   "keyboard-hint-level-up-screen_zero": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
-  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "close": "Close"
 }

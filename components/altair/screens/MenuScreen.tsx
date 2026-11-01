@@ -246,14 +246,16 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => fetchLeaderboard(category)}
-              className="p-1.5 rounded-(--altair-radius-sm) text-(--altair-text-dim) hover:text-(--altair-text) hover:bg-(--altair-surface-hover) transition-colors"
+              className="p-1.5 pointer-coarse:p-3.5 rounded-(--altair-radius-sm) text-(--altair-text-dim) hover:text-(--altair-text) hover:bg-(--altair-surface-hover) transition-colors"
+              aria-label={t("refresh", { defaultValue: "Refresh" })}
               title={t("refresh", { defaultValue: "Refresh" })}
             >
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-(--altair-radius-sm) text-(--altair-text-dim) hover:text-(--altair-text) hover:bg-(--altair-surface-hover) transition-colors"
+              aria-label={t("close", { defaultValue: "Close" })}
+              className="p-1.5 pointer-coarse:p-3.5 rounded-(--altair-radius-sm) text-(--altair-text-dim) hover:text-(--altair-text) hover:bg-(--altair-surface-hover) transition-colors"
             >
               <X size={16} />
             </button>
@@ -327,7 +329,7 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
 
                   {/* Games played (subtle) */}
                   <span className="text-xs text-(--altair-text-dim) w-10 text-right">
-                    {entry.gamesPlayed} {t("run-label", { defaultValue: "run", count: entry.gamesPlayed })}
+                    {entry.gamesPlayed} {t("run-label", { defaultValue: "run", defaultValue_other: "runs", count: entry.gamesPlayed })}
                   </span>
                 </div>
               ))}

@@ -358,7 +358,8 @@ export default function PatchnotesModal({ onClose }: { onClose: () => void }) {
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-(--altair-radius-sm) text-(--altair-text-dim) hover:text-(--altair-text) hover:bg-(--altair-surface-hover) transition-colors"
+            aria-label={t("close", { defaultValue: "Close" })}
+            className="p-1.5 pointer-coarse:p-3.5 rounded-(--altair-radius-sm) text-(--altair-text-dim) hover:text-(--altair-text) hover:bg-(--altair-surface-hover) transition-colors"
           >
             <X size={16} />
           </button>

@@ -164,5 +164,6 @@
   "you": "（你）",
   "your-class": "你的班级",
   "zoom": "Zoom",
-  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "close": "Close"
 }

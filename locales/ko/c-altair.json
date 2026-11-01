@@ -164,5 +164,6 @@
   "you": "(당신)",
   "your-class": "당신의 클래스",
   "zoom": "확대/축소",
-  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "close": "Close"
 }
