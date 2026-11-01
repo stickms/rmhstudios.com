@@ -2,6 +2,7 @@
 import { Suspense, useEffect, useRef } from 'react';
 import { markGamePlaying } from '@/lib/game-capabilities';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { WebGLUnavailable, useWebGLSupport } from '@/components/shared/WebGLUnavailable';
 import { Physics } from '@react-three/rapier';
 import { useCookgameStore } from '@/lib/cookgame/store';
 import { cookgameSave } from '@/lib/cookgame/cloud';
@@ -172,6 +173,11 @@ export function CookGameGame() {
       document.removeEventListener('visibilitychange', onHidden);
     };
   }, []);
+
+  // A browser that cannot start WebGL would otherwise land on the generic
+  // "Game crashed" boundary with a raw three.js error string.
+  const webglSupported = useWebGLSupport();
+  if (!webglSupported) return <WebGLUnavailable gameName="Cookgame" />;
 
   return (
     <div className="relative w-full h-full touch-none overscroll-none">
