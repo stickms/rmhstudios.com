@@ -271,6 +271,19 @@ export function migrateV1(old: LegacySaveV1): Partial<GameState> {
 }
 
 /**
+ * The shape every save this build has ever written has: a finite joy figure, a
+ * `sources` map, and plain arrays wherever a Set is revived (`new Set(5)` throws).
+ */
+function looksLikeTempleSave(o: Record<string, unknown>): boolean {
+  if (typeof o.joy !== 'number' || !Number.isFinite(o.joy)) return false;
+  if (!o.sources || typeof o.sources !== 'object' || Array.isArray(o.sources)) return false;
+  for (const k of ['blessings', 'trophies', 'legacy', 'keepsakes', 'buffs', 'sinners']) {
+    if (o[k] !== undefined && !Array.isArray(o[k])) return false;
+  }
+  return true;
+}
+
+/**
  * Read whatever is on the server or in storage and normalise it to v2 state.
  *
  * The two save shapes have nothing structural in common, so this sniffs rather
@@ -285,6 +298,9 @@ export function readSave(raw: unknown): Partial<GameState> | null {
   // serves both — a v2 payload simply leaves the globes and the lane to their
   // defaults. Writing always emits the current version.
   if (typeof probe.version === 'number' && READABLE_VERSIONS.has(probe.version)) {
+    // A `version` field alone is not a temple: `{"version":3}`, or another
+    // game's save, used to "load" as an empty temple and wipe the real one.
+    if (!looksLikeTempleSave(raw as Record<string, unknown>)) return null;
     return saveToState(raw as SaveData);
   }
   // Anything that is not v2/v3 but carries the old currency is a v1 save.
