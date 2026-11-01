@@ -6,5 +6,7 @@
   "remove": "Remove",
   "save": "Save",
   "saved": "Search saved",
-  "saved-searches": "Saved searches"
+  "saved-searches": "Saved searches",
+  "operator-copy": "{{operator}} کاپی کریں",
+  "operator-copied": "{{operator}} کاپی ہو گیا"
 }

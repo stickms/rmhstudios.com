@@ -6,9 +6,13 @@ import { toast } from 'sonner';
 import { Bookmark, BookmarkPlus, Bell, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { useClipboard } from '@/hooks/useClipboard';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import type { SavedSearchView } from '@/lib/search/saved';
+
+/** The search operators shown as copyable examples. */
+const OPERATOR_EXAMPLES = ['from:@user', 'has:media', 'before:2026-01-01', 'after:2025-01-01'] as const;
 
 /**
  * SavedSearches (§18) — save the current query (operators included) and re-run
@@ -18,6 +22,13 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
   const { t } = useTranslation('search');
   const [saved, setSaved] = useState<SavedSearchView[] | null>(null);
   const [showTips, setShowTips] = useState(false);
+  const { copy } = useClipboard();
+
+  async function copyOperator(op: string) {
+    if (await copy(op)) {
+      toast.success(t('operator-copied', { defaultValue: 'Copied {{operator}}', operator: op }));
+    }
+  }
 
   useEffect(() => {
     fetch('/api/search/saved')
@@ -90,11 +101,21 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
       </div>
 
       {showTips ? (
-        <p className="mb-3 text-xs text-site-text-muted">
-          <code className="font-mono">from:@user</code> ·{' '}
-          <code className="font-mono">has:media</code> ·{' '}
-          <code className="font-mono">before:2026-01-01</code> ·{' '}
-          <code className="font-mono">after:2025-01-01</code>
+        <p className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-site-text-muted">
+          {OPERATOR_EXAMPLES.map((op, i) => (
+            <span key={op} className="inline-flex items-center gap-2">
+              {i > 0 ? <span aria-hidden>·</span> : null}
+              <button
+                type="button"
+                onClick={() => void copyOperator(op)}
+                aria-label={t('operator-copy', { defaultValue: 'Copy {{operator}}', operator: op })}
+                title={t('operator-copy', { defaultValue: 'Copy {{operator}}', operator: op })}
+                className="font-mono underline-offset-2 hover:text-site-text hover:underline"
+              >
+                {op}
+              </button>
+            </span>
+          ))}
         </p>
       ) : null}
 
