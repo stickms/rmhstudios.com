@@ -19,6 +19,7 @@
 
 'use client';
 
+import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
@@ -69,7 +70,7 @@ export function storedTableCode(): string | null {
 
 const store = () => useHornStore.getState();
 
-export async function connectHorn(): Promise<Socket> {
+async function connectHornInner(): Promise<Socket> {
   if (client) {
     client.reconnectNow();
     return client.socket;
@@ -259,3 +260,6 @@ export const hornNet = {
   soundEnd: () => emit(C2S.SOUND_END, {}),
   pass: () => emit(C2S.PASS, {}),
 };
+
+/** Concurrent callers share one in-flight connect (see single-flight.ts). */
+export const connectHorn = singleFlight(connectHornInner);

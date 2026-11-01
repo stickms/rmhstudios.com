@@ -1,5 +1,6 @@
 'use client';
 
+import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import { io, Socket } from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';
 import { authClient } from '@/lib/auth-client';
@@ -8,7 +9,7 @@ import { S2C } from './events';
 
 let socket: Socket | null = null;
 
-export async function connectToRoulette(): Promise<Socket> {
+async function connectToRouletteInner(): Promise<Socket> {
   if (socket?.connected) return socket;
 
   if (socket) {
@@ -93,3 +94,6 @@ export function onRouletteBalanceUpdate(cb: (coins: number) => void): () => void
   balanceUpdateCallbacks.add(cb);
   return () => balanceUpdateCallbacks.delete(cb);
 }
+
+/** Concurrent callers share one in-flight connect (see single-flight.ts). */
+export const connectToRoulette = singleFlight(connectToRouletteInner);

@@ -131,7 +131,7 @@ export class SynapseStormMultiplayerClient {
     }
 
     connect(userId: string, displayName: string): void {
-        if (this.socket?.connected) return;
+        if (this.socket?.connected || this.socket?.active) return;
 
         this.userId = userId;
         this.displayName = displayName;

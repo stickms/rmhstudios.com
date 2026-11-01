@@ -4,6 +4,7 @@
 
 'use client';
 
+import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import { io, Socket } from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';
 import { authClient } from '@/lib/auth-client';
@@ -20,7 +21,7 @@ import type {
 
 let socket: Socket | null = null;
 
-export async function connect(): Promise<Socket> {
+async function connectInner(): Promise<Socket> {
     if (socket?.connected) return socket;
     if (socket) {
         socket.removeAllListeners();
@@ -170,3 +171,6 @@ export const actions = {
     leaveFarm: () => emit(C2S.LEAVE_FARM),
     renameFarm: (name: string) => emit(C2S.RENAME_FARM, { name }),
 };
+
+/** Concurrent callers share one in-flight connect (see single-flight.ts). */
+export const connect = singleFlight(connectInner);

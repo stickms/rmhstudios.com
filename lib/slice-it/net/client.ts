@@ -28,6 +28,7 @@
 
 'use client';
 
+import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
@@ -163,7 +164,7 @@ const store = () => useSliceItStore.getState();
  * With neither credential we still fail fast rather than opening a socket the
  * hub will refuse to seat.
  */
-export async function connectSliceIt(): Promise<Socket> {
+async function connectSliceItInner(): Promise<Socket> {
   if (client) {
     client.reconnectNow();
     return client.socket;
@@ -507,3 +508,6 @@ export function sendChat(text: string): void {
 export function kickPlayer(socketId: string): void {
   emit(C2S.KICK, { socketId });
 }
+
+/** Concurrent callers share one in-flight connect (see single-flight.ts). */
+export const connectSliceIt = singleFlight(connectSliceItInner);

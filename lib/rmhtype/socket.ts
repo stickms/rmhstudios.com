@@ -8,6 +8,7 @@
 
 'use client';
 
+import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
@@ -25,7 +26,7 @@ const store = () => useRmhTypeStore.getState();
 
 // ─── Connection ─────────────────────────────────────────────────────────────
 
-export async function connectToRmhType(roomCode?: string): Promise<Socket> {
+async function connectToRmhTypeInner(roomCode?: string): Promise<Socket> {
   if (roomCode) pendingRoomCode = roomCode;
 
   if (client) {
@@ -188,4 +189,12 @@ export function emit(event: string, data?: unknown, options?: { queue?: boolean 
     return false;
   }
   return client.emit(event, data, options);
+}
+
+const connectToRmhTypeOnce = singleFlight(connectToRmhTypeInner);
+
+/** Concurrent callers share one connect; a joiner's code is recorded first so the connect's onConnect re-joins it. */
+export function connectToRmhType(roomCode?: string): Promise<Socket> {
+  if (roomCode) pendingRoomCode = roomCode;
+  return connectToRmhTypeOnce(roomCode);
 }

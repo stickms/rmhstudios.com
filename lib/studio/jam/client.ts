@@ -337,10 +337,16 @@ function stopSync() {
 // ─── Public API ─────────────────────────────────────────────────────────────
 
 async function connect(): Promise<void> {
+  // Claim the slot before the await: startJam/joinJam gate on `status !== 'off'`,
+  // so two same-tick callers used to both pass it and build two clients.
+  jam().set({ status: 'connecting' });
   const session = await authClient.getSession();
   const myId = session?.data?.user?.id;
-  if (!myId) throw new Error('Sign in to jam');
-  jam().set({ status: 'connecting', myId });
+  if (!myId) {
+    jam().set({ status: 'off' });
+    throw new Error('Sign in to jam');
+  }
+  jam().set({ myId });
   rt = createRealtimeClient({
     name: 'StudioJam',
     url: import.meta.env.VITE_SOCKET_URL,

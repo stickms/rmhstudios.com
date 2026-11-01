@@ -9,6 +9,7 @@
 
 'use client';
 
+import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import { io, type Socket } from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';
 import { authClient } from '@/lib/auth-client';
@@ -35,7 +36,7 @@ export function getSocket(): Socket | null {
     return socket;
 }
 
-export async function connectDreamRift(): Promise<Socket> {
+async function connectDreamRiftInner(): Promise<Socket> {
     if (socket?.connected) return socket;
     if (socket) {
         socket.removeAllListeners();
@@ -141,3 +142,6 @@ export function kickPlayer(slot: number): void {
 export function sendRelay(msg: RelayMsg): void {
     socket?.emit(C2S.RELAY, msg);
 }
+
+/** Concurrent callers share one in-flight connect (see single-flight.ts). */
+export const connectDreamRift = singleFlight(connectDreamRiftInner);

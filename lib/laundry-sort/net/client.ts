@@ -13,6 +13,7 @@
 
 'use client';
 
+import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
@@ -33,7 +34,7 @@ let pendingCode: string | null = null;
 
 const store = () => useLaundryStore.getState();
 
-export async function connectLaundry(): Promise<Socket> {
+async function connectLaundryInner(): Promise<Socket> {
   if (client) {
     client.reconnectNow();
     return client.socket;
@@ -178,3 +179,6 @@ export const laundryNet = {
   rematch: () => emit(C2S.REMATCH, {}, true),
   ticket: (token: string) => emit(C2S.TICKET, { token }, true),
 };
+
+/** Concurrent callers share one in-flight connect (see single-flight.ts). */
+export const connectLaundry = singleFlight(connectLaundryInner);
