@@ -87,6 +87,8 @@
   "err-too-few": "Not everyone is ready yet.",
   "exit-game": "SALIR DEL JUEGO",
   "expert": "Experto",
+  "farm-resume-failed": "Reconnected, but you can no longer visit that farm. You are on your own farm.",
+  "farm-resumed": "Reconnected. You are back on the farm you were visiting.",
   "final-score": "Puntuación final",
   "finished": "Terminado",
   "game-modifiers": "Modificadores del juego",
