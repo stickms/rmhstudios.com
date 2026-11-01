@@ -48,7 +48,7 @@ export function HornButton({
         // phone, mid-round, under a clock. `sm` is used for icon-only chrome
         // and inline row actions, and padding on a 12px glyph gives a ~26px
         // target — small enough to miss twice while a phase timer runs.
-        size === 'sm' ? 'min-h-9 px-2.5 py-1.5 text-xs' : 'min-h-11 px-4 py-2.5 text-sm',
+        size === 'sm' ? 'min-h-9 px-2.5 py-1.5 text-xs pointer-coarse:min-h-11 pointer-coarse:min-w-11' : 'min-h-11 px-4 py-2.5 text-sm',
         VARIANT[variant],
         className,
       )}
