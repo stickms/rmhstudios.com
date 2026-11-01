@@ -30,6 +30,7 @@ export default function GameView() {
     const [session, setSession] = useState<GameSession | null>(null);
     const [input, setInput] = useState<LocalInputSource | null>(null);
     const [hud, setHud] = useState<HudState | null>(null);
+    const [glLost, setGlLost] = useState(false);
     const sessionRef = useRef<GameSession | null>(null);
 
     const seatIds = useMemo(() => {
@@ -94,14 +95,50 @@ export default function GameView() {
             <Canvas
                 data-jelly-zone="playfield"
                 shadows
-                dpr={[1, 2]}
+                // Phones render at 1-1.5x: a 3x retina canvas with shadows is what
+                // drops mobile Safari/Android to single-digit FPS.
+                dpr={isMobile ? [1, 1.5] : [1, 2]}
                 gl={createKowloonRenderer}
+                onCreated={({ gl }) => {
+                    const canvas = gl.domElement as HTMLCanvasElement;
+                    canvas.style.touchAction = 'none';
+                    // A backgrounded mobile tab can lose its GL context. Prevent the
+                    // default so a restore is possible, and tell the player instead of
+                    // leaving a frozen canvas.
+                    canvas.addEventListener('webglcontextlost', (e) => {
+                        e.preventDefault();
+                        setGlLost(true);
+                    });
+                    canvas.addEventListener('webglcontextrestored', () => setGlLost(false));
+                }}
                 camera={{ position: [0, 9, 15], fov: 50, near: 0.1, far: 120 }}
             >
                 {session && <Arena3D session={session} seatIds={seatIds} />}
                 {session?.training && <TrainingOverlay session={session} />}
             </Canvas>
 
+            {glLost && (
+                <div
+                    role="alert"
+                    style={{
+                        position: 'absolute', inset: 0, zIndex: 50, display: 'grid', placeItems: 'center',
+                        background: 'rgba(0,0,0,0.75)', color: '#ffcc00', textAlign: 'center', padding: 24,
+                    }}
+                >
+                    <div>
+                        <p style={{ marginBottom: 16 }}>
+                            {t('graphics-lost', { defaultValue: 'Graphics were interrupted by your device.' })}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setPhase('menu')}
+                            style={{ minHeight: 44, minWidth: 160, padding: '0 20px', border: '2px solid #ffcc00', color: '#ffcc00', background: 'transparent' }}
+                        >
+                            {t('back-to-menu', { defaultValue: 'Back to menu' })}
+                        </button>
+                    </div>
+                </div>
+            )}
             {hud && <HUD hud={hud} />}
             {session?.training && <TrainingPanel training={session.training} />}
             {isMobile && input && <MobileControls input={input} />}

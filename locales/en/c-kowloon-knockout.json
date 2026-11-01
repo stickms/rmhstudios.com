@@ -1,6 +1,7 @@
 {
   "back": "BACK",
   "back-to-lobby": "BACK TO LOBBY",
+  "back-to-menu": "Back to menu",
   "block": "Block",
   "body-breaker": "Body Breaker",
   "champion": "CHAMPION: {{name}}",
@@ -29,6 +30,7 @@
   "fury-combo": "Fury Combo",
   "graphics": "GRAPHICS",
   "graphics-hint": "Auto adapts quality to keep the frame rate smooth. Pick a level to lock it.",
+  "graphics-lost": "Graphics were interrupted by your device.",
   "haymaker": "Haymaker",
   "hook": "Hook",
   "hook-desc": "(slow, high dmg)",
