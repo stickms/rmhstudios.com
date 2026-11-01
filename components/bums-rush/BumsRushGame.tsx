@@ -45,7 +45,7 @@ import { cn } from '@/lib/utils';
 import { applyAudioSettings } from '@/lib/bums-rush/audio';
 import { createTouchArmState, type DeviceProfileKind, type TouchArmState } from '@/lib/bums-rush/input';
 import { loadManifest, nextLevel } from '@/lib/bums-rush/levels';
-import { reconnectBumsRushNow } from '@/lib/bums-rush/net';
+import { reconnectBumsRushNow, type BumsRushLobby } from '@/lib/bums-rush/net';
 import type { LevelResult, RoomMode, SeatIndex } from '@/lib/bums-rush/types';
 import { PaperCard } from './paper/PaperSurface';
 import { InkButton } from './paper/InkControls';
@@ -241,7 +241,7 @@ interface DocumentScreensProps {
   initialRoomCode: string | null;
   connection: ReturnType<typeof useBumsRushConnection>;
   lobbyBridge: LobbyBridge;
-  connectLobby: () => Promise<unknown>;
+  connectLobby: () => Promise<BumsRushLobby>;
   padBrand: ReturnType<typeof useBumsRushStore.getState>['padBrand'];
   padSeen: boolean;
   padId: string | null;
@@ -318,12 +318,10 @@ function DocumentScreens({
           onlineAvailable={online}
           onCampaign={() => go({ kind: 'world-map' })}
           onQuickPlay={() =>
-            void connectLobby().then(() =>
-              lobbyBridge.lobby?.quickPlay({ mode: 'campaign', minPlayers: 1 }),
-            )
+            void connectLobby().then((lobby) => lobby.quickPlay({ mode: 'campaign', minPlayers: 1 }))
           }
           onShowdown={() =>
-            void connectLobby().then(() => lobbyBridge.lobby?.quickPlay({ mode: 'showdown', minPlayers: 2 }))
+            void connectLobby().then((lobby) => lobby.quickPlay({ mode: 'showdown', minPlayers: 2 }))
           }
           onLobby={() => openLobby()}
           onBack={back}
@@ -356,8 +354,8 @@ function DocumentScreens({
           status={connection}
           initialCode={initialRoomCode}
           onCreate={() =>
-            void connectLobby().then(() =>
-              lobbyBridge.lobby?.createRoom({
+            void connectLobby().then((lobby) =>
+              lobby.createRoom({
                 mode: 'campaign',
                 private: true,
                 ...(anyModifier(partyMods) ? { modifiers: partyMods } : {}),
@@ -366,7 +364,7 @@ function DocumentScreens({
           }
           createExtras={<PartyModifierToggles value={partyMods} onChange={setPartyMods} />}
           roomExtras={<PartyModifierBadges modifiers={lobbyBridge.state.room?.modifiers} />}
-          onJoin={(code) => void connectLobby().then(() => lobbyBridge.lobby?.joinRoom(code))}
+          onJoin={(code) => void connectLobby().then((lobby) => lobby.joinRoom(code))}
           onReady={(seat: SeatIndex, ready) => lobbyBridge.lobby?.setReady(seat, ready)}
           onStart={() => lobbyBridge.lobby?.start()}
           onLeave={() => {
