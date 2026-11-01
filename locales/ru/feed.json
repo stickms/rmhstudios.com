@@ -1597,5 +1597,6 @@
   "muted-duration-week": "1 неделя",
   "muted-duration-month": "30 дней",
   "activity-title": "Активность публикаций",
-  "activity-summary": "Публикаций за последние {{weeks}} нед.: {{total}}"
+  "activity-summary": "Публикаций за последние {{weeks}} нед.: {{total}}",
+  "activity-streak": "Текущая серия: {{current}} дн. · Самая длинная: {{longest}} дн."
 }

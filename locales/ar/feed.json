@@ -1687,5 +1687,6 @@
   "muted-duration-week": "أسبوع واحد",
   "muted-duration-month": "30 يومًا",
   "activity-title": "نشاط النشر",
-  "activity-summary": "المنشورات في آخر {{weeks}} أسبوعًا: {{total}}"
+  "activity-summary": "المنشورات في آخر {{weeks}} أسبوعًا: {{total}}",
+  "activity-streak": "السلسلة الحالية: {{current}} يومًا · الأطول: {{longest}} يومًا"
 }

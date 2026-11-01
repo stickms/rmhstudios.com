@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HEATMAP_WEEKS, heatLevel, windowDays } from '@/lib/profile/activity';
+import { HEATMAP_WEEKS, heatLevel, postingStreaks, windowDays } from '@/lib/profile/activity';
 
 /** Opacity of the accent per shade; 0 is the empty-cell wash. */
 const LEVEL_MIX = [8, 28, 48, 72, 100] as const;
@@ -28,15 +28,15 @@ export default function ProfileActivityHeatmap({ userId }: { userId: string }) {
     };
   }, [userId]);
 
-  const weeks = useMemo(() => {
-    if (!data) return [];
+  const { weeks, streaks } = useMemo(() => {
+    if (!data) return { weeks: [], streaks: { current: 0, longest: 0 } };
     const days = windowDays(data.days, new Date());
     const max = Math.max(0, ...days.map((d) => d.count));
     const cols: Array<Array<{ date: string; count: number; level: number }>> = [];
     for (let i = 0; i < days.length; i += 7) {
       cols.push(days.slice(i, i + 7).map((d) => ({ ...d, level: heatLevel(d.count, max) })));
     }
-    return cols;
+    return { weeks: cols, streaks: postingStreaks(days) };
   }, [data]);
 
   if (!data || data.total === 0) return null;
@@ -50,6 +50,15 @@ export default function ProfileActivityHeatmap({ userId }: { userId: string }) {
           weeks: HEATMAP_WEEKS,
         })}
       </p>
+      {streaks.longest > 1 ? (
+        <p className="mb-3 font-mono text-xs text-site-text-muted">
+          {t('activity-streak', {
+            defaultValue: 'Current streak: {{current}} days · Longest: {{longest}} days',
+            current: streaks.current,
+            longest: streaks.longest,
+          })}
+        </p>
+      ) : null}
       <div className="overflow-x-auto" aria-hidden>
         <div className="flex gap-0.5">
           {weeks.map((week, wi) => (

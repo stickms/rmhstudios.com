@@ -1462,5 +1462,6 @@
   "muted-duration-week": "1 minggu",
   "muted-duration-month": "30 hari",
   "activity-title": "Aktivitas posting",
-  "activity-summary": "Postingan dalam {{weeks}} minggu terakhir: {{total}}"
+  "activity-summary": "Postingan dalam {{weeks}} minggu terakhir: {{total}}",
+  "activity-streak": "Rentetan saat ini: {{current}} hari · Terpanjang: {{longest}} hari"
 }

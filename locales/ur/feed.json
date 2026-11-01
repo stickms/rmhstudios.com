@@ -1507,5 +1507,6 @@
   "muted-duration-week": "1 ہفتہ",
   "muted-duration-month": "30 دن",
   "activity-title": "پوسٹنگ کی سرگرمی",
-  "activity-summary": "پچھلے {{weeks}} ہفتوں میں پوسٹس: {{total}}"
+  "activity-summary": "پچھلے {{weeks}} ہفتوں میں پوسٹس: {{total}}",
+  "activity-streak": "موجودہ سلسلہ: {{current}} دن · طویل ترین: {{longest}} دن"
 }

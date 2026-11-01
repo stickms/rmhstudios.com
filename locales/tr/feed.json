@@ -1507,5 +1507,6 @@
   "muted-duration-week": "1 hafta",
   "muted-duration-month": "30 gün",
   "activity-title": "Paylaşım etkinliği",
-  "activity-summary": "Son {{weeks}} haftadaki gönderiler: {{total}}"
+  "activity-summary": "Son {{weeks}} haftadaki gönderiler: {{total}}",
+  "activity-streak": "Güncel seri: {{current}} gün · En uzun: {{longest}} gün"
 }

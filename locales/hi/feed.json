@@ -1507,5 +1507,6 @@
   "muted-duration-week": "1 सप्ताह",
   "muted-duration-month": "30 दिन",
   "activity-title": "पोस्टिंग गतिविधि",
-  "activity-summary": "पिछले {{weeks}} सप्ताहों में पोस्ट: {{total}}"
+  "activity-summary": "पिछले {{weeks}} सप्ताहों में पोस्ट: {{total}}",
+  "activity-streak": "मौजूदा सिलसिला: {{current}} दिन · सबसे लंबा: {{longest}} दिन"
 }

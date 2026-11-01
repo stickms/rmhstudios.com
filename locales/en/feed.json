@@ -1576,5 +1576,6 @@
   "muted-duration-week": "1 week",
   "muted-duration-month": "30 days",
   "activity-title": "Posting activity",
-  "activity-summary": "Posts in the last {{weeks}} weeks: {{total}}"
+  "activity-summary": "Posts in the last {{weeks}} weeks: {{total}}",
+  "activity-streak": "Current streak: {{current}} days · Longest: {{longest}} days"
 }
