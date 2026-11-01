@@ -126,7 +126,9 @@ function registerHandlers(socket: Socket): void {
     rememberCode(data.code);
     const s = store();
     s.setSelfSocketId(data.socketId);
-    s.setScreen('lobby');
+    // A reconnect mid-hand re-seats us and the state push that follows puts us
+    // back on the table; don't bounce a seated player through the lobby first.
+    if (s.screen !== 'table') s.setScreen('lobby');
   });
 
   socket.on(S2C.BROWSE_RESULT, (lobbies: PublicLobbyInfo[]) =>
