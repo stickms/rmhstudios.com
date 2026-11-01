@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Award, Star, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import type { RatingAgg, ReviewView } from '@/lib/games/reviews';
+import { REVIEW_BODY_MAX, type RatingAgg, type ReviewView } from '@/lib/games/reviews';
 import { AWARD_CATALOG } from '@/lib/awards/catalog';
 import { formatPlaytime } from '@/lib/games/format-playtime';
 import { recommendation, summaryLabel } from '@/lib/games/review-extras';
@@ -64,9 +64,11 @@ export function SteamReviews({
   const [body, setBody] = useState(mine?.body ?? '');
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  // The API sorts by helpfulness unless asked for `recent`; the page loads in that order.
+  const [sort, setSort] = useState<'helpful' | 'recent'>('helpful');
 
-  async function refresh() {
-    const res = await fetch(`/api/games/${gameId}/reviews`);
+  async function refresh(nextSort: 'helpful' | 'recent' = sort) {
+    const res = await fetch(`/api/games/${gameId}/reviews?sort=${nextSort}`);
     if (res.ok) {
       const d = (await res.json()) as { reviews: ReviewView[]; agg: RatingAgg };
       setReviews(d.reviews);
@@ -169,9 +171,9 @@ export function SteamReviews({
           <Stars value={stars} onRate={setStars} label={t('your-rating', { defaultValue: 'Your rating' })} />
           <textarea
             className="stm-textarea"
-            rows={3}
+            rows={4}
             value={body}
-            maxLength={2000}
+            maxLength={REVIEW_BODY_MAX}
             onChange={(e) => setBody(e.target.value)}
             placeholder={t('review-placeholder', { defaultValue: 'Share your thoughts (optional)' })}
             aria-label={t('write-review', { defaultValue: 'Write a review' })}
@@ -185,7 +187,33 @@ export function SteamReviews({
                 {status}
               </span>
             ) : null}
+            {body.length >= REVIEW_BODY_MAX * 0.9 ? (
+              <span className="stm-muted stm-write-count" aria-live="polite" data-full={body.length >= REVIEW_BODY_MAX ? 'true' : 'false'}>
+                {t('review-length', { defaultValue: '{{used}}/{{max}}', used: body.length, max: REVIEW_BODY_MAX })}
+              </span>
+            ) : null}
           </div>
+        </div>
+      ) : null}
+
+      {reviews.length > 1 ? (
+        <div className="stm-card-note stm-sort" role="group" aria-label={t('reviews-sort', { defaultValue: 'Sort reviews' })}>
+          {(['helpful', 'recent'] as const).map((key) => (
+            <button
+              key={key}
+              type="button"
+              className={sort === key ? 'stm-btn stm-btn-blue' : 'stm-btn stm-btn-ghost'}
+              aria-pressed={sort === key}
+              onClick={() => {
+                setSort(key);
+                void refresh(key);
+              }}
+            >
+              {key === 'helpful'
+                ? t('sort-helpful', { defaultValue: 'Most helpful' })
+                : t('sort-recent', { defaultValue: 'Newest' })}
+            </button>
+          ))}
         </div>
       ) : null}
 
