@@ -43,7 +43,7 @@ export function ObjectiveTray({ objectives, completed, open, onToggle }: Objecti
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex items-center gap-1.5 rounded-bum border border-bum-ink bg-bum-surface px-2 py-1 text-bum-ink transition-colors hover:bg-bum-paper-2"
+        className="flex items-center gap-1.5 pointer-coarse:min-h-11 pointer-coarse:min-w-11 rounded-bum border border-bum-ink bg-bum-surface px-2 py-1 text-bum-ink transition-colors hover:bg-bum-paper-2"
         style={{ fontSize: 'clamp(0.65rem, 1.6vmin, 0.85rem)' }}
       >
         <ListChecks className="size-[clamp(0.75rem,2vmin,1rem)]" aria-hidden="true" />
