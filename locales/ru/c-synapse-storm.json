@@ -101,5 +101,7 @@
   "waiting-for-players": "ОЖИДАНИЕ ИГРОКОВ{{notReady}}",
   "waiting-status": "ОЖИДАНИЕ",
   "you": "ВЫ",
-  "you-badge": "ВЫ"
+  "you-badge": "ВЫ",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

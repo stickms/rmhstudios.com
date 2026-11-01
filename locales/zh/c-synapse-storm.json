@@ -98,5 +98,7 @@
   "waiting-for-players": "等待玩家加入{{notReady}}",
   "waiting-status": "等待中",
   "you": "你",
-  "you-badge": "你"
+  "you-badge": "你",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

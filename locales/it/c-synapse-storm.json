@@ -100,5 +100,7 @@
   "waiting-for-players": "IN ATTESA DEI GIOCATORI{{notReady}}",
   "waiting-status": "IN ATTESA",
   "you": "TU",
-  "you-badge": "TU"
+  "you-badge": "TU",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

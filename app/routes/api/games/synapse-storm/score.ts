@@ -23,7 +23,8 @@ const scoreSchema = z
     score: z.number().int().min(0).max(10_000_000),
     puzzlesSolved: z.number().int().min(0).max(10_000),
     maxCombo: z.number().int().min(0).max(10_000),
-    peakDifficulty: z.number().int().min(1).max(100),
+    // The game tracks difficulty as a float (the leaderboard shows it as "Lv.1.6"); the adapter rounds it.
+    peakDifficulty: z.number().finite().min(1).max(100),
     totalTime: z.number().finite().min(0).max(86_400),
   })
   .strict()

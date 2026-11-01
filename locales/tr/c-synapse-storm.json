@@ -99,5 +99,7 @@
   "waiting-for-players": "OYUNCULAR BEKLENİYOR{{notReady}}",
   "waiting-status": "BEKLİYOR",
   "you": "SEN",
-  "you-badge": "SEN"
+  "you-badge": "SEN",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

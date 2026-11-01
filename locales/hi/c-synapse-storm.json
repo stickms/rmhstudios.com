@@ -99,5 +99,7 @@
   "waiting-for-players": "खिलाड़ियों की प्रतीक्षा{{notReady}}",
   "waiting-status": "प्रतीक्षा",
   "you": "आप",
-  "you-badge": "आप"
+  "you-badge": "आप",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

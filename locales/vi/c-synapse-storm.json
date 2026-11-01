@@ -98,5 +98,7 @@
   "waiting-for-players": "ĐANG CHỜ NGƯỜI CHƠI{{notReady}}",
   "waiting-status": "ĐANG CHỜ",
   "you": "BẠN",
-  "you-badge": "BẠN"
+  "you-badge": "BẠN",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }
