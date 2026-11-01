@@ -28,7 +28,17 @@
 'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Component,
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useDialogHost } from '@/components/shared/useDialogHost';
@@ -52,6 +62,27 @@ import { TempleButton, Glyph } from '../ui';
 import type { LaneControls, LanePalette } from './BowlLane';
 
 const BowlLane = lazy(() => import('./BowlLane'));
+
+/**
+ * Keeps a failed lane chunk (offline, a deploy that replaced the file) or a
+ * WebGL/Rapier crash inside the alley. Without it the error climbs to the
+ * route's boundary and the whole temple is replaced by "crashed" — over a
+ * minigame. A rejected lazy() import is cached by React, so the retry is a reload (the
+ * temple autosaves).
+ */
+class LaneBoundary extends Component<
+  { children: ReactNode; fallback: () => ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    if (this.state.failed) return this.props.fallback();
+    return this.props.children;
+  }
+}
 
 /** How far up the viewport a swipe must travel to count as a roll. */
 const SWIPE_MIN = 0.14;
@@ -441,248 +472,267 @@ function Alley() {
 
   return (
     <>
-    {sentinel}
-    {host ? (
-    <Dialog open onOpenChange={(next) => { if (!next) close(); }}>
-      <DialogContent
-        // The Leave button below is the way out, and it is disabled mid-roll —
-        // a corner close would be a second exit that is not.
-        hideClose
-        container={host}
-        aria-describedby="toj-bowl-status"
-        data-jelly="off" data-liquid-material="off" data-dialog-shell="bare"
-        overlayClassName="toj-bowl-scrim"
-        className="flex max-w-[46rem] flex-col gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none"
-        // Focus lands on Leave rather than on the aim slider, because arriving
-        // with focus already on a control that Left/Right will change is a trap
-        // for anyone orienting themselves with the arrow keys.
-        onOpenAutoFocus={(event) => {
-          event.preventDefault();
-          closeRef.current?.focus();
-        }}
-        onCloseAutoFocus={returnFocus}
-        // Never mid-roll: the settle is what banks the frame, and closing over
-        // it would spend the day's cooldown on nothing.
-        onEscapeKeyDown={(event) => {
-          if (phase === 'rolling') event.preventDefault();
-        }}
-        // A swipe that ends on the scrim is a throw, not a request to leave.
-        onInteractOutside={(event) => event.preventDefault()}
-      >
-      <div className="toj-bowl-card" ref={rootRef}>
-        <header className="toj-bowl-head">
-          <div>
-            <DialogPrimitive.Title className="toj-bowl-title">
-              {t('bowl-title', { defaultValue: 'The Lane' })}
-            </DialogPrimitive.Title>
-            <p className="toj-bowl-sub">
-              {t('bowl-sub', {
-                minutes: Math.round(BOWL_BOOST_SECONDS / 60),
-                defaultValue:
-                  'One frame a day. Every pin is worth more rate for {{minutes}} minutes — and your hands are still until it ends.',
-              })}
-            </p>
-          </div>
-          <TempleButton
-            ref={closeRef}
-            variant="quiet"
-            size="sm"
-            onClick={close}
-            disabled={phase === 'rolling'}
-          >
-            {t('bowl-leave', { defaultValue: 'Leave the lane' })}
-          </TempleButton>
-        </header>
-
-        <div
-          className="toj-bowl-view"
-          data-phase={phase}
-          onPointerDown={onPointerDown}
-          // The swipe owns every gesture inside the viewport: the browser must
-          // not pan, scroll or long-press-select while a ball is being thrown.
-          style={{ touchAction: 'none' }}
+      {sentinel}
+      {host ? (
+        <Dialog
+          open
+          onOpenChange={(next) => {
+            if (!next) close();
+          }}
         >
-          {webgl ? (
-            <Suspense
-              fallback={
-                <p className="toj-bowl-loading" role="status">
-                  {t('bowl-loading', { defaultValue: 'Oiling the lane…' })}
-                </p>
-              }
-            >
-              <BowlLane
-                controls={controls}
-                globes={globes}
-                standing={standing}
-                rollToken={rollToken}
-                palette={palette}
-                reducedMotion={reducedMotion}
-                onSettled={onSettled}
-                onRolling={onRolling}
-              />
-            </Suspense>
-          ) : (
-            <p className="toj-bowl-loading" role="status">
-              {t('bowl-no-webgl', {
-                defaultValue:
-                  'The lane needs 3D graphics, and this browser cannot open them. Everything else in the temple works as it always did.',
-              })}
-            </p>
-          )}
+          <DialogContent
+            // The Leave button below is the way out, and it is disabled mid-roll —
+            // a corner close would be a second exit that is not.
+            hideClose
+            container={host}
+            aria-describedby="toj-bowl-status"
+            data-jelly="off"
+            data-liquid-material="off"
+            data-dialog-shell="bare"
+            overlayClassName="toj-bowl-scrim"
+            className="flex max-w-[46rem] flex-col gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none"
+            // Focus lands on Leave rather than on the aim slider, because arriving
+            // with focus already on a control that Left/Right will change is a trap
+            // for anyone orienting themselves with the arrow keys.
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              closeRef.current?.focus();
+            }}
+            onCloseAutoFocus={returnFocus}
+            // Never mid-roll: the settle is what banks the frame, and closing over
+            // it would spend the day's cooldown on nothing.
+            onEscapeKeyDown={(event) => {
+              if (phase === 'rolling') event.preventDefault();
+            }}
+            // A swipe that ends on the scrim is a throw, not a request to leave.
+            onInteractOutside={(event) => event.preventDefault()}
+          >
+            <div className="toj-bowl-card" ref={rootRef}>
+              <header className="toj-bowl-head">
+                <div>
+                  <DialogPrimitive.Title className="toj-bowl-title">
+                    {t('bowl-title', { defaultValue: 'The Lane' })}
+                  </DialogPrimitive.Title>
+                  <p className="toj-bowl-sub">
+                    {t('bowl-sub', {
+                      minutes: Math.round(BOWL_BOOST_SECONDS / 60),
+                      defaultValue:
+                        'One frame a day. Every pin is worth more rate for {{minutes}} minutes — and your hands are still until it ends.',
+                    })}
+                  </p>
+                </div>
+                <TempleButton
+                  ref={closeRef}
+                  variant="quiet"
+                  size="sm"
+                  onClick={close}
+                  disabled={phase === 'rolling'}
+                >
+                  {t('bowl-leave', { defaultValue: 'Leave the lane' })}
+                </TempleButton>
+              </header>
 
-          {/* The line you have set, drawn over the lane. Written to directly
+              <div
+                className="toj-bowl-view"
+                data-phase={phase}
+                onPointerDown={onPointerDown}
+                // The swipe owns every gesture inside the viewport: the browser must
+                // not pan, scroll or long-press-select while a ball is being thrown.
+                style={{ touchAction: 'none' }}
+              >
+                {webgl ? (
+                  <LaneBoundary
+                    fallback={() => (
+                      <div className="toj-bowl-loading" role="alert">
+                        <p>{t('bowl-load-failed', { defaultValue: 'The lane would not open.' })}</p>
+                        <TempleButton size="sm" onClick={() => window.location.reload()}>
+                          {t('bowl-retry', { defaultValue: 'Reload' })}
+                        </TempleButton>
+                      </div>
+                    )}
+                  >
+                    <Suspense
+                      fallback={
+                        <p className="toj-bowl-loading" role="status">
+                          {t('bowl-loading', { defaultValue: 'Oiling the lane…' })}
+                        </p>
+                      }
+                    >
+                      <BowlLane
+                        controls={controls}
+                        globes={globes}
+                        standing={standing}
+                        rollToken={rollToken}
+                        palette={palette}
+                        reducedMotion={reducedMotion}
+                        onSettled={onSettled}
+                        onRolling={onRolling}
+                      />
+                    </Suspense>
+                  </LaneBoundary>
+                ) : (
+                  <p className="toj-bowl-loading" role="status">
+                    {t('bowl-no-webgl', {
+                      defaultValue:
+                        'The lane needs 3D graphics, and this browser cannot open them. Everything else in the temple works as it always did.',
+                    })}
+                  </p>
+                )}
+
+                {/* The line you have set, drawn over the lane. Written to directly
               during a swipe — see `paintControls`. */}
-          <span className="toj-bowl-aim" ref={aimMarkRef} aria-hidden />
-          <span className="toj-bowl-power" aria-hidden>
-            <span className="toj-bowl-power-fill" ref={powerFillRef} />
-          </span>
+                <span className="toj-bowl-aim" ref={aimMarkRef} aria-hidden />
+                <span className="toj-bowl-power" aria-hidden>
+                  <span className="toj-bowl-power-fill" ref={powerFillRef} />
+                </span>
 
-          <p className="toj-bowl-hint" aria-hidden>
-            {phase !== 'aim' && phase !== 'between'
-              ? ''
-              : swingArmed
-                ? t('bowl-hint-swing', { defaultValue: 'Swing the phone to roll' })
-                : t('bowl-hint', { defaultValue: 'Swipe up the lane to roll' })}
-          </p>
-        </div>
+                <p className="toj-bowl-hint" aria-hidden>
+                  {phase !== 'aim' && phase !== 'between'
+                    ? ''
+                    : swingArmed
+                      ? t('bowl-hint-swing', { defaultValue: 'Swing the phone to roll' })
+                      : t('bowl-hint', { defaultValue: 'Swipe up the lane to roll' })}
+                </p>
+              </div>
 
-        <Rack standing={standing} />
+              <Rack standing={standing} />
 
-        <p className="toj-bowl-status" id="toj-bowl-status" role="status" aria-live="polite">
-          {status}
-        </p>
+              <p className="toj-bowl-status" id="toj-bowl-status" role="status" aria-live="polite">
+                {status}
+              </p>
 
-        {phase === 'done' ? (
-          <div className="toj-bowl-actions toj-bowl-foot">
-            <TempleButton variant="gold" ready onClick={bank}>
-              <Glyph>🎳</Glyph>
-              {down > 0
-                ? t('bowl-take', {
-                    multiplier: multiplier.toFixed(2),
-                    defaultValue: 'Take the hour at ×{{multiplier}}',
-                  })
-                : t('bowl-take-none', { defaultValue: 'Rack them up and go home' })}
-            </TempleButton>
-            <p className="toj-bowl-note">
-              {down > 0
-                ? t('bowl-take-note', {
-                    time: formatDuration(BOWL_BOOST_SECONDS),
-                    defaultValue:
-                      'For the next {{time}} the globes stay here. No offerings by hand — the rate does the work.',
-                  })
-                : t('bowl-none-note', {
-                    defaultValue: 'The lane shuts for a day either way. Better luck tomorrow.',
-                  })}
-            </p>
-          </div>
-        ) : (
-          <fieldset className="toj-bowl-controls" disabled={phase === 'rolling'}>
-            <legend className="toj-sr">
-              {t('bowl-controls', { defaultValue: 'Set the roll' })}
-            </legend>
+              {phase === 'done' ? (
+                <div className="toj-bowl-actions toj-bowl-foot">
+                  <TempleButton variant="gold" ready onClick={bank}>
+                    <Glyph>🎳</Glyph>
+                    {down > 0
+                      ? t('bowl-take', {
+                          multiplier: multiplier.toFixed(2),
+                          defaultValue: 'Take the hour at ×{{multiplier}}',
+                        })
+                      : t('bowl-take-none', { defaultValue: 'Rack them up and go home' })}
+                  </TempleButton>
+                  <p className="toj-bowl-note">
+                    {down > 0
+                      ? t('bowl-take-note', {
+                          time: formatDuration(BOWL_BOOST_SECONDS),
+                          defaultValue:
+                            'For the next {{time}} the globes stay here. No offerings by hand — the rate does the work.',
+                        })
+                      : t('bowl-none-note', {
+                          defaultValue:
+                            'The lane shuts for a day either way. Better luck tomorrow.',
+                        })}
+                  </p>
+                </div>
+              ) : (
+                <fieldset className="toj-bowl-controls" disabled={phase === 'rolling'}>
+                  <legend className="toj-sr">
+                    {t('bowl-controls', { defaultValue: 'Set the roll' })}
+                  </legend>
 
-            <Dial
-              label={t('bowl-aim', { defaultValue: 'Line' })}
-              value={aim}
-              min={-1}
-              readout={
-                Math.abs(aim) < 0.06
-                  ? t('bowl-aim-centre', { defaultValue: 'Down the middle' })
-                  : aim < 0
-                    ? t('bowl-aim-left', {
-                        percent: Math.round(-aim * 100),
-                        defaultValue: '{{percent}}% left',
-                      })
-                    : t('bowl-aim-right', {
-                        percent: Math.round(aim * 100),
-                        defaultValue: '{{percent}}% right',
-                      })
-              }
-              onChange={(v) => {
-                setAim(v);
-                controls.current.aim = v;
-              }}
-            />
+                  <Dial
+                    label={t('bowl-aim', { defaultValue: 'Line' })}
+                    value={aim}
+                    min={-1}
+                    readout={
+                      Math.abs(aim) < 0.06
+                        ? t('bowl-aim-centre', { defaultValue: 'Down the middle' })
+                        : aim < 0
+                          ? t('bowl-aim-left', {
+                              percent: Math.round(-aim * 100),
+                              defaultValue: '{{percent}}% left',
+                            })
+                          : t('bowl-aim-right', {
+                              percent: Math.round(aim * 100),
+                              defaultValue: '{{percent}}% right',
+                            })
+                    }
+                    onChange={(v) => {
+                      setAim(v);
+                      controls.current.aim = v;
+                    }}
+                  />
 
-            <Dial
-              label={t('bowl-power', { defaultValue: 'Power' })}
-              value={power}
-              min={0}
-              readout={`${Math.round(power * 100)}%`}
-              onChange={(v) => {
-                setPower(v);
-                controls.current.power = v;
-              }}
-            />
+                  <Dial
+                    label={t('bowl-power', { defaultValue: 'Power' })}
+                    value={power}
+                    min={0}
+                    readout={`${Math.round(power * 100)}%`}
+                    onChange={(v) => {
+                      setPower(v);
+                      controls.current.power = v;
+                    }}
+                  />
 
-            <Dial
-              label={t('bowl-spin', { defaultValue: 'Hook' })}
-              value={spin}
-              min={-1}
-              readout={
-                Math.abs(spin) < 0.06
-                  ? t('bowl-spin-none', { defaultValue: 'Straight' })
-                  : spin < 0
-                    ? t('bowl-spin-left', {
-                        percent: Math.round(-spin * 100),
-                        defaultValue: 'Curving left, {{percent}}%',
-                      })
-                    : t('bowl-spin-right', {
-                        percent: Math.round(spin * 100),
-                        defaultValue: 'Curving right, {{percent}}%',
-                      })
-              }
-              onChange={(v) => {
-                setSpin(v);
-                controls.current.spin = v;
-              }}
-            />
-          </fieldset>
-        )}
+                  <Dial
+                    label={t('bowl-spin', { defaultValue: 'Hook' })}
+                    value={spin}
+                    min={-1}
+                    readout={
+                      Math.abs(spin) < 0.06
+                        ? t('bowl-spin-none', { defaultValue: 'Straight' })
+                        : spin < 0
+                          ? t('bowl-spin-left', {
+                              percent: Math.round(-spin * 100),
+                              defaultValue: 'Curving left, {{percent}}%',
+                            })
+                          : t('bowl-spin-right', {
+                              percent: Math.round(spin * 100),
+                              defaultValue: 'Curving right, {{percent}}%',
+                            })
+                    }
+                    onChange={(v) => {
+                      setSpin(v);
+                      controls.current.spin = v;
+                    }}
+                  />
+                </fieldset>
+              )}
 
-        {/* Outside the fieldset, and last in the card, so it can be the card's
+              {/* Outside the fieldset, and last in the card, so it can be the card's
             sticky floor. On a phone the lane, the rack, the status line and
             three dials are taller than the screen, and before this the one
             button the whole modal exists to press was below its own fold. Both
             buttons already carry their own `disabled`, so leaving the
             fieldset's group-disable behind costs nothing. */}
-        {phase !== 'done' && (
-          <div className="toj-bowl-throw toj-bowl-foot">
-            <TempleButton
-              variant="gold"
-              ready={phase !== 'rolling'}
-              disabled={phase === 'rolling' || !webgl}
-              onClick={roll}
-            >
-              {phase === 'between'
-                ? t('bowl-roll-again', { defaultValue: 'Roll the second ball' })
-                : t('bowl-roll', { defaultValue: 'Roll' })}
-            </TempleButton>
+              {phase !== 'done' && (
+                <div className="toj-bowl-throw toj-bowl-foot">
+                  <TempleButton
+                    variant="gold"
+                    ready={phase !== 'rolling'}
+                    disabled={phase === 'rolling' || !webgl}
+                    onClick={roll}
+                  >
+                    {phase === 'between'
+                      ? t('bowl-roll-again', { defaultValue: 'Roll the second ball' })
+                      : t('bowl-roll', { defaultValue: 'Roll' })}
+                  </TempleButton>
 
-            {/* Offered only where there is an accelerometer to swing. The press
+                  {/* Offered only where there is an accelerometer to swing. The press
                 is also the iOS permission prompt, which is why it is a button
                 and not a setting. */}
-            {swingable && (
-              <TempleButton
-                variant={swingArmed ? 'gold' : 'plain'}
-                aria-pressed={swingArmed}
-                disabled={phase === 'rolling' || !webgl}
-                onClick={() => {
-                  void armSwing();
-                }}
-              >
-                <Glyph>🤾</Glyph>
-                {swingArmed
-                  ? t('bowl-swing-armed', { defaultValue: 'Swing now' })
-                  : t('bowl-swing', { defaultValue: 'Swing to bowl' })}
-              </TempleButton>
-            )}
-          </div>
-        )}
-      </div>
-      </DialogContent>
-    </Dialog>
-    ) : null}
+                  {swingable && (
+                    <TempleButton
+                      variant={swingArmed ? 'gold' : 'plain'}
+                      aria-pressed={swingArmed}
+                      disabled={phase === 'rolling' || !webgl}
+                      onClick={() => {
+                        void armSwing();
+                      }}
+                    >
+                      <Glyph>🤾</Glyph>
+                      {swingArmed
+                        ? t('bowl-swing-armed', { defaultValue: 'Swing now' })
+                        : t('bowl-swing', { defaultValue: 'Swing to bowl' })}
+                    </TempleButton>
+                  )}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </>
   );
 }

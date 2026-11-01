@@ -12,7 +12,8 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useClipboard } from '@/hooks/useClipboard';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
@@ -284,6 +285,24 @@ function SaveDestination() {
 function SaveTools() {
   const { t } = useTranslation('c-temple-of-joy');
   const [status, setStatus] = useState('');
+  const [pasting, setPasting] = useState(false);
+  const [pasted, setPasted] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { copy } = useClipboard();
+
+  // One place both the paste box and the file picker land. `window.prompt` was
+  // the old path: embedded browsers and installed web apps suppress it, and
+  // there was no file route at all, so on those a save could never be loaded.
+  const applyImport = (code: string) => {
+    const parsed = importSave(code);
+    if (!parsed) {
+      setStatus(t('import-failed', { defaultValue: 'That is not a save.' }));
+      return false;
+    }
+    useTempleStore.getState().load(parsed);
+    setStatus(t('import-done', { defaultValue: 'Loaded.' }));
+    return true;
+  };
 
   return (
     <>
@@ -305,10 +324,13 @@ function SaveTools() {
           size="sm"
           onClick={() => {
             const code = exportSave(useTempleStore.getState());
-            navigator.clipboard
-              ?.writeText(code)
-              .then(() => setStatus(t('export-done', { defaultValue: 'Copied to the clipboard.' })))
-              .catch(() => setStatus(t('export-failed', { defaultValue: 'Clipboard refused.' })));
+            void copy(code).then((ok) =>
+              setStatus(
+                ok
+                  ? t('export-done', { defaultValue: 'Copied to the clipboard.' })
+                  : t('export-failed', { defaultValue: 'Clipboard refused.' }),
+              ),
+            );
           }}
         >
           {t('export-save', { defaultValue: 'Copy save' })}
@@ -316,24 +338,100 @@ function SaveTools() {
 
         <TempleButton
           size="sm"
-          variant="danger"
           onClick={() => {
-            const code = window.prompt(
-              t('import-prompt', { defaultValue: 'Paste a save. This replaces the current one.' }),
-            );
-            if (!code) return;
-            const parsed = importSave(code);
-            if (!parsed) {
-              setStatus(t('import-failed', { defaultValue: 'That is not a save.' }));
-              return;
+            try {
+              const code = exportSave(useTempleStore.getState());
+              const url = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'temple-of-joy-save.txt';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+              setStatus(t('download-done', { defaultValue: 'Save file downloaded.' }));
+            } catch {
+              setStatus(t('download-failed', { defaultValue: 'Could not make a file.' }));
             }
-            useTempleStore.getState().load(parsed);
-            setStatus(t('import-done', { defaultValue: 'Loaded.' }));
           }}
         >
+          {t('download-save', { defaultValue: 'Download save' })}
+        </TempleButton>
+
+        <TempleButton size="sm" variant="danger" onClick={() => fileRef.current?.click()}>
+          {t('import-file', { defaultValue: 'Load from file' })}
+        </TempleButton>
+        <input
+          ref={fileRef}
+          type="file"
+          // No strict accept list: iOS greys out .txt files it does not know,
+          // and a wrong file simply fails to parse with a clear message.
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file) return;
+            if (file.size > 2_000_000) {
+              setStatus(
+                t('import-too-big', { defaultValue: 'That file is too large to be a save.' }),
+              );
+              return;
+            }
+            file
+              .text()
+              .then((text) => applyImport(text))
+              .catch(() => setStatus(t('import-failed', { defaultValue: 'That is not a save.' })));
+          }}
+        />
+
+        <TempleButton size="sm" variant="danger" onClick={() => setPasting((v) => !v)}>
           {t('import-save', { defaultValue: 'Load a save' })}
         </TempleButton>
       </div>
+
+      {pasting && (
+        <div className="toj-desk">
+          <textarea
+            value={pasted}
+            onChange={(e) => setPasted(e.target.value)}
+            rows={3}
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            aria-label={t('import-prompt', {
+              defaultValue: 'Paste a save. This replaces the current one.',
+            })}
+            placeholder={t('import-prompt', {
+              defaultValue: 'Paste a save. This replaces the current one.',
+            })}
+            // 16px: anything smaller makes iOS Safari zoom the page on focus.
+            style={{
+              width: '100%',
+              fontSize: '16px',
+              padding: '0.5rem',
+              borderRadius: 'var(--toj-radius-sm)',
+              border: '1px solid var(--toj-rule-strong)',
+              background: 'var(--toj-surface-sunk)',
+              color: 'var(--toj-ink)',
+            }}
+          />
+          <TempleButton
+            size="sm"
+            variant="danger"
+            onClick={() => {
+              if (!pasted.trim()) return;
+              if (applyImport(pasted)) {
+                setPasted('');
+                setPasting(false);
+              }
+            }}
+          >
+            {t('import-confirm', { defaultValue: 'Replace my temple' })}
+          </TempleButton>
+        </div>
+      )}
 
       {status && (
         <p className="toj-panel-note" role="status">
