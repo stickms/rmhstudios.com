@@ -206,7 +206,8 @@ model User {
   flashcardReviews FlashcardReview[]
 
   // Saved media playlists (music/video)
-  playlists Playlist[]
+  playlists              Playlist[]
+  playlistCollaborations PlaylistCollaborator[]
 
   // RMHTube channel subscriptions
   rmhtubeSubscriptions RmhTubeSubscription[] @relation("TubeSubscriber")
@@ -4139,11 +4140,28 @@ model Playlist {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items PlaylistItem[]
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items         PlaylistItem[]
+  collaborators PlaylistCollaborator[]
 
   @@index([userId, updatedAt(sort: Desc)])
   @@map("playlist")
+}
+
+/// A non-owner who may add/remove items in someone's playlist. The owner (Playlist.userId)
+/// is never a row here and stays the only one who can rename, delete or manage collaborators.
+model PlaylistCollaborator {
+  id         String   @id @default(cuid())
+  playlistId String
+  userId     String
+  createdAt  DateTime @default(now())
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, userId])
+  @@index([userId])
+  @@map("playlist_collaborator")
 }
 
 model PlaylistItem {
