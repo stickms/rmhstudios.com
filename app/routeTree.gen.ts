@@ -1296,6 +1296,8 @@ import { Route as ApiOfficeHoursHostIdSummaryRouteImport } from './routes/api/of
 import { Route as ApiOgPostIdStoryRouteImport } from './routes/api/og/post/$id/story'
 import { Route as ApiPf2ecalSessionsIdRecapRouteImport } from './routes/api/pf2ecal/sessions.$id.recap'
 import { Route as ApiPf2ecalSessionsIdResponseRouteImport } from './routes/api/pf2ecal/sessions.$id.response'
+import { Route as ApiPlaylistsIdCollaboratorsIndexRouteImport } from './routes/api/playlists/$id/collaborators/index'
+import { Route as ApiPlaylistsIdCollaboratorsUserIdRouteImport } from './routes/api/playlists/$id/collaborators/$userId'
 import { Route as ApiPlaylistsIdItemsIndexRouteImport } from './routes/api/playlists/$id/items/index'
 import { Route as ApiPlaylistsIdItemsItemIdRouteImport } from './routes/api/playlists/$id/items/$itemId'
 import { Route as ApiProfileIdGuestbookEntryIdRouteImport } from './routes/api/profile/$id/guestbook.$entryId'
@@ -8008,6 +8010,18 @@ const ApiPf2ecalSessionsIdResponseRoute =
     path: '/response',
     getParentRoute: () => ApiPf2ecalSessionsIdRoute,
   } as any)
+const ApiPlaylistsIdCollaboratorsIndexRoute =
+  ApiPlaylistsIdCollaboratorsIndexRouteImport.update({
+    id: '/api/playlists/$id/collaborators/',
+    path: '/api/playlists/$id/collaborators/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPlaylistsIdCollaboratorsUserIdRoute =
+  ApiPlaylistsIdCollaboratorsUserIdRouteImport.update({
+    id: '/api/playlists/$id/collaborators/$userId',
+    path: '/api/playlists/$id/collaborators/$userId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPlaylistsIdItemsIndexRoute =
   ApiPlaylistsIdItemsIndexRouteImport.update({
     id: '/api/playlists/$id/items/',
@@ -9727,6 +9741,7 @@ export interface FileRoutesByFullPath {
   '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
   '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
+  '/api/playlists/$id/collaborators/$userId': typeof ApiPlaylistsIdCollaboratorsUserIdRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/profile/$id/guestbook/$entryId': typeof ApiProfileIdGuestbookEntryIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
@@ -9791,6 +9806,7 @@ export interface FileRoutesByFullPath {
   '/api/market/listings/$id/': typeof ApiMarketListingsIdIndexRoute
   '/api/office-hours/bookings/$id/': typeof ApiOfficeHoursBookingsIdIndexRoute
   '/api/office-hours/host/$id/': typeof ApiOfficeHoursHostIdIndexRoute
+  '/api/playlists/$id/collaborators/': typeof ApiPlaylistsIdCollaboratorsIndexRoute
   '/api/playlists/$id/items/': typeof ApiPlaylistsIdItemsIndexRoute
   '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/shop/loadouts/$id/': typeof ApiShopLoadoutsIdIndexRoute
@@ -11065,6 +11081,7 @@ export interface FileRoutesByTo {
   '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
   '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
+  '/api/playlists/$id/collaborators/$userId': typeof ApiPlaylistsIdCollaboratorsUserIdRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/profile/$id/guestbook/$entryId': typeof ApiProfileIdGuestbookEntryIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
@@ -11129,6 +11146,7 @@ export interface FileRoutesByTo {
   '/api/market/listings/$id': typeof ApiMarketListingsIdIndexRoute
   '/api/office-hours/bookings/$id': typeof ApiOfficeHoursBookingsIdIndexRoute
   '/api/office-hours/host/$id': typeof ApiOfficeHoursHostIdIndexRoute
+  '/api/playlists/$id/collaborators': typeof ApiPlaylistsIdCollaboratorsIndexRoute
   '/api/playlists/$id/items': typeof ApiPlaylistsIdItemsIndexRoute
   '/api/rmhmusic/guess/$id': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/shop/loadouts/$id': typeof ApiShopLoadoutsIdIndexRoute
@@ -12434,6 +12452,7 @@ export interface FileRoutesById {
   '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
   '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
+  '/api/playlists/$id/collaborators/$userId': typeof ApiPlaylistsIdCollaboratorsUserIdRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/profile/$id/guestbook/$entryId': typeof ApiProfileIdGuestbookEntryIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
@@ -12498,6 +12517,7 @@ export interface FileRoutesById {
   '/api/market/listings/$id/': typeof ApiMarketListingsIdIndexRoute
   '/api/office-hours/bookings/$id/': typeof ApiOfficeHoursBookingsIdIndexRoute
   '/api/office-hours/host/$id/': typeof ApiOfficeHoursHostIdIndexRoute
+  '/api/playlists/$id/collaborators/': typeof ApiPlaylistsIdCollaboratorsIndexRoute
   '/api/playlists/$id/items/': typeof ApiPlaylistsIdItemsIndexRoute
   '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/shop/loadouts/$id/': typeof ApiShopLoadoutsIdIndexRoute
@@ -13802,6 +13822,7 @@ export interface FileRouteTypes {
     | '/api/og/post/$id/story'
     | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
+    | '/api/playlists/$id/collaborators/$userId'
     | '/api/playlists/$id/items/$itemId'
     | '/api/profile/$id/guestbook/$entryId'
     | '/api/rideshare/rides/$id/messages'
@@ -13866,6 +13887,7 @@ export interface FileRouteTypes {
     | '/api/market/listings/$id/'
     | '/api/office-hours/bookings/$id/'
     | '/api/office-hours/host/$id/'
+    | '/api/playlists/$id/collaborators/'
     | '/api/playlists/$id/items/'
     | '/api/rmhmusic/guess/$id/'
     | '/api/shop/loadouts/$id/'
@@ -15140,6 +15162,7 @@ export interface FileRouteTypes {
     | '/api/og/post/$id/story'
     | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
+    | '/api/playlists/$id/collaborators/$userId'
     | '/api/playlists/$id/items/$itemId'
     | '/api/profile/$id/guestbook/$entryId'
     | '/api/rideshare/rides/$id/messages'
@@ -15204,6 +15227,7 @@ export interface FileRouteTypes {
     | '/api/market/listings/$id'
     | '/api/office-hours/bookings/$id'
     | '/api/office-hours/host/$id'
+    | '/api/playlists/$id/collaborators'
     | '/api/playlists/$id/items'
     | '/api/rmhmusic/guess/$id'
     | '/api/shop/loadouts/$id'
@@ -16508,6 +16532,7 @@ export interface FileRouteTypes {
     | '/api/og/post/$id/story'
     | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
+    | '/api/playlists/$id/collaborators/$userId'
     | '/api/playlists/$id/items/$itemId'
     | '/api/profile/$id/guestbook/$entryId'
     | '/api/rideshare/rides/$id/messages'
@@ -16572,6 +16597,7 @@ export interface FileRouteTypes {
     | '/api/market/listings/$id/'
     | '/api/office-hours/bookings/$id/'
     | '/api/office-hours/host/$id/'
+    | '/api/playlists/$id/collaborators/'
     | '/api/playlists/$id/items/'
     | '/api/rmhmusic/guess/$id/'
     | '/api/shop/loadouts/$id/'
@@ -17407,6 +17433,7 @@ export interface RootRouteChildren {
   ApiMarketListingsIdBuyRoute: typeof ApiMarketListingsIdBuyRoute
   ApiOfficeHoursBookingsIdIcsRoute: typeof ApiOfficeHoursBookingsIdIcsRoute
   ApiOfficeHoursHostIdSummaryRoute: typeof ApiOfficeHoursHostIdSummaryRoute
+  ApiPlaylistsIdCollaboratorsUserIdRoute: typeof ApiPlaylistsIdCollaboratorsUserIdRoute
   ApiPlaylistsIdItemsItemIdRoute: typeof ApiPlaylistsIdItemsItemIdRoute
   ApiRmhmusicGuessIdAttemptRoute: typeof ApiRmhmusicGuessIdAttemptRoute
   ApiShopLoadoutsIdApplyRoute: typeof ApiShopLoadoutsIdApplyRoute
@@ -17428,6 +17455,7 @@ export interface RootRouteChildren {
   ApiMarketListingsIdIndexRoute: typeof ApiMarketListingsIdIndexRoute
   ApiOfficeHoursBookingsIdIndexRoute: typeof ApiOfficeHoursBookingsIdIndexRoute
   ApiOfficeHoursHostIdIndexRoute: typeof ApiOfficeHoursHostIdIndexRoute
+  ApiPlaylistsIdCollaboratorsIndexRoute: typeof ApiPlaylistsIdCollaboratorsIndexRoute
   ApiPlaylistsIdItemsIndexRoute: typeof ApiPlaylistsIdItemsIndexRoute
   ApiRmhmusicGuessIdIndexRoute: typeof ApiRmhmusicGuessIdIndexRoute
   ApiShopLoadoutsIdIndexRoute: typeof ApiShopLoadoutsIdIndexRoute
@@ -26457,6 +26485,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPf2ecalSessionsIdResponseRouteImport
       parentRoute: typeof ApiPf2ecalSessionsIdRoute
     }
+    '/api/playlists/$id/collaborators/': {
+      id: '/api/playlists/$id/collaborators/'
+      path: '/api/playlists/$id/collaborators'
+      fullPath: '/api/playlists/$id/collaborators/'
+      preLoaderRoute: typeof ApiPlaylistsIdCollaboratorsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/playlists/$id/collaborators/$userId': {
+      id: '/api/playlists/$id/collaborators/$userId'
+      path: '/api/playlists/$id/collaborators/$userId'
+      fullPath: '/api/playlists/$id/collaborators/$userId'
+      preLoaderRoute: typeof ApiPlaylistsIdCollaboratorsUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/playlists/$id/items/': {
       id: '/api/playlists/$id/items/'
       path: '/api/playlists/$id/items'
@@ -30119,6 +30161,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMarketListingsIdBuyRoute: ApiMarketListingsIdBuyRoute,
   ApiOfficeHoursBookingsIdIcsRoute: ApiOfficeHoursBookingsIdIcsRoute,
   ApiOfficeHoursHostIdSummaryRoute: ApiOfficeHoursHostIdSummaryRoute,
+  ApiPlaylistsIdCollaboratorsUserIdRoute:
+    ApiPlaylistsIdCollaboratorsUserIdRoute,
   ApiPlaylistsIdItemsItemIdRoute: ApiPlaylistsIdItemsItemIdRoute,
   ApiRmhmusicGuessIdAttemptRoute: ApiRmhmusicGuessIdAttemptRoute,
   ApiShopLoadoutsIdApplyRoute: ApiShopLoadoutsIdApplyRoute,
@@ -30140,6 +30184,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMarketListingsIdIndexRoute: ApiMarketListingsIdIndexRoute,
   ApiOfficeHoursBookingsIdIndexRoute: ApiOfficeHoursBookingsIdIndexRoute,
   ApiOfficeHoursHostIdIndexRoute: ApiOfficeHoursHostIdIndexRoute,
+  ApiPlaylistsIdCollaboratorsIndexRoute: ApiPlaylistsIdCollaboratorsIndexRoute,
   ApiPlaylistsIdItemsIndexRoute: ApiPlaylistsIdItemsIndexRoute,
   ApiRmhmusicGuessIdIndexRoute: ApiRmhmusicGuessIdIndexRoute,
   ApiShopLoadoutsIdIndexRoute: ApiShopLoadoutsIdIndexRoute,
