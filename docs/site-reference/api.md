@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 966 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 968 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1343,12 +1343,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/playlists`
 
-4 routes.
+6 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/playlists` | `GET` `POST` | `app/routes/api/playlists/index.ts` |
 | `/api/playlists/:id` | `DELETE` `GET` `PATCH` | `app/routes/api/playlists/$id/index.ts` |
+| `/api/playlists/:id/collaborators` | `GET` `POST` | `app/routes/api/playlists/$id/collaborators/index.ts` |
+| `/api/playlists/:id/collaborators/:userId` | `DELETE` | `app/routes/api/playlists/$id/collaborators/$userId.ts` |
 | `/api/playlists/:id/items` | `POST` | `app/routes/api/playlists/$id/items/index.ts` |
 | `/api/playlists/:id/items/:itemId` | `DELETE` | `app/routes/api/playlists/$id/items/$itemId.ts` |
 

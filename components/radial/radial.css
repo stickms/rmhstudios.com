@@ -3904,6 +3904,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
     :is([data-slot='liquid-tabs-sheet'], [data-slot='search-field']):only-child:not(
       [role='dialog'] *,
       [data-motion] *,
+      .glass-pane *,
       :is(.flex-1, .grow) > *
     ) {
     box-sizing: border-box;

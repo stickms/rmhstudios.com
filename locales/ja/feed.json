@@ -17,6 +17,8 @@
   "action-improve": "改善する",
   "action-shorten": "短くする",
   "activity-join": "参加",
+  "activity-legend-less": "Less",
+  "activity-legend-more": "More",
   "activity-online": "オンライン",
   "add": "追加",
   "add-a-card": "カードを追加",
@@ -855,6 +857,14 @@
   "playlist-add-failed": "追加できませんでした。",
   "playlist-added": "プレイリストに追加しました。",
   "playlist-already": "そのプレイリストにはすでに追加されています。",
+  "playlist-collab-add": "Add",
+  "playlist-collab-add-failed": "Could not add collaborator.",
+  "playlist-collab-label": "Collaborator handle",
+  "playlist-collab-placeholder": "Add by @handle…",
+  "playlist-collab-remove": "Remove collaborator",
+  "playlist-collab-remove-failed": "Could not remove collaborator.",
+  "playlist-collaborators": "Collaborators",
+  "playlist-shared-badge": "Shared with you",
   "playlist-create": "作成",
   "playlist-create-failed": "プレイリストを作成できませんでした。",
   "playlist-delete": "削除",
@@ -1469,5 +1479,7 @@
   "muted-import-done": "{{added}} 語をインポートしました。",
   "muted-import-none": "インポートする新しい語はありません。",
   "muted-import-failed": "ファイルを読み込めませんでした。",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

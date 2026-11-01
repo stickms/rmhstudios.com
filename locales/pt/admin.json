@@ -434,5 +434,19 @@
   "audit-filter-to": "Até",
   "audit-export-csv": "Exportar CSV",
   "audit-clear-filters": "Limpar filtros",
-  "audit-no-match": "Nenhuma ação corresponde a estes filtros."
+  "audit-no-match": "Nenhuma ação corresponde a estes filtros.",
+  "flags-title": "Sinalizadores de recursos",
+  "flags-card-title": "Sinalizadores de recursos",
+  "flags-card-description": "Ative recursos para uma porcentagem de usuários sem fazer deploy.",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "Letras minúsculas, dígitos, pontos, hifens ou sublinhados, começando por uma letra.",
+  "flags-description-placeholder": "O que ele controla?",
+  "flags-create": "Criar sinalizador",
+  "flags-rollout": "Liberação %",
+  "flags-enabled": "Ativado",
+  "flags-delete": "Excluir",
+  "flags-delete-title": "Excluir este sinalizador?",
+  "flags-delete-description": "Tudo que o consultar o tratará como desativado.",
+  "flags-empty": "Nenhum sinalizador ainda.",
+  "flags-save-failed": "Não foi possível salvar o sinalizador."
 }

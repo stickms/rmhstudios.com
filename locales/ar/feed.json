@@ -22,6 +22,8 @@
   "action-improve": "تحسين",
   "action-shorten": "اختصار",
   "activity-join": "انضمام",
+  "activity-legend-less": "Less",
+  "activity-legend-more": "More",
   "activity-online": "متصل",
   "add": "إضافة",
   "add-a-card": "أضف بطاقة",
@@ -970,6 +972,14 @@
   "playlist-add-failed": "تعذرت الإضافة.",
   "playlist-added": "أُضيف إلى قائمة التشغيل.",
   "playlist-already": "موجود بالفعل في قائمة التشغيل هذه.",
+  "playlist-collab-add": "Add",
+  "playlist-collab-add-failed": "Could not add collaborator.",
+  "playlist-collab-label": "Collaborator handle",
+  "playlist-collab-placeholder": "Add by @handle…",
+  "playlist-collab-remove": "Remove collaborator",
+  "playlist-collab-remove-failed": "Could not remove collaborator.",
+  "playlist-collaborators": "Collaborators",
+  "playlist-shared-badge": "Shared with you",
   "playlist-create": "إنشاء",
   "playlist-create-failed": "تعذر إنشاء قائمة التشغيل.",
   "playlist-delete": "حذف",
@@ -1694,5 +1704,7 @@
   "muted-import-done": "تم استيراد {{added}} كلمة.",
   "muted-import-none": "لا توجد كلمات جديدة للاستيراد.",
   "muted-import-failed": "تعذّرت قراءة هذا الملف.",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

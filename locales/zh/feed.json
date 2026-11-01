@@ -17,6 +17,8 @@
   "action-improve": "好的，请提供您想要改进的文本，我会尽力帮您优化。",
   "action-shorten": "缩短",
   "activity-join": "加入",
+  "activity-legend-less": "Less",
+  "activity-legend-more": "More",
   "activity-online": "在线",
   "add": "添加",
   "add-a-card": "添加一张卡片",
@@ -855,6 +857,14 @@
   "playlist-add-failed": "无法添加。",
   "playlist-added": "已添加到播放列表。",
   "playlist-already": "已在该播放列表中。",
+  "playlist-collab-add": "Add",
+  "playlist-collab-add-failed": "Could not add collaborator.",
+  "playlist-collab-label": "Collaborator handle",
+  "playlist-collab-placeholder": "Add by @handle…",
+  "playlist-collab-remove": "Remove collaborator",
+  "playlist-collab-remove-failed": "Could not remove collaborator.",
+  "playlist-collaborators": "Collaborators",
+  "playlist-shared-badge": "Shared with you",
   "playlist-create": "创建",
   "playlist-create-failed": "无法创建播放列表。",
   "playlist-delete": "删除",
@@ -1469,5 +1479,7 @@
   "muted-import-done": "已导入 {{added}} 个词。",
   "muted-import-none": "没有可导入的新词。",
   "muted-import-failed": "无法读取该文件。",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

@@ -100,5 +100,7 @@
   "waiting-for-players": "ESPERANDO JUGADORES{{notReady}}",
   "waiting-status": "ESPERANDO",
   "you": "TÚ",
-  "you-badge": "TÚ"
+  "you-badge": "TÚ",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

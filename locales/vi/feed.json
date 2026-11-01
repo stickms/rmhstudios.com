@@ -17,6 +17,8 @@
   "action-improve": "Cải thiện",
   "action-shorten": "Rút gọn",
   "activity-join": "Tham gia",
+  "activity-legend-less": "Less",
+  "activity-legend-more": "More",
   "activity-online": "Đang hoạt động",
   "add": "Thêm",
   "add-a-card": "Thêm thẻ",
@@ -855,6 +857,14 @@
   "playlist-add-failed": "Không thể thêm.",
   "playlist-added": "Đã thêm vào danh sách phát.",
   "playlist-already": "Đã có trong danh sách phát đó.",
+  "playlist-collab-add": "Add",
+  "playlist-collab-add-failed": "Could not add collaborator.",
+  "playlist-collab-label": "Collaborator handle",
+  "playlist-collab-placeholder": "Add by @handle…",
+  "playlist-collab-remove": "Remove collaborator",
+  "playlist-collab-remove-failed": "Could not remove collaborator.",
+  "playlist-collaborators": "Collaborators",
+  "playlist-shared-badge": "Shared with you",
   "playlist-create": "Tạo",
   "playlist-create-failed": "Không thể tạo danh sách phát.",
   "playlist-delete": "Xóa",
@@ -1469,5 +1479,7 @@
   "muted-import-done": "Đã nhập {{added}} từ.",
   "muted-import-none": "Không có từ mới để nhập.",
   "muted-import-failed": "Không thể đọc tệp đó.",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

@@ -412,5 +412,19 @@
   "audit-filter-to": "Đến",
   "audit-export-csv": "Xuất CSV",
   "audit-clear-filters": "Xóa bộ lọc",
-  "audit-no-match": "Không có hành động nào khớp bộ lọc."
+  "audit-no-match": "Không có hành động nào khớp bộ lọc.",
+  "flags-title": "Cờ tính năng",
+  "flags-card-title": "Cờ tính năng",
+  "flags-card-description": "Bật tính năng cho một tỷ lệ người dùng mà không cần triển khai.",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "Chữ thường, chữ số, dấu chấm, gạch ngang hoặc gạch dưới, bắt đầu bằng chữ cái.",
+  "flags-description-placeholder": "Nó điều khiển gì?",
+  "flags-create": "Tạo cờ",
+  "flags-rollout": "Triển khai %",
+  "flags-enabled": "Đã bật",
+  "flags-delete": "Xóa",
+  "flags-delete-title": "Xóa cờ này?",
+  "flags-delete-description": "Mọi nơi kiểm tra nó sẽ coi như đang tắt.",
+  "flags-empty": "Chưa có cờ nào.",
+  "flags-save-failed": "Không thể lưu cờ."
 }

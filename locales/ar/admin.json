@@ -467,5 +467,19 @@
   "audit-filter-to": "إلى",
   "audit-export-csv": "تصدير CSV",
   "audit-clear-filters": "مسح عوامل التصفية",
-  "audit-no-match": "لا توجد إجراءات مطابقة لهذه المرشحات."
+  "audit-no-match": "لا توجد إجراءات مطابقة لهذه المرشحات.",
+  "flags-title": "أعلام الميزات",
+  "flags-card-title": "أعلام الميزات",
+  "flags-card-description": "فعّل الميزات لنسبة من المستخدمين دون نشر جديد.",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "أحرف صغيرة وأرقام ونقاط وشرطات أو شرطات سفلية، وتبدأ بحرف.",
+  "flags-description-placeholder": "ما الذي يتحكم فيه؟",
+  "flags-create": "إنشاء علم",
+  "flags-rollout": "نسبة الإطلاق %",
+  "flags-enabled": "مفعّل",
+  "flags-delete": "حذف",
+  "flags-delete-title": "حذف هذا العلم؟",
+  "flags-delete-description": "أي شيء يتحقق منه سيعامله على أنه معطّل.",
+  "flags-empty": "لا توجد أعلام بعد.",
+  "flags-save-failed": "تعذّر حفظ العلم."
 }

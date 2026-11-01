@@ -17,6 +17,8 @@
   "action-improve": "개선",
   "action-shorten": "줄이기",
   "activity-join": "참가",
+  "activity-legend-less": "Less",
+  "activity-legend-more": "More",
   "activity-online": "온라인",
   "add": "추가",
   "add-a-card": "카드 추가",
@@ -855,6 +857,14 @@
   "playlist-add-failed": "추가할 수 없습니다.",
   "playlist-added": "재생목록에 추가되었습니다.",
   "playlist-already": "이미 해당 재생목록에 있습니다.",
+  "playlist-collab-add": "Add",
+  "playlist-collab-add-failed": "Could not add collaborator.",
+  "playlist-collab-label": "Collaborator handle",
+  "playlist-collab-placeholder": "Add by @handle…",
+  "playlist-collab-remove": "Remove collaborator",
+  "playlist-collab-remove-failed": "Could not remove collaborator.",
+  "playlist-collaborators": "Collaborators",
+  "playlist-shared-badge": "Shared with you",
   "playlist-create": "만들기",
   "playlist-create-failed": "재생목록을 만들 수 없습니다.",
   "playlist-delete": "삭제",
@@ -1469,5 +1479,7 @@
   "muted-import-done": "{{added}}개 단어를 가져왔습니다.",
   "muted-import-none": "가져올 새 단어가 없습니다.",
   "muted-import-failed": "파일을 읽을 수 없습니다.",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

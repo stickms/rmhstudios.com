@@ -19,6 +19,8 @@
   "action-improve": "Migliora",
   "action-shorten": "Accorcia",
   "activity-join": "Unisciti",
+  "activity-legend-less": "Less",
+  "activity-legend-more": "More",
   "activity-online": "Online",
   "add": "Aggiungi",
   "add-a-card": "Aggiungi una carta",
@@ -901,6 +903,14 @@
   "playlist-add-failed": "Impossibile aggiungere.",
   "playlist-added": "Aggiunto alla playlist.",
   "playlist-already": "Già presente in quella playlist.",
+  "playlist-collab-add": "Add",
+  "playlist-collab-add-failed": "Could not add collaborator.",
+  "playlist-collab-label": "Collaborator handle",
+  "playlist-collab-placeholder": "Add by @handle…",
+  "playlist-collab-remove": "Remove collaborator",
+  "playlist-collab-remove-failed": "Could not remove collaborator.",
+  "playlist-collaborators": "Collaborators",
+  "playlist-shared-badge": "Shared with you",
   "playlist-create": "Crea",
   "playlist-create-failed": "Impossibile creare la playlist.",
   "playlist-delete": "Elimina",
@@ -1559,5 +1569,7 @@
   "muted-import-done": "Importate {{added}} parole.",
   "muted-import-none": "Nessuna parola nuova da importare.",
   "muted-import-failed": "Impossibile leggere il file.",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

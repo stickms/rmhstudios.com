@@ -18,6 +18,7 @@ const entry: AppInfo = {
   tags: ['AI', 'CLI', 'Developer Tools', 'Beta'],
   imagePath: '/images/games/rmhcode.webp',
   authGate: true,
+  usesSiteTheme: true,
 };
 
 export default entry;

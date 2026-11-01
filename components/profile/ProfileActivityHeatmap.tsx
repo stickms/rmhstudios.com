@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { HEATMAP_WEEKS, heatLevel, postingStreaks, windowDays } from '@/lib/profile/activity';
 
 /** Opacity of the accent per shade; 0 is the empty-cell wash. */
-const LEVEL_MIX = [8, 28, 48, 72, 100] as const;
+const LEVEL_MIX = [14, 30, 50, 72, 100] as const;
 
 /**
  * Posts-per-day grid for a profile (last 26 weeks). Decorative cells are
@@ -43,7 +43,7 @@ export default function ProfileActivityHeatmap({ userId }: { userId: string }) {
 
   return (
     <section className="glass-fill rounded-site p-4" aria-label={t('activity-title', { defaultValue: 'Posting activity' })}>
-      <p className="mb-3 font-mono text-xs text-site-text-muted">
+      <p className="mb-1 font-mono text-xs text-site-text-muted">
         {t('activity-summary', {
           defaultValue: 'Posts in the last {{weeks}} weeks: {{total}}',
           total: data.total,
@@ -59,14 +59,17 @@ export default function ProfileActivityHeatmap({ userId }: { userId: string }) {
           })}
         </p>
       ) : null}
-      <div className="overflow-x-auto" aria-hidden>
-        <div className="flex gap-0.5">
+      <div aria-hidden>
+        <div
+          className="grid max-w-full gap-0.5"
+          style={{ gridTemplateColumns: `repeat(${weeks.length || 1}, minmax(0, 14px))` }}
+        >
           {weeks.map((week, wi) => (
-            <div key={wi} className="flex flex-col gap-0.5">
+            <div key={wi} className="grid gap-0.5">
               {week.map((cell) => (
                 <div
                   key={cell.date}
-                  className="h-2.5 w-2.5 rounded-xs"
+                  className="aspect-square w-full rounded-xs"
                   style={{
                     background: `color-mix(in srgb, var(--site-accent) ${LEVEL_MIX[cell.level]}%, transparent)`,
                   }}
@@ -75,6 +78,17 @@ export default function ProfileActivityHeatmap({ userId }: { userId: string }) {
               ))}
             </div>
           ))}
+        </div>
+        <div className="mt-2 flex items-center justify-end gap-1 font-mono text-xs text-site-text-muted">
+          <span>{t('activity-legend-less', { defaultValue: 'Less' })}</span>
+          {LEVEL_MIX.map((mix) => (
+            <span
+              key={mix}
+              className="size-2.5 rounded-xs"
+              style={{ background: `color-mix(in srgb, var(--site-accent) ${mix}%, transparent)` }}
+            />
+          ))}
+          <span>{t('activity-legend-more', { defaultValue: 'More' })}</span>
         </div>
       </div>
     </section>

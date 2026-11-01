@@ -18,6 +18,8 @@
   "action-improve": "İyileştir",
   "action-shorten": "Kısalt",
   "activity-join": "Katıl",
+  "activity-legend-less": "Less",
+  "activity-legend-more": "More",
   "activity-online": "Çevrimiçi",
   "add": "Ekle",
   "add-a-card": "Kart ekle",
@@ -878,6 +880,14 @@
   "playlist-add-failed": "Eklenemedi.",
   "playlist-added": "Çalma listesine eklendi.",
   "playlist-already": "Zaten bu çalma listesinde.",
+  "playlist-collab-add": "Add",
+  "playlist-collab-add-failed": "Could not add collaborator.",
+  "playlist-collab-label": "Collaborator handle",
+  "playlist-collab-placeholder": "Add by @handle…",
+  "playlist-collab-remove": "Remove collaborator",
+  "playlist-collab-remove-failed": "Could not remove collaborator.",
+  "playlist-collaborators": "Collaborators",
+  "playlist-shared-badge": "Shared with you",
   "playlist-create": "Oluştur",
   "playlist-create-failed": "Çalma listesi oluşturulamadı.",
   "playlist-delete": "Sil",
@@ -1514,5 +1524,7 @@
   "muted-import-done": "{{added}} sözcük içe aktarıldı.",
   "muted-import-none": "İçe aktarılacak yeni sözcük yok.",
   "muted-import-failed": "Dosya okunamadı.",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

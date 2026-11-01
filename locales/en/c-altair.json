@@ -126,7 +126,7 @@
   "role-host": "HOST",
   "room-code": "Room Code",
   "run-label_one": "run",
-  "run-label_other": "run",
+  "run-label_other": "runs",
   "runs-played": "Runs played: {{totalRuns}}",
   "screen-shake": "Screen Shake",
   "select-a-class": "Select a class...",
@@ -183,5 +183,6 @@
   "webgl-context-lost": "WebGL context lost! Please reload the page.",
   "you": "(you)",
   "your-class": "Your Class",
-  "zoom": "Zoom"
+  "zoom": "Zoom",
+  "close": "Close"
 }

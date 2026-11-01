@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { VolumeX, Plus, X, Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { mergeImportedWords, serializeMutedWords } from '@/lib/feed/muted-import';
 import { MUTE_DURATIONS, type MuteDuration, type MutedExpiries } from '@/lib/feed/muted-expiry';
@@ -164,7 +165,7 @@ export function MutedWordsPanel() {
       })}
     >
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -177,19 +178,19 @@ export function MutedWordsPanel() {
           maxLength={MAX_WORD_LEN}
           placeholder={t('muted-placeholder', { defaultValue: 'Add a word or phrase…' })}
           aria-label={t('muted-input-label', { defaultValue: 'Add a muted word' })}
-          className="flex-1"
+          className="min-w-full flex-1 sm:min-w-48"
         />
-        <select
+        <Select
           value={duration}
           onChange={(e) => setDuration(e.target.value as DurationChoice)}
           aria-label={t('muted-duration-label', { defaultValue: 'How long to mute' })}
-          className="glass-inset h-10 rounded-site-sm px-3 text-sm text-site-text"
+          containerClassName="min-w-0 flex-1 sm:flex-none"
         >
           <option value="forever">{t('muted-duration-forever', { defaultValue: 'Until I remove it' })}</option>
           <option value="day">{t('muted-duration-day', { defaultValue: '1 day' })}</option>
           <option value="week">{t('muted-duration-week', { defaultValue: '1 week' })}</option>
           <option value="month">{t('muted-duration-month', { defaultValue: '30 days' })}</option>
-        </select>
+        </Select>
         <Button onClick={addWord} disabled={saving || !input.trim()} className="gap-2">
           <Plus className="h-4 w-4" aria-hidden />
           {t('muted-add', { defaultValue: 'Add' })}
@@ -230,14 +231,14 @@ export function MutedWordsPanel() {
               <span className="inline-flex items-center gap-2 rounded-full glass-fill px-3 py-1 text-sm text-site-text">
                 {w}
                 {expiries[w] ? (
-                  <span className="font-mono text-xs text-site-text-dim">{timeLeft(expiries[w], Date.now())}</span>
+                  <span className="font-mono text-xs text-site-text-muted">{timeLeft(expiries[w], Date.now())}</span>
                 ) : null}
                 <button
                   type="button"
                   onClick={() => removeWord(w)}
                   disabled={saving}
                   aria-label={t('muted-remove', { defaultValue: 'Remove {{word}}', word: w })}
-                  className="text-site-text-dim hover:text-site-danger disabled:opacity-50"
+                  className="relative text-site-text-dim hover:text-site-danger disabled:opacity-50 after:absolute after:-inset-3 after:content-['']"
                 >
                   <X className="h-3.5 w-3.5" aria-hidden />
                 </button>

@@ -168,5 +168,6 @@
   "you": "(Anda)",
   "your-class": "Kelas Anda",
   "zoom": "Zoom",
-  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "close": "Close"
 }

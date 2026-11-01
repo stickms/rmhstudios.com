@@ -103,5 +103,7 @@
   "waiting-for-players": "في انتظار اللاعبين{{notReady}}",
   "waiting-status": "انتظار",
   "you": "أنت",
-  "you-badge": "أنت"
+  "you-badge": "أنت",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

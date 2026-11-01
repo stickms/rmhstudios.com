@@ -124,7 +124,7 @@ export const Hud = forwardRef<LiveHandle, HudProps>(function Hud(
           type="button"
           onClick={onPause}
           aria-label={t('hud.pause', { defaultValue: 'Pause' })}
-          className="pointer-events-auto flex items-center justify-center rounded-full border-2 border-bum-ink bg-bum-surface text-bum-ink transition-colors hover:bg-bum-paper-2 active:bg-bum-highlight"
+          className="pointer-events-auto flex items-center justify-center pointer-coarse:min-h-11 pointer-coarse:min-w-11 rounded-full border-2 border-bum-ink bg-bum-surface text-bum-ink transition-colors hover:bg-bum-paper-2 active:bg-bum-highlight"
           style={{ width: 'clamp(2.25rem, 6vmin, 3rem)', height: 'clamp(2.25rem, 6vmin, 3rem)' }}
         >
           <Pause className="size-[clamp(0.9rem,2.5vmin,1.25rem)]" aria-hidden="true" />

@@ -73,6 +73,7 @@ import { SITE_STYLES, useThemeStore, type SiteStyle } from '@/stores/themeStore'
 import { useSession } from '@/components/Providers';
 import { authClient } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
+import { CURRENT_RELEASE, isUnseen, WHATS_NEW_OPEN_EVENT } from '@/lib/whats-new';
 
 // Loaded on demand so the palette (mounted on every route, including games)
 // doesn't pull the compose stack into the initial bundle.
@@ -94,6 +95,8 @@ interface Command {
   section: Section;
   keywords: string;
   icon?: LucideIcon;
+  /** Show a small accent dot (unread). Decorative; the label is the signal. */
+  unread?: boolean;
   emoji?: string;
   /** Avatar URL for server-search results (people). */
   image?: string | null;
@@ -303,6 +306,16 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
 
   const surprise = useSurpriseCommand(() => setOpen(false));
 
+  // Read only while open so the server render and hydration never see storage.
+  const whatsNewUnread = useMemo(() => {
+    if (!open) return false;
+    try {
+      return isUnseen(CURRENT_RELEASE, localStorage);
+    } catch {
+      return false;
+    }
+  }, [open]);
+
   const commands = useMemo<Command[]>(() => {
     const list: Command[] = [];
 
@@ -329,6 +342,18 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
       run: () => go('/achievements'),
     });
     list.push(surprise);
+    list.push({
+      id: 'action-whats-new',
+      label: t('palette-whats-new', { defaultValue: 'What’s new' }),
+      section: 'actions',
+      keywords: 'whats new release announcement changes updates',
+      icon: Sparkles,
+      unread: whatsNewUnread,
+      run: () => {
+        setOpen(false);
+        window.dispatchEvent(new Event(WHATS_NEW_OPEN_EVENT));
+      },
+    });
     list.push({
       id: 'action-shortcuts',
       label: t('palette-shortcuts', { defaultValue: 'Keyboard shortcuts' }),
@@ -421,7 +446,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
     }
 
     return list;
-  }, [t, signedIn, userHandle, go, setStyle, surprise]);
+  }, [t, signedIn, userHandle, go, setStyle, surprise, whatsNewUnread]);
 
   // Ranked by the SAME scorer the Explore page and the top-bar panel use
   // (`lib/search/score.ts`), not a matcher of its own. This used Fuse.js, so ⌘K,
@@ -629,6 +654,14 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                             </span>
                           )}
                         </span>
+                        {cmd.unread && (
+                          <>
+                            <span className="size-2 shrink-0 rounded-full bg-site-accent" aria-hidden />
+                            <span className="sr-only">
+                              {t('palette-unread', { defaultValue: 'Unread' })}
+                            </span>
+                          </>
+                        )}
                         {active && (
                           <CornerDownLeft
                             className="h-3.5 w-3.5 shrink-0 text-site-text-dim"

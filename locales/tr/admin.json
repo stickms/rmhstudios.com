@@ -423,5 +423,19 @@
   "audit-filter-to": "Bitiş",
   "audit-export-csv": "CSV dışa aktar",
   "audit-clear-filters": "Filtreleri temizle",
-  "audit-no-match": "Bu filtrelerle eşleşen eylem yok."
+  "audit-no-match": "Bu filtrelerle eşleşen eylem yok.",
+  "flags-title": "Özellik bayrakları",
+  "flags-card-title": "Özellik bayrakları",
+  "flags-card-description": "Dağıtım yapmadan özellikleri kullanıcıların bir yüzdesi için açın.",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "Küçük harf, rakam, nokta, tire veya alt çizgi; harfle başlamalı.",
+  "flags-description-placeholder": "Neyi kontrol ediyor?",
+  "flags-create": "Bayrak oluştur",
+  "flags-rollout": "Yayılım %",
+  "flags-enabled": "Etkin",
+  "flags-delete": "Sil",
+  "flags-delete-title": "Bu bayrak silinsin mi?",
+  "flags-delete-description": "Onu kontrol eden her şey kapalı kabul edecek.",
+  "flags-empty": "Henüz bayrak yok.",
+  "flags-save-failed": "Bayrak kaydedilemedi."
 }

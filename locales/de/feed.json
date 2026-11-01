@@ -18,6 +18,8 @@
   "action-improve": "Verbessern",
   "action-shorten": "Kürzen",
   "activity-join": "Beitreten",
+  "activity-legend-less": "Less",
+  "activity-legend-more": "More",
   "activity-online": "Online",
   "add": "Hinzufügen",
   "add-a-card": "Eine Karte hinzufügen",
@@ -878,6 +880,14 @@
   "playlist-add-failed": "Konnte nicht hinzugefügt werden.",
   "playlist-added": "Zur Playlist hinzugefügt.",
   "playlist-already": "Bereits in dieser Playlist.",
+  "playlist-collab-add": "Add",
+  "playlist-collab-add-failed": "Could not add collaborator.",
+  "playlist-collab-label": "Collaborator handle",
+  "playlist-collab-placeholder": "Add by @handle…",
+  "playlist-collab-remove": "Remove collaborator",
+  "playlist-collab-remove-failed": "Could not remove collaborator.",
+  "playlist-collaborators": "Collaborators",
+  "playlist-shared-badge": "Shared with you",
   "playlist-create": "Erstellen",
   "playlist-create-failed": "Playlist konnte nicht erstellt werden.",
   "playlist-delete": "Löschen",
@@ -1514,5 +1524,7 @@
   "muted-import-done": "{{added}} Wörter importiert.",
   "muted-import-none": "Keine neuen Wörter zum Importieren.",
   "muted-import-failed": "Die Datei konnte nicht gelesen werden.",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

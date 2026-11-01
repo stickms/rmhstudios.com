@@ -13,7 +13,9 @@ import {
   CURRENT_RELEASE,
   gridClassFor,
   itemNumber,
+  markSeen,
   storageKeyFor,
+  WHATS_NEW_OPEN_EVENT,
   type WhatsNewItemId,
 } from '@/lib/whats-new';
 
@@ -111,6 +113,21 @@ export function WhatsNewModal() {
 
     return () => window.clearTimeout(timer);
   }, [isPending, session, consentAnswered]);
+
+  // Re-open from the command palette. Opening counts as seeing it, which clears
+  // the palette's unread dot.
+  useEffect(() => {
+    const onOpen = () => {
+      try {
+        markSeen(CURRENT_RELEASE, localStorage);
+      } catch {
+        // Storage unavailable; the dot already stays hidden in that case.
+      }
+      setOpen(true);
+    };
+    window.addEventListener(WHATS_NEW_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(WHATS_NEW_OPEN_EVENT, onOpen);
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

@@ -18,6 +18,8 @@
   "action-improve": "بہتر بنائیں",
   "action-shorten": "مختصر کریں",
   "activity-join": "شامل ہوں",
+  "activity-legend-less": "Less",
+  "activity-legend-more": "More",
   "activity-online": "آن لائن",
   "add": "شامل کریں",
   "add-a-card": "ایک کارڈ شامل کریں",
@@ -878,6 +880,14 @@
   "playlist-add-failed": "شامل نہیں کیا جا سکا۔",
   "playlist-added": "پلے لسٹ میں شامل کر دیا گیا۔",
   "playlist-already": "پہلے سے اس پلے لسٹ میں موجود ہے۔",
+  "playlist-collab-add": "Add",
+  "playlist-collab-add-failed": "Could not add collaborator.",
+  "playlist-collab-label": "Collaborator handle",
+  "playlist-collab-placeholder": "Add by @handle…",
+  "playlist-collab-remove": "Remove collaborator",
+  "playlist-collab-remove-failed": "Could not remove collaborator.",
+  "playlist-collaborators": "Collaborators",
+  "playlist-shared-badge": "Shared with you",
   "playlist-create": "بنائیں",
   "playlist-create-failed": "پلے لسٹ نہیں بنائی جا سکی۔",
   "playlist-delete": "حذف کریں",
@@ -1514,5 +1524,7 @@
   "muted-import-done": "{{added}} الفاظ درآمد کیے گئے۔",
   "muted-import-none": "درآمد کرنے کے لیے کوئی نیا لفظ نہیں۔",
   "muted-import-failed": "وہ فائل پڑھی نہیں جا سکی۔",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

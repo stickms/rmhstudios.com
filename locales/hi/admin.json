@@ -423,5 +423,19 @@
   "audit-filter-to": "तक",
   "audit-export-csv": "CSV निर्यात करें",
   "audit-clear-filters": "फ़िल्टर हटाएँ",
-  "audit-no-match": "इन फ़िल्टरों से कोई क्रिया मेल नहीं खाती।"
+  "audit-no-match": "इन फ़िल्टरों से कोई क्रिया मेल नहीं खाती।",
+  "flags-title": "फ़ीचर फ़्लैग",
+  "flags-card-title": "फ़ीचर फ़्लैग",
+  "flags-card-description": "डिप्लॉय किए बिना कुछ प्रतिशत उपयोगकर्ताओं के लिए फ़ीचर चालू करें।",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "छोटे अक्षर, अंक, बिंदु, डैश या अंडरस्कोर, अक्षर से शुरू।",
+  "flags-description-placeholder": "यह किसे नियंत्रित करता है?",
+  "flags-create": "फ़्लैग बनाएँ",
+  "flags-rollout": "रोलआउट %",
+  "flags-enabled": "सक्षम",
+  "flags-delete": "हटाएँ",
+  "flags-delete-title": "यह फ़्लैग हटाएँ?",
+  "flags-delete-description": "इसे जाँचने वाला कोई भी कोड इसे बंद मानेगा।",
+  "flags-empty": "अभी कोई फ़्लैग नहीं।",
+  "flags-save-failed": "फ़्लैग सहेजा नहीं जा सका।"
 }

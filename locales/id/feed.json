@@ -17,6 +17,8 @@
   "action-improve": "Tingkatkan",
   "action-shorten": "Persingkat",
   "activity-join": "Gabung",
+  "activity-legend-less": "Less",
+  "activity-legend-more": "More",
   "activity-online": "Online",
   "add": "Tambah",
   "add-a-card": "Tambah kartu",
@@ -855,6 +857,14 @@
   "playlist-add-failed": "Tidak dapat menambahkan.",
   "playlist-added": "Ditambahkan ke daftar putar.",
   "playlist-already": "Sudah ada di daftar putar itu.",
+  "playlist-collab-add": "Add",
+  "playlist-collab-add-failed": "Could not add collaborator.",
+  "playlist-collab-label": "Collaborator handle",
+  "playlist-collab-placeholder": "Add by @handle…",
+  "playlist-collab-remove": "Remove collaborator",
+  "playlist-collab-remove-failed": "Could not remove collaborator.",
+  "playlist-collaborators": "Collaborators",
+  "playlist-shared-badge": "Shared with you",
   "playlist-create": "Buat",
   "playlist-create-failed": "Tidak dapat membuat daftar putar.",
   "playlist-delete": "Hapus",
@@ -1469,5 +1479,7 @@
   "muted-import-done": "{{added}} kata diimpor.",
   "muted-import-none": "Tidak ada kata baru untuk diimpor.",
   "muted-import-failed": "Tidak dapat membaca berkas itu.",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

@@ -50,7 +50,7 @@ export function GameShell({ userName }: GameShellProps) {
 
       {/* Game area. `app-stage-fit` is the size container the stage measures
           itself against, so the playfield letterboxes rather than stretches. */}
-      <div className="app-stage-fit app-safe-x flex-1 min-h-0 bg-black">
+      <div className="app-stage-fit app-safe-x relative flex-1 min-h-0 bg-black">
         <Suspense
           fallback={
             <div className="flex items-center justify-center w-full h-full">

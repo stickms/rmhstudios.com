@@ -412,5 +412,19 @@
   "audit-filter-to": "終了日",
   "audit-export-csv": "CSV をエクスポート",
   "audit-clear-filters": "フィルターをクリア",
-  "audit-no-match": "条件に一致する操作はありません。"
+  "audit-no-match": "条件に一致する操作はありません。",
+  "flags-title": "機能フラグ",
+  "flags-card-title": "機能フラグ",
+  "flags-card-description": "デプロイなしで、一部のユーザーに機能を有効にします。",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "小文字、数字、ドット、ダッシュ、アンダースコア。先頭は英字。",
+  "flags-description-placeholder": "何を制御しますか？",
+  "flags-create": "フラグを作成",
+  "flags-rollout": "ロールアウト %",
+  "flags-enabled": "有効",
+  "flags-delete": "削除",
+  "flags-delete-title": "このフラグを削除しますか？",
+  "flags-delete-description": "このフラグを参照するものは無効として扱います。",
+  "flags-empty": "フラグはまだありません。",
+  "flags-save-failed": "フラグを保存できませんでした。"
 }

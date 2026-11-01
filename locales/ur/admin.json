@@ -423,5 +423,19 @@
   "audit-filter-to": "تک",
   "audit-export-csv": "CSV برآمد کریں",
   "audit-clear-filters": "فلٹر صاف کریں",
-  "audit-no-match": "ان فلٹرز سے کوئی عمل میل نہیں کھاتا۔"
+  "audit-no-match": "ان فلٹرز سے کوئی عمل میل نہیں کھاتا۔",
+  "flags-title": "فیچر فلیگز",
+  "flags-card-title": "فیچر فلیگز",
+  "flags-card-description": "ڈیپلائے کیے بغیر صارفین کے ایک فیصد کے لیے فیچرز آن کریں۔",
+  "flags-key-placeholder": "flag.key",
+  "flags-key-invalid": "چھوٹے حروف، ہندسے، نقطے، ڈیش یا انڈر اسکور، حرف سے شروع۔",
+  "flags-description-placeholder": "یہ کسے کنٹرول کرتا ہے؟",
+  "flags-create": "فلیگ بنائیں",
+  "flags-rollout": "رول آؤٹ %",
+  "flags-enabled": "فعال",
+  "flags-delete": "حذف کریں",
+  "flags-delete-title": "یہ فلیگ حذف کریں؟",
+  "flags-delete-description": "اسے جانچنے والی ہر چیز اسے بند سمجھے گی۔",
+  "flags-empty": "ابھی کوئی فلیگ نہیں۔",
+  "flags-save-failed": "فلیگ محفوظ نہیں ہو سکا۔"
 }

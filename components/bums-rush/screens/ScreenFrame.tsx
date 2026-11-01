@@ -69,7 +69,7 @@ export function ScreenFrame({
       style={{
         // The top gutter also clears the route's own back link, which is pinned
         // to the window rather than to this column.
-        paddingTop: 'calc(clamp(3.25rem, 7vmin, 4.5rem) + var(--safe-top))',
+        paddingTop: 'calc(clamp(3.75rem, 7vmin, 4.5rem) + var(--safe-top))',
         paddingLeft: 'calc(clamp(0.75rem, 3vmin, 2rem) + var(--safe-left))',
         paddingRight: 'calc(clamp(0.75rem, 3vmin, 2rem) + var(--safe-right))',
         paddingBottom: 'clamp(1.5rem, 5vmin, 3rem)',

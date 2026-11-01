@@ -196,7 +196,7 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
           <button
             onClick={onMenu}
             data-altair-sfx="menu_back"
-            className={`py-2 rounded-(--altair-radius-lg) font-medium text-(--altair-text-muted) hover:text-(--altair-text) transition-colors text-sm ${focusClass(2)}`}
+            className={`py-2 min-h-11 rounded-(--altair-radius-lg) font-medium text-(--altair-text-muted) hover:text-(--altair-text) transition-colors text-sm ${focusClass(2)}`}
           >
             {t("main-menu", { defaultValue: "Main Menu" })}
           </button>
