@@ -48,6 +48,7 @@
   "copy-invite-link": "Davet Bağlantısını Kopyala",
   "cover-art": "Cover",
   "cover-format-unsupported-panel": "Bu görsel biçimi desteklenmiyor. JPEG, PNG veya WebP kullan.",
+  "cover-heic-unsupported-panel": "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
   "cover-image": "Kapak Görseli",
   "cover-too-large": "Cover image must be under 10 MB.",
   "cover-too-large-song-details-panel": "Kapak görseli çok büyük ({{size}} MB). Azami boyut 10 MB.",

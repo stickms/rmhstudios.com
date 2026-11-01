@@ -47,6 +47,7 @@
   "controller-connected": "تم توصيل وحدة التحكم",
   "copy-invite-link": "نسخ رابط الدعوة",
   "cover-art": "Cover",
+  "cover-heic-unsupported-panel": "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
   "cover-image": "صورة الغلاف",
   "cover-too-large": "Cover image must be under 10 MB.",
   "cover-too-large-song-details-panel": "صورة الغلاف كبيرة جدًا ({{size}} ميغابايت). الحد الأقصى 10 ميغابايت.",

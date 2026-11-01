@@ -48,6 +48,7 @@
   "copy-invite-link": "Salin Tautan Undangan",
   "cover-art": "Cover",
   "cover-format-unsupported-panel": "Format gambar tidak didukung. Gunakan JPEG, PNG, atau WebP.",
+  "cover-heic-unsupported-panel": "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
   "cover-image": "Gambar Sampul",
   "cover-too-large": "Cover image must be under 10 MB.",
   "cover-too-large-song-details-panel": "Gambar sampul terlalu besar ({{size}} MB). Ukuran maksimum 10 MB.",

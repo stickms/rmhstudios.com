@@ -1,6 +1,17 @@
 const COVER_PASSTHROUGH = /^image\/(png|jpe?g|webp|gif)$/i;
 
 /**
+ * HEIC/HEIF is what an iPhone photo is. Safari (WebKit) decodes it, so
+ * `normalizeCover` can turn it into a JPEG there; Chromium and Firefox cannot,
+ * and the caller needs to know that is why `normalizeCover` returned `null` so
+ * it can say "export as JPEG" instead of the generic "format not supported".
+ * Some platforms hand over an empty MIME type, so the extension counts too.
+ */
+export function isHeicCover(file: Pick<File, 'type' | 'name'>): boolean {
+  return /^image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+}
+
+/**
  * Re-encode a picked cover as a bounded JPEG when the browser can decode it.
  * Returns the original for already-supported small images when decoding is
  * unavailable, and `null` for formats (HEIC on non-Safari) we cannot convert.

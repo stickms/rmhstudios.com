@@ -47,6 +47,7 @@
   "controller-connected": "Controller Collegato",
   "copy-invite-link": "Copia Link Invito",
   "cover-art": "Cover",
+  "cover-heic-unsupported-panel": "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
   "cover-image": "Immagine Copertina",
   "cover-too-large": "Cover image must be under 10 MB.",
   "cover-too-large-song-details-panel": "L’immagine di copertina è troppo grande ({{size}} MB). La dimensione massima è 10 MB.",

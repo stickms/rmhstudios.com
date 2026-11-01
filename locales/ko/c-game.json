@@ -48,6 +48,7 @@
   "copy-invite-link": "초대 링크 복사",
   "cover-art": "Cover",
   "cover-format-unsupported-panel": "지원하지 않는 이미지 형식입니다. JPEG, PNG 또는 WebP를 사용하세요.",
+  "cover-heic-unsupported-panel": "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
   "cover-image": "커버 이미지",
   "cover-too-large": "Cover image must be under 10 MB.",
   "cover-too-large-song-details-panel": "커버 이미지가 너무 큽니다({{size}}MB). 최대 크기는 10MB입니다.",

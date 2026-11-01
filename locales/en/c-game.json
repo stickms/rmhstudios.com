@@ -48,6 +48,7 @@
   "copy-invite-link": "Copy Invite Link",
   "cover-art": "Cover",
   "cover-format-unsupported-panel": "That image format is not supported. Use JPEG, PNG or WebP.",
+  "cover-heic-unsupported-panel": "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
   "cover-image": "Cover Image",
   "cover-too-large": "Cover image must be under 10 MB.",
   "cover-too-large-song-details-panel": "Cover image too large ({{size}} MB). Maximum size is 10 MB.",
