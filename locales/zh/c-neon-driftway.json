@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "千钧一发",
   "code-label": "代码：",
+  "context-lost": "浏览器重置了图形，它们应该会自行恢复。",
+  "context-lost-reload": "重新加载",
   "continue-endless": "继续无尽",
   "countdown-go": "GO!",
   "crashed": "崩溃了",

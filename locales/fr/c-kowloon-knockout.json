@@ -1,7 +1,7 @@
 {
   "back": "RETOUR",
   "back-to-lobby": "RETOUR AU HALL",
-  "back-to-menu": "Back to menu",
+  "back-to-menu": "Retour au menu",
   "block": "Bloquer",
   "body-breaker": "Brise-Corps",
   "champion": "CHAMPION : {{name}}",
@@ -30,7 +30,7 @@
   "fury-combo": "Combo Furie",
   "graphics": "GRAPHISMES",
   "graphics-hint": "Adapte automatiquement la qualité pour garder un taux d'images fluide. Choisissez un niveau pour le verrouiller.",
-  "graphics-lost": "Graphics were interrupted by your device.",
+  "graphics-lost": "Votre appareil a interrompu l’affichage graphique.",
   "haymaker": "Coup de Poing",
   "hook": "Crochet",
   "hook-desc": "(lent, dégâts élevés)",

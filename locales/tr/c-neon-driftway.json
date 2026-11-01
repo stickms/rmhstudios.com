@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "Yakın Sinyaller",
   "code-label": "Kod:",
+  "context-lost": "Tarayıcı grafikleri sıfırladı. Kendiliğinden geri gelmeleri gerekir.",
+  "context-lost-reload": "Yeniden yükle",
   "continue-endless": "Sonsuz Devam Et",
   "countdown-go": "GO!",
   "crashed": "ÇARPIŞTI",

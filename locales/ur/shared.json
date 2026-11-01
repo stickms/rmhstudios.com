@@ -39,5 +39,8 @@
   "sign-in-required-title": "This part needs an account",
   "try-again": "دوبارہ کوشش کریں",
   "unexpected-error": "ایک غیر متوقع خرابی پیش آئی۔",
-  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…",
+  "webgl-unavailable-body": "{{gameName}} کو WebGL درکار ہے، اور یہ براؤزر اسے شروع نہیں کر سکا۔ کوئی دوسرا براؤزر آزمائیں یا براؤزر کی سیٹنگز میں ہارڈویئر ایکسلریشن آن کریں۔",
+  "webgl-unavailable-retry": "دوبارہ کوشش کریں",
+  "webgl-unavailable-title": "تھری ڈی گرافکس دستیاب نہیں ہیں"
 }

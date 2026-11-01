@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "Chiamate ravvicinate",
   "code-label": "Codice:",
+  "context-lost": "Il browser ha reimpostato la grafica. Dovrebbe tornare da sola.",
+  "context-lost-reload": "Ricarica",
   "continue-endless": "Continua Endless",
   "countdown-go": "GO!",
   "crashed": "SCHIANTATO",

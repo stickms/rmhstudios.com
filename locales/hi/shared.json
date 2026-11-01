@@ -39,5 +39,8 @@
   "sign-in-required-title": "This part needs an account",
   "try-again": "फिर से प्रयास करें",
   "unexpected-error": "एक अप्रत्याशित त्रुटि हुई।",
-  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…",
+  "webgl-unavailable-body": "{{gameName}} को WebGL चाहिए, और यह ब्राउज़र उसे शुरू नहीं कर सका। दूसरा ब्राउज़र आज़माएँ या ब्राउज़र सेटिंग में हार्डवेयर एक्सेलेरेशन चालू करें।",
+  "webgl-unavailable-retry": "फिर से कोशिश करें",
+  "webgl-unavailable-title": "3D ग्राफ़िक्स उपलब्ध नहीं हैं"
 }

@@ -39,5 +39,8 @@
   "sign-in-required-title": "This part needs an account",
   "try-again": "再試行",
   "unexpected-error": "予期しないエラーが発生しました。",
-  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…",
+  "webgl-unavailable-body": "{{gameName}} には WebGL が必要ですが、このブラウザでは起動できませんでした。別のブラウザをお試しいただくか、ブラウザの設定でハードウェアアクセラレーションを有効にしてください。",
+  "webgl-unavailable-retry": "もう一度試す",
+  "webgl-unavailable-title": "3Dグラフィックスを利用できません"
 }

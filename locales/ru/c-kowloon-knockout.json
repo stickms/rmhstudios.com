@@ -1,7 +1,7 @@
 {
   "back": "НАЗАД",
   "back-to-lobby": "В ЛОББИ",
-  "back-to-menu": "Back to menu",
+  "back-to-menu": "Назад в меню",
   "block": "Блок",
   "body-breaker": "Body Breaker",
   "champion": "ЧЕМПИОН: {{name}}",
@@ -30,7 +30,7 @@
   "fury-combo": "Fury Combo",
   "graphics": "ГРАФИКА",
   "graphics-hint": "Автоматически подстраивает качество для плавной частоты кадров. Выберите уровень, чтобы зафиксировать его.",
-  "graphics-lost": "Graphics were interrupted by your device.",
+  "graphics-lost": "Устройство прервало работу графики.",
   "haymaker": "Haymaker",
   "hook": "Hook",
   "hook-desc": "(медленно, высокий урон)",

@@ -1,7 +1,7 @@
 {
   "back": "वापस",
   "back-to-lobby": "लॉबी में वापस",
-  "back-to-menu": "Back to menu",
+  "back-to-menu": "मेनू पर वापस जाएँ",
   "block": "ब्लॉक",
   "body-breaker": "बॉडी ब्रेकर",
   "champion": "चैंपियन: {{name}}",
@@ -30,7 +30,7 @@
   "fury-combo": "फ्यूरी कॉम्बो",
   "graphics": "ग्राफिक्स",
   "graphics-hint": "फ्रेम रेट स्मूथ रखने के लिए ऑटो गुणवत्ता को अनुकूलित करता है। इसे लॉक करने के लिए एक स्तर चुनें।",
-  "graphics-lost": "Graphics were interrupted by your device.",
+  "graphics-lost": "आपके डिवाइस ने ग्राफ़िक्स को बाधित कर दिया।",
   "haymaker": "हेमेकर",
   "hook": "हुक",
   "hook-desc": "(धीमा, उच्च क्षति)",

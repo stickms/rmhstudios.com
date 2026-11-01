@@ -1,7 +1,7 @@
 {
   "back": "GERİ",
   "back-to-lobby": "LOBİYE DÖN",
-  "back-to-menu": "Back to menu",
+  "back-to-menu": "Menüye dön",
   "block": "Blok",
   "body-breaker": "Vücut Kırıcı",
   "champion": "ŞAMPİYON: {{name}}",
@@ -30,7 +30,7 @@
   "fury-combo": "Öfke Kombosu",
   "graphics": "GRAFİKLER",
   "graphics-hint": "Kare hızını akıcı tutmak için kaliteyi otomatik ayarlar. Kilitlemek için bir seviye seçin.",
-  "graphics-lost": "Graphics were interrupted by your device.",
+  "graphics-lost": "Grafikler cihazın tarafından kesintiye uğratıldı.",
   "haymaker": "Yumruk",
   "hook": "Kanca",
   "hook-desc": "(yavaş, yüksek hasar)",

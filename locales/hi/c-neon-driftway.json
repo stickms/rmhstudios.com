@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "करीबी मौके",
   "code-label": "कोड:",
+  "context-lost": "ब्राउज़र ने ग्राफ़िक्स रीसेट कर दिए। ये अपने आप वापस आ जाने चाहिए।",
+  "context-lost-reload": "पुनः लोड करें",
   "continue-endless": "एंडलेस जारी रखें",
   "countdown-go": "GO!",
   "crashed": "क्रैश हो गया",

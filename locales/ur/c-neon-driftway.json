@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "قریبی کالیں",
   "code-label": "کوڈ:",
+  "context-lost": "براؤزر نے گرافکس ری سیٹ کر دیے۔ وہ خود بخود واپس آ جانے چاہییں۔",
+  "context-lost-reload": "دوبارہ لوڈ کریں",
   "continue-endless": "لامحدود جاری رکھیں",
   "countdown-go": "GO!",
   "crashed": "کریش ہو گیا",

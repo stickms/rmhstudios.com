@@ -1,7 +1,7 @@
 {
   "back": "INDIETRO",
   "back-to-lobby": "TORNA ALLA LOBBY",
-  "back-to-menu": "Back to menu",
+  "back-to-menu": "Torna al menu",
   "block": "Blocca",
   "body-breaker": "Body Breaker",
   "champion": "CAMPIONE: {{name}}",
@@ -30,7 +30,7 @@
   "fury-combo": "Fury Combo",
   "graphics": "GRAFICA",
   "graphics-hint": "Adatta automaticamente la qualità per mantenere il frame rate fluido. Scegli un livello per bloccarlo.",
-  "graphics-lost": "Graphics were interrupted by your device.",
+  "graphics-lost": "La grafica è stata interrotta dal tuo dispositivo.",
   "haymaker": "Haymaker",
   "hook": "Hook",
   "hook-desc": "(lento, danni alti)",

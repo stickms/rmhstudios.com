@@ -1,7 +1,7 @@
 {
   "back": "خلف",
   "back-to-lobby": "العودة إلى الردهة",
-  "back-to-menu": "Back to menu",
+  "back-to-menu": "العودة إلى القائمة",
   "block": "Block",
   "body-breaker": "Body Breaker",
   "champion": "البطل: {{name}}",
@@ -30,7 +30,7 @@
   "fury-combo": "فيوري كومبو",
   "graphics": "الرسومات",
   "graphics-hint": "يضبط الجودة تلقائيًا للحفاظ على سلاسة معدّل الإطارات. اختر مستوى لتثبيته.",
-  "graphics-lost": "Graphics were interrupted by your device.",
+  "graphics-lost": "قام جهازك بمقاطعة عرض الرسومات.",
   "haymaker": "هايماكر",
   "hook": "هوك",
   "hook-desc": "(بطيء، ضرر عالي)",

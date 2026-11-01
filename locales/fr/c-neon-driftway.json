@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "Appels serrés",
   "code-label": "Code :",
+  "context-lost": "Le navigateur a réinitialisé l’affichage graphique. Il devrait revenir tout seul.",
+  "context-lost-reload": "Recharger",
   "continue-endless": "Continuer l'infini",
   "countdown-go": "GO!",
   "crashed": "PLANTAGE",

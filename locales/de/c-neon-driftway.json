@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "Beinaheunfälle",
   "code-label": "Code:",
+  "context-lost": "Der Browser hat die Grafik zurückgesetzt. Sie sollte von selbst zurückkommen.",
+  "context-lost-reload": "Neu laden",
   "continue-endless": "Endlos fortsetzen",
   "countdown-go": "GO!",
   "crashed": "ABGESTÜRZT",

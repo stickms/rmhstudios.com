@@ -10,6 +10,8 @@
   "cargo-delivered": "Cargo delivered",
   "cargo-lost": "CARGO LOST",
   "cargo-lost-sub": "Cargo lost — run over.",
+  "context-lost": "Tarayıcı grafikleri sıfırladı. Kendiliğinden geri gelmeleri gerekir.",
+  "context-lost-reload": "Yeniden yükle",
   "countdown-go": "GO!",
   "delivered": "DELIVERED",
   "delivery-rank": "Delivery rank",

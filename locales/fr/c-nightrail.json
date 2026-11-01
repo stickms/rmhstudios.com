@@ -10,6 +10,8 @@
   "cargo-delivered": "Cargo delivered",
   "cargo-lost": "CARGO LOST",
   "cargo-lost-sub": "Cargo lost — run over.",
+  "context-lost": "Le navigateur a réinitialisé l’affichage graphique. Il devrait revenir tout seul.",
+  "context-lost-reload": "Recharger",
   "countdown-go": "GO!",
   "delivered": "DELIVERED",
   "delivery-rank": "Delivery rank",

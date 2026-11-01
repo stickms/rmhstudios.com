@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "Casi accidentes",
   "code-label": "Código:",
+  "context-lost": "El navegador restableció los gráficos. Deberían volver por sí solos.",
+  "context-lost-reload": "Recargar",
   "continue-endless": "Continuar infinito",
   "countdown-go": "GO!",
   "crashed": "CHOCADO",

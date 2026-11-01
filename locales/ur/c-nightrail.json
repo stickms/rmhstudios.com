@@ -10,6 +10,8 @@
   "cargo-delivered": "Cargo delivered",
   "cargo-lost": "CARGO LOST",
   "cargo-lost-sub": "Cargo lost — run over.",
+  "context-lost": "براؤزر نے گرافکس ری سیٹ کر دیے۔ وہ خود بخود واپس آ جانے چاہییں۔",
+  "context-lost-reload": "دوبارہ لوڈ کریں",
   "countdown-go": "GO!",
   "delivered": "DELIVERED",
   "delivery-rank": "Delivery rank",

@@ -1,7 +1,7 @@
 {
   "back": "QUAY LẠI",
   "back-to-lobby": "QUAY LẠI SẢNH",
-  "back-to-menu": "Back to menu",
+  "back-to-menu": "Quay lại menu",
   "block": "Chặn",
   "body-breaker": "Phá Thân",
   "champion": "NHÀ VÔ ĐỊCH: {{name}}",
@@ -30,7 +30,7 @@
   "fury-combo": "Liên Hoàn Cuồng Nộ",
   "graphics": "ĐỒ HỌA",
   "graphics-hint": "Tự động điều chỉnh chất lượng để giữ khung hình mượt. Chọn mức để khóa.",
-  "graphics-lost": "Graphics were interrupted by your device.",
+  "graphics-lost": "Thiết bị của bạn đã làm gián đoạn đồ họa.",
   "haymaker": "Đòn Mạnh",
   "hook": "Móc",
   "hook-desc": "(chậm, sát thương cao)",

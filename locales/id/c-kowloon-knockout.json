@@ -1,7 +1,7 @@
 {
   "back": "KEMBALI",
   "back-to-lobby": "KEMBALI KE LOBBY",
-  "back-to-menu": "Back to menu",
+  "back-to-menu": "Kembali ke menu",
   "block": "Blokir",
   "body-breaker": "Penghancur Tubuh",
   "champion": "JUARA: {{name}}",
@@ -30,7 +30,7 @@
   "fury-combo": "Kombo Kemarahan",
   "graphics": "GRAFIS",
   "graphics-hint": "Secara otomatis menyesuaikan kualitas untuk menjaga frame rate tetap mulus. Pilih level untuk menguncinya.",
-  "graphics-lost": "Graphics were interrupted by your device.",
+  "graphics-lost": "Grafis terhenti oleh perangkat Anda.",
   "haymaker": "Pukulan Keras",
   "hook": "Kait",
   "hook-desc": "(lambat, dmg tinggi)",

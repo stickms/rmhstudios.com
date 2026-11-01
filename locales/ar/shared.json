@@ -39,5 +39,8 @@
   "sign-in-required-title": "This part needs an account",
   "try-again": "حاول مرة أخرى",
   "unexpected-error": "حدث خطأ غير متوقع.",
-  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…",
+  "webgl-unavailable-body": "تحتاج {{gameName}} إلى WebGL، ولم يتمكن هذا المتصفح من تشغيله. جرّب متصفحًا آخر أو فعّل تسريع الأجهزة من إعدادات المتصفح.",
+  "webgl-unavailable-retry": "حاول مرة أخرى",
+  "webgl-unavailable-title": "الرسومات ثلاثية الأبعاد غير متاحة"
 }

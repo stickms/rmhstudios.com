@@ -10,6 +10,8 @@
   "cargo-delivered": "Cargo delivered",
   "cargo-lost": "CARGO LOST",
   "cargo-lost-sub": "Cargo lost — run over.",
+  "context-lost": "أعاد المتصفح ضبط الرسومات، ومن المفترض أن تعود من تلقاء نفسها.",
+  "context-lost-reload": "إعادة تحميل",
   "countdown-go": "GO!",
   "delivered": "DELIVERED",
   "delivery-rank": "Delivery rank",

@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "Опасные моменты",
   "code-label": "Код:",
+  "context-lost": "Браузер сбросил графику. Она должна восстановиться сама.",
+  "context-lost-reload": "Перезагрузить",
   "continue-endless": "Продолжить бесконечный",
   "countdown-go": "GO!",
   "crashed": "АВАРИЯ",

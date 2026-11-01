@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "아슬아슬한 순간",
   "code-label": "코드:",
+  "context-lost": "브라우저가 그래픽을 초기화했습니다. 저절로 복구될 것입니다.",
+  "context-lost-reload": "새로고침",
   "continue-endless": "엔드리스 계속",
   "countdown-go": "GO!",
   "crashed": "충돌",

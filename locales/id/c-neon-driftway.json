@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "Nyaris Tabrakan",
   "code-label": "Kode:",
+  "context-lost": "Browser mereset grafis. Seharusnya akan pulih dengan sendirinya.",
+  "context-lost-reload": "Muat ulang",
   "continue-endless": "Lanjutkan Endless",
   "countdown-go": "GO!",
   "crashed": "KECELAKAAN",

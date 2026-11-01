@@ -1,7 +1,7 @@
 {
   "back": "뒤로",
   "back-to-lobby": "로비로 돌아가기",
-  "back-to-menu": "Back to menu",
+  "back-to-menu": "메뉴로 돌아가기",
   "block": "막기",
   "body-breaker": "바디 브레이커",
   "champion": "챔피언: {{name}}",
@@ -30,7 +30,7 @@
   "fury-combo": "퓨리 콤보",
   "graphics": "그래픽",
   "graphics-hint": "프레임 속도를 부드럽게 유지하기 위해 자동으로 품질을 조정합니다. 수준을 선택하여 고정하세요.",
-  "graphics-lost": "Graphics were interrupted by your device.",
+  "graphics-lost": "기기에서 그래픽이 중단되었습니다.",
   "haymaker": "헤이메이커",
   "hook": "훅",
   "hook-desc": "(느림, 높은 대미지)",

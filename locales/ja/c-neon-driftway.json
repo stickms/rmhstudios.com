@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "ニアミス",
   "code-label": "コード:",
+  "context-lost": "ブラウザがグラフィックをリセットしました。自動的に復帰するはずです。",
+  "context-lost-reload": "再読み込み",
   "continue-endless": "エンドレスを続ける",
   "countdown-go": "GO!",
   "crashed": "クラッシュ",

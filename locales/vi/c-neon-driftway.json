@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "Suýt va chạm",
   "code-label": "Mã:",
+  "context-lost": "Trình duyệt đã đặt lại đồ họa. Chúng sẽ tự khôi phục.",
+  "context-lost-reload": "Tải lại",
   "continue-endless": "Tiếp tục Vô tận",
   "countdown-go": "GO!",
   "crashed": "ĐÂM XE",

@@ -39,5 +39,8 @@
   "sign-in-required-title": "This part needs an account",
   "try-again": "Tekrar Dene",
   "unexpected-error": "Beklenmeyen bir hata oluştu.",
-  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…",
+  "webgl-unavailable-body": "{{gameName}} için WebGL gerekiyor ancak bu tarayıcı onu başlatamadı. Başka bir tarayıcı dene veya tarayıcı ayarlarında donanım hızlandırmayı aç.",
+  "webgl-unavailable-retry": "Tekrar dene",
+  "webgl-unavailable-title": "3D grafikler kullanılamıyor"
 }

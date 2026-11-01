@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "مكالمات قريبة",
   "code-label": "كود:",
+  "context-lost": "أعاد المتصفح ضبط الرسومات، ومن المفترض أن تعود من تلقاء نفسها.",
+  "context-lost-reload": "إعادة تحميل",
   "continue-endless": "استمر بلا نهاية",
   "countdown-go": "GO!",
   "crashed": "تحطم",

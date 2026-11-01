@@ -270,7 +270,7 @@
   "you-label": "VOUS",
   "your-plays": "Vos parties",
   "your-track": "VOTRE PISTE",
-  "cover-format-unsupported-panel": "That image format is not supported. Use JPEG, PNG or WebP.",
-  "velum-retry": "Retry",
-  "velum-start-failed": "Velum 2099 could not start. It needs WebGL — enable hardware acceleration or try another browser."
+  "cover-format-unsupported-panel": "Ce format d’image n’est pas pris en charge. Utilisez JPEG, PNG ou WebP.",
+  "velum-retry": "Réessayer",
+  "velum-start-failed": "Velum 2099 n’a pas pu démarrer. Il nécessite WebGL : activez l’accélération matérielle ou essayez un autre navigateur."
 }

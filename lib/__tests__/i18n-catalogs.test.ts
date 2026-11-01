@@ -84,8 +84,6 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
-  // Touch controls / context recovery / WebGL fallback (games audit). Remove when translate runs.
-  shared: ['webgl-unavailable-body', 'webgl-unavailable-retry', 'webgl-unavailable-title'],
   // TF2 loadout builder rules (stock loadout, game-rule warnings, unlimited cosmetics) and the AI
   // assistants. English-only until the translate workflow runs on merge; remove entries with it.
   'c-tf2-hud': [

@@ -39,5 +39,8 @@
   "sign-in-required-title": "This part needs an account",
   "try-again": "Riprova",
   "unexpected-error": "Si è verificato un errore imprevisto.",
-  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…",
+  "webgl-unavailable-body": "{{gameName}} richiede WebGL, ma questo browser non è riuscito ad avviarlo. Prova un altro browser o attiva l’accelerazione hardware nelle impostazioni del browser.",
+  "webgl-unavailable-retry": "Riprova",
+  "webgl-unavailable-title": "La grafica 3D non è disponibile"
 }
