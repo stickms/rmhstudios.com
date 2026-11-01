@@ -2491,3 +2491,78 @@ html[dir='rtl'] .stm-drawer-panel {
 .steam [id] {
   scroll-margin-top: calc(var(--stm-header-h) + 8px);
 }
+
+/* ─── Points shop (/games/shop) ───────────────────────────────────────────── */
+
+.stm-shop {
+  width: 100%;
+  max-width: 1100px;
+  margin-inline: auto;
+  padding: 24px clamp(12px, 3vw, 24px) 0;
+}
+.stm-shop-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.stm-shop-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--stm-bright);
+}
+.stm-shop-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0;
+}
+.stm-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+.stm-shop-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 14px;
+}
+.stm-shop-swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+  border-radius: var(--stm-radius);
+  background: var(--stm-web-bg-2);
+  font-size: 32px;
+}
+.stm-shop-body {
+  flex: 1;
+  min-width: 0;
+}
+.stm-shop-name {
+  margin: 0;
+  color: var(--stm-bright);
+  font-size: 14px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.stm-shop-meta {
+  margin: 2px 0 0;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+.stm-shop-desc {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+.stm-shop-act .stm-btn {
+  width: 100%;
+  justify-content: center;
+}

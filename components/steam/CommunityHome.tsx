@@ -149,7 +149,7 @@ export function CommunityHome({ data }: { data: CommunityHomeData }) {
               ))}
             </ul>
             <p className="stm-web-pad">
-              <Link to="/communities" className="stm-link">
+              <Link to="/games/communities" className="stm-link">
                 {t('steam-browse-groups', { defaultValue: 'Browse all groups' })}
               </Link>
             </p>
