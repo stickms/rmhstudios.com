@@ -42,14 +42,36 @@ export interface DiscordContext {
  *
  * @throws If no credential is available.
  */
-export async function connectToRMHbox(
+/**
+ * The in-flight connect. `connectToRMHbox` awaits the session before it builds
+ * the client, so two callers in the same tick (StrictMode's double mount, or
+ * two components) both saw `client === null` and each built one: two live
+ * sockets for one account. The hub's DUPLICATE_SESSION handling then kicks one
+ * of them with a server-side disconnect, which socket.io never retries, and
+ * whichever one the store followed could be the dead one — the header sat on
+ * "Connecting..." for good after any network drop.
+ */
+let connecting: Promise<Socket> | null = null;
+
+export function connectToRMHbox(
   discordToken?: string,
   discordContext?: DiscordContext,
 ): Promise<Socket> {
   if (client) {
     client.reconnectNow();
-    return client.socket;
+    return Promise.resolve(client.socket);
   }
+  connecting ??= buildClient(discordToken, discordContext).finally(() => {
+    connecting = null;
+  });
+  return connecting;
+}
+
+async function buildClient(
+  discordToken?: string,
+  discordContext?: DiscordContext,
+): Promise<Socket> {
+  if (client) return client.socket;
 
   if (!discordToken) {
     const session = await authClient.getSession();
