@@ -89,7 +89,7 @@
 
 - [ ] **Step 1: Find every link:** `grep -rnE "to=\"/(store|shop|communities)|to: '/(store|shop|communities)'" components/steam app/routes/games app/routes/_site/apps app/routes/_site/arcade.tsx`. Record the list in the commit message.
 - [ ] **Step 2: Retarget** `/communities` → `/games/communities` in `CommunityNav` (also add `aria-current` like its siblings) and `CommunityHome`; `/store` (shop/points intent) → `/games/shop` in `StorePage`. Leave links that are meant to reach membership or daily tabs.
-- [ ] **Step 3: Add a Points shop link** to `CommunityNav`? No — add it to `StorePage` only (Store tab owns it), as a visible "Points shop" link beside the existing one.
+- [ ] **Step 3: Add a visible "Points shop" link** in `StorePage` beside the existing `/store` link (the Store tab owns it).
 - [ ] **Step 4: Run** `pnpm exec tsc --noEmit` and `pnpm exec vitest run components/steam` — Expected: pass.
 - [ ] **Step 5: Commit** `feat(steam): link the Steam frame to its own shop and communities pages`.
 
