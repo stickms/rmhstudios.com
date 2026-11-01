@@ -130,5 +130,9 @@
   "writing-passage": "Writing your passage...",
   "you": "(вы)",
   "apps": "Apps",
-  "room-of-host": "{{name}}'s room"
+  "room-of-host": "{{name}}'s room",
+  "copy-result": "Скопировать результат",
+  "result-copied": "Результат скопирован",
+  "result-copy-failed": "Не удалось скопировать результат",
+  "kbd-hint-retry": "Нажмите Enter, чтобы повторить"
 }

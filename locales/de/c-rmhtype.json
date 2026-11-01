@@ -122,5 +122,9 @@
   "writing-passage": "Writing your passage...",
   "you": "(du)",
   "apps": "Apps",
-  "room-of-host": "{{name}}'s room"
+  "room-of-host": "{{name}}'s room",
+  "copy-result": "Ergebnis kopieren",
+  "result-copied": "Ergebnis kopiert",
+  "result-copy-failed": "Ergebnis konnte nicht kopiert werden",
+  "kbd-hint-retry": "Enter drücken für einen neuen Versuch"
 }

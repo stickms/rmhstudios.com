@@ -118,5 +118,9 @@
   "writing-passage": "Writing your passage...",
   "you": "(bạn)",
   "apps": "Apps",
-  "room-of-host": "{{name}}'s room"
+  "room-of-host": "{{name}}'s room",
+  "copy-result": "Sao chép kết quả",
+  "result-copied": "Đã sao chép kết quả",
+  "result-copy-failed": "Không thể sao chép kết quả",
+  "kbd-hint-retry": "Nhấn Enter để thử lại"
 }

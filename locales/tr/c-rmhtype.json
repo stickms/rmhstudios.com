@@ -122,5 +122,9 @@
   "writing-passage": "Writing your passage...",
   "you": "(sen)",
   "apps": "Apps",
-  "room-of-host": "{{name}}'s room"
+  "room-of-host": "{{name}}'s room",
+  "copy-result": "Sonucu kopyala",
+  "result-copied": "Sonuç kopyalandı",
+  "result-copy-failed": "Sonuç kopyalanamadı",
+  "kbd-hint-retry": "Tekrar denemek için Enter'a basın"
 }
