@@ -460,5 +460,12 @@
   "remove-option_one": "Remove option {{count}}",
   "remove-option_two": "Remove option {{count}}",
   "remove-option_zero": "Remove option {{count}}",
-  "remove-option_other": "Remove option {{count}}"
+  "remove-option_other": "Remove option {{count}}",
+  "audit-filter-action": "يبدأ الإجراء بـ…",
+  "audit-filter-target": "نوع الهدف",
+  "audit-filter-from": "من",
+  "audit-filter-to": "إلى",
+  "audit-export-csv": "تصدير CSV",
+  "audit-clear-filters": "مسح عوامل التصفية",
+  "audit-no-match": "لا توجد إجراءات مطابقة لهذه المرشحات."
 }

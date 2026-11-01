@@ -405,5 +405,12 @@
   "variant-success": "Success",
   "variant-warning": "Warning",
   "badge-images_other": "{{count}} img",
-  "remove-option_other": "Remove option {{count}}"
+  "remove-option_other": "Remove option {{count}}",
+  "audit-filter-action": "操作以…开头",
+  "audit-filter-target": "目标类型",
+  "audit-filter-from": "从",
+  "audit-filter-to": "至",
+  "audit-export-csv": "导出 CSV",
+  "audit-clear-filters": "清除筛选",
+  "audit-no-match": "没有符合这些筛选条件的操作。"
 }

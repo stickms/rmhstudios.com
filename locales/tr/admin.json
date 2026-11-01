@@ -416,5 +416,12 @@
   "badge-images_one": "{{count}} img",
   "badge-images_other": "{{count}} img",
   "remove-option_one": "Remove option {{count}}",
-  "remove-option_other": "Remove option {{count}}"
+  "remove-option_other": "Remove option {{count}}",
+  "audit-filter-action": "Eylem şununla başlar…",
+  "audit-filter-target": "Hedef türü",
+  "audit-filter-from": "Başlangıç",
+  "audit-filter-to": "Bitiş",
+  "audit-export-csv": "CSV dışa aktar",
+  "audit-clear-filters": "Filtreleri temizle",
+  "audit-no-match": "Bu filtrelerle eşleşen eylem yok."
 }

@@ -438,5 +438,12 @@
   "remove-option_few": "Remove option {{count}}",
   "remove-option_many": "Remove option {{count}}",
   "remove-option_one": "Remove option {{count}}",
-  "remove-option_other": "Remove option {{count}}"
+  "remove-option_other": "Remove option {{count}}",
+  "audit-filter-action": "Действие начинается с…",
+  "audit-filter-target": "Тип объекта",
+  "audit-filter-from": "С",
+  "audit-filter-to": "По",
+  "audit-export-csv": "Экспорт в CSV",
+  "audit-clear-filters": "Сбросить фильтры",
+  "audit-no-match": "Нет действий, подходящих под фильтры."
 }

@@ -416,5 +416,12 @@
   "badge-images_one": "{{count}} img",
   "badge-images_other": "{{count}} img",
   "remove-option_one": "Remove option {{count}}",
-  "remove-option_other": "Remove option {{count}}"
+  "remove-option_other": "Remove option {{count}}",
+  "audit-filter-action": "عمل اس سے شروع ہو…",
+  "audit-filter-target": "ہدف کی قسم",
+  "audit-filter-from": "سے",
+  "audit-filter-to": "تک",
+  "audit-export-csv": "CSV برآمد کریں",
+  "audit-clear-filters": "فلٹر صاف کریں",
+  "audit-no-match": "ان فلٹرز سے کوئی عمل میل نہیں کھاتا۔"
 }
