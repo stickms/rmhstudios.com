@@ -23,7 +23,7 @@ type InkButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const SIZES = {
-  sm: 'px-3 py-1.5 text-sm min-h-9',
+  sm: 'px-3 py-1.5 text-sm min-h-9 pointer-coarse:min-h-11',
   // 44px is the smallest reliable touch target, and this game is played with
   // thumbs on a phone more often than with a mouse.
   md: 'px-4 py-2 text-base min-h-11',

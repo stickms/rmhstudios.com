@@ -35,7 +35,10 @@ export function OrientationCard({ onDismiss }: OrientationCardProps) {
   return (
     <div
       className="app-hud pointer-events-none z-30 flex items-start justify-center-safe"
-      style={{ paddingTop: 'clamp(0.75rem, 4vmin, 2rem)' }}
+      // Portrait only, so the 16:9 stage is a letterboxed strip in the middle of
+      // the screen. The card starts below it: at the top it sat on the timer,
+      // objective count and pause button, which are the HUD.
+      style={{ paddingTop: 'max(clamp(0.75rem, 4vmin, 2rem), 66vh)' }}
       role="status"
     >
       <PaperCard
