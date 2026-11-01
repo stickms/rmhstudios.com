@@ -19,7 +19,7 @@
 
 import { prismaRead } from '@/lib/prisma.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
-import { parseQuery } from './parse';
+import { parseQuery, resolveSearchKinds } from './parse';
 import { fuzzyTerms, type FuzzyTerms } from './db.server';
 import { searchPeopleScored, personToHit, type ScoredPerson } from './people.server';
 import { searchPostsScored, postToHit, resolveCommunityId, type ScoredPost } from './posts.server';
@@ -287,13 +287,14 @@ export async function universalSearch(input: UniversalSearchInput): Promise<Sear
   const tab: SearchTab = input.tab ?? 'top';
   const anonymous = input.viewerId === null;
   const signedIn = !anonymous && input.signedIn !== false;
-  const kinds = new Set<SearchKind>(
-    SEARCH_TAB_KINDS[tab].filter((k) => !anonymous || ANONYMOUS_KINDS.has(k)),
-  );
-  const perKind = tab === 'top' ? TOP_PER_KIND : FOCUSED_PER_KIND;
-
   // Operators refine posts; the leftover free text drives every corpus.
   const parsed = parseQuery(input.query);
+  // `type:` overrides the tab; either way an anonymous visitor stays inside the
+  // anonymously-searchable corpora.
+  const kinds = new Set<SearchKind>(
+    resolveSearchKinds(SEARCH_TAB_KINDS[tab], parsed.types, (k) => !anonymous || ANONYMOUS_KINDS.has(k)),
+  );
+  const perKind = tab === 'top' && !parsed.types ? TOP_PER_KIND : FOCUSED_PER_KIND;
   const text = parsed.text || (parsed.operatorCount > 0 ? '' : input.query);
   const terms = fuzzyTerms(text);
 

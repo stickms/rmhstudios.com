@@ -3,15 +3,42 @@
  * docs/plans/2026-07-20-parity-qol-customization-design.md).
  *
  * Splits a raw query into free text + a bounded set of operators
- * (`from:@user`, `in:community`, `has:media`, `before:`/`after:`). Unknown
+ * (`from:@user`, `in:community`, `has:media`, `type:`, `before:`/`after:`). Unknown
  * operators degrade to plain text (never error). Client-safe + unit-tested; the
  * grammar mirrored here is shown to users in the cheatsheet.
  */
+import { SEARCH_KINDS, type SearchKind } from './types';
+
+/** What `type:` accepts → the corpus kinds it selects (singular, plural, and `places`). */
+const TYPE_ALIASES: Record<string, readonly SearchKind[]> = {
+  person: ['person'],
+  people: ['person'],
+  user: ['person'],
+  users: ['person'],
+  post: ['post'],
+  posts: ['post'],
+  build: ['build'],
+  builds: ['build'],
+  blog: ['blog'],
+  news: ['news'],
+  library: ['library'],
+  game: ['game'],
+  games: ['game'],
+  app: ['app'],
+  apps: ['app'],
+  page: ['page'],
+  pages: ['page'],
+  place: ['game', 'app', 'page'],
+  places: ['game', 'app', 'page'],
+};
+
 export interface ParsedQuery {
   text: string;
   from?: string; // handle (no '@')
   inCommunity?: string;
   hasMedia?: boolean;
+  /** Corpus kinds named by `type:` operators (union of all of them). */
+  types?: SearchKind[];
   before?: string; // YYYY-MM-DD
   after?: string; // YYYY-MM-DD
   /** How many operators were recognized (capped). */
@@ -49,6 +76,11 @@ export function parseQuery(raw: string): ParsedQuery {
     } else if (canAddOp && key === 'has' && value.toLowerCase() === 'media') {
       result.hasMedia = true;
       result.operatorCount++;
+    } else if (canAddOp && key === 'type' && TYPE_ALIASES[value.toLowerCase()]) {
+      const merged = new Set<SearchKind>(result.types ?? []);
+      for (const k of TYPE_ALIASES[value.toLowerCase()]!) merged.add(k);
+      result.types = SEARCH_KINDS.filter((k) => merged.has(k));
+      result.operatorCount++;
     } else if (canAddOp && key === 'before' && DATE_RE.test(value)) {
       result.before = value;
       result.operatorCount++;
@@ -63,4 +95,19 @@ export function parseQuery(raw: string): ParsedQuery {
 
   result.text = textParts.join(' ').trim();
   return result;
+}
+
+/**
+ * The corpus kinds a search should cover. With no `type:` operator that is the
+ * tab's kinds; with one, the operator wins over the tab (typing `type:post` while
+ * on the People tab means posts), still limited to what `allowed` permits (so an
+ * anonymous visitor cannot reach signed-in corpora by naming them).
+ */
+export function resolveSearchKinds(
+  tabKinds: readonly SearchKind[],
+  types: readonly SearchKind[] | undefined,
+  allowed: (kind: SearchKind) => boolean,
+): SearchKind[] {
+  const base = types && types.length > 0 ? types : tabKinds;
+  return base.filter(allowed);
 }

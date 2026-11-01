@@ -12,7 +12,13 @@ import { IconButton } from '@/components/ui/icon-button';
 import type { SavedSearchView } from '@/lib/search/saved';
 
 /** The search operators shown as copyable examples. */
-const OPERATOR_EXAMPLES = ['from:@user', 'has:media', 'before:2026-01-01', 'after:2025-01-01'] as const;
+const OPERATOR_EXAMPLES = [
+  'from:@user',
+  'has:media',
+  'type:post',
+  'before:2026-01-01',
+  'after:2025-01-01',
+] as const;
 
 /**
  * SavedSearches (§18) — save the current query (operators included) and re-run
