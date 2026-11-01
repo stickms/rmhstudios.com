@@ -1254,3 +1254,21 @@
     min-width: 44px;
   }
 }
+
+.kowloon-knockout .kk-net-notice {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    max-width: min(90vw, 560px);
+    padding: 10px 18px;
+    border-radius: var(--site-radius-sm);
+    background: rgba(10, 10, 14, 0.92);
+    border: 1px solid rgba(255, 204, 0, 0.5);
+    color: #ffcc00;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-align: center;
+    pointer-events: none;
+}

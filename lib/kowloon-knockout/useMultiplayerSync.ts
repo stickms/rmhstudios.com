@@ -12,7 +12,7 @@ import { useEffect } from 'react';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { networkClient, type ServerMessage } from '@/lib/kowloon-knockout/net/client';
 
-const FATAL = new Set(['Host left the room', 'Disconnected']);
+const FATAL = new Set(['Host left the room', 'Disconnected', 'Room closed']);
 
 export function useMultiplayerSync(): void {
     useEffect(() => {
@@ -44,13 +44,25 @@ export function useMultiplayerSync(): void {
 
         const onStart = (m: ServerMessage) => {
             if (m.type !== 'match_start') return;
+            store().setNetReconnecting(false);
+            useGameStore.setState({ offlineSeats: [] });
             store().setMatchResult(null);
             if (m.you === 0) store().startHostMatch(m.seats, m.mode, m.maxRounds, m.aiDifficulty, m.you);
             else store().startGuestMatch(m.seats, m.mode, m.you);
         };
 
+        const onConnection = (m: ServerMessage) => {
+            if (m.type === 'connection') store().setNetReconnecting(m.status === 'reconnecting');
+        };
+
+        const onPeer = (m: ServerMessage) => {
+            if (m.type === 'peer_status') store().setSeatOnline(m.seat, m.connected);
+        };
+
         const onError = (m: ServerMessage) => {
             if (m.type !== 'error') return;
+            store().setNetReconnecting(false);
+            useGameStore.setState({ offlineSeats: [] });
             store().setMpError(m.message);
             if (FATAL.has(m.message)) {
                 // Room is gone — drop back to the lobby browser.
@@ -64,11 +76,15 @@ export function useMultiplayerSync(): void {
         networkClient.on('lobby_update', onLobby);
         networkClient.on('match_start', onStart);
         networkClient.on('error', onError);
+        networkClient.on('connection', onConnection);
+        networkClient.on('peer_status', onPeer);
         return () => {
             networkClient.off('room_created', onRoomCreated);
             networkClient.off('lobby_update', onLobby);
             networkClient.off('match_start', onStart);
             networkClient.off('error', onError);
+            networkClient.off('connection', onConnection);
+            networkClient.off('peer_status', onPeer);
         };
     }, []);
 }

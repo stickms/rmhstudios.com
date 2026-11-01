@@ -43,14 +43,26 @@ export type ServerMessage =
     | { type: 'input'; seat: number; input: WireInput }
     | { type: 'snapshot'; data: Snapshot }
     | { type: 'player_left'; seat: number }
+    | { type: 'peer_status'; seat: number; connected: boolean }
+    | { type: 'connection'; status: 'reconnecting' | 'live' }
     | { type: 'error'; message: string };
 
 type MessageHandler = (msg: ServerMessage) => void;
 
-class NetworkClient {
+export class NetworkClient {
     private socket: Socket | null = null;
     private handlers = new Map<string, MessageHandler[]>();
     private _seat = 0;
+    /**
+     * What a reclaim needs. The server hands each seat a secret token with
+     * `lobby_update` / `match_start`; presenting it with the room code after a
+     * drop gets the same seat back (the hub holds seats for 15s mid-match).
+     */
+    private roomCode: string | null = null;
+    private resumeToken: string | null = null;
+    /** A match is running, so a drop is worth riding out rather than leaving. */
+    private inMatch = false;
+    private resuming = false;
 
     get seat(): number { return this._seat; }
     get connected(): boolean { return this.socket !== null && this.socket.connected; }
@@ -59,20 +71,65 @@ class NetworkClient {
         return new Promise((resolve, reject) => {
             if (this.socket?.connected) { resolve(); return; }
 
-            this.socket = io(url, { path: SOCKET_PATH, reconnection: false, timeout: 10000 });
-            this.socket.on('connect', () => resolve());
-            this.socket.on('connect_error', () => reject(new Error('Socket.io connection failed')));
+            // Reconnection is bounded (~8s of attempts, inside the hub's 15s seat hold)
+            // and only ever used to resume a running match; any other drop is
+            // surfaced as 'Disconnected' exactly as before.
+            const socket = io(url, {
+                path: SOCKET_PATH, timeout: 10000,
+                reconnection: true, reconnectionAttempts: 6, reconnectionDelay: 500, reconnectionDelayMax: 2000,
+            });
+            this.socket = socket;
+            let everConnected = false;
+            socket.on('connect', () => {
+                if (!everConnected) { everConnected = true; resolve(); return; }
+                if (this.resuming && this.roomCode && this.resumeToken) {
+                    socket.emit('kk:resume', { code: this.roomCode, token: this.resumeToken });
+                } else {
+                    this.fail('Disconnected');
+                }
+            });
+            socket.on('connect_error', () => { if (!everConnected) reject(new Error('Socket.io connection failed')); });
+            socket.io.on('reconnect_failed', () => this.fail('Disconnected'));
 
-            this.socket.on('kk:room_created', (d) => { this._seat = d.seat; this.dispatch({ type: 'room_created', code: d.code, seat: d.seat }); });
-            this.socket.on('kk:lobby_update', (d) => { this._seat = d.you; this.dispatch({ type: 'lobby_update', ...d }); });
+            this.socket.on('kk:room_created', (d) => { this._seat = d.seat; this.roomCode = d.code; this.dispatch({ type: 'room_created', code: d.code, seat: d.seat }); });
+            this.socket.on('kk:lobby_update', (d) => {
+                this._seat = d.you; this.roomCode = d.code; this.resumeToken = d.resumeToken ?? null;
+                this.inMatch = false; this.resuming = false;
+                this.dispatch({ type: 'lobby_update', ...d });
+            });
             this.socket.on('kk:lobby_list', (d) => this.dispatch({ type: 'lobby_list', lobbies: d.lobbies }));
-            this.socket.on('kk:match_start', (d) => { this._seat = d.you; this.dispatch({ type: 'match_start', ...d }); });
+            this.socket.on('kk:match_start', (d) => {
+                this._seat = d.you; this.resumeToken = d.resumeToken ?? null; this.inMatch = true;
+                this.dispatch({ type: 'match_start', ...d });
+            });
+            this.socket.on('kk:resumed', (d) => {
+                this._seat = d.you; this.resumeToken = d.resumeToken ?? this.resumeToken; this.inMatch = true; this.resuming = false;
+                this.dispatch({ type: 'connection', status: 'live' });
+            });
+            this.socket.on('kk:peer_status', (d) => this.dispatch({ type: 'peer_status', seat: d.seat, connected: d.connected }));
             this.socket.on('kk:input', (d) => this.dispatch({ type: 'input', seat: d.seat, input: d.input }));
             this.socket.on('kk:snapshot', (d) => this.dispatch({ type: 'snapshot', data: d }));
             this.socket.on('kk:player_left', (d) => this.dispatch({ type: 'player_left', seat: d.seat }));
-            this.socket.on('kk:error', (d) => this.dispatch({ type: 'error', message: d.message }));
-            this.socket.on('disconnect', () => this.dispatch({ type: 'error', message: 'Disconnected' }));
+            this.socket.on('kk:error', (d) => { this.inMatch = false; this.resuming = false; this.dispatch({ type: 'error', message: d.message }); });
+            this.socket.on('disconnect', (reason) => {
+                if (reason === 'io client disconnect') return; // we hung up on purpose
+                if (reason === 'io server disconnect') { this.fail('Disconnected'); return; } // kicked: socket.io will not retry
+                if (this.inMatch && this.roomCode && this.resumeToken) {
+                    this.resuming = true;
+                    this.dispatch({ type: 'connection', status: 'reconnecting' });
+                } else {
+                    this.fail('Disconnected');
+                }
+            });
         });
+    }
+
+    /** Give up on the connection: tell the UI, and stop socket.io retrying a seat we cannot reclaim. */
+    private fail(message: string): void {
+        this.inMatch = false;
+        this.resuming = false;
+        this.socket?.disconnect();
+        this.dispatch({ type: 'error', message });
     }
 
     private dispatch(msg: ServerMessage): void {
@@ -81,6 +138,10 @@ class NetworkClient {
     }
 
     disconnect(): void {
+        this.inMatch = false;
+        this.resuming = false;
+        this.roomCode = null;
+        this.resumeToken = null;
         if (this.socket) {
             this.socket.emit('kk:leave');
             this.socket.disconnect();

@@ -61,6 +61,12 @@ interface GameStore {
 
     mpError: string | null;
     setMpError: (e: string | null) => void;
+    /** Our own link is down and being retried (a match is running). */
+    netReconnecting: boolean;
+    setNetReconnecting: (v: boolean) => void;
+    /** Seats whose player's link is down; the hub holds the seat for a few seconds. */
+    offlineSeats: number[];
+    setSeatOnline: (seat: number, online: boolean) => void;
     clearLobbyRoom: () => void;
 
     startLocalMatch: () => void;
@@ -155,6 +161,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     mpError: null,
     setMpError: (mpError) => set({ mpError }),
+    netReconnecting: false,
+    setNetReconnecting: (netReconnecting) => set({ netReconnecting }),
+    offlineSeats: [],
+    setSeatOnline: (seat, online) =>
+        set((st) => ({
+            offlineSeats: online ? st.offlineSeats.filter((x) => x !== seat) : st.offlineSeats.includes(seat) ? st.offlineSeats : [...st.offlineSeats, seat],
+        })),
     clearLobbyRoom: () => set({ lobbySeats: [], roomCode: null }),
 
     startLocalMatch: () => {
