@@ -95,11 +95,11 @@ export default function PlayerBar() {
       <div
         // A floating capsule clear of the edge (the wrapper above insets it by the safe area): a bar
         // whose surface runs to the physical bottom is what iOS Safari extends into a flat band.
-        className="flex items-center gap-4 px-4 py-3 backdrop-blur-xl"
+        className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 backdrop-blur-xl"
         style={{ background: 'color-mix(in srgb, var(--app-bg) 85%, transparent)' }}
       >
         {/* Track info */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-center gap-3 min-w-0 basis-full sm:basis-0 sm:flex-1">
           {currentTrack?.albumArt ? (
             <img src={currentTrack.albumArt} alt="" className="w-12 h-12 rounded-(--app-radius-sm) object-cover shrink-0" />
           ) : (
@@ -165,7 +165,7 @@ export default function PlayerBar() {
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-1">
           <SleepTimerButton />
           <button
             onClick={() => setSearchOpen(!isSearchOpen)}
