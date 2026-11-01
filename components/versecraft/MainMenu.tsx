@@ -97,7 +97,7 @@ export function MainMenu() {
       <div className="relative z-10 min-h-[100dvh] flex flex-col items-center-safe justify-center-safe pl-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-10">
         {/* Title */}
         <motion.div className="text-center mb-8" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
-          <div className="text-[11px] tracking-[0.6em] uppercase mb-3" style={{ color: '#c4a35a', opacity: 0.7 }}>✦ poetry · romance · fate ✦</div>
+          <div className="text-[11px] tracking-[0.3em] sm:tracking-[0.6em] uppercase mb-3" style={{ color: '#c4a35a', opacity: 0.7 }}>✦ poetry · romance · fate ✦</div>
           {/* Fluid size, and no tracking below sm: at a fixed 60px with wide
               tracking the wordmark exceeded a 390px screen and the
               overflow-hidden wrapper cropped both ends ("ERSECRAF"). */}
