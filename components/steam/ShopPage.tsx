@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Link, useLocation } from '@tanstack/react-router';
+import { useLocation } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { KIND_LABELS, KIND_ORDER, RARITY_COLORS, type ShopItemKind } from '@/lib/shop/catalog';
+import { StoreNav } from './StoreNav';
 import { canBuy, visibleShopItems, type SteamShopItem } from './shop-view';
 
 interface ShopPageData {
@@ -15,8 +16,8 @@ interface ShopPageData {
 }
 
 /** What an item looks like in its card: its emoji, or its colour or gradient. */
-function Swatch({ item }: { item: SteamShopItem }) {
-  const { emoji, color, gradient } = item.data;
+export function Swatch({ data }: { data: { emoji?: string; color?: string; gradient?: string } }) {
+  const { emoji, color, gradient } = data;
   if (emoji) {
     return (
       <span className="stm-shop-swatch" aria-hidden>
@@ -90,6 +91,7 @@ export function ShopPage({ data }: { data: ShopPageData }) {
 
   return (
     <div className="stm-web">
+      <StoreNav />
       <div className="stm-shop">
         <header className="stm-shop-head">
           <h1 className="stm-web-title">{t('steam-shop-title', { defaultValue: 'Points shop' })}</h1>
@@ -127,7 +129,7 @@ export function ShopPage({ data }: { data: ShopPageData }) {
               const status = canBuy(item, coins, data.signedIn);
               return (
                 <li key={item.id} className="stm-web-card stm-shop-item" style={{ borderTop: `2px solid ${RARITY_COLORS[item.rarity]}` }}>
-                  <Swatch item={item} />
+                  <Swatch data={item.data} />
                   <div className="stm-shop-body">
                     <p className="stm-shop-name">{item.name}</p>
                     <p className="stm-muted stm-shop-meta">
@@ -176,11 +178,6 @@ export function ShopPage({ data }: { data: ShopPageData }) {
           </ul>
         )}
 
-        <p className="stm-muted">
-          <Link to="/store" search={{ tab: 'membership' }} className="stm-link">
-            {t('steam-shop-membership', { defaultValue: 'Membership and daily rewards' })}
-          </Link>
-        </p>
       </div>
     </div>
   );

@@ -2612,3 +2612,30 @@ html[dir='rtl'] .stm-drawer-panel {
   max-width: 360px;
   margin-bottom: 12px;
 }
+
+/* ─── Store pages: daily, marketplace, membership ─────────────────────────── */
+
+.stm-seller {
+  padding-inline: 0;
+}
+.stm-membership-price {
+  margin: 4px 0 0;
+  color: var(--stm-bright);
+  font-size: 22px;
+  font-weight: 300;
+}
+.stm-membership-features {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+.stm-membership-features li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.stm-shop > p {
+  margin: 0 0 16px;
+}

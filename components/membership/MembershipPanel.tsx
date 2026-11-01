@@ -16,11 +16,10 @@
  * drops into any positioned container. `returnPath` controls where Stripe
  * sends the viewer back to (and where the status banner is read from).
  */
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, ArrowUpRight, ArrowRight, X } from 'lucide-react';
 import type { Tier } from '@/lib/entitlements';
-import { authClient } from '@/lib/auth-client';
+import { useMembershipActions } from '@/components/membership/useMembershipActions';
 import { PinnedHero } from '@/components/feed/PinnedHero';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 import { Badge } from '@/components/ui/badge';
@@ -41,14 +40,14 @@ import type { MemberFeature } from '@/lib/entitlements/features';
  * a currency amount is not a translatable string, but the period suffix
  * ("/mo") is.
  */
-type Plan = {
+export type Plan = {
   tier: Tier;
   price: string;
   cta: 'current' | 'subscribe' | 'contact';
   featured?: boolean;
 };
 
-const PLANS: Plan[] = [
+export const PLANS: Plan[] = [
   { tier: 'free', price: '$0', cta: 'current' },
   { tier: 'starter', price: '$20', cta: 'subscribe' },
   { tier: 'pro', price: '$100', cta: 'subscribe', featured: true },
@@ -65,7 +64,7 @@ const PLANS: Plan[] = [
  * statically, so a computed key like `plan-${tier}-name` is invisible to it and
  * would never reach a translator.
  */
-function planCopy(t: (key: string, opts: { defaultValue: string }) => string) {
+export function planCopy(t: (key: string, opts: { defaultValue: string }) => string) {
   return {
     free: {
       name: t('plan-free-name', { defaultValue: 'Free' }),
@@ -143,54 +142,8 @@ export function MembershipPanel({
   const { t } = useTranslation('site');
   const signedOut = currentTier === null;
   const tier: Tier = currentTier ?? 'free';
-  const [busy, setBusy] = useState<string | null>(null);
-  const [status, setStatus] = useState<'success' | 'cancelled' | null>(null);
+  const { busy, status, setStatus, subscribe, manageBilling } = useMembershipActions(returnPath);
   const COPY = planCopy(t);
-
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get('status');
-    if (p === 'success' || p === 'cancelled') setStatus(p);
-  }, []);
-
-  async function subscribe(plan: 'starter' | 'pro') {
-    setBusy(plan);
-    try {
-      const result = await authClient.subscription.upgrade({
-        plan,
-        successUrl: `${returnPath}?status=success`,
-        cancelUrl: `${returnPath}?status=cancelled`,
-      });
-      if (result?.error) {
-        console.error('subscribe failed:', result.error);
-        return;
-      }
-      if (result?.data?.url && !result.data.redirect) {
-        window.location.href = result.data.url;
-      }
-    } catch (err) {
-      console.error('subscribe failed:', err);
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function manageBilling() {
-    setBusy('portal');
-    try {
-      const result = await authClient.subscription.billingPortal({ returnUrl: returnPath });
-      if (result?.error) {
-        console.error('manageBilling failed:', result.error);
-        return;
-      }
-      if (result?.data?.url && !result.data.redirect) {
-        window.location.href = result.data.url;
-      }
-    } catch (err) {
-      console.error('manageBilling failed:', err);
-    } finally {
-      setBusy(null);
-    }
-  }
 
   return (
     // No `overflow-hidden` on this section: it would establish a scroll

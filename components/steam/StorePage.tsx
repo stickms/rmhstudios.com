@@ -5,6 +5,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Search, Star, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { StoreCard, StoreData } from '@/lib/games/store-types';
+import { StoreNav } from './StoreNav';
 import { TitleArt } from './TitleArt';
 
 function Capsules({ items }: { items: StoreCard[] }) {
@@ -46,12 +47,10 @@ export function StorePage({ data }: { data: StoreData }) {
 
   return (
     <div className="stm-web">
+      <StoreNav />
       <div className="stm-web-single">
         <div className="stm-market-head">
           <h1 className="stm-web-title">{t('steam-nav-store', { defaultValue: 'Store' })}</h1>
-          <Link to="/games/shop" className="stm-link">
-            {t('steam-store-coin-shop', { defaultValue: 'Coin shop' })}
-          </Link>
         </div>
 
         <form
