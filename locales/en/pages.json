@@ -217,5 +217,6 @@
   "viewing-earlier-version": "Viewing an earlier version",
   "warming-up-the-model": "Warming up the model.",
   "welcome-back": "Welcome back",
-  "writing-the-code": "Writing the code."
+  "writing-the-code": "Writing the code.",
+  "blog-reading-time": "{{minutes}} min read"
 }

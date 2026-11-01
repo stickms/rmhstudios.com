@@ -217,5 +217,6 @@
   "warming-up-the-model": "Préchauffage du modèle.",
   "welcome-back": "Bon retour",
   "writing-the-code": "Rédaction du code.",
-  "post-view-on-rmh": "View on RMH Studios"
+  "post-view-on-rmh": "View on RMH Studios",
+  "blog-reading-time": "{{minutes}} min de lecture"
 }

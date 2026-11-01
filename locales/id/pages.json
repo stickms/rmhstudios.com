@@ -217,5 +217,6 @@
   "warming-up-the-model": "Memanaskan model.",
   "welcome-back": "Selamat datang kembali",
   "writing-the-code": "Menulis kode.",
-  "post-view-on-rmh": "View on RMH Studios"
+  "post-view-on-rmh": "View on RMH Studios",
+  "blog-reading-time": "{{minutes}} mnt baca"
 }

@@ -217,5 +217,6 @@
   "warming-up-the-model": "Разогреваем модель.",
   "welcome-back": "С возвращением",
   "writing-the-code": "Пишем код.",
-  "post-view-on-rmh": "View on RMH Studios"
+  "post-view-on-rmh": "View on RMH Studios",
+  "blog-reading-time": "{{minutes}} мин чтения"
 }
