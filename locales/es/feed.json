@@ -1558,5 +1558,6 @@
   "muted-import": "Importar",
   "muted-import-done": "Se importaron {{added}} palabras.",
   "muted-import-none": "No hay palabras nuevas para importar.",
-  "muted-import-failed": "No se pudo leer ese archivo."
+  "muted-import-failed": "No se pudo leer ese archivo.",
+  "message-edit-length": "{{used}}/{{max}}"
 }

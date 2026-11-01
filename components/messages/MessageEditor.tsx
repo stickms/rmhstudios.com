@@ -68,6 +68,14 @@ export function MessageEditor({
         <span className="mr-auto text-[11px] text-site-text-dim">
           {t('message-edit-hint', { defaultValue: 'Enter to save · Esc to cancel' })}
         </span>
+        {value.length >= MESSAGE_MAX_LENGTH * 0.9 ? (
+          <span
+            aria-live="polite"
+            className={`font-mono text-[11px] ${value.length >= MESSAGE_MAX_LENGTH ? 'text-site-danger' : 'text-site-text-muted'}`}
+          >
+            {t('message-edit-length', { defaultValue: '{{used}}/{{max}}', used: value.length, max: MESSAGE_MAX_LENGTH })}
+          </span>
+        ) : null}
         <Button
           variant="ghost"
           size="sm"

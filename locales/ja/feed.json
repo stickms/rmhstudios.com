@@ -1468,5 +1468,6 @@
   "muted-import": "インポート",
   "muted-import-done": "{{added}} 語をインポートしました。",
   "muted-import-none": "インポートする新しい語はありません。",
-  "muted-import-failed": "ファイルを読み込めませんでした。"
+  "muted-import-failed": "ファイルを読み込めませんでした。",
+  "message-edit-length": "{{used}}/{{max}}"
 }

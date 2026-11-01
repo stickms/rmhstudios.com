@@ -1513,5 +1513,6 @@
   "muted-import": "İçe aktar",
   "muted-import-done": "{{added}} sözcük içe aktarıldı.",
   "muted-import-none": "İçe aktarılacak yeni sözcük yok.",
-  "muted-import-failed": "Dosya okunamadı."
+  "muted-import-failed": "Dosya okunamadı.",
+  "message-edit-length": "{{used}}/{{max}}"
 }

@@ -1468,5 +1468,6 @@
   "muted-import": "Impor",
   "muted-import-done": "{{added}} kata diimpor.",
   "muted-import-none": "Tidak ada kata baru untuk diimpor.",
-  "muted-import-failed": "Tidak dapat membaca berkas itu."
+  "muted-import-failed": "Tidak dapat membaca berkas itu.",
+  "message-edit-length": "{{used}}/{{max}}"
 }
