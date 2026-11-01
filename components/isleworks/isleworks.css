@@ -667,6 +667,7 @@
 }
 
 .isw-title-tag {
+  margin-top: 10px;
   font-size: 14px;
   color: var(--isw-ink-soft);
   line-height: 1.5;
@@ -677,6 +678,16 @@
   gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+/* Touch players have no keyboard: the title card is the start button and nothing else. */
+@media (pointer: coarse) {
+  .isw-title-actions .isw-btn {
+    min-height: 44px;
+  }
+  .isw-title-card .isw-keys {
+    display: none;
+  }
 }
 
 .isw-keys {
