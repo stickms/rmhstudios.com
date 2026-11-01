@@ -20,6 +20,8 @@
   "claim-truth-hint": "The true total is highlighted.",
   "copy-code": "Copy the table code",
   "copy-failed": "Could not copy the code.",
+  "copy-invite-link": "Copiar enlace de invitación",
+  "copy-link-failed": "No se pudo copiar el enlace.",
   "deal": "Deal",
   "dealing-in": "Dealing in {{seconds}}…",
   "deck-left_one": "{{count}} cards left in the deck",

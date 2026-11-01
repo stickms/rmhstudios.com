@@ -39,5 +39,8 @@
   "sign-in-required-title": "This part needs an account",
   "try-again": "Erneut versuchen",
   "unexpected-error": "Ein unerwarteter Fehler ist aufgetreten.",
-  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…",
+  "webgl-unavailable-body": "{{gameName}} benötigt WebGL, und dieser Browser konnte es nicht starten. Probiere einen anderen Browser oder aktiviere die Hardwarebeschleunigung in den Browsereinstellungen.",
+  "webgl-unavailable-retry": "Erneut versuchen",
+  "webgl-unavailable-title": "3D-Grafik ist nicht verfügbar"
 }

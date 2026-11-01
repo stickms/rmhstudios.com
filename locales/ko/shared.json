@@ -39,5 +39,8 @@
   "sign-in-required-title": "This part needs an account",
   "try-again": "다시 시도",
   "unexpected-error": "예기치 않은 오류가 발생했습니다.",
-  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…",
+  "webgl-unavailable-body": "{{gameName}}에는 WebGL이 필요하지만 이 브라우저에서 시작할 수 없었습니다. 다른 브라우저를 사용하거나 브라우저 설정에서 하드웨어 가속을 켜 보세요.",
+  "webgl-unavailable-retry": "다시 시도",
+  "webgl-unavailable-title": "3D 그래픽을 사용할 수 없음"
 }

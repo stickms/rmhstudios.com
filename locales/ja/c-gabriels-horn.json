@@ -18,6 +18,8 @@
   "claim-truth-hint": "The true total is highlighted.",
   "copy-code": "Copy the table code",
   "copy-failed": "Could not copy the code.",
+  "copy-invite-link": "招待リンクをコピー",
+  "copy-link-failed": "リンクをコピーできませんでした。",
   "deal": "Deal",
   "dealing-in": "Dealing in {{seconds}}…",
   "deck-left_other": "{{count}} cards left in the deck",

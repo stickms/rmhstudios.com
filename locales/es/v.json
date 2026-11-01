@@ -12,6 +12,7 @@
   "open-page": "Open page",
   "pages-title": "Páginas",
   "prompt-aria-label": "Describe la página que quieres crear",
+  "prompt-heading": "Describe una página para generar",
   "prompt-placeholder": "¿A dónde quieres ir?",
   "search-aria-label": "Buscar páginas",
   "search-placeholder": "Buscar páginas..."

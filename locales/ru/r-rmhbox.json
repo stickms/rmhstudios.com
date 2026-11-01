@@ -32,6 +32,7 @@
   "player-count_few": "{{count}} players",
   "player-count_many": "{{count}} players",
   "player-count_other": "{{count}} игроков",
+  "player-count-of-max": "Игроки: {{count}}/{{max}}",
   "player-range": "{{minPlayers}}–{{maxPlayers}} игроков",
   "pts": "очк.",
   "public-lobbies": "Публичные лобби",
@@ -53,6 +54,6 @@
   "room-code": "Room code",
   "player-count-of-max_few": "{{count}}/{{max}} players",
   "player-count-of-max_many": "{{count}}/{{max}} players",
-  "player-count-of-max_one": "{{count}}/{{max}} players",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "player-count-of-max_one": "Игроки: {{count}}/{{max}}",
+  "player-count-of-max_other": "Игроки: {{count}}/{{max}}"
 }

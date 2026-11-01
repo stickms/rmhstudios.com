@@ -34,6 +34,7 @@
   "player-count_few": "{{count}} players",
   "player-count_many": "{{count}} players",
   "player-count_other": "{{count}} لاعب",
+  "player-count-of-max": "اللاعبون: {{count}}/{{max}}",
   "player-range": "{{minPlayers}}–{{maxPlayers}} لاعبًا",
   "pts": "pts",
   "public-lobbies": "اللوبيات العامة",
@@ -55,8 +56,8 @@
   "room-code": "Room code",
   "player-count-of-max_few": "{{count}}/{{max}} players",
   "player-count-of-max_many": "{{count}}/{{max}} players",
-  "player-count-of-max_one": "{{count}}/{{max}} players",
+  "player-count-of-max_one": "اللاعبون: {{count}}/{{max}}",
   "player-count-of-max_two": "{{count}}/{{max}} players",
   "player-count-of-max_zero": "{{count}}/{{max}} players",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "player-count-of-max_other": "اللاعبون: {{count}}/{{max}}"
 }

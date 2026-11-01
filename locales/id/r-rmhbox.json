@@ -29,6 +29,7 @@
   "pagination-previous": "Sebelumnya",
   "pagination-range": "{{from}}–{{to}} dari {{total}}",
   "player-count_other": "{{count}} pemain",
+  "player-count-of-max": "Pemain: {{count}}/{{max}}",
   "player-range": "{{minPlayers}}–{{maxPlayers}} pemain",
   "pts": "poin",
   "public-lobbies": "Lobi Publik",
@@ -48,5 +49,5 @@
   "winner-none": "Tidak ada",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "player-count-of-max_other": "Pemain: {{count}}/{{max}}"
 }

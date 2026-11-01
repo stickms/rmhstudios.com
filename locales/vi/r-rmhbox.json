@@ -29,6 +29,7 @@
   "pagination-previous": "Trước",
   "pagination-range": "{{from}}–{{to}} trong tổng số {{total}}",
   "player-count_other": "{{count}} người chơi",
+  "player-count-of-max": "Người chơi: {{count}}/{{max}}",
   "player-range": "{{minPlayers}}–{{maxPlayers}} người chơi",
   "pts": "điểm",
   "public-lobbies": "Sảnh Công khai",
@@ -48,5 +49,5 @@
   "winner-none": "Không có",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "player-count-of-max_other": "Người chơi: {{count}}/{{max}}"
 }

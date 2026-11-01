@@ -29,6 +29,7 @@
   "pagination-previous": "이전",
   "pagination-range": "{{from}}–{{to}} / {{total}}",
   "player-count_other": "플레이어 {{count}}명",
+  "player-count-of-max": "플레이어: {{count}}/{{max}}",
   "player-range": "플레이어 {{minPlayers}}–{{maxPlayers}}명",
   "pts": "점",
   "public-lobbies": "공개 로비",
@@ -48,5 +49,5 @@
   "winner-none": "없음",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "player-count-of-max_other": "플레이어: {{count}}/{{max}}"
 }

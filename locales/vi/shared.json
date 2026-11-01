@@ -39,5 +39,8 @@
   "sign-in-required-title": "This part needs an account",
   "try-again": "Thử lại",
   "unexpected-error": "Đã xảy ra lỗi không mong muốn.",
-  "waiting-for-peer": "Waiting for {{name}} to reconnect…"
+  "waiting-for-peer": "Waiting for {{name}} to reconnect…",
+  "webgl-unavailable-body": "{{gameName}} cần WebGL nhưng trình duyệt này không thể khởi chạy nó. Hãy thử trình duyệt khác hoặc bật tăng tốc phần cứng trong cài đặt trình duyệt.",
+  "webgl-unavailable-retry": "Thử lại",
+  "webgl-unavailable-title": "Đồ họa 3D không khả dụng"
 }
