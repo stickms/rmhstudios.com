@@ -65,7 +65,7 @@ export function HUD() {
         </div>
         {/* Current district readout */}
         {DISTRICTS[currentDistrict] && (
-          <div className="rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">
+          <div className="hidden sm:block rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">
             <div className="font-mono text-[11px] uppercase tracking-widest text-neutral-400">District</div>
             <div className="font-mono text-sm text-lime-300">{DISTRICTS[currentDistrict].name}</div>
           </div>
@@ -81,19 +81,19 @@ export function HUD() {
         <div className="pointer-events-auto flex gap-2">
           <button
             onClick={() => setActiveOverlay('journal')}
-            className="rounded border border-neutral-700 bg-neutral-800 px-2.5 py-1 font-mono text-xs text-neutral-200 hover:bg-neutral-700"
+            className="rounded border border-neutral-700 bg-neutral-800 min-h-11 px-3 py-1 font-mono text-xs [@media(pointer:fine)]:min-h-0 text-neutral-200 hover:bg-neutral-700"
           >
             Journal (J)
           </button>
           <button
             onClick={() => setActiveOverlay('menu')}
-            className="rounded border border-neutral-700 bg-neutral-800 px-2.5 py-1 font-mono text-xs text-neutral-200 hover:bg-neutral-700"
+            className="rounded border border-neutral-700 bg-neutral-800 min-h-11 px-3 py-1 font-mono text-xs [@media(pointer:fine)]:min-h-0 text-neutral-200 hover:bg-neutral-700"
           >
             Menu (M)
           </button>
           <button
             onClick={() => setActiveOverlay('map')}
-            className="rounded border border-neutral-700 bg-neutral-800 px-2.5 py-1 font-mono text-xs text-neutral-200 hover:bg-neutral-700"
+            className="rounded border border-neutral-700 bg-neutral-800 min-h-11 px-3 py-1 font-mono text-xs [@media(pointer:fine)]:min-h-0 text-neutral-200 hover:bg-neutral-700"
           >
             Map (N)
           </button>

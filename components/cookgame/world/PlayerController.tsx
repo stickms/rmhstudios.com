@@ -5,6 +5,7 @@ import { frameAlpha } from '@/lib/render/frame-alpha';
 import { RigidBody, CapsuleCollider, type RapierRigidBody } from '@react-three/rapier';
 import { Vector3 } from 'three';
 import { useCookgameStore } from '@/lib/cookgame/store';
+import { touchInput } from '@/lib/cookgame/touch-input';
 import Character from '@/components/cookgame/models/Character';
 
 const WALK_SPEED = 5;
@@ -26,7 +27,12 @@ export function PlayerController() {
     const up = (e: KeyboardEvent) => { keys.current[e.code] = false; };
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', up);
+    // A key released while the window was unfocused never fires keyup, which
+    // left the player walking on return.
+    const clear = () => { keys.current = {}; };
+    window.addEventListener('blur', clear);
     return () => {
+      window.removeEventListener('blur', clear);
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };
@@ -47,11 +53,16 @@ export function PlayerController() {
       if (k['KeyA'] || k['ArrowLeft']) x -= 1;
       if (k['KeyD'] || k['ArrowRight']) x += 1;
     }
-    const speed = k['ShiftLeft'] || k['ShiftRight'] ? SPRINT_SPEED : WALK_SPEED;
+    if (!overlayOpen && x === 0 && z === 0) {
+      x = touchInput.x;
+      z = touchInput.z;
+    }
+    const speed = k['ShiftLeft'] || k['ShiftRight'] || touchInput.sprint ? SPRINT_SPEED : WALK_SPEED;
     const len = Math.hypot(x, z);
     if (len > 0) {
-      x = (x / len) * speed;
-      z = (z / len) * speed;
+      const mag = Math.min(1, len); // analog stick: partial deflection walks slower
+      x = (x / len) * speed * mag;
+      z = (z / len) * speed * mag;
     }
     const vel = rb.linvel();
     // Wake the body only to move it. Waking it every frame kept it from ever

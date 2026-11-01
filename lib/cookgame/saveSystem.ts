@@ -143,6 +143,11 @@ export function saveGame(save: SaveV4): boolean {
 }
 
 export function loadGame(): SaveV4 | null {
-  if (typeof localStorage === 'undefined') return null;
-  return parseSave(localStorage.getItem(STORAGE_KEY));
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    return parseSave(localStorage.getItem(STORAGE_KEY));
+  } catch {
+    // Storage blocked (Safari private mode / site data off): start a new game.
+    return null;
+  }
 }
