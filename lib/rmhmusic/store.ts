@@ -55,6 +55,7 @@ export interface RmhMusicStore {
   isSearchOpen: boolean;
   isChatOpen: boolean;
   isGuessOpen: boolean;
+  isCommentsOpen: boolean;
 
   setConnectionStatus: (status: RmhMusicStore['connectionStatus']) => void;
   setPeersWaiting: (waiting: PeerWaitState | null) => void;
@@ -73,6 +74,7 @@ export interface RmhMusicStore {
   setSearchOpen: (open: boolean) => void;
   setChatOpen: (open: boolean) => void;
   setGuessOpen: (open: boolean) => void;
+  setCommentsOpen: (open: boolean) => void;
 
   addRoomToHistory: (entry: RoomHistoryEntry) => void;
 }
@@ -97,6 +99,7 @@ export const useRmhMusicStore = create<RmhMusicStore>()(
       isSearchOpen: false,
       isChatOpen: false,
       isGuessOpen: false,
+      isCommentsOpen: false,
 
       setConnectionStatus: (status) => set({ connectionStatus: status }),
       setPeersWaiting: (waiting) => set({ peersWaiting: waiting }),
@@ -143,6 +146,7 @@ export const useRmhMusicStore = create<RmhMusicStore>()(
       setSearchOpen: (open) => set({ isSearchOpen: open }),
       setChatOpen: (open) => set({ isChatOpen: open }),
       setGuessOpen: (open) => set({ isGuessOpen: open }),
+      setCommentsOpen: (open) => set({ isCommentsOpen: open }),
 
       addRoomToHistory: (entry) => {
         set((s) => {

@@ -523,6 +523,7 @@ model User {
   arcadeRivalOf              ArcadeRival[]                @relation("ArcadeRivalTarget")
   // P20 watch parties: F1 timed comments, F17 watch later, T5 commentary tracks
   rmhtubeTimedComments       RmhTubeTimedComment[]
+  rmhMusicTrackComments      RmhMusicTrackComment[]
   rmhtubeWatchLater          RmhTubeWatchLater[]
   rmhtubeCommentaryTracks    RmhTubeCommentaryTrack[]
   // P11 gifting: G1 birthdays, G2 advent, G3 gift exchange, G4 kudos, F2 mixtape exchange
@@ -3500,6 +3501,24 @@ model RmhMusicQueueItem {
 
   @@index([roomId, position])
   @@map("rmh_music_queue_item")
+}
+
+/// A short comment pinned to a moment in an RMHMusic track. Tracks are external
+/// Spotify results with no internal row, so the comment is keyed on the
+/// `spotifyUri` string the player and queue already carry.
+model RmhMusicTrackComment {
+  id         String   @id @default(cuid())
+  trackUri   String   @db.VarChar(256)
+  userId     String
+  positionMs Int
+  body       String   @db.VarChar(280)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([trackUri, positionMs])
+  @@index([userId, trackUri])
+  @@map("rmh_music_track_comment")
 }
 
 /// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.

@@ -9,6 +9,7 @@ import PlayerBar from '@/components/rmhmusic/PlayerBar';
 import SearchPanel from '@/components/rmhmusic/SearchPanel';
 import ChatPanel from '@/components/rmhmusic/ChatPanel';
 import GuessPanel from '@/components/rmhmusic/GuessPanel';
+import CommentsPanel from '@/components/rmhmusic/CommentsPanel';
 import RadioPanel from '@/components/rmhmusic/RadioPanel';
 
 export default function PlayerPage() {
@@ -104,6 +105,7 @@ export default function PlayerPage() {
       <SearchPanel onPlay={handlePlay} />
       <ChatPanel />
       <GuessPanel />
+      <CommentsPanel />
       <PlayerBar />
     </div>
   );

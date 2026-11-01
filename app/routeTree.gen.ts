@@ -681,6 +681,7 @@ import { Route as ApiRmhladderInterviewReportsRouteImport } from './routes/api/r
 import { Route as ApiRmhladderPrepRouteImport } from './routes/api/rmhladder/prep'
 import { Route as ApiRmhladderReferralsRouteImport } from './routes/api/rmhladder/referrals'
 import { Route as ApiRmhladderSearchesRouteImport } from './routes/api/rmhladder/searches'
+import { Route as ApiRmhmusicTrackCommentsRouteImport } from './routes/api/rmhmusic/track-comments'
 import { Route as ApiRmhtubeCommentaryRouteImport } from './routes/api/rmhtube/commentary'
 import { Route as ApiRmhtubeHeatRouteImport } from './routes/api/rmhtube/heat'
 import { Route as ApiRmhtubeOembedRouteImport } from './routes/api/rmhtube/oembed'
@@ -4771,6 +4772,12 @@ const ApiRmhladderSearchesRoute = ApiRmhladderSearchesRouteImport.update({
   path: '/api/rmhladder/searches',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRmhmusicTrackCommentsRoute =
+  ApiRmhmusicTrackCommentsRouteImport.update({
+    id: '/api/rmhmusic/track-comments',
+    path: '/api/rmhmusic/track-comments',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiRmhtubeCommentaryRoute = ApiRmhtubeCommentaryRouteImport.update({
   id: '/api/rmhtube/commentary',
   path: '/api/rmhtube/commentary',
@@ -9067,6 +9074,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/prep': typeof ApiRmhladderPrepRoute
   '/api/rmhladder/referrals': typeof ApiRmhladderReferralsRouteWithChildren
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
+  '/api/rmhmusic/track-comments': typeof ApiRmhmusicTrackCommentsRoute
   '/api/rmhtube/commentary': typeof ApiRmhtubeCommentaryRoute
   '/api/rmhtube/heat': typeof ApiRmhtubeHeatRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
@@ -10411,6 +10419,7 @@ export interface FileRoutesByTo {
   '/api/rmhladder/prep': typeof ApiRmhladderPrepRoute
   '/api/rmhladder/referrals': typeof ApiRmhladderReferralsRouteWithChildren
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
+  '/api/rmhmusic/track-comments': typeof ApiRmhmusicTrackCommentsRoute
   '/api/rmhtube/commentary': typeof ApiRmhtubeCommentaryRoute
   '/api/rmhtube/heat': typeof ApiRmhtubeHeatRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
@@ -11784,6 +11793,7 @@ export interface FileRoutesById {
   '/api/rmhladder/prep': typeof ApiRmhladderPrepRoute
   '/api/rmhladder/referrals': typeof ApiRmhladderReferralsRouteWithChildren
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
+  '/api/rmhmusic/track-comments': typeof ApiRmhmusicTrackCommentsRoute
   '/api/rmhtube/commentary': typeof ApiRmhtubeCommentaryRoute
   '/api/rmhtube/heat': typeof ApiRmhtubeHeatRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
@@ -13157,6 +13167,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/prep'
     | '/api/rmhladder/referrals'
     | '/api/rmhladder/searches'
+    | '/api/rmhmusic/track-comments'
     | '/api/rmhtube/commentary'
     | '/api/rmhtube/heat'
     | '/api/rmhtube/oembed'
@@ -14501,6 +14512,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/prep'
     | '/api/rmhladder/referrals'
     | '/api/rmhladder/searches'
+    | '/api/rmhmusic/track-comments'
     | '/api/rmhtube/commentary'
     | '/api/rmhtube/heat'
     | '/api/rmhtube/oembed'
@@ -15873,6 +15885,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/prep'
     | '/api/rmhladder/referrals'
     | '/api/rmhladder/searches'
+    | '/api/rmhmusic/track-comments'
     | '/api/rmhtube/commentary'
     | '/api/rmhtube/heat'
     | '/api/rmhtube/oembed'
@@ -17002,6 +17015,7 @@ export interface RootRouteChildren {
   ApiRmhladderPrepRoute: typeof ApiRmhladderPrepRoute
   ApiRmhladderReferralsRoute: typeof ApiRmhladderReferralsRouteWithChildren
   ApiRmhladderSearchesRoute: typeof ApiRmhladderSearchesRoute
+  ApiRmhmusicTrackCommentsRoute: typeof ApiRmhmusicTrackCommentsRoute
   ApiRmhtubeCommentaryRoute: typeof ApiRmhtubeCommentaryRoute
   ApiRmhtubeHeatRoute: typeof ApiRmhtubeHeatRoute
   ApiRmhtubeOembedRoute: typeof ApiRmhtubeOembedRoute
@@ -22214,6 +22228,13 @@ declare module '@tanstack/react-router' {
       path: '/api/rmhladder/searches'
       fullPath: '/api/rmhladder/searches'
       preLoaderRoute: typeof ApiRmhladderSearchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rmhmusic/track-comments': {
+      id: '/api/rmhmusic/track-comments'
+      path: '/api/rmhmusic/track-comments'
+      fullPath: '/api/rmhmusic/track-comments'
+      preLoaderRoute: typeof ApiRmhmusicTrackCommentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rmhtube/commentary': {
@@ -29753,6 +29774,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhladderPrepRoute: ApiRmhladderPrepRoute,
   ApiRmhladderReferralsRoute: ApiRmhladderReferralsRouteWithChildren,
   ApiRmhladderSearchesRoute: ApiRmhladderSearchesRoute,
+  ApiRmhmusicTrackCommentsRoute: ApiRmhmusicTrackCommentsRoute,
   ApiRmhtubeCommentaryRoute: ApiRmhtubeCommentaryRoute,
   ApiRmhtubeHeatRoute: ApiRmhtubeHeatRoute,
   ApiRmhtubeOembedRoute: ApiRmhtubeOembedRoute,

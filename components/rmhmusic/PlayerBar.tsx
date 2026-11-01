@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
-import { Play, Pause, SkipForward, Volume2, VolumeX, Search, Users, Music, Music2 } from 'lucide-react';
+import { Play, Pause, SkipForward, Volume2, VolumeX, Search, Users, Music, Music2, MessageSquareText } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';
 import { formatDuration } from '@/lib/rmhmusic/utils';
@@ -12,7 +12,7 @@ import { isTypingTarget } from '@/lib/shortcuts/registry';
 import { VOLUME_STEP, stepVolume } from '@/lib/rmhmusic/volume';
 
 export default function PlayerBar() {
-  const { currentTrack, playback, settings, isSearchOpen, isChatOpen, isGuessOpen, setSearchOpen, setChatOpen, setGuessOpen, updateSettings } = useRmhMusicStore();
+  const { currentTrack, playback, settings, isSearchOpen, isChatOpen, isGuessOpen, isCommentsOpen, setSearchOpen, setChatOpen, setGuessOpen, setCommentsOpen, updateSettings } = useRmhMusicStore();
   const { t } = useTranslation("c-rmhmusic");
   const { pause, resume, setVolume } = usePreviewPlayer();
   const [progress, setProgress] = useState(0);
@@ -175,19 +175,29 @@ export default function PlayerBar() {
             <Search className="w-4 h-4" />
           </button>
           <button
-            onClick={() => { setChatOpen(!isChatOpen); if (!isChatOpen) setGuessOpen(false); }}
+            onClick={() => { setChatOpen(!isChatOpen); if (!isChatOpen) { setGuessOpen(false); setCommentsOpen(false); } }}
             className="p-2 rounded-(--app-radius-sm) transition-colors"
             style={{ color: isChatOpen ? 'var(--app-accent)' : 'var(--app-text-muted)', background: isChatOpen ? 'color-mix(in srgb, var(--app-accent) 15%, transparent)' : 'transparent' }}
           >
             <Users className="w-4 h-4" />
           </button>
           <button
-            onClick={() => { setGuessOpen(!isGuessOpen); if (!isGuessOpen) setChatOpen(false); }}
+            onClick={() => { setGuessOpen(!isGuessOpen); if (!isGuessOpen) { setChatOpen(false); setCommentsOpen(false); } }}
             className="p-2 rounded-(--app-radius-sm) transition-colors"
             style={{ color: isGuessOpen ? 'var(--app-accent)' : 'var(--app-text-muted)', background: isGuessOpen ? 'color-mix(in srgb, var(--app-accent) 15%, transparent)' : 'transparent' }}
             title={t("guess-the-song", { defaultValue: "Guess the Song" })}
           >
             <Music2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => { setCommentsOpen(!isCommentsOpen); if (!isCommentsOpen) { setChatOpen(false); setGuessOpen(false); } }}
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-(--app-radius-sm) transition-colors"
+            style={{ color: isCommentsOpen ? 'var(--app-accent)' : 'var(--app-text-muted)', background: isCommentsOpen ? 'color-mix(in srgb, var(--app-accent) 15%, transparent)' : 'transparent' }}
+            title={t("track-comments", { defaultValue: "Comments" })}
+            aria-label={t("track-comments", { defaultValue: "Comments" })}
+            aria-pressed={isCommentsOpen}
+          >
+            <MessageSquareText className="w-4 h-4" />
           </button>
         </div>
       </div>
