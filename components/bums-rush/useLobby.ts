@@ -44,7 +44,12 @@ export interface LobbyBridge {
 
 export function useLobby(): LobbyBridge {
   const ref = useRef<BumsRushLobby | null>(null);
-  const [, setTick] = useState(0);
+  // The instance is also held in state so `subscribe` / `getSnapshot` change
+  // identity when it is created. `useSyncExternalStore` only re-subscribes when
+  // `subscribe` changes; with a stable callback the store created by the first
+  // `connect()` was never subscribed to, so a created/joined room never
+  // repainted the lobby screen.
+  const [instance, setInstance] = useState<BumsRushLobby | null>(null);
 
   useEffect(() => {
     return () => {
@@ -53,24 +58,20 @@ export function useLobby(): LobbyBridge {
     };
   }, []);
 
-  const subscribe = useCallback((onChange: () => void) => {
-    if (!ref.current) {
-      // Nothing to subscribe to yet. `connect()` bumps `setTick`, which
-      // re-runs this with a live instance.
-      return () => {};
-    }
-    return ref.current.subscribe(onChange);
-  }, []);
+  const subscribe = useCallback(
+    (onChange: () => void) => (instance ? instance.subscribe(onChange) : () => {}),
+    [instance],
+  );
 
-  const getSnapshot = useCallback(() => ref.current?.getState() ?? EMPTY_STATE, []);
+  const getSnapshot = useCallback(() => instance?.getState() ?? EMPTY_STATE, [instance]);
 
   const state = useSyncExternalStore(subscribe, getSnapshot, () => EMPTY_STATE);
 
   const connect = useCallback(async (identity: { name: string; cosmetics: Cosmetics }) => {
     if (!ref.current) {
       ref.current = new BumsRushLobby();
-      // Force `subscribe` to re-run now that there is something to subscribe to.
-      setTick((n) => n + 1);
+      // Re-run `subscribe` now that there is something to subscribe to.
+      setInstance(ref.current);
     }
     await ref.current.connect(identity);
     return ref.current;
@@ -80,5 +81,5 @@ export function useLobby(): LobbyBridge {
     ref.current?.leave();
   }, []);
 
-  return { lobby: ref.current, state, connect, leave };
+  return { lobby: instance, state, connect, leave };
 }
