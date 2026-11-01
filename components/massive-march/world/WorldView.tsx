@@ -46,6 +46,7 @@ export function WorldView() {
   const [locked, setLocked] = useState(false);
   const [charge, setCharge] = useState(0);
   const { quality, tier, dpr, downscale } = useRenderQuality();
+  const [glEpoch, setGlEpoch] = useState(0);
 
   const overlay = useMmStore((s) => s.overlay);
   const setOverlay = useMmStore((s) => s.setOverlay);
@@ -263,12 +264,27 @@ export function WorldView() {
       style={{ background: LAND.waterDeep, touchAction: 'none' }}
     >
       <Canvas
+        key={glEpoch}
         data-jelly-zone="playfield"
         shadows={quality.shadows}
         dpr={dpr}
         gl={{ antialias: quality.antialias, powerPreference: 'high-performance' }}
         camera={{ fov: useMmSettings.getState().fov, near: 0.1, far: CAMERA_FAR }}
         onPointerDown={grab}
+        onCreated={({ gl }) => {
+          // Mobile browsers drop the GL context when the tab is backgrounded or
+          // memory is tight. preventDefault() allows a restore; if none comes, rebuild
+          // the renderer rather than leave a frozen canvas.
+          const canvas = gl.domElement;
+          let timer: ReturnType<typeof setTimeout> | undefined;
+          canvas.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            timer = setTimeout(() => setGlEpoch((n) => n + 1), 2000);
+          });
+          canvas.addEventListener('webglcontextrestored', () => {
+            if (timer) clearTimeout(timer);
+          });
+        }}
       >
         <AdaptiveQuality onDownscale={downscale} />
         <Scene quality={quality} tier={tier} onInteract={performInteraction} />
