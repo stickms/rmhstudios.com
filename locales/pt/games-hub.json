@@ -34,5 +34,8 @@
   "write-review": "Write a review",
   "your-rating": "Your rating",
   "your-review": "Your review",
-  "guide-new-title": "New guide"
+  "guide-new-title": "New guide",
+  "reviews-sort": "Ordenar avaliações",
+  "sort-helpful": "Mais úteis",
+  "sort-recent": "Mais recentes"
 }
