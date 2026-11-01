@@ -99,13 +99,13 @@ export default function TokenGenerator() {
     <div className="space-y-6">
       {/* Generate New Token */}
       <div className="space-y-3">
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <input
             type="text"
             placeholder={t("token-name-placeholder", { defaultValue: "Token name (optional)" })}
             value={tokenName}
             onChange={(e) => setTokenName(e.target.value)}
-            className="flex-1 px-3 py-2 glass-inset rounded-site-sm text-site-text text-sm outline-none focus:border-site-border-bright transition-colors"
+            className="min-w-0 flex-1 basis-48 px-3 py-2 glass-inset rounded-site-sm text-site-text text-base sm:text-sm outline-none focus:border-site-border-bright transition-colors"
             maxLength={100}
           />
           <Button
