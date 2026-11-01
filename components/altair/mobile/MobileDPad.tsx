@@ -20,14 +20,24 @@ export default function MobileDPad({ onChange, side = 'left' }: MobileDPadProps)
     onChangeRef.current = onChange;
   }, [onChange]);
 
+  // Identifier of the finger that owns the stick. Without it, a second finger
+  // anywhere (e.g. tapping pause) became `touches[0]` and yanked the stick.
+  const activeTouchId = useRef<number | null>(null);
+
   const handleTouch = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
     const pad = padRef.current;
     const thumb = thumbRef.current;
     if (!pad || !thumb) return;
 
-    const touch = e.touches[0];
+    if (activeTouchId.current === null) {
+      activeTouchId.current = e.changedTouches[0]?.identifier ?? null;
+    }
+    let touch: React.Touch | undefined;
+    for (let i = 0; i < e.touches.length; i++) {
+      if (e.touches[i].identifier === activeTouchId.current) touch = e.touches[i];
+    }
     if (!touch) {
+      activeTouchId.current = null;
       onChangeRef.current(0, 0);
       thumb.style.transform = 'translate(0px, 0px)';
       return;
@@ -53,7 +63,12 @@ export default function MobileDPad({ onChange, side = 'left' }: MobileDPadProps)
     onChangeRef.current(dx, dy);
   }, []);
 
-  const handleEnd = useCallback(() => {
+  const handleEnd = useCallback((e: React.TouchEvent) => {
+    // Ignore other fingers lifting; only the stick's own finger releases it.
+    for (let i = 0; i < e.touches.length; i++) {
+      if (e.touches[i].identifier === activeTouchId.current) return;
+    }
+    activeTouchId.current = null;
     onChangeRef.current(0, 0);
     const thumb = thumbRef.current;
     if (thumb) thumb.style.transform = 'translate(0px, 0px)';
