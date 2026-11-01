@@ -38,7 +38,7 @@ class NDWMultiplayerClient {
     // ── Connection ──
 
     connect(): void {
-        if (this.socket?.connected) return;
+        if (this.socket?.connected || this.socket?.active) return;
 
         this.socket = io(SOCKET_URL, {
             path: '/socket/',
