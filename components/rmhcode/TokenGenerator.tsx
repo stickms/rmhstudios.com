@@ -147,7 +147,7 @@ export default function TokenGenerator() {
             <CopyButton value={newToken} label={t("copy-token-label", { defaultValue: "Copy token" })} variant="outline" className="shrink-0" />
           </div>
           <p className="text-xs text-site-text-dim mt-2">
-            {t("token-auth-instruction-pre", { defaultValue: "Run" })} <code className="text-site-accent">rmhcode login --token YOUR_TOKEN</code> {t("token-auth-instruction-post", { defaultValue: "to authenticate." })}
+            {t("token-auth-instruction-pre", { defaultValue: "Run" })} <code className="break-all text-site-accent">rmhcode login --token YOUR_TOKEN</code> {t("token-auth-instruction-post", { defaultValue: "to authenticate." })}
           </p>
         </div>
       )}
