@@ -1463,5 +1463,10 @@
   "muted-duration-month": "30 ngày",
   "activity-title": "Hoạt động đăng bài",
   "activity-summary": "Bài đăng trong {{weeks}} tuần qua: {{total}}",
-  "activity-streak": "Chuỗi hiện tại: {{current}} ngày · Dài nhất: {{longest}} ngày"
+  "activity-streak": "Chuỗi hiện tại: {{current}} ngày · Dài nhất: {{longest}} ngày",
+  "muted-export": "Xuất",
+  "muted-import": "Nhập",
+  "muted-import-done": "Đã nhập {{added}} từ.",
+  "muted-import-none": "Không có từ mới để nhập.",
+  "muted-import-failed": "Không thể đọc tệp đó."
 }

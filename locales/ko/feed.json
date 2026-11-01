@@ -1463,5 +1463,10 @@
   "muted-duration-month": "30일",
   "activity-title": "게시 활동",
   "activity-summary": "최근 {{weeks}}주간 게시물: {{total}}",
-  "activity-streak": "현재 연속 {{current}}일 · 최장 {{longest}}일"
+  "activity-streak": "현재 연속 {{current}}일 · 최장 {{longest}}일",
+  "muted-export": "내보내기",
+  "muted-import": "가져오기",
+  "muted-import-done": "{{added}}개 단어를 가져왔습니다.",
+  "muted-import-none": "가져올 새 단어가 없습니다.",
+  "muted-import-failed": "파일을 읽을 수 없습니다."
 }

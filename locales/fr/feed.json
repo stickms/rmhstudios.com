@@ -1553,5 +1553,10 @@
   "muted-duration-month": "30 jours",
   "activity-title": "Activité de publication",
   "activity-summary": "Publications des {{weeks}} dernières semaines : {{total}}",
-  "activity-streak": "Série actuelle : {{current}} jours · La plus longue : {{longest}} jours"
+  "activity-streak": "Série actuelle : {{current}} jours · La plus longue : {{longest}} jours",
+  "muted-export": "Exporter",
+  "muted-import": "Importer",
+  "muted-import-done": "{{added}} mots importés.",
+  "muted-import-none": "Aucun nouveau mot à importer.",
+  "muted-import-failed": "Impossible de lire ce fichier."
 }

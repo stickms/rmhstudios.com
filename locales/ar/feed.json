@@ -1688,5 +1688,10 @@
   "muted-duration-month": "30 يومًا",
   "activity-title": "نشاط النشر",
   "activity-summary": "المنشورات في آخر {{weeks}} أسبوعًا: {{total}}",
-  "activity-streak": "السلسلة الحالية: {{current}} يومًا · الأطول: {{longest}} يومًا"
+  "activity-streak": "السلسلة الحالية: {{current}} يومًا · الأطول: {{longest}} يومًا",
+  "muted-export": "تصدير",
+  "muted-import": "استيراد",
+  "muted-import-done": "تم استيراد {{added}} كلمة.",
+  "muted-import-none": "لا توجد كلمات جديدة للاستيراد.",
+  "muted-import-failed": "تعذّرت قراءة هذا الملف."
 }
