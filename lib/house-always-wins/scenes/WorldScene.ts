@@ -646,6 +646,11 @@ export class WorldScene implements Scene {
   private updatePromptAndInteract() {
     const pr = this.player.rect;
     const reach = this.padRect(pr, 10);
+    // Furniture (levers, save points, plaques, the table) is authored a tile or
+    // two above the floor in several rooms, so from the floor the 10px reach fell
+    // 2-6px short and the player had to jump and press E at the apex. Reach 28px
+    // further UP for those so standing on the floor is enough.
+    const reachUp = { x: reach.x, y: pr.y - 28, w: reach.w, h: reach.h + (reach.y - (pr.y - 28)) };
     this.prompt = null;
     // While locked (just left a dialogue), still show prompts but swallow the
     // stale keypress so we don't immediately re-open what we just closed.
@@ -689,13 +694,13 @@ export class WorldScene implements Scene {
     if (!acted)
       for (const e of this.ents) {
         if (e.taken) continue;
-        if (e.spec.kind === "lever" && rectIntersect(reach, this.padRect(e.rect, 4))) {
+        if (e.spec.kind === "lever" && rectIntersect(reachUp, this.padRect(e.rect, 4))) {
           this.prompt = "Press E — pull lever";
           if (Input.interact() && !acted) {
             acted = true;
             this.pullLever(e);
           }
-        } else if (e.spec.kind === "save" && rectIntersect(reach, this.padRect(e.rect, 6))) {
+        } else if (e.spec.kind === "save" && rectIntersect(reachUp, this.padRect(e.rect, 6))) {
           this.prompt = "Press E — save your progress";
           if (Input.interact() && !acted) {
             acted = true;
@@ -705,13 +710,13 @@ export class WorldScene implements Scene {
             SfxManager.play("save");
             this.engine.toast("Progress saved.", COLORS.save);
           }
-        } else if (e.spec.kind === "sign" && rectIntersect(reach, this.padRect(e.rect, 4))) {
+        } else if (e.spec.kind === "sign" && rectIntersect(reachUp, this.padRect(e.rect, 4))) {
           this.prompt = "Press E — read";
           if (Input.interact() && !acted) {
             acted = true;
             this.openSign(e.spec.text ?? "");
           }
-        } else if (e.spec.kind === "pokerTable" && rectIntersect(reach, this.padRect(e.rect, 14))) {
+        } else if (e.spec.kind === "pokerTable" && rectIntersect(reachUp, this.padRect(e.rect, 14))) {
           this.prompt = "Press E — sit down for five-card draw";
           if (Input.interact() && !acted) {
             acted = true;

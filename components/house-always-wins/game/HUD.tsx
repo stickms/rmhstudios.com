@@ -76,10 +76,10 @@ export function HUD({ areaLabel, prompt }: HUDProps) {
       </div>
 
       {/* Objective ribbon */}
-      <div className="pointer-events-none absolute top-16 left-1/2 z-10 -translate-x-1/2">
+      <div className="pointer-events-none absolute top-16 left-1/2 z-10 w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2">
         <div className="flex max-w-[520px] items-center gap-2 rounded-full border border-[#2a2520]/80 bg-black/55 px-4 py-1.5 backdrop-blur-sm">
           <Target className="h-3.5 w-3.5 shrink-0 text-[#d4a054]" />
-          <span className="font-mono text-[11px] leading-tight text-[#cabba0]">
+          <span className="min-w-0 truncate font-mono text-[11px] leading-tight text-[#cabba0]">
             {objective.text}
           </span>
         </div>
@@ -89,8 +89,8 @@ export function HUD({ areaLabel, prompt }: HUDProps) {
 
       {/* Interact prompt */}
       {prompt && (
-        <div className="pointer-events-none absolute bottom-24 left-1/2 z-10 -translate-x-1/2">
-          <div className="animate-pulse rounded bg-black/70 px-3 py-1 font-mono text-xs tracking-widest text-[#f0c674]">
+        <div className="pointer-events-none absolute bottom-24 left-1/2 z-10 w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2">
+          <div className="animate-pulse rounded text-center bg-black/70 px-3 py-1 font-mono text-xs tracking-widest text-[#f0c674]">
             {prompt}
           </div>
         </div>

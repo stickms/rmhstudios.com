@@ -235,7 +235,7 @@ export function PokerGame({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Player hand */}
-        <div className="mb-2 mt-6 font-mono text-[10px] tracking-widest text-[#6b6155] uppercase">
+        <div className="mb-6 mt-6 font-mono text-[10px] tracking-widest text-[#6b6155] uppercase">
           You {phase === "draw" && "— click cards to HOLD, then Draw"}
         </div>
         <div className="mb-2 flex min-h-[7rem] justify-center gap-2">
