@@ -5,6 +5,7 @@
 'use client';
 
 import { io, Socket } from 'socket.io-client';
+import { clientI18n } from '@/lib/i18n/instances';
 import { ensureTrailingSlash } from '@/lib/url';
 import { authClient } from '@/lib/auth-client';
 import { useRfsStore } from './store';
@@ -19,6 +20,13 @@ import type {
 } from './types';
 
 let socket: Socket | null = null;
+
+/**
+ * The code of the farm we are currently visiting (null on our own). Sent with
+ * HELLO on a reconnect so a visitor who drops comes back to the farm they were
+ * in rather than to their own.
+ */
+let visitingCode: string | null = null;
 
 export async function connect(): Promise<Socket> {
     if (socket?.connected) return socket;
@@ -63,7 +71,7 @@ function bind(s: Socket): void {
 
     s.on('connect', () => {
         store().setConnection('connected');
-        s.emit(C2S.HELLO);
+        s.emit(C2S.HELLO, visitingCode ? { resume: visitingCode } : undefined);
     });
 
     s.on('disconnect', (reason) => {
@@ -78,12 +86,30 @@ function bind(s: Socket): void {
         store().setConnection('error');
     });
 
-    s.on(S2C.WELCOME, (w: Welcome) => store().applyWelcome(w));
+    s.on(S2C.WELCOME, (w: Welcome) => {
+        store().applyWelcome(w);
+        if (w.resume === 'ok') {
+            store().pushToast(
+                clientI18n.t('farm-resumed', { ns: 'c-game', defaultValue: 'Reconnected. You are back on the farm you were visiting.' }),
+                'success',
+            );
+        } else if (w.resume === 'failed') {
+            visitingCode = null;
+            store().pushToast(
+                clientI18n.t('farm-resume-failed', {
+                    ns: 'c-game',
+                    defaultValue: 'Reconnected, but you can no longer visit that farm. You are on your own farm.',
+                }),
+                'info',
+            );
+        }
+    });
 
     s.on(S2C.FARM_STATE, (f: FarmState) => {
         const st = store();
         const wasFarmId = st.farm?.id;
         st.applyFarmState(f);
+        visitingCode = st.welcome && f.id !== st.welcome.userId ? f.code : null;
         // landing in someone else's farm: remember it and jump into the game
         if (st.welcome && f.id !== st.welcome.userId) {
             const host = st.members?.members.find((m) => m.isHost)?.name ?? 'Farmer';
@@ -141,6 +167,7 @@ export function getSocket(): Socket | null {
 }
 
 export function disconnect(): void {
+    visitingCode = null;
     if (socket) {
         socket.removeAllListeners();
         socket.disconnect();
