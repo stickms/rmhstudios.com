@@ -40,6 +40,7 @@ import { ChatPlusHost } from'@/components/chat-plus/ChatPlusHost';
 import { ChatSystemLine } from'@/components/chat-plus/ChatSystemLine';
 import { ChatRichBody } from'@/components/chat-plus/ChatRichBody';
 import { ChecklistComposer } from'@/components/chat-plus/ChecklistComposer';
+import { ComposerLengthCounter } from '@/components/messages/ComposerLengthCounter';
 import { MessageBadges, ThreadChip } from'@/components/chat-plus/MessageBadges';
 import { GroupMessageMenu } from'@/components/chat-plus/MessagePlusItems';
 import { useSlashCommands } from'@/components/chat-plus/useSlashCommands';
@@ -793,6 +794,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  maxLength={2000}
  className="max-h-32 w-full resize-none rounded-site glass-inset px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
+ <ComposerLengthCounter used={input.length} />
  </div>
  <Button variant="accent"size="sm"disabled={!canSend} onClick={send} className="h-9">
  <Send className="h-4 w-4"/>

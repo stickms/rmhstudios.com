@@ -38,6 +38,7 @@ import { subscribeMessageStream } from '@/lib/useUnreadCount';
 import { yieldToMain } from '@/lib/scheduler';
 import { MessageActions } from '@/components/messages/MessageActions';
 import { MessageEditor } from '@/components/messages/MessageEditor';
+import { ComposerLengthCounter } from '@/components/messages/ComposerLengthCounter';
 import { DeletedMessage } from '@/components/messages/DeletedMessage';
 import { VoiceComposer, type SentVoiceMessage } from '@/components/voice/VoiceComposer';
 import { VoicePlayer } from '@/components/voice/VoicePlayer';
@@ -1535,6 +1536,7 @@ export function ConversationView({
                 />
                 {shortcodes.menu}
                 {slash.popover}
+                <ComposerLengthCounter used={input.length} />
               </div>
               <ChecklistComposer chat={chatRef} onPosted={appendPosted} disabled={sending} />
               <EmojiPickerButton
