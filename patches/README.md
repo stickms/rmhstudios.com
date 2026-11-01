@@ -30,3 +30,13 @@ both runtime formats and remove this patch and the scoped override only after
 the runtime regression tests and `pnpm audit --prod --audit-level=high` pass.
 Regenerate changes using `pnpm patch` / `pnpm patch-commit`; do not edit installed
 node_modules in place or replace the SDK's v3 runtime with the v4 API.
+
+# drei Html: deferred root unmount
+
+`@react-three/drei@10.7.9` `Html` mounts its DOM content in its own `ReactDOM.createRoot` and
+unmounted it synchronously in a layout-effect cleanup. R3F runs that cleanup inside react-dom's
+commit whenever a `Canvas` (or the Html's parent) unmounts, so React logged "Attempted to
+synchronously unmount a root while React was already rendering" (seen on RMH Farming Sim and
+Kowloon Knockout). The patch defers the unmount to a microtask and lets a re-run of the effect
+(StrictMode) adopt the pending root instead of calling `createRoot` on the same container twice.
+Drop the patch once upstream does the same.
