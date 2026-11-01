@@ -26,9 +26,11 @@
 /* ─── Light ──────────────────────────────────────────────────────── */
 
 .rmhbox-theme.app-light {
-  --app-accent: #4a8aba;
+  /* #3a78a4 under white ink is 4.7:1; the earlier #4a8aba was 3.6:1 on every
+     primary button in the light theme. */
+  --app-accent: #3a78a4;
   --app-accent-fg: #ffffff;
-  --app-accent-hover: #3d7aa8;
+  --app-accent-hover: #2f6a94;
   --app-rare: #9364ba;
 }
 

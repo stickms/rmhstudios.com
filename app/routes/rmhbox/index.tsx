@@ -120,7 +120,7 @@ function RMHboxLanding() {
   }, []);
 
   const connected = connectionStatus === 'connected';
-  const card = 'flex flex-col gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) px-4 py-4 md:px-6 md:py-5';
+  const card = 'flex min-w-0 flex-col gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) px-4 py-4 md:px-6 md:py-5';
   const primaryBtn =
     'rounded-(--app-radius-sm) bg-(--app-accent) px-6 py-3 font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover) disabled:cursor-not-allowed disabled:opacity-50';
 
@@ -189,7 +189,7 @@ function RMHboxLanding() {
             <button
               type="button"
               onClick={handleBrowse}
-              className="rounded-(--app-radius-sm) bg-(--app-surface-hover) px-3 py-2 text-sm text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+              className="rounded-(--app-radius-sm) bg-(--app-surface-hover) px-3 py-2 pointer-coarse:min-h-11 text-sm text-(--app-text-muted) transition-colors hover:text-(--app-text)"
             >
               {t("refresh", { defaultValue: "Refresh" })}
             </button>
