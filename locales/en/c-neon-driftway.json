@@ -6,6 +6,8 @@
   "brake": "Brake",
   "close-calls": "Close Calls",
   "code-label": "Code:",
+  "context-lost": "The browser reset the graphics. They should come back on their own.",
+  "context-lost-reload": "Reload",
   "continue-endless": "Continue Endless",
   "copy-code": "Copy lobby code",
   "copy-invite-link": "Copy invite link",

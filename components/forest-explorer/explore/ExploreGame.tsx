@@ -1,5 +1,6 @@
 'use client';
 
+import { WebGLUnavailable, useWebGLSupport } from '@/components/shared/WebGLUnavailable';
 import { Canvas } from '@react-three/fiber';
 import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,12 +13,18 @@ import { markGamePlaying } from '@/lib/game-capabilities';
 import AdaptiveQuality from '@/components/render/AdaptiveQuality';
 import { ExploreScene } from './ExploreScene';
 import { GardenWorldsCard, GardenWorldsLoader } from './GardenWorlds';
+import { TouchControls, type TouchAction } from '../shared/TouchControls';
+import { usesTouchControls } from '../shared/touchInput';
 
 export function ExploreGame() {
     const [locked, setLocked] = useState(false);
     const [mode, setMode] = useState<TimeOfDay>('day');
     const [flashlightOn, setFlashlightOn] = useState(false);
     const night = mode === 'night';
+    const webgl = useWebGLSupport();
+    // Phones and tablets cannot pointer-lock: they walk with on-screen controls.
+    const [touch, setTouch] = useState(false);
+    useEffect(() => setTouch(usesTouchControls()), []);
 
     const { t } = useTranslation("c-forest-explorer");
     const { muted, toggleMute, volume, setVolume } = useForestAudio(mode, locked);
@@ -47,6 +54,8 @@ export function ExploreGame() {
 
     useEffect(() => { if (!night) setFlashlightOn(false); }, [night]);
 
+    if (!webgl) return <WebGLUnavailable gameName="Forest Explorer" />;
+
     return (
         <div className="w-full h-full relative select-none" style={{ touchAction: 'none' }}>
             <GardenWorldsLoader />
@@ -68,8 +77,20 @@ export function ExploreGame() {
                     night={night}
                     flashlightOn={flashlightOn}
                     locked={locked}
+                    touch={touch}
                 />
             </Canvas>
+
+            {touch && locked && (
+                <TouchControls
+                    actions={[
+                        { id: 'plant', code: 'KeyG', label: t('touch-plant', { defaultValue: 'Plant' }), ariaLabel: t('touch-plant-aria', { defaultValue: 'Plant a seed' }) },
+                        { id: 'water', code: 'KeyE', label: t('touch-water', { defaultValue: 'Water' }), ariaLabel: t('touch-water-aria', { defaultValue: 'Water plants' }) },
+                        ...(night ? [{ id: 'light', code: 'KeyF', label: '🔦', ariaLabel: t('touch-flashlight', { defaultValue: 'Flashlight' }) }] : []),
+                    ] satisfies TouchAction[]}
+                    onPause={() => setLocked(false)}
+                />
+            )}
 
             {!locked && (
                 <div className="app-safe-pad absolute inset-0 flex items-center-safe justify-center-safe overflow-y-auto bg-black/55 backdrop-blur-sm">
@@ -104,6 +125,9 @@ export function ExploreGame() {
                         </div>
 
                         <div className="pt-1 space-y-1 text-xs text-zinc-400">
+                            {touch ? (
+                                <p>{t("hint-touch", { defaultValue: "Left thumb — walk · Right thumb — look · Use the buttons to jump, plant and water" })}</p>
+                            ) : (<>
                             <p>
                                 <span className="text-zinc-200">WASD</span>{t("hint-walk", { defaultValue: " — walk" })} &nbsp;·&nbsp;{' '}
                                 <span className="text-zinc-200">Shift</span>{t("hint-run", { defaultValue: " — run" })} &nbsp;·&nbsp;{' '}
@@ -117,6 +141,7 @@ export function ExploreGame() {
                                 <span className="text-green-300">G</span>{t("hint-plant", { defaultValue: " — plant a seed" })} &nbsp;·&nbsp;{' '}
                                 <span className="text-green-300">E</span>{t("hint-water", { defaultValue: " — water plants" })}
                             </p>
+                        </>)}
                         </div>
 
                         {plants.length > 0 && (
@@ -154,6 +179,10 @@ export function ExploreGame() {
                         <button
                             className="mt-2 w-full py-2.5 bg-green-800 hover:bg-green-700 active:bg-green-900 text-green-100 rounded-xl font-medium transition-colors text-sm cursor-pointer"
                             onClick={() => {
+                                if (touch) {
+                                    setLocked(true);
+                                    return;
+                                }
                                 const canvas = document.querySelector('canvas');
                                 canvas?.click();
                             }}
@@ -221,7 +250,7 @@ export function ExploreGame() {
                 </div>
             )}
 
-            {locked && (
+            {locked && !touch && (
                 // `whitespace-nowrap` on a ~70-character keybind list ran off both
                 // edges of any window narrower than about 560px, with no way to
                 // scroll to the rest. It wraps and centres instead.

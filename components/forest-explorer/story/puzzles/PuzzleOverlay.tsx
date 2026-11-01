@@ -1,5 +1,6 @@
 'use client';
 
+import { safeRequestPointerLock } from '../../shared/touchInput';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStoryStore } from '@/lib/forest-explorer/store';
@@ -32,7 +33,7 @@ export function PuzzleOverlay() {
                 e.preventDefault();
                 closePuzzle();
                 // Re-engage pointer lock while keydown gesture is still active
-                document.querySelector('canvas')?.requestPointerLock();
+                safeRequestPointerLock();
             }
         };
         window.addEventListener('keydown', fn);

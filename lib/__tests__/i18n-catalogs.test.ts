@@ -84,6 +84,8 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
+  // Touch controls / context recovery / WebGL fallback (games audit). Remove when translate runs.
+  shared: ['webgl-unavailable-body', 'webgl-unavailable-retry', 'webgl-unavailable-title'],
   // TF2 loadout builder rules (stock loadout, game-rule warnings, unlimited cosmetics) and the AI
   // assistants. English-only until the translate workflow runs on merge; remove entries with it.
   'c-tf2-hud': [
@@ -652,7 +654,14 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // not available in this environment. Runtime falls back to English per key.
   'c-gabriels-horn': ['copy-invite-link', 'copy-link-failed'],
   'c-kowloon-knockout': ['copy-link', 'punches-game-view'],
-  'c-laundry-sort': ['copy-invite-link', 'copy-link-failed', 'link-copied'],
+  'c-laundry-sort': [
+    'copy-invite-link',
+    'copy-link-failed',
+    'link-copied',
+    'leave-room',
+    'reload-page',
+    'waiting-timeout',
+  ],
   'c-massive-march': ['copy-link', 'talking-hud'],
   'c-neon-driftway': [
     'copy-code',
@@ -667,6 +676,8 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'ghost-top-label',
     'paused-photo-hint',
     'photo-mode',
+    'context-lost',
+    'context-lost-reload',
   ],
   'c-rmhbox': [
     'copy-invite-link',
@@ -1596,17 +1607,9 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'wardrobe.sub',
     'wardrobe.title',
   ],
-  'c-economy': [
-    'tip-invalid',
-  ],
-  'c-layout': [
-    'hide',
-    'sidebar-reorder-hint',
-    'unhide',
-  ],
-  'c-moderation': [
-    'toast-invalid',
-  ],
+  'c-economy': ['tip-invalid'],
+  'c-layout': ['hide', 'sidebar-reorder-hint', 'unhide'],
+  'c-moderation': ['toast-invalid'],
   'c-profile-modules': [
     'lamp-cleared_one',
     'lamp-cleared_other',
@@ -1701,7 +1704,25 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'kills-game-hud',
   ],
   'c-cursed-logic': ['next-round-cursed-logic-game'],
-  'c-forest-explorer': ['flashlight-off-explore-game', 'flashlight-on-explore-game'],
+  'c-forest-explorer': [
+    'flashlight-off-explore-game',
+    'flashlight-on-explore-game',
+    'hint-touch',
+    'touch-flashlight',
+    'touch-interact',
+    'touch-interact-aria',
+    'touch-journal',
+    'touch-journal-aria',
+    'touch-jump',
+    'touch-jump-short',
+    'touch-pause',
+    'touch-plant',
+    'touch-plant-aria',
+    'touch-run',
+    'touch-run-short',
+    'touch-water',
+    'touch-water-aria',
+  ],
   'c-library': ['status-analyzing-upload-modal'],
   'c-lists': ['error-add-to-list-sheet'],
   'c-rmh-capital': [
@@ -1832,6 +1853,8 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
     'photo-mode',
     'photo-mode-key',
+    'context-lost',
+    'context-lost-reload',
   ],
 };
 

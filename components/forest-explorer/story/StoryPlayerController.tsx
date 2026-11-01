@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useMemo } from 'react';
+import { touchInput } from '../shared/touchInput';
 import { useFrame, useThree } from '@react-three/fiber';
 import { frameAlpha } from '@/lib/render/frame-alpha';
 import { Vector2, Vector3, Euler } from 'three';
@@ -172,9 +173,13 @@ export function StoryPlayer() {
 
         window.addEventListener('keydown', down);
         window.addEventListener('keyup', up);
+        // A key held while the window loses focus never sends its keyup.
+        const clear = () => { keys.current = {}; };
+        window.addEventListener('blur', clear);
         return () => {
             window.removeEventListener('keydown', down);
             window.removeEventListener('keyup', up);
+            window.removeEventListener('blur', clear);
         };
     }, [setFlashlight, toggleJournal, openPuzzle, discoverEntry, visitLandmark]);
 
@@ -189,8 +194,14 @@ export function StoryPlayer() {
         if (k['KeyA'] || k['ArrowLeft'])  input.x -= 1;
         if (k['KeyD'] || k['ArrowRight']) input.x += 1;
 
-        const speed = (k['ShiftLeft'] || k['ShiftRight']) ? 9 : 5;
-        if (input.lengthSq() > 0) input.normalize().multiplyScalar(speed);
+        const speed = (k['ShiftLeft'] || k['ShiftRight'] || touchInput.run) ? 9 : 5;
+        if (touchInput.moveX !== 0 || touchInput.moveY !== 0) {
+            // Analog stick: magnitude is the throttle, capped at 1.
+            input.set(touchInput.moveX, touchInput.moveY);
+            const mag = input.length();
+            if (mag > 1) input.divideScalar(mag);
+            input.multiplyScalar(speed);
+        } else if (input.lengthSq() > 0) input.normalize().multiplyScalar(speed);
         localVel.current.lerp(input, frameAlpha(0.15, delta));
 
         const camForward = scratch.camForward;
