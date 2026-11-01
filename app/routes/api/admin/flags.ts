@@ -4,6 +4,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { FLAG_KEY_PATTERN } from '@/lib/flags/evaluate';
 import { invalidateFlags } from '@/lib/flags/flags.server';
+import { logAdminAction } from '@/lib/admin-audit.server';
 
 const upsertSchema = z.object({
   key: z.string().regex(FLAG_KEY_PATTERN),
@@ -35,14 +36,20 @@ export const Route = createFileRoute('/api/admin/flags')({
             update: { ...body, updatedBy: userId },
           });
           invalidateFlags();
+          await logAdminAction(userId, 'flag.upsert', {
+            targetType: 'feature_flag',
+            targetId: body.key,
+            detail: `${body.enabled ? 'on' : 'off'} · ${body.rolloutPercent}%`,
+          });
           return Response.json({ flag });
         },
       ),
       DELETE: defineHandler(
         { auth: 'admin', rateLimit: 'write', body: deleteSchema },
-        async ({ body }) => {
+        async ({ userId, body }) => {
           await prisma.featureFlag.deleteMany({ where: { key: body.key } });
           invalidateFlags();
+          await logAdminAction(userId, 'flag.delete', { targetType: 'feature_flag', targetId: body.key });
           return Response.json({ ok: true });
         },
       ),
