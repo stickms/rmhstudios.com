@@ -75,7 +75,12 @@ export async function connectHorn(): Promise<Socket> {
     return client.socket;
   }
 
-  const session = await authClient.getSession();
+  // A hung session fetch (flaky mobile network) must fail, not leave the menu
+  // on "Connecting…" forever.
+  const session = await Promise.race([
+    authClient.getSession(),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 12000)),
+  ]);
   if (!session?.data?.session?.token) {
     store().setConnection('error');
     throw new Error('Not authenticated');
@@ -179,11 +184,16 @@ function registerHandlers(socket: Socket): void {
     // mean the seat is gone for good — the grace window expired, or the table
     // did. Without this the player sits on a frozen table forever, looking at a
     // state nobody is going to update.
-    if ((code === 'game-in-progress' || code === 'lobby-not-found') && s.screen === 'table') {
+    if (code === 'game-in-progress' || code === 'lobby-not-found') {
+      // Forget the code whatever screen we are on, or every reconnect re-joins
+      // the dead table and re-raises this error. A lobby that vanished under us
+      // also goes back to the menu rather than sitting frozen.
       rememberCode(null);
-      s.setLobby(null);
-      s.setView(null);
-      s.setScreen('menu');
+      if (s.screen === 'table' || s.screen === 'lobby') {
+        s.setLobby(null);
+        s.setView(null);
+        s.setScreen('menu');
+      }
     }
     s.setError(code);
   });

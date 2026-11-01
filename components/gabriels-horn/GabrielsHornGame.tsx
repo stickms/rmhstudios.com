@@ -137,6 +137,15 @@ export function GabrielsHornGame() {
     if (error) setResuming(false);
   }, [error]);
 
+  // Never trap the player on the "returning" screen: if the server answers
+  // neither with a table nor an error (dropped packet, hub restarting), give
+  // up after a while and show the menu.
+  useEffect(() => {
+    if (!resuming) return;
+    const timer = window.setTimeout(() => setResuming(false), 12000);
+    return () => window.clearTimeout(timer);
+  }, [resuming]);
+
   // ── Errors ────────────────────────────────────────────────────────────────
 
   useEffect(() => {

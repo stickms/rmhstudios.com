@@ -11,9 +11,9 @@
 
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Check, Copy, Crown, Link2, LogOut, Play, RefreshCw, UserX } from 'lucide-react';
-import { useState } from 'react';
 import { toast } from 'sonner';
 import { useLobbyLink } from '@/hooks/useLobbyLink';
+import { useClipboard } from '@/hooks/useClipboard';
 import { MAX_PLAYERS, MIN_PLAYERS } from '@/lib/gabriels-horn/constants';
 import { useHornStore } from '@/lib/gabriels-horn/store';
 import { hornNet } from '@/lib/gabriels-horn/net/client';
@@ -81,7 +81,9 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
   const selfSocketId = useHornStore((s) => s.selfSocketId);
   const countdown = useHornStore((s) => s.countdown);
   const error = useHornStore((s) => s.error);
-  const [copied, setCopied] = useState(false);
+  // Shared hook: falls back to execCommand where navigator.clipboard is absent
+  // (insecure contexts, older iOS WebViews).
+  const { copied, copy: copyText } = useClipboard();
   const { copied: linkCopied, copyLink } = useLobbyLink({ code: lobby?.code });
 
   if (!lobby) return null;
@@ -93,11 +95,7 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
   const canStart = isHost && lobby.players.length >= MIN_PLAYERS && everyoneReady;
 
   const copyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(lobby.code);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    } catch {
+    if (!(await copyText(lobby.code))) {
       toast.error(t('copy-failed', { defaultValue: 'Could not copy the code.' }));
     }
   };
