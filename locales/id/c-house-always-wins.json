@@ -1,5 +1,16 @@
 {
   "controls-hint": "WASD/← → Bergerak • Space Melompat • Shift Meluncur • E Berinteraksi • M Menu",
   "e-continue": "[E] Lanjutkan",
-  "loading": "MEMUAT..."
+  "loading": "MEMUAT...",
+  "tap-continue": "Tap to continue",
+  "touch-dash": "Dash",
+  "touch-dash-aria": "Dash",
+  "touch-jump": "Jump",
+  "touch-jump-aria": "Jump",
+  "touch-left": "Move left",
+  "touch-menu": "Menu",
+  "touch-menu-aria": "Open menu",
+  "touch-right": "Move right",
+  "touch-use": "Use",
+  "touch-use-aria": "Interact"
 }

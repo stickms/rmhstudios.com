@@ -51,6 +51,16 @@ export const Input = {
     justReleased.clear();
   },
 
+  // Virtual (on-screen) buttons feed the same sets as the keyboard, so every
+  // scene works on touch devices without knowing about them.
+  press(code: string) {
+    if (!held.has(code)) justPressed.add(code);
+    held.add(code);
+  },
+  release(code: string) {
+    if (held.delete(code)) justReleased.add(code);
+  },
+
   // Clear held state (used when a modal/dialogue grabs focus) so the player
   // doesn't keep running after control returns.
   clearHeld() {
