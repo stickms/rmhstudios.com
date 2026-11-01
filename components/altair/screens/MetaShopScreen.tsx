@@ -115,7 +115,7 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
                       <button
                         onClick={() => handlePurchase(def.id, def.name)}
                         disabled={!canAfford}
-                        className={`w-full py-2 rounded-(--altair-radius) text-sm font-semibold transition-colors ${
+                        className={`w-full py-2 pointer-coarse:min-h-11 rounded-(--altair-radius) text-sm font-semibold transition-colors ${
                           canAfford
                             ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-(--altair-accent-fg)'
                             : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed'
