@@ -15,6 +15,7 @@ import type { Difficulty } from '@/lib/dream-rift/types';
 import type { PracticeOutcome, PracticeTarget } from '@/lib/dream-rift/practice';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { useGameSession } from '@/hooks/useGameSession';
+import { setPeerLeftHandler } from '@/lib/dream-rift/net/connection';
 import { useRuntime } from './runtime';
 import { MobileControls } from './MobileControls';
 import { PhoneControllerHost } from '@/components/party/PhoneControllerHost';
@@ -84,6 +85,23 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
             input.clearVirtual();
             sessionRef.current = null;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // The host client is the only simulation (guests just render its snapshots),
+    // so when the host vanishes mid-run the stage can never advance again. Send
+    // guests back to the lobby browser with a clear message instead of leaving
+    // them on a frozen stage.
+    useEffect(() => {
+        if (start.practice || start.transport.isHost) return;
+        const hostSlot = start.roster.find((r) => r.isHost)?.slot;
+        if (hostSlot === undefined) return;
+        setPeerLeftHandler((slot) => {
+            if (slot !== hostSlot) return;
+            useDreamRift.getState().setError('The host left, so the run ended.');
+            onExit();
+        });
+        return () => setPeerLeftHandler(null);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

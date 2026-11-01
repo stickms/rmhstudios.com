@@ -18,9 +18,14 @@ import { C2S, S2C, type DrDifficulty, type DrPlayerId, type LobbySnapshot, type 
 let socket: Socket | null = null;
 let relayHandler: ((msg: RelayMsg) => void) | null = null;
 let startHandler: ((p: StartPayload) => void) | null = null;
+let peerLeftHandler: ((slot: number) => void) | null = null;
 
 export function setRelayHandler(fn: ((msg: RelayMsg) => void) | null): void {
     relayHandler = fn;
+}
+/** Notified with the slot of any player who leaves the lobby (used by guests to notice a vanished host). */
+export function setPeerLeftHandler(fn: ((slot: number) => void) | null): void {
+    peerLeftHandler = fn;
 }
 export function setStartHandler(fn: ((p: StartPayload) => void) | null): void {
     startHandler = fn;
@@ -80,7 +85,9 @@ export async function connectDreamRift(): Promise<Socket> {
         useDreamRift.getState().setError('You were removed from the lobby.');
     });
     s.on(S2C.HOST_CHANGED, (lobby: LobbySnapshot) => useDreamRift.getState().setLobby(lobby));
-    s.on(S2C.PEER_LEFT, () => {});
+    s.on(S2C.PEER_LEFT, (data: { slot?: number }) => {
+        if (typeof data?.slot === 'number') peerLeftHandler?.(data.slot);
+    });
     s.on(S2C.START, (p: StartPayload) => startHandler?.(p));
     s.on(S2C.RELAY, (msg: RelayMsg) => relayHandler?.(msg));
 
@@ -95,6 +102,7 @@ export function disconnectDreamRift(): void {
     }
     relayHandler = null;
     startHandler = null;
+    peerLeftHandler = null;
 }
 
 // ── lobby actions ──
