@@ -688,7 +688,7 @@ export function SongLibrary({
             <DialogTrigger asChild>
               <Button
                 variant="ghost"
-                className="h-9 w-9 shrink-0 rounded-lg text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/30 p-0 touch-target"
+                className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/30 p-0 touch-target"
                 aria-label={ts('packs-title', { defaultValue: 'Packs' })}
               >
                 <Layers className="w-4 h-4" aria-hidden />
@@ -709,7 +709,7 @@ export function SongLibrary({
           <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
             <DialogTrigger asChild>
               <Button
-                className="h-9 w-9 shrink-0 rounded-lg bg-blue-500 text-white hover:bg-blue-600 p-0 touch-target"
+                className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg bg-blue-500 text-white hover:bg-blue-600 p-0 touch-target"
                 aria-label={t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
               >
                 <Upload className="w-4 h-4" />
