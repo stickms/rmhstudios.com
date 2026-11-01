@@ -269,5 +269,8 @@
   "you-badge": "YOU",
   "you-label": "YOU",
   "your-plays": "Your plays",
-  "your-track": "YOUR TRACK"
+  "your-track": "YOUR TRACK",
+  "cover-format-unsupported-panel": "That image format is not supported. Use JPEG, PNG or WebP.",
+  "velum-retry": "Retry",
+  "velum-start-failed": "Velum 2099 could not start. It needs WebGL — enable hardware acceleration or try another browser."
 }
