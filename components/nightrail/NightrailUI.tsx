@@ -281,7 +281,7 @@ export function NightrailUI({
 
           {leaderboardPanel(5, t('top-scores', { defaultValue: 'Top Scores' }))}
 
-          <div className="space-y-1 text-[10px] text-slate-600 sm:text-xs">
+          <div className="space-y-1 text-[11px] text-slate-400 sm:text-xs">
             <p className="hidden sm:block">
               {/* Kept in step with the key handler in NightrailGame.tsx — the
                   arrows are tricks, not steering, which is the one thing a
