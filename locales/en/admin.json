@@ -421,5 +421,12 @@
   "view-content": "View content",
   "view-driver-applications": "Driver applications",
   "view-ride-history": "Ride history",
-  "year-label": "Year"
+  "year-label": "Year",
+  "audit-filter-action": "Action starts with…",
+  "audit-filter-target": "Target type",
+  "audit-filter-from": "From",
+  "audit-filter-to": "To",
+  "audit-export-csv": "Export CSV",
+  "audit-clear-filters": "Clear filters",
+  "audit-no-match": "No actions match these filters."
 }

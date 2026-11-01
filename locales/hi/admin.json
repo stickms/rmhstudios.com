@@ -416,5 +416,12 @@
   "badge-images_one": "{{count}} img",
   "badge-images_other": "{{count}} img",
   "remove-option_one": "Remove option {{count}}",
-  "remove-option_other": "Remove option {{count}}"
+  "remove-option_other": "Remove option {{count}}",
+  "audit-filter-action": "क्रिया इससे शुरू हो…",
+  "audit-filter-target": "लक्ष्य प्रकार",
+  "audit-filter-from": "से",
+  "audit-filter-to": "तक",
+  "audit-export-csv": "CSV निर्यात करें",
+  "audit-clear-filters": "फ़िल्टर हटाएँ",
+  "audit-no-match": "इन फ़िल्टरों से कोई क्रिया मेल नहीं खाती।"
 }

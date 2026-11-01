@@ -405,5 +405,12 @@
   "variant-success": "Success",
   "variant-warning": "Warning",
   "badge-images_other": "{{count}} img",
-  "remove-option_other": "Remove option {{count}}"
+  "remove-option_other": "Remove option {{count}}",
+  "audit-filter-action": "작업 접두사…",
+  "audit-filter-target": "대상 유형",
+  "audit-filter-from": "시작일",
+  "audit-filter-to": "종료일",
+  "audit-export-csv": "CSV 내보내기",
+  "audit-clear-filters": "필터 지우기",
+  "audit-no-match": "필터와 일치하는 작업이 없습니다."
 }

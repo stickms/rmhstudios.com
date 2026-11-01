@@ -405,5 +405,12 @@
   "variant-success": "Success",
   "variant-warning": "Warning",
   "badge-images_other": "{{count}} img",
-  "remove-option_other": "Remove option {{count}}"
+  "remove-option_other": "Remove option {{count}}",
+  "audit-filter-action": "アクションの先頭一致…",
+  "audit-filter-target": "対象の種類",
+  "audit-filter-from": "開始日",
+  "audit-filter-to": "終了日",
+  "audit-export-csv": "CSV をエクスポート",
+  "audit-clear-filters": "フィルターをクリア",
+  "audit-no-match": "条件に一致する操作はありません。"
 }

@@ -427,5 +427,12 @@
   "badge-images_other": "{{count}} img",
   "remove-option_many": "Remove option {{count}}",
   "remove-option_one": "Remove option {{count}}",
-  "remove-option_other": "Remove option {{count}}"
+  "remove-option_other": "Remove option {{count}}",
+  "audit-filter-action": "La acción empieza por…",
+  "audit-filter-target": "Tipo de destino",
+  "audit-filter-from": "Desde",
+  "audit-filter-to": "Hasta",
+  "audit-export-csv": "Exportar CSV",
+  "audit-clear-filters": "Borrar filtros",
+  "audit-no-match": "Ninguna acción coincide con estos filtros."
 }
