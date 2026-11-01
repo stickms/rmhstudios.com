@@ -92,5 +92,6 @@
   "work-duration": "작업 시간: {{minutes}}분",
   "apps": "Apps",
   "kbd-hint-reveal": "스페이스바를 눌러 정답 보기",
-  "kbd-hint-grade": "1–4를 눌러 평가: 다시, 어려움, 좋음, 쉬움"
+  "kbd-hint-grade": "1–4를 눌러 평가: 다시, 어려움, 좋음, 쉬움",
+  "session-recalled": "기억함: {{percent}}%"
 }

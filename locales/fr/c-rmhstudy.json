@@ -104,5 +104,6 @@
   "work-duration": "Durée de travail : {{minutes}} min",
   "apps": "Apps",
   "kbd-hint-reveal": "Appuyez sur Espace pour révéler",
-  "kbd-hint-grade": "Appuyez sur 1–4 pour noter : À revoir, Difficile, Bien, Facile"
+  "kbd-hint-grade": "Appuyez sur 1–4 pour noter : À revoir, Difficile, Bien, Facile",
+  "session-recalled": "Retenu : {{percent}} %"
 }

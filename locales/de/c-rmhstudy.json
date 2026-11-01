@@ -98,5 +98,6 @@
   "work-duration": "Arbeitsdauer: {{minutes}} Min",
   "apps": "Apps",
   "kbd-hint-reveal": "Leertaste drücken zum Aufdecken",
-  "kbd-hint-grade": "1–4 drücken zum Bewerten: Nochmal, Schwer, Gut, Leicht"
+  "kbd-hint-grade": "1–4 drücken zum Bewerten: Nochmal, Schwer, Gut, Leicht",
+  "session-recalled": "Gewusst: {{percent}} %"
 }

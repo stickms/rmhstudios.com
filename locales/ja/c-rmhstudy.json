@@ -92,5 +92,6 @@
   "work-duration": "作業時間: {{minutes}} 分",
   "apps": "Apps",
   "kbd-hint-reveal": "スペースキーで答えを表示",
-  "kbd-hint-grade": "1〜4 キーで評価：もう一度、難しい、良い、簡単"
+  "kbd-hint-grade": "1〜4 キーで評価：もう一度、難しい、良い、簡単",
+  "session-recalled": "思い出せた割合：{{percent}}%"
 }

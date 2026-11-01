@@ -122,5 +122,6 @@
   "work-duration": "مدة العمل: {{minutes}} دقيقة",
   "apps": "Apps",
   "kbd-hint-reveal": "اضغط مفتاح المسافة للكشف",
-  "kbd-hint-grade": "اضغط 1–4 للتقييم: مجددًا، صعب، جيد، سهل"
+  "kbd-hint-grade": "اضغط 1–4 للتقييم: مجددًا، صعب، جيد، سهل",
+  "session-recalled": "تم تذكّر: {{percent}}٪"
 }

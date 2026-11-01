@@ -104,5 +104,6 @@
   "work-duration": "Duração do Trabalho: {{minutes}} min",
   "apps": "Apps",
   "kbd-hint-reveal": "Pressione Espaço para revelar",
-  "kbd-hint-grade": "Pressione 1–4 para avaliar: De novo, Difícil, Bom, Fácil"
+  "kbd-hint-grade": "Pressione 1–4 para avaliar: De novo, Difícil, Bom, Fácil",
+  "session-recalled": "Lembrado: {{percent}}%"
 }

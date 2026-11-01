@@ -103,5 +103,6 @@
   "unban-user": "Unban user",
   "work-duration": "Work Duration: {{minutes}} min",
   "kbd-hint-reveal": "Press Space to reveal",
-  "kbd-hint-grade": "Press 1–4 to grade: Again, Hard, Good, Easy"
+  "kbd-hint-grade": "Press 1–4 to grade: Again, Hard, Good, Easy",
+  "session-recalled": "Recalled: {{percent}}%"
 }

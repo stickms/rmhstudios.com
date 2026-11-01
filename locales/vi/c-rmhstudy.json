@@ -92,5 +92,6 @@
   "work-duration": "Thời gian làm việc: {{minutes}} phút",
   "apps": "Apps",
   "kbd-hint-reveal": "Nhấn Space để xem đáp án",
-  "kbd-hint-grade": "Nhấn 1–4 để chấm: Lại, Khó, Tốt, Dễ"
+  "kbd-hint-grade": "Nhấn 1–4 để chấm: Lại, Khó, Tốt, Dễ",
+  "session-recalled": "Nhớ được: {{percent}}%"
 }
