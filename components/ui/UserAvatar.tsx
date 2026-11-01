@@ -41,6 +41,7 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
  width={size}
  height={size}
  data-slot="avatar"
+ suppressHydrationWarning
  className={`rounded-full shrink-0 object-cover ${className}`}
  style={{ width: size, height: size }}
  />
@@ -56,6 +57,7 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
  width={size}
  height={size}
  data-slot="avatar"
+ suppressHydrationWarning
  className={`rounded-full shrink-0 object-cover ${className}`}
  style={{ width: size, height: size }}
  onError={() => setImgError(true)}

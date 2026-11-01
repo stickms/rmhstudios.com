@@ -899,11 +899,13 @@ export function GameCanvas() {
   const [isPortrait, setIsPortrait] = useState(false);
 
   // Input device detection
-  // Assume keyboard exists on non-touch devices to avoid a flash of "no input" warning
-  const [hasKeyboard, setHasKeyboard] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    return !window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-  });
+  // Assume a keyboard on the first render. This initial value has to be the same
+  // on the server and on the client's hydrating render: it used to read
+  // `matchMedia` here, so a phone's first client render started with `false`,
+  // drew the "no input device" warning the server never rendered, and React threw
+  // the server HTML away for the whole tree (minified error #418 in production).
+  // The touch-detection effect below flips it to `false` after mount instead.
+  const [hasKeyboard, setHasKeyboard] = useState(true);
   const [hasGamepad, setHasGamepad] = useState(false);
   const [hasTouch, setHasTouch] = useState(false);
 
@@ -1004,7 +1006,11 @@ export function GameCanvas() {
     const check = () => {
       const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
       setShowMobileButtons(isTouchDevice);
-      if (isTouchDevice) setHasTouch(true);
+      if (isTouchDevice) {
+        setHasTouch(true);
+        // A phone or tablet has no keyboard until a key is actually pressed.
+        setHasKeyboard(false);
+      }
     };
     check();
     window.addEventListener(
