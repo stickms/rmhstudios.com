@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import { normalizeCover } from '@/lib/slice-it/cover-image';
 import { toast } from 'sonner';
 import {
   Heart,
@@ -1287,6 +1288,21 @@ function UploadForm({ onDone }: { onDone: () => void }) {
     const picked = chosen[0];
     if (!picked) return;
 
+    // iPhones hand over .m4a/.aac voice memos and Music exports freely; the
+    // server only decodes MP3/WAV/OGG/FLAC, so say so before the upload, not
+    // after fifty megabytes of cellular data.
+    const unsupported = chosen.find((f) => /\.(m4a|aac|mp4|caf|aiff?|wma|amr)$/i.test(f.name));
+    if (unsupported) {
+      toast.error(
+        ts('audio-format-unsupported', {
+          defaultValue: '{{name}} is not supported. Convert it to MP3, WAV, OGG or FLAC.',
+          name: unsupported.name,
+        }),
+      );
+      event.target.value = '';
+      return;
+    }
+
     const oversize = chosen.find((f) => f.size > AUDIO_MAX_BYTES);
     if (oversize) {
       toast.error(
@@ -1352,17 +1368,32 @@ function UploadForm({ onDone }: { onDone: () => void }) {
     }
   };
 
-  const pickCover = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = event.target.files?.[0];
-    if (!picked) return;
-    if (picked.size > COVER_MAX_BYTES) {
+  const pickCover = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const input = event.target;
+    const raw = input.files?.[0];
+    if (!raw) return;
+    if (raw.size > COVER_MAX_BYTES) {
       toast.error(t('cover-too-large', { defaultValue: 'Cover image must be under 10 MB.' }));
-      event.target.value = '';
+      input.value = '';
       return;
     }
-    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    // Phone photos (HEIC/HEIF, huge JPEGs) are re-encoded in the browser: the
+    // server only accepts PNG/JPEG/GIF/WebP and a 12 MP photo is a slow upload.
+    const picked = await normalizeCover(raw);
+    if (!picked) {
+      toast.error(
+        ts('cover-format-unsupported', {
+          defaultValue: 'That image format is not supported. Use JPEG, PNG or WebP.',
+        }),
+      );
+      input.value = '';
+      return;
+    }
+    setCoverPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(picked);
+    });
     setCover(picked);
-    setCoverPreview(URL.createObjectURL(picked));
   };
 
   const submit = (event: React.FormEvent) => {
@@ -1458,10 +1489,16 @@ function UploadForm({ onDone }: { onDone: () => void }) {
       toast.error(body.error || t('upload-failed', { defaultValue: 'Upload failed' }));
     });
 
-    xhr.addEventListener('error', () => {
+    const fail = () => {
       setUploading(false);
       toast.error(t('upload-error', { defaultValue: 'Upload error' }));
-    });
+    };
+    xhr.addEventListener('error', fail);
+    xhr.addEventListener('abort', fail);
+    // Without a ceiling a dropped mobile connection leaves the form on
+    // "Uploading…" forever with the submit button disabled.
+    xhr.timeout = 10 * 60 * 1000;
+    xhr.addEventListener('timeout', fail);
 
     xhr.open('POST', '/api/slice-it/songs/upload');
     xhr.send(form);
@@ -1527,7 +1564,7 @@ function UploadForm({ onDone }: { onDone: () => void }) {
                 type="file"
                 accept="image/*"
                 className="absolute inset-0 opacity-0 cursor-pointer"
-                onChange={pickCover}
+                onChange={(e) => void pickCover(e)}
               />
               {coverPreview ? (
                 <img src={coverPreview} alt="" className="w-full h-full object-cover" />

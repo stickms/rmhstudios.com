@@ -269,5 +269,8 @@
   "you-badge": "TU",
   "you-label": "TU",
   "your-plays": "Le tue partite",
-  "your-track": "IL TUO BRANO"
+  "your-track": "IL TUO BRANO",
+  "cover-format-unsupported-panel": "That image format is not supported. Use JPEG, PNG or WebP.",
+  "velum-retry": "Retry",
+  "velum-start-failed": "Velum 2099 could not start. It needs WebGL — enable hardware acceleration or try another browser."
 }

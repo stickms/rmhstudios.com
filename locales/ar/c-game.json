@@ -284,5 +284,8 @@
   "you-badge": "أنت",
   "you-label": "أنت",
   "your-plays": "مسرحياتك",
-  "your-track": "مسارك"
+  "your-track": "مسارك",
+  "cover-format-unsupported-panel": "That image format is not supported. Use JPEG, PNG or WebP.",
+  "velum-retry": "Retry",
+  "velum-start-failed": "Velum 2099 could not start. It needs WebGL — enable hardware acceleration or try another browser."
 }

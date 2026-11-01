@@ -179,7 +179,12 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
             if (prev.status !== 'playing') return prev;
 
             const now = Date.now();
-            const dt = (now - prev.lastTickAt) / 1000;
+            // A backgrounded tab (phone lock, app switch) throttles timers and can
+            // wake with seconds of accumulated time; in solo play that would
+            // expire every puzzle at once. Clamp so time effectively pauses.
+            // Multiplayer stays on the wall clock so every player sees the same match.
+            const rawDt = (now - prev.lastTickAt) / 1000;
+            const dt = modeRef.current === 'multiplayer' ? rawDt : Math.min(rawDt, 0.5);
             const totalTime = (now - prev.startTime) / 1000;
 
             const scalarBySolves = Math.min(1, prev.puzzlesSolved / 80);

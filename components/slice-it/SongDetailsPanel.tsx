@@ -35,6 +35,7 @@ import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { calculateScoreMultiplier } from '@/lib/slice-it/scoring';
 import { ChartPicker, type ChartOption } from './ChartPicker';
 import { useTranslation } from 'react-i18next';
+import { normalizeCover } from '@/lib/slice-it/cover-image';
 import { whenIdle } from '@/lib/shared/platform';
 
 /**
@@ -228,8 +229,9 @@ export function SongDetailsPanel({
 
   const MAX_COVER_SIZE = 10 * 1024 * 1024; // 10 MB
 
-  const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleCoverSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const file = input.files?.[0];
     if (!file) return;
     if (file.size > MAX_COVER_SIZE) {
       toast.error(
@@ -241,9 +243,21 @@ export function SongDetailsPanel({
       e.target.value = '';
       return;
     }
-    setEditCoverFile(file);
-    const url = URL.createObjectURL(file);
-    setEditCoverPreview(url);
+    const normalized = await normalizeCover(file);
+    if (!normalized) {
+      toast.error(
+        t('cover-format-unsupported-panel', {
+          defaultValue: 'That image format is not supported. Use JPEG, PNG or WebP.',
+        }),
+      );
+      input.value = '';
+      return;
+    }
+    setEditCoverFile(normalized);
+    setEditCoverPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(normalized);
+    });
   };
 
   const handleSave = async () => {
@@ -261,7 +275,10 @@ export function SongDetailsPanel({
         method: 'PATCH',
         body: formData,
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error ?? `HTTP ${res.status}`);
+      }
       const data = await res.json();
       const newCoverUrl = data.song?.coverUrl ?? song.coverUrl;
       const newBpm = parseFloat(editBpm) || song.bpm;
@@ -357,7 +374,7 @@ export function SongDetailsPanel({
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={handleCoverSelect}
+                    onChange={(e) => void handleCoverSelect(e)}
                   />
                 </label>
               </div>
