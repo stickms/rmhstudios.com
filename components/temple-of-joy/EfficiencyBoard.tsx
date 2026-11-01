@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EFFICIENCY_GAME_ID, exponentOf } from '@/lib/temple-of-joy/efficiency';
+import { useSession } from '@/components/Providers';
 import { TempleButton, TempleSection } from './ui';
 
 interface Row {
@@ -18,19 +19,23 @@ export function EfficiencyBoard() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [mine, setMine] = useState<number | null | undefined>(undefined);
   const [note, setNote] = useState<string | null>(null);
+  const signedIn = Boolean(useSession().data?.user);
 
   const load = useCallback(async () => {
     const [board, me] = await Promise.all([
       fetch(`/api/games/${EFFICIENCY_GAME_ID}/leaderboard?limit=10`)
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
-      fetch('/api/temple-of-joy/efficiency')
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
+      // Signed out there is no row to read; asking would only log a 401.
+      signedIn
+        ? fetch('/api/temple-of-joy/efficiency')
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null)
+        : Promise.resolve(null),
     ]);
     setRows((board as { entries: Row[] } | null)?.entries ?? []);
     setMine((me as { efficiency: { score: number } | null } | null)?.efficiency?.score ?? null);
-  }, []);
+  }, [signedIn]);
 
   useEffect(() => {
     void load();
