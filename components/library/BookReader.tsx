@@ -40,6 +40,7 @@ import {
 import type { LibraryBook } from '@/lib/library/library';
 import { liquidVTName } from '@/lib/view-transition';
 import { PageStore } from '@/lib/library/page-store';
+import { isReaderKeyBlocked } from '@/lib/library/reader-keys';
 import { useBookState, type Bookmark as BookmarkT, type Note } from '@/lib/library/reader-store';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { BookCanvas } from './BookCanvas';
@@ -343,6 +344,26 @@ export function BookReader({ book }: { book: LibraryBook }) {
     }
   }, []);
 
+  // B bookmarks the page, F toggles fullscreen — the toolbar actions, one key each.
+  // Same guard BookCanvas uses for the arrow keys: not while typing or inside a
+  // menu/listbox/dialog, and never with a modifier held.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isReaderKeyBlocked(e.target)) return;
+      const key = e.key.toLowerCase();
+      if (key === 'b') {
+        e.preventDefault();
+        toggleBookmark();
+      } else if (key === 'f') {
+        e.preventDefault();
+        void toggleFullscreen();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [toggleBookmark, toggleFullscreen]);
+
   const setReaderZoom = useCallback((next: number) => {
     setZoom(Math.max(0.8, Math.min(1.5, Math.round(next * 10) / 10)));
   }, []);
@@ -395,6 +416,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
               type="button"
               className={`vibe-toolbar__icon transition-transform duration-site-fast active:scale-90${bookmarked ? ' is-on' : ''}`}
               onClick={toggleBookmark}
+              aria-keyshortcuts="B"
               aria-pressed={bookmarked}
               title={bookmarked ? t('remove-bookmark', { defaultValue: 'Remove bookmark' }) : t('add-bookmark', { defaultValue: 'Bookmark this page' })}
               aria-label={bookmarked ? t('remove-bookmark', { defaultValue: 'Remove bookmark' }) : t('add-bookmark', { defaultValue: 'Bookmark this page' })}
@@ -426,7 +448,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
           <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={(event) => openDetails(event.currentTarget)} aria-label={t('book-details', { defaultValue: 'Book details' })} title={t('book-details', { defaultValue: 'Book details' })}>
             <Info size={16} />
           </button>
-          <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={toggleFullscreen} aria-label={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })} title={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })}>
+          <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={toggleFullscreen} aria-keyshortcuts="F" aria-label={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })} title={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })}>
             {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
           <a href={book.url} download className="vibe-toolbar__icon transition-transform duration-site-fast active:scale-90" aria-label={t("download-pdf", { defaultValue: "Download PDF" })}>
