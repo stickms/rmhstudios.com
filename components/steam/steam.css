@@ -2578,3 +2578,31 @@ html[dir='rtl'] .stm-drawer-panel {
   width: 100%;
   justify-content: center;
 }
+
+/* ─── Group discussion (/games/groups/$slug) ──────────────────────────────── */
+
+.stm-posts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stm-post {
+  padding: 10px 14px;
+  border-top: 1px solid var(--stm-line, rgba(255, 255, 255, 0.06));
+}
+.stm-post:first-child {
+  border-top: 0;
+}
+.stm-post .stm-person {
+  padding-inline: 0;
+}
+.stm-post-text {
+  margin: 4px 0 0;
+  color: var(--stm-text, inherit);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.stm-post-meta {
+  margin: 6px 0 0;
+  font-size: 12px;
+}

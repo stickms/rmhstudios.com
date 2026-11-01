@@ -92,5 +92,13 @@
   "steam-shop-plan": "Formule {{tier}}",
   "steam-shop-signin": "Connectez-vous pour acheter",
   "steam-shop-sub": "Dépensez vos pièces en couleurs de pseudo, badges, cadres et plus encore, puis équipez-les dans tout le studio.",
-  "steam-shop-title": "Boutique de points"
+  "steam-shop-title": "Boutique de points",
+  "steam-group-announcements": "Announcements",
+  "steam-group-discussion": "Recent discussion",
+  "steam-group-join-failed": "Could not update membership.",
+  "steam-group-leave": "Leave group",
+  "steam-group-main-site": "Post or moderate on the main site",
+  "steam-group-no-posts": "No posts yet.",
+  "steam-group-post-counts": "Likes: {{likes}} · Replies: {{replies}}",
+  "steam-group-signin": "Sign in to join"
 }

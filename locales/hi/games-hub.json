@@ -92,5 +92,13 @@
   "steam-shop-plan": "{{tier}} प्लान",
   "steam-shop-signin": "खरीदने के लिए साइन इन करें",
   "steam-shop-sub": "अपने सिक्कों से नाम के रंग, बैज, फ़्रेम और बहुत कुछ खरीदें, फिर उन्हें पूरे स्टूडियो में पहनें।",
-  "steam-shop-title": "पॉइंट शॉप"
+  "steam-shop-title": "पॉइंट शॉप",
+  "steam-group-announcements": "Announcements",
+  "steam-group-discussion": "Recent discussion",
+  "steam-group-join-failed": "Could not update membership.",
+  "steam-group-leave": "Leave group",
+  "steam-group-main-site": "Post or moderate on the main site",
+  "steam-group-no-posts": "No posts yet.",
+  "steam-group-post-counts": "Likes: {{likes}} · Replies: {{replies}}",
+  "steam-group-signin": "Sign in to join"
 }

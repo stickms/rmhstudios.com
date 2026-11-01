@@ -92,5 +92,13 @@
   "steam-shop-plan": "Paket {{tier}}",
   "steam-shop-signin": "Masuk untuk membeli",
   "steam-shop-sub": "Belanjakan koin Anda untuk warna nama, lencana, bingkai, dan lainnya, lalu pakai di seluruh studio.",
-  "steam-shop-title": "Toko poin"
+  "steam-shop-title": "Toko poin",
+  "steam-group-announcements": "Announcements",
+  "steam-group-discussion": "Recent discussion",
+  "steam-group-join-failed": "Could not update membership.",
+  "steam-group-leave": "Leave group",
+  "steam-group-main-site": "Post or moderate on the main site",
+  "steam-group-no-posts": "No posts yet.",
+  "steam-group-post-counts": "Likes: {{likes}} · Replies: {{replies}}",
+  "steam-group-signin": "Sign in to join"
 }

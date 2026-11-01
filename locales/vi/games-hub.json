@@ -92,5 +92,13 @@
   "steam-shop-plan": "Gói {{tier}}",
   "steam-shop-signin": "Đăng nhập để mua",
   "steam-shop-sub": "Dùng xu của bạn để mua màu tên, huy hiệu, khung và nhiều thứ khác, rồi trang bị chúng trên toàn studio.",
-  "steam-shop-title": "Cửa hàng điểm"
+  "steam-shop-title": "Cửa hàng điểm",
+  "steam-group-announcements": "Announcements",
+  "steam-group-discussion": "Recent discussion",
+  "steam-group-join-failed": "Could not update membership.",
+  "steam-group-leave": "Leave group",
+  "steam-group-main-site": "Post or moderate on the main site",
+  "steam-group-no-posts": "No posts yet.",
+  "steam-group-post-counts": "Likes: {{likes}} · Replies: {{replies}}",
+  "steam-group-signin": "Sign in to join"
 }

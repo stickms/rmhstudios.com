@@ -92,5 +92,13 @@
   "steam-shop-plan": "{{tier}} پلان",
   "steam-shop-signin": "خریدنے کے لیے سائن اِن کریں",
   "steam-shop-sub": "اپنے سکے نام کے رنگوں، بیجز، فریموں اور مزید پر خرچ کریں، پھر انہیں پورے اسٹوڈیو میں لگائیں۔",
-  "steam-shop-title": "پوائنٹس شاپ"
+  "steam-shop-title": "پوائنٹس شاپ",
+  "steam-group-announcements": "Announcements",
+  "steam-group-discussion": "Recent discussion",
+  "steam-group-join-failed": "Could not update membership.",
+  "steam-group-leave": "Leave group",
+  "steam-group-main-site": "Post or moderate on the main site",
+  "steam-group-no-posts": "No posts yet.",
+  "steam-group-post-counts": "Likes: {{likes}} · Replies: {{replies}}",
+  "steam-group-signin": "Sign in to join"
 }

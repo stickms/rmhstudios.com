@@ -92,5 +92,13 @@
   "steam-shop-plan": "{{tier}} 플랜",
   "steam-shop-signin": "구매하려면 로그인",
   "steam-shop-sub": "코인으로 이름 색상, 배지, 프레임 등을 구매하고 스튜디오 전체에서 장착하세요.",
-  "steam-shop-title": "포인트 상점"
+  "steam-shop-title": "포인트 상점",
+  "steam-group-announcements": "Announcements",
+  "steam-group-discussion": "Recent discussion",
+  "steam-group-join-failed": "Could not update membership.",
+  "steam-group-leave": "Leave group",
+  "steam-group-main-site": "Post or moderate on the main site",
+  "steam-group-no-posts": "No posts yet.",
+  "steam-group-post-counts": "Likes: {{likes}} · Replies: {{replies}}",
+  "steam-group-signin": "Sign in to join"
 }
