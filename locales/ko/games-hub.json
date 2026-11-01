@@ -34,5 +34,8 @@
   "write-review": "Write a review",
   "your-rating": "Your rating",
   "your-review": "Your review",
-  "guide-new-title": "New guide"
+  "guide-new-title": "New guide",
+  "reviews-sort": "리뷰 정렬",
+  "sort-helpful": "도움순",
+  "sort-recent": "최신순"
 }

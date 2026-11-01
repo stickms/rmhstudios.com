@@ -34,5 +34,8 @@
   "write-review": "Write a review",
   "your-rating": "Your rating",
   "your-review": "Your review",
-  "guide-new-title": "New guide"
+  "guide-new-title": "New guide",
+  "reviews-sort": "Sắp xếp đánh giá",
+  "sort-helpful": "Hữu ích nhất",
+  "sort-recent": "Mới nhất"
 }

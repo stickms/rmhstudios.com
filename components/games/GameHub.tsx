@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { EmptyState } from '@/components/ui/empty-state';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { StarRating } from './StarRating';
 import { HowToPlay } from './HowToPlay';
 import { GameTracker } from '@/components/arcade/GameTracker';
@@ -36,6 +37,8 @@ interface GameHubData {
  * `embedded`: rendered inside the library's detail pane, which draws its own hero
  * and Play button and supplies its own padding.
  */
+type ReviewSort = 'helpful' | 'recent';
+
 export function GameHub({ data, embedded = false }: { data: GameHubData; embedded?: boolean }) {
   const { t } = useTranslation('games-hub');
   const [reviews, setReviews] = useState(data.reviews);
@@ -44,9 +47,11 @@ export function GameHub({ data, embedded = false }: { data: GameHubData; embedde
   const [stars, setStars] = useState(mine?.stars ?? 0);
   const [body, setBody] = useState(mine?.body ?? '');
   const [saving, setSaving] = useState(false);
+  // The API sorts by helpfulness unless asked for `recent`; the page loads in that order.
+  const [sort, setSort] = useState<ReviewSort>('helpful');
 
-  async function refresh() {
-    const res = await fetch(`/api/games/${data.gameId}/reviews`);
+  async function refresh(nextSort: ReviewSort = sort) {
+    const res = await fetch(`/api/games/${data.gameId}/reviews?sort=${nextSort}`);
     if (res.ok) {
       const d = (await res.json()) as { reviews: ReviewView[]; agg: RatingAgg };
       setReviews(d.reviews);
@@ -160,9 +165,25 @@ export function GameHub({ data, embedded = false }: { data: GameHubData; embedde
 
       {/* Reviews */}
       <section>
-        <h2 className="site-section-label mb-3">
-          {t('reviews', { defaultValue: 'Reviews' })}
-        </h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="site-section-label">{t('reviews', { defaultValue: 'Reviews' })}</h2>
+          {reviews.length > 1 ? (
+            <LiquidTabs
+              aria-label={t('reviews-sort', { defaultValue: 'Sort reviews' })}
+              tabs={[
+                { id: 'helpful', label: t('sort-helpful', { defaultValue: 'Most helpful' }) },
+                { id: 'recent', label: t('sort-recent', { defaultValue: 'Newest' }) },
+              ]}
+              value={sort}
+              onChange={(id) => {
+                if (id === 'helpful' || id === 'recent') {
+                  setSort(id);
+                  void refresh(id);
+                }
+              }}
+            />
+          ) : null}
+        </div>
         {reviews.length === 0 ? (
           <EmptyState
             icon={MessageSquare}

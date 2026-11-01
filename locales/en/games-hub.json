@@ -383,5 +383,8 @@
   "write-guide": "Write a guide",
   "write-review": "Write a review",
   "your-rating": "Your rating",
-  "your-review": "Your review"
+  "your-review": "Your review",
+  "reviews-sort": "Sort reviews",
+  "sort-helpful": "Most helpful",
+  "sort-recent": "Newest"
 }
