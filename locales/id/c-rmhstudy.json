@@ -90,5 +90,7 @@
   "unban": "Buka larangan",
   "unban-user": "Buka larangan pengguna",
   "work-duration": "Durasi Kerja: {{minutes}} menit",
-  "apps": "Apps"
+  "apps": "Apps",
+  "kbd-hint-reveal": "Tekan Spasi untuk menampilkan",
+  "kbd-hint-grade": "Tekan 1–4 untuk menilai: Ulangi, Sulit, Bagus, Mudah"
 }

@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { isTypingTarget } from '@/lib/shortcuts/registry';
 import { useTranslation } from 'react-i18next';
 import { Layers, Loader2, ArrowLeft, ExternalLink, RotateCw } from 'lucide-react';
 import { toast } from '@/lib/rmhstudy/toast-store';
@@ -116,6 +117,29 @@ export default function RmhStudyFlashcards() {
     }
   }, [cards, index, grading]);
 
+  // Keyboard review: Space/Enter reveals the card, 1-4 grades it (Again..Easy).
+  // Ignored while typing, with a modifier held, and for Space/Enter on a focused
+  // button or link, where the browser already activates it.
+  const reviewing = activeDeck !== null && !done;
+  useEffect(() => {
+    if (!reviewing) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isTypingTarget(e.target)) return;
+      if (!revealed) {
+        if (e.key !== ' ' && e.key !== 'Enter') return;
+        if (e.target instanceof HTMLElement && /^(BUTTON|A)$/.test(e.target.tagName)) return;
+        e.preventDefault();
+        setRevealed(true);
+      } else if (e.key >= '1' && e.key <= '4') {
+        e.preventDefault();
+        void grade(Number(e.key) - 1);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [reviewing, revealed, grade]);
+
   const exitReview = useCallback(() => {
     setActiveDeck(null);
     setCards([]);
@@ -183,6 +207,7 @@ export default function RmhStudyFlashcards() {
             <button
               type="button"
               onClick={() => setRevealed(true)}
+              aria-keyshortcuts="Space"
               className="w-full min-h-44 rounded-(--app-radius) glass-fill p-6 flex flex-col items-center justify-center gap-3 text-center transition-colors hover:border-(--app-accent)"
             >
               <span className="text-lg font-medium whitespace-pre-wrap">{card?.front}</span>
@@ -196,6 +221,12 @@ export default function RmhStudyFlashcards() {
               )}
             </button>
 
+            <p className="text-center text-xs text-(--app-text-dim)">
+              {revealed
+                ? t("kbd-hint-grade", { defaultValue: "Press 1–4 to grade: Again, Hard, Good, Easy" })
+                : t("kbd-hint-reveal", { defaultValue: "Press Space to reveal" })}
+            </p>
+
             {revealed && (
               <div className="grid grid-cols-4 gap-2" data-jelly-group>
                 {GRADES.map((g) => (
@@ -203,6 +234,7 @@ export default function RmhStudyFlashcards() {
                     key={g.grade}
                     disabled={grading}
                     onClick={() => grade(g.grade)}
+                    aria-keyshortcuts={String(g.grade + 1)}
                     className={`py-2 rounded-(--app-radius-sm) text-sm font-medium transition-colors disabled:opacity-50 ${g.cls}`}
                   >
                     {t(`grade-${g.grade}`, { defaultValue: g.label })}

@@ -90,5 +90,7 @@
   "unban": "解除",
   "unban-user": "ユーザーのBANを解除",
   "work-duration": "作業時間: {{minutes}} 分",
-  "apps": "Apps"
+  "apps": "Apps",
+  "kbd-hint-reveal": "スペースキーで答えを表示",
+  "kbd-hint-grade": "1〜4 キーで評価：もう一度、難しい、良い、簡単"
 }

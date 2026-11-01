@@ -102,5 +102,7 @@
   "unban": "Desbanear",
   "unban-user": "Desbanear usuario",
   "work-duration": "Duración de trabajo: {{minutes}} min",
-  "apps": "Apps"
+  "apps": "Apps",
+  "kbd-hint-reveal": "Pulsa Espacio para revelar",
+  "kbd-hint-grade": "Pulsa 1–4 para calificar: Otra vez, Difícil, Bien, Fácil"
 }

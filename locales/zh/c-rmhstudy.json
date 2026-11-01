@@ -90,5 +90,7 @@
   "unban": "解封",
   "unban-user": "解封用户",
   "work-duration": "工作时长：{{minutes}} 分钟",
-  "apps": "Apps"
+  "apps": "Apps",
+  "kbd-hint-reveal": "按空格键翻看答案",
+  "kbd-hint-grade": "按 1–4 评分：重来、困难、良好、简单"
 }

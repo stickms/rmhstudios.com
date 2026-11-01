@@ -102,5 +102,7 @@
   "unban": "Sbanna",
   "unban-user": "Sbanna utente",
   "work-duration": "Durata lavoro: {{minutes}} min",
-  "apps": "Apps"
+  "apps": "Apps",
+  "kbd-hint-reveal": "Premi Spazio per rivelare",
+  "kbd-hint-grade": "Premi 1–4 per valutare: Ancora, Difficile, Bene, Facile"
 }

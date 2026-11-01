@@ -90,5 +90,7 @@
   "unban": "Bỏ cấm",
   "unban-user": "Bỏ cấm người dùng",
   "work-duration": "Thời gian làm việc: {{minutes}} phút",
-  "apps": "Apps"
+  "apps": "Apps",
+  "kbd-hint-reveal": "Nhấn Space để xem đáp án",
+  "kbd-hint-grade": "Nhấn 1–4 để chấm: Lại, Khó, Tốt, Dễ"
 }
