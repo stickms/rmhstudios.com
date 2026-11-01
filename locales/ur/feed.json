@@ -1514,5 +1514,7 @@
   "muted-import-done": "{{added}} الفاظ درآمد کیے گئے۔",
   "muted-import-none": "درآمد کرنے کے لیے کوئی نیا لفظ نہیں۔",
   "muted-import-failed": "وہ فائل پڑھی نہیں جا سکی۔",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

@@ -1559,5 +1559,7 @@
   "muted-import-done": "Importate {{added}} parole.",
   "muted-import-none": "Nessuna parola nuova da importare.",
   "muted-import-failed": "Impossibile leggere il file.",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

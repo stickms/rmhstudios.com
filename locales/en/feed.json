@@ -1583,5 +1583,7 @@
   "muted-import-done": "Imported {{added}} words.",
   "muted-import-none": "No new words to import.",
   "muted-import-failed": "Could not read that file.",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }

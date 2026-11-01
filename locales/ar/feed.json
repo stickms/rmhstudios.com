@@ -1694,5 +1694,7 @@
   "muted-import-done": "تم استيراد {{added}} كلمة.",
   "muted-import-none": "لا توجد كلمات جديدة للاستيراد.",
   "muted-import-failed": "تعذّرت قراءة هذا الملف.",
-  "message-edit-length": "{{used}}/{{max}}"
+  "message-edit-length": "{{used}}/{{max}}",
+  "palette-whats-new": "What’s new",
+  "palette-unread": "Unread"
 }
