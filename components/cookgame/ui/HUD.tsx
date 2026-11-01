@@ -38,7 +38,7 @@ export function HUD() {
   return (
     <div className="pointer-events-none absolute inset-0 z-20 select-none text-white" data-jelly-zone="hud">
       {/* Top-left: cash + rank */}
-      <div className="absolute left-[calc(1rem+var(--safe-left))] top-[calc(1rem+var(--safe-top))] flex flex-col gap-2">
+      <div className="absolute left-[calc(1rem+var(--safe-left))] top-[calc(1rem+var(--safe-top))] max-sm:top-[calc(4.75rem+var(--safe-top))] flex flex-col gap-2">
         <div className="rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">
           <div className="font-mono text-2xl font-bold text-lime-400">${cash}</div>
           <div className="font-mono text-[11px] uppercase tracking-widest text-neutral-400">
