@@ -4412,3 +4412,11 @@ button.toj-row:active:not(:disabled) {
     padding: 2px;
   }
 }
+
+/* Touch: every pill, including size=sm (the HUD Builds link was 28px), gets a 44px hit height. */
+@media (pointer: coarse) {
+  .toj-btn,
+  .toj-btn[data-size="sm"] {
+    min-height: 2.75rem;
+  }
+}
