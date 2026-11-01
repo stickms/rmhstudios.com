@@ -13,6 +13,7 @@
   "open-page": "Open page",
   "pages-title": "Страницы",
   "prompt-aria-label": "Опишите страницу, которую хотите создать",
+  "prompt-heading": "Опишите страницу для генерации",
   "prompt-placeholder": "Куда вы хотите отправиться?",
   "search-aria-label": "Поиск страниц",
   "search-placeholder": "Поиск страниц..."

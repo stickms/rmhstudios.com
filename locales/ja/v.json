@@ -10,6 +10,7 @@
   "open-page": "Open page",
   "pages-title": "ページ",
   "prompt-aria-label": "作成したいページを説明してください",
+  "prompt-heading": "生成したいページを説明してください",
   "prompt-placeholder": "どこへ行きたいですか？",
   "search-aria-label": "ページを検索",
   "search-placeholder": "ページを検索…"
