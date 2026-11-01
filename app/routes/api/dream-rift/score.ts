@@ -80,12 +80,12 @@ export const Route = createFileRoute('/api/dream-rift/score')({
               where: { userId },
             });
 
-            if (existingProfile) {
+            const applyToProfile = async (profile: NonNullable<typeof existingProfile>) => {
               await prisma.dreamRiftPlayer.update({
-                where: { id: existingProfile.id },
+                where: { id: profile.id },
                 data: {
-                  [scoreField]: Math.max(existingProfile[scoreField] as number, Math.round(score)),
-                  bestStage: Math.max(existingProfile.bestStage, safeStage),
+                  [scoreField]: Math.max(profile[scoreField] as number, Math.round(score)),
+                  bestStage: Math.max(profile.bestStage, safeStage),
                   character: safeCharacter,
                   gamesPlayed: { increment: 1 },
                   totalGraze: { increment: safeGraze },
@@ -95,7 +95,9 @@ export const Route = createFileRoute('/api/dream-rift/score')({
               });
               await recordGamePlay(userId);
               return Response.json({ success: true, linked: true });
-            }
+            };
+
+            if (existingProfile) return applyToProfile(existingProfile);
 
             // First submission for this account: derive a unique display name from the
             // user's handle/name (the leaderboard otherwise renders the linked account).
@@ -105,18 +107,27 @@ export const Route = createFileRoute('/api/dream-rift/score')({
             });
             const username = await deriveUniqueUsername(account?.handle, account?.name, userId);
 
-            await prisma.dreamRiftPlayer.create({
-              data: {
-                userId,
-                username,
-                [scoreField]: Math.round(score),
-                bestStage: safeStage,
-                character: safeCharacter,
-                gamesPlayed: 1,
-                totalGraze: safeGraze,
-                spellsCaptured: safeSpells,
-              },
-            });
+            try {
+              await prisma.dreamRiftPlayer.create({
+                data: {
+                  userId,
+                  username,
+                  [scoreField]: Math.round(score),
+                  bestStage: safeStage,
+                  character: safeCharacter,
+                  gamesPlayed: 1,
+                  totalGraze: safeGraze,
+                  spellsCaptured: safeSpells,
+                },
+              });
+            } catch (createError) {
+              // Two submissions for a brand-new account can race (the results screen can post
+              // twice): the loser trips the unique constraint. It is a retry, not a failure.
+              if ((createError as { code?: string })?.code !== 'P2002') throw createError;
+              const raced = await prisma.dreamRiftPlayer.findUnique({ where: { userId } });
+              if (!raced) throw createError;
+              return applyToProfile(raced);
+            }
             await recordGamePlay(userId);
             return Response.json({ success: true, created: true });
           } catch (e) {

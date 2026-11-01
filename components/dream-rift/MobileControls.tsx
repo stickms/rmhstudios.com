@@ -10,9 +10,15 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { Pause } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useDreamRift } from '@/lib/dream-rift/store';
 import type { InputManager } from '@/lib/dream-rift/input';
 
 export function MobileControls({ input }: { input: InputManager }) {
+    const { t } = useTranslation('c-dream-rift');
+    // Escape pauses on a keyboard; a phone had no way to pause or leave a run. Co-op can't pause for everyone.
+    const solo = useDreamRift((st) => st.mode === 'single');
     const stickRef = useRef<HTMLDivElement>(null);
     const [knob, setKnob] = useState({ x: 0, y: 0 });
     const activeId = useRef<number | null>(null);
@@ -84,6 +90,19 @@ export function MobileControls({ input }: { input: InputManager }) {
         // the moment anyone turns the phone. The 86px lift stays — it clears the
         // dialogue strip — and the device inset is added on top of it.
         <div className="app-hud pointer-events-none z-20 select-none md:hidden" data-jelly-zone="hud" data-jelly-scope="off">
+            {solo && (
+                <button
+                    type="button"
+                    aria-label={t('pause', { defaultValue: 'Pause' })}
+                    className="pointer-events-auto absolute right-3 top-14 flex h-11 w-11 touch-none items-center justify-center rounded-full border border-[rgba(231,205,140,0.45)] bg-[rgba(11,7,18,0.55)] text-[color:var(--dr-cream)] active:scale-95"
+                    onPointerDown={(e) => {
+                        e.preventDefault();
+                        useDreamRift.getState().setPaused(true);
+                    }}
+                >
+                    <Pause className="h-5 w-5" aria-hidden />
+                </button>
+            )}
             {/* stick */}
             <div
                 ref={stickRef}
