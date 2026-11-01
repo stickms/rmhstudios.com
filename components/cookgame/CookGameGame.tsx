@@ -20,6 +20,7 @@ import { DryingRackOverlay } from './stations/DryingRackOverlay';
 import { ChemistryStationOverlay } from './stations/ChemistryStationOverlay';
 import { PropertyOverlay } from './stations/PropertyOverlay';
 import { HUD } from './ui/HUD';
+import { TouchControls } from './ui/TouchControls';
 import { RecipeJournal } from './ui/RecipeJournal';
 import { MenuOverlay } from './ui/MenuOverlay';
 import { DistrictMap } from './ui/DistrictMap';
@@ -155,16 +156,25 @@ export function CookGameGame() {
       }, 3000);
     });
     const onUnload = () => useCookgameStore.getState().saveNow();
+    // iOS Safari rarely fires beforeunload; pagehide / hidden visibility are the
+    // reliable "the player left" signals there (and when the app is swiped away).
+    const onHidden = () => {
+      if (document.visibilityState === 'hidden') onUnload();
+    };
     window.addEventListener('beforeunload', onUnload);
+    window.addEventListener('pagehide', onUnload);
+    document.addEventListener('visibilitychange', onHidden);
     return () => {
       unsub();
       if (t) clearTimeout(t);
       window.removeEventListener('beforeunload', onUnload);
+      window.removeEventListener('pagehide', onUnload);
+      document.removeEventListener('visibilitychange', onHidden);
     };
   }, []);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full touch-none overscroll-none">
       {/* Two saves that have both been played. Rendered over the game rather
           than instead of it — the scene is inert until `loadOrNew` runs, and it
           only runs once this has been answered. */}
@@ -226,6 +236,7 @@ export function CookGameGame() {
 
       {/* DOM overlays (outside the canvas) */}
       <HUD />
+      <TouchControls />
       <InteractionPrompt />
       <ShopOverlay />
       <MixingStationOverlay />
