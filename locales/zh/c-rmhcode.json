@@ -11,5 +11,7 @@
   "token-generated-notice": "令牌已生成！立即复制——此令牌将不再显示。",
   "token-name-placeholder": "代币名称（可选）",
   "unnamed-token": "未命名代币",
-  "your-tokens": "您的代币"
+  "your-tokens": "您的代币",
+  "expires-soon": "即将过期",
+  "expires-date": "{{date}} 过期"
 }

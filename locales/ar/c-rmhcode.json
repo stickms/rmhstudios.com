@@ -11,5 +11,7 @@
   "token-generated-notice": "تم إنشاء الرمز! انسخه الآن - لن يظهر مرة أخرى.",
   "token-name-placeholder": "اسم الرمز (اختياري)",
   "unnamed-token": "رمز غير مسمى",
-  "your-tokens": "رموزك"
+  "your-tokens": "رموزك",
+  "expires-soon": "ينتهي قريبًا",
+  "expires-date": "ينتهي في {{date}}"
 }

@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Key, Check, RefreshCw, Trash2, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { CopyButton } from '@/components/ui/copy-button';
+import { tokenExpiry } from '@/lib/rmhcode/token-expiry';
 
 interface Token {
   id: string;
@@ -13,7 +15,7 @@ interface Token {
 }
 
 export default function TokenGenerator() {
-  const { t } = useTranslation("c-rmhcode");
+  const { t, i18n } = useTranslation("c-rmhcode");
   const [tokens, setTokens] = useState<Token[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -82,7 +84,7 @@ export default function TokenGenerator() {
   }
 
   function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return new Date(dateStr).toLocaleDateString(i18n.language, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -185,12 +187,20 @@ export default function TokenGenerator() {
                         {t("expired", { defaultValue: "Expired" })}
                       </span>
                     )}
+                    {tokenExpiry(token.expiresAt) === 'soon' && (
+                      <Badge variant="warning" size="sm">
+                        {t("expires-soon", { defaultValue: "Expires soon" })}
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-xs text-site-text-dim">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {t("created-date", { defaultValue: "Created {{date}}", date: formatDate(token.createdAt) })}
                     </span>
+                    {!isExpired(token.expiresAt) && (
+                      <span>{t("expires-date", { defaultValue: "Expires {{date}}", date: formatDate(token.expiresAt) })}</span>
+                    )}
                     {token.lastUsedAt && (
                       <span>{t("last-used-date", { defaultValue: "Last used {{date}}", date: formatDate(token.lastUsedAt) })}</span>
                     )}

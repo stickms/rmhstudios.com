@@ -11,5 +11,7 @@
   "token-generated-notice": "ٹوکن بن گیا! ابھی کاپی کریں - یہ دوبارہ نہیں دکھایا جائے گا۔",
   "token-name-placeholder": "ٹوکن کا نام (اختیاری)",
   "unnamed-token": "بغیر نام کا ٹوکن",
-  "your-tokens": "آپ کے ٹوکنز"
+  "your-tokens": "آپ کے ٹوکنز",
+  "expires-soon": "جلد ختم ہو گا",
+  "expires-date": "{{date}} کو ختم"
 }
