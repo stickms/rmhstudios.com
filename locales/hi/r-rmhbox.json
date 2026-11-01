@@ -30,6 +30,7 @@
   "pagination-range": "{{from}}–{{to}} का {{total}}",
   "player-count_one": "{{count}} खिलाड़ी",
   "player-count_other": "{{count}} खिलाड़ी",
+  "player-count-of-max": "खिलाड़ी: {{count}}/{{max}}",
   "player-range": "{{minPlayers}}–{{maxPlayers}} खिलाड़ी",
   "pts": "अंक",
   "public-lobbies": "सार्वजनिक लॉबी",
@@ -49,6 +50,6 @@
   "winner-none": "कोई नहीं",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_one": "{{count}}/{{max}} players",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "player-count-of-max_one": "खिलाड़ी: {{count}}/{{max}}",
+  "player-count-of-max_other": "खिलाड़ी: {{count}}/{{max}}"
 }

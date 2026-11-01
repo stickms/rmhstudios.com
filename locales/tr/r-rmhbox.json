@@ -30,6 +30,7 @@
   "pagination-range": "{{from}}–{{to}} / {{total}}",
   "player-count_one": "{{count}} oyuncu",
   "player-count_other": "{{count}} oyuncu",
+  "player-count-of-max": "Oyuncu: {{count}}/{{max}}",
   "player-range": "{{minPlayers}}–{{maxPlayers}} oyuncu",
   "pts": "puan",
   "public-lobbies": "Halka Açık Lobiler",
@@ -49,6 +50,6 @@
   "winner-none": "Yok",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_one": "{{count}}/{{max}} players",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "player-count-of-max_one": "Oyuncu: {{count}}/{{max}}",
+  "player-count-of-max_other": "Oyuncu: {{count}}/{{max}}"
 }

@@ -31,6 +31,7 @@
   "player-count_one": "{{count}} jogador",
   "player-count_many": "{{count}} players",
   "player-count_other": "{{count}} jogadores",
+  "player-count-of-max": "Jogadores: {{count}}/{{max}}",
   "player-range": "{{minPlayers}}–{{maxPlayers}} jogadores",
   "pts": "pts",
   "public-lobbies": "Lobbies Públicos",
@@ -51,6 +52,6 @@
   "loading": "Loading…",
   "room-code": "Room code",
   "player-count-of-max_many": "{{count}}/{{max}} players",
-  "player-count-of-max_one": "{{count}}/{{max}} players",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "player-count-of-max_one": "Jogadores: {{count}}/{{max}}",
+  "player-count-of-max_other": "Jogadores: {{count}}/{{max}}"
 }

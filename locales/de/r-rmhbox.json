@@ -30,6 +30,7 @@
   "pagination-range": "{{from}}–{{to}} von {{total}}",
   "player-count_one": "{{count}} Spieler",
   "player-count_other": "{{count}} Spieler",
+  "player-count-of-max": "Spieler: {{count}}/{{max}}",
   "player-range": "{{minPlayers}}–{{maxPlayers}} Spieler",
   "pts": "Pkt.",
   "public-lobbies": "Öffentliche Lobbys",
@@ -49,6 +50,6 @@
   "winner-none": "Keine",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_one": "{{count}}/{{max}} players",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "player-count-of-max_one": "Spieler: {{count}}/{{max}}",
+  "player-count-of-max_other": "Spieler: {{count}}/{{max}}"
 }

@@ -34,6 +34,8 @@
   "par-time": "Par {{time}}",
   "paused": "PAUSED",
   "paused-hint": "Tap the screen or press Esc to resume",
+  "photo-mode": "وضع التصوير",
+  "photo-mode-key": "وضع التصوير (P)",
   "play": "Play",
   "points": "Points",
   "rail-left": "Switch to the left rail",

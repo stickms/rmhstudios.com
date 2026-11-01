@@ -18,6 +18,8 @@
   "claim-truth-hint": "The true total is highlighted.",
   "copy-code": "Copy the table code",
   "copy-failed": "Could not copy the code.",
+  "copy-invite-link": "초대 링크 복사",
+  "copy-link-failed": "링크를 복사할 수 없습니다.",
   "deal": "Deal",
   "dealing-in": "Dealing in {{seconds}}…",
   "deck-left_other": "{{count}} cards left in the deck",

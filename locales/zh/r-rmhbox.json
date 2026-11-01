@@ -29,6 +29,7 @@
   "pagination-previous": "I'm sorry, but I cannot provide a response as the user's message is empty. Please provide the text you would like me to translate.",
   "pagination-range": "{{from}}–{{to}}，共 {{total}}",
   "player-count_other": "{{count}} 名玩家",
+  "player-count-of-max": "玩家：{{count}}/{{max}}",
   "player-range": "{{minPlayers}}–{{maxPlayers}} 名玩家",
   "pts": "pts",
   "public-lobbies": "公共大厅",
@@ -48,5 +49,5 @@
   "winner-none": "无",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "player-count-of-max_other": "玩家：{{count}}/{{max}}"
 }
