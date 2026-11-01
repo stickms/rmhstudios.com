@@ -19,5 +19,6 @@
   "tip-dialog-title": "Gửi tip",
   "tip-error": "Không thể gửi tip",
   "tip-sign-in": "Vui lòng đăng nhập để tip.",
-  "tip-success": "Đã tip {{amount}} coins{{recipient}}!"
+  "tip-success": "Đã tip {{amount}} coins{{recipient}}!",
+  "tip-max-hint": "Tối đa mỗi lần tip: {{max}}"
 }

@@ -19,5 +19,6 @@
   "tip-dialog-title": "チップを送る",
   "tip-error": "チップを送信できませんでした",
   "tip-sign-in": "チップを送るにはサインインしてください。",
-  "tip-success": "{{amount}}コインをチップしました{{recipient}}！"
+  "tip-success": "{{amount}}コインをチップしました{{recipient}}！",
+  "tip-max-hint": "1回のチップの上限：{{max}}"
 }

@@ -19,5 +19,6 @@
   "tip-dialog-title": "Trinkgeld senden",
   "tip-error": "Trinkgeld konnte nicht gesendet werden",
   "tip-sign-in": "Bitte melde dich an, um Trinkgeld zu geben.",
-  "tip-success": "{{amount}} Münzen{{recipient}} als Trinkgeld gesendet!"
+  "tip-success": "{{amount}} Münzen{{recipient}} als Trinkgeld gesendet!",
+  "tip-max-hint": "Maximum pro Trinkgeld: {{max}}"
 }

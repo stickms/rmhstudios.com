@@ -19,5 +19,6 @@
   "tip-dialog-title": "टिप भेजें",
   "tip-error": "टिप नहीं भेज सके",
   "tip-sign-in": "कृपया टिप देने के लिए साइन इन करें।",
-  "tip-success": "{{recipient}} को {{amount}} सिक्के टिप दिए!"
+  "tip-success": "{{recipient}} को {{amount}} सिक्के टिप दिए!",
+  "tip-max-hint": "प्रति टिप अधिकतम: {{max}}"
 }
