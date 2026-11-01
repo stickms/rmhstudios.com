@@ -97,5 +97,7 @@
   "waiting-for-players": "EN ATTENTE DES JOUEURS{{notReady}}",
   "waiting-status": "EN ATTENTE",
   "you": "VOUS",
-  "you-badge": "VOUS"
+  "you-badge": "VOUS",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

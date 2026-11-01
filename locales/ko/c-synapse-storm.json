@@ -95,5 +95,7 @@
   "waiting-for-players": "플레이어 대기 중{{notReady}}",
   "waiting-status": "대기 중",
   "you": "당신",
-  "you-badge": "당신"
+  "you-badge": "당신",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

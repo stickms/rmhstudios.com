@@ -95,5 +95,7 @@
   "waiting-for-players": "プレイヤーを待機中{{notReady}}",
   "waiting-status": "待機中",
   "you": "あなた",
-  "you-badge": "あなた"
+  "you-badge": "あなた",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

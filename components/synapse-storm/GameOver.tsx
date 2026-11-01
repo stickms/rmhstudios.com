@@ -11,11 +11,13 @@ interface GameOverProps {
     onMenu: () => void;
     currentUserId?: string;
     scoreSaved?: boolean;
+    /** The server reported this run as a personal best (the result moment fired). */
+    newBest?: boolean;
     /** R14: an unranked custom storm — no leaderboard, nothing was submitted. */
     training?: boolean;
 }
 
-export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, currentUserId, scoreSaved, training }) => {
+export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, currentUserId, scoreSaved, newBest, training }) => {
     const { t } = useTranslation("c-synapse-storm");
     const accuracy = state.puzzlesSolved > 0
         ? Math.round((state.puzzlesSolved / (state.puzzlesSolved + state.puzzlesMissed)) * 100)
@@ -58,7 +60,9 @@ export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, cu
                     </div>
                     <div className="go-stat">
                         <span className="hud-label">{t("stat-new-best", { defaultValue: "New Best?" })}</span>
-                        <div className="hud-value" style={{ color: 'var(--accent-gold)' }}>--</div>
+                        <div className="hud-value" style={{ color: 'var(--accent-gold)' }}>
+                            {training || !scoreSaved ? '--' : newBest ? t("new-best-yes", { defaultValue: "Yes" }) : t("new-best-no", { defaultValue: "No" })}
+                        </div>
                     </div>
                 </div>
 

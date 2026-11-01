@@ -96,5 +96,7 @@
   "waiting-for-players": "WAITING FOR PLAYERS{{notReady}}",
   "waiting-status": "WAITING",
   "you": "YOU",
-  "you-badge": "YOU"
+  "you-badge": "YOU",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

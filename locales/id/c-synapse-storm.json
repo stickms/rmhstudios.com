@@ -95,5 +95,7 @@
   "waiting-for-players": "MENUNGGU PEMAIN{{notReady}}",
   "waiting-status": "MENUNGGU",
   "you": "ANDA",
-  "you-badge": "ANDA"
+  "you-badge": "ANDA",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

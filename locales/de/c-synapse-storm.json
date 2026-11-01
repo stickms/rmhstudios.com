@@ -96,5 +96,7 @@
   "waiting-for-players": "WARTE AUF SPIELER{{notReady}}",
   "waiting-status": "WARTEN",
   "you": "DU",
-  "you-badge": "DU"
+  "you-badge": "DU",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

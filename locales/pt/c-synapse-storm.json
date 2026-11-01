@@ -97,5 +97,7 @@
   "waiting-for-players": "AGUARDANDO JOGADORES{{notReady}}",
   "waiting-status": "AGUARDANDO",
   "you": "VOCÊ",
-  "you-badge": "VOCÊ"
+  "you-badge": "VOCÊ",
+  "new-best-yes": "Yes",
+  "new-best-no": "No"
 }

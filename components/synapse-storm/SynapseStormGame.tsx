@@ -93,7 +93,7 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
                     <ResultMomentSlot moment={scoreMoment} gameName="Synapse Storm" onDismiss={clearScoreMoment} />
                 )}
                 {state.status === 'gameover' && (
-                    <GameOver state={state} onRestart={training ? () => playTraining(training) : playStorm} onMenu={returnToMenu} currentUserId={currentUserId} scoreSaved={scoreSaved} training={!!training} />
+                    <GameOver state={state} onRestart={training ? () => playTraining(training) : playStorm} onMenu={returnToMenu} currentUserId={currentUserId} scoreSaved={scoreSaved} newBest={!!scoreMoment} training={!!training} />
                 )}
             </div>
         </div>
