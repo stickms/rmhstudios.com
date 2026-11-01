@@ -8,7 +8,7 @@ import { getNewsArticleBySlug } from '@/lib/news';
 import { buildCanonical, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Calendar, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, ExternalLink } from 'lucide-react';
 // `m as motion`, not `motion` — the same alias the six other route modules that
 // animate use. `Providers` wraps the app in `LazyMotion`, whose whole point is
 // that the feature bundle loads on demand; `m` is the component that honours
@@ -23,6 +23,7 @@ import { ShareButton } from '@/components/blog/ShareButton';
 import { liquidVTName } from '@/lib/view-transition';
 import { getCategoryColor } from '@/lib/news-categories';
 import { useTranslation } from 'react-i18next';
+import { readingTimeMinutes } from '@/lib/reading-time';
 import { ArticleBody } from '@/components/reading/ArticleBody';
 import { StoryBanner } from '@/components/reading/StoryBanner';
 import { getStoryForArticle } from '@/lib/reading/stories.server';
@@ -76,6 +77,7 @@ export const Route = createFileRoute('/news/$slug')({
 function NewsArticlePage() {
   const { t } = useTranslation('pages');
   const article = Route.useLoaderData();
+  const minutes = article ? readingTimeMinutes(article.content) : 0;
   const { slug } = Route.useParams();
 
   if (!article) {
@@ -131,6 +133,12 @@ function NewsArticlePage() {
               <Calendar className="size-4" aria-hidden />
               {article.date}
             </div>
+            {minutes > 0 ? (
+              <div className="flex items-center gap-2 text-site-text-muted font-mono text-sm">
+                <Clock className="size-4" aria-hidden />
+                {t('blog-reading-time', { defaultValue: '{{minutes}} min read', minutes })}
+              </div>
+            ) : null}
             <ShareButton slug={slug} section="news" />
           </motion.div>
 
