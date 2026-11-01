@@ -2110,3 +2110,17 @@
         min-width: 44px;
     }
 }
+
+/* Narrow phones: keep the primary buttons on one line and tappable. */
+@media (max-width: 420px) {
+    .start-button {
+        padding-inline: 1.25rem;
+        max-width: 100%;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+    }
+}
+
+.settings-toggle {
+    min-height: 44px;
+}
