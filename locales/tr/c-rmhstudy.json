@@ -96,5 +96,7 @@
   "unban": "Yasağı kaldır",
   "unban-user": "Kullanıcının yasağını kaldır",
   "work-duration": "Çalışma Süresi: {{minutes}} dk",
-  "apps": "Apps"
+  "apps": "Apps",
+  "kbd-hint-reveal": "Göstermek için Boşluk tuşuna basın",
+  "kbd-hint-grade": "Puanlamak için 1–4 tuşlarına basın: Tekrar, Zor, İyi, Kolay"
 }

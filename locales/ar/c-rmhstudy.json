@@ -120,5 +120,7 @@
   "unban": "إلغاء الحظر",
   "unban-user": "إلغاء حظر المستخدم",
   "work-duration": "مدة العمل: {{minutes}} دقيقة",
-  "apps": "Apps"
+  "apps": "Apps",
+  "kbd-hint-reveal": "اضغط مفتاح المسافة للكشف",
+  "kbd-hint-grade": "اضغط 1–4 للتقييم: مجددًا، صعب، جيد، سهل"
 }
