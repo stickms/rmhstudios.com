@@ -893,14 +893,28 @@ function handleJoin(io: Server, socket: Socket, payload: unknown): void {
     return;
   }
 
-  // A reconnect with a NEW socket id: match the held seat by account, so the
+  // A reconnect with a NEW socket id: match the seat by account, so the
   // player walks back into their own body with their own pockets.
-  const held = [...session.members.values()].find((m) => !m.connected && m.userId === userId && userId);
+  //
+  // The seat may be held (`connected: false`) OR still marked connected: a
+  // flaky link reconnects twice in a row, and the second socket arrives before
+  // the hub has noticed the first one died. Matching only held seats gave that
+  // player a second body (two "bob"s in the roster, one a ghost for the whole
+  // grace window); one account has one seat, so the newest socket takes it.
+  const held = [...session.members.values()].find((m) => m.userId === userId && userId && m.socketId !== socket.id);
   if (held) {
+    if (held.connected) {
+      socketSession.delete(held.socketId);
+      io.sockets.sockets.get(held.socketId)?.leave(roomName(code));
+    }
     session.members.delete(held.socketId);
     for (const item of session.items.values()) {
       if (item.holder === held.socketId) item.holder = socket.id;
     }
+    // The host owns the save and the start button; a host who reconnects on a
+    // new socket id must still be the host, or `not-host` locks them out of
+    // their own session and the 'host-left' release never matches them.
+    if (session.hostSocketId === held.socketId) session.hostSocketId = socket.id;
     held.socketId = socket.id;
     held.connected = true;
     held.disconnectedAt = null;
