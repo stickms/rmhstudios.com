@@ -950,6 +950,26 @@ function rebindSeat(io: Server, socket: Socket, lobby: Lobby, seat: Seat): void 
 function seatSocket(io: Server, socket: Socket, lobby: Lobby): boolean {
   const who = identity(socket);
 
+  // socket.io's connection-state recovery can hand the SAME id back after a
+  // drop. The seat is then still keyed by it but marked away, and nothing
+  // below would ever flip it back: the player sat "away" on every other screen,
+  // was skipped each turn, and never got the table state pushed to them.
+  const returning = lobby.seats.get(socket.id);
+  if (returning && !returning.connected) {
+    returning.connected = true;
+    returning.droppedAt = 0;
+    pushLog(lobby, 'returned', { actorName: returning.name });
+    socketLobby.set(socket.id, lobby.code);
+    socket.join(roomName(lobby.code));
+    touch(lobby);
+    socket.emit(S2C.JOINED, { code: lobby.code, socketId: socket.id });
+    for (const message of lobby.chat.slice(-20)) socket.emit(S2C.CHAT, message);
+    broadcastLobby(io, lobby);
+    if (lobby.state === 'playing') emitState(io, lobby);
+    armReaper(io, lobby);
+    return true;
+  }
+
   if (!lobby.seats.has(socket.id)) {
     // A seat held open for this account after a drop. Reclaiming it is what
     // makes a locked phone screen survivable — the hand and the place in turn
