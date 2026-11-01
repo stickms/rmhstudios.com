@@ -45,7 +45,7 @@ export function VoidBreakerTouchControls({ inputRef, onPause, visible }: Props) 
         data-jelly-scope="off"
         style={{ touchAction: 'none' }}
       >
-        <div className="absolute inset-x-0 bottom-0 flex justify-between items-end px-4 pb-4">
+        <div className="absolute inset-x-0 bottom-0 flex justify-between items-end px-4 pb-4 portrait:pb-[4.5rem]">
           {/* D-pad */}
           <div className="pointer-events-auto grid grid-cols-3 gap-1">
             <div />
