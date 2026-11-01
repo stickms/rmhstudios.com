@@ -1,5 +1,16 @@
 {
   "controls-hint": "WASD/← → حرکت • Space چھلانگ • Shift ڈیش • E تعامل • M مینو",
   "e-continue": "[E] جاری رکھیں",
-  "loading": "لوڈ ہو رہا ہے..."
+  "loading": "لوڈ ہو رہا ہے...",
+  "tap-continue": "Tap to continue",
+  "touch-dash": "Dash",
+  "touch-dash-aria": "Dash",
+  "touch-jump": "Jump",
+  "touch-jump-aria": "Jump",
+  "touch-left": "Move left",
+  "touch-menu": "Menu",
+  "touch-menu-aria": "Open menu",
+  "touch-right": "Move right",
+  "touch-use": "Use",
+  "touch-use-aria": "Interact"
 }

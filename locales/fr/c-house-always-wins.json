@@ -1,5 +1,16 @@
 {
   "controls-hint": "WASD/← → Déplacer • Space Sauter • Shift Dash • E Interagir • M Menu",
   "e-continue": "[E] Continuer",
-  "loading": "CHARGEMENT..."
+  "loading": "CHARGEMENT...",
+  "tap-continue": "Tap to continue",
+  "touch-dash": "Dash",
+  "touch-dash-aria": "Dash",
+  "touch-jump": "Jump",
+  "touch-jump-aria": "Jump",
+  "touch-left": "Move left",
+  "touch-menu": "Menu",
+  "touch-menu-aria": "Open menu",
+  "touch-right": "Move right",
+  "touch-use": "Use",
+  "touch-use-aria": "Interact"
 }

@@ -1,5 +1,16 @@
 {
   "controls-hint": "WASD/← → Di chuyển • Space Nhảy • Shift Lướt • E Tương tác • M Menu",
   "e-continue": "[E] Tiếp tục",
-  "loading": "ĐANG TẢI..."
+  "loading": "ĐANG TẢI...",
+  "tap-continue": "Tap to continue",
+  "touch-dash": "Dash",
+  "touch-dash-aria": "Dash",
+  "touch-jump": "Jump",
+  "touch-jump-aria": "Jump",
+  "touch-left": "Move left",
+  "touch-menu": "Menu",
+  "touch-menu-aria": "Open menu",
+  "touch-right": "Move right",
+  "touch-use": "Use",
+  "touch-use-aria": "Interact"
 }

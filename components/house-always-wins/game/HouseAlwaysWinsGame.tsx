@@ -15,6 +15,7 @@ import { MenuOverlay } from "./MenuOverlay";
 import { Toasts, type ToastItem } from "./Toasts";
 import { EndingOverlay } from "./EndingOverlay";
 import { PokerGame } from "./PokerGame";
+import { TouchPad } from "./TouchPad";
 
 export function HouseAlwaysWinsGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -148,6 +149,10 @@ export function HouseAlwaysWinsGame() {
 
       {dialogue && (
         <DialogBox dialogue={dialogue} onChoice={handleChoice} onAdvance={handleAdvance} />
+      )}
+
+      {!menuOpen && !pokerOpen && !ending && !dialogue && (
+        <TouchPad onMenu={() => setMenuOpen(true)} />
       )}
 
       <MenuOverlay open={menuOpen} onClose={() => setMenuOpen(false)} />

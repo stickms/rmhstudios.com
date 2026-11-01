@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Input } from "@/lib/house-always-wins/input";
 import type { DialogueData } from "@/lib/house-always-wins/types";
 
 interface DialogBoxProps {
@@ -83,9 +84,19 @@ export function DialogBox({ dialogue, onChoice, onAdvance }: DialogBoxProps) {
             ))}
           </div>
         ) : (
-          <div className="text-[#555] text-xs font-mono mt-2">
-            {t("e-continue", { defaultValue: "[E] Continue" })}
-          </div>
+          // A real button so touch (no E key) can advance through the same
+          // Input channel the scene reads, and keyboard/AT users get a control.
+          <button
+            type="button"
+            onClick={() => {
+              Input.press("KeyE");
+              window.setTimeout(() => Input.release("KeyE"), 60);
+            }}
+            className="mt-2 block w-full pointer-coarse:min-h-11 text-left text-[#777] text-xs font-mono"
+          >
+            <span className="[@media(pointer:coarse)]:hidden">{t("e-continue", { defaultValue: "[E] Continue" })}</span>
+            <span className="hidden [@media(pointer:coarse)]:inline">{t("tap-continue", { defaultValue: "Tap to continue" })}</span>
+          </button>
         )}
       </div>
     </div>
