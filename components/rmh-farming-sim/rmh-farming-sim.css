@@ -325,6 +325,9 @@
 
 /* hotbar */
 .rfs-hotbar {
+    max-width: calc(100% - 16px);
+    overflow-x: auto;
+    scrollbar-width: none;
     position: absolute;
     bottom: 34px;
     left: 50%;
@@ -730,4 +733,42 @@
   .rfs-tabs button {
     min-height: 44px;
   }
+}
+
+/* Walk stick: a fixed pad above the hotbar, left side. Touch devices only
+   (the component renders nothing without a coarse pointer). */
+.rfs-stick {
+    position: absolute;
+    left: calc(16px + var(--safe-left));
+    bottom: calc(110px + var(--safe-bottom));
+    width: 104px;
+    height: 104px;
+    border-radius: 50%;
+    background: rgba(28, 18, 10, 0.55);
+    border: 2px solid var(--rfs-wood-light);
+    touch-action: none;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.rfs-stick-thumb {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: rgba(240, 197, 72, 0.55);
+    border: 2px solid var(--rfs-gold);
+    pointer-events: none;
+}
+@media (pointer: coarse) {
+    .rfs-slot {
+        width: 48px;
+        height: 48px;
+    }
+    .rfs-hotbar {
+        bottom: calc(14px + var(--safe-bottom));
+    }
+    .rfs-stick {
+        bottom: calc(84px + var(--safe-bottom));
+    }
 }

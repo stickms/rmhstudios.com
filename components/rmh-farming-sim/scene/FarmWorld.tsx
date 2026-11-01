@@ -11,6 +11,7 @@ import { useRfsStore } from '@/lib/rmh-farming-sim/store';
 import { actions } from '@/lib/rmh-farming-sim/socket';
 import type { CropDef, HotbarSelection, PresencePlayer } from '@/lib/rmh-farming-sim/types';
 import { useKeyboard, isTypingTarget } from '../useKeyboard';
+import { farmTouch } from '@/lib/rmh-farming-sim/touch';
 
 const SEASON_GRASS: Record<string, string> = {
     spring: '#6fbf5a',
@@ -75,8 +76,13 @@ function LocalController({ grid }: { grid: number }) {
             if (k.has('KeyA') || k.has('ArrowLeft')) dx -= 1;
             if (k.has('KeyD') || k.has('ArrowRight')) dx += 1;
         }
+        // Analog stick (touch): magnitude is the throttle, capped at 1.
+        if (dx === 0 && dz === 0 && (farmTouch.dx !== 0 || farmTouch.dz !== 0)) {
+            dx = farmTouch.dx;
+            dz = farmTouch.dz;
+        }
         if (dx !== 0 || dz !== 0) {
-            const len = Math.hypot(dx, dz) || 1;
+            const len = Math.max(Math.hypot(dx, dz), 1);
             const step = (MOVE_SPEED * Math.min(dt, 0.05)) / len;
             pos.current.x = THREE.MathUtils.clamp(pos.current.x + dx * step, 0.2, grid - 0.2);
             pos.current.z = THREE.MathUtils.clamp(pos.current.z + dz * step, 0.2, grid - 0.2);

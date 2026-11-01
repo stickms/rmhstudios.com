@@ -12,6 +12,7 @@ import HUD from './HUD';
 import ShopPanel from './ShopPanel';
 import MembersPanel from './MembersPanel';
 import ChatBox from './ChatBox';
+import TouchStick from './TouchStick';
 import { FarmTourViewer } from './FarmTour';
 import './rmh-farming-sim.css';
 
@@ -53,6 +54,7 @@ export default function RmhFarmingSim() {
                         <FarmCanvas />
                     </div>
                     <HUD />
+                    <TouchStick />
                     <ChatBox />
                     <ShopPanel />
                     <MembersPanel />

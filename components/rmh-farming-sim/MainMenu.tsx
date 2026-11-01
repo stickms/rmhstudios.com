@@ -4,7 +4,9 @@
 
 import { useState } from 'react';
 import { useRfsStore } from '@/lib/rmh-farming-sim/store';
-import { actions } from '@/lib/rmh-farming-sim/socket';
+import { actions, connect } from '@/lib/rmh-farming-sim/socket';
+import { useSession } from '@/components/Providers';
+import { useNavigate } from '@tanstack/react-router';
 
 export default function MainMenu() {
     const welcome = useRfsStore((s) => s.welcome);
@@ -14,9 +16,13 @@ export default function MainMenu() {
     const removeRecent = useRfsStore((s) => s.removeRecent);
     const setScreen = useRfsStore((s) => s.setScreen);
     const [code, setCode] = useState('');
+    const session = useSession();
+    const navigate = useNavigate();
+    const signedOut = !session.isPending && !session.data;
 
     const ready = connection === 'connected' && !!welcome;
-    const needsAuth = connection === 'error' && !welcome;
+    const needsAuth = signedOut && connection === 'error' && !welcome;
+    const serverDown = !signedOut && connection === 'error' && !welcome;
 
     const enterOwn = () => setScreen('game');
     const join = (c: string) => {
@@ -32,13 +38,32 @@ export default function MainMenu() {
                 </h1>
                 <p className="rfs-tagline">Plant, tend, harvest &amp; trade — solo or with friends.</p>
 
-                {!ready && !needsAuth && (
+                {!ready && !needsAuth && !serverDown && (
                     <div className="rfs-connect">Connecting to the farm server…</div>
                 )}
 
                 {needsAuth && (
                     <div className="rfs-connect rfs-error">
                         Please sign in to play. Your farm and progress are tied to your account.
+                        <div>
+                            <button
+                                className="rfs-big-btn"
+                                onClick={() => navigate({ to: '/login', search: { callbackURL: '/rmh-farming-sim' } })}
+                            >
+                                Sign in
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {serverDown && (
+                    <div className="rfs-connect rfs-error">
+                        Can&apos;t reach the farm server right now. We keep retrying in the background.
+                        <div>
+                            <button className="rfs-big-btn" onClick={() => connect().catch(() => {})}>
+                                Try again
+                            </button>
+                        </div>
                     </div>
                 )}
 

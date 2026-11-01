@@ -62,6 +62,8 @@ export function LaundryGame() {
   const [connecting, setConnecting] = useState(false);
   /** Our own clock ran out but the server has not published standings yet. */
   const [awaitingResults, setAwaitingResults] = useState(false);
+  /** The wait for standings has gone on long enough that the player needs a way out. */
+  const [awaitTimedOut, setAwaitTimedOut] = useState(false);
 
   const screen = useLaundryStore((s) => s.screen);
   const mode = useLaundryStore((s) => s.mode);
@@ -252,6 +254,15 @@ export function LaundryGame() {
     void submitSolo(match);
   }, [submitSolo]);
 
+  // If the room never answers (dropped socket, host gone), offer a way out
+  // instead of a spinner-less overlay that blocks the whole screen forever.
+  useEffect(() => {
+    setAwaitTimedOut(false);
+    if (!awaitingResults) return;
+    const id = window.setTimeout(() => setAwaitTimedOut(true), 20_000);
+    return () => window.clearTimeout(id);
+  }, [awaitingResults]);
+
   // The server's standings supersede the local wait.
   useEffect(() => {
     if (screen === 'results') setAwaitingResults(false);
@@ -282,6 +293,8 @@ export function LaundryGame() {
 
   const leaveLobby = useCallback(() => {
     laundryNet.leave();
+    matchRef.current = null;
+    setAwaitingResults(false);
     const store = useLaundryStore.getState();
     store.setLobby(null);
     store.setMode('solo');
@@ -350,6 +363,18 @@ export function LaundryGame() {
               {t('waiting-for-others', {
                 defaultValue: 'Your round is done — waiting for the rest of the room.',
               })}
+              {awaitTimedOut ? (
+                <span className="mt-3 flex flex-col items-center gap-2">
+                  <span className="text-xs opacity-80">
+                    {t('waiting-timeout', {
+                      defaultValue: 'This is taking longer than it should.',
+                    })}
+                  </span>
+                  <Button size="sm" className="pointer-coarse:min-h-11" onClick={leaveLobby}>
+                    {t('leave-room', { defaultValue: 'Leave room' })}
+                  </Button>
+                </span>
+              ) : null}
             </p>
           </div>
         ) : null}
@@ -361,6 +386,13 @@ export function LaundryGame() {
                 defaultValue:
                   'The browser reset this page’s graphics. It should come back on its own — reload if it does not.',
               })}
+              <Button
+                size="sm"
+                className="mt-3 pointer-coarse:min-h-11"
+                onClick={() => window.location.reload()}
+              >
+                {t('reload-page', { defaultValue: 'Reload' })}
+              </Button>
             </p>
           </div>
         ) : null}

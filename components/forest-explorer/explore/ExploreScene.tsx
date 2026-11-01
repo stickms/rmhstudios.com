@@ -15,6 +15,7 @@ import { Moon } from '../shared/Moon';
 import { TikiTorches } from '../shared/TikiTorches';
 import { Flashlight } from '../shared/Flashlight';
 import { Player } from '../shared/PlayerController';
+import { TouchLook } from '../shared/TouchLook';
 import { ScatterDecor } from '../story/scenery/ScatterDecor';
 import { Garden } from './Garden';
 import { Butterflies } from './Butterflies';
@@ -29,12 +30,14 @@ export function ExploreScene({
     night,
     flashlightOn,
     locked,
+    touch,
 }: {
     onLock: () => void;
     onUnlock: () => void;
     night: boolean;
     flashlightOn: boolean;
     locked: boolean;
+    touch: boolean;
 }) {
     // Wild ground cover keeps clear of the river and pond
     const rejectScatter = useCallback((x: number, z: number) => {
@@ -130,7 +133,7 @@ export function ExploreScene({
 
             <Player />
 
-            <PointerLockControls onLock={onLock} onUnlock={onUnlock} />
+            {touch ? <TouchLook /> : <PointerLockControls onLock={onLock} onUnlock={onUnlock} />}
         </>
     );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useGameSession } from '@/hooks/useGameSession';
+import { WebGLUnavailable, useWebGLSupport } from '@/components/shared/WebGLUnavailable';
 import { Canvas } from '@react-three/fiber';
 import { useState, useEffect, useCallback, useRef } from 'react';
 // `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
@@ -25,6 +26,8 @@ import { JournalOverlay } from './journal/JournalOverlay';
 import { StoryToast } from './StoryToast';
 import { StoryNarration } from './StoryNarration';
 import type { ActId } from '@/lib/forest-explorer/types';
+import { TouchControls } from '../shared/TouchControls';
+import { safeRequestPointerLock, usesTouchControls } from '../shared/touchInput';
 
 export function StoryGame() {
     const { t } = useTranslation("c-forest-explorer");
@@ -33,7 +36,11 @@ export function StoryGame() {
         summarize: (save) => summarizeForestSave(save, t),
     });
 
+    const webgl = useWebGLSupport();
     const [locked, setLocked] = useState(false);
+    // Phones and tablets cannot pointer-lock: they walk with on-screen controls.
+    const [touch, setTouch] = useState(false);
+    useEffect(() => setTouch(usesTouchControls()), []);
     const [showMenu, setShowMenu] = useState(true);
     const [paused, setPaused] = useState(false);
     const [introMounted, setIntroMounted] = useState(false);
@@ -157,17 +164,22 @@ export function StoryGame() {
     const handleNewGame = () => {
         newGame();
         setShowMenu(false);
+        if (touch) setLocked(true);
     };
 
     const handleContinue = () => {
         setShowMenu(false);
+        if (touch) setLocked(true);
     };
 
     const handleSaveAndQuit = () => {
         saveProgress();
         setPaused(false);
         setShowMenu(true);
+        if (touch) setLocked(false);
     };
+
+    if (!webgl) return <WebGLUnavailable gameName="Forest Explorer" />;
 
     // Two saves that have both been played. Nothing else is rendered behind it:
     // the scene has not been initialised, so there is no run to autosave over
@@ -207,8 +219,20 @@ export function StoryGame() {
                 <StoryScene
                     onLock={() => setLocked(true)}
                     onUnlock={() => setLocked(false)}
+                    touch={touch}
                 />
             </Canvas>
+
+            {touch && sceneActive && !transitioning && !showCompletion && (
+                <TouchControls
+                    actions={[
+                        { id: 'interact', code: 'KeyE', label: t('touch-interact', { defaultValue: 'Use' }), ariaLabel: t('touch-interact-aria', { defaultValue: 'Interact' }) },
+                        { id: 'light', code: 'KeyF', label: '🔦', ariaLabel: t('touch-flashlight', { defaultValue: 'Flashlight' }) },
+                        { id: 'journal', code: 'Tab', label: t('touch-journal', { defaultValue: 'Journal' }), ariaLabel: t('touch-journal-aria', { defaultValue: 'Open journal' }) },
+                    ]}
+                    onPause={() => setPaused(true)}
+                />
+            )}
 
             {/* Pre-game menu */}
             {showMenu && !locked && (
@@ -261,9 +285,8 @@ export function StoryGame() {
                             className="w-full py-2.5 bg-green-800 hover:bg-green-700 text-green-100 rounded-xl font-medium transition-colors text-sm cursor-pointer"
                             onClick={() => {
                                 setPaused(false);
-                                setTimeout(() => {
-                                    document.querySelector('canvas')?.requestPointerLock();
-                                }, 50);
+                                if (touch) setLocked(true);
+                                setTimeout(safeRequestPointerLock, 50);
                             }}
                         >
                             {t("resume", { defaultValue: "Resume" })}
@@ -362,6 +385,7 @@ export function StoryGame() {
                                 saveProgress();
                                 setShowMenu(true);
                                 setShowCompletion(false);
+                                if (touch) setLocked(false);
                             }}
                         >
                             {t("return-to-menu", { defaultValue: "Return to Menu" })}

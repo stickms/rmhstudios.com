@@ -5,6 +5,7 @@ import { PointerLockControls } from '@react-three/drei';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 import { InteractionSystem } from './InteractionSystem';
 import { StoryPlayer } from './StoryPlayerController';
+import { TouchLook } from '../shared/TouchLook';
 import { ActOneScene } from './acts/ActOneScene';
 import { ActTwoScene } from './acts/ActTwoScene';
 import { ActThreeScene } from './acts/ActThreeScene';
@@ -13,9 +14,11 @@ import { useFrame } from '@react-three/fiber';
 export function StoryScene({
     onLock,
     onUnlock,
+    touch,
 }: {
     onLock: () => void;
     onUnlock: () => void;
+    touch: boolean;
 }) {
     const currentAct = useStoryStore(s => s.currentAct);
     const tickPlaytime = useStoryStore(s => s.tickPlaytime);
@@ -54,8 +57,10 @@ export function StoryScene({
             {/* Pointer lock — only mount when no overlay is active.
                 Unmounting removes the click-to-lock handler so clicks on
                 puzzle/journal UI don't re-capture the pointer. */}
-            {!overlayActive && (
-                <PointerLockControls onLock={onLock} onUnlock={onUnlock} />
+            {touch ? (
+                <TouchLook />
+            ) : (
+                !overlayActive && <PointerLockControls onLock={onLock} onUnlock={onUnlock} />
             )}
         </>
     );

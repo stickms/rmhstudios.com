@@ -1,5 +1,6 @@
 'use client';
 
+import { safeRequestPointerLock } from '../../shared/touchInput';
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStoryStore } from '@/lib/forest-explorer/store';
@@ -41,7 +42,7 @@ export function JournalOverlay() {
                 e.preventDefault();
                 toggleJournal();
                 // Re-engage pointer lock while keydown gesture is still active
-                document.querySelector('canvas')?.requestPointerLock();
+                safeRequestPointerLock();
             }
         };
         window.addEventListener('keydown', fn);
