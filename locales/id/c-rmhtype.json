@@ -118,5 +118,9 @@
   "writing-passage": "Writing your passage...",
   "you": "(Anda)",
   "apps": "Apps",
-  "room-of-host": "{{name}}'s room"
+  "room-of-host": "{{name}}'s room",
+  "copy-result": "Salin hasil",
+  "result-copied": "Hasil disalin",
+  "result-copy-failed": "Tidak dapat menyalin hasil",
+  "kbd-hint-retry": "Tekan Enter untuk mencoba lagi"
 }

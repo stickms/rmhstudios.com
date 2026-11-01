@@ -118,5 +118,9 @@
   "writing-passage": "Writing your passage...",
   "you": "（あなた）",
   "apps": "Apps",
-  "room-of-host": "{{name}}'s room"
+  "room-of-host": "{{name}}'s room",
+  "copy-result": "結果をコピー",
+  "result-copied": "結果をコピーしました",
+  "result-copy-failed": "結果をコピーできませんでした",
+  "kbd-hint-retry": "Enter キーでもう一度挑戦"
 }

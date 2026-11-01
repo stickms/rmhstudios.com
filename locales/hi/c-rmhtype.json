@@ -122,5 +122,9 @@
   "writing-passage": "Writing your passage...",
   "you": "(आप)",
   "apps": "Apps",
-  "room-of-host": "{{name}}'s room"
+  "room-of-host": "{{name}}'s room",
+  "copy-result": "परिणाम कॉपी करें",
+  "result-copied": "परिणाम कॉपी हो गया",
+  "result-copy-failed": "परिणाम कॉपी नहीं हो सका",
+  "kbd-hint-retry": "फिर से कोशिश के लिए Enter दबाएँ"
 }

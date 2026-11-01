@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { RotateCcw, Sparkles, Trophy, User } from 'lucide-react';
+import { Copy, RotateCcw, Sparkles, Trophy, User } from 'lucide-react';
 import { connectToRmhType, emit } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 import { C2S } from '@/lib/rmhtype/events';
@@ -16,6 +16,8 @@ import { useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { SoloSourcePicker, SourcePracticeNote } from '@/components/rmhtype/SoloSourcePicker';
 import { autoIndent, backspaceIndent, type SoloSource } from '@/lib/rmhtype/sources';
+import { formatSoloResult } from '@/lib/rmhtype/result-text';
+import { isTypingTarget } from '@/lib/shortcuts/registry';
 
 export default function RmhTypeSolo() {
   const router = useRouter();
@@ -149,6 +151,39 @@ export default function RmhTypeSolo() {
       source,
     });
   }, [settings.soloDifficulty, settings.soloPassageLength, topic, source]);
+
+  // Quick restart: Esc while typing, Enter on the results screen. Tab is left to
+  // keyboard navigation. Enter on a focused button/link is left to the browser so
+  // it never fires twice.
+  const typingNow = started && !!soloPassage && !soloResult && soloCountdown === null && !finished;
+  const resultsNow = !!soloResult;
+  useEffect(() => {
+    if (!typingNow && !resultsNow) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (typingNow && e.key === 'Escape') {
+        e.preventDefault();
+        handleRetry();
+      } else if (resultsNow && e.key === 'Enter') {
+        if (isTypingTarget(e.target)) return;
+        if (e.target instanceof HTMLElement && /^(BUTTON|A)$/.test(e.target.tagName)) return;
+        e.preventDefault();
+        handleRetry();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [typingNow, resultsNow, handleRetry]);
+
+  const handleCopyResult = useCallback(async () => {
+    if (!soloResult) return;
+    try {
+      await navigator.clipboard.writeText(formatSoloResult(soloResult));
+      toast.success(t("result-copied", { defaultValue: "Result copied" }));
+    } catch {
+      toast.error(t("result-copy-failed", { defaultValue: "Could not copy the result" }));
+    }
+  }, [soloResult, t]);
 
   const handleBackToSettings = useCallback(() => {
     useRmhTypeStore.getState().clearSolo();
@@ -339,6 +374,16 @@ export default function RmhTypeSolo() {
                   {t("change-settings", { defaultValue: "Change Settings" })}
                 </button>
               </div>
+              <button
+                onClick={handleCopyResult}
+                className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-(--app-radius-sm) text-sm font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+              >
+                <Copy className="h-4 w-4" aria-hidden />
+                {t("copy-result", { defaultValue: "Copy result" })}
+              </button>
+              <p className="mt-2 text-xs text-(--app-text-dim)">
+                {t("kbd-hint-retry", { defaultValue: "Press Enter to try again" })}
+              </p>
             </div>
           </div>
         </div>

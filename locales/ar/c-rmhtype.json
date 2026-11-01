@@ -138,5 +138,9 @@
   "writing-passage": "Writing your passage...",
   "you": "(أنت)",
   "apps": "Apps",
-  "room-of-host": "{{name}}'s room"
+  "room-of-host": "{{name}}'s room",
+  "copy-result": "نسخ النتيجة",
+  "result-copied": "تم نسخ النتيجة",
+  "result-copy-failed": "تعذّر نسخ النتيجة",
+  "kbd-hint-retry": "اضغط Enter للمحاولة مجددًا"
 }

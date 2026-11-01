@@ -118,5 +118,9 @@
   "writing-passage": "Writing your passage...",
   "you": "（你）",
   "apps": "Apps",
-  "room-of-host": "{{name}}'s room"
+  "room-of-host": "{{name}}'s room",
+  "copy-result": "复制成绩",
+  "result-copied": "成绩已复制",
+  "result-copy-failed": "无法复制成绩",
+  "kbd-hint-retry": "按 Enter 再试一次"
 }

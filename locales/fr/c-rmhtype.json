@@ -126,5 +126,9 @@
   "writing-passage": "Writing your passage...",
   "you": "(vous)",
   "apps": "Apps",
-  "room-of-host": "{{name}}'s room"
+  "room-of-host": "{{name}}'s room",
+  "copy-result": "Copier le résultat",
+  "result-copied": "Résultat copié",
+  "result-copy-failed": "Impossible de copier le résultat",
+  "kbd-hint-retry": "Appuyez sur Entrée pour réessayer"
 }

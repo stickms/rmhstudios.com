@@ -118,5 +118,9 @@
   "writing-passage": "Writing your passage...",
   "you": "(당신)",
   "apps": "Apps",
-  "room-of-host": "{{name}}'s room"
+  "room-of-host": "{{name}}'s room",
+  "copy-result": "결과 복사",
+  "result-copied": "결과를 복사했습니다",
+  "result-copy-failed": "결과를 복사할 수 없습니다",
+  "kbd-hint-retry": "Enter를 눌러 다시 시도"
 }

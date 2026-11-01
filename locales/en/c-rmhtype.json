@@ -124,5 +124,9 @@
   "worst-title": "Worst keys",
   "wpm": "WPM",
   "writing-passage": "Writing your passage...",
-  "you": "(you)"
+  "you": "(you)",
+  "copy-result": "Copy result",
+  "result-copied": "Result copied",
+  "result-copy-failed": "Could not copy the result",
+  "kbd-hint-retry": "Press Enter to try again"
 }
