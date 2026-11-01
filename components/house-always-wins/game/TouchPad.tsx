@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/lib/house-always-wins/input";
 
@@ -54,7 +55,7 @@ function PadButton({
 }
 
 /** On-screen controls for coarse pointers (phones/tablets). Hidden on desktop. */
-export function TouchPad({ onMenu }: { onMenu: () => void }) {
+export function TouchPad({ onMenu, host }: { onMenu: () => void; host: HTMLElement | null }) {
   const { t } = useTranslation("c-house-always-wins");
   const [coarse, setCoarse] = useState(false);
   useEffect(() => {
@@ -64,8 +65,8 @@ export function TouchPad({ onMenu }: { onMenu: () => void }) {
     mq?.addEventListener?.("change", update);
     return () => mq?.removeEventListener?.("change", update);
   }, []);
-  if (!coarse) return null;
-  return (
+  if (!coarse || !host) return null;
+  return createPortal(
     <div
       className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex select-none items-end justify-between p-3"
       data-jelly-scope="off"
@@ -92,6 +93,7 @@ export function TouchPad({ onMenu }: { onMenu: () => void }) {
       >
         {t("touch-menu", { defaultValue: "Menu" })}
       </button>
-    </div>
+    </div>,
+    host,
   );
 }
