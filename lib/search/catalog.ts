@@ -274,6 +274,45 @@ export const SITE_DESTINATIONS: SiteDestination[] = [
     requiresAuth: true,
     description: 'Export or delete your data.',
   },
+  // Settings sub-pages that were reachable only by clicking through /settings,
+  // so "close friends" or "appeal" found nothing from search or ⌘K.
+  {
+    id: 'content-settings',
+    title: 'Content preferences',
+    href: '/settings/content',
+    iconName: 'SlidersHorizontal',
+    keywords:
+      'content preferences feed controls hide bots alt text auto delete posts sensitive settings',
+    requiresAuth: true,
+    description: 'Feed controls, alt-text requirement and auto-delete.',
+  },
+  {
+    id: 'close-friends',
+    title: 'Close Friends',
+    href: '/settings/circle',
+    iconName: 'Users',
+    keywords: 'close friends circle inner circle private audience list settings',
+    requiresAuth: true,
+    description: 'Manage who sees your Close Friends posts.',
+  },
+  {
+    id: 'profile-customization',
+    title: 'Profile customization',
+    href: '/settings/profile',
+    iconName: 'Sparkles',
+    keywords: 'profile customize customise cosmetics banner links birthday modules settings',
+    requiresAuth: true,
+    description: 'Cosmetics, links and modules on your profile.',
+  },
+  {
+    id: 'account-status',
+    title: 'Account status',
+    href: '/settings/account-status',
+    iconName: 'ShieldUser',
+    keywords: 'account status standing strikes warnings moderation appeal suspended ban settings',
+    requiresAuth: true,
+    description: 'Your standing, moderation actions and appeals.',
+  },
   // ── Coverage added by the 2026-10-09 search audit ─────────────────────────
   // Each of these is a real destination that a plain-word query could not
   // reach from search or ⌘K: "tournament", "rideshare", "services", "events"
