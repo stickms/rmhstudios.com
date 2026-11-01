@@ -79,6 +79,17 @@ export default function ProfileActivityHeatmap({ userId }: { userId: string }) {
             </div>
           ))}
         </div>
+        <div className="mt-2 flex items-center justify-end gap-1 font-mono text-xs text-site-text-muted">
+          <span>{t('activity-legend-less', { defaultValue: 'Less' })}</span>
+          {LEVEL_MIX.map((mix) => (
+            <span
+              key={mix}
+              className="size-2.5 rounded-xs"
+              style={{ background: `color-mix(in srgb, var(--site-accent) ${mix}%, transparent)` }}
+            />
+          ))}
+          <span>{t('activity-legend-more', { defaultValue: 'More' })}</span>
+        </div>
       </div>
     </section>
   );

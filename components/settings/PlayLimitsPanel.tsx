@@ -218,7 +218,11 @@ export function PlayLimitsPanel() {
               onClick={() => void save({ coolOffForDays: days })}
               disabled={saving}
             >
-              {t('play-limits-break-days', { defaultValue: '{{count}} days', count: days })}
+              {t('play-limits-break-days', {
+                defaultValue_one: '{{count}} day',
+                defaultValue: '{{count}} days',
+                count: days,
+              })}
             </Button>
           ))}
         </div>
