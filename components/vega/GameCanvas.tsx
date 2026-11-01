@@ -50,15 +50,18 @@ export default function GameCanvas() {
   // Audio Logic
   useEffect(() => {
     // Load volume
-    const saved = localStorage.getItem('vega_volume');
-    if (saved) setVolume(parseFloat(saved));
+    try {
+      const saved = localStorage.getItem('vega_volume');
+      const v = saved ? parseFloat(saved) : NaN;
+      if (Number.isFinite(v)) setVolume(Math.min(1, Math.max(0, v)));
+    } catch { /* storage blocked (private mode) */ }
   }, []);
 
   useEffect(() => {
     if (audioRef.current) {
         audioRef.current.volume = volume;
     }
-    localStorage.setItem('vega_volume', volume.toString());
+    try { localStorage.setItem('vega_volume', volume.toString()); } catch { /* storage blocked */ }
   }, [volume]);
 
   // Handle track ending
@@ -99,7 +102,7 @@ export default function GameCanvas() {
   const { t } = useTranslation("c-vega");
 
   return (
-    <div className="w-full min-h-screen flex flex-col md:flex-row items-center justify-center bg-slate-950 p-2 md:p-4 gap-4">
+    <div className="w-full min-h-dvh flex flex-col md:flex-row items-center justify-center bg-slate-950 p-2 md:p-4 gap-4">
       {/* Audio Element */}
       <audio 
         ref={audioRef}
@@ -118,7 +121,7 @@ export default function GameCanvas() {
           <button onClick={() => setShowTutorial(true)} className="underline">{t("help-btn", { defaultValue: "[HELP]" })}</button>
       </div>
 
-      <div ref={containerRef} className="relative w-full max-w-[1200px] aspect-3/2 max-h-[85vh] bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl shadow-blue-900/20 flex items-center justify-center font-mono text-slate-100">
+      <div ref={containerRef} className="relative w-full max-w-[1200px] aspect-3/2 max-h-[85dvh] bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl shadow-blue-900/20 flex items-center justify-center font-mono text-slate-100">
       
       {/* CRT Overlay Effect */}
       <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0)_50%,rgba(255,255,255,0.05)_50%),linear-gradient(90deg,rgba(0,0,0,0.02),rgba(255,255,255,0.01),rgba(0,0,0,0.02))] z-10 bg-size-[100%_2px,3px_100%] pointer-events-none opacity-50" />
