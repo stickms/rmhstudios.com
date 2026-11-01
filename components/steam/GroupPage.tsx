@@ -1,16 +1,50 @@
 'use client';
 
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Users } from 'lucide-react';
+import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import type { SteamGroup } from '@/lib/games/community-types';
+import type { SteamAnnouncement, SteamGroupPost } from '@/lib/games/group-posts';
 import { CommunityNav } from './CommunityNav';
 import { PersonAvatar } from './SteamPeople';
 import { TitleArt } from './TitleArt';
 
 /** A Steam group page: the group's header, what it is about, and who is in it. */
-export function GroupPage({ group }: { group: SteamGroup }) {
+export function GroupPage({
+  group,
+  announcements,
+  posts,
+}: {
+  group: SteamGroup;
+  announcements: SteamAnnouncement[];
+  posts: SteamGroupPost[];
+}) {
   const { t } = useTranslation('games-hub');
+  const [isMember, setIsMember] = useState(group.joined);
+  const [memberCount, setMemberCount] = useState(group.memberCount);
+  const [busy, setBusy] = useState(false);
+
+  const toggleJoin = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/communities/${group.slug}/join`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const body = (await res.json().catch(() => ({}))) as { joined?: boolean; error?: string };
+      if (res.ok && typeof body.joined === 'boolean') {
+        if (body.joined !== isMember) setMemberCount((n) => n + (body.joined ? 1 : -1));
+        setIsMember(body.joined);
+      } else {
+        toast.error(body.error ?? t('steam-group-join-failed', { defaultValue: 'Could not update membership.' }));
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const joined = new Date(group.createdAt).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'long',
@@ -26,16 +60,27 @@ export function GroupPage({ group }: { group: SteamGroup }) {
         <div className="stm-group-title">
           <h1>{group.name}</h1>
           <p className="stm-muted">
-            {t('steam-members-n', { defaultValue: 'Members: {{n}}', n: group.memberCount })}
+            {t('steam-members-n', { defaultValue: 'Members: {{n}}', n: memberCount })}
             {' · '}
             {t('steam-group-founded', { defaultValue: 'Founded {{date}}', date: joined })}
           </p>
         </div>
-        <Link to="/c/$slug" params={{ slug: group.slug }} className="stm-btn stm-btn-blue">
-          {group.joined
-            ? t('steam-group-open', { defaultValue: 'Open group' })
-            : t('steam-group-join', { defaultValue: 'Join group' })}
-        </Link>
+        {group.signedIn ? (
+          <button
+            type="button"
+            className={`stm-btn ${isMember ? 'stm-btn-ghost' : 'stm-btn-blue'}`}
+            disabled={busy}
+            onClick={() => void toggleJoin()}
+          >
+            {isMember
+              ? t('steam-group-leave', { defaultValue: 'Leave group' })
+              : t('steam-group-join', { defaultValue: 'Join group' })}
+          </button>
+        ) : (
+          <a className="stm-btn stm-btn-blue" href={`/login?callbackURL=${encodeURIComponent(`/games/groups/${group.slug}`)}`}>
+            {t('steam-group-signin', { defaultValue: 'Sign in to join' })}
+          </a>
+        )}
       </header>
 
       <div className="stm-web-cols">
@@ -46,6 +91,66 @@ export function GroupPage({ group }: { group: SteamGroup }) {
             </h2>
             <p className="stm-web-pad">
               {group.description ?? t('steam-group-no-desc', { defaultValue: 'This group has no description yet.' })}
+            </p>
+          </section>
+
+          {announcements.length > 0 ? (
+            <section className="stm-web-card" aria-labelledby="stm-group-news">
+              <h2 id="stm-group-news" className="stm-web-head">
+                {t('steam-group-announcements', { defaultValue: 'Announcements' })}
+              </h2>
+              <ul className="stm-gposts">
+                {announcements.map((a) => (
+                  <li key={a.id} className="stm-gpost">
+                    <p className="stm-gpost-text">{a.body}</p>
+                    <p className="stm-muted stm-gpost-meta">
+                      {a.author.name ?? a.author.handle ?? ''} · {new Date(a.createdAt).toLocaleDateString()}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          <section className="stm-web-card" aria-labelledby="stm-group-posts">
+            <h2 id="stm-group-posts" className="stm-web-head">
+              {t('steam-group-discussion', { defaultValue: 'Recent discussion' })}
+            </h2>
+            {posts.length === 0 ? (
+              <p className="stm-muted stm-web-pad">
+                {t('steam-group-no-posts', { defaultValue: 'No posts yet.' })}
+              </p>
+            ) : (
+              <ul className="stm-gposts">
+                {posts.map((p) => (
+                  <li key={p.id} className="stm-gpost">
+                    <Link
+                      to="/games/profile/$id"
+                      params={{ id: p.author.handle ?? p.author.id }}
+                      className="stm-person"
+                    >
+                      <PersonAvatar src={p.author.image} name={p.author.name ?? p.author.handle ?? '?'} />
+                      <span className="stm-person-body">
+                        <span className="stm-person-name">{p.author.name ?? p.author.handle}</span>
+                        <span className="stm-person-sub">{new Date(p.createdAt).toLocaleString()}</span>
+                      </span>
+                    </Link>
+                    <p className="stm-gpost-text">{p.content}</p>
+                    <p className="stm-muted stm-gpost-meta">
+                      {t('steam-group-post-counts', {
+                        defaultValue: 'Likes: {{likes}} · Replies: {{replies}}',
+                        likes: p.likeCount,
+                        replies: p.commentCount,
+                      })}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="stm-web-pad">
+              <Link to="/c/$slug" params={{ slug: group.slug }} className="stm-link">
+                {t('steam-group-main-site', { defaultValue: 'Post or moderate on the main site' })}
+              </Link>
             </p>
           </section>
 

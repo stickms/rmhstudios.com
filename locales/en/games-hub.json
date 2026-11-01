@@ -405,5 +405,13 @@
   "steam-shop-plan": "{{tier}} plan",
   "steam-shop-signin": "Sign in to buy",
   "steam-shop-sub": "Spend your coins on name colours, badges, frames and more, then equip them across the studio.",
-  "steam-shop-title": "Points shop"
+  "steam-shop-title": "Points shop",
+  "steam-group-announcements": "Announcements",
+  "steam-group-discussion": "Recent discussion",
+  "steam-group-join-failed": "Could not update membership.",
+  "steam-group-leave": "Leave group",
+  "steam-group-main-site": "Post or moderate on the main site",
+  "steam-group-no-posts": "No posts yet.",
+  "steam-group-post-counts": "Likes: {{likes}} · Replies: {{replies}}",
+  "steam-group-signin": "Sign in to join"
 }

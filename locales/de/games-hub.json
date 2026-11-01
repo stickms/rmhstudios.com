@@ -92,5 +92,13 @@
   "steam-shop-plan": "{{tier}}-Tarif",
   "steam-shop-signin": "Zum Kaufen anmelden",
   "steam-shop-sub": "Gib deine Münzen für Namensfarben, Abzeichen, Rahmen und mehr aus und rüste sie dann im ganzen Studio aus.",
-  "steam-shop-title": "Punkteshop"
+  "steam-shop-title": "Punkteshop",
+  "steam-group-announcements": "Announcements",
+  "steam-group-discussion": "Recent discussion",
+  "steam-group-join-failed": "Could not update membership.",
+  "steam-group-leave": "Leave group",
+  "steam-group-main-site": "Post or moderate on the main site",
+  "steam-group-no-posts": "No posts yet.",
+  "steam-group-post-counts": "Likes: {{likes}} · Replies: {{replies}}",
+  "steam-group-signin": "Sign in to join"
 }

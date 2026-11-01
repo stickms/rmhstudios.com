@@ -92,5 +92,13 @@
   "steam-shop-plan": "Plano {{tier}}",
   "steam-shop-signin": "Entre para comprar",
   "steam-shop-sub": "Gaste suas moedas em cores de nome, emblemas, molduras e mais, e equipe-os em todo o estúdio.",
-  "steam-shop-title": "Loja de pontos"
+  "steam-shop-title": "Loja de pontos",
+  "steam-group-announcements": "Announcements",
+  "steam-group-discussion": "Recent discussion",
+  "steam-group-join-failed": "Could not update membership.",
+  "steam-group-leave": "Leave group",
+  "steam-group-main-site": "Post or moderate on the main site",
+  "steam-group-no-posts": "No posts yet.",
+  "steam-group-post-counts": "Likes: {{likes}} · Replies: {{replies}}",
+  "steam-group-signin": "Sign in to join"
 }

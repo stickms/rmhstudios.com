@@ -92,5 +92,13 @@
   "steam-shop-plan": "{{tier}} planı",
   "steam-shop-signin": "Satın almak için giriş yap",
   "steam-shop-sub": "Jetonlarını isim renkleri, rozetler, çerçeveler ve daha fazlası için harca, sonra bunları stüdyonun her yerinde kuşan.",
-  "steam-shop-title": "Puan mağazası"
+  "steam-shop-title": "Puan mağazası",
+  "steam-group-announcements": "Announcements",
+  "steam-group-discussion": "Recent discussion",
+  "steam-group-join-failed": "Could not update membership.",
+  "steam-group-leave": "Leave group",
+  "steam-group-main-site": "Post or moderate on the main site",
+  "steam-group-no-posts": "No posts yet.",
+  "steam-group-post-counts": "Likes: {{likes}} · Replies: {{replies}}",
+  "steam-group-signin": "Sign in to join"
 }

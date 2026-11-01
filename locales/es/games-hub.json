@@ -92,5 +92,13 @@
   "steam-shop-plan": "Plan {{tier}}",
   "steam-shop-signin": "Inicia sesión para comprar",
   "steam-shop-sub": "Gasta tus monedas en colores de nombre, insignias, marcos y más, y equípalos en todo el estudio.",
-  "steam-shop-title": "Tienda de puntos"
+  "steam-shop-title": "Tienda de puntos",
+  "steam-group-announcements": "Announcements",
+  "steam-group-discussion": "Recent discussion",
+  "steam-group-join-failed": "Could not update membership.",
+  "steam-group-leave": "Leave group",
+  "steam-group-main-site": "Post or moderate on the main site",
+  "steam-group-no-posts": "No posts yet.",
+  "steam-group-post-counts": "Likes: {{likes}} · Replies: {{replies}}",
+  "steam-group-signin": "Sign in to join"
 }
