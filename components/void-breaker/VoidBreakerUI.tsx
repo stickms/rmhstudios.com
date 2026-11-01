@@ -446,7 +446,7 @@ export function VoidBreakerUI({
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-hidden bg-[#0d0d14]">
         <div className="app-safe-pad relative h-full flex items-center-safe justify-center-safe overflow-y-auto">
-          <div className="vb-anim text-center space-y-4 sm:space-y-5 w-full max-w-md px-4 py-6"
+          <div className="vb-anim text-center space-y-4 sm:space-y-5 w-full max-w-md px-4 pt-16 pb-6 sm:pt-6"
             style={{ animation: 'vb-scale-in 0.4s cubic-bezier(0.22,1.2,0.36,1) both' }}>
             <div className="absolute top-[calc(1rem+var(--safe-top))] right-[calc(1rem+var(--safe-right))] flex items-center gap-2">
               <button onClick={() => setShowSettings(true)}
@@ -549,7 +549,7 @@ export function VoidBreakerUI({
                   const on = activeMods.includes(m.id);
                   return (
                     <button key={m.id} onClick={() => onToggleModifier(m.id)} title={m.description}
-                      className={`text-[10px] font-mono px-2 py-1 rounded border transition ${on ? '' : 'opacity-50 hover:opacity-90'}`}
+                      className={`text-[10px] font-mono px-2 py-1 pointer-coarse:min-h-11 pointer-coarse:px-3 rounded border transition ${on ? '' : 'opacity-50 hover:opacity-90'}`}
                       style={{ borderColor: on ? m.color : '#2a2a3a', background: on ? m.color + '18' : 'transparent', color: on ? m.color : '#888' }}>
                       {m.icon} {m.name} <span className="opacity-70">+{Math.round(m.coreBonus * 100)}%</span>
                     </button>
