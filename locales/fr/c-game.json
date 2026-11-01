@@ -47,6 +47,7 @@
   "controller-connected": "Manette connectée",
   "copy-invite-link": "Copier le lien d'invitation",
   "cover-art": "Cover",
+  "cover-heic-unsupported-panel": "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
   "cover-image": "Pochette",
   "cover-too-large": "Cover image must be under 10 MB.",
   "cover-too-large-song-details-panel": "L’image de couverture est trop volumineuse ({{size}} Mo). La taille maximale est de 10 Mo.",

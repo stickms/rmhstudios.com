@@ -48,6 +48,7 @@
   "copy-invite-link": "आमंत्रण लिंक कॉपी करें",
   "cover-art": "Cover",
   "cover-format-unsupported-panel": "यह इमेज फ़ॉर्मेट समर्थित नहीं है। JPEG, PNG या WebP का उपयोग करें।",
+  "cover-heic-unsupported-panel": "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
   "cover-image": "कवर इमेज",
   "cover-too-large": "Cover image must be under 10 MB.",
   "cover-too-large-song-details-panel": "कवर इमेज बहुत बड़ी है ({{size}} MB)। अधिकतम आकार 10 MB है।",

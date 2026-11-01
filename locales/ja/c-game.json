@@ -48,6 +48,7 @@
   "copy-invite-link": "招待リンクをコピー",
   "cover-art": "Cover",
   "cover-format-unsupported-panel": "この画像形式には対応していません。JPEG、PNG、WebP を使用してください。",
+  "cover-heic-unsupported-panel": "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
   "cover-image": "カバー画像",
   "cover-too-large": "Cover image must be under 10 MB.",
   "cover-too-large-song-details-panel": "カバー画像が大きすぎます（{{size}} MB）。上限は 10 MB です。",

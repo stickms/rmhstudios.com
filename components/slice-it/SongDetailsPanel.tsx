@@ -35,7 +35,7 @@ import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { calculateScoreMultiplier } from '@/lib/slice-it/scoring';
 import { ChartPicker, type ChartOption } from './ChartPicker';
 import { useTranslation } from 'react-i18next';
-import { normalizeCover } from '@/lib/slice-it/cover-image';
+import { isHeicCover, normalizeCover } from '@/lib/slice-it/cover-image';
 import { whenIdle } from '@/lib/shared/platform';
 
 /**
@@ -246,9 +246,14 @@ export function SongDetailsPanel({
     const normalized = await normalizeCover(file);
     if (!normalized) {
       toast.error(
-        t('cover-format-unsupported-panel', {
-          defaultValue: 'That image format is not supported. Use JPEG, PNG or WebP.',
-        }),
+        isHeicCover(file)
+          ? t('cover-heic-unsupported-panel', {
+              defaultValue:
+                "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
+            })
+          : t('cover-format-unsupported-panel', {
+              defaultValue: 'That image format is not supported. Use JPEG, PNG or WebP.',
+            }),
       );
       input.value = '';
       return;
