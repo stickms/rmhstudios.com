@@ -23,6 +23,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type ComponentType,
   type ReactNode,
 } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -44,9 +45,9 @@ import {
   type LoadStage,
 } from '@/lib/tf2-game/client/game-client';
 import { cn } from '@/lib/utils';
-import GameHud from './GameHud';
 import P2pHostPlayers from './P2pHostPlayers';
 import type { TouchAction } from './touch/TouchOverlay';
+import GameHud, { type GameHudProps } from './GameHud';
 import { useCloseGuard } from './use-close-guard';
 import CloseGuardHint from './CloseGuardHint';
 import './play.css';
@@ -67,6 +68,12 @@ export interface GameCanvasProps {
   loadingScreen?: (view: LoadingView) => ReactNode;
   /** False for a game with no published asset channels (Harmonic): its menus fetch nothing. Default true. */
   remoteAssets?: boolean;
+  /**
+   * The game's own HUD, pause menu and options in place of `GameHud` (Harmonic). It receives the same
+   * props and owns the pause flow: `input.suspended`, `store.send({ kind: 'pause' })`, impulse 'menu'.
+   * Default: `GameHud`.
+   */
+  hudComponent?: ComponentType<GameHudProps>;
 }
 
 /** What a game's loading screen shows: the level, how far along, each stage, and a way out. */
@@ -150,6 +157,7 @@ export default function GameCanvas({
   sessionId,
   loadingScreen,
   remoteAssets = true,
+  hudComponent: Hud = GameHud,
 }: GameCanvasProps) {
   const { t } = useTranslation('c-tf2-game');
   const stageLabels = useStageLabels();
@@ -330,7 +338,7 @@ export default function GameCanvas({
 
       {running ? (
         <RemoteAssetsContext.Provider value={remoteAssets}>
-          <GameHud
+          <Hud
             game={game}
             store={store}
             input={input}

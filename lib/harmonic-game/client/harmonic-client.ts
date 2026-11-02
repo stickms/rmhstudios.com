@@ -16,6 +16,8 @@ import { compileLevel } from '../compiler';
 import { HARMONIC_MATERIAL_LOOKUP, createHarmonicAssets } from '../assets';
 import { createProceduralTextureCache } from '../assets/texture-cache';
 import { HARMONIC_LEVELS, findHarmonicLevel } from '../levels';
+import { readHudState } from './hud-state';
+import { saveLevelStart } from './save';
 
 export type HarmonicClientOptions = Omit<
   SpClientOptions,
@@ -35,6 +37,7 @@ export function harmonicContent(): SpContent {
       progress.begin('map', 1);
       const compiled = compileLevel(level.source(), { materials: HARMONIC_MATERIAL_LOOKUP });
       progress.finish('map');
+      saveLevelStart(level.id); // the Continue slot (H1.4)
       return {
         bsp: compiled.bsp,
         manifest: compiled.manifest,
@@ -49,9 +52,10 @@ export function harmonicContent(): SpContent {
         maxSize: core.plan.maxTextureSize,
         anisotropy: core.plan.anisotropy,
       }),
-    // Nothing from the HL2/Portal channels: no sound channel yet (H3.3), no suit HUD (H1.4),
-    // and no write to the HL2 save slot.
+    // Nothing from the HL2/Portal channels: no sound channel yet (H3.3), no suit HUD (Harmonic's
+    // own HUD rides `hud`), and no write to the HL2 save slot (Harmonic saves in loadLevel).
     features: { audio: false, suitHud: false, saves: false },
+    hud: (snap) => readHudState(snap),
   };
 }
 

@@ -184,11 +184,25 @@ lines: [{ speaker, key, defaultValue, durationMs }], then?: Output[] }`, fired b
   through the same seam (extend `SpContent`, additively). It mounts through
   `components/tf2-game/GameCanvas.tsx` with `game="hl2"` and `remoteAssets={false}` (the pause menu
   and Options then fetch no HL2 menu channel).
-- `components/harmonic-game/HarmonicPlayPage.tsx`: main menu (New game, Continue, Chapters,
-  Options, Credits), loading screen, pause menu, HUD (health, cold, ammo, Tuner charge,
-  subtitles). `AppShell` + `--app-*` tokens; one signal button per view.
-- Saves: per-chapter start + flags in `localStorage` (`client/save.ts`, modelled on
-  `lib/tf2-game/client/sp-save.ts`, its own key prefix `harmonic:`).
+- `components/harmonic-game/HarmonicPlayPage.tsx`: title screen (Continue when a save exists,
+  New game, asking before it replaces one); later Chapters, Credits. `AppShell` + `--app-*`
+  tokens; one primary button per view.
+- **HUD (H1.4).** `client/hud-state.ts` defines `HarmonicHudState` (health, cold, weapon, tuner,
+  layer, hint, subtitles, dead — each optional slice is filled by its own WP, the file header says
+  who) and the pure `readHudState(snap)`. `harmonicContent().hud` returns it each 20 Hz tick;
+  `SpClient` publishes it as `HudState.ext` through the shared HUD store. `GameCanvas hudComponent`
+  mounts `components/harmonic-game/HarmonicGameUi.tsx` instead of the HL2 `GameHud`: it draws
+  `HarmonicHud` (cold whites on a scrim, amber only for "in phase"), owns the pause menu (Resume,
+  Options, Quit to title) and Options (sensitivity, FOV, volume, invert Y, subtitles, subtitle
+  size). Settings are the shared `GameSettings`; the subtitle size is `client/prefs.ts`
+  (`harmonic:prefs`). To add a HUD field: extend `HarmonicHudState`, fill it in `readHudState`
+  (or merge in `harmonicContent().hud`), draw it in `HarmonicHud`.
+- Saves: `client/save.ts`, `harmonic:save` = `{ v: 1, level, flags, savedAt }`, written by
+  `loadLevel` at every level start (flags of the run in progress are kept; New game clears the
+  slot first). Narrative/flag WPs write flags with `writeHarmonicSave`.
+- Browser check: `scripts/harmonic/hud-smoke.ts` (HUD health follows the pit, pause → Options →
+  FOV → resume, Continue round-trip; screenshots, including the light app appearance).
+- Not yet: touch controls for Harmonic (the shared overlay is not mounted by `HarmonicGameUi`).
 
 ## 8. Tests
 

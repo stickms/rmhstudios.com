@@ -106,6 +106,12 @@ export interface SpContent {
    * the game's localStorage slot.
    */
   features?: { audio?: boolean; suitHud?: boolean; saves?: boolean };
+  /**
+   * The content's own HUD payload, called with each HUD tick's snapshot (20 Hz) and the HUD clock
+   * (`HudState.now`); the result is published as `HudState.ext` for a custom HUD component
+   * (`GameCanvas.hudComponent`). Absent: `ext` stays unset (HL2/Portal unchanged).
+   */
+  hud?: (snap: SpSnapshot, now: number) => unknown;
 }
 
 export interface SpClientOptions extends ClientMount {
@@ -758,6 +764,8 @@ export class SpClient implements GameClient {
       });
     }
     state.fade = this.fadeState();
+    const ext = this.opts.content?.hud;
+    if (ext) state.ext = ext(snap, this.clientNow);
     this.log.apply(state, this.clientNow);
     if (this.hint) state.center.unshift({ id: -1, at: this.clientNow, duration: 1, text: this.hint, kind: 'training' });
     this.store.publish(state);

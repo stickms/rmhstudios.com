@@ -15,16 +15,16 @@ the spec is wrong.
 
 ## Module map (architecture.md §2)
 
-| Path         | What                                                                    |
-| ------------ | ----------------------------------------------------------------------- |
-| `index.ts`   | Public entry (re-exports).                                              |
-| `levels/`    | One `LevelSource` per chapter + `dev_box.ts`.                           |
-| `compiler/`  | LevelSource DSL → in-memory `BspFile` (brushes, kd-tree, bevels).       |
-| `assets/`    | Procedural textures, materials, models, the `SpAssets` implementation.  |
-| `sim/`       | Harmonic-only entities and services: weapons, damage, phase, enemies.   |
-| `narrative/` | Dialogue/subtitle runner, radio, chapter flags, endings.                |
-| `audio/`     | WebAudio synthesis: SFX, ambient beds, music layers.                    |
-| `client/`    | Client wiring, view model renderer, HUD adapter, save slots.            |
+| Path         | What                                                                     |
+| ------------ | ------------------------------------------------------------------------ |
+| `index.ts`   | Public entry (re-exports).                                               |
+| `levels/`    | One `LevelSource` per chapter + `dev_box.ts`.                            |
+| `compiler/`  | LevelSource DSL → in-memory `BspFile` (brushes, kd-tree, bevels).        |
+| `assets/`    | Procedural textures, materials, models, the `SpAssets` implementation.   |
+| `sim/`       | Harmonic-only entities and services: weapons, damage, phase, enemies.    |
+| `narrative/` | Dialogue/subtitle runner, radio, chapter flags, endings.                 |
+| `audio/`     | WebAudio synthesis: SFX, ambient beds, music layers.                     |
+| `client/`    | Client wiring, HUD state (`hud-state.ts`), save slot, prefs, view model. |
 
 React lives in `components/harmonic-game/`, the route in `app/routes/harmonic.tsx`,
 strings in `locales/en/harmonic.json` (namespace `harmonic`).
