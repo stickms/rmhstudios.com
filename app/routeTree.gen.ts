@@ -27,6 +27,7 @@ import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DesignRouteImport } from './routes/design'
 import { Route as DreamRiftRouteImport } from './routes/dream-rift'
 import { Route as DunesdayRouteImport } from './routes/dunesday'
+import { Route as ElectionsRouteImport } from './routes/elections'
 import { Route as EversionLabRouteImport } from './routes/eversion-lab'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
@@ -492,6 +493,7 @@ import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
 import { Route as ApiDunesdayAskRouteImport } from './routes/api/dunesday/ask'
 import { Route as ApiDunesdaySyncRouteImport } from './routes/api/dunesday/sync'
+import { Route as ApiElectionsIndexRouteImport } from './routes/api/elections/index'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api/email/unsubscribe'
 import { Route as ApiEmbedOembedRouteImport } from './routes/api/embed/oembed'
 import { Route as ApiEmojiPacksIndexRouteImport } from './routes/api/emoji-packs/index'
@@ -1469,6 +1471,11 @@ const DreamRiftRoute = DreamRiftRouteImport.update({
 const DunesdayRoute = DunesdayRouteImport.update({
   id: '/dunesday',
   path: '/dunesday',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ElectionsRoute = ElectionsRouteImport.update({
+  id: '/elections',
+  path: '/elections',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EversionLabRoute = EversionLabRouteImport.update({
@@ -3808,6 +3815,11 @@ const ApiDunesdayAskRoute = ApiDunesdayAskRouteImport.update({
 const ApiDunesdaySyncRoute = ApiDunesdaySyncRouteImport.update({
   id: '/api/dunesday/sync',
   path: '/api/dunesday/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsIndexRoute = ApiElectionsIndexRouteImport.update({
+  id: '/api/elections/',
+  path: '/api/elections/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
@@ -8510,6 +8522,7 @@ export interface FileRoutesByFullPath {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/dunesday': typeof DunesdayRoute
+  '/elections': typeof ElectionsRoute
   '/eversion-lab': typeof EversionLabRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
@@ -9257,6 +9270,7 @@ export interface FileRoutesByFullPath {
   '/api/community-goals/': typeof ApiCommunityGoalsIndexRoute
   '/api/community-pages/': typeof ApiCommunityPagesIndexRoute
   '/api/context-notes/': typeof ApiContextNotesIndexRoute
+  '/api/elections/': typeof ApiElectionsIndexRoute
   '/api/emoji-packs/': typeof ApiEmojiPacksIndexRoute
   '/api/events/': typeof ApiEventsIndexRoute
   '/api/experiments/': typeof ApiExperimentsIndexRoute
@@ -9879,6 +9893,7 @@ export interface FileRoutesByTo {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/dunesday': typeof DunesdayRoute
+  '/elections': typeof ElectionsRoute
   '/eversion-lab': typeof EversionLabRoute
   '/gabriels-horn': typeof GabrielsHornRoute
   '/games': typeof GamesLibraryIndexRoute
@@ -10602,6 +10617,7 @@ export interface FileRoutesByTo {
   '/api/community-goals': typeof ApiCommunityGoalsIndexRoute
   '/api/community-pages': typeof ApiCommunityPagesIndexRoute
   '/api/context-notes': typeof ApiContextNotesIndexRoute
+  '/api/elections': typeof ApiElectionsIndexRoute
   '/api/emoji-packs': typeof ApiEmojiPacksIndexRoute
   '/api/events': typeof ApiEventsIndexRoute
   '/api/experiments': typeof ApiExperimentsIndexRoute
@@ -11227,6 +11243,7 @@ export interface FileRoutesById {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/dunesday': typeof DunesdayRoute
+  '/elections': typeof ElectionsRoute
   '/eversion-lab': typeof EversionLabRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
@@ -11976,6 +11993,7 @@ export interface FileRoutesById {
   '/api/community-goals/': typeof ApiCommunityGoalsIndexRoute
   '/api/community-pages/': typeof ApiCommunityPagesIndexRoute
   '/api/context-notes/': typeof ApiContextNotesIndexRoute
+  '/api/elections/': typeof ApiElectionsIndexRoute
   '/api/emoji-packs/': typeof ApiEmojiPacksIndexRoute
   '/api/events/': typeof ApiEventsIndexRoute
   '/api/experiments/': typeof ApiExperimentsIndexRoute
@@ -12603,6 +12621,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/dunesday'
+    | '/elections'
     | '/eversion-lab'
     | '/forest-explorer'
     | '/gabriels-horn'
@@ -13350,6 +13369,7 @@ export interface FileRouteTypes {
     | '/api/community-goals/'
     | '/api/community-pages/'
     | '/api/context-notes/'
+    | '/api/elections/'
     | '/api/emoji-packs/'
     | '/api/events/'
     | '/api/experiments/'
@@ -13972,6 +13992,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/dunesday'
+    | '/elections'
     | '/eversion-lab'
     | '/gabriels-horn'
     | '/games'
@@ -14695,6 +14716,7 @@ export interface FileRouteTypes {
     | '/api/community-goals'
     | '/api/community-pages'
     | '/api/context-notes'
+    | '/api/elections'
     | '/api/emoji-packs'
     | '/api/events'
     | '/api/experiments'
@@ -15319,6 +15341,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/dunesday'
+    | '/elections'
     | '/eversion-lab'
     | '/forest-explorer'
     | '/gabriels-horn'
@@ -16068,6 +16091,7 @@ export interface FileRouteTypes {
     | '/api/community-goals/'
     | '/api/community-pages/'
     | '/api/context-notes/'
+    | '/api/elections/'
     | '/api/emoji-packs/'
     | '/api/events/'
     | '/api/experiments/'
@@ -16694,6 +16718,7 @@ export interface RootRouteChildren {
   DesignRoute: typeof DesignRoute
   DreamRiftRoute: typeof DreamRiftRoute
   DunesdayRoute: typeof DunesdayRoute
+  ElectionsRoute: typeof ElectionsRoute
   EversionLabRoute: typeof EversionLabRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   GabrielsHornRoute: typeof GabrielsHornRoute
@@ -17139,6 +17164,7 @@ export interface RootRouteChildren {
   ApiCommunityGoalsIndexRoute: typeof ApiCommunityGoalsIndexRoute
   ApiCommunityPagesIndexRoute: typeof ApiCommunityPagesIndexRoute
   ApiContextNotesIndexRoute: typeof ApiContextNotesIndexRoute
+  ApiElectionsIndexRoute: typeof ApiElectionsIndexRoute
   ApiEmojiPacksIndexRoute: typeof ApiEmojiPacksIndexRoute
   ApiEventsIndexRoute: typeof ApiEventsIndexRoute
   ApiExperimentsIndexRoute: typeof ApiExperimentsIndexRoute
@@ -17650,6 +17676,13 @@ declare module '@tanstack/react-router' {
       path: '/dunesday'
       fullPath: '/dunesday'
       preLoaderRoute: typeof DunesdayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/elections': {
+      id: '/elections'
+      path: '/elections'
+      fullPath: '/elections'
+      preLoaderRoute: typeof ElectionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/eversion-lab': {
@@ -20905,6 +20938,13 @@ declare module '@tanstack/react-router' {
       path: '/api/dunesday/sync'
       fullPath: '/api/dunesday/sync'
       preLoaderRoute: typeof ApiDunesdaySyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/': {
+      id: '/api/elections/'
+      path: '/api/elections'
+      fullPath: '/api/elections/'
+      preLoaderRoute: typeof ApiElectionsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/email/unsubscribe': {
@@ -29452,6 +29492,7 @@ const rootRouteChildren: RootRouteChildren = {
   DesignRoute: DesignRoute,
   DreamRiftRoute: DreamRiftRoute,
   DunesdayRoute: DunesdayRoute,
+  ElectionsRoute: ElectionsRoute,
   EversionLabRoute: EversionLabRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   GabrielsHornRoute: GabrielsHornRoute,
@@ -29898,6 +29939,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunityGoalsIndexRoute: ApiCommunityGoalsIndexRoute,
   ApiCommunityPagesIndexRoute: ApiCommunityPagesIndexRoute,
   ApiContextNotesIndexRoute: ApiContextNotesIndexRoute,
+  ApiElectionsIndexRoute: ApiElectionsIndexRoute,
   ApiEmojiPacksIndexRoute: ApiEmojiPacksIndexRoute,
   ApiEventsIndexRoute: ApiEventsIndexRoute,
   ApiExperimentsIndexRoute: ApiExperimentsIndexRoute,

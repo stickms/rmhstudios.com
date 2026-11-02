@@ -41,6 +41,8 @@
 @source not "../components/bums-rush";
 @source not "../components/cookgame";
 @source not "../components/covid";
+@source not "../components/elections";
+@source not "../lib/elections";
 @source not "../components/cursed-logic";
 @source not "../components/daily-puzzles";
 @source not "../components/design";
@@ -158,6 +160,7 @@
 @source not "./routes/cookies.tsx";
 @source not "./routes/copyright.tsx";
 @source not "./routes/covid.tsx";
+@source not "./routes/elections.tsx";
 @source not "./routes/daily.tsx";
 @source not "./routes/daily";
 @source not "./routes/design.tsx";
