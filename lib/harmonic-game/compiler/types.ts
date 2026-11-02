@@ -42,6 +42,9 @@ export interface PlaneSource {
   face?: Face;
 }
 
+/** The two layers of the ship (story.md): 1971 and 2030. */
+export type PhaseLayer = 'past' | 'present';
+
 export interface BrushSource {
   /** Either an AABB or at least 4 half-space planes for a convex solid. */
   box?: { min: Vec3; max: Vec3 };
@@ -52,8 +55,12 @@ export interface BrushSource {
   faces?: Partial<Record<BoxFaceName, Face>>;
   /** Default `'solid'`. */
   contents?: BrushContents;
-  /** Phase layer (H2.1). Carried, not yet acted on by the compiler. */
-  layer?: 'both' | 'past' | 'present';
+  /**
+   * Phase layer (H2.1; compiler/layers.ts). World brushes tagged `past`/`present` are grouped into
+   * the auto `func_brush` models `harmonic_layer_past` / `harmonic_layer_present`; inside an
+   * entity the tag sets the entity's layer. `'both'` / absent = unaffected.
+   */
+  layer?: 'both' | PhaseLayer;
 }
 
 export interface EntitySource {
@@ -67,6 +74,8 @@ export interface EntitySource {
    * give `origin` only to offset the whole model, as `MapCollision` applies it.
    */
   brushes?: BrushSource[];
+  /** Phase layer of the entity (written as the `layer` key when not `both`); brushes may imply it. */
+  layer?: 'both' | PhaseLayer;
   /** Source I/O outputs: `"OnTrigger target,Input,param,delay,times"` (output name, a space, the value). */
   outputs?: string[];
 }
@@ -87,6 +96,8 @@ export interface LevelSource {
   sky?: string;
   /** Emitted as an `env_fog_controller` the renderer reads. */
   fog?: FogSource;
+  /** The layer the player starts in (the controller's `startlayer`); default `'present'`. */
+  startLayer?: PhaseLayer;
   world: BrushSource[];
   entities: EntitySource[];
 }

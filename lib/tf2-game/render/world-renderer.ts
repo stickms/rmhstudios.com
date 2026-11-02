@@ -11,6 +11,7 @@
  * the world (opaque, then transparent).
  */
 import {
+  AdditiveBlending,
   BufferAttribute,
   BufferGeometry,
   Color,
@@ -19,6 +20,8 @@ import {
   LinearFilter,
   Matrix4,
   Mesh,
+  MeshBasicMaterial,
+  type Material,
   type Object3D,
   PerspectiveCamera,
   RGBAFormat,
@@ -66,6 +69,9 @@ import {
   unpatchMaterialName,
   type ChunkData,
 } from './world-geometry';
+
+/** How a brush entity model is drawn (`WorldRenderer.setModelVisibility`). */
+export type BrushDrawMode = 'normal' | 'hidden' | 'ghost';
 
 export type GameName = 'tf2' | 'hl2' | 'portal' | 'csgo';
 
@@ -171,7 +177,9 @@ export class WorldRenderer {
   private readonly skyRoot = new Group();
   private readonly brushModels = new Map<number, Group>();
   /** Per brush model: entity visibility, PVS clusters at its current placement, PVS result. */
-  private readonly brushState = new Map<number, { shown: boolean; clusters: number[]; pvs: boolean }>();
+  private readonly brushState = new Map<number, { shown: boolean; clusters: number[]; pvs: boolean; mode: BrushDrawMode }>();
+  /** Shared cold, translucent material for models drawn in `'ghost'` mode (created on first use). */
+  private ghostMaterial: MeshBasicMaterial | null = null;
   private readonly chunkMeshes: ChunkMesh[] = [];
   private readonly materials = new Map<string, { material: ShaderMaterial; transparent: boolean }>();
   private readonly resolved = new Map<string, MapMaterial>();
@@ -430,7 +438,7 @@ export class WorldRenderer {
       g.name = `*${model}`;
       g.matrixAutoUpdate = false;
       this.brushModels.set(model, g);
-      this.brushState.set(model, { shown: true, clusters: [], pvs: true });
+      this.brushState.set(model, { shown: true, clusters: [], pvs: true, mode: 'normal' });
       this.scene.add(g);
     }
     return g;
@@ -441,7 +449,7 @@ export class WorldRenderer {
     const st = this.brushState.get(model);
     if (!g || !st) return;
     st.pvs = this.pvsRow ? clustersVisible(this.pvsRow, st.clusters) : true;
-    g.visible = st.shown && st.pvs;
+    g.visible = st.shown && st.mode !== 'hidden' && st.pvs;
   }
 
   private placeBrushEntities(): void {
@@ -492,6 +500,48 @@ export class WorldRenderer {
     if (!st) return;
     st.shown = visible;
     this.applyBrushVisibility(modelIndex);
+  }
+
+  /**
+   * How a brush model is drawn, on top of `setVisible` (both must allow it): `'normal'` (default,
+   * its own materials), `'hidden'`, or `'ghost'` — every face in one translucent, additive cold
+   * material, no lightmap, no depth write, so the player sees the shape through walls. Additive:
+   * models never use it unless a game asks (Harmonic's phase layers, plan H2.1).
+   */
+  setModelVisibility(modelIndex: number, mode: BrushDrawMode): void {
+    const st = this.brushState.get(modelIndex);
+    if (!st || st.mode === mode) return;
+    const wasGhost = st.mode === 'ghost';
+    st.mode = mode;
+    if (wasGhost !== (mode === 'ghost')) {
+      const ghost = mode === 'ghost' ? this.ghostMat() : null;
+      for (const c of this.chunkMeshes) {
+        if (c.data.model !== modelIndex) continue;
+        const keep = c.mesh.userData as { solidMaterial?: Material | Material[]; solidOrder?: number };
+        if (ghost) {
+          keep.solidMaterial = c.mesh.material;
+          keep.solidOrder = c.mesh.renderOrder;
+          c.mesh.material = ghost;
+          c.mesh.renderOrder = 2;
+        } else if (keep.solidMaterial) {
+          c.mesh.material = keep.solidMaterial;
+          c.mesh.renderOrder = keep.solidOrder ?? 0;
+          keep.solidMaterial = undefined;
+        }
+      }
+    }
+    this.applyBrushVisibility(modelIndex);
+  }
+
+  private ghostMat(): MeshBasicMaterial {
+    return (this.ghostMaterial ??= new MeshBasicMaterial({
+      color: new Color(0.32, 0.62, 0.95),
+      transparent: true,
+      opacity: 0.3,
+      blending: AdditiveBlending,
+      depthWrite: false,
+      fog: false,
+    }));
   }
 
   /** The Object3D of a brush model (null when it has no drawn faces). */
@@ -595,6 +645,7 @@ export class WorldRenderer {
   dispose(): void {
     for (const g of this.geometries) g.dispose();
     for (const m of this.materials.values()) m.material.dispose();
+    this.ghostMaterial?.dispose();
     this.lightmap.dispose();
     this.sky2d.dispose();
     this.props?.dispose();

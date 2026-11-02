@@ -10,6 +10,7 @@ import type { LevelSource } from './types';
 
 export * from './types';
 export * from './shapes';
+export { LAYER_BRUSH_NAMES, PHASE_CONTROLLER_CLASS, PHASE_CONTROLLER_NAME } from './layers';
 export { defaultMaterialLookup, normalizeHarmonicMaterial } from './materials';
 export type { MaterialInfo, MaterialLookup } from './materials';
 

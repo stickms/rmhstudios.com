@@ -19,6 +19,7 @@ import {
   brushContainsPoint,
   type CompiledBrush,
 } from './brush';
+import { expandLayers } from './layers';
 import { buildKd, type KdBounds, type KdNode } from './kd';
 import type { MaterialInfo, MaterialLookup } from './materials';
 import { normalizeHarmonicMaterial } from './materials';
@@ -287,7 +288,8 @@ interface ModelWork {
   hidden: boolean;
 }
 
-export function buildBsp(src: LevelSource, lookup: MaterialLookup): BuiltBsp {
+export function buildBsp(source: LevelSource, lookup: MaterialLookup): BuiltBsp {
+  const src = expandLayers(source);
   // 1. Compile brushes.
   const world: CompiledBrush[] = src.world.map((b, i) =>
     buildBrush(b, `${src.id}: world brush ${i}`),

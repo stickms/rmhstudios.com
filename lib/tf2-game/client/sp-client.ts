@@ -108,6 +108,12 @@ export interface SpContent {
    * the game's localStorage slot.
    */
   features?: { audio?: boolean; suitHud?: boolean; saves?: boolean };
+  /**
+   * Called once per loaded level, after the simulation and the world renderer exist and before
+   * the first frame. Content wires its own sim-to-renderer adapters here; the returned function
+   * runs when the level is torn down. Absent = nothing (HL2/Portal never set it).
+   */
+  onLevelReady?(ctx: { sim: SpWorld; world: WorldRenderer }): (() => void) | void;
 }
 
 export interface SpClientOptions extends ClientMount {
@@ -143,6 +149,7 @@ export class SpClient implements GameClient {
   private audio: AudioEngine | null = null;
   private sim: SpWorld | null = null;
   private world: WorldRenderer | null = null;
+  private contentDispose: (() => void) | null = null;
   private ents: EntityRenderer | null = null;
   private portals: PortalView | null = null;
   private gun: SpViewModelRenderer | null = null;
@@ -342,6 +349,7 @@ export class SpClient implements GameClient {
       },
     });
     this.world = world;
+    this.contentDispose = content?.onLevelReady?.({ sim, world }) ?? null;
     this.ents = new EntityRenderer({
       lighting: world,
       scene: world.scene,
@@ -385,6 +393,8 @@ export class SpClient implements GameClient {
   }
 
   private teardownLevel(): void {
+    this.contentDispose?.();
+    this.contentDispose = null;
     this.portals?.dispose();
     this.portals = null;
     this.gun?.dispose();

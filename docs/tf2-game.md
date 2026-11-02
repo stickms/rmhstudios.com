@@ -322,7 +322,12 @@ signal)` returns `{ bsp, manifest, hulls }`, `createAssets(level)` the `SpAssets
   world's `TextureCache`, and `maps` is the level list the console and `changelevel` check instead of
   `GAME_MAPS`. `features` (`audio`, `suitHud`, `saves`, all off for injected content) gate what the channels
   give HL2/Portal: the sound channel, the HEV-suit HUD state and the level-start saves in the HL2 localStorage
-  slot. With `content` omitted every branch is the old one, so HL2 and Portal behave identically.
+  slot. `onLevelReady({ sim, world })` (optional) runs once per level after the simulation and `WorldRenderer`
+  exist and returns a teardown function; content wires its sim-to-renderer adapters there (Harmonic's phase view).
+  With `content` omitted every branch is the old one, so HL2 and Portal behave identically.
+  `WorldRenderer.setModelVisibility(modelIndex, 'normal' | 'hidden' | 'ghost')` is an additive per-brush-model
+  draw mode on top of `setVisible`: `ghost` draws every face in one shared translucent additive cold material
+  (no lightmap, no depth write); default `normal` leaves every existing model unchanged.
   `GameCanvas` takes `remoteAssets={false}` for a game without asset channels: the pause menu and Options skip
   the menu-channel and HUD-base fetches (`menus/remote-assets.ts`). Harmonic (`lib/harmonic-game/client/`) compiles
   its levels in the browser and runs the `'hl2'` simulation; see `docs/plans/harmonic/architecture.md` §7.
