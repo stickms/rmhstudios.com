@@ -3474,21 +3474,29 @@ summary:not([data-jelly-active]):active {
 
    The tap highlight goes with it: the press layer's spring IS the feedback, and
    a platform-drawn rectangle over the top of it just looks like a bug. */
-a[href],
-button,
-summary,
-label,
-[role='button'],
-[role='tab'],
-[role='menuitem'],
-[role='option'],
-[role='switch'],
-input:not([type='range']),
-select,
-textarea,
-[data-fluid-press] {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+/* In `@layer base` on purpose. Unlayered, this rule outranked every Tailwind
+   utility whatever its specificity (unlayered beats layered), so `touch-none`,
+   `touch-pan-y` and friends on a `<button>`, `<a>` or `role="button"` were
+   silently ignored: an on-screen game pad still let a second finger pinch-zoom
+   the page. In the base layer it is still the default for anything pressable,
+   and an element that sets its own `touch-action` now actually gets it. */
+@layer base {
+  a[href],
+  button,
+  summary,
+  label,
+  [role='button'],
+  [role='tab'],
+  [role='menuitem'],
+  [role='option'],
+  [role='switch'],
+  input:not([type='range']),
+  select,
+  textarea,
+  [data-fluid-press] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 /* NB: there is deliberately no `will-change` rule for `[data-fluid-press]` here.

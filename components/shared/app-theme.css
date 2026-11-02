@@ -452,12 +452,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.app-theme button,
-.app-theme [role='button'],
-.app-theme a,
-.app-theme label,
-.app-theme summary {
-  touch-action: manipulation;
+/* `@layer base` so a `touch-none` / `touch-pan-*` utility on an app button wins
+   (see the same note on the site-wide rule in app/globals.css). */
+@layer base {
+  .app-theme button,
+  .app-theme [role='button'],
+  .app-theme a,
+  .app-theme label,
+  .app-theme summary {
+    touch-action: manipulation;
+  }
 }
 
 /* iOS zooms the page when a sub-16px field takes focus. */
