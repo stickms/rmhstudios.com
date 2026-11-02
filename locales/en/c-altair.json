@@ -184,5 +184,7 @@
   "you": "(you)",
   "your-class": "Your Class",
   "zoom": "Zoom",
-  "close": "Close"
+  "close": "Close",
+  "match-not-ready-title": "Multiplayer matches are not playable yet",
+  "match-not-ready-body": "The lobby works, but the match screen is still being built. Leave the lobby and check back after the next update."
 }

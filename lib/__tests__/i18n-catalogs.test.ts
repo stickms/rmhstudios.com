@@ -84,6 +84,9 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
+  // Altair multiplayer placeholder message (2026-11-02). English-only until the
+  // locales are translated; remove with it.
+  'c-altair': ['match-not-ready-body', 'match-not-ready-title'],
   // Games library detail pane + playtime notice (2026-10-30). English-only until the
   // translate pipeline runs on build; remove with it.
   'games-hub': [

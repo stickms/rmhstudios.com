@@ -152,7 +152,7 @@ function AltairLobbyPage() {
           </div>
         </div>
       }>
-        <MultiplayerGameScreen lobbyId={lobbyId} />
+        <MultiplayerGameScreen lobbyId={lobbyId} onLeave={handleLeave} />
       </Suspense>
     )
   }
