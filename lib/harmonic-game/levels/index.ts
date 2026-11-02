@@ -7,6 +7,7 @@ import { devModelsSource } from './dev_models';
 import { devDialogueSource } from './dev_dialogue';
 import { devWeaponsSource } from './dev_weapons';
 import { devColdSource } from './dev_cold';
+import { h1WhiteoutSource } from './h1_whiteout';
 
 export interface HarmonicLevel {
   id: string;
@@ -52,6 +53,12 @@ export const HARMONIC_LEVELS: HarmonicLevel[] = [
     titleKey: 'level_dev_cold',
     titleDefault: 'Dev cold',
     source: devColdSource,
+  },
+  {
+    id: 'h1_whiteout',
+    titleKey: 'chapter_h1_whiteout',
+    titleDefault: 'Whiteout',
+    source: h1WhiteoutSource,
   },
 ];
 
