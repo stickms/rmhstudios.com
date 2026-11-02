@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Link2, RotateCcw, Wand2 } from 'lucide-react';
+import { RotateCcw, Wand2 } from 'lucide-react';
+import { SITE_URL } from '@/lib/seo';
 import type { ChamberControl, Office, Race } from '@/lib/elections/types';
 import { OFFICE_NAME } from '@/lib/elections/types';
 import { STATE_CODES, stateName } from '@/lib/elections/states';
 import {
   PAINTABLE,
+  compactKeys,
+  decodeAnyPicks,
   decodePicks,
+  encodeCompact,
   encodePicks,
   nextPick,
   project,
@@ -17,6 +21,7 @@ import {
 } from '@/lib/elections/predict';
 import type { Tone } from '@/lib/elections/map-model';
 import { TileGrid, type TileCell } from './TileGrid';
+import { ShareBar } from './ShareBar';
 
 const storageKey = (year: number) => `rmh-elections-picks:${year}`;
 
@@ -56,17 +61,17 @@ export function PredictionPainter({
   const paintable = offices.filter((o) => PAINTABLE.includes(o));
   const [office, setOffice] = useState<Office>(paintable[0] ?? 'senate');
   const [picks, setPicks] = useState<Picks>({});
-  const [copied, setCopied] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
 
-  const validKeys = useMemo(() => new Set(races.map(raceKey)), [races]);
+  const keys = useMemo(() => compactKeys(races), [races]);
+  const validKeys = useMemo(() => new Set(keys), [keys]);
 
   // Load once per cycle: a `?p=` share link wins over local storage.
   useEffect(() => {
-    const fromUrl = decodePicks(new URLSearchParams(location.search).get('p'));
+    const fromUrl = decodeAnyPicks(new URLSearchParams(location.search).get('p'), keys);
     const stored = readStored(year);
     setPicks(Object.keys(fromUrl).length ? { ...stored, ...fromUrl } : stored);
-  }, [year]);
+  }, [year, keys]);
 
   const update = useCallback(
     (next: Picks) => {
@@ -135,17 +140,8 @@ export function PredictionPainter({
     update(next);
   };
 
-  const shareUrl = () => `${location.origin}/elections?cycle=${year}&p=${encodePicks(picks)}#predict`;
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl());
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-    } catch {
-      window.prompt(t('predict.copyPrompt', { defaultValue: 'Copy your map link:' }), shareUrl());
-    }
-  };
-
+  const shareUrl = `${SITE_URL}/elections?cycle=${year}&p=${encodeCompact(picks, keys)}`;
+  const shareText = `My ${year} ${OFFICE_NAME[office].toLowerCase()} map: ${proj.DEM}–${proj.GOP}. Paint yours and get graded:`;
   if (!paintable.length) return null;
 
   return (
@@ -199,10 +195,9 @@ export function PredictionPainter({
               <RotateCcw size={14} aria-hidden />
               {t('predict.reset', { defaultValue: 'Reset' })}
             </button>
-            <button type="button" className="el-btn el-btn--sm el-btn--pink" onClick={copy} disabled={!painted}>
-              {copied ? <Check size={14} aria-hidden /> : <Link2 size={14} aria-hidden />}
-              {copied ? t('predict.copied', { defaultValue: 'Link copied' }) : t('predict.share', { defaultValue: 'Share my map' })}
-            </button>
+          </div>
+          <div style={{ marginTop: 14 }}>
+            <ShareBar url={shareUrl} text={shareText} disabled={!painted} />
           </div>
         </div>
 

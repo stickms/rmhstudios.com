@@ -32,8 +32,11 @@ const HEAD_BUDGET_MS = 1500;
 
 const getLite = createServerFn({ method: 'GET' })
   .validator((input: unknown) => {
-    const c = (input as { cycle?: unknown } | null | undefined)?.cycle;
-    return { cycle: typeof c === 'string' ? c : undefined };
+    const i = (input ?? {}) as { cycle?: unknown; p?: unknown };
+    return {
+      cycle: typeof i.cycle === 'string' ? i.cycle : undefined,
+      p: typeof i.p === 'string' && i.p.length <= 400 ? i.p : undefined,
+    };
   })
   .handler(async ({ data }) => {
     const now = new Date();
@@ -57,6 +60,7 @@ const getLite = createServerFn({ method: 'GET' })
     }
     return {
       year: cycle.year,
+      sharedMap: data.p ?? null,
       title: cycle.title,
       phase: phaseOf(cycle.date, now),
       options: cycleOptions(now),
@@ -67,21 +71,41 @@ const getLite = createServerFn({ method: 'GET' })
   });
 
 export const Route = createFileRoute('/elections')({
+  // TanStack JSON-parses search values, so `?cycle=2028` arrives as the NUMBER 2028 — accept both.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { cycle?: string; race?: string; p?: string } => ({
-    cycle: typeof search.cycle === 'string' && search.cycle.length <= 10 ? search.cycle : undefined,
-    race: typeof search.race === 'string' && search.race.length <= 80 ? search.race : undefined,
-    p: typeof search.p === 'string' && search.p.length <= 4000 ? search.p : undefined,
-  }),
-  loaderDeps: ({ search }) => ({ cycle: search.cycle }),
+  ): { cycle?: string; race?: string; p?: string } => {
+    const str = (v: unknown, max: number) => {
+      const s = typeof v === 'string' ? v : typeof v === 'number' ? String(v) : undefined;
+      return s && s.length <= max ? s : undefined;
+    };
+    return { cycle: str(search.cycle, 10), race: str(search.race, 80), p: str(search.p, 400) };
+  },
+  loaderDeps: ({ search }) => ({ cycle: search.cycle, p: search.p }),
   loader: ({ deps }) => getLite({ data: deps }),
   head: ({ loaderData }) => {
-    const title = `${loaderData?.title ?? 'Elections'} — Live Results | RMH Studios`;
-    const description = loaderData?.headline ?? DESC_FALLBACK;
+    const shared = !!loaderData?.sharedMap;
+    const title = shared
+      ? `My ${loaderData?.year} election map | RMH Studios`
+      : `${loaderData?.title ?? 'Elections'} — Live Results | RMH Studios`;
+    const description = shared
+      ? 'See how I called it — then paint your own map and get graded as the races are called.'
+      : (loaderData?.headline ?? DESC_FALLBACK);
+    // The card is dynamic (live board / the sharer's map). `v` changes every 5 minutes so crawlers that
+    // cache by URL pick up a moving board; the picks themselves are never drawn, only counted.
+    const bucket = Math.floor(Date.now() / 300_000);
+    const image = `/api/og/elections?cycle=${loaderData?.year ?? ''}&v=${bucket}${
+      shared ? `&p=${encodeURIComponent(loaderData!.sharedMap!)}` : ''
+    }`;
     return {
       meta: [
-        ...buildMeta({ title, description, path: PATH }),
+        ...buildMeta({
+          title,
+          description,
+          path: PATH,
+          image,
+          imageAlt: shared ? 'A shared election map' : 'Live election results',
+        }),
         { name: 'theme-color', content: '#F3F0E6' },
       ],
       links: [

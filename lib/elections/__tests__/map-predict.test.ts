@@ -100,3 +100,52 @@ describe('picks', () => {
     expect(raceKey({ id: 'OH-S_W-S-2026-11-03' })).toBe('OH-S_W-S');
   });
 });
+
+import { compactKeys, decodeAnyPicks, decodeCompact, encodeCompact } from '../predict';
+
+describe('compact share form', () => {
+  const races = [
+    ...normalizeNytPage(senatePage, 'senate').races,
+  ];
+  const keys = compactKeys(races);
+
+  it('uses sorted unique keys of paintable races only', () => {
+    expect(keys).toEqual(['MI-G-S', 'OH-S_W-S', 'PA-G-S', 'TX-G-S']);
+    expect(compactKeys(normalizeNytPage(housePage, 'house').races)).toEqual([]);
+  });
+
+  it('round-trips every call, including blanks', () => {
+    const picks = { 'MI-G-S': 'TOSS', 'PA-G-S': 'DEM', 'TX-G-S': 'GOP' } as const;
+    const s = encodeCompact({ ...picks }, keys);
+    expect(s.startsWith('~')).toBe(true);
+    expect(s.length).toBe(1 + 4 + Math.ceil(keys.length / 3));
+    expect(decodeCompact(s, keys)).toEqual(picks);
+  });
+
+  it('is far shorter than the long form for a full map', () => {
+    // A realistic night: 35 Senate + 36 governor races, every one painted.
+    const full = [
+      ...STATE_CODES.slice(0, 35).map((c) => `${c}-G-S`),
+      ...STATE_CODES.slice(0, 36).map((c) => `${c}-G-G`),
+    ].sort();
+    const picks = Object.fromEntries(full.map((k) => [k, 'DEM'])) as Record<string, 'DEM'>;
+    const compact = encodeCompact(picks, full);
+    expect(compact.length).toBeLessThanOrEqual(30);
+    expect(compact.length).toBeLessThan(encodePicks(picks).length / 10);
+    expect(decodeCompact(compact, full)).toEqual(picks);
+  });
+
+  it('rejects a link made against a different race list or garbage', () => {
+    const s = encodeCompact({ 'PA-G-S': 'DEM' }, keys);
+    expect(decodeCompact(s, [...keys, 'WI-G-G'])).toBeNull();
+    expect(decodeCompact('~xxxx', keys)).toBeNull();
+    expect(decodeCompact(s.slice(0, -1), keys)).toBeNull();
+    expect(decodeCompact('PA-G-S.d', keys)).toBeNull();
+  });
+
+  it('decodeAnyPicks reads both forms', () => {
+    expect(decodeAnyPicks(encodeCompact({ 'PA-G-S': 'GOP' }, keys), keys)).toEqual({ 'PA-G-S': 'GOP' });
+    expect(decodeAnyPicks('PA-G-S.d,ZZ-G-S.r', keys)).toEqual({ 'PA-G-S': 'DEM' });
+    expect(decodeAnyPicks(null, keys)).toEqual({});
+  });
+});
