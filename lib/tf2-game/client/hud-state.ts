@@ -478,6 +478,11 @@ export interface HudState {
   admin?: HudAdmin | null;
   /** CS:GO's part of the HUD (money, the round, the bomb); absent in the other games. */
   cs?: HudCs | null;
+  /**
+   * A game-specific HUD payload the shared client does not interpret (injected `SpContent.hud`
+   * fills it; Harmonic's `HarmonicHudState`). Absent for TF2, HL2, Portal and CS:GO.
+   */
+  ext?: unknown;
 }
 
 /** One weapon in a CS:GO player's inventory, for the HUD's slots and the buy menu. */

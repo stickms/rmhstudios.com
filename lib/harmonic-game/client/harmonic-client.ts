@@ -20,6 +20,8 @@ import { HARMONIC_LEVELS, findHarmonicLevel } from '../levels';
 import { attachHarmonicSim } from '../sim';
 import { onPhaseLevelReady } from './phase-view';
 import { createHarmonicAudio } from '../audio/player';
+import { readHudState } from './hud-state';
+import { saveLevelStart } from './save';
 
 export type HarmonicClientOptions = Omit<
   SpClientOptions,
@@ -39,6 +41,7 @@ export function harmonicContent(): SpContent {
       progress.begin('map', 1);
       const compiled = compileLevel(level.source(), { materials: HARMONIC_MATERIAL_LOOKUP });
       progress.finish('map');
+      saveLevelStart(level.id); // the Continue slot (H1.4)
       return {
         bsp: compiled.bsp,
         manifest: compiled.manifest,
@@ -56,11 +59,13 @@ export function harmonicContent(): SpContent {
       }),
     // Procedural models: an in-memory index and a stub loader (assets/models/library.ts).
     createModels: () => createHarmonicModelLibrary(),
-    // Nothing from the HL2/Portal channels: no suit HUD (H1.4) and no write to the HL2 save slot.
+    // Nothing from the HL2/Portal channels: no suit HUD (Harmonic's own HUD rides `hud`) and no
+    // write to the HL2 save slot (Harmonic saves in loadLevel).
     // Sound is Harmonic's own synthesised bank, injected through `createAudio` (H3.3).
     features: { audio: false, suitHud: false, saves: false },
     onLevelReady: (ctx) => onPhaseLevelReady(ctx),
     createAudio: createHarmonicAudio,
+    hud: (snap) => readHudState(snap),
   };
 }
 

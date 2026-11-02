@@ -121,6 +121,12 @@ export interface SpContent {
    */
   onLevelReady?(ctx: { sim: SpWorld; world: WorldRenderer }): (() => void) | void;
   /**
+   * The content's own HUD payload, called with each HUD tick's snapshot (20 Hz) and the HUD clock
+   * (`HudState.now`); the result is published as `HudState.ext` for a custom HUD component
+   * (`GameCanvas.hudComponent`). Absent: `ext` stays unset (HL2/Portal unchanged).
+   */
+  hud?: (snap: SpSnapshot, now: number) => unknown;
+  /**
    * An injected audio backend in place of the HL2/Portal sound channel (`features.audio` stays
    * false for such content). Optional and additive: absent, nothing changes. Harmonic's synthesised
    * sound bank plugs in here (`lib/harmonic-game/audio/`).
@@ -952,6 +958,8 @@ export class SpClient implements GameClient {
       });
     }
     state.fade = this.fadeState();
+    const ext = this.opts.content?.hud;
+    if (ext) state.ext = ext(snap, this.clientNow);
     this.log.apply(state, this.clientNow);
     if (this.hint)
       state.center.unshift({

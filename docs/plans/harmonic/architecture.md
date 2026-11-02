@@ -140,8 +140,8 @@ Corrections found while building it (all implemented in `compiler/`):
   model frame is the identity. Paths `models/harmonic/<name>.mdl`: characters `meridian_trooper`
   `meridian_shield` `unstrung_drifter` `ines` `lind_old` (clips `idle walk run aim fire reload die hurt`,
   activities `ACT_IDLE ACT_WALK ACT_RUN ACT_IDLE_ANGRY ACT_RANGE_ATTACK1 ACT_RELOAD ACT_DIESIMPLE
-  ACT_FLINCH_CHEST`; attachments `muzzle` (armed), `eyes`); world guns `w_prybar w_pulse_pistol
-  w_coil_rifle w_tuner`; view models `v_<same>` (clips `draw idle fire reload`, activities `ACT_VM_*`);
+ACT_FLINCH_CHEST`; attachments `muzzle` (armed), `eyes`); world guns `w_prybar w_pulse_pistol
+w_coil_rifle w_tuner`; view models `v_<same>` (clips `draw idle fire reload`, activities `ACT_VM_*`);
   props `crate locker heater antenna_mast lamp_post oil_drum`. Compiled levels carry a flat per-leaf ambient
   cube (`bsp-build.ts`) so models are lit before the lightmap bake (H5.1); without it they draw black.
   Check with `scripts/harmonic/model-gallery.ts` (contact sheets) and `models-smoke.ts` (in-game, via
@@ -216,11 +216,25 @@ lines: [{ speaker, key, defaultValue, durationMs }], then?: Output[] }`, fired b
   (`harmonicSounds.sfx(...)`, `{type:'area'}`, `{type:'music'}`) other WPs emit to. Dev hook:
   `window.__harmonicAudio.debug()`. Smoke: `scripts/harmonic/audio-smoke.ts`; WAV export:
   `scripts/harmonic/audio-export.ts`.
-- `components/harmonic-game/HarmonicPlayPage.tsx`: main menu (New game, Continue, Chapters,
-  Options, Credits), loading screen, pause menu, HUD (health, cold, ammo, Tuner charge,
-  subtitles). `AppShell` + `--app-*` tokens; one signal button per view.
-- Saves: per-chapter start + flags in `localStorage` (`client/save.ts`, modelled on
-  `lib/tf2-game/client/sp-save.ts`, its own key prefix `harmonic:`).
+- `components/harmonic-game/HarmonicPlayPage.tsx`: title screen (Continue when a save exists,
+  New game, asking before it replaces one); later Chapters, Credits. `AppShell` + `--app-*`
+  tokens; one primary button per view.
+- **HUD (H1.4).** `client/hud-state.ts` defines `HarmonicHudState` (health, cold, weapon, tuner,
+  layer, hint, subtitles, dead — each optional slice is filled by its own WP, the file header says
+  who) and the pure `readHudState(snap)`. `harmonicContent().hud` returns it each 20 Hz tick;
+  `SpClient` publishes it as `HudState.ext` through the shared HUD store. `GameCanvas hudComponent`
+  mounts `components/harmonic-game/HarmonicGameUi.tsx` instead of the HL2 `GameHud`: it draws
+  `HarmonicHud` (cold whites on a scrim, amber only for "in phase"), owns the pause menu (Resume,
+  Options, Quit to title) and Options (sensitivity, FOV, volume, invert Y, subtitles, subtitle
+  size). Settings are the shared `GameSettings`; the subtitle size is `client/prefs.ts`
+  (`harmonic:prefs`). To add a HUD field: extend `HarmonicHudState`, fill it in `readHudState`
+  (or merge in `harmonicContent().hud`), draw it in `HarmonicHud`.
+- Saves: `client/save.ts`, `harmonic:save` = `{ v: 1, level, flags, savedAt }`, written by
+  `loadLevel` at every level start (flags of the run in progress are kept; New game clears the
+  slot first). Narrative/flag WPs write flags with `writeHarmonicSave`.
+- Browser check: `scripts/harmonic/hud-smoke.ts` (HUD health follows the pit, pause → Options →
+  FOV → resume, Continue round-trip; screenshots, including the light app appearance).
+- Not yet: touch controls for Harmonic (the shared overlay is not mounted by `HarmonicGameUi`).
 
 ## 8. Tests
 

@@ -345,6 +345,10 @@ signal)` returns `{ bsp, manifest, hulls }`, `createAssets(level)` the `SpAssets
   world. Harmonic's `attachHarmonicSim` (`lib/harmonic-game/sim/`) uses it for the combat service
   (`HarmonicCombat`: hitscan/melee traces over the map and solid box entities, damage routing, a typed event stream).
   `lib/harmonic-game/sim/combat.test.ts` covers it, including the inert no-hooks case.
+  Two more additive seams (H1.4): `SpContent.hud?(snap, now)` is called with each 20 Hz HUD tick and its result is
+  published as `HudState.ext` (`unknown`; unset for HL2/Portal/TF2/CS:GO), and `GameCanvas hudComponent` swaps
+  `GameHud` for the game's own HUD, pause menu and options (it gets the same `GameHudProps` and owns the pause
+  flow: `input.suspended`, the `pause` command, the `menu` impulse). Default: `GameHud`, unchanged.
 - **Quality** (`client/quality.ts`): desktop / laptop / mobile from WebGL2, the texture limit, memory, cores,
   the GPU name and touch; each sets resolution scale, DPR cap, texture cap, anisotropy, particle budget, prop
   draw distance and portal recursion (2 desktop, 1 phone). A frame-time governor lowers the resolution scale

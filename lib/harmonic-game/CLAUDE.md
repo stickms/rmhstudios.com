@@ -15,17 +15,17 @@ the spec is wrong.
 
 ## Module map (architecture.md §2)
 
-| Path         | What                                                                    |
-| ------------ | ----------------------------------------------------------------------- |
-| `index.ts`   | Public entry (re-exports).                                              |
-| `levels/`    | One `LevelSource` per chapter + `dev_box.ts`.                           |
-| `compiler/`  | LevelSource DSL → in-memory `BspFile` (brushes, kd-tree, bevels).       |
-| `assets/`    | Procedural textures, materials, models, the `SpAssets` implementation.  |
-|              | `assets/models/`: `info.ts` is Node-safe; `catalog.ts`/`library.ts` use three. |
-| `sim/`       | Harmonic-only entities and services: weapons, damage, phase, enemies.   |
-| `narrative/` | Dialogue/subtitle runner, radio, chapter flags, endings.                |
+| Path         | What                                                                                                                |
+| ------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `index.ts`   | Public entry (re-exports).                                                                                          |
+| `levels/`    | One `LevelSource` per chapter + `dev_box.ts`.                                                                       |
+| `compiler/`  | LevelSource DSL → in-memory `BspFile` (brushes, kd-tree, bevels).                                                   |
+| `assets/`    | Procedural textures, materials, models, the `SpAssets` implementation.                                              |
+|              | `assets/models/`: `info.ts` is Node-safe; `catalog.ts`/`library.ts` use three.                                      |
+| `sim/`       | Harmonic-only entities and services: weapons, damage, phase, enemies.                                               |
+| `narrative/` | Dialogue/subtitle runner, radio, chapter flags, endings.                                                            |
 | `audio/`     | Synthesised sound bank (`recipes`→`dsp`→`synth`), beds, music, `HarmonicSoundEvent` bus (`events.ts`), `player.ts`. |
-| `client/`    | Client wiring, view model renderer, HUD adapter, save slots.            |
+| `client/`    | Client wiring, HUD state (`hud-state.ts`), save slot, prefs, phase view, view model.                                |
 
 React lives in `components/harmonic-game/`, the route in `app/routes/harmonic.tsx`,
 strings in `locales/en/harmonic.json` (namespace `harmonic`).
