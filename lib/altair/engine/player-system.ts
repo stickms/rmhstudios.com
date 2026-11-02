@@ -199,6 +199,17 @@ export function resetPositionHistoryAccum(): void {
   positionHistoryAccum = 0;
 }
 
+/**
+ * The accumulator is module state but belongs to a player; the multiplayer host
+ * saves/restores it around each player's turn (engine/multiplayer/player-state.ts).
+ */
+export function getPositionHistoryAccum(): number {
+  return positionHistoryAccum;
+}
+export function setPositionHistoryAccum(v: number): void {
+  positionHistoryAccum = v;
+}
+
 // =============================================================================
 // 2. computeEffectiveStats
 // =============================================================================
