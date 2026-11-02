@@ -117,3 +117,69 @@ export function scorePicks(picks: Picks, races: Race[]): Score {
     accuracy: scored ? Math.round((correct / scored) * 100) : null,
   };
 }
+
+/* ── compact share form ──────────────────────────────────────────────────
+ * A 71-race map as `KEY.d,KEY.r,…` is ~800 characters: too long for a feed
+ * post or a tidy link. The compact form packs two bits per race over the
+ * cycle's SORTED race keys (3 races per base64url character) behind a 4-char
+ * fingerprint of that key list: `~<fp><packed>`. If the race list has changed
+ * since the link was made (a special election was added) the fingerprint
+ * differs and the link is ignored rather than silently mis-assigned.
+ */
+
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+const CODE2: Record<string, number> = { DEM: 1, GOP: 2, TOSS: 3 };
+const CALL2: (Call | undefined)[] = [undefined, 'DEM', 'GOP', 'TOSS'];
+
+/** Sorted, unique keys of the paintable races — the shared coordinate system for the compact form. */
+export function compactKeys(races: Race[]): string[] {
+  return [...new Set(races.filter((r) => PAINTABLE.includes(r.office)).map(raceKey))].sort();
+}
+
+function fingerprint(keys: string[]): string {
+  let h = 2166136261;
+  for (const ch of keys.join('|')) {
+    h ^= ch.charCodeAt(0);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return B64[h & 63] + B64[(h >>> 6) & 63] + B64[(h >>> 12) & 63] + B64[(h >>> 18) & 63];
+}
+
+export function encodeCompact(picks: Picks, keys: string[]): string {
+  let out = '';
+  for (let i = 0; i < keys.length; i += 3) {
+    let v = 0;
+    for (let j = 0; j < 3; j++) {
+      const k = keys[i + j];
+      v |= (k ? (CODE2[picks[k] ?? ''] ?? 0) : 0) << (j * 2);
+    }
+    out += B64[v];
+  }
+  return `~${fingerprint(keys)}${out}`;
+}
+
+/** Null when the string is not compact, or was made against a different race list. */
+export function decodeCompact(raw: string, keys: string[]): Picks | null {
+  if (!raw.startsWith('~') || raw.length > 400) return null;
+  if (raw.slice(1, 5) !== fingerprint(keys)) return null;
+  const body = raw.slice(5);
+  if (body.length !== Math.ceil(keys.length / 3)) return null;
+  const out: Picks = {};
+  for (let i = 0; i < body.length; i++) {
+    const v = B64.indexOf(body[i]);
+    if (v < 0) return null;
+    for (let j = 0; j < 3; j++) {
+      const k = keys[i * 3 + j];
+      const call = CALL2[(v >> (j * 2)) & 3];
+      if (k && call) out[k] = call;
+    }
+  }
+  return out;
+}
+
+/** Accept either form (a link made before the compact form existed still works). */
+export function decodeAnyPicks(raw: string | null | undefined, keys: string[]): Picks {
+  if (!raw) return {};
+  if (raw.startsWith('~')) return decodeCompact(raw, keys) ?? {};
+  return decodePicks(raw, new Set(keys));
+}

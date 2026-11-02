@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
+import { SITE_URL } from '@/lib/seo';
 import { cycleForYear, cycleOptions, phaseOf, type Cycle } from '@/lib/elections/calendar';
 import { buildFacts, deterministicSummary, headline } from '@/lib/elections/summary';
 import type { ElectionSnapshot, Office } from '@/lib/elections/types';
@@ -13,6 +14,9 @@ import { RaceExplorer } from './RaceExplorer';
 import { PollClosings } from './PollClosings';
 import { PredictionPainter } from './PredictionPainter';
 import { AiDesk } from './AiDesk';
+import { ElectionChat } from './ElectionChat';
+import { WatchParty } from './WatchParty';
+import { ShareBar } from './ShareBar';
 import { timeAgo, useElectionData, useNow, useReveal } from './hooks';
 
 export interface ElectionsPageProps {
@@ -134,6 +138,7 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
             <a href="#map">{t('nav.map', { defaultValue: 'Map' })}</a>
             <a href="#races">{t('nav.races', { defaultValue: 'Races' })}</a>
             <a href="#polls">{t('nav.polls', { defaultValue: 'Polls' })}</a>
+            <a href="#live">{t('nav.live', { defaultValue: 'Watch' })}</a>
             <a href="#predict">{t('nav.predict', { defaultValue: 'Predict' })}</a>
           </nav>
           <div className="el-bar__tools">
@@ -268,6 +273,23 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
         </Section>
 
         <Section
+          id="live"
+          tone="ink"
+          eyebrow={t('live.eyebrow', { defaultValue: 'Together' })}
+          title={
+            <>
+              {t('live.title1', { defaultValue: 'Watch &' })} <em>{t('live.title2', { defaultValue: 'talk' })}</em>
+            </>
+          }
+          lede={t('live.lede', { defaultValue: 'Put a stream on and argue about it in real time.' })}
+        >
+          <div className="el-map">
+            <WatchParty />
+            <ElectionChat year={year} />
+          </div>
+        </Section>
+
+        <Section
           id="predict"
           eyebrow={t('predict.eyebrow', { defaultValue: 'Call it' })}
           title={
@@ -278,7 +300,13 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
           lede={t('predict.lede', { defaultValue: 'Make your calls, share the link, get graded as races are called.' })}
         >
           {snapshot && hasData ? (
-            <PredictionPainter year={year} races={snapshot.races} chambers={snapshot.chambers} offices={offices} />
+            <>
+              <PredictionPainter year={year} races={snapshot.races} chambers={snapshot.chambers} offices={offices} />
+              <div style={{ marginTop: 28 }}>
+                <p className="el-eyebrow">{t('share.board', { defaultValue: 'Share the live board' })}</p>
+                <ShareBar url={`${SITE_URL}/elections?cycle=${year}`} text={headline(snapshot)} />
+              </div>
+            </>
           ) : (
             <div className="el-box el-skel" aria-busy />
           )}
