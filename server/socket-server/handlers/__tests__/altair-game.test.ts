@@ -93,6 +93,44 @@ describe('altair game relays', () => {
     });
   });
 
+  describe('drop-in', () => {
+    function joiner() {
+      const s = playing();
+      const lobbyId = (last<{ lobbyId: string }>(s.host, 'altair:lobby:created') as { lobbyId: string }).lobbyId;
+      const late = s.w.connect('sock-late', { userId: 'late', userName: 'late' });
+      s.w.send(late, E.join, { lobbyId });
+      return { ...s, late };
+    }
+    const joined = (s: ReturnType<typeof joiner>['host']) =>
+      all<{ player: { userId: string; classId: string | null; slot: number } }>(s, 'altair:game:player_joined');
+
+    it('a mid-run joiner is announced without a class, then picks exactly once', () => {
+      const { w, host, late } = joiner();
+      expect(joined(host).map((j) => j.player.classId)).toEqual([null]);
+      w.send(late, E.classSelect, { classId: 'arcanist' });
+      const events = joined(host);
+      expect(events.length).toBe(2);
+      expect(events[1].player).toMatchObject({ userId: 'late', classId: 'arcanist' });
+      // A second pick is refused: classes are locked in a running match.
+      w.send(late, E.classSelect, { classId: 'knight' });
+      expect(all<{ code: string }>(late, E.error).map((e) => e.code)).toContain('WRONG_STATE');
+      expect(joined(host).length).toBe(2);
+    });
+
+    it('a player who started the match cannot swap class mid-run', () => {
+      const { w, host, guest } = joiner();
+      w.send(guest, E.classSelect, { classId: 'arcanist' });
+      expect(all<{ code: string }>(guest, E.error).map((e) => e.code)).toContain('WRONG_STATE');
+      expect(joined(host).filter((j) => j.player.userId === 'guest')).toEqual([]);
+    });
+
+    it('rejects an unknown class from a joiner', () => {
+      const { w, late } = joiner();
+      w.send(late, E.classSelect, { classId: 'not-a-class' });
+      expect(all<{ code: string }>(late, E.error).map((e) => e.code)).toContain('INVALID_PAYLOAD');
+    });
+  });
+
   describe('input', () => {
     it('forwards a guest intent to the host only, rebuilt field by field', () => {
       const { w, host, guest } = playing();

@@ -722,13 +722,31 @@ function onClassSelect(io: Server, socket: Socket, payload: any): void {
   const player = lobby.players.get(userId);
   if (!player) return;
 
-  if (lobby.state !== 'WAITING' && lobby.state !== 'CLASS_SELECT') {
+  // A drop-in joins a running match without a class: they may pick exactly once.
+  const dropInPick = lobby.state === 'PLAYING' && player.classId === null;
+  if (!dropInPick && lobby.state !== 'WAITING' && lobby.state !== 'CLASS_SELECT') {
     socket.emit(S2C.ERROR, { code: 'WRONG_STATE', message: 'Classes are locked once the countdown starts.' });
     return;
   }
   const classId = payload?.classId;
   if (typeof classId !== 'string' || !VALID_CLASS_IDS.has(classId)) {
     socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Unknown class.' });
+    return;
+  }
+
+  if (dropInPick) {
+    player.classId = classId;
+    player.isReady = true;
+    player.runState = createInitialRunState();
+    lobby.lastActivityAt = Date.now();
+    broadcastFullSync(lobby);
+    // The host's page spawns them now that the class is known.
+    broadcastToLobby(lobby.id, S2C.GAME_PLAYER_JOINED, {
+      player: {
+        userId, userName: player.userName, avatarUrl: player.avatarUrl, isConnected: true, isHost: false,
+        slot: player.slot, classId, isReady: true, color: getSlotColor(player.slot),
+      },
+    });
     return;
   }
 

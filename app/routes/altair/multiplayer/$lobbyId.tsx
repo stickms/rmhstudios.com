@@ -14,9 +14,7 @@ import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store'
 import { C2S, S2C } from '@/lib/altair/multiplayer/events'
 import { useAltairToastStore } from '@/lib/altair/stores/toast-store'
 import AltairHeader from '@/components/altair/AltairHeader'
-import ClassSelectLobby from '@/components/altair/multiplayer/ClassSelectLobby'
 import LobbyWaiting from '@/components/altair/multiplayer/LobbyWaiting'
-import type { GameResultsData } from '@/lib/altair/multiplayer/types'
 
 // Lazy import for the multiplayer game screen
 const MultiplayerGameScreen = lazy(
@@ -117,8 +115,13 @@ function AltairLobbyPage() {
     navigate({ to: '/altair/multiplayer' })
   }, [lobbyId, navigate])
 
+  // A live match must survive a dropped socket: the host's page IS the simulation, so
+  // unmounting it for a "Connecting..." screen would throw the whole run away. The match
+  // screen shows its own reconnect banner instead.
+  const inMatch = !!lobby && (lobby.state === 'PLAYING' || gameStarted)
+
   // Loading state
-  if (connectionStatus === 'connecting' || connectionStatus === 'disconnected') {
+  if (!inMatch && (connectionStatus === 'connecting' || connectionStatus === 'disconnected')) {
     return (
       <>
         <AltairHeader context="menu" title={t("multiplayer-title", { defaultValue: "Multiplayer" })} onBack={() => navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
@@ -133,7 +136,7 @@ function AltairLobbyPage() {
   }
 
   // Error state
-  if (connectionStatus === 'error') {
+  if (!inMatch && connectionStatus === 'error') {
     return (
       <>
         <AltairHeader context="menu" title={t("multiplayer-title", { defaultValue: "Multiplayer" })} onBack={() => navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
@@ -188,14 +191,7 @@ function AltairLobbyPage() {
   if (lobby.state === 'RESULTS' && results) {
     return (
       <Suspense fallback={null}>
-        <MultiplayerResultsScreen
-          results={results}
-          onPlayAgain={() => {
-            // Host restarts, others stay in lobby
-            useAltairMultiplayerStore.getState().setResults(null as unknown as GameResultsData)
-          }}
-          onLeave={handleLeave}
-        />
+        <MultiplayerResultsScreen results={results} onLeave={handleLeave} />
       </Suspense>
     )
   }
@@ -215,18 +211,6 @@ function AltairLobbyPage() {
               {countdown}
             </div>
           </div>
-        </div>
-      </>
-    )
-  }
-
-  // Class select phase
-  if (lobby.state === 'CLASS_SELECT') {
-    return (
-      <>
-        <AltairHeader context="menu" title={t("class-select", { defaultValue: "Class Select" })} onBack={handleLeave} connectionStatus={connectionStatus} />
-        <div className="flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable both-edges' }}>
-          <ClassSelectLobby lobbyId={lobbyId} />
         </div>
       </>
     )

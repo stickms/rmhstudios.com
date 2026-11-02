@@ -15,7 +15,7 @@ engine, it does not fork it.
 | 2     | Host simulation for 2–4 players (`engine/multiplayer/host-sim.ts`) | done (pure logic + tests; not wired to a page yet) |
 | 3A    | Client: host driver, snapshot rendering, guest input, host-leave | done (two real clients verified) |
 | 3B    | Co-op feel: per-player level-up, revive/down UI, spectate, boss bar | done (two real clients verified) |
-| 3C    | Robustness: touch, reconnect, drop-in, play again             | not started |
+| 3C    | Robustness: touch, reconnect, drop-in, results/lobby loop     | done (two real clients verified) |
 | 4     | Results, drop-in, persistence                                 | not started |
 
 ### Phase 3A as built
@@ -55,6 +55,26 @@ engine, it does not fork it.
 - Known gap (pre-existing, single-player too): the wave table has a boss entry at t=300 and another wave
   starting at t=300 after it, and the director takes the LAST matching wave, so no boss ever spawns. The
   boss bar was verified with a boss-flagged enemy injected on the host, not a real spawn.
+
+### Phase 3C as built
+
+- The lobby route no longer swaps a live match for a "Connecting..." screen on a socket drop (that
+  unmounted the host page, i.e. destroyed the simulation); the match shows its own banner. Snapshots
+  and guest input are sent `volatile`, so nothing stale replays after a reconnect.
+- Drop-in: a mid-run joiner (hub rules unchanged) sees a class picker and picks once (the hub accepts a
+  class from a PLAYING player who has none); the hub announces `GAME_PLAYER_JOINED` with the class and the
+  host calls `HostSim.addPlayer`; `GAME_PLAYER_LEFT` (after the grace) calls `removePlayer`.
+- Results: no "Play Again" button (it did nothing); the hub reopens the lobby 15 s after results and the
+  screen says so. Coins are not shown: co-op runs earn none. `ClassSelectLobby` (unreachable) is gone.
+- Persistence, for whoever builds it (read, not built): `/api/altair/match` already exists
+  (server-to-server, `ALTAIR_SERVER_SECRET` bearer) and writes `AltairMatch`, `AltairMatchPlayer`, the
+  co-op profile (`totalCoopCoins` from `coinsEarned`) and achievements, but it only CLAMPS what it is
+  given, and nothing calls it (the hub does not). Single-player's `/api/altair/meta` likewise stores
+  whatever coin balance the client sends (bounded to 0-100M), so neither path verifies a run. Co-op
+  numbers come from the host's browser, which every other player must treat as untrusted, so they must
+  not mint coins as sent: persisting them needs either server-side re-simulation or caps derived from
+  run time plus a way for guests to dispute the report. Until then the hub's results carry
+  `coinsEarned: 0` and nothing is written.
 
 - A host page that mounts mid-run (reload) cannot resume the match; it says so and offers Leave.
 

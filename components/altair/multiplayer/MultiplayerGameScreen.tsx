@@ -33,6 +33,7 @@ import { PLAYER_DEAD, PLAYER_ALIVE, type GameEvent } from '@/lib/altair/multipla
 import type { UpgradeChoice } from '@/lib/altair/stores/game-store';
 import { LevelUpPicker } from '@/components/altair/screens/LevelUpScreen';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
+import { CLASSES } from '@/lib/altair/data/classes';
 import { createTileGenerator } from '@/lib/altair/engine/game-loop';
 import { createWebGLRenderer } from '@/lib/altair/engine/renderer-setup';
 import { renderFrame } from '@/lib/altair/engine/renderer';
@@ -109,6 +110,8 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
   const joystickSide = useAltairSettingsStore((s) => s.joystickSide);
 
   const isHost = !!lobby && lobby.hostUserId === lobby.myUserId;
+  // Null for someone who dropped into a running match and has not chosen yet.
+  const myClassId = lobby?.players.find((p) => p.userId === lobby.myUserId)?.classId ?? null;
   // The host page IS the simulation. If it mounts without having seen the match
   // start (a reload mid-run) there is nothing to resume: say so.
   const [hostLost] = useState(() => isHost && !useAltairMultiplayerStore.getState().gameStarted);
@@ -225,6 +228,8 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
     let inputTimer: ReturnType<typeof setInterval> | null = null;
     let onGuestInput: ((m: { userId: string; seq: number; dx: number; dy: number }) => void) | null = null;
     let onSnapshot: ((raw: unknown) => void) | null = null;
+    let onJoined: ((m: { player?: { userId: string; classId: string | null; slot: number } }) => void) | null = null;
+    let onLeft: ((m: { userId?: string }) => void) | null = null;
     let onOffer: ((o: { level?: number; remaining?: number; choices?: UpgradeChoice[] }) => void) | null = null;
     let onChoice: ((m: { userId: string; choiceIndex: number }) => void) | null = null;
 
@@ -233,7 +238,7 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
         players: me.players.map((p) => ({ playerId: p.userId, classId: p.classId ?? 'knight', slot: p.slot })),
         doubleTime: me.settings.doubleTime,
         send: (snap) => {
-          socket.emit(C2S.GAME_STATE_SNAPSHOT, snap);
+          socket.volatile.emit(C2S.GAME_STATE_SNAPSHOT, snap); // volatile: a stale snapshot is worthless after a reconnect
           pushRaw(snap);
         },
         onLevelUpOffer: (playerId, o) => {
@@ -272,6 +277,18 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
         if (m && typeof m.userId === 'string') d.chooseUpgrade(m.userId, m.choiceIndex);
       };
       socket.on(C2S.GAME_LEVEL_UP_CHOICE, onChoice);
+      // Drop-in: the hub announces a joiner once they have picked a class; leavers are removed for good.
+      onJoined = (m) => {
+        const pl = m?.player;
+        if (pl && typeof pl.userId === 'string' && typeof pl.classId === 'string') {
+          d.sim.addPlayer({ playerId: pl.userId, classId: pl.classId, slot: pl.slot });
+        }
+      };
+      onLeft = (m) => {
+        if (m && typeof m.userId === 'string') d.sim.removePlayer(m.userId);
+      };
+      socket.on(S2C.GAME_PLAYER_JOINED, onJoined);
+      socket.on(S2C.GAME_PLAYER_LEFT, onLeft);
       pickRef.current = (i) => {
         d.chooseUpgrade(myId, i);
         openOffer(null);
@@ -310,7 +327,7 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
       let seq = 0;
       inputTimer = setInterval(() => {
         const v = getMovementVector(inputState);
-        socket.emit(C2S.GAME_INPUT, { seq: seq++, dx: v.dx, dy: v.dy });
+        socket.volatile.emit(C2S.GAME_INPUT, { seq: seq++, dx: v.dx, dy: v.dy });
       }, INPUT_INTERVAL_MS);
     }
 
@@ -388,6 +405,8 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
       if (onSnapshot) socket.off(S2C.GAME_STATE_SNAPSHOT, onSnapshot);
       if (onOffer) socket.off(S2C.GAME_LEVEL_UP_OFFER, onOffer);
       if (onChoice) socket.off(C2S.GAME_LEVEL_UP_CHOICE, onChoice);
+      if (onJoined) socket.off(S2C.GAME_PLAYER_JOINED, onJoined);
+      if (onLeft) socket.off(S2C.GAME_PLAYER_LEFT, onLeft);
       openOffer(null);
       cleanupInput();
       document.removeEventListener('visibilitychange', onHide);
@@ -462,6 +481,33 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
       />
 
       {hud && <CoopHud {...hud} />}
+
+      {myClassId === null && (
+        <div className="absolute inset-0 z-50 flex items-center-safe justify-center-safe overflow-y-auto bg-black/60 px-4">
+          <div role="region" aria-label={t('coop-dropin-title', { defaultValue: 'Join the run' })} className="flex w-full max-w-lg flex-col gap-3 rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) p-5">
+            <h2 className="text-center text-xl font-bold text-(--altair-text)">
+              {t('coop-dropin-title', { defaultValue: 'Join the run' })}
+            </h2>
+            <p className="text-center text-sm text-(--altair-text-muted)">
+              {t('coop-dropin-body', { defaultValue: 'The match is already under way. Pick a class and you appear next to the team.' })}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {CLASSES.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  data-testid={`dropin-class-${c.id}`}
+                  onClick={() => getSocket()?.emit(C2S.CLASS_SELECT, { classId: c.id })}
+                  className="min-h-11 rounded-(--altair-radius) border border-(--altair-border) px-3 py-2 text-left text-sm font-semibold hover:bg-(--altair-surface-hover)"
+                  style={{ color: c.color }}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {offer && <CoopLevelUp offer={offer} onPick={(i) => pickRef.current(i)} />}
 
