@@ -3041,6 +3041,10 @@ export function GameCanvas() {
               <button
                 data-mobile-btn
                 className="pointer-events-auto touch-none select-none flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
+                // Inline, because `touch-none` is a layered utility and the unlayered global
+                // `button { touch-action: manipulation }` in globals.css beats it: the lane
+                // pads kept pinch-zoom, so a two-finger pinch zoomed the page mid-song.
+                style={{ touchAction: 'none' }}
                 // No preventDefault here: React registers touchstart as passive, so it only
                 // logged "Unable to preventDefault inside passive event listener" on every
                 // tap. touch-none already stops scrolling, and the touchend handler below
@@ -3072,6 +3076,10 @@ export function GameCanvas() {
               <button
                 data-mobile-btn
                 className="pointer-events-auto touch-none select-none flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
+                // Inline, because `touch-none` is a layered utility and the unlayered global
+                // `button { touch-action: manipulation }` in globals.css beats it: the lane
+                // pads kept pinch-zoom, so a two-finger pinch zoomed the page mid-song.
+                style={{ touchAction: 'none' }}
                 // No preventDefault here: React registers touchstart as passive, so it only
                 // logged "Unable to preventDefault inside passive event listener" on every
                 // tap. touch-none already stops scrolling, and the touchend handler below
