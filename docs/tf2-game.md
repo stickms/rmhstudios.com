@@ -354,6 +354,10 @@ signal)` returns `{ bsp, manifest, hulls }`, `createAssets(level)` the `SpAssets
   `SpContent.viewModel?(sim)` returns `{ mdl, visible, play? }` each frame so the client keeps one
   `SpViewModelRenderer` per model path, starts the `play` activities and shows only the named one (absent: nothing
   drawn, the Portal gun apart). Zoom (ADS) needs no seam: the sim emits the existing `zoom` event.
+  Two more (H3.2): `SpContent.onClientCommand?(command, host)` receives the text of a `point_clientcommand`
+  (a `clientcommand` sim event, ignored before) with `host.loadMap(map)` (load one of `content.maps` from its
+  start) and `host.end()` (the `ended` phase); and `GameCanvas endScreen` replaces the HL2-worded "End of the
+  demo" screen. Both optional; HL2/Portal behaviour is unchanged. Harmonic's chapter flow rides on them.
 - **Quality** (`client/quality.ts`): desktop / laptop / mobile from WebGL2, the texture limit, memory, cores,
   the GPU name and touch; each sets resolution scale, DPR cap, texture cap, anisotropy, particle budget, prop
   draw distance and portal recursion (2 desktop, 1 phone). A frame-time governor lowers the resolution scale

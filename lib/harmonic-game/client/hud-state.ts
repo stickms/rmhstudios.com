@@ -11,6 +11,7 @@
  *   tuner                     H2.1 phase layers (the Tuner's charge; `listening` while it is held)
  *   layer                     H2.1 (which time the player is in)
  *   hint                      level scripts / tutorials (a one-line prompt)
+ *   chapter, curtain          chapter flow (H3.2): the title card, the fade to black between chapters
  *   subtitles                 narrative runner (dialogue lines; `until` is on the HUD clock, `HudState.now`)
  *
  * How it reaches React: `harmonicContent().hud` (the `SpContent.hud` seam) returns this object each
@@ -26,6 +27,10 @@ export interface HarmonicHudState {
   tuner?: { charge: number; max: number; listening: boolean };
   layer?: 'past' | 'present';
   hint?: { key: string; defaultValue: string } | null;
+  /** Chapter title card, up for a few seconds after a chapter starts (client/flow.ts). */
+  chapter?: { number: number; titleKey: string; titleDefault: string; fading: boolean };
+  /** True while the screen fades to black for the next chapter to load. */
+  curtain?: boolean;
   subtitles: {
     /** English display name (fallback); the HUD translates `speakerId`. */
     speaker: string;

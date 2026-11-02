@@ -64,6 +64,8 @@ export interface GameCanvasProps {
   sessionId: string;
   /** What "the end" screen offers (Half-Life 2 / Portal demos end at the last published map). */
   onEnded?: () => void;
+  /** Replaces the default "End of the demo" screen (content with its own wording, e.g. Harmonic). */
+  endScreen?: ReactNode;
   /** The game's own loading screen (its menu art and type); the plain one when absent. */
   loadingScreen?: (view: LoadingView) => ReactNode;
   /** False for a game with no published asset channels (Harmonic): its menus fetch nothing. Default true. */
@@ -154,6 +156,7 @@ export default function GameCanvas({
   onExit,
   title,
   onEnded,
+  endScreen,
   sessionId,
   loadingScreen,
   remoteAssets = true,
@@ -484,7 +487,8 @@ export default function GameCanvas({
         </div>
       ) : null}
 
-      {phase === 'ended' ? (
+      {phase === 'ended' && endScreen ? endScreen : null}
+      {phase === 'ended' && !endScreen ? (
         <section className="tf2g-play-screen" aria-labelledby="tf2g-end-title">
           <h2 id="tf2g-end-title" className="tf2hud-title text-3xl">
             {t('play_end_title', { defaultValue: 'End of the demo' })}

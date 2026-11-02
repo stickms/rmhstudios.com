@@ -143,6 +143,13 @@ export interface SpContent {
    * One renderer is kept per `mdl`; those not named are hidden.
    */
   viewModel?(sim: SpWorld): SpViewModelFrame | null;
+  /**
+   * The simulation's `point_clientcommand` text (a `clientcommand` event), with the controls a
+   * story needs: load another of this content's maps from its start, or end the run (the client's
+   * `ended` phase). Optional and additive: absent, the event is ignored as before. Harmonic's
+   * chapter transitions and endings ride on it (`lib/harmonic-game/client/flow.ts`).
+   */
+  onClientCommand?(command: string, host: SpContentHost): void;
 }
 
 /** What `SpContent.viewModel` returns for one frame. */
@@ -153,6 +160,14 @@ export interface SpViewModelFrame {
   visible: boolean;
   /** Activities to (re)start now, in order of preference (e.g. `['ACT_VM_PRIMARYATTACK']`). */
   play?: readonly string[];
+}
+
+/** What `SpContent.onClientCommand` may do to the client. */
+export interface SpContentHost {
+  /** Loads `map` (one of `SpContent.maps`) from its start; false when it is unknown or the client is gone. */
+  loadMap(map: string): boolean;
+  /** Stops the run and moves the client to its `ended` phase. */
+  end(): void;
 }
 
 /** What the client hands an injected audio backend when it is created. */
@@ -629,9 +644,15 @@ export class SpClient implements GameClient {
     const n = this.paused ? 0 : this.ticks.advance(dt * this.spConsole.timescale);
     const t0 = performance.now();
     for (let i = 0; i < n && this.sim === sim; i++) {
-      const cmd: SpUserCmd = buildUserCmd(input, this.viewAngles, this.settings, this.opts.content?.weaponContext?.(sim), {
-        tickCount: sim.tickCount + 1,
-      });
+      const cmd: SpUserCmd = buildUserCmd(
+        input,
+        this.viewAngles,
+        this.settings,
+        this.opts.content?.weaponContext?.(sim),
+        {
+          tickCount: sim.tickCount + 1,
+        },
+      );
       cmd.impulse = this.impulse;
       this.impulse = 0;
       this.prevOrigin.x = this.curOrigin.x;
@@ -945,6 +966,17 @@ export class SpClient implements GameClient {
         break;
       case 'changelevel':
         this.changeLevel(ev.map, ev.transition);
+        break;
+      case 'clientcommand':
+        this.opts.content?.onClientCommand?.(ev.command, {
+          loadMap: (map) => this.consoleChangeLevel(map),
+          end: () => {
+            if (this.disposed) return;
+            this.running = false;
+            this.loop?.stop();
+            this.opts.callbacks.onPhase?.('ended');
+          },
+        });
         break;
       case 'credits':
         if (ev.mode === 'outro') this.opts.callbacks.onPhase?.('ended');

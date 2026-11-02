@@ -24,6 +24,8 @@ import { createHarmonicAudio } from '../audio/player';
 import { applyNarrativeHud } from '../narrative';
 import { readHudState } from './hud-state';
 import { saveLevelStart } from './save';
+import { noteChapterReached } from '../narrative/flags';
+import { ChapterFlow } from './flow';
 
 export type HarmonicClientOptions = Omit<
   SpClientOptions,
@@ -36,6 +38,7 @@ export type HarmonicClientOptions = Omit<
 /** The content seam for Harmonic: no network, no game install. */
 export function harmonicContent(): SpContent {
   let world: SpWorld | null = null; // the current level's sim, for the narrative HUD slice
+  const flow = new ChapterFlow(); // chapter transitions and endings (H3.2)
   return {
     maps: HARMONIC_LEVELS.map((l) => ({ name: l.id, title: l.titleDefault })),
     async loadLevel(map, progress) {
@@ -45,6 +48,8 @@ export function harmonicContent(): SpContent {
       const compiled = compileLevel(level.source(), { materials: HARMONIC_MATERIAL_LOOKUP });
       progress.finish('map');
       saveLevelStart(level.id); // the Continue slot (H1.4)
+      noteChapterReached(level.id);
+      flow.levelLoaded(level.id);
       return {
         bsp: compiled.bsp,
         manifest: compiled.manifest,
@@ -71,10 +76,20 @@ export function harmonicContent(): SpContent {
     // write to the HL2 save slot (Harmonic saves in loadLevel).
     // Sound is Harmonic's own synthesised bank, injected through `createAudio` (H3.3).
     features: { audio: false, suitHud: false, saves: false },
-    onLevelReady: (ctx) => onPhaseLevelReady(ctx),
+    onLevelReady: (ctx) => {
+      const off = onPhaseLevelReady(ctx);
+      return () => {
+        flow.cancel();
+        off?.();
+      };
+    },
+    onClientCommand: (command, host) => flow.handle(command, host),
     createAudio: createHarmonicAudio,
     hud: (snap, now) =>
-      applyNarrativeHud(readHudState(snap, world ? harmonicSim(world) : null), world, now),
+      Object.assign(
+        applyNarrativeHud(readHudState(snap, world ? harmonicSim(world) : null), world, now),
+        flow.readHud(now),
+      ),
   };
 }
 
