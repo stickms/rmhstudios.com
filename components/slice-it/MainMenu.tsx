@@ -288,6 +288,8 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     : 'text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20'
                 }`}
                 onClick={() => setSoloMode(soloMode === 'daily' ? 'library' : 'daily')}
+                aria-label={ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
+                aria-pressed={soloMode === 'daily'}
               >
                 <CalendarDays className="w-4 h-4 [@media(min-width:640px)_and_(min-height:620px)]:mr-1.5" />
                 <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
@@ -302,6 +304,8 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     : 'text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20'
                 }`}
                 onClick={() => setSoloMode(soloMode === 'setlists' ? 'library' : 'setlists')}
+                aria-label={ts('setlists', { defaultValue: 'Setlists' })}
+                aria-pressed={soloMode === 'setlists'}
               >
                 <ListMusic className="w-4 h-4 [@media(min-width:640px)_and_(min-height:620px)]:mr-1.5" />
                 <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
@@ -317,6 +321,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 variant="outline"
                 className="h-10 shrink-0 bg-linear-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-3 sm:px-5 rounded-lg transition-colors uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse-settle hover:animate-none"
                 onClick={() => setShowMultiplayer(true)}
+                aria-label={t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
