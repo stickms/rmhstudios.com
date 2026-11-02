@@ -75,6 +75,10 @@ harmonic-client.ts`; `components/harmonic-game/HarmonicPlayPage.tsx` (New game �
   checkpoint (SP checkpoint system, `lib/sp-game/level/checkpoint.ts`). Optional additive
   `SpWorld` tick hook if needed (architecture §5). **Done when:** a test shoots a target
   entity through `Driver` input and it takes the expected damage; HL2/Portal tests unchanged.
+- **As built:** `SpWorld.hooks` (`afterPlayerCmd`, `afterTick`) + `SpContent.attachWorld`; `sim/index.ts`
+  `attachHarmonicSim(world)` installs `HarmonicCombat` (`world`-attached; `sim/combat.ts`) and the debug pulse
+  (`firePrimary`, the one function H1.3 replaces). Death/checkpoint reload is the engine's (`SpPlayer` →
+  `SpWorld.reloadAfterDeath`), unchanged. Test level `dev_combat`.
 - **Deps:** H0.4.
 
 ### H1.2 Cold and shelters

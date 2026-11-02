@@ -50,6 +50,17 @@ import '../entities/register';
 /** How the map was entered (gpGlobals->eLoadType): logic_auto picks its outputs by it. */
 export type LoadType = 'new' | 'transition' | 'load';
 
+/**
+ * Optional per-tick extension points for content that adds its own simulation (Harmonic's combat).
+ * Unset (the default, and always for HL2/Portal) they are never consulted: `step` is unchanged.
+ */
+export interface SpWorldHooks {
+  /** After the player's command ran this tick (also called while the player is dead; check `w.player.dead`). */
+  afterPlayerCmd?(w: SpWorld, cmd: SpUserCmd): void;
+  /** At the very end of the tick, after I/O and impact sounds. */
+  afterTick?(w: SpWorld): void;
+}
+
 export interface SpWorldInit {
   game: SpGame;
   mapName: string;
@@ -61,6 +72,8 @@ export interface SpWorldInit {
   seed?: number;
   /** Physics substeps per tick (default 2). */
   substeps?: number;
+  /** Optional additive tick hooks (see `SpWorldHooks`). */
+  hooks?: SpWorldHooks;
 }
 
 /** Entities a trigger registers as a touch volume. */
@@ -177,6 +190,8 @@ export class SpWorld {
   soundscape = '';
   /** Set when a trigger_changelevel fired (the host loads `map`). */
   pendingChangeLevel: (ChangeLevelRequest & { transition: TransitionData }) | null = null;
+  /** Optional tick hooks; null (the default) means `step` runs exactly as before. */
+  hooks: SpWorldHooks | null;
   /** The last logic_autosave (or the map start). */
   checkpoint: Checkpoint | null = null;
   /** point_template / npc_template_maker templates by lower-case name. */
@@ -207,6 +222,7 @@ export class SpWorld {
     this.assets = init.assets;
     this.loadType = init.loadType ?? (init.transition ? 'transition' : 'new');
     this.random_ = new UniformRandomStream(init.seed ?? 1);
+    this.hooks = init.hooks ?? null;
 
     const loaded = loadParsedMap(init.bsp, { name: init.mapName, propCollision: (m) => this.propCollisionModel(m) });
     this.mapCollision = loaded.collision;
@@ -849,6 +865,7 @@ export class SpWorld {
     // 1. The player.
     const p = this.player;
     p.runCommand(cmd ?? p.lastCmd);
+    if (this.hooks?.afterPlayerCmd) this.hooks.afterPlayerCmd(this, cmd ?? p.lastCmd);
     if (this.game === 'portal') this.portals.updatePlayer();
 
     // 2. Thinks, movers, parenting.
@@ -892,6 +909,9 @@ export class SpWorld {
       const e = this.entity(imp.entity) as (Entity & { onImpact?: (speed: number) => void }) | null;
       e?.onImpact?.(imp.speed);
     }
+
+    // 7. Content hook.
+    if (this.hooks?.afterTick) this.hooks.afterTick(this);
   }
 
   private riderEnt = NO_ENTITY;

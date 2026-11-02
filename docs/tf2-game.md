@@ -326,6 +326,13 @@ signal)` returns `{ bsp, manifest, hulls }`, `createAssets(level)` the `SpAssets
   `GameCanvas` takes `remoteAssets={false}` for a game without asset channels: the pause menu and Options skip
   the menu-channel and HUD-base fetches (`menus/remote-assets.ts`). Harmonic (`lib/harmonic-game/client/`) compiles
   its levels in the browser and runs the `'hl2'` simulation; see `docs/plans/harmonic/architecture.md` §7.
+- **Tick hooks (`SpWorld.hooks`, additive):** `SpWorldInit.hooks` / `world.hooks` is an optional
+  `{ afterPlayerCmd?(w, cmd), afterTick?(w) }`. `step` calls `afterPlayerCmd` right after the player's command ran
+  (also while dead) and `afterTick` after I/O and impact sounds; with `hooks` null (the default, always for
+  HL2/Portal) neither is consulted. `SpContent.attachWorld?(world)` lets injected content install them on each new
+  world. Harmonic's `attachHarmonicSim` (`lib/harmonic-game/sim/`) uses it for the combat service
+  (`HarmonicCombat`: hitscan/melee traces over the map and solid box entities, damage routing, a typed event stream).
+  `lib/harmonic-game/sim/combat.test.ts` covers it, including the inert no-hooks case.
 - **Quality** (`client/quality.ts`): desktop / laptop / mobile from WebGL2, the texture limit, memory, cores,
   the GPU name and touch; each sets resolution scale, DPR cap, texture cap, anisotropy, particle budget, prop
   draw distance and portal recursion (2 desktop, 1 phone). A frame-time governor lowers the resolution scale

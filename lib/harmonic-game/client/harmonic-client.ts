@@ -16,6 +16,7 @@ import { compileLevel } from '../compiler';
 import { HARMONIC_MATERIAL_LOOKUP, createHarmonicAssets } from '../assets';
 import { createProceduralTextureCache } from '../assets/texture-cache';
 import { HARMONIC_LEVELS, findHarmonicLevel } from '../levels';
+import { attachHarmonicSim } from '../sim';
 
 export type HarmonicClientOptions = Omit<
   SpClientOptions,
@@ -43,6 +44,7 @@ export function harmonicContent(): SpContent {
       };
     },
     createAssets: async () => createHarmonicAssets(),
+    attachWorld: attachHarmonicSim,
     createTextures: (core) =>
       createProceduralTextureCache({
         renderer: core.renderer,

@@ -99,6 +99,8 @@ export interface SpContent {
   createAssets(level: SpLevelData, signal: AbortSignal): Promise<SpAssets>;
   /** The world's texture cache (the default is the channels' HTTP cache). */
   createTextures(core: RenderCore): TextureCache;
+  /** Called with each new `SpWorld` before its first tick (Harmonic attaches its simulation here). */
+  attachWorld?(world: SpWorld): void;
   /**
    * What the HL2/Portal channels give that this content does not: all default to false for
    * injected content, so nothing is fetched or shown from a game install.
@@ -317,6 +319,7 @@ export class SpClient implements GameClient {
       sim.dispose();
       return;
     }
+    content?.attachWorld?.(sim);
     this.sim = sim;
     this.spConsole.bind(sim);
     this.mapName = map;
