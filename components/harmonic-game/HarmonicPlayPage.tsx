@@ -20,9 +20,12 @@ export default function HarmonicPlayPage() {
   // Bumped per run so a second "New game" mounts a fresh canvas and client.
   const [run, setRun] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const level = HARMONIC_LEVELS[0];
+  const [level, setLevel] = useState(HARMONIC_LEVELS[0]);
 
   const start = useCallback(() => {
+    // `?level=<id>` starts any listed level (development: dev_models, chapters under test).
+    const id = new URLSearchParams(window.location.search).get('level');
+    setLevel(HARMONIC_LEVELS.find((l) => l.id === id) ?? HARMONIC_LEVELS[0]);
     setRun((r) => r + 1);
     setPlaying(true);
   }, []);

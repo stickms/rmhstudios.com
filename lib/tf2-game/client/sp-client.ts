@@ -100,6 +100,12 @@ export interface SpContent {
   /** The world's texture cache (the default is the channels' HTTP cache). */
   createTextures(core: RenderCore): TextureCache;
   /**
+   * The entity renderer's model cache (the default is the channels' GLBs over HTTP). Content with
+   * no model files — Harmonic's procedural models — returns a `ModelLibrary` built over an
+   * in-memory index and a stub loader.
+   */
+  createModels?(core: RenderCore): ModelLibrary;
+  /**
    * What the HL2/Portal channels give that this content does not: all default to false for
    * injected content, so nothing is fetched or shown from a game install.
    * `audio`: the sound channel; `suitHud`: the HEV suit HUD state; `saves`: level-start saves in
@@ -323,7 +329,9 @@ export class SpClient implements GameClient {
     this.transition = transition;
     this.progress.finish('world');
     const textures = content ? content.createTextures(core) : core.textureCache(this.game);
-    const models = new ModelLibrary({ url: (p) => gameAssetUrl(p, this.game), loader: new Tf2GLTFLoader() });
+    const models =
+      content?.createModels?.(core) ??
+      new ModelLibrary({ url: (p) => gameAssetUrl(p, this.game), loader: new Tf2GLTFLoader() });
     this.progress.begin('textures');
     const world = new WorldRenderer({
       bsp: pkg.bsp,

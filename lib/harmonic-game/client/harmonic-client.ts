@@ -14,6 +14,7 @@ import {
 } from '../../tf2-game/client/sp-client';
 import { compileLevel } from '../compiler';
 import { HARMONIC_MATERIAL_LOOKUP, createHarmonicAssets } from '../assets';
+import { createHarmonicModelLibrary } from '../assets/models/library';
 import { createProceduralTextureCache } from '../assets/texture-cache';
 import { HARMONIC_LEVELS, findHarmonicLevel } from '../levels';
 
@@ -49,6 +50,8 @@ export function harmonicContent(): SpContent {
         maxSize: core.plan.maxTextureSize,
         anisotropy: core.plan.anisotropy,
       }),
+    // Procedural models: an in-memory index and a stub loader (assets/models/library.ts).
+    createModels: () => createHarmonicModelLibrary(),
     // Nothing from the HL2/Portal channels: no sound channel yet (H3.3), no suit HUD (H1.4),
     // and no write to the HL2 save slot.
     features: { audio: false, suitHud: false, saves: false },

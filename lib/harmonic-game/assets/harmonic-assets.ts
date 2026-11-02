@@ -3,6 +3,7 @@ import type { SpAssets, SpMaterialInfo } from '../../sp-game/assets';
 import { SurfacePropsTable } from '../../sp-game/physics/surface-props';
 import { normalizeHarmonicMaterial } from '../compiler/materials';
 import { HARMONIC_MATERIAL_LOOKUP, MATERIALS } from './materials';
+import { harmonicModelInfo } from './models/info';
 
 /** surfaceproperties-format text for the props the materials use. */
 export const HARMONIC_SURFACE_PROPS = `
@@ -21,7 +22,7 @@ export function createHarmonicAssets(): SpAssets {
   return {
     game: 'hl2',
     surfaceProps,
-    model: () => null,
+    model: harmonicModelInfo,
     material(name: string): SpMaterialInfo {
       const key = normalizeHarmonicMaterial(name);
       const m = HARMONIC_MATERIAL_LOOKUP(key);

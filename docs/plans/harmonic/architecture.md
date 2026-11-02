@@ -132,6 +132,20 @@ Corrections found while building it (all implemented in `compiler/`):
   `EntityRenderer` through a `ModelLibrary` constructed with an in-memory `index` and a
   stub `loader.loadAsync()` returning `{ scene, animations, parser: { getDependencies } }`
   (`model-asset.ts:303-362`). Animations are `AnimationClip`s built in code.
+  As built (H2.4): `assets/models/info.ts` is the pure half (`MODEL_SPECS`, `HARMONIC_MODEL_INFO`,
+  `harmonicModelInfo(path)` — what `SpAssets.model()` serves; no three); `catalog.ts` is
+  `HARMONIC_MODELS` (path → builder + info); `library.ts` is `createHarmonicModelLibrary()`, injected
+  through the optional `SpContent.createModels(core)` seam. Models are authored in Source units on the
+  renderer's three axes (+X left, +Y up, +Z forward), scaled to metres, with `source.clipFrame` set so the
+  model frame is the identity. Paths `models/harmonic/<name>.mdl`: characters `meridian_trooper`
+  `meridian_shield` `unstrung_drifter` `ines` `lind_old` (clips `idle walk run aim fire reload die hurt`,
+  activities `ACT_IDLE ACT_WALK ACT_RUN ACT_IDLE_ANGRY ACT_RANGE_ATTACK1 ACT_RELOAD ACT_DIESIMPLE
+  ACT_FLINCH_CHEST`; attachments `muzzle` (armed), `eyes`); world guns `w_prybar w_pulse_pistol
+  w_coil_rifle w_tuner`; view models `v_<same>` (clips `draw idle fire reload`, activities `ACT_VM_*`);
+  props `crate locker heater antenna_mast lamp_post oil_drum`. Compiled levels carry a flat per-leaf ambient
+  cube (`bsp-build.ts`) so models are lit before the lightmap bake (H5.1); without it they draw black.
+  Check with `scripts/harmonic/model-gallery.ts` (contact sheets) and `models-smoke.ts` (in-game, via
+  the bare `models-harness/`).
 - **SpAssets:** `harmonic-assets.ts` implements `SpAssets` (`lib/sp-game/assets.ts:67`):
   `model()` returns code-authored `SpModelInfo` (box hulls, sequences by name), `material()`
   maps material names to surface props (`metal`, `ice`, `snow`, `wood`, `glass`).

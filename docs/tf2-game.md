@@ -319,7 +319,9 @@ CS:GO's team models, arms and weapons). A TF2 host can turn on instant respawn (
 - **Injected content (`SpContent`, the seam Harmonic uses):** `createSpClient` takes an optional
   `content: SpContent` (`sp-client.ts`) in place of the published HL2/Portal package: `loadLevel(map, progress,
 signal)` returns `{ bsp, manifest, hulls }`, `createAssets(level)` the `SpAssets`, `createTextures(core)` the
-  world's `TextureCache`, and `maps` is the level list the console and `changelevel` check instead of
+  world's `TextureCache`, `createModels?(core)` the entity renderer's `ModelLibrary` (omit it and the models are the
+  channels' GLBs; Harmonic returns a library over an in-memory index and a stub loader that serves procedural
+  Object3Ds), and `maps` is the level list the console and `changelevel` check instead of
   `GAME_MAPS`. `features` (`audio`, `suitHud`, `saves`, all off for injected content) gate what the channels
   give HL2/Portal: the sound channel, the HEV-suit HUD state and the level-start saves in the HL2 localStorage
   slot. With `content` omitted every branch is the old one, so HL2 and Portal behave identically.
