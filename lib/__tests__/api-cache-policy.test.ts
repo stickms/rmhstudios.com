@@ -82,6 +82,8 @@ const IDEMPOTENT_SEED_ON_READ: Record<string, string> = {
   '/api/fortune/today': "marks the day's fortune served; same row for everyone",
   '/api/kaikai-debt': 'seeds the ledger rows on first read',
   '/api/pf2ecal/calendar.ics': 'seeds the recurring sessions on first read',
+  '/api/elections/summary':
+    'generates the shared AI summary on the first read after a race is called (single-flight, memoised per snapshot fingerprint, at most one call per 90s); the same text for every viewer, and the usage-ledger row is platform spend, not the viewer\'s',
   '/api/tf2-loadout/catalog':
     'refreshes the shared item-catalog snapshot when it is stale (keyed by the schema hash); the same row for everyone, and the next read finds it fresh',
 };
