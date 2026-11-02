@@ -134,6 +134,9 @@ export const config = {
     'altair:game:input': { max: 1500, windowMs: 60_000 },
     'altair:game:state_snapshot': { max: 1500, windowMs: 60_000 },
     'altair:game:end': { max: 5, windowMs: 60_000 },
+    // A level-up is a few a minute per player; these were missing, so the events were silently dropped.
+    'altair:game:level_up_choice': { max: 120, windowMs: 60_000 },
+    'altair:game:level_up_offer': { max: 120, windowMs: 60_000 },
     'altair:game:ping': { max: 30, windowMs: 60_000 },
     'altair:game:quick_chat': { max: 20, windowMs: 60_000 },
     'bj:join_table': { max: 30, windowMs: 60_000 },

@@ -27,6 +27,8 @@ export const C2S = {
   GAME_STATE_SNAPSHOT:    'altair:game:state_snapshot',
   /** Host only: the run is over (victory or team wipe) and these are the counters. */
   GAME_END:               'altair:game:end',
+  /** Host only -> one guest: the upgrade options rolled for that player (also the S2C name). */
+  GAME_LEVEL_UP_OFFER:    'altair:game:level_up_offer',
 
   // Communication
   GAME_PING:              'altair:game:ping',
@@ -52,6 +54,7 @@ export const S2C = {
   GAME_PLAYER_JOINED:     'altair:game:player_joined',
   GAME_PLAYER_LEFT:       'altair:game:player_left',
   GAME_RESULTS:           'altair:game:results',
+  GAME_LEVEL_UP_OFFER:    'altair:game:level_up_offer',
 
   // Communication
   GAME_PING:              'altair:game:ping_broadcast',

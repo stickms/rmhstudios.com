@@ -19,6 +19,8 @@ const E = {
   input: 'altair:game:input',
   snapshot: 'altair:game:state_snapshot',
   end: 'altair:game:end',
+  offer: 'altair:game:level_up_offer',
+  choice: 'altair:game:level_up_choice',
   results: 'altair:game:results',
   error: 'altair:error',
 };
@@ -150,6 +152,65 @@ describe('altair game relays', () => {
       const { w, host, guest } = playing();
       w.send(host, E.snapshot, snapshot(over));
       expect(all(guest, E.snapshot)).toEqual([]);
+    });
+  });
+
+  describe('level-up (host -> one guest, guest -> host)', () => {
+    const offer = (over: Record<string, unknown> = {}) => ({
+      userId: 'guest',
+      level: 4,
+      remaining: 10,
+      choices: [
+        { type: 'new_weapon', weaponId: 'whip' },
+        { type: 'upgrade_passive', passiveId: 'might', newLevel: 2 },
+        { type: 'gold', amount: 25 },
+      ],
+      ...over,
+    });
+
+    it('rate limits exist for both directions', () => {
+      const rules = config.SOCKET_RATE_LIMITS as Record<string, { max: number }>;
+      expect(rules['altair:game:level_up_choice']).toBeTruthy();
+      expect(rules['altair:game:level_up_offer']).toBeTruthy();
+    });
+
+    it('the host offers choices to exactly that guest, rebuilt field by field', () => {
+      const { w, host, guest } = playing();
+      w.send(host, E.offer, offer({ choices: [{ type: 'new_weapon', weaponId: 'whip', evil: '<script>' }] }));
+      expect(last(guest, E.offer)).toEqual({ level: 4, remaining: 10, choices: [{ type: 'new_weapon', weaponId: 'whip' }] });
+      expect(all(host, E.offer)).toEqual([]);
+    });
+
+    it('a guest cannot offer upgrades to anyone', () => {
+      const { w, host, guest } = playing();
+      w.send(guest, E.offer, offer({ userId: 'host' }));
+      expect(all(host, E.offer)).toEqual([]);
+      expect(all<{ code: string }>(guest, E.error).map((e) => e.code)).toContain('NOT_HOST');
+    });
+
+    it.each([
+      ['unknown target', { userId: 'stranger' }],
+      ['the host itself', { userId: 'host' }],
+      ['no choices', { choices: [] }],
+      ['too many choices', { choices: new Array(7).fill({ type: 'gold', amount: 25 }) }],
+      ['unknown choice type', { choices: [{ type: 'grant_admin' }] }],
+      ['non-array choices', { choices: 'x' }],
+    ])('drops a malformed offer: %s', (_n, over) => {
+      const { w, host, guest } = playing();
+      w.send(host, E.offer, offer(over));
+      expect(all(guest, E.offer)).toEqual([]);
+    });
+
+    it('relays a guest pick to the host as a bare index', () => {
+      const { w, host, guest } = playing();
+      w.send(guest, E.choice, { choiceIndex: 2, extra: 'x' });
+      expect(last(host, E.choice)).toEqual({ userId: 'guest', choiceIndex: 2 });
+    });
+
+    it.each([[-1], [1.5], ['1'], [99], [null]])('drops a bad pick index %s', (idx) => {
+      const { w, host, guest } = playing();
+      w.send(guest, E.choice, { choiceIndex: idx });
+      expect(all(host, E.choice)).toEqual([]);
     });
   });
 

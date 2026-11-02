@@ -87,6 +87,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // Altair multiplayer placeholder message (2026-11-02). English-only until the
   // locales are translated; remove with it.
   'c-altair': [
+    'coop-choosing',
     'coop-dead',
     'coop-downed-timer',
     'coop-host-left',
@@ -94,6 +95,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'coop-kills',
     'coop-leave-host',
     'coop-level',
+    'coop-levelup-countdown',
     'coop-match-lost-body',
     'coop-match-lost-title',
     'coop-menu',
@@ -101,9 +103,12 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'coop-reconnecting',
     'coop-resume',
     'coop-run-ended',
+    'coop-spectating',
     'coop-team',
     'coop-waiting-snapshot',
     'coop-you',
+    'coop-you-dead',
+    'coop-you-downed',
     'need-two-players',
     'waiting-for-ready',
   ],

@@ -30,6 +30,8 @@ import {
 import { SnapshotView, type RosterEntry } from '@/lib/altair/multiplayer/snapshot-view';
 import { HostDriver, type HostEnd } from '@/lib/altair/multiplayer/host-driver';
 import { PLAYER_DEAD, PLAYER_ALIVE, type GameEvent } from '@/lib/altair/multiplayer/types';
+import type { UpgradeChoice } from '@/lib/altair/stores/game-store';
+import { LevelUpPicker } from '@/components/altair/screens/LevelUpScreen';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
 import { createTileGenerator } from '@/lib/altair/engine/game-loop';
 import { createWebGLRenderer } from '@/lib/altair/engine/renderer-setup';
@@ -40,7 +42,7 @@ import type { PlayerEntity } from '@/lib/altair/engine/types';
 import { getAllSpriteEntries } from '@/lib/altair/engine/sprites/sprite-defs';
 import { preloadAllSprites } from '@/lib/altair/engine/sprites/sprite-loader';
 import MobileDPad from '@/components/altair/mobile/MobileDPad';
-import CoopHud, { type CoopHudPlayer, type CoopHudBoss } from '@/components/altair/multiplayer/CoopHud';
+import CoopHud, { type CoopHudPlayer, type CoopHudBoss, type CoopHudSelf } from '@/components/altair/multiplayer/CoopHud';
 import { WebGLUnavailable, useWebGLSupport } from '@/components/shared/WebGLUnavailable';
 
 interface MultiplayerGameScreenProps {
@@ -66,7 +68,33 @@ export default function MultiplayerGameScreen(props: MultiplayerGameScreenProps)
   return <Match {...props} />;
 }
 
+interface Offer {
+  choices: UpgradeChoice[];
+  level: number;
+  /** performance.now() when the host auto-picks. */
+  deadline: number;
+  openedAt: number;
+}
+
+/** The level-up overlay for THIS player: opened by the host's offer, never pauses anything. */
+function CoopLevelUp({ offer, onPick }: { offer: Offer; onPick: (index: number) => void }) {
+  const [now, setNow] = useState(() => performance.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(performance.now()), 250);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <LevelUpPicker
+      choices={offer.choices}
+      level={offer.level}
+      onPick={onPick}
+      countdown={Math.max(0, (offer.deadline - now) / 1000)}
+    />
+  );
+}
+
 interface HudState {
+  self: CoopHudSelf;
   players: CoopHudPlayer[];
   sharedKills: number;
   time: number;
@@ -100,6 +128,13 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
   const [hud, setHud] = useState<HudState | null>(null);
   const [hostGone, setHostGone] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [offer, setOffer] = useState<Offer | null>(null);
+  const offerRef = useRef<Offer | null>(null);
+  const pickRef = useRef<(index: number) => void>(() => {});
+  const openOffer = useCallback((o: Offer | null) => {
+    offerRef.current = o;
+    setOffer(o);
+  }, []);
   const [isMobile, setIsMobile] = useState(false);
   const mobileSetterRef = useRef<(dx: number, dy: number) => void>(() => {});
 
@@ -190,6 +225,8 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
     let inputTimer: ReturnType<typeof setInterval> | null = null;
     let onGuestInput: ((m: { userId: string; seq: number; dx: number; dy: number }) => void) | null = null;
     let onSnapshot: ((raw: unknown) => void) | null = null;
+    let onOffer: ((o: { level?: number; remaining?: number; choices?: UpgradeChoice[] }) => void) | null = null;
+    let onChoice: ((m: { userId: string; choiceIndex: number }) => void) | null = null;
 
     if (iAmHost) {
       driver = new HostDriver({
@@ -198,6 +235,14 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
         send: (snap) => {
           socket.emit(C2S.GAME_STATE_SNAPSHOT, snap);
           pushRaw(snap);
+        },
+        onLevelUpOffer: (playerId, o) => {
+          if (playerId === myId) {
+            const at = performance.now();
+            openOffer({ choices: o.choices, level: o.level, deadline: at + o.remaining * 1000, openedAt: at });
+          } else {
+            socket.emit(C2S.GAME_LEVEL_UP_OFFER, { userId: playerId, level: o.level, remaining: o.remaining, choices: o.choices });
+          }
         },
         onEnd: (end: HostEnd) => {
           socket.emit(C2S.GAME_END, {
@@ -223,6 +268,14 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
         if (m && typeof m.userId === 'string') d.input(m.userId, m.dx, m.dy, performance.now());
       };
       socket.on(C2S.GAME_INPUT, onGuestInput);
+      onChoice = (m) => {
+        if (m && typeof m.userId === 'string') d.chooseUpgrade(m.userId, m.choiceIndex);
+      };
+      socket.on(C2S.GAME_LEVEL_UP_CHOICE, onChoice);
+      pickRef.current = (i) => {
+        d.chooseUpgrade(myId, i);
+        openOffer(null);
+      };
 
       const tick = () => {
         const v = getMovementVector(inputState);
@@ -244,6 +297,16 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
     } else {
       onSnapshot = pushRaw;
       socket.on(S2C.GAME_STATE_SNAPSHOT, onSnapshot);
+      onOffer = (o) => {
+        if (!o || !Array.isArray(o.choices) || o.choices.length === 0) return;
+        const at = performance.now();
+        openOffer({ choices: o.choices, level: o.level ?? 1, deadline: at + (o.remaining ?? 10) * 1000, openedAt: at });
+      };
+      socket.on(S2C.GAME_LEVEL_UP_OFFER, onOffer);
+      pickRef.current = (i) => {
+        socket.emit(C2S.GAME_LEVEL_UP_CHOICE, { choiceIndex: i });
+        openOffer(null);
+      };
       let seq = 0;
       inputTimer = setInterval(() => {
         const v = getMovementVector(inputState);
@@ -289,7 +352,13 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
       if (now - lastHud >= HUD_INTERVAL_MS && snap) {
         lastHud = now;
         const r = rosterRef.current;
+        const me = view.players.find((p) => p.playerId === myId);
+        // The host closed the overlay itself (auto-pick): drop ours, once the snapshot has had time to catch up.
+        const open = offerRef.current;
+        if (open && me && !me.levelUpPending && now - open.openedAt > 1500) openOffer(null);
+        const followed = view.followedId !== myId ? r.get(view.followedId)?.name ?? null : null;
         setHud({
+          self: { state: me?.state ?? PLAYER_ALIVE, downTimer: me?.downTimer ?? 0, spectating: followed },
           sharedKills: view.sharedKills,
           time: view.time,
           boss: view.boss && { name: view.boss.name, title: view.boss.title, hpFrac: view.boss.hpFrac, color: view.boss.color },
@@ -302,6 +371,7 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
             maxHp: p.maxHp,
             state: p.state,
             downTimer: p.downTimer,
+            levelUpPending: p.levelUpPending,
             isLocal: p.playerId === myId,
           })),
         });
@@ -316,6 +386,9 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
       worker?.terminate();
       if (onGuestInput) socket.off(C2S.GAME_INPUT, onGuestInput);
       if (onSnapshot) socket.off(S2C.GAME_STATE_SNAPSHOT, onSnapshot);
+      if (onOffer) socket.off(S2C.GAME_LEVEL_UP_OFFER, onOffer);
+      if (onChoice) socket.off(C2S.GAME_LEVEL_UP_CHOICE, onChoice);
+      openOffer(null);
       cleanupInput();
       document.removeEventListener('visibilitychange', onHide);
       window.removeEventListener('resize', resize);
@@ -389,6 +462,8 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
       />
 
       {hud && <CoopHud {...hud} />}
+
+      {offer && <CoopLevelUp offer={offer} onPick={(i) => pickRef.current(i)} />}
 
       {!hud && (
         <div className="absolute inset-0 flex items-center justify-center">

@@ -98,6 +98,24 @@ describe('HostDriver', () => {
     expect(Number.isFinite(a.x) && Number.isFinite(a.y)).toBe(true);
   });
 
+  it('offers a level-up to its owner exactly once and the pick closes it (the world keeps running)', () => {
+    const offers: { id: string; level: number; n: number }[] = [];
+    const { d } = driver({ onLevelUpOffer: (id, o) => offers.push({ id, level: o.level, n: o.choices.length }) });
+    d.advance(0);
+    (d.sim as unknown as { byId: Map<string, { levelUpQueue: number }> }).byId.get('b')!.levelUpQueue = 1;
+    for (let t = 16; t <= 400; t += 16) d.advance(t);
+    expect(offers.length).toBe(1);
+    expect(offers[0].id).toBe('b');
+    expect(offers[0].n).toBeGreaterThan(0);
+    const tick = d.sim.tick;
+    expect(d.sim.getPendingLevelUp('b')).not.toBeNull();
+    expect(d.chooseUpgrade('b', 0)).toBe(true);
+    expect(d.chooseUpgrade('b', 0)).toBe(false); // nothing left to pick
+    for (let t = 416; t <= 800; t += 16) d.advance(t);
+    expect(d.sim.tick).toBeGreaterThan(tick); // never paused
+    expect(offers.length).toBe(1);
+  });
+
   it('reports the end of the run once, with per-player stats, after a team wipe', () => {
     const ends: unknown[] = [];
     const { d } = driver({ onEnd: (e) => ends.push(e) });
