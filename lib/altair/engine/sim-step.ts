@@ -352,6 +352,8 @@ export function stepWorldPost(
   callbacks: GameLoopCallbacks,
   scaledDt: number,
   animatePlayer: boolean,
+  /** Multiplayer scales the director's clock with the team (spawn budget); single-player passes nothing. */
+  waveDelta: number = scaledDt,
 ): void {
   // 10. Particles
   updateParticles(world.particles, scaledDt);
@@ -360,7 +362,7 @@ export function stepWorldPost(
   }
 
   // 11. Wave director
-  const waveEvents = updateWaveDirectorSystem(world, rt.waveState, scaledDt);
+  const waveEvents = updateWaveDirectorSystem(world, rt.waveState, waveDelta);
   if (waveEvents.bossSpawn) {
     callbacks.onBossSpawn(waveEvents.bossSpawn);
     world.bossActive = true;
