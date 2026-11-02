@@ -102,7 +102,7 @@ describe('HostDriver', () => {
     const ends: unknown[] = [];
     const { d } = driver({ onEnd: (e) => ends.push(e) });
     d.advance(0);
-    for (const id of d.sim.playerIds()) d.sim.getPlayer(id)!.hp = 0;
+    for (const id of d.sim.playerIds()) (d.sim.getPlayer(id) as { hp: number }).hp = 0;
     for (let t = 16; t <= 2000; t += 16) d.advance(t);
     expect(d.isEnded).toBe(true);
     expect(ends.length).toBe(1);
