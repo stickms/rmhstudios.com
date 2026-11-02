@@ -28,6 +28,9 @@ import { BEATMAP_VERSION, generateBeatmap, isStaleAnalysis } from './beatmap';
 import { COUNTDOWN_SECONDS } from './constants';
 import { useSliceItStore } from './store';
 import { reportLoaded } from './net/client';
+
+/** How long a song gets to decode before the run is abandoned. */
+const DECODE_TIMEOUT_MS = 20_000;
 import type { GameEngine } from './engine';
 import type { BeatMap, SliceSong } from './types';
 
@@ -93,7 +96,20 @@ export function useStartRun(engine: GameEngine | null) {
 
         store.setLoadingProgress(45);
         store.setLoadingProgressText('DECODING AUDIO…');
-        const audioBuffer = await context.decodeAudioData(arrayBuffer);
+        // `decodeAudioData` never settles on an engine that cannot decode the
+        // stored codec (songs are Ogg Opus; measured on WebKit, where it hung for
+        // good with the loading screen stuck on "DECODING AUDIO… 45%" and no way
+        // out). Bound it so the player is returned to the menu instead.
+        let decodeTimer: ReturnType<typeof setTimeout> | undefined;
+        const audioBuffer = await Promise.race([
+          context.decodeAudioData(arrayBuffer),
+          new Promise<never>((_, reject) => {
+            decodeTimer = setTimeout(
+              () => reject(new Error('This browser could not decode the song audio')),
+              DECODE_TIMEOUT_MS,
+            );
+          }),
+        ]).finally(() => clearTimeout(decodeTimer));
 
         let map: BeatMap;
         if (song.analysisData && !isStaleAnalysis(song.analysisData)) {
