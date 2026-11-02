@@ -44,7 +44,7 @@ export interface AltairMultiplayerStore {
   applyFullSync: (state: AltairClientLobbyState) => void;
   leaveLobby: () => void;
   setClassSelections: (selections: Record<string, string | null>, readyStates: Record<string, boolean>) => void;
-  setCountdown: (seconds: number) => void;
+  setCountdown: (seconds: number | null) => void;
   setGameStarted: (tick: number) => void;
   setGameSnapshot: (snapshot: GameStateSnapshot) => void;
   addGameEvent: (event: GameEvent) => void;

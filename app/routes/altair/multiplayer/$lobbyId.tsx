@@ -8,6 +8,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { connectToAltair, emit } from '@/lib/altair/multiplayer/socket'
 import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store'
 import { C2S, S2C } from '@/lib/altair/multiplayer/events'
@@ -27,6 +28,25 @@ const MultiplayerResultsScreen = lazy(
   () => import('@/components/altair/multiplayer/MultiplayerResultsScreen'),
 )
 
+/** Player-facing text for a hub rejection (falls back to the hub's own message). */
+function lobbyErrorText(
+  t: TFunction,
+  data: { code?: string; message?: string },
+): string {
+  switch (data.code) {
+    case 'NOT_HOST':
+      return t("error-not-host", { defaultValue: "Only the host can do that." })
+    case 'NOT_READY':
+      return t("error-not-ready", { defaultValue: "Everyone needs a class and to be ready before the match can start." })
+    case 'NEED_MORE_PLAYERS':
+      return t("error-need-more-players", { defaultValue: "Co-op needs at least 2 players." })
+    case 'WRONG_STATE':
+      return t("error-wrong-state", { defaultValue: "That is not possible while the match is starting." })
+    default:
+      return data.message || t("error-generic", { defaultValue: "Something went wrong in the lobby." })
+  }
+}
+
 function AltairLobbyPage() {
   const { t } = useTranslation("r-altair")
   const { lobbyId } = Route.useParams()
@@ -38,51 +58,58 @@ function AltairLobbyPage() {
   const results = useAltairMultiplayerStore((s) => s.results)
   const addToast = useAltairToastStore((s) => s.addToast)
 
-  // Connect and join lobby on mount
+  // Connect and join lobby on mount. The listeners are removed on unmount:
+  // without that every revisit of the lobby route stacked another set, so a
+  // single server error toasted once per visit.
   useEffect(() => {
     let mounted = true
+    let cleanup: (() => void) | null = null
 
     async function init() {
       try {
         const socket = await connectToAltair()
+        if (!mounted) return
 
-        // Join the lobby
-        socket.emit(C2S.LOBBY_JOIN, { lobbyId })
-
-        // Listen for kick
-        socket.on(S2C.LOBBY_KICKED, () => {
-          if (mounted) {
-            useAltairMultiplayerStore.getState().leaveLobby()
-            addToast(t("kicked-from-lobby", { defaultValue: "You were kicked from the lobby" }), 'warning')
-            navigate({ to: '/altair/multiplayer' })
-          }
-        })
-
-        // Listen for disband
-        socket.on(S2C.LOBBY_DISBANDED, () => {
-          if (mounted) {
-            useAltairMultiplayerStore.getState().leaveLobby()
-            addToast(t("lobby-disbanded", { defaultValue: "Lobby was disbanded" }), 'info')
-            navigate({ to: '/altair/multiplayer' })
-          }
-        })
-
-        // Listen for errors
-        socket.on(S2C.ERROR, (data: { code?: string; message?: string }) => {
-          if (!mounted) return
+        const onKicked = () => {
+          useAltairMultiplayerStore.getState().leaveLobby()
+          addToast(t("kicked-from-lobby", { defaultValue: "You were kicked from the lobby" }), 'warning')
+          navigate({ to: '/altair/multiplayer' })
+        }
+        const onDisbanded = () => {
+          useAltairMultiplayerStore.getState().leaveLobby()
+          addToast(t("lobby-disbanded", { defaultValue: "Lobby was disbanded" }), 'info')
+          navigate({ to: '/altair/multiplayer' })
+        }
+        const onError = (data: { code?: string; message?: string }) => {
           if (data.code === 'LOBBY_NOT_FOUND' || data.code === 'NOT_IN_LOBBY') {
             useAltairMultiplayerStore.getState().leaveLobby()
             navigate({ to: '/altair/multiplayer' })
+            return
           }
-        })
+          addToast(lobbyErrorText(t, data), 'error')
+        }
+        socket.on(S2C.LOBBY_KICKED, onKicked)
+        socket.on(S2C.LOBBY_DISBANDED, onDisbanded)
+        socket.on(S2C.ERROR, onError)
+        cleanup = () => {
+          socket.off(S2C.LOBBY_KICKED, onKicked)
+          socket.off(S2C.LOBBY_DISBANDED, onDisbanded)
+          socket.off(S2C.ERROR, onError)
+        }
+
+        // Join the lobby (after the listeners, so a rejection is never missed)
+        socket.emit(C2S.LOBBY_JOIN, { lobbyId })
       } catch (err) {
         if (mounted) addToast(err instanceof Error ? err.message : t("failed-to-connect", { defaultValue: "Failed to connect" }), 'error')
       }
     }
 
     init()
-    return () => { mounted = false }
-  }, [lobbyId, navigate, addToast])
+    return () => {
+      mounted = false
+      cleanup?.()
+    }
+  }, [lobbyId, navigate, addToast, t])
 
   const handleLeave = useCallback(() => {
     emit(C2S.LOBBY_LEAVE, { lobbyId })
@@ -152,7 +179,7 @@ function AltairLobbyPage() {
           </div>
         </div>
       }>
-        <MultiplayerGameScreen lobbyId={lobbyId} />
+        <MultiplayerGameScreen lobbyId={lobbyId} onLeave={handleLeave} />
       </Suspense>
     )
   }

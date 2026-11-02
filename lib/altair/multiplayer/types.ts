@@ -158,7 +158,9 @@ export type GameEventType =
   | 'boss_kill'
   | 'kill_milestone'
   | 'victory'
-  | 'tpk';
+  | 'tpk'
+  | 'host_disconnected'
+  | 'host_reconnected';
 
 export interface GameEvent {
   type: GameEventType;
@@ -234,6 +236,8 @@ export interface GameResultsData {
   timeSurvived: number;
   bossesDefeated: string[];
   doubleTime: boolean;
+  /** Set when the run ended for a reason other than winning or losing. */
+  endedReason?: 'host_left';
   players: PlayerResultData[];
 }
 
@@ -253,7 +257,10 @@ export type AltairErrorCode =
   | 'INVALID_PAYLOAD'
   | 'INTERNAL_ERROR'
   | 'RATE_LIMITED'
-  | 'DROP_IN_CLOSED';
+  | 'DROP_IN_CLOSED'
+  | 'NOT_READY'
+  | 'NEED_MORE_PLAYERS'
+  | 'WRONG_STATE';
 
 export interface AltairError {
   code: AltairErrorCode;
