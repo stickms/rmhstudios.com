@@ -23,6 +23,9 @@ import { createRng } from '../../__tests__/golden-harness';
 import type { HostSim, HostPlayerInit } from '../host-sim';
 import { decodeSnapshot } from '../../../multiplayer/snapshot';
 
+// Several tests simulate thousands of steps of a full world; keep CI load from tripping the 5 s default.
+vi.setConfig({ testTimeout: 60_000 });
+
 type Mod = typeof import('../host-sim');
 
 /** Fresh module registry per sim: the engine keeps module-level state (pickup merge timer, nav cache). */
