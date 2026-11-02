@@ -12,7 +12,7 @@ engine, it does not fork it.
 | ----- | ------------------------------------------------------------- | ------ |
 | 0     | This design                                                   | done   |
 | 1     | Lobby flow: a match can start; errors reach the player; tests | done   |
-| 2     | Host simulation for 2–4 players                               | not started |
+| 2     | Host simulation for 2–4 players (`engine/multiplayer/host-sim.ts`) | done (pure logic + tests; not wired to a page yet) |
 | 3     | Client: render snapshots, input, HUD, banners                 | not started |
 | 4     | Results, drop-in, persistence                                 | not started |
 
@@ -76,6 +76,31 @@ players. The hub never simulates; it relays.
   bit-identical (verified by running a run before/after).
 - **Scaling:** `ScalingState` (types.ts) scales enemy HP/damage/spawn budget with
   the alive player count; spawns happen around a random alive player.
+
+### Phase 2 as built
+
+- `engine/sim-step.ts` holds the fixed step as phases (world prep · player actions ·
+  enemies+boss · collisions · player post · world post); single-player runs them once
+  (`stepSimulation`), `engine/multiplayer/host-sim.ts` (`HostSim`) runs the player-owned
+  phases per player under `swapIn`/`swapOut` (`player-state.ts`) and the rest once.
+  Single-player is pinned by `engine/__tests__/golden-master.test.ts` (full-world hashes over
+  9 seeded scenarios) — if a hash moves you changed gameplay.
+- `handleCollisions` takes `CollisionOptions`: the host calls it once per player filtered by
+  `ownerId` (stamped on projectiles/hitboxes/auras/summons after each player's phase), advances
+  enemy projectiles once (`advanceShared`), and processes deaths itself, per killer
+  (`processEnemyDeaths`), crediting whoever dropped the enemy to 0 HP (`lastHitBy`).
+- Pickups go to the nearest living player. XP trickles 25% to each living teammate.
+- Scaling per living player: enemy HP ×(1+0.5n), damage ×(1+0.15n), spawn budget ×(1+0.6n), boss
+  HP ×(1+0.8n) (n = players − 1); applied once to newly created enemies.
+- The shared systems (enemy spawns, boss aim) target ONE living player, rotating every 2 s
+  (`FOCUS_PERIOD`); enemy AI targets the nearest. Boss attacks therefore aim at the focus player.
+- Level-ups: `getPendingLevelUp` / `chooseUpgrade`; auto-pick of the first option after 10 s;
+  the player is invulnerable while the overlay is open; the world never pauses. Reroll/banish
+  are not offered in co-op yet.
+- Downed 25 s, revived by a teammate within 70 px for 3 s (50% HP, 2.5 s grace), else dead.
+- Wire format: `GameStateSnapshot` is flat number arrays (positions in tenths of a pixel);
+  `multiplayer/snapshot.ts` encodes (interest radius 1100 px, capped), decodes (validating) and
+  interpolates (`snapshotAlpha`, at most one interval of extrapolation, snaps on teleports).
 
 ## Shared objectives
 

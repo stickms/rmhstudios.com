@@ -84,67 +84,63 @@ export interface PlayerInputPacket {
   timestamp: number;
 }
 
+/**
+ * Wire format of a host snapshot (sent at 20 Hz through the hub, which only
+ * reads `sharedKills`). Cheap by construction: positions are integers in
+ * tenths of a pixel (`POS_Q`), and the entity lists are FLAT number arrays with
+ * a fixed stride instead of arrays of objects (no per-entity object, key or
+ * string on the wire). `lib/altair/multiplayer/snapshot.ts` encodes, decodes and
+ * interpolates them.
+ */
+export const POS_Q = 10;
+export const ENEMY_STRIDE = 6; // id, defIndex, x, y, hpPermille, flags
+export const PROJECTILE_STRIDE = 6; // id, x, y, vx, vy, meta
+export const PICKUP_STRIDE = 5; // id, typeIndex, x, y, value
+
+/** Enemy flag bits. */
+export const ENEMY_FLAG_BOSS = 1;
+export const ENEMY_FLAG_DEAD = 2;
+
+/** Player lifecycle in a snapshot. */
+export const PLAYER_ALIVE = 0;
+export const PLAYER_DOWNED = 1;
+export const PLAYER_DEAD = 2;
+
 export interface PlayerStateSnapshot {
   playerId: string;
-  x: number;
+  x: number; // tenths of a pixel
   y: number;
-  hp: number;
+  hp: number; // whole HP
   maxHp: number;
-  facingX: number;
-  facingY: number;
-  isDowned: boolean;
-  downTimer: number;
-  revivalProgress: number;
-  isDead: boolean;
-  isSpectating: boolean;
-  invulnTimer: number;
+  fx: number; // facing, -100..100
+  fy: number;
+  state: 0 | 1 | 2; // PLAYER_ALIVE | PLAYER_DOWNED | PLAYER_DEAD
+  downTimer: number; // whole seconds left while downed
+  revive: number; // 0..100 revive progress
+  invuln: boolean;
   classId: string;
   slot: number;
   level: number;
   kills: number;
   coins: number;
-}
-
-export interface EnemyStateSnapshot {
-  id: number;
-  defId: string;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  isBoss: boolean;
-}
-
-export interface ProjectileSnapshot {
-  id: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  radius: number;
-  isEnemy: boolean;
-  color: string;
-}
-
-export interface PickupSnapshot {
-  id: number;
-  type: string;
-  x: number;
-  y: number;
-  value: number;
+  /** True while this player's level-up overlay is open (they are invulnerable). */
+  levelUpPending: boolean;
 }
 
 export interface GameStateSnapshot {
   tick: number;
+  /** Game clock in seconds (world.time). */
   time: number;
-  timestamp: number;
-  players: PlayerStateSnapshot[];
-  enemies: EnemyStateSnapshot[];
-  projectiles: ProjectileSnapshot[];
-  pickups: PickupSnapshot[];
+  sharedKills: number;
   bossActive: boolean;
   bossWarning: { bossId: string; timer: number } | null;
-  sharedKills: number;
+  players: PlayerStateSnapshot[];
+  /** Flat, stride ENEMY_STRIDE. */
+  enemies: number[];
+  /** Flat, stride PROJECTILE_STRIDE; meta = isEnemy + 2*radius + 512*rgb. */
+  projectiles: number[];
+  /** Flat, stride PICKUP_STRIDE. */
+  pickups: number[];
 }
 
 // ---- Game Events (from server) ----------------------------------------------

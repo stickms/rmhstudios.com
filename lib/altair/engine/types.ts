@@ -63,6 +63,8 @@ export interface EnemyEntity extends Entity {
   // Corpse system — dead enemies remain visible briefly as grayed-out sprites
   isDead: boolean;
   corpseTimer: number; // seconds remaining as visible corpse
+  // Multiplayer host only: playerId credited with the kill (unset in single-player)
+  lastHitBy?: string;
 }
 
 export interface ProjectileEntity extends Entity {
@@ -107,6 +109,10 @@ export interface ProjectileEntity extends Entity {
   lifestealPct?: number;
   // v1.3.1: source tracking for bestiary "killed by" stats
   sourceDefId?: string;
+  // Multiplayer host only: the playerId whose weapons made this (unset in single-player)
+  ownerId?: string;
+  // Multiplayer host only: the step an enemy pool last ticked (so every player's pass sees one tick)
+  poolTickStep?: number;
 }
 
 export interface PickupEntity extends Entity {
@@ -172,6 +178,8 @@ export interface MeleeHitbox {
   // v1.2: block DR on hit (Broad Sword)
   blockDR?: number;
   blockDuration?: number;
+  // Multiplayer host only: owning playerId
+  ownerId?: string;
 }
 
 export interface AuraEffect {
@@ -188,6 +196,8 @@ export interface AuraEffect {
   maxTargets?: number;
   knockback?: number;
   innerRadius?: number; // full damage zone; outer ring does 50% damage
+  // Multiplayer host only: owning playerId
+  ownerId?: string;
 }
 
 export interface SummonEntity extends Entity {
@@ -202,6 +212,8 @@ export interface SummonEntity extends Entity {
   type: 'skeleton'; // expandable
   // Sprite animation state
   animState?: AnimationState;
+  // Multiplayer host only: owning playerId
+  ownerId?: string;
 }
 
 export interface Camera {

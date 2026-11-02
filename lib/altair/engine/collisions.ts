@@ -67,6 +67,24 @@ function aoeDiminishingFactor(enemiesHit: number): number {
   return AOE_DR_THRESHOLD / enemiesHit;
 }
 
+/**
+ * Multiplayer host options. Single-player passes none, which keeps every
+ * default below identical to the pre-multiplayer behaviour.
+ *
+ * The host calls handleCollisions once PER PLAYER with that player swapped into
+ * world.player: `ownerId` restricts the pass to that player's projectiles,
+ * hitboxes, auras and summons; `advanceShared` is true only on the first pass so
+ * enemy projectiles/pools move once per step while every pass hit-tests its own
+ * player; `skipDeaths` leaves enemy death processing to the host, which runs it
+ * per killer (processEnemyDeaths) and ticks corpses once (tickCorpses).
+ */
+export interface CollisionOptions {
+  ownerId?: string;
+  advanceShared?: boolean;
+  stepId?: number;
+  skipDeaths?: boolean;
+}
+
 export function handleCollisions(
   world: GameWorld,
   stats: PlayerStats,
@@ -77,14 +95,19 @@ export function handleCollisions(
   propHash: SpatialHash,
   damageablePropHash: SpatialHash,
   catalystStates: CatalystRuntimeState[],
+  opts?: CollisionOptions,
 ): number {
   const pl = world.player;
   let totalDamageDealt = 0;
+  const owner = opts?.ownerId;
+  const advance = opts?.advanceShared !== false;
+  const stepId = opts?.stepId;
 
   // -- Move & collide player projectiles vs enemies --
   for (let pi = world.projectiles.length - 1; pi >= 0; pi--) {
     const proj = world.projectiles[pi];
     if (proj.isEnemy || proj.isPool) continue;
+    if (owner !== undefined && proj.ownerId !== owner) continue;
 
     // Move projectile
     proj.x += proj.vx * delta;
@@ -236,6 +259,7 @@ export function handleCollisions(
   for (let pi = world.projectiles.length - 1; pi >= 0; pi--) {
     const proj = world.projectiles[pi];
     if (proj.isEnemy || proj.isPool) continue;
+    if (owner !== undefined && proj.ownerId !== owner) continue;
 
     // Query nearby props
     const nearbyProps = damageablePropHash.query(proj.x, proj.y, proj.radius + 20);
@@ -273,9 +297,18 @@ export function handleCollisions(
     if (proj.isPool) {
       // Pool tick logic
       if (proj.poolTimer !== undefined && proj.poolTickInterval !== undefined) {
-        proj.poolTimer -= delta;
-        if (proj.poolTimer <= 0) {
-          proj.poolTimer += proj.poolTickInterval;
+        let ticked = false;
+        if (advance) {
+          proj.poolTimer -= delta;
+          if (proj.poolTimer <= 0) {
+            proj.poolTimer += proj.poolTickInterval;
+            ticked = true;
+            proj.poolTickStep = stepId;
+          }
+        } else {
+          ticked = stepId !== undefined && proj.poolTickStep === stepId;
+        }
+        if (ticked) {
           // Damage player if standing in enemy pool
           const pdx = pl.x - proj.x;
           const pdy = pl.y - proj.y;
@@ -293,20 +326,24 @@ export function handleCollisions(
           }
         }
       }
-      proj.lifetime -= delta;
-      if (proj.lifetime <= 0) {
-        world.projectiles.splice(pi, 1);
+      if (advance) {
+        proj.lifetime -= delta;
+        if (proj.lifetime <= 0) {
+          world.projectiles.splice(pi, 1);
+        }
       }
       continue;
     }
 
-    proj.x += proj.vx * delta;
-    proj.y += proj.vy * delta;
-    proj.lifetime -= delta;
+    if (advance) {
+      proj.x += proj.vx * delta;
+      proj.y += proj.vy * delta;
+      proj.lifetime -= delta;
 
-    if (proj.lifetime <= 0) {
-      world.projectiles.splice(pi, 1);
-      continue;
+      if (proj.lifetime <= 0) {
+        world.projectiles.splice(pi, 1);
+        continue;
+      }
     }
 
     // Hit player?
@@ -344,6 +381,7 @@ export function handleCollisions(
   // -- Friendly pool damage ticks vs enemies --
   for (const proj of world.projectiles) {
     if (!proj.isPool || proj.isEnemy) continue;
+    if (owner !== undefined && proj.ownerId !== owner) continue;
     if (proj.poolTimer !== undefined && proj.poolTickInterval !== undefined) {
       proj.poolTimer -= delta;
       if (proj.poolTimer <= 0) {
@@ -421,6 +459,7 @@ export function handleCollisions(
   // -- Melee hitboxes vs Enemies --
   for (let hi = world.meleeHitboxes.length - 1; hi >= 0; hi--) {
     const hb = world.meleeHitboxes[hi];
+    if (owner !== undefined && hb.ownerId !== owner) continue;
     hb.lifetime -= delta;
 
     // Track player position so the hitbox moves with the player
@@ -500,6 +539,7 @@ export function handleCollisions(
   // -- Melee hitboxes vs Props (arc-AABB) --
   for (const hb of world.meleeHitboxes) {
     if (hb.lifetime <= 0) continue;
+    if (owner !== undefined && hb.ownerId !== owner) continue;
     const nearbyProps = damageablePropHash.query(hb.x, hb.y, hb.radius + 20);
     for (const propEntity of nearbyProps) {
       const propHitId = -propEntity.id;
@@ -529,6 +569,7 @@ export function handleCollisions(
 
   // -- Aura damage ticks --
   for (const aura of world.auras) {
+    if (owner !== undefined && aura.ownerId !== owner) continue;
     aura.x = pl.x;
     aura.y = pl.y;
     aura.timer -= delta;
@@ -592,6 +633,7 @@ export function handleCollisions(
 
   // -- Summon attacks --
   for (const s of world.summons) {
+    if (owner !== undefined && s.ownerId !== owner) continue;
     s.lifetime -= delta;
     s.attackTimer -= delta;
 
@@ -634,9 +676,31 @@ export function handleCollisions(
     }
   }
 
+  if (!opts?.skipDeaths) {
+    processEnemyDeaths(world, stats, abilityState, callbacks, catalystStates);
+    tickCorpses(world, delta);
+  }
+
+  return totalDamageDealt;
+}
+
+/**
+ * Mark newly dead enemies as corpses and run their kill hooks (drops, class
+ * and catalyst on-kill). `filter` lets the multiplayer host process only the
+ * kills credited to the player currently swapped into the world.
+ */
+export function processEnemyDeaths(
+  world: GameWorld,
+  stats: PlayerStats,
+  abilityState: ClassAbilityState,
+  callbacks: GameLoopCallbacks,
+  catalystStates: CatalystRuntimeState[],
+  filter?: (e: EnemyEntity) => boolean,
+): void {
   // -- Process newly dead enemies (mark as corpse, spawn drops) --
   for (const e of world.enemies) {
     if (e.hp <= 0 && !e.isDead) {
+      if (filter && !filter(e)) continue;
       // Boss entities are managed by the boss system (step 6b), skip here
       if (e.isBoss) continue;
 
@@ -669,7 +733,10 @@ export function handleCollisions(
       onCatalystKill(catalystStates, world, stats, { enemyId: e.id, x: e.x, y: e.y, wasPoisoned: hasEffect(e.statusEffects, 'poison'), enemyTier: 1 });
     }
   }
+}
 
+/** Tick corpse timers and remove expired corpses. */
+export function tickCorpses(world: GameWorld, delta: number): void {
   // -- Tick corpse timers and remove expired corpses --
   for (let i = world.enemies.length - 1; i >= 0; i--) {
     const e = world.enemies[i];
@@ -680,6 +747,4 @@ export function handleCollisions(
       }
     }
   }
-
-  return totalDamageDealt;
 }
