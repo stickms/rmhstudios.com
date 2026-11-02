@@ -17,7 +17,7 @@ import { HARMONIC_MATERIAL_LOOKUP, createHarmonicAssets } from '../assets';
 import { createHarmonicModelLibrary } from '../assets/models/library';
 import { createProceduralTextureCache } from '../assets/texture-cache';
 import { HARMONIC_LEVELS, findHarmonicLevel } from '../levels';
-import { attachHarmonicSim } from '../sim';
+import { activeHarmonicSim, attachHarmonicSim } from '../sim';
 import { onPhaseLevelReady } from './phase-view';
 import { createHarmonicAudio } from '../audio/player';
 import { readHudState } from './hud-state';
@@ -65,7 +65,7 @@ export function harmonicContent(): SpContent {
     features: { audio: false, suitHud: false, saves: false },
     onLevelReady: (ctx) => onPhaseLevelReady(ctx),
     createAudio: createHarmonicAudio,
-    hud: (snap) => readHudState(snap),
+    hud: (snap) => readHudState(snap, activeHarmonicSim()),
   };
 }
 

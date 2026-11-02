@@ -23,3 +23,28 @@ export const TARGET_HULL_HEIGHT = 64;
 
 /** Impulse scale given to `DamageInfo.force` (ragdolls and effects read it). */
 export const HIT_FORCE_SCALE = 60;
+
+// ─── Cold and shelters (H1.2, sim/cold.ts) ──────────────────────────────────────────────────
+
+/** The exposure meter's full value (a warm player). */
+export const COLD_MAX = 100;
+/** Meter points lost per second outdoors (empty in 40 s). */
+export const COLD_DRAIN_OUTDOOR = 2.5;
+/** Outdoor drain multiplier inside a `wind` volume (empty in ~13 s). */
+export const COLD_WIND_MULTIPLIER = 3;
+/** Meter points regained per second in a shelter. */
+export const COLD_REFILL_SHELTER = 10;
+/** Extra points per second, at the heater itself; it falls off linearly to 0 at the heater's radius. */
+export const COLD_HEATER_REFILL = 25;
+/** Default `harmonic_heater` radius (Source inches). */
+export const COLD_HEATER_RADIUS = 192;
+/** Height above the player's feet that is measured against a heater (the torso). */
+export const COLD_PLAYER_CENTER_Z = 36;
+/** At zero, the player takes this much cold damage ... */
+export const COLD_DAMAGE = 2;
+/** ... every this many seconds. */
+export const COLD_DAMAGE_INTERVAL = 1;
+/** Frost starts to creep in below this fraction of the meter and reaches 1 at empty. */
+export const COLD_FROST_START = 0.6;
+/** Below this fraction (and outside a shelter) the HUD hint says to find shelter. */
+export const COLD_HINT_FRACTION = 0.4;

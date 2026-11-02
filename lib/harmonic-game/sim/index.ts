@@ -8,20 +8,30 @@ import { angleVectors, normalize, vec3 } from '../../tf2-game/core/vec';
 import type { SpWorld } from '../../sp-game/world/sp-world';
 import { HarmonicCombat, type HitResult } from './combat';
 import { DEBUG_PULSE_DAMAGE, DEBUG_PULSE_INTERVAL, DEBUG_PULSE_RANGE } from './constants';
+import { ColdService } from './cold';
 import './entities';
 
 export * from './combat';
 export * from './constants';
+export * from './cold';
 export { HarmonicTarget } from './entities';
 
 export interface HarmonicSim {
   readonly world: SpWorld;
   readonly combat: HarmonicCombat;
+  /** Exposure meter, shelters and heaters (H1.2). */
+  readonly cold: ColdService;
   /** curtime before which the primary fire is cooling down. */
   nextFireAt: number;
 }
 
 const sims = new WeakMap<SpWorld, HarmonicSim>();
+let active: HarmonicSim | null = null;
+
+/** The most recently attached sim (the one running world; the HUD reads it). */
+export function activeHarmonicSim(): HarmonicSim | null {
+  return active;
+}
 
 export function harmonicSim(world: SpWorld): HarmonicSim | null {
   return sims.get(world) ?? null;
@@ -45,14 +55,19 @@ export function firePrimary(sim: HarmonicSim): HitResult {
 export function attachHarmonicSim(world: SpWorld): HarmonicSim {
   const existing = sims.get(world);
   if (existing) return existing;
-  const sim: HarmonicSim = { world, combat: new HarmonicCombat(world), nextFireAt: 0 };
+  const combat = new HarmonicCombat(world);
+  const sim: HarmonicSim = { world, combat, cold: new ColdService(world, combat), nextFireAt: 0 };
   sims.set(world, sim);
+  active = sim;
   world.hooks = {
     afterPlayerCmd(w, cmd) {
       const p = w.player;
       if (p.dead || !(cmd.buttons & IN_ATTACK) || w.curtime < sim.nextFireAt) return;
       sim.nextFireAt = w.curtime + DEBUG_PULSE_INTERVAL;
       firePrimary(sim);
+    },
+    afterTick() {
+      sim.cold.tick();
     },
   };
   return sim;

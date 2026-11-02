@@ -69,6 +69,14 @@ export default function HarmonicHud({
         </div>
       ) : null}
 
+      {hud.cold?.frost ? (
+        <span
+          className="harmonic-hud-frost"
+          style={{ opacity: Math.min(1, hud.cold.frost) }}
+          aria-hidden
+        />
+      ) : null}
+
       <div className="harmonic-hud-panel harmonic-hud-vitals">
         <div className="harmonic-hud-row">
           <span className="harmonic-hud-label">

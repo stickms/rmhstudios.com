@@ -3,6 +3,14 @@
  * HUD store and input state, `createHarmonicClient`. Used by `models-smoke.ts` to check the entity
  * renderer drawing the procedural models. Exposes `window.__rmhGame` like the play page does.
  */
+import { createElement } from 'react';
+import { createRoot } from 'react-dom/client';
+import i18next from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import '../../../components/shared/app-theme.css';
+import '../../../components/harmonic-game/harmonic.css';
+import HarmonicHud from '../../../components/harmonic-game/HarmonicHud';
+import { isHarmonicHud } from '../../../lib/harmonic-game/client/hud-state';
 import { createHarmonicClient } from '../../../lib/harmonic-game/client/harmonic-client';
 import { createHudStore } from '../../../lib/tf2-game/client/hud-store';
 import { createInputState } from '../../../lib/tf2-game/client/input';
@@ -30,3 +38,20 @@ const client = createHarmonicClient({
 });
 (window as unknown as { __rmhGame: unknown }).__rmhGame = client;
 void client.start();
+
+// The HUD overlay (English defaults), so screenshots show the meters and the frost edge.
+void i18next.use(initReactI18next).init({ lng: 'en', resources: {} });
+const hudRoot = createRoot(document.getElementById('hud') as HTMLElement);
+store.subscribe(() => {
+  const ext = store.getSnapshot().ext;
+  hudRoot.render(
+    isHarmonicHud(ext)
+      ? createElement(HarmonicHud, {
+          hud: ext,
+          now: 0,
+          subtitleSize: 'medium',
+          showSubtitles: true,
+        })
+      : null,
+  );
+});

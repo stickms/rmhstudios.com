@@ -4,6 +4,7 @@ import { devBoxSource } from './dev_box';
 import { devCombatSource } from './dev_combat';
 import { devPhaseSource } from './dev_phase';
 import { devModelsSource } from './dev_models';
+import { devColdSource } from './dev_cold';
 
 export interface HarmonicLevel {
   id: string;
@@ -31,6 +32,12 @@ export const HARMONIC_LEVELS: HarmonicLevel[] = [
     titleKey: 'level_dev_models',
     titleDefault: 'Dev models',
     source: devModelsSource,
+  },
+  {
+    id: 'dev_cold',
+    titleKey: 'level_dev_cold',
+    titleDefault: 'Dev cold',
+    source: devColdSource,
   },
 ];
 
