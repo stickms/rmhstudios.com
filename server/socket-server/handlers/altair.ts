@@ -40,6 +40,7 @@ const C2S = {
   GAME_INPUT:            'altair:game:input',
   GAME_LEVEL_UP_CHOICE:  'altair:game:level_up_choice',
   GAME_STATE_SNAPSHOT:   'altair:game:state_snapshot',
+  GAME_END:              'altair:game:end',
   GAME_PING:             'altair:game:ping',
   GAME_QUICK_CHAT:       'altair:game:quick_chat',
 } as const;
@@ -159,6 +160,8 @@ const DEFAULT_SETTINGS: LobbySettings = {
 const lobbies = new Map<string, AltairLobby>();
 const userToLobby = new Map<string, string>();
 const graceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+/** Live sockets per user (any feature's): a player only counts as gone when the LAST one closes. */
+const liveSockets = new Map<string, Set<string>>();
 const countdownTimers = new Map<string, ReturnType<typeof setInterval>>();
 let gcInterval: ReturnType<typeof setInterval> | null = null;
 let ioRef: Server;
@@ -216,13 +219,35 @@ function broadcastToLobby(lobbyId: string, event: string, data: unknown): void {
   ioRef.to(`altair:${lobbyId}`).emit(event, data);
 }
 
+/**
+ * A player is reached through a per-user room, never a single remembered socket
+ * id. One browser tab holds SEVERAL sockets to this hub (the site-wide call
+ * socket and every other feature connect with the same session), and
+ * registerAltairHandlers runs for each of them: a "last socket wins" id pointed
+ * at whichever connected last, which routinely was not the one listening for
+ * Altair events, so snapshots and input went to a socket with no handlers.
+ */
+function userRoom(lobbyId: string, userId: string): string {
+  return `altair:${lobbyId}:u:${userId}`;
+}
+
+function emitToUser(lobby: AltairLobby, userId: string, event: string, data: unknown): void {
+  ioRef.to(userRoom(lobby.id, userId)).emit(event, data);
+}
+
+function joinLobbyRooms(socket: Socket, lobbyId: string, userId: string): void {
+  socket.join(`altair:${lobbyId}`);
+  socket.join(userRoom(lobbyId, userId));
+}
+
+function leaveLobbyRooms(socket: Socket, lobbyId: string, userId: string): void {
+  socket.leave(`altair:${lobbyId}`);
+  socket.leave(userRoom(lobbyId, userId));
+}
+
 function broadcastFullSync(lobby: AltairLobby): void {
   for (const [, player] of lobby.players) {
-    if (!player.socketId) continue;
-    const socket = ioRef.sockets.sockets.get(player.socketId);
-    if (socket) {
-      socket.emit(S2C.LOBBY_STATE_SNAPSHOT, buildClientState(lobby, player.userId));
-    }
+    emitToUser(lobby, player.userId, S2C.LOBBY_STATE_SNAPSHOT, buildClientState(lobby, player.userId));
   }
 }
 
@@ -276,9 +301,9 @@ function removePlayer(lobby: AltairLobby, userId: string): void {
     graceTimers.delete(userId);
   }
 
-  if (player.socketId) {
-    const socket = ioRef.sockets.sockets.get(player.socketId);
-    if (socket) socket.leave(`altair:${lobby.id}`);
+  for (const sid of liveSockets.get(userId) ?? []) {
+    const socket = ioRef.sockets.sockets.get(sid);
+    if (socket) leaveLobbyRooms(socket, lobby.id, userId);
   }
 
   if (lobby.players.size === 0) {
@@ -413,6 +438,7 @@ export function __resetAltairLobbies(): void {
   graceTimers.clear();
   lobbies.clear();
   userToLobby.clear();
+  liveSockets.clear();
   if (gcInterval) {
     clearInterval(gcInterval);
     gcInterval = null;
@@ -470,7 +496,7 @@ function onLobbyCreate(io: Server, socket: Socket, payload: any): void {
 
   lobbies.set(lobbyId, lobby);
   userToLobby.set(userId, lobbyId);
-  socket.join(`altair:${lobbyId}`);
+  joinLobbyRooms(socket, lobbyId, userId);
   socket.emit(S2C.LOBBY_CREATED, { lobbyId, lobby: buildClientState(lobby, userId) });
 }
 
@@ -503,7 +529,7 @@ function onLobbyJoin(io: Server, socket: Socket, payload: any): void {
       player.isConnected = true;
       player.socketId = socket.id;
       player.lastSeenAt = Date.now();
-      socket.join(`altair:${lobbyId}`);
+      joinLobbyRooms(socket, lobbyId, userId);
       socket.emit(S2C.LOBBY_STATE_SNAPSHOT, buildClientState(existingLobby, userId));
       broadcastFullSync(existingLobby);
       return;
@@ -552,7 +578,7 @@ function onLobbyJoin(io: Server, socket: Socket, payload: any): void {
 
   lobby.players.set(userId, player);
   userToLobby.set(userId, lobby.id);
-  socket.join(`altair:${lobby.id}`);
+  joinLobbyRooms(socket, lobby.id, userId);
   lobby.lastActivityAt = now;
 
   socket.emit(S2C.LOBBY_STATE_SNAPSHOT, buildClientState(lobby, userId));
@@ -575,7 +601,7 @@ function onLobbyLeave(io: Server, socket: Socket, payload: any): void {
   const lobby = userToLobby.has(userId) ? lobbies.get(userToLobby.get(userId)!) : undefined;
   if (!lobby) return;
   removePlayer(lobby, userId);
-  socket.leave(`altair:${lobby.id}`);
+  leaveLobbyRooms(socket, lobby.id, userId);
 }
 
 function onLobbyBrowse(io: Server, socket: Socket): void {
@@ -630,12 +656,10 @@ function onLobbyKick(io: Server, socket: Socket, payload: any): void {
   const target = lobby.players.get(targetUserId);
   if (!target) return;
 
-  if (target.socketId) {
-    const targetSocket = ioRef.sockets.sockets.get(target.socketId);
-    if (targetSocket) {
-      targetSocket.emit(S2C.LOBBY_KICKED, { reason: 'Kicked by host' });
-      targetSocket.leave(`altair:${lobby.id}`);
-    }
+  emitToUser(lobby, targetUserId, S2C.LOBBY_KICKED, { reason: 'Kicked by host' });
+  for (const sid of liveSockets.get(targetUserId) ?? []) {
+    const targetSocket = ioRef.sockets.sockets.get(sid);
+    if (targetSocket) leaveLobbyRooms(targetSocket, lobby.id, targetUserId);
   }
 
   lobby.players.delete(targetUserId);
@@ -805,19 +829,43 @@ function onGameStart(io: Server, socket: Socket, payload: any): void {
   countdownTimers.set(lobby.id, interval);
 }
 
+/**
+ * Guest movement intent -> host. Intent only (never positions or damage), so the
+ * shape is checked here and re-built field by field: whatever else the client
+ * sent is not forwarded. The host's own input is never relayed (it drives itself
+ * locally) and nothing is broadcast.
+ */
 function onGameInput(io: Server, socket: Socket, payload: any): void {
   const userId = socket.data.userId as string;
   if (!userId) return;
   const lobby = userToLobby.has(userId) ? lobbies.get(userToLobby.get(userId)!) : undefined;
   if (!lobby || lobby.state !== 'PLAYING') return;
+  if (lobby.hostUserId === userId) return;
+  if (!payload || typeof payload !== 'object') return;
+  const { seq, dx, dy } = payload as { seq?: unknown; dx?: unknown; dy?: unknown };
+  if (typeof seq !== 'number' || !Number.isSafeInteger(seq) || seq < 0) return;
+  if (typeof dx !== 'number' || typeof dy !== 'number') return;
+  if (!Number.isFinite(dx) || !Number.isFinite(dy) || Math.abs(dx) > 1.5 || Math.abs(dy) > 1.5) return;
 
-  const hostPlayer = lobby.players.get(lobby.hostUserId);
-  if (hostPlayer?.socketId && hostPlayer.userId !== userId) {
-    const hostSocket = ioRef.sockets.sockets.get(hostPlayer.socketId);
-    if (hostSocket) {
-      hostSocket.emit(C2S.GAME_INPUT, { userId, ...payload });
-    }
+  emitToUser(lobby, lobby.hostUserId, C2S.GAME_INPUT, { userId, seq, dx, dy });
+}
+
+/** Largest flat entity array the hub will relay (the host encoder caps are well below these). */
+const MAX_SNAPSHOT_ARRAY = 4000;
+const MAX_SNAPSHOT_PLAYERS = 4;
+
+/** A host snapshot is relayed verbatim to guests, so it must at least be well-formed and bounded. */
+function isRelayableSnapshot(raw: unknown): boolean {
+  if (!raw || typeof raw !== 'object') return false;
+  const snapshot = raw as Record<string, unknown>;
+  if (typeof snapshot.tick !== 'number' || !Number.isFinite(snapshot.tick)) return false;
+  if (typeof snapshot.time !== 'number' || !Number.isFinite(snapshot.time)) return false;
+  if (!Array.isArray(snapshot.players) || snapshot.players.length > MAX_SNAPSHOT_PLAYERS) return false;
+  for (const key of ['enemies', 'projectiles', 'pickups'] as const) {
+    const arr = snapshot[key];
+    if (!Array.isArray(arr) || arr.length > MAX_SNAPSHOT_ARRAY) return false;
   }
+  return true;
 }
 
 function onHostSnapshot(io: Server, socket: Socket, snapshot: any): void {
@@ -826,20 +874,90 @@ function onHostSnapshot(io: Server, socket: Socket, snapshot: any): void {
   const lobby = userToLobby.has(userId) ? lobbies.get(userToLobby.get(userId)!) : undefined;
   if (!lobby || lobby.state !== 'PLAYING') return;
   if (lobby.hostUserId !== userId) return;
+  if (!isRelayableSnapshot(snapshot)) return;
 
   lobby.lastSnapshot = snapshot;
-  if (typeof snapshot?.sharedKills === 'number') {
-    lobby.sharedKills = snapshot.sharedKills;
+  if (typeof snapshot.sharedKills === 'number' && Number.isFinite(snapshot.sharedKills)) {
+    lobby.sharedKills = Math.max(0, Math.min(10_000_000, Math.floor(snapshot.sharedKills)));
   }
 
   for (const [, player] of lobby.players) {
     if (player.userId === userId) continue;
-    if (!player.socketId) continue;
-    const clientSocket = ioRef.sockets.sockets.get(player.socketId);
-    if (clientSocket) {
-      clientSocket.emit(S2C.GAME_STATE_SNAPSHOT, snapshot);
-    }
+    emitToUser(lobby, player.userId, S2C.GAME_STATE_SNAPSHOT, snapshot);
   }
+}
+
+/**
+ * Host-only end of run. The host's browser owns the simulation, so it reports
+ * how the run ended and the per-player counters; the hub clamps every number (a
+ * client is untrusted) and builds the results itself. Nothing here awards coins
+ * or writes anything: `coinsEarned` is always 0 for a co-op run.
+ */
+const MAX_RUN_SECONDS = 6 * 60 * 60;
+function clampInt(v: unknown, max: number): number {
+  return typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, Math.floor(v))) : 0;
+}
+function clampNum(v: unknown, max: number): number {
+  return typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, v)) : 0;
+}
+
+interface EndReport {
+  victory?: unknown;
+  time?: unknown;
+  sharedKills?: unknown;
+  bossesDefeated?: unknown;
+  players?: unknown;
+}
+interface EndRow {
+  userId?: unknown;
+  level?: unknown;
+  kills?: unknown;
+  timeSurvived?: unknown;
+  revivesGiven?: unknown;
+  revivesReceived?: unknown;
+  wasDowned?: unknown;
+  wasAliveAtEnd?: unknown;
+}
+
+function onGameEnd(io: Server, socket: Socket, raw: unknown): void {
+  const payload = (raw && typeof raw === 'object' ? raw : null) as EndReport | null;
+  const userId = socket.data.userId as string;
+  if (!userId) return;
+  const lobby = userToLobby.has(userId) ? lobbies.get(userToLobby.get(userId)!) : undefined;
+  if (!lobby || lobby.state !== 'PLAYING') return;
+  if (lobby.hostUserId !== userId) {
+    socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can end the run.' });
+    return;
+  }
+  if (!payload || !Array.isArray(payload.players) || payload.players.length > MAX_PLAYERS_PER_LOBBY) {
+    socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Malformed end of run.' });
+    return;
+  }
+
+  if (typeof payload.sharedKills === 'number') lobby.sharedKills = clampInt(payload.sharedKills, 10_000_000);
+  if (Array.isArray(payload.bossesDefeated)) {
+    lobby.bossesDefeated = payload.bossesDefeated
+      .filter((b: unknown) => typeof b === 'string')
+      .slice(0, 20)
+      .map((b: string) => sanitizeString(b, 40));
+  }
+  for (const row of payload.players as EndRow[]) {
+    const player = row && typeof row.userId === 'string' ? lobby.players.get(row.userId) : undefined;
+    if (!player) continue;
+    const run = createInitialRunState();
+    run.level = Math.max(1, clampInt(row.level, 999));
+    run.kills = clampInt(row.kills, 10_000_000);
+    run.timeSurvived = clampNum(row.timeSurvived, MAX_RUN_SECONDS);
+    run.revivesGiven = clampInt(row.revivesGiven, 999);
+    run.revivesReceived = clampInt(row.revivesReceived, 999);
+    run.wasDowned = row.wasDowned === true;
+    run.wasAliveAtEnd = row.wasAliveAtEnd === true;
+    run.coins = 0;
+    player.runState = run;
+  }
+  const results = buildCurrentResults(lobby, payload.victory === true);
+  results.timeSurvived = clampNum(payload.time, MAX_RUN_SECONDS) || results.timeSurvived;
+  endGame(lobby.id, results);
 }
 
 function onLevelUpChoice(io: Server, socket: Socket, payload: any): void {
@@ -848,13 +966,7 @@ function onLevelUpChoice(io: Server, socket: Socket, payload: any): void {
   const lobby = userToLobby.has(userId) ? lobbies.get(userToLobby.get(userId)!) : undefined;
   if (!lobby || lobby.state !== 'PLAYING') return;
 
-  const hostPlayer = lobby.players.get(lobby.hostUserId);
-  if (hostPlayer?.socketId) {
-    const hostSocket = ioRef.sockets.sockets.get(hostPlayer.socketId);
-    if (hostSocket) {
-      hostSocket.emit(C2S.GAME_LEVEL_UP_CHOICE, { userId, choiceIndex: payload?.choiceIndex });
-    }
-  }
+  emitToUser(lobby, lobby.hostUserId, C2S.GAME_LEVEL_UP_CHOICE, { userId, choiceIndex: payload?.choiceIndex });
 }
 
 function onPing(io: Server, socket: Socket, payload: any): void {
@@ -911,7 +1023,7 @@ function handleReconnect(socket: Socket): void {
   player.socketId = socket.id;
   player.lastSeenAt = Date.now();
 
-  socket.join(`altair:${lobby.id}`);
+  joinLobbyRooms(socket, lobby.id, userId);
   socket.emit(S2C.LOBBY_STATE_SNAPSHOT, buildClientState(lobby, userId));
   broadcastFullSync(lobby);
   addSystemChat(lobby.id, `${player.userName} reconnected`);
@@ -942,6 +1054,13 @@ function startGarbageCollector(): void {
 export function registerAltairHandlers(io: Server, socket: Socket): void {
   ioRef = io;
 
+  const connectedUser = socket.data.userId as string | undefined;
+  if (connectedUser) {
+    let set = liveSockets.get(connectedUser);
+    if (!set) liveSockets.set(connectedUser, (set = new Set()));
+    set.add(socket.id);
+  }
+
   // Start GC on first connection
   startGarbageCollector();
 
@@ -966,6 +1085,7 @@ export function registerAltairHandlers(io: Server, socket: Socket): void {
   socket.on(C2S.GAME_START, (payload) => onGameStart(io, socket, payload));
   socket.on(C2S.GAME_INPUT, (payload) => onGameInput(io, socket, payload));
   socket.on(C2S.GAME_STATE_SNAPSHOT, (payload) => onHostSnapshot(io, socket, payload));
+  socket.on(C2S.GAME_END, (payload) => onGameEnd(io, socket, payload));
   socket.on(C2S.GAME_LEVEL_UP_CHOICE, (payload) => onLevelUpChoice(io, socket, payload));
   socket.on(C2S.GAME_PING, (payload) => onPing(io, socket, payload));
   socket.on(C2S.GAME_QUICK_CHAT, (payload) => onQuickChat(io, socket, payload));
@@ -974,6 +1094,12 @@ export function registerAltairHandlers(io: Server, socket: Socket): void {
 export function handleAltairDisconnect(io: Server, socket: Socket): void {
   const userId = socket.data.userId as string;
   if (!userId) return;
+  const live = liveSockets.get(userId);
+  live?.delete(socket.id);
+  if (live && live.size === 0) liveSockets.delete(userId);
+  // Another socket of this user (a different feature's, or the Altair client
+  // itself after a reconnect) is still up: they have not dropped.
+  if (live && live.size > 0) return;
   const lobbyId = userToLobby.get(userId);
   if (!lobbyId) return;
   const lobby = lobbies.get(lobbyId);

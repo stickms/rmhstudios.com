@@ -13,12 +13,34 @@ engine, it does not fork it.
 | 0     | This design                                                   | done   |
 | 1     | Lobby flow: a match can start; errors reach the player; tests | done   |
 | 2     | Host simulation for 2–4 players (`engine/multiplayer/host-sim.ts`) | done (pure logic + tests; not wired to a page yet) |
-| 3     | Client: render snapshots, input, HUD, banners                 | not started |
+| 3A    | Client: host driver, snapshot rendering, guest input, host-leave | done (two real clients verified) |
+| 3B    | Co-op feel: per-player level-up, revive UI, spectate polish   | not started |
+| 3C    | Robustness: touch, reconnect, drop-in, play again             | not started |
 | 4     | Results, drop-in, persistence                                 | not started |
 
-Until phase 2 and 3 land, `MultiplayerGameScreen` shows an honest "not playable
-yet" message with a Leave button (the interim from the placeholder-exit change).
-Remove it in the same PR that lands the real match.
+### Phase 3A as built
+
+- **Host page** (`MultiplayerGameScreen`): `HostDriver` (`lib/altair/multiplayer/host-driver.ts`) wraps
+  `HostSim`: an accumulator turns wall time into 60 Hz steps (at most 15 per call; a longer stall drops
+  the backlog instead of replaying it), a snapshot goes out every 3rd step, guests that go quiet for 1 s
+  are told to stand still. It is driven by a **worker metronome** (`tick-worker.ts`): background-tab
+  main-thread timers are throttled to ~1 Hz, worker messages are not, so a hidden host tab keeps
+  feeding guests. Without Worker support it falls back to `setInterval` (throttled when hidden: the
+  one known limitation). Not verified on a real backgrounded tab here.
+- **Every client, host included**, draws from snapshots: `decodeSnapshot` -> `SnapshotBuffer`
+  (`snapshot-buffer.ts`, sampled 100 ms behind for guests, 50 ms for the host's own loopback) ->
+  `SnapshotView` (`snapshot-view.ts`, builds the `GameWorld` the single-player renderer draws, entities
+  pooled by id so sprite animation persists) -> `renderFrame(…, { players })`. The renderer gained one
+  optional argument (`RenderExtras`) for teammate bodies, rings and name tags; single-player passes none.
+- Lingering pools are not flagged on the wire, so the view treats a stationary projectile of radius >= 30
+  as a pool. Particles and damage numbers are not reconstructed yet.
+- **Hub:** guest `GAME_INPUT` is shape-validated and rebuilt field by field before it reaches the
+  host; host snapshots are shape/size-checked; new host-only `GAME_END` carries the run outcome and
+  per-player counters (clamped; `coinsEarned` is always 0 for co-op). Players are reached through a
+  per-user room, not one remembered socket id: a tab holds several sockets to the hub (call socket and
+  others), and the last one to connect used to steal the slot, so the Altair client stopped receiving
+  snapshots. A player is only "disconnected" when their LAST socket closes.
+- A host page that mounts mid-run (reload) cannot resume the match; it says so and offers Leave.
 
 ## Lobby state machine (phase 1, implemented)
 

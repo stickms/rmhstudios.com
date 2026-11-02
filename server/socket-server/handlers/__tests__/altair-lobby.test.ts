@@ -236,9 +236,12 @@ describe('altair lobby: leave / disconnect / disband per state', () => {
 
   it('PLAYING: only the host may push snapshots; guests receive them', () => {
     const { w, host, guest } = playing();
-    w.send(guest, E.snapshot, { tick: 1, sharedKills: 99 });
+    const snap = (tick: number, sharedKills: number) => ({
+      tick, time: tick / 60, sharedKills, players: [], enemies: [], projectiles: [], pickups: [],
+    });
+    w.send(guest, E.snapshot, snap(1, 99));
     expect(last(host, E.snapshot)).toBeUndefined();
-    w.send(host, E.snapshot, { tick: 2, sharedKills: 3 });
+    w.send(host, E.snapshot, snap(2, 3));
     expect(last<{ tick: number }>(guest, E.snapshot)?.tick).toBe(2);
   });
 

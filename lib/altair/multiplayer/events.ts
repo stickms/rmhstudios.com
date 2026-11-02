@@ -25,6 +25,8 @@ export const C2S = {
   GAME_INPUT:             'altair:game:input',
   GAME_LEVEL_UP_CHOICE:   'altair:game:level_up_choice',
   GAME_STATE_SNAPSHOT:    'altair:game:state_snapshot',
+  /** Host only: the run is over (victory or team wipe) and these are the counters. */
+  GAME_END:               'altair:game:end',
 
   // Communication
   GAME_PING:              'altair:game:ping',

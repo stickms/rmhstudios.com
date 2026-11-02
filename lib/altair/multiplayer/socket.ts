@@ -115,9 +115,9 @@ async function connectToAltairInner(): Promise<Socket> {
     useAltairMultiplayerStore.getState().setGameStarted(data.tick);
   });
 
-  socket.on(S2C.GAME_STATE_SNAPSHOT, (snapshot) => {
-    useAltairMultiplayerStore.getState().setGameSnapshot(snapshot);
-  });
+  // GAME_STATE_SNAPSHOT is deliberately NOT stored: 20 Hz of entity arrays would
+  // re-render every store subscriber. The match screen listens to it directly and
+  // feeds its own jitter buffer (MultiplayerGameScreen).
 
   socket.on(S2C.GAME_EVENT, (event) => {
     useAltairMultiplayerStore.getState().addGameEvent(event);

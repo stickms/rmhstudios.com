@@ -86,7 +86,27 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // Altair multiplayer placeholder message (2026-11-02). English-only until the
   // locales are translated; remove with it.
-  'c-altair': ['match-not-ready-body', 'match-not-ready-title', 'need-two-players', 'waiting-for-ready'],
+  'c-altair': [
+    'coop-dead',
+    'coop-downed-timer',
+    'coop-host-left',
+    'coop-host-lost-connection',
+    'coop-kills',
+    'coop-leave-host',
+    'coop-level',
+    'coop-match-lost-body',
+    'coop-match-lost-title',
+    'coop-menu',
+    'coop-menu-note',
+    'coop-reconnecting',
+    'coop-resume',
+    'coop-run-ended',
+    'coop-team',
+    'coop-waiting-snapshot',
+    'coop-you',
+    'need-two-players',
+    'waiting-for-ready',
+  ],
   'r-altair': [
     'error-generic',
     'error-need-more-players',
