@@ -52,6 +52,8 @@ export interface Facts {
   chambers: ChamberFact[];
   flips: RaceFact[];
   closest: RaceFact[];
+  /** Rated toss-ups that are not yet called — what to watch. */
+  tossups: RaceFact[];
   /** Races called most recently are not knowable from the feed, so: called, biggest first by office weight. */
   calledHighlights: RaceFact[];
 }
@@ -79,6 +81,11 @@ export function buildFacts(s: ElectionSnapshot): Facts {
     .sort((a, b) => (a.margin ?? 99) - (b.margin ?? 99))
     .slice(0, 5)
     .map(raceFact);
+  const tossups = s.races
+    .filter((r) => r.rating === 'tossup' && r.status !== 'called')
+    .sort((a, b) => OFFICE_WEIGHT[a.office] - OFFICE_WEIGHT[b.office])
+    .slice(0, 10)
+    .map(raceFact);
   const highlights = [...called]
     .sort((a, b) => OFFICE_WEIGHT[a.office] - OFFICE_WEIGHT[b.office])
     .filter((r) => r.office !== 'house')
@@ -97,6 +104,7 @@ export function buildFacts(s: ElectionSnapshot): Facts {
     }),
     flips: called.filter((r) => r.flipped).slice(0, 12).map(raceFact),
     closest,
+    tossups,
     calledHighlights: highlights,
   };
 }

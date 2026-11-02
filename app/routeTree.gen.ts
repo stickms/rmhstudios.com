@@ -494,6 +494,8 @@ import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/s
 import { Route as ApiDunesdayAskRouteImport } from './routes/api/dunesday/ask'
 import { Route as ApiDunesdaySyncRouteImport } from './routes/api/dunesday/sync'
 import { Route as ApiElectionsIndexRouteImport } from './routes/api/elections/index'
+import { Route as ApiElectionsAskRouteImport } from './routes/api/elections/ask'
+import { Route as ApiElectionsSummaryRouteImport } from './routes/api/elections/summary'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api/email/unsubscribe'
 import { Route as ApiEmbedOembedRouteImport } from './routes/api/embed/oembed'
 import { Route as ApiEmojiPacksIndexRouteImport } from './routes/api/emoji-packs/index'
@@ -3820,6 +3822,16 @@ const ApiDunesdaySyncRoute = ApiDunesdaySyncRouteImport.update({
 const ApiElectionsIndexRoute = ApiElectionsIndexRouteImport.update({
   id: '/api/elections/',
   path: '/api/elections/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsAskRoute = ApiElectionsAskRouteImport.update({
+  id: '/api/elections/ask',
+  path: '/api/elections/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsSummaryRoute = ApiElectionsSummaryRouteImport.update({
+  id: '/api/elections/summary',
+  path: '/api/elections/summary',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
@@ -8933,6 +8945,8 @@ export interface FileRoutesByFullPath {
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
+  '/api/elections/ask': typeof ApiElectionsAskRoute
+  '/api/elections/summary': typeof ApiElectionsSummaryRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -10280,6 +10294,8 @@ export interface FileRoutesByTo {
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
+  '/api/elections/ask': typeof ApiElectionsAskRoute
+  '/api/elections/summary': typeof ApiElectionsSummaryRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -11656,6 +11672,8 @@ export interface FileRoutesById {
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
+  '/api/elections/ask': typeof ApiElectionsAskRoute
+  '/api/elections/summary': typeof ApiElectionsSummaryRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -13032,6 +13050,8 @@ export interface FileRouteTypes {
     | '/api/dream-rift/score'
     | '/api/dunesday/ask'
     | '/api/dunesday/sync'
+    | '/api/elections/ask'
+    | '/api/elections/summary'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -14379,6 +14399,8 @@ export interface FileRouteTypes {
     | '/api/dream-rift/score'
     | '/api/dunesday/ask'
     | '/api/dunesday/sync'
+    | '/api/elections/ask'
+    | '/api/elections/summary'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -15754,6 +15776,8 @@ export interface FileRouteTypes {
     | '/api/dream-rift/score'
     | '/api/dunesday/ask'
     | '/api/dunesday/sync'
+    | '/api/elections/ask'
+    | '/api/elections/summary'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -16908,6 +16932,8 @@ export interface RootRouteChildren {
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
   ApiDunesdayAskRoute: typeof ApiDunesdayAskRoute
   ApiDunesdaySyncRoute: typeof ApiDunesdaySyncRouteWithChildren
+  ApiElectionsAskRoute: typeof ApiElectionsAskRoute
+  ApiElectionsSummaryRoute: typeof ApiElectionsSummaryRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
   ApiEmbedOembedRoute: typeof ApiEmbedOembedRoute
   ApiEmojiPacksInstalledRoute: typeof ApiEmojiPacksInstalledRoute
@@ -20945,6 +20971,20 @@ declare module '@tanstack/react-router' {
       path: '/api/elections'
       fullPath: '/api/elections/'
       preLoaderRoute: typeof ApiElectionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/ask': {
+      id: '/api/elections/ask'
+      path: '/api/elections/ask'
+      fullPath: '/api/elections/ask'
+      preLoaderRoute: typeof ApiElectionsAskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/summary': {
+      id: '/api/elections/summary'
+      path: '/api/elections/summary'
+      fullPath: '/api/elections/summary'
+      preLoaderRoute: typeof ApiElectionsSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/email/unsubscribe': {
@@ -29683,6 +29723,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
   ApiDunesdayAskRoute: ApiDunesdayAskRoute,
   ApiDunesdaySyncRoute: ApiDunesdaySyncRouteWithChildren,
+  ApiElectionsAskRoute: ApiElectionsAskRoute,
+  ApiElectionsSummaryRoute: ApiElectionsSummaryRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
   ApiEmbedOembedRoute: ApiEmbedOembedRoute,
   ApiEmojiPacksInstalledRoute: ApiEmojiPacksInstalledRoute,

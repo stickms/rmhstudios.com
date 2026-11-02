@@ -12,6 +12,7 @@ import { StateMap } from './StateMap';
 import { RaceExplorer } from './RaceExplorer';
 import { PollClosings } from './PollClosings';
 import { PredictionPainter } from './PredictionPainter';
+import { AiDesk } from './AiDesk';
 import { timeAgo, useElectionData, useNow, useReveal } from './hooks';
 
 export interface ElectionsPageProps {
@@ -194,14 +195,9 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
         >
           {!snapshot ? <div className="el-box el-skel" aria-busy /> : null}
           {snapshot ? <BalanceOfPower chambers={snapshot.chambers} live={live} races={snapshot.races} /> : null}
-          {bullets.length > 1 ? (
-            <div className="el-box" style={{ padding: 16, marginTop: 24, background: 'var(--el-paper)', color: 'var(--el-ink)' }}>
-              <p className="el-eyebrow" style={{ margin: '0 0 6px' }}>{t('desk.eyebrow', { defaultValue: 'The desk' })}</p>
-              <ul className="el-desk__list">
-                {bullets.slice(1).map((b) => (
-                  <li key={b}>{b}</li>
-                ))}
-              </ul>
+          {hasData ? (
+            <div style={{ marginTop: 24 }}>
+              <AiDesk year={year} live={live} bullets={bullets} />
             </div>
           ) : null}
           <p className="el-eyebrow" style={{ marginTop: 18, display: 'flex', gap: 10, alignItems: 'center' }}>

@@ -6,7 +6,28 @@ export type FeedItemType =
   | "app_announcement"
   | "news"
   | "blog"
-  | "research";
+  | "research"
+  | "election_announcement";
+
+/** The live-results payload of an `election_announcement` card (see lib/elections/feed.ts). */
+export interface FeedElection {
+  /** Election Day, YYYY-MM-DD. */
+  date: string;
+  phase: "upcoming" | "election-day" | "counting" | "archive";
+  live: boolean;
+  called: number;
+  total: number;
+  /** One row per chamber that has a score to show. `basis` says what the numbers are. */
+  chambers: {
+    office: "president" | "senate" | "house" | "governor";
+    name: string;
+    dem: number;
+    gop: number;
+    toWin: number;
+    basis: "results" | "current";
+    controlledBy: "DEM" | "GOP" | "OTH" | null;
+  }[];
+}
 
 export interface UserCosmetics {
   nameColor?: { color?: string; gradient?: string };
@@ -120,6 +141,8 @@ export interface FeedItem {
   iconName?: string;
   category?: string;
   sourcePublisher?: string;
+  /** Live results for an `election_announcement` card. */
+  election?: FeedElection;
 }
 
 export type FeedFilter =

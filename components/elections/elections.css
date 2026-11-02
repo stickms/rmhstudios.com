@@ -172,6 +172,9 @@
 .el-chip--yellow {
   background: var(--el-yellow);
 }
+.el-chip--pink {
+  background: var(--el-pink);
+}
 .el-chip--ink {
   background: var(--el-ink);
   color: var(--el-paper);
