@@ -1259,6 +1259,20 @@ function maybeFinishMatch(io: Server, lobby: Lobby): void {
 }
 
 function finishMatch(io: Server, lobby: Lobby): void {
+  // The last racer's `slice:finish` lands here directly, so the score ticker never
+  // gets another tick to say they are done. Without this frame the opponent
+  // sidebar (and the spectator board) kept showing the final racer as ACTIVE
+  // under a results card that already read Finished. Not volatile: unlike a
+  // mid-song frame, nothing newer will replace it.
+  if (lobby.state === 'playing') {
+    const finalScores: LiveScore[] = activeSeats(lobby).map((seat) => ({
+      socketId: seat.socketId ?? '',
+      ...seat.report,
+      done: seat.done,
+    }));
+    io.to(lobbyRoom(lobby.code)).emit(S2C.SCORES, finalScores);
+    io.to(specRoom(lobby.code)).emit(S2C.SCORES, finalScores);
+  }
   clearTimers(lobby);
   lobby.state = 'results';
   lobby.pausedAt = null;
