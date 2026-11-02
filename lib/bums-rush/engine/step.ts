@@ -248,6 +248,8 @@ export function createSimulation(level: Level, opts: SimulationOptions = {}): Si
   let checkpointIndex = 0;
   let deaths = 0;
   let finished = false;
+  /** True while the current party wipe has already been counted for Inkblot. */
+  let wipeCounted = false;
   let extraCheckpoints = false;
 
   // Double-buffered so `drainEvents` never allocates.
@@ -638,8 +640,16 @@ export function createSimulation(level: Level, opts: SimulationOptions = {}): Si
     }
     // A party wipe is what Inkblot counts (§6.4). One player dying never
     // blocks the party — they respawn alone while everyone else keeps playing.
+    // updateDeaths runs every step and a wipe lasts the whole respawn delay, so
+    // count the EPISODE once — counting per step made 'Send the cat after N
+    // splats' fire a few ticks after the first death whatever N was.
     if (live === 0 && dead > 0 && !finished) {
-      if (noteWipe(assist, checkpointIndex)) emit({ kind: 'cat' });
+      if (!wipeCounted) {
+        wipeCounted = true;
+        if (noteWipe(assist, checkpointIndex)) emit({ kind: 'cat' });
+      }
+    } else if (live > 0) {
+      wipeCounted = false;
     }
   }
 
