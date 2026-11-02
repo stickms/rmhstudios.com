@@ -11,11 +11,12 @@ import { loadSettings } from '../../../lib/tf2-game/client/settings';
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const level = new URLSearchParams(location.search).get('level') ?? undefined;
 const store = createHudStore({ game: 'hl2' });
+const input = createInputState();
 const client = createHarmonicClient({
   canvas,
   inputTarget: canvas,
   store,
-  input: createInputState(),
+  input,
   settings: loadSettings('hl2'),
   callbacks: {
     onPhase: (p) => {
@@ -29,4 +30,5 @@ const client = createHarmonicClient({
   level,
 });
 (window as unknown as { __rmhGame: unknown }).__rmhGame = client;
+(window as unknown as { __rmhInput: unknown }).__rmhInput = input;
 void client.start();

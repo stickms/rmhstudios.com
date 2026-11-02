@@ -94,6 +94,23 @@ harmonic-client.ts`; `components/harmonic-game/HarmonicPlayPage.tsx` (New game �
   (pistol, 12 rounds), `harmonic_weapon_coil` (rifle, 30 rounds, ADS zoom), ammo pickups,
   inventory + `weaponSelect`. Numbers in a table `sim/weapon-table.ts`. **Done when:** tests
   for fire rate, ammo, reload, switching, pickup; view models drawn (procedural, H2.4 can stub).
+- **As built:** `sim/weapon-table.ts` (every number; `WEAPONS[id]`, `RESERVE_MAX`, `AMMO_PICKUP_AMOUNT`),
+  `sim/weapons.ts` (`HarmonicWeapons`, reached as `harmonicSim(world).weapons`; replaces the debug `firePrimary`,
+  whose `DEBUG_PULSE_*` constants are gone), `sim/pickups.ts` (`harmonic_weapon_{prybar,pulse,coil}`,
+  `harmonic_ammo_{pulse,coil}`; key `amount`, output `OnPickup`), level `dev_weapons`.
+  API for later WPs: `weapons.state` (`owned/clip/reserve/active`), `give(id, reserve?)`, `pickupWeapon(id)`,
+  `addAmmo(type, n?)`, `select(slot)`, `startReload()`, `hud()` (the `HarmonicHudState.weapon` slice; melee has none),
+  `on(fn)` events `draw|fire{hit}|empty|reload|reloaded|pickup|ads`, `ads`/`zoomFov`, `spreadOffset(shot, deg)`.
+  Controls: number keys → `cmd.weaponSelect` (slot), wheel → `SpContent.weaponContext`, R = `IN_RELOAD`, attack2 = ADS
+  (coil only; the sim emits the engine's existing `zoom` event). Pistol is semi-auto, coil full-auto; an empty click
+  auto-reloads when reserve remains. Prybar does `PRYBAR_PANEL_DAMAGE` to a `func_breakable` (breaks in two swings).
+  Sounds go through `harmonicSounds` (`*.fire/reload/empty`, `melee.swing/hit`, `impact.<surface>`, `pickup`).
+  **Checkpoint rule:** the inventory is part of the checkpoint (captured when `world.checkpoint` changes); dying
+  restores it as it was at the level start / last autosave, matching the pickups the engine restores, so nothing is
+  farmed by dying. Start with nothing (levels grant weapons via pickups). Engine seams (additive, `docs/tf2-game.md`):
+  `SpContent.weaponContext?` and `SpContent.viewModel?` (`SpViewModelFrame`). `readHudState(snap, sim?)` fills `weapon`.
+  Gaps: ammo pickups reuse the weapon's world model (no ammo-box model yet); reload clips are fixed at 1.5 s so the
+  pistol (1.2 s) returns to idle early; `scripts/harmonic/weapons-smoke.ts` is the browser check.
 - **Deps:** H1.1.
 
 ### H1.4 HUD, pause, saves

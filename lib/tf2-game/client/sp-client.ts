@@ -51,7 +51,7 @@ import { adaptHl2Suit, adaptPortalGun, captionStyle, HudEventLog } from './hud-a
 import { emptyHudState, type HudFade } from './hud-state';
 import type { HudCommand, HudStore } from './hud-store';
 import { zoomSensitivityScale, type GameSettings } from './settings';
-import { applyLook, buildUserCmd, drainImpulses, heldButtons } from './input';
+import { applyLook, buildUserCmd, drainImpulses, heldButtons, type WeaponContext } from './input';
 import { FixedStep, GameLoop, type FrameInfo } from './loop';
 import {
   applyVolumes,
@@ -132,6 +132,27 @@ export interface SpContent {
    * sound bank plugs in here (`lib/harmonic-game/audio/`).
    */
   createAudio?(ctx: SpAudioContext): SpAudioBackend | null;
+  /**
+   * The loadout `buildUserCmd` resolves wheel / next / previous weapon switches against (absent:
+   * only absolute slot keys reach the command, as before). Called once per command.
+   */
+  weaponContext?(sim: SpWorld): WeaponContext | undefined;
+  /**
+   * The first-person view model to draw this frame (absent: none, the Portal gun apart). Called
+   * once per frame; `play` is consumed by the call (activities to start, first one the model has).
+   * One renderer is kept per `mdl`; those not named are hidden.
+   */
+  viewModel?(sim: SpWorld): SpViewModelFrame | null;
+}
+
+/** What `SpContent.viewModel` returns for one frame. */
+export interface SpViewModelFrame {
+  /** Model channel path of the `v_` model to show. */
+  mdl: string;
+  /** False when unarmed or otherwise hidden. */
+  visible: boolean;
+  /** Activities to (re)start now, in order of preference (e.g. `['ACT_VM_PRIMARYATTACK']`). */
+  play?: readonly string[];
 }
 
 /** What the client hands an injected audio backend when it is created. */
@@ -199,6 +220,8 @@ export class SpClient implements GameClient {
   private ents: EntityRenderer | null = null;
   private portals: PortalView | null = null;
   private gun: SpViewModelRenderer | null = null;
+  /** `SpContent.viewModel` renderers, one per model path. */
+  private readonly contentGuns = new Map<string, SpViewModelRenderer>();
   private snap: SpSnapshot | null = null;
   private readonly prevOrigin = { x: 0, y: 0, z: 0 };
   private readonly curOrigin = { x: 0, y: 0, z: 0 };
@@ -506,6 +529,8 @@ export class SpClient implements GameClient {
     this.portals = null;
     this.gun?.dispose();
     this.gun = null;
+    for (const g of this.contentGuns.values()) g.dispose();
+    this.contentGuns.clear();
     this.ents?.dispose();
     this.ents = null;
     this.world?.dispose();
@@ -604,7 +629,7 @@ export class SpClient implements GameClient {
     const n = this.paused ? 0 : this.ticks.advance(dt * this.spConsole.timescale);
     const t0 = performance.now();
     for (let i = 0; i < n && this.sim === sim; i++) {
-      const cmd: SpUserCmd = buildUserCmd(input, this.viewAngles, this.settings, undefined, {
+      const cmd: SpUserCmd = buildUserCmd(input, this.viewAngles, this.settings, this.opts.content?.weaponContext?.(sim), {
         tickCount: sim.tickCount + 1,
       });
       cmd.impulse = this.impulse;
@@ -741,6 +766,35 @@ export class SpClient implements GameClient {
         ents.context,
       );
     }
+    const vmContent = this.opts.content?.viewModel;
+    if (vmContent) {
+      const f = vmContent(sim);
+      if (f) {
+        let g = this.contentGuns.get(f.mdl);
+        if (!g) {
+          g = new SpViewModelRenderer(f.mdl);
+          this.contentGuns.set(f.mdl, g);
+        }
+        if (f.play && f.play.length > 0) g.play(...f.play);
+      }
+      for (const [mdl, g] of this.contentGuns) {
+        g.update(
+          {
+            eyeOrigin: view.origin,
+            eyeAngles: view.angles,
+            velocity: p.velocity,
+            visible:
+              !!f &&
+              f.mdl === mdl &&
+              f.visible &&
+              !p.dead &&
+              !snap.view &&
+              (this.console?.console.drawViewModel.bool ?? true),
+          },
+          ents.context,
+        );
+      }
+    }
 
     // Draw.
     const t2 = performance.now();
@@ -753,6 +807,7 @@ export class SpClient implements GameClient {
     this.culler.cull(world.props?.group, cam.camera, core.plan.propDrawDistance, SOURCE_UNIT);
     world.render(core.renderer, cam);
     this.gun?.render(core.renderer, cam);
+    for (const g of this.contentGuns.values()) g.render(core.renderer, cam);
 
     this.fps.phase('render', performance.now() - t2);
     // Audio.

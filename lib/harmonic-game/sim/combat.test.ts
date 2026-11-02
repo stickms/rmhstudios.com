@@ -5,8 +5,11 @@ import { SpWorld } from '../../sp-game/world/sp-world';
 import { HARMONIC_MATERIAL_LOOKUP, createHarmonicAssets } from '../assets';
 import { compileLevel } from '../compiler';
 import { devCombatSource } from '../levels/dev_combat';
-import { attachHarmonicSim, type CombatEvent, DEBUG_PULSE_DAMAGE, DEBUG_PULSE_INTERVAL, MELEE_DAMAGE, MELEE_RANGE } from './index';
+import { attachHarmonicSim, type CombatEvent, MELEE_DAMAGE, MELEE_RANGE, WEAPONS } from './index';
 import type { HarmonicTarget } from './entities';
+
+const DEBUG_PULSE_DAMAGE = WEAPONS.pulse.damage;
+const DEBUG_PULSE_INTERVAL = WEAPONS.pulse.fireInterval;
 
 async function load(attach = true) {
   const level = compileLevel(devCombatSource(), { materials: HARMONIC_MATERIAL_LOOKUP });
@@ -17,6 +20,7 @@ async function load(attach = true) {
     assets: createHarmonicAssets(),
   });
   const sim = attach ? attachHarmonicSim(world) : null;
+  sim?.weapons.give('pulse', 60);
   const events: CombatEvent[] = [];
   sim?.combat.on((e) => events.push(e));
   const d = new Driver(world);
@@ -50,9 +54,10 @@ describe('Harmonic combat (H1.1)', () => {
   it('keeps firing at the fire interval, then OnDeath at zero (once)', async () => {
     const { d, target, lookAt, relayFires, events } = await load();
     lookAt('t_near');
-    d.cmd.buttons |= IN_ATTACK;
-    d.run(DEBUG_PULSE_INTERVAL * 6);
-    d.cmd.buttons &= ~IN_ATTACK;
+    for (let i = 0; i < 6; i++) {
+      d.press(IN_ATTACK);
+      d.idle(DEBUG_PULSE_INTERVAL);
+    }
     const t = target('t_near');
     expect(t.health).toBe(0);
     expect(t.dead).toBe(true);
@@ -66,9 +71,8 @@ describe('Harmonic combat (H1.1)', () => {
   it('does not fire faster than the interval', async () => {
     const { d, target, lookAt } = await load();
     lookAt('t_near');
-    d.cmd.buttons |= IN_ATTACK;
-    d.run(DEBUG_PULSE_INTERVAL * 0.9);
-    d.cmd.buttons &= ~IN_ATTACK;
+    d.press(IN_ATTACK);
+    d.press(IN_ATTACK);
     expect(target('t_near').health).toBe(40 - DEBUG_PULSE_DAMAGE);
   });
 

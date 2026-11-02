@@ -45,11 +45,16 @@ export const emptyHarmonicHud = (): HarmonicHudState => ({
 });
 
 /** Fills what exists today (health, dead). Pure; later work packages extend it. */
-export function readHudState(world: HudSource): HarmonicHudState {
+export function readHudState(
+  world: HudSource,
+  sim?: { weapons: { hud(): HarmonicHudState['weapon'] } } | null,
+): HarmonicHudState {
   const hp = Number.isFinite(world.player.health) ? world.player.health : 0;
   const state = emptyHarmonicHud();
   state.health = Math.max(0, Math.min(state.maxHealth, Math.round(hp)));
   state.dead = world.player.dead || hp <= 0;
+  const weapon = sim?.weapons.hud();
+  if (weapon) state.weapon = weapon;
   return state;
 }
 

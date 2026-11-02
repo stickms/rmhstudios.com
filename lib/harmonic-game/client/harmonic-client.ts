@@ -17,7 +17,8 @@ import { HARMONIC_MATERIAL_LOOKUP, createHarmonicAssets } from '../assets';
 import { createHarmonicModelLibrary } from '../assets/models/library';
 import { createProceduralTextureCache } from '../assets/texture-cache';
 import { HARMONIC_LEVELS, findHarmonicLevel } from '../levels';
-import { attachHarmonicSim } from '../sim';
+import { attachHarmonicSim, harmonicSim } from '../sim';
+import type { SpWorld } from '../../sp-game/world/sp-world';
 import { onPhaseLevelReady } from './phase-view';
 import { createHarmonicAudio } from '../audio/player';
 import { readHudState } from './hud-state';
@@ -33,6 +34,7 @@ export type HarmonicClientOptions = Omit<
 
 /** The content seam for Harmonic: no network, no game install. */
 export function harmonicContent(): SpContent {
+  let activeWorld: SpWorld | null = null;
   return {
     maps: HARMONIC_LEVELS.map((l) => ({ name: l.id, title: l.titleDefault })),
     async loadLevel(map, progress) {
@@ -50,7 +52,12 @@ export function harmonicContent(): SpContent {
       };
     },
     createAssets: async () => createHarmonicAssets(),
-    attachWorld: attachHarmonicSim,
+    attachWorld: (w) => {
+      activeWorld = w;
+      attachHarmonicSim(w);
+    },
+    weaponContext: (w) => harmonicSim(w)?.weapons.weaponContext(),
+    viewModel: (w) => harmonicSim(w)?.weapons.viewFrame() ?? null,
     createTextures: (core) =>
       createProceduralTextureCache({
         renderer: core.renderer,
@@ -65,7 +72,7 @@ export function harmonicContent(): SpContent {
     features: { audio: false, suitHud: false, saves: false },
     onLevelReady: (ctx) => onPhaseLevelReady(ctx),
     createAudio: createHarmonicAudio,
-    hud: (snap) => readHudState(snap),
+    hud: (snap) => readHudState(snap, activeWorld ? harmonicSim(activeWorld) : null),
   };
 }
 
