@@ -8,7 +8,7 @@
 
 import { Skull, Swords } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { PLAYER_DOWNED, PLAYER_DEAD } from '@/lib/altair/multiplayer/types';
+import { PLAYER_ALIVE, PLAYER_DOWNED, PLAYER_DEAD } from '@/lib/altair/multiplayer/types';
 
 export interface CoopHudPlayer {
   playerId: string;
@@ -19,7 +19,15 @@ export interface CoopHudPlayer {
   maxHp: number;
   state: 0 | 1 | 2;
   downTimer: number;
+  levelUpPending: boolean;
   isLocal: boolean;
+}
+
+export interface CoopHudSelf {
+  state: 0 | 1 | 2;
+  downTimer: number;
+  /** Name of the teammate the camera follows while this player is dead. */
+  spectating: string | null;
 }
 
 export interface CoopHudBoss {
@@ -30,6 +38,7 @@ export interface CoopHudBoss {
 }
 
 interface CoopHudProps {
+  self: CoopHudSelf;
   players: CoopHudPlayer[];
   sharedKills: number;
   time: number;
@@ -42,7 +51,7 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export default function CoopHud({ players, sharedKills, time, boss }: CoopHudProps) {
+export default function CoopHud({ self, players, sharedKills, time, boss }: CoopHudProps) {
   const { t } = useTranslation('c-altair');
 
   return (
@@ -76,6 +85,8 @@ export default function CoopHud({ players, sharedKills, time, boss }: CoopHudPro
                 <span className="shrink-0 font-mono text-(--altair-text-muted)">
                   {dead ? (
                     <Skull size={12} aria-label={t('coop-dead', { defaultValue: 'Dead' })} />
+                  ) : p.levelUpPending ? (
+                    t('coop-choosing', { defaultValue: 'Choosing...' })
                   ) : down ? (
                     t('coop-downed-timer', { defaultValue: 'Down {{seconds}}s', seconds: Math.max(0, Math.ceil(p.downTimer)) })
                   ) : (
@@ -119,6 +130,24 @@ export default function CoopHud({ players, sharedKills, time, boss }: CoopHudPro
       </div>
 
       <div className="w-44 sm:w-56" aria-hidden="true" />
+
+      {self.state !== PLAYER_ALIVE && (
+        <div
+          role="status"
+          data-testid="coop-self-state"
+          className="absolute inset-x-0 mx-auto w-fit max-w-[90vw] rounded-(--altair-radius) border border-(--altair-danger) bg-(--altair-hud-scrim) px-4 py-2 text-center text-sm text-(--altair-text)"
+          style={{ top: '5.5rem' }}
+        >
+          {self.state === PLAYER_DOWNED
+            ? t('coop-you-downed', {
+                defaultValue: 'You are down. Stay put: a teammate can revive you ({{seconds}}s left).',
+                seconds: Math.max(0, Math.ceil(self.downTimer)),
+              })
+            : self.spectating
+              ? t('coop-spectating', { defaultValue: 'You are out. Watching {{name}}.', name: self.spectating })
+              : t('coop-you-dead', { defaultValue: 'You are out.' })}
+        </div>
+      )}
     </div>
   );
 }

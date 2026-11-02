@@ -203,5 +203,10 @@
   "coop-resume": "Back to the match",
   "coop-leave-host": "Leave and end the run for everyone",
   "coop-host-left": "The host left, so the run ended.",
-  "coop-run-ended": "RUN ENDED"
+  "coop-run-ended": "RUN ENDED",
+  "coop-choosing": "Choosing...",
+  "coop-you-downed": "You are down. Stay put: a teammate can revive you ({{seconds}}s left).",
+  "coop-spectating": "You are out. Watching {{name}}.",
+  "coop-you-dead": "You are out.",
+  "coop-levelup-countdown": "The first option is picked in {{seconds}}s. The game keeps running; you are protected."
 }

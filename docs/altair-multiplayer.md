@@ -14,7 +14,7 @@ engine, it does not fork it.
 | 1     | Lobby flow: a match can start; errors reach the player; tests | done   |
 | 2     | Host simulation for 2–4 players (`engine/multiplayer/host-sim.ts`) | done (pure logic + tests; not wired to a page yet) |
 | 3A    | Client: host driver, snapshot rendering, guest input, host-leave | done (two real clients verified) |
-| 3B    | Co-op feel: per-player level-up, revive UI, spectate polish   | not started |
+| 3B    | Co-op feel: per-player level-up, revive/down UI, spectate, boss bar | done (two real clients verified) |
 | 3C    | Robustness: touch, reconnect, drop-in, play again             | not started |
 | 4     | Results, drop-in, persistence                                 | not started |
 
@@ -40,6 +40,22 @@ engine, it does not fork it.
   per-user room, not one remembered socket id: a tab holds several sockets to the hub (call socket and
   others), and the last one to connect used to steal the slot, so the Altair client stopped receiving
   snapshots. A player is only "disconnected" when their LAST socket closes.
+### Phase 3B as built
+
+- Level-up: the host's `HostDriver` announces each newly opened overlay once (`onLevelUpOffer`); the host
+  sends it to that guest only (`altair:game:level_up_offer`, host-only, options rebuilt by the hub) or opens
+  it locally; the guest answers with a bare index (`altair:game:level_up_choice`, rate limited: it had no rule
+  before and would have been dropped). `LevelUpPicker` is the single-player picker, extracted from
+  `LevelUpScreen`, with a countdown; nothing pauses. The overlay closes on a pick or when the snapshot says
+  the host auto-picked.
+- HUD: team rows (name, class colour, level, HP, Down Ns, dead, "Choosing..."), team kills and clock, boss
+  bar from the snapshot, "you are down" / spectating banner. Revive progress is a ring drawn on the downed
+  body by the renderer (it fills while a teammate stands in range). A dead player's camera follows a living
+  teammate.
+- Known gap (pre-existing, single-player too): the wave table has a boss entry at t=300 and another wave
+  starting at t=300 after it, and the director takes the LAST matching wave, so no boss ever spawns. The
+  boss bar was verified with a boss-flagged enemy injected on the host, not a real spawn.
+
 - A host page that mounts mid-run (reload) cannot resume the match; it says so and offers Leave.
 
 ## Lobby state machine (phase 1, implemented)

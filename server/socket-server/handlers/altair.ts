@@ -41,6 +41,7 @@ const C2S = {
   GAME_LEVEL_UP_CHOICE:  'altair:game:level_up_choice',
   GAME_STATE_SNAPSHOT:   'altair:game:state_snapshot',
   GAME_END:              'altair:game:end',
+  GAME_LEVEL_UP_OFFER:   'altair:game:level_up_offer',
   GAME_PING:             'altair:game:ping',
   GAME_QUICK_CHAT:       'altair:game:quick_chat',
 } as const;
@@ -59,6 +60,7 @@ const S2C = {
   GAME_PLAYER_JOINED:    'altair:game:player_joined',
   GAME_PLAYER_LEFT:      'altair:game:player_left',
   GAME_RESULTS:          'altair:game:results',
+  GAME_LEVEL_UP_OFFER:   'altair:game:level_up_offer',
   GAME_PING:             'altair:game:ping_broadcast',
   GAME_QUICK_CHAT:       'altair:game:quick_chat_broadcast',
   ERROR:                 'altair:error',
@@ -960,13 +962,75 @@ function onGameEnd(io: Server, socket: Socket, raw: unknown): void {
   endGame(lobby.id, results);
 }
 
+/**
+ * Guest -> host: which upgrade they picked. Index only: the host owns the
+ * choices and applies the pick to that player, so all a guest can ever send is
+ * a small integer for the offer the host already made to them.
+ */
 function onLevelUpChoice(io: Server, socket: Socket, payload: any): void {
   const userId = socket.data.userId as string;
   if (!userId) return;
   const lobby = userToLobby.has(userId) ? lobbies.get(userToLobby.get(userId)!) : undefined;
   if (!lobby || lobby.state !== 'PLAYING') return;
+  if (lobby.hostUserId === userId) return; // the host picks locally
+  const choiceIndex = payload?.choiceIndex;
+  if (typeof choiceIndex !== 'number' || !Number.isInteger(choiceIndex) || choiceIndex < 0 || choiceIndex > 7) return;
+  emitToUser(lobby, lobby.hostUserId, C2S.GAME_LEVEL_UP_CHOICE, { userId, choiceIndex });
+}
 
-  emitToUser(lobby, lobby.hostUserId, C2S.GAME_LEVEL_UP_CHOICE, { userId, choiceIndex: payload?.choiceIndex });
+const UPGRADE_TYPES = new Set([
+  'new_weapon', 'upgrade_weapon', 'new_passive', 'upgrade_passive', 'new_catalyst', 'upgrade_catalyst', 'gold',
+]);
+
+interface OfferChoice {
+  type?: unknown;
+  weaponId?: unknown;
+  passiveId?: unknown;
+  catalystId?: unknown;
+  newLevel?: unknown;
+  amount?: unknown;
+}
+
+/** One upgrade option, rebuilt field by field (ids are short strings, levels small ints). */
+function cleanChoice(raw: OfferChoice): Record<string, unknown> | null {
+  if (!raw || typeof raw.type !== 'string' || !UPGRADE_TYPES.has(raw.type)) return null;
+  const out: Record<string, unknown> = { type: raw.type };
+  for (const key of ['weaponId', 'passiveId', 'catalystId'] as const) {
+    if (typeof raw[key] === 'string') out[key] = sanitizeString(raw[key], 48);
+  }
+  if (typeof raw.newLevel === 'number' && Number.isFinite(raw.newLevel)) out.newLevel = clampInt(raw.newLevel, 99);
+  if (typeof raw.amount === 'number' && Number.isFinite(raw.amount)) out.amount = clampInt(raw.amount, 1000);
+  return out;
+}
+
+/**
+ * Host -> ONE guest: the upgrade options the host rolled for that player. Only
+ * the host may send it, only to a player in the lobby (never to the host
+ * itself), and only well-formed options are forwarded.
+ */
+function onLevelUpOffer(io: Server, socket: Socket, payload: any): void {
+  const userId = socket.data.userId as string;
+  if (!userId) return;
+  const lobby = userToLobby.has(userId) ? lobbies.get(userToLobby.get(userId)!) : undefined;
+  if (!lobby || lobby.state !== 'PLAYING') return;
+  if (lobby.hostUserId !== userId) {
+    socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can offer upgrades.' });
+    return;
+  }
+  const target = typeof payload?.userId === 'string' ? payload.userId : '';
+  if (!target || target === userId || !lobby.players.has(target)) return;
+  if (!Array.isArray(payload.choices) || payload.choices.length < 1 || payload.choices.length > 6) return;
+  const choices: Record<string, unknown>[] = [];
+  for (const c of payload.choices as OfferChoice[]) {
+    const clean = cleanChoice(c);
+    if (!clean) return;
+    choices.push(clean);
+  }
+  emitToUser(lobby, target, S2C.GAME_LEVEL_UP_OFFER, {
+    level: Math.max(1, clampInt(payload.level, 999)),
+    remaining: clampNum(payload.remaining, 60),
+    choices,
+  });
 }
 
 function onPing(io: Server, socket: Socket, payload: any): void {
@@ -1087,6 +1151,7 @@ export function registerAltairHandlers(io: Server, socket: Socket): void {
   socket.on(C2S.GAME_STATE_SNAPSHOT, (payload) => onHostSnapshot(io, socket, payload));
   socket.on(C2S.GAME_END, (payload) => onGameEnd(io, socket, payload));
   socket.on(C2S.GAME_LEVEL_UP_CHOICE, (payload) => onLevelUpChoice(io, socket, payload));
+  socket.on(C2S.GAME_LEVEL_UP_OFFER, (payload) => onLevelUpOffer(io, socket, payload));
   socket.on(C2S.GAME_PING, (payload) => onPing(io, socket, payload));
   socket.on(C2S.GAME_QUICK_CHAT, (payload) => onQuickChat(io, socket, payload));
 }

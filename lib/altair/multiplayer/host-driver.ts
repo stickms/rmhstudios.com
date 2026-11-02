@@ -8,7 +8,7 @@
 // tab keeps stepping; see MultiplayerGameScreen) and supplies `send`.
 // =============================================================================
 
-import { HostSim, FIXED_DT, type HostPlayerInit, type HostPlayerStats, type HostStatus } from '../engine/multiplayer/host-sim';
+import { HostSim, FIXED_DT, type HostPlayerInit, type HostPlayerStats, type HostStatus, type PendingLevelUp } from '../engine/multiplayer/host-sim';
 import type { GameEvent, GameStateSnapshot } from './types';
 
 /** One snapshot every this many steps = 20 Hz. */
@@ -27,12 +27,18 @@ export interface HostEnd {
   time: number;
 }
 
+export interface LevelUpOffer extends PendingLevelUp {
+  level: number;
+}
+
 export interface HostDriverOptions {
   players: HostPlayerInit[];
   doubleTime?: boolean;
   /** Called with the (reused) snapshot object; must serialise or decode it synchronously. */
   send: (snapshot: GameStateSnapshot) => void;
   onEvents?: (events: GameEvent[]) => void;
+  /** A player's level-up overlay just opened: tell that player (once per level-up). */
+  onLevelUpOffer?: (playerId: string, offer: LevelUpOffer) => void;
   onEnd?: (end: HostEnd) => void;
 }
 
@@ -42,6 +48,7 @@ export class HostDriver {
   private last: number | null = null;
   private stepsSinceSnapshot = 0;
   private ended = false;
+  private readonly offered = new Set<string>();
   private readonly lastInputAt = new Map<string, number>();
   private readonly opts: HostDriverOptions;
   /** Steps dropped because the page could not keep up (for diagnostics). */
@@ -61,6 +68,11 @@ export class HostDriver {
   /** The host's own keyboard/touch intent. */
   localInput(playerId: string, dx: number, dy: number): void {
     this.sim.setInput(playerId, dx, dy);
+  }
+
+  /** A player's pick from their level-up overlay (the hub passes guests' picks through as a bare index). */
+  chooseUpgrade(playerId: string, index: number): boolean {
+    return this.sim.chooseUpgrade(playerId, index);
   }
 
   /** Advance to `nowMs`. Returns the number of steps run. */
@@ -97,12 +109,30 @@ export class HostDriver {
         return steps;
       }
     }
+    this.announceLevelUps();
     if (this.acc >= FIXED_DT) {
       // Could not keep up: forget the backlog rather than spiral.
       this.droppedSteps += Math.floor(this.acc / FIXED_DT);
       this.acc = 0;
     }
     return steps;
+  }
+
+  /** Offer each newly opened level-up to its owner exactly once; forget it once it is resolved. */
+  private announceLevelUps(): void {
+    const pending = this.sim.pendingLevelUpPlayers();
+    for (const id of this.offered) if (!pending.includes(id)) this.offered.delete(id);
+    for (const id of pending) {
+      if (this.offered.has(id)) continue;
+      const p = this.sim.getPendingLevelUp(id);
+      if (!p) continue;
+      this.offered.add(id);
+      this.opts.onLevelUpOffer?.(id, {
+        choices: p.choices,
+        remaining: p.remaining,
+        level: this.sim.getPlayerProgress(id)?.level ?? 1,
+      });
+    }
   }
 
   private emitSnapshot(): void {
