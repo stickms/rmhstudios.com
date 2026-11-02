@@ -349,6 +349,11 @@ signal)` returns `{ bsp, manifest, hulls }`, `createAssets(level)` the `SpAssets
   published as `HudState.ext` (`unknown`; unset for HL2/Portal/TF2/CS:GO), and `GameCanvas hudComponent` swaps
   `GameHud` for the game's own HUD, pause menu and options (it gets the same `GameHudProps` and owns the pause
   flow: `input.suspended`, the `pause` command, the `menu` impulse). Default: `GameHud`, unchanged.
+  Two more (Harmonic H1.3): `SpContent.weaponContext?(sim)` supplies the `WeaponContext` that `buildUserCmd` resolves
+  wheel / next / previous switches against (absent: only absolute slot keys, as before), and
+  `SpContent.viewModel?(sim)` returns `{ mdl, visible, play? }` each frame so the client keeps one
+  `SpViewModelRenderer` per model path, starts the `play` activities and shows only the named one (absent: nothing
+  drawn, the Portal gun apart). Zoom (ADS) needs no seam: the sim emits the existing `zoom` event.
 - **Quality** (`client/quality.ts`): desktop / laptop / mobile from WebGL2, the texture limit, memory, cores,
   the GPU name and touch; each sets resolution scale, DPR cap, texture cap, anisotropy, particle budget, prop
   draw distance and portal recursion (2 desktop, 1 phone). A frame-time governor lowers the resolution scale

@@ -17,10 +17,10 @@ import { HARMONIC_MATERIAL_LOOKUP, createHarmonicAssets } from '../assets';
 import { createHarmonicModelLibrary } from '../assets/models/library';
 import { createProceduralTextureCache } from '../assets/texture-cache';
 import { HARMONIC_LEVELS, findHarmonicLevel } from '../levels';
-import { attachHarmonicSim } from '../sim';
+import { attachHarmonicSim, harmonicSim } from '../sim';
+import type { SpWorld } from '../../sp-game/world/sp-world';
 import { onPhaseLevelReady } from './phase-view';
 import { createHarmonicAudio } from '../audio/player';
-import type { SpWorld } from '../../sp-game/world/sp-world';
 import { applyNarrativeHud } from '../narrative';
 import { readHudState } from './hud-state';
 import { saveLevelStart } from './save';
@@ -57,6 +57,8 @@ export function harmonicContent(): SpContent {
       world = w;
       return attachHarmonicSim(w);
     },
+    weaponContext: (w) => harmonicSim(w)?.weapons.weaponContext(),
+    viewModel: (w) => harmonicSim(w)?.weapons.viewFrame() ?? null,
     createTextures: (core) =>
       createProceduralTextureCache({
         renderer: core.renderer,
@@ -71,7 +73,8 @@ export function harmonicContent(): SpContent {
     features: { audio: false, suitHud: false, saves: false },
     onLevelReady: (ctx) => onPhaseLevelReady(ctx),
     createAudio: createHarmonicAudio,
-    hud: (snap, now) => applyNarrativeHud(readHudState(snap), world, now),
+    hud: (snap, now) =>
+      applyNarrativeHud(readHudState(snap, world ? harmonicSim(world) : null), world, now),
   };
 }
 

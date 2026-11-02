@@ -5,6 +5,7 @@ import { devCombatSource } from './dev_combat';
 import { devPhaseSource } from './dev_phase';
 import { devModelsSource } from './dev_models';
 import { devDialogueSource } from './dev_dialogue';
+import { devWeaponsSource } from './dev_weapons';
 
 export interface HarmonicLevel {
   id: string;
@@ -38,6 +39,12 @@ export const HARMONIC_LEVELS: HarmonicLevel[] = [
     titleKey: 'level_dev_dialogue',
     titleDefault: 'Dev dialogue',
     source: devDialogueSource,
+  },
+  {
+    id: 'dev_weapons',
+    titleKey: 'level_dev_weapons',
+    titleDefault: 'Dev weapons range',
+    source: devWeaponsSource,
   },
 ];
 

@@ -4,12 +4,6 @@
  * Units: Source inches, seconds.
  */
 
-/** The debug "pulse" the player fires before H1.3 lands real weapons. */
-export const DEBUG_PULSE_DAMAGE = 12;
-export const DEBUG_PULSE_RANGE = 4096;
-/** Seconds between debug pulses while attack is held. */
-export const DEBUG_PULSE_INTERVAL = 0.25;
-
 /** Melee: a short hull sweep from the eye. */
 export const MELEE_RANGE = 64;
 /** Half-extent of the melee sweep hull. */
