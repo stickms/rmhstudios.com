@@ -425,7 +425,7 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
 
       {menuOpen && (
         <div className="absolute inset-0 z-50 flex items-center-safe justify-center-safe overflow-y-auto bg-black/50 px-6">
-          <div role="dialog" aria-modal="true" aria-label={t('coop-menu', { defaultValue: 'Menu' })} className="flex w-full max-w-sm flex-col gap-4 rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) p-6 text-center">
+          <div role="region" aria-label={t('coop-menu', { defaultValue: 'Menu' })} className="flex w-full max-w-sm flex-col gap-4 rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) p-6 text-center">
             <p className="text-sm text-(--altair-text-muted)">
               {t('coop-menu-note', { defaultValue: 'The run keeps going while this is open.' })}
             </p>
