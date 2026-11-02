@@ -94,6 +94,8 @@ const IDEMPOTENT_SEED_ON_READ: Record<string, string> = {
  * it; the dynamic test below confirms only IP headers are touched.
  */
 const PUBLIC_DESPITE_SCAN: Record<string, string> = {
+  '/api/elections/markets':
+    'serializeMarket() has an optional viewerId parameter, but this route never passes one: no positions are included, so the body is the same for every viewer',
   '/api/comments/$commentId/translate':
     'client IP feeds the rate limit only; body is a function of (comment, ?to=)',
 };
