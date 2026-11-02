@@ -40,6 +40,9 @@ const SCENARIOS: Scenario[] = [
   { name: 'berserker-death', classId: 'berserker', seed: 606, frames: 3000, input: 'still', startTime: 700 },
 ];
 
+// Each scenario simulates up to 3000 frames of a full world; on a loaded CI worker that can pass the 5 s default.
+vi.setConfig({ testTimeout: 60_000 });
+
 const GOLDEN_PATH = join(__dirname, 'golden-master.json');
 const update = process.env.ALTAIR_UPDATE_GOLDEN === '1';
 const golden: Record<string, GoldenResult> = existsSync(GOLDEN_PATH)
