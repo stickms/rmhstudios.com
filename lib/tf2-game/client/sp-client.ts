@@ -106,6 +106,38 @@ export interface SpContent {
    * the game's localStorage slot.
    */
   features?: { audio?: boolean; suitHud?: boolean; saves?: boolean };
+  /**
+   * An injected audio backend in place of the HL2/Portal sound channel (`features.audio` stays
+   * false for such content). Optional and additive: absent, nothing changes. Harmonic's synthesised
+   * sound bank plugs in here (`lib/harmonic-game/audio/`).
+   */
+  createAudio?(ctx: SpAudioContext): SpAudioBackend | null;
+}
+
+/** What the client hands an injected audio backend when it is created. */
+export interface SpAudioContext {
+  /** The level being loaded (`changelevel` makes a new backend). */
+  map: string;
+  settings: GameSettings;
+  /** An entity's current (interpolated) position, or null when unknown. */
+  entityPosition(entity: number): Vec3 | null;
+}
+
+/** An injected audio backend. The client forwards every simulation event and the listener each frame. */
+export interface SpAudioBackend {
+  /** Unlock on the first gesture / suspend while hidden; returns the detach function. */
+  attach(): () => void;
+  /** Every `SpEvent` the simulation emits (sounds, pickups, death, effects…). */
+  onEvent(ev: SpEvent): void;
+  setListener(origin: Vec3, angles: Vec3): void;
+  /** Once per frame, after `setListener`. */
+  update(): void;
+  setVolumes(volume: GameSettings['volume']): void;
+  stopAll(): void;
+  onVisibility?(visible: boolean): void;
+  /** A level (re)loaded: `changelevel`, `retry`. The first level is `SpAudioContext.map`. */
+  onLevel?(map: string): void;
+  dispose(): void;
 }
 
 export interface SpClientOptions extends ClientMount {
@@ -139,6 +171,8 @@ export class SpClient implements GameClient {
   private inputCore: InputCore | null = null;
   private loop: GameLoop | null = null;
   private audio: AudioEngine | null = null;
+  /** The content's own audio backend (`SpContent.createAudio`), when it injects one. */
+  private backend: SpAudioBackend | null = null;
   private sim: SpWorld | null = null;
   private world: WorldRenderer | null = null;
   private ents: EntityRenderer | null = null;
@@ -225,6 +259,8 @@ export class SpClient implements GameClient {
         ? createAudio(this.game as GameId, this.settings, (id) => this.entityPos.get(id) ?? null, this.occlusion)
         : null;
       this.audio = audio;
+      this.backend = this.opts.content?.createAudio?.({ map: this.mapName, settings: this.settings, entityPosition: (id) => this.entityPos.get(id) ?? null }) ?? null;
+      if (this.backend) this.unsubs.push(this.backend.attach());
       if (audio) {
         this.unsubs.push(audio.attach());
         this.unsubs.push(
@@ -320,6 +356,7 @@ export class SpClient implements GameClient {
     this.sim = sim;
     this.spConsole.bind(sim);
     this.mapName = map;
+    this.backend?.onLevel?.(map);
     this.transition = transition;
     this.progress.finish('world');
     const textures = content ? content.createTextures(core) : core.textureCache(this.game);
@@ -394,6 +431,7 @@ export class SpClient implements GameClient {
     this.sim = null;
     this.brushCache.clear();
     this.audio?.stopAll();
+    this.backend?.stopAll();
   }
 
   private startLoop(): void {
@@ -403,7 +441,10 @@ export class SpClient implements GameClient {
     this.loop ??= new GameLoop(
       (f) => this.frame(f),
       undefined,
-      (p) => this.audio?.onVisibility(p),
+      (p) => {
+        this.audio?.onVisibility(p);
+        this.backend?.onVisibility?.(p);
+      },
     );
     this.loop.start();
     this.opts.callbacks.onPhase?.('running');
@@ -602,6 +643,10 @@ export class SpClient implements GameClient {
       if (snap.soundscape && snap.soundscape !== this.audio.currentSoundscape) this.audio.setSoundscape(snap.soundscape);
       this.audio.update();
     }
+    if (this.backend) {
+      this.backend.setListener(view.origin, view.angles);
+      this.backend.update();
+    }
 
     // HUD.
     this.hudAcc += dt;
@@ -650,6 +695,7 @@ export class SpClient implements GameClient {
   }
 
   private onEvent(ev: SpEvent): void {
+    this.backend?.onEvent(ev);
     switch (ev.type) {
       case 'sound':
         if (ev.setVolume !== undefined) break;
@@ -777,6 +823,7 @@ export class SpClient implements GameClient {
     this.settings = s;
     this.fov.setDefault(s.fov);
     if (this.audio) applyVolumes(this.audio, s);
+    this.backend?.setVolumes(s.volume);
   }
 
   stats(): ClientStats {
@@ -832,6 +879,8 @@ export class SpClient implements GameClient {
     this.unsubs.length = 0;
     this.audio?.dispose();
     this.audio = null;
+    this.backend?.dispose();
+    this.backend = null;
     this.teardownLevel();
     this.inputCore?.dispose();
     this.inputCore = null;

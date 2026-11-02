@@ -184,6 +184,18 @@ lines: [{ speaker, key, defaultValue, durationMs }], then?: Output[] }`, fired b
   through the same seam (extend `SpContent`, additively). It mounts through
   `components/tf2-game/GameCanvas.tsx` with `game="hl2"` and `remoteAssets={false}` (the pause menu
   and Options then fetch no HL2 menu channel).
+- **Audio (H3.3):** `SpContent.createAudio?(ctx)` injects an `SpAudioBackend` (the sp-client forwards
+  every `SpEvent`, the listener pose and the volume settings). `lib/harmonic-game/audio/` is the
+  implementation: `recipes.ts` (the sound bank as pure seeded data) → `dsp.ts` (a deterministic PCM
+  renderer — chosen over per-sound `OfflineAudioContext` graphs because Web Audio's filters differ
+  between engines and a graph cannot be unit-tested or exported to WAV under Node) → `synth.ts`
+  (`AudioBuffer` cache; `renderOffline` pushes a buffer through a real `OfflineAudioContext` for the
+  smoke) → `player.ts` (voices, engine distance curve + PannerNode, bed crossfade, generative music).
+  `event-map.ts` maps the engine's sound names (the surface props' `stepleft`/`bulletimpact` already name
+  bank sounds) onto the bank, with a soft default; `events.ts` is the typed `HarmonicSoundEvent` bus
+  (`harmonicSounds.sfx(...)`, `{type:'area'}`, `{type:'music'}`) other WPs emit to. Dev hook:
+  `window.__harmonicAudio.debug()`. Smoke: `scripts/harmonic/audio-smoke.ts`; WAV export:
+  `scripts/harmonic/audio-export.ts`.
 - `components/harmonic-game/HarmonicPlayPage.tsx`: main menu (New game, Continue, Chapters,
   Options, Credits), loading screen, pause menu, HUD (health, cold, ammo, Tuner charge,
   subtitles). `AppShell` + `--app-*` tokens; one signal button per view.

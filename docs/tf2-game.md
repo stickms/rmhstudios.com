@@ -323,6 +323,11 @@ signal)` returns `{ bsp, manifest, hulls }`, `createAssets(level)` the `SpAssets
   `GAME_MAPS`. `features` (`audio`, `suitHud`, `saves`, all off for injected content) gate what the channels
   give HL2/Portal: the sound channel, the HEV-suit HUD state and the level-start saves in the HL2 localStorage
   slot. With `content` omitted every branch is the old one, so HL2 and Portal behave identically.
+  `content.createAudio?(ctx)` (optional, additive) injects an audio backend in place of the sound channel:
+  `ctx` is `{ map, settings, entityPosition(id) }`, the returned `SpAudioBackend` gets every `SpEvent`
+  (`onEvent`), the listener and a frame `update()` each frame, `setVolumes(settings.volume)`, `stopAll`,
+  `onVisibility`, `onLevel(map)` and `dispose`. Harmonic's synthesised sound bank
+  (`lib/harmonic-game/audio/`) plugs in here; HL2/Portal never set it.
   `GameCanvas` takes `remoteAssets={false}` for a game without asset channels: the pause menu and Options skip
   the menu-channel and HUD-base fetches (`menus/remote-assets.ts`). Harmonic (`lib/harmonic-game/client/`) compiles
   its levels in the browser and runs the `'hl2'` simulation; see `docs/plans/harmonic/architecture.md` §7.
