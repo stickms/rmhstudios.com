@@ -495,6 +495,7 @@ import { Route as ApiDunesdayAskRouteImport } from './routes/api/dunesday/ask'
 import { Route as ApiDunesdaySyncRouteImport } from './routes/api/dunesday/sync'
 import { Route as ApiElectionsIndexRouteImport } from './routes/api/elections/index'
 import { Route as ApiElectionsAskRouteImport } from './routes/api/elections/ask'
+import { Route as ApiElectionsMarketsRouteImport } from './routes/api/elections/markets'
 import { Route as ApiElectionsStreamsRouteImport } from './routes/api/elections/streams'
 import { Route as ApiElectionsSummaryRouteImport } from './routes/api/elections/summary'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api/email/unsubscribe'
@@ -3831,6 +3832,11 @@ const ApiElectionsIndexRoute = ApiElectionsIndexRouteImport.update({
 const ApiElectionsAskRoute = ApiElectionsAskRouteImport.update({
   id: '/api/elections/ask',
   path: '/api/elections/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsMarketsRoute = ApiElectionsMarketsRouteImport.update({
+  id: '/api/elections/markets',
+  path: '/api/elections/markets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiElectionsStreamsRoute = ApiElectionsStreamsRouteImport.update({
@@ -8970,6 +8976,7 @@ export interface FileRoutesByFullPath {
   '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
   '/api/elections/ask': typeof ApiElectionsAskRoute
+  '/api/elections/markets': typeof ApiElectionsMarketsRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
   '/api/elections/summary': typeof ApiElectionsSummaryRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
@@ -10323,6 +10330,7 @@ export interface FileRoutesByTo {
   '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
   '/api/elections/ask': typeof ApiElectionsAskRoute
+  '/api/elections/markets': typeof ApiElectionsMarketsRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
   '/api/elections/summary': typeof ApiElectionsSummaryRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
@@ -11705,6 +11713,7 @@ export interface FileRoutesById {
   '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
   '/api/elections/ask': typeof ApiElectionsAskRoute
+  '/api/elections/markets': typeof ApiElectionsMarketsRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
   '/api/elections/summary': typeof ApiElectionsSummaryRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
@@ -13087,6 +13096,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/ask'
     | '/api/dunesday/sync'
     | '/api/elections/ask'
+    | '/api/elections/markets'
     | '/api/elections/streams'
     | '/api/elections/summary'
     | '/api/email/unsubscribe'
@@ -14440,6 +14450,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/ask'
     | '/api/dunesday/sync'
     | '/api/elections/ask'
+    | '/api/elections/markets'
     | '/api/elections/streams'
     | '/api/elections/summary'
     | '/api/email/unsubscribe'
@@ -15821,6 +15832,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/ask'
     | '/api/dunesday/sync'
     | '/api/elections/ask'
+    | '/api/elections/markets'
     | '/api/elections/streams'
     | '/api/elections/summary'
     | '/api/email/unsubscribe'
@@ -16981,6 +16993,7 @@ export interface RootRouteChildren {
   ApiDunesdayAskRoute: typeof ApiDunesdayAskRoute
   ApiDunesdaySyncRoute: typeof ApiDunesdaySyncRouteWithChildren
   ApiElectionsAskRoute: typeof ApiElectionsAskRoute
+  ApiElectionsMarketsRoute: typeof ApiElectionsMarketsRoute
   ApiElectionsStreamsRoute: typeof ApiElectionsStreamsRoute
   ApiElectionsSummaryRoute: typeof ApiElectionsSummaryRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
@@ -21030,6 +21043,13 @@ declare module '@tanstack/react-router' {
       path: '/api/elections/ask'
       fullPath: '/api/elections/ask'
       preLoaderRoute: typeof ApiElectionsAskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/markets': {
+      id: '/api/elections/markets'
+      path: '/api/elections/markets'
+      fullPath: '/api/elections/markets'
+      preLoaderRoute: typeof ApiElectionsMarketsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/elections/streams': {
@@ -29804,6 +29824,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDunesdayAskRoute: ApiDunesdayAskRoute,
   ApiDunesdaySyncRoute: ApiDunesdaySyncRouteWithChildren,
   ApiElectionsAskRoute: ApiElectionsAskRoute,
+  ApiElectionsMarketsRoute: ApiElectionsMarketsRoute,
   ApiElectionsStreamsRoute: ApiElectionsStreamsRoute,
   ApiElectionsSummaryRoute: ApiElectionsSummaryRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
@@ -30460,12 +30481,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

@@ -17,6 +17,7 @@ import { AiDesk } from './AiDesk';
 import { ElectionChat } from './ElectionChat';
 import { WatchParty } from './WatchParty';
 import { ShareBar } from './ShareBar';
+import { MarketsPanel } from './MarketsPanel';
 import { timeAgo, useElectionData, useNow, useReveal } from './hooks';
 
 export interface ElectionsPageProps {
@@ -310,6 +311,19 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
           ) : (
             <div className="el-box el-skel" aria-busy />
           )}
+        </Section>
+        <Section
+          id="markets"
+          tone="yellow"
+          eyebrow={t('markets.eyebrow', { defaultValue: 'Put coins on it' })}
+          title={
+            <>
+              {t('markets.title1', { defaultValue: 'The' })} <em>{t('markets.title2', { defaultValue: 'markets' })}</em>
+            </>
+          }
+          lede={t('markets.lede', { defaultValue: 'Back your call with coins. Odds move with every trade.' })}
+        >
+          <MarketsPanel year={year} />
         </Section>
       </main>
 
