@@ -11,6 +11,18 @@
         height: 100%;
         background: #000;
       }
+      #hud {
+        position: fixed;
+        inset: 0;
+      }
+      .size-3\.5 {
+        width: 0.875rem;
+        height: 0.875rem;
+      }
+      .size-4 {
+        width: 1rem;
+        height: 1rem;
+      }
       #game {
         width: 100vw;
         height: 100vh;
@@ -20,6 +32,7 @@
   </head>
   <body>
     <canvas id="game"></canvas>
+    <div id="hud" class="harmonic-root harmonic-ui"></div>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

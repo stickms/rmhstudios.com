@@ -26,7 +26,16 @@ export interface HarmonicHudState {
   tuner?: { charge: number; max: number; listening: boolean };
   layer?: 'past' | 'present';
   hint?: { key: string; defaultValue: string } | null;
-  subtitles: { speaker: string; key: string; defaultValue: string; until: number }[];
+  subtitles: {
+    /** English display name (fallback); the HUD translates `speakerId`. */
+    speaker: string;
+    speakerId?: string;
+    /** `radio` lines get the radio mark. */
+    channel?: 'radio' | 'voice';
+    key: string;
+    defaultValue: string;
+    until: number;
+  }[];
   dead: boolean;
 }
 

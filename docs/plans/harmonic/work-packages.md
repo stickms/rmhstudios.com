@@ -149,6 +149,24 @@ harmonic-client.ts`; `components/harmonic-game/HarmonicPlayPage.tsx` (New game â
   pause-aware. **Done when:** a level's I/O starts a script; subtitles show in order; keys
   extracted by `pnpm i18n:extract`.
 - **Deps:** H1.4.
+- **As built (H3.1).** `lib/harmonic-game/narrative/`: `DialogueScript { id, lines, then?, once? }`,
+  `DialogueLine { speaker, key, defaultValue, durationMs?, channel?: 'radio'|'voice' }`
+  (`types.ts`); builders `say()` / `radio()` (`speakers.ts`); registry `findScript(id)` /
+  `ALL_SCRIPTS` (`scripts/index.ts`; add `scripts/ch<N>.ts` there); `DialogueRunner(clock)` with
+  `start(script, { source?, interrupt? })`, `cancel(idOrSource?)`, `skip()`, `tick()`, `current()`,
+  `hasPlayed(id)`, `reset()`, `on(listener)` (`runner.ts`); per-world `attachNarrative(world)` /
+  `getNarrative(world)` â†’ `NarrativeService { runner, showHint(owner,key,default), hideHint(owner),
+readHud(hudNow), reset() }`. Entities (`import '.../narrative'` registers them):
+  `harmonic_dialogue` (key `script`, `interrupt`; inputs `Start`, `Cancel`; outputs `OnLine<N>`,
+  `OnFinished`, the script's `then` names, `OnCancelled`) and `harmonic_hint` (keys `hintkey`,
+  `hinttext`, `duration`; inputs `ShowHint`, `HideHint`). The service is attached lazily by those
+  entities and ticked from their think, so `sim/index.ts` is untouched; the HUD slice is merged by
+  `applyNarrativeHud` in `harmonicContent().hud`. Time is `world.curtime` (stops while paused);
+  subtitle `until` = HUD now + sim time left. `+use` skips a line after 0.4 s (no options key yet).
+  Radio lines emit `radio.click` + `radio.static` on the audio bus. HUD subtitles gained optional
+  `speakerId` / `channel`; speaker colours are `--harmonic-speaker-<id>` tokens. Keys `dev.*`,
+  `speaker_*`, `hud_radio` are in `locales/en/harmonic.json` by hand; `narrative.test.ts` checks every
+  script key against it. Browser check: `scripts/harmonic/dialogue-smoke.ts` (harness `?hud=1`).
 
 ### H3.2 Chapter flags and endings framework
 
