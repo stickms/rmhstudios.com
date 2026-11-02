@@ -18,6 +18,7 @@ import { createProceduralTextureCache } from '../assets/texture-cache';
 import { HARMONIC_LEVELS, findHarmonicLevel } from '../levels';
 import { attachHarmonicSim } from '../sim';
 import { onPhaseLevelReady } from './phase-view';
+import { createHarmonicAudio } from '../audio/player';
 
 export type HarmonicClientOptions = Omit<
   SpClientOptions,
@@ -52,10 +53,11 @@ export function harmonicContent(): SpContent {
         maxSize: core.plan.maxTextureSize,
         anisotropy: core.plan.anisotropy,
       }),
-    // Nothing from the HL2/Portal channels: no sound channel yet (H3.3), no suit HUD (H1.4),
-    // and no write to the HL2 save slot.
+    // Nothing from the HL2/Portal channels: no suit HUD (H1.4) and no write to the HL2 save slot.
+    // Sound is Harmonic's own synthesised bank, injected through `createAudio` (H3.3).
     features: { audio: false, suitHud: false, saves: false },
     onLevelReady: (ctx) => onPhaseLevelReady(ctx),
+    createAudio: createHarmonicAudio,
   };
 }
 

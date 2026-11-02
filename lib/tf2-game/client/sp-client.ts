@@ -114,6 +114,38 @@ export interface SpContent {
    * runs when the level is torn down. Absent = nothing (HL2/Portal never set it).
    */
   onLevelReady?(ctx: { sim: SpWorld; world: WorldRenderer }): (() => void) | void;
+  /**
+   * An injected audio backend in place of the HL2/Portal sound channel (`features.audio` stays
+   * false for such content). Optional and additive: absent, nothing changes. Harmonic's synthesised
+   * sound bank plugs in here (`lib/harmonic-game/audio/`).
+   */
+  createAudio?(ctx: SpAudioContext): SpAudioBackend | null;
+}
+
+/** What the client hands an injected audio backend when it is created. */
+export interface SpAudioContext {
+  /** The level being loaded (`changelevel` makes a new backend). */
+  map: string;
+  settings: GameSettings;
+  /** An entity's current (interpolated) position, or null when unknown. */
+  entityPosition(entity: number): Vec3 | null;
+}
+
+/** An injected audio backend. The client forwards every simulation event and the listener each frame. */
+export interface SpAudioBackend {
+  /** Unlock on the first gesture / suspend while hidden; returns the detach function. */
+  attach(): () => void;
+  /** Every `SpEvent` the simulation emits (sounds, pickups, death, effects…). */
+  onEvent(ev: SpEvent): void;
+  setListener(origin: Vec3, angles: Vec3): void;
+  /** Once per frame, after `setListener`. */
+  update(): void;
+  setVolumes(volume: GameSettings['volume']): void;
+  stopAll(): void;
+  onVisibility?(visible: boolean): void;
+  /** A level (re)loaded: `changelevel`, `retry`. The first level is `SpAudioContext.map`. */
+  onLevel?(map: string): void;
+  dispose(): void;
 }
 
 export interface SpClientOptions extends ClientMount {
@@ -147,6 +179,8 @@ export class SpClient implements GameClient {
   private inputCore: InputCore | null = null;
   private loop: GameLoop | null = null;
   private audio: AudioEngine | null = null;
+  /** The content's own audio backend (`SpContent.createAudio`), when it injects one. */
+  private backend: SpAudioBackend | null = null;
   private sim: SpWorld | null = null;
   private world: WorldRenderer | null = null;
   private contentDispose: (() => void) | null = null;
@@ -176,7 +210,14 @@ export class SpClient implements GameClient {
   private lastButtons = 0;
   private lastFired: 'blue' | 'orange' | null = null;
   private firedThisFrame = false;
-  private fade: { color: [number, number, number, number]; start: number; duration: number; hold: number; fadeIn: boolean; stayOut: boolean } | null = null;
+  private fade: {
+    color: [number, number, number, number];
+    start: number;
+    duration: number;
+    hold: number;
+    fadeIn: boolean;
+    stayOut: boolean;
+  } | null = null;
   private shakes: Shake[] = [];
   private checkpoints = 0;
   private hint = '';
@@ -196,10 +237,14 @@ export class SpClient implements GameClient {
     this.mapName = opts.map;
     this.transition = opts.transition ?? null;
     this.fov = new FovState(opts.settings.fov);
-    this.progress = new ProgressTracker((p) => opts.callbacks.onProgress?.(p), opts.content && !opts.content.features?.audio ? ['connect', 'sounds'] : ['connect']);
+    this.progress = new ProgressTracker(
+      (p) => opts.callbacks.onProgress?.(p),
+      opts.content && !opts.content.features?.audio ? ['connect', 'sounds'] : ['connect'],
+    );
     this.spConsole = new SpServerConsole(opts.game, {
       print: (text, level) => this.console?.console.print(text, level),
-      cvar: (name, value) => this.console?.serverEvent({ type: 'cvar', name, value } as { type: string }),
+      cvar: (name, value) =>
+        this.console?.serverEvent({ type: 'cvar', name, value } as { type: string }),
       maps: () => this.mapList().map((m) => m.name),
       changeLevel: (map) => this.consoleChangeLevel(map),
       setViewAngles: (a) => {
@@ -227,20 +272,52 @@ export class SpClient implements GameClient {
     this.started = true;
     try {
       this.core = new RenderCore(this.opts.canvas, this.settings, () =>
-        this.fail(new ClientFailure({ code: 'context-lost', detail: 'WebGL context lost', retryable: true })),
+        this.fail(
+          new ClientFailure({
+            code: 'context-lost',
+            detail: 'WebGL context lost',
+            retryable: true,
+          }),
+        ),
       );
-      this.inputCore = new InputCore(this.opts.inputTarget, this.game, () => this.settings, (l) => this.opts.callbacks.onLockChange?.(l), this.opts.input);
+      this.inputCore = new InputCore(
+        this.opts.inputTarget,
+        this.game,
+        () => this.settings,
+        (l) => this.opts.callbacks.onLockChange?.(l),
+        this.opts.input,
+      );
       const audio = this.feature('audio')
-        ? createAudio(this.game as GameId, this.settings, (id) => this.entityPos.get(id) ?? null, this.occlusion)
+        ? createAudio(
+            this.game as GameId,
+            this.settings,
+            (id) => this.entityPos.get(id) ?? null,
+            this.occlusion,
+          )
         : null;
       this.audio = audio;
+      this.backend =
+        this.opts.content?.createAudio?.({
+          map: this.mapName,
+          settings: this.settings,
+          entityPosition: (id) => this.entityPos.get(id) ?? null,
+        }) ?? null;
+      if (this.backend) this.unsubs.push(this.backend.attach());
       if (audio) {
         this.unsubs.push(audio.attach());
         this.unsubs.push(
           audio.onCaption((c) => {
             if (!this.settings.captions) return;
             const st = captionStyle(c.text);
-            this.log.pushCaption({ text: c.text.replace(/<[^>]+>/g, ''), color: c.color ?? st.color, sfx: c.sfx || st.sfx, duration: c.duration }, this.clientNow + c.delay);
+            this.log.pushCaption(
+              {
+                text: c.text.replace(/<[^>]+>/g, ''),
+                color: c.color ?? st.color,
+                sfx: c.sfx || st.sfx,
+                duration: c.duration,
+              },
+              this.clientNow + c.delay,
+            );
           }),
         );
       }
@@ -249,7 +326,8 @@ export class SpClient implements GameClient {
         authority: () => 'sp',
         stats: () => this.stats(),
         canvas: () => this.opts.canvas,
-        hudRoot: () => this.opts.canvas.parentElement?.querySelector<HTMLElement>('.tf2g-hud') ?? null,
+        hudRoot: () =>
+          this.opts.canvas.parentElement?.querySelector<HTMLElement>('.tf2g-hud') ?? null,
         // ent_fire completes from the world itself (the single-player client runs it).
         entityIndex: () => (this.sim ? indexFromEntities(this.sim.entities) : null),
         mapName: () => this.mapName,
@@ -260,7 +338,13 @@ export class SpClient implements GameClient {
         },
         position: () => {
           const p = this.sim?.player;
-          return p ? { origin: { ...p.origin }, angles: { ...this.viewAngles }, velocity: { ...p.velocity } } : null;
+          return p
+            ? {
+                origin: { ...p.origin },
+                angles: { ...this.viewAngles },
+                velocity: { ...p.velocity },
+              }
+            : null;
         },
         retry: () => void this.consoleChangeLevel(this.mapName),
       });
@@ -299,7 +383,9 @@ export class SpClient implements GameClient {
     const content = this.opts.content;
     const pkg: SpLevelData = content
       ? await content.loadLevel(map, this.progress, this.abort.signal)
-      : await loadMapPackageForClient(this.game, map, this.progress, this.abort.signal, { collision: false });
+      : await loadMapPackageForClient(this.game, map, this.progress, this.abort.signal, {
+          collision: false,
+        });
     if (this.disposed) return;
     this.progress.begin('models');
     const assets = content
@@ -330,10 +416,14 @@ export class SpClient implements GameClient {
     this.sim = sim;
     this.spConsole.bind(sim);
     this.mapName = map;
+    this.backend?.onLevel?.(map);
     this.transition = transition;
     this.progress.finish('world');
     const textures = content ? content.createTextures(core) : core.textureCache(this.game);
-    const models = new ModelLibrary({ url: (p) => gameAssetUrl(p, this.game), loader: new Tf2GLTFLoader() });
+    const models = new ModelLibrary({
+      url: (p) => gameAssetUrl(p, this.game),
+      loader: new Tf2GLTFLoader(),
+    });
     this.progress.begin('textures');
     const world = new WorldRenderer({
       bsp: pkg.bsp,
@@ -344,7 +434,13 @@ export class SpClient implements GameClient {
       sunVisible: (p) => {
         const s = this.world?.sun;
         if (!s || !this.sim) return false;
-        this.sim.mapCollision.traceLine(p, { x: p.x + s.dir[0] * 16384, y: p.y + s.dir[1] * 16384, z: p.z + s.dir[2] * 16384 }, MASK_OPAQUE, null, sunTrace);
+        this.sim.mapCollision.traceLine(
+          p,
+          { x: p.x + s.dir[0] * 16384, y: p.y + s.dir[1] * 16384, z: p.z + s.dir[2] * 16384 },
+          MASK_OPAQUE,
+          null,
+          sunTrace,
+        );
         return sunTrace.fraction >= 1 || (sunTrace.surfaceFlags & SURF_SKY) !== 0;
       },
     });
@@ -407,6 +503,7 @@ export class SpClient implements GameClient {
     this.sim = null;
     this.brushCache.clear();
     this.audio?.stopAll();
+    this.backend?.stopAll();
   }
 
   private startLoop(): void {
@@ -416,7 +513,10 @@ export class SpClient implements GameClient {
     this.loop ??= new GameLoop(
       (f) => this.frame(f),
       undefined,
-      (p) => this.audio?.onVisibility(p),
+      (p) => {
+        this.audio?.onVisibility(p);
+        this.backend?.onVisibility?.(p);
+      },
     );
     this.loop.start();
     this.opts.callbacks.onPhase?.('running');
@@ -467,7 +567,11 @@ export class SpClient implements GameClient {
     }
     if (!this.paused) {
       // Any zoom that narrows the view FOV (env_zoom) slows the look with the FOV in use (CHud::Think).
-      input.lookScale = zoomSensitivityScale(this.fov.current(this.clientNow), this.settings.fov, this.settings.zoomSensitivityRatio);
+      input.lookScale = zoomSensitivityScale(
+        this.fov.current(this.clientNow),
+        this.settings.fov,
+        this.settings.zoomSensitivityRatio,
+      );
       applyLook(input, this.viewAngles, this.settings);
     }
     input.mouseDx = input.mouseDy = input.lookYaw = input.lookPitch = 0;
@@ -489,7 +593,9 @@ export class SpClient implements GameClient {
     const n = this.paused ? 0 : this.ticks.advance(dt * this.spConsole.timescale);
     const t0 = performance.now();
     for (let i = 0; i < n && this.sim === sim; i++) {
-      const cmd: SpUserCmd = buildUserCmd(input, this.viewAngles, this.settings, undefined, { tickCount: sim.tickCount + 1 });
+      const cmd: SpUserCmd = buildUserCmd(input, this.viewAngles, this.settings, undefined, {
+        tickCount: sim.tickCount + 1,
+      });
       cmd.impulse = this.impulse;
       this.impulse = 0;
       this.prevOrigin.x = this.curOrigin.x;
@@ -508,13 +614,23 @@ export class SpClient implements GameClient {
     const snap = this.snap;
     if (!snap) return;
     // A teleport (portal, landmark) must not be interpolated across.
-    if (Math.hypot(this.curOrigin.x - this.prevOrigin.x, this.curOrigin.y - this.prevOrigin.y, this.curOrigin.z - this.prevOrigin.z) > 64) {
+    if (
+      Math.hypot(
+        this.curOrigin.x - this.prevOrigin.x,
+        this.curOrigin.y - this.prevOrigin.y,
+        this.curOrigin.z - this.prevOrigin.z,
+      ) > 64
+    ) {
       this.prevOrigin.x = this.curOrigin.x;
       this.prevOrigin.y = this.curOrigin.y;
       this.prevOrigin.z = this.curOrigin.z;
     }
     // Angles changed by the world (a portal turns you; a level start): follow them.
-    if (n > 0 && (Math.abs(angleDelta(sim.player.eyeAngles.y, this.viewAngles.y)) > 0.5 || Math.abs(sim.player.eyeAngles.x - this.viewAngles.x) > 0.5)) {
+    if (
+      n > 0 &&
+      (Math.abs(angleDelta(sim.player.eyeAngles.y, this.viewAngles.y)) > 0.5 ||
+        Math.abs(sim.player.eyeAngles.x - this.viewAngles.x) > 0.5)
+    ) {
       this.viewAngles.x = sim.player.eyeAngles.x;
       this.viewAngles.y = sim.player.eyeAngles.y;
     }
@@ -583,14 +699,34 @@ export class SpClient implements GameClient {
       });
     }
     const ents = this.ents;
-    ents.beginFrame({ time: snap.curtime, dt, localPlayer: -1, localTeam: 0, firstPerson: true, camera: cam.camera });
+    ents.beginFrame({
+      time: snap.curtime,
+      dt,
+      localPlayer: -1,
+      localTeam: 0,
+      firstPerson: true,
+      camera: cam.camera,
+    });
     ents.sync(states);
     ents.endFrame();
     if (this.gun) {
       // weapon_portalgun sends ACT_VM_PRIMARYATTACK for either portal; prefer a secondary one if the model has it.
-      if (this.firedThisFrame) this.gun.play(...(this.lastFired === 'orange' ? ['ACT_VM_SECONDARYATTACK'] : []), 'ACT_VM_PRIMARYATTACK');
+      if (this.firedThisFrame)
+        this.gun.play(
+          ...(this.lastFired === 'orange' ? ['ACT_VM_SECONDARYATTACK'] : []),
+          'ACT_VM_PRIMARYATTACK',
+        );
       this.gun.update(
-        { eyeOrigin: view.origin, eyeAngles: view.angles, velocity: p.velocity, visible: !!p.portalgun && !p.dead && !snap.view && (this.console?.console.drawViewModel.bool ?? true) },
+        {
+          eyeOrigin: view.origin,
+          eyeAngles: view.angles,
+          velocity: p.velocity,
+          visible:
+            !!p.portalgun &&
+            !p.dead &&
+            !snap.view &&
+            (this.console?.console.drawViewModel.bool ?? true),
+        },
         ents.context,
       );
     }
@@ -612,8 +748,13 @@ export class SpClient implements GameClient {
     if (this.audio) {
       this.audio.setLocalEntity(1);
       this.audio.setListener(view.origin, view.angles);
-      if (snap.soundscape && snap.soundscape !== this.audio.currentSoundscape) this.audio.setSoundscape(snap.soundscape);
+      if (snap.soundscape && snap.soundscape !== this.audio.currentSoundscape)
+        this.audio.setSoundscape(snap.soundscape);
       this.audio.update();
+    }
+    if (this.backend) {
+      this.backend.setListener(view.origin, view.angles);
+      this.backend.update();
     }
 
     // HUD.
@@ -663,6 +804,7 @@ export class SpClient implements GameClient {
   }
 
   private onEvent(ev: SpEvent): void {
+    this.backend?.onEvent(ev);
     switch (ev.type) {
       case 'sound':
         if (ev.setVolume !== undefined) break;
@@ -676,25 +818,53 @@ export class SpClient implements GameClient {
           loop: ev.loop,
           // ambient_generic's radius is a raw wave's level (a script entry keeps its own).
           soundlevel:
-            ev.radius !== undefined && /\.(wav|mp3|ogg)$/i.test(ev.name) ? soundlevelForRadius(ev.radius) : undefined,
+            ev.radius !== undefined && /\.(wav|mp3|ogg)$/i.test(ev.name)
+              ? soundlevelForRadius(ev.radius)
+              : undefined,
         });
         break;
       case 'caption':
         if (this.settings.captions) {
           const st = captionStyle(ev.text);
-          this.log.pushCaption({ text: ev.text.replace(/<[^>]+>/g, ''), color: st.color, sfx: st.sfx, duration: ev.duration }, this.clientNow);
+          this.log.pushCaption(
+            {
+              text: ev.text.replace(/<[^>]+>/g, ''),
+              color: st.color,
+              sfx: st.sfx,
+              duration: ev.duration,
+            },
+            this.clientNow,
+          );
         }
         break;
       case 'fade':
-        this.fade = { color: ev.color, start: this.clientNow, duration: ev.duration, hold: ev.hold, fadeIn: ev.fadeIn, stayOut: ev.stayOut };
+        this.fade = {
+          color: ev.color,
+          start: this.clientNow,
+          duration: ev.duration,
+          hold: ev.hold,
+          fadeIn: ev.fadeIn,
+          stayOut: ev.stayOut,
+        };
         break;
       case 'shake':
         if (ev.stop) this.shakes = [];
-        else this.shakes.push({ amplitude: ev.amplitude, frequency: ev.frequency, duration: Math.max(0.05, ev.duration), at: this.clientNow });
+        else
+          this.shakes.push({
+            amplitude: ev.amplitude,
+            frequency: ev.frequency,
+            duration: Math.max(0.05, ev.duration),
+            at: this.clientNow,
+          });
         break;
       case 'message':
       case 'gametext':
-        this.log.pushCenter(ev.type === 'message' ? ev.message : ev.text, 'text', 4, this.clientNow);
+        this.log.pushCenter(
+          ev.type === 'message' ? ev.message : ev.text,
+          'text',
+          4,
+          this.clientNow,
+        );
         break;
       case 'hudhint':
         this.hint = ev.show ? ev.message : '';
@@ -704,7 +874,8 @@ export class SpClient implements GameClient {
         break;
       case 'autosave':
         this.checkpoints++;
-        if (this.feature('saves')) writeSave(makeSave(this.game, this.mapName, this.transition, this.checkpoints));
+        if (this.feature('saves'))
+          writeSave(makeSave(this.game, this.mapName, this.transition, this.checkpoints));
         break;
       case 'changelevel':
         this.changeLevel(ev.map, ev.transition);
@@ -728,7 +899,12 @@ export class SpClient implements GameClient {
       // From the colour to clear.
       alpha = t < f.hold ? max : max * Math.max(0, 1 - (t - f.hold) / Math.max(0.01, f.duration));
     } else {
-      alpha = t < f.duration ? (max * t) / Math.max(0.01, f.duration) : f.stayOut || t < f.duration + f.hold ? max : 0;
+      alpha =
+        t < f.duration
+          ? (max * t) / Math.max(0.01, f.duration)
+          : f.stayOut || t < f.duration + f.hold
+            ? max
+            : 0;
     }
     if (alpha <= 0.001 && t > f.duration + f.hold) {
       this.fade = null;
@@ -772,7 +948,14 @@ export class SpClient implements GameClient {
     }
     state.fade = this.fadeState();
     this.log.apply(state, this.clientNow);
-    if (this.hint) state.center.unshift({ id: -1, at: this.clientNow, duration: 1, text: this.hint, kind: 'training' });
+    if (this.hint)
+      state.center.unshift({
+        id: -1,
+        at: this.clientNow,
+        duration: 1,
+        text: this.hint,
+        kind: 'training',
+      });
     this.store.publish(state);
   }
 
@@ -790,6 +973,7 @@ export class SpClient implements GameClient {
     this.settings = s;
     this.fov.setDefault(s.fov);
     if (this.audio) applyVolumes(this.audio, s);
+    this.backend?.setVolumes(s.volume);
   }
 
   stats(): ClientStats {
@@ -814,10 +998,19 @@ export class SpClient implements GameClient {
       tick: this.snap?.tick ?? 0,
       origin: p ? { ...p.origin } : null,
       health: p?.health ?? 0,
-      portals: this.snap?.portals.map((x) => ({ which: x.which, open: x.open, linked: x.linked })) ?? [],
+      portals:
+        this.snap?.portals.map((x) => ({ which: x.which, open: x.open, linked: x.linked })) ?? [],
       portalViews: this.portals?.views ?? 0,
       viewControl: this.snap?.view?.entity ?? null,
-      fade: this.fade ? { color: this.fade.color, fadeIn: this.fade.fadeIn, stayOut: this.fade.stayOut, at: this.fade.start, now: this.clientNow } : null,
+      fade: this.fade
+        ? {
+            color: this.fade.color,
+            fadeIn: this.fade.fadeIn,
+            stayOut: this.fade.stayOut,
+            at: this.fade.start,
+            now: this.clientNow,
+          }
+        : null,
       paused: this.paused,
       stats: this.stats(),
     };
@@ -827,7 +1020,13 @@ export class SpClient implements GameClient {
     if (this.disposed) return;
     if ((e as { name?: string })?.name === 'AbortError') return;
     const info =
-      e instanceof ClientFailure ? e.info : { code: 'unknown' as const, detail: e instanceof Error ? e.message : String(e), retryable: true };
+      e instanceof ClientFailure
+        ? e.info
+        : {
+            code: 'unknown' as const,
+            detail: e instanceof Error ? e.message : String(e),
+            retryable: true,
+          };
     console.error('[sp client]', info.code, info.detail, e);
     this.running = false;
     this.loop?.stop();
@@ -845,6 +1044,8 @@ export class SpClient implements GameClient {
     this.unsubs.length = 0;
     this.audio?.dispose();
     this.audio = null;
+    this.backend?.dispose();
+    this.backend = null;
     this.teardownLevel();
     this.inputCore?.dispose();
     this.inputCore = null;

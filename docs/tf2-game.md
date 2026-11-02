@@ -328,6 +328,11 @@ signal)` returns `{ bsp, manifest, hulls }`, `createAssets(level)` the `SpAssets
   `WorldRenderer.setModelVisibility(modelIndex, 'normal' | 'hidden' | 'ghost')` is an additive per-brush-model
   draw mode on top of `setVisible`: `ghost` draws every face in one shared translucent additive cold material
   (no lightmap, no depth write); default `normal` leaves every existing model unchanged.
+  `content.createAudio?(ctx)` (optional, additive) injects an audio backend in place of the sound channel:
+  `ctx` is `{ map, settings, entityPosition(id) }`, the returned `SpAudioBackend` gets every `SpEvent`
+  (`onEvent`), the listener and a frame `update()` each frame, `setVolumes(settings.volume)`, `stopAll`,
+  `onVisibility`, `onLevel(map)` and `dispose`. Harmonic's synthesised sound bank
+  (`lib/harmonic-game/audio/`) plugs in here; HL2/Portal never set it.
   `GameCanvas` takes `remoteAssets={false}` for a game without asset channels: the pause menu and Options skip
   the menu-channel and HUD-base fetches (`menus/remote-assets.ts`). Harmonic (`lib/harmonic-game/client/`) compiles
   its levels in the browser and runs the `'hl2'` simulation; see `docs/plans/harmonic/architecture.md` §7.

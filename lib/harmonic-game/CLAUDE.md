@@ -23,7 +23,7 @@ the spec is wrong.
 | `assets/`    | Procedural textures, materials, models, the `SpAssets` implementation.  |
 | `sim/`       | Harmonic-only entities and services: weapons, damage, phase, enemies.   |
 | `narrative/` | Dialogue/subtitle runner, radio, chapter flags, endings.                |
-| `audio/`     | WebAudio synthesis: SFX, ambient beds, music layers.                    |
+| `audio/`     | Synthesised sound bank (`recipes`→`dsp`→`synth`), beds, music, `HarmonicSoundEvent` bus (`events.ts`), `player.ts`. |
 | `client/`    | Client wiring, view model renderer, HUD adapter, save slots.            |
 
 React lives in `components/harmonic-game/`, the route in `app/routes/harmonic.tsx`,
