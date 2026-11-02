@@ -136,6 +136,9 @@ harmonic-client.ts`; `components/harmonic-game/HarmonicPlayPage.tsx` (New game �
 
 - Shift (tagged object/doorway layer flip, charge cost), Listen (overlay), charge regen,
   pulling Unstrung into layer. **Done when:** tests for each; puzzle room in dev level.
+- **Also verify H2.1's ghost render in a browser** (never seen yet: a 2026-11-02 console-driven
+  check at `/harmonic?level=dev_phase` faced a wall with no layered brush in view). Spawn facing the
+  past-only wall, listen, screenshot both states, and fix the ghost material if it does not read.
 - **Deps:** H2.1, H1.3.
 
 ## Phase 3 — Narrative and audio (→ M1)
