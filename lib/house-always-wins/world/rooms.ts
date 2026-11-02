@@ -301,7 +301,10 @@ export const ROOMS: Record<RoomId, RoomData> = {
     ],
     npcs: [],
     entities: [
-      { kind: "save", id: "maintSave", col: 8, row: 23 },
+      // On top of the ### block, NOT on the exit door's tile (col 8): the door loop in
+      // WorldScene runs first and swallows E, so a save point sharing the door's tile
+      // could never be used (pressing E at it left the shaft instead).
+      { kind: "save", id: "maintSave", col: 10, row: 23 },
       { kind: "chip", id: "mc1", col: 5, row: 6 },
       { kind: "chip", id: "mc2", col: 11, row: 12 },
       { kind: "chip", id: "mc3", col: 4, row: 18 },
