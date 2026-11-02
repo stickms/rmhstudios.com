@@ -8,7 +8,8 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { Snowflake, Waves } from 'lucide-react';
+import type { TFunction } from 'i18next';
+import { Radio, Snowflake, Waves } from 'lucide-react';
 import type { HarmonicHudState } from '@/lib/harmonic-game/client/hud-state';
 import type { SubtitleSize } from '@/lib/harmonic-game/client/prefs';
 
@@ -37,6 +38,26 @@ function Meter({
       <span style={{ width: `${pct}%` }} />
     </div>
   );
+}
+
+/** Speaker display names: literal t() calls so extraction sees every key. */
+function speakerLabel(t: TFunction, id: string | undefined, fallback: string): string {
+  switch (id) {
+    case 'ines':
+      return t('harmonic:speaker_ines', { defaultValue: 'Ines' });
+    case 'odile':
+      return t('harmonic:speaker_odile', { defaultValue: 'Odile' });
+    case 'sana':
+      return t('harmonic:speaker_sana', { defaultValue: 'Sana' });
+    case 'voss':
+      return t('harmonic:speaker_voss', { defaultValue: 'Voss' });
+    case 'lind':
+      return t('harmonic:speaker_lind', { defaultValue: 'Lind' });
+    case 'pavel':
+      return t('harmonic:speaker_pavel', { defaultValue: 'Pavel' });
+    default:
+      return fallback;
+  }
 }
 
 export default function HarmonicHud({
@@ -162,10 +183,23 @@ export default function HarmonicHud({
         >
           {lines.map((s) => (
             <p
-              key={`${s.speaker}:${s.key}:${s.until}`}
+              key={`${s.speakerId ?? s.speaker}:${s.key}`}
               className="harmonic-hud-panel harmonic-hud-subtitle"
+              data-speaker={s.speakerId}
+              data-channel={s.channel}
             >
-              {s.speaker ? <b>{s.speaker}: </b> : null}
+              {s.speaker ? (
+                <b>
+                  {s.channel === 'radio' ? (
+                    <Radio
+                      className="harmonic-hud-radio-glyph size-3.5"
+                      aria-label={t('harmonic:hud_radio', { defaultValue: 'Radio' })}
+                      role="img"
+                    />
+                  ) : null}
+                  {speakerLabel(t, s.speakerId, s.speaker)}:{' '}
+                </b>
+              ) : null}
               {t(s.key, { defaultValue: s.defaultValue })}
             </p>
           ))}

@@ -186,9 +186,10 @@ search`), line-of-sight with traceLine, movement with the engine's `SpPlayer`-st
 
 ## 6. Narrative (H3)
 
-- `narrative/script.ts`: chapter scripts as data — `{ id, trigger: 'output' | 'enter',
-lines: [{ speaker, key, defaultValue, durationMs }], then?: Output[] }`, fired by an
-  `harmonic_dialogue` point entity's `Start` input so levels drive them with plain I/O.
+- `narrative/types.ts` + `scripts/ch<N>.ts`: chapter scripts as data — `{ id, lines: [{ speaker, key,
+defaultValue, durationMs?, channel? }], then?: string[] (output names), once? }`, started by a
+  `harmonic_dialogue` point entity's `Start` input so levels drive them with plain I/O (no
+  `trigger` field: the level's I/O is the trigger). Runner, radio and hints: work-packages H3.1.
 - Subtitles render in the HUD. Every line is `t('harmonic:ch4.workshop.03', { defaultValue })`;
   keys are stable forever (changing a shipped English line = new key, repo `CLAUDE.md` §5a).
 - Chapter flags (`sanaHelped`, `vossSpared`, `ending`) live in the save; endings read them.

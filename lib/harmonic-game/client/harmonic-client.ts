@@ -20,6 +20,8 @@ import { HARMONIC_LEVELS, findHarmonicLevel } from '../levels';
 import { attachHarmonicSim } from '../sim';
 import { onPhaseLevelReady } from './phase-view';
 import { createHarmonicAudio } from '../audio/player';
+import type { SpWorld } from '../../sp-game/world/sp-world';
+import { applyNarrativeHud } from '../narrative';
 import { readHudState } from './hud-state';
 import { saveLevelStart } from './save';
 
@@ -33,6 +35,7 @@ export type HarmonicClientOptions = Omit<
 
 /** The content seam for Harmonic: no network, no game install. */
 export function harmonicContent(): SpContent {
+  let world: SpWorld | null = null; // the current level's sim, for the narrative HUD slice
   return {
     maps: HARMONIC_LEVELS.map((l) => ({ name: l.id, title: l.titleDefault })),
     async loadLevel(map, progress) {
@@ -50,7 +53,10 @@ export function harmonicContent(): SpContent {
       };
     },
     createAssets: async () => createHarmonicAssets(),
-    attachWorld: attachHarmonicSim,
+    attachWorld: (w) => {
+      world = w;
+      return attachHarmonicSim(w);
+    },
     createTextures: (core) =>
       createProceduralTextureCache({
         renderer: core.renderer,
@@ -65,7 +71,7 @@ export function harmonicContent(): SpContent {
     features: { audio: false, suitHud: false, saves: false },
     onLevelReady: (ctx) => onPhaseLevelReady(ctx),
     createAudio: createHarmonicAudio,
-    hud: (snap) => readHudState(snap),
+    hud: (snap, now) => applyNarrativeHud(readHudState(snap), world, now),
   };
 }
 
