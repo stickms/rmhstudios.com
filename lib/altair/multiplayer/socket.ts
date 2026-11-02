@@ -107,7 +107,7 @@ async function connectToAltairInner(): Promise<Socket> {
 
   // ── Game lifecycle ────────────────────────────────────────────
 
-  socket.on(S2C.GAME_COUNTDOWN, (data: { seconds: number }) => {
+  socket.on(S2C.GAME_COUNTDOWN, (data: { seconds: number | null }) => {
     useAltairMultiplayerStore.getState().setCountdown(data.seconds);
   });
 

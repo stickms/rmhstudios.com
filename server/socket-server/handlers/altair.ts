@@ -3,11 +3,25 @@
  *
  * Manages lobbies, game coordination, state sync, and chat
  * for the Altair co-op multiplayer mode.
+ *
+ * Lobby state machine (see docs/altair-multiplayer.md):
+ *
+ *   WAITING --start--> COUNTDOWN --5s--> PLAYING --end--> RESULTS --15s--> WAITING
+ *      ^                   |  (a roster change cancels it)
+ *      +-------------------+
+ *
+ * Class choice and ready-up both happen in WAITING (LobbyWaiting). The
+ * CLASS_SELECT state exists in the shared type but is never entered: a
+ * separate class-select screen was the original plan and nothing ever drove
+ * it, so Start could not succeed.
  */
 
 import type { Server, Socket } from 'socket.io';
 import { generateRoomCode, sanitizeString } from '../utils';
 import { config } from '../config';
+import { CLASSES } from '../../../lib/altair/data/classes';
+
+const VALID_CLASS_IDS = new Set<string>(CLASSES.map((c) => c.id));
 
 // ── Event Constants ────────────────────────────────────────────────
 
@@ -251,8 +265,16 @@ function removePlayer(lobby: AltairLobby, userId: string): void {
   if (!player) return;
 
   const userName = player.userName;
+  const wasHost = lobby.hostUserId === userId;
+  const resultsIfHostLeft =
+    wasHost && lobby.state === 'PLAYING' ? buildCurrentResults(lobby, false) : null;
   lobby.players.delete(userId);
   userToLobby.delete(userId);
+  const grace = graceTimers.get(userId);
+  if (grace) {
+    clearTimeout(grace);
+    graceTimers.delete(userId);
+  }
 
   if (player.socketId) {
     const socket = ioRef.sockets.sockets.get(player.socketId);
@@ -274,9 +296,20 @@ function removePlayer(lobby: AltairLobby, userId: string): void {
   }
 
   addSystemChat(lobby.id, `${userName} left`);
-  broadcastFullSync(lobby);
+  if (lobby.state === 'COUNTDOWN') {
+    cancelCountdown(lobby, `${userName} left, countdown cancelled`);
+  } else {
+    broadcastFullSync(lobby);
+  }
 
   if (lobby.state === 'PLAYING') {
+    // The host client owns the simulation: without it there is no match to
+    // continue (the world cannot be rebuilt from a snapshot), so end the run
+    // cleanly for everyone and say why.
+    if (resultsIfHostLeft) {
+      endGame(lobby.id, { ...resultsIfHostLeft, endedReason: 'host_left' });
+      return;
+    }
     broadcastToLobby(lobby.id, S2C.GAME_PLAYER_LEFT, { userId });
   }
 }
@@ -322,15 +355,20 @@ function buildCurrentResults(lobby: AltairLobby, victory: boolean) {
   };
 }
 
-function endGame(lobbyId: string, results: ReturnType<typeof buildCurrentResults>): void {
+function endGame(
+  lobbyId: string,
+  results: ReturnType<typeof buildCurrentResults> & { endedReason?: 'host_left' },
+): void {
   const lobby = lobbies.get(lobbyId);
-  if (!lobby) return;
+  if (!lobby || lobby.state === 'RESULTS' || lobby.state === 'DISBANDED') return;
 
   lobby.state = 'RESULTS';
   broadcastToLobby(lobbyId, S2C.GAME_RESULTS, results);
+  // Clients route on lobby.state, so they must learn it changed to RESULTS.
+  broadcastFullSync(lobby);
 
   setTimeout(() => {
-    if (lobby.state !== 'RESULTS') return;
+    if (lobby.state !== 'RESULTS' || lobbies.get(lobbyId) !== lobby) return;
     lobby.state = 'WAITING';
     lobby.gameStartedAt = null;
     lobby.lastSnapshot = null;
@@ -343,33 +381,45 @@ function endGame(lobbyId: string, results: ReturnType<typeof buildCurrentResults
   }, 15000);
 }
 
-function attemptHostMigration(lobby: AltairLobby): void {
-  const remaining = [...lobby.players.values()]
-    .filter((p) => p.isConnected && p.userId !== lobby.hostUserId)
-    .sort((a, b) => a.joinedAt - b.joinedAt);
+/** Un-ready everyone (a roster or class change invalidates a ready check). */
+function unreadyAll(lobby: AltairLobby): void {
+  for (const [, p] of lobby.players) p.isReady = false;
+}
 
-  if (remaining.length === 0) {
-    endGame(lobby.id, buildCurrentResults(lobby, false));
-    return;
+/**
+ * Abort a running countdown and return to WAITING. A roster change (leave,
+ * kick, disconnect) during the countdown must not launch a match with a
+ * different party than the one that readied up.
+ */
+function cancelCountdown(lobby: AltairLobby, reason: string): void {
+  const timer = countdownTimers.get(lobby.id);
+  if (timer) {
+    clearInterval(timer);
+    countdownTimers.delete(lobby.id);
   }
-
-  const newHost = remaining[0];
-  lobby.hostUserId = newHost.userId;
-
-  if (lobby.lastSnapshot && newHost.socketId) {
-    const hostSocket = ioRef.sockets.sockets.get(newHost.socketId);
-    if (hostSocket) {
-      hostSocket.emit(S2C.GAME_EVENT, {
-        type: 'host_migration',
-        data: { lastSnapshot: lobby.lastSnapshot },
-        timestamp: Date.now(),
-      });
-    }
-  }
-
-  addSystemChat(lobby.id, `Host migrated to ${newHost.userName}`);
+  if (lobby.state !== 'COUNTDOWN') return;
+  lobby.state = 'WAITING';
+  unreadyAll(lobby);
+  addSystemChat(lobby.id, reason);
+  broadcastToLobby(lobby.id, S2C.GAME_COUNTDOWN, { seconds: null });
   broadcastFullSync(lobby);
 }
+
+/** TEST ONLY: drop all hub state between cases. */
+export function __resetAltairLobbies(): void {
+  for (const t of countdownTimers.values()) clearInterval(t);
+  for (const t of graceTimers.values()) clearTimeout(t);
+  countdownTimers.clear();
+  graceTimers.clear();
+  lobbies.clear();
+  userToLobby.clear();
+  if (gcInterval) {
+    clearInterval(gcInterval);
+    gcInterval = null;
+  }
+}
+
+export const ALTAIR_DISCONNECT_GRACE_MS = DISCONNECT_GRACE_MS;
 
 // ── Lobby Event Handlers ───────────────────────────────────────────
 
@@ -593,7 +643,11 @@ function onLobbyKick(io: Server, socket: Socket, payload: any): void {
   lobby.lastActivityAt = Date.now();
 
   addSystemChat(lobby.id, `${target.userName} was kicked`);
-  broadcastFullSync(lobby);
+  if (lobby.state === 'COUNTDOWN') {
+    cancelCountdown(lobby, 'A player was kicked, countdown cancelled');
+  } else {
+    broadcastFullSync(lobby);
+  }
 }
 
 function onLobbyTransferHost(io: Server, socket: Socket, payload: any): void {
@@ -642,10 +696,21 @@ function onClassSelect(io: Server, socket: Socket, payload: any): void {
   const player = lobby.players.get(userId);
   if (!player) return;
 
-  player.classId = typeof payload?.classId === 'string' ? payload.classId : null;
+  if (lobby.state !== 'WAITING' && lobby.state !== 'CLASS_SELECT') {
+    socket.emit(S2C.ERROR, { code: 'WRONG_STATE', message: 'Classes are locked once the countdown starts.' });
+    return;
+  }
+  const classId = payload?.classId;
+  if (typeof classId !== 'string' || !VALID_CLASS_IDS.has(classId)) {
+    socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Unknown class.' });
+    return;
+  }
+
+  player.classId = classId;
   player.isReady = false;
   lobby.lastActivityAt = Date.now();
   broadcastClassSelections(lobby);
+  broadcastFullSync(lobby);
 }
 
 function onClassReady(io: Server, socket: Socket, payload: any): void {
@@ -658,13 +723,19 @@ function onClassReady(io: Server, socket: Socket, payload: any): void {
   if (!player) return;
 
   if (!player.classId) {
-    socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Select a class first.' });
+    socket.emit(S2C.ERROR, { code: 'NOT_READY', message: 'Select a class first.' });
+    return;
+  }
+
+  if (lobby.state !== 'WAITING' && lobby.state !== 'CLASS_SELECT') {
+    socket.emit(S2C.ERROR, { code: 'WRONG_STATE', message: 'Classes are locked once the countdown starts.' });
     return;
   }
 
   player.isReady = !!payload?.ready;
   lobby.lastActivityAt = Date.now();
   broadcastClassSelections(lobby);
+  broadcastFullSync(lobby);
 }
 
 // ── Game Event Handlers ────────────────────────────────────────────
@@ -680,13 +751,25 @@ function onGameStart(io: Server, socket: Socket, payload: any): void {
     return;
   }
 
+  if (lobby.state !== 'WAITING' && lobby.state !== 'CLASS_SELECT') {
+    socket.emit(S2C.ERROR, { code: 'WRONG_STATE', message: 'A game is already starting or running.' });
+    return;
+  }
+  if (lobby.players.size < 2) {
+    socket.emit(S2C.ERROR, { code: 'NEED_MORE_PLAYERS', message: 'Co-op needs at least 2 players.' });
+    return;
+  }
   for (const [, player] of lobby.players) {
+    if (!player.isConnected) {
+      socket.emit(S2C.ERROR, { code: 'NOT_READY', message: 'A player is disconnected.' });
+      return;
+    }
     if (!player.classId) {
-      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'All players must select a class.' });
+      socket.emit(S2C.ERROR, { code: 'NOT_READY', message: 'All players must select a class.' });
       return;
     }
     if (!player.isReady) {
-      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'All players must be ready.' });
+      socket.emit(S2C.ERROR, { code: 'NOT_READY', message: 'All players must be ready.' });
       return;
     }
   }
@@ -704,6 +787,7 @@ function onGameStart(io: Server, socket: Socket, payload: any): void {
     } else {
       clearInterval(interval);
       countdownTimers.delete(lobby.id);
+      if (lobbies.get(lobby.id) !== lobby || lobby.state !== 'COUNTDOWN') return;
 
       // Start game
       lobby.state = 'PLAYING';
@@ -831,6 +915,12 @@ function handleReconnect(socket: Socket): void {
   socket.emit(S2C.LOBBY_STATE_SNAPSHOT, buildClientState(lobby, userId));
   broadcastFullSync(lobby);
   addSystemChat(lobby.id, `${player.userName} reconnected`);
+  if (lobby.state === 'PLAYING' && lobby.hostUserId === userId) {
+    broadcastToLobby(lobby.id, S2C.GAME_EVENT, {
+      type: 'host_reconnected',
+      timestamp: Date.now(),
+    });
+  }
 }
 
 // ── Garbage Collection ─────────────────────────────────────────────
@@ -911,11 +1001,20 @@ export function handleAltairDisconnect(io: Server, socket: Socket): void {
   }, DISCONNECT_GRACE_MS);
   graceTimers.set(userId, timer);
 
-  broadcastFullSync(lobby);
   addSystemChat(lobby.id, `${player.userName} disconnected`);
+  if (lobby.state === 'COUNTDOWN') {
+    cancelCountdown(lobby, `${player.userName} disconnected, countdown cancelled`);
+  } else {
+    broadcastFullSync(lobby);
+  }
 
-  // Host migration if needed
+  // The host client owns the simulation. Tell the guests it is gone; if it is
+  // still gone when the grace timer fires, removePlayer() ends the run.
   if (lobby.state === 'PLAYING' && lobby.hostUserId === userId) {
-    attemptHostMigration(lobby);
+    broadcastToLobby(lobby.id, S2C.GAME_EVENT, {
+      type: 'host_disconnected',
+      data: { graceMs: DISCONNECT_GRACE_MS },
+      timestamp: Date.now(),
+    });
   }
 }
