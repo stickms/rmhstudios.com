@@ -26,18 +26,25 @@ export default function MultiplayerResultsScreen({
 }: MultiplayerResultsScreenProps) {
   const { t } = useTranslation("c-altair");
   const isVictory = results.victory;
+  const hostLeft = results.endedReason === 'host_left';
 
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex-1 px-4 pt-4 pb-12 md:px-8 md:pt-8">
         <div className="mx-auto flex max-w-4xl flex-col gap-4 md:gap-6">
+          {hostLeft && (
+            <div role="alert" className="rounded-(--altair-radius-lg) border border-(--altair-warning) bg-(--altair-surface) px-4 py-3 text-center text-(--altair-warning)">
+              {t("coop-host-left", { defaultValue: "The host left, so the run ended." })}
+            </div>
+          )}
+
           {/* Title */}
           <div className="text-center py-6">
             <h1
               className={`text-5xl font-black tracking-wider ${isVictory ? 'text-(--altair-success)' : 'text-(--altair-danger)'}`}
               style={{ fontFamily: 'var(--altair-font-display)' }}
             >
-              {isVictory ? t("victory", { defaultValue: "VICTORY" }) : t("defeated", { defaultValue: "DEFEATED" })}
+              {hostLeft ? t("coop-run-ended", { defaultValue: "RUN ENDED" }) : isVictory ? t("victory", { defaultValue: "VICTORY" }) : t("defeated", { defaultValue: "DEFEATED" })}
             </h1>
             <p className="text-(--altair-text-muted) mt-2 text-sm">
               {results.sharedKills} kills | {Math.floor(results.timeSurvived / 60)}:{String(Math.floor(results.timeSurvived % 60)).padStart(2, '0')} survived
@@ -55,13 +62,13 @@ export default function MultiplayerResultsScreen({
 
           {/* Actions */}
           <div className="flex gap-4 justify-center pt-4">
-            <button
+            {!hostLeft && <button
               onClick={onPlayAgain}
               className="flex items-center gap-2 px-8 py-3 rounded-(--altair-radius-lg) font-bold text-(--altair-accent-fg) bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-colors"
             >
               <RotateCcw size={18} />
               {t("play-again", { defaultValue: "Play Again" })}
-            </button>
+            </button>}
             <button
               onClick={onLeave}
               className="flex items-center gap-2 px-8 py-3 rounded-(--altair-radius-lg) font-semibold text-(--altair-text-muted) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"

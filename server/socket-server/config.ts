@@ -130,8 +130,10 @@ export const config = {
     'altair:class:ready': { max: 60, windowMs: 60_000 },
     'altair:game:start': { max: 10, windowMs: 60_000 },
     'altair:lobby:chat': { max: 30, windowMs: 60_000 },
-    'altair:game:input': { max: 1200, windowMs: 60_000 },
-    'altair:game:state_snapshot': { max: 1200, windowMs: 60_000 },
+    // 20 Hz is exactly 1200/min, so the caps leave headroom for jitter.
+    'altair:game:input': { max: 1500, windowMs: 60_000 },
+    'altair:game:state_snapshot': { max: 1500, windowMs: 60_000 },
+    'altair:game:end': { max: 5, windowMs: 60_000 },
     'altair:game:ping': { max: 30, windowMs: 60_000 },
     'altair:game:quick_chat': { max: 20, windowMs: 60_000 },
     'bj:join_table': { max: 30, windowMs: 60_000 },
