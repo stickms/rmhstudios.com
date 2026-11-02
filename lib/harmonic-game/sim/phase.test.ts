@@ -186,7 +186,10 @@ describe('PhaseService on dev_phase', () => {
     const { level, phase } = await load();
     const modelOf = (name: string) =>
       parseInt(
-        level.bsp.entities.find((e) => e.get('targetname') === name)!.get('model')!.slice(1),
+        level.bsp.entities
+          .find((e) => e.get('targetname') === name)!
+          .get('model')!
+          .slice(1),
         10,
       );
     const past = modelOf(LAYER_BRUSH_NAMES.past);

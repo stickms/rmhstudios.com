@@ -7,12 +7,24 @@ import { harmonicSounds, type HarmonicSoundEvent } from '../audio/events';
 import { readHudState } from '../client/hud-state';
 import { compileLevel } from '../compiler';
 import { devWeaponsSource } from '../levels/dev_weapons';
-import { attachHarmonicSim, spreadOffset, WEAPONS, RESERVE_MAX, AMMO_PICKUP_AMOUNT, type WeaponEvent } from './index';
+import {
+  attachHarmonicSim,
+  spreadOffset,
+  WEAPONS,
+  RESERVE_MAX,
+  AMMO_PICKUP_AMOUNT,
+  type WeaponEvent,
+} from './index';
 import type { HarmonicTarget } from './entities';
 
 async function load() {
   const level = compileLevel(devWeaponsSource(), { materials: HARMONIC_MATERIAL_LOOKUP });
-  const world = await SpWorld.create({ game: 'hl2', mapName: 'dev_weapons', bsp: level.bsp, assets: createHarmonicAssets() });
+  const world = await SpWorld.create({
+    game: 'hl2',
+    mapName: 'dev_weapons',
+    bsp: level.bsp,
+    assets: createHarmonicAssets(),
+  });
   const sim = attachHarmonicSim(world);
   const events: WeaponEvent[] = [];
   sim.weapons.on((e) => events.push(e));
@@ -65,7 +77,8 @@ describe('Harmonic weapons (H1.3)', () => {
     expect(sounds.some((e) => e.type === 'sfx' && e.sound === 'pickup')).toBe(true);
     let left = 0;
     world.forEachEntity((e) => {
-      if (e.classname.startsWith('harmonic_weapon_') || e.classname.startsWith('harmonic_ammo_')) left++;
+      if (e.classname.startsWith('harmonic_weapon_') || e.classname.startsWith('harmonic_ammo_'))
+        left++;
     });
     expect(left).toBe(1); // the pulse ammo box at (220, 100) was not walked over
   });
@@ -189,7 +202,8 @@ describe('Harmonic weapons (H1.3)', () => {
   it('ADS: coil zooms to its FOV while attack2 is held, and a reload cancels it', async () => {
     const { sim, d, arm, events, d: driver } = await load();
     arm('coil');
-    const zooms = () => driver.events.filter((e) => e.type === 'zoom') as { type: 'zoom'; fov: number }[];
+    const zooms = () =>
+      driver.events.filter((e) => e.type === 'zoom') as { type: 'zoom'; fov: number }[];
     d.cmd.buttons |= IN_ATTACK2;
     d.run(0.1);
     expect(sim.weapons.ads).toBe(true);
@@ -225,7 +239,9 @@ describe('Harmonic weapons (H1.3)', () => {
     const max = Math.tan((2.2 * Math.PI) / 180);
     for (const o of a) expect(Math.hypot(o.x, o.y)).toBeLessThanOrEqual(max + 1e-9);
     const tight = spreadOffset(3, 2.2 * WEAPONS.coil.adsSpreadScale);
-    expect(Math.hypot(tight.x, tight.y)).toBeLessThanOrEqual(max * WEAPONS.coil.adsSpreadScale + 1e-9);
+    expect(Math.hypot(tight.x, tight.y)).toBeLessThanOrEqual(
+      max * WEAPONS.coil.adsSpreadScale + 1e-9,
+    );
     expect(spreadOffset(3, 0)).toEqual({ x: 0, y: 0 });
   });
 
@@ -235,7 +251,11 @@ describe('Harmonic weapons (H1.3)', () => {
       arm('coil');
       hold(IN_ATTACK, 0.5);
       d.idle(0.1);
-      return events.flatMap((e) => (e.type === 'fire' ? [[e.hit.position.x, e.hit.position.y, e.hit.position.z]] : [])).concat([[sim.weapons.state.shots, 0, 0]]);
+      return events
+        .flatMap((e) =>
+          e.type === 'fire' ? [[e.hit.position.x, e.hit.position.y, e.hit.position.z]] : [],
+        )
+        .concat([[sim.weapons.state.shots, 0, 0]]);
     };
     const first = await run();
     const second = await run();
@@ -256,7 +276,11 @@ describe('Harmonic weapons (H1.3)', () => {
   it('view model: draw on equip, fire and reload activities, consumed once', async () => {
     const { sim, d, arm } = await load();
     arm('pulse');
-    expect(sim.weapons.viewFrame()).toMatchObject({ mdl: 'models/harmonic/v_pulse_pistol.mdl', visible: true, play: ['ACT_VM_DRAW'] });
+    expect(sim.weapons.viewFrame()).toMatchObject({
+      mdl: 'models/harmonic/v_pulse_pistol.mdl',
+      visible: true,
+      play: ['ACT_VM_DRAW'],
+    });
     expect(sim.weapons.viewFrame()?.play).toBeUndefined();
     d.press(IN_ATTACK);
     expect(sim.weapons.viewFrame()?.play).toEqual(['ACT_VM_PRIMARYATTACK']);

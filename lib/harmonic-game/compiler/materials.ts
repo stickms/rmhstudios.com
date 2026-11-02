@@ -44,7 +44,9 @@ export function normalizeHarmonicMaterial(name: string): string {
 /** Flat colours only; enough for compiler tests and as a fallback. */
 export const defaultMaterialLookup: MaterialLookup = (raw) => {
   const name = normalizeHarmonicMaterial(raw);
-  if (name.endsWith('nodraw')) return { name, color: [0, 0, 0], nodraw: true, surfaceProp: 'default' };
-  if (name.endsWith('sky')) return { name, color: [0.6, 0.65, 0.7], sky: true, surfaceProp: 'default' };
+  if (name.endsWith('nodraw'))
+    return { name, color: [0, 0, 0], nodraw: true, surfaceProp: 'default' };
+  if (name.endsWith('sky'))
+    return { name, color: [0.6, 0.65, 0.7], sky: true, surfaceProp: 'default' };
   return { name, color: [0.5, 0.5, 0.5], surfaceProp: 'concrete' };
 };

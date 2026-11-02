@@ -5,8 +5,11 @@
  */
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import HarmonicHud from '../../../components/harmonic-game/HarmonicHud';
+import i18next from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import '../../../components/shared/app-theme.css';
 import '../../../components/harmonic-game/harmonic.css';
+import HarmonicHud from '../../../components/harmonic-game/HarmonicHud';
 import { isHarmonicHud } from '../../../lib/harmonic-game/client/hud-state';
 import { createHarmonicClient } from '../../../lib/harmonic-game/client/harmonic-client';
 import { createHudStore } from '../../../lib/tf2-game/client/hud-store';
@@ -38,21 +41,19 @@ const client = createHarmonicClient({
 (window as unknown as { __rmhInput: unknown }).__rmhInput = input;
 void client.start();
 
-// `?hud=1` also mounts the React HUD over the canvas (subtitles, hints) without the site shell.
-if (new URLSearchParams(location.search).get('hud')) {
-  const host = document.getElementById('hud')!;
-  const root = createRoot(host);
-  const draw = () => {
-    const s = store.getSnapshot();
-    if (!isHarmonicHud(s.ext)) return;
-    root.render(
-      createElement(HarmonicHud, {
-        hud: s.ext,
-        now: s.now,
-        subtitleSize: 'medium',
-        showSubtitles: true,
-      }),
-    );
-  };
-  store.subscribe(draw);
-}
+// The HUD overlay (English defaults), so screenshots show the meters and the frost edge.
+void i18next.use(initReactI18next).init({ lng: 'en', resources: {} });
+const hudRoot = createRoot(document.getElementById('hud') as HTMLElement);
+store.subscribe(() => {
+  const ext = store.getSnapshot().ext;
+  hudRoot.render(
+    isHarmonicHud(ext)
+      ? createElement(HarmonicHud, {
+          hud: ext,
+          now: store.getSnapshot().now,
+          subtitleSize: 'medium',
+          showSubtitles: true,
+        })
+      : null,
+  );
+});

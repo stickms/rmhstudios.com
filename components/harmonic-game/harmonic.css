@@ -70,6 +70,7 @@
   --harmonic-speaker-voss: rgb(226 196 196);
   --harmonic-speaker-lind: rgb(204 200 236);
   --harmonic-speaker-pavel: rgb(218 214 200);
+  --harmonic-frost: rgb(110 165 220);
 }
 
 .harmonic-root .harmonic-secondary {
@@ -196,6 +197,20 @@
 }
 .harmonic-root .harmonic-meter[data-tone='phase'] > span {
   background: var(--harmonic-phase);
+}
+/* Frost creeping in at the screen edge as the cold meter empties. Strength is the element's opacity
+   (set from the sim's cold.frost); the shape is static, so nothing animates per frame. */
+.harmonic-root .harmonic-hud-frost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 75% 70% at 50% 50%,
+    transparent 45%,
+    color-mix(in srgb, var(--harmonic-frost) 40%, transparent) 78%,
+    color-mix(in srgb, var(--harmonic-frost) 85%, transparent) 100%
+  );
+  transition: opacity var(--app-duration) var(--app-ease);
 }
 .harmonic-root .harmonic-hud-crosshair {
   position: absolute;

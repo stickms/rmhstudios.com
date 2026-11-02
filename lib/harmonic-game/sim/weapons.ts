@@ -153,7 +153,12 @@ export class HarmonicWeapons {
   hud(): HudWeapon | undefined {
     const d = this.activeDef;
     if (!d || !d.ammo) return undefined;
-    return { id: d.id, ammo: this.state.clip[d.id], reserve: this.state.reserve[d.ammo], reloading: this.reloading };
+    return {
+      id: d.id,
+      ammo: this.state.clip[d.id],
+      reserve: this.state.reserve[d.ammo],
+      reloading: this.reloading,
+    };
   }
 
   /** What `buildUserCmd` resolves wheel / next / previous switches against. */
@@ -187,7 +192,8 @@ export class HarmonicWeapons {
     } else {
       s.owned[id] = true;
       s.clip[id] = d.clip;
-      if (d.ammo) s.reserve[d.ammo] = Math.min(RESERVE_MAX[d.ammo], s.reserve[d.ammo] + d.pickupReserve);
+      if (d.ammo)
+        s.reserve[d.ammo] = Math.min(RESERVE_MAX[d.ammo], s.reserve[d.ammo] + d.pickupReserve);
       if (!s.active) this.equip(id);
     }
     this.emit({ type: 'pickup', weapon: id, ammo: null });
@@ -210,7 +216,8 @@ export class HarmonicWeapons {
     const d = WEAPONS[id];
     this.state.owned[id] = true;
     this.state.clip[id] = d.clip;
-    if (d.ammo && reserve !== undefined) this.state.reserve[d.ammo] = Math.min(RESERVE_MAX[d.ammo], reserve);
+    if (d.ammo && reserve !== undefined)
+      this.state.reserve[d.ammo] = Math.min(RESERVE_MAX[d.ammo], reserve);
     if (!this.state.active) this.equip(id);
   }
 
@@ -341,7 +348,8 @@ export class HarmonicWeapons {
   startReload(): boolean {
     const d = this.activeDef;
     const s = this.state;
-    if (!d || !d.ammo || this.reloading || s.clip[d.id] >= d.clip || s.reserve[d.ammo] <= 0) return false;
+    if (!d || !d.ammo || this.reloading || s.clip[d.id] >= d.clip || s.reserve[d.ammo] <= 0)
+      return false;
     this.setAds(false);
     this.reloadEndsAt = this.world.curtime + d.reloadTime;
     this.pendingPlay = 'ACT_VM_RELOAD';

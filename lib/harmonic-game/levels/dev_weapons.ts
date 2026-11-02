@@ -19,7 +19,11 @@ const WHITE_OLD = 'harmonic/paint_white_1971';
 const STEEL = 'harmonic/steel_plate';
 
 function target(name: string, x: number, y: number): EntitySource {
-  return { classname: 'harmonic_target', origin: v3(x, y, 0), keys: { targetname: name, health: '60' } };
+  return {
+    classname: 'harmonic_target',
+    origin: v3(x, y, 0),
+    keys: { targetname: name, health: '60' },
+  };
 }
 
 function pickup(classname: string, x: number, y: number): EntitySource {
@@ -31,7 +35,12 @@ export function devWeaponsSource(): LevelSource {
     id: 'dev_weapons',
     title: 'Dev weapons range',
     world: [
-      ...room({ min: v3(0, 0, 0), max: v3(1024, 384, 192), material: WHITE_OLD, floorMaterial: CONCRETE }),
+      ...room({
+        min: v3(0, 0, 0),
+        max: v3(1024, 384, 192),
+        material: WHITE_OLD,
+        floorMaterial: CONCRETE,
+      }),
     ],
     entities: [
       { classname: 'info_player_start', origin: v3(48, 192, 1), angles: v3(0, 0, 0) },

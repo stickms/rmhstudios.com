@@ -87,6 +87,19 @@ harmonic-client.ts`; `components/harmonic-game/HarmonicPlayPage.tsx` (New game â
   HUD-facing state. **Done when:** tests drain outdoors / refill indoors at the specified
   rates (constants in `sim/constants.ts`), health ticks at zero.
 - **Deps:** H1.1.
+- **As built (H1.2):** `sim/cold.ts`. `sim.cold: ColdService` (`value`, `max`, `mode`, `warmth`,
+  `enabled`, `sheltered`, `frost`, `hint`, `hudState()`, `reset()`, `tick(dt)`), driven from
+  `afterTick`. `activeHarmonicSim()` (sim/index.ts) gives the HUD the running sim;
+  `readHudState(snap, sim?)` fills `cold` (`{value,max,sheltered,frost}`) and `hint`. Entities:
+  `trigger_harmonic_exposure` (keys `mode` outdoor|shelter|wind, `area`, `hint`, `hintkey`; input
+  `SetMode`; shelter beats wind beats outdoor where volumes overlap) and `harmonic_heater` (a
+  `PropDynamic`; keys `radius`, `StartDisabled`; inputs `Enable`/`Disable`/`Toggle`; output
+  `OnPlayerWarm`; warmth falls off linearly, added to the base rate, no wall occlusion).
+  Level default: `LevelSource.exposure` (`'outdoor'|'shelter'`, absent = shelter = no meter) and
+  `exposureArea` (worldspawn `harmonic_exposure` / `harmonic_area`). Area changes publish
+  `{type:'area'}` on `harmonicSounds`. Reset happens when the player is alive again after a death
+  (not checkpointed). Constants: `COLD_*` in `sim/constants.ts`. Test level `dev_cold`. The
+  browser harness (`scripts/harmonic/models-harness`) now overlays `HarmonicHud`.
 
 ### H1.3 Weapons
 

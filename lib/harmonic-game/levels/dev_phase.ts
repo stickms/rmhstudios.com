@@ -78,5 +78,11 @@ function entities(): EntitySource[] {
 }
 
 export function devPhaseSource(): LevelSource {
-  return { id: 'dev_phase', title: 'Dev phase', startLayer: 'present', world: world(), entities: entities() };
+  return {
+    id: 'dev_phase',
+    title: 'Dev phase',
+    startLayer: 'present',
+    world: world(),
+    entities: entities(),
+  };
 }

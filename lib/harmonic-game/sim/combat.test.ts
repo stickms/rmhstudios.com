@@ -48,7 +48,12 @@ describe('Harmonic combat (H1.1)', () => {
     expect(target('t_near').health).toBe(40 - DEBUG_PULSE_DAMAGE);
     expect(relayFires()).toBe(1);
     const hit = events.find((e) => e.type === 'hit');
-    expect(hit).toMatchObject({ type: 'hit', damage: DEBUG_PULSE_DAMAGE, damageType: 'bullet', killed: false });
+    expect(hit).toMatchObject({
+      type: 'hit',
+      damage: DEBUG_PULSE_DAMAGE,
+      damageType: 'bullet',
+      killed: false,
+    });
   });
 
   it('keeps firing at the fire interval, then OnDeath at zero (once)', async () => {
@@ -93,7 +98,13 @@ describe('Harmonic combat (H1.1)', () => {
     const hit = sim!.combat.melee(from, dir, MELEE_RANGE, MELEE_DAMAGE, world.player);
     expect(hit.kind).toBe('entity');
     expect(t.health).toBe(40 - MELEE_DAMAGE);
-    const far = sim!.combat.melee({ ...from, x: t.origin.x - 120 }, dir, MELEE_RANGE, MELEE_DAMAGE, world.player);
+    const far = sim!.combat.melee(
+      { ...from, x: t.origin.x - 120 },
+      dir,
+      MELEE_RANGE,
+      MELEE_DAMAGE,
+      world.player,
+    );
     expect(far.kind).toBe('none');
     expect(t.health).toBe(40 - MELEE_DAMAGE);
   });
@@ -104,7 +115,15 @@ describe('Harmonic combat (H1.1)', () => {
     const r = sim!.combat.hurt(world.player, 30, 'cold');
     expect(r.dealt).toBe(30);
     expect(world.player.health).toBe(70);
-    expect(events).toContainEqual(expect.objectContaining({ type: 'playerHurt', amount: 30, damageType: 'cold', health: 70, dead: false }));
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: 'playerHurt',
+        amount: 30,
+        damageType: 'cold',
+        health: 70,
+        dead: false,
+      }),
+    );
     world.teleportEntity(world.player, { x: 300, y: 300, z: 1 }, null, null);
     const k = sim!.combat.hurt(world.player, 500, 'phase');
     expect(k.killed).toBe(true);

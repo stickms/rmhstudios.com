@@ -31,7 +31,11 @@ abstract class HarmonicPickup extends SpEntity {
 
   private scan(): void {
     const p = this.sp.player;
-    if (!p.dead && distanceSqr(p.origin, this.origin) <= PICKUP_RADIUS * PICKUP_RADIUS && this.tryTake()) {
+    if (
+      !p.dead &&
+      distanceSqr(p.origin, this.origin) <= PICKUP_RADIUS * PICKUP_RADIUS &&
+      this.tryTake()
+    ) {
       this.fireOutput('OnPickup', p);
       this.sp.remove(this);
       return;
@@ -52,7 +56,10 @@ export class HarmonicWeaponPickup extends HarmonicPickup {
 }
 
 // No ammo-box model yet (H2.4 can add one): ammo shows the weapon it feeds.
-const AMMO_MODEL: Record<AmmoType, string> = { pulse: WEAPONS.pulse.worldModel, coil: WEAPONS.coil.worldModel };
+const AMMO_MODEL: Record<AmmoType, string> = {
+  pulse: WEAPONS.pulse.worldModel,
+  coil: WEAPONS.coil.worldModel,
+};
 
 export class HarmonicAmmoPickup extends HarmonicPickup {
   private ammoType(): AmmoType {
@@ -68,5 +75,10 @@ export class HarmonicAmmoPickup extends HarmonicPickup {
   }
 }
 
-registerSp(HarmonicWeaponPickup, 'harmonic_weapon_prybar', 'harmonic_weapon_pulse', 'harmonic_weapon_coil');
+registerSp(
+  HarmonicWeaponPickup,
+  'harmonic_weapon_prybar',
+  'harmonic_weapon_pulse',
+  'harmonic_weapon_coil',
+);
 registerSp(HarmonicAmmoPickup, 'harmonic_ammo_pulse', 'harmonic_ammo_coil');

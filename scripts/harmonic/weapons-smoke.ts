@@ -34,7 +34,12 @@ const command = (page: Page, name: string, ...args: number[]): Promise<void> =>
 async function main(): Promise<void> {
   const browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_PATH || undefined,
-    args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+    args: [
+      '--use-gl=angle',
+      '--use-angle=swiftshader',
+      '--enable-unsafe-swiftshader',
+      '--ignore-gpu-blocklist',
+    ],
   });
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const problems: string[] = [];
@@ -47,8 +52,9 @@ async function main(): Promise<void> {
   await page.waitForSelector('canvas', { timeout: 90_000 });
   await page.waitForFunction(
     () => {
-      const g = (window as unknown as { __rmhGame?: { debug?: () => { stats: { drawCalls: number } } } })
-        .__rmhGame;
+      const g = (
+        window as unknown as { __rmhGame?: { debug?: () => { stats: { drawCalls: number } } } }
+      ).__rmhGame;
       return (g?.debug?.().stats.drawCalls ?? 0) > 0;
     },
     undefined,

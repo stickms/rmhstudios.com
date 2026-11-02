@@ -96,6 +96,10 @@ export interface LevelSource {
   sky?: string;
   /** Emitted as an `env_fog_controller` the renderer reads. */
   fog?: FogSource;
+  /** Level-wide exposure outside any `trigger_harmonic_exposure` (H1.2); absent = `shelter` (no cold). */
+  exposure?: 'outdoor' | 'shelter';
+  /** Audio bed (`AreaId`) used outside any exposure volume that names its own. */
+  exposureArea?: string;
   /** The layer the player starts in (the controller's `startlayer`); default `'present'`. */
   startLayer?: PhaseLayer;
   world: BrushSource[];

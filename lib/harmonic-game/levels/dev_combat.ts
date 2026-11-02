@@ -17,7 +17,12 @@ const CONCRETE = 'harmonic/concrete';
 const WHITE_OLD = 'harmonic/paint_white_1971';
 const STEEL = 'harmonic/steel_plate';
 
-function target(name: string, x: number, y: number, extra: Record<string, string> = {}): EntitySource {
+function target(
+  name: string,
+  x: number,
+  y: number,
+  extra: Record<string, string> = {},
+): EntitySource {
   return {
     classname: 'harmonic_target',
     origin: v3(x, y, 0),
@@ -31,7 +36,12 @@ export function devCombatSource(): LevelSource {
     id: 'dev_combat',
     title: 'Dev combat range',
     world: [
-      ...room({ min: v3(0, 0, 0), max: v3(1024, 384, 192), material: WHITE_OLD, floorMaterial: CONCRETE }),
+      ...room({
+        min: v3(0, 0, 0),
+        max: v3(1024, 384, 192),
+        material: WHITE_OLD,
+        floorMaterial: CONCRETE,
+      }),
       box(v3(480, 120, 0), v3(496, 264, 192), STEEL),
     ],
     entities: [

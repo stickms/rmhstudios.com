@@ -21,7 +21,7 @@
 export interface HarmonicHudState {
   health: number;
   maxHealth: number;
-  cold?: { value: number; max: number; sheltered: boolean };
+  cold?: { value: number; max: number; sheltered: boolean; frost?: number };
   weapon?: { id: string; ammo: number; reserve: number; reloading: boolean };
   tuner?: { charge: number; max: number; listening: boolean };
   layer?: 'past' | 'present';
@@ -53,17 +53,28 @@ export const emptyHarmonicHud = (): HarmonicHudState => ({
   dead: false,
 });
 
-/** Fills what exists today (health, dead). Pure; later work packages extend it. */
-export function readHudState(
-  world: HudSource,
-  sim?: { weapons: { hud(): HarmonicHudState['weapon'] } } | null,
-): HarmonicHudState {
+/** What the sim adds to the HUD (a structural slice of `HarmonicSim`). */
+export interface HudSim {
+  weapons?: { hud(): HarmonicHudState['weapon'] };
+  cold?: {
+    enabled: boolean;
+    hint: { key: string; defaultValue: string } | null;
+    hudState(): { value: number; max: number; sheltered: boolean; frost: number };
+  };
+}
+
+/** Fills what exists today (health, dead, weapon, cold). Pure; later work packages extend it. */
+export function readHudState(world: HudSource, sim?: HudSim | null): HarmonicHudState {
   const hp = Number.isFinite(world.player.health) ? world.player.health : 0;
   const state = emptyHarmonicHud();
   state.health = Math.max(0, Math.min(state.maxHealth, Math.round(hp)));
   state.dead = world.player.dead || hp <= 0;
-  const weapon = sim?.weapons.hud();
+  const weapon = sim?.weapons?.hud();
   if (weapon) state.weapon = weapon;
+  if (sim?.cold?.enabled) {
+    state.cold = sim.cold.hudState();
+    state.hint = sim.cold.hint;
+  }
   return state;
 }
 

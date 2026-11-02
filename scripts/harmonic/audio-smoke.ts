@@ -66,15 +66,18 @@ async function main(): Promise<void> {
   await page.goto(`${base}/harmonic`, { waitUntil: 'networkidle', timeout: 120_000 });
 
   // 1. Offline renders.
-  const rendered = await page.evaluate(async (names) => {
-    // Root-relative: Vite's dev server serves the repo's modules by path.
-    const mod = (await import(/* @vite-ignore */ '/lib/harmonic-game/audio/synth.ts')) as {
-      renderOffline(name: string, variant?: number): Promise<Offline>;
-    };
-    const out: Record<string, Offline> = {};
-    for (const n of names) out[n] = await mod.renderOffline(n, 0);
-    return out;
-  }, SAMPLE as unknown as string[]);
+  const rendered = await page.evaluate(
+    async (names) => {
+      // Root-relative: Vite's dev server serves the repo's modules by path.
+      const mod = (await import(/* @vite-ignore */ '/lib/harmonic-game/audio/synth.ts')) as {
+        renderOffline(name: string, variant?: number): Promise<Offline>;
+      };
+      const out: Record<string, Offline> = {};
+      for (const n of names) out[n] = await mod.renderOffline(n, 0);
+      return out;
+    },
+    SAMPLE as unknown as string[],
+  );
   for (const [name, m] of Object.entries(rendered)) {
     process.stdout.write(
       `${name.padEnd(16)} peak ${m.peak.toFixed(3)} rms ${m.rms.toFixed(3)} ${m.seconds.toFixed(2)}s x${m.channels}\n`,

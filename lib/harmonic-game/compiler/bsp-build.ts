@@ -640,6 +640,8 @@ export function buildBsp(source: LevelSource, lookup: MaterialLookup): BuiltBsp 
     ['message', src.title],
   ];
   if (src.sky) world0.push(['skyname', src.sky]);
+  if (src.exposure) world0.push(['harmonic_exposure', src.exposure]);
+  if (src.exposureArea) world0.push(['harmonic_area', src.exposureArea]);
   blocks.push(entityBlock(world0));
   if (src.fog) {
     blocks.push(

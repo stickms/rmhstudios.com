@@ -9,7 +9,15 @@
 import { MASK_SHOT } from '../../tf2-game/core/constants';
 import { emptyTrace, NO_ENTITY, type TraceFilter } from '../../tf2-game/core/types';
 import { copy, vec3, type Vec3 } from '../../tf2-game/core/vec';
-import { DMG_BULLET, DMG_CLUB, DMG_FALL, DMG_RADIATION, DMG_SHOCK, createDamageInfo, type DamageInfo } from '../../tf2-game/sim/damage';
+import {
+  DMG_BULLET,
+  DMG_CLUB,
+  DMG_FALL,
+  DMG_RADIATION,
+  DMG_SHOCK,
+  createDamageInfo,
+  type DamageInfo,
+} from '../../tf2-game/sim/damage';
 import { DAMAGE_NO, type Entity } from '../../tf2-game/sim/entity';
 import type { SpWorld } from '../../sp-game/world/sp-world';
 import { HIT_FORCE_SCALE, MELEE_HULL_RADIUS } from './constants';
@@ -70,8 +78,21 @@ export type CombatEvent =
       killed: boolean;
       surface: string;
     }
-  | { type: 'kill'; target: number; attacker: number; damageType: HarmonicDamageType; isPlayer: boolean }
-  | { type: 'playerHurt'; amount: number; damageType: HarmonicDamageType; health: number; dead: boolean; attacker: number };
+  | {
+      type: 'kill';
+      target: number;
+      attacker: number;
+      damageType: HarmonicDamageType;
+      isPlayer: boolean;
+    }
+  | {
+      type: 'playerHurt';
+      amount: number;
+      damageType: HarmonicDamageType;
+      health: number;
+      dead: boolean;
+      attacker: number;
+    };
 
 export type CombatListener = (ev: CombatEvent) => void;
 
@@ -105,7 +126,14 @@ export class HarmonicCombat {
   }
 
   /** A line from `from` along unit `dir`, up to `range`, damaging the first damageable it meets. */
-  hitscan(from: Vec3, dir: Vec3, range: number, damage: number, attacker: Entity | null, type: HarmonicDamageType = 'bullet'): HitResult {
+  hitscan(
+    from: Vec3,
+    dir: Vec3,
+    range: number,
+    damage: number,
+    attacker: Entity | null,
+    type: HarmonicDamageType = 'bullet',
+  ): HitResult {
     endPos.x = from.x + dir.x * range;
     endPos.y = from.y + dir.y * range;
     endPos.z = from.z + dir.z * range;
@@ -114,17 +142,39 @@ export class HarmonicCombat {
   }
 
   /** A short hull sweep (the player's strike): like `hitscan` with a fat ray and a short reach. */
-  melee(from: Vec3, dir: Vec3, range: number, damage: number, attacker: Entity | null, hullRadius = MELEE_HULL_RADIUS): HitResult {
+  melee(
+    from: Vec3,
+    dir: Vec3,
+    range: number,
+    damage: number,
+    attacker: Entity | null,
+    hullRadius = MELEE_HULL_RADIUS,
+  ): HitResult {
     endPos.x = from.x + dir.x * range;
     endPos.y = from.y + dir.y * range;
     endPos.z = from.z + dir.z * range;
     hullMins.x = hullMins.y = hullMins.z = -hullRadius;
     hullMaxs.x = hullMaxs.y = hullMaxs.z = hullRadius;
-    this.world.collision.traceHull(from, endPos, hullMins, hullMaxs, MASK_SHOT, this.filterFor(attacker), trace);
+    this.world.collision.traceHull(
+      from,
+      endPos,
+      hullMins,
+      hullMaxs,
+      MASK_SHOT,
+      this.filterFor(attacker),
+      trace,
+    );
     return this.resolve(from, dir, range, damage, attacker, 'melee');
   }
 
-  private resolve(from: Vec3, dir: Vec3, range: number, damage: number, attacker: Entity | null, type: HarmonicDamageType): HitResult {
+  private resolve(
+    from: Vec3,
+    dir: Vec3,
+    range: number,
+    damage: number,
+    attacker: Entity | null,
+    type: HarmonicDamageType,
+  ): HitResult {
     const res: HitResult = {
       kind: 'none',
       distance: range,
@@ -145,7 +195,13 @@ export class HarmonicCombat {
     if (target && target.takeDamage !== DAMAGE_NO) {
       res.kind = 'entity';
       res.entity = target;
-      const r = this.applyDamage(target, { amount: damage, type, attacker, position: res.position, direction: dir });
+      const r = this.applyDamage(target, {
+        amount: damage,
+        type,
+        attacker,
+        position: res.position,
+        direction: dir,
+      });
       res.damageDealt = r.dealt;
       res.killed = r.killed;
     } else {
@@ -170,7 +226,8 @@ export class HarmonicCombat {
    */
   applyDamage(target: Entity, d: HarmonicDamage): { dealt: number; killed: boolean } {
     const t = target as unknown as Damageable;
-    if (target.removed || target.takeDamage === DAMAGE_NO || d.amount <= 0) return { dealt: 0, killed: false };
+    if (target.removed || target.takeDamage === DAMAGE_NO || d.amount <= 0)
+      return { dealt: 0, killed: false };
     if (t.acceptsDamage && !t.acceptsDamage(d)) return { dealt: 0, killed: false };
     const info = createDamageInfo();
     info.attacker = d.attacker ? d.attacker.id : NO_ENTITY;
@@ -190,14 +247,38 @@ export class HarmonicCombat {
     const nowDead = isPlayer ? player.dead : target.health <= 0 || target.takeDamage === DAMAGE_NO;
     const killed = !wasDead && nowDead;
     if (isPlayer && dealt > 0) {
-      this.emit({ type: 'playerHurt', amount: dealt, damageType: d.type, health: player.health, dead: player.dead, attacker: info.attacker });
+      this.emit({
+        type: 'playerHurt',
+        amount: dealt,
+        damageType: d.type,
+        health: player.health,
+        dead: player.dead,
+        attacker: info.attacker,
+      });
     }
-    if (killed) this.emit({ type: 'kill', target: target.id, attacker: info.attacker, damageType: d.type, isPlayer });
+    if (killed)
+      this.emit({
+        type: 'kill',
+        target: target.id,
+        attacker: info.attacker,
+        damageType: d.type,
+        isPlayer,
+      });
     return { dealt, killed };
   }
 
   /** Damage with no attacker and no direction (cold, falls, scripted hurt). */
-  hurt(target: Entity, amount: number, type: HarmonicDamageType): { dealt: number; killed: boolean } {
-    return this.applyDamage(target, { amount, type, attacker: null, position: target.origin, direction: ZERO });
+  hurt(
+    target: Entity,
+    amount: number,
+    type: HarmonicDamageType,
+  ): { dealt: number; killed: boolean } {
+    return this.applyDamage(target, {
+      amount,
+      type,
+      attacker: null,
+      position: target.origin,
+      direction: ZERO,
+    });
   }
 }
