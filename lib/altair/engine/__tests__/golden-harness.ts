@@ -129,13 +129,13 @@ export async function runScenario(sc: Scenario): Promise<GoldenResult> {
   const randSpy = vi.spyOn(Math, 'random').mockImplementation(() => rng.next());
   vi.spyOn(performance, 'now').mockReturnValue(0);
 
-  let pending: ((now: number) => void) | null = null;
+  const raf: { pending: ((now: number) => void) | null } = { pending: null };
   vi.stubGlobal('requestAnimationFrame', (cb: (now: number) => void) => {
-    pending = cb;
+    raf.pending = cb;
     return 1;
   });
   vi.stubGlobal('cancelAnimationFrame', () => {
-    pending = null;
+    raf.pending = null;
   });
   const fakeOverlay = {
     width: 0,
@@ -221,8 +221,8 @@ export async function runScenario(sc: Scenario): Promise<GoldenResult> {
     world.inputState.dx = inp.dx;
     world.inputState.dy = inp.dy;
     now += FRAME_MS;
-    const cb = pending;
-    pending = null;
+    const cb = raf.pending;
+    raf.pending = null;
     if (!cb) break;
     cb(now);
     if (frame % every === 0 || frame === sc.frames) {
