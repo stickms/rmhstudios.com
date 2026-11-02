@@ -228,7 +228,17 @@ and a browser screenshot in the PR.
 
 Level transitions use the engine's `trigger_changelevel` path, or a Harmonic
 `harmonic_chapter_end` entity that the client turns into "load next `HARMONIC_LEVELS` entry"
-(choose in H4.1, record here).
+(choose in H4.1, record here). **Chosen (H4.1):** `harmonic_chapter_end` (input `End`, owned by H3.2); levels name it `chapter_end`.
+- **As built (H4.1):** `levels/h1_whiteout.ts` (`h1WhiteoutSource()`, exported `H1` waypoints/boxes), scripts
+  `narrative/scripts/ch1.ts` (`CH1_SCRIPTS`, ids `ch1.<scene>`), keys by hand in `locales/en/harmonic.json`.
+  Pattern for later chapters: a distant "ghost" is a `func_brush` (`solidity 1`, `StartDisabled 1`) that a
+  `logic_relay` enables/disables on a timed list of delayed outputs, started from a dialogue `OnLine<N>`; the
+  level ceiling is `snow` far above the fog end (the `sky` material is not fogged and shows as a hard slab);
+  sounds from level I/O use `ambient_generic` (`message` = bank name, spawnflags 49) + `PlaySound`. The chapter
+  ends by `fence_dialogue OnFinished -> chapter_end,End` (`harmonic_chapter_end`, class owned by H3.2).
+  Tests must `import '../narrative'` or dialogue entities are never registered. ~850 brushes, no enemies;
+  cold budget walks the path ending >15/100 with both shelters used.
+
 
 ## Phase 5 — Polish (→ M3)
 
