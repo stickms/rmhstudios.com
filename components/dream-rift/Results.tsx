@@ -66,11 +66,13 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
 
     // The host of a co-op run submits the squad's combined-score / time-survived
     // record to the co-op leaderboard once, automatically (no username needed).
-    const [coopSubmitted, setCoopSubmitted] = useState(false);
+    // A ref keyed by the result, like the personal score above: `session.data.user` changes identity on
+    // every session refetch and re-ran this effect before the state flip rendered, posting the squad twice.
+    const coopSubmittedFor = useRef<unknown>(null);
     useEffect(() => {
-        if (!result || coopSubmitted) return;
+        if (!result || coopSubmittedFor.current === result) return;
         if (result.playerCount < 2 || !result.isHost || !session.data?.user) return;
-        setCoopSubmitted(true);
+        coopSubmittedFor.current = result;
         fetch('/api/dream-rift/coop', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -85,7 +87,6 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
         }).catch(() => {
             /* best-effort; a failed co-op submit shouldn't disrupt the results screen */
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [result, session.data?.user]);
 
     if (!result) return null;
