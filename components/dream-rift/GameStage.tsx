@@ -105,6 +105,22 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // The hub drops a player from the lobby the instant their socket dies (no grace), and a
+    // reconnected socket is a stranger to the room: relays go nowhere, so the rest of the squad
+    // sees this player frozen while they keep playing a ghost run. Leave the run instead.
+    const connection = useDreamRift((s) => s.connection);
+    const wasConnected = useRef(false);
+    useEffect(() => {
+        if (start.practice || useDreamRift.getState().mode !== 'multi') return;
+        if (connection === 'connected') {
+            wasConnected.current = true;
+        } else if (wasConnected.current) {
+            useDreamRift.getState().setError('Connection lost, so you left the run.');
+            onExit();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [connection]);
+
     // Session contract: screen on during a stage; a solo run pauses when the
     // tab hides (co-op can't pause for everyone, so it only keeps the screen on).
     useGameSession({
