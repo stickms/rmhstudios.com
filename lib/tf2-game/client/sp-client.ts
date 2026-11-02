@@ -132,6 +132,21 @@ export interface SpContent {
    * sound bank plugs in here (`lib/harmonic-game/audio/`).
    */
   createAudio?(ctx: SpAudioContext): SpAudioBackend | null;
+  /**
+   * The simulation's `point_clientcommand` text (a `clientcommand` event), with the controls a
+   * story needs: load another of this content's maps from its start, or end the run (the client's
+   * `ended` phase). Optional and additive: absent, the event is ignored as before. Harmonic's
+   * chapter transitions and endings ride on it (`lib/harmonic-game/client/flow.ts`).
+   */
+  onClientCommand?(command: string, host: SpContentHost): void;
+}
+
+/** What `SpContent.onClientCommand` may do to the client. */
+export interface SpContentHost {
+  /** Loads `map` (one of `SpContent.maps`) from its start; false when it is unknown or the client is gone. */
+  loadMap(map: string): boolean;
+  /** Stops the run and moves the client to its `ended` phase. */
+  end(): void;
 }
 
 /** What the client hands an injected audio backend when it is created. */
@@ -890,6 +905,17 @@ export class SpClient implements GameClient {
         break;
       case 'changelevel':
         this.changeLevel(ev.map, ev.transition);
+        break;
+      case 'clientcommand':
+        this.opts.content?.onClientCommand?.(ev.command, {
+          loadMap: (map) => this.consoleChangeLevel(map),
+          end: () => {
+            if (this.disposed) return;
+            this.running = false;
+            this.loop?.stop();
+            this.opts.callbacks.onPhase?.('ended');
+          },
+        });
         break;
       case 'credits':
         if (ev.mode === 'outro') this.opts.callbacks.onPhase?.('ended');

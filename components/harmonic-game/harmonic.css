@@ -335,3 +335,71 @@
   height: 1.125rem;
   accent-color: var(--app-accent);
 }
+
+/* ── Chapter flow (H3.2): the fade to black between chapters and the title card ──────────── */
+.harmonic-root .harmonic-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  background: var(--harmonic-void, rgb(4 6 9));
+  opacity: 0;
+  transition: opacity var(--harmonic-curtain-ms, 900ms) var(--app-ease);
+}
+.harmonic-root .harmonic-curtain[data-state='down'],
+.harmonic-root .harmonic-curtain[data-state='card'] {
+  opacity: 1;
+}
+.harmonic-root .harmonic-curtain[data-state='card'] {
+  transition-duration: 0ms;
+}
+.harmonic-root .harmonic-chapter-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  text-align: center;
+}
+.harmonic-root .harmonic-chapter-number {
+  font-family: var(--app-font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--harmonic-ink-muted);
+}
+.harmonic-root .harmonic-chapter-title {
+  font-family: var(--app-font-display);
+  font-size: clamp(1.75rem, 5vw, 2.75rem);
+  letter-spacing: 0.04em;
+  color: var(--harmonic-ink);
+}
+.harmonic-root .harmonic-chapters {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+.harmonic-root .harmonic-chapters-label {
+  font-family: var(--app-font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--app-text-muted);
+}
+.harmonic-root .harmonic-chapter-link {
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  border-radius: var(--app-radius-sm);
+  color: var(--app-text);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.harmonic-root .harmonic-chapter-link:hover:not(:disabled) {
+  background: var(--app-surface-hover);
+}
+.harmonic-root .harmonic-chapter-link:disabled {
+  color: var(--app-text-muted);
+  text-decoration: none;
+}

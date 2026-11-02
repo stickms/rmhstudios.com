@@ -60,6 +60,32 @@ function speakerLabel(t: TFunction, id: string | undefined, fallback: string): s
   }
 }
 
+/** Chapter titles: literal t() calls so extraction sees every key. */
+function chapterTitle(t: TFunction, c: { titleKey: string; titleDefault: string }): string {
+  switch (c.titleKey) {
+    case 'chapter_h1_whiteout':
+      return t('harmonic:chapter_h1_whiteout', { defaultValue: 'Whiteout' });
+    case 'chapter_h2_listening':
+      return t('harmonic:chapter_h2_listening', { defaultValue: 'Listening Post' });
+    case 'chapter_h3_still_point':
+      return t('harmonic:chapter_h3_still_point', { defaultValue: 'Still Point' });
+    case 'chapter_h4_below_decks':
+      return t('harmonic:chapter_h4_below_decks', { defaultValue: 'Below Decks' });
+    case 'chapter_h5_long_corridor':
+      return t('harmonic:chapter_h5_long_corridor', { defaultValue: 'Long Corridor' });
+    case 'chapter_h6_drive_room':
+      return t('harmonic:chapter_h6_drive_room', { defaultValue: 'Drive Room' });
+    case 'chapter_h7_harmonic':
+      return t('harmonic:chapter_h7_harmonic', { defaultValue: 'Harmonic' });
+    case 'chapter_dev_flow_a':
+      return t('harmonic:chapter_dev_flow_a', { defaultValue: 'Dev flow A' });
+    case 'chapter_dev_flow_b':
+      return t('harmonic:chapter_dev_flow_b', { defaultValue: 'Dev flow B' });
+    default:
+      return c.titleDefault;
+  }
+}
+
 export default function HarmonicHud({
   hud,
   now,
@@ -79,6 +105,26 @@ export default function HarmonicHud({
 
   return (
     <div className="harmonic-hud" data-dead={hud.dead || undefined}>
+      {/* The chapter title card (and the fade to black before the next chapter): above the HUD. */}
+      <div
+        className="harmonic-curtain"
+        data-state={
+          hud.curtain ? 'down' : hud.chapter ? (hud.chapter.fading ? 'fading' : 'card') : 'up'
+        }
+        aria-hidden={!hud.chapter}
+      >
+        {hud.chapter ? (
+          <p className="harmonic-chapter-card" role="status">
+            <span className="harmonic-chapter-number">
+              {t('harmonic:chapter_number', {
+                defaultValue: 'Chapter {{number}}',
+                number: hud.chapter.number,
+              })}
+            </span>
+            <span className="harmonic-chapter-title">{chapterTitle(t, hud.chapter)}</span>
+          </p>
+        ) : null}
+      </div>
       {hud.layer ? (
         <div className="harmonic-hud-panel harmonic-hud-layer" data-phase={inPhase || undefined}>
           <Waves className="size-4" aria-hidden />

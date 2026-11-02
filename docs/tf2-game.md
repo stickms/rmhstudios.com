@@ -349,6 +349,10 @@ signal)` returns `{ bsp, manifest, hulls }`, `createAssets(level)` the `SpAssets
   published as `HudState.ext` (`unknown`; unset for HL2/Portal/TF2/CS:GO), and `GameCanvas hudComponent` swaps
   `GameHud` for the game's own HUD, pause menu and options (it gets the same `GameHudProps` and owns the pause
   flow: `input.suspended`, the `pause` command, the `menu` impulse). Default: `GameHud`, unchanged.
+  Two more (H3.2): `SpContent.onClientCommand?(command, host)` receives the text of a `point_clientcommand`
+  (a `clientcommand` sim event, ignored before) with `host.loadMap(map)` (load one of `content.maps` from its
+  start) and `host.end()` (the `ended` phase); and `GameCanvas endScreen` replaces the HL2-worded "End of the
+  demo" screen. Both optional; HL2/Portal behaviour is unchanged. Harmonic's chapter flow rides on them.
 - **Quality** (`client/quality.ts`): desktop / laptop / mobile from WebGL2, the texture limit, memory, cores,
   the GPU name and touch; each sets resolution scale, DPR cap, texture cap, anisotropy, particle budget, prop
   draw distance and portal recursion (2 desktop, 1 phone). A frame-time governor lowers the resolution scale

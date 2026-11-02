@@ -172,6 +172,29 @@ readHud(hudNow), reset() }`. Entities (`import '.../narrative'` registers them):
 
 - Flags in save, ending selection entity, epilogue routing. **Done when:** tests.
 - **Deps:** H3.1.
+- **As built (H3.2).** `narrative/flags.ts`: `HARMONIC_FLAGS` (typed rows: `sanaHelped`, `vossSpared`,
+  `ending`, `chapterReached`, dev flags; add a flag = add a row), `getFlags(world): FlagService`
+  (`get(name)`, `set(name, value): boolean` — type/enum checked, `all()`, `persist(level)`,
+  `restoreLevelStart()` for the death reload), `parseFlagValue`, `noteChapterReached(level)`,
+  `furthestChapter(flags)`, `setDefaultFlagStorage(s)` (tests). The service starts from the save's flags
+  and writes them back (merged over unknown keys) on chapter end and on an ending; `harmonic-client.ts`
+  calls `noteChapterReached` + `flow.levelLoaded` from `loadLevel`. `narrative/chapters.ts`:
+  `HARMONIC_CHAPTERS` (`{ id, number, titleKey, titleDefault }`, h1..h7), `HARMONIC_DEV_CHAPTERS`
+  (`dev_flow_a/b`), `chapterById`, `nextChapter(id)`, `EPILOGUE_LEVELS`, `flowCommand` / `parseFlowCommand`.
+  Entities (`narrative/flow-entities.ts`): `harmonic_flag` (`Set [name] <value>`, `Test [name]` →
+  `OnTrue`/`OnFalse`/`OnValue<value>`), `harmonic_chapter_end` (`End` → saves with the NEXT chapter as the
+  slot level, `OnEnd`, then a `clientcommand`), `harmonic_ending` (`Choose anchor|release|silence` → sets
+  `ending`, saves, `OnChosen`, goes to `h7_epilogue_<ending>`). A target level with no source in
+  `HARMONIC_LEVELS` is "not available": the client shows "End of the current build". `narrative/endings.ts`:
+  `endingLines(ending, flags)` → `[base, sana variant, voss variant]` (`{ key, defaultValue }`, keys
+  `ch7.ending.<ending>.<slot>`, already in `locales/en/harmonic.json` — H4.7 rewrites the defaults under NEW
+  keys), `ALL_ENDING_LINES`, `epilogueLevel`. Client (`client/flow.ts`, `ChapterFlow`): fade to black
+  (`CURTAIN_MS`), load, chapter title card (`hud.chapter`, `hud.curtain` in `HarmonicHudState`). Engine
+  seams: `SpContent.onClientCommand` + `GameCanvas endScreen` (docs/tf2-game.md). Title screen lists
+  "Chapters" up to `flags.chapterReached`. Test level `dev_flow.ts`; tests `narrative/flow.test.ts`;
+  browser check `scripts/harmonic/flow-smoke.ts` (`harness` / `site`). Chapter WPs: put the finish trigger →
+  `harmonic_chapter_end End`; ch2 sets `sanaHelped` and ch6 `vossSpared` with `harmonic_flag Set <name> 1`;
+  H4.7 wires the console to `harmonic_ending Choose <ending>` and plays `endingLines`.
 
 ### H3.3 Audio
 
@@ -196,9 +219,10 @@ and a browser screenshot in the PR.
 | H4.6 | `h6_drive_room`    | H4.5                   |
 | H4.7 | `h7_harmonic`      | H4.6, H3.2             |
 
-Level transitions use the engine's `trigger_changelevel` path, or a Harmonic
-`harmonic_chapter_end` entity that the client turns into "load next `HARMONIC_LEVELS` entry"
-(choose in H4.1, record here).
+Level transitions: **decided in H3.2 — the `harmonic_chapter_end` entity**, not the engine's
+`trigger_changelevel` (levels are compiled from TypeScript: no landmarks, nothing to carry over).
+A chapter's finish trigger fires `harmonic_chapter_end End`; add the chapter to `HARMONIC_LEVELS`
+(its id is already in `HARMONIC_CHAPTERS`) and the transition, title card and "Chapters" entry work.
 
 ## Phase 5 — Polish (→ M3)
 
