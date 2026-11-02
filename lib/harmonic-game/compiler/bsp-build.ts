@@ -54,6 +54,27 @@ function u16(v: number, what: string): number {
 }
 const clamp16 = (v: number): number => Math.max(-32768, Math.min(32767, v));
 
+/**
+ * One flat cold ambient cube for every leaf (RGBE, 6 faces × 4 bytes: +X −X +Y −Y +Z −Z), so models
+ * and view models are lit before the lightmap bake gives real leaf ambients (plan H5.1). Without
+ * it the entity renderer's ambient cube is zero and every model draws black. Values are linear
+ * (mantissa × 2^-8): sides about 0.5, up 0.62, down 0.32.
+ */
+function flatAmbient(leafCount: number): Uint8Array {
+  const face = (r: number, g: number, b: number): number[] => [r, g, b, 248];
+  const cube = [
+    ...face(124, 134, 146),
+    ...face(124, 134, 146),
+    ...face(122, 132, 144),
+    ...face(122, 132, 144),
+    ...face(152, 162, 172),
+    ...face(78, 82, 88),
+  ];
+  const out = new Uint8Array(leafCount * 24);
+  for (let i = 0; i < leafCount; i++) out.set(cube, i * 24);
+  return out;
+}
+
 // --- planes -----------------------------------------------------------------------------
 
 class PlaneTable {
@@ -722,7 +743,7 @@ export function buildBsp(source: LevelSource, lookup: MaterialLookup): BuiltBsp 
       firstLeafBrush: Uint16Array.from(lFirstBrush),
       numLeafBrushes: Uint16Array.from(lNumBrushes),
       leafWaterDataId: new Int16Array(leafCount).fill(-1),
-      ambientLighting: null,
+      ambientLighting: flatAmbient(leafCount),
     },
     edges: Uint16Array.from(edges),
     surfEdges: Int32Array.from(surfEdges),

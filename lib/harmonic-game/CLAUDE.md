@@ -21,6 +21,7 @@ the spec is wrong.
 | `levels/`    | One `LevelSource` per chapter + `dev_box.ts`.                           |
 | `compiler/`  | LevelSource DSL → in-memory `BspFile` (brushes, kd-tree, bevels).       |
 | `assets/`    | Procedural textures, materials, models, the `SpAssets` implementation.  |
+|              | `assets/models/`: `info.ts` is Node-safe; `catalog.ts`/`library.ts` use three. |
 | `sim/`       | Harmonic-only entities and services: weapons, damage, phase, enemies.   |
 | `narrative/` | Dialogue/subtitle runner, radio, chapter flags, endings.                |
 | `audio/`     | Synthesised sound bank (`recipes`→`dsp`→`synth`), beds, music, `HarmonicSoundEvent` bus (`events.ts`), `player.ts`. |
