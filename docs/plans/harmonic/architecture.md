@@ -155,7 +155,13 @@ all available today and driven by `outputs` in the level source.
 - **Phase layers (H2.1):** every entity and brush entity has a `layer`; the world has a
   `currentLayer` for the player. Brushes of the other layer are `func_brush` models
   toggled non-solid and drawn as a translucent ghost when the player "listens". Shifting
-  a tagged object flips its layer. Enemies out of layer ignore damage.
+  a tagged object flips its layer. Enemies out of layer ignore damage. As built: the compiler
+  (`compiler/layers.ts`) moves layered world brushes into ONE auto `func_brush` per layer
+  (`harmonic_layer_past` / `_present`; per-room models wait for H5.2 culling), copies an entity's
+  brush layer onto the entity, writes a `layer` key (absent = `both`) and adds a
+  `harmonic_phase_controller` (`harmonic_phase`) whose spawn attaches `PhaseService`
+  (`sim/phase.ts`, `getPhase(world)`); no tick hook. `client/phase-view.ts` drives
+  `WorldRenderer.setModelVisibility` from the service's events via `SpContent.onLevelReady`.
 - **AI (H2.2–H2.3):** a small state-machine brain per enemy (`idle → alert → engage →
 search`), line-of-sight with traceLine, movement with the engine's `SpPlayer`-style
   ground movement or straight-line steering on authored `path_corner` / `info_node`

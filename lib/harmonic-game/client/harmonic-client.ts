@@ -16,6 +16,7 @@ import { compileLevel } from '../compiler';
 import { HARMONIC_MATERIAL_LOOKUP, createHarmonicAssets } from '../assets';
 import { createProceduralTextureCache } from '../assets/texture-cache';
 import { HARMONIC_LEVELS, findHarmonicLevel } from '../levels';
+import { onPhaseLevelReady } from './phase-view';
 
 export type HarmonicClientOptions = Omit<
   SpClientOptions,
@@ -52,6 +53,7 @@ export function harmonicContent(): SpContent {
     // Nothing from the HL2/Portal channels: no sound channel yet (H3.3), no suit HUD (H1.4),
     // and no write to the HL2 save slot.
     features: { audio: false, suitHud: false, saves: false },
+    onLevelReady: (ctx) => onPhaseLevelReady(ctx),
   };
 }
 
