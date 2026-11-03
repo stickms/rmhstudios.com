@@ -17,6 +17,7 @@ import { MyStates } from './MyStates';
 import { NailBiters } from './NailBiters';
 import { BallotMeasures } from './BallotMeasures';
 import { OtherOffices } from './OtherOffices';
+import { StateBallot } from './StateBallot';
 import { toggleState } from '@/lib/elections/alerts';
 import { BaselineContext } from './BaselineContext';
 import { Ticker } from './Ticker';
@@ -145,6 +146,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
   const { data, isError, isFetching, refetch, dataUpdatedAt } = useElectionData(param);
   const { events } = useElectionEvents(param);
   const [alertPrefs, setAlertPrefs] = useAlertPrefs();
+  const [ballotState, setBallotState] = useState<string | null>(null);
   useElectionAlerts(events, alertPrefs);
 
   // A live event means the numbers just changed: pull the snapshot now instead of waiting for the next
@@ -511,26 +513,18 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
               <em>{t('measures.title2', { defaultValue: 'measures' })}</em>
             </>
           }
-          lede={t('measures.lede', {
-            defaultValue: 'Statewide amendments and propositions, plus local city and county questions — live yes and no counts and what each needs to pass.',
+          lede={t('measures.ledeMap', {
+            defaultValue: 'Pick a state to see its statewide measures, local city and county questions and local races — live yes and no counts and what each needs to pass.',
           })}
         >
+          <StateBallot cycle={param} live={live} selected={ballotState} onSelect={setBallotState} />
+          <h3 className="el-drawer__title" style={{ margin: '40px 0 14px' }}>
+            {t('ballot.allMeasures', { defaultValue: 'All ballot measures' })}
+          </h3>
           <BallotMeasures cycle={param} live={live} />
-        </Section>
-
-        <Section
-          id="offices"
-          eyebrow={t('office.eyebrow', { defaultValue: 'Down the ballot' })}
-          title={
-            <>
-              {t('office.title1', { defaultValue: 'Other' })}{' '}
-              <em>{t('office.title2', { defaultValue: 'offices' })}</em>
-            </>
-          }
-          lede={t('office.lede', {
-            defaultValue: 'Attorneys general, secretaries of state, treasurers, supreme court seats, mayors and other local races.',
-          })}
-        >
+          <h3 id="offices" className="el-drawer__title" style={{ margin: '40px 0 14px' }}>
+            {t('ballot.allLocal', { defaultValue: 'All local and down-ballot races' })}
+          </h3>
           <OtherOffices cycle={param} live={live} />
         </Section>
 

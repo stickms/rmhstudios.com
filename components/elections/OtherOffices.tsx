@@ -8,7 +8,7 @@ import { useFollow } from './FollowContext';
 
 const PAGE = 18;
 
-function useOffices(cycle: string, live: boolean) {
+export function useOffices(cycle: string, live: boolean) {
   return useQuery<{ races: OtherRace[]; updatedAt: string }>({
     queryKey: ['elections-offices', cycle],
     queryFn: async () => {
@@ -25,7 +25,7 @@ function useOffices(cycle: string, live: boolean) {
 const PARTY = { DEM: 'dem', GOP: 'gop', OTH: 'oth' } as const;
 const WORD = { DEM: 'Dem', GOP: 'GOP', OTH: 'Ind' } as const;
 
-function OfficeCard({ r }: { r: OtherRace }) {
+export function OfficeCard({ r }: { r: OtherRace }) {
   const { t } = useTranslation('c-elections');
   const started = r.totalVotes > 0;
   return (
