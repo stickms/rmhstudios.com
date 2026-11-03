@@ -88,7 +88,8 @@ export const Route = createFileRoute('/elections')({
   },
   loaderDeps: ({ search }) => ({ cycle: search.cycle, p: search.p }),
   loader: ({ deps }) => getLite({ data: deps }),
-  head: ({ loaderData }) => {
+  head: ({ loaderData, match }) => {
+    const raceId = (match as { search?: { race?: string } }).search?.race;
     const shared = !!loaderData?.sharedMap;
     const title = shared
       ? `My ${loaderData?.year} election map | RMH Studios`
@@ -103,7 +104,7 @@ export const Route = createFileRoute('/elections')({
       loaderData?.cycle.kind === 'other' ? loaderData.cycle.date : (loaderData?.year ?? '');
     const image = `/api/og/elections?cycle=${cycleParam}&v=${bucket}${
       shared ? `&p=${encodeURIComponent(loaderData!.sharedMap!)}` : ''
-    }`;
+    }${raceId && !shared ? `&race=${encodeURIComponent(raceId)}` : ''}`;
     return {
       meta: [
         ...buildMeta({
@@ -111,7 +112,7 @@ export const Route = createFileRoute('/elections')({
           description,
           path: PATH,
           image,
-          imageAlt: shared ? 'A shared election map' : 'Live election results',
+          imageAlt: shared ? 'A shared election map' : raceId ? 'An election race' : 'Live election results',
         }),
         { name: 'theme-color', content: '#F3F0E6' },
       ],
