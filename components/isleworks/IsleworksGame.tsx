@@ -22,6 +22,8 @@ import { codeFromLocation } from '@/lib/worlds/schema';
 
 import { WebGLUnavailable, useWebGLSupport } from '@/components/shared/WebGLUnavailable';
 import { BuildPalette } from './hud/BuildPalette';
+import { CompactHud } from './hud/CompactHud';
+import { useCompactHud } from './hud/useCompactHud';
 import { Rail } from './hud/Rail';
 import { IsleVisit } from './hud/IsleVisit';
 import { StartScreen } from './hud/StartScreen';
@@ -44,6 +46,7 @@ export default function IsleworksGame() {
   useEffect(() => setVisitCode(codeFromLocation('isleworks')), []);
   const rigRef = useRef<RigHandle | null>(null);
   const webgl = useWebGLSupport();
+  const compactHud = useCompactHud();
 
   /* Game keys. The camera's Q/E/WASD are handled inside the rig. */
   useEffect(() => {
@@ -120,7 +123,7 @@ export default function IsleworksGame() {
   if (!webgl) return <WebGLUnavailable gameName="Isleworks" />;
 
   return (
-    <div className="isw">
+    <div className={`isw${compactHud ? ' isw--compact' : ''}`}>
       <div className="isw-canvas">
         <CityScene rigRef={rigRef} />
       </div>
@@ -128,8 +131,8 @@ export default function IsleworksGame() {
       {visitCode && <IsleVisit code={visitCode} />}
       {started ? (
         <div className="isw-hud" data-jelly-zone="hud">
-          <TopBar rigRef={rigRef} />
-          {!visiting && <Rail />}
+          {compactHud ? <CompactHud rigRef={rigRef} /> : <TopBar rigRef={rigRef} />}
+          {!visiting && !compactHud && <Rail />}
           {!visiting && <BuildPalette />}
           <Toasts />
         </div>
