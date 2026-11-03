@@ -15,6 +15,7 @@ import { AlertsPanel, useAlertPrefs, useElectionAlerts } from './AlertsPanel';
 import { FollowContext } from './FollowContext';
 import { MyStates } from './MyStates';
 import { NailBiters } from './NailBiters';
+import { BallotMeasures } from './BallotMeasures';
 import { toggleState } from '@/lib/elections/alerts';
 import { BaselineContext } from './BaselineContext';
 import { Ticker } from './Ticker';
@@ -289,6 +290,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
             <a href="#results">{t('nav.results', { defaultValue: 'Results' })}</a>
             <a href="#map">{t('nav.map', { defaultValue: 'Map' })}</a>
             <a href="#races">{t('nav.races', { defaultValue: 'Races' })}</a>
+            <a href="#measures">{t('nav.measures', { defaultValue: 'Measures' })}</a>
             <a href="#polls">{t('nav.polls', { defaultValue: 'Polls' })}</a>
             <a href="#wire">{t('nav.wire', { defaultValue: 'Wire' })}</a>
             <a href="#timeline">{t('nav.timeline', { defaultValue: 'Night' })}</a>
@@ -496,6 +498,22 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
           ) : (
             <div className="el-box el-skel" aria-busy />
           )}
+        </Section>
+
+        <Section
+          id="measures"
+          eyebrow={t('measures.eyebrow', { defaultValue: 'On your ballot' })}
+          title={
+            <>
+              {t('measures.title1', { defaultValue: 'Ballot' })}{' '}
+              <em>{t('measures.title2', { defaultValue: 'measures' })}</em>
+            </>
+          }
+          lede={t('measures.lede', {
+            defaultValue: 'Statewide amendments and propositions, plus local city and county questions — live yes and no counts and what each needs to pass.',
+          })}
+        >
+          <BallotMeasures cycle={param} live={live} />
         </Section>
 
         <Section

@@ -181,3 +181,14 @@ Nail-biters (thin-lead counting races), My states (followed states at a glance, 
 local-time poll closings, an **Explain** button on race cards (signed-in; asks the Briefing Room about that race),
 **Follow** on race cards, a chime and keep-screen-on toggle in Alerts, `?state=PA` deep links, the browser tab
 title as a live scoreboard, and a formula-safe CSV of every race at `/api/elections/races.csv`.
+
+## Ballot measures
+
+`/api/elections/measures` lists every measure on the cycle's ballots — statewide amendments, propositions and
+initiatives, plus **local** city and county questions (the feed marks those `coverage: county`) — with live yes/no
+counts, the share each needs (`win_threshold`, e.g. 60% for some Florida amendments), whether it is passing at this
+count, and the AP call. The results feed publishes one page per measure plus a "search" index; the index URL is
+read from an office page's config (override with `ELECTIONS_MEASURES_INDEX_URL`). Pages are fetched with ETags
+(304 when unchanged), 8 at a time, cached 45 s on election day. The page's **Measures** section shows the night's
+tallies (passed/failed, passing/failing now, supermajority count), the closest measures, and filters by
+statewide/local, state, text, and followed states.

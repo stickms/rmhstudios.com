@@ -498,6 +498,7 @@ import { Route as ApiElectionsAskRouteImport } from './routes/api/elections/ask'
 import { Route as ApiElectionsCalendarRouteImport } from './routes/api/elections/calendar'
 import { Route as ApiElectionsHistoryRouteImport } from './routes/api/elections/history'
 import { Route as ApiElectionsMarketsRouteImport } from './routes/api/elections/markets'
+import { Route as ApiElectionsMeasuresRouteImport } from './routes/api/elections/measures'
 import { Route as ApiElectionsNewsRouteImport } from './routes/api/elections/news'
 import { Route as ApiElectionsPublicRouteImport } from './routes/api/elections/public'
 import { Route as ApiElectionsRacesDotcsvRouteImport } from './routes/api/elections/races[.]csv'
@@ -3864,6 +3865,11 @@ const ApiElectionsHistoryRoute = ApiElectionsHistoryRouteImport.update({
 const ApiElectionsMarketsRoute = ApiElectionsMarketsRouteImport.update({
   id: '/api/elections/markets',
   path: '/api/elections/markets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsMeasuresRoute = ApiElectionsMeasuresRouteImport.update({
+  id: '/api/elections/measures',
+  path: '/api/elections/measures',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiElectionsNewsRoute = ApiElectionsNewsRouteImport.update({
@@ -9084,6 +9090,7 @@ export interface FileRoutesByFullPath {
   '/api/elections/calendar': typeof ApiElectionsCalendarRoute
   '/api/elections/history': typeof ApiElectionsHistoryRoute
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
+  '/api/elections/measures': typeof ApiElectionsMeasuresRoute
   '/api/elections/news': typeof ApiElectionsNewsRoute
   '/api/elections/public': typeof ApiElectionsPublicRoute
   '/api/elections/races.csv': typeof ApiElectionsRacesDotcsvRoute
@@ -10455,6 +10462,7 @@ export interface FileRoutesByTo {
   '/api/elections/calendar': typeof ApiElectionsCalendarRoute
   '/api/elections/history': typeof ApiElectionsHistoryRoute
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
+  '/api/elections/measures': typeof ApiElectionsMeasuresRoute
   '/api/elections/news': typeof ApiElectionsNewsRoute
   '/api/elections/public': typeof ApiElectionsPublicRoute
   '/api/elections/races.csv': typeof ApiElectionsRacesDotcsvRoute
@@ -11855,6 +11863,7 @@ export interface FileRoutesById {
   '/api/elections/calendar': typeof ApiElectionsCalendarRoute
   '/api/elections/history': typeof ApiElectionsHistoryRoute
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
+  '/api/elections/measures': typeof ApiElectionsMeasuresRoute
   '/api/elections/news': typeof ApiElectionsNewsRoute
   '/api/elections/public': typeof ApiElectionsPublicRoute
   '/api/elections/races.csv': typeof ApiElectionsRacesDotcsvRoute
@@ -13255,6 +13264,7 @@ export interface FileRouteTypes {
     | '/api/elections/calendar'
     | '/api/elections/history'
     | '/api/elections/markets'
+    | '/api/elections/measures'
     | '/api/elections/news'
     | '/api/elections/public'
     | '/api/elections/races.csv'
@@ -14626,6 +14636,7 @@ export interface FileRouteTypes {
     | '/api/elections/calendar'
     | '/api/elections/history'
     | '/api/elections/markets'
+    | '/api/elections/measures'
     | '/api/elections/news'
     | '/api/elections/public'
     | '/api/elections/races.csv'
@@ -16025,6 +16036,7 @@ export interface FileRouteTypes {
     | '/api/elections/calendar'
     | '/api/elections/history'
     | '/api/elections/markets'
+    | '/api/elections/measures'
     | '/api/elections/news'
     | '/api/elections/public'
     | '/api/elections/races.csv'
@@ -17203,6 +17215,7 @@ export interface RootRouteChildren {
   ApiElectionsCalendarRoute: typeof ApiElectionsCalendarRoute
   ApiElectionsHistoryRoute: typeof ApiElectionsHistoryRoute
   ApiElectionsMarketsRoute: typeof ApiElectionsMarketsRoute
+  ApiElectionsMeasuresRoute: typeof ApiElectionsMeasuresRoute
   ApiElectionsNewsRoute: typeof ApiElectionsNewsRoute
   ApiElectionsPublicRoute: typeof ApiElectionsPublicRoute
   ApiElectionsRacesDotcsvRoute: typeof ApiElectionsRacesDotcsvRoute
@@ -21287,6 +21300,13 @@ declare module '@tanstack/react-router' {
       path: '/api/elections/markets'
       fullPath: '/api/elections/markets'
       preLoaderRoute: typeof ApiElectionsMarketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/measures': {
+      id: '/api/elections/measures'
+      path: '/api/elections/measures'
+      fullPath: '/api/elections/measures'
+      preLoaderRoute: typeof ApiElectionsMeasuresRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/elections/news': {
@@ -30183,6 +30203,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiElectionsCalendarRoute: ApiElectionsCalendarRoute,
   ApiElectionsHistoryRoute: ApiElectionsHistoryRoute,
   ApiElectionsMarketsRoute: ApiElectionsMarketsRoute,
+  ApiElectionsMeasuresRoute: ApiElectionsMeasuresRoute,
   ApiElectionsNewsRoute: ApiElectionsNewsRoute,
   ApiElectionsPublicRoute: ApiElectionsPublicRoute,
   ApiElectionsRacesDotcsvRoute: ApiElectionsRacesDotcsvRoute,
