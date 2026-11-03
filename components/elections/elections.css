@@ -2304,3 +2304,75 @@ html.ios-webkit .el-room__grid {
   color: var(--el-ink);
   padding: 0 3px;
 }
+
+/* Ballot measures */
+.el-measure__stats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+}
+.el-measure__stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 110px;
+}
+.el-measure__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+}
+.el-measure {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--el-cell);
+}
+.el-measure__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.el-measure__summary {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.el-measure__summary--clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.el-measure__bar {
+  position: relative;
+  display: flex;
+  height: 16px;
+  border: var(--el-bw) solid var(--el-ink);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--el-paper-2);
+}
+.el-measure__yes {
+  background: var(--el-purple);
+}
+.el-measure__no {
+  background: var(--el-ink);
+  margin-left: auto;
+}
+.el-measure__mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 3px;
+  background: #fff;
+  border-inline: 1px solid var(--el-ink);
+}
+.el-measure__nums {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-weight: 600;
+}
