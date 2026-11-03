@@ -30,12 +30,7 @@ function Card({ c, live, races }: { c: ChamberControl; live: boolean; races: Rac
   const who = c.controlledBy
     ? t('bop.control', {
         defaultValue: '{{party}} control',
-        party:
-          c.controlledBy === 'DEM'
-            ? 'Democratic'
-            : c.controlledBy === 'GOP'
-              ? 'Republican'
-              : 'Independent',
+        party: c.controlledBy === 'DEM' ? 'Democratic' : c.controlledBy === 'GOP' ? 'Republican' : 'Independent',
       })
     : null;
 
@@ -52,11 +47,7 @@ function Card({ c, live, races }: { c: ChamberControl; live: boolean; races: Rac
       {who ? (
         <span
           className={`el-sticker el-stamp`}
-          style={
-            c.controlledBy === 'GOP'
-              ? { background: '#fff', color: '#000' }
-              : { background: '#000', color: '#fff' }
-          }
+          style={{ background: c.controlledBy === 'GOP' ? 'var(--el-gop)' : 'var(--el-dem)', color: '#fff' }}
         >
           {who}
         </span>
@@ -91,20 +82,11 @@ function Card({ c, live, races }: { c: ChamberControl; live: boolean; races: Rac
       >
         <span className="el-meter__mid" />
         <span className="el-meter__tag">{c.toWin}</span>
-        <div
-          className="el-meter__seg el-meter__seg--dem"
-          style={{ width: `${pctOf(shown.DEM, meterTotal)}%` }}
-        />
+        <div className="el-meter__seg el-meter__seg--dem" style={{ width: `${pctOf(shown.DEM, meterTotal)}%` }} />
         {shown.OTH ? (
-          <div
-            className="el-meter__seg el-meter__seg--oth"
-            style={{ width: `${pctOf(shown.OTH, meterTotal)}%` }}
-          />
+          <div className="el-meter__seg el-meter__seg--oth" style={{ width: `${pctOf(shown.OTH, meterTotal)}%` }} />
         ) : null}
-        <div
-          className="el-meter__seg el-meter__seg--gop"
-          style={{ width: `${pctOf(shown.GOP, meterTotal)}%` }}
-        />
+        <div className="el-meter__seg el-meter__seg--gop" style={{ width: `${pctOf(shown.GOP, meterTotal)}%` }} />
       </div>
 
       <div className="el-bop__foot">

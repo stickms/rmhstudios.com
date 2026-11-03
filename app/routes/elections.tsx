@@ -3,9 +3,9 @@ import { createServerFn } from '@tanstack/react-start';
 import { ElectionsPage } from '@/components/elections/ElectionsPage';
 import electionsCss from '@/components/elections/elections.css?url';
 // Archivo (variable width — the stretched display type), Space Grotesk (body) and Space Mono (data),
-// self-hosted with `font-display: optional` (app/fonts/elections.css); Archivo's Latin file preloaded. See lib/fonts/self-hosted.ts.
+// self-hosted with `font-display: optional` (app/fonts/elections.css); Space Grotesk Latin file preloaded. See lib/fonts/self-hosted.ts.
 import fontsCss from '@/app/fonts/elections.css?url';
-import archivoLatin from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
+import spaceGroteskLatin from '@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2?url';
 import { preloadFont } from '@/lib/fonts/self-hosted';
 import { currentCycle, cycleOptions, parseDay, phaseOf } from '@/lib/elections/calendar';
 import { getElectionSnapshot } from '@/lib/elections/source.server';
@@ -119,7 +119,7 @@ export const Route = createFileRoute('/elections')({
         buildCanonical(PATH),
         { rel: 'stylesheet', href: electionsCss },
         { rel: 'stylesheet', href: fontsCss },
-        preloadFont(archivoLatin),
+        preloadFont(spaceGroteskLatin),
       ],
     };
   },
