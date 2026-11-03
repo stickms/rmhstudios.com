@@ -32,6 +32,7 @@ import { createInputState } from '../engine/input';
 import type { TileGenerator } from '../engine/tile-generator';
 import type { Camera, CatalystState, GameWorld, InputState, PassiveState, WeaponState } from '../engine/types';
 import { useAltairGameStore } from '../stores/game-store';
+import { finalCoinsFor } from './loadout';
 import {
   KEY_DOWN,
   KEY_LEFT,
@@ -108,10 +109,7 @@ export interface SoloResult {
 
 const store = () => useAltairGameStore.getState();
 
-/** The payout multiplier arithmetic, shared by the results screen, the meta save and the server. */
-export function finalCoinsFor(runCoins: number, greedLevel: number, doubleTime: boolean): number {
-  return Math.floor(runCoins * (1 + greedLevel * 0.1) * (doubleTime ? 1.5 : 1));
-}
+export { finalCoinsFor };
 
 /** Store -> world: rebuild the world's weapon/passive/catalyst lists from the run store, keeping runtime state. */
 export function syncStoreToWorld(world: GameWorld): void {
@@ -179,6 +177,7 @@ export class SoloRun {
     this.world.inputState = this.simInput;
     this.tileGen = createTileGenerator();
     this.rt = createSimRuntime(this.world);
+    if (loadout.stats) this.rt.metaBonuses = { ...loadout.stats };
     this.callbacks = this.makeCallbacks();
 
     store().startRun(classId, doubleTime, {}, loadout.rerolls, loadout.banishes, loadout.revival, loadout.extraChoice);

@@ -111,6 +111,10 @@ export const Route = createFileRoute('/api/altair/meta')({
               if (!decision.ok) {
                 return Response.json({ error: decision.error }, { status: 400 });
               }
+              // classFirstClears only ever grows: a save cannot take a class back out of it.
+              const serverClears = Array.isArray(row?.classFirstClears) ? (row?.classFirstClears as unknown[]) : [];
+              const clientClears = Array.isArray(shared.classFirstClears) ? shared.classFirstClears : [];
+              const classFirstClears = [...new Set([...serverClears, ...clientClears].filter((c): c is string => typeof c === 'string'))];
               const money = {
                 coins: decision.coins,
                 upgrades: decision.upgrades,
@@ -119,7 +123,7 @@ export const Route = createFileRoute('/api/altair/meta')({
               };
               if (!row) {
                 try {
-                  await prisma.altairMetaProgress.create({ data: { userId, ...money, ...shared } });
+                  await prisma.altairMetaProgress.create({ data: { userId, ...money, ...shared, classFirstClears } });
                 } catch {
                   continue; // a concurrent first save won; reconcile against it
                 }
@@ -127,7 +131,7 @@ export const Route = createFileRoute('/api/altair/meta')({
                 // Optimistic concurrency on the balance we reconciled against.
                 const done = await prisma.altairMetaProgress.updateMany({
                   where: { userId, coins: row.coins, updatedAt: row.updatedAt },
-                  data: { ...money, ...shared },
+                  data: { ...money, ...shared, classFirstClears },
                 });
                 if (done.count === 0) continue;
               }

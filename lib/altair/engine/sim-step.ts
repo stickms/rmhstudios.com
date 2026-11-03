@@ -53,7 +53,7 @@ export function recomputeStats(world: GameWorld, rt: SimRuntime): PlayerStats {
     1, // level comes from Zustand store, but we track weapons/passives from world
     world.weapons,
     world.passives,
-    {}, // meta bonuses applied at run start
+    rt.metaBonuses ?? {}, // solo: the loadout's meta-upgrade stats; multiplayer / golden master: none
   );
 
   // Apply Berserker blood rage
