@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 969 files across 200 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 985 files across 201 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -658,6 +658,28 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/economy/savings-goals` | `GET` `POST` | `app/routes/api/economy/savings-goals/index.ts` |
 | `/api/economy/savings-goals/:id` | `DELETE` | `app/routes/api/economy/savings-goals/$id.ts` |
 
+## `/api/elections`
+
+15 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/elections` | `GET` | `app/routes/api/elections/index.ts` |
+| `/api/elections/ask` | `POST` | `app/routes/api/elections/ask.ts` |
+| `/api/elections/calendar` | `GET` | `app/routes/api/elections/calendar.ts` |
+| `/api/elections/chat` | `DELETE` `POST` | `app/routes/api/elections/chat/index.ts` |
+| `/api/elections/chat/react` | `POST` | `app/routes/api/elections/chat/react.ts` |
+| `/api/elections/chat/stream` | `GET` | `app/routes/api/elections/chat/stream.ts` |
+| `/api/elections/events` | `GET` | `app/routes/api/elections/events/index.ts` |
+| `/api/elections/events/stream` | `GET` | `app/routes/api/elections/events/stream.ts` |
+| `/api/elections/history` | `GET` | `app/routes/api/elections/history.ts` |
+| `/api/elections/markets` | `GET` | `app/routes/api/elections/markets.ts` |
+| `/api/elections/news` | `GET` | `app/routes/api/elections/news.ts` |
+| `/api/elections/rooms` | `GET` `POST` | `app/routes/api/elections/rooms/index.ts` |
+| `/api/elections/rooms/:code` | `DELETE` `GET` `PATCH` | `app/routes/api/elections/rooms/$code.ts` |
+| `/api/elections/streams` | `GET` | `app/routes/api/elections/streams.ts` |
+| `/api/elections/summary` | `GET` | `app/routes/api/elections/summary.ts` |
+
 ## `/api/email`
 
 1 route.
@@ -1271,7 +1293,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/og`
 
-15 routes.
+16 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1279,6 +1301,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/og/app/:appId` | `GET` | `app/routes/api/og/app/$appId.ts` |
 | `/api/og/blog/:slug` | `GET` | `app/routes/api/og/blog/$slug.ts` |
 | `/api/og/build/:slug` | `GET` | `app/routes/api/og/build/$slug.ts` |
+| `/api/og/elections` | `GET` | `app/routes/api/og/elections.ts` |
 | `/api/og/game/:gameId` | `GET` | `app/routes/api/og/game/$gameId.ts` |
 | `/api/og/job/:jobId` | `GET` | `app/routes/api/og/job/$jobId.ts` |
 | `/api/og/moment/:id` | `GET` | `app/routes/api/og/moment/$id.ts` |
