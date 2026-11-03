@@ -16,7 +16,15 @@
  */
 
 import { CITY_HALL_ID, STARTING_MONEY, tryGetDefinition } from './catalog';
-import { PARCEL_SIZE, index, parcelBounds, parcelIndexFor, parcelsAcross } from './grid';
+import {
+  PARCEL_SIZE,
+  inBounds,
+  index,
+  instanceTiles,
+  parcelBounds,
+  parcelIndexFor,
+  parcelsAcross,
+} from './grid';
 import { evaluateObjectives, initialObjectives } from './objectives';
 import { emptyStats, recomputeDerived } from './simulation';
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH, generateIsland } from './terrain';
@@ -27,7 +35,6 @@ import { SAVE_KEY, SAVE_VERSION, type SavedCity } from './save-format';
 // Re-exported so every existing importer of `./city` keeps working.
 export { SAVE_KEY, SAVE_VERSION };
 export type { SavedBuilding, SavedCity } from './save-format';
-
 
 let instanceCounter = 0;
 
@@ -186,6 +193,11 @@ export function fromSavedCity(payload: SavedCity | null): CityState | null {
   for (const saved of payload.buildings ?? []) {
     if (!tryGetDefinition(saved.d)) continue;
     const instance = makeInstance(saved.d, saved.x, saved.y, saved.r ?? 0, saved.m ?? 1);
+    // A save or a shared island can put a footprint off the grid; the simulation
+    // indexes tiles by it, so one such building would crash every load.
+    const def = tryGetDefinition(saved.d)!;
+    if (!instanceTiles(instance, def).every((t) => inBounds(t.x, t.y, state.width, state.height)))
+      continue;
     instance.level = Math.min(3, Math.max(1, saved.l ?? 1));
     instance.condition = Math.min(1, Math.max(0, saved.c ?? 1));
     instance.constructionProgress = 1;
