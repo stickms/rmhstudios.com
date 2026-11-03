@@ -78,15 +78,25 @@ export const Route = createFileRoute('/api/slice-it/leaderboard')({
               ...audience.where,
             };
 
+            // A board that omits the tier or the pool merges them, and a player
+            // holds one row per (tier, pool): without this the same account
+            // ranked several times, one per tier it had played. Their best row
+            // stands for them, which is also what `selfSongRank` picks.
+            const merged = !difficulty || !modPool;
             const [rows, total] = await Promise.all([
               prisma.songLeaderboard.findMany({
                 where,
                 orderBy: [{ score: 'desc' }, { createdAt: 'asc' }],
+                ...(merged ? { distinct: ['userId' as const] } : {}),
                 skip: cursor,
                 take: limit,
                 select: BOARD_SELECT,
               }),
-              prisma.songLeaderboard.count({ where }),
+              merged
+                ? prisma.songLeaderboard
+                    .groupBy({ by: ['userId'], where })
+                    .then((groups) => groups.length)
+                : prisma.songLeaderboard.count({ where }),
             ]);
 
             const entries: LeaderboardEntry[] = rows.map((row, index) =>
@@ -363,9 +373,9 @@ function toGlobalEntry(row: GlobalRow, rank: number, viewerId: string | null): G
     speedMod: 1,
     modifiers: null,
     // The board is an aggregate over every run, so there is no single moment it
-    // was "achieved". Epoch rather than `now()`, so a client sorting or
-    // displaying it cannot mistake it for a fresh timestamp.
-    achievedAt: new Date(0).toISOString(),
+    // was "achieved". Null rather than `now()` (a fresh-looking timestamp) or the
+    // epoch, which a client formats as a row dated 1970.
+    achievedAt: null,
     isSelf: Boolean(viewerId) && row.userId === viewerId,
   };
 }
