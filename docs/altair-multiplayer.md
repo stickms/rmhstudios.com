@@ -303,6 +303,20 @@ recorded in real Chromium (keyboard, level-up clicks, a resize) that replays off
 6. **Bounds.** 30 submissions per user per hour, 60 waiting jobs, one replay at a time, a deadline, a
    10 MB inflate cap, steps <= wall clock.
 
+7. **Meta upgrades and the first-clear bonus (fixed).** The loadout used to read upgrade ids without the shop's
+   `meta_` prefix, so Reroll / Banish / Revival / Extra Choice / Catalyst Affinity / Greed were always level 0, and
+   the stat upgrades (Vitality, Might, Swiftness, ...) never reached the sim. `loadoutFromUpgrades` now reads
+   the real ids and carries the summed stat bonuses in `loadout.stats` (whitelist `META_STAT_KEYS`), which the
+   server issues, the log must repeat, and `SoloRun` feeds to `computeEffectiveStats`. A loadout WITHOUT `stats`
+   is the old shape and replays exactly as before, so every previously recorded log (and run issued before the
+   fix) still verifies; multiplayer and the golden master never set it. The first-clear bonus (200, flat, once
+   per class) was added to the run store after the payout was computed, so it was never paid; it is now paid by
+   `persistVerifiedSoloRun` on a verified victory, decided by the server's own ledger
+   (`AltairSoloRun.firstClearBonus`, checked under a lock on the meta row), so a repeat of the run id, a second
+   victory with the class, or an edited `classFirstClears` cannot pay it again (`/api/altair/meta` also only ever
+   grows that list). Still inert because the engine has no implementation for them: Piercing (`pierce` is read by
+   no weapon), Tenacity, Scavenger, Endurance, Arsenal, and the "catalysts start at lv2" half of Catalyst Affinity.
+
 Residual (not closed): bots and macros play inputs a human could not and replay cannot tell; class unlocks,
 double-time unlock, best-time/first-clear fields still round-trip through the client's meta save; a seed
 can be shopped by starting runs (6/min) and abandoning the ones a bot simulates badly; closing the tab on a

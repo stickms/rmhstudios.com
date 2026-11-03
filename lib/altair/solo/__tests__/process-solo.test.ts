@@ -41,7 +41,7 @@ function fakeDb(row: SoloRunRow) {
       if (r.status !== 'submitted') return { saved: false, reason: 'duplicate' };
       r.status = 'verified';
       credited.push({ runId: id, coins: run.finalCoins, kills: run.kills });
-      return { saved: true, coins: run.finalCoins };
+      return { saved: true, coins: run.finalCoins, firstClearBonus: 0 };
     },
     reject: async (id, reason) => {
       rows.get(id)!.status = 'rejected';

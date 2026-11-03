@@ -213,13 +213,13 @@ describe('the replay deadline', () => {
 });
 
 describe('loadout derivation', () => {
-  it('reads the upgrade ids the game has always read', () => {
-    expect(loadoutFromUpgrades({ reroll: 2, banish: 1, revival: 1, extra_choice: 1, catalyst_affinity: 3, greed: 4 })).toEqual({
+  it('reads the upgrade ids the shop sells (meta_*)', () => {
+    expect(loadoutFromUpgrades({ meta_reroll: 2, meta_banish: 1, meta_revival: 1, meta_extra_choice: 1, meta_catalyst_affinity: 2, meta_greed: 4 })).toEqual({
       rerolls: 2,
       banishes: 1,
       revival: 1,
       extraChoice: true,
-      catalystAffinity: 3,
+      catalystAffinity: 2,
       greed: 4,
     });
     expect(loadoutFromUpgrades(null)).toEqual({ rerolls: 0, banishes: 0, revival: 0, extraChoice: false, catalystAffinity: 0, greed: 0 });

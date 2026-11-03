@@ -44,7 +44,7 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
   const weapons = useAltairGameStore((s) => s.weapons);
   const selectedClassId = useAltairGameStore((s) => s.selectedClassId);
   const doubleTime = useAltairGameStore((s) => s.doubleTime);
-  const greedLevel = useAltairMetaStore((s) => s.getUpgradeLevel('greed'));
+  const greedLevel = useAltairMetaStore((s) => s.getUpgradeLevel('meta_greed'));
 
   const { t } = useTranslation("c-altair");
 
