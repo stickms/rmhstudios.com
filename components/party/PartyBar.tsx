@@ -187,7 +187,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
   }
 
   return (
-    <div className="pointer-events-none bottom-above-dock fixed inset-x-0 z-40 flex justify-center px-3 md:bottom-4">
+    <div data-vv-follow="" className="pointer-events-none bottom-above-dock fixed inset-x-0 z-40 flex justify-center px-3 md:bottom-4">
       <div className="pointer-events-auto glass-chrome flex items-center gap-2 rounded-full px-3 py-2">
         {core}
       </div>
