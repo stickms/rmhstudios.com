@@ -82,10 +82,10 @@ export function AiDesk({
           {data?.summary ? (
             <span className="el-chip el-chip--pink">
               <Sparkles size={11} aria-hidden style={{ verticalAlign: -1, marginRight: 4 }} />
-              {t('desk.ai', { defaultValue: 'AI summary' })}
+              {t('desk.briefing', { defaultValue: 'Briefing Room Summary' })}
             </span>
           ) : (
-            <span className="el-chip el-chip--ink">{t('desk.eyebrow', { defaultValue: 'The desk' })}</span>
+            <span className="el-chip el-chip--ink">{t('desk.briefingEyebrow', { defaultValue: 'Briefing Room' })}</span>
           )}
           {data?.generatedAt ? <span>{timeAgo(data.generatedAt, now)}</span> : null}
         </p>
@@ -93,7 +93,7 @@ export function AiDesk({
           <>
             <p className="el-desk__prose" aria-live="polite">{data.summary}</p>
             <p className="el-eyebrow" style={{ margin: '12px 0 0' }}>
-              {t('desk.disclaimer', { defaultValue: 'Written by AI from the live numbers. Calls are projections, not certified results.' })}
+              {t('desk.briefingNote', { defaultValue: 'Generated automatically from the live numbers. Calls are projections, not certified results.' })}
             </p>
           </>
         ) : null}
@@ -108,7 +108,7 @@ export function AiDesk({
       </div>
 
       <div className="el-box el-proj" style={{ margin: 0 }}>
-        <h3 className="el-drawer__title" style={{ fontSize: 28 }}>{t('ask.title', { defaultValue: 'Ask the desk' })}</h3>
+        <h3 className="el-drawer__title" style={{ fontSize: 28 }}>{t('ask.briefingTitle', { defaultValue: 'Ask the Briefing Room' })}</h3>
         {session ? (
           <form onSubmit={ask} className="el-stack">
             <label className="el-sr" htmlFor="el-ask">{t('ask.label', { defaultValue: 'Your question about the results' })}</label>

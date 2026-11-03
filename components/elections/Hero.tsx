@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowDown, Share2 } from 'lucide-react';
 import { countdownTo, type Cycle, type Phase } from '@/lib/elections/calendar';
 import { useNow } from './hooks';
+import { BriefingPortrait, HOST_NAME } from './BriefingPortrait';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -30,7 +31,6 @@ export function Hero({
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const yDoodle = useTransform(scrollYProgress, [0, 1], [0, 90]);
-  const yVert = useTransform(scrollYProgress, [0, 1], [0, -40]);
 
   const kindWord =
     cycle.kind === 'midterm'
@@ -98,12 +98,19 @@ export function Hero({
             </div>
           </div>
 
-          <div className="el-cell el-cell--vert" aria-hidden>
-            <span className="el-glyph el-glyph--a">✱</span>
-            <motion.span className="el-vert" style={{ y: yVert }}>
+          <div className="el-cell el-cell--vert">
+            <span className="el-glyph el-glyph--a" aria-hidden>
+              ✱
+            </span>
+            <span className="el-vert" aria-hidden>
               {t('hero.vertical', { defaultValue: 'Election night' })}
-            </motion.span>
-            <span className="el-glyph el-glyph--b">◐</span>
+            </span>
+            <BriefingPortrait
+              variant={4}
+              className="el-hero__portrait"
+              drift={34}
+              caption={`${HOST_NAME} · ${t('portrait.role', { defaultValue: 'Briefing Room host' })}`}
+            />
           </div>
 
           <div className="el-cell el-cell--count">
@@ -150,9 +157,9 @@ export function Hero({
           <div className="el-cell el-cell--note">
             <p className="el-eyebrow">{t('hero.noteLabel', { defaultValue: 'How it works' })}</p>
             <p>
-              {t('hero.note', {
+              {t('hero.noteBriefing', {
                 defaultValue:
-                  'Results come straight from the count, updated every 20 seconds. Calls, flips and closing polls appear as they happen — watch live, paint your own map, or open the Situation Room.',
+                  'Results come straight from the count, updated every 20 seconds. Calls, flips and closing polls appear as they happen — watch live, paint your own map, or open the Briefing Room.',
               })}
             </p>
           </div>

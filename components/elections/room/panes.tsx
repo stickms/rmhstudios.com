@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ExternalLink, Pause, Play, Pin } from 'lucide-react';
+import { ChevronDown, ExternalLink, ListVideo, Pause, Play, Pin } from 'lucide-react';
 import type { ElectionEvent, FollowMode } from '@/lib/elections/events';
 import {
   FOLLOW_MODES,
@@ -48,116 +48,148 @@ const FOLLOW_LABEL: Record<FollowMode, [string, string]> = {
 };
 
 /* ── stream ───────────────────────────────────────────────────────────── */
+/**
+ * A stream pane is the video and nothing else. Until something is chosen it shows the picker (live
+ * newsrooms, a link box); once a stream is chosen the picker folds into a small overlay button that opens a
+ * dropdown, so the video gets the whole pane instead of being squeezed by controls it no longer needs.
+ */
 export function StreamBody({ pane, ctx }: { pane: StreamPane; ctx: PaneContext }) {
   const { t } = useTranslation('c-elections');
   const [draft, setDraft] = useState(pane.url);
   const [bad, setBad] = useState(false);
+  const [open, setOpen] = useState(false);
   const live = useLiveStreams();
   const [armed, setArmed] = useState(false); // nothing third-party loads until the viewer clicks play
+  const wrap = useRef<HTMLDivElement | null>(null);
   const embed = useMemo(() => (pane.url ? parseEmbed(pane.url) : null), [pane.url]);
   const src = embed && typeof location !== 'undefined' ? embed.src(location.hostname) : null;
 
-  const go = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!draft.trim() || parseEmbed(draft.trim())) {
-      setBad(false);
-      setArmed(true);
-      ctx.onChange({ ...pane, url: draft.trim() });
-    } else setBad(true);
+  // The dropdown closes on Escape and on any press outside it.
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => {
+      if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', away);
+    document.addEventListener('keydown', esc, true);
+    return () => {
+      document.removeEventListener('pointerdown', away);
+      document.removeEventListener('keydown', esc, true);
+    };
+  }, [open]);
+
+  const choose = (url: string) => {
+    setDraft(url);
+    setBad(false);
+    setArmed(true);
+    setOpen(false);
+    ctx.onChange({ ...pane, url });
   };
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, gap: 8 }}>
-      {src && embed ? (
-        armed ? (
-          <iframe
-            title={t('watch.frame', { defaultValue: 'Live stream: {{label}}', label: embed.label })}
-            src={src}
-            style={{
-              flex: 1,
-              minHeight: 0,
-              width: '100%',
-              border: '2px solid var(--el-ink)',
-              background: '#000',
-            }}
-            allow="autoplay; fullscreen; picture-in-picture"
-            allowFullScreen
-            referrerPolicy="strict-origin-when-cross-origin"
-            sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
-          />
-        ) : (
-          <button
-            type="button"
-            className="el-btn el-btn--pink"
-            style={{ flex: 1 }}
-            onClick={() => setArmed(true)}
-          >
-            <Play size={18} aria-hidden />{' '}
-            {t('stream.play', { defaultValue: 'Play {{site}}', site: embed.label })}
-          </button>
-        )
-      ) : (
-        <p className="el-eyebrow" style={{ margin: 0 }}>
-          {t('stream.empty', {
-            defaultValue: 'Paste a YouTube or Twitch link. Nothing loads until you press play.',
-          })}
-        </p>
-      )}
-      {ctx.canEdit && live.length ? (
-        <div
-          className="el-pick-row"
-          role="group"
-          aria-label={t('watch.live', { defaultValue: 'Live now' })}
-          style={{ margin: 0 }}
-        >
+  const go = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!draft.trim() || parseEmbed(draft.trim())) choose(draft.trim());
+    else setBad(true);
+  };
+
+  const picker = ctx.canEdit ? (
+    <div className="el-streampick">
+      {live.length ? (
+        <div className="el-pick-row" role="group" aria-label={t('watch.live', { defaultValue: 'Live now' })} style={{ margin: 0 }}>
           {live.map((s) => (
             <button
               key={s.url}
               type="button"
               className="el-btn el-btn--sm"
               aria-pressed={pane.url === s.url}
-              onClick={() => {
-                setDraft(s.url);
-                setBad(false);
-                setArmed(true);
-                ctx.onChange({ ...pane, url: s.url });
-              }}
+              onClick={() => choose(s.url)}
             >
               {s.label}
             </button>
           ))}
         </div>
       ) : null}
-      {ctx.canEdit ? (
-        <form onSubmit={go} className="el-pick-row" style={{ flexWrap: 'nowrap', margin: 0 }}>
-          <label className="el-sr" htmlFor={`stream-${pane.id}`}>
-            {t('watch.label', { defaultValue: 'Stream link' })}
-          </label>
-          <input
-            id={`stream-${pane.id}`}
-            className="el-input"
-            inputMode="url"
-            value={draft}
-            aria-invalid={bad}
-            placeholder={t('watch.ph', { defaultValue: 'youtube.com/watch?v=… or twitch.tv/…' })}
-            onChange={(e) => setDraft(e.target.value)}
-            style={{ flex: 1, minWidth: 0, minHeight: 36 }}
-          />
-          <button type="submit" className="el-btn el-btn--sm el-btn--pink">
-            {t('watch.go', { defaultValue: 'Watch' })}
-          </button>
-        </form>
-      ) : null}
+      <form onSubmit={go} className="el-pick-row" style={{ flexWrap: 'nowrap', margin: 0 }}>
+        <label className="el-sr" htmlFor={`stream-${pane.id}`}>
+          {t('watch.label', { defaultValue: 'Stream link' })}
+        </label>
+        <input
+          id={`stream-${pane.id}`}
+          className="el-input"
+          inputMode="url"
+          value={draft}
+          aria-invalid={bad}
+          placeholder={t('watch.ph', { defaultValue: 'youtube.com/watch?v=… or twitch.tv/…' })}
+          onChange={(e) => setDraft(e.target.value)}
+          style={{ flex: 1, minWidth: 0, minHeight: 36 }}
+        />
+        <button type="submit" className="el-btn el-btn--sm el-btn--pink">
+          {t('watch.go', { defaultValue: 'Watch' })}
+        </button>
+      </form>
       {bad ? (
         <p className="el-eyebrow" role="alert" style={{ margin: 0 }}>
           {t('watch.bad', { defaultValue: 'That is not a YouTube or Twitch link we can embed.' })}
         </p>
       ) : null}
-      {embed ? (
-        <a className="el-eyebrow" href={embed.watchUrl} target="_blank" rel="noopener noreferrer">
-          <ExternalLink size={11} aria-hidden />{' '}
-          {t('watch.open', { defaultValue: 'Open on {{site}}', site: embed.label })}
-        </a>
+    </div>
+  ) : null;
+
+  if (!src || !embed) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, gap: 8, overflowY: 'auto' }}>
+        <p className="el-eyebrow" style={{ margin: 0 }}>
+          {t('stream.empty', {
+            defaultValue: 'Paste a YouTube or Twitch link. Nothing loads until you press play.',
+          })}
+        </p>
+        {picker}
+      </div>
+    );
+  }
+
+  return (
+    <div ref={wrap} className="el-streamframe">
+      {armed ? (
+        <iframe
+          title={t('watch.frame', { defaultValue: 'Live stream: {{label}}', label: embed.label })}
+          src={src}
+          className="el-streamframe__video"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+          sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+        />
+      ) : (
+        <button type="button" className="el-btn el-btn--pink el-streamframe__video" onClick={() => setArmed(true)}>
+          <Play size={18} aria-hidden /> {t('stream.play', { defaultValue: 'Play {{site}}', site: embed.label })}
+        </button>
+      )}
+      <button
+        type="button"
+        className="el-btn el-btn--sm el-streamframe__menu"
+        aria-expanded={open}
+        aria-haspopup="true"
+        aria-label={t('stream.change', { defaultValue: 'Change stream' })}
+        title={t('stream.change', { defaultValue: 'Change stream' })}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <ListVideo size={14} aria-hidden />
+        <ChevronDown size={12} aria-hidden />
+      </button>
+      {open ? (
+        <div className="el-streamframe__panel el-box" role="group" aria-label={t('stream.change', { defaultValue: 'Change stream' })}>
+          {picker}
+          <a className="el-eyebrow" href={embed.watchUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink size={11} aria-hidden /> {t('watch.open', { defaultValue: 'Open on {{site}}', site: embed.label })}
+          </a>
+        </div>
       ) : null}
     </div>
   );

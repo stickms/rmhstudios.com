@@ -113,7 +113,7 @@ Other free sources considered and rejected: Google Civic (needs a key), OpenFEC
 - **Rehearsing:** `ELECTIONS_RESULTS_BASE` points the feed at a mirror, and **`ELECTIONS_TTL_MS`** forces the
   refresh interval (e.g. `4000`) so you can swap files in the mirror and watch calls arrive within seconds.
 
-## Phase 3: watch rooms and the Situation Room
+## Phase 3: watch rooms and the Briefing Room
 
 - **Rooms** (`ElectionRoom`, `rooms*.ts`): *solo* is browser-only (localStorage); *private* is stored and
   reachable only by its 8-character code (32^8 ≈ 10^12, no ambiguous characters; the code is the capability);
@@ -122,7 +122,7 @@ Other free sources considered and rejected: Google Civic (needs a key), OpenFEC
 - **Chat and reactions** are channel-addressed (a room, or the election's main room): ephemeral on the
   realtime bus, signed-in write, no links. Reactions are a closed set of 8 emoji. A room host can delete
   messages in their own room.
-- **The Situation Room** (`components/elections/room/`): a full-screen Radix dialog (focus trap, scroll lock,
+- **The Briefing Room** (`components/elections/room/`): a full-screen Radix dialog (focus trap, scroll lock,
   Escape) with up to four panes in five layouts. Panes: stream (YouTube/Twitch; several at once; loads only on
   click), race, **live graph** (vote share over the count, from `history.server.ts`), map, wire, chat, events.
   Race/graph panes can be pinned to a state, follow the map selection, or **auto-follow**: major calls, every
