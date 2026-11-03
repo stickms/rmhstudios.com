@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback } from "react";
 import { MusicManager } from "@/lib/house-always-wins/music";
 import { SfxManager } from "@/lib/house-always-wins/sfx";
@@ -15,6 +16,7 @@ interface MenuOverlayProps {
 }
 
 export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
+  const { t } = useTranslation("c-house-always-wins");
   const [musicVol, setMusicVol] = useState(() => MusicManager.getVolume());
   const [musicMuted, setMusicMuted] = useState(() => MusicManager.isMuted());
   const [sfxVol, setSfxVol] = useState(() => SfxManager.getVolume());
@@ -77,7 +79,7 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
   const confirmReset = async () => {
     if (
       await confirm({
-        title: "Abandon this run? All progress, keys and chips are lost.",
+        title: t("menu-abandon-confirm", { defaultValue: "Abandon this run? All progress, keys and chips are lost." }),
         danger: true,
       })
     ) {
@@ -93,13 +95,13 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
           The House Always Wins
         </h2>
         <p className="mb-5 text-center font-mono text-[10px] tracking-[0.3em] text-[#6b6155] uppercase">
-          Paused
+          {t("menu-paused", { defaultValue: "Paused" })}
         </p>
 
         {/* Objective log */}
         <div className="mb-5">
           <div className="mb-2 font-mono text-[10px] tracking-widest text-[#8b6914] uppercase">
-            Objectives
+            {t("menu-objectives", { defaultValue: "Objectives" })}
           </div>
           <ul className="max-h-44 space-y-1 overflow-y-auto pr-1">
             {OBJECTIVES.map((o) => {
@@ -128,21 +130,21 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
         {/* Settings — audio */}
         <div className="mb-4">
           <div className="mb-2 font-mono text-[10px] tracking-widest text-[#8b6914] uppercase">
-            Settings
+            {t("menu-settings", { defaultValue: "Settings" })}
           </div>
 
           {/* Music */}
           <div className="mb-2.5 flex items-center gap-3">
             <button
               onClick={toggleMusicMute}
-              title={musicMuted ? "Unmute music" : "Mute music"}
+              title={musicMuted ? t("menu-unmute-music", { defaultValue: "Unmute music" }) : t("menu-mute-music", { defaultValue: "Mute music" })}
               className={`flex h-7 w-7 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 items-center justify-center rounded ${
                 musicMuted ? "text-[#6b6155]" : "text-[#d4a054]"
               } hover:bg-white/5`}
             >
               {musicMuted ? <Music2 className="h-4 w-4" /> : <Music className="h-4 w-4" />}
             </button>
-            <span className="w-12 font-mono text-[11px] text-[#cabba0]">Music</span>
+            <span className="w-16 font-mono text-[11px] text-[#cabba0]">{t("menu-music", { defaultValue: "Music" })}</span>
             <input
               type="range"
               min={0}
@@ -161,14 +163,14 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
           <div className="flex items-center gap-3">
             <button
               onClick={toggleSfxMute}
-              title={sfxMuted ? "Unmute sound effects" : "Mute sound effects"}
+              title={sfxMuted ? t("menu-unmute-sfx", { defaultValue: "Unmute sound effects" }) : t("menu-mute-sfx", { defaultValue: "Mute sound effects" })}
               className={`flex h-7 w-7 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 items-center justify-center rounded ${
                 sfxMuted ? "text-[#6b6155]" : "text-[#5fd2a0]"
               } hover:bg-white/5`}
             >
               {sfxMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </button>
-            <span className="w-12 font-mono text-[11px] text-[#cabba0]">Sound FX</span>
+            <span className="w-16 font-mono text-[11px] text-[#cabba0]">{t("menu-sfx", { defaultValue: "Sound FX" })}</span>
             <input
               type="range"
               min={0}
@@ -187,13 +189,13 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
         <NgPlusSlot />
 
         {/* Controls */}
-        <div className="mb-5 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px] text-[#6b6155]">
-          <div>Move — A/D · ←/→</div>
-          <div>Jump — Space / K</div>
-          <div>Dash — Shift / J</div>
-          <div>Interact — E</div>
-          <div>Drop down — S / ↓</div>
-          <div>Menu — M / Esc</div>
+        <div className="mb-5 grid grid-cols-2 gap-x-4 [@media(pointer:coarse)]:hidden gap-y-1 font-mono text-[11px] text-[#6b6155]">
+          <div>{t("menu-ctl-move", { defaultValue: "Move" })} — A/D · ←/→</div>
+          <div>{t("menu-ctl-jump", { defaultValue: "Jump" })} — Space / K</div>
+          <div>{t("menu-ctl-dash", { defaultValue: "Dash" })} — Shift / J</div>
+          <div>{t("menu-ctl-use", { defaultValue: "Interact" })} — E</div>
+          <div>{t("menu-ctl-drop", { defaultValue: "Drop down" })} — S / ↓</div>
+          <div>{t("menu-ctl-menu", { defaultValue: "Menu" })} — M / Esc</div>
         </div>
 
         <div className="flex gap-2">
@@ -201,13 +203,13 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
             onClick={onClose}
             className="flex-1 rounded-lg border border-[#d4a054]/30 bg-[#d4a054]/10 py-2 pointer-coarse:min-h-11 font-mono text-sm text-[#f0c674] transition-colors hover:bg-[#d4a054]/20"
           >
-            Resume [M]
+            {t("menu-resume", { defaultValue: "Resume" })}<span className="[@media(pointer:coarse)]:hidden"> [M]</span>
           </button>
           <button
             onClick={confirmReset}
             className="rounded-lg border border-[#c0392b]/30 bg-[#c0392b]/10 px-3 py-2 pointer-coarse:min-h-11 font-mono text-xs text-[#c0392b]/80 transition-colors hover:bg-[#c0392b]/20"
           >
-            Abandon Run
+            {t("menu-abandon", { defaultValue: "Abandon Run" })}
           </button>
         </div>
       </div>

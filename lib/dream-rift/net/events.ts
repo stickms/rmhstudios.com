@@ -23,6 +23,8 @@ export const C2S = {
     SET_SETTINGS: 'dr:setSettings',
     START: 'dr:start',
     KICK: 'dr:kick',
+    /** Reclaim a seat after a dropped connection: `{ code, token }` (token from JOINED). */
+    RESUME: 'dr:resume',
     /** Realtime in-game payload to relay to everyone else in the room. */
     RELAY: 'dr:relay',
 } as const;
@@ -39,7 +41,19 @@ export const S2C = {
     /** A relayed realtime payload from a peer. */
     RELAY: 'dr:relay',
     HOST_CHANGED: 'dr:hostChanged',
+    /** Answer to a successful RESUME: the seat is yours again, on this new socket. */
+    RESUMED: 'dr:resumed',
+    /** A seated player's connection dropped (connected:false) or came back (true). */
+    PEER_STATUS: 'dr:peerStatus',
 } as const;
+
+/** Payload of S2C.JOINED / S2C.RESUMED. `resumeToken` is private to this client, never broadcast. */
+export interface JoinedPayload {
+    code: string;
+    yourSlot: number;
+    selfId: string;
+    resumeToken: string;
+}
 
 export interface LobbyPlayerInfo {
     socketId: string;

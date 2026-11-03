@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { createKowloonRenderer, extendKowloonThree } from '@/lib/kowloon-knockout/render/webgpu';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { useIsMobile } from '@/lib/studio/hooks/useIsMobile';
+import {
+    currentBackendIsWebGPU, decideRecovery, markForceWebGL, renderHealthSnapshot, resetRenderHealth, shouldForceWebGL,
+} from '@/lib/kowloon-knockout/render/health';
 import { LocalInputSource } from '@/lib/kowloon-knockout/game/input';
 import {
     createLocalSession, createTrainingSession, createHostSession, createGuestSession,
@@ -20,6 +23,20 @@ import { TrainingPanel, TrainingOverlay } from '@/components/kowloon-knockout/Tr
 // arena JSX mounts.
 extendKowloonThree();
 
+/** The renderer failed to start or threw while running (no WebGL 2 at all, a GPU
+ *  process that refuses a second context, a node material that will not compile).
+ *  Without this the error climbs to the page-level boundary, which unmounts the
+ *  whole game under a "crashed" card carrying a raw `TypeError`. Here the player
+ *  is told what happened and the first failure on WebGPU gets a WebGL 2 retry. */
+class GraphicsBoundary extends Component<{ onError: (e: unknown) => void; children: ReactNode }, { error: boolean }> {
+    state = { error: false };
+    static getDerivedStateFromError() { return { error: true }; }
+    componentDidCatch(error: unknown) { this.props.onError(error); }
+    render() {
+        return this.state.error ? null : this.props.children;
+    }
+}
+
 export default function GameView() {
     const { t } = useTranslation('c-kowloon-knockout');
     const runtime = useGameStore((s) => s.runtime);
@@ -31,6 +48,15 @@ export default function GameView() {
     const [input, setInput] = useState<LocalInputSource | null>(null);
     const [hud, setHud] = useState<HudState | null>(null);
     const [glLost, setGlLost] = useState(false);
+    // Render watchdog: the sim and HUD keep running when the canvas stops
+    // painting, so a bumped key remounts the Canvas (on WebGL 2 after a WebGPU
+    // failure) and `frozen` is the last resort: tell the player, don't leave a
+    // dead picture under a live HUD.
+    const [canvasKey, setCanvasKey] = useState(0);
+    const [frozen, setFrozen] = useState(false);
+    // The renderer could not start (or died with an exception) and WebGL 2 has
+    // already been tried: nothing will ever paint, say so.
+    const [unavailable, setUnavailable] = useState(false);
     const sessionRef = useRef<GameSession | null>(null);
 
     const seatIds = useMemo(() => {
@@ -90,8 +116,56 @@ export default function GameView() {
         return () => cancelAnimationFrame(raf);
     }, []);
 
+    const onGraphicsError = (e: unknown) => {
+        console.warn('[kowloon] renderer failed:', e);
+        if (!shouldForceWebGL()) {
+            // First failure: a fresh canvas on WebGL 2. A canvas that was given a
+            // WebGPU context can never be handed a WebGL one, hence the new key.
+            markForceWebGL();
+            resetRenderHealth(false);
+            setCanvasKey((k) => k + 1);
+            return;
+        }
+        setUnavailable(true);
+    };
+
+    // Nothing will ever paint: don't leave a match playing out behind the card.
+    useEffect(() => {
+        if (unavailable) sessionRef.current?.stop();
+    }, [unavailable]);
+
+    useEffect(() => {
+        if (frozen || unavailable) return;
+        // Start the clock at mount: if the renderer never finishes initialising
+        // (a hung adapter request), that is a stall too.
+        resetRenderHealth(false);
+        const id = window.setInterval(() => {
+            const action = decideRecovery(renderHealthSnapshot(), performance.now(), {
+                backendIsWebGPU: currentBackendIsWebGPU(),
+                alreadyForcedWebGL: shouldForceWebGL(),
+                hidden: document.hidden,
+            });
+            if (action === 'force-webgl') {
+                console.warn('[kowloon] WebGPU is not painting; restarting the renderer on WebGL 2');
+                markForceWebGL();
+                // Clear the old renderer's verdict now: the new one takes a moment
+                // to init, and its predecessor's failure must not count against it.
+                resetRenderHealth(false);
+                setCanvasKey((k) => k + 1);
+            } else if (action === 'give-up') {
+                console.warn('[kowloon] renderer is not painting; showing the recovery card');
+                setFrozen(true);
+            }
+        }, 1000);
+        // A tab that was hidden has no frames to judge; start the clock over.
+        const onVisible = () => { if (!document.hidden) resetRenderHealth(currentBackendIsWebGPU()); };
+        document.addEventListener('visibilitychange', onVisible);
+        return () => { window.clearInterval(id); document.removeEventListener('visibilitychange', onVisible); };
+    }, [frozen, unavailable]);
+
     return (
         <div className="kk-arena" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+            <GraphicsBoundary key={canvasKey} onError={onGraphicsError}>
             <Canvas
                 data-jelly-zone="playfield"
                 shadows
@@ -116,6 +190,39 @@ export default function GameView() {
                 {session && <Arena3D session={session} seatIds={seatIds} />}
                 {session?.training && <TrainingOverlay session={session} />}
             </Canvas>
+            </GraphicsBoundary>
+
+            {(frozen || unavailable) && !glLost && (
+                <div
+                    role="alert"
+                    style={{
+                        position: 'absolute', inset: 0, zIndex: 50, display: 'grid', placeItems: 'center',
+                        background: 'rgba(0,0,0,0.75)', color: '#ffcc00', textAlign: 'center', padding: 24,
+                    }}
+                >
+                    <div>
+                        <p style={{ marginBottom: 16 }}>
+                            {unavailable
+                                ? t('graphics-unavailable', { defaultValue: '3D graphics could not start on this device.' })
+                                : t('graphics-stalled', { defaultValue: 'The picture stopped updating on this device.' })}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => window.location.reload()}
+                            style={{ minHeight: 44, minWidth: 160, padding: '0 20px', marginRight: 12, border: '2px solid #ffcc00', color: '#ffcc00', background: 'transparent' }}
+                        >
+                            {t('reload', { defaultValue: 'Reload' })}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPhase('menu')}
+                            style={{ minHeight: 44, minWidth: 160, padding: '0 20px', border: '2px solid #ffcc00', color: '#ffcc00', background: 'transparent' }}
+                        >
+                            {t('back-to-menu', { defaultValue: 'Back to menu' })}
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {glLost && (
                 <div

@@ -6,7 +6,7 @@
  * resolution, how often the ambient clock ticks and when it stops (master plan R6/R7, 01 §2.2–2.3, 04 §3), how many
  * haze draws one frame may issue, how far a squished rim may overdraw its host, and how a charge pulse decays.
  */
-import { AMBIENT_BOUNDS, CHARGE, IDLE_AFTER_MS, PLASMA } from '@/lib/jelly/tiers';
+import { AMBIENT_BOUNDS, CHARGE, IDLE_AFTER_MS, JELLY_BODY, PLASMA } from '@/lib/jelly/tiers';
 
 export const GLASS_BUDGET = {
   /**
@@ -322,14 +322,14 @@ export function seedFor(order: number): number {
 }
 
 /**
- * How far a rim canvas may overdraw its host so an outward lattice bulge is not clipped: {@link
- * AMBIENT_BOUNDS.maxOverdrawPx} (2px, the focus ring's offset) for cards and controls, 0 for panes, chrome and
- * overlays — those are often flush with the viewport, where 2px of overflow would be a horizontal page scroll, and
- * their squish reads through the dent, which needs no margin. 0 everywhere when no lattice may run.
+ * How far a rim canvas may overdraw its host so the bulging silhouette is not clipped: {@link JELLY_BODY.overdrawPx}
+ * (the full unclipped margin, 16px) for cards, fields and controls. Panes, chrome and overlays keep 0 — they are often
+ * flush with the viewport or a scroller, and they squish through the dent, which needs no margin. 0 everywhere when no
+ * lattice may run. The engine narrows this per host to the room it measures at activation (viewport side edges).
  */
 export function overdrawMargin(role: GlassRole, latticesAllowed: boolean): number {
   if (!latticesAllowed) return 0;
-  return role === 'fill' || role === 'control' ? AMBIENT_BOUNDS.maxOverdrawPx : 0;
+  return role === 'fill' || role === 'control' ? JELLY_BODY.overdrawPx : 0;
 }
 
 /** Lattice amplitude: half on large surfaces (04 §4.3), full otherwise. */

@@ -565,7 +565,7 @@ export function NightrailGame() {
           aria-label={t('photo-mode', { defaultValue: 'Photo mode' })}
           title={t('photo-mode-key', { defaultValue: 'Photo mode (P)' })}
           className="absolute z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/75 backdrop-blur-sm transition-colors hover:text-white"
-          style={{ top: 'calc(var(--safe-top) + 3.5rem)', right: 'calc(var(--safe-right) + 0.65rem)' }}
+          style={{ top: 'calc(var(--safe-top) + 5.6rem)', right: 'calc(var(--safe-right) + 0.65rem)' }}
         >
           <Camera className="h-4 w-4" aria-hidden />
         </button>

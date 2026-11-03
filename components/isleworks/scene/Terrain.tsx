@@ -19,7 +19,7 @@
  */
 
 import { useEffect, useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 
 import { parcelBounds, parcelIndexFor, tileToWorld } from '@/lib/isleworks/grid';
@@ -271,6 +271,14 @@ export function Terrain({ city, overlay, onHoverTile, onLeave }: TerrainProps) {
     }
   }, [buckets]);
 
+  const aimAtTile = (event: ThreeEvent<PointerEvent>) => {
+    const i = event.instanceId;
+    if (i === undefined) return;
+    event.stopPropagation();
+    const tile = city.tiles[i];
+    if (tile) onHoverTile(tile.x, tile.y);
+  };
+
   useFrame(() => {
     // Only the leaves move. Everything else was written once, above.
     const mesh = sceneryRefs.current.get('leaf');
@@ -301,13 +309,10 @@ export function Terrain({ city, overlay, onHoverTile, onLeave }: TerrainProps) {
         args={[GEOMETRY.box, undefined, count]}
         receiveShadow
         frustumCulled={false}
-        onPointerMove={(event) => {
-          const i = event.instanceId;
-          if (i === undefined) return;
-          event.stopPropagation();
-          const tile = city.tiles[i];
-          if (tile) onHoverTile(tile.x, tile.y);
-        }}
+        onPointerMove={aimAtTile}
+        // A finger tap has no hover: it is a press and a release with no move in
+        // between, so without this the rig's click would act on no tile at all.
+        onPointerDown={aimAtTile}
         onPointerOut={onLeave}
       >
         <meshLambertMaterial />

@@ -7,6 +7,8 @@
 
 import { GameWorld, PickupEntity, EnemyEntity, createId } from './types';
 import { PlayerStats } from '../stores/game-store';
+import { rand } from './rng';
+import { dcos, dsin } from './dmath';
 
 // ---- Types ------------------------------------------------------------------
 
@@ -47,6 +49,11 @@ const XP_MERGE_RADIUS = 25; // px — orbs within this distance merge
 const XP_MERGE_INTERVAL = 0.5; // seconds between merge passes
 let mergeTimer = 0;
 
+/** Forget module state left by a previous run (a replay must start exactly like a fresh page). */
+export function resetPickupSystem(): void {
+  mergeTimer = 0;
+}
+
 // ---- Spawn Pickups ----------------------------------------------------------
 
 /** Spawn XP gems from a killed enemy. */
@@ -64,7 +71,7 @@ export function spawnEnemyDrops(
     spawnPickup(world, x, y, 'xp_large', XP_LARGE_VALUE);
     const remainder = xpValue - 25;
     if (remainder >= 5) {
-      spawnPickup(world, x + (Math.random() - 0.5) * 20, y + (Math.random() - 0.5) * 20, 'xp_medium', XP_MEDIUM_VALUE);
+      spawnPickup(world, x + (rand() - 0.5) * 20, y + (rand() - 0.5) * 20, 'xp_medium', XP_MEDIUM_VALUE);
     }
   } else if (xpValue >= 5) {
     spawnPickup(world, x, y, 'xp_medium', XP_MEDIUM_VALUE);
@@ -72,8 +79,8 @@ export function spawnEnemyDrops(
     for (let i = 0; i < Math.min(remainder, 4); i++) {
       spawnPickup(
         world,
-        x + (Math.random() - 0.5) * 30,
-        y + (Math.random() - 0.5) * 30,
+        x + (rand() - 0.5) * 30,
+        y + (rand() - 0.5) * 30,
         'xp_small',
         XP_SMALL_VALUE,
       );
@@ -82,8 +89,8 @@ export function spawnEnemyDrops(
     for (let i = 0; i < xpValue; i++) {
       spawnPickup(
         world,
-        x + (Math.random() - 0.5) * 20,
-        y + (Math.random() - 0.5) * 20,
+        x + (rand() - 0.5) * 20,
+        y + (rand() - 0.5) * 20,
         'xp_small',
         XP_SMALL_VALUE,
       );
@@ -91,13 +98,13 @@ export function spawnEnemyDrops(
   }
 
   // Coin drop (3% × luck)
-  if (Math.random() < COIN_DROP_CHANCE * luck) {
-    spawnPickup(world, x + (Math.random() - 0.5) * 15, y + (Math.random() - 0.5) * 15, 'coin', 1);
+  if (rand() < COIN_DROP_CHANCE * luck) {
+    spawnPickup(world, x + (rand() - 0.5) * 15, y + (rand() - 0.5) * 15, 'coin', 1);
   }
 
   // Food drop (2% × luck)
-  if (Math.random() < FOOD_DROP_CHANCE * luck) {
-    spawnPickup(world, x + (Math.random() - 0.5) * 15, y + (Math.random() - 0.5) * 15, 'food', 0);
+  if (rand() < FOOD_DROP_CHANCE * luck) {
+    spawnPickup(world, x + (rand() - 0.5) * 15, y + (rand() - 0.5) * 15, 'food', 0);
   }
 
   // Special drops from specific enemies
@@ -107,25 +114,25 @@ export function spawnEnemyDrops(
   }
 
   // Rare special pickups
-  if (Math.random() < MAGNET_DROP_CHANCE * luck) {
+  if (rand() < MAGNET_DROP_CHANCE * luck) {
     spawnPickup(world, x, y, 'magnet', 0);
   }
-  if (Math.random() < VACUUM_DROP_CHANCE * luck) {
+  if (rand() < VACUUM_DROP_CHANCE * luck) {
     spawnPickup(world, x, y, 'vacuum', 0);
   }
-  if (Math.random() < ROSARY_DROP_CHANCE * luck) {
+  if (rand() < ROSARY_DROP_CHANCE * luck) {
     spawnPickup(world, x, y, 'rosary', 0);
   }
-  if (Math.random() < CHEST_DROP_CHANCE * luck) {
+  if (rand() < CHEST_DROP_CHANCE * luck) {
     spawnPickup(world, x, y, 'chest', 0);
   }
-  if (Math.random() < CLOCK_DROP_CHANCE * luck) {
+  if (rand() < CLOCK_DROP_CHANCE * luck) {
     spawnPickup(world, x, y, 'clock', 0);
   }
-  if (Math.random() < SHIELD_ORB_DROP_CHANCE * luck) {
+  if (rand() < SHIELD_ORB_DROP_CHANCE * luck) {
     spawnPickup(world, x, y, 'shield_orb', 0);
   }
-  if (Math.random() < BOMB_DROP_CHANCE * luck) {
+  if (rand() < BOMB_DROP_CHANCE * luck) {
     spawnPickup(world, x, y, 'bomb', 0);
   }
 }
@@ -133,19 +140,19 @@ export function spawnEnemyDrops(
 /** Spawn drops from a destroyed prop (1-2 XP gems + 15% coin chance). */
 export function spawnPropDrops(world: GameWorld, x: number, y: number): void {
   // 1-2 small XP gems
-  const gemCount = 1 + (Math.random() < 0.5 ? 1 : 0);
+  const gemCount = 1 + (rand() < 0.5 ? 1 : 0);
   for (let i = 0; i < gemCount; i++) {
     spawnPickup(
       world,
-      x + (Math.random() - 0.5) * 16,
-      y + (Math.random() - 0.5) * 16,
+      x + (rand() - 0.5) * 16,
+      y + (rand() - 0.5) * 16,
       'xp_small',
       XP_SMALL_VALUE,
     );
   }
   // 15% coin chance
-  if (Math.random() < 0.15) {
-    spawnPickup(world, x + (Math.random() - 0.5) * 10, y + (Math.random() - 0.5) * 10, 'coin', 1);
+  if (rand() < 0.15) {
+    spawnPickup(world, x + (rand() - 0.5) * 10, y + (rand() - 0.5) * 10, 'coin', 1);
   }
 }
 
@@ -157,14 +164,14 @@ export function spawnBossDrops(
   coinMin: number,
   coinMax: number,
 ): void {
-  const coinCount = coinMin + Math.floor(Math.random() * (coinMax - coinMin + 1));
+  const coinCount = coinMin + Math.floor(rand() * (coinMax - coinMin + 1));
   for (let i = 0; i < coinCount; i++) {
     const angle = (i / coinCount) * Math.PI * 2;
-    const dist = 30 + Math.random() * 40;
+    const dist = 30 + rand() * 40;
     spawnPickup(
       world,
-      x + Math.cos(angle) * dist,
-      y + Math.sin(angle) * dist,
+      x + dcos(angle) * dist,
+      y + dsin(angle) * dist,
       'coin',
       1,
     );

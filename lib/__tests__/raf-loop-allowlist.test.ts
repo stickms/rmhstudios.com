@@ -178,6 +178,8 @@ const SCAN_DIRS = ['components', 'app', 'hooks', 'lib', 'stores'];
 
 /** Files permitted to call requestAnimationFrame (see the doc block above). */
 const ALLOW = new Set<string>([
+  // Altair co-op match: the draw loop is cancelled in the effect cleanup (unmount); it only draws.
+  'components/altair/multiplayer/MultiplayerGameScreen.tsx',
   // The ONE jelly frame (#989). The engine, the soft body, the arc renderer and
   // the fallback cursor light are drivers on it (`drive(fn, { order })`) and call
   // no rAF themselves. No frame is requested while no driver is awake; `stop()`

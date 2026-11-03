@@ -258,6 +258,30 @@ export const JELLY_LAYOUT = {
 } as const;
 
 /**
+ * The soft body's SILHOUETTE (2026-11-03, docs/superpowers/specs/2026-11-03-globe-jelly-overhaul-design.md). The host
+ * element still moves only within {@link MOTION_BOUNDS}; the gel the shader draws round it bulges, sags and wobbles
+ * like the liquid globe, inside the unclipped {@link JELLY_LAYOUT.marginPx} room. Targets are for a body whose short
+ * side is at least `refShortSidePx`; smaller bodies scale down to `minScale` of them so a 48px button does not swell
+ * to the size of a card. One block, so the feel is tuned in one place.
+ */
+export const JELLY_BODY = {
+  /** Peak outward bulge toward the pointer, CSS px. Total outward travel on any side never exceeds the margin. */
+  bulgePx: 10,
+  /** Press sag under the contact, CSS px (inward, so it needs no room outside the host). */
+  sagPx: 18,
+  /** Lean of the whole silhouette toward the pointer, CSS px (counted inside the outward cap). */
+  leanPx: 9,
+  /** Short side at which the full amplitudes apply. */
+  refShortSidePx: 120,
+  /** Smallest share of the amplitudes any body gets. */
+  minScale: 0.45,
+  /** Lattice nodes: 4 edges × {@link JELLY_BODY.segments}. */
+  segments: 6,
+  /** Overdraw of the silhouette canvas past the host: the full margin. */
+  overdrawPx: 16,
+} as const;
+
+/**
  * The root class that degrades the material, exactly as the site stamps it on `<html>` today (the engine's `off()`
  * and `runtime.ts`'s `disabled()`). Print is a media query, read separately. The site's high-contrast theme and the
  * OS forced-colours / reduced-transparency fallbacks were removed: the material always draws.

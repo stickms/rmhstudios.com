@@ -411,7 +411,21 @@ function keysetOf(item: FeedItem): { createdAt: string; id: string } {
 /*  Announcements (virtual feed items from static data sources)         */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Announcements: the cached static/slow-moving ones, plus the live election card.
+ * The election card is deliberately NOT inside the 60s cache below - its numbers
+ * move every ~20s on election night - and is built in-process from the election
+ * snapshot's own TTL cache, with a hard time budget so it can never slow the feed.
+ */
 async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
+  const base = await getStaticAnnouncementItems(filter);
+  if (filter !== 'all' && filter !== 'news') return base;
+  const { getElectionFeedItem } = await import('../elections/feed.server');
+  const election = await getElectionFeedItem();
+  return election ? [election, ...base] : base;
+}
+
+async function getStaticAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
   // Announcements are static (games/apps catalogs) or slow-moving (blog posts),
   // yet this runs on every feed read *and* every pagination. Cache per-filter for
   // a minute so the feed's hot path stops re-querying blog posts each time; a

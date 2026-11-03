@@ -27,6 +27,7 @@ import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DesignRouteImport } from './routes/design'
 import { Route as DreamRiftRouteImport } from './routes/dream-rift'
 import { Route as DunesdayRouteImport } from './routes/dunesday'
+import { Route as ElectionsRouteImport } from './routes/elections'
 import { Route as EversionLabRouteImport } from './routes/eversion-lab'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
@@ -492,6 +493,17 @@ import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
 import { Route as ApiDunesdayAskRouteImport } from './routes/api/dunesday/ask'
 import { Route as ApiDunesdaySyncRouteImport } from './routes/api/dunesday/sync'
+import { Route as ApiElectionsIndexRouteImport } from './routes/api/elections/index'
+import { Route as ApiElectionsAskRouteImport } from './routes/api/elections/ask'
+import { Route as ApiElectionsCalendarRouteImport } from './routes/api/elections/calendar'
+import { Route as ApiElectionsHistoryRouteImport } from './routes/api/elections/history'
+import { Route as ApiElectionsMarketsRouteImport } from './routes/api/elections/markets'
+import { Route as ApiElectionsNewsRouteImport } from './routes/api/elections/news'
+import { Route as ApiElectionsPublicRouteImport } from './routes/api/elections/public'
+import { Route as ApiElectionsRacesDotcsvRouteImport } from './routes/api/elections/races[.]csv'
+import { Route as ApiElectionsStreamsRouteImport } from './routes/api/elections/streams'
+import { Route as ApiElectionsSummaryRouteImport } from './routes/api/elections/summary'
+import { Route as ApiElectionsSwingRouteImport } from './routes/api/elections/swing'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api/email/unsubscribe'
 import { Route as ApiEmbedOembedRouteImport } from './routes/api/embed/oembed'
 import { Route as ApiEmojiPacksIndexRouteImport } from './routes/api/emoji-packs/index'
@@ -596,6 +608,7 @@ import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifica
 import { Route as ApiNotificationsPreferencesRouteImport } from './routes/api/notifications/preferences'
 import { Route as ApiNotificationsReadRouteImport } from './routes/api/notifications/read'
 import { Route as ApiOfficeHoursIndexRouteImport } from './routes/api/office-hours/index'
+import { Route as ApiOgElectionsRouteImport } from './routes/api/og/elections'
 import { Route as ApiOgPf2ecalRouteImport } from './routes/api/og/pf2ecal'
 import { Route as ApiOgSohumtrackerRouteImport } from './routes/api/og/sohumtracker'
 import { Route as ApiOnboardingIndexRouteImport } from './routes/api/onboarding/index'
@@ -899,6 +912,9 @@ import { Route as ApiAdminStudioChallengesIndexRouteImport } from './routes/api/
 import { Route as ApiAdminStudioChallengesUploadRouteImport } from './routes/api/admin/studio-challenges/upload'
 import { Route as ApiAdminVibeBackfillThumbsRouteImport } from './routes/api/admin/vibe/backfill-thumbs'
 import { Route as ApiAlbumsAssetSplatRouteImport } from './routes/api/albums/asset/$'
+import { Route as ApiAltairRunFinishRouteImport } from './routes/api/altair/run/finish'
+import { Route as ApiAltairRunStartRouteImport } from './routes/api/altair/run/start'
+import { Route as ApiAltairRunStatusRouteImport } from './routes/api/altair/run/status'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
 import { Route as ApiArcadeBacklogIndexRouteImport } from './routes/api/arcade/backlog/index'
 import { Route as ApiArcadeBasketIndexRouteImport } from './routes/api/arcade/basket/index'
@@ -969,6 +985,15 @@ import { Route as ApiDoctrineSahurStatusRouteImport } from './routes/api/doctrin
 import { Route as ApiDunesdaySyncFeedIdRouteImport } from './routes/api/dunesday/sync.$feedId'
 import { Route as ApiEconomySavingsGoalsIndexRouteImport } from './routes/api/economy/savings-goals/index'
 import { Route as ApiEconomySavingsGoalsIdRouteImport } from './routes/api/economy/savings-goals/$id'
+import { Route as ApiElectionsChatIndexRouteImport } from './routes/api/elections/chat/index'
+import { Route as ApiElectionsChatReactRouteImport } from './routes/api/elections/chat/react'
+import { Route as ApiElectionsChatStreamRouteImport } from './routes/api/elections/chat/stream'
+import { Route as ApiElectionsEventsIndexRouteImport } from './routes/api/elections/events/index'
+import { Route as ApiElectionsEventsStreamRouteImport } from './routes/api/elections/events/stream'
+import { Route as ApiElectionsLeaguesIndexRouteImport } from './routes/api/elections/leagues/index'
+import { Route as ApiElectionsLeaguesCodeRouteImport } from './routes/api/elections/leagues/$code'
+import { Route as ApiElectionsRoomsIndexRouteImport } from './routes/api/elections/rooms/index'
+import { Route as ApiElectionsRoomsCodeRouteImport } from './routes/api/elections/rooms/$code'
 import { Route as ApiEmojiPacksSlugIndexRouteImport } from './routes/api/emoji-packs/$slug/index'
 import { Route as ApiEmojiPacksSlugItemsRouteImport } from './routes/api/emoji-packs/$slug/items'
 import { Route as ApiEmojiPacksSlugSubscribeRouteImport } from './routes/api/emoji-packs/$slug/subscribe'
@@ -1285,6 +1310,7 @@ import { Route as ApiDeveloperKeysIdUsageRouteImport } from './routes/api/develo
 import { Route as ApiDunesdayFeedsFeedIdCalendarDoticsRouteImport } from './routes/api/dunesday/feeds.$feedId.calendar[.]ics'
 import { Route as ApiDunesdayFeedsFeedIdRssDotxmlRouteImport } from './routes/api/dunesday/feeds.$feedId.rss[.]xml'
 import { Route as ApiDunesdaySyncFeedIdDiscordRouteImport } from './routes/api/dunesday/sync.$feedId.discord'
+import { Route as ApiElectionsLeaguesCodePicksRouteImport } from './routes/api/elections/leagues/$code.picks'
 import { Route as ApiGiftsScheduledIdIndexRouteImport } from './routes/api/gifts/scheduled/$id/index'
 import { Route as ApiGiftsScheduledIdUnwrapRouteImport } from './routes/api/gifts/scheduled/$id/unwrap'
 import { Route as ApiHomesListingsIdFavoriteRouteImport } from './routes/api/homes/listings.$id.favorite'
@@ -1469,6 +1495,11 @@ const DreamRiftRoute = DreamRiftRouteImport.update({
 const DunesdayRoute = DunesdayRouteImport.update({
   id: '/dunesday',
   path: '/dunesday',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ElectionsRoute = ElectionsRouteImport.update({
+  id: '/elections',
+  path: '/elections',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EversionLabRoute = EversionLabRouteImport.update({
@@ -3810,6 +3841,61 @@ const ApiDunesdaySyncRoute = ApiDunesdaySyncRouteImport.update({
   path: '/api/dunesday/sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiElectionsIndexRoute = ApiElectionsIndexRouteImport.update({
+  id: '/api/elections/',
+  path: '/api/elections/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsAskRoute = ApiElectionsAskRouteImport.update({
+  id: '/api/elections/ask',
+  path: '/api/elections/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsCalendarRoute = ApiElectionsCalendarRouteImport.update({
+  id: '/api/elections/calendar',
+  path: '/api/elections/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsHistoryRoute = ApiElectionsHistoryRouteImport.update({
+  id: '/api/elections/history',
+  path: '/api/elections/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsMarketsRoute = ApiElectionsMarketsRouteImport.update({
+  id: '/api/elections/markets',
+  path: '/api/elections/markets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsNewsRoute = ApiElectionsNewsRouteImport.update({
+  id: '/api/elections/news',
+  path: '/api/elections/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsPublicRoute = ApiElectionsPublicRouteImport.update({
+  id: '/api/elections/public',
+  path: '/api/elections/public',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsRacesDotcsvRoute = ApiElectionsRacesDotcsvRouteImport.update({
+  id: '/api/elections/races.csv',
+  path: '/api/elections/races.csv',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsStreamsRoute = ApiElectionsStreamsRouteImport.update({
+  id: '/api/elections/streams',
+  path: '/api/elections/streams',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsSummaryRoute = ApiElectionsSummaryRouteImport.update({
+  id: '/api/elections/summary',
+  path: '/api/elections/summary',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsSwingRoute = ApiElectionsSwingRouteImport.update({
+  id: '/api/elections/swing',
+  path: '/api/elections/swing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
   id: '/api/email/unsubscribe',
   path: '/api/email/unsubscribe',
@@ -4339,6 +4425,11 @@ const ApiNotificationsReadRoute = ApiNotificationsReadRouteImport.update({
 const ApiOfficeHoursIndexRoute = ApiOfficeHoursIndexRouteImport.update({
   id: '/api/office-hours/',
   path: '/api/office-hours/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOgElectionsRoute = ApiOgElectionsRouteImport.update({
+  id: '/api/og/elections',
+  path: '/api/og/elections',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOgPf2ecalRoute = ApiOgPf2ecalRouteImport.update({
@@ -5892,6 +5983,21 @@ const ApiAlbumsAssetSplatRoute = ApiAlbumsAssetSplatRouteImport.update({
   path: '/api/albums/asset/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAltairRunFinishRoute = ApiAltairRunFinishRouteImport.update({
+  id: '/api/altair/run/finish',
+  path: '/api/altair/run/finish',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAltairRunStartRoute = ApiAltairRunStartRouteImport.update({
+  id: '/api/altair/run/start',
+  path: '/api/altair/run/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAltairRunStatusRoute = ApiAltairRunStatusRouteImport.update({
+  id: '/api/altair/run/status',
+  path: '/api/altair/run/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAnnouncementsIdVoteRoute = ApiAnnouncementsIdVoteRouteImport.update({
   id: '/$id/vote',
   path: '/$id/vote',
@@ -6281,6 +6387,53 @@ const ApiEconomySavingsGoalsIdRoute =
     path: '/api/economy/savings-goals/$id',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiElectionsChatIndexRoute = ApiElectionsChatIndexRouteImport.update({
+  id: '/api/elections/chat/',
+  path: '/api/elections/chat/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsChatReactRoute = ApiElectionsChatReactRouteImport.update({
+  id: '/api/elections/chat/react',
+  path: '/api/elections/chat/react',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsChatStreamRoute = ApiElectionsChatStreamRouteImport.update({
+  id: '/api/elections/chat/stream',
+  path: '/api/elections/chat/stream',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsEventsIndexRoute = ApiElectionsEventsIndexRouteImport.update({
+  id: '/api/elections/events/',
+  path: '/api/elections/events/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsEventsStreamRoute =
+  ApiElectionsEventsStreamRouteImport.update({
+    id: '/api/elections/events/stream',
+    path: '/api/elections/events/stream',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiElectionsLeaguesIndexRoute =
+  ApiElectionsLeaguesIndexRouteImport.update({
+    id: '/api/elections/leagues/',
+    path: '/api/elections/leagues/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiElectionsLeaguesCodeRoute = ApiElectionsLeaguesCodeRouteImport.update({
+  id: '/api/elections/leagues/$code',
+  path: '/api/elections/leagues/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsRoomsIndexRoute = ApiElectionsRoomsIndexRouteImport.update({
+  id: '/api/elections/rooms/',
+  path: '/api/elections/rooms/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsRoomsCodeRoute = ApiElectionsRoomsCodeRouteImport.update({
+  id: '/api/elections/rooms/$code',
+  path: '/api/elections/rooms/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEmojiPacksSlugIndexRoute = ApiEmojiPacksSlugIndexRouteImport.update({
   id: '/api/emoji-packs/$slug/',
   path: '/api/emoji-packs/$slug/',
@@ -7947,6 +8100,12 @@ const ApiDunesdaySyncFeedIdDiscordRoute =
     path: '/discord',
     getParentRoute: () => ApiDunesdaySyncFeedIdRoute,
   } as any)
+const ApiElectionsLeaguesCodePicksRoute =
+  ApiElectionsLeaguesCodePicksRouteImport.update({
+    id: '/picks',
+    path: '/picks',
+    getParentRoute: () => ApiElectionsLeaguesCodeRoute,
+  } as any)
 const ApiGiftsScheduledIdIndexRoute =
   ApiGiftsScheduledIdIndexRouteImport.update({
     id: '/api/gifts/scheduled/$id/',
@@ -8510,6 +8669,7 @@ export interface FileRoutesByFullPath {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/dunesday': typeof DunesdayRoute
+  '/elections': typeof ElectionsRoute
   '/eversion-lab': typeof EversionLabRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
@@ -8920,6 +9080,16 @@ export interface FileRoutesByFullPath {
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
+  '/api/elections/ask': typeof ApiElectionsAskRoute
+  '/api/elections/calendar': typeof ApiElectionsCalendarRoute
+  '/api/elections/history': typeof ApiElectionsHistoryRoute
+  '/api/elections/markets': typeof ApiElectionsMarketsRoute
+  '/api/elections/news': typeof ApiElectionsNewsRoute
+  '/api/elections/public': typeof ApiElectionsPublicRoute
+  '/api/elections/races.csv': typeof ApiElectionsRacesDotcsvRoute
+  '/api/elections/streams': typeof ApiElectionsStreamsRoute
+  '/api/elections/summary': typeof ApiElectionsSummaryRoute
+  '/api/elections/swing': typeof ApiElectionsSwingRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -9003,6 +9173,7 @@ export interface FileRoutesByFullPath {
   '/api/notices/dismiss': typeof ApiNoticesDismissRoute
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
+  '/api/og/elections': typeof ApiOgElectionsRoute
   '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
   '/api/og/sohumtracker': typeof ApiOgSohumtrackerRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
@@ -9257,6 +9428,7 @@ export interface FileRoutesByFullPath {
   '/api/community-goals/': typeof ApiCommunityGoalsIndexRoute
   '/api/community-pages/': typeof ApiCommunityPagesIndexRoute
   '/api/context-notes/': typeof ApiContextNotesIndexRoute
+  '/api/elections/': typeof ApiElectionsIndexRoute
   '/api/emoji-packs/': typeof ApiEmojiPacksIndexRoute
   '/api/events/': typeof ApiEventsIndexRoute
   '/api/experiments/': typeof ApiExperimentsIndexRoute
@@ -9366,6 +9538,9 @@ export interface FileRoutesByFullPath {
   '/api/admin/studio-challenges/upload': typeof ApiAdminStudioChallengesUploadRoute
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
+  '/api/altair/run/finish': typeof ApiAltairRunFinishRoute
+  '/api/altair/run/start': typeof ApiAltairRunStartRoute
+  '/api/altair/run/status': typeof ApiAltairRunStatusRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/arcade/basket/finish': typeof ApiArcadeBasketFinishRoute
   '/api/arcade/basket/start': typeof ApiArcadeBasketStartRoute
@@ -9422,6 +9597,11 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
   '/api/dunesday/sync/$feedId': typeof ApiDunesdaySyncFeedIdRouteWithChildren
   '/api/economy/savings-goals/$id': typeof ApiEconomySavingsGoalsIdRoute
+  '/api/elections/chat/react': typeof ApiElectionsChatReactRoute
+  '/api/elections/chat/stream': typeof ApiElectionsChatStreamRoute
+  '/api/elections/events/stream': typeof ApiElectionsEventsStreamRoute
+  '/api/elections/leagues/$code': typeof ApiElectionsLeaguesCodeRouteWithChildren
+  '/api/elections/rooms/$code': typeof ApiElectionsRoomsCodeRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
@@ -9679,6 +9859,10 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/api/economy/savings-goals/': typeof ApiEconomySavingsGoalsIndexRoute
+  '/api/elections/chat/': typeof ApiElectionsChatIndexRoute
+  '/api/elections/events/': typeof ApiElectionsEventsIndexRoute
+  '/api/elections/leagues/': typeof ApiElectionsLeaguesIndexRoute
+  '/api/elections/rooms/': typeof ApiElectionsRoomsIndexRoute
   '/api/emoji-packs/$slug/': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id/': typeof ApiEventsIdIndexRoute
   '/api/fortune/today/': typeof ApiFortuneTodayIndexRoute
@@ -9759,6 +9943,7 @@ export interface FileRoutesByFullPath {
   '/api/dunesday/feeds/$feedId/calendar.ics': typeof ApiDunesdayFeedsFeedIdCalendarDoticsRoute
   '/api/dunesday/feeds/$feedId/rss.xml': typeof ApiDunesdayFeedsFeedIdRssDotxmlRoute
   '/api/dunesday/sync/$feedId/discord': typeof ApiDunesdaySyncFeedIdDiscordRoute
+  '/api/elections/leagues/$code/picks': typeof ApiElectionsLeaguesCodePicksRoute
   '/api/gifts/scheduled/$id/unwrap': typeof ApiGiftsScheduledIdUnwrapRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/homes/listings/$id/roommate': typeof ApiHomesListingsIdRoommateRoute
@@ -9879,6 +10064,7 @@ export interface FileRoutesByTo {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/dunesday': typeof DunesdayRoute
+  '/elections': typeof ElectionsRoute
   '/eversion-lab': typeof EversionLabRoute
   '/gabriels-horn': typeof GabrielsHornRoute
   '/games': typeof GamesLibraryIndexRoute
@@ -10265,6 +10451,16 @@ export interface FileRoutesByTo {
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
+  '/api/elections/ask': typeof ApiElectionsAskRoute
+  '/api/elections/calendar': typeof ApiElectionsCalendarRoute
+  '/api/elections/history': typeof ApiElectionsHistoryRoute
+  '/api/elections/markets': typeof ApiElectionsMarketsRoute
+  '/api/elections/news': typeof ApiElectionsNewsRoute
+  '/api/elections/public': typeof ApiElectionsPublicRoute
+  '/api/elections/races.csv': typeof ApiElectionsRacesDotcsvRoute
+  '/api/elections/streams': typeof ApiElectionsStreamsRoute
+  '/api/elections/summary': typeof ApiElectionsSummaryRoute
+  '/api/elections/swing': typeof ApiElectionsSwingRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -10348,6 +10544,7 @@ export interface FileRoutesByTo {
   '/api/notices/dismiss': typeof ApiNoticesDismissRoute
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
+  '/api/og/elections': typeof ApiOgElectionsRoute
   '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
   '/api/og/sohumtracker': typeof ApiOgSohumtrackerRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
@@ -10602,6 +10799,7 @@ export interface FileRoutesByTo {
   '/api/community-goals': typeof ApiCommunityGoalsIndexRoute
   '/api/community-pages': typeof ApiCommunityPagesIndexRoute
   '/api/context-notes': typeof ApiContextNotesIndexRoute
+  '/api/elections': typeof ApiElectionsIndexRoute
   '/api/emoji-packs': typeof ApiEmojiPacksIndexRoute
   '/api/events': typeof ApiEventsIndexRoute
   '/api/experiments': typeof ApiExperimentsIndexRoute
@@ -10710,6 +10908,9 @@ export interface FileRoutesByTo {
   '/api/admin/studio-challenges/upload': typeof ApiAdminStudioChallengesUploadRoute
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
+  '/api/altair/run/finish': typeof ApiAltairRunFinishRoute
+  '/api/altair/run/start': typeof ApiAltairRunStartRoute
+  '/api/altair/run/status': typeof ApiAltairRunStatusRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/arcade/basket/finish': typeof ApiArcadeBasketFinishRoute
   '/api/arcade/basket/start': typeof ApiArcadeBasketStartRoute
@@ -10766,6 +10967,11 @@ export interface FileRoutesByTo {
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
   '/api/dunesday/sync/$feedId': typeof ApiDunesdaySyncFeedIdRouteWithChildren
   '/api/economy/savings-goals/$id': typeof ApiEconomySavingsGoalsIdRoute
+  '/api/elections/chat/react': typeof ApiElectionsChatReactRoute
+  '/api/elections/chat/stream': typeof ApiElectionsChatStreamRoute
+  '/api/elections/events/stream': typeof ApiElectionsEventsStreamRoute
+  '/api/elections/leagues/$code': typeof ApiElectionsLeaguesCodeRouteWithChildren
+  '/api/elections/rooms/$code': typeof ApiElectionsRoomsCodeRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
@@ -11023,6 +11229,10 @@ export interface FileRoutesByTo {
   '/api/doctrine/incidents': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
   '/api/economy/savings-goals': typeof ApiEconomySavingsGoalsIndexRoute
+  '/api/elections/chat': typeof ApiElectionsChatIndexRoute
+  '/api/elections/events': typeof ApiElectionsEventsIndexRoute
+  '/api/elections/leagues': typeof ApiElectionsLeaguesIndexRoute
+  '/api/elections/rooms': typeof ApiElectionsRoomsIndexRoute
   '/api/emoji-packs/$slug': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id': typeof ApiEventsIdIndexRoute
   '/api/fortune/today': typeof ApiFortuneTodayIndexRoute
@@ -11103,6 +11313,7 @@ export interface FileRoutesByTo {
   '/api/dunesday/feeds/$feedId/calendar.ics': typeof ApiDunesdayFeedsFeedIdCalendarDoticsRoute
   '/api/dunesday/feeds/$feedId/rss.xml': typeof ApiDunesdayFeedsFeedIdRssDotxmlRoute
   '/api/dunesday/sync/$feedId/discord': typeof ApiDunesdaySyncFeedIdDiscordRoute
+  '/api/elections/leagues/$code/picks': typeof ApiElectionsLeaguesCodePicksRoute
   '/api/gifts/scheduled/$id/unwrap': typeof ApiGiftsScheduledIdUnwrapRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/homes/listings/$id/roommate': typeof ApiHomesListingsIdRoommateRoute
@@ -11227,6 +11438,7 @@ export interface FileRoutesById {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/dunesday': typeof DunesdayRoute
+  '/elections': typeof ElectionsRoute
   '/eversion-lab': typeof EversionLabRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
@@ -11639,6 +11851,16 @@ export interface FileRoutesById {
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
+  '/api/elections/ask': typeof ApiElectionsAskRoute
+  '/api/elections/calendar': typeof ApiElectionsCalendarRoute
+  '/api/elections/history': typeof ApiElectionsHistoryRoute
+  '/api/elections/markets': typeof ApiElectionsMarketsRoute
+  '/api/elections/news': typeof ApiElectionsNewsRoute
+  '/api/elections/public': typeof ApiElectionsPublicRoute
+  '/api/elections/races.csv': typeof ApiElectionsRacesDotcsvRoute
+  '/api/elections/streams': typeof ApiElectionsStreamsRoute
+  '/api/elections/summary': typeof ApiElectionsSummaryRoute
+  '/api/elections/swing': typeof ApiElectionsSwingRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -11722,6 +11944,7 @@ export interface FileRoutesById {
   '/api/notices/dismiss': typeof ApiNoticesDismissRoute
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
+  '/api/og/elections': typeof ApiOgElectionsRoute
   '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
   '/api/og/sohumtracker': typeof ApiOgSohumtrackerRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
@@ -11976,6 +12199,7 @@ export interface FileRoutesById {
   '/api/community-goals/': typeof ApiCommunityGoalsIndexRoute
   '/api/community-pages/': typeof ApiCommunityPagesIndexRoute
   '/api/context-notes/': typeof ApiContextNotesIndexRoute
+  '/api/elections/': typeof ApiElectionsIndexRoute
   '/api/emoji-packs/': typeof ApiEmojiPacksIndexRoute
   '/api/events/': typeof ApiEventsIndexRoute
   '/api/experiments/': typeof ApiExperimentsIndexRoute
@@ -12085,6 +12309,9 @@ export interface FileRoutesById {
   '/api/admin/studio-challenges/upload': typeof ApiAdminStudioChallengesUploadRoute
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
+  '/api/altair/run/finish': typeof ApiAltairRunFinishRoute
+  '/api/altair/run/start': typeof ApiAltairRunStartRoute
+  '/api/altair/run/status': typeof ApiAltairRunStatusRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/arcade/basket/finish': typeof ApiArcadeBasketFinishRoute
   '/api/arcade/basket/start': typeof ApiArcadeBasketStartRoute
@@ -12141,6 +12368,11 @@ export interface FileRoutesById {
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
   '/api/dunesday/sync/$feedId': typeof ApiDunesdaySyncFeedIdRouteWithChildren
   '/api/economy/savings-goals/$id': typeof ApiEconomySavingsGoalsIdRoute
+  '/api/elections/chat/react': typeof ApiElectionsChatReactRoute
+  '/api/elections/chat/stream': typeof ApiElectionsChatStreamRoute
+  '/api/elections/events/stream': typeof ApiElectionsEventsStreamRoute
+  '/api/elections/leagues/$code': typeof ApiElectionsLeaguesCodeRouteWithChildren
+  '/api/elections/rooms/$code': typeof ApiElectionsRoomsCodeRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
@@ -12398,6 +12630,10 @@ export interface FileRoutesById {
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/api/economy/savings-goals/': typeof ApiEconomySavingsGoalsIndexRoute
+  '/api/elections/chat/': typeof ApiElectionsChatIndexRoute
+  '/api/elections/events/': typeof ApiElectionsEventsIndexRoute
+  '/api/elections/leagues/': typeof ApiElectionsLeaguesIndexRoute
+  '/api/elections/rooms/': typeof ApiElectionsRoomsIndexRoute
   '/api/emoji-packs/$slug/': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id/': typeof ApiEventsIdIndexRoute
   '/api/fortune/today/': typeof ApiFortuneTodayIndexRoute
@@ -12478,6 +12714,7 @@ export interface FileRoutesById {
   '/api/dunesday/feeds/$feedId/calendar.ics': typeof ApiDunesdayFeedsFeedIdCalendarDoticsRoute
   '/api/dunesday/feeds/$feedId/rss.xml': typeof ApiDunesdayFeedsFeedIdRssDotxmlRoute
   '/api/dunesday/sync/$feedId/discord': typeof ApiDunesdaySyncFeedIdDiscordRoute
+  '/api/elections/leagues/$code/picks': typeof ApiElectionsLeaguesCodePicksRoute
   '/api/gifts/scheduled/$id/unwrap': typeof ApiGiftsScheduledIdUnwrapRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/homes/listings/$id/roommate': typeof ApiHomesListingsIdRoommateRoute
@@ -12603,6 +12840,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/dunesday'
+    | '/elections'
     | '/eversion-lab'
     | '/forest-explorer'
     | '/gabriels-horn'
@@ -13013,6 +13251,16 @@ export interface FileRouteTypes {
     | '/api/dream-rift/score'
     | '/api/dunesday/ask'
     | '/api/dunesday/sync'
+    | '/api/elections/ask'
+    | '/api/elections/calendar'
+    | '/api/elections/history'
+    | '/api/elections/markets'
+    | '/api/elections/news'
+    | '/api/elections/public'
+    | '/api/elections/races.csv'
+    | '/api/elections/streams'
+    | '/api/elections/summary'
+    | '/api/elections/swing'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -13096,6 +13344,7 @@ export interface FileRouteTypes {
     | '/api/notices/dismiss'
     | '/api/notifications/preferences'
     | '/api/notifications/read'
+    | '/api/og/elections'
     | '/api/og/pf2ecal'
     | '/api/og/sohumtracker'
     | '/api/onboarding/first-week'
@@ -13350,6 +13599,7 @@ export interface FileRouteTypes {
     | '/api/community-goals/'
     | '/api/community-pages/'
     | '/api/context-notes/'
+    | '/api/elections/'
     | '/api/emoji-packs/'
     | '/api/events/'
     | '/api/experiments/'
@@ -13459,6 +13709,9 @@ export interface FileRouteTypes {
     | '/api/admin/studio-challenges/upload'
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
+    | '/api/altair/run/finish'
+    | '/api/altair/run/start'
+    | '/api/altair/run/status'
     | '/api/announcements/$id/vote'
     | '/api/arcade/basket/finish'
     | '/api/arcade/basket/start'
@@ -13515,6 +13768,11 @@ export interface FileRouteTypes {
     | '/api/doctrine/sahur/status'
     | '/api/dunesday/sync/$feedId'
     | '/api/economy/savings-goals/$id'
+    | '/api/elections/chat/react'
+    | '/api/elections/chat/stream'
+    | '/api/elections/events/stream'
+    | '/api/elections/leagues/$code'
+    | '/api/elections/rooms/$code'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
     | '/api/emoji-packs/$slug/upload'
@@ -13772,6 +14030,10 @@ export interface FileRouteTypes {
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
     | '/api/economy/savings-goals/'
+    | '/api/elections/chat/'
+    | '/api/elections/events/'
+    | '/api/elections/leagues/'
+    | '/api/elections/rooms/'
     | '/api/emoji-packs/$slug/'
     | '/api/events/$id/'
     | '/api/fortune/today/'
@@ -13852,6 +14114,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/feeds/$feedId/calendar.ics'
     | '/api/dunesday/feeds/$feedId/rss.xml'
     | '/api/dunesday/sync/$feedId/discord'
+    | '/api/elections/leagues/$code/picks'
     | '/api/gifts/scheduled/$id/unwrap'
     | '/api/homes/listings/$id/favorite'
     | '/api/homes/listings/$id/roommate'
@@ -13972,6 +14235,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/dunesday'
+    | '/elections'
     | '/eversion-lab'
     | '/gabriels-horn'
     | '/games'
@@ -14358,6 +14622,16 @@ export interface FileRouteTypes {
     | '/api/dream-rift/score'
     | '/api/dunesday/ask'
     | '/api/dunesday/sync'
+    | '/api/elections/ask'
+    | '/api/elections/calendar'
+    | '/api/elections/history'
+    | '/api/elections/markets'
+    | '/api/elections/news'
+    | '/api/elections/public'
+    | '/api/elections/races.csv'
+    | '/api/elections/streams'
+    | '/api/elections/summary'
+    | '/api/elections/swing'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -14441,6 +14715,7 @@ export interface FileRouteTypes {
     | '/api/notices/dismiss'
     | '/api/notifications/preferences'
     | '/api/notifications/read'
+    | '/api/og/elections'
     | '/api/og/pf2ecal'
     | '/api/og/sohumtracker'
     | '/api/onboarding/first-week'
@@ -14695,6 +14970,7 @@ export interface FileRouteTypes {
     | '/api/community-goals'
     | '/api/community-pages'
     | '/api/context-notes'
+    | '/api/elections'
     | '/api/emoji-packs'
     | '/api/events'
     | '/api/experiments'
@@ -14803,6 +15079,9 @@ export interface FileRouteTypes {
     | '/api/admin/studio-challenges/upload'
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
+    | '/api/altair/run/finish'
+    | '/api/altair/run/start'
+    | '/api/altair/run/status'
     | '/api/announcements/$id/vote'
     | '/api/arcade/basket/finish'
     | '/api/arcade/basket/start'
@@ -14859,6 +15138,11 @@ export interface FileRouteTypes {
     | '/api/doctrine/sahur/status'
     | '/api/dunesday/sync/$feedId'
     | '/api/economy/savings-goals/$id'
+    | '/api/elections/chat/react'
+    | '/api/elections/chat/stream'
+    | '/api/elections/events/stream'
+    | '/api/elections/leagues/$code'
+    | '/api/elections/rooms/$code'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
     | '/api/emoji-packs/$slug/upload'
@@ -15116,6 +15400,10 @@ export interface FileRouteTypes {
     | '/api/doctrine/incidents'
     | '/api/doctrine/reputation'
     | '/api/economy/savings-goals'
+    | '/api/elections/chat'
+    | '/api/elections/events'
+    | '/api/elections/leagues'
+    | '/api/elections/rooms'
     | '/api/emoji-packs/$slug'
     | '/api/events/$id'
     | '/api/fortune/today'
@@ -15196,6 +15484,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/feeds/$feedId/calendar.ics'
     | '/api/dunesday/feeds/$feedId/rss.xml'
     | '/api/dunesday/sync/$feedId/discord'
+    | '/api/elections/leagues/$code/picks'
     | '/api/gifts/scheduled/$id/unwrap'
     | '/api/homes/listings/$id/favorite'
     | '/api/homes/listings/$id/roommate'
@@ -15319,6 +15608,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/dunesday'
+    | '/elections'
     | '/eversion-lab'
     | '/forest-explorer'
     | '/gabriels-horn'
@@ -15731,6 +16021,16 @@ export interface FileRouteTypes {
     | '/api/dream-rift/score'
     | '/api/dunesday/ask'
     | '/api/dunesday/sync'
+    | '/api/elections/ask'
+    | '/api/elections/calendar'
+    | '/api/elections/history'
+    | '/api/elections/markets'
+    | '/api/elections/news'
+    | '/api/elections/public'
+    | '/api/elections/races.csv'
+    | '/api/elections/streams'
+    | '/api/elections/summary'
+    | '/api/elections/swing'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -15814,6 +16114,7 @@ export interface FileRouteTypes {
     | '/api/notices/dismiss'
     | '/api/notifications/preferences'
     | '/api/notifications/read'
+    | '/api/og/elections'
     | '/api/og/pf2ecal'
     | '/api/og/sohumtracker'
     | '/api/onboarding/first-week'
@@ -16068,6 +16369,7 @@ export interface FileRouteTypes {
     | '/api/community-goals/'
     | '/api/community-pages/'
     | '/api/context-notes/'
+    | '/api/elections/'
     | '/api/emoji-packs/'
     | '/api/events/'
     | '/api/experiments/'
@@ -16177,6 +16479,9 @@ export interface FileRouteTypes {
     | '/api/admin/studio-challenges/upload'
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
+    | '/api/altair/run/finish'
+    | '/api/altair/run/start'
+    | '/api/altair/run/status'
     | '/api/announcements/$id/vote'
     | '/api/arcade/basket/finish'
     | '/api/arcade/basket/start'
@@ -16233,6 +16538,11 @@ export interface FileRouteTypes {
     | '/api/doctrine/sahur/status'
     | '/api/dunesday/sync/$feedId'
     | '/api/economy/savings-goals/$id'
+    | '/api/elections/chat/react'
+    | '/api/elections/chat/stream'
+    | '/api/elections/events/stream'
+    | '/api/elections/leagues/$code'
+    | '/api/elections/rooms/$code'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
     | '/api/emoji-packs/$slug/upload'
@@ -16490,6 +16800,10 @@ export interface FileRouteTypes {
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
     | '/api/economy/savings-goals/'
+    | '/api/elections/chat/'
+    | '/api/elections/events/'
+    | '/api/elections/leagues/'
+    | '/api/elections/rooms/'
     | '/api/emoji-packs/$slug/'
     | '/api/events/$id/'
     | '/api/fortune/today/'
@@ -16570,6 +16884,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/feeds/$feedId/calendar.ics'
     | '/api/dunesday/feeds/$feedId/rss.xml'
     | '/api/dunesday/sync/$feedId/discord'
+    | '/api/elections/leagues/$code/picks'
     | '/api/gifts/scheduled/$id/unwrap'
     | '/api/homes/listings/$id/favorite'
     | '/api/homes/listings/$id/roommate'
@@ -16694,6 +17009,7 @@ export interface RootRouteChildren {
   DesignRoute: typeof DesignRoute
   DreamRiftRoute: typeof DreamRiftRoute
   DunesdayRoute: typeof DunesdayRoute
+  ElectionsRoute: typeof ElectionsRoute
   EversionLabRoute: typeof EversionLabRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   GabrielsHornRoute: typeof GabrielsHornRoute
@@ -16883,6 +17199,16 @@ export interface RootRouteChildren {
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
   ApiDunesdayAskRoute: typeof ApiDunesdayAskRoute
   ApiDunesdaySyncRoute: typeof ApiDunesdaySyncRouteWithChildren
+  ApiElectionsAskRoute: typeof ApiElectionsAskRoute
+  ApiElectionsCalendarRoute: typeof ApiElectionsCalendarRoute
+  ApiElectionsHistoryRoute: typeof ApiElectionsHistoryRoute
+  ApiElectionsMarketsRoute: typeof ApiElectionsMarketsRoute
+  ApiElectionsNewsRoute: typeof ApiElectionsNewsRoute
+  ApiElectionsPublicRoute: typeof ApiElectionsPublicRoute
+  ApiElectionsRacesDotcsvRoute: typeof ApiElectionsRacesDotcsvRoute
+  ApiElectionsStreamsRoute: typeof ApiElectionsStreamsRoute
+  ApiElectionsSummaryRoute: typeof ApiElectionsSummaryRoute
+  ApiElectionsSwingRoute: typeof ApiElectionsSwingRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
   ApiEmbedOembedRoute: typeof ApiEmbedOembedRoute
   ApiEmojiPacksInstalledRoute: typeof ApiEmojiPacksInstalledRoute
@@ -16959,6 +17285,7 @@ export interface RootRouteChildren {
   ApiNoticesDismissRoute: typeof ApiNoticesDismissRoute
   ApiNotificationsPreferencesRoute: typeof ApiNotificationsPreferencesRoute
   ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
+  ApiOgElectionsRoute: typeof ApiOgElectionsRoute
   ApiOgPf2ecalRoute: typeof ApiOgPf2ecalRoute
   ApiOgSohumtrackerRoute: typeof ApiOgSohumtrackerRoute
   ApiOnboardingFirstWeekRoute: typeof ApiOnboardingFirstWeekRoute
@@ -17139,6 +17466,7 @@ export interface RootRouteChildren {
   ApiCommunityGoalsIndexRoute: typeof ApiCommunityGoalsIndexRoute
   ApiCommunityPagesIndexRoute: typeof ApiCommunityPagesIndexRoute
   ApiContextNotesIndexRoute: typeof ApiContextNotesIndexRoute
+  ApiElectionsIndexRoute: typeof ApiElectionsIndexRoute
   ApiEmojiPacksIndexRoute: typeof ApiEmojiPacksIndexRoute
   ApiEventsIndexRoute: typeof ApiEventsIndexRoute
   ApiExperimentsIndexRoute: typeof ApiExperimentsIndexRoute
@@ -17229,6 +17557,9 @@ export interface RootRouteChildren {
   ApiAdminStudioChallengesUploadRoute: typeof ApiAdminStudioChallengesUploadRoute
   ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiAlbumsAssetSplatRoute: typeof ApiAlbumsAssetSplatRoute
+  ApiAltairRunFinishRoute: typeof ApiAltairRunFinishRoute
+  ApiAltairRunStartRoute: typeof ApiAltairRunStartRoute
+  ApiAltairRunStatusRoute: typeof ApiAltairRunStatusRoute
   ApiArcadeBasketFinishRoute: typeof ApiArcadeBasketFinishRoute
   ApiArcadeBasketStartRoute: typeof ApiArcadeBasketStartRoute
   ApiArcadeDailyStartRoute: typeof ApiArcadeDailyStartRoute
@@ -17281,6 +17612,11 @@ export interface RootRouteChildren {
   ApiDoctrineSafehouseDisclosuresRoute: typeof ApiDoctrineSafehouseDisclosuresRoute
   ApiDoctrineSahurStatusRoute: typeof ApiDoctrineSahurStatusRoute
   ApiEconomySavingsGoalsIdRoute: typeof ApiEconomySavingsGoalsIdRoute
+  ApiElectionsChatReactRoute: typeof ApiElectionsChatReactRoute
+  ApiElectionsChatStreamRoute: typeof ApiElectionsChatStreamRoute
+  ApiElectionsEventsStreamRoute: typeof ApiElectionsEventsStreamRoute
+  ApiElectionsLeaguesCodeRoute: typeof ApiElectionsLeaguesCodeRouteWithChildren
+  ApiElectionsRoomsCodeRoute: typeof ApiElectionsRoomsCodeRoute
   ApiEmojiPacksSlugItemsRoute: typeof ApiEmojiPacksSlugItemsRoute
   ApiEmojiPacksSlugSubscribeRoute: typeof ApiEmojiPacksSlugSubscribeRoute
   ApiEmojiPacksSlugUploadRoute: typeof ApiEmojiPacksSlugUploadRoute
@@ -17427,6 +17763,10 @@ export interface RootRouteChildren {
   ApiDoctrineIncidentsIndexRoute: typeof ApiDoctrineIncidentsIndexRoute
   ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
   ApiEconomySavingsGoalsIndexRoute: typeof ApiEconomySavingsGoalsIndexRoute
+  ApiElectionsChatIndexRoute: typeof ApiElectionsChatIndexRoute
+  ApiElectionsEventsIndexRoute: typeof ApiElectionsEventsIndexRoute
+  ApiElectionsLeaguesIndexRoute: typeof ApiElectionsLeaguesIndexRoute
+  ApiElectionsRoomsIndexRoute: typeof ApiElectionsRoomsIndexRoute
   ApiEmojiPacksSlugIndexRoute: typeof ApiEmojiPacksSlugIndexRoute
   ApiEventsIdIndexRoute: typeof ApiEventsIdIndexRoute
   ApiFortuneTodayIndexRoute: typeof ApiFortuneTodayIndexRoute
@@ -17650,6 +17990,13 @@ declare module '@tanstack/react-router' {
       path: '/dunesday'
       fullPath: '/dunesday'
       preLoaderRoute: typeof DunesdayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/elections': {
+      id: '/elections'
+      path: '/elections'
+      fullPath: '/elections'
+      preLoaderRoute: typeof ElectionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/eversion-lab': {
@@ -20907,6 +21254,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDunesdaySyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/elections/': {
+      id: '/api/elections/'
+      path: '/api/elections'
+      fullPath: '/api/elections/'
+      preLoaderRoute: typeof ApiElectionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/ask': {
+      id: '/api/elections/ask'
+      path: '/api/elections/ask'
+      fullPath: '/api/elections/ask'
+      preLoaderRoute: typeof ApiElectionsAskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/calendar': {
+      id: '/api/elections/calendar'
+      path: '/api/elections/calendar'
+      fullPath: '/api/elections/calendar'
+      preLoaderRoute: typeof ApiElectionsCalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/history': {
+      id: '/api/elections/history'
+      path: '/api/elections/history'
+      fullPath: '/api/elections/history'
+      preLoaderRoute: typeof ApiElectionsHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/markets': {
+      id: '/api/elections/markets'
+      path: '/api/elections/markets'
+      fullPath: '/api/elections/markets'
+      preLoaderRoute: typeof ApiElectionsMarketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/news': {
+      id: '/api/elections/news'
+      path: '/api/elections/news'
+      fullPath: '/api/elections/news'
+      preLoaderRoute: typeof ApiElectionsNewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/public': {
+      id: '/api/elections/public'
+      path: '/api/elections/public'
+      fullPath: '/api/elections/public'
+      preLoaderRoute: typeof ApiElectionsPublicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/races.csv': {
+      id: '/api/elections/races.csv'
+      path: '/api/elections/races.csv'
+      fullPath: '/api/elections/races.csv'
+      preLoaderRoute: typeof ApiElectionsRacesDotcsvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/streams': {
+      id: '/api/elections/streams'
+      path: '/api/elections/streams'
+      fullPath: '/api/elections/streams'
+      preLoaderRoute: typeof ApiElectionsStreamsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/summary': {
+      id: '/api/elections/summary'
+      path: '/api/elections/summary'
+      fullPath: '/api/elections/summary'
+      preLoaderRoute: typeof ApiElectionsSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/swing': {
+      id: '/api/elections/swing'
+      path: '/api/elections/swing'
+      fullPath: '/api/elections/swing'
+      preLoaderRoute: typeof ApiElectionsSwingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/email/unsubscribe': {
       id: '/api/email/unsubscribe'
       path: '/api/email/unsubscribe'
@@ -21633,6 +22057,13 @@ declare module '@tanstack/react-router' {
       path: '/api/office-hours'
       fullPath: '/api/office-hours/'
       preLoaderRoute: typeof ApiOfficeHoursIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/og/elections': {
+      id: '/api/og/elections'
+      path: '/api/og/elections'
+      fullPath: '/api/og/elections'
+      preLoaderRoute: typeof ApiOgElectionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/og/pf2ecal': {
@@ -23756,6 +24187,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAlbumsAssetSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/altair/run/finish': {
+      id: '/api/altair/run/finish'
+      path: '/api/altair/run/finish'
+      fullPath: '/api/altair/run/finish'
+      preLoaderRoute: typeof ApiAltairRunFinishRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/altair/run/start': {
+      id: '/api/altair/run/start'
+      path: '/api/altair/run/start'
+      fullPath: '/api/altair/run/start'
+      preLoaderRoute: typeof ApiAltairRunStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/altair/run/status': {
+      id: '/api/altair/run/status'
+      path: '/api/altair/run/status'
+      fullPath: '/api/altair/run/status'
+      preLoaderRoute: typeof ApiAltairRunStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/announcements/$id/vote': {
       id: '/api/announcements/$id/vote'
       path: '/$id/vote'
@@ -24244,6 +24696,69 @@ declare module '@tanstack/react-router' {
       path: '/api/economy/savings-goals/$id'
       fullPath: '/api/economy/savings-goals/$id'
       preLoaderRoute: typeof ApiEconomySavingsGoalsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/chat/': {
+      id: '/api/elections/chat/'
+      path: '/api/elections/chat'
+      fullPath: '/api/elections/chat/'
+      preLoaderRoute: typeof ApiElectionsChatIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/chat/react': {
+      id: '/api/elections/chat/react'
+      path: '/api/elections/chat/react'
+      fullPath: '/api/elections/chat/react'
+      preLoaderRoute: typeof ApiElectionsChatReactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/chat/stream': {
+      id: '/api/elections/chat/stream'
+      path: '/api/elections/chat/stream'
+      fullPath: '/api/elections/chat/stream'
+      preLoaderRoute: typeof ApiElectionsChatStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/events/': {
+      id: '/api/elections/events/'
+      path: '/api/elections/events'
+      fullPath: '/api/elections/events/'
+      preLoaderRoute: typeof ApiElectionsEventsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/events/stream': {
+      id: '/api/elections/events/stream'
+      path: '/api/elections/events/stream'
+      fullPath: '/api/elections/events/stream'
+      preLoaderRoute: typeof ApiElectionsEventsStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/leagues/': {
+      id: '/api/elections/leagues/'
+      path: '/api/elections/leagues'
+      fullPath: '/api/elections/leagues/'
+      preLoaderRoute: typeof ApiElectionsLeaguesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/leagues/$code': {
+      id: '/api/elections/leagues/$code'
+      path: '/api/elections/leagues/$code'
+      fullPath: '/api/elections/leagues/$code'
+      preLoaderRoute: typeof ApiElectionsLeaguesCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/rooms/': {
+      id: '/api/elections/rooms/'
+      path: '/api/elections/rooms'
+      fullPath: '/api/elections/rooms/'
+      preLoaderRoute: typeof ApiElectionsRoomsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/rooms/$code': {
+      id: '/api/elections/rooms/$code'
+      path: '/api/elections/rooms/$code'
+      fullPath: '/api/elections/rooms/$code'
+      preLoaderRoute: typeof ApiElectionsRoomsCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/emoji-packs/$slug/': {
@@ -26457,6 +26972,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/dunesday/sync/$feedId/discord'
       preLoaderRoute: typeof ApiDunesdaySyncFeedIdDiscordRouteImport
       parentRoute: typeof ApiDunesdaySyncFeedIdRoute
+    }
+    '/api/elections/leagues/$code/picks': {
+      id: '/api/elections/leagues/$code/picks'
+      path: '/picks'
+      fullPath: '/api/elections/leagues/$code/picks'
+      preLoaderRoute: typeof ApiElectionsLeaguesCodePicksRouteImport
+      parentRoute: typeof ApiElectionsLeaguesCodeRoute
     }
     '/api/gifts/scheduled/$id/': {
       id: '/api/gifts/scheduled/$id/'
@@ -29262,6 +29784,20 @@ const ApiDeveloperKeysIdRouteChildren: ApiDeveloperKeysIdRouteChildren = {
 const ApiDeveloperKeysIdRouteWithChildren =
   ApiDeveloperKeysIdRoute._addFileChildren(ApiDeveloperKeysIdRouteChildren)
 
+interface ApiElectionsLeaguesCodeRouteChildren {
+  ApiElectionsLeaguesCodePicksRoute: typeof ApiElectionsLeaguesCodePicksRoute
+}
+
+const ApiElectionsLeaguesCodeRouteChildren: ApiElectionsLeaguesCodeRouteChildren =
+  {
+    ApiElectionsLeaguesCodePicksRoute: ApiElectionsLeaguesCodePicksRoute,
+  }
+
+const ApiElectionsLeaguesCodeRouteWithChildren =
+  ApiElectionsLeaguesCodeRoute._addFileChildren(
+    ApiElectionsLeaguesCodeRouteChildren,
+  )
+
 interface ApiGroupChatsIdMessagesRouteChildren {
   ApiGroupChatsIdMessagesMessageIdVoteRoute: typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
 }
@@ -29452,6 +29988,7 @@ const rootRouteChildren: RootRouteChildren = {
   DesignRoute: DesignRoute,
   DreamRiftRoute: DreamRiftRoute,
   DunesdayRoute: DunesdayRoute,
+  ElectionsRoute: ElectionsRoute,
   EversionLabRoute: EversionLabRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   GabrielsHornRoute: GabrielsHornRoute,
@@ -29642,6 +30179,16 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
   ApiDunesdayAskRoute: ApiDunesdayAskRoute,
   ApiDunesdaySyncRoute: ApiDunesdaySyncRouteWithChildren,
+  ApiElectionsAskRoute: ApiElectionsAskRoute,
+  ApiElectionsCalendarRoute: ApiElectionsCalendarRoute,
+  ApiElectionsHistoryRoute: ApiElectionsHistoryRoute,
+  ApiElectionsMarketsRoute: ApiElectionsMarketsRoute,
+  ApiElectionsNewsRoute: ApiElectionsNewsRoute,
+  ApiElectionsPublicRoute: ApiElectionsPublicRoute,
+  ApiElectionsRacesDotcsvRoute: ApiElectionsRacesDotcsvRoute,
+  ApiElectionsStreamsRoute: ApiElectionsStreamsRoute,
+  ApiElectionsSummaryRoute: ApiElectionsSummaryRoute,
+  ApiElectionsSwingRoute: ApiElectionsSwingRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
   ApiEmbedOembedRoute: ApiEmbedOembedRoute,
   ApiEmojiPacksInstalledRoute: ApiEmojiPacksInstalledRoute,
@@ -29718,6 +30265,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNoticesDismissRoute: ApiNoticesDismissRoute,
   ApiNotificationsPreferencesRoute: ApiNotificationsPreferencesRoute,
   ApiNotificationsReadRoute: ApiNotificationsReadRoute,
+  ApiOgElectionsRoute: ApiOgElectionsRoute,
   ApiOgPf2ecalRoute: ApiOgPf2ecalRoute,
   ApiOgSohumtrackerRoute: ApiOgSohumtrackerRoute,
   ApiOnboardingFirstWeekRoute: ApiOnboardingFirstWeekRoute,
@@ -29898,6 +30446,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunityGoalsIndexRoute: ApiCommunityGoalsIndexRoute,
   ApiCommunityPagesIndexRoute: ApiCommunityPagesIndexRoute,
   ApiContextNotesIndexRoute: ApiContextNotesIndexRoute,
+  ApiElectionsIndexRoute: ApiElectionsIndexRoute,
   ApiEmojiPacksIndexRoute: ApiEmojiPacksIndexRoute,
   ApiEventsIndexRoute: ApiEventsIndexRoute,
   ApiExperimentsIndexRoute: ApiExperimentsIndexRoute,
@@ -29988,6 +30537,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminStudioChallengesUploadRoute: ApiAdminStudioChallengesUploadRoute,
   ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiAlbumsAssetSplatRoute: ApiAlbumsAssetSplatRoute,
+  ApiAltairRunFinishRoute: ApiAltairRunFinishRoute,
+  ApiAltairRunStartRoute: ApiAltairRunStartRoute,
+  ApiAltairRunStatusRoute: ApiAltairRunStatusRoute,
   ApiArcadeBasketFinishRoute: ApiArcadeBasketFinishRoute,
   ApiArcadeBasketStartRoute: ApiArcadeBasketStartRoute,
   ApiArcadeDailyStartRoute: ApiArcadeDailyStartRoute,
@@ -30043,6 +30595,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineSafehouseDisclosuresRoute: ApiDoctrineSafehouseDisclosuresRoute,
   ApiDoctrineSahurStatusRoute: ApiDoctrineSahurStatusRoute,
   ApiEconomySavingsGoalsIdRoute: ApiEconomySavingsGoalsIdRoute,
+  ApiElectionsChatReactRoute: ApiElectionsChatReactRoute,
+  ApiElectionsChatStreamRoute: ApiElectionsChatStreamRoute,
+  ApiElectionsEventsStreamRoute: ApiElectionsEventsStreamRoute,
+  ApiElectionsLeaguesCodeRoute: ApiElectionsLeaguesCodeRouteWithChildren,
+  ApiElectionsRoomsCodeRoute: ApiElectionsRoomsCodeRoute,
   ApiEmojiPacksSlugItemsRoute: ApiEmojiPacksSlugItemsRoute,
   ApiEmojiPacksSlugSubscribeRoute: ApiEmojiPacksSlugSubscribeRoute,
   ApiEmojiPacksSlugUploadRoute: ApiEmojiPacksSlugUploadRoute,
@@ -30189,6 +30746,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineIncidentsIndexRoute: ApiDoctrineIncidentsIndexRoute,
   ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
   ApiEconomySavingsGoalsIndexRoute: ApiEconomySavingsGoalsIndexRoute,
+  ApiElectionsChatIndexRoute: ApiElectionsChatIndexRoute,
+  ApiElectionsEventsIndexRoute: ApiElectionsEventsIndexRoute,
+  ApiElectionsLeaguesIndexRoute: ApiElectionsLeaguesIndexRoute,
+  ApiElectionsRoomsIndexRoute: ApiElectionsRoomsIndexRoute,
   ApiEmojiPacksSlugIndexRoute: ApiEmojiPacksSlugIndexRoute,
   ApiEventsIdIndexRoute: ApiEventsIdIndexRoute,
   ApiFortuneTodayIndexRoute: ApiFortuneTodayIndexRoute,

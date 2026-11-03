@@ -14,12 +14,18 @@ import { io, type Socket } from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';
 import { authClient } from '@/lib/auth-client';
 import { useDreamRift } from '../store';
-import { C2S, S2C, type DrDifficulty, type DrPlayerId, type LobbySnapshot, type PublicLobbyInfo, type RelayMsg, type StartPayload } from './events';
+import { C2S, S2C, type DrDifficulty, type JoinedPayload, type DrPlayerId, type LobbySnapshot, type PublicLobbyInfo, type RelayMsg, type StartPayload } from './events';
 
 let socket: Socket | null = null;
 let relayHandler: ((msg: RelayMsg) => void) | null = null;
 let startHandler: ((p: StartPayload) => void) | null = null;
 let peerLeftHandler: ((slot: number) => void) | null = null;
+let resumedHandler: (() => void) | null = null;
+let resumeFailedHandler: (() => void) | null = null;
+/** True from the moment we ask for our seat back until the hub answers. */
+let resumePending = false;
+/** Seat credentials from the last JOINED/RESUMED: presenting them on a reconnect reclaims the seat. */
+let resumeCreds: { code: string; token: string } | null = null;
 
 export function setRelayHandler(fn: ((msg: RelayMsg) => void) | null): void {
     relayHandler = fn;
@@ -27,6 +33,11 @@ export function setRelayHandler(fn: ((msg: RelayMsg) => void) | null): void {
 /** Notified with the slot of any player who leaves the lobby (used by guests to notice a vanished host). */
 export function setPeerLeftHandler(fn: ((slot: number) => void) | null): void {
     peerLeftHandler = fn;
+}
+/** In-run reconnect: `onResumed` when the hub hands the seat back, `onFailed` when it can't (the grace window ran out, or the lobby closed). */
+export function setResumeHandlers(onResumed: (() => void) | null, onFailed: (() => void) | null): void {
+    resumedHandler = onResumed;
+    resumeFailedHandler = onFailed;
 }
 export function setStartHandler(fn: ((p: StartPayload) => void) | null): void {
     startHandler = fn;
@@ -65,7 +76,15 @@ async function connectDreamRiftInner(): Promise<Socket> {
     });
 
     const s = socket;
-    s.on('connect', () => useDreamRift.getState().setConnection('connected'));
+    s.on('connect', () => {
+        useDreamRift.getState().setConnection('connected');
+        // A transport that dropped and came back is a NEW socket id: ask the server
+        // to rebind our held seat to it (it keeps the seat for the shared grace window).
+        if (resumeCreds) {
+            resumePending = true;
+            s.emit(C2S.RESUME, resumeCreds);
+        }
+    });
     s.on('disconnect', () => useDreamRift.getState().setConnection('idle'));
     s.on('connect_error', () => {
         useDreamRift.getState().setConnection('error');
@@ -74,13 +93,30 @@ async function connectDreamRiftInner(): Promise<Socket> {
 
     s.on(S2C.LOBBY, (lobby: LobbySnapshot) => useDreamRift.getState().setLobby(lobby));
     s.on(S2C.BROWSE_RESULT, (data: { lobbies: PublicLobbyInfo[] }) => useDreamRift.getState().setBrowse(data.lobbies ?? []));
-    s.on(S2C.JOINED, (data: { code: string; yourSlot: number; selfId: string }) => {
+    s.on(S2C.JOINED, (data: JoinedPayload) => {
+        resumeCreds = data.resumeToken ? { code: data.code, token: data.resumeToken } : null;
         useDreamRift.getState().setSelf(data.selfId);
         useDreamRift.getState().setScreen('lobby');
         useDreamRift.getState().setError(null);
     });
-    s.on(S2C.ERROR, (data: { message: string }) => useDreamRift.getState().setError(data?.message ?? 'Error'));
+    s.on(S2C.RESUMED, (data: JoinedPayload) => {
+        // Same seat, new socket: only our own id changes (the lobby broadcast follows).
+        useDreamRift.getState().setSelf(data.selfId);
+        useDreamRift.getState().setError(null);
+        resumePending = false;
+        resumedHandler?.();
+    });
+    s.on(S2C.ERROR, (data: { message: string }) => {
+        if (resumePending) {
+            // The only error a RESUME can produce: the seat is gone.
+            resumePending = false;
+            resumeCreds = null;
+            resumeFailedHandler?.();
+        }
+        useDreamRift.getState().setError(data?.message ?? 'Error');
+    });
     s.on(S2C.KICKED, () => {
+        resumeCreds = null;
         useDreamRift.getState().setLobby(null);
         useDreamRift.getState().setScreen('lobby-browser');
         useDreamRift.getState().setError('You were removed from the lobby.');
@@ -104,6 +140,10 @@ export function disconnectDreamRift(): void {
     relayHandler = null;
     startHandler = null;
     peerLeftHandler = null;
+    resumeCreds = null;
+    resumePending = false;
+    resumedHandler = null;
+    resumeFailedHandler = null;
 }
 
 // ── lobby actions ──
@@ -121,6 +161,7 @@ export function browseLobbies(): void {
     socket?.emit(C2S.BROWSE, {});
 }
 export function leaveLobby(): void {
+    resumeCreds = null;
     socket?.emit(C2S.LEAVE, {});
     useDreamRift.getState().setLobby(null);
 }

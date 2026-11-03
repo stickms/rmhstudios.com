@@ -156,6 +156,8 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // Campaigns and standalone statements.
   { loc: '/black-lives-matter', changefreq: 'yearly', priority: 0.3 },
   { loc: '/covid', changefreq: 'yearly', priority: 0.3 },
+  // The election hub: results change by the minute on election night, so it is crawled often.
+  { loc: '/elections', changefreq: 'hourly', priority: 0.8 },
 
   // Engineering/design write-ups. Real content, and the kind that earns links.
   { loc: '/design', changefreq: 'monthly', priority: 0.5 },

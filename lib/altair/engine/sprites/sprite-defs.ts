@@ -160,6 +160,9 @@ export const CATALYST_ICON_SRC = CATALYST_ICON_SHEET_FILE;
 
 /** Load all sprite sheets. Call once at game startup. */
 export function initAllSpriteSheets(): void {
+  // Headless (the server-side run verifier replays the sim in Node): there is nothing to load
+  // and the simulation never reads sprite pixels.
+  if (typeof Image === 'undefined') return;
   // Player
   for (const [id, path] of Object.entries(PLAYER_SHEET_FILES)) {
     playerSheets[id] = loadSpriteSheet(path, FRAME_SIZE, FRAME_SIZE);

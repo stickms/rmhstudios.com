@@ -22,8 +22,10 @@ import { codeFromLocation } from '@/lib/worlds/schema';
 
 import { WebGLUnavailable, useWebGLSupport } from '@/components/shared/WebGLUnavailable';
 import { BuildPalette } from './hud/BuildPalette';
+import { CompactHud } from './hud/CompactHud';
+import { useCompactHud } from './hud/useCompactHud';
 import { Rail } from './hud/Rail';
-import { IsleVisit } from './hud/IsleVisit';
+import { IsleVisit, useIsleVisit } from './hud/IsleVisit';
 import { StartScreen } from './hud/StartScreen';
 import { Toasts } from './hud/Toasts';
 import { TopBar } from './hud/TopBar';
@@ -44,13 +46,19 @@ export default function IsleworksGame() {
   useEffect(() => setVisitCode(codeFromLocation('isleworks')), []);
   const rigRef = useRef<RigHandle | null>(null);
   const webgl = useWebGLSupport();
+  const compactHud = useCompactHud();
+  const visit = useIsleVisit(visitCode ?? null);
 
   /* Game keys. The camera's Q/E/WASD are handled inside the rig. */
   useEffect(() => {
     if (!started) return;
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return;
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      )
+        return;
       const store = useIsleworks.getState();
       switch (event.key.toLowerCase()) {
         case 'escape':
@@ -120,16 +128,16 @@ export default function IsleworksGame() {
   if (!webgl) return <WebGLUnavailable gameName="Isleworks" />;
 
   return (
-    <div className="isw">
+    <div className={`isw${compactHud ? ' isw--compact' : ''}`}>
       <div className="isw-canvas">
         <CityScene rigRef={rigRef} />
       </div>
 
-      {visitCode && <IsleVisit code={visitCode} />}
+      {visitCode && <IsleVisit visit={visit} compact={compactHud} />}
       {started ? (
         <div className="isw-hud" data-jelly-zone="hud">
-          <TopBar rigRef={rigRef} />
-          {!visiting && <Rail />}
+          {compactHud ? <CompactHud rigRef={rigRef} visit={visit} /> : <TopBar rigRef={rigRef} />}
+          {!visiting && !compactHud && <Rail />}
           {!visiting && <BuildPalette />}
           <Toasts />
         </div>

@@ -35,6 +35,7 @@ import type {
 import { isCosmeticId, isValidCosmetics } from '@/lib/bums-rush/cosmetics';
 import { clearKey } from './merge';
 import { createDefaultProfile } from './save';
+import { objectiveIdsToBitmask } from './objectives';
 import { evaluateUnlocks, progressFromProfile } from './unlocks';
 
 type Tx = Prisma.TransactionClient;
@@ -55,7 +56,28 @@ export type LevelBoundsResolver = (
   levelId: string,
 ) => LevelPlausibilityBounds | null | Promise<LevelPlausibilityBounds | null>;
 
-let levelBoundsResolver: LevelBoundsResolver = () => null;
+/**
+ * The default resolver reads the authored level data, so a real clear is ranked
+ * and saved without anything having to call `setLevelBoundsResolver` first.
+ * Nothing in production ever did, which left every server-side clear "unranked"
+ * (reason: 'level bounds unavailable') and the signed-in player's clears and
+ * unlocks never written. An unknown level id still resolves to `null` (unranked).
+ */
+const loadAuthoredBounds: LevelBoundsResolver = async (levelId) => {
+  try {
+    const { loadLevel } = await import('@/lib/bums-rush/levels/loader');
+    const level = await loadLevel(levelId);
+    return {
+      minPlausibleSeconds: level.minPlausibleSeconds ?? null,
+      parSeconds: level.parSeconds,
+      objectives: level.objectives.map((o) => ({ id: o.id, kind: o.kind })),
+    };
+  } catch {
+    return null;
+  }
+};
+
+let levelBoundsResolver: LevelBoundsResolver = loadAuthoredBounds;
 
 /** Wired up once the level catalog loads (see the module doc). Exported for the levels ticket and for tests. */
 export function setLevelBoundsResolver(resolver: LevelBoundsResolver): void {
@@ -120,19 +142,16 @@ function validateAgainstBounds(
 }
 
 /** `LevelResult.objectiveIds` (strings) → the stored bitmask, using the level's authored order. `null` bounds → nothing can be trusted. */
-function objectiveIdsToBitmask(
+function boundsObjectiveMask(
   objectiveIds: readonly string[],
   bounds: LevelPlausibilityBounds | null,
 ): number {
   if (!bounds) return 0;
-  let mask = 0;
-  bounds.objectives.forEach((objective, index) => {
-    if (objectiveIds.includes(objective.id)) mask |= 1 << index;
-  });
-  return mask;
+  return objectiveIdsToBitmask(objectiveIds, bounds.objectives);
 }
 
-async function resolveBounds(levelId: string): Promise<LevelPlausibilityBounds | null> {
+/** Exported for tests: the bounds the validator would use for this level right now. */
+export async function resolveBounds(levelId: string): Promise<LevelPlausibilityBounds | null> {
   return (await levelBoundsResolver(levelId)) ?? null;
 }
 
@@ -160,7 +179,8 @@ function toLevelClear(row: {
   };
 }
 
-function toProfile(row: ProfileRow): Profile {
+/** Exported for tests. */
+export function toProfile(row: ProfileRow): Profile {
   const clears: Record<string, LevelClear> = {};
   for (const c of row.clears) clears[clearKey(c.levelId, c.playerCount)] = toLevelClear(c);
 
@@ -172,7 +192,8 @@ function toProfile(row: ProfileRow): Profile {
 
   return {
     cosmetics: { head: row.head, hat: row.hat, gloves: row.gloves, ink: row.ink },
-    unlockedCosmetics: row.unlockedCosmetics,
+    // A row created by a first clear starts with an empty column; the starter kit is always owned.
+    unlockedCosmetics: Array.from(new Set([...defaults.unlockedCosmetics, ...row.unlockedCosmetics])),
     parcelsFound: row.parcelsFound,
     posesFound: row.posesFound,
     recipesMade: row.recipesMade,
@@ -214,6 +235,14 @@ interface ClearCandidate {
   objectivesBitmask: number;
   assisted: boolean;
   ranked: boolean;
+  /**
+   * Set ONLY by the bulk profile sync (`upsertProfile`): the client's own count
+   * for this record. A sync replays history, it is not a new clear, so the
+   * stored count becomes the max of the two instead of `+ 1` - otherwise every
+   * page load (an autosave round-trip) inflated `clears` by one. Unset for a
+   * real result (`recordLevelResult`), which does add one.
+   */
+  syncedClears?: number;
 }
 
 /**
@@ -252,7 +281,14 @@ async function applyClearForUser(
   const assisted =
     existing && existing.bestMs <= candidate.bestMs ? existing.assisted : candidate.assisted;
   const objectives = (existing?.objectives ?? 0) | candidate.objectivesBitmask;
-  const clearsCount = (existing?.clears ?? 0) + 1;
+  const syncedClears =
+    candidate.syncedClears === undefined
+      ? undefined
+      : Math.min(100_000, Math.max(0, Math.round(candidate.syncedClears)));
+  const clearsCount =
+    syncedClears === undefined
+      ? (existing?.clears ?? 0) + 1
+      : Math.max(existing?.clears ?? 0, syncedClears);
 
   const changed =
     !existing ||
@@ -270,7 +306,7 @@ async function applyClearForUser(
       bestMs: candidate.bestMs,
       objectives: candidate.objectivesBitmask,
       assisted: candidate.assisted,
-      clears: 1,
+      clears: syncedClears === undefined ? 1 : Math.max(1, syncedClears),
     },
     update: { bestMs, objectives, assisted, clears: clearsCount },
   });
@@ -313,7 +349,7 @@ export interface RecordResultOutcome {
  */
 export async function recordLevelResult(result: LevelResult): Promise<RecordResultOutcome> {
   const bounds = await resolveBounds(result.levelId);
-  const claimedBitmask = objectiveIdsToBitmask(result.objectiveIds, bounds);
+  const claimedBitmask = boundsObjectiveMask(result.objectiveIds, bounds);
   const validation = validateAgainstBounds(result.durationMs, claimedBitmask, bounds);
 
   if (bounds) {
@@ -476,6 +512,7 @@ export async function upsertProfile(userId: string, incoming: Profile): Promise<
         objectivesBitmask: validation.trustedObjectivesBitmask,
         assisted: clear.assisted,
         ranked: validation.reasons.length === 0,
+        syncedClears: clear.clears,
       });
       touchedLevels.push({ levelId: clear.levelId, playerCount: clear.playerCount });
     }

@@ -12,7 +12,7 @@ import { io, Socket } from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';
 import { authClient } from '@/lib/auth-client';
 import { useAltairMultiplayerStore } from './store';
-import { S2C } from './events';
+import { C2S, S2C } from './events';
 
 // ── Module-Level Socket Reference ────────────────────────────────
 
@@ -64,8 +64,15 @@ async function connectToAltairInner(): Promise<Socket> {
 
   // ── Connection lifecycle ──────────────────────────────────────
 
+  let connectedBefore = false;
   socket.on('connect', () => {
-    useAltairMultiplayerStore.getState().setConnectionStatus('connected');
+    const st = useAltairMultiplayerStore.getState();
+    st.setConnectionStatus('connected');
+    // A RE-connect while we hold a lobby: re-announce ourselves. Inside the hub's 10 s grace
+    // this is a no-op reconnect; after it expired the hub already removed us, and this is how a
+    // returning guest rejoins the running match (as their old class).
+    if (connectedBefore && st.lobby?.lobbyId) socket?.emit(C2S.LOBBY_JOIN, { lobbyId: st.lobby.lobbyId });
+    connectedBefore = true;
   });
 
   socket.on('disconnect', (reason) => {
@@ -107,7 +114,7 @@ async function connectToAltairInner(): Promise<Socket> {
 
   // ── Game lifecycle ────────────────────────────────────────────
 
-  socket.on(S2C.GAME_COUNTDOWN, (data: { seconds: number }) => {
+  socket.on(S2C.GAME_COUNTDOWN, (data: { seconds: number | null }) => {
     useAltairMultiplayerStore.getState().setCountdown(data.seconds);
   });
 
@@ -115,9 +122,9 @@ async function connectToAltairInner(): Promise<Socket> {
     useAltairMultiplayerStore.getState().setGameStarted(data.tick);
   });
 
-  socket.on(S2C.GAME_STATE_SNAPSHOT, (snapshot) => {
-    useAltairMultiplayerStore.getState().setGameSnapshot(snapshot);
-  });
+  // GAME_STATE_SNAPSHOT is deliberately NOT stored: 20 Hz of entity arrays would
+  // re-render every store subscriber. The match screen listens to it directly and
+  // feeds its own jitter buffer (MultiplayerGameScreen).
 
   socket.on(S2C.GAME_EVENT, (event) => {
     useAltairMultiplayerStore.getState().addGameEvent(event);

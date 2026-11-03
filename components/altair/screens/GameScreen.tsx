@@ -12,13 +12,13 @@ import { useAltairGameStore } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
 import { useAltairToastStore } from '@/lib/altair/stores/toast-store';
-import { createGameWorld, createGameLoop, createTileGenerator } from '@/lib/altair/engine/game-loop';
-import { setupInputListeners, setMobileInput } from '@/lib/altair/engine/input';
-import { generateUpgradeChoices, checkEvolution } from '@/lib/altair/engine/level-up-system';
-import { spawnEvolution, spawnLevelUp } from '@/lib/altair/engine/particle-system';
+import { createGameLoop } from '@/lib/altair/engine/game-loop';
+import { createInputState, setupInputListeners, setMobileInput } from '@/lib/altair/engine/input';
+import { SoloRun } from '@/lib/altair/solo/solo-run';
+import { loadoutFromUpgrades } from '@/lib/altair/solo/loadout';
+import { beginSoloSession, setActiveRun } from '@/lib/altair/solo/session';
 import { altairSfx } from '@/lib/altair/audio/sfx';
 import { BOSSES } from '@/lib/altair/data/bosses';
-import { WeaponState, PassiveState, CatalystState } from '@/lib/altair/engine/types';
 import { getAllSpriteEntries } from '@/lib/altair/engine/sprites/sprite-defs';
 import { preloadAllSprites } from '@/lib/altair/engine/sprites/sprite-loader';
 import GameHUD from '@/components/altair/hud/GameHUD';
@@ -54,7 +54,9 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const loopRef = useRef<ReturnType<typeof createGameLoop> | null>(null);
-  const worldRef = useRef<ReturnType<typeof createGameWorld> | null>(null);
+  const runRef = useRef<SoloRun | null>(null);
+  // What the player is pressing right now. The run samples it once per fixed step and records it.
+  const liveInputRef = useRef(createInputState());
 
   const phase = useAltairGameStore((s) => s.phase);
   const selectedClassId = useAltairGameStore((s) => s.selectedClassId);
@@ -80,7 +82,6 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
   } | null>(null);
 
   // Track previous phase for sync triggers
-  const prevPhaseRef = useRef(phase);
   const prevPausePhaseRef = useRef(phase);
 
   // Detect mobile
@@ -98,84 +99,6 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
       setSpritesReady(true);
     });
   }, []);
-
-  // Sync store weapons/passives back to world after upgrading
-  const syncStoreToWorld = useCallback(() => {
-    const world = worldRef.current;
-    if (!world) return;
-    const store = useAltairGameStore.getState();
-
-    // Rebuild world.weapons from store, preserving runtime state by position
-    const newWeapons: WeaponState[] = store.weapons.map((sw, i) => {
-      const existing = i < world.weapons.length ? world.weapons[i] : null;
-      return {
-        weaponId: sw.weaponId,
-        level: sw.level,
-        evolved: sw.evolved,
-        cooldownTimer: existing?.cooldownTimer ?? 0,
-        activeTimer: existing?.activeTimer,
-        orbitAngle: existing?.orbitAngle,
-      };
-    });
-    world.weapons = newWeapons;
-
-    // Rebuild world.passives from store
-    const newPassives: PassiveState[] = store.passives.map((sp) => ({
-      passiveId: sp.passiveId,
-      level: sp.level,
-    }));
-    world.passives = newPassives;
-
-    // Rebuild world.catalysts from store
-    const newCatalysts: CatalystState[] = store.catalysts.map((sc) => ({
-      catalystId: sc.catalystId,
-      level: sc.level,
-    }));
-    world.catalysts = newCatalysts;
-  }, []);
-
-  // Handle reroll from LevelUpScreen
-  const handleReroll = useCallback(() => {
-    const world = worldRef.current;
-    if (!world) return;
-    const store = useAltairGameStore.getState();
-    if (store.rerollsRemaining <= 0) return;
-    const meta = useAltairMetaStore.getState();
-    const extraChoice = meta.getUpgradeLevel('extra_choice') > 0;
-    const catalystAffinity = meta.getUpgradeLevel('catalyst_affinity');
-    const catalystAffinityPct = catalystAffinity * 15;
-    const newChoices = generateUpgradeChoices(
-      world.weapons,
-      world.passives,
-      world.catalysts,
-      store.banishedIds,
-      extraChoice,
-      catalystAffinityPct,
-    );
-    store.reroll(newChoices);
-    altairSfx.play('upgrade_reroll');
-  }, []);
-
-  // When returning from upgrading to playing, sync store → world + check evolution
-  useEffect(() => {
-    if (phase === 'playing' && prevPhaseRef.current === 'upgrading') {
-      altairSfx.play('upgrade_pick');
-      syncStoreToWorld();
-
-      // Check for weapon evolution
-      const world = worldRef.current;
-      if (world) {
-        const evolution = checkEvolution(world.weapons, world.catalysts);
-        if (evolution) {
-          useAltairGameStore.getState().evolveWeapon(evolution.weaponId, evolution.evolvedId, evolution.consumedCatalystId);
-          syncStoreToWorld(); // Re-sync after evolution
-          spawnEvolution(world, world.player.x, world.player.y);
-          addToast(t("weapon-evolved", { defaultValue: "Weapon evolved!" }), 'success');
-        }
-      }
-    }
-    prevPhaseRef.current = phase;
-  }, [phase, syncStoreToWorld, addToast]);
 
   // Initialize game world and loop (waits for sprites to preload)
   useEffect(() => {
@@ -200,11 +123,12 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
 
       canvas.width = Math.max(1, Math.round(targetWidth));
       canvas.height = Math.max(1, Math.round(targetHeight));
-      // Update world camera if it exists
-      const w = worldRef.current;
-      if (w) {
-        w.camera.width = canvas.width;
-        w.camera.height = canvas.height;
+      // Update the run's camera and terrain window if it exists
+      const run = runRef.current;
+      if (run) {
+        run.world.camera.width = canvas.width;
+        run.world.camera.height = canvas.height;
+        run.setViewport(canvas.width, canvas.height);
       }
     };
     resizeCanvas();
@@ -229,128 +153,65 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
     };
     canvas.addEventListener('webglcontextlost', handleContextLost);
 
-    // Create game world (handles class stats and starting weapon internally)
-    const world = createGameWorld(canvas.width, canvas.height, selectedClassId, doubleTime);
-    worldRef.current = world;
+    // The run: sim step, rules (XP, level-ups, coins, revives) and the seeded random stream live in
+    // SoloRun, shared with the server's replay verifier. This component only feeds it input and draws.
+    const meta = useAltairMetaStore.getState();
+    const session = beginSoloSession(loadoutFromUpgrades(meta.upgrades));
+    const run = new SoloRun({
+      setup: { seed: session.seed, classId: selectedClassId, doubleTime, loadout: session.loadout },
+      viewport: { w: canvas.width, h: canvas.height },
+      inputSource: () => liveInputRef.current,
+      hooks: {
+        onPlayerHit: () => altairSfx.play('player_hit'),
+        onHeal: () => altairSfx.play('player_heal'),
+        onXp: (amount) => altairSfx.play('pickup_xp', Math.min(1.5, 0.7 + amount / 20)),
+        onLevelUp: () => altairSfx.play('level_up'),
+        onCoin: (amount) => altairSfx.play('pickup_coin', Math.min(1.5, 0.7 + amount / 8)),
+        onKill: (defId) => {
+          altairSfx.play('enemy_kill');
+          useAltairMetaStore.getState().recordBestiaryKill(defId);
+        },
+        onEnemySpawns: (defIds) => useAltairMetaStore.getState().recordBestiaryEncounterBatch(defIds),
+        onBossSpawn: (bossId) => {
+          altairSfx.play('boss_spawn');
+          const bossDef = BOSSES.find((b) => b.id === bossId);
+          addToast(t("boss-approaches", { defaultValue: "{{title}} APPROACHES!", title: bossDef?.title ?? 'BOSS' }), 'warning');
+        },
+        onBossKill: (bossId) => {
+          altairSfx.play('boss_kill');
+          setBossInfo(null);
+          const bossDef = BOSSES.find((b) => b.id === bossId);
+          addToast(t("boss-defeated", { defaultValue: "{{name}} defeated!", name: bossDef?.name ?? 'Boss' }), 'success');
+        },
+        onWeaponDisable: (duration) => {
+          altairSfx.play('weapon_disabled');
+          addToast(t("weapons-disabled", { defaultValue: "Weapons disabled for {{duration}}s!", duration: duration.toFixed(1) }), 'error');
+        },
+        onRevive: () => {
+          addToast(t("revived", { defaultValue: "Revived!" }), 'success');
+          altairSfx.play('revive');
+        },
+        onDeath: (sourceDefId) => {
+          // Record "killed by" in bestiary
+          if (sourceDefId) useAltairMetaStore.getState().recordBestiaryKilledBy(sourceDefId);
+        },
+        onPicked: () => altairSfx.play('upgrade_pick'),
+        onRerolled: () => altairSfx.play('upgrade_reroll'),
+        onEvolved: () => addToast(t("weapon-evolved", { defaultValue: "Weapon evolved!" }), 'success'),
+      },
+    });
+    runRef.current = run;
+    setActiveRun(run);
+    if (import.meta.env.DEV) (window as unknown as { __altairRun?: SoloRun }).__altairRun = run;
 
-    // Sync initial state to store
-    useAltairGameStore.getState().addWeapon(world.weapons[0]?.weaponId || '');
-    useAltairGameStore.setState({ hp: world.player.hp, maxHp: world.player.maxHp });
-
-    const tileGen = createTileGenerator();
-
-    // Set up input
+    // Set up input (keys and the on-screen stick write to the live state; the run samples it)
     const cleanupInput = setupInputListeners(
-      world.inputState,
+      liveInputRef.current,
       keybinds,
       () => useAltairGameStore.getState().togglePause(),
     );
 
-    // Create game loop with callbacks
-    const loop = createGameLoop(canvas, world, tileGen, {
-      onPlayerDamage: (_amount, sourceDefId) => {
-        altairSfx.play('player_hit');
-        // Engine already reduced world.player.hp; sync to store
-        useAltairGameStore.setState({ hp: world.player.hp });
-
-        // Check death
-        if (world.player.hp <= 0) {
-          const store = useAltairGameStore.getState();
-          if (store.revivalsRemaining > 0) {
-            store.revive();
-            // Restore world HP and grant generous post-revival invulnerability
-            world.player.hp = world.player.maxHp;
-            world.player.iFrames = 2.0;
-            // Clear nearby enemy projectiles so player doesn't instantly die again
-            for (let i = world.projectiles.length - 1; i >= 0; i--) {
-              const p = world.projectiles[i];
-              if (!p.isEnemy) continue;
-              const dx = p.x - world.player.x;
-              const dy = p.y - world.player.y;
-              if (dx * dx + dy * dy <= 150 * 150) {
-                world.projectiles.splice(i, 1);
-              }
-            }
-            addToast(t("revived", { defaultValue: "Revived!" }), 'success');
-            altairSfx.play('revive');
-          } else {
-            // Record "killed by" in bestiary
-            if (sourceDefId) {
-              useAltairMetaStore.getState().recordBestiaryKilledBy(sourceDefId);
-            }
-            store.die();
-          }
-        }
-      },
-      onPlayerHeal: (_amount) => {
-        altairSfx.play('player_heal');
-        // Sync HP from engine to store
-        useAltairGameStore.setState({ hp: world.player.hp });
-      },
-      onXPGain: (amount) => {
-        altairSfx.play('pickup_xp', Math.min(1.5, 0.7 + amount / 20));
-        const prevLevel = useAltairGameStore.getState().level;
-        useAltairGameStore.getState().addXP(amount);
-        const newLevel = useAltairGameStore.getState().level;
-
-        if (newLevel > prevLevel) {
-          altairSfx.play('level_up');
-          // Trigger level-up: generate choices and show picker
-          const store = useAltairGameStore.getState();
-          const meta = useAltairMetaStore.getState();
-          const extraChoice = meta.getUpgradeLevel('extra_choice') > 0;
-          const catalystAffinity = meta.getUpgradeLevel('catalyst_affinity');
-          const catalystAffinityPct = catalystAffinity * 15;
-          const choices = generateUpgradeChoices(
-            world.weapons,
-            world.passives,
-            world.catalysts,
-            store.banishedIds,
-            extraChoice,
-            catalystAffinityPct,
-          );
-          store.setUpgradeChoices(choices);
-          spawnLevelUp(world, world.player.x, world.player.y);
-        }
-      },
-      onCoinGain: (amount) => {
-        altairSfx.play('pickup_coin', Math.min(1.5, 0.7 + amount / 8));
-        useAltairGameStore.getState().addCoins(amount, 'enemyDrops');
-      },
-      onKill: (defId: string) => {
-        altairSfx.play('enemy_kill');
-        useAltairGameStore.getState().addKill(defId);
-        useAltairMetaStore.getState().recordBestiaryKill(defId);
-      },
-      onEnemySpawns: (defIds: string[]) => {
-        useAltairMetaStore.getState().recordBestiaryEncounterBatch(defIds);
-      },
-      onLevelUp: () => {
-        // Level-up is handled directly in onXPGain above
-      },
-      onBossSpawn: (bossId) => {
-        altairSfx.play('boss_spawn');
-        useAltairGameStore.getState().setBossActive(true);
-        const bossDef = BOSSES.find((b) => b.id === bossId);
-        addToast(t("boss-approaches", { defaultValue: "{{title}} APPROACHES!", title: bossDef?.title ?? 'BOSS' }), 'warning');
-      },
-      onBossKill: (bossId) => {
-        altairSfx.play('boss_kill');
-        useAltairGameStore.getState().setBossActive(false);
-        useAltairGameStore.getState().recordBossKill(bossId);
-        setBossInfo(null);
-        const bossDef = BOSSES.find((b) => b.id === bossId);
-        addToast(t("boss-defeated", { defaultValue: "{{name}} defeated!", name: bossDef?.name ?? 'Boss' }), 'success');
-        useAltairGameStore.getState().addCoins(25, 'bossKills');
-      },
-      onVictory: () => {
-        useAltairGameStore.getState().victory();
-      },
-      onWeaponDisable: (duration) => {
-        altairSfx.play('weapon_disabled');
-        addToast(t("weapons-disabled", { defaultValue: "Weapons disabled for {{duration}}s!", duration: duration.toFixed(1) }), 'error');
-      },
-    });
+    const loop = createGameLoop(canvas, run.world, run.tileGen, run.callbacks, run);
 
     loopRef.current = loop;
     loop.start();
@@ -378,11 +239,8 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
   useEffect(() => {
     const onHide = () => {
       if (document.visibilityState !== 'hidden') return;
-      const world = worldRef.current;
-      if (world) {
-        world.inputState.keys.clear();
-        setMobileInput(world.inputState, 0, 0);
-      }
+      liveInputRef.current.keys.clear();
+      setMobileInput(liveInputRef.current, 0, 0);
       if (useAltairGameStore.getState().phase === 'playing') {
         useAltairGameStore.getState().togglePause();
       }
@@ -416,7 +274,7 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
     if (phase !== 'playing') return;
 
     const interval = setInterval(() => {
-      const world = worldRef.current;
+      const world = runRef.current?.world;
       if (!world) return;
 
       // Sync time
@@ -453,8 +311,7 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
 
   // Mobile D-pad handler
   const handleDPad = useCallback((dx: number, dy: number) => {
-    const world = worldRef.current;
-    if (world) setMobileInput(world.inputState, dx, dy);
+    setMobileInput(liveInputRef.current, dx, dy);
   }, []);
 
   // Show loading screen while sprites preload
@@ -513,7 +370,11 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
       {bossActive && bossInfo && <BossHealthBar {...bossInfo} />}
 
       {/* Level-up picker */}
-      <LevelUpScreen onReroll={handleReroll} />
+      <LevelUpScreen
+        onPick={(i) => runRef.current?.pick(i)}
+        onBanish={(i) => runRef.current?.banish(i)}
+        onReroll={() => runRef.current?.reroll()}
+      />
 
       {/* Pause overlay */}
       {phase === 'paused' && (

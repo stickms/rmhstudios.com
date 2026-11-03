@@ -35,7 +35,7 @@ import { useIsleworks, useIsleworksClock, type OverlayMode } from '@/lib/islewor
 import type { GameSpeed } from '@/lib/isleworks/types';
 import type { RigHandle } from '../scene/CameraRig';
 
-function compact(value: number): string {
+export function compact(value: number): string {
   if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
   if (Math.abs(value) >= 10_000) return `${Math.round(value / 1000)}k`;
   if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(1)}k`;
@@ -48,7 +48,6 @@ export function TopBar({ rigRef }: { rigRef: React.MutableRefObject<RigHandle | 
   const { t } = useTranslation('c-isleworks');
   const city = useIsleworks((s) => s.city);
   const speed = useIsleworks((s) => s.speed);
-  const setSpeed = useIsleworks((s) => s.setSpeed);
   const overlay = useIsleworks((s) => s.overlay);
   const setOverlay = useIsleworks((s) => s.setOverlay);
 
@@ -105,74 +104,92 @@ export function TopBar({ rigRef }: { rigRef: React.MutableRefObject<RigHandle | 
         </div>
       </div>
 
-      <div
-        className="isw-panel isw-cluster"
-        role="group"
-        aria-label={t('speed', { defaultValue: 'Speed' })}
-      >
-        {SPEEDS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            className="isw-btn"
-            aria-pressed={speed === option}
-            aria-label={
-              option === 0
-                ? t('pause', { defaultValue: 'Pause' })
-                : t('speed-n', { defaultValue: '{{n}}× speed', n: option })
-            }
-            onClick={() => setSpeed(option)}
-          >
-            {option === 0 ? <Pause size={14} aria-hidden /> : <>{option}×</>}
-          </button>
-        ))}
-      </div>
+      <SpeedControl />
 
       <OverlayPicker value={overlay} onChange={setOverlay} />
 
-      <div
-        className="isw-panel isw-cluster"
-        role="group"
-        aria-label={t('camera', { defaultValue: 'Camera' })}
-      >
-        <button
-          type="button"
-          className="isw-btn"
-          aria-label={t('rotate-left', { defaultValue: 'Rotate left' })}
-          onClick={() => rigRef.current?.rotate(1)}
-        >
-          <RotateCcw size={14} aria-hidden />
-        </button>
-        <button
-          type="button"
-          className="isw-btn"
-          aria-label={t('rotate-right', { defaultValue: 'Rotate right' })}
-          onClick={() => rigRef.current?.rotate(-1)}
-        >
-          <RotateCw size={14} aria-hidden />
-        </button>
-        <button
-          type="button"
-          className="isw-btn"
-          aria-label={t('zoom-in', { defaultValue: 'Zoom in' })}
-          onClick={() => rigRef.current?.zoomBy(1.25)}
-        >
-          <ZoomIn size={14} aria-hidden />
-        </button>
-        <button
-          type="button"
-          className="isw-btn"
-          aria-label={t('zoom-out', { defaultValue: 'Zoom out' })}
-          onClick={() => rigRef.current?.zoomBy(0.8)}
-        >
-          <ZoomOut size={14} aria-hidden />
-        </button>
-      </div>
+      <CameraControls rigRef={rigRef} />
     </div>
   );
 }
 
-function Stat({
+/** Pause and the three run speeds. Shared by the desktop bar and the phone menu. */
+export function SpeedControl() {
+  const { t } = useTranslation('c-isleworks');
+  const speed = useIsleworks((s) => s.speed);
+  const setSpeed = useIsleworks((s) => s.setSpeed);
+  return (
+    <div
+      className="isw-panel isw-cluster"
+      role="group"
+      aria-label={t('speed', { defaultValue: 'Speed' })}
+    >
+      {SPEEDS.map((option) => (
+        <button
+          key={option}
+          type="button"
+          className="isw-btn"
+          aria-pressed={speed === option}
+          aria-label={
+            option === 0
+              ? t('pause', { defaultValue: 'Pause' })
+              : t('speed-n', { defaultValue: '{{n}}× speed', n: option })
+          }
+          onClick={() => setSpeed(option)}
+        >
+          {option === 0 ? <Pause size={14} aria-hidden /> : <>{option}×</>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Rotate and zoom buttons. Shared by the desktop bar and the phone menu. */
+export function CameraControls({ rigRef }: { rigRef: React.MutableRefObject<RigHandle | null> }) {
+  const { t } = useTranslation('c-isleworks');
+  return (
+    <div
+      className="isw-panel isw-cluster"
+      role="group"
+      aria-label={t('camera', { defaultValue: 'Camera' })}
+    >
+      <button
+        type="button"
+        className="isw-btn"
+        aria-label={t('rotate-left', { defaultValue: 'Rotate left' })}
+        onClick={() => rigRef.current?.rotate(1)}
+      >
+        <RotateCcw size={14} aria-hidden />
+      </button>
+      <button
+        type="button"
+        className="isw-btn"
+        aria-label={t('rotate-right', { defaultValue: 'Rotate right' })}
+        onClick={() => rigRef.current?.rotate(-1)}
+      >
+        <RotateCw size={14} aria-hidden />
+      </button>
+      <button
+        type="button"
+        className="isw-btn"
+        aria-label={t('zoom-in', { defaultValue: 'Zoom in' })}
+        onClick={() => rigRef.current?.zoomBy(1.25)}
+      >
+        <ZoomIn size={14} aria-hidden />
+      </button>
+      <button
+        type="button"
+        className="isw-btn"
+        aria-label={t('zoom-out', { defaultValue: 'Zoom out' })}
+        onClick={() => rigRef.current?.zoomBy(0.8)}
+      >
+        <ZoomOut size={14} aria-hidden />
+      </button>
+    </div>
+  );
+}
+
+export function Stat({
   icon,
   label,
   value,
@@ -201,7 +218,7 @@ function Stat({
  * money should not see a "−240" chip for a building they deliberately bought,
  * only for what the city earned or cost them while they were not looking.
  */
-function Treasury({ money, month, net }: { money: number; month: number; net: number }) {
+export function Treasury({ money, month, net }: { money: number; month: number; net: number }) {
   const { t } = useTranslation('c-isleworks');
   const [pop, setPop] = useState<{ id: number; amount: number } | null>(null);
   const lastMonth = useRef(month);
@@ -242,7 +259,7 @@ function Treasury({ money, month, net }: { money: number; month: number; net: nu
 }
 
 /** The only thing in the HUD that redraws at 10 Hz. */
-function MonthDial({ month }: { month: number }) {
+export function MonthDial({ month }: { month: number }) {
   const progress = useIsleworksClock((s) => s.progress);
   const angle = Math.round(progress * 360);
   return (
@@ -267,7 +284,7 @@ const OVERLAYS: { id: OverlayMode; labelKey: string; fallback: string }[] = [
   { id: 'traffic', labelKey: 'overlay-traffic', fallback: 'Traffic' },
 ];
 
-function OverlayPicker({
+export function OverlayPicker({
   value,
   onChange,
 }: {

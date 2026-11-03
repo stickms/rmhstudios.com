@@ -204,7 +204,10 @@ export function ExploreGame() {
 
             {/* Garden counter */}
             {locked && plants.length > 0 && (
-                <div className="absolute top-[calc(0.75rem+var(--safe-top))] left-[calc(3.5rem+var(--safe-left))] z-50">
+                // A display chip, never a target. On touch the top row is the back link,
+                // the centred pause button and the day/night + mute controls, so the chip
+                // drops below it; it used to sit over the pause button at 390px and ate its taps.
+                <div className={`absolute z-50 pointer-events-none ${touch ? 'top-[calc(4.25rem+var(--safe-top))] left-[calc(0.75rem+var(--safe-left))]' : 'top-[calc(0.75rem+var(--safe-top))] left-[calc(3.5rem+var(--safe-left))]'}`}>
                     <span className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-black/50 backdrop-blur-sm border border-green-700/30 text-green-300/80">
                         🌼 {t("garden-chip", { defaultValue: "{{count}} planted · {{blooms}} blooming", count: plants.length, blooms: bloomCount })}
                     </span>
