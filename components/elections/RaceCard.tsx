@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Link2 } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 import type { Party, Race } from '@/lib/elections/types';
+import { fmtMargin, swingFrom } from '@/lib/elections/swing';
 import { fmtInt } from './hooks';
+import { useBaselineFor } from './BaselineContext';
 
 const PARTY_CHIP: Record<Party, string> = { DEM: 'dem', GOP: 'gop', OTH: 'oth' };
 const PARTY_WORD: Record<Party, string> = { DEM: 'Dem', GOP: 'GOP', OTH: 'Ind' };
@@ -22,6 +24,8 @@ const RATING_WORD: Record<string, string> = {
 export function RaceCard({ race, onShare }: { race: Race; onShare?: (race: Race) => void }) {
   const { t } = useTranslation('c-elections');
   const [copied, setCopied] = useState(false);
+  const baseline = useBaselineFor(race.id);
+  const swing = swingFrom(race, baseline);
   const shown = race.candidates.slice(0, race.office === 'house' || race.candidates.length <= 3 ? 3 : 4);
   const hidden = race.candidates.length - shown.length;
 
@@ -85,6 +89,17 @@ export function RaceCard({ race, onShare }: { race: Race; onShare?: (race: Race)
               ? t('card.final', { defaultValue: 'Final count' })
               : t('card.called', { defaultValue: 'Called' })}
         </motion.div>
+      ) : null}
+
+      {baseline ? (
+        <p className="el-eyebrow" style={{ margin: '8px 0 0' }}>
+          {baseline.kind === 'house'
+            ? t('card.baseHouse', { defaultValue: '{{year}} House vote here: {{m}}', year: baseline.year, m: fmtMargin(baseline.margin) })
+            : t('card.basePres', { defaultValue: '{{year}} presidential vote here: {{m}}', year: baseline.year, m: fmtMargin(baseline.margin) })}
+          {swing != null && Math.abs(swing) >= 0.1
+            ? ` · ${t('card.swing', { defaultValue: 'moved {{m}}', m: fmtMargin(swing) })}`
+            : ''}
+        </p>
       ) : null}
 
       <footer className="el-race__foot">

@@ -7,12 +7,15 @@ import { buildFacts, headline } from '@/lib/elections/summary';
 import { compactKeys, decodeAnyPicks, project } from '@/lib/elections/predict';
 import { renderElectionsCard } from '@/lib/og/elections-card.server';
 import { cardStats, type CardStat } from '@/lib/elections/card-stats';
-import { OFFICE_NAME } from '@/lib/elections/types';
+import { OFFICE_NAME, PARTY_SHORT } from '@/lib/elections/types';
+import { fmtMargin, signedMargin } from '@/lib/elections/swing';
 
 const query = z.object({
   cycle: z.string().max(10).optional(),
   /** A shared map (`~…` compact or the long form). Only ever read as picks — never drawn. */
   p: z.string().max(400).optional(),
+  /** One race (a feed id). Looked up in the snapshot — only the race's own fields are ever drawn. */
+  race: z.string().max(80).optional(),
   /** Cache-buster the page puts on the URL so crawlers re-fetch as the night moves. */
   v: z.string().max(12).optional(),
 });
@@ -46,7 +49,30 @@ export const Route = createFileRoute('/api/og/elections')({
           let sticker: string;
           let stats: CardStat[];
 
-          if (isMap) {
+          const focus = q.race ? snap.races.find((r) => r.id === q.race) : undefined;
+
+          if (focus) {
+            // One race: the state or district as the big word, the office beneath it, the top two candidates
+            // as the numbers. Every string comes from the snapshot, never from the URL.
+            line1 = focus.office === 'house' ? `${focus.state}-${focus.district ?? ''}` : focus.state;
+            line2 = focus.office === 'governor' ? 'Governor' : OFFICE_NAME[focus.office];
+            const [a, b] = focus.candidates;
+            const m = signedMargin(focus);
+            sub =
+              focus.status === 'called' && focus.winnerParty
+                ? `${PARTY_SHORT[focus.winnerParty]} win projected${a ? ` · ${a.lastName}` : ''}`
+                : a && b && focus.totalVotes > 0
+                  ? `${a.lastName} leads ${b.lastName}${m != null ? ` (${fmtMargin(m)})` : ''}${focus.pctReporting != null ? ` · ${Math.round(focus.pctReporting)}% in` : ''}`
+                  : focus.rating
+                    ? `Rated ${focus.rating.replace('-', ' ')}. Live results the moment polls close.`
+                    : 'Live results the moment polls close.';
+            sticker = focus.status === 'called' ? 'Called' : focus.status === 'counting' ? 'Live' : 'Soon';
+            stats = focus.candidates.slice(0, 2).map((c) => ({
+              value: focus.totalVotes > 0 ? `${c.pct}%` : PARTY_SHORT[c.party],
+              label: `${c.lastName} (${PARTY_SHORT[c.party]})`.slice(0, 22),
+              tone: 'ink' as const,
+            }));
+          } else if (isMap) {
             // A shared map: only the sharer's CALLS (decoded to D/R/toss-up) become numbers; nothing
             // from the URL is ever drawn as text.
             line1 = `My ${cycle.year}`;
@@ -68,7 +94,7 @@ export const Route = createFileRoute('/api/og/elections')({
           }
 
           const png = await renderElectionsCard({
-            cacheKey: `${isMap ? 'map' : 'board'}:${cycle.date}:${sticker}:${line1}:${line2}:${stats.map((s) => `${s.value}${s.label}`).join(',')}`,
+            cacheKey: `${focus ? 'race:' + focus.id : isMap ? 'map' : 'board'}:${cycle.date}:${sticker}:${line1}:${line2}:${stats.map((s) => `${s.value}${s.label}`).join(',')}`,
             date: cycle.date,
             line1,
             line2,

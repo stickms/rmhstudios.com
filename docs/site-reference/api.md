@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 988 files across 201 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 990 files across 201 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -663,7 +663,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/elections`
 
-15 routes.
+17 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -678,10 +678,12 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/elections/history` | `GET` | `app/routes/api/elections/history.ts` |
 | `/api/elections/markets` | `GET` | `app/routes/api/elections/markets.ts` |
 | `/api/elections/news` | `GET` | `app/routes/api/elections/news.ts` |
+| `/api/elections/public` | `GET` | `app/routes/api/elections/public.ts` |
 | `/api/elections/rooms` | `GET` `POST` | `app/routes/api/elections/rooms/index.ts` |
 | `/api/elections/rooms/:code` | `DELETE` `GET` `PATCH` | `app/routes/api/elections/rooms/$code.ts` |
 | `/api/elections/streams` | `GET` | `app/routes/api/elections/streams.ts` |
 | `/api/elections/summary` | `GET` | `app/routes/api/elections/summary.ts` |
+| `/api/elections/swing` | `GET` | `app/routes/api/elections/swing.ts` |
 
 ## `/api/email`
 

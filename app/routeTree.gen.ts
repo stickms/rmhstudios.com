@@ -499,8 +499,10 @@ import { Route as ApiElectionsCalendarRouteImport } from './routes/api/elections
 import { Route as ApiElectionsHistoryRouteImport } from './routes/api/elections/history'
 import { Route as ApiElectionsMarketsRouteImport } from './routes/api/elections/markets'
 import { Route as ApiElectionsNewsRouteImport } from './routes/api/elections/news'
+import { Route as ApiElectionsPublicRouteImport } from './routes/api/elections/public'
 import { Route as ApiElectionsStreamsRouteImport } from './routes/api/elections/streams'
 import { Route as ApiElectionsSummaryRouteImport } from './routes/api/elections/summary'
+import { Route as ApiElectionsSwingRouteImport } from './routes/api/elections/swing'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api/email/unsubscribe'
 import { Route as ApiEmbedOembedRouteImport } from './routes/api/embed/oembed'
 import { Route as ApiEmojiPacksIndexRouteImport } from './routes/api/emoji-packs/index'
@@ -3865,6 +3867,11 @@ const ApiElectionsNewsRoute = ApiElectionsNewsRouteImport.update({
   path: '/api/elections/news',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiElectionsPublicRoute = ApiElectionsPublicRouteImport.update({
+  id: '/api/elections/public',
+  path: '/api/elections/public',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiElectionsStreamsRoute = ApiElectionsStreamsRouteImport.update({
   id: '/api/elections/streams',
   path: '/api/elections/streams',
@@ -3873,6 +3880,11 @@ const ApiElectionsStreamsRoute = ApiElectionsStreamsRouteImport.update({
 const ApiElectionsSummaryRoute = ApiElectionsSummaryRouteImport.update({
   id: '/api/elections/summary',
   path: '/api/elections/summary',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsSwingRoute = ApiElectionsSwingRouteImport.update({
+  id: '/api/elections/swing',
+  path: '/api/elections/swing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
@@ -9047,8 +9059,10 @@ export interface FileRoutesByFullPath {
   '/api/elections/history': typeof ApiElectionsHistoryRoute
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
   '/api/elections/news': typeof ApiElectionsNewsRoute
+  '/api/elections/public': typeof ApiElectionsPublicRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
   '/api/elections/summary': typeof ApiElectionsSummaryRoute
+  '/api/elections/swing': typeof ApiElectionsSwingRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -10412,8 +10426,10 @@ export interface FileRoutesByTo {
   '/api/elections/history': typeof ApiElectionsHistoryRoute
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
   '/api/elections/news': typeof ApiElectionsNewsRoute
+  '/api/elections/public': typeof ApiElectionsPublicRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
   '/api/elections/summary': typeof ApiElectionsSummaryRoute
+  '/api/elections/swing': typeof ApiElectionsSwingRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -11806,8 +11822,10 @@ export interface FileRoutesById {
   '/api/elections/history': typeof ApiElectionsHistoryRoute
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
   '/api/elections/news': typeof ApiElectionsNewsRoute
+  '/api/elections/public': typeof ApiElectionsPublicRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
   '/api/elections/summary': typeof ApiElectionsSummaryRoute
+  '/api/elections/swing': typeof ApiElectionsSwingRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -13200,8 +13218,10 @@ export interface FileRouteTypes {
     | '/api/elections/history'
     | '/api/elections/markets'
     | '/api/elections/news'
+    | '/api/elections/public'
     | '/api/elections/streams'
     | '/api/elections/summary'
+    | '/api/elections/swing'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -14565,8 +14585,10 @@ export interface FileRouteTypes {
     | '/api/elections/history'
     | '/api/elections/markets'
     | '/api/elections/news'
+    | '/api/elections/public'
     | '/api/elections/streams'
     | '/api/elections/summary'
+    | '/api/elections/swing'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -15958,8 +15980,10 @@ export interface FileRouteTypes {
     | '/api/elections/history'
     | '/api/elections/markets'
     | '/api/elections/news'
+    | '/api/elections/public'
     | '/api/elections/streams'
     | '/api/elections/summary'
+    | '/api/elections/swing'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -17130,8 +17154,10 @@ export interface RootRouteChildren {
   ApiElectionsHistoryRoute: typeof ApiElectionsHistoryRoute
   ApiElectionsMarketsRoute: typeof ApiElectionsMarketsRoute
   ApiElectionsNewsRoute: typeof ApiElectionsNewsRoute
+  ApiElectionsPublicRoute: typeof ApiElectionsPublicRoute
   ApiElectionsStreamsRoute: typeof ApiElectionsStreamsRoute
   ApiElectionsSummaryRoute: typeof ApiElectionsSummaryRoute
+  ApiElectionsSwingRoute: typeof ApiElectionsSwingRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
   ApiEmbedOembedRoute: typeof ApiEmbedOembedRoute
   ApiEmojiPacksInstalledRoute: typeof ApiEmojiPacksInstalledRoute
@@ -21217,6 +21243,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiElectionsNewsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/elections/public': {
+      id: '/api/elections/public'
+      path: '/api/elections/public'
+      fullPath: '/api/elections/public'
+      preLoaderRoute: typeof ApiElectionsPublicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/elections/streams': {
       id: '/api/elections/streams'
       path: '/api/elections/streams'
@@ -21229,6 +21262,13 @@ declare module '@tanstack/react-router' {
       path: '/api/elections/summary'
       fullPath: '/api/elections/summary'
       preLoaderRoute: typeof ApiElectionsSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/swing': {
+      id: '/api/elections/swing'
+      path: '/api/elections/swing'
+      fullPath: '/api/elections/swing'
+      preLoaderRoute: typeof ApiElectionsSwingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/email/unsubscribe': {
@@ -30049,8 +30089,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiElectionsHistoryRoute: ApiElectionsHistoryRoute,
   ApiElectionsMarketsRoute: ApiElectionsMarketsRoute,
   ApiElectionsNewsRoute: ApiElectionsNewsRoute,
+  ApiElectionsPublicRoute: ApiElectionsPublicRoute,
   ApiElectionsStreamsRoute: ApiElectionsStreamsRoute,
   ApiElectionsSummaryRoute: ApiElectionsSummaryRoute,
+  ApiElectionsSwingRoute: ApiElectionsSwingRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
   ApiEmbedOembedRoute: ApiEmbedOembedRoute,
   ApiEmojiPacksInstalledRoute: ApiEmojiPacksInstalledRoute,

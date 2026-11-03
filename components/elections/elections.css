@@ -2119,3 +2119,114 @@ html.ios-webkit .el-room__foot {
 html.ios-webkit .el-room__grid {
   padding-bottom: 0;
 }
+
+/* Path to control + hour-by-hour watch list */
+.el-path__grid,
+.el-watch__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+.el-path__row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin: 8px 0 0;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.el-linkbtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  cursor: pointer;
+}
+.el-linkbtn:hover {
+  color: var(--el-purple);
+}
+
+/* Night timeline */
+.el-timeline {
+  margin: 0;
+  list-style: none;
+}
+.el-timeline__row {
+  display: grid;
+  grid-template-columns: 4.5em auto 1fr;
+  gap: 10px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 2px dashed var(--el-ink);
+  line-height: 1.3;
+}
+.el-timeline__row:last-child {
+  border-bottom: 0;
+}
+.el-timeline__row--3 .el-timeline__text {
+  font-weight: 800;
+}
+.el-timeline__time {
+  font-family: var(--el-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+@media (max-width: 599px) {
+  .el-timeline__row {
+    grid-template-columns: auto 1fr;
+  }
+  .el-timeline__text {
+    grid-column: 1 / -1;
+  }
+}
+
+.el-briefing__lead {
+  display: none;
+}
+@media (min-width: 1100px) {
+  .el-briefing--reserve {
+    padding-top: clamp(250px, 24vw, 350px);
+  }
+  .el-briefing--reserve .el-briefing__lead {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 24px;
+    max-width: 46%;
+  }
+  .el-briefing__leadtext {
+    margin: 6px 0 0;
+    font-family: var(--el-display);
+    font-size: clamp(30px, 4vw, 56px);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 0.95;
+    color: var(--el-paper);
+  }
+}
+@media (min-width: 1100px) {
+  .el-briefing--reserve {
+    padding-top: clamp(300px, 25vw, 360px);
+  }
+  .el-briefing--reserve .el-briefing__portrait {
+    top: 0;
+    bottom: auto;
+    width: clamp(240px, 21vw, 300px);
+    margin: 0;
+  }
+}
+
+/* Party chips keep their party fill (the generic chip rule is more specific than the variants). */
+.el-root .el-chip--gop {
+  background: var(--el-gop);
+  color: #fff;
+}
+.el-root .el-chip--oth {
+  background: var(--el-oth);
+  color: #fff;
+}

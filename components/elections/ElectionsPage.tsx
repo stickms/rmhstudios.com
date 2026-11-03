@@ -7,6 +7,10 @@ import { phaseOf, type Cycle } from '@/lib/elections/calendar';
 import { buildFacts, deterministicSummary, headline } from '@/lib/elections/summary';
 import type { ElectionSnapshot, Office } from '@/lib/elections/types';
 import { Hero } from './Hero';
+import { PathPanel } from './PathPanel';
+import { WatchList } from './WatchList';
+import { NightTimeline } from './NightTimeline';
+import { BaselineContext } from './BaselineContext';
 import { Ticker } from './Ticker';
 import { BalanceOfPower } from './BalanceOfPower';
 import { StateMap } from './StateMap';
@@ -25,7 +29,7 @@ import type { RoomSource } from './room/useRoomState';
 import { isRoomCode } from '@/lib/elections/room-config';
 import { CalendarPanel } from './CalendarPanel';
 import { NewsWire } from './NewsWire';
-import { timeAgo, useElectionData, useElectionEvents, useNow, useReveal } from './hooks';
+import { timeAgo, useBaseline, useElectionData, useElectionEvents, useNow, useReveal } from './hooks';
 
 export interface ElectionsPageProps {
   /** The election day the route resolved (from `?cycle=` or "the current one"). */
@@ -87,15 +91,19 @@ function Section({
 function Host({
   variant,
   flip,
+  lead,
   children,
 }: {
   variant: number;
   flip?: boolean;
+  /** Reserves a band above the block for the portrait on wide screens, with this text beside him. */
+  lead?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { t } = useTranslation('c-elections');
   return (
-    <div className="el-briefing">
+    <div className={lead ? 'el-briefing el-briefing--reserve' : 'el-briefing'}>
+      {lead ? <div className="el-briefing__lead">{lead}</div> : null}
       <BriefingPortrait
         variant={variant}
         flip={flip}
@@ -223,8 +231,10 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
 
   const live = snapshot?.live ?? false;
   const hasData = !!snapshot && snapshot.races.length > 0;
+  const baseline = useBaseline(param);
 
   return (
+    <BaselineContext.Provider value={baseline}>
     <div className="el-root" ref={rootRef}>
       <a className="el-btn el-sr" href="#results" style={{ position: 'absolute' }}>
         {t('a11y.skip', { defaultValue: 'Skip to results' })}
@@ -246,6 +256,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
             <a href="#races">{t('nav.races', { defaultValue: 'Races' })}</a>
             <a href="#polls">{t('nav.polls', { defaultValue: 'Polls' })}</a>
             <a href="#wire">{t('nav.wire', { defaultValue: 'Wire' })}</a>
+            <a href="#timeline">{t('nav.timeline', { defaultValue: 'Night' })}</a>
             <a href="#live">{t('nav.live', { defaultValue: 'Watch' })}</a>
             <a href="#predict">{t('nav.predict', { defaultValue: 'Predict' })}</a>
           </nav>
@@ -338,9 +349,24 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
           {snapshot ? (
             <BalanceOfPower chambers={snapshot.chambers} live={live} races={snapshot.races} />
           ) : null}
+          {snapshot && hasData ? (
+            <div style={{ marginTop: 24 }}>
+              <PathPanel chambers={snapshot.chambers} races={snapshot.races} />
+            </div>
+          ) : null}
           {hasData ? (
             <div style={{ marginTop: 24 }}>
-              <Host variant={3}>
+              <Host
+                variant={3}
+                lead={
+                  <>
+                    <p className="el-eyebrow">{t('briefing.leadEyebrow', { defaultValue: 'From the Briefing Room' })}</p>
+                    <p className="el-briefing__leadtext">
+                      {t('briefing.lead', { defaultValue: 'What changed, in plain English.' })}
+                    </p>
+                  </>
+                }
+              >
                 <AiDesk cycle={param} live={live} bullets={bullets} />
               </Host>
             </div>
@@ -441,6 +467,11 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
             defaultValue: 'Last polls in each state, Eastern time. Results follow within minutes.',
           })}
         >
+          {snapshot && hasData ? (
+            <div style={{ marginBottom: 28 }}>
+              <WatchList snapshot={snapshot} now={now} onSelectState={selectFromElsewhere} />
+            </div>
+          ) : null}
           <Host variant={2}>
             <PollClosings
               closings={snapshot?.pollClosings ?? {}}
@@ -465,6 +496,22 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
         >
           <Host variant={1} flip>
             <NewsWire state={selectedState} live={live} />
+          </Host>
+        </Section>
+
+        <Section
+          id="timeline"
+          eyebrow={t('timeline.eyebrow', { defaultValue: 'As it happened' })}
+          title={
+            <>
+              {t('timeline.title1', { defaultValue: 'The' })}{' '}
+              <em>{t('timeline.title2', { defaultValue: 'night' })}</em>
+            </>
+          }
+          lede={t('timeline.lede', { defaultValue: 'Every call, flip and closing poll, in order.' })}
+        >
+          <Host variant={4}>
+            <NightTimeline events={events} onSelectState={selectFromElsewhere} />
           </Host>
         </Section>
 
@@ -633,5 +680,6 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
         />
       ) : null}
     </div>
+    </BaselineContext.Provider>
   );
 }
