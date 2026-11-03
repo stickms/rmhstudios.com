@@ -177,6 +177,9 @@ const ALL_PALETTES   = PALETTES.map((_, i) => i);
 let _activePalette = PALETTES[0];
 function randomNeon() { return _activePalette.neons[Math.floor(Math.random() * _activePalette.neons.length)]; }
 
+/** Entries kept in the per-building geometry and texture-clone caches. */
+const CACHE_LIMIT = 700;
+
 /* ── Grid constants ── */
 /** Bloom render-target scale. Bloom is low-frequency, so half res is visually
  *  near-identical and roughly a quarter of the fill cost. */
@@ -1236,6 +1239,7 @@ export class CyberpunkScene {
         // Center vertically so geometry spans -h/2 to h/2 (like BoxGeometry)
         geo.translate(0, -h / 2, 0);
         this._geoCache.set(cacheKey, geo);
+        this._trimCache(this._geoCache);
         return geo;
     }
 
@@ -1252,7 +1256,23 @@ export class CyberpunkScene {
         if (offsetX || offsetY) cached.offset.set(offsetX, offsetY);
         cached.needsUpdate = true;
         this._texCache.set(key, cached);
+        this._trimCache(this._texCache, true);
         return cached;
+    }
+
+    /**
+     * Keys are built from per-building sizes, so entries are almost never hit
+     * twice and the maps grew by ~420 entries per full chunk turnover for as
+     * long as the player drove. Keep roughly a loaded neighbourhood's worth and
+     * drop the oldest (Map order); a live user of an evicted texture simply
+     * re-uploads it.
+     */
+    _trimCache(cache, disposeValues = false) {
+        while (cache.size > CACHE_LIMIT) {
+            const oldest = cache.keys().next().value;
+            if (disposeValues) cache.get(oldest).dispose();
+            cache.delete(oldest);
+        }
     }
 
     /* ── Material factories (Layer 1 texture support) ── */
