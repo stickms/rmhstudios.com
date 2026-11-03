@@ -317,7 +317,8 @@ export interface LeaderboardEntry {
    */
   isFullCombo?: boolean;
   isPerfect?: boolean;
-  achievedAt: string;
+  /** When the best was set; `null` on the global board, which aggregates many runs and has no single moment. */
+  achievedAt: string | null;
   /** True for the signed-in caller's own row. */
   isSelf: boolean;
 }
