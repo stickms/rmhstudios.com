@@ -8,8 +8,6 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 import { DURATION, EASE } from '@/lib/motion';
-import { currentViewportShift } from '@/lib/viewport-shift';
-import { useViewportShift } from '@/hooks/useViewportShift';
 
 /**
  * Where the "scrolled down" answer lives, so a page can host the arrow in its own control.
@@ -103,12 +101,6 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
   const [visible, setVisible] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
-  useViewportShift(buttonRef);
-  // The button mounts when the page is scrolled: give it the shift that is already in force.
-  useEffect(() => {
-    const px = currentViewportShift();
-    if (visible && px !== 0) buttonRef.current?.style.setProperty('--vv-shift', `${px}px`);
-  }, [visible]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;

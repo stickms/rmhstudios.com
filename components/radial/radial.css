@@ -2743,7 +2743,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   /* The shared bottom-right lane (globals.css §5.5x A.1). Same numbers this rule
      always used, now expressed once so the lane's clamps live in one place. */
   right: var(--site-fab-row-right);
-  bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom) - var(--vv-shift, 0px));
+  bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px));
   z-index: var(--z-floating);
   display: inline-flex;
   align-items: stretch;
