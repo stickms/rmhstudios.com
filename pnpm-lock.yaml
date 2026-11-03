@@ -239,8 +239,8 @@ importers:
         specifier: ^8.6.0
         version: 8.6.0(react@19.3.1)
       emoji-picker-react:
-        specifier: ^4.22.3
-        version: 4.22.3(react@19.3.1)
+        specifier: ^5.1.4
+        version: 5.1.4(react@19.3.1)
       epubjs:
         specifier: ^0.3.93
         version: 0.3.93
@@ -4682,9 +4682,9 @@ packages:
   embla-carousel@8.6.0:
     resolution: {integrity: sha512-SjWyZBHJPbqxHOzckOfo8lHisEaJWmwd23XppYFYVh10bU66/Pn5tkVkbkCMZVdbUE5eTCI2nD8OyIP4Z+uwkA==}
 
-  emoji-picker-react@4.22.3:
-    resolution: {integrity: sha512-jrAkkoN69l5lA2Xp6P5axqoK1YdHNS1+MKMlLxwltnnnaXrojUjZaolgI/U8vdx8vFWqG42yYqpLSR83f6pwiw==}
-    engines: {node: '>=10'}
+  emoji-picker-react@5.1.4:
+    resolution: {integrity: sha512-kWBAgDCFPcRJrINeRE7/o7VAVNc0Yeg1n7gMHSvJ54qffidCV8Jdmeb9iEHkx1CtClzhnutCax8bQFDTHAbyTg==}
+    engines: {node: '>=18'}
     peerDependencies:
       react: '>=16.8'
 
@@ -11865,7 +11865,7 @@ snapshots:
 
   embla-carousel@8.6.0: {}
 
-  emoji-picker-react@4.22.3(react@19.3.1):
+  emoji-picker-react@5.1.4(react@19.3.1):
     dependencies:
       react: 19.3.1
       shipstyles: 1.0.0
