@@ -160,7 +160,6 @@ export function CompactHud({ rigRef }: { rigRef: React.MutableRefObject<RigHandl
           ref={sheetRef}
           tabIndex={-1}
           className="isw-panel isw-sheet"
-          role="region"
           aria-label={t('menu', { defaultValue: 'Menu' })}
         >
           <header className="isw-sheet-head">
