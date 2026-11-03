@@ -164,3 +164,13 @@ only members see the board. Tables `election_league` / `election_league_member`
   and swing** on race cards (`/api/elections/swing`; the free feed has 2024 but not 2022/2020), a **night
   timeline**, per-race **share cards** (`/api/og/elections?race=ID`), and a CORS-open **JSON summary**
   (`/api/elections/public`).
+
+## Alerts
+
+- **In the browser:** the Night section's Alerts panel asks for notification permission and then raises a
+  notification for big moments, every call, and/or anything in followed states — only for events that arrive live
+  while the page is open (history is never replayed). Choices are kept in `localStorage`. iPhone needs the page on
+  the Home Screen first.
+- **Discord (optional):** set `ELECTIONS_DISCORD_WEBHOOK` to a Discord webhook URL (only discord.com hosts over
+  https are accepted) and calls, flips, control changes and polls closing are posted in batches every 5 seconds,
+  with mentions disabled. Each web instance relays its own events, so run it on the active instance only.
