@@ -26,6 +26,9 @@ function aliveEnemyCount(world: GameWorld): number {
   return count;
 }
 
+/** Seconds after a boss's time during which it may still spawn (held back while another boss lives). */
+const BOSS_SPAWN_WINDOW = 30;
+
 // ---- Types ------------------------------------------------------------------
 
 export interface WaveDirectorState {
@@ -244,12 +247,20 @@ export function updateWaveDirector(
     }
   }
 
-  // Handle special events
-  if (currentWave.specialEvent === 'boss_spawn' && currentWave.bossId) {
-    if (!state.bossSpawned.has(currentWave.bossId)) {
-      state.bossSpawned.add(currentWave.bossId);
-      events.bossSpawn = currentWave.bossId;
-    }
+  // Boss spawns. Each boss wave is a zero-length entry (startTime === endTime)
+  // and a post-boss recovery wave begins at the very same instant, so the
+  // "last matching wave" lookup above always lands on the recovery wave and
+  // never sees the boss entry. Scan the boss entries directly instead. A boss
+  // fires inside a short window after its time and never while another boss is
+  // alive (it waits for the fight to end instead of stacking two bosses).
+  for (const wave of WAVE_TIMELINE) {
+    if (wave.specialEvent !== 'boss_spawn' || !wave.bossId) continue;
+    if (state.bossSpawned.has(wave.bossId)) continue;
+    if (timeSeconds < wave.startTime || timeSeconds >= wave.startTime + BOSS_SPAWN_WINDOW) continue;
+    if (world.bossActive) continue;
+    state.bossSpawned.add(wave.bossId);
+    events.bossSpawn = wave.bossId;
+    break;
   }
 
   if (currentWave.specialEvent === 'calm_before_storm') {

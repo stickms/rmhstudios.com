@@ -52,9 +52,7 @@ engine, it does not fork it.
   bar from the snapshot, "you are down" / spectating banner. Revive progress is a ring drawn on the downed
   body by the renderer (it fills while a teammate stands in range). A dead player's camera follows a living
   teammate.
-- Known gap (pre-existing, single-player too): the wave table has a boss entry at t=300 and another wave
-  starting at t=300 after it, and the director takes the LAST matching wave, so no boss ever spawns. The
-  boss bar was verified with a boss-flagged enemy injected on the host, not a real spawn.
+- Fixed (play3): the wave table has a boss entry at t=300 and another wave starting at t=300 after it, and the director took the LAST matching wave, so no boss ever spawned. The director now scans the boss entries directly (30 s window, never while a boss lives). Verified: Hollow King + bar in single-player and on a co-op guest.
 
 ### Phase 3C as built
 
@@ -234,3 +232,9 @@ multiplayer run awards coins or writes leaderboard rows unless the existing
 single-player path already verifies results server-side — that path will be read
 before anything is persisted, and a client-submitted score is never trusted for
 coin rewards.
+
+- Rejoin after the grace (play3): a guest whose 10 s grace expired mid-match is removed, but the hub remembers
+  their class (`departedClasses`). The client re-sends `LOBBY_JOIN` on every socket RE-connect; a returning guest
+  skips the drop-in picker and window and re-enters as their old class (`GAME_PLAYER_JOINED` -> host `addPlayer`).
+  Their run progress (level, weapons) is NOT restored: they are a fresh drop-in. Leaving on purpose gives no pass
+  back. A reloaded or long-dropped HOST still ends the run (`host_left`): the world cannot be rebuilt from a snapshot.

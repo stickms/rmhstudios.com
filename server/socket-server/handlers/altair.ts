@@ -152,6 +152,8 @@ interface AltairLobby {
   startRoster: JobPlayer[];
   /** Everyone admitted mid-run (a log may only add players from this list). */
   admitted: JobPlayer[];
+  /** Classes of players whose disconnect grace expired mid-match, so they can rejoin as that class. */
+  departedClasses: Map<string, string>;
 }
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -305,9 +307,13 @@ function disbandLobby(lobbyId: string): void {
   lobbies.delete(lobbyId);
 }
 
-function removePlayer(lobby: AltairLobby, userId: string): void {
+function removePlayer(lobby: AltairLobby, userId: string, graceExpired = false): void {
   const player = lobby.players.get(userId);
   if (!player) return;
+  // A guest who timed out mid-match may come back: remember their class (not a deliberate leave).
+  if (graceExpired && lobby.state === 'PLAYING' && player.classId && lobby.hostUserId !== userId) {
+    lobby.departedClasses.set(userId, player.classId);
+  }
 
   const userName = player.userName;
   const wasHost = lobby.hostUserId === userId;
@@ -515,7 +521,7 @@ function onLobbyCreate(io: Server, socket: Socket, payload: any): void {
     id: lobbyId, hostUserId: userId, settings,
     players: new Map([[userId, player]]),
     state: 'WAITING', chat: [], createdAt: now, lastActivityAt: now,
-    gameStartedAt: null, lastSnapshot: null, bossesDefeated: [], sharedKills: 0, runSeed: null,
+    gameStartedAt: null, lastSnapshot: null, bossesDefeated: [], sharedKills: 0, runSeed: null, departedClasses: new Map(),
     runId: null, startRoster: [], admitted: [],
   };
 
@@ -569,7 +575,9 @@ function onLobbyJoin(io: Server, socket: Socket, payload: any): void {
     return;
   }
 
-  if (lobby.state === 'PLAYING') {
+  // A guest whose grace expired mid-match is a returning player, not a new drop-in.
+  const returningClass = lobby.state === 'PLAYING' ? lobby.departedClasses.get(userId) : undefined;
+  if (lobby.state === 'PLAYING' && !returningClass) {
     if (!lobby.settings.dropInAllowed) {
       socket.emit(S2C.ERROR, { code: 'LOBBY_IN_GAME', message: 'Game in progress, drop-in disabled.' });
       return;
@@ -583,7 +591,7 @@ function onLobbyJoin(io: Server, socket: Socket, payload: any): void {
         return;
       }
     }
-  } else if (lobby.state !== 'WAITING' && lobby.state !== 'CLASS_SELECT') {
+  } else if (!returningClass && lobby.state !== 'WAITING' && lobby.state !== 'CLASS_SELECT') {
     socket.emit(S2C.ERROR, { code: 'LOBBY_IN_GAME', message: 'Game in progress.' });
     return;
   }
@@ -600,6 +608,12 @@ function onLobbyJoin(io: Server, socket: Socket, payload: any): void {
     isConnected: true, isReady: false, slot, classId: null,
     joinedAt: now, lastSeenAt: now, runState: null,
   };
+  if (returningClass) {
+    player.classId = returningClass;
+    player.isReady = true;
+    player.runState = createInitialRunState();
+    lobby.departedClasses.delete(userId);
+  }
 
   lobby.players.set(userId, player);
   userToLobby.set(userId, lobby.id);
@@ -611,10 +625,12 @@ function onLobbyJoin(io: Server, socket: Socket, payload: any): void {
   addSystemChat(lobby.id, `${userName} joined`);
 
   if (lobby.state === 'PLAYING') {
+    // A returning player (class already known) is spawned by the host right now: the verifier must expect it.
+    if (player.classId) lobby.admitted.push({ userId, userName, classId: player.classId, slot });
     broadcastToLobby(lobby.id, S2C.GAME_PLAYER_JOINED, {
       player: {
         userId, userName, avatarUrl, isConnected: true, isHost: false,
-        slot, classId: null, isReady: false, color: getSlotColor(slot),
+        slot, classId: player.classId, isReady: player.isReady, color: getSlotColor(slot),
       },
     });
   }
@@ -859,6 +875,7 @@ function onGameStart(io: Server, socket: Socket, payload: any): void {
 
       // Start game
       lobby.state = 'PLAYING';
+      lobby.departedClasses.clear();
       lobby.gameStartedAt = Date.now();
       lobby.bossesDefeated = [];
       lobby.sharedKills = 0;
@@ -1299,7 +1316,7 @@ export function handleAltairDisconnect(io: Server, socket: Socket): void {
   // Start grace timer
   const timer = setTimeout(() => {
     graceTimers.delete(userId);
-    removePlayer(lobby, userId);
+    removePlayer(lobby, userId, true);
   }, DISCONNECT_GRACE_MS);
   graceTimers.set(userId, timer);
 
