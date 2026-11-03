@@ -237,6 +237,7 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
       driver = new HostDriver({
         players: me.players.map((p) => ({ playerId: p.userId, classId: p.classId ?? 'knight', slot: p.slot })),
         doubleTime: me.settings.doubleTime,
+        seed: me.runSeed ?? undefined,
         send: (snap) => {
           socket.volatile.emit(C2S.GAME_STATE_SNAPSHOT, snap); // volatile: a stale snapshot is worthless after a reconnect
           pushRaw(snap);

@@ -15,6 +15,7 @@ import {
 import { BOSSES, BossDef } from '../data/bosses';
 import { getHPScale, getDamageScale, getSpeedScale } from '../data/scaling';
 import { applyEmpower } from './status-effects';
+import { rand } from './rng';
 
 // =============================================================================
 // Types
@@ -133,7 +134,7 @@ export function spawnBoss(world: GameWorld, bossId: string): BossState | null {
   const bossRadius = 12 * def.size; // base radius 12 * size multiplier
 
   // Position 500px from player in a random direction
-  const angle = Math.random() * Math.PI * 2;
+  const angle = rand() * Math.PI * 2;
   const spawnX = world.player.x + Math.cos(angle) * 500;
   const spawnY = world.player.y + Math.sin(angle) * 500;
 
@@ -698,8 +699,8 @@ function updateCrimsonCountess(
         const dropCount = attack.params.dropletCount ?? 15;
         // Spawn droplets around the player's current position
         for (let i = 0; i < dropCount; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const r = Math.random() * radius;
+          const a = rand() * Math.PI * 2;
+          const r = rand() * radius;
           events.bossProjectiles.push(
             makeProjectile(
               world,
@@ -736,8 +737,8 @@ function updateCrimsonCountess(
         const radius = attack.params.radius ?? 200;
         const dropCount = attack.params.dropletCount ?? 5;
         for (let i = 0; i < dropCount; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const r = Math.random() * radius;
+          const a = rand() * Math.PI * 2;
+          const r = rand() * radius;
           events.bossProjectiles.push(
             makeProjectile(
               world,
@@ -799,8 +800,8 @@ function updateElderLichMalachar(
       // Complete teleport: reposition
       const minRange = 300;
       const maxRange = 500;
-      const teleportDist = minRange + Math.random() * (maxRange - minRange);
-      const teleportAngle = Math.random() * Math.PI * 2;
+      const teleportDist = minRange + rand() * (maxRange - minRange);
+      const teleportAngle = rand() * Math.PI * 2;
       // Explosion at departure point
       events.bossProjectiles.push(
         makeProjectile(
@@ -1008,7 +1009,7 @@ function updateElderLichMalachar(
         // Spawn shamblers as "resurrected" enemies
         for (let i = 0; i < maxRes; i++) {
           const a = (Math.PI * 2 * i) / maxRes;
-          const spawnDist = 60 + Math.random() * 100;
+          const spawnDist = 60 + rand() * 100;
           events.bossSpawnEnemies.push({
             defId: 'shambler',
             x: entity.x + Math.cos(a) * spawnDist,
@@ -1196,8 +1197,8 @@ function updateTerminusPhase1(
 
           // Spawn a random Tier 3-4 enemy
           const tier34Enemies = ['werewolf', 'cultist', 'witch', 'bone_golem', 'shadow'];
-          const randomEnemy = tier34Enemies[Math.floor(Math.random() * tier34Enemies.length)];
-          const angle = Math.random() * Math.PI * 2;
+          const randomEnemy = tier34Enemies[Math.floor(rand() * tier34Enemies.length)];
+          const angle = rand() * Math.PI * 2;
           const spawnDist = 60;
           events.bossSpawnEnemies.push({
             defId: randomEnemy,
@@ -1280,8 +1281,8 @@ function updateTerminusPhase2(
         const spawnRange = attack.params.spawnRange ?? 400;
 
         for (let i = 0; i < zoneCount; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const r = Math.random() * spawnRange;
+          const a = rand() * Math.PI * 2;
+          const r = rand() * spawnRange;
           events.bossProjectiles.push(
             makeProjectile(
               world,

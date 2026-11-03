@@ -16,6 +16,7 @@
  * it, so Start could not succeed.
  */
 
+import { randomInt } from 'node:crypto';
 import type { Server, Socket } from 'socket.io';
 import { generateRoomCode, sanitizeString } from '../utils';
 import { config } from '../config';
@@ -136,6 +137,12 @@ interface AltairLobby {
   lastSnapshot: unknown;
   bossesDefeated: string[];
   sharedKills: number;
+  /**
+   * Seed for every random roll of the current run, chosen HERE (never by a client) when the
+   * countdown ends. The host sim plays from it and the server replays from it, so a host cannot
+   * pick a favourable one. Null outside PLAYING/RESULTS.
+   */
+  runSeed: number | null;
   /** Classes of players whose disconnect grace expired mid-match, so they can rejoin as that class. */
   departedClasses: Map<string, string>;
 }
@@ -216,6 +223,8 @@ function buildClientState(lobby: AltairLobby, userId: string) {
     chat: lobby.chat.slice(-50),
     myUserId: userId,
     seq: Date.now(),
+    // Only the host runs the simulation, so only the host is told the seed.
+    runSeed: lobby.state === 'PLAYING' && lobby.hostUserId === userId ? lobby.runSeed : null,
   };
 }
 
@@ -405,6 +414,7 @@ function endGame(
     lobby.state = 'WAITING';
     lobby.gameStartedAt = null;
     lobby.lastSnapshot = null;
+    lobby.runSeed = null;
     for (const [, player] of lobby.players) {
       player.isReady = false;
       player.classId = null;
@@ -499,7 +509,7 @@ function onLobbyCreate(io: Server, socket: Socket, payload: any): void {
     id: lobbyId, hostUserId: userId, settings,
     players: new Map([[userId, player]]),
     state: 'WAITING', chat: [], createdAt: now, lastActivityAt: now,
-    gameStartedAt: null, lastSnapshot: null, bossesDefeated: [], sharedKills: 0, departedClasses: new Map(),
+    gameStartedAt: null, lastSnapshot: null, bossesDefeated: [], sharedKills: 0, runSeed: null, departedClasses: new Map(),
   };
 
   lobbies.set(lobbyId, lobby);
@@ -853,6 +863,7 @@ function onGameStart(io: Server, socket: Socket, payload: any): void {
       lobby.gameStartedAt = Date.now();
       lobby.bossesDefeated = [];
       lobby.sharedKills = 0;
+      lobby.runSeed = randomInt(0, 2 ** 32);
       for (const [, player] of lobby.players) {
         player.runState = createInitialRunState();
       }

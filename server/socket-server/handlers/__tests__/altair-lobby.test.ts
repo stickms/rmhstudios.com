@@ -40,6 +40,7 @@ interface LobbyView {
   state: string;
   hostUserId: string;
   players: { userId: string; classId: string | null; isReady: boolean }[];
+  runSeed?: number | null;
 }
 
 function setup() {
@@ -96,6 +97,20 @@ describe('altair lobby: start gating', () => {
     expect(last(host, E.started)).toBeTruthy();
     expect(last(guest, E.started)).toBeTruthy();
     expect(view(guest).state).toBe('PLAYING');
+  });
+
+  it('the hub issues the run seed and tells only the host', () => {
+    const { w, host, guest, readyUp, view } = setup();
+    readyUp(host);
+    readyUp(guest);
+    w.send(host, E.start, {});
+    expect(view(host).runSeed ?? null).toBeNull(); // nothing before the countdown ends
+    vi.advanceTimersByTime(5000);
+    const seed = view(host).runSeed;
+    expect(Number.isInteger(seed)).toBe(true);
+    expect(seed).toBeGreaterThanOrEqual(0);
+    expect(seed).toBeLessThan(2 ** 32);
+    expect(view(guest).runSeed ?? null).toBeNull();
   });
 
   it('needs at least two players', () => {

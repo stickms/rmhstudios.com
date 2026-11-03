@@ -11,8 +11,11 @@
 // single-player slots; the shared phases (enemy AI, boss, wave director,
 // corpses) run once. See docs/altair-multiplayer.md "Simulation model".
 //
-// Determinism: given the same Math.random stream, the same players and the same
-// setInput() calls between steps, an N-player run is bit-identical. Players are
+// Determinism: a run is a pure function of (seed, players, the setInput() /
+// chooseUpgrade() / addPlayer() / removePlayer() calls made between steps). All
+// randomness comes from the seeded stream (engine/rng.ts) that every public
+// method installs for its duration, so an N-player run is bit-identical on any
+// machine. The server replays runs on that guarantee (lib/altair/verify/). Players are
 // always processed in slot order; nothing reads a clock.
 // =============================================================================
 
@@ -34,6 +37,10 @@ import { xpRequired, type UpgradeChoice } from '../../stores/game-store';
 import { generateUpgradeChoices, checkEvolution } from '../level-up-system';
 import { handleCollisions, processEnemyDeaths, tickCorpses } from '../collisions';
 import { enforceBossDpsCap } from '../boss-system';
+import { createSeededRng, withRng, type RandomSource } from '../rng';
+import { resetEnemyNavigation } from '../enemy-navigation';
+import { resetPickupSystem } from '../pickup-system';
+import { resetPositionHistoryAccum } from '../player-system';
 import { createSimRuntime, type GameLoopCallbacks, type SimRuntime } from '../sim-runtime';
 import {
   recomputeStats,
@@ -80,6 +87,11 @@ export interface HostPlayerInit {
 export interface HostSimOptions {
   players: HostPlayerInit[];
   doubleTime?: boolean;
+  /**
+   * 32-bit seed for every random roll in the run. In a real match the HUB picks it (so a
+   * client cannot shop for a favourable one); tests and offline use may omit it.
+   */
+  seed?: number;
   /** Override the level-up auto-pick timeout (tests). */
   levelUpTimeout?: number;
 }
@@ -134,6 +146,7 @@ export class HostSim {
   readonly world: MultiplayerGameWorld;
   readonly rt: SimRuntime;
   readonly tileGen: TileGenerator;
+  readonly seed: number;
   status: HostStatus = 'playing';
   tick = 0;
   bossesDefeated: string[] = [];
@@ -143,6 +156,7 @@ export class HostSim {
   private readonly events: GameEvent[] = [];
   private readonly callbacks: GameLoopCallbacks;
   private readonly levelUpTimeout: number;
+  private readonly rng: RandomSource;
   private current: HostPlayer | null = null;
   private scaledMaxId = 0;
   private realTime = 0;
@@ -157,6 +171,12 @@ export class HostSim {
       throw new Error('HostSim needs 1-4 players');
     }
     this.levelUpTimeout = opts.levelUpTimeout ?? LEVEL_UP_TIMEOUT;
+    this.seed = (opts.seed ?? Math.floor(Math.random() * 0x100000000)) >>> 0;
+    this.rng = createSeededRng(this.seed);
+    // Module-level engine state (path cache, merge timers) must start as on a fresh page.
+    resetEnemyNavigation();
+    resetPickupSystem();
+    resetPositionHistoryAccum();
     const first = opts.players[0];
     const base = createGameWorld(1280, 720, first.classId, !!opts.doubleTime);
     const scaling: ScalingState = {
@@ -191,10 +211,15 @@ export class HostSim {
     this.scaledMaxId = this.world.nextId;
   }
 
+
   // ---- Players -------------------------------------------------------------
 
   /** Add a player (match start or drop-in). Drop-ins appear beside the nearest living player. */
   addPlayer(init: HostPlayerInit): void {
+    withRng(this.rng, () => this.addPlayerInner(init));
+  }
+
+  private addPlayerInner(init: HostPlayerInit): void {
     if (this.byId.has(init.playerId) || this.players.length >= 4) return;
     const world = this.world;
     const def = CLASSES.find((c) => c.id === init.classId) || CLASSES[0];
@@ -340,6 +365,10 @@ export class HostSim {
 
   /** Apply the player's pick. False if nothing is pending or the index is invalid. */
   chooseUpgrade(playerId: string, index: number): boolean {
+    return withRng(this.rng, () => this.chooseUpgradeInner(playerId, index));
+  }
+
+  private chooseUpgradeInner(playerId: string, index: number): boolean {
     const p = this.byId.get(playerId);
     if (!p || !p.pending) return false;
     if (!Number.isInteger(index) || index < 0 || index >= p.pending.choices.length) return false;
@@ -394,6 +423,10 @@ export class HostSim {
 
   /** Advance one fixed 60 Hz step. No-op once the run is over. */
   step(): void {
+    withRng(this.rng, () => this.stepInner());
+  }
+
+  private stepInner(): void {
     if (this.status !== 'playing') return;
     const world = this.world;
     const rt = this.rt;

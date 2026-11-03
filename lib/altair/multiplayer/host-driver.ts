@@ -34,6 +34,8 @@ export interface LevelUpOffer extends PendingLevelUp {
 export interface HostDriverOptions {
   players: HostPlayerInit[];
   doubleTime?: boolean;
+  /** The hub-issued run seed (see AltairClientLobbyState.runSeed). */
+  seed?: number;
   /** Called with the (reused) snapshot object; must serialise or decode it synchronously. */
   send: (snapshot: GameStateSnapshot) => void;
   onEvents?: (events: GameEvent[]) => void;
@@ -56,7 +58,7 @@ export class HostDriver {
 
   constructor(opts: HostDriverOptions) {
     this.opts = opts;
-    this.sim = new HostSim({ players: opts.players, doubleTime: opts.doubleTime });
+    this.sim = new HostSim({ players: opts.players, doubleTime: opts.doubleTime, seed: opts.seed });
   }
 
   /** Movement intent from a guest (already shape-checked by the hub; HostSim clamps again). */

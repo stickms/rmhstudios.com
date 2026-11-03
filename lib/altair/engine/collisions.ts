@@ -17,6 +17,7 @@ import { SpatialHash } from './spatial-hash';
 import { DestructibleProp, PROP_COLLISION_OFFSET_Y, TileGenerator } from './tile-generator';
 import type { GameLoopCallbacks } from './sim-runtime';
 import { CORPSE_DURATION } from './sim-runtime';
+import { rand } from './rng';
 
 // ---- AABB-Circle collision helper -------------------------------------------
 
@@ -179,7 +180,7 @@ export function handleCollisions(
         // v1.2: Crit system (Shortbow)
         let critMul = 1;
         if (proj.critChance && proj.critMultiplier) {
-          if (Math.random() < proj.critChance) {
+          if (rand() < proj.critChance) {
             critMul = proj.critMultiplier;
           }
         }
