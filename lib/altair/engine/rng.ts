@@ -19,6 +19,11 @@ export function rand(): number {
   return source ? source() : Math.random();
 }
 
+/** True inside a seeded (replayable) simulation scope: dmath.ts then uses its engine-independent functions. */
+export function isSeeded(): boolean {
+  return source !== null;
+}
+
 /** mulberry32: tiny, well known, fully deterministic. */
 export function createSeededRng(seed: number): RandomSource {
   let a = seed >>> 0;

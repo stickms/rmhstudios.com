@@ -18,6 +18,7 @@ import { DestructibleProp, PROP_COLLISION_OFFSET_Y, TileGenerator } from './tile
 import type { GameLoopCallbacks } from './sim-runtime';
 import { CORPSE_DURATION } from './sim-runtime';
 import { rand } from './rng';
+import { datan2, dsq } from './dmath';
 
 // ---- AABB-Circle collision helper -------------------------------------------
 
@@ -484,7 +485,7 @@ export function handleCollisions(
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist <= hb.radius + e.radius) {
-        const angle = Math.atan2(dy, dx);
+        const angle = datan2(dy, dx);
         let angleDiff = angle - hb.angle;
         while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
@@ -501,8 +502,8 @@ export function handleCollisions(
       // Prioritize closest enemies
       finalMeleeTargets = meleeTargets
         .sort((a, b) => {
-          const da = (a.x - hb.x) ** 2 + (a.y - hb.y) ** 2;
-          const db = (b.x - hb.x) ** 2 + (b.y - hb.y) ** 2;
+          const da = dsq(a.x - hb.x) + dsq(a.y - hb.y);
+          const db = dsq(b.x - hb.x) + dsq(b.y - hb.y);
           return da - db;
         })
         .slice(0, hb.maxTargets);
@@ -552,7 +553,7 @@ export function handleCollisions(
       const dist = Math.sqrt(pdx * pdx + pdy * pdy);
 
       if (dist <= hb.radius + prop.radius) {
-        const angle = Math.atan2(pdy, pdx);
+        const angle = datan2(pdy, pdx);
         let angleDiff = angle - hb.angle;
         while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
@@ -594,8 +595,8 @@ export function handleCollisions(
         // Prioritize closest enemies
         finalAuraTargets = auraTargets
           .sort((a, b) => {
-            const da = (a.x - aura.x) ** 2 + (a.y - aura.y) ** 2;
-            const db = (b.x - aura.x) ** 2 + (b.y - aura.y) ** 2;
+            const da = dsq(a.x - aura.x) + dsq(a.y - aura.y);
+            const db = dsq(b.x - aura.x) + dsq(b.y - aura.y);
             return da - db;
           })
           .slice(0, aura.maxTargets);
@@ -606,7 +607,7 @@ export function handleCollisions(
         // v1.2: Inner radius damage falloff (Garlic: outer ring does 50% damage)
         let falloff = 1;
         if (aura.innerRadius) {
-          const eDist = Math.sqrt((e.x - aura.x) ** 2 + (e.y - aura.y) ** 2);
+          const eDist = Math.sqrt(dsq(e.x - aura.x) + dsq(e.y - aura.y));
           if (eDist > aura.innerRadius) {
             falloff = 0.5;
           }

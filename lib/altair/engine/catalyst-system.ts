@@ -19,6 +19,7 @@ import {
   hasEffect,
 } from './status-effects';
 import { rand } from './rng';
+import { dcos, dsin } from './dmath';
 
 // =============================================================================
 // Runtime State
@@ -96,8 +97,8 @@ function spawnParticle(
       id: createId(world),
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed,
       life: 0.4 + rand() * 0.3,
       maxLife: 0.6,
       color,
@@ -492,8 +493,8 @@ function tickPhylacteryShard(
         // Wisp orbits around player
         const angle =
           (world.time * 2 + (i * Math.PI * 2) / 4) % (Math.PI * 2);
-        const wx = world.player.x + Math.cos(angle) * orbitRadius;
-        const wy = world.player.y + Math.sin(angle) * orbitRadius;
+        const wx = world.player.x + dcos(angle) * orbitRadius;
+        const wy = world.player.y + dsin(angle) * orbitRadius;
 
         // Damage nearby enemies
         for (const enemy of world.enemies) {

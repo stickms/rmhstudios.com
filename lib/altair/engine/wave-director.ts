@@ -17,6 +17,7 @@ import {
 } from '../data/waves';
 import { getHPScale, getDamageScale, getSpeedScale, getXPScale } from '../data/scaling';
 import { rand } from './rng';
+import { dcos, dsin } from './dmath';
 
 /** Count living (non-corpse) enemies for spawn cap checks. */
 function aliveEnemyCount(world: GameWorld): number {
@@ -71,8 +72,8 @@ function getRandomSpawnPosition(
   const angle = rand() * Math.PI * 2;
   const dist = minDist + rand() * (maxDist - minDist);
   return {
-    x: playerX + Math.cos(angle) * dist,
-    y: playerY + Math.sin(angle) * dist,
+    x: playerX + dcos(angle) * dist,
+    y: playerY + dsin(angle) * dist,
   };
 }
 

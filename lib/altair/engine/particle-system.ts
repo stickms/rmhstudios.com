@@ -7,6 +7,7 @@
 
 import { ParticleEntity, GameWorld, createId } from './types';
 import { rand } from './rng';
+import { dcos, dsin } from './dmath';
 
 const MAX_PARTICLES = 300;
 
@@ -89,8 +90,8 @@ export function spawnDeathBurst(
       id: createId(world),
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed,
       life: 0.4 + rand() * 0.3,
       maxLife: 0.7,
       color,
@@ -117,8 +118,8 @@ export function spawnHitFlash(
       id: createId(world),
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed,
       life: 0.15,
       maxLife: 0.15,
       color: '#ffffff',
@@ -144,8 +145,8 @@ export function spawnXPCollect(
       id: createId(world),
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 20,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed - 20,
       life: 0.3 + rand() * 0.2,
       maxLife: 0.5,
       color: '#44ff88',
@@ -172,8 +173,8 @@ export function spawnLevelUp(
       id: createId(world),
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed,
       life: 0.6 + rand() * 0.4,
       maxLife: 1.0,
       color: colors[i % colors.length],
@@ -216,8 +217,8 @@ export function spawnEvolution(
       id: createId(world),
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed,
       life: 0.8 + rand() * 0.5,
       maxLife: 1.3,
       color: colors[i % colors.length],
