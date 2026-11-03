@@ -2730,6 +2730,10 @@ model AltairMetaProgress {
   userId             String   @unique
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   coins              Int      @default(0)
+  // Earned coins the server will still accept from a client save (refills with time; see
+  // lib/altair/meta-guard.ts). Interim bound until single-player runs are replay-verified.
+  coinAllowance      Int      @default(8000)
+  coinAllowanceAt    DateTime?
   upgrades           Json     @default("{}")
   unlockedClasses    Json     @default("[\"knight\",\"arcanist\",\"ranger\"]")
   doubleTimeUnlocked Boolean  @default(false)
