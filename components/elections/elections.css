@@ -2069,3 +2069,14 @@
   align-items: center;
   gap: 6px;
 }
+
+/* A section portrait has no floor under it, so the name box straddles its bottom edge, like a caption plate
+   the figure stands behind (it also reads as sitting on the block's top rule). */
+.el-briefing__portrait .el-portrait__tag {
+  left: 50%;
+  right: auto;
+  bottom: -13px;
+  transform: translateX(-50%);
+  z-index: 3;
+  box-shadow: 3px 3px 0 var(--el-ink);
+}

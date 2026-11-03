@@ -87,12 +87,10 @@ function Section({
 function Host({
   variant,
   flip,
-  named,
   children,
 }: {
   variant: number;
   flip?: boolean;
-  named?: boolean;
   children: React.ReactNode;
 }) {
   const { t } = useTranslation('c-elections');
@@ -103,7 +101,7 @@ function Host({
         flip={flip}
         className="el-briefing__portrait"
         drift={28}
-        caption={named ? `${HOST_NAME} · ${t('portrait.role', { defaultValue: 'Briefing Room host' })}` : undefined}
+        caption={`${HOST_NAME} · ${t('portrait.role', { defaultValue: 'Briefing Room host' })}`}
       />
       {children}
     </div>
@@ -342,7 +340,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
           ) : null}
           {hasData ? (
             <div style={{ marginTop: 24 }}>
-              <Host variant={3} named>
+              <Host variant={3}>
                 <AiDesk cycle={param} live={live} bullets={bullets} />
               </Host>
             </div>
@@ -534,7 +532,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
               'Full-screen, up to four panes: streams from different services at once, live graphs, the map, the wire and chat. Follow the action automatically or pick your states.',
           })}
         >
-          <Host variant={2} named>
+          <Host variant={2}>
             <RoomLobby cycle={param} onOpen={openRoom} />
           </Host>
         </Section>
