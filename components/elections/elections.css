@@ -2012,3 +2012,60 @@
     right: -4%;
   }
 }
+
+/* Stream panes: the video owns the pane; picking a stream lives in a small overlay menu. */
+.el-streamframe {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
+.el-streamframe__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 2px solid var(--el-ink);
+  background: #000;
+}
+.el-streamframe__menu {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  min-height: 28px;
+  padding: 2px 8px;
+  gap: 2px;
+  opacity: 0.92;
+}
+.el-streamframe__menu:hover {
+  transform: translateX(-50%);
+}
+.el-streamframe__menu:active,
+.el-streamframe__menu[aria-expanded='true'] {
+  transform: translateX(-50%);
+}
+.el-streamframe__panel {
+  position: absolute;
+  top: 44px;
+  left: 8px;
+  right: 8px;
+  z-index: 4;
+  max-height: calc(100% - 52px);
+  overflow-y: auto;
+  padding: 12px;
+  background: var(--el-cell);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.el-streampick {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.el-streamframe__panel > a.el-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
