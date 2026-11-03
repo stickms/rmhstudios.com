@@ -18,7 +18,7 @@ import {
   softFeatures,
   type ElementTraits,
 } from '../soft-policy';
-import { MOTION_BOUNDS } from '../tiers';
+import { JELLY_BODY, JELLY_LAYOUT, MOTION_BOUNDS } from '../tiers';
 
 /**
  * The soft-body table decides which hosts may move at all, so it is pinned here: every legacy alias keeps working
@@ -313,10 +313,19 @@ describe('neighbour nudge', () => {
 });
 
 describe('lattice caps and plastic', () => {
-  it('outward never exceeds the focus-ring offset; inward is min(0.6·bevel, 10px)', () => {
-    expect(latticeCaps(3)).toEqual({ outward: 2, inward: 0.6 * 3 });
-    expect(latticeCaps(24).inward).toBe(10);
-    expect(latticeCaps(10, 0.5)).toEqual({ outward: 1, inward: 3 });
+  it('rim-only slabs: outward ≤ the overdraw bound; inward is min(0.6·bevel, 10px)', () => {
+    expect(latticeCaps(3, 1, 200, false)).toEqual({ outward: 2, inward: 0.6 * 3 });
+    expect(latticeCaps(24, 1, 200, false).inward).toBe(10);
+    expect(latticeCaps(10, 0.5, 200, false)).toEqual({ outward: 1, inward: 3 });
+  });
+
+  it('body slabs: bulge ≤ the unclipped margin, sag = JELLY_BODY.sagPx, both scaled by the short side', () => {
+    expect(latticeCaps(12, 1, 200)).toEqual({ outward: JELLY_BODY.bulgePx, inward: JELLY_BODY.sagPx });
+    expect(latticeCaps(12, 1, 24).outward).toBeCloseTo(JELLY_BODY.bulgePx * JELLY_BODY.minScale, 10);
+    expect(latticeCaps(12, 0.5, 200).inward).toBeCloseTo(JELLY_BODY.sagPx / 2, 10);
+    expect(latticeCaps(12, 1, 60).inward).toBeCloseTo(JELLY_BODY.sagPx * 0.5, 10);
+    expect(latticeCaps(12, 100, 200).outward).toBeLessThanOrEqual(JELLY_LAYOUT.marginPx);
+    expect(latticeCaps(12, 1, Number.NaN).outward).toBe(JELLY_BODY.bulgePx);
   });
 
   it('plastic is zero under 350ms, capped, and exactly gone after 3τ', () => {

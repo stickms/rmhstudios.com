@@ -75,10 +75,15 @@ export interface GlassDraw {
   jelly?: JellyLook;
   /** Dispersion relative to crown glass (0.8 for jelly). Default 1. */
   dispersion?: number;
-  /** Canvas overdraw past the host on each side, CSS px (≤ 2). The target canvas covers `width + 2·margin`. */
+  /** Canvas overdraw past the host on each side, CSS px (≤ 16). The target canvas covers `width + 2·margin`. */
   margin?: number;
-  /** `latticeUniform()` output (16 floats) while a Tier L lattice is awake; omitted or null = no squish. */
+  /** `latticeUniform()` output (48 floats) while a Tier L lattice is awake; omitted or null = no squish. */
   lattice?: Float32Array | null;
+  /**
+   * The gel body this program paints itself (the host's CSS fill has stepped aside): straight RGBA at the top and the
+   * base. Omitted or null = rim only, and the lattice warps just the rim band.
+   */
+  body?: { top: RGBA4; bottom: RGBA4 } | null;
   /** #989 gel tokens; omitted = no RGB band, no Fresnel edge, no depth, no plasma colour. */
   gel?: GelLook;
   /** Dormant plasma drawn by THIS program (slabs without a haze canvas); omitted = none. */
@@ -182,7 +187,7 @@ const HAZE_NAMES = [
 ] as const;
 type HName = (typeof HAZE_NAMES)[number];
 
-const NO_LATTICE = new Float32Array(16);
+const NO_LATTICE = new Float32Array(48);
 const NO_RINGS = new Float32Array(16);
 const NO_EDGE: RGBA4 = [0, 0, 0, 0];
 
@@ -225,6 +230,9 @@ const NAMES = [
   'uRings',
   'uMold',
   'uLens',
+  'uBodyOn',
+  'uBody',
+  'uBodyDepth',
 ] as const;
 type UName = (typeof NAMES)[number];
 
@@ -601,6 +609,16 @@ export class GlassRenderer {
     gl.uniform2f(u.uDentStretch, dent?.stretchX ?? 0, dent?.stretchY ?? 0);
     gl.uniform2f(u.uMold, gel?.mold ?? 0, gel?.feather ?? 0);
     gl.uniform3f(u.uLens, gel?.dispersion ?? 1, gel?.lens ?? 1, gel?.reflect ?? 0);
+    const body = o.body;
+    gl.uniform1f(u.uBodyOn, body ? 1 : 0);
+    gl.uniform4f(u.uBody, body?.top[0] ?? 0, body?.top[1] ?? 0, body?.top[2] ?? 0, body?.top[3] ?? 0);
+    gl.uniform4f(
+      u.uBodyDepth,
+      body?.bottom[0] ?? 0,
+      body?.bottom[1] ?? 0,
+      body?.bottom[2] ?? 0,
+      body?.bottom[3] ?? 0,
+    );
     return this.blit(pw, ph, target);
   }
 

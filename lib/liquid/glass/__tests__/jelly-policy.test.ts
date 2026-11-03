@@ -5,7 +5,15 @@ import {
   knobsAt,
   GOVERNED_FLOOR_HZ,
 } from '@/lib/jelly/governor';
-import { AMBIENT_BOUNDS, CHARGE, IDLE_AFTER_MS, JELLY_BUDGETS, PLASMA } from '@/lib/jelly/tiers';
+import {
+  AMBIENT_BOUNDS,
+  CHARGE,
+  IDLE_AFTER_MS,
+  JELLY_BODY,
+  JELLY_BUDGETS,
+  JELLY_LAYOUT,
+  PLASMA,
+} from '@/lib/jelly/tiers';
 import { HAZE_FRAG } from '../haze-shader';
 import {
   GLASS_BUDGET,
@@ -202,9 +210,9 @@ describe('haze scheduling', () => {
 });
 
 describe('lattice overdraw and charge pulse', () => {
-  it('overdraws at most 2px, only on cards and controls, and never without lattices', () => {
-    expect(overdrawMargin('fill', true)).toBe(AMBIENT_BOUNDS.maxOverdrawPx);
-    expect(overdrawMargin('control', true)).toBeLessThanOrEqual(2);
+  it('overdraws the full unclipped margin, only on cards and controls, and never without lattices', () => {
+    expect(overdrawMargin('fill', true)).toBe(JELLY_BODY.overdrawPx);
+    expect(overdrawMargin('control', true)).toBe(JELLY_LAYOUT.marginPx);
     for (const r of ['overlay', 'chrome', 'pane'] as GlassRole[])
       expect(overdrawMargin(r, true)).toBe(0);
     for (const r of ['fill', 'control'] as GlassRole[]) expect(overdrawMargin(r, false)).toBe(0);
@@ -304,7 +312,8 @@ describe('#989 plasma level and charge rings', () => {
 
 describe('shader contract', () => {
   it('the rim reads the lattice and jelly terms but never a clock; the haze reads the clock', () => {
-    expect(FRAG).toContain('uniform vec2 uJelly[8]');
+    expect(FRAG).toContain('uniform vec2 uJelly[24]');
+    expect(FRAG).toContain('uniform float uBodyOn;');
     expect(FRAG).toContain('uJellyOn');
     expect(FRAG).toContain('uDispersion');
     expect(FRAG).not.toContain('uTime');
@@ -337,7 +346,7 @@ describe('shader contract', () => {
     expect(FRAG).toMatch(/vec3 refl = glassFresnel\(n\.z\) \* [^;]*edgeOnly[^;]*;/);
     // The deep interior leaves in a NESTED block (a masked early return still costs a SIMD rasteriser the whole body).
     expect(FRAG).toMatch(
-      /if \(d > max\(bz, d0 \+ 3\.0 \* bw \+ 2\.0\) && uDentOn < 0\.5 && uPlasmaInRim < 0\.5\) \{\s*outColor = vec4\(0\.0\);\s*\} else \{/,
+      /if \(d > max\(bz, d0 \+ 3\.0 \* bw \+ 2\.0\) && uDentOn < 0\.5 && uPlasmaInRim < 0\.5\) \{\s*outColor = bodyP \* cover;\s*\} else \{/,
     );
     // pow() with a constant exponent is repeated squaring (the dearest instruction on a CPU rasteriser).
     expect(FRAG).not.toMatch(/\bpow\([^)]*,\s*(70|80|120)\.0\)/);
