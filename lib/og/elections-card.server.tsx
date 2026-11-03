@@ -1,7 +1,7 @@
 /**
  * The election share card — BENTO NEO-BRUTALISM, to match /elections: a light grey ground, one ruled and
- * rounded frame split into cells (a heavy grotesque headline, a yellow sticker, two stat cells), blue and
- * red party numbers. Fixed words and our own numbers only.
+ * rounded frame split into cells (a heavy grotesque headline, a purple sticker, two stat cells), purple and
+ * black party numbers. Fixed words and our own numbers only.
  *
  * Satori renders it (no CSS grid, every multi-child box is `display:flex`), through the same font and
  * rasteriser plumbing as every other card. Only numbers and our own fixed words are ever drawn — never
@@ -15,11 +15,11 @@ import { loadFonts, satoriFonts } from './shared.server';
 import type { CardStat } from '@/lib/elections/card-stats';
 
 const INK = '#000000';
-const PAPER = '#F1F1F3';
+const PAPER = '#F4F3F7';
 const CELL = '#FFFFFF';
-const YELLOW = '#F7E04A';
-const DEM = '#1F3BFF';
-const GOP = '#FF2B2B';
+const PURPLE = '#6D28FF';
+const DEM = '#6D28FF';
+const GOP = '#0B0B0C';
 
 const W = 1200;
 const H = 630;
@@ -70,7 +70,7 @@ const pill = (text: string, dark: boolean): React.ReactElement => (
     style={{
       display: 'flex',
       border: `3px solid ${INK}`,
-      borderRadius: 999,
+      borderRadius: 6,
       background: dark ? INK : PAPER,
       color: dark ? PAPER : INK,
       fontSize: 20,
@@ -83,14 +83,14 @@ const pill = (text: string, dark: boolean): React.ReactElement => (
   </div>
 );
 
-/** Bento layout: one ruled, rounded frame; a big headline cell beside a yellow sticker cell and two stat cells. */
+/** Bento layout: one ruled, rounded frame; a big headline cell beside a purple sticker cell and two stat cells. */
 function element(d: ElectionsCardData): React.ReactElement {
   const [word, ...restWords] = d.line1.split(' ');
   const kind = d.line2.charAt(0).toUpperCase() + d.line2.slice(1).toLowerCase();
   const second = `${restWords.join(' ')} ${kind}`.trim();
   return (
-    <div style={{ display: 'flex', width: W, height: H, background: PAPER, padding: 22 }}>
-      <div style={{ display: 'flex', flex: 1, background: INK, border: `4px solid ${INK}`, borderRadius: 30, overflow: 'hidden', gap: 4 }}>
+    <div style={{ display: 'flex', width: W, height: H, background: PAPER, padding: '22px 34px 34px 22px' }}>
+      <div style={{ display: 'flex', flex: 1, background: INK, border: `4px solid ${INK}`, borderRadius: 14, boxShadow: `12px 12px 0 ${INK}`, overflow: 'hidden', gap: 4 }}>
         <div style={{ display: 'flex', flexDirection: 'column', width: 748, background: PAPER, padding: '30px 38px 26px' }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {pill('RMH VOTE', true)}
@@ -101,7 +101,7 @@ function element(d: ElectionsCardData): React.ReactElement {
           <div style={{ display: 'flex', marginTop: 20, fontSize: 24, fontWeight: 400, lineHeight: 1.22, maxWidth: 640, height: 60, overflow: 'hidden' }}>{d.sub}</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 4 }}>
-          <div style={{ display: 'flex', flex: 1, background: YELLOW, alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+          <div style={{ display: 'flex', flex: 1, background: PURPLE, color: CELL, alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
             <div style={{ display: 'flex', fontSize: d.sticker.length > 6 ? 56 : 84, fontWeight: 700, letterSpacing: -3, textTransform: 'uppercase' }}>{d.sticker}</div>
           </div>
           {d.stats.slice(0, 2).map(statCell)}

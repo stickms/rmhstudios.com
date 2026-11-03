@@ -13,22 +13,25 @@
  */
 
 .el-root {
-  --el-paper: #f1f1f3;
+  --el-paper: #f4f3f7;
   --el-paper-2: #e3e3e8;
   --el-cell: #f8f8fa;
   --el-ink: #0b0b0c;
-  --el-dem: #2b50ff;
-  --el-dem-soft: #c9d3ff;
-  --el-gop: #ff3b30;
-  --el-gop-soft: #ffc9c4;
-  --el-oth: #8b5cf6;
-  --el-yellow: #f7e04a;
-  --el-pink: #ff9d8a;
-  --el-mint: #bff0d4;
-  --el-sky: #8fc7ff;
+  --el-dem: #6d28ff;
+  --el-dem-soft: #d9ccff;
+  --el-gop: #0b0b0c;
+  --el-gop-soft: #c6c6cd;
+  --el-oth: #8a8a93;
+  --el-yellow: #d9ccff;
+  --el-pink: #6d28ff;
+  --el-mint: #ece6ff;
+  --el-sky: #b79bff;
   --el-grey: #b8b8c0;
   --el-bw: 2px;
-  --el-r: 20px;
+  --el-r: 10px;
+  --el-hard: 6px 6px 0 var(--el-ink);
+  --el-hard-sm: 3px 3px 0 var(--el-ink);
+  --el-purple: #6d28ff;
   --el-shadow: none;
   --el-shadow-sm: none;
   --el-display: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
@@ -1538,4 +1541,198 @@
 }
 .el-h2 em {
   font-style: normal;
+}
+
+/* ═══ Purple + hard shadows (second reference pass) ═════════════════════════
+ * Monochrome with ONE theme colour. The references: an application window with a title bar and a hard
+ * offset shadow, a magenta-style button with its own hard shadow, a ruled tab strip along the bottom of the
+ * hero. Black, white, grey and purple only; parties are purple (Dem) and black (GOP).
+ */
+.el-box {
+  border-radius: var(--el-r);
+  box-shadow: var(--el-hard);
+}
+.el-root .el-btn {
+  border-radius: 8px;
+  box-shadow: var(--el-hard-sm);
+  transition:
+    transform 0.08s,
+    box-shadow 0.08s,
+    background-color 0.12s,
+    color 0.12s;
+}
+.el-root .el-btn:hover {
+  background: var(--el-purple);
+  color: #fff;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--el-ink);
+}
+.el-root .el-btn:active,
+.el-root .el-btn[aria-pressed='true'] {
+  background: var(--el-purple);
+  color: #fff;
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--el-ink);
+}
+.el-root .el-btn--dem,
+.el-root .el-btn--pink {
+  background: var(--el-purple);
+  color: #fff;
+}
+.el-root .el-btn--dem:hover,
+.el-root .el-btn--pink:hover {
+  background: var(--el-ink);
+  color: #fff;
+}
+.el-root .el-btn--ghost {
+  background: #fff;
+  color: var(--el-ink);
+  box-shadow: var(--el-hard-sm);
+}
+.el-root .el-btn--ghost:hover {
+  background: var(--el-purple);
+  color: #fff;
+}
+.el-root .el-input {
+  border-radius: 8px;
+  padding-inline: 12px;
+}
+.el-root .el-chip,
+.el-sticker {
+  border-radius: 6px;
+}
+.el-root .el-chip--dem {
+  background: var(--el-purple);
+}
+.el-live {
+  background: var(--el-purple);
+  border-radius: 6px;
+}
+.el-strip--ink {
+  background: var(--el-purple);
+  color: #fff;
+}
+.el-count__cell {
+  border-radius: 8px;
+}
+.el-count__cell:nth-child(odd) {
+  background: var(--el-purple);
+  color: #fff;
+}
+.el-tile--tossup {
+  background: repeating-linear-gradient(45deg, var(--el-ink) 0 2px, #fff 2px 7px);
+}
+.el-tile--tossup .el-tile__code,
+.el-tile--tossup .el-tile__cap {
+  background: #fff;
+  color: var(--el-ink);
+  padding: 0 2px;
+}
+.el-room__pane {
+  border-radius: var(--el-r);
+}
+.el-room__pane,
+.el-room__bar .el-btn {
+  box-shadow: none;
+}
+
+/* Hero: an application window. */
+.el-bento {
+  border-radius: var(--el-r);
+  box-shadow: 8px 8px 0 var(--el-ink);
+  background: var(--el-ink);
+}
+.el-cell--title {
+  grid-column: span 12;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--el-cell);
+  font-family: var(--el-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.el-win {
+  display: flex;
+  gap: 6px;
+}
+.el-win i {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--el-ink);
+  background: #fff;
+}
+.el-win i:nth-child(2) {
+  background: var(--el-purple);
+}
+.el-win i:nth-child(3) {
+  background: var(--el-ink);
+}
+.el-cell--tabs {
+  grid-column: span 12;
+  padding: 0;
+  background: var(--el-ink);
+}
+.el-tabrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--el-bw);
+}
+.el-tabrow a {
+  display: block;
+  padding: 12px 10px;
+  background: #fff;
+  color: var(--el-ink);
+  font-family: var(--el-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.el-tabrow a:first-child {
+  background: var(--el-purple);
+  color: #fff;
+}
+.el-tabrow a:last-child {
+  background: var(--el-ink);
+  color: #fff;
+}
+.el-tabrow a:hover {
+  background: var(--el-purple);
+  color: #fff;
+}
+.el-doodle {
+  color: var(--el-purple);
+}
+.el-cell--vert {
+  background:
+    linear-gradient(rgba(109, 40, 255, 0.28) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgba(109, 40, 255, 0.28) 1px, transparent 1px) 0 0 / 28px 28px, var(--el-cell);
+}
+.el-cell--stat {
+  background:
+    repeating-linear-gradient(0deg, rgba(109, 40, 255, 0.25) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(90deg, rgba(109, 40, 255, 0.25) 0 1px, transparent 1px 22px), var(--el-cell);
+}
+.el-stat__n {
+  color: var(--el-purple);
+}
+.el-hero__title span:last-child {
+  color: var(--el-purple);
+}
+.el-h2 {
+  font-family: var(--el-mono);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+}
+.el-h2 em {
+  color: var(--el-purple);
 }

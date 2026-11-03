@@ -43,6 +43,14 @@ export function Hero({
     <section ref={ref} className="el-hero" aria-labelledby="el-title">
       <div className="el-wrap el-hero__in">
         <div className="el-bento">
+          <div className="el-cell el-cell--title" aria-hidden>
+            <span>{`elections.exe — ${cycle.year}`}</span>
+            <span className="el-win">
+              <i />
+              <i />
+              <i />
+            </span>
+          </div>
           <div className="el-cell el-cell--head">
             <p className="el-eyebrow" style={{ margin: 0 }}>
               <span className="el-chip el-chip--ink">{cycle.title}</span>{' '}
@@ -146,6 +154,16 @@ export function Hero({
               })}
             </p>
           </div>
+          <nav className="el-cell el-cell--tabs" aria-label={t('hero.sections', { defaultValue: 'Sections' })}>
+            <div className="el-tabrow">
+              <a href="#results">{t('nav.results', { defaultValue: 'Results' })}</a>
+              <a href="#map">{t('nav.map', { defaultValue: 'Map' })}</a>
+              <a href="#races">{t('nav.races', { defaultValue: 'Races' })}</a>
+              <a href="#polls">{t('nav.polls', { defaultValue: 'Polls' })}</a>
+              <a href="#live">{t('nav.watch', { defaultValue: 'Watch' })}</a>
+              <a href="#predict">{t('nav.predict', { defaultValue: 'Predict' })}</a>
+            </div>
+          </nav>
         </div>
       </div>
     </section>
