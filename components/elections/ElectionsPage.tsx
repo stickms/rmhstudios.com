@@ -12,6 +12,10 @@ import { WatchList } from './WatchList';
 import { NightTimeline } from './NightTimeline';
 import { LeaguePanel } from './LeaguePanel';
 import { AlertsPanel, useAlertPrefs, useElectionAlerts } from './AlertsPanel';
+import { FollowContext } from './FollowContext';
+import { MyStates } from './MyStates';
+import { NailBiters } from './NailBiters';
+import { toggleState } from '@/lib/elections/alerts';
 import { BaselineContext } from './BaselineContext';
 import { Ticker } from './Ticker';
 import { BalanceOfPower } from './BalanceOfPower';
@@ -41,6 +45,8 @@ export interface ElectionsPageProps {
   roomCode?: string;
   /** `?league=CODE`: open that friends league in the Predict section. */
   leagueCode?: string;
+  /** `?state=PA`: open that state's races on the map on arrival. */
+  focusState?: string;
   /** The cycles the switcher offers, computed server-side so SSR and hydration agree. */
   options: Cycle[];
 }
@@ -120,7 +126,7 @@ function Host({
   );
 }
 
-export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, options }: ElectionsPageProps) {
+export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusState, options }: ElectionsPageProps) {
   const { t } = useTranslation('c-elections');
   const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -238,9 +244,32 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, option
   const live = snapshot?.live ?? false;
   const hasData = !!snapshot && snapshot.races.length > 0;
   const baseline = useBaseline(param);
+  const followValue = useMemo(
+    () => ({ states: alertPrefs.states, toggle: (postal: string) => setAlertPrefs({ ...alertPrefs, states: toggleState(alertPrefs.states, postal) }) }),
+    [alertPrefs, setAlertPrefs],
+  );
+
+  // The tab title carries the score, so a pinned tab is a scoreboard.
+  useEffect(() => {
+    if (!snapshot || !snapshot.live) return;
+    const prev = document.title;
+    document.title = `${headline(snapshot)} | RMH Vote`;
+    return () => {
+      document.title = prev;
+    };
+  }, [snapshot]);
+
+  // `?state=PA` opens that state on arrival (once the snapshot is in).
+  const focused = useRef(false);
+  useEffect(() => {
+    if (focused.current || !focusState || !snapshot) return;
+    focused.current = true;
+    selectFromElsewhere(focusState.toUpperCase());
+  });
 
   return (
     <BaselineContext.Provider value={baseline}>
+    <FollowContext.Provider value={followValue}>
     <div className="el-root" ref={rootRef}>
       <a className="el-btn el-sr" href="#results" style={{ position: 'absolute' }}>
         {t('a11y.skip', { defaultValue: 'Skip to results' })}
@@ -354,6 +383,16 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, option
           {!snapshot ? <div className="el-box el-skel" aria-busy /> : null}
           {snapshot ? (
             <BalanceOfPower chambers={snapshot.chambers} live={live} races={snapshot.races} />
+          ) : null}
+          {snapshot && hasData ? (
+            <div style={{ marginTop: 24 }}>
+              <MyStates races={snapshot.races} onSelectState={selectFromElsewhere} />
+            </div>
+          ) : null}
+          {snapshot && hasData ? (
+            <div style={{ marginTop: 24 }}>
+              <NailBiters races={snapshot.races} onSelectState={selectFromElsewhere} />
+            </div>
           ) : null}
           {snapshot && hasData ? (
             <div style={{ marginTop: 24 }}>
@@ -663,6 +702,14 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, option
                 'Results, ratings and race calls come from a free public results feed and can lag or differ from official state tallies. Calls are projections, not certifications. Always check your state’s election office for official results.',
             })}
           </p>
+          {snapshot && hasData ? (
+            <p>
+              <a href={`/api/elections/races.csv?cycle=${param}`} download>
+                {t('foot.csv', { defaultValue: 'Download every race as CSV' })}
+              </a>{' · '}
+              <a href={`/api/elections/public?cycle=${param}`}>{t('foot.json', { defaultValue: 'JSON summary' })}</a>
+            </p>
+          ) : null}
           {snapshot?.providers.length ? (
             <p>
               {t('foot.sources', {
@@ -692,6 +739,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, option
         />
       ) : null}
     </div>
+    </FollowContext.Provider>
     </BaselineContext.Provider>
   );
 }

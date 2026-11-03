@@ -2290,3 +2290,17 @@ html.ios-webkit .el-room__grid {
     grid-column: 2;
   }
 }
+
+/* Tiles with a pattern behind them (leads and leans) keep their labels readable on a plain chip. */
+.el-tile--dem-lead .el-tile__code,
+.el-tile--dem-lead .el-tile__cap,
+.el-tile--dem-lean .el-tile__code,
+.el-tile--dem-lean .el-tile__cap,
+.el-tile--gop-lead .el-tile__code,
+.el-tile--gop-lead .el-tile__cap,
+.el-tile--gop-lean .el-tile__code,
+.el-tile--gop-lean .el-tile__cap {
+  background: #fff;
+  color: var(--el-ink);
+  padding: 0 3px;
+}

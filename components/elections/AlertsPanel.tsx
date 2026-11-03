@@ -11,6 +11,7 @@ import {
   type AlertPrefs,
 } from '@/lib/elections/alerts';
 import { STATE_CODES, stateName } from '@/lib/elections/states';
+import { getAudioContext, requestScreenWakeLock } from '@/lib/shared/platform';
 
 const KEY = 'rmh-elections-alerts';
 
@@ -38,16 +39,41 @@ export function useAlertPrefs(): [AlertPrefs, (next: AlertPrefs) => void] {
   return [prefs, set];
 }
 
-/** Raise a browser notification for each live event the viewer asked about (once per event, only while permitted). */
+/** A short two-note chime through the shared audio context. Silent if audio is unavailable or not yet unlocked. */
+function chime() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  try {
+    void ctx.resume();
+    const t0 = ctx.currentTime;
+    [660, 880].forEach((hz, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = hz;
+      g.gain.setValueAtTime(0.0001, t0 + i * 0.14);
+      g.gain.exponentialRampToValueAtTime(0.12, t0 + i * 0.14 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + i * 0.14 + 0.22);
+      o.connect(g).connect(ctx.destination);
+      o.start(t0 + i * 0.14);
+      o.stop(t0 + i * 0.14 + 0.25);
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Raise a browser notification and/or chime for each live event the viewer asked about (once per event). */
 export function useElectionAlerts(events: ElectionEvent[], prefs: AlertPrefs): void {
   const seen = useRef(new Set<string>());
   useEffect(() => {
-    if (readPerm() !== 'granted') return;
     for (const ev of events) {
       // Only events that arrived live: opening the page mid-night must not replay the evening.
       if (!ev.fresh || seen.current.has(ev.id)) continue;
       seen.current.add(ev.id);
       if (!shouldAlert(ev, prefs)) continue;
+      if (prefs.sound) chime();
+      if (readPerm() !== 'granted') continue;
       try {
         new Notification(alertTitle(ev), { body: ev.text, tag: ev.id });
       } catch {
@@ -60,7 +86,13 @@ export function useElectionAlerts(events: ElectionEvent[], prefs: AlertPrefs): v
 export function AlertsPanel({ prefs, onChange }: { prefs: AlertPrefs; onChange: (p: AlertPrefs) => void }) {
   const { t } = useTranslation('c-elections');
   const [perm, setPerm] = useState<Perm>('default');
+  const [awake, setAwake] = useState(false);
   useEffect(() => setPerm(readPerm()), []);
+  // Keep the screen on while the viewer asks for it (election night is long); released on toggle or leaving.
+  useEffect(() => {
+    if (!awake) return;
+    return requestScreenWakeLock();
+  }, [awake]);
 
   const enable = async () => {
     if (typeof Notification === 'undefined') return;
@@ -91,7 +123,8 @@ export function AlertsPanel({ prefs, onChange }: { prefs: AlertPrefs; onChange: 
             {t('alerts.enable', { defaultValue: 'Turn on alerts' })}
           </button>
         </>
-      ) : (
+      ) : null}
+      {(
         <>
           <div className="el-pick-row" role="group" aria-label={t('alerts.what', { defaultValue: 'What to alert' })}>
             <button type="button" className="el-btn el-btn--sm" aria-pressed={prefs.major} onClick={() => onChange({ ...prefs, major: !prefs.major })}>
@@ -123,6 +156,14 @@ export function AlertsPanel({ prefs, onChange }: { prefs: AlertPrefs; onChange: 
           </div>
         </>
       )}
+      <div className="el-pick-row" role="group" aria-label={t('alerts.extras', { defaultValue: 'Extras' })} style={{ marginTop: 10 }}>
+        <button type="button" className="el-btn el-btn--sm" aria-pressed={prefs.sound} onClick={() => onChange({ ...prefs, sound: !prefs.sound })}>
+          {t('alerts.sound', { defaultValue: 'Chime on alerts' })}
+        </button>
+        <button type="button" className="el-btn el-btn--sm" aria-pressed={awake} onClick={() => setAwake((v) => !v)}>
+          {t('alerts.awake', { defaultValue: 'Keep screen on' })}
+        </button>
+      </div>
     </section>
   );
 }

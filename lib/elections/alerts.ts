@@ -15,9 +15,11 @@ export interface AlertPrefs {
   calls: boolean;
   /** Anything (calls, flips, lead changes, polls closing) in these states, as USPS codes. */
   states: string[];
+  /** A short chime when something matches (works even without notification permission). */
+  sound: boolean;
 }
 
-export const DEFAULT_ALERTS: AlertPrefs = { major: true, calls: false, states: [] };
+export const DEFAULT_ALERTS: AlertPrefs = { major: true, calls: false, states: [], sound: false };
 
 export const MAX_FOLLOWED = 12;
 
@@ -31,6 +33,7 @@ export function parseAlertPrefs(raw: string | null | undefined): AlertPrefs {
     return {
       major: typeof v.major === 'boolean' ? v.major : DEFAULT_ALERTS.major,
       calls: typeof v.calls === 'boolean' ? v.calls : DEFAULT_ALERTS.calls,
+      sound: typeof v.sound === 'boolean' ? v.sound : DEFAULT_ALERTS.sound,
       states: Array.isArray(v.states) ? [...new Set(v.states.filter((s): s is string => typeof s === 'string' && POSTAL.test(s)))].slice(0, MAX_FOLLOWED) : [],
     };
   } catch {

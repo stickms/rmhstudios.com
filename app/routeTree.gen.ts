@@ -500,6 +500,7 @@ import { Route as ApiElectionsHistoryRouteImport } from './routes/api/elections/
 import { Route as ApiElectionsMarketsRouteImport } from './routes/api/elections/markets'
 import { Route as ApiElectionsNewsRouteImport } from './routes/api/elections/news'
 import { Route as ApiElectionsPublicRouteImport } from './routes/api/elections/public'
+import { Route as ApiElectionsRacesDotcsvRouteImport } from './routes/api/elections/races[.]csv'
 import { Route as ApiElectionsStreamsRouteImport } from './routes/api/elections/streams'
 import { Route as ApiElectionsSummaryRouteImport } from './routes/api/elections/summary'
 import { Route as ApiElectionsSwingRouteImport } from './routes/api/elections/swing'
@@ -3873,6 +3874,11 @@ const ApiElectionsNewsRoute = ApiElectionsNewsRouteImport.update({
 const ApiElectionsPublicRoute = ApiElectionsPublicRouteImport.update({
   id: '/api/elections/public',
   path: '/api/elections/public',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsRacesDotcsvRoute = ApiElectionsRacesDotcsvRouteImport.update({
+  id: '/api/elections/races.csv',
+  path: '/api/elections/races.csv',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiElectionsStreamsRoute = ApiElectionsStreamsRouteImport.update({
@@ -9080,6 +9086,7 @@ export interface FileRoutesByFullPath {
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
   '/api/elections/news': typeof ApiElectionsNewsRoute
   '/api/elections/public': typeof ApiElectionsPublicRoute
+  '/api/elections/races.csv': typeof ApiElectionsRacesDotcsvRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
   '/api/elections/summary': typeof ApiElectionsSummaryRoute
   '/api/elections/swing': typeof ApiElectionsSwingRoute
@@ -10450,6 +10457,7 @@ export interface FileRoutesByTo {
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
   '/api/elections/news': typeof ApiElectionsNewsRoute
   '/api/elections/public': typeof ApiElectionsPublicRoute
+  '/api/elections/races.csv': typeof ApiElectionsRacesDotcsvRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
   '/api/elections/summary': typeof ApiElectionsSummaryRoute
   '/api/elections/swing': typeof ApiElectionsSwingRoute
@@ -11849,6 +11857,7 @@ export interface FileRoutesById {
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
   '/api/elections/news': typeof ApiElectionsNewsRoute
   '/api/elections/public': typeof ApiElectionsPublicRoute
+  '/api/elections/races.csv': typeof ApiElectionsRacesDotcsvRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
   '/api/elections/summary': typeof ApiElectionsSummaryRoute
   '/api/elections/swing': typeof ApiElectionsSwingRoute
@@ -13248,6 +13257,7 @@ export interface FileRouteTypes {
     | '/api/elections/markets'
     | '/api/elections/news'
     | '/api/elections/public'
+    | '/api/elections/races.csv'
     | '/api/elections/streams'
     | '/api/elections/summary'
     | '/api/elections/swing'
@@ -14618,6 +14628,7 @@ export interface FileRouteTypes {
     | '/api/elections/markets'
     | '/api/elections/news'
     | '/api/elections/public'
+    | '/api/elections/races.csv'
     | '/api/elections/streams'
     | '/api/elections/summary'
     | '/api/elections/swing'
@@ -16016,6 +16027,7 @@ export interface FileRouteTypes {
     | '/api/elections/markets'
     | '/api/elections/news'
     | '/api/elections/public'
+    | '/api/elections/races.csv'
     | '/api/elections/streams'
     | '/api/elections/summary'
     | '/api/elections/swing'
@@ -17193,6 +17205,7 @@ export interface RootRouteChildren {
   ApiElectionsMarketsRoute: typeof ApiElectionsMarketsRoute
   ApiElectionsNewsRoute: typeof ApiElectionsNewsRoute
   ApiElectionsPublicRoute: typeof ApiElectionsPublicRoute
+  ApiElectionsRacesDotcsvRoute: typeof ApiElectionsRacesDotcsvRoute
   ApiElectionsStreamsRoute: typeof ApiElectionsStreamsRoute
   ApiElectionsSummaryRoute: typeof ApiElectionsSummaryRoute
   ApiElectionsSwingRoute: typeof ApiElectionsSwingRoute
@@ -21288,6 +21301,13 @@ declare module '@tanstack/react-router' {
       path: '/api/elections/public'
       fullPath: '/api/elections/public'
       preLoaderRoute: typeof ApiElectionsPublicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/races.csv': {
+      id: '/api/elections/races.csv'
+      path: '/api/elections/races.csv'
+      fullPath: '/api/elections/races.csv'
+      preLoaderRoute: typeof ApiElectionsRacesDotcsvRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/elections/streams': {
@@ -30165,6 +30185,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiElectionsMarketsRoute: ApiElectionsMarketsRoute,
   ApiElectionsNewsRoute: ApiElectionsNewsRoute,
   ApiElectionsPublicRoute: ApiElectionsPublicRoute,
+  ApiElectionsRacesDotcsvRoute: ApiElectionsRacesDotcsvRoute,
   ApiElectionsStreamsRoute: ApiElectionsStreamsRoute,
   ApiElectionsSummaryRoute: ApiElectionsSummaryRoute,
   ApiElectionsSwingRoute: ApiElectionsSwingRoute,
