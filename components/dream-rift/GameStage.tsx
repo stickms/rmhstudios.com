@@ -7,7 +7,7 @@
  * the render loop; React only paints overlays on state changes.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GameSession, type RosterEntry } from '@/lib/dream-rift/net/session';
 import { loadHiScore } from '@/lib/dream-rift/highscore';
 import type { Transport } from '@/lib/dream-rift/net/transport';
@@ -15,7 +15,8 @@ import type { Difficulty } from '@/lib/dream-rift/types';
 import type { PracticeOutcome, PracticeTarget } from '@/lib/dream-rift/practice';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { useGameSession } from '@/hooks/useGameSession';
-import { setPeerLeftHandler } from '@/lib/dream-rift/net/connection';
+import { setPeerLeftHandler, setResumeHandlers } from '@/lib/dream-rift/net/connection';
+import { PEER_GRACE_MS } from '@/lib/shared/realtime/types';
 import { useRuntime } from './runtime';
 import { MobileControls } from './MobileControls';
 import { PhoneControllerHost } from '@/components/party/PhoneControllerHost';
@@ -105,19 +106,36 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // The hub drops a player from the lobby the instant their socket dies (no grace), and a
-    // reconnected socket is a stranger to the room: relays go nowhere, so the rest of the squad
-    // sees this player frozen while they keep playing a ghost run. Leave the run instead.
+    // A dropped socket is not the end of the run: the hub holds the seat for PEER_GRACE_MS
+    // and hands it to the reconnected socket (RESUME), so the squad never sees a frozen ghost.
+    // Only when the seat cannot be recovered (window over, lobby closed) do we leave the run.
     const connection = useDreamRift((s) => s.connection);
     const wasConnected = useRef(false);
+    const [reconnecting, setReconnecting] = useState(false);
+    useEffect(() => {
+        if (start.practice || useDreamRift.getState().mode !== 'multi') return;
+        const giveUp = () => {
+            useDreamRift.getState().setError('Connection lost, so you left the run.');
+            onExit();
+        };
+        setResumeHandlers(() => setReconnecting(false), giveUp);
+        return () => setResumeHandlers(null, null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
     useEffect(() => {
         if (start.practice || useDreamRift.getState().mode !== 'multi') return;
         if (connection === 'connected') {
             wasConnected.current = true;
-        } else if (wasConnected.current) {
+            return;
+        }
+        if (!wasConnected.current) return;
+        setReconnecting(true);
+        // The hub frees the seat after PEER_GRACE_MS; a little slack for the last attempt's round trip.
+        const timer = window.setTimeout(() => {
             useDreamRift.getState().setError('Connection lost, so you left the run.');
             onExit();
-        }
+        }, PEER_GRACE_MS + 3000);
+        return () => window.clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [connection]);
 
@@ -151,6 +169,14 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
             />
             <StageBanner />
             <DialogueOverlay />
+            {reconnecting && (
+                <div
+                    role="status"
+                    className="pointer-events-none absolute inset-x-0 top-3 z-20 mx-auto w-fit rounded-sm border border-[rgba(231,205,140,0.4)] bg-black/70 px-4 py-2 text-sm text-[color:var(--dr-cream)]"
+                >
+                    Connection lost. Reconnecting to your squad…
+                </div>
+            )}
             {paused && <PauseOverlay onResume={() => useDreamRift.getState().setPaused(false)} onQuit={onExit} />}
             <MobileControls input={input} />
             <PhoneControllerHost sink={input} />
