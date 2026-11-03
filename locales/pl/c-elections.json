@@ -27,6 +27,7 @@
   "ballot.allLocal": "All local and down-ballot races",
   "ballot.allMeasures": "All ballot measures",
   "ballot.aria": "Map of states. Select a state for its ballot measures and local races.",
+  "ballot.back": "Pick another state",
   "ballot.how": "Each tile: ballot measures · local races.",
   "ballot.lLive": "Results coming in",
   "ballot.lNone": "None published",
