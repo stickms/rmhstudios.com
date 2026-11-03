@@ -2503,3 +2503,50 @@ html.ios-webkit .el-room__grid {
     cursor: row-resize;
   }
 }
+
+/* ── Briefing Room: top bar that hides until hovered ─────────────────────────────────────────────────────
+ * With data-bar='auto' the bar leaves the layout (the panes take the whole screen) and slides down over them
+ * when the pointer reaches a thin strip at the top edge, or when anything inside it has keyboard focus. A
+ * small tab on the strip shows where to go. Touch: tapping the strip reveals it (hover emulation).
+ */
+.el-room__hot {
+  display: none;
+}
+.el-room[data-bar='auto'] .el-room__bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  padding-top: calc(8px + env(safe-area-inset-top, 0px));
+  transform: translateY(-110%);
+  transition: transform 0.22s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
+}
+.el-room[data-bar='auto'] .el-room__hot {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 19;
+  height: 14px;
+}
+.el-room[data-bar='auto'] .el-room__hot::after {
+  content: '';
+  position: absolute;
+  top: env(safe-area-inset-top, 0px);
+  left: 50%;
+  width: 56px;
+  height: 5px;
+  margin-left: -28px;
+  border-radius: 0 0 4px 4px;
+  background: var(--el-purple);
+  opacity: 0.85;
+}
+.el-room[data-bar='auto'][data-bar-open] .el-room__bar,
+.el-room[data-bar='auto'] .el-room__bar:focus-within {
+  transform: none;
+}
+.el-room[data-bar='auto'][data-bar-open] .el-room__hot::after {
+  opacity: 0;
+}

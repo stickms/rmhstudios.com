@@ -8,6 +8,8 @@ import {
   LayoutPanelLeft,
   Maximize2,
   Minimize2,
+  Pin,
+  PinOff,
   Rows2,
   Square,
   X,
@@ -77,6 +79,15 @@ const KIND_LABEL: Record<PaneKind, [string, string]> = {
  * returns focus to what opened it, and renders into <body> so nothing in the page can clip or cover it.
  * Reactions float across it for everyone in the same room.
  */
+/** Read the saved bar choice synchronously (the open-focus decision happens before state has loaded it). */
+function localStorageBarIsAuto(): boolean {
+  try {
+    return localStorage.getItem('rmh-elections-roombar') === 'auto';
+  } catch {
+    return false;
+  }
+}
+
 export function RoomOverlay({
   cycle,
   source,
@@ -106,6 +117,47 @@ export function RoomOverlay({
   // Phones show one pane at a time (a switcher picks it); wider screens show the whole layout.
   const [mobilePane, setMobilePane] = useState(0);
   const { split, grid, dragging, handlers } = useSplit(config.layout);
+  // The room's top bar can hide until the pointer (or keyboard focus) reaches the top edge, giving the panes the
+  // whole screen. The choice is per viewer, kept in this browser.
+  const [autoHide, setAutoHide] = useState(false);
+  useEffect(() => {
+    try {
+      setAutoHide(localStorage.getItem('rmh-elections-roombar') === 'auto');
+    } catch {
+      /* private mode: the bar stays pinned */
+    }
+  }, []);
+  // Open/close the hidden bar from pointer events (a data attribute, not :hover — the site's CSS pipeline strips
+  // hand-written hover transforms). A short grace timer lets the pointer travel from the strip into the bar.
+  const [barOpen, setBarOpen] = useState(false);
+  const barTimer = useRef<number | undefined>(undefined);
+  const openBar = () => {
+    window.clearTimeout(barTimer.current);
+    setBarOpen(true);
+  };
+  const closeBar = (e?: React.PointerEvent) => {
+    // Touch has no hover: a tap opens the bar and a tap anywhere else closes it (below), so leaving is not a close.
+    if (e?.pointerType === 'touch') return;
+    window.clearTimeout(barTimer.current);
+    barTimer.current = window.setTimeout(() => setBarOpen(false), 350);
+  };
+  useEffect(() => {
+    if (!barOpen) return;
+    const away = (e: PointerEvent) => {
+      if (e.pointerType === 'touch' && !(e.target as Element | null)?.closest?.('.el-room__bar, .el-room__hot')) setBarOpen(false);
+    };
+    document.addEventListener('pointerdown', away);
+    return () => document.removeEventListener('pointerdown', away);
+  }, [barOpen]);
+  const toggleAutoHide = () =>
+    setAutoHide((v) => {
+      try {
+        localStorage.setItem('rmh-elections-roombar', v ? 'pinned' : 'auto');
+      } catch {
+        /* ignore */
+      }
+      return !v;
+    });
   const root = useRef<HTMLDivElement | null>(null);
   const now = useNow(500);
 
@@ -207,15 +259,26 @@ export function RoomOverlay({
         <DialogPrimitive.Content
           ref={root}
           className="el-root el-room"
+          data-bar={autoHide ? 'auto' : 'pinned'}
+          data-bar-open={autoHide && barOpen ? '' : undefined}
           aria-describedby={undefined}
           data-animate=""
           // In browser fullscreen, Escape leaves fullscreen first; a second press closes the room.
           onEscapeKeyDown={(e) => document.fullscreenElement && e.preventDefault()}
+          // With the bar hidden, opening the room must not focus a control inside it (focus keeps it visible).
+          onOpenAutoFocus={(e) => {
+            if (localStorageBarIsAuto()) {
+              e.preventDefault();
+              root.current?.focus();
+            }
+          }}
+          tabIndex={-1}
         >
           <DialogPrimitive.Title className="el-sr">
             {t('room.briefingAria', { defaultValue: 'Briefing Room: {{name}}', name: title })}
           </DialogPrimitive.Title>
-          <header className="el-room__bar">
+          {autoHide ? <div className="el-room__hot" aria-hidden onPointerEnter={openBar} onPointerLeave={closeBar} onPointerDown={openBar} /> : null}
+          <header className="el-room__bar" onPointerEnter={autoHide ? openBar : undefined} onPointerLeave={autoHide ? closeBar : undefined}>
             <div className="el-room__title">
               <strong>{title}</strong> <span className="el-chip el-chip--yellow">{badge}</span>
               {meta?.owner?.name && meta.visibility !== 'SOLO' ? (
@@ -265,6 +328,20 @@ export function RoomOverlay({
                   <span className="el-mono">{code}</span>
                 </button>
               ) : null}
+              <button
+                type="button"
+                className="el-btn el-btn--sm el-btn--ghost"
+                onClick={(e) => {
+                  toggleAutoHide();
+                  // A mouse click would leave focus inside the bar and keep it open; keyboard users keep their focus.
+                  if (e.detail > 0) e.currentTarget.blur();
+                }}
+                aria-pressed={autoHide}
+                title={autoHide ? t('room.pinBar', { defaultValue: 'Keep this bar visible' }) : t('room.hideBar', { defaultValue: 'Hide this bar until hovered' })}
+                aria-label={autoHide ? t('room.pinBar', { defaultValue: 'Keep this bar visible' }) : t('room.hideBar', { defaultValue: 'Hide this bar until hovered' })}
+              >
+                {autoHide ? <Pin size={14} aria-hidden /> : <PinOff size={14} aria-hidden />}
+              </button>
               <button
                 type="button"
                 className="el-btn el-btn--sm el-btn--ghost"
