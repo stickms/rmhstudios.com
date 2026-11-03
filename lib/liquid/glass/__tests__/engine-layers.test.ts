@@ -174,7 +174,7 @@ class FakeEl {
   get isConnected(): boolean {
     return this === docRoot || (this.parentNode?.isConnected ?? false);
   }
-  get parentElement() {
+  get parentElement(): FakeEl | null {
     return this.parentNode && !this.parentNode.isText ? this.parentNode : null;
   }
   get firstChild() {
@@ -514,7 +514,7 @@ describe('engine layers vs React setTextContent', () => {
     vi.advanceTimersByTime(500);
     await frames();
     vi.advanceTimersByTime(120);
-    expect(card.getAttribute('data-jelly-body')).toBe('on');
+    expect(card.getAttribute('data-jelly-gel')).toBe('on');
     const withBody = draws.filter((d) => d.target === rimOf(card));
     expect(withBody.at(-1)?.body).not.toBeNull();
     expect(withBody[0]?.body).toBeNull(); // the very first frame is rim only
@@ -527,12 +527,47 @@ describe('engine layers vs React setTextContent', () => {
     await frames();
     vi.advanceTimersByTime(700);
     await frames();
-    expect(art.getAttribute('data-jelly-body')).toBeNull();
+    expect(art.getAttribute('data-jelly-gel')).toBeNull();
     // Leaving the document drops the attribute with the canvas.
     card.remove();
     await flush();
     expect(rimOf(card)).toBeUndefined();
-    expect(card.getAttribute('data-jelly-body')).toBeNull();
+    expect(card.getAttribute('data-jelly-gel')).toBeNull();
+  });
+
+  it('a flat control costs nothing at rest, is admitted while touched, and is released after it calms', async () => {
+    const flat = new FakeEl('button');
+    flat.setAttribute('data-slot', 'button');
+    flat.setAttribute('data-jelly-rest', 'flat');
+    flat.textContent = 'Share';
+    const solid = new FakeEl('button');
+    solid.setAttribute('data-slot', 'button');
+    solid.textContent = 'Deploy';
+    body.append(flat, solid);
+    await install();
+    expect(rimOf(solid)).toBeDefined(); // a slab control is admitted as before
+    expect(rimOf(flat)).toBeUndefined(); // the flat one is just its label on the ground
+
+    jellyBus.emit('plasma:level', { el: flat as unknown as Element, level: PLASMA.wake });
+    await frames();
+    expect(rimOf(flat)).toBeDefined();
+
+    jellyBus.emit('plasma:level', { el: flat as unknown as Element, level: 0 });
+    vi.advanceTimersByTime(300); // still lingering: the slab has not gone yet
+    await frames();
+    expect(rimOf(flat)).toBeDefined();
+    // Touched again while it lingers: it stays.
+    jellyBus.emit('plasma:level', { el: flat as unknown as Element, level: PLASMA.wake });
+    vi.advanceTimersByTime(1000);
+    await frames();
+    expect(rimOf(flat)).toBeDefined();
+    // Calm for good: linger, fade out, release.
+    jellyBus.emit('plasma:level', { el: flat as unknown as Element, level: 0 });
+    for (let i = 0; i < 8; i++) {
+      vi.advanceTimersByTime(300);
+      await frames(1, 300);
+    }
+    expect(rimOf(flat)).toBeUndefined();
   });
 
   it('a <Button> whose text is replaced gets its SAME rim canvas back and never draws into a detached one', async () => {

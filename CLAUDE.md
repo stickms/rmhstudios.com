@@ -281,7 +281,7 @@ and data are Geist Mono, everything else Geist. One ink-gel primary action
 - **The silhouette (2026-11-03).** The gel the shader draws round a host — the rim canvas, overdrawn up to 16px past it
   — bulges toward the pointer (≈10px), sags under a press (≈18px) and wobbles back, like the globe. A 24-node lattice
   (`lib/jelly/lattice.ts`, constants `JELLY_BODY` in `lib/jelly/tiers.ts`) drives it, and the shader paints the whole gel
-  body (`data-jelly-body="on"`: the host's own fill steps aside; opt a host out with `data-jelly-bodyless`). The HOST
+  body (`data-jelly-gel="on"`: the host's own fill steps aside; opt a host out with `data-jelly-nogel`). The HOST
   still moves only within the bounds below; text and hit areas never move. Outward travel on each side is capped to the
   measured room (`lib/jelly/room.ts`: clipping ancestors, the viewport's side edges, half the gap to a neighbouring
   body), so a bulge is never clipped — give a body its 16px of room (`--jelly-margin`) in layout.

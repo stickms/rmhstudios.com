@@ -5,7 +5,7 @@
 
 **Goal:** Make main-site slabs bulge, sag and wobble like the liquid globe, with flat-until-touched controls, and never clip a bulge.
 
-**Architecture:** Keep the jelly engine. Generalise the 8-node rim lattice to 24 nodes with per-node room caps; let the rim shader warp the *whole* signed-distance field and paint the gel fill itself (CSS background steps aside via `data-jelly-body="on"`); flat controls are admitted as slabs only while touched; clipping is prevented by activation-time room measurement plus a layout sweep gated by a test.
+**Architecture:** Keep the jelly engine. Generalise the 8-node rim lattice to 24 nodes with per-node room caps; let the rim shader warp the *whole* signed-distance field and paint the gel fill itself (CSS background steps aside via `data-jelly-gel="on"`); flat controls are admitted as slabs only while touched; clipping is prevented by activation-time room measurement plus a layout sweep gated by a test.
 
 **Tech Stack:** TypeScript, WebGL2 GLSL ES 3.00 (worker `OffscreenCanvas`), Vitest, Tailwind v4 + `app/*.css`, Playwright (pre-installed Chromium).
 
@@ -55,9 +55,9 @@
 - `LATTICE_GLSL` declares `uniform vec2 uJelly[24]` and Catmull-Rom over 24 nodes by arc-length parameter.
 - New uniforms `uBodyOn: float`, `uBody: vec4` (gel top colour+alpha), `uBodyDepth: vec4` (bottom). When `uBodyOn > 0.5` the lattice push is applied to the *entire* distance field (`sd -= push`, not rim-only), and the interior fills with the gel gradient (cheap early-out branch emits the fill, skipping lighting).
 - `overdrawMargin(role, latticesAllowed)` returns `JELLY_LAYOUT.marginPx` for `fill | pane | control | inset | overlay | chrome` hosts that deform; `0` when no lattice may run.
-- Engine sets `data-jelly-body="on"` on the host only while the shader draws the body; CSS rule `[data-jelly-body='on']` makes the host's own background transparent. Cleared when the slab leaves the budget, the tier degrades, or WebGL is lost.
+- Engine sets `data-jelly-gel="on"` on the host only while the shader draws the body; CSS rule `[data-jelly-gel='on']` makes the host's own background transparent. Cleared when the slab leaves the budget, the tier degrades, or WebGL is lost.
 
-- [ ] Step 1: failing tests — `overdrawMargin('fill', true) === 16`, `0` when disallowed; `LATTICE_GLSL` string declares 24 nodes; engine unit test (existing harness) sets/clears `data-jelly-body` with admission and tier degrade; CSS contract test: `[data-jelly-body='on']` rule exists and every other background rule is untouched under `:not([data-jelly-body='on'])`.
+- [ ] Step 1: failing tests — `overdrawMargin('fill', true) === 16`, `0` when disallowed; `LATTICE_GLSL` string declares 24 nodes; engine unit test (existing harness) sets/clears `data-jelly-gel` with admission and tier degrade; CSS contract test: `[data-jelly-gel='on']` rule exists and every other background rule is untouched under `:not([data-jelly-gel='on'])`.
 - [ ] Step 2–4: implement; run `pnpm exec vitest run lib/liquid lib/jelly lib/__tests__/jelly-*.test.ts`.
 - [ ] Step 5: render check in Chromium (`/jelly` demo route + a feed screenshot, SwiftShader WebGL) — rim, fill and bulge visible, no outline; record findings in the PR.
 - [ ] Step 6: commit.

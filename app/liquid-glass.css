@@ -299,9 +299,21 @@
 /* The shader paints this surface's whole gel body (lib/liquid/glass/engine.ts sets the attribute a few frames after the
    body's first frame lands), so the host's own fill and coat step aside. Unlayered, so it also beats a component's own
    background utility: the engine only arms hosts whose fill is the plain role tint (no `bg-[…]`/gradient classes, no
-   inline background-image, no \`data-jelly-bodyless\`). The silhouette can then bulge and sag past the host's box
+   inline background-image, no `data-jelly-nogel`). The silhouette can then bulge and sag past the host's box
    with its fill. The degraded tiers remove the canvas and this attribute with it. */
-html:not(.perf-lite) [data-jelly-body='on']:not([data-liquid-material='off']) {
+html:not(.perf-lite) [data-jelly-gel='on']:not([data-liquid-material='off']) {
   background-color: transparent;
   background-image: none;
+}
+
+/* A flat control has no body at rest, so where the material is off (perf-lite, print) it needs its own
+   affordance: an opaque slab with a solid edge, like every other degraded surface. */
+html.perf-lite [data-jelly-rest='flat'] {
+  background-color: var(--site-surface-opaque);
+  border-color: var(--site-border);
+}
+@media print {
+  [data-jelly-rest='flat'] {
+    border-color: var(--site-border);
+  }
 }

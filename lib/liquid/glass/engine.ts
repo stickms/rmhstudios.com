@@ -229,6 +229,11 @@ const WORKER_WAIT_MS = 5000;
  * `data-liquid-canvas="on"` and the static coat, edge and carrier step aside. A cross-fade, never a swap.
  */
 const ENTER_MS = 450;
+/** A flat control is touched NOW: its slab fades in over this, not the full entrance. */
+const FLAT_ENTER_MS = 90;
+/** How long a flat control keeps its slab after it calms, and how long the fade out takes. */
+const FLAT_LINGER_MS = 420;
+const FLAT_FADE_MS = 200;
 /** From the first frame that carries the gel body to the host's own fill stepping aside (a few frames, worker latency). */
 const BODY_HANDOVER_MS = 80;
 /**
@@ -298,10 +303,19 @@ interface Surface {
   margin: number;
   /**
    * The shader paints this surface's whole gel body (role tint under the gel coat): straight RGBA at the top and the
-   * base, or null for a rim-only slab. While set and the rim is in, the host carries `data-jelly-body="on"` and its own
+   * base, or null for a rim-only slab. While set and the rim is in, the host carries `data-jelly-gel="on"` and its own
    * CSS fill steps aside.
    */
   body: { top: RGBA; bottom: RGBA } | null;
+  /**
+   * `data-jelly-rest="flat"`: at rest this control is just its content on the ground — no canvas, no body, no budget
+   * cost. It is admitted as a slab only while touched (hover, press, focus: the plasma wake level), lingers
+   * {@link FLAT_LINGER_MS} once calm, and fades out before it is released.
+   */
+  flat: boolean;
+  touched: boolean;
+  lingerTimer: number;
+  fadeTimer: number;
   /** The rim is in and the shader now paints `body` (the host's own fill follows a few frames later). */
   bodyArmed: boolean;
   bodyTimer: number;
@@ -728,6 +742,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
       jellyOn: true,
       margin: 0,
       body: null,
+      flat: el.getAttribute('data-jelly-rest') === 'flat',
+      touched: false,
+      lingerTimer: 0,
+      fadeTimer: 0,
       bodyArmed: false,
       bodyTimer: 0,
       clips: [],
@@ -858,7 +876,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     const style = win.getComputedStyle(s.el);
     // The host's own fill is what carries the role tint. While the shader paints the body that fill is transparent, so
     // step the attribute aside (with no transition, for one frame) to read it, then put it back.
-    const bodyAttr = s.el.getAttribute('data-jelly-body');
+    const bodyAttr = s.el.getAttribute('data-jelly-gel');
     let prevTransition: [string, string] | null = null;
     if (bodyAttr) {
       prevTransition = [
@@ -866,7 +884,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
         s.el.style.getPropertyPriority('transition'),
       ];
       s.el.style.setProperty('transition', 'none', 'important');
-      s.el.removeAttribute('data-jelly-body');
+      s.el.removeAttribute('data-jelly-gel');
     }
     s.width = s.el.clientWidth;
     s.height = s.el.clientHeight;
@@ -889,7 +907,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     const disarm = !s.body && s.bodyArmed;
     if (disarm) s.bodyArmed = false;
     if (bodyAttr) {
-      if (!disarm) s.el.setAttribute('data-jelly-body', bodyAttr);
+      if (!disarm) s.el.setAttribute('data-jelly-gel', bodyAttr);
       const [v, pr] = prevTransition!;
       // Restore after the next frame's style recalc has seen the attribute (a timer, never a second rAF loop).
       win.setTimeout(() => {
@@ -906,7 +924,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     if (
       s.role === 'chrome' ||
       s.still ||
-      s.el.hasAttribute('data-jelly-bodyless') ||
+      s.el.hasAttribute('data-jelly-gelless') ||
       s.el.style.backgroundImage ||
       BODY_OPT_OUT.test(s.el.getAttribute('class') ?? '')
     )
@@ -934,6 +952,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     // Transparent until its first frame lands, then it fades in (`rimDrawn`).
     canvas.setAttribute('data-liquid-fresh', '');
     s.canvas = canvas;
+    if (s.flat) canvas.style.transitionDuration = `${FLAT_ENTER_MS}ms`;
     measure(s);
     // Static, never animated: room for an outward lattice bulge on cards and controls (≤ 2px, 02 §1.3).
     s.margin = overdrawMargin(s.role, budget.lattices > 0 && !s.still);
@@ -978,10 +997,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
         requestFrame();
         s.bodyTimer = win.setTimeout(() => {
           s.bodyTimer = 0;
-          if (s.canvas && s.bodyArmed) s.el.setAttribute('data-jelly-body', 'on');
+          if (s.canvas && s.bodyArmed) s.el.setAttribute('data-jelly-gel', 'on');
         }, BODY_HANDOVER_MS);
       }
-    }, ENTER_MS);
+    }, s.flat ? FLAT_ENTER_MS : ENTER_MS);
   };
   /** The same for a haze canvas: it fades in over the CSS carrier, which steps aside (`markHazeOn`) once it has. */
   const hazeDrawn = (s: Surface) => {
@@ -1079,10 +1098,13 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.canvas.remove();
     s.canvas = null;
     s.el.removeAttribute('data-liquid-canvas');
-    s.el.removeAttribute('data-jelly-body');
+    s.el.removeAttribute('data-jelly-gel');
     win.clearTimeout(s.bodyTimer);
     s.bodyTimer = 0;
     s.bodyArmed = false;
+    win.clearTimeout(s.lingerTimer);
+    win.clearTimeout(s.fadeTimer);
+    s.lingerTimer = s.fadeTimer = 0;
     s.el.removeAttribute('data-liquid-layer');
     s.el.removeAttribute('data-liquid-static');
     s.light = 0;
@@ -1370,8 +1392,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
       if (!s.el.hasAttribute('data-liquid-layer')) s.el.setAttribute('data-liquid-layer', '');
       if (s.entered && s.el.getAttribute('data-liquid-canvas') !== 'on')
         s.el.setAttribute('data-liquid-canvas', 'on');
-      if (s.bodyArmed && !s.bodyTimer && s.el.getAttribute('data-jelly-body') !== 'on')
-        s.el.setAttribute('data-jelly-body', 'on');
+      if (s.bodyArmed && !s.bodyTimer && s.el.getAttribute('data-jelly-gel') !== 'on')
+        s.el.setAttribute('data-jelly-gel', 'on');
       s.dirty = true;
       if (s.haze) s.hazeFresh = true;
     }
@@ -1396,7 +1418,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
           s,
           role: s.role,
           order: s.order + (onScreen(s) ? 0 : OFFSCREEN_ORDER),
-          visible: s.visible && s.el.isConnected,
+          visible: s.visible && s.el.isConnected && (!s.flat || s.touched),
           width: s.width,
           height: s.height,
         })),
@@ -1718,6 +1740,47 @@ export function installLiquidGlass(doc: Document = document): () => void {
     if (s.plasmaAt === 0) s.plasmaAt = win.performance.now();
     s.plasmaTarget = target;
     if (s.canvas) requestFrame();
+    if (s.flat) touchFlat(s, target > 0);
+  };
+
+  /** A flat control is touched (slab in) or calm (slab lingers, then fades out and is released). */
+  const touchFlat = (s: Surface, on: boolean) => {
+    win.clearTimeout(s.lingerTimer);
+    s.lingerTimer = 0;
+    if (on) {
+      win.clearTimeout(s.fadeTimer);
+      s.fadeTimer = 0;
+      if (s.canvas) s.canvas.style.removeProperty('opacity');
+      if (!s.touched) {
+        s.touched = true;
+        scheduleReconcile();
+      }
+      return;
+    }
+    if (!s.touched) return;
+    s.lingerTimer = win.setTimeout(() => releaseFlat(s), FLAT_LINGER_MS);
+  };
+  const releaseFlat = (s: Surface) => {
+    s.lingerTimer = 0;
+    if (!s.touched || disposed) return;
+    // Still wobbling or dented: wait for it to settle, the slab is its motion.
+    if ((s.lattice && !s.lattice.asleep) || dentOf(s.el) || s.plasmaLevel > 0.01) {
+      s.lingerTimer = win.setTimeout(() => releaseFlat(s), 160);
+      return;
+    }
+    if (!s.canvas) {
+      s.touched = false;
+      return;
+    }
+    s.canvas.style.transition = `opacity ${FLAT_FADE_MS}ms var(--ease-smooth, ease)`;
+    s.canvas.style.opacity = '0';
+    s.fadeTimer = win.setTimeout(() => {
+      s.fadeTimer = 0;
+      s.touched = false;
+      s.canvas?.style.removeProperty('opacity');
+      s.canvas?.style.removeProperty('transition');
+      scheduleReconcile();
+    }, FLAT_FADE_MS + 20);
   };
 
   const frame = (): boolean => {
