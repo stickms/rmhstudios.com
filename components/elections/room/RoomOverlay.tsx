@@ -101,6 +101,8 @@ export function RoomOverlay({
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Phones show one pane at a time (a switcher picks it); wider screens show the whole layout.
+  const [mobilePane, setMobilePane] = useState(0);
   const root = useRef<HTMLDivElement | null>(null);
   const now = useNow(500);
 
@@ -312,12 +314,27 @@ export function RoomOverlay({
               {t('room.error', { defaultValue: 'Could not load the room. Try again.' })}
             </p>
           ) : (
+            <>
+            <div className="el-room__switch" role="group" aria-label={t('room.panes', { defaultValue: 'Panes' })}>
+              {panes.map((pane, i) => (
+                <button
+                  key={pane.id}
+                  type="button"
+                  className="el-btn el-btn--sm"
+                  aria-pressed={Math.min(mobilePane, panes.length - 1) === i}
+                  onClick={() => setMobilePane(i)}
+                >
+                  {t(KIND_LABEL[pane.kind][0], { defaultValue: KIND_LABEL[pane.kind][1] })}
+                </button>
+              ))}
+            </div>
             <div className="el-room__grid" data-layout={config.layout}>
               {panes.map((pane, i) => (
                 <section
                   key={pane.id}
                   className="el-room__pane"
                   data-slot={i}
+                  data-active={Math.min(mobilePane, panes.length - 1) === i}
                   aria-label={t(KIND_LABEL[pane.kind][0], {
                     defaultValue: KIND_LABEL[pane.kind][1],
                   })}
@@ -360,6 +377,7 @@ export function RoomOverlay({
                 </section>
               ))}
             </div>
+            </>
           )}
 
           <footer className="el-room__foot">

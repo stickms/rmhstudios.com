@@ -9,6 +9,7 @@ import {
   type StreamPane,
 } from '@/lib/elections/room-config';
 import { parseEmbed } from '@/lib/elections/streams';
+import { useLiveStreams } from '../useLiveStreams';
 import { buildStateViews, emptyView } from '@/lib/elections/map-model';
 import { STATE_CODES, STATE_NAMES } from '@/lib/elections/states';
 import { OFFICES, OFFICE_NAME, type ElectionSnapshot, type Office } from '@/lib/elections/types';
@@ -51,6 +52,7 @@ export function StreamBody({ pane, ctx }: { pane: StreamPane; ctx: PaneContext }
   const { t } = useTranslation('c-elections');
   const [draft, setDraft] = useState(pane.url);
   const [bad, setBad] = useState(false);
+  const live = useLiveStreams();
   const [armed, setArmed] = useState(false); // nothing third-party loads until the viewer clicks play
   const embed = useMemo(() => (pane.url ? parseEmbed(pane.url) : null), [pane.url]);
   const src = embed && typeof location !== 'undefined' ? embed.src(location.hostname) : null;
@@ -101,6 +103,31 @@ export function StreamBody({ pane, ctx }: { pane: StreamPane; ctx: PaneContext }
           })}
         </p>
       )}
+      {ctx.canEdit && live.length ? (
+        <div
+          className="el-pick-row"
+          role="group"
+          aria-label={t('watch.live', { defaultValue: 'Live now' })}
+          style={{ margin: 0 }}
+        >
+          {live.map((s) => (
+            <button
+              key={s.url}
+              type="button"
+              className="el-btn el-btn--sm"
+              aria-pressed={pane.url === s.url}
+              onClick={() => {
+                setDraft(s.url);
+                setBad(false);
+                setArmed(true);
+                ctx.onChange({ ...pane, url: s.url });
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {ctx.canEdit ? (
         <form onSubmit={go} className="el-pick-row" style={{ flexWrap: 'nowrap', margin: 0 }}>
           <label className="el-sr" htmlFor={`stream-${pane.id}`}>

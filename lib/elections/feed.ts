@@ -5,7 +5,7 @@
  */
 
 import type { FeedItem } from '@/lib/feed-types';
-import { countdownTo, phaseOf, type Cycle } from './calendar';
+import { countdownTo, etDayStart, phaseOf, type Cycle } from './calendar';
 import { headline } from './summary';
 import { OFFICE_NAME, type ChamberControl, type ElectionSnapshot, type Office } from './types';
 
@@ -18,7 +18,7 @@ export function isFeedWindow(cycle: Cycle, now: Date): boolean {
   const phase = phaseOf(cycle.date, now);
   if (phase === 'archive') return false;
   if (phase !== 'upcoming') return true;
-  return countdownTo(cycle.date, now).days <= FEED_LEAD_DAYS;
+  return countdownTo(cycle.date, now, etDayStart(cycle.date)).days <= FEED_LEAD_DAYS;
 }
 
 function chamberRow(c: ChamberControl, live: boolean) {
@@ -51,7 +51,7 @@ export function buildElectionFeedItem(
   const hasRaces = !!snapshot && snapshot.races.length > 0;
 
   // Prose rounds UP to calendar days (41 hours out is "2 days away"); the hero's ticking countdown shows the exact split.
-  const days = Math.max(1, Math.ceil(countdownTo(cycle.date, now).totalMs / 86_400_000));
+  const days = Math.max(1, Math.ceil(countdownTo(cycle.date, now, etDayStart(cycle.date)).totalMs / 86_400_000));
   const description = hasRaces
     ? headline(snapshot as ElectionSnapshot)
     : phase === 'upcoming'

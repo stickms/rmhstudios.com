@@ -142,6 +142,15 @@ const GROUPS: Group[] = [
       },
     ],
   },
+  {
+    out: 'app/fonts/elections.css',
+    usedBy: 'app/routes/elections.tsx',
+    sources: [
+      { pkg: '@fontsource-variable/archivo', css: ['wdth.css'], family: 'Archivo' },
+      { pkg: '@fontsource-variable/space-grotesk', css: ['wght.css'], family: 'Space Grotesk' },
+      { pkg: '@fontsource/space-mono', css: ['400.css', '700.css'], family: 'Space Mono' },
+    ],
+  },
 ];
 
 const FACE = /\/\*[^*]*\*\/\s*@font-face\s*\{[^}]*\}|@font-face\s*\{[^}]*\}/g;

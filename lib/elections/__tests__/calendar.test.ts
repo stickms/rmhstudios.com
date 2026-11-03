@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   countdownTo,
+  firstCloseAt,
   currentCycle,
   cycleForYear,
   cycleOptions,
@@ -71,8 +72,11 @@ describe('phaseOf / currentCycle', () => {
 describe('countdownTo', () => {
   it('splits the remaining time and clamps at zero', () => {
     const c = countdownTo('2026-11-03', new Date('2026-11-01T03:58:58Z'));
-    expect(c).toMatchObject({ days: 2, hours: 1, minutes: 1, seconds: 2 });
-    expect(countdownTo('2026-11-03', new Date('2026-11-04T00:00:00Z')).totalMs).toBe(0);
+    // Counts to the first polls CLOSING (6 p.m. ET = 23:00Z), not to the start of the day.
+    expect(c).toMatchObject({ days: 2, hours: 19, minutes: 1, seconds: 2 });
+    expect(firstCloseAt('2026-11-03').toISOString()).toBe('2026-11-03T23:00:00.000Z');
+    expect(countdownTo('2026-11-03', new Date('2026-11-03T23:00:00Z')).totalMs).toBe(0);
+    expect(countdownTo('2026-11-03', new Date('2026-11-03T12:00:00Z')).hours).toBe(11);
   });
 });
 

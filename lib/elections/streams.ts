@@ -55,8 +55,11 @@ export function parseEmbed(raw: string): Embed | null {
       kind: 'twitch',
       id: video ?? channel!,
       label: 'Twitch',
-      watchUrl: video ? `https://www.twitch.tv/videos/${video}` : `https://www.twitch.tv/${channel}`,
-      src: (parent) => `https://player.twitch.tv/?${query}&parent=${HOST.test(parent) ? parent : 'localhost'}&autoplay=true`,
+      watchUrl: video
+        ? `https://www.twitch.tv/videos/${video}`
+        : `https://www.twitch.tv/${channel}`,
+      src: (parent) =>
+        `https://player.twitch.tv/?${query}&parent=${HOST.test(parent) ? parent : 'localhost'}&autoplay=true`,
     };
   }
   return null;
@@ -65,6 +68,27 @@ export function parseEmbed(raw: string): Embed | null {
 export interface FeaturedStream {
   label: string;
   url: string;
+  /** Found automatically (a live broadcast on a known newsroom channel) rather than configured. */
+  auto?: boolean;
+  /** The broadcast's own title, for auto-discovered streams. */
+  title?: string;
+}
+
+/** Configured streams first, then discovered ones, one per video. */
+export function mergeStreams(
+  configured: FeaturedStream[],
+  discovered: FeaturedStream[],
+): FeaturedStream[] {
+  const seen = new Set<string>();
+  const out: FeaturedStream[] = [];
+  for (const s of [...configured, ...discovered]) {
+    const e = parseEmbed(s.url);
+    const key = e ? `${e.kind}:${e.id}` : s.url;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(s);
+  }
+  return out.slice(0, 8);
 }
 
 /** Parse `ELECTIONS_STREAMS` (a JSON array of `{label,url}`), keeping only embeddable entries. */
@@ -79,7 +103,11 @@ export function parseFeaturedStreams(raw: string | undefined): FeaturedStream[] 
         const { label, url } = x as { label?: unknown; url?: unknown };
         if (typeof label !== 'string' || typeof url !== 'string') return [];
         // Drop control characters (code points below 32) without a control-character regex.
-        const l = [...label].filter((c) => c.charCodeAt(0) > 31).join('').trim().slice(0, 40);
+        const l = [...label]
+          .filter((c) => c.charCodeAt(0) > 31)
+          .join('')
+          .trim()
+          .slice(0, 40);
         return l && parseEmbed(url) ? [{ label: l, url }] : [];
       })
       .slice(0, 8);

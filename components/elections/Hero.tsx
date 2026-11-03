@@ -8,35 +8,6 @@ import { useNow } from './hooks';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** A pixel-art arrow, drawn on a 12×16 grid with crisp edges: the reference's cursor. */
-function PixelCursor() {
-  const rows = [
-    '1...........',
-    '11..........',
-    '111.........',
-    '1111........',
-    '11111.......',
-    '111111......',
-    '1111111.....',
-    '11111111....',
-    '111111111...',
-    '1111111111..',
-    '11111111111.',
-    '111111......',
-    '11.111......',
-    '1...111.....',
-    '....111.....',
-    '.....11.....',
-  ];
-  return (
-    <svg viewBox="0 0 12 16" aria-hidden shapeRendering="crispEdges">
-      {rows.flatMap((row, y) =>
-        [...row].map((c, x) => (c === '1' ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="currentColor" /> : null)),
-      )}
-    </svg>
-  );
-}
-
 export function Hero({
   cycle,
   phase,
@@ -58,113 +29,143 @@ export function Hero({
   const cd = now ? countdownTo(cycle.date, now) : null;
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  const xFlat = useTransform(scrollYProgress, [0, 1], [0, 160]);
-  const xBold = useTransform(scrollYProgress, [0, 1], [0, -120]);
-  const yCursor = useTransform(scrollYProgress, [0, 1], [0, -180]);
-  const xCursor = useTransform(scrollYProgress, [0, 1], [0, 60]);
+  const yDoodle = useTransform(scrollYProgress, [0, 1], [0, 90]);
+  const yVert = useTransform(scrollYProgress, [0, 1], [0, -40]);
 
   const kindWord =
     cycle.kind === 'midterm'
       ? t('hero.midterms', { defaultValue: 'Midterms' })
       : t('hero.president', { defaultValue: 'President' });
 
-  const live = phase === 'election-day' || phase === 'counting';
+  // Counting down to the first polls CLOSING (6 p.m. Eastern), not to midnight: that is when results begin.
+  const waiting = !!cd && cd.totalMs > 0 && (phase === 'upcoming' || phase === 'election-day');
+  const live = !waiting && (phase === 'election-day' || phase === 'counting');
 
   return (
     <section ref={ref} className="el-hero" aria-labelledby="el-title">
       <div className="el-wrap el-hero__in">
-        <p className="el-eyebrow" style={{ margin: '0 0 12px' }}>
-          <span className="el-chip el-chip--ink">{cycle.title}</span>{' '}
-          <span className="el-chip">{cycle.date}</span>
-        </p>
-
-        {/*
-          The reference's anti-design type: a black/white checker field; the letters are white with
-          `mix-blend-mode: difference`, so they read black on the white cells and white on the black ones
-          and invert as they cross. Three treatments of one message — a heavy block word, a word squashed
-          flat and stretched wide, a word drawn as a dashed hairline — all cropped by the frame as the page
-          scrolls. The heading's accessible name is plain text; the pieces are decoration.
-        */}
-        <h1 id="el-title" className="el-hero__type" aria-label={`${t('hero.vote', { defaultValue: 'Vote' })} ${cycle.year} ${kindWord}`}>
-          <motion.span className="el-hero__row" aria-hidden style={{ x: xBold }}>
-            <span className="el-hero__bold">{t('hero.vote', { defaultValue: 'Vote' })}</span>
-          </motion.span>
-          <motion.span className="el-hero__row el-hero__row--flat" aria-hidden style={{ x: xFlat }}>
-            <span className="el-hero__flat">{cycle.year}</span>
-          </motion.span>
-          <span className="el-hero__row" aria-hidden>
-            <svg className="el-hero__dash" viewBox="0 0 1000 130" preserveAspectRatio="none">
-              <text
-                x="0"
-                y="112"
-                fontSize="150"
-                fontWeight="900"
-                textLength="1000"
-                lengthAdjust="spacingAndGlyphs"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeDasharray="7 6"
-                style={{ fontFamily: 'var(--el-display)', fontStretch: '125%' }}
-              >
-                {kindWord.toUpperCase()}
-              </text>
-            </svg>
-          </span>
-          <motion.span className="el-hero__cursor" aria-hidden style={{ y: yCursor, x: xCursor }}>
-            <PixelCursor />
-          </motion.span>
-        </h1>
-
-        <p className="el-hero__sub">
-          {phase === 'upcoming'
-            ? t('hero.subUpcoming', {
-                defaultValue: 'Live results, calls and your own map — the moment the first polls close.',
-              })
-            : phase === 'archive'
-              ? t('hero.subArchive', { defaultValue: 'The final board. Every race, every margin.' })
-              : t('hero.subLive', {
-                  defaultValue: '{{called}} of {{total}} races called. Updating every 20 seconds.',
-                  called: racesCalled,
-                  total: racesTotal,
-                })}
-        </p>
-
-        {phase === 'upcoming' ? (
-          <div className="el-count" role="timer" aria-label={t('hero.countdown', { defaultValue: 'Time until Election Day' })}>
-            {[
-              [cd?.days, t('hero.days', { defaultValue: 'days' })],
-              [cd?.hours, t('hero.hours', { defaultValue: 'hrs' })],
-              [cd?.minutes, t('hero.minutes', { defaultValue: 'min' })],
-              [cd?.seconds, t('hero.seconds', { defaultValue: 'sec' })],
-            ].map(([n, l]) => (
-              <div className="el-count__cell" key={String(l)}>
-                <span className="el-count__n">{n == null ? '--' : pad(Number(n))}</span>
-                <span className="el-count__l">{l}</span>
-              </div>
-            ))}
+        <div className="el-bento">
+          <div className="el-cell el-cell--title" aria-hidden>
+            <span>{`elections.exe — ${cycle.year}`}</span>
+            <span className="el-win">
+              <i />
+              <i />
+              <i />
+            </span>
           </div>
-        ) : live ? (
-          <div style={{ marginTop: 24 }}>
-            <span className="el-live">{t('hero.live', { defaultValue: 'LIVE' })}</span>
+          <div className="el-cell el-cell--head">
+            <p className="el-eyebrow" style={{ margin: 0 }}>
+              <span className="el-chip el-chip--ink">{cycle.title}</span>{' '}
+              <span className="el-chip">{cycle.date}</span>
+            </p>
+            <h1 id="el-title" className="el-hero__title">
+              <span>{t('hero.vote', { defaultValue: 'Vote' })}</span>
+              <span>
+                {cycle.year} {kindWord}
+              </span>
+            </h1>
+            <motion.svg className="el-doodle" viewBox="0 0 100 70" aria-hidden style={{ y: yDoodle }}>
+              <path d="M6 50 C 22 8, 56 6, 88 30 M70 12 L90 31 L66 44" />
+            </motion.svg>
+            <p className="el-hero__sub">
+              {waiting
+                ? t('hero.subUpcoming', {
+                    defaultValue: 'Live results, calls and your own map — the moment the first polls close.',
+                  })
+                : phase === 'archive'
+                  ? t('hero.subArchive', { defaultValue: 'The final board. Every race, every margin.' })
+                  : t('hero.subLive', {
+                      defaultValue: '{{called}} of {{total}} races called. Updating every 20 seconds.',
+                      called: racesCalled,
+                      total: racesTotal,
+                    })}
+            </p>
+            <div className="el-hero__ctas">
+              <a className="el-btn el-btn--pink" href="#results">
+                <ArrowDown size={18} aria-hidden />
+                {live ? t('hero.ctaLive', { defaultValue: 'Live results' }) : t('hero.ctaResults', { defaultValue: 'The board' })}
+              </a>
+              <a className="el-btn" href="#predict">
+                {t('hero.ctaPredict', { defaultValue: 'Paint your map' })}
+              </a>
+              <button type="button" className="el-btn el-btn--ghost" onClick={onShare}>
+                <Share2 size={18} aria-hidden />
+                {t('hero.share', { defaultValue: 'Share' })}
+              </button>
+              <Link className="el-btn el-btn--ghost" to="/predictions">
+                {t('hero.markets', { defaultValue: 'Bet coins' })}
+              </Link>
+            </div>
           </div>
-        ) : null}
 
-        <div className="el-hero__ctas">
-          <a className="el-btn" href="#results">
-            <ArrowDown size={18} aria-hidden />
-            {live ? t('hero.ctaLive', { defaultValue: 'Live results' }) : t('hero.ctaResults', { defaultValue: 'The board' })}
-          </a>
-          <a className="el-btn el-btn--dem" href="#predict">
-            {t('hero.ctaPredict', { defaultValue: 'Paint your map' })}
-          </a>
-          <button type="button" className="el-btn el-btn--ghost" onClick={onShare}>
-            <Share2 size={18} aria-hidden />
-            {t('hero.share', { defaultValue: 'Share' })}
-          </button>
-          <Link className="el-btn el-btn--ghost" to="/predictions">
-            {t('hero.markets', { defaultValue: 'Bet coins' })}
-          </Link>
+          <div className="el-cell el-cell--vert" aria-hidden>
+            <span className="el-glyph el-glyph--a">✱</span>
+            <motion.span className="el-vert" style={{ y: yVert }}>
+              {t('hero.vertical', { defaultValue: 'Election night' })}
+            </motion.span>
+            <span className="el-glyph el-glyph--b">◐</span>
+          </div>
+
+          <div className="el-cell el-cell--count">
+            {waiting ? (
+              <>
+                <p className="el-eyebrow" style={{ margin: 0 }}>
+                  {t('hero.closeLabel', { defaultValue: 'First polls close in' })}
+                </p>
+                <div className="el-count" role="timer" aria-label={t('hero.countdownClose', { defaultValue: 'Time until the first polls close' })}>
+                  {[
+                    [cd?.days, t('hero.days', { defaultValue: 'days' })],
+                    [cd?.hours, t('hero.hours', { defaultValue: 'hrs' })],
+                    [cd?.minutes, t('hero.minutes', { defaultValue: 'min' })],
+                    [cd?.seconds, t('hero.seconds', { defaultValue: 'sec' })],
+                  ].map(([n, l]) => (
+                    <div className="el-count__cell" key={String(l)}>
+                      <span className="el-count__n">{n == null ? '--' : pad(Number(n))}</span>
+                      <span className="el-count__l">{l}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="el-eyebrow" style={{ margin: 0 }}>
+                  {live ? t('hero.nowLabel', { defaultValue: 'Right now' }) : t('hero.finalLabel', { defaultValue: 'Final' })}
+                </p>
+                <div style={{ marginTop: 14 }}>
+                  {live ? <span className="el-live">{t('hero.live', { defaultValue: 'LIVE' })}</span> : null}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="el-cell el-cell--stat">
+            <span className="el-stat__n">{racesTotal ? (live ? racesCalled : racesTotal) : '—'}</span>
+            <span className="el-stat__l">
+              {live
+                ? t('hero.statCalled', { defaultValue: 'races called' })
+                : t('hero.statTotal', { defaultValue: 'races on the ballot' })}
+            </span>
+          </div>
+
+          <div className="el-cell el-cell--note">
+            <p className="el-eyebrow">{t('hero.noteLabel', { defaultValue: 'How it works' })}</p>
+            <p>
+              {t('hero.note', {
+                defaultValue:
+                  'Results come straight from the count, updated every 20 seconds. Calls, flips and closing polls appear as they happen — watch live, paint your own map, or open the Situation Room.',
+              })}
+            </p>
+          </div>
+          <nav className="el-cell el-cell--tabs" aria-label={t('hero.sections', { defaultValue: 'Sections' })}>
+            <div className="el-tabrow">
+              <a href="#results">{t('nav.results', { defaultValue: 'Results' })}</a>
+              <a href="#map">{t('nav.map', { defaultValue: 'Map' })}</a>
+              <a href="#races">{t('nav.races', { defaultValue: 'Races' })}</a>
+              <a href="#polls">{t('nav.polls', { defaultValue: 'Polls' })}</a>
+              <a href="#live">{t('nav.watch', { defaultValue: 'Watch' })}</a>
+              <a href="#predict">{t('nav.predict', { defaultValue: 'Predict' })}</a>
+            </div>
+          </nav>
         </div>
       </div>
     </section>
