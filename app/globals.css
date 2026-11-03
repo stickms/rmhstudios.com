@@ -2717,7 +2717,9 @@ html.readable-font body {
 
   /* Fixed floating UI shares one safe, visually consistent viewport edge. */
   .bottom-above-dock {
-    bottom: calc(var(--safe-bottom) + var(--site-floating-edge));
+    /* `--vv-shift`: where iOS Safari's changing toolbar has left the fixed container, written by
+       hooks/useViewportFollow on every floating-stack member so none of them trails the tab bar. */
+    bottom: calc(var(--safe-bottom) + var(--site-floating-edge) - var(--vv-shift, 0px));
   }
 
   /* ── The bottom-right FAB lane ──────────────────────────────────────────
@@ -2816,13 +2818,15 @@ html.readable-font body {
   }
   /* Cookie bar rides above the hub orb. */
   .vibe-app:has([data-floating='hub']) [data-floating='cookie'] {
-    bottom: calc(var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub));
+    bottom: calc(
+      var(--safe-bottom) + var(--site-floating-edge) - var(--vv-shift, 0px) + var(--float-lift-hub)
+    );
   }
   /* Mini-player rides above the hub orb and the cookie bar. */
   .vibe-app:has([data-floating='hub']) [data-floating='miniplayer'],
   .vibe-app:has([data-floating='cookie']) [data-floating='miniplayer'] {
     bottom: calc(
-      var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub) +
+      var(--safe-bottom) + var(--site-floating-edge) - var(--vv-shift, 0px) + var(--float-lift-hub) +
         var(--float-lift-cookie)
     );
   }
