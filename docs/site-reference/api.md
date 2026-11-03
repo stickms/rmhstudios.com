@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 985 files across 201 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 988 files across 201 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -176,13 +176,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/altair`
 
-4 routes.
+7 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/altair/leaderboard` | `GET` | `app/routes/api/altair/leaderboard.ts` |
 | `/api/altair/match` | `POST` | `app/routes/api/altair/match.ts` |
 | `/api/altair/meta` | `GET` `POST` | `app/routes/api/altair/meta.ts` |
+| `/api/altair/run/finish` | `POST` | `app/routes/api/altair/run/finish.ts` |
+| `/api/altair/run/start` | `POST` | `app/routes/api/altair/run/start.ts` |
+| `/api/altair/run/status` | `GET` | `app/routes/api/altair/run/status.ts` |
 | `/api/altair/score` | `POST` | `app/routes/api/altair/score.ts` |
 
 ## `/api/announcements`
