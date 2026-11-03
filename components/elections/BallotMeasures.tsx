@@ -8,7 +8,7 @@ import { useFollow } from './FollowContext';
 
 const PAGE = 18;
 
-function useMeasures(cycle: string, live: boolean) {
+export function useMeasures(cycle: string, live: boolean) {
   return useQuery<{ measures: BallotMeasure[]; updatedAt: string }>({
     queryKey: ['elections-measures', cycle],
     queryFn: async () => {
@@ -22,7 +22,7 @@ function useMeasures(cycle: string, live: boolean) {
   });
 }
 
-function MeasureCard({ m }: { m: BallotMeasure }) {
+export function MeasureCard({ m }: { m: BallotMeasure }) {
   const { t } = useTranslation('c-elections');
   const [open, setOpen] = useState(false);
   const verdict =
