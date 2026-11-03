@@ -495,7 +495,9 @@ import { Route as ApiDunesdayAskRouteImport } from './routes/api/dunesday/ask'
 import { Route as ApiDunesdaySyncRouteImport } from './routes/api/dunesday/sync'
 import { Route as ApiElectionsIndexRouteImport } from './routes/api/elections/index'
 import { Route as ApiElectionsAskRouteImport } from './routes/api/elections/ask'
+import { Route as ApiElectionsCalendarRouteImport } from './routes/api/elections/calendar'
 import { Route as ApiElectionsMarketsRouteImport } from './routes/api/elections/markets'
+import { Route as ApiElectionsNewsRouteImport } from './routes/api/elections/news'
 import { Route as ApiElectionsStreamsRouteImport } from './routes/api/elections/streams'
 import { Route as ApiElectionsSummaryRouteImport } from './routes/api/elections/summary'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api/email/unsubscribe'
@@ -978,6 +980,8 @@ import { Route as ApiEconomySavingsGoalsIndexRouteImport } from './routes/api/ec
 import { Route as ApiEconomySavingsGoalsIdRouteImport } from './routes/api/economy/savings-goals/$id'
 import { Route as ApiElectionsChatIndexRouteImport } from './routes/api/elections/chat/index'
 import { Route as ApiElectionsChatStreamRouteImport } from './routes/api/elections/chat/stream'
+import { Route as ApiElectionsEventsIndexRouteImport } from './routes/api/elections/events/index'
+import { Route as ApiElectionsEventsStreamRouteImport } from './routes/api/elections/events/stream'
 import { Route as ApiEmojiPacksSlugIndexRouteImport } from './routes/api/emoji-packs/$slug/index'
 import { Route as ApiEmojiPacksSlugItemsRouteImport } from './routes/api/emoji-packs/$slug/items'
 import { Route as ApiEmojiPacksSlugSubscribeRouteImport } from './routes/api/emoji-packs/$slug/subscribe'
@@ -3834,9 +3838,19 @@ const ApiElectionsAskRoute = ApiElectionsAskRouteImport.update({
   path: '/api/elections/ask',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiElectionsCalendarRoute = ApiElectionsCalendarRouteImport.update({
+  id: '/api/elections/calendar',
+  path: '/api/elections/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiElectionsMarketsRoute = ApiElectionsMarketsRouteImport.update({
   id: '/api/elections/markets',
   path: '/api/elections/markets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsNewsRoute = ApiElectionsNewsRouteImport.update({
+  id: '/api/elections/news',
+  path: '/api/elections/news',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiElectionsStreamsRoute = ApiElectionsStreamsRouteImport.update({
@@ -6335,6 +6349,17 @@ const ApiElectionsChatStreamRoute = ApiElectionsChatStreamRouteImport.update({
   path: '/api/elections/chat/stream',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiElectionsEventsIndexRoute = ApiElectionsEventsIndexRouteImport.update({
+  id: '/api/elections/events/',
+  path: '/api/elections/events/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsEventsStreamRoute =
+  ApiElectionsEventsStreamRouteImport.update({
+    id: '/api/elections/events/stream',
+    path: '/api/elections/events/stream',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiEmojiPacksSlugIndexRoute = ApiEmojiPacksSlugIndexRouteImport.update({
   id: '/api/emoji-packs/$slug/',
   path: '/api/emoji-packs/$slug/',
@@ -8976,7 +9001,9 @@ export interface FileRoutesByFullPath {
   '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
   '/api/elections/ask': typeof ApiElectionsAskRoute
+  '/api/elections/calendar': typeof ApiElectionsCalendarRoute
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
+  '/api/elections/news': typeof ApiElectionsNewsRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
   '/api/elections/summary': typeof ApiElectionsSummaryRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
@@ -9484,6 +9511,7 @@ export interface FileRoutesByFullPath {
   '/api/dunesday/sync/$feedId': typeof ApiDunesdaySyncFeedIdRouteWithChildren
   '/api/economy/savings-goals/$id': typeof ApiEconomySavingsGoalsIdRoute
   '/api/elections/chat/stream': typeof ApiElectionsChatStreamRoute
+  '/api/elections/events/stream': typeof ApiElectionsEventsStreamRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
@@ -9742,6 +9770,7 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/api/economy/savings-goals/': typeof ApiEconomySavingsGoalsIndexRoute
   '/api/elections/chat/': typeof ApiElectionsChatIndexRoute
+  '/api/elections/events/': typeof ApiElectionsEventsIndexRoute
   '/api/emoji-packs/$slug/': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id/': typeof ApiEventsIdIndexRoute
   '/api/fortune/today/': typeof ApiFortuneTodayIndexRoute
@@ -10330,7 +10359,9 @@ export interface FileRoutesByTo {
   '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
   '/api/elections/ask': typeof ApiElectionsAskRoute
+  '/api/elections/calendar': typeof ApiElectionsCalendarRoute
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
+  '/api/elections/news': typeof ApiElectionsNewsRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
   '/api/elections/summary': typeof ApiElectionsSummaryRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
@@ -10837,6 +10868,7 @@ export interface FileRoutesByTo {
   '/api/dunesday/sync/$feedId': typeof ApiDunesdaySyncFeedIdRouteWithChildren
   '/api/economy/savings-goals/$id': typeof ApiEconomySavingsGoalsIdRoute
   '/api/elections/chat/stream': typeof ApiElectionsChatStreamRoute
+  '/api/elections/events/stream': typeof ApiElectionsEventsStreamRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
@@ -11095,6 +11127,7 @@ export interface FileRoutesByTo {
   '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
   '/api/economy/savings-goals': typeof ApiEconomySavingsGoalsIndexRoute
   '/api/elections/chat': typeof ApiElectionsChatIndexRoute
+  '/api/elections/events': typeof ApiElectionsEventsIndexRoute
   '/api/emoji-packs/$slug': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id': typeof ApiEventsIdIndexRoute
   '/api/fortune/today': typeof ApiFortuneTodayIndexRoute
@@ -11713,7 +11746,9 @@ export interface FileRoutesById {
   '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
   '/api/elections/ask': typeof ApiElectionsAskRoute
+  '/api/elections/calendar': typeof ApiElectionsCalendarRoute
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
+  '/api/elections/news': typeof ApiElectionsNewsRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
   '/api/elections/summary': typeof ApiElectionsSummaryRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
@@ -12221,6 +12256,7 @@ export interface FileRoutesById {
   '/api/dunesday/sync/$feedId': typeof ApiDunesdaySyncFeedIdRouteWithChildren
   '/api/economy/savings-goals/$id': typeof ApiEconomySavingsGoalsIdRoute
   '/api/elections/chat/stream': typeof ApiElectionsChatStreamRoute
+  '/api/elections/events/stream': typeof ApiElectionsEventsStreamRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
@@ -12479,6 +12515,7 @@ export interface FileRoutesById {
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/api/economy/savings-goals/': typeof ApiEconomySavingsGoalsIndexRoute
   '/api/elections/chat/': typeof ApiElectionsChatIndexRoute
+  '/api/elections/events/': typeof ApiElectionsEventsIndexRoute
   '/api/emoji-packs/$slug/': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id/': typeof ApiEventsIdIndexRoute
   '/api/fortune/today/': typeof ApiFortuneTodayIndexRoute
@@ -13096,7 +13133,9 @@ export interface FileRouteTypes {
     | '/api/dunesday/ask'
     | '/api/dunesday/sync'
     | '/api/elections/ask'
+    | '/api/elections/calendar'
     | '/api/elections/markets'
+    | '/api/elections/news'
     | '/api/elections/streams'
     | '/api/elections/summary'
     | '/api/email/unsubscribe'
@@ -13604,6 +13643,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/sync/$feedId'
     | '/api/economy/savings-goals/$id'
     | '/api/elections/chat/stream'
+    | '/api/elections/events/stream'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
     | '/api/emoji-packs/$slug/upload'
@@ -13862,6 +13902,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/reputation/'
     | '/api/economy/savings-goals/'
     | '/api/elections/chat/'
+    | '/api/elections/events/'
     | '/api/emoji-packs/$slug/'
     | '/api/events/$id/'
     | '/api/fortune/today/'
@@ -14450,7 +14491,9 @@ export interface FileRouteTypes {
     | '/api/dunesday/ask'
     | '/api/dunesday/sync'
     | '/api/elections/ask'
+    | '/api/elections/calendar'
     | '/api/elections/markets'
+    | '/api/elections/news'
     | '/api/elections/streams'
     | '/api/elections/summary'
     | '/api/email/unsubscribe'
@@ -14957,6 +15000,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/sync/$feedId'
     | '/api/economy/savings-goals/$id'
     | '/api/elections/chat/stream'
+    | '/api/elections/events/stream'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
     | '/api/emoji-packs/$slug/upload'
@@ -15215,6 +15259,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/reputation'
     | '/api/economy/savings-goals'
     | '/api/elections/chat'
+    | '/api/elections/events'
     | '/api/emoji-packs/$slug'
     | '/api/events/$id'
     | '/api/fortune/today'
@@ -15832,7 +15877,9 @@ export interface FileRouteTypes {
     | '/api/dunesday/ask'
     | '/api/dunesday/sync'
     | '/api/elections/ask'
+    | '/api/elections/calendar'
     | '/api/elections/markets'
+    | '/api/elections/news'
     | '/api/elections/streams'
     | '/api/elections/summary'
     | '/api/email/unsubscribe'
@@ -16340,6 +16387,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/sync/$feedId'
     | '/api/economy/savings-goals/$id'
     | '/api/elections/chat/stream'
+    | '/api/elections/events/stream'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
     | '/api/emoji-packs/$slug/upload'
@@ -16598,6 +16646,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/reputation/'
     | '/api/economy/savings-goals/'
     | '/api/elections/chat/'
+    | '/api/elections/events/'
     | '/api/emoji-packs/$slug/'
     | '/api/events/$id/'
     | '/api/fortune/today/'
@@ -16993,7 +17042,9 @@ export interface RootRouteChildren {
   ApiDunesdayAskRoute: typeof ApiDunesdayAskRoute
   ApiDunesdaySyncRoute: typeof ApiDunesdaySyncRouteWithChildren
   ApiElectionsAskRoute: typeof ApiElectionsAskRoute
+  ApiElectionsCalendarRoute: typeof ApiElectionsCalendarRoute
   ApiElectionsMarketsRoute: typeof ApiElectionsMarketsRoute
+  ApiElectionsNewsRoute: typeof ApiElectionsNewsRoute
   ApiElectionsStreamsRoute: typeof ApiElectionsStreamsRoute
   ApiElectionsSummaryRoute: typeof ApiElectionsSummaryRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
@@ -17397,6 +17448,7 @@ export interface RootRouteChildren {
   ApiDoctrineSahurStatusRoute: typeof ApiDoctrineSahurStatusRoute
   ApiEconomySavingsGoalsIdRoute: typeof ApiEconomySavingsGoalsIdRoute
   ApiElectionsChatStreamRoute: typeof ApiElectionsChatStreamRoute
+  ApiElectionsEventsStreamRoute: typeof ApiElectionsEventsStreamRoute
   ApiEmojiPacksSlugItemsRoute: typeof ApiEmojiPacksSlugItemsRoute
   ApiEmojiPacksSlugSubscribeRoute: typeof ApiEmojiPacksSlugSubscribeRoute
   ApiEmojiPacksSlugUploadRoute: typeof ApiEmojiPacksSlugUploadRoute
@@ -17544,6 +17596,7 @@ export interface RootRouteChildren {
   ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
   ApiEconomySavingsGoalsIndexRoute: typeof ApiEconomySavingsGoalsIndexRoute
   ApiElectionsChatIndexRoute: typeof ApiElectionsChatIndexRoute
+  ApiElectionsEventsIndexRoute: typeof ApiElectionsEventsIndexRoute
   ApiEmojiPacksSlugIndexRoute: typeof ApiEmojiPacksSlugIndexRoute
   ApiEventsIdIndexRoute: typeof ApiEventsIdIndexRoute
   ApiFortuneTodayIndexRoute: typeof ApiFortuneTodayIndexRoute
@@ -21045,11 +21098,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiElectionsAskRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/elections/calendar': {
+      id: '/api/elections/calendar'
+      path: '/api/elections/calendar'
+      fullPath: '/api/elections/calendar'
+      preLoaderRoute: typeof ApiElectionsCalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/elections/markets': {
       id: '/api/elections/markets'
       path: '/api/elections/markets'
       fullPath: '/api/elections/markets'
       preLoaderRoute: typeof ApiElectionsMarketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/news': {
+      id: '/api/elections/news'
+      path: '/api/elections/news'
+      fullPath: '/api/elections/news'
+      preLoaderRoute: typeof ApiElectionsNewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/elections/streams': {
@@ -24424,6 +24491,20 @@ declare module '@tanstack/react-router' {
       path: '/api/elections/chat/stream'
       fullPath: '/api/elections/chat/stream'
       preLoaderRoute: typeof ApiElectionsChatStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/events/': {
+      id: '/api/elections/events/'
+      path: '/api/elections/events'
+      fullPath: '/api/elections/events/'
+      preLoaderRoute: typeof ApiElectionsEventsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/events/stream': {
+      id: '/api/elections/events/stream'
+      path: '/api/elections/events/stream'
+      fullPath: '/api/elections/events/stream'
+      preLoaderRoute: typeof ApiElectionsEventsStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/emoji-packs/$slug/': {
@@ -29824,7 +29905,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDunesdayAskRoute: ApiDunesdayAskRoute,
   ApiDunesdaySyncRoute: ApiDunesdaySyncRouteWithChildren,
   ApiElectionsAskRoute: ApiElectionsAskRoute,
+  ApiElectionsCalendarRoute: ApiElectionsCalendarRoute,
   ApiElectionsMarketsRoute: ApiElectionsMarketsRoute,
+  ApiElectionsNewsRoute: ApiElectionsNewsRoute,
   ApiElectionsStreamsRoute: ApiElectionsStreamsRoute,
   ApiElectionsSummaryRoute: ApiElectionsSummaryRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
@@ -30231,6 +30314,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineSahurStatusRoute: ApiDoctrineSahurStatusRoute,
   ApiEconomySavingsGoalsIdRoute: ApiEconomySavingsGoalsIdRoute,
   ApiElectionsChatStreamRoute: ApiElectionsChatStreamRoute,
+  ApiElectionsEventsStreamRoute: ApiElectionsEventsStreamRoute,
   ApiEmojiPacksSlugItemsRoute: ApiEmojiPacksSlugItemsRoute,
   ApiEmojiPacksSlugSubscribeRoute: ApiEmojiPacksSlugSubscribeRoute,
   ApiEmojiPacksSlugUploadRoute: ApiEmojiPacksSlugUploadRoute,
@@ -30378,6 +30462,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
   ApiEconomySavingsGoalsIndexRoute: ApiEconomySavingsGoalsIndexRoute,
   ApiElectionsChatIndexRoute: ApiElectionsChatIndexRoute,
+  ApiElectionsEventsIndexRoute: ApiElectionsEventsIndexRoute,
   ApiEmojiPacksSlugIndexRoute: ApiEmojiPacksSlugIndexRoute,
   ApiEventsIdIndexRoute: ApiEventsIdIndexRoute,
   ApiFortuneTodayIndexRoute: ApiFortuneTodayIndexRoute,
@@ -30481,3 +30566,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

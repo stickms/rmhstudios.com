@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import { parseCycle } from '@/lib/elections/calendar';
+import { parseDay } from '@/lib/elections/calendar';
 import { sanitizeChatText } from '@/lib/elections/chat';
 import { deleteChatMessage, postChatMessage } from '@/lib/elections/chat.server';
 
@@ -33,7 +33,7 @@ export const Route = createFileRoute('/api/elections/chat/')({
           label: 'elections.chat.post',
         },
         async ({ userId, body }) => {
-          const cycle = parseCycle(body.cycle);
+          const cycle = parseDay(body.cycle);
           if (!cycle) return Response.json({ error: 'Unknown election' }, { status: 400 });
           const clean = sanitizeChatText(body.text);
           if (!clean.ok) return Response.json({ error: REASONS[clean.reason] }, { status: 422 });
@@ -61,7 +61,7 @@ export const Route = createFileRoute('/api/elections/chat/')({
       DELETE: defineHandler(
         { auth: 'admin', rateLimit: 'write', query: deleteQuery, label: 'elections.chat.delete' },
         async ({ query }) => {
-          const cycle = parseCycle(query.cycle);
+          const cycle = parseDay(query.cycle);
           if (!cycle) return Response.json({ error: 'Unknown election' }, { status: 400 });
           deleteChatMessage(cycle.date, query.id);
           return Response.json({ ok: true });

@@ -15,6 +15,10 @@
  */
 
 import { phaseOf, resultsUrl, type Cycle } from './calendar';
+import { crossCheck } from './official';
+import { NCSBE_NAME } from './sources/ncsbe';
+import { getNcOfficial } from './sources/ncsbe.server';
+import { ingestSnapshot } from './events.server';
 import { normalizeNytPage } from './nyt';
 import type { ElectionSnapshot, Office, PollClosing, Race, ChamberControl } from './types';
 
@@ -47,7 +51,7 @@ async function fetchOffice(date: string, office: Office): Promise<unknown | null
   return res.json();
 }
 
-async function build(cycle: Cycle): Promise<ElectionSnapshot> {
+async function buildGeneral(cycle: Cycle): Promise<ElectionSnapshot> {
   const results = await Promise.allSettled(
     cycle.offices.map(async (office) => ({ office, json: await fetchOffice(cycle.date, office) })),
   );
@@ -86,18 +90,62 @@ async function build(cycle: Cycle): Promise<ElectionSnapshot> {
   // Every office failed outright (not "missing"): surface it so the caller can serve stale.
   if (failures === cycle.offices.length) throw new Error('all election sources failed');
 
+  // An independent government count, set beside the feed's where one exists (NC today). Best-effort:
+  // the cross-check never blocks or fails the snapshot.
+  const providers = races.length ? ['The New York Times results feed (AP data)'] : [];
+  let checked = races;
+  if (races.some((r) => r.status !== 'upcoming')) {
+    try {
+      const nc = await getNcOfficial(cycle.date);
+      if (nc) {
+        checked = crossCheck(races, nc.races, NCSBE_NAME);
+        if (checked.some((r) => r.official)) providers.push(`${NCSBE_NAME} (official count, cross-check)`);
+      }
+    } catch (err) {
+      console.warn('[elections] NC cross-check unavailable:', String(err));
+    }
+  }
+
   return {
     date: cycle.date,
+    kind: 'general',
     source: races.length ? 'nyt' : 'calendar',
     fetchedAt: new Date().toISOString(),
     sourceUpdatedAt,
     live: races.some((r) => r.status !== 'upcoming'),
     chambers,
-    races,
+    races: checked,
     pollClosings,
     missing,
+    providers,
   };
 }
+
+/**
+ * A primary, runoff or special: there is no news-grade feed page for these, so the snapshot comes from
+ * the state election boards we integrate (North Carolina's official count today). Races only — a primary
+ * decides no chamber, so there is no control table.
+ */
+async function buildOther(cycle: Cycle): Promise<ElectionSnapshot> {
+  const nc = await getNcOfficial(cycle.date);
+  const races = nc?.races ?? [];
+  return {
+    date: cycle.date,
+    kind: 'other',
+    source: races.length ? 'official' : 'calendar',
+    fetchedAt: new Date().toISOString(),
+    sourceUpdatedAt: null,
+    // "Live" means votes are still being counted: a finished primary from March is data, not an event.
+    live: races.some((r) => r.totalVotes > 0) && phaseOf(cycle.date) !== 'archive',
+    chambers: {},
+    races,
+    pollClosings: nc?.pollClosings ?? {},
+    missing: races.length ? [] : [...cycle.offices],
+    providers: races.length ? [NCSBE_NAME] : [],
+  };
+}
+
+const build = (cycle: Cycle) => (cycle.kind === 'other' ? buildOther(cycle) : buildGeneral(cycle));
 
 /** The current snapshot for a cycle. Never rejects when a previous snapshot exists. */
 export async function getElectionSnapshot(cycle: Cycle, now = new Date()): Promise<ElectionSnapshot> {
@@ -112,6 +160,7 @@ export async function getElectionSnapshot(cycle: Cycle, now = new Date()): Promi
     p = build(cycle)
       .then((snapshot) => {
         memo.set(key, { at: Date.now(), snapshot });
+        ingestSnapshot(snapshot); // diff against the last one: calls, flips, lead changes, polls closing
         return snapshot;
       })
       .finally(() => inflight.delete(key));
@@ -128,6 +177,7 @@ export async function getElectionSnapshot(cycle: Cycle, now = new Date()): Promi
     // Nothing cached and the source is down: an honest empty, calendar-only snapshot.
     return {
       date: cycle.date,
+      kind: cycle.kind === 'other' ? 'other' : 'general',
       source: 'calendar',
       fetchedAt: new Date().toISOString(),
       sourceUpdatedAt: null,
@@ -136,6 +186,7 @@ export async function getElectionSnapshot(cycle: Cycle, now = new Date()): Promi
       races: [],
       pollClosings: {},
       missing: [...cycle.offices],
+      providers: [],
     };
   }
 }

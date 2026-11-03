@@ -16,6 +16,7 @@ function snap(live = true): ElectionSnapshot {
   const races = [...s.races, ...g.races];
   return {
     date: '2026-11-03',
+    kind: 'general',
     source: 'nyt',
     fetchedAt: '2026-11-04T02:00:00Z',
     sourceUpdatedAt: null,
@@ -24,6 +25,7 @@ function snap(live = true): ElectionSnapshot {
     races: live ? races : races.map((r) => ({ ...r, status: 'upcoming', totalVotes: 0, margin: null })),
     pollClosings: {},
     missing: [],
+    providers: [],
   };
 }
 

@@ -8,7 +8,7 @@ import electionsCss from '@/components/elections/elections.css?url';
 import pmcFontsCss from '@/app/fonts/rmh-pmc.css?url';
 import archivoLatin from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
 import { preloadFont } from '@/lib/fonts/self-hosted';
-import { currentCycle, cycleOptions, parseCycle, phaseOf } from '@/lib/elections/calendar';
+import { currentCycle, cycleOptions, parseDay, phaseOf } from '@/lib/elections/calendar';
 import { getElectionSnapshot } from '@/lib/elections/source.server';
 import { buildFacts, headline } from '@/lib/elections/summary';
 import { buildMeta, buildCanonical } from '@/lib/seo';
@@ -40,7 +40,7 @@ const getLite = createServerFn({ method: 'GET' })
   })
   .handler(async ({ data }) => {
     const now = new Date();
-    const cycle = (data.cycle ? parseCycle(data.cycle) : null) ?? currentCycle(now);
+    const cycle = (data.cycle ? parseDay(data.cycle) : null) ?? currentCycle(now);
     let line: string | null = null;
     let called = 0;
     let total = 0;
@@ -59,6 +59,7 @@ const getLite = createServerFn({ method: 'GET' })
       /* the head just falls back to the static description */
     }
     return {
+      cycle,
       year: cycle.year,
       sharedMap: data.p ?? null,
       title: cycle.title,
@@ -94,7 +95,8 @@ export const Route = createFileRoute('/elections')({
     // The card is dynamic (live board / the sharer's map). `v` changes every 5 minutes so crawlers that
     // cache by URL pick up a moving board; the picks themselves are never drawn, only counted.
     const bucket = Math.floor(Date.now() / 300_000);
-    const image = `/api/og/elections?cycle=${loaderData?.year ?? ''}&v=${bucket}${
+    const cycleParam = loaderData?.cycle.kind === 'other' ? loaderData.cycle.date : (loaderData?.year ?? '');
+    const image = `/api/og/elections?cycle=${cycleParam}&v=${bucket}${
       shared ? `&p=${encodeURIComponent(loaderData!.sharedMap!)}` : ''
     }`;
     return {
@@ -122,5 +124,5 @@ export const Route = createFileRoute('/elections')({
 function ElectionsRoute() {
   const data = Route.useLoaderData();
   const search = Route.useSearch();
-  return <ElectionsPage year={data.year} options={data.options} focusRaceId={search.race} />;
+  return <ElectionsPage cycle={data.cycle} options={data.options} focusRaceId={search.race} />;
 }

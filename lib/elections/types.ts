@@ -70,6 +70,30 @@ export interface Race {
   uncontested: boolean;
   /** ISO time the source last touched this race. */
   updatedAt: string | null;
+  /** The party whose primary this is; null for a general election contest. */
+  primaryParty: Party | null;
+  /** Who made the call: "ap" from the results feed, or a rule applied to a final official count. */
+  calledBy: string[];
+  /** Which provider this race came from. */
+  source: 'nyt' | 'ncsbe';
+  /** A government count for the same race, when one exists (see lib/elections/official.ts). */
+  official?: OfficialCheck;
+}
+
+/** A state election board's own count for a race, set beside the results feed's. */
+export interface OfficialCheck {
+  /** Display name, e.g. "NC State Board of Elections". */
+  source: string;
+  totalVotes: number;
+  /** Votes by candidate last name (lower-case). */
+  votes: Record<string, number>;
+  /**
+   * Largest per-candidate gap between the two counts as a share of the race's votes, in points
+   * (0–100). Null when the two counts cannot be compared.
+   */
+  deltaPts: number | null;
+  /** The two counts agree to within `OFFICIAL_TOLERANCE_PTS`. */
+  agrees: boolean;
 }
 
 export interface ChamberControl {
@@ -105,11 +129,13 @@ export interface PollClosing {
   displayET: string;
 }
 
-export type SnapshotSource = 'nyt' | 'calendar';
+export type SnapshotSource = 'nyt' | 'official' | 'calendar';
 
 export interface ElectionSnapshot {
   /** Election day, YYYY-MM-DD. */
   date: string;
+  /** `general` carries chamber control and predictions; `other` (a primary, runoff, special) is races only. */
+  kind: 'general' | 'other';
   source: SnapshotSource;
   /** ISO — when WE fetched. */
   fetchedAt: string;
@@ -123,6 +149,8 @@ export interface ElectionSnapshot {
   pollClosings: Record<string, PollClosing>;
   /** Offices the source had no page for (yet) — rendered as "awaiting ballots". */
   missing: Office[];
+  /** Display names of every provider that contributed, for attribution in the footer. */
+  providers: string[];
 }
 
 export const PARTY_NAME: Record<Party, string> = {

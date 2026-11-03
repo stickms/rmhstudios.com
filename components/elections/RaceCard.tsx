@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import type { Party, Race } from '@/lib/elections/types';
 import { fmtInt } from './hooks';
 
@@ -42,7 +42,11 @@ export function RaceCard({ race, onShare }: { race: Race; onShare?: (race: Race)
       <header className="el-race__head">
         <div>
           <h3 className="el-race__label">{race.label}</h3>
-          {race.type !== 'General' && !race.special ? (
+          {race.primaryParty ? (
+            <span className={`el-chip el-chip--${PARTY_CHIP[race.primaryParty]}`}>
+              {t('card.primary', { defaultValue: '{{party}} primary', party: PARTY_WORD[race.primaryParty] })}
+            </span>
+          ) : race.type !== 'General' && !race.special ? (
             <span className="el-chip el-chip--ink">{race.type}</span>
           ) : null}
         </div>
@@ -75,7 +79,11 @@ export function RaceCard({ race, onShare }: { race: Race; onShare?: (race: Race)
           animate={{ scale: 1, opacity: 1, rotate: -8 }}
           transition={{ type: 'spring', stiffness: 520, damping: 22 }}
         >
-          {t('card.called', { defaultValue: 'Called' })}
+          {race.calledBy.includes('ap')
+            ? t('card.calledAp', { defaultValue: 'AP called' })
+            : race.calledBy.some((c) => c.endsWith('-final'))
+              ? t('card.final', { defaultValue: 'Final count' })
+              : t('card.called', { defaultValue: 'Called' })}
         </motion.div>
       ) : null}
 
@@ -96,6 +104,13 @@ export function RaceCard({ race, onShare }: { race: Race; onShare?: (race: Race)
           {copied ? t('card.copied', { defaultValue: 'Copied' }) : t('card.share', { defaultValue: 'Share' })}
         </button>
       </footer>
+      {race.official ? (
+        <p className="el-eyebrow" style={{ margin: '8px 0 0' }} title={race.official.source}>
+          {race.official.agrees
+            ? t('card.officialOk', { defaultValue: '✓ Matches the {{src}} count', src: race.official.source })
+            : t('card.officialDiff', { defaultValue: '⚠ {{src}} count differs by {{pts}} pts', src: race.official.source, pts: race.official.deltaPts ?? 0 })}
+        </p>
+      ) : null}
     </article>
   );
 }

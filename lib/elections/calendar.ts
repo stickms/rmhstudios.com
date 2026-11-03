@@ -9,7 +9,8 @@
 
 import type { Office } from './types';
 
-export type CycleKind = 'presidential' | 'midterm';
+/** `other` = any election day that is not a general: a primary, runoff or special. */
+export type CycleKind = 'presidential' | 'midterm' | 'other';
 export type Phase = 'upcoming' | 'election-day' | 'counting' | 'archive';
 
 export interface Cycle {
@@ -64,6 +65,32 @@ export function parseCycle(raw: unknown): Cycle | null {
   const c = cycleForYear(year);
   // Accept a bare year or exactly that cycle's date; anything else is a typo.
   return raw.length === 4 || raw === c.date ? c : null;
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** Any real YYYY-MM-DD between 2000 and 2100 as an election day; a general date resolves to its cycle. */
+export function dayForDate(raw: unknown): Cycle | null {
+  if (typeof raw !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+  const [y, m, d] = raw.split('-').map(Number);
+  if (y < 2000 || y > 2100) return null;
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return null; // 2026-02-31
+  if (y % 2 === 0 && raw === generalElectionDate(y) && isValidCycleYear(y)) return cycleForYear(y);
+  const pretty = `${MONTHS[m - 1]} ${d}, ${y}`;
+  return {
+    year: y,
+    kind: 'other',
+    date: raw,
+    title: `${pretty} Elections`,
+    shortTitle: pretty,
+    offices: ['president', 'senate', 'house', 'governor'],
+  };
+}
+
+/** `?cycle=` value → a general cycle (a year, or its date) or any other election day (a date). */
+export function parseDay(raw: unknown): Cycle | null {
+  return parseCycle(raw) ?? dayForDate(raw);
 }
 
 /** UTC offset of America/New_York at the given instant, in minutes (−300 EST / −240 EDT). */

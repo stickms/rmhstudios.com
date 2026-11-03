@@ -187,13 +187,17 @@ export function headline(s: ElectionSnapshot): string {
   if (!f.racesTotal) return 'Results will appear here as soon as polls report.';
   if (!f.live) {
     const bits = f.chambers.map((c) => `${c.seatsUp} ${c.name}`);
-    return `On the ballot: ${bits.join(' · ')}. Live results the moment polls close.`;
+    return bits.length
+      ? `On the ballot: ${bits.join(' · ')}. Live results the moment polls close.`
+      : `${f.racesTotal} races on the ballot. Live results the moment polls close.`;
   }
   const lead = f.chambers.filter((c) => c.office === 'senate' || c.office === 'house');
   const parts = lead.map(
     (c) => `${c.name} ${PARTY_SHORT.GOP} ${c.seats.GOP}–${PARTY_SHORT.DEM} ${c.seats.DEM}`,
   );
-  return `${parts.join(' · ')} · ${f.racesCalled}/${f.racesTotal} races called`;
+  return parts.length
+    ? `${parts.join(' · ')} · ${f.racesCalled}/${f.racesTotal} races called`
+    : `${f.racesCalled} of ${f.racesTotal} races called`;
 }
 
 /** Counts of races by rating lean — for the "ratings" bar before results exist. */

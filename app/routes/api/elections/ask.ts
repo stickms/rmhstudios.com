@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-import { currentCycle, parseCycle } from '@/lib/elections/calendar';
+import { currentCycle, parseDay } from '@/lib/elections/calendar';
 import { answerElectionQuestion } from '@/lib/elections/ai.server';
 import { getElectionSnapshot } from '@/lib/elections/source.server';
 import { isAiConfigured } from '@/lib/ai/provider.server';
@@ -19,7 +19,7 @@ export const Route = createFileRoute('/api/elections/ask')({
         { rateLimit: 'ai', body, label: 'elections.ask' },
         async ({ userId, body: b }) => {
           if (!isAiConfigured()) return Response.json({ error: 'AI is unavailable' }, { status: 503 });
-          const cycle = b.cycle ? parseCycle(b.cycle) : currentCycle();
+          const cycle = b.cycle ? parseDay(b.cycle) : currentCycle();
           if (!cycle) return Response.json({ error: 'Unknown election cycle' }, { status: 400 });
           const snapshot = await getElectionSnapshot(cycle);
           if (!snapshot.races.length) {

@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Link } from '@tanstack/react-router';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { m as motion, useScroll, useTransform } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { ArrowDown, Share2 } from 'lucide-react';
 import { countdownTo, type Cycle, type Phase } from '@/lib/elections/calendar';

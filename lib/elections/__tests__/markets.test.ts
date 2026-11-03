@@ -10,6 +10,7 @@ function snap(over: Partial<ElectionSnapshot> = {}): ElectionSnapshot {
   const h = normalizeNytPage(housePage, 'house');
   return {
     date: '2026-11-03',
+    kind: 'general',
     source: 'nyt',
     fetchedAt: 'x',
     sourceUpdatedAt: null,
@@ -18,6 +19,7 @@ function snap(over: Partial<ElectionSnapshot> = {}): ElectionSnapshot {
     races: [...s.races, ...h.races],
     pollClosings: {},
     missing: [],
+    providers: [],
     ...over,
   };
 }
