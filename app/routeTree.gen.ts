@@ -989,6 +989,8 @@ import { Route as ApiElectionsChatReactRouteImport } from './routes/api/election
 import { Route as ApiElectionsChatStreamRouteImport } from './routes/api/elections/chat/stream'
 import { Route as ApiElectionsEventsIndexRouteImport } from './routes/api/elections/events/index'
 import { Route as ApiElectionsEventsStreamRouteImport } from './routes/api/elections/events/stream'
+import { Route as ApiElectionsLeaguesIndexRouteImport } from './routes/api/elections/leagues/index'
+import { Route as ApiElectionsLeaguesCodeRouteImport } from './routes/api/elections/leagues/$code'
 import { Route as ApiElectionsRoomsIndexRouteImport } from './routes/api/elections/rooms/index'
 import { Route as ApiElectionsRoomsCodeRouteImport } from './routes/api/elections/rooms/$code'
 import { Route as ApiEmojiPacksSlugIndexRouteImport } from './routes/api/emoji-packs/$slug/index'
@@ -1307,6 +1309,7 @@ import { Route as ApiDeveloperKeysIdUsageRouteImport } from './routes/api/develo
 import { Route as ApiDunesdayFeedsFeedIdCalendarDoticsRouteImport } from './routes/api/dunesday/feeds.$feedId.calendar[.]ics'
 import { Route as ApiDunesdayFeedsFeedIdRssDotxmlRouteImport } from './routes/api/dunesday/feeds.$feedId.rss[.]xml'
 import { Route as ApiDunesdaySyncFeedIdDiscordRouteImport } from './routes/api/dunesday/sync.$feedId.discord'
+import { Route as ApiElectionsLeaguesCodePicksRouteImport } from './routes/api/elections/leagues/$code.picks'
 import { Route as ApiGiftsScheduledIdIndexRouteImport } from './routes/api/gifts/scheduled/$id/index'
 import { Route as ApiGiftsScheduledIdUnwrapRouteImport } from './routes/api/gifts/scheduled/$id/unwrap'
 import { Route as ApiHomesListingsIdFavoriteRouteImport } from './routes/api/homes/listings.$id.favorite'
@@ -6404,6 +6407,17 @@ const ApiElectionsEventsStreamRoute =
     path: '/api/elections/events/stream',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiElectionsLeaguesIndexRoute =
+  ApiElectionsLeaguesIndexRouteImport.update({
+    id: '/api/elections/leagues/',
+    path: '/api/elections/leagues/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiElectionsLeaguesCodeRoute = ApiElectionsLeaguesCodeRouteImport.update({
+  id: '/api/elections/leagues/$code',
+  path: '/api/elections/leagues/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiElectionsRoomsIndexRoute = ApiElectionsRoomsIndexRouteImport.update({
   id: '/api/elections/rooms/',
   path: '/api/elections/rooms/',
@@ -8080,6 +8094,12 @@ const ApiDunesdaySyncFeedIdDiscordRoute =
     path: '/discord',
     getParentRoute: () => ApiDunesdaySyncFeedIdRoute,
   } as any)
+const ApiElectionsLeaguesCodePicksRoute =
+  ApiElectionsLeaguesCodePicksRouteImport.update({
+    id: '/picks',
+    path: '/picks',
+    getParentRoute: () => ApiElectionsLeaguesCodeRoute,
+  } as any)
 const ApiGiftsScheduledIdIndexRoute =
   ApiGiftsScheduledIdIndexRouteImport.update({
     id: '/api/gifts/scheduled/$id/',
@@ -9573,6 +9593,7 @@ export interface FileRoutesByFullPath {
   '/api/elections/chat/react': typeof ApiElectionsChatReactRoute
   '/api/elections/chat/stream': typeof ApiElectionsChatStreamRoute
   '/api/elections/events/stream': typeof ApiElectionsEventsStreamRoute
+  '/api/elections/leagues/$code': typeof ApiElectionsLeaguesCodeRouteWithChildren
   '/api/elections/rooms/$code': typeof ApiElectionsRoomsCodeRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
@@ -9833,6 +9854,7 @@ export interface FileRoutesByFullPath {
   '/api/economy/savings-goals/': typeof ApiEconomySavingsGoalsIndexRoute
   '/api/elections/chat/': typeof ApiElectionsChatIndexRoute
   '/api/elections/events/': typeof ApiElectionsEventsIndexRoute
+  '/api/elections/leagues/': typeof ApiElectionsLeaguesIndexRoute
   '/api/elections/rooms/': typeof ApiElectionsRoomsIndexRoute
   '/api/emoji-packs/$slug/': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id/': typeof ApiEventsIdIndexRoute
@@ -9914,6 +9936,7 @@ export interface FileRoutesByFullPath {
   '/api/dunesday/feeds/$feedId/calendar.ics': typeof ApiDunesdayFeedsFeedIdCalendarDoticsRoute
   '/api/dunesday/feeds/$feedId/rss.xml': typeof ApiDunesdayFeedsFeedIdRssDotxmlRoute
   '/api/dunesday/sync/$feedId/discord': typeof ApiDunesdaySyncFeedIdDiscordRoute
+  '/api/elections/leagues/$code/picks': typeof ApiElectionsLeaguesCodePicksRoute
   '/api/gifts/scheduled/$id/unwrap': typeof ApiGiftsScheduledIdUnwrapRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/homes/listings/$id/roommate': typeof ApiHomesListingsIdRoommateRoute
@@ -10939,6 +10962,7 @@ export interface FileRoutesByTo {
   '/api/elections/chat/react': typeof ApiElectionsChatReactRoute
   '/api/elections/chat/stream': typeof ApiElectionsChatStreamRoute
   '/api/elections/events/stream': typeof ApiElectionsEventsStreamRoute
+  '/api/elections/leagues/$code': typeof ApiElectionsLeaguesCodeRouteWithChildren
   '/api/elections/rooms/$code': typeof ApiElectionsRoomsCodeRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
@@ -11199,6 +11223,7 @@ export interface FileRoutesByTo {
   '/api/economy/savings-goals': typeof ApiEconomySavingsGoalsIndexRoute
   '/api/elections/chat': typeof ApiElectionsChatIndexRoute
   '/api/elections/events': typeof ApiElectionsEventsIndexRoute
+  '/api/elections/leagues': typeof ApiElectionsLeaguesIndexRoute
   '/api/elections/rooms': typeof ApiElectionsRoomsIndexRoute
   '/api/emoji-packs/$slug': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id': typeof ApiEventsIdIndexRoute
@@ -11280,6 +11305,7 @@ export interface FileRoutesByTo {
   '/api/dunesday/feeds/$feedId/calendar.ics': typeof ApiDunesdayFeedsFeedIdCalendarDoticsRoute
   '/api/dunesday/feeds/$feedId/rss.xml': typeof ApiDunesdayFeedsFeedIdRssDotxmlRoute
   '/api/dunesday/sync/$feedId/discord': typeof ApiDunesdaySyncFeedIdDiscordRoute
+  '/api/elections/leagues/$code/picks': typeof ApiElectionsLeaguesCodePicksRoute
   '/api/gifts/scheduled/$id/unwrap': typeof ApiGiftsScheduledIdUnwrapRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/homes/listings/$id/roommate': typeof ApiHomesListingsIdRoommateRoute
@@ -12336,6 +12362,7 @@ export interface FileRoutesById {
   '/api/elections/chat/react': typeof ApiElectionsChatReactRoute
   '/api/elections/chat/stream': typeof ApiElectionsChatStreamRoute
   '/api/elections/events/stream': typeof ApiElectionsEventsStreamRoute
+  '/api/elections/leagues/$code': typeof ApiElectionsLeaguesCodeRouteWithChildren
   '/api/elections/rooms/$code': typeof ApiElectionsRoomsCodeRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
@@ -12596,6 +12623,7 @@ export interface FileRoutesById {
   '/api/economy/savings-goals/': typeof ApiEconomySavingsGoalsIndexRoute
   '/api/elections/chat/': typeof ApiElectionsChatIndexRoute
   '/api/elections/events/': typeof ApiElectionsEventsIndexRoute
+  '/api/elections/leagues/': typeof ApiElectionsLeaguesIndexRoute
   '/api/elections/rooms/': typeof ApiElectionsRoomsIndexRoute
   '/api/emoji-packs/$slug/': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id/': typeof ApiEventsIdIndexRoute
@@ -12677,6 +12705,7 @@ export interface FileRoutesById {
   '/api/dunesday/feeds/$feedId/calendar.ics': typeof ApiDunesdayFeedsFeedIdCalendarDoticsRoute
   '/api/dunesday/feeds/$feedId/rss.xml': typeof ApiDunesdayFeedsFeedIdRssDotxmlRoute
   '/api/dunesday/sync/$feedId/discord': typeof ApiDunesdaySyncFeedIdDiscordRoute
+  '/api/elections/leagues/$code/picks': typeof ApiElectionsLeaguesCodePicksRoute
   '/api/gifts/scheduled/$id/unwrap': typeof ApiGiftsScheduledIdUnwrapRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/homes/listings/$id/roommate': typeof ApiHomesListingsIdRoommateRoute
@@ -13732,6 +13761,7 @@ export interface FileRouteTypes {
     | '/api/elections/chat/react'
     | '/api/elections/chat/stream'
     | '/api/elections/events/stream'
+    | '/api/elections/leagues/$code'
     | '/api/elections/rooms/$code'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
@@ -13992,6 +14022,7 @@ export interface FileRouteTypes {
     | '/api/economy/savings-goals/'
     | '/api/elections/chat/'
     | '/api/elections/events/'
+    | '/api/elections/leagues/'
     | '/api/elections/rooms/'
     | '/api/emoji-packs/$slug/'
     | '/api/events/$id/'
@@ -14073,6 +14104,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/feeds/$feedId/calendar.ics'
     | '/api/dunesday/feeds/$feedId/rss.xml'
     | '/api/dunesday/sync/$feedId/discord'
+    | '/api/elections/leagues/$code/picks'
     | '/api/gifts/scheduled/$id/unwrap'
     | '/api/homes/listings/$id/favorite'
     | '/api/homes/listings/$id/roommate'
@@ -15098,6 +15130,7 @@ export interface FileRouteTypes {
     | '/api/elections/chat/react'
     | '/api/elections/chat/stream'
     | '/api/elections/events/stream'
+    | '/api/elections/leagues/$code'
     | '/api/elections/rooms/$code'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
@@ -15358,6 +15391,7 @@ export interface FileRouteTypes {
     | '/api/economy/savings-goals'
     | '/api/elections/chat'
     | '/api/elections/events'
+    | '/api/elections/leagues'
     | '/api/elections/rooms'
     | '/api/emoji-packs/$slug'
     | '/api/events/$id'
@@ -15439,6 +15473,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/feeds/$feedId/calendar.ics'
     | '/api/dunesday/feeds/$feedId/rss.xml'
     | '/api/dunesday/sync/$feedId/discord'
+    | '/api/elections/leagues/$code/picks'
     | '/api/gifts/scheduled/$id/unwrap'
     | '/api/homes/listings/$id/favorite'
     | '/api/homes/listings/$id/roommate'
@@ -16494,6 +16529,7 @@ export interface FileRouteTypes {
     | '/api/elections/chat/react'
     | '/api/elections/chat/stream'
     | '/api/elections/events/stream'
+    | '/api/elections/leagues/$code'
     | '/api/elections/rooms/$code'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
@@ -16754,6 +16790,7 @@ export interface FileRouteTypes {
     | '/api/economy/savings-goals/'
     | '/api/elections/chat/'
     | '/api/elections/events/'
+    | '/api/elections/leagues/'
     | '/api/elections/rooms/'
     | '/api/emoji-packs/$slug/'
     | '/api/events/$id/'
@@ -16835,6 +16872,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/feeds/$feedId/calendar.ics'
     | '/api/dunesday/feeds/$feedId/rss.xml'
     | '/api/dunesday/sync/$feedId/discord'
+    | '/api/elections/leagues/$code/picks'
     | '/api/gifts/scheduled/$id/unwrap'
     | '/api/homes/listings/$id/favorite'
     | '/api/homes/listings/$id/roommate'
@@ -17564,6 +17602,7 @@ export interface RootRouteChildren {
   ApiElectionsChatReactRoute: typeof ApiElectionsChatReactRoute
   ApiElectionsChatStreamRoute: typeof ApiElectionsChatStreamRoute
   ApiElectionsEventsStreamRoute: typeof ApiElectionsEventsStreamRoute
+  ApiElectionsLeaguesCodeRoute: typeof ApiElectionsLeaguesCodeRouteWithChildren
   ApiElectionsRoomsCodeRoute: typeof ApiElectionsRoomsCodeRoute
   ApiEmojiPacksSlugItemsRoute: typeof ApiEmojiPacksSlugItemsRoute
   ApiEmojiPacksSlugSubscribeRoute: typeof ApiEmojiPacksSlugSubscribeRoute
@@ -17713,6 +17752,7 @@ export interface RootRouteChildren {
   ApiEconomySavingsGoalsIndexRoute: typeof ApiEconomySavingsGoalsIndexRoute
   ApiElectionsChatIndexRoute: typeof ApiElectionsChatIndexRoute
   ApiElectionsEventsIndexRoute: typeof ApiElectionsEventsIndexRoute
+  ApiElectionsLeaguesIndexRoute: typeof ApiElectionsLeaguesIndexRoute
   ApiElectionsRoomsIndexRoute: typeof ApiElectionsRoomsIndexRoute
   ApiEmojiPacksSlugIndexRoute: typeof ApiEmojiPacksSlugIndexRoute
   ApiEventsIdIndexRoute: typeof ApiEventsIdIndexRoute
@@ -24673,6 +24713,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiElectionsEventsStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/elections/leagues/': {
+      id: '/api/elections/leagues/'
+      path: '/api/elections/leagues'
+      fullPath: '/api/elections/leagues/'
+      preLoaderRoute: typeof ApiElectionsLeaguesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/leagues/$code': {
+      id: '/api/elections/leagues/$code'
+      path: '/api/elections/leagues/$code'
+      fullPath: '/api/elections/leagues/$code'
+      preLoaderRoute: typeof ApiElectionsLeaguesCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/elections/rooms/': {
       id: '/api/elections/rooms/'
       path: '/api/elections/rooms'
@@ -26898,6 +26952,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/dunesday/sync/$feedId/discord'
       preLoaderRoute: typeof ApiDunesdaySyncFeedIdDiscordRouteImport
       parentRoute: typeof ApiDunesdaySyncFeedIdRoute
+    }
+    '/api/elections/leagues/$code/picks': {
+      id: '/api/elections/leagues/$code/picks'
+      path: '/picks'
+      fullPath: '/api/elections/leagues/$code/picks'
+      preLoaderRoute: typeof ApiElectionsLeaguesCodePicksRouteImport
+      parentRoute: typeof ApiElectionsLeaguesCodeRoute
     }
     '/api/gifts/scheduled/$id/': {
       id: '/api/gifts/scheduled/$id/'
@@ -29703,6 +29764,20 @@ const ApiDeveloperKeysIdRouteChildren: ApiDeveloperKeysIdRouteChildren = {
 const ApiDeveloperKeysIdRouteWithChildren =
   ApiDeveloperKeysIdRoute._addFileChildren(ApiDeveloperKeysIdRouteChildren)
 
+interface ApiElectionsLeaguesCodeRouteChildren {
+  ApiElectionsLeaguesCodePicksRoute: typeof ApiElectionsLeaguesCodePicksRoute
+}
+
+const ApiElectionsLeaguesCodeRouteChildren: ApiElectionsLeaguesCodeRouteChildren =
+  {
+    ApiElectionsLeaguesCodePicksRoute: ApiElectionsLeaguesCodePicksRoute,
+  }
+
+const ApiElectionsLeaguesCodeRouteWithChildren =
+  ApiElectionsLeaguesCodeRoute._addFileChildren(
+    ApiElectionsLeaguesCodeRouteChildren,
+  )
+
 interface ApiGroupChatsIdMessagesRouteChildren {
   ApiGroupChatsIdMessagesMessageIdVoteRoute: typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
 }
@@ -30502,6 +30577,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiElectionsChatReactRoute: ApiElectionsChatReactRoute,
   ApiElectionsChatStreamRoute: ApiElectionsChatStreamRoute,
   ApiElectionsEventsStreamRoute: ApiElectionsEventsStreamRoute,
+  ApiElectionsLeaguesCodeRoute: ApiElectionsLeaguesCodeRouteWithChildren,
   ApiElectionsRoomsCodeRoute: ApiElectionsRoomsCodeRoute,
   ApiEmojiPacksSlugItemsRoute: ApiEmojiPacksSlugItemsRoute,
   ApiEmojiPacksSlugSubscribeRoute: ApiEmojiPacksSlugSubscribeRoute,
@@ -30651,6 +30727,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEconomySavingsGoalsIndexRoute: ApiEconomySavingsGoalsIndexRoute,
   ApiElectionsChatIndexRoute: ApiElectionsChatIndexRoute,
   ApiElectionsEventsIndexRoute: ApiElectionsEventsIndexRoute,
+  ApiElectionsLeaguesIndexRoute: ApiElectionsLeaguesIndexRoute,
   ApiElectionsRoomsIndexRoute: ApiElectionsRoomsIndexRoute,
   ApiEmojiPacksSlugIndexRoute: ApiEmojiPacksSlugIndexRoute,
   ApiEventsIdIndexRoute: ApiEventsIdIndexRoute,
