@@ -37,7 +37,9 @@ export function Hero({
       ? t('hero.midterms', { defaultValue: 'Midterms' })
       : t('hero.president', { defaultValue: 'President' });
 
-  const live = phase === 'election-day' || phase === 'counting';
+  // Counting down to the first polls CLOSING (6 p.m. Eastern), not to midnight: that is when results begin.
+  const waiting = !!cd && cd.totalMs > 0 && (phase === 'upcoming' || phase === 'election-day');
+  const live = !waiting && (phase === 'election-day' || phase === 'counting');
 
   return (
     <section ref={ref} className="el-hero" aria-labelledby="el-title">
@@ -66,7 +68,7 @@ export function Hero({
               <path d="M6 50 C 22 8, 56 6, 88 30 M70 12 L90 31 L66 44" />
             </motion.svg>
             <p className="el-hero__sub">
-              {phase === 'upcoming'
+              {waiting
                 ? t('hero.subUpcoming', {
                     defaultValue: 'Live results, calls and your own map — the moment the first polls close.',
                   })
@@ -105,12 +107,12 @@ export function Hero({
           </div>
 
           <div className="el-cell el-cell--count">
-            {phase === 'upcoming' ? (
+            {waiting ? (
               <>
                 <p className="el-eyebrow" style={{ margin: 0 }}>
-                  {t('hero.countdownLabel', { defaultValue: 'Polls open in' })}
+                  {t('hero.closeLabel', { defaultValue: 'First polls close in' })}
                 </p>
-                <div className="el-count" role="timer" aria-label={t('hero.countdown', { defaultValue: 'Time until Election Day' })}>
+                <div className="el-count" role="timer" aria-label={t('hero.countdownClose', { defaultValue: 'Time until the first polls close' })}>
                   {[
                     [cd?.days, t('hero.days', { defaultValue: 'days' })],
                     [cd?.hours, t('hero.hours', { defaultValue: 'hrs' })],

@@ -1035,14 +1035,28 @@
   gap: 8px;
   min-height: 0;
   padding: 8px;
-  /* One column on phones, whatever the chosen layout: panes stack and the grid scrolls. */
+  /* Phones: one pane fills the screen (the switcher above picks which); nothing scrolls the page. */
   grid-template-columns: minmax(0, 1fr);
-  overflow-y: auto;
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+.el-room__switch {
+  display: flex;
+  gap: 6px;
+  padding: 8px 8px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.el-room__switch .el-btn {
+  flex: 0 0 auto;
+}
+.el-room__pane:not([data-active='true']) {
+  display: none;
 }
 .el-room__pane {
   display: flex;
   flex-direction: column;
-  min-height: 320px;
+  min-height: 0;
   min-width: 0;
   border: var(--el-bw) solid var(--el-ink);
   background: var(--el-paper);
@@ -1063,8 +1077,11 @@
   overflow: hidden;
 }
 @media (min-width: 900px) {
-  .el-room__grid {
-    overflow: hidden;
+  .el-room__switch {
+    display: none;
+  }
+  .el-room__pane:not([data-active='true']) {
+    display: flex;
   }
   .el-room__pane {
     min-height: 0;
@@ -1735,4 +1752,22 @@
 }
 .el-h2 em {
   color: var(--el-purple);
+}
+
+/* Phone room bar: the layout picker is meaningless with one pane; keep the bar to a single tidy row. */
+@media (max-width: 899px) {
+  .el-room__layouts {
+    display: none;
+  }
+}
+
+.el-root .el-room__foot {
+  background: var(--el-paper);
+  color: var(--el-ink);
+}
+@media (max-width: 899px) {
+  .el-room__foot > div {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
 }

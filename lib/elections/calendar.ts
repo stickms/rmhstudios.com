@@ -145,7 +145,7 @@ export function cycleOptions(now: Date = new Date()): Cycle[] {
 }
 
 export interface Countdown {
-  /** Whole days/hours/minutes/seconds until the day starts; zeros once past. */
+  /** Whole days/hours/minutes/seconds until the first polls close; zeros once past. */
   days: number;
   hours: number;
   minutes: number;
@@ -154,8 +154,16 @@ export interface Countdown {
   totalMs: number;
 }
 
-export function countdownTo(date: string, now: Date = new Date()): Countdown {
-  const ms = Math.max(0, etDayStart(date).getTime() - now.getTime());
+/** The first polls to close anywhere in the US (Indiana and Kentucky, 6 p.m. Eastern) — when results begin. */
+export const FIRST_CLOSE_HOUR_ET = 18;
+
+export function firstCloseAt(date: string): Date {
+  return new Date(etDayStart(date).getTime() + FIRST_CLOSE_HOUR_ET * 3_600_000);
+}
+
+/** Time left until `target` (default: the first polls closing on `date`); zeros once past. */
+export function countdownTo(date: string, now: Date = new Date(), target: Date = firstCloseAt(date)): Countdown {
+  const ms = Math.max(0, target.getTime() - now.getTime());
   return {
     days: Math.floor(ms / DAY),
     hours: Math.floor((ms % DAY) / 3_600_000),
