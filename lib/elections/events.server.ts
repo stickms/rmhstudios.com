@@ -10,6 +10,7 @@
  * make the same event seen by two instances collapse to one.
  */
 
+import { relayToDiscord } from './discord.server';
 import { createBus } from '@/lib/realtime-bus.server';
 import { closedPollEvents, diffSnapshots, pushEvents, type ElectionEvent } from './events';
 import { recordHistory } from './history.server';
@@ -65,6 +66,7 @@ export function ingestSnapshot(next: ElectionSnapshot, now: number = Date.now())
     events.push(...closed.events);
 
     publish(next.date, events);
+    relayToDiscord(events);
     return events;
   } catch (err) {
     console.warn('[elections] event ingest failed:', String(err));

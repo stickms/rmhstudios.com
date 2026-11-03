@@ -11,6 +11,7 @@ import { PathPanel } from './PathPanel';
 import { WatchList } from './WatchList';
 import { NightTimeline } from './NightTimeline';
 import { LeaguePanel } from './LeaguePanel';
+import { AlertsPanel, useAlertPrefs, useElectionAlerts } from './AlertsPanel';
 import { BaselineContext } from './BaselineContext';
 import { Ticker } from './Ticker';
 import { BalanceOfPower } from './BalanceOfPower';
@@ -135,6 +136,8 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, option
   const isGeneral = cycle.kind !== 'other';
   const { data, isError, isFetching, refetch, dataUpdatedAt } = useElectionData(param);
   const { events } = useElectionEvents(param);
+  const [alertPrefs, setAlertPrefs] = useAlertPrefs();
+  useElectionAlerts(events, alertPrefs);
 
   // A live event means the numbers just changed: pull the snapshot now instead of waiting for the next
   // 20-second poll, or a pane would announce "AP calls X" above numbers that still say "awaiting polls".
@@ -513,6 +516,9 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, option
           }
           lede={t('timeline.lede', { defaultValue: 'Every call, flip and closing poll, in order.' })}
         >
+          <div style={{ marginBottom: 20 }}>
+            <AlertsPanel prefs={alertPrefs} onChange={setAlertPrefs} />
+          </div>
           <Host variant={4}>
             <NightTimeline events={events} onSelectState={selectFromElsewhere} />
           </Host>
