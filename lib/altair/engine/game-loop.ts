@@ -112,6 +112,12 @@ export function createGameLoop(
   world: GameWorld,
   tileGen: TileGenerator,
   callbacks: GameLoopCallbacks,
+  /**
+   * Single-player passes its SoloRun (solo/solo-run.ts): it then owns the step body, the terrain window
+   * and the random stream, so the server can replay the run. Without one (the golden-master harness)
+   * the loop steps the world itself exactly as it always did.
+   */
+  driver?: { step: () => boolean },
 ): {
   start: () => void;
   pause: () => void;
@@ -179,8 +185,8 @@ export function createGameLoop(
       return;
     }
 
-    // Recompute stats when inventory changes (once per frame, not per step)
-    refreshInventoryStats(world, rt);
+    // Recompute stats when inventory changes (once per frame, not per step; the driver does it per step)
+    if (!driver) refreshInventoryStats(world, rt);
 
     // ---- Fixed-timestep simulation loop ----
     // All physics/game logic runs at a consistent 60 Hz regardless of display
@@ -188,7 +194,15 @@ export function createGameLoop(
     accumulator += frameDelta;
     while (accumulator >= FIXED_DT) {
       interpolator.capture(world);
-      stepSimulation(world, rt, tileGen, callbacks, FIXED_DT);
+      if (driver) {
+        // A refused step (level-up picker open, run over) must not bank time for a burst later.
+        if (!driver.step()) {
+          accumulator = 0;
+          break;
+        }
+      } else {
+        stepSimulation(world, rt, tileGen, callbacks, FIXED_DT);
+      }
 
       accumulator -= FIXED_DT;
     }
@@ -205,10 +219,14 @@ export function createGameLoop(
     try {
       // 13. Camera follows at frame rate for smooth visual tracking
       updateCamera(world.camera, world.player, frameDelta);
-      tileGen.update(world.camera);
+      // The driver updates the terrain from the player (not this smoothed camera) inside each step, so
+      // the props the sim sees do not depend on frame timing.
+      if (!driver) {
+        tileGen.update(world.camera);
 
-      // 13b. Spawn structure pickups queued by tile generator
-      drainTilePickups(world, tileGen);
+        // 13b. Spawn structure pickups queued by tile generator
+        drainTilePickups(world, tileGen);
+      }
 
       // 14. Render
       renderFrame(renderer, world, tileGen);
