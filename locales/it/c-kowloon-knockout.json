@@ -38,6 +38,7 @@
   "graphics-hint": "Adatta automaticamente la qualità per mantenere il frame rate fluido. Scegli un livello per bloccarlo.",
   "graphics-lost": "La grafica è stata interrotta dal tuo dispositivo.",
   "graphics-stalled": "The picture stopped updating on this device.",
+  "graphics-unavailable": "3D graphics could not start on this device.",
   "haymaker": "Haymaker",
   "hook": "Hook",
   "hook-desc": "(lento, danni alti)",

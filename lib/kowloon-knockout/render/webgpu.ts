@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { extend } from '@react-three/fiber';
-import { reportFatal, reportFrameFail, reportFrameOk, resetRenderHealth, shouldForceWebGL } from './health';
+import { reportFatal, reportFrameFail, reportFrameOk, reportGpuError, reportProbe, resetRenderHealth, shouldForceWebGL } from './health';
+import { isBlankSample } from './probe';
 
 let extended = false;
 
@@ -51,10 +52,26 @@ function instrumentRenderer(renderer: THREE.WebGPURenderer): void {
         renderAsync?: (...a: unknown[]) => Promise<unknown>;
     };
     const render = r.render.bind(renderer);
+    const probe = makeCanvasProbe(renderer.domElement as HTMLCanvasElement);
+    let probeQueued = false;
+    let lastProbeAt = 0;
     r.render = (...a) => {
         try {
             const out = render(...a);
             reportFrameOk();
+            // Only a pass that drew to the canvas itself says anything about what
+            // is on screen (post-fx passes draw into render targets first), and the
+            // read-back has to happen before the task ends, while the drawing
+            // buffer / current texture still holds this frame.
+            if (!probeQueued && probe && !document.hidden && performance.now() - lastProbeAt >= PROBE_EVERY_MS
+                && (renderer as unknown as { getRenderTarget?: () => unknown }).getRenderTarget?.() === null) {
+                probeQueued = true;
+                queueMicrotask(() => {
+                    probeQueued = false;
+                    lastProbeAt = performance.now();
+                    reportProbe(probe());
+                });
+            }
             return out;
         } catch (e) {
             reportFrameFail(e);
@@ -72,6 +89,29 @@ function instrumentRenderer(renderer: THREE.WebGPURenderer): void {
     // A lost or erroring WebGPU device paints nothing and often throws nowhere
     // we can catch; count it as a failed frame so the watchdog sees it.
     const device = (renderer.backend as { device?: GPUDevice } | undefined)?.device;
-    device?.addEventListener?.('uncapturederror', (e) => reportFrameFail((e as GPUUncapturedErrorEvent).error));
+    device?.addEventListener?.('uncapturederror', (e) => reportGpuError((e as GPUUncapturedErrorEvent).error));
     void device?.lost?.then((info) => reportFatal(info));
+}
+
+const PROBE_EVERY_MS = 1000;
+
+/** A tiny 2D read-back of the presented canvas: true when it is blank, false
+ *  when it shows a picture, null when it cannot be read (no verdict). */
+function makeCanvasProbe(source: HTMLCanvasElement): (() => boolean | null) | null {
+    if (typeof document === 'undefined' || !source) return null;
+    const W = 16, H = 9;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return null;
+    return () => {
+        try {
+            if (!source.width || !source.height) return null;
+            ctx.clearRect(0, 0, W, H);
+            ctx.drawImage(source, 0, 0, W, H);
+            return isBlankSample(ctx.getImageData(0, 0, W, H).data);
+        } catch {
+            return null;
+        }
+    };
 }

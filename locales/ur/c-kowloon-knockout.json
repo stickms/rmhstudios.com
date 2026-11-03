@@ -38,6 +38,7 @@
   "graphics-hint": "خودکار طور پر معیار کو ایڈجسٹ کرتا ہے تاکہ فریم ریٹ ہموار رہے۔ اسے لاک کرنے کے لیے ایک سطح منتخب کریں۔",
   "graphics-lost": "آپ کے آلے نے گرافکس کو روک دیا۔",
   "graphics-stalled": "The picture stopped updating on this device.",
+  "graphics-unavailable": "3D graphics could not start on this device.",
   "haymaker": "ہے میکر",
   "hook": "ہک",
   "hook-desc": "(سست، زیادہ نقصان)",

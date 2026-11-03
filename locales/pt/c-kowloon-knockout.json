@@ -38,6 +38,7 @@
   "graphics-hint": "Adapta automaticamente a qualidade para manter a taxa de quadros suave. Escolha um nível para fixá-lo.",
   "graphics-lost": "Seu dispositivo interrompeu os gráficos.",
   "graphics-stalled": "The picture stopped updating on this device.",
+  "graphics-unavailable": "3D graphics could not start on this device.",
   "haymaker": "Haymaker",
   "hook": "Hook",
   "hook-desc": "(lento, alto dano)",
