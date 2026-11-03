@@ -82,6 +82,20 @@ describe('altair hub: run submission', () => {
     });
   });
 
+  it('a mid-run drop-in is admitted in the job (and nobody else is)', async () => {
+    const { w, host, lobbyId, view } = startMatch();
+    const seed = view(host).runSeed as number;
+    const late = w.connect('sock-late', { userId: 'late', userName: 'Late' });
+    w.send(late, 'altair:lobby:join', { lobbyId });
+    w.send(late, 'altair:class:select', { classId: 'arcanist' });
+    vi.advanceTimersByTime(20_000);
+    w.send(host, 'altair:game:end', { ...claim, runLog: { enc: 'json', data: JSON.stringify(logFor(seed)) } });
+    await vi.waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+    const job = submit.mock.calls[0][0] as { joins: unknown[]; roster: unknown[] };
+    expect(job.roster).toHaveLength(2);
+    expect(job.joins).toEqual([{ userId: 'late', userName: 'Late', classId: 'arcanist', slot: 2 }]);
+  });
+
   it('a guest cannot end the run or submit anything', () => {
     const { w, guest } = startMatch();
     w.send(guest, 'altair:game:end', { ...claim, runLog: { enc: 'json', data: '{}' } });
