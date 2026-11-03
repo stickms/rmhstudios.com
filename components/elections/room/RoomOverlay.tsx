@@ -40,6 +40,8 @@ import {
   type PaneContext,
 } from './panes';
 import { useRoomState, writeSolo, type RoomSource } from './useRoomState';
+import { useSplit } from './useSplit';
+import { dividers, splitVars } from '@/lib/elections/split';
 
 const LAYOUT_ICON: Record<Layout, typeof Square> = {
   '1': Square,
@@ -103,6 +105,7 @@ export function RoomOverlay({
   const [copied, setCopied] = useState(false);
   // Phones show one pane at a time (a switcher picks it); wider screens show the whole layout.
   const [mobilePane, setMobilePane] = useState(0);
+  const { split, grid, dragging, handlers } = useSplit(config.layout);
   const root = useRef<HTMLDivElement | null>(null);
   const now = useNow(500);
 
@@ -328,7 +331,13 @@ export function RoomOverlay({
                 </button>
               ))}
             </div>
-            <div className="el-room__grid" data-layout={config.layout}>
+            <div
+              ref={grid}
+              className="el-room__grid"
+              data-layout={config.layout}
+              data-dragging={dragging ?? undefined}
+              style={splitVars(split) as React.CSSProperties}
+            >
               {panes.map((pane, i) => (
                 <section
                   key={pane.id}
@@ -376,6 +385,32 @@ export function RoomOverlay({
                   <div className="el-room__panebody">{body(pane)}</div>
                 </section>
               ))}
+              {dividers(config.layout).col ? (
+                <div
+                  className={`el-split el-split--col${dividers(config.layout).rowsOnRight ? '' : ' el-split--full'}`}
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label={t('split.col', { defaultValue: 'Resize panes: drag, or use the arrow keys. Double-click to reset.' })}
+                  aria-valuemin={14}
+                  aria-valuemax={86}
+                  aria-valuenow={Math.round(split.c * 100)}
+                  tabIndex={0}
+                  {...handlers('c')}
+                />
+              ) : null}
+              {dividers(config.layout).row ? (
+                <div
+                  className={`el-split el-split--row${dividers(config.layout).rowsOnRight ? ' el-split--right' : ''}`}
+                  role="separator"
+                  aria-orientation="horizontal"
+                  aria-label={t('split.row', { defaultValue: 'Resize panes: drag, or use the arrow keys. Double-click to reset.' })}
+                  aria-valuemin={14}
+                  aria-valuemax={86}
+                  aria-valuenow={Math.round(split.r * 100)}
+                  tabIndex={0}
+                  {...handlers('r')}
+                />
+              ) : null}
             </div>
             </>
           )}

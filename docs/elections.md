@@ -200,3 +200,11 @@ general, secretaries of state, treasurers, lieutenant governors, comptrollers, s
 other local offices (the feed marks those `coverage: county`) — with candidates, parties, live counts and calls. It
 reads the same index and per-page ETag strategy as ballot measures (`lib/elections/downballot*.ts`). The page's
 **Local** section filters by office, statewide/local, state, text (including candidate names) and followed states.
+
+## Resizable Briefing Room panes
+
+On wide screens the split-screen panes have draggable dividers (a column divider and/or a row divider per layout —
+`lib/elections/split.ts`). Drag a divider, or focus it and use the arrow keys (Home / Enter / double-click resets).
+Sizes are clamped to 14–86% so no pane can be dragged shut, are kept per layout in this browser
+(`localStorage`, `rmh-elections-split`), and are not shared with the room. Spacing around and between panes is 4px.
+Streams cannot swallow a drag: iframes ignore the pointer while a divider is moving.

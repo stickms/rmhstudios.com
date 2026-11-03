@@ -1030,11 +1030,14 @@
   font-weight: 700;
 }
 .el-room__grid {
+  --el-room-pad: 4px;
+  --el-room-gap: 4px;
+  position: relative;
   display: grid;
   flex: 1;
-  gap: 8px;
+  gap: var(--el-room-gap);
   min-height: 0;
-  padding: 8px;
+  padding: var(--el-room-pad);
   /* Phones: one pane fills the screen (the switcher above picks which); nothing scrolls the page. */
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
@@ -1090,24 +1093,26 @@
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
   }
+  /* Track sizes come from the viewer's dragged dividers (--cA/--cB/--rA/--rB, set inline); the weights are
+     large numbers so their sum is always well above 1fr. */
   .el-room__grid[data-layout='2h'] {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, var(--cA, 1fr)) minmax(0, var(--cB, 1fr));
     grid-template-rows: 1fr;
   }
   .el-room__grid[data-layout='2v'] {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: minmax(0, var(--rA, 1fr)) minmax(0, var(--rB, 1fr));
   }
   .el-room__grid[data-layout='3l'] {
-    grid-template-columns: 1.6fr 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-columns: minmax(0, var(--cA, 1.6fr)) minmax(0, var(--cB, 1fr));
+    grid-template-rows: minmax(0, var(--rA, 1fr)) minmax(0, var(--rB, 1fr));
   }
   .el-room__grid[data-layout='3l'] .el-room__pane[data-slot='0'] {
     grid-row: 1 / span 2;
   }
   .el-room__grid[data-layout='4'] {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-columns: minmax(0, var(--cA, 1fr)) minmax(0, var(--cB, 1fr));
+    grid-template-rows: minmax(0, var(--rA, 1fr)) minmax(0, var(--rB, 1fr));
   }
 }
 .el-room__foot {
@@ -2411,5 +2416,90 @@ html.ios-webkit .el-room__grid {
   /* The LIVE chip pushed the tools onto a second row and made the sticky bar a fifth of the screen. */
   .el-bar__tools .el-live {
     display: none;
+  }
+}
+
+/* ── Briefing Room: tighter panes and draggable dividers ─────────────────────────────────────────────────
+ * Spacing is minimal so the panes get the screen (4px around and between). The dividers sit in the gap, a
+ * wide invisible grab area over a thin bar that lights on hover, focus and drag. Wide screens only: on phones
+ * one pane fills the screen. While dragging, iframes ignore the pointer so a stream cannot swallow the move.
+ */
+.el-room__panebar {
+  padding: 2px 6px;
+}
+.el-room__panebody {
+  padding: 4px;
+}
+.el-room__pane {
+  min-height: 0;
+}
+.el-split {
+  display: none;
+}
+@media (min-width: 900px) {
+  .el-split {
+    display: block;
+    position: absolute;
+    z-index: 6;
+    touch-action: none;
+    outline: none;
+  }
+  .el-split::after {
+    content: '';
+    position: absolute;
+    background: transparent;
+    transition: background-color 0.12s;
+  }
+  .el-split:hover::after,
+  .el-split:focus-visible::after,
+  .el-room__grid[data-dragging] .el-split::after {
+    background: var(--el-purple);
+  }
+  /* column divider: a vertical bar between the left and right panes */
+  .el-split--col {
+    top: var(--el-room-pad);
+    bottom: var(--el-room-pad);
+    left: calc(var(--el-room-pad) + (100% - 2 * var(--el-room-pad) - var(--el-room-gap)) * var(--c, 0.5) + var(--el-room-gap) / 2);
+    width: 16px;
+    margin-left: -8px;
+    cursor: col-resize;
+  }
+  .el-split--col::after {
+    top: 0;
+    bottom: 0;
+    left: 6px;
+    width: 4px;
+    border-radius: 2px;
+  }
+  /* row divider: a horizontal bar between the top and bottom panes (the right column only in 3-pane) */
+  .el-split--row {
+    left: var(--el-room-pad);
+    right: var(--el-room-pad);
+    top: calc(var(--el-room-pad) + (100% - 2 * var(--el-room-pad) - var(--el-room-gap)) * var(--r, 0.5) + var(--el-room-gap) / 2);
+    height: 16px;
+    margin-top: -8px;
+    cursor: row-resize;
+  }
+  .el-split--row::after {
+    left: 0;
+    right: 0;
+    top: 6px;
+    height: 4px;
+    border-radius: 2px;
+  }
+  .el-split--row.el-split--right {
+    left: calc(var(--el-room-pad) + (100% - 2 * var(--el-room-pad) - var(--el-room-gap)) * var(--c, 0.5) + var(--el-room-gap));
+  }
+  .el-room__grid[data-dragging] {
+    user-select: none;
+  }
+  .el-room__grid[data-dragging] iframe {
+    pointer-events: none;
+  }
+  .el-room__grid[data-dragging='c'] {
+    cursor: col-resize;
+  }
+  .el-room__grid[data-dragging='r'] {
+    cursor: row-resize;
   }
 }
