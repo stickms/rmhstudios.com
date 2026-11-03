@@ -40,7 +40,10 @@ import {
   applyLevelClear,
   createDefaultProfile,
   loadOrCreateLocalProfile,
+  mergeOnSignIn,
   saveLocalProfile,
+  saveProfileToServer,
+  bumsRushSave,
 } from '@/lib/bums-rush/progress/save';
 import type {
   Assists,
@@ -191,6 +194,30 @@ export interface BumsRushState {
 
 const MAX_STACK = 12;
 
+/**
+ * Signed-in players' progress lives on the account as well as in this browser.
+ * Nothing used to call the save layer's sign-in merge or its cloud write, so a
+ * clear was kept only in localStorage and never reached the profile or the
+ * leaderboard. Anonymous play is untouched: no session means no network.
+ */
+async function syncSignedInProfile(apply: (profile: Profile) => void): Promise<void> {
+  try {
+    const { authClient } = await import('@/lib/auth-client');
+    const session = await authClient.getSession();
+    const userId = session?.data?.user?.id;
+    if (!userId) return;
+    await mergeOnSignIn(userId);
+    apply(loadOrCreateLocalProfile());
+  } catch {
+    // Offline or the session endpoint is down: the local profile stands.
+  }
+}
+
+function pushToCloud(profile: Profile): void {
+  if (!bumsRushSave.getIdentity()) return;
+  void saveProfileToServer(profile).catch(() => {});
+}
+
 export const useBumsRushStore = create<BumsRushState>()((set, get) => ({
   hydrated: false,
   screen: { kind: 'title' },
@@ -208,6 +235,7 @@ export const useBumsRushStore = create<BumsRushState>()((set, get) => ({
       profile: loadOrCreateLocalProfile(),
       bindings: readStoredBindings(),
     });
+    void syncSignedInProfile((profile) => set({ profile }));
   },
 
   go(screen) {
@@ -241,6 +269,7 @@ export const useBumsRushStore = create<BumsRushState>()((set, get) => ({
     };
     set({ profile: next });
     saveLocalProfile(next);
+    pushToCloud(next);
   },
 
   patchAssists(patch) {
@@ -252,6 +281,7 @@ export const useBumsRushStore = create<BumsRushState>()((set, get) => ({
     };
     set({ profile: next });
     saveLocalProfile(next);
+    pushToCloud(next);
   },
 
   equip(cosmetics) {
@@ -263,6 +293,7 @@ export const useBumsRushStore = create<BumsRushState>()((set, get) => ({
     };
     set({ profile: next });
     saveLocalProfile(next);
+    pushToCloud(next);
   },
 
   setBindingSet(key, value) {
@@ -295,6 +326,7 @@ export const useBumsRushStore = create<BumsRushState>()((set, get) => ({
     });
     set({ profile: next });
     saveLocalProfile(next);
+    pushToCloud(next);
   },
 }));
 

@@ -55,7 +55,28 @@ export type LevelBoundsResolver = (
   levelId: string,
 ) => LevelPlausibilityBounds | null | Promise<LevelPlausibilityBounds | null>;
 
-let levelBoundsResolver: LevelBoundsResolver = () => null;
+/**
+ * The default resolver reads the authored level data, so a real clear is ranked
+ * and saved without anything having to call `setLevelBoundsResolver` first.
+ * Nothing in production ever did, which left every server-side clear "unranked"
+ * (reason: 'level bounds unavailable') and the signed-in player's clears and
+ * unlocks never written. An unknown level id still resolves to `null` (unranked).
+ */
+const loadAuthoredBounds: LevelBoundsResolver = async (levelId) => {
+  try {
+    const { loadLevel } = await import('@/lib/bums-rush/levels/loader');
+    const level = await loadLevel(levelId);
+    return {
+      minPlausibleSeconds: level.minPlausibleSeconds ?? null,
+      parSeconds: level.parSeconds,
+      objectives: level.objectives.map((o) => ({ id: o.id, kind: o.kind })),
+    };
+  } catch {
+    return null;
+  }
+};
+
+let levelBoundsResolver: LevelBoundsResolver = loadAuthoredBounds;
 
 /** Wired up once the level catalog loads (see the module doc). Exported for the levels ticket and for tests. */
 export function setLevelBoundsResolver(resolver: LevelBoundsResolver): void {
@@ -172,7 +193,8 @@ function toProfile(row: ProfileRow): Profile {
 
   return {
     cosmetics: { head: row.head, hat: row.hat, gloves: row.gloves, ink: row.ink },
-    unlockedCosmetics: row.unlockedCosmetics,
+    // A row created by a first clear starts with an empty column; the starter kit is always owned.
+    unlockedCosmetics: Array.from(new Set([...defaults.unlockedCosmetics, ...row.unlockedCosmetics])),
     parcelsFound: row.parcelsFound,
     posesFound: row.posesFound,
     recipesMade: row.recipesMade,

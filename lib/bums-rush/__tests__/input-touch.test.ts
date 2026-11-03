@@ -8,6 +8,7 @@ import {
   TOUCH_GRIP_BREAK_PX,
   TOUCH_STICK_DEAD_RADIUS_PX,
   TOUCH_STICK_FULL_DEFLECTION_PX,
+  TOUCH_STICK_LEASH_PX,
   applyTiltToAim,
   armForTouchX,
   createTouchArmState,
@@ -139,6 +140,36 @@ describe("Bum's Rush touch", () => {
       expect(frame.gripRequested).toBe(false);
       // Aim still tracks the drag even though the grip let go.
       expect(frame.aim.x).toBeGreaterThan(0);
+    });
+  });
+
+  describe('a normal thumb drag keeps the grip (regression: break was 60px vs 64px full deflection)', () => {
+    it('full stick deflection and a modest overshoot do not pull free', () => {
+      expect(TOUCH_GRIP_BREAK_PX).toBeGreaterThan(TOUCH_STICK_FULL_DEFLECTION_PX * 2);
+      let state = onTouchDown(createTouchArmState(), 1, { x: 100, y: 100 }, 800);
+      for (const dx of [20, 64, 90, 130]) {
+        state = onTouchMove(state, 1, { x: 100 + dx, y: 100 });
+        const frame = resolveTouchFrame(state, 'auto-grab').left;
+        expect(frame.gripRequested).toBe(true);
+      }
+    });
+
+    it('the stick origin trails the finger past the leash, so aim stays live and reversible', () => {
+      let state = onTouchDown(createTouchArmState(), 1, { x: 100, y: 100 }, 800);
+      state = onTouchMove(state, 1, { x: 100 + 140, y: 100 });
+      expect(Math.hypot(state.left!.current.x - state.left!.origin.x, state.left!.current.y - state.left!.origin.y)).toBeCloseTo(
+        TOUCH_STICK_LEASH_PX,
+      );
+      expect(state.left!.down).toEqual({ x: 100, y: 100 });
+      // Reverse a little: aim flips immediately instead of crossing a long dead stretch.
+      state = onTouchMove(state, 1, { x: 100 + 100, y: 100 });
+      expect(resolveTouchFrame(state, 'auto-grab').left.aim.x).toBeLessThan(0.9);
+    });
+
+    it('a deliberate fling far past the touch-down point still pulls free', () => {
+      let state = onTouchDown(createTouchArmState(), 1, { x: 100, y: 100 }, 800);
+      state = onTouchMove(state, 1, { x: 100 + TOUCH_GRIP_BREAK_PX + 10, y: 100 });
+      expect(resolveTouchFrame(state, 'auto-grab').left.gripRequested).toBe(false);
     });
   });
 
