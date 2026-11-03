@@ -251,8 +251,35 @@ purchases are priced and paid server-side, earned coins are limited by a refilli
 to ~8 coins per second of wall clock without playing; `/api/altair/score` (leaderboard totals) is still
 client-reported.
 
-Plan for real verification (same machinery as co-op): a `SoloRun` driver shared by `GameScreen` and the
-verifier (synchronous level-up/reroll/banish/pause, frame-delta log because camera-driven tile streaming
-depends on frame timing), a server-issued `{runId, seed}` per run (HMAC, single use), the recorded
-frames/actions submitted at run end and replayed with the player's server-side meta bonuses, then
-`meta` coins credited only from the replay (and `score` rows written from it).
+### The solo driver (built, anti-cheat 4/6)
+
+`lib/altair/solo/solo-run.ts` (`SoloRun`) is the one synchronous driver for a single-player run, used by
+`GameScreen` (the browser) and by the headless verifier (`solo/verify-solo.ts`). It owns what used to be
+spread over `GameScreen` callbacks and `useEffect`s: the sim step (`engine/sim-step.ts`), the rules (XP,
+level-ups, coins, revives, evolution, reroll, banish), a seeded random stream (`engine/rng.ts`, scoped
+per call like `HostSim`), and a terrain window. The loop (`createGameLoop`) is only a fixed-step adapter:
+`driver.step()` once per 60 Hz step, render at the interpolated pose. A run is a pure function of
+`(seed, class + loadout, canvas size, input changes, level-up picks/rerolls/banishes)`, each indexed by the
+number of steps taken (`solo/solo-log.ts`: input = mobile stick in hundredths + a 4-bit key mask).
+
+What had to change to make that true (each was a hidden input from the wall clock or the display):
+
+- The level-up picker froze the world only after a React effect ran, a few frames late. `step()` now
+  refuses to advance while the picker is open, so picks are logged at an exact step.
+- Terrain (and so which props exist, and what a destroyed prop respawns as) followed the smoothed render
+  camera, i.e. frame timing and window size. The sim now updates terrain from the player each step with
+  a camera of its own whose size is the canvas size (logged when it changes; the render camera is unchanged).
+- Structure pickups drained per frame; they now drain inside the step. Hunter's Mark reads the sim camera.
+- Module-level engine state is reset at run start (it used to carry over between runs on one page).
+- The survival clock at death is `world.time`, not the 100 ms-stale store sync.
+
+`createGameLoop` without a driver (the golden-master harness) is untouched, so `golden-master.json` is
+unchanged. Equivalence evidence: `solo/__tests__/solo-loop.test.ts` plays 25 s through the real loop at
+60/144/30 Hz and a jittery 20-90 Hz and replays each log to identical numbers; `browser-run.json` is a log
+recorded in real Chromium (keyboard, level-up clicks, a resize) that replays offline to identical numbers.
+
+Not yet (next PR): the server issuing `{runId, seed, loadout}`, the log being submitted, the replay running
+in the jobs worker, and coins/leaderboard rows being written from it. Until then `/api/altair/meta`
+(`lib/altair/meta-guard.ts`) bounds the coin balance: purchases are priced and paid server-side, earned
+coins are limited by a refilling allowance (8 coins/s, 8000 cap), a first save may import at most 50k, and
+`/api/altair/score` (leaderboard totals) is still client-reported.

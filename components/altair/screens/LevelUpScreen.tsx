@@ -246,10 +246,13 @@ export function LevelUpPicker({
 }
 
 interface LevelUpScreenProps {
+  /** Single-player routes these through the run, which records them for the server's replay. */
+  onPick?: (index: number) => void;
+  onBanish?: (index: number) => void;
   onReroll?: () => void;
 }
 
-export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
+export default function LevelUpScreen({ onPick, onBanish, onReroll }: LevelUpScreenProps) {
   const phase = useAltairGameStore((s) => s.phase);
   const choices = useAltairGameStore((s) => s.upgradeChoices);
   const rerollsRemaining = useAltairGameStore((s) => s.rerollsRemaining);
@@ -264,9 +267,9 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
     <LevelUpPicker
       choices={choices}
       level={level}
-      onPick={pickUpgrade}
+      onPick={onPick ?? pickUpgrade}
       banishesRemaining={banishesRemaining}
-      onBanish={banish}
+      onBanish={onBanish ?? banish}
       rerollsRemaining={rerollsRemaining}
       onReroll={onReroll}
     />
