@@ -208,3 +208,11 @@ On wide screens the split-screen panes have draggable dividers (a column divider
 Sizes are clamped to 14–86% so no pane can be dragged shut, are kept per layout in this browser
 (`localStorage`, `rmh-elections-split`), and are not shared with the room. Spacing around and between panes is 4px.
 Streams cannot swallow a drag: iframes ignore the pointer while a divider is moving.
+
+## Auto-hiding Briefing Room bar
+
+The Briefing Room's top bar can hide (pin icon in the bar): it leaves the layout so the panes take the whole screen,
+and slides down when the pointer reaches a thin strip at the top edge (a small tab marks it) or when anything in
+it has keyboard focus. On touch, tap the strip to open it and tap elsewhere to close. The choice is kept per viewer
+in `localStorage` (`rmh-elections-roombar`). It is driven by a data attribute rather than `:hover`, because the
+site's CSS pipeline strips hand-written hover transforms.
