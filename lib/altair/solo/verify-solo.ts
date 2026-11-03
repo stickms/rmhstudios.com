@@ -176,6 +176,7 @@ export async function verifySoloRun(
 
 /** Key order is part of the comparison above, so compare through one canonical shape. */
 export function canonicalLoadout(l: SoloLoadout): SoloLoadout {
+  const keys = l.stats ? Object.keys(l.stats).sort() : [];
   return {
     rerolls: l.rerolls,
     banishes: l.banishes,
@@ -183,5 +184,7 @@ export function canonicalLoadout(l: SoloLoadout): SoloLoadout {
     extraChoice: l.extraChoice,
     catalystAffinity: l.catalystAffinity,
     greed: l.greed,
+    // Present only when non-empty, so a legacy loadout (no stats) keeps its exact old shape.
+    ...(keys.length > 0 ? { stats: Object.fromEntries(keys.map((k) => [k, l.stats![k]])) } : {}),
   };
 }

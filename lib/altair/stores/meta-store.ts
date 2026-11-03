@@ -9,6 +9,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { META_UPGRADES } from '@/lib/altair/data/meta-upgrades';
+import { FIRST_CLEAR_BONUS } from '@/lib/altair/solo/loadout';
 
 // ---- DB sync helpers (fire-and-forget, debounced) ---------------------------
 
@@ -199,7 +200,7 @@ export const useAltairMetaStore = create<AltairMetaState>()(
         if (s.classFirstClears.includes(classId)) return 0;
         set({ classFirstClears: [...s.classFirstClears, classId] });
         scheduleSave();
-        return 200; // bonus coins for first clear
+        return FIRST_CLEAR_BONUS; // bonus coins for first clear
       },
 
       incrementRuns: () => {

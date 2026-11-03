@@ -38,6 +38,7 @@
   "graphics-hint": "फ्रेम रेट स्मूथ रखने के लिए ऑटो गुणवत्ता को अनुकूलित करता है। इसे लॉक करने के लिए एक स्तर चुनें।",
   "graphics-lost": "आपके डिवाइस ने ग्राफ़िक्स को बाधित कर दिया।",
   "graphics-stalled": "The picture stopped updating on this device.",
+  "graphics-unavailable": "3D graphics could not start on this device.",
   "haymaker": "हेमेकर",
   "hook": "हुक",
   "hook-desc": "(धीमा, उच्च क्षति)",

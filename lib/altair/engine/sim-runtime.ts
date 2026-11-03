@@ -38,6 +38,11 @@ export interface SimRuntime {
   abilityState: ClassAbilityState;
   catalystStates: CatalystRuntimeState[];
   effectiveStats: PlayerStats | null;
+  /**
+   * Permanent meta-upgrade stat bonuses for this run (keys as in computeEffectiveStats). Absent/empty for
+   * multiplayer and the golden-master harness, which play without meta upgrades.
+   */
+  metaBonuses?: Record<string, number>;
   lastStatsWeaponCount: number;
   lastStatsPassiveCount: number;
   lastStatsCatalystCount: number;

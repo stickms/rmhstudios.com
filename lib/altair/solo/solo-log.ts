@@ -33,6 +33,23 @@ export const SEV_VIEWPORT = 4;
 export const MIN_VIEWPORT = 200;
 export const MAX_VIEWPORT = 6144;
 
+/**
+ * The stat keys a meta upgrade may feed the sim (computeEffectiveStats). `revival` is deliberately absent:
+ * it is the loadout's own field. Anything else in `stats` is refused, so a log cannot smuggle in a bonus.
+ */
+export const META_STAT_KEYS = [
+  'armor',
+  'hpRegen',
+  'maxHpPercent',
+  'mightPercent',
+  'moveSpeedPercent',
+  'pickupRange',
+  'growthPercent',
+  'luckPercent',
+  'pierce',
+  'attackSpeedPercent',
+] as const;
+
 export interface SoloLoadout {
   rerolls: number;
   banishes: number;
@@ -40,6 +57,12 @@ export interface SoloLoadout {
   extraChoice: boolean;
   catalystAffinity: number;
   greed: number;
+  /**
+   * Summed meta-upgrade stat bonuses (see META_STAT_KEYS). OPTIONAL and omitted when empty: a loadout
+   * without it is the pre-fix shape, and replays exactly as it always did (no bonuses), so every
+   * previously recorded log still verifies.
+   */
+  stats?: Record<string, number>;
 }
 
 export type SoloEnd = 'dead' | 'victory' | 'quit';
@@ -133,6 +156,14 @@ export type SoloLogCheck = { ok: true; events: SoloEvent[] } | { ok: false; reas
 
 const isInt = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v);
 
+function checkStats(s: unknown): boolean {
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return false;
+  const allowed = new Set<string>(META_STAT_KEYS);
+  return Object.entries(s as Record<string, unknown>).every(
+    ([k, v]) => allowed.has(k) && typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1000,
+  );
+}
+
 export function checkLoadout(l: unknown): l is SoloLoadout {
   if (!l || typeof l !== 'object') return false;
   const o = l as Record<string, unknown>;
@@ -143,7 +174,8 @@ export function checkLoadout(l: unknown): l is SoloLoadout {
     lvl(o.revival, 10) &&
     typeof o.extraChoice === 'boolean' &&
     lvl(o.catalystAffinity, 20) &&
-    lvl(o.greed, 20)
+    lvl(o.greed, 20) &&
+    (o.stats === undefined || checkStats(o.stats))
   );
 }
 
