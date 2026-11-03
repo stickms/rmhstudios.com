@@ -24,13 +24,19 @@ export interface ChatMessage {
   at: number;
 }
 
-export type ChatEvent = { type: 'msg'; msg: ChatMessage } | { type: 'del'; id: string };
+export type ChatEvent =
+  | { type: 'msg'; msg: ChatMessage }
+  | { type: 'del'; id: string }
+  /** A one-tap reaction; ephemeral, never stored in history. */
+  | { type: 'react'; emoji: string; at: number }
+  /** The room's host changed the shared screen; every member's overlay re-renders from this. */
+  | { type: 'config'; config: unknown };
 
 export type ChatTextResult = { ok: true; text: string } | { ok: false; reason: 'empty' | 'links' | 'too-long' };
 
 // Control chars, zero-width, and the bidi overrides used to spoof text direction.
 // eslint-disable-next-line no-control-regex
-const INVISIBLE = /[\u0000-\u0008\u000B-\u001F\u007F​-‏‪-‮⁦-⁩﻿]/g;
+const INVISIBLE = /[\u0000-\u0008\u000B-\u001F\u007F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g;
 const URL_LIKE =
   /(?:https?:\/\/|www\.|\b[a-z0-9-]+\s?(?:\.|\[dot\]|\(dot\)|\sdot\s)\s?(?:com|net|org|io|co|gg|ly|tv|me|xyz|ru|cn|app|dev|info|biz|us|vote|gov|link|click|top|site|online|shop|live|news)\b|\bt\.me\/|\bbit\.ly)/i;
 

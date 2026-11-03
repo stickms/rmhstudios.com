@@ -979,9 +979,12 @@ import { Route as ApiDunesdaySyncFeedIdRouteImport } from './routes/api/dunesday
 import { Route as ApiEconomySavingsGoalsIndexRouteImport } from './routes/api/economy/savings-goals/index'
 import { Route as ApiEconomySavingsGoalsIdRouteImport } from './routes/api/economy/savings-goals/$id'
 import { Route as ApiElectionsChatIndexRouteImport } from './routes/api/elections/chat/index'
+import { Route as ApiElectionsChatReactRouteImport } from './routes/api/elections/chat/react'
 import { Route as ApiElectionsChatStreamRouteImport } from './routes/api/elections/chat/stream'
 import { Route as ApiElectionsEventsIndexRouteImport } from './routes/api/elections/events/index'
 import { Route as ApiElectionsEventsStreamRouteImport } from './routes/api/elections/events/stream'
+import { Route as ApiElectionsRoomsIndexRouteImport } from './routes/api/elections/rooms/index'
+import { Route as ApiElectionsRoomsCodeRouteImport } from './routes/api/elections/rooms/$code'
 import { Route as ApiEmojiPacksSlugIndexRouteImport } from './routes/api/emoji-packs/$slug/index'
 import { Route as ApiEmojiPacksSlugItemsRouteImport } from './routes/api/emoji-packs/$slug/items'
 import { Route as ApiEmojiPacksSlugSubscribeRouteImport } from './routes/api/emoji-packs/$slug/subscribe'
@@ -6344,6 +6347,11 @@ const ApiElectionsChatIndexRoute = ApiElectionsChatIndexRouteImport.update({
   path: '/api/elections/chat/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiElectionsChatReactRoute = ApiElectionsChatReactRouteImport.update({
+  id: '/api/elections/chat/react',
+  path: '/api/elections/chat/react',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiElectionsChatStreamRoute = ApiElectionsChatStreamRouteImport.update({
   id: '/api/elections/chat/stream',
   path: '/api/elections/chat/stream',
@@ -6360,6 +6368,16 @@ const ApiElectionsEventsStreamRoute =
     path: '/api/elections/events/stream',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiElectionsRoomsIndexRoute = ApiElectionsRoomsIndexRouteImport.update({
+  id: '/api/elections/rooms/',
+  path: '/api/elections/rooms/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsRoomsCodeRoute = ApiElectionsRoomsCodeRouteImport.update({
+  id: '/api/elections/rooms/$code',
+  path: '/api/elections/rooms/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEmojiPacksSlugIndexRoute = ApiEmojiPacksSlugIndexRouteImport.update({
   id: '/api/emoji-packs/$slug/',
   path: '/api/emoji-packs/$slug/',
@@ -9510,8 +9528,10 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
   '/api/dunesday/sync/$feedId': typeof ApiDunesdaySyncFeedIdRouteWithChildren
   '/api/economy/savings-goals/$id': typeof ApiEconomySavingsGoalsIdRoute
+  '/api/elections/chat/react': typeof ApiElectionsChatReactRoute
   '/api/elections/chat/stream': typeof ApiElectionsChatStreamRoute
   '/api/elections/events/stream': typeof ApiElectionsEventsStreamRoute
+  '/api/elections/rooms/$code': typeof ApiElectionsRoomsCodeRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
@@ -9771,6 +9791,7 @@ export interface FileRoutesByFullPath {
   '/api/economy/savings-goals/': typeof ApiEconomySavingsGoalsIndexRoute
   '/api/elections/chat/': typeof ApiElectionsChatIndexRoute
   '/api/elections/events/': typeof ApiElectionsEventsIndexRoute
+  '/api/elections/rooms/': typeof ApiElectionsRoomsIndexRoute
   '/api/emoji-packs/$slug/': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id/': typeof ApiEventsIdIndexRoute
   '/api/fortune/today/': typeof ApiFortuneTodayIndexRoute
@@ -10867,8 +10888,10 @@ export interface FileRoutesByTo {
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
   '/api/dunesday/sync/$feedId': typeof ApiDunesdaySyncFeedIdRouteWithChildren
   '/api/economy/savings-goals/$id': typeof ApiEconomySavingsGoalsIdRoute
+  '/api/elections/chat/react': typeof ApiElectionsChatReactRoute
   '/api/elections/chat/stream': typeof ApiElectionsChatStreamRoute
   '/api/elections/events/stream': typeof ApiElectionsEventsStreamRoute
+  '/api/elections/rooms/$code': typeof ApiElectionsRoomsCodeRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
@@ -11128,6 +11151,7 @@ export interface FileRoutesByTo {
   '/api/economy/savings-goals': typeof ApiEconomySavingsGoalsIndexRoute
   '/api/elections/chat': typeof ApiElectionsChatIndexRoute
   '/api/elections/events': typeof ApiElectionsEventsIndexRoute
+  '/api/elections/rooms': typeof ApiElectionsRoomsIndexRoute
   '/api/emoji-packs/$slug': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id': typeof ApiEventsIdIndexRoute
   '/api/fortune/today': typeof ApiFortuneTodayIndexRoute
@@ -12255,8 +12279,10 @@ export interface FileRoutesById {
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
   '/api/dunesday/sync/$feedId': typeof ApiDunesdaySyncFeedIdRouteWithChildren
   '/api/economy/savings-goals/$id': typeof ApiEconomySavingsGoalsIdRoute
+  '/api/elections/chat/react': typeof ApiElectionsChatReactRoute
   '/api/elections/chat/stream': typeof ApiElectionsChatStreamRoute
   '/api/elections/events/stream': typeof ApiElectionsEventsStreamRoute
+  '/api/elections/rooms/$code': typeof ApiElectionsRoomsCodeRoute
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
@@ -12516,6 +12542,7 @@ export interface FileRoutesById {
   '/api/economy/savings-goals/': typeof ApiEconomySavingsGoalsIndexRoute
   '/api/elections/chat/': typeof ApiElectionsChatIndexRoute
   '/api/elections/events/': typeof ApiElectionsEventsIndexRoute
+  '/api/elections/rooms/': typeof ApiElectionsRoomsIndexRoute
   '/api/emoji-packs/$slug/': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id/': typeof ApiEventsIdIndexRoute
   '/api/fortune/today/': typeof ApiFortuneTodayIndexRoute
@@ -13642,8 +13669,10 @@ export interface FileRouteTypes {
     | '/api/doctrine/sahur/status'
     | '/api/dunesday/sync/$feedId'
     | '/api/economy/savings-goals/$id'
+    | '/api/elections/chat/react'
     | '/api/elections/chat/stream'
     | '/api/elections/events/stream'
+    | '/api/elections/rooms/$code'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
     | '/api/emoji-packs/$slug/upload'
@@ -13903,6 +13932,7 @@ export interface FileRouteTypes {
     | '/api/economy/savings-goals/'
     | '/api/elections/chat/'
     | '/api/elections/events/'
+    | '/api/elections/rooms/'
     | '/api/emoji-packs/$slug/'
     | '/api/events/$id/'
     | '/api/fortune/today/'
@@ -14999,8 +15029,10 @@ export interface FileRouteTypes {
     | '/api/doctrine/sahur/status'
     | '/api/dunesday/sync/$feedId'
     | '/api/economy/savings-goals/$id'
+    | '/api/elections/chat/react'
     | '/api/elections/chat/stream'
     | '/api/elections/events/stream'
+    | '/api/elections/rooms/$code'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
     | '/api/emoji-packs/$slug/upload'
@@ -15260,6 +15292,7 @@ export interface FileRouteTypes {
     | '/api/economy/savings-goals'
     | '/api/elections/chat'
     | '/api/elections/events'
+    | '/api/elections/rooms'
     | '/api/emoji-packs/$slug'
     | '/api/events/$id'
     | '/api/fortune/today'
@@ -16386,8 +16419,10 @@ export interface FileRouteTypes {
     | '/api/doctrine/sahur/status'
     | '/api/dunesday/sync/$feedId'
     | '/api/economy/savings-goals/$id'
+    | '/api/elections/chat/react'
     | '/api/elections/chat/stream'
     | '/api/elections/events/stream'
+    | '/api/elections/rooms/$code'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
     | '/api/emoji-packs/$slug/upload'
@@ -16647,6 +16682,7 @@ export interface FileRouteTypes {
     | '/api/economy/savings-goals/'
     | '/api/elections/chat/'
     | '/api/elections/events/'
+    | '/api/elections/rooms/'
     | '/api/emoji-packs/$slug/'
     | '/api/events/$id/'
     | '/api/fortune/today/'
@@ -17447,8 +17483,10 @@ export interface RootRouteChildren {
   ApiDoctrineSafehouseDisclosuresRoute: typeof ApiDoctrineSafehouseDisclosuresRoute
   ApiDoctrineSahurStatusRoute: typeof ApiDoctrineSahurStatusRoute
   ApiEconomySavingsGoalsIdRoute: typeof ApiEconomySavingsGoalsIdRoute
+  ApiElectionsChatReactRoute: typeof ApiElectionsChatReactRoute
   ApiElectionsChatStreamRoute: typeof ApiElectionsChatStreamRoute
   ApiElectionsEventsStreamRoute: typeof ApiElectionsEventsStreamRoute
+  ApiElectionsRoomsCodeRoute: typeof ApiElectionsRoomsCodeRoute
   ApiEmojiPacksSlugItemsRoute: typeof ApiEmojiPacksSlugItemsRoute
   ApiEmojiPacksSlugSubscribeRoute: typeof ApiEmojiPacksSlugSubscribeRoute
   ApiEmojiPacksSlugUploadRoute: typeof ApiEmojiPacksSlugUploadRoute
@@ -17597,6 +17635,7 @@ export interface RootRouteChildren {
   ApiEconomySavingsGoalsIndexRoute: typeof ApiEconomySavingsGoalsIndexRoute
   ApiElectionsChatIndexRoute: typeof ApiElectionsChatIndexRoute
   ApiElectionsEventsIndexRoute: typeof ApiElectionsEventsIndexRoute
+  ApiElectionsRoomsIndexRoute: typeof ApiElectionsRoomsIndexRoute
   ApiEmojiPacksSlugIndexRoute: typeof ApiEmojiPacksSlugIndexRoute
   ApiEventsIdIndexRoute: typeof ApiEventsIdIndexRoute
   ApiFortuneTodayIndexRoute: typeof ApiFortuneTodayIndexRoute
@@ -24486,6 +24525,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiElectionsChatIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/elections/chat/react': {
+      id: '/api/elections/chat/react'
+      path: '/api/elections/chat/react'
+      fullPath: '/api/elections/chat/react'
+      preLoaderRoute: typeof ApiElectionsChatReactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/elections/chat/stream': {
       id: '/api/elections/chat/stream'
       path: '/api/elections/chat/stream'
@@ -24505,6 +24551,20 @@ declare module '@tanstack/react-router' {
       path: '/api/elections/events/stream'
       fullPath: '/api/elections/events/stream'
       preLoaderRoute: typeof ApiElectionsEventsStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/rooms/': {
+      id: '/api/elections/rooms/'
+      path: '/api/elections/rooms'
+      fullPath: '/api/elections/rooms/'
+      preLoaderRoute: typeof ApiElectionsRoomsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/rooms/$code': {
+      id: '/api/elections/rooms/$code'
+      path: '/api/elections/rooms/$code'
+      fullPath: '/api/elections/rooms/$code'
+      preLoaderRoute: typeof ApiElectionsRoomsCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/emoji-packs/$slug/': {
@@ -30313,8 +30373,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineSafehouseDisclosuresRoute: ApiDoctrineSafehouseDisclosuresRoute,
   ApiDoctrineSahurStatusRoute: ApiDoctrineSahurStatusRoute,
   ApiEconomySavingsGoalsIdRoute: ApiEconomySavingsGoalsIdRoute,
+  ApiElectionsChatReactRoute: ApiElectionsChatReactRoute,
   ApiElectionsChatStreamRoute: ApiElectionsChatStreamRoute,
   ApiElectionsEventsStreamRoute: ApiElectionsEventsStreamRoute,
+  ApiElectionsRoomsCodeRoute: ApiElectionsRoomsCodeRoute,
   ApiEmojiPacksSlugItemsRoute: ApiEmojiPacksSlugItemsRoute,
   ApiEmojiPacksSlugSubscribeRoute: ApiEmojiPacksSlugSubscribeRoute,
   ApiEmojiPacksSlugUploadRoute: ApiEmojiPacksSlugUploadRoute,
@@ -30463,6 +30525,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEconomySavingsGoalsIndexRoute: ApiEconomySavingsGoalsIndexRoute,
   ApiElectionsChatIndexRoute: ApiElectionsChatIndexRoute,
   ApiElectionsEventsIndexRoute: ApiElectionsEventsIndexRoute,
+  ApiElectionsRoomsIndexRoute: ApiElectionsRoomsIndexRoute,
   ApiEmojiPacksSlugIndexRoute: ApiEmojiPacksSlugIndexRoute,
   ApiEventsIdIndexRoute: ApiEventsIdIndexRoute,
   ApiFortuneTodayIndexRoute: ApiFortuneTodayIndexRoute,
@@ -30566,12 +30629,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

@@ -514,6 +514,7 @@ model User {
   pileOnGuards               PileOnGuard[]
   // P12 forecasting: G6 market comments
   predictionComments         PredictionComment[]
+  electionRooms              ElectionRoom[]      @relation("ElectionRoomOwner")
   // P07 arcade: E1/E12 seeded runs, E2 backlog, E6 achievement tips, E11 rivals
   arcadeSeedRuns             ArcadeSeedRun[]
   gamePlayStatuses           GamePlayStatus[]
@@ -13522,4 +13523,37 @@ model Tf2LoadoutCatalog {
   checkedAt DateTime
 
   @@map("tf2_loadout_catalog")
+}
+
+// ─── Election watch rooms ──────────────────────────────────────────────
+
+enum ElectionRoomVisibility {
+  PUBLIC // listed in the lobby for its election day
+  PRIVATE // unlisted: reachable only by its code
+}
+
+/// A watch room for an election night: a shared screen (layout + panes) with its own chat and
+/// reactions. Chat and reactions are ephemeral (realtime bus only); what is stored is the room
+/// itself so a link keeps working across deploys. Solo rooms are not stored at all (browser only).
+/// The `code` is the capability: anyone holding it can read and chat; only the owner edits.
+model ElectionRoom {
+  id           String                 @id @default(cuid())
+  code         String                 @unique @db.VarChar(12)
+  name         String                 @db.VarChar(60)
+  visibility   ElectionRoomVisibility @default(PRIVATE)
+  ownerId      String
+  /// The election day this room watches, YYYY-MM-DD.
+  electionDate String                 @db.VarChar(10)
+  /// Shared layout and panes — validated by lib/elections/room-config.ts before every write.
+  config       Json
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  /// Rooms are not kept forever: swept after this (election day + a few days).
+  expiresAt    DateTime
+
+  owner User @relation("ElectionRoomOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([visibility, electionDate, expiresAt])
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@map("election_room")
 }

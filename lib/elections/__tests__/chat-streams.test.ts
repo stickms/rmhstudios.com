@@ -5,14 +5,14 @@ import { parseEmbed, parseFeaturedStreams } from '../streams';
 
 describe('sanitizeChatText', () => {
   it('trims, collapses whitespace and strips invisible/bidi characters', () => {
-    expect(sanitizeChatText('  hello \n\n  world‮  ')).toEqual({ ok: true, text: 'hello world' });
-    expect(sanitizeChatText('a​b\u0000c')).toEqual({ ok: true, text: 'abc' });
+    expect(sanitizeChatText('  hello \n\n  world\u202E  ')).toEqual({ ok: true, text: 'hello world' });
+    expect(sanitizeChatText('a\u200Bb\u0000c')).toEqual({ ok: true, text: 'abc' });
   });
   it('collapses character walls', () => {
     expect(sanitizeChatText('wooooooooooow')).toEqual({ ok: true, text: 'wooow' });
   });
   it('rejects empty and over-long text', () => {
-    expect(sanitizeChatText('   ​ ')).toEqual({ ok: false, reason: 'empty' });
+    expect(sanitizeChatText('   \u200B ')).toEqual({ ok: false, reason: 'empty' });
     expect(sanitizeChatText('x y '.repeat(MAX_CHAT_LENGTH))).toEqual({ ok: false, reason: 'too-long' });
   });
   it.each([

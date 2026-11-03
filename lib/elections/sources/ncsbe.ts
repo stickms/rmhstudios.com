@@ -90,7 +90,7 @@ export interface ParsedNcsbe {
 /** Parse the results text for one election date. */
 export function parseNcsbeResults(text: string, date: string): ParsedNcsbe {
   const lines = text.split(/\r?\n/);
-  const header = (lines[0] ?? '').replace(/^﻿/, '').split('\t').map((h) => h.trim());
+  const header = (lines[0] ?? '').replace(/^\uFEFF/, '').split('\t').map((h) => h.trim());
   const col = (n: string) => header.indexOf(n);
   const iPrec = col('Precinct');
   const iCounty = col('County');
