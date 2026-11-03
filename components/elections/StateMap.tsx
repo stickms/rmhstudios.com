@@ -28,9 +28,8 @@ export function StateMap({
     return m;
   }, [races, offices]);
 
-  const current = views.get(office) ?? new Map<string, StateView>();
-
   const cells = useMemo(() => {
+    const current = views.get(office) ?? new Map<string, StateView>();
     const out = new Map<string, TileCell>();
     for (const code of STATE_CODES) {
       const v = current.get(code) ?? emptyView(code);
@@ -44,7 +43,7 @@ export function StateMap({
       });
     }
     return out;
-  }, [current, office]);
+  }, [views, office]);
 
   const stateRaces = useMemo(
     () => (selected ? races.filter((r) => r.state === selected) : []),
@@ -78,7 +77,7 @@ export function StateMap({
           <span><i style={{ background: 'var(--el-gop)' }} />{t('map.lGop', { defaultValue: 'GOP won' })}</span>
           <span><i style={{ background: 'repeating-linear-gradient(135deg,var(--el-dem-soft) 0 4px,#fff 4px 8px)' }} />{t('map.lLeadD', { defaultValue: 'Dem leads / leans' })}</span>
           <span><i style={{ background: 'repeating-linear-gradient(135deg,var(--el-gop-soft) 0 4px,#fff 4px 8px)' }} />{t('map.lLeadR', { defaultValue: 'GOP leads / leans' })}</span>
-          <span><i style={{ background: 'var(--el-yellow)' }} />{t('map.lToss', { defaultValue: 'Toss-up' })}</span>
+          <span><i style={{ background: 'repeating-linear-gradient(45deg,#000 0 2px,#fff 2px 5px)' }} />{t('map.lToss', { defaultValue: 'Toss-up' })}</span>
           <span><i style={{ background: 'transparent', borderStyle: 'dashed' }} />{t('map.lNone', { defaultValue: 'No race' })}</span>
         </div>
       </div>
