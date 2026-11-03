@@ -14,15 +14,17 @@
     "flashSafe": true,
     "contrastRatio": 13.02
   },
-  "spawn": [{ "x": 220, "y": 860 }],
+  "spawn": [
+    { "x": 220, "y": 710 }
+  ],
   "goal": {
-    "shape": { "kind": "rect", "x": 2600, "y": 740, "w": 120, "h": 60 },
+    "shape": { "kind": "rect", "x": 2600, "y": 910, "w": 120, "h": 60 },
     "requires": "all"
   },
   "checkpoints": [],
   "geometry": [
     {
-      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 700, "h": 80 },
+      "shape": { "kind": "rect", "x": 0, "y": 750, "w": 700, "h": 80 },
       "material": "paper",
       "render": "drawn"
     },
@@ -32,12 +34,12 @@
       "render": "drawn"
     },
     {
-      "shape": { "kind": "rect", "x": 960, "y": 860, "w": 650, "h": 80 },
+      "shape": { "kind": "rect", "x": 900, "y": 860, "w": 710, "h": 80 },
       "material": "paper",
       "render": "drawn"
     },
     {
-      "shape": { "kind": "rect", "x": 1890, "y": 800, "w": 900, "h": 100 },
+      "shape": { "kind": "rect", "x": 1810, "y": 970, "w": 980, "h": 100 },
       "material": "paper",
       "render": "drawn"
     },
@@ -52,22 +54,18 @@
     {
       "id": "swing-tutorial",
       "kind": "swing",
-      "at": { "x": 680, "y": 640 },
-      "length": 260,
+      "at": { "x": 752, "y": 200 },
+      "length": 530,
       "damping": 0.25
     },
     {
       "id": "swing-crossing",
       "kind": "swing",
-      "at": { "x": 1610, "y": 590 },
-      "length": 250,
-      "damping": 0.15
+      "at": { "x": 1662, "y": 310 },
+      "length": 530,
+      "damping": 0.25
     },
-    {
-      "id": "camera-1",
-      "kind": "camera",
-      "at": { "x": 300, "y": 850 }
-    }
+    { "id": "camera-1", "kind": "camera", "at": { "x": 300, "y": 700 } }
   ],
   "hazards": [
     {
@@ -88,13 +86,13 @@
   "decorations": [
     {
       "kind": "note",
-      "at": { "x": 120, "y": 760 },
+      "at": { "x": 120, "y": 610 },
       "textKey": "bums.level.w1-01.note-aim",
       "width": 260
     },
     {
       "kind": "note",
-      "at": { "x": 720, "y": 560 },
+      "at": { "x": 440, "y": 430 },
       "textKey": "bums.level.w1-01.note-swing",
       "width": 240
     },
@@ -106,18 +104,21 @@
     },
     {
       "kind": "arrow",
-      "from": { "x": 300, "y": 800 },
-      "to": { "x": 620, "y": 780 }
+      "from": { "x": 300, "y": 650 },
+      "to": { "x": 620, "y": 630 }
     },
-    {
-      "kind": "stain",
-      "at": { "x": 2450, "y": 830 },
-      "r": 40
-    }
+    { "kind": "stain", "at": { "x": 2450, "y": 1000 }, "r": 40 }
   ],
   "assistBeams": [
-    { "kind": "chain", "points": [{ "x": 1580, "y": 900 }, { "x": 1900, "y": 860 }], "thickness": 10 }
+    {
+      "kind": "chain",
+      "points": [
+        { "x": 1580, "y": 900 },
+        { "x": 1900, "y": 1030 }
+      ],
+      "thickness": 10
+    }
   ],
   "music": "w1-doodle-docks",
-  "authorNotes": "Solo, no chain required. Spawn on the starting pier and swing (swing-tutorial, pivot ~680,640) across the 260px gap to the middle pier — a safety-net plank sits directly beneath this whole gap, so a missed grab or a bad release in the first ~20s of play lands the player back on solid ground, never in the sea. Grab camera-1 near spawn on the way past (it is off the direct line so picking it up is optional but convenient) to be ready for the photo objective, then hang upside-down at the top of either swing's arc and use it (predicate anyInverted) for w1-01-photo. Cross the second gap on swing-crossing (pivot ~1610,590, 250px reach to the goal pier) — this crossing is over the real void hazard, so it is the first point in the level an unforced error actually costs a life; an assist beam (striped chain) spans the same gap for players who want it, at the Clock objective's usual cost. No relics, ropes or crates yet — those are levels 02+."
+  "authorNotes": "Solo, no chain required. Spawn on the raised starting pier (top y=750) and swing (swing-tutorial, pivot 752,200, 530px bar, lowest point y=730) across the 200px gap to the middle pier (top y=860, x=900..1610). Arms only reach ~50px past the head, so each bar hangs ~52px past the pier edge with its tip a few px below head height: walk to the edge, grab the tip, pump along the body's own motion, let go on the forward swing. Every swing lands ~110px lower than it starts (a hanging head sits an arm-length below the hand) and a long 530px bar builds enough amplitude to cross; headless pump-and-release runs with noise (lib/bums-rush probe, 100 seeds) land >=85% on both gaps. A safety-net plank sits directly beneath the first gap, so a missed grab or a bad release in the first ~20s lands the player back on solid ground, never in the sea. Grab camera-1 near spawn on the way past (it is off the direct line so picking it up is optional but convenient) to be ready for the photo objective, then hang upside-down at the top of either swing's arc and use it (predicate anyInverted) for w1-01-photo. Cross the second gap on swing-crossing (pivot 1662,310, bar tip y=840, to the goal pier, top y=970) - this crossing is over the real void hazard, so it is the first point in the level an unforced error actually costs a life; an assist beam (striped chain) spans the same gap for players who want it, at the Clock objective's usual cost. No relics, ropes or crates yet - those are levels 02+."
 }
