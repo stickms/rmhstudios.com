@@ -587,7 +587,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                 })}
                 className="w-full bg-transparent py-4 text-[0.9375rem] text-site-text placeholder:text-site-text-dim focus:outline-none"
               />
-              <kbd className="hidden shrink-0 rounded-[var(--site-radius-sm)] border border-site-border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-site-text-dim sm:block">
+              <kbd className="hidden shrink-0 rounded-[var(--site-radius-sm)] border border-site-border px-1.5 py-0.5 text-[10px] font-medium uppercase text-site-text-dim sm:block">
                 esc
               </kbd>
             </div>
@@ -605,7 +605,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
               )}
               {grouped.map((group) => (
                 <div key={group.section} className="mb-1">
-                  <p className="px-3 pb-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-site-text-dim">
+                  <p className="px-3 pb-1 pt-2 text-xs font-semibold text-site-text-dim">
                     {t(SECTION_LABELS[group.section].key, {
                       defaultValue: SECTION_LABELS[group.section].fallback,
                     })}

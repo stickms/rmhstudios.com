@@ -70,7 +70,7 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
 
         <div className="space-y-4">
           <div>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('tier', { defaultValue: 'Tier' })}</p>
+            <p className="mb-1.5 site-section-label">{t('tier', { defaultValue: 'Tier' })}</p>
             <div className="grid grid-cols-2 gap-2">
               {(['starter', 'pro'] as const).map((tierOpt) => (
                 <button
@@ -92,7 +92,7 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
           </div>
 
           <div>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('duration', { defaultValue: 'Duration' })}</p>
+            <p className="mb-1.5 site-section-label">{t('duration', { defaultValue: 'Duration' })}</p>
             <div className="flex gap-2">
               {MONTH_OPTIONS.map((m) => (
                 <button

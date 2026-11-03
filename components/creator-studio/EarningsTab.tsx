@@ -121,7 +121,7 @@ export function EarningsTab() {
       {/* Stat tiles — L1 fills: repeated content takes no backdrop blur (design-language §5). */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <Card className="p-4">
-          <div className="text-xs uppercase tracking-wide text-site-text-dim">
+          <div className="text-xs font-medium text-site-text-dim">
             {t('redeemable', { defaultValue: 'Redeemable' })}
           </div>
           <div className="flex items-center gap-2 text-2xl font-bold tabular-nums">
@@ -130,7 +130,7 @@ export function EarningsTab() {
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-xs uppercase tracking-wide text-site-text-dim">
+          <div className="text-xs font-medium text-site-text-dim">
             {t('lifetime', { defaultValue: 'Lifetime earned' })}
           </div>
           <div className="text-2xl font-bold tabular-nums">
@@ -138,7 +138,7 @@ export function EarningsTab() {
           </div>
         </Card>
         <Card className="p-4 col-span-2 sm:col-span-1">
-          <div className="text-xs uppercase tracking-wide text-site-text-dim">
+          <div className="text-xs font-medium text-site-text-dim">
             {t('balance', { defaultValue: 'Coin balance' })}
           </div>
           <div className="text-2xl font-bold tabular-nums">
@@ -229,7 +229,7 @@ export function EarningsTab() {
                 />
               </div>
               {kind === 'PAYOUT' && (
-                <p className="text-xs text-site-text-dim">
+                <p className="text-xs font-medium text-site-text-dim">
                   {t('payout-note', {
                     defaultValue:
                       'Payouts require a verified creator account and admin review (min {{n}} coins).',

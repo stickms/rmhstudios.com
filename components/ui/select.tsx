@@ -384,7 +384,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                       <SelectPrimitive.Label
                         className={cn(
                           // Matches `MenuLabel` — same inset as the rows below it.
-                          'px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em]',
+                          'px-3 pb-1 pt-2 text-xs font-semibold',
                           styles.label,
                         )}
                       >

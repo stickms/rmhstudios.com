@@ -57,12 +57,12 @@ export function FriendsOnlineWidget({ onSettled }: { onSettled?: () => void } = 
  if (!session?.user || !friends || friends.length === 0) return null;
 
  return (
- <section className="rad-live__card">
- <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-site-text">
- <Users className="h-5 w-5 text-site-accent"aria-hidden />
+ <section className="rad-live__card glass-fill">
+ <h2>
+ <Users aria-hidden />
  {t('friends-online', { defaultValue:'Friends online'})}
  </h2>
- <ul className="space-y-1">
+ <ul>
  {friends.map(({ user, activity }) => {
  const name = user.name || user.handle || t('someone', { defaultValue:'Someone'});
  const profileHref = `/u/${user.handle ?? user.id}`;
@@ -70,9 +70,9 @@ export function FriendsOnlineWidget({ onSettled }: { onSettled?: () => void } = 
  <li key={user.id}>
  <Link
  to={activity?.href ?? profileHref}
- className="-mx-2 flex items-center gap-2.5 rounded-site-sm px-2 py-1.5 transition-colors hover:bg-site-surface-hover"
+ className="rad-live__row"
  >
- <span className="relative shrink-0">
+ <span className="rad-live__slot relative">
  <UserAvatar src={user.image} alt=""size={32} fallbackName={name} />
  <span
  aria-hidden

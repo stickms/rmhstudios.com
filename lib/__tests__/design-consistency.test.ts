@@ -939,6 +939,51 @@ const SECTION_LABEL_ALLOW = new Set([
   join('components', 'rebar-rutabaga', 'TastingMenu.tsx'),
 ]);
 
+describe('design consistency — no eyebrows (owner decision, 2026-11-03)', () => {
+  it('no site-tier element is set in letterspaced all-caps', () => {
+    // `uppercase` with wide tracking is the eyebrow signature. A short badge or key cap may still be `uppercase`
+    // (ALT, GIF, ESC), but never letterspaced; a group label is `site-section-label`, a page kicker `site-kicker`
+    // (sentence case), a category a soft chip.
+    const classAttr = /className=(?:\{`([^`]*)`\}|(["'])([^"']*)\2)/g;
+    const offenders: Violation[] = [];
+    // Surfaces with a scheme of their own keep it (like the games and apps): a themed restaurant microsite, the casino
+    // tables, the Balatro lane, game replays and result screens.
+    const OWN_SCHEME = /(^|\/)(rebar-rutabaga|rmhcoins|balatro|replays|games)\//;
+    for (const file of SITE_FILES) {
+      if (OWN_SCHEME.test(file) || file.includes('rebar-rutabaga')) continue;
+      const src = readFileSync(join(ROOT, file), 'utf8');
+      classAttr.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = classAttr.exec(src))) {
+        const classes = m[1] ?? m[3] ?? '';
+        if (/(^|\s)uppercase(\s|$)/.test(classes) && /(^|\s)tracking-(wide|wider|widest|\[)/.test(classes)) {
+          offenders.push({ file, line: lineAt(src, m.index), detail: 'uppercase + wide tracking' });
+        }
+      }
+    }
+    expect(
+      offenders,
+      report(
+        'Letterspaced all-caps (an eyebrow) — use `site-section-label` for a group label, `site-kicker` ' +
+          '(sentence case) for the line over a heading, or a soft category chip',
+        offenders,
+      ),
+    ).toEqual([]);
+  });
+
+  it('the shared eyebrow classes are sentence case', () => {
+    const css = [
+      readFileSync(join(ROOT, 'app/globals.css'), 'utf8'),
+      readFileSync(join(ROOT, 'components/feed/feed.css'), 'utf8'),
+    ].join('\n');
+    for (const selector of ['.site-kicker', '.apple-hero__eyebrow', '.feed-hero__eyebrow', '.rmhark__kicker']) {
+      const rule = css.match(new RegExp(`${selector.replace('.', '\\.')}\\s*\\{[^}]*\\}`))?.[0];
+      if (!rule) continue; // .rmhark__kicker lives in radial.css
+      expect(rule, selector).not.toContain('text-transform: uppercase');
+    }
+  });
+});
+
 describe('design consistency — section headings (minimalism audit 2026-10-09)', () => {
   it('no site-tier h2/h3 is styled as an uppercase eyebrow', () => {
     const heading = /<(h2|h3)\b[^>]*\bclassName=(["'])([^"']*)\2/g;

@@ -47,7 +47,8 @@ language:
 graphite surfaces, white ink and **one** electric accent (`--site-accent`), which
 is also the plasma colour — this is the default theme (Midnight); Daylight is the same rule in daylight. No
 gradients on the ground, no neon or glowing type, no sci-fi illustration. Copy is
-short and literal. Text is Geist, eyebrows and data Geist Mono (§3). **One signal
+short and literal. Text is Geist, data Geist Mono (§3); **no eyebrows** (2026-11-03: no
+letterspaced all-caps labels — `site-section-label`, `site-kicker`, soft category chips). **One signal
 action per view** — `<Button variant="signal">`, ink gel (§5.2).
 
 **Everything rests on one contract:** a single set of CSS custom properties
@@ -509,8 +510,10 @@ mode list, the CSS blocks, the pre-paint script) is CI-enforced — §13.
 
 ## 3. Typography & fonts
 
-- **Identity faces: Geist for text, Geist Mono for eyebrows and data** (counts,
-  latencies, IDs, section labels), always through `--site-font-body` /
+- **Identity faces: Geist for text, Geist Mono for data** (counts, latencies, IDs).
+  Section labels and kickers are Geist in sentence case — there are no eyebrows
+  (no letterspaced all-caps; `lib/__tests__/design-consistency.test.ts` enforces it),
+  always through `--site-font-body` /
   `--site-font-display` / `--site-font-mono` (`font-body`, `font-display`,
   `font-mono`) — never a literal family in a component. A theme may swap the
   faces through the same tokens. _Status (2026-10-23):_ the default stacks still

@@ -114,7 +114,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  )}
 
  <div className="mt-4">
- <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <p className="mb-2 site-section-label">
  {t('likes-last-7-days', { defaultValue:'Likes · last 7 days'})}
  </p>
  <div className="flex h-24 items-end gap-1.5">

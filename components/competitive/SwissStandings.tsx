@@ -26,7 +26,7 @@ export function SwissStandings({ tournament }: { tournament: SerializedTournamen
       <div className="glass-fill rounded-site overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs text-site-text-dim uppercase tracking-wide">
+            <tr className="text-left text-xs text-site-text-dim">
               <th className="px-3 py-2">#</th>
               <th className="px-3 py-2">{t('swiss-player', { defaultValue: 'Player' })}</th>
               <th className="px-3 py-2 text-right">{t('swiss-points', { defaultValue: 'Pts' })}</th>

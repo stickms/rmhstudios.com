@@ -14,7 +14,7 @@ export function CaughtUpDivider() {
       className="flex w-full items-center gap-3 px-[var(--rad-card-pad)] py-4 text-site-text-muted"
     >
       <span className="h-px flex-1 bg-site-border" aria-hidden />
-      <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+      <span className="inline-flex items-center gap-2 site-section-label">
         <CheckCheck className="h-3.5 w-3.5 text-site-success" aria-hidden />
         {t('caught-up', { defaultValue: "You're all caught up" })}
       </span>

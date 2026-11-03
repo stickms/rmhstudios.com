@@ -204,7 +204,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
           return (
             <div key={d.key} className="rounded-site glass-fill p-5 space-y-4">
               <div className="flex items-start justify-between gap-3">
-                <span className="text-xs font-medium uppercase tracking-wide text-site-text-dim">
+                <span className="text-xs font-medium text-site-text-dim">
                   {t('tier-n', { defaultValue: 'Tier {{n}}', n: i + 1 })}
                 </span>
                 <Button

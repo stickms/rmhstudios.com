@@ -114,7 +114,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  <div
  className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
  >
- <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <div className="flex items-center gap-1.5 site-section-label">
  <Trophy className="h-3.5 w-3.5"/>{''}
  {t('longest-label', { defaultValue:'Longest'})}
  </div>
@@ -130,7 +130,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  <div
  className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
  >
- <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <div className="flex items-center gap-1.5 site-section-label">
  <CalendarCheck className="h-3.5 w-3.5"/>{''}
  {t('total-check-ins-label', { defaultValue:'Total check-ins'})}
  </div>

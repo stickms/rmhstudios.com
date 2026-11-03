@@ -171,7 +171,7 @@ export function RightSidebar({
                   <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
                     {build.title}
                   </p>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-site-text-dim">
+                  <span className="text-xs font-semibold text-site-text-dim">
                     {build.status}
                   </span>
                 </div>
@@ -201,7 +201,7 @@ export function RightSidebar({
                   <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
                     {build.title}
                   </p>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-site-text-dim">
+                  <span className="text-xs font-semibold text-site-text-dim">
                     {build.status}
                   </span>
                 </div>

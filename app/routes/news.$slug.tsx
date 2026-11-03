@@ -125,7 +125,7 @@ function NewsArticlePage() {
         <header className="mb-10" style={{ viewTransitionName: liquidVTName('news', slug) }}>
           <motion.div variants={staggerItem} className="flex flex-wrap items-center gap-3 mb-4">
             <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${categoryColor.bg} ${categoryColor.text} ${categoryColor.border} border`}
+              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-boldr ${categoryColor.bg} ${categoryColor.text} ${categoryColor.border} border`}
             >
               {article.category}
             </span>
@@ -167,7 +167,7 @@ function NewsArticlePage() {
             variants={staggerItem}
             className="glass-fill mb-10 p-4 sm:p-6"
           >
-            <p className="text-xs font-semibold uppercase tracking-widest text-site-accent mb-2">
+            <p className="text-xs font-semiboldst text-site-accent mb-2">
               {t('original-source', { defaultValue: 'Original Source' })}
             </p>
             <p className="text-site-text font-bold text-lg mb-1 leading-snug">
