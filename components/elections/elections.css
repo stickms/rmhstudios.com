@@ -13,21 +13,21 @@
  */
 
 .el-root {
-  --el-paper: #f3f0e6;
-  --el-paper-2: #e7e2d2;
-  --el-ink: #0b0b0b;
+  --el-paper: #ffffff;
+  --el-paper-2: #ececec;
+  --el-ink: #000000;
   --el-dem: #1f3bff;
   --el-dem-soft: #b9c3ff;
   --el-gop: #ff2b2b;
   --el-gop-soft: #ffb9b9;
   --el-oth: #9b30ff;
-  --el-yellow: #ffe500;
-  --el-pink: #ff7ad9;
-  --el-mint: #29f0a4;
-  --el-grey: #c9c5b8;
-  --el-bw: 3px;
-  --el-shadow: 6px 6px 0 var(--el-ink);
-  --el-shadow-sm: 3px 3px 0 var(--el-ink);
+  --el-yellow: #ffffff;
+  --el-pink: #ffffff;
+  --el-mint: #ffffff;
+  --el-grey: #b8b8b8;
+  --el-bw: 2px;
+  --el-shadow: none;
+  --el-shadow-sm: none;
   --el-display: 'Archivo', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
   --el-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
@@ -323,53 +323,88 @@
   }
 }
 
-/* ── hero ──────────────────────────────────────────────────── */
+/* ── hero: anti-design type ─────────────────────────────────── */
 .el-hero {
   position: relative;
   overflow: clip;
   border-bottom: var(--el-bw) solid var(--el-ink);
-  background: repeating-conic-gradient(var(--el-paper-2) 0% 25%, var(--el-paper) 0% 50%) 0 0 / 56px
-    56px;
+  background: var(--el-paper);
 }
 .el-hero__in {
   position: relative;
-  z-index: 2;
-  padding-block: clamp(28px, 6vw, 72px) clamp(36px, 6vw, 88px);
+  padding-block: clamp(28px, 5vw, 64px) clamp(36px, 6vw, 80px);
 }
-.el-hero__title {
+.el-hero__type {
+  --S: clamp(70px, 21vw, 300px);
+  --cell: clamp(96px, 24vw, 340px);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   margin: 0;
+  padding: clamp(10px, 2vw, 24px) 0;
+  border: var(--el-bw) solid var(--el-ink);
+  color: #fff;
+  /* Big black and white cells, like the reference's frame. */
+  background: conic-gradient(#000 25%, #fff 0 50%, #000 0 75%, #fff 0) 0 0 / var(--cell) var(--cell);
+}
+/* The letters are white and DIFFERENCE-blend with the cells behind them: black on white, white on black. */
+.el-hero__type > * {
+  mix-blend-mode: difference;
+  color: #fff;
+}
+.el-hero__row {
+  display: block;
+  white-space: nowrap;
+}
+.el-hero__bold {
+  display: inline-block;
+  font-size: var(--S);
   font-weight: 900;
   font-stretch: 125%;
-  font-size: clamp(64px, 21vw, 300px);
   line-height: 0.78;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.07em;
   text-transform: uppercase;
+  transform: scaleX(1.14);
+  transform-origin: 0 100%;
+  padding-inline: 0.04em;
 }
-.el-hero__line {
-  display: block;
-  width: max-content;
-  max-width: 100%;
+/* A word squashed flat and stretched wide: its layout box is the squashed height, so nothing is left blank. */
+.el-hero__row--flat {
+  height: calc(var(--S) * 0.4);
+  margin-top: calc(var(--S) * 0.03);
 }
-.el-hero__line--out {
-  -webkit-text-stroke: clamp(2px, 0.5vw, 6px) var(--el-ink);
-  color: transparent;
-}
-.el-hero__line--dem {
-  color: var(--el-dem);
-}
-.el-hero__line--gop {
-  color: var(--el-gop);
-}
-/* The cycle's kind ("Midterms", "President") has 8–9 letters against "Vote"'s 4: scale it so it fits the column. */
-.el-hero__line--kind {
-  font-size: 0.5em;
-  line-height: 1.5;
-  margin-top: 0.06em;
-}
-.el-hero__stretch {
+.el-hero__flat {
   display: inline-block;
-  transform: scaleY(1.35);
-  transform-origin: 50% 80%;
+  font-size: var(--S);
+  font-weight: 900;
+  font-stretch: 125%;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  transform: scale(1.32, 0.4);
+  transform-origin: 0 0;
+  padding-inline: 0.04em;
+}
+.el-hero__dash {
+  display: block;
+  width: 100%;
+  height: calc(var(--S) * 0.5);
+  margin-top: calc(var(--S) * 0.06);
+  overflow: visible;
+}
+.el-hero__cursor {
+  position: absolute;
+  right: 16%;
+  bottom: 16%;
+  display: block;
+  width: clamp(36px, 7vw, 84px);
+  pointer-events: none;
+  will-change: transform;
+}
+.el-hero__cursor svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 .el-hero__sub {
   max-width: 34ch;
@@ -378,32 +413,11 @@
   font-weight: 700;
   line-height: 1.15;
 }
-.el-hero__row {
+.el-hero__ctas {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 24px;
-}
-.el-hero__deco {
-  position: absolute;
-  z-index: 1;
-  pointer-events: none;
-  will-change: transform;
-}
-.el-hero__deco--block,
-.el-hero__deco--cursor {
-  display: none;
-}
-@media (min-width: 640px) {
-  .el-hero__deco--block,
-  .el-hero__deco--cursor {
-    display: block;
-  }
-}
-.el-hero__deco svg {
-  display: block;
-  width: 100%;
-  height: auto;
 }
 
 .el-count {
@@ -1196,5 +1210,266 @@
     animation: none;
     opacity: 1;
     bottom: 64px;
+  }
+}
+
+
+/* ═══ Anti-design / monochrome layer ══════════════════════════════════════
+ * The reference is pure black and white: no shadows, no radii, no colour. Everything above is
+ * re-voiced here so the whole page speaks it. Colour survives ONLY as data — the party colours on
+ * tiles, meters, candidate chips and charts — because red and blue must mean the same thing on
+ * every page that reports a result.
+ */
+.el-root {
+  --el-cell: clamp(96px, 24vw, 340px);
+}
+
+/* Frames are marked by crop marks at the corners (outside the border), not by shadows. The marks blend by
+   DIFFERENCE, so they are black on a white page and white on a black section. */
+.el-box {
+  position: relative;
+  border: var(--el-bw) solid var(--el-ink);
+  box-shadow: none;
+}
+.el-box::after {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  background:
+    linear-gradient(#fff, #fff) 0 0 / 12px 1px no-repeat,
+    linear-gradient(#fff, #fff) 0 0 / 1px 12px no-repeat,
+    linear-gradient(#fff, #fff) 100% 0 / 12px 1px no-repeat,
+    linear-gradient(#fff, #fff) 100% 0 / 1px 12px no-repeat,
+    linear-gradient(#fff, #fff) 0 100% / 12px 1px no-repeat,
+    linear-gradient(#fff, #fff) 0 100% / 1px 12px no-repeat,
+    linear-gradient(#fff, #fff) 100% 100% / 12px 1px no-repeat,
+    linear-gradient(#fff, #fff) 100% 100% / 1px 12px no-repeat;
+}
+
+/* Buttons: white with a black border; hover and press INVERT. No lift, no shadow. */
+.el-root .el-btn {
+  background: #fff;
+  color: #000;
+  box-shadow: none;
+  transition: none;
+}
+.el-root .el-btn:hover {
+  transform: none;
+  box-shadow: none;
+  background: #000;
+  color: #fff;
+}
+.el-root .el-btn:active,
+.el-root .el-btn[aria-pressed='true'] {
+  transform: none;
+  box-shadow: inset 0 0 0 3px #fff;
+  background: #000;
+  color: #fff;
+}
+.el-root .el-btn--dem,
+.el-root .el-btn--gop,
+.el-root .el-btn--pink {
+  background: #000;
+  color: #fff;
+}
+.el-root .el-btn--dem:hover,
+.el-root .el-btn--gop:hover,
+.el-root .el-btn--pink:hover {
+  background: #fff;
+  color: #000;
+}
+.el-root .el-btn--ghost {
+  background: #fff;
+  color: #000;
+}
+.el-root .el-btn:disabled {
+  opacity: 1;
+  background: repeating-linear-gradient(135deg, #fff 0 5px, #d4d4d4 5px 7px);
+  color: #666;
+  cursor: not-allowed;
+}
+.el-root .el-input {
+  box-shadow: none;
+  background: #fff;
+}
+
+/* Chips and stickers: flat, mono. Party chips keep their colour (data). */
+.el-chip--yellow {
+  background: #fff;
+}
+.el-chip--pink {
+  background: #000;
+  color: #fff;
+}
+.el-sticker {
+  background: #fff;
+  box-shadow: none;
+}
+.el-live {
+  background: #000;
+  color: #fff;
+  border-color: #fff;
+}
+
+/* Strips: black with white type, alternating with white. */
+.el-strip {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+.el-strip--ink {
+  background: #fff;
+  color: #000;
+}
+.el-strip--pink {
+  background: #fff;
+  color: #000;
+  border-block-style: dashed;
+}
+
+/* Sections alternate white and black; the "yellow" and "pink" tones are white and black now. */
+.el-section--yellow {
+  background: #fff;
+}
+.el-section--pink {
+  background: #000;
+  color: #fff;
+}
+.el-section--pink .el-h2 em {
+  -webkit-text-stroke-color: #fff;
+}
+
+/* Headings: heavy, tight and dashed underneath, like the reference's dashed letter fragments. */
+.el-h2 {
+  line-height: 0.82;
+  letter-spacing: -0.05em;
+}
+.el-h2::after {
+  content: '';
+  display: block;
+  margin-top: 0.14em;
+  border-bottom: 2px dashed currentColor;
+}
+.el-eyebrow .el-chip--ink {
+  background: #000;
+  color: #fff;
+}
+
+/* Countdown cells: black and white, no depth. */
+.el-count__cell {
+  box-shadow: none;
+  background: #fff;
+}
+.el-count__cell:nth-child(odd) {
+  background: #000;
+  color: #fff;
+}
+
+/* The map: no hover lift; a toss-up is hatched, not yellow. */
+.el-tile {
+  transition: none;
+}
+.el-tile:not(.el-tile--none):hover {
+  transform: none;
+  box-shadow: none;
+  outline: 3px solid #000;
+  outline-offset: -4px;
+}
+.el-tile--tossup {
+  background: repeating-linear-gradient(45deg, #000 0 2px, #fff 2px 7px);
+}
+.el-tile--tossup .el-tile__code,
+.el-tile--tossup .el-tile__cap {
+  background: #fff;
+  color: #000;
+  padding: 0 2px;
+}
+.el-tile--unrated {
+  background: #ececec;
+}
+.el-tile__flip {
+  background: #000;
+  color: #fff;
+  border-color: #fff;
+}
+.el-legend i {
+  box-shadow: none;
+}
+
+/* Meters, bars, stamps: flat. */
+.el-meter {
+  background: #ececec;
+}
+.el-meter__tag {
+  background: #000;
+  color: #fff;
+}
+.el-bar2 {
+  background: #ececec;
+}
+.el-bar2 > i {
+  background: #000;
+}
+.el-called {
+  background: #fff;
+}
+
+/* Watch rooms: black bars, white panes. */
+.el-room {
+  background: #fff;
+}
+.el-room__bar {
+  background: #000;
+  color: #fff;
+  border-bottom-color: #000;
+}
+.el-room__title strong {
+  color: #fff;
+}
+.el-room__pane {
+  box-shadow: none;
+}
+.el-room__panebar {
+  background: #000;
+  color: #fff;
+  border-bottom-color: #000;
+}
+.el-room__foot {
+  background: #fff;
+}
+.el-room__emoji {
+  filter: grayscale(1) contrast(1.4);
+}
+
+/* Reveal: hard cut, no rotation. */
+.el-root[data-animate] .el-reveal {
+  --el-r: 0deg;
+}
+
+/* Chips: black text by default (a chip on a black bar must not inherit white-on-white); the filled variants
+   say what they are. */
+.el-root .el-chip {
+  color: #000;
+}
+.el-root .el-chip--ink,
+.el-root .el-chip--pink,
+.el-root .el-chip--dem,
+.el-root .el-chip--gop,
+.el-root .el-chip--oth {
+  color: #fff;
+}
+/* Buttons that sit on a black bar get a white edge so they never disappear into it. */
+.el-room__bar .el-btn,
+.el-room__panebar .el-input {
+  border-color: #fff;
+}
+
+@media (max-width: 640px) {
+  /* On a phone the type should fill its frame, as in the reference: bigger, with larger checker cells. */
+  .el-hero__type {
+    --S: 24.5vw;
+    --cell: 30vw;
   }
 }

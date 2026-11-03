@@ -12,7 +12,7 @@ import { io, Socket } from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';
 import { authClient } from '@/lib/auth-client';
 import { useAltairMultiplayerStore } from './store';
-import { S2C } from './events';
+import { C2S, S2C } from './events';
 
 // ── Module-Level Socket Reference ────────────────────────────────
 
@@ -64,8 +64,15 @@ async function connectToAltairInner(): Promise<Socket> {
 
   // ── Connection lifecycle ──────────────────────────────────────
 
+  let connectedBefore = false;
   socket.on('connect', () => {
-    useAltairMultiplayerStore.getState().setConnectionStatus('connected');
+    const st = useAltairMultiplayerStore.getState();
+    st.setConnectionStatus('connected');
+    // A RE-connect while we hold a lobby: re-announce ourselves. Inside the hub's 10 s grace
+    // this is a no-op reconnect; after it expired the hub already removed us, and this is how a
+    // returning guest rejoins the running match (as their old class).
+    if (connectedBefore && st.lobby?.lobbyId) socket?.emit(C2S.LOBBY_JOIN, { lobbyId: st.lobby.lobbyId });
+    connectedBefore = true;
   });
 
   socket.on('disconnect', (reason) => {
