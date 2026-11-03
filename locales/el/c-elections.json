@@ -1,5 +1,6 @@
 {
   "a11y.skip": "Skip to results",
+  "ask.briefingTitle": "Ask the Briefing Room",
   "ask.budget": "You have used this month’s AI allowance.",
   "ask.label": "Your question about the results",
   "ask.ph": "Who’s ahead in Michigan?",
@@ -71,6 +72,9 @@
   "days.view": "View results",
   "desk.ai": "AI summary",
   "desk.aiWaiting": "The AI desk writes a summary as soon as there is something to summarise.",
+  "desk.briefing": "Briefing Room Summary",
+  "desk.briefingEyebrow": "Briefing Room",
+  "desk.briefingNote": "Generated automatically from the live numbers. Calls are projections, not certified results.",
   "desk.disclaimer": "Written by AI from the live numbers. Calls are projections, not certified results.",
   "desk.eyebrow": "The desk",
   "error.retry": "Try again",

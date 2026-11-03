@@ -14,6 +14,7 @@ import { RaceExplorer } from './RaceExplorer';
 import { PollClosings } from './PollClosings';
 import { PredictionPainter } from './PredictionPainter';
 import { AiDesk } from './AiDesk';
+import { BriefingPortrait } from './BriefingPortrait';
 import { ElectionChat } from './ElectionChat';
 import { WatchParty } from './WatchParty';
 import { ShareBar } from './ShareBar';
@@ -310,7 +311,10 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
           ) : null}
           {hasData ? (
             <div style={{ marginTop: 24 }}>
-              <AiDesk cycle={param} live={live} bullets={bullets} />
+              <div className="el-briefing">
+                <BriefingPortrait variant={1} className="el-briefing__portrait" />
+                <AiDesk cycle={param} live={live} bullets={bullets} />
+              </div>
             </div>
           ) : null}
           <p

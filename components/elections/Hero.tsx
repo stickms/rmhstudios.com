@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowDown, Share2 } from 'lucide-react';
 import { countdownTo, type Cycle, type Phase } from '@/lib/elections/calendar';
 import { useNow } from './hooks';
+import { BriefingPortrait } from './BriefingPortrait';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -64,6 +65,7 @@ export function Hero({
                 {cycle.year} {kindWord}
               </span>
             </h1>
+            <BriefingPortrait variant={2} className="el-hero__portrait" drift={40} />
             <motion.svg className="el-doodle" viewBox="0 0 100 70" aria-hidden style={{ y: yDoodle }}>
               <path d="M6 50 C 22 8, 56 6, 88 30 M70 12 L90 31 L66 44" />
             </motion.svg>

@@ -1771,3 +1771,90 @@
     overflow-x: auto;
   }
 }
+
+/* The wire (and any list inside a box): `.el-desk__list` used to zero the box's padding, so entries touched the border. */
+.el-desk__list.el-proj {
+  padding: 8px clamp(16px, 3vw, 28px);
+}
+.el-desk__list li {
+  padding-block: 14px;
+}
+
+/* Phone navbar: brand and tools on one row, the section links on a second, swipeable row (they were hidden). */
+@media (max-width: 959px) {
+  .el-bar__in {
+    flex-wrap: wrap;
+    row-gap: 0;
+    padding-block: 6px 0;
+  }
+  .el-bar__nav {
+    display: flex;
+    order: 3;
+    flex: 0 0 calc(100% + 32px);
+    margin: 6px -16px 0;
+    padding: 0 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-top: var(--el-bw) solid var(--el-ink);
+  }
+  .el-bar__nav::-webkit-scrollbar {
+    display: none;
+  }
+  .el-bar__nav a {
+    flex: 0 0 auto;
+    padding: 10px 12px;
+  }
+  .el-bar__tools #el-cycle {
+    min-width: 0;
+    width: auto;
+    font-size: 14px;
+  }
+  .el-section {
+    scroll-margin-top: 104px;
+  }
+}
+
+/* Briefing Room portrait: a transparent black-and-white cut-out that drifts with the scroll. */
+.el-portrait {
+  pointer-events: none;
+  will-change: transform;
+}
+.el-portrait img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: grayscale(1) contrast(1.08);
+}
+.el-briefing {
+  position: relative;
+}
+.el-briefing__portrait {
+  display: none;
+}
+@media (min-width: 1100px) {
+  .el-briefing__portrait {
+    display: block;
+    position: absolute;
+    right: -30px;
+    bottom: -40px;
+    width: 220px;
+    z-index: 2;
+  }
+}
+.el-hero__portrait {
+  display: none;
+}
+@media (min-width: 900px) {
+  .el-hero__portrait {
+    display: block;
+    position: absolute;
+    right: 24px;
+    bottom: 0;
+    width: clamp(160px, 20vw, 280px);
+    z-index: 0;
+  }
+  .el-cell--head > :not(.el-hero__portrait):not(.el-doodle) {
+    position: relative;
+    z-index: 1;
+  }
+}
