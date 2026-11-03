@@ -209,3 +209,21 @@ coin rewards.
   skips the drop-in picker and window and re-enters as their old class (`GAME_PLAYER_JOINED` -> host `addPlayer`).
   Their run progress (level, weapons) is NOT restored: they are a fresh drop-in. Leaving on purpose gives no pass
   back. A reloaded or long-dropped HOST still ends the run (`host_left`): the world cannot be rebuilt from a snapshot.
+
+## Single-player results (what is and is not verified)
+
+Co-op is replay-verified (above). Single-player is **not yet**: it is a React-driven loop (level-up
+application, pause/resume and the periodic store sync are `useEffect`s, the camera and tile streaming run
+per animation frame, and a run can be finalised by closing the tab), so a headless replay of what the
+client did would need those moved into a synchronous driver first. Until then
+`/api/altair/meta` (`lib/altair/meta-guard.ts`) bounds the coin balance instead of trusting it:
+purchases are priced and paid server-side, earned coins are limited by a refilling allowance
+(8 coins/s, 8000 cap) and clamped, a first save may import at most 50k. A cheater can still claim up
+to ~8 coins per second of wall clock without playing; `/api/altair/score` (leaderboard totals) is still
+client-reported.
+
+Plan for real verification (same machinery as co-op): a `SoloRun` driver shared by `GameScreen` and the
+verifier (synchronous level-up/reroll/banish/pause, frame-delta log because camera-driven tile streaming
+depends on frame timing), a server-issued `{runId, seed}` per run (HMAC, single use), the recorded
+frames/actions submitted at run end and replayed with the player's server-side meta bonuses, then
+`meta` coins credited only from the replay (and `score` rows written from it).
