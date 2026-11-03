@@ -38,6 +38,7 @@
   "graphics-hint": "フレームレートを滑らかに保つため、自動で品質を調整します。固定するにはレベルを選択してください。",
   "graphics-lost": "お使いのデバイスによってグラフィックが中断されました。",
   "graphics-stalled": "The picture stopped updating on this device.",
+  "graphics-unavailable": "3D graphics could not start on this device.",
   "haymaker": "ヘイメーカー",
   "hook": "フック",
   "hook-desc": "(遅い、高ダメージ)",

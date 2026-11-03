@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { createKowloonRenderer, extendKowloonThree } from '@/lib/kowloon-knockout/render/webgpu';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,20 @@ import { TrainingPanel, TrainingOverlay } from '@/components/kowloon-knockout/Tr
 // arena JSX mounts.
 extendKowloonThree();
 
+/** The renderer failed to start or threw while running (no WebGL 2 at all, a GPU
+ *  process that refuses a second context, a node material that will not compile).
+ *  Without this the error climbs to the page-level boundary, which unmounts the
+ *  whole game under a "crashed" card carrying a raw `TypeError`. Here the player
+ *  is told what happened and the first failure on WebGPU gets a WebGL 2 retry. */
+class GraphicsBoundary extends Component<{ onError: (e: unknown) => void; children: ReactNode }, { error: boolean }> {
+    state = { error: false };
+    static getDerivedStateFromError() { return { error: true }; }
+    componentDidCatch(error: unknown) { this.props.onError(error); }
+    render() {
+        return this.state.error ? null : this.props.children;
+    }
+}
+
 export default function GameView() {
     const { t } = useTranslation('c-kowloon-knockout');
     const runtime = useGameStore((s) => s.runtime);
@@ -40,6 +54,9 @@ export default function GameView() {
     // dead picture under a live HUD.
     const [canvasKey, setCanvasKey] = useState(0);
     const [frozen, setFrozen] = useState(false);
+    // The renderer could not start (or died with an exception) and WebGL 2 has
+    // already been tried: nothing will ever paint, say so.
+    const [unavailable, setUnavailable] = useState(false);
     const sessionRef = useRef<GameSession | null>(null);
 
     const seatIds = useMemo(() => {
@@ -99,8 +116,26 @@ export default function GameView() {
         return () => cancelAnimationFrame(raf);
     }, []);
 
+    const onGraphicsError = (e: unknown) => {
+        console.warn('[kowloon] renderer failed:', e);
+        if (!shouldForceWebGL()) {
+            // First failure: a fresh canvas on WebGL 2. A canvas that was given a
+            // WebGPU context can never be handed a WebGL one, hence the new key.
+            markForceWebGL();
+            resetRenderHealth(false);
+            setCanvasKey((k) => k + 1);
+            return;
+        }
+        setUnavailable(true);
+    };
+
+    // Nothing will ever paint: don't leave a match playing out behind the card.
     useEffect(() => {
-        if (frozen) return;
+        if (unavailable) sessionRef.current?.stop();
+    }, [unavailable]);
+
+    useEffect(() => {
+        if (frozen || unavailable) return;
         // Start the clock at mount: if the renderer never finishes initialising
         // (a hung adapter request), that is a stall too.
         resetRenderHealth(false);
@@ -126,12 +161,12 @@ export default function GameView() {
         const onVisible = () => { if (!document.hidden) resetRenderHealth(currentBackendIsWebGPU()); };
         document.addEventListener('visibilitychange', onVisible);
         return () => { window.clearInterval(id); document.removeEventListener('visibilitychange', onVisible); };
-    }, [frozen]);
+    }, [frozen, unavailable]);
 
     return (
         <div className="kk-arena" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+            <GraphicsBoundary key={canvasKey} onError={onGraphicsError}>
             <Canvas
-                key={canvasKey}
                 data-jelly-zone="playfield"
                 shadows
                 // Phones render at 1-1.5x: a 3x retina canvas with shadows is what
@@ -155,8 +190,9 @@ export default function GameView() {
                 {session && <Arena3D session={session} seatIds={seatIds} />}
                 {session?.training && <TrainingOverlay session={session} />}
             </Canvas>
+            </GraphicsBoundary>
 
-            {frozen && !glLost && (
+            {(frozen || unavailable) && !glLost && (
                 <div
                     role="alert"
                     style={{
@@ -166,7 +202,9 @@ export default function GameView() {
                 >
                     <div>
                         <p style={{ marginBottom: 16 }}>
-                            {t('graphics-stalled', { defaultValue: 'The picture stopped updating on this device.' })}
+                            {unavailable
+                                ? t('graphics-unavailable', { defaultValue: '3D graphics could not start on this device.' })
+                                : t('graphics-stalled', { defaultValue: 'The picture stopped updating on this device.' })}
                         </p>
                         <button
                             type="button"
