@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { isFrameCapped } from '@/lib/render/frame-cap';
 import { budgetMsFor, DEFAULT_WINDOW, FrametimeMonitor, shouldDownscale, targetFpsForRefresh } from '@/lib/render/governor';
+import { SlowFrameClock } from '@/lib/render/slow-frame-clock';
 import { displayRefreshHz } from '@/lib/render/refresh-rate';
 
 interface Props {
@@ -31,6 +32,7 @@ const FPS_PUBLISH_EVERY = 20;
 export default function AdaptiveQuality({ onDownscale, targetFps, onFps }: Props) {
     const monitor = useMemo(() => new FrametimeMonitor(DEFAULT_WINDOW), []);
     const frames = useRef(0);
+    const slow = useMemo(() => new SlowFrameClock(), []);
     const gl = useThree((s) => s.gl);
 
     useFrame((_, deltaRaw) => {
@@ -39,6 +41,7 @@ export default function AdaptiveQuality({ onDownscale, targetFps, onFps }: Props
         // opened, so drop the window and re-sample once the cap lifts.
         if (isFrameCapped(gl)) {
             monitor.reset();
+            slow.reset();
             return;
         }
         // Clamp tab-stalls and asset-decode hitches so one 3s freeze doesn't
@@ -54,9 +57,12 @@ export default function AdaptiveQuality({ onDownscale, targetFps, onFps }: Props
         // Re-read each frame: the refresh estimate lands a few hundred ms after
         // mount and is a cached number from then on.
         const budget = budgetMsFor(targetFps ?? targetFpsForRefresh(displayRefreshHz()));
-        if (shouldDownscale(monitor, budget)) {
+        // Frame-count window OR wall-clock time over budget, whichever comes
+        // first: at 4 fps a 90-frame window is 22 s of slideshow before it acts.
+        if (shouldDownscale(monitor, budget) || slow.over(deltaRaw * 1000, budget)) {
             onDownscale();
             monitor.reset(); // cooldown: re-sample a full window before stepping again
+            slow.reset();
         }
     });
 

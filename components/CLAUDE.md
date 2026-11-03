@@ -66,7 +66,11 @@ rounded-site shadow-site-sm` renders the same _box_ and none of the
   keyframes, arc drawing, gradient-position animation, or inherited root variable
   writes in frames. `app/liquid-glass.css` + `app/jelly-material.css` are the
   complete fallback tier. Layout never changes: hosts squash within 4px/3% and
-  neighbours nudge ≤1.5px. See
+  neighbours nudge ≤1.5px.
+  The gel *silhouette* the shader draws is larger than the host: it bulges ≈10px and sags ≈18px (`JELLY_BODY`), painted by the
+  shader (`data-jelly-gel="on"`), and is capped per side to the measured room — so keep 16px (`--jelly-margin`) of free
+  room round a slab inside any `overflow` container (`pnpm audit:jelly-clip`). Buttons are flat until touched
+  (`data-jelly-rest="flat"`); only `variant="signal"` and the semantic fills are always slabs. See
   [`docs/plasmatic-jelly-system.md`](../docs/plasmatic-jelly-system.md).
 - **Variants:** use `class-variance-authority` for components with variant
   APIs (see `ui/button.tsx`, `ui/badge.tsx`). Set a `data-slot="..."`

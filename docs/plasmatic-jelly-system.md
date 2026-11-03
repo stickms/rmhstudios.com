@@ -318,6 +318,36 @@ A press sinks a smooth, creaseless **Gaussian bowl** under the pointer:
 - **Bounds.** The dent is drawn, not laid out: hit areas never move, layout never
   changes, and the host affine stays inside `MOTION_BOUNDS`.
 
+### 3.2 The silhouette, flat controls and room (2026-11-03)
+
+Design: `docs/superpowers/specs/2026-11-03-globe-jelly-overhaul-design.md`. The soft body moves two things at different
+scales, and the bounds in §3 apply to the first only:
+
+- **The host** (CSS `translate`/`scale`, `MOTION_BOUNDS`: ≤ 4px / 3%, neighbours ≤ 1.5px). Text and hit areas follow it by
+  `--jelly-content-strain`. Unchanged.
+- **The silhouette** — the gel the rim shader draws. A 24-node perimeter lattice (`lib/jelly/lattice.ts`, six nodes per edge,
+  periodic Catmull-Rom in `LATTICE_GLSL`, the two nearest edges blended across corner diagonals so there is no seam)
+  bulges up to `JELLY_BODY.bulgePx` (10) toward the pointer, sags up to `sagPx` (18) under a press, and wobbles back on the
+  same spring as before. Amplitude scales with the short side (`refShortSidePx` 120, floor `minScale` 0.45) and halves on
+  large surfaces. The shader warps the **whole** distance field (`uBodyOn`) and paints the gel body itself: the role tint
+  under `--gel-body` → `--gel-depth`. The engine arms this only after the rim has faded in, and a few frames later stamps
+  `data-jelly-gel="on"`, which makes the host's own fill transparent (`app/liquid-glass.css`). Hosts with their own
+  background art (`bg-[…]`/gradient classes, an inline `background-image`) or `data-jelly-nogel` keep their CSS fill and a
+  rim-only warp. (`data-jelly-body` is physics' "awake soft body" marker — a different thing.)
+
+**Room.** The rim canvas overdraws its host by `JELLY_BODY.overdrawPx` (16, `--jelly-margin`) for cards and controls, narrowed at
+activation so it never passes the viewport's side edges. Outward travel on each side is capped to the room measured by
+`lib/jelly/room.ts` (`roomFromRects`): the gap to every clipping ancestor, the viewport's left/right edges and **half** the gap
+to a neighbouring body, read with the rect refresh (never per frame). A side with no room is flat, so a bulge is never cut
+off, whatever the layout. `pnpm audit:jelly-clip` (`scripts/audit-jelly-clip.mjs`, against `pnpm dev`) lists the surfaces that
+sit within 8px of a clip — give those their 16px: padding on the clipping container, or move the clip to an inner wrapper.
+Chrome and overlays (margin 0) draw inside their box and are not subject to it.
+
+**Flat controls** (`data-jelly-rest="flat"`, set by `<Button>` for every variant except `signal`, `destructive`, `danger` and
+`warning`). At rest a flat control is its label on the ground: no fill, no border, no canvas, no budget cost. The plasma wake
+level (hover, press, focus) admits it as a slab through the normal budget; the slab fades in over 90ms, lingers 420ms once calm and
+fades out over 200ms before it is released. Under `perf-lite` and print it gets an opaque fill and a solid edge instead.
+
 ## 4. Arcs and the photosensitivity ledger (R9, R10, R13)
 
 `lib/jelly/arcs/` draws arcs on one Canvas2D `.jelly-arc-layer` appended to `<body>`

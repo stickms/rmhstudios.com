@@ -13,6 +13,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { ProceduralTextures } from '../textures/ProceduralTextures';
 import { detectRuntimeQuality } from '@/lib/render/runtime';
+import { RenderScaleGovernor } from '@/lib/render/scale-governor';
 
 /* ── Retro shader ── */
 const RetroShader = {
@@ -180,6 +181,12 @@ function randomNeon() { return _activePalette.neons[Math.floor(Math.random() * _
  *  near-identical and roughly a quarter of the fill cost. */
 const BLOOM_SCALE = 0.5;
 
+/** Render-resolution steps (fractions of the tier's pixel ratio); last = full. */
+const RENDER_SCALES = [0.55, 0.7, 0.85, 1];
+/** Frame interval above which the device is over budget / below which it keeps up. */
+const SLOW_FRAME_MS = 24;
+const FAST_FRAME_MS = 18;
+
 const CHUNK_SIZE = 60;          // world units per chunk
 const ROAD_WIDTH = 28;          // width of a road
 const VIEW_RADIUS = 5;          // generate chunks in a 5-chunk radius
@@ -225,6 +232,11 @@ export class CyberpunkScene {
         this.trafficVehicles = [];  // oncoming traffic objects
         this.rainDrops = null;
         this._quality = null;   // resolved in _initRenderer once the canvas exists
+        // Adapts the render scale to the real wall-clock frame cadence (not the
+        // CPU time of update(), which only submits GL work). See scale-governor.ts.
+        this._scaleIndex = RENDER_SCALES.length - 1;
+        this._governor = new RenderScaleGovernor(RENDER_SCALES.length, { slowMs: SLOW_FRAME_MS, fastMs: FAST_FRAME_MS });
+        this._bloomPass = null;
         this._paletteIndex = 0;
         this._paletteTimer = 0;
         this._palettePool = ALL_PALETTES; // indices to cycle through
@@ -2017,6 +2029,7 @@ export class CyberpunkScene {
         bloom.setSize = (w: number, h: number) =>
             bloomSetSize(Math.max(1, Math.round(w * BLOOM_SCALE)), Math.max(1, Math.round(h * BLOOM_SCALE)));
         this.composer.addPass(bloom);
+        this._bloomPass = bloom;
 
         // FXAA instead of SMAA (cheaper)
         this._fxaaPass = new ShaderPass(FXAAShader);
@@ -2435,6 +2448,23 @@ export class CyberpunkScene {
         }
 
         this.composer.render();
+        this._adaptScale();
+    }
+
+    /** Step the render scale from the real frame cadence; bloom goes first at the floor. */
+    _adaptScale() {
+        const next = this._governor.sample(performance.now());
+        if (next === null) return;
+        this._scaleIndex = next;
+        this._applyScale();
+    }
+
+    _applyScale() {
+        const ratio = this._quality.pixelRatio * RENDER_SCALES[this._scaleIndex];
+        this.renderer.setPixelRatio(ratio);
+        this.composer.setPixelRatio(ratio);
+        this._onResize();
+        if (this._bloomPass) this._bloomPass.enabled = this._scaleIndex > 0;
     }
 
     renderClean() { this.renderer.render(this.scene, this.camera); }

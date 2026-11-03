@@ -41,6 +41,22 @@ function useDevicePixelRatio(): number {
     );
 }
 
+/** Fraction of the resolved ratio kept after each governor step. */
+const GOVERNOR_DPR_SCALE = [1, 0.8, 0.65, 0.5];
+
+/**
+ * R3F clamps `devicePixelRatio` into the `[min, max]` range, so on a 1x display
+ * a tier change like `[1, 1.25]` -> `[0.6, 1]` still renders at exactly 1 and
+ * the governor's "downscale" bought nothing (measured: the canvas stayed at
+ * full size at 4 fps). Once the governor has stepped, pin the ratio below the
+ * range so a slow device really renders fewer pixels.
+ */
+export function governedDpr([min, max]: [number, number], steps: number): [number, number] {
+    if (steps <= 0) return [min, max];
+    const x = Math.max(0.5, max * GOVERNOR_DPR_SCALE[Math.min(steps, GOVERNOR_DPR_SCALE.length - 1)]);
+    return [x, x];
+}
+
 /**
  * Resolve render quality for a 3D surface.
  *
@@ -74,7 +90,7 @@ export function useRenderQuality(preference: TierPreference = 'auto'): RenderQua
             tier,
             detectedTier,
             quality: TIER_QUALITY[tier],
-            dpr: resolveDpr(tier, devicePixelRatio),
+            dpr: governedDpr(resolveDpr(tier, devicePixelRatio), preference === 'auto' ? governorSteps : 0),
             downscale,
         };
     }, [preference, detectedTier, governorSteps, devicePixelRatio, downscale]);
