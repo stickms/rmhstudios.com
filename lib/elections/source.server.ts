@@ -35,6 +35,9 @@ const memo = new Map<string, Entry>();
 const inflight = new Map<string, Promise<ElectionSnapshot>>();
 
 export function snapshotTtlMs(date: string, live: boolean, now = new Date()): number {
+  // Rehearsal override (docs/elections.md): refresh on a fixed interval whatever the phase.
+  const forced = Number(process.env.ELECTIONS_TTL_MS);
+  if (Number.isFinite(forced) && forced >= 1000) return forced;
   const phase = phaseOf(date, now);
   return live || phase === 'election-day' || phase === 'counting' ? LIVE_TTL_MS : IDLE_TTL_MS;
 }

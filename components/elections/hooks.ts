@@ -87,7 +87,10 @@ export function timeAgo(iso: string | null | undefined, now: Date | null): strin
  * Newest last, de-duplicated by id, capped at 150. EventSource reconnects by itself;
  * `status` lets a UI say so.
  */
-export function useElectionEvents(cycle: string): { events: ElectionEvent[]; status: 'connecting' | 'live' | 'offline' } {
+export function useElectionEvents(cycle: string): {
+  events: ElectionEvent[];
+  status: 'connecting' | 'live' | 'offline';
+} {
   const [events, setEvents] = useState<ElectionEvent[]>([]);
   const [status, setStatus] = useState<'connecting' | 'live' | 'offline'>('connecting');
   useEffect(() => {
@@ -100,22 +103,25 @@ export function useElectionEvents(cycle: string): { events: ElectionEvent[]; sta
     const es = new EventSource(`/api/elections/events/stream?cycle=${encodeURIComponent(cycle)}`);
     es.onopen = () => setStatus('live');
     es.onerror = () => setStatus(es.readyState === EventSource.CLOSED ? 'offline' : 'connecting');
-    const merge = (incoming: ElectionEvent[]) =>
+    const merge = (incoming: ElectionEvent[], fresh: boolean) =>
       setEvents((cur) => {
         const ids = new Set(cur.map((e) => e.id));
-        const next = [...cur, ...incoming.filter((e) => !ids.has(e.id))].sort((a, b) => a.at - b.at);
+        const next = [
+          ...cur,
+          ...incoming.filter((e) => !ids.has(e.id)).map((e) => ({ ...e, fresh })),
+        ].sort((a, b) => a.at - b.at);
         return next.length > 150 ? next.slice(next.length - 150) : next;
       });
     es.addEventListener('history', (e) => {
       try {
-        merge(JSON.parse((e as MessageEvent).data));
+        merge(JSON.parse((e as MessageEvent).data), false);
       } catch {
         /* ignore a malformed frame */
       }
     });
     es.addEventListener('event', (e) => {
       try {
-        merge([JSON.parse((e as MessageEvent).data)]);
+        merge([JSON.parse((e as MessageEvent).data)], true);
       } catch {
         /* ignore */
       }

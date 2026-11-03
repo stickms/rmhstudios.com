@@ -23,6 +23,8 @@ const listening = new Map<string, () => void>();
 function ensureRoom(room: string) {
   if (listening.has(room)) return;
   const off = bus.subscribe(room, (ev) => {
+    // Reactions and config changes are live-only: they never enter the history ring.
+    if (ev.type === 'react' || ev.type === 'config') return;
     const ring = rings.get(room) ?? [];
     if (ev.type === 'msg') {
       ring.push(ev.msg);
@@ -55,6 +57,16 @@ export function postChatMessage(
   const msg: ChatMessage = { id: randomUUID(), room, ...author, text, at: Date.now() };
   bus.publish(room, { type: 'msg', msg });
   return msg;
+}
+
+export function postReaction(room: string, emoji: string): void {
+  ensureRoom(room);
+  bus.publish(room, { type: 'react', emoji, at: Date.now() });
+}
+
+export function publishRoomConfig(room: string, config: unknown): void {
+  ensureRoom(room);
+  bus.publish(room, { type: 'config', config });
 }
 
 export function deleteChatMessage(room: string, id: string): void {

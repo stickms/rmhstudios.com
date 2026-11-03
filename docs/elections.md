@@ -89,3 +89,43 @@ Other free sources considered and rejected: Google Civic (needs a key), OpenFEC
   moment it subscribed) and is lost on restart, by design.
 - `?cycle=2028` redirects once to `?cycle="2028"` (TanStack quotes numeric-looking
   strings); harmless, and the canonical URL is `/elections`.
+
+## Phase 2: government sources, primaries, news, live events
+
+- **Official count (NC State Board of Elections):** `lib/elections/sources/ncsbe*.ts`. Keyless precinct
+  results published for *every* NC election date including primaries
+  (`dl.ncsbe.gov/ENRS/<YYYY_MM_DD>/results_pct_<YYYYMMDD>.zip`; a missing date is a clean 404). Only
+  federal and governor contests are carried; NC's *state* `HOUSE OF REPRESENTATIVES` contests are not ours.
+  Validated against the real 2026-03-03 primary, 2024-03-05 primary and 2024-11-05 general
+  (`ncsbe-real.test.ts`, opt-in: set `ELECTIONS_REAL_DATA_DIR`). The file has no calls, so a FINAL count is
+  called by rule (plurality; >30% in a primary to avoid a runoff; ties never) and labelled "Final count",
+  never "AP called". On a general night the same file cross-checks the feed per race (`official.ts`).
+- **Primary days:** `?cycle=YYYY-MM-DD` opens any election day from the official source; control meters,
+  predictor and markets only exist for generals.
+- **Calendar:** primaries/runoffs/specials come from (1) nominees' headshot ids in the feed (keyless) and
+  (2) the FEC election-dates API. Set **`FEC_API_KEY`** (free, api.data.gov/signup): `DEMO_KEY` is a shared
+  40 calls/hour pool; a 429 backs off 15 minutes.
+- **News wire:** public RSS only (`news.ts` lists the feeds). Headline + ≤200-char snippet, always linked to
+  the publisher; never article bodies, never paywalled HTML.
+- **Live events:** `events.ts` diffs consecutive snapshots into calls / flips / lead changes (≥5% in) /
+  clinches / polls closing; `events.server.ts` publishes them on the realtime bus; `/api/elections/events/stream`
+  is the SSE feed. Ids are deterministic (`call:<raceId>`), so a race is announced once.
+- **Rehearsing:** `ELECTIONS_RESULTS_BASE` points the feed at a mirror, and **`ELECTIONS_TTL_MS`** forces the
+  refresh interval (e.g. `4000`) so you can swap files in the mirror and watch calls arrive within seconds.
+
+## Phase 3: watch rooms and the Situation Room
+
+- **Rooms** (`ElectionRoom`, `rooms*.ts`): *solo* is browser-only (localStorage); *private* is stored and
+  reachable only by its 8-character code (32^8 ≈ 10^12, no ambiguous characters; the code is the capability);
+  *public* is listed per election day. Host-only edits are pushed live to everyone in the room; 10 active rooms
+  per account; rooms expire 4 days after Election Day (expired rows are removed on list reads).
+- **Chat and reactions** are channel-addressed (a room, or the election's main room): ephemeral on the
+  realtime bus, signed-in write, no links. Reactions are a closed set of 8 emoji. A room host can delete
+  messages in their own room.
+- **The Situation Room** (`components/elections/room/`): a full-screen Radix dialog (focus trap, scroll lock,
+  Escape) with up to four panes in five layouts. Panes: stream (YouTube/Twitch; several at once; loads only on
+  click), race, **live graph** (vote share over the count, from `history.server.ts`), map, wire, chat, events.
+  Race/graph panes can be pinned to a state, follow the map selection, or **auto-follow**: major calls, every
+  call, polls closing, or everything. `follow.ts` holds a dwell time (20 s; 8 s for major events) so the pane
+  never flickers; an event inside the hold is deferred, not lost. Only events that arrive live move a pane:
+  opening a room mid-night never replays the evening.

@@ -78,7 +78,8 @@ export function parseFeaturedStreams(raw: string | undefined): FeaturedStream[] 
         if (!x || typeof x !== 'object') return [];
         const { label, url } = x as { label?: unknown; url?: unknown };
         if (typeof label !== 'string' || typeof url !== 'string') return [];
-        const l = label.replace(/[\u0000-\u001F]/g, '').trim().slice(0, 40);
+        // Drop control characters (code points below 32) without a control-character regex.
+        const l = [...label].filter((c) => c.charCodeAt(0) > 31).join('').trim().slice(0, 40);
         return l && parseEmbed(url) ? [{ label: l, url }] : [];
       })
       .slice(0, 8);
