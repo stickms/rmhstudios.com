@@ -52,9 +52,7 @@ engine, it does not fork it.
   bar from the snapshot, "you are down" / spectating banner. Revive progress is a ring drawn on the downed
   body by the renderer (it fills while a teammate stands in range). A dead player's camera follows a living
   teammate.
-- Known gap (pre-existing, single-player too): the wave table has a boss entry at t=300 and another wave
-  starting at t=300 after it, and the director takes the LAST matching wave, so no boss ever spawns. The
-  boss bar was verified with a boss-flagged enemy injected on the host, not a real spawn.
+- Fixed (play3): the wave table has a boss entry at t=300 and another wave starting at t=300 after it, and the director took the LAST matching wave, so no boss ever spawned. The director now scans the boss entries directly (30 s window, never while a boss lives). Verified: Hollow King + bar in single-player and on a co-op guest.
 
 ### Phase 3C as built
 
