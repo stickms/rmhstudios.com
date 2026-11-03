@@ -1524,7 +1524,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       dispersion: JELLY_DISPERSION,
       margin: s.margin,
       lattice: s.lattice && !s.lattice.asleep ? latticeUniform(s.lattice, s.latticeBuf) : null,
-      body: s.bodyArmed ? (frosted ? frostedBody(s.body) : s.body) : null,
+      body: s.bodyArmed && s.body ? (frosted ? frostedBody(s.body) : s.body) : null,
       frost: frosted ? FROST.strength : 0,
       gel: s.gel,
       // A haze slot draws its own (moving) plasma; every other slab draws the static variant here.
