@@ -238,6 +238,7 @@ export const config = {
     'dr:join': { max: 30, windowMs: 60_000 },
     'dr:quickplay': { max: 20, windowMs: 60_000 },
     'dr:browse': { max: 30, windowMs: 60_000 },
+    'dr:resume': { max: 10, windowMs: 60_000 },
     // Laundry Sort versus. `ls:score` is the only high-frequency one — clients
     // publish on a 400ms timer, so 200/min leaves headroom for a reconnect
     // burst without letting a socket flood the room.
