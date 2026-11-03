@@ -129,3 +129,20 @@ Other free sources considered and rejected: Google Civic (needs a key), OpenFEC
   call, polls closing, or everything. `follow.ts` holds a dwell time (20 s; 8 s for major events) so the pane
   never flickers; an event inside the hold is deferred, not lost. Only events that arrive live move a pane:
   opening a room mid-night never replays the evening.
+
+
+## Live streams: auto-discovery
+
+`/api/elections/streams` returns the configured `ELECTIONS_STREAMS` first, then any newsroom broadcast that is
+live right now, found automatically (`lib/elections/stream-discovery*.ts`). Each channel in the pool
+(`CHANNEL_POOL`: PBS NewsHour, ABC, NBC, CBS, AP, C-SPAN, Reuters, Sky, Bloomberg) is probed through its
+`/channel/<id>/live` page, which is trusted only if it names that channel, says `isLive`, and agrees with its
+own canonical video id. Results are cached 3 minutes; a failing channel just drops out.
+
+| Env | Effect |
+| --- | --- |
+| `ELECTIONS_STREAM_CHANNELS` | Comma-separated extra YouTube channel ids (`UC…`) to probe. |
+| `ELECTIONS_STREAMS_AUTO=0` | Turn discovery off (configured streams only). |
+
+Twitch has no keyless "is it live" check, so Twitch streams stay configured/pasted. Embeds still load only after
+a click.

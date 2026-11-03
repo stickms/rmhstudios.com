@@ -2,10 +2,9 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { ElectionsPage } from '@/components/elections/ElectionsPage';
 import electionsCss from '@/components/elections/elections.css?url';
-// Archivo (variable width — the stretched display type) and IBM Plex Mono, self-hosted with
-// `font-display: optional` (app/fonts/rmh-pmc.css, shared with /rmh-pmc); Archivo's Latin file
-// preloaded. See lib/fonts/self-hosted.ts.
-import pmcFontsCss from '@/app/fonts/rmh-pmc.css?url';
+// Archivo (variable width — the stretched display type), Space Grotesk (body) and Space Mono (data),
+// self-hosted with `font-display: optional` (app/fonts/elections.css); Archivo's Latin file preloaded. See lib/fonts/self-hosted.ts.
+import fontsCss from '@/app/fonts/elections.css?url';
 import archivoLatin from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
 import { preloadFont } from '@/lib/fonts/self-hosted';
 import { currentCycle, cycleOptions, parseDay, phaseOf } from '@/lib/elections/calendar';
@@ -119,7 +118,7 @@ export const Route = createFileRoute('/elections')({
       links: [
         buildCanonical(PATH),
         { rel: 'stylesheet', href: electionsCss },
-        { rel: 'stylesheet', href: pmcFontsCss },
+        { rel: 'stylesheet', href: fontsCss },
         preloadFont(archivoLatin),
       ],
     };

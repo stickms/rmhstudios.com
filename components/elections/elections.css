@@ -6,7 +6,7 @@
  * `--el-*`; everything is scoped under `.el-root`.
  *
  * The look: paper ground, ink borders at 3px, hard offset shadows with no blur,
- * square corners, enormous stretched Archivo display type, flat saturated party
+ * square corners, enormous stretched Archivo display type over Space Grotesk body and Space Mono data, flat saturated party
  * colours, stickers set at a slight angle, ticker strips. Motion is hard-edged
  * and quick (translate on press, snap on hover) and every perpetual animation
  * stops under prefers-reduced-motion.
@@ -16,11 +16,12 @@
   --el-paper: #ffffff;
   --el-paper-2: #ececec;
   --el-ink: #000000;
-  --el-dem: #1f3bff;
-  --el-dem-soft: #b9c3ff;
-  --el-gop: #ff2b2b;
-  --el-gop-soft: #ffb9b9;
-  --el-oth: #9b30ff;
+  --el-dem: #000000;
+  --el-dem-soft: #000000;
+  --el-gop: #ffffff;
+  --el-hatch: repeating-linear-gradient(45deg, #000 0 3px, #fff 3px 8px);
+  --el-gop-soft: #000000;
+  --el-oth: #808080;
   --el-yellow: #ffffff;
   --el-pink: #ffffff;
   --el-mint: #ffffff;
@@ -29,12 +30,13 @@
   --el-shadow: none;
   --el-shadow-sm: none;
   --el-display: 'Archivo', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
-  --el-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --el-body: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --el-mono: 'Space Mono', 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   min-height: 100dvh;
   background: var(--el-paper);
   color: var(--el-ink);
-  font-family: var(--el-display);
+  font-family: var(--el-body);
   font-stretch: 100%;
   overflow-x: clip;
   -webkit-text-size-adjust: 100%;
@@ -164,7 +166,7 @@
 }
 .el-chip--gop {
   background: var(--el-gop);
-  color: #fff;
+  color: #000;
 }
 .el-chip--oth {
   background: var(--el-oth);
@@ -535,10 +537,10 @@
   text-transform: uppercase;
 }
 .el-bop__num--dem {
-  color: var(--el-dem);
+  color: var(--el-ink);
 }
 .el-bop__num--gop {
-  color: var(--el-gop);
+  color: var(--el-ink);
   text-align: right;
 }
 .el-meter {
@@ -556,7 +558,7 @@
   background: var(--el-dem);
 }
 .el-meter__seg--gop {
-  background: var(--el-gop);
+  background: var(--el-hatch);
   margin-left: auto;
 }
 .el-meter__seg--oth {
@@ -669,7 +671,7 @@
   color: #fff;
 }
 .el-tile--GOP {
-  background: var(--el-gop);
+  background: var(--el-hatch);
   color: #fff;
 }
 .el-tile--OTH {
@@ -677,16 +679,18 @@
   color: #fff;
 }
 .el-tile--split {
-  background: linear-gradient(135deg, var(--el-dem) 50%, var(--el-gop) 50%);
+  background: linear-gradient(135deg, #000 50%, transparent 50%), var(--el-hatch);
   color: #fff;
 }
 .el-tile--dem-lead,
 .el-tile--dem-lean {
-  background: repeating-linear-gradient(135deg, var(--el-dem-soft) 0 6px, var(--el-paper) 6px 12px);
+  background:
+    radial-gradient(#000 2px, transparent 2.5px) 0 0 / 8px 8px,
+    var(--el-paper);
 }
 .el-tile--gop-lead,
 .el-tile--gop-lean {
-  background: repeating-linear-gradient(135deg, var(--el-gop-soft) 0 6px, var(--el-paper) 6px 12px);
+  background: repeating-linear-gradient(135deg, #000 0 1px, var(--el-paper) 1px 9px);
 }
 .el-tile--tossup {
   background: var(--el-yellow);
@@ -787,7 +791,7 @@
   background: var(--el-dem);
 }
 .el-bar2--GOP > i {
-  background: var(--el-gop);
+  background: var(--el-hatch);
 }
 .el-bar2--OTH > i {
   background: var(--el-oth);
@@ -820,10 +824,10 @@
   pointer-events: none;
 }
 .el-called--DEM {
-  color: var(--el-dem);
+  color: var(--el-ink);
 }
 .el-called--GOP {
-  color: var(--el-gop);
+  color: var(--el-ink);
 }
 .el-called--OTH {
   color: var(--el-oth);
@@ -1213,7 +1217,6 @@
   }
 }
 
-
 /* ═══ Anti-design / monochrome layer ══════════════════════════════════════
  * The reference is pure black and white: no shadows, no radii, no colour. Everything above is
  * re-voiced here so the whole page speaks it. Colour survives ONLY as data — the party colours on
@@ -1456,7 +1459,9 @@
 .el-root .el-chip--ink,
 .el-root .el-chip--pink,
 .el-root .el-chip--dem,
-.el-root .el-chip--gop,
+.el-root .el-chip--gop {
+  color: #000;
+}
 .el-root .el-chip--oth {
   color: #fff;
 }
@@ -1472,4 +1477,26 @@
     --S: 24.5vw;
     --cell: 30vw;
   }
+}
+
+/* Headings and display type are always Archivo at full weight and width; body copy is Space Grotesk. */
+.el-root h1,
+.el-root h2,
+.el-root h3,
+.el-root h4,
+.el-root .el-btn,
+.el-root .el-bop__name,
+.el-root .el-drawer__title {
+  font-family: var(--el-display);
+  font-weight: 900;
+  font-stretch: 118%;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.el-hero__type,
+.el-hero__type text,
+.el-clock b,
+.el-ticker {
+  font-family: var(--el-display);
 }

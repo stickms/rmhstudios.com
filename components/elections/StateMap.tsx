@@ -53,7 +53,11 @@ export function StateMap({
   return (
     <div className="el-map">
       <div>
-        <div className="el-tabs" role="group" aria-label={t('map.office', { defaultValue: 'Office' })}>
+        <div
+          className="el-tabs"
+          role="group"
+          aria-label={t('map.office', { defaultValue: 'Office' })}
+        >
           {offices.map((o) => (
             <button
               key={o}
@@ -70,15 +74,39 @@ export function StateMap({
           cells={cells}
           selected={selected}
           onSelect={(p) => onSelect(selected === p ? null : p)}
-          ariaLabel={t('map.aria', { defaultValue: 'Map of states. Select a state for its races.' })}
+          ariaLabel={t('map.aria', {
+            defaultValue: 'Map of states. Select a state for its races.',
+          })}
         />
         <div className="el-legend" aria-hidden>
-          <span><i style={{ background: 'var(--el-dem)' }} />{t('map.lDem', { defaultValue: 'Dem won' })}</span>
-          <span><i style={{ background: 'var(--el-gop)' }} />{t('map.lGop', { defaultValue: 'GOP won' })}</span>
-          <span><i style={{ background: 'repeating-linear-gradient(135deg,var(--el-dem-soft) 0 4px,#fff 4px 8px)' }} />{t('map.lLeadD', { defaultValue: 'Dem leads / leans' })}</span>
-          <span><i style={{ background: 'repeating-linear-gradient(135deg,var(--el-gop-soft) 0 4px,#fff 4px 8px)' }} />{t('map.lLeadR', { defaultValue: 'GOP leads / leans' })}</span>
-          <span><i style={{ background: 'repeating-linear-gradient(45deg,#000 0 2px,#fff 2px 5px)' }} />{t('map.lToss', { defaultValue: 'Toss-up' })}</span>
-          <span><i style={{ background: 'transparent', borderStyle: 'dashed' }} />{t('map.lNone', { defaultValue: 'No race' })}</span>
+          <span>
+            <i style={{ background: 'var(--el-dem)' }} />
+            {t('map.lDem', { defaultValue: 'Dem won' })}
+          </span>
+          <span>
+            <i style={{ background: 'var(--el-hatch)' }} />
+            {t('map.lGop', { defaultValue: 'GOP won' })}
+          </span>
+          <span>
+            <i
+              style={{ background: 'radial-gradient(#000 1.5px,transparent 2px) 0 0/6px 6px,#fff' }}
+            />
+            {t('map.lLeadD', { defaultValue: 'Dem leads / leans' })}
+          </span>
+          <span>
+            <i
+              style={{ background: 'repeating-linear-gradient(135deg,#000 0 1px,#fff 1px 7px)' }}
+            />
+            {t('map.lLeadR', { defaultValue: 'GOP leads / leans' })}
+          </span>
+          <span>
+            <i style={{ background: 'repeating-linear-gradient(45deg,#000 0 2px,#fff 2px 5px)' }} />
+            {t('map.lToss', { defaultValue: 'Toss-up' })}
+          </span>
+          <span>
+            <i style={{ background: 'transparent', borderStyle: 'dashed' }} />
+            {t('map.lNone', { defaultValue: 'No race' })}
+          </span>
         </div>
       </div>
 
@@ -88,7 +116,9 @@ export function StateMap({
             <h3 className="el-drawer__title">{stateName(selected)}</h3>
             {stateRaces.length === 0 ? (
               <p className="el-eyebrow">
-                {t('map.noRaces', { defaultValue: 'No federal or governor races here this cycle.' })}
+                {t('map.noRaces', {
+                  defaultValue: 'No federal or governor races here this cycle.',
+                })}
               </p>
             ) : (
               stateRaces
@@ -98,7 +128,10 @@ export function StateMap({
             )}
             {stateRaces.length > 12 ? (
               <p className="el-eyebrow">
-                {t('map.more', { defaultValue: '+{{n}} more — see Races below', n: stateRaces.length - 12 })}
+                {t('map.more', {
+                  defaultValue: '+{{n}} more — see Races below',
+                  n: stateRaces.length - 12,
+                })}
               </p>
             ) : null}
           </div>
@@ -107,7 +140,8 @@ export function StateMap({
             <h3 className="el-drawer__title">{t('map.pick', { defaultValue: 'Pick a state' })}</h3>
             <p className="el-eyebrow">
               {t('map.pickHint', {
-                defaultValue: 'Every tile is one state, same size — the way Senate and governor nights are won.',
+                defaultValue:
+                  'Every tile is one state, same size — the way Senate and governor nights are won.',
               })}
             </p>
           </div>

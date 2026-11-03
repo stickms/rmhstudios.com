@@ -3,11 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { layoutLines, type SeriesPoint } from '@/lib/elections/history';
 import type { Party, Race } from '@/lib/elections/types';
 
-const COLOR: Record<Party, string> = {
-  DEM: 'var(--el-dem)',
-  GOP: 'var(--el-gop)',
-  OTH: 'var(--el-oth)',
-};
+// Black and white only: parties are told apart by line style, not hue (DEM solid, GOP dashed, others dotted).
+const COLOR: Record<Party, string> = { DEM: '#000', GOP: '#000', OTH: '#000' };
+const DASH: Record<Party, string | undefined> = { DEM: undefined, GOP: '8 4', OTH: '2 4' };
 const W = 300;
 const H = 150;
 const PAD = { l: 28, r: 6, t: 8, b: 16 };
@@ -111,6 +109,7 @@ export function VoteChart({ race, cycle, live }: { race: Race; cycle: string; li
               fill="none"
               stroke={COLOR[cand.party]}
               strokeWidth="2.5"
+              strokeDasharray={DASH[cand.party]}
               strokeLinejoin="miter"
               points={l.points.map((p) => `${x(p.x).toFixed(1)},${y(p.y).toFixed(1)}`).join(' ')}
             />
@@ -125,7 +124,7 @@ export function VoteChart({ race, cycle, live }: { race: Race; cycle: string; li
               cx={x(last.x)}
               cy={y(last.y)}
               r="3.5"
-              fill={COLOR[cand.party]}
+              fill={cand.party === 'GOP' ? '#fff' : '#000'}
               stroke="var(--el-ink)"
               strokeWidth="1.5"
             />
@@ -146,7 +145,7 @@ export function VoteChart({ race, cycle, live }: { race: Race; cycle: string; li
                 display: 'inline-block',
                 width: 10,
                 height: 10,
-                background: COLOR[c.party],
+                background: c.party === 'GOP' ? 'var(--el-hatch)' : '#000',
                 border: '2px solid var(--el-ink)',
                 marginRight: 4,
               }}

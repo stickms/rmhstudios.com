@@ -130,8 +130,18 @@ export function PredictionPainter({
     return out;
   }, [byState, picks]);
 
-  const proj = useMemo(() => project(picks, officeRaces, chambers[office]), [picks, officeRaces, chambers, office]);
-  const score = useMemo(() => scorePicks(picks, races.filter((r) => PAINTABLE.includes(r.office))), [picks, races]);
+  const proj = useMemo(
+    () => project(picks, officeRaces, chambers[office]),
+    [picks, officeRaces, chambers, office],
+  );
+  const score = useMemo(
+    () =>
+      scorePicks(
+        picks,
+        races.filter((r) => PAINTABLE.includes(r.office)),
+      ),
+    [picks, races],
+  );
   const painted = Object.keys(picks).filter((k) => validKeys.has(k)).length;
 
   const fillRatings = () => {
@@ -150,9 +160,19 @@ export function PredictionPainter({
   return (
     <div className="el-pred">
       <div>
-        <div className="el-pick-row" role="group" aria-label={t('map.office', { defaultValue: 'Office' })}>
+        <div
+          className="el-pick-row"
+          role="group"
+          aria-label={t('map.office', { defaultValue: 'Office' })}
+        >
           {paintable.map((o) => (
-            <button key={o} type="button" className="el-btn el-btn--sm" aria-pressed={office === o} onClick={() => setOffice(o)}>
+            <button
+              key={o}
+              type="button"
+              className="el-btn el-btn--sm"
+              aria-pressed={office === o}
+              onClick={() => setOffice(o)}
+            >
               {OFFICE_NAME[o]}
             </button>
           ))}
@@ -161,7 +181,9 @@ export function PredictionPainter({
           cells={cells}
           selected={selected}
           onSelect={cycleState}
-          ariaLabel={t('predict.aria', { defaultValue: 'Prediction map. Tap a state to cycle Democrat, toss-up, Republican.' })}
+          ariaLabel={t('predict.aria', {
+            defaultValue: 'Prediction map. Tap a state to cycle Democrat, toss-up, Republican.',
+          })}
         />
         <p className="el-eyebrow" style={{ marginTop: 12 }}>
           {t('predict.how', { defaultValue: 'Tap a state: Dem → Toss-up → GOP → clear.' })}
@@ -170,11 +192,13 @@ export function PredictionPainter({
 
       <div>
         <div className="el-proj el-box">
-          <h3 className="el-drawer__title">{t('predict.yourCall', { defaultValue: 'Your map' })}</h3>
+          <h3 className="el-drawer__title">
+            {t('predict.yourCall', { defaultValue: 'Your map' })}
+          </h3>
           <p className="el-bop__num" style={{ fontSize: 48 }}>
-            <span style={{ color: 'var(--el-dem)' }}>{proj.DEM}</span>
+            <span style={{ color: 'var(--el-ink)' }}>{proj.DEM}</span>
             <span style={{ margin: '0 10px' }}>–</span>
-            <span style={{ color: 'var(--el-gop)' }}>{proj.GOP}</span>
+            <span style={{ color: 'var(--el-ink)' }}>{proj.GOP}</span>
           </p>
           <p className="el-eyebrow">
             {proj.controlledBy
@@ -194,7 +218,11 @@ export function PredictionPainter({
               <Wand2 size={14} aria-hidden />
               {t('predict.fill', { defaultValue: 'Fill from ratings' })}
             </button>
-            <button type="button" className="el-btn el-btn--sm el-btn--ghost" onClick={() => update({})}>
+            <button
+              type="button"
+              className="el-btn el-btn--sm el-btn--ghost"
+              onClick={() => update({})}
+            >
               <RotateCcw size={14} aria-hidden />
               {t('predict.reset', { defaultValue: 'Reset' })}
             </button>
@@ -210,10 +238,14 @@ export function PredictionPainter({
           </h3>
           {score.accuracy == null ? (
             <p className="el-eyebrow">
-              {t('predict.noScore', { defaultValue: 'Graded the moment your first race is called.' })}
+              {t('predict.noScore', {
+                defaultValue: 'Graded the moment your first race is called.',
+              })}
             </p>
           ) : (
-            <p className="el-bop__num" style={{ fontSize: 56 }}>{score.accuracy}%</p>
+            <p className="el-bop__num" style={{ fontSize: 56 }}>
+              {score.accuracy}%
+            </p>
           )}
           <p className="el-eyebrow">
             {t('predict.tally', {
