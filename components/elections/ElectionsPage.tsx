@@ -14,7 +14,7 @@ import { RaceExplorer } from './RaceExplorer';
 import { PollClosings } from './PollClosings';
 import { PredictionPainter } from './PredictionPainter';
 import { AiDesk } from './AiDesk';
-import { BriefingPortrait } from './BriefingPortrait';
+import { BriefingPortrait, HOST_NAME } from './BriefingPortrait';
 import { ElectionChat } from './ElectionChat';
 import { WatchParty } from './WatchParty';
 import { ShareBar } from './ShareBar';
@@ -312,7 +312,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
           {hasData ? (
             <div style={{ marginTop: 24 }}>
               <div className="el-briefing">
-                <BriefingPortrait variant={1} className="el-briefing__portrait" />
+                <BriefingPortrait variant={3} className="el-briefing__portrait" caption={`${HOST_NAME} · ${t('portrait.role', { defaultValue: 'Briefing Room host' })}`} />
                 <AiDesk cycle={param} live={live} bullets={bullets} />
               </div>
             </div>

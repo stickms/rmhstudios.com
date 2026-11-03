@@ -192,6 +192,7 @@
   "polls.lede": "Last polls in each state, Eastern time. Results follow within minutes.",
   "polls.title1": "When polls",
   "polls.title2": "close",
+  "portrait.role": "Briefing Room host",
   "predict.aria": "Prediction map. Tap a state to cycle Democrat, toss-up, Republican.",
   "predict.controls": "You give {{party}} control ({{need}} needed)",
   "predict.copied": "Link copied",

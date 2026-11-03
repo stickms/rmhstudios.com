@@ -5,16 +5,22 @@ import { m as motion, useScroll, useTransform } from 'framer-motion';
  * A black-and-white cut-out portrait of the Briefing Room host, drifting with the scroll. The files are
  * real transparent WebPs at `public/elections/briefer-<variant>.webp` (background removed from the
  * supplied photos). If one is ever missing the component renders nothing rather than a broken image.
- * Alt text is a role, not a name — add attribution only once the person has agreed to it.
+ * The host is named with his agreement; the summaries beside him are still generated automatically, and
+ * the page says so — the caption names the host, it does not claim he wrote the text.
  */
+export const HOST_NAME = 'John Kiriakou';
+
 export function BriefingPortrait({
   variant = 1,
-  alt = '',
+  alt = HOST_NAME,
+  caption,
   className,
   drift = 60,
 }: {
   variant?: number;
   alt?: string;
+  /** A small name tag under the portrait. */
+  caption?: string;
   className?: string;
   /** How far (px) the portrait travels against the scroll. */
   drift?: number;
@@ -28,7 +34,7 @@ export function BriefingPortrait({
   const y = useTransform(scrollYProgress, [0, 1], [drift, -drift]);
   if (missing) return null;
   return (
-    <div ref={ref} className={`el-portrait ${className ?? ''}`} aria-hidden={alt === ''}>
+    <div ref={ref} className={`el-portrait ${className ?? ''}`}>
       {mounted ? (
         <motion.div style={{ y }}>
           <img
@@ -39,6 +45,7 @@ export function BriefingPortrait({
             draggable={false}
             onError={() => setMissing(true)}
           />
+          {caption ? <span className="el-portrait__tag">{caption}</span> : null}
         </motion.div>
       ) : null}
     </div>

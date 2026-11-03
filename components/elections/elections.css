@@ -1876,3 +1876,22 @@
   -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent);
   mask-image: linear-gradient(to bottom, #000 82%, transparent);
 }
+
+.el-portrait__tag {
+  position: absolute;
+  left: 8%;
+  bottom: 6%;
+  padding: 3px 8px;
+  border: 2px solid var(--el-ink);
+  background: #fff;
+  color: var(--el-ink);
+  font-family: var(--el-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.el-portrait > div {
+  position: relative;
+}
