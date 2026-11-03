@@ -255,6 +255,27 @@ describe('altair lobby: leave / disconnect / disband per state', () => {
     expect(view(host).state).toBe('PLAYING');
   });
 
+  it('PLAYING: a guest whose grace expired rejoins with their class, bypassing drop-in rules', () => {
+    const { w, host, guest, lobbyId, view } = playing();
+    w.disconnect(guest);
+    handleAltairDisconnect(w.io, guest as never);
+    vi.advanceTimersByTime(ALTAIR_DISCONNECT_GRACE_MS + 1);
+    expect(view(host).players.map((p) => p.userId)).toEqual(['host']);
+
+    const back = w.connect('sock-guest-2', { userId: 'guest', userName: 'guest' });
+    w.send(back, E.join, { lobbyId });
+    const me = view(back).players.find((p) => p.userId === 'guest')!;
+    expect(me.classId).toBe('knight');
+    const joined = last<{ player: { userId: string; classId: string | null } }>(host, 'altair:game:player_joined');
+    expect(joined?.player.userId).toBe('guest');
+    expect(joined?.player.classId).toBe('knight');
+    // The rejoin is consumed: leaving on purpose gives no free pass back.
+    w.send(back, E.leave, {});
+    const again = w.connect('sock-guest-3', { userId: 'guest', userName: 'guest' });
+    w.send(again, E.join, { lobbyId });
+    expect(view(again).players.find((p) => p.userId === 'guest')!.classId).toBeNull();
+  });
+
   it('PLAYING: host dropping tells guests, and ends the run when the grace expires', () => {
     const { w, host, guest, view } = playing();
     w.disconnect(host);

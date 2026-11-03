@@ -205,3 +205,9 @@ multiplayer run awards coins or writes leaderboard rows unless the existing
 single-player path already verifies results server-side — that path will be read
 before anything is persisted, and a client-submitted score is never trusted for
 coin rewards.
+
+- Rejoin after the grace (play3): a guest whose 10 s grace expired mid-match is removed, but the hub remembers
+  their class (`departedClasses`). The client re-sends `LOBBY_JOIN` on every socket RE-connect; a returning guest
+  skips the drop-in picker and window and re-enters as their old class (`GAME_PLAYER_JOINED` -> host `addPlayer`).
+  Their run progress (level, weapons) is NOT restored: they are a fresh drop-in. Leaving on purpose gives no pass
+  back. A reloaded or long-dropped HOST still ends the run (`host_left`): the world cannot be rebuilt from a snapshot.
