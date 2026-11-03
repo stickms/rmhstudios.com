@@ -63,7 +63,7 @@ export default function FortuneCard() {
       <div className="flex items-start gap-3">
         <Cookie className="mt-0.5 size-5 shrink-0 text-site-accent" aria-hidden />
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+          <p className="site-section-label">
             {t('fortune-title', { defaultValue: 'Fortune cookie' })}
           </p>
           <p className="mt-1 text-site-text">

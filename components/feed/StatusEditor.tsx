@@ -165,7 +165,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  </div>
 
  <div>
- <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-site-text-muted">
+ <p className="mb-1.5 site-section-label">
  {t('clear-after', { defaultValue:'Clear after'})}
  </p>
  <div className="flex flex-wrap gap-2">

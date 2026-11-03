@@ -1444,7 +1444,7 @@ export function ComposeBox({
             </div>
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-xs uppercase tracking-wide text-site-text-dim">
+                <tr className="text-xs font-medium text-site-text-dim">
                   <th className="pb-2 font-medium">
                     {t('cheatsheet-col-type', { defaultValue: 'Type this' })}
                   </th>

@@ -1039,10 +1039,16 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
   border-radius: var(--site-radius, 22px);
   border: var(--site-border-width, 1px) solid var(--site-border);
 }
+.rad-live__card {
+  /* One leading column for everything a card puts before its text — the heading's icon, a row's icon or avatar, the
+     footer's icon — so the heading, the rows and the footer all start their text on the same x, and every icon is centred
+     on the same line. (They used to be 24, 36 and 42px.) */
+  --rad-slot: 2rem;
+}
 .rad-live__card h2 {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--rad-3);
   margin-bottom: var(--rad-3);
   font-family: var(--site-font-display, inherit);
   font-size: 1rem;
@@ -1050,9 +1056,31 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
   color: var(--site-text);
 }
 .rad-live__card h2 svg {
-  width: 1.05rem;
-  height: 1.05rem;
+  box-sizing: border-box;
+  flex: none;
+  width: var(--rad-slot);
+  height: var(--rad-slot);
+  padding: calc((var(--rad-slot) - 1.05rem) / 2);
   color: var(--site-accent);
+}
+.rad-live__slot {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--rad-slot, 2rem);
+  height: var(--rad-slot, 2rem);
+}
+/* A heading with something on its right (a streak badge): the badge centres on the heading, and the pair carries the
+   spacing the bare heading would. */
+.rad-live__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rad-3);
+  margin-bottom: var(--rad-3);
+}
+.rad-live__head h2 {
+  margin-bottom: 0;
 }
 .rad-live__card ul {
   display: flex;
@@ -3069,17 +3097,27 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   height: 1.05rem;
 }
 
+/* The category of an announcement card: a soft accent chip in sentence case, text only — not a letterspaced all-caps
+   eyebrow, and no dot or icon. No border, no outline: a tinted fill is the whole shape. The headline under it carries
+   the weight. */
 .rmhark__kicker {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--site-text-muted);
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--site-accent) 14%, transparent);
+  color: var(--site-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0;
 }
 .rmhark__title {
-  font-size: 1.15rem;
+  font-size: 1.375rem;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
   color: var(--site-text);
 }
 /* `.rmhark__stats` is gone: the wheel card renders the shared `RMHarkActions`

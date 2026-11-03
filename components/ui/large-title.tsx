@@ -79,7 +79,7 @@ export function LargeTitle({
           {leading}
           <div className="min-w-0 flex-1">
             {eyebrow && (
-              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-site-text-muted">
+              <p className="site-kicker">
                 {eyebrow}
               </p>
             )}
@@ -126,7 +126,7 @@ export function LargeTitle({
         style={{ scale: largeScale, opacity: largeOpacity, y: largeY }}
       >
         {eyebrow && (
-          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-site-text-muted">
+          <p className="site-kicker">
             {eyebrow}
           </p>
         )}

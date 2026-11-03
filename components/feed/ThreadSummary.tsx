@@ -57,7 +57,7 @@ export function ThreadSummary({ postId, commentCount }: { postId: string; commen
  <p className="text-sm text-site-text-muted">{error}</p>
  ) : (
  <div>
- <p className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <p className="mb-1 flex items-center gap-2 site-section-label">
  <Sparkles className="h-3.5 w-3.5 text-site-accent"/> {t('ai-summary', { defaultValue:'AI summary'})}
  </p>
  <p className="whitespace-pre-line text-sm text-site-text">{summary}</p>

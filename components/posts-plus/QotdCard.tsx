@@ -78,7 +78,7 @@ export default function QotdCard() {
     >
       <MessageCircleQuestion className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+        <p className="site-section-label">
           {t('qotd-card-label', { defaultValue: 'Question of the day' })}
         </p>
         <p className="mt-0.5 text-sm font-medium text-site-text">{today.text}</p>

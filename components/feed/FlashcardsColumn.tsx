@@ -191,7 +191,7 @@ export function FlashcardsColumn({
               className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <div className="rounded-site-sm border border-site-accent/30 bg-site-accent/5 p-2">
-              <label className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-site-accent">
+              <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-site-accent">
                 <Sparkles className="h-3 w-3" />
                 {''}
                 {t('ai-tutor-label', { defaultValue: 'AI tutor — auto-generate cards' })}

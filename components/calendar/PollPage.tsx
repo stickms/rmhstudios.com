@@ -306,7 +306,7 @@ export default function PollPage({ id }: { id: string }) {
       {locked && (
         <section className="glass-pane flex flex-wrap items-center justify-between gap-3 rounded-site p-5">
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-site-text-muted">
+            <p className="flex items-center gap-1.5 text-xs font-medium text-site-text-muted">
               <Lock className="size-3.5" aria-hidden />
               {t('locked-label', { defaultValue: 'Locked in' })}
             </p>

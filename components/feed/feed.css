@@ -179,11 +179,9 @@
 
 .feed-hero__eyebrow {
   display: inline-block;
-  color: var(--site-text-dim);
-  font-size: 0.66rem;
-  font-weight: 620;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  color: var(--site-text-muted);
+  font-size: var(--site-kicker-size);
+  font-weight: var(--site-kicker-weight);
 }
 
 .feed-hero__title {
@@ -450,11 +448,8 @@
 }
 
 .spatial-whats-new__meta {
-  /* 11px floor for micro-caps (§AUD-002); 0.65rem was 10.4px. */
-  font-size: 0.6875rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
   opacity: 0.85;
   /* Clear the Dialog primitive's absolutely-positioned close button, which
      lands in this same top-right corner and was overlapping the date. */

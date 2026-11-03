@@ -13,6 +13,7 @@ import { Flame, Puzzle, CircleDot, Target, Snowflake, Check } from 'lucide-react
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useSession } from '@/components/Providers';
+import { Button } from '@/components/ui/button';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
@@ -51,14 +52,14 @@ function TaskRow({
       to={to}
       className="-mx-2 flex items-center gap-3 rounded-site-sm px-2 py-2 transition-colors hover:bg-site-surface-hover"
     >
-      <span
-        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
-          done
-            ? 'border-site-success bg-site-success/15 text-site-success'
-            : 'border-site-border text-site-text-dim'
-        }`}
-      >
-        {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : icon}
+      <span className="rad-live__slot">
+        <span
+          className={`flex h-6 w-6 items-center justify-center rounded-full ${
+            done ? 'bg-site-success/15 text-site-success' : 'bg-site-surface-hover text-site-text-dim'
+          }`}
+        >
+          {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : icon}
+        </span>
       </span>
       <span
         className={`min-w-0 flex-1 text-sm ${done ? 'text-site-text-muted' : 'text-site-text'}`}
@@ -137,10 +138,10 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
   };
 
   return (
-    <section className="rad-live__card">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 font-display text-lg font-bold text-site-text">
-          <Flame className="h-5 w-5 text-site-accent" aria-hidden />
+    <section className="rad-live__card glass-fill">
+      <div className="rad-live__head">
+        <h2>
+          <Flame aria-hidden />
           {t('today-title', { defaultValue: 'Today' })}
         </h2>
         {data.streak.current > 0 && (
@@ -186,27 +187,34 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
         />
       </div>
 
-      {/* Streak freeze — protect the streak against a missed day. */}
-      <div className="mt-3 flex items-center gap-2 border-t border-site-border pt-3">
-        <Snowflake className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
-        <p className="min-w-0 flex-1 text-xs text-site-text-muted">
-          {data.streak.freezeTokens > 0
-            ? t('freeze-held', {
-                defaultValue: '{{count}} streak freeze protecting you',
-                count: data.streak.freezeTokens,
-              })
-            : t('freeze-none', { defaultValue: 'No streak freeze — a miss resets your streak' })}
-        </p>
-        <button
-          type="button"
-          onClick={buyFreeze}
-          disabled={buying || data.streak.freezeTokens >= 3}
-          className="shrink-0 rounded-full border border-site-border px-3 py-1 text-xs font-semibold text-site-text transition-colors hover:bg-site-surface-hover disabled:opacity-50"
-        >
-          {data.streak.freezeTokens >= 3
-            ? t('freeze-max', { defaultValue: 'Max' })
-            : t('freeze-buy', { defaultValue: 'Buy · 150' })}
-        </button>
+      {/* Streak freeze — protect the streak against a missed day. The note and its button stack in the text column, so
+          neither is squeezed by the other. */}
+      <div className="mt-3 flex items-start gap-3 border-t border-site-border pt-3">
+        <span className="rad-live__slot">
+          <Snowflake className="h-4 w-4 text-site-accent" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="text-xs text-site-text-muted">
+            {data.streak.freezeTokens > 0
+              ? t('freeze-held', {
+                  defaultValue: '{{count}} streak freeze protecting you',
+                  count: data.streak.freezeTokens,
+                })
+              : t('freeze-none', { defaultValue: 'No streak freeze — a miss resets your streak' })}
+          </p>
+          <Button
+            type="button"
+            variant="accent-ghost"
+            size="xs"
+            onClick={buyFreeze}
+            disabled={buying || data.streak.freezeTokens >= 3}
+            className="-ml-3.5"
+          >
+            {data.streak.freezeTokens >= 3
+              ? t('freeze-max', { defaultValue: 'Max' })
+              : t('freeze-buy', { defaultValue: 'Buy · 150' })}
+          </Button>
+        </div>
       </div>
     </section>
   );

@@ -239,7 +239,7 @@ export function MenuLabel({
   return (
     <div
       className={cn(
-        'px-4 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-site-text-dim',
+        'px-4 pb-1 pt-2 text-xs font-semibold text-site-text-dim',
         className,
       )}
     >

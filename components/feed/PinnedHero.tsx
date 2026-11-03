@@ -98,7 +98,7 @@ function HeroFrame({
 
       {eyebrow && (
         <motion.p
-          className="mb-5 font-mono text-xs font-medium uppercase tracking-[0.22em] text-site-text-muted sm:text-sm"
+          className="site-kicker mb-5"
           style={styles.eyebrow}
         >
           {eyebrow}
@@ -137,7 +137,7 @@ function HeroFrame({
           className="absolute inset-x-0 flex flex-col items-center gap-1.5 text-site-text-muted"
           style={{ ...styles.cue, bottom: 'var(--site-floating-reserve)' }}
         >
-          <span className="font-mono text-xs uppercase tracking-[0.24em]">{scrollCue}</span>
+          <span className="text-sm font-medium">{scrollCue}</span>
           <motion.span
             animate={{ y: [0, 5, 0] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}

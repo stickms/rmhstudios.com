@@ -230,9 +230,12 @@ in `lib/jelly/tiers.ts` (and the engine modules it names) with CSS tokens in
 accent (`--site-accent`), which is also the plasma colour (the haze's second plasma
 hue only ever appears inside the gel, never as UI colour). No gradients on the
 ground, no neon or glowing type, no sci-fi illustration (robots, brains, circuits,
-sparkles). Copy is short and literal ("Deploy model", "Latency 42 ms"); eyebrows
-and data are Geist Mono, everything else Geist. One ink-gel primary action
-(`<Button variant="signal">`) per view.
+sparkles). Copy is short and literal ("Deploy model", "Latency 42 ms"); data is
+Geist Mono, everything else Geist. **No eyebrows** (owner decision, 2026-11-03): no
+letterspaced all-caps labels anywhere on the main site — a group's heading is
+`site-section-label`, the line over a page heading is `site-kicker` (both sentence
+case), and an announcement's category is a soft chip (`.rmhark__kicker`); the headline
+carries the weight. One ink-gel primary action (`<Button variant="signal">`) per view.
 
 **The material, in physical layers (all drawn by shared services):**
 

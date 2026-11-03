@@ -1,5 +1,5 @@
 /**
- * The site's type: Geist for everything, Geist Mono for eyebrows and data
+ * The site's type: Geist for everything, Geist Mono for data (no eyebrows)
  * (CLAUDE.md "Design system: Plasmatic Jelly" → Identity). Both faces are
  * self-hosted, the sans is preloaded and metric-matched, and the default
  * theme's `--site-font-*` tokens lead with them while keeping the system face
@@ -85,9 +85,11 @@ describe('site fonts: Geist + Geist Mono', () => {
     ]);
   });
 
-  it('sets eyebrows in the mono token', () => {
+  it('has no eyebrows: the kicker is sentence case in the site sans, not letterspaced mono caps', () => {
     const kicker = globals.match(/\.site-kicker\s*\{[^}]*\}/)?.[0] ?? '';
-    expect(kicker).toContain('font-family: var(--site-font-mono)');
+    expect(kicker).not.toContain('--site-font-mono');
+    expect(kicker).not.toContain('text-transform: uppercase');
+    expect(globals).toMatch(/--site-kicker-tracking:\s*0;/);
   });
 
   it('preloads the Geist Latin subset (and only one font file) from the root document', () => {

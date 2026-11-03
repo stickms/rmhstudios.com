@@ -44,7 +44,7 @@ export function MuseumPage() {
             {q.data.eras.map((e) => (
               <li key={e.id} className="glass-fill space-y-3 rounded-site px-4 py-3">
                 <time
-                  className="text-xs font-semibold uppercase tracking-wide text-site-text-dim"
+                  className="site-section-label"
                   dateTime={e.eraDate}
                 >
                   {new Date(`${e.eraDate}T00:00:00Z`).toLocaleDateString(undefined, {

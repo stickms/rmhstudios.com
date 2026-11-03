@@ -73,7 +73,7 @@ function StatTile({
   // was re-blurred on every scroll frame (perf audit 2026-10-08, scroll).
   return (
     <Card className="p-4">
-      <div className="text-xs uppercase tracking-wide text-site-text-dim">{label}</div>
+      <div className="text-xs font-medium text-site-text-dim">{label}</div>
       <div className="flex items-center gap-2 text-2xl font-bold tabular-nums">
         {Icon ? <Icon className="size-5 text-site-warning" aria-hidden /> : null}
         {value.toLocaleString()}
@@ -139,7 +139,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
           <h2 className="site-section-label">
             {t('earnings-by-source', { defaultValue: 'Earnings by source' })}
           </h2>
-          <span className="text-xs text-site-text-dim">
+          <span className="text-xs font-medium text-site-text-dim">
             {t('last-6-months', { defaultValue: 'Last 6 months' })}
           </span>
         </div>
@@ -225,7 +225,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
                     {tip.sender?.name ?? t('someone', { defaultValue: 'Someone' })}
                   </span>
                   {tip.sender?.handle ? (
-                    <span className="text-xs text-site-text-dim"> @{tip.sender.handle}</span>
+                    <span className="text-xs font-medium text-site-text-dim"> @{tip.sender.handle}</span>
                   ) : null}
                   {tip.note ? (
                     <p className="truncate text-xs text-site-text-muted">{tip.note}</p>
@@ -236,7 +236,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
                     <Coins className="size-4 text-site-warning" aria-hidden />
                     {tip.amount.toLocaleString()}
                   </span>
-                  <span className="text-xs text-site-text-dim">{timeAgoShort(tip.createdAt)}</span>
+                  <span className="text-xs font-medium text-site-text-dim">{timeAgoShort(tip.createdAt)}</span>
                 </div>
               </div>
             ))}

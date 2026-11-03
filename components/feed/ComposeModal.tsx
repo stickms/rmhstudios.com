@@ -381,7 +381,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  {attachment ==='poll'&& (
  <div className="glass-fill mt-2 rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">
- <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">
+ <span className="site-section-label">
  Poll
  </span>
  <button
@@ -468,7 +468,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  {attachment ==='gif'&& (
  <div className="glass-fill mt-2 rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">
- <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">
+ <span className="site-section-label">
  {t('gif-heading', { defaultValue:'GIF'})}
  </span>
  <button
@@ -530,7 +530,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  defaultValue:'Describe this image for screen readers',
  })
  }
- className={`absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide transition-colors ${
+ className={`absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none transition-colors ${
  hasAlt
  ?'bg-site-accent text-site-accent-fg'
  :'bg-site-media-scrim-strong text-site-media-ink/90 hover:bg-site-media-scrim-hover'

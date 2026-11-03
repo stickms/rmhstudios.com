@@ -425,7 +425,7 @@ function LoginPage() {
           <div className="glass-inset mb-3 flex size-12 items-center justify-center rounded-site">
             <span className="font-serif text-lg font-bold tracking-tight text-site-text">R</span>
           </div>
-          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-site-text-muted">
+          <p className="site-kicker">
             RMH Studios
           </p>
           <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-site-text">
@@ -485,7 +485,7 @@ function LoginPage() {
 
           <div className="flex items-center gap-3 py-1">
             <div className="h-px flex-1 bg-site-border" />
-            <span className="text-[0.6875rem] uppercase tracking-[0.14em] text-site-text-muted">
+            <span className="text-xs text-site-text-muted">
               {t('or-with-email', { defaultValue: 'or with email' })}
             </span>
             <div className="h-px flex-1 bg-site-border" />
