@@ -53,6 +53,8 @@ export interface AltairClientLobbyState {
   chat: ChatMessage[];
   myUserId: string;
   seq: number;
+  /** The run's random seed, chosen by the hub; sent to the host only, while PLAYING. */
+  runSeed?: number | null;
 }
 
 export interface ChatMessage {

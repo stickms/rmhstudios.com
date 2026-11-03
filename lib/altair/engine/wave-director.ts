@@ -16,6 +16,7 @@ import {
   HORDE_SURGE_MAX_RADIUS,
 } from '../data/waves';
 import { getHPScale, getDamageScale, getSpeedScale, getXPScale } from '../data/scaling';
+import { rand } from './rng';
 
 /** Count living (non-corpse) enemies for spawn cap checks. */
 function aliveEnemyCount(world: GameWorld): number {
@@ -67,8 +68,8 @@ function getRandomSpawnPosition(
   minDist: number,
   maxDist: number,
 ): { x: number; y: number } {
-  const angle = Math.random() * Math.PI * 2;
-  const dist = minDist + Math.random() * (maxDist - minDist);
+  const angle = rand() * Math.PI * 2;
+  const dist = minDist + rand() * (maxDist - minDist);
   return {
     x: playerX + Math.cos(angle) * dist,
     y: playerY + Math.sin(angle) * dist,
@@ -99,7 +100,7 @@ function spawnEnemy(
   let speedMod = 1;
   if (def.behavior === 'swarm') {
     const variance = def.specialParams.speedVariance || 0.2;
-    speedMod = 1 + (Math.random() * 2 - 1) * variance;
+    speedMod = 1 + (rand() * 2 - 1) * variance;
   }
 
   const enemy: EnemyEntity = {
@@ -285,16 +286,16 @@ export function updateWaveDirector(
       for (let i = 0; i < 30; i++) {
         if (aliveEnemyCount(world) >= MAX_ACTIVE_ENEMIES) break;
         const pos = getRandomSpawnPosition(world.player.x, world.player.y, 400, 700);
-        const type = Math.random() < 0.5 ? 'shambler' : 'bat';
+        const type = rand() < 0.5 ? 'shambler' : 'bat';
         const enemy = spawnEnemy(world, type, pos.x, pos.y, 1, events.spawned);
         if (enemy) world.enemies.push(enemy);
       }
       const highTierTypes = ['vampire_noble', 'arcane_construct', 'death_knight', 'bone_golem', 'witch'];
-      const highTierCount = 3 + Math.floor(Math.random() * 3);
+      const highTierCount = 3 + Math.floor(rand() * 3);
       for (let i = 0; i < highTierCount; i++) {
         if (aliveEnemyCount(world) >= MAX_ACTIVE_ENEMIES) break;
         const pos = getRandomSpawnPosition(world.player.x, world.player.y, 400, 700);
-        const type = highTierTypes[Math.floor(Math.random() * highTierTypes.length)];
+        const type = highTierTypes[Math.floor(rand() * highTierTypes.length)];
         const enemy = spawnEnemy(world, type, pos.x, pos.y, 1, events.spawned);
         if (enemy) world.enemies.push(enemy);
       }
@@ -305,7 +306,7 @@ export function updateWaveDirector(
   while (state.budgetAccumulator >= 1 && aliveEnemyCount(world) < MAX_ACTIVE_ENEMIES) {
     // Pick a random enemy from the current composition
     const composition = currentWave.enemyComposition;
-    const enemyId = composition[Math.floor(Math.random() * composition.length)];
+    const enemyId = composition[Math.floor(rand() * composition.length)];
     const cost = ENEMY_THREAT_COSTS[enemyId] || 1;
 
     if (state.budgetAccumulator < cost) {
@@ -323,10 +324,10 @@ export function updateWaveDirector(
         const def = ENEMY_BY_ID.get('swarm_rat');
         const packMin = def?.specialParams.packSizeMin || 8;
         const packMax = def?.specialParams.packSizeMax || 12;
-        const packSize = packMin + Math.floor(Math.random() * (packMax - packMin + 1));
+        const packSize = packMin + Math.floor(rand() * (packMax - packMin + 1));
         for (let j = 0; j < packSize; j++) {
           if (aliveEnemyCount(world) >= MAX_ACTIVE_ENEMIES) break;
-          const offset = { x: (Math.random() - 0.5) * 60, y: (Math.random() - 0.5) * 60 };
+          const offset = { x: (rand() - 0.5) * 60, y: (rand() - 0.5) * 60 };
           const rat = spawnEnemy(world, 'swarm_rat', pos.x + offset.x, pos.y + offset.y, 1, events.spawned);
           if (rat) world.enemies.push(rat);
         }
@@ -346,10 +347,10 @@ export function updateWaveDirector(
       const def = ENEMY_BY_ID.get('swarm_rat');
       const packMin = def?.specialParams.packSizeMin || 8;
       const packMax = def?.specialParams.packSizeMax || 12;
-      const packSize = packMin + Math.floor(Math.random() * (packMax - packMin + 1));
+      const packSize = packMin + Math.floor(rand() * (packMax - packMin + 1));
       for (let j = 0; j < packSize; j++) {
         if (aliveEnemyCount(world) >= MAX_ACTIVE_ENEMIES) break;
-        const offset = { x: (Math.random() - 0.5) * 60, y: (Math.random() - 0.5) * 60 };
+        const offset = { x: (rand() - 0.5) * 60, y: (rand() - 0.5) * 60 };
         const rat = spawnEnemy(world, 'swarm_rat', pos.x + offset.x, pos.y + offset.y, 1, events.spawned);
         if (rat) world.enemies.push(rat);
       }

@@ -33,6 +33,7 @@ import {
   hasEffect,
   getEffectMagnitude,
 } from './status-effects';
+import { rand } from './rng';
 
 // =============================================================================
 // Class Ability State
@@ -1156,7 +1157,7 @@ export function tryRaiseDead(
 
   // 25% chance scaled by luck
   const chance = 0.25 * stats.luck;
-  if (Math.random() >= chance) return;
+  if (rand() >= chance) return;
 
   const skeleton: SummonEntity = {
     id: createId(world),

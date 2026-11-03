@@ -26,6 +26,7 @@ import {
 import { distToNearestPlayer } from './multiplayer/player-helpers';
 import { SpatialHash } from './spatial-hash';
 import { beginEnemyNavigationFrame, computePathVelocity } from './enemy-navigation';
+import { rand } from './rng';
 
 // -----------------------------------------------------------------------------
 // Events returned each frame for the game loop to process
@@ -637,7 +638,7 @@ function updateSwarmRat(
   // Speed variance is applied via aiParams.speedMod at spawn time
   if (enemy.aiParams.speedMod === undefined) {
     // Initialize with +/-20% variance if not set by spawner
-    enemy.aiParams.speedMod = 0.8 + Math.random() * 0.4;
+    enemy.aiParams.speedMod = 0.8 + rand() * 0.4;
   }
   const speed = getEffectiveSpeed(enemy);
   moveTowardPlayer(enemy, world, delta, speed);

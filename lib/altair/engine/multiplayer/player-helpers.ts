@@ -11,6 +11,7 @@ import {
   MultiplayerGameWorld,
   EnemyEntity,
 } from '../types';
+import { rand } from '../rng';
 
 /**
  * Get all alive (non-downed, non-dead, non-spectating) players.
@@ -185,8 +186,8 @@ export function maintainRangeFromNearestPlayer(
 export function getSpawnPositionAroundPlayer(
   player: MultiplayerPlayerEntity,
 ): { x: number; y: number } {
-  const angle = Math.random() * Math.PI * 2;
-  const dist = 600 + Math.random() * 300;
+  const angle = rand() * Math.PI * 2;
+  const dist = 600 + rand() * 300;
   return {
     x: player.x + Math.cos(angle) * dist,
     y: player.y + Math.sin(angle) * dist,
@@ -212,8 +213,8 @@ export function getEquidistantPosition(
   cy /= alive.length;
 
   // Spawn at centroid offset by 600-900px
-  const angle = Math.random() * Math.PI * 2;
-  const dist = 600 + Math.random() * 300;
+  const angle = rand() * Math.PI * 2;
+  const dist = 600 + rand() * 300;
   return {
     x: cx + Math.cos(angle) * dist,
     y: cy + Math.sin(angle) * dist,

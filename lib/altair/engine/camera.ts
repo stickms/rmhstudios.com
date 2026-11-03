@@ -5,6 +5,7 @@
 // =============================================================================
 
 import { Camera, PlayerEntity } from './types';
+import { rand } from './rng';
 
 const CAMERA_LERP_SPEED = 5.0; // higher = snappier follow
 const SHAKE_DECAY = 8.0; // how fast shake fades
@@ -51,7 +52,7 @@ export function updateCamera(
       // Decay intensity over time
       camera.shakeIntensity *= Math.exp(-SHAKE_DECAY * delta);
       // Random offset each frame
-      const angle = Math.random() * Math.PI * 2;
+      const angle = rand() * Math.PI * 2;
       camera.shakeX = Math.cos(angle) * camera.shakeIntensity;
       camera.shakeY = Math.sin(angle) * camera.shakeIntensity;
     }
