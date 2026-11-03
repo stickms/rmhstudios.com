@@ -2080,3 +2080,42 @@
   z-index: 3;
   box-shadow: 3px 3px 0 var(--el-ink);
 }
+
+/* ═══ Mobile audit fixes ═══════════════════════════════════════════════════════════════════════════
+ * 1. The page's own canvas is paper, so Safari's status-bar strip and rubber-band overscroll never show the
+ *    site's black html background around the page.
+ * 2. iOS 26 Safari floats a tab bar over the bottom ~70px. Nothing here is pinned flush to the bottom edge:
+ *    the page ends with room to scroll the footer clear of it, and the Briefing Room's reaction row floats
+ *    off the edge instead of sitting behind the bar.
+ * 3. A portrait's name plate hangs below its image, so the content under it starts a little lower.
+ */
+/* !important: the theme script writes the site's colour into the root element's inline style. */
+html:has(.el-root),
+html:has(.el-root) body {
+  background-color: #f4f3f7 !important;
+}
+@media (max-width: 899px) {
+  .el-foot {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 112px);
+  }
+  .el-bar__nav {
+    -webkit-mask-image: linear-gradient(90deg, #000 90%, transparent);
+    mask-image: linear-gradient(90deg, #000 90%, transparent);
+  }
+  .el-briefing__portrait {
+    margin-bottom: 16px;
+  }
+}
+@media (min-width: 1100px) {
+  .el-briefing {
+    padding-top: 16px;
+  }
+}
+html.ios-webkit .el-room__foot {
+  margin: 0 8px calc(env(safe-area-inset-bottom, 0px) + 78px);
+  border: var(--el-bw) solid var(--el-ink);
+  border-radius: 10px;
+}
+html.ios-webkit .el-room__grid {
+  padding-bottom: 0;
+}
