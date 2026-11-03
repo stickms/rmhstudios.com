@@ -17,7 +17,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { objectiveIdsToBitmask } from '../progress/objectives';
 import type { InputFrame, Level, RenderSeat, SeatIndex, Vec2 } from '../types';
 import { input, run, simFor, unit } from './rig';
@@ -25,6 +25,9 @@ import { input, run, simFor, unit } from './rig';
 const LEVEL: Level = JSON.parse(
   readFileSync(join(process.cwd(), 'data/bums-rush/levels/w1/w1-01.json'), 'utf-8'),
 ) as Level;
+
+// The repro runs ~120 seeded engine simulations; the 5s default is too tight on a loaded CI runner.
+vi.setConfig({ testTimeout: 60_000 });
 
 /** The level as it shipped before the lift — the dead end. */
 const LEGACY: Level = { ...LEVEL, props: LEVEL.props.filter((p) => p.id !== 'plank-lift') };
