@@ -235,6 +235,14 @@ interface ClearCandidate {
   objectivesBitmask: number;
   assisted: boolean;
   ranked: boolean;
+  /**
+   * Set ONLY by the bulk profile sync (`upsertProfile`): the client's own count
+   * for this record. A sync replays history, it is not a new clear, so the
+   * stored count becomes the max of the two instead of `+ 1` - otherwise every
+   * page load (an autosave round-trip) inflated `clears` by one. Unset for a
+   * real result (`recordLevelResult`), which does add one.
+   */
+  syncedClears?: number;
 }
 
 /**
@@ -273,7 +281,14 @@ async function applyClearForUser(
   const assisted =
     existing && existing.bestMs <= candidate.bestMs ? existing.assisted : candidate.assisted;
   const objectives = (existing?.objectives ?? 0) | candidate.objectivesBitmask;
-  const clearsCount = (existing?.clears ?? 0) + 1;
+  const syncedClears =
+    candidate.syncedClears === undefined
+      ? undefined
+      : Math.min(100_000, Math.max(0, Math.round(candidate.syncedClears)));
+  const clearsCount =
+    syncedClears === undefined
+      ? (existing?.clears ?? 0) + 1
+      : Math.max(existing?.clears ?? 0, syncedClears);
 
   const changed =
     !existing ||
@@ -291,7 +306,7 @@ async function applyClearForUser(
       bestMs: candidate.bestMs,
       objectives: candidate.objectivesBitmask,
       assisted: candidate.assisted,
-      clears: 1,
+      clears: syncedClears === undefined ? 1 : Math.max(1, syncedClears),
     },
     update: { bestMs, objectives, assisted, clears: clearsCount },
   });
@@ -497,6 +512,7 @@ export async function upsertProfile(userId: string, incoming: Profile): Promise<
         objectivesBitmask: validation.trustedObjectivesBitmask,
         assisted: clear.assisted,
         ranked: validation.reasons.length === 0,
+        syncedClears: clear.clears,
       });
       touchedLevels.push({ levelId: clear.levelId, playerCount: clear.playerCount });
     }
