@@ -8,6 +8,7 @@
 import { GameWorld, PickupEntity, EnemyEntity, createId } from './types';
 import { PlayerStats } from '../stores/game-store';
 import { rand } from './rng';
+import { dcos, dsin } from './dmath';
 
 // ---- Types ------------------------------------------------------------------
 
@@ -169,8 +170,8 @@ export function spawnBossDrops(
     const dist = 30 + rand() * 40;
     spawnPickup(
       world,
-      x + Math.cos(angle) * dist,
-      y + Math.sin(angle) * dist,
+      x + dcos(angle) * dist,
+      y + dsin(angle) * dist,
       'coin',
       1,
     );

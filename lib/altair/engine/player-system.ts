@@ -34,6 +34,7 @@ import {
   getEffectMagnitude,
 } from './status-effects';
 import { rand } from './rng';
+import { dcos, dsin } from './dmath';
 
 // =============================================================================
 // Class Ability State
@@ -1105,8 +1106,8 @@ function handleNecromancer(
 
     for (let i = 0; i < pillarCount; i++) {
       const angle = (2 * Math.PI * i) / pillarCount;
-      const px = player.x + Math.cos(angle) * ringRadius;
-      const py = player.y + Math.sin(angle) * ringRadius;
+      const px = player.x + dcos(angle) * ringRadius;
+      const py = player.y + dsin(angle) * ringRadius;
 
       const pillar: ProjectileEntity = {
         id: createId(world),

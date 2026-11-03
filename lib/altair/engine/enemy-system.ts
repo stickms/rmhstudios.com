@@ -27,6 +27,7 @@ import { distToNearestPlayer } from './multiplayer/player-helpers';
 import { SpatialHash } from './spatial-hash';
 import { beginEnemyNavigationFrame, computePathVelocity } from './enemy-navigation';
 import { rand } from './rng';
+import { datan2, dcos, dsin } from './dmath';
 
 // -----------------------------------------------------------------------------
 // Events returned each frame for the game loop to process
@@ -369,9 +370,9 @@ function updateBat(
 
   // Sinusoidal offset perpendicular to travel direction
   const waveOffset =
-    Math.sin((enemy.aiTimer / wavePeriod) * Math.PI * 2) * waveAmplitude;
+    dsin((enemy.aiTimer / wavePeriod) * Math.PI * 2) * waveAmplitude;
   const prevWaveOffset =
-    Math.sin(((enemy.aiTimer - delta) / wavePeriod) * Math.PI * 2) *
+    dsin(((enemy.aiTimer - delta) / wavePeriod) * Math.PI * 2) *
     waveAmplitude;
   const waveDelta = waveOffset - prevWaveOffset;
 
@@ -806,8 +807,8 @@ export function onBoneGolemDeath(
   const splitCount = 3;
   for (let i = 0; i < splitCount; i++) {
     const angle = (Math.PI * 2 * i) / splitCount;
-    const offsetX = Math.cos(angle) * 30;
-    const offsetY = Math.sin(angle) * 30;
+    const offsetX = dcos(angle) * 30;
+    const offsetY = dsin(angle) * 30;
     events.splitSpawns.push(
       spawnEnemyEntity(world, 'skeleton_warrior', enemy.x + offsetX, enemy.y + offsetY),
     );
@@ -941,8 +942,8 @@ function updateVampireNoble(
     // Spawn 4 bats near this enemy
     for (let i = 0; i < batSummonCount; i++) {
       const angle = (Math.PI * 2 * i) / batSummonCount;
-      const offsetX = Math.cos(angle) * 25;
-      const offsetY = Math.sin(angle) * 25;
+      const offsetX = dcos(angle) * 25;
+      const offsetY = dsin(angle) * 25;
       events.splitSpawns.push(
         spawnEnemyEntity(world, 'bat', enemy.x + offsetX, enemy.y + offsetY),
       );
@@ -1042,7 +1043,7 @@ function updateArcaneConstruct(
       const predictedY = world.player.y + playerVy * timeToHit;
       const pdx = predictedX - enemy.x;
       const pdy = predictedY - enemy.y;
-      enemy.aiParams.beamAngle = Math.atan2(pdy, pdx);
+      enemy.aiParams.beamAngle = datan2(pdy, pdx);
 
       if (enemy.aiTimer <= 0) {
         enemy.aiState = 'fire_beam';
@@ -1053,8 +1054,8 @@ function updateArcaneConstruct(
       // Spawn beam projectile
       const angle = enemy.aiParams.beamAngle ?? 0;
       const beamSpeed = 800;
-      const vx = Math.cos(angle) * beamSpeed;
-      const vy = Math.sin(angle) * beamSpeed;
+      const vx = dcos(angle) * beamSpeed;
+      const vy = dsin(angle) * beamSpeed;
 
       events.enemyProjectiles.push(
         spawnEnemyProjectile(
@@ -1245,13 +1246,13 @@ function updateDeathKnight(
     case 'swing': {
       // Melee arc attack: spawn a short-lived projectile representing the swing
       const { dx, dy, dist } = distToPlayer(enemy, world);
-      const angle = Math.atan2(dy, dx);
+      const angle = datan2(dy, dx);
       // Create a melee projectile in the arc direction
       events.enemyProjectiles.push(
         spawnEnemyProjectile(
           world,
-          enemy.x + Math.cos(angle) * 40,
-          enemy.y + Math.sin(angle) * 40,
+          enemy.x + dcos(angle) * 40,
+          enemy.y + dsin(angle) * 40,
           0,
           0,
           meleeDamage,
@@ -1375,7 +1376,7 @@ function updateLich(
 
     // Fire fan of projectiles
     const { dx, dy, dist } = distToPlayer(enemy, world);
-    const baseAngle = Math.atan2(dy, dx);
+    const baseAngle = datan2(dy, dx);
     const arcRad = (volleyArcDeg * Math.PI) / 180;
     const startAngle = baseAngle - arcRad / 2;
 
@@ -1384,8 +1385,8 @@ function updateLich(
         volleyProjectiles === 1
           ? baseAngle
           : startAngle + (arcRad * i) / (volleyProjectiles - 1);
-      const vx = Math.cos(angle) * volleyProjectileSpeed;
-      const vy = Math.sin(angle) * volleyProjectileSpeed;
+      const vx = dcos(angle) * volleyProjectileSpeed;
+      const vy = dsin(angle) * volleyProjectileSpeed;
 
       events.enemyProjectiles.push(
         spawnEnemyProjectile(
@@ -1412,8 +1413,8 @@ function updateLich(
     // Spawn shamblers near lich at 50% HP (simulated resurrection)
     for (let i = 0; i < resurrectCount; i++) {
       const angle = (Math.PI * 2 * i) / resurrectCount;
-      const offsetX = Math.cos(angle) * 40;
-      const offsetY = Math.sin(angle) * 40;
+      const offsetX = dcos(angle) * 40;
+      const offsetY = dsin(angle) * 40;
       const shamDef = ENEMY_DEF_MAP.get('shambler');
       const halfHp = shamDef ? Math.floor(shamDef.baseHp * 0.5) : 4;
       events.splitSpawns.push(

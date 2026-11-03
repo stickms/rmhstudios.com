@@ -37,6 +37,7 @@ import { xpRequired, type UpgradeChoice } from '../../stores/game-store';
 import { generateUpgradeChoices, checkEvolution } from '../level-up-system';
 import { handleCollisions, processEnemyDeaths, tickCorpses } from '../collisions';
 import { enforceBossDpsCap } from '../boss-system';
+import { RunRecorder, quantiseIntent, type RunLog } from '../../verify/run-log';
 import { createSeededRng, withRng, type RandomSource } from '../rng';
 import { resetEnemyNavigation } from '../enemy-navigation';
 import { resetPickupSystem } from '../pickup-system';
@@ -147,6 +148,10 @@ export class HostSim {
   readonly rt: SimRuntime;
   readonly tileGen: TileGenerator;
   readonly seed: number;
+  readonly doubleTime: boolean;
+  /** Records every between-step call so the server can replay the run (lib/altair/verify). */
+  readonly recorder: RunRecorder;
+  private recording = false;
   status: HostStatus = 'playing';
   tick = 0;
   bossesDefeated: string[] = [];
@@ -173,6 +178,8 @@ export class HostSim {
     this.levelUpTimeout = opts.levelUpTimeout ?? LEVEL_UP_TIMEOUT;
     this.seed = (opts.seed ?? Math.floor(Math.random() * 0x100000000)) >>> 0;
     this.rng = createSeededRng(this.seed);
+    this.doubleTime = !!opts.doubleTime;
+    this.recorder = new RunRecorder(opts.players.map((p) => ({ id: p.playerId, classId: p.classId, slot: p.slot })));
     // Module-level engine state (path cache, merge timers) must start as on a fresh page.
     resetEnemyNavigation();
     resetPickupSystem();
@@ -209,6 +216,7 @@ export class HostSim {
     for (const init of opts.players) this.addPlayer(init);
     this.world.player = this.players[0].entity;
     this.scaledMaxId = this.world.nextId;
+    this.recording = true;
   }
 
 
@@ -216,7 +224,11 @@ export class HostSim {
 
   /** Add a player (match start or drop-in). Drop-ins appear beside the nearest living player. */
   addPlayer(init: HostPlayerInit): void {
+    const before = this.byId.has(init.playerId) ? -1 : this.players.length;
     withRng(this.rng, () => this.addPlayerInner(init));
+    if (this.recording && this.status === 'playing' && before >= 0 && this.byId.has(init.playerId)) {
+      this.recorder.join(this.tick, { id: init.playerId, classId: init.classId, slot: Math.max(0, Math.min(3, init.slot)) });
+    }
   }
 
   private addPlayerInner(init: HostPlayerInit): void {
@@ -321,6 +333,7 @@ export class HostSim {
   removePlayer(playerId: string): void {
     const p = this.byId.get(playerId);
     if (!p) return;
+    if (this.recording && this.status === 'playing') this.recorder.leave(this.tick, playerId);
     this.byId.delete(playerId);
     this.world.players.delete(playerId);
     const i = this.players.indexOf(p);
@@ -344,8 +357,26 @@ export class HostSim {
       dx /= m;
       dy /= m;
     }
-    p.intentX = dx;
-    p.intentY = dy;
+    // Intent is quantised to hundredths: that is what the run log stores, so the live sim and the
+    // server's replay see the same numbers.
+    this.applyIntent(p, playerId, quantiseIntent(dx), quantiseIntent(dy));
+  }
+
+  /**
+   * Replay entry point: the integer hundredths the run log stores, applied as they are. (Feeding them
+   * back through setInput would normalise a second time, and a rounded-up vector can land on a
+   * different integer.)
+   */
+  setQuantisedInput(playerId: string, qx: number, qy: number): void {
+    const p = this.byId.get(playerId);
+    if (!p) return;
+    this.applyIntent(p, playerId, Math.max(-100, Math.min(100, Math.trunc(qx))), Math.max(-100, Math.min(100, Math.trunc(qy))));
+  }
+
+  private applyIntent(p: HostPlayer, playerId: string, qx: number, qy: number): void {
+    p.intentX = qx / 100;
+    p.intentY = qy / 100;
+    if (this.recording && this.status === 'playing') this.recorder.input(this.tick, playerId, qx, qy);
     p.entity.lastInputTime = this.world.time;
   }
 
@@ -365,7 +396,14 @@ export class HostSim {
 
   /** Apply the player's pick. False if nothing is pending or the index is invalid. */
   chooseUpgrade(playerId: string, index: number): boolean {
-    return withRng(this.rng, () => this.chooseUpgradeInner(playerId, index));
+    const ok = withRng(this.rng, () => this.chooseUpgradeInner(playerId, index));
+    if (ok && this.recording && this.status === 'playing') this.recorder.pick(this.tick, playerId, index);
+    return ok;
+  }
+
+  /** The replayable record of the run so far (valid to submit only when `recorder.overflow` is false). */
+  getRunLog(): RunLog {
+    return this.recorder.toLog(this.tick, this.seed, this.doubleTime);
   }
 
   private chooseUpgradeInner(playerId: string, index: number): boolean {

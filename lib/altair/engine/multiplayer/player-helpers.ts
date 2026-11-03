@@ -12,6 +12,7 @@ import {
   EnemyEntity,
 } from '../types';
 import { rand } from '../rng';
+import { dcos, dsin } from '../dmath';
 
 /**
  * Get all alive (non-downed, non-dead, non-spectating) players.
@@ -189,8 +190,8 @@ export function getSpawnPositionAroundPlayer(
   const angle = rand() * Math.PI * 2;
   const dist = 600 + rand() * 300;
   return {
-    x: player.x + Math.cos(angle) * dist,
-    y: player.y + Math.sin(angle) * dist,
+    x: player.x + dcos(angle) * dist,
+    y: player.y + dsin(angle) * dist,
   };
 }
 
@@ -216,7 +217,7 @@ export function getEquidistantPosition(
   const angle = rand() * Math.PI * 2;
   const dist = 600 + rand() * 300;
   return {
-    x: cx + Math.cos(angle) * dist,
-    y: cy + Math.sin(angle) * dist,
+    x: cx + dcos(angle) * dist,
+    y: cy + dsin(angle) * dist,
   };
 }
