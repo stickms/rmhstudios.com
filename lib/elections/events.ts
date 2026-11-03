@@ -12,7 +12,8 @@
 import type { ChamberControl, ElectionSnapshot, Office, Party, PollClosing, Race } from './types';
 import { OFFICE_NAME, PARTY_SHORT } from './types';
 
-export type ElectionEventKind = 'call' | 'flip' | 'lead-change' | 'polls-closed' | 'clinch' | 'news';
+export type ElectionEventKind =
+  'call' | 'flip' | 'lead-change' | 'polls-closed' | 'clinch' | 'news';
 
 export interface ElectionEvent {
   id: string;
@@ -30,13 +31,23 @@ export interface ElectionEvent {
   party?: Party | null;
   /** Link for `news` events. */
   url?: string;
+  /**
+   * Set by the CLIENT, never the server: true for an event that arrived live over the stream, false for
+   * one that came in the initial history batch. Auto-follow acts only on fresh events, so opening a
+   * room mid-night never replays the evening.
+   */
+  fresh?: boolean;
 }
 
 /** A lead change only means something once real votes are in; below this it is noise. */
 export const MIN_REPORTING_FOR_LEAD_CHANGE = 5;
 
 const calledByWord = (r: Race): string =>
-  r.calledBy.includes('ap') ? 'AP calls' : r.calledBy.some((c) => c.endsWith('-final')) ? 'Final count:' : 'Called:';
+  r.calledBy.includes('ap')
+    ? 'AP calls'
+    : r.calledBy.some((c) => c.endsWith('-final'))
+      ? 'Final count:'
+      : 'Called:';
 
 const weight = (r: Race): 2 | 3 => (r.office === 'house' && !r.flipped ? 2 : 3);
 
@@ -47,7 +58,11 @@ function leaderOf(r: Race) {
 const nameOf = (c: { name: string; party: Party }) => `${c.name} (${PARTY_SHORT[c.party]})`;
 
 /** Events that happened between `prev` and `next` (same Election Day). */
-export function diffSnapshots(prev: ElectionSnapshot, next: ElectionSnapshot, at: number = Date.now()): ElectionEvent[] {
+export function diffSnapshots(
+  prev: ElectionSnapshot,
+  next: ElectionSnapshot,
+  at: number = Date.now(),
+): ElectionEvent[] {
   const out: ElectionEvent[] = [];
   const before = new Map(prev.races.map((r) => [r.id, r]));
 
@@ -76,7 +91,11 @@ export function diffSnapshots(prev: ElectionSnapshot, next: ElectionSnapshot, at
     }
 
     // Lead change: both sides counting, a different leader, and enough votes in to mean it.
-    if (p.status === 'counting' && r.status === 'counting' && (r.pctReporting ?? 0) >= MIN_REPORTING_FOR_LEAD_CHANGE) {
+    if (
+      p.status === 'counting' &&
+      r.status === 'counting' &&
+      (r.pctReporting ?? 0) >= MIN_REPORTING_FOR_LEAD_CHANGE
+    ) {
       const a = leaderOf(p);
       const b = leaderOf(r);
       if (a && b && a.id !== b.id) {
@@ -168,7 +187,11 @@ export function matchesFollow(ev: ElectionEvent, mode: FollowMode): boolean {
 }
 
 /** Keep a ring of events: newest last, unique by id, bounded. */
-export function pushEvents(ring: ElectionEvent[], incoming: ElectionEvent[], cap = 200): ElectionEvent[] {
+export function pushEvents(
+  ring: ElectionEvent[],
+  incoming: ElectionEvent[],
+  cap = 200,
+): ElectionEvent[] {
   const ids = new Set(ring.map((e) => e.id));
   const next = [...ring];
   for (const e of incoming) {

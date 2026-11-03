@@ -12,6 +12,7 @@
 
 import { createBus } from '@/lib/realtime-bus.server';
 import { closedPollEvents, diffSnapshots, pushEvents, type ElectionEvent } from './events';
+import { recordHistory } from './history.server';
 import type { NewsItem } from './news';
 import type { ElectionSnapshot } from './types';
 
@@ -48,11 +49,18 @@ export function ingestSnapshot(next: ElectionSnapshot, now: number = Date.now())
     if (!next.races.length) return [];
     const prev = previous.get(next.date);
     previous.set(next.date, next);
+    recordHistory(next.date, next.races, now);
 
     const events: ElectionEvent[] = prev ? diffSnapshots(prev, next, now) : [];
 
     const statewide = new Set(next.races.filter((r) => r.office !== 'house').map((r) => r.state));
-    const closed = closedPollEvents(next.date, next.pollClosings, announced.get(next.date) ?? new Set(), now, (s) => statewide.has(s));
+    const closed = closedPollEvents(
+      next.date,
+      next.pollClosings,
+      announced.get(next.date) ?? new Set(),
+      now,
+      (s) => statewide.has(s),
+    );
     announced.set(next.date, closed.announced);
     events.push(...closed.events);
 

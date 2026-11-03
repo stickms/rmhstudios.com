@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { RefreshCw } from 'lucide-react';
+import { MonitorPlay, RefreshCw } from 'lucide-react';
 import { SITE_URL } from '@/lib/seo';
 import { phaseOf, type Cycle } from '@/lib/elections/calendar';
 import { buildFacts, deterministicSummary, headline } from '@/lib/elections/summary';
@@ -18,6 +18,10 @@ import { ElectionChat } from './ElectionChat';
 import { WatchParty } from './WatchParty';
 import { ShareBar } from './ShareBar';
 import { MarketsPanel } from './MarketsPanel';
+import { RoomLobby } from './room/RoomLobby';
+import { RoomOverlay } from './room/RoomOverlay';
+import type { RoomSource } from './room/useRoomState';
+import { isRoomCode } from '@/lib/elections/room-config';
 import { CalendarPanel } from './CalendarPanel';
 import { NewsWire } from './NewsWire';
 import { timeAgo, useElectionData, useElectionEvents, useNow, useReveal } from './hooks';
@@ -26,6 +30,8 @@ export interface ElectionsPageProps {
   /** The election day the route resolved (from `?cycle=` or "the current one"). */
   cycle: Cycle;
   focusRaceId?: string;
+  /** `?room=CODE`: open that watch room on arrival. */
+  roomCode?: string;
   /** The cycles the switcher offers, computed server-side so SSR and hydration agree. */
   options: Cycle[];
 }
@@ -47,7 +53,11 @@ function Section({
 }) {
   const ref = useReveal<HTMLDivElement>();
   return (
-    <section id={id} className={`el-section${tone ? ` el-section--${tone}` : ''}`} aria-labelledby={`${id}-h`}>
+    <section
+      id={id}
+      className={`el-section${tone ? ` el-section--${tone}` : ''}`}
+      aria-labelledby={`${id}-h`}
+    >
       <div className="el-wrap">
         <div ref={ref} className="el-reveal" style={{ ['--el-r' as string]: '-0.4deg' }}>
           <div className="el-section__head">
@@ -68,11 +78,15 @@ function Section({
   );
 }
 
-export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProps) {
+export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: ElectionsPageProps) {
   const { t } = useTranslation('c-elections');
   const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [selectedState, setSelectedState] = useState<string | null>(null);
+  const [room, setRoom] = useState<RoomSource | null>(() => {
+    const c = roomCode?.toUpperCase();
+    return c && isRoomCode(c) ? { kind: 'hosted', code: c } : null;
+  });
 
   const year = cycle.year;
   /** What goes in `?cycle=`: a year for a general election, the date for any other election day. */
@@ -80,6 +94,20 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
   const isGeneral = cycle.kind !== 'other';
   const { data, isError, isFetching, refetch, dataUpdatedAt } = useElectionData(param);
   const { events } = useElectionEvents(param);
+
+  // A live event means the numbers just changed: pull the snapshot now instead of waiting for the next
+  // 20-second poll, or a pane would announce "AP calls X" above numbers that still say "awaiting polls".
+  const lastLiveEvent = useMemo(() => [...events].reverse().find((e) => e.fresh)?.id ?? null, [events]);
+  const lastRefetch = useRef(0);
+  useEffect(() => {
+    if (!lastLiveEvent) return;
+    const wait = Math.max(0, 4000 - (Date.now() - lastRefetch.current)); // at most once per 4 s, however many events land
+    const id = window.setTimeout(() => {
+      lastRefetch.current = Date.now();
+      void refetch();
+    }, wait);
+    return () => window.clearTimeout(id);
+  }, [lastLiveEvent, refetch]);
   const now = useNow(15_000, data?.serverTime);
 
   // Reveal + parallax are progressive enhancement: the markup is fully visible until this flips.
@@ -100,17 +128,52 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
   const tickerItems = useMemo(() => {
     if (!snapshot || !facts) return [];
     const items = [headline(snapshot)];
-    for (const r of facts.flips.slice(0, 4)) items.push(`Flip · ${r.label} → ${r.leader ?? 'called'}`);
+    for (const r of facts.flips.slice(0, 4))
+      items.push(`Flip · ${r.label} → ${r.leader ?? 'called'}`);
     for (const r of facts.closest.slice(0, 3)) items.push(`Too close · ${r.label}`);
     if (!snapshot.live) items.push(t('ticker.soon', { defaultValue: 'Polls open soon' }));
     // What just happened beats what is generally true: the latest events lead the strip.
-    const recent = events.filter((e) => e.kind !== 'polls-closed' || e.importance > 1).slice(-6).reverse().map((e) => e.text);
+    const recent = events
+      .filter((e) => e.kind !== 'polls-closed' || e.importance > 1)
+      .slice(-6)
+      .reverse()
+      .map((e) => e.text);
     return [...recent, ...items];
   }, [snapshot, facts, events, t]);
 
   const setCycle = (value: string) =>
-    navigate({ to: '/elections', search: (s: Record<string, unknown>) => ({ ...s, cycle: value, race: undefined, p: undefined }), replace: true });
+    navigate({
+      to: '/elections',
+      search: (s: Record<string, unknown>) => ({
+        ...s,
+        cycle: value,
+        race: undefined,
+        p: undefined,
+      }),
+      replace: true,
+    });
   const selectOptions = isGeneral ? options : [cycle, ...options];
+
+  /** Open a room and keep the URL shareable: a hosted room is `?room=CODE`. */
+  const openRoom = (source: RoomSource) => {
+    setRoom(source);
+    navigate({
+      to: '/elections',
+      search: (s: Record<string, unknown>) => ({
+        ...s,
+        room: source.kind === 'hosted' ? source.code : undefined,
+      }),
+      replace: true,
+    });
+  };
+  const closeRoom = () => {
+    setRoom(null);
+    navigate({
+      to: '/elections',
+      search: (s: Record<string, unknown>) => ({ ...s, room: undefined }),
+      replace: true,
+    });
+  };
 
   const share = async () => {
     const url = `${location.origin}/elections?cycle=${param}`;
@@ -139,7 +202,11 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
 
       <header className="el-bar">
         <div className="el-wrap el-bar__in">
-          <Link to="/" className="el-bar__brand" aria-label={t('bar.home', { defaultValue: 'RMH Studios home' })}>
+          <Link
+            to="/"
+            className="el-bar__brand"
+            aria-label={t('bar.home', { defaultValue: 'RMH Studios home' })}
+          >
             <b>RMH</b>
             {t('bar.vote', { defaultValue: 'Vote' })}
           </Link>
@@ -153,11 +220,29 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
             <a href="#predict">{t('nav.predict', { defaultValue: 'Predict' })}</a>
           </nav>
           <div className="el-bar__tools">
-            {live ? <span className="el-live">{t('hero.live', { defaultValue: 'LIVE' })}</span> : null}
+            {live ? (
+              <span className="el-live">{t('hero.live', { defaultValue: 'LIVE' })}</span>
+            ) : null}
+            <button
+              type="button"
+              className="el-btn el-btn--sm el-btn--pink"
+              onClick={() => openRoom({ kind: 'solo' })}
+            >
+              <MonitorPlay size={14} aria-hidden />{' '}
+              <span className="el-room__lbl">
+                {t('bar.room', { defaultValue: 'Situation room' })}
+              </span>
+            </button>
             <label className="el-sr" htmlFor="el-cycle">
               {t('bar.cycle', { defaultValue: 'Election' })}
             </label>
-            <select id="el-cycle" className="el-input" style={{ minHeight: 40, padding: '4px 8px' }} value={param} onChange={(e) => setCycle(e.target.value)}>
+            <select
+              id="el-cycle"
+              className="el-input"
+              style={{ minHeight: 40, padding: '4px 8px' }}
+              value={param}
+              onChange={(e) => setCycle(e.target.value)}
+            >
               {selectOptions.map((c) => (
                 <option key={c.date} value={c.kind === 'other' ? c.date : String(c.year)}>
                   {c.shortTitle}
@@ -185,8 +270,15 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
         {isError && !snapshot ? (
           <div className="el-wrap" style={{ paddingBlock: 32 }}>
             <div className="el-box" style={{ padding: 20 }} role="alert">
-              <p className="el-h2" style={{ fontSize: 36 }}>{t('error.title', { defaultValue: 'Can’t reach the results feed.' })}</p>
-              <button type="button" className="el-btn" style={{ marginTop: 16 }} onClick={() => refetch()}>
+              <p className="el-h2" style={{ fontSize: 36 }}>
+                {t('error.title', { defaultValue: 'Can’t reach the results feed.' })}
+              </p>
+              <button
+                type="button"
+                className="el-btn"
+                style={{ marginTop: 16 }}
+                onClick={() => refetch()}
+              >
                 <RefreshCw size={16} aria-hidden />
                 {t('error.retry', { defaultValue: 'Try again' })}
               </button>
@@ -200,27 +292,38 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
           eyebrow={t('results.eyebrow', { defaultValue: 'Balance of power' })}
           title={
             <>
-              {t('results.title1', { defaultValue: 'Who’s' })} <em>{t('results.title2', { defaultValue: 'winning' })}</em>
+              {t('results.title1', { defaultValue: 'Who’s' })}{' '}
+              <em>{t('results.title2', { defaultValue: 'winning' })}</em>
             </>
           }
           lede={
             hasData
               ? bullets[0]
-              : t('results.empty', { defaultValue: 'The board fills in as each state’s polls report.' })
+              : t('results.empty', {
+                  defaultValue: 'The board fills in as each state’s polls report.',
+                })
           }
         >
           {!snapshot ? <div className="el-box el-skel" aria-busy /> : null}
-          {snapshot ? <BalanceOfPower chambers={snapshot.chambers} live={live} races={snapshot.races} /> : null}
+          {snapshot ? (
+            <BalanceOfPower chambers={snapshot.chambers} live={live} races={snapshot.races} />
+          ) : null}
           {hasData ? (
             <div style={{ marginTop: 24 }}>
               <AiDesk cycle={param} live={live} bullets={bullets} />
             </div>
           ) : null}
-          <p className="el-eyebrow" style={{ marginTop: 18, display: 'flex', gap: 10, alignItems: 'center' }}>
+          <p
+            className="el-eyebrow"
+            style={{ marginTop: 18, display: 'flex', gap: 10, alignItems: 'center' }}
+          >
             {snapshot ? (
               <>
                 <span>
-                  {t('results.updated', { defaultValue: 'Updated {{ago}}', ago: timeAgo(new Date(dataUpdatedAt).toISOString(), now) })}
+                  {t('results.updated', {
+                    defaultValue: 'Updated {{ago}}',
+                    ago: timeAgo(new Date(dataUpdatedAt).toISOString(), now),
+                  })}
                 </span>
                 {isFetching ? <RefreshCw size={12} aria-hidden /> : null}
               </>
@@ -228,7 +331,15 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
           </p>
         </Section>
 
-        <Ticker tone="ink" label={t('ticker.label', { defaultValue: 'Election headlines' })} items={[t('ticker.every', { defaultValue: 'Every race' }), t('ticker.every2', { defaultValue: 'Every margin' }), t('ticker.every3', { defaultValue: 'Every 20 seconds' })]} />
+        <Ticker
+          tone="ink"
+          label={t('ticker.label', { defaultValue: 'Election headlines' })}
+          items={[
+            t('ticker.every', { defaultValue: 'Every race' }),
+            t('ticker.every2', { defaultValue: 'Every margin' }),
+            t('ticker.every3', { defaultValue: 'Every 20 seconds' }),
+          ]}
+        />
 
         <Section
           id="map"
@@ -236,13 +347,21 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
           eyebrow={t('map.eyebrow', { defaultValue: 'State by state' })}
           title={
             <>
-              {t('map.title1', { defaultValue: 'The' })} <em>{t('map.title2', { defaultValue: 'map' })}</em>
+              {t('map.title1', { defaultValue: 'The' })}{' '}
+              <em>{t('map.title2', { defaultValue: 'map' })}</em>
             </>
           }
-          lede={t('map.lede', { defaultValue: 'Equal tiles, equal weight. Tap a state for every race on its ballot.' })}
+          lede={t('map.lede', {
+            defaultValue: 'Equal tiles, equal weight. Tap a state for every race on its ballot.',
+          })}
         >
           {snapshot ? (
-            <StateMap races={snapshot.races} offices={offices} selected={selectedState} onSelect={setSelectedState} />
+            <StateMap
+              races={snapshot.races}
+              offices={offices}
+              selected={selectedState}
+              onSelect={setSelectedState}
+            />
           ) : (
             <div className="el-box el-skel" aria-busy />
           )}
@@ -253,16 +372,21 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
           eyebrow={t('races.eyebrow', { defaultValue: 'Every contest' })}
           title={
             <>
-              {t('races.title1', { defaultValue: 'All the' })} <em>{t('races.title2', { defaultValue: 'races' })}</em>
+              {t('races.title1', { defaultValue: 'All the' })}{' '}
+              <em>{t('races.title2', { defaultValue: 'races' })}</em>
             </>
           }
-          lede={t('races.lede', { defaultValue: 'Filter, search, sort by closest. Calls land as they happen.' })}
+          lede={t('races.lede', {
+            defaultValue: 'Filter, search, sort by closest. Calls land as they happen.',
+          })}
         >
           {snapshot && hasData ? (
             <RaceExplorer races={snapshot.races} offices={offices} focusRaceId={focusRaceId} />
           ) : snapshot ? (
             <p className="el-h2" style={{ fontSize: 36 }}>
-              {t('races.notYet', { defaultValue: 'Ballots for this election aren’t published yet.' })}
+              {t('races.notYet', {
+                defaultValue: 'Ballots for this election aren’t published yet.',
+              })}
             </p>
           ) : (
             <div className="el-box el-skel" aria-busy />
@@ -275,12 +399,19 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
           eyebrow={t('polls.eyebrow', { defaultValue: 'Election night' })}
           title={
             <>
-              {t('polls.title1', { defaultValue: 'When polls' })} <em>{t('polls.title2', { defaultValue: 'close' })}</em>
+              {t('polls.title1', { defaultValue: 'When polls' })}{' '}
+              <em>{t('polls.title2', { defaultValue: 'close' })}</em>
             </>
           }
-          lede={t('polls.lede', { defaultValue: 'Last polls in each state, Eastern time. Results follow within minutes.' })}
+          lede={t('polls.lede', {
+            defaultValue: 'Last polls in each state, Eastern time. Results follow within minutes.',
+          })}
         >
-          <PollClosings closings={snapshot?.pollClosings ?? {}} now={now} onSelectState={selectFromElsewhere} />
+          <PollClosings
+            closings={snapshot?.pollClosings ?? {}}
+            now={now}
+            onSelectState={selectFromElsewhere}
+          />
         </Section>
 
         <Section
@@ -288,10 +419,13 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
           eyebrow={t('wire.eyebrow', { defaultValue: 'Live updates' })}
           title={
             <>
-              {t('wire.title1', { defaultValue: 'The' })} <em>{t('wire.title2', { defaultValue: 'wire' })}</em>
+              {t('wire.title1', { defaultValue: 'The' })}{' '}
+              <em>{t('wire.title2', { defaultValue: 'wire' })}</em>
             </>
           }
-          lede={t('wire.lede', { defaultValue: 'Headlines from NPR, PBS, Politico, the Guardian and more, as they land.' })}
+          lede={t('wire.lede', {
+            defaultValue: 'Headlines from NPR, PBS, Politico, the Guardian and more, as they land.',
+          })}
         >
           <NewsWire state={selectedState} live={live} />
         </Section>
@@ -302,14 +436,22 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
           eyebrow={t('days.eyebrow', { defaultValue: 'Primaries & specials' })}
           title={
             <>
-              {t('days.title1', { defaultValue: 'Every' })} <em>{t('days.title2', { defaultValue: 'election day' })}</em>
+              {t('days.title1', { defaultValue: 'Every' })}{' '}
+              <em>{t('days.title2', { defaultValue: 'election day' })}</em>
             </>
           }
-          lede={t('days.lede', { defaultValue: 'Pick a primary, runoff or special election to see its results where a government feed covers it.' })}
+          lede={t('days.lede', {
+            defaultValue:
+              'Pick a primary, runoff or special election to see its results where a government feed covers it.',
+          })}
         >
           {!isGeneral ? (
             <p style={{ marginBottom: 20 }}>
-              <button type="button" className="el-btn" onClick={() => setCycle(String(year - (year % 2)))}>
+              <button
+                type="button"
+                className="el-btn"
+                onClick={() => setCycle(String(year - (year % 2)))}
+              >
                 {t('days.back', { defaultValue: '← Back to the general election' })}
               </button>
             </p>
@@ -323,10 +465,13 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
           eyebrow={t('live.eyebrow', { defaultValue: 'Together' })}
           title={
             <>
-              {t('live.title1', { defaultValue: 'Watch &' })} <em>{t('live.title2', { defaultValue: 'talk' })}</em>
+              {t('live.title1', { defaultValue: 'Watch &' })}{' '}
+              <em>{t('live.title2', { defaultValue: 'talk' })}</em>
             </>
           }
-          lede={t('live.lede', { defaultValue: 'Put a stream on and argue about it in real time.' })}
+          lede={t('live.lede', {
+            defaultValue: 'Put a stream on and argue about it in real time.',
+          })}
         >
           <div className="el-map">
             <WatchParty />
@@ -334,43 +479,78 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
           </div>
         </Section>
 
+        <Section
+          id="rooms"
+          tone="yellow"
+          eyebrow={t('rooms.eyebrow', { defaultValue: 'Split screen' })}
+          title={
+            <>
+              {t('rooms.title1', { defaultValue: 'Situation' })}{' '}
+              <em>{t('rooms.title2', { defaultValue: 'room' })}</em>
+            </>
+          }
+          lede={t('rooms.lede', {
+            defaultValue:
+              'Full-screen, up to four panes: streams from different services at once, live graphs, the map, the wire and chat. Follow the action automatically or pick your states.',
+          })}
+        >
+          <RoomLobby cycle={param} onOpen={openRoom} />
+        </Section>
+
         {isGeneral ? (
           <>
-        <Section
-          id="predict"
-          eyebrow={t('predict.eyebrow', { defaultValue: 'Call it' })}
-          title={
-            <>
-              {t('predict.title1', { defaultValue: 'Paint your' })} <em>{t('predict.title2', { defaultValue: 'map' })}</em>
-            </>
-          }
-          lede={t('predict.lede', { defaultValue: 'Make your calls, share the link, get graded as races are called.' })}
-        >
-          {snapshot && hasData ? (
-            <>
-              <PredictionPainter year={year} cycle={param} races={snapshot.races} chambers={snapshot.chambers} offices={offices} />
-              <div style={{ marginTop: 28 }}>
-                <p className="el-eyebrow">{t('share.board', { defaultValue: 'Share the live board' })}</p>
-                <ShareBar url={`${SITE_URL}/elections?cycle=${param}`} text={headline(snapshot)} />
-              </div>
-            </>
-          ) : (
-            <div className="el-box el-skel" aria-busy />
-          )}
-        </Section>
-        <Section
-          id="markets"
-          tone="yellow"
-          eyebrow={t('markets.eyebrow', { defaultValue: 'Put coins on it' })}
-          title={
-            <>
-              {t('markets.title1', { defaultValue: 'The' })} <em>{t('markets.title2', { defaultValue: 'markets' })}</em>
-            </>
-          }
-          lede={t('markets.lede', { defaultValue: 'Back your call with coins. Odds move with every trade.' })}
-        >
-          <MarketsPanel cycle={param} />
-        </Section>
+            <Section
+              id="predict"
+              eyebrow={t('predict.eyebrow', { defaultValue: 'Call it' })}
+              title={
+                <>
+                  {t('predict.title1', { defaultValue: 'Paint your' })}{' '}
+                  <em>{t('predict.title2', { defaultValue: 'map' })}</em>
+                </>
+              }
+              lede={t('predict.lede', {
+                defaultValue: 'Make your calls, share the link, get graded as races are called.',
+              })}
+            >
+              {snapshot && hasData ? (
+                <>
+                  <PredictionPainter
+                    year={year}
+                    cycle={param}
+                    races={snapshot.races}
+                    chambers={snapshot.chambers}
+                    offices={offices}
+                  />
+                  <div style={{ marginTop: 28 }}>
+                    <p className="el-eyebrow">
+                      {t('share.board', { defaultValue: 'Share the live board' })}
+                    </p>
+                    <ShareBar
+                      url={`${SITE_URL}/elections?cycle=${param}`}
+                      text={headline(snapshot)}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="el-box el-skel" aria-busy />
+              )}
+            </Section>
+            <Section
+              id="markets"
+              tone="yellow"
+              eyebrow={t('markets.eyebrow', { defaultValue: 'Put coins on it' })}
+              title={
+                <>
+                  {t('markets.title1', { defaultValue: 'The' })}{' '}
+                  <em>{t('markets.title2', { defaultValue: 'markets' })}</em>
+                </>
+              }
+              lede={t('markets.lede', {
+                defaultValue: 'Back your call with coins. Odds move with every trade.',
+              })}
+            >
+              <MarketsPanel cycle={param} />
+            </Section>
           </>
         ) : null}
       </main>
@@ -386,7 +566,10 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
           </p>
           {snapshot?.providers.length ? (
             <p>
-              {t('foot.sources', { defaultValue: 'Sources: {{list}}.', list: snapshot.providers.join('; ') })}
+              {t('foot.sources', {
+                defaultValue: 'Sources: {{list}}.',
+                list: snapshot.providers.join('; '),
+              })}
             </p>
           ) : null}
           <p>
@@ -397,6 +580,18 @@ export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProp
           </p>
         </div>
       </footer>
+
+      {room ? (
+        <RoomOverlay
+          cycle={param}
+          source={room}
+          snapshot={snapshot}
+          events={events}
+          live={live}
+          onClose={closeRoom}
+          onUseSolo={() => openRoom({ kind: 'solo' })}
+        />
+      ) : null}
     </div>
   );
 }

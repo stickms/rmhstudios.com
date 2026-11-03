@@ -75,12 +75,17 @@ export const Route = createFileRoute('/elections')({
   // TanStack JSON-parses search values, so `?cycle=2028` arrives as the NUMBER 2028 — accept both.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { cycle?: string; race?: string; p?: string } => {
+  ): { cycle?: string; race?: string; p?: string; room?: string } => {
     const str = (v: unknown, max: number) => {
       const s = typeof v === 'string' ? v : typeof v === 'number' ? String(v) : undefined;
       return s && s.length <= max ? s : undefined;
     };
-    return { cycle: str(search.cycle, 10), race: str(search.race, 80), p: str(search.p, 400) };
+    return {
+      cycle: str(search.cycle, 10),
+      race: str(search.race, 80),
+      p: str(search.p, 400),
+      room: str(search.room, 12),
+    };
   },
   loaderDeps: ({ search }) => ({ cycle: search.cycle, p: search.p }),
   loader: ({ deps }) => getLite({ data: deps }),
@@ -95,7 +100,8 @@ export const Route = createFileRoute('/elections')({
     // The card is dynamic (live board / the sharer's map). `v` changes every 5 minutes so crawlers that
     // cache by URL pick up a moving board; the picks themselves are never drawn, only counted.
     const bucket = Math.floor(Date.now() / 300_000);
-    const cycleParam = loaderData?.cycle.kind === 'other' ? loaderData.cycle.date : (loaderData?.year ?? '');
+    const cycleParam =
+      loaderData?.cycle.kind === 'other' ? loaderData.cycle.date : (loaderData?.year ?? '');
     const image = `/api/og/elections?cycle=${cycleParam}&v=${bucket}${
       shared ? `&p=${encodeURIComponent(loaderData!.sharedMap!)}` : ''
     }`;
@@ -124,5 +130,12 @@ export const Route = createFileRoute('/elections')({
 function ElectionsRoute() {
   const data = Route.useLoaderData();
   const search = Route.useSearch();
-  return <ElectionsPage cycle={data.cycle} options={data.options} focusRaceId={search.race} />;
+  return (
+    <ElectionsPage
+      cycle={data.cycle}
+      options={data.options}
+      focusRaceId={search.race}
+      roomCode={search.room}
+    />
+  );
 }

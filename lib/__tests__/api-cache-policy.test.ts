@@ -84,6 +84,8 @@ const IDEMPOTENT_SEED_ON_READ: Record<string, string> = {
   '/api/pf2ecal/calendar.ics': 'seeds the recurring sessions on first read',
   '/api/elections/summary':
     'generates the shared AI summary on the first read after a race is called (single-flight, memoised per snapshot fingerprint, at most one call per 90s); the same text for every viewer, and the usage-ledger row is platform spend, not the viewer\'s',
+  '/api/elections/rooms':
+    'the list read also removes expired rooms (housekeeping rides the read instead of needing a job); the same rows are deleted whoever asks, and the body is the same public listing for every viewer',
   '/api/tf2-loadout/catalog':
     'refreshes the shared item-catalog snapshot when it is stale (keyed by the schema hash); the same row for everyone, and the next read finds it fresh',
 };
@@ -266,8 +268,13 @@ describe('public cache declarations are anonymous-invariant (dynamic)', () => {
   beforeAll(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-10-21T12:00:00Z'));
+    // Hermetic: a handler that reaches a live upstream (results feed, FEC, RSS) would return different
+    // bodies for two identical calls milliseconds apart for a reason that has nothing to do with the caller.
+    // Every upstream-dependent route degrades to the same empty answer when the network is off.
+    vi.stubGlobal('fetch', () => Promise.reject(new Error('network disabled in the cache-policy probe')));
   });
   afterAll(() => {
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 

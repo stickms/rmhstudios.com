@@ -1,0 +1,116 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  defaultRoomConfig,
+  sanitizeRoomConfig,
+  type RoomConfig,
+} from '@/lib/elections/room-config';
+import type { RoomView } from '@/lib/elections/rooms';
+
+export type RoomSource = { kind: 'solo' } | { kind: 'hosted'; code: string };
+
+export interface RoomMeta {
+  name: string;
+  visibility: 'PUBLIC' | 'PRIVATE' | 'SOLO';
+  mine: boolean;
+  owner: RoomView['owner'];
+}
+
+const soloKey = (cycle: string) => `rmh-elections-room:solo:${cycle}`;
+
+export function readSolo(cycle: string): RoomConfig {
+  try {
+    const raw = localStorage.getItem(soloKey(cycle));
+    return raw ? sanitizeRoomConfig(JSON.parse(raw)) : defaultRoomConfig();
+  } catch {
+    return defaultRoomConfig();
+  }
+}
+
+export function writeSolo(cycle: string, config: RoomConfig): void {
+  try {
+    localStorage.setItem(soloKey(cycle), JSON.stringify(config));
+  } catch {
+    /* private mode: the room lasts for this visit only */
+  }
+}
+
+/**
+ * A room's shared screen. Solo: lives in this browser. Hosted: loaded from the server, kept current by the
+ * host's pushes (`applyRemote`), and — for the host only — saved back (debounced) on every change.
+ */
+export function useRoomState(cycle: string, source: RoomSource) {
+  const code = source.kind === 'hosted' ? source.code : null;
+  const [config, setConfigState] = useState<RoomConfig>(defaultRoomConfig());
+  const [meta, setMeta] = useState<RoomMeta | null>(
+    source.kind === 'solo'
+      ? { name: 'Solo room', visibility: 'SOLO', mine: true, owner: null }
+      : null,
+  );
+  const [status, setStatus] = useState<'loading' | 'ready' | 'not-found' | 'error'>(
+    source.kind === 'solo' ? 'ready' : 'loading',
+  );
+  const save = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (source.kind === 'solo') {
+      setConfigState(readSolo(cycle));
+      setMeta({ name: 'Solo room', visibility: 'SOLO', mine: true, owner: null });
+      setStatus('ready');
+      return;
+    }
+    let cancelled = false;
+    setStatus('loading');
+    fetch(`/api/elections/rooms/${source.code}`, { credentials: 'same-origin' })
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.status === 404) return setStatus('not-found');
+        if (!res.ok) return setStatus('error');
+        const { room } = (await res.json()) as { room: RoomView };
+        setConfigState(sanitizeRoomConfig(room.config));
+        setMeta({
+          name: room.name,
+          visibility: room.visibility,
+          mine: room.mine,
+          owner: room.owner,
+        });
+        setStatus('ready');
+      })
+      .catch(() => !cancelled && setStatus('error'));
+    return () => {
+      cancelled = true;
+    };
+  }, [cycle, source.kind, code]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** A config pushed by the host over the stream. */
+  const applyRemote = useCallback((c: unknown) => setConfigState(sanitizeRoomConfig(c)), []);
+
+  const canEdit = source.kind === 'solo' || Boolean(meta?.mine);
+
+  const setConfig = useCallback(
+    (next: RoomConfig) => {
+      if (!canEdit) return;
+      setConfigState(next);
+      if (source.kind === 'solo') return writeSolo(cycle, next);
+      // Host: keep the screen responsive, save at most once per half second.
+      if (save.current) clearTimeout(save.current);
+      save.current = setTimeout(() => {
+        fetch(`/api/elections/rooms/${source.code}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ config: next }),
+        }).catch(() => undefined);
+      }, 500);
+    },
+    [canEdit, cycle, source],
+  );
+
+  useEffect(
+    () => () => {
+      if (save.current) clearTimeout(save.current);
+    },
+    [],
+  );
+
+  return { config, setConfig, meta, status, canEdit, applyRemote };
+}

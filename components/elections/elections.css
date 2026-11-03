@@ -148,6 +148,7 @@
 }
 .el-chip {
   display: inline-block;
+  white-space: nowrap;
   padding: 2px 8px;
   border: 2px solid var(--el-ink);
   background: var(--el-paper);
@@ -327,8 +328,8 @@
   position: relative;
   overflow: clip;
   border-bottom: var(--el-bw) solid var(--el-ink);
-  background:
-    repeating-conic-gradient(var(--el-paper-2) 0% 25%, var(--el-paper) 0% 50%) 0 0 / 56px 56px;
+  background: repeating-conic-gradient(var(--el-paper-2) 0% 25%, var(--el-paper) 0% 50%) 0 0 / 56px
+    56px;
 }
 .el-hero__in {
   position: relative;
@@ -667,19 +668,11 @@
 }
 .el-tile--dem-lead,
 .el-tile--dem-lean {
-  background: repeating-linear-gradient(
-    135deg,
-    var(--el-dem-soft) 0 6px,
-    var(--el-paper) 6px 12px
-  );
+  background: repeating-linear-gradient(135deg, var(--el-dem-soft) 0 6px, var(--el-paper) 6px 12px);
 }
 .el-tile--gop-lead,
 .el-tile--gop-lean {
-  background: repeating-linear-gradient(
-    135deg,
-    var(--el-gop-soft) 0 6px,
-    var(--el-paper) 6px 12px
-  );
+  background: repeating-linear-gradient(135deg, var(--el-gop-soft) 0 6px, var(--el-paper) 6px 12px);
 }
 .el-tile--tossup {
   background: var(--el-yellow);
@@ -1015,5 +1008,193 @@
   }
   .el-bar__brand {
     font-size: 17px;
+  }
+}
+
+/* ── Situation Room (full-screen overlay) ───────────────────────────── */
+.el-lobby {
+  display: grid;
+  gap: 20px;
+}
+@media (min-width: 900px) {
+  .el-lobby {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.el-room {
+  position: fixed;
+  inset: 0;
+  /* The shared dialog band (50): the room renders in a portal, so it needs no higher number. */
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  /* The overlay is its own page: paper ground so no flat colour band shows at an edge, and the
+     safe-area insets keep controls clear of notches and the home indicator. */
+  background: var(--el-paper);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+  outline: none;
+}
+.el-room__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 8px 12px;
+  border-bottom: var(--el-bw) solid var(--el-ink);
+  background: var(--el-yellow);
+}
+.el-room__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 18px;
+}
+.el-room__title strong {
+  overflow: hidden;
+  max-width: 40ch;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 900;
+  font-stretch: 125%;
+  text-transform: uppercase;
+}
+.el-room__tools,
+.el-room__layouts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.el-room__note {
+  margin: 0;
+  padding: 10px 12px;
+  border-bottom: 2px dashed var(--el-ink);
+  font-weight: 700;
+}
+.el-room__grid {
+  display: grid;
+  flex: 1;
+  gap: 8px;
+  min-height: 0;
+  padding: 8px;
+  /* One column on phones, whatever the chosen layout: panes stack and the grid scrolls. */
+  grid-template-columns: minmax(0, 1fr);
+  overflow-y: auto;
+}
+.el-room__pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+  min-width: 0;
+  border: var(--el-bw) solid var(--el-ink);
+  background: var(--el-paper);
+  box-shadow: var(--el-shadow-sm);
+}
+.el-room__panebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 2px solid var(--el-ink);
+  background: var(--el-paper-2);
+}
+.el-room__panebody {
+  flex: 1;
+  min-height: 0;
+  padding: 8px;
+  overflow: hidden;
+}
+@media (min-width: 900px) {
+  .el-room__grid {
+    overflow: hidden;
+  }
+  .el-room__pane {
+    min-height: 0;
+  }
+  .el-room__grid[data-layout='1'] {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+  .el-room__grid[data-layout='2h'] {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+  }
+  .el-room__grid[data-layout='2v'] {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .el-room__grid[data-layout='3l'] {
+    grid-template-columns: 1.6fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .el-room__grid[data-layout='3l'] .el-room__pane[data-slot='0'] {
+    grid-row: 1 / span 2;
+  }
+  .el-room__grid[data-layout='4'] {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+}
+.el-room__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 6px 12px;
+  border-top: var(--el-bw) solid var(--el-ink);
+  background: var(--el-pink);
+}
+.el-room__reacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.el-room__lbl {
+  display: none;
+}
+@media (min-width: 640px) {
+  .el-room__lbl {
+    display: inline;
+  }
+}
+.el-room__float {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.el-room__emoji {
+  position: absolute;
+  bottom: 56px;
+  font-size: 36px;
+  line-height: 1;
+  animation: el-float 2.8s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+@keyframes el-float {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(-30px) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-62vh) translateX(18px) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .el-room__emoji {
+    animation: none;
+    opacity: 1;
+    bottom: 64px;
   }
 }

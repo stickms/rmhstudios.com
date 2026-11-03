@@ -496,6 +496,7 @@ import { Route as ApiDunesdaySyncRouteImport } from './routes/api/dunesday/sync'
 import { Route as ApiElectionsIndexRouteImport } from './routes/api/elections/index'
 import { Route as ApiElectionsAskRouteImport } from './routes/api/elections/ask'
 import { Route as ApiElectionsCalendarRouteImport } from './routes/api/elections/calendar'
+import { Route as ApiElectionsHistoryRouteImport } from './routes/api/elections/history'
 import { Route as ApiElectionsMarketsRouteImport } from './routes/api/elections/markets'
 import { Route as ApiElectionsNewsRouteImport } from './routes/api/elections/news'
 import { Route as ApiElectionsStreamsRouteImport } from './routes/api/elections/streams'
@@ -3844,6 +3845,11 @@ const ApiElectionsAskRoute = ApiElectionsAskRouteImport.update({
 const ApiElectionsCalendarRoute = ApiElectionsCalendarRouteImport.update({
   id: '/api/elections/calendar',
   path: '/api/elections/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectionsHistoryRoute = ApiElectionsHistoryRouteImport.update({
+  id: '/api/elections/history',
+  path: '/api/elections/history',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiElectionsMarketsRoute = ApiElectionsMarketsRouteImport.update({
@@ -9020,6 +9026,7 @@ export interface FileRoutesByFullPath {
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
   '/api/elections/ask': typeof ApiElectionsAskRoute
   '/api/elections/calendar': typeof ApiElectionsCalendarRoute
+  '/api/elections/history': typeof ApiElectionsHistoryRoute
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
   '/api/elections/news': typeof ApiElectionsNewsRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
@@ -10381,6 +10388,7 @@ export interface FileRoutesByTo {
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
   '/api/elections/ask': typeof ApiElectionsAskRoute
   '/api/elections/calendar': typeof ApiElectionsCalendarRoute
+  '/api/elections/history': typeof ApiElectionsHistoryRoute
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
   '/api/elections/news': typeof ApiElectionsNewsRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
@@ -11771,6 +11779,7 @@ export interface FileRoutesById {
   '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
   '/api/elections/ask': typeof ApiElectionsAskRoute
   '/api/elections/calendar': typeof ApiElectionsCalendarRoute
+  '/api/elections/history': typeof ApiElectionsHistoryRoute
   '/api/elections/markets': typeof ApiElectionsMarketsRoute
   '/api/elections/news': typeof ApiElectionsNewsRoute
   '/api/elections/streams': typeof ApiElectionsStreamsRoute
@@ -13161,6 +13170,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/sync'
     | '/api/elections/ask'
     | '/api/elections/calendar'
+    | '/api/elections/history'
     | '/api/elections/markets'
     | '/api/elections/news'
     | '/api/elections/streams'
@@ -14522,6 +14532,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/sync'
     | '/api/elections/ask'
     | '/api/elections/calendar'
+    | '/api/elections/history'
     | '/api/elections/markets'
     | '/api/elections/news'
     | '/api/elections/streams'
@@ -15911,6 +15922,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/sync'
     | '/api/elections/ask'
     | '/api/elections/calendar'
+    | '/api/elections/history'
     | '/api/elections/markets'
     | '/api/elections/news'
     | '/api/elections/streams'
@@ -17079,6 +17091,7 @@ export interface RootRouteChildren {
   ApiDunesdaySyncRoute: typeof ApiDunesdaySyncRouteWithChildren
   ApiElectionsAskRoute: typeof ApiElectionsAskRoute
   ApiElectionsCalendarRoute: typeof ApiElectionsCalendarRoute
+  ApiElectionsHistoryRoute: typeof ApiElectionsHistoryRoute
   ApiElectionsMarketsRoute: typeof ApiElectionsMarketsRoute
   ApiElectionsNewsRoute: typeof ApiElectionsNewsRoute
   ApiElectionsStreamsRoute: typeof ApiElectionsStreamsRoute
@@ -21142,6 +21155,13 @@ declare module '@tanstack/react-router' {
       path: '/api/elections/calendar'
       fullPath: '/api/elections/calendar'
       preLoaderRoute: typeof ApiElectionsCalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/elections/history': {
+      id: '/api/elections/history'
+      path: '/api/elections/history'
+      fullPath: '/api/elections/history'
+      preLoaderRoute: typeof ApiElectionsHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/elections/markets': {
@@ -29966,6 +29986,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDunesdaySyncRoute: ApiDunesdaySyncRouteWithChildren,
   ApiElectionsAskRoute: ApiElectionsAskRoute,
   ApiElectionsCalendarRoute: ApiElectionsCalendarRoute,
+  ApiElectionsHistoryRoute: ApiElectionsHistoryRoute,
   ApiElectionsMarketsRoute: ApiElectionsMarketsRoute,
   ApiElectionsNewsRoute: ApiElectionsNewsRoute,
   ApiElectionsStreamsRoute: ApiElectionsStreamsRoute,
