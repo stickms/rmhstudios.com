@@ -6533,3 +6533,24 @@ html.fools .radial-core__mark::after {
   content: 'RMHaha';
   font-size: clamp(1rem, 4vw, 1.3rem);
 }
+
+/* ── Route progress (components/ui/NavigationProgress.tsx) ────────────────────────────────────────────────────────
+   The bar creeps toward 90% on ONE transition, not a script that sets a width every 160ms: it leaves fast and slows
+   as it nears 90%, like the trickle it replaces (each step covered 18% of what was left). `@starting-style` gives it its
+   start (8%) the moment it enters the box tree. `done` snaps to the end quickly; the component then takes it out. */
+[data-nav-progress] {
+  transform: scaleX(0.08);
+}
+[data-nav-progress][data-phase='running'] {
+  transform: scaleX(0.9);
+  transition: transform 3.2s cubic-bezier(0.1, 0.7, 0.2, 1);
+}
+[data-nav-progress][data-phase='done'] {
+  transform: scaleX(1);
+  transition: transform calc(var(--site-transition-speed, 200ms) * 0.75) ease-out;
+}
+@starting-style {
+  [data-nav-progress][data-phase='running'] {
+    transform: scaleX(0.08);
+  }
+}
