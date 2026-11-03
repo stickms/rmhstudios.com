@@ -424,6 +424,8 @@
   "share.native": "Share…",
   "share.posted": "Posted",
   "share.retry": "Try again",
+  "split.col": "Resize panes: drag, or use the arrow keys. Double-click to reset.",
+  "split.row": "Resize panes: drag, or use the arrow keys. Double-click to reset.",
   "stream.change": "Change stream",
   "stream.empty": "Paste a YouTube or Twitch link. Nothing loads until you press play.",
   "stream.play": "Play {{site}}",
