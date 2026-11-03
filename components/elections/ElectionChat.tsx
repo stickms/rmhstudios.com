@@ -101,7 +101,7 @@ export function ElectionChat({
         className="el-eyebrow"
         style={{ margin: '0 0 10px', display: 'flex', gap: 8, alignItems: 'center' }}
       >
-        <span className={`el-chip ${status === 'live' ? 'el-chip--gop' : 'el-chip--ink'}`}>
+        <span className={`el-chip ${status === 'live' ? 'el-chip--ink' : ''}`}>
           {status === 'live'
             ? t('chat.live', { defaultValue: 'Live chat' })
             : status === 'connecting'

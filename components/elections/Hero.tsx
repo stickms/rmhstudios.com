@@ -8,24 +8,31 @@ import { useNow } from './hooks';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-function Burst({ fill }: { fill: string }) {
-  // A 16-point starburst — the sticker shape.
-  const pts = Array.from({ length: 32 }, (_, i) => {
-    const a = (i / 32) * Math.PI * 2;
-    const r = i % 2 ? 38 : 50;
-    return `${50 + Math.cos(a) * r},${50 + Math.sin(a) * r}`;
-  }).join(' ');
+/** A pixel-art arrow, drawn on a 12×16 grid with crisp edges: the reference's cursor. */
+function PixelCursor() {
+  const rows = [
+    '1...........',
+    '11..........',
+    '111.........',
+    '1111........',
+    '11111.......',
+    '111111......',
+    '1111111.....',
+    '11111111....',
+    '111111111...',
+    '1111111111..',
+    '11111111111.',
+    '111111......',
+    '11.111......',
+    '1...111.....',
+    '....111.....',
+    '.....11.....',
+  ];
   return (
-    <svg viewBox="0 0 100 100" aria-hidden>
-      <polygon points={pts} fill={fill} stroke="#0b0b0b" strokeWidth="3" strokeLinejoin="miter" />
-    </svg>
-  );
-}
-
-function Cursor() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden>
-      <path d="M3 2l7 19 3-8 8-3z" fill="#fff" stroke="#0b0b0b" strokeWidth="2" strokeLinejoin="miter" />
+    <svg viewBox="0 0 12 16" aria-hidden shapeRendering="crispEdges">
+      {rows.flatMap((row, y) =>
+        [...row].map((c, x) => (c === '1' ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="currentColor" /> : null)),
+      )}
     </svg>
   );
 }
@@ -51,13 +58,10 @@ export function Hero({
   const cd = now ? countdownTo(cycle.date, now) : null;
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  const yTitle = useTransform(scrollYProgress, [0, 1], [0, -90]);
-  const xOut = useTransform(scrollYProgress, [0, 1], [0, 140]);
-  const xDem = useTransform(scrollYProgress, [0, 1], [0, -110]);
-  const yBurst = useTransform(scrollYProgress, [0, 1], [0, 180]);
-  const rBurst = useTransform(scrollYProgress, [0, 1], [0, 140]);
-  const yCursor = useTransform(scrollYProgress, [0, 1], [0, -240]);
-  const yBlock = useTransform(scrollYProgress, [0, 1], [0, 90]);
+  const xFlat = useTransform(scrollYProgress, [0, 1], [0, 160]);
+  const xBold = useTransform(scrollYProgress, [0, 1], [0, -120]);
+  const yCursor = useTransform(scrollYProgress, [0, 1], [0, -180]);
+  const xCursor = useTransform(scrollYProgress, [0, 1], [0, 60]);
 
   const kindWord =
     cycle.kind === 'midterm'
@@ -68,32 +72,49 @@ export function Hero({
 
   return (
     <section ref={ref} className="el-hero" aria-labelledby="el-title">
-      <motion.div className="el-hero__deco" style={{ y: yBurst, rotate: rBurst, right: '-4%', top: '4%', width: 'clamp(84px, 26vw, 360px)' }}>
-        <Burst fill="var(--el-yellow)" />
-      </motion.div>
-      <motion.div
-        className="el-hero__deco el-hero__deco--block"
-        style={{ y: yBlock, left: '-3%', bottom: '8%', width: 'clamp(90px, 16vw, 220px)', aspectRatio: '1', background: 'var(--el-dem)', border: '3px solid var(--el-ink)', boxShadow: '8px 8px 0 var(--el-ink)', transform: 'rotate(8deg)' }}
-      />
-      <motion.div className="el-hero__deco el-hero__deco--cursor" style={{ y: yCursor, right: '14%', bottom: '14%', width: 'clamp(36px, 6vw, 80px)' }}>
-        <Cursor />
-      </motion.div>
-
       <div className="el-wrap el-hero__in">
         <p className="el-eyebrow" style={{ margin: '0 0 12px' }}>
           <span className="el-chip el-chip--ink">{cycle.title}</span>{' '}
           <span className="el-chip">{cycle.date}</span>
         </p>
 
-        <motion.h1 id="el-title" className="el-hero__title" style={{ y: yTitle }}>
-          <span className="el-hero__line">{t('hero.vote', { defaultValue: 'Vote' })}</span>
-          <motion.span className="el-hero__line el-hero__line--out" style={{ x: xOut }}>
-            {cycle.year}
+        {/*
+          The reference's anti-design type: a black/white checker field; the letters are white with
+          `mix-blend-mode: difference`, so they read black on the white cells and white on the black ones
+          and invert as they cross. Three treatments of one message — a heavy block word, a word squashed
+          flat and stretched wide, a word drawn as a dashed hairline — all cropped by the frame as the page
+          scrolls. The heading's accessible name is plain text; the pieces are decoration.
+        */}
+        <h1 id="el-title" className="el-hero__type" aria-label={`${t('hero.vote', { defaultValue: 'Vote' })} ${cycle.year} ${kindWord}`}>
+          <motion.span className="el-hero__row" aria-hidden style={{ x: xBold }}>
+            <span className="el-hero__bold">{t('hero.vote', { defaultValue: 'Vote' })}</span>
           </motion.span>
-          <motion.span className="el-hero__line el-hero__line--dem el-hero__line--kind" style={{ x: xDem }}>
-            <span className="el-hero__stretch">{kindWord}</span>
+          <motion.span className="el-hero__row el-hero__row--flat" aria-hidden style={{ x: xFlat }}>
+            <span className="el-hero__flat">{cycle.year}</span>
           </motion.span>
-        </motion.h1>
+          <span className="el-hero__row" aria-hidden>
+            <svg className="el-hero__dash" viewBox="0 0 1000 130" preserveAspectRatio="none">
+              <text
+                x="0"
+                y="112"
+                fontSize="150"
+                fontWeight="900"
+                textLength="1000"
+                lengthAdjust="spacingAndGlyphs"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeDasharray="7 6"
+                style={{ fontFamily: 'var(--el-display)', fontStretch: '125%' }}
+              >
+                {kindWord.toUpperCase()}
+              </text>
+            </svg>
+          </span>
+          <motion.span className="el-hero__cursor" aria-hidden style={{ y: yCursor, x: xCursor }}>
+            <PixelCursor />
+          </motion.span>
+        </h1>
 
         <p className="el-hero__sub">
           {phase === 'upcoming'
@@ -129,7 +150,7 @@ export function Hero({
           </div>
         ) : null}
 
-        <div className="el-hero__row">
+        <div className="el-hero__ctas">
           <a className="el-btn" href="#results">
             <ArrowDown size={18} aria-hidden />
             {live ? t('hero.ctaLive', { defaultValue: 'Live results' }) : t('hero.ctaResults', { defaultValue: 'The board' })}
