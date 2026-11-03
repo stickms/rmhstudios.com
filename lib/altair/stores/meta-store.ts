@@ -30,10 +30,25 @@ function getPersistedState() {
   };
 }
 
+/**
+ * Marks this client as one whose runs are replayed server-side (coins arrive from the replay, not from
+ * this balance). The fallback header names a run the server could not verify, which may be paid once
+ * through the capped allowance.
+ */
+let fallbackRunId: string | null = null;
+export function setFallbackRun(runId: string | null): void {
+  fallbackRunId = runId;
+}
+function metaHeaders(): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json', 'x-altair-verified-runs': '1' };
+  if (fallbackRunId) h['x-altair-fallback-run'] = fallbackRunId;
+  return h;
+}
+
 function doSave(): Promise<boolean> {
   return fetch('/api/altair/meta', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: metaHeaders(),
     body: JSON.stringify(getPersistedState()),
   }).then((res) => res.ok).catch(() => false);
 }
@@ -41,15 +56,10 @@ function doSave(): Promise<boolean> {
 function doSaveKeepalive(): void {
   const payload = JSON.stringify(getPersistedState());
 
-  // Prefer sendBeacon during unload/navigation where regular fetch can be dropped.
-  if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
-    const blob = new Blob([payload], { type: 'application/json' });
-    if (navigator.sendBeacon('/api/altair/meta', blob)) return;
-  }
-
+  // keepalive fetch (not sendBeacon): the request must carry the verified-runs header.
   void fetch('/api/altair/meta', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: metaHeaders(),
     body: payload,
     keepalive: true,
   }).catch(() => {

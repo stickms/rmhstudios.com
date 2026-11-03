@@ -57,6 +57,7 @@ model User {
   altairMetaProgress   AltairMetaProgress?
   altairCoopProfile    AltairCoopProfile?
   altairMatchPlayers   AltairMatchPlayer[]
+  altairSoloRuns       AltairSoloRun[]
   laundryProfile       LaundryPlayer?
   globesetProfile      GlobeSetPlayer?
   sliceItProfile       Player?
@@ -2747,6 +2748,36 @@ model AltairMetaProgress {
   updatedAt          DateTime @updatedAt
 
   @@map("altair_meta_progress")
+}
+
+// A single-player run the SERVER issued (seed + loadout) and later replays (lib/altair/solo). Coins and
+// leaderboard totals are written from the replay's numbers only, under this row, exactly once.
+model AltairSoloRun {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Equals userId while the run is open and NULL once it is closed. Unique, so a user has at most one
+  // open run (NULLs do not collide). Starting a run closes the previous one.
+  openUserId    String?   @unique
+  seed          Int
+  classId       String
+  doubleTime    Boolean
+  loadout       Json
+  // open | submitted | verified | rejected | unverified | abandoned | expired
+  status        String    @default("open")
+  issuedAt      DateTime  @default(now())
+  expiresAt     DateTime
+  submittedAt   DateTime?
+  verifiedAt    DateTime?
+  steps         Int?
+  // The replay's numbers (never the client's claim) once verified.
+  result        Json?
+  rejectReason  String?
+  coinsCredited Int       @default(0)
+
+  @@index([userId, issuedAt(sort: Desc)])
+  @@index([status, expiresAt])
+  @@map("altair_solo_run")
 }
 
 // ─── Altair Multiplayer (Co-op) Models ────────────────────────

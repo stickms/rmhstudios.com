@@ -278,8 +278,33 @@ unchanged. Equivalence evidence: `solo/__tests__/solo-loop.test.ts` plays 25 s t
 60/144/30 Hz and a jittery 20-90 Hz and replays each log to identical numbers; `browser-run.json` is a log
 recorded in real Chromium (keyboard, level-up clicks, a resize) that replays offline to identical numbers.
 
-Not yet (next PR): the server issuing `{runId, seed, loadout}`, the log being submitted, the replay running
-in the jobs worker, and coins/leaderboard rows being written from it. Until then `/api/altair/meta`
-(`lib/altair/meta-guard.ts`) bounds the coin balance: purchases are priced and paid server-side, earned
-coins are limited by a refilling allowance (8 coins/s, 8000 cap), a first save may import at most 50k, and
-`/api/altair/score` (leaderboard totals) is still client-reported.
+### Server-verified single-player (built, anti-cheat 5/6)
+
+1. **Issue.** `POST /api/altair/run/start` (`solo/issue.server.ts`, 6/min, signed in) picks the seed
+   (`crypto.randomInt`) and derives the loadout from the SERVER's copy of the player's upgrades, storing an
+   `AltairSoloRun` (`openUserId` is unique, so one open run per user; starting another abandons the old
+   one; 3 h expiry). The browser plays exactly that run (`solo/session.ts` hands it to `GameScreen`).
+   Signed out / offline: no run is issued and single-player behaves as before.
+2. **Submit.** At run end (death, victory, Exit, tab close) the browser gzips the log and
+   `POST /api/altair/run/finish` flips the row open -> submitted (the flip is the idempotency key) and
+   queues `altair.verify-solo` on pg-boss. 202; nothing in the body is believed.
+3. **Verify.** The `jobs` worker (`solo/queue.server.ts`) reads seed/class/double-time/loadout from the ROW,
+   requires the log to match them, requires `steps/60` <= server wall clock between issue and submit
+   (x1.1 + 10 s), replays (serialised, yielding, 10 min deadline) and requires the claim (victory, kills,
+   level, payout) to equal the replay. A mismatch marks the run `rejected` and writes nothing.
+4. **Persist.** `persistVerifiedSoloRun` writes, in one transaction with the status flip, the replay's
+   payout to `AltairMetaProgress.coins` and the replay's totals to `AltairPlayer` (what `/api/altair/score`
+   took from the client). `GET /api/altair/run/status` lets the client wait and then reload the balance.
+5. **Meta save.** A client that sends `x-altair-verified-runs: 1` can never RAISE its coin balance through
+   `/api/altair/meta` (purchases are still priced server-side). Exception: a run the server could not take
+   (queue full, rate limited: status `unverified`) may be paid once through the capped 8 coins/s allowance,
+   named by `x-altair-fallback-run`. Old clients (no header) keep the allowance, and `/api/altair/score`
+   keeps a plausibility-bounded legacy intake, until `ALTAIR_LEGACY_META=0` / `ALTAIR_LEGACY_SCORE=0`.
+6. **Bounds.** 30 submissions per user per hour, 60 waiting jobs, one replay at a time, a deadline, a
+   10 MB inflate cap, steps <= wall clock.
+
+Residual (not closed): bots and macros play inputs a human could not and replay cannot tell; class unlocks,
+double-time unlock, best-time/first-clear fields still round-trip through the client's meta save; a seed
+can be shopped by starting runs (6/min) and abandoning the ones a bot simulates badly; closing the tab on a
+log larger than ~60 KB loses that run's payout (keepalive size limit); the legacy intake for old clients
+remains until its switch is flipped.

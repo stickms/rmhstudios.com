@@ -16,7 +16,7 @@ import { createGameLoop } from '@/lib/altair/engine/game-loop';
 import { createInputState, setupInputListeners, setMobileInput } from '@/lib/altair/engine/input';
 import { SoloRun } from '@/lib/altair/solo/solo-run';
 import { loadoutFromUpgrades } from '@/lib/altair/solo/loadout';
-import { beginSoloSession } from '@/lib/altair/solo/session';
+import { beginSoloSession, setActiveRun } from '@/lib/altair/solo/session';
 import { altairSfx } from '@/lib/altair/audio/sfx';
 import { BOSSES } from '@/lib/altair/data/bosses';
 import { getAllSpriteEntries } from '@/lib/altair/engine/sprites/sprite-defs';
@@ -201,6 +201,7 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
       },
     });
     runRef.current = run;
+    setActiveRun(run);
     if (import.meta.env.DEV) (window as unknown as { __altairRun?: SoloRun }).__altairRun = run;
 
     // Set up input (keys and the on-screen stick write to the live state; the run samples it)
