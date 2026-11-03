@@ -1895,3 +1895,12 @@
 .el-portrait > div {
   position: relative;
 }
+
+@media (min-width: 1100px) {
+  .el-briefing__portrait--rooms {
+    right: -30px;
+    top: -318px;
+    bottom: auto;
+    width: 280px;
+  }
+}

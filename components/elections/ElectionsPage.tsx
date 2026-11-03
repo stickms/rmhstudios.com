@@ -501,7 +501,15 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
               'Full-screen, up to four panes: streams from different services at once, live graphs, the map, the wire and chat. Follow the action automatically or pick your states.',
           })}
         >
-          <RoomLobby cycle={param} onOpen={openRoom} />
+          <div className="el-briefing">
+            <BriefingPortrait
+              variant={4}
+              className="el-briefing__portrait el-briefing__portrait--rooms"
+              drift={45}
+              caption={`${HOST_NAME} · ${t('portrait.role', { defaultValue: 'Briefing Room host' })}`}
+            />
+            <RoomLobby cycle={param} onOpen={openRoom} />
+          </div>
         </Section>
 
         {isGeneral ? (
