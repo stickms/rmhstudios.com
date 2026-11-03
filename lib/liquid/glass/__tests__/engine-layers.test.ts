@@ -18,9 +18,10 @@ interface DrawRec {
   /** #989: what the draw carried (rings copied — the engine reuses its buffer). */
   plasma: { level: number; rings: number[] } | null;
   dent: unknown;
+  body: unknown;
 }
 const draws: DrawRec[] = [];
-const hazeDraws: Omit<DrawRec, 'dent'>[] = [];
+const hazeDraws: Omit<DrawRec, 'dent' | 'body'>[] = [];
 type PlasmaArg = { level: number; rings: Float32Array } | null | undefined;
 const plasmaRec = (p: PlasmaArg) => (p ? { level: p.level, rings: [...p.rings] } : null);
 
@@ -30,12 +31,13 @@ vi.mock('../renderer', () => ({
       ready: true,
       hazeReady: true,
       onChange: null,
-      draw: (o: { plasma?: PlasmaArg; dent?: unknown }, target: FakeEl) => {
+      draw: (o: { plasma?: PlasmaArg; dent?: unknown; body?: unknown }, target: FakeEl) => {
         draws.push({
           target,
           attached: target.parentNode !== null,
           plasma: plasmaRec(o.plasma),
           dent: o.dent ?? null,
+          body: o.body ?? null,
         });
         return true;
       },
@@ -140,6 +142,10 @@ class FakeStyle {
   getPropertyValue(k: string) {
     return this.props.get(k) ?? '';
   }
+  getPropertyPriority(_k: string) {
+    return '';
+  }
+  backgroundImage = '';
 }
 
 class FakeEl {
@@ -167,6 +173,9 @@ class FakeEl {
   }
   get isConnected(): boolean {
     return this === docRoot || (this.parentNode?.isConnected ?? false);
+  }
+  get parentElement() {
+    return this.parentNode && !this.parentNode.isText ? this.parentNode : null;
   }
   get firstChild() {
     return this.childNodes[0] ?? null;
@@ -339,6 +348,7 @@ function setup() {
   draws.length = 0;
   hazeDraws.length = 0;
   docRoot = new FakeEl('html');
+  Object.defineProperty(docRoot, 'clientWidth', { get: () => 1000 });
   body = new FakeEl('body');
   docRoot.childNodes.push(body);
   body.parentNode = docRoot;
@@ -413,6 +423,9 @@ function setup() {
       borderTopWidth: '1px',
       borderTopLeftRadius: '12px',
       backgroundColor: 'rgba(255, 255, 255, 0.4)',
+      overflowX: 'visible',
+      overflowY: 'visible',
+      contain: 'none',
       getPropertyValue: (k: string) => el.vars?.[k] ?? '',
     }),
   };
@@ -489,6 +502,37 @@ describe('engine layers vs React setTextContent', () => {
       expect(logo.hasAttribute('data-liquid-static')).toBe(true);
       expect(rimOf(logo)?.parentNode).toBe(logo);
     }
+  });
+
+  it('hands the host\'s fill to the shader only once the rim is in, and takes it back on deactivation', async () => {
+    const card = new FakeEl('div');
+    card.className = 'glass-fill';
+    body.append(card);
+    await install();
+    expect(rimOf(card)).toBeDefined();
+    // The rim fades in first; the body is armed and the host's own fill steps aside only after that.
+    vi.advanceTimersByTime(500);
+    await frames();
+    vi.advanceTimersByTime(120);
+    expect(card.getAttribute('data-jelly-body')).toBe('on');
+    const withBody = draws.filter((d) => d.target === rimOf(card));
+    expect(withBody.at(-1)?.body).not.toBeNull();
+    expect(withBody[0]?.body).toBeNull(); // the very first frame is rim only
+    // A host that paints its own background art keeps its CSS fill.
+    const art = new FakeEl('div');
+    art.className = 'glass-fill bg-[url(/hero.webp)]';
+    body.append(art);
+    await flush();
+    showAll();
+    await frames();
+    vi.advanceTimersByTime(700);
+    await frames();
+    expect(art.getAttribute('data-jelly-body')).toBeNull();
+    // Leaving the document drops the attribute with the canvas.
+    card.remove();
+    await flush();
+    expect(rimOf(card)).toBeUndefined();
+    expect(card.getAttribute('data-jelly-body')).toBeNull();
   });
 
   it('a <Button> whose text is replaced gets its SAME rim canvas back and never draws into a detached one', async () => {

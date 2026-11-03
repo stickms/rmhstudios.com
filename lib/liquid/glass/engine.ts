@@ -80,13 +80,18 @@ import {
 import {
   LATTICE,
   createLattice,
+  LATTICE_NODES,
+  MIN_LATTICE_SIDE,
+  setLatticeRoom,
   impulseLattice,
   latticeUniform,
   setLatticeInput,
   stepLattice,
   type Lattice,
   type LatticeInput,
+  type Sides,
 } from '@/lib/jelly/lattice';
+import { clipRegion, clippingAncestors, roomFromRects, sameRoom } from '@/lib/jelly/room';
 import { drive, type FrameDriver } from '@/lib/jelly/frame';
 import {
   dentOf,
@@ -224,6 +229,8 @@ const WORKER_WAIT_MS = 5000;
  * `data-liquid-canvas="on"` and the static coat, edge and carrier step aside. A cross-fade, never a swap.
  */
 const ENTER_MS = 450;
+/** From the first frame that carries the gel body to the host's own fill stepping aside (a few frames, worker latency). */
+const BODY_HANDOVER_MS = 80;
 /**
  * How far past the viewport (as a share of its height, above and below) a surface is already admitted. A rim is a
  * canvas that fades in over {@link ENTER_MS} after its worker's first frame, so a surface admitted only as it arrives
@@ -289,6 +296,19 @@ interface Surface {
   jellyOn: boolean;
   /** Rim canvas overdraw past the host, px (fixed at activation). */
   margin: number;
+  /**
+   * The shader paints this surface's whole gel body (role tint under the gel coat): straight RGBA at the top and the
+   * base, or null for a rim-only slab. While set and the rim is in, the host carries `data-jelly-body="on"` and its own
+   * CSS fill steps aside.
+   */
+  body: { top: RGBA; bottom: RGBA } | null;
+  /** The rim is in and the shader now paints `body` (the host's own fill follows a few frames later). */
+  bodyArmed: boolean;
+  bodyTimer: number;
+  /** Ancestors that clip this host's overflow, read at activation. */
+  clips: HTMLElement[];
+  /** Free room on each side for the silhouette to bulge into (see `lib/jelly/room.ts`). */
+  roomSides: Sides;
   haze: HTMLCanvasElement | null;
   /** The rim canvas was transferred to the glass worker: only the worker can draw it now. */
   rimRemote: boolean;
@@ -707,6 +727,11 @@ export function installLiquidGlass(doc: Document = document): () => void {
       edge: 0,
       jellyOn: true,
       margin: 0,
+      body: null,
+      bodyArmed: false,
+      bodyTimer: 0,
+      clips: [],
+      roomSides: { top: 0, right: 0, bottom: 0, left: 0 },
       haze: null,
       rimRemote: false,
       rimOld: null,
@@ -721,7 +746,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       lattice: null,
       latticeInput: null,
       latticeParked: false,
-      latticeBuf: new Float32Array(16),
+      latticeBuf: new Float32Array(LATTICE_NODES * 2),
       gel: defaultGel(),
       shoulder: GEL_FALLBACK.shoulder,
       pad: 0,
@@ -831,6 +856,18 @@ export function installLiquidGlass(doc: Document = document): () => void {
 
   const measure = (s: Surface) => {
     const style = win.getComputedStyle(s.el);
+    // The host's own fill is what carries the role tint. While the shader paints the body that fill is transparent, so
+    // step the attribute aside (with no transition, for one frame) to read it, then put it back.
+    const bodyAttr = s.el.getAttribute('data-jelly-body');
+    let prevTransition: [string, string] | null = null;
+    if (bodyAttr) {
+      prevTransition = [
+        s.el.style.getPropertyValue('transition'),
+        s.el.style.getPropertyPriority('transition'),
+      ];
+      s.el.style.setProperty('transition', 'none', 'important');
+      s.el.removeAttribute('data-jelly-body');
+    }
     s.width = s.el.clientWidth;
     s.height = s.el.clientHeight;
     const border = parseFloat(style.borderTopWidth) || 0;
@@ -848,6 +885,43 @@ export function installLiquidGlass(doc: Document = document): () => void {
     // relative position this marker supplied; removing it would anchor a small
     // control's canvas to its enclosing panel and stretch its rim into an oval.
     readJelly(s, style);
+    s.body = bodyFor(s, style);
+    const disarm = !s.body && s.bodyArmed;
+    if (disarm) s.bodyArmed = false;
+    if (bodyAttr) {
+      if (!disarm) s.el.setAttribute('data-jelly-body', bodyAttr);
+      const [v, pr] = prevTransition!;
+      // Restore after the next frame's style recalc has seen the attribute (a timer, never a second rAF loop).
+      win.setTimeout(() => {
+        if (v) s.el.style.setProperty('transition', v, pr);
+        else s.el.style.removeProperty('transition');
+      }, 50);
+    }
+  };
+
+  /** Hosts that paint their own background art keep their CSS fill; the shader paints only plain role fills. */
+  const BODY_OPT_OUT = /\bbg-(?:\[|gradient|linear|radial|conic|none)/;
+  /** The gel body of a surface: the role tint under `--gel-body` (top) / `--gel-depth` (base), or null for rim-only. */
+  const bodyFor = (s: Surface, style: CSSStyleDeclaration): Surface['body'] => {
+    if (
+      s.role === 'chrome' ||
+      s.still ||
+      s.el.hasAttribute('data-jelly-bodyless') ||
+      s.el.style.backgroundImage ||
+      BODY_OPT_OUT.test(s.el.getAttribute('class') ?? '')
+    )
+      return null;
+    const get = (name: string): RGBA => {
+      const css = style.getPropertyValue(name).trim();
+      return css ? resolveColor(css, [0, 0, 0, 0], doc) : [0, 0, 0, 0];
+    };
+    const over = (g: RGBA, t: RGBA): RGBA => {
+      const a = g[3] + t[3] * (1 - g[3]);
+      if (a <= 1e-4) return [0, 0, 0, 0];
+      const k = t[3] * (1 - g[3]);
+      return [(g[0] * g[3] + t[0] * k) / a, (g[1] * g[3] + t[1] * k) / a, (g[2] * g[3] + t[2] * k) / a, a];
+    };
+    return { top: over(get('--gel-body'), s.tint), bottom: over(get('--gel-depth'), s.tint) };
   };
 
   const activate = (s: Surface): boolean => {
@@ -863,6 +937,14 @@ export function installLiquidGlass(doc: Document = document): () => void {
     measure(s);
     // Static, never animated: room for an outward lattice bulge on cards and controls (≤ 2px, 02 §1.3).
     s.margin = overdrawMargin(s.role, budget.lattices > 0 && !s.still);
+    if (s.margin > 0) {
+      // Never overdraw past the viewport's left/right edge: a canvas out there would add a horizontal scrollbar.
+      const r0 = s.el.getBoundingClientRect();
+      const vw = doc.documentElement.clientWidth || win.innerWidth;
+      s.margin = Math.max(0, Math.min(s.margin, Math.floor(Math.min(r0.left, vw - r0.right))));
+    }
+    s.clips = clippingAncestors(s.el, win, doc.documentElement);
+    s.roomSides = { top: s.margin, right: s.margin, bottom: s.margin, left: s.margin };
     if (s.margin > 0) {
       const m = s.margin;
       canvas.style.cssText = `left:${-m}px;top:${-m}px;width:calc(100% + ${2 * m}px);height:calc(100% + ${2 * m}px)`;
@@ -880,6 +962,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
   const rimDrawn = (s: Surface) => {
     if (s.entered || s.enterTimer || !s.canvas) return;
     s.canvas.removeAttribute('data-liquid-fresh');
+
     s.enterTimer = win.setTimeout(() => {
       s.enterTimer = 0;
       if (!s.canvas) return;
@@ -887,6 +970,17 @@ export function installLiquidGlass(doc: Document = document): () => void {
       // Settled: re-inserting it (React wiping the host, `repairLayers`) must not replay the fade.
       s.canvas.setAttribute('data-liquid-settled', '');
       s.el.setAttribute('data-liquid-canvas', 'on');
+      // The rim is in. Now the shader starts painting the gel body too, and a few frames later, once that frame has
+      // landed (the worker draws asynchronously), the host's own fill steps aside — never a frame with neither.
+      if (s.body) {
+        s.bodyArmed = true;
+        s.dirty = true;
+        requestFrame();
+        s.bodyTimer = win.setTimeout(() => {
+          s.bodyTimer = 0;
+          if (s.canvas && s.bodyArmed) s.el.setAttribute('data-jelly-body', 'on');
+        }, BODY_HANDOVER_MS);
+      }
     }, ENTER_MS);
   };
   /** The same for a haze canvas: it fades in over the CSS carrier, which steps aside (`markHazeOn`) once it has. */
@@ -933,6 +1027,44 @@ export function installLiquidGlass(doc: Document = document): () => void {
     }
   };
 
+  /**
+   * The free room each admitted surface has to bulge into (clipping ancestors, the viewport's side edges, half the gap
+   * to a neighbouring body), capped at its canvas margin. Runs with the rect read, so it costs no extra layout beyond
+   * the clipping ancestors' own rects, each read once per pass.
+   */
+  const fitRoom = (active: Surface[]) => {
+    const vw = doc.documentElement.clientWidth || win.innerWidth;
+    const regions = new Map<HTMLElement, ReturnType<typeof clipRegion>>();
+    const region = (el: HTMLElement) => {
+      let r = regions.get(el);
+      if (!r) {
+        r = clipRegion(el.getBoundingClientRect(), el.clientLeft, el.clientTop, el.clientWidth, el.clientHeight);
+        regions.set(el, r);
+      }
+      return r;
+    };
+    for (const s of active) {
+      if (s.margin <= 0) continue;
+      const neighbours: ReturnType<typeof clipRegion>[] = [];
+      for (const o of active) {
+        if (o === s || s.el.contains(o.el) || o.el.contains(s.el)) continue;
+        neighbours.push(o.rect!);
+      }
+      const next = roomFromRects(
+        s.rect!,
+        s.clips.map(region),
+        { left: 0, right: vw },
+        neighbours,
+        s.margin,
+      );
+      if (!sameRoom(next, s.roomSides)) {
+        s.roomSides = next;
+        if (s.lattice) setLatticeRoom(s.lattice, next);
+        s.dirty = true;
+      }
+    }
+  };
+
   const deactivate = (s: Surface) => {
     removeHaze(s);
     dropLattice(s);
@@ -947,6 +1079,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.canvas.remove();
     s.canvas = null;
     s.el.removeAttribute('data-liquid-canvas');
+    s.el.removeAttribute('data-jelly-body');
+    win.clearTimeout(s.bodyTimer);
+    s.bodyTimer = 0;
+    s.bodyArmed = false;
     s.el.removeAttribute('data-liquid-layer');
     s.el.removeAttribute('data-liquid-static');
     s.light = 0;
@@ -1234,6 +1370,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
       if (!s.el.hasAttribute('data-liquid-layer')) s.el.setAttribute('data-liquid-layer', '');
       if (s.entered && s.el.getAttribute('data-liquid-canvas') !== 'on')
         s.el.setAttribute('data-liquid-canvas', 'on');
+      if (s.bodyArmed && !s.bodyTimer && s.el.getAttribute('data-jelly-body') !== 'on')
+        s.el.setAttribute('data-jelly-body', 'on');
       s.dirty = true;
       if (s.haze) s.hazeFresh = true;
     }
@@ -1350,6 +1488,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       dispersion: JELLY_DISPERSION,
       margin: s.margin,
       lattice: s.lattice && !s.lattice.asleep ? latticeUniform(s.lattice, s.latticeBuf) : null,
+      body: s.bodyArmed ? s.body : null,
       gel: s.gel,
       // A haze slot draws its own (moving) plasma; every other slab draws the static variant here.
       plasma: s.haze ? null : plasmaFor(s, now),
@@ -1516,6 +1655,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
           h: s.height,
           bevel: bevelFor(s.width, s.height, s.radius, s.shoulder, s.room),
           amplitude: latticeAmplitude(s.width, s.height),
+          room: s.roomSides,
+          body: !!s.body,
         });
         s.latticeInput = null;
       }
@@ -1528,7 +1669,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
   const stepSurfaceLattice = (s: Surface, dt: number): [boolean, boolean] => {
     const l = s.lattice;
     if (!l) return [false, false];
-    if (l.w !== Math.max(1, s.width) || l.h !== Math.max(1, s.height)) {
+    if (l.w !== Math.max(MIN_LATTICE_SIDE, s.width) || l.h !== Math.max(MIN_LATTICE_SIDE, s.height)) {
       dropLattice(s);
       return [true, false];
     }
@@ -1629,6 +1770,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       for (const s of active) s.rect = s.el.getBoundingClientRect();
       rectsAt = now;
       fitNested(active);
+      fitRoom(active);
     }
     for (const s of active) {
       const rect = s.rect!;
