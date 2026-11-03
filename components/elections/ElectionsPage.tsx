@@ -79,6 +79,37 @@ function Section({
   );
 }
 
+/**
+ * The Briefing Room host standing on the top edge of a block of content, facing it: a parallax cut-out
+ * that sits in the header's empty right-hand space on wide screens and in the flow above the block on
+ * phones, so it never lies over text. `flip` mirrors a photo that would otherwise look away from the content.
+ */
+function Host({
+  variant,
+  flip,
+  named,
+  children,
+}: {
+  variant: number;
+  flip?: boolean;
+  named?: boolean;
+  children: React.ReactNode;
+}) {
+  const { t } = useTranslation('c-elections');
+  return (
+    <div className="el-briefing">
+      <BriefingPortrait
+        variant={variant}
+        flip={flip}
+        className="el-briefing__portrait"
+        drift={28}
+        caption={named ? `${HOST_NAME} · ${t('portrait.role', { defaultValue: 'Briefing Room host' })}` : undefined}
+      />
+      {children}
+    </div>
+  );
+}
+
 export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: ElectionsPageProps) {
   const { t } = useTranslation('c-elections');
   const navigate = useNavigate();
@@ -311,10 +342,9 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
           ) : null}
           {hasData ? (
             <div style={{ marginTop: 24 }}>
-              <div className="el-briefing">
-                <BriefingPortrait variant={3} className="el-briefing__portrait" caption={`${HOST_NAME} · ${t('portrait.role', { defaultValue: 'Briefing Room host' })}`} />
+              <Host variant={3} named>
                 <AiDesk cycle={param} live={live} bullets={bullets} />
-              </div>
+              </Host>
             </div>
           ) : null}
           <p
@@ -385,7 +415,9 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
           })}
         >
           {snapshot && hasData ? (
-            <RaceExplorer races={snapshot.races} offices={offices} focusRaceId={focusRaceId} />
+            <Host variant={3}>
+              <RaceExplorer races={snapshot.races} offices={offices} focusRaceId={focusRaceId} />
+            </Host>
           ) : snapshot ? (
             <p className="el-h2" style={{ fontSize: 36 }}>
               {t('races.notYet', {
@@ -411,11 +443,13 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
             defaultValue: 'Last polls in each state, Eastern time. Results follow within minutes.',
           })}
         >
-          <PollClosings
-            closings={snapshot?.pollClosings ?? {}}
-            now={now}
-            onSelectState={selectFromElsewhere}
-          />
+          <Host variant={2}>
+            <PollClosings
+              closings={snapshot?.pollClosings ?? {}}
+              now={now}
+              onSelectState={selectFromElsewhere}
+            />
+          </Host>
         </Section>
 
         <Section
@@ -431,10 +465,9 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
             defaultValue: 'Headlines from NPR, PBS, Politico, the Guardian and more, as they land.',
           })}
         >
-          <div className="el-briefing">
-            <BriefingPortrait variant={1} className="el-briefing__portrait el-briefing__portrait--wire" drift={50} />
+          <Host variant={1} flip>
             <NewsWire state={selectedState} live={live} />
-          </div>
+          </Host>
         </Section>
 
         <Section
@@ -501,15 +534,9 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
               'Full-screen, up to four panes: streams from different services at once, live graphs, the map, the wire and chat. Follow the action automatically or pick your states.',
           })}
         >
-          <div className="el-briefing">
-            <BriefingPortrait
-              variant={4}
-              className="el-briefing__portrait el-briefing__portrait--rooms"
-              drift={45}
-              caption={`${HOST_NAME} · ${t('portrait.role', { defaultValue: 'Briefing Room host' })}`}
-            />
+          <Host variant={2} named>
             <RoomLobby cycle={param} onOpen={openRoom} />
-          </div>
+          </Host>
         </Section>
 
         {isGeneral ? (
@@ -528,7 +555,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
               })}
             >
               {snapshot && hasData ? (
-                <>
+                <Host variant={4}>
                   <PredictionPainter
                     year={year}
                     cycle={param}
@@ -545,7 +572,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
                       text={headline(snapshot)}
                     />
                   </div>
-                </>
+                </Host>
               ) : (
                 <div className="el-box el-skel" aria-busy />
               )}

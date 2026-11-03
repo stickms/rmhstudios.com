@@ -14,6 +14,7 @@ export function BriefingPortrait({
   variant = 1,
   alt = HOST_NAME,
   caption,
+  flip = false,
   className,
   drift = 60,
 }: {
@@ -21,6 +22,8 @@ export function BriefingPortrait({
   alt?: string;
   /** A small name tag under the portrait. */
   caption?: string;
+  /** Mirror the photo so he faces the other way (he should face the content he sits beside). */
+  flip?: boolean;
   className?: string;
   /** How far (px) the portrait travels against the scroll. */
   drift?: number;
@@ -43,6 +46,7 @@ export function BriefingPortrait({
             loading="lazy"
             decoding="async"
             draggable={false}
+            data-flip={flip || undefined}
             onError={() => setMissing(true)}
           />
           {caption ? <span className="el-portrait__tag">{caption}</span> : null}

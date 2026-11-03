@@ -1904,3 +1904,111 @@
     width: 280px;
   }
 }
+
+/* ═══ Portraits (final): large, facing the content, standing on it ═══════════════════════════════════
+ * Phones: in the flow, right-aligned, standing on the top edge of the block it introduces (no text under
+ * the photo). Wide screens: absolutely placed in the header's empty right-hand space, bottom on the block's
+ * top edge. A portrait is only ever over transparent space or other chrome, never over text.
+ */
+.el-portrait img[data-flip] {
+  transform: scaleX(-1);
+}
+.el-briefing {
+  position: relative;
+}
+.el-briefing__portrait {
+  display: block;
+  position: relative;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  width: min(70%, 320px);
+  max-width: none;
+  margin: 0 0 -2px auto;
+  z-index: 2;
+}
+.el-briefing .el-desk__list,
+.el-briefing:has(.el-briefing__portrait--wire) .el-desk__list {
+  max-width: none;
+}
+.el-portrait__tag {
+  left: 4%;
+  bottom: 10%;
+}
+@media (min-width: 1100px) {
+  .el-briefing__portrait,
+  .el-briefing__portrait--wire,
+  .el-briefing__portrait--rooms {
+    position: absolute;
+    top: auto;
+    right: -6px;
+    bottom: 100%;
+    width: clamp(240px, 22vw, 340px);
+    margin: 0 0 -2px;
+  }
+}
+
+/* Hero: the host fills the right-hand cell, large, bottom-anchored and leaning toward the headline. */
+.el-cell--vert {
+  display: block;
+  position: relative;
+  min-height: 340px;
+  overflow: hidden;
+  padding: 0;
+  background:
+    linear-gradient(rgba(109, 40, 255, 0.28) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgba(109, 40, 255, 0.28) 1px, transparent 1px) 0 0 / 28px 28px, var(--el-cell);
+}
+.el-cell--vert .el-vert {
+  position: absolute;
+  left: 16px;
+  top: 14px;
+  z-index: 3;
+  padding: 3px 8px;
+  border: 2px solid var(--el-ink);
+  background: #fff;
+  font-family: var(--el-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  writing-mode: horizontal-tb;
+  transform: none;
+}
+.el-cell--vert .el-glyph--a {
+  top: 14px;
+  right: 16px;
+  z-index: 3;
+}
+.el-cell--vert .el-hero__portrait {
+  display: block;
+  position: absolute;
+  right: -8%;
+  bottom: -44px;
+  width: min(100%, 520px);
+  margin: 0;
+  z-index: 1;
+}
+.el-cell--vert .el-portrait__tag {
+  left: auto;
+  right: 12%;
+  bottom: 12%;
+}
+@media (min-width: 900px) {
+  .el-cell--vert {
+    min-height: 560px;
+  }
+  .el-cell--vert .el-hero__portrait {
+    width: 118%;
+    right: -9%;
+  }
+}
+@media (max-width: 899px) {
+  .el-cell--vert {
+    min-height: 380px;
+  }
+  .el-cell--vert .el-hero__portrait {
+    width: 92%;
+    right: -4%;
+  }
+}

@@ -13,6 +13,7 @@ import satori from 'satori';
 import { dedupeOgRender, svgToPng } from './render.server';
 import { loadFonts, satoriFonts } from './shared.server';
 import type { CardStat } from '@/lib/elections/card-stats';
+import { HOST_PORTRAIT } from './elections-portrait';
 
 const INK = '#000000';
 const PAPER = '#F4F3F7';
@@ -47,9 +48,9 @@ function statCell(s: CardStat, i: number): React.ReactElement {
   return (
     <div
       key={i}
-      style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: i % 2 ? PAPER : CELL, padding: '14px 22px 16px', height: 150 }}
+      style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: i % 2 ? PAPER : CELL, padding: '12px 18px 14px', height: 118, flex: 1 }}
     >
-      <div style={{ display: 'flex', fontSize: 72, fontWeight: 700, lineHeight: 0.9, letterSpacing: -4 }}>
+      <div style={{ display: 'flex', fontSize: 56, fontWeight: 700, lineHeight: 0.9, letterSpacing: -3 }}>
         {s.tone === 'result' && s.dem != null && s.gop != null ? (
           <>
             <span style={{ display: 'flex', color: DEM }}>{s.dem}</span>
@@ -101,10 +102,18 @@ function element(d: ElectionsCardData): React.ReactElement {
           <div style={{ display: 'flex', marginTop: 20, fontSize: 24, fontWeight: 400, lineHeight: 1.22, maxWidth: 640, height: 60, overflow: 'hidden' }}>{d.sub}</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 4 }}>
-          <div style={{ display: 'flex', flex: 1, background: PURPLE, color: CELL, alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-            <div style={{ display: 'flex', fontSize: d.sticker.length > 6 ? 56 : 84, fontWeight: 700, letterSpacing: -3, textTransform: 'uppercase' }}>{d.sticker}</div>
+          {/* the host, large, facing the headline; the sticker sits over his jacket, never over his face */}
+          <div style={{ display: 'flex', flex: 1, background: PURPLE, position: 'relative', overflow: 'hidden' }}>
+            <img
+              alt=""
+              src={HOST_PORTRAIT.src}
+              width={430}
+              height={Math.round((430 * HOST_PORTRAIT.height) / HOST_PORTRAIT.width)}
+              style={{ position: 'absolute', left: -10, bottom: -6 }}
+            />
+            <div style={{ display: 'flex', position: 'absolute', left: 16, bottom: 14, background: CELL, color: INK, border: `3px solid ${INK}`, borderRadius: 6, padding: '2px 12px', fontSize: d.sticker.length > 6 ? 26 : 34, fontWeight: 700, letterSpacing: -1, textTransform: 'uppercase' }}>{d.sticker}</div>
           </div>
-          {d.stats.slice(0, 2).map(statCell)}
+          <div style={{ display: 'flex', gap: 4 }}>{d.stats.slice(0, 2).map(statCell)}</div>
         </div>
       </div>
     </div>

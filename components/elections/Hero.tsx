@@ -31,7 +31,6 @@ export function Hero({
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const yDoodle = useTransform(scrollYProgress, [0, 1], [0, 90]);
-  const yVert = useTransform(scrollYProgress, [0, 1], [0, -40]);
 
   const kindWord =
     cycle.kind === 'midterm'
@@ -65,12 +64,6 @@ export function Hero({
                 {cycle.year} {kindWord}
               </span>
             </h1>
-            <BriefingPortrait
-              variant={2}
-              className="el-hero__portrait"
-              drift={40}
-              caption={`${HOST_NAME} · ${t('portrait.role', { defaultValue: 'Briefing Room host' })}`}
-            />
             <motion.svg className="el-doodle" viewBox="0 0 100 70" aria-hidden style={{ y: yDoodle }}>
               <path d="M6 50 C 22 8, 56 6, 88 30 M70 12 L90 31 L66 44" />
             </motion.svg>
@@ -105,12 +98,19 @@ export function Hero({
             </div>
           </div>
 
-          <div className="el-cell el-cell--vert" aria-hidden>
-            <span className="el-glyph el-glyph--a">✱</span>
-            <motion.span className="el-vert" style={{ y: yVert }}>
+          <div className="el-cell el-cell--vert">
+            <span className="el-glyph el-glyph--a" aria-hidden>
+              ✱
+            </span>
+            <span className="el-vert" aria-hidden>
               {t('hero.vertical', { defaultValue: 'Election night' })}
-            </motion.span>
-            <span className="el-glyph el-glyph--b">◐</span>
+            </span>
+            <BriefingPortrait
+              variant={4}
+              className="el-hero__portrait"
+              drift={34}
+              caption={`${HOST_NAME} · ${t('portrait.role', { defaultValue: 'Briefing Room host' })}`}
+            />
           </div>
 
           <div className="el-cell el-cell--count">
