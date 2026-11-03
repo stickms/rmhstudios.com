@@ -2230,3 +2230,63 @@ html.ios-webkit .el-room__grid {
   background: var(--el-oth);
   color: #fff;
 }
+
+/* Friends leagues */
+.el-league__forms {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+@media (min-width: 760px) {
+  .el-league__forms {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.el-league__board {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 2px dashed var(--el-ink);
+}
+.el-league__name {
+  margin: 0;
+  font-family: var(--el-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+.el-league__rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.el-league__row {
+  display: grid;
+  grid-template-columns: 2.2em 1fr auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 2px dashed var(--el-ink);
+}
+.el-league__row:last-child {
+  border-bottom: 0;
+}
+.el-league__rank {
+  font-family: var(--el-display);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+.el-league__row:first-child .el-league__rank {
+  color: var(--el-purple);
+}
+.el-league__who {
+  font-weight: 700;
+}
+@media (max-width: 599px) {
+  .el-league__row {
+    grid-template-columns: 2.2em 1fr;
+  }
+  .el-league__score {
+    grid-column: 2;
+  }
+}

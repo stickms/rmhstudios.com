@@ -515,7 +515,9 @@ model User {
   pileOnGuards               PileOnGuard[]
   // P12 forecasting: G6 market comments
   predictionComments         PredictionComment[]
-  electionRooms              ElectionRoom[]      @relation("ElectionRoomOwner")
+  electionRooms              ElectionRoom[]               @relation("ElectionRoomOwner")
+  electionLeaguesOwned       ElectionLeague[]             @relation("ElectionLeagueOwner")
+  electionLeagueMemberships  ElectionLeagueMember[]       @relation("ElectionLeagueMember")
   // P07 arcade: E1/E12 seeded runs, E2 backlog, E6 achievement tips, E11 rivals
   arcadeSeedRuns             ArcadeSeedRun[]
   gamePlayStatuses           GamePlayStatus[]
@@ -2727,25 +2729,25 @@ model BumsRushRun {
 // ─── Altair Meta Progression (persisted to DB) ────────────────────────
 
 model AltairMetaProgress {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  coins              Int      @default(0)
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coins              Int       @default(0)
   // Earned coins the server will still accept from a client save (refills with time; see
   // lib/altair/meta-guard.ts). Interim bound until single-player runs are replay-verified.
-  coinAllowance      Int      @default(8000)
+  coinAllowance      Int       @default(8000)
   coinAllowanceAt    DateTime?
-  upgrades           Json     @default("{}")
-  unlockedClasses    Json     @default("[\"knight\",\"arcanist\",\"ranger\"]")
-  doubleTimeUnlocked Boolean  @default(false)
-  classFirstClears   Json     @default("[]")
-  totalRunsPlayed    Int      @default(0)
-  bestTimeSurvived   Float    @default(0)
-  bestKills          Int      @default(0)
-  bossesDefeated     Json     @default("[]")
-  bestiary           Json     @default("{}")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  upgrades           Json      @default("{}")
+  unlockedClasses    Json      @default("[\"knight\",\"arcanist\",\"ranger\"]")
+  doubleTimeUnlocked Boolean   @default(false)
+  classFirstClears   Json      @default("[]")
+  totalRunsPlayed    Int       @default(0)
+  bestTimeSurvived   Float     @default(0)
+  bestKills          Int       @default(0)
+  bossesDefeated     Json      @default("[]")
+  bestiary           Json      @default("{}")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@map("altair_meta_progress")
 }
@@ -13594,4 +13596,40 @@ model ElectionRoom {
   @@index([visibility, electionDate, expiresAt])
   @@index([ownerId, createdAt(sort: Desc)])
   @@map("election_room")
+}
+
+/// A friends league for election predictions: people join by code, each submits a painted map, and the
+/// leaderboard scores everyone's calls against the races as they are called. No coins are involved.
+/// The `code` is the capability to join; the board is visible to members only.
+model ElectionLeague {
+  id        String   @id @default(cuid())
+  code      String   @unique @db.VarChar(12)
+  name      String   @db.VarChar(60)
+  /// The cycle being predicted: a year ("2026") or an election day (YYYY-MM-DD).
+  cycle     String   @db.VarChar(10)
+  ownerId   String
+  createdAt DateTime @default(now())
+
+  owner   User                   @relation("ElectionLeagueOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members ElectionLeagueMember[]
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@map("election_league")
+}
+
+model ElectionLeagueMember {
+  id       String    @id @default(cuid())
+  leagueId String
+  userId   String
+  /// race key -> "DEM" | "GOP" | "TOSS" (validated by lib/elections/leagues.ts before every write).
+  picks    Json      @default("{}")
+  pickedAt DateTime?
+  joinedAt DateTime  @default(now())
+
+  league ElectionLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  user   User           @relation("ElectionLeagueMember", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, userId])
+  @@index([userId, joinedAt(sort: Desc)])
+  @@map("election_league_member")
 }

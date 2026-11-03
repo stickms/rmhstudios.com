@@ -146,3 +146,21 @@ own canonical video id. Results are cached 3 minutes; a failing channel just dro
 
 Twitch has no keyless "is it live" check, so Twitch streams stay configured/pasted. Embeds still load only after
 a click.
+
+## Friends leagues
+
+`/elections` (Predict section) lets signed-in users start a **league**, share an 8-character code (or the
+`?league=CODE` link), and compare painted maps. Everyone submits their map from the Predict painter; the
+leaderboard scores each member's Dem/GOP calls against the races as they are called (`scorePicks`), ranked by
+right calls, then fewer wrong, then earlier submission. **No coins are involved.** Maps freeze when the first
+polls close on a general election day (`firstCloseAt`), so nobody can edit after seeing results. Limits: 10
+leagues per owner, 50 members each. The code is the invitation: anyone with it sees the league's name and size,
+only members see the board. Tables `election_league` / `election_league_member`
+(`prisma/migrations/20261103170000_election_leagues`); API under `/api/elections/leagues`.
+
+## Also on the page
+
+- **What to watch** (competitive open races by poll-closing hour), **path to control** per chamber, **2024 baseline
+  and swing** on race cards (`/api/elections/swing`; the free feed has 2024 but not 2022/2020), a **night
+  timeline**, per-race **share cards** (`/api/og/elections?race=ID`), and a CORS-open **JSON summary**
+  (`/api/elections/public`).

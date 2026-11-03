@@ -10,6 +10,7 @@ import { Hero } from './Hero';
 import { PathPanel } from './PathPanel';
 import { WatchList } from './WatchList';
 import { NightTimeline } from './NightTimeline';
+import { LeaguePanel } from './LeaguePanel';
 import { BaselineContext } from './BaselineContext';
 import { Ticker } from './Ticker';
 import { BalanceOfPower } from './BalanceOfPower';
@@ -37,6 +38,8 @@ export interface ElectionsPageProps {
   focusRaceId?: string;
   /** `?room=CODE`: open that watch room on arrival. */
   roomCode?: string;
+  /** `?league=CODE`: open that friends league in the Predict section. */
+  leagueCode?: string;
   /** The cycles the switcher offers, computed server-side so SSR and hydration agree. */
   options: Cycle[];
 }
@@ -116,7 +119,7 @@ function Host({
   );
 }
 
-export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: ElectionsPageProps) {
+export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, options }: ElectionsPageProps) {
   const { t } = useTranslation('c-elections');
   const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -608,6 +611,9 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
                     chambers={snapshot.chambers}
                     offices={offices}
                   />
+                  <div style={{ marginTop: 28 }}>
+                    <LeaguePanel year={year} initialCode={leagueCode} />
+                  </div>
                   <div style={{ marginTop: 28 }}>
                     <p className="el-eyebrow">
                       {t('share.board', { defaultValue: 'Share the live board' })}
