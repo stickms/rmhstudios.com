@@ -1858,3 +1858,21 @@
     z-index: 1;
   }
 }
+
+/* The wire's portrait sits in the right margin beside the list on wide screens. */
+@media (min-width: 1100px) {
+  .el-briefing__portrait--wire {
+    right: -40px;
+    top: -140px;
+    bottom: auto;
+    width: 260px;
+  }
+  .el-briefing:has(.el-briefing__portrait--wire) .el-desk__list {
+    max-width: calc(100% - 250px);
+  }
+}
+
+.el-portrait img {
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent);
+  mask-image: linear-gradient(to bottom, #000 82%, transparent);
+}

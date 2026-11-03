@@ -431,7 +431,10 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
             defaultValue: 'Headlines from NPR, PBS, Politico, the Guardian and more, as they land.',
           })}
         >
-          <NewsWire state={selectedState} live={live} />
+          <div className="el-briefing">
+            <BriefingPortrait variant={1} className="el-briefing__portrait el-briefing__portrait--wire" drift={50} />
+            <NewsWire state={selectedState} live={live} />
+          </div>
         </Section>
 
         <Section
