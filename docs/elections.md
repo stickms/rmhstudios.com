@@ -174,3 +174,10 @@ only members see the board. Tables `election_league` / `election_league_member`
 - **Discord (optional):** set `ELECTIONS_DISCORD_WEBHOOK` to a Discord webhook URL (only discord.com hosts over
   https are accepted) and calls, flips, control changes and polls closing are posted in batches every 5 seconds,
   with mentions disabled. Each web instance relays its own events, so run it on the active instance only.
+
+## Small extras
+
+Nail-biters (thin-lead counting races), My states (followed states at a glance, shared with the Alerts list),
+local-time poll closings, an **Explain** button on race cards (signed-in; asks the Briefing Room about that race),
+**Follow** on race cards, a chime and keep-screen-on toggle in Alerts, `?state=PA` deep links, the browser tab
+title as a live scoreboard, and a formula-safe CSV of every race at `/api/elections/races.csv`.

@@ -61,3 +61,14 @@ export function watchByClosing(
   }
   return out;
 }
+
+/**
+ * Nail-biters: races with votes in, no call yet, and a thin lead. Needs a few percent counted so an early
+ * lopsided trickle does not read as a close race; closest first.
+ */
+export function nailBiters(races: Race[], limit = 6, maxMargin = 5, minReporting = 5): Race[] {
+  return races
+    .filter((r) => r.status === 'counting' && r.margin != null && r.margin <= maxMargin && (r.pctReporting ?? 0) >= minReporting)
+    .sort((a, b) => (a.margin ?? 99) - (b.margin ?? 99) || OFFICE_ORDER[a.office] - OFFICE_ORDER[b.office])
+    .slice(0, limit);
+}

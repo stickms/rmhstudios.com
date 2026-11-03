@@ -74,7 +74,7 @@ export const Route = createFileRoute('/elections')({
   // TanStack JSON-parses search values, so `?cycle=2028` arrives as the NUMBER 2028 — accept both.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { cycle?: string; race?: string; p?: string; room?: string; league?: string } => {
+  ): { cycle?: string; race?: string; p?: string; room?: string; league?: string; state?: string } => {
     const str = (v: unknown, max: number) => {
       const s = typeof v === 'string' ? v : typeof v === 'number' ? String(v) : undefined;
       return s && s.length <= max ? s : undefined;
@@ -85,6 +85,7 @@ export const Route = createFileRoute('/elections')({
       p: str(search.p, 400),
       room: str(search.room, 12),
       league: str(search.league, 12),
+      state: str(search.state, 2),
     };
   },
   loaderDeps: ({ search }) => ({ cycle: search.cycle, p: search.p }),
@@ -138,6 +139,7 @@ function ElectionsRoute() {
       focusRaceId={search.race}
       roomCode={search.room}
       leagueCode={search.league}
+      focusState={search.state}
     />
   );
 }

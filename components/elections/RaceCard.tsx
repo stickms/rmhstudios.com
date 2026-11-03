@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link2 } from 'lucide-react';
+import { Bell, Link2, Sparkles } from 'lucide-react';
+import { useSession } from '@/components/Providers';
 import { m as motion } from 'framer-motion';
 import type { Party, Race } from '@/lib/elections/types';
 import { fmtMargin, swingFrom } from '@/lib/elections/swing';
 import { fmtInt } from './hooks';
 import { useBaselineFor } from './BaselineContext';
+import { useFollow } from './FollowContext';
 
 const PARTY_CHIP: Record<Party, string> = { DEM: 'dem', GOP: 'gop', OTH: 'oth' };
 const PARTY_WORD: Record<Party, string> = { DEM: 'Dem', GOP: 'GOP', OTH: 'Ind' };
@@ -24,6 +26,10 @@ const RATING_WORD: Record<string, string> = {
 export function RaceCard({ race, onShare }: { race: Race; onShare?: (race: Race) => void }) {
   const { t } = useTranslation('c-elections');
   const [copied, setCopied] = useState(false);
+  const { data: session } = useSession();
+  const follow = useFollow();
+  const following = follow.states.includes(race.state);
+  const [explain, setExplain] = useState<{ busy: boolean; text: string | null }>({ busy: false, text: null });
   const baseline = useBaselineFor(race.id);
   const swing = swingFrom(race, baseline);
   const shown = race.candidates.slice(0, race.office === 'house' || race.candidates.length <= 3 ? 3 : 4);
@@ -38,6 +44,24 @@ export function RaceCard({ race, onShare }: { race: Race; onShare?: (race: Race)
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
       /* clipboard blocked: the button simply does nothing */
+    }
+  };
+
+  const askExplain = async () => {
+    setExplain({ busy: true, text: null });
+    try {
+      const res = await fetch('/api/elections/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          question: `In two short sentences, explain the ${race.label} race: who is ahead, by how much, how much is counted, and what could change it.`,
+        }),
+      });
+      const j = res.ok ? ((await res.json()) as { answer?: string }) : null;
+      setExplain({ busy: false, text: j?.answer ?? t('card.explainFail', { defaultValue: 'The Briefing Room can’t answer right now.' }) });
+    } catch {
+      setExplain({ busy: false, text: t('card.explainFail', { defaultValue: 'The Briefing Room can’t answer right now.' }) });
     }
   };
 
@@ -91,17 +115,6 @@ export function RaceCard({ race, onShare }: { race: Race; onShare?: (race: Race)
         </motion.div>
       ) : null}
 
-      {baseline ? (
-        <p className="el-eyebrow" style={{ margin: '8px 0 0' }}>
-          {baseline.kind === 'house'
-            ? t('card.baseHouse', { defaultValue: '{{year}} House vote here: {{m}}', year: baseline.year, m: fmtMargin(baseline.margin) })
-            : t('card.basePres', { defaultValue: '{{year}} presidential vote here: {{m}}', year: baseline.year, m: fmtMargin(baseline.margin) })}
-          {swing != null && Math.abs(swing) >= 0.1
-            ? ` · ${t('card.swing', { defaultValue: 'moved {{m}}', m: fmtMargin(swing) })}`
-            : ''}
-        </p>
-      ) : null}
-
       <footer className="el-race__foot">
         <span>
           {race.status === 'upcoming'
@@ -114,11 +127,39 @@ export function RaceCard({ race, onShare }: { race: Race; onShare?: (race: Race)
                 })
               : t('card.counting', { defaultValue: 'Counting' })}
         </span>
+        <span style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap' }}>
+          <button type="button" className="el-btn el-btn--ghost el-btn--sm" aria-pressed={following} onClick={() => follow.toggle(race.state)}>
+            <Bell size={14} aria-hidden />
+            {following ? t('card.following', { defaultValue: 'Following' }) : t('card.follow', { defaultValue: 'Follow {{s}}', s: race.state })}
+          </button>
+          {session?.user ? (
+            <button type="button" className="el-btn el-btn--ghost el-btn--sm" onClick={askExplain} disabled={explain.busy}>
+              <Sparkles size={14} aria-hidden />
+              {explain.busy ? t('card.explaining', { defaultValue: 'Thinking…' }) : t('card.explain', { defaultValue: 'Explain' })}
+            </button>
+          ) : null}
         <button type="button" className="el-btn el-btn--ghost el-btn--sm" onClick={share}>
           <Link2 size={14} aria-hidden />
           {copied ? t('card.copied', { defaultValue: 'Copied' }) : t('card.share', { defaultValue: 'Share' })}
         </button>
+        </span>
       </footer>
+      {explain.text ? (
+        <p className="el-eyebrow" style={{ margin: '8px 0 0', textTransform: 'none', letterSpacing: 0 }} aria-live="polite">
+          {explain.text}
+        </p>
+      ) : null}
+      {baseline ? (
+        <p className="el-eyebrow" style={{ margin: '8px 0 0' }}>
+          {baseline.kind === 'house'
+            ? t('card.baseHouse', { defaultValue: '{{year}} House vote here: {{m}}', year: baseline.year, m: fmtMargin(baseline.margin) })
+            : t('card.basePres', { defaultValue: '{{year}} presidential vote here: {{m}}', year: baseline.year, m: fmtMargin(baseline.margin) })}
+          {swing != null && Math.abs(swing) >= 0.1
+            ? ` · ${t('card.swing', { defaultValue: 'moved {{m}}', m: fmtMargin(swing) })}`
+            : ''}
+        </p>
+      ) : null}
+
       {race.official ? (
         <p className="el-eyebrow" style={{ margin: '8px 0 0' }} title={race.official.source}>
           {race.official.agrees

@@ -7,8 +7,8 @@ const ev = (o: Partial<ElectionEvent>): ElectionEvent => ({ id: o.id ?? 'e1', at
 
 describe('alert prefs', () => {
   it('falls back on junk and keeps only valid, unique postal codes', () => {
-    expect(parseAlertPrefs('nope')).toEqual({ major: true, calls: false, states: [] });
-    expect(parseAlertPrefs(JSON.stringify({ major: false, calls: true, states: ['PA', 'pa', 'PA', 'XYZ', 5] }))).toEqual({ major: false, calls: true, states: ['PA'] });
+    expect(parseAlertPrefs('nope')).toEqual({ major: true, calls: false, states: [], sound: false });
+    expect(parseAlertPrefs(JSON.stringify({ major: false, calls: true, sound: true, states: ['PA', 'pa', 'PA', 'XYZ', 5] }))).toEqual({ major: false, calls: true, sound: true, states: ['PA'] });
   });
   it('toggles and caps followed states', () => {
     expect(toggleState([], 'GA')).toEqual(['GA']);
@@ -20,7 +20,7 @@ describe('alert prefs', () => {
 });
 
 describe('shouldAlert', () => {
-  const base = { major: false, calls: false, states: [] as string[] };
+  const base = { major: false, calls: false, sound: false, states: [] as string[] };
   it('alerts on a followed state, on majors, and on calls only when chosen — never on news', () => {
     expect(shouldAlert(ev({ state: 'PA' }), { ...base, states: ['PA'] })).toBe(true);
     expect(shouldAlert(ev({ state: 'OH' }), { ...base, states: ['PA'] })).toBe(false);
@@ -28,7 +28,7 @@ describe('shouldAlert', () => {
     expect(shouldAlert(ev({ importance: 2 }), { ...base, major: true })).toBe(false);
     expect(shouldAlert(ev({ kind: 'call' }), { ...base, calls: true })).toBe(true);
     expect(shouldAlert(ev({ kind: 'lead-change' }), { ...base, calls: true })).toBe(false);
-    expect(shouldAlert(ev({ kind: 'news', importance: 3, state: 'PA' }), { major: true, calls: true, states: ['PA'] })).toBe(false);
+    expect(shouldAlert(ev({ kind: 'news', importance: 3, state: 'PA' }), { major: true, calls: true, sound: false, states: ['PA'] })).toBe(false);
   });
 });
 
