@@ -2376,3 +2376,16 @@ html.ios-webkit .el-room__grid {
   margin-top: 6px;
   font-weight: 600;
 }
+
+.el-office__cand {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  line-height: 1.25;
+}
+.el-office__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

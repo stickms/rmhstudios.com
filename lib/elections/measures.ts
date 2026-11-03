@@ -34,8 +34,24 @@ export interface MeasureRef {
 
 const SLUG = /(results-[a-z0-9-]+)\.html/i;
 
+/** Offices with their own pages that are NOT "other offices" (they have dedicated sections). */
+const CORE_OFFICES: ReadonlySet<string> = new Set(['President', 'U.S. Senate', 'U.S. House', 'Governor']);
+
+/**
+ * The pages for statewide and local offices below the headline races (attorney general, secretary of state,
+ * treasurer, lieutenant governor, supreme court, mayor, …): everything in the index that is neither a core
+ * office nor a measure.
+ */
+export function parseOtherOfficeIndex(feed: unknown): MeasureRef[] {
+  return parseIndexBy(feed, (office) => !CORE_OFFICES.has(office) && !MEASURE_OFFICES.has(office));
+}
+
 /** The measures listed in a "search" index feed (`{ data: [...] }`). */
 export function parseMeasureIndex(feed: unknown): MeasureRef[] {
+  return parseIndexBy(feed, (office) => MEASURE_OFFICES.has(office));
+}
+
+function parseIndexBy(feed: unknown, wanted: (office: string) => boolean): MeasureRef[] {
   const data = isObj(feed) ? arr(feed.data) : [];
   const out: MeasureRef[] = [];
   const seen = new Set<string>();
@@ -44,7 +60,7 @@ export function parseMeasureIndex(feed: unknown): MeasureRef[] {
     const office = str(x.office);
     const url = str(x.publishUrl);
     const state = str(x.statePostal);
-    if (!office || !MEASURE_OFFICES.has(office) || !url || !state) continue;
+    if (!office || !wanted(office) || !url || !state) continue;
     const slug = SLUG.exec(url)?.[1];
     if (!slug || seen.has(slug)) continue;
     seen.add(slug);

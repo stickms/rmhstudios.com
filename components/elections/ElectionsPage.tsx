@@ -16,6 +16,7 @@ import { FollowContext } from './FollowContext';
 import { MyStates } from './MyStates';
 import { NailBiters } from './NailBiters';
 import { BallotMeasures } from './BallotMeasures';
+import { OtherOffices } from './OtherOffices';
 import { toggleState } from '@/lib/elections/alerts';
 import { BaselineContext } from './BaselineContext';
 import { Ticker } from './Ticker';
@@ -291,6 +292,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
             <a href="#map">{t('nav.map', { defaultValue: 'Map' })}</a>
             <a href="#races">{t('nav.races', { defaultValue: 'Races' })}</a>
             <a href="#measures">{t('nav.measures', { defaultValue: 'Measures' })}</a>
+            <a href="#offices">{t('nav.offices', { defaultValue: 'Local' })}</a>
             <a href="#polls">{t('nav.polls', { defaultValue: 'Polls' })}</a>
             <a href="#wire">{t('nav.wire', { defaultValue: 'Wire' })}</a>
             <a href="#timeline">{t('nav.timeline', { defaultValue: 'Night' })}</a>
@@ -514,6 +516,22 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
           })}
         >
           <BallotMeasures cycle={param} live={live} />
+        </Section>
+
+        <Section
+          id="offices"
+          eyebrow={t('office.eyebrow', { defaultValue: 'Down the ballot' })}
+          title={
+            <>
+              {t('office.title1', { defaultValue: 'Other' })}{' '}
+              <em>{t('office.title2', { defaultValue: 'offices' })}</em>
+            </>
+          }
+          lede={t('office.lede', {
+            defaultValue: 'Attorneys general, secretaries of state, treasurers, supreme court seats, mayors and other local races.',
+          })}
+        >
+          <OtherOffices cycle={param} live={live} />
         </Section>
 
         <Section

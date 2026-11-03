@@ -192,3 +192,11 @@ read from an office page's config (override with `ELECTIONS_MEASURES_INDEX_URL`)
 (304 when unchanged), 8 at a time, cached 45 s on election day. The page's **Measures** section shows the night's
 tallies (passed/failed, passing/failing now, supermajority count), the closest measures, and filters by
 statewide/local, state, text, and followed states.
+
+## Other offices (down the ballot and local)
+
+`/api/elections/offices` lists everything on the ballot that is neither a headline race nor a measure: attorneys
+general, secretaries of state, treasurers, lieutenant governors, comptrollers, supreme court seats, mayors and
+other local offices (the feed marks those `coverage: county`) — with candidates, parties, live counts and calls. It
+reads the same index and per-page ETag strategy as ballot measures (`lib/elections/downballot*.ts`). The page's
+**Local** section filters by office, statewide/local, state, text (including candidate names) and followed states.

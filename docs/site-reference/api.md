@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 995 files across 201 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 996 files across 201 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -663,7 +663,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/elections`
 
-22 routes.
+23 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -682,6 +682,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/elections/markets` | `GET` | `app/routes/api/elections/markets.ts` |
 | `/api/elections/measures` | `GET` | `app/routes/api/elections/measures.ts` |
 | `/api/elections/news` | `GET` | `app/routes/api/elections/news.ts` |
+| `/api/elections/offices` | `GET` | `app/routes/api/elections/offices.ts` |
 | `/api/elections/public` | `GET` | `app/routes/api/elections/public.ts` |
 | `/api/elections/races.csv` | `GET` | `app/routes/api/elections/races[.]csv.ts` |
 | `/api/elections/rooms` | `GET` `POST` | `app/routes/api/elections/rooms/index.ts` |
