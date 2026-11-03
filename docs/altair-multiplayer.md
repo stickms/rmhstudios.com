@@ -215,11 +215,16 @@ function of `(seed, roster, doubleTime, the calls made between steps)`, which le
 5. **DoS bounds.** One replay at a time; the deadline; at most 8 submissions per host per hour and 40
    waiting jobs (beyond that a run is dropped, not recorded); the hub never simulates.
 
+Cross-engine determinism: JS engines do not agree on `Math.sin/cos/atan2` (measured: Chromium 153 and
+Node 22 return different bits), so inside a seeded sim the engine calls `engine/dmath.ts` instead, which
+uses software versions built only from IEEE-exact operations (outside it they are `Math.*`, so
+single-player and the golden master are unchanged). Measured: a 4000-step run's whole world state is
+bit-identical between Node 22, Chromium 153, Firefox 155 and WebKit (Safari 26.6). New sim code must use
+`rand()` and the `d*` math, never `Math.random/sin/cos/atan2/exp/pow/hypot`.
+
 Known limits: a run longer than 30 real minutes cannot be verified and is not recorded; a player who
-leaves mid-run is absent from the replay's per-player stats (as in the live results); a host whose
-JS engine computes `Math.sin/cos/atan2` differently from Node's V8 (Firefox, Safari) may diverge from
-the replay and have the run rejected (nothing wrong is recorded); a bot or macro that plays inputs a
-human could not is not detectable by replay.
+leaves mid-run is absent from the replay's per-player stats (as in the live results); a bot or macro that
+plays inputs a human could not is not detectable by replay.
 
 ## Results and persistence (original notes)
 
