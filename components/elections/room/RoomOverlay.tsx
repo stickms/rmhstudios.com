@@ -66,7 +66,7 @@ const KIND_LABEL: Record<PaneKind, [string, string]> = {
 };
 
 /**
- * The Situation Room: a full-screen overlay of up to four panes — streams (several services at once),
+ * The Briefing Room: a full-screen overlay of up to four panes — streams (several services at once),
  * races, live graphs, the map, the news wire, chat and the event feed. Solo rooms live in this browser;
  * hosted rooms (private by code, or public) are edited by their host and followed live by everyone else.
  *
@@ -210,7 +210,7 @@ export function RoomOverlay({
           onEscapeKeyDown={(e) => document.fullscreenElement && e.preventDefault()}
         >
           <DialogPrimitive.Title className="el-sr">
-            {t('room.aria', { defaultValue: 'Situation room: {{name}}', name: title })}
+            {t('room.briefingAria', { defaultValue: 'Briefing Room: {{name}}', name: title })}
           </DialogPrimitive.Title>
           <header className="el-room__bar">
             <div className="el-room__title">

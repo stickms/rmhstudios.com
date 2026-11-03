@@ -152,9 +152,9 @@ export function Hero({
           <div className="el-cell el-cell--note">
             <p className="el-eyebrow">{t('hero.noteLabel', { defaultValue: 'How it works' })}</p>
             <p>
-              {t('hero.note', {
+              {t('hero.noteBriefing', {
                 defaultValue:
-                  'Results come straight from the count, updated every 20 seconds. Calls, flips and closing polls appear as they happen — watch live, paint your own map, or open the Situation Room.',
+                  'Results come straight from the count, updated every 20 seconds. Calls, flips and closing polls appear as they happen — watch live, paint your own map, or open the Briefing Room.',
               })}
             </p>
           </div>

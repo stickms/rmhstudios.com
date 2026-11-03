@@ -231,7 +231,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
             >
               <MonitorPlay size={14} aria-hidden />{' '}
               <span className="el-room__lbl">
-                {t('bar.room', { defaultValue: 'Situation room' })}
+                {t('bar.briefing', { defaultValue: 'Briefing Room' })}
               </span>
             </button>
             <label className="el-sr" htmlFor="el-cycle">
@@ -489,8 +489,8 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, options }: Electio
           eyebrow={t('rooms.eyebrow', { defaultValue: 'Split screen' })}
           title={
             <>
-              {t('rooms.title1', { defaultValue: 'Situation' })}{' '}
-              <em>{t('rooms.title2', { defaultValue: 'room' })}</em>
+              {t('rooms.briefing1', { defaultValue: 'Briefing' })}{' '}
+              <em>{t('rooms.briefing2', { defaultValue: 'Room' })}</em>
             </>
           }
           lede={t('rooms.lede', {

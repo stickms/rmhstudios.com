@@ -962,7 +962,7 @@
   }
 }
 
-/* ── Situation Room (full-screen overlay) ───────────────────────────── */
+/* ── Briefing Room (full-screen overlay) ───────────────────────────── */
 .el-lobby {
   display: grid;
   gap: 20px;

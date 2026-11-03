@@ -83,7 +83,7 @@ export function RoomLobby({ cycle, onOpen }: { cycle: string; onOpen: (s: RoomSo
           })}
         </p>
         <button type="button" className="el-btn" onClick={() => onOpen({ kind: 'solo' })}>
-          {t('lobby.startSolo', { defaultValue: 'Open the situation room' })}
+          {t('lobby.startBriefing', { defaultValue: 'Open the Briefing Room' })}
         </button>
       </div>
 
