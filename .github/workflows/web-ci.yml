@@ -522,14 +522,21 @@ jobs:
     needs: changes
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # 10, not 5: the check itself takes <1s, but this job used to clone the full
+    # history and sat within a minute of the old limit (checkout 35s-4m33s),
+    # so a slow runner failed required-checks for a reason unrelated to the PR.
+    timeout-minutes: 10
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
     steps:
+      # The script runs `git diff base HEAD`, a two-tree diff that needs those
+      # two commits and nothing between them, so no full history.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+      - name: Fetch the base commit
+        run: git fetch --no-tags --depth=1 origin "$BASE_SHA"
       - name: New migrations must stay rollback-compatible (expand/contract)
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node .github/scripts/check-migrations-additive.mjs
 
   required-checks:
