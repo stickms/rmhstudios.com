@@ -75,8 +75,8 @@ function anthropicProvider(): LadderAiProvider {
         model,
         system,
         messages: [{ role: 'user', content: prompt }],
+        // @anthropic-ai/sdk 1.x (API 2026-10-21) no longer accepts sampling params, so no `temperature`.
         max_tokens: maxTokens,
-        temperature: 0.1,
       });
       const text = response.content.find((block) => block.type === 'text');
       return jsonFromModelText(text?.type === 'text' ? text.text : '');
