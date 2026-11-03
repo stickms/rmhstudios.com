@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { useHouseAlwaysWinsStore } from "@/lib/store/houseAlwaysWinsStore";
 import { NgPlusTag } from "./NgPlus";
 import { currentObjective } from "@/lib/house-always-wins/quests";
@@ -19,6 +20,7 @@ const ABILITY_GLYPH: Record<AbilityId, string> = {
 };
 
 export function HUD({ areaLabel, prompt }: HUDProps) {
+  const { t } = useTranslation("c-house-always-wins");
   const debt = useHouseAlwaysWinsStore((s) => s.debt);
   const chips = useHouseAlwaysWinsStore((s) => s.chips);
   const keys = useHouseAlwaysWinsStore((s) => s.keys);
@@ -91,7 +93,17 @@ export function HUD({ areaLabel, prompt }: HUDProps) {
       {prompt && (
         <div className="pointer-events-none absolute bottom-24 left-1/2 z-10 w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2">
           <div className="animate-pulse rounded text-center bg-black/70 px-3 py-1 font-mono text-xs tracking-widest text-[#f0c674]">
-            {prompt}
+            {/* The scene writes "Press E — <action>"; touch has no E key, so show the on-screen button's own label. */}
+            {prompt.startsWith("Press E — ") ? (
+              <>
+                <span className="[@media(pointer:coarse)]:hidden">{prompt}</span>
+                <span className="hidden [@media(pointer:coarse)]:inline">
+                  {t("prompt-touch", { defaultValue: "Tap {{use}} — {{action}}", use: t("touch-use", { defaultValue: "Use" }), action: prompt.slice("Press E — ".length) })}
+                </span>
+              </>
+            ) : (
+              prompt
+            )}
           </div>
         </div>
       )}
