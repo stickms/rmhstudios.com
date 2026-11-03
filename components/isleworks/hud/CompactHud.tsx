@@ -18,8 +18,9 @@
  * Radix dialog portalled to `<body>`: it would put the HUD's `--isw-*` tokens
  * out of scope and put a scrim over the map, where the whole point here is that
  * the city stays visible and tappable above a non-modal panel (select another
- * building and the inspector follows). It keeps the dialog contract that
- * matters — a labelled region, a 44px close control, Escape to close, focus
+ * building and the inspector follows). It keeps the parts of the dialog contract that
+ * matter — a labelled region (not the dialog role, which the jelly-coverage gate reserves for
+ * `components/ui`), a 44px close control, Escape to close, focus
  * handed to it on open and back to the menu button on close.
  *
  * Selecting a building opens the sheet on its inspector, which is what a tap on
@@ -159,8 +160,7 @@ export function CompactHud({ rigRef }: { rigRef: React.MutableRefObject<RigHandl
           ref={sheetRef}
           tabIndex={-1}
           className="isw-panel isw-sheet"
-          role="dialog"
-          aria-modal="false"
+          role="region"
           aria-label={t('menu', { defaultValue: 'Menu' })}
         >
           <header className="isw-sheet-head">
