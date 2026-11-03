@@ -35,6 +35,7 @@ import type {
 import { isCosmeticId, isValidCosmetics } from '@/lib/bums-rush/cosmetics';
 import { clearKey } from './merge';
 import { createDefaultProfile } from './save';
+import { objectiveIdsToBitmask } from './objectives';
 import { evaluateUnlocks, progressFromProfile } from './unlocks';
 
 type Tx = Prisma.TransactionClient;
@@ -141,19 +142,16 @@ function validateAgainstBounds(
 }
 
 /** `LevelResult.objectiveIds` (strings) → the stored bitmask, using the level's authored order. `null` bounds → nothing can be trusted. */
-function objectiveIdsToBitmask(
+function boundsObjectiveMask(
   objectiveIds: readonly string[],
   bounds: LevelPlausibilityBounds | null,
 ): number {
   if (!bounds) return 0;
-  let mask = 0;
-  bounds.objectives.forEach((objective, index) => {
-    if (objectiveIds.includes(objective.id)) mask |= 1 << index;
-  });
-  return mask;
+  return objectiveIdsToBitmask(objectiveIds, bounds.objectives);
 }
 
-async function resolveBounds(levelId: string): Promise<LevelPlausibilityBounds | null> {
+/** Exported for tests: the bounds the validator would use for this level right now. */
+export async function resolveBounds(levelId: string): Promise<LevelPlausibilityBounds | null> {
   return (await levelBoundsResolver(levelId)) ?? null;
 }
 
@@ -181,7 +179,8 @@ function toLevelClear(row: {
   };
 }
 
-function toProfile(row: ProfileRow): Profile {
+/** Exported for tests. */
+export function toProfile(row: ProfileRow): Profile {
   const clears: Record<string, LevelClear> = {};
   for (const c of row.clears) clears[clearKey(c.levelId, c.playerCount)] = toLevelClear(c);
 
@@ -335,7 +334,7 @@ export interface RecordResultOutcome {
  */
 export async function recordLevelResult(result: LevelResult): Promise<RecordResultOutcome> {
   const bounds = await resolveBounds(result.levelId);
-  const claimedBitmask = objectiveIdsToBitmask(result.objectiveIds, bounds);
+  const claimedBitmask = boundsObjectiveMask(result.objectiveIds, bounds);
   const validation = validateAgainstBounds(result.durationMs, claimedBitmask, bounds);
 
   if (bounds) {
