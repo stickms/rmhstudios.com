@@ -119,6 +119,19 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
             <div className="text-sm text-slice-text-light uppercase tracking-widest font-bold">
               {t('final-score', { defaultValue: 'Final Score' })}
             </div>
+            {isNewBest && (
+              <motion.div
+                className="flex justify-center"
+                variants={popIn}
+                initial="initial"
+                animate="animate"
+              >
+                <div className="bg-yellow-400 text-black text-[10px] font-black px-2 py-1 rounded-md shadow-lg flex items-center gap-1">
+                  <Trophy className="w-3 h-3" />
+                  {t('new-best', { defaultValue: 'NEW BEST!' })}
+                </div>
+              </motion.div>
+            )}
             {previousBest !== null && !isNewBest && (
               <div className="text-[10px] font-bold uppercase tracking-widest text-slice-text-light">
                 {t('previous-best', {
@@ -129,19 +142,6 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
             )}
             <div className="text-4xl sm:text-6xl font-bold text-slice-text relative inline-block tabular-nums">
               {score.toLocaleString()}
-              {isNewBest && (
-                <motion.div
-                  className="absolute -top-6 -right-12 rotate-12 duration-500"
-                  variants={popIn}
-                  initial="initial"
-                  animate="animate"
-                >
-                  <div className="bg-yellow-400 text-black text-[10px] font-black px-2 py-1 rounded-md shadow-lg flex items-center gap-1">
-                    <Trophy className="w-3 h-3" />
-                    {t('new-best', { defaultValue: 'NEW BEST!' })}
-                  </div>
-                </motion.div>
-              )}
             </div>
             {bestDelta !== null && (
               <div
