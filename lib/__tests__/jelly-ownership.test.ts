@@ -125,7 +125,8 @@ describe('N2 — the jelly services have one owner each', () => {
         '`@/lib/jelly/physics|compose|arcs`. One soft body, one arc service — mounted once from ' +
         'hooks/useLiquidInteractions.ts (docs/plasmatic-jelly-system.md).',
     ).toEqual([]);
-  });
+    // Reads every source file on its first call (cold file cache): 5-9s on a loaded machine, past the 5s default.
+  }, 30_000);
 
   it('(a) the service-import allowlist stays honest', () => {
     for (const [file, reason] of SERVICE_IMPORT_ALLOW) {

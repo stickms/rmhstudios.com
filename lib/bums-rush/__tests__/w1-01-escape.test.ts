@@ -121,7 +121,8 @@ describe('w1-01 plank dead end', () => {
     expect(escaped, 'a flailing player reached the middle pier from the plank').toBe(0);
     // The head never gets meaningfully above where it spawned (1100) in any trial.
     expect(highest).toBeGreaterThan(1050);
-  });
+    // 120 trials x 600 steps: ~3.7s on an idle machine, so the default 5s limit timed out on loaded CI runners.
+  }, 30_000);
 
   it('REPRO control: the same flail policy is not simply broken (it moves around)', () => {
     let spread = 0;
