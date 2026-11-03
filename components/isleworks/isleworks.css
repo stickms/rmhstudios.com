@@ -918,6 +918,30 @@
   flex-wrap: wrap;
 }
 
+/* A visit's name, under the strip. Read-only: it never takes a tap from the map. */
+.isw-visit-chip {
+  position: absolute;
+  z-index: 4;
+  top: calc(54px + var(--safe-top));
+  left: calc(58px + var(--safe-left));
+  max-width: calc(100% - 66px - var(--safe-left) - var(--safe-right));
+  margin: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+@media (min-width: 640px) {
+  .isw-visit-chip {
+    left: calc(152px + var(--safe-left));
+    max-width: calc(100% - 160px - var(--safe-left) - var(--safe-right));
+  }
+}
+
 /* The next-unlock hint moves into the sheet; the dock keeps to tools. */
 .isw--compact .isw-build > .isw-next-unlock {
   display: none;

@@ -36,6 +36,7 @@ import { useIsleworks } from '@/lib/isleworks/store';
 import type { RigHandle } from '../scene/CameraRig';
 
 import { NextUnlock } from './BuildPalette';
+import { VisitPanel, type IsleVisitState } from './IsleVisit';
 import { RailPanels } from './Rail';
 import {
   CameraControls,
@@ -47,8 +48,15 @@ import {
   compact,
 } from './TopBar';
 
-export function CompactHud({ rigRef }: { rigRef: React.MutableRefObject<RigHandle | null> }) {
+export function CompactHud({
+  rigRef,
+  visit,
+}: {
+  rigRef: React.MutableRefObject<RigHandle | null>;
+  visit: IsleVisitState;
+}) {
   const { t } = useTranslation('c-isleworks');
+  const { t: tw } = useTranslation('f-worlds');
   const city = useIsleworks((s) => s.city);
   const speed = useIsleworks((s) => s.speed);
   const setSpeed = useIsleworks((s) => s.setSpeed);
@@ -65,6 +73,15 @@ export function CompactHud({ rigRef }: { rigRef: React.MutableRefObject<RigHandl
   useEffect(() => {
     if (selectedId) setOpen(true);
   }, [selectedId]);
+
+  // A visit opens its sheet once: the postcard form and the way home live there.
+  const visitOpened = useRef(false);
+  useEffect(() => {
+    if (visiting && !visitOpened.current) {
+      visitOpened.current = true;
+      setOpen(true);
+    }
+  }, [visiting]);
 
   const close = () => {
     setOpen(false);
@@ -154,6 +171,12 @@ export function CompactHud({ rigRef }: { rigRef: React.MutableRefObject<RigHandl
         </div>
       </div>
 
+      {visiting && visit.world && (
+        <p className="isw-panel isw-visit-chip">
+          {tw('visit-title', { defaultValue: 'Visiting {{name}}', name: visit.world.title })}
+        </p>
+      )}
+
       {open && (
         <section
           id="isw-sheet"
@@ -178,6 +201,11 @@ export function CompactHud({ rigRef }: { rigRef: React.MutableRefObject<RigHandl
           </header>
 
           <div className="isw-sheet-body">
+            {visiting && (
+              <div className="isw-panel" style={{ padding: 12 }}>
+                <VisitPanel visit={visit} compact />
+              </div>
+            )}
             <div className="isw-sheet-controls">
               <SpeedControl />
               <CameraControls rigRef={rigRef} />
