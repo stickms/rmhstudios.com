@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import type { ChamberControl, Party, Race } from '@/lib/elections/types';
 import { OFFICE_NAME } from '@/lib/elections/types';
 import { ratingLean } from '@/lib/elections/summary';

@@ -174,6 +174,9 @@ function normalizeRace(raw: Json, office: Office): Race | null {
     margin,
     uncontested: raw.uncontested === true,
     updatedAt: str(raw.updated_at),
+    primaryParty: null,
+    calledBy: arr(outcome.called_by).filter((x): x is string => typeof x === 'string'),
+    source: 'nyt',
   };
 }
 

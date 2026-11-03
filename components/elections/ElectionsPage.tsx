@@ -3,7 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 import { SITE_URL } from '@/lib/seo';
-import { cycleForYear, cycleOptions, phaseOf, type Cycle } from '@/lib/elections/calendar';
+import { phaseOf, type Cycle } from '@/lib/elections/calendar';
 import { buildFacts, deterministicSummary, headline } from '@/lib/elections/summary';
 import type { ElectionSnapshot, Office } from '@/lib/elections/types';
 import { Hero } from './Hero';
@@ -18,11 +18,13 @@ import { ElectionChat } from './ElectionChat';
 import { WatchParty } from './WatchParty';
 import { ShareBar } from './ShareBar';
 import { MarketsPanel } from './MarketsPanel';
-import { timeAgo, useElectionData, useNow, useReveal } from './hooks';
+import { CalendarPanel } from './CalendarPanel';
+import { NewsWire } from './NewsWire';
+import { timeAgo, useElectionData, useElectionEvents, useNow, useReveal } from './hooks';
 
 export interface ElectionsPageProps {
-  /** Cycle year the route resolved (from `?cycle=` or "the current one"). */
-  year: number;
+  /** The election day the route resolved (from `?cycle=` or "the current one"). */
+  cycle: Cycle;
   focusRaceId?: string;
   /** The cycles the switcher offers, computed server-side so SSR and hydration agree. */
   options: Cycle[];
@@ -66,14 +68,18 @@ function Section({
   );
 }
 
-export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps) {
+export function ElectionsPage({ cycle, focusRaceId, options }: ElectionsPageProps) {
   const { t } = useTranslation('c-elections');
   const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [selectedState, setSelectedState] = useState<string | null>(null);
 
-  const cycle = useMemo(() => options.find((c) => c.year === year) ?? cycleForYear(year), [options, year]);
-  const { data, isError, isFetching, refetch, dataUpdatedAt } = useElectionData(year);
+  const year = cycle.year;
+  /** What goes in `?cycle=`: a year for a general election, the date for any other election day. */
+  const param = cycle.kind === 'other' ? cycle.date : String(cycle.year);
+  const isGeneral = cycle.kind !== 'other';
+  const { data, isError, isFetching, refetch, dataUpdatedAt } = useElectionData(param);
+  const { events } = useElectionEvents(param);
   const now = useNow(15_000, data?.serverTime);
 
   // Reveal + parallax are progressive enhancement: the markup is fully visible until this flips.
@@ -97,14 +103,17 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
     for (const r of facts.flips.slice(0, 4)) items.push(`Flip · ${r.label} → ${r.leader ?? 'called'}`);
     for (const r of facts.closest.slice(0, 3)) items.push(`Too close · ${r.label}`);
     if (!snapshot.live) items.push(t('ticker.soon', { defaultValue: 'Polls open soon' }));
-    return items;
-  }, [snapshot, facts, t]);
+    // What just happened beats what is generally true: the latest events lead the strip.
+    const recent = events.filter((e) => e.kind !== 'polls-closed' || e.importance > 1).slice(-6).reverse().map((e) => e.text);
+    return [...recent, ...items];
+  }, [snapshot, facts, events, t]);
 
-  const setYear = (y: number) =>
-    navigate({ to: '/elections', search: (s: Record<string, unknown>) => ({ ...s, cycle: String(y), race: undefined }), replace: true });
+  const setCycle = (value: string) =>
+    navigate({ to: '/elections', search: (s: Record<string, unknown>) => ({ ...s, cycle: value, race: undefined, p: undefined }), replace: true });
+  const selectOptions = isGeneral ? options : [cycle, ...options];
 
   const share = async () => {
-    const url = `${location.origin}/elections?cycle=${year}`;
+    const url = `${location.origin}/elections?cycle=${param}`;
     const text = snapshot ? headline(snapshot) : cycle.title;
     try {
       if (navigator.share) await navigator.share({ title: cycle.title, text, url });
@@ -139,6 +148,7 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
             <a href="#map">{t('nav.map', { defaultValue: 'Map' })}</a>
             <a href="#races">{t('nav.races', { defaultValue: 'Races' })}</a>
             <a href="#polls">{t('nav.polls', { defaultValue: 'Polls' })}</a>
+            <a href="#wire">{t('nav.wire', { defaultValue: 'Wire' })}</a>
             <a href="#live">{t('nav.live', { defaultValue: 'Watch' })}</a>
             <a href="#predict">{t('nav.predict', { defaultValue: 'Predict' })}</a>
           </nav>
@@ -147,9 +157,9 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
             <label className="el-sr" htmlFor="el-cycle">
               {t('bar.cycle', { defaultValue: 'Election' })}
             </label>
-            <select id="el-cycle" className="el-input" style={{ minHeight: 40, padding: '4px 8px' }} value={year} onChange={(e) => setYear(Number(e.target.value))}>
-              {options.map((c) => (
-                <option key={c.year} value={c.year}>
+            <select id="el-cycle" className="el-input" style={{ minHeight: 40, padding: '4px 8px' }} value={param} onChange={(e) => setCycle(e.target.value)}>
+              {selectOptions.map((c) => (
+                <option key={c.date} value={c.kind === 'other' ? c.date : String(c.year)}>
                   {c.shortTitle}
                 </option>
               ))}
@@ -203,7 +213,7 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
           {snapshot ? <BalanceOfPower chambers={snapshot.chambers} live={live} races={snapshot.races} /> : null}
           {hasData ? (
             <div style={{ marginTop: 24 }}>
-              <AiDesk year={year} live={live} bullets={bullets} />
+              <AiDesk cycle={param} live={live} bullets={bullets} />
             </div>
           ) : null}
           <p className="el-eyebrow" style={{ marginTop: 18, display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -274,6 +284,40 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
         </Section>
 
         <Section
+          id="wire"
+          eyebrow={t('wire.eyebrow', { defaultValue: 'Live updates' })}
+          title={
+            <>
+              {t('wire.title1', { defaultValue: 'The' })} <em>{t('wire.title2', { defaultValue: 'wire' })}</em>
+            </>
+          }
+          lede={t('wire.lede', { defaultValue: 'Headlines from NPR, PBS, Politico, the Guardian and more, as they land.' })}
+        >
+          <NewsWire state={selectedState} live={live} />
+        </Section>
+
+        <Section
+          id="days"
+          tone="pink"
+          eyebrow={t('days.eyebrow', { defaultValue: 'Primaries & specials' })}
+          title={
+            <>
+              {t('days.title1', { defaultValue: 'Every' })} <em>{t('days.title2', { defaultValue: 'election day' })}</em>
+            </>
+          }
+          lede={t('days.lede', { defaultValue: 'Pick a primary, runoff or special election to see its results where a government feed covers it.' })}
+        >
+          {!isGeneral ? (
+            <p style={{ marginBottom: 20 }}>
+              <button type="button" className="el-btn" onClick={() => setCycle(String(year - (year % 2)))}>
+                {t('days.back', { defaultValue: '← Back to the general election' })}
+              </button>
+            </p>
+          ) : null}
+          <CalendarPanel year={year} current={param} onOpen={(d) => setCycle(d)} />
+        </Section>
+
+        <Section
           id="live"
           tone="ink"
           eyebrow={t('live.eyebrow', { defaultValue: 'Together' })}
@@ -286,10 +330,12 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
         >
           <div className="el-map">
             <WatchParty />
-            <ElectionChat year={year} />
+            <ElectionChat cycle={param} />
           </div>
         </Section>
 
+        {isGeneral ? (
+          <>
         <Section
           id="predict"
           eyebrow={t('predict.eyebrow', { defaultValue: 'Call it' })}
@@ -302,10 +348,10 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
         >
           {snapshot && hasData ? (
             <>
-              <PredictionPainter year={year} races={snapshot.races} chambers={snapshot.chambers} offices={offices} />
+              <PredictionPainter year={year} cycle={param} races={snapshot.races} chambers={snapshot.chambers} offices={offices} />
               <div style={{ marginTop: 28 }}>
                 <p className="el-eyebrow">{t('share.board', { defaultValue: 'Share the live board' })}</p>
-                <ShareBar url={`${SITE_URL}/elections?cycle=${year}`} text={headline(snapshot)} />
+                <ShareBar url={`${SITE_URL}/elections?cycle=${param}`} text={headline(snapshot)} />
               </div>
             </>
           ) : (
@@ -323,8 +369,10 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
           }
           lede={t('markets.lede', { defaultValue: 'Back your call with coins. Odds move with every trade.' })}
         >
-          <MarketsPanel year={year} />
+          <MarketsPanel cycle={param} />
         </Section>
+          </>
+        ) : null}
       </main>
 
       <footer className="el-foot">
@@ -336,6 +384,11 @@ export function ElectionsPage({ year, focusRaceId, options }: ElectionsPageProps
                 'Results, ratings and race calls come from a free public results feed and can lag or differ from official state tallies. Calls are projections, not certifications. Always check your state’s election office for official results.',
             })}
           </p>
+          {snapshot?.providers.length ? (
+            <p>
+              {t('foot.sources', { defaultValue: 'Sources: {{list}}.', list: snapshot.providers.join('; ') })}
+            </p>
+          ) : null}
           <p>
             {t('foot.vote', { defaultValue: 'Need to vote or check your registration?' })}{' '}
             <a href="https://vote.gov" target="_blank" rel="noopener noreferrer">

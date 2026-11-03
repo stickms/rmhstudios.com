@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-import { currentCycle, parseCycle, phaseOf } from '@/lib/elections/calendar';
+import { currentCycle, parseDay, phaseOf } from '@/lib/elections/calendar';
 import { getElectionSnapshot } from '@/lib/elections/source.server';
 import { buildFacts, headline } from '@/lib/elections/summary';
 import { compactKeys, decodeAnyPicks, project } from '@/lib/elections/predict';
@@ -31,7 +31,7 @@ export const Route = createFileRoute('/api/og/elections')({
       GET: defineHandler({ auth: 'none', rateLimit: 'read', query }, async ({ query: q }) => {
         try {
           const now = new Date();
-          const cycle = (q.cycle ? parseCycle(q.cycle) : null) ?? currentCycle(now);
+          const cycle = (q.cycle ? parseDay(q.cycle) : null) ?? currentCycle(now);
           const snap = await getElectionSnapshot(cycle, now);
           const facts = buildFacts(snap);
           const phase = phaseOf(cycle.date, now);

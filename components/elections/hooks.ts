@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ElectionEvent } from '@/lib/elections/events';
 import { useQuery } from '@tanstack/react-query';
 import type { ElectionsApiResponse } from '@/lib/elections/api-types';
 
@@ -6,11 +7,11 @@ import type { ElectionsApiResponse } from '@/lib/elections/api-types';
 export const LIVE_POLL_MS = 20_000;
 export const IDLE_POLL_MS = 5 * 60_000;
 
-export function useElectionData(year: number) {
+export function useElectionData(cycle: string) {
   return useQuery<ElectionsApiResponse>({
-    queryKey: ['elections', year],
+    queryKey: ['elections', cycle],
     queryFn: async ({ signal }) => {
-      const res = await fetch(`/api/elections?cycle=${year}`, { signal });
+      const res = await fetch(`/api/elections?cycle=${encodeURIComponent(cycle)}`, { signal });
       if (!res.ok) throw new Error(`elections ${res.status}`);
       return res.json();
     },
@@ -79,4 +80,47 @@ export function timeAgo(iso: string | null | undefined, now: Date | null): strin
   if (s < 3600) return `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
   return `${Math.floor(s / 86400)}d ago`;
+}
+
+/**
+ * The day's live events (calls, flips, lead changes, polls closing, headlines) over SSE.
+ * Newest last, de-duplicated by id, capped at 150. EventSource reconnects by itself;
+ * `status` lets a UI say so.
+ */
+export function useElectionEvents(cycle: string): { events: ElectionEvent[]; status: 'connecting' | 'live' | 'offline' } {
+  const [events, setEvents] = useState<ElectionEvent[]>([]);
+  const [status, setStatus] = useState<'connecting' | 'live' | 'offline'>('connecting');
+  useEffect(() => {
+    if (typeof EventSource === 'undefined') {
+      setStatus('offline');
+      return;
+    }
+    setEvents([]);
+    setStatus('connecting');
+    const es = new EventSource(`/api/elections/events/stream?cycle=${encodeURIComponent(cycle)}`);
+    es.onopen = () => setStatus('live');
+    es.onerror = () => setStatus(es.readyState === EventSource.CLOSED ? 'offline' : 'connecting');
+    const merge = (incoming: ElectionEvent[]) =>
+      setEvents((cur) => {
+        const ids = new Set(cur.map((e) => e.id));
+        const next = [...cur, ...incoming.filter((e) => !ids.has(e.id))].sort((a, b) => a.at - b.at);
+        return next.length > 150 ? next.slice(next.length - 150) : next;
+      });
+    es.addEventListener('history', (e) => {
+      try {
+        merge(JSON.parse((e as MessageEvent).data));
+      } catch {
+        /* ignore a malformed frame */
+      }
+    });
+    es.addEventListener('event', (e) => {
+      try {
+        merge([JSON.parse((e as MessageEvent).data)]);
+      } catch {
+        /* ignore */
+      }
+    });
+    return () => es.close();
+  }, [cycle]);
+  return { events, status };
 }

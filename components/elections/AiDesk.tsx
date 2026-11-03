@@ -18,11 +18,11 @@ interface SummaryResponse {
  * the numbers above it.
  */
 export function AiDesk({
-  year,
+  cycle,
   live,
   bullets,
 }: {
-  year: number;
+  cycle: string;
   live: boolean;
   bullets: string[];
 }) {
@@ -34,9 +34,9 @@ export function AiDesk({
   const [answer, setAnswer] = useState<{ q: string; a: string } | null>(null);
 
   const { data } = useQuery<SummaryResponse>({
-    queryKey: ['elections-summary', year],
+    queryKey: ['elections-summary', cycle],
     queryFn: async ({ signal }) => {
-      const r = await fetch(`/api/elections/summary?cycle=${year}`, { signal });
+      const r = await fetch(`/api/elections/summary?cycle=${encodeURIComponent(cycle)}`, { signal });
       if (!r.ok) throw new Error(String(r.status));
       return r.json();
     },
@@ -55,7 +55,7 @@ export function AiDesk({
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ question, cycle: String(year) }),
+        body: JSON.stringify({ question, cycle }),
       });
       if (res.ok) {
         const j = (await res.json()) as { answer: string };

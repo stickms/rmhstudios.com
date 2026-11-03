@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-import { currentCycle, parseCycle, phaseOf } from '@/lib/elections/calendar';
+import { currentCycle, parseDay, phaseOf } from '@/lib/elections/calendar';
 import { getElectionSnapshot } from '@/lib/elections/source.server';
 import { OFFICES, type Office } from '@/lib/elections/types';
 
@@ -33,7 +33,7 @@ export const Route = createFileRoute('/api/elections/')({
         },
         async ({ query: q }) => {
           const now = new Date();
-          const cycle = q.cycle ? parseCycle(q.cycle) : currentCycle(now);
+          const cycle = q.cycle ? parseDay(q.cycle) : currentCycle(now);
           if (!cycle) return Response.json({ error: 'Unknown election cycle' }, { status: 400 });
 
           const want = q.offices

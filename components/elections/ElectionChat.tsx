@@ -13,7 +13,7 @@ const KEEP = 200;
  * needs an account. No links are allowed in messages (server-enforced) — the
  * rule is shown up front so a rejection is never a surprise.
  */
-export function ElectionChat({ year }: { year: number }) {
+export function ElectionChat({ cycle }: { cycle: string }) {
   const { t } = useTranslation('c-elections');
   const { data: session } = useSession();
   const isAdmin = Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
@@ -32,7 +32,7 @@ export function ElectionChat({ year }: { year: number }) {
     }
     setMsgs([]);
     setStatus('connecting');
-    const es = new EventSource(`/api/elections/chat/stream?cycle=${year}`);
+    const es = new EventSource(`/api/elections/chat/stream?cycle=${encodeURIComponent(cycle)}`);
     es.onopen = () => setStatus('live');
     es.onerror = () => setStatus(es.readyState === EventSource.CLOSED ? 'offline' : 'connecting');
     es.addEventListener('history', (e) => {
@@ -59,7 +59,7 @@ export function ElectionChat({ year }: { year: number }) {
       }
     });
     return () => es.close();
-  }, [year]);
+  }, [cycle]);
 
   // Follow new messages unless the reader has scrolled up to read.
   useEffect(() => {
@@ -78,7 +78,7 @@ export function ElectionChat({ year }: { year: number }) {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ text: body, cycle: String(year) }),
+        body: JSON.stringify({ text: body, cycle }),
       });
       if (res.ok) {
         setText('');
@@ -97,7 +97,7 @@ export function ElectionChat({ year }: { year: number }) {
   };
 
   const remove = (id: string) =>
-    fetch(`/api/elections/chat?cycle=${year}&id=${encodeURIComponent(id)}`, {
+    fetch(`/api/elections/chat?cycle=${encodeURIComponent(cycle)}&id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
       credentials: 'same-origin',
     }).catch(() => undefined);

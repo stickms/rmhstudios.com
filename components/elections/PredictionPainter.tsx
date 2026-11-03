@@ -48,11 +48,14 @@ function fromRating(r: Race): Call | undefined {
  */
 export function PredictionPainter({
   year,
+  cycle,
   races,
   chambers,
   offices,
 }: {
   year: number;
+  /** The `?cycle=` value (a year for generals) used in share links. */
+  cycle: string;
   races: Race[];
   chambers: Partial<Record<Office, ChamberControl>>;
   offices: Office[];
@@ -140,7 +143,7 @@ export function PredictionPainter({
     update(next);
   };
 
-  const shareUrl = `${SITE_URL}/elections?cycle=${year}&p=${encodeCompact(picks, keys)}`;
+  const shareUrl = `${SITE_URL}/elections?cycle=${cycle}&p=${encodeCompact(picks, keys)}`;
   const shareText = `My ${year} ${OFFICE_NAME[office].toLowerCase()} map: ${proj.DEM}–${proj.GOP}. Paint yours and get graded:`;
   if (!paintable.length) return null;
 

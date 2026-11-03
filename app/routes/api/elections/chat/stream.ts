@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
-import { parseCycle } from '@/lib/elections/calendar';
+import { parseDay } from '@/lib/elections/calendar';
 import { chatHistory, subscribeChat } from '@/lib/elections/chat.server';
 
 const query = z.object({ cycle: z.string().max(10) });
@@ -19,7 +19,7 @@ export const Route = createFileRoute('/api/elections/chat/stream')({
   server: {
     handlers: {
       GET: defineHandler({ auth: 'none', query }, async ({ request, query: q }) => {
-        const cycle = parseCycle(q.cycle);
+        const cycle = parseDay(q.cycle);
         if (!cycle) return new Response('Unknown election', { status: 400 });
 
         const rl = await checkRateLimit(`ip:${getClientIp(request)}`, {

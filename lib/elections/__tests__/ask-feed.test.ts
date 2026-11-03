@@ -13,6 +13,7 @@ function snap(live: boolean): ElectionSnapshot {
   const preS = live ? s : { ...s, races: s.races.map((r) => ({ ...r, status: 'upcoming' as const, totalVotes: 0, winnerParty: null })) };
   return {
     date: '2026-11-03',
+    kind: 'general',
     source: 'nyt',
     fetchedAt: 'x',
     sourceUpdatedAt: null,
@@ -21,6 +22,7 @@ function snap(live: boolean): ElectionSnapshot {
     races: [...preS.races, ...g.races],
     pollClosings: {},
     missing: [],
+    providers: [],
   };
 }
 

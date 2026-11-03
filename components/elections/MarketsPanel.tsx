@@ -18,10 +18,10 @@ interface Market {
  * The coin markets on this election, with live implied odds. Trading happens on
  * /predictions (one market UI on the site); this is the shop window.
  */
-export function MarketsPanel({ year }: { year: number }) {
+export function MarketsPanel({ cycle }: { cycle: string }) {
   const { t } = useTranslation('c-elections');
   const { data } = useQuery<{ markets: Market[] }>({
-    queryKey: ['elections-markets', year],
+    queryKey: ['elections-markets', cycle],
     queryFn: async () => {
       const r = await fetch('/api/elections/markets');
       if (!r.ok) throw new Error(String(r.status));
@@ -32,7 +32,7 @@ export function MarketsPanel({ year }: { year: number }) {
     retry: 1,
   });
 
-  const markets = (data?.markets ?? []).filter((m) => m.subjectUrl?.includes(`cycle=${year}`));
+  const markets = (data?.markets ?? []).filter((m) => m.subjectUrl?.includes(`cycle=${cycle}`));
 
   if (!markets.length) {
     return (
