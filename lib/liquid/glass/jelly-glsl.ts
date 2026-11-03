@@ -49,34 +49,39 @@ vec2 jCurl(vec2 p) {
 `;
 
 /**
- * The Tier L warp. `uJelly[8]` holds the lattice's node offsets (CSS px, clockwise from the top-left corner: corner,
- * top-mid, corner, right-mid, …), exactly `latticeUniform()`'s layout (`lib/jelly/lattice.ts`). `jellyOffset(p, size)`
- * finds the perimeter parameter of the rim point nearest `p` (slab-local px, y down — the same nearest-edge rule as
- * `perimeterParam`) and interpolates the offset there with a periodic Catmull-Rom over the eight nodes. Each half-edge
- * is one segment, so the interpolation is uniform per segment even though the slab is not square.
+ * The Tier L warp. `uJelly[24]` holds the lattice's node offsets (CSS px), exactly `latticeUniform()`'s layout
+ * (`lib/jelly/lattice.ts`): six segments per edge, edges clockwise from the top (node `edge·6 + k` sits at `k/6` along
+ * its edge, so the corners are 0, 6, 12, 18). `jellyOffset(p, size)` finds the nearest edge of the rest rect and the
+ * parameter along it, then interpolates the offset there with a periodic Catmull-Rom over the 24 nodes. Each segment
+ * is one span, so the interpolation is uniform per segment even though the slab is not square.
  */
 export const LATTICE_GLSL = /* glsl */ `
-uniform vec2 uJelly[8];
+uniform vec2 uJelly[24];
 uniform float uJellyOn;
-vec2 jellyOffset(vec2 p, vec2 size) {
-  vec2 c = clamp(p, vec2(0.0), size);
-  float dT = c.y, dR = size.x - c.x, dB = size.y - c.y, dL = c.x;
-  float m = min(min(dT, dR), min(dB, dL));
-  float s;
-  float base;
-  if (m == dT) { s = c.x / (size.x * 0.5); base = 0.0; }
-  else if (m == dR) { s = c.y / (size.y * 0.5); base = 2.0; }
-  else if (m == dB) { s = (size.x - c.x) / (size.x * 0.5); base = 4.0; }
-  else { s = (size.y - c.y) / (size.y * 0.5); base = 6.0; }
-  float k = floor(clamp(s, 0.0, 1.999));
+// Periodic Catmull-Rom over the 24 nodes: segment k (0..5) of the edge whose first node is \`base\`.
+vec2 jellyEdge(int base, float s) {
+  float k = floor(clamp(s, 0.0, 5.999));
   float t = clamp(s - k, 0.0, 1.0);
-  int i = int(base + k);
-  vec2 p0 = uJelly[(i + 7) % 8];
+  int i = base + int(k);
+  vec2 p0 = uJelly[(i + 23) % 24];
   vec2 p1 = uJelly[i];
-  vec2 p2 = uJelly[(i + 1) % 8];
-  vec2 p3 = uJelly[(i + 2) % 8];
+  vec2 p2 = uJelly[(i + 1) % 24];
+  vec2 p3 = uJelly[(i + 2) % 24];
   float t2 = t * t, t3 = t2 * t;
   return 0.5 * (2.0 * p1 + (p2 - p0) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2 + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t3);
+}
+// The offset at \`p\`: the nearest horizontal edge's (top or bottom) and the nearest vertical edge's (left or right),
+// blended across the corner diagonal. Picking only the single nearest edge jumps where two edges are equally near, and
+// now that the whole silhouette moves that jump would be a visible seam.
+vec2 jellyOffset(vec2 p, vec2 size) {
+  vec2 c = clamp(p, vec2(0.0), size);
+  bool top = c.y <= size.y - c.y;
+  bool left = c.x <= size.x - c.x;
+  float dTB = top ? c.y : size.y - c.y;
+  float dLR = left ? c.x : size.x - c.x;
+  vec2 oTB = top ? jellyEdge(0, c.x / size.x * 6.0) : jellyEdge(12, (size.x - c.x) / size.x * 6.0);
+  vec2 oLR = left ? jellyEdge(18, (size.y - c.y) / size.y * 6.0) : jellyEdge(6, c.y / size.y * 6.0);
+  return mix(oLR, oTB, smoothstep(-12.0, 12.0, dLR - dTB));
 }
 `;
 

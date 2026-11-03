@@ -80,6 +80,19 @@ export const STATIC_CARDS: StaticCard[] = [
     subtitle: 'Notes on the design language, the physics, the rewrites, and what each one cost.',
   },
   {
+    path: '/elections',
+    file: 'elections',
+    eyebrow: 'Elections',
+    title: 'Live results. Your calls.',
+    subtitle:
+      'Every race, every margin, updated every 20 seconds — plus the map you paint yourself.',
+    stats: [
+      { value: '35', label: 'Senate', lead: true },
+      { value: '435', label: 'House' },
+      { value: '36', label: 'governors' },
+    ],
+  },
+  {
     path: '/news',
     file: 'news',
     eyebrow: 'News',

@@ -16,6 +16,9 @@ export class FrametimeMonitor {
         this.samples.push(deltaMs);
         if (this.samples.length > this.window) this.samples.shift();
     }
+    count(): number {
+        return this.samples.length;
+    }
     full(): boolean {
         return this.samples.length >= this.window;
     }
@@ -33,5 +36,12 @@ export class FrametimeMonitor {
 /** Downscale only when the average over a FULL window exceeds the per-frame
  *  budget — i.e. FPS has been sustainedly below target, not a transient spike. */
 export function shouldDownscale(monitor: FrametimeMonitor, budgetMs: number): boolean {
-    return monitor.full() && monitor.averageMs() > budgetMs;
+    if (monitor.full() && monitor.averageMs() > budgetMs) return true;
+    // A full window is ~1.5s at 60fps but ~90s at 1fps, so a machine that is
+    // struggling most would wait longest to be helped. Frames are clamped to
+    // 100ms by the caller, so a short window pinned at the clamp is ≤10fps.
+    return monitor.count() >= SLOW_MIN_SAMPLES && monitor.averageMs() >= SLOW_AVG_MS;
 }
+
+export const SLOW_MIN_SAMPLES = 6;
+export const SLOW_AVG_MS = 95;

@@ -125,9 +125,18 @@ export const config = {
     'altair:lobby:create': { max: 3, windowMs: 60_000 },
     'altair:lobby:join': { max: 10, windowMs: 60_000 },
     'altair:lobby:browse': { max: 20, windowMs: 60_000 },
+    'altair:lobby:update_settings': { max: 30, windowMs: 60_000 },
+    'altair:class:select': { max: 60, windowMs: 60_000 },
+    'altair:class:ready': { max: 60, windowMs: 60_000 },
+    'altair:game:start': { max: 10, windowMs: 60_000 },
     'altair:lobby:chat': { max: 30, windowMs: 60_000 },
-    'altair:game:input': { max: 1200, windowMs: 60_000 },
-    'altair:game:state_snapshot': { max: 1200, windowMs: 60_000 },
+    // 20 Hz is exactly 1200/min, so the caps leave headroom for jitter.
+    'altair:game:input': { max: 1500, windowMs: 60_000 },
+    'altair:game:state_snapshot': { max: 1500, windowMs: 60_000 },
+    'altair:game:end': { max: 5, windowMs: 60_000 },
+    // A level-up is a few a minute per player; these were missing, so the events were silently dropped.
+    'altair:game:level_up_choice': { max: 120, windowMs: 60_000 },
+    'altair:game:level_up_offer': { max: 120, windowMs: 60_000 },
     'altair:game:ping': { max: 30, windowMs: 60_000 },
     'altair:game:quick_chat': { max: 20, windowMs: 60_000 },
     'bj:join_table': { max: 30, windowMs: 60_000 },
@@ -229,6 +238,7 @@ export const config = {
     'dr:join': { max: 30, windowMs: 60_000 },
     'dr:quickplay': { max: 20, windowMs: 60_000 },
     'dr:browse': { max: 30, windowMs: 60_000 },
+    'dr:resume': { max: 10, windowMs: 60_000 },
     // Laundry Sort versus. `ls:score` is the only high-frequency one — clients
     // publish on a 400ms timer, so 200/min leaves headroom for a reconnect
     // burst without letting a socket flood the room.

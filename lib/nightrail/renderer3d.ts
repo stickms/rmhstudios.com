@@ -43,6 +43,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
 import { MAX_PARTICLES, RAIL_SPACING, TRAIN_HEIGHT, TRAIN_LENGTH } from './constants';
+import { RenderScaleGovernor } from '@/lib/render/scale-governor';
 import type { RunState } from './game';
 import { bakeLevel, railOffset, railPosition, samplePoint } from './track';
 import type { TrackPoint } from './track';
@@ -182,9 +183,12 @@ const STAR_COUNT = 700;
 // ── Adaptive quality ────────────────────────────────────────────────────────
 
 const RENDER_SCALES = [0.55, 0.7, 0.85, 1];
-/** Frame time above this for a sustained run means we are over budget. */
-const SLOW_FRAME_MS = 23;
-const FAST_FRAME_MS = 13.5;
+/** Bloom is skipped at and below this scale step. */
+const BLOOM_MIN_SCALE_INDEX = 0;
+/** Frame interval above this for a sustained run means we are over budget. */
+const SLOW_FRAME_MS = 24;
+/** At or under this the display is being met (60 Hz is 16.7 ms). */
+const FAST_FRAME_MS = 18;
 
 // ── Scratch ─────────────────────────────────────────────────────────────────
 
@@ -349,8 +353,10 @@ export class NightrailRenderer3D {
 
   // Adaptive quality
   private scaleIndex = RENDER_SCALES.length - 1;
-  private frameAvg = 16;
-  private sustained = 0;
+  private readonly governor = new RenderScaleGovernor(RENDER_SCALES.length, {
+    slowMs: SLOW_FRAME_MS,
+    fastMs: FAST_FRAME_MS,
+  });
 
   constructor(canvas: HTMLCanvasElement, options: RendererOptions = {}) {
     this.maxPixelRatio = options.maxPixelRatio ?? 2;
@@ -438,6 +444,8 @@ export class NightrailRenderer3D {
     this.historyCount = 0;
     this.historyHead = 0;
     this.cameraPlaced = false;
+    // Building a level's geometry is a hitch, not a slow GPU.
+    this.governor.reset();
     this.shake = 0;
     this.prevImmune = 0;
   }
@@ -470,7 +478,6 @@ export class NightrailRenderer3D {
     if (state.level !== this.level) this.setLevel(state.level);
     if (!this.level) return;
 
-    const started = performance.now();
     this.time += dt;
 
     this.pushHistory(state);
@@ -485,7 +492,7 @@ export class NightrailRenderer3D {
     this.updateLighting(state, dt);
 
     this.renderFrame();
-    this.adaptQuality(performance.now() - started);
+    this.adaptQuality();
   }
 
   dispose(): void {
@@ -588,6 +595,7 @@ export class NightrailRenderer3D {
     if (this.composer) {
       this.composer.setPixelRatio(this.pixelRatio * scale);
       this.composer.setSize(this.width, this.height);
+      this.applyBloomTier();
     }
   }
 
@@ -621,30 +629,16 @@ export class NightrailRenderer3D {
   /**
    * Nudge render scale toward whatever this device can actually sustain.
    *
-   * A phone and a desktop land in very different places and neither should have
-   * to be detected by name. Dropping is fast (45 slow frames) and climbing back
-   * is slow (240 fast ones) so the scale cannot oscillate on a marginal device.
+   * Driven by the wall-clock interval between drawn frames, NOT by how long
+   * `draw()` took: draw() only submits work, so on a GPU-bound phone it stays at
+   * a few ms while the game crawls (measured: 3 ms of JS at 2 fps). See
+   * `lib/render/scale-governor.ts`.
    */
-  private adaptQuality(frameMs: number): void {
-    this.frameAvg += (frameMs - this.frameAvg) * 0.1;
-
-    if (this.frameAvg > SLOW_FRAME_MS && this.scaleIndex > 0) {
-      this.sustained += 1;
-      if (this.sustained > 45) {
-        this.scaleIndex--;
-        this.sustained = 0;
-        this.applyResolution();
-      }
-    } else if (this.frameAvg < FAST_FRAME_MS && this.scaleIndex < RENDER_SCALES.length - 1) {
-      this.sustained -= 1;
-      if (this.sustained < -240) {
-        this.scaleIndex++;
-        this.sustained = 0;
-        this.applyResolution();
-      }
-    } else {
-      this.sustained = 0;
-    }
+  private adaptQuality(): void {
+    const next = this.governor.sample(performance.now());
+    if (next === null) return;
+    this.scaleIndex = next;
+    this.applyResolution();
   }
 
   private ensureComposer(): void {
@@ -660,6 +654,16 @@ export class NightrailRenderer3D {
     this.composer.addPass(this.bloomPass);
     this.composer.setPixelRatio(this.pixelRatio * RENDER_SCALES[this.scaleIndex]);
     this.composer.setSize(this.width, this.height);
+    this.applyBloomTier();
+  }
+
+  /**
+   * Bloom is a chain of ~10 blur passes over mip levels of the frame. At the
+   * bottom scale step the device is already losing, so the glow goes first and
+   * the scene (which is what steers the game) keeps its resolution.
+   */
+  private applyBloomTier(): void {
+    if (this.bloomPass) this.bloomPass.enabled = this.scaleIndex > BLOOM_MIN_SCALE_INDEX;
   }
 
   private renderFrame(): void {

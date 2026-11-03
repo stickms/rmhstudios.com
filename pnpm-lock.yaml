@@ -127,6 +127,9 @@ importers:
       '@fontsource-variable/playfair-display':
         specifier: ^5.3.0
         version: 5.3.0
+      '@fontsource-variable/space-grotesk':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fontsource/bangers':
         specifier: ^5.3.0
         version: 5.3.0
@@ -146,6 +149,9 @@ importers:
         specifier: ^5.3.0
         version: 5.3.0
       '@fontsource/press-start-2p':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/space-mono':
         specifier: ^5.3.0
         version: 5.3.0
       '@fontsource/spectral':
@@ -1453,6 +1459,9 @@ packages:
   '@fontsource-variable/playfair-display@5.3.0':
     resolution: {integrity: sha512-IHdzTvE8eGIXHteZql7KXoqdc3Gfm+Zs1u4XlSC3MeplkwviT3sx/P6gI0tLwg/xIYLF4ZJYveZ5V+bl9cnDwA==}
 
+  '@fontsource-variable/space-grotesk@5.3.0':
+    resolution: {integrity: sha512-2IxmvfB08i9vnGB3Ym/AXvhRE+8XOjWMXIyDum03c+tPwH0FUoMNQfGpU8NXPxjbws0Vvss3AH0Zqt4oJBBAdw==}
+
   '@fontsource/bangers@5.3.0':
     resolution: {integrity: sha512-tSRpmWwkqrO9PCqo9wjA/99/5sLOIWm5cf51G3ooEHd8qZus8sVSSJoWp/7EvM5rIgZMjKRG6XtY9yeisKxE7g==}
 
@@ -1473,6 +1482,9 @@ packages:
 
   '@fontsource/press-start-2p@5.3.0':
     resolution: {integrity: sha512-gxWFxdeDglPhEYSwEeooomcaFK8kSQYLQwVxfnOJeYRj2sPEHXjpVtFgEaYfqzOjuAJGrIcJOipu2KY5YkbyuQ==}
+
+  '@fontsource/space-mono@5.3.0':
+    resolution: {integrity: sha512-FrpBMOVWn3PRdRHlrZWC55X3kZG/2BTH7SM5ZyS/bky3iKya2BturI5lk+t0RoDQL2JyHzURsVq/EisCsxpI5A==}
 
   '@fontsource/spectral@5.3.0':
     resolution: {integrity: sha512-2TL5WWGOZj4SIsBmPFEzKeA60tXXd1Qp1OqaaVEWkJL8IfSGLk6YmiusmC441iFkdJDIuFelu1r8lhCmQUU3mw==}
@@ -8692,6 +8704,8 @@ snapshots:
 
   '@fontsource-variable/playfair-display@5.3.0': {}
 
+  '@fontsource-variable/space-grotesk@5.3.0': {}
+
   '@fontsource/bangers@5.3.0': {}
 
   '@fontsource/bebas-neue@5.3.0': {}
@@ -8705,6 +8719,8 @@ snapshots:
   '@fontsource/patrick-hand@5.3.0': {}
 
   '@fontsource/press-start-2p@5.3.0': {}
+
+  '@fontsource/space-mono@5.3.0': {}
 
   '@fontsource/spectral@5.3.0': {}
 

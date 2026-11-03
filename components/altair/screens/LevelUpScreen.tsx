@@ -101,30 +101,43 @@ function getChoiceInfo(choice: UpgradeChoice): { name: string; description: stri
   }
 }
 
-interface LevelUpScreenProps {
+interface LevelUpPickerProps {
+  choices: UpgradeChoice[];
+  level: number;
+  onPick: (index: number) => void;
+  /** Solo only: how many banishes are left, and the banish action. */
+  banishesRemaining?: number;
+  onBanish?: (index: number) => void;
+  /** Solo only: rerolls left and the reroll action. */
+  rerollsRemaining?: number;
   onReroll?: () => void;
+  /** Co-op: seconds left before the first option is auto-picked (the world never pauses). */
+  countdown?: number;
 }
 
-export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
-  const phase = useAltairGameStore((s) => s.phase);
-  const choices = useAltairGameStore((s) => s.upgradeChoices);
-  const rerollsRemaining = useAltairGameStore((s) => s.rerollsRemaining);
-  const banishesRemaining = useAltairGameStore((s) => s.banishesRemaining);
-  const pickUpgrade = useAltairGameStore((s) => s.pickUpgrade);
-  const banish = useAltairGameStore((s) => s.banish);
-  const level = useAltairGameStore((s) => s.level);
-
+/**
+ * The upgrade picker itself (title, cards, keyboard navigation). Single-player
+ * wraps it in LevelUpScreen (store-driven, pauses the game); co-op renders it
+ * per player from the host's offer, with a countdown and no pause.
+ */
+export function LevelUpPicker({
+  choices,
+  level,
+  onPick,
+  banishesRemaining = 0,
+  onBanish,
+  rerollsRemaining = 0,
+  onReroll,
+  countdown,
+}: LevelUpPickerProps) {
   const { t } = useTranslation("c-altair");
-  const isActive = phase === 'upgrading' && choices.length > 0;
   const { focusedIndex } = useKeyboardNav({
     itemCount: choices.length,
-    onSelect: pickUpgrade,
+    onSelect: onPick,
     orientation: 'horizontal',
-    enabled: isActive,
+    enabled: choices.length > 0,
     numberKeys: true,
   });
-
-  if (!isActive) return null;
 
   return (
     <div className="absolute inset-0 z-50 flex items-center-safe justify-center-safe altair-overlay overflow-y-auto">
@@ -139,6 +152,11 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
             {t("level-heading", { defaultValue: "LEVEL {{level}}", level })}
           </h2>
           <p className="text-sm text-(--altair-text-muted) mt-1">{t("choose-upgrade", { defaultValue: "Choose an upgrade" })}</p>
+          {countdown !== undefined && (
+            <p data-testid="levelup-countdown" className="mt-1 font-mono text-xs text-(--altair-warning)">
+              {t("coop-levelup-countdown", { defaultValue: "The first option is picked in {{seconds}}s. The game keeps running; you are protected.", seconds: Math.max(0, Math.ceil(countdown)) })}
+            </p>
+          )}
         </div>
 
         {/* Choice cards */}
@@ -149,7 +167,7 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
             return (
               <div key={i} className="relative group">
                 <button
-                  onClick={() => pickUpgrade(i)}
+                  onClick={() => onPick(i)}
                   className={`altair-parchment-surface w-36 sm:w-44 p-3 sm:p-4 rounded-(--altair-radius-lg) border bg-(--altair-surface) hover:bg-(--altair-surface-hover) hover:border-(--altair-border-bright) transition-colors text-left altair-modal ${
                     isFocused ? 'border-2 border-(--altair-accent) ring-2 ring-(--altair-accent)/30 scale-[1.03]' : 'border-(--altair-border)'
                   }`}
@@ -186,11 +204,11 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
                 </button>
 
                 {/* Banish button */}
-                {banishesRemaining > 0 && !info.isGold && (
+                {banishesRemaining > 0 && onBanish && !info.isGold && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      banish(i);
+                      onBanish(i);
                     }}
                     className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-(--altair-danger) text-(--altair-hud-ink) flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     title={t("banish-title", { defaultValue: "Banish ({{count}} left)", count: banishesRemaining })}
@@ -224,5 +242,36 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
         )}
       </div>
     </div>
+  );
+}
+
+interface LevelUpScreenProps {
+  /** Single-player routes these through the run, which records them for the server's replay. */
+  onPick?: (index: number) => void;
+  onBanish?: (index: number) => void;
+  onReroll?: () => void;
+}
+
+export default function LevelUpScreen({ onPick, onBanish, onReroll }: LevelUpScreenProps) {
+  const phase = useAltairGameStore((s) => s.phase);
+  const choices = useAltairGameStore((s) => s.upgradeChoices);
+  const rerollsRemaining = useAltairGameStore((s) => s.rerollsRemaining);
+  const banishesRemaining = useAltairGameStore((s) => s.banishesRemaining);
+  const pickUpgrade = useAltairGameStore((s) => s.pickUpgrade);
+  const banish = useAltairGameStore((s) => s.banish);
+  const level = useAltairGameStore((s) => s.level);
+
+  if (!(phase === 'upgrading' && choices.length > 0)) return null;
+
+  return (
+    <LevelUpPicker
+      choices={choices}
+      level={level}
+      onPick={onPick ?? pickUpgrade}
+      banishesRemaining={banishesRemaining}
+      onBanish={onBanish ?? banish}
+      rerollsRemaining={rerollsRemaining}
+      onReroll={onReroll}
+    />
   );
 }

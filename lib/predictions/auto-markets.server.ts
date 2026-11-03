@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { resolvePrediction } from './predictions.server';
 import { getResolver } from './resolvers.server';
+import { seedElectionMarkets } from '@/lib/elections/markets.server';
 
 type Db = PrismaClient;
 
@@ -158,7 +159,7 @@ export async function resolveDueAutoMarkets(
 
 /** One full tick: seed fresh markets, then settle anything now decided. */
 export async function runAutoMarketTick(db: Db = prisma): Promise<{ seeded: number; resolved: number }> {
-  const seeded = await seedTrendingBuildMarkets(db);
+  const seeded = (await seedTrendingBuildMarkets(db)) + (await seedElectionMarkets(db));
   const resolved = await resolveDueAutoMarkets(db);
   return { seeded, resolved };
 }

@@ -215,6 +215,11 @@ const FULLSCREEN_TIER_DIRS = new Set([
   'dunesday',
   'breakpoint',
   'covid',
+  // The election hub, asked for as neo-brutalist: paper ground, 3px ink borders, hard offset shadows,
+  // square corners, stretched Archivo display type and flat saturated party colours. It declares its
+  // own `--el-*` group in `components/elections/elections.css` (the party colours are data, not
+  // theme: red/blue must mean the same thing in every theme), so the site tokens have nothing to say.
+  'elections',
   'doctrine',
   'history',
   'lockdown',

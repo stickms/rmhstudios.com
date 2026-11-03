@@ -18,6 +18,8 @@ import {
 import { WEAPONS, EVOLVED_WEAPONS, WeaponDef, EvolvedWeaponDef } from '../data/weapons';
 import { PlayerStats } from '../stores/game-store';
 import { applyFreeze, applyPoison, applySlow, applyStun } from './status-effects';
+import { rand } from './rng';
+import { datan2, dcos, dpow, dsin } from './dmath';
 
 // =============================================================================
 // Extended weapon state — extra per-weapon data not in the base WeaponState
@@ -56,7 +58,7 @@ function findWeaponDef(
 
 /** Calculate level-scaled damage (v1.1: +10% per level, down from +15%). */
 function levelDamage(baseDamage: number, level: number, might: number): number {
-  return baseDamage * Math.pow(1.10, level - 1) * might;
+  return baseDamage * dpow(1.10, level - 1) * might;
 }
 
 /** Calculate effective cooldown. */
@@ -110,7 +112,7 @@ function findRandomEnemyInRange(
 ): EnemyEntity | null {
   const inRange = enemies.filter((e) => dist(x, y, e.x, e.y) <= range);
   if (inRange.length === 0) return null;
-  return inRange[Math.floor(Math.random() * inRange.length)];
+  return inRange[Math.floor(rand() * inRange.length)];
 }
 
 /** Find N nearest enemies to a point (sorted by distance). */
@@ -177,7 +179,7 @@ function normalize(x: number, y: number): { x: number; y: number } {
 
 /** Get player facing angle in radians. */
 function facingAngle(world: GameWorld): number {
-  return Math.atan2(world.player.facingY, world.player.facingX);
+  return datan2(world.player.facingY, world.player.facingX);
 }
 
 /** Create a base projectile entity with common defaults. */
@@ -341,9 +343,9 @@ function fireHoming(
       vx = dir.x * speed;
       vy = dir.y * speed;
     } else {
-      const a = Math.random() * Math.PI * 2;
-      vx = Math.cos(a) * speed;
-      vy = Math.sin(a) * speed;
+      const a = rand() * Math.PI * 2;
+      vx = dcos(a) * speed;
+      vy = dsin(a) * speed;
     }
 
     const proj = createProjectile(
@@ -426,8 +428,8 @@ function fireDirectional(
       angle = baseAngle + offset;
     }
 
-    const vx = Math.cos(angle) * speed;
-    const vy = Math.sin(angle) * speed;
+    const vx = dcos(angle) * speed;
+    const vy = dsin(angle) * speed;
 
     // v1.2: lifetime based on range/speed. 450px / 400px/s = 1.125s, give some extra
     const lifetime = 450 / (speed / stats.projSpeed) + 0.5;
@@ -495,13 +497,13 @@ function fireLobbed(
       poolRadius,
     );
     if (cluster) {
-      targetX = cluster.x + (f > 0 ? (Math.random() - 0.5) * 60 : 0);
-      targetY = cluster.y + (f > 0 ? (Math.random() - 0.5) * 60 : 0);
+      targetX = cluster.x + (f > 0 ? (rand() - 0.5) * 60 : 0);
+      targetY = cluster.y + (f > 0 ? (rand() - 0.5) * 60 : 0);
     } else {
-      const a = Math.random() * Math.PI * 2;
-      const r = 80 + Math.random() * 120;
-      targetX = world.player.x + Math.cos(a) * r;
-      targetY = world.player.y + Math.sin(a) * r;
+      const a = rand() * Math.PI * 2;
+      const r = 80 + rand() * 120;
+      targetX = world.player.x + dcos(a) * r;
+      targetY = world.player.y + dsin(a) * r;
     }
 
     const proj: ProjectileEntity = {
@@ -710,8 +712,8 @@ function fireBoomerang(
       angle = (Math.PI * 2 * i) / count;
     }
 
-    const vx = Math.cos(angle) * speed;
-    const vy = Math.sin(angle) * speed;
+    const vx = dcos(angle) * speed;
+    const vy = dsin(angle) * speed;
 
     const proj = createProjectile(
       world,
@@ -754,7 +756,7 @@ function fireLash(
   // v1.2: width as arc angle. 55px width at 140px range ≈ 22.5° half-angle
   // For evolved: 60px width. We use arc in radians.
   const baseWidth = ws.evolved ? 60 : 55; // v1.2: 55px base, 60px evolved
-  const arc = 2 * Math.atan2(baseWidth / 2, range); // Convert width to arc angle
+  const arc = 2 * datan2(baseWidth / 2, range); // Convert width to arc angle
 
   // v1.2: lifesteal
   const lifestealPct = ws.evolved ? 0.03 : 0.02;
@@ -838,10 +840,10 @@ function fireGroundAoe(
         px = target.x;
         py = target.y;
       } else {
-        const a = Math.random() * Math.PI * 2;
-        const r = 80 + Math.random() * 200;
-        px = world.player.x + Math.cos(a) * r;
-        py = world.player.y + Math.sin(a) * r;
+        const a = rand() * Math.PI * 2;
+        const r = 80 + rand() * 200;
+        px = world.player.x + dcos(a) * r;
+        py = world.player.y + dsin(a) * r;
       }
     } else {
       px = world.player.x;
@@ -896,8 +898,8 @@ function fireMultiProjectile(
     // Knife Storm: 360° burst
     for (let i = 0; i < daggerCount; i++) {
       const angle = (Math.PI * 2 * i) / daggerCount;
-      const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed;
+      const vx = dcos(angle) * speed;
+      const vy = dsin(angle) * speed;
 
       const proj = createProjectile(
         world,
@@ -917,10 +919,10 @@ function fireMultiProjectile(
   } else {
     // Base: random spread around facing direction
     for (let i = 0; i < daggerCount; i++) {
-      const angleOffset = (Math.random() - 0.5) * 2 * spreadAngle;
+      const angleOffset = (rand() - 0.5) * 2 * spreadAngle;
       const angle = baseAngle + angleOffset;
-      const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed;
+      const vx = dcos(angle) * speed;
+      const vy = dsin(angle) * speed;
 
       const proj = createProjectile(
         world,
@@ -1118,8 +1120,8 @@ function updateOrbitals(
   if (existingOrbs.length === orbCount) {
     for (let i = 0; i < orbCount; i++) {
       const angle = ws.orbitAngle + (Math.PI * 2 * i) / orbCount;
-      existingOrbs[i].x = world.player.x + Math.cos(angle) * orbitRadius;
-      existingOrbs[i].y = world.player.y + Math.sin(angle) * orbitRadius;
+      existingOrbs[i].x = world.player.x + dcos(angle) * orbitRadius;
+      existingOrbs[i].y = world.player.y + dsin(angle) * orbitRadius;
       existingOrbs[i].damage = damage;
       existingOrbs[i].lifetime = 999;
       existingOrbs[i].hitEnemyIds.clear();
@@ -1134,8 +1136,8 @@ function updateOrbitals(
 
     for (let i = 0; i < orbCount; i++) {
       const angle = ws.orbitAngle + (Math.PI * 2 * i) / orbCount;
-      const ox = world.player.x + Math.cos(angle) * orbitRadius;
-      const oy = world.player.y + Math.sin(angle) * orbitRadius;
+      const ox = world.player.x + dcos(angle) * orbitRadius;
+      const oy = world.player.y + dsin(angle) * orbitRadius;
 
       const orb = createProjectile(
         world,
@@ -1168,9 +1170,9 @@ function fireDirectShot(
   const count = 1 + stats.projCount;
 
   for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const vx = Math.cos(angle) * speed;
-    const vy = Math.sin(angle) * speed;
+    const angle = rand() * Math.PI * 2;
+    const vx = dcos(angle) * speed;
+    const vy = dsin(angle) * speed;
 
     const proj = createProjectile(
       world,
@@ -1215,11 +1217,11 @@ export function spawnInfernoEmbers(
 
     const pool: ProjectileEntity = {
       id: createId(world),
-      x: x + Math.cos(angle) * 20,
-      y: y + Math.sin(angle) * 20,
+      x: x + dcos(angle) * 20,
+      y: y + dsin(angle) * 20,
       radius: 20 * stats.area,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed,
       damage: 0,
       pierceLeft: 999,
       hitEnemyIds: new Set(),

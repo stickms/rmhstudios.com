@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { CheckCircle2 } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
+import type { LobbyPlayer } from '@/lib/slice-it/net/events';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 
 /**
@@ -86,8 +87,18 @@ export function MultiplayerSidebar() {
   const lobby = useSliceItStore((s) => s.lobby);
   const selfSocketId = useSliceItStore((s) => s.selfSocketId);
 
+  // A dropped player's seat is held but its `socketId` is blanked (the server
+  // reports '' until they rebind), while `liveScores` is frozen for the pause
+  // and still keyed by the socket they had. Looked up live alone, that chip
+  // loses its seat and reads "Player" for exactly the moment the match is
+  // waiting on them. So every seat seen is remembered by the socket it held.
+  const seatsBySocket = React.useRef(new Map<string, LobbyPlayer>());
+
   const rows = React.useMemo(() => {
-    const seatOf = (socketId: string) => lobby?.players.find((p) => p.socketId === socketId);
+    const remembered = seatsBySocket.current;
+    for (const p of lobby?.players ?? []) if (p.socketId) remembered.set(p.socketId, p);
+    const seatOf = (socketId: string) =>
+      lobby?.players.find((p) => p.socketId === socketId) ?? remembered.get(socketId);
     return Object.values(liveScores)
       .filter((entry) => entry.socketId !== selfSocketId)
       .map((entry) => {

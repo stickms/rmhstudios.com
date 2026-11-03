@@ -15,6 +15,8 @@ import {
 import { BOSSES, BossDef } from '../data/bosses';
 import { getHPScale, getDamageScale, getSpeedScale } from '../data/scaling';
 import { applyEmpower } from './status-effects';
+import { rand } from './rng';
+import { datan2, dcos, dsin } from './dmath';
 
 // =============================================================================
 // Types
@@ -133,9 +135,9 @@ export function spawnBoss(world: GameWorld, bossId: string): BossState | null {
   const bossRadius = 12 * def.size; // base radius 12 * size multiplier
 
   // Position 500px from player in a random direction
-  const angle = Math.random() * Math.PI * 2;
-  const spawnX = world.player.x + Math.cos(angle) * 500;
-  const spawnY = world.player.y + Math.sin(angle) * 500;
+  const angle = rand() * Math.PI * 2;
+  const spawnX = world.player.x + dcos(angle) * 500;
+  const spawnY = world.player.y + dsin(angle) * 500;
 
   const entity: EnemyEntity = {
     id: createId(world),
@@ -456,12 +458,12 @@ function updateHollowKing(
         const range = attack.params.range ?? 150;
         if (dist <= range) {
           // Spawn a short-lived AoE projectile representing the cleave
-          const angle = Math.atan2(dy, dx);
+          const angle = datan2(dy, dx);
           events.bossProjectiles.push(
             makeProjectile(
               world,
-              entity.x + Math.cos(angle) * 40,
-              entity.y + Math.sin(angle) * 40,
+              entity.x + dcos(angle) * 40,
+              entity.y + dsin(angle) * 40,
               0,
               0,
               attack.damage * dmgScale,
@@ -484,8 +486,8 @@ function updateHollowKing(
           const spawnDist = 80;
           events.bossSpawnEnemies.push({
             defId: 'shambler',
-            x: entity.x + Math.cos(a) * spawnDist,
-            y: entity.y + Math.sin(a) * spawnDist,
+            x: entity.x + dcos(a) * spawnDist,
+            y: entity.y + dsin(a) * spawnDist,
             hpMul: 1,
           });
         }
@@ -522,12 +524,12 @@ function updateHollowKing(
         state.attackTimers[timerId] = state.enraged ? 2 : attack.cooldown;
         const range = attack.params.range ?? 150;
         if (dist <= range) {
-          const angle = Math.atan2(dy, dx);
+          const angle = datan2(dy, dx);
           events.bossProjectiles.push(
             makeProjectile(
               world,
-              entity.x + Math.cos(angle) * 40,
-              entity.y + Math.sin(angle) * 40,
+              entity.x + dcos(angle) * 40,
+              entity.y + dsin(angle) * 40,
               0,
               0,
               attack.damage * dmgScale,
@@ -656,8 +658,8 @@ function updateCrimsonCountess(
           const spawnDist = 40 + i * 8; // spiral pattern
           events.bossSpawnEnemies.push({
             defId: 'bat',
-            x: entity.x + Math.cos(a) * spawnDist,
-            y: entity.y + Math.sin(a) * spawnDist,
+            x: entity.x + dcos(a) * spawnDist,
+            y: entity.y + dsin(a) * spawnDist,
             hpMul: 0.3, // weaker bats with 3 HP (30% of base 5 = ~1.5, rounded)
           });
         }
@@ -670,7 +672,7 @@ function updateCrimsonCountess(
         const projSpeed = attack.params.projectileSpeed ?? 280;
         const projCount = attack.params.projectileCount ?? 3;
         const spreadRad = ((attack.params.spreadAngle ?? 30) * Math.PI) / 180;
-        const baseAngle = Math.atan2(dy, dx);
+        const baseAngle = datan2(dy, dx);
         const startAngle = baseAngle - spreadRad / 2;
 
         for (let i = 0; i < projCount; i++) {
@@ -680,8 +682,8 @@ function updateCrimsonCountess(
               world,
               entity.x,
               entity.y,
-              Math.cos(a) * projSpeed,
-              Math.sin(a) * projSpeed,
+              dcos(a) * projSpeed,
+              dsin(a) * projSpeed,
               attack.damage * dmgScale,
               10,
               3,
@@ -698,13 +700,13 @@ function updateCrimsonCountess(
         const dropCount = attack.params.dropletCount ?? 15;
         // Spawn droplets around the player's current position
         for (let i = 0; i < dropCount; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const r = Math.random() * radius;
+          const a = rand() * Math.PI * 2;
+          const r = rand() * radius;
           events.bossProjectiles.push(
             makeProjectile(
               world,
-              world.player.x + Math.cos(a) * r,
-              world.player.y + Math.sin(a) * r,
+              world.player.x + dcos(a) * r,
+              world.player.y + dsin(a) * r,
               0,
               0,
               attack.damage * dmgScale,
@@ -736,13 +738,13 @@ function updateCrimsonCountess(
         const radius = attack.params.radius ?? 200;
         const dropCount = attack.params.dropletCount ?? 5;
         for (let i = 0; i < dropCount; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const r = Math.random() * radius;
+          const a = rand() * Math.PI * 2;
+          const r = rand() * radius;
           events.bossProjectiles.push(
             makeProjectile(
               world,
-              world.player.x + Math.cos(a) * r,
-              world.player.y + Math.sin(a) * r,
+              world.player.x + dcos(a) * r,
+              world.player.y + dsin(a) * r,
               0,
               0,
               10 * dmgScale,
@@ -799,8 +801,8 @@ function updateElderLichMalachar(
       // Complete teleport: reposition
       const minRange = 300;
       const maxRange = 500;
-      const teleportDist = minRange + Math.random() * (maxRange - minRange);
-      const teleportAngle = Math.random() * Math.PI * 2;
+      const teleportDist = minRange + rand() * (maxRange - minRange);
+      const teleportAngle = rand() * Math.PI * 2;
       // Explosion at departure point
       events.bossProjectiles.push(
         makeProjectile(
@@ -819,8 +821,8 @@ function updateElderLichMalachar(
       events.screenShake = 3;
 
       // Move to new position
-      entity.x = world.player.x + Math.cos(teleportAngle) * teleportDist;
-      entity.y = world.player.y + Math.sin(teleportAngle) * teleportDist;
+      entity.x = world.player.x + dcos(teleportAngle) * teleportDist;
+      entity.y = world.player.y + dsin(teleportAngle) * teleportDist;
       state.teleportFading = false;
       entity.opacity = 1.0;
     }
@@ -857,8 +859,8 @@ function updateElderLichMalachar(
   // Inner phylactery: continuous beam toward player (32 dps, 200px range)
   if (innerAlive) {
     const innerOrbitR = mainMods.innerPhylacteryOrbitRadius ?? 150;
-    const innerX = entity.x + Math.cos(orbitAngle) * innerOrbitR;
-    const innerY = entity.y + Math.sin(orbitAngle) * innerOrbitR;
+    const innerX = entity.x + dcos(orbitAngle) * innerOrbitR;
+    const innerY = entity.y + dsin(orbitAngle) * innerOrbitR;
     const beamRange = mainMods.innerBeamRange ?? 200;
     const beamDps = mainMods.innerBeamDps ?? 32;
     const { dist: playerDist } = distBetween(innerX, innerY, world.player.x, world.player.y);
@@ -904,8 +906,8 @@ function updateElderLichMalachar(
       // Signal a pull effect toward the middle phylactery position
       const middleOrbitR = mainMods.middlePhylacteryOrbitRadius ?? 250;
       const middleAngle = orbitAngle + (Math.PI * 2) / 3; // offset from inner
-      const middleX = entity.x + Math.cos(middleAngle) * middleOrbitR;
-      const middleY = entity.y + Math.sin(middleAngle) * middleOrbitR;
+      const middleX = entity.x + dcos(middleAngle) * middleOrbitR;
+      const middleY = entity.y + dsin(middleAngle) * middleOrbitR;
       const { dx: pdx, dy: pdy, dist: pdist } = distBetween(
         world.player.x,
         world.player.y,
@@ -931,8 +933,8 @@ function updateElderLichMalachar(
       const ringSpeed = mainMods.outerRingProjectileSpeed ?? 160;
       const outerOrbitR = mainMods.outerPhylacteryOrbitRadius ?? 350;
       const outerAngle = orbitAngle + ((Math.PI * 2) * 2) / 3; // offset from inner
-      const outerX = entity.x + Math.cos(outerAngle) * outerOrbitR;
-      const outerY = entity.y + Math.sin(outerAngle) * outerOrbitR;
+      const outerX = entity.x + dcos(outerAngle) * outerOrbitR;
+      const outerY = entity.y + dsin(outerAngle) * outerOrbitR;
 
       for (let i = 0; i < ringCount; i++) {
         const a = (Math.PI * 2 * i) / ringCount;
@@ -941,8 +943,8 @@ function updateElderLichMalachar(
             world,
             outerX,
             outerY,
-            Math.cos(a) * ringSpeed,
-            Math.sin(a) * ringSpeed,
+            dcos(a) * ringSpeed,
+            dsin(a) * ringSpeed,
             ringDamage * dmgScale,
             8,
             3,
@@ -979,14 +981,14 @@ function updateElderLichMalachar(
 
         for (let i = 0; i < orbCount; i++) {
           // Spread orbs slightly
-          const spreadAngle = Math.atan2(ndy, ndx) + ((i - (orbCount - 1) / 2) * 0.3);
+          const spreadAngle = datan2(ndy, ndx) + ((i - (orbCount - 1) / 2) * 0.3);
           events.bossProjectiles.push(
             makeProjectile(
               world,
               entity.x,
               entity.y,
-              Math.cos(spreadAngle) * orbSpeed,
-              Math.sin(spreadAngle) * orbSpeed,
+              dcos(spreadAngle) * orbSpeed,
+              dsin(spreadAngle) * orbSpeed,
               attack.damage * dmgScale,
               12,
               orbTrackDuration,
@@ -1008,11 +1010,11 @@ function updateElderLichMalachar(
         // Spawn shamblers as "resurrected" enemies
         for (let i = 0; i < maxRes; i++) {
           const a = (Math.PI * 2 * i) / maxRes;
-          const spawnDist = 60 + Math.random() * 100;
+          const spawnDist = 60 + rand() * 100;
           events.bossSpawnEnemies.push({
             defId: 'shambler',
-            x: entity.x + Math.cos(a) * spawnDist,
-            y: entity.y + Math.sin(a) * spawnDist,
+            x: entity.x + dcos(a) * spawnDist,
+            y: entity.y + dsin(a) * spawnDist,
             hpMul: attack.params.resurrectedHpPercent ?? 0.3,
           });
         }
@@ -1196,13 +1198,13 @@ function updateTerminusPhase1(
 
           // Spawn a random Tier 3-4 enemy
           const tier34Enemies = ['werewolf', 'cultist', 'witch', 'bone_golem', 'shadow'];
-          const randomEnemy = tier34Enemies[Math.floor(Math.random() * tier34Enemies.length)];
-          const angle = Math.random() * Math.PI * 2;
+          const randomEnemy = tier34Enemies[Math.floor(rand() * tier34Enemies.length)];
+          const angle = rand() * Math.PI * 2;
           const spawnDist = 60;
           events.bossSpawnEnemies.push({
             defId: randomEnemy,
-            x: entity.x + Math.cos(angle) * spawnDist,
-            y: entity.y + Math.sin(angle) * spawnDist,
+            x: entity.x + dcos(angle) * spawnDist,
+            y: entity.y + dsin(angle) * spawnDist,
             hpMul: 1,
           });
         }
@@ -1280,13 +1282,13 @@ function updateTerminusPhase2(
         const spawnRange = attack.params.spawnRange ?? 400;
 
         for (let i = 0; i < zoneCount; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const r = Math.random() * spawnRange;
+          const a = rand() * Math.PI * 2;
+          const r = rand() * spawnRange;
           events.bossProjectiles.push(
             makeProjectile(
               world,
-              world.player.x + Math.cos(a) * r,
-              world.player.y + Math.sin(a) * r,
+              world.player.x + dcos(a) * r,
+              world.player.y + dsin(a) * r,
               0,
               0,
               0, // pool handles damage
@@ -1318,8 +1320,8 @@ function updateTerminusPhase2(
           events.bossProjectiles.push(
             makeProjectile(
               world,
-              entity.x + Math.cos(a) * tendrilLength * 0.5,
-              entity.y + Math.sin(a) * tendrilLength * 0.5,
+              entity.x + dcos(a) * tendrilLength * 0.5,
+              entity.y + dsin(a) * tendrilLength * 0.5,
               0,
               0,
               25 * dmgScale,
@@ -1401,8 +1403,8 @@ function updateTerminusPhase3(
   state.orbitAngle = (state.orbitAngle ?? 0) + orbitSpeed * delta;
 
   // Position boss on orbit circle around player
-  entity.x = world.player.x + Math.cos(state.orbitAngle) * currentOrbitRadius;
-  entity.y = world.player.y + Math.sin(state.orbitAngle) * currentOrbitRadius;
+  entity.x = world.player.x + dcos(state.orbitAngle) * currentOrbitRadius;
+  entity.y = world.player.y + dsin(state.orbitAngle) * currentOrbitRadius;
 
   // Speed boost from phase modifiers
   const speedBoost = phase.modifiers.speedBoost ?? 1.0;
@@ -1434,8 +1436,8 @@ function updateSoulStorm(
     const orbitRadius = 250;
     for (let i = 0; i < projCount; i++) {
       const a = state.soulStormAngle + (Math.PI * 2 * i) / projCount;
-      const px = entity.x + Math.cos(a) * orbitRadius;
-      const py = entity.y + Math.sin(a) * orbitRadius;
+      const px = entity.x + dcos(a) * orbitRadius;
+      const py = entity.y + dsin(a) * orbitRadius;
       events.bossProjectiles.push(
         makeProjectile(
           world,
@@ -1598,18 +1600,18 @@ export function getPhylacteryPositions(
 
   return {
     inner: {
-      x: entity.x + Math.cos(orbitAngle) * innerR,
-      y: entity.y + Math.sin(orbitAngle) * innerR,
+      x: entity.x + dcos(orbitAngle) * innerR,
+      y: entity.y + dsin(orbitAngle) * innerR,
       hp: state.phaseState.innerPhylacteryHp ?? 0,
     },
     middle: {
-      x: entity.x + Math.cos(orbitAngle + (Math.PI * 2) / 3) * middleR,
-      y: entity.y + Math.sin(orbitAngle + (Math.PI * 2) / 3) * middleR,
+      x: entity.x + dcos(orbitAngle + (Math.PI * 2) / 3) * middleR,
+      y: entity.y + dsin(orbitAngle + (Math.PI * 2) / 3) * middleR,
       hp: state.phaseState.middlePhylacteryHp ?? 0,
     },
     outer: {
-      x: entity.x + Math.cos(orbitAngle + ((Math.PI * 2) * 2) / 3) * outerR,
-      y: entity.y + Math.sin(orbitAngle + ((Math.PI * 2) * 2) / 3) * outerR,
+      x: entity.x + dcos(orbitAngle + ((Math.PI * 2) * 2) / 3) * outerR,
+      y: entity.y + dsin(orbitAngle + ((Math.PI * 2) * 2) / 3) * outerR,
       hp: state.phaseState.outerPhylacteryHp ?? 0,
     },
   };

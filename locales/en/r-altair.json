@@ -36,5 +36,10 @@
   "settings": "Settings",
   "visibility-label": "Visibility",
   "visibility-private": "Private",
-  "visibility-public": "Public"
+  "visibility-public": "Public",
+  "error-not-host": "Only the host can do that.",
+  "error-not-ready": "Everyone needs a class and to be ready before the match can start.",
+  "error-need-more-players": "Co-op needs at least 2 players.",
+  "error-wrong-state": "That is not possible while the match is starting.",
+  "error-generic": "Something went wrong in the lobby."
 }

@@ -67,6 +67,36 @@ export interface WebGLRenderer {
   overlayCtx: CanvasRenderingContext2D;
 }
 
+/**
+ * A co-op player to draw on top of the single-player scene. The local player is
+ * still `world.player` (drawn by renderPlayer); a marker adds the ring + name
+ * tag for every player and the full sprite for teammates (`isLocal: false`).
+ */
+export interface PlayerMarker {
+  playerId: string;
+  name: string;
+  color: string;
+  classId: string;
+  x: number;
+  y: number;
+  radius: number;
+  facingX: number;
+  facingY: number;
+  hp: number;
+  maxHp: number;
+  /** 0 alive, 1 downed, 2 dead (PLAYER_* in multiplayer/types.ts). */
+  state: 0 | 1 | 2;
+  downTimer: number;
+  /** 0..1 revive progress. */
+  revive: number;
+  isLocal: boolean;
+  animState?: AnimationState;
+}
+
+export interface RenderExtras {
+  players: readonly PlayerMarker[];
+}
+
 // ---- Enemy lookup cache (built once) ----------------------------------------
 
 const ENEMY_COLOR_MAP = new Map<string, string>();
@@ -128,6 +158,7 @@ export function renderFrame(
   renderer: WebGLRenderer,
   world: GameWorld,
   tileGen: TileGenerator,
+  extras?: RenderExtras,
 ): void {
   const { gl, spriteBatch, shapeBatch, overlayCtx } = renderer;
   const { camera } = world;
@@ -180,6 +211,11 @@ export function renderFrame(
 
   // 9. Player
   renderPlayer(renderer, world, camera);
+
+  // 9b. Co-op teammates, rings and name tags (absent in single-player)
+  if (extras && extras.players.length > 0) {
+    renderPlayerMarkers(renderer, extras.players, camera);
+  }
 
   // 10. Particles (on top of everything)
   spriteBatch.flush();
@@ -751,6 +787,93 @@ function renderPlayer(
     shapeBatch.drawRect(s.x - barWidth / 2, barY, barWidth * hpPercent, barHeight, color);
     shapeBatch.flush();
   }
+}
+
+// ---- Co-op players ----------------------------------------------------------
+
+function renderPlayerMarkers(
+  renderer: WebGLRenderer,
+  players: readonly PlayerMarker[],
+  camera: Camera,
+): void {
+  const { spriteBatch, shapeBatch, overlayCtx } = renderer;
+
+  // Pass 1: teammate bodies (the local body is drawn by renderPlayer) + rings.
+  for (const m of players) {
+    if (m.state === 2) continue; // dead: nothing on the field
+    if (!isVisible(camera, m.x, m.y, 60)) continue;
+    // The local player already follows the camera smoothly (renderPlayer); every
+    // other body is drawn exactly where the snapshot blend puts it.
+    const s = m.isLocal
+      ? getSmoothedLocalPlayerScreenPosition(m, worldToScreen(camera, m.x, m.y).x, worldToScreen(camera, m.x, m.y).y)
+      : worldToScreen(camera, m.x, m.y);
+    const alpha = m.state === 1 ? 0.45 : 1;
+
+    if (!m.isLocal) {
+      const sprites = getPlayerSprites(m.classId);
+      if (sprites && m.animState) {
+        const flipX = m.animState.animation === sprites.walkSide && m.facingX < 0;
+        if (alpha < 1) {
+          const frameIndex = getCurrentFrameIndex(m.animState);
+          const tex = m.animState.animation.sheet.glTexture;
+          if (tex) {
+            const { sx, sy, sw, sh } = getFrameRect(m.animState.animation.sheet, frameIndex);
+            const dw = sw * PLAYER_SCALE;
+            const dh = sh * PLAYER_SCALE;
+            const img = m.animState.animation.sheet.image;
+            spriteBatch.drawQuad(
+              tex, sx, sy, sw, sh,
+              img.naturalWidth, img.naturalHeight,
+              Math.round(s.x - dw / 2), Math.round(s.y - dh / 2), dw, dh,
+              1, 1, 1, alpha,
+              flipX,
+            );
+          }
+        } else {
+          drawAnimatedSprite(spriteBatch, m.animState, s.x, s.y, PLAYER_SCALE, flipX);
+        }
+      } else {
+        spriteBatch.flush();
+        shapeBatch.drawCircle(s.x, s.y, m.radius, m.color, alpha);
+        shapeBatch.flush();
+      }
+    }
+
+    spriteBatch.flush();
+    // Ring in the player's slot colour, so teammates are told apart at a glance.
+    shapeBatch.drawRing(s.x, s.y, m.radius + 9, 2, m.color, m.state === 1 ? 0.35 : 0.8);
+    if (m.state === 0 && m.hp < m.maxHp && !m.isLocal) {
+      const barW = 28;
+      const barY = s.y + m.radius + 6;
+      const frac = Math.max(0, m.hp / m.maxHp);
+      shapeBatch.drawRect(s.x - barW / 2, barY, barW, 3, 'rgba(0,0,0,0.6)');
+      shapeBatch.drawRect(s.x - barW / 2, barY, barW * frac, 3, frac > 0.5 ? '#44ff44' : frac > 0.25 ? '#ffaa00' : '#ff3333');
+    }
+    if (m.state === 1 && m.revive > 0) {
+      // Revive progress: a ring that fills clockwise from the top.
+      shapeBatch.drawRing(s.x, s.y, m.radius + 14, 3, '#000000', 0.5);
+      shapeBatch.drawRing(s.x, s.y, m.radius + 14, 3, '#44ff88', 0.35 + 0.65 * m.revive);
+    }
+    shapeBatch.flush();
+  }
+
+  // Pass 2: name tags on the 2D overlay.
+  overlayCtx.save();
+  overlayCtx.font = 'bold 11px monospace';
+  overlayCtx.textAlign = 'center';
+  overlayCtx.textBaseline = 'alphabetic';
+  overlayCtx.lineWidth = 3;
+  overlayCtx.strokeStyle = 'rgba(0,0,0,0.85)';
+  for (const m of players) {
+    if (m.state === 2 || !isVisible(camera, m.x, m.y, 80)) continue;
+    const s = worldToScreen(camera, m.x, m.y);
+    const label = m.state === 1 ? `${m.name} (${Math.max(0, Math.ceil(m.downTimer))}s)` : m.name;
+    const ty = s.y - m.radius - 26;
+    overlayCtx.strokeText(label, s.x, ty);
+    overlayCtx.fillStyle = m.state === 1 ? '#ff8888' : m.color;
+    overlayCtx.fillText(label, s.x, ty);
+  }
+  overlayCtx.restore();
 }
 
 // ---- Summons ----------------------------------------------------------------

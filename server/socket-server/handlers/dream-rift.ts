@@ -11,10 +11,12 @@
  * rooms for broadcast, soft auth via socket.data, light rate limiting.
  */
 
+import { randomBytes } from 'node:crypto';
 import type { Server, Socket } from 'socket.io';
 import { generateRoomCode, sanitizeUserName } from '../utils';
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
+import { PEER_GRACE_MS } from '../../../lib/shared/realtime/types';
 import {
   C2S,
   S2C,
@@ -27,6 +29,7 @@ import type {
   DrLobbyState,
   LobbyPlayerInfo,
   LobbySnapshot,
+  JoinedPayload,
   PublicLobbyInfo,
   StartPayload,
   RelayMsg,
@@ -41,8 +44,34 @@ const MAX_LOBBIES = 2000;
 const BROWSE_CAP = 30;
 const GC_INTERVAL_MS = 60_000;
 const LOBBY_IDLE_TIMEOUT_MS = 30 * 60_000; // stale lobbies pruned after 30m of no activity
+/**
+ * How long a seat is held after its socket drops mid-game. The shared 15s
+ * window every other game uses (lib/shared/realtime/types.ts). Lobbies that
+ * have not started are not held: re-joining a lobby is one click and a ghost
+ * seat would block a public room.
+ */
+export const DR_RESUME_GRACE_MS = PEER_GRACE_MS;
+let resumeGraceMs = DR_RESUME_GRACE_MS;
+
+/** Test hooks: shorten the hold window and wipe module state between cases. */
+export function __setResumeGraceMs(ms: number): void {
+  resumeGraceMs = ms;
+}
+export function __resetDreamRiftLobbies(): void {
+  for (const lobby of lobbies.values()) for (const seat of lobby.seats.values()) clearTimeout(seat.dropTimer);
+  lobbies.clear();
+  socketLobby.clear();
+  resumeGraceMs = DR_RESUME_GRACE_MS;
+}
 
 // ─── Types ──────────────────────────────────────────────────────────
+
+/** Per-seat secret + hold timer. Kept off LobbyPlayerInfo, which is broadcast to the room. */
+interface SeatSecret {
+  token: string;
+  /** Set while the socket is gone and the seat is being held. */
+  dropTimer?: ReturnType<typeof setTimeout>;
+}
 
 interface Lobby {
   code: string;
@@ -51,6 +80,8 @@ interface Lobby {
   difficulty: DrDifficulty;
   state: DrLobbyState;
   players: LobbyPlayerInfo[]; // ordered; max MAX_LOBBY_PLAYERS
+  /** slot -> secret. */
+  seats: Map<number, SeatSecret>;
   lastActivityAt: number;
 }
 
@@ -148,14 +179,23 @@ function removeFromLobby(io: Server, socket: Socket): void {
   socket.leave(roomName(code));
   if (!lobby) return;
 
-  const idx = lobby.players.findIndex((p) => p.socketId === socket.id);
-  if (idx === -1) {
+  const player = lobby.players.find((p) => p.socketId === socket.id);
+  if (!player) {
     if (lobby.players.length === 0) lobbies.delete(code);
     return;
   }
+  evictPlayer(io, lobby, player);
+}
 
-  const departing = lobby.players[idx];
+/** Free a seat for good (leave, grace expiry): peer notice, host migration, lobby deletion. */
+function evictPlayer(io: Server, lobby: Lobby, departing: LobbyPlayerInfo): void {
+  const code = lobby.code;
+  const idx = lobby.players.indexOf(departing);
+  if (idx === -1) return;
   const wasHost = departing.isHost;
+  const secret = lobby.seats.get(departing.slot);
+  if (secret?.dropTimer) clearTimeout(secret.dropTimer);
+  lobby.seats.delete(departing.slot);
   lobby.players.splice(idx, 1);
 
   io.to(roomName(code)).emit(S2C.PEER_LEFT, { slot: departing.slot });
@@ -178,6 +218,15 @@ function removeFromLobby(io: Server, socket: Socket): void {
   broadcastLobby(io, lobby);
 }
 
+function joinedPayload(lobby: Lobby, self: LobbyPlayerInfo): JoinedPayload {
+  return {
+    code: lobby.code,
+    yourSlot: self.slot,
+    selfId: self.socketId,
+    resumeToken: lobby.seats.get(self.slot)?.token ?? '',
+  };
+}
+
 function addPlayer(lobby: Lobby, socket: Socket, slot: number, isHost: boolean): LobbyPlayerInfo {
   const { userId, name, avatarUrl } = resolveIdentity(socket);
   const player: LobbyPlayerInfo = {
@@ -192,6 +241,7 @@ function addPlayer(lobby: Lobby, socket: Socket, slot: number, isHost: boolean):
   };
   lobby.players.push(player);
   lobby.players.sort((a, b) => a.slot - b.slot);
+  lobby.seats.set(slot, { token: randomBytes(16).toString('hex') });
   socket.join(roomName(lobby.code));
   socketLobby.set(socket.id, lobby.code);
   return player;
@@ -205,6 +255,7 @@ function createLobby(socket: Socket, isPublic: boolean, difficulty: DrDifficulty
     difficulty,
     state: 'waiting',
     players: [],
+    seats: new Map(),
     lastActivityAt: Date.now(),
   };
   lobbies.set(lobby.code, lobby);
@@ -253,7 +304,7 @@ export function registerDreamRiftHandlers(io: Server, socket: Socket): void {
     const lobby = createLobby(socket, isPublic, difficulty);
     const self = lobby.players[0];
 
-    socket.emit(S2C.JOINED, { code: lobby.code, yourSlot: self.slot, selfId: socket.id });
+    socket.emit(S2C.JOINED, joinedPayload(lobby, self));
     broadcastLobby(io, lobby);
     logger.info({ event: 'dr_lobby_created', code: lobby.code, host: socket.id, isPublic, difficulty });
   });
@@ -294,7 +345,7 @@ export function registerDreamRiftHandlers(io: Server, socket: Socket): void {
     }
 
     const self = addPlayer(target, socket, freeSlot, false);
-    socket.emit(S2C.JOINED, { code: target.code, yourSlot: self.slot, selfId: socket.id });
+    socket.emit(S2C.JOINED, joinedPayload(target, self));
     broadcastLobby(io, target);
     logger.info({ event: 'dr_lobby_joined', code: target.code, socketId: socket.id, slot: self.slot });
   });
@@ -320,7 +371,7 @@ export function registerDreamRiftHandlers(io: Server, socket: Socket): void {
       const slot = lowestFreeSlot(best);
       if (slot !== -1) {
         const self = addPlayer(best, socket, slot, false);
-        socket.emit(S2C.JOINED, { code: best.code, yourSlot: self.slot, selfId: socket.id });
+        socket.emit(S2C.JOINED, joinedPayload(best, self));
         broadcastLobby(io, best);
         logger.info({ event: 'dr_quickplay_joined', code: best.code, socketId: socket.id });
         return;
@@ -334,7 +385,7 @@ export function registerDreamRiftHandlers(io: Server, socket: Socket): void {
 
     const lobby = createLobby(socket, true, 'normal');
     const self = lobby.players[0];
-    socket.emit(S2C.JOINED, { code: lobby.code, yourSlot: self.slot, selfId: socket.id });
+    socket.emit(S2C.JOINED, joinedPayload(lobby, self));
     broadcastLobby(io, lobby);
     logger.info({ event: 'dr_quickplay_created', code: lobby.code, socketId: socket.id });
   });
@@ -448,6 +499,43 @@ export function registerDreamRiftHandlers(io: Server, socket: Socket): void {
     logger.info({ event: 'dr_game_started', code: lobby.code, seed, players: lobby.players.length });
   });
 
+  // ── Resume: reclaim a held seat on a fresh socket ──
+  socket.on(C2S.RESUME, (payload: { code?: unknown; token?: unknown }) => {
+    if (!checkRateLimit(socket.id, C2S.RESUME)) return;
+    const code = typeof payload?.code === 'string' ? payload.code.trim().toUpperCase() : '';
+    const token = typeof payload?.token === 'string' ? payload.token : '';
+    const lobby = lobbies.get(code);
+    let slot = -1;
+    if (lobby && token) {
+      for (const [s, secret] of lobby.seats) {
+        if (secret.token === token) { slot = s; break; }
+      }
+    }
+    const player = lobby?.players.find((p) => p.slot === slot);
+    if (!lobby || !player) {
+      socket.emit(S2C.ERROR, { message: 'Lobby closed.' });
+      return;
+    }
+    const secret = lobby.seats.get(slot)!;
+    if (secret.dropTimer) { clearTimeout(secret.dropTimer); secret.dropTimer = undefined; }
+
+    const stale = player.socketId;
+    if (stale !== socket.id) {
+      // The old transport may still be half-open: drop it out of the room.
+      socketLobby.delete(stale);
+      io.sockets.sockets.get(stale)?.leave(roomName(code));
+      if (lobby.hostSocketId === stale) lobby.hostSocketId = socket.id;
+      player.socketId = socket.id;
+    }
+    socketLobby.set(socket.id, code);
+    socket.join(roomName(code));
+
+    socket.emit(S2C.RESUMED, joinedPayload(lobby, player));
+    io.to(roomName(code)).emit(S2C.PEER_STATUS, { slot, connected: true });
+    broadcastLobby(io, lobby);
+    logger.info({ event: 'dr_seat_resumed', code, slot, socketId: socket.id });
+  });
+
   // ── Hot path: relay ──
   // Forward verbatim to everyone else in the room. No validation beyond room
   // membership. Player positions ~15Hz, host world snapshots ~10Hz.
@@ -465,5 +553,28 @@ function getSocketLobby(socket: Socket): Lobby | undefined {
 }
 
 export function handleDreamRiftDisconnect(io: Server, socket: Socket): void {
-  removeFromLobby(io, socket);
+  const code = socketLobby.get(socket.id);
+  const lobby = code ? lobbies.get(code) : undefined;
+  const player = lobby?.players.find((p) => p.socketId === socket.id);
+  const secret = lobby && player ? lobby.seats.get(player.slot) : undefined;
+  if (!lobby || !player || !secret || lobby.state !== 'playing') {
+    removeFromLobby(io, socket);
+    return;
+  }
+  // Mid-game: hold the seat. The host client's simulation lives in its
+  // browser and keeps running; a guest just misses some relays. If nobody
+  // reclaims the seat in time it is freed exactly as if they had left
+  // (including host migration).
+  socketLobby.delete(socket.id);
+  if (secret.dropTimer) clearTimeout(secret.dropTimer);
+  secret.dropTimer = setTimeout(() => {
+    secret.dropTimer = undefined;
+    if (lobbies.get(lobby.code) === lobby && lobby.seats.get(player.slot) === secret) {
+      logger.info({ event: 'dr_seat_expired', code: lobby.code, slot: player.slot });
+      evictPlayer(io, lobby, player);
+    }
+  }, resumeGraceMs);
+  secret.dropTimer.unref?.();
+  io.to(roomName(lobby.code)).emit(S2C.PEER_STATUS, { slot: player.slot, connected: false });
+  logger.info({ event: 'dr_seat_held', code: lobby.code, slot: player.slot });
 }

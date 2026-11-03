@@ -18,6 +18,8 @@ import {
   applyMark,
   hasEffect,
 } from './status-effects';
+import { rand } from './rng';
+import { dcos, dsin } from './dmath';
 
 // =============================================================================
 // Runtime State
@@ -89,18 +91,18 @@ function spawnParticle(
   count: number = 3,
 ): void {
   for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 20 + Math.random() * 40;
+    const angle = rand() * Math.PI * 2;
+    const speed = 20 + rand() * 40;
     world.particles.push({
       id: createId(world),
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: 0.4 + Math.random() * 0.3,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed,
+      life: 0.4 + rand() * 0.3,
       maxLife: 0.6,
       color,
-      radius: 2 + Math.random() * 2,
+      radius: 2 + rand() * 2,
     });
   }
 }
@@ -116,7 +118,7 @@ function spawnDamageNumber(
     id: createId(world),
     x,
     y: y - 10,
-    vx: (Math.random() - 0.5) * 20,
+    vx: (rand() - 0.5) * 20,
     vy: -40,
     life: 0.8,
     maxLife: 0.8,
@@ -491,8 +493,8 @@ function tickPhylacteryShard(
         // Wisp orbits around player
         const angle =
           (world.time * 2 + (i * Math.PI * 2) / 4) % (Math.PI * 2);
-        const wx = world.player.x + Math.cos(angle) * orbitRadius;
-        const wy = world.player.y + Math.sin(angle) * orbitRadius;
+        const wx = world.player.x + dcos(angle) * orbitRadius;
+        const wy = world.player.y + dsin(angle) * orbitRadius;
 
         // Damage nearby enemies
         for (const enemy of world.enemies) {
@@ -604,7 +606,7 @@ function handleStormConduitHit(
   const enemy = world.enemies.find((e) => e.id === context.enemyId);
   if (!enemy || enemy.hp <= 0 || enemy.hp >= enemy.maxHp) return;
 
-  if (Math.random() > procChance) return;
+  if (rand() > procChance) return;
 
   // Primary AoE discharge
   const hitEnemies = new Set<number>();
@@ -776,7 +778,7 @@ function handlePhylacteryShardKill(
   if (rs.charges >= maxWisps) return;
 
   // Proc roll
-  if (Math.random() > procChance) return;
+  if (rand() > procChance) return;
 
   // Find a free wisp slot
   for (let i = 0; i < maxWisps; i++) {
@@ -853,7 +855,7 @@ function handleCinderCoreKill(
   const spreadRadius = getParam(def, 'spreadRadiusPx', rs.level);
   const armorReduction = getParam(def, 'armorReductionPercent', rs.level);
 
-  if (Math.random() > igniteChance) return;
+  if (rand() > igniteChance) return;
 
   // Spread fire to nearby enemies
   for (const enemy of world.enemies) {
@@ -1085,7 +1087,7 @@ export function onCatalystProjectileMiss(
     const ricochetRange = getParam(def, 'ricochetRangePx', rs.level);
     const ricochetPierce = getParam(def, 'ricochetPierce', rs.level);
 
-    if (Math.random() > ricochetChance) return null;
+    if (rand() > ricochetChance) return null;
 
     // Find nearest enemy to ricochet toward
     const target = findNearestEnemy(

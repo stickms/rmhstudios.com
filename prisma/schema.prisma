@@ -57,6 +57,7 @@ model User {
   altairMetaProgress   AltairMetaProgress?
   altairCoopProfile    AltairCoopProfile?
   altairMatchPlayers   AltairMatchPlayer[]
+  altairSoloRuns       AltairSoloRun[]
   laundryProfile       LaundryPlayer?
   globesetProfile      GlobeSetPlayer?
   sliceItProfile       Player?
@@ -514,6 +515,9 @@ model User {
   pileOnGuards               PileOnGuard[]
   // P12 forecasting: G6 market comments
   predictionComments         PredictionComment[]
+  electionRooms              ElectionRoom[]               @relation("ElectionRoomOwner")
+  electionLeaguesOwned       ElectionLeague[]             @relation("ElectionLeagueOwner")
+  electionLeagueMemberships  ElectionLeagueMember[]       @relation("ElectionLeagueMember")
   // P07 arcade: E1/E12 seeded runs, E2 backlog, E6 achievement tips, E11 rivals
   arcadeSeedRuns             ArcadeSeedRun[]
   gamePlayStatuses           GamePlayStatus[]
@@ -2725,23 +2729,61 @@ model BumsRushRun {
 // ─── Altair Meta Progression (persisted to DB) ────────────────────────
 
 model AltairMetaProgress {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  coins              Int      @default(0)
-  upgrades           Json     @default("{}")
-  unlockedClasses    Json     @default("[\"knight\",\"arcanist\",\"ranger\"]")
-  doubleTimeUnlocked Boolean  @default(false)
-  classFirstClears   Json     @default("[]")
-  totalRunsPlayed    Int      @default(0)
-  bestTimeSurvived   Float    @default(0)
-  bestKills          Int      @default(0)
-  bossesDefeated     Json     @default("[]")
-  bestiary           Json     @default("{}")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coins              Int       @default(0)
+  // Earned coins the server will still accept from a client save (refills with time; see
+  // lib/altair/meta-guard.ts). Interim bound until single-player runs are replay-verified.
+  coinAllowance      Int       @default(8000)
+  coinAllowanceAt    DateTime?
+  upgrades           Json      @default("{}")
+  unlockedClasses    Json      @default("[\"knight\",\"arcanist\",\"ranger\"]")
+  doubleTimeUnlocked Boolean   @default(false)
+  classFirstClears   Json      @default("[]")
+  totalRunsPlayed    Int       @default(0)
+  bestTimeSurvived   Float     @default(0)
+  bestKills          Int       @default(0)
+  bossesDefeated     Json      @default("[]")
+  bestiary           Json      @default("{}")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@map("altair_meta_progress")
+}
+
+// A single-player run the SERVER issued (seed + loadout) and later replays (lib/altair/solo). Coins and
+// leaderboard totals are written from the replay's numbers only, under this row, exactly once.
+model AltairSoloRun {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Equals userId while the run is open and NULL once it is closed. Unique, so a user has at most one
+  // open run (NULLs do not collide). Starting a run closes the previous one.
+  openUserId      String?   @unique
+  seed            Int
+  classId         String
+  doubleTime      Boolean
+  loadout         Json
+  // open | submitted | verified | rejected | unverified | abandoned | expired
+  status          String    @default("open")
+  issuedAt        DateTime  @default(now())
+  expiresAt       DateTime
+  submittedAt     DateTime?
+  verifiedAt      DateTime?
+  steps           Int?
+  // The replay's numbers (never the client's claim) once verified.
+  result          Json?
+  rejectReason    String?
+  coinsCredited   Int       @default(0)
+  // Part of coinsCredited that was the one-time first-clear bonus for this class (0 or 200). A user has at
+  // most one such run per class: persistVerifiedSoloRun checks it under a lock on the meta row.
+  firstClearBonus Int       @default(0)
+
+  @@index([userId, issuedAt(sort: Desc)])
+  @@index([userId, classId, firstClearBonus])
+  @@index([status, expiresAt])
+  @@map("altair_solo_run")
 }
 
 // ─── Altair Multiplayer (Co-op) Models ────────────────────────
@@ -2768,6 +2810,9 @@ model AltairCoopProfile {
 model AltairMatch {
   id             String              @id @default(cuid())
   lobbyId        String
+  // Hub-issued id of the verified run this row came from (null on rows written before server-side
+  // verification). Unique, so a replayed submission can never be recorded twice.
+  runId          String?             @unique
   startedAt      DateTime            @default(now())
   endedAt        DateTime?
   durationMs     Int?
@@ -13522,4 +13567,73 @@ model Tf2LoadoutCatalog {
   checkedAt DateTime
 
   @@map("tf2_loadout_catalog")
+}
+
+// ─── Election watch rooms ──────────────────────────────────────────────
+
+enum ElectionRoomVisibility {
+  PUBLIC // listed in the lobby for its election day
+  PRIVATE // unlisted: reachable only by its code
+}
+
+/// A watch room for an election night: a shared screen (layout + panes) with its own chat and
+/// reactions. Chat and reactions are ephemeral (realtime bus only); what is stored is the room
+/// itself so a link keeps working across deploys. Solo rooms are not stored at all (browser only).
+/// The `code` is the capability: anyone holding it can read and chat; only the owner edits.
+model ElectionRoom {
+  id           String                 @id @default(cuid())
+  code         String                 @unique @db.VarChar(12)
+  name         String                 @db.VarChar(60)
+  visibility   ElectionRoomVisibility @default(PRIVATE)
+  ownerId      String
+  /// The election day this room watches, YYYY-MM-DD.
+  electionDate String                 @db.VarChar(10)
+  /// Shared layout and panes — validated by lib/elections/room-config.ts before every write.
+  config       Json
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  /// Rooms are not kept forever: swept after this (election day + a few days).
+  expiresAt    DateTime
+
+  owner User @relation("ElectionRoomOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([visibility, electionDate, expiresAt])
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@map("election_room")
+}
+
+/// A friends league for election predictions: people join by code, each submits a painted map, and the
+/// leaderboard scores everyone's calls against the races as they are called. No coins are involved.
+/// The `code` is the capability to join; the board is visible to members only.
+model ElectionLeague {
+  id        String   @id @default(cuid())
+  code      String   @unique @db.VarChar(12)
+  name      String   @db.VarChar(60)
+  /// The cycle being predicted: a year ("2026") or an election day (YYYY-MM-DD).
+  cycle     String   @db.VarChar(10)
+  ownerId   String
+  createdAt DateTime @default(now())
+
+  owner   User                   @relation("ElectionLeagueOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members ElectionLeagueMember[]
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@map("election_league")
+}
+
+model ElectionLeagueMember {
+  id       String    @id @default(cuid())
+  leagueId String
+  userId   String
+  /// race key -> "DEM" | "GOP" | "TOSS" (validated by lib/elections/leagues.ts before every write).
+  picks    Json      @default("{}")
+  pickedAt DateTime?
+  joinedAt DateTime  @default(now())
+
+  league ElectionLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  user   User           @relation("ElectionLeagueMember", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, userId])
+  @@index([userId, joinedAt(sort: Desc)])
+  @@map("election_league_member")
 }

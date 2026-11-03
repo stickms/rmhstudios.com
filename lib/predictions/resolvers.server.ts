@@ -1,4 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
+import { CHAMBER_RESOLVER, RACE_RESOLVER, resolveChamber, resolveRace } from '@/lib/elections/markets';
+import { snapshotForDate } from '@/lib/elections/markets.server';
 
 // Resolver registry for self-referential prediction markets. Each resolver reads
 // the platform's OWN ground truth and returns a definitive YES/NO, or null when
@@ -50,7 +52,30 @@ const buildLikes: MarketResolver = {
   },
 };
 
+/**
+ * "Does <party> control <chamber>?" — settles from the election results feed. Fails closed: no
+ * snapshot, an unofficial/derived tally or an undecided chamber is null (see lib/elections/markets.ts).
+ */
+const electionChamber: MarketResolver = {
+  key: CHAMBER_RESOLVER,
+  async resolve(params) {
+    const snap = await snapshotForDate(params.date);
+    return snap ? resolveChamber(snap, params) : null;
+  },
+};
+
+/** "Does <party> win <race>?" — settles once the race is called. Fails closed like the above. */
+const electionRace: MarketResolver = {
+  key: RACE_RESOLVER,
+  async resolve(params) {
+    const snap = await snapshotForDate(params.date);
+    return snap ? resolveRace(snap, params) : null;
+  },
+};
+
 const RESOLVERS: Record<string, MarketResolver> = {
+  [electionChamber.key]: electionChamber,
+  [electionRace.key]: electionRace,
   [tournamentTopSeed.key]: tournamentTopSeed,
   [buildLikes.key]: buildLikes,
 };

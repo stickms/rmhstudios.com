@@ -33,6 +33,8 @@ import {
   hasEffect,
   getEffectMagnitude,
 } from './status-effects';
+import { rand } from './rng';
+import { dcos, dsin } from './dmath';
 
 // =============================================================================
 // Class Ability State
@@ -197,6 +199,17 @@ export function updatePlayer(
 /** Reset the position history accumulator (call on run start). */
 export function resetPositionHistoryAccum(): void {
   positionHistoryAccum = 0;
+}
+
+/**
+ * The accumulator is module state but belongs to a player; the multiplayer host
+ * saves/restores it around each player's turn (engine/multiplayer/player-state.ts).
+ */
+export function getPositionHistoryAccum(): number {
+  return positionHistoryAccum;
+}
+export function setPositionHistoryAccum(v: number): void {
+  positionHistoryAccum = v;
 }
 
 // =============================================================================
@@ -1093,8 +1106,8 @@ function handleNecromancer(
 
     for (let i = 0; i < pillarCount; i++) {
       const angle = (2 * Math.PI * i) / pillarCount;
-      const px = player.x + Math.cos(angle) * ringRadius;
-      const py = player.y + Math.sin(angle) * ringRadius;
+      const px = player.x + dcos(angle) * ringRadius;
+      const py = player.y + dsin(angle) * ringRadius;
 
       const pillar: ProjectileEntity = {
         id: createId(world),
@@ -1145,7 +1158,7 @@ export function tryRaiseDead(
 
   // 25% chance scaled by luck
   const chance = 0.25 * stats.luck;
-  if (Math.random() >= chance) return;
+  if (rand() >= chance) return;
 
   const skeleton: SummonEntity = {
     id: createId(world),

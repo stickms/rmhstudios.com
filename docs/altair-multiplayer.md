@@ -1,0 +1,324 @@
+# Altair co-op multiplayer — design and status
+
+Scope: `/altair/multiplayer`, `/altair/multiplayer/$lobbyId`,
+`components/altair/multiplayer/*`, `lib/altair/multiplayer/*`,
+`server/socket-server/handlers/altair.ts`. Single-player Altair
+(`/altair`, `lib/altair/engine/*`) must never regress; multiplayer extends the
+engine, it does not fork it.
+
+## Status
+
+| Phase | What                                                          | State  |
+| ----- | ------------------------------------------------------------- | ------ |
+| 0     | This design                                                   | done   |
+| 1     | Lobby flow: a match can start; errors reach the player; tests | done   |
+| 2     | Host simulation for 2–4 players (`engine/multiplayer/host-sim.ts`) | done (pure logic + tests; not wired to a page yet) |
+| 3A    | Client: host driver, snapshot rendering, guest input, host-leave | done (two real clients verified) |
+| 3B    | Co-op feel: per-player level-up, revive/down UI, spectate, boss bar | done (two real clients verified) |
+| 3C    | Robustness: touch, reconnect, drop-in, results/lobby loop     | done (two real clients verified) |
+| 4     | Results, drop-in, verified persistence                        | co-op persistence done (replay-verified); solo pending |
+
+### Phase 3A as built
+
+- **Host page** (`MultiplayerGameScreen`): `HostDriver` (`lib/altair/multiplayer/host-driver.ts`) wraps
+  `HostSim`: an accumulator turns wall time into 60 Hz steps (at most 15 per call; a longer stall drops
+  the backlog instead of replaying it), a snapshot goes out every 3rd step, guests that go quiet for 1 s
+  are told to stand still. It is driven by a **worker metronome** (`tick-worker.ts`): background-tab
+  main-thread timers are throttled to ~1 Hz, worker messages are not, so a hidden host tab keeps
+  feeding guests. Without Worker support it falls back to `setInterval` (throttled when hidden: the
+  one known limitation). Not verified on a real backgrounded tab here.
+- **Every client, host included**, draws from snapshots: `decodeSnapshot` -> `SnapshotBuffer`
+  (`snapshot-buffer.ts`, sampled 100 ms behind for guests, 50 ms for the host's own loopback) ->
+  `SnapshotView` (`snapshot-view.ts`, builds the `GameWorld` the single-player renderer draws, entities
+  pooled by id so sprite animation persists) -> `renderFrame(…, { players })`. The renderer gained one
+  optional argument (`RenderExtras`) for teammate bodies, rings and name tags; single-player passes none.
+- Lingering pools are not flagged on the wire, so the view treats a stationary projectile of radius >= 30
+  as a pool. Particles and damage numbers are not reconstructed yet.
+- **Hub:** guest `GAME_INPUT` is shape-validated and rebuilt field by field before it reaches the
+  host; host snapshots are shape/size-checked; new host-only `GAME_END` carries the run outcome and
+  per-player counters (clamped; `coinsEarned` is always 0 for co-op). Players are reached through a
+  per-user room, not one remembered socket id: a tab holds several sockets to the hub (call socket and
+  others), and the last one to connect used to steal the slot, so the Altair client stopped receiving
+  snapshots. A player is only "disconnected" when their LAST socket closes.
+### Phase 3B as built
+
+- Level-up: the host's `HostDriver` announces each newly opened overlay once (`onLevelUpOffer`); the host
+  sends it to that guest only (`altair:game:level_up_offer`, host-only, options rebuilt by the hub) or opens
+  it locally; the guest answers with a bare index (`altair:game:level_up_choice`, rate limited: it had no rule
+  before and would have been dropped). `LevelUpPicker` is the single-player picker, extracted from
+  `LevelUpScreen`, with a countdown; nothing pauses. The overlay closes on a pick or when the snapshot says
+  the host auto-picked.
+- HUD: team rows (name, class colour, level, HP, Down Ns, dead, "Choosing..."), team kills and clock, boss
+  bar from the snapshot, "you are down" / spectating banner. Revive progress is a ring drawn on the downed
+  body by the renderer (it fills while a teammate stands in range). A dead player's camera follows a living
+  teammate.
+- Fixed (play3): the wave table has a boss entry at t=300 and another wave starting at t=300 after it, and the director took the LAST matching wave, so no boss ever spawned. The director now scans the boss entries directly (30 s window, never while a boss lives). Verified: Hollow King + bar in single-player and on a co-op guest.
+
+### Phase 3C as built
+
+- The lobby route no longer swaps a live match for a "Connecting..." screen on a socket drop (that
+  unmounted the host page, i.e. destroyed the simulation); the match shows its own banner. Snapshots
+  and guest input are sent `volatile`, so nothing stale replays after a reconnect.
+- Drop-in: a mid-run joiner (hub rules unchanged) sees a class picker and picks once (the hub accepts a
+  class from a PLAYING player who has none); the hub announces `GAME_PLAYER_JOINED` with the class and the
+  host calls `HostSim.addPlayer`; `GAME_PLAYER_LEFT` (after the grace) calls `removePlayer`.
+- Results: no "Play Again" button (it did nothing); the hub reopens the lobby 15 s after results and the
+  screen says so. Coins are not shown: co-op runs earn none. `ClassSelectLobby` (unreachable) is gone.
+- Persistence: built, see "Verified results" below. The hub's results screen still carries
+  `coinsEarned: 0`; what is recorded comes from the server-side replay, never from the host.
+
+- A host page that mounts mid-run (reload) cannot resume the match; it says so and offers Leave.
+
+## Lobby state machine (phase 1, implemented)
+
+```
+WAITING --host Start (all ready, >=2, all connected)--> COUNTDOWN (5s)
+COUNTDOWN --timer--> PLAYING --host ends / TPK / victory--> RESULTS --15s--> WAITING
+COUNTDOWN --leave | kick | disconnect--> WAITING (everyone un-readied)
+PLAYING --host gone past the 10s grace--> RESULTS (endedReason: 'host_left')
+```
+
+- Class choice and Ready both live on `LobbyWaiting`. The `CLASS_SELECT` state
+  and `ClassSelectLobby` were the original plan; nothing ever entered that state
+  so Start could not succeed. The state stays in the shared type (reserved) but
+  is never entered.
+- Changing class un-readies the player. Classes lock once COUNTDOWN begins.
+- Only the host may Start; a second Start while counting is refused (`WRONG_STATE`).
+- Hub rejections carry codes (`NOT_HOST`, `NOT_READY`, `NEED_MORE_PLAYERS`,
+  `WRONG_STATE`, `INVALID_PAYLOAD`) and the lobby route toasts them.
+- Tests: `server/socket-server/handlers/__tests__/altair-lobby.test.ts`.
+
+## Simulation model (phases 2–3, decided)
+
+**Host-authoritative.** The host's browser runs the one simulation for all N
+players. The hub never simulates; it relays.
+
+- Guests send `GAME_INPUT` at 20 Hz: `{seq, dx, dy, aim?}` (movement intent only;
+  never positions, HP, damage or XP). The hub forwards it to the host tagged with
+  the sender's `userId` (already implemented) — the host ignores input from users
+  not in the lobby.
+- The host steps the fixed 60 Hz sim, and every 3rd step (20 Hz) sends a
+  `GameStateSnapshot` (`lib/altair/multiplayer/types.ts`) through the hub, which
+  fans it out to guests and keeps `lastSnapshot`/`sharedKills`.
+- Guests render the two latest snapshots, interpolated ~100 ms behind (one
+  snapshot of buffer), extrapolating at most one interval. Local prediction of the
+  guest's own movement is a later refinement; the first version shows own movement
+  with the same interpolation (≈ one RTT + 50 ms of latency), which is acceptable
+  for a survivor game with a 200 px/s walk speed.
+- **Snapshot contents:** tick, game time, players (position, facing, HP, state,
+  class, level, kills), enemies (id, def, position, HP — only those near a player,
+  capped), enemy/player projectiles (position, velocity, radius, colour), pickups,
+  boss state, shared kills. Positions are rounded to 0.1 px. Visual-only
+  state (particles, damage numbers, hit flashes) is regenerated client-side from
+  snapshot deltas and `GAME_EVENT`s, never sent.
+- **Engine coupling.** The single-player engine is built around one
+  `world.player`, `world.weapons`, one ability state and one effective-stats
+  object (≈200 references). The multiplayer host runs the same systems by
+  *context swap*: per fixed step, for each player in turn, the player-specific
+  systems (movement, class abilities, catalysts, weapons, pickups) run with that
+  player's entity/weapons/passives/ability state swapped into the world's single
+  slots; the shared systems (enemy AI, bosses, wave director, collisions) run once
+  and target through `world.players` (`engine/multiplayer/player-helpers.ts` and
+  the `isMultiplayer` branch of `enemy-system.ts` already do this for targeting).
+  The per-step body of `createGameLoop` is extracted into a reusable step function
+  so single-player and the host share it; single-player output must stay
+  bit-identical (verified by running a run before/after).
+- **Scaling:** `ScalingState` (types.ts) scales enemy HP/damage/spawn budget with
+  the alive player count; spawns happen around a random alive player.
+
+### Phase 2 as built
+
+- `engine/sim-step.ts` holds the fixed step as phases (world prep · player actions ·
+  enemies+boss · collisions · player post · world post); single-player runs them once
+  (`stepSimulation`), `engine/multiplayer/host-sim.ts` (`HostSim`) runs the player-owned
+  phases per player under `swapIn`/`swapOut` (`player-state.ts`) and the rest once.
+  Single-player is pinned by `engine/__tests__/golden-master.test.ts` (full-world hashes over
+  9 seeded scenarios) — if a hash moves you changed gameplay.
+- `handleCollisions` takes `CollisionOptions`: the host calls it once per player filtered by
+  `ownerId` (stamped on projectiles/hitboxes/auras/summons after each player's phase), advances
+  enemy projectiles once (`advanceShared`), and processes deaths itself, per killer
+  (`processEnemyDeaths`), crediting whoever dropped the enemy to 0 HP (`lastHitBy`).
+- Pickups go to the nearest living player. XP trickles 25% to each living teammate.
+- Scaling per living player: enemy HP ×(1+0.5n), damage ×(1+0.15n), spawn budget ×(1+0.6n), boss
+  HP ×(1+0.8n) (n = players − 1); applied once to newly created enemies.
+- The shared systems (enemy spawns, boss aim) target ONE living player, rotating every 2 s
+  (`FOCUS_PERIOD`); enemy AI targets the nearest. Boss attacks therefore aim at the focus player.
+- Level-ups: `getPendingLevelUp` / `chooseUpgrade`; auto-pick of the first option after 10 s;
+  the player is invulnerable while the overlay is open; the world never pauses. Reroll/banish
+  are not offered in co-op yet.
+- Downed 25 s, revived by a teammate within 70 px for 3 s (50% HP, 2.5 s grace), else dead.
+- Wire format: `GameStateSnapshot` is flat number arrays (positions in tenths of a pixel);
+  `multiplayer/snapshot.ts` encodes (interest radius 1100 px, capped), decodes (validating) and
+  interpolates (`snapshotAlpha`, at most one interval of extrapolation, snaps on teleports).
+
+## Shared objectives
+
+- **Kills:** an enemy dies once; `sharedKills` counts all of them; each player's
+  `kills` counts the ones their projectiles finished. Boss kills are shared.
+- **XP and levels are per player.** Pickups go to whoever collects them (XP gems
+  also trickle a share to teammates — `xpTrickleAccum` in the world type). Each
+  player levels independently and gets their own upgrade overlay; the host rolls
+  the choices and returns them to that player only. The overlay **does not pause
+  the world** — a co-op match cannot pause for everyone. Instead the player is
+  invulnerable while the overlay is open (capped at 10 s, then the first option
+  is auto-picked).
+- **Pause:** there is no pause. Esc opens a non-pausing menu (settings, leave).
+  Solo-host pause is not offered either, since it would freeze guests.
+- **Death:** at 0 HP a player is *downed* for `downTimer` seconds; a living
+  teammate standing next to them fills `revivalProgress` and revives them
+  (invulnerable briefly). If the timer expires they are *dead*, spectate a living
+  teammate, and cannot be revived. All players dead/downed = TPK → results (defeat).
+- **Win:** the same victory condition as single-player (wave director victory /
+  final boss). Reported to the hub by the host.
+
+## Drop-in, reconnect, host loss
+
+- Drop-in uses the existing hub rule (`dropInAllowed`, `dropInWindow`): joiners get
+  `GAME_PLAYER_JOINED`; the host spawns them beside the nearest living player at
+  roughly the average team level, with a short invulnerability window. A joiner
+  with no class yet picks one in a small overlay before spawning.
+- A guest who drops keeps their slot for the hub's 10 s grace window (their
+  character stands still and invulnerable-ish: shown as "reconnecting"); on
+  reconnect the host resumes feeding them. After the grace they are removed and
+  the host despawns them.
+- **Host loss ends the run.** The simulation lives only in the host's page and
+  cannot be rebuilt from a snapshot, so there is no host migration (the old
+  half-built migration was removed). The hub tells guests `host_disconnected`
+  immediately (banner with the grace countdown) and `host_reconnected` if the
+  socket returns in time; past the grace it ends the match with
+  `endedReason: 'host_left'` and everyone sees results plus a message.
+
+## Verified results (phase 4)
+
+The host's browser runs the simulation, so nothing it reports is believed. A co-op run is a pure
+function of `(seed, roster, doubleTime, the calls made between steps)`, which lets the server replay it.
+
+1. **Seed.** The hub picks a random 32-bit seed (`crypto.randomInt`) and a `runId` when the countdown
+   ends and tells only the host. `HostSim` draws every random number from that seeded stream
+   (`engine/rng.ts`, `rand()`; single-player's `rand()` is `Math.random`, so the golden master is
+   unchanged).
+2. **Log.** `HostSim.recorder` (`verify/run-log.ts`) records input changes (quantised to hundredths),
+   level-up picks, drop-ins and leaves, delta-encoded into one flat integer array. The host gzips it
+   (`verify/log-codec.ts`) and sends it with `GAME_END` plus the result it claims.
+3. **Verify.** The hub builds a `CoopRunJob` from its OWN state (seed, roster with classes and slots,
+   admitted drop-ins, wall-clock time) plus the host's log and claim, and queues it on pg-boss
+   (`altair.verify-coop`). The `jobs` worker runs `verifyCoopRun`: structural checks on the log
+   (caps: 108k steps, 1.2M numbers), setup must equal the hub's, simulated time cannot exceed the wall
+   clock the hub saw (so verification costs at most ~15% of the time the match was played), then a
+   serialised, yielding replay with a 10 minute deadline. The claim must equal the replay.
+4. **Persist.** Only the replay's numbers are written (`verify/persist.server.ts`: `AltairMatch`,
+   `AltairMatchPlayer`, `AltairCoopProfile`, achievements), under the unique `AltairMatch.runId`, so a
+   replayed submission is a no-op. `POST /api/altair/match` (ALTAIR_SERVER_SECRET) accepts the same job
+   as an alternative intake and answers 202.
+5. **DoS bounds.** One replay at a time; the deadline; at most 8 submissions per host per hour and 40
+   waiting jobs (beyond that a run is dropped, not recorded); the hub never simulates.
+
+Cross-engine determinism: JS engines do not agree on `Math.sin/cos/atan2` (measured: Chromium 153 and
+Node 22 return different bits), so inside a seeded sim the engine calls `engine/dmath.ts` instead, which
+uses software versions built only from IEEE-exact operations (outside it they are `Math.*`, so
+single-player and the golden master are unchanged). Measured: a 4000-step run's whole world state is
+bit-identical between Node 22, Chromium 153, Firefox 155 and WebKit (Safari 26.6). New sim code must use
+`rand()` and the `d*` math, never `Math.random/sin/cos/atan2/exp/pow/hypot`.
+
+Known limits: a run longer than 30 real minutes cannot be verified and is not recorded; a player who
+leaves mid-run is absent from the replay's per-player stats (as in the live results); a bot or macro that
+plays inputs a human could not is not detectable by replay.
+
+## Results and persistence (original notes)
+
+The host reports final per-player stats with a host-only end-of-run event; the hub
+clamps them (a client is untrusted) and broadcasts results. Nothing from a
+multiplayer run awards coins or writes leaderboard rows unless the existing
+single-player path already verifies results server-side — that path will be read
+before anything is persisted, and a client-submitted score is never trusted for
+coin rewards.
+
+- Rejoin after the grace (play3): a guest whose 10 s grace expired mid-match is removed, but the hub remembers
+  their class (`departedClasses`). The client re-sends `LOBBY_JOIN` on every socket RE-connect; a returning guest
+  skips the drop-in picker and window and re-enters as their old class (`GAME_PLAYER_JOINED` -> host `addPlayer`).
+  Their run progress (level, weapons) is NOT restored: they are a fresh drop-in. Leaving on purpose gives no pass
+  back. A reloaded or long-dropped HOST still ends the run (`host_left`): the world cannot be rebuilt from a snapshot.
+
+## Single-player results (what is and is not verified)
+
+Co-op is replay-verified (above). Single-player is **not yet**: it is a React-driven loop (level-up
+application, pause/resume and the periodic store sync are `useEffect`s, the camera and tile streaming run
+per animation frame, and a run can be finalised by closing the tab), so a headless replay of what the
+client did would need those moved into a synchronous driver first. Until then
+`/api/altair/meta` (`lib/altair/meta-guard.ts`) bounds the coin balance instead of trusting it:
+purchases are priced and paid server-side, earned coins are limited by a refilling allowance
+(8 coins/s, 8000 cap) and clamped, a first save may import at most 50k. A cheater can still claim up
+to ~8 coins per second of wall clock without playing; `/api/altair/score` (leaderboard totals) is still
+client-reported.
+
+### The solo driver (built, anti-cheat 4/6)
+
+`lib/altair/solo/solo-run.ts` (`SoloRun`) is the one synchronous driver for a single-player run, used by
+`GameScreen` (the browser) and by the headless verifier (`solo/verify-solo.ts`). It owns what used to be
+spread over `GameScreen` callbacks and `useEffect`s: the sim step (`engine/sim-step.ts`), the rules (XP,
+level-ups, coins, revives, evolution, reroll, banish), a seeded random stream (`engine/rng.ts`, scoped
+per call like `HostSim`), and a terrain window. The loop (`createGameLoop`) is only a fixed-step adapter:
+`driver.step()` once per 60 Hz step, render at the interpolated pose. A run is a pure function of
+`(seed, class + loadout, canvas size, input changes, level-up picks/rerolls/banishes)`, each indexed by the
+number of steps taken (`solo/solo-log.ts`: input = mobile stick in hundredths + a 4-bit key mask).
+
+What had to change to make that true (each was a hidden input from the wall clock or the display):
+
+- The level-up picker froze the world only after a React effect ran, a few frames late. `step()` now
+  refuses to advance while the picker is open, so picks are logged at an exact step.
+- Terrain (and so which props exist, and what a destroyed prop respawns as) followed the smoothed render
+  camera, i.e. frame timing and window size. The sim now updates terrain from the player each step with
+  a camera of its own whose size is the canvas size (logged when it changes; the render camera is unchanged).
+- Structure pickups drained per frame; they now drain inside the step. Hunter's Mark reads the sim camera.
+- Module-level engine state is reset at run start (it used to carry over between runs on one page).
+- The survival clock at death is `world.time`, not the 100 ms-stale store sync.
+
+`createGameLoop` without a driver (the golden-master harness) is untouched, so `golden-master.json` is
+unchanged. Equivalence evidence: `solo/__tests__/solo-loop.test.ts` plays 25 s through the real loop at
+60/144/30 Hz and a jittery 20-90 Hz and replays each log to identical numbers; `browser-run.json` is a log
+recorded in real Chromium (keyboard, level-up clicks, a resize) that replays offline to identical numbers.
+
+### Server-verified single-player (built, anti-cheat 5/6)
+
+1. **Issue.** `POST /api/altair/run/start` (`solo/issue.server.ts`, 6/min, signed in) picks the seed
+   (`crypto.randomInt`) and derives the loadout from the SERVER's copy of the player's upgrades, storing an
+   `AltairSoloRun` (`openUserId` is unique, so one open run per user; starting another abandons the old
+   one; 3 h expiry). The browser plays exactly that run (`solo/session.ts` hands it to `GameScreen`).
+   Signed out / offline: no run is issued and single-player behaves as before.
+2. **Submit.** At run end (death, victory, Exit, tab close) the browser gzips the log and
+   `POST /api/altair/run/finish` flips the row open -> submitted (the flip is the idempotency key) and
+   queues `altair.verify-solo` on pg-boss. 202; nothing in the body is believed.
+3. **Verify.** The `jobs` worker (`solo/queue.server.ts`) reads seed/class/double-time/loadout from the ROW,
+   requires the log to match them, requires `steps/60` <= server wall clock between issue and submit
+   (x1.1 + 10 s), replays (serialised, yielding, 10 min deadline) and requires the claim (victory, kills,
+   level, payout) to equal the replay. A mismatch marks the run `rejected` and writes nothing.
+4. **Persist.** `persistVerifiedSoloRun` writes, in one transaction with the status flip, the replay's
+   payout to `AltairMetaProgress.coins` and the replay's totals to `AltairPlayer` (what `/api/altair/score`
+   took from the client). `GET /api/altair/run/status` lets the client wait and then reload the balance.
+5. **Meta save.** A client that sends `x-altair-verified-runs: 1` can never RAISE its coin balance through
+   `/api/altair/meta` (purchases are still priced server-side). Exception: a run the server could not take
+   (queue full, rate limited: status `unverified`) may be paid once through the capped 8 coins/s allowance,
+   named by `x-altair-fallback-run`. Old clients (no header) keep the allowance, and `/api/altair/score`
+   keeps a plausibility-bounded legacy intake, until `ALTAIR_LEGACY_META=0` / `ALTAIR_LEGACY_SCORE=0`.
+6. **Bounds.** 30 submissions per user per hour, 60 waiting jobs, one replay at a time, a deadline, a
+   10 MB inflate cap, steps <= wall clock.
+
+7. **Meta upgrades and the first-clear bonus (fixed).** The loadout used to read upgrade ids without the shop's
+   `meta_` prefix, so Reroll / Banish / Revival / Extra Choice / Catalyst Affinity / Greed were always level 0, and
+   the stat upgrades (Vitality, Might, Swiftness, ...) never reached the sim. `loadoutFromUpgrades` now reads
+   the real ids and carries the summed stat bonuses in `loadout.stats` (whitelist `META_STAT_KEYS`), which the
+   server issues, the log must repeat, and `SoloRun` feeds to `computeEffectiveStats`. A loadout WITHOUT `stats`
+   is the old shape and replays exactly as before, so every previously recorded log (and run issued before the
+   fix) still verifies; multiplayer and the golden master never set it. The first-clear bonus (200, flat, once
+   per class) was added to the run store after the payout was computed, so it was never paid; it is now paid by
+   `persistVerifiedSoloRun` on a verified victory, decided by the server's own ledger
+   (`AltairSoloRun.firstClearBonus`, checked under a lock on the meta row), so a repeat of the run id, a second
+   victory with the class, or an edited `classFirstClears` cannot pay it again (`/api/altair/meta` also only ever
+   grows that list). Still inert because the engine has no implementation for them: Piercing (`pierce` is read by
+   no weapon), Tenacity, Scavenger, Endurance, Arsenal, and the "catalysts start at lv2" half of Catalyst Affinity.
+
+Residual (not closed): bots and macros play inputs a human could not and replay cannot tell; class unlocks,
+double-time unlock, best-time/first-clear fields still round-trip through the client's meta save; a seed
+can be shopped by starting runs (6/min) and abandoning the ones a bot simulates badly; closing the tab on a
+log larger than ~60 KB loses that run's payout (keepalive size limit); the legacy intake for old clients
+remains until its switch is flipped.

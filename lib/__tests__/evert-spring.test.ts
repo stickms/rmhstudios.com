@@ -142,7 +142,8 @@ describe('ordinary controls keep immediate feedback', () => {
   });
   it('buttons acknowledge hover and press without replacing the surface', () => {
     const button = read('components/ui/button.tsx');
-    expect(button).toContain('hover:bg-site-surface-hover');
+    // Flat at rest: the slab is the engine's, admitted on touch — no hand-rolled hover fill.
+    expect(button).toContain('data-jelly-rest');
     expect(button).toContain('data-fluid-press');
     expect(button).not.toContain('data-evert=');
   });

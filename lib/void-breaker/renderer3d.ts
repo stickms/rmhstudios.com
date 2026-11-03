@@ -12,6 +12,7 @@
  *   constructor(canvas), getAimPoint(cx, cy, game), draw(game, dt), dispose().
  */
 import * as THREE from 'three';
+import { RenderScaleGovernor } from '@/lib/render/scale-governor';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
@@ -44,6 +45,12 @@ const tmpColor = new THREE.Color();
 /** Bloom render-target scale — see setupComposer(). */
 const BLOOM_SCALE = 0.5;
 
+/** Internal-resolution steps (fraction of 1280x720); the last is full. */
+const RENDER_SCALES = [0.55, 0.7, 0.85, 1];
+/** Frame interval above which the device is over budget / at which it keeps up. */
+const SLOW_FRAME_MS = 24;
+const FAST_FRAME_MS = 18;
+
 /** A renderer interface both the 2D and 3D renderers satisfy. */
 export interface VBRenderer {
   getAimPoint(canvasX: number, canvasY: number, game: VoidBreakerEngine): { x: number; y: number };
@@ -59,6 +66,12 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   private camera: THREE.PerspectiveCamera;
   private composer!: EffectComposer;
   private bloom!: UnrealBloomPass;
+  /** Adapts the internal resolution to the real frame cadence (not draw() CPU time). */
+  private scaleIndex = RENDER_SCALES.length - 1;
+  private readonly governor = new RenderScaleGovernor(RENDER_SCALES.length, {
+    slowMs: SLOW_FRAME_MS,
+    fastMs: FAST_FRAME_MS,
+  });
   private rgbShift!: ShaderPass;
   private filmPass!: FilmPass;
   /** Accessibility: when true, dampen shake + flashes, disable CA/grain. */
@@ -138,6 +151,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.setupEnvironment();
     this.setupEntities();
     this.setupComposer();
+    this.applyScale();
   }
 
   // ── Setup ──────────────────────────────────────────────────────────────────
@@ -654,6 +668,32 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.rgbShift.uniforms.amount.value = ca;
 
     this.composer.render();
+    this.adaptQuality();
+  }
+
+  /** Step the render scale from the wall-clock frame interval; bloom goes first at the floor. */
+  private adaptQuality(): void {
+    const next = this.governor.sample(performance.now());
+    if (next === null) return;
+    this.scaleIndex = next;
+    this.applyScale();
+  }
+
+  /**
+   * The buffer is a fixed 1280x720 stretched by CSS. On a phone that shows it
+   * at ~412 CSS px wide, so rendering all 1280 columns is wasted fill: cap the
+   * base at what the screen can show at up to 2x density, then let the
+   * governor scale from there.
+   */
+  private applyScale(): void {
+    const canvas = this.renderer.domElement;
+    const shown = canvas.clientWidth > 0 ? (canvas.clientWidth * Math.min(window.devicePixelRatio || 1, 2)) / CANVAS_WIDTH : 1;
+    const scale = Math.min(1, Math.max(0.4, shown)) * RENDER_SCALES[this.scaleIndex];
+    this.renderer.setPixelRatio(scale);
+    this.renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT, false);
+    this.composer.setPixelRatio(scale);
+    this.composer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+    this.bloom.enabled = this.scaleIndex > 0;
   }
 
   private syncEnemies(game: VoidBreakerEngine): void {

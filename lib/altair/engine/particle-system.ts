@@ -6,6 +6,8 @@
 // =============================================================================
 
 import { ParticleEntity, GameWorld, createId } from './types';
+import { rand } from './rng';
+import { dcos, dsin } from './dmath';
 
 const MAX_PARTICLES = 300;
 
@@ -56,10 +58,10 @@ export function spawnDamageNumber(
   if (world.particles.length >= MAX_PARTICLES) return;
   const p: ParticleEntity = {
     id: createId(world),
-    x: x + (Math.random() - 0.5) * 10,
+    x: x + (rand() - 0.5) * 10,
     y: y - 10,
-    vx: (Math.random() - 0.5) * 30,
-    vy: -60 - Math.random() * 20,
+    vx: (rand() - 0.5) * 30,
+    vy: -60 - rand() * 20,
     life: 0.8,
     maxLife: 0.8,
     color: isCrit ? '#ffdd00' : '#ffffff',
@@ -82,18 +84,18 @@ export function spawnDeathBurst(
 ): void {
   if (world.particles.length >= MAX_PARTICLES) return;
   for (let i = 0; i < count; i++) {
-    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
-    const speed = 60 + Math.random() * 80;
+    const angle = (Math.PI * 2 * i) / count + (rand() - 0.5) * 0.5;
+    const speed = 60 + rand() * 80;
     const p: ParticleEntity = {
       id: createId(world),
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: 0.4 + Math.random() * 0.3,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed,
+      life: 0.4 + rand() * 0.3,
       maxLife: 0.7,
       color,
-      radius: 2 + Math.random() * 2,
+      radius: 2 + rand() * 2,
     };
     world.particles.push(p);
   }
@@ -110,18 +112,18 @@ export function spawnHitFlash(
   if (world.particles.length >= MAX_PARTICLES) return;
   const count = 3;
   for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 20 + Math.random() * 40;
+    const angle = rand() * Math.PI * 2;
+    const speed = 20 + rand() * 40;
     const p: ParticleEntity = {
       id: createId(world),
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed,
       life: 0.15,
       maxLife: 0.15,
       color: '#ffffff',
-      radius: 2 + Math.random(),
+      radius: 2 + rand(),
     };
     world.particles.push(p);
   }
@@ -137,18 +139,18 @@ export function spawnXPCollect(
 ): void {
   const count = 4;
   for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 30 + Math.random() * 30;
+    const angle = rand() * Math.PI * 2;
+    const speed = 30 + rand() * 30;
     const p: ParticleEntity = {
       id: createId(world),
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 20,
-      life: 0.3 + Math.random() * 0.2,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed - 20,
+      life: 0.3 + rand() * 0.2,
       maxLife: 0.5,
       color: '#44ff88',
-      radius: 1.5 + Math.random(),
+      radius: 1.5 + rand(),
     };
     world.particles.push(p);
   }
@@ -166,17 +168,17 @@ export function spawnLevelUp(
   const count = 16;
   for (let i = 0; i < count; i++) {
     const angle = (Math.PI * 2 * i) / count;
-    const speed = 100 + Math.random() * 60;
+    const speed = 100 + rand() * 60;
     const p: ParticleEntity = {
       id: createId(world),
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: 0.6 + Math.random() * 0.4,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed,
+      life: 0.6 + rand() * 0.4,
       maxLife: 1.0,
       color: colors[i % colors.length],
-      radius: 2.5 + Math.random() * 2,
+      radius: 2.5 + rand() * 2,
     };
     world.particles.push(p);
   }
@@ -210,17 +212,17 @@ export function spawnEvolution(
   const count = 24;
   for (let i = 0; i < count; i++) {
     const angle = (Math.PI * 2 * i) / count;
-    const speed = 120 + Math.random() * 80;
+    const speed = 120 + rand() * 80;
     const p: ParticleEntity = {
       id: createId(world),
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: 0.8 + Math.random() * 0.5,
+      vx: dcos(angle) * speed,
+      vy: dsin(angle) * speed,
+      life: 0.8 + rand() * 0.5,
       maxLife: 1.3,
       color: colors[i % colors.length],
-      radius: 3 + Math.random() * 3,
+      radius: 3 + rand() * 3,
     };
     world.particles.push(p);
   }

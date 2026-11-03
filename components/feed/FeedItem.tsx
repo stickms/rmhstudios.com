@@ -25,6 +25,8 @@ export const FeedItem = memo(function FeedItem({ item }: FeedItemProps) {
  return <AnnouncementCard item={item} variant="article"/>;
  case'research':
  return <AnnouncementCard item={item} variant="research"/>;
+ case'election_announcement':
+ return <AnnouncementCard item={item} variant="election"/>;
  default:
  return null;
  }

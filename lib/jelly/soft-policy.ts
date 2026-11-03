@@ -13,7 +13,9 @@
 
 import {
   AMBIENT_BOUNDS,
+  JELLY_BODY,
   JELLY_BUDGETS,
+  JELLY_LAYOUT,
   MOTION_BOUNDS,
   type JellyMotion,
   type JellyTier,
@@ -91,9 +93,7 @@ export const SOFT_BODY = {
   cornerFlexMaxH: 64,
   cornerFlexAmount: 0.25,
   cornerFlexMax: 3,
-  /** Tier L outward bulge cap (px) before the overdraw bound; see {@link latticeCaps}. */
-  latticeOutwardPx: 3,
-  /** Tier L dent: `−min(dentBevelShare · bevel, dentMaxPx)`. */
+  /** Tier L dent (rim-only slabs, which have no body fill to sag): `−min(dentBevelShare · bevel, dentMaxPx)`. */
   dentBevelShare: 0.6,
   dentMaxPx: 10,
 } as const;
@@ -555,15 +555,29 @@ export function pickNudgeTargets<K>(
 /* ── Lattice caps ────────────────────────────────────────────────────────── */
 
 /**
- * Tier L displacement caps for a bevel (02 §1.3): outward ≤ 3px, and never past the focus ring's offset
- * (`AMBIENT_BOUNDS.maxOverdrawPx`, 04 §4.5); inward (the dent) ≤ `min(0.6·bevel, 10px)`. Both scale with
- * `amplitude` (0.5 on large surfaces).
+ * The soft-cap bounds of a lattice (px). `outward` is the silhouette bulge: `JELLY_BODY.bulgePx`, never more than the
+ * unclipped margin. `inward` is the sag. A slab whose shader draws the whole body (`body`) sags `JELLY_BODY.sagPx`; one
+ * that only warps the rim band is limited to `min(0.6·bevel, 10px)` as before. Both scale with `amplitude` (0.5 on
+ * large surfaces) and with the body's short side (`JELLY_BODY.refShortSidePx`, floored at `minScale`).
  */
-export function latticeCaps(bevel: number, amplitude = 1): { outward: number; inward: number } {
+export function latticeCaps(
+  bevel: number,
+  amplitude = 1,
+  short: number = JELLY_BODY.refShortSidePx,
+  body = true,
+): { outward: number; inward: number } {
   const a = Math.max(0, amplitude);
+  const size = Number.isFinite(short) ? short : JELLY_BODY.refShortSidePx;
+  const k = a * Math.min(1, Math.max(JELLY_BODY.minScale, size / JELLY_BODY.refShortSidePx));
+  if (!body) {
+    return {
+      outward: Math.min(AMBIENT_BOUNDS.maxOverdrawPx, SOFT_BODY.dentMaxPx) * a,
+      inward: Math.min(SOFT_BODY.dentBevelShare * Math.max(0, bevel), SOFT_BODY.dentMaxPx) * a,
+    };
+  }
   return {
-    outward: Math.min(SOFT_BODY.latticeOutwardPx, AMBIENT_BOUNDS.maxOverdrawPx) * a,
-    inward: Math.min(SOFT_BODY.dentBevelShare * Math.max(0, bevel), SOFT_BODY.dentMaxPx) * a,
+    outward: Math.min(JELLY_BODY.bulgePx * k, JELLY_LAYOUT.marginPx),
+    inward: JELLY_BODY.sagPx * k,
   };
 }
 
