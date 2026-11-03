@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { ArrowUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ballotByState, statewideFirst } from '@/lib/elections/ballot-map';
 import { STATE_CODES, stateName } from '@/lib/elections/states';
@@ -23,6 +24,8 @@ export function StateBallot({
 }) {
   const { t } = useTranslation('c-elections');
   const [all, setAll] = useState<string | null>(null);
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const drawerRef = useRef<HTMLElement | null>(null);
   const meas = useMeasures(cycle, live);
   const offs = useOffices(cycle, live);
   const by = useMemo(() => ballotByState(meas.data?.measures ?? [], offs.data?.races ?? []), [meas.data, offs.data]);
@@ -56,6 +59,14 @@ export function StateBallot({
     );
   }
 
+  // On a narrow screen the details sit below the map: bring them into view on selection, and offer a way back.
+  const pick = (p: string) => {
+    const next = selected === p ? null : p;
+    onSelect(next);
+    if (next && typeof window !== 'undefined' && window.matchMedia('(max-width: 999px)').matches) {
+      window.setTimeout(() => drawerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+    }
+  };
   const entry = selected ? by.get(selected) : undefined;
   const LIMIT = 8;
   const expanded = all === selected;
@@ -64,11 +75,11 @@ export function StateBallot({
 
   return (
     <div className="el-map">
-      <div>
+      <div ref={mapRef}>
         <TileGrid
           cells={cells}
           selected={selected}
-          onSelect={(p) => onSelect(selected === p ? null : p)}
+          onSelect={pick}
           ariaLabel={t('ballot.aria', { defaultValue: 'Map of states. Select a state for its ballot measures and local races.' })}
         />
         <div className="el-legend" aria-hidden>
@@ -81,9 +92,17 @@ export function StateBallot({
         </p>
       </div>
 
-      <aside className="el-drawer el-box" aria-live="polite">
+      <aside ref={drawerRef} className="el-drawer el-box el-ballot__drawer" aria-live="polite">
         {selected ? (
           <div className="el-stack">
+            <button
+              type="button"
+              className="el-btn el-btn--sm el-btn--ghost el-ballot__back"
+              onClick={() => mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            >
+              <ArrowUp size={14} aria-hidden />
+              {t('ballot.back', { defaultValue: 'Pick another state' })}
+            </button>
             <h3 className="el-drawer__title">{stateName(selected)}</h3>
             {!entry ? (
               <p className="el-eyebrow">{t('ballot.noneHere', { defaultValue: 'No ballot measures or local races published for this state.' })}</p>

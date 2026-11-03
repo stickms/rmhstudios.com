@@ -2389,3 +2389,27 @@ html.ios-webkit .el-room__grid {
   flex-direction: column;
   gap: 2px;
 }
+
+/* Ballot map on phones: the details sit under the map; a way back up, a lighter drawer, and a lean top bar. */
+.el-ballot__back {
+  align-self: flex-start;
+}
+.el-ballot__drawer {
+  scroll-margin-top: 110px;
+}
+@media (min-width: 1000px) {
+  .el-ballot__back {
+    display: none;
+  }
+}
+@media (max-width: 999px) {
+  .el-ballot__drawer {
+    padding: 12px;
+  }
+}
+@media (max-width: 599px) {
+  /* The LIVE chip pushed the tools onto a second row and made the sticky bar a fifth of the screen. */
+  .el-bar__tools .el-live {
+    display: none;
+  }
+}
