@@ -209,6 +209,16 @@ const GEL_FALLBACK = {
 } as const;
 const LIGHT_HEIGHT = 96;
 /**
+ * The frosted overlay body (2026-11-03): how much blurred page goes under the tint (0..1), and the most opaque the tint
+ * may be while it does — the blurred snapshot is what the remaining share shows. No `backdrop-filter` anywhere: this is a
+ * coarse mip level of the snapshot the rim already refracts.
+ */
+const FROST = { strength: 1, tintAlpha: 0.78 } as const;
+const frostedBody = (b: { top: RGBA; bottom: RGBA }) => ({
+  top: [b.top[0], b.top[1], b.top[2], Math.min(b.top[3], FROST.tintAlpha)] as RGBA,
+  bottom: [b.bottom[0], b.bottom[1], b.bottom[2], Math.min(b.bottom[3], FROST.tintAlpha)] as RGBA,
+});
+/**
  * How far past a surface's own edge the rim may read the snapshot, px. Refraction samples INWARD from the edge, so the
  * region read is the surface itself plus the dispersion spread; a surface flush with the viewport edge (a sticky header
  * at the top) is fully covered and must not be faded as if it read past the picture.
@@ -1481,6 +1491,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
         sceneCoverage(sceneX, sceneY, w, h, scene.width, scene.height, SCENE_EDGE_MARGIN);
     }
 
+    // Dialogs, menus and popovers are frosted: a blurred copy of the page snapshot goes under their (lighter) tint, so the
+    // live page can never read through the fill. Needs the shader to paint the body and a snapshot to blur.
+    const frosted = s.role === 'overlay' && !!s.body && s.bodyArmed && sceneOn > 0;
+
     // The cursor light, in this surface's pixels.
     const ox = rect.left + padLeft;
     const oy = rect.top + padTop;
@@ -1510,7 +1524,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
       dispersion: JELLY_DISPERSION,
       margin: s.margin,
       lattice: s.lattice && !s.lattice.asleep ? latticeUniform(s.lattice, s.latticeBuf) : null,
-      body: s.bodyArmed ? s.body : null,
+      body: s.bodyArmed && s.body ? (frosted ? frostedBody(s.body) : s.body) : null,
+      frost: frosted ? FROST.strength : 0,
       gel: s.gel,
       // A haze slot draws its own (moving) plasma; every other slab draws the static variant here.
       plasma: s.haze ? null : plasmaFor(s, now),

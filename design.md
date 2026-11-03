@@ -101,8 +101,9 @@ form is a near-black void, graphite surfaces, white ink and **one** electric acc
 which is also the plasma colour, and it is the default theme (Midnight); Daylight is the same rule in daylight
 (white canvas, ink text, ink accent). No gradients on the ground, no neon or glowing
 type, no sci-fi illustration (robots, brains, circuits, sparkles). Copy is short and
-literal ("Deploy model", "Latency 42 ms"). Text is **Geist**; eyebrows and data are
-**Geist Mono**. Each view has **one signal action** — the ink-gel
+literal ("Deploy model", "Latency 42 ms"). Text is **Geist**; data is **Geist Mono**.
+There are **no eyebrows** (owner decision, 2026-11-03): no letterspaced all-caps labels;
+group headings and kickers are sentence case and a category is a soft chip. Each view has **one signal action** — the ink-gel
 `<Button variant="signal">` — and everything else on it is quieter. Restraint in the
 palette is what lets the optics be loud.
 

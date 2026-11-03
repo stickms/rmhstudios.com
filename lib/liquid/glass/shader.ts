@@ -123,6 +123,7 @@ uniform float uDentOn;
 uniform vec4 uSpecular;    // dent light dot colour + alpha (--gel-specular)
 uniform vec2 uMold;        // x = shoulder depth 0..1.5 (--gel-mold), y = edge feather px (--gel-feather)
 uniform float uBodyOn;     // 1 when this program paints the whole gel body (the host's CSS fill has stepped aside)
+uniform float uFrost;      // 0..1: a blurred copy of the page snapshot painted under the body (dialogs, menus)
 uniform vec4 uBody;        // the body's colour at the top (straight rgb + alpha: role tint under the gel coat)
 uniform vec4 uBodyDepth;   // and at the base
 uniform vec3 uLens;        // x = wavelength spread (x crown glass, --gel-dispersion), y = slab thickness multiplier (--gel-lens), z = environment reflection strength (--gel-reflect)
@@ -192,6 +193,12 @@ void main() {
   // The gel body (premultiplied), under everything else: the role tint under the gel coat, top to base.
   vec4 bodyC = uBodyOn > 0.5 ? mix(uBody, uBodyDepth, clamp(P.y / max(uSize.y, 1.0), 0.0, 1.0)) : vec4(0.0);
   vec4 bodyP = vec4(bodyC.rgb * bodyC.a, bodyC.a);
+  // Frosted: the page snapshot at a coarse mip level (about a 16px blur) goes UNDER the tint, so what shows through is
+  // the page blurred, never its live text. One extra texture read, for the few overlay hosts that ask for it.
+  if (uBodyOn > 0.5 && uFrost > 0.001 && uSceneOn > 0.001) {
+    vec4 frost = textureLod(uScene, (P + uSceneMap.xy) * uSceneMap.zw, 4.0) * (uFrost * uSceneOn);
+    bodyP += frost * (1.0 - bodyP.a);
+  }
 
   // ── Bevel geometry ──
   float bz = max(uBezel, 2.0);

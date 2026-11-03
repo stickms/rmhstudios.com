@@ -84,7 +84,7 @@ export default function TakeMeter({ postId }: { postId: string }) {
       role="group"
       aria-label={t('take-label', { defaultValue: 'Take meter' })}
     >
-      <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+      <div className="mb-2 flex items-center gap-2 site-section-label">
         <Scale className="h-3.5 w-3.5" aria-hidden />
         {t('take-heading', { defaultValue: 'Take' })}
       </div>

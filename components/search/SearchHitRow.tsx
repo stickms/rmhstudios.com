@@ -127,7 +127,7 @@ export function SearchHitRow({ hit, showKind = true }: { hit: SearchHit; showKin
         <div className="flex items-baseline gap-2">
           <p className="truncate text-sm font-semibold text-site-text">{hit.title}</p>
           {showKind && (
-            <span className="shrink-0 text-[0.6875rem] uppercase tracking-wide text-site-text-dim">
+            <span className="shrink-0 text-xs text-site-text-dim">
               {kindLabel(hit.kind)}
             </span>
           )}

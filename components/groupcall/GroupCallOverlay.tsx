@@ -284,7 +284,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
             layout="list"
             excludeUserId={ringingFrom?.id ?? null}
             heading={
-              <p className="text-xs font-medium uppercase tracking-wide text-site-text-muted">
+              <p className="text-xs font-medium text-site-text-muted">
                 {t('incoming-roster', { defaultValue: 'Already in this call' })}
               </p>
             }

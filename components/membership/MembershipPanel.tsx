@@ -287,7 +287,7 @@ export function MembershipPanel({
                           <Badge
                             variant="accent"
                             size="sm"
-                            className="mt-1 font-mono uppercase tracking-widest"
+                            className="mt-1"
                           >
                             {t('current-badge', { defaultValue: 'Current' })}
                           </Badge>
@@ -461,8 +461,8 @@ function PricingStyles() {
       .pricing-ribbon {
         position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%);
         border-radius: 9999px; padding: 4px 12px; max-width: calc(100% - 1.5rem);
-        font-family: var(--site-font-mono); font-size: 10px; font-weight: 600;
-        text-transform: uppercase; letter-spacing: 0.16em; white-space: nowrap;
+        font-size: 0.75rem; font-weight: 600;
+        white-space: nowrap;
         overflow: hidden; text-overflow: ellipsis;
         color: var(--site-warning-fg); background: var(--site-warning);
         box-shadow: 0 6px 20px -6px color-mix(in srgb, var(--site-warning) 60%, transparent);

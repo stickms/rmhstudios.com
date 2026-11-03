@@ -879,7 +879,7 @@ function PollComposer({
  return (
  <div className="border-t border-site-border bg-site-surface/40 p-3">
  <div className="mb-2 flex items-center justify-between">
- <span className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <span className="site-section-label">
  {t('poll', { defaultValue:'Poll'})}
  </span>
  <button

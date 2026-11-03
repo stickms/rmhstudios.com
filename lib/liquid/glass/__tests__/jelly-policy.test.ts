@@ -339,6 +339,15 @@ describe('shader contract', () => {
     }
   });
 
+  it('frosts dialogs and menus from a coarse mip of the page snapshot, with no backdrop-filter and no extra pass', () => {
+    // One extra read, only for hosts that ask (uFrost): the same snapshot the rim refracts, sampled blurred and put UNDER
+    // the tint. The three refraction reads (`texture(uScene,`) are unchanged.
+    expect(FRAG).toContain('uniform float uFrost;');
+    expect(FRAG).toMatch(/textureLod\(uScene,[^;]*,\s*4\.0\)/);
+    expect(FRAG).toMatch(/bodyP \+= frost \* \(1\.0 - bodyP\.a\);/);
+    expect(FRAG).not.toContain('backdrop');
+  });
+
   it('the lens costs no extra texture read and the interior skips the whole refraction path', () => {
     // Refraction + dispersion + reflection are arithmetic over the SAME three scene samples (one per wavelength).
     expect((FRAG.match(/texture\(uScene,/g) ?? []).length).toBe(3);

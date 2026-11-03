@@ -62,7 +62,7 @@ export function WidgetStack({ className }: { className?: string }) {
   return (
     <div className={className}>
       <div className="mb-2 flex items-center justify-between px-1">
-        <span className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+        <span className="site-section-label">
           {t('for-you', { defaultValue: 'For you' })}
         </span>
         <Link

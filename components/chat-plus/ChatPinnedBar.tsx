@@ -52,7 +52,7 @@ export function ChatPinnedBar({
       >
         <Pin className="size-4 shrink-0 text-site-accent" aria-hidden />
         <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-semibold uppercase tracking-wide text-site-accent">
+          <span className="block text-xs font-semibold text-site-accent">
             {pins.length > 1
               ? t('pinned-bar-count', {
                   count: pins.length,

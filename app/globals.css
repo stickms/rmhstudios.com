@@ -286,7 +286,7 @@
   --site-glass-tint-strong: rgba(255, 255, 255, 0.5);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(255, 255, 255, 0.9);
   --site-glass-blur-pane: 18px;
@@ -525,21 +525,14 @@
      drawn rather than shouted. */
   --site-display-weight: 600;
 
-  /* Kicker (the micro-caps eyebrow above a display heading). /design uses
-     0.625rem; this is 0.6875rem — the 11px floor the 2026-07-28 audit set in
-     AUD-002 — a deliberate deviation from the reference in accessibility's
-     favour. See ui-audit-apple-2026-07-30.md §6.3. */
-  --site-kicker-size: 0.6875rem;
-  --site-kicker-tracking: 0.2em;
-  --site-kicker-weight: 700;
-  /* On a phone the kicker is the eyebrow over every PageLayout title and the
-     "Back" label, in muted ink at wide tracking, held at arm's length. 11px was
-     the only type on the site still under the 12px floor; AUD-002 already moved
-     this token in accessibility's favour once, and the same argument reaches one
-     step further where the viewing distance is worst. Desktop keeps 11px. */
-  @media (max-width: 767.98px) {
-    --site-kicker-size: 0.75rem;
-  }
+  /* Kicker — the short line of context over a heading (a page's section, the
+     "Back" label). It is NOT an eyebrow any more (owner decision, 2026-11-03):
+     no letterspaced all-caps, no mono. It is sentence case in the site sans, a
+     step under body size, in muted ink, so it reads as a quiet caption rather
+     than a label to decode. The heading under it carries the weight. */
+  --site-kicker-size: 0.8125rem;
+  --site-kicker-tracking: 0;
+  --site-kicker-weight: 600;
 
   /* The lede paragraph that follows a display heading. */
   --site-lede-size: clamp(1rem, 1.25vw, 1.125rem);
@@ -981,7 +974,7 @@
   --site-glass-tint-strong: rgba(255, 255, 255, 0.52);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-rim: rgba(0, 0, 0, 0.12);
   --site-glass-rim-soft: rgba(0, 0, 0, 0.05);
@@ -1066,7 +1059,7 @@
   --site-glass-tint-strong: rgba(255, 255, 255, 0.48);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(244, 247, 253, 0.55);
   --site-glass-rim: rgba(255, 255, 255, 0.9);
@@ -1177,7 +1170,7 @@
      cards and floating panels remain distinct, including on narrow screens. */
   --site-glass-pane-tint: color-mix(in srgb, var(--site-surface-opaque) 82%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-surface-opaque) 92%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-surface-opaque) 96%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-surface-opaque) 98%, transparent);
   --site-glass-mobile-tint: var(--site-glass-pane-tint);
   --site-glass-ink: rgba(0, 0, 0, 0.62);
   --site-glass-rim: rgba(255, 255, 255, 0.14);
@@ -1263,7 +1256,7 @@
   --site-glass-tint-strong: rgba(255, 250, 238, 0.48);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(240, 232, 214, 0.6);
   --site-glass-rim: rgba(255, 248, 230, 0.85);
@@ -1348,7 +1341,7 @@
   --site-glass-tint-strong: rgba(150, 185, 255, 0.15);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   /* Nocturne declared the whole glass contract EXCEPT this one, so it fell
      through to the light theme's `rgba(255, 255, 255, 0.9)` at :root — and
@@ -1442,7 +1435,7 @@
   --site-glass-tint-strong: rgba(177, 232, 255, 0.12);
   --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 94%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(2, 6, 14, 0.58);
   --site-glass-rim: rgba(191, 244, 255, 0.42);
@@ -5352,12 +5345,10 @@ body {
 
 /* ── Kicker + lede ───────────────────────────────────────────────────────── */
 .site-kicker {
-  /* Eyebrows are Geist Mono (CLAUDE.md "Identity"). */
-  font-family: var(--site-font-mono);
+  /* Sentence case, site sans (CLAUDE.md "Identity": no eyebrows). */
   font-size: var(--site-kicker-size);
   font-weight: var(--site-kicker-weight);
   letter-spacing: var(--site-kicker-tracking);
-  text-transform: uppercase;
   color: var(--site-text-muted);
 }
 /* ── Section label ────────────────────────────────────────────────────────
@@ -5649,10 +5640,8 @@ body {
   display: flex;
   justify-content: space-between;
   padding: 2rem clamp(1rem, 5vw, 5rem);
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--site-text-dim);
 }
 
@@ -5904,12 +5893,9 @@ body {
   text-align: center;
 }
 .apple-hero__eyebrow {
-  font-family: var(--site-font-mono);
-  color: var(--site-text-dim);
-  font-size: 0.72rem;
-  font-weight: 620;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  color: var(--site-text-muted);
+  font-size: var(--site-kicker-size);
+  font-weight: var(--site-kicker-weight);
 }
 .apple-hero__title {
   color: var(--site-text);

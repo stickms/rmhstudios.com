@@ -83,7 +83,7 @@ export default function MyHighlightsPanel() {
           <li key={row.id} className="glass-fill rounded-site p-5">
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1 space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-site-text-dim">
+                <p className="text-xs font-semiboldr text-site-text-dim">
                   {kindLabel(row.kind)}
                 </p>
                 <Link to={row.href} className="font-medium text-site-text hover:underline">

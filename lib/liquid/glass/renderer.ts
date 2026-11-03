@@ -84,6 +84,11 @@ export interface GlassDraw {
    * base. Omitted or null = rim only, and the lattice warps just the rim band.
    */
   body?: { top: RGBA4; bottom: RGBA4 } | null;
+  /**
+   * 0..1: how much of a blurred copy of the page snapshot is painted under the body (the frosted look of dialogs and
+   * menus, which would otherwise show the live page through their fill). Needs `body` and a snapshot; 0 or omitted = none.
+   */
+  frost?: number;
   /** #989 gel tokens; omitted = no RGB band, no Fresnel edge, no depth, no plasma colour. */
   gel?: GelLook;
   /** Dormant plasma drawn by THIS program (slabs without a haze canvas); omitted = none. */
@@ -233,6 +238,7 @@ const NAMES = [
   'uBodyOn',
   'uBody',
   'uBodyDepth',
+  'uFrost',
 ] as const;
 type UName = (typeof NAMES)[number];
 
@@ -403,7 +409,8 @@ export class GlassRenderer {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    // Mipmapped: the frosted overlay body samples a coarse level of the page snapshot (a blur at no extra pass).
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -427,6 +434,7 @@ export class GlassRenderer {
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     try {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+      gl.generateMipmap(gl.TEXTURE_2D);
     } catch {
       return false;
     }
@@ -611,6 +619,7 @@ export class GlassRenderer {
     gl.uniform3f(u.uLens, gel?.dispersion ?? 1, gel?.lens ?? 1, gel?.reflect ?? 0);
     const body = o.body;
     gl.uniform1f(u.uBodyOn, body ? 1 : 0);
+    gl.uniform1f(u.uFrost, body ? Math.max(0, Math.min(1, o.frost ?? 0)) : 0);
     gl.uniform4f(u.uBody, body?.top[0] ?? 0, body?.top[1] ?? 0, body?.top[2] ?? 0, body?.top[3] ?? 0);
     gl.uniform4f(
       u.uBodyDepth,
