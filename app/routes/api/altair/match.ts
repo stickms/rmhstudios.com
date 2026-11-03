@@ -3,49 +3,56 @@ import { defineHandler } from '@/lib/api/handler.server';
 /**
  * Altair Multiplayer Match Recording API
  *
- * POST — Called by the Altair multiplayer server at run end
- * to persist match results and update co-op profiles.
+ * POST -- server-to-server intake (ALTAIR_SERVER_SECRET bearer) for a finished co-op match.
+ *
+ * It does NOT record what it is given. The body is a CoopRunJob: the hub's trusted setup (seed,
+ * roster, wall clock) plus the host's run LOG and CLAIMED result. The run is queued for a
+ * headless replay (lib/altair/verify); only if the replay reproduces the claim does the worker
+ * write the REPLAY's numbers to AltairMatch / AltairMatchPlayer / the co-op profile. The response is
+ * 202: the result is not known yet, and a rejected run is not an error the caller can fix.
  */
 
-import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
-import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
-import { recordGamePlay } from '@/lib/quests/engine.server';
 import { timingSafeStringEqual } from '@/lib/internal-auth';
+import { enqueueCoopRun } from '@/lib/altair/verify/queue.server';
 
-// Server-to-server auth via shared secret
 const ALTAIR_SERVER_SECRET = process.env.ALTAIR_SERVER_SECRET;
 
-// Bound every client-influenced stat to a sane maximum so a compromised/abused
-// caller can't write absurd totals into a user's co-op profile (which feeds
-// leaderboards). Values are clamped, not rejected, to keep match recording
-// resilient.
-const playerSchema = z.object({
+const jobPlayer = z.object({
   userId: z.string().min(1).max(64),
-  userName: z.string().max(64).optional(),
-  classId: z.string().max(64).optional(),
-  slot: z.number().int().min(0).max(64).optional(),
-  level: z.number().int().min(0).max(1000).optional(),
-  kills: z.number().int().min(0).max(1_000_000).optional(),
-  coinsEarned: z.number().int().min(0).max(100_000_000).optional(),
-  timeSurvived: z.number().min(0).max(86_400_000).optional(),
-  wasDowned: z.boolean().optional(),
-  wasRevived: z.boolean().optional(),
-  revivesGiven: z.number().int().min(0).max(10_000).optional(),
-  revivesReceived: z.number().int().min(0).max(10_000).optional(),
-  wasAliveAtEnd: z.boolean().optional(),
-  coinBreakdown: z.unknown().optional(),
+  userName: z.string().max(64),
+  classId: z.string().min(1).max(64),
+  slot: z.number().int().min(0).max(3),
 });
 
-const matchSchema = z.object({
+const claimPlayer = z.object({
+  userId: z.string().min(1).max(64),
+  level: z.number().int().min(0).max(1000),
+  kills: z.number().int().min(0).max(10_000_000),
+  coins: z.number().int().min(0).max(100_000_000),
+  revivesGiven: z.number().int().min(0).max(10_000),
+  revivesReceived: z.number().int().min(0).max(10_000),
+  wasDowned: z.boolean(),
+  wasAliveAtEnd: z.boolean(),
+});
+
+const jobSchema = z.object({
+  runId: z.string().min(8).max(64),
   lobbyId: z.string().min(1).max(64),
-  playerCount: z.number().int().min(0).max(64).optional(),
-  doubleTime: z.boolean().optional(),
-  victory: z.boolean().optional(),
-  sharedKills: z.number().int().min(0).max(10_000_000).optional(),
-  bossesDefeated: z.array(z.string().max(64)).max(100).optional(),
-  durationMs: z.number().int().min(0).max(86_400_000).nullable().optional(),
-  players: z.array(playerSchema).min(1).max(64),
+  hostUserId: z.string().min(1).max(64),
+  seed: z.number().int().min(0).max(0xffffffff),
+  doubleTime: z.boolean(),
+  roster: z.array(jobPlayer).min(1).max(4),
+  joins: z.array(jobPlayer).max(16),
+  wallMs: z.number().min(0).max(6 * 3_600_000),
+  // Shape and size are checked by checkRunLog before any step is simulated.
+  log: z.unknown(),
+  claim: z.object({
+    victory: z.boolean(),
+    sharedKills: z.number().int().min(0).max(10_000_000),
+    bossesDefeated: z.array(z.string().max(64)).max(100),
+    players: z.array(claimPlayer).max(20),
+  }),
 });
 
 export const Route = createFileRoute('/api/altair/match')({
@@ -61,123 +68,19 @@ export const Route = createFileRoute('/api/altair/match')({
           return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await request.json();
-        const parsed = matchSchema.safeParse(body);
+        const parsed = jobSchema.safeParse(await request.json().catch(() => null));
         if (!parsed.success) {
           return Response.json(
             { error: parsed.error.issues[0]?.message ?? 'Invalid payload' },
             { status: 400 },
           );
         }
-        const {
-          lobbyId,
-          playerCount,
-          doubleTime,
-          victory,
-          sharedKills,
-          bossesDefeated,
-          durationMs,
-          players,
-        } = parsed.data;
 
-        // Only update co-op profiles for userIds that map to real accounts —
-        // never let a caller mint/inflate profiles for arbitrary or anonymous ids.
-        const realUserIds = new Set(
-          (
-            await prisma.user.findMany({
-              where: { id: { in: players.map((p) => p.userId) } },
-              select: { id: true },
-            })
-          ).map((u) => u.id),
-        );
-
-        // Create match record with player records in a transaction
-        const match = await prisma.$transaction(async (tx) => {
-          // Create the match
-          const matchRecord = await tx.altairMatch.create({
-            data: {
-              lobbyId,
-              playerCount: playerCount ?? players.length,
-              doubleTime: doubleTime ?? false,
-              victory: victory ?? false,
-              sharedKills: sharedKills ?? 0,
-              bossesDefeated: bossesDefeated ?? [],
-              durationMs: durationMs ?? null,
-              endedAt: new Date(),
-              results: body,
-            },
-          });
-
-          // Player match rows are independent inserts with nothing read back, so
-          // they go in as one statement rather than an awaited create per player.
-          await tx.altairMatchPlayer.createMany({
-            data: players.map((p) => ({
-              matchId: matchRecord.id,
-              userId: p.userId,
-              userName: p.userName ?? 'Player',
-              classId: p.classId ?? 'unknown',
-              slot: p.slot ?? 0,
-              finalLevel: p.level ?? 1,
-              kills: p.kills ?? 0,
-              coinsEarned: p.coinsEarned ?? 0,
-              timeSurvived: p.timeSurvived ?? 0,
-              wasDowned: p.wasDowned ?? false,
-              wasRevived: p.wasRevived ?? false,
-              revivesGiven: p.revivesGiven ?? 0,
-              wasAliveAtEnd: p.wasAliveAtEnd ?? true,
-              stats: p.coinBreakdown ?? {},
-            })),
-          });
-
-          // Co-op profiles still need per-user upsert semantics (increments on
-          // an existing row), which has no bulk form.
-          for (const p of players) {
-            // Only verified real users get a persisted profile.
-            if (!realUserIds.has(p.userId)) continue;
-            await tx.altairCoopProfile.upsert({
-              where: { userId: p.userId },
-              create: {
-                userId: p.userId,
-                totalCoopRuns: 1,
-                totalCoopWins: victory ? 1 : 0,
-                totalRevivesGiven: p.revivesGiven ?? 0,
-                totalRevivesReceived: p.revivesReceived ?? 0,
-                totalCoopKills: p.kills ?? 0,
-                totalCoopCoins: p.coinsEarned ?? 0,
-                favoriteClassId: p.classId ?? null,
-              },
-              update: {
-                totalCoopRuns: { increment: 1 },
-                totalCoopWins: victory ? { increment: 1 } : undefined,
-                totalRevivesGiven: { increment: p.revivesGiven ?? 0 },
-                totalRevivesReceived: { increment: p.revivesReceived ?? 0 },
-                totalCoopKills: { increment: p.kills ?? 0 },
-                totalCoopCoins: { increment: p.coinsEarned ?? 0 },
-              },
-            });
-          }
-
-          return matchRecord;
-        });
-
-        // Achievements for real co-op players (best-effort).
-        try {
-          for (const p of players) {
-            if (!realUserIds.has(p.userId)) continue;
-            await grantAchievement(p.userId, 'game.altair.first_run');
-            if (victory) await grantAchievement(p.userId, 'game.altair.first_victory');
-            if (p.revivesGiven && p.revivesGiven > 0) {
-              await progressAchievement(p.userId, 'game.altair.coop_revives_10', {
-                by: p.revivesGiven,
-              });
-            }
-            await recordGamePlay(p.userId);
-          }
-        } catch (e) {
-          console.error('altair achievement error:', e);
-        }
-
-        return Response.json({ success: true, matchId: match.id });
+        const outcome = await enqueueCoopRun(parsed.data);
+        if (outcome === 'rate_limited') return Response.json({ error: 'Too many runs from this host' }, { status: 429 });
+        if (outcome === 'backlog_full') return Response.json({ error: 'Verifier is busy' }, { status: 503 });
+        if (outcome === 'failed') return Response.json({ error: 'Could not queue the run' }, { status: 500 });
+        return Response.json({ success: true, queued: true, runId: parsed.data.runId }, { status: 202 });
       }),
     },
   },

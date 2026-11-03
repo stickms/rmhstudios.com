@@ -16,11 +16,14 @@
  * it, so Start could not succeed.
  */
 
-import { randomInt } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 import type { Server, Socket } from 'socket.io';
 import { generateRoomCode, sanitizeString } from '../utils';
 import { config } from '../config';
 import { CLASSES } from '../../../lib/altair/data/classes';
+import { decodeRunLog } from '../../../lib/altair/verify/log-codec.server';
+import { submitToVerifyQueue } from '../../../lib/altair/verify/submit.server';
+import type { CoopRunJob, JobPlayer } from '../../../lib/altair/verify/job';
 
 const VALID_CLASS_IDS = new Set<string>(CLASSES.map((c) => c.id));
 
@@ -143,6 +146,12 @@ interface AltairLobby {
    * pick a favourable one. Null outside PLAYING/RESULTS.
    */
   runSeed: number | null;
+  /** Hub-issued id of the current run: the dedupe key of its persisted result. */
+  runId: string | null;
+  /** Who was in the match, with which class and slot, when it started (the verifier's trusted roster). */
+  startRoster: JobPlayer[];
+  /** Everyone admitted mid-run (a log may only add players from this list). */
+  admitted: JobPlayer[];
 }
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -409,6 +418,9 @@ function endGame(
     lobby.gameStartedAt = null;
     lobby.lastSnapshot = null;
     lobby.runSeed = null;
+    lobby.runId = null;
+    lobby.startRoster = [];
+    lobby.admitted = [];
     for (const [, player] of lobby.players) {
       player.isReady = false;
       player.classId = null;
@@ -504,6 +516,7 @@ function onLobbyCreate(io: Server, socket: Socket, payload: any): void {
     players: new Map([[userId, player]]),
     state: 'WAITING', chat: [], createdAt: now, lastActivityAt: now,
     gameStartedAt: null, lastSnapshot: null, bossesDefeated: [], sharedKills: 0, runSeed: null,
+    runId: null, startRoster: [], admitted: [],
   };
 
   lobbies.set(lobbyId, lobby);
@@ -750,6 +763,7 @@ function onClassSelect(io: Server, socket: Socket, payload: any): void {
     player.runState = createInitialRunState();
     lobby.lastActivityAt = Date.now();
     broadcastFullSync(lobby);
+    lobby.admitted.push({ userId, userName: player.userName, classId, slot: player.slot });
     // The host's page spawns them now that the class is known.
     broadcastToLobby(lobby.id, S2C.GAME_PLAYER_JOINED, {
       player: {
@@ -849,6 +863,11 @@ function onGameStart(io: Server, socket: Socket, payload: any): void {
       lobby.bossesDefeated = [];
       lobby.sharedKills = 0;
       lobby.runSeed = randomInt(0, 2 ** 32);
+      lobby.runId = randomUUID();
+      lobby.startRoster = [...lobby.players.values()].map((p) => ({
+        userId: p.userId, userName: p.userName, classId: p.classId ?? 'knight', slot: p.slot,
+      }));
+      lobby.admitted = [];
       for (const [, player] of lobby.players) {
         player.runState = createInitialRunState();
       }
@@ -921,8 +940,10 @@ function onHostSnapshot(io: Server, socket: Socket, snapshot: any): void {
 /**
  * Host-only end of run. The host's browser owns the simulation, so it reports
  * how the run ended and the per-player counters; the hub clamps every number (a
- * client is untrusted) and builds the results itself. Nothing here awards coins
- * or writes anything: `coinsEarned` is always 0 for a co-op run.
+ * client is untrusted) and builds the results screen itself; `coinsEarned` there
+ * is always 0. Nothing the host says is persisted: the run log it attaches goes
+ * to the verifier (lib/altair/verify), which replays it and records the replay's
+ * numbers only if they equal the host's claim.
  */
 const MAX_RUN_SECONDS = 6 * 60 * 60;
 function clampInt(v: unknown, max: number): number {
@@ -938,6 +959,16 @@ interface EndReport {
   sharedKills?: unknown;
   bossesDefeated?: unknown;
   players?: unknown;
+}
+interface ClaimRow {
+  userId?: unknown;
+  level?: unknown;
+  kills?: unknown;
+  coins?: unknown;
+  revivesGiven?: unknown;
+  revivesReceived?: unknown;
+  wasDowned?: unknown;
+  wasAliveAtEnd?: unknown;
 }
 interface EndRow {
   userId?: unknown;
@@ -988,7 +1019,58 @@ function onGameEnd(io: Server, socket: Socket, raw: unknown): void {
   }
   const results = buildCurrentResults(lobby, payload.victory === true);
   results.timeSurvived = clampNum(payload.time, MAX_RUN_SECONDS) || results.timeSurvived;
+  // Persistence: what the host reports above is for the results screen only. The run itself is
+  // handed to the verifier, which replays it and records the replay's numbers.
+  void submitRunForVerification(lobby, raw as EndReport & { runLog?: unknown });
   endGame(lobby.id, results);
+}
+
+/** Build the verify job from hub state (trusted) + the host's log and claim (untrusted) and queue it. */
+async function submitRunForVerification(lobby: AltairLobby, payload: EndReport & { runLog?: unknown }): Promise<void> {
+  const runId = lobby.runId;
+  const seed = lobby.runSeed;
+  if (!runId || seed === null || !lobby.gameStartedAt) return;
+  const log = decodeRunLog(payload.runLog);
+  if (!log) {
+    console.warn(JSON.stringify({ event: 'altair.run_unverifiable', runId, reason: 'no readable run log' }));
+    return;
+  }
+  const claim = {
+    victory: payload.victory === true,
+    sharedKills: clampInt(payload.sharedKills, 10_000_000),
+    bossesDefeated: Array.isArray(payload.bossesDefeated)
+      ? payload.bossesDefeated.filter((b: unknown): b is string => typeof b === 'string').slice(0, 20).map((b) => sanitizeString(b, 40))
+      : [],
+    players: (Array.isArray(payload.players) ? (payload.players as ClaimRow[]) : [])
+      .filter((r) => r && typeof r.userId === 'string')
+      .slice(0, MAX_PLAYERS_PER_LOBBY)
+      .map((r) => ({
+        userId: r.userId as string,
+        level: clampInt(r.level, 1000),
+        kills: clampInt(r.kills, 10_000_000),
+        coins: clampInt(r.coins, 100_000_000),
+        revivesGiven: clampInt(r.revivesGiven, 10_000),
+        revivesReceived: clampInt(r.revivesReceived, 10_000),
+        wasDowned: r.wasDowned === true,
+        wasAliveAtEnd: r.wasAliveAtEnd === true,
+      })),
+  };
+  const job: CoopRunJob = {
+    runId,
+    lobbyId: lobby.id,
+    hostUserId: lobby.hostUserId,
+    seed,
+    doubleTime: lobby.settings.doubleTime,
+    roster: lobby.startRoster,
+    joins: lobby.admitted,
+    wallMs: Date.now() - lobby.gameStartedAt,
+    log,
+    claim,
+  };
+  const outcome = await submitToVerifyQueue(job);
+  if (outcome !== 'queued') {
+    console.warn(JSON.stringify({ event: 'altair.run_not_queued', runId, outcome }));
+  }
 }
 
 /**
