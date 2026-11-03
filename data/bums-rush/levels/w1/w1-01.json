@@ -65,6 +65,20 @@
       "length": 530,
       "damping": 0.25
     },
+    {
+      "id": "plank-lift",
+      "kind": "platformMoving",
+      "at": { "x": 820, "y": 1162 },
+      "size": { "x": 150, "y": 24 },
+      "path": [
+        { "x": 820, "y": 1162 },
+        { "x": 820, "y": 1162 },
+        { "x": 820, "y": 872 },
+        { "x": 820, "y": 872 }
+      ],
+      "speed": 24,
+      "material": "paper"
+    },
     { "id": "camera-1", "kind": "camera", "at": { "x": 300, "y": 700 } }
   ],
   "hazards": [
@@ -120,5 +134,5 @@
     }
   ],
   "music": "w1-doodle-docks",
-  "authorNotes": "Solo, no chain required. Spawn on the raised starting pier (top y=750) and swing (swing-tutorial, pivot 752,200, 530px bar, lowest point y=730) across the 200px gap to the middle pier (top y=860, x=900..1610). Arms only reach ~50px past the head, so each bar hangs ~52px past the pier edge with its tip a few px below head height: walk to the edge, grab the tip, pump along the body's own motion, let go on the forward swing. Every swing lands ~110px lower than it starts (a hanging head sits an arm-length below the hand) and a long 530px bar builds enough amplitude to cross; headless pump-and-release runs with noise (lib/bums-rush probe, 100 seeds) land >=85% on both gaps. A safety-net plank sits directly beneath the first gap, so a missed grab or a bad release in the first ~20s lands the player back on solid ground, never in the sea. Grab camera-1 near spawn on the way past (it is off the direct line so picking it up is optional but convenient) to be ready for the photo objective, then hang upside-down at the top of either swing's arc and use it (predicate anyInverted) for w1-01-photo. Cross the second gap on swing-crossing (pivot 1662,310, bar tip y=840, to the goal pier, top y=970) - this crossing is over the real void hazard, so it is the first point in the level an unforced error actually costs a life; an assist beam (striped chain) spans the same gap for players who want it, at the Clock objective's usual cost. No relics, ropes or crates yet - those are levels 02+."
+  "authorNotes": "Solo, no chain required. Spawn on the raised starting pier (top y=750) and swing (swing-tutorial, pivot 752,200, 530px bar, lowest point y=730) across the 200px gap to the middle pier (top y=860, x=900..1610). Arms only reach ~50px past the head, so each bar hangs ~52px past the pier edge with its tip a few px below head height: walk to the edge, grab the tip, pump along the body's own motion, let go on the forward swing. Every swing lands ~110px lower than it starts (a hanging head sits an arm-length below the hand) and a long 530px bar builds enough amplitude to cross; headless pump-and-release runs with noise (lib/bums-rush probe, 100 seeds) land >=85% on both gaps. A safety-net plank sits directly beneath the first gap, so a missed grab or a bad release in the first ~20s lands the player back on solid ground, never in the sea. Arms cannot haul a grounded head up even a single ledge (a free hand droops to ~15px above the head), so the plank would be a dead end on its own: plank-lift (a platformMoving, flush with the plank at the bottom and with the middle pier's top at y=860 at the top, 5px clear of the pier's edge so nothing can wedge) shuttles a stranded player back up to the middle pier (the path repeats each end point so it dwells ~8s at both ends - path time is uniform per segment, so the repeated points are the dwell - and rises over ~4s at speed 24). It rests inside the plank so a player crawls onto it with no step; a head that falls anywhere in the gap lands on it or on the plank within a few px of it. Grab camera-1 near spawn on the way past (it is off the direct line so picking it up is optional but convenient) to be ready for the photo objective, then hang upside-down at the top of either swing's arc and use it (predicate anyInverted) for w1-01-photo. Cross the second gap on swing-crossing (pivot 1662,310, bar tip y=840, to the goal pier, top y=970) - this crossing is over the real void hazard, so it is the first point in the level an unforced error actually costs a life; an assist beam (striped chain) spans the same gap for players who want it, at the Clock objective's usual cost. No relics, ropes or crates yet - those are levels 02+."
 }
