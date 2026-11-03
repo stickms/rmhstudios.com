@@ -55,6 +55,7 @@ import {
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
 import { useLiquidInteractions } from '@/hooks/useLiquidInteractions';
+import { useViewportFollow } from '@/hooks/useViewportFollow';
 import { isNativeMaterialRoute } from '@/lib/native-material-routes';
 import { useLiquidBackground } from '@/hooks/useLiquidBackground';
 import { useIdleReady } from '@/hooks/useIdleReady';
@@ -364,6 +365,7 @@ export function Providers({
   // the registry, the CSS flow carriers, the arcs and the glass engine — see hooks/useLiquidInteractions.ts.
   // The TF2 HUD Editor is deliberately plain Team Fortress 2 — it installs none of the jelly.
   useLiquidInteractions(!isNativeMaterialRoute(pathname));
+  useViewportFollow();
 
   // The eversion state layer's input (globals.css §7.3): where each `data-evert` control turns inside out from
   // (the pointer's entry, the finger, the exit) and when a press is down. Delegated, passive, no frame loop.

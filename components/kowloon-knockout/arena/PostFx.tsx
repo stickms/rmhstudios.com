@@ -7,6 +7,7 @@ import { pass, mix, float } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
 import { useRenderTier } from './RenderTierContext';
+import { reportFrameFail, reportFrameOk } from '@/lib/kowloon-knockout/render/health';
 
 /** Drives the priority-1 render takeover. Only mounted when `post` exists so
  *  that on low tier (no post) no priority>0 useFrame subscriber is registered
@@ -25,7 +26,7 @@ function PostFxRenderer({ post }: { post: THREE.PostProcessing }) {
         try {
             const r = gl.renderAsync ? gl.renderAsync(scene, camera) : (gl.render(scene, camera), undefined);
             if (r && typeof (r as Promise<void>).catch === 'function') (r as Promise<void>).catch(() => {});
-        } catch { /* last resort: skip this frame rather than kill the loop */ }
+        } catch (e) { reportFrameFail(e); /* last resort: skip this frame rather than kill the loop */ }
     };
 
     useFrame(() => {
@@ -34,8 +35,10 @@ function PostFxRenderer({ post }: { post: THREE.PostProcessing }) {
         // the canvas — recover this frame, retry post the next.
         try {
             const p = post.renderAsync();
+            if (p && typeof p.then === 'function') p.then(reportFrameOk, () => {});
             if (p && typeof p.catch === 'function') {
                 p.catch((e: unknown) => {
+                    reportFrameFail(e);
                     if (!warned.current) { warned.current = true; console.warn('[PostFx] renderAsync failed; direct-render fallback:', e); }
                     direct();
                 });
