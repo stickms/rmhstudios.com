@@ -38,3 +38,22 @@ export function beginSoloSession(fallbackLoadout: SoloLoadout): SoloSession {
 export function getSoloSession(): SoloSession | null {
   return current;
 }
+
+/** The run being played (set by GameScreen), so the page that finishes it can read its log and result. */
+export interface ActiveRun {
+  toLog: (end?: 'dead' | 'victory' | 'quit') => import('./solo-log').SoloLog;
+  result: () => import('./solo-run').SoloResult;
+  ended: 'dead' | 'victory' | 'quit' | null;
+}
+let active: ActiveRun | null = null;
+export function setActiveRun(r: ActiveRun | null): void {
+  active = r;
+}
+export function getActiveRun(): ActiveRun | null {
+  return active;
+}
+/** Forget the finished run so it cannot be submitted twice. */
+export function clearSoloSession(): void {
+  current = null;
+  active = null;
+}

@@ -2,8 +2,6 @@
 // JSON; socket.io's per-message cap is 1 MB, so it travels gzipped + base64 where the browser can
 // (CompressionStream), and plain JSON otherwise (only if it still fits).
 
-import type { RunLog } from './run-log';
-
 export interface EncodedRunLog {
   enc: 'gzip-b64' | 'json';
   data: string;
@@ -19,7 +17,7 @@ function toBase64(bytes: Uint8Array): string {
 }
 
 /** Null when the log cannot be sent (too big even compressed). */
-export async function encodeRunLog(log: RunLog): Promise<EncodedRunLog | null> {
+export async function encodeRunLog(log: object): Promise<EncodedRunLog | null> {
   const json = JSON.stringify(log);
   if (typeof CompressionStream !== 'undefined') {
     try {

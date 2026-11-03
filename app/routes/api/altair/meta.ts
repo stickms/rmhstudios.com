@@ -73,6 +73,20 @@ export const Route = createFileRoute('/api/altair/meta')({
             // own table against the server's balance, and earned coins are limited by a refilling
             // allowance (lib/altair/meta-guard.ts). Everything else saves as before.
             const userId = session.user.id;
+            // New clients send x-altair-verified-runs: their coins come from the replay of a server-issued
+            // run, never from this claim. The one exception is a run the server could not take
+            // (x-altair-fallback-run names it, status 'unverified'): it may be paid once through the
+            // capped allowance. Old clients (no header) keep the allowance until ALTAIR_LEGACY_META=0.
+            let verifiedOnly =
+              request.headers.get('x-altair-verified-runs') === '1' || process.env.ALTAIR_LEGACY_META === '0';
+            const fallbackRun = request.headers.get('x-altair-fallback-run');
+            if (verifiedOnly && fallbackRun) {
+              const used = await prisma.altairSoloRun.updateMany({
+                where: { id: fallbackRun, userId, status: 'unverified' },
+                data: { status: 'unverified_paid' },
+              });
+              if (used.count === 1) verifiedOnly = false;
+            }
             const shared = {
               unlockedClasses,
               doubleTimeUnlocked: !!doubleTimeUnlocked,
@@ -93,7 +107,7 @@ export const Route = createFileRoute('/api/altair/meta')({
                     coinAllowanceAt: row.coinAllowanceAt,
                   }
                 : null;
-              const decision = reconcileMetaSave(prev, { coins, upgrades }, new Date());
+              const decision = reconcileMetaSave(prev, { coins, upgrades }, new Date(), { verifiedOnly });
               if (!decision.ok) {
                 return Response.json({ error: decision.error }, { status: 400 });
               }

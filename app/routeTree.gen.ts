@@ -909,6 +909,9 @@ import { Route as ApiAdminStudioChallengesIndexRouteImport } from './routes/api/
 import { Route as ApiAdminStudioChallengesUploadRouteImport } from './routes/api/admin/studio-challenges/upload'
 import { Route as ApiAdminVibeBackfillThumbsRouteImport } from './routes/api/admin/vibe/backfill-thumbs'
 import { Route as ApiAlbumsAssetSplatRouteImport } from './routes/api/albums/asset/$'
+import { Route as ApiAltairRunFinishRouteImport } from './routes/api/altair/run/finish'
+import { Route as ApiAltairRunStartRouteImport } from './routes/api/altair/run/start'
+import { Route as ApiAltairRunStatusRouteImport } from './routes/api/altair/run/status'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
 import { Route as ApiArcadeBacklogIndexRouteImport } from './routes/api/arcade/backlog/index'
 import { Route as ApiArcadeBasketIndexRouteImport } from './routes/api/arcade/basket/index'
@@ -5959,6 +5962,21 @@ const ApiAlbumsAssetSplatRoute = ApiAlbumsAssetSplatRouteImport.update({
   path: '/api/albums/asset/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAltairRunFinishRoute = ApiAltairRunFinishRouteImport.update({
+  id: '/api/altair/run/finish',
+  path: '/api/altair/run/finish',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAltairRunStartRoute = ApiAltairRunStartRouteImport.update({
+  id: '/api/altair/run/start',
+  path: '/api/altair/run/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAltairRunStatusRoute = ApiAltairRunStatusRouteImport.update({
+  id: '/api/altair/run/status',
+  path: '/api/altair/run/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAnnouncementsIdVoteRoute = ApiAnnouncementsIdVoteRouteImport.update({
   id: '/$id/vote',
   path: '/$id/vote',
@@ -9479,6 +9497,9 @@ export interface FileRoutesByFullPath {
   '/api/admin/studio-challenges/upload': typeof ApiAdminStudioChallengesUploadRoute
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
+  '/api/altair/run/finish': typeof ApiAltairRunFinishRoute
+  '/api/altair/run/start': typeof ApiAltairRunStartRoute
+  '/api/altair/run/status': typeof ApiAltairRunStatusRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/arcade/basket/finish': typeof ApiArcadeBasketFinishRoute
   '/api/arcade/basket/start': typeof ApiArcadeBasketStartRoute
@@ -10840,6 +10861,9 @@ export interface FileRoutesByTo {
   '/api/admin/studio-challenges/upload': typeof ApiAdminStudioChallengesUploadRoute
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
+  '/api/altair/run/finish': typeof ApiAltairRunFinishRoute
+  '/api/altair/run/start': typeof ApiAltairRunStartRoute
+  '/api/altair/run/status': typeof ApiAltairRunStatusRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/arcade/basket/finish': typeof ApiArcadeBasketFinishRoute
   '/api/arcade/basket/start': typeof ApiArcadeBasketStartRoute
@@ -12232,6 +12256,9 @@ export interface FileRoutesById {
   '/api/admin/studio-challenges/upload': typeof ApiAdminStudioChallengesUploadRoute
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
+  '/api/altair/run/finish': typeof ApiAltairRunFinishRoute
+  '/api/altair/run/start': typeof ApiAltairRunStartRoute
+  '/api/altair/run/status': typeof ApiAltairRunStatusRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/arcade/basket/finish': typeof ApiArcadeBasketFinishRoute
   '/api/arcade/basket/start': typeof ApiArcadeBasketStartRoute
@@ -13623,6 +13650,9 @@ export interface FileRouteTypes {
     | '/api/admin/studio-challenges/upload'
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
+    | '/api/altair/run/finish'
+    | '/api/altair/run/start'
+    | '/api/altair/run/status'
     | '/api/announcements/$id/vote'
     | '/api/arcade/basket/finish'
     | '/api/arcade/basket/start'
@@ -14984,6 +15014,9 @@ export interface FileRouteTypes {
     | '/api/admin/studio-challenges/upload'
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
+    | '/api/altair/run/finish'
+    | '/api/altair/run/start'
+    | '/api/altair/run/status'
     | '/api/announcements/$id/vote'
     | '/api/arcade/basket/finish'
     | '/api/arcade/basket/start'
@@ -16375,6 +16408,9 @@ export interface FileRouteTypes {
     | '/api/admin/studio-challenges/upload'
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
+    | '/api/altair/run/finish'
+    | '/api/altair/run/start'
+    | '/api/altair/run/status'
     | '/api/announcements/$id/vote'
     | '/api/arcade/basket/finish'
     | '/api/arcade/basket/start'
@@ -17444,6 +17480,9 @@ export interface RootRouteChildren {
   ApiAdminStudioChallengesUploadRoute: typeof ApiAdminStudioChallengesUploadRoute
   ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiAlbumsAssetSplatRoute: typeof ApiAlbumsAssetSplatRoute
+  ApiAltairRunFinishRoute: typeof ApiAltairRunFinishRoute
+  ApiAltairRunStartRoute: typeof ApiAltairRunStartRoute
+  ApiAltairRunStatusRoute: typeof ApiAltairRunStatusRoute
   ApiArcadeBasketFinishRoute: typeof ApiArcadeBasketFinishRoute
   ApiArcadeBasketStartRoute: typeof ApiArcadeBasketStartRoute
   ApiArcadeDailyStartRoute: typeof ApiArcadeDailyStartRoute
@@ -24048,6 +24087,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAlbumsAssetSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/altair/run/finish': {
+      id: '/api/altair/run/finish'
+      path: '/api/altair/run/finish'
+      fullPath: '/api/altair/run/finish'
+      preLoaderRoute: typeof ApiAltairRunFinishRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/altair/run/start': {
+      id: '/api/altair/run/start'
+      path: '/api/altair/run/start'
+      fullPath: '/api/altair/run/start'
+      preLoaderRoute: typeof ApiAltairRunStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/altair/run/status': {
+      id: '/api/altair/run/status'
+      path: '/api/altair/run/status'
+      fullPath: '/api/altair/run/status'
+      preLoaderRoute: typeof ApiAltairRunStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/announcements/$id/vote': {
       id: '/api/announcements/$id/vote'
       path: '/$id/vote'
@@ -30339,6 +30399,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminStudioChallengesUploadRoute: ApiAdminStudioChallengesUploadRoute,
   ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiAlbumsAssetSplatRoute: ApiAlbumsAssetSplatRoute,
+  ApiAltairRunFinishRoute: ApiAltairRunFinishRoute,
+  ApiAltairRunStartRoute: ApiAltairRunStartRoute,
+  ApiAltairRunStatusRoute: ApiAltairRunStatusRoute,
   ApiArcadeBasketFinishRoute: ApiArcadeBasketFinishRoute,
   ApiArcadeBasketStartRoute: ApiArcadeBasketStartRoute,
   ApiArcadeDailyStartRoute: ApiArcadeDailyStartRoute,

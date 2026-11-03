@@ -69,7 +69,16 @@ export function priceUpgrades(
 /** Most coins a first-ever save (progress made while signed out) may import: all upgrades cost ~34k. */
 export const FIRST_IMPORT_MAX_COINS = 50_000;
 
-export function reconcileMetaSave(prev: MetaRow | null, claim: MetaClaim, now: Date): MetaDecision {
+export interface ReconcileOptions {
+  /**
+   * True for clients that submit their runs for replay (lib/altair/solo): the server credits earned coins
+   * itself from the verified replay, so a rise in the client's balance is never minted from its claim.
+   * False keeps the capped allowance above (old clients, and runs the server could not verify).
+   */
+  verifiedOnly?: boolean;
+}
+
+export function reconcileMetaSave(prev: MetaRow | null, claim: MetaClaim, now: Date, opts: ReconcileOptions = {}): MetaDecision {
   if (!Number.isFinite(claim.coins) || claim.coins < 0 || claim.coins > MAX_COINS) {
     return { ok: false, error: 'Invalid coins' };
   }
@@ -97,6 +106,16 @@ export function reconcileMetaSave(prev: MetaRow | null, claim: MetaClaim, now: D
   const refilled = Math.min(ALLOWANCE_CAP, prev.coinAllowance + (Number.isFinite(elapsed) ? elapsed * INCOME_PER_SECOND : ALLOWANCE_CAP));
 
   const claimedGain = Math.floor(claim.coins) - afterPurchases;
+  if (opts.verifiedOnly && claimedGain > 0) {
+    return {
+      ok: true,
+      coins: afterPurchases,
+      upgrades: claim.upgrades,
+      coinAllowance: prev.coinAllowance,
+      coinAllowanceAt: prev.coinAllowanceAt ?? now,
+      clamped: true,
+    };
+  }
   if (claimedGain <= 0) {
     // Spent or unchanged: take the client's (lower) balance.
     return {
