@@ -66,7 +66,11 @@ rounded-site shadow-site-sm` renders the same _box_ and none of the
   keyframes, arc drawing, gradient-position animation, or inherited root variable
   writes in frames. `app/liquid-glass.css` + `app/jelly-material.css` are the
   complete fallback tier. Layout never changes: hosts squash within 4px/3% and
-  neighbours nudge ≤1.5px. See
+  neighbours nudge ≤1.5px.
+  The gel *silhouette* the shader draws is larger than the host: it bulges ≈10px and sags ≈18px (`JELLY_BODY`), painted by the
+  shader (`data-jelly-gel="on"`), and is capped per side to the measured room — so keep 16px (`--jelly-margin`) of free
+  room round a slab inside any `overflow` container (`pnpm audit:jelly-clip`). Buttons are flat until touched
+  (`data-jelly-rest="flat"`); only `variant="signal"` and the semantic fills are always slabs. See
   [`docs/plasmatic-jelly-system.md`](../docs/plasmatic-jelly-system.md).
 - **Variants:** use `class-variance-authority` for components with variant
   APIs (see `ui/button.tsx`, `ui/badge.tsx`). Set a `data-slot="..."`
@@ -163,6 +167,12 @@ cannot see, and it is the half that decides whether the change looks native:
       edge, and no new full-viewport fixed layer (hide it on `html.ios-webkit`).
       `ios-edge-contract.test.ts` blocks the static cases; run `pnpm audit:pages` for a
       shell, page-frame or global-CSS change.
+- [ ] **Bottom-anchored `position: fixed` UI follows Safari's toolbar**: write `bottom: calc(<offset> + var(--vv-follow, 0px))`
+      (app/globals.css, "Bottom-anchored fixed UI that follows Safari's toolbar, in CSS only"), never a bare
+      `bottom: <offset>`. `--vv-follow` is `100% - 100dvh` on iOS WebKit and `0px` elsewhere, so the element stays on the
+      visible area while the toolbar resizes, resolved by layout with no script. Don't add a script that measures and
+      writes the position: it runs on the main thread and trails the toolbar. (The hub orb and globe dock are the one
+      exception and keep the measured `--vv-shift`.)
 - [ ] **Keyboard + screen reader**: icon-only controls named, decorative icons
       `aria-hidden`, focus ring visible against the surface it lands on, no new
       jsx-a11y warnings.

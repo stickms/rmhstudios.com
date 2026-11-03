@@ -29,8 +29,11 @@
  */
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import AdaptiveQuality from '@/components/render/AdaptiveQuality';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { governedDpr } from '@/lib/render/useRenderQuality';
 import {
   BallCollider,
   CuboidCollider,
@@ -127,13 +130,20 @@ const REST_SPEED = 0.28;
 const DECK_HOLD_SECONDS = 2.6;
 
 export default function BowlLane(props: BowlLaneProps) {
+  // The scene is a lane, ten pins and a ball — trivial to draw. The cost
+  // here is fill rate, so the ratio is clamped exactly as every other
+  // full-screen surface on the site clamps it (design-language §12.1) — lower
+  // on a phone, whose 2.6-3x panel otherwise pays for ~3x the pixels of what
+  // reads at a glance — and the shared governor steps it down within seconds
+  // when the device cannot hold the display rate.
+  const isMobile = useIsMobile();
+  const [steps, setSteps] = useState(0);
+  const downscale = useCallback(() => setSteps((n) => Math.min(n + 1, 3)), []);
+  const dpr = governedDpr([1, isMobile ? 1.5 : 1.75], steps);
   return (
     <Canvas
       data-jelly-zone="playfield"
-      // The scene is a lane, ten pins and a ball — trivial to draw. The cost
-      // here is fill rate, so the ratio is clamped exactly as every other
-      // full-screen surface on the site clamps it (design-language §12.1).
-      dpr={[1, 1.75]}
+      dpr={dpr}
       gl={{ antialias: true, powerPreference: 'default' }}
       // A long lens, as a bowling telecast uses: at 46° a sixty-foot lane
       // vanished to a point and the rack was an unreadable smudge four pixels
@@ -145,6 +155,7 @@ export default function BowlLane(props: BowlLaneProps) {
       // when it is not on screen. It unmounts when the overlay closes.
       frameloop="always"
     >
+      <AdaptiveQuality onDownscale={downscale} />
       <Scene {...props} />
     </Canvas>
   );

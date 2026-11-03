@@ -12,7 +12,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover',
+        // Flat at rest, like the globe menu's buttons: just the label on the ground. The slab (a soft gel body that
+        // bulges and sags) is drawn only while the button is touched (`data-jelly-rest="flat"`, lib/liquid/glass/engine.ts).
+        default: 'font-semibold text-site-accent hover:text-site-accent-hover',
         destructive: 'bg-site-danger text-site-danger-fg hover:opacity-85',
         danger: 'bg-site-danger text-site-danger-fg hover:opacity-85',
         // The featured-tier fill (/pricing, /store). Existed only as an inline
@@ -22,14 +24,13 @@ const buttonVariants = cva(
         // Hover was border-brighten-only, which on a transparent fill is close
         // to imperceptible — the outline button reads as inert until clicked.
         // A surface tint gives it the same feedback every other variant has.
-        outline:
-          'border-site-border bg-transparent text-site-text hover:bg-site-surface-hover hover:border-site-border-bright',
-        secondary: 'border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover',
-        ghost: 'text-site-text hover:bg-site-surface-hover',
+        outline: 'text-site-text',
+        secondary: 'text-site-text',
+        ghost: 'text-site-text',
         link: 'text-site-accent underline-offset-4 hover:underline',
-        accent: 'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover',
-        'accent-outline': 'border border-site-accent text-site-accent hover:bg-site-accent-dim',
-        'accent-ghost': 'text-site-accent hover:bg-site-accent-dim',
+        accent: 'font-semibold text-site-accent hover:text-site-accent-hover',
+        'accent-outline': 'text-site-accent',
+        'accent-ghost': 'text-site-accent',
         // The ink-gel primary action (#989): ONE per view. A dense gel of the
         // theme's ink (`--gel-ink`, `--on-ink`), which darkens toward its base
         // through the shared gel coat and wakes its plasma on hover
@@ -55,6 +56,21 @@ const buttonVariants = cva(
     },
   },
 );
+
+/**
+ * Variants that sit flat on the ground at rest and grow a body only while touched. `signal` (the one ink primary per
+ * view) and the semantic fills (`destructive`, `danger`, `warning`) keep their slab: their colour is their meaning.
+ */
+const FLAT_VARIANTS = new Set<string | null | undefined>([
+  'default',
+  'outline',
+  'secondary',
+  'ghost',
+  'link',
+  'accent',
+  'accent-outline',
+  'accent-ghost',
+]);
 
 function Button({
   className,
@@ -88,6 +104,7 @@ function Button({
     <Comp
       data-slot="button"
       data-variant={variant}
+      data-jelly-rest={FLAT_VARIANTS.has(variant) ? 'flat' : undefined}
       data-size={size}
       data-loading={loading ? '' : undefined}
       // A control-mode jelly body (lib/jelly/physics.ts, which absorbed the old

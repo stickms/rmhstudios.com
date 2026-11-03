@@ -84,6 +84,45 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
+  // Altair multiplayer placeholder message (2026-11-02). English-only until the
+  // locales are translated; remove with it.
+  'c-altair': [
+    'coop-choosing',
+    'coop-dead',
+    'coop-downed-timer',
+    'coop-dropin-body',
+    'coop-dropin-title',
+    'coop-host-left',
+    'coop-host-lost-connection',
+    'coop-kills',
+    'coop-leave-host',
+    'coop-level',
+    'coop-levelup-countdown',
+    'coop-lobby-reopens',
+    'coop-match-lost-body',
+    'coop-match-lost-title',
+    'coop-menu',
+    'coop-menu-note',
+    'coop-no-coins',
+    'coop-reconnecting',
+    'coop-resume',
+    'coop-run-ended',
+    'coop-spectating',
+    'coop-team',
+    'coop-waiting-snapshot',
+    'coop-you',
+    'coop-you-dead',
+    'coop-you-downed',
+    'need-two-players',
+    'waiting-for-ready',
+  ],
+  'r-altair': [
+    'error-generic',
+    'error-need-more-players',
+    'error-not-host',
+    'error-not-ready',
+    'error-wrong-state',
+  ],
   // Games library detail pane + playtime notice (2026-10-30). English-only until the
   // translate pipeline runs on build; remove with it.
   'games-hub': [

@@ -43,8 +43,18 @@ import type { GyroSample } from '@/lib/neon-driftway/gyro';
 
 export const TOUCH_STICK_DEAD_RADIUS_PX = 8;
 export const TOUCH_STICK_FULL_DEFLECTION_PX = 64;
-/** ">60px past the grip point" reads as "pulling free" (§12.2). */
-export const TOUCH_GRIP_BREAK_PX = 60;
+/**
+ * Pulling free (§12.2) is a deliberate fling well past full stick deflection.
+ * It used to be 60px against a 64px full deflection, so an ordinary full push
+ * of the thumb dropped the grip and climbing crawled; it now sits 2.5x past it.
+ */
+export const TOUCH_GRIP_BREAK_PX = 160;
+/**
+ * The stick's origin trails the finger beyond this distance (a floating stick),
+ * so a thumb that overshoots full deflection keeps a live, reversible aim
+ * instead of having to travel all the way back across a dead stretch.
+ */
+export const TOUCH_STICK_LEASH_PX = 96;
 
 /**
  * Relative virtual stick: direction + magnitude from `origin` (where the
@@ -89,8 +99,11 @@ export function armForTouchX(clientX: number, stageWidthPx: number): ArmSide {
 
 export interface ActiveTouch {
   pointerId: number;
+  /** The stick's centre. Starts at the touch-down point and trails the finger past `TOUCH_STICK_LEASH_PX`. */
   origin: Vec2;
   current: Vec2;
+  /** Where the finger first landed: the grip-break reference, which the trailing origin must not erase. */
+  down?: Vec2;
 }
 
 export interface TouchArmState {
@@ -118,13 +131,22 @@ export function onTouchDown(
   const existing = side === 'l' ? state.left : state.right;
   if (existing) return state;
 
-  const claimed: ActiveTouch = { pointerId, origin: point, current: point };
+  const claimed: ActiveTouch = { pointerId, origin: point, current: point, down: point };
   return side === 'l' ? { ...state, left: claimed } : { ...state, right: claimed };
 }
 
+function moveTouch(touch: ActiveTouch, point: Vec2): ActiveTouch {
+  const dx = point.x - touch.origin.x;
+  const dy = point.y - touch.origin.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance <= TOUCH_STICK_LEASH_PX) return { ...touch, current: point };
+  const pull = (distance - TOUCH_STICK_LEASH_PX) / distance;
+  return { ...touch, current: point, origin: { x: touch.origin.x + dx * pull, y: touch.origin.y + dy * pull } };
+}
+
 export function onTouchMove(state: TouchArmState, pointerId: number, point: Vec2): TouchArmState {
-  const left = state.left?.pointerId === pointerId ? { ...state.left, current: point } : state.left;
-  const right = state.right?.pointerId === pointerId ? { ...state.right, current: point } : state.right;
+  const left = state.left?.pointerId === pointerId ? moveTouch(state.left, point) : state.left;
+  const right = state.right?.pointerId === pointerId ? moveTouch(state.right, point) : state.right;
   if (left === state.left && right === state.right) return state;
   return { left, right };
 }
@@ -170,7 +192,7 @@ export function resolveTouchArmFrame(
     return { aim, gripRequested: false, active: true };
   }
 
-  const pulledFree = hasDraggedPastGripBreak(touch.origin, touch.current, opts?.gripBreakPx);
+  const pulledFree = hasDraggedPastGripBreak(touch.down ?? touch.origin, touch.current, opts?.gripBreakPx);
   return { aim, gripRequested: !pulledFree, active: true };
 }
 

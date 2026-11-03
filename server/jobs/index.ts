@@ -39,6 +39,10 @@ import {
   SOHUMTRACKER_ALERT_QUEUE,
   registerSohumTrackerAlertCron,
 } from '@/lib/sohumtracker/alerts.server';
+import { registerAltairVerifyWorker } from '@/lib/altair/verify/queue.server';
+import { registerAltairSoloWorker } from '@/lib/altair/solo/queue.server';
+import { VERIFY_SOLO_QUEUE } from '@/lib/altair/solo/job';
+import { VERIFY_COOP_QUEUE } from '@/lib/altair/verify/job';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';
@@ -120,6 +124,34 @@ async function main() {
     log.error({
       event: 'jobs.register_failed',
       queue: ANALYSIS_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // Altair co-op: replay each finished match headlessly and persist only what the replay
+  // reproduces (lib/altair/verify). CPU-heavy, one job at a time, so it lives here and nowhere near
+  // a request or the socket hub. A registration failure means runs wait in the queue, never that an
+  // unverified result is recorded.
+  try {
+    await registerAltairVerifyWorker(boss);
+    log.info({ event: 'jobs.started', queue: VERIFY_COOP_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: VERIFY_COOP_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // Altair single-player: replay each submitted solo run and credit coins / leaderboard rows from the
+  // replay only (lib/altair/solo). A registration failure leaves runs waiting, never credited unverified.
+  try {
+    await registerAltairSoloWorker(boss);
+    log.info({ event: 'jobs.started', queue: VERIFY_SOLO_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: VERIFY_SOLO_QUEUE,
       err: (e as Error)?.message,
     });
   }

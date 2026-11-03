@@ -4,47 +4,44 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { DURATION } from '@/lib/motion';
 
-/** Remains mounted across routes. Finish, fade, then reset while invisible. */
+/**
+ * The route-progress bar. Three phases, changed three times per navigation, not once per tick: `running` (the bar creeps
+ * toward 90%), `done` (it jumps to 100% and the bar goes away) and `idle` (not in the box tree). The creep itself is a
+ * single CSS transition (app/globals.css, "Route progress"); it used to be a `setInterval` that set React state every
+ * 160ms for as long as the page was pending.
+ *
+ * Remains mounted across routes.
+ */
+type Phase = 'idle' | 'running' | 'done';
+
 export function NavigationProgress() {
   const pending = useRouterState({ select: (s) => s.status === 'pending' });
-  const [progress, setProgress] = useState(0);
-  const [visible, setVisible] = useState(false);
+  const [phase, setPhase] = useState<Phase>('idle');
   const shown = useRef(false);
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
-    let trickle: ReturnType<typeof setInterval> | undefined;
     if (pending) {
-      if (!shown.current) setProgress(8);
-      else setVisible(true);
-      timers.push(
-        setTimeout(() => {
-          shown.current = true;
-          setVisible(true);
-          trickle = setInterval(
-            () => setProgress((p) => (p < 90 ? p + (90 - p) * 0.18 : p)),
-            DURATION.base * 1000,
-          );
-        }, 90),
-      );
+      // Re-pending while the previous bar is still finishing keeps it up; otherwise the bar waits 90ms so a fast
+      // navigation never flashes one.
+      if (shown.current) setPhase('running');
+      else
+        timers.push(
+          setTimeout(() => {
+            shown.current = true;
+            setPhase('running');
+          }, 90),
+        );
     } else if (shown.current) {
-      setProgress(100);
+      setPhase('done');
       timers.push(
         setTimeout(() => {
-          setVisible(false);
-          timers.push(
-            setTimeout(() => {
-              shown.current = false;
-              setProgress(0);
-            }, DURATION.base * 1000),
-          );
+          shown.current = false;
+          setPhase('idle');
         }, DURATION.fast * 1000),
       );
     }
-    return () => {
-      timers.forEach(clearTimeout);
-      if (trickle) clearInterval(trickle);
-    };
+    return () => timers.forEach(clearTimeout);
   }, [pending]);
 
   return (
@@ -52,13 +49,9 @@ export function NavigationProgress() {
     // edge (opacity or not) as the source of the status-bar tint, and this one is full width.
     <div
       aria-hidden
-      className={`pointer-events-none fixed inset-x-0 top-0 z-[300] h-0.5 ${visible ? 'block' : 'hidden'}`}
+      className={`pointer-events-none fixed inset-x-0 top-0 z-[300] h-0.5 ${phase === 'idle' ? 'hidden' : 'block'}`}
     >
-      <div
-        data-nav-progress
-        className="h-full origin-left bg-site-accent transition-transform duration-site-fast ease-out"
-        style={{ transform: `scaleX(${progress / 100})` }}
-      />
+      <div data-nav-progress data-phase={phase} className="h-full origin-left bg-site-accent" />
     </div>
   );
 }

@@ -223,7 +223,8 @@ export const NightrailHud = forwardRef<HudHandle, Props>(function NightrailHud({
       >
         <div data-hud="run" className="absolute inset-0">
           {/* Top left — score, then the live combo stacked beneath it */}
-          <div className="absolute" style={{ top: '0.7em', left: '0.7em' }}>
+          {/* Starts below GameBackLink (top-3, up to 44px tall on touch), which the route pins to this corner. */}
+          <div className="absolute" style={{ top: 'max(0.7em, 3.8rem)', left: '0.7em' }}>
             <div
               className="rounded bg-slate-950/55 backdrop-blur-[2px]"
               style={{ padding: '0.4em 0.7em' }}

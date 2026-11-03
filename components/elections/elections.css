@@ -1,0 +1,2306 @@
+/*
+ * /elections — neo-brutalist election hub.
+ *
+ * A standalone full-screen page in the /covid and /rmh-pmc tradition: its own
+ * palette, served by URL so none of it enters the main bundle. Tokens are
+ * `--el-*`; everything is scoped under `.el-root`.
+ *
+ * The look: paper ground, ink borders at 3px, hard offset shadows with no blur,
+ * square corners, enormous stretched Archivo display type over Space Grotesk body and Space Mono data, flat saturated party
+ * colours, stickers set at a slight angle, ticker strips. Motion is hard-edged
+ * and quick (translate on press, snap on hover) and every perpetual animation
+ * stops under prefers-reduced-motion.
+ */
+
+.el-root {
+  --el-paper: #f4f3f7;
+  --el-paper-2: #e3e3e8;
+  --el-cell: #f8f8fa;
+  --el-ink: #0b0b0c;
+  --el-dem: #6d28ff;
+  --el-dem-soft: #d9ccff;
+  --el-gop: #0b0b0c;
+  --el-gop-soft: #c6c6cd;
+  --el-oth: #8a8a93;
+  --el-yellow: #d9ccff;
+  --el-pink: #6d28ff;
+  --el-mint: #ece6ff;
+  --el-sky: #b79bff;
+  --el-grey: #b8b8c0;
+  --el-bw: 2px;
+  --el-r: 10px;
+  --el-hard: 6px 6px 0 var(--el-ink);
+  --el-hard-sm: 3px 3px 0 var(--el-ink);
+  --el-purple: #6d28ff;
+  --el-shadow: none;
+  --el-shadow-sm: none;
+  --el-display: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --el-body: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --el-mono: 'Space Mono', 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  min-height: 100dvh;
+  background: var(--el-paper);
+  color: var(--el-ink);
+  font-family: var(--el-body);
+  font-stretch: 100%;
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+}
+.el-root *,
+.el-root *::before,
+.el-root *::after {
+  box-sizing: border-box;
+}
+.el-root a {
+  color: inherit;
+}
+.el-root button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 0;
+}
+.el-root :focus-visible {
+  outline: 4px solid var(--el-pink);
+  outline-offset: 2px;
+}
+.el-mono {
+  font-family: var(--el-mono);
+}
+.el-wrap {
+  width: min(1280px, 100% - 32px);
+  margin-inline: auto;
+}
+
+/* ── primitives ─────────────────────────────────────────────── */
+.el-box {
+  border: var(--el-bw) solid var(--el-ink);
+  background: var(--el-paper);
+  box-shadow: var(--el-shadow);
+}
+.el-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: var(--el-bw) solid var(--el-ink);
+  background: var(--el-yellow);
+  box-shadow: var(--el-shadow-sm);
+  font-weight: 800;
+  font-stretch: 112%;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    transform 80ms steps(2, end),
+    box-shadow 80ms steps(2, end),
+    background-color 80ms steps(2, end);
+  touch-action: manipulation;
+}
+.el-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--el-ink);
+}
+.el-btn:active,
+.el-btn[aria-pressed='true'] {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--el-ink);
+}
+.el-btn[aria-pressed='true'] {
+  background: var(--el-ink);
+  color: var(--el-paper);
+}
+.el-btn--ghost {
+  background: var(--el-paper);
+}
+.el-btn--dem {
+  background: var(--el-dem);
+  color: #fff;
+}
+.el-btn--gop {
+  background: var(--el-gop);
+  color: #fff;
+}
+.el-btn--pink {
+  background: var(--el-pink);
+}
+.el-btn--sm {
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+.el-eyebrow {
+  font-family: var(--el-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.el-h2 {
+  margin: 0;
+  font-size: clamp(40px, 9vw, 112px);
+  font-weight: 900;
+  font-stretch: 125%;
+  line-height: 0.86;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.el-h2 em {
+  font-style: normal;
+  -webkit-text-stroke: 3px var(--el-ink);
+  color: transparent;
+}
+.el-chip {
+  display: inline-block;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border: 2px solid var(--el-ink);
+  background: var(--el-paper);
+  font-family: var(--el-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.el-chip--dem {
+  background: var(--el-dem);
+  color: #fff;
+}
+.el-chip--gop {
+  background: var(--el-gop);
+  color: #fff;
+}
+.el-chip--oth {
+  background: var(--el-oth);
+  color: #fff;
+}
+.el-chip--yellow {
+  background: var(--el-yellow);
+}
+.el-chip--pink {
+  background: var(--el-pink);
+}
+.el-chip--ink {
+  background: var(--el-ink);
+  color: var(--el-paper);
+}
+.el-sticker {
+  display: inline-block;
+  padding: 6px 12px;
+  border: var(--el-bw) solid var(--el-ink);
+  background: var(--el-yellow);
+  box-shadow: var(--el-shadow-sm);
+  font-weight: 900;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  transform: rotate(var(--el-rot, -4deg));
+}
+
+/* ── top bar ───────────────────────────────────────────────── */
+.el-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--el-paper);
+  border-bottom: var(--el-bw) solid var(--el-ink);
+}
+.el-bar__in {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding-block: 6px;
+}
+.el-bar__brand {
+  font-weight: 900;
+  font-stretch: 125%;
+  font-size: 20px;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.el-bar__brand b {
+  background: var(--el-ink);
+  color: var(--el-yellow);
+  padding: 0 6px;
+  margin-right: 4px;
+}
+.el-bar__nav {
+  display: none;
+  gap: 4px;
+  margin-left: auto;
+}
+.el-bar__nav a {
+  padding: 6px 10px;
+  font-family: var(--el-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.el-bar__nav a:hover {
+  background: var(--el-yellow);
+}
+.el-bar__tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+@media (min-width: 960px) {
+  .el-bar__nav {
+    display: flex;
+  }
+  .el-bar__tools {
+    margin-left: 0;
+  }
+}
+.el-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 2px solid var(--el-ink);
+  background: var(--el-gop);
+  color: #fff;
+  font-family: var(--el-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.el-live::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  animation: el-blink 1.1s steps(2, end) infinite;
+}
+@keyframes el-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── ticker strips ─────────────────────────────────────────── */
+.el-strip {
+  overflow: hidden;
+  border-block: var(--el-bw) solid var(--el-ink);
+  background: var(--el-yellow);
+  white-space: nowrap;
+}
+.el-strip--ink {
+  background: var(--el-ink);
+  color: var(--el-yellow);
+}
+.el-strip--pink {
+  background: var(--el-pink);
+}
+.el-strip__track {
+  display: inline-flex;
+  gap: 0;
+  padding-block: 8px;
+  animation: el-marquee 38s linear infinite;
+  will-change: transform;
+}
+.el-strip__item {
+  padding-inline: 20px;
+  font-weight: 900;
+  font-stretch: 125%;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+.el-strip__item::after {
+  content: '✱';
+  margin-left: 40px;
+}
+@keyframes el-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .el-strip__track,
+  .el-live::before {
+    animation: none;
+  }
+}
+
+/* ── hero: anti-design type ─────────────────────────────────── */
+.el-hero {
+  position: relative;
+  overflow: clip;
+  border-bottom: var(--el-bw) solid var(--el-ink);
+  background: var(--el-paper);
+}
+.el-hero__in {
+  position: relative;
+  padding-block: clamp(28px, 5vw, 64px) clamp(36px, 6vw, 80px);
+}
+.el-hero__sub {
+  max-width: 34ch;
+  margin: 24px 0 0;
+  font-size: clamp(18px, 2.4vw, 28px);
+  font-weight: 700;
+  line-height: 1.15;
+}
+.el-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.el-count {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  width: min(560px, 100%);
+  margin-top: 28px;
+}
+.el-count__cell {
+  padding: 8px 4px;
+  border: var(--el-bw) solid var(--el-ink);
+  background: var(--el-paper);
+  box-shadow: var(--el-shadow-sm);
+  text-align: center;
+}
+.el-count__cell:nth-child(odd) {
+  background: var(--el-yellow);
+}
+.el-count__n {
+  display: block;
+  font-family: var(--el-mono);
+  font-size: clamp(28px, 7vw, 52px);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.el-count__l {
+  font-family: var(--el-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── sections ──────────────────────────────────────────────── */
+.el-section {
+  padding-block: clamp(40px, 7vw, 96px);
+  border-bottom: var(--el-bw) solid var(--el-ink);
+  scroll-margin-top: 56px;
+}
+.el-section--ink {
+  background: var(--el-ink);
+  color: var(--el-paper);
+}
+.el-section--ink .el-h2 em {
+  -webkit-text-stroke-color: var(--el-paper);
+}
+.el-section--yellow {
+  background: var(--el-yellow);
+}
+.el-section--pink {
+  background: var(--el-pink);
+}
+.el-section__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: clamp(20px, 4vw, 40px);
+}
+.el-section__lede {
+  max-width: 46ch;
+  margin: 12px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* ── balance of power ─────────────────────────────────────── */
+.el-bop {
+  display: grid;
+  gap: 20px;
+}
+@media (min-width: 880px) {
+  .el-bop {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.el-bop__card {
+  padding: 16px;
+  color: var(--el-ink);
+  background: var(--el-paper);
+}
+.el-bop__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.el-bop__name {
+  font-size: 28px;
+  font-weight: 900;
+  font-stretch: 125%;
+  text-transform: uppercase;
+}
+.el-bop__nums {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-block: 12px 8px;
+}
+.el-bop__num {
+  font-family: var(--el-mono);
+  font-size: clamp(44px, 8vw, 72px);
+  font-weight: 700;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+.el-bop__num small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.el-bop__num--dem {
+  color: var(--el-dem);
+}
+.el-bop__num--gop {
+  color: var(--el-gop);
+  text-align: right;
+}
+.el-meter {
+  position: relative;
+  display: flex;
+  height: 40px;
+  border: var(--el-bw) solid var(--el-ink);
+  background: var(--el-paper-2);
+}
+.el-meter__seg {
+  height: 100%;
+  transition: width 600ms cubic-bezier(0.7, 0, 0.3, 1);
+}
+.el-meter__seg--dem {
+  background: var(--el-dem);
+}
+.el-meter__seg--gop {
+  background: var(--el-gop);
+  margin-left: auto;
+}
+.el-meter__seg--oth {
+  background: var(--el-oth);
+}
+.el-meter__mid {
+  position: absolute;
+  top: -10px;
+  bottom: -10px;
+  left: 50%;
+  width: 0;
+  border-left: 3px dashed var(--el-ink);
+}
+.el-meter__tag {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 6px;
+  background: var(--el-ink);
+  color: var(--el-paper);
+  font-family: var(--el-mono);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.el-bop__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+.el-stamp {
+  position: absolute;
+  right: -8px;
+  top: -18px;
+  --el-rot: 6deg;
+}
+
+/* ── map ───────────────────────────────────────────────────── */
+.el-map {
+  display: grid;
+  gap: 24px;
+}
+@media (min-width: 1000px) {
+  .el-map {
+    grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+    align-items: start;
+  }
+}
+.el-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.el-grid {
+  --cols: 11;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: clamp(3px, 0.8vw, 8px);
+  padding: clamp(8px, 2vw, 20px);
+  background: var(--el-paper);
+}
+.el-tile {
+  position: relative;
+  display: flex;
+  aspect-ratio: 1;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 2px solid var(--el-ink);
+  background: var(--el-grey);
+  font-family: var(--el-mono);
+  font-weight: 700;
+  line-height: 1.05;
+  transition:
+    transform 80ms steps(2, end),
+    box-shadow 80ms steps(2, end);
+  touch-action: manipulation;
+}
+.el-tile__code {
+  font-size: clamp(11px, 2.6vw, 20px);
+  font-weight: 900;
+}
+.el-tile__cap {
+  font-size: clamp(7px, 1.5vw, 11px);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.el-tile--none {
+  background: transparent;
+  border-style: dashed;
+  color: var(--el-grey);
+  border-color: var(--el-grey);
+}
+.el-tile:not(.el-tile--none):hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 4px 4px 0 var(--el-ink);
+  z-index: 2;
+}
+.el-tile[aria-pressed='true'] {
+  outline: 4px solid var(--el-ink);
+  outline-offset: 1px;
+  z-index: 3;
+}
+.el-tile--DEM {
+  background: var(--el-dem);
+  color: #fff;
+}
+.el-tile--GOP {
+  background: var(--el-gop);
+  color: #fff;
+}
+.el-tile--OTH {
+  background: var(--el-oth);
+  color: #fff;
+}
+.el-tile--split {
+  background: linear-gradient(135deg, var(--el-dem) 50%, var(--el-gop) 50%);
+  color: #fff;
+}
+.el-tile--dem-lead,
+.el-tile--dem-lean {
+  background:
+    radial-gradient(#000 2px, transparent 2.5px) 0 0 / 8px 8px,
+    var(--el-paper);
+}
+.el-tile--gop-lead,
+.el-tile--gop-lean {
+  background: repeating-linear-gradient(135deg, var(--el-gop-soft) 0 6px, var(--el-paper) 6px 12px);
+}
+.el-tile--tossup {
+  background: var(--el-yellow);
+}
+.el-tile--unrated {
+  background: var(--el-paper-2);
+}
+.el-tile--dem-lead,
+.el-tile--gop-lead {
+  border-width: 3px;
+}
+.el-tile__flip {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  padding: 0 3px;
+  border: 2px solid var(--el-ink);
+  background: var(--el-yellow);
+  color: var(--el-ink);
+  font-size: 9px;
+  font-weight: 900;
+}
+.el-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 14px;
+  font-family: var(--el-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.el-legend i {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  border: 2px solid var(--el-ink);
+}
+
+/* ── race cards ────────────────────────────────────────────── */
+.el-race {
+  position: relative;
+  padding: 14px;
+  background: var(--el-paper);
+  color: var(--el-ink);
+}
+.el-race__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.el-race__label {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  font-stretch: 112%;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.el-race__cand {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  margin-top: 12px;
+  font-weight: 700;
+}
+.el-race__name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+.el-race__name span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.el-race__pct {
+  font-family: var(--el-mono);
+  font-variant-numeric: tabular-nums;
+}
+.el-bar2 {
+  grid-column: 1 / -1;
+  height: 12px;
+  border: 2px solid var(--el-ink);
+  background: var(--el-paper-2);
+}
+.el-bar2 > i {
+  display: block;
+  height: 100%;
+  background: var(--el-ink);
+  transition: width 500ms cubic-bezier(0.7, 0, 0.3, 1);
+}
+.el-bar2--DEM > i {
+  background: var(--el-dem);
+}
+.el-bar2--GOP > i {
+  background: var(--el-gop);
+}
+.el-bar2--OTH > i {
+  background: var(--el-oth);
+}
+.el-race__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  font-family: var(--el-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.el-called {
+  position: absolute;
+  right: 10px;
+  bottom: 52px;
+  padding: 2px 10px;
+  border: 3px solid currentColor;
+  background: transparent;
+  font-weight: 900;
+  font-stretch: 125%;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+.el-called--DEM {
+  color: var(--el-dem);
+}
+.el-called--GOP {
+  color: var(--el-gop);
+}
+.el-called--OTH {
+  color: var(--el-oth);
+}
+
+.el-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.el-input {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: var(--el-bw) solid var(--el-ink);
+  background: var(--el-paper);
+  box-shadow: var(--el-shadow-sm);
+  font: inherit;
+  font-weight: 700;
+  color: var(--el-ink);
+  border-radius: 0;
+}
+.el-input::placeholder {
+  color: #6b6759;
+}
+.el-cards {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+
+/* ── closings ──────────────────────────────────────────────── */
+.el-closings {
+  display: grid;
+  gap: 14px;
+}
+.el-closing {
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  gap: 0;
+  border: var(--el-bw) solid var(--el-ink);
+  background: var(--el-paper);
+  color: var(--el-ink);
+  box-shadow: var(--el-shadow-sm);
+}
+.el-closing__t {
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  border-right: var(--el-bw) solid var(--el-ink);
+  background: var(--el-yellow);
+  font-family: var(--el-mono);
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+.el-closing[data-past='true'] .el-closing__t {
+  background: var(--el-ink);
+  color: var(--el-paper);
+}
+.el-closing__states {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+}
+
+/* ── predictions ───────────────────────────────────────────── */
+.el-pred {
+  display: grid;
+  gap: 24px;
+}
+@media (min-width: 1000px) {
+  .el-pred {
+    grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr);
+    align-items: start;
+  }
+}
+.el-pick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.el-proj {
+  padding: 16px;
+  background: var(--el-paper);
+  color: var(--el-ink);
+}
+.el-proj + .el-proj {
+  margin-top: 18px;
+}
+
+/* ── detail drawer ─────────────────────────────────────────── */
+.el-drawer {
+  padding: 16px;
+  background: var(--el-paper);
+  color: var(--el-ink);
+}
+.el-drawer__title {
+  margin: 0 0 12px;
+  font-size: 36px;
+  font-weight: 900;
+  font-stretch: 125%;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+.el-stack {
+  display: grid;
+  gap: 14px;
+}
+
+/* ── summary ("the desk") ──────────────────────────────────── */
+.el-desk {
+  display: grid;
+  gap: 20px;
+}
+@media (min-width: 900px) {
+  .el-desk {
+    grid-template-columns: 1.2fr 1fr;
+  }
+}
+.el-desk__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.el-desk__list li {
+  padding: 10px 0;
+  border-bottom: 2px dashed var(--el-ink);
+  font-weight: 700;
+  line-height: 1.25;
+}
+.el-desk__list li:last-child {
+  border-bottom: 0;
+}
+.el-desk__prose {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.el-foot {
+  padding-block: 40px 56px;
+  background: var(--el-ink);
+  color: var(--el-paper);
+}
+.el-foot p {
+  max-width: 70ch;
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.el-foot a {
+  text-decoration-thickness: 2px;
+}
+.el-skel {
+  background: repeating-linear-gradient(90deg, var(--el-paper-2) 0 12px, var(--el-paper) 12px 24px);
+  min-height: 120px;
+}
+.el-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* ── reveal: progressive enhancement (markup is visible without JS) ── */
+.el-root[data-animate] .el-reveal {
+  opacity: 0;
+  transform: translateY(24px) rotate(var(--el-r, 0deg));
+  transition:
+    opacity 320ms cubic-bezier(0.7, 0, 0.3, 1),
+    transform 320ms cubic-bezier(0.7, 0, 0.3, 1);
+}
+.el-root[data-animate] .el-reveal[data-in='true'] {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .el-root[data-animate] .el-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .el-bar__tools .el-input {
+    max-width: 44vw;
+    font-size: 14px;
+    padding-inline: 6px;
+  }
+  .el-bar__brand {
+    font-size: 17px;
+  }
+}
+
+/* ── Briefing Room (full-screen overlay) ───────────────────────────── */
+.el-lobby {
+  display: grid;
+  gap: 20px;
+}
+@media (min-width: 900px) {
+  .el-lobby {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.el-room {
+  position: fixed;
+  inset: 0;
+  /* The shared dialog band (50): the room renders in a portal, so it needs no higher number. */
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  /* The overlay is its own page: paper ground so no flat colour band shows at an edge, and the
+     safe-area insets keep controls clear of notches and the home indicator. */
+  background: var(--el-paper);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+  outline: none;
+}
+.el-room__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 8px 12px;
+  border-bottom: var(--el-bw) solid var(--el-ink);
+  background: var(--el-yellow);
+}
+.el-room__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 18px;
+}
+.el-room__title strong {
+  overflow: hidden;
+  max-width: 40ch;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 900;
+  font-stretch: 125%;
+  text-transform: uppercase;
+}
+.el-room__tools,
+.el-room__layouts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.el-room__note {
+  margin: 0;
+  padding: 10px 12px;
+  border-bottom: 2px dashed var(--el-ink);
+  font-weight: 700;
+}
+.el-room__grid {
+  display: grid;
+  flex: 1;
+  gap: 8px;
+  min-height: 0;
+  padding: 8px;
+  /* Phones: one pane fills the screen (the switcher above picks which); nothing scrolls the page. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+.el-room__switch {
+  display: flex;
+  gap: 6px;
+  padding: 8px 8px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.el-room__switch .el-btn {
+  flex: 0 0 auto;
+}
+.el-room__pane:not([data-active='true']) {
+  display: none;
+}
+.el-room__pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border: var(--el-bw) solid var(--el-ink);
+  background: var(--el-paper);
+  box-shadow: var(--el-shadow-sm);
+}
+.el-room__panebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 2px solid var(--el-ink);
+  background: var(--el-paper-2);
+}
+.el-room__panebody {
+  flex: 1;
+  min-height: 0;
+  padding: 8px;
+  overflow: hidden;
+}
+@media (min-width: 900px) {
+  .el-room__switch {
+    display: none;
+  }
+  .el-room__pane:not([data-active='true']) {
+    display: flex;
+  }
+  .el-room__pane {
+    min-height: 0;
+  }
+  .el-room__grid[data-layout='1'] {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+  .el-room__grid[data-layout='2h'] {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+  }
+  .el-room__grid[data-layout='2v'] {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .el-room__grid[data-layout='3l'] {
+    grid-template-columns: 1.6fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .el-room__grid[data-layout='3l'] .el-room__pane[data-slot='0'] {
+    grid-row: 1 / span 2;
+  }
+  .el-room__grid[data-layout='4'] {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+}
+.el-room__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 6px 12px;
+  border-top: var(--el-bw) solid var(--el-ink);
+  background: var(--el-pink);
+}
+.el-room__reacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.el-room__lbl {
+  display: none;
+}
+@media (min-width: 640px) {
+  .el-room__lbl {
+    display: inline;
+  }
+}
+.el-room__float {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.el-room__emoji {
+  position: absolute;
+  bottom: 56px;
+  font-size: 36px;
+  line-height: 1;
+  animation: el-float 2.8s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+@keyframes el-float {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(-30px) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-62vh) translateX(18px) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .el-room__emoji {
+    animation: none;
+    opacity: 1;
+    bottom: 64px;
+  }
+}
+
+
+/* ═══ Bento neo-brutalism ═══════════════════════════════════════════════════
+ * The reference: a light grey ground, enormous heavy grotesque type, content set in a bento grid of
+ * cells divided by thin black rules inside one rounded frame, black pill buttons, a soft peach-to-blue
+ * gradient pill for the main action, and a few bright pops (yellow arrow, asterisks, half-moon glyph).
+ * Parties are blue and red again. No shadows anywhere — depth is the rule lines.
+ */
+.el-root h1,
+.el-root h2,
+.el-root h3,
+.el-root h4 {
+  font-family: var(--el-display);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+/* Frames: rounded, ruled, flat. */
+.el-box {
+  border: var(--el-bw) solid var(--el-ink);
+  border-radius: var(--el-r);
+  background: var(--el-cell);
+  box-shadow: none;
+}
+.el-box::after {
+  content: none;
+}
+
+/* Buttons are pills: black with white type; the primary is the pastel gradient. */
+.el-root .el-btn {
+  border: var(--el-bw) solid var(--el-ink);
+  border-radius: 999px;
+  background: var(--el-ink);
+  color: #fff;
+  font-family: var(--el-body);
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  box-shadow: none;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.el-root .el-btn:hover {
+  transform: none;
+  box-shadow: none;
+  background: #fff;
+  color: var(--el-ink);
+}
+.el-root .el-btn:active,
+.el-root .el-btn[aria-pressed='true'] {
+  transform: none;
+  box-shadow: none;
+  background: var(--el-yellow);
+  color: var(--el-ink);
+}
+.el-root .el-btn--dem,
+.el-root .el-btn--pink {
+  background: linear-gradient(100deg, var(--el-pink), #ffd9c9 45%, var(--el-sky));
+  color: var(--el-ink);
+}
+.el-root .el-btn--dem:hover,
+.el-root .el-btn--pink:hover {
+  background: linear-gradient(100deg, #ffc2b5, #fff0e8 45%, #b8dcff);
+}
+.el-root .el-btn--gop {
+  background: var(--el-gop);
+  color: #fff;
+}
+.el-root .el-btn--ghost {
+  background: transparent;
+  color: var(--el-ink);
+}
+.el-root .el-btn--ghost:hover {
+  background: var(--el-ink);
+  color: #fff;
+}
+.el-root .el-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--el-paper-2);
+  color: var(--el-ink);
+}
+.el-root .el-input {
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: none;
+  padding-inline: 18px;
+}
+
+/* Chips and stickers: small pills. */
+.el-root .el-chip,
+.el-sticker {
+  border-radius: 999px;
+  box-shadow: none;
+  color: var(--el-ink);
+  background: #fff;
+}
+.el-root .el-chip--ink,
+.el-root .el-chip--pink {
+  background: var(--el-ink);
+  color: #fff;
+}
+.el-root .el-chip--yellow {
+  background: var(--el-yellow);
+}
+.el-root .el-chip--dem,
+.el-root .el-chip--gop,
+.el-root .el-chip--oth {
+  color: #fff;
+}
+.el-live {
+  background: var(--el-gop);
+  color: #fff;
+  border-radius: 999px;
+  border-color: var(--el-ink);
+}
+
+/* Sections: the grey ground; "yellow" and "pink" sections are quiet bands, strips are black pills of text. */
+.el-section--yellow {
+  background: var(--el-paper);
+}
+.el-section--pink {
+  background: var(--el-cell);
+  color: var(--el-ink);
+}
+.el-section--pink .el-h2 em {
+  -webkit-text-stroke-color: var(--el-ink);
+}
+.el-h2 {
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+}
+.el-strip {
+  background: var(--el-ink);
+  color: #fff;
+  border-color: var(--el-ink);
+}
+.el-strip--ink {
+  background: var(--el-yellow);
+  color: var(--el-ink);
+}
+.el-strip--pink {
+  background: var(--el-cell);
+  color: var(--el-ink);
+}
+
+/* Countdown, map, meters, bars: rounded and flat. */
+.el-count__cell {
+  border-radius: 14px;
+  box-shadow: none;
+  background: var(--el-cell);
+}
+.el-count__cell:nth-child(odd) {
+  background: var(--el-yellow);
+}
+.el-tile {
+  border-radius: 10px;
+  transition: none;
+}
+.el-tile:not(.el-tile--none):hover {
+  transform: none;
+  box-shadow: none;
+  outline: 3px solid var(--el-ink);
+  outline-offset: -4px;
+}
+.el-tile--tossup {
+  background: var(--el-yellow);
+}
+.el-tile--unrated {
+  background: var(--el-paper-2);
+}
+.el-meter,
+.el-bar2 {
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--el-paper-2);
+}
+.el-meter__tag {
+  background: var(--el-ink);
+  color: #fff;
+}
+
+/* Watch rooms. */
+.el-room {
+  background: var(--el-paper);
+}
+.el-room__bar,
+.el-room__panebar {
+  background: var(--el-ink);
+  color: #fff;
+  border-bottom-color: var(--el-ink);
+}
+.el-room__title strong {
+  color: #fff;
+}
+.el-room__pane {
+  border-radius: var(--el-r);
+  overflow: hidden;
+  box-shadow: none;
+  background: var(--el-cell);
+}
+.el-room__bar .el-btn,
+.el-room__panebar .el-input {
+  border-color: #fff;
+}
+.el-room__bar .el-btn:hover {
+  background: #fff;
+  color: var(--el-ink);
+}
+.el-root[data-animate] .el-reveal {
+  --el-r: 0deg;
+}
+
+/* ── Hero: one ruled bento frame ─────────────────────────────────────────── */
+.el-hero {
+  background: var(--el-paper);
+  border-bottom: 0;
+}
+.el-bento {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  border: var(--el-bw) solid var(--el-ink);
+  border-radius: var(--el-r);
+  background: var(--el-ink);
+  gap: var(--el-bw);
+  overflow: hidden;
+}
+.el-cell {
+  position: relative;
+  min-width: 0;
+  padding: clamp(18px, 3vw, 40px);
+  background: var(--el-cell);
+}
+.el-cell--head {
+  grid-column: span 12;
+  background: var(--el-paper);
+}
+.el-cell--vert {
+  grid-column: span 12;
+  min-height: 150px;
+  overflow: hidden;
+}
+.el-cell--count,
+.el-cell--stat,
+.el-cell--note {
+  grid-column: span 12;
+}
+@media (min-width: 900px) {
+  .el-doodle {
+    top: clamp(18px, 3vw, 36px);
+    bottom: auto;
+  }
+  .el-cell--head {
+    grid-column: span 8;
+    grid-row: span 2;
+  }
+  .el-cell--vert {
+    grid-column: span 4;
+    min-height: 0;
+  }
+  .el-cell--count {
+    grid-column: span 4;
+  }
+  .el-cell--stat {
+    grid-column: span 4;
+  }
+  .el-cell--note {
+    grid-column: span 8;
+  }
+}
+.el-hero__title {
+  margin: 14px 0 0;
+  font-size: clamp(52px, 11vw, 148px);
+  font-weight: 700;
+  line-height: 0.88;
+  letter-spacing: -0.065em;
+  text-wrap: balance;
+}
+.el-hero__title span {
+  display: block;
+}
+.el-doodle {
+  position: absolute;
+  right: clamp(12px, 5vw, 64px);
+  bottom: clamp(18px, 3vw, 36px);
+  width: clamp(64px, 12vw, 150px);
+  color: var(--el-yellow);
+  pointer-events: none;
+}
+.el-doodle path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.el-hero__sub {
+  max-width: 34ch;
+  margin: 22px 0 0;
+  font-size: clamp(17px, 2vw, 24px);
+  font-weight: 500;
+  line-height: 1.25;
+}
+.el-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+/* The tall cell: a word set sideways, an asterisk and a half-moon, as in the reference. */
+.el-cell--vert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.35) 1px, transparent 1.5px) 0 0 / 14px 14px,
+    var(--el-cell);
+}
+.el-vert {
+  display: block;
+  font-family: var(--el-display);
+  font-size: clamp(48px, 9vw, 96px);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  text-transform: none;
+}
+@media (min-width: 900px) {
+  .el-vert {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+}
+.el-glyph {
+  position: absolute;
+  font-size: 28px;
+  line-height: 1;
+}
+.el-glyph--a {
+  top: 16px;
+  right: 18px;
+}
+.el-glyph--b {
+  bottom: 16px;
+  left: 18px;
+}
+/* The big-number cell: a heavy figure over a faint wireframe, like the reference's "3D". */
+.el-cell--stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 200px;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 22px), var(--el-cell);
+}
+.el-stat__n {
+  font-family: var(--el-display);
+  font-size: clamp(64px, 9vw, 120px);
+  font-weight: 700;
+  letter-spacing: -0.07em;
+  line-height: 0.85;
+}
+.el-stat__l {
+  margin-top: 8px;
+  font-family: var(--el-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.el-cell--count .el-count {
+  margin-top: 14px;
+  width: 100%;
+}
+.el-cell--note p {
+  margin: 0;
+  max-width: 48ch;
+  font-size: clamp(16px, 1.8vw, 21px);
+  font-weight: 500;
+  line-height: 1.3;
+}
+.el-cell--note .el-eyebrow {
+  margin-bottom: 8px;
+}
+
+.el-h2 {
+  text-transform: none;
+}
+.el-h2 em {
+  font-style: normal;
+}
+
+/* ═══ Purple + hard shadows (second reference pass) ═════════════════════════
+ * Monochrome with ONE theme colour. The references: an application window with a title bar and a hard
+ * offset shadow, a magenta-style button with its own hard shadow, a ruled tab strip along the bottom of the
+ * hero. Black, white, grey and purple only; parties are purple (Dem) and black (GOP).
+ */
+.el-box {
+  border-radius: var(--el-r);
+  box-shadow: var(--el-hard);
+}
+.el-root .el-btn {
+  border-radius: 8px;
+  box-shadow: var(--el-hard-sm);
+  transition:
+    transform 0.08s,
+    box-shadow 0.08s,
+    background-color 0.12s,
+    color 0.12s;
+}
+.el-root .el-btn:hover {
+  background: var(--el-purple);
+  color: #fff;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--el-ink);
+}
+.el-root .el-btn:active,
+.el-root .el-btn[aria-pressed='true'] {
+  background: var(--el-purple);
+  color: #fff;
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--el-ink);
+}
+.el-root .el-btn--dem,
+.el-root .el-btn--pink {
+  background: var(--el-purple);
+  color: #fff;
+}
+.el-root .el-btn--dem:hover,
+.el-root .el-btn--pink:hover {
+  background: var(--el-ink);
+  color: #fff;
+}
+.el-root .el-btn--ghost {
+  background: #fff;
+  color: var(--el-ink);
+  box-shadow: var(--el-hard-sm);
+}
+.el-root .el-btn--ghost:hover {
+  background: var(--el-purple);
+  color: #fff;
+}
+.el-root .el-input {
+  border-radius: 8px;
+  padding-inline: 12px;
+}
+.el-root .el-chip,
+.el-sticker {
+  border-radius: 6px;
+}
+.el-root .el-chip--dem {
+  background: var(--el-purple);
+}
+.el-live {
+  background: var(--el-purple);
+  border-radius: 6px;
+}
+.el-strip--ink {
+  background: var(--el-purple);
+  color: #fff;
+}
+.el-count__cell {
+  border-radius: 8px;
+}
+.el-count__cell:nth-child(odd) {
+  background: var(--el-purple);
+  color: #fff;
+}
+.el-tile--tossup {
+  background: repeating-linear-gradient(45deg, var(--el-ink) 0 2px, #fff 2px 7px);
+}
+.el-tile--tossup .el-tile__code,
+.el-tile--tossup .el-tile__cap {
+  background: #fff;
+  color: var(--el-ink);
+  padding: 0 2px;
+}
+.el-room__pane {
+  border-radius: var(--el-r);
+}
+.el-room__pane,
+.el-room__bar .el-btn {
+  box-shadow: none;
+}
+
+/* Hero: an application window. */
+.el-bento {
+  border-radius: var(--el-r);
+  box-shadow: 8px 8px 0 var(--el-ink);
+  background: var(--el-ink);
+}
+.el-cell--title {
+  grid-column: span 12;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--el-cell);
+  font-family: var(--el-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.el-win {
+  display: flex;
+  gap: 6px;
+}
+.el-win i {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--el-ink);
+  background: #fff;
+}
+.el-win i:nth-child(2) {
+  background: var(--el-purple);
+}
+.el-win i:nth-child(3) {
+  background: var(--el-ink);
+}
+.el-cell--tabs {
+  grid-column: span 12;
+  padding: 0;
+  background: var(--el-ink);
+}
+.el-tabrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--el-bw);
+}
+.el-tabrow a {
+  display: block;
+  padding: 12px 10px;
+  background: #fff;
+  color: var(--el-ink);
+  font-family: var(--el-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.el-tabrow a:first-child {
+  background: var(--el-purple);
+  color: #fff;
+}
+.el-tabrow a:last-child {
+  background: var(--el-ink);
+  color: #fff;
+}
+.el-tabrow a:hover {
+  background: var(--el-purple);
+  color: #fff;
+}
+.el-doodle {
+  color: var(--el-purple);
+}
+.el-cell--vert {
+  background:
+    linear-gradient(rgba(109, 40, 255, 0.28) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgba(109, 40, 255, 0.28) 1px, transparent 1px) 0 0 / 28px 28px, var(--el-cell);
+}
+.el-cell--stat {
+  background:
+    repeating-linear-gradient(0deg, rgba(109, 40, 255, 0.25) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(90deg, rgba(109, 40, 255, 0.25) 0 1px, transparent 1px 22px), var(--el-cell);
+}
+.el-stat__n {
+  color: var(--el-purple);
+}
+.el-hero__title span:last-child {
+  color: var(--el-purple);
+}
+.el-h2 {
+  font-family: var(--el-mono);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+}
+.el-h2 em {
+  color: var(--el-purple);
+}
+
+/* Phone room bar: the layout picker is meaningless with one pane; keep the bar to a single tidy row. */
+@media (max-width: 899px) {
+  .el-room__layouts {
+    display: none;
+  }
+}
+
+.el-root .el-room__foot {
+  background: var(--el-paper);
+  color: var(--el-ink);
+}
+@media (max-width: 899px) {
+  .el-room__foot > div {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+}
+
+/* The wire (and any list inside a box): `.el-desk__list` used to zero the box's padding, so entries touched the border. */
+.el-desk__list.el-proj {
+  padding: 8px clamp(16px, 3vw, 28px);
+}
+.el-desk__list li {
+  padding-block: 14px;
+}
+
+/* Phone navbar: brand and tools on one row, the section links on a second, swipeable row (they were hidden). */
+@media (max-width: 959px) {
+  .el-bar__in {
+    flex-wrap: wrap;
+    row-gap: 0;
+    padding-block: 6px 0;
+  }
+  .el-bar__nav {
+    display: flex;
+    order: 3;
+    flex: 0 0 calc(100% + 32px);
+    margin: 6px -16px 0;
+    padding: 0 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-top: var(--el-bw) solid var(--el-ink);
+  }
+  .el-bar__nav::-webkit-scrollbar {
+    display: none;
+  }
+  .el-bar__nav a {
+    flex: 0 0 auto;
+    padding: 10px 12px;
+  }
+  .el-bar__tools #el-cycle {
+    min-width: 0;
+    width: auto;
+    font-size: 14px;
+  }
+  .el-section {
+    scroll-margin-top: 104px;
+  }
+}
+
+/* Briefing Room portrait: a transparent black-and-white cut-out that drifts with the scroll. */
+.el-portrait {
+  pointer-events: none;
+  will-change: transform;
+}
+.el-portrait img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: grayscale(1) contrast(1.08);
+}
+.el-briefing {
+  position: relative;
+}
+.el-briefing__portrait {
+  display: none;
+}
+@media (min-width: 1100px) {
+  .el-briefing__portrait {
+    display: block;
+    position: absolute;
+    right: -30px;
+    bottom: -40px;
+    width: 220px;
+    z-index: 2;
+  }
+}
+.el-hero__portrait {
+  display: none;
+}
+@media (min-width: 900px) {
+  .el-hero__portrait {
+    display: block;
+    position: absolute;
+    right: 24px;
+    bottom: 0;
+    width: clamp(160px, 20vw, 280px);
+    z-index: 0;
+  }
+  .el-cell--head > :not(.el-hero__portrait):not(.el-doodle) {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+/* The wire's portrait sits in the right margin beside the list on wide screens. */
+@media (min-width: 1100px) {
+  .el-briefing__portrait--wire {
+    right: -40px;
+    top: -140px;
+    bottom: auto;
+    width: 260px;
+  }
+  .el-briefing:has(.el-briefing__portrait--wire) .el-desk__list {
+    max-width: calc(100% - 250px);
+  }
+}
+
+.el-portrait img {
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent);
+  mask-image: linear-gradient(to bottom, #000 82%, transparent);
+}
+
+.el-portrait__tag {
+  position: absolute;
+  left: 8%;
+  bottom: 6%;
+  padding: 3px 8px;
+  border: 2px solid var(--el-ink);
+  background: #fff;
+  color: var(--el-ink);
+  font-family: var(--el-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.el-portrait > div {
+  position: relative;
+}
+
+@media (min-width: 1100px) {
+  .el-briefing__portrait--rooms {
+    right: -30px;
+    top: -318px;
+    bottom: auto;
+    width: 280px;
+  }
+}
+
+/* ═══ Portraits (final): large, facing the content, standing on it ═══════════════════════════════════
+ * Phones: in the flow, right-aligned, standing on the top edge of the block it introduces (no text under
+ * the photo). Wide screens: absolutely placed in the header's empty right-hand space, bottom on the block's
+ * top edge. A portrait is only ever over transparent space or other chrome, never over text.
+ */
+.el-portrait img[data-flip] {
+  transform: scaleX(-1);
+}
+.el-briefing {
+  position: relative;
+}
+.el-briefing__portrait {
+  display: block;
+  position: relative;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  width: min(70%, 320px);
+  max-width: none;
+  margin: 0 0 -2px auto;
+  z-index: 2;
+}
+.el-briefing .el-desk__list,
+.el-briefing:has(.el-briefing__portrait--wire) .el-desk__list {
+  max-width: none;
+}
+.el-portrait__tag {
+  left: 4%;
+  bottom: 10%;
+}
+@media (min-width: 1100px) {
+  .el-briefing__portrait,
+  .el-briefing__portrait--wire,
+  .el-briefing__portrait--rooms {
+    position: absolute;
+    top: auto;
+    right: -6px;
+    bottom: 100%;
+    width: clamp(240px, 22vw, 340px);
+    margin: 0 0 -2px;
+  }
+}
+
+/* Hero: the host fills the right-hand cell, large, bottom-anchored and leaning toward the headline. */
+.el-cell--vert {
+  display: block;
+  position: relative;
+  min-height: 340px;
+  overflow: hidden;
+  padding: 0;
+  background:
+    linear-gradient(rgba(109, 40, 255, 0.28) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgba(109, 40, 255, 0.28) 1px, transparent 1px) 0 0 / 28px 28px, var(--el-cell);
+}
+.el-cell--vert .el-vert {
+  position: absolute;
+  left: 16px;
+  top: 14px;
+  z-index: 3;
+  padding: 3px 8px;
+  border: 2px solid var(--el-ink);
+  background: #fff;
+  font-family: var(--el-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  writing-mode: horizontal-tb;
+  transform: none;
+}
+.el-cell--vert .el-glyph--a {
+  top: 14px;
+  right: 16px;
+  z-index: 3;
+}
+.el-cell--vert .el-hero__portrait {
+  display: block;
+  position: absolute;
+  right: -8%;
+  bottom: -44px;
+  width: min(100%, 520px);
+  margin: 0;
+  z-index: 1;
+}
+.el-cell--vert .el-portrait__tag {
+  left: auto;
+  right: 12%;
+  bottom: 12%;
+}
+@media (min-width: 900px) {
+  .el-cell--vert {
+    min-height: 560px;
+  }
+  .el-cell--vert .el-hero__portrait {
+    width: 118%;
+    right: -9%;
+  }
+}
+@media (max-width: 899px) {
+  .el-cell--vert {
+    min-height: 380px;
+  }
+  .el-cell--vert .el-hero__portrait {
+    width: 92%;
+    right: -4%;
+  }
+}
+
+/* Stream panes: the video owns the pane; picking a stream lives in a small overlay menu. */
+.el-streamframe {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
+.el-streamframe__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 2px solid var(--el-ink);
+  background: #000;
+}
+.el-streamframe__menu {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  min-height: 28px;
+  padding: 2px 8px;
+  gap: 2px;
+  opacity: 0.92;
+}
+.el-streamframe__menu:hover {
+  transform: translateX(-50%);
+}
+.el-streamframe__menu:active,
+.el-streamframe__menu[aria-expanded='true'] {
+  transform: translateX(-50%);
+}
+.el-streamframe__panel {
+  position: absolute;
+  top: 44px;
+  left: 8px;
+  right: 8px;
+  z-index: 4;
+  max-height: calc(100% - 52px);
+  overflow-y: auto;
+  padding: 12px;
+  background: var(--el-cell);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.el-streampick {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.el-streamframe__panel > a.el-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* A section portrait has no floor under it, so the name box straddles its bottom edge, like a caption plate
+   the figure stands behind (it also reads as sitting on the block's top rule). */
+.el-briefing__portrait .el-portrait__tag {
+  left: 50%;
+  right: auto;
+  bottom: -13px;
+  transform: translateX(-50%);
+  z-index: 3;
+  box-shadow: 3px 3px 0 var(--el-ink);
+}
+
+/* ═══ Mobile audit fixes ═══════════════════════════════════════════════════════════════════════════
+ * 1. The page's own canvas is paper, so Safari's status-bar strip and rubber-band overscroll never show the
+ *    site's black html background around the page.
+ * 2. iOS 26 Safari floats a tab bar over the bottom ~70px. Nothing here is pinned flush to the bottom edge:
+ *    the page ends with room to scroll the footer clear of it, and the Briefing Room's reaction row floats
+ *    off the edge instead of sitting behind the bar.
+ * 3. A portrait's name plate hangs below its image, so the content under it starts a little lower.
+ */
+/* !important: the theme script writes the site's colour into the root element's inline style. */
+html:has(.el-root),
+html:has(.el-root) body {
+  background-color: #f4f3f7 !important;
+}
+@media (max-width: 899px) {
+  .el-foot {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 112px);
+  }
+  .el-bar__nav {
+    -webkit-mask-image: linear-gradient(90deg, #000 90%, transparent);
+    mask-image: linear-gradient(90deg, #000 90%, transparent);
+  }
+  .el-briefing__portrait {
+    margin-bottom: 16px;
+  }
+}
+@media (min-width: 1100px) {
+  .el-briefing {
+    padding-top: 16px;
+  }
+}
+html.ios-webkit .el-room__foot {
+  margin: 0 8px calc(env(safe-area-inset-bottom, 0px) + 78px);
+  border: var(--el-bw) solid var(--el-ink);
+  border-radius: 10px;
+}
+html.ios-webkit .el-room__grid {
+  padding-bottom: 0;
+}
+
+/* Path to control + hour-by-hour watch list */
+.el-path__grid,
+.el-watch__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+.el-path__row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin: 8px 0 0;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.el-linkbtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  cursor: pointer;
+}
+.el-linkbtn:hover {
+  color: var(--el-purple);
+}
+
+/* Night timeline */
+.el-timeline {
+  margin: 0;
+  list-style: none;
+}
+.el-timeline__row {
+  display: grid;
+  grid-template-columns: 4.5em auto 1fr;
+  gap: 10px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 2px dashed var(--el-ink);
+  line-height: 1.3;
+}
+.el-timeline__row:last-child {
+  border-bottom: 0;
+}
+.el-timeline__row--3 .el-timeline__text {
+  font-weight: 800;
+}
+.el-timeline__time {
+  font-family: var(--el-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+@media (max-width: 599px) {
+  .el-timeline__row {
+    grid-template-columns: auto 1fr;
+  }
+  .el-timeline__text {
+    grid-column: 1 / -1;
+  }
+}
+
+.el-briefing__lead {
+  display: none;
+}
+@media (min-width: 1100px) {
+  .el-briefing--reserve {
+    padding-top: clamp(250px, 24vw, 350px);
+  }
+  .el-briefing--reserve .el-briefing__lead {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 24px;
+    max-width: 46%;
+  }
+  .el-briefing__leadtext {
+    margin: 6px 0 0;
+    font-family: var(--el-display);
+    font-size: clamp(30px, 4vw, 56px);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 0.95;
+    color: var(--el-paper);
+  }
+}
+@media (min-width: 1100px) {
+  .el-briefing--reserve {
+    padding-top: clamp(300px, 25vw, 360px);
+  }
+  .el-briefing--reserve .el-briefing__portrait {
+    top: 0;
+    bottom: auto;
+    width: clamp(240px, 21vw, 300px);
+    margin: 0;
+  }
+}
+
+/* Party chips keep their party fill (the generic chip rule is more specific than the variants). */
+.el-root .el-chip--gop {
+  background: var(--el-gop);
+  color: #fff;
+}
+.el-root .el-chip--oth {
+  background: var(--el-oth);
+  color: #fff;
+}
+
+/* Friends leagues */
+.el-league__forms {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+@media (min-width: 760px) {
+  .el-league__forms {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.el-league__board {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 2px dashed var(--el-ink);
+}
+.el-league__name {
+  margin: 0;
+  font-family: var(--el-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+.el-league__rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.el-league__row {
+  display: grid;
+  grid-template-columns: 2.2em 1fr auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 2px dashed var(--el-ink);
+}
+.el-league__row:last-child {
+  border-bottom: 0;
+}
+.el-league__rank {
+  font-family: var(--el-display);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+.el-league__row:first-child .el-league__rank {
+  color: var(--el-purple);
+}
+.el-league__who {
+  font-weight: 700;
+}
+@media (max-width: 599px) {
+  .el-league__row {
+    grid-template-columns: 2.2em 1fr;
+  }
+  .el-league__score {
+    grid-column: 2;
+  }
+}
+
+/* Tiles with a pattern behind them (leads and leans) keep their labels readable on a plain chip. */
+.el-tile--dem-lead .el-tile__code,
+.el-tile--dem-lead .el-tile__cap,
+.el-tile--dem-lean .el-tile__code,
+.el-tile--dem-lean .el-tile__cap,
+.el-tile--gop-lead .el-tile__code,
+.el-tile--gop-lead .el-tile__cap,
+.el-tile--gop-lean .el-tile__code,
+.el-tile--gop-lean .el-tile__cap {
+  background: #fff;
+  color: var(--el-ink);
+  padding: 0 3px;
+}

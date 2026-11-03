@@ -108,6 +108,17 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
     emit(C2S.CLASS_SELECT, { lobbyId, classId });
   };
 
+  // Class choice and ready-up both live on this screen. The hub un-readies a
+  // player whenever they change class, and only accepts Start once everyone
+  // connected has a class and is ready.
+  const me = players.find((p) => p.userId === lobby.myUserId);
+  const myReady = me?.isReady ?? false;
+  const myClassId = classSelections[lobby.myUserId] ?? me?.classId ?? null;
+  const allReady = players.length >= 2 && players.every((p) => p.isReady && p.isConnected);
+  const handleToggleReady = () => {
+    emit(C2S.CLASS_READY, { lobbyId, ready: !myReady });
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-4 pb-12 md:gap-6 md:px-6">
       {/* Room Code Banner */}
@@ -293,11 +304,34 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
             )}
           </div>
 
+          {/* Ready toggle (everyone, host included) */}
+          <button
+            onClick={handleToggleReady}
+            disabled={!myClassId}
+            aria-pressed={myReady}
+            className={`w-full py-3 rounded-(--altair-radius-lg) font-bold text-lg transition-colors flex items-center justify-center gap-2 ${
+              myReady
+                ? 'bg-(--altair-success) text-(--altair-bg) hover:bg-(--altair-success)/80'
+                : myClassId
+                  ? 'bg-(--altair-surface) text-(--altair-text) border border-(--altair-border) hover:bg-(--altair-surface-hover)'
+                  : 'bg-(--altair-surface) text-(--altair-text-dim) cursor-not-allowed opacity-50'
+            }`}
+          >
+            {myReady ? (
+              <>
+                <Check size={20} aria-hidden />
+                {t('ready', { defaultValue: 'Ready!' })}
+              </>
+            ) : (
+              t('ready-up', { defaultValue: 'Ready Up' })
+            )}
+          </button>
+
           {/* Host Controls */}
           {isHost && (
             <button
               onClick={handleStartGame}
-              disabled={players.length < 2}
+              disabled={!allReady}
               className="w-full py-4 rounded-(--altair-radius-lg) font-bold text-(--altair-accent-fg) text-lg tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover) shadow-(--altair-shadow) flex items-center justify-center gap-2"
             >
               <Play size={22} />
@@ -308,6 +342,13 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
           {!isHost && (
             <div className="text-center text-sm text-(--altair-text-muted) py-4">
               {t('waiting-for-host', { defaultValue: 'Waiting for host to start the game...' })}
+            </div>
+          )}
+          {isHost && !allReady && (
+            <div className="text-center text-xs text-(--altair-text-muted)">
+              {players.length < 2
+                ? t('need-two-players', { defaultValue: 'Co-op needs at least 2 players.' })
+                : t('waiting-for-ready', { defaultValue: 'Waiting for everyone to pick a class and ready up.' })}
             </div>
           )}
         </div>
@@ -411,6 +452,12 @@ function PlayerRow({
           ) : (
             <span className="text-xs text-(--altair-text-dim) italic">
               {t('no-class-selected', { defaultValue: 'No class selected' })}
+            </span>
+          )}
+          {player.isReady && (
+            <span className="flex items-center gap-1 text-xs text-(--altair-success) ml-1">
+              <Check size={12} aria-hidden />
+              {t('ready', { defaultValue: 'Ready!' })}
             </span>
           )}
           {!player.isConnected && (

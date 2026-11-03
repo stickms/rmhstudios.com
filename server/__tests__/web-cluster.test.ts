@@ -75,7 +75,8 @@ let dir = '';
 afterEach(() => {
   child?.kill('SIGKILL');
   child = null;
-  if (dir) rmSync(dir, { recursive: true, force: true });
+  // The killed primary's workers can still be writing into `dir` for a moment (ENOTEMPTY on CI, 2026-11-03): retry.
+  if (dir) rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 });
 
 function start(files: Record<string, string>, port: number, workers = 2) {

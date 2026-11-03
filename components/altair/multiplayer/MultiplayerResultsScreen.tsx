@@ -7,37 +7,52 @@
 
 'use client';
 
-import { Trophy, Skull, Heart, Coins, Clock, Swords, ArrowLeft, RotateCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Trophy, Skull, Heart, Clock, Swords, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CLASSES } from '@/lib/altair/data/classes';
 import { PLAYER_SLOT_COLORS } from '@/lib/altair/engine/types';
 import type { GameResultsData, PlayerResultData } from '@/lib/altair/multiplayer/types';
 
+/** The hub reopens the lobby this long after results (server/socket-server/handlers/altair.ts: endGame). */
+const LOBBY_REOPEN_SECONDS = 15;
+
 interface MultiplayerResultsScreenProps {
   results: GameResultsData;
-  onPlayAgain: () => void;
   onLeave: () => void;
 }
 
 export default function MultiplayerResultsScreen({
   results,
-  onPlayAgain,
   onLeave,
 }: MultiplayerResultsScreenProps) {
   const { t } = useTranslation("c-altair");
+  // The lobby reopens by itself (the route swaps this screen for the lobby when the hub says WAITING).
+  const [reopenIn, setReopenIn] = useState(LOBBY_REOPEN_SECONDS);
+  useEffect(() => {
+    const id = setInterval(() => setReopenIn((n) => Math.max(0, n - 1)), 1000);
+    return () => clearInterval(id);
+  }, []);
   const isVictory = results.victory;
+  const hostLeft = results.endedReason === 'host_left';
 
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex-1 px-4 pt-4 pb-12 md:px-8 md:pt-8">
         <div className="mx-auto flex max-w-4xl flex-col gap-4 md:gap-6">
+          {hostLeft && (
+            <div role="alert" className="rounded-(--altair-radius-lg) border border-(--altair-warning) bg-(--altair-surface) px-4 py-3 text-center text-(--altair-warning)">
+              {t("coop-host-left", { defaultValue: "The host left, so the run ended." })}
+            </div>
+          )}
+
           {/* Title */}
           <div className="text-center py-6">
             <h1
               className={`text-5xl font-black tracking-wider ${isVictory ? 'text-(--altair-success)' : 'text-(--altair-danger)'}`}
               style={{ fontFamily: 'var(--altair-font-display)' }}
             >
-              {isVictory ? t("victory", { defaultValue: "VICTORY" }) : t("defeated", { defaultValue: "DEFEATED" })}
+              {hostLeft ? t("coop-run-ended", { defaultValue: "RUN ENDED" }) : isVictory ? t("victory", { defaultValue: "VICTORY" }) : t("defeated", { defaultValue: "DEFEATED" })}
             </h1>
             <p className="text-(--altair-text-muted) mt-2 text-sm">
               {results.sharedKills} kills | {Math.floor(results.timeSurvived / 60)}:{String(Math.floor(results.timeSurvived % 60)).padStart(2, '0')} survived
@@ -55,13 +70,9 @@ export default function MultiplayerResultsScreen({
 
           {/* Actions */}
           <div className="flex gap-4 justify-center pt-4">
-            <button
-              onClick={onPlayAgain}
-              className="flex items-center gap-2 px-8 py-3 rounded-(--altair-radius-lg) font-bold text-(--altair-accent-fg) bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-colors"
-            >
-              <RotateCcw size={18} />
-              {t("play-again", { defaultValue: "Play Again" })}
-            </button>
+            <p data-testid="results-reopen" className="self-center text-sm text-(--altair-text-muted)">
+              {t("coop-lobby-reopens", { defaultValue: "Back to the lobby in {{seconds}}s, ready for another run.", seconds: reopenIn })}
+            </p>
             <button
               onClick={onLeave}
               className="flex items-center gap-2 px-8 py-3 rounded-(--altair-radius-lg) font-semibold text-(--altair-text-muted) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
@@ -105,24 +116,13 @@ function PlayerStatCard({ player }: { player: PlayerResultData }) {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-2 text-xs">
         <StatRow icon={Swords} label={t("kills", { defaultValue: "Kills" })} value={String(player.kills)} />
-        <StatRow icon={Coins} label={t("coins", { defaultValue: "Coins" })} value={String(player.coinsEarned)} />
         <StatRow icon={Clock} label={t("time", { defaultValue: "Time" })} value={`${Math.floor(player.timeSurvived / 60)}:${String(Math.floor(player.timeSurvived % 60)).padStart(2, '0')}`} />
         <StatRow icon={Heart} label={t("revives", { defaultValue: "Revives" })} value={`${player.revivesGiven} given / ${player.revivesReceived} recv`} />
       </div>
 
-      {/* Coin breakdown */}
-      <div className="mt-3 pt-3 border-t border-(--altair-border)">
-        <div className="text-xs text-(--altair-text-dim) uppercase tracking-wider mb-1">{t("coin-breakdown", { defaultValue: "Coin Breakdown" })}</div>
-        <div className="grid grid-cols-2 gap-1 text-xs">
-          {player.coinBreakdown.enemyDrops > 0 && <CoinRow label={t("enemy-drops", { defaultValue: "Enemy drops" })} value={player.coinBreakdown.enemyDrops} />}
-          {player.coinBreakdown.bossKills > 0 && <CoinRow label={t("boss-kills", { defaultValue: "Boss kills" })} value={player.coinBreakdown.bossKills} />}
-          {player.coinBreakdown.chestDrops > 0 && <CoinRow label={t("chests", { defaultValue: "Chests" })} value={player.coinBreakdown.chestDrops} />}
-          {player.coinBreakdown.survivalBonus > 0 && <CoinRow label={t("survival", { defaultValue: "Survival" })} value={player.coinBreakdown.survivalBonus} />}
-          {player.coinBreakdown.killMilestones > 0 && <CoinRow label={t("milestones", { defaultValue: "Milestones" })} value={player.coinBreakdown.killMilestones} />}
-          {player.coinBreakdown.completionBonus > 0 && <CoinRow label={t("completion", { defaultValue: "Completion" })} value={player.coinBreakdown.completionBonus} />}
-          {player.coinBreakdown.firstClearBonus > 0 && <CoinRow label={t("first-clear", { defaultValue: "First clear" })} value={player.coinBreakdown.firstClearBonus} />}
-        </div>
-      </div>
+      <p className="mt-3 border-t border-(--altair-border) pt-3 text-xs text-(--altair-text-dim)">
+        {t("coop-no-coins", { defaultValue: "Co-op runs do not earn coins yet." })}
+      </p>
     </div>
   );
 }
@@ -134,14 +134,5 @@ function StatRow({ icon: Icon, label, value }: { icon: typeof Trophy; label: str
       <span>{label}:</span>
       <span className="font-bold text-(--altair-text)">{value}</span>
     </div>
-  );
-}
-
-function CoinRow({ label, value }: { label: string; value: number }) {
-  return (
-    <>
-      <span className="text-(--altair-text-muted)">{label}</span>
-      <span className="text-(--altair-warning) font-bold text-right">{value}</span>
-    </>
   );
 }

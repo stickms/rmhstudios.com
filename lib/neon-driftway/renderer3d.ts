@@ -32,6 +32,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
+import { RenderScaleGovernor } from '@/lib/render/scale-governor';
 import type { NeonDriftwayEngine } from './game';
 import type { GyroSample } from './gyro';
 import { LookController, yawOf } from './camera';
@@ -86,9 +87,12 @@ const MAX_GHOSTS = 8;
 // ── Adaptive quality ────────────────────────────────────────────────────────
 
 const RENDER_SCALES = [0.55, 0.7, 0.85, 1];
-/** Frame time above this for a sustained run means we are over budget. */
-const SLOW_FRAME_MS = 23;
-const FAST_FRAME_MS = 13.5;
+/** Frame interval above this for a sustained run means we are over budget. */
+const SLOW_FRAME_MS = 24;
+/** At or under this the display is being met (60 Hz is 16.7 ms). */
+const FAST_FRAME_MS = 18;
+/** Bloom is skipped at and below this scale step. */
+const BLOOM_MIN_SCALE_INDEX = 0;
 
 const dummy = new THREE.Object3D();
 const scratchColor = new THREE.Color();
@@ -223,8 +227,10 @@ export class NeonDriftwayRenderer3D {
 
   // Adaptive quality
   private scaleIndex = RENDER_SCALES.length - 1;
-  private frameAvg = 16;
-  private sustained = 0;
+  private readonly governor = new RenderScaleGovernor(RENDER_SCALES.length, {
+    slowMs: SLOW_FRAME_MS,
+    fastMs: FAST_FRAME_MS,
+  });
 
   constructor(canvas: HTMLCanvasElement, options: RendererOptions = {}) {
     this.maxPixelRatio = options.maxPixelRatio ?? 2;
@@ -291,6 +297,8 @@ export class NeonDriftwayRenderer3D {
   /** Re-dress the scene for a level. Cheap enough to call on every run. */
   setLevel(level: LevelConfig): void {
     this.level = level;
+    // Building a level's geometry is a hitch, not a slow GPU.
+    this.governor.reset();
     this.lanes = level.lanes;
     const v = level.visuals;
 
@@ -402,8 +410,6 @@ export class NeonDriftwayRenderer3D {
 
   draw(game: NeonDriftwayEngine, dt: number, gyro: GyroSample | null): void {
     if (this.disposed || !this.level) return;
-    const started = performance.now();
-
     this.pendingGyro = gyro;
     this.time += dt;
     const car = game.car;
@@ -421,7 +427,7 @@ export class NeonDriftwayRenderer3D {
     this.updateLighting(dt, game);
 
     this.renderFrame();
-    this.adaptQuality(performance.now() - started);
+    this.adaptQuality();
   }
 
   dispose(): void {
@@ -508,6 +514,7 @@ export class NeonDriftwayRenderer3D {
     if (this.composer) {
       this.composer.setPixelRatio(this.pixelRatio * scale);
       this.composer.setSize(this.width, this.height);
+      this.applyBloomTier();
     }
   }
 
@@ -544,29 +551,20 @@ export class NeonDriftwayRenderer3D {
   /**
    * Nudge render scale toward whatever this device can actually sustain.
    *
-   * Phones running a stereo viewer and laptops on integrated graphics land in
-   * very different places, and neither should have to be detected by name.
+   * Driven by the wall-clock interval between drawn frames, NOT by how long
+   * `draw()` took: draw() only submits work, so a GPU-bound device reads a few
+   * ms while crawling. See `lib/render/scale-governor.ts`.
    */
-  private adaptQuality(frameMs: number): void {
-    this.frameAvg += (frameMs - this.frameAvg) * 0.1;
+  private adaptQuality(): void {
+    const next = this.governor.sample(performance.now());
+    if (next === null) return;
+    this.scaleIndex = next;
+    this.applyResolution();
+  }
 
-    if (this.frameAvg > SLOW_FRAME_MS && this.scaleIndex > 0) {
-      this.sustained += 1;
-      if (this.sustained > 45) {
-        this.scaleIndex--;
-        this.sustained = 0;
-        this.applyResolution();
-      }
-    } else if (this.frameAvg < FAST_FRAME_MS && this.scaleIndex < RENDER_SCALES.length - 1) {
-      this.sustained -= 1;
-      if (this.sustained < -240) {
-        this.scaleIndex++;
-        this.sustained = 0;
-        this.applyResolution();
-      }
-    } else {
-      this.sustained = 0;
-    }
+  /** The glow goes first at the bottom scale step; the road keeps its pixels. */
+  private applyBloomTier(): void {
+    if (this.bloomPass) this.bloomPass.enabled = this.scaleIndex > BLOOM_MIN_SCALE_INDEX;
   }
 
   // ── Per-frame updates ─────────────────────────────────────────────────────

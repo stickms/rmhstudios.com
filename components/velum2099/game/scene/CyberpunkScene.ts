@@ -6,6 +6,7 @@
    ═══════════════════════════════════════════ */
 
 import { ACESFilmicToneMapping, AdditiveBlending, AmbientLight, BackSide, Box3, BoxGeometry, BufferAttribute, BufferGeometry, CanvasTexture, Clock, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide, EdgesGeometry, ExtrudeGeometry, FogExp2, Frustum, Group, HemisphereLight, InstancedBufferAttribute, InstancedMesh, Line, LineBasicMaterial, LineSegments, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, PerspectiveCamera, PlaneGeometry, PointLight, Points, QuadraticBezierCurve3, RepeatWrapping, Scene, ShaderMaterial, Shape, SphereGeometry, Vector2, Vector3, WebGLRenderer } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -13,6 +14,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { ProceduralTextures } from '../textures/ProceduralTextures';
 import { detectRuntimeQuality } from '@/lib/render/runtime';
+import { RenderScaleGovernor } from '@/lib/render/scale-governor';
 
 /* ── Retro shader ── */
 const RetroShader = {
@@ -175,10 +177,19 @@ const ALL_PALETTES   = PALETTES.map((_, i) => i);
 let _activePalette = PALETTES[0];
 function randomNeon() { return _activePalette.neons[Math.floor(Math.random() * _activePalette.neons.length)]; }
 
+/** Entries kept in the per-building geometry and texture-clone caches. */
+const CACHE_LIMIT = 700;
+
 /* ── Grid constants ── */
 /** Bloom render-target scale. Bloom is low-frequency, so half res is visually
  *  near-identical and roughly a quarter of the fill cost. */
 const BLOOM_SCALE = 0.5;
+
+/** Render-resolution steps (fractions of the tier's pixel ratio); last = full. */
+const RENDER_SCALES = [0.55, 0.7, 0.85, 1];
+/** Frame interval above which the device is over budget / below which it keeps up. */
+const SLOW_FRAME_MS = 24;
+const FAST_FRAME_MS = 18;
 
 const CHUNK_SIZE = 60;          // world units per chunk
 const ROAD_WIDTH = 28;          // width of a road
@@ -225,6 +236,11 @@ export class CyberpunkScene {
         this.trafficVehicles = [];  // oncoming traffic objects
         this.rainDrops = null;
         this._quality = null;   // resolved in _initRenderer once the canvas exists
+        // Adapts the render scale to the real wall-clock frame cadence (not the
+        // CPU time of update(), which only submits GL work). See scale-governor.ts.
+        this._scaleIndex = RENDER_SCALES.length - 1;
+        this._governor = new RenderScaleGovernor(RENDER_SCALES.length, { slowMs: SLOW_FRAME_MS, fastMs: FAST_FRAME_MS });
+        this._bloomPass = null;
         this._paletteIndex = 0;
         this._paletteTimer = 0;
         this._palettePool = ALL_PALETTES; // indices to cycle through
@@ -492,6 +508,9 @@ export class CyberpunkScene {
         const worldX = cx * CHUNK_SIZE;
         const worldZ = cz * CHUNK_SIZE;
         const type = this._getChunkType(cx, cz);
+        // Per-building neon lines, edge outlines and window panes are collected here
+        // and built as one mesh each per chunk (see _flushChunkBatch).
+        this._chunkBatch = { neon: [], edges: [], frames: [], winM: [], winC: [] };
 
         // Ground plane for every chunk
         const groundGeo = new PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE);
@@ -530,6 +549,7 @@ export class CyberpunkScene {
             this._buildBlockBuildings(group, meshes, chunkSigns, worldX, worldZ, cx, cz, collidables);
         }
 
+        this._flushChunkBatch(meshes);
         this.scene.add(group);
         const rooftopBillboards = this._chunkRBs || [];
         this._chunkRBs = null;
@@ -750,7 +770,18 @@ export class CyberpunkScene {
         const p1 = positions[0];
         const p2 = positions[1];
 
+        // Cables are batched into one LineSegments per opacity (7 draws -> 2).
+        const toSegments = (points, out) => {
+            for (let i = 0; i < points.length - 1; i++) out.push(points[i], points[i + 1]);
+        };
+        const addCables = (segments, opacity) => {
+            const geo = new BufferGeometry().setFromPoints(segments);
+            const mat = new LineBasicMaterial({ color: 0x333344, transparent: true, opacity });
+            group.add(new LineSegments(geo, mat));
+        };
+
         // Cross-road cables (between the two poles)
+        const cross = [];
         for (let cable = 0; cable < 3; cable++) {
             const yOff = cable * 0.4;
             const start = new Vector3(p1.x, 7.0 - yOff, p1.z);
@@ -758,16 +789,12 @@ export class CyberpunkScene {
             const mid = new Vector3().lerpVectors(start, end, 0.5);
             mid.y -= 1.5 + cable * 0.3;
 
-            const curve = new QuadraticBezierCurve3(start, mid, end);
-            const points = curve.getPoints(12);
-            const geo = new BufferGeometry().setFromPoints(points);
-            const mat = new LineBasicMaterial({
-                color: 0x333344, transparent: true, opacity: 0.7,
-            });
-            group.add(new Line(geo, mat));
+            toSegments(new QuadraticBezierCurve3(start, mid, end).getPoints(12), cross);
         }
+        addCables(cross, 0.7);
 
         // Longitudinal cables (along road from each pole toward chunk edges)
+        const longitudinal = [];
         for (const p of positions) {
             for (const d of [-1, 1]) {
                 const edgePos = dir === 'ns'
@@ -782,15 +809,10 @@ export class CyberpunkScene {
                     (p.z + edgePos.z) / 2
                 );
 
-                const curve = new QuadraticBezierCurve3(start, mid, end);
-                const points = curve.getPoints(8);
-                const geo = new BufferGeometry().setFromPoints(points);
-                const mat = new LineBasicMaterial({
-                    color: 0x333344, transparent: true, opacity: 0.6,
-                });
-                group.add(new Line(geo, mat));
+                toSegments(new QuadraticBezierCurve3(start, mid, end).getPoints(8), longitudinal);
             }
         }
+        addCables(longitudinal, 0.6);
     }
 
     _addSpark(group, meshes, x, y, z) {
@@ -1217,6 +1239,7 @@ export class CyberpunkScene {
         // Center vertically so geometry spans -h/2 to h/2 (like BoxGeometry)
         geo.translate(0, -h / 2, 0);
         this._geoCache.set(cacheKey, geo);
+        this._trimCache(this._geoCache);
         return geo;
     }
 
@@ -1233,7 +1256,23 @@ export class CyberpunkScene {
         if (offsetX || offsetY) cached.offset.set(offsetX, offsetY);
         cached.needsUpdate = true;
         this._texCache.set(key, cached);
+        this._trimCache(this._texCache, true);
         return cached;
+    }
+
+    /**
+     * Keys are built from per-building sizes, so entries are almost never hit
+     * twice and the maps grew by ~420 entries per full chunk turnover for as
+     * long as the player drove. Keep roughly a loaded neighbourhood's worth and
+     * drop the oldest (Map order); a live user of an evicted texture simply
+     * re-uploads it.
+     */
+    _trimCache(cache, disposeValues = false) {
+        while (cache.size > CACHE_LIMIT) {
+            const oldest = cache.keys().next().value;
+            if (disposeValues) cache.get(oldest).dispose();
+            cache.delete(oldest);
+        }
     }
 
     /* ── Material factories (Layer 1 texture support) ── */
@@ -1417,26 +1456,14 @@ export class CyberpunkScene {
     _buildingDetails(building, w, h, d, meshes, chunkSigns, faceSide, cx, cz, idx) {
         // Neon edge lines
         const color = randomNeon();
+        const batch = this._chunkBatch;
         for (const ey of [h / 2, -h / 2 + 0.5]) {
             if (seededRandom(cx, cz, 300 + idx + ey) < 0.4) continue;
-            const geo = new BoxGeometry(w + 0.1, 0.06, 0.06);
-            const mat = new MeshBasicMaterial({ color });
-            mat._isNeon = true;
-            const line = new Mesh(geo, mat);
-            line.position.set(building.position.x, building.position.y + ey, building.position.z);
-            this.scene.add(line);
-            meshes.push(line);
+            batch.neon.push({ w: w + 0.1, x: building.position.x, y: building.position.y + ey, z: building.position.z, color });
         }
 
         // Neon building edge outline (toggleable via /edges setting)
-        const edgeGeo = new EdgesGeometry(new BoxGeometry(w + 0.1, h + 0.1, d + 0.1));
-        const edgeMat = new LineBasicMaterial({ color });
-        const edgeMesh = new LineSegments(edgeGeo, edgeMat);
-        edgeMesh.position.copy(building.position);
-        edgeMesh.visible = this._buildingEdgesEnabled;
-        this.scene.add(edgeMesh);
-        meshes.push(edgeMesh);
-        if (this._chunkEdgeMeshes) this._chunkEdgeMeshes.push(edgeMesh);
+        batch.edges.push({ w: w + 0.1, h: h + 0.1, d: d + 0.1, x: building.position.x, y: building.position.y, z: building.position.z, color });
 
         // Windows — InstancedMesh with per-instance color
         const cols = Math.min(Math.floor(w / 1.5), 6);
@@ -1465,22 +1492,13 @@ export class CyberpunkScene {
 
         if (winPositions.length > 0) {
             const count = winPositions.length / 3;
-            const winMat = new MeshBasicMaterial();
-            const winIM = new InstancedMesh(this._winGeo, winMat, count);
             const _m4 = new Matrix4();
             const _rotM = new Matrix4().makeRotationY(rotY);
-            const colorAttr = new Float32Array(count * 3);
             for (let i = 0; i < count; i++) {
                 _m4.makeTranslation(winPositions[i * 3], winPositions[i * 3 + 1], winPositions[i * 3 + 2]).multiply(_rotM);
-                winIM.setMatrixAt(i, _m4);
-                colorAttr[i * 3] = winColors[i * 3];
-                colorAttr[i * 3 + 1] = winColors[i * 3 + 1];
-                colorAttr[i * 3 + 2] = winColors[i * 3 + 2];
+                for (let k = 0; k < 16; k++) batch.winM.push(_m4.elements[k]);
+                batch.winC.push(winColors[i * 3], winColors[i * 3 + 1], winColors[i * 3 + 2]);
             }
-            winIM.instanceMatrix.needsUpdate = true;
-            winIM.instanceColor = new InstancedBufferAttribute(colorAttr, 3);
-            this.scene.add(winIM);
-            meshes.push(winIM);
         }
 
         // Billboard (occasional)
@@ -1499,16 +1517,17 @@ export class CyberpunkScene {
             const borderMat = new MeshBasicMaterial({ color: randomNeon() });
             const hBar = new BoxGeometry(bbW + 0.12, 0.08, 0.06);
             const vBar = new BoxGeometry(0.08, bbH + 0.12, 0.06);
-            for (const dy of [-bbH / 2, bbH / 2]) {
-                const bar = new Mesh(hBar, borderMat);
-                bar.position.set(0, dy, 0.02);
-                bb.add(bar);
-            }
-            for (const dx of [-bbW / 2, bbW / 2]) {
-                const bar = new Mesh(vBar, borderMat);
-                bar.position.set(dx, 0, 0.02);
-                bb.add(bar);
-            }
+            const bars = [];
+            for (const dy of [-bbH / 2, bbH / 2]) bars.push(hBar.clone().translate(0, dy, 0.02));
+            for (const dx of [-bbW / 2, bbW / 2]) bars.push(vBar.clone().translate(dx, 0, 0.02));
+            hBar.dispose();
+            vBar.dispose();
+            const frameGeo = mergeGeometries(bars);
+            for (const g of bars) g.dispose();
+            // The frame is baked into the chunk's shared frame mesh (world space).
+            bb.updateMatrix();
+            this._chunkBatch.frames.push({ geo: frameGeo.applyMatrix4(bb.matrix), color: borderMat.color });
+            borderMat.dispose();
 
             const signObj = { mesh: bb, baseOpacity: bbMat.opacity, phase: seededRandom(cx, cz, 740 + idx) * Math.PI * 2 };
             this.signs.push(signObj);
@@ -1518,6 +1537,95 @@ export class CyberpunkScene {
         // Rooftop billboard (on tall buildings, 20% chance)
         if (h > 18 && seededRandom(cx, cz, 750 + idx) < 0.2) {
             this._addRooftopBillboard(building, w, h, d, meshes, chunkSigns, cx, cz, idx);
+        }
+    }
+
+    /**
+     * Build the chunk's collected neon lines, edge outlines and window panes as
+     * one mesh each instead of one per building (hundreds of draw calls fewer).
+     * Colours live in vertex/instance attributes so every building keeps its own.
+     */
+    _flushChunkBatch(meshes) {
+        const b = this._chunkBatch;
+        this._chunkBatch = null;
+        if (!b) return;
+        const c = new Color();
+        const paint = (geo, color) => {
+            const n = geo.attributes.position.count;
+            c.set(color);
+            const arr = new Float32Array(n * 3);
+            for (let i = 0; i < n; i++) { arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b; }
+            geo.setAttribute('color', new BufferAttribute(arr, 3));
+        };
+
+        if (b.neon.length) {
+            const parts = [];
+            const ranges = [];
+            let start = 0;
+            for (const l of b.neon) {
+                const g = new BoxGeometry(l.w, 0.06, 0.06).translate(l.x, l.y, l.z);
+                paint(g, l.color);
+                const n = g.attributes.position.count;
+                ranges.push([start, n]);
+                start += n;
+                parts.push(g);
+            }
+            const geo = mergeGeometries(parts);
+            for (const g of parts) g.dispose();
+            const mesh = new Mesh(geo, new MeshBasicMaterial({ vertexColors: true }));
+            // A palette change recolours each line independently, as the per-line
+            // `_isNeon` materials did before they were merged.
+            mesh.userData.recolorNeon = (palette) => {
+                const attr = geo.attributes.color;
+                for (const [s0, n] of ranges) {
+                    c.set(palette.neons[Math.floor(Math.random() * palette.neons.length)]);
+                    for (let i = s0; i < s0 + n; i++) attr.setXYZ(i, c.r, c.g, c.b);
+                }
+                attr.needsUpdate = true;
+            };
+            this.scene.add(mesh);
+            meshes.push(mesh);
+        }
+
+        if (b.edges.length) {
+            const parts = [];
+            for (const e of b.edges) {
+                const box = new BoxGeometry(e.w, e.h, e.d);
+                const g = new EdgesGeometry(box).translate(e.x, e.y, e.z);
+                box.dispose();
+                paint(g, e.color);
+                parts.push(g);
+            }
+            const geo = mergeGeometries(parts);
+            for (const g of parts) g.dispose();
+            const edgeMesh = new LineSegments(geo, new LineBasicMaterial({ vertexColors: true }));
+            edgeMesh.visible = this._buildingEdgesEnabled;
+            this.scene.add(edgeMesh);
+            meshes.push(edgeMesh);
+            if (this._chunkEdgeMeshes) this._chunkEdgeMeshes.push(edgeMesh);
+        }
+
+        if (b.frames.length) {
+            const parts = [];
+            for (const f of b.frames) {
+                paint(f.geo, f.color);
+                parts.push(f.geo);
+            }
+            const geo = mergeGeometries(parts);
+            for (const g of parts) g.dispose();
+            const frames = new Mesh(geo, new MeshBasicMaterial({ vertexColors: true }));
+            this.scene.add(frames);
+            meshes.push(frames);
+        }
+
+        if (b.winC.length) {
+            const count = b.winC.length / 3;
+            const winIM = new InstancedMesh(this._winGeo, new MeshBasicMaterial(), count);
+            winIM.instanceMatrix.array.set(b.winM);
+            winIM.instanceMatrix.needsUpdate = true;
+            winIM.instanceColor = new InstancedBufferAttribute(new Float32Array(b.winC), 3);
+            this.scene.add(winIM);
+            meshes.push(winIM);
         }
     }
 
@@ -2017,6 +2125,7 @@ export class CyberpunkScene {
         bloom.setSize = (w: number, h: number) =>
             bloomSetSize(Math.max(1, Math.round(w * BLOOM_SCALE)), Math.max(1, Math.round(h * BLOOM_SCALE)));
         this.composer.addPass(bloom);
+        this._bloomPass = bloom;
 
         // FXAA instead of SMAA (cheaper)
         this._fxaaPass = new ShaderPass(FXAAShader);
@@ -2262,6 +2371,7 @@ export class CyberpunkScene {
                 }
             });
             for (const m of chunk.meshes) {
+                if (m.userData.recolorNeon) m.userData.recolorNeon(palette);
                 if (m.material) recolorMat(m.material);
             }
         }
@@ -2435,6 +2545,23 @@ export class CyberpunkScene {
         }
 
         this.composer.render();
+        this._adaptScale();
+    }
+
+    /** Step the render scale from the real frame cadence; bloom goes first at the floor. */
+    _adaptScale() {
+        const next = this._governor.sample(performance.now());
+        if (next === null) return;
+        this._scaleIndex = next;
+        this._applyScale();
+    }
+
+    _applyScale() {
+        const ratio = this._quality.pixelRatio * RENDER_SCALES[this._scaleIndex];
+        this.renderer.setPixelRatio(ratio);
+        this.composer.setPixelRatio(ratio);
+        this._onResize();
+        if (this._bloomPass) this._bloomPass.enabled = this._scaleIndex > 0;
     }
 
     renderClean() { this.renderer.render(this.scene, this.camera); }

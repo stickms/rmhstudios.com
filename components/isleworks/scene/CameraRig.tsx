@@ -138,6 +138,10 @@ export function CameraRig({
           const [a, b] = [...drag.current.touches.values()];
           drag.current.pinchDistance = Math.hypot(a.x - b.x, a.y - b.y);
           drag.current.mode = 'camera';
+          // A pinch is never a tap: without this the first finger lifting off
+          // looks like an untravelled press and fires a click on whatever tile
+          // was last aimed at — selecting a building, or placing one.
+          drag.current.travelled = Infinity;
           onPaintEnd();
           return;
         }

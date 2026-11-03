@@ -104,7 +104,7 @@ uniform vec3 uLight;       // cursor light: x,y in surface CSS px, z = height ab
 uniform float uLightOn;    // 0..1
 uniform vec2 uTilt;        // smoothed unit-disc cursor pose; optical tilt only, no text transform
 
-uniform float uMargin;     // canvas overdraw past the host on every side, CSS px (0..2)
+uniform float uMargin;     // canvas overdraw past the host on every side, CSS px (0..16)
 uniform float uSeed;       // per-surface 0..1
 uniform vec4 uHaze;        // haze colour rgb + the role's haze alpha
 uniform float uDispersion; // 1.0 = crown glass, 0.8 = jelly
@@ -122,6 +122,9 @@ uniform vec2 uDentStretch; // rubber-band stretch, px
 uniform float uDentOn;
 uniform vec4 uSpecular;    // dent light dot colour + alpha (--gel-specular)
 uniform vec2 uMold;        // x = shoulder depth 0..1.5 (--gel-mold), y = edge feather px (--gel-feather)
+uniform float uBodyOn;     // 1 when this program paints the whole gel body (the host's CSS fill has stepped aside)
+uniform vec4 uBody;        // the body's colour at the top (straight rgb + alpha: role tint under the gel coat)
+uniform vec4 uBodyDepth;   // and at the base
 uniform vec3 uLens;        // x = wavelength spread (x crown glass, --gel-dispersion), y = slab thickness multiplier (--gel-lens), z = environment reflection strength (--gel-reflect)
 
 ${GLASS_OPTICS_GLSL}
@@ -159,13 +162,23 @@ void main() {
       sd = max(sdRoundRect(q - uDentStretch * lead, hs, r), sd0 - uMargin);
     }
   }
-  // Tier L squish: move the edge along its normal by the lattice offset there, only within the rim band.
+  // Tier L squish. A rim-only slab moves its edge within the rim band only. A body slab (uBodyOn) moves the WHOLE
+  // silhouette: the lattice offset at the nearest edge point pushes the distance field out (bulge) or in (sag) by up to
+  // the canvas margin / 24px, fading to nothing 24-48px inside, where the fill is solid anyway.
   if (uJellyOn > 0.5) {
-    float bz0 = max(uBezel, 2.0);
-    float fallJ = 1.0 - smoothstep(bz0, min(2.0 * bz0, bz0 + 8.0), -sd);
-    if (fallJ > 0.0) {
-      float push = dot(jellyOffset(P, uSize), sdGrad(q, hs, r));
-      sd -= min(push, uMargin) * fallJ;
+    if (uBodyOn > 0.5) {
+      float fallB = 1.0 - smoothstep(24.0, 48.0, -sd);
+      if (fallB > 0.0) {
+        float push = dot(jellyOffset(P, uSize), sdGrad(q, hs, r));
+        sd -= clamp(push, -24.0, uMargin) * fallB;
+      }
+    } else {
+      float bz0 = max(uBezel, 2.0);
+      float fallJ = 1.0 - smoothstep(bz0, min(2.0 * bz0, bz0 + 8.0), -sd);
+      if (fallJ > 0.0) {
+        float push = dot(jellyOffset(P, uSize), sdGrad(q, hs, r));
+        sd -= min(push, uMargin) * fallJ;
+      }
     }
   }
   float d = -sd;                                  // depth inside the (squished) edge, px
@@ -176,6 +189,9 @@ void main() {
   float mold = clamp(uMold.x, 0.0, 1.5);
   float moldOn = min(mold, 1.0);
   float cover = smoothstep(-uPx, uPx * 0.5 + max(uMold.y, 0.0), d);
+  // The gel body (premultiplied), under everything else: the role tint under the gel coat, top to base.
+  vec4 bodyC = uBodyOn > 0.5 ? mix(uBody, uBodyDepth, clamp(P.y / max(uSize.y, 1.0), 0.0, 1.0)) : vec4(0.0);
+  vec4 bodyP = vec4(bodyC.rgb * bodyC.a, bodyC.a);
 
   // ── Bevel geometry ──
   float bz = max(uBezel, 2.0);
@@ -192,7 +208,7 @@ void main() {
   // It is a nested block, not an early \`return\`: a SIMD rasteriser (SwiftShader, llvmpipe) keeps running straight-line
   // code after a masked return for the whole pixel group, but skips a block no lane enters.
   if (d > max(bz, d0 + 3.0 * bw + 2.0) && uDentOn < 0.5 && uPlasmaInRim < 0.5) {
-    outColor = vec4(0.0);
+    outColor = bodyP * cover;
   } else {
   // Quartic "convex squircle" profile h = bz·(1 - u^4)^(1/4), u = 1 - t. It meets the flat interior with a vanishing
   // slope AND curvature (C3), which is what makes the refraction fade into the page without a seam; the slope is
@@ -322,9 +338,9 @@ void main() {
   float fresEdge = (1.0 - smoothstep(uPx * 0.5, 1.0 + uPx * 0.5, d)) * smoothstep(-uPx, 0.0, d);
   float fresA = fresEdge * uFresnel.a * (0.75 + 0.25 * facing) * (1.0 - moldOn);
 
-  // Composite, premultiplied: plasma at the back, then the refracted rim, shade, band, light and edge.
-  vec3 col = vec3(0.0);
-  float a = 0.0;
+  // Composite, premultiplied: the gel body at the very back, plasma, then the refracted rim, shade, band, light and edge.
+  vec3 col = bodyP.rgb;
+  float a = bodyP.a;
   if (uPlasmaInRim > 0.5) {
     float pa = jPlasma(P, uSize, d, uSeed, 0.0);
     col = col * (1.0 - pa) + uAccent * pa;

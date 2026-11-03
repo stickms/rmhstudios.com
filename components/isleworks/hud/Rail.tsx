@@ -40,17 +40,26 @@ const WARNING_TEXT: Record<BuildingWarning, { key: string; fallback: string }> =
 };
 
 export function Rail() {
+  return (
+    <div className="isw-rail">
+      <RailPanels />
+    </div>
+  );
+}
+
+/** The rail's panels with no frame of their own, so the phone sheet can host them too. */
+export function RailPanels() {
   const city = useIsleworks((s) => s.city);
   const selectedId = useIsleworks((s) => s.selectedId);
 
   return (
-    <div className="isw-rail">
+    <>
       {selectedId && <Inspector city={city} selectedId={selectedId} />}
       <Objectives />
       {city.events.length > 0 && <Events city={city} />}
       <CityPanel />
       <ShareIsland />
-    </div>
+    </>
   );
 }
 
@@ -67,12 +76,7 @@ function Inspector({ city, selectedId }: { city: CityState; selectedId: string }
     <section className="isw-panel isw-section">
       <div className="isw-section-title">
         {t('inspector', { defaultValue: 'Selected' })}
-        <button
-          type="button"
-          className="isw-btn"
-          style={{ height: 24, minWidth: 24, padding: '0 8px' }}
-          onClick={() => select(null)}
-        >
+        <button type="button" className="isw-btn isw-btn--sm" onClick={() => select(null)}>
           {t('close', { defaultValue: 'Close' })}
         </button>
       </div>

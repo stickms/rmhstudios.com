@@ -11,6 +11,10 @@ import { useTranslation } from 'react-i18next'
 import { useAltairGameStore } from '@/lib/altair/stores/game-store'
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store'
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store'
+import { finalCoinsFor, loadoutFromUpgrades } from '@/lib/altair/solo/loadout'
+import { clearSoloSession, getActiveRun, getSoloSession, setSoloSession } from '@/lib/altair/solo/session'
+import { startServerRun, submitSoloRun, waitForVerdict } from '@/lib/altair/solo/client'
+import { setFallbackRun } from '@/lib/altair/stores/meta-store'
 import { useSignInGate } from '@/components/shared/SignInRequiredDialog'
 import AltairHeader from '@/components/altair/AltairHeader'
 import MenuScreen from '@/components/altair/screens/MenuScreen'
@@ -50,14 +54,13 @@ function AltairPage() {
   const computeFinalCoins = useCallback(() => {
     const gameState = useAltairGameStore.getState()
     const meta = useAltairMetaStore.getState()
-    const greedLevel = meta.getUpgradeLevel('greed')
-    const greedMultiplier = 1 + greedLevel * 0.1
-    const dtMultiplier = gameState.doubleTime ? 1.5 : 1
-    return Math.floor(gameState.coins * greedMultiplier * dtMultiplier)
+    return finalCoinsFor(gameState.coins, meta.getUpgradeLevel('meta_greed'), gameState.doubleTime)
   }, [])
 
   const submitScore = useCallback((keepalive = false) => {
     if (scoreSubmittedRef.current) return
+    // A server-issued run is scored from its replay (lib/altair/solo), never from these numbers.
+    if (getSoloSession()?.runId && getActiveRun()) return
 
     const gameState = useAltairGameStore.getState()
     const payload = {
@@ -82,18 +85,30 @@ function AltairPage() {
     }).catch(() => { /* silently ignore leaderboard submission failures */ })
   }, [computeFinalCoins])
 
-  const handleClassSelect = useCallback((classId: string) => {
-    const meta = useAltairMetaStore.getState()
-    const bonuses = meta.getMetaStatBonuses()
-    const rerolls = meta.getUpgradeLevel('reroll')
-    const banishes = meta.getUpgradeLevel('banish')
-    const revival = meta.getUpgradeLevel('revival')
-    const extraChoice = meta.getUpgradeLevel('extra_choice') > 0
+  const startingRef = useRef(false)
+  const handleClassSelect = useCallback(async (classId: string) => {
+    if (startingRef.current) return
+    startingRef.current = true
+    try {
+      const meta = useAltairMetaStore.getState()
+      const bonuses = meta.getMetaStatBonuses()
+      const wantDoubleTime = settingsDoubleTime && meta.doubleTimeUnlocked
 
-    startRun(classId, settingsDoubleTime && meta.doubleTimeUnlocked, bonuses, rerolls, banishes, revival, extraChoice)
-    meta.incrementRuns()
-    runFinalizedRef.current = false
-    scoreSubmittedRef.current = false
+      // The server issues the seed and the loadout (from its own copy of the upgrades). Without one
+      // (signed out, offline) the run is played and saved locally exactly as before.
+      setSoloSession(null)
+      clearSoloSession()
+      const issued = await startServerRun(classId, wantDoubleTime)
+      const doubleTime = issued ? issued.doubleTime : wantDoubleTime
+      const loadout = issued ? issued.loadout : loadoutFromUpgrades(meta.upgrades)
+
+      startRun(classId, doubleTime, bonuses, loadout.rerolls, loadout.banishes, loadout.revival, loadout.extraChoice)
+      meta.incrementRuns()
+      runFinalizedRef.current = false
+      scoreSubmittedRef.current = false
+    } finally {
+      startingRef.current = false
+    }
   }, [startRun, settingsDoubleTime])
 
   // Music is now managed by AltairShell (persists across all /altair/* routes)
@@ -115,13 +130,20 @@ function AltairPage() {
     runFinalizedRef.current = true
     const finalCoins = computeFinalCoins()
 
-    if (gameState.phase === 'victory' && gameState.selectedClassId) {
-      const bonus = meta.recordFirstClear(gameState.selectedClassId)
-      if (bonus > 0) {
-        useAltairGameStore.getState().addCoins(bonus, 'firstClearBonus')
-      }
-      meta.unlockDoubleTime()
+    const session = getSoloSession()
+    const run = getActiveRun()
+    const clearedClass = gameState.phase === 'victory' ? gameState.selectedClassId : null
+    // The first-clear bonus is flat (not multiplied) and paid ONCE per class. A server-issued run gets it
+    // from the server, which adds it to the replay's payout (lib/altair/solo/persist.server.ts); this
+    // client claims none. Every other path (signed out / offline, or a run the server could not take)
+    // pays it locally, into the same payout that is saved below.
+    const payFirstClear = () => {
+      if (!clearedClass) return 0
+      const bonus = meta.recordFirstClear(clearedClass)
+      if (bonus > 0) useAltairGameStore.getState().addCoins(bonus, 'firstClearBonus')
+      return bonus
     }
+    if (clearedClass) meta.unlockDoubleTime()
 
     // Persist best run stats and check all unlock conditions (retroactive)
     meta.updateRunStats(
@@ -131,7 +153,43 @@ function AltairPage() {
     )
     meta.checkUnlocks()
 
-    meta.addCoins(finalCoins)
+    if (session?.runId && run) {
+      // Server-verified run: hand in the log. Coins and leaderboard rows come from its replay.
+      const runId = session.runId
+      // Captured now: the run store is reset the moment the player leaves the results screen.
+      const legacyScore = {
+        timeSurvived: gameState.timeSurvived,
+        kills: gameState.kills,
+        totalXP: gameState.xp,
+        gold: finalCoins,
+      }
+      clearSoloSession()
+      meta.saveToServerNow(keepalive)
+      void (async () => {
+        const sent = await submitSoloRun(runId, run, keepalive)
+        if (sent === 'queued' || sent === 'inline') {
+          const verdict = await waitForVerdict(runId)
+          if (verdict === 'verified') await useAltairMetaStore.getState().loadFromServer()
+          if (verdict !== 'unverified') return
+        } else if (sent === 'duplicate') {
+          return
+        }
+        // The server could not take or verify it: fall back to the capped legacy payout, once.
+        setFallbackRun(runId)
+        const bonus = payFirstClear()
+        useAltairMetaStore.getState().addCoins(finalCoins + bonus)
+        void fetch('/api/altair/score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(legacyScore),
+        }).catch(() => { /* silently ignore leaderboard submission failures */ })
+        useAltairMetaStore.getState().saveToServerNow(false)
+      })()
+      return
+    }
+
+    const bonus = payFirstClear()
+    meta.addCoins(finalCoins + bonus)
     submitScore(keepalive)
     meta.saveToServerNow(keepalive)
   }, [computeFinalCoins, submitScore])

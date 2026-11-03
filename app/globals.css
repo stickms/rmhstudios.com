@@ -2715,9 +2715,29 @@ html.readable-font body {
     filter: drop-shadow(0 1px 2px var(--site-media-scrim-strong));
   }
 
+  /* ── Bottom-anchored fixed UI that follows Safari's toolbar, in CSS only ───────────────────────────────────────
+     iOS Safari lays `position: fixed` elements out against a container it resizes LATE while its toolbar grows and
+     shrinks, whereas `dvh` (the dynamic viewport) follows the toolbar as it moves. For a fixed element a percentage in
+     `bottom` is a percentage of that container, so `100% - 100dvh` is exactly how far the container's bottom is above
+     (positive) or below the visible bottom: adding it to `bottom` keeps the element on the visible area, resolved by
+     layout every frame with no script reading or writing anything. (The earlier JS correction, `--vv-shift`, measured
+     the same gap from a 1px probe once per frame on the main thread, which is never faster than the main thread
+     and competed with the page's own scroll work: it still runs for the hub orb and the globe dock, whose docking
+     animation re-measures on it.) Only iOS WebKit has the lag; `0px` everywhere else, so nothing changes there. */
+  :root {
+    --vv-follow: 0px;
+  }
+  @supports (height: 100dvh) {
+    html.ios-webkit {
+      --vv-follow: calc(100% - 100dvh);
+    }
+  }
+
   /* Fixed floating UI shares one safe, visually consistent viewport edge. */
   .bottom-above-dock {
-    bottom: calc(var(--safe-bottom) + var(--site-floating-edge));
+    /* `--vv-follow`: where iOS Safari's changing toolbar has left the fixed container, as a pure CSS length (below,
+       `:root`) — no script in the loop, so no floating-stack member trails the tab bar. */
+    bottom: calc(var(--safe-bottom) + var(--site-floating-edge) + var(--vv-follow, 0px));
   }
 
   /* ── The bottom-right FAB lane ──────────────────────────────────────────
@@ -2741,7 +2761,7 @@ html.readable-font body {
      edge by itself, which is exactly right on every non-feed page. */
   .floating-fab-lane {
     right: calc(var(--site-fab-row-right) + var(--float-fab-lane, 0px));
-    bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom) - var(--vv-shift, 0px));
+    bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px));
   }
 
   /* The tripwire back-to-top watches instead of a scroll listener: a 1px marker
@@ -2816,13 +2836,15 @@ html.readable-font body {
   }
   /* Cookie bar rides above the hub orb. */
   .vibe-app:has([data-floating='hub']) [data-floating='cookie'] {
-    bottom: calc(var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub));
+    bottom: calc(
+      var(--safe-bottom) + var(--site-floating-edge) + var(--vv-follow, 0px) + var(--float-lift-hub)
+    );
   }
   /* Mini-player rides above the hub orb and the cookie bar. */
   .vibe-app:has([data-floating='hub']) [data-floating='miniplayer'],
   .vibe-app:has([data-floating='cookie']) [data-floating='miniplayer'] {
     bottom: calc(
-      var(--safe-bottom) + var(--site-floating-edge) + var(--float-lift-hub) +
+      var(--safe-bottom) + var(--site-floating-edge) + var(--vv-follow, 0px) + var(--float-lift-hub) +
         var(--float-lift-cookie)
     );
   }
@@ -2853,7 +2875,7 @@ html.readable-font body {
     )
     [data-floating='backtotop'] {
     bottom: calc(
-      var(--safe-bottom) + var(--site-fab-row-bottom) - var(--vv-shift, 0px) + var(--float-lift-hub) +
+      var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px) + var(--float-lift-hub) +
         var(--float-lift-cookie) + var(--float-lift-miniplayer)
     );
   }
@@ -2863,7 +2885,7 @@ html.readable-font body {
     )
     [data-floating='backtotop'] {
     bottom: calc(
-      var(--safe-bottom) + var(--site-fab-row-bottom) - var(--vv-shift, 0px) + var(--float-lift-cookie) +
+      var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px) + var(--float-lift-cookie) +
         var(--float-lift-miniplayer)
     );
   }
@@ -6510,4 +6532,25 @@ html.fools .radial-core__mark {
 html.fools .radial-core__mark::after {
   content: 'RMHaha';
   font-size: clamp(1rem, 4vw, 1.3rem);
+}
+
+/* ── Route progress (components/ui/NavigationProgress.tsx) ────────────────────────────────────────────────────────
+   The bar creeps toward 90% on ONE transition, not a script that sets a width every 160ms: it leaves fast and slows
+   as it nears 90%, like the trickle it replaces (each step covered 18% of what was left). `@starting-style` gives it its
+   start (8%) the moment it enters the box tree. `done` snaps to the end quickly; the component then takes it out. */
+[data-nav-progress] {
+  transform: scaleX(0.08);
+}
+[data-nav-progress][data-phase='running'] {
+  transform: scaleX(0.9);
+  transition: transform 3.2s cubic-bezier(0.1, 0.7, 0.2, 1);
+}
+[data-nav-progress][data-phase='done'] {
+  transform: scaleX(1);
+  transition: transform calc(var(--site-transition-speed, 200ms) * 0.75) ease-out;
+}
+@starting-style {
+  [data-nav-progress][data-phase='running'] {
+    transform: scaleX(0.08);
+  }
 }

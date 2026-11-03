@@ -130,12 +130,12 @@ export function CityScene({ rigRef }: { rigRef: React.MutableRefObject<RigHandle
   const onPaintStart = useCallback(() => {
     paintingRef.current = true;
     lastPainted.current = '';
-    const target = aim.current.tile;
-    if (target) {
-      lastPainted.current = `${target.x},${target.y}`;
-      applyAt(target.x, target.y);
-    }
-  }, [applyAt]);
+    // The first tile is painted by the press itself: the terrain/building
+    // `onPointerDown` aims at what is under the pointer and `onHoverTile`
+    // applies it. Applying `aim.tile` here would act on the PREVIOUS aim — on a
+    // touch screen, where nothing hovers between taps, that is the last tile you
+    // touched, so every placement tap also hit the old one.
+  }, []);
 
   const onPaintEnd = useCallback(() => {
     paintingRef.current = false;
@@ -197,9 +197,7 @@ export function CityScene({ rigRef }: { rigRef: React.MutableRefObject<RigHandle
         city={city}
         freshIds={freshIds}
         selectedId={selectedId}
-        onPick={(id) => {
-          aim.current.buildingId = id;
-        }}
+        onPick={onHoverBuilding}
         onHoverBuilding={onHoverBuilding}
       />
 

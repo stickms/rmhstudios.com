@@ -11,6 +11,7 @@ import { UpgradeChoice } from '../stores/game-store';
 import { WEAPONS } from '../data/weapons';
 import { PASSIVES } from '../data/passives';
 import { CATALYSTS } from '../data/catalysts';
+import { rand } from './rng';
 
 // ---- Constants --------------------------------------------------------------
 
@@ -115,7 +116,7 @@ export function generateUpgradeChoices(
 
   // Shuffle the pool
   for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rand() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
 
@@ -226,7 +227,7 @@ function weightChoices(
     }
 
     // Add random jitter
-    weight *= 0.5 + Math.random();
+    weight *= 0.5 + rand();
     weighted.push({ choice, weight });
   }
 

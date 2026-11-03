@@ -469,6 +469,11 @@ function buildLocalPath(
   return reconstructPath(cameFrom, startIdx, finalIdx, originCellX, originCellY);
 }
 
+/** Forget per-enemy path state from a previous run (enemy ids restart at 100 every run). */
+export function resetEnemyNavigation(): void {
+  navStateByEnemy.clear();
+}
+
 export function beginEnemyNavigationFrame(enemies: EnemyEntity[]): void {
   if (navStateByEnemy.size === 0) return;
   const aliveIds = new Set<number>();
