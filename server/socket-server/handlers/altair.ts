@@ -16,10 +16,14 @@
  * it, so Start could not succeed.
  */
 
+import { randomInt, randomUUID } from 'node:crypto';
 import type { Server, Socket } from 'socket.io';
 import { generateRoomCode, sanitizeString } from '../utils';
 import { config } from '../config';
 import { CLASSES } from '../../../lib/altair/data/classes';
+import { decodeRunLog } from '../../../lib/altair/verify/log-codec.server';
+import { submitToVerifyQueue } from '../../../lib/altair/verify/submit.server';
+import type { CoopRunJob, JobPlayer } from '../../../lib/altair/verify/job';
 
 const VALID_CLASS_IDS = new Set<string>(CLASSES.map((c) => c.id));
 
@@ -136,6 +140,20 @@ interface AltairLobby {
   lastSnapshot: unknown;
   bossesDefeated: string[];
   sharedKills: number;
+  /**
+   * Seed for every random roll of the current run, chosen HERE (never by a client) when the
+   * countdown ends. The host sim plays from it and the server replays from it, so a host cannot
+   * pick a favourable one. Null outside PLAYING/RESULTS.
+   */
+  runSeed: number | null;
+  /** Hub-issued id of the current run: the dedupe key of its persisted result. */
+  runId: string | null;
+  /** Who was in the match, with which class and slot, when it started (the verifier's trusted roster). */
+  startRoster: JobPlayer[];
+  /** Everyone admitted mid-run (a log may only add players from this list). */
+  admitted: JobPlayer[];
+  /** Classes of players whose disconnect grace expired mid-match, so they can rejoin as that class. */
+  departedClasses: Map<string, string>;
 }
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -214,6 +232,8 @@ function buildClientState(lobby: AltairLobby, userId: string) {
     chat: lobby.chat.slice(-50),
     myUserId: userId,
     seq: Date.now(),
+    // Only the host runs the simulation, so only the host is told the seed.
+    runSeed: lobby.state === 'PLAYING' && lobby.hostUserId === userId ? lobby.runSeed : null,
   };
 }
 
@@ -287,9 +307,13 @@ function disbandLobby(lobbyId: string): void {
   lobbies.delete(lobbyId);
 }
 
-function removePlayer(lobby: AltairLobby, userId: string): void {
+function removePlayer(lobby: AltairLobby, userId: string, graceExpired = false): void {
   const player = lobby.players.get(userId);
   if (!player) return;
+  // A guest who timed out mid-match may come back: remember their class (not a deliberate leave).
+  if (graceExpired && lobby.state === 'PLAYING' && player.classId && lobby.hostUserId !== userId) {
+    lobby.departedClasses.set(userId, player.classId);
+  }
 
   const userName = player.userName;
   const wasHost = lobby.hostUserId === userId;
@@ -399,6 +423,10 @@ function endGame(
     lobby.state = 'WAITING';
     lobby.gameStartedAt = null;
     lobby.lastSnapshot = null;
+    lobby.runSeed = null;
+    lobby.runId = null;
+    lobby.startRoster = [];
+    lobby.admitted = [];
     for (const [, player] of lobby.players) {
       player.isReady = false;
       player.classId = null;
@@ -493,7 +521,8 @@ function onLobbyCreate(io: Server, socket: Socket, payload: any): void {
     id: lobbyId, hostUserId: userId, settings,
     players: new Map([[userId, player]]),
     state: 'WAITING', chat: [], createdAt: now, lastActivityAt: now,
-    gameStartedAt: null, lastSnapshot: null, bossesDefeated: [], sharedKills: 0,
+    gameStartedAt: null, lastSnapshot: null, bossesDefeated: [], sharedKills: 0, runSeed: null, departedClasses: new Map(),
+    runId: null, startRoster: [], admitted: [],
   };
 
   lobbies.set(lobbyId, lobby);
@@ -546,7 +575,9 @@ function onLobbyJoin(io: Server, socket: Socket, payload: any): void {
     return;
   }
 
-  if (lobby.state === 'PLAYING') {
+  // A guest whose grace expired mid-match is a returning player, not a new drop-in.
+  const returningClass = lobby.state === 'PLAYING' ? lobby.departedClasses.get(userId) : undefined;
+  if (lobby.state === 'PLAYING' && !returningClass) {
     if (!lobby.settings.dropInAllowed) {
       socket.emit(S2C.ERROR, { code: 'LOBBY_IN_GAME', message: 'Game in progress, drop-in disabled.' });
       return;
@@ -560,7 +591,7 @@ function onLobbyJoin(io: Server, socket: Socket, payload: any): void {
         return;
       }
     }
-  } else if (lobby.state !== 'WAITING' && lobby.state !== 'CLASS_SELECT') {
+  } else if (!returningClass && lobby.state !== 'WAITING' && lobby.state !== 'CLASS_SELECT') {
     socket.emit(S2C.ERROR, { code: 'LOBBY_IN_GAME', message: 'Game in progress.' });
     return;
   }
@@ -577,6 +608,12 @@ function onLobbyJoin(io: Server, socket: Socket, payload: any): void {
     isConnected: true, isReady: false, slot, classId: null,
     joinedAt: now, lastSeenAt: now, runState: null,
   };
+  if (returningClass) {
+    player.classId = returningClass;
+    player.isReady = true;
+    player.runState = createInitialRunState();
+    lobby.departedClasses.delete(userId);
+  }
 
   lobby.players.set(userId, player);
   userToLobby.set(userId, lobby.id);
@@ -588,10 +625,12 @@ function onLobbyJoin(io: Server, socket: Socket, payload: any): void {
   addSystemChat(lobby.id, `${userName} joined`);
 
   if (lobby.state === 'PLAYING') {
+    // A returning player (class already known) is spawned by the host right now: the verifier must expect it.
+    if (player.classId) lobby.admitted.push({ userId, userName, classId: player.classId, slot });
     broadcastToLobby(lobby.id, S2C.GAME_PLAYER_JOINED, {
       player: {
         userId, userName, avatarUrl, isConnected: true, isHost: false,
-        slot, classId: null, isReady: false, color: getSlotColor(slot),
+        slot, classId: player.classId, isReady: player.isReady, color: getSlotColor(slot),
       },
     });
   }
@@ -740,6 +779,7 @@ function onClassSelect(io: Server, socket: Socket, payload: any): void {
     player.runState = createInitialRunState();
     lobby.lastActivityAt = Date.now();
     broadcastFullSync(lobby);
+    lobby.admitted.push({ userId, userName: player.userName, classId, slot: player.slot });
     // The host's page spawns them now that the class is known.
     broadcastToLobby(lobby.id, S2C.GAME_PLAYER_JOINED, {
       player: {
@@ -835,9 +875,16 @@ function onGameStart(io: Server, socket: Socket, payload: any): void {
 
       // Start game
       lobby.state = 'PLAYING';
+      lobby.departedClasses.clear();
       lobby.gameStartedAt = Date.now();
       lobby.bossesDefeated = [];
       lobby.sharedKills = 0;
+      lobby.runSeed = randomInt(0, 2 ** 32);
+      lobby.runId = randomUUID();
+      lobby.startRoster = [...lobby.players.values()].map((p) => ({
+        userId: p.userId, userName: p.userName, classId: p.classId ?? 'knight', slot: p.slot,
+      }));
+      lobby.admitted = [];
       for (const [, player] of lobby.players) {
         player.runState = createInitialRunState();
       }
@@ -910,8 +957,10 @@ function onHostSnapshot(io: Server, socket: Socket, snapshot: any): void {
 /**
  * Host-only end of run. The host's browser owns the simulation, so it reports
  * how the run ended and the per-player counters; the hub clamps every number (a
- * client is untrusted) and builds the results itself. Nothing here awards coins
- * or writes anything: `coinsEarned` is always 0 for a co-op run.
+ * client is untrusted) and builds the results screen itself; `coinsEarned` there
+ * is always 0. Nothing the host says is persisted: the run log it attaches goes
+ * to the verifier (lib/altair/verify), which replays it and records the replay's
+ * numbers only if they equal the host's claim.
  */
 const MAX_RUN_SECONDS = 6 * 60 * 60;
 function clampInt(v: unknown, max: number): number {
@@ -927,6 +976,16 @@ interface EndReport {
   sharedKills?: unknown;
   bossesDefeated?: unknown;
   players?: unknown;
+}
+interface ClaimRow {
+  userId?: unknown;
+  level?: unknown;
+  kills?: unknown;
+  coins?: unknown;
+  revivesGiven?: unknown;
+  revivesReceived?: unknown;
+  wasDowned?: unknown;
+  wasAliveAtEnd?: unknown;
 }
 interface EndRow {
   userId?: unknown;
@@ -977,7 +1036,58 @@ function onGameEnd(io: Server, socket: Socket, raw: unknown): void {
   }
   const results = buildCurrentResults(lobby, payload.victory === true);
   results.timeSurvived = clampNum(payload.time, MAX_RUN_SECONDS) || results.timeSurvived;
+  // Persistence: what the host reports above is for the results screen only. The run itself is
+  // handed to the verifier, which replays it and records the replay's numbers.
+  void submitRunForVerification(lobby, raw as EndReport & { runLog?: unknown });
   endGame(lobby.id, results);
+}
+
+/** Build the verify job from hub state (trusted) + the host's log and claim (untrusted) and queue it. */
+async function submitRunForVerification(lobby: AltairLobby, payload: EndReport & { runLog?: unknown }): Promise<void> {
+  const runId = lobby.runId;
+  const seed = lobby.runSeed;
+  if (!runId || seed === null || !lobby.gameStartedAt) return;
+  const log = decodeRunLog(payload.runLog);
+  if (!log) {
+    console.warn(JSON.stringify({ event: 'altair.run_unverifiable', runId, reason: 'no readable run log' }));
+    return;
+  }
+  const claim = {
+    victory: payload.victory === true,
+    sharedKills: clampInt(payload.sharedKills, 10_000_000),
+    bossesDefeated: Array.isArray(payload.bossesDefeated)
+      ? payload.bossesDefeated.filter((b: unknown): b is string => typeof b === 'string').slice(0, 20).map((b) => sanitizeString(b, 40))
+      : [],
+    players: (Array.isArray(payload.players) ? (payload.players as ClaimRow[]) : [])
+      .filter((r) => r && typeof r.userId === 'string')
+      .slice(0, MAX_PLAYERS_PER_LOBBY)
+      .map((r) => ({
+        userId: r.userId as string,
+        level: clampInt(r.level, 1000),
+        kills: clampInt(r.kills, 10_000_000),
+        coins: clampInt(r.coins, 100_000_000),
+        revivesGiven: clampInt(r.revivesGiven, 10_000),
+        revivesReceived: clampInt(r.revivesReceived, 10_000),
+        wasDowned: r.wasDowned === true,
+        wasAliveAtEnd: r.wasAliveAtEnd === true,
+      })),
+  };
+  const job: CoopRunJob = {
+    runId,
+    lobbyId: lobby.id,
+    hostUserId: lobby.hostUserId,
+    seed,
+    doubleTime: lobby.settings.doubleTime,
+    roster: lobby.startRoster,
+    joins: lobby.admitted,
+    wallMs: Date.now() - lobby.gameStartedAt,
+    log,
+    claim,
+  };
+  const outcome = await submitToVerifyQueue(job);
+  if (outcome !== 'queued') {
+    console.warn(JSON.stringify({ event: 'altair.run_not_queued', runId, outcome }));
+  }
 }
 
 /**
@@ -1206,7 +1316,7 @@ export function handleAltairDisconnect(io: Server, socket: Socket): void {
   // Start grace timer
   const timer = setTimeout(() => {
     graceTimers.delete(userId);
-    removePlayer(lobby, userId);
+    removePlayer(lobby, userId, true);
   }, DISCONNECT_GRACE_MS);
   graceTimers.set(userId, timer);
 

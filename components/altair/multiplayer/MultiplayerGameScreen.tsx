@@ -28,6 +28,7 @@ import {
   HOST_RENDER_DELAY_MS,
 } from '@/lib/altair/multiplayer/snapshot-buffer';
 import { SnapshotView, type RosterEntry } from '@/lib/altair/multiplayer/snapshot-view';
+import { encodeRunLog } from '@/lib/altair/verify/log-codec';
 import { HostDriver, type HostEnd } from '@/lib/altair/multiplayer/host-driver';
 import { PLAYER_DEAD, PLAYER_ALIVE, type GameEvent } from '@/lib/altair/multiplayer/types';
 import type { UpgradeChoice } from '@/lib/altair/stores/game-store';
@@ -237,6 +238,7 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
       driver = new HostDriver({
         players: me.players.map((p) => ({ playerId: p.userId, classId: p.classId ?? 'knight', slot: p.slot })),
         doubleTime: me.settings.doubleTime,
+        seed: me.runSeed ?? undefined,
         send: (snap) => {
           socket.volatile.emit(C2S.GAME_STATE_SNAPSHOT, snap); // volatile: a stale snapshot is worthless after a reconnect
           pushRaw(snap);
@@ -250,7 +252,7 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
           }
         },
         onEnd: (end: HostEnd) => {
-          socket.emit(C2S.GAME_END, {
+          const report = {
             victory: end.victory,
             time: end.time,
             sharedKills: end.sharedKills,
@@ -259,13 +261,19 @@ function Match({ lobbyId, onLeave }: MultiplayerGameScreenProps) {
               userId: s.playerId,
               level: s.level,
               kills: s.kills,
+              coins: s.coins,
               timeSurvived: s.timeSurvived,
               revivesGiven: s.revivesGiven,
               revivesReceived: s.revivesReceived,
               wasDowned: s.wasDowned,
               wasAliveAtEnd: s.wasAliveAtEnd,
             })),
-          });
+          };
+          // The run log lets the server replay the match and record the replay's result. Without it
+          // (too long to send) the results screen still works but nothing is persisted.
+          void (end.log ? encodeRunLog(end.log) : Promise.resolve(null))
+            .catch(() => null)
+            .then((runLog) => socket.emit(C2S.GAME_END, runLog ? { ...report, runLog } : report));
         },
       });
       const d = driver;

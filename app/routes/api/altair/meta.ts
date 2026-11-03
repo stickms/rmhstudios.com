@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
+import { reconcileMetaSave, type MetaRow } from '@/lib/altair/meta-guard';
 
 /** GET — Load meta progress from database. */
 
@@ -61,43 +62,64 @@ export const Route = createFileRoute('/api/altair/meta')({
             if (typeof coins !== 'number' || coins < 0 || coins > 100_000_000) {
               return Response.json({ error: 'Invalid coins' }, { status: 400 });
             }
-            if (typeof upgrades !== 'object' || upgrades === null) {
+            if (typeof upgrades !== 'object' || upgrades === null || Array.isArray(upgrades)) {
               return Response.json({ error: 'Invalid upgrades' }, { status: 400 });
             }
             if (!Array.isArray(unlockedClasses)) {
               return Response.json({ error: 'Invalid unlockedClasses' }, { status: 400 });
             }
 
-            await prisma.altairMetaProgress.upsert({
-              where: { userId: session.user.id },
-              create: {
-                userId: session.user.id,
-                coins,
-                upgrades,
-                unlockedClasses,
-                doubleTimeUnlocked: !!doubleTimeUnlocked,
-                classFirstClears: classFirstClears ?? [],
-                totalRunsPlayed: totalRunsPlayed ?? 0,
-                bestTimeSurvived: bestTimeSurvived ?? 0,
-                bestKills: bestKills ?? 0,
-                bossesDefeated: bossesDefeated ?? [],
-                bestiary: bestiary ?? {},
-              },
-              update: {
-                coins,
-                upgrades,
-                unlockedClasses,
-                doubleTimeUnlocked: !!doubleTimeUnlocked,
-                classFirstClears: classFirstClears ?? [],
-                totalRunsPlayed: totalRunsPlayed ?? 0,
-                bestTimeSurvived: bestTimeSurvived ?? 0,
-                bestKills: bestKills ?? 0,
-                bossesDefeated: bossesDefeated ?? [],
-                bestiary: bestiary ?? {},
-              },
-            });
-
-            return Response.json({ success: true });
+            // The client's coin balance is a CLAIM, not a fact: purchases are priced from the server's
+            // own table against the server's balance, and earned coins are limited by a refilling
+            // allowance (lib/altair/meta-guard.ts). Everything else saves as before.
+            const userId = session.user.id;
+            const shared = {
+              unlockedClasses,
+              doubleTimeUnlocked: !!doubleTimeUnlocked,
+              classFirstClears: classFirstClears ?? [],
+              totalRunsPlayed: totalRunsPlayed ?? 0,
+              bestTimeSurvived: bestTimeSurvived ?? 0,
+              bestKills: bestKills ?? 0,
+              bossesDefeated: bossesDefeated ?? [],
+              bestiary: bestiary ?? {},
+            };
+            for (let attempt = 0; attempt < 3; attempt++) {
+              const row = await prisma.altairMetaProgress.findUnique({ where: { userId } });
+              const prev: MetaRow | null = row
+                ? {
+                    coins: row.coins,
+                    upgrades: (row.upgrades ?? {}) as Record<string, number>,
+                    coinAllowance: row.coinAllowance,
+                    coinAllowanceAt: row.coinAllowanceAt,
+                  }
+                : null;
+              const decision = reconcileMetaSave(prev, { coins, upgrades }, new Date());
+              if (!decision.ok) {
+                return Response.json({ error: decision.error }, { status: 400 });
+              }
+              const money = {
+                coins: decision.coins,
+                upgrades: decision.upgrades,
+                coinAllowance: decision.coinAllowance,
+                coinAllowanceAt: decision.coinAllowanceAt,
+              };
+              if (!row) {
+                try {
+                  await prisma.altairMetaProgress.create({ data: { userId, ...money, ...shared } });
+                } catch {
+                  continue; // a concurrent first save won; reconcile against it
+                }
+              } else {
+                // Optimistic concurrency on the balance we reconciled against.
+                const done = await prisma.altairMetaProgress.updateMany({
+                  where: { userId, coins: row.coins, updatedAt: row.updatedAt },
+                  data: { ...money, ...shared },
+                });
+                if (done.count === 0) continue;
+              }
+              return Response.json({ success: true, coins: decision.coins, clamped: decision.clamped });
+            }
+            return Response.json({ error: 'Conflict, try again' }, { status: 409 });
           } catch (e) {
             console.error('Altair meta save failed:', e);
             return Response.json({ error: 'Internal Server Error' }, { status: 500 });

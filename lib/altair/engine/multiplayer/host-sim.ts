@@ -11,8 +11,11 @@
 // single-player slots; the shared phases (enemy AI, boss, wave director,
 // corpses) run once. See docs/altair-multiplayer.md "Simulation model".
 //
-// Determinism: given the same Math.random stream, the same players and the same
-// setInput() calls between steps, an N-player run is bit-identical. Players are
+// Determinism: a run is a pure function of (seed, players, the setInput() /
+// chooseUpgrade() / addPlayer() / removePlayer() calls made between steps). All
+// randomness comes from the seeded stream (engine/rng.ts) that every public
+// method installs for its duration, so an N-player run is bit-identical on any
+// machine. The server replays runs on that guarantee (lib/altair/verify/). Players are
 // always processed in slot order; nothing reads a clock.
 // =============================================================================
 
@@ -34,6 +37,11 @@ import { xpRequired, type UpgradeChoice } from '../../stores/game-store';
 import { generateUpgradeChoices, checkEvolution } from '../level-up-system';
 import { handleCollisions, processEnemyDeaths, tickCorpses } from '../collisions';
 import { enforceBossDpsCap } from '../boss-system';
+import { RunRecorder, quantiseIntent, type RunLog } from '../../verify/run-log';
+import { createSeededRng, withRng, type RandomSource } from '../rng';
+import { resetEnemyNavigation } from '../enemy-navigation';
+import { resetPickupSystem } from '../pickup-system';
+import { resetPositionHistoryAccum } from '../player-system';
 import { createSimRuntime, type GameLoopCallbacks, type SimRuntime } from '../sim-runtime';
 import {
   recomputeStats,
@@ -80,6 +88,11 @@ export interface HostPlayerInit {
 export interface HostSimOptions {
   players: HostPlayerInit[];
   doubleTime?: boolean;
+  /**
+   * 32-bit seed for every random roll in the run. In a real match the HUB picks it (so a
+   * client cannot shop for a favourable one); tests and offline use may omit it.
+   */
+  seed?: number;
   /** Override the level-up auto-pick timeout (tests). */
   levelUpTimeout?: number;
 }
@@ -134,6 +147,11 @@ export class HostSim {
   readonly world: MultiplayerGameWorld;
   readonly rt: SimRuntime;
   readonly tileGen: TileGenerator;
+  readonly seed: number;
+  readonly doubleTime: boolean;
+  /** Records every between-step call so the server can replay the run (lib/altair/verify). */
+  readonly recorder: RunRecorder;
+  private recording = false;
   status: HostStatus = 'playing';
   tick = 0;
   bossesDefeated: string[] = [];
@@ -143,6 +161,7 @@ export class HostSim {
   private readonly events: GameEvent[] = [];
   private readonly callbacks: GameLoopCallbacks;
   private readonly levelUpTimeout: number;
+  private readonly rng: RandomSource;
   private current: HostPlayer | null = null;
   private scaledMaxId = 0;
   private realTime = 0;
@@ -157,6 +176,14 @@ export class HostSim {
       throw new Error('HostSim needs 1-4 players');
     }
     this.levelUpTimeout = opts.levelUpTimeout ?? LEVEL_UP_TIMEOUT;
+    this.seed = (opts.seed ?? Math.floor(Math.random() * 0x100000000)) >>> 0;
+    this.rng = createSeededRng(this.seed);
+    this.doubleTime = !!opts.doubleTime;
+    this.recorder = new RunRecorder(opts.players.map((p) => ({ id: p.playerId, classId: p.classId, slot: p.slot })));
+    // Module-level engine state (path cache, merge timers) must start as on a fresh page.
+    resetEnemyNavigation();
+    resetPickupSystem();
+    resetPositionHistoryAccum();
     const first = opts.players[0];
     const base = createGameWorld(1280, 720, first.classId, !!opts.doubleTime);
     const scaling: ScalingState = {
@@ -189,12 +216,22 @@ export class HostSim {
     for (const init of opts.players) this.addPlayer(init);
     this.world.player = this.players[0].entity;
     this.scaledMaxId = this.world.nextId;
+    this.recording = true;
   }
+
 
   // ---- Players -------------------------------------------------------------
 
   /** Add a player (match start or drop-in). Drop-ins appear beside the nearest living player. */
   addPlayer(init: HostPlayerInit): void {
+    const before = this.byId.has(init.playerId) ? -1 : this.players.length;
+    withRng(this.rng, () => this.addPlayerInner(init));
+    if (this.recording && this.status === 'playing' && before >= 0 && this.byId.has(init.playerId)) {
+      this.recorder.join(this.tick, { id: init.playerId, classId: init.classId, slot: Math.max(0, Math.min(3, init.slot)) });
+    }
+  }
+
+  private addPlayerInner(init: HostPlayerInit): void {
     if (this.byId.has(init.playerId) || this.players.length >= 4) return;
     const world = this.world;
     const def = CLASSES.find((c) => c.id === init.classId) || CLASSES[0];
@@ -296,6 +333,7 @@ export class HostSim {
   removePlayer(playerId: string): void {
     const p = this.byId.get(playerId);
     if (!p) return;
+    if (this.recording && this.status === 'playing') this.recorder.leave(this.tick, playerId);
     this.byId.delete(playerId);
     this.world.players.delete(playerId);
     const i = this.players.indexOf(p);
@@ -319,8 +357,26 @@ export class HostSim {
       dx /= m;
       dy /= m;
     }
-    p.intentX = dx;
-    p.intentY = dy;
+    // Intent is quantised to hundredths: that is what the run log stores, so the live sim and the
+    // server's replay see the same numbers.
+    this.applyIntent(p, playerId, quantiseIntent(dx), quantiseIntent(dy));
+  }
+
+  /**
+   * Replay entry point: the integer hundredths the run log stores, applied as they are. (Feeding them
+   * back through setInput would normalise a second time, and a rounded-up vector can land on a
+   * different integer.)
+   */
+  setQuantisedInput(playerId: string, qx: number, qy: number): void {
+    const p = this.byId.get(playerId);
+    if (!p) return;
+    this.applyIntent(p, playerId, Math.max(-100, Math.min(100, Math.trunc(qx))), Math.max(-100, Math.min(100, Math.trunc(qy))));
+  }
+
+  private applyIntent(p: HostPlayer, playerId: string, qx: number, qy: number): void {
+    p.intentX = qx / 100;
+    p.intentY = qy / 100;
+    if (this.recording && this.status === 'playing') this.recorder.input(this.tick, playerId, qx, qy);
     p.entity.lastInputTime = this.world.time;
   }
 
@@ -340,6 +396,17 @@ export class HostSim {
 
   /** Apply the player's pick. False if nothing is pending or the index is invalid. */
   chooseUpgrade(playerId: string, index: number): boolean {
+    const ok = withRng(this.rng, () => this.chooseUpgradeInner(playerId, index));
+    if (ok && this.recording && this.status === 'playing') this.recorder.pick(this.tick, playerId, index);
+    return ok;
+  }
+
+  /** The replayable record of the run so far (valid to submit only when `recorder.overflow` is false). */
+  getRunLog(): RunLog {
+    return this.recorder.toLog(this.tick, this.seed, this.doubleTime);
+  }
+
+  private chooseUpgradeInner(playerId: string, index: number): boolean {
     const p = this.byId.get(playerId);
     if (!p || !p.pending) return false;
     if (!Number.isInteger(index) || index < 0 || index >= p.pending.choices.length) return false;
@@ -394,6 +461,10 @@ export class HostSim {
 
   /** Advance one fixed 60 Hz step. No-op once the run is over. */
   step(): void {
+    withRng(this.rng, () => this.stepInner());
+  }
+
+  private stepInner(): void {
     if (this.status !== 'playing') return;
     const world = this.world;
     const rt = this.rt;

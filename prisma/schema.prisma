@@ -2730,6 +2730,10 @@ model AltairMetaProgress {
   userId             String   @unique
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   coins              Int      @default(0)
+  // Earned coins the server will still accept from a client save (refills with time; see
+  // lib/altair/meta-guard.ts). Interim bound until single-player runs are replay-verified.
+  coinAllowance      Int      @default(8000)
+  coinAllowanceAt    DateTime?
   upgrades           Json     @default("{}")
   unlockedClasses    Json     @default("[\"knight\",\"arcanist\",\"ranger\"]")
   doubleTimeUnlocked Boolean  @default(false)
@@ -2769,6 +2773,9 @@ model AltairCoopProfile {
 model AltairMatch {
   id             String              @id @default(cuid())
   lobbyId        String
+  // Hub-issued id of the verified run this row came from (null on rows written before server-side
+  // verification). Unique, so a replayed submission can never be recorded twice.
+  runId          String?             @unique
   startedAt      DateTime            @default(now())
   endedAt        DateTime?
   durationMs     Int?

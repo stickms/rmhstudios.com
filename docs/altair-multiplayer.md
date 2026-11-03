@@ -16,7 +16,7 @@ engine, it does not fork it.
 | 3A    | Client: host driver, snapshot rendering, guest input, host-leave | done (two real clients verified) |
 | 3B    | Co-op feel: per-player level-up, revive/down UI, spectate, boss bar | done (two real clients verified) |
 | 3C    | Robustness: touch, reconnect, drop-in, results/lobby loop     | done (two real clients verified) |
-| 4     | Results, drop-in, persistence                                 | not started |
+| 4     | Results, drop-in, verified persistence                        | co-op persistence done (replay-verified); solo pending |
 
 ### Phase 3A as built
 
@@ -52,9 +52,7 @@ engine, it does not fork it.
   bar from the snapshot, "you are down" / spectating banner. Revive progress is a ring drawn on the downed
   body by the renderer (it fills while a teammate stands in range). A dead player's camera follows a living
   teammate.
-- Known gap (pre-existing, single-player too): the wave table has a boss entry at t=300 and another wave
-  starting at t=300 after it, and the director takes the LAST matching wave, so no boss ever spawns. The
-  boss bar was verified with a boss-flagged enemy injected on the host, not a real spawn.
+- Fixed (play3): the wave table has a boss entry at t=300 and another wave starting at t=300 after it, and the director took the LAST matching wave, so no boss ever spawned. The director now scans the boss entries directly (30 s window, never while a boss lives). Verified: Hollow King + bar in single-player and on a co-op guest.
 
 ### Phase 3C as built
 
@@ -66,15 +64,8 @@ engine, it does not fork it.
   host calls `HostSim.addPlayer`; `GAME_PLAYER_LEFT` (after the grace) calls `removePlayer`.
 - Results: no "Play Again" button (it did nothing); the hub reopens the lobby 15 s after results and the
   screen says so. Coins are not shown: co-op runs earn none. `ClassSelectLobby` (unreachable) is gone.
-- Persistence, for whoever builds it (read, not built): `/api/altair/match` already exists
-  (server-to-server, `ALTAIR_SERVER_SECRET` bearer) and writes `AltairMatch`, `AltairMatchPlayer`, the
-  co-op profile (`totalCoopCoins` from `coinsEarned`) and achievements, but it only CLAMPS what it is
-  given, and nothing calls it (the hub does not). Single-player's `/api/altair/meta` likewise stores
-  whatever coin balance the client sends (bounded to 0-100M), so neither path verifies a run. Co-op
-  numbers come from the host's browser, which every other player must treat as untrusted, so they must
-  not mint coins as sent: persisting them needs either server-side re-simulation or caps derived from
-  run time plus a way for guests to dispute the report. Until then the hub's results carry
-  `coinsEarned: 0` and nothing is written.
+- Persistence: built, see "Verified results" below. The hub's results screen still carries
+  `coinsEarned: 0`; what is recorded comes from the server-side replay, never from the host.
 
 - A host page that mounts mid-run (reload) cannot resume the match; it says so and offers Leave.
 
@@ -197,7 +188,43 @@ players. The hub never simulates; it relays.
   socket returns in time; past the grace it ends the match with
   `endedReason: 'host_left'` and everyone sees results plus a message.
 
-## Results and persistence (phase 4)
+## Verified results (phase 4)
+
+The host's browser runs the simulation, so nothing it reports is believed. A co-op run is a pure
+function of `(seed, roster, doubleTime, the calls made between steps)`, which lets the server replay it.
+
+1. **Seed.** The hub picks a random 32-bit seed (`crypto.randomInt`) and a `runId` when the countdown
+   ends and tells only the host. `HostSim` draws every random number from that seeded stream
+   (`engine/rng.ts`, `rand()`; single-player's `rand()` is `Math.random`, so the golden master is
+   unchanged).
+2. **Log.** `HostSim.recorder` (`verify/run-log.ts`) records input changes (quantised to hundredths),
+   level-up picks, drop-ins and leaves, delta-encoded into one flat integer array. The host gzips it
+   (`verify/log-codec.ts`) and sends it with `GAME_END` plus the result it claims.
+3. **Verify.** The hub builds a `CoopRunJob` from its OWN state (seed, roster with classes and slots,
+   admitted drop-ins, wall-clock time) plus the host's log and claim, and queues it on pg-boss
+   (`altair.verify-coop`). The `jobs` worker runs `verifyCoopRun`: structural checks on the log
+   (caps: 108k steps, 1.2M numbers), setup must equal the hub's, simulated time cannot exceed the wall
+   clock the hub saw (so verification costs at most ~15% of the time the match was played), then a
+   serialised, yielding replay with a 10 minute deadline. The claim must equal the replay.
+4. **Persist.** Only the replay's numbers are written (`verify/persist.server.ts`: `AltairMatch`,
+   `AltairMatchPlayer`, `AltairCoopProfile`, achievements), under the unique `AltairMatch.runId`, so a
+   replayed submission is a no-op. `POST /api/altair/match` (ALTAIR_SERVER_SECRET) accepts the same job
+   as an alternative intake and answers 202.
+5. **DoS bounds.** One replay at a time; the deadline; at most 8 submissions per host per hour and 40
+   waiting jobs (beyond that a run is dropped, not recorded); the hub never simulates.
+
+Cross-engine determinism: JS engines do not agree on `Math.sin/cos/atan2` (measured: Chromium 153 and
+Node 22 return different bits), so inside a seeded sim the engine calls `engine/dmath.ts` instead, which
+uses software versions built only from IEEE-exact operations (outside it they are `Math.*`, so
+single-player and the golden master are unchanged). Measured: a 4000-step run's whole world state is
+bit-identical between Node 22, Chromium 153, Firefox 155 and WebKit (Safari 26.6). New sim code must use
+`rand()` and the `d*` math, never `Math.random/sin/cos/atan2/exp/pow/hypot`.
+
+Known limits: a run longer than 30 real minutes cannot be verified and is not recorded; a player who
+leaves mid-run is absent from the replay's per-player stats (as in the live results); a bot or macro that
+plays inputs a human could not is not detectable by replay.
+
+## Results and persistence (original notes)
 
 The host reports final per-player stats with a host-only end-of-run event; the hub
 clamps them (a client is untrusted) and broadcasts results. Nothing from a
@@ -205,3 +232,27 @@ multiplayer run awards coins or writes leaderboard rows unless the existing
 single-player path already verifies results server-side — that path will be read
 before anything is persisted, and a client-submitted score is never trusted for
 coin rewards.
+
+- Rejoin after the grace (play3): a guest whose 10 s grace expired mid-match is removed, but the hub remembers
+  their class (`departedClasses`). The client re-sends `LOBBY_JOIN` on every socket RE-connect; a returning guest
+  skips the drop-in picker and window and re-enters as their old class (`GAME_PLAYER_JOINED` -> host `addPlayer`).
+  Their run progress (level, weapons) is NOT restored: they are a fresh drop-in. Leaving on purpose gives no pass
+  back. A reloaded or long-dropped HOST still ends the run (`host_left`): the world cannot be rebuilt from a snapshot.
+
+## Single-player results (what is and is not verified)
+
+Co-op is replay-verified (above). Single-player is **not yet**: it is a React-driven loop (level-up
+application, pause/resume and the periodic store sync are `useEffect`s, the camera and tile streaming run
+per animation frame, and a run can be finalised by closing the tab), so a headless replay of what the
+client did would need those moved into a synchronous driver first. Until then
+`/api/altair/meta` (`lib/altair/meta-guard.ts`) bounds the coin balance instead of trusting it:
+purchases are priced and paid server-side, earned coins are limited by a refilling allowance
+(8 coins/s, 8000 cap) and clamped, a first save may import at most 50k. A cheater can still claim up
+to ~8 coins per second of wall clock without playing; `/api/altair/score` (leaderboard totals) is still
+client-reported.
+
+Plan for real verification (same machinery as co-op): a `SoloRun` driver shared by `GameScreen` and the
+verifier (synchronous level-up/reroll/banish/pause, frame-delta log because camera-driven tile streaming
+depends on frame timing), a server-issued `{runId, seed}` per run (HMAC, single use), the recorded
+frames/actions submitted at run end and replayed with the player's server-side meta bonuses, then
+`meta` coins credited only from the replay (and `score` rows written from it).
