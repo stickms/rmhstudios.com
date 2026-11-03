@@ -18,7 +18,6 @@ import { RadialLoader } from '@/components/ui/radial-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDeferOnNavigate } from '@/components/ui/defer-on-navigate';
 import { scrollPageToTop, useBackToTopHost } from '@/components/ui/back-to-top';
-import { useViewportShift } from '@/hooks/useViewportShift';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
 import { WheelCard } from './WheelCard';
 
@@ -305,7 +304,6 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   // scrolled and folds back at the top. Registering as the host keeps the shell's own arrow from drawing.
   const scrolled = useBackToTopHost();
   const fabRef = useRef<HTMLDivElement | null>(null);
-  useViewportShift(fabRef);
 
   return (
     <section className="radial-feed" aria-label={t('feed', { defaultValue: 'Feed' })}>
