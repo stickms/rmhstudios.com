@@ -36,6 +36,7 @@ import { useIsleworks } from '@/lib/isleworks/store';
 import type { BuildingCategory } from '@/lib/isleworks/types';
 
 import { CatalogIcon } from './icons';
+import { COMPACT_QUERY } from './useCompactHud';
 
 export function BuildPalette() {
   const { t } = useTranslation('c-isleworks');
@@ -48,11 +49,10 @@ export function BuildPalette() {
   // Open on a desktop (the palette is the first thing to learn), closed on a
   // phone (where it would cover the island the player came to look at).
   const [open, setOpen] = useState<BuildingCategory | null>(() =>
-    typeof window !== 'undefined' && window.innerWidth < 780 ? null : 'transport',
+    typeof window !== 'undefined' && window.matchMedia(COMPACT_QUERY).matches ? null : 'transport',
   );
 
   const peak = Math.max(city.peakPopulation, city.stats.population);
-  const upcoming = useMemo(() => nextUnlock(peak), [peak]);
   const listed = useMemo(() => (open ? unlockedIn(open, peak) : []), [open, peak]);
 
   const landPrice = useMemo(() => {
@@ -205,20 +205,29 @@ export function BuildPalette() {
         )}
       </div>
 
-      {upcoming && (
-        <p
-          className="isw-panel isw-section"
-          style={{ fontSize: 11, padding: '7px 11px', margin: 0 }}
-        >
-          <span style={{ color: 'var(--isw-ink-faint)' }}>
-            {t('next-unlock', {
-              defaultValue: 'Next: {{name}} at {{n}} residents',
-              name: upcoming.name,
-              n: upcoming.unlockPopulation,
-            })}
-          </span>
-        </p>
-      )}
+      <NextUnlock className="isw-next-unlock" />
     </div>
+  );
+}
+
+/** The one building the player is working toward, and the population it needs. */
+export function NextUnlock({ className }: { className?: string }) {
+  const { t } = useTranslation('c-isleworks');
+  const peak = useIsleworks((s) => Math.max(s.city.peakPopulation, s.city.stats.population));
+  const upcoming = useMemo(() => nextUnlock(peak), [peak]);
+  if (!upcoming) return null;
+  return (
+    <p
+      className={`isw-panel isw-section${className ? ` ${className}` : ''}`}
+      style={{ fontSize: 11, padding: '7px 11px', margin: 0 }}
+    >
+      <span style={{ color: 'var(--isw-ink-faint)' }}>
+        {t('next-unlock', {
+          defaultValue: 'Next: {{name}} at {{n}} residents',
+          name: upcoming.name,
+          n: upcoming.unlockPopulation,
+        })}
+      </span>
+    </p>
   );
 }
