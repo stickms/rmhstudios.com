@@ -27,6 +27,8 @@
 
 import { create } from 'zustand';
 import type { PadBrand } from '@/lib/bums-rush/input';
+import { loadLevel } from '@/lib/bums-rush/levels/loader';
+import { objectiveIdsToBitmask } from '@/lib/bums-rush/progress/objectives';
 import {
   cloneBindingSet,
   defaultBindingSetFor,
@@ -314,19 +316,28 @@ export const useBumsRushStore = create<BumsRushState>()((set, get) => ({
   },
 
   recordResult(result) {
-    const profile = get().profile;
-    const next = applyLevelClear(profile, {
-      levelId: result.levelId,
-      playerCount: result.playerCount,
-      bestMs: result.durationMs,
-      // The objective bitmask is over the level's authored order; the session
-      // has already reduced its ids to that mask before handing it here.
-      objectives: 0,
-      assisted: result.assisted,
-    });
-    set({ profile: next });
-    saveLocalProfile(next);
-    pushToCloud(next);
+    // The objective bitmask is over the level's authored order, so the level has
+    // to be read to build it. It is already cached from playing it; if it cannot
+    // be read the clear is still saved, without objective ticks.
+    void (async () => {
+      let objectives = 0;
+      try {
+        const level = await loadLevel(result.levelId);
+        objectives = objectiveIdsToBitmask(result.objectiveIds, level.objectives);
+      } catch {
+        // keep 0
+      }
+      const next = applyLevelClear(get().profile, {
+        levelId: result.levelId,
+        playerCount: result.playerCount,
+        bestMs: result.durationMs,
+        objectives,
+        assisted: result.assisted,
+      });
+      set({ profile: next });
+      saveLocalProfile(next);
+      pushToCloud(next);
+    })();
   },
 }));
 
