@@ -48,14 +48,27 @@ async function indexUrl(date: string): Promise<string | null> {
   return null;
 }
 
+const feedMemo = new Map<string, { at: number; feed: unknown }>();
+
+/** The raw "search" index feed for a day (every page the results site publishes), cached half an hour. */
+export async function getIndexFeed(date: string, now = Date.now()): Promise<unknown | null> {
+  const hit = feedMemo.get(date);
+  if (hit && now - hit.at < INDEX_TTL_MS) return hit.feed;
+  const url = await indexUrl(date);
+  if (!url) return hit?.feed ?? null;
+  const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), headers: headers() });
+  if (!res.ok) throw new Error(`index: HTTP ${res.status}`);
+  const feed = await res.json();
+  feedMemo.set(date, { at: now, feed });
+  return feed;
+}
+
 async function getRefs(date: string, now: number): Promise<MeasureRef[]> {
   const hit = indexMemo.get(date);
   if (hit && now - hit.at < INDEX_TTL_MS) return hit.refs;
-  const url = await indexUrl(date);
-  if (!url) return hit?.refs ?? [];
-  const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), headers: headers() });
-  if (!res.ok) throw new Error(`measure index: HTTP ${res.status}`);
-  const refs = parseMeasureIndex(await res.json());
+  const feed = await getIndexFeed(date, now);
+  if (!feed) return hit?.refs ?? [];
+  const refs = parseMeasureIndex(feed);
   indexMemo.set(date, { at: now, refs });
   return refs;
 }
@@ -120,6 +133,7 @@ export async function getBallotMeasures(cycle: Cycle, now = Date.now()): Promise
 export function __resetMeasures() {
   pages.clear();
   indexMemo.clear();
+  feedMemo.clear();
   listMemo.clear();
   inflight.clear();
 }

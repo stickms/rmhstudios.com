@@ -169,6 +169,7 @@ export function Hero({
               <a href="#map">{t('nav.map', { defaultValue: 'Map' })}</a>
               <a href="#races">{t('nav.races', { defaultValue: 'Races' })}</a>
               <a href="#measures">{t('nav.measures', { defaultValue: 'Measures' })}</a>
+              <a href="#offices">{t('nav.offices', { defaultValue: 'Local' })}</a>
               <a href="#polls">{t('nav.polls', { defaultValue: 'Polls' })}</a>
               <a href="#live">{t('nav.watch', { defaultValue: 'Watch' })}</a>
               <a href="#predict">{t('nav.predict', { defaultValue: 'Predict' })}</a>

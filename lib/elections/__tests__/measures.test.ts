@@ -86,3 +86,45 @@ describe('stats and filters', () => {
     expect(filterMeasures([a, b], { scope: 'all', state: 'all', q: 'fresno' })).toEqual([b]);
   });
 });
+
+describe('other offices', () => {
+  const url = (s: string) => `https://www.nytimes.com/interactive/2026/11/03/us/elections/${s}.html`;
+  it('indexes statewide and local offices but not the headline races or measures', async () => {
+    const { parseOtherOfficeIndex } = await import('../measures');
+    const feed = {
+      data: [
+        { office: 'Governor', statePostal: 'GA', publishUrl: url('results-georgia-governor'), headline: 'g' },
+        { office: 'Proposition', statePostal: 'AZ', publishUrl: url('results-arizona-proposition-144'), headline: 'p' },
+        { office: 'Attorney General', statePostal: 'GA', publishUrl: url('results-georgia-attorney-general'), headline: 'ag' },
+        { office: 'Mayor', statePostal: 'KY', publishUrl: url('results-louisville-mayor'), headline: 'm' },
+      ],
+    };
+    expect(parseOtherOfficeIndex(feed).map((r) => r.slug)).toEqual(['results-georgia-attorney-general', 'results-louisville-mayor']);
+  });
+  it('reads candidates, parties, the leader and a call', async () => {
+    const { normalizeOtherRace, otherStats, filterOther } = await import('../downballot');
+    const raw = (won: string[]) => ({
+      races: [
+        {
+          nyt_id: 'GA-AG-2026', office: 'Attorney General', coverage: 'state', title: { default: 'Georgia Attorney General' },
+          outcome: { won, gained: won.length ? true : null, called_by: won.length ? ['ap'] : [] },
+          candidate_metadata: {
+            a: { nyt_id: 'a', first_name: 'Ann', last_name: 'Lee', party: { nyt_id: 'DEM', name: 'Democrat' }, incumbent: false, ballot_order: 1 },
+            b: { nyt_id: 'b', first_name: 'Bob', last_name: 'Ray', party: { nyt_id: 'GOP', name: 'Republican' }, incumbent: true, ballot_order: 2 },
+          },
+          top_reporting_unit: { total_votes: 100, eevp: 60, candidates: [{ nyt_id: 'a', votes: { total: 54 }, leader: true }, { nyt_id: 'b', votes: { total: 46 } }] },
+        },
+      ],
+    });
+    const ref = { slug: 'results-georgia-attorney-general', state: 'GA', office: 'Attorney General', seat: null, headline: 'Georgia Attorney General Election Results' };
+    const counting = normalizeOtherRace(raw([]), ref)!;
+    expect(counting).toMatchObject({ status: 'counting', margin: 8, scope: 'statewide', pctReporting: 60 });
+    expect(counting.candidates[0]).toMatchObject({ name: 'Ann Lee', party: 'DEM', pct: 54, leader: true });
+    const called = normalizeOtherRace(raw(['a']), ref)!;
+    expect(called).toMatchObject({ status: 'called', winnerParty: 'DEM', flipped: true });
+    expect(otherStats([counting, called])).toMatchObject({ total: 2, called: 1, flips: 1 });
+    expect(filterOther([counting, called], { office: 'all', scope: 'all', state: 'all', q: 'ray' })).toHaveLength(2);
+    expect(filterOther([counting], { office: 'Mayor', scope: 'all', state: 'all', q: '' })).toEqual([]);
+    expect(normalizeOtherRace({}, ref)).toBeNull();
+  });
+});
