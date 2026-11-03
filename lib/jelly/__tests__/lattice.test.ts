@@ -16,7 +16,7 @@ import {
   type Lattice,
 } from '../lattice';
 import { latticeCaps } from '../soft-policy';
-import { DENT } from '../tiers';
+import { JELLY_BODY } from '../tiers';
 
 /**
  * Tier L runs inside the glass engine's frame, so its contract is the engine's: it must settle and stop on its own,
@@ -26,13 +26,13 @@ import { DENT } from '../tiers';
 
 /** Node indices, clockwise from the top-left. */
 const TL = 0;
-const T = 1;
-const TR = 2;
-const R = 3;
-const BR = 4;
-const B = 5;
-const BL = 6;
-const L = 7;
+const T = 3;
+const TR = 6;
+const R = 9;
+const BR = 12;
+const B = 15;
+const BL = 18;
+const L = 21;
 
 function steps(l: Lattice, seconds: number, dt = 1 / 60) {
   for (let t = 0; t < seconds - 1e-9; t += dt) stepLattice(l, dt);
@@ -89,7 +89,7 @@ describe('settle', () => {
       expect(l.vx[i]).toBe(0);
       expect(l.vy[i]).toBe(0);
     }
-    expect(Array.from(latticeUniform(l))).toEqual(new Array(16).fill(0));
+    expect(Array.from(latticeUniform(l))).toEqual(new Array(LATTICE_NODES * 2).fill(0));
   });
 
   it('a new lattice sleeps and costs nothing to step', () => {
@@ -120,21 +120,81 @@ describe('area preservation', () => {
     for (const side of [R, B, L]) expect(n[side]).toBeGreaterThan(0.5);
   });
 
-  it('the #989 press dent indents ≈ DENT.indentPx under the contact and bulges the far sides', () => {
-    const l = createLattice({ w: 200, h: 120, bevel: 10 }); // bevel cap 0.6·10 = 6px, dent indent 5px
+  it('a press sinks the contact toward JELLY_BODY.sagPx and bulges the far side', () => {
+    const l = createLattice({ w: 200, h: 120, bevel: 10 });
     setLatticeInput(l, { kind: 'press', x: 100, y: 0 });
     steps(l, 0.3);
     const n = normals(l);
-    expect(n[T]).toBeCloseTo(-DENT.indentPx, 0);
+    expect(n[T]).toBeLessThan(-0.65 * JELLY_BODY.sagPx);
+    expect(n[T]).toBeGreaterThan(-1.2 * JELLY_BODY.sagPx);
     expect(n[B]).toBeGreaterThan(0.8);
-    expect(n[B]).toBeLessThan(2.2);
   });
 
-  it('a thin bevel still caps the indent below DENT.indentPx', () => {
-    const l = createLattice({ w: 200, h: 120, bevel: 4 }); // bevel cap 0.6·4 = 2.4px
+  it('a rim-only slab (no body fill) still caps the indent at 0.6·bevel', () => {
+    const l = createLattice({ w: 200, h: 120, bevel: 4, body: false });
     setLatticeInput(l, { kind: 'press', x: 100, y: 0 });
     steps(l, 0.3);
-    expect(normals(l)[T]).toBeCloseTo(-2.4, 0); // the solver's raw state; the drawn rim is saturated at the cap
+    expect(l.caps.inward).toBeCloseTo(2.4, 10);
+    const out = latticeUniform(l);
+    expect(nodeNormalOffset(out, l, T)).toBeGreaterThanOrEqual(-2.4 - 1e-5);
+  });
+});
+
+describe('silhouette', () => {
+  it('has 24 nodes: unit normals, strictly increasing arc length, corners at 0, 6, 12, 18', () => {
+    const l = createLattice({ w: 308, h: 176, bevel: 16 });
+    expect(LATTICE_NODES).toBe(24);
+    for (let i = 0; i < LATTICE_NODES; i++) {
+      expect(Math.hypot(l.nx[i], l.ny[i])).toBeCloseTo(1, 10);
+      if (i > 0) expect(l.s[i]).toBeGreaterThan(l.s[i - 1]);
+    }
+    expect([l.px[TL], l.py[TL], l.px[TR], l.py[TR]]).toEqual([0, 0, 308, 0]);
+    expect([l.px[BR], l.py[BR], l.px[BL], l.py[BL]]).toEqual([308, 176, 0, 176]);
+    expect([l.px[T], l.py[T]]).toEqual([154, 0]);
+  });
+
+  it('a hover bulges the near edge by more than half the cap and never past it', () => {
+    const l = createLattice({ w: 308, h: 176, bevel: 16 });
+    setLatticeInput(l, { kind: 'hover', x: 154, y: 0 });
+    steps(l, 0.6);
+    const out = latticeUniform(l);
+    const bulge = nodeNormalOffset(out, l, T);
+    expect(bulge).toBeGreaterThan(0.5 * JELLY_BODY.bulgePx);
+    expect(bulge).toBeLessThanOrEqual(l.caps.outward + 1e-5);
+  });
+
+  it('never bulges past the room on a side, whatever drives it', () => {
+    const l = createLattice({ w: 308, h: 176, bevel: 16, room: { top: 3, right: 16, bottom: 0, left: 16 } });
+    setLatticeInput(l, { kind: 'hover', x: 154, y: 0 });
+    for (let k = 0; k < 90; k++) {
+      stepLattice(l, 1 / 60);
+      const out = latticeUniform(l);
+      expect(nodeNormalOffset(out, l, T)).toBeLessThanOrEqual(3 + 1e-5);
+    }
+    setLatticeInput(l, { kind: 'hover', x: 154, y: 176 });
+    for (let k = 0; k < 90; k++) {
+      stepLattice(l, 1 / 60);
+      const out = latticeUniform(l);
+      expect(nodeNormalOffset(out, l, B)).toBeLessThanOrEqual(1e-5);
+    }
+  });
+
+  it('scales down for small bodies and stays finite on extreme aspect ratios', () => {
+    for (const [w, h] of [
+      [4000, 60],
+      [40, 40],
+      [60, 4000],
+      [1, 1],
+    ]) {
+      const l = createLattice({ w, h, bevel: 8 });
+      setLatticeInput(l, { kind: 'press', x: w / 2, y: h / 2 });
+      steps(l, 1);
+      setLatticeInput(l, null);
+      steps(l, 3);
+      for (let i = 0; i < LATTICE_NODES; i++) expect(Number.isFinite(l.ox[i] + l.oy[i])).toBe(true);
+      expect(latticeAsleep(l)).toBe(true);
+    }
+    expect(createLattice({ w: 40, h: 40, bevel: 8 }).caps.inward).toBeLessThan(JELLY_BODY.sagPx);
   });
 });
 
@@ -159,7 +219,7 @@ describe('symmetry', () => {
 });
 
 describe('caps', () => {
-  it('outward ≤ the overdraw bound (≤ 3px) and inward ≤ min(0.6·bevel, 10px) for bevels 3–24, under abuse', () => {
+  it('outward ≤ min(bulge, margin) and inward ≤ sagPx for any bevel and size, under abuse', () => {
     for (const bevel of [3, 6, 12, 18, 24]) {
       for (const [w, h] of [
         [48, 32],
@@ -168,9 +228,11 @@ describe('caps', () => {
       ]) {
         const l = createLattice({ w, h, bevel });
         const { outward, inward } = l.caps;
-        expect(outward).toBeLessThanOrEqual(3);
-        expect(inward).toBeCloseTo(Math.min(0.6 * bevel, 10), 10);
-        const out = new Float32Array(16);
+        const k = Math.min(1, Math.max(JELLY_BODY.minScale, Math.min(w, h) / JELLY_BODY.refShortSidePx));
+        expect(outward).toBeLessThanOrEqual(16);
+        expect(outward).toBeCloseTo(JELLY_BODY.bulgePx * k, 10);
+        expect(inward).toBeCloseTo(JELLY_BODY.sagPx * k, 10);
+        const out = new Float32Array(LATTICE_NODES * 2);
         const check = () => {
           latticeUniform(l, out);
           for (let i = 0; i < LATTICE_NODES; i++) {
@@ -291,11 +353,11 @@ describe('plastic memory', () => {
 });
 
 describe('uniform', () => {
-  it('is 16 floats and reuses the buffer it is given', () => {
+  it('is 48 floats (24 nodes) and reuses the buffer it is given', () => {
     const l = dented();
-    const buf = new Float32Array(16);
+    const buf = new Float32Array(LATTICE_NODES * 2);
     expect(latticeUniform(l, buf)).toBe(buf);
-    expect(latticeUniform(l)).toHaveLength(16);
+    expect(latticeUniform(l)).toHaveLength(48);
     expect(nodeNormalOffset(buf, l, T)).toBeLessThan(0);
   });
 });

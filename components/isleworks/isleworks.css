@@ -714,7 +714,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   Narrow screens — the rail becomes a strip, the drawer a sheet
+   Narrow screens — the HUD condenses (see hud/CompactHud.tsx)
    ══════════════════════════════════════════════════════════════════════════ */
 
 /*
@@ -723,31 +723,11 @@
  * The height half of that condition is the one that matters most: a phone in
  * landscape is 932px WIDE and 430px tall, so a width-only query left it on the
  * desktop layout, where the right rail runs from under the status bar to the
- * bottom of the screen and covers the city it is describing.
+ * bottom of the screen and covers the city it is describing. This query must
+ * match `COMPACT_QUERY` in hud/useCompactHud.ts, which decides which HUD mounts:
+ * there the rail does not exist at all, and its panels live in a sheet.
  */
 @media (max-width: 780px), (max-height: 560px) {
-  /* The rail becomes a short horizontal strip in the middle of the screen. The
-     cap is the point: as a full-height column it covered the island, which on a
-     phone is most of the game. Each panel scrolls inside its own box. */
-  .isw-rail {
-    position: static;
-    width: auto;
-    max-height: min(168px, 34vh);
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 0 calc(8px + var(--safe-right)) 0 calc(8px + var(--safe-left));
-    gap: 8px;
-  }
-
-  .isw-rail > * {
-    min-width: 236px;
-    max-width: 236px;
-    max-height: min(168px, 34vh);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-
   .isw-drawer {
     max-height: 26vh;
     grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
@@ -791,5 +771,165 @@
   .isw-btn {
     height: 44px;
     min-width: 44px;
+  }
+}
+
+.isw-btn--sm {
+  height: 24px;
+  min-width: 24px;
+  padding: 0 8px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Phone HUD — a slim strip and an on-demand sheet (hud/CompactHud.tsx)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.isw--compact .isw-top--compact {
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  /* Left inset clears GameBackLink; right inset is the device edge. */
+  padding: calc(6px + var(--safe-top)) calc(8px + var(--safe-right)) 0 calc(58px + var(--safe-left));
+}
+
+/* From 640px GameBackLink grows its "RMH Studios" label (a phone on its side). */
+@media (min-width: 640px) {
+  .isw--compact .isw-top--compact {
+    padding-left: calc(152px + var(--safe-left));
+  }
+}
+
+.isw-stats--compact {
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+  min-height: 44px;
+  padding: 0 4px;
+  overflow: hidden;
+}
+
+.isw-stats--compact .isw-stat {
+  gap: 4px;
+  padding: 0 5px;
+  flex: 0 1 auto;
+}
+
+.isw-stats--compact .isw-stat-icon {
+  width: 18px;
+  height: 18px;
+  background: none;
+}
+
+.isw-stats--compact .isw-stat-value {
+  font-size: 13px;
+}
+
+.isw-top--compact .isw-cluster {
+  flex: none;
+  padding: 0;
+  gap: 0;
+}
+
+.isw--compact .isw-btn--sm {
+  height: 44px;
+  min-width: 44px;
+}
+
+.isw-menu-btn {
+  position: relative;
+}
+
+/* A reward is waiting: the only thing the strip is allowed to shout about. */
+.isw-menu-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--isw-good);
+}
+
+.isw--compact .isw-sheet {
+  position: absolute;
+  z-index: 5;
+  left: calc(8px + var(--safe-left));
+  right: calc(8px + var(--safe-right));
+  bottom: calc(8px + var(--safe-bottom));
+  max-height: min(56vh, 420px);
+  max-height: min(56dvh, 420px);
+  display: flex;
+  flex-direction: column;
+  outline: none;
+}
+
+.isw-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 4px 4px 12px;
+  box-shadow: 0 1px 0 var(--isw-rule);
+  flex: none;
+}
+
+.isw-sheet-close {
+  margin-left: auto;
+}
+
+.isw-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+  pointer-events: auto;
+}
+
+.isw-sheet-body > * {
+  flex: none;
+}
+
+/* The three control groups sit side by side where they fit, and wrap where not. */
+.isw-sheet-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Panels nested in the sheet are content, not floating glass of their own. */
+.isw-sheet .isw-panel {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  background: rgb(255 255 255 / 5%);
+}
+
+.isw-sheet input[type='range'] {
+  height: 44px;
+}
+
+/* Flat, wrapped overlay picker: every option stays reachable at 44px. */
+.isw-sheet .isw-cluster {
+  flex-wrap: wrap;
+}
+
+/* The next-unlock hint moves into the sheet; the dock keeps to tools. */
+.isw--compact .isw-build > .isw-next-unlock {
+  display: none;
+}
+
+/* A phone on its side is wide and short: the sheet becomes a side panel so the
+   city stays visible beside it instead of under it. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .isw--compact .isw-sheet {
+    left: auto;
+    top: calc(56px + var(--safe-top));
+    width: min(380px, 48vw);
+    max-height: none;
   }
 }

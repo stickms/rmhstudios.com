@@ -1,9 +1,9 @@
 /**
- * Tier L — the 8-node perimeter spring lattice that squishes a shader slab's rim
- * (docs/plans/plasmatic-jelly/02-soft-body.md §1.3).
+ * Tier L — the 24-node perimeter spring lattice that bulges, sags and wobbles a shader slab's silhouette
+ * (docs/plans/plasmatic-jelly/02-soft-body.md §1.3; 24 nodes since 2026-11-03, spec 2026-11-03-globe-jelly-overhaul).
  *
- * Eight nodes sit on the rest rect — four corners and four edge midpoints, clockwise from the top-left, in slab-local
- * CSS px (y down). Each holds a 2D offset `o_i` and velocity `v_i`. Per node:
+ * Twenty-four nodes sit on the rest rect — {@link LATTICE_SEGMENTS} per edge, node `edge·S + k` at `k/S` along its edge,
+ * edges clockwise from the top (so the corners are `0, S, 2S, 3S`) — in slab-local CSS px (y down). Each holds a 2D offset `o_i` and velocity `v_i`. Per node:
  *
  * ```
  * F_i = −k_a·(o_i − p_i)                          anchor to rest (p_i = plastic memory)   k_a = (2π/0.40)²
@@ -20,19 +20,34 @@
  * stiffest mode is `ω ≤ √(8.4·k_a) ≈ 46 rad/s`, so `ω·h ≤ 0.57`, far inside the `2` stability bound even when a
  * 250ms stall arrives as one frame.
  *
- * The output ({@link latticeUniform}) is what the rim shader reads as `uniform vec2 uJelly[8]`: the offsets with
- * their normal component soft-capped at `outward` (≤ 2px, the focus ring's offset, 04 §4.5) and `inward`
- * (`min(0.6·bevel, 10px)`), so whatever the solver does, the drawn rim stays inside the bounds.
+ * The output ({@link latticeUniform}) is what the rim shader reads as `uniform vec2 uJelly[24]`: the offsets with
+ * their normal component soft-capped at the node's outward cap (`JELLY_BODY.bulgePx`, never past the unclipped margin
+ * or the room on that side) and `inward` (`JELLY_BODY.sagPx`; `min(0.6·bevel, 10px)` for rim-only slabs), so whatever
+ * the solver does, the drawn silhouette stays inside the bounds.
  *
  * Pure: no DOM, no clock. The glass engine steps it inside its own frame (02 D9).
  */
 
 import { latticeCaps, plasticDecay, plasticFraction, SOFT_BODY } from './soft-policy';
-import { DENT } from './tiers';
+import { JELLY_BODY } from './tiers';
 
-export const LATTICE_NODES = 8;
+/** Segments per edge; nodes sit at each segment start, so node `edge·SEGMENTS + k` is `k/SEGMENTS` along that edge. */
+export const LATTICE_SEGMENTS = JELLY_BODY.segments;
+/** Four edges × {@link LATTICE_SEGMENTS}: corners are `0, S, 2S, 3S`, edge midpoints `S/2 + edge·S`. */
+export const LATTICE_NODES = 4 * LATTICE_SEGMENTS;
 
-/** Solver constants (02 §1.3). */
+/** Smallest side a lattice is built for (CSS px); smaller hosts are treated as this size. */
+export const MIN_LATTICE_SIDE = 8;
+
+/** Free room (CSS px) on each side of a body: how far the silhouette may bulge before it meets a clip or a neighbour. */
+export interface Sides {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+/** Solver constants (02 §1.3; 2026-11-03 retuned for the silhouette, spec §Goals 2). */
 export const LATTICE = {
   /** Anchor stiffness, `(2π/0.40)²`. */
   ka: ((2 * Math.PI) / 0.4) ** 2,
@@ -47,12 +62,12 @@ export const LATTICE = {
   h: 1 / 120,
   maxSubsteps: 4,
   maxDt: 0.05,
-  /** Hover pull: Gaussian σ as a share of the perimeter, peak outward offset (px). */
+  /** Hover pull: Gaussian σ as a share of the perimeter, and the overdrive that lets the bulge reach its cap. */
   hoverSigma: 0.18,
-  hoverPx: 3,
+  hoverDrive: 1.35,
   /** Press dent: Gaussian σ as a share of the perimeter, and the overdrive that lets the dent reach its cap. */
-  pressSigma: 0.08,
-  pressDrive: 2.2,
+  pressSigma: 0.1,
+  pressDrive: 1.5,
   /** Sleep thresholds. */
   sleepOffset: 0.05,
   sleepVelocity: 0.5,
@@ -66,6 +81,10 @@ export interface LatticeSpec {
   bevel: number;
   /** Amplitude multiplier (0.5 on large surfaces, 04 §4.3). Default 1. */
   amplitude?: number;
+  /** Free room on each side (default: unbounded, i.e. the margin). Outward travel on a side never exceeds it. */
+  room?: Readonly<Sides>;
+  /** The shader draws the whole body, so it may sag past the rim band (default true). */
+  body?: boolean;
 }
 
 export type LatticeInput =
@@ -83,6 +102,8 @@ export interface Lattice {
   readonly perimeter: number;
   readonly restArea: number;
   readonly caps: { outward: number; inward: number };
+  /** Outward cap per node: `caps.outward` limited by the room on the side(s) that node faces. */
+  readonly cap: Float64Array;
   /** Rest node positions, unit outward normals and perimeter parameters. */
   readonly px: Float64Array;
   readonly py: Float64Array;
@@ -107,34 +128,65 @@ export interface Lattice {
 /* ── Construction ────────────────────────────────────────────────────────── */
 
 export function createLattice(spec: LatticeSpec): Lattice {
-  const w = Math.max(1, spec.w);
-  const h = Math.max(1, spec.h);
+  // A body under 8px a side cannot hold 24 nodes: the area term divides by the perimeter and goes unstable.
+  const w = Math.max(MIN_LATTICE_SIDE, spec.w);
+  const h = Math.max(MIN_LATTICE_SIDE, spec.h);
+  const S = LATTICE_SEGMENTS;
   const SQ = Math.SQRT1_2;
-  const nodes: [number, number, number, number, number][] = [
-    // x, y, nx, ny, s (perimeter parameter, clockwise from top-left)
-    [0, 0, -SQ, -SQ, 0],
-    [w / 2, 0, 0, -1, w / 2],
-    [w, 0, SQ, -SQ, w],
-    [w, h / 2, 1, 0, w + h / 2],
-    [w, h, SQ, SQ, w + h],
-    [w / 2, h, 0, 1, w + h + w / 2],
-    [0, h, -SQ, SQ, 2 * w + h],
-    [0, h / 2, -1, 0, 2 * w + h + h / 2],
-  ];
-  const col = (k: number) => Float64Array.from(nodes, (n) => n[k]);
-  const z = () => new Float64Array(LATTICE_NODES);
-  return {
+  const n = LATTICE_NODES;
+  const px = new Float64Array(n);
+  const py = new Float64Array(n);
+  const nx = new Float64Array(n);
+  const ny = new Float64Array(n);
+  const sp = new Float64Array(n);
+  for (let e = 0; e < 4; e++) {
+    for (let k = 0; k < S; k++) {
+      const i = e * S + k;
+      const t = k / S;
+      if (e === 0) {
+        px[i] = w * t;
+        py[i] = 0;
+        ny[i] = -1;
+        sp[i] = w * t;
+      } else if (e === 1) {
+        px[i] = w;
+        py[i] = h * t;
+        nx[i] = 1;
+        sp[i] = w + h * t;
+      } else if (e === 2) {
+        px[i] = w * (1 - t);
+        py[i] = h;
+        ny[i] = 1;
+        sp[i] = w + h + w * t;
+      } else {
+        px[i] = 0;
+        py[i] = h * (1 - t);
+        nx[i] = -1;
+        sp[i] = 2 * w + h + h * t;
+      }
+      if (k === 0) {
+        // Corners face diagonally: the mean of the two edges that meet there.
+        nx[i] = e === 0 || e === 3 ? -SQ : SQ;
+        ny[i] = e === 0 || e === 1 ? -SQ : SQ;
+      }
+    }
+  }
+  const caps = latticeCaps(spec.bevel, spec.amplitude ?? 1, Math.min(w, h), spec.body ?? true);
+  const cap = new Float64Array(n);
+  const z = () => new Float64Array(n);
+  const lattice: Lattice = {
     w,
     h,
     bevel: spec.bevel,
     perimeter: 2 * (w + h),
     restArea: w * h,
-    caps: latticeCaps(spec.bevel, spec.amplitude ?? 1),
-    px: col(0),
-    py: col(1),
-    nx: col(2),
-    ny: col(3),
-    s: col(4),
+    caps,
+    cap,
+    px,
+    py,
+    nx,
+    ny,
+    s: sp,
     ox: z(),
     oy: z(),
     vx: z(),
@@ -146,6 +198,25 @@ export function createLattice(spec: LatticeSpec): Lattice {
     pressHeld: 0,
     asleep: true,
   };
+  setLatticeRoom(lattice, spec.room);
+  return lattice;
+}
+
+/**
+ * Cap each node's outward travel by the room on the side(s) it faces (`undefined` = the full `caps.outward`). Safe on a
+ * running lattice: only the output cap changes, and a node already past it is brought back by the uniform's soft cap.
+ */
+export function setLatticeRoom(l: Lattice, room: Readonly<Sides> | undefined): void {
+  for (let i = 0; i < LATTICE_NODES; i++) {
+    let r = Infinity;
+    if (room) {
+      if (l.ny[i] < -0.3) r = Math.min(r, room.top);
+      if (l.ny[i] > 0.3) r = Math.min(r, room.bottom);
+      if (l.nx[i] > 0.3) r = Math.min(r, room.right);
+      if (l.nx[i] < -0.3) r = Math.min(r, room.left);
+    }
+    l.cap[i] = Math.max(0, Math.min(l.caps.outward, r));
+  }
 }
 
 /* ── Geometry helpers ────────────────────────────────────────────────────── */
@@ -248,7 +319,7 @@ function inputForce(l: Lattice, i: number): [number, number] {
   if (!input) return [0, 0];
   const ka = LATTICE.ka;
   if (input.kind === 'drag') {
-    const cap = LATTICE.hoverPx * ka;
+    const cap = Math.max(l.caps.outward, 1) * ka;
     const mag = Math.hypot(input.ax, input.ay);
     if (!(mag > 0) || !Number.isFinite(mag)) return [0, 0];
     const k = (cap * Math.tanh(mag / cap)) / mag;
@@ -257,13 +328,13 @@ function inputForce(l: Lattice, i: number): [number, number] {
   const s0 = perimeterParam(l, input.x, input.y);
   const strength = Math.max(0, Math.min(1, input.strength ?? 1));
   if (input.kind === 'hover') {
-    const g = LATTICE.hoverPx * strength * weight(l, i, s0, LATTICE.hoverSigma * l.perimeter);
+    const g = l.caps.outward * LATTICE.hoverDrive * strength * weight(l, i, s0, LATTICE.hoverSigma * l.perimeter);
     return [ka * g * l.nx[i], ka * g * l.ny[i]];
   }
-  // The press is the #989 dent's outline: it indents ~DENT.indentPx under the contact (never past the bevel's cap),
-  // and the area term bulges the far side.
+  // The press is the #989 dent's outline: it sinks toward the inward cap under the contact, and the area term bulges
+  // the far side.
   const g =
-    -Math.min(l.caps.inward, DENT.indentPx) *
+    -l.caps.inward *
     strength *
     LATTICE.pressDrive *
     weight(l, i, s0, LATTICE.pressSigma * l.perimeter);
@@ -367,15 +438,15 @@ export function latticeOn(l: Lattice): 0 | 1 {
 /* ── Output ──────────────────────────────────────────────────────────────── */
 
 /**
- * The shader uniform `uJelly[8]` as 16 floats (x, y per node, clockwise from the top-left), with each node's
- * normal component soft-capped (`tanh`) at `+outward` / `−inward` and its tangential component at `±outward`.
+ * The shader uniform `uJelly[24]` as 48 floats (x, y per node, clockwise from the top-left), with each node's
+ * normal component soft-capped (`tanh`) at `+cap[i]` / `−inward` and its tangential component at `±cap[i]`.
  * Pass `out` to reuse a buffer per frame.
  */
 export function latticeUniform(
   l: Lattice,
   out: Float32Array = new Float32Array(LATTICE_NODES * 2),
 ): Float32Array {
-  const { outward, inward } = l.caps;
+  const { inward } = l.caps;
   const sat = (x: number, cap: number) => (cap > 0 ? cap * Math.tanh(x / cap) : 0);
   for (let i = 0; i < LATTICE_NODES; i++) {
     if (l.asleep) {
@@ -387,8 +458,8 @@ export function latticeUniform(
     const ny = l.ny[i];
     const n = l.ox[i] * nx + l.oy[i] * ny;
     const t = -l.ox[i] * ny + l.oy[i] * nx;
-    const nOut = n >= 0 ? sat(n, outward) : sat(n, inward);
-    const tOut = sat(t, outward);
+    const nOut = n >= 0 ? sat(n, l.cap[i]) : sat(n, inward);
+    const tOut = sat(t, l.cap[i]);
     out[2 * i] = nOut * nx - tOut * ny;
     out[2 * i + 1] = nOut * ny + tOut * nx;
   }
