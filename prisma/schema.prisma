@@ -2773,6 +2773,9 @@ model AltairCoopProfile {
 model AltairMatch {
   id             String              @id @default(cuid())
   lobbyId        String
+  // Hub-issued id of the verified run this row came from (null on rows written before server-side
+  // verification). Unique, so a replayed submission can never be recorded twice.
+  runId          String?             @unique
   startedAt      DateTime            @default(now())
   endedAt        DateTime?
   durationMs     Int?
