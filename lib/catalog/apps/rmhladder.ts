@@ -16,6 +16,7 @@ const entry: AppInfo = {
   iconName: 'BriefcaseBusiness',
   color: 'from-violet-500/20 to-indigo-600/20 hover:border-violet-500/50',
   tags: ['Careers', 'Jobs', 'Early Career', 'AI', 'Beta'],
+  imagePath: '/images/games/rmhladder.webp',
   authGate: false,
   usesSiteTheme: true,
 };

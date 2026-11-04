@@ -16,6 +16,7 @@ const entry: AppInfo = {
   iconName: 'Home',
   color: 'from-teal-500/20 to-green-600/20 hover:border-teal-500/50',
   tags: ['Housing', 'Search', 'Maps', 'Beta'],
+  imagePath: '/images/games/rmhhomes.webp',
   authGate: true,
   // All /homes routes render under the _site sidebar shell (app/routes/
   // _site/homes/*), so the site theme applies — without this flag the

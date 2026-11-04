@@ -17,6 +17,7 @@ const entry: AppInfo = {
   iconName: 'Clapperboard',
   color: 'from-sky-500/20 to-amber-400/20 hover:border-sky-400/50',
   tags: ['Planner', 'Movies', 'AI'],
+  imagePath: '/images/games/dunesday.webp',
   authGate: false,
   // Full-screen top-level route (app/routes/dunesday.tsx) with its own Frutiger
   // Aero palette (components/dunesday/dunesday.css), so the site theme class

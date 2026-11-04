@@ -15,6 +15,7 @@ const entry: AppInfo = {
   iconName: 'LayoutDashboard',
   color: 'from-orange-500/20 to-red-700/20 hover:border-orange-500/50',
   tags: ['TF2', 'HUD', 'Loadout', 'Beta'],
+  imagePath: '/images/games/rmh-tf2-hud.webp',
   authGate: false,
 };
 
