@@ -2698,7 +2698,8 @@ html.ios-webkit .el-room__grid {
   display: block;
   max-width: 100%;
   cursor: grab;
-  touch-action: pan-y;
+  /* a finger on the globe turns it in both axes; the page scrolls from the margins around it */
+  touch-action: none;
   border-radius: 50%;
   outline-offset: 4px;
 }
