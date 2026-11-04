@@ -2671,3 +2671,71 @@ html.ios-webkit .el-room__grid {
 .el-room[data-bar='auto'] .el-room__panebody {
   padding-top: 0;
 }
+
+/* ── Liquid globe: where the chambers are leaning ─────────────────────────────────────────────────────── */
+.el-globe {
+  margin-top: clamp(24px, 4vw, 48px);
+}
+.el-globe__frame {
+  display: grid;
+  gap: clamp(16px, 3vw, 40px);
+  align-items: center;
+  padding: clamp(16px, 3vw, 36px);
+  background:
+    linear-gradient(rgba(109, 40, 255, 0.12) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgba(109, 40, 255, 0.12) 1px, transparent 1px) 0 0 / 28px 28px, var(--el-cell);
+}
+@media (min-width: 860px) {
+  .el-globe__frame {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+}
+.el-globe__stage {
+  display: flex;
+  justify-content: center;
+}
+.el-globe__canvas {
+  display: block;
+  max-width: 100%;
+}
+.el-globe__empty {
+  max-width: 100%;
+  border: 4px solid var(--el-ink);
+  border-radius: 50%;
+  background: var(--el-paper-2);
+}
+.el-globe__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.el-globe__word {
+  margin: 0;
+  font-family: var(--el-display);
+  font-size: clamp(34px, 6vw, 72px);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.92;
+}
+.el-globe__nums {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  font-weight: 600;
+}
+.el-globe__nums strong {
+  font-family: var(--el-display);
+  font-size: clamp(28px, 4vw, 44px);
+  letter-spacing: -0.04em;
+}
+.el-globe__d strong {
+  color: #2f5bff;
+}
+.el-globe__r strong {
+  color: #e8332a;
+}
+.el-globe__odds {
+  margin: 0;
+  font-weight: 700;
+}

@@ -231,3 +231,13 @@ against its channel page.
 With the room bar set to hide, each **pane header hides too**: the pane body takes the full height and the header
 fades in over the top of the pane when the pointer is on a thin strip just under the pane's top edge (marked by a
 small tab), or when anything in it has keyboard focus. The one pin toggle controls both.
+
+## The liquid globe
+
+Under the hero, a glass globe half-full of blue (Democratic) and red (Republican) liquid shows which way each chamber
+(Senate / House toggle) is leaning. The boundary sits at the expected Democratic share of seats, glides there on a
+spring and sloshes when the count moves it; a dashed line marks the majority. The numbers come from
+`lib/elections/liquid.ts`: the seats each party holds or has won, plus, for every undecided race, a chance the
+Democrat wins that starts from the rating and moves toward the current margin as more is counted. The chance of
+control is a normal approximation that treats races as independent. It is **indicative, not a forecast** — there is
+no polling model — and the page says so. The canvas loop runs only while the globe is on screen and the tab visible.
