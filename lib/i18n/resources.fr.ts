@@ -9,7 +9,6 @@ import frCAwards from "@/locales/fr/c-awards.json";
 import frCBalatro from "@/locales/fr/c-balatro.json";
 import frCBlog from "@/locales/fr/c-blog.json";
 import frCBuilds from "@/locales/fr/c-builds.json";
-import frCBumsRush from "@/locales/fr/c-bums-rush.json";
 import frCCircle from "@/locales/fr/c-circle.json";
 import frCCreator from "@/locales/fr/c-creator.json";
 import frCCursedLogic from "@/locales/fr/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import frCDoctrine from "@/locales/fr/c-doctrine.json";
 import frCDreamRift from "@/locales/fr/c-dream-rift.json";
 import frCDunesday from "@/locales/fr/c-dunesday.json";
 import frCEconomy from "@/locales/fr/c-economy.json";
+import frCElections from "@/locales/fr/c-elections.json";
 import frCForestExplorer from "@/locales/fr/c-forest-explorer.json";
 import frCGabrielsHorn from "@/locales/fr/c-gabriels-horn.json";
 import frCGame from "@/locales/fr/c-game.json";
@@ -32,7 +32,6 @@ import frCLibrary from "@/locales/fr/c-library.json";
 import frCLightsOut from "@/locales/fr/c-lights-out.json";
 import frCLists from "@/locales/fr/c-lists.json";
 import frCLockdown from "@/locales/fr/c-lockdown.json";
-import frCMassiveMarch from "@/locales/fr/c-massive-march.json";
 import frCModeration from "@/locales/fr/c-moderation.json";
 import frCNeonDriftway from "@/locales/fr/c-neon-driftway.json";
 import frCNews from "@/locales/fr/c-news.json";
@@ -109,7 +108,6 @@ const frResources = {
   "c-balatro": frCBalatro,
   "c-blog": frCBlog,
   "c-builds": frCBuilds,
-  "c-bums-rush": frCBumsRush,
   "c-circle": frCCircle,
   "c-creator": frCCreator,
   "c-cursed-logic": frCCursedLogic,
@@ -118,6 +116,7 @@ const frResources = {
   "c-dream-rift": frCDreamRift,
   "c-dunesday": frCDunesday,
   "c-economy": frCEconomy,
+  "c-elections": frCElections,
   "c-forest-explorer": frCForestExplorer,
   "c-gabriels-horn": frCGabrielsHorn,
   "c-game": frCGame,
@@ -132,7 +131,6 @@ const frResources = {
   "c-lights-out": frCLightsOut,
   "c-lists": frCLists,
   "c-lockdown": frCLockdown,
-  "c-massive-march": frCMassiveMarch,
   "c-moderation": frCModeration,
   "c-neon-driftway": frCNeonDriftway,
   "c-news": frCNews,

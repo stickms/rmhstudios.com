@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 996 files across 201 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 989 files across 199 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -295,17 +295,6 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/bulk` | `GET` `POST` | `app/routes/api/bulk/index.ts` |
 | `/api/bulk/:id` | `DELETE` `GET` | `app/routes/api/bulk/$id.ts` |
 | `/api/bulk/preview` | `POST` | `app/routes/api/bulk/preview.ts` |
-
-## `/api/bums-rush`
-
-4 routes.
-
-| Route | Methods | Source |
-| ----- | ------- | ------ |
-| `/api/bums-rush/clear` | `POST` | `app/routes/api/bums-rush/clear.ts` |
-| `/api/bums-rush/leaderboard` | `GET` | `app/routes/api/bums-rush/leaderboard.ts` |
-| `/api/bums-rush/profile` | `GET` `PUT` | `app/routes/api/bums-rush/profile.ts` |
-| `/api/bums-rush/showdown` | `POST` | `app/routes/api/bums-rush/showdown.ts` |
 
 ## `/api/calc-notebooks`
 
@@ -1165,16 +1154,6 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/market/listings` | `GET` `POST` | `app/routes/api/market/listings/index.ts` |
 | `/api/market/listings/:id` | `DELETE` | `app/routes/api/market/listings/$id/index.ts` |
 | `/api/market/listings/:id/buy` | `POST` | `app/routes/api/market/listings/$id/buy.ts` |
-
-## `/api/massive-march`
-
-3 routes.
-
-| Route | Methods | Source |
-| ----- | ------- | ------ |
-| `/api/massive-march/campaigns` | `DELETE` `GET` | `app/routes/api/massive-march/campaigns.ts` |
-| `/api/massive-march/signals` | `GET` `POST` | `app/routes/api/massive-march/signals/index.ts` |
-| `/api/massive-march/signals/vote` | `POST` | `app/routes/api/massive-march/signals/vote.ts` |
 
 ## `/api/memory`
 

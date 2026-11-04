@@ -84,7 +84,6 @@ const QUEUE_CONFIG: Record<string, Partial<QueueConfig>> = {
   'synapse-storm': { minPlayers: 2, maxPlayers: 8 },
   'laundry-sort': { minPlayers: 2, maxPlayers: 8 },
   "gabriels-horn": { minPlayers: 2, maxPlayers: 6 },
-  'bums-rush': { minPlayers: 2, maxPlayers: 4 },
 };
 
 function configFor(game: string): QueueConfig {

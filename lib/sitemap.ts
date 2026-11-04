@@ -390,7 +390,6 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // skips `unlisted` catalog entries, so this is only here to satisfy the
   // coverage gate — and it comes out, with the `unlisted` flag, in the commit
   // that makes the game playable.
-  '/bums-rush': 'noindex',
   '/offline': 'noindex', // the service worker's offline shell
   '/music-trivia': 'noindex', // an in-page widget, not a destination
   '/discord/lights-out': 'noindex', // Discord Activity surface, minimal head

@@ -9,7 +9,6 @@ import ptCAwards from "@/locales/pt/c-awards.json";
 import ptCBalatro from "@/locales/pt/c-balatro.json";
 import ptCBlog from "@/locales/pt/c-blog.json";
 import ptCBuilds from "@/locales/pt/c-builds.json";
-import ptCBumsRush from "@/locales/pt/c-bums-rush.json";
 import ptCCircle from "@/locales/pt/c-circle.json";
 import ptCCreator from "@/locales/pt/c-creator.json";
 import ptCCursedLogic from "@/locales/pt/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import ptCDoctrine from "@/locales/pt/c-doctrine.json";
 import ptCDreamRift from "@/locales/pt/c-dream-rift.json";
 import ptCDunesday from "@/locales/pt/c-dunesday.json";
 import ptCEconomy from "@/locales/pt/c-economy.json";
+import ptCElections from "@/locales/pt/c-elections.json";
 import ptCForestExplorer from "@/locales/pt/c-forest-explorer.json";
 import ptCGabrielsHorn from "@/locales/pt/c-gabriels-horn.json";
 import ptCGame from "@/locales/pt/c-game.json";
@@ -32,7 +32,6 @@ import ptCLibrary from "@/locales/pt/c-library.json";
 import ptCLightsOut from "@/locales/pt/c-lights-out.json";
 import ptCLists from "@/locales/pt/c-lists.json";
 import ptCLockdown from "@/locales/pt/c-lockdown.json";
-import ptCMassiveMarch from "@/locales/pt/c-massive-march.json";
 import ptCModeration from "@/locales/pt/c-moderation.json";
 import ptCNeonDriftway from "@/locales/pt/c-neon-driftway.json";
 import ptCNews from "@/locales/pt/c-news.json";
@@ -109,7 +108,6 @@ const ptResources = {
   "c-balatro": ptCBalatro,
   "c-blog": ptCBlog,
   "c-builds": ptCBuilds,
-  "c-bums-rush": ptCBumsRush,
   "c-circle": ptCCircle,
   "c-creator": ptCCreator,
   "c-cursed-logic": ptCCursedLogic,
@@ -118,6 +116,7 @@ const ptResources = {
   "c-dream-rift": ptCDreamRift,
   "c-dunesday": ptCDunesday,
   "c-economy": ptCEconomy,
+  "c-elections": ptCElections,
   "c-forest-explorer": ptCForestExplorer,
   "c-gabriels-horn": ptCGabrielsHorn,
   "c-game": ptCGame,
@@ -132,7 +131,6 @@ const ptResources = {
   "c-lights-out": ptCLightsOut,
   "c-lists": ptCLists,
   "c-lockdown": ptCLockdown,
-  "c-massive-march": ptCMassiveMarch,
   "c-moderation": ptCModeration,
   "c-neon-driftway": ptCNeonDriftway,
   "c-news": ptCNews,

@@ -32,7 +32,6 @@ const CLIENTS = [
   'lib/rmhbox/socket.ts',
   'lib/gabriels-horn/net/client.ts',
   'lib/laundry-sort/net/client.ts',
-  'lib/massive-march/net/client.ts',
   'lib/tf2-game/net/client.ts',
   'lib/balatro/mp/hub-client.ts',
 ];

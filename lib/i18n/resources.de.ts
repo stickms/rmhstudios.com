@@ -9,7 +9,6 @@ import deCAwards from "@/locales/de/c-awards.json";
 import deCBalatro from "@/locales/de/c-balatro.json";
 import deCBlog from "@/locales/de/c-blog.json";
 import deCBuilds from "@/locales/de/c-builds.json";
-import deCBumsRush from "@/locales/de/c-bums-rush.json";
 import deCCircle from "@/locales/de/c-circle.json";
 import deCCreator from "@/locales/de/c-creator.json";
 import deCCursedLogic from "@/locales/de/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import deCDoctrine from "@/locales/de/c-doctrine.json";
 import deCDreamRift from "@/locales/de/c-dream-rift.json";
 import deCDunesday from "@/locales/de/c-dunesday.json";
 import deCEconomy from "@/locales/de/c-economy.json";
+import deCElections from "@/locales/de/c-elections.json";
 import deCForestExplorer from "@/locales/de/c-forest-explorer.json";
 import deCGabrielsHorn from "@/locales/de/c-gabriels-horn.json";
 import deCGame from "@/locales/de/c-game.json";
@@ -32,7 +32,6 @@ import deCLibrary from "@/locales/de/c-library.json";
 import deCLightsOut from "@/locales/de/c-lights-out.json";
 import deCLists from "@/locales/de/c-lists.json";
 import deCLockdown from "@/locales/de/c-lockdown.json";
-import deCMassiveMarch from "@/locales/de/c-massive-march.json";
 import deCModeration from "@/locales/de/c-moderation.json";
 import deCNeonDriftway from "@/locales/de/c-neon-driftway.json";
 import deCNews from "@/locales/de/c-news.json";
@@ -109,7 +108,6 @@ const deResources = {
   "c-balatro": deCBalatro,
   "c-blog": deCBlog,
   "c-builds": deCBuilds,
-  "c-bums-rush": deCBumsRush,
   "c-circle": deCCircle,
   "c-creator": deCCreator,
   "c-cursed-logic": deCCursedLogic,
@@ -118,6 +116,7 @@ const deResources = {
   "c-dream-rift": deCDreamRift,
   "c-dunesday": deCDunesday,
   "c-economy": deCEconomy,
+  "c-elections": deCElections,
   "c-forest-explorer": deCForestExplorer,
   "c-gabriels-horn": deCGabrielsHorn,
   "c-game": deCGame,
@@ -132,7 +131,6 @@ const deResources = {
   "c-lights-out": deCLightsOut,
   "c-lists": deCLists,
   "c-lockdown": deCLockdown,
-  "c-massive-march": deCMassiveMarch,
   "c-moderation": deCModeration,
   "c-neon-driftway": deCNeonDriftway,
   "c-news": deCNews,

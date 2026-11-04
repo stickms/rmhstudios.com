@@ -9,7 +9,6 @@ import zhCAwards from "@/locales/zh/c-awards.json";
 import zhCBalatro from "@/locales/zh/c-balatro.json";
 import zhCBlog from "@/locales/zh/c-blog.json";
 import zhCBuilds from "@/locales/zh/c-builds.json";
-import zhCBumsRush from "@/locales/zh/c-bums-rush.json";
 import zhCCircle from "@/locales/zh/c-circle.json";
 import zhCCreator from "@/locales/zh/c-creator.json";
 import zhCCursedLogic from "@/locales/zh/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import zhCDoctrine from "@/locales/zh/c-doctrine.json";
 import zhCDreamRift from "@/locales/zh/c-dream-rift.json";
 import zhCDunesday from "@/locales/zh/c-dunesday.json";
 import zhCEconomy from "@/locales/zh/c-economy.json";
+import zhCElections from "@/locales/zh/c-elections.json";
 import zhCForestExplorer from "@/locales/zh/c-forest-explorer.json";
 import zhCGabrielsHorn from "@/locales/zh/c-gabriels-horn.json";
 import zhCGame from "@/locales/zh/c-game.json";
@@ -32,7 +32,6 @@ import zhCLibrary from "@/locales/zh/c-library.json";
 import zhCLightsOut from "@/locales/zh/c-lights-out.json";
 import zhCLists from "@/locales/zh/c-lists.json";
 import zhCLockdown from "@/locales/zh/c-lockdown.json";
-import zhCMassiveMarch from "@/locales/zh/c-massive-march.json";
 import zhCModeration from "@/locales/zh/c-moderation.json";
 import zhCNeonDriftway from "@/locales/zh/c-neon-driftway.json";
 import zhCNews from "@/locales/zh/c-news.json";
@@ -111,7 +110,6 @@ const zhResources = {
   "c-balatro": zhCBalatro,
   "c-blog": zhCBlog,
   "c-builds": zhCBuilds,
-  "c-bums-rush": zhCBumsRush,
   "c-circle": zhCCircle,
   "c-creator": zhCCreator,
   "c-cursed-logic": zhCCursedLogic,
@@ -120,6 +118,7 @@ const zhResources = {
   "c-dream-rift": zhCDreamRift,
   "c-dunesday": zhCDunesday,
   "c-economy": zhCEconomy,
+  "c-elections": zhCElections,
   "c-forest-explorer": zhCForestExplorer,
   "c-gabriels-horn": zhCGabrielsHorn,
   "c-game": zhCGame,
@@ -134,7 +133,6 @@ const zhResources = {
   "c-lights-out": zhCLightsOut,
   "c-lists": zhCLists,
   "c-lockdown": zhCLockdown,
-  "c-massive-march": zhCMassiveMarch,
   "c-moderation": zhCModeration,
   "c-neon-driftway": zhCNeonDriftway,
   "c-news": zhCNews,

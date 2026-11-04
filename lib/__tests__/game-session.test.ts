@@ -21,7 +21,6 @@ const ROOT = process.cwd();
 
 /** Catalog id → the directories its runtime lives in. Defaults to `components/<id>`. */
 const DIRS: Record<string, string[]> = {
-  'rochester-offensive': ['components/breakpoint'],
   'daily-puzzles': ['components/daily-puzzles'],
   // Half-Life 2 / Portal: their pages are components/sp-game; the game surface is the shared GameCanvas.
   'half-life-2': ['components/sp-game', 'components/tf2-game'],
@@ -37,7 +36,6 @@ const EXEMPT: Record<string, string> = {
   isleworks: 'untimed builder',
   'rmh-farming-sim': 'shared persistent farm; the world keeps time server-side',
   rmhbox: 'party game hosted for a room; the host screen drives timing',
-  'rochester-offensive': 'online-first; pause needs a host-side design first',
   'temple-of-joy': 'idle game — it is meant to keep running while hidden',
   velum2099: 'text adventure with no clock',
   versecraft: 'narrative puzzle with no clock',

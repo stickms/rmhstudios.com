@@ -151,7 +151,6 @@ function enclosingTag(src: string, idx: number): string {
 const FULLSCREEN_TIER_DIRS = new Set([
   // Games (their own palettes / scoped variable groups in globals.css)
   'altair',
-  'bums-rush',
   'cookgame',
   'cursed-logic',
   'daily-puzzles',
@@ -164,7 +163,6 @@ const FULLSCREEN_TIER_DIRS = new Set([
   'kowloon-knockout',
   'laundry-sort',
   'lights-out',
-  'massive-march',
   'neon-driftway',
   'nightrail',
   'rmh-farming-sim',
@@ -245,7 +243,6 @@ const FULLSCREEN_TIER_DIRS = new Set([
 const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'altair',
   'api',
-  'bums-rush',
   'cookgame',
   'daily',
   'discord',
@@ -261,7 +258,6 @@ const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'isleworks',
   'kowloon-knockout',
   'laundry-sort',
-  'massive-march',
   'neon-driftway',
   'nightrail',
   // The PF2e table's board — see the note beside `pf2ecal` above.
@@ -274,7 +270,6 @@ const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'rmhtube',
   'rmhtype',
   'tf2-hud',
-  'rochester-offensive',
   'secret',
   'slice-it',
   'sohumbum',

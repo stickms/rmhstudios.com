@@ -9,7 +9,6 @@ import viCAwards from "@/locales/vi/c-awards.json";
 import viCBalatro from "@/locales/vi/c-balatro.json";
 import viCBlog from "@/locales/vi/c-blog.json";
 import viCBuilds from "@/locales/vi/c-builds.json";
-import viCBumsRush from "@/locales/vi/c-bums-rush.json";
 import viCCircle from "@/locales/vi/c-circle.json";
 import viCCreator from "@/locales/vi/c-creator.json";
 import viCCursedLogic from "@/locales/vi/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import viCDoctrine from "@/locales/vi/c-doctrine.json";
 import viCDreamRift from "@/locales/vi/c-dream-rift.json";
 import viCDunesday from "@/locales/vi/c-dunesday.json";
 import viCEconomy from "@/locales/vi/c-economy.json";
+import viCElections from "@/locales/vi/c-elections.json";
 import viCForestExplorer from "@/locales/vi/c-forest-explorer.json";
 import viCGabrielsHorn from "@/locales/vi/c-gabriels-horn.json";
 import viCGame from "@/locales/vi/c-game.json";
@@ -32,7 +32,6 @@ import viCLibrary from "@/locales/vi/c-library.json";
 import viCLightsOut from "@/locales/vi/c-lights-out.json";
 import viCLists from "@/locales/vi/c-lists.json";
 import viCLockdown from "@/locales/vi/c-lockdown.json";
-import viCMassiveMarch from "@/locales/vi/c-massive-march.json";
 import viCModeration from "@/locales/vi/c-moderation.json";
 import viCNeonDriftway from "@/locales/vi/c-neon-driftway.json";
 import viCNews from "@/locales/vi/c-news.json";
@@ -109,7 +108,6 @@ const viResources = {
   "c-balatro": viCBalatro,
   "c-blog": viCBlog,
   "c-builds": viCBuilds,
-  "c-bums-rush": viCBumsRush,
   "c-circle": viCCircle,
   "c-creator": viCCreator,
   "c-cursed-logic": viCCursedLogic,
@@ -118,6 +116,7 @@ const viResources = {
   "c-dream-rift": viCDreamRift,
   "c-dunesday": viCDunesday,
   "c-economy": viCEconomy,
+  "c-elections": viCElections,
   "c-forest-explorer": viCForestExplorer,
   "c-gabriels-horn": viCGabrielsHorn,
   "c-game": viCGame,
@@ -132,7 +131,6 @@ const viResources = {
   "c-lights-out": viCLightsOut,
   "c-lists": viCLists,
   "c-lockdown": viCLockdown,
-  "c-massive-march": viCMassiveMarch,
   "c-moderation": viCModeration,
   "c-neon-driftway": viCNeonDriftway,
   "c-news": viCNews,

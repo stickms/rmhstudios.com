@@ -60,7 +60,6 @@ import type { AppInfo, GameInfo } from './types';
 
 // ── Games ─────────────────────────────────────────────────────────────────
 import altair from './games/altair';
-import bumsRush from './games/bums-rush';
 import cookgame from './games/cookgame';
 import dailyPuzzles from './games/daily-puzzles';
 import dreamRift from './games/dream-rift';
@@ -71,14 +70,12 @@ import houseAlwaysWins from './games/house-always-wins';
 import isleworks from './games/isleworks';
 import kowloonKnockout from './games/kowloon-knockout';
 import laundrySort from './games/laundry-sort';
-import massiveMarch from './games/massive-march';
 import neonDriftway from './games/neon-driftway';
 import nightrail from './games/nightrail';
 import portal from './games/portal';
 import csgo from './games/csgo';
 import rmhFarmingSim from './games/rmh-farming-sim';
 import rmhbox from './games/rmhbox';
-import rochesterOffensive from './games/rochester-offensive';
 import sliceIt from './games/slice-it';
 import synapseStorm from './games/synapse-storm';
 import templeOfJoy from './games/temple-of-joy';
@@ -104,7 +101,6 @@ import studio from './apps/studio';
 
 const GAME_MODULES: readonly GameInfo[] = [
   altair,
-  bumsRush,
   cookgame,
   dailyPuzzles,
   dreamRift,
@@ -115,14 +111,12 @@ const GAME_MODULES: readonly GameInfo[] = [
   isleworks,
   kowloonKnockout,
   laundrySort,
-  massiveMarch,
   neonDriftway,
   nightrail,
   portal,
   csgo,
   rmhFarmingSim,
   rmhbox,
-  rochesterOffensive,
   sliceIt,
   synapseStorm,
   templeOfJoy,

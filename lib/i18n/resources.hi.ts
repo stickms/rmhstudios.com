@@ -9,7 +9,6 @@ import hiCAwards from "@/locales/hi/c-awards.json";
 import hiCBalatro from "@/locales/hi/c-balatro.json";
 import hiCBlog from "@/locales/hi/c-blog.json";
 import hiCBuilds from "@/locales/hi/c-builds.json";
-import hiCBumsRush from "@/locales/hi/c-bums-rush.json";
 import hiCCircle from "@/locales/hi/c-circle.json";
 import hiCCreator from "@/locales/hi/c-creator.json";
 import hiCCursedLogic from "@/locales/hi/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import hiCDoctrine from "@/locales/hi/c-doctrine.json";
 import hiCDreamRift from "@/locales/hi/c-dream-rift.json";
 import hiCDunesday from "@/locales/hi/c-dunesday.json";
 import hiCEconomy from "@/locales/hi/c-economy.json";
+import hiCElections from "@/locales/hi/c-elections.json";
 import hiCForestExplorer from "@/locales/hi/c-forest-explorer.json";
 import hiCGabrielsHorn from "@/locales/hi/c-gabriels-horn.json";
 import hiCGame from "@/locales/hi/c-game.json";
@@ -32,7 +32,6 @@ import hiCLibrary from "@/locales/hi/c-library.json";
 import hiCLightsOut from "@/locales/hi/c-lights-out.json";
 import hiCLists from "@/locales/hi/c-lists.json";
 import hiCLockdown from "@/locales/hi/c-lockdown.json";
-import hiCMassiveMarch from "@/locales/hi/c-massive-march.json";
 import hiCModeration from "@/locales/hi/c-moderation.json";
 import hiCNeonDriftway from "@/locales/hi/c-neon-driftway.json";
 import hiCNews from "@/locales/hi/c-news.json";
@@ -109,7 +108,6 @@ const hiResources = {
   "c-balatro": hiCBalatro,
   "c-blog": hiCBlog,
   "c-builds": hiCBuilds,
-  "c-bums-rush": hiCBumsRush,
   "c-circle": hiCCircle,
   "c-creator": hiCCreator,
   "c-cursed-logic": hiCCursedLogic,
@@ -118,6 +116,7 @@ const hiResources = {
   "c-dream-rift": hiCDreamRift,
   "c-dunesday": hiCDunesday,
   "c-economy": hiCEconomy,
+  "c-elections": hiCElections,
   "c-forest-explorer": hiCForestExplorer,
   "c-gabriels-horn": hiCGabrielsHorn,
   "c-game": hiCGame,
@@ -132,7 +131,6 @@ const hiResources = {
   "c-lights-out": hiCLightsOut,
   "c-lists": hiCLists,
   "c-lockdown": hiCLockdown,
-  "c-massive-march": hiCMassiveMarch,
   "c-moderation": hiCModeration,
   "c-neon-driftway": hiCNeonDriftway,
   "c-news": hiCNews,

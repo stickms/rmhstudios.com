@@ -66,7 +66,6 @@ const FULLSCREEN_DIRS = [
   'kowloon-knockout',
   'laundry-sort',
   'lights-out',
-  'massive-march',
   'neon-driftway',
   'nightrail',
   'rmh-farming-sim',
@@ -332,7 +331,6 @@ function viewportUnitViolations(): Violation[] {
  * without one. A game's runtime lives in `components/<id>` unless listed here.
  */
 const GAME_DIRS: Record<string, string[]> = {
-  'rochester-offensive': ['components/breakpoint'],
   // Half-Life 2 / Portal mount the shared game surface (components/tf2-game/GameCanvas).
   'half-life-2': ['components/sp-game', 'components/tf2-game'],
   portal: ['components/sp-game', 'components/tf2-game'],

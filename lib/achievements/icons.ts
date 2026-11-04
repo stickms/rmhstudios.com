@@ -100,19 +100,6 @@ export const ACHIEVEMENT_ICON: Record<string, string> = {
   'game.casino.first_win': 'Dices',
   'game.casino.high_roller': 'Banknote',
   'game.casino.blackjack': 'Spade',
-  // Bum's Rush
-  'games.bums_first_clear': 'Hand',
-  'games.bums_world_1': 'Anchor',
-  'games.bums_levels_25': 'Grab',
-  'games.bums_levels_72': 'Layers',
-  'games.bums_objectives_100': 'ClipboardList',
-  'games.bums_parcels_40': 'Package',
-  'games.bums_flawless_10': 'Shield',
-  'games.bums_chain_4': 'Link2',
-  'games.bums_showdown_first': 'Sword',
-  'games.bums_showdown_25': 'Axe',
-  'games.bums_cat': 'Cat',
-  'games.bums_deaths_500': 'Bomb',
 };
 
 /** The lucide icon name for an achievement id; a trophy for an unknown one. */
@@ -206,17 +193,6 @@ export const ACHIEVEMENT_ACCENT: Record<string, string> = {
   'game.casino.first_win': 'Star',
   'game.casino.high_roller': 'Crown',
   'game.casino.blackjack': 'Star',
-  'games.bums_first_clear': 'Check',
-  'games.bums_world_1': 'Star',
-  'games.bums_levels_72': 'Crown',
-  'games.bums_objectives_100': 'Check',
-  'games.bums_parcels_40': 'Star',
-  'games.bums_flawless_10': 'Heart',
-  'games.bums_chain_4': 'Plus',
-  'games.bums_showdown_first': 'Trophy',
-  'games.bums_showdown_25': 'Crown',
-  'games.bums_cat': 'Heart',
-  'games.bums_deaths_500': 'Skull',
 };
 
 /** The accent glyph's lucide name, or null when the badge has none. */

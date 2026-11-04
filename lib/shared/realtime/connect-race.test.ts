@@ -47,7 +47,6 @@ const cases: [string, () => Promise<() => Promise<unknown>>][] = [
   ['blackjack', async () => (await import('@/lib/blackjack/socket')).connectToBlackjack],
   ['laundry-sort', async () => (await import('@/lib/laundry-sort/net/client')).connectLaundry],
   ['gabriels-horn', async () => (await import('@/lib/gabriels-horn/net/client')).connectHorn],
-  ['massive-march', async () => (await import('@/lib/massive-march/net/client')).connectMassiveMarch],
   ['slice-it', async () => (await import('@/lib/slice-it/net/client')).connectSliceIt],
   ['rmhmusic', async () => (await import('@/lib/rmhmusic/socket')).connectToRmhMusic],
 ];

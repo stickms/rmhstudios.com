@@ -326,23 +326,6 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     accessibility: [],
     descriptors: ['flashing'],
   },
-  'bums-rush': {
-    genre: ['party', 'platformer'],
-    players: ['single', 'online-coop', 'online-versus', 'async-leaderboard'],
-    maxPlayers: 4,
-    // Only `mouse` today: the shell is a DOM title screen. The input layer that
-    // adds keyboard, gamepad and touch lands with the playable build, and each
-    // of those strings goes in with the commit that implements it — the honesty
-    // rule at the top of this file, applied to a game that is arriving in
-    // pieces. Same for `accessibility`, which is empty rather than aspirational.
-    input: { supported: ['mouse'], required: [] },
-    sessionMinutes: [10, 45],
-    engine: '2d-canvas',
-    demanding: false,
-    save: 'own-table',
-    accessibility: [],
-    partyCapable: true,
-  },
   'kowloon-knockout': {
     genre: ['fighting', 'action'],
     players: ['single', 'online-versus'],
@@ -366,18 +349,6 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     demanding: true,
     save: 'shared-table',
     accessibility: ['no-timed-input'],
-  },
-  'rochester-offensive': {
-    genre: ['shooter', 'action'],
-    players: ['single', 'online-versus', 'online-coop'],
-    maxPlayers: 10,
-    input: { supported: ['keyboard', 'mouse', 'touch'], required: [] },
-    sessionMinutes: [10, 40],
-    engine: 'webgl',
-    demanding: true,
-    save: 'none',
-    accessibility: [],
-    descriptors: ['violence'],
   },
   'house-always-wins': {
     genre: ['platformer', 'narrative'],
@@ -451,33 +422,6 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     accessibility: [],
     // Neon signage, bloom, drift sparks and the crash burst all strobe.
     descriptors: ['flashing'],
-  },
-  'massive-march': {
-    genre: ['puzzle', 'narrative'],
-    // Co-op first, but no longer co-op ONLY. Every site has a one-person layout
-    // (`crew.solo` in world/sites.ts), so the island is the same island alone —
-    // fewer pads lit, one totem to turn, and the bucket route read to the person
-    // walking it because there is nobody else to read it. What solo removes is
-    // the second pair of hands, never the walk or the puzzle.
-    players: ['single', 'online-coop'],
-    maxPlayers: 12, // lib/massive-march/constants.ts MAX_PLAYERS
-    // A microphone is genuinely optional — spatial text is under identical
-    // audibility rules — so it is not an input method the game requires.
-    input: { supported: ['keyboard', 'mouse', 'touch'], required: [] },
-    // A sitting is a leg of the walk, not a round; the campaign runs to eight
-    // hours or more across several of them.
-    sessionMinutes: [30, 120],
-    engine: 'webgl',
-    demanding: true,
-    // MassiveMarchCampaign, owned by the host and written by the socket hub.
-    save: 'own-table',
-    // Two real ones, and no more than two. Every action is rebindable through
-    // the options sheet, and host-enabled challenge skipping is an assist mode
-    // in the literal sense — it exists to step past a challenge that depends on
-    // hearing, speaking, reaction time or precise aim without ending the
-    // campaign (§17). `subtitles` is deliberately NOT claimed: spatial text is a
-    // parallel channel, not a transcription of what anybody said out loud.
-    accessibility: ['remappable-input', 'assist-mode'],
   },
 };
 

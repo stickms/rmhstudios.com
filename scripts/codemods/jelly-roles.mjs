@@ -54,9 +54,9 @@ const ROOTS = roots.length ? roots : ['components', 'app'];
 
 /** Mirrors FULLSCREEN_TIER_DIRS in lib/__tests__/design-consistency.test.ts. */
 const GAME_DIRS = new Set([
-  'altair', 'bums-rush', 'cookgame', 'cursed-logic', 'daily-puzzles', 'dream-rift',
+  'altair', 'cookgame', 'cursed-logic', 'daily-puzzles', 'dream-rift',
   'forest-explorer', 'gabriels-horn', 'game', 'house-always-wins', 'isleworks',
-  'kowloon-knockout', 'laundry-sort', 'lights-out', 'massive-march', 'neon-driftway',
+  'kowloon-knockout', 'laundry-sort', 'lights-out', 'neon-driftway',
   'nightrail', 'rmh-farming-sim', 'signal-forge', 'slice-it', 'synapse-storm',
   'temple-of-joy', 'vega', 'velum2099', 'versecraft', 'void-breaker', 'rmhbox', 'blm',
   'pf2ecal', 'dunesday', 'rebar-rutabaga',

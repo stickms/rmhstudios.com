@@ -684,6 +684,9 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'guestbook-tab',
   ],
   site: [
+    // Reworded 2026-11-04 when Massive March was removed (new key, per the i18n rule);
+    // English-only until the locales are translated — remove with it.
+    'assists-none-yet-2',
     // Arcade page (the old /games Home sections), 2026-10-30.
     'arcade-page-subtitle',
     'arcade-page-title',

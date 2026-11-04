@@ -36,10 +36,6 @@ import {
   registerKowloonKnockoutHandlers,
   handleKowloonKnockoutDisconnect,
 } from './handlers/kowloon-knockout';
-import {
-  registerRochesterOffensiveHandlers,
-  handleRochesterOffensiveDisconnect,
-} from './handlers/rochester-offensive';
 import { registerRmhMusicHandlers, handleRmhMusicDisconnect } from './handlers/rmhmusic';
 import { registerStudioJamHandlers } from './handlers/studio-jam';
 import {
@@ -79,11 +75,6 @@ import {
   registerGabrielsHornHandlers,
   handleGabrielsHornDisconnect,
 } from './handlers/gabriels-horn';
-import {
-  registerMassiveMarchHandlers,
-  handleMassiveMarchDisconnect,
-} from './handlers/massive-march';
-import { registerBumsRushHandlers, handleBumsRushDisconnect } from './handlers/bums-rush';
 import { registerGlobeSetHandlers, handleGlobeSetDisconnect } from './handlers/globeset';
 import { registerTf2GameHandlers, handleTf2GameDisconnect } from './handlers/tf2-game';
 import { registerTf2P2pHandlers, handleTf2P2pDisconnect } from './handlers/tf2-p2p';
@@ -529,7 +520,6 @@ io.on('connection', (socket) => {
   registerRmhStudyHandlers(io, socket);
   registerAltairHandlers(io, socket);
   registerKowloonKnockoutHandlers(io, socket);
-  registerRochesterOffensiveHandlers(io, socket);
   registerRmhMusicHandlers(io, socket);
   registerStudioJamHandlers(io, socket); // F13: self-cleans on disconnect
   registerBlackjackHandlers(io, socket);
@@ -543,8 +533,6 @@ io.on('connection', (socket) => {
   registerRmhFarmingSimHandlers(io, socket);
   registerLaundrySortHandlers(io, socket);
   registerGabrielsHornHandlers(io, socket);
-  registerMassiveMarchHandlers(io, socket);
-  registerBumsRushHandlers(io, socket);
   registerGlobeSetHandlers(io, socket);
   // TF2: the server browser and P2P signaling — every match runs in a player's browser.
   registerTf2GameHandlers(io, socket);
@@ -580,7 +568,6 @@ io.on('connection', (socket) => {
     handleRmhStudyDisconnect(io, socket);
     handleAltairDisconnect(io, socket);
     handleKowloonKnockoutDisconnect(io, socket);
-    handleRochesterOffensiveDisconnect(io, socket);
     handleRmhMusicDisconnect(io, socket);
     handleBlackjackDisconnect(io, socket);
     handleHoldemDisconnect(io, socket);
@@ -593,8 +580,6 @@ io.on('connection', (socket) => {
     handleRmhFarmingSimDisconnect(io, socket);
     handleLaundrySortDisconnect(io, socket);
     handleGabrielsHornDisconnect(io, socket);
-    handleMassiveMarchDisconnect(io, socket);
-    handleBumsRushDisconnect(io, socket);
     handleGlobeSetDisconnect(io, socket);
     handleTf2GameDisconnect(io, socket);
     handleTf2P2pDisconnect(io, socket);

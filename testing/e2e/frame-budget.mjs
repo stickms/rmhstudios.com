@@ -136,10 +136,10 @@ const DEFAULT_ROUTES = [
   '/', '/games', '/apps', '/pricing', '/news', '/library', '/leaderboard', '/achievements',
   '/market', '/store', '/events', '/communities', '/help', '/roadmap', '/services',
   '/predictions', '/homes', '/rideshare', '/rmhladder', '/study', '/search', '/developer',
-  '/login', '/cookies', '/altair', '/bums-rush', '/cookgame', '/daily', '/dream-rift',
+  '/login', '/cookies', '/altair', '/cookgame', '/daily', '/dream-rift',
   '/dunesday', '/forest-explorer', '/gabriels-horn', '/house-always-wins', '/isleworks',
-  '/kowloon-knockout', '/laundry-sort', '/massive-march', '/neon-driftway', '/nightrail',
-  '/rmh-farming-sim', '/rmhbox', '/rochester-offensive', '/slice-it', '/synapse-storm',
+  '/kowloon-knockout', '/laundry-sort', '/neon-driftway', '/nightrail',
+  '/rmh-farming-sim', '/rmhbox', '/slice-it', '/synapse-storm',
   '/temple-of-joy', '/velum2099', '/versecraft', '/void-breaker', '/rmhcode', '/strategies',
 ];
 

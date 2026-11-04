@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 371 routes. 196 render inside the standard site shell (sidebar, nav, context rail); 175 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 368 routes. 196 render inside the standard site shell (sidebar, nav, context rail); 172 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -231,7 +231,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/black-lives-matter` | Black Lives Matter | public | `app/routes/black-lives-matter.tsx` |
 | `/blog/rss.xml` | RMH Studios — Blog | public | `app/routes/blog.rss[.]xml.ts` |
 | `/breaches` | Breaches | public | `app/routes/breaches.tsx` |
-| `/bums-rush` | — | public | `app/routes/bums-rush.tsx` |
 | `/controller/:code` | Phone Controller | public | `app/routes/controller.$code.tsx` |
 | `/cookgame` | — | public | `app/routes/cookgame.tsx` |
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
@@ -295,7 +294,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/lights-out` | redirects to `/daily/lights-out` | public | `app/routes/lights-out.tsx` |
 | `/liquid-glass` | redirects to `/jelly` | public | `app/routes/liquid-glass.tsx` |
 | `/login` | Login \| RMH | public | `app/routes/login.tsx` |
-| `/massive-march` | — | public | `app/routes/massive-march.tsx` |
 | `/neon-driftway` | — | public | `app/routes/neon-driftway.tsx` |
 | `/news/:slug` | — | public | `app/routes/news.$slug.tsx` |
 | `/news/rss.xml` | RMH Studios — News | public | `app/routes/news.rss[.]xml.ts` |
@@ -341,7 +339,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhtype/:roomId` | — | sign-in | `app/routes/rmhtype/$roomId.tsx` |
 | `/rmhtype/multiplayer` | — | sign-in | `app/routes/rmhtype/multiplayer.tsx` |
 | `/rmhtype/solo` | — | sign-in | `app/routes/rmhtype/solo.tsx` |
-| `/rochester-offensive` | — | public | `app/routes/rochester-offensive.tsx` |
 | `/secret` | Secret | public | `app/routes/secret/index.tsx` |
 | `/secret/cursed-logic` | — | public | `app/routes/secret/cursed-logic/index.tsx` |
 | `/secret/signal-forge` | Signal Forge | public | `app/routes/secret/signal-forge.tsx` |

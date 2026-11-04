@@ -9,7 +9,6 @@ import urCAwards from "@/locales/ur/c-awards.json";
 import urCBalatro from "@/locales/ur/c-balatro.json";
 import urCBlog from "@/locales/ur/c-blog.json";
 import urCBuilds from "@/locales/ur/c-builds.json";
-import urCBumsRush from "@/locales/ur/c-bums-rush.json";
 import urCCircle from "@/locales/ur/c-circle.json";
 import urCCreator from "@/locales/ur/c-creator.json";
 import urCCursedLogic from "@/locales/ur/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import urCDoctrine from "@/locales/ur/c-doctrine.json";
 import urCDreamRift from "@/locales/ur/c-dream-rift.json";
 import urCDunesday from "@/locales/ur/c-dunesday.json";
 import urCEconomy from "@/locales/ur/c-economy.json";
+import urCElections from "@/locales/ur/c-elections.json";
 import urCForestExplorer from "@/locales/ur/c-forest-explorer.json";
 import urCGabrielsHorn from "@/locales/ur/c-gabriels-horn.json";
 import urCGame from "@/locales/ur/c-game.json";
@@ -32,7 +32,6 @@ import urCLibrary from "@/locales/ur/c-library.json";
 import urCLightsOut from "@/locales/ur/c-lights-out.json";
 import urCLists from "@/locales/ur/c-lists.json";
 import urCLockdown from "@/locales/ur/c-lockdown.json";
-import urCMassiveMarch from "@/locales/ur/c-massive-march.json";
 import urCModeration from "@/locales/ur/c-moderation.json";
 import urCNeonDriftway from "@/locales/ur/c-neon-driftway.json";
 import urCNews from "@/locales/ur/c-news.json";
@@ -109,7 +108,6 @@ const urResources = {
   "c-balatro": urCBalatro,
   "c-blog": urCBlog,
   "c-builds": urCBuilds,
-  "c-bums-rush": urCBumsRush,
   "c-circle": urCCircle,
   "c-creator": urCCreator,
   "c-cursed-logic": urCCursedLogic,
@@ -118,6 +116,7 @@ const urResources = {
   "c-dream-rift": urCDreamRift,
   "c-dunesday": urCDunesday,
   "c-economy": urCEconomy,
+  "c-elections": urCElections,
   "c-forest-explorer": urCForestExplorer,
   "c-gabriels-horn": urCGabrielsHorn,
   "c-game": urCGame,
@@ -132,7 +131,6 @@ const urResources = {
   "c-lights-out": urCLightsOut,
   "c-lists": urCLists,
   "c-lockdown": urCLockdown,
-  "c-massive-march": urCMassiveMarch,
   "c-moderation": urCModeration,
   "c-neon-driftway": urCNeonDriftway,
   "c-news": urCNews,

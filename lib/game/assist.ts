@@ -195,5 +195,4 @@ export const ASSIST_FEATURES = [
  */
 export const OWN_ASSIST_IMPLEMENTATION: ReadonlySet<string> = new Set([
   'slice-it',
-  'massive-march',
 ]);

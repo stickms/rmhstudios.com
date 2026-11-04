@@ -99,7 +99,6 @@ const GAME_IDS = [
   'synapse-storm',
   'altair',
   'slice-it',
-  'bums-rush',
 ];
 const THREAD_POST = 100; // the ≥2,000-comment thread
 const HEAVY_FOLLOWS = Math.min(2_000, N.users - 3);

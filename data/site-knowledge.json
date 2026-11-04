@@ -618,20 +618,6 @@
       "text": "A satirical underground tycoon sim — buy ingredients, mix product for wild effects, and hustle your block before the heat catches up. A tongue-in-cheek crime-management sim. Run a small-town operation: stock up at the supplier, experiment at the mixing bench to stack value-boosting effects onto your product, package it, and sell to the neighbourhood — all w…"
     },
     {
-      "id": "game:rochester-offensive",
-      "kind": "game",
-      "title": "Mental-Hospital: Rochester Offensive",
-      "tags": [
-        "FPS",
-        "Multiplayer",
-        "Tactical",
-        "3D"
-      ],
-      "route": "/rochester-offensive",
-      "players": "multiplayer / playable with friends",
-      "text": "A pixelated tactical 5v5 FPS — agents, abilities, an economy, the spike and MR13, plus co-op Zombies and online lobbies. A browser-based, Valorant-inspired tactical shooter rendered in chunky pixel-art 3D. Pick an agent, buy weapons and abilities each round, plant or defuse the spike, and play to 13 in standard 5v5 — or team up for wave-based co-op Zombies …"
-    },
-    {
       "id": "game:house-always-wins",
       "kind": "game",
       "title": "House Always Wins",

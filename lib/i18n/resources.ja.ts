@@ -9,7 +9,6 @@ import jaCAwards from "@/locales/ja/c-awards.json";
 import jaCBalatro from "@/locales/ja/c-balatro.json";
 import jaCBlog from "@/locales/ja/c-blog.json";
 import jaCBuilds from "@/locales/ja/c-builds.json";
-import jaCBumsRush from "@/locales/ja/c-bums-rush.json";
 import jaCCircle from "@/locales/ja/c-circle.json";
 import jaCCreator from "@/locales/ja/c-creator.json";
 import jaCCursedLogic from "@/locales/ja/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import jaCDoctrine from "@/locales/ja/c-doctrine.json";
 import jaCDreamRift from "@/locales/ja/c-dream-rift.json";
 import jaCDunesday from "@/locales/ja/c-dunesday.json";
 import jaCEconomy from "@/locales/ja/c-economy.json";
+import jaCElections from "@/locales/ja/c-elections.json";
 import jaCForestExplorer from "@/locales/ja/c-forest-explorer.json";
 import jaCGabrielsHorn from "@/locales/ja/c-gabriels-horn.json";
 import jaCGame from "@/locales/ja/c-game.json";
@@ -32,7 +32,6 @@ import jaCLibrary from "@/locales/ja/c-library.json";
 import jaCLightsOut from "@/locales/ja/c-lights-out.json";
 import jaCLists from "@/locales/ja/c-lists.json";
 import jaCLockdown from "@/locales/ja/c-lockdown.json";
-import jaCMassiveMarch from "@/locales/ja/c-massive-march.json";
 import jaCModeration from "@/locales/ja/c-moderation.json";
 import jaCNeonDriftway from "@/locales/ja/c-neon-driftway.json";
 import jaCNews from "@/locales/ja/c-news.json";
@@ -109,7 +108,6 @@ const jaResources = {
   "c-balatro": jaCBalatro,
   "c-blog": jaCBlog,
   "c-builds": jaCBuilds,
-  "c-bums-rush": jaCBumsRush,
   "c-circle": jaCCircle,
   "c-creator": jaCCreator,
   "c-cursed-logic": jaCCursedLogic,
@@ -118,6 +116,7 @@ const jaResources = {
   "c-dream-rift": jaCDreamRift,
   "c-dunesday": jaCDunesday,
   "c-economy": jaCEconomy,
+  "c-elections": jaCElections,
   "c-forest-explorer": jaCForestExplorer,
   "c-gabriels-horn": jaCGabrielsHorn,
   "c-game": jaCGame,
@@ -132,7 +131,6 @@ const jaResources = {
   "c-lights-out": jaCLightsOut,
   "c-lists": jaCLists,
   "c-lockdown": jaCLockdown,
-  "c-massive-march": jaCMassiveMarch,
   "c-moderation": jaCModeration,
   "c-neon-driftway": jaCNeonDriftway,
   "c-news": jaCNews,

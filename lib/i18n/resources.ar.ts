@@ -9,7 +9,6 @@ import arCAwards from "@/locales/ar/c-awards.json";
 import arCBalatro from "@/locales/ar/c-balatro.json";
 import arCBlog from "@/locales/ar/c-blog.json";
 import arCBuilds from "@/locales/ar/c-builds.json";
-import arCBumsRush from "@/locales/ar/c-bums-rush.json";
 import arCCircle from "@/locales/ar/c-circle.json";
 import arCCreator from "@/locales/ar/c-creator.json";
 import arCCursedLogic from "@/locales/ar/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import arCDoctrine from "@/locales/ar/c-doctrine.json";
 import arCDreamRift from "@/locales/ar/c-dream-rift.json";
 import arCDunesday from "@/locales/ar/c-dunesday.json";
 import arCEconomy from "@/locales/ar/c-economy.json";
+import arCElections from "@/locales/ar/c-elections.json";
 import arCForestExplorer from "@/locales/ar/c-forest-explorer.json";
 import arCGabrielsHorn from "@/locales/ar/c-gabriels-horn.json";
 import arCGame from "@/locales/ar/c-game.json";
@@ -32,7 +32,6 @@ import arCLibrary from "@/locales/ar/c-library.json";
 import arCLightsOut from "@/locales/ar/c-lights-out.json";
 import arCLists from "@/locales/ar/c-lists.json";
 import arCLockdown from "@/locales/ar/c-lockdown.json";
-import arCMassiveMarch from "@/locales/ar/c-massive-march.json";
 import arCModeration from "@/locales/ar/c-moderation.json";
 import arCNeonDriftway from "@/locales/ar/c-neon-driftway.json";
 import arCNews from "@/locales/ar/c-news.json";
@@ -111,7 +110,6 @@ const arResources = {
   "c-balatro": arCBalatro,
   "c-blog": arCBlog,
   "c-builds": arCBuilds,
-  "c-bums-rush": arCBumsRush,
   "c-circle": arCCircle,
   "c-creator": arCCreator,
   "c-cursed-logic": arCCursedLogic,
@@ -120,6 +118,7 @@ const arResources = {
   "c-dream-rift": arCDreamRift,
   "c-dunesday": arCDunesday,
   "c-economy": arCEconomy,
+  "c-elections": arCElections,
   "c-forest-explorer": arCForestExplorer,
   "c-gabriels-horn": arCGabrielsHorn,
   "c-game": arCGame,
@@ -134,7 +133,6 @@ const arResources = {
   "c-lights-out": arCLightsOut,
   "c-lists": arCLists,
   "c-lockdown": arCLockdown,
-  "c-massive-march": arCMassiveMarch,
   "c-moderation": arCModeration,
   "c-neon-driftway": arCNeonDriftway,
   "c-news": arCNews,
