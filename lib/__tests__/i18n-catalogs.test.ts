@@ -150,6 +150,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'menu-tagline',
     'menu-waiting',
     'menu-your-char',
+  ],
   // Synapse Storm + Versecraft menu redesign (2026-11-04): the new menu strings
   // are English-only until the translation pipeline runs; remove with it.
   'c-synapse-storm': ['game-title'],
