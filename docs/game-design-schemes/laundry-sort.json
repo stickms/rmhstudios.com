@@ -1,0 +1,35 @@
+{
+  "id": "laundry-sort",
+  "mood": "Cosy and silly: a pastel laundry room where smiling garments tumble into baskets.",
+  "palette": {
+    "bg": "#CFEFFF",
+    "bgAlt": "#EAF8FF",
+    "surface": "#FFFFFF",
+    "surfaceHover": "#FFF6D6",
+    "ink": "#2B4C7E",
+    "inkMuted": "#46638F",
+    "accent": "#3F8FE0",
+    "accent2": "#FFD25C",
+    "danger": "#D93F5C",
+    "border": "#2B4C7E"
+  },
+  "fonts": {
+    "display": "Lilita One",
+    "body": "Fredoka"
+  },
+  "shape": {
+    "radius": "22px",
+    "borderStyle": "4px solid navy (#2B4C7E)",
+    "texture": "soft white checker tiles at 35% opacity"
+  },
+  "motifs": [
+    "smiling garments",
+    "washing machine window",
+    "laundry baskets",
+    "clothesline with pegs",
+    "soap bubbles"
+  ],
+  "buttonStyle": "Primary is a sky-blue pill with white Lilita One text and a thick navy outline, bouncing 4px up on hover; secondary is a white pill with a navy outline and a yellow hover fill.",
+  "backdrop": "Pastel blue checker wall with a washing machine in the middle whose round window slowly swirls (rotate transform) and a few bubbles floating upward.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

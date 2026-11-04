@@ -1,0 +1,35 @@
+{
+  "id": "daily-puzzles",
+  "mood": "Bright, friendly and bite-sized: a sunny desk of colourful puzzle tiles that resets every midnight.",
+  "palette": {
+    "bg": "#FFF8EC",
+    "bgAlt": "#FFEBD6",
+    "surface": "#FFFFFF",
+    "surfaceHover": "#F4F0FF",
+    "ink": "#2A1F66",
+    "inkMuted": "#5A4F99",
+    "accent": "#4B2FC4",
+    "accent2": "#FF4F8B",
+    "danger": "#D62F45",
+    "border": "#D9D0FF"
+  },
+  "fonts": {
+    "display": "Lilita One",
+    "body": "Fredoka"
+  },
+  "shape": {
+    "radius": "20px",
+    "borderStyle": "3px solid #4B2FC4 with a 4px offset hard shadow on cards",
+    "texture": "confetti dots on a warm cream ground"
+  },
+  "motifs": [
+    "puzzle tiles",
+    "Lights Out grid",
+    "calendar badge with the number 7",
+    "pencil and glass globe",
+    "chunky outlines"
+  ],
+  "buttonStyle": "Primary is a violet pill with white Lilita One text and a thick darker outline that presses down 2px on click; secondary is a white pill with a violet outline and pink hover fill.",
+  "backdrop": "Warm cream gradient with soft pastel confetti dots drifting up very slowly (CSS transform only), and a small calendar badge that flips when the day changes.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

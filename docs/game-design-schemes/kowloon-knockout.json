@@ -1,0 +1,35 @@
+{
+  "id": "kowloon-knockout",
+  "mood": "Loud, humid and electric: 1997 Hong Kong rooftops lit by pink and yellow neon signs and a cyan hanzi sign.",
+  "palette": {
+    "bg": "#05020D",
+    "bgAlt": "#14082B",
+    "surface": "#0F0620",
+    "surfaceHover": "#1D0B3A",
+    "ink": "#FFE8F3",
+    "inkMuted": "#D0A3BE",
+    "accent": "#FF2E88",
+    "accent2": "#FFC400",
+    "danger": "#FF5A3C",
+    "border": "#5A1B7A"
+  },
+  "fonts": {
+    "display": "Bungee",
+    "body": "Jost"
+  },
+  "shape": {
+    "radius": "4px",
+    "borderStyle": "2px solid neon pink with an outer glow (box-shadow, no blur animation)",
+    "texture": "faint scanlines and rain haze"
+  },
+  "motifs": [
+    "neon sign boxes with hanzi",
+    "stick-fighter silhouettes",
+    "impact starburst",
+    "wet street reflection",
+    "cyan 九龙淘汰赛 sign"
+  ],
+  "buttonStyle": "Primary is a dark button with a thick pink neon outline and pink Bungee text that brightens to white on hover; secondary uses a yellow neon outline.",
+  "backdrop": "Dark tenement skyline with a handful of neon sign boxes that glow at a steady level (static glow), plus slow CSS rain streaks and a soft pink haze at street level.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

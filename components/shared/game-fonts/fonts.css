@@ -1,0 +1,27 @@
+/* Self-hosted OFL fonts; from the design pack; .ttf fallbacks dropped (woff2 is universal) */
+@font-face{font-family:'Orbitron';src:url('./Orbitron/Orbitron-Variable.woff2') format('woff2');font-weight:400 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Audiowide';src:url('./Audiowide/Audiowide-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Bungee';src:url('./Bungee/Bungee-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Press Start 2P';src:url('./PressStart2P/PressStart2P-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Silkscreen';src:url('./Silkscreen/Silkscreen-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Cinzel';src:url('./Cinzel/Cinzel-Variable.woff2') format('woff2');font-weight:400 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Black Ops One';src:url('./BlackOpsOne/BlackOpsOne-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Teko';src:url('./Teko/Teko-Variable.woff2') format('woff2');font-weight:300 700;font-style:normal;font-display:swap}
+@font-face{font-family:'Barlow Condensed';src:url('./BarlowCondensed/BarlowCondensed-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Barlow Condensed';src:url('./BarlowCondensed/BarlowCondensed-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Barlow Condensed';src:url('./BarlowCondensed/BarlowCondensed-ExtraBold.woff2') format('woff2');font-weight:800;font-style:normal;font-display:swap}
+@font-face{font-family:'Lilita One';src:url('./LilitaOne/LilitaOne-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Titan One';src:url('./TitanOne/TitanOne-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Great Vibes';src:url('./GreatVibes/GreatVibes-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Abril Fatface';src:url('./AbrilFatface/AbrilFatface-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Limelight';src:url('./Limelight/Limelight-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'ZCOOL KuaiLe';src:url('./ZCOOLKuaiLe/ZCOOLKuaiLe-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Exo 2';src:url('./Exo2/Exo2-Variable.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Exo 2';src:url('./Exo2/Exo2-Italic-Variable.woff2') format('woff2');font-weight:100 900;font-style:italic;font-display:swap}
+@font-face{font-family:'Michroma';src:url('./Michroma/Michroma-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Jost';src:url('./Jost/Jost-Variable.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Fredoka';src:url('./Fredoka/Fredoka-Variable.woff2') format('woff2');font-weight:300 700;font-style:normal;font-display:swap}
+@font-face{font-family:'Cormorant Garamond';src:url('./CormorantGaramond/CormorantGaramond-Variable.woff2') format('woff2');font-weight:300 700;font-style:normal;font-display:swap}
+@font-face{font-family:'Cormorant Garamond';src:url('./CormorantGaramond/CormorantGaramond-Italic-Variable.woff2') format('woff2');font-weight:300 700;font-style:italic;font-display:swap}
+@font-face{font-family:'IBM Plex Mono';src:url('./IBMPlexMono/IBMPlexMono-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'IBM Plex Mono';src:url('./IBMPlexMono/IBMPlexMono-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}

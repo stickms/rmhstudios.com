@@ -1,0 +1,36 @@
+{
+  "id": "velum2099",
+  "mood": "Rainy and neon-soaked: a night courier threading a cyberpunk megacity with the police a few blocks behind.",
+  "palette": {
+    "bg": "#050A1A",
+    "bgAlt": "#0C1B3F",
+    "surface": "#0A1430",
+    "surfaceHover": "#12234F",
+    "ink": "#E8F7FF",
+    "inkMuted": "#8EB6D0",
+    "accent": "#2EE6FF",
+    "accent2": "#FF5CE1",
+    "danger": "#FF2A55",
+    "border": "#1E5C8C"
+  },
+  "fonts": {
+    "display": "Orbitron",
+    "body": "Exo 2",
+    "mono": "IBM Plex Mono"
+  },
+  "shape": {
+    "radius": "sharp with a 10px clipped corner",
+    "borderStyle": "1px solid #1E5C8C with cyan corner brackets",
+    "texture": "rain streaks and scanlines"
+  },
+  "motifs": [
+    "holographic billboards",
+    "cargo parcel with a checkmark",
+    "corner-bracket HUD",
+    "red/blue police glow",
+    "neon vertical signs"
+  ],
+  "buttonStyle": "Primary is a clipped-corner cyan outline button with cyan Orbitron text that fills 20% on hover; secondary is a magenta outline variant.",
+  "backdrop": "Layered cyan/violet skyline parallax (two layers, transform only) with thin rain streaks falling and a very slow red/blue glow cross-fading in the lower-left corner.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

@@ -1,0 +1,36 @@
+{
+  "id": "altair",
+  "mood": "Cold, lonely and tense: a dead mining rig humming in the dark, with a glitching ghost at the end of the corridor.",
+  "palette": {
+    "bg": "#04080F",
+    "bgAlt": "#071420",
+    "surface": "#0A1B2A",
+    "surfaceHover": "#0F2A3E",
+    "ink": "#E6FBFF",
+    "inkMuted": "#8FB3BF",
+    "accent": "#19D3DA",
+    "accent2": "#FFB44D",
+    "danger": "#FF3DB8",
+    "border": "#0F3B52"
+  },
+  "fonts": {
+    "display": "Michroma",
+    "body": "Jost",
+    "mono": "IBM Plex Mono"
+  },
+  "shape": {
+    "radius": "2px",
+    "borderStyle": "1px solid border; cyan glow ring on focus",
+    "texture": "faint scanlines plus occasional glitch slices"
+  },
+  "motifs": [
+    "one-point corridor frames",
+    "amber emergency lamps",
+    "cyan/magenta glitch offset on titles",
+    "ghostly \"Echo\" silhouette",
+    "star flare"
+  ],
+  "buttonStyle": "Primary is a flat cyan outline button with cyan text that fills with 15% cyan on hover; secondary is a plain text button with an amber bracket marker. Disabled controls fade to muted ink.",
+  "backdrop": "Slowly zooming CSS corridor of nested rectangles with cyan edges and two amber lamps, plus a few drifting dust specks; a magenta/cyan glitch bar slides across the title once every ~10 s.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

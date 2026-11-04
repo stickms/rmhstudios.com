@@ -27,3 +27,15 @@ No official Valve / Counter-Strike / Half-Life / Portal files are used. The thre
 | void-breaker | Black Ops One, Jost | blackopsone/BlackOpsOne-Regular.ttf | Gold gradient, orange glow |
 
 Local copies are in `dl/fonts/` (downloaded, untrusted data; only used as font files by Chromium and by fontTools for text measuring).
+
+---
+
+## Logos, design schemes and fonts (2026-11-04)
+
+Per-game logos live in `public/images/games/logos/<id>.svg|webp`, the design-scheme specs a menu is built
+from in `docs/game-design-schemes/<id>.json`, and the self-hosted OFL fonts (woff2 + their `OFL.txt`) in
+`components/shared/game-fonts/` with ready `@font-face` rules in `fonts.css` — import it from a game's CSS with
+`@import '../shared/game-fonts/fonts.css';` so Vite hashes and serves the files. All 21 families are SIL Open
+Font License 1.1, from https://github.com/google/fonts (`ofl/<family>/`): Orbitron, Audiowide, Bungee, Press
+Start 2P, Silkscreen, Cinzel, Black Ops One, Teko, Barlow Condensed, Lilita One, Titan One, Great Vibes, Abril
+Fatface, Limelight, ZCOOL KuaiLe, Exo 2, Michroma, Jost, Fredoka, Cormorant Garamond, IBM Plex Mono.

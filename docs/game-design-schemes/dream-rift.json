@@ -1,0 +1,36 @@
+{
+  "id": "dream-rift",
+  "mood": "Dreamy and dense: a pixel-art danmaku nightscape where beautiful curtains of bullets bloom around a tiny dreamer.",
+  "palette": {
+    "bg": "#12062E",
+    "bgAlt": "#3A0F6E",
+    "surface": "#1E0C45",
+    "surfaceHover": "#2C1260",
+    "ink": "#FFF0FB",
+    "inkMuted": "#C9A8E8",
+    "accent": "#FF4FD8",
+    "accent2": "#2EE6FF",
+    "danger": "#FF5C7A",
+    "border": "#5B2A9E"
+  },
+  "fonts": {
+    "display": "Press Start 2P",
+    "body": "Jost",
+    "mono": "Silkscreen"
+  },
+  "shape": {
+    "radius": "sharp (0)",
+    "borderStyle": "2px solid with a pixel stair-step corner (box-shadow, no blur)",
+    "texture": "CRT scanlines at 12% opacity over a violet gradient"
+  },
+  "motifs": [
+    "concentric bullet rings",
+    "pixel-art sprite",
+    "starfield",
+    "boss spell-card sigil",
+    "pixel font"
+  ],
+  "buttonStyle": "Primary is a pink block with a darker pink bottom edge (3px) and white pixel text that nudges down 3px when pressed; secondary is a violet block with a cyan text label.",
+  "backdrop": "Violet-to-magenta gradient with a few hundred tiny stars and one slow rotating ring of coloured dots (a static CSS radial pattern rotated with transform), safe and cheap.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

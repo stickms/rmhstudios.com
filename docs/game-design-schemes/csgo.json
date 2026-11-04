@@ -1,0 +1,36 @@
+{
+  "id": "csgo",
+  "mood": "Competitive and clean: dark translucent Panorama panels over a sunlit Dust II, with a single green GO call to action.",
+  "palette": {
+    "bg": "#0A0C0E",
+    "bgAlt": "#101317",
+    "surface": "#1C2127",
+    "surfaceHover": "#272E36",
+    "ink": "#ECECEC",
+    "inkMuted": "#A6ACB4",
+    "accent": "#4C8E38",
+    "accent2": "#5B81AD",
+    "danger": "#D9534F",
+    "border": "#2A2F35"
+  },
+  "fonts": {
+    "display": "Teko",
+    "body": "Barlow Condensed",
+    "mono": "IBM Plex Mono"
+  },
+  "shape": {
+    "radius": "2px (near sharp)",
+    "borderStyle": "1px solid rgba(255,255,255,.10); 3px left rail in select-blue on the active item",
+    "texture": "none (a dark left-to-right shade over the backdrop)"
+  },
+  "motifs": [
+    "dark translucent panels",
+    "narrow icon sidebar",
+    "green GO button",
+    "Dust II sandstone arch art with an orange crosshair",
+    "already implemented in components/csgo-game/cs-menu.css (--pano-* variables)"
+  ],
+  "buttonStyle": "Primary \"GO\" is solid green (#4C8E38, hover #60A848) with near-white text and square corners; secondary buttons are translucent dark panels with a thin light edge that brighten on hover.",
+  "backdrop": "A dimmed, slightly desaturated still or looping image of the Dust II arch under a left-heavy black gradient so the sidebar and panels stay legible; no extra animation needed.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

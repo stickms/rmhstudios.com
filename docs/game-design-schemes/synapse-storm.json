@@ -1,0 +1,35 @@
+{
+  "id": "synapse-storm",
+  "mood": "Electric and overloaded: a neural storm of micro-challenges that keeps you sharp.",
+  "palette": {
+    "bg": "#070312",
+    "bgAlt": "#1A0A3A",
+    "surface": "#0B0620",
+    "surfaceHover": "#17093A",
+    "ink": "#EFFFFF",
+    "inkMuted": "#A3C9DC",
+    "accent": "#2EE6FF",
+    "accent2": "#FF4FD8",
+    "danger": "#FF5A5A",
+    "border": "#3A2A8A"
+  },
+  "fonts": {
+    "display": "Exo 2",
+    "body": "Jost"
+  },
+  "shape": {
+    "radius": "16px",
+    "borderStyle": "2px solid neon (cyan or pink) with outer glow",
+    "texture": "sparse star specks, no overlay"
+  },
+  "motifs": [
+    "neural core with lightning",
+    "spiral swirl",
+    "challenge tiles (7x8, timer ring, color grid)",
+    "italic black headings",
+    "cyan and pink duo-tone"
+  ],
+  "buttonStyle": "Primary is a cyan neon outline pill with white italic text that gains a pink outline on hover; secondary is a pink neon outline pill.",
+  "backdrop": "Near-black violet field with a slowly rotating spiral of thin cyan and pink rings (CSS transform) behind the menu and a glowing core dot that breathes once every 4 s.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}
