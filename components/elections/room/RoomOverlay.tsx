@@ -186,9 +186,13 @@ export function RoomOverlay({
   // hand-written hover transforms). A short grace timer lets the pointer travel from the strip into the bar.
   const [barOpen, setBarOpen] = useState(false);
   const barTimer = useRef<number | undefined>(undefined);
-  const openBar = () => {
+  const openBar = (e?: React.PointerEvent) => {
+    // A finger "entering" the bar is just the tap that is about to toggle the pin; only a deliberate touch on the
+    // strip opens it (and it then closes itself after a few seconds, or on a tap elsewhere).
+    if (e?.pointerType === 'touch' && e.type !== 'pointerdown') return;
     window.clearTimeout(barTimer.current);
     setBarOpen(true);
+    if (e?.pointerType === 'touch') barTimer.current = window.setTimeout(() => setBarOpen(false), 6000);
   };
   const closeBar = (e?: React.PointerEvent) => {
     // Touch has no hover: a tap opens the bar and a tap anywhere else closes it (below), so leaving is not a close.
@@ -204,7 +208,10 @@ export function RoomOverlay({
     document.addEventListener('pointerdown', away);
     return () => document.removeEventListener('pointerdown', away);
   }, [barOpen]);
-  const toggleAutoHide = () =>
+  const toggleAutoHide = () => {
+    // Switching modes puts the bar away at once (the pointer is still over it, which would otherwise hold it open).
+    window.clearTimeout(barTimer.current);
+    setBarOpen(false);
     setAutoHide((v) => {
       try {
         localStorage.setItem('rmh-elections-roombar', v ? 'pinned' : 'auto');
@@ -213,6 +220,7 @@ export function RoomOverlay({
       }
       return !v;
     });
+  };
   const root = useRef<HTMLDivElement | null>(null);
   const now = useNow(500);
 
@@ -422,6 +430,9 @@ export function RoomOverlay({
                 aria-label={autoHide ? t('room.pinBars', { defaultValue: 'Keep the bars visible' }) : t('room.hideBars', { defaultValue: 'Hide the room bar and pane headers until hovered' })}
               >
                 {autoHide ? <Pin size={14} aria-hidden /> : <PinOff size={14} aria-hidden />}
+                <span className="el-room__lbl">
+                  {autoHide ? t('room.barPinned', { defaultValue: 'Show bars' }) : t('room.barHide', { defaultValue: 'Hide bars' })}
+                </span>
               </button>
               <button
                 type="button"
