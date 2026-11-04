@@ -13,7 +13,7 @@ export const RECIPES: Record<string, RecipeDef> = {
   bread: { name: 'Bake bread', inputs: { flour: 2 }, output: 'bread', outputQty: 1 },
   stew: { name: 'Hearty stew', inputs: { tomato: 2, herbs: 1, mushroom: 1 }, output: 'stew', outputQty: 1 },
   jam: { name: 'Berry jam', inputs: { berries: 3 }, output: 'jam', outputQty: 1 },
-  // The back-alley trade (CookGame's underground cooking, kept pure fiction): worth far more, but only on the street.
+  // The back-alley trade (an underground cooking trade, kept pure fiction): worth far more, but only on the street.
   tonic: { name: 'Brew mystery tonic', inputs: { herbs: 2, mushroom: 2 }, output: 'mystery-tonic', outputQty: 1 },
   'alley-stew': { name: 'Simmer back-alley stew', inputs: { tomato: 2, mushroom: 1, berries: 1 }, output: 'alley-stew', outputQty: 1 },
 };

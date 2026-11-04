@@ -53,8 +53,8 @@ export const NAMESPACES = [
   // Component namespaces.
   "c-admin", "c-altair", "c-awards", "c-balatro", "c-blog", "c-builds", "c-circle",
   "c-creator", "c-cursed-logic", "c-daily-puzzles", "c-doctrine", "c-dunesday",
-  "c-dream-rift", "c-economy", "c-elections", "c-forest-explorer", "c-gabriels-horn",
-  "c-game", "c-groupcall", "c-hearthworks", "c-history", "c-house-always-wins", "c-isleworks",
+  "c-dream-rift", "c-economy", "c-elections", "c-gabriels-horn",
+  "c-game", "c-groupcall", "c-hearthworks", "c-history", "c-house-always-wins",
   "c-kaikai-debt",
   "c-kowloon-knockout", "c-laundry-sort", "c-layout", "c-library",
   "c-lights-out", "c-lists", "c-lockdown", "c-moderation", "c-neon-driftway",
@@ -68,7 +68,7 @@ export const NAMESPACES = [
   "c-tournaments", "c-ui", "c-user-builds", "c-vega", "c-velum2099",
   "c-versecraft", "c-void-breaker", "c-wager", "c-wishlist",
   // Route namespaces.
-  "r-altair", "r-discord", "r-forest-explorer", "r-kowloon-knockout",
+  "r-altair", "r-discord", "r-kowloon-knockout",
   "r-pf2ecal",
   "r-rmhbox", "r-rmhcode", "r-secret", "r-slice-it", "r-sohumbum",
   "r-sohumtracker",

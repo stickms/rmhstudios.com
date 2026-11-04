@@ -456,8 +456,6 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/daily/outcast': 'duplicate',
   '/daily/globeset': 'duplicate',
   '/daily/spectrum': 'duplicate',
-  '/forest-explorer/explore': 'duplicate',
-  '/forest-explorer/story': 'duplicate',
 };
 
 /**

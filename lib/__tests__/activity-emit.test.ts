@@ -54,7 +54,7 @@ describe('emitActivity — buffering', () => {
   it('flushes on the timer, as ONE createMany for the whole window', async () => {
     emitActivity({ userId: 'u1', verb: 'VIEWED', kind: 'post', entityId: 'p1' });
     emitActivity({ userId: 'u1', verb: 'VIEWED', kind: 'post', entityId: 'p2' });
-    emitActivity({ userId: 'u2', verb: 'PLAYED', kind: 'game', entityId: 'isleworks' });
+    emitActivity({ userId: 'u2', verb: 'PLAYED', kind: 'game', entityId: 'hearthworks' });
 
     await vi.advanceTimersByTimeAsync(2_500);
 
@@ -97,7 +97,7 @@ describe('emitActivity — de-duplication inside one window', () => {
       userId: 'u1',
       verb: 'PLAYED',
       kind: 'game',
-      entityId: 'isleworks',
+      entityId: 'hearthworks',
       meta: { level: 7, mode: 'story' },
       at: first,
     });
@@ -105,7 +105,7 @@ describe('emitActivity — de-duplication inside one window', () => {
       userId: 'u1',
       verb: 'PLAYED',
       kind: 'game',
-      entityId: 'isleworks',
+      entityId: 'hearthworks',
       meta: { level: 8 },
       at: second,
     });

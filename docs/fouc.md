@@ -87,7 +87,7 @@ the chunk's CSS alongside the chunk. Asked **after the page settles**, every one
 of that sheet's selectors matches — the game has mounted by then — and the sheet
 looks exactly like a flash. Asked **at the frame the sheet joined the cascade**,
 none of them matched, because `__vitePreload` _awaits the CSS before executing the
-chunk_. Measured on `/isleworks`: the game's stylesheet applied at **553ms** and
+chunk_. Measured on `/hearthworks`: the game's stylesheet applied at **553ms** and
 the first `.isw` element existed at **1020ms**. Nothing ever painted unstyled.
 
 So the probe lives in the instrument, runs on the frame the sheet appears, and
@@ -115,7 +115,7 @@ real compositor frames it measured, in order, each labelled with how long after 
 first captured frame it was on screen, next to the verdict drawn from them.
 
 ```bash
-node testing/e2e/fouc.mjs --route / --route /isleworks \
+node testing/e2e/fouc.mjs --route / --route /hearthworks \
   --profiles fresh,signed-in --filmstrip /tmp/initial-loads.html
 ```
 
@@ -226,7 +226,7 @@ minimum that makes the measurement possible at all.
 `FRAME_LATE_SETTLE_LIMIT` is set from measurement, not taste. Across a
 representative slice, most pages measure **exactly 0.0000** — they paint their
 settled look and never move again. The two that move are the ones still fetching
-content: the feed at `/` (0.0227, settled at +745ms) and `/isleworks` (0.0093,
+content: the feed at `/` (0.0227, settled at +745ms) and `/hearthworks` (0.0093,
 +621ms). A deliberate flash measures **0.80**. The limit sits an order of
 magnitude above the content-arrival noise and an order of magnitude below a real
 flash.

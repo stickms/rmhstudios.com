@@ -18,12 +18,10 @@ import ruCDreamRift from "@/locales/ru/c-dream-rift.json";
 import ruCDunesday from "@/locales/ru/c-dunesday.json";
 import ruCEconomy from "@/locales/ru/c-economy.json";
 import ruCElections from "@/locales/ru/c-elections.json";
-import ruCForestExplorer from "@/locales/ru/c-forest-explorer.json";
 import ruCGabrielsHorn from "@/locales/ru/c-gabriels-horn.json";
 import ruCGame from "@/locales/ru/c-game.json";
 import ruCHistory from "@/locales/ru/c-history.json";
 import ruCHouseAlwaysWins from "@/locales/ru/c-house-always-wins.json";
-import ruCIsleworks from "@/locales/ru/c-isleworks.json";
 import ruCKaikaiDebt from "@/locales/ru/c-kaikai-debt.json";
 import ruCKowloonKnockout from "@/locales/ru/c-kowloon-knockout.json";
 import ruCLaundrySort from "@/locales/ru/c-laundry-sort.json";
@@ -78,7 +76,6 @@ import ruNav from "@/locales/ru/nav.json";
 import ruPages from "@/locales/ru/pages.json";
 import ruRAltair from "@/locales/ru/r-altair.json";
 import ruRDiscord from "@/locales/ru/r-discord.json";
-import ruRForestExplorer from "@/locales/ru/r-forest-explorer.json";
 import ruRPf2ecal from "@/locales/ru/r-pf2ecal.json";
 import ruRRmhbox from "@/locales/ru/r-rmhbox.json";
 import ruRRmhcode from "@/locales/ru/r-rmhcode.json";
@@ -117,12 +114,10 @@ const ruResources = {
   "c-dunesday": ruCDunesday,
   "c-economy": ruCEconomy,
   "c-elections": ruCElections,
-  "c-forest-explorer": ruCForestExplorer,
   "c-gabriels-horn": ruCGabrielsHorn,
   "c-game": ruCGame,
   "c-history": ruCHistory,
   "c-house-always-wins": ruCHouseAlwaysWins,
-  "c-isleworks": ruCIsleworks,
   "c-kaikai-debt": ruCKaikaiDebt,
   "c-kowloon-knockout": ruCKowloonKnockout,
   "c-laundry-sort": ruCLaundrySort,
@@ -177,7 +172,6 @@ const ruResources = {
   "pages": ruPages,
   "r-altair": ruRAltair,
   "r-discord": ruRDiscord,
-  "r-forest-explorer": ruRForestExplorer,
   "r-pf2ecal": ruRPf2ecal,
   "r-rmhbox": ruRRmhbox,
   "r-rmhcode": ruRRmhcode,

@@ -18,12 +18,10 @@ import zhCDreamRift from "@/locales/zh/c-dream-rift.json";
 import zhCDunesday from "@/locales/zh/c-dunesday.json";
 import zhCEconomy from "@/locales/zh/c-economy.json";
 import zhCElections from "@/locales/zh/c-elections.json";
-import zhCForestExplorer from "@/locales/zh/c-forest-explorer.json";
 import zhCGabrielsHorn from "@/locales/zh/c-gabriels-horn.json";
 import zhCGame from "@/locales/zh/c-game.json";
 import zhCHistory from "@/locales/zh/c-history.json";
 import zhCHouseAlwaysWins from "@/locales/zh/c-house-always-wins.json";
-import zhCIsleworks from "@/locales/zh/c-isleworks.json";
 import zhCKaikaiDebt from "@/locales/zh/c-kaikai-debt.json";
 import zhCKowloonKnockout from "@/locales/zh/c-kowloon-knockout.json";
 import zhCLaundrySort from "@/locales/zh/c-laundry-sort.json";
@@ -79,7 +77,6 @@ import zhNav from "@/locales/zh/nav.json";
 import zhPages from "@/locales/zh/pages.json";
 import zhRAltair from "@/locales/zh/r-altair.json";
 import zhRDiscord from "@/locales/zh/r-discord.json";
-import zhRForestExplorer from "@/locales/zh/r-forest-explorer.json";
 import zhRKowloonKnockout from "@/locales/zh/r-kowloon-knockout.json";
 import zhRPf2ecal from "@/locales/zh/r-pf2ecal.json";
 import zhRRmhbox from "@/locales/zh/r-rmhbox.json";
@@ -119,12 +116,10 @@ const zhResources = {
   "c-dunesday": zhCDunesday,
   "c-economy": zhCEconomy,
   "c-elections": zhCElections,
-  "c-forest-explorer": zhCForestExplorer,
   "c-gabriels-horn": zhCGabrielsHorn,
   "c-game": zhCGame,
   "c-history": zhCHistory,
   "c-house-always-wins": zhCHouseAlwaysWins,
-  "c-isleworks": zhCIsleworks,
   "c-kaikai-debt": zhCKaikaiDebt,
   "c-kowloon-knockout": zhCKowloonKnockout,
   "c-laundry-sort": zhCLaundrySort,
@@ -180,7 +175,6 @@ const zhResources = {
   "pages": zhPages,
   "r-altair": zhRAltair,
   "r-discord": zhRDiscord,
-  "r-forest-explorer": zhRForestExplorer,
   "r-kowloon-knockout": zhRKowloonKnockout,
   "r-pf2ecal": zhRPf2ecal,
   "r-rmhbox": zhRRmhbox,

@@ -11,7 +11,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
  * Models in this repo are authored as readable piles of small primitives — a
  * house is nine boxes, a workbench is ten boxes and cylinders — each with its
  * own geometry and its own material. That reads well but costs one draw call
- * per primitive: cookgame was measured at 432 draw calls for 10,120 triangles,
+ * per primitive: a town scene was measured at 432 draw calls for 10,120 triangles,
  * about 23 triangles per call (see `docs/3d-performance-audit.md` §2).
  *
  * Rather than rewrite every model as merge-ready data (error-prone, and it

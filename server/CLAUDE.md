@@ -48,7 +48,7 @@ Consequences:
   Hosts ~18 games/apps on one default namespace: Slice It, Neon Driftway,
   Synapse Storm, RMH Type, RMH Study, Altair, Kowloon Knockout, Rochester
   Offensive, **RMHMusic**, casino games (Blackjack/Hold'em/Baccarat/Roulette),
-  Lights Out, Doctrine, Velum, Dream Rift, RMH Farming Sim, RMH TF2 (server
+  Lights Out, Doctrine, Velum, Dream Rift, RMH TF2 (server
   browser and peer-to-peer signaling only — every match runs in a player's
   browser; see `docs/tf2-game.md` §Multiplayer hosting; Hearthworks
   co-op signaling and host migration, `handlers/hearthworks-p2p.ts` over the

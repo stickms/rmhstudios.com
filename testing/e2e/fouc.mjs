@@ -126,7 +126,7 @@ const FRAME_DIVERGENCE_LIMIT = 0.06;
  * Set from measurement, not taste. Across a representative slice of the site most
  * pages measure EXACTLY 0.0000 — they paint their settled look and never move
  * again — and the two that do move are the ones still fetching content: the feed
- * at `/` (0.0227, settled at +745ms) and `/isleworks` (0.0093, +621ms). A
+ * at `/` (0.0227, settled at +745ms) and a game route (0.0093, +621ms). A
  * deliberate flash measures 0.80. 0.08 sits an order of magnitude above the
  * content-arrival noise and an order of magnitude below a real flash.
  *

@@ -76,7 +76,7 @@ describe('saveLook', () => {
   });
 
   it('turns anything not unlocked into none, per field', async () => {
-    const r = await saveLook('u1', { background: 'bg:cookgame', frame: 'frame:altair:3' });
+    const r = await saveLook('u1', { background: 'bg:hearthworks', frame: 'frame:altair:3' });
     expect(r).toEqual({ background: null, frame: 'frame:altair:3' });
   });
 

@@ -10,7 +10,7 @@
  * So the mapping lives here instead, as data. `scripts/gen-og-cards.tsx` renders
  * one PNG per entry into `public/images/og/`, and `buildMeta` in `lib/seo.ts`
  * resolves a path to its card automatically — longest matching prefix wins, so
- * `/games/isleworks` inherits the games card unless it names its own (it does:
+ * `/games/hearthworks` inherits the games card unless it names its own (it does:
  * a dynamic one).
  *
  * This module is **client-safe** — plain data, no renderer — because `lib/seo`
@@ -49,7 +49,7 @@ export const STATIC_CARDS: StaticCard[] = [
     subtitle:
       'A social-first home for original games, creative tools, music, learning, and the people making them.',
     stats: [
-      { value: '24', label: 'games', lead: true },
+      { value: '20', label: 'games', lead: true },
       { value: '14', label: 'apps' },
       { value: '16', label: 'languages' },
     ],
@@ -61,7 +61,7 @@ export const STATIC_CARDS: StaticCard[] = [
     title: 'Games, in the browser.',
     subtitle:
       'Party games, puzzles, roguelikes and 3D — multiplayer where it matters, no download anywhere.',
-    stats: [{ value: '24', label: 'to play', lead: true }],
+    stats: [{ value: '20', label: 'to play', lead: true }],
   },
   {
     path: '/apps',

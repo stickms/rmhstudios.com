@@ -245,11 +245,10 @@ function simulateLaundrySort(data: unknown): SimulationResult {
 /**
  * Every game a speedrun category may be opened for.
  *
- * The `manual` entries are the honest half of this table. Dream Rift, Kowloon
- * Knockout and CookGame all have deterministic, unit-tested logic under `lib/`
- * — what they do not have is a replay capture contract, and two of them cannot
- * be stepped headlessly today, so a verifier for them would be code that runs on
- * nothing. Saying so here is better than a board that quietly trusts whatever
+ * The `manual` entries are the honest half of this table. Dream Rift and Kowloon
+ * Knockout both have deterministic, unit-tested logic under `lib/` — what they
+ * do not have is a replay capture contract, and neither can be stepped headlessly
+ * today, so a verifier for them would be code that runs on nothing. Saying so here is better than a board that quietly trusts whatever
  * number the client sent.
  */
 export const SPEEDRUN_VERIFIERS: readonly SpeedrunVerifier[] = [
@@ -297,14 +296,6 @@ export const SPEEDRUN_VERIFIERS: readonly SpeedrunVerifier[] = [
       'The fight simulation is pure and testable, but nothing records an input ' +
       'log: a verifier needs a per-frame input capture contract in ' +
       'lib/game/replay.ts before there is anything to re-simulate.',
-  },
-  {
-    game: 'cookgame',
-    tier: 'manual',
-    versions: [],
-    note:
-      'A long-form save-based simulation with no run boundary and no input log ' +
-      '— the unit of a "run" has to be defined before it can be verified.',
   },
 ] as const;
 

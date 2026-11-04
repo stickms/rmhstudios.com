@@ -3,7 +3,7 @@
  * every destination page on the site.
  *
  * None of this lives in the database, so it can be scored in the browser as
- * well as on the server. `/api/search` uses it so "isleworks" or "passkeys"
+ * well as on the server. `/api/search` uses it so "hearthworks" or "passkeys"
  * finds the thing from the search page; the ⌘K palette uses it so both surfaces
  * rank identically instead of each having its own idea of what matches.
  *

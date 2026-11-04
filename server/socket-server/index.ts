@@ -66,10 +66,6 @@ import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers
 import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/doctrine';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
 import { registerDreamRiftHandlers, handleDreamRiftDisconnect } from './handlers/dream-rift';
-import {
-  registerRmhFarmingSimHandlers,
-  handleRmhFarmingSimDisconnect,
-} from './handlers/rmh-farming-sim';
 import { registerLaundrySortHandlers, handleLaundrySortDisconnect } from './handlers/laundry-sort';
 import {
   registerGabrielsHornHandlers,
@@ -531,7 +527,6 @@ io.on('connection', (socket) => {
   registerDoctrineHandlers(io, socket);
   registerVelumHandlers(io, socket);
   registerDreamRiftHandlers(io, socket);
-  registerRmhFarmingSimHandlers(io, socket);
   registerLaundrySortHandlers(io, socket);
   registerGabrielsHornHandlers(io, socket);
   registerGlobeSetHandlers(io, socket);
@@ -580,7 +575,6 @@ io.on('connection', (socket) => {
     handleDoctrineDisconnect(io, socket);
     handleVelumDisconnect(io, socket);
     handleDreamRiftDisconnect(io, socket);
-    handleRmhFarmingSimDisconnect(io, socket);
     handleLaundrySortDisconnect(io, socket);
     handleGabrielsHornDisconnect(io, socket);
     handleGlobeSetDisconnect(io, socket);

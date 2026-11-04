@@ -12,7 +12,6 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 
 | | Route | Status | Auth | Tags |
 | --- | ----- | ------ | ---- | ---- |
-| **Isleworks** | [`/isleworks`](https://rmhstudios.com/isleworks) | Playable | — | `City Builder` `Strategy` `Relaxing` `Isometric` |
 | **Hearthworks** | [`/hearthworks`](https://rmhstudios.com/hearthworks) | Early access | — | `City Builder` `Farming` `Cooking` `Relaxing` |
 | **RMHbox** | [`/rmhbox`](https://rmhstudios.com/rmhbox) | Playable | required | `Multiplayer` `Party` `Minigames` |
 | **Altair** | [`/altair`](https://rmhstudios.com/altair) | — | required | `Deckbuilder` `Roguelike` `Strategy` |
@@ -24,13 +23,10 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **Temple of Joy** | [`/temple-of-joy`](https://rmhstudios.com/temple-of-joy) | — | required | `Idle` `Clicker` `Prestige` `Minigames` |
 | **Neon Driftway** | [`/neon-driftway`](https://rmhstudios.com/neon-driftway) | Playable Demo | required | `Arcade` `Racing` `3D` `VR` |
 | **Laundry Sort** | [`/laundry-sort`](https://rmhstudios.com/laundry-sort) | Playable | required | `Multiplayer` `Physics` `3D` |
-| **Forest Explorer** | [`/forest-explorer`](https://rmhstudios.com/forest-explorer) | — | — | `Exploration` `3D` `Relaxing` |
 | **Void Breaker** | [`/void-breaker`](https://rmhstudios.com/void-breaker) | — | required | `Arcade` `Shooter` `3D` `Survival` |
 | **Kowloon Knockout** | [`/kowloon-knockout`](https://rmhstudios.com/kowloon-knockout) | — | — | `Fighting` `Multiplayer` `3D` |
-| **CookGame** | [`/cookgame`](https://rmhstudios.com/cookgame) | — | — | `Simulation` `Tycoon` `Crime` |
 | **House Always Wins** | [`/house-always-wins`](https://rmhstudios.com/house-always-wins) | — | required | `Metroidvania` `Platformer` `Narrative` `Pixel Art` |
 | **Dream Rift** | [`/dream-rift`](https://rmhstudios.com/dream-rift) | — | — | `Bullet Hell` `Multiplayer` `Danmaku` `Pixel Art` |
-| **RMH Farming Simulator** | [`/rmh-farming-sim`](https://rmhstudios.com/rmh-farming-sim) | — | required | `Simulation` `Farming` `Co-op` `Multiplayer` `3D` |
 | **Gabriel's Horn** | [`/gabriels-horn`](https://rmhstudios.com/gabriels-horn) | Playable | required | `Multiplayer` `Card Game` `Bluffing` `Party` |
 | **Nightrail** | [`/nightrail`](https://rmhstudios.com/nightrail) | Playable | required | `Arcade` `Racing` `3D` `Trick Scoring` |
 | **Half-Life 2** | [`/half-life-2`](https://rmhstudios.com/half-life-2) | Beta | — | `Valve` `FPS` `Single-player` `Beta` |
@@ -38,12 +34,6 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **Counter-Strike: Global Offensive** | [`/csgo`](https://rmhstudios.com/csgo) | Beta | — | `Valve` `FPS` `Multiplayer` `Beta` |
 
 ## Detail
-
-### Isleworks
-
-Found a city on a square-grid island floating in a soft blue void. Draw roads, raise homes, shops and industry, wire up power and water, and balance pollution, traffic, land value and happiness as the months roll by. Buy new parcels to expand, complete milestones to unlock towers and landmarks, and watch tiny citizens and cars fill the streets of your low-poly diorama.
-
-**Route:** `/isleworks` · **Catalog id:** `isleworks` · **Status:** Playable · **Sign-in:** not required
 
 ### Hearthworks
 
@@ -111,12 +101,6 @@ Every garment is actual cloth: a mass of particles solved with position-based dy
 
 **Route:** `/laundry-sort` · **Catalog id:** `laundry-sort` · **Status:** Playable · **Sign-in:** required
 
-### Forest Explorer
-
-A first-person 3D forest experience with two modes. Free Explore lets you roam a dense ancient forest with towering conifers, glowing fireflies, butterflies, and dappled sunlight — and plant your own garden of five flower species that grow in real time, even while you're away. Story Mode is a 3-act narrative adventure following the trail of the forest's last Warden, featuring nine logic puzzles, environmental storytelling, letterboxed narration, and a discoverable journal system.
-
-**Route:** `/forest-explorer` · **Catalog id:** `forest-explorer` · **Sign-in:** not required
-
 ### Void Breaker
 
 Survive waves of enemies in a dark arena. Collect void shards that orbit you as a shield and score multiplier. Activate Focus for bullet-time. Dash to dodge. Detonate your shard ring for a devastating Void Burst. Boss fights every 5 waves.
@@ -129,12 +113,6 @@ Step into the neon-lit rooftops of Kowloon, 1997, rendered in fully animated 3D 
 
 **Route:** `/kowloon-knockout` · **Catalog id:** `kowloon-knockout` · **Sign-in:** not required
 
-### CookGame
-
-A tongue-in-cheek crime-management sim. Run a small-town operation: stock up at the supplier, experiment at the mixing bench to stack value-boosting effects onto your product, package it, and sell to the neighbourhood — all while keeping your heat meter cool. Pure fiction, all invented strains and effects.
-
-**Route:** `/cookgame` · **Catalog id:** `cookgame` · **Sign-in:** not required
-
 ### House Always Wins
 
 A narrative pixel-art metroidvania set inside a decaying casino. Explore six interconnected wings — Lobby, Poker Hall, Slot Vault, Security Wing, Maintenance shafts and the Vault — gating your progress behind three unlockable abilities: the Lucky Coin (double jump), the All-In Dash, and the Card Grip (wall climb). Talk to the Dealer, the old janitor Marlow, the slot-witch Vesper and Security Chief Doss, solve lever and pressure-plate puzzles, dodge spikes, lasers and camera cones, collect chips to pay down your ever-mounting Debt, recover three Vault Keys, and face The House in a multi-ending finale. Tight Celeste-style platforming, the deeper you owe the more the world distorts.
@@ -146,12 +124,6 @@ A narrative pixel-art metroidvania set inside a decaying casino. Explore six int
 A vertical bullet-hell shoot-’em-up: weave a tiny pinpoint hitbox through dense, beautiful danmaku curtains, graze bullets for score, bomb to survive, and capture each boss’s spell cards before the timer runs out. Four playable dreamers — the shrine maiden Reika, the star-thief witch Mira, the tideglass diviner Aoi and void-walker Nyx — each with a distinct shot type. Three stages with mid-bosses, animated bosses and a synced story, a driving techno soundtrack, and Nico Nico–style scrolling comments. Play solo, or create public/private lobbies for up to four-player co-op with forgiving client-authoritative netcode (lag never kills you). Fixed-aspect, fair-by-design, with full mobile touch controls.
 
 **Route:** `/dream-rift` · **Catalog id:** `dream-rift` · **Sign-in:** not required
-
-### RMH Farming Simulator
-
-Claim your own pixelated 3D homestead and grow it from a few seed packets into a thriving farm. Till the soil, plant seasonal crops across spring, summer, fall and winter, water them (or let the rain do it), and harvest for Normal, Silver or Gold quality. Sell produce at the General Store and shipping bin, buy new seeds, and upgrade your Hoe, Watering Can and Scythe through Copper, Iron and Gold tiers for wider area-of-effect. Every farm has a shareable invite code: friends request to join, the host approves or declines, and you all share one wallet, inventory and plot of land in real-time co-op — with a previously-joined-farms list to hop back in and host kick controls to keep things friendly.
-
-**Route:** `/rmh-farming-sim` · **Catalog id:** `rmh-farming-sim` · **Sign-in:** required
 
 ### Gabriel's Horn
 

@@ -18,12 +18,10 @@ import jaCDreamRift from "@/locales/ja/c-dream-rift.json";
 import jaCDunesday from "@/locales/ja/c-dunesday.json";
 import jaCEconomy from "@/locales/ja/c-economy.json";
 import jaCElections from "@/locales/ja/c-elections.json";
-import jaCForestExplorer from "@/locales/ja/c-forest-explorer.json";
 import jaCGabrielsHorn from "@/locales/ja/c-gabriels-horn.json";
 import jaCGame from "@/locales/ja/c-game.json";
 import jaCHistory from "@/locales/ja/c-history.json";
 import jaCHouseAlwaysWins from "@/locales/ja/c-house-always-wins.json";
-import jaCIsleworks from "@/locales/ja/c-isleworks.json";
 import jaCKaikaiDebt from "@/locales/ja/c-kaikai-debt.json";
 import jaCKowloonKnockout from "@/locales/ja/c-kowloon-knockout.json";
 import jaCLaundrySort from "@/locales/ja/c-laundry-sort.json";
@@ -78,7 +76,6 @@ import jaNav from "@/locales/ja/nav.json";
 import jaPages from "@/locales/ja/pages.json";
 import jaRAltair from "@/locales/ja/r-altair.json";
 import jaRDiscord from "@/locales/ja/r-discord.json";
-import jaRForestExplorer from "@/locales/ja/r-forest-explorer.json";
 import jaRPf2ecal from "@/locales/ja/r-pf2ecal.json";
 import jaRRmhbox from "@/locales/ja/r-rmhbox.json";
 import jaRRmhcode from "@/locales/ja/r-rmhcode.json";
@@ -117,12 +114,10 @@ const jaResources = {
   "c-dunesday": jaCDunesday,
   "c-economy": jaCEconomy,
   "c-elections": jaCElections,
-  "c-forest-explorer": jaCForestExplorer,
   "c-gabriels-horn": jaCGabrielsHorn,
   "c-game": jaCGame,
   "c-history": jaCHistory,
   "c-house-always-wins": jaCHouseAlwaysWins,
-  "c-isleworks": jaCIsleworks,
   "c-kaikai-debt": jaCKaikaiDebt,
   "c-kowloon-knockout": jaCKowloonKnockout,
   "c-laundry-sort": jaCLaundrySort,
@@ -177,7 +172,6 @@ const jaResources = {
   "pages": jaPages,
   "r-altair": jaRAltair,
   "r-discord": jaRDiscord,
-  "r-forest-explorer": jaRForestExplorer,
   "r-pf2ecal": jaRPf2ecal,
   "r-rmhbox": jaRRmhbox,
   "r-rmhcode": jaRRmhcode,

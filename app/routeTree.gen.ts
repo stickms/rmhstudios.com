@@ -16,7 +16,6 @@ import { Route as AltairRouteImport } from './routes/altair'
 import { Route as BalatroRouteImport } from './routes/balatro'
 import { Route as BlackLivesMatterRouteImport } from './routes/black-lives-matter'
 import { Route as BreachesRouteImport } from './routes/breaches'
-import { Route as CookgameRouteImport } from './routes/cookgame'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as CopyrightRouteImport } from './routes/copyright'
 import { Route as CovidRouteImport } from './routes/covid'
@@ -28,14 +27,12 @@ import { Route as DreamRiftRouteImport } from './routes/dream-rift'
 import { Route as DunesdayRouteImport } from './routes/dunesday'
 import { Route as ElectionsRouteImport } from './routes/elections'
 import { Route as EversionLabRouteImport } from './routes/eversion-lab'
-import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as HalfLife2RouteImport } from './routes/half-life-2'
 import { Route as HandleRouteImport } from './routes/handle'
 import { Route as HearthworksRouteImport } from './routes/hearthworks'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
-import { Route as IsleworksRouteImport } from './routes/isleworks'
 import { Route as JellyRouteImport } from './routes/jelly'
 import { Route as KaikaidebtcounterRouteImport } from './routes/kaikaidebtcounter'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
@@ -51,7 +48,6 @@ import { Route as Pf2ecalRouteImport } from './routes/pf2ecal'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
-import { Route as RmhFarmingSimRouteImport } from './routes/rmh-farming-sim'
 import { Route as RmhInternalAffairsRouteImport } from './routes/rmh-internal-affairs'
 import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
 import { Route as RmhboxRouteImport } from './routes/rmhbox'
@@ -174,9 +170,6 @@ import { Route as DeeplinkPageRouteImport } from './routes/deeplink.$page'
 import { Route as DiscordIndexRouteImport } from './routes/discord/index'
 import { Route as DiscordLightsOutRouteImport } from './routes/discord/lights-out'
 import { Route as DiscordRmhboxRouteImport } from './routes/discord/rmhbox'
-import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explorer/index'
-import { Route as ForestExplorerExploreRouteImport } from './routes/forest-explorer/explore'
-import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
 import { Route as GamesLibraryRouteImport } from './routes/games/_library'
 import { Route as GamesCommunitiesRouteImport } from './routes/games/communities'
 import { Route as GamesCommunityRouteImport } from './routes/games/community'
@@ -198,7 +191,6 @@ import { Route as RmhCapitalCareersRouteImport } from './routes/rmh-capital/care
 import { Route as RmhCapitalContactRouteImport } from './routes/rmh-capital/contact'
 import { Route as RmhCapitalFirmRouteImport } from './routes/rmh-capital/firm'
 import { Route as RmhCapitalInsightsRouteImport } from './routes/rmh-capital/insights'
-import { Route as RmhFarmingSimIndexRouteImport } from './routes/rmh-farming-sim/index'
 import { Route as RmhInternalAffairsPageRouteImport } from './routes/rmh-internal-affairs.$page'
 import { Route as RmhPmcIndexRouteImport } from './routes/rmh-pmc/index'
 import { Route as RmhPmcCapabilitiesRouteImport } from './routes/rmh-pmc/capabilities'
@@ -514,7 +506,6 @@ import { Route as ApiFeedsIndexRouteImport } from './routes/api/feeds/index'
 import { Route as ApiFeedsIdRouteImport } from './routes/api/feeds/$id'
 import { Route as ApiForecastingCalibrationRouteImport } from './routes/api/forecasting/calibration'
 import { Route as ApiForecastingSeasonsRouteImport } from './routes/api/forecasting/seasons'
-import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
 import { Route as ApiFortuneIndexRouteImport } from './routes/api/fortune/index'
 import { Route as ApiFriendlyIndexRouteImport } from './routes/api/friendly/index'
 import { Route as ApiFriendlyIdRouteImport } from './routes/api/friendly/$id'
@@ -810,10 +801,6 @@ import { Route as ApiWheelIndexRouteImport } from './routes/api/wheel/index'
 import { Route as ApiWheelSpinRouteImport } from './routes/api/wheel/spin'
 import { Route as ApiWhenIndexRouteImport } from './routes/api/when/index'
 import { Route as ApiWishlistIndexRouteImport } from './routes/api/wishlist/index'
-import { Route as ApiWorldsFestivalRouteImport } from './routes/api/worlds/festival'
-import { Route as ApiWorldsGardenClaimRouteImport } from './routes/api/worlds/garden-claim'
-import { Route as ApiWorldsPostcardsRouteImport } from './routes/api/worlds/postcards'
-import { Route as ApiWorldsSnapshotsRouteImport } from './routes/api/worlds/snapshots'
 import { Route as EmbedPostIdRouteImport } from './routes/embed.post.$id'
 import { Route as EmbedReplayIdRouteImport } from './routes/embed.replay.$id'
 import { Route as GamesLibraryIndexRouteImport } from './routes/games/_library/index'
@@ -1246,7 +1233,6 @@ import { Route as ApiWhenIdIndexRouteImport } from './routes/api/when/$id/index'
 import { Route as ApiWhenIdIcsRouteImport } from './routes/api/when/$id/ics'
 import { Route as ApiWhenIdLockRouteImport } from './routes/api/when/$id/lock'
 import { Route as ApiWhenIdRespondRouteImport } from './routes/api/when/$id/respond'
-import { Route as ApiWorldsVisitCodeRouteImport } from './routes/api/worlds/visit.$code'
 import { Route as GamesHubGameIdIndexRouteImport } from './routes/games/hub.$gameId.index'
 import { Route as GamesMarketGameIdCardIndexRouteImport } from './routes/games/market.$gameId.$cardIndex'
 import { Route as GamesTradesNewIdRouteImport } from './routes/games/trades.new.$id'
@@ -1377,8 +1363,6 @@ import { Route as ApiV1UsersHandleFollowRouteImport } from './routes/api/v1/user
 import { Route as ApiV1UsersHandleFollowersRouteImport } from './routes/api/v1/users/$handle/followers'
 import { Route as ApiV1UsersHandleFollowingRouteImport } from './routes/api/v1/users/$handle/following'
 import { Route as ApiV1UsersHandlePostsRouteImport } from './routes/api/v1/users/$handle/posts'
-import { Route as ApiWorldsVisitCodePostcardRouteImport } from './routes/api/worlds/visit.$code.postcard'
-import { Route as ApiWorldsVisitCodeWaterRouteImport } from './routes/api/worlds/visit.$code.water'
 import { Route as GamesLibraryGameIdGuidesGuideIdRouteImport } from './routes/games/_library/$gameId_.guides.$guideId'
 import { Route as GamesHubGameIdTThreadIdRouteImport } from './routes/games/hub.$gameId.t.$threadId'
 import { Route as ApiAdminAlbumsIdSlidesSlideIdRouteImport } from './routes/api/admin/albums/$id/slides/$slideId'
@@ -1433,11 +1417,6 @@ const BlackLivesMatterRoute = BlackLivesMatterRouteImport.update({
 const BreachesRoute = BreachesRouteImport.update({
   id: '/breaches',
   path: '/breaches',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CookgameRoute = CookgameRouteImport.update({
-  id: '/cookgame',
-  path: '/cookgame',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CookiesRoute = CookiesRouteImport.update({
@@ -1495,11 +1474,6 @@ const EversionLabRoute = EversionLabRouteImport.update({
   path: '/eversion-lab',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ForestExplorerRoute = ForestExplorerRouteImport.update({
-  id: '/forest-explorer',
-  path: '/forest-explorer',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const GabrielsHornRoute = GabrielsHornRouteImport.update({
   id: '/gabriels-horn',
   path: '/gabriels-horn',
@@ -1528,11 +1502,6 @@ const HearthworksRoute = HearthworksRouteImport.update({
 const HouseAlwaysWinsRoute = HouseAlwaysWinsRouteImport.update({
   id: '/house-always-wins',
   path: '/house-always-wins',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IsleworksRoute = IsleworksRouteImport.update({
-  id: '/isleworks',
-  path: '/isleworks',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JellyRoute = JellyRouteImport.update({
@@ -1608,11 +1577,6 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const RmhCapitalRoute = RmhCapitalRouteImport.update({
   id: '/rmh-capital',
   path: '/rmh-capital',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RmhFarmingSimRoute = RmhFarmingSimRouteImport.update({
-  id: '/rmh-farming-sim',
-  path: '/rmh-farming-sim',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RmhInternalAffairsRoute = RmhInternalAffairsRouteImport.update({
@@ -2227,21 +2191,6 @@ const DiscordRmhboxRoute = DiscordRmhboxRouteImport.update({
   path: '/discord/rmhbox',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ForestExplorerIndexRoute = ForestExplorerIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ForestExplorerRoute,
-} as any)
-const ForestExplorerExploreRoute = ForestExplorerExploreRouteImport.update({
-  id: '/explore',
-  path: '/explore',
-  getParentRoute: () => ForestExplorerRoute,
-} as any)
-const ForestExplorerStoryRoute = ForestExplorerStoryRouteImport.update({
-  id: '/story',
-  path: '/story',
-  getParentRoute: () => ForestExplorerRoute,
-} as any)
 const GamesLibraryRoute = GamesLibraryRouteImport.update({
   id: '/_library',
   getParentRoute: () => GamesRoute,
@@ -2345,11 +2294,6 @@ const RmhCapitalInsightsRoute = RmhCapitalInsightsRouteImport.update({
   id: '/insights',
   path: '/insights',
   getParentRoute: () => RmhCapitalRoute,
-} as any)
-const RmhFarmingSimIndexRoute = RmhFarmingSimIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => RmhFarmingSimRoute,
 } as any)
 const RmhInternalAffairsPageRoute = RmhInternalAffairsPageRouteImport.update({
   id: '/$page',
@@ -3940,11 +3884,6 @@ const ApiForecastingSeasonsRoute = ApiForecastingSeasonsRouteImport.update({
   path: '/api/forecasting/seasons',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiForestExplorerSaveRoute = ApiForestExplorerSaveRouteImport.update({
-  id: '/api/forest-explorer/save',
-  path: '/api/forest-explorer/save',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiFortuneIndexRoute = ApiFortuneIndexRouteImport.update({
   id: '/api/fortune/',
   path: '/api/fortune/',
@@ -5439,26 +5378,6 @@ const ApiWhenIndexRoute = ApiWhenIndexRouteImport.update({
 const ApiWishlistIndexRoute = ApiWishlistIndexRouteImport.update({
   id: '/api/wishlist/',
   path: '/api/wishlist/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWorldsFestivalRoute = ApiWorldsFestivalRouteImport.update({
-  id: '/api/worlds/festival',
-  path: '/api/worlds/festival',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWorldsGardenClaimRoute = ApiWorldsGardenClaimRouteImport.update({
-  id: '/api/worlds/garden-claim',
-  path: '/api/worlds/garden-claim',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWorldsPostcardsRoute = ApiWorldsPostcardsRouteImport.update({
-  id: '/api/worlds/postcards',
-  path: '/api/worlds/postcards',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWorldsSnapshotsRoute = ApiWorldsSnapshotsRouteImport.update({
-  id: '/api/worlds/snapshots',
-  path: '/api/worlds/snapshots',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmbedPostIdRoute = EmbedPostIdRouteImport.update({
@@ -7736,11 +7655,6 @@ const ApiWhenIdRespondRoute = ApiWhenIdRespondRouteImport.update({
   path: '/api/when/$id/respond',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiWorldsVisitCodeRoute = ApiWorldsVisitCodeRouteImport.update({
-  id: '/api/worlds/visit/$code',
-  path: '/api/worlds/visit/$code',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const GamesHubGameIdIndexRoute = GamesHubGameIdIndexRouteImport.update({
   id: '/hub/$gameId/',
   path: '/hub/$gameId/',
@@ -8468,17 +8382,6 @@ const ApiV1UsersHandlePostsRoute = ApiV1UsersHandlePostsRouteImport.update({
   path: '/posts',
   getParentRoute: () => ApiV1UsersHandleRoute,
 } as any)
-const ApiWorldsVisitCodePostcardRoute =
-  ApiWorldsVisitCodePostcardRouteImport.update({
-    id: '/postcard',
-    path: '/postcard',
-    getParentRoute: () => ApiWorldsVisitCodeRoute,
-  } as any)
-const ApiWorldsVisitCodeWaterRoute = ApiWorldsVisitCodeWaterRouteImport.update({
-  id: '/water',
-  path: '/water',
-  getParentRoute: () => ApiWorldsVisitCodeRoute,
-} as any)
 const GamesLibraryGameIdGuidesGuideIdRoute =
   GamesLibraryGameIdGuidesGuideIdRouteImport.update({
     id: '/$gameId_/guides/$guideId',
@@ -8613,7 +8516,6 @@ export interface FileRoutesByFullPath {
   '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/breaches': typeof BreachesRoute
-  '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/covid': typeof CovidRoute
@@ -8625,14 +8527,12 @@ export interface FileRoutesByFullPath {
   '/dunesday': typeof DunesdayRoute
   '/elections': typeof ElectionsRoute
   '/eversion-lab': typeof EversionLabRoute
-  '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
   '/games': typeof GamesRouteWithChildren
   '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/hearthworks': typeof HearthworksRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
-  '/isleworks': typeof IsleworksRoute
   '/jelly': typeof JellyRoute
   '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
@@ -8648,7 +8548,6 @@ export interface FileRoutesByFullPath {
   '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
-  '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
@@ -8767,8 +8666,6 @@ export interface FileRoutesByFullPath {
   '/deeplink/$page': typeof DeeplinkPageRoute
   '/discord/lights-out': typeof DiscordLightsOutRoute
   '/discord/rmhbox': typeof DiscordRmhboxRoute
-  '/forest-explorer/explore': typeof ForestExplorerExploreRoute
-  '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/games/communities': typeof GamesCommunitiesRoute
   '/games/community': typeof GamesCommunityRoute
   '/games/daily': typeof GamesDailyRoute
@@ -8819,10 +8716,8 @@ export interface FileRoutesByFullPath {
   '/altair/': typeof AltairIndexRoute
   '/daily/': typeof DailyIndexRoute
   '/discord/': typeof DiscordIndexRoute
-  '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmh-capital/': typeof RmhCapitalIndexRoute
-  '/rmh-farming-sim/': typeof RmhFarmingSimIndexRoute
   '/rmh-pmc/': typeof RmhPmcIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
@@ -9051,7 +8946,6 @@ export interface FileRoutesByFullPath {
   '/api/feeds/$id': typeof ApiFeedsIdRouteWithChildren
   '/api/forecasting/calibration': typeof ApiForecastingCalibrationRoute
   '/api/forecasting/seasons': typeof ApiForecastingSeasonsRoute
-  '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/friendly/$id': typeof ApiFriendlyIdRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
@@ -9297,10 +9191,6 @@ export interface FileRoutesByFullPath {
   '/api/wager/$id': typeof ApiWagerIdRouteWithChildren
   '/api/webrings/$slug': typeof ApiWebringsSlugRouteWithChildren
   '/api/wheel/spin': typeof ApiWheelSpinRoute
-  '/api/worlds/festival': typeof ApiWorldsFestivalRoute
-  '/api/worlds/garden-claim': typeof ApiWorldsGardenClaimRoute
-  '/api/worlds/postcards': typeof ApiWorldsPostcardsRoute
-  '/api/worlds/snapshots': typeof ApiWorldsSnapshotsRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/games/$gameId': typeof GamesLibraryGameIdRoute
@@ -9773,7 +9663,6 @@ export interface FileRoutesByFullPath {
   '/api/when/$id/ics': typeof ApiWhenIdIcsRoute
   '/api/when/$id/lock': typeof ApiWhenIdLockRoute
   '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
-  '/api/worlds/visit/$code': typeof ApiWorldsVisitCodeRouteWithChildren
   '/games/market/$gameId/$cardIndex': typeof GamesMarketGameIdCardIndexRoute
   '/games/trades/new/$id': typeof GamesTradesNewIdRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
@@ -9953,8 +9842,6 @@ export interface FileRoutesByFullPath {
   '/api/v1/users/$handle/followers': typeof ApiV1UsersHandleFollowersRoute
   '/api/v1/users/$handle/following': typeof ApiV1UsersHandleFollowingRoute
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
-  '/api/worlds/visit/$code/postcard': typeof ApiWorldsVisitCodePostcardRoute
-  '/api/worlds/visit/$code/water': typeof ApiWorldsVisitCodeWaterRoute
   '/games/$gameId/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
   '/games/hub/$gameId/t/$threadId': typeof GamesHubGameIdTThreadIdRoute
   '/api/admin/delight/fools/': typeof ApiAdminDelightFoolsIndexRoute
@@ -10002,7 +9889,6 @@ export interface FileRoutesByTo {
   '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/breaches': typeof BreachesRoute
-  '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/covid': typeof CovidRoute
@@ -10019,7 +9905,6 @@ export interface FileRoutesByTo {
   '/handle': typeof HandleRoute
   '/hearthworks': typeof HearthworksRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
-  '/isleworks': typeof IsleworksRoute
   '/jelly': typeof JellyRoute
   '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/laundry-sort': typeof LaundrySortRoute
@@ -10131,8 +10016,6 @@ export interface FileRoutesByTo {
   '/deeplink/$page': typeof DeeplinkPageRoute
   '/discord/lights-out': typeof DiscordLightsOutRoute
   '/discord/rmhbox': typeof DiscordRmhboxRoute
-  '/forest-explorer/explore': typeof ForestExplorerExploreRoute
-  '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/games/communities': typeof GamesCommunitiesRoute
   '/games/community': typeof GamesCommunityRoute
   '/games/daily': typeof GamesDailyRoute
@@ -10183,10 +10066,8 @@ export interface FileRoutesByTo {
   '/altair': typeof AltairIndexRoute
   '/daily': typeof DailyIndexRoute
   '/discord': typeof DiscordIndexRoute
-  '/forest-explorer': typeof ForestExplorerIndexRoute
   '/kowloon-knockout': typeof KowloonKnockoutIndexRoute
   '/rmh-capital': typeof RmhCapitalIndexRoute
-  '/rmh-farming-sim': typeof RmhFarmingSimIndexRoute
   '/rmh-pmc': typeof RmhPmcIndexRoute
   '/rmhbox': typeof RmhboxIndexRoute
   '/rmhcode': typeof RmhcodeIndexRoute
@@ -10415,7 +10296,6 @@ export interface FileRoutesByTo {
   '/api/feeds/$id': typeof ApiFeedsIdRouteWithChildren
   '/api/forecasting/calibration': typeof ApiForecastingCalibrationRoute
   '/api/forecasting/seasons': typeof ApiForecastingSeasonsRoute
-  '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/friendly/$id': typeof ApiFriendlyIdRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
@@ -10661,10 +10541,6 @@ export interface FileRoutesByTo {
   '/api/wager/$id': typeof ApiWagerIdRouteWithChildren
   '/api/webrings/$slug': typeof ApiWebringsSlugRouteWithChildren
   '/api/wheel/spin': typeof ApiWheelSpinRoute
-  '/api/worlds/festival': typeof ApiWorldsFestivalRoute
-  '/api/worlds/garden-claim': typeof ApiWorldsGardenClaimRoute
-  '/api/worlds/postcards': typeof ApiWorldsPostcardsRoute
-  '/api/worlds/snapshots': typeof ApiWorldsSnapshotsRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/games/$gameId': typeof GamesLibraryGameIdRoute
@@ -11136,7 +11012,6 @@ export interface FileRoutesByTo {
   '/api/when/$id/ics': typeof ApiWhenIdIcsRoute
   '/api/when/$id/lock': typeof ApiWhenIdLockRoute
   '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
-  '/api/worlds/visit/$code': typeof ApiWorldsVisitCodeRouteWithChildren
   '/games/market/$gameId/$cardIndex': typeof GamesMarketGameIdCardIndexRoute
   '/games/trades/new/$id': typeof GamesTradesNewIdRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
@@ -11316,8 +11191,6 @@ export interface FileRoutesByTo {
   '/api/v1/users/$handle/followers': typeof ApiV1UsersHandleFollowersRoute
   '/api/v1/users/$handle/following': typeof ApiV1UsersHandleFollowingRoute
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
-  '/api/worlds/visit/$code/postcard': typeof ApiWorldsVisitCodePostcardRoute
-  '/api/worlds/visit/$code/water': typeof ApiWorldsVisitCodeWaterRoute
   '/games/$gameId/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
   '/games/hub/$gameId/t/$threadId': typeof GamesHubGameIdTThreadIdRoute
   '/api/admin/delight/fools': typeof ApiAdminDelightFoolsIndexRoute
@@ -11368,7 +11241,6 @@ export interface FileRoutesById {
   '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/breaches': typeof BreachesRoute
-  '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/covid': typeof CovidRoute
@@ -11380,14 +11252,12 @@ export interface FileRoutesById {
   '/dunesday': typeof DunesdayRoute
   '/elections': typeof ElectionsRoute
   '/eversion-lab': typeof EversionLabRoute
-  '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
   '/games': typeof GamesRouteWithChildren
   '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
   '/hearthworks': typeof HearthworksRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
-  '/isleworks': typeof IsleworksRoute
   '/jelly': typeof JellyRoute
   '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
@@ -11403,7 +11273,6 @@ export interface FileRoutesById {
   '/portal': typeof PortalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
-  '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
@@ -11522,8 +11391,6 @@ export interface FileRoutesById {
   '/deeplink/$page': typeof DeeplinkPageRoute
   '/discord/lights-out': typeof DiscordLightsOutRoute
   '/discord/rmhbox': typeof DiscordRmhboxRoute
-  '/forest-explorer/explore': typeof ForestExplorerExploreRoute
-  '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/games/_library': typeof GamesLibraryRouteWithChildren
   '/games/communities': typeof GamesCommunitiesRoute
   '/games/community': typeof GamesCommunityRoute
@@ -11576,10 +11443,8 @@ export interface FileRoutesById {
   '/altair/': typeof AltairIndexRoute
   '/daily/': typeof DailyIndexRoute
   '/discord/': typeof DiscordIndexRoute
-  '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmh-capital/': typeof RmhCapitalIndexRoute
-  '/rmh-farming-sim/': typeof RmhFarmingSimIndexRoute
   '/rmh-pmc/': typeof RmhPmcIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
@@ -11808,7 +11673,6 @@ export interface FileRoutesById {
   '/api/feeds/$id': typeof ApiFeedsIdRouteWithChildren
   '/api/forecasting/calibration': typeof ApiForecastingCalibrationRoute
   '/api/forecasting/seasons': typeof ApiForecastingSeasonsRoute
-  '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/friendly/$id': typeof ApiFriendlyIdRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
@@ -12054,10 +11918,6 @@ export interface FileRoutesById {
   '/api/wager/$id': typeof ApiWagerIdRouteWithChildren
   '/api/webrings/$slug': typeof ApiWebringsSlugRouteWithChildren
   '/api/wheel/spin': typeof ApiWheelSpinRoute
-  '/api/worlds/festival': typeof ApiWorldsFestivalRoute
-  '/api/worlds/garden-claim': typeof ApiWorldsGardenClaimRoute
-  '/api/worlds/postcards': typeof ApiWorldsPostcardsRoute
-  '/api/worlds/snapshots': typeof ApiWorldsSnapshotsRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/games/_library/$gameId': typeof GamesLibraryGameIdRoute
@@ -12530,7 +12390,6 @@ export interface FileRoutesById {
   '/api/when/$id/ics': typeof ApiWhenIdIcsRoute
   '/api/when/$id/lock': typeof ApiWhenIdLockRoute
   '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
-  '/api/worlds/visit/$code': typeof ApiWorldsVisitCodeRouteWithChildren
   '/games/market/$gameId/$cardIndex': typeof GamesMarketGameIdCardIndexRoute
   '/games/trades/new/$id': typeof GamesTradesNewIdRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
@@ -12710,8 +12569,6 @@ export interface FileRoutesById {
   '/api/v1/users/$handle/followers': typeof ApiV1UsersHandleFollowersRoute
   '/api/v1/users/$handle/following': typeof ApiV1UsersHandleFollowingRoute
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
-  '/api/worlds/visit/$code/postcard': typeof ApiWorldsVisitCodePostcardRoute
-  '/api/worlds/visit/$code/water': typeof ApiWorldsVisitCodeWaterRoute
   '/games/_library/$gameId_/guides/$guideId': typeof GamesLibraryGameIdGuidesGuideIdRoute
   '/games/hub/$gameId/t/$threadId': typeof GamesHubGameIdTThreadIdRoute
   '/api/admin/delight/fools/': typeof ApiAdminDelightFoolsIndexRoute
@@ -12763,7 +12620,6 @@ export interface FileRouteTypes {
     | '/balatro'
     | '/black-lives-matter'
     | '/breaches'
-    | '/cookgame'
     | '/cookies'
     | '/copyright'
     | '/covid'
@@ -12775,14 +12631,12 @@ export interface FileRouteTypes {
     | '/dunesday'
     | '/elections'
     | '/eversion-lab'
-    | '/forest-explorer'
     | '/gabriels-horn'
     | '/games'
     | '/half-life-2'
     | '/handle'
     | '/hearthworks'
     | '/house-always-wins'
-    | '/isleworks'
     | '/jelly'
     | '/kaikaidebtcounter'
     | '/kowloon-knockout'
@@ -12798,7 +12652,6 @@ export interface FileRouteTypes {
     | '/portal'
     | '/privacy'
     | '/rmh-capital'
-    | '/rmh-farming-sim'
     | '/rmh-internal-affairs'
     | '/rmh-pmc'
     | '/rmhbox'
@@ -12917,8 +12770,6 @@ export interface FileRouteTypes {
     | '/deeplink/$page'
     | '/discord/lights-out'
     | '/discord/rmhbox'
-    | '/forest-explorer/explore'
-    | '/forest-explorer/story'
     | '/games/communities'
     | '/games/community'
     | '/games/daily'
@@ -12969,10 +12820,8 @@ export interface FileRouteTypes {
     | '/altair/'
     | '/daily/'
     | '/discord/'
-    | '/forest-explorer/'
     | '/kowloon-knockout/'
     | '/rmh-capital/'
-    | '/rmh-farming-sim/'
     | '/rmh-pmc/'
     | '/rmhbox/'
     | '/rmhcode/'
@@ -13201,7 +13050,6 @@ export interface FileRouteTypes {
     | '/api/feeds/$id'
     | '/api/forecasting/calibration'
     | '/api/forecasting/seasons'
-    | '/api/forest-explorer/save'
     | '/api/friendly/$id'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
@@ -13447,10 +13295,6 @@ export interface FileRouteTypes {
     | '/api/wager/$id'
     | '/api/webrings/$slug'
     | '/api/wheel/spin'
-    | '/api/worlds/festival'
-    | '/api/worlds/garden-claim'
-    | '/api/worlds/postcards'
-    | '/api/worlds/snapshots'
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/games/$gameId'
@@ -13923,7 +13767,6 @@ export interface FileRouteTypes {
     | '/api/when/$id/ics'
     | '/api/when/$id/lock'
     | '/api/when/$id/respond'
-    | '/api/worlds/visit/$code'
     | '/games/market/$gameId/$cardIndex'
     | '/games/trades/new/$id'
     | '/rmhbox/minigames/$minigameId/history'
@@ -14103,8 +13946,6 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/followers'
     | '/api/v1/users/$handle/following'
     | '/api/v1/users/$handle/posts'
-    | '/api/worlds/visit/$code/postcard'
-    | '/api/worlds/visit/$code/water'
     | '/games/$gameId/guides/$guideId'
     | '/games/hub/$gameId/t/$threadId'
     | '/api/admin/delight/fools/'
@@ -14152,7 +13993,6 @@ export interface FileRouteTypes {
     | '/balatro'
     | '/black-lives-matter'
     | '/breaches'
-    | '/cookgame'
     | '/cookies'
     | '/copyright'
     | '/covid'
@@ -14169,7 +14009,6 @@ export interface FileRouteTypes {
     | '/handle'
     | '/hearthworks'
     | '/house-always-wins'
-    | '/isleworks'
     | '/jelly'
     | '/kaikaidebtcounter'
     | '/laundry-sort'
@@ -14281,8 +14120,6 @@ export interface FileRouteTypes {
     | '/deeplink/$page'
     | '/discord/lights-out'
     | '/discord/rmhbox'
-    | '/forest-explorer/explore'
-    | '/forest-explorer/story'
     | '/games/communities'
     | '/games/community'
     | '/games/daily'
@@ -14333,10 +14170,8 @@ export interface FileRouteTypes {
     | '/altair'
     | '/daily'
     | '/discord'
-    | '/forest-explorer'
     | '/kowloon-knockout'
     | '/rmh-capital'
-    | '/rmh-farming-sim'
     | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
@@ -14565,7 +14400,6 @@ export interface FileRouteTypes {
     | '/api/feeds/$id'
     | '/api/forecasting/calibration'
     | '/api/forecasting/seasons'
-    | '/api/forest-explorer/save'
     | '/api/friendly/$id'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
@@ -14811,10 +14645,6 @@ export interface FileRouteTypes {
     | '/api/wager/$id'
     | '/api/webrings/$slug'
     | '/api/wheel/spin'
-    | '/api/worlds/festival'
-    | '/api/worlds/garden-claim'
-    | '/api/worlds/postcards'
-    | '/api/worlds/snapshots'
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/games/$gameId'
@@ -15286,7 +15116,6 @@ export interface FileRouteTypes {
     | '/api/when/$id/ics'
     | '/api/when/$id/lock'
     | '/api/when/$id/respond'
-    | '/api/worlds/visit/$code'
     | '/games/market/$gameId/$cardIndex'
     | '/games/trades/new/$id'
     | '/rmhbox/minigames/$minigameId/history'
@@ -15466,8 +15295,6 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/followers'
     | '/api/v1/users/$handle/following'
     | '/api/v1/users/$handle/posts'
-    | '/api/worlds/visit/$code/postcard'
-    | '/api/worlds/visit/$code/water'
     | '/games/$gameId/guides/$guideId'
     | '/games/hub/$gameId/t/$threadId'
     | '/api/admin/delight/fools'
@@ -15517,7 +15344,6 @@ export interface FileRouteTypes {
     | '/balatro'
     | '/black-lives-matter'
     | '/breaches'
-    | '/cookgame'
     | '/cookies'
     | '/copyright'
     | '/covid'
@@ -15529,14 +15355,12 @@ export interface FileRouteTypes {
     | '/dunesday'
     | '/elections'
     | '/eversion-lab'
-    | '/forest-explorer'
     | '/gabriels-horn'
     | '/games'
     | '/half-life-2'
     | '/handle'
     | '/hearthworks'
     | '/house-always-wins'
-    | '/isleworks'
     | '/jelly'
     | '/kaikaidebtcounter'
     | '/kowloon-knockout'
@@ -15552,7 +15376,6 @@ export interface FileRouteTypes {
     | '/portal'
     | '/privacy'
     | '/rmh-capital'
-    | '/rmh-farming-sim'
     | '/rmh-internal-affairs'
     | '/rmh-pmc'
     | '/rmhbox'
@@ -15671,8 +15494,6 @@ export interface FileRouteTypes {
     | '/deeplink/$page'
     | '/discord/lights-out'
     | '/discord/rmhbox'
-    | '/forest-explorer/explore'
-    | '/forest-explorer/story'
     | '/games/_library'
     | '/games/communities'
     | '/games/community'
@@ -15725,10 +15546,8 @@ export interface FileRouteTypes {
     | '/altair/'
     | '/daily/'
     | '/discord/'
-    | '/forest-explorer/'
     | '/kowloon-knockout/'
     | '/rmh-capital/'
-    | '/rmh-farming-sim/'
     | '/rmh-pmc/'
     | '/rmhbox/'
     | '/rmhcode/'
@@ -15957,7 +15776,6 @@ export interface FileRouteTypes {
     | '/api/feeds/$id'
     | '/api/forecasting/calibration'
     | '/api/forecasting/seasons'
-    | '/api/forest-explorer/save'
     | '/api/friendly/$id'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
@@ -16203,10 +16021,6 @@ export interface FileRouteTypes {
     | '/api/wager/$id'
     | '/api/webrings/$slug'
     | '/api/wheel/spin'
-    | '/api/worlds/festival'
-    | '/api/worlds/garden-claim'
-    | '/api/worlds/postcards'
-    | '/api/worlds/snapshots'
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/games/_library/$gameId'
@@ -16679,7 +16493,6 @@ export interface FileRouteTypes {
     | '/api/when/$id/ics'
     | '/api/when/$id/lock'
     | '/api/when/$id/respond'
-    | '/api/worlds/visit/$code'
     | '/games/market/$gameId/$cardIndex'
     | '/games/trades/new/$id'
     | '/rmhbox/minigames/$minigameId/history'
@@ -16859,8 +16672,6 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/followers'
     | '/api/v1/users/$handle/following'
     | '/api/v1/users/$handle/posts'
-    | '/api/worlds/visit/$code/postcard'
-    | '/api/worlds/visit/$code/water'
     | '/games/_library/$gameId_/guides/$guideId'
     | '/games/hub/$gameId/t/$threadId'
     | '/api/admin/delight/fools/'
@@ -16911,7 +16722,6 @@ export interface RootRouteChildren {
   BalatroRoute: typeof BalatroRoute
   BlackLivesMatterRoute: typeof BlackLivesMatterRoute
   BreachesRoute: typeof BreachesRoute
-  CookgameRoute: typeof CookgameRoute
   CookiesRoute: typeof CookiesRoute
   CopyrightRoute: typeof CopyrightRoute
   CovidRoute: typeof CovidRoute
@@ -16923,14 +16733,12 @@ export interface RootRouteChildren {
   DunesdayRoute: typeof DunesdayRoute
   ElectionsRoute: typeof ElectionsRoute
   EversionLabRoute: typeof EversionLabRoute
-  ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   GabrielsHornRoute: typeof GabrielsHornRoute
   GamesRoute: typeof GamesRouteWithChildren
   HalfLife2Route: typeof HalfLife2Route
   HandleRoute: typeof HandleRoute
   HearthworksRoute: typeof HearthworksRoute
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
-  IsleworksRoute: typeof IsleworksRoute
   JellyRoute: typeof JellyRoute
   KaikaidebtcounterRoute: typeof KaikaidebtcounterRoute
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
@@ -16946,7 +16754,6 @@ export interface RootRouteChildren {
   PortalRoute: typeof PortalRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
-  RmhFarmingSimRoute: typeof RmhFarmingSimRouteWithChildren
   RmhInternalAffairsRoute: typeof RmhInternalAffairsRouteWithChildren
   RmhPmcRoute: typeof RmhPmcRouteWithChildren
   RmhboxRoute: typeof RmhboxRouteWithChildren
@@ -17128,7 +16935,6 @@ export interface RootRouteChildren {
   ApiFeedsIdRoute: typeof ApiFeedsIdRouteWithChildren
   ApiForecastingCalibrationRoute: typeof ApiForecastingCalibrationRoute
   ApiForecastingSeasonsRoute: typeof ApiForecastingSeasonsRoute
-  ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
   ApiFriendlyIdRoute: typeof ApiFriendlyIdRoute
   ApiGabrielsHornHouseRuleRoute: typeof ApiGabrielsHornHouseRuleRoute
   ApiGabrielsHornLeaderboardRoute: typeof ApiGabrielsHornLeaderboardRoute
@@ -17347,10 +17153,6 @@ export interface RootRouteChildren {
   ApiWagerIdRoute: typeof ApiWagerIdRouteWithChildren
   ApiWebringsSlugRoute: typeof ApiWebringsSlugRouteWithChildren
   ApiWheelSpinRoute: typeof ApiWheelSpinRoute
-  ApiWorldsFestivalRoute: typeof ApiWorldsFestivalRoute
-  ApiWorldsGardenClaimRoute: typeof ApiWorldsGardenClaimRoute
-  ApiWorldsPostcardsRoute: typeof ApiWorldsPostcardsRoute
-  ApiWorldsSnapshotsRoute: typeof ApiWorldsSnapshotsRoute
   EmbedPostIdRoute: typeof EmbedPostIdRoute
   EmbedReplayIdRoute: typeof EmbedReplayIdRoute
   LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
@@ -17644,7 +17446,6 @@ export interface RootRouteChildren {
   ApiWhenIdIcsRoute: typeof ApiWhenIdIcsRoute
   ApiWhenIdLockRoute: typeof ApiWhenIdLockRoute
   ApiWhenIdRespondRoute: typeof ApiWhenIdRespondRoute
-  ApiWorldsVisitCodeRoute: typeof ApiWorldsVisitCodeRouteWithChildren
   ApiAdminAlbumsIndexRoute: typeof ApiAdminAlbumsIndexRoute
   ApiAdminBotsIndexRoute: typeof ApiAdminBotsIndexRoute
   ApiAdminCanvasIndexRoute: typeof ApiAdminCanvasIndexRoute
@@ -17821,13 +17622,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BreachesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/cookgame': {
-      id: '/cookgame'
-      path: '/cookgame'
-      fullPath: '/cookgame'
-      preLoaderRoute: typeof CookgameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/cookies': {
       id: '/cookies'
       path: '/cookies'
@@ -17905,13 +17699,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EversionLabRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/forest-explorer': {
-      id: '/forest-explorer'
-      path: '/forest-explorer'
-      fullPath: '/forest-explorer'
-      preLoaderRoute: typeof ForestExplorerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/gabriels-horn': {
       id: '/gabriels-horn'
       path: '/gabriels-horn'
@@ -17952,13 +17739,6 @@ declare module '@tanstack/react-router' {
       path: '/house-always-wins'
       fullPath: '/house-always-wins'
       preLoaderRoute: typeof HouseAlwaysWinsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/isleworks': {
-      id: '/isleworks'
-      path: '/isleworks'
-      fullPath: '/isleworks'
-      preLoaderRoute: typeof IsleworksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/jelly': {
@@ -18064,13 +17844,6 @@ declare module '@tanstack/react-router' {
       path: '/rmh-capital'
       fullPath: '/rmh-capital'
       preLoaderRoute: typeof RmhCapitalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/rmh-farming-sim': {
-      id: '/rmh-farming-sim'
-      path: '/rmh-farming-sim'
-      fullPath: '/rmh-farming-sim'
-      preLoaderRoute: typeof RmhFarmingSimRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rmh-internal-affairs': {
@@ -18927,27 +18700,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiscordRmhboxRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/forest-explorer/': {
-      id: '/forest-explorer/'
-      path: '/'
-      fullPath: '/forest-explorer/'
-      preLoaderRoute: typeof ForestExplorerIndexRouteImport
-      parentRoute: typeof ForestExplorerRoute
-    }
-    '/forest-explorer/explore': {
-      id: '/forest-explorer/explore'
-      path: '/explore'
-      fullPath: '/forest-explorer/explore'
-      preLoaderRoute: typeof ForestExplorerExploreRouteImport
-      parentRoute: typeof ForestExplorerRoute
-    }
-    '/forest-explorer/story': {
-      id: '/forest-explorer/story'
-      path: '/story'
-      fullPath: '/forest-explorer/story'
-      preLoaderRoute: typeof ForestExplorerStoryRouteImport
-      parentRoute: typeof ForestExplorerRoute
-    }
     '/games/_library': {
       id: '/games/_library'
       path: ''
@@ -19094,13 +18846,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmh-capital/insights'
       preLoaderRoute: typeof RmhCapitalInsightsRouteImport
       parentRoute: typeof RmhCapitalRoute
-    }
-    '/rmh-farming-sim/': {
-      id: '/rmh-farming-sim/'
-      path: '/'
-      fullPath: '/rmh-farming-sim/'
-      preLoaderRoute: typeof RmhFarmingSimIndexRouteImport
-      parentRoute: typeof RmhFarmingSimRoute
     }
     '/rmh-internal-affairs/$page': {
       id: '/rmh-internal-affairs/$page'
@@ -21307,13 +21052,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiForecastingSeasonsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/forest-explorer/save': {
-      id: '/api/forest-explorer/save'
-      path: '/api/forest-explorer/save'
-      fullPath: '/api/forest-explorer/save'
-      preLoaderRoute: typeof ApiForestExplorerSaveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/fortune/': {
       id: '/api/fortune/'
       path: '/api/fortune'
@@ -23377,34 +23115,6 @@ declare module '@tanstack/react-router' {
       path: '/api/wishlist'
       fullPath: '/api/wishlist/'
       preLoaderRoute: typeof ApiWishlistIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/worlds/festival': {
-      id: '/api/worlds/festival'
-      path: '/api/worlds/festival'
-      fullPath: '/api/worlds/festival'
-      preLoaderRoute: typeof ApiWorldsFestivalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/worlds/garden-claim': {
-      id: '/api/worlds/garden-claim'
-      path: '/api/worlds/garden-claim'
-      fullPath: '/api/worlds/garden-claim'
-      preLoaderRoute: typeof ApiWorldsGardenClaimRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/worlds/postcards': {
-      id: '/api/worlds/postcards'
-      path: '/api/worlds/postcards'
-      fullPath: '/api/worlds/postcards'
-      preLoaderRoute: typeof ApiWorldsPostcardsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/worlds/snapshots': {
-      id: '/api/worlds/snapshots'
-      path: '/api/worlds/snapshots'
-      fullPath: '/api/worlds/snapshots'
-      preLoaderRoute: typeof ApiWorldsSnapshotsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/embed/post/$id': {
@@ -26431,13 +26141,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWhenIdRespondRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/worlds/visit/$code': {
-      id: '/api/worlds/visit/$code'
-      path: '/api/worlds/visit/$code'
-      fullPath: '/api/worlds/visit/$code'
-      preLoaderRoute: typeof ApiWorldsVisitCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/games/hub/$gameId/': {
       id: '/games/hub/$gameId/'
       path: '/hub/$gameId'
@@ -27348,20 +27051,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1UsersHandlePostsRouteImport
       parentRoute: typeof ApiV1UsersHandleRoute
     }
-    '/api/worlds/visit/$code/postcard': {
-      id: '/api/worlds/visit/$code/postcard'
-      path: '/postcard'
-      fullPath: '/api/worlds/visit/$code/postcard'
-      preLoaderRoute: typeof ApiWorldsVisitCodePostcardRouteImport
-      parentRoute: typeof ApiWorldsVisitCodeRoute
-    }
-    '/api/worlds/visit/$code/water': {
-      id: '/api/worlds/visit/$code/water'
-      path: '/water'
-      fullPath: '/api/worlds/visit/$code/water'
-      preLoaderRoute: typeof ApiWorldsVisitCodeWaterRouteImport
-      parentRoute: typeof ApiWorldsVisitCodeRoute
-    }
     '/games/_library/$gameId_/guides/$guideId': {
       id: '/games/_library/$gameId_/guides/$guideId'
       path: '/$gameId/guides/$guideId'
@@ -28044,22 +27733,6 @@ const DeeplinkRouteWithChildren = DeeplinkRoute._addFileChildren(
   DeeplinkRouteChildren,
 )
 
-interface ForestExplorerRouteChildren {
-  ForestExplorerExploreRoute: typeof ForestExplorerExploreRoute
-  ForestExplorerStoryRoute: typeof ForestExplorerStoryRoute
-  ForestExplorerIndexRoute: typeof ForestExplorerIndexRoute
-}
-
-const ForestExplorerRouteChildren: ForestExplorerRouteChildren = {
-  ForestExplorerExploreRoute: ForestExplorerExploreRoute,
-  ForestExplorerStoryRoute: ForestExplorerStoryRoute,
-  ForestExplorerIndexRoute: ForestExplorerIndexRoute,
-}
-
-const ForestExplorerRouteWithChildren = ForestExplorerRoute._addFileChildren(
-  ForestExplorerRouteChildren,
-)
-
 interface GamesLibraryRouteChildren {
   GamesLibraryGameIdRoute: typeof GamesLibraryGameIdRoute
   GamesLibrarySliceItRoute: typeof GamesLibrarySliceItRoute
@@ -28152,18 +27825,6 @@ const RmhCapitalRouteChildren: RmhCapitalRouteChildren = {
 
 const RmhCapitalRouteWithChildren = RmhCapitalRoute._addFileChildren(
   RmhCapitalRouteChildren,
-)
-
-interface RmhFarmingSimRouteChildren {
-  RmhFarmingSimIndexRoute: typeof RmhFarmingSimIndexRoute
-}
-
-const RmhFarmingSimRouteChildren: RmhFarmingSimRouteChildren = {
-  RmhFarmingSimIndexRoute: RmhFarmingSimIndexRoute,
-}
-
-const RmhFarmingSimRouteWithChildren = RmhFarmingSimRoute._addFileChildren(
-  RmhFarmingSimRouteChildren,
 )
 
 interface RmhInternalAffairsRouteChildren {
@@ -29813,19 +29474,6 @@ const ApiV1UsersHandleRouteChildren: ApiV1UsersHandleRouteChildren = {
 const ApiV1UsersHandleRouteWithChildren =
   ApiV1UsersHandleRoute._addFileChildren(ApiV1UsersHandleRouteChildren)
 
-interface ApiWorldsVisitCodeRouteChildren {
-  ApiWorldsVisitCodePostcardRoute: typeof ApiWorldsVisitCodePostcardRoute
-  ApiWorldsVisitCodeWaterRoute: typeof ApiWorldsVisitCodeWaterRoute
-}
-
-const ApiWorldsVisitCodeRouteChildren: ApiWorldsVisitCodeRouteChildren = {
-  ApiWorldsVisitCodePostcardRoute: ApiWorldsVisitCodePostcardRoute,
-  ApiWorldsVisitCodeWaterRoute: ApiWorldsVisitCodeWaterRoute,
-}
-
-const ApiWorldsVisitCodeRouteWithChildren =
-  ApiWorldsVisitCodeRoute._addFileChildren(ApiWorldsVisitCodeRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   SiteRoute: SiteRouteWithChildren,
   AdaptiveIntelligenceRoute: AdaptiveIntelligenceRoute,
@@ -29834,7 +29482,6 @@ const rootRouteChildren: RootRouteChildren = {
   BalatroRoute: BalatroRoute,
   BlackLivesMatterRoute: BlackLivesMatterRoute,
   BreachesRoute: BreachesRoute,
-  CookgameRoute: CookgameRoute,
   CookiesRoute: CookiesRoute,
   CopyrightRoute: CopyrightRoute,
   CovidRoute: CovidRoute,
@@ -29846,14 +29493,12 @@ const rootRouteChildren: RootRouteChildren = {
   DunesdayRoute: DunesdayRoute,
   ElectionsRoute: ElectionsRoute,
   EversionLabRoute: EversionLabRoute,
-  ForestExplorerRoute: ForestExplorerRouteWithChildren,
   GabrielsHornRoute: GabrielsHornRoute,
   GamesRoute: GamesRouteWithChildren,
   HalfLife2Route: HalfLife2Route,
   HandleRoute: HandleRoute,
   HearthworksRoute: HearthworksRoute,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
-  IsleworksRoute: IsleworksRoute,
   JellyRoute: JellyRoute,
   KaikaidebtcounterRoute: KaikaidebtcounterRoute,
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,
@@ -29869,7 +29514,6 @@ const rootRouteChildren: RootRouteChildren = {
   PortalRoute: PortalRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
-  RmhFarmingSimRoute: RmhFarmingSimRouteWithChildren,
   RmhInternalAffairsRoute: RmhInternalAffairsRouteWithChildren,
   RmhPmcRoute: RmhPmcRouteWithChildren,
   RmhboxRoute: RmhboxRouteWithChildren,
@@ -30052,7 +29696,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFeedsIdRoute: ApiFeedsIdRouteWithChildren,
   ApiForecastingCalibrationRoute: ApiForecastingCalibrationRoute,
   ApiForecastingSeasonsRoute: ApiForecastingSeasonsRoute,
-  ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
   ApiFriendlyIdRoute: ApiFriendlyIdRoute,
   ApiGabrielsHornHouseRuleRoute: ApiGabrielsHornHouseRuleRoute,
   ApiGabrielsHornLeaderboardRoute: ApiGabrielsHornLeaderboardRoute,
@@ -30271,10 +29914,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWagerIdRoute: ApiWagerIdRouteWithChildren,
   ApiWebringsSlugRoute: ApiWebringsSlugRouteWithChildren,
   ApiWheelSpinRoute: ApiWheelSpinRoute,
-  ApiWorldsFestivalRoute: ApiWorldsFestivalRoute,
-  ApiWorldsGardenClaimRoute: ApiWorldsGardenClaimRoute,
-  ApiWorldsPostcardsRoute: ApiWorldsPostcardsRoute,
-  ApiWorldsSnapshotsRoute: ApiWorldsSnapshotsRoute,
   EmbedPostIdRoute: EmbedPostIdRoute,
   EmbedReplayIdRoute: EmbedReplayIdRoute,
   LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,
@@ -30571,7 +30210,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWhenIdIcsRoute: ApiWhenIdIcsRoute,
   ApiWhenIdLockRoute: ApiWhenIdLockRoute,
   ApiWhenIdRespondRoute: ApiWhenIdRespondRoute,
-  ApiWorldsVisitCodeRoute: ApiWorldsVisitCodeRouteWithChildren,
   ApiAdminAlbumsIndexRoute: ApiAdminAlbumsIndexRoute,
   ApiAdminBotsIndexRoute: ApiAdminBotsIndexRoute,
   ApiAdminCanvasIndexRoute: ApiAdminCanvasIndexRoute,

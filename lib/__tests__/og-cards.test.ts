@@ -154,7 +154,7 @@ describe('buildMeta', () => {
 
 describe('ogCardPath', () => {
   it('points at the card route for a kind', () => {
-    expect(ogCardPath('game', 'isleworks')).toBe('/api/og/game/isleworks');
+    expect(ogCardPath('game', 'hearthworks')).toBe('/api/og/game/hearthworks');
     expect(ogCardPath('app', 'rmhtube')).toBe('/api/og/app/rmhtube');
     expect(ogCardPath('section', 'tf2-play')).toBe('/api/og/section/tf2-play');
     expect(ogCardPath('build', 'my-build')).toBe('/api/og/build/my-build');
@@ -248,7 +248,7 @@ describe('fitText', () => {
   const box = { width: 1000, height: 200, steps: [96, 72, 56, 40, 28] };
 
   it('gives short text the largest step', () => {
-    expect(fitText('Isleworks', box)).toBe(96);
+    expect(fitText('Hearthworks', box)).toBe(96);
   });
 
   it('steps down as the text grows', () => {

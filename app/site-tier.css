@@ -37,7 +37,6 @@
 @source not "../components/balatro";
 @source not "../components/blm";
 @source not "../components/breaches";
-@source not "../components/cookgame";
 @source not "../components/covid";
 @source not "../components/elections";
 @source not "../components/cursed-logic";
@@ -46,12 +45,10 @@
 @source not "../components/doctrine";
 @source not "../components/dream-rift";
 @source not "../components/dunesday";
-@source not "../components/forest-explorer";
 @source not "../components/gabriels-horn";
 @source not "../components/games";
 @source not "../components/house-always-wins";
 @source not "../components/hearthworks";
-@source not "../components/isleworks";
 @source not "../components/kaikai-debt";
 @source not "../components/kowloon-knockout";
 @source not "../components/laundry-sort";
@@ -65,7 +62,6 @@
 @source not "../components/render";
 @source not "../components/replays";
 @source not "../components/rmh-capital";
-@source not "../components/rmh-farming-sim";
 @source not "../components/rmh-pmc";
 @source not "../components/rmhbox";
 @source not "../components/rmhcalculator";
@@ -91,24 +87,20 @@
 @source not "../components/velum2099";
 @source not "../components/versecraft";
 @source not "../components/void-breaker";
-@source not "../components/worlds";
 @source not "../lib/altair";
 @source not "../lib/audio";
 @source not "../lib/balatro";
 @source not "../lib/controller";
-@source not "../lib/cookgame";
 @source not "../lib/cursed-logic";
 @source not "../lib/daily-puzzles";
 @source not "../lib/doctrine";
 @source not "../lib/dream-rift";
-@source not "../lib/forest-explorer";
 @source not "../lib/fonts";
 @source not "../lib/gabriels-horn";
 @source not "../lib/game-saves";
 @source not "../lib/globeset";
 @source not "../lib/house-always-wins";
 @source not "../lib/hearthworks";
-@source not "../lib/isleworks";
 @source not "../lib/kaikai-debt";
 @source not "../lib/kowloon-knockout";
 @source not "../lib/laundry-sort";
@@ -118,7 +110,6 @@
 @source not "../lib/pf2ecal";
 @source not "../lib/pwa";
 @source not "../lib/rebar-rutabaga";
-@source not "../lib/rmh-farming-sim";
 @source not "../lib/rmhbox";
 @source not "../lib/rmhcalculator";
 @source not "../lib/rmhcode";
@@ -142,7 +133,6 @@
 @source not "../lib/velum2099";
 @source not "../lib/versecraft";
 @source not "../lib/void-breaker";
-@source not "../lib/worlds";
 
 /* Their route files (top-level routes that render one of the directories above). */
 @source not "./routes/adaptive-intelligence.tsx";
@@ -150,7 +140,6 @@
 @source not "./routes/altair";
 @source not "./routes/black-lives-matter.tsx";
 @source not "./routes/breaches.tsx";
-@source not "./routes/cookgame.tsx";
 @source not "./routes/cookies.tsx";
 @source not "./routes/copyright.tsx";
 @source not "./routes/covid.tsx";
@@ -162,12 +151,9 @@
 @source not "./routes/dream-rift.tsx";
 @source not "./routes/dunesday.tsx";
 @source not "./routes/embed.replay.$id.tsx";
-@source not "./routes/forest-explorer.tsx";
-@source not "./routes/forest-explorer";
 @source not "./routes/gabriels-horn.tsx";
 @source not "./routes/house-always-wins.tsx";
 @source not "./routes/hearthworks.tsx";
-@source not "./routes/isleworks.tsx";
 @source not "./routes/kaikaidebtcounter.tsx";
 @source not "./routes/kowloon-knockout.tsx";
 @source not "./routes/kowloon-knockout";
@@ -180,8 +166,6 @@
 @source not "./routes/replays.$id.tsx";
 @source not "./routes/rmh-capital.tsx";
 @source not "./routes/rmh-capital";
-@source not "./routes/rmh-farming-sim.tsx";
-@source not "./routes/rmh-farming-sim";
 @source not "./routes/rmh-pmc.tsx";
 @source not "./routes/rmh-pmc";
 @source not "./routes/rmhbox.tsx";

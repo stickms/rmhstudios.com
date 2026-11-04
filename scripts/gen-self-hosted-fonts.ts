@@ -86,7 +86,7 @@ const GROUPS: Group[] = [
   },
   {
     out: 'app/fonts/press-start-2p.css',
-    usedBy: 'app/routes/rmh-farming-sim.tsx, app/routes/kowloon-knockout.tsx',
+    usedBy: 'app/routes/kowloon-knockout.tsx',
     sources: [{ pkg: '@fontsource/press-start-2p', css: ['400.css'], family: 'Press Start 2P' }],
   },
   {

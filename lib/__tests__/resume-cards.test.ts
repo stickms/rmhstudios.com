@@ -31,7 +31,7 @@ function makeCard(over: Partial<ResumeCard> & { updatedAt: string }): ResumeCard
   return {
     kind: 'game' as ResumeKind,
     title: 'A game',
-    href: '/isleworks?resume=1',
+    href: '/hearthworks?resume=1',
     subtitle: '',
     state: [],
     ...over,
@@ -52,7 +52,7 @@ describe('rankResumeCards — ordering', () => {
     const ranked = rankResumeCards([
       makeCard({ kind: 'deck', href: '/study/d1', updatedAt: '2026-08-02T00:00:00.000Z' }),
       makeCard({ kind: 'read', href: '/library/x', updatedAt: '2026-08-04T00:00:00.000Z' }),
-      makeCard({ kind: 'game', href: '/isleworks', updatedAt: '2026-08-03T00:00:00.000Z' }),
+      makeCard({ kind: 'game', href: '/hearthworks', updatedAt: '2026-08-03T00:00:00.000Z' }),
     ]);
     expect(ranked.map((c) => c.kind)).toEqual(['read', 'game', 'deck']);
   });

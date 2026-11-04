@@ -129,12 +129,12 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     why: 'As above, for a replay embed.',
   },
   '/games/$gameId': {
-    path: '/games/isleworks',
+    path: '/games/hearthworks',
     fidelity: 'content',
     why: 'A catalog id from `lib/games.ts`, so the detail page renders fully populated.',
   },
   '/games/$gameId/guides/$guideId': {
-    path: '/games/isleworks/guides/fouc-audit',
+    path: '/games/hearthworks/guides/fouc-audit',
     fidelity: 'shell',
     why: 'Real game, absent guide — the guide shell with its not-found branch.',
   },
@@ -144,17 +144,17 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     why: 'Not-found branch of a Steam-style profile.',
   },
   '/games/market/$gameId/$cardIndex': {
-    path: '/games/market/isleworks/0',
+    path: '/games/market/hearthworks/0',
     fidelity: 'content',
     why: 'A catalog id and a real card index, so the card page renders its empty market.',
   },
   '/games/hub/$gameId/': {
-    path: '/games/hub/isleworks',
+    path: '/games/hub/hearthworks',
     fidelity: 'content',
     why: 'A catalog id, so the hub renders its empty-discussions state populated with the sidebar.',
   },
   '/games/hub/$gameId/t/$threadId': {
-    path: '/games/hub/isleworks/t/fouc-audit',
+    path: '/games/hub/hearthworks/t/fouc-audit',
     fidelity: 'shell',
     why: 'Real game, absent thread: the not-found branch inside the shell.',
   },

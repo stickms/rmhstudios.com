@@ -172,7 +172,7 @@ function ensureFlusher(): void {
  *
  * ```ts
  * emitActivity({ userId, verb: 'VIEWED', kind: 'post', entityId: postId });
- * emitActivity({ userId, verb: 'PLAYED', kind: 'game', entityId: 'isleworks', meta: { level: 7 } });
+ * emitActivity({ userId, verb: 'PLAYED', kind: 'game', entityId: 'hearthworks', meta: { level: 7 } });
  * ```
  */
 export function emitActivity(event: ActivityEvent): void {

@@ -253,9 +253,6 @@ const ALLOW = new Set<string>([
   'components/feed/GhostTextArea.tsx',
   'components/feed/HandleInput.tsx',
   'components/feed/MentionTextarea.tsx',
-  'components/forest-explorer/story/StoryGame.tsx',
-  'components/forest-explorer/story/StoryNarration.tsx',
-  'components/forest-explorer/story/StoryToast.tsx',
   // The ONE loop behind every canvas view on the site tier: the debt counter's
   // three spatial views (the 3D terrain, the 4D projection and the debt globe)
   // and the Rebar & Rutabaga menu globe. These are `_site` pages rather than

@@ -60,22 +60,18 @@ import type { AppInfo, GameInfo } from './types';
 
 // ── Games ─────────────────────────────────────────────────────────────────
 import altair from './games/altair';
-import cookgame from './games/cookgame';
 import dailyPuzzles from './games/daily-puzzles';
 import dreamRift from './games/dream-rift';
-import forestExplorer from './games/forest-explorer';
 import gabrielsHorn from './games/gabriels-horn';
 import halfLife2 from './games/half-life-2';
 import houseAlwaysWins from './games/house-always-wins';
 import hearthworks from './games/hearthworks';
-import isleworks from './games/isleworks';
 import kowloonKnockout from './games/kowloon-knockout';
 import laundrySort from './games/laundry-sort';
 import neonDriftway from './games/neon-driftway';
 import nightrail from './games/nightrail';
 import portal from './games/portal';
 import csgo from './games/csgo';
-import rmhFarmingSim from './games/rmh-farming-sim';
 import rmhbox from './games/rmhbox';
 import sliceIt from './games/slice-it';
 import synapseStorm from './games/synapse-storm';
@@ -102,22 +98,18 @@ import studio from './apps/studio';
 
 const GAME_MODULES: readonly GameInfo[] = [
   altair,
-  cookgame,
   dailyPuzzles,
   dreamRift,
-  forestExplorer,
   gabrielsHorn,
   halfLife2,
   houseAlwaysWins,
   hearthworks,
-  isleworks,
   kowloonKnockout,
   laundrySort,
   neonDriftway,
   nightrail,
   portal,
   csgo,
-  rmhFarmingSim,
   rmhbox,
   sliceIt,
   synapseStorm,
