@@ -216,3 +216,14 @@ and slides down when the pointer reaches a thin strip at the top edge (a small t
 it has keyboard focus. On touch, tap the strip to open it and tap elsewhere to close. The choice is kept per viewer
 in `localStorage` (`rmh-elections-roombar`). It is driven by a data attribute rather than `:hover`, because the
 site's CSS pipeline strips hand-written hover transforms.
+
+## Briefing Room layout controls
+
+Per viewer, kept in this browser: **Spacing** (None / Tight / Normal / Roomy: 0, 2, 4, 10px of padding and gap),
+**Borders** (None / Thin / Normal / Thick: 0, 1, 2, 4px) — both selects are in the room bar — and **pane order**:
+drag a pane's grip (⋮) onto another pane to swap them, or focus the grip and use the arrow keys. Sizes from the
+dividers and the order are per layout. Stream panes show their change-stream button only while the pointer is over
+the video (or it has focus); on touch it stays, softened. Live-stream discovery now probes 21 newsroom channels
+(PBS, ABC, NBC, CBS, AP, C-SPAN, Reuters, Sky, Bloomberg, NYT, CNN, CNBC, MS NOW, The Hill, The Washington Post,
+Newsmax, BBC News, Al Jazeera English, DW News, FRANCE 24 English, Forbes Breaking News); each id was checked
+against its channel page.

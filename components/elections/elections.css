@@ -2550,3 +2550,68 @@ html.ios-webkit .el-room__grid {
 .el-room[data-bar='auto'][data-bar-open] .el-room__hot::after {
   opacity: 0;
 }
+
+/* ── Briefing Room: border size, pane grips, look controls, stream menu that stays out of the way ─────── */
+.el-room__pane {
+  border-width: var(--el-room-bw, var(--el-bw));
+}
+.el-room__panebar {
+  border-bottom-width: var(--el-room-bw, 2px);
+}
+.el-room__grip {
+  display: none;
+  align-items: center;
+  flex: none;
+  padding: 2px;
+  border-radius: 4px;
+  color: inherit;
+  cursor: grab;
+  touch-action: none;
+}
+.el-room__grip:active {
+  cursor: grabbing;
+}
+.el-room__grip:focus-visible {
+  outline: 2px solid var(--el-purple);
+  outline-offset: 1px;
+}
+.el-room__look {
+  display: none;
+  gap: 6px;
+}
+.el-room__look .el-input {
+  min-height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
+}
+@media (min-width: 900px) {
+  .el-room__grip {
+    display: inline-flex;
+  }
+  .el-room__look {
+    display: inline-flex;
+  }
+  .el-room__pane[data-drop] {
+    outline: 3px solid var(--el-purple);
+    outline-offset: -3px;
+  }
+  .el-room__grid[data-dragging='pane'] iframe {
+    pointer-events: none;
+  }
+}
+/* The stream's change-stream button fades out until the pointer is over the video (or it has focus or is open).
+   Touch has no hover, so there it stays, softened. */
+.el-streamframe__menu {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.el-streamframe:hover .el-streamframe__menu,
+.el-streamframe:focus-within .el-streamframe__menu,
+.el-streamframe__menu[aria-expanded='true'] {
+  opacity: 0.95;
+}
+@media (hover: none) {
+  .el-streamframe__menu {
+    opacity: 0.7;
+  }
+}

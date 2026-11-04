@@ -77,3 +77,70 @@ export function splitVars(s: Split): Record<string, string> {
     '--rB': `${Math.round((1 - s.r) * 1000)}fr`,
   };
 }
+
+/* ── look: spacing and border size ───────────────────────────────────────────────────────────────────── */
+
+export const SPACE_PX = [0, 2, 4, 10] as const;
+export const BORDER_PX = [0, 1, 2, 4] as const;
+export const SPACE_LABELS = ['None', 'Tight', 'Normal', 'Roomy'] as const;
+export const BORDER_LABELS = ['None', 'Thin', 'Normal', 'Thick'] as const;
+
+/** Indexes into SPACE_PX / BORDER_PX. */
+export interface Look {
+  space: number;
+  border: number;
+}
+
+export const DEFAULT_LOOK: Look = { space: 2, border: 2 };
+
+const idx = (v: unknown, max: number, fallback: number): number =>
+  typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= max ? v : fallback;
+
+export function parseLook(raw: string | null | undefined): Look {
+  if (!raw) return DEFAULT_LOOK;
+  try {
+    const v = JSON.parse(raw) as { space?: unknown; border?: unknown };
+    return { space: idx(v.space, SPACE_PX.length - 1, DEFAULT_LOOK.space), border: idx(v.border, BORDER_PX.length - 1, DEFAULT_LOOK.border) };
+  } catch {
+    return DEFAULT_LOOK;
+  }
+}
+
+export function lookVars(l: Look): Record<string, string> {
+  const px = SPACE_PX[l.space] ?? 4;
+  return { '--el-room-pad': `${px}px`, '--el-room-gap': `${px}px`, '--el-room-bw': `${BORDER_PX[l.border] ?? 2}px` };
+}
+
+/* ── pane order (drag to rearrange; per viewer) ─────────────────────────────────────────────────────── */
+
+/** Apply a saved order: saved ids first (those still present), then any pane the order doesn't know. */
+export function orderPanes<T extends { id: string }>(items: T[], saved: string[] | undefined): T[] {
+  if (!saved?.length) return items;
+  const byId = new Map(items.map((i) => [i.id, i]));
+  const out: T[] = [];
+  for (const id of saved) {
+    const it = byId.get(id);
+    if (it) {
+      out.push(it);
+      byId.delete(id);
+    }
+  }
+  return [...out, ...byId.values()];
+}
+
+/** Swap two panes' positions in an order of ids. Unknown ids leave it unchanged. */
+export function swapIds(ids: string[], a: string, b: string): string[] {
+  const i = ids.indexOf(a);
+  const j = ids.indexOf(b);
+  if (i < 0 || j < 0 || i === j) return ids;
+  const out = [...ids];
+  [out[i], out[j]] = [out[j], out[i]];
+  return out;
+}
+
+/** Move a pane one step earlier (-1) or later (+1), for the keyboard. */
+export function nudgeId(ids: string[], id: string, dir: -1 | 1): string[] {
+  const i = ids.indexOf(id);
+  const j = i + dir;
+  return i < 0 || j < 0 || j >= ids.length ? ids : swapIds(ids, id, ids[j]);
+}

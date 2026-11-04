@@ -27,6 +27,19 @@ export const CHANNEL_POOL: PoolChannel[] = [
   { id: 'UChqUTb7kYRX8-EiaN3XFrSQ', label: 'Reuters' },
   { id: 'UCoMdktPbSTixAyNGwb-UYkQ', label: 'Sky News' },
   { id: 'UCIALMKvObZNtJ6AmdCLP7Lg', label: 'Bloomberg' },
+  // Added later; each id was checked against its channel page's own title.
+  { id: 'UCqnbDFdCpuN8CMEg0VuEBqA', label: 'The New York Times' },
+  { id: 'UCupvZG-5ko_eiXAupbDfxWw', label: 'CNN' },
+  { id: 'UCvJJ_dzjViJCoLf5uKUTwoA', label: 'CNBC' },
+  { id: 'UCaXkIU1QidjPwiAYu6GcHjg', label: 'MS NOW' },
+  { id: 'UCPWXiRWZ29zrxPFIQT7eHSA', label: 'The Hill' },
+  { id: 'UCHd62-u_v4DvJ8TCFtpi4GA', label: 'The Washington Post' },
+  { id: 'UCx6h-dWzJ5NpAlja1YsApdg', label: 'Newsmax' },
+  { id: 'UC16niRr50-MSBwiO3YDb3RA', label: 'BBC News' },
+  { id: 'UCNye-wNBqNL5ZzHSJj3l8Bg', label: 'Al Jazeera English' },
+  { id: 'UCknLrEdhRCp1aegoMqRaCZg', label: 'DW News' },
+  { id: 'UCQfwfsi5VrQ8yKZ-UWmAEFg', label: 'FRANCE 24 English' },
+  { id: 'UCg40OxZ1GYh3u3jBntB6DLg', label: 'Forbes Breaking News' },
 ];
 
 const CHANNEL_ID = /^UC[A-Za-z0-9_-]{22}$/;
