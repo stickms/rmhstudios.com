@@ -191,7 +191,7 @@ export function CameraRig() {
     // Camera.
     const pose = blendPose(
       isoPose(rt.isoCenter, rt.isoDistance),
-      thirdPose({ x: rt.avatar.x, z: rt.avatar.z, yaw: rt.camYaw }),
+      thirdPose({ x: rt.avatar.x, z: rt.avatar.z, yaw: rt.camYaw, y: rt.avatarY }),
       easeProgress(rt.progress),
     );
     const cam = camera as THREE.PerspectiveCamera;
