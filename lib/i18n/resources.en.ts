@@ -6,9 +6,9 @@ import enBuilds from "@/locales/en/builds.json";
 import enCAdmin from "@/locales/en/c-admin.json";
 import enCAltair from "@/locales/en/c-altair.json";
 import enCAwards from "@/locales/en/c-awards.json";
+import enCBalatro from "@/locales/en/c-balatro.json";
 import enCBlog from "@/locales/en/c-blog.json";
 import enCBuilds from "@/locales/en/c-builds.json";
-import enCBumsRush from "@/locales/en/c-bums-rush.json";
 import enCCircle from "@/locales/en/c-circle.json";
 import enCCreator from "@/locales/en/c-creator.json";
 import enCCursedLogic from "@/locales/en/c-cursed-logic.json";
@@ -17,9 +17,11 @@ import enCDoctrine from "@/locales/en/c-doctrine.json";
 import enCDreamRift from "@/locales/en/c-dream-rift.json";
 import enCDunesday from "@/locales/en/c-dunesday.json";
 import enCEconomy from "@/locales/en/c-economy.json";
+import enCElections from "@/locales/en/c-elections.json";
 import enCForestExplorer from "@/locales/en/c-forest-explorer.json";
 import enCGabrielsHorn from "@/locales/en/c-gabriels-horn.json";
 import enCGame from "@/locales/en/c-game.json";
+import enCGroupcall from "@/locales/en/c-groupcall.json";
 import enCHistory from "@/locales/en/c-history.json";
 import enCHouseAlwaysWins from "@/locales/en/c-house-always-wins.json";
 import enCIsleworks from "@/locales/en/c-isleworks.json";
@@ -31,7 +33,6 @@ import enCLibrary from "@/locales/en/c-library.json";
 import enCLightsOut from "@/locales/en/c-lights-out.json";
 import enCLists from "@/locales/en/c-lists.json";
 import enCLockdown from "@/locales/en/c-lockdown.json";
-import enCMassiveMarch from "@/locales/en/c-massive-march.json";
 import enCModeration from "@/locales/en/c-moderation.json";
 import enCNeonDriftway from "@/locales/en/c-neon-driftway.json";
 import enCNews from "@/locales/en/c-news.json";
@@ -61,6 +62,8 @@ import enCStatus from "@/locales/en/c-status.json";
 import enCStudio from "@/locales/en/c-studio.json";
 import enCSynapseStorm from "@/locales/en/c-synapse-storm.json";
 import enCTempleOfJoy from "@/locales/en/c-temple-of-joy.json";
+import enCTf2Game from "@/locales/en/c-tf2-game.json";
+import enCTf2Hud from "@/locales/en/c-tf2-hud.json";
 import enCTournaments from "@/locales/en/c-tournaments.json";
 import enCUi from "@/locales/en/c-ui.json";
 import enCUserBuilds from "@/locales/en/c-user-builds.json";
@@ -72,11 +75,37 @@ import enCWager from "@/locales/en/c-wager.json";
 import enCWishlist from "@/locales/en/c-wishlist.json";
 import enCommon from "@/locales/en/common.json";
 import enErrors from "@/locales/en/errors.json";
+import enFAccess from "@/locales/en/f-access.json";
+import enFAction from "@/locales/en/f-action.json";
+import enFArcade from "@/locales/en/f-arcade.json";
+import enFAsyncGames from "@/locales/en/f-async-games.json";
+import enFCalendar from "@/locales/en/f-calendar.json";
+import enFCanvas from "@/locales/en/f-canvas.json";
+import enFCommunitiesPlus from "@/locales/en/f-communities-plus.json";
+import enFCompetitive from "@/locales/en/f-competitive.json";
+import enFCreative from "@/locales/en/f-creative.json";
+import enFDeepseek from "@/locales/en/f-deepseek.json";
+import enFDelight from "@/locales/en/f-delight.json";
+import enFDevAi from "@/locales/en/f-dev-ai.json";
+import enFDevplatform from "@/locales/en/f-devplatform.json";
+import enFDiscovery from "@/locales/en/f-discovery.json";
 import enFEconomyPlus from "@/locales/en/f-economy-plus.json";
 import enFFeedPlus from "@/locales/en/f-feed-plus.json";
+import enFForecasting from "@/locales/en/f-forecasting.json";
+import enFGifting from "@/locales/en/f-gifting.json";
+import enFLadderHomes from "@/locales/en/f-ladder-homes.json";
 import enFMessaging from "@/locales/en/f-messaging.json";
+import enFOncall from "@/locales/en/f-oncall.json";
+import enFOps from "@/locales/en/f-ops.json";
+import enFParty from "@/locales/en/f-party.json";
+import enFPerf from "@/locales/en/f-perf.json";
 import enFPostsPlus from "@/locales/en/f-posts-plus.json";
 import enFProfilePlus from "@/locales/en/f-profile-plus.json";
+import enFReading from "@/locales/en/f-reading.json";
+import enFSafety from "@/locales/en/f-safety.json";
+import enFTools from "@/locales/en/f-tools.json";
+import enFWatch from "@/locales/en/f-watch.json";
+import enFWorlds from "@/locales/en/f-worlds.json";
 import enFeed from "@/locales/en/feed.json";
 import enGamesHub from "@/locales/en/games-hub.json";
 import enGroups from "@/locales/en/groups.json";
@@ -113,9 +142,9 @@ const enResources = {
   "c-admin": enCAdmin,
   "c-altair": enCAltair,
   "c-awards": enCAwards,
+  "c-balatro": enCBalatro,
   "c-blog": enCBlog,
   "c-builds": enCBuilds,
-  "c-bums-rush": enCBumsRush,
   "c-circle": enCCircle,
   "c-creator": enCCreator,
   "c-cursed-logic": enCCursedLogic,
@@ -124,9 +153,11 @@ const enResources = {
   "c-dream-rift": enCDreamRift,
   "c-dunesday": enCDunesday,
   "c-economy": enCEconomy,
+  "c-elections": enCElections,
   "c-forest-explorer": enCForestExplorer,
   "c-gabriels-horn": enCGabrielsHorn,
   "c-game": enCGame,
+  "c-groupcall": enCGroupcall,
   "c-history": enCHistory,
   "c-house-always-wins": enCHouseAlwaysWins,
   "c-isleworks": enCIsleworks,
@@ -138,7 +169,6 @@ const enResources = {
   "c-lights-out": enCLightsOut,
   "c-lists": enCLists,
   "c-lockdown": enCLockdown,
-  "c-massive-march": enCMassiveMarch,
   "c-moderation": enCModeration,
   "c-neon-driftway": enCNeonDriftway,
   "c-news": enCNews,
@@ -168,6 +198,8 @@ const enResources = {
   "c-studio": enCStudio,
   "c-synapse-storm": enCSynapseStorm,
   "c-temple-of-joy": enCTempleOfJoy,
+  "c-tf2-game": enCTf2Game,
+  "c-tf2-hud": enCTf2Hud,
   "c-tournaments": enCTournaments,
   "c-ui": enCUi,
   "c-user-builds": enCUserBuilds,
@@ -179,11 +211,37 @@ const enResources = {
   "c-wishlist": enCWishlist,
   "common": enCommon,
   "errors": enErrors,
+  "f-access": enFAccess,
+  "f-action": enFAction,
+  "f-arcade": enFArcade,
+  "f-async-games": enFAsyncGames,
+  "f-calendar": enFCalendar,
+  "f-canvas": enFCanvas,
+  "f-communities-plus": enFCommunitiesPlus,
+  "f-competitive": enFCompetitive,
+  "f-creative": enFCreative,
+  "f-deepseek": enFDeepseek,
+  "f-delight": enFDelight,
+  "f-dev-ai": enFDevAi,
+  "f-devplatform": enFDevplatform,
+  "f-discovery": enFDiscovery,
   "f-economy-plus": enFEconomyPlus,
   "f-feed-plus": enFFeedPlus,
+  "f-forecasting": enFForecasting,
+  "f-gifting": enFGifting,
+  "f-ladder-homes": enFLadderHomes,
   "f-messaging": enFMessaging,
+  "f-oncall": enFOncall,
+  "f-ops": enFOps,
+  "f-party": enFParty,
+  "f-perf": enFPerf,
   "f-posts-plus": enFPostsPlus,
   "f-profile-plus": enFProfilePlus,
+  "f-reading": enFReading,
+  "f-safety": enFSafety,
+  "f-tools": enFTools,
+  "f-watch": enFWatch,
+  "f-worlds": enFWorlds,
   "feed": enFeed,
   "games-hub": enGamesHub,
   "groups": enGroups,
