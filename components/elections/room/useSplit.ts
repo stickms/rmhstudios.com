@@ -3,14 +3,12 @@ import type { Layout } from '@/lib/elections/room-config';
 import { DEFAULT_SPLIT, STEP, clampShare, parseSplits, shareFromPointer, type Split } from '@/lib/elections/split';
 
 const KEY = 'rmh-elections-split';
-/** Must match `--el-room-pad` / `--el-room-gap` in elections.css. */
-const PAD = 4;
-const GAP = 4;
 
 type Axis = 'c' | 'r';
 
 /** Draggable pane sizes for the current layout, saved per layout in this browser. */
-export function useSplit(layout: Layout) {
+/** `pad` and `gap` are the grid's padding and gap in px (they follow the viewer's spacing choice). */
+export function useSplit(layout: Layout, pad: number, gap: number) {
   const [all, setAll] = useState<Partial<Record<Layout, Split>>>({});
   const [dragging, setDragging] = useState<Axis | null>(null);
   const grid = useRef<HTMLDivElement | null>(null);
@@ -65,7 +63,7 @@ export function useSplit(layout: Layout) {
       const el = grid.current;
       if (!el || !e.currentTarget.hasPointerCapture(e.pointerId)) return;
       const rect = el.getBoundingClientRect();
-      set(axis, axis === 'c' ? shareFromPointer(e.clientX, rect.left, rect.width, PAD, GAP) : shareFromPointer(e.clientY, rect.top, rect.height, PAD, GAP));
+      set(axis, axis === 'c' ? shareFromPointer(e.clientX, rect.left, rect.width, pad, gap) : shareFromPointer(e.clientY, rect.top, rect.height, pad, gap));
     },
     onPointerUp: (e: React.PointerEvent<HTMLDivElement>) => {
       if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);

@@ -5,6 +5,7 @@ import {
   Columns2,
   Copy,
   Grid2x2,
+  GripVertical,
   LayoutPanelLeft,
   Maximize2,
   Minimize2,
@@ -43,7 +44,20 @@ import {
 } from './panes';
 import { useRoomState, writeSolo, type RoomSource } from './useRoomState';
 import { useSplit } from './useSplit';
-import { dividers, splitVars } from '@/lib/elections/split';
+import {
+  BORDER_LABELS,
+  SPACE_LABELS,
+  SPACE_PX,
+  dividers,
+  lookVars,
+  nudgeId,
+  orderPanes,
+  parseLook,
+  splitVars,
+  swapIds,
+  DEFAULT_LOOK,
+  type Look,
+} from '@/lib/elections/split';
 
 const LAYOUT_ICON: Record<Layout, typeof Square> = {
   '1': Square,
@@ -116,7 +130,48 @@ export function RoomOverlay({
   const [copied, setCopied] = useState(false);
   // Phones show one pane at a time (a switcher picks it); wider screens show the whole layout.
   const [mobilePane, setMobilePane] = useState(0);
-  const { split, grid, dragging, handlers } = useSplit(config.layout);
+  // How the panes sit: spacing and border size (None … Roomy / Thick), per viewer, kept in this browser.
+  const [look, setLookState] = useState<Look>(DEFAULT_LOOK);
+  useEffect(() => {
+    try {
+      setLookState(parseLook(localStorage.getItem('rmh-elections-roomlook')));
+    } catch {
+      /* defaults */
+    }
+  }, []);
+  const setLook = (next: Look) => {
+    setLookState(next);
+    try {
+      localStorage.setItem('rmh-elections-roomlook', JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  };
+  // Pane order is also per viewer: drag a pane's grip onto another to swap them.
+  const [orders, setOrders] = useState<Record<string, string[]>>({});
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem('rmh-elections-roomorder') ?? '{}') as Record<string, unknown>;
+      const clean: Record<string, string[]> = {};
+      for (const [k, v] of Object.entries(raw)) if (Array.isArray(v)) clean[k] = v.filter((x): x is string => typeof x === 'string').slice(0, 8);
+      setOrders(clean);
+    } catch {
+      /* default order */
+    }
+  }, []);
+  const saveOrder = (layout: string, ids: string[]) =>
+    setOrders((cur) => {
+      const next = { ...cur, [layout]: ids };
+      try {
+        localStorage.setItem('rmh-elections-roomorder', JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  const { split, grid, dragging, handlers } = useSplit(config.layout, SPACE_PX[look.space] ?? 4, SPACE_PX[look.space] ?? 4);
   // The room's top bar can hide until the pointer (or keyboard focus) reaches the top edge, giving the panes the
   // whole screen. The choice is per viewer, kept in this browser.
   const [autoHide, setAutoHide] = useState(false);
@@ -201,7 +256,7 @@ export function RoomOverlay({
     onUseSolo();
   };
 
-  const panes = visiblePanes(config);
+  const panes = orderPanes(visiblePanes(config), orders[config.layout]);
   const recent = useMemo(
     () => chat.reactions.filter((r) => (now ? now.getTime() - r.at < 3_000 : false)),
     [chat.reactions, now],
@@ -328,6 +383,32 @@ export function RoomOverlay({
                   <span className="el-mono">{code}</span>
                 </button>
               ) : null}
+              <span className="el-room__look" role="group" aria-label={t('room.look', { defaultValue: 'Pane spacing and borders' })}>
+                <label className="el-sr" htmlFor="el-room-space">{t('room.space', { defaultValue: 'Spacing' })}</label>
+                <select
+                  id="el-room-space"
+                  className="el-input"
+                  value={look.space}
+                  title={t('room.space', { defaultValue: 'Spacing' })}
+                  onChange={(e) => setLook({ ...look, space: Number(e.target.value) })}
+                >
+                  {SPACE_LABELS.map((label, i) => (
+                    <option key={label} value={i}>{t('room.spaceOpt', { defaultValue: 'Spacing: {{size}}', size: label })}</option>
+                  ))}
+                </select>
+                <label className="el-sr" htmlFor="el-room-border">{t('room.border', { defaultValue: 'Borders' })}</label>
+                <select
+                  id="el-room-border"
+                  className="el-input"
+                  value={look.border}
+                  title={t('room.border', { defaultValue: 'Borders' })}
+                  onChange={(e) => setLook({ ...look, border: Number(e.target.value) })}
+                >
+                  {BORDER_LABELS.map((label, i) => (
+                    <option key={label} value={i}>{t('room.borderOpt', { defaultValue: 'Borders: {{size}}', size: label })}</option>
+                  ))}
+                </select>
+              </span>
               <button
                 type="button"
                 className="el-btn el-btn--sm el-btn--ghost"
@@ -412,8 +493,8 @@ export function RoomOverlay({
               ref={grid}
               className="el-room__grid"
               data-layout={config.layout}
-              data-dragging={dragging ?? undefined}
-              style={splitVars(split) as React.CSSProperties}
+              data-dragging={dragging ?? (dragId ? 'pane' : undefined)}
+              style={{ ...splitVars(split), ...lookVars(look) } as React.CSSProperties}
             >
               {panes.map((pane, i) => (
                 <section
@@ -421,11 +502,53 @@ export function RoomOverlay({
                   className="el-room__pane"
                   data-slot={i}
                   data-active={Math.min(mobilePane, panes.length - 1) === i}
+                  data-drop={dragId && overId === pane.id && dragId !== pane.id ? '' : undefined}
+                  onDragOver={(e) => {
+                    if (!dragId || dragId === pane.id) return;
+                    e.preventDefault();
+                    setOverId(pane.id);
+                  }}
+                  onDragLeave={() => setOverId((cur) => (cur === pane.id ? null : cur))}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (dragId && dragId !== pane.id) saveOrder(config.layout, swapIds(panes.map((p) => p.id), dragId, pane.id));
+                    setDragId(null);
+                    setOverId(null);
+                  }}
                   aria-label={t(KIND_LABEL[pane.kind][0], {
                     defaultValue: KIND_LABEL[pane.kind][1],
                   })}
                 >
                   <div className="el-room__panebar">
+                    {panes.length > 1 ? (
+                      <span
+                        className="el-room__grip"
+                        role="button"
+                        tabIndex={0}
+                        draggable
+                        aria-label={t('room.movePane', { defaultValue: 'Move this pane: drag it onto another pane, or press the arrow keys' })}
+                        title={t('room.movePaneTip', { defaultValue: 'Drag onto another pane to swap' })}
+                        onDragStart={(e) => {
+                          e.dataTransfer.effectAllowed = 'move';
+                          e.dataTransfer.setData('text/plain', `pane:${pane.id}`);
+                          const sec = e.currentTarget.closest('section');
+                          if (sec) e.dataTransfer.setDragImage(sec, 24, 12);
+                          setDragId(pane.id);
+                        }}
+                        onDragEnd={() => {
+                          setDragId(null);
+                          setOverId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          const dir = e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : 0;
+                          if (!dir) return;
+                          e.preventDefault();
+                          saveOrder(config.layout, nudgeId(panes.map((p) => p.id), pane.id, dir));
+                        }}
+                      >
+                        <GripVertical size={16} aria-hidden />
+                      </span>
+                    ) : null}
                     {canEdit ? (
                       <>
                         <label className="el-sr" htmlFor={`kind-${pane.id}`}>
