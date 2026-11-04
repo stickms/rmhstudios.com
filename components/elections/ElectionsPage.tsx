@@ -7,6 +7,8 @@ import { phaseOf, type Cycle } from '@/lib/elections/calendar';
 import { buildFacts, deterministicSummary, headline } from '@/lib/elections/summary';
 import type { ElectionSnapshot, Office } from '@/lib/elections/types';
 import { Hero } from './Hero';
+import { LiquidGlobe } from './LiquidGlobe';
+import { chamberLean } from '@/lib/elections/liquid';
 import { PathPanel } from './PathPanel';
 import { WatchList } from './WatchList';
 import { NightTimeline } from './NightTimeline';
@@ -248,6 +250,13 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
   const live = snapshot?.live ?? false;
   const hasData = !!snapshot && snapshot.races.length > 0;
   const baseline = useBaseline(param);
+  const leans = useMemo(
+    () => ({
+      senate: chamberLean('senate', snapshot?.chambers.senate, snapshot?.races ?? []),
+      house: chamberLean('house', snapshot?.chambers.house, snapshot?.races ?? []),
+    }),
+    [snapshot],
+  );
   const followValue = useMemo(
     () => ({ states: alertPrefs.states, toggle: (postal: string) => setAlertPrefs({ ...alertPrefs, states: toggleState(alertPrefs.states, postal) }) }),
     [alertPrefs, setAlertPrefs],
@@ -344,6 +353,7 @@ export function ElectionsPage({ cycle, focusRaceId, roomCode, leagueCode, focusS
           racesTotal={facts?.racesTotal ?? 0}
           onShare={share}
         />
+        <LiquidGlobe leans={leans} />
         <Ticker
           label={t('ticker.label', { defaultValue: 'Election headlines' })}
           items={tickerItems.length ? tickerItems : [cycle.title, cycle.date]}

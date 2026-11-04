@@ -136,6 +136,13 @@ import { join } from 'node:path';
  *                                       loop. While it runs it writes only
  *                                       transform/opacity/custom properties and
  *                                       strokes one canvas, and reads no layout.
+ *   - components/elections/LiquidGlobe.tsx — the election page's lean globe (two liquids in a glass sphere).
+ *                                       IDLE-AT-REST: the loop runs for ~7 s when the globe scrolls into view,
+ *                                       when its lean changes, or when the pointer touches it, then ends once the
+ *                                       spring has settled (`frame()` does not reschedule), so a page at rest runs no
+ *                                       loop. It also stops while off screen (IntersectionObserver) or the tab is
+ *                                       hidden, draws one still frame under jellyMotion `still`, and cancels its
+ *                                       pending frame on unmount.
  *   - components/radial/eversion/useEversionController.ts — the eversion controller's two
  *                                       one-shot rAF waits (`nextFrame()`): each resolves one
  *                                       promise and never re-requests a frame.
@@ -301,6 +308,7 @@ const ALLOW = new Set<string>([
   'components/library/LibraryReveal.tsx',
   'components/library/UploadModal.tsx',
   'components/massive-march/world/WorldView.tsx',
+  'components/elections/LiquidGlobe.tsx',
   'components/radial/LiquidGlobe.tsx',
   'components/neon-driftway/NeonDriftwayGame.tsx',
   'components/nightrail/NightrailGame.tsx',
