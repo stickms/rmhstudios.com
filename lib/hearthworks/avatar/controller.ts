@@ -1,10 +1,11 @@
 import type { World } from '../world';
 import { canStand } from './collision';
 
-export const WALK_SPEED = 2.4;
-export const RUN_SPEED = 4.4;
+/** Tiles per second. A tile is ~4 m, so a walk is a brisk 6 m/s stroll-trot and a run a sprint; chosen for feel. */
+export const WALK_SPEED = 1.6;
+export const RUN_SPEED = 3.0;
 /** Units/s² — about 0.15 s from standing to a walk, so starts and stops feel soft, never instant. */
-const ACCEL = 16;
+const ACCEL = 11;
 /** Turning rate constant (1/s) for the exponential approach to the heading. */
 const TURN_RATE = 14;
 
