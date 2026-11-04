@@ -400,6 +400,7 @@
     color: var(--hw-ink);
     cursor: pointer;
   }
+}
 
 /* Multiplayer panel (MultiplayerPanel.tsx): fields, the room code and the player list. */
 .hw-field {
