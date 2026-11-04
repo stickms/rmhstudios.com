@@ -19,6 +19,8 @@ import { useHornStore } from '@/lib/gabriels-horn/store';
 import { hornNet } from '@/lib/gabriels-horn/net/client';
 import { HouseRulesPanel, HouseRulesSummary } from './HouseRulesPanel';
 import { HornButton, Panel, SeatAvatar } from './ui';
+import { MenuBackdrop } from './MenuScene';
+import './gh-menu.css';
 
 /** Server error codes → a sentence. Unknown codes fall back to a generic line. */
 export function useLobbyErrorMessage(): (code: string) => string {
@@ -107,7 +109,8 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
   };
 
   return (
-    <div className="gh-scene app-page app-safe-x text-(--app-text)">
+    <div className="ghm-scene app-page app-safe-x">
+      <MenuBackdrop />
       <header className="app-safe-top flex items-center justify-between gap-2 px-4 pt-4">
         <HornButton variant="ghost" size="sm" onClick={onLeave}>
           <LogOut className="size-3.5" aria-hidden="true" />
@@ -126,7 +129,7 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
           <button
             type="button"
             onClick={copyCode}
-            className="mt-1 inline-flex items-center gap-2 rounded-[var(--app-radius-sm)] px-2 py-1 font-mono text-3xl font-black tracking-[0.25em] text-(--app-accent) transition-colors hover:bg-(--app-surface-hover)"
+            className="ghm-code mt-1 inline-flex min-h-11 items-center gap-2 rounded-[var(--app-radius-sm)] px-2 py-1 text-3xl font-black tracking-[0.25em] text-(--app-accent) transition-colors hover:bg-(--app-surface-hover)"
             aria-label={t('copy-code', { defaultValue: 'Copy the table code' })}
           >
             {lobby.code}
@@ -159,7 +162,7 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
         ) : null}
 
         <Panel>
-          <h2 className="mb-2 text-xs font-semibold tracking-[0.14em] text-(--app-text-muted) uppercase">
+          <h2 className="ghm-h2">
             {t('seats', {
               defaultValue: 'Seats {{n}} / {{max}}',
               n: lobby.players.length,
@@ -221,7 +224,12 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
 
         {isHost ? (
           <div className="grid gap-2">
-            <HornButton variant="primary" onClick={() => hornNet.start()} disabled={!canStart}>
+            <HornButton
+              variant="primary"
+              className="ghm-cta"
+              onClick={() => hornNet.start()}
+              disabled={!canStart}
+            >
               <Play className="size-4" aria-hidden="true" />
               {t('deal', { defaultValue: 'Deal' })}
             </HornButton>
@@ -252,6 +260,7 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
         ) : (
           <HornButton
             variant={me?.ready ? 'secondary' : 'primary'}
+            className="ghm-cta"
             onClick={() => hornNet.ready(!me?.ready)}
           >
             {me?.ready
@@ -286,7 +295,8 @@ export function BrowsePanel({ onBack, onRefresh }: { onBack: () => void; onRefre
   const browsing = useHornStore((s) => s.browsing);
 
   return (
-    <div className="gh-scene app-page app-safe-x text-(--app-text)">
+    <div className="ghm-scene app-page app-safe-x">
+      <MenuBackdrop />
       <header className="app-safe-top flex items-center justify-between gap-2 px-4 pt-4">
         <HornButton variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="size-3.5" aria-hidden="true" />
@@ -299,7 +309,7 @@ export function BrowsePanel({ onBack, onRefresh }: { onBack: () => void; onRefre
       </header>
 
       <main className="mx-auto flex w-full max-w-md grow flex-col gap-3 px-4 py-6">
-        <h1 className="text-lg font-bold">{t('open-tables', { defaultValue: 'Open tables' })}</h1>
+        <h1 className="ghm-title">{t('open-tables', { defaultValue: 'Open tables' })}</h1>
 
         {browsing ? (
           <p className="text-sm text-(--app-text-dim)">

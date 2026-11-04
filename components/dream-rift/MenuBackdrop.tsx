@@ -1,165 +1,91 @@
 'use client';
 
 /**
- * Animated danmaku backdrop for the Dream Rift menus.
+ * Backdrop for the Dream Rift menus.
  *
- * A cheap canvas that drifts a soft bullet curtain + twinkling starfield behind
- * the menu UI. Frame-time driven so it runs at normal speed on any refresh
- * rate, scales its particle count down on small screens (mobile-friendly), and
- * falls back to a single static frame when the user prefers reduced motion.
+ * Layered, static markup moved only by CSS `transform`/`opacity` (see menus.css):
+ *
+ *   sky      violet → magenta gradient (the scheme's bg → bgAlt)
+ *   stars    two tiled pixel-star layers drifting at different, very slow speeds
+ *   rings    concentric rings of pixel bullets around a spell-card sigil, one
+ *            slow turn every few minutes (a fixed SVG rotated by transform)
+ *   hills    stair-stepped silhouette along the bottom edge
+ *   scan     CRT scanlines at 12% over everything
+ *
+ * There is no canvas and no per-frame script: the layers are painted once and
+ * the compositor does the rest, so a menu left open costs nothing. `className`
+ * is forwarded (the dim variant is `drm-backdrop--dim`).
  */
 
-import { useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 
-// Shrine-crimson + brass danmaku, the Touhou menu curtain.
-const PALETTE = ['#d4405a', '#e7cd8c', '#f0c668', '#c5364e', '#b8607a'];
-
-interface Bullet {
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
+interface Ring {
     r: number;
+    n: number;
+    size: number;
     color: string;
-    spin: number;
-}
-interface Star {
-    x: number;
-    y: number;
-    r: number;
-    tw: number;
     phase: number;
 }
 
+// Cyan, pink, gold, lilac, cyan: the bullet-ring palette from the catalog card.
+const RINGS: Ring[] = [
+    { r: 118, n: 25, size: 8, color: '#2EE6FF', phase: 0 },
+    { r: 182, n: 38, size: 8, color: '#FF4FD8', phase: 0.5 },
+    { r: 246, n: 52, size: 8, color: '#FFE46B', phase: 0 },
+    { r: 310, n: 65, size: 8, color: '#B28CFF', phase: 0.5 },
+    { r: 374, n: 78, size: 8, color: '#2EE6FF', phase: 0 },
+];
+
+function bulletRing(rings: Ring[]) {
+    return rings.flatMap((ring) =>
+        Array.from({ length: ring.n }, (_, i) => {
+            const a = ((i + ring.phase) / ring.n) * Math.PI * 2;
+            // Snap to the 2px grid so every bullet is a crisp pixel square.
+            const x = Math.round((400 + Math.cos(a) * ring.r) / 2) * 2;
+            const y = Math.round((400 + Math.sin(a) * ring.r) / 2) * 2;
+            const h = ring.size / 2;
+            return (
+                <g key={`${ring.r}-${i}`}>
+                    <rect x={x - h} y={y - h} width={ring.size} height={ring.size} fill={ring.color} />
+                    <rect x={x - h / 2} y={y - h / 2} width={h} height={h} fill="#FFFFFF" />
+                </g>
+            );
+        }),
+    );
+}
+
+/** A pentagram-ish spell-card sigil: two nested pentagons and a lit core. */
+function Sigil() {
+    const pts = (r: number, rot: number) =>
+        Array.from({ length: 5 }, (_, i) => {
+            const a = rot + (i / 5) * Math.PI * 2;
+            return `${Math.round(400 + Math.cos(a) * r)},${Math.round(400 + Math.sin(a) * r)}`;
+        }).join(' ');
+    return (
+        <>
+            <circle cx="400" cy="400" r="76" fill="none" stroke="#FF4FD8" strokeWidth="4" strokeDasharray="12 8" />
+            <polygon points={pts(62, -Math.PI / 2)} fill="none" stroke="#FFF0FB" strokeWidth="4" strokeLinejoin="miter" />
+            <polygon points={pts(34, Math.PI / 2)} fill="none" stroke="#2EE6FF" strokeWidth="4" strokeLinejoin="miter" />
+            <rect x="390" y="390" width="20" height="20" fill="#FFF0FB" />
+        </>
+    );
+}
+
 export function MenuBackdrop({ className }: { className?: string }) {
-    const ref = useRef<HTMLCanvasElement>(null);
-
-    useEffect(() => {
-        const canvas = ref.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d', { alpha: true });
-        if (!ctx) return;
-
-
-        let w = 0;
-        let h = 0;
-        let dpr = 1;
-        let bullets: Bullet[] = [];
-        let stars: Star[] = [];
-
-        const seed = () => {
-            const small = w < 560;
-            const nB = small ? 22 : 40;
-            const nS = small ? 50 : 90;
-            bullets = Array.from({ length: nB }, () => spawnBullet(w, h));
-            stars = Array.from({ length: nS }, () => ({
-                x: Math.random() * w,
-                y: Math.random() * h,
-                r: 0.6 + Math.random() * 1.4,
-                tw: 0.4 + Math.random() * 1.2,
-                phase: Math.random() * Math.PI * 2,
-            }));
-        };
-
-        const resize = () => {
-            const rect = canvas.getBoundingClientRect();
-            dpr = Math.min(window.devicePixelRatio || 1, 2);
-            w = Math.max(1, rect.width);
-            h = Math.max(1, rect.height);
-            canvas.width = Math.round(w * dpr);
-            canvas.height = Math.round(h * dpr);
-            seed();
-        };
-        resize();
-        const ro = new ResizeObserver(resize);
-        ro.observe(canvas);
-
-        let raf = 0;
-        let last = performance.now();
-        let time = 0;
-
-        const frame = (now: number) => {
-            raf = requestAnimationFrame(frame);
-            let dt = now - last;
-            last = now;
-            if (dt > 80) dt = 80; // clamp after tab stalls
-            const fs = dt / (1000 / 60);
-            time += dt;
-
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            ctx.clearRect(0, 0, w, h);
-
-            // twinkling stars
-            ctx.save();
-            for (const s of stars) {
-                const a = 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(time * 0.001 * s.tw + s.phase));
-                ctx.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`;
-                ctx.beginPath();
-                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.restore();
-
-            // soft drifting bullets (additive glow)
-            ctx.save();
-            ctx.globalCompositeOperation = 'lighter';
-            for (const b of bullets) {
-                b.x += b.vx * fs;
-                b.y += b.vy * fs;
-                b.spin += 0.02 * fs;
-                // wrap around edges with margin
-                const m = 30;
-                if (b.x < -m) b.x = w + m;
-                else if (b.x > w + m) b.x = -m;
-                if (b.y < -m) b.y = h + m;
-                else if (b.y > h + m) b.y = -m;
-
-                const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * 3.2);
-                g.addColorStop(0, b.color);
-                g.addColorStop(0.4, hexA(b.color, 0.5));
-                g.addColorStop(1, hexA(b.color, 0));
-                ctx.fillStyle = g;
-                ctx.beginPath();
-                ctx.arc(b.x, b.y, b.r * 3.2, 0, Math.PI * 2);
-                ctx.fill();
-                // bright core
-                ctx.fillStyle = 'rgba(255,255,255,0.85)';
-                ctx.beginPath();
-                ctx.arc(b.x, b.y, b.r * 0.5, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.restore();
-
-        };
-        raf = requestAnimationFrame(frame);
-
-        return () => {
-            cancelAnimationFrame(raf);
-            ro.disconnect();
-        };
-    }, []);
-
-    return <canvas ref={ref} aria-hidden className={className} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />;
-}
-
-function spawnBullet(w: number, h: number): Bullet {
-    const ang = Math.random() * Math.PI * 2;
-    const sp = 0.15 + Math.random() * 0.5;
-    return {
-        x: Math.random() * w,
-        y: Math.random() * h,
-        vx: Math.cos(ang) * sp,
-        vy: Math.sin(ang) * sp + 0.18, // gentle downward bias
-        r: 2 + Math.random() * 3.5,
-        color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
-        spin: Math.random() * Math.PI,
-    };
-}
-
-function hexA(hex: string, a: number): string {
-    const n = parseInt(hex.slice(1), 16);
-    const r = (n >> 16) & 255;
-    const g = (n >> 8) & 255;
-    const b = n & 255;
-    return `rgba(${r},${g},${b},${a})`;
+    const outer = useMemo(() => bulletRing(RINGS), []);
+    return (
+        <div aria-hidden="true" className={`drm-backdrop ${className ?? ''}`}>
+            <div className="drm-bd-stars drm-bd-stars--far" />
+            <div className="drm-bd-stars drm-bd-stars--near" />
+            <div className="drm-bd-bloom" />
+            <svg className="drm-bd-ring drm-bd-ring--outer" viewBox="0 0 800 800" shapeRendering="crispEdges">
+                {outer}
+            </svg>
+            <svg className="drm-bd-ring drm-bd-ring--sigil" viewBox="0 0 800 800" shapeRendering="crispEdges">
+                <Sigil />
+            </svg>
+            <div className="drm-bd-hills" />
+            <div className="drm-bd-scan" />
+        </div>
+    );
 }

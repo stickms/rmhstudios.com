@@ -5,9 +5,14 @@
  * private Lobby Browser, the Lobby Room, and the end-of-run Result screen.
  * Lobby actions go through lib/dream-rift/net/connection; the store mirrors
  * server lobby state.
+ *
+ * Skin: pixel-art danmaku (docs/game-design-schemes/dream-rift.json), carried by
+ * the `.drm-*` classes in ./menus.css and the CSS-only ./MenuBackdrop. The
+ * screens, props, store reads and lobby calls are unchanged by the skin.
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLobbyInviteJoin, useLobbyLink } from '@/hooks/useLobbyLink';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { CHARACTERS, PLAYER_IDS } from '@/lib/dream-rift/render/sprites';
@@ -31,6 +36,7 @@ import { useFocusReturn } from '@/components/shared/useFocusReturn';
 import { SheetPortrait } from './SheetPortrait';
 import { MenuBackdrop } from './MenuBackdrop';
 import { useRuntime } from './runtime';
+import './menus.css';
 
 const DIFF_COLOR: Record<Difficulty, string> = {
     easy: '#5fe0b0',
@@ -39,33 +45,39 @@ const DIFF_COLOR: Record<Difficulty, string> = {
     lunatic: '#ff5ccd',
 };
 
+function useDiffLabels(): Record<Difficulty, string> {
+    const { t } = useTranslation('c-dream-rift');
+    return {
+        easy: t('menu-diff-easy', { defaultValue: 'easy' }),
+        normal: t('menu-diff-normal', { defaultValue: 'normal' }),
+        hard: t('menu-diff-hard', { defaultValue: 'hard' }),
+        lunatic: t('menu-diff-lunatic', { defaultValue: 'lunatic' }),
+    };
+}
+
 function Btn({ children, onClick, variant = 'primary', disabled, className }: { children: React.ReactNode; onClick?: () => void; variant?: 'primary' | 'ghost'; disabled?: boolean; className?: string }) {
-    const base = 'dr-plaque rounded-sm px-5 py-3 text-sm font-semibold active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed';
-    const styles = variant === 'primary' ? 'dr-plaque-primary' : '';
     return (
-        <button type="button" onClick={onClick} disabled={disabled} className={`${base} ${styles} ${className ?? ''}`}>
-            {children}
+        <button type="button" onClick={onClick} disabled={disabled} className={`drm-btn ${variant === 'primary' ? 'drm-btn--primary' : 'drm-btn--ghost'} ${className ?? ''}`}>
+            <span className="drm-btn__label">{children}</span>
         </button>
     );
 }
 
 function DiffPicker({ value, onChange, disabled }: { value: Difficulty; onChange: (d: Difficulty) => void; disabled?: boolean }) {
+    const labels = useDiffLabels();
     return (
-        <div className="flex min-w-0 gap-2">
+        <div className="drm-diff">
             {DIFFICULTIES.map((d) => (
                 <button
                     key={d}
                     type="button"
                     disabled={disabled}
+                    aria-pressed={value === d}
                     onClick={() => onChange(d)}
-                    className="dr-serif flex-1 rounded-sm border min-w-0 px-1 py-2 pointer-coarse:min-h-11 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.06em] sm:tracking-[0.18em] transition disabled:opacity-40"
-                    style={{
-                        borderColor: value === d ? DIFF_COLOR[d] : 'rgba(231,205,140,0.22)',
-                        background: value === d ? `${DIFF_COLOR[d]}22` : 'transparent',
-                        color: value === d ? DIFF_COLOR[d] : 'var(--dr-cream-dim)',
-                    }}
+                    className="drm-chip"
+                    style={{ '--drm-diff': DIFF_COLOR[d] } as React.CSSProperties}
                 >
-                    {d}
+                    {labels[d]}
                 </button>
             ))}
         </div>
@@ -75,22 +87,13 @@ function DiffPicker({ value, onChange, disabled }: { value: Difficulty; onChange
 function CharCard({ id, selected, onClick }: { id: PlayerId; selected: boolean; onClick: () => void }) {
     const c = CHARACTERS[id];
     return (
-        <button
-            type="button"
-            onClick={onClick}
-            className="group relative flex flex-col items-center rounded-sm border p-3 transition-transform duration-150 hover:-translate-y-0.5"
-            style={{
-                borderColor: selected ? c.accent : 'rgba(231,205,140,0.2)',
-                background: selected ? `${c.accent}1f` : 'rgba(11,7,18,0.5)',
-                boxShadow: selected ? `inset 0 0 0 1px ${c.accent}55, 0 0 22px ${c.accent}33` : 'inset 0 1px 0 rgba(231,205,140,0.08)',
-            }}
-        >
-            <SheetPortrait url={c.sheet} frame={1} size={104} className="rounded-sm" />
-            <div className="dr-serif mt-1 text-sm font-semibold tracking-wide" style={{ color: c.accent }}>
-                {c.name}
+        <button type="button" onClick={onClick} aria-pressed={selected} className="drm-char" style={{ '--drm-char': c.accent } as React.CSSProperties}>
+            <div className="drm-char__frame">
+                <SheetPortrait url={c.sheet} frame={1} size={120} />
             </div>
-            <div className="dr-serif-body text-[10px] italic text-[color:var(--dr-cream-dim)]">{c.title}</div>
-            <div className="mt-1 text-[10px] leading-tight text-[color:var(--dr-cream-dim)]">{c.shotType}</div>
+            <div className="drm-char__name">{c.name}</div>
+            <div className="drm-char__title">{c.title}</div>
+            <div className="drm-char__shot">{c.shotType}</div>
         </button>
     );
 }
@@ -98,7 +101,9 @@ function CharCard({ id, selected, onClick }: { id: PlayerId; selected: boolean; 
 // ─── Title ───
 
 export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings, extra }: { onSingle: () => void; onMulti: () => void; onLeaderboard: () => void; onSettings: () => void; extra?: React.ReactNode }) {
+    const { t } = useTranslation('c-dream-rift');
     const { music, sfx } = useRuntime();
+    const selectedChar = useDreamRift((s) => s.selectedChar);
     const [showHelp, setShowHelp] = useState(false);
     useEffect(() => {
         const begin = () => {
@@ -116,43 +121,49 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings, extr
         };
     }, [music, sfx]);
 
-    const stagger = (i: number): React.CSSProperties => ({ animationDelay: `${0.12 + i * 0.08}s` });
+    const stagger = (i: number): React.CSSProperties => ({ animationDelay: `${0.1 + i * 0.07}s` });
+    const sprite = CHARACTERS[selectedChar];
 
     return (
-        <div className="relative flex min-h-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#0a0612] via-[#170d22] to-[#06030c] px-6 py-12 text-center">
-            {/* animated danmaku backdrop + soft vignette */}
-            <MenuBackdrop className="opacity-70" />
-            <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 26%, rgba(212,64,90,0.22), transparent 56%)' }} />
-            <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 30%, rgba(231,205,140,0.12), transparent 48%)' }} />
-            <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(120% 80% at 50% 50%, transparent 52%, rgba(4,2,9,0.78) 100%)' }} />
+        <div className="drm-root drm-root--title">
+            <MenuBackdrop />
+
+            {/* The dreamer waiting on the horizon, shot lines rising (desktop only). */}
+            <div className="drm-sprite" aria-hidden="true">
+                <div className="drm-sprite__body">
+                    <div className="drm-sprite__shot"><i /><i /><i /></div>
+                    <SheetPortrait url={sprite.sheet} frame={1} size={192} className="drm-sprite__img" />
+                </div>
+                <div className="drm-sprite__shadow" />
+            </div>
 
             <div className="relative">
-                <h1 className="dr-float dr-title-glow dr-serif bg-gradient-to-b from-[#fff6e2] via-[#e7cd8c] to-[#b78f44] bg-clip-text text-6xl font-black tracking-[0.04em] text-transparent md:text-8xl">
-                    Dream Rift
-                </h1>
-                <div className="dr-rise dr-serif-body mt-2 text-xl tracking-[0.42em] text-[color:var(--dr-gold)] md:text-3xl" style={stagger(0)}>ドリームリフト</div>
-                <div className="dr-rise mx-auto mt-3 h-px w-40 dr-rule" style={stagger(1)} />
-                <p className="dr-rise dr-serif-body mt-3 text-sm italic text-[color:var(--dr-cream-dim)]" style={stagger(1)}>A danmaku bullet hell · solo or up to 4-player co-op</p>
+                <div className="drm-logo-wrap">
+                    <h1 className="drm-rise m-0">
+                        <img className="drm-logo" src="/images/games/logos/dream-rift.svg" alt={t('title', { defaultValue: 'Dream Rift' })} width={1120} height={556} />
+                    </h1>
+                </div>
+                <p className="drm-rise drm-tagline" style={stagger(1)}>{t('menu-tagline', { defaultValue: 'A danmaku bullet hell · solo or up to 4-player co-op' })}</p>
             </div>
 
-            <div className="relative mt-10 flex w-full max-w-xs flex-col gap-3">
-                <div className="dr-rise" style={stagger(2)}>
-                    <Btn onClick={() => { sfx.play('menuSelect'); onSingle(); }} className="w-full">Single Player</Btn>
+            <div className="drm-menu">
+                <div className="drm-rise" style={stagger(2)}>
+                    <Btn onClick={() => { sfx.play('menuSelect'); onSingle(); }} className="w-full">{t('menu-single', { defaultValue: 'Single Player' })}</Btn>
                 </div>
-                <div className="dr-rise" style={stagger(3)}>
-                    <Btn onClick={() => { sfx.play('menuSelect'); onMulti(); }} className="w-full">Multiplayer Lobbies</Btn>
+                <div className="drm-rise" style={stagger(3)}>
+                    <Btn variant="ghost" onClick={() => { sfx.play('menuSelect'); onMulti(); }} className="w-full">{t('menu-multi', { defaultValue: 'Multiplayer Lobbies' })}</Btn>
                 </div>
-                <div className="dr-rise" style={stagger(4)}>
-                    <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onLeaderboard(); }} className="w-full">Leaderboard</Btn>
+                <div className="drm-rise" style={stagger(4)}>
+                    <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onLeaderboard(); }} className="w-full">{t('menu-leaderboard', { defaultValue: 'Leaderboard' })}</Btn>
                 </div>
-                {extra && <div className="dr-rise" style={stagger(4)}>{extra}</div>}
-                <div className="dr-rise flex gap-3" style={stagger(5)}>
-                    <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onSettings(); }} className="flex-1">Settings</Btn>
-                    <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); setShowHelp(true); }} className="flex-1">How to Play</Btn>
+                {extra && <div className="drm-rise" style={stagger(4)}>{extra}</div>}
+                <div className="drm-rise drm-menu__row" style={stagger(5)}>
+                    <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onSettings(); }} className="flex-1">{t('menu-settings', { defaultValue: 'Settings' })}</Btn>
+                    <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); setShowHelp(true); }} className="flex-1">{t('menu-how-to-play', { defaultValue: 'How to Play' })}</Btn>
                 </div>
             </div>
 
-            <p className="dr-rise relative mt-10 text-[11px] tracking-wide text-[color:var(--dr-cream-faint)]" style={stagger(6)}>Move: Arrows/WASD · Shoot: Z · Bomb: X · Focus: Shift · Pause: Esc · or play by touch</p>
+            <p className="drm-rise drm-hint" style={stagger(6)}>{t('menu-controls-hint', { defaultValue: 'Move: Arrows/WASD · Shoot: Z · Bomb: X · Focus: Shift · Pause: Esc · or play by touch' })}</p>
 
             {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
         </div>
@@ -160,26 +171,44 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings, extr
 }
 
 function HelpModal({ onClose }: { onClose: () => void }) {
+    const { t } = useTranslation('c-dream-rift');
     const returnFocus = useFocusReturn();
     return (
         <Dialog open onOpenChange={(next) => { if (!next) onClose(); }}>
             <DialogContent hideClose onCloseAutoFocus={returnFocus} overlayClassName="bg-black/80" data-jelly="off" data-liquid-material="off" data-dialog-shell="bare" className="max-w-md gap-0 rounded-none border-0 bg-transparent p-0 shadow-none">
-              <div className="dr-frame grid gap-4 rounded-sm p-6 text-left text-sm text-[color:var(--dr-cream)]">
-                <DialogTitle className="dr-serif text-lg font-semibold tracking-[0.12em] text-[color:var(--dr-gold)]">How to Play</DialogTitle>
-                <DialogDescription className="sr-only">Controls and rules for Dream Rift.</DialogDescription>
-                <div className="dr-rule" />
-                <ul className="space-y-2 text-[color:var(--dr-cream-dim)]">
-                    <li>• Your true hitbox is the tiny dot at your center — hold <b className="text-[color:var(--dr-cream)]">Focus</b> (Shift) to see it and move slowly for precise dodging.</li>
-                    <li>• <b className="text-[color:var(--dr-cream)]">Graze</b> bullets (pass close without dying) for score.</li>
-                    <li>• Collect <span className="text-[color:var(--dr-crimson)]">P</span> power to strengthen your shots, <span className="text-sky-300">pt</span> for points.</li>
-                    <li>• <b className="text-[color:var(--dr-cream)]">Bomb</b> (X) clears the screen and saves you in a pinch — you even get a brief window to bomb right after being hit.</li>
-                    <li>• Capture a boss's <b className="text-[color:var(--dr-cream)]">spell card</b> by defeating it before the timer runs out.</li>
-                    <li>• In co-op you only die from hits on <b className="text-[color:var(--dr-cream)]">your</b> screen — lag never kills you. The boss fight stays in sync for everyone.</li>
-                </ul>
-                <DialogClose className="dr-plaque dr-plaque-primary mt-1 w-full rounded-sm py-2 text-sm font-semibold pointer-coarse:min-h-11">
-                    Got it
-                </DialogClose>
-              </div>
+                <div className="drm-dialog">
+                    <DialogTitle className="drm-h">{t('menu-help-title', { defaultValue: 'How to Play' })}</DialogTitle>
+                    <DialogDescription className="sr-only">{t('menu-help-desc', { defaultValue: 'Controls and rules for Dream Rift.' })}</DialogDescription>
+                    <ul className="drm-help">
+                        <li>
+                            <strong>{t('menu-help-hitbox-term', { defaultValue: 'Hitbox' })}</strong>
+                            {t('menu-help-hitbox', { defaultValue: 'Your true hitbox is the tiny dot at your center. Hold Shift (Focus) to see it and move slowly for precise dodging.' })}
+                        </li>
+                        <li>
+                            <strong>{t('menu-help-graze-term', { defaultValue: 'Graze' })}</strong>
+                            {t('menu-help-graze', { defaultValue: 'Pass close to bullets without dying to earn score.' })}
+                        </li>
+                        <li>
+                            <strong>{t('menu-help-items-term', { defaultValue: 'Items' })}</strong>
+                            {t('menu-help-items', { defaultValue: 'Collect P power to strengthen your shots, and pt for points.' })}
+                        </li>
+                        <li>
+                            <strong>{t('menu-help-bomb-term', { defaultValue: 'Bomb' })}</strong>
+                            {t('menu-help-bomb', { defaultValue: 'Press X to clear the screen and save you in a pinch. You even get a brief window to bomb right after being hit.' })}
+                        </li>
+                        <li>
+                            <strong>{t('menu-help-spell-term', { defaultValue: 'Spell cards' })}</strong>
+                            {t('menu-help-spell', { defaultValue: 'Capture a boss spell card by defeating it before the timer runs out.' })}
+                        </li>
+                        <li>
+                            <strong>{t('menu-help-coop-term', { defaultValue: 'Co-op' })}</strong>
+                            {t('menu-help-coop', { defaultValue: 'You only die from hits on your own screen, so lag never kills you. The boss fight stays in sync for everyone.' })}
+                        </li>
+                    </ul>
+                    <DialogClose className="drm-btn drm-btn--primary w-full">
+                        <span className="drm-btn__label">{t('menu-help-ok', { defaultValue: 'Got it' })}</span>
+                    </DialogClose>
+                </div>
             </DialogContent>
         </Dialog>
     );
@@ -188,6 +217,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
 // ─── Character Select (singleplayer) ───
 
 export function CharacterSelect({ onStart, onBack }: { onStart: (char: PlayerId, diff: Difficulty) => void; onBack: () => void }) {
+    const { t } = useTranslation('c-dream-rift');
     const selectedChar = useDreamRift((s) => s.selectedChar);
     const setSelectedChar = useDreamRift((s) => s.setSelectedChar);
     const difficulty = useDreamRift((s) => s.difficulty);
@@ -195,26 +225,28 @@ export function CharacterSelect({ onStart, onBack }: { onStart: (char: PlayerId,
     const { sfx } = useRuntime();
 
     return (
-        <div className="relative flex min-h-full flex-col overflow-hidden bg-gradient-to-b from-[#0a0612] to-[#120a20] px-6 pb-6 pt-[calc(3.5rem+var(--safe-top))] sm:pt-6">
-            <MenuBackdrop className="opacity-40" />
-            <h2 className="dr-rise dr-serif relative mb-1 text-2xl font-semibold tracking-[0.1em] text-[color:var(--dr-gold)]">Choose Your Dreamer</h2>
-            <p className="dr-rise dr-serif-body relative mb-5 text-sm italic text-[color:var(--dr-cream-dim)]" style={{ animationDelay: '0.06s' }}>Pick a character and a difficulty, then dive into the rift.</p>
-            <div className="relative grid grid-cols-2 gap-3 md:grid-cols-4">
-                {PLAYER_IDS.map((id) => (
-                    <CharCard key={id} id={id} selected={selectedChar === id} onClick={() => { sfx.play('menuMove'); setSelectedChar(id); }} />
-                ))}
-            </div>
-            <div className="mx-auto mt-6 w-full max-w-md">
-                <div className="dr-serif mb-2 text-xs uppercase tracking-[0.2em] text-[color:var(--dr-gold-soft)]">Difficulty</div>
-                <DiffPicker value={difficulty} onChange={setDifficulty} />
-            </div>
-            <div className="mx-auto mt-6 flex w-full max-w-md gap-3">
-                <Btn variant="ghost" onClick={onBack} className="flex-1">
-                    Back
-                </Btn>
-                <Btn onClick={() => { sfx.play('menuSelect'); onStart(selectedChar, difficulty); }} className="flex-[2]">
-                    Enter the Rift
-                </Btn>
+        <div className="drm-root">
+            <MenuBackdrop className="drm-backdrop--dim" />
+            <div className="drm-col">
+                <h2 className="drm-rise drm-h">{t('menu-choose-title', { defaultValue: 'Choose Your Dreamer' })}</h2>
+                <p className="drm-rise drm-sub" style={{ animationDelay: '0.06s' }}>{t('menu-choose-hint', { defaultValue: 'Pick a character and a difficulty, then dive into the rift.' })}</p>
+                <div className="drm-chars">
+                    {PLAYER_IDS.map((id) => (
+                        <CharCard key={id} id={id} selected={selectedChar === id} onClick={() => { sfx.play('menuMove'); setSelectedChar(id); }} />
+                    ))}
+                </div>
+                <div className="mx-auto mt-8 w-full max-w-md">
+                    <div className="drm-label">{t('menu-difficulty', { defaultValue: 'Difficulty' })}</div>
+                    <DiffPicker value={difficulty} onChange={setDifficulty} />
+                </div>
+                <div className="mx-auto mt-8 flex w-full max-w-md gap-4">
+                    <Btn variant="ghost" onClick={onBack} className="flex-1">
+                        {t('menu-back', { defaultValue: 'Back' })}
+                    </Btn>
+                    <Btn onClick={() => { sfx.play('menuSelect'); onStart(selectedChar, difficulty); }} className="flex-[2]">
+                        {t('menu-enter-rift', { defaultValue: 'Enter the Rift' })}
+                    </Btn>
+                </div>
             </div>
         </div>
     );
@@ -223,6 +255,7 @@ export function CharacterSelect({ onStart, onBack }: { onStart: (char: PlayerId,
 // ─── Lobby Browser ───
 
 export function LobbyBrowser({ onBack }: { onBack: () => void }) {
+    const { t } = useTranslation('c-dream-rift');
     const browse = useDreamRift((s) => s.browse);
     const connection = useDreamRift((s) => s.connection);
     const errorMsg = useDreamRift((s) => s.errorMsg);
@@ -230,6 +263,7 @@ export function LobbyBrowser({ onBack }: { onBack: () => void }) {
     const setDifficulty = useDreamRift((s) => s.setDifficulty);
     const [code, setCode] = useState('');
     const [isPublic, setIsPublic] = useState(true);
+    const labels = useDiffLabels();
 
     useEffect(() => {
         let active = true;
@@ -248,79 +282,83 @@ export function LobbyBrowser({ onBack }: { onBack: () => void }) {
     useLobbyInviteJoin(connection === 'connected', (code) => joinLobby(code.toUpperCase()));
 
     return (
-        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0612] to-[#120a20] px-6 pb-6 pt-[calc(3.5rem+var(--safe-top))] sm:pt-6">
-            <div className="mb-4 flex items-center justify-between">
-                <h2 className="dr-serif text-2xl font-semibold tracking-[0.1em] text-[color:var(--dr-gold)]">Multiplayer Lobbies</h2>
-                <span className="text-xs text-[color:var(--dr-cream-dim)]">{connection === 'connected' ? '● online' : connection}</span>
-            </div>
-            {errorMsg && <div className="mb-3 rounded-sm border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">{errorMsg}</div>}
-
-            <div className="grid min-w-0 gap-4 [&>*]:min-w-0 md:grid-cols-2">
-                <div className="dr-frame rounded-sm p-4">
-                    <div className="dr-serif mb-2 text-sm font-semibold tracking-wide text-[color:var(--dr-gold)]">Quick Play</div>
-                    <p className="mb-3 text-xs text-[color:var(--dr-cream-dim)]">Jump into the first open public lobby, or start a new one.</p>
-                    <Btn onClick={() => quickplay()} className="w-full">
-                        Quick Play
-                    </Btn>
+        <div className="drm-root">
+            <MenuBackdrop className="drm-backdrop--dim" />
+            <div className="drm-col drm-col--narrow">
+                <div className="drm-head">
+                    <h2 className="drm-h">{t('menu-lobbies-title', { defaultValue: 'Multiplayer Lobbies' })}</h2>
+                    <span className="drm-status" data-on={connection === 'connected'}>{connection === 'connected' ? t('menu-online', { defaultValue: 'online' }) : connection}</span>
                 </div>
-                <div className="dr-frame rounded-sm p-4">
-                    <div className="dr-serif mb-2 text-sm font-semibold tracking-wide text-[color:var(--dr-gold)]">Create Lobby</div>
-                    <div className="mb-3"><DiffPicker value={difficulty} onChange={setDifficulty} /></div>
-                    <label className="mb-3 flex items-center gap-2 text-xs text-[color:var(--dr-cream-dim)]">
-                        <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="accent-[color:var(--dr-crimson)]" />
-                        Public (listed &amp; findable)
-                    </label>
-                    <Btn onClick={() => createLobby({ isPublic, difficulty })} className="w-full">
-                        Create
-                    </Btn>
-                </div>
-            </div>
+                {errorMsg && <div className="drm-error" role="alert">{errorMsg}</div>}
 
-            <div className="dr-frame mt-4 rounded-sm p-4">
-                <div className="mb-0 flex items-center gap-2">
-                    <input
-                        value={code}
-                        onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
-                        placeholder="ENTER CODE"
-                        className="min-w-0 flex-1 rounded-sm text-base border border-[rgba(231,205,140,0.25)] bg-black/40 px-3 py-2 font-mono uppercase tracking-widest text-[color:var(--dr-cream)] placeholder:text-[color:var(--dr-cream-faint)]"
-                    />
-                    <Btn onClick={() => code && joinLobby(code)} disabled={code.length < 4}>
-                        Join
-                    </Btn>
-                </div>
-            </div>
-
-            <div className="mt-4 flex-1">
-                <div className="dr-serif mb-2 text-xs uppercase tracking-[0.2em] text-[color:var(--dr-gold-soft)]">Public Lobbies</div>
-                {browse.length === 0 ? (
-                    <div className="rounded-sm border border-dashed border-[rgba(231,205,140,0.2)] p-6 text-center text-sm text-[color:var(--dr-cream-faint)]">No open lobbies — create one!</div>
-                ) : (
-                    <div className="space-y-2">
-                        {browse.map((l) => (
-                            <button
-                                key={l.code}
-                                type="button"
-                                onClick={() => joinLobby(l.code)}
-                                className="dr-inset flex w-full items-center justify-between rounded-sm px-4 py-3 text-left transition hover:border-[rgba(231,205,140,0.5)]"
-                            >
-                                <div>
-                                    <div className="dr-serif font-semibold text-[color:var(--dr-cream)]">{l.hostName}'s rift</div>
-                                    <div className="text-xs text-[color:var(--dr-cream-faint)]">
-                                        <span className="font-mono">{l.code}</span> · <span style={{ color: DIFF_COLOR[l.difficulty] }}>{l.difficulty}</span>
-                                    </div>
-                                </div>
-                                <div className="text-sm text-[color:var(--dr-cream-dim)]">
-                                    {l.playerCount}/{l.maxPlayers} 👤
-                                </div>
-                            </button>
-                        ))}
+                <div className="drm-grid2">
+                    <div className="drm-panel">
+                        <div className="drm-panel-title">{t('menu-quickplay-title', { defaultValue: 'Quick Play' })}</div>
+                        <p className="drm-muted mb-4 mt-0 text-[15px] leading-snug">{t('menu-quickplay-desc', { defaultValue: 'Jump into the first open public lobby, or start a new one.' })}</p>
+                        <Btn onClick={() => quickplay()} className="w-full">
+                            {t('menu-quickplay-title', { defaultValue: 'Quick Play' })}
+                        </Btn>
                     </div>
-                )}
-            </div>
+                    <div className="drm-panel">
+                        <div className="drm-panel-title">{t('menu-create-title', { defaultValue: 'Create Lobby' })}</div>
+                        <div className="mb-4"><DiffPicker value={difficulty} onChange={setDifficulty} /></div>
+                        <label className="drm-check">
+                            <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
+                            {t('menu-public-check', { defaultValue: 'Public (listed & findable)' })}
+                        </label>
+                        <Btn onClick={() => createLobby({ isPublic, difficulty })} className="w-full">
+                            {t('menu-create', { defaultValue: 'Create' })}
+                        </Btn>
+                    </div>
+                </div>
 
-            <Btn variant="ghost" onClick={() => { leaveLobby(); onBack(); }} className="mt-4 self-start">
-                Back
-            </Btn>
+                <div className="drm-panel drm-panel--flat mt-5">
+                    <div className="drm-join">
+                        <label className="sr-only" htmlFor="drm-lobby-code">{t('menu-code-label', { defaultValue: 'Lobby code' })}</label>
+                        <input
+                            id="drm-lobby-code"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
+                            placeholder={t('menu-code-placeholder', { defaultValue: 'ENTER CODE' })}
+                            autoComplete="off"
+                            spellCheck={false}
+                            className="drm-field"
+                        />
+                        <Btn onClick={() => code && joinLobby(code)} disabled={code.length < 4}>
+                            {t('menu-join', { defaultValue: 'Join' })}
+                        </Btn>
+                    </div>
+                </div>
+
+                <div className="mt-7">
+                    <div className="drm-label">{t('menu-public-lobbies', { defaultValue: 'Public Lobbies' })}</div>
+                    {browse.length === 0 ? (
+                        <div className="drm-empty">{t('menu-no-lobbies', { defaultValue: 'No open lobbies — create one!' })}</div>
+                    ) : (
+                        <div className="drm-list">
+                            {browse.map((l) => (
+                                <button key={l.code} type="button" onClick={() => joinLobby(l.code)} className="drm-row">
+                                    <div className="min-w-0">
+                                        <div className="drm-row__name">{t('menu-lobby-rift', { defaultValue: "{{name}}'s rift", name: l.hostName })}</div>
+                                        <div className="drm-row__meta">
+                                            {l.code} · <span style={{ color: DIFF_COLOR[l.difficulty] }}>{labels[l.difficulty]}</span>
+                                        </div>
+                                    </div>
+                                    <div className="drm-count">
+                                        <span>{l.playerCount}/{l.maxPlayers}</span>
+                                        <span className="drm-pip" aria-hidden="true" />
+                                        <span className="sr-only">{t('menu-players', { defaultValue: 'players' })}</span>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <Btn variant="ghost" onClick={() => { leaveLobby(); onBack(); }} className="mt-7">
+                    {t('menu-back', { defaultValue: 'Back' })}
+                </Btn>
+            </div>
         </div>
     );
 }
@@ -328,6 +366,7 @@ export function LobbyBrowser({ onBack }: { onBack: () => void }) {
 // ─── Lobby Room ───
 
 export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
+    const { t } = useTranslation('c-dream-rift');
     const lobby = useDreamRift((s) => s.lobby);
     const selfSocketId = useDreamRift((s) => s.selfSocketId);
     const selectedChar = useDreamRift((s) => s.selectedChar);
@@ -336,6 +375,7 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
     const isHost = !!me?.isHost;
     const allReady = !!lobby && lobby.players.filter((p) => !p.isHost).every((p) => p.ready);
     const { copied: linkCopied, copyLink } = useLobbyLink({ code: lobby?.code });
+    const labels = useDiffLabels();
 
     useEffect(() => {
         // sync our preferred character to the lobby once on entering
@@ -346,93 +386,98 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
     if (!lobby) return null;
 
     return (
-        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0612] to-[#120a20] px-6 pb-6 pt-[calc(3.5rem+var(--safe-top))] sm:pt-6">
-            <div className="mb-4 flex items-center justify-between">
-                <div>
-                    <h2 className="dr-serif text-2xl font-semibold tracking-[0.1em] text-[color:var(--dr-gold)]">Lobby</h2>
-                    <div className="text-sm text-[color:var(--dr-cream-dim)]">
-                        Code <span className="font-mono text-lg tracking-widest text-[color:var(--dr-crimson)]">{lobby.code}</span> · {lobby.isPublic ? 'Public' : 'Private'}
+        <div className="drm-root">
+            <MenuBackdrop className="drm-backdrop--dim" />
+            <div className="drm-col flex grow flex-col">
+                <div className="drm-head">
+                    <div>
+                        <h2 className="drm-h">{t('menu-room-title', { defaultValue: 'Lobby' })}</h2>
+                        <div className="drm-roomline">
+                            <span>{t('menu-code', { defaultValue: 'Code' })}</span>
+                            <span className="drm-code">{lobby.code}</span>
+                            <span>· {lobby.isPublic ? t('menu-public-state', { defaultValue: 'Public' }) : t('menu-private-state', { defaultValue: 'Private' })}</span>
+                        </div>
+                        <button type="button" onClick={() => void copyLink()} className="drm-btn drm-btn--ghost mt-4">
+                            <span className="drm-btn__label">{linkCopied ? t('menu-link-copied', { defaultValue: 'Invite link copied' }) : t('menu-copy-link', { defaultValue: 'Copy invite link' })}</span>
+                        </button>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => void copyLink()}
-                        className="dr-inset mt-2 rounded-sm px-3 py-2 pointer-coarse:min-h-11 text-xs font-semibold tracking-wide text-[color:var(--dr-cream-dim)] transition hover:border-[rgba(231,205,140,0.5)] hover:text-[color:var(--dr-cream)]"
-                    >
-                        {linkCopied ? 'Invite link copied' : 'Copy invite link'}
-                    </button>
-                </div>
-                <div className="text-right text-xs text-[color:var(--dr-cream-dim)]">
-                    Difficulty
-                    <div className="dr-serif font-semibold uppercase tracking-[0.14em]" style={{ color: DIFF_COLOR[lobby.difficulty] }}>
-                        {lobby.difficulty}
+                    <div className="drm-head__end">
+                        <div className="drm-label justify-end">{t('menu-difficulty', { defaultValue: 'Difficulty' })}</div>
+                        <div className="drm-row__name" style={{ color: DIFF_COLOR[lobby.difficulty] }}>
+                            {labels[lobby.difficulty].toUpperCase()}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-                {[0, 1, 2, 3].map((slot) => {
-                    const p = lobby.players.find((pl) => pl.slot === slot);
-                    if (!p)
+                <div className="drm-slots">
+                    {[0, 1, 2, 3].map((slot) => {
+                        const p = lobby.players.find((pl) => pl.slot === slot);
+                        if (!p)
+                            return (
+                                <div key={slot} className="drm-slot drm-slot--open drm-empty">
+                                    {t('menu-open-slot', { defaultValue: 'Open Slot' })}
+                                </div>
+                            );
+                        const lit = p.ready || p.isHost;
                         return (
-                            <div key={slot} className="flex h-40 flex-col items-center justify-center rounded-sm border border-dashed border-[rgba(231,205,140,0.2)] text-sm text-[color:var(--dr-cream-faint)]">
-                                Open Slot
+                            <div key={slot} className="drm-slot drm-slot--taken" style={{ '--drm-slot-edge': lit ? CHARACTERS[p.charId].accent : '#3a1a72' } as React.CSSProperties}>
+                                <div className="drm-char__frame">
+                                    <SheetPortrait url={CHARACTERS[p.charId].sheet} frame={1} size={88} />
+                                </div>
+                                <div className="drm-slot__name" title={p.name}>{p.name}</div>
+                                <div className="drm-slot__char" style={{ color: CHARACTERS[p.charId].accent }}>
+                                    {CHARACTERS[p.charId].name}
+                                </div>
+                                <div className="drm-slot__state">
+                                    {p.isHost ? <span style={{ color: '#ffe46b' }}>★ {t('menu-host', { defaultValue: 'Host' })}</span> : p.ready ? <span style={{ color: '#7dffc0' }}>{t('menu-ready', { defaultValue: 'Ready' })}</span> : <span className="drm-muted">{t('menu-not-ready', { defaultValue: 'Not ready' })}</span>}
+                                </div>
+                                {isHost && !p.isHost && (
+                                    <button type="button" onClick={() => kickPlayer(slot)} aria-label={t('menu-remove', { defaultValue: 'Remove {{name}}', name: p.name })} className="drm-kick">
+                                        <span aria-hidden="true">✕</span>
+                                    </button>
+                                )}
                             </div>
                         );
-                    return (
-                        <div key={slot} className="dr-inset relative flex flex-col items-center rounded-sm p-2" style={{ borderColor: p.ready || p.isHost ? 'var(--dr-gold)' : 'rgba(231,205,140,0.16)' }}>
-                            <SheetPortrait url={CHARACTERS[p.charId].sheet} frame={1} size={88} className="rounded-sm" />
-                            <div className="dr-serif text-sm font-semibold text-[color:var(--dr-cream)]">{p.name}</div>
-                            <div className="text-[10px]" style={{ color: CHARACTERS[p.charId].accent }}>
-                                {CHARACTERS[p.charId].name}
-                            </div>
-                            <div className="mt-1 text-[10px] font-bold uppercase tracking-wider">
-                                {p.isHost ? <span className="text-[color:var(--dr-gold)]">★ Host</span> : p.ready ? <span className="text-emerald-300">Ready</span> : <span className="text-[color:var(--dr-cream-faint)]">Not ready</span>}
-                            </div>
-                            {isHost && !p.isHost && (
-                                <button type="button" onClick={() => kickPlayer(slot)} aria-label={`Remove ${p.name}`} className="absolute right-0 top-0 inline-flex size-8 items-center justify-center text-xs text-[color:var(--dr-cream-faint)] hover:text-rose-400 pointer-coarse:size-11">
-                                    <span aria-hidden="true">✕</span>
-                                </button>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-
-            <div className="dr-serif mb-2 text-xs uppercase tracking-[0.2em] text-[color:var(--dr-gold-soft)]">Your Character</div>
-            <div className="mb-4 grid grid-cols-4 gap-2">
-                {PLAYER_IDS.map((id) => (
-                    <button
-                        key={id}
-                        type="button"
-                        onClick={() => setLobbyChar(id)}
-                        className="dr-serif rounded-sm border py-2 text-xs font-semibold tracking-wide"
-                        style={{ borderColor: me?.charId === id ? CHARACTERS[id].accent : 'rgba(231,205,140,0.2)', color: me?.charId === id ? CHARACTERS[id].accent : 'var(--dr-cream-dim)' }}
-                    >
-                        {CHARACTERS[id].name}
-                    </button>
-                ))}
-            </div>
-
-            {isHost && (
-                <div className="mb-4">
-                    <div className="dr-serif mb-2 text-xs uppercase tracking-[0.2em] text-[color:var(--dr-gold-soft)]">Difficulty (host)</div>
-                    <DiffPicker value={lobby.difficulty} onChange={(d) => setLobbySettings(d)} />
+                    })}
                 </div>
-            )}
 
-            <div className="mt-auto flex gap-3">
-                <Btn variant="ghost" onClick={() => { leaveLobby(); onLeave(); }} className="flex-1">
-                    Leave
-                </Btn>
-                {isHost ? (
-                    <Btn onClick={() => startLobby()} disabled={!allReady} className="flex-[2]">
-                        {allReady ? 'Start Run' : 'Waiting for players…'}
-                    </Btn>
-                ) : (
-                    <Btn onClick={() => setLobbyReady(!me?.ready)} className="flex-[2]">
-                        {me?.ready ? 'Cancel Ready' : 'Ready Up'}
-                    </Btn>
+                <div className="drm-label">{t('menu-your-char', { defaultValue: 'Your Character' })}</div>
+                <div className="drm-picks mb-5">
+                    {PLAYER_IDS.map((id) => (
+                        <button
+                            key={id}
+                            type="button"
+                            onClick={() => setLobbyChar(id)}
+                            aria-pressed={me?.charId === id}
+                            className="drm-chip"
+                            style={{ '--drm-diff': CHARACTERS[id].accent } as React.CSSProperties}
+                        >
+                            {CHARACTERS[id].name}
+                        </button>
+                    ))}
+                </div>
+
+                {isHost && (
+                    <div className="mb-5">
+                        <div className="drm-label">{t('menu-difficulty-host', { defaultValue: 'Difficulty (host)' })}</div>
+                        <DiffPicker value={lobby.difficulty} onChange={(d) => setLobbySettings(d)} />
+                    </div>
                 )}
+
+                <div className="drm-actions">
+                    <Btn variant="ghost" onClick={() => { leaveLobby(); onLeave(); }} className="flex-1">
+                        {t('menu-leave', { defaultValue: 'Leave' })}
+                    </Btn>
+                    {isHost ? (
+                        <Btn onClick={() => startLobby()} disabled={!allReady} className="flex-[2]">
+                            {allReady ? t('menu-start-run', { defaultValue: 'Start Run' }) : t('menu-waiting', { defaultValue: 'Waiting for players…' })}
+                        </Btn>
+                    ) : (
+                        <Btn onClick={() => setLobbyReady(!me?.ready)} className="flex-[2]">
+                            {me?.ready ? t('menu-cancel-ready', { defaultValue: 'Cancel Ready' }) : t('menu-ready-up', { defaultValue: 'Ready Up' })}
+                        </Btn>
+                    )}
+                </div>
             </div>
         </div>
     );

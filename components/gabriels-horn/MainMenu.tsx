@@ -9,6 +9,11 @@
  * first round thinking the game is broken, so the pitch says it and the rules
  * button sits right next to it.
  *
+ * Skin: royal purple and gold (docs/game-design-schemes/gabriels-horn.json),
+ * scoped to `.ghm-scene` in gh-menu.css so the table screens keep their theme.
+ * On a wide screen the page is two columns (the pitch and still life on the
+ * left, the actions on the right); on a phone they stack in that order.
+ *
  * This is a document — a column you read top to bottom — so it uses `.app-page`
  * and scrolls the DOCUMENT rather than an inner box (components/CLAUDE.md
  * §Full-screen games/apps, rule 5).
@@ -24,6 +29,8 @@ import { MAX_PLAYERS, MIN_PLAYERS, MIRROR_NAME } from '@/lib/gabriels-horn/const
 import { HornLeaderboard } from './Leaderboard';
 import { HornButton, Panel } from './ui';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
+import { HornStillLife, MenuBackdrop } from './MenuScene';
+import './gh-menu.css';
 
 export function MainMenu({
   signedIn,
@@ -49,119 +56,131 @@ export function MainMenu({
   const [code, setCode] = useState('');
 
   return (
-    <div className="gh-scene app-page app-safe-x text-(--app-text)">
+    <div className="ghm-scene app-page app-safe-x">
+      <MenuBackdrop />
       <header className="app-safe-top px-4 pt-4">
-        <Link
-          to="/games"
-          onClick={goBack}
-          className="inline-flex min-h-11 items-center gap-1.5 rounded-[var(--app-radius-sm)] px-2 py-1 text-xs text-(--app-text-muted) transition-colors hover:text-(--app-text)"
-        >
+        <Link to="/games" onClick={goBack} className="ghm-back">
           <ArrowLeft className="size-3.5" aria-hidden="true" />
           {t('back-to-games', { defaultValue: 'All games' })}
         </Link>
       </header>
 
-      <main className="mx-auto flex w-full max-w-md grow flex-col gap-4 px-4 py-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-black tracking-tight text-(--app-accent)">
-            {t('title', { defaultValue: 'Gabriel’s Horn' })}
+      <main className="ghm-main">
+        <div className="ghm-hero">
+          <h1 className="m-0">
+            <img
+              className="ghm-logo"
+              src="/images/games/logos/gabriels-horn.svg"
+              alt={t('title', { defaultValue: 'Gabriel’s Horn' })}
+              width={1120}
+              height={450}
+            />
           </h1>
-          <p className="mt-1 font-mono text-xs tracking-[0.3em] text-(--app-text-dim) uppercase">
-            {MIRROR_NAME}
-          </p>
-          <p className="mt-3 text-sm text-(--app-text-muted)">
+          <p className="ghm-mirror">{MIRROR_NAME}</p>
+          <HornStillLife className="ghm-art" />
+          <div className="ghm-ornament" aria-hidden="true">
+            <i />
+          </div>
+          <p className="ghm-pitch">
             {t('pitch', {
               defaultValue:
                 'Three dice, and you are the one person who cannot see them. Ask the table. Decide who is lying. Whoever ends holding the fewest cards wins.',
             })}
           </p>
+          <HornButton variant="ghost" size="sm" onClick={onRules}>
+            <BookOpen className="size-4" aria-hidden="true" />
+            {t('read-rules', { defaultValue: 'Read the rules' })}
+          </HornButton>
         </div>
 
-        <HornButton variant="ghost" size="sm" onClick={onRules} className="self-center">
-          <BookOpen className="size-4" aria-hidden="true" />
-          {t('read-rules', { defaultValue: 'Read the rules' })}
-        </HornButton>
-
-        {!signedIn ? (
-          <Panel className="text-center text-sm text-(--app-text-muted)">
-            <p>
-              {t('sign-in-required', {
-                defaultValue:
-                  'Gabriel’s Horn is played against other people, so it needs an account.',
-              })}
-            </p>
-            <Link
-              to="/login"
-              search={{ callbackURL: lobbyReturnPath('/gabriels-horn', invite) }}
-              className="mt-3 inline-flex w-full items-center justify-center rounded-[var(--app-radius-sm)] bg-(--app-accent) px-4 py-2.5 text-sm font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover)"
-            >
-              {t('sign-in', { defaultValue: 'Sign in' })}
-            </Link>
-          </Panel>
-        ) : (
-          <>
-            <div className="grid gap-2">
-              <HornButton variant="primary" onClick={onQuickTable} disabled={connecting}>
-                <Dices className="size-4" aria-hidden="true" />
-                {t('quick-table', { defaultValue: 'Find a table' })}
-              </HornButton>
-              <div className="grid grid-cols-2 gap-2">
-                <HornButton onClick={onHost} disabled={connecting}>
-                  <Plus className="size-4" aria-hidden="true" />
-                  {t('host', { defaultValue: 'Host' })}
-                </HornButton>
-                <HornButton onClick={onBrowse} disabled={connecting}>
-                  <Users className="size-4" aria-hidden="true" />
-                  {t('browse', { defaultValue: 'Browse' })}
-                </HornButton>
-              </div>
-            </div>
-
-            <Panel>
-              <form
-                className="flex gap-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const clean = code.trim().toUpperCase();
-                  if (clean) onJoinCode(clean);
-                }}
+        <div className="ghm-stack">
+          {!signedIn ? (
+            <Panel className="text-center text-sm text-(--app-text-muted)">
+              <p>
+                {t('sign-in-required', {
+                  defaultValue:
+                    'Gabriel’s Horn is played against other people, so it needs an account.',
+                })}
+              </p>
+              <Link
+                to="/login"
+                search={{ callbackURL: lobbyReturnPath('/gabriels-horn', invite) }}
+                data-horn-variant="primary"
+                className="ghm-link-btn"
               >
-                <label className="sr-only" htmlFor="gh-code">
-                  {t('join-code-label', { defaultValue: 'Table code' })}
-                </label>
-                <input
-                  id="gh-code"
-                  value={code}
-                  onChange={(event) => setCode(event.target.value.toUpperCase().slice(0, 8))}
-                  placeholder={t('join-code-placeholder', { defaultValue: 'TABLE CODE' })}
-                  autoComplete="off"
-                  autoCapitalize="characters"
-                  spellCheck={false}
-                  className="min-w-0 grow rounded-[var(--app-radius-sm)] border border-(--app-border) bg-(--app-bg-subtle) px-3 py-2 font-mono text-sm tracking-[0.2em] text-(--app-text) uppercase placeholder:text-(--app-text-dim) focus-visible:border-(--app-accent)"
-                />
-                <HornButton type="submit" disabled={connecting || !code.trim()}>
-                  {t('join', { defaultValue: 'Join' })}
-                </HornButton>
-              </form>
+                {t('sign-in', { defaultValue: 'Sign in' })}
+              </Link>
             </Panel>
-          </>
-        )}
+          ) : (
+            <>
+              <div className="grid gap-2">
+                <HornButton
+                  variant="primary"
+                  onClick={onQuickTable}
+                  disabled={connecting}
+                  className="ghm-cta"
+                >
+                  <Dices className="size-4" aria-hidden="true" />
+                  {t('quick-table', { defaultValue: 'Find a table' })}
+                </HornButton>
+                <div className="grid grid-cols-2 gap-2">
+                  <HornButton onClick={onHost} disabled={connecting}>
+                    <Plus className="size-4" aria-hidden="true" />
+                    {t('host', { defaultValue: 'Host' })}
+                  </HornButton>
+                  <HornButton onClick={onBrowse} disabled={connecting}>
+                    <Users className="size-4" aria-hidden="true" />
+                    {t('browse', { defaultValue: 'Browse' })}
+                  </HornButton>
+                </div>
+              </div>
 
-        <Panel>
-          <h2 className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-[0.14em] text-(--app-text-muted) uppercase">
-            <ListOrdered className="size-3.5" aria-hidden="true" />
-            {t('leaderboard-title', { defaultValue: 'Most games won' })}
-          </h2>
-          <HornLeaderboard />
-        </Panel>
+              <Panel>
+                <form
+                  className="flex gap-2"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const clean = code.trim().toUpperCase();
+                    if (clean) onJoinCode(clean);
+                  }}
+                >
+                  <label className="sr-only" htmlFor="gh-code">
+                    {t('join-code-label', { defaultValue: 'Table code' })}
+                  </label>
+                  <input
+                    id="gh-code"
+                    value={code}
+                    onChange={(event) => setCode(event.target.value.toUpperCase().slice(0, 8))}
+                    placeholder={t('join-code-placeholder', { defaultValue: 'TABLE CODE' })}
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    className="min-w-0 grow rounded-[var(--app-radius-sm)] border border-(--app-border) bg-(--app-bg-subtle) px-3 py-2 font-mono text-sm tracking-[0.2em] text-(--app-text) uppercase placeholder:text-(--app-text-dim) focus-visible:border-(--app-accent)"
+                  />
+                  <HornButton type="submit" disabled={connecting || !code.trim()}>
+                    {t('join', { defaultValue: 'Join' })}
+                  </HornButton>
+                </form>
+              </Panel>
+            </>
+          )}
 
-        <p className="text-center text-xs text-(--app-text-dim)">
-          {t('player-range', {
-            defaultValue: '{{min}}–{{max}} players. Bluffing works better with more of them.',
-            min: MIN_PLAYERS,
-            max: MAX_PLAYERS,
-          })}
-        </p>
+          <Panel>
+            <h2 className="ghm-h2">
+              <ListOrdered className="size-4" aria-hidden="true" />
+              {t('leaderboard-title', { defaultValue: 'Most games won' })}
+            </h2>
+            <HornLeaderboard />
+          </Panel>
+
+          <p className="text-center text-xs text-(--app-text-dim)">
+            {t('player-range', {
+              defaultValue: '{{min}}–{{max}} players. Bluffing works better with more of them.',
+              min: MIN_PLAYERS,
+              max: MAX_PLAYERS,
+            })}
+          </p>
+        </div>
       </main>
     </div>
   );
