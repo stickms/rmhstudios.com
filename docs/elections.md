@@ -241,3 +241,10 @@ spring and sloshes when the count moves it; a dashed line marks the majority. Th
 Democrat wins that starts from the rating and moves toward the current margin as more is counted. The chance of
 control is a normal approximation that treats races as independent. It is **indicative, not a forecast** — there is
 no polling model — and the page says so. The canvas loop runs only while the globe is on screen and the tab visible.
+
+**3D (`GlobeCanvas.tsx`).** The globe is a real 3D scene you can rotate: drag (horizontal drags rotate on touch, vertical
+swipes still scroll), flick for inertia, arrow keys, double-click / Home / Escape or "Reset view" to go back. The sphere
+is a small CPU ray-caster (the blue/red split is a plane through the liquid, so what you see depends on the angle); inside
+hang a gauge arc and a 3D needle that points at the lean and shivers more the more is undecided. Colours follow the
+New York Times needle's blue-to-red scale, from our best recollection of its palette (not an official source). The loop
+is idle-at-rest: it also runs while a drag, flick or reset is moving, then stops.
