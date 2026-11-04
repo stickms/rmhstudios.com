@@ -418,8 +418,8 @@ export function RoomOverlay({
                   if (e.detail > 0) e.currentTarget.blur();
                 }}
                 aria-pressed={autoHide}
-                title={autoHide ? t('room.pinBar', { defaultValue: 'Keep this bar visible' }) : t('room.hideBar', { defaultValue: 'Hide this bar until hovered' })}
-                aria-label={autoHide ? t('room.pinBar', { defaultValue: 'Keep this bar visible' }) : t('room.hideBar', { defaultValue: 'Hide this bar until hovered' })}
+                title={autoHide ? t('room.pinBars', { defaultValue: 'Keep the bars visible' }) : t('room.hideBars', { defaultValue: 'Hide the room bar and pane headers until hovered' })}
+                aria-label={autoHide ? t('room.pinBars', { defaultValue: 'Keep the bars visible' }) : t('room.hideBars', { defaultValue: 'Hide the room bar and pane headers until hovered' })}
               >
                 {autoHide ? <Pin size={14} aria-hidden /> : <PinOff size={14} aria-hidden />}
               </button>
@@ -519,6 +519,7 @@ export function RoomOverlay({
                     defaultValue: KIND_LABEL[pane.kind][1],
                   })}
                 >
+                  {autoHide ? <div className="el-room__panehot" aria-hidden /> : null}
                   <div className="el-room__panebar">
                     {panes.length > 1 ? (
                       <span
