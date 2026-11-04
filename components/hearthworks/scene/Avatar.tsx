@@ -43,7 +43,7 @@ export function Avatar() {
 
     const b = locomotionBlend(a.speed);
     // Gait advances with distance covered, so feet never skate.
-    rt.gaitPhase += a.speed * dt * 4.2;
+    rt.gaitPhase += a.speed * dt * 6.2;
     const amp = b.walk * 0.62 + b.run * 1.0;
     const swing = Math.sin(rt.gaitPhase) * amp;
     if (legL.current) legL.current.rotation.x = swing;
@@ -51,7 +51,7 @@ export function Avatar() {
     if (armL.current) armL.current.rotation.x = -swing * 0.9;
     if (armR.current) armR.current.rotation.x = swing * 0.9;
     if (body.current) {
-      const bob = Math.abs(Math.sin(rt.gaitPhase)) * 0.05 * (b.walk + b.run * 1.4);
+      const bob = Math.abs(Math.sin(rt.gaitPhase)) * 0.016 * (b.walk + b.run * 1.4);
       const breathe = Math.sin(clock.current * 2.1) * 0.012 * b.idle;
       body.current.position.y = bob;
       body.current.scale.y = 1 + breathe;

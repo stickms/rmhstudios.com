@@ -121,6 +121,9 @@ function Prop({ look }: { look: SkinLook }) {
 }
 
 
+/** A person is about 0.4 tiles tall (a tile is ~4 m): smaller than a cottage's door-height wall, taller than a crop. */
+export const FIGURE_SCALE = 0.3;
+
 export interface FigureRefs {
   body?: RefObject<THREE.Group | null>;
   legL?: RefObject<THREE.Group | null>;
@@ -132,7 +135,7 @@ export interface FigureRefs {
 export function Figure({ look, refs = {} }: { look: SkinLook; refs?: FigureRefs }) {
   const w = look.build;
   return (
-    <group scale={look.height}>
+    <group scale={look.height * FIGURE_SCALE}>
       <group ref={refs.body}>
         <mesh position={[0, 0.7, 0]}>
           <boxGeometry args={[0.34 * w, 0.42, 0.2]} />

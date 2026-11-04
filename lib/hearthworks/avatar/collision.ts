@@ -1,9 +1,12 @@
 import { LEVEL_HEIGHT, SOLID_BUILDINGS } from '../world';
 import type { World } from '../world';
 
-export const AVATAR_RADIUS = 0.22;
-/** The most block levels the avatar steps up (or down) in one move, as in a voxel world. */
-export const MAX_STEP_LEVELS = 1;
+/** Body radius in tiles (a person is ~0.5 m wide against a ~4 m tile). */
+export const AVATAR_RADIUS = 0.12;
+/** The most block levels a person hops up in one move, as in a voxel world. */
+export const MAX_STEP_UP = 1;
+/** The most block levels a person will drop down (a fall); further than this is a cliff. */
+export const MAX_FALL = 3;
 
 /** Block level a tile stands at (water reads as its one fixed level). */
 export function levelAt(world: World, tx: number, tz: number): number {
@@ -41,7 +44,8 @@ export function canStand(
       const tx = Math.round(x + ox);
       const tz = Math.round(z + oz);
       if (tileBlocked(world, tx, tz)) return false;
-      if (Math.abs(levelAt(world, tx, tz) - fromLevel) > MAX_STEP_LEVELS) return false;
+      const rise = levelAt(world, tx, tz) - fromLevel;
+      if (rise > MAX_STEP_UP || rise < -MAX_FALL) return false;
     }
   }
   return true;

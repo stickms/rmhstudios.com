@@ -81,7 +81,7 @@ describe('stepAvatar', () => {
     stepWorld(w, 0, [{ type: 'join', playerId: 'p' }]);
     w.players.p.money = 99_999;
     for (let z = 4; z <= 12; z++) stepWorld(w, 0, [{ type: 'place', playerId: 'p', kind: 'cottage', x: 10, z }]);
-    const s = run(w, at(8.5, 6, Math.atan2(1, 1)), { x: 1, z: 1 }, 3000);
+    const s = run(w, at(8.5, 6, Math.atan2(1, 1)), { x: 1, z: 1 }, 6000);
     expect(s.x).toBeLessThan(9.4); // never through the wall
     expect(s.z).toBeGreaterThan(8); // but kept moving along it
   });
