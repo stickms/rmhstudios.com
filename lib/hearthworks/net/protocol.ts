@@ -1,0 +1,126 @@
+/**
+ * The wire protocol between a host and its peers. The host is authoritative: it orders every command into a tick,
+ * and every peer runs the same deterministic sim (`stepWorld`) over the same ordered stream, so all worlds stay
+ * identical without shipping state every frame. Peers are untrusted — everything they send is parsed against the
+ * schemas here, and the host stamps the sender's (hub-vouched) identity itself; a command never carries one.
+ */
+
+import { z } from 'zod';
+import { BUILDING_IDS, CROP_IDS, ITEM_IDS } from '../content';
+import { SKIN_IDS } from '../skins';
+import type { LocalCommand } from '../store';
+import { decodeWorld, encodeWorld } from '../save';
+import type { World } from '../world';
+
+export const PROTOCOL_VERSION = 1;
+/** A peer's JSON message may be at most this large. */
+export const MAX_PEER_MESSAGE_BYTES = 4096;
+
+const int = z.number().int();
+const coord = int.min(0).max(4096);
+
+export const localCommandSchema: z.ZodType<LocalCommand> = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('join') }).strict(),
+  z.object({ type: z.literal('move'), x: z.number().finite(), z: z.number().finite() }).strict(),
+  z
+    .object({
+      type: z.literal('place'),
+      kind: z.enum(BUILDING_IDS),
+      x: coord,
+      z: coord,
+      rot: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]).optional(),
+    })
+    .strict(),
+  z.object({ type: z.literal('remove'), x: coord, z: coord }).strict(),
+  z.object({ type: z.literal('plant'), crop: z.enum(CROP_IDS), x: coord, z: coord }).strict(),
+  z.object({ type: z.literal('harvest'), x: coord, z: coord }).strict(),
+  z.object({ type: z.literal('cook'), recipe: z.string().min(1).max(32) }).strict(),
+  z.object({ type: z.literal('sell'), item: z.enum(ITEM_IDS), qty: int.min(1).max(9999) }).strict(),
+  z.object({ type: z.literal('buySkin'), skin: z.enum(SKIN_IDS) }).strict(),
+  z.object({ type: z.literal('setSkin'), skin: z.enum(SKIN_IDS) }).strict(),
+]) as z.ZodType<LocalCommand>;
+
+/** Peer → host. */
+export const peerMessageSchema = z.discriminatedUnion('t', [
+  z.object({ t: z.literal('cmd'), seq: int.min(0).max(2 ** 31), cmd: localCommandSchema }).strict(),
+  z.object({ t: z.literal('resync') }).strict(),
+]);
+export type PeerMessage = z.infer<typeof peerMessageSchema>;
+
+/** One ordered command in a tick, as every replica applies it. */
+export interface TickCommand {
+  /** Hub-vouched sender, stamped by the host. */
+  p: string;
+  cmd: LocalCommand;
+}
+
+/** Host → peer (JSON frames; snapshots are a separate binary frame). */
+export type HostMessage =
+  | { t: 'welcome'; v: number; you: string; successor: string | null }
+  | { t: 'tick'; n: number; cmds: TickCommand[]; acks: Record<string, number> }
+  | { t: 'successor'; id: string | null };
+
+const FRAME_JSON = 1;
+const FRAME_SNAPSHOT = 2;
+
+export function encodeJson(msg: HostMessage | PeerMessage): Uint8Array {
+  const body = new TextEncoder().encode(JSON.stringify(msg));
+  const out = new Uint8Array(body.length + 1);
+  out[0] = FRAME_JSON;
+  out.set(body, 1);
+  return out;
+}
+
+/** A snapshot frame: the world at tick `n`, plus the acks the new replica needs to know what was already applied. */
+export function encodeSnapshot(world: World, acks: Record<string, number>): Uint8Array {
+  const ackBytes = new TextEncoder().encode(JSON.stringify(acks));
+  const worldBytes = encodeWorld(world);
+  const out = new Uint8Array(1 + 4 + ackBytes.length + worldBytes.length);
+  out[0] = FRAME_SNAPSHOT;
+  new DataView(out.buffer).setUint32(1, ackBytes.length);
+  out.set(ackBytes, 5);
+  out.set(worldBytes, 5 + ackBytes.length);
+  return out;
+}
+
+export type Frame =
+  | { kind: 'json'; value: unknown }
+  | { kind: 'snapshot'; world: World; acks: Record<string, number> }
+  | { kind: 'invalid' };
+
+export function decodeFrame(data: Uint8Array, opts: { maxJsonBytes?: number } = {}): Frame {
+  try {
+    if (data.length < 2) return { kind: 'invalid' };
+    if (data[0] === FRAME_JSON) {
+      if (opts.maxJsonBytes !== undefined && data.length > opts.maxJsonBytes) return { kind: 'invalid' };
+      return { kind: 'json', value: JSON.parse(new TextDecoder().decode(data.subarray(1))) };
+    }
+    if (data[0] === FRAME_SNAPSHOT) {
+      const ackLen = new DataView(data.buffer, data.byteOffset).getUint32(1);
+      if (ackLen > data.length - 5) return { kind: 'invalid' };
+      const acks = JSON.parse(new TextDecoder().decode(data.subarray(5, 5 + ackLen)));
+      const world = decodeWorld(data.subarray(5 + ackLen));
+      return { kind: 'snapshot', world, acks: sanitiseAcks(acks) };
+    }
+  } catch {
+    // fall through
+  }
+  return { kind: 'invalid' };
+}
+
+function sanitiseAcks(v: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (v && typeof v === 'object') {
+    for (const [k, n] of Object.entries(v)) if (Number.isInteger(n) && (n as number) >= -1) out[k] = n as number;
+  }
+  return out;
+}
+
+/** The part of a byte channel the session needs (a subset of lib/shared/p2p's `ChannelLike`). */
+export interface Link {
+  readonly open: boolean;
+  send(data: Uint8Array): void;
+  onmessage: ((data: Uint8Array) => void) | null;
+  onclose: (() => void) | null;
+  close(): void;
+}
