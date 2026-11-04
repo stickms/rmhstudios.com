@@ -136,10 +136,10 @@ import { join } from 'node:path';
  *                                       loop. While it runs it writes only
  *                                       transform/opacity/custom properties and
  *                                       strokes one canvas, and reads no layout.
- *   - components/elections/LiquidGlobe.tsx — the election page's lean globe (two liquids in a glass sphere).
+ *   - components/elections/GlobeCanvas.tsx — the election page's 3D lean globe (two liquids, a needle, rotatable).
  *                                       IDLE-AT-REST: the loop runs for ~7 s when the globe scrolls into view,
- *                                       when its lean changes, or when the pointer touches it, then ends once the
- *                                       spring has settled (`frame()` does not reschedule), so a page at rest runs no
+ *                                       when its lean changes, or when it is touched, and while a drag/flick/reset
+ *                                       is moving, then ends once the spring and the view have settled (`frame()` does not reschedule), so a page at rest runs no
  *                                       loop. It also stops while off screen (IntersectionObserver) or the tab is
  *                                       hidden, draws one still frame under jellyMotion `still`, and cancels its
  *                                       pending frame on unmount.
@@ -308,7 +308,7 @@ const ALLOW = new Set<string>([
   'components/library/LibraryReveal.tsx',
   'components/library/UploadModal.tsx',
   'components/massive-march/world/WorldView.tsx',
-  'components/elections/LiquidGlobe.tsx',
+  'components/elections/GlobeCanvas.tsx',
   'components/radial/LiquidGlobe.tsx',
   'components/neon-driftway/NeonDriftwayGame.tsx',
   'components/nightrail/NightrailGame.tsx',

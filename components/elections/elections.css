@@ -2697,6 +2697,22 @@ html.ios-webkit .el-room__grid {
 .el-globe__canvas {
   display: block;
   max-width: 100%;
+  cursor: grab;
+  touch-action: pan-y;
+  border-radius: 50%;
+  outline-offset: 4px;
+}
+.el-globe__canvas:active {
+  cursor: grabbing;
+}
+.el-globe__hint {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
 }
 .el-globe__empty {
   max-width: 100%;
@@ -2730,10 +2746,10 @@ html.ios-webkit .el-room__grid {
   letter-spacing: -0.04em;
 }
 .el-globe__d strong {
-  color: #2f5bff;
+  color: #1375b7;
 }
 .el-globe__r strong {
-  color: #e8332a;
+  color: #c93135;
 }
 .el-globe__odds {
   margin: 0;
