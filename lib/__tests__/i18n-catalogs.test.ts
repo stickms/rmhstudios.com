@@ -177,6 +177,10 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'verse-poem-for-you',
     'verse-the-page-remembers',
   ],
+  // Kowloon Knockout and Slice It! main-menu redesign (2026-11-04): the wordmark's
+  // alt text and the menu taglines. English-only until the pipeline is run.
+  'c-kowloon-knockout': ['game-title', 'menu-tagline'],
+  'c-game': ['game-title', 'menu-tagline'],
   // Altair multiplayer placeholder message (2026-11-02). English-only until the
   // locales are translated; remove with it.
   'c-altair': [
@@ -844,6 +848,8 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // reached ANY catalog — including English. Moving them into
   // `SettingsPanel.tsx` under a plain `t` is what finally extracted them.
   'r-slice-it': [
+    // Menu redesign, 2026-11-04: the route header's logo alt text.
+    'game-title',
     // Extract backlog, 2026-09-15 — see the block at the end of this map.
     'artist-play-count_one',
     'pack-track-count_one',

@@ -24,6 +24,8 @@ export default function GraphicsSettings({ onClose }: { onClose?: () => void }) 
     return (
         <motion.div
             className="kk-graphics-panel"
+            role="region"
+            aria-label={t("graphics", { defaultValue: "GRAPHICS" })}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
@@ -34,6 +36,7 @@ export default function GraphicsSettings({ onClose }: { onClose?: () => void }) 
                     <button
                         key={p.value}
                         className={`neon-button neon-button-controls${preference === p.value ? ' is-active' : ''}`}
+                        aria-pressed={preference === p.value}
                         onClick={() => setPreference(p.value)}
                     >
                         {t(p.tKey, { defaultValue: p.defaultLabel })}

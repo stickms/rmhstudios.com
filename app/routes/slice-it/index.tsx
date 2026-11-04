@@ -44,7 +44,14 @@ function SliceItPage() {
           <span aria-hidden className="hidden text-xs font-black text-slice-text-light sm:inline">
             |
           </span>
-          <span className="hidden text-sm font-black text-slice-text sm:inline">Slice-It</span>
+          <img
+            src="/images/games/logos/slice-it.svg"
+            alt={t('game-title', { defaultValue: 'Slice It!' })}
+            width={1120}
+            height={319}
+            decoding="async"
+            className="hidden h-7 w-auto sm:block"
+          />
         </div>
 
         {/* Game Canvas — occupies remaining space */}
