@@ -22,6 +22,7 @@ import enCForestExplorer from "@/locales/en/c-forest-explorer.json";
 import enCGabrielsHorn from "@/locales/en/c-gabriels-horn.json";
 import enCGame from "@/locales/en/c-game.json";
 import enCGroupcall from "@/locales/en/c-groupcall.json";
+import enCHearthworks from "@/locales/en/c-hearthworks.json";
 import enCHistory from "@/locales/en/c-history.json";
 import enCHouseAlwaysWins from "@/locales/en/c-house-always-wins.json";
 import enCIsleworks from "@/locales/en/c-isleworks.json";
@@ -158,6 +159,7 @@ const enResources = {
   "c-gabriels-horn": enCGabrielsHorn,
   "c-game": enCGame,
   "c-groupcall": enCGroupcall,
+  "c-hearthworks": enCHearthworks,
   "c-history": enCHistory,
   "c-house-always-wins": enCHouseAlwaysWins,
   "c-isleworks": enCIsleworks,

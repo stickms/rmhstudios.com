@@ -127,6 +127,17 @@ export interface GameCapabilities {
 
 /** Keyed by `GameInfo.id`. Held to exact parity with `games` by the test file. */
 export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
+  hearthworks: {
+    genre: ['simulation', 'strategy'],
+    // Multiplayer (P2P with host transfer) lands in a later phase; the honesty rule says claim only what ships.
+    players: ['single'],
+    input: { supported: ['mouse', 'touch'], required: [] },
+    sessionMinutes: [20, 90],
+    engine: 'webgl',
+    demanding: true,
+    save: 'local-only',
+    accessibility: [],
+  },
   isleworks: {
     genre: ['simulation', 'strategy'],
     players: ['single'],

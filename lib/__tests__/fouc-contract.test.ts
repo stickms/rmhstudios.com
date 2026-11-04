@@ -564,6 +564,7 @@ describe('FOUC contract: hydration', () => {
     'app/routes/forest-explorer/explore.tsx':
       'client-only 3D scene: the server renders the fallback',
     'app/routes/forest-explorer/story.tsx': 'client-only 3D scene: the server renders the fallback',
+    'app/routes/hearthworks.tsx': 'client-only 3D scene: the server renders the fallback',
     'app/routes/isleworks.tsx': 'client-only 3D scene: the server renders the fallback',
     'app/routes/library.$slug.tsx': 'the book and EPUB readers open from the page on demand',
     'app/routes/rmhcode/index.tsx': 'the token generator opens on demand from the page',

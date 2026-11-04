@@ -67,6 +67,7 @@ import forestExplorer from './games/forest-explorer';
 import gabrielsHorn from './games/gabriels-horn';
 import halfLife2 from './games/half-life-2';
 import houseAlwaysWins from './games/house-always-wins';
+import hearthworks from './games/hearthworks';
 import isleworks from './games/isleworks';
 import kowloonKnockout from './games/kowloon-knockout';
 import laundrySort from './games/laundry-sort';
@@ -108,6 +109,7 @@ const GAME_MODULES: readonly GameInfo[] = [
   gabrielsHorn,
   halfLife2,
   houseAlwaysWins,
+  hearthworks,
   isleworks,
   kowloonKnockout,
   laundrySort,
