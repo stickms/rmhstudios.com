@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SlidersHorizontal } from 'lucide-react';
 import type { PuzzleCategory } from '@/lib/synapse-storm/types';
 
 /** Every category a custom storm can draw from, in the order the menu lists them. */
@@ -73,39 +74,35 @@ export const CustomStormPicker: React.FC<CustomStormPickerProps> = ({ onStart })
   return (
     <>
       <button
-        className="start-button multiplayer-button"
+        className="ssm-btn ssm-btn--ghost"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
+        <SlidersHorizontal className="ssm-btn__icon" size={18} aria-hidden="true" />
         {t('storm-custom-open', { defaultValue: 'CUSTOM STORM (TRAINING)' })}
-        <div className="start-glow" />
       </button>
       {open && (
-        <div className="settings-panel">
-          <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
-            <legend className="hud-label">
+        <div className="ssm-panel ssm-panel--pink ssm-custom">
+          <fieldset className="ssm-fieldset">
+            <legend className="ssm-legend">
               {t('storm-custom-legend', { defaultValue: 'Challenges in your storm' })}
             </legend>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', margin: '8px 0' }}>
+            <div className="ssm-checks">
               {CUSTOM_STORM_CATEGORIES.map((c) => (
-                <label
-                  key={c}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 32 }}
-                >
+                <label key={c} className="ssm-check">
                   <input type="checkbox" checked={picked.includes(c)} onChange={() => toggle(c)} />
                   {labels[c]}
                 </label>
               ))}
             </div>
           </fieldset>
-          <p className="menu-tagline" style={{ fontSize: '0.8rem' }}>
+          <p className="ssm-note">
             {t('storm-custom-note', {
               defaultValue: 'Training mode: unranked, and your score is never submitted.',
             })}
           </p>
-          <button className="start-button" onClick={start} disabled={!canStart}>
+          <button className="ssm-btn ssm-btn--primary" onClick={start} disabled={!canStart}>
             {t('storm-custom-start', { defaultValue: 'START TRAINING STORM' })}
-            <div className="start-glow" />
           </button>
         </div>
       )}

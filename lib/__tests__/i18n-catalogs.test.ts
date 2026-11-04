@@ -150,6 +150,31 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'menu-tagline',
     'menu-waiting',
     'menu-your-char',
+  // Synapse Storm + Versecraft menu redesign (2026-11-04): the new menu strings
+  // are English-only until the translation pipeline runs; remove with it.
+  'c-synapse-storm': ['game-title'],
+  'c-versecraft': [
+    'chapter-progress',
+    'current-story-label',
+    'delete-slot',
+    'game-title',
+    'loading-your-story',
+    'menu-cast',
+    'menu-kicker',
+    'menu-tagline-1',
+    'menu-tagline-2',
+    'menu-tagline-3',
+    'menu-tagline-4',
+    'new-story',
+    'new-story-note',
+    'play-a-seed',
+    'restoring-your-cast',
+    'step-finding-save',
+    'step-returning-scene',
+    'step-waking-cast',
+    'verse-once-upon-a-spring',
+    'verse-poem-for-you',
+    'verse-the-page-remembers',
   ],
   // Altair multiplayer placeholder message (2026-11-02). English-only until the
   // locales are translated; remove with it.
