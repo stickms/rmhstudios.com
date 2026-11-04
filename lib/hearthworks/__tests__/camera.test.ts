@@ -93,6 +93,14 @@ describe('blendPose', () => {
     expect(Number.isFinite(blendPose(iso, third, Number.NaN).fov)).toBe(true);
   });
 
+  it('rides above the ground the avatar stands on, however high that is', () => {
+    const high = thirdPose({ x: 16, z: 16, yaw: 0.6, y: 2.6 });
+    expect(high.position[1]).toBeGreaterThan(2.6);
+    expect(high.target[1]).toBeGreaterThan(2.6);
+    const low = thirdPose({ x: 16, z: 16, yaw: 0.6, y: 0.4 });
+    expect(high.position[1] - low.position[1]).toBeCloseTo(2.2, 9);
+  });
+
   it('keeps the camera above ground and brings it in close on the avatar', () => {
     for (let i = 0; i <= 100; i++) expect(blendPose(iso, third, i / 100).position[1]).toBeGreaterThan(0);
     const end = blendPose(iso, third, 1);

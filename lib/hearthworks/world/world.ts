@@ -1,14 +1,7 @@
-import {
-  BUILDINGS,
-  CROPS,
-  ITEMS,
-  RECIPES,
-  isBuildingId,
-  isCropId,
-  isItemId,
-} from '../content';
+import { BUILDINGS, CROPS, ITEMS, RECIPES, isBuildingId, isCropId, isItemId } from '../content';
 import { DEFAULT_SKIN, SKINS, isSkinId } from '../skins';
 import { collect, fire, forage, hire, serve } from './actions';
+import { agentOnTile } from './agents';
 import { buildingAt, cropStage, inBounds, tileIndex } from './helpers';
 import { fbm } from './noise';
 import { tickSystems } from './systems';
@@ -32,7 +25,12 @@ import {
 } from './types';
 
 /** Buildings you cannot walk through. */
-export const SOLID_BUILDINGS: ReadonlySet<string> = new Set(['cottage', 'stall', 'kitchen', 'harvester']);
+export const SOLID_BUILDINGS: ReadonlySet<string> = new Set([
+  'cottage',
+  'stall',
+  'kitchen',
+  'harvester',
+]);
 
 /** Build a world from a seed. Same seed and size → identical world. */
 export function createWorld(seed: number, size: number): World {
@@ -127,7 +125,8 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
 
   switch (cmd.type) {
     case 'move': {
-      if (!Number.isFinite(cmd.x) || !Number.isFinite(cmd.z)) return reject(events, cmd, 'out-of-bounds');
+      if (!Number.isFinite(cmd.x) || !Number.isFinite(cmd.z))
+        return reject(events, cmd, 'out-of-bounds');
       const tx = Math.floor(cmd.x);
       const tz = Math.floor(cmd.z);
       if (!inBounds(w, tx, tz)) return reject(events, cmd, 'out-of-bounds');
@@ -139,12 +138,16 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
     case 'place': {
       if (!isBuildingId(cmd.kind)) return reject(events, cmd, 'nothing-there');
       if (!inBounds(w, cmd.x, cmd.z)) return reject(events, cmd, 'out-of-bounds');
-      if (w.terrain[tileIndex(w, cmd.x, cmd.z)] !== 'grass') return reject(events, cmd, 'bad-terrain');
+      if (w.terrain[tileIndex(w, cmd.x, cmd.z)] !== 'grass')
+        return reject(events, cmd, 'bad-terrain');
       if (buildingAt(w, cmd.x, cmd.z)) return reject(events, cmd, 'occupied');
-      // Never wall someone in: a solid building cannot go up on a tile a player is standing on.
+      // Never wall someone in: a solid building cannot go up on a tile a player, a customer or a farmhand is standing on.
       if (
         SOLID_BUILDINGS.has(cmd.kind) &&
-        Object.values(w.players).some((o) => Math.round(o.x) === cmd.x && Math.round(o.z) === cmd.z)
+        (Object.values(w.players).some(
+          (o) => Math.round(o.x) === cmd.x && Math.round(o.z) === cmd.z,
+        ) ||
+          agentOnTile(w, cmd.x, cmd.z))
       )
         return reject(events, cmd, 'occupied');
       const cost = BUILDINGS[cmd.kind].cost;
@@ -172,7 +175,8 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
       if (!inBounds(w, cmd.x, cmd.z)) return reject(events, cmd, 'out-of-bounds');
       const b = buildingAt(w, cmd.x, cmd.z);
       if (!b || b.kind !== 'plot') return reject(events, cmd, 'no-plot');
-      if (w.crops.some((c) => c.x === cmd.x && c.z === cmd.z)) return reject(events, cmd, 'occupied');
+      if (w.crops.some((c) => c.x === cmd.x && c.z === cmd.z))
+        return reject(events, cmd, 'occupied');
       const price = CROPS[cmd.crop].seedPrice;
       if (p.money < price) return reject(events, cmd, 'cannot-afford');
       p.money -= price;
@@ -200,7 +204,8 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
           return reject(events, cmd, 'missing-ingredients');
       }
       for (const [item, need] of Object.entries(recipe.inputs)) {
-        p.inventory[item as keyof typeof ITEMS] = (p.inventory[item as keyof typeof ITEMS] ?? 0) - (need ?? 0);
+        p.inventory[item as keyof typeof ITEMS] =
+          (p.inventory[item as keyof typeof ITEMS] ?? 0) - (need ?? 0);
       }
       give(p, recipe.output, recipe.outputQty);
       events.push({ type: 'cooked', playerId: p.id, item: recipe.output, qty: recipe.outputQty });

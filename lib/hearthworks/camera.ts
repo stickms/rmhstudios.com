@@ -84,15 +84,17 @@ export function isoPose(center: { x: number; z: number }, distance: number): Cam
 }
 
 /** Behind and above the avatar, looking at its shoulders. `yaw` is the direction it faces (0 = +z). */
-export function thirdPose(avatar: { x: number; z: number; yaw: number }): CameraPose {
+/** `y` is the height of the ground under the avatar (the camera rides above the terrain, never inside it). */
+export function thirdPose(avatar: { x: number; z: number; yaw: number; y?: number }): CameraPose {
   // Scaled to a person ~0.4 tiles tall: just behind and above the shoulders.
   const back = 1.7;
   const up = 0.95;
+  const ground = avatar.y ?? 0;
   const fx = Math.sin(avatar.yaw);
   const fz = Math.cos(avatar.yaw);
   return {
-    position: [avatar.x - fx * back, up, avatar.z - fz * back],
-    target: [avatar.x + fx * 0.55, 0.38, avatar.z + fz * 0.55],
+    position: [avatar.x - fx * back, ground + up, avatar.z - fz * back],
+    target: [avatar.x + fx * 0.55, ground + 0.38, avatar.z + fz * 0.55],
     fov: THIRD_FOV,
   };
 }

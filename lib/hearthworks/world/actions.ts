@@ -1,9 +1,12 @@
 /** The command handlers for the economy layer: foraging, serving customers, collecting from machines, hiring. */
 
 import { BUILDINGS, CROPS, ITEMS, type ItemId } from '../content';
+import { doorTile, newBudget, staticBlockers } from './agents';
+import { sendHome } from './customers';
+import { newFarmhand } from './farmhands';
 import { buildingAt, inBounds, tileDistance, tileIndex } from './helpers';
 import { nextRandom } from './rng';
-import type { Command, PlayerState, RejectReason, World, WorldEvent, Worker } from './types';
+import type { Command, PlayerState, RejectReason, World, WorldEvent } from './types';
 
 /** How far a player can reach to pick, serve or collect (tiles). */
 export const REACH = 2;
@@ -27,7 +30,12 @@ function draw(w: World): number {
 
 type Result = RejectReason | null;
 
-export function forage(w: World, p: PlayerState, cmd: Extract<Command, { type: 'forage' }>, ev: WorldEvent[]): Result {
+export function forage(
+  w: World,
+  p: PlayerState,
+  cmd: Extract<Command, { type: 'forage' }>,
+  ev: WorldEvent[],
+): Result {
   if (!inBounds(w, cmd.x, cmd.z)) return 'out-of-bounds';
   const i = tileIndex(w, cmd.x, cmd.z);
   if (w.terrain[i] !== 'forest') return 'nothing-there';
@@ -42,20 +50,32 @@ export function forage(w: World, p: PlayerState, cmd: Extract<Command, { type: '
   return null;
 }
 
-export function serve(w: World, p: PlayerState, cmd: Extract<Command, { type: 'serve' }>, ev: WorldEvent[]): Result {
+export function serve(
+  w: World,
+  p: PlayerState,
+  cmd: Extract<Command, { type: 'serve' }>,
+  ev: WorldEvent[],
+): Result {
   const npc = w.npcs.find((n) => n.id === cmd.npcId);
-  if (!npc) return 'no-such-npc';
+  // Someone already walking off has had their turn.
+  if (!npc || npc.mode === 'leaving') return 'no-such-npc';
   if (tileDistance(p.x, p.z, npc.x, npc.z) > SERVE_REACH) return 'too-far';
   if ((p.inventory[npc.want] ?? 0) < npc.qty) return 'missing-ingredients';
   p.inventory[npc.want] = (p.inventory[npc.want] ?? 0) - npc.qty;
   const earned = Math.floor(ITEMS[npc.want].price * npc.qty * CUSTOMER_PREMIUM);
   p.money += earned;
-  w.npcs = w.npcs.filter((n) => n.id !== npc.id);
   ev.push({ type: 'served', playerId: p.id, npcId: npc.id, item: npc.want, qty: npc.qty, earned });
+  // Happy, they walk back the way they came; if they somehow cannot, they are simply gone.
+  if (!sendHome(w, npc, ev, newBudget())) w.npcs = w.npcs.filter((n) => n.id !== npc.id);
   return null;
 }
 
-export function collect(w: World, p: PlayerState, cmd: Extract<Command, { type: 'collect' }>, ev: WorldEvent[]): Result {
+export function collect(
+  w: World,
+  p: PlayerState,
+  cmd: Extract<Command, { type: 'collect' }>,
+  ev: WorldEvent[],
+): Result {
   if (!inBounds(w, cmd.x, cmd.z)) return 'out-of-bounds';
   const b = buildingAt(w, cmd.x, cmd.z);
   if (!b || b.kind !== 'harvester') return 'nothing-there';
@@ -68,32 +88,33 @@ export function collect(w: World, p: PlayerState, cmd: Extract<Command, { type: 
   return null;
 }
 
-export function hire(w: World, p: PlayerState, cmd: Extract<Command, { type: 'hire' }>, ev: WorldEvent[]): Result {
+export function hire(
+  w: World,
+  p: PlayerState,
+  cmd: Extract<Command, { type: 'hire' }>,
+  ev: WorldEvent[],
+): Result {
   if (!inBounds(w, cmd.x, cmd.z)) return 'out-of-bounds';
   const home = buildingAt(w, cmd.x, cmd.z);
   if (!home || home.kind !== 'cottage') return 'no-cottage';
   const here = w.workers.filter((k) => k.homeX === home.x && k.homeZ === home.z).length;
   if (here >= WORKERS_PER_COTTAGE) return 'too-many-workers';
   if (p.money < HIRE_COST) return 'cannot-afford';
+  const door = doorTile(w, home.x, home.z, staticBlockers(w, null));
+  if (!door) return 'occupied';
   p.money -= HIRE_COST;
-  const worker: Worker = {
-    id: w.nextId++,
-    ownerId: p.id,
-    role: 'farmer',
-    homeX: home.x,
-    homeZ: home.z,
-    x: home.x,
-    z: home.z + 1,
-    lastCrop: null,
-    nextActTick: w.tick + 40,
-    nextWageTick: w.tick + WAGE_INTERVAL_TICKS,
-  };
+  const worker = newFarmhand(w.nextId++, p.id, home, door, w.tick, WAGE_INTERVAL_TICKS);
   w.workers.push(worker);
   ev.push({ type: 'hired', worker });
   return null;
 }
 
-export function fire(w: World, p: PlayerState, cmd: Extract<Command, { type: 'fire' }>, ev: WorldEvent[]): Result {
+export function fire(
+  w: World,
+  p: PlayerState,
+  cmd: Extract<Command, { type: 'fire' }>,
+  ev: WorldEvent[],
+): Result {
   const k = w.workers.find((x) => x.id === cmd.workerId);
   if (!k || k.ownerId !== p.id) return 'nothing-there';
   w.workers = w.workers.filter((x) => x.id !== k.id);
@@ -104,6 +125,5 @@ export function fire(w: World, p: PlayerState, cmd: Extract<Command, { type: 'fi
 /** A farmhand costs this much every minute of game time (1200 ticks), paid by whoever hired them. */
 export const WAGE = 6;
 export const WAGE_INTERVAL_TICKS = 1200;
-export const WORK_RADIUS = 5;
-export const WORK_INTERVAL_TICKS = 100;
+export { WORK_RADIUS, WORK_INTERVAL_TICKS } from './farmhands';
 export { BUILDINGS, CROPS };
