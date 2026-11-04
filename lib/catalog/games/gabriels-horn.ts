@@ -16,6 +16,7 @@ const entry: GameInfo = {
   iconName: 'Dices',
   color: 'from-amber-400/20 to-purple-700/20 hover:border-amber-400/50',
   tags: ['Multiplayer', 'Card Game', 'Bluffing', 'Party'],
+  imagePath: '/images/games/gabriels-horn.webp',
   authGate: true,
 };
 

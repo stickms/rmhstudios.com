@@ -15,6 +15,7 @@ const entry: GameInfo = {
   iconName: 'Crosshair',
   color: 'from-amber-500/20 to-sky-700/20 hover:border-amber-500/50',
   tags: ['Valve', 'FPS', 'Multiplayer', 'Beta'],
+  imagePath: '/images/games/csgo.webp',
   authGate: false,
 };
 

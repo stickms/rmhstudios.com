@@ -16,6 +16,7 @@ const entry: GameInfo = {
   iconName: 'Atom',
   color: 'from-orange-500/20 to-stone-800/20 hover:border-orange-500/50',
   tags: ['Valve', 'FPS', 'Single-player', 'Beta'],
+  imagePath: '/images/games/half-life-2.webp',
   authGate: false,
 };
 
