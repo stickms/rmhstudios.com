@@ -1,6 +1,6 @@
 # Hearthworks — design (working title)
 
-Status: **draft for approval** · 2026-11-04 · replaces CookGame, Forest Explorer,
+Status: **approved by the owner 2026-11-04** (decisions in §13) · 2026-11-04 · replaces CookGame, Forest Explorer,
 Isleworks and RMH Farming Simulator; removes Massive March, Bum's Rush and
 Mental-Hospital: Rochester Offensive.
 
@@ -39,16 +39,15 @@ friends. **[Asked]**
 - **Not** four games under one menu. If forest, city, farm and kitchen are
   separate screens with a shared save, it has failed. [Call]
 - **Not** a game server. Nothing authoritative runs in our infrastructure. [Asked]
-- **Not** a crime sim. CookGame's satirical drug-tycoon framing does not carry
-  over: "cook and sell" becomes food (a restaurant/market/street-stall economy),
-  reusing its mixing, effect-stacking, demand and heat-style systems under
-  a different theme. [Call — it also keeps the game one tone. Say if you want the
-  original theme kept.]
+- **Both food and crime** **[Asked]**: cooking and selling food is the legal
+  route; CookGame's underground product-mixing is the crime route. Choosing crime
+  brings **heat** and run-ins with the police (City-17 Metrocops / Combine) that the
+  player must fight with guns sourced from the CS:GO and HL2 channels. Pure fiction,
+  invented products, as in CookGame.
 - **Not** a stylistic mashup. A model that looks like it came from a different game
   is a defect (§6). [Asked, "cohesive"]
-- No real-money purchase paths in this project; skins are **earned in play only**
-  in v1 (no coin purchase, no membership gating). [Call — also keeps the Valve-asset
-  risk in §6.4 small]
+- No real-money purchase paths for skins. Skins are bought with **in-game money
+  only** **[Asked]** (never site coins/memberships). [Call]
 
 ## 4. Constraints from the codebase
 
@@ -114,6 +113,11 @@ toggle just reverses it. Skippable setting for those who want a cut.
 
 ### 5.4 Multiplayer (P2P)
 
+- **Netcode [Asked: Source-engine smoothness]:** the existing TF2 stack already
+  implements Source-style networking (fixed tick, user-command stream, client-side
+  prediction with reconciliation, snapshot interpolation, lag compensation, delta
+  snapshots, cmdrate/updaterate, loss meter). Hearthworks reuses these pieces
+  from `lib/tf2-game/{net,client/net,sim}` and `lib/shared/p2p`.
 - **Topology:** host-authoritative star over WebRTC. The host runs the full sim
   in its browser; peers send inputs/commands and receive state deltas and
   snapshots. Peers interpolate/predict their own avatar.
@@ -131,12 +135,17 @@ toggle just reverses it. Skippable setting for those who want a cut.
 
 ### 5.5 Skins
 
-The avatar is a modular rig (body + head + outfit + hat + tool-held items) with
-the cosmetics catalog as one list of legal ids, shared by client and host (the
-pattern Bum's Rush used for `cosmetics.ts`: ids validated against a catalog,
-never rendered raw). Peers announce their cosmetic ids; the host validates them
-and rebroadcasts. Skins are visible in both views (iso shows the avatar from above
-at small scale). Launch with a starter set; unlocks come from play. [Call]
+**[Asked]** Different skins are different **models** (a Source character model
+with its animation set), tiered and priced in **in-game money** by how
+influential the character is — e.g. the G-Man is a very expensive top-tier skin.
+Cosmetics (hats, paint) bone-merge on top of any body. The catalog is one list of
+legal ids shared by client and host (the pattern of Bum's Rush's `cosmetics.ts`):
+a peer announces its skin id, the host validates it against the catalog and
+rebroadcasts. Owned skins live with the account; prices are tiers in one table.
+[Call] Tiers: Common (citizens, rebels) · Uncommon (Metrocop, Barney) ·
+Rare (Combine soldier, Alyx-type heroes) · Epic (TF2 mercs) · Legendary (G-Man,
+Breen). Only models present in the asset channels ship; the table is data.
+Skins are visible in both views.
 
 ## 6. Art direction — Source-engine assets, one cohesive scheme
 
@@ -203,8 +212,7 @@ RMH TF2, Half-Life 2 (demo), Portal and CS:GO (`docs/tf2-game.md`):
 These are **Valve's copyrighted assets**. The pipeline avoids committing them and
 the existing games are free to play (`docs/tf2-game.md`). Hearthworks would sit on
 a site with a coin economy and paid memberships, and would put those assets inside
-a monetised economy. This is not a legal opinion; it is a decision that should be
-made deliberately (Q4). Mitigations I can build in either way: gate the Source
+a monetised economy. This is not a legal opinion; it is a decision the owner has made (§13). Mitigations I can build in either way: gate the Source
 content behind the same asset channels (so it can be turned off without code
 changes), keep skins free/earned only (already a non-goal to sell them for money),
 and keep a full set of original fallback models behind the same interface.
@@ -275,22 +283,15 @@ Exact grid/chunk sizes, tick rate and netcode details, machine/recipe/crop
 content tables, belt/worker algorithms, model-by-model art, quality-tier thresholds,
 the skin starter set, and asset/LOD budgets — within the constraints above.
 
-## 13. Open questions for the owner
+## 13. Owner decisions (2026-11-04)
 
-- **Q1. Existing player data.** Removing a game can mean dropping its database
-  tables (Bum's Rush progress and leaderboards, Massive March campaigns, Forest
-  Explorer / Farming Sim saves). Drop them, or keep the tables dormant and read-only?
-  Dropping is irreversible. *Default if unanswered: removed games' tables stay
-  until after cutover; the merged games' tables stay until the importer ships.*
-- **Q2. Food, not crime.** OK to retheme CookGame's trade as food?
-- **Q3. Signaling hub.** OK that "no hosted servers" still allows the signaling/TURN
-  hub (§4)?
-- **Q4. Valve assets in a monetised site.** See §6.4. Proceed with Source content
-  as the primary art (my recommendation: yes, behind the existing channels and with
-  original fallbacks), or build original models only?
-- **Q5. Characters.** The HL2 demo only has the citizens/Combine from two maps;
-  TF2's nine classes and cosmetics are the richer, fully animated set. OK to draw
-  characters from TF2/CS:GO channels as well as HL2?
+- **Valve assets: use them.** Source content is primary. Skins are tiered Source
+  models bought with in-game money (§5.5). The risk in §6.4 is accepted by the owner.
+- **Old player data: delete freely.** The old games are replaced entirely; their
+  tables may be dropped with the games.
+- **Food and crime both** (§3), with police fights using CS:GO/HL2 guns.
+- **Hub:** use the existing signaling hub; Source-style netcode (§5.4).
+- **Delivery:** implement in sequential PRs; each is merged by the agent once CI is green.
 
 ## 14. Calls made after the builder check (correct any)
 
