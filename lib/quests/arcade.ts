@@ -205,14 +205,6 @@ const POOL: ArcadeChallengeDef[] = [
     coins: 14,
   },
   {
-    game: 'rochester-offensive',
-    title: 'Win a round in Rochester Offensive',
-    metric: 'win',
-    target: 1,
-    xp: 65,
-    coins: 18,
-  },
-  {
     game: 'temple-of-joy',
     title: 'Play Temple of Joy today',
     metric: 'plays',

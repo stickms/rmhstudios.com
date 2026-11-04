@@ -171,9 +171,9 @@ export function GameAssistPanel() {
 
       <p className="border-t border-site-border pt-3 text-xs text-site-text-muted">
         {state.honouredBy.length === 0
-          ? t('assists-none-yet', {
+          ? t('assists-none-yet-2', {
               defaultValue:
-                'No game reads these yet — the layer landed before the games did. Your choices are saved and apply the moment one does. Slice It and Massive March have their own assist settings, in their own options.',
+                'No game reads these yet — the layer landed before the games did. Your choices are saved and apply the moment one does. Slice It has its own assist settings, in its own options.',
             })
           : t('assists-honoured-by', {
               defaultValue: 'Applied by: {{games}}.',

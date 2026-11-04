@@ -9,7 +9,6 @@ import koCAwards from "@/locales/ko/c-awards.json";
 import koCBalatro from "@/locales/ko/c-balatro.json";
 import koCBlog from "@/locales/ko/c-blog.json";
 import koCBuilds from "@/locales/ko/c-builds.json";
-import koCBumsRush from "@/locales/ko/c-bums-rush.json";
 import koCCircle from "@/locales/ko/c-circle.json";
 import koCCreator from "@/locales/ko/c-creator.json";
 import koCCursedLogic from "@/locales/ko/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import koCDoctrine from "@/locales/ko/c-doctrine.json";
 import koCDreamRift from "@/locales/ko/c-dream-rift.json";
 import koCDunesday from "@/locales/ko/c-dunesday.json";
 import koCEconomy from "@/locales/ko/c-economy.json";
+import koCElections from "@/locales/ko/c-elections.json";
 import koCForestExplorer from "@/locales/ko/c-forest-explorer.json";
 import koCGabrielsHorn from "@/locales/ko/c-gabriels-horn.json";
 import koCGame from "@/locales/ko/c-game.json";
@@ -32,7 +32,6 @@ import koCLibrary from "@/locales/ko/c-library.json";
 import koCLightsOut from "@/locales/ko/c-lights-out.json";
 import koCLists from "@/locales/ko/c-lists.json";
 import koCLockdown from "@/locales/ko/c-lockdown.json";
-import koCMassiveMarch from "@/locales/ko/c-massive-march.json";
 import koCModeration from "@/locales/ko/c-moderation.json";
 import koCNeonDriftway from "@/locales/ko/c-neon-driftway.json";
 import koCNews from "@/locales/ko/c-news.json";
@@ -109,7 +108,6 @@ const koResources = {
   "c-balatro": koCBalatro,
   "c-blog": koCBlog,
   "c-builds": koCBuilds,
-  "c-bums-rush": koCBumsRush,
   "c-circle": koCCircle,
   "c-creator": koCCreator,
   "c-cursed-logic": koCCursedLogic,
@@ -118,6 +116,7 @@ const koResources = {
   "c-dream-rift": koCDreamRift,
   "c-dunesday": koCDunesday,
   "c-economy": koCEconomy,
+  "c-elections": koCElections,
   "c-forest-explorer": koCForestExplorer,
   "c-gabriels-horn": koCGabrielsHorn,
   "c-game": koCGame,
@@ -132,7 +131,6 @@ const koResources = {
   "c-lights-out": koCLightsOut,
   "c-lists": koCLists,
   "c-lockdown": koCLockdown,
-  "c-massive-march": koCMassiveMarch,
   "c-moderation": koCModeration,
   "c-neon-driftway": koCNeonDriftway,
   "c-news": koCNews,

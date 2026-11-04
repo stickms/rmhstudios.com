@@ -9,7 +9,6 @@ import ruCAwards from "@/locales/ru/c-awards.json";
 import ruCBalatro from "@/locales/ru/c-balatro.json";
 import ruCBlog from "@/locales/ru/c-blog.json";
 import ruCBuilds from "@/locales/ru/c-builds.json";
-import ruCBumsRush from "@/locales/ru/c-bums-rush.json";
 import ruCCircle from "@/locales/ru/c-circle.json";
 import ruCCreator from "@/locales/ru/c-creator.json";
 import ruCCursedLogic from "@/locales/ru/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import ruCDoctrine from "@/locales/ru/c-doctrine.json";
 import ruCDreamRift from "@/locales/ru/c-dream-rift.json";
 import ruCDunesday from "@/locales/ru/c-dunesday.json";
 import ruCEconomy from "@/locales/ru/c-economy.json";
+import ruCElections from "@/locales/ru/c-elections.json";
 import ruCForestExplorer from "@/locales/ru/c-forest-explorer.json";
 import ruCGabrielsHorn from "@/locales/ru/c-gabriels-horn.json";
 import ruCGame from "@/locales/ru/c-game.json";
@@ -32,7 +32,6 @@ import ruCLibrary from "@/locales/ru/c-library.json";
 import ruCLightsOut from "@/locales/ru/c-lights-out.json";
 import ruCLists from "@/locales/ru/c-lists.json";
 import ruCLockdown from "@/locales/ru/c-lockdown.json";
-import ruCMassiveMarch from "@/locales/ru/c-massive-march.json";
 import ruCModeration from "@/locales/ru/c-moderation.json";
 import ruCNeonDriftway from "@/locales/ru/c-neon-driftway.json";
 import ruCNews from "@/locales/ru/c-news.json";
@@ -109,7 +108,6 @@ const ruResources = {
   "c-balatro": ruCBalatro,
   "c-blog": ruCBlog,
   "c-builds": ruCBuilds,
-  "c-bums-rush": ruCBumsRush,
   "c-circle": ruCCircle,
   "c-creator": ruCCreator,
   "c-cursed-logic": ruCCursedLogic,
@@ -118,6 +116,7 @@ const ruResources = {
   "c-dream-rift": ruCDreamRift,
   "c-dunesday": ruCDunesday,
   "c-economy": ruCEconomy,
+  "c-elections": ruCElections,
   "c-forest-explorer": ruCForestExplorer,
   "c-gabriels-horn": ruCGabrielsHorn,
   "c-game": ruCGame,
@@ -132,7 +131,6 @@ const ruResources = {
   "c-lights-out": ruCLightsOut,
   "c-lists": ruCLists,
   "c-lockdown": ruCLockdown,
-  "c-massive-march": ruCMassiveMarch,
   "c-moderation": ruCModeration,
   "c-neon-driftway": ruCNeonDriftway,
   "c-news": ruCNews,

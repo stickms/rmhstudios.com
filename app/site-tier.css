@@ -37,8 +37,6 @@
 @source not "../components/balatro";
 @source not "../components/blm";
 @source not "../components/breaches";
-@source not "../components/breakpoint";
-@source not "../components/bums-rush";
 @source not "../components/cookgame";
 @source not "../components/covid";
 @source not "../components/elections";
@@ -58,7 +56,6 @@
 @source not "../components/laundry-sort";
 @source not "../components/lights-out";
 @source not "../components/lockdown";
-@source not "../components/massive-march";
 @source not "../components/neon-driftway";
 @source not "../components/nightrail";
 @source not "../components/optimization";
@@ -97,8 +94,6 @@
 @source not "../lib/altair";
 @source not "../lib/audio";
 @source not "../lib/balatro";
-@source not "../lib/breakpoint";
-@source not "../lib/bums-rush";
 @source not "../lib/controller";
 @source not "../lib/cookgame";
 @source not "../lib/cursed-logic";
@@ -116,7 +111,6 @@
 @source not "../lib/kowloon-knockout";
 @source not "../lib/laundry-sort";
 @source not "../lib/lights-out";
-@source not "../lib/massive-march";
 @source not "../lib/neon-driftway";
 @source not "../lib/nightrail";
 @source not "../lib/pf2ecal";
@@ -154,7 +148,6 @@
 @source not "./routes/altair";
 @source not "./routes/black-lives-matter.tsx";
 @source not "./routes/breaches.tsx";
-@source not "./routes/bums-rush.tsx";
 @source not "./routes/cookgame.tsx";
 @source not "./routes/cookies.tsx";
 @source not "./routes/copyright.tsx";
@@ -176,7 +169,6 @@
 @source not "./routes/kowloon-knockout.tsx";
 @source not "./routes/kowloon-knockout";
 @source not "./routes/laundry-sort.tsx";
-@source not "./routes/massive-march.tsx";
 @source not "./routes/neon-driftway.tsx";
 @source not "./routes/nightrail.tsx";
 @source not "./routes/optimization.tsx";
@@ -200,7 +192,6 @@
 @source not "./routes/rmhtube";
 @source not "./routes/rmhtype.tsx";
 @source not "./routes/rmhtype";
-@source not "./routes/rochester-offensive.tsx";
 @source not "./routes/secret.tsx";
 @source not "./routes/secret";
 @source not "./routes/security.tsx";

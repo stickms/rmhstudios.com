@@ -9,7 +9,6 @@ import trCAwards from "@/locales/tr/c-awards.json";
 import trCBalatro from "@/locales/tr/c-balatro.json";
 import trCBlog from "@/locales/tr/c-blog.json";
 import trCBuilds from "@/locales/tr/c-builds.json";
-import trCBumsRush from "@/locales/tr/c-bums-rush.json";
 import trCCircle from "@/locales/tr/c-circle.json";
 import trCCreator from "@/locales/tr/c-creator.json";
 import trCCursedLogic from "@/locales/tr/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import trCDoctrine from "@/locales/tr/c-doctrine.json";
 import trCDreamRift from "@/locales/tr/c-dream-rift.json";
 import trCDunesday from "@/locales/tr/c-dunesday.json";
 import trCEconomy from "@/locales/tr/c-economy.json";
+import trCElections from "@/locales/tr/c-elections.json";
 import trCForestExplorer from "@/locales/tr/c-forest-explorer.json";
 import trCGabrielsHorn from "@/locales/tr/c-gabriels-horn.json";
 import trCGame from "@/locales/tr/c-game.json";
@@ -32,7 +32,6 @@ import trCLibrary from "@/locales/tr/c-library.json";
 import trCLightsOut from "@/locales/tr/c-lights-out.json";
 import trCLists from "@/locales/tr/c-lists.json";
 import trCLockdown from "@/locales/tr/c-lockdown.json";
-import trCMassiveMarch from "@/locales/tr/c-massive-march.json";
 import trCModeration from "@/locales/tr/c-moderation.json";
 import trCNeonDriftway from "@/locales/tr/c-neon-driftway.json";
 import trCNews from "@/locales/tr/c-news.json";
@@ -109,7 +108,6 @@ const trResources = {
   "c-balatro": trCBalatro,
   "c-blog": trCBlog,
   "c-builds": trCBuilds,
-  "c-bums-rush": trCBumsRush,
   "c-circle": trCCircle,
   "c-creator": trCCreator,
   "c-cursed-logic": trCCursedLogic,
@@ -118,6 +116,7 @@ const trResources = {
   "c-dream-rift": trCDreamRift,
   "c-dunesday": trCDunesday,
   "c-economy": trCEconomy,
+  "c-elections": trCElections,
   "c-forest-explorer": trCForestExplorer,
   "c-gabriels-horn": trCGabrielsHorn,
   "c-game": trCGame,
@@ -132,7 +131,6 @@ const trResources = {
   "c-lights-out": trCLightsOut,
   "c-lists": trCLists,
   "c-lockdown": trCLockdown,
-  "c-massive-march": trCMassiveMarch,
   "c-moderation": trCModeration,
   "c-neon-driftway": trCNeonDriftway,
   "c-news": trCNews,

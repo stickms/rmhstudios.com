@@ -217,17 +217,7 @@ const ALLOW = new Set<string>([
   'app/routes/_site/library/index.tsx',
   'app/routes/_site/rmhladder/pipeline.tsx',
   'components/assistant/ConciergePanel.tsx',
-  'components/breakpoint/GameView.tsx',
   'components/canvas/CanvasReplay.tsx', // P19 Z5: stops at the last pixel; cancelled on unmount/pause
-  // Bum's Rush runs exactly ONE loop for the whole game — engine step, render,
-  // input polling and the host's network tick all ride it, which is why the
-  // HUD can exist without a second rAF anywhere in `components/bums-rush/`.
-  // It meets the game/app standard: the effect that starts it returns a
-  // teardown whose first statement is `cancelAnimationFrame`, and which then
-  // disposes the simulation, the renderer, the host, both input devices and
-  // every listener. Leaving a level unmounts the hook, so there is no path
-  // where the frame outlives the screen.
-  'components/bums-rush/useLevelSession.ts',
   'components/cursed-logic/MinigameOverlay.tsx',
   // GlobeSet's globe: the seven cards of the daily deal pinned to a sphere you
   // turn. Idle-at-rest, which is the standard this has to meet because /daily
@@ -307,7 +297,6 @@ const ALLOW = new Set<string>([
   'components/library/EpubReader.tsx',
   'components/library/LibraryReveal.tsx',
   'components/library/UploadModal.tsx',
-  'components/massive-march/world/WorldView.tsx',
   'components/elections/GlobeCanvas.tsx',
   'components/radial/LiquidGlobe.tsx',
   'components/neon-driftway/NeonDriftwayGame.tsx',

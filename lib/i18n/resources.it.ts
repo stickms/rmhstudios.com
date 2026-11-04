@@ -9,7 +9,6 @@ import itCAwards from "@/locales/it/c-awards.json";
 import itCBalatro from "@/locales/it/c-balatro.json";
 import itCBlog from "@/locales/it/c-blog.json";
 import itCBuilds from "@/locales/it/c-builds.json";
-import itCBumsRush from "@/locales/it/c-bums-rush.json";
 import itCCircle from "@/locales/it/c-circle.json";
 import itCCreator from "@/locales/it/c-creator.json";
 import itCCursedLogic from "@/locales/it/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import itCDoctrine from "@/locales/it/c-doctrine.json";
 import itCDreamRift from "@/locales/it/c-dream-rift.json";
 import itCDunesday from "@/locales/it/c-dunesday.json";
 import itCEconomy from "@/locales/it/c-economy.json";
+import itCElections from "@/locales/it/c-elections.json";
 import itCForestExplorer from "@/locales/it/c-forest-explorer.json";
 import itCGabrielsHorn from "@/locales/it/c-gabriels-horn.json";
 import itCGame from "@/locales/it/c-game.json";
@@ -32,7 +32,6 @@ import itCLibrary from "@/locales/it/c-library.json";
 import itCLightsOut from "@/locales/it/c-lights-out.json";
 import itCLists from "@/locales/it/c-lists.json";
 import itCLockdown from "@/locales/it/c-lockdown.json";
-import itCMassiveMarch from "@/locales/it/c-massive-march.json";
 import itCModeration from "@/locales/it/c-moderation.json";
 import itCNeonDriftway from "@/locales/it/c-neon-driftway.json";
 import itCNews from "@/locales/it/c-news.json";
@@ -109,7 +108,6 @@ const itResources = {
   "c-balatro": itCBalatro,
   "c-blog": itCBlog,
   "c-builds": itCBuilds,
-  "c-bums-rush": itCBumsRush,
   "c-circle": itCCircle,
   "c-creator": itCCreator,
   "c-cursed-logic": itCCursedLogic,
@@ -118,6 +116,7 @@ const itResources = {
   "c-dream-rift": itCDreamRift,
   "c-dunesday": itCDunesday,
   "c-economy": itCEconomy,
+  "c-elections": itCElections,
   "c-forest-explorer": itCForestExplorer,
   "c-gabriels-horn": itCGabrielsHorn,
   "c-game": itCGame,
@@ -132,7 +131,6 @@ const itResources = {
   "c-lights-out": itCLightsOut,
   "c-lists": itCLists,
   "c-lockdown": itCLockdown,
-  "c-massive-march": itCMassiveMarch,
   "c-moderation": itCModeration,
   "c-neon-driftway": itCNeonDriftway,
   "c-news": itCNews,

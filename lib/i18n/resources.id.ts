@@ -9,7 +9,6 @@ import idCAwards from "@/locales/id/c-awards.json";
 import idCBalatro from "@/locales/id/c-balatro.json";
 import idCBlog from "@/locales/id/c-blog.json";
 import idCBuilds from "@/locales/id/c-builds.json";
-import idCBumsRush from "@/locales/id/c-bums-rush.json";
 import idCCircle from "@/locales/id/c-circle.json";
 import idCCreator from "@/locales/id/c-creator.json";
 import idCCursedLogic from "@/locales/id/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import idCDoctrine from "@/locales/id/c-doctrine.json";
 import idCDreamRift from "@/locales/id/c-dream-rift.json";
 import idCDunesday from "@/locales/id/c-dunesday.json";
 import idCEconomy from "@/locales/id/c-economy.json";
+import idCElections from "@/locales/id/c-elections.json";
 import idCForestExplorer from "@/locales/id/c-forest-explorer.json";
 import idCGabrielsHorn from "@/locales/id/c-gabriels-horn.json";
 import idCGame from "@/locales/id/c-game.json";
@@ -32,7 +32,6 @@ import idCLibrary from "@/locales/id/c-library.json";
 import idCLightsOut from "@/locales/id/c-lights-out.json";
 import idCLists from "@/locales/id/c-lists.json";
 import idCLockdown from "@/locales/id/c-lockdown.json";
-import idCMassiveMarch from "@/locales/id/c-massive-march.json";
 import idCModeration from "@/locales/id/c-moderation.json";
 import idCNeonDriftway from "@/locales/id/c-neon-driftway.json";
 import idCNews from "@/locales/id/c-news.json";
@@ -109,7 +108,6 @@ const idResources = {
   "c-balatro": idCBalatro,
   "c-blog": idCBlog,
   "c-builds": idCBuilds,
-  "c-bums-rush": idCBumsRush,
   "c-circle": idCCircle,
   "c-creator": idCCreator,
   "c-cursed-logic": idCCursedLogic,
@@ -118,6 +116,7 @@ const idResources = {
   "c-dream-rift": idCDreamRift,
   "c-dunesday": idCDunesday,
   "c-economy": idCEconomy,
+  "c-elections": idCElections,
   "c-forest-explorer": idCForestExplorer,
   "c-gabriels-horn": idCGabrielsHorn,
   "c-game": idCGame,
@@ -132,7 +131,6 @@ const idResources = {
   "c-lights-out": idCLightsOut,
   "c-lists": idCLists,
   "c-lockdown": idCLockdown,
-  "c-massive-march": idCMassiveMarch,
   "c-moderation": idCModeration,
   "c-neon-driftway": idCNeonDriftway,
   "c-news": idCNews,

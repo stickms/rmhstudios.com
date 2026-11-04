@@ -9,7 +9,6 @@ import esCAwards from "@/locales/es/c-awards.json";
 import esCBalatro from "@/locales/es/c-balatro.json";
 import esCBlog from "@/locales/es/c-blog.json";
 import esCBuilds from "@/locales/es/c-builds.json";
-import esCBumsRush from "@/locales/es/c-bums-rush.json";
 import esCCircle from "@/locales/es/c-circle.json";
 import esCCreator from "@/locales/es/c-creator.json";
 import esCCursedLogic from "@/locales/es/c-cursed-logic.json";
@@ -18,6 +17,7 @@ import esCDoctrine from "@/locales/es/c-doctrine.json";
 import esCDreamRift from "@/locales/es/c-dream-rift.json";
 import esCDunesday from "@/locales/es/c-dunesday.json";
 import esCEconomy from "@/locales/es/c-economy.json";
+import esCElections from "@/locales/es/c-elections.json";
 import esCForestExplorer from "@/locales/es/c-forest-explorer.json";
 import esCGabrielsHorn from "@/locales/es/c-gabriels-horn.json";
 import esCGame from "@/locales/es/c-game.json";
@@ -32,7 +32,6 @@ import esCLibrary from "@/locales/es/c-library.json";
 import esCLightsOut from "@/locales/es/c-lights-out.json";
 import esCLists from "@/locales/es/c-lists.json";
 import esCLockdown from "@/locales/es/c-lockdown.json";
-import esCMassiveMarch from "@/locales/es/c-massive-march.json";
 import esCModeration from "@/locales/es/c-moderation.json";
 import esCNeonDriftway from "@/locales/es/c-neon-driftway.json";
 import esCNews from "@/locales/es/c-news.json";
@@ -109,7 +108,6 @@ const esResources = {
   "c-balatro": esCBalatro,
   "c-blog": esCBlog,
   "c-builds": esCBuilds,
-  "c-bums-rush": esCBumsRush,
   "c-circle": esCCircle,
   "c-creator": esCCreator,
   "c-cursed-logic": esCCursedLogic,
@@ -118,6 +116,7 @@ const esResources = {
   "c-dream-rift": esCDreamRift,
   "c-dunesday": esCDunesday,
   "c-economy": esCEconomy,
+  "c-elections": esCElections,
   "c-forest-explorer": esCForestExplorer,
   "c-gabriels-horn": esCGabrielsHorn,
   "c-game": esCGame,
@@ -132,7 +131,6 @@ const esResources = {
   "c-lights-out": esCLightsOut,
   "c-lists": esCLists,
   "c-lockdown": esCLockdown,
-  "c-massive-march": esCMassiveMarch,
   "c-moderation": esCModeration,
   "c-neon-driftway": esCNeonDriftway,
   "c-news": esCNews,

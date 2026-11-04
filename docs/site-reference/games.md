@@ -27,14 +27,11 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **Void Breaker** | [`/void-breaker`](https://rmhstudios.com/void-breaker) | — | required | `Arcade` `Shooter` `3D` `Survival` |
 | **Kowloon Knockout** | [`/kowloon-knockout`](https://rmhstudios.com/kowloon-knockout) | — | — | `Fighting` `Multiplayer` `3D` |
 | **CookGame** | [`/cookgame`](https://rmhstudios.com/cookgame) | — | — | `Simulation` `Tycoon` `Crime` |
-| **Mental-Hospital: Rochester Offensive** | [`/rochester-offensive`](https://rmhstudios.com/rochester-offensive) | — | — | `FPS` `Multiplayer` `Tactical` `3D` |
 | **House Always Wins** | [`/house-always-wins`](https://rmhstudios.com/house-always-wins) | — | required | `Metroidvania` `Platformer` `Narrative` `Pixel Art` |
 | **Dream Rift** | [`/dream-rift`](https://rmhstudios.com/dream-rift) | — | — | `Bullet Hell` `Multiplayer` `Danmaku` `Pixel Art` |
 | **RMH Farming Simulator** | [`/rmh-farming-sim`](https://rmhstudios.com/rmh-farming-sim) | — | required | `Simulation` `Farming` `Co-op` `Multiplayer` `3D` |
 | **Gabriel's Horn** | [`/gabriels-horn`](https://rmhstudios.com/gabriels-horn) | Playable | required | `Multiplayer` `Card Game` `Bluffing` `Party` |
 | **Nightrail** | [`/nightrail`](https://rmhstudios.com/nightrail) | Playable | required | `Arcade` `Racing` `3D` `Trick Scoring` |
-| **Massive March** | [`/massive-march`](https://rmhstudios.com/massive-march) | Playable | required | `Multiplayer` `Co-op` `3D` `Exploration` `Puzzle` |
-| **Bum's Rush** | [`/bums-rush`](https://rmhstudios.com/bums-rush) | Beta | — | `Party` `Multiplayer` `Physics` `Platformer` |
 | **Half-Life 2** | [`/half-life-2`](https://rmhstudios.com/half-life-2) | Beta | — | `Valve` `FPS` `Single-player` `Beta` |
 | **Portal** | [`/portal`](https://rmhstudios.com/portal) | Beta | — | `Valve` `FPS` `Single-player` `Beta` |
 | **Counter-Strike: Global Offensive** | [`/csgo`](https://rmhstudios.com/csgo) | Beta | — | `Valve` `FPS` `Multiplayer` `Beta` |
@@ -131,12 +128,6 @@ A tongue-in-cheek crime-management sim. Run a small-town operation: stock up at 
 
 **Route:** `/cookgame` · **Catalog id:** `cookgame` · **Sign-in:** not required
 
-### Mental-Hospital: Rochester Offensive
-
-A browser-based, Valorant-inspired tactical shooter rendered in chunky pixel-art 3D. Pick an agent, buy weapons and abilities each round, plant or defuse the spike, and play to 13 in standard 5v5 — or team up for wave-based co-op Zombies against walkers, runners, brutes and spitters. Online lobbies with public/private rooms, team selection, and host-configurable AI fill, plus full mobile support with an on-screen joystick.
-
-**Route:** `/rochester-offensive` · **Catalog id:** `rochester-offensive` · **Sign-in:** not required
-
 ### House Always Wins
 
 A narrative pixel-art metroidvania set inside a decaying casino. Explore six interconnected wings — Lobby, Poker Hall, Slot Vault, Security Wing, Maintenance shafts and the Vault — gating your progress behind three unlockable abilities: the Lucky Coin (double jump), the All-In Dash, and the Card Grip (wall climb). Talk to the Dealer, the old janitor Marlow, the slot-witch Vesper and Security Chief Doss, solve lever and pressure-plate puzzles, dodge spikes, lasers and camera cones, collect chips to pay down your ever-mounting Debt, recover three Vault Keys, and face The House in a multi-ending finale. Tight Celeste-style platforming, the deeper you owe the more the world distorts.
@@ -166,18 +157,6 @@ Three dice are rolled at the start of your turn and everyone at the table can se
 You run night freight on a self-propelling courier train, and it will not slow down for you. Every bend scrubs speed off the railhead unless you drift it, so the game is less about going faster than about refusing to give back what you already have. Switch between parallel rails to thread barriers, oncoming freight and holes in the deck; charge a jump to clear the gaps, and spend the airtime flicking through eight tricks — but land with the rotation unfinished and the combo you were protecting is gone. Grind the edge rails to glue combos together, bank them at checkpoints, and get your crates to the end of five runs: the harbor at dusk, a neon ward, a viaduct in the rain, the tunnels under the city, and a skybridge above the clouds.
 
 **Route:** `/nightrail` · **Catalog id:** `nightrail` · **Status:** Playable · **Sign-in:** required
-
-### Massive March
-
-A first-person cooperative campaign with no combat, no health bar and no quest markers. You — on your own, or with up to eleven friends — land on a coastline of granite headlands and gum-tree gullies, scattered with enormous toy-coloured structures somebody left behind, and work out what any of it is for. Voice and text are both spatial: they fade with distance, muffle through a ridge and stop dead at a soundproof booth wall — so the sealed room holding the answer is a room whose occupant cannot simply tell you. Carry one thing in your hands, two on your belt, four more in a backpack you cannot open yourself. Solve installations to produce red rounds, walk them to the towers, and let the keys they hand back open the cart line, the ridge road and finally the White Gate. The sun sets, and the island gets genuinely dark.
-
-**Route:** `/massive-march` · **Catalog id:** `massive-march` · **Status:** Playable · **Sign-in:** required
-
-### Bum's Rush
-
-You are a head with two enormous arms and no legs whatsoever. Grab a ledge, swing, let go at exactly the wrong moment, and paint the wall. Bum's Rush is a hand-drawn physics party game for one to four players: link hands into a living rope, haul each other over gaps none of you could cross alone, and argue about whose fault it was. Eight themed worlds with hidden objectives, and a Showdown mode for when co-operation has run its course. Plays online, on one screen, or both at once — with a gamepad, a keyboard, or two thumbs.
-
-**Route:** `/bums-rush` · **Catalog id:** `bums-rush` · **Status:** Beta · **Sign-in:** not required
 
 ### Half-Life 2
 

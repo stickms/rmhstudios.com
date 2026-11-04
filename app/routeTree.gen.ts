@@ -16,7 +16,6 @@ import { Route as AltairRouteImport } from './routes/altair'
 import { Route as BalatroRouteImport } from './routes/balatro'
 import { Route as BlackLivesMatterRouteImport } from './routes/black-lives-matter'
 import { Route as BreachesRouteImport } from './routes/breaches'
-import { Route as BumsRushRouteImport } from './routes/bums-rush'
 import { Route as CookgameRouteImport } from './routes/cookgame'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as CopyrightRouteImport } from './routes/copyright'
@@ -43,7 +42,6 @@ import { Route as LaundrySortRouteImport } from './routes/laundry-sort'
 import { Route as LightsOutRouteImport } from './routes/lights-out'
 import { Route as LiquidGlassRouteImport } from './routes/liquid-glass'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as MassiveMarchRouteImport } from './routes/massive-march'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as NightrailRouteImport } from './routes/nightrail'
 import { Route as OfflineRouteImport } from './routes/offline'
@@ -62,7 +60,6 @@ import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
 import { Route as RmhstudyRouteImport } from './routes/rmhstudy'
 import { Route as RmhtubeRouteImport } from './routes/rmhtube'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
-import { Route as RochesterOffensiveRouteImport } from './routes/rochester-offensive'
 import { Route as SecretRouteImport } from './routes/secret'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -436,10 +433,6 @@ import { Route as ApiBuildsReviewRouteImport } from './routes/api/builds/review'
 import { Route as ApiBulkIndexRouteImport } from './routes/api/bulk/index'
 import { Route as ApiBulkIdRouteImport } from './routes/api/bulk/$id'
 import { Route as ApiBulkPreviewRouteImport } from './routes/api/bulk/preview'
-import { Route as ApiBumsRushClearRouteImport } from './routes/api/bums-rush/clear'
-import { Route as ApiBumsRushLeaderboardRouteImport } from './routes/api/bums-rush/leaderboard'
-import { Route as ApiBumsRushProfileRouteImport } from './routes/api/bums-rush/profile'
-import { Route as ApiBumsRushShowdownRouteImport } from './routes/api/bums-rush/showdown'
 import { Route as ApiCalcNotebooksIndexRouteImport } from './routes/api/calc-notebooks/index'
 import { Route as ApiCalcNotebooksIdRouteImport } from './routes/api/calc-notebooks/$id'
 import { Route as ApiCalendarFeedIndexRouteImport } from './routes/api/calendar-feed/index'
@@ -585,7 +578,6 @@ import { Route as ApiListsIndexRouteImport } from './routes/api/lists/index'
 import { Route as ApiListsIdRouteImport } from './routes/api/lists/$id'
 import { Route as ApiMarathonListsIndexRouteImport } from './routes/api/marathon-lists/index'
 import { Route as ApiMarathonListsIdRouteImport } from './routes/api/marathon-lists/$id'
-import { Route as ApiMassiveMarchCampaignsRouteImport } from './routes/api/massive-march/campaigns'
 import { Route as ApiMemoryIndexRouteImport } from './routes/api/memory/index'
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
 import { Route as ApiMessagesReadAllRouteImport } from './routes/api/messages/read-all'
@@ -1062,8 +1054,6 @@ import { Route as ApiListsIdFeedRouteImport } from './routes/api/lists/$id.feed'
 import { Route as ApiListsIdMembersRouteImport } from './routes/api/lists/$id.members'
 import { Route as ApiMarathonListsSharedShareIdRouteImport } from './routes/api/marathon-lists/shared/$shareId'
 import { Route as ApiMarketListingsIndexRouteImport } from './routes/api/market/listings/index'
-import { Route as ApiMassiveMarchSignalsIndexRouteImport } from './routes/api/massive-march/signals/index'
-import { Route as ApiMassiveMarchSignalsVoteRouteImport } from './routes/api/massive-march/signals/vote'
 import { Route as ApiMessagesConversationIdEditRouteImport } from './routes/api/messages/$conversationId/edit'
 import { Route as ApiMessagesConversationIdHideRouteImport } from './routes/api/messages/$conversationId/hide'
 import { Route as ApiMessagesConversationIdMutationsRouteImport } from './routes/api/messages/$conversationId/mutations'
@@ -1444,11 +1434,6 @@ const BreachesRoute = BreachesRouteImport.update({
   path: '/breaches',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BumsRushRoute = BumsRushRouteImport.update({
-  id: '/bums-rush',
-  path: '/bums-rush',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CookgameRoute = CookgameRouteImport.update({
   id: '/cookgame',
   path: '/cookgame',
@@ -1579,11 +1564,6 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MassiveMarchRoute = MassiveMarchRouteImport.update({
-  id: '/massive-march',
-  path: '/massive-march',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const NeonDriftwayRoute = NeonDriftwayRouteImport.update({
   id: '/neon-driftway',
   path: '/neon-driftway',
@@ -1672,11 +1652,6 @@ const RmhtubeRoute = RmhtubeRouteImport.update({
 const RmhtypeRoute = RmhtypeRouteImport.update({
   id: '/rmhtype',
   path: '/rmhtype',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RochesterOffensiveRoute = RochesterOffensiveRouteImport.update({
-  id: '/rochester-offensive',
-  path: '/rochester-offensive',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SecretRoute = SecretRouteImport.update({
@@ -3556,26 +3531,6 @@ const ApiBulkPreviewRoute = ApiBulkPreviewRouteImport.update({
   path: '/api/bulk/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiBumsRushClearRoute = ApiBumsRushClearRouteImport.update({
-  id: '/api/bums-rush/clear',
-  path: '/api/bums-rush/clear',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiBumsRushLeaderboardRoute = ApiBumsRushLeaderboardRouteImport.update({
-  id: '/api/bums-rush/leaderboard',
-  path: '/api/bums-rush/leaderboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiBumsRushProfileRoute = ApiBumsRushProfileRouteImport.update({
-  id: '/api/bums-rush/profile',
-  path: '/api/bums-rush/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiBumsRushShowdownRoute = ApiBumsRushShowdownRouteImport.update({
-  id: '/api/bums-rush/showdown',
-  path: '/api/bums-rush/showdown',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiCalcNotebooksIndexRoute = ApiCalcNotebooksIndexRouteImport.update({
   id: '/api/calc-notebooks/',
   path: '/api/calc-notebooks/',
@@ -4310,12 +4265,6 @@ const ApiMarathonListsIdRoute = ApiMarathonListsIdRouteImport.update({
   path: '/api/marathon-lists/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiMassiveMarchCampaignsRoute =
-  ApiMassiveMarchCampaignsRouteImport.update({
-    id: '/api/massive-march/campaigns',
-    path: '/api/massive-march/campaigns',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiMemoryIndexRoute = ApiMemoryIndexRouteImport.update({
   id: '/api/memory/',
   path: '/api/memory/',
@@ -6787,18 +6736,6 @@ const ApiMarketListingsIndexRoute = ApiMarketListingsIndexRouteImport.update({
   path: '/api/market/listings/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiMassiveMarchSignalsIndexRoute =
-  ApiMassiveMarchSignalsIndexRouteImport.update({
-    id: '/api/massive-march/signals/',
-    path: '/api/massive-march/signals/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiMassiveMarchSignalsVoteRoute =
-  ApiMassiveMarchSignalsVoteRouteImport.update({
-    id: '/api/massive-march/signals/vote',
-    path: '/api/massive-march/signals/vote',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiMessagesConversationIdEditRoute =
   ApiMessagesConversationIdEditRouteImport.update({
     id: '/edit',
@@ -8670,7 +8607,6 @@ export interface FileRoutesByFullPath {
   '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/breaches': typeof BreachesRoute
-  '/bums-rush': typeof BumsRushRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -8697,7 +8633,6 @@ export interface FileRoutesByFullPath {
   '/lights-out': typeof LightsOutRoute
   '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
-  '/massive-march': typeof MassiveMarchRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
@@ -8716,7 +8651,6 @@ export interface FileRoutesByFullPath {
   '/rmhstudy': typeof RmhstudyRouteWithChildren
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
-  '/rochester-offensive': typeof RochesterOffensiveRoute
   '/secret': typeof SecretRouteWithChildren
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -9044,10 +8978,6 @@ export interface FileRoutesByFullPath {
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
-  '/api/bums-rush/clear': typeof ApiBumsRushClearRoute
-  '/api/bums-rush/leaderboard': typeof ApiBumsRushLeaderboardRoute
-  '/api/bums-rush/profile': typeof ApiBumsRushProfileRoute
-  '/api/bums-rush/showdown': typeof ApiBumsRushShowdownRoute
   '/api/calc-notebooks/$id': typeof ApiCalcNotebooksIdRoute
   '/api/calendar/$token': typeof ApiCalendarTokenRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
@@ -9167,7 +9097,6 @@ export interface FileRoutesByFullPath {
   '/api/links/check': typeof ApiLinksCheckRoute
   '/api/lists/$id': typeof ApiListsIdRouteWithChildren
   '/api/marathon-lists/$id': typeof ApiMarathonListsIdRoute
-  '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
   '/api/messages/saved': typeof ApiMessagesSavedRoute
@@ -9673,7 +9602,6 @@ export interface FileRoutesByFullPath {
   '/api/lists/$id/feed': typeof ApiListsIdFeedRoute
   '/api/lists/$id/members': typeof ApiListsIdMembersRoute
   '/api/marathon-lists/shared/$shareId': typeof ApiMarathonListsSharedShareIdRoute
-  '/api/massive-march/signals/vote': typeof ApiMassiveMarchSignalsVoteRoute
   '/api/messages/$conversationId/edit': typeof ApiMessagesConversationIdEditRoute
   '/api/messages/$conversationId/hide': typeof ApiMessagesConversationIdHideRoute
   '/api/messages/$conversationId/mutations': typeof ApiMessagesConversationIdMutationsRoute
@@ -9886,7 +9814,6 @@ export interface FileRoutesByFullPath {
   '/api/hunt/answer/': typeof ApiHuntAnswerIndexRoute
   '/api/hunt/marker/': typeof ApiHuntMarkerIndexRoute
   '/api/market/listings/': typeof ApiMarketListingsIndexRoute
-  '/api/massive-march/signals/': typeof ApiMassiveMarchSignalsIndexRoute
   '/api/nightrail/tricks/': typeof ApiNightrailTricksIndexRoute
   '/api/personas/$id/': typeof ApiPersonasIdIndexRoute
   '/api/photo-of-the-day/$id/': typeof ApiPhotoOfTheDayIdIndexRoute
@@ -10068,7 +9995,6 @@ export interface FileRoutesByTo {
   '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/breaches': typeof BreachesRoute
-  '/bums-rush': typeof BumsRushRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -10092,7 +10018,6 @@ export interface FileRoutesByTo {
   '/lights-out': typeof LightsOutRoute
   '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
-  '/massive-march': typeof MassiveMarchRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
@@ -10102,7 +10027,6 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmhcalculator': typeof RmhcalculatorRoute
-  '/rochester-offensive': typeof RochesterOffensiveRoute
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sohumbum': typeof SohumbumRoute
@@ -10417,10 +10341,6 @@ export interface FileRoutesByTo {
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
-  '/api/bums-rush/clear': typeof ApiBumsRushClearRoute
-  '/api/bums-rush/leaderboard': typeof ApiBumsRushLeaderboardRoute
-  '/api/bums-rush/profile': typeof ApiBumsRushProfileRoute
-  '/api/bums-rush/showdown': typeof ApiBumsRushShowdownRoute
   '/api/calc-notebooks/$id': typeof ApiCalcNotebooksIdRoute
   '/api/calendar/$token': typeof ApiCalendarTokenRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
@@ -10540,7 +10460,6 @@ export interface FileRoutesByTo {
   '/api/links/check': typeof ApiLinksCheckRoute
   '/api/lists/$id': typeof ApiListsIdRouteWithChildren
   '/api/marathon-lists/$id': typeof ApiMarathonListsIdRoute
-  '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
   '/api/messages/saved': typeof ApiMessagesSavedRoute
@@ -11045,7 +10964,6 @@ export interface FileRoutesByTo {
   '/api/lists/$id/feed': typeof ApiListsIdFeedRoute
   '/api/lists/$id/members': typeof ApiListsIdMembersRoute
   '/api/marathon-lists/shared/$shareId': typeof ApiMarathonListsSharedShareIdRoute
-  '/api/massive-march/signals/vote': typeof ApiMassiveMarchSignalsVoteRoute
   '/api/messages/$conversationId/edit': typeof ApiMessagesConversationIdEditRoute
   '/api/messages/$conversationId/hide': typeof ApiMessagesConversationIdHideRoute
   '/api/messages/$conversationId/mutations': typeof ApiMessagesConversationIdMutationsRoute
@@ -11258,7 +11176,6 @@ export interface FileRoutesByTo {
   '/api/hunt/answer': typeof ApiHuntAnswerIndexRoute
   '/api/hunt/marker': typeof ApiHuntMarkerIndexRoute
   '/api/market/listings': typeof ApiMarketListingsIndexRoute
-  '/api/massive-march/signals': typeof ApiMassiveMarchSignalsIndexRoute
   '/api/nightrail/tricks': typeof ApiNightrailTricksIndexRoute
   '/api/personas/$id': typeof ApiPersonasIdIndexRoute
   '/api/photo-of-the-day/$id': typeof ApiPhotoOfTheDayIdIndexRoute
@@ -11443,7 +11360,6 @@ export interface FileRoutesById {
   '/balatro': typeof BalatroRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
   '/breaches': typeof BreachesRoute
-  '/bums-rush': typeof BumsRushRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -11470,7 +11386,6 @@ export interface FileRoutesById {
   '/lights-out': typeof LightsOutRoute
   '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
-  '/massive-march': typeof MassiveMarchRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
@@ -11489,7 +11404,6 @@ export interface FileRoutesById {
   '/rmhstudy': typeof RmhstudyRouteWithChildren
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
-  '/rochester-offensive': typeof RochesterOffensiveRoute
   '/secret': typeof SecretRouteWithChildren
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -11819,10 +11733,6 @@ export interface FileRoutesById {
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
-  '/api/bums-rush/clear': typeof ApiBumsRushClearRoute
-  '/api/bums-rush/leaderboard': typeof ApiBumsRushLeaderboardRoute
-  '/api/bums-rush/profile': typeof ApiBumsRushProfileRoute
-  '/api/bums-rush/showdown': typeof ApiBumsRushShowdownRoute
   '/api/calc-notebooks/$id': typeof ApiCalcNotebooksIdRoute
   '/api/calendar/$token': typeof ApiCalendarTokenRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
@@ -11942,7 +11852,6 @@ export interface FileRoutesById {
   '/api/links/check': typeof ApiLinksCheckRoute
   '/api/lists/$id': typeof ApiListsIdRouteWithChildren
   '/api/marathon-lists/$id': typeof ApiMarathonListsIdRoute
-  '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
   '/api/messages/saved': typeof ApiMessagesSavedRoute
@@ -12448,7 +12357,6 @@ export interface FileRoutesById {
   '/api/lists/$id/feed': typeof ApiListsIdFeedRoute
   '/api/lists/$id/members': typeof ApiListsIdMembersRoute
   '/api/marathon-lists/shared/$shareId': typeof ApiMarathonListsSharedShareIdRoute
-  '/api/massive-march/signals/vote': typeof ApiMassiveMarchSignalsVoteRoute
   '/api/messages/$conversationId/edit': typeof ApiMessagesConversationIdEditRoute
   '/api/messages/$conversationId/hide': typeof ApiMessagesConversationIdHideRoute
   '/api/messages/$conversationId/mutations': typeof ApiMessagesConversationIdMutationsRoute
@@ -12661,7 +12569,6 @@ export interface FileRoutesById {
   '/api/hunt/answer/': typeof ApiHuntAnswerIndexRoute
   '/api/hunt/marker/': typeof ApiHuntMarkerIndexRoute
   '/api/market/listings/': typeof ApiMarketListingsIndexRoute
-  '/api/massive-march/signals/': typeof ApiMassiveMarchSignalsIndexRoute
   '/api/nightrail/tricks/': typeof ApiNightrailTricksIndexRoute
   '/api/personas/$id/': typeof ApiPersonasIdIndexRoute
   '/api/photo-of-the-day/$id/': typeof ApiPhotoOfTheDayIdIndexRoute
@@ -12847,7 +12754,6 @@ export interface FileRouteTypes {
     | '/balatro'
     | '/black-lives-matter'
     | '/breaches'
-    | '/bums-rush'
     | '/cookgame'
     | '/cookies'
     | '/copyright'
@@ -12874,7 +12780,6 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/liquid-glass'
     | '/login'
-    | '/massive-march'
     | '/neon-driftway'
     | '/nightrail'
     | '/offline'
@@ -12893,7 +12798,6 @@ export interface FileRouteTypes {
     | '/rmhstudy'
     | '/rmhtube'
     | '/rmhtype'
-    | '/rochester-offensive'
     | '/secret'
     | '/security'
     | '/sitemap.xml'
@@ -13221,10 +13125,6 @@ export interface FileRouteTypes {
     | '/api/builds/review'
     | '/api/bulk/$id'
     | '/api/bulk/preview'
-    | '/api/bums-rush/clear'
-    | '/api/bums-rush/leaderboard'
-    | '/api/bums-rush/profile'
-    | '/api/bums-rush/showdown'
     | '/api/calc-notebooks/$id'
     | '/api/calendar/$token'
     | '/api/calls/history'
@@ -13344,7 +13244,6 @@ export interface FileRouteTypes {
     | '/api/links/check'
     | '/api/lists/$id'
     | '/api/marathon-lists/$id'
-    | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
     | '/api/messages/saved'
@@ -13850,7 +13749,6 @@ export interface FileRouteTypes {
     | '/api/lists/$id/feed'
     | '/api/lists/$id/members'
     | '/api/marathon-lists/shared/$shareId'
-    | '/api/massive-march/signals/vote'
     | '/api/messages/$conversationId/edit'
     | '/api/messages/$conversationId/hide'
     | '/api/messages/$conversationId/mutations'
@@ -14063,7 +13961,6 @@ export interface FileRouteTypes {
     | '/api/hunt/answer/'
     | '/api/hunt/marker/'
     | '/api/market/listings/'
-    | '/api/massive-march/signals/'
     | '/api/nightrail/tricks/'
     | '/api/personas/$id/'
     | '/api/photo-of-the-day/$id/'
@@ -14245,7 +14142,6 @@ export interface FileRouteTypes {
     | '/balatro'
     | '/black-lives-matter'
     | '/breaches'
-    | '/bums-rush'
     | '/cookgame'
     | '/cookies'
     | '/copyright'
@@ -14269,7 +14165,6 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/liquid-glass'
     | '/login'
-    | '/massive-march'
     | '/neon-driftway'
     | '/nightrail'
     | '/offline'
@@ -14279,7 +14174,6 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/rmh-internal-affairs'
     | '/rmhcalculator'
-    | '/rochester-offensive'
     | '/security'
     | '/sitemap.xml'
     | '/sohumbum'
@@ -14594,10 +14488,6 @@ export interface FileRouteTypes {
     | '/api/builds/review'
     | '/api/bulk/$id'
     | '/api/bulk/preview'
-    | '/api/bums-rush/clear'
-    | '/api/bums-rush/leaderboard'
-    | '/api/bums-rush/profile'
-    | '/api/bums-rush/showdown'
     | '/api/calc-notebooks/$id'
     | '/api/calendar/$token'
     | '/api/calls/history'
@@ -14717,7 +14607,6 @@ export interface FileRouteTypes {
     | '/api/links/check'
     | '/api/lists/$id'
     | '/api/marathon-lists/$id'
-    | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
     | '/api/messages/saved'
@@ -15222,7 +15111,6 @@ export interface FileRouteTypes {
     | '/api/lists/$id/feed'
     | '/api/lists/$id/members'
     | '/api/marathon-lists/shared/$shareId'
-    | '/api/massive-march/signals/vote'
     | '/api/messages/$conversationId/edit'
     | '/api/messages/$conversationId/hide'
     | '/api/messages/$conversationId/mutations'
@@ -15435,7 +15323,6 @@ export interface FileRouteTypes {
     | '/api/hunt/answer'
     | '/api/hunt/marker'
     | '/api/market/listings'
-    | '/api/massive-march/signals'
     | '/api/nightrail/tricks'
     | '/api/personas/$id'
     | '/api/photo-of-the-day/$id'
@@ -15619,7 +15506,6 @@ export interface FileRouteTypes {
     | '/balatro'
     | '/black-lives-matter'
     | '/breaches'
-    | '/bums-rush'
     | '/cookgame'
     | '/cookies'
     | '/copyright'
@@ -15646,7 +15532,6 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/liquid-glass'
     | '/login'
-    | '/massive-march'
     | '/neon-driftway'
     | '/nightrail'
     | '/offline'
@@ -15665,7 +15550,6 @@ export interface FileRouteTypes {
     | '/rmhstudy'
     | '/rmhtube'
     | '/rmhtype'
-    | '/rochester-offensive'
     | '/secret'
     | '/security'
     | '/sitemap.xml'
@@ -15995,10 +15879,6 @@ export interface FileRouteTypes {
     | '/api/builds/review'
     | '/api/bulk/$id'
     | '/api/bulk/preview'
-    | '/api/bums-rush/clear'
-    | '/api/bums-rush/leaderboard'
-    | '/api/bums-rush/profile'
-    | '/api/bums-rush/showdown'
     | '/api/calc-notebooks/$id'
     | '/api/calendar/$token'
     | '/api/calls/history'
@@ -16118,7 +15998,6 @@ export interface FileRouteTypes {
     | '/api/links/check'
     | '/api/lists/$id'
     | '/api/marathon-lists/$id'
-    | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
     | '/api/messages/saved'
@@ -16624,7 +16503,6 @@ export interface FileRouteTypes {
     | '/api/lists/$id/feed'
     | '/api/lists/$id/members'
     | '/api/marathon-lists/shared/$shareId'
-    | '/api/massive-march/signals/vote'
     | '/api/messages/$conversationId/edit'
     | '/api/messages/$conversationId/hide'
     | '/api/messages/$conversationId/mutations'
@@ -16837,7 +16715,6 @@ export interface FileRouteTypes {
     | '/api/hunt/answer/'
     | '/api/hunt/marker/'
     | '/api/market/listings/'
-    | '/api/massive-march/signals/'
     | '/api/nightrail/tricks/'
     | '/api/personas/$id/'
     | '/api/photo-of-the-day/$id/'
@@ -17022,7 +16899,6 @@ export interface RootRouteChildren {
   BalatroRoute: typeof BalatroRoute
   BlackLivesMatterRoute: typeof BlackLivesMatterRoute
   BreachesRoute: typeof BreachesRoute
-  BumsRushRoute: typeof BumsRushRoute
   CookgameRoute: typeof CookgameRoute
   CookiesRoute: typeof CookiesRoute
   CopyrightRoute: typeof CopyrightRoute
@@ -17049,7 +16925,6 @@ export interface RootRouteChildren {
   LightsOutRoute: typeof LightsOutRoute
   LiquidGlassRoute: typeof LiquidGlassRoute
   LoginRoute: typeof LoginRoute
-  MassiveMarchRoute: typeof MassiveMarchRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   NightrailRoute: typeof NightrailRoute
   OfflineRoute: typeof OfflineRoute
@@ -17068,7 +16943,6 @@ export interface RootRouteChildren {
   RmhstudyRoute: typeof RmhstudyRouteWithChildren
   RmhtubeRoute: typeof RmhtubeRouteWithChildren
   RmhtypeRoute: typeof RmhtypeRouteWithChildren
-  RochesterOffensiveRoute: typeof RochesterOffensiveRoute
   SecretRoute: typeof SecretRouteWithChildren
   SecurityRoute: typeof SecurityRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -17175,10 +17049,6 @@ export interface RootRouteChildren {
   ApiBuildsReviewRoute: typeof ApiBuildsReviewRoute
   ApiBulkIdRoute: typeof ApiBulkIdRoute
   ApiBulkPreviewRoute: typeof ApiBulkPreviewRoute
-  ApiBumsRushClearRoute: typeof ApiBumsRushClearRoute
-  ApiBumsRushLeaderboardRoute: typeof ApiBumsRushLeaderboardRoute
-  ApiBumsRushProfileRoute: typeof ApiBumsRushProfileRoute
-  ApiBumsRushShowdownRoute: typeof ApiBumsRushShowdownRoute
   ApiCalcNotebooksIdRoute: typeof ApiCalcNotebooksIdRoute
   ApiCalendarTokenRoute: typeof ApiCalendarTokenRoute
   ApiCallsHistoryRoute: typeof ApiCallsHistoryRoute
@@ -17298,7 +17168,6 @@ export interface RootRouteChildren {
   ApiLinksCheckRoute: typeof ApiLinksCheckRoute
   ApiListsIdRoute: typeof ApiListsIdRouteWithChildren
   ApiMarathonListsIdRoute: typeof ApiMarathonListsIdRoute
-  ApiMassiveMarchCampaignsRoute: typeof ApiMassiveMarchCampaignsRoute
   ApiModerationBlockRoute: typeof ApiModerationBlockRoute
   ApiModerationMuteRoute: typeof ApiModerationMuteRoute
   ApiModerationReportRoute: typeof ApiModerationReportRoute
@@ -17693,7 +17562,6 @@ export interface RootRouteChildren {
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
   ApiMarathonListsSharedShareIdRoute: typeof ApiMarathonListsSharedShareIdRoute
-  ApiMassiveMarchSignalsVoteRoute: typeof ApiMassiveMarchSignalsVoteRoute
   ApiNightrailTricksVoteRoute: typeof ApiNightrailTricksVoteRoute
   ApiOgAlbumAlbumIdRoute: typeof ApiOgAlbumAlbumIdRoute
   ApiOgAppAppIdRoute: typeof ApiOgAppAppIdRoute
@@ -17802,7 +17670,6 @@ export interface RootRouteChildren {
   ApiHuntAnswerIndexRoute: typeof ApiHuntAnswerIndexRoute
   ApiHuntMarkerIndexRoute: typeof ApiHuntMarkerIndexRoute
   ApiMarketListingsIndexRoute: typeof ApiMarketListingsIndexRoute
-  ApiMassiveMarchSignalsIndexRoute: typeof ApiMassiveMarchSignalsIndexRoute
   ApiNightrailTricksIndexRoute: typeof ApiNightrailTricksIndexRoute
   ApiPersonasIdIndexRoute: typeof ApiPersonasIdIndexRoute
   ApiPhotoOfTheDayIdIndexRoute: typeof ApiPhotoOfTheDayIdIndexRoute
@@ -17939,13 +17806,6 @@ declare module '@tanstack/react-router' {
       path: '/breaches'
       fullPath: '/breaches'
       preLoaderRoute: typeof BreachesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bums-rush': {
-      id: '/bums-rush'
-      path: '/bums-rush'
-      fullPath: '/bums-rush'
-      preLoaderRoute: typeof BumsRushRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cookgame': {
@@ -18130,13 +17990,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/massive-march': {
-      id: '/massive-march'
-      path: '/massive-march'
-      fullPath: '/massive-march'
-      preLoaderRoute: typeof MassiveMarchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/neon-driftway': {
       id: '/neon-driftway'
       path: '/neon-driftway'
@@ -18261,13 +18114,6 @@ declare module '@tanstack/react-router' {
       path: '/rmhtype'
       fullPath: '/rmhtype'
       preLoaderRoute: typeof RmhtypeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/rochester-offensive': {
-      id: '/rochester-offensive'
-      path: '/rochester-offensive'
-      fullPath: '/rochester-offensive'
-      preLoaderRoute: typeof RochesterOffensiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/secret': {
@@ -20881,34 +20727,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBulkPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/bums-rush/clear': {
-      id: '/api/bums-rush/clear'
-      path: '/api/bums-rush/clear'
-      fullPath: '/api/bums-rush/clear'
-      preLoaderRoute: typeof ApiBumsRushClearRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/bums-rush/leaderboard': {
-      id: '/api/bums-rush/leaderboard'
-      path: '/api/bums-rush/leaderboard'
-      fullPath: '/api/bums-rush/leaderboard'
-      preLoaderRoute: typeof ApiBumsRushLeaderboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/bums-rush/profile': {
-      id: '/api/bums-rush/profile'
-      path: '/api/bums-rush/profile'
-      fullPath: '/api/bums-rush/profile'
-      preLoaderRoute: typeof ApiBumsRushProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/bums-rush/showdown': {
-      id: '/api/bums-rush/showdown'
-      path: '/api/bums-rush/showdown'
-      fullPath: '/api/bums-rush/showdown'
-      preLoaderRoute: typeof ApiBumsRushShowdownRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/calc-notebooks/': {
       id: '/api/calc-notebooks/'
       path: '/api/calc-notebooks'
@@ -21922,13 +21740,6 @@ declare module '@tanstack/react-router' {
       path: '/api/marathon-lists/$id'
       fullPath: '/api/marathon-lists/$id'
       preLoaderRoute: typeof ApiMarathonListsIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/massive-march/campaigns': {
-      id: '/api/massive-march/campaigns'
-      path: '/api/massive-march/campaigns'
-      fullPath: '/api/massive-march/campaigns'
-      preLoaderRoute: typeof ApiMassiveMarchCampaignsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/memory/': {
@@ -25261,20 +25072,6 @@ declare module '@tanstack/react-router' {
       path: '/api/market/listings'
       fullPath: '/api/market/listings/'
       preLoaderRoute: typeof ApiMarketListingsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/massive-march/signals/': {
-      id: '/api/massive-march/signals/'
-      path: '/api/massive-march/signals'
-      fullPath: '/api/massive-march/signals/'
-      preLoaderRoute: typeof ApiMassiveMarchSignalsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/massive-march/signals/vote': {
-      id: '/api/massive-march/signals/vote'
-      path: '/api/massive-march/signals/vote'
-      fullPath: '/api/massive-march/signals/vote'
-      preLoaderRoute: typeof ApiMassiveMarchSignalsVoteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/messages/$conversationId/edit': {
@@ -30017,7 +29814,6 @@ const rootRouteChildren: RootRouteChildren = {
   BalatroRoute: BalatroRoute,
   BlackLivesMatterRoute: BlackLivesMatterRoute,
   BreachesRoute: BreachesRoute,
-  BumsRushRoute: BumsRushRoute,
   CookgameRoute: CookgameRoute,
   CookiesRoute: CookiesRoute,
   CopyrightRoute: CopyrightRoute,
@@ -30044,7 +29840,6 @@ const rootRouteChildren: RootRouteChildren = {
   LightsOutRoute: LightsOutRoute,
   LiquidGlassRoute: LiquidGlassRoute,
   LoginRoute: LoginRoute,
-  MassiveMarchRoute: MassiveMarchRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
   NightrailRoute: NightrailRoute,
   OfflineRoute: OfflineRoute,
@@ -30063,7 +29858,6 @@ const rootRouteChildren: RootRouteChildren = {
   RmhstudyRoute: RmhstudyRouteWithChildren,
   RmhtubeRoute: RmhtubeRouteWithChildren,
   RmhtypeRoute: RmhtypeRouteWithChildren,
-  RochesterOffensiveRoute: RochesterOffensiveRoute,
   SecretRoute: SecretRouteWithChildren,
   SecurityRoute: SecurityRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -30171,10 +29965,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBuildsReviewRoute: ApiBuildsReviewRoute,
   ApiBulkIdRoute: ApiBulkIdRoute,
   ApiBulkPreviewRoute: ApiBulkPreviewRoute,
-  ApiBumsRushClearRoute: ApiBumsRushClearRoute,
-  ApiBumsRushLeaderboardRoute: ApiBumsRushLeaderboardRoute,
-  ApiBumsRushProfileRoute: ApiBumsRushProfileRoute,
-  ApiBumsRushShowdownRoute: ApiBumsRushShowdownRoute,
   ApiCalcNotebooksIdRoute: ApiCalcNotebooksIdRoute,
   ApiCalendarTokenRoute: ApiCalendarTokenRoute,
   ApiCallsHistoryRoute: ApiCallsHistoryRoute,
@@ -30294,7 +30084,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLinksCheckRoute: ApiLinksCheckRoute,
   ApiListsIdRoute: ApiListsIdRouteWithChildren,
   ApiMarathonListsIdRoute: ApiMarathonListsIdRoute,
-  ApiMassiveMarchCampaignsRoute: ApiMassiveMarchCampaignsRoute,
   ApiModerationBlockRoute: ApiModerationBlockRoute,
   ApiModerationMuteRoute: ApiModerationMuteRoute,
   ApiModerationReportRoute: ApiModerationReportRoute,
@@ -30692,7 +30481,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
   ApiMarathonListsSharedShareIdRoute: ApiMarathonListsSharedShareIdRoute,
-  ApiMassiveMarchSignalsVoteRoute: ApiMassiveMarchSignalsVoteRoute,
   ApiNightrailTricksVoteRoute: ApiNightrailTricksVoteRoute,
   ApiOgAlbumAlbumIdRoute: ApiOgAlbumAlbumIdRoute,
   ApiOgAppAppIdRoute: ApiOgAppAppIdRoute,
@@ -30801,7 +30589,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHuntAnswerIndexRoute: ApiHuntAnswerIndexRoute,
   ApiHuntMarkerIndexRoute: ApiHuntMarkerIndexRoute,
   ApiMarketListingsIndexRoute: ApiMarketListingsIndexRoute,
-  ApiMassiveMarchSignalsIndexRoute: ApiMassiveMarchSignalsIndexRoute,
   ApiNightrailTricksIndexRoute: ApiNightrailTricksIndexRoute,
   ApiPersonasIdIndexRoute: ApiPersonasIdIndexRoute,
   ApiPhotoOfTheDayIdIndexRoute: ApiPhotoOfTheDayIdIndexRoute,

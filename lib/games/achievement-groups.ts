@@ -8,7 +8,6 @@
 /** Catalog title id -> the achievement catalog `group` label. */
 export const ACHIEVEMENT_GROUP_BY_GAME_ID: Record<string, string> = {
   altair: 'Altair',
-  'bums-rush': "Bum's Rush",
   'daily-puzzles': 'Daily Puzzles',
   rmhbox: 'RMHBox',
   rmhmusic: 'RMHMusic',

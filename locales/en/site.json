@@ -27,7 +27,7 @@
   "assists-hold-hint": "A held button stands in for repeated presses.",
   "assists-hold-label": "Hold instead of mash",
   "assists-honoured-by": "Applied by: {{games}}.",
-  "assists-none-yet": "No game reads these yet — the layer landed before the games did. Your choices are saved and apply the moment one does. Slice It and Massive March have their own assist settings, in their own options.",
+  "assists-none-yet-2": "No game reads these yet — the layer landed before the games did. Your choices are saved and apply the moment one does. Slice It has its own assist settings, in its own options.",
   "assists-ranked-warning": "A run with any assist on does not count towards leaderboards or ranked play. A board that mixed assisted and unassisted runs would measure nothing.",
   "assists-speed-hint": "Runs the game clock slower where a game supports it.",
   "assists-speed-label": "Slow games down",
