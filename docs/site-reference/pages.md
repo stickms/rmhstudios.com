@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 368 routes. 196 render inside the standard site shell (sidebar, nav, context rail); 172 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 369 routes. 196 render inside the standard site shell (sidebar, nav, context rail); 173 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -283,6 +283,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/games/trades/new/:id` | — | public | `app/routes/games/trades.new.$id.tsx` |
 | `/half-life-2` | — | public | `app/routes/half-life-2.tsx` |
 | `/handle` | — | public | `app/routes/handle.ts` |
+| `/hearthworks` | Hearthworks — build a cozy town, farm, cook and trade | public | `app/routes/hearthworks.tsx` |
 | `/house-always-wins` | — | public | `app/routes/house-always-wins.tsx` |
 | `/isleworks` | Isleworks — isometric island city builder | public | `app/routes/isleworks.tsx` |
 | `/jelly` | — | public | `app/routes/jelly.tsx` |

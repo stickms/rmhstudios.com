@@ -13,6 +13,7 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | | Route | Status | Auth | Tags |
 | --- | ----- | ------ | ---- | ---- |
 | **Isleworks** | [`/isleworks`](https://rmhstudios.com/isleworks) | Playable | — | `City Builder` `Strategy` `Relaxing` `Isometric` |
+| **Hearthworks** | [`/hearthworks`](https://rmhstudios.com/hearthworks) | Early access | — | `City Builder` `Farming` `Cooking` `Relaxing` |
 | **RMHbox** | [`/rmhbox`](https://rmhstudios.com/rmhbox) | Playable | required | `Multiplayer` `Party` `Minigames` |
 | **Altair** | [`/altair`](https://rmhstudios.com/altair) | — | required | `Deckbuilder` `Roguelike` `Strategy` |
 | **Daily Puzzles** | [`/daily`](https://rmhstudios.com/daily) | — | — | `Puzzle` `Daily` `Brain Games` |
@@ -43,6 +44,12 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 Found a city on a square-grid island floating in a soft blue void. Draw roads, raise homes, shops and industry, wire up power and water, and balance pollution, traffic, land value and happiness as the months roll by. Buy new parcels to expand, complete milestones to unlock towers and landmarks, and watch tiny citizens and cars fill the streets of your low-poly diorama.
 
 **Route:** `/isleworks` · **Catalog id:** `isleworks` · **Status:** Playable · **Sign-in:** not required
+
+### Hearthworks
+
+Found a town on a floating island. Lay roads, raise cottages and market stalls, plant and harvest crops, cook what you grow and sell it to your neighbours. Everything lives in one world: plan it from an isometric bird’s-eye view, and soon walk it on foot, build machines to automate the work, hire helpers, and play with friends.
+
+**Route:** `/hearthworks` · **Catalog id:** `hearthworks` · **Status:** Early access · **Sign-in:** not required
 
 ### RMHbox
 

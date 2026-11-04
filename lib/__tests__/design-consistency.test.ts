@@ -158,6 +158,7 @@ const FULLSCREEN_TIER_DIRS = new Set([
   'forest-explorer',
   'gabriels-horn',
   'game', // Slice It's UI (reached from slice-it/index.tsx → GameCanvas)
+  'hearthworks',
   'house-always-wins',
   'isleworks',
   'kowloon-knockout',
@@ -254,6 +255,7 @@ const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'dunesday',
   'forest-explorer',
   'gabriels-horn',
+  'hearthworks',
   'house-always-wins',
   'isleworks',
   'kowloon-knockout',

@@ -50,6 +50,7 @@
 @source not "../components/gabriels-horn";
 @source not "../components/games";
 @source not "../components/house-always-wins";
+@source not "../components/hearthworks";
 @source not "../components/isleworks";
 @source not "../components/kaikai-debt";
 @source not "../components/kowloon-knockout";
@@ -106,6 +107,7 @@
 @source not "../lib/game-saves";
 @source not "../lib/globeset";
 @source not "../lib/house-always-wins";
+@source not "../lib/hearthworks";
 @source not "../lib/isleworks";
 @source not "../lib/kaikai-debt";
 @source not "../lib/kowloon-knockout";
@@ -164,6 +166,7 @@
 @source not "./routes/forest-explorer";
 @source not "./routes/gabriels-horn.tsx";
 @source not "./routes/house-always-wins.tsx";
+@source not "./routes/hearthworks.tsx";
 @source not "./routes/isleworks.tsx";
 @source not "./routes/kaikaidebtcounter.tsx";
 @source not "./routes/kowloon-knockout.tsx";

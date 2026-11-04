@@ -33,6 +33,7 @@ import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as HalfLife2RouteImport } from './routes/half-life-2'
 import { Route as HandleRouteImport } from './routes/handle'
+import { Route as HearthworksRouteImport } from './routes/hearthworks'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
 import { Route as IsleworksRouteImport } from './routes/isleworks'
 import { Route as JellyRouteImport } from './routes/jelly'
@@ -1517,6 +1518,11 @@ const HalfLife2Route = HalfLife2RouteImport.update({
 const HandleRoute = HandleRouteImport.update({
   id: '/handle',
   path: '/handle',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HearthworksRoute = HearthworksRouteImport.update({
+  id: '/hearthworks',
+  path: '/hearthworks',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HouseAlwaysWinsRoute = HouseAlwaysWinsRouteImport.update({
@@ -8624,6 +8630,7 @@ export interface FileRoutesByFullPath {
   '/games': typeof GamesRouteWithChildren
   '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
+  '/hearthworks': typeof HearthworksRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
   '/jelly': typeof JellyRoute
@@ -10010,6 +10017,7 @@ export interface FileRoutesByTo {
   '/games': typeof GamesLibraryIndexRoute
   '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
+  '/hearthworks': typeof HearthworksRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
   '/jelly': typeof JellyRoute
@@ -11377,6 +11385,7 @@ export interface FileRoutesById {
   '/games': typeof GamesRouteWithChildren
   '/half-life-2': typeof HalfLife2Route
   '/handle': typeof HandleRoute
+  '/hearthworks': typeof HearthworksRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
   '/jelly': typeof JellyRoute
@@ -12771,6 +12780,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/half-life-2'
     | '/handle'
+    | '/hearthworks'
     | '/house-always-wins'
     | '/isleworks'
     | '/jelly'
@@ -14157,6 +14167,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/half-life-2'
     | '/handle'
+    | '/hearthworks'
     | '/house-always-wins'
     | '/isleworks'
     | '/jelly'
@@ -15523,6 +15534,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/half-life-2'
     | '/handle'
+    | '/hearthworks'
     | '/house-always-wins'
     | '/isleworks'
     | '/jelly'
@@ -16916,6 +16928,7 @@ export interface RootRouteChildren {
   GamesRoute: typeof GamesRouteWithChildren
   HalfLife2Route: typeof HalfLife2Route
   HandleRoute: typeof HandleRoute
+  HearthworksRoute: typeof HearthworksRoute
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
   IsleworksRoute: typeof IsleworksRoute
   JellyRoute: typeof JellyRoute
@@ -17925,6 +17938,13 @@ declare module '@tanstack/react-router' {
       path: '/handle'
       fullPath: '/handle'
       preLoaderRoute: typeof HandleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hearthworks': {
+      id: '/hearthworks'
+      path: '/hearthworks'
+      fullPath: '/hearthworks'
+      preLoaderRoute: typeof HearthworksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/house-always-wins': {
@@ -29831,6 +29851,7 @@ const rootRouteChildren: RootRouteChildren = {
   GamesRoute: GamesRouteWithChildren,
   HalfLife2Route: HalfLife2Route,
   HandleRoute: HandleRoute,
+  HearthworksRoute: HearthworksRoute,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
   IsleworksRoute: IsleworksRoute,
   JellyRoute: JellyRoute,
