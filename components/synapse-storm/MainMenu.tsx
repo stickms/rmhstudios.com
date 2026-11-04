@@ -1,8 +1,10 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { Zap, Brain, Activity, Target, Layers, Timer, Settings2 } from 'lucide-react';
+import React, { useState, useEffect, useId } from 'react';
+import { Zap, Brain, Activity, Target, Layers, Timer, Settings2, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { GlobalLeaderboard } from './GlobalLeaderboard';
+import { MenuBackdrop } from './MenuBackdrop';
+import './SynapseStormMenu.css';
 import { CustomStormPicker } from './CustomStormPicker';
 import type { PuzzleCategory } from '@/lib/synapse-storm/types';
 import { getSettings, setMusicVolume, setSfxVolume } from '@/lib/synapse-storm/settings';
@@ -17,16 +19,17 @@ interface MainMenuProps {
 }
 
 const FEATURE_KEYS = [
-    { icon: <Zap size={14} />, key: 'feature-reaction', defaultValue: 'Reaction' },
-    { icon: <Brain size={14} />, key: 'feature-memory', defaultValue: 'Memory' },
-    { icon: <Layers size={14} />, key: 'feature-patterns', defaultValue: 'Patterns' },
-    { icon: <Target size={14} />, key: 'feature-spatial', defaultValue: 'Spatial' },
-    { icon: <Activity size={14} />, key: 'feature-math', defaultValue: 'Math' },
-    { icon: <Timer size={14} />, key: 'feature-fast-paced', defaultValue: 'Fast-paced' },
+    { icon: <Zap size={16} />, key: 'feature-reaction', defaultValue: 'Reaction' },
+    { icon: <Brain size={16} />, key: 'feature-memory', defaultValue: 'Memory' },
+    { icon: <Layers size={16} />, key: 'feature-patterns', defaultValue: 'Patterns' },
+    { icon: <Target size={16} />, key: 'feature-spatial', defaultValue: 'Spatial' },
+    { icon: <Activity size={16} />, key: 'feature-math', defaultValue: 'Math' },
+    { icon: <Timer size={16} />, key: 'feature-fast-paced', defaultValue: 'Fast-paced' },
 ];
 
 export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, onCustom, currentUserId }) => {
     const { t } = useTranslation("c-synapse-storm");
+    const uid = useId();
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [musicVol, setMusicVol] = useState(0.25);
     const [sfxVol, setSfxVol] = useState(0.3);
@@ -50,94 +53,112 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, onCu
     };
 
     return (
-        <div className="main-menu">
-            <div className="menu-bg-effect" />
+        <div className="ssm-screen">
+            <MenuBackdrop />
 
-            <div className="menu-content">
-                <div className="menu-logo">
-                    <span className="logo-icon">🌩️</span>
-                    <h1 className="menu-title">
-                        <span className="title-synapse">SYNAPSE</span>
-                        <span className="title-storm">STORM</span>
-                    </h1>
-                </div>
+            <div className="ssm-scroll">
+                <div className="ssm-main">
+                    <div className="ssm-play">
+                        <h1 className="ssm-title">
+                            <img
+                                className="ssm-logo"
+                                src="/images/games/logos/synapse-storm.svg"
+                                alt={t("game-title", { defaultValue: "Synapse Storm" })}
+                                width={1120}
+                                height={502}
+                                decoding="async"
+                            />
+                        </h1>
 
-                <p className="menu-tagline">
-                    {t("tagline", { defaultValue: "Juggle a storm of micro-challenges. Stay sharp. See how long your mind can keep up before the load becomes too great." })}
-                </p>
+                        <p className="ssm-tagline">
+                            {t("tagline", { defaultValue: "Juggle a storm of micro-challenges. Stay sharp. See how long your mind can keep up before the load becomes too great." })}
+                        </p>
 
-                <div className="menu-features">
-                    {FEATURE_KEYS.map((f, i) => (
-                        <div key={i} className="feature">
-                            <span className="feature-icon">{f.icon}</span>
-                            {t(f.key, { defaultValue: f.defaultValue })}
+                        <ul className="ssm-chips">
+                            {FEATURE_KEYS.map((f, i) => (
+                                <li key={i} className="ssm-chip">
+                                    <span className="ssm-chip__icon" aria-hidden="true">{f.icon}</span>
+                                    {t(f.key, { defaultValue: f.defaultValue })}
+                                </li>
+                            ))}
+                        </ul>
+
+                        <div className="ssm-actions">
+                            <button className="ssm-btn ssm-btn--primary" onClick={onStart}>
+                                <Zap className="ssm-btn__icon" size={20} aria-hidden="true" />
+                                {t("solo-neural-link", { defaultValue: "SOLO NEURAL LINK" })}
+                            </button>
+                            {onMultiplayer && (
+                                <button className="ssm-btn ssm-btn--secondary" onClick={onMultiplayer}>
+                                    <Users className="ssm-btn__icon" size={20} aria-hidden="true" />
+                                    {t("multiplayer-storm", { defaultValue: "MULTIPLAYER STORM" })}
+                                </button>
+                            )}
+                            {onCustom && <CustomStormPicker onStart={onCustom} />}
                         </div>
-                    ))}
-                </div>
 
-                <div className="menu-buttons">
-                    <button className="start-button" onClick={onStart}>
-                        {t("solo-neural-link", { defaultValue: "SOLO NEURAL LINK" })}
-                        <div className="start-glow" />
-                    </button>
-                    {onMultiplayer && (
-                        <button className="start-button multiplayer-button" onClick={onMultiplayer}>
-                            {t("multiplayer-storm", { defaultValue: "MULTIPLAYER STORM" })}
-                            <div className="start-glow" />
-                        </button>
-                    )}
-                    {onCustom && <CustomStormPicker onStart={onCustom} />}
-                </div>
-
-                <div className="menu-settings-section">
-                    <button
-                        type="button"
-                        className="settings-toggle"
-                        onClick={() => setSettingsOpen(!settingsOpen)}
-                        aria-expanded={settingsOpen}
-                    >
-                        <Settings2 size={18} />
-                        {t("settings", { defaultValue: "Settings" })}
-                    </button>
-                    {settingsOpen && (
-                        <div className="settings-panel">
-                            <div className="settings-row">
-                                <label>{t("music", { defaultValue: "Music" })}</label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={Math.round(musicVol * 100)}
-                                    onChange={(e) => handleMusicChange(Number(e.target.value) / 100)}
-                                />
-                                <span className="settings-value">{Math.round(musicVol * 100)}%</span>
-                            </div>
-                            <div className="settings-row">
-                                <label>{t("sound-effects", { defaultValue: "Sound effects" })}</label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={Math.round(sfxVol * 100)}
-                                    onChange={(e) => handleSfxChange(Number(e.target.value) / 100)}
-                                />
-                                <span className="settings-value">{Math.round(sfxVol * 100)}%</span>
-                            </div>
+                        <div className="ssm-settings">
+                            <button
+                                type="button"
+                                className="ssm-toggle"
+                                onClick={() => setSettingsOpen(!settingsOpen)}
+                                aria-expanded={settingsOpen}
+                            >
+                                <Settings2 size={18} aria-hidden="true" />
+                                {t("settings", { defaultValue: "Settings" })}
+                            </button>
+                            {settingsOpen && (
+                                <div className="ssm-panel ssm-panel--cyan">
+                                    <div className="ssm-row">
+                                        <label htmlFor={`${uid}-music`}>{t("music", { defaultValue: "Music" })}</label>
+                                        <input
+                                            id={`${uid}-music`}
+                                            className="ssm-range"
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={Math.round(musicVol * 100)}
+                                            style={{ '--val': `${Math.round(musicVol * 100)}%` } as React.CSSProperties}
+                                            onChange={(e) => handleMusicChange(Number(e.target.value) / 100)}
+                                        />
+                                        <output htmlFor={`${uid}-music`}>{Math.round(musicVol * 100)}%</output>
+                                    </div>
+                                    <div className="ssm-row">
+                                        <label htmlFor={`${uid}-sfx`}>{t("sound-effects", { defaultValue: "Sound effects" })}</label>
+                                        <input
+                                            id={`${uid}-sfx`}
+                                            className="ssm-range"
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={Math.round(sfxVol * 100)}
+                                            style={{ '--val': `${Math.round(sfxVol * 100)}%` } as React.CSSProperties}
+                                            onChange={(e) => handleSfxChange(Number(e.target.value) / 100)}
+                                        />
+                                        <output htmlFor={`${uid}-sfx`}>{Math.round(sfxVol * 100)}%</output>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
+                    </div>
 
-                <div className="menu-instructions">
-                    <h3>{t("transmission-protocol", { defaultValue: "Transmission Protocol:" })}</h3>
-                    <ul>
-                        <li>{t("instruction-solve-cards", { defaultValue: "Solve cards before they expire to maintain system stability." })}</li>
-                        <li>{t("instruction-combos", { defaultValue: "Maintain combos to exponentially increase your score." })}</li>
-                        <li>{t("instruction-integrity", { defaultValue: "Integrity failure occurs after 5 data casualties (Misses)." })}</li>
-                        <li>{t("instruction-difficulty", { defaultValue: "Difficulty scales dynamically with your neural efficiency." })}</li>
-                    </ul>
-                </div>
+                    <div className="ssm-side">
+                        <section className="ssm-panel ssm-panel--pink">
+                            <h2 className="ssm-panel-title">
+                                <Brain size={18} aria-hidden="true" />
+                                {t("transmission-protocol", { defaultValue: "Transmission Protocol:" })}
+                            </h2>
+                            <ul className="ssm-protocol">
+                                <li>{t("instruction-solve-cards", { defaultValue: "Solve cards before they expire to maintain system stability." })}</li>
+                                <li>{t("instruction-combos", { defaultValue: "Maintain combos to exponentially increase your score." })}</li>
+                                <li>{t("instruction-integrity", { defaultValue: "Integrity failure occurs after 5 data casualties (Misses)." })}</li>
+                                <li>{t("instruction-difficulty", { defaultValue: "Difficulty scales dynamically with your neural efficiency." })}</li>
+                            </ul>
+                        </section>
 
-                <GlobalLeaderboard currentUserId={currentUserId} />
+                        <GlobalLeaderboard currentUserId={currentUserId} />
+                    </div>
+                </div>
             </div>
         </div>
     );

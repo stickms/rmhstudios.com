@@ -242,7 +242,6 @@ const ALLOW = new Set<string>([
   // hidden tab runs no rAF callbacks.
   'components/render/FrameCap.tsx',
   'components/daily-puzzles/globeset/GlobeSetGlobe.tsx',
-  'components/dream-rift/MenuBackdrop.tsx',
   // One-shot, not a loop: a single deferred frame that restores the caret after
   // a smart-paste rewrites the textarea value (B16). It schedules no successor,
   // so it settles by construction.

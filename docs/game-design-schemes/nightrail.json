@@ -1,0 +1,36 @@
+{
+  "id": "nightrail",
+  "mood": "Moody and relentless: a courier train thundering through a violet night with amber headlamps.",
+  "palette": {
+    "bg": "#12061F",
+    "bgAlt": "#3A0F55",
+    "surface": "#1B0B30",
+    "surfaceHover": "#2E1450",
+    "ink": "#FFF3D6",
+    "inkMuted": "#C7A5D9",
+    "accent": "#FFB547",
+    "accent2": "#FF63C9",
+    "danger": "#FF3050",
+    "border": "#5A3A6E"
+  },
+  "fonts": {
+    "display": "Michroma",
+    "body": "Jost",
+    "mono": "IBM Plex Mono"
+  },
+  "shape": {
+    "radius": "6px",
+    "borderStyle": "1px solid #FF63C9 at 40% opacity; amber rail line under the active item",
+    "texture": "thin horizontal rail-sleeper lines in perspective"
+  },
+  "motifs": [
+    "converging rails",
+    "headlamp cone",
+    "striped barriers",
+    "city skyline with a big moon",
+    "drift sparks"
+  ],
+  "buttonStyle": "Primary is an amber-filled button with plum text and a small spark glyph on hover; secondary is a plum button with a pink hairline outline.",
+  "backdrop": "Violet gradient sky with a pale moon and city skyline; two amber rails converge to the horizon and the sleepers slide slowly toward the viewer (background-position).",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

@@ -9,32 +9,21 @@ import { spriteUrl } from '@/lib/versecraft/sprites/registry';
 import { ShareSeed } from './ShareSeed';
 import { PublishSeedButton } from './SeedGallery';
 import { GeneratingState } from './GeneratingState';
+import { DuskBackdrop } from './DuskBackdrop';
+import './VersecraftMenu.css';
 
-const FLOATING_WORDS = [
-  'whisper', 'shadow', 'bloom', 'echo', 'ember', 'drift', 'moonlight', 'silence',
-  'dream', 'verse', 'solitude', 'aurora', 'cadence', 'infinity', 'luminous', 'tender',
-];
-
-const TAGLINES = [
-  'A new emotional story every time — written for you.',
-  'Your cast. Your bonds. Your seed to share.',
-  'No two playthroughs are ever the same.',
-  'Prompt a life, or let fate deal the cards.',
-];
-
-function FloatingWord({ word, index }: { word: string; index: number }) {
-  const duration = 16 + ((index * 37) % 18);
-  const startX = (index * 53) % 100;
+/** An open book with a quill, the game's mark: drawn once, tinted by `currentColor`. */
+function BookQuill() {
   return (
-    <motion.span
-      className="absolute pointer-events-none"
-      style={{ left: `${startX}%`, color: '#c4a35a', fontFamily: 'var(--font-patrick-hand, serif)', fontSize: `${12 + (index % 4) * 3}px` }}
-      initial={{ y: '110vh', opacity: 0 }}
-      animate={{ y: '-10vh', opacity: [0, 0.16, 0.16, 0] }}
-      transition={{ duration, delay: index * 0.9, repeat: Infinity, ease: 'linear' }}
-    >
-      {word}
-    </motion.span>
+    <svg viewBox="0 0 120 64" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d="M60 20C48 13 30 13 12 17V52C30 48 48 48 60 54Z" fill="rgba(255,243,220,0.12)" />
+      <path d="M60 20C72 13 90 13 108 17V52C90 48 72 48 60 54Z" fill="rgba(255,243,220,0.12)" />
+      <path d="M60 20V54" />
+      <path d="M21 25C31 23 42 24 52 28M21 32C31 30 42 31 52 35M21 39C31 37 42 38 52 42" strokeWidth="1" opacity="0.7" />
+      <path d="M68 28C78 24 88 24 98 26M68 35C78 31 88 31 98 33" strokeWidth="1" opacity="0.7" />
+      <path d="M74 46L112 6C109 19 99 31 87 39Z" fill="currentColor" fillOpacity="0.35" />
+      <path d="M74 46L110 8M90 22L98 24M84 29L93 30" strokeWidth="1.2" />
+    </svg>
   );
 }
 
@@ -51,6 +40,13 @@ export function MainMenu() {
   const [checking, setChecking] = useState(true);
   const [continuing, setContinuing] = useState(false);
   const [tagline, setTagline] = useState(0);
+
+  const taglines = [
+    t('menu-tagline-1', { defaultValue: 'A new emotional story every time — written for you.' }),
+    t('menu-tagline-2', { defaultValue: 'Your cast. Your bonds. Your seed to share.' }),
+    t('menu-tagline-3', { defaultValue: 'No two playthroughs are ever the same.' }),
+    t('menu-tagline-4', { defaultValue: 'Prompt a life, or let fate deal the cards.' }),
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -69,135 +65,128 @@ export function MainMenu() {
 
   useEffect(() => {
     if (reducedMotion) return;
-    const i = setInterval(() => setTagline(v => (v + 1) % TAGLINES.length), 4200);
+    const i = setInterval(() => setTagline(v => (v + 1) % 4), 4200);
     return () => clearInterval(i);
   }, [reducedMotion]);
 
   if (continuing) {
     return (
-      <GeneratingState title="Loading your story…" note="Restoring your cast and where you left off."
-        steps={['Finding your save…', 'Waking the cast…', 'Returning to the scene…']} />
+      <GeneratingState
+        title={t('loading-your-story', { defaultValue: 'Loading your story…' })}
+        note={t('restoring-your-cast', { defaultValue: 'Restoring your cast and where you left off.' })}
+        steps={[
+          t('step-finding-save', { defaultValue: 'Finding your save…' }),
+          t('step-waking-cast', { defaultValue: 'Waking the cast…' }),
+          t('step-returning-scene', { defaultValue: 'Returning to the scene…' }),
+        ]}
+      />
     );
   }
 
-  const tile = 'group rounded-xl px-4 py-3.5 text-left transition active:scale-[0.98] flex items-center gap-3';
-  const tileStyle = { backgroundColor: 'rgba(26,21,32,0.66)', border: '1px solid rgba(196,163,90,0.16)', color: '#e8e0d0', minHeight: 56 } as const;
+  const runContinue = async () => { setContinuing(true); try { await continueGame(); } finally { setContinuing(false); } };
 
   return (
-    <div className="relative min-h-[100dvh] overflow-hidden">
-      {/* Atmosphere */}
-      <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 80% at 50% -10%, #2a2038 0%, #1a1520 55%, #100d16 100%)' }} />
-      {!reducedMotion && (
-        <div className="absolute inset-0 overflow-hidden" aria-hidden>
-          {FLOATING_WORDS.map((w, i) => <FloatingWord key={w} word={w} index={i} />)}
-        </div>
-      )}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, transparent 45%, #100d16 95%)' }} />
+    <div className="vc-screen" data-reduced-motion={reducedMotion ? 'true' : undefined}>
+      <DuskBackdrop />
 
-      <div className="relative z-10 min-h-[100dvh] flex flex-col items-center-safe justify-center-safe pl-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-10">
-        {/* Title */}
-        <motion.div className="text-center mb-8" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
-          <div className="text-[11px] tracking-[0.3em] sm:tracking-[0.6em] uppercase mb-3" style={{ color: '#c4a35a', opacity: 0.7 }}>✦ poetry · romance · fate ✦</div>
-          {/* Fluid size, and no tracking below sm: at a fixed 60px with wide
-              tracking the wordmark exceeded a 390px screen and the
-              overflow-hidden wrapper cropped both ends ("ERSECRAF"). */}
-          <h1
-            className="font-bold tracking-normal sm:tracking-wide"
-            style={{
-              fontFamily: 'var(--font-cinzel, serif)',
-              color: '#e8e0d0',
-              fontSize: 'clamp(2.2rem, 12vw, 6rem)',
-              textShadow: '0 0 50px rgba(196,163,90,0.35)',
-            }}
-          >
-            VERSECRAFT
+      <div className="vc-menu__inner">
+        <motion.header className="vc-hero" initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
+          <h1 className="vc-title">
+            <img
+              className="vc-logo"
+              src="/images/games/logos/versecraft.svg"
+              alt={t('game-title', { defaultValue: 'Versecraft' })}
+              width={1120}
+              height={538}
+              decoding="async"
+            />
           </h1>
-          <div className="h-6 mt-3 relative w-full max-w-md mx-auto">
+          <div className="vc-kicker">{t('menu-kicker', { defaultValue: '✦ poetry · romance · fate ✦' })}</div>
+          <div className="vc-tagline-wrap">
             <AnimatePresence mode="wait">
-              <motion.p key={tagline} className="absolute inset-x-0 text-sm md:text-base italic px-4"
-                style={{ fontFamily: 'var(--font-playfair, serif)', color: '#a89888' }}
+              <motion.p key={tagline} className="vc-tagline"
                 initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.5 }}>
-                {TAGLINES[tagline]}
+                {taglines[tagline]}
               </motion.p>
             </AnimatePresence>
           </div>
-        </motion.div>
+          <div className="vc-ornament"><BookQuill /></div>
+        </motion.header>
 
-        <div className="w-full max-w-sm flex flex-col gap-3">
+        <div className="vc-panel">
           {/* Active story panel */}
           <AnimatePresence>
             {world && (
               <motion.div
-                className="rounded-2xl p-4"
-                style={{ background: `linear-gradient(150deg, ${world.characters[0]?.color ?? '#4A3B6B'}26, rgba(26,21,32,0.8))`, border: '1px solid rgba(196,163,90,0.22)' }}
+                className="vc-story"
+                style={{ background: `linear-gradient(150deg, ${world.characters[0]?.color ?? '#4A3B6B'}33, rgba(36,16,70,0.85))` }}
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               >
-                <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: '#c4a35a' }}>Your current story</div>
-                <div className="text-lg leading-tight mb-0.5" style={{ fontFamily: 'var(--font-playfair, serif)', color: '#e8e0d0' }}>{world.title}</div>
-                <div className="text-xs mb-3" style={{ color: '#a89888' }}>Chapter {chapterIndex + 1} of {world.routePlan.totalChapters}</div>
-                <div className="flex -space-x-2 mb-3">
+                <p className="vc-story__label">{t('current-story-label', { defaultValue: 'Your current story' })}</p>
+                <p className="vc-story__title">{world.title}</p>
+                <p className="vc-story__meta">
+                  {t('chapter-progress', { defaultValue: 'Chapter {{current}} of {{total}}', current: chapterIndex + 1, total: world.routePlan.totalChapters })}
+                </p>
+                <div className="vc-avatars">
                   {world.characters.slice(0, 5).map(c => {
                     const u = spriteUrl(c.packId, 'happy') ?? spriteUrl(c.packId, 'neutral');
                     return (
-                      <div key={c.id} className="w-9 h-9 rounded-full overflow-hidden flex items-end justify-center"
-                        style={{ background: `linear-gradient(160deg, ${c.color}55, #1a1520)`, border: `2px solid ${c.color}` }}>
-                        {u && <img src={u} alt={c.name} className="h-[150%] object-contain object-bottom" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />}
+                      <div key={c.id} className="vc-avatar"
+                        style={{ background: `linear-gradient(160deg, ${c.color}55, #241046)`, border: `2px solid ${c.color}` }}>
+                        {u && <img src={u} alt={c.name} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />}
                       </div>
                     );
                   })}
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={async () => { setContinuing(true); try { await continueGame(); } finally { setContinuing(false); } }}
-                    className="flex-1 rounded-lg py-2.5 pointer-coarse:min-h-11 text-sm active:scale-95 transition-transform"
-                    style={{ backgroundColor: 'rgba(196,163,90,0.25)', border: '1px solid rgba(196,163,90,0.5)', color: '#fff', fontFamily: 'var(--font-playfair, serif)' }}>
-                    ▸ Continue
+                <div className="vc-story__actions">
+                  <button type="button" onClick={runContinue} className="vc-btn vc-btn--primary">
+                    <span className="vc-btn__mark" aria-hidden="true">▸</span>{t('continue', { defaultValue: 'Continue' })}
                   </button>
-                  <button onClick={() => setScreen('cast')} className="rounded-lg px-4 py-2.5 pointer-coarse:min-h-11 text-sm active:scale-95 transition-transform"
-                    style={{ backgroundColor: 'rgba(42,34,53,0.7)', border: '1px solid rgba(196,163,90,0.2)', color: '#e8e0d0' }}>♥ Cast</button>
+                  <button type="button" onClick={() => setScreen('cast')} className="vc-btn">
+                    <span className="vc-btn__mark" aria-hidden="true">♥</span>{t('menu-cast', { defaultValue: 'Cast' })}
+                  </button>
                 </div>
-                <div className="mt-2 flex items-center justify-center gap-2"><ShareSeed seed={world.seed} compact /><PublishSeedButton seed={world.seed} /></div>
+                <div className="vc-story__share"><ShareSeed seed={world.seed} compact /><PublishSeedButton seed={world.seed} /></div>
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Hero: New Story */}
           <motion.button
+            type="button"
             onClick={() => setScreen('world_setup')}
-            className="relative overflow-hidden rounded-2xl px-5 py-5 text-left active:scale-[0.98] transition-transform"
-            style={{ background: 'linear-gradient(135deg, rgba(196,163,90,0.28), rgba(123,63,160,0.28))', border: '1px solid rgba(196,163,90,0.45)' }}
-            whileHover={reducedMotion ? undefined : { scale: 1.01 }}
+            className="vc-btn vc-btn--primary vc-new"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           >
-            <div className="text-xl mb-0.5" style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#fff' }}>✦ New Story</div>
-            <div className="text-xs" style={{ color: '#d8cdb8' }}>Prompt the life you want, or roll the dice.</div>
+            <span className="vc-new__title">{t('new-story', { defaultValue: 'New Story' })}</span>
+            <span className="vc-new__note">{t('new-story-note', { defaultValue: 'Prompt the life you want, or roll the dice.' })}</span>
           </motion.button>
 
           {/* Continue (if save exists but no world loaded yet) */}
           {hasSave && !world && (
-            <button className={tile} style={tileStyle}
-              onClick={async () => { setContinuing(true); try { await continueGame(); } finally { setContinuing(false); } }}>
-              <span style={{ color: '#c4a35a' }}>▸</span>
-              <span className="flex-1">{t('continue', { defaultValue: 'Continue' })}</span>
+            <button type="button" className="vc-btn" onClick={runContinue}>
+              <span className="vc-btn__mark" aria-hidden="true">▸</span>
+              {t('continue', { defaultValue: 'Continue' })}
             </button>
           )}
 
-          {/* Secondary tiles */}
-          <div className="grid grid-cols-2 gap-3">
-            <button className={tile} style={tileStyle} onClick={() => setScreen('world_setup')}>
-              <span style={{ color: '#c4a35a' }}>⧉</span><span className="flex-1 text-sm">Play a seed</span>
+          {/* Secondary pills */}
+          <div className="vc-grid">
+            <button type="button" className="vc-btn" onClick={() => setScreen('world_setup')}>
+              <span className="vc-btn__mark" aria-hidden="true">⧉</span>{t('play-a-seed', { defaultValue: 'Play a seed' })}
             </button>
-            <button className={tile} style={tileStyle} onClick={() => setScreen('settings')}>
-              <span style={{ color: '#c4a35a' }}>⚙</span><span className="flex-1 text-sm">Settings</span>
+            <button type="button" className="vc-btn" onClick={() => setScreen('settings')}>
+              <span className="vc-btn__mark" aria-hidden="true">⚙</span>{t('settings', { defaultValue: 'Settings' })}
             </button>
           </div>
         </div>
 
         {!isLoggedIn && !checking && (
-          <p className="mt-8 text-xs text-center px-6 max-w-xs" style={{ color: '#6f6657' }}>
+          <p className="vc-hint">
             {t('sign-in-hint', { defaultValue: 'Sign in to save your stories to the cloud and replay them anywhere.' })}
           </p>
         )}
-        <p className="mt-5 text-[11px] tracking-widest" style={{ color: '#8d857b' }}>RMH STUDIOS</p>
+        <p className="vc-brand">RMH STUDIOS</p>
       </div>
     </div>
   );

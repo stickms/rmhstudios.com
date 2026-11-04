@@ -1,0 +1,35 @@
+{
+  "id": "temple-of-joy",
+  "mood": "Radiant and absurdly cheerful: a golden temple above the clouds, grinning in the sunrise.",
+  "palette": {
+    "bg": "#FFF0B8",
+    "bgAlt": "#FFFBEA",
+    "surface": "#FFFDF2",
+    "surfaceHover": "#FFF3C4",
+    "ink": "#5A3306",
+    "inkMuted": "#7F5210",
+    "accent": "#F5B82E",
+    "accent2": "#C9851A",
+    "danger": "#C0392B",
+    "border": "#9A5E0F"
+  },
+  "fonts": {
+    "display": "Cinzel",
+    "body": "Jost"
+  },
+  "shape": {
+    "radius": "14px",
+    "borderStyle": "3px solid #9A5E0F with a light gold inner bevel",
+    "texture": "soft sunburst rays"
+  },
+  "motifs": [
+    "golden ziggurat",
+    "smiley sun and halos",
+    "clouds",
+    "sunburst rays",
+    "embossed gold"
+  ],
+  "buttonStyle": "Primary is a gold gradient button with dark brown Cinzel text and a brown outline that glows on hover; secondary is a cream button with a gold outline.",
+  "backdrop": "Warm gold sky gradient with pale rays radiating from a smiley sun, rotating once every few minutes, and a cloud bank at the bottom that drifts sideways slowly.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

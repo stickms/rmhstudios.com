@@ -16,6 +16,7 @@ const entry: GameInfo = {
   iconName: 'CircleDot',
   color: 'from-sky-500/20 to-orange-500/20 hover:border-sky-500/50',
   tags: ['Valve', 'FPS', 'Single-player', 'Beta'],
+  imagePath: '/images/games/portal.webp',
   authGate: false,
 };
 

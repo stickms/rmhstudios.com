@@ -28,6 +28,8 @@ import { SongDetailsPanel } from '@/components/slice-it/SongDetailsPanel';
 import { DailyPanel } from '@/components/slice-it/modes/DailyPanel';
 import { SettingsPanel } from '@/components/slice-it/SettingsPanel';
 import { SetlistPanel } from '@/components/slice-it/modes/SetlistPanel';
+import { MenuStage } from '@/components/slice-it/MenuStage';
+import './slice-menu.css';
 
 /**
  * Which solo surface the menu is showing.
@@ -207,7 +209,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
   // Unified Main Menu View
   return (
-    <div className="absolute inset-0 z-50 flex flex-col overflow-hidden bg-slice-bg text-slice-text">
+    <div className="slice-menu absolute inset-0 z-50 flex flex-col overflow-hidden bg-slice-bg text-slice-text">
       {showCalibration && <CalibrationScreen onBack={() => setShowCalibration(false)} />}
 
       {showMultiplayer && !showCalibration && (
@@ -241,10 +243,31 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             </div>
           )}
 
-          {/* Header Bar */}
-          <div className="flex items-center justify-between gap-2 min-w-0 shrink-0 bg-slice-bg px-4 py-3 border-b border-slice-shadow-dark/50">
-            <div className="flex items-center gap-3 min-w-0">
-              {/* The player's actual avatar. This was a `<div>` printing the
+          {/* Masthead: the game's wordmark over its neon runway, with the player
+              and the mode buttons on top. The stage is decoration only. */}
+          <div className="slice-menu__mast">
+            <div className="slice-menu__bar">
+              <div className="slice-menu__brand">
+                <h1 className="slice-menu__title">
+                  <img
+                    className="slice-menu__logo"
+                    src="/images/games/logos/slice-it.svg"
+                    alt={t('game-title', { defaultValue: 'Slice It!' })}
+                    width={1120}
+                    height={319}
+                    decoding="async"
+                    fetchPriority="high"
+                  />
+                </h1>
+                <p className="slice-menu__tagline">
+                  {t('menu-tagline', { defaultValue: 'Slice through every beat.' })}
+                </p>
+              </div>
+              {/* On a wide screen the stage is the free space between the wordmark
+                  and the controls; on a narrow one it fills the masthead behind them. */}
+              <MenuStage />
+              <div className="slice-menu__who">
+                {/* The player's actual avatar. This was a `<div>` printing the
                   first letter of their name and nothing else — the session
                   carries `user.image` and it was never read, so everyone was a
                   grey initial. `UserAvatar` is the shared primitive: it proxies
@@ -253,14 +276,14 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   `<img>` here would not. The neumorphic ring keeps it in the
                   game's material rather than sitting on the surface as a flat
                   circle. */}
-              <UserAvatar
-                src={avatarUrl}
-                alt={userName || 'Player'}
-                size={40}
-                fallbackName={userName || undefined}
-                className="shrink-0 shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]"
-              />
-              {/* Hidden below `sm`, not truncated. Truncating kept the name in
+                <UserAvatar
+                  src={avatarUrl}
+                  alt={userName || 'Player'}
+                  size={40}
+                  fallbackName={userName || undefined}
+                  className="slice-menu__avatar shrink-0"
+                />
+                {/* Hidden below `sm`, not truncated. Truncating kept the name in
                   the layout while the five buttons opposite squeezed it to 24px
                   — one letter and an ellipsis, directly beside an avatar
                   already showing that same letter. The name is not a control
@@ -269,116 +292,119 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   buttons that need it. `min-w-0` + truncate still hold from
                   `sm` up, where a long display name would otherwise push those
                   buttons off the right edge. */}
-              <div className="hidden [@media(min-width:640px)_and_(min-height:620px)]:flex min-w-0 items-center">
-                <div className="font-black text-slice-text text-base uppercase tracking-tight truncate">
-                  {userName || 'GUEST'}
+                <div className="hidden [@media(min-width:640px)_and_(min-height:620px)]:flex min-w-0 items-center">
+                  <div className="slice-menu__name truncate">{userName || 'GUEST'}</div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-              {/* S1 / S8 entry points. Plain buttons rather than a tab strip:
+              <div className="slice-menu__actions">
+                {/* S1 / S8 entry points. Plain buttons rather than a tab strip:
                   each one swaps the whole stage for a different mode, and only
                   one of the three is ever the current view. */}
-              <Button
-                variant="ghost"
-                className={`h-10 shrink-0 rounded-lg font-black px-2.5 sm:px-4 uppercase tracking-wide text-xs transition-colors ${
-                  soloMode === 'daily'
-                    ? 'neumorphic-inset text-slice-text'
-                    : 'text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20'
-                }`}
-                onClick={() => setSoloMode(soloMode === 'daily' ? 'library' : 'daily')}
-                aria-label={ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
-                aria-pressed={soloMode === 'daily'}
-              >
-                <CalendarDays className="w-4 h-4 [@media(min-width:640px)_and_(min-height:620px)]:mr-1.5" />
-                <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
-                  {ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
-                </span>
-              </Button>
-              <Button
-                variant="ghost"
-                className={`h-10 shrink-0 rounded-lg font-black px-2.5 sm:px-4 uppercase tracking-wide text-xs transition-colors ${
-                  soloMode === 'setlists'
-                    ? 'neumorphic-inset text-slice-text'
-                    : 'text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20'
-                }`}
-                onClick={() => setSoloMode(soloMode === 'setlists' ? 'library' : 'setlists')}
-                aria-label={ts('setlists', { defaultValue: 'Setlists' })}
-                aria-pressed={soloMode === 'setlists'}
-              >
-                <ListMusic className="w-4 h-4 [@media(min-width:640px)_and_(min-height:620px)]:mr-1.5" />
-                <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
-                  {ts('setlists', { defaultValue: 'Setlists' })}
-                </span>
-              </Button>
-              {/* Three pulses on arrival, then still. It used to pulse forever,
-                  and while signed out it sits under the full-menu
-                  `backdrop-blur-xl` sign-in veil — so every pulse frame re-blurred
-                  the whole menu: 10fps and a full core at rest on desktop,
-                  60fps / idle with the pulse stopped (perf audit 2026-10-08). */}
-              <Button
-                variant="outline"
-                className="h-10 shrink-0 bg-linear-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-3 sm:px-5 rounded-lg transition-colors uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse-settle hover:animate-none"
-                onClick={() => setShowMultiplayer(true)}
-                aria-label={t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="[@media(min-width:640px)_and_(min-height:620px)]:mr-1.5"
+                <Button
+                  variant="ghost"
+                  data-jelly="off"
+                  className="slice-btn slice-btn--mode"
+                  onClick={() => setSoloMode(soloMode === 'daily' ? 'library' : 'daily')}
+                  aria-label={ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
+                  aria-pressed={soloMode === 'daily'}
                 >
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-                <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
-                  {t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
-                </span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-colors"
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                title={
-                  isDarkMode
-                    ? t('switch-to-light-mode', { defaultValue: 'Switch to Light Mode' })
-                    : t('switch-to-dark-mode', { defaultValue: 'Switch to Dark Mode' })
-                }
-              >
-                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-colors"
-                onClick={() => setShowSettings(true)}
-              >
-                <span className="sr-only">{t('settings', { defaultValue: 'Settings' })}</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  <CalendarDays className="w-4 h-4 [@media(min-width:640px)_and_(min-height:620px)]:mr-1.5" />
+                  <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
+                    {ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
+                  </span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  data-jelly="off"
+                  className="slice-btn slice-btn--mode"
+                  onClick={() => setSoloMode(soloMode === 'setlists' ? 'library' : 'setlists')}
+                  aria-label={ts('setlists', { defaultValue: 'Setlists' })}
+                  aria-pressed={soloMode === 'setlists'}
                 >
-                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </Button>
+                  <ListMusic className="w-4 h-4 [@media(min-width:640px)_and_(min-height:620px)]:mr-1.5" />
+                  <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
+                    {ts('setlists', { defaultValue: 'Setlists' })}
+                  </span>
+                </Button>
+                {/* The primary action: a cyan neon outline that fills on hover. It
+                  does not pulse. It used to pulse forever, and while signed out it
+                  sits under the full-menu `backdrop-blur-xl` sign-in veil, so
+                  every pulse frame re-blurred the whole menu: 10fps and a full
+                  core at rest on desktop, 60fps / idle with the pulse stopped
+                  (perf audit 2026-10-08). The look is `.slice-btn--primary` in
+                  `slice-menu.css`. */}
+                <Button
+                  variant="outline"
+                  data-jelly="off"
+                  className="slice-btn slice-btn--primary"
+                  onClick={() => setShowMultiplayer(true)}
+                  aria-label={t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="[@media(min-width:640px)_and_(min-height:620px)]:mr-1.5"
+                  >
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
+                    {t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
+                  </span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  data-jelly="off"
+                  className="slice-btn slice-btn--icon"
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  aria-label={
+                    isDarkMode
+                      ? t('switch-to-light-mode', { defaultValue: 'Switch to Light Mode' })
+                      : t('switch-to-dark-mode', { defaultValue: 'Switch to Dark Mode' })
+                  }
+                  title={
+                    isDarkMode
+                      ? t('switch-to-light-mode', { defaultValue: 'Switch to Light Mode' })
+                      : t('switch-to-dark-mode', { defaultValue: 'Switch to Dark Mode' })
+                  }
+                >
+                  {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  data-jelly="off"
+                  className="slice-btn slice-btn--icon"
+                  onClick={() => setShowSettings(true)}
+                >
+                  <span className="sr-only">{t('settings', { defaultValue: 'Settings' })}</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </Button>
+              </div>
             </div>
           </div>
 

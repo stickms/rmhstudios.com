@@ -1,0 +1,36 @@
+{
+  "id": "neon-driftway",
+  "mood": "Fast, sleek and nostalgic: a synthwave sunset highway seen from the driver's seat.",
+  "palette": {
+    "bg": "#06021A",
+    "bgAlt": "#2B0B52",
+    "surface": "#14082B",
+    "surfaceHover": "#221046",
+    "ink": "#FFF1F8",
+    "inkMuted": "#C7A5E0",
+    "accent": "#FF2E7E",
+    "accent2": "#2EE6FF",
+    "danger": "#FF5A5A",
+    "border": "#6A2BB5"
+  },
+  "fonts": {
+    "display": "Exo 2",
+    "body": "Exo 2",
+    "mono": "IBM Plex Mono"
+  },
+  "shape": {
+    "radius": "2px with 12px slanted (skewed) corners",
+    "borderStyle": "1px solid violet with a pink/cyan edge glow on hover",
+    "texture": "scanlines over a perspective grid floor"
+  },
+  "motifs": [
+    "retro sun with stripes",
+    "neon road edges (pink left, cyan right)",
+    "skyline silhouette",
+    "italic black headings",
+    "speed streaks"
+  ],
+  "buttonStyle": "Primary is an italic black-weight button with a pink-to-magenta gradient and a cyan underline sweep on hover; secondary is a transparent button with a cyan outline.",
+  "backdrop": "Static sun and skyline with a CSS perspective grid whose lines scroll toward the viewer slowly (background-position only), with a faint pink horizon glow.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

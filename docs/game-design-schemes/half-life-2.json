@@ -1,0 +1,35 @@
+{
+  "id": "half-life-2",
+  "mood": "Gritty and resistant: a worn, olive-and-steel Source GameUI over the grey smog of City 17, with the orange lambda as the only bright note.",
+  "palette": {
+    "bg": "#0F0F0E",
+    "bgAlt": "#1E1C1A",
+    "surface": "#2E2B2A",
+    "surfaceHover": "#3E4637",
+    "ink": "#D8DED3",
+    "inkMuted": "#A0A0A0",
+    "accent": "#F26A1B",
+    "accent2": "#C4B550",
+    "danger": "#E0503F",
+    "border": "#889180"
+  },
+  "fonts": {
+    "display": "Barlow Condensed",
+    "body": "Jost"
+  },
+  "shape": {
+    "radius": "sharp (0)",
+    "borderStyle": "1px bevel: bright #889180 top/left, dark #282E22 bottom/right (VGUI frame)",
+    "texture": "none (flat panels over the game background image)"
+  },
+  "motifs": [
+    "lambda mark",
+    "VGUI bevelled frames",
+    "olive button greens",
+    "Citadel spire silhouette with orange crowbar",
+    "already implemented in components/sp-game/source-menu.css with colours from lib/tf2-game/client/menus/source-gameui.ts (--gui-* variables)"
+  ],
+  "buttonStyle": "Menu items are plain uppercase text lines (white 86%, white on hover, grey when pressed) with no box; dialog buttons are olive-green rectangles (#4C5844) whose text turns yellow-olive (#C4B550) when armed.",
+  "backdrop": "Full-bleed game background image (City 17 / train station) under a black base; keep it still or a very slow 2% push-in, and place the logo bottom-left above the menu list as the real game does.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

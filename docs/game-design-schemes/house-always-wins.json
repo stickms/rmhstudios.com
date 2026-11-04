@@ -1,0 +1,36 @@
+{
+  "id": "house-always-wins",
+  "mood": "Seductive and sinister: a decaying casino whose glittering entrance is really a mouth.",
+  "palette": {
+    "bg": "#0A0407",
+    "bgAlt": "#2A0710",
+    "surface": "#1A0509",
+    "surfaceHover": "#2E0A12",
+    "ink": "#FFF4E0",
+    "inkMuted": "#D6B98A",
+    "accent": "#E7B84A",
+    "accent2": "#D81E3A",
+    "danger": "#FF4A5E",
+    "border": "#8A1B2B"
+  },
+  "fonts": {
+    "display": "Abril Fatface",
+    "body": "Cormorant Garamond",
+    "mono": "IBM Plex Mono"
+  },
+  "shape": {
+    "radius": "6px",
+    "borderStyle": "2px solid gold with small marquee-bulb dots along the top edge",
+    "texture": "velvet vignette with fine film grain"
+  },
+  "motifs": [
+    "marquee bulbs",
+    "fanged archway",
+    "playing-card suits",
+    "slot reels showing 777",
+    "checkerboard floor"
+  ],
+  "buttonStyle": "Primary is a gold gradient plate with dark red Abril text and glowing bulb dots on its border; secondary is a dark red plate with a thin gold outline and cream text.",
+  "backdrop": "Deep red radial glow behind a dark archway silhouette, with marquee bulbs twinkling one at a time (opacity only, each at most once per second) and slow drifting dust.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

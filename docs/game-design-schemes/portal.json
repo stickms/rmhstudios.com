@@ -1,0 +1,36 @@
+{
+  "id": "portal",
+  "mood": "Clinical and calm with a hint of menace: a spotless Aperture test chamber, two portal rings and a polite voice.",
+  "palette": {
+    "bg": "#0E1319",
+    "bgAlt": "#1A2430",
+    "surface": "#1F2A36",
+    "surfaceHover": "#2A3A4B",
+    "ink": "#EAF0F5",
+    "inkMuted": "#9AA8B5",
+    "accent": "#1EA0F0",
+    "accent2": "#F7941D",
+    "danger": "#E04F3C",
+    "border": "#5E6A78"
+  },
+  "fonts": {
+    "display": "Jost",
+    "body": "Jost",
+    "mono": "IBM Plex Mono"
+  },
+  "shape": {
+    "radius": "sharp (0) as in GameUI",
+    "borderStyle": "1px bevel (bright top/left, dark bottom/right) like the Source VGUI frame",
+    "texture": "none (clean panels over a blurred chamber photo)"
+  },
+  "motifs": [
+    "orange and blue portal rings",
+    "white test-chamber panels",
+    "test-subject pictogram",
+    "light letter-spaced capitals",
+    "already implemented in components/sp-game/source-menu.css (shared with Half-Life 2) via --gui-* variables"
+  ],
+  "buttonStyle": "Menu items are letter-spaced light-weight uppercase text that turns white on hover with a small blue ring marker; dialog buttons are slate rectangles with a thin bevel and an orange armed state.",
+  "backdrop": "A softly blurred test-chamber image with a blue and an orange portal ring glowing at steady brightness at the edges; nothing else moves.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

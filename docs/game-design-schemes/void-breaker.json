@@ -1,0 +1,36 @@
+{
+  "id": "void-breaker",
+  "mood": "Dark and precious: an obsidian arena where gold shards orbit your ship and detonate.",
+  "palette": {
+    "bg": "#07050A",
+    "bgAlt": "#1A0F12",
+    "surface": "#130C10",
+    "surfaceHover": "#221218",
+    "ink": "#FFF3D6",
+    "inkMuted": "#C9B48A",
+    "accent": "#F5C04A",
+    "accent2": "#FF7A2B",
+    "danger": "#E8284A",
+    "border": "#6A4A18"
+  },
+  "fonts": {
+    "display": "Black Ops One",
+    "body": "Jost",
+    "mono": "IBM Plex Mono"
+  },
+  "shape": {
+    "radius": "sharp with hex-clipped corners",
+    "borderStyle": "1px solid gold at 50% with a gold glow on focus",
+    "texture": "faint hexagon grid"
+  },
+  "motifs": [
+    "orbiting gold shards",
+    "arena ring",
+    "red polygon enemies",
+    "dash trail",
+    "obsidian and gold"
+  ],
+  "buttonStyle": "Primary is a gold gradient hex-cornered button with near-black Black Ops One text; secondary is an obsidian button with a gold hairline and orange hover glow.",
+  "backdrop": "Near-black ground with a faint gold hex grid and a slowly rotating ring of twelve gold shards around the title; shards only rotate, no flashing.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

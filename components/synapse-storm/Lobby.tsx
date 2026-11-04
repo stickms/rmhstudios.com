@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useMultiplayer } from '../../lib/synapse-storm/MultiplayerProvider';
 import { useLobbyLink } from '@/hooks/useLobbyLink';
 import { Copy, Check, Crown, Circle, CheckCircle, Link2 } from 'lucide-react';
+import { MenuBackdrop } from './MenuBackdrop';
+import './SynapseStormMenu.css';
 
 interface LobbyProps {
     onLeave: () => void;
@@ -41,10 +43,20 @@ export const Lobby: React.FC<LobbyProps> = ({ onLeave }) => {
     };
 
     return (
-        <div className="ss-lobby">
-            <div className="menu-bg-effect" />
+        <div className="ssm-screen">
+            <MenuBackdrop />
+            <div className="ssm-scroll">
             <div className="ss-lobby-content">
-                <h2 className="ss-mp-title">{t("neural-lobby", { defaultValue: "NEURAL LOBBY" })}</h2>
+            <img
+                className="ssm-mp-logo"
+                src="/images/games/logos/synapse-storm.svg"
+                alt={t("game-title", { defaultValue: "Synapse Storm" })}
+                width={1120}
+                height={502}
+                decoding="async"
+            />
+            <div className="ssm-panel ssm-panel--cyan ssm-card">
+                <h1 className="ss-mp-title">{t("neural-lobby", { defaultValue: "NEURAL LOBBY" })}</h1>
 
                 <div className="ss-lobby-code-section">
                     <span className="ss-lobby-code-label">{t("lobby-code", { defaultValue: "LOBBY CODE" })}</span>
@@ -65,7 +77,7 @@ export const Lobby: React.FC<LobbyProps> = ({ onLeave }) => {
                 </div>
 
                 <div className="ss-lobby-players">
-                    <h3 className="ss-lobby-players-title">{t("neural-operatives", { defaultValue: "NEURAL OPERATIVES ({{count}}/{{max}})", count: playerCount, max: MAX_PLAYERS })}</h3>
+                    <h2 className="ss-lobby-players-title">{t("neural-operatives", { defaultValue: "NEURAL OPERATIVES ({{count}}/{{max}})", count: playerCount, max: MAX_PLAYERS })}</h2>
                     <div className="ss-lobby-player-list">
                         {lobbyState.players.map((player) => (
                             <div
@@ -103,7 +115,7 @@ export const Lobby: React.FC<LobbyProps> = ({ onLeave }) => {
                 <div className="ss-lobby-actions">
                     {!isHost && (
                         <button
-                            className={`ss-mp-btn ss-mp-btn-wide ${myPlayer?.isReady ? 'ss-mp-btn-ready' : 'ss-mp-btn-primary'}`}
+                            className={`ssm-btn ssm-btn--wide ${myPlayer?.isReady ? 'ssm-btn--ready' : 'ssm-btn--primary'}`}
                             onClick={toggleReady}
                         >
                             {myPlayer?.isReady ? t("unready", { defaultValue: "UNREADY" }) : t("ready-up", { defaultValue: "READY UP" })}
@@ -111,17 +123,19 @@ export const Lobby: React.FC<LobbyProps> = ({ onLeave }) => {
                     )}
                     {isHost && (
                         <button
-                            className="ss-mp-btn ss-mp-btn-primary ss-mp-btn-wide"
+                            className="ssm-btn ssm-btn--primary ssm-btn--wide"
                             onClick={startMatch}
                             disabled={!canStart}
                         >
                             {canStart ? t("start-match", { defaultValue: "START MATCH" }) : t("waiting-for-players", { defaultValue: "WAITING FOR PLAYERS{{notReady}}", notReady: !allReady ? ' (NOT READY)' : '' })}
                         </button>
                     )}
-                    <button className="ss-mp-btn ss-mp-btn-ghost" onClick={handleLeave}>
+                    <button className="ssm-btn ssm-btn--ghost" onClick={handleLeave}>
                         {t("leave-lobby", { defaultValue: "LEAVE LOBBY" })}
                     </button>
                 </div>
+            </div>
+            </div>
             </div>
         </div>
     );

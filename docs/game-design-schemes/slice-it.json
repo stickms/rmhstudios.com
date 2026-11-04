@@ -1,0 +1,36 @@
+{
+  "id": "slice-it",
+  "mood": "Sharp and rhythmic: glowing lanes, a laser slash and music you can see.",
+  "palette": {
+    "bg": "#040818",
+    "bgAlt": "#0A1442",
+    "surface": "#0C1640",
+    "surfaceHover": "#12235C",
+    "ink": "#EAF6FF",
+    "inkMuted": "#8EB4D8",
+    "accent": "#18B6FF",
+    "accent2": "#FF3D8B",
+    "danger": "#FF3D5C",
+    "border": "#1D3F8A"
+  },
+  "fonts": {
+    "display": "Audiowide",
+    "body": "Jost",
+    "mono": "IBM Plex Mono"
+  },
+  "shape": {
+    "radius": "10px",
+    "borderStyle": "1px solid cyan at 60% with a soft glow",
+    "texture": "equalizer bars along the horizon"
+  },
+  "motifs": [
+    "three-lane runway",
+    "pink laser slash",
+    "split glowing blocks",
+    "equalizer bars",
+    "cyan neon"
+  ],
+  "buttonStyle": "Primary is a cyan neon-outline button with white Audiowide text that fills pink-to-cyan on hover; secondary is a dark button with a pink hairline.",
+  "backdrop": "Navy gradient with a perspective runway whose lane lines scroll toward the viewer slowly, and two rows of equalizer bars gently easing in height (opacity/transform, under 1 Hz).",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

@@ -1,0 +1,35 @@
+{
+  "id": "gabriels-horn",
+  "mood": "Solemn but mischievous: a golden trumpet announcing a bluffing table where nobody is sure who is lying.",
+  "palette": {
+    "bg": "#10051F",
+    "bgAlt": "#2A1050",
+    "surface": "#1E0B3A",
+    "surfaceHover": "#2E1456",
+    "ink": "#FFF3D6",
+    "inkMuted": "#C9B2E0",
+    "accent": "#F5B82E",
+    "accent2": "#B57BFF",
+    "danger": "#E0505F",
+    "border": "#5B2A8C"
+  },
+  "fonts": {
+    "display": "Cinzel",
+    "body": "Jost"
+  },
+  "shape": {
+    "radius": "14px",
+    "borderStyle": "2px solid gold (#F5B82E) with a thin inner gold line (double border)",
+    "texture": "starfield and faint light rays from the top right"
+  },
+  "motifs": [
+    "golden horn",
+    "three dice",
+    "fan of cards",
+    "radiating light rays",
+    "ornate card-back diamond"
+  ],
+  "buttonStyle": "Primary is a gold gradient button with deep-purple Cinzel text and a gold glow on hover; secondary is a purple button with a double gold hairline border.",
+  "backdrop": "Deep purple radial gradient with soft golden rays fanning from the top right, rotating imperceptibly slowly, and three dice that bob a few pixels.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

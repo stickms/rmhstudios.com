@@ -41,6 +41,7 @@ export function HornButton({
   return (
     <button
       type={type}
+      data-horn-variant={variant}
       className={cn(
         'inline-flex items-center justify-center gap-2 rounded-[var(--app-radius-sm)] font-semibold',
         'transition-colors disabled:cursor-not-allowed disabled:opacity-45',

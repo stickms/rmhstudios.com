@@ -1,0 +1,35 @@
+{
+  "id": "rmhbox",
+  "mood": "Loud, friendly party energy: a cardboard box that explodes with minigames when the lobby opens.",
+  "palette": {
+    "bg": "#2A1170",
+    "bgAlt": "#7A2CCB",
+    "surface": "#3A1C8C",
+    "surfaceHover": "#4E2AA8",
+    "ink": "#FFFFFF",
+    "inkMuted": "#E0CFFF",
+    "accent": "#FFD93D",
+    "accent2": "#FF4FA3",
+    "danger": "#FF5C5C",
+    "border": "#1B0A52"
+  },
+  "fonts": {
+    "display": "Titan One",
+    "body": "Fredoka"
+  },
+  "shape": {
+    "radius": "20px",
+    "borderStyle": "4px solid #1B0A52 with a 4px hard drop shadow",
+    "texture": "sunburst rays and scattered confetti"
+  },
+  "motifs": [
+    "cardboard box",
+    "sunburst rays",
+    "confetti",
+    "game controller, dice and trophy",
+    "GG speech bubble"
+  ],
+  "buttonStyle": "Primary is a yellow pill with dark purple Titan One text and a chunky outline that squashes on press; secondary is a pink pill with white text.",
+  "backdrop": "Purple radial sunburst behind a cardboard box; the rays rotate very slowly (one turn per minute) and confetti drifts down gently.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}

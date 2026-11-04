@@ -1,18 +1,23 @@
 /**
  * Half-Life 2's and Portal's main menu as GameUI draws it, from the game's own files (the `<game>-menu`
- * channel, lib/tf2-game/client/menus/source-gameui.ts): the console background of the chapter reached,
- * the game's title (gameinfo.txt) in the scheme's ClientTitleFont, and gamemenu.res's entries in the
- * scheme's MenuLarge font and MainMenu colours. New Game opens GameUI's chapter dialog (the chapters'
- * pictures and titles), Load Game continues from the saved level start, Options opens the Options
- * property sheet in the scheme's colours, Quit leaves for the games list.
+ * channel, lib/tf2-game/client/menus/source-gameui.ts): the console background of the chapter reached
+ * and gamemenu.res's entries. New Game opens GameUI's chapter dialog (the chapters' pictures and
+ * titles), Load Game continues from the saved level start, Options opens the Options property sheet,
+ * Quit leaves for the games list.
  *
- * Every entry is a real button (mouse, touch, Tab / arrows, Enter); the background, title and dialogs'
+ * The two games share this component and each wears its own look (source-menu.css, `.gui-hl2` /
+ * `.gui-portal`): Half-Life 2 the worn olive-and-steel GameUI under the City 17 smog with the lambda,
+ * Portal the clinical slate of an Aperture chamber with a blue and an orange portal ring. The title is
+ * the game's logo (public/images/games/logos); the type is the self-hosted Barlow Condensed / Jost.
+ *
+ * Every entry is a real button (mouse, touch, Tab / arrows, Enter); the background, logo and dialogs'
  * pictures are decoration. Where the channel is not published yet the caller keeps its plain menu.
  */
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Lock, X } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import {
   backgroundFor,
@@ -30,6 +35,7 @@ import { cn } from '@/lib/utils';
 import OptionsDialog from '../tf2-game/menus/OptionsDialog';
 import { useMenuSource } from '../tf2-game/menus/use-menu-source';
 import { moveFocus } from '../tf2-game/menu-nav';
+import { ChapterArt, SOURCE_LOGOS, SourceBackdrop, SourceGlyph } from './source-art';
 import './source-menu.css';
 
 export interface SourceChapter {
@@ -48,38 +54,20 @@ export interface SourceMainMenuProps {
   onLoadGame: () => void;
 }
 
-const registered = new Set<string>();
-
-/** Registers the scheme's font files (once per page) so the title and menu draw in the game's type. */
-export function useSchemeFonts(
-  channel: MenuChannel,
-  files: Array<{ family: string; file: string }>,
-) {
-  const [ready, setReady] = useState(0);
-  useEffect(() => {
-    let alive = true;
-    for (const { family, file } of files) {
-      const key = `${family}|${file}`;
-      if (registered.has(key) || typeof FontFace === 'undefined') continue;
-      registered.add(key);
-      const face = new FontFace(family, `url(${menuAssetUrl(file, channel.game)})`);
-      void face
-        .load()
-        .then((f) => {
-          document.fonts.add(f);
-          if (alive) setReady((n) => n + 1);
-        })
-        .catch(() => undefined);
-    }
-    return () => {
-      alive = false;
-    };
-  }, [channel, files]);
-  return ready;
-}
-
 /** A VGUI frame: a title bar, the body, a close button (Escape closes too). */
-function VguiFrame({ title, onClose, children, className }: { title: string; onClose: () => void; children: ReactNode; className?: string }) {
+function VguiFrame({
+  game,
+  title,
+  onClose,
+  children,
+  className,
+}: {
+  game: SpGameId;
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  className?: string;
+}) {
   const { t } = useTranslation('c-tf2-game');
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -89,9 +77,10 @@ function VguiFrame({ title, onClose, children, className }: { title: string; onC
     <div className="gui-modal" onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), onClose())}>
       <section ref={ref} className={cn('gui-frame', className)} aria-label={title}>
         <header className="gui-frame-title">
+          <SourceGlyph game={game} />
           <h2>{title}</h2>
           <button type="button" className="gui-frame-close" onClick={onClose} aria-label={t('close', { defaultValue: 'Close' })}>
-            <span aria-hidden>×</span>
+            <X className="size-5" aria-hidden />
           </button>
         </header>
         <div className="gui-frame-body">{children}</div>
@@ -104,7 +93,6 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
   const { t } = useTranslation('c-tf2-game');
   const navigate = useNavigate();
   const style = useMemo(() => gameUiStyle(channel), [channel]);
-  useSchemeFonts(channel, style.fontFiles);
   const source = useMenuSource(game);
   const [dialog, setDialog] = useState<null | 'newgame' | 'options'>(null);
   const [aspect, setAspect] = useState(16 / 9);
@@ -143,11 +131,9 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
   };
 
   const title = parseGameTitle(channel.files['gameinfo.txt']);
-  // The game's name without an edition's subtitle ("Portal: The First Slice" -> "Portal").
+  // The logo is the base game's; the alt text keeps an edition's own title ("Portal: The First Slice").
   const ownName = game === 'hl2' ? t('play_hl2_title', { defaultValue: 'Half-Life 2' }) : t('play_portal_title', { defaultValue: 'Portal' });
-  const shownTitle = title?.title.split(':')[0].trim() || ownName;
   const background = backgroundFor(channel, savedChapter ?? 0, aspect);
-  const logoFile = Object.entries(channel.index.images).find(([k]) => /logo/i.test(k) && !k.startsWith('console/'))?.[1];
 
   const act = (a: SourceMenuAction) => {
     if (a === 'newgame') setDialog('newgame');
@@ -156,13 +142,6 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
     else if (a === 'quit') void navigate({ to: '/games' });
   };
 
-  // GameUI sizes fonts in units of a 480-line screen; on a narrow (portrait) screen the title is held to
-  // the width too, and the entries never drop below a readable 16px.
-  const font = (f: GameUiStyleFont | null, fallback: string, size: (tall: number) => string): CSSProperties =>
-    f ? { fontFamily: `'${f.family}', ${fallback}`, fontWeight: f.weight || 400, fontSize: size(f.tall) } : { fontFamily: fallback };
-  const titleSize = (tall: number) => `calc(min(var(--gui-u), var(--gui-uw)) * ${tall})`;
-  const entrySize = (tall: number) => `max(1rem, calc(var(--gui-u) * ${tall}))`;
-
   const listRef = useRef<HTMLUListElement>(null);
   useEffect(() => {
     listRef.current?.querySelector<HTMLElement>('button')?.focus({ preventScroll: true });
@@ -170,21 +149,16 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
 
   return (
     <div className={cn('gui-root', `gui-${game}`)} style={style.vars as CSSProperties}>
-      {background ? <img className="gui-background" src={menuAssetUrl(background, game)} alt="" aria-hidden /> : null}
+      <SourceBackdrop game={game} src={background ? menuAssetUrl(background, game) : null} />
       <div className="gui-main">
-        {logoFile ? (
-          <img className="gui-logo-image" src={menuAssetUrl(logoFile, game)} alt={title?.title ?? ''} />
-        ) : (
-          <h1 className="gui-logo" style={font(style.titleFont, 'Verdana, Tahoma, sans-serif', titleSize)}>
-            <span>{shownTitle}</span>
-            {title?.title2 ? <span className="gui-logo-2">{title.title2}</span> : null}
-          </h1>
-        )}
+        <h1 className="gui-logo">
+          <img src={SOURCE_LOGOS[game]} alt={title?.title || ownName} />
+        </h1>
+        <span className="gui-rule" aria-hidden />
         <nav aria-label={t('play_menu', { defaultValue: 'Main menu' })}>
           <ul
             ref={listRef}
             className="gui-menu"
-            style={font(style.menuFont, 'Verdana, Tahoma, sans-serif', entrySize)}
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
@@ -192,10 +166,10 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
               }
             }}
           >
-            {entries.map((e) => {
+            {entries.map((e, i) => {
               const disabled = e.action === 'loadgame' && savedChapter === null;
               return (
-                <li key={`${e.action}${e.label}`}>
+                <li key={`${e.action}${e.label}`} style={{ '--i': i } as CSSProperties}>
                   <button type="button" className="gui-menu-item" data-menu-item disabled={disabled} onClick={() => act(e.action)}>
                     {menuText(channel, e.label, words[e.action])}
                   </button>
@@ -208,6 +182,7 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
 
       {dialog === 'newgame' ? (
         <NewGameDialog
+          game={game}
           channel={channel}
           chapters={chapters}
           onClose={() => setDialog(null)}
@@ -218,7 +193,7 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
         />
       ) : null}
       {dialog === 'options' ? (
-        <VguiFrame title={menuText(channel, '#GameUI_Options', words.options)} onClose={() => setDialog(null)} className="gui-frame-options">
+        <VguiFrame game={game} title={menuText(channel, '#GameUI_Options', words.options)} onClose={() => setDialog(null)} className="gui-frame-options">
           <div className="gui-skin">
             <OptionsDialog game={game} settings={settings} onChange={onSettings} source={source} />
           </div>
@@ -228,15 +203,15 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
   );
 }
 
-type GameUiStyleFont = { family: string; tall: number; weight: number };
-
 /** GameUI's New Game dialog: the chapters in a row of pictures, the chosen one framed, Start / Cancel. */
 function NewGameDialog({
+  game,
   channel,
   chapters,
   onClose,
   onStart,
 }: {
+  game: SpGameId;
   channel: MenuChannel;
   chapters: readonly SourceChapter[];
   onClose: () => void;
@@ -255,7 +230,7 @@ function NewGameDialog({
       : t('play_chapter_n', { defaultValue: 'Chapter {{n}}', n: i + 1 });
   const ok = chapters[chosen]?.available ?? false;
   return (
-    <VguiFrame title={menuText(channel, '#GameUI_NewGame', t('play_new_game', { defaultValue: 'New game' }))} onClose={onClose} className="gui-frame-newgame">
+    <VguiFrame game={game} title={menuText(channel, '#GameUI_NewGame', t('play_new_game', { defaultValue: 'New game' }))} onClose={onClose} className="gui-frame-newgame">
       <ul className="gui-chapters" aria-label={t('play_chapters', { defaultValue: 'Chapters' })}>
         {chapters.map((c, i) => {
           const pic = picture(i);
@@ -275,17 +250,28 @@ function NewGameDialog({
                     <img src={menuAssetUrl(pic, channel.game)} alt="" />
                   </span>
                 ) : (
-                  <span className="gui-chapter-blank" aria-hidden />
+                  <span className="gui-chapter-blank" aria-hidden>
+                    <ChapterArt game={game} />
+                  </span>
                 )}
                 <span className="gui-chapter-title">{c.title}</span>
-                {!c.available ? <span className="gui-chapter-note">{t('play_not_available', { defaultValue: 'Not available yet' })}</span> : null}
+                {!c.available ? (
+                  <span className="gui-chapter-note">
+                    <Lock className="size-3.5" aria-hidden />
+                    {t('play_not_available', { defaultValue: 'Not available yet' })}
+                  </span>
+                ) : null}
               </button>
             </li>
           );
         })}
       </ul>
       <footer className="gui-frame-buttons">
-        <button type="button" className="gui-button" disabled={!ok} onClick={() => onStart(chosen)}>
+        <p className="gui-frame-status">
+          <span>{chapterLabel(chosen)}</span>
+          {chapters[chosen] ? <b>{chapters[chosen].title}</b> : null}
+        </p>
+        <button type="button" className="gui-button gui-button-primary" disabled={!ok} onClick={() => onStart(chosen)}>
           {menuText(channel, '#GameUI_StartNewGame', t('play_start_new_game', { defaultValue: 'Start new game' }))}
         </button>
         <button type="button" className="gui-button" onClick={onClose}>

@@ -1,8 +1,9 @@
 /**
  * CS:GO's main menu in the shape of its Panorama UI, drawn from the game's own files where the
  * `csgo-menu` channel publishes them (scripts/tf2-game/menu_ui.py): the main menu's background movie
- * (else Dust II's screenshot), Panorama's fonts and its menu icons. A sidebar holds Play, Settings and
- * Quit; Play opens the play panel — the mode (bomb defusal / deathmatch), how to play (practice with
+ * (else Dust II's screenshot, else a drawn Dust II) and its menu icons. The title is the game's logo
+ * (public/images/games/logos); the type is the self-hosted Teko / Barlow Condensed (cs-menu.css). A
+ * sidebar holds Play, Settings and Quit; Play opens the play panel — the mode (bomb defusal / deathmatch), how to play (practice with
  * bots, host a match for friends, the community games players host, or a code), the map tile and GO —
  * and Settings the Options sheet (the same controls as every game here) in Panorama's colours.
  *
@@ -13,7 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bot, Globe, KeyRound, LogIn, Play, Power, RefreshCw, Server, Settings, X } from 'lucide-react';
+import { Bot, Check, Crosshair, Globe, KeyRound, LogIn, Play, Power, RefreshCw, Server, Settings, X } from 'lucide-react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { lobbyReturnPath } from '@/lib/lobby-link';
 import { menuAssetUrl, type MenuChannel } from '@/lib/tf2-game/client/menus/source-gameui';
@@ -22,6 +23,7 @@ import { BOT_DIFFICULTIES, TF2_LIMITS, TF2_ROOM_CODE_RE, type BotDifficulty, typ
 import { cn } from '@/lib/utils';
 import OptionsDialog from '../tf2-game/menus/OptionsDialog';
 import { useMenuSource } from '../tf2-game/menus/use-menu-source';
+import { CS_LOGO, CsScene } from './cs-art';
 import './cs-menu.css';
 
 export type CsPlaySource = 'offline' | 'host' | 'browse';
@@ -95,12 +97,6 @@ export default function CsMainMenu({ channel, signedIn, mapName, mapTitle, onOff
 
   const video = channel?.index.video ? menuAssetUrl(channel.index.video.file, 'csgo') : null;
   const screenshot = useMemo(() => mapScreenshot(channel, mapName), [channel, mapName]);
-  const logo = useMemo(() => {
-    const icons = channel?.index.icons ?? {};
-    const key = Object.keys(icons).find((k) => /csgologo|counterstrikelogo/.test(k)) ?? Object.keys(icons).find((k) => /\/logo/.test(k));
-    return key ? menuAssetUrl(icons[key], 'csgo') : null;
-  }, [channel]);
-
   const modeLabel = (m: CsRoomMode) => (m === 'dm' ? t('cs_mode_dm', { defaultValue: 'Deathmatch' }) : t('cs_mode_de', { defaultValue: 'Bomb defusal' }));
   const howLabel: Record<CsPlaySource, string> = {
     offline: t('cs_offline', { defaultValue: 'Practice against bots' }),
@@ -123,6 +119,7 @@ export default function CsMainMenu({ channel, signedIn, mapName, mapTitle, onOff
 
   return (
     <div className="pano-root">
+      <CsScene />
       {video ? (
         <video className="pano-bg" src={video} autoPlay muted loop playsInline aria-hidden poster={screenshot ?? undefined} />
       ) : screenshot ? (
@@ -131,13 +128,9 @@ export default function CsMainMenu({ channel, signedIn, mapName, mapTitle, onOff
       <div className="pano-shade" aria-hidden />
 
       <nav className="pano-sidebar" aria-label={t('play_menu', { defaultValue: 'Main menu' })}>
-        <div className="pano-logo">
-          {logo ? (
-            <img src={logo} alt={t('csgo_title', { defaultValue: 'Counter-Strike: Global Offensive' })} />
-          ) : (
-            <span>{t('csgo_short', { defaultValue: 'CS:GO' })}</span>
-          )}
-        </div>
+        <span className="pano-mark" aria-hidden>
+          <Crosshair className="size-7" />
+        </span>
         <SideButton active={panel === 'play'} label={t('cs_play', { defaultValue: 'Play' })} onClick={() => setPanel(panel === 'play' ? null : 'play')}>
           <PanoIcon channel={channel} names={['play', 'play_filled']} fallback={<Play className="size-6" aria-hidden />} />
         </SideButton>
@@ -151,6 +144,11 @@ export default function CsMainMenu({ channel, signedIn, mapName, mapTitle, onOff
       </nav>
 
       <div className="pano-stage">
+        <header className="pano-masthead">
+          <h1>
+            <img src={CS_LOGO} alt={t('csgo_title', { defaultValue: 'Counter-Strike: Global Offensive' })} />
+          </h1>
+        </header>
         {panel === 'play' ? (
           <section className="pano-panel pano-play" aria-label={t('cs_play', { defaultValue: 'Play' })}>
             <header className="pano-panel-head">
@@ -180,6 +178,12 @@ export default function CsMainMenu({ channel, signedIn, mapName, mapTitle, onOff
               <div className="pano-maps">
                 <div className="pano-map" aria-current="true">
                   {screenshot ? <img src={screenshot} alt="" aria-hidden /> : <span className="pano-map-blank" aria-hidden />}
+                  <span className="pano-map-tag" aria-hidden>
+                    {modeLabel(mode)}
+                  </span>
+                  <span className="pano-map-check" aria-hidden>
+                    <Check className="size-4" />
+                  </span>
                   <span className="pano-map-name">{mapTitle}</span>
                 </div>
                 <div className="pano-play-side">
@@ -205,7 +209,13 @@ export default function CsMainMenu({ channel, signedIn, mapName, mapTitle, onOff
 
             {how !== 'browse' ? (
               <footer className="pano-go-row">
+                <p className="pano-go-summary">
+                  <span>{howLabel[how]}</span>
+                  <span>{modeLabel(mode)}</span>
+                  <span>{mapTitle}</span>
+                </p>
                 <button type="button" className="pano-go" disabled={!canGo} onClick={go}>
+                  <Play className="size-5" fill="currentColor" aria-hidden />
                   {t('cs_go', { defaultValue: 'Go' })}
                 </button>
               </footer>

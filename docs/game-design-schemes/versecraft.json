@@ -1,0 +1,35 @@
+{
+  "id": "versecraft",
+  "mood": "Romantic and wistful: a dusk-lit story you write together in verse, with petals on the wind.",
+  "palette": {
+    "bg": "#241046",
+    "bgAlt": "#7A2F6E",
+    "surface": "#321A5C",
+    "surfaceHover": "#432474",
+    "ink": "#FFF3DC",
+    "inkMuted": "#E6C9DE",
+    "accent": "#FF8FB8",
+    "accent2": "#F2A65A",
+    "danger": "#FF6B81",
+    "border": "#7A4B9A"
+  },
+  "fonts": {
+    "display": "Great Vibes",
+    "body": "Cormorant Garamond"
+  },
+  "shape": {
+    "radius": "18px",
+    "borderStyle": "1px solid rose (#FF8FB8) at 50% with a soft glow",
+    "texture": "subtle paper grain and drifting petals"
+  },
+  "motifs": [
+    "open book and quill",
+    "crescent or full moon",
+    "cherry petals",
+    "floating verse lines",
+    "two silhouettes at dusk"
+  ],
+  "buttonStyle": "Primary is a rose-pink pill with dark plum text in Cormorant semibold and a soft glow on hover; secondary is a translucent plum pill with a cream hairline.",
+  "backdrop": "Dusk gradient from deep violet to amber with a pale moon and a few petals drifting down slowly (CSS transform), plus a line of verse that fades in and out under 0.5 Hz.",
+  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+}
