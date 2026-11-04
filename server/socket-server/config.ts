@@ -337,6 +337,21 @@ export const config = {
     'balatro:spectate:list': { max: 30, windowMs: 60_000 },
     // Find Game's live counts (A12): Lua polls every 5 s while the page is open (12/min).
     'balatro:queue:counts': { max: 30, windowMs: 60_000 },
+    // Hearthworks multiplayer (lib/hearthworks/net/events.ts): the hub signals, lists rooms, relays as a
+    // fallback and promotes a successor; the world itself runs in the host's browser. `admit` and `signal`
+    // scale with an 8-player room (a host answers 7 joins, each a trickle of ICE candidates, and
+    // re-admits everyone on a migration). `relay` is the fallback hot path — the byte budget per relayed
+    // member (48 KB/s, HW_RELAY_LIMITS) is the real limit.
+    'hearthworks:p2p:host': { max: 10, windowMs: 60_000 },
+    'hearthworks:p2p:list': { max: 30, windowMs: 60_000 },
+    'hearthworks:p2p:join': { max: 20, windowMs: 60_000 },
+    'hearthworks:p2p:admit': { max: 120, windowMs: 60_000 },
+    'hearthworks:p2p:signal': { max: 900, windowMs: 60_000 },
+    'hearthworks:p2p:relay:start': { max: 20, windowMs: 60_000 },
+    'hearthworks:p2p:relay': { max: 12_000, windowMs: 60_000 },
+    'hearthworks:p2p:successor': { max: 60, windowMs: 60_000 },
+    'hearthworks:p2p:kick': { max: 30, windowMs: 60_000 },
+    'hearthworks:p2p:leave': { max: 20, windowMs: 60_000 },
     // ─── High-frequency relay / movement events ───
     // Movement + per-frame update events were previously unmetered (the rate
     // limiter returns true for events with no rule), so a single socket could

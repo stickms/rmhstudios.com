@@ -8,9 +8,6 @@
  * (BridgeLike) and the engine's Emscripten FS (FsLike).
  */
 
-import type { ChannelPair } from '../../../shared/p2p/channel';
-import type { IceServerConfig } from '../../../shared/p2p/ice-core';
-import type { IceCandidateLike, SessionDescriptionLike, SignalOut } from '../../../shared/p2p/webrtc';
 import type {
   BalatroC2SEvent,
   BalatroC2SPayload,
@@ -21,32 +18,7 @@ import type { J2LData, J2LType, L2JData, L2JType } from '../bridge-protocol';
 
 /* ─── Time ───────────────────────────────────────────────────────────────── */
 
-export interface Scheduler {
-  /** Wall-clock ms (Date.now): referee times, `startedAt`; comparable across peers. */
-  now(): number;
-  /** Monotonic ms (performance.now): timers and link liveness; keeps counting in hidden tabs. */
-  mono(): number;
-  /** Run `fn` once after `ms`; returns a cancel function. */
-  after(ms: number, fn: () => void): () => void;
-  /** Run `fn` every `ms`; returns a cancel function. */
-  every(ms: number, fn: () => void): () => void;
-}
-
-export function realScheduler(): Scheduler {
-  const perf = (globalThis as { performance?: { now(): number } }).performance;
-  return {
-    now: () => Date.now(),
-    mono: () => (perf ? perf.now() : Date.now()),
-    after(ms, fn) {
-      const id = setTimeout(fn, ms);
-      return () => clearTimeout(id);
-    },
-    every(ms, fn) {
-      const id = setInterval(fn, ms);
-      return () => clearInterval(id);
-    },
-  };
-}
+export { realScheduler, type Scheduler } from '../../../shared/p2p/connector';
 
 /* ─── The hub (socket.io signalling) ─────────────────────────────────────── */
 
@@ -71,27 +43,7 @@ export interface HubLike {
 
 /* ─── Peer connections ───────────────────────────────────────────────────── */
 
-export interface PeerSignalIn {
-  description?: SessionDescriptionLike;
-  candidate?: IceCandidateLike | null;
-}
-
-export interface PeerConnectOptions {
-  role: 'host' | 'member';
-  ice: IceServerConfig[];
-  signal(s: SignalOut): void;
-  onChannels(pair: ChannelPair, kind: 'direct' | 'turn'): void;
-  onFailed(why: 'timeout' | 'failed'): void;
-}
-
-export interface PeerAttempt {
-  handle(signal: PeerSignalIn): void;
-  close(): void;
-}
-
-export interface PeerConnector {
-  connect(opts: PeerConnectOptions): PeerAttempt;
-}
+export type { PeerAttempt, PeerConnectOptions, PeerConnector, PeerSignalIn } from '../../../shared/p2p/connector';
 
 /* ─── Lua (the WS3 mailbox) and the engine FS ────────────────────────────── */
 

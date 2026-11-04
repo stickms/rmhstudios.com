@@ -129,8 +129,10 @@ export interface GameCapabilities {
 export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
   hearthworks: {
     genre: ['simulation', 'strategy'],
-    // Multiplayer (P2P with host transfer) lands in a later phase; the honesty rule says claim only what ships.
-    players: ['single'],
+    // Co-op over WebRTC: the host's browser runs the world (host-authoritative, signalled by the games hub, which
+    // never carries game state) and hands it to another player when it leaves. lib/hearthworks/net.
+    players: ['single', 'online-coop'],
+    maxPlayers: 8, // lib/hearthworks/net/events.ts: HW_LIMITS.MAX_PLAYERS
     input: { supported: ['mouse', 'touch'], required: [] },
     sessionMinutes: [20, 90],
     engine: 'webgl',

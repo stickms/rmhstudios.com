@@ -401,3 +401,97 @@
     cursor: pointer;
   }
 }
+
+/* Multiplayer panel (MultiplayerPanel.tsx): fields, the room code and the player list. */
+.hw-field {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.hw-field--inline {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.hw-input {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--hw-rule);
+  border-radius: var(--hw-radius-sm);
+  background: #fff;
+  color: var(--hw-ink);
+  font: inherit;
+}
+
+.hw-input:focus-visible,
+.hw-small:focus-visible,
+.hw-chip--button:focus-visible {
+  outline: 2px solid var(--hw-ink);
+  outline-offset: 2px;
+}
+
+.hw-input--code {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hw-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 0.875rem;
+}
+
+.hw-code {
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hw-row--gap {
+  margin: 6px 0;
+}
+
+.hw-player {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hw-tag {
+  padding: 0 8px;
+  border-radius: 10px;
+  background: var(--hw-powder);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.hw-error {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-radius: var(--hw-radius-sm);
+  background: #fde8e4;
+  color: #8a2f22;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.hw-small--link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.hw-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

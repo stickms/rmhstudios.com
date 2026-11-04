@@ -80,6 +80,7 @@ import { registerTf2GameHandlers, handleTf2GameDisconnect } from './handlers/tf2
 import { registerTf2P2pHandlers, handleTf2P2pDisconnect } from './handlers/tf2-p2p';
 import { registerBalatroP2pHandlers, handleBalatroP2pDisconnect } from './handlers/balatro-p2p';
 import { registerBalatroQueueHandlers, handleBalatroQueueDisconnect } from './handlers/balatro-queue';
+import { registerHearthworksP2pHandlers, handleHearthworksP2pDisconnect } from './handlers/hearthworks-p2p';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './handlers/matchmaking';
@@ -542,6 +543,8 @@ io.on('connection', (socket) => {
   registerBalatroP2pHandlers(io, socket);
   // Balatro matchmaking / party / invites / spectate list.
   registerBalatroQueueHandlers(io, socket);
+  // Hearthworks multiplayer: room list, signalling, relay fallback and host migration — the world runs in the host's browser.
+  registerHearthworksP2pHandlers(io, socket);
 
   // Platform expansion (§4, §5): live Spaces + cross-game party.
   registerSpacesHandlers(io, socket);
@@ -585,6 +588,7 @@ io.on('connection', (socket) => {
     handleTf2P2pDisconnect(io, socket);
     handleBalatroP2pDisconnect(io, socket);
     handleBalatroQueueDisconnect(io, socket);
+    handleHearthworksP2pDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });
