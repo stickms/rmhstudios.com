@@ -1,93 +1,351 @@
+@import '../shared/game-fonts/fonts.css';
+
 /**
- * Half-Life 2's and Portal's GameUI main menu (SourceMainMenu.tsx). Colours come from the game's own
- * schemes as `--gui-*` custom properties (source-gameui.ts gameUiStyle); sizes follow GameUI's
- * proportional units (`--gui-u`: one unit of a 480-line screen). VGUI is square and bevelled, so the
- * dialogs draw a 1px bright / dark edge rather than a rounded panel.
+ * Half-Life 2's and Portal's GameUI main menu (SourceMainMenu.tsx, SourceLoadingScreen.tsx), one component
+ * in two looks. Sizes follow GameUI's proportional units (`--gui-u`: one unit of a 480-line screen); VGUI is
+ * square and bevelled, so dialogs draw a 1px bright / dark edge rather than a rounded panel. Everything is
+ * drawn from the scoped `--sm-*` group:
+ *
+ *   .gui-hl2     the worn olive-and-steel GameUI of Half-Life 2 under the smog of City 17, the orange lambda
+ *                the one bright note. Its colours stay the game's own scheme (`--gui-*`, source-gameui.ts,
+ *                which defaults to the same olive); Barlow Condensed.
+ *   .gui-portal  an Aperture chamber: slate and white panels, light letter-spaced capitals (Jost), a blue and
+ *                an orange portal ring at the edges, an orange armed state.
+ *
+ * Motion is one slow push-in of the picture, a short rise of the entries and the dialogs' enter — all
+ * one-shot, transform / opacity only, nothing that repeats (WCAG 2.2.2, 2.3.1).
+ * The Options sheet and pause-menu skin (`.gui-skin`, use-game-skin.ts) read the `--gui-*` scheme directly.
  */
 
 .gui-root {
   --gui-u: calc(100dvh / 480);
   --gui-uw: calc(100vw / 640);
+  --sm-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --sm-blue: #1ea0f0;
+  --sm-orange: #f7941d;
   position: fixed;
   inset: 0;
   overflow: hidden;
   background: #000;
-  color: var(--gui-text);
-  font-family: Tahoma, Verdana, sans-serif;
+  color: var(--sm-ink);
+  font-family: var(--sm-font-body);
 }
 
+/* Half-Life 2: olive and steel; the scheme's own values, the design pack's as their fallback. */
+.gui-hl2 {
+  --sm-font-display: 'Barlow Condensed', 'Arial Narrow', Tahoma, sans-serif;
+  --sm-font-body: 'Jost', Tahoma, Verdana, sans-serif;
+  --sm-accent: #f26a1b;
+  --sm-accent-ink: var(--gui-button-armed-text, #c4b550);
+  --sm-focus: #c4b550;
+  --sm-shade: 8 8 7;
+  --sm-ink: var(--gui-text, #d8ded3);
+  --sm-ink-dim: var(--gui-text-dim, #a0a0a0);
+  --sm-menu-ink: var(--gui-menu-text, rgb(255 255 255 / 0.86));
+  --sm-menu-armed: var(--gui-menu-armed, #fff);
+  --sm-menu-down: var(--gui-menu-depressed, #c0c0c0);
+  --sm-frame-bg: var(--gui-frame-bg, rgb(46 43 42 / 0.94));
+  --sm-title-bg: linear-gradient(180deg, rgb(76 88 68 / 0.95), rgb(62 70 55 / 0.95));
+  --sm-title-ink: var(--gui-frame-title, rgb(255 255 255 / 0.92));
+  --sm-edge-hi: var(--gui-border-bright, #889180);
+  --sm-edge-lo: var(--gui-border-dark, #282e22);
+  --sm-btn-bg: var(--gui-button-bg, #4c5844);
+  --sm-btn-ink: var(--gui-button-text, #d8ded3);
+  --sm-btn-hover-bg: #3e4637;
+  --sm-btn-armed-ink: var(--gui-button-armed-text, #c4b550);
+  --sm-select: var(--gui-selection, #958831);
+  --sm-field-bg: var(--gui-field-bg, #3e4637);
+  --sm-progress-fg: var(--gui-progress-fg, #d8ded3);
+  --sm-progress-bg: var(--gui-progress-bg, rgb(0 0 0 / 0.3));
+  --sm-push-from: 1;
+  --sm-push-to: 1.02;
+}
+
+/* Portal: slate panels, a blue and an orange ring, an orange armed state. */
+.gui-portal {
+  --sm-font-display: 'Jost', 'Trebuchet MS', Tahoma, sans-serif;
+  --sm-font-body: 'Jost', Tahoma, Verdana, sans-serif;
+  --sm-accent: #1ea0f0;
+  --sm-accent-ink: #6cc1f7;
+  --sm-focus: #6cc1f7;
+  --sm-shade: 6 10 15;
+  --sm-ink: #eaf0f5;
+  --sm-ink-dim: #9aa8b5;
+  --sm-menu-ink: rgb(234 240 245 / 0.86);
+  --sm-menu-armed: #fff;
+  --sm-menu-down: #9aa8b5;
+  --sm-frame-bg: rgb(31 42 54 / 0.95);
+  --sm-title-bg: linear-gradient(180deg, #2a3a4b, #1f2a36);
+  --sm-title-ink: #eaf0f5;
+  --sm-edge-hi: #5e6a78;
+  --sm-edge-lo: #0e1319;
+  --sm-btn-bg: #2a3a4b;
+  --sm-btn-ink: #eaf0f5;
+  --sm-btn-hover-bg: #f7941d;
+  --sm-btn-armed-ink: #0e1319;
+  --sm-select: #1ea0f0;
+  --sm-field-bg: #1a2430;
+  --sm-progress-fg: #1ea0f0;
+  --sm-progress-bg: rgb(0 0 0 / 0.35);
+  --sm-push-from: 1.04;
+  --sm-push-to: 1.06;
+}
+
+/* ── backdrop ─────────────────────────────────────────────────────────────── */
+
+.gui-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+.gui-scene {
+  position: absolute;
+  inset: 0;
+}
+/* What stands behind (and, before the game's menu files are published, in place of) the console
+   background. */
+.gui-hl2 .gui-scene {
+  background:
+    radial-gradient(110% 60% at 74% 64%, rgb(110 112 98 / 0.45), transparent 62%),
+    linear-gradient(180deg, #151613 0%, #272924 46%, #3a3c34 66%, #10110e 100%);
+}
+.gui-citadel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  width: auto;
+  min-width: 100%;
+  aspect-ratio: 16 / 9;
+}
+/* Portrait: the spire comes into the frame instead of sitting past its edge. */
+@media (max-aspect-ratio: 4 / 5) {
+  .gui-citadel {
+    right: -69vw;
+  }
+}
+.gui-portal .gui-scene {
+  --seam: calc(var(--gui-u) * 96);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.07), transparent 34%),
+    repeating-linear-gradient(90deg, transparent 0 calc(var(--seam) - 1px), rgb(255 255 255 / 0.055) calc(var(--seam) - 1px) var(--seam)),
+    repeating-linear-gradient(0deg, transparent 0 calc(var(--seam) - 1px), rgb(255 255 255 / 0.055) calc(var(--seam) - 1px) var(--seam)),
+    repeating-conic-gradient(rgb(255 255 255 / 0.035) 0 25%, transparent 0 50%) 0 0 / calc(var(--seam) * 2) calc(var(--seam) * 2),
+    radial-gradient(90% 80% at 56% 36%, #35506a 0%, #1e2a37 52%, #0e1319 100%);
+}
+/* The floor of the chamber, a long soft reflection. */
+.gui-portal .gui-scene::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 34%;
+  background: linear-gradient(0deg, rgb(8 12 17 / 0.8), rgb(255 255 255 / 0.05));
+}
+
+/* The game's console background: one slow push-in, once. */
 .gui-background {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  pointer-events: none;
-  user-select: none;
+  transform: scale(var(--sm-push-from));
+  animation: gui-push 90s linear forwards;
 }
+.gui-portal .gui-background {
+  filter: blur(2.5px) saturate(0.85);
+}
+@keyframes gui-push {
+  to {
+    transform: scale(var(--sm-push-to));
+  }
+}
+
+.gui-ring {
+  position: absolute;
+  width: min(calc(var(--gui-u) * 118), 30vw);
+  aspect-ratio: 118 / 230;
+  border: calc(var(--gui-u) * 6) solid;
+  border-radius: 50%;
+}
+.gui-ring-blue {
+  top: 5%;
+  left: calc(var(--gui-u) * -58);
+  border-color: var(--sm-blue);
+  background: radial-gradient(closest-side, rgb(30 160 240 / 0.28), rgb(10 16 22 / 0.92));
+  box-shadow:
+    0 0 calc(var(--gui-u) * 36) rgb(30 160 240 / 0.5),
+    inset 0 0 calc(var(--gui-u) * 22) rgb(30 160 240 / 0.55);
+  rotate: -5deg;
+}
+.gui-ring-orange {
+  right: calc(var(--gui-u) * -44);
+  bottom: 24%;
+  border-color: var(--sm-orange);
+  background: radial-gradient(closest-side, rgb(247 148 29 / 0.28), rgb(20 14 8 / 0.92));
+  box-shadow:
+    0 0 calc(var(--gui-u) * 36) rgb(247 148 29 / 0.5),
+    inset 0 0 calc(var(--gui-u) * 22) rgb(247 148 29 / 0.55);
+  rotate: 7deg;
+}
+
+@media (max-aspect-ratio: 4 / 5) {
+  .gui-ring-orange {
+    top: 24%;
+    bottom: auto;
+  }
+}
+
+/* Keeps the logo and entries legible on any picture. */
+.gui-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgb(var(--sm-shade) / 0.66) 0, rgb(var(--sm-shade) / 0.3) 40%, transparent 72%),
+    linear-gradient(0deg, rgb(var(--sm-shade) / 0.78) 0, transparent 52%),
+    radial-gradient(120% 120% at 50% 40%, transparent 55%, rgb(var(--sm-shade) / 0.55) 100%);
+}
+
+/* ── the main menu ────────────────────────────────────────────────────────── */
 
 .gui-main {
   position: absolute;
-  left: max(calc(var(--safe-left, 0px) + 1rem), calc(var(--gui-u) * 76));
-  bottom: max(calc(var(--safe-bottom, 0px) + 1rem), calc(var(--gui-u) * 54));
+  /* GameUI's units, held to the width as well on a portrait screen. */
+  left: max(calc(var(--safe-left, 0px) + 2.5rem), calc(min(var(--gui-u), var(--gui-uw)) * 76));
+  bottom: max(calc(var(--safe-bottom, 0px) + 1.5rem), calc(var(--gui-u) * 54));
   display: flex;
   flex-direction: column;
-  gap: calc(var(--gui-u) * 24);
+  align-items: flex-start;
 }
-
 .gui-logo {
-  display: flex;
-  font-size: calc(min(var(--gui-u), var(--gui-uw)) * 40);
-  flex-direction: column;
-  color: var(--gui-menu-armed);
-  line-height: 1;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-shadow: 0 0 calc(var(--gui-u) * 2) rgb(0 0 0 / 0.6);
+  margin: 0;
+  line-height: 0;
+  --logo-w: min(
+    clamp(14rem, calc(min(var(--gui-u), var(--gui-uw)) * 250), 32rem),
+    calc(100vw - 5rem - var(--safe-left, 0px) - var(--safe-right, 0px))
+  );
 }
-.gui-logo-2 {
-  font-size: 0.5em;
-}
-.gui-logo-image {
-  max-width: min(60vw, calc(var(--gui-u) * 320));
+.gui-logo img {
+  display: block;
+  width: var(--logo-w);
   height: auto;
+  /* The artwork keeps a margin round the letters; the letters line up with the rule and the entries. */
+  margin-left: calc(var(--logo-w) * -0.045);
+  filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5));
+}
+/* A short mark in the game's colour that runs out into a hairline. */
+.gui-rule {
+  display: block;
+  align-self: stretch;
+  height: 2px;
+  margin: calc(var(--gui-u) * 14) 0 calc(var(--gui-u) * 10);
+  background: linear-gradient(90deg, var(--sm-accent) 0 3.5rem, rgb(255 255 255 / 0.24) 3.5rem, transparent);
+}
+.gui-portal .gui-rule {
+  background: linear-gradient(
+    90deg,
+    var(--sm-blue) 0 1.75rem,
+    var(--sm-orange) 1.75rem 3.5rem,
+    rgb(255 255 255 / 0.22) 3.5rem,
+    transparent
+  );
 }
 
 .gui-menu {
   display: flex;
-  font-size: max(1rem, calc(var(--gui-u) * 12));
   flex-direction: column;
-  gap: calc(var(--gui-u) * 4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--sm-font-display);
+  font-size: clamp(1.5rem, calc(var(--gui-u) * 15), 2.25rem);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1;
+}
+.gui-portal .gui-menu {
+  font-size: clamp(1.125rem, calc(var(--gui-u) * 11), 1.625rem);
+  font-weight: 300;
+  letter-spacing: 0.28em;
+}
+.gui-menu li {
+  animation: gui-rise 520ms var(--sm-ease) both;
+  animation-delay: calc(120ms + var(--i, 0) * 70ms);
+}
+@keyframes gui-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
 }
 .gui-menu-item {
+  position: relative;
   display: block;
   min-height: 2.75rem;
-  padding: 0;
+  /* The padding gives the focus ring room; the negative margin keeps the text on the logo's edge. */
+  margin-left: -0.5rem;
+  padding: 0 0.625rem 0 0.5rem;
   background: none;
   border: 0;
-  color: var(--gui-menu-text);
+  color: var(--sm-menu-ink);
   font: inherit;
+  letter-spacing: inherit;
   text-align: start;
+  text-shadow: 0 1px 10px rgb(0 0 0 / 0.7);
   text-transform: uppercase;
   cursor: pointer;
+  transition: color 160ms var(--sm-ease);
 }
-.gui-menu-item:hover,
+/* The armed marker: Half-Life's lambda, Portal's ring. It sits beside the entry, so the text never moves. */
+.gui-menu-item::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: calc(0.5rem - 1.5em);
+  width: 0.85em;
+  height: 0.85em;
+  background: var(--sm-accent);
+  translate: -0.4em -50%;
+  opacity: 0;
+  transition:
+    opacity 160ms var(--sm-ease),
+    translate 220ms var(--sm-ease);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 3h5.5L19 21M13.2 11.6 5.5 21' fill='none' stroke='%23000' stroke-width='3.6' stroke-linecap='square'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+.gui-portal .gui-menu-item::before {
+  width: 0.6em;
+  height: 0.9em;
+  background: none;
+  border: 2px solid var(--sm-blue);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgb(30 160 240 / 0.6);
+  mask: none;
+}
+.gui-menu-item:hover:not(:disabled),
 .gui-menu-item:focus-visible {
-  color: var(--gui-menu-armed);
+  color: var(--sm-menu-armed);
 }
-.gui-menu-item:active {
-  color: var(--gui-menu-depressed);
+.gui-menu-item:hover:not(:disabled)::before,
+.gui-menu-item:focus-visible::before {
+  opacity: 1;
+  translate: 0 -50%;
+}
+.gui-menu-item:active:not(:disabled) {
+  color: var(--sm-menu-down);
 }
 .gui-menu-item:disabled {
   opacity: 0.45;
   cursor: default;
 }
 .gui-menu-item:focus-visible {
-  outline: 2px solid var(--gui-menu-armed);
+  outline: 2px solid var(--sm-focus);
   outline-offset: 2px;
 }
 
-/* ── VGUI frames ───────────────────────────────────────────────────────────── */
+/* ── VGUI frames ──────────────────────────────────────────────────────────── */
 
 .gui-modal {
   position: fixed;
@@ -97,20 +355,37 @@
   padding: calc(var(--safe-top, 0px) + 1rem) calc(var(--safe-right, 0px) + 1rem) calc(var(--safe-bottom, 0px) + 1rem)
     calc(var(--safe-left, 0px) + 1rem);
   overflow-y: auto;
+  background: rgb(var(--sm-shade, 0 0 0) / 0.62);
+  animation: gui-fade 180ms var(--sm-ease) both;
+}
+@keyframes gui-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes gui-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
 }
 .gui-frame {
   display: flex;
   flex-direction: column;
   /* margin: auto centres the frame and, unlike a flex centre, never pushes a tall one off the top. */
   margin: auto;
-  width: min(100%, 44rem);
+  width: min(100%, 46rem);
   max-height: 100%;
-  background: var(--gui-frame-bg);
-  border: 1px solid var(--gui-border-bright);
-  border-right-color: var(--gui-border-dark);
-  border-bottom-color: var(--gui-border-dark);
-  color: var(--gui-text);
-  font-size: 0.8125rem;
+  background: var(--sm-frame-bg);
+  border: 1px solid var(--sm-edge-hi);
+  border-right-color: var(--sm-edge-lo);
+  border-bottom-color: var(--sm-edge-lo);
+  box-shadow:
+    inset 1px 1px 0 rgb(255 255 255 / 0.05),
+    0 28px 70px rgb(0 0 0 / 0.6);
+  color: var(--sm-ink);
+  font-size: 0.875rem;
+  animation: gui-pop 220ms var(--sm-ease) both;
 }
 .gui-frame-options {
   width: min(100%, 52rem);
@@ -118,62 +393,139 @@
 .gui-frame-title {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.375rem 0.5rem 0.375rem 0.75rem;
+  gap: 0.625rem;
+  min-height: 2.75rem;
+  padding: 0 0.25rem 0 0.875rem;
+  background: var(--sm-title-bg);
+  border-bottom: 1px solid var(--sm-edge-lo);
+  box-shadow: inset 3px 0 0 var(--sm-accent);
 }
 .gui-frame-title h2 {
-  color: var(--gui-frame-title);
-  font-size: 0.875rem;
+  color: var(--sm-title-ink);
+  font-family: var(--sm-font-display);
+  font-size: 1.125rem;
   font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+.gui-portal .gui-frame-title h2 {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: 0.24em;
+}
+.gui-glyph {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--sm-accent);
+}
+.gui-glyph-rings {
+  width: 1.5rem;
+}
+.gui-glyph-blue {
+  stroke: var(--sm-blue);
+}
+.gui-glyph-orange {
+  stroke: var(--sm-orange);
+}
 .gui-frame-close {
+  display: grid;
+  place-items: center;
   min-width: 2.75rem;
   min-height: 2.75rem;
+  margin-inline-start: auto;
   background: none;
   border: 0;
-  color: var(--gui-text);
-  font-size: 1.25rem;
+  color: var(--sm-ink);
   cursor: pointer;
+  transition: color 140ms var(--sm-ease);
 }
 .gui-frame-close:hover,
 .gui-frame-close:focus-visible {
-  color: var(--gui-button-armed-text);
+  color: var(--sm-btn-armed-ink);
+}
+.gui-portal .gui-frame-close:hover,
+.gui-portal .gui-frame-close:focus-visible {
+  color: var(--sm-orange);
+}
+.gui-frame-close:focus-visible,
+.gui-button:focus-visible,
+.gui-chapter:focus-visible {
+  outline: 2px solid var(--sm-focus);
+  outline-offset: -2px;
 }
 .gui-frame-body {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.875rem;
   min-height: 0;
-  padding: 0.5rem 0.75rem 0.75rem;
+  padding: 0.75rem 0.875rem 0.875rem;
   overflow-y: auto;
 }
 .gui-frame-buttons {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--sm-edge-lo);
+  box-shadow: 0 -1px 0 rgb(255 255 255 / 0.05);
+}
+.gui-frame-status {
+  display: grid;
+  min-width: 0;
+  margin-inline-end: auto;
+  color: var(--sm-ink-dim);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.gui-frame-status b {
+  overflow: hidden;
+  color: var(--sm-ink);
+  font-family: var(--sm-font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .gui-button {
   min-height: 2.75rem;
-  min-width: 7rem;
-  padding: 0 0.875rem;
-  background: var(--gui-button-bg);
-  border: 1px solid var(--gui-border-bright);
-  border-right-color: var(--gui-border-dark);
-  border-bottom-color: var(--gui-border-dark);
-  color: var(--gui-button-text);
-  font: inherit;
+  min-width: 7.5rem;
+  padding: 0 1.125rem;
+  background: var(--sm-btn-bg);
+  border: 1px solid var(--sm-edge-hi);
+  border-right-color: var(--sm-edge-lo);
+  border-bottom-color: var(--sm-edge-lo);
+  color: var(--sm-btn-ink);
+  font-family: var(--sm-font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   cursor: pointer;
+  transition:
+    background-color 140ms var(--sm-ease),
+    color 140ms var(--sm-ease);
 }
-.gui-button:hover,
+.gui-hl2 .gui-button {
+  font-size: 1.1875rem;
+  font-weight: 700;
+}
+.gui-button-primary {
+  box-shadow: inset 0 -2px 0 var(--sm-accent);
+}
+.gui-button:hover:not(:disabled),
 .gui-button:focus-visible {
-  background: var(--gui-button-armed-bg);
-  color: var(--gui-button-armed-text);
+  background: var(--sm-btn-hover-bg);
+  color: var(--sm-btn-armed-ink);
 }
-.gui-button:active {
-  border-color: var(--gui-border-dark);
-  border-right-color: var(--gui-border-bright);
-  border-bottom-color: var(--gui-border-bright);
+.gui-button:active:not(:disabled) {
+  border-color: var(--sm-edge-lo);
+  border-right-color: var(--sm-edge-hi);
+  border-bottom-color: var(--sm-edge-hi);
 }
 .gui-button:disabled {
   opacity: 0.5;
@@ -182,33 +534,59 @@
 
 /* The New Game dialog: chapter pictures in a row that scrolls sideways. */
 .gui-chapters {
+  margin: 0;
+  list-style: none;
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(9.5rem, 1fr);
+  grid-auto-columns: minmax(10rem, 1fr);
   gap: 0.5rem;
   overflow-x: auto;
-  padding-bottom: 0.25rem;
+  padding: 0.125rem 0.125rem 0.5rem;
+  scroll-snap-type: x proximity;
+}
+.gui-chapters > li {
+  scroll-snap-align: start;
 }
 .gui-chapter {
+  position: relative;
   display: flex;
   width: 100%;
   min-height: 2.75rem;
   flex-direction: column;
   gap: 0.25rem;
-  padding: 0.375rem;
-  background: none;
-  border: 1px solid transparent;
-  color: var(--gui-text);
+  padding: 0.5rem;
+  background: rgb(0 0 0 / 0.2);
+  border: 1px solid var(--sm-edge-lo);
+  color: var(--sm-ink);
   font: inherit;
   text-align: start;
   cursor: pointer;
+  transition:
+    background-color 140ms var(--sm-ease),
+    border-color 140ms var(--sm-ease);
+}
+.gui-chapter:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.06);
+  border-color: var(--sm-edge-hi);
 }
 .gui-chapter[aria-pressed='true'] {
-  border-color: var(--gui-selection);
-  background: color-mix(in srgb, var(--gui-selection) 18%, transparent);
+  border-color: var(--sm-select);
+  background: color-mix(in srgb, var(--sm-select) 20%, transparent);
+  box-shadow: inset 0 0 0 1px var(--sm-select);
+}
+/* The chosen chapter's corner tick. */
+.gui-chapter[aria-pressed='true']::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  background: var(--sm-select);
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
 }
 .gui-chapter:disabled {
-  opacity: 0.5;
+  opacity: 0.55;
   cursor: default;
 }
 .gui-chapter-pic,
@@ -217,7 +595,27 @@
   width: 100%;
   aspect-ratio: 152 / 86;
   overflow: hidden;
-  background: var(--gui-field-bg);
+  background: var(--sm-field-bg);
+  border: 1px solid var(--sm-edge-lo);
+}
+.gui-chapter-blank {
+  display: grid;
+  place-items: center;
+  color: var(--sm-ink-dim);
+  background:
+    repeating-linear-gradient(135deg, rgb(255 255 255 / 0.04) 0 1px, transparent 1px 10px),
+    var(--sm-field-bg);
+}
+.gui-portal .gui-chapter-blank {
+  background:
+    linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px) 0 0 / 1.5rem 1.5rem,
+    linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px) 0 0 / 1.5rem 1.5rem,
+    var(--sm-field-bg);
+}
+.gui-chapter-blank svg {
+  width: 32%;
+  height: auto;
+  opacity: 0.7;
 }
 /* GameUI's chapter pictures are 152x86 in the top-left of a 256x128 texture. */
 .gui-chapter-pic img {
@@ -227,17 +625,26 @@
   height: auto;
 }
 .gui-chapter-n {
-  font-size: 0.6875rem;
-  font-weight: 700;
+  color: var(--sm-ink-dim);
+  font-family: var(--sm-font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--gui-text-dim);
+}
+.gui-chapter[aria-pressed='true'] .gui-chapter-n {
+  color: var(--sm-accent-ink);
 }
 .gui-chapter-title {
-  font-weight: 700;
+  font-weight: 600;
+  line-height: 1.25;
 }
 .gui-chapter-note {
-  font-size: 0.6875rem;
-  color: var(--gui-text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--sm-ink-dim);
+  font-size: 0.75rem;
 }
 
 /* The Options property sheet (menus/OptionsDialog.tsx) in the scheme's colours: the TF2 Hub controls it
@@ -258,21 +665,58 @@
   --app-accent-fg: var(--gui-text);
   --app-accent-hover: var(--gui-selection);
   --tf2-panel: var(--gui-frame-bg);
-  --app-font-display: Tahoma, Verdana, sans-serif;
-  --app-font-body: Tahoma, Verdana, sans-serif;
+  --app-font-display: 'Jost', Tahoma, Verdana, sans-serif;
+  --app-font-body: 'Jost', Tahoma, Verdana, sans-serif;
   --app-radius: 0;
   --app-radius-sm: 0;
   color: var(--gui-text);
+}
+/* Inside the menu the sheet takes the game's own look (Portal's slate and blue rather than the scheme's). */
+.gui-root .gui-skin {
+  --app-bg: var(--sm-frame-bg);
+  --app-bg-subtle: var(--sm-field-bg);
+  --app-surface: var(--sm-btn-bg);
+  --app-surface-hover: var(--sm-btn-hover-bg);
+  --app-surface-active: var(--sm-btn-hover-bg);
+  --app-border: var(--sm-edge-lo);
+  --app-border-bright: var(--sm-edge-hi);
+  --app-text: var(--sm-ink);
+  --app-text-muted: var(--sm-ink);
+  --app-text-dim: var(--sm-ink-dim);
+  --app-accent: var(--sm-select);
+  --app-accent-text: var(--sm-accent-ink);
+  --app-accent-fg: var(--sm-ink);
+  --app-accent-hover: var(--sm-select);
+  --tf2-panel: var(--sm-frame-bg);
+  --app-font-display: var(--sm-font-body);
+  --app-font-body: var(--sm-font-body);
+  color: var(--sm-ink);
 }
 
 /* The skin on a dialog over the running game (use-game-skin.ts): the frame itself in the scheme's colours. */
 .gui-skin-dialog {
   background: var(--gui-frame-bg);
   border-color: var(--gui-border-bright);
-  font-family: Tahoma, Verdana, sans-serif;
+  font-family: 'Jost', Tahoma, Verdana, sans-serif;
 }
 
-/* GameUI's loading dialog (SourceLoadingScreen.tsx): a small frame low on the right over the background. */
+/* ── the loading screen (SourceLoadingScreen.tsx) ─────────────────────────── */
+
+.gui-loading-logo {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 1.75rem);
+  left: max(calc(var(--safe-left, 0px) + 1.5rem), calc(var(--gui-u) * 40));
+  z-index: 2;
+  line-height: 0;
+}
+.gui-loading-logo img {
+  display: block;
+  width: clamp(11rem, calc(var(--gui-u) * 170), 22rem);
+  max-width: calc(100vw - 3rem);
+  height: auto;
+  filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.5));
+}
+/* GameUI's loading dialog: a small frame low on the right over the background. */
 .gui-loading {
   position: absolute;
   inset: auto calc(var(--safe-right, 0px) + 1.5rem) calc(var(--safe-bottom, 0px) + 1.5rem) auto;
@@ -281,25 +725,46 @@
   margin: 0;
 }
 .gui-loading-map {
-  color: var(--gui-text-dim);
-  font-size: 0.75rem;
+  color: var(--sm-ink-dim);
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
 }
 /* vgui ProgressBar: a sunken track of lit blocks. */
 .gui-progress {
   display: block;
   height: 1.125rem;
   padding: 2px;
-  background: var(--gui-progress-bg);
-  border: 1px solid var(--gui-border-dark);
-  border-right-color: var(--gui-border-bright);
-  border-bottom-color: var(--gui-border-bright);
+  background: var(--sm-progress-bg);
+  border: 1px solid var(--sm-edge-lo);
+  border-right-color: var(--sm-edge-hi);
+  border-bottom-color: var(--sm-edge-hi);
 }
 .gui-progress > span {
   display: block;
   height: 100%;
-  background: repeating-linear-gradient(
-    90deg,
-    var(--gui-progress-fg) 0 0.5rem,
-    transparent 0.5rem 0.625rem
-  );
+  background: repeating-linear-gradient(90deg, var(--sm-progress-fg) 0 0.5rem, transparent 0.5rem 0.625rem);
+}
+
+@media (width < 40rem) {
+  .gui-frame-status {
+    flex: 1 1 100%;
+  }
+  .gui-frame-buttons .gui-button {
+    flex: 1 1 100%;
+  }
+  .gui-frame-body {
+    padding: 0.625rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gui-background,
+  .gui-menu li,
+  .gui-modal,
+  .gui-frame {
+    animation: none;
+  }
+  .gui-menu-item::before {
+    transition: none;
+  }
 }

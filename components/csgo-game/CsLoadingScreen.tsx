@@ -1,7 +1,7 @@
 /**
  * CS:GO's loading screen in Panorama's shape: the map's screenshot full bleed under a dark fade, the
- * map's name large in Stratum2 with the mode beneath, and a thin bar along the bottom with the stage under
- * way (the `csgo-menu` channel: lib/tf2-game/client/menus/source-gameui.ts).
+ * map's name large in Teko with the mode beneath, and a thin bar along the bottom with the stage under
+ * way (the `csgo-menu` channel: lib/tf2-game/client/menus/source-gameui.ts), the game's logo in the corner.
  */
 'use client';
 
@@ -9,6 +9,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MenuChannel } from '@/lib/tf2-game/client/menus/source-gameui';
 import type { LoadingView } from '../tf2-game/GameCanvas';
+import { CS_LOGO, CsScene } from './cs-art';
 import { mapScreenshot, usePanoramaFonts } from './CsMainMenu';
 import './cs-menu.css';
 
@@ -34,12 +35,14 @@ export default function CsLoadingScreen({
   const pct = Math.round(view.fraction * 100);
   return (
     <div className="pano-root pano-load">
+      <CsScene />
       {shot ? <img className="pano-bg" src={shot} alt="" aria-hidden /> : null}
       <div className="pano-load-shade" aria-hidden />
       <div className="pano-load-info">
         <p className="pano-load-mode">{modeLabel}</p>
         <h2 className="pano-load-map">{mapTitle}</h2>
       </div>
+      <img className="pano-load-logo" src={CS_LOGO} alt="" aria-hidden />
       <div className="pano-load-foot">
         <div className="pano-load-row">
           <span className="pano-load-label">

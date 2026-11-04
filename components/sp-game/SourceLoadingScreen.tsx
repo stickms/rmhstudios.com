@@ -1,7 +1,8 @@
 /**
  * Half-Life 2's and Portal's loading screen as GameUI draws it: the console background of the chapter
  * being loaded, and the loading dialog low on the right — its title, the level, vgui's block progress bar,
- * a Cancel button — in the game's scheme colours and type (the `<game>-menu` channel, source-gameui.ts).
+ * a Cancel button — in the same look as the main menu (SourceMainMenu.tsx; the `<game>-menu` channel,
+ * source-gameui.ts), under the game's logo.
  */
 'use client';
 
@@ -16,7 +17,7 @@ import {
 } from '@/lib/tf2-game/client/menus/source-gameui';
 import type { SpGameId } from '@/lib/tf2-game/client/sp-save';
 import type { LoadingView } from '../tf2-game/GameCanvas';
-import { useSchemeFonts } from './SourceMainMenu';
+import { SOURCE_LOGOS, SourceBackdrop, SourceGlyph } from './source-art';
 import './source-menu.css';
 
 export interface SourceLoadingScreenProps {
@@ -35,21 +36,18 @@ export default function SourceLoadingScreen({
 }: SourceLoadingScreenProps) {
   const { t } = useTranslation('c-tf2-game');
   const style = useMemo(() => gameUiStyle(channel), [channel]);
-  useSchemeFonts(channel, style.fontFiles);
   const [aspect, setAspect] = useState(16 / 9);
   useEffect(() => {
     setAspect(window.innerWidth / Math.max(1, window.innerHeight));
   }, []);
   const background = backgroundFor(channel, chapter, aspect);
-  const font = style.menuFont
-    ? { fontFamily: `'${style.menuFont.family}', Tahoma, Verdana, sans-serif` }
-    : undefined;
   const stage = view.stages.find((s) => !s.done);
   return (
     <div className={`gui-root gui-${game}`} style={style.vars as CSSProperties}>
-      {background ? (
-        <img className="gui-background" src={menuAssetUrl(background, game)} alt="" aria-hidden />
-      ) : null}
+      <SourceBackdrop game={game} src={background ? menuAssetUrl(background, game) : null} />
+      <div className="gui-loading-logo" aria-hidden>
+        <img src={SOURCE_LOGOS[game]} alt="" />
+      </div>
       <section
         className="gui-frame gui-loading"
         aria-label={menuText(
@@ -59,7 +57,8 @@ export default function SourceLoadingScreen({
         )}
       >
         <header className="gui-frame-title">
-          <h2 style={font}>
+          <SourceGlyph game={game} />
+          <h2>
             {menuText(channel, '#GameUI_Loading', t('play_loading', { defaultValue: 'Loading' }))}
           </h2>
         </header>
