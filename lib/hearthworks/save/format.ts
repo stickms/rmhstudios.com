@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BUILDING_IDS, CROP_IDS, ITEM_IDS } from '../content';
+import { DEFAULT_SKIN, SKIN_IDS } from '../skins';
 import { MAX_LEVEL, MAX_WORLD_SIZE, MIN_WORLD_SIZE, type World } from '../world';
 
 /** 'HWLD' + a version byte, then the world as UTF-8 JSON. */
@@ -42,6 +43,9 @@ const worldSchema = z
         z: z.number().finite(),
         money: int.nonnegative(),
         inventory: z.partialRecord(z.enum(ITEM_IDS), int.nonnegative()),
+        // Saves from before skins existed carry neither field.
+        skin: z.enum(SKIN_IDS).default(DEFAULT_SKIN),
+        ownedSkins: z.array(z.enum(SKIN_IDS)).default([DEFAULT_SKIN]),
       }),
     ),
   })

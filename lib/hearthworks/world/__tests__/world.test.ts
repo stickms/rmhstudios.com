@@ -19,6 +19,9 @@ const P = 'p1';
 function fresh(seed = 7) {
   const w = createWorld(seed, 24);
   stepWorld(w, 0, [{ type: 'join', playerId: P }]);
+  // Stand off to the side so tests can build on the middle tiles (a solid building cannot go up under someone).
+  w.players[P].x = 2;
+  w.players[P].z = 2;
   return w;
 }
 const center = (w: { size: number }) => Math.floor(w.size / 2);
@@ -212,5 +215,53 @@ describe('terrain heights', () => {
     expect(tileTop(w, m, m)).toBeCloseTo(MEADOW_LEVEL * LEVEL_HEIGHT, 6);
     expect(tileTop(w, 0, 0)).toBeCloseTo(WATER_LEVEL * LEVEL_HEIGHT, 6);
     expect(tileTop(w, -5, 3)).toBe(0);
+  });
+});
+
+describe('skins in the world', () => {
+  it('starts every player in the free skin, owning only it', () => {
+    const w = fresh();
+    expect(w.players[P].skin).toBe('citizen');
+    expect(w.players[P].ownedSkins).toEqual(['citizen']);
+  });
+
+  it('buys with in-game money, then equips; refuses duplicates, the broke, and the unowned', () => {
+    const w = fresh();
+    w.players[P].money = 2000;
+    const ev = stepWorld(w, 0, [
+      { type: 'setSkin', playerId: P, skin: 'barney' }, // not owned yet
+      { type: 'buySkin', playerId: P, skin: 'gman' }, // far too dear
+      { type: 'buySkin', playerId: P, skin: 'barney' },
+      { type: 'buySkin', playerId: P, skin: 'barney' }, // again
+      { type: 'setSkin', playerId: P, skin: 'barney' },
+      { type: 'buySkin', playerId: P, skin: 'nuke' as never },
+    ]);
+    const tags = ev.map((e) => (e.type === 'rejected' ? `x:${e.reason}` : e.type));
+    expect(tags).toEqual([
+      'x:not-owned',
+      'x:cannot-afford',
+      'skinBought',
+      'x:already-owned',
+      'skinChanged',
+      'x:unknown-skin',
+    ]);
+    expect(w.players[P].money).toBe(2000 - 1200);
+    expect(w.players[P].skin).toBe('barney');
+    expect(w.players[P].ownedSkins).toEqual(['citizen', 'barney']);
+  });
+});
+
+describe('building around people', () => {
+  it('refuses a solid building on a tile a player is standing on, but allows a road', () => {
+    const w = fresh();
+    const m = center(w);
+    w.players[P].money = 5000;
+    w.players[P].x = m;
+    w.players[P].z = m;
+    const ev = stepWorld(w, 0, [
+      { type: 'place', playerId: P, kind: 'cottage', x: m, z: m },
+      { type: 'place', playerId: P, kind: 'road', x: m, z: m },
+    ]);
+    expect(ev.map((e) => (e.type === 'rejected' ? `x:${e.reason}` : e.type))).toEqual(['x:occupied', 'placed']);
   });
 });

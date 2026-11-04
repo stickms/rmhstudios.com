@@ -7,6 +7,7 @@ import {
   isCropId,
   isItemId,
 } from '../content';
+import { DEFAULT_SKIN, SKINS, isSkinId } from '../skins';
 import { fbm } from './noise';
 import {
   LEVEL_HEIGHT,
@@ -26,6 +27,9 @@ import {
   type World,
   type WorldEvent,
 } from './types';
+
+/** Buildings you cannot walk through. */
+export const SOLID_BUILDINGS: ReadonlySet<string> = new Set(['cottage', 'stall', 'kitchen']);
 
 const idx = (w: World, x: number, z: number) => z * w.size + x;
 const inBounds = (w: World, x: number, z: number) =>
@@ -117,6 +121,8 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
         z: mid,
         money: START_MONEY,
         inventory: {},
+        skin: DEFAULT_SKIN,
+        ownedSkins: [DEFAULT_SKIN],
       };
       events.push({ type: 'joined', playerId: cmd.playerId });
     }
@@ -141,6 +147,12 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
       if (!inBounds(w, cmd.x, cmd.z)) return reject(events, cmd, 'out-of-bounds');
       if (w.terrain[idx(w, cmd.x, cmd.z)] !== 'grass') return reject(events, cmd, 'bad-terrain');
       if (buildingAt(w, cmd.x, cmd.z)) return reject(events, cmd, 'occupied');
+      // Never wall someone in: a solid building cannot go up on a tile a player is standing on.
+      if (
+        SOLID_BUILDINGS.has(cmd.kind) &&
+        Object.values(w.players).some((o) => Math.round(o.x) === cmd.x && Math.round(o.z) === cmd.z)
+      )
+        return reject(events, cmd, 'occupied');
       const cost = BUILDINGS[cmd.kind].cost;
       if (p.money < cost) return reject(events, cmd, 'cannot-afford');
       p.money -= cost;
@@ -198,6 +210,23 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
       }
       give(p, recipe.output, recipe.outputQty);
       events.push({ type: 'cooked', playerId: p.id, item: recipe.output, qty: recipe.outputQty });
+      return;
+    }
+    case 'buySkin': {
+      if (!isSkinId(cmd.skin)) return reject(events, cmd, 'unknown-skin');
+      if (p.ownedSkins.includes(cmd.skin)) return reject(events, cmd, 'already-owned');
+      const price = SKINS[cmd.skin].price;
+      if (p.money < price) return reject(events, cmd, 'cannot-afford');
+      p.money -= price;
+      p.ownedSkins.push(cmd.skin);
+      events.push({ type: 'skinBought', playerId: p.id, skin: cmd.skin, price });
+      return;
+    }
+    case 'setSkin': {
+      if (!isSkinId(cmd.skin)) return reject(events, cmd, 'unknown-skin');
+      if (!p.ownedSkins.includes(cmd.skin)) return reject(events, cmd, 'not-owned');
+      p.skin = cmd.skin;
+      events.push({ type: 'skinChanged', playerId: p.id, skin: cmd.skin });
       return;
     }
     case 'sell': {

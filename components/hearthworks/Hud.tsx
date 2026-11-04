@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
   CookingPot,
+  Shirt,
   Coins,
   House,
   MousePointer2,
@@ -28,6 +29,8 @@ import {
 } from '@/lib/hearthworks/content';
 import { hearthworksStore, useHearthworks, type Tool } from '@/lib/hearthworks/store';
 import type { RejectReason } from '@/lib/hearthworks/world';
+import { ViewToggle, WalkControls } from './ViewControls';
+import { Wardrobe } from './Wardrobe';
 
 const BUILDING_ICON: Record<BuildingId, LucideIcon> = {
   road: Route,
@@ -78,11 +81,13 @@ export function Hud() {
   const money = useHearthworks((s) => s.world.players[s.playerId]?.money ?? 0);
   const inventory = useHearthworks((s) => s.world.players[s.playerId]?.inventory);
   const lastEvents = useHearthworks((s) => s.lastEvents);
-  const [pantry, setPantry] = useState(false);
+  const [panel, setPanel] = useState<'pantry' | 'wardrobe' | null>(null);
+  const pantry = panel === 'pantry';
 
   // Refusals are the game's most common feedback; say them where the player is looking.
   useEffect(() => {
     for (const e of lastEvents) {
+      if (e.type === 'skinBought') toast(t('skin-bought', { defaultValue: 'New look unlocked!' }), { id: 'hw-skin' });
       if (e.type !== 'rejected') continue;
       toast(reasonText(t, e.reason), { id: `hw-${e.reason}` });
     }
@@ -100,17 +105,28 @@ export function Hud() {
           <Coins aria-hidden size={18} />
           <span className="hw-chip__value">{money.toLocaleString()}</span>
         </div>
+        <ViewToggle />
+        <button
+          type="button"
+          className="hw-chip hw-chip--button"
+          aria-expanded={panel === 'wardrobe'}
+          onClick={() => setPanel((p) => (p === 'wardrobe' ? null : 'wardrobe'))}
+        >
+          <Shirt aria-hidden size={18} />
+          <span>{t('wardrobe-title', { defaultValue: 'Wardrobe' })}</span>
+        </button>
         <button
           type="button"
           className="hw-chip hw-chip--button"
           aria-expanded={pantry}
-          onClick={() => setPantry((v) => !v)}
+          onClick={() => setPanel((p) => (p === 'pantry' ? null : 'pantry'))}
         >
           <Wheat aria-hidden size={18} />
           <span>{t('pantry-title', { defaultValue: 'Pantry' })}</span>
         </button>
       </header>
 
+      {panel === 'wardrobe' && <Wardrobe />}
       {pantry && (
         <section className="hw-panel" aria-label={t('pantry-title', { defaultValue: 'Pantry' })}>
           <h2 className="hw-panel__title">{t('pantry-title', { defaultValue: 'Pantry' })}</h2>
@@ -158,6 +174,7 @@ export function Hud() {
         </section>
       )}
 
+      <WalkControls />
       <nav className="hw-dock" aria-label={t('tools-label', { defaultValue: 'Tools' })}>
         <ToolButton
           tool={{ kind: 'inspect' }}
@@ -225,5 +242,11 @@ function reasonText(t: ReturnType<typeof useTranslation>['t'], reason: RejectRea
       return t('err-unknown-recipe', { defaultValue: 'You do not know that recipe.' });
     case 'bad-amount':
       return t('err-bad-amount', { defaultValue: 'That is not a valid amount.' });
+    case 'unknown-skin':
+      return t('err-unknown-skin', { defaultValue: 'That look does not exist.' });
+    case 'already-owned':
+      return t('err-already-owned', { defaultValue: 'You already own that look.' });
+    case 'not-owned':
+      return t('err-not-owned', { defaultValue: 'Buy that look first.' });
   }
 }

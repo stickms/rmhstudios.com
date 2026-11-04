@@ -1,6 +1,7 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { BuildingId, CropId } from './content';
+import type { ViewKind } from './camera';
 import { createWorld, stepWorld, type Command, type World, type WorldEvent } from './world';
 
 type DistributiveOmit<T, K extends keyof never> = T extends unknown ? Omit<T, K> : never;
@@ -19,6 +20,8 @@ export interface HearthworksState {
   /** Bumped when an advance changed something visible, so selectors re-run (the world is mutated in place). */
   rev: number;
   playerId: string;
+  /** Which view the player wants; the camera eases toward it (see camera.ts). */
+  view: ViewKind;
   tool: Tool;
   /** Events from the most recent advance, for HUD toasts. */
   lastEvents: readonly WorldEvent[];
@@ -26,6 +29,8 @@ export interface HearthworksState {
   dispatch: (cmd: LocalCommand) => void;
   advance: (dtMs: number) => readonly WorldEvent[];
   setTool: (tool: Tool) => void;
+  setView: (view: ViewKind) => void;
+  toggleView: () => void;
   replaceWorld: (world: World) => void;
 }
 
@@ -38,6 +43,7 @@ export function createHearthworksStore(opts: { seed?: number; size?: number; pla
     world,
     rev: 0,
     playerId,
+    view: 'iso',
     tool: { kind: 'inspect' },
     lastEvents: [],
     pending: [],
@@ -53,6 +59,8 @@ export function createHearthworksStore(opts: { seed?: number; size?: number; pla
       return events;
     },
     setTool: (tool) => set({ tool }),
+    setView: (view) => set({ view }),
+    toggleView: () => set((s) => ({ view: s.view === 'iso' ? 'third' : 'iso' })),
     replaceWorld: (next) => {
       stepWorld(next, 0, [{ type: 'join', playerId: get().playerId }]);
       set((s) => ({ world: next, rev: s.rev + 1, pending: [], lastEvents: [] }));

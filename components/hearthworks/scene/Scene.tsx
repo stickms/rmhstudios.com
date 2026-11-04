@@ -10,11 +10,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { PALETTE, PROCEDURAL_MODELS, buildTerrainMesh } from '@/lib/hearthworks/art';
 import { CROPS } from '@/lib/hearthworks/content';
 import { hearthworksStore, useHearthworks } from '@/lib/hearthworks/store';
+import { runtime } from '@/lib/hearthworks/runtime-instance';
+import { applyToolAt } from '@/lib/hearthworks/tools';
+import { Avatar } from './Avatar';
+import { CameraRig } from './CameraRig';
 import { cropStage, tileTop, type Rot, type World } from '@/lib/hearthworks/world';
 import { InstancedModels, type ModelInstance } from './InstancedModels';
 
@@ -78,26 +81,6 @@ function Ticker() {
   return null;
 }
 
-function applyTool(tx: number, tz: number) {
-  const { tool, dispatch } = hearthworksStore.getState();
-  switch (tool.kind) {
-    case 'build':
-      dispatch({ type: 'place', kind: tool.building, x: tx, z: tz });
-      break;
-    case 'remove':
-      dispatch({ type: 'remove', x: tx, z: tz });
-      break;
-    case 'plant':
-      dispatch({ type: 'plant', crop: tool.crop, x: tx, z: tz });
-      break;
-    case 'harvest':
-      dispatch({ type: 'harvest', x: tx, z: tz });
-      break;
-    case 'inspect':
-      break;
-  }
-}
-
 function Board() {
   const world = useHearthworks((s) => s.world);
   const rev = useHearthworks((s) => s.rev);
@@ -148,7 +131,7 @@ function Board() {
           if (!d || e.button !== 0) return;
           if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > CLICK_SLOP) return;
           const t = tileOf(e);
-          if (t) applyTool(t.x, t.z);
+          if (t && hearthworksStore.getState().view === 'iso' && runtime.progress < 0.01) applyToolAt(hearthworksStore, t.x, t.z);
         }}
       >
         <meshStandardMaterial vertexColors roughness={0.95} metalness={0} />
@@ -165,49 +148,13 @@ function Board() {
   );
 }
 
-function Controls({ size }: { size: number }) {
-  const mid = (size - 1) / 2;
-  const controls = useRef<React.ComponentRef<typeof OrbitControls>>(null);
-  // Keep the view over the board: shift camera and target together when the target strays.
-  const clamp = useCallback(() => {
-    const c = controls.current;
-    if (!c) return;
-    const t = c.target as THREE.Vector3;
-    const nx = THREE.MathUtils.clamp(t.x, 0, size - 1);
-    const nz = THREE.MathUtils.clamp(t.z, 0, size - 1);
-    if (nx === t.x && nz === t.z) return;
-    const cam = c.object as THREE.Camera;
-    cam.position.x += nx - t.x;
-    cam.position.z += nz - t.z;
-    t.x = nx;
-    t.z = nz;
-  }, [size]);
-  return (
-    <OrbitControls
-      ref={controls}
-      makeDefault
-      target={[mid, 0, mid]}
-      enableRotate={false}
-      screenSpacePanning={false}
-      enableDamping
-      dampingFactor={0.12}
-      minZoom={16}
-      maxZoom={110}
-      mouseButtons={{ LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
-      touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN }}
-      onChange={clamp}
-    />
-  );
-}
-
 export default function Scene() {
   const size = useHearthworks((s) => s.world.size);
   const mid = (size - 1) / 2;
   return (
     <Canvas
-      orthographic
       dpr={[1, 2]}
-      camera={{ position: [mid + 22, 19, mid + 22], zoom: 44, near: -50, far: 300 }}
+      camera={{ position: [mid + 100, 90, mid + 100], fov: 6, near: 0.3, far: 900 }}
       gl={{ antialias: true }}
       style={{ touchAction: 'none' }}
     >
@@ -215,8 +162,9 @@ export default function Scene() {
       <ambientLight intensity={1.7} />
       <directionalLight position={[mid + 10, 16, mid + 6]} intensity={1.3} />
       <Ticker />
+      <CameraRig />
       <Board />
-      <Controls size={size} />
+      <Avatar />
     </Canvas>
   );
 }

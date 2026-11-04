@@ -50,3 +50,28 @@ describe('world save format', () => {
     ).toThrow(SaveFormatError);
   });
 });
+
+describe('older saves', () => {
+  it('loads a save written before skins existed, defaulting the skin fields', () => {
+    const w = JSON.parse(JSON.stringify(sample()));
+    delete w.players.a.skin;
+    delete w.players.a.ownedSkins;
+    const body = new TextEncoder().encode(JSON.stringify(w));
+    const bytes = new Uint8Array(5 + body.length);
+    bytes.set([0x48, 0x57, 0x4c, 0x44, SAVE_VERSION]);
+    bytes.set(body, 5);
+    const loaded = decodeWorld(bytes);
+    expect(loaded.players.a.skin).toBe('citizen');
+    expect(loaded.players.a.ownedSkins).toEqual(['citizen']);
+  });
+
+  it('refuses a save that claims a skin that does not exist', () => {
+    const w = JSON.parse(JSON.stringify(sample()));
+    w.players.a.skin = 'nuke';
+    const body = new TextEncoder().encode(JSON.stringify(w));
+    const bytes = new Uint8Array(5 + body.length);
+    bytes.set([0x48, 0x57, 0x4c, 0x44, SAVE_VERSION]);
+    bytes.set(body, 5);
+    expect(() => decodeWorld(bytes)).toThrow(SaveFormatError);
+  });
+});

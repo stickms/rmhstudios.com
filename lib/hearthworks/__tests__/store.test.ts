@@ -5,7 +5,7 @@ import { TICK_MS, buildingAt } from '../world';
 describe('hearthworks store', () => {
   it('stamps the local player on commands and applies them on the next advance', () => {
     const store = createHearthworksStore({ seed: 3, size: 24 });
-    const m = Math.floor(store.getState().world.size / 2);
+    const m = Math.floor(store.getState().world.size / 2) + 2; // beside the spawn tile
     store.getState().dispatch({ type: 'place', kind: 'cottage', x: m, z: m });
     expect(buildingAt(store.getState().world, m, m)).toBeUndefined();
     const events = store.getState().advance(TICK_MS);
@@ -46,5 +46,18 @@ describe('hearthworks store', () => {
     a.getState().replaceWorld(loaded);
     expect(a.getState().world.seed).toBe(2);
     expect(a.getState().world.players.local).toBeDefined();
+  });
+});
+
+describe('view switching', () => {
+  it('starts isometric and toggles both ways', () => {
+    const store = createHearthworksStore({ seed: 3, size: 24 });
+    expect(store.getState().view).toBe('iso');
+    store.getState().toggleView();
+    expect(store.getState().view).toBe('third');
+    store.getState().toggleView();
+    expect(store.getState().view).toBe('iso');
+    store.getState().setView('third');
+    expect(store.getState().view).toBe('third');
   });
 });

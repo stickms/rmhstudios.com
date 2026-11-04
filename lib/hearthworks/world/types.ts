@@ -1,4 +1,5 @@
 import type { BuildingId, CropId, ItemId } from '../content';
+import type { SkinId } from '../skins';
 
 /** One simulation tick is 50 ms of game time (20 Hz — the rate the P2P layer will stream at). */
 export const TICK_MS = 50;
@@ -40,6 +41,9 @@ export interface PlayerState {
   /** In-game money, whole units only. */
   money: number;
   inventory: Partial<Record<ItemId, number>>;
+  /** The skin currently worn. Always one of `ownedSkins`. */
+  skin: SkinId;
+  ownedSkins: SkinId[];
 }
 
 /** Plain, JSON-serialisable data: everything a save or a P2P checkpoint needs. */
@@ -70,7 +74,9 @@ export type Command =
   | { type: 'plant'; playerId: string; crop: CropId; x: number; z: number }
   | { type: 'harvest'; playerId: string; x: number; z: number }
   | { type: 'cook'; playerId: string; recipe: string }
-  | { type: 'sell'; playerId: string; item: ItemId; qty: number };
+  | { type: 'sell'; playerId: string; item: ItemId; qty: number }
+  | { type: 'buySkin'; playerId: string; skin: SkinId }
+  | { type: 'setSkin'; playerId: string; skin: SkinId };
 
 export type WorldEvent =
   | { type: 'joined'; playerId: string }
@@ -81,6 +87,8 @@ export type WorldEvent =
   | { type: 'harvested'; playerId: string; item: ItemId; qty: number }
   | { type: 'cooked'; playerId: string; item: ItemId; qty: number }
   | { type: 'sold'; playerId: string; item: ItemId; qty: number; earned: number }
+  | { type: 'skinBought'; playerId: string; skin: SkinId; price: number }
+  | { type: 'skinChanged'; playerId: string; skin: SkinId }
   | { type: 'rejected'; command: Command['type']; playerId: string; reason: RejectReason };
 
 export type RejectReason =
@@ -96,4 +104,7 @@ export type RejectReason =
   | 'no-kitchen'
   | 'no-stall'
   | 'unknown-recipe'
-  | 'bad-amount';
+  | 'bad-amount'
+  | 'unknown-skin'
+  | 'already-owned'
+  | 'not-owned';
