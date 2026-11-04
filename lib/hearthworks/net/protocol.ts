@@ -44,9 +44,38 @@ export const localCommandSchema: z.ZodType<LocalCommand> = z.discriminatedUnion(
     .object({ type: z.literal('shoot'), x: z.number().finite().min(-8192).max(8192), z: z.number().finite().min(-8192).max(8192) })
     .strict(),
   z.object({ type: z.literal('reload') }).strict(),
+  z.object({ type: z.literal('forage'), x: coord, z: coord }).strict(),
+  z.object({ type: z.literal('serve'), npcId: int.min(0).max(2 ** 31) }).strict(),
+  z.object({ type: z.literal('collect'), x: coord, z: coord }).strict(),
+  z.object({ type: z.literal('hire'), x: coord, z: coord }).strict(),
+  z.object({ type: z.literal('fire'), workerId: int.min(0).max(2 ** 31) }).strict(),
   z.object({ type: z.literal('buySkin'), skin: z.enum(SKIN_IDS) }).strict(),
   z.object({ type: z.literal('setSkin'), skin: z.enum(SKIN_IDS) }).strict(),
 ]) as z.ZodType<LocalCommand>;
+
+/**
+ * Every command a player can issue needs a schema above, or a peer's command of that type is refused by
+ * the host as a malformed frame (the `as` cast hides the gap). Adding a command type to the world makes
+ * this fail to compile until the schema lists it — a loud break instead of "multiplayer ignores hire".
+ */
+const COMMAND_TYPES_HAVE_SCHEMAS: Record<LocalCommand['type'], true> = {
+  join: true,
+  move: true,
+  place: true,
+  remove: true,
+  plant: true,
+  harvest: true,
+  cook: true,
+  sell: true,
+  forage: true,
+  serve: true,
+  collect: true,
+  hire: true,
+  fire: true,
+  buySkin: true,
+  setSkin: true,
+};
+void COMMAND_TYPES_HAVE_SCHEMAS;
 
 /** Peer → host. */
 export const peerMessageSchema = z.discriminatedUnion('t', [

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useGameSession } from '@/hooks/useGameSession';
 import { hearthworksStore } from '@/lib/hearthworks/store';
+import { leaveLobby } from '@/lib/hearthworks/net/lobby';
 import { loadWorld, saveWorld } from '@/lib/hearthworks/save';
 import { Hud } from './Hud';
 import Scene from './scene/Scene';
@@ -21,7 +22,11 @@ export default function HearthworksGame() {
     void loadWorld(SLOT).then((saved) => {
       if (saved && !cancelled) hearthworksStore.getState().replaceWorld(saved);
     });
-    const save = () => void saveWorld(SLOT, hearthworksStore.getState().world);
+    // Joined someone else's world? The personal save is the offline world set aside, never the shared one.
+    const save = () => {
+      const s = hearthworksStore.getState();
+      void saveWorld(SLOT, s.stash?.world ?? s.world);
+    };
     const timer = window.setInterval(save, AUTOSAVE_MS);
     const onHide = () => {
       if (document.visibilityState === 'hidden') save();
@@ -30,6 +35,8 @@ export default function HearthworksGame() {
     window.addEventListener('pagehide', save);
     return () => {
       cancelled = true;
+      // Leaving the page hands a hosted world to its successor (a no-op when multiplayer was never opened).
+      leaveLobby();
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', onHide);
       window.removeEventListener('pagehide', save);

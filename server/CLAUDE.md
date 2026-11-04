@@ -50,7 +50,10 @@ Consequences:
   Offensive, **RMHMusic**, casino games (Blackjack/Hold'em/Baccarat/Roulette),
   Lights Out, Doctrine, Velum, Dream Rift, RMH Farming Sim, RMH TF2 (server
   browser and peer-to-peer signaling only — every match runs in a player's
-  browser; see `docs/tf2-game.md` §Multiplayer hosting).
+  browser; see `docs/tf2-game.md` §Multiplayer hosting; Hearthworks
+  co-op signaling and host migration, `handlers/hearthworks-p2p.ts` over the
+  generic `p2p/signal-hub.ts`, contract `lib/hearthworks/net/events.ts` — the hub
+  never carries game state).
   - **Soft auth**: anonymous connections allowed; a valid Better Auth session
     token attaches `socket.data.userId/userName/avatarUrl`.
   - **Handler contract**: `handlers/<game>.ts` exports

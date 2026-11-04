@@ -19,6 +19,7 @@ import { interactAt } from '@/lib/hearthworks/tools';
 import { Avatar } from './Avatar';
 import Combat from './Combat';
 import { People } from './People';
+import { RemotePlayers } from './RemotePlayers';
 import { CameraRig } from './CameraRig';
 import { cropStage, tileTop, type Rot, type World } from '@/lib/hearthworks/world';
 import { InstancedModels, type ModelInstance } from './InstancedModels';
@@ -169,6 +170,7 @@ export default function Scene() {
       <Avatar />
       <People />
       <Combat />
+      <RemotePlayers />
     </Canvas>
   );
 }

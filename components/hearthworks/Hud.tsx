@@ -18,6 +18,7 @@ import {
   Store,
   Trash2,
   Trees,
+  UsersRound,
   Wheat,
   type LucideIcon,
 } from 'lucide-react';
@@ -31,11 +32,13 @@ import {
   isItemId,
   type BuildingId,
 } from '@/lib/hearthworks/content';
+import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import { hearthworksStore, useHearthworks, type Tool } from '@/lib/hearthworks/store';
 import type { RejectReason } from '@/lib/hearthworks/world';
 import { HIRE_COST } from '@/lib/hearthworks/world';
 import { Armory, Vitals } from './Armory';
 import { Customers } from './Customers';
+import { MultiplayerPanel } from './MultiplayerPanel';
 import { ViewToggle, WalkControls } from './ViewControls';
 import { Wardrobe } from './Wardrobe';
 
@@ -89,7 +92,12 @@ export function Hud() {
   const money = useHearthworks((s) => s.world.players[s.playerId]?.money ?? 0);
   const inventory = useHearthworks((s) => s.world.players[s.playerId]?.inventory);
   const lastEvents = useHearthworks((s) => s.lastEvents);
-  const [panel, setPanel] = useState<'pantry' | 'wardrobe' | 'customers' | 'armory' | null>(null);
+  const [panel, setPanel] = useState<'pantry' | 'wardrobe' | 'customers' | 'armory' | 'multiplayer' | null>(null);
+  // An invite link (?lobby=CODE) opens the multiplayer panel, which joins it.
+  const invite = useLobbyInvite();
+  useEffect(() => {
+    if (invite) setPanel('multiplayer');
+  }, [invite]);
   const customers = useHearthworks((s) => s.world.npcs.filter((n) => n.mode !== 'leaving').length);
   const pantry = panel === 'pantry';
 
@@ -127,6 +135,15 @@ export function Hud() {
           <span className="hw-chip__value">{money.toLocaleString()}</span>
         </div>
         <ViewToggle />
+        <button
+          type="button"
+          className="hw-chip hw-chip--button"
+          aria-expanded={panel === 'multiplayer'}
+          onClick={() => setPanel((p) => (p === 'multiplayer' ? null : 'multiplayer'))}
+        >
+          <UsersRound aria-hidden size={18} />
+          <span>{t('mp-title', { defaultValue: 'Play together' })}</span>
+        </button>
         <button
           type="button"
           className="hw-chip hw-chip--button"
@@ -170,6 +187,7 @@ export function Hud() {
       {panel === 'customers' && <Customers />}
       {panel === 'armory' && <Armory />}
       <Vitals />
+      {panel === 'multiplayer' && <MultiplayerPanel />}
       {pantry && (
         <section className="hw-panel" aria-label={t('pantry-title', { defaultValue: 'Pantry' })}>
           <h2 className="hw-panel__title">{t('pantry-title', { defaultValue: 'Pantry' })}</h2>
