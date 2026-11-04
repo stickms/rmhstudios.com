@@ -8,7 +8,10 @@ import {
   isItemId,
 } from '../content';
 import { DEFAULT_SKIN, SKINS, isSkinId } from '../skins';
+import { collect, fire, forage, hire, serve } from './actions';
+import { buildingAt, cropStage, inBounds, tileIndex } from './helpers';
 import { fbm } from './noise';
+import { tickSystems } from './systems';
 import {
   LEVEL_HEIGHT,
   MAX_LEVEL,
@@ -29,11 +32,7 @@ import {
 } from './types';
 
 /** Buildings you cannot walk through. */
-export const SOLID_BUILDINGS: ReadonlySet<string> = new Set(['cottage', 'stall', 'kitchen']);
-
-const idx = (w: World, x: number, z: number) => z * w.size + x;
-const inBounds = (w: World, x: number, z: number) =>
-  Number.isInteger(x) && Number.isInteger(z) && x >= 0 && z >= 0 && x < w.size && z < w.size;
+export const SOLID_BUILDINGS: ReadonlySet<string> = new Set(['cottage', 'stall', 'kitchen', 'harvester']);
 
 /** Build a world from a seed. Same seed and size → identical world. */
 export function createWorld(seed: number, size: number): World {
@@ -83,6 +82,9 @@ export function createWorld(seed: number, size: number): World {
     buildings: [],
     crops: [],
     players: {},
+    foraged: {},
+    npcs: [],
+    workers: [],
   };
 }
 
@@ -94,14 +96,6 @@ export function tileTop(w: World, x: number, z: number): number {
   const i = tz * w.size + tx;
   return (w.terrain[i] === 'water' ? WATER_LEVEL : w.height[i]) * LEVEL_HEIGHT;
 }
-
-export const buildingAt = (w: World, x: number, z: number): Building | undefined =>
-  w.buildings.find((b) => b.x === x && b.z === z);
-
-export const cropStage = (w: World, c: { kind: keyof typeof CROPS; plantedTick: number }): number => {
-  const def = CROPS[c.kind];
-  return Math.min(def.stages, Math.floor(((w.tick - c.plantedTick) * TICK_MS) / def.stageMs));
-};
 
 function reject(events: WorldEvent[], cmd: Command, reason: RejectReason) {
   events.push({ type: 'rejected', command: cmd.type, playerId: cmd.playerId, reason });
@@ -137,7 +131,7 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
       const tx = Math.floor(cmd.x);
       const tz = Math.floor(cmd.z);
       if (!inBounds(w, tx, tz)) return reject(events, cmd, 'out-of-bounds');
-      if (w.terrain[idx(w, tx, tz)] === 'water') return reject(events, cmd, 'bad-terrain');
+      if (w.terrain[tileIndex(w, tx, tz)] === 'water') return reject(events, cmd, 'bad-terrain');
       p.x = cmd.x;
       p.z = cmd.z;
       return;
@@ -145,7 +139,7 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
     case 'place': {
       if (!isBuildingId(cmd.kind)) return reject(events, cmd, 'nothing-there');
       if (!inBounds(w, cmd.x, cmd.z)) return reject(events, cmd, 'out-of-bounds');
-      if (w.terrain[idx(w, cmd.x, cmd.z)] !== 'grass') return reject(events, cmd, 'bad-terrain');
+      if (w.terrain[tileIndex(w, cmd.x, cmd.z)] !== 'grass') return reject(events, cmd, 'bad-terrain');
       if (buildingAt(w, cmd.x, cmd.z)) return reject(events, cmd, 'occupied');
       // Never wall someone in: a solid building cannot go up on a tile a player is standing on.
       if (
@@ -212,6 +206,24 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
       events.push({ type: 'cooked', playerId: p.id, item: recipe.output, qty: recipe.outputQty });
       return;
     }
+    case 'forage':
+    case 'serve':
+    case 'collect':
+    case 'hire':
+    case 'fire': {
+      const reason =
+        cmd.type === 'forage'
+          ? forage(w, p, cmd, events)
+          : cmd.type === 'serve'
+            ? serve(w, p, cmd, events)
+            : cmd.type === 'collect'
+              ? collect(w, p, cmd, events)
+              : cmd.type === 'hire'
+                ? hire(w, p, cmd, events)
+                : fire(w, p, cmd, events);
+      if (reason) reject(events, cmd, reason);
+      return;
+    }
     case 'buySkin': {
       if (!isSkinId(cmd.skin)) return reject(events, cmd, 'unknown-skin');
       if (p.ownedSkins.includes(cmd.skin)) return reject(events, cmd, 'already-owned');
@@ -255,6 +267,7 @@ export function stepWorld(world: World, dtMs: number, cmds: readonly Command[] =
   while (world.accMs >= TICK_MS) {
     world.accMs -= TICK_MS;
     world.tick++;
+    tickSystems(world, events);
     for (const crop of world.crops) {
       const def = CROPS[crop.kind];
       const elapsed = (world.tick - crop.plantedTick) * TICK_MS;

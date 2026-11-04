@@ -23,7 +23,7 @@ import {
 import { cameraRelativeMove, createRuntime } from '@/lib/hearthworks/runtime';
 import { runtime } from '@/lib/hearthworks/runtime-instance';
 import { hearthworksStore } from '@/lib/hearthworks/store';
-import { applyToolAt, tileInFront } from '@/lib/hearthworks/tools';
+import { interactAt, tileInFront } from '@/lib/hearthworks/tools';
 
 const MIN_DISTANCE = 40;
 const MAX_DISTANCE = 330;
@@ -115,7 +115,7 @@ export function CameraRig() {
       if (down && !e.repeat && (k === ' ' || k === 'f') && view() === 'third') {
         e.preventDefault();
         const t = tileInFront(rt.avatar.x, rt.avatar.z, rt.avatar.yaw);
-        applyToolAt(hearthworksStore, t.x, t.z);
+        interactAt(hearthworksStore, t.x, t.z);
       }
     };
     const kd = onKey(true);

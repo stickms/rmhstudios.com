@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const BUILDING_IDS = ['road', 'plot', 'cottage', 'stall', 'kitchen', 'park'] as const;
+export const BUILDING_IDS = ['road', 'plot', 'cottage', 'stall', 'kitchen', 'park', 'harvester'] as const;
 export type BuildingId = (typeof BUILDING_IDS)[number];
 
 export const buildingSchema = z.object({
@@ -16,6 +16,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDef> = {
   stall: { name: 'Market stall', cost: 80 },
   kitchen: { name: 'Kitchen', cost: 150 },
   park: { name: 'Pocket park', cost: 60 },
+  harvester: { name: 'Auto-harvester', cost: 300 },
 };
 
 export const isBuildingId = (v: unknown): v is BuildingId =>

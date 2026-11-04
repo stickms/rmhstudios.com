@@ -24,6 +24,36 @@ export interface Building {
   x: number;
   z: number;
   rot: Rot;
+  /** Machines (the harvester) keep what they gather here until a player collects it. */
+  storage?: Partial<Record<ItemId, number>>;
+}
+
+export interface Npc {
+  id: number;
+  kind: 'customer';
+  x: number;
+  z: number;
+  /** What they came to buy, how many, and how long they will wait (in ticks) before leaving. */
+  want: ItemId;
+  qty: number;
+  patience: number;
+  /** A look for the renderer (a skin id's stand-in). */
+  look: SkinId;
+}
+
+export interface Worker {
+  id: number;
+  ownerId: string;
+  role: 'farmer';
+  /** The cottage they live in; they work within a few tiles of it. */
+  homeX: number;
+  homeZ: number;
+  x: number;
+  z: number;
+  /** What they last planted, so they can replant it. */
+  lastCrop: CropId | null;
+  nextActTick: number;
+  nextWageTick: number;
 }
 
 export interface Crop {
@@ -64,6 +94,10 @@ export interface World {
   buildings: Building[];
   crops: Crop[];
   players: Record<string, PlayerState>;
+  /** Forest tiles that have been picked clean: tile index → tick they are ready again. */
+  foraged: Record<string, number>;
+  npcs: Npc[];
+  workers: Worker[];
 }
 
 export type Command =
@@ -75,6 +109,11 @@ export type Command =
   | { type: 'harvest'; playerId: string; x: number; z: number }
   | { type: 'cook'; playerId: string; recipe: string }
   | { type: 'sell'; playerId: string; item: ItemId; qty: number }
+  | { type: 'forage'; playerId: string; x: number; z: number }
+  | { type: 'serve'; playerId: string; npcId: number }
+  | { type: 'collect'; playerId: string; x: number; z: number }
+  | { type: 'hire'; playerId: string; x: number; z: number }
+  | { type: 'fire'; playerId: string; workerId: number }
   | { type: 'buySkin'; playerId: string; skin: SkinId }
   | { type: 'setSkin'; playerId: string; skin: SkinId };
 
@@ -87,6 +126,13 @@ export type WorldEvent =
   | { type: 'harvested'; playerId: string; item: ItemId; qty: number }
   | { type: 'cooked'; playerId: string; item: ItemId; qty: number }
   | { type: 'sold'; playerId: string; item: ItemId; qty: number; earned: number }
+  | { type: 'foraged'; playerId: string; item: ItemId; qty: number }
+  | { type: 'customerArrived'; npc: Npc }
+  | { type: 'served'; playerId: string; npcId: number; item: ItemId; qty: number; earned: number }
+  | { type: 'customerLeft'; npcId: number }
+  | { type: 'collected'; playerId: string; items: Partial<Record<ItemId, number>> }
+  | { type: 'hired'; worker: Worker }
+  | { type: 'workerQuit'; workerId: number; reason: 'unpaid' | 'fired' }
   | { type: 'skinBought'; playerId: string; skin: SkinId; price: number }
   | { type: 'skinChanged'; playerId: string; skin: SkinId }
   | { type: 'rejected'; command: Command['type']; playerId: string; reason: RejectReason };
@@ -105,6 +151,11 @@ export type RejectReason =
   | 'no-stall'
   | 'unknown-recipe'
   | 'bad-amount'
+  | 'too-far'
+  | 'depleted'
+  | 'no-such-npc'
+  | 'no-cottage'
+  | 'too-many-workers'
   | 'unknown-skin'
   | 'already-owned'
   | 'not-owned';

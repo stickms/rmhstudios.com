@@ -30,11 +30,50 @@ const worldSchema = z
     terrain: z.array(z.enum(['water', 'sand', 'grass', 'forest', 'rock'])),
     height: z.array(int.min(0).max(MAX_LEVEL)),
     buildings: z.array(
-      z.object({ id: int, kind: z.enum(BUILDING_IDS), x: int, z: int, rot }),
+      z.object({
+        id: int,
+        kind: z.enum(BUILDING_IDS),
+        x: int,
+        z: int,
+        rot,
+        storage: z.partialRecord(z.enum(ITEM_IDS), int.nonnegative()).optional(),
+      }),
     ),
     crops: z.array(
       z.object({ id: int, kind: z.enum(CROP_IDS), x: int, z: int, plantedTick: int }),
     ),
+    // The economy layer (older saves have none of it).
+    foraged: z.record(z.string(), int).default({}),
+    npcs: z
+      .array(
+        z.object({
+          id: int,
+          kind: z.literal('customer'),
+          x: z.number().finite(),
+          z: z.number().finite(),
+          want: z.enum(ITEM_IDS),
+          qty: int.min(1).max(99),
+          patience: int,
+          look: z.enum(SKIN_IDS),
+        }),
+      )
+      .default([]),
+    workers: z
+      .array(
+        z.object({
+          id: int,
+          ownerId: z.string().min(1).max(64),
+          role: z.literal('farmer'),
+          homeX: int,
+          homeZ: int,
+          x: z.number().finite(),
+          z: z.number().finite(),
+          lastCrop: z.enum(CROP_IDS).nullable(),
+          nextActTick: int,
+          nextWageTick: int,
+        }),
+      )
+      .default([]),
     players: z.record(
       z.string().min(1).max(64),
       z.object({

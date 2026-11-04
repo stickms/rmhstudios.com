@@ -5,7 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
   CookingPot,
+  Cog,
+  Handshake,
   Shirt,
+  Users,
   Coins,
   House,
   MousePointer2,
@@ -29,6 +32,8 @@ import {
 } from '@/lib/hearthworks/content';
 import { hearthworksStore, useHearthworks, type Tool } from '@/lib/hearthworks/store';
 import type { RejectReason } from '@/lib/hearthworks/world';
+import { HIRE_COST } from '@/lib/hearthworks/world';
+import { Customers } from './Customers';
 import { ViewToggle, WalkControls } from './ViewControls';
 import { Wardrobe } from './Wardrobe';
 
@@ -39,6 +44,7 @@ const BUILDING_ICON: Record<BuildingId, LucideIcon> = {
   stall: Store,
   kitchen: CookingPot,
   park: Trees,
+  harvester: Cog,
 };
 
 function sameTool(a: Tool, b: Tool): boolean {
@@ -81,7 +87,8 @@ export function Hud() {
   const money = useHearthworks((s) => s.world.players[s.playerId]?.money ?? 0);
   const inventory = useHearthworks((s) => s.world.players[s.playerId]?.inventory);
   const lastEvents = useHearthworks((s) => s.lastEvents);
-  const [panel, setPanel] = useState<'pantry' | 'wardrobe' | null>(null);
+  const [panel, setPanel] = useState<'pantry' | 'wardrobe' | 'customers' | null>(null);
+  const customers = useHearthworks((s) => s.world.npcs.length);
   const pantry = panel === 'pantry';
 
   // Refusals are the game's most common feedback; say them where the player is looking.
@@ -109,6 +116,16 @@ export function Hud() {
         <button
           type="button"
           className="hw-chip hw-chip--button"
+          aria-expanded={panel === 'customers'}
+          onClick={() => setPanel((p) => (p === 'customers' ? null : 'customers'))}
+        >
+          <Users aria-hidden size={18} />
+          <span>{t('customers-title', { defaultValue: 'Customers' })}</span>
+          {customers > 0 && <b className="hw-badge">{customers}</b>}
+        </button>
+        <button
+          type="button"
+          className="hw-chip hw-chip--button"
           aria-expanded={panel === 'wardrobe'}
           onClick={() => setPanel((p) => (p === 'wardrobe' ? null : 'wardrobe'))}
         >
@@ -127,6 +144,7 @@ export function Hud() {
       </header>
 
       {panel === 'wardrobe' && <Wardrobe />}
+      {panel === 'customers' && <Customers />}
       {pantry && (
         <section className="hw-panel" aria-label={t('pantry-title', { defaultValue: 'Pantry' })}>
           <h2 className="hw-panel__title">{t('pantry-title', { defaultValue: 'Pantry' })}</h2>
@@ -205,6 +223,12 @@ export function Hud() {
           Icon={Wheat}
         />
         <ToolButton
+          tool={{ kind: 'hire' }}
+          label={t('tool-hire', { defaultValue: 'Hire' })}
+          Icon={Handshake}
+          hint={String(HIRE_COST)}
+        />
+        <ToolButton
           tool={{ kind: 'remove' }}
           label={t('tool-clear', { defaultValue: 'Clear' })}
           Icon={Trash2}
@@ -242,6 +266,16 @@ function reasonText(t: ReturnType<typeof useTranslation>['t'], reason: RejectRea
       return t('err-unknown-recipe', { defaultValue: 'You do not know that recipe.' });
     case 'bad-amount':
       return t('err-bad-amount', { defaultValue: 'That is not a valid amount.' });
+    case 'too-far':
+      return t('err-too-far', { defaultValue: 'Get closer first.' });
+    case 'depleted':
+      return t('err-depleted', { defaultValue: 'Nothing left there for now.' });
+    case 'no-such-npc':
+      return t('err-no-such-npc', { defaultValue: 'They have already gone.' });
+    case 'no-cottage':
+      return t('err-no-cottage', { defaultValue: 'Hire people at a cottage.' });
+    case 'too-many-workers':
+      return t('err-too-many-workers', { defaultValue: 'That cottage is full.' });
     case 'unknown-skin':
       return t('err-unknown-skin', { defaultValue: 'That look does not exist.' });
     case 'already-owned':

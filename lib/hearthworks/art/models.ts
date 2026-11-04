@@ -76,6 +76,17 @@ export const PROCEDURAL_MODELS: Record<ModelId, ModelSpec> = {
       box([0.3, 0.1, 0.1], [0.2, 0.1, 0.25], 'wood'),
     ],
   },
+  'building:harvester': {
+    id: 'building:harvester',
+    parts: [
+      box([0.8, 0.12, 0.8], [0, 0.06, 0], 'stone'),
+      box([0.5, 0.34, 0.5], [0, 0.29, 0], 'teal'),
+      { shape: 'cylinder', size: [0.34, 0.1, 0.34], pos: [0, 0.51, 0], color: 'deepTeal' },
+      box([0.08, 0.5, 0.08], [0.34, 0.37, 0], 'wood'),
+      box([0.34, 0.06, 0.06], [0.2, 0.62, 0], 'wood'),
+      box([0.14, 0.12, 0.14], [-0.28, 0.18, 0.28], 'butter'),
+    ],
+  },
   'crop:wheat': {
     id: 'crop:wheat',
     parts: [

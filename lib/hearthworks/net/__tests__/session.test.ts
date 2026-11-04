@@ -5,7 +5,14 @@ import { PeerSession } from '../peer';
 import { encodeJson } from '../protocol';
 import { linkPair, settle, type TestLink } from './memory-link';
 
-const same = (a: World, b: World) => JSON.stringify(a) === JSON.stringify(b);
+/** Structural equality: key order is irrelevant (a decoded snapshot emits keys in schema order). */
+const canon = (v: unknown): unknown =>
+  Array.isArray(v)
+    ? v.map(canon)
+    : v && typeof v === 'object'
+      ? Object.fromEntries(Object.entries(v as object).sort(([a], [b]) => a.localeCompare(b)).map(([k, x]) => [k, canon(x)]))
+      : v;
+const same = (a: World, b: World) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
 
 /** A player that already exists in the world with some stock, as a loaded save would have. */
 function withStock(world: World, id: string, inventory: World['players'][string]['inventory']) {

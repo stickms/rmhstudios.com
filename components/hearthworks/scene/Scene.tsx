@@ -15,8 +15,9 @@ import { PALETTE, PROCEDURAL_MODELS, buildTerrainMesh } from '@/lib/hearthworks/
 import { CROPS } from '@/lib/hearthworks/content';
 import { hearthworksStore, useHearthworks } from '@/lib/hearthworks/store';
 import { runtime } from '@/lib/hearthworks/runtime-instance';
-import { applyToolAt } from '@/lib/hearthworks/tools';
+import { interactAt } from '@/lib/hearthworks/tools';
 import { Avatar } from './Avatar';
+import { People } from './People';
 import { CameraRig } from './CameraRig';
 import { cropStage, tileTop, type Rot, type World } from '@/lib/hearthworks/world';
 import { InstancedModels, type ModelInstance } from './InstancedModels';
@@ -131,7 +132,7 @@ function Board() {
           if (!d || e.button !== 0) return;
           if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > CLICK_SLOP) return;
           const t = tileOf(e);
-          if (t && hearthworksStore.getState().view === 'iso' && runtime.progress < 0.01) applyToolAt(hearthworksStore, t.x, t.z);
+          if (t && hearthworksStore.getState().view === 'iso' && runtime.progress < 0.01) interactAt(hearthworksStore, t.x, t.z);
         }}
       >
         <meshStandardMaterial vertexColors roughness={0.95} metalness={0} />
@@ -165,6 +166,7 @@ export default function Scene() {
       <CameraRig />
       <Board />
       <Avatar />
+      <People />
     </Canvas>
   );
 }
