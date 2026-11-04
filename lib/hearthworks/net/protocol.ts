@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { BUILDING_IDS, CROP_IDS, ITEM_IDS } from '../content';
+import { BUILDING_IDS, CROP_IDS, ITEM_IDS, WEAPON_IDS } from '../content';
 import { SKIN_IDS } from '../skins';
 import type { LocalCommand } from '../store';
 import { decodeWorld, encodeWorld } from '../save';
@@ -36,6 +36,14 @@ export const localCommandSchema: z.ZodType<LocalCommand> = z.discriminatedUnion(
   z.object({ type: z.literal('harvest'), x: coord, z: coord }).strict(),
   z.object({ type: z.literal('cook'), recipe: z.string().min(1).max(32) }).strict(),
   z.object({ type: z.literal('sell'), item: z.enum(ITEM_IDS), qty: int.min(1).max(9999) }).strict(),
+  // The crime route. Aim points are finite and bounded; the sim enforces fire rate and ammo, not this schema.
+  z.object({ type: z.literal('hustle'), item: z.enum(ITEM_IDS), qty: int.min(1).max(9999) }).strict(),
+  z.object({ type: z.literal('buyWeapon'), weapon: z.enum(WEAPON_IDS) }).strict(),
+  z.object({ type: z.literal('equip'), weapon: z.enum(WEAPON_IDS).nullable() }).strict(),
+  z
+    .object({ type: z.literal('shoot'), x: z.number().finite().min(-8192).max(8192), z: z.number().finite().min(-8192).max(8192) })
+    .strict(),
+  z.object({ type: z.literal('reload') }).strict(),
   z.object({ type: z.literal('buySkin'), skin: z.enum(SKIN_IDS) }).strict(),
   z.object({ type: z.literal('setSkin'), skin: z.enum(SKIN_IDS) }).strict(),
 ]) as z.ZodType<LocalCommand>;

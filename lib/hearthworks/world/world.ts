@@ -2,6 +2,8 @@ import { BUILDINGS, CROPS, ITEMS, RECIPES, isBuildingId, isCropId, isItemId } fr
 import { DEFAULT_SKIN, SKINS, isSkinId } from '../skins';
 import { collect, fire, forage, hire, serve } from './actions';
 import { agentOnTile } from './agents';
+import { MAX_HP, applyCrimeCommand, crimeGate, newArms } from './crime';
+import { tickCrime } from './police';
 import { buildingAt, cropStage, inBounds, tileIndex } from './helpers';
 import { fbm } from './noise';
 import { tickSystems } from './systems';
@@ -80,6 +82,7 @@ export function createWorld(seed: number, size: number): World {
     buildings: [],
     crops: [],
     players: {},
+    officers: [],
     foraged: {},
     npcs: [],
     workers: [],
@@ -115,6 +118,9 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
         inventory: {},
         skin: DEFAULT_SKIN,
         ownedSkins: [DEFAULT_SKIN],
+        hp: MAX_HP,
+        heat: 0,
+        arms: newArms(),
       };
       events.push({ type: 'joined', playerId: cmd.playerId });
     }
@@ -122,6 +128,9 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
   }
   const p = w.players[cmd.playerId];
   if (!p) return reject(events, cmd, 'unknown-player');
+  // A downed player is out of action (crime.ts).
+  const gate = crimeGate(w, p, cmd.type);
+  if (gate) return gate === 'silent' ? undefined : reject(events, cmd, gate);
 
   switch (cmd.type) {
     case 'move': {
@@ -229,6 +238,15 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
       if (reason) reject(events, cmd, reason);
       return;
     }
+    case 'hustle':
+    case 'buyWeapon':
+    case 'equip':
+    case 'shoot':
+    case 'reload': {
+      const reason = applyCrimeCommand(w, p, cmd, events);
+      if (reason && reason !== 'silent') reject(events, cmd, reason);
+      return;
+    }
     case 'buySkin': {
       if (!isSkinId(cmd.skin)) return reject(events, cmd, 'unknown-skin');
       if (p.ownedSkins.includes(cmd.skin)) return reject(events, cmd, 'already-owned');
@@ -249,6 +267,7 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
     case 'sell': {
       if (!isItemId(cmd.item) || !Number.isInteger(cmd.qty) || cmd.qty <= 0)
         return reject(events, cmd, 'bad-amount');
+      if (ITEMS[cmd.item].contraband) return reject(events, cmd, 'contraband'); // no stall buys it: hustle it
       if (!w.buildings.some((b) => b.kind === 'stall')) return reject(events, cmd, 'no-stall');
       if ((p.inventory[cmd.item] ?? 0) < cmd.qty) return reject(events, cmd, 'missing-ingredients');
       p.inventory[cmd.item] = (p.inventory[cmd.item] ?? 0) - cmd.qty;
@@ -273,6 +292,7 @@ export function stepWorld(world: World, dtMs: number, cmds: readonly Command[] =
     world.accMs -= TICK_MS;
     world.tick++;
     tickSystems(world, events);
+    tickCrime(world, events);
     for (const crop of world.crops) {
       const def = CROPS[crop.kind];
       const elapsed = (world.tick - crop.plantedTick) * TICK_MS;

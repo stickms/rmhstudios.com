@@ -13,6 +13,8 @@ export const ITEM_IDS = [
   'bread',
   'stew',
   'jam',
+  'mystery-tonic',
+  'alley-stew',
 ] as const;
 export type ItemId = (typeof ITEM_IDS)[number];
 
@@ -20,6 +22,8 @@ export const itemSchema = z.object({
   name: z.string().min(1),
   /** What a stall pays per unit. */
   price: z.number().int().positive(),
+  /** Back-alley goods: no stall will buy them, so they can only be hustled (see world/crime.ts). */
+  contraband: z.boolean().optional(),
 });
 export type ItemDef = z.infer<typeof itemSchema>;
 
@@ -35,6 +39,8 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   bread: { name: 'Bread', price: 40 },
   stew: { name: 'Hearty stew', price: 46 },
   jam: { name: 'Berry jam', price: 28 },
+  'mystery-tonic': { name: 'Mystery tonic', price: 70, contraband: true },
+  'alley-stew': { name: 'Back-alley stew', price: 60, contraband: true },
 };
 
 export const isItemId = (v: unknown): v is ItemId =>

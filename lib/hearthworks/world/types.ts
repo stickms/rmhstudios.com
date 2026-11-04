@@ -1,6 +1,7 @@
 import type { BuildingId, CropId, ItemId } from '../content';
 import type { Mover } from '../nav/mover';
 import type { SkinId } from '../skins';
+import type { Arms, CrimeCommand, CrimeEvent, CrimeReject, Officer } from './crime-types';
 
 /** One simulation tick is 50 ms of game time (20 Hz — the rate the P2P layer will stream at). */
 export const TICK_MS = 50;
@@ -102,6 +103,12 @@ export interface PlayerState {
   /** The skin currently worn. Always one of `ownedSkins`. */
   skin: SkinId;
   ownedSkins: SkinId[];
+  /** Health, 0..MAX_HP (world/crime.ts). */
+  hp: number;
+  /** How wanted they are, 0..100 (world/crime.ts). */
+  heat: number;
+  /** Guns, ammo and combat clocks. */
+  arms: Arms;
 }
 
 /** Plain, JSON-serialisable data: everything a save or a P2P checkpoint needs. */
@@ -122,6 +129,8 @@ export interface World {
   buildings: Building[];
   crops: Crop[];
   players: Record<string, PlayerState>;
+  /** The police on the island (world/police.ts). */
+  officers: Officer[];
   /** Forest tiles that have been picked clean: tile index → tick they are ready again. */
   foraged: Record<string, number>;
   npcs: Npc[];
@@ -129,6 +138,7 @@ export interface World {
 }
 
 export type Command =
+  | CrimeCommand
   | { type: 'join'; playerId: string }
   | { type: 'move'; playerId: string; x: number; z: number }
   | { type: 'place'; playerId: string; kind: BuildingId; x: number; z: number; rot?: Rot }
@@ -146,6 +156,7 @@ export type Command =
   | { type: 'setSkin'; playerId: string; skin: SkinId };
 
 export type WorldEvent =
+  | CrimeEvent
   | { type: 'joined'; playerId: string }
   | { type: 'placed'; building: Building }
   | { type: 'removed'; buildingId: number; refund: number }
@@ -167,6 +178,7 @@ export type WorldEvent =
   | { type: 'rejected'; command: Command['type']; playerId: string; reason: RejectReason };
 
 export type RejectReason =
+  | CrimeReject
   | 'unknown-player'
   | 'out-of-bounds'
   | 'bad-terrain'

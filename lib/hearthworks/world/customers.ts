@@ -33,7 +33,7 @@ const CUSTOMER_LOOKS = ['citizen', 'worker', 'rebel'] as const;
 
 /** Customers prefer what is worth cooking: pick an item weighted toward dearer goods. */
 function pickWant(w: World): ItemId {
-  const items = ITEM_IDS.filter((i) => ITEMS[i].price >= 5);
+  const items = ITEM_IDS.filter((i) => ITEMS[i].price >= 5 && !ITEMS[i].contraband);
   const total = items.reduce((s, i) => s + ITEMS[i].price, 0);
   let roll = draw(w) * total;
   for (const i of items) {
