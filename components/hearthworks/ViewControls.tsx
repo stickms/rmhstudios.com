@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Footprints, Hand, Map as MapIcon } from 'lucide-react';
 import { runtime } from '@/lib/hearthworks/runtime-instance';
 import { hearthworksStore, useHearthworks } from '@/lib/hearthworks/store';
-import { applyToolAt, tileInFront } from '@/lib/hearthworks/tools';
+import { interactAt, tileInFront } from '@/lib/hearthworks/tools';
 
 const STICK_RADIUS = 52;
 
@@ -95,7 +95,7 @@ export function WalkControls() {
         onClick={() => {
           const a = runtime.avatar;
           const tile = tileInFront(a.x, a.z, a.yaw);
-          applyToolAt(hearthworksStore, tile.x, tile.z);
+          interactAt(hearthworksStore, tile.x, tile.z);
         }}
       >
         <Hand aria-hidden size={26} />

@@ -1,132 +1,20 @@
 'use client';
 
 /**
- * The player's character: a small procedural figure built from the active skin's look (see
- * lib/hearthworks/skins/looks.ts). All motion is derived from the avatar's speed through
- * `locomotionBlend`, so idle → walk → run crossfades continuously instead of switching clips, and every
- * visible quantity (limb swing, bob, lean, breathing) is smooth in time.
+ * The player's character. All motion is derived from the avatar's speed through `locomotionBlend`, so idle → walk
+ * → run crossfades continuously instead of switching clips, and every visible quantity (limb swing, bob, lean,
+ * breathing) is smooth in time.
  */
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-import { PALETTE, type PaletteKey } from '@/lib/hearthworks/art';
+import type * as THREE from 'three';
 import { locomotionBlend } from '@/lib/hearthworks/avatar';
 import { runtime } from '@/lib/hearthworks/runtime-instance';
-import { useHearthworks } from '@/lib/hearthworks/store';
-import { SKIN_LOOKS, type SkinLook } from '@/lib/hearthworks/skins';
+import { SKIN_LOOKS } from '@/lib/hearthworks/skins';
+import { hearthworksStore, useHearthworks } from '@/lib/hearthworks/store';
 import { tileTop } from '@/lib/hearthworks/world';
-import { hearthworksStore } from '@/lib/hearthworks/store';
-
-const mat = (key: PaletteKey) => <meshStandardMaterial color={PALETTE[key]} roughness={0.85} />;
-
-function Hat({ look }: { look: SkinLook }) {
-  const hat = look.hat;
-  if (!hat) return null;
-  switch (hat.kind) {
-    case 'cap':
-      return (
-        <group position={[0, 1.2, 0]}>
-          <mesh position={[0, 0.02, 0]}>
-            <sphereGeometry args={[0.2, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            {mat(hat.color)}
-          </mesh>
-          <mesh position={[0, 0, 0.17]}>
-            <boxGeometry args={[0.24, 0.025, 0.14]} />
-            {mat(hat.color)}
-          </mesh>
-        </group>
-      );
-    case 'helmet':
-      return (
-        <mesh position={[0, 1.2, 0]}>
-          <sphereGeometry args={[0.235, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.62]} />
-          {mat(hat.color)}
-        </mesh>
-      );
-    case 'hardhat':
-      return (
-        <group position={[0, 1.2, 0]}>
-          <mesh>
-            <sphereGeometry args={[0.215, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            {mat(hat.color)}
-          </mesh>
-          <mesh position={[0, -0.005, 0]}>
-            <cylinderGeometry args={[0.27, 0.27, 0.025, 16]} />
-            {mat(hat.color)}
-          </mesh>
-        </group>
-      );
-    case 'wide':
-      return (
-        <group position={[0, 1.2, 0]}>
-          <mesh position={[0, 0.07, 0]}>
-            <cylinderGeometry args={[0.13, 0.17, 0.14, 14]} />
-            {mat(hat.color)}
-          </mesh>
-          <mesh>
-            <cylinderGeometry args={[0.3, 0.3, 0.02, 18]} />
-            {mat(hat.color)}
-          </mesh>
-        </group>
-      );
-    case 'mask':
-      return (
-        <mesh position={[0, 1.1, 0.03]}>
-          <sphereGeometry args={[0.215, 14, 10]} />
-          {mat(hat.color)}
-        </mesh>
-      );
-    case 'visor':
-      return (
-        <group position={[0, 1.1, 0]}>
-          <mesh>
-            <sphereGeometry args={[0.225, 14, 10]} />
-            {mat('stone')}
-          </mesh>
-          <mesh position={[0, 0.0, 0.16]}>
-            <boxGeometry args={[0.3, 0.07, 0.1]} />
-            {mat(hat.color)}
-          </mesh>
-        </group>
-      );
-    case 'hair':
-      return (
-        <mesh position={[0, 1.15, -0.02]}>
-          <sphereGeometry args={[0.2, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
-          {mat(hat.color)}
-        </mesh>
-      );
-  }
-}
-
-function Prop({ look }: { look: SkinLook }) {
-  switch (look.prop) {
-    case 'briefcase':
-      return (
-        <mesh position={[0, -0.22, 0.02]}>
-          <boxGeometry args={[0.07, 0.2, 0.26]} />
-          {mat('wood')}
-        </mesh>
-      );
-    case 'crowbar':
-      return (
-        <mesh position={[0, -0.24, 0.1]} rotation={[0.5, 0, 0]}>
-          <cylinderGeometry args={[0.018, 0.018, 0.5, 6]} />
-          {mat('stone')}
-        </mesh>
-      );
-    case 'wrench':
-      return (
-        <mesh position={[0, -0.24, 0.08]} rotation={[0.4, 0, 0]}>
-          <boxGeometry args={[0.04, 0.04, 0.34]} />
-          {mat('stone')}
-        </mesh>
-      );
-    default:
-      return null;
-  }
-}
+import { Figure } from './Figure';
 
 export function Avatar() {
   const skin = useHearthworks((s) => s.world.players[s.playerId]?.skin ?? 'citizen');
@@ -171,53 +59,9 @@ export function Avatar() {
     }
   });
 
-  const w = look.build;
   return (
-    <group ref={root} scale={look.height}>
-      <group ref={body}>
-        {/* torso */}
-        <mesh position={[0, 0.7, 0]}>
-          <boxGeometry args={[0.34 * w, 0.42, 0.2]} />
-          {mat(look.suit)}
-        </mesh>
-        <mesh position={[0, 0.5, 0.0]}>
-          <boxGeometry args={[0.35 * w, 0.06, 0.21]} />
-          {mat(look.trim)}
-        </mesh>
-        {/* head */}
-        <mesh position={[0, 1.08, 0]}>
-          <sphereGeometry args={[0.18, 16, 12]} />
-          {mat(look.skin)}
-        </mesh>
-        <Hat look={look} />
-        {/* arms pivot at the shoulders */}
-        <group ref={armL} position={[0.22 * w, 0.88, 0]}>
-          <mesh position={[0, -0.18, 0]}>
-            <boxGeometry args={[0.09, 0.36, 0.09]} />
-            {mat(look.suit)}
-          </mesh>
-        </group>
-        <group ref={armR} position={[-0.22 * w, 0.88, 0]}>
-          <mesh position={[0, -0.18, 0]}>
-            <boxGeometry args={[0.09, 0.36, 0.09]} />
-            {mat(look.suit)}
-          </mesh>
-          <Prop look={look} />
-        </group>
-      </group>
-      {/* legs pivot at the hips */}
-      <group ref={legL} position={[0.09 * w, 0.5, 0]}>
-        <mesh position={[0, -0.22, 0]}>
-          <boxGeometry args={[0.13, 0.44, 0.13]} />
-          {mat(look.trim)}
-        </mesh>
-      </group>
-      <group ref={legR} position={[-0.09 * w, 0.5, 0]}>
-        <mesh position={[0, -0.22, 0]}>
-          <boxGeometry args={[0.13, 0.44, 0.13]} />
-          {mat(look.trim)}
-        </mesh>
-      </group>
+    <group ref={root}>
+      <Figure look={look} refs={{ body, legL, legR, armL, armR }} />
     </group>
   );
 }

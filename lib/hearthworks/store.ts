@@ -12,6 +12,7 @@ export type Tool =
   | { kind: 'inspect' }
   | { kind: 'build'; building: BuildingId }
   | { kind: 'remove' }
+  | { kind: 'hire' }
   | { kind: 'plant'; crop: CropId }
   | { kind: 'harvest' };
 
