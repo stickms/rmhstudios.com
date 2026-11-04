@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import {
   CookingPot,
   Cog,
+  Crosshair,
   Handshake,
   Shirt,
   Users,
@@ -33,6 +34,7 @@ import {
 import { hearthworksStore, useHearthworks, type Tool } from '@/lib/hearthworks/store';
 import type { RejectReason } from '@/lib/hearthworks/world';
 import { HIRE_COST } from '@/lib/hearthworks/world';
+import { Armory, Vitals } from './Armory';
 import { Customers } from './Customers';
 import { ViewToggle, WalkControls } from './ViewControls';
 import { Wardrobe } from './Wardrobe';
@@ -87,7 +89,7 @@ export function Hud() {
   const money = useHearthworks((s) => s.world.players[s.playerId]?.money ?? 0);
   const inventory = useHearthworks((s) => s.world.players[s.playerId]?.inventory);
   const lastEvents = useHearthworks((s) => s.lastEvents);
-  const [panel, setPanel] = useState<'pantry' | 'wardrobe' | 'customers' | null>(null);
+  const [panel, setPanel] = useState<'pantry' | 'wardrobe' | 'customers' | 'armory' | null>(null);
   const customers = useHearthworks((s) => s.world.npcs.filter((n) => n.mode !== 'leaving').length);
   const pantry = panel === 'pantry';
 
@@ -96,6 +98,13 @@ export function Hud() {
     for (const e of lastEvents) {
       if (e.type === 'skinBought')
         toast(t('skin-bought', { defaultValue: 'New look unlocked!' }), { id: 'hw-skin' });
+      if (e.type === 'officerSpawned') toast(t('police-coming', { defaultValue: 'Police are on the island.' }), { id: 'hw-police' });
+      if (e.type === 'arrested')
+        toast(t('arrested', { defaultValue: 'Arrested. Fined {{fine}} and your contraband was taken.', fine: e.fine }), { id: 'hw-arrest' });
+      if (e.type === 'respawned')
+        toast(t('respawned', { defaultValue: 'You came to at the meadow. Fined {{fine}}.', fine: e.fine }), { id: 'hw-respawn' });
+      if (e.type === 'officerDown')
+        toast(t('officer-down', { defaultValue: 'Officer down. Heat is way up. +{{drop}}', drop: e.drop }), { id: 'hw-kill' });
       if (e.type !== 'rejected') continue;
       toast(reasonText(t, e.reason), { id: `hw-${e.reason}` });
     }
@@ -131,6 +140,15 @@ export function Hud() {
         <button
           type="button"
           className="hw-chip hw-chip--button"
+          aria-expanded={panel === 'armory'}
+          onClick={() => setPanel((p) => (p === 'armory' ? null : 'armory'))}
+        >
+          <Crosshair aria-hidden size={18} />
+          <span>{t('armory-title', { defaultValue: 'Back alley' })}</span>
+        </button>
+        <button
+          type="button"
+          className="hw-chip hw-chip--button"
           aria-expanded={panel === 'wardrobe'}
           onClick={() => setPanel((p) => (p === 'wardrobe' ? null : 'wardrobe'))}
         >
@@ -150,6 +168,8 @@ export function Hud() {
 
       {panel === 'wardrobe' && <Wardrobe />}
       {panel === 'customers' && <Customers />}
+      {panel === 'armory' && <Armory />}
+      <Vitals />
       {pantry && (
         <section className="hw-panel" aria-label={t('pantry-title', { defaultValue: 'Pantry' })}>
           <h2 className="hw-panel__title">{t('pantry-title', { defaultValue: 'Pantry' })}</h2>
@@ -167,18 +187,19 @@ export function Hud() {
                     <span>
                       {ITEMS[id].name} <b>×{n}</b>
                     </span>
-                    <button
-                      type="button"
-                      className="hw-small"
-                      onClick={() =>
-                        hearthworksStore
-                          .getState()
-                          .dispatch({ type: 'sell', item: id, qty: n ?? 0 })
-                      }
-                    >
-                      {t('sell-all', { defaultValue: 'Sell all' })} ·{' '}
-                      {(ITEMS[id].price * (n ?? 0)).toLocaleString()}
-                    </button>
+                    {ITEMS[id].contraband ? (
+                      <span className="hw-muted">{t('street-only', { defaultValue: 'Street only' })}</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="hw-small"
+                        onClick={() =>
+                          hearthworksStore.getState().dispatch({ type: 'sell', item: id, qty: n ?? 0 })
+                        }
+                      >
+                        {t('sell-all', { defaultValue: 'Sell all' })} · {(ITEMS[id].price * (n ?? 0)).toLocaleString()}
+                      </button>
+                    )}
                   </li>
                 ) : null,
               )}
@@ -294,5 +315,17 @@ function reasonText(t: ReturnType<typeof useTranslation>['t'], reason: RejectRea
       return t('err-already-owned', { defaultValue: 'You already own that look.' });
     case 'not-owned':
       return t('err-not-owned', { defaultValue: 'Buy that look first.' });
+    case 'contraband':
+      return t('err-contraband', { defaultValue: 'No stall will buy that. Hustle it on the street.' });
+    case 'unknown-weapon':
+      return t('err-unknown-weapon', { defaultValue: 'There is no such gun.' });
+    case 'no-weapon':
+      return t('err-no-weapon', { defaultValue: 'Buy that gun and equip it first.' });
+    case 'no-ammo':
+      return t('err-no-ammo', { defaultValue: 'Out of ammo.' });
+    case 'bad-aim':
+      return t('err-bad-aim', { defaultValue: 'Aim somewhere else.' });
+    case 'downed':
+      return t('err-downed', { defaultValue: 'You are down.' });
   }
 }

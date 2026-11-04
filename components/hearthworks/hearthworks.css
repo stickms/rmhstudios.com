@@ -14,6 +14,8 @@
   --hw-teal: #5fb8b2;
   --hw-ink: #1f6a74;
   --hw-ink-soft: #2e7f86;
+  --hw-butter: #ffe7a8;
+  --hw-blush: #ffc9c0;
   --hw-panel: rgb(247 251 252 / 88%);
   --hw-rule: rgb(46 127 134 / 22%);
   --hw-radius: 20px;
@@ -237,7 +239,8 @@
 }
 
 .hw-stick,
-.hw-use {
+.hw-use,
+.hw-fire {
   display: none;
 }
 
@@ -289,4 +292,112 @@
   font-size: 0.75rem;
   line-height: 20px;
   text-align: center;
+}
+
+/* The crime route: vitals (health, heat, ammo) and the back-alley / armoury panel. */
+.hw-vitals {
+  position: absolute;
+  left: 12px;
+  top: calc(max(12px, env(safe-area-inset-top, 0px)) + 56px);
+  display: grid;
+  gap: 6px;
+  width: min(220px, calc(100% - 24px));
+  padding: 10px 12px;
+  border: 1px solid var(--hw-rule);
+  border-radius: var(--hw-radius);
+  background: var(--hw-panel);
+  pointer-events: none;
+}
+
+.hw-meter {
+  display: grid;
+  grid-template-columns: 52px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.hw-panel > .hw-meter {
+  margin-bottom: 6px;
+}
+
+.hw-meter__track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--hw-sky);
+  border: 1px solid var(--hw-rule);
+}
+
+.hw-meter__fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--hw-teal);
+  transition: width 200ms var(--hw-ease);
+}
+
+.hw-meter--heat .hw-meter__fill {
+  background: var(--hw-butter);
+}
+
+.hw-meter--heat[data-hot='true'] .hw-meter__fill {
+  background: var(--hw-blush);
+}
+
+.hw-meter--heat[data-hot='true'] .hw-meter__track {
+  border-color: var(--hw-ink-soft);
+}
+
+.hw-meter__value {
+  text-align: right;
+}
+
+.hw-vitals__ammo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--hw-ink-soft);
+}
+
+.hw-gun {
+  display: grid;
+  gap: 4px;
+  padding: 8px 0;
+  border-top: 1px solid var(--hw-rule);
+}
+
+.hw-gun__stats {
+  font-size: 0.75rem;
+}
+
+.hw-gun__actions {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.hw-small[aria-pressed='true'] {
+  background: var(--hw-teal);
+  color: #fff;
+}
+
+@media (pointer: coarse) {
+  .hw-fire {
+    position: absolute;
+    right: max(22px, env(safe-area-inset-right, 0px));
+    bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 190px);
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--hw-rule);
+    border-radius: 50%;
+    background: var(--hw-blush);
+    color: var(--hw-ink);
+    cursor: pointer;
+  }
 }

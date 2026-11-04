@@ -17,6 +17,7 @@ import { hearthworksStore, useHearthworks } from '@/lib/hearthworks/store';
 import { runtime } from '@/lib/hearthworks/runtime-instance';
 import { interactAt } from '@/lib/hearthworks/tools';
 import { Avatar } from './Avatar';
+import Combat from './Combat';
 import { People } from './People';
 import { CameraRig } from './CameraRig';
 import { cropStage, tileTop, type Rot, type World } from '@/lib/hearthworks/world';
@@ -167,6 +168,7 @@ export default function Scene() {
       <Board />
       <Avatar />
       <People />
+      <Combat />
     </Canvas>
   );
 }

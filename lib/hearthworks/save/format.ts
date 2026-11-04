@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BUILDING_IDS, CROP_IDS, ITEM_IDS } from '../content';
 import { DEFAULT_SKIN, SKIN_IDS } from '../skins';
+import { officerSchema, playerCrimeFields } from './crime-schema';
 import { MAX_LEVEL, MAX_WORLD_SIZE, MIN_WORLD_SIZE, type World } from '../world';
 
 /** 'HWLD' + a version byte, then the world as UTF-8 JSON. */
@@ -127,6 +128,7 @@ const worldSchema = z
           .transform(withMoverDefaults),
       )
       .default([]),
+    officers: z.array(officerSchema).max(16).default([]),
     players: z.record(
       z.string().min(1).max(64),
       z.object({
@@ -138,6 +140,7 @@ const worldSchema = z
         // Saves from before skins existed carry neither field.
         skin: z.enum(SKIN_IDS).default(DEFAULT_SKIN),
         ownedSkins: z.array(z.enum(SKIN_IDS)).default([DEFAULT_SKIN]),
+        ...playerCrimeFields,
       }),
     ),
   })
