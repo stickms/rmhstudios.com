@@ -18,6 +18,29 @@ export class SaveFormatError extends Error {
 const int = z.number().int();
 const rot = z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]);
 
+/** The walking state shared by customers and farmhands; older saves (before they walked) have only x and z. */
+const moverShape = {
+  x: z.number().finite(),
+  z: z.number().finite(),
+  fromX: int.optional(),
+  fromZ: int.optional(),
+  path: z
+    .array(z.object({ x: int, z: int, kind: z.enum(['walk', 'jump', 'fall']) }))
+    .max(2048)
+    .default([]),
+  leg: int.nonnegative().default(0),
+  goalX: int.nullable().default(null),
+  goalZ: int.nullable().default(null),
+  stopWithin: int.nonnegative().default(0),
+  yaw: z.number().finite().default(0),
+};
+
+function withMoverDefaults<T extends { x: number; z: number; fromX?: number; fromZ?: number }>(
+  a: T,
+): T & { fromX: number; fromZ: number } {
+  return { ...a, fromX: a.fromX ?? Math.round(a.x), fromZ: a.fromZ ?? Math.round(a.z) };
+}
+
 const worldSchema = z
   .object({
     version: z.literal(1),
@@ -39,39 +62,69 @@ const worldSchema = z
         storage: z.partialRecord(z.enum(ITEM_IDS), int.nonnegative()).optional(),
       }),
     ),
-    crops: z.array(
-      z.object({ id: int, kind: z.enum(CROP_IDS), x: int, z: int, plantedTick: int }),
-    ),
+    crops: z.array(z.object({ id: int, kind: z.enum(CROP_IDS), x: int, z: int, plantedTick: int })),
     // The economy layer (older saves have none of it).
     foraged: z.record(z.string(), int).default({}),
     npcs: z
       .array(
-        z.object({
-          id: int,
-          kind: z.literal('customer'),
-          x: z.number().finite(),
-          z: z.number().finite(),
-          want: z.enum(ITEM_IDS),
-          qty: int.min(1).max(99),
-          patience: int,
-          look: z.enum(SKIN_IDS),
-        }),
+        z
+          .object({
+            id: int,
+            kind: z.literal('customer'),
+            ...moverShape,
+            want: z.enum(ITEM_IDS),
+            qty: int.min(1).max(99),
+            patience: int,
+            look: z.enum(SKIN_IDS),
+            // Customers saved before they walked have none of these: they stand where they were, and head home from there.
+            mode: z.enum(['arriving', 'waiting', 'leaving']).default('waiting'),
+            stallId: int.default(0),
+            serviceX: int.optional(),
+            serviceZ: int.optional(),
+            gateX: int.optional(),
+            gateZ: int.optional(),
+            stuck: int.default(0),
+          })
+          .transform((n) => {
+            const m = withMoverDefaults(n);
+            const tx = Math.round(n.x);
+            const tz = Math.round(n.z);
+            return {
+              ...m,
+              serviceX: n.serviceX ?? tx,
+              serviceZ: n.serviceZ ?? tz,
+              gateX: n.gateX ?? tx,
+              gateZ: n.gateZ ?? tz,
+            };
+          }),
       )
       .default([]),
     workers: z
       .array(
-        z.object({
-          id: int,
-          ownerId: z.string().min(1).max(64),
-          role: z.literal('farmer'),
-          homeX: int,
-          homeZ: int,
-          x: z.number().finite(),
-          z: z.number().finite(),
-          lastCrop: z.enum(CROP_IDS).nullable(),
-          nextActTick: int,
-          nextWageTick: int,
-        }),
+        z
+          .object({
+            id: int,
+            ownerId: z.string().min(1).max(64),
+            role: z.literal('farmer'),
+            homeX: int,
+            homeZ: int,
+            ...moverShape,
+            lastCrop: z.enum(CROP_IDS).nullable(),
+            nextActTick: int,
+            nextWageTick: int,
+            state: z.enum(['home', 'toWork', 'working', 'toHome']).default('home'),
+            task: z
+              .object({ kind: z.enum(['harvest', 'plant']), x: int, z: int })
+              .nullable()
+              .default(null),
+            workLeft: int.default(0),
+            stuck: int.default(0),
+            avoid: z
+              .array(z.object({ x: int, z: int, until: int }))
+              .max(32)
+              .default([]),
+          })
+          .transform(withMoverDefaults),
       )
       .default([]),
     players: z.record(

@@ -88,13 +88,14 @@ export function Hud() {
   const inventory = useHearthworks((s) => s.world.players[s.playerId]?.inventory);
   const lastEvents = useHearthworks((s) => s.lastEvents);
   const [panel, setPanel] = useState<'pantry' | 'wardrobe' | 'customers' | null>(null);
-  const customers = useHearthworks((s) => s.world.npcs.length);
+  const customers = useHearthworks((s) => s.world.npcs.filter((n) => n.mode !== 'leaving').length);
   const pantry = panel === 'pantry';
 
   // Refusals are the game's most common feedback; say them where the player is looking.
   useEffect(() => {
     for (const e of lastEvents) {
-      if (e.type === 'skinBought') toast(t('skin-bought', { defaultValue: 'New look unlocked!' }), { id: 'hw-skin' });
+      if (e.type === 'skinBought')
+        toast(t('skin-bought', { defaultValue: 'New look unlocked!' }), { id: 'hw-skin' });
       if (e.type !== 'rejected') continue;
       toast(reasonText(t, e.reason), { id: `hw-${e.reason}` });
     }
@@ -108,7 +109,11 @@ export function Hud() {
     <>
       <header className="hw-top">
         <img className="hw-logo" src="/images/hearthworks/logo.png" alt="Hearthworks" height={40} />
-        <div className="hw-chip" role="status" aria-label={t('money-label', { defaultValue: 'Money' })}>
+        <div
+          className="hw-chip"
+          role="status"
+          aria-label={t('money-label', { defaultValue: 'Money' })}
+        >
           <Coins aria-hidden size={18} />
           <span className="hw-chip__value">{money.toLocaleString()}</span>
         </div>
@@ -150,7 +155,9 @@ export function Hud() {
           <h2 className="hw-panel__title">{t('pantry-title', { defaultValue: 'Pantry' })}</h2>
           {held.length === 0 ? (
             <p className="hw-muted">
-              {t('pantry-empty', { defaultValue: 'Nothing yet — plant something and wait for it to ripen.' })}
+              {t('pantry-empty', {
+                defaultValue: 'Nothing yet — plant something and wait for it to ripen.',
+              })}
             </p>
           ) : (
             <ul className="hw-list">
@@ -164,10 +171,13 @@ export function Hud() {
                       type="button"
                       className="hw-small"
                       onClick={() =>
-                        hearthworksStore.getState().dispatch({ type: 'sell', item: id, qty: n ?? 0 })
+                        hearthworksStore
+                          .getState()
+                          .dispatch({ type: 'sell', item: id, qty: n ?? 0 })
                       }
                     >
-                      {t('sell-all', { defaultValue: 'Sell all' })} · {(ITEMS[id].price * (n ?? 0)).toLocaleString()}
+                      {t('sell-all', { defaultValue: 'Sell all' })} ·{' '}
+                      {(ITEMS[id].price * (n ?? 0)).toLocaleString()}
                     </button>
                   </li>
                 ) : null,
@@ -182,7 +192,9 @@ export function Hud() {
                 <button
                   type="button"
                   className="hw-small"
-                  onClick={() => hearthworksStore.getState().dispatch({ type: 'cook', recipe: key })}
+                  onClick={() =>
+                    hearthworksStore.getState().dispatch({ type: 'cook', recipe: key })
+                  }
                 >
                   {t('cook', { defaultValue: 'Cook' })}
                 </button>

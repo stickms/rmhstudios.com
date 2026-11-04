@@ -1,4 +1,5 @@
 import type { BuildingId, CropId, ItemId } from '../content';
+import type { Mover } from '../nav/mover';
 import type { SkinId } from '../skins';
 
 /** One simulation tick is 50 ms of game time (20 Hz — the rate the P2P layer will stream at). */
@@ -28,32 +29,59 @@ export interface Building {
   storage?: Partial<Record<ItemId, number>>;
 }
 
-export interface Npc {
+/** Where a customer is in their visit: walking to the stall, standing at it, or walking back to where they came from. */
+export type CustomerMode = 'arriving' | 'waiting' | 'leaving';
+
+/** A customer: a `Mover` (position, route, facing) plus what they came for. */
+export interface Npc extends Mover {
   id: number;
   kind: 'customer';
-  x: number;
-  z: number;
-  /** What they came to buy, how many, and how long they will wait (in ticks) before leaving. */
+  /** What they came to buy, how many, and how long they will wait (in ticks) before leaving. Counts down only while waiting. */
   want: ItemId;
   qty: number;
   patience: number;
   /** A look for the renderer (a skin id's stand-in). */
   look: SkinId;
+  mode: CustomerMode;
+  /** The stall they came to, and the tile beside it they are (or were) heading for. */
+  stallId: number;
+  serviceX: number;
+  serviceZ: number;
+  /** The shore tile they walked in from, and walk back to. */
+  gateX: number;
+  gateZ: number;
+  /** Ticks spent waiting for someone else to get out of the way. */
+  stuck: number;
 }
 
-export interface Worker {
+/** A farmhand's day: resting at the cottage, walking to a job, doing it, walking back. */
+export type WorkerState = 'home' | 'toWork' | 'working' | 'toHome';
+
+export interface WorkerTask {
+  kind: 'harvest' | 'plant';
+  x: number;
+  z: number;
+}
+
+export interface Worker extends Mover {
   id: number;
   ownerId: string;
   role: 'farmer';
   /** The cottage they live in; they work within a few tiles of it. */
   homeX: number;
   homeZ: number;
-  x: number;
-  z: number;
   /** What they last planted, so they can replant it. */
   lastCrop: CropId | null;
+  /** The earliest tick they will look for work again. */
   nextActTick: number;
   nextWageTick: number;
+  state: WorkerState;
+  task: WorkerTask | null;
+  /** Ticks of work left on the current task. */
+  workLeft: number;
+  stuck: number;
+  /** Jobs that could not be reached, and until when to leave them alone. */
+  avoid: { x: number; z: number; until: number }[];
 }
 
 export interface Crop {
@@ -129,6 +157,7 @@ export type WorldEvent =
   | { type: 'foraged'; playerId: string; item: ItemId; qty: number }
   | { type: 'customerArrived'; npc: Npc }
   | { type: 'served'; playerId: string; npcId: number; item: ItemId; qty: number; earned: number }
+  | { type: 'customerLeaving'; npcId: number }
   | { type: 'customerLeft'; npcId: number }
   | { type: 'collected'; playerId: string; items: Partial<Record<ItemId, number>> }
   | { type: 'hired'; worker: Worker }

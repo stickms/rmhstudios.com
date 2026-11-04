@@ -4,12 +4,14 @@ import {
   CUSTOMER_PREMIUM,
   FORAGE_COOLDOWN_TICKS,
   HIRE_COST,
+  MIN_GATE_DISTANCE,
   TICK_MS,
   WAGE,
   WAGE_INTERVAL_TICKS,
   WORKERS_PER_COTTAGE,
   createWorld,
   stepWorld,
+  tileDistance,
   type Command,
   type World,
 } from '..';
@@ -50,19 +52,29 @@ describe('foraging', () => {
     expect(got[0]).toMatchObject({ type: 'foraged' });
     const total = Object.values(w.players[P].inventory).reduce((a, b) => a + (b ?? 0), 0);
     expect(total).toBeGreaterThanOrEqual(1);
-    expect(reasons(stepWorld(w, 0, [{ type: 'forage', playerId: P, x: f.x, z: f.z }]))).toEqual(['depleted']);
+    expect(reasons(stepWorld(w, 0, [{ type: 'forage', playerId: P, x: f.x, z: f.z }]))).toEqual([
+      'depleted',
+    ]);
     ticks(w, FORAGE_COOLDOWN_TICKS);
-    expect(stepWorld(w, 0, [{ type: 'forage', playerId: P, x: f.x, z: f.z }])[0]).toMatchObject({ type: 'foraged' });
+    expect(stepWorld(w, 0, [{ type: 'forage', playerId: P, x: f.x, z: f.z }])[0]).toMatchObject({
+      type: 'foraged',
+    });
   });
 
   it('refuses grass, far-away tiles and out-of-range coordinates', () => {
     const w = world();
     const f = firstForest(w);
     stand(w, 2, 2);
-    expect(reasons(stepWorld(w, 0, [{ type: 'forage', playerId: P, x: f.x, z: f.z }]))).toEqual(['too-far']);
+    expect(reasons(stepWorld(w, 0, [{ type: 'forage', playerId: P, x: f.x, z: f.z }]))).toEqual([
+      'too-far',
+    ]);
     const m = mid(w);
-    expect(reasons(stepWorld(w, 0, [{ type: 'forage', playerId: P, x: m, z: m }]))).toEqual(['nothing-there']);
-    expect(reasons(stepWorld(w, 0, [{ type: 'forage', playerId: P, x: -1, z: 99999 }]))).toEqual(['out-of-bounds']);
+    expect(reasons(stepWorld(w, 0, [{ type: 'forage', playerId: P, x: m, z: m }]))).toEqual([
+      'nothing-there',
+    ]);
+    expect(reasons(stepWorld(w, 0, [{ type: 'forage', playerId: P, x: -1, z: 99999 }]))).toEqual([
+      'out-of-bounds',
+    ]);
   });
 
   it('is deterministic: the same world and commands forage the same goods', () => {
@@ -77,58 +89,94 @@ describe('foraging', () => {
   });
 });
 
+/** Step until `done` holds (at most `max` ticks), returning the events on the way. */
+function until(w: World, done: () => boolean, max = 4000) {
+  const events: ReturnType<typeof stepWorld> = [];
+  for (let i = 0; i < max && !done(); i++) events.push(...stepWorld(w, TICK_MS));
+  return events;
+}
+
 describe('customers', () => {
-  it('only appear once there is a stall, beside it, wanting something', () => {
+  function stalled() {
+    const w = world();
+    const m = mid(w);
+    stepWorld(w, 0, [{ type: 'place', playerId: P, kind: 'stall', x: m + 1, z: m }]);
+    return { w, m };
+  }
+
+  it('only come once there is a stall, and walk in from a gate far away to a tile beside it', () => {
     const w = world();
     ticks(w, 450);
     expect(w.npcs).toHaveLength(0);
     const m = mid(w);
     stepWorld(w, 0, [{ type: 'place', playerId: P, kind: 'stall', x: m + 1, z: m }]);
-    const ev = ticks(w, 450);
+    const ev = until(w, () => w.npcs.length > 0, 2400);
     expect(ev.some((e) => e.type === 'customerArrived')).toBe(true);
     const n = w.npcs[0];
-    expect(Math.abs(n.x - (m + 1))).toBeLessThanOrEqual(1);
-    expect(Math.abs(n.z - m)).toBeLessThanOrEqual(1);
+    expect(n.mode).toBe('arriving');
+    expect(tileDistance(n.x, n.z, m + 1, m)).toBeGreaterThanOrEqual(MIN_GATE_DISTANCE);
     expect(ITEMS[n.want]).toBeDefined();
+    until(w, () => n.mode === 'waiting');
+    expect(n.mode).toBe('waiting');
+    expect(tileDistance(n.x, n.z, m + 1, m)).toBe(1);
   });
 
-  it('pay a premium over the stall price when served, and leave once served or out of patience', () => {
-    const w = world();
-    const m = mid(w);
-    stepWorld(w, 0, [{ type: 'place', playerId: P, kind: 'stall', x: m + 1, z: m }]);
-    ticks(w, 450);
-    const n = w.npcs[0];
+  it('pay a premium over the stall price when served, then walk off rather than vanish', () => {
+    const { w } = stalled();
+    until(w, () => w.npcs.some((n) => n.mode === 'waiting'));
+    const n = w.npcs.find((o) => o.mode === 'waiting')!;
     stand(w, n.x, n.z);
     w.players[P].inventory = { [n.want]: n.qty };
     const moneyBefore = w.players[P].money;
     const ev = stepWorld(w, 0, [{ type: 'serve', playerId: P, npcId: n.id }]);
     expect(ev[0]).toMatchObject({ type: 'served', npcId: n.id });
-    expect(w.players[P].money - moneyBefore).toBe(Math.floor(ITEMS[n.want].price * n.qty * CUSTOMER_PREMIUM));
+    expect(w.players[P].money - moneyBefore).toBe(
+      Math.floor(ITEMS[n.want].price * n.qty * CUSTOMER_PREMIUM),
+    );
     expect(w.players[P].inventory[n.want]).toBe(0);
-    expect(w.npcs.find((o) => o.id === n.id)).toBeUndefined();
+    // Still there, now heading for the gate.
+    expect(w.npcs.find((o) => o.id === n.id)).toMatchObject({ mode: 'leaving' });
+    const left = until(w, () => !w.npcs.some((o) => o.id === n.id));
+    expect(left.some((e) => e.type === 'customerLeft' && e.npcId === n.id)).toBe(true);
   });
 
-  it('refuse to be served without the goods, from too far away, or twice', () => {
-    const w = world();
-    const m = mid(w);
-    stepWorld(w, 0, [{ type: 'place', playerId: P, kind: 'stall', x: m + 1, z: m }]);
-    ticks(w, 450);
-    const n = w.npcs[0];
+  it('refuse to be served without the goods, from too far away, or once they are leaving', () => {
+    const { w } = stalled();
+    until(w, () => w.npcs.some((o) => o.mode === 'waiting'));
+    const n = w.npcs.find((o) => o.mode === 'waiting')!;
     stand(w, n.x, n.z);
-    expect(reasons(stepWorld(w, 0, [{ type: 'serve', playerId: P, npcId: n.id }]))).toEqual(['missing-ingredients']);
+    expect(reasons(stepWorld(w, 0, [{ type: 'serve', playerId: P, npcId: n.id }]))).toEqual([
+      'missing-ingredients',
+    ]);
     stand(w, 2, 2);
     w.players[P].inventory = { [n.want]: 99 };
-    expect(reasons(stepWorld(w, 0, [{ type: 'serve', playerId: P, npcId: n.id }]))).toEqual(['too-far']);
+    expect(reasons(stepWorld(w, 0, [{ type: 'serve', playerId: P, npcId: n.id }]))).toEqual([
+      'too-far',
+    ]);
     stand(w, n.x, n.z);
     stepWorld(w, 0, [{ type: 'serve', playerId: P, npcId: n.id }]);
-    expect(reasons(stepWorld(w, 0, [{ type: 'serve', playerId: P, npcId: n.id }]))).toEqual(['no-such-npc']);
+    expect(reasons(stepWorld(w, 0, [{ type: 'serve', playerId: P, npcId: n.id }]))).toEqual([
+      'no-such-npc',
+    ]);
   });
 
-  it('give up and go home if nobody serves them', () => {
-    const w = world();
-    const m = mid(w);
-    stepWorld(w, 0, [{ type: 'place', playerId: P, kind: 'stall', x: m + 1, z: m }]);
-    const ev = ticks(w, 1700);
+  it('can be served on the way in, before they have reached the stall', () => {
+    const { w } = stalled();
+    until(w, () => w.npcs.length > 0);
+    const n = w.npcs[0];
+    expect(n.mode).toBe('arriving');
+    // Walk up to wherever they are.
+    stand(w, n.x, n.z);
+    w.players[P].inventory = { [n.want]: n.qty };
+    expect(stepWorld(w, 0, [{ type: 'serve', playerId: P, npcId: n.id }])[0]).toMatchObject({
+      type: 'served',
+    });
+  });
+
+  it('give up and walk home if nobody serves them', () => {
+    const { w } = stalled();
+    const ev = until(w, () => false, 3000);
+    expect(ev.some((e) => e.type === 'customerLeaving')).toBe(true);
     expect(ev.some((e) => e.type === 'customerLeft')).toBe(true);
   });
 });
@@ -165,9 +213,13 @@ describe('the auto-harvester', () => {
     const ev = stepWorld(w, 0, [{ type: 'collect', playerId: P, x: m, z: m }]);
     expect(ev[0]).toMatchObject({ type: 'collected' });
     expect(w.players[P].inventory.wheat).toBe(CROPS.wheat.yieldQty);
-    expect(reasons(stepWorld(w, 0, [{ type: 'collect', playerId: P, x: m, z: m }]))).toEqual(['depleted']);
+    expect(reasons(stepWorld(w, 0, [{ type: 'collect', playerId: P, x: m, z: m }]))).toEqual([
+      'depleted',
+    ]);
     stand(w, 2, 2);
-    expect(reasons(stepWorld(w, 0, [{ type: 'collect', playerId: P, x: m, z: m }]))).toEqual(['too-far']);
+    expect(reasons(stepWorld(w, 0, [{ type: 'collect', playerId: P, x: m, z: m }]))).toEqual([
+      'too-far',
+    ]);
   });
 });
 
@@ -220,7 +272,11 @@ describe('hired farmhands', () => {
     w.players[P].money = 500;
     stepWorld(w, 0, [{ type: 'hire', playerId: P, x: m, z: m }]);
     const id = w.workers[0].id;
-    expect(stepWorld(w, 0, [{ type: 'fire', playerId: P, workerId: id }])[0]).toMatchObject({ reason: 'fired' });
-    expect(reasons(stepWorld(w, 0, [{ type: 'fire', playerId: P, workerId: id }]))).toEqual(['nothing-there']);
+    expect(stepWorld(w, 0, [{ type: 'fire', playerId: P, workerId: id }])[0]).toMatchObject({
+      reason: 'fired',
+    });
+    expect(reasons(stepWorld(w, 0, [{ type: 'fire', playerId: P, workerId: id }]))).toEqual([
+      'nothing-there',
+    ]);
   });
 });
