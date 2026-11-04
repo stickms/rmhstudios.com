@@ -1,0 +1,73 @@
+import { z } from 'zod';
+import { BUILDING_IDS, CROP_IDS, ITEM_IDS } from '../content';
+import { MAX_WORLD_SIZE, MIN_WORLD_SIZE, type World } from '../world';
+
+/** 'HWLD' + a version byte, then the world as UTF-8 JSON. */
+const MAGIC = [0x48, 0x57, 0x4c, 0x44] as const;
+export const SAVE_VERSION = 1;
+const MAX_SAVE_BYTES = 8 * 1024 * 1024;
+
+export class SaveFormatError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SaveFormatError';
+  }
+}
+
+const int = z.number().int();
+const rot = z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]);
+
+const worldSchema = z
+  .object({
+    version: z.literal(1),
+    seed: int.nonnegative(),
+    size: int.min(MIN_WORLD_SIZE).max(MAX_WORLD_SIZE),
+    tick: int.nonnegative(),
+    accMs: z.number().min(0).finite(),
+    rng: int.nonnegative(),
+    nextId: int.positive(),
+    terrain: z.array(z.enum(['grass', 'forest', 'water'])),
+    buildings: z.array(
+      z.object({ id: int, kind: z.enum(BUILDING_IDS), x: int, z: int, rot }),
+    ),
+    crops: z.array(
+      z.object({ id: int, kind: z.enum(CROP_IDS), x: int, z: int, plantedTick: int }),
+    ),
+    players: z.record(
+      z.string().min(1).max(64),
+      z.object({
+        id: z.string().min(1).max(64),
+        x: z.number().finite(),
+        z: z.number().finite(),
+        money: int.nonnegative(),
+        inventory: z.partialRecord(z.enum(ITEM_IDS), int.nonnegative()),
+      }),
+    ),
+  })
+  .refine((w) => w.terrain.length === w.size * w.size, { message: 'terrain size mismatch' });
+
+export function encodeWorld(world: World): Uint8Array {
+  const body = new TextEncoder().encode(JSON.stringify(world));
+  const out = new Uint8Array(MAGIC.length + 1 + body.length);
+  out.set(MAGIC, 0);
+  out[MAGIC.length] = SAVE_VERSION;
+  out.set(body, MAGIC.length + 1);
+  return out;
+}
+
+export function decodeWorld(bytes: Uint8Array): World {
+  if (bytes.length > MAX_SAVE_BYTES) throw new SaveFormatError('save is too large');
+  if (bytes.length < MAGIC.length + 2 || MAGIC.some((b, i) => bytes[i] !== b))
+    throw new SaveFormatError('not a Hearthworks save');
+  const version = bytes[MAGIC.length];
+  if (version !== SAVE_VERSION) throw new SaveFormatError(`unsupported save version ${version}`);
+  let json: unknown;
+  try {
+    json = JSON.parse(new TextDecoder().decode(bytes.subarray(MAGIC.length + 1)));
+  } catch {
+    throw new SaveFormatError('save data is corrupted');
+  }
+  const parsed = worldSchema.safeParse(json);
+  if (!parsed.success) throw new SaveFormatError('save data is invalid');
+  return parsed.data as World;
+}
