@@ -32,7 +32,7 @@ export interface HearthworksState {
 /** One store per game session; a factory so tests (and later, networked sessions) get their own. */
 export function createHearthworksStore(opts: { seed?: number; size?: number; playerId?: string } = {}) {
   const playerId = opts.playerId ?? 'local';
-  const world = createWorld(opts.seed ?? 1, opts.size ?? 40);
+  const world = createWorld(opts.seed ?? 1, opts.size ?? 32);
   stepWorld(world, 0, [{ type: 'join', playerId }]);
   return createStore<HearthworksState>((set, get) => ({
     world,

@@ -212,13 +212,13 @@ export default function Scene() {
     <Canvas
       orthographic
       dpr={[1, 2]}
-      camera={{ position: [mid + 22, 19, mid + 22], zoom: 34, near: -50, far: 300 }}
+      camera={{ position: [mid + 22, 19, mid + 22], zoom: 44, near: -50, far: 300 }}
       gl={{ antialias: true }}
       style={{ touchAction: 'none' }}
     >
       <color attach="background" args={[PALETTE.sky]} />
-      <ambientLight intensity={1.05} />
-      <directionalLight position={[mid + 10, 16, mid + 6]} intensity={1.5} />
+      <ambientLight intensity={1.7} />
+      <directionalLight position={[mid + 10, 16, mid + 6]} intensity={1.3} />
       <Ticker />
       <Board />
       <Controls size={size} />
