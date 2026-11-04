@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BUILDING_IDS, CROP_IDS, ITEM_IDS } from '../content';
-import { MAX_WORLD_SIZE, MIN_WORLD_SIZE, type World } from '../world';
+import { MAX_LEVEL, MAX_WORLD_SIZE, MIN_WORLD_SIZE, type World } from '../world';
 
 /** 'HWLD' + a version byte, then the world as UTF-8 JSON. */
 const MAGIC = [0x48, 0x57, 0x4c, 0x44] as const;
@@ -26,7 +26,8 @@ const worldSchema = z
     accMs: z.number().min(0).finite(),
     rng: int.nonnegative(),
     nextId: int.positive(),
-    terrain: z.array(z.enum(['grass', 'forest', 'water'])),
+    terrain: z.array(z.enum(['water', 'sand', 'grass', 'forest', 'rock'])),
+    height: z.array(int.min(0).max(MAX_LEVEL)),
     buildings: z.array(
       z.object({ id: int, kind: z.enum(BUILDING_IDS), x: int, z: int, rot }),
     ),
@@ -44,7 +45,9 @@ const worldSchema = z
       }),
     ),
   })
-  .refine((w) => w.terrain.length === w.size * w.size, { message: 'terrain size mismatch' });
+  .refine((w) => w.terrain.length === w.size * w.size && w.height.length === w.terrain.length, {
+    message: 'terrain size mismatch',
+  });
 
 export function encodeWorld(world: World): Uint8Array {
   const body = new TextEncoder().encode(JSON.stringify(world));

@@ -6,7 +6,15 @@ export const MIN_WORLD_SIZE = 8;
 export const MAX_WORLD_SIZE = 96;
 export const START_MONEY = 300;
 
-export type TerrainKind = 'grass' | 'forest' | 'water';
+/** Terrain is stepped like blocks: integer height levels, `LEVEL_HEIGHT` world units each. */
+export const MAX_LEVEL = 7;
+export const LEVEL_HEIGHT = 0.38;
+/** Tiles at or below this level are water, drawn at exactly this level. */
+export const WATER_LEVEL = 1;
+/** Level of the flat starting meadow. */
+export const MEADOW_LEVEL = 3;
+
+export type TerrainKind = 'water' | 'sand' | 'grass' | 'forest' | 'rock';
 export type Rot = 0 | 1 | 2 | 3;
 
 export interface Building {
@@ -47,6 +55,8 @@ export interface World {
   nextId: number;
   /** size × size, row-major by z then x. */
   terrain: TerrainKind[];
+  /** Block height level of every tile (0..MAX_LEVEL), same layout as `terrain`. */
+  height: number[];
   buildings: Building[];
   crops: Crop[];
   players: Record<string, PlayerState>;

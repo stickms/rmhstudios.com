@@ -11,6 +11,7 @@ export const PALETTE = {
   leaf: '#7FCFB2',
   leafDeep: '#4FA896',
   stone: '#B8D4DC',
+  sand: '#EDE5C8',
   cream: '#F7FBFC',
   ink: '#1F6A74',
   deepTeal: '#2E7F86',

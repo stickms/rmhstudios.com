@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { CROPS, ITEMS } from '../../content';
-import { TICK_MS, START_MONEY, buildingAt, createWorld, cropStage, stepWorld, type Command } from '..';
+import {
+  LEVEL_HEIGHT,
+  MAX_LEVEL,
+  MEADOW_LEVEL,
+  TICK_MS,
+  START_MONEY,
+  WATER_LEVEL,
+  buildingAt,
+  createWorld,
+  cropStage,
+  stepWorld,
+  tileTop,
+  type Command,
+} from '..';
 
 const P = 'p1';
 function fresh(seed = 7) {
@@ -155,5 +168,49 @@ describe('stepWorld', () => {
     expect(ev.every((e) => e.type === 'rejected')).toBe(true);
     expect(JSON.stringify(w.players[P])).toBe(before);
     expect(w.players[P].money).toBe(START_MONEY);
+  });
+});
+
+describe('terrain heights', () => {
+  it('has one height per tile, in range, consistent with water, and a flat meadow at spawn', () => {
+    const w = createWorld(42, 32);
+    expect(w.height).toHaveLength(w.terrain.length);
+    const m = Math.floor(w.size / 2);
+    for (let i = 0; i < w.height.length; i++) {
+      expect(Number.isInteger(w.height[i])).toBe(true);
+      expect(w.height[i]).toBeGreaterThanOrEqual(0);
+      expect(w.height[i]).toBeLessThanOrEqual(MAX_LEVEL);
+      expect(w.terrain[i] === 'water').toBe(w.height[i] <= WATER_LEVEL);
+    }
+    for (let dz = -3; dz <= 3; dz++)
+      for (let dx = -3; dx <= 3; dx++) {
+        expect(w.height[(m + dz) * w.size + (m + dx)]).toBe(MEADOW_LEVEL);
+        expect(w.terrain[(m + dz) * w.size + (m + dx)]).toBe('grass');
+      }
+  });
+
+  it('is varied: several heights and several terrain kinds, deterministically', () => {
+    const a = createWorld(7, 40);
+    expect(new Set(a.height).size).toBeGreaterThanOrEqual(4);
+    expect(new Set(a.terrain).size).toBeGreaterThanOrEqual(3);
+    expect(JSON.stringify(createWorld(7, 40))).toBe(JSON.stringify(a));
+  });
+
+  it('never steps more than two levels between neighbours (rolling, not spiky)', () => {
+    const w = createWorld(99, 48);
+    for (let z = 0; z < w.size; z++)
+      for (let x = 0; x < w.size - 1; x++) {
+        expect(Math.abs(w.height[z * w.size + x] - w.height[z * w.size + x + 1])).toBeLessThanOrEqual(2);
+        if (z < w.size - 1)
+          expect(Math.abs(w.height[z * w.size + x] - w.height[(z + 1) * w.size + x])).toBeLessThanOrEqual(2);
+      }
+  });
+
+  it('puts water at one level and land at LEVEL_HEIGHT × level', () => {
+    const w = createWorld(42, 32);
+    const m = Math.floor(w.size / 2);
+    expect(tileTop(w, m, m)).toBeCloseTo(MEADOW_LEVEL * LEVEL_HEIGHT, 6);
+    expect(tileTop(w, 0, 0)).toBeCloseTo(WATER_LEVEL * LEVEL_HEIGHT, 6);
+    expect(tileTop(w, -5, 3)).toBe(0);
   });
 });

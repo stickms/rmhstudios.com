@@ -7,12 +7,16 @@ import {
   isCropId,
   isItemId,
 } from '../content';
-import { nextRandom } from './rng';
+import { fbm } from './noise';
 import {
+  LEVEL_HEIGHT,
+  MAX_LEVEL,
   MAX_WORLD_SIZE,
+  MEADOW_LEVEL,
   MIN_WORLD_SIZE,
   START_MONEY,
   TICK_MS,
+  WATER_LEVEL,
   type Building,
   type Command,
   type PlayerState,
@@ -30,54 +34,61 @@ const inBounds = (w: World, x: number, z: number) =>
 /** Build a world from a seed. Same seed and size → identical world. */
 export function createWorld(seed: number, size: number): World {
   const n = Math.min(MAX_WORLD_SIZE, Math.max(MIN_WORLD_SIZE, Math.floor(size)));
-  let rng = seed >>> 0;
-  const forest: boolean[] = new Array(n * n).fill(false);
-  for (let i = 0; i < forest.length; i++) {
-    const r = nextRandom(rng);
-    rng = r.state;
-    forest[i] = r.value < 0.34;
-  }
-  // Two smoothing passes turn noise into woods with clearings.
-  for (let pass = 0; pass < 2; pass++) {
-    const next = forest.slice();
-    for (let z = 0; z < n; z++) {
-      for (let x = 0; x < n; x++) {
-        let around = 0;
-        for (let dz = -1; dz <= 1; dz++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            if (dx === 0 && dz === 0) continue;
-            const xx = x + dx;
-            const zz = z + dz;
-            if (xx >= 0 && zz >= 0 && xx < n && zz < n && forest[zz * n + xx]) around++;
-          }
-        }
-        next[z * n + x] = around >= 5 || (forest[z * n + x] && around >= 4);
-      }
-    }
-    for (let i = 0; i < forest.length; i++) forest[i] = next[i];
-  }
-  const mid = Math.floor(n / 2);
+  const s32 = seed >>> 0;
+  const mid = (n - 1) / 2;
+  const height: number[] = [];
   const terrain: TerrainKind[] = [];
+  const forestSeed = (s32 ^ 0x9e3779b9) >>> 0;
   for (let z = 0; z < n; z++) {
     for (let x = 0; x < n; x++) {
       const edge = x === 0 || z === 0 || x === n - 1 || z === n - 1;
-      const spawn = Math.abs(x - mid) <= 3 && Math.abs(z - mid) <= 3;
-      terrain.push(edge ? 'water' : spawn ? 'grass' : forest[z * n + x] ? 'forest' : 'grass');
+      // Island shape: lumpy fractal noise, pulled to the sea only near the rim so the coast is irregular.
+      const dx = (x - mid) / mid;
+      const dz = (z - mid) / mid;
+      const d = Math.hypot(dx, dz);
+      const shore = 1 - Math.min(1, Math.max(0, (d - 0.62) / 0.4));
+      const ridges = Math.abs(fbm(s32 ^ 0x7f4a, x / 9, z / 9, 2) - 0.5) * 2; // 0 on ridgelines, 1 in basins
+      let e = fbm(s32, x / 5.5, z / 5.5, 4) * 0.82 + (1 - ridges) * 0.18;
+      e = e * 0.94 * (shore * shore * (3 - 2 * shore)) + 0.06 * shore;
+      // The starting meadow is flat grass; it blends into the noise over three tiles.
+      const dm = Math.max(Math.abs(x - Math.floor(n / 2)), Math.abs(z - Math.floor(n / 2)));
+      const level0 = Math.round(e * (MAX_LEVEL + 2.2));
+      const blend = dm <= 3 ? 1 : dm <= 6 ? 1 - (dm - 3) / 3 : 0;
+      let level = Math.round(level0 * (1 - blend) + MEADOW_LEVEL * blend);
+      level = Math.min(MAX_LEVEL, Math.max(0, level));
+      if (edge) level = 0;
+      let kind: TerrainKind;
+      if (level <= WATER_LEVEL) kind = 'water';
+      else if (level === WATER_LEVEL + 1 && dm > 3) kind = 'sand';
+      else if (level >= MAX_LEVEL && dm > 6) kind = 'rock';
+      else kind = fbm(forestSeed, x / 3.2, z / 3.2, 2) > 0.62 && dm > 3 ? 'forest' : 'grass';
+      height.push(level);
+      terrain.push(kind);
     }
   }
   return {
     version: 1,
-    seed: seed >>> 0,
+    seed: s32,
     size: n,
     tick: 0,
     accMs: 0,
-    rng,
+    rng: s32,
     nextId: 1,
     terrain,
+    height,
     buildings: [],
     crops: [],
     players: {},
   };
+}
+
+/** World-space height of a tile's top surface (water sits at one fixed level). */
+export function tileTop(w: World, x: number, z: number): number {
+  const tx = Math.round(x);
+  const tz = Math.round(z);
+  if (!(tx >= 0 && tz >= 0 && tx < w.size && tz < w.size)) return 0;
+  const i = tz * w.size + tx;
+  return (w.terrain[i] === 'water' ? WATER_LEVEL : w.height[i]) * LEVEL_HEIGHT;
 }
 
 export const buildingAt = (w: World, x: number, z: number): Building | undefined =>
