@@ -227,3 +227,7 @@ the video (or it has focus); on touch it stays, softened. Live-stream discovery 
 (PBS, ABC, NBC, CBS, AP, C-SPAN, Reuters, Sky, Bloomberg, NYT, CNN, CNBC, MS NOW, The Hill, The Washington Post,
 Newsmax, BBC News, Al Jazeera English, DW News, FRANCE 24 English, Forbes Breaking News); each id was checked
 against its channel page.
+
+With the room bar set to hide, each **pane header hides too**: the pane body takes the full height and the header
+fades in over the top of the pane when the pointer is on a thin strip just under the pane's top edge (marked by a
+small tab), or when anything in it has keyboard focus. The one pin toggle controls both.

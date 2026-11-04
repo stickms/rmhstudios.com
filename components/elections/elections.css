@@ -2615,3 +2615,59 @@ html.ios-webkit .el-room__grid {
     opacity: 0.7;
   }
 }
+
+/* ── Auto-hide extends to each pane's header ──────────────────────────────────────────────────────────────
+ * With the room bar set to hide, every pane header leaves the layout too (the pane body takes the full height)
+ * and fades in over the top of the pane when the pointer is on a thin strip along its top edge, or when
+ * anything in it has keyboard focus. Opacity and pointer-events only (no transform), so it reveals reliably.
+ */
+.el-room__panehot {
+  display: none;
+}
+.el-room[data-bar='auto'] .el-room__pane {
+  position: relative;
+}
+.el-room[data-bar='auto'] .el-room__panehot {
+  display: block;
+  position: absolute;
+  /* Starts just below the room bar's own strip (14px) so a pane at the very top of the screen has both. */
+  top: 14px;
+  left: 0;
+  right: 0;
+  z-index: 7;
+  height: 14px;
+}
+.el-room[data-bar='auto'] .el-room__panehot::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 40px;
+  height: 4px;
+  margin-left: -20px;
+  border-radius: 0 0 3px 3px;
+  background: var(--el-purple);
+  opacity: 0.7;
+}
+.el-room[data-bar='auto'] .el-room__panebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 8;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.el-room[data-bar='auto'] .el-room__panehot:hover + .el-room__panebar,
+.el-room[data-bar='auto'] .el-room__panebar:hover,
+.el-room[data-bar='auto'] .el-room__panebar:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+.el-room[data-bar='auto'] .el-room__panehot:hover::after {
+  opacity: 0;
+}
+.el-room[data-bar='auto'] .el-room__panebody {
+  padding-top: 0;
+}
