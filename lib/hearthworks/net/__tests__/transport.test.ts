@@ -3,6 +3,7 @@ import { FakeNet, fakeConnection, type PathConfig } from '../../../shared/p2p/fa
 import type { Scheduler } from '../../../shared/p2p/connector';
 import { createHearthworksStore } from '../../store';
 import { TICK_MS, createWorld, stepWorld } from '../../world';
+import { newFarmhand } from '../../world/farmhands';
 import { channelPairToLink } from '../channel-link';
 import { signalPayload } from '../connector';
 import { hostDriver, peerDriver } from '../driver';
@@ -160,7 +161,7 @@ describe('identity', () => {
     const w = createWorld(5, 24);
     stepWorld(w, 0, [{ type: 'join', playerId: LOCAL_PLAYER_ID }]);
     w.players[LOCAL_PLAYER_ID].money = 777;
-    w.workers.push({ id: 90, ownerId: LOCAL_PLAYER_ID, role: 'farmer', homeX: 1, homeZ: 1, x: 1, z: 1, lastCrop: null, nextActTick: 0, nextWageTick: 0 });
+    w.workers.push(newFarmhand(90, LOCAL_PLAYER_ID, { x: 1, z: 1 }, { x: 1, z: 1 }, 0, 100));
     rekeyPlayer(w, LOCAL_PLAYER_ID, 'acct-1');
     expect(Object.keys(w.players)).toEqual(['acct-1']);
     expect(w.players['acct-1']).toMatchObject({ id: 'acct-1', money: 777 });

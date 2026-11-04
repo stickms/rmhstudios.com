@@ -92,7 +92,7 @@ export class FakePeers {
   kill(label: string): void {
     for (const c of this.connections) {
       if (c.hostLabel !== label && c.memberLabel !== label) continue;
-      for (const ch of [c.host.unreliable, c.host.reliable, c.member.unreliable, c.member.reliable]) (ch as { kill(): void }).kill();
+      for (const ch of [c.host.unreliable, c.host.reliable, c.member.unreliable, c.member.reliable]) (ch as unknown as { kill(): void }).kill();
     }
   }
 
