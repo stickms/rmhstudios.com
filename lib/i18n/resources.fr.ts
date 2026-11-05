@@ -20,6 +20,7 @@ import frCEconomy from "@/locales/fr/c-economy.json";
 import frCElections from "@/locales/fr/c-elections.json";
 import frCGabrielsHorn from "@/locales/fr/c-gabriels-horn.json";
 import frCGame from "@/locales/fr/c-game.json";
+import frCHearthworks from "@/locales/fr/c-hearthworks.json";
 import frCHistory from "@/locales/fr/c-history.json";
 import frCHouseAlwaysWins from "@/locales/fr/c-house-always-wins.json";
 import frCKaikaiDebt from "@/locales/fr/c-kaikai-debt.json";
@@ -116,6 +117,7 @@ const frResources = {
   "c-elections": frCElections,
   "c-gabriels-horn": frCGabrielsHorn,
   "c-game": frCGame,
+  "c-hearthworks": frCHearthworks,
   "c-history": frCHistory,
   "c-house-always-wins": frCHouseAlwaysWins,
   "c-kaikai-debt": frCKaikaiDebt,

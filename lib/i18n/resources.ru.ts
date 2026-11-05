@@ -20,6 +20,7 @@ import ruCEconomy from "@/locales/ru/c-economy.json";
 import ruCElections from "@/locales/ru/c-elections.json";
 import ruCGabrielsHorn from "@/locales/ru/c-gabriels-horn.json";
 import ruCGame from "@/locales/ru/c-game.json";
+import ruCHearthworks from "@/locales/ru/c-hearthworks.json";
 import ruCHistory from "@/locales/ru/c-history.json";
 import ruCHouseAlwaysWins from "@/locales/ru/c-house-always-wins.json";
 import ruCKaikaiDebt from "@/locales/ru/c-kaikai-debt.json";
@@ -116,6 +117,7 @@ const ruResources = {
   "c-elections": ruCElections,
   "c-gabriels-horn": ruCGabrielsHorn,
   "c-game": ruCGame,
+  "c-hearthworks": ruCHearthworks,
   "c-history": ruCHistory,
   "c-house-always-wins": ruCHouseAlwaysWins,
   "c-kaikai-debt": ruCKaikaiDebt,

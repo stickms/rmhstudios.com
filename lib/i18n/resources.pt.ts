@@ -20,6 +20,7 @@ import ptCEconomy from "@/locales/pt/c-economy.json";
 import ptCElections from "@/locales/pt/c-elections.json";
 import ptCGabrielsHorn from "@/locales/pt/c-gabriels-horn.json";
 import ptCGame from "@/locales/pt/c-game.json";
+import ptCHearthworks from "@/locales/pt/c-hearthworks.json";
 import ptCHistory from "@/locales/pt/c-history.json";
 import ptCHouseAlwaysWins from "@/locales/pt/c-house-always-wins.json";
 import ptCKaikaiDebt from "@/locales/pt/c-kaikai-debt.json";
@@ -116,6 +117,7 @@ const ptResources = {
   "c-elections": ptCElections,
   "c-gabriels-horn": ptCGabrielsHorn,
   "c-game": ptCGame,
+  "c-hearthworks": ptCHearthworks,
   "c-history": ptCHistory,
   "c-house-always-wins": ptCHouseAlwaysWins,
   "c-kaikai-debt": ptCKaikaiDebt,

@@ -20,6 +20,7 @@ import arCEconomy from "@/locales/ar/c-economy.json";
 import arCElections from "@/locales/ar/c-elections.json";
 import arCGabrielsHorn from "@/locales/ar/c-gabriels-horn.json";
 import arCGame from "@/locales/ar/c-game.json";
+import arCHearthworks from "@/locales/ar/c-hearthworks.json";
 import arCHistory from "@/locales/ar/c-history.json";
 import arCHouseAlwaysWins from "@/locales/ar/c-house-always-wins.json";
 import arCKaikaiDebt from "@/locales/ar/c-kaikai-debt.json";
@@ -118,6 +119,7 @@ const arResources = {
   "c-elections": arCElections,
   "c-gabriels-horn": arCGabrielsHorn,
   "c-game": arCGame,
+  "c-hearthworks": arCHearthworks,
   "c-history": arCHistory,
   "c-house-always-wins": arCHouseAlwaysWins,
   "c-kaikai-debt": arCKaikaiDebt,

@@ -20,6 +20,7 @@ import esCEconomy from "@/locales/es/c-economy.json";
 import esCElections from "@/locales/es/c-elections.json";
 import esCGabrielsHorn from "@/locales/es/c-gabriels-horn.json";
 import esCGame from "@/locales/es/c-game.json";
+import esCHearthworks from "@/locales/es/c-hearthworks.json";
 import esCHistory from "@/locales/es/c-history.json";
 import esCHouseAlwaysWins from "@/locales/es/c-house-always-wins.json";
 import esCKaikaiDebt from "@/locales/es/c-kaikai-debt.json";
@@ -116,6 +117,7 @@ const esResources = {
   "c-elections": esCElections,
   "c-gabriels-horn": esCGabrielsHorn,
   "c-game": esCGame,
+  "c-hearthworks": esCHearthworks,
   "c-history": esCHistory,
   "c-house-always-wins": esCHouseAlwaysWins,
   "c-kaikai-debt": esCKaikaiDebt,

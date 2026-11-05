@@ -20,6 +20,7 @@ import koCEconomy from "@/locales/ko/c-economy.json";
 import koCElections from "@/locales/ko/c-elections.json";
 import koCGabrielsHorn from "@/locales/ko/c-gabriels-horn.json";
 import koCGame from "@/locales/ko/c-game.json";
+import koCHearthworks from "@/locales/ko/c-hearthworks.json";
 import koCHistory from "@/locales/ko/c-history.json";
 import koCHouseAlwaysWins from "@/locales/ko/c-house-always-wins.json";
 import koCKaikaiDebt from "@/locales/ko/c-kaikai-debt.json";
@@ -116,6 +117,7 @@ const koResources = {
   "c-elections": koCElections,
   "c-gabriels-horn": koCGabrielsHorn,
   "c-game": koCGame,
+  "c-hearthworks": koCHearthworks,
   "c-history": koCHistory,
   "c-house-always-wins": koCHouseAlwaysWins,
   "c-kaikai-debt": koCKaikaiDebt,

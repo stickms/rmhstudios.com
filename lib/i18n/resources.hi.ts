@@ -20,6 +20,7 @@ import hiCEconomy from "@/locales/hi/c-economy.json";
 import hiCElections from "@/locales/hi/c-elections.json";
 import hiCGabrielsHorn from "@/locales/hi/c-gabriels-horn.json";
 import hiCGame from "@/locales/hi/c-game.json";
+import hiCHearthworks from "@/locales/hi/c-hearthworks.json";
 import hiCHistory from "@/locales/hi/c-history.json";
 import hiCHouseAlwaysWins from "@/locales/hi/c-house-always-wins.json";
 import hiCKaikaiDebt from "@/locales/hi/c-kaikai-debt.json";
@@ -116,6 +117,7 @@ const hiResources = {
   "c-elections": hiCElections,
   "c-gabriels-horn": hiCGabrielsHorn,
   "c-game": hiCGame,
+  "c-hearthworks": hiCHearthworks,
   "c-history": hiCHistory,
   "c-house-always-wins": hiCHouseAlwaysWins,
   "c-kaikai-debt": hiCKaikaiDebt,
