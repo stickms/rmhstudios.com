@@ -57,6 +57,7 @@ developer-api/index
 codebase-overview
 architecture
 testing
+hearthworks-multiplayer
 frontend-webassembly
 performance-slo
 status-page

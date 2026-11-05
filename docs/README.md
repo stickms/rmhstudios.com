@@ -35,6 +35,9 @@ writing, not necessarily the current code).
 
 ## Reference docs (keep current)
 
+- [`hearthworks-multiplayer.md`](./hearthworks-multiplayer.md) — Hearthworks P2P multiplayer: wire
+  protocol v2 (host→peer refusals), room passwords, remote-player interpolation, the real-WebRTC
+  Chromium e2e (`pnpm test:hearthworks:e2e`) and what loopback cannot prove.
 - [`frontend-webassembly.md`](./frontend-webassembly.md) — the globe's dough and
   Peirce kernels, source map, JavaScript fallbacks, build/test/benchmark commands,
   hashed deployment assets and the one-time Apache CSP update.
