@@ -1,22 +1,27 @@
 'use client';
 
 /**
- * The crime route in the scene: the police (drawn with the same Figure as everyone, at their live mover position),
- * the gun in the player's hand, tracers and muzzle flashes, and the F / R keys. The sim owns every outcome; this
- * only shows it. Tracers and flashes live in two fixed InstancedMeshes (no allocation per shot or per frame).
+ * The crime route in the scene: the police (drawn with the same SkinFigure as everyone, at their live mover position,
+ * shooting, flinching and dying with their model's clips), tracers and muzzle flashes, and the F / R keys. The player's
+ * own gun is held by the avatar (Avatar.tsx). The sim owns every outcome; this only shows it. Tracers and flashes
+ * live in two fixed InstancedMeshes (no allocation per shot or per frame).
  */
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { PALETTE } from '@/lib/hearthworks/art';
 import { createCombatControls } from '@/lib/hearthworks/combat-input';
 import { moverY } from '@/lib/hearthworks/nav';
+import type { OfficerKind } from '@/lib/hearthworks/content';
 import { runtime } from '@/lib/hearthworks/runtime-instance';
-import { SKIN_LOOKS } from '@/lib/hearthworks/skins';
+import { newDrive, pushTrigger } from '@/lib/hearthworks/skins/animator';
+import { MotionEstimator } from '@/lib/hearthworks/skins/motion-estimator';
 import { hearthworksStore, useHearthworks } from '@/lib/hearthworks/store';
 import { tileTop, type WorldEvent } from '@/lib/hearthworks/world';
-import { Figure } from './Figure';
+import { driveFromEvents } from './figure-events';
+import { GunProp } from './GunProp';
+import { SkinFigure } from './SkinFigure';
 
 const SLOTS = 24;
 const TRACER_MS = 130;
@@ -28,12 +33,28 @@ const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement &&
   (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
 
-function GunProp({ color }: { color: string }) {
+/** What an officer looked like last frame, kept so a downed one can be drawn where it fell. */
+interface Seen {
+  kind: OfficerKind;
+  x: number;
+  y: number;
+  z: number;
+  aim: number;
+}
+const lastSeen = new Map<number, Seen>();
+
+/** How long a fallen officer lies in the scene before it is gone. */
+const DYING_MS = 2600;
+
+function OfficerGun({ flash }: { flash?: RefObject<THREE.Mesh | null> }) {
   return (
-    <mesh position={[0, 0, 0.07]}>
-      <boxGeometry args={[0.022, 0.034, 0.15]} />
-      <meshStandardMaterial color={color} roughness={0.7} />
-    </mesh>
+    <>
+      <GunProp color={PALETTE.ink} />
+      <mesh ref={flash} position={[0, 0, 0.17]} visible={false}>
+        <sphereGeometry args={[0.04, 8, 6]} />
+        <meshBasicMaterial color={PALETTE.butter} />
+      </mesh>
+    </>
   );
 }
 
@@ -43,8 +64,13 @@ function OfficerFigure({ id }: { id: number }) {
   const legR = useRef<THREE.Group>(null);
   const flash = useRef<THREE.Mesh>(null);
   const kind = useHearthworks((s) => s.world.officers.find((o) => o.id === id)?.kind ?? 'metrocop');
-  const look = SKIN_LOOKS[kind];
   const phase = useRef(0);
+  const drive = useMemo(() => newDrive(), []);
+  const motion = useMemo(() => new MotionEstimator({ follow: 18 }), []);
+  const lastFired = useRef(-1);
+
+  // Wounds the world reports play the hurt clip; shots are caught below from the officer's own fire tick.
+  useEffect(() => driveFromEvents(hearthworksStore, { kind: 'officer', id }, drive), [drive, id]);
 
   useFrame((_, delta) => {
     const w = hearthworksStore.getState().world;
@@ -56,26 +82,41 @@ function OfficerFigure({ id }: { id: number }) {
       return;
     }
     g.visible = true;
-    g.position.set(o.mover.x, moverY(w, o.mover), o.mover.z);
+    const y = moverY(w, o.mover);
+    g.position.set(o.mover.x, y, o.mover.z);
     g.rotation.y = o.aim;
+    lastSeen.set(id, { kind: o.kind, x: o.mover.x, y, z: o.mover.z, aim: o.aim });
     const walking = o.mover.path.length > 0;
     phase.current += walking ? Math.min(delta, 0.1) * 9 : 0;
     const swing = walking ? Math.sin(phase.current) * 0.7 : 0;
     if (legL.current) legL.current.rotation.x = swing;
     if (legR.current) legR.current.rotation.x = -swing;
-    if (flash.current) flash.current.visible = w.tick - o.firedTick <= 1;
+    const firing = w.tick - o.firedTick <= 1;
+    if (flash.current) flash.current.visible = firing;
+    if (firing && o.firedTick !== lastFired.current) pushTrigger(drive, 'shoot');
+    lastFired.current = o.firedTick;
+    // Speed from how the mover actually moves between sightings, so the model walks when they walk.
+    motion.observe(o.mover.x, y, o.mover.z);
+    drive.speed = motion.step(delta).speed;
   });
 
   return (
     <group ref={root}>
-      <Figure look={look} refs={{ legL, legR }} />
-      <group position={[-0.07, 0.2, 0.06]}>
-        <GunProp color={PALETTE.ink} />
-        <mesh ref={flash} position={[0, 0, 0.17]} visible={false}>
-          <sphereGeometry args={[0.04, 8, 6]} />
-          <meshBasicMaterial color={PALETTE.butter} />
-        </mesh>
-      </group>
+      <SkinFigure skin={kind} drive={drive} refs={{ legL, legR }} held={<OfficerGun flash={flash} />} />
+    </group>
+  );
+}
+
+/** A downed officer: plays its death clip (or topples) where it fell, then is gone. */
+function FallenOfficer({ seen }: { seen: Seen }) {
+  const drive = useMemo(() => {
+    const d = newDrive();
+    d.dead = true;
+    return d;
+  }, []);
+  return (
+    <group position={[seen.x, seen.y, seen.z]} rotation={[0, seen.aim, 0]}>
+      <SkinFigure skin={seen.kind} drive={drive} held={<OfficerGun />} />
     </group>
   );
 }
@@ -83,10 +124,45 @@ function OfficerFigure({ id }: { id: number }) {
 function Officers() {
   const officers = useHearthworks((s) => s.world.officers);
   useHearthworks((s) => s.rev);
+  const [fallen, setFallen] = useState<Array<{ key: number; seen: Seen }>>([]);
+
+  useEffect(() => {
+    let n = 0;
+    const timers = new Set<number>();
+    const unsub = hearthworksStore.subscribe((s, prev) => {
+      if (s.lastEvents === prev.lastEvents) return;
+      for (const e of s.lastEvents) {
+        if (e.type !== 'officerDown') continue;
+        const seen = lastSeen.get(e.officerId);
+        if (!seen) continue;
+        const key = ++n;
+        setFallen((f) => [...f.slice(-5), { key, seen }]);
+        const t = window.setTimeout(() => {
+          timers.delete(t);
+          setFallen((f) => f.filter((q) => q.key !== key));
+        }, DYING_MS);
+        timers.add(t);
+      }
+    });
+    return () => {
+      unsub();
+      for (const t of timers) window.clearTimeout(t);
+    };
+  }, []);
+
+  // Forget officers that are gone, so the map stays the size of the force (after the fallen have been copied out).
+  useEffect(() => {
+    const live = new Set(officers.map((o) => o.id));
+    for (const id of [...lastSeen.keys()]) if (!live.has(id)) lastSeen.delete(id);
+  }, [officers]);
+
   return (
     <>
       {officers.map((o) => (
         <OfficerFigure key={o.id} id={o.id} />
+      ))}
+      {fallen.map((f) => (
+        <FallenOfficer key={f.key} seen={f.seen} />
       ))}
     </>
   );
@@ -105,14 +181,12 @@ interface Fx {
 
 /** The player's gun, tracers, flashes, and the keyboard. */
 function PlayerCombat() {
-  const gun = useRef<THREE.Group>(null);
   const tracers = useRef<THREE.InstancedMesh>(null);
   const flashes = useRef<THREE.InstancedMesh>(null);
   const fxs = useRef<Fx[]>([]);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const controls = useMemo(() => createCombatControls(hearthworksStore, runtime), []);
   const held = useRef(false);
-  const equipped = useHearthworks((s) => s.world.players[s.playerId]?.arms.equipped ?? null);
 
   useEffect(() => {
     // Shots and respawns arrive as events; turn them into short-lived effects.
@@ -174,12 +248,6 @@ function PlayerCombat() {
 
   useFrame(() => {
     if (held.current) controls.fire();
-    const a = runtime.avatar;
-    const g = gun.current;
-    if (g) {
-      g.position.set(a.x, runtime.avatarY, a.z);
-      g.rotation.y = a.yaw;
-    }
     const now = performance.now();
     const list = fxs.current;
     while (list.length > 0 && now - list[0].t0 > TRACER_MS) list.shift();
@@ -220,11 +288,6 @@ function PlayerCombat() {
 
   return (
     <>
-      <group ref={gun} visible={equipped !== null}>
-        <group position={[-0.07, 0.2, 0.06]}>
-          <GunProp color={PALETTE.ink} />
-        </group>
-      </group>
       <instancedMesh
         ref={tracers}
         args={[undefined, undefined, SLOTS]}

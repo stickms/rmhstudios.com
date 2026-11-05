@@ -17,6 +17,7 @@ import { hearthworksStore, useHearthworks } from '@/lib/hearthworks/store';
 import { runtime } from '@/lib/hearthworks/runtime-instance';
 import { interactAt } from '@/lib/hearthworks/tools';
 import { Avatar } from './Avatar';
+import { FigureSystem } from './figure-system';
 import Combat from './Combat';
 import { People } from './People';
 import { RemotePlayers } from './RemotePlayers';
@@ -167,10 +168,12 @@ export default function Scene() {
       <Ticker />
       <CameraRig />
       <Board />
-      <Avatar />
-      <People />
-      <Combat />
-      <RemotePlayers />
+      <FigureSystem>
+        <Avatar />
+        <People />
+        <Combat />
+        <RemotePlayers />
+      </FigureSystem>
     </Canvas>
   );
 }

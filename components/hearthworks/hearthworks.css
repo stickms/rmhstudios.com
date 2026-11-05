@@ -122,6 +122,28 @@
   font-size: 0.875rem;
 }
 
+.hw-preview {
+  height: 168px;
+  margin: 0 0 4px;
+  overflow: hidden;
+  border-radius: var(--hw-radius-sm);
+  background: var(--hw-sky);
+}
+
+.hw-name {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.hw-name[aria-pressed='true'] {
+  font-weight: 700;
+}
+
 .hw-small {
   min-height: 32px;
   padding: 0 12px;
