@@ -1,0 +1,329 @@
+{
+  "_comment": "Hearthworks skin id -> Source model + the Source sequences baked into each gameplay clip. A clip is a sequence name ({seq}), an activity regex ({act}) or a name regex ({match}); a list is tried in order; 'trim' keeps source frames [first,last]; 'fps' overrides the sequence rate; 'pose' picks the blend cell of 9-way movement blends (HL2 move_yaw 0 = forward; TF2 move_x 1 = forward). 'extraModels' adds animation files of the same ValveBiped rig family to the virtual model so their sequences can be named (bones are matched by name). HL2 NPC models have no authored death animation: 'cit_door' frames 12-52 (the male citizen set's knock-down) is borrowed for every skin that has one.",
+  "defaults": {
+    "texCap": 512,
+    "maxBones": 64,
+    "maxTris": 12000
+  },
+  "skins": {
+    "citizen": {
+      "mdl": "models/humans/group01/male_01.mdl",
+      "handBone": "ValveBiped.Bip01_R_Hand",
+      "clips": {
+        "idle": "idle_subtle",
+        "walk": "walk_all",
+        "run": "run_all",
+        "jump": {
+          "seq": "jump_holding_jump"
+        },
+        "fall": {
+          "seq": "jump_holding_glide",
+          "loop": true
+        },
+        "shoot": {
+          "seq": "shootp1",
+          "fps": 12
+        },
+        "reload": "reload_pistol",
+        "hurt": "Fear_Reaction",
+        "death": {
+          "seq": "cit_door",
+          "trim": [
+            12,
+            52
+          ]
+        },
+        "interact": "Open_door_away"
+      }
+    },
+    "worker": {
+      "mdl": "models/humans/group03/male_02.mdl",
+      "handBone": "ValveBiped.Bip01_R_Hand",
+      "clipsFrom": "citizen"
+    },
+    "rebel": {
+      "mdl": "models/humans/group03/female_01.mdl",
+      "handBone": "ValveBiped.Bip01_R_Hand",
+      "clips": {
+        "idle": "idle_subtle",
+        "walk": "walk_all",
+        "run": "run_all",
+        "jump": {
+          "seq": "jump_holding_jump"
+        },
+        "fall": {
+          "seq": "jump_holding_glide",
+          "loop": true
+        },
+        "shoot": {
+          "seq": "shootp1",
+          "fps": 12
+        },
+        "reload": "reloadpistol",
+        "hurt": "Fear_Reaction",
+        "interact": "Open_door_away",
+        "death": {
+          "seq": "cit_door",
+          "trim": [
+            12,
+            52
+          ]
+        }
+      },
+      "extraModels": [
+        "models/humans/male_shared.mdl"
+      ]
+    },
+    "barney": {
+      "mdl": "models/barney.mdl",
+      "handBone": "ValveBiped.Bip01_R_Hand",
+      "clips": {
+        "idle": "idle_subtle",
+        "walk": "walk_all",
+        "run": "run_all",
+        "jump": {
+          "seq": "jump_holding_jump"
+        },
+        "fall": {
+          "seq": "jump_holding_glide",
+          "loop": true
+        },
+        "shoot": {
+          "seq": "shootp1",
+          "fps": 12
+        },
+        "reload": "reload_pistol",
+        "hurt": "Fear_Reaction",
+        "death": {
+          "seq": "cit_door",
+          "trim": [
+            12,
+            52
+          ]
+        },
+        "interact": "Open_door_away"
+      }
+    },
+    "metrocop": {
+      "mdl": "models/police.mdl",
+      "handBone": "ValveBiped.Bip01_R_Hand",
+      "clips": {
+        "idle": "batonidle1",
+        "walk": "walk_all",
+        "run": "run_all",
+        "shoot": {
+          "seq": "shootp1"
+        },
+        "reload": "reload_pistol",
+        "hurt": "flinch2",
+        "interact": "thrust",
+        "jump": {
+          "seq": "jump_holding_jump"
+        },
+        "fall": {
+          "seq": "jump_holding_glide",
+          "loop": true
+        },
+        "death": {
+          "seq": "cit_door",
+          "trim": [
+            12,
+            52
+          ]
+        }
+      },
+      "extraModels": [
+        "models/humans/male_shared.mdl"
+      ]
+    },
+    "combine-soldier": {
+      "mdl": "models/combine_soldier.mdl",
+      "handBone": "ValveBiped.Bip01_R_Hand",
+      "clips": {
+        "idle": "Idle_Unarmed",
+        "walk": "WalkEasy_all",
+        "run": "RunALL",
+        "jump": {
+          "seq": "jump_holding_jump"
+        },
+        "fall": {
+          "seq": "jump_holding_glide",
+          "loop": true
+        },
+        "shoot": {
+          "seq": "shootSMG1s"
+        },
+        "reload": "reload",
+        "hurt": "flinchbig",
+        "interact": "signal_advance",
+        "death": {
+          "seq": "cit_door",
+          "trim": [
+            12,
+            52
+          ]
+        }
+      },
+      "extraModels": [
+        "models/humans/male_shared.mdl"
+      ]
+    },
+    "combine-elite": {
+      "mdl": "models/combine_super_soldier.mdl",
+      "handBone": "ValveBiped.Bip01_R_Hand",
+      "clipsFrom": "combine-soldier",
+      "extraModels": [
+        "models/humans/male_shared.mdl"
+      ]
+    },
+    "breen": {
+      "mdl": "models/breen.mdl",
+      "handBone": "ValveBiped.Bip01_R_Hand",
+      "clips": {
+        "idle": "B_idle01",
+        "walk": "walk_all_Moderate",
+        "run": "run_all",
+        "jump": {
+          "seq": "jump_holding_jump"
+        },
+        "fall": {
+          "seq": "jump_holding_glide",
+          "loop": true
+        },
+        "shoot": {
+          "seq": "shootp1",
+          "fps": 12
+        },
+        "reload": "reload_pistol",
+        "hurt": "Fear_Reaction",
+        "death": {
+          "seq": "cit_door",
+          "trim": [
+            12,
+            52
+          ]
+        },
+        "interact": "Open_door_away"
+      }
+    },
+    "gman": {
+      "mdl": "models/gman.mdl",
+      "handBone": "ValveBiped.Bip01_R_Hand",
+      "clips": {
+        "idle": "idle_subtle",
+        "walk": "walk_all_Moderate",
+        "run": "run_all",
+        "jump": {
+          "seq": "jump_holding_jump"
+        },
+        "fall": {
+          "seq": "jump_holding_glide",
+          "loop": true
+        },
+        "shoot": {
+          "seq": "shootp1",
+          "fps": 12
+        },
+        "reload": "reload_pistol",
+        "hurt": "Fear_Reaction",
+        "death": {
+          "seq": "cit_door",
+          "trim": [
+            12,
+            52
+          ]
+        },
+        "interact": "tiefidget"
+      }
+    },
+    "_tf2_note": "TF2 class entries below are UNTESTED: no public copy of the TF2 player models could be found for this import. They name TF2's own activities (ACT_MP_*) and are meant for `--steam <TF2 install>` on the owner's machine; each clip that does not resolve is reported and skipped (idle and walk are required).",
+    "scout": {
+      "mdl": "models/player/scout.mdl",
+      "handBone": "bip_hand_R",
+      "clipsFrom": "_tf2_melee"
+    },
+    "soldier": {
+      "mdl": "models/player/soldier.mdl",
+      "handBone": "bip_hand_R",
+      "clipsFrom": "_tf2_melee"
+    },
+    "pyro": {
+      "mdl": "models/player/pyro.mdl",
+      "handBone": "bip_hand_R",
+      "clipsFrom": "_tf2_melee"
+    },
+    "demoman": {
+      "mdl": "models/player/demo.mdl",
+      "handBone": "bip_hand_R",
+      "clipsFrom": "_tf2_melee"
+    },
+    "heavy": {
+      "mdl": "models/player/heavy.mdl",
+      "handBone": "bip_hand_R",
+      "clipsFrom": "_tf2_melee"
+    },
+    "engineer": {
+      "mdl": "models/player/engineer.mdl",
+      "handBone": "bip_hand_R",
+      "clipsFrom": "_tf2_melee"
+    },
+    "medic": {
+      "mdl": "models/player/medic.mdl",
+      "handBone": "bip_hand_R",
+      "clipsFrom": "_tf2_melee"
+    },
+    "sniper": {
+      "mdl": "models/player/sniper.mdl",
+      "handBone": "bip_hand_R",
+      "clipsFrom": "_tf2_melee"
+    },
+    "spy": {
+      "mdl": "models/player/spy.mdl",
+      "handBone": "bip_hand_R",
+      "clipsFrom": "_tf2_melee"
+    },
+    "_tf2_melee": {
+      "clips": {
+        "idle": {
+          "act": "^ACT_MP_STAND_MELEE$"
+        },
+        "walk": [
+          {
+            "act": "^ACT_MP_WALK_MELEE$",
+            "pose": {
+              "move_x": 1,
+              "move_y": 0
+            }
+          },
+          {
+            "act": "^ACT_MP_RUN_MELEE$",
+            "pose": {
+              "move_x": 1,
+              "move_y": 0
+            }
+          }
+        ],
+        "run": {
+          "act": "^ACT_MP_RUN_MELEE$",
+          "pose": {
+            "move_x": 1,
+            "move_y": 0
+          }
+        },
+        "jump": {
+          "act": "^ACT_MP_JUMP_START_MELEE$"
+        },
+        "fall": {
+          "act": "^ACT_MP_JUMP_FLOAT_MELEE$",
+          "loop": true
+        },
+        "shoot": {
+          "act": "^ACT_MP_ATTACK_STAND_MELEE$"
+        },
+        "death": {
+          "match": "^(death|dying|die)"
+        }
+      }
+    }
+  }
+}
