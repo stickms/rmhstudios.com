@@ -15,6 +15,8 @@ const entry: AppInfo = {
   color: 'from-emerald-500/20 to-cyan-600/20 hover:border-emerald-500/50',
   tags: ['Typing', 'Multiplayer', 'Competitive', 'Beta'],
   imagePath: '/images/games/rmhtype.webp',
+  bannerPath: '/images/games/banners/rmhtype.webp',
+  logoPath: '/images/games/logos/rmhtype.webp',
   authGate: true,
 };
 

@@ -112,10 +112,10 @@ describe('catalog barrel', () => {
     expect(problems).toEqual([]);
   });
 
-  it('every game has a banner and a logo for its library page', () => {
+  it('every game and app has a banner and a logo for its library page', () => {
     // The page shows the banner behind the card and the logo as the title; without them it falls back to a blurred
     // copy of the card and plain text, which is the look this replaced.
-    const missing = games.filter((e) => !e.unlisted).flatMap((e) => [
+    const missing = [...games, ...apps].filter((e) => !e.unlisted).flatMap((e) => [
       ...(e.bannerPath ? [] : [`${e.id}: no bannerPath`]),
       ...(e.logoPath ? [] : [`${e.id}: no logoPath`]),
     ]);

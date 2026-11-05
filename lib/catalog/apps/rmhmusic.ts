@@ -17,6 +17,8 @@ const entry: AppInfo = {
   color: 'from-purple-500/20 to-indigo-600/20 hover:border-purple-500/50',
   tags: ['Music', 'Spotify', 'Real-time', 'Beta'],
   imagePath: '/images/games/rmhmusic.webp',
+  bannerPath: '/images/games/banners/rmhmusic.webp',
+  logoPath: '/images/games/logos/rmhmusic.webp',
   authGate: true,
 };
 
