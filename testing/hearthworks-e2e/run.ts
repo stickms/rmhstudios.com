@@ -66,7 +66,7 @@ async function agree(a: Player, b: Player, minCommon = 8, timeoutMs = 20_000): P
 }
 
 const spot = (size: number, dx: number, dz = 0) => ({ x: Math.floor(size / 2) + dx, z: Math.floor(size / 2) + dz });
-const place = (kind: 'road' | 'cottage', p: { x: number; z: number }) => ({ type: 'place' as const, kind, ...p });
+const place = (kind: 'park' | 'cottage', p: { x: number; z: number }) => ({ type: 'place' as const, kind, ...p });
 const moneys = (s: { players: Record<string, { money: number }> }) => Object.fromEntries(Object.entries(s.players).map(([k, v]) => [k, v.money]));
 
 async function startRoom(host: Player, opts: Record<string, unknown> = {}): Promise<string> {
@@ -111,8 +111,8 @@ const SCENARIOS: Record<string, Scenario> = {
       });
       await step('commands round-trip and the three worlds converge', async () => {
         await ann.ev((hw, c) => hw.dispatch(c), place('cottage', spot(SIZE, 1)));
-        await bob.ev((hw, c) => hw.dispatch(c), place('road', spot(SIZE, 2)));
-        await host.ev((hw, c) => hw.dispatch(c), place('road', spot(SIZE, 3)));
+        await bob.ev((hw, c) => hw.dispatch(c), place('park', spot(SIZE, 2)));
+        await host.ev((hw, c) => hw.dispatch(c), place('park', spot(SIZE, 3)));
         for (const p of [host, ann, bob]) await p.until('3 buildings', (hw) => hw.summary().buildings.length === 3);
         await agree(host, ann);
         await agree(host, bob);
@@ -120,7 +120,7 @@ const SCENARIOS: Record<string, Scenario> = {
       await step("a refused command comes back to the peer that issued it, and to nobody else", async () => {
         // The host builds on a tile in the same tick ann builds on it: ann predicts success, the host says no.
         const t = spot(SIZE, 1, 2);
-        await host.ev((hw, c) => hw.dispatch(c), place('road', t));
+        await host.ev((hw, c) => hw.dispatch(c), place('park', t));
         await ann.ev((hw, c) => hw.dispatch(c), place('cottage', t));
         await ann.until('ann is told', (hw) => hw.rejected().some((e) => e.reason === 'occupied'));
         const [onAnn, onBob, onHost] = await Promise.all([ann, bob, host].map((p) => p.ev((hw) => hw.rejected() as { reason: string; playerId: string }[])));
@@ -150,7 +150,7 @@ const SCENARIOS: Record<string, Scenario> = {
         await agree(ann, bob);
       });
       await step('play continues under the new host', async () => {
-        await bob.ev((hw, c) => hw.dispatch(c), place('road', spot(SIZE, 1, 1)));
+        await bob.ev((hw, c) => hw.dispatch(c), place('park', spot(SIZE, 1, 1)));
         for (const p of [ann, bob]) await p.until('5 buildings', (hw) => hw.summary().buildings.length === 5);
         await agree(ann, bob);
       });
@@ -164,7 +164,7 @@ const SCENARIOS: Record<string, Scenario> = {
         await ann.ev((hw) => hw.leave());
         await bob.until('bob hosts', (hw) => hw.lobby().role === 'host' && hw.lobby().phase === 'hosting', 30_000);
         await cat.until('cat follows bob', (hw) => hw.lobby().phase === 'member' && hw.peerReady() && hw.lobby().players.find((p) => p.host)?.id === 'acct-bob', 30_000);
-        await cat.ev((hw, c) => hw.dispatch(c), place('road', spot(SIZE, 2, 1)));
+        await cat.ev((hw, c) => hw.dispatch(c), place('park', spot(SIZE, 2, 1)));
         for (const p of [bob, cat]) await p.until('6 buildings', (hw) => hw.summary().buildings.length === 6);
         await agree(bob, cat);
       });
@@ -189,9 +189,9 @@ const SCENARIOS: Record<string, Scenario> = {
       await step('a burst of 30 commands from the three sides stays consistent', async () => {
         const c = Math.floor(SIZE / 2);
         for (let i = 0; i < 10; i++) {
-          await ann.ev((hw, p) => hw.dispatch(p), place('road', { x: c + 1 + i, z: c }));
-          await bob.ev((hw, p) => hw.dispatch(p), place('road', { x: c + 1 + i, z: c + 1 }));
-          await host.ev((hw, p) => hw.dispatch(p), place('road', { x: c + 1 + i, z: c + 2 }));
+          await ann.ev((hw, p) => hw.dispatch(p), place('park', { x: c + 1 + i, z: c }));
+          await bob.ev((hw, p) => hw.dispatch(p), place('park', { x: c + 1 + i, z: c + 1 }));
+          await host.ev((hw, p) => hw.dispatch(p), place('park', { x: c + 1 + i, z: c + 2 }));
         }
         await sleep(2500);
         const s = await host.ev((hw) => hw.summary());
@@ -233,8 +233,8 @@ const SCENARIOS: Record<string, Scenario> = {
         await agree(host, ann);
       });
       await step('a legitimate command still works afterwards', async () => {
-        await ann.ev((hw, c) => hw.dispatch(c), place('road', spot(SIZE, 1)));
-        await host.until('road', (hw) => hw.summary().buildings.length === 1);
+        await ann.ev((hw, c) => hw.dispatch(c), place('park', spot(SIZE, 1)));
+        await host.until('park', (hw) => hw.summary().buildings.length === 1);
         await agree(host, ann);
       });
     },
@@ -359,7 +359,7 @@ const SCENARIOS: Record<string, Scenario> = {
         note(`recovered ${(Date.now() - t0) / 1000} s after the freeze`);
       });
       await step('play continues; the thawed old host is told it was replaced', async () => {
-        await bob.ev((hw, c) => hw.dispatch(c), place('road', spot(SIZE, 2)));
+        await bob.ev((hw, c) => hw.dispatch(c), place('park', spot(SIZE, 2)));
         for (const p of [ann, bob]) await p.until('2 buildings', (hw) => hw.summary().buildings.length === 2);
         await agree(ann, bob);
         h.hostProc.thaw();
