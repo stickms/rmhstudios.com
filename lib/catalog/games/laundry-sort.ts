@@ -17,6 +17,8 @@ const entry: GameInfo = {
   color: 'from-yellow-500/20 to-orange-600/20 hover:border-yellow-500/50',
   tags: ['Multiplayer', 'Physics', '3D'],
   imagePath: '/images/games/laundry_sort.webp',
+  bannerPath: '/images/games/banners/laundry-sort.webp',
+  logoPath: '/images/games/logos/laundry-sort.webp',
   authGate: true,
 };
 

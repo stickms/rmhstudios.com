@@ -67,6 +67,9 @@ const catalogEntryShape = {
   /** Wide hero for the library detail pane (about 3:1, 1920x620 WebP). Optional:
    *  the hero falls back to `imagePath` cropped, then to the hue tile. */
   bannerPath: z.string().min(1).optional(),
+  /** The title as a stylized wordmark (transparent WebP, about 1024 px wide), shown in place of the plain
+   *  heading on the library detail hero. Optional: the page falls back to the title as text. */
+  logoPath: z.string().min(1).optional(),
   /** Whether the entry requires a signed-in account to open. */
   authGate: z.boolean(),
   /** Hidden from the public index but reachable by direct link. */

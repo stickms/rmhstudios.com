@@ -17,6 +17,8 @@ const entry: GameInfo = {
   color: 'from-sky-300/20 to-teal-300/20 hover:border-teal-300/50',
   tags: ['City Builder', 'Farming', 'Cooking', 'Relaxing'],
   imagePath: '/images/games/hearthworks.webp',
+  bannerPath: '/images/games/banners/hearthworks.webp',
+  logoPath: '/images/games/logos/hearthworks.webp',
   authGate: false,
 };
 

@@ -17,6 +17,8 @@ const entry: GameInfo = {
   color: 'from-fuchsia-500/20 to-amber-400/20 hover:border-fuchsia-500/50',
   tags: ['Arcade', 'Racing', '3D', 'Trick Scoring'],
   imagePath: '/images/games/nightrail.webp',
+  bannerPath: '/images/games/banners/nightrail.webp',
+  logoPath: '/images/games/logos/nightrail.webp',
   authGate: true,
 };
 

@@ -869,8 +869,17 @@ html.ios-webkit .steam {
   border-radius: var(--stm-radius);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
 }
-.stm-hero[data-hero='cropped-card'] .stm-hero-title {
+.stm-hero[data-capsule='true'] .stm-hero-title {
   inset-inline-start: calc(48px + (var(--stm-hero-h) - 48px) * 2 / 3);
+}
+/* The title as a wordmark: the game's own lettering, sized to the hero, never stretched. */
+.stm-hero-logo {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: clamp(48px, calc(var(--stm-hero-h) * 0.34), 120px);
+  filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.55));
 }
 .stm-hero-fade {
   position: absolute;

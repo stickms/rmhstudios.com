@@ -16,6 +16,8 @@ const entry: GameInfo = {
   color: 'from-rose-500/20 to-purple-600/20 hover:border-rose-500/50',
   tags: ['Arcade', 'Rhythm', 'Action'],
   imagePath: '/images/games/slice_it.webp',
+  bannerPath: '/images/games/banners/slice-it.webp',
+  logoPath: '/images/games/logos/slice-it.webp',
   authGate: true,
 };
 

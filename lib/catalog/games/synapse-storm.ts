@@ -15,6 +15,8 @@ const entry: GameInfo = {
   color: 'from-cyan-500/20 to-pink-500/20 hover:border-cyan-500/50',
   tags: ['Action', 'Puzzle', 'Fast-paced'],
   imagePath: '/images/games/synapsestorm.webp',
+  bannerPath: '/images/games/banners/synapse-storm.webp',
+  logoPath: '/images/games/logos/synapse-storm.webp',
   authGate: true,
 };
 

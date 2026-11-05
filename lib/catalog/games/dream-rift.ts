@@ -16,6 +16,8 @@ const entry: GameInfo = {
   color: 'from-fuchsia-500/20 to-violet-700/20 hover:border-fuchsia-500/50',
   tags: ['Bullet Hell', 'Multiplayer', 'Danmaku', 'Pixel Art'],
   imagePath: '/images/games/dream-rift.webp',
+  bannerPath: '/images/games/banners/dream-rift.webp',
+  logoPath: '/images/games/logos/dream-rift.webp',
   authGate: false,
 };
 

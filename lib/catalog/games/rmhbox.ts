@@ -16,6 +16,8 @@ const entry: GameInfo = {
   color: 'from-purple-500/20 to-pink-500/20 hover:border-purple-500/50',
   tags: ['Multiplayer', 'Party', 'Minigames'],
   imagePath: '/images/games/rmhbox.webp',
+  bannerPath: '/images/games/banners/rmhbox.webp',
+  logoPath: '/images/games/logos/rmhbox.webp',
   authGate: true,
 };
 

@@ -29,6 +29,8 @@ interface HubPayload {
   playHref: string;
   image: string | null;
   bannerUrl: string | null;
+  /** The title as a wordmark image, or null (the hero then shows the title as text). */
+  logoUrl: string | null;
   hue: number;
   agg: RatingAgg;
   reviews: ReviewView[];
@@ -76,6 +78,7 @@ const fetchHub = createServerFn({ method: 'GET' })
       playHref: entry.href,
       image: entry.imagePath ?? null,
       bannerUrl: entry.bannerPath ?? null,
+      logoUrl: entry.logoPath ?? null,
       hue: hueFromString(entry.id),
       agg,
       reviews,

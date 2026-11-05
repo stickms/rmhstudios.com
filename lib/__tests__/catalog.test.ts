@@ -97,6 +97,31 @@ describe('catalog barrel', () => {
     expect(problems).toEqual([]);
   });
 
+  it('logoPath, when declared, exists under public/, is a WebP and is at most 150 KB', () => {
+    // The library hero shows it in place of the title text; a typo'd path would leave a broken image where the
+    // game's name should be.
+    const problems = [...games, ...apps]
+      .filter((e) => e.logoPath)
+      .flatMap((e) => {
+        const path = e.logoPath as string;
+        const file = join(process.cwd(), 'public', path);
+        if (!path.endsWith('.webp')) return [`${e.id}: ${path} is not a .webp`];
+        if (!existsSync(file)) return [`${e.id}: ${path} is missing`];
+        return statSync(file).size > 150 * 1024 ? [`${e.id}: ${path} is over 150 KB`] : [];
+      });
+    expect(problems).toEqual([]);
+  });
+
+  it('every game has a banner and a logo for its library page', () => {
+    // The page shows the banner behind the card and the logo as the title; without them it falls back to a blurred
+    // copy of the card and plain text, which is the look this replaced.
+    const missing = games.filter((e) => !e.unlisted).flatMap((e) => [
+      ...(e.bannerPath ? [] : [`${e.id}: no bannerPath`]),
+      ...(e.logoPath ? [] : [`${e.id}: no logoPath`]),
+    ]);
+    expect(missing).toEqual([]);
+  });
+
   it('every href is a site path or an absolute URL', () => {
     const bad = [...games, ...apps]
       .filter((e) => !e.href.startsWith('/') && !/^https?:\/\//.test(e.href))
@@ -116,6 +141,11 @@ describe('catalog schema', () => {
   it('accepts an optional bannerPath on games and apps', () => {
     expect(gameEntrySchema.safeParse({ ...games[0], bannerPath: '/images/games/x-banner.webp' }).success).toBe(true);
     expect(appEntrySchema.safeParse({ ...apps[0], bannerPath: '/images/games/y-banner.webp' }).success).toBe(true);
+  });
+
+  it('accepts an optional logoPath on games and apps', () => {
+    expect(gameEntrySchema.safeParse({ ...games[0], logoPath: '/images/games/logos/x.webp' }).success).toBe(true);
+    expect(appEntrySchema.safeParse({ ...apps[0], logoPath: '/images/games/logos/y.webp' }).success).toBe(true);
   });
 
   it('rejects a missing required field', () => {

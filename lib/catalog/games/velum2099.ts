@@ -16,6 +16,8 @@ const entry: GameInfo = {
   color: 'from-cyan-500/20 to-purple-600/20 hover:border-cyan-500/50',
   tags: ['Simulation', 'Driving', '3D', 'Cyberpunk'],
   imagePath: '/images/games/velum2099.webp',
+  bannerPath: '/images/games/banners/velum2099.webp',
+  logoPath: '/images/games/logos/velum2099.webp',
   authGate: false,
 };
 

@@ -17,6 +17,8 @@ const entry: GameInfo = {
   color: 'from-red-500/20 to-cyan-600/20 hover:border-red-500/50',
   tags: ['Arcade', 'Racing', '3D', 'VR'],
   imagePath: '/images/games/neon_driftway.webp',
+  bannerPath: '/images/games/banners/neon-driftway.webp',
+  logoPath: '/images/games/logos/neon-driftway.webp',
   authGate: true,
 };
 

@@ -31,6 +31,7 @@ export type GamePageData = {
   playHref: string;
   image: string | null;
   bannerUrl: string | null;
+  logoUrl: string | null;
   hue: number;
   agg: RatingAgg;
   reviews: ReviewView[];
@@ -53,6 +54,8 @@ export function GamePage({ data }: { data: GamePageData }) {
   const { t } = useTranslation('games-hub');
   const { extras } = data;
   const hero = heroSource({ thumbnailUrl: data.image, bannerUrl: data.bannerUrl, hue: data.hue });
+  // The card stands in front of the hero art whenever it has one to show (over the banner, or alone with a blurred copy).
+  const hasCapsule = hero.kind === 'cropped-card' || (hero.kind === 'banner' && !!data.image);
   const isGame = data.kind === 'game';
   const offSite = isOffSite(data.playHref);
   const done = extras.achievements.filter((a) => a.unlocked).length;
@@ -74,18 +77,32 @@ export function GamePage({ data }: { data: GamePageData }) {
         {t('steam-back-library', { defaultValue: 'Library' })}
       </Link>
 
-      <div className="stm-hero" data-hero={hero.kind}>
+      <div className="stm-hero" data-hero={hero.kind} data-capsule={hasCapsule ? 'true' : undefined}>
         {hero.kind === 'banner' && hero.src ? (
-          <OptimizedImage
-            src={hero.src}
-            alt=""
-            width={1280}
-            height={427}
-            priority
-            className="stm-hero-img"
-            // Stamped `data-loaded` by the site's media-reveal script as it loads.
-            suppressHydrationWarning
-          />
+          <>
+            {/* The title's own banner is the backdrop; the card sits in front of it, as on Steam. */}
+            <OptimizedImage
+              src={hero.src}
+              alt=""
+              width={1280}
+              height={427}
+              priority
+              className="stm-hero-img"
+              // Stamped `data-loaded` by the site's media-reveal script as it loads.
+              suppressHydrationWarning
+            />
+            {data.image ? (
+              <OptimizedImage
+                src={data.image}
+                alt=""
+                width={320}
+                height={480}
+                priority
+                className="stm-hero-capsule"
+                suppressHydrationWarning
+              />
+            ) : null}
+          </>
         ) : hero.kind === 'cropped-card' && hero.src ? (
           <>
             {/* No wide art: a blurred copy fills the banner and the sharp capsule sits
@@ -114,7 +131,14 @@ export function GamePage({ data }: { data: GamePageData }) {
           </div>
         )}
         <div className="stm-hero-fade" aria-hidden />
-        <h1 className="stm-hero-title">{data.title}</h1>
+        <h1 className="stm-hero-title">
+          {data.logoUrl ? (
+            // The wordmark carries the title's name and typeface; its alt text keeps the heading readable.
+            <img className="stm-hero-logo" src={data.logoUrl} alt={data.title} decoding="async" />
+          ) : (
+            data.title
+          )}
+        </h1>
       </div>
 
       <div className="stm-actionbar">

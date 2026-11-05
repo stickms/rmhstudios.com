@@ -16,6 +16,8 @@ const entry: GameInfo = {
   color: 'from-amber-400/20 to-yellow-300/20 hover:border-amber-400/50',
   tags: ['Idle', 'Clicker', 'Prestige', 'Minigames'],
   imagePath: '/images/games/temple_of_joy.webp',
+  bannerPath: '/images/games/banners/temple-of-joy.webp',
+  logoPath: '/images/games/logos/temple-of-joy.webp',
   authGate: true,
 };
 

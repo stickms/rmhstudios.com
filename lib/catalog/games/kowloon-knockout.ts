@@ -16,6 +16,8 @@ const entry: GameInfo = {
   color: 'from-pink-500/20 to-purple-600/20 hover:border-pink-500/50',
   tags: ['Fighting', 'Multiplayer', '3D'],
   imagePath: '/images/games/Kowloon-Knockout.webp',
+  bannerPath: '/images/games/banners/kowloon-knockout.webp',
+  logoPath: '/images/games/logos/kowloon-knockout.webp',
   authGate: false,
 };
 

@@ -16,6 +16,8 @@ const entry: GameInfo = {
   color: 'from-amber-700/20 to-neutral-900/40 hover:border-amber-500/50',
   tags: ['Metroidvania', 'Platformer', 'Narrative', 'Pixel Art'],
   imagePath: '/images/games/house_always_wins.webp',
+  bannerPath: '/images/games/banners/house-always-wins.webp',
+  logoPath: '/images/games/logos/house-always-wins.webp',
   authGate: true,
 };
 
