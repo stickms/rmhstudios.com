@@ -8,7 +8,7 @@
 import type { RefObject } from 'react';
 import type * as THREE from 'three';
 import { PALETTE, type PaletteKey } from '@/lib/hearthworks/art';
-import type { SkinLook } from '@/lib/hearthworks/skins';
+import { FIGURE_SCALE, type SkinLook } from '@/lib/hearthworks/skins';
 
 const mat = (key: PaletteKey) => <meshStandardMaterial color={PALETTE[key]} roughness={0.85} />;
 
@@ -121,8 +121,7 @@ function Prop({ look }: { look: SkinLook }) {
 }
 
 
-/** A person is about 0.4 tiles tall (a tile is ~4 m): smaller than a cottage's door-height wall, taller than a crop. */
-export const FIGURE_SCALE = 0.3;
+export { FIGURE_SCALE };
 
 export interface FigureRefs {
   body?: RefObject<THREE.Group | null>;

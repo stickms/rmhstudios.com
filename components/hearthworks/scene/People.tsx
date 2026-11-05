@@ -4,18 +4,20 @@
  * Everyone who is not the player: customers walking to and from their stalls and farmhands going about their day.
  * The simulation moves them in 50 ms ticks along routes that hop up ledges and drop down cliffs; here each one is
  * drawn between its last two ticks (so motion is smooth at any frame rate) and its limbs are driven by what it is
- * doing — walking swings, a jump tucks the legs, a fall throws the arms up, and work is a bob over the crop.
+ * doing — walking swings, a jump tucks the legs, a fall throws the arms up, and work is a bob over the crop. A skin
+ * with a skinned model plays its real clips for the same states (SkinFigure picks model or procedural).
  */
 
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type * as THREE from 'three';
 import { locomotionBlend } from '@/lib/hearthworks/avatar';
 import { moverY, stepTicks, type Mover } from '@/lib/hearthworks/nav';
-import { SKIN_LOOKS, type SkinLook } from '@/lib/hearthworks/skins';
+import type { SkinId } from '@/lib/hearthworks/skins';
+import { newDrive } from '@/lib/hearthworks/skins/animator';
 import { hearthworksStore, useHearthworks } from '@/lib/hearthworks/store';
 import { TICK_MS, type Worker } from '@/lib/hearthworks/world';
-import { Figure } from './Figure';
+import { SkinFigure } from './SkinFigure';
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 /** Smoothing toward a target at `rate` per second, independent of frame rate. */
@@ -56,7 +58,7 @@ const newPose = (): Pose => ({
   work: 0,
 });
 
-function Person({ kind, id, look }: { kind: 'npc' | 'worker'; id: number; look: SkinLook }) {
+function Person({ kind, id, skin }: { kind: 'npc' | 'worker'; id: number; skin: SkinId }) {
   const root = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
   const legL = useRef<THREE.Group>(null);
@@ -64,6 +66,7 @@ function Person({ kind, id, look }: { kind: 'npc' | 'worker'; id: number; look: 
   const armL = useRef<THREE.Group>(null);
   const armR = useRef<THREE.Group>(null);
   const pose = useRef<Pose>(newPose());
+  const drive = useMemo(() => newDrive(), []);
 
   useFrame((_, delta) => {
     const world = hearthworksStore.getState().world;
@@ -116,6 +119,11 @@ function Person({ kind, id, look }: { kind: 'npc' | 'worker'; id: number; look: 
     p.clock += dt;
     p.phase += p.speed * dt * 6.2;
 
+    // The skinned model reads the same state the procedural limbs below are posed from.
+    drive.speed = p.speed;
+    drive.air = p.fall > 0.5 && p.fall >= p.jump ? 'fall' : p.jump > 0.5 ? 'jump' : 'ground';
+    drive.busy = p.work > 0.5;
+
     const air = Math.min(1, p.jump + p.fall);
     const ground = 1 - air;
     const b = locomotionBlend(p.speed);
@@ -154,7 +162,7 @@ function Person({ kind, id, look }: { kind: 'npc' | 'worker'; id: number; look: 
 
   return (
     <group ref={root} visible={false}>
-      <Figure look={look} refs={{ body, legL, legR, armL, armR }} />
+      <SkinFigure skin={skin} drive={drive} refs={{ body, legL, legR, armL, armR }} />
     </group>
   );
 }
@@ -166,10 +174,10 @@ export function People() {
   return (
     <>
       {world.npcs.map((n) => (
-        <Person key={`n${n.id}`} kind="npc" id={n.id} look={SKIN_LOOKS[n.look]} />
+        <Person key={`n${n.id}`} kind="npc" id={n.id} skin={n.look} />
       ))}
       {world.workers.map((k) => (
-        <Person key={`w${k.id}`} kind="worker" id={k.id} look={SKIN_LOOKS.worker} />
+        <Person key={`w${k.id}`} kind="worker" id={k.id} skin="worker" />
       ))}
     </>
   );
