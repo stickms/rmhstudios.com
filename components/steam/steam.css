@@ -415,6 +415,11 @@ html.ios-webkit .steam {
   background: var(--stm-hover);
   color: var(--stm-bright);
 }
+/* The selected row's highlight belongs to the whole row, favourite star included, as the hover highlight already does;
+   on the link alone it stops short of the star. */
+.stm-row-wrap:has(> .stm-row[aria-current='page']) {
+  background: var(--stm-hover);
+}
 .stm-row span {
   min-width: 0;
   overflow: hidden;
