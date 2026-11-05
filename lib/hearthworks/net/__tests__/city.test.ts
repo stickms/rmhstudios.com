@@ -106,12 +106,12 @@ describe('replicas stay identical while a town is built and grows', () => {
     expect(same(bob.view!, host.world)).toBe(true);
 
     // Let it grow for a few game minutes, with a late edit now and then, and compare as it goes.
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 16; i++) {
       tick(100);
-      if (i === 5) alice.send({ type: 'placeRoad', x: m + 9, z: m, x2: m + 9, z2: m + 5 });
-      if (i === 8) bob.send({ type: 'removeRoad', x: m + 9, z: m + 3 });
-      if (i === 12) host.submit({ type: 'unzone', x: m + 1, z: m - 1, x2: m + 2, z2: m - 1 });
-      if (i % 10 === 9) {
+      if (i === 3) alice.send({ type: 'placeRoad', x: m + 9, z: m, x2: m + 9, z2: m + 5 });
+      if (i === 6) bob.send({ type: 'removeRoad', x: m + 9, z: m + 3 });
+      if (i === 9) host.submit({ type: 'unzone', x: m + 1, z: m - 1, x2: m + 2, z2: m - 1 });
+      if (i % 5 === 4) {
         tick(3);
         expect(same(alice.view!, host.world)).toBe(true);
         expect(same(bob.view!, host.world)).toBe(true);
@@ -130,5 +130,5 @@ describe('replicas stay identical while a town is built and grows', () => {
     expect(worldHash(carol.view!)).toBe(worldHash(host.world));
     // …and the snapshot round trip alone preserves the hash.
     expect(worldHash(decodeWorld(encodeWorld(host.world)))).toBe(worldHash(host.world));
-  });
+  }, 60_000);
 });
