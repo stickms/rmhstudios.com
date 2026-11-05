@@ -153,7 +153,7 @@ export function jsonTransport(endpoint: string): CloudTransport {
    ══════════════════════════════════════════════════════════════════════════ */
 
 export interface CloudSaveConfig<T> {
-  /** Catalog id — `temple-of-joy`, `cookgame`. Names the shared endpoint. */
+  /** Catalog id — `temple-of-joy`, `void-breaker`. Names the shared endpoint. */
   gameId: string;
   /** The `localStorage` key this game already uses. Never change it lightly. */
   localKey: string;

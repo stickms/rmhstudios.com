@@ -18,14 +18,12 @@ import enCDreamRift from "@/locales/en/c-dream-rift.json";
 import enCDunesday from "@/locales/en/c-dunesday.json";
 import enCEconomy from "@/locales/en/c-economy.json";
 import enCElections from "@/locales/en/c-elections.json";
-import enCForestExplorer from "@/locales/en/c-forest-explorer.json";
 import enCGabrielsHorn from "@/locales/en/c-gabriels-horn.json";
 import enCGame from "@/locales/en/c-game.json";
 import enCGroupcall from "@/locales/en/c-groupcall.json";
 import enCHearthworks from "@/locales/en/c-hearthworks.json";
 import enCHistory from "@/locales/en/c-history.json";
 import enCHouseAlwaysWins from "@/locales/en/c-house-always-wins.json";
-import enCIsleworks from "@/locales/en/c-isleworks.json";
 import enCKaikaiDebt from "@/locales/en/c-kaikai-debt.json";
 import enCKowloonKnockout from "@/locales/en/c-kowloon-knockout.json";
 import enCLaundrySort from "@/locales/en/c-laundry-sort.json";
@@ -115,7 +113,6 @@ import enNav from "@/locales/en/nav.json";
 import enPages from "@/locales/en/pages.json";
 import enRAltair from "@/locales/en/r-altair.json";
 import enRDiscord from "@/locales/en/r-discord.json";
-import enRForestExplorer from "@/locales/en/r-forest-explorer.json";
 import enRKowloonKnockout from "@/locales/en/r-kowloon-knockout.json";
 import enRPf2ecal from "@/locales/en/r-pf2ecal.json";
 import enRRmhbox from "@/locales/en/r-rmhbox.json";
@@ -155,14 +152,12 @@ const enResources = {
   "c-dunesday": enCDunesday,
   "c-economy": enCEconomy,
   "c-elections": enCElections,
-  "c-forest-explorer": enCForestExplorer,
   "c-gabriels-horn": enCGabrielsHorn,
   "c-game": enCGame,
   "c-groupcall": enCGroupcall,
   "c-hearthworks": enCHearthworks,
   "c-history": enCHistory,
   "c-house-always-wins": enCHouseAlwaysWins,
-  "c-isleworks": enCIsleworks,
   "c-kaikai-debt": enCKaikaiDebt,
   "c-kowloon-knockout": enCKowloonKnockout,
   "c-laundry-sort": enCLaundrySort,
@@ -252,7 +247,6 @@ const enResources = {
   "pages": enPages,
   "r-altair": enRAltair,
   "r-discord": enRDiscord,
-  "r-forest-explorer": enRForestExplorer,
   "r-kowloon-knockout": enRKowloonKnockout,
   "r-pf2ecal": enRPf2ecal,
   "r-rmhbox": enRRmhbox,

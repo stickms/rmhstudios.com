@@ -171,7 +171,7 @@ interface ResumeLink {
  * Split a card's href into the parts `<Link>` wants.
  *
  * The server hands over one canonical URL string (`/study/abc`,
- * `/isleworks?resume=1`, `/library/x#ch-4`) because that is what a card IS — a
+ * `/hearthworks?resume=1`, `/library/x#ch-4`) because that is what a card IS — a
  * destination. TanStack's `Link` models the pieces separately, and a query
  * string left inside `to` is treated as part of the pathname, so the deep link
  * quietly degrades into a 404 or a landing page. Splitting here keeps the

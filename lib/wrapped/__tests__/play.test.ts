@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { summarizePlay } from '../play';
 
-const names = new Map([['altair', 'Altair'], ['laundry-sort', 'Laundry Sort'], ['cookgame', 'CookGame'], ['dream-rift', 'Dream Rift']]);
+const names = new Map([['altair', 'Altair'], ['laundry-sort', 'Laundry Sort'], ['nightrail', 'Nightrail'], ['dream-rift', 'Dream Rift']]);
 
 describe('summarizePlay', () => {
   it('totals the time, counts titles, and lists the top three most played first', () => {
@@ -9,7 +9,7 @@ describe('summarizePlay', () => {
       [
         { gameId: 'altair', seconds: 3600 },
         { gameId: 'laundry-sort', seconds: 7200 },
-        { gameId: 'cookgame', seconds: 1800 },
+        { gameId: 'nightrail', seconds: 1800 },
         { gameId: 'dream-rift', seconds: 600 },
       ],
       names,
@@ -21,7 +21,7 @@ describe('summarizePlay', () => {
       top: [
         { gameId: 'laundry-sort', title: 'Laundry Sort', seconds: 7200 },
         { gameId: 'altair', title: 'Altair', seconds: 3600 },
-        { gameId: 'cookgame', title: 'CookGame', seconds: 1800 },
+        { gameId: 'nightrail', title: 'Nightrail', seconds: 1800 },
       ],
       cardDrops: 4,
       badges: 1,

@@ -30,7 +30,7 @@ export function useCoarsePointer() {
 }
 
 interface DesktopControlsGateProps {
-  /** Name shown in the message, e.g. "Forest Explorer". */
+  /** Name shown in the message, e.g. "Hearthworks". */
   gameName: string;
   /** Where the "Go back" link points. */
   backTo?: string;

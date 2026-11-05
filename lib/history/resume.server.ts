@@ -3,7 +3,7 @@
  *
  * "Jump back in" already exists (`hooks/useRecents` → `components/feed/JumpBackIn`)
  * but it is a per-DEVICE localStorage list of hrefs: it knows you opened
- * Isleworks, not that you are on day 34 with a save waiting, and it knows
+ * Hearthworks, not that you are on day 34 with a save waiting, and it knows
  * nothing at all on the phone you did it from. This module answers the harder
  * question — *what is unfinished on this account* — by projecting the five
  * places the site already stores half-finished state:

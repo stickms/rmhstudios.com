@@ -117,7 +117,7 @@ describe('every page route is classified', () => {
       const known = isDynamic
         ? path in DYNAMIC_ROUTES
         : STATIC_LOCS.has(path) || path in EXCLUDED_ROUTES;
-      // Catalog-derived paths (`/isleworks`, `/games/…`, `/builds/…`) are
+      // Catalog-derived paths (`/hearthworks`, `/games/…`, `/builds/…`) are
       // generated rather than listed, so check those too.
       if (!known && !CATALOG_LOCS.has(path)) unclassified.push(`${path}  (${files.join(', ')})`);
     }
@@ -149,7 +149,7 @@ const CATALOG_LOCS = new Set(catalogRoutes().map((r) => r.loc));
  * Whether a concrete URL resolves to *some* route — either its own file, or a
  * parameterised one that matches it.
  *
- * The catalog emits concrete paths (`/games/isleworks`), and those are served
+ * The catalog emits concrete paths (`/games/hearthworks`), and those are served
  * by `/games/$gameId`. Matching literally would flag every one of them as a
  * 404 while missing the actual bug this test exists for.
  */

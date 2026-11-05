@@ -30,11 +30,8 @@ const DIRS: Record<string, string[]> = {
 
 const EXEMPT: Record<string, string> = {
   altair: 'turn-paced co-op board; no live clock to pause',
-  cookgame: 'cozy sim with no fail state',
   'daily-puzzles': 'untimed puzzles',
   'gabriels-horn': 'online-only table game; cannot pause for the table',
-  isleworks: 'untimed builder',
-  'rmh-farming-sim': 'shared persistent farm; the world keeps time server-side',
   rmhbox: 'party game hosted for a room; the host screen drives timing',
   'temple-of-joy': 'idle game — it is meant to keep running while hidden',
   velum2099: 'text adventure with no clock',

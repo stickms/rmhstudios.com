@@ -253,7 +253,7 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
  * i.e. after hydration, so every game and full-screen app loaded with the site's
  * translucent surfaces, a reserved scrollbar gutter and a live aurora, and then
  * snapped out of all three at once — a full-width horizontal jog plus a contrast
- * pop, measured at ~1.9s after first contentful paint on `/isleworks` by
+ * pop, measured at ~1.9s after first contentful paint on `/hearthworks` by
  * `testing/e2e/fouc.mjs`. The effect STAYS: it is the client-navigation path (a
  * soft nav from a site page into a game never re-runs this script) and the
  * recovery path if this one throws, exactly as `PERF_TIER_SCRIPT`'s re-assert in

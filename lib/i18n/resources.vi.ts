@@ -18,12 +18,10 @@ import viCDreamRift from "@/locales/vi/c-dream-rift.json";
 import viCDunesday from "@/locales/vi/c-dunesday.json";
 import viCEconomy from "@/locales/vi/c-economy.json";
 import viCElections from "@/locales/vi/c-elections.json";
-import viCForestExplorer from "@/locales/vi/c-forest-explorer.json";
 import viCGabrielsHorn from "@/locales/vi/c-gabriels-horn.json";
 import viCGame from "@/locales/vi/c-game.json";
 import viCHistory from "@/locales/vi/c-history.json";
 import viCHouseAlwaysWins from "@/locales/vi/c-house-always-wins.json";
-import viCIsleworks from "@/locales/vi/c-isleworks.json";
 import viCKaikaiDebt from "@/locales/vi/c-kaikai-debt.json";
 import viCKowloonKnockout from "@/locales/vi/c-kowloon-knockout.json";
 import viCLaundrySort from "@/locales/vi/c-laundry-sort.json";
@@ -78,7 +76,6 @@ import viNav from "@/locales/vi/nav.json";
 import viPages from "@/locales/vi/pages.json";
 import viRAltair from "@/locales/vi/r-altair.json";
 import viRDiscord from "@/locales/vi/r-discord.json";
-import viRForestExplorer from "@/locales/vi/r-forest-explorer.json";
 import viRPf2ecal from "@/locales/vi/r-pf2ecal.json";
 import viRRmhbox from "@/locales/vi/r-rmhbox.json";
 import viRRmhcode from "@/locales/vi/r-rmhcode.json";
@@ -117,12 +114,10 @@ const viResources = {
   "c-dunesday": viCDunesday,
   "c-economy": viCEconomy,
   "c-elections": viCElections,
-  "c-forest-explorer": viCForestExplorer,
   "c-gabriels-horn": viCGabrielsHorn,
   "c-game": viCGame,
   "c-history": viCHistory,
   "c-house-always-wins": viCHouseAlwaysWins,
-  "c-isleworks": viCIsleworks,
   "c-kaikai-debt": viCKaikaiDebt,
   "c-kowloon-knockout": viCKowloonKnockout,
   "c-laundry-sort": viCLaundrySort,
@@ -177,7 +172,6 @@ const viResources = {
   "pages": viPages,
   "r-altair": viRAltair,
   "r-discord": viRDiscord,
-  "r-forest-explorer": viRForestExplorer,
   "r-pf2ecal": viRPf2ecal,
   "r-rmhbox": viRRmhbox,
   "r-rmhcode": viRRmhcode,

@@ -565,19 +565,6 @@
       "text": "A frantic physics-based arcade game where gravity and color matching are your only tools. Sort falling laundry into color-coded bins using ragdoll physics. Watch clothes tumble and bounce through complex dividers as you chase high scores in a race against the clock. Simple controls, chaotic physics."
     },
     {
-      "id": "game:forest-explorer",
-      "kind": "game",
-      "title": "Forest Explorer",
-      "tags": [
-        "Exploration",
-        "3D",
-        "Relaxing"
-      ],
-      "route": "/forest-explorer",
-      "players": "single-player",
-      "text": "Wander a peaceful 3D ancient forest, plant a garden that grows in real time, or play the 3-act story mode with puzzles and lore. A first-person 3D forest experience with two modes. Free Explore lets you roam a dense ancient forest with towering conifers, glowing fireflies, butterflies, and dappled sunlight — and plant your own garden of five flower species …"
-    },
-    {
       "id": "game:void-breaker",
       "kind": "game",
       "title": "Void Breaker",
@@ -603,19 +590,6 @@
       "route": "/kowloon-knockout",
       "players": "multiplayer / playable with friends",
       "text": "A neon 3D brawler set in 90s Hong Kong — pixel-shaded stick fighters, combos, and up to 4-player FFA or team battles. Step into the neon-lit rooftops of Kowloon, 1997, rendered in fully animated 3D stick fighters with a retro pixel-art filter. Pick from nine fighter classes, master devastating combos and counter-strikes, and brawl across an open arena. Batt…"
-    },
-    {
-      "id": "game:cookgame",
-      "kind": "game",
-      "title": "CookGame",
-      "tags": [
-        "Simulation",
-        "Tycoon",
-        "Crime"
-      ],
-      "route": "/cookgame",
-      "players": "single-player",
-      "text": "A satirical underground tycoon sim — buy ingredients, mix product for wild effects, and hustle your block before the heat catches up. A tongue-in-cheek crime-management sim. Run a small-town operation: stock up at the supplier, experiment at the mixing bench to stack value-boosting effects onto your product, package it, and sell to the neighbourhood — all w…"
     },
     {
       "id": "game:house-always-wins",
@@ -644,21 +618,6 @@
       "route": "/dream-rift",
       "players": "multiplayer / playable with friends",
       "text": "A danmaku bullet hell — dodge gorgeous bullet curtains solo or in up to 4-player co-op across three dream worlds. A vertical bullet-hell shoot-’em-up: weave a tiny pinpoint hitbox through dense, beautiful danmaku curtains, graze bullets for score, bomb to survive, and capture each boss’s spell cards before the timer runs out. Four playable dreamers — the sh…"
-    },
-    {
-      "id": "game:rmh-farming-sim",
-      "kind": "game",
-      "title": "RMH Farming Simulator",
-      "tags": [
-        "Simulation",
-        "Farming",
-        "Co-op",
-        "Multiplayer",
-        "3D"
-      ],
-      "route": "/rmh-farming-sim",
-      "players": "multiplayer / playable with friends",
-      "text": "A cozy pixel-3D farming sim — till, plant, water and harvest, sell at the shop, upgrade your gear, and farm co-op with friends. Claim your own pixelated 3D homestead and grow it from a few seed packets into a thriving farm. Till the soil, plant seasonal crops across spring, summer, fall and winter, water them (or let the rain do it), and harvest for Normal,…"
     },
     {
       "id": "app:rmhtube",

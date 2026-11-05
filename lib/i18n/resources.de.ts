@@ -18,12 +18,10 @@ import deCDreamRift from "@/locales/de/c-dream-rift.json";
 import deCDunesday from "@/locales/de/c-dunesday.json";
 import deCEconomy from "@/locales/de/c-economy.json";
 import deCElections from "@/locales/de/c-elections.json";
-import deCForestExplorer from "@/locales/de/c-forest-explorer.json";
 import deCGabrielsHorn from "@/locales/de/c-gabriels-horn.json";
 import deCGame from "@/locales/de/c-game.json";
 import deCHistory from "@/locales/de/c-history.json";
 import deCHouseAlwaysWins from "@/locales/de/c-house-always-wins.json";
-import deCIsleworks from "@/locales/de/c-isleworks.json";
 import deCKaikaiDebt from "@/locales/de/c-kaikai-debt.json";
 import deCKowloonKnockout from "@/locales/de/c-kowloon-knockout.json";
 import deCLaundrySort from "@/locales/de/c-laundry-sort.json";
@@ -78,7 +76,6 @@ import deNav from "@/locales/de/nav.json";
 import dePages from "@/locales/de/pages.json";
 import deRAltair from "@/locales/de/r-altair.json";
 import deRDiscord from "@/locales/de/r-discord.json";
-import deRForestExplorer from "@/locales/de/r-forest-explorer.json";
 import deRPf2ecal from "@/locales/de/r-pf2ecal.json";
 import deRRmhbox from "@/locales/de/r-rmhbox.json";
 import deRRmhcode from "@/locales/de/r-rmhcode.json";
@@ -117,12 +114,10 @@ const deResources = {
   "c-dunesday": deCDunesday,
   "c-economy": deCEconomy,
   "c-elections": deCElections,
-  "c-forest-explorer": deCForestExplorer,
   "c-gabriels-horn": deCGabrielsHorn,
   "c-game": deCGame,
   "c-history": deCHistory,
   "c-house-always-wins": deCHouseAlwaysWins,
-  "c-isleworks": deCIsleworks,
   "c-kaikai-debt": deCKaikaiDebt,
   "c-kowloon-knockout": deCKowloonKnockout,
   "c-laundry-sort": deCLaundrySort,
@@ -177,7 +172,6 @@ const deResources = {
   "pages": dePages,
   "r-altair": deRAltair,
   "r-discord": deRDiscord,
-  "r-forest-explorer": deRForestExplorer,
   "r-pf2ecal": deRPf2ecal,
   "r-rmhbox": deRRmhbox,
   "r-rmhcode": deRRmhcode,

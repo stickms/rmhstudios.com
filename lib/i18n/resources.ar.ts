@@ -18,12 +18,10 @@ import arCDreamRift from "@/locales/ar/c-dream-rift.json";
 import arCDunesday from "@/locales/ar/c-dunesday.json";
 import arCEconomy from "@/locales/ar/c-economy.json";
 import arCElections from "@/locales/ar/c-elections.json";
-import arCForestExplorer from "@/locales/ar/c-forest-explorer.json";
 import arCGabrielsHorn from "@/locales/ar/c-gabriels-horn.json";
 import arCGame from "@/locales/ar/c-game.json";
 import arCHistory from "@/locales/ar/c-history.json";
 import arCHouseAlwaysWins from "@/locales/ar/c-house-always-wins.json";
-import arCIsleworks from "@/locales/ar/c-isleworks.json";
 import arCKaikaiDebt from "@/locales/ar/c-kaikai-debt.json";
 import arCKowloonKnockout from "@/locales/ar/c-kowloon-knockout.json";
 import arCLaundrySort from "@/locales/ar/c-laundry-sort.json";
@@ -79,7 +77,6 @@ import arNav from "@/locales/ar/nav.json";
 import arPages from "@/locales/ar/pages.json";
 import arRAltair from "@/locales/ar/r-altair.json";
 import arRDiscord from "@/locales/ar/r-discord.json";
-import arRForestExplorer from "@/locales/ar/r-forest-explorer.json";
 import arRKowloonKnockout from "@/locales/ar/r-kowloon-knockout.json";
 import arRPf2ecal from "@/locales/ar/r-pf2ecal.json";
 import arRRmhbox from "@/locales/ar/r-rmhbox.json";
@@ -119,12 +116,10 @@ const arResources = {
   "c-dunesday": arCDunesday,
   "c-economy": arCEconomy,
   "c-elections": arCElections,
-  "c-forest-explorer": arCForestExplorer,
   "c-gabriels-horn": arCGabrielsHorn,
   "c-game": arCGame,
   "c-history": arCHistory,
   "c-house-always-wins": arCHouseAlwaysWins,
-  "c-isleworks": arCIsleworks,
   "c-kaikai-debt": arCKaikaiDebt,
   "c-kowloon-knockout": arCKowloonKnockout,
   "c-laundry-sort": arCLaundrySort,
@@ -180,7 +175,6 @@ const arResources = {
   "pages": arPages,
   "r-altair": arRAltair,
   "r-discord": arRDiscord,
-  "r-forest-explorer": arRForestExplorer,
   "r-kowloon-knockout": arRKowloonKnockout,
   "r-pf2ecal": arRPf2ecal,
   "r-rmhbox": arRRmhbox,

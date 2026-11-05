@@ -18,12 +18,10 @@ import hiCDreamRift from "@/locales/hi/c-dream-rift.json";
 import hiCDunesday from "@/locales/hi/c-dunesday.json";
 import hiCEconomy from "@/locales/hi/c-economy.json";
 import hiCElections from "@/locales/hi/c-elections.json";
-import hiCForestExplorer from "@/locales/hi/c-forest-explorer.json";
 import hiCGabrielsHorn from "@/locales/hi/c-gabriels-horn.json";
 import hiCGame from "@/locales/hi/c-game.json";
 import hiCHistory from "@/locales/hi/c-history.json";
 import hiCHouseAlwaysWins from "@/locales/hi/c-house-always-wins.json";
-import hiCIsleworks from "@/locales/hi/c-isleworks.json";
 import hiCKaikaiDebt from "@/locales/hi/c-kaikai-debt.json";
 import hiCKowloonKnockout from "@/locales/hi/c-kowloon-knockout.json";
 import hiCLaundrySort from "@/locales/hi/c-laundry-sort.json";
@@ -78,7 +76,6 @@ import hiNav from "@/locales/hi/nav.json";
 import hiPages from "@/locales/hi/pages.json";
 import hiRAltair from "@/locales/hi/r-altair.json";
 import hiRDiscord from "@/locales/hi/r-discord.json";
-import hiRForestExplorer from "@/locales/hi/r-forest-explorer.json";
 import hiRPf2ecal from "@/locales/hi/r-pf2ecal.json";
 import hiRRmhbox from "@/locales/hi/r-rmhbox.json";
 import hiRRmhcode from "@/locales/hi/r-rmhcode.json";
@@ -117,12 +114,10 @@ const hiResources = {
   "c-dunesday": hiCDunesday,
   "c-economy": hiCEconomy,
   "c-elections": hiCElections,
-  "c-forest-explorer": hiCForestExplorer,
   "c-gabriels-horn": hiCGabrielsHorn,
   "c-game": hiCGame,
   "c-history": hiCHistory,
   "c-house-always-wins": hiCHouseAlwaysWins,
-  "c-isleworks": hiCIsleworks,
   "c-kaikai-debt": hiCKaikaiDebt,
   "c-kowloon-knockout": hiCKowloonKnockout,
   "c-laundry-sort": hiCLaundrySort,
@@ -177,7 +172,6 @@ const hiResources = {
   "pages": hiPages,
   "r-altair": hiRAltair,
   "r-discord": hiRDiscord,
-  "r-forest-explorer": hiRForestExplorer,
   "r-pf2ecal": hiRPf2ecal,
   "r-rmhbox": hiRRmhbox,
   "r-rmhcode": hiRRmhcode,

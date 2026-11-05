@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 369 routes. 196 render inside the standard site shell (sidebar, nav, context rail); 173 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 363 routes. 196 render inside the standard site shell (sidebar, nav, context rail); 167 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -232,7 +232,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/blog/rss.xml` | RMH Studios — Blog | public | `app/routes/blog.rss[.]xml.ts` |
 | `/breaches` | Breaches | public | `app/routes/breaches.tsx` |
 | `/controller/:code` | Phone Controller | public | `app/routes/controller.$code.tsx` |
-| `/cookgame` | — | public | `app/routes/cookgame.tsx` |
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
 | `/copyright` | Copyright | public | `app/routes/copyright.tsx` |
 | `/covid` | — | public | `app/routes/covid.tsx` |
@@ -257,9 +256,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/embed/post/:id` | — | public | `app/routes/embed.post.$id.tsx` |
 | `/embed/replay/:id` | — | public | `app/routes/embed.replay.$id.tsx` |
 | `/eversion-lab` | — | admin | `app/routes/eversion-lab.tsx` |
-| `/forest-explorer` | — | public | `app/routes/forest-explorer/index.tsx` |
-| `/forest-explorer/explore` | — | public | `app/routes/forest-explorer/explore.tsx` |
-| `/forest-explorer/story` | — | public | `app/routes/forest-explorer/story.tsx` |
 | `/gabriels-horn` | Gabriel | public | `app/routes/gabriels-horn.tsx` |
 | `/games` | redirects to `/arcade` | public | `app/routes/games/_library/index.tsx` |
 | `/games/:gameId` | — | public | `app/routes/games/_library/$gameId.tsx` |
@@ -285,7 +281,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/handle` | — | public | `app/routes/handle.ts` |
 | `/hearthworks` | Hearthworks — build a cozy town, farm, cook and trade | public | `app/routes/hearthworks.tsx` |
 | `/house-always-wins` | — | public | `app/routes/house-always-wins.tsx` |
-| `/isleworks` | Isleworks — isometric island city builder | public | `app/routes/isleworks.tsx` |
 | `/jelly` | — | public | `app/routes/jelly.tsx` |
 | `/kaikaidebtcounter` | The Kaikai Debt Counter | public | `app/routes/kaikaidebtcounter.tsx` |
 | `/kowloon-knockout` | — | public | `app/routes/kowloon-knockout/index.tsx` |
@@ -312,7 +307,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmh-capital/contact` | — | public | `app/routes/rmh-capital/contact.tsx` |
 | `/rmh-capital/firm` | — | public | `app/routes/rmh-capital/firm.tsx` |
 | `/rmh-capital/insights` | — | public | `app/routes/rmh-capital/insights.tsx` |
-| `/rmh-farming-sim` | — | public | `app/routes/rmh-farming-sim/index.tsx` |
 | `/rmh-internal-affairs` | — | public | `app/routes/rmh-internal-affairs.ts` |
 | `/rmh-internal-affairs/:page` | — | public | `app/routes/rmh-internal-affairs.$page.ts` |
 | `/rmh-pmc` | — | public | `app/routes/rmh-pmc/index.tsx` |

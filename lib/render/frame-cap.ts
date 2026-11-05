@@ -2,8 +2,8 @@
  * Frame caps for a 3D scene that is on screen but not being played.
  *
  * A game's menu usually sits in front of its live scene — Nightrail's idle
- * cruise, the Isleworks island breathing behind the title card, Cookgame's town
- * behind a shop overlay. That is deliberate and stays. What it should not do is
+ * cruise, a town breathing behind the title card, a shop overlay over a live
+ * scene. That is deliberate and stays. What it should not do is
  * render at the panel's full rate: a menu backdrop stays at 60fps so it looks
  * smooth, but on a 120/144/240Hz panel the frames above 60 buy nothing behind
  * a dimmed or blurred menu, and every one is a full WebGL draw (plus, under a

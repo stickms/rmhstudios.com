@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 989 files across 199 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 981 files across 197 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -782,14 +782,6 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/forecasting/calibration` | `GET` | `app/routes/api/forecasting/calibration.ts` |
 | `/api/forecasting/seasons` | `GET` | `app/routes/api/forecasting/seasons.ts` |
-
-## `/api/forest-explorer`
-
-1 route.
-
-| Route | Methods | Source |
-| ----- | ------- | ------ |
-| `/api/forest-explorer/save` | `GET` `POST` | `app/routes/api/forest-explorer/save.ts` |
 
 ## `/api/fortune`
 
@@ -2369,20 +2361,6 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/wishlist` | `DELETE` `GET` `POST` | `app/routes/api/wishlist/index.ts` |
-
-## `/api/worlds`
-
-7 routes.
-
-| Route | Methods | Source |
-| ----- | ------- | ------ |
-| `/api/worlds/festival` | `GET` | `app/routes/api/worlds/festival.ts` |
-| `/api/worlds/garden-claim` | `POST` | `app/routes/api/worlds/garden-claim.ts` |
-| `/api/worlds/postcards` | `POST` | `app/routes/api/worlds/postcards.ts` |
-| `/api/worlds/snapshots` | `DELETE` `GET` `POST` | `app/routes/api/worlds/snapshots.ts` |
-| `/api/worlds/visit/:code` | `GET` | `app/routes/api/worlds/visit.$code.ts` |
-| `/api/worlds/visit/:code/postcard` | `POST` | `app/routes/api/worlds/visit.$code.postcard.ts` |
-| `/api/worlds/visit/:code/water` | `POST` | `app/routes/api/worlds/visit.$code.water.ts` |
 
 ## `/api/wrapped`
 

@@ -140,16 +140,6 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     save: 'local-only',
     accessibility: [],
   },
-  isleworks: {
-    genre: ['simulation', 'strategy'],
-    players: ['single'],
-    input: { supported: ['mouse', 'touch'], required: ['mouse'] },
-    sessionMinutes: [20, 90],
-    engine: 'webgl',
-    demanding: true,
-    save: 'shared-table',
-    accessibility: [],
-  },
   rmhbox: {
     genre: ['party', 'puzzle'],
     players: ['online-versus', 'online-coop'],
@@ -317,17 +307,6 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     accessibility: [],
     partyCapable: true,
   },
-  'forest-explorer': {
-    genre: ['narrative', 'puzzle'],
-    players: ['single'],
-    // No touch handling in the source: first-person 3D, desktop-only in practice.
-    input: { supported: ['keyboard', 'mouse'], required: ['keyboard'] },
-    sessionMinutes: [10, 45],
-    engine: 'webgl',
-    demanding: true,
-    save: 'own-table',
-    accessibility: ['no-timed-input'],
-  },
   'void-breaker': {
     genre: ['shooter', 'arcade'],
     players: ['single', 'async-leaderboard'],
@@ -351,17 +330,6 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     accessibility: [],
     descriptors: ['violence'],
     partyCapable: true,
-  },
-  cookgame: {
-    genre: ['simulation', 'strategy'],
-    players: ['single'],
-    // No touch handling in the source.
-    input: { supported: ['mouse'], required: ['mouse'] },
-    sessionMinutes: [15, 60],
-    engine: 'webgl',
-    demanding: true,
-    save: 'shared-table',
-    accessibility: ['no-timed-input'],
   },
   'house-always-wins': {
     genre: ['platformer', 'narrative'],
@@ -388,18 +356,6 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     save: 'none',
     accessibility: [],
     descriptors: ['flashing'],
-  },
-  'rmh-farming-sim': {
-    genre: ['simulation'],
-    players: ['single', 'online-coop'],
-    maxPlayers: 4,
-    input: { supported: ['keyboard', 'mouse'], required: ['keyboard'] },
-    sessionMinutes: [20, 90],
-    engine: 'webgl',
-    demanding: true,
-    // FarmingSimFarm.saveData, upserted by the socket handler.
-    save: 'own-table',
-    accessibility: ['no-timed-input'],
   },
   'gabriels-horn': {
     genre: ['card', 'party'],

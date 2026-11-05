@@ -18,12 +18,10 @@ import idCDreamRift from "@/locales/id/c-dream-rift.json";
 import idCDunesday from "@/locales/id/c-dunesday.json";
 import idCEconomy from "@/locales/id/c-economy.json";
 import idCElections from "@/locales/id/c-elections.json";
-import idCForestExplorer from "@/locales/id/c-forest-explorer.json";
 import idCGabrielsHorn from "@/locales/id/c-gabriels-horn.json";
 import idCGame from "@/locales/id/c-game.json";
 import idCHistory from "@/locales/id/c-history.json";
 import idCHouseAlwaysWins from "@/locales/id/c-house-always-wins.json";
-import idCIsleworks from "@/locales/id/c-isleworks.json";
 import idCKaikaiDebt from "@/locales/id/c-kaikai-debt.json";
 import idCKowloonKnockout from "@/locales/id/c-kowloon-knockout.json";
 import idCLaundrySort from "@/locales/id/c-laundry-sort.json";
@@ -78,7 +76,6 @@ import idNav from "@/locales/id/nav.json";
 import idPages from "@/locales/id/pages.json";
 import idRAltair from "@/locales/id/r-altair.json";
 import idRDiscord from "@/locales/id/r-discord.json";
-import idRForestExplorer from "@/locales/id/r-forest-explorer.json";
 import idRPf2ecal from "@/locales/id/r-pf2ecal.json";
 import idRRmhbox from "@/locales/id/r-rmhbox.json";
 import idRRmhcode from "@/locales/id/r-rmhcode.json";
@@ -117,12 +114,10 @@ const idResources = {
   "c-dunesday": idCDunesday,
   "c-economy": idCEconomy,
   "c-elections": idCElections,
-  "c-forest-explorer": idCForestExplorer,
   "c-gabriels-horn": idCGabrielsHorn,
   "c-game": idCGame,
   "c-history": idCHistory,
   "c-house-always-wins": idCHouseAlwaysWins,
-  "c-isleworks": idCIsleworks,
   "c-kaikai-debt": idCKaikaiDebt,
   "c-kowloon-knockout": idCKowloonKnockout,
   "c-laundry-sort": idCLaundrySort,
@@ -177,7 +172,6 @@ const idResources = {
   "pages": idPages,
   "r-altair": idRAltair,
   "r-discord": idRDiscord,
-  "r-forest-explorer": idRForestExplorer,
   "r-pf2ecal": idRPf2ecal,
   "r-rmhbox": idRRmhbox,
   "r-rmhcode": idRRmhcode,

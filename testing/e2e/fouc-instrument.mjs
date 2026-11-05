@@ -259,7 +259,7 @@ export const INSTRUMENT_SOURCE = `(() => {
   // settled gives the wrong answer in the common and CORRECT case: Vite's
   // '__vitePreload' awaits a dynamically-imported chunk's CSS before executing
   // the chunk, so a game's stylesheet lands several hundred milliseconds BEFORE
-  // the game's markup exists. Measured on /isleworks: sheet applied at 553ms,
+  // the game's markup exists. Measured on a game route: sheet applied at 553ms,
   // first '.isw' element at 1020ms. Its selectors all match once the game has
   // mounted, and none of them matched anything when the sheet arrived — nothing
   // ever painted unstyled, and a detector that asked at the end would have called

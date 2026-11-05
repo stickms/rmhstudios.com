@@ -17,20 +17,20 @@ describe('SITE_DESTINATIONS', () => {
 
 describe('searchCatalog', () => {
   it('finds a game by its exact title', () => {
-    const { game } = searchCatalog(q('Isleworks'));
-    expect(game[0]?.title).toBe('Isleworks');
+    const { game } = searchCatalog(q('Hearthworks'));
+    expect(game[0]?.title).toBe('Hearthworks');
     expect(game[0]?.score).toBe(1);
   });
 
   it('still finds a game through a one-character typo', () => {
-    const { game } = searchCatalog(q('islworks'));
-    expect(game[0]?.title).toBe('Isleworks');
+    const { game } = searchCatalog(q('hearthwoks'));
+    expect(game[0]?.title).toBe('Hearthworks');
     expect(game[0]?.score).toBeGreaterThanOrEqual(CONFIDENCE.medium);
   });
 
   it('finds a game by a tag rather than its name', () => {
     const { game } = searchCatalog(q('city builder'));
-    expect(game.map((g) => g.title)).toContain('Isleworks');
+    expect(game.map((g) => g.title)).toContain('Hearthworks');
   });
 
   it('finds a settings page by what it is for, not what it is called', () => {

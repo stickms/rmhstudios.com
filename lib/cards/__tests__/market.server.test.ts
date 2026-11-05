@@ -458,7 +458,7 @@ describe('buy orders', () => {
     expect(await code(bid())).toBe('ALREADY_ORDERED');
     for (let i = 0; i < 5; i++) await code(placeBuyOrder({ buyerId: BUYER, gameId: G, cardIndex: i === 2 ? 5 : i, foil: i === 4, priceCoins: 50 }));
     // The cap: fill the rest with distinct cards across titles.
-    for (const g of ['laundry-sort', 'cookgame', 'dream-rift']) {
+    for (const g of ['laundry-sort', 'nightrail', 'dream-rift']) {
       for (let i = 0; i < 6; i++) for (const f of [false, true]) await code(placeBuyOrder({ buyerId: BUYER, gameId: g, cardIndex: i, foil: f, priceCoins: 50 }));
     }
     expect(await code(placeBuyOrder({ buyerId: BUYER, gameId: 'void-breaker', cardIndex: 0, foil: false, priceCoins: 50 }))).toBe('TOO_MANY_ORDERS');

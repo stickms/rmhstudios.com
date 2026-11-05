@@ -18,12 +18,10 @@ import esCDreamRift from "@/locales/es/c-dream-rift.json";
 import esCDunesday from "@/locales/es/c-dunesday.json";
 import esCEconomy from "@/locales/es/c-economy.json";
 import esCElections from "@/locales/es/c-elections.json";
-import esCForestExplorer from "@/locales/es/c-forest-explorer.json";
 import esCGabrielsHorn from "@/locales/es/c-gabriels-horn.json";
 import esCGame from "@/locales/es/c-game.json";
 import esCHistory from "@/locales/es/c-history.json";
 import esCHouseAlwaysWins from "@/locales/es/c-house-always-wins.json";
-import esCIsleworks from "@/locales/es/c-isleworks.json";
 import esCKaikaiDebt from "@/locales/es/c-kaikai-debt.json";
 import esCKowloonKnockout from "@/locales/es/c-kowloon-knockout.json";
 import esCLaundrySort from "@/locales/es/c-laundry-sort.json";
@@ -78,7 +76,6 @@ import esNav from "@/locales/es/nav.json";
 import esPages from "@/locales/es/pages.json";
 import esRAltair from "@/locales/es/r-altair.json";
 import esRDiscord from "@/locales/es/r-discord.json";
-import esRForestExplorer from "@/locales/es/r-forest-explorer.json";
 import esRPf2ecal from "@/locales/es/r-pf2ecal.json";
 import esRRmhbox from "@/locales/es/r-rmhbox.json";
 import esRRmhcode from "@/locales/es/r-rmhcode.json";
@@ -117,12 +114,10 @@ const esResources = {
   "c-dunesday": esCDunesday,
   "c-economy": esCEconomy,
   "c-elections": esCElections,
-  "c-forest-explorer": esCForestExplorer,
   "c-gabriels-horn": esCGabrielsHorn,
   "c-game": esCGame,
   "c-history": esCHistory,
   "c-house-always-wins": esCHouseAlwaysWins,
-  "c-isleworks": esCIsleworks,
   "c-kaikai-debt": esCKaikaiDebt,
   "c-kowloon-knockout": esCKowloonKnockout,
   "c-laundry-sort": esCLaundrySort,
@@ -177,7 +172,6 @@ const esResources = {
   "pages": esPages,
   "r-altair": esRAltair,
   "r-discord": esRDiscord,
-  "r-forest-explorer": esRForestExplorer,
   "r-pf2ecal": esRPf2ecal,
   "r-rmhbox": esRRmhbox,
   "r-rmhcode": esRRmhcode,

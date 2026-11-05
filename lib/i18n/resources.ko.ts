@@ -18,12 +18,10 @@ import koCDreamRift from "@/locales/ko/c-dream-rift.json";
 import koCDunesday from "@/locales/ko/c-dunesday.json";
 import koCEconomy from "@/locales/ko/c-economy.json";
 import koCElections from "@/locales/ko/c-elections.json";
-import koCForestExplorer from "@/locales/ko/c-forest-explorer.json";
 import koCGabrielsHorn from "@/locales/ko/c-gabriels-horn.json";
 import koCGame from "@/locales/ko/c-game.json";
 import koCHistory from "@/locales/ko/c-history.json";
 import koCHouseAlwaysWins from "@/locales/ko/c-house-always-wins.json";
-import koCIsleworks from "@/locales/ko/c-isleworks.json";
 import koCKaikaiDebt from "@/locales/ko/c-kaikai-debt.json";
 import koCKowloonKnockout from "@/locales/ko/c-kowloon-knockout.json";
 import koCLaundrySort from "@/locales/ko/c-laundry-sort.json";
@@ -78,7 +76,6 @@ import koNav from "@/locales/ko/nav.json";
 import koPages from "@/locales/ko/pages.json";
 import koRAltair from "@/locales/ko/r-altair.json";
 import koRDiscord from "@/locales/ko/r-discord.json";
-import koRForestExplorer from "@/locales/ko/r-forest-explorer.json";
 import koRPf2ecal from "@/locales/ko/r-pf2ecal.json";
 import koRRmhbox from "@/locales/ko/r-rmhbox.json";
 import koRRmhcode from "@/locales/ko/r-rmhcode.json";
@@ -117,12 +114,10 @@ const koResources = {
   "c-dunesday": koCDunesday,
   "c-economy": koCEconomy,
   "c-elections": koCElections,
-  "c-forest-explorer": koCForestExplorer,
   "c-gabriels-horn": koCGabrielsHorn,
   "c-game": koCGame,
   "c-history": koCHistory,
   "c-house-always-wins": koCHouseAlwaysWins,
-  "c-isleworks": koCIsleworks,
   "c-kaikai-debt": koCKaikaiDebt,
   "c-kowloon-knockout": koCKowloonKnockout,
   "c-laundry-sort": koCLaundrySort,
@@ -177,7 +172,6 @@ const koResources = {
   "pages": koPages,
   "r-altair": koRAltair,
   "r-discord": koRDiscord,
-  "r-forest-explorer": koRForestExplorer,
   "r-pf2ecal": koRPf2ecal,
   "r-rmhbox": koRRmhbox,
   "r-rmhcode": koRRmhcode,

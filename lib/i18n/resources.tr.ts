@@ -18,12 +18,10 @@ import trCDreamRift from "@/locales/tr/c-dream-rift.json";
 import trCDunesday from "@/locales/tr/c-dunesday.json";
 import trCEconomy from "@/locales/tr/c-economy.json";
 import trCElections from "@/locales/tr/c-elections.json";
-import trCForestExplorer from "@/locales/tr/c-forest-explorer.json";
 import trCGabrielsHorn from "@/locales/tr/c-gabriels-horn.json";
 import trCGame from "@/locales/tr/c-game.json";
 import trCHistory from "@/locales/tr/c-history.json";
 import trCHouseAlwaysWins from "@/locales/tr/c-house-always-wins.json";
-import trCIsleworks from "@/locales/tr/c-isleworks.json";
 import trCKaikaiDebt from "@/locales/tr/c-kaikai-debt.json";
 import trCKowloonKnockout from "@/locales/tr/c-kowloon-knockout.json";
 import trCLaundrySort from "@/locales/tr/c-laundry-sort.json";
@@ -78,7 +76,6 @@ import trNav from "@/locales/tr/nav.json";
 import trPages from "@/locales/tr/pages.json";
 import trRAltair from "@/locales/tr/r-altair.json";
 import trRDiscord from "@/locales/tr/r-discord.json";
-import trRForestExplorer from "@/locales/tr/r-forest-explorer.json";
 import trRPf2ecal from "@/locales/tr/r-pf2ecal.json";
 import trRRmhbox from "@/locales/tr/r-rmhbox.json";
 import trRRmhcode from "@/locales/tr/r-rmhcode.json";
@@ -117,12 +114,10 @@ const trResources = {
   "c-dunesday": trCDunesday,
   "c-economy": trCEconomy,
   "c-elections": trCElections,
-  "c-forest-explorer": trCForestExplorer,
   "c-gabriels-horn": trCGabrielsHorn,
   "c-game": trCGame,
   "c-history": trCHistory,
   "c-house-always-wins": trCHouseAlwaysWins,
-  "c-isleworks": trCIsleworks,
   "c-kaikai-debt": trCKaikaiDebt,
   "c-kowloon-knockout": trCKowloonKnockout,
   "c-laundry-sort": trCLaundrySort,
@@ -177,7 +172,6 @@ const trResources = {
   "pages": trPages,
   "r-altair": trRAltair,
   "r-discord": trRDiscord,
-  "r-forest-explorer": trRForestExplorer,
   "r-pf2ecal": trRPf2ecal,
   "r-rmhbox": trRRmhbox,
   "r-rmhcode": trRRmhcode,
