@@ -39,8 +39,8 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   bread: { name: 'Bread', price: 40 },
   stew: { name: 'Hearty stew', price: 46 },
   jam: { name: 'Berry jam', price: 28 },
-  'mystery-tonic': { name: 'Mystery tonic', price: 70, contraband: true },
-  'alley-stew': { name: 'Back-alley stew', price: 60, contraband: true },
+  'mystery-tonic': { name: 'Mystery tonic', price: 100, contraband: true },
+  'alley-stew': { name: 'Back-alley stew', price: 90, contraband: true },
 };
 
 export const isItemId = (v: unknown): v is ItemId =>

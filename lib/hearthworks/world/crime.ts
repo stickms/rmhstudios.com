@@ -12,31 +12,51 @@ import type { PlayerState, RejectReason, World, WorldEvent } from './types';
 
 export const MAX_HP = 100;
 export const HEAT_MAX = 100;
-/** Street buyers pay this much over the stall price: the price of asking no questions. */
-export const HUSTLE_MARKUP = 2.5;
-/** Heat from one hustle: a base (more for contraband) plus a little for each extra unit, up to a cap. */
-export const HUSTLE_HEAT = 8;
-export const HUSTLE_HEAT_CONTRABAND = 14;
-export const HUSTLE_HEAT_PER_EXTRA = 2;
-export const HUSTLE_HEAT_EXTRA_CAP = 8;
+/**
+ * Street buyers pay this much over the stall price: the price of asking no questions. Deliberately below the 1.5×
+ * a customer pays at a stall (CUSTOMER_PREMIUM), so laundering legal goods is never worth the heat; the money in
+ * crime is the contraband's own price (content/items.ts), not the markup.
+ */
+export const HUSTLE_MARKUP = 1.6;
+/**
+ * Heat from one hustle: a small fixed cost for making a deal, plus a charge per unit, so a bigger deal is hotter
+ * in proportion (there is no bulk discount: dumping a whole stock at once reaches the cap and calls the police).
+ * Contraband is hotter per unit than legal goods.
+ */
+export const HUSTLE_HEAT_DEAL = 2;
+export const HUSTLE_HEAT_PER_UNIT = 4;
+export const HUSTLE_HEAT_PER_UNIT_CONTRABAND = 7;
 /** At this heat (and above) the police come. */
 export const WANTED_HEAT = 40;
-/** Heat lost every HEAT_DECAY_TICKS (1 per 2 s: a full 100 takes 3½ minutes to cool). */
-export const HEAT_DECAY_TICKS = 40;
+/** Heat lost every HEAT_DECAY_TICKS (1 per 2.5 s: 44 → calm takes 72 s, a full 100 takes 4 minutes). */
+export const HEAT_DECAY_TICKS = 50;
 /** Heat for hitting an officer, and for killing one. */
-export const HIT_HEAT = 3;
-export const KILL_HEAT = 30;
-/** Health returns 1 every REGEN_TICKS, starting REGEN_DELAY ticks after the last wound. */
-export const REGEN_DELAY = 100;
-export const REGEN_TICKS = 10;
+export const HIT_HEAT = 1;
+export const KILL_HEAT = 20;
+/** Health returns 1 every REGEN_TICKS (2.5 hp/s), starting REGEN_DELAY ticks (3 s) after the last wound. */
+export const REGEN_DELAY = 60;
+export const REGEN_TICKS = 8;
 /** Time knocked out before waking at the meadow (3 s). */
 export const DOWNED_TICKS = 60;
 export const EQUIP_TICKS = 6;
-/** Percentages of money lost to an arrest and to a knock-out. */
+/**
+ * What an arrest and a knock-out cost, as a percentage of the money carried: a base plus a share for every point of
+ * heat at the time (the hotter you were, the harder they come down), and never less than the floor (or all you have).
+ * Cold (heat 40): 25 % / 18 %. Burning (heat 100): 40 % / 30 %.
+ */
 export const ARREST_FINE_PCT = 15;
+export const ARREST_FINE_PCT_PER_HEAT = 0.25;
 export const DOWNED_FINE_PCT = 10;
+export const DOWNED_FINE_PCT_PER_HEAT = 0.2;
+export const FINE_FLOOR = 30;
 /** Having fired this recently counts as fighting back (10 s). */
 export const FIGHT_MEMORY_TICKS = 200;
+
+/** The heat one hustle of `qty` units of `item` makes. */
+export function hustleHeat(item: ItemId, qty: number): number {
+  const per = ITEMS[item].contraband ? HUSTLE_HEAT_PER_UNIT_CONTRABAND : HUSTLE_HEAT_PER_UNIT;
+  return HUSTLE_HEAT_DEAL + per * qty;
+}
 
 export function newArms(): Arms {
   return {
@@ -111,8 +131,7 @@ export function applyCrimeCommand(
       p.inventory[cmd.item] = (p.inventory[cmd.item] ?? 0) - cmd.qty;
       const earned = Math.floor(ITEMS[cmd.item].price * cmd.qty * HUSTLE_MARKUP);
       p.money += earned;
-      const base = ITEMS[cmd.item].contraband ? HUSTLE_HEAT_CONTRABAND : HUSTLE_HEAT;
-      addHeat(p, base + HUSTLE_HEAT_PER_EXTRA * Math.min(cmd.qty - 1, HUSTLE_HEAT_EXTRA_CAP));
+      addHeat(p, hustleHeat(cmd.item, cmd.qty));
       ev.push({
         type: 'hustled',
         playerId: p.id,
@@ -267,11 +286,20 @@ function confiscate(p: PlayerState): Partial<Record<ItemId, number>> {
   return taken;
 }
 
-const fineOf = (money: number, pct: number): number => Math.floor((money * pct) / 100);
+/** The fine: a share of the money, never less than the floor, never more than you have, never negative. */
+const fineOf = (money: number, pct: number): number =>
+  Math.max(0, Math.min(money, Math.max(FINE_FLOOR, Math.floor((money * pct) / 100))));
+
+/** The arrest fine for a player of this heat carrying this much. */
+export const arrestFine = (money: number, heat: number): number =>
+  fineOf(money, ARREST_FINE_PCT + ARREST_FINE_PCT_PER_HEAT * heat);
+/** The fine for being knocked out. */
+export const downedFine = (money: number, heat: number): number =>
+  fineOf(money, DOWNED_FINE_PCT + DOWNED_FINE_PCT_PER_HEAT * heat);
 
 /** The cuffs go on: a fine, the contraband gone, and the heat with it. */
 export function arrest(w: World, p: PlayerState, officerId: number, ev: WorldEvent[]): void {
-  const fine = fineOf(p.money, ARREST_FINE_PCT);
+  const fine = arrestFine(p.money, p.heat);
   p.money -= fine;
   const confiscated = confiscate(p);
   p.heat = 0;
@@ -282,7 +310,7 @@ export function arrest(w: World, p: PlayerState, officerId: number, ev: WorldEve
 /** Wake at the meadow: a smaller fine, no contraband, full health, a clean slate. Inventory otherwise kept. */
 export function respawn(w: World, p: PlayerState, ev: WorldEvent[]): void {
   const mid = Math.floor(w.size / 2);
-  const fine = fineOf(p.money, DOWNED_FINE_PCT);
+  const fine = downedFine(p.money, p.heat);
   p.money -= fine;
   const confiscated = confiscate(p);
   p.x = mid;
@@ -311,7 +339,7 @@ export function tickPlayersCombat(w: World, ev: WorldEvent[]): void {
       p.arms.reloadDoneAt = 0;
       ev.push({ type: 'reloaded', playerId: p.id, weapon: g.id });
     }
-    if (p.heat > 0 && w.tick % HEAT_DECAY_TICKS === 0) p.heat -= 1;
+    if (p.heat > 0 && w.tick % HEAT_DECAY_TICKS === 0) p.heat = Math.max(0, p.heat - 1);
     if (p.hp < MAX_HP && w.tick - p.arms.lastHitTick >= REGEN_DELAY && w.tick % REGEN_TICKS === 0)
       p.hp += 1;
   }

@@ -3,7 +3,9 @@ import { ITEMS, OFFICERS, RECIPES, WEAPONS } from '../../content';
 import {
   DOWNED_TICKS,
   HEAT_DECAY_TICKS,
+  KILL_HEAT,
   HUSTLE_MARKUP,
+  hustleHeat,
   MAX_HP,
   START_MONEY,
   placeOfficer,
@@ -32,7 +34,8 @@ describe('the street trade and heat', () => {
     const p = withPlayer(w, 5, 5);
     p.inventory['mystery-tonic'] = 50;
     ticks(w, 0, [{ type: 'hustle', playerId: P, item: 'mystery-tonic', qty: 1 }]);
-    expect(p.heat).toBe(14);
+    expect(p.heat).toBe(hustleHeat('mystery-tonic', 1));
+    expect(p.heat).toBeGreaterThan(hustleHeat('bread', 1));
     for (let i = 0; i < 10; i++)
       ticks(w, 0, [{ type: 'hustle', playerId: P, item: 'mystery-tonic', qty: 4 }]);
     expect(p.heat).toBe(100);
@@ -175,10 +178,14 @@ describe('guns', () => {
     });
   });
 
-  it('scatters shotgun pellets: eight at close range, and each is a fraction of a rifle round', () => {
-    const { w, o } = duel(2, 'shotgun');
-    ticks(w, 0, [{ type: 'shoot', playerId: P, x: 7, z: 16 }]);
-    expect(OFFICERS.metrocop.hp - o.hp).toBe(40);
+  it('scatters shotgun pellets: eight at close range, which is enough to kill a Metrocop, and far fewer at four tiles', () => {
+    const near = duel(2, 'shotgun');
+    ticks(near.w, 0, [{ type: 'shoot', playerId: P, x: 7, z: 16 }]);
+    expect(near.w.officers).toHaveLength(0); // 8 pellets of 8 each, all inside the hit radius
+    const far = duel(4, 'shotgun');
+    ticks(far.w, 0, [{ type: 'shoot', playerId: P, x: 9, z: 16 }]);
+    expect(far.o.hp).toBeGreaterThan(0);
+    expect(far.o.hp).toBeLessThan(OFFICERS.metrocop.hp);
   });
 
   it('does not let a shot through a ledge', () => {
@@ -193,17 +200,14 @@ describe('guns', () => {
   it('kills an officer: cash drops, heat jumps, an event says so', () => {
     const { w, p, o } = duel(5, 'marksman');
     const before = p.money;
-    ticks(w, 0, [{ type: 'shoot', playerId: P, x: 10, z: 16 }]);
-    expect(o.hp).toBeLessThan(OFFICERS.metrocop.hp);
-    ticks(w, WEAPONS.marksman.fireTicks);
-    const events = ticks(w, 0, [{ type: 'shoot', playerId: P, x: 10, z: 16 }]);
+    const events = ticks(w, 0, [{ type: 'shoot', playerId: P, x: 10, z: 16 }]); // one round kills a Metrocop
     expect(ev(events, 'officerDown')[0]).toMatchObject({
       officerId: o.id,
       drop: OFFICERS.metrocop.drop,
     });
     expect(w.officers).toHaveLength(0);
     expect(p.money).toBe(before + OFFICERS.metrocop.drop);
-    expect(p.heat).toBeGreaterThanOrEqual(30);
+    expect(p.heat).toBeGreaterThanOrEqual(KILL_HEAT);
   });
 });
 
