@@ -597,3 +597,175 @@ No new third-party asset was downloaded for this batch; everything is re-composi
 - **versecraft**: the owner's illustrated card art (`oldcards/versecraft.webp`) with the owner's figure untouched, scaled 1.26x and placed right; the left of the scene continues the same painting (mirrored garden strip from the card's own left edge, defocused and shaded), plus soft light rays and grain. No text.
 
 Tools: Python (PIL, numpy, OpenCV), headless Chromium via Playwright. Scripts: `game-banners-v4/scripts/`.
+
+## Art round 4 (2026-11-05): 2x cards, banners and icons
+
+Every card (1600 px wide), banner (3840x1280) and icon (1024x1024) was re-rendered at twice the earlier resolution, with higher-resolution masters re-fetched where the source offered them. The RMHcode and RMHbox cards were not changed (only their banners and icons). Sources that were only available at lower resolution are upscaled with Lanczos and a mild unsharp, with grain carrying the texture; each batch says which. The earlier rounds' attributions above still apply to the assets they list; the entries below add the newly fetched masters.
+
+### 2x batch A (apps: Dunesday, TF2 Hub, Calculator, Homes)
+
+#### Attributions: hires-v5, batch A
+
+All sources, licences, fonts and the face provenance from `../../app-art-v3/A/ATTRIBUTIONS.md` and `../../app-art-v4/A/ATTRIBUTIONS.md` still apply. This pass re-renders at 2x using higher-resolution versions of the same works. No new works were added.
+
+Higher-resolution files used (same works, same licences):
+| Work | File now used | Source URL |
+|---|---|---|
+| The Active Dunes of Nili Patera (PIA18244), NASA/JPL-Caltech/Univ. of Arizona | `~orig.jpg` 2880x1800 (was 1280x800) | https://images-assets.nasa.gov/image/PIA18244/PIA18244~orig.jpg |
+| GRC-1956-C-41394, GRC-1950-C-26414, GRC-1951-C-27174, GRC-1955-C-39782 (NASA Glenn/Lewis) | `~orig.jpg` 2048x1536 (were 1280x960) | https://images-assets.nasa.gov/image/<id>/<id>~orig.jpg |
+| LRC-1957-B701_P-00959 (NASA Langley) | `~large.jpg` 1920x1378 (no larger public derivative was fetched) | https://images-assets.nasa.gov/image/LRC-1957-B701_P-00959/LRC-1957-B701_P-00959~large.jpg |
+| LoC LC-USZ62-29325 (Elphinstone), LC-USZ62-33733 (Dorando), LC-USZ62-111275 (Brooklyn marathon), Bain Collection; "No known restrictions on publication" | LoC master TIFFs (1258x1536, 1536x1154, 4096x3291; were 524x640, 640x481, 640x514) | https://tile.loc.gov/storage-services/master/pnp/cph/3a30000/3a30000/3a30000/3a30001u.tif ; https://tile.loc.gov/storage-services/master/pnp/cph/3a30000/3a34000/3a34200/3a34239u.tif ; https://cdn.loc.gov/master/pnp/cph/3c10000/3c11000/3c11200/3c11275u.tif |
+| Sanborn Fire Insurance Map, Boston (East Boston), 1900, sheet 5; LoC, public domain | Native-resolution (5583x7987) IIIF regions cut for card/banner/icon/compass rose | https://tile.loc.gov/image-services/iiif/service:gmd:gmd376m:g3764m:g3764bm:g03693190005:03693_05_1900-0005/ |
+| HP 9100A Calculator 1968.jpg (Swtpc6800, Commons, public domain) | original 1305x1125 (already the full size on Commons) | https://commons.wikimedia.org/wiki/File:HP_9100A_Calculator_1968.jpg |
+
+Changes are as in v3/v4 (crop, greyscale, gradient-map/duotone, grain), now done on the 2x grid with Lanczos and a mild unsharp when a source is enlarged. Output webps carry a very light (sigma 0.9 level) dither before encoding to avoid banding.
+
+### 2x batch B (apps: Ladder, Music, Study, Type)
+
+#### Attributions: batch B (RMH Ladder, RMH Music, RMH Study, RMH Type), hi-res v5 (2x) re-render
+
+Everything below was downloaded to `_assets/<name>/` (each with a `meta.json` holding the licence data returned by the
+source API) and treated as image data only. Only public-domain / CC0 material is used. All assets were fetched on
+2026-11-05 through the Wikimedia Commons API and the Metropolitan Museum Open Access API.
+
+##### Face imagery (owner's own, not third party)
+Every face is derived from the owner's existing "Marlon Jack" cards (`scratchpad/oldcards/`, previous cut-outs in
+`game-art-v2/jack/work/`). Nothing was generated or invented.
+- rmhladder: GrabCut photo cut-out (`face_photo_cut.png`, from the owner's rmhcode card), re-treated as a violet/lime
+  halftone (badge, banner) and a 3-level posterised version (icon).
+- rmhmusic: the owner's watercolour portrait from the original rmhmusic card, multiplied onto new paper/wash backgrounds.
+- rmhstudy: the line-art face from the owner's original rmhstudy card, re-extracted (4x, thresholded to a clean ink mask,
+  dial ticks removed) and recoloured navy.
+- rmhtype: the line-art face from the owner's original rmhtype card, re-extracted the same way and recoloured black.
+
+##### Third-party assets
+
+| # | Title | Creator / source | URL | Licence | Used in | Changes |
+|---|-------|------------------|-----|---------|---------|---------|
+| 1 | "The Ladder" (salted paper print, April 1844) | William Henry Fox Talbot; The Metropolitan Museum of Art, Bequest of Maurice B. Sendak, 2012 (obj. 306335) | https://www.metmuseum.org/art/collection/search/306335 | CC0 (Met Open Access, public domain) | rmhladder card + banner | Cropped to the ladder, converted to a violet tritone duotone with grain; level labels (STAFF ... INTERN) and leader lines added on top. |
+| 2 | "Sailors or Laborers Wanted" for Washington Navy Yard, City of Washington Gazette, 1 Dec 1819 | Newspaper advertisement (1819), Library of Congress scan, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:%22Sailors_or_Laborers_Wanted%22_for_Washington_Navy_Yard,_City_of_Washington_Gazette_1_Dec_1819.jpg | Public domain (Commons) | rmhladder card | Recoloured to deep violet ink on cream paper; placed as a taped clipping with a new caption. |
+| 3 | "Palm Tree, Nassau" (watercolour, 1898) | Winslow Homer; The Met, Amelia B. Lazarus Fund, 1910 (obj. 11131) | https://www.metmuseum.org/art/collection/search/11131 | CC0 (Met Open Access) | rmhmusic card + banner | Palm crown cut from the sky by darkness mask, slightly saturated, mirrored/rotated and multiplied into the washes. |
+| 4 | Church sonata K. 274, autograph score, f. 1r | Wolfgang Amadeus Mozart; Staatsbibliothek zu Berlin, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:Mozart_-_Church_sonata_K._274_-_autograph,_Staatsbibliothek_zu_Berlin,_f._1r.png | Public domain (Commons) | rmhmusic card + banner | Cropped, desaturated and lifted to a faint manuscript texture under procedurally generated watercolour washes. |
+| 5 | 12in-Vinyl-LP-Record-Angle.jpg | Evan-Amos, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:12in-Vinyl-LP-Record-Angle.jpg | Public domain (Commons) | rmhmusic card, banner, icon | Cut out as a disc, recoloured to blue, groove contrast boosted, yellow label repainted; used as a pale record behind the portrait and as the icon's record. |
+| 6 | "Fleurs Tropicales et Palmiers (Tropical Flowers and Palm Trees)" (block-printed cotton, 1787) | Oberkampf Manufactory; The Met, Rogers Fund, 1937 (obj. 226246) | https://www.metmuseum.org/art/collection/search/226246 | CC0 (Met Open Access) | rmhmusic card | Cropped to a strip, mapped to a navy/sky duotone, faded into the bottom edge. |
+| 7 | Stoppuhr hanhart.jpg (mechanical stopwatch) | Stefan (StefanPohl), via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:Stoppuhr_hanhart.jpg | Public domain (released by the author, Commons) | rmhstudy card + banner | Cut out of its background, mapped to a navy cyanotype tone, case clipped to a circle; the centre of the dial (including the maker's logo) is covered by the owner's face dial; amber second hand added. |
+| 8 | 2ND DECK CASEMATE, ADDITIONAL DECK PROTECTION, 3 DEC. 1925 (blueprint, battleship Texas) | US Navy (Thompson), via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:2ND_DECK_CASEMATE,_ADDITIONAL_DECK_PROTECTION,_3_DEC._1925.jpg | Public domain (Commons) | rmhstudy card + banner | Two crops, recoloured to the app's navy and pale-blue, darkened under a veil so it acts only as texture. |
+| 9 | Underwood Standard Typewriter No. 5 (colored) | Anonymous advertisement illustration (Motion Picture Magazine), via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:Underwood_Standard_Typewriter_No._5_(colored).jpg | Public domain (Commons) | rmhtype card + banner | Cropped to the key rows only (no brand lettering), converted to graphite monochrome, edge-masked. |
+
+##### Fonts (all from Google Fonts, https://github.com/google/fonts)
+
+| Font | Designer | Licence | Used for |
+|------|----------|---------|----------|
+| Big Shoulders Display | Patric King | SIL OFL 1.1 (`ofl/bigshouldersdisplay`) | rmhladder chips, badge role, level labels, logo |
+| Big Shoulders Stencil Display | Patric King | SIL OFL 1.1 (`ofl/bigshouldersstencildisplay`) | rmhstudy "STUDY" and CTA |
+| Anton | Vernon Adams | SIL OFL 1.1 (`ofl/anton`) | rmhladder and rmhstudy card titles |
+| Instrument Serif (Italic) | Rodrigo Fuenzalida, Jordan Egstad | SIL OFL 1.1 (`ofl/instrumentserif`) | rmhmusic tagline |
+| IBM Plex Mono | Mike Abbink, Bold Monday | SIL OFL 1.1 (`ofl/ibmplexmono`) | body/data text across the batch |
+| DM Mono | Colophon Foundry | SIL OFL 1.1 (`ofl/dmmono`) | rmhmusic time stamps and sub-line |
+| Tourney | Tyler Finck, ETC | SIL OFL 1.1 (`ofl/tourney`) | rmhstudy logo |
+| Yellowtail | Brian J. Bonislawsky (Astigmatic) | Apache License 2.0 (`apache/yellowtail`) | rmhmusic title and logo |
+| Special Elite | Brian J. Bonislawsky (Astigmatic) | Apache License 2.0 (`apache/specialelite`) | rmhtype title, typed text, key legends, logo |
+
+Yellowtail and Special Elite are published by Google Fonts under Apache 2.0 rather than the OFL; both permit use and
+embedding in artwork. No other fonts are used in the finished images (extra files in `fonts/` are loaded but unused).
+
+##### Tools
+Python (PIL, numpy, OpenCV GrabCut/threshold), headless Chromium via Playwright for layout and type. All noise, paper
+grain, watercolour washes, halftone dots, keycaps, badge, ladder and chart/UI shapes are generated by `scripts/`.
+
+
+##### Hi-res v5 additions
+No new third-party assets were added. One asset was re-fetched at higher resolution:
+- 12in-Vinyl-LP-Record-Angle.jpg (Evan-Amos, Wikimedia Commons, public domain): https://commons.wikimedia.org/wiki/File:12in-Vinyl-LP-Record-Angle.jpg, now fetched at 3840 px (was 1920 px), cut to the disc and recoloured as before.
+The Met originals (Talbot "The Ladder", 3416 px; Homer "Palm Tree, Nassau", 2800 px full crop, no downsizing) are used at full size.
+All other photo assets are unchanged from the sections above (the larger Commons originals for the blueprint, Underwood typewriter and Mozart score could not be fetched: Wikimedia rate-limited the proxy).
+
+### 2x batch C (apps: Tube, Connections, RMHdle, Studio)
+
+#### Attributions: batch C hi-res (v5) — rmhtube, rmhconnections, rmhdle, rmhstudio
+Earlier-version attributions (all other assets, fonts) remain in `../../app-art-v3/C/ATTRIBUTIONS.md`. Assets re-fetched at higher resolution for v5:
+
+| Asset | Title / creator / URL | Licence | Resolution used | Changes |
+|---|---|---|---|---|
+| projector | "Old Film Projector", Gary Lee Todd, Ph.D. (Flickr original, `_o`), https://www.flickr.com/photos/101561334@N08/17028682361 | CC0 1.0 | 3456x5184 | cut-out (mask upscaled+smoothed), red duotone |
+| mixer | "Mixing console", freestocks.org (Flickr original), https://www.flickr.com/photos/135396164@N05/25668265836 | CC0 1.0 | 5416x3611 | cyan/violet duotone, orange kept |
+| loc_proj | "[Motion picture projectionist operating new sound projector in theater projection booth]", c1926, LC-USZ62-49229, Library of Congress, https://www.loc.gov/pictures/item/2006686775/ (master TIFF) | LOC: no known restrictions on publication | 1536x1195 | red duotone, halftone, film-strip frames |
+| loc_voa | "[Men seated in control room at the Voice of America radio broadcasting studio]", 28 May 1976, Warren K. Leffler, LC-DIG-ppmsca-86224, https://www.loc.gov/pictures/item/2024630431/ (master TIFF) | LOC: no known restrictions on publication | 3619x5316 | crop, blur, blue duotone |
+| brain | "Brain: dissection showing the gyri, seen from above. Coloured line engraving by W.H. Lizars, ca. 1826", Wellcome Collection (V0008410), https://wellcomecollection.org/works/fk5bnkpq (IIIF full image) | Public Domain Mark | 2244x3231 | spline cut-out, indigo/cream ink remap (replaces the rawpixel copy of the same plate) |
+| cork, map, news, tiles, nagra_rp | rawpixel CC0 items as listed in the v3 file, fetched at the largest public size (`image_1300`) | CC0 1.0 (per Openverse/rawpixel) | 1300 px max | as v3; wood-tile face now = photo patch colour + procedural grain |
+| face | owner's existing vector portrait (`public/images/games/rmhtube.webp`, via `oldcards`) | owner's own imagery | 330x382 source | cleaned/traced to crisp tone plates at 8x (bilateral + k-means posterise), re-screenprinted at 2x |
+
+Fonts unchanged (SIL OFL 1.1, Google Fonts; see v3 file). Procedural parts (halftone, grain, scanlines, wood fibres, waveforms, notes, threads) generated by `scripts/`.
+
+### 2x batch D (apps: Strategies; RMHcode and RMHbox banners and icons)
+
+#### hires-v5 (2x) attributions
+Same sources as app-art-v3/D and app-art-v4/D ATTRIBUTIONS.md (Met Open Access CC0: Sauthier map obj 384833, Knight 464233, Queen 479682, manuscript 24880; Wikimedia CC0: rope-core board, Pi Pico macro, cardboard texture; LoC "no known restrictions": crate board LCCN 2010651505, trademarks 2026706247 (W.B. fish) and 2026707861 (Insuloid stencil)). Owner's own card imagery for faces and the Sahur figure.
+
+New in this pass:
+- LoC master TIFFs re-fetched at full size (cdn.loc.gov/master/pnp/...): crate board 4926x1962, W.B. trademark 4134x6141, Insuloid trademark 4117x6216. Same rights statement and same changes as before (cropped, ink-only tinted marks, duotone planks).
+- Met originals: the previously downloaded Met JPEGs were already full size (Sauthier 3071x4000, Queen 4000x3900, Knight 2000x1532, manuscript 2706x4000).
+- Fonts (SIL OFL 1.1, google/fonts): Almendra, Cormorant SC, IM Fell Pica Italic (ofl/imfellpica; this REPLACES the IM Fell DW Pica listed in v3/v4, whose files had failed to download so the browser had silently fallen back to a system serif), VT323, Unbounded, Martian Mono, Stardos Stencil, Black Ops One.
+
+### 2x batch E (games: Hearthworks, Altair, Counter-Strike, Half-Life 2, Portal)
+
+#### hires-v5 / E: attributions (2x re-render of banners, cards, icons)
+
+All sources are open: NASA media and US Government works are public domain, Library of Congress items carry no known restrictions, the Met item is CC0, Kenney tiles are CC0, fonts are SIL OFL. No Valve art is used (csgo, half-life-2 and portal stay drawn-from-scratch mimic-the-look).
+
+##### Re-downloaded full-resolution masters (same works as before, higher resolution)
+- Standard Elevator, 1 Saint Clair Street, Buffalo, NY (HAER NY-241), photo 350161: LoC master TIFF https://tile.loc.gov/storage-services/master/pnp/habshaer/ny/ny1600/ny1669/photos/350161pu.tif (3608x5000, was 739x1024). Item https://www.loc.gov/item/ny1669/. US Government work, public domain.
+- Buffalo Grain Elevators, Buffalo, Erie County, NY (HAER NY-289), photo 350072: LoC master TIFF https://tile.loc.gov/storage-services/master/pnp/habshaer/ny/ny1600/ny1667/photos/350072pu.tif (5000x3632, was 1024x744). Item https://www.loc.gov/item/ny1667/. US Government work, public domain. (This also gives the exact record title that was missing in the v4 notes.)
+- NASA "orig" files from https://images-assets.nasa.gov/image/<id>/<id>~orig.jpg: Skylab 0102625 (3000x2375), Clean Room in the Zero Gravity Research Facility GRC-1968-C-02344 (2048x1536, was 1280x960), Clean Room Facility GRC-2016-C-02363 (3000x2250, was 1280x960), Dawn Spacecraft Processing KSC-07PD-0861 (2349x3000) and KSC-07PD-0862 (2000x3008). Public domain.
+
+##### Unchanged sources (already credited in earlier files)
+- altair: NASA/MSFC Ben Franklin PX-15 interior id 6900903 (3000x2300 original). csgo: LoC Matson "Jerusalem, Damascus Gate" 15028u.tif (5785x4241 master). hearthworks: the Met Open Access object 913662 (2912x4000 original), Vilmorin-Andrieux engravings (Internet Archive, 1920, public domain), Kenney Isometric Landscape and Miniature Farm (CC0), Fredoka and Fraunces, DM Mono (OFL).
+
+### 2x batch F (games: Dream Rift, Gabriel's Horn, Kowloon Knockout, Slice It, Synapse Storm)
+
+#### Attributions: hires-v5 batch F (dream-rift, gabriels-horn, kowloon-knockout, slice-it, synapse-storm)
+
+No new licences. Same sources as `game-art-v2/ATTRIBUTIONS*.md` and `game-banners-v4/F/ATTRIBUTIONS.md`; only the files were re-fetched at higher resolution.
+
+Full-resolution masters re-downloaded this round (used as image data only):
+- slice-it: W. P. Gottlieb, "Portrait of Sid Catlett", Library of Congress item 2023867522 (public domain per the photographer), IIIF full JPEG 5548x5642 (`tile.loc.gov/.../musgottlieb-01181:0001/full/pct:100.0/0/default.jpg`) replaces the earlier 2360 px derivative.
+- kowloon-knockout: Wonderlane, Hong Kong 1990 (Flickr 14469754044, CC0 1.0), original `_o.jpg` 2747x4075 replaces the earlier 690x1024 copy.
+
+Limited-resolution sources (upscaled Lanczos + mild unsharp; grain/halftone carries the texture):
+- synapse-storm lightning: rawpixel "lightning bolt storm" (CC0), only a 1024x678 copy reachable (rawpixel is behind a Cloudflare challenge; Wikimedia Commons downloads were rate-limited, HTTP 429). Bolt cores are tightened in processing; the orb rings and bolts in the banner are redrawn procedurally at 2x.
+- synapse-storm / Cajal plate: Internet Archive page image max 2086x3393 (`n204`), used as-is.
+- dream-rift: Met original 1344x3873 (already the master). gabriels-horn: Met original 2710x3579 (already the master).
+- Previous banner art (neon fighters, horn sprite, dice) exists only at 1x: upscaled 2x with Lanczos + unsharp.
+
+### 2x batch G (games: Daily Puzzles, House Always Wins, Laundry Sort, Neon Driftway, Temple of Joy)
+
+#### Attributions: hires-v5 (daily-puzzles, house-always-wins, laundry-sort, neon-driftway, temple-of-joy)
+
+Open licences only. Everything is re-printed (halftone / riso plates, tritone maps), cropped and grained; nothing is used as found.
+
+##### Higher-resolution originals used in this pass (same works as before, no new credits needed beyond these notes)
+- Carol M. Highsmith, "Neon casino sign, Las Vegas" (LoC LC-DIG-highsm-17922, https://www.loc.gov/item/2011636116/): LoC master TIFF 6168x4867 (`.../master/pnp/highsm/17900/17922u.tif`). Public-domain dedication / no known restrictions. Used for the house-always-wins card strip, icon and banner canopy/bokeh.
+- Carol M. Highsmith, "Vintage slot machine at the Casino Legends Hall of Fame" (LoC LC-DIG-highsm-13666, item 2011631860): LoC master TIFF 5422x6871. Same terms. Cut out as the hero prop in the house-always-wins banner.
+- Internet Archive `crosswordpuzzleb00unse` (1924 Cross Word Puzzle Book), page n30, 2883x3523 (largest derivative the archive serves). Public domain.
+- The Met Open Access (CC0), "original" files: object 313386 (DP104829.jpg, 1693x1901), 312773 (1979.206.577.jpg, 2227x2347). Used for the temple-of-joy card, icon and banner (the Met serves no larger image).
+- Wikimedia Commons "Highway light trains at night (Unsplash).jpg", CC0 (https://commons.wikimedia.org/wiki/File:Highway_light_trains_at_night_(Unsplash).jpg), 3840x2400 (the largest size the proxy returned; the Commons rate limit blocked fetching the file-page metadata, so the photographer is not recorded). Neon-driftway banner only.
+
+##### Resolution-limited sources (upscaled with Lanczos + unsharp, texture carried by halftone/grain)
+- neon-driftway card: rawpixel "Long exposure traffic line night" 683x1024 (CC0 via Openverse; rawpixel blocks downloads, so no larger copy). ~2.3x upscale into halftone plates.
+- laundry-sort: F. E. Church "Laundry Hung Out to Dry" 1500x723 (Smithsonian IDS serves max 1280 px; 1500 px copy used); 1919 Voss ad 1024x1024 (Flickr, PDM, only copy); Asheville postcard 1024x664 (Flickr PDM). The Voss line art is the weakest: the icon and the card machine are 2-4x upscales, re-thresholded to keep ink edges crisp.
+
+##### Reused, already credited in earlier files (`game-art-v2/ATTRIBUTIONS*.md`, `game-banners-v4/G/ATTRIBUTIONS.md`)
+Fonts (SIL OFL): Abril Fatface, Alfa Slab One, Anton, Rozha One, Fredoka, IBM Plex Mono, Gloock, Racing Sans One, Shrikhand, Space Mono, Ultra, UnifrakturMaguntia, Instrument Serif, Exo 2, Playfair Display, Special Elite, Courier Prime. All vector scenes are original procedural work.
+
+### 2x batch H (games: Velum 2099, Versecraft, Void Breaker, Nightrail)
+
+#### Attributions: hi-res v5 (velum2099, versecraft, void-breaker, nightrail)
+
+Only open licences. No new licence class; two sources were re-fetched at higher resolution.
+
+- **nightrail** (card, banner, icon): Library of Congress FSA/OWI, LC-USW3-012681-D (negative OWI-12681-D), https://www.loc.gov/item/2017836467/. "Public domain and free to use and reuse" (LoC rights statement for the FSA/OWI B&W negatives). NEW in this batch: the **master TIFF** `8d11258u.tif` (12904 x 9976 px, from tile.loc.gov) replaces the 1024 px service JPEG used earlier. Changes: crop inside the film rebate, black-plum/violet/amber/cream tritone, grain; card, banner and icon re-composed at 2x. Fonts (SIL OFL): Big Shoulders Display (title, now un-cropped), IBM Plex Mono.
+- **velum2099**: Wikimedia Commons CC0 photo "Alone in Tokyo III" (47956673191), already credited. NEW: the 1920 x 2880 Commons derivative (was 960 px). Changes as in earlier files (riso cyan/magenta halftone, misregistration, bloom). Fonts (OFL): Dela Gothic One, DotGothic16, IBM Plex Mono.
+- **void-breaker**: NASA / ESA / HEIC / Hubble Heritage Team, Cat's Eye Nebula, `GSFC_20171208_Archive_e002155` (NASA media, public domain). Already credited; the 1417 px `~orig.jpg` was already the full original. Fonts (OFL): Big Shoulders Stencil Display, Chakra Petch, IBM Plex Mono.
+- **versecraft**: the owner's illustrated card art, figure untouched; no third-party asset.
+
+Source resolution limits: see the report (Wikimedia would only serve up to 1920 px wide; the Hubble original is 1417 px; versecraft's card art exists only at 800 px).
