@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "models": {
+    "barney": {
+      "file": "barney.glb",
+      "height": 1.3696,
+      "yaw": 0.0,
+      "handBone": "ValveBiped_Bip01_R_Hand",
+      "bytes": 560796,
+      "provenance": "valve-source",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "jump": "jump",
+        "fall": "fall",
+        "shoot": "shoot",
+        "reload": "reload",
+        "hurt": "hurt",
+        "death": "death",
+        "interact": "interact"
+      }
+    },
+    "breen": {
+      "file": "breen.glb",
+      "height": 1.3612,
+      "yaw": 0.0,
+      "handBone": "ValveBiped_Bip01_R_Hand",
+      "bytes": 657820,
+      "provenance": "valve-source",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "jump": "jump",
+        "fall": "fall",
+        "shoot": "shoot",
+        "reload": "reload",
+        "hurt": "hurt",
+        "death": "death",
+        "interact": "interact"
+      }
+    },
+    "citizen": {
+      "file": "citizen.glb",
+      "height": 1.3635,
+      "yaw": 0.0,
+      "handBone": "ValveBiped_Bip01_R_Hand",
+      "bytes": 520496,
+      "provenance": "valve-source",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "jump": "jump",
+        "fall": "fall",
+        "shoot": "shoot",
+        "reload": "reload",
+        "hurt": "hurt",
+        "death": "death",
+        "interact": "interact"
+      }
+    },
+    "combine-elite": {
+      "file": "combine-elite.glb",
+      "height": 1.3972,
+      "yaw": 0.0,
+      "handBone": "ValveBiped_Bip01_R_Hand",
+      "bytes": 614940,
+      "provenance": "valve-source",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "jump": "jump",
+        "fall": "fall",
+        "shoot": "shoot",
+        "reload": "reload",
+        "hurt": "hurt",
+        "death": "death",
+        "interact": "interact"
+      }
+    },
+    "combine-soldier": {
+      "file": "combine-soldier.glb",
+      "height": 1.3822,
+      "yaw": 0.0,
+      "handBone": "ValveBiped_Bip01_R_Hand",
+      "bytes": 600484,
+      "provenance": "valve-source",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "jump": "jump",
+        "fall": "fall",
+        "shoot": "shoot",
+        "reload": "reload",
+        "hurt": "hurt",
+        "death": "death",
+        "interact": "interact"
+      }
+    },
+    "gman": {
+      "file": "gman.glb",
+      "height": 1.387,
+      "yaw": 0.0,
+      "handBone": "ValveBiped_Bip01_R_Hand",
+      "bytes": 738460,
+      "provenance": "valve-source",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "jump": "jump",
+        "fall": "fall",
+        "shoot": "shoot",
+        "reload": "reload",
+        "hurt": "hurt",
+        "death": "death",
+        "interact": "interact"
+      }
+    },
+    "metrocop": {
+      "file": "metrocop.glb",
+      "height": 1.3762,
+      "yaw": 0.0,
+      "handBone": "ValveBiped_Bip01_R_Hand",
+      "bytes": 424948,
+      "provenance": "valve-source",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "jump": "jump",
+        "fall": "fall",
+        "shoot": "shoot",
+        "reload": "reload",
+        "hurt": "hurt",
+        "death": "death",
+        "interact": "interact"
+      }
+    },
+    "rebel": {
+      "file": "rebel.glb",
+      "height": 1.3207,
+      "yaw": 0.0,
+      "handBone": "ValveBiped_Bip01_R_Hand",
+      "bytes": 572648,
+      "provenance": "valve-source",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "jump": "jump",
+        "fall": "fall",
+        "shoot": "shoot",
+        "reload": "reload",
+        "hurt": "hurt",
+        "death": "death",
+        "interact": "interact"
+      }
+    },
+    "worker": {
+      "file": "worker.glb",
+      "height": 1.3725,
+      "yaw": 0.0,
+      "handBone": "ValveBiped_Bip01_R_Hand",
+      "bytes": 596116,
+      "provenance": "valve-source",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "jump": "jump",
+        "fall": "fall",
+        "shoot": "shoot",
+        "reload": "reload",
+        "hurt": "hurt",
+        "death": "death",
+        "interact": "interact"
+      }
+    }
+  }
+}
