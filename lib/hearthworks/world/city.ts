@@ -11,8 +11,16 @@
 
 import {
   BASE_HAPPINESS,
+  CITY_EVENTS,
+  CITY_EVENT_IDS,
   COTTAGE_HOUSING,
   DAY_TICKS,
+  DEFAULT_TAX_RATE,
+  EVENT_CHANCE,
+  EVENT_MIN_DAY,
+  EVENT_MIN_POPULATION,
+  EVENT_SALT_PICK,
+  EVENT_SALT_START,
   GROWTH_PER_STEP,
   GROWTH_SCALE_LOTS,
   GROWTH_TICKS,
@@ -34,6 +42,8 @@ import {
   SPROUT_DEMAND_FLOOR,
   STALL_JOBS,
   STALL_SERVES,
+  TAX_DESIRABILITY_PER_POINT,
+  TAX_HAPPINESS_PER_POINT,
   TAX_PER_RESIDENT,
   UNLOCK_IDS,
   UNPOWERED_HOUSING,
@@ -44,6 +54,9 @@ import {
   WORKSHOP_RADIUS,
   ZONES,
   isUtilityId,
+  taxIncomeFactor,
+  type CityEventDef,
+  type CityEventId,
   type MetricId,
   type MilestoneDef,
   type UnlockId,
@@ -62,7 +75,7 @@ import {
   cityHub,
   roadLink,
 } from './city-cells';
-import type { CityStats } from './city-types';
+import type { CityState, CityStats } from './city-types';
 import type { World, WorldEvent } from './types';
 
 const DIRS4 = [
@@ -88,6 +101,53 @@ export function hash01(a: number, b: number, c: number): number {
 /** Mark the derived city data out of date (the next step, or `recomputeCity`, refreshes it). */
 export function touchCity(w: World): void {
   w.city.dirty = true;
+}
+
+/* ── Tax rate and events ─────────────────────────────────────────────────────────────────────────────────── */
+
+/** What the active event does right now (all neutral when there is none). A pure read of `CityState`. */
+export function eventEffects(
+  c: Pick<CityState, 'event'>,
+): Omit<CityEventDef, 'name' | 'days' | 'weight' | 'needs'> {
+  const def = c.event ? CITY_EVENTS[c.event.id] : undefined;
+  return def
+    ? {
+        happiness: def.happiness,
+        power: def.power,
+        water: def.water,
+        trade: def.trade,
+        tax: def.tax,
+      }
+    : { happiness: 0, power: 1, water: 1, trade: 1, tax: 1 };
+}
+
+/** Points the tax rate adds to (negative above the default) happiness. 0 at the default rate. */
+export const taxHappiness = (rate: number): number =>
+  (DEFAULT_TAX_RATE - rate) * TAX_HAPPINESS_PER_POINT;
+/** What the tax rate adds to residents' desirability (negative above the default). 0 at the default rate. */
+export const taxDesirability = (rate: number): number =>
+  (DEFAULT_TAX_RATE - rate) * TAX_DESIRABILITY_PER_POINT;
+
+/**
+ * Today's event draw, if any: a pure function of (seed, day, the town's size and utilities), using only `hash01`.
+ * The world's rng is never touched, so adding events moved no other random stream. `null` = a quiet day.
+ */
+export function drawCityEvent(w: World, day: number): CityEventId | null {
+  const s = w.city.stats;
+  if (day < EVENT_MIN_DAY || w.city.population < EVENT_MIN_POPULATION) return null;
+  if (hash01(w.seed, EVENT_SALT_START, day) >= EVENT_CHANCE) return null;
+  const able = CITY_EVENT_IDS.filter((id) => {
+    const need = CITY_EVENTS[id].needs;
+    return need === null || (need === 'power' ? s.powerSupply : s.waterSupply) > 0;
+  });
+  const total = able.reduce((sum, id) => sum + CITY_EVENTS[id].weight, 0);
+  if (total <= 0) return null;
+  let roll = hash01(w.seed, EVENT_SALT_PICK, day) * total;
+  for (const id of able) {
+    roll -= CITY_EVENTS[id].weight;
+    if (roll < 0) return id;
+  }
+  return able[able.length - 1];
 }
 
 /* ── Derived data ─────────────────────────────────────────────────────────────────────────────────────────── */
@@ -159,6 +219,7 @@ export function recomputeCity(w: World): void {
   flags.fill(0);
 
   /* 1. The road network that reaches the green. */
+  const fx = eventEffects(c);
   const hub = cityHub(n);
   const roadDist = new Int16Array(n * n).fill(-1);
   const queue = new Int32Array(n * n);
@@ -253,7 +314,10 @@ export function recomputeCity(w: World): void {
             q.push(j);
           }
         }
-        producers.push({ i, x, z, kind: util, supply: def.supply, reach: def.reach, dist });
+        // A storm or a dry spell cuts what a producer gives (a partial, whole-unit cut) while it lasts.
+        const cut = def.supplies === 'power' ? fx.power : fx.water;
+        const supply = cut === 1 ? def.supply : Math.floor(def.supply * cut);
+        producers.push({ i, x, z, kind: util, supply, reach: def.reach, dist });
       }
     }
     const zone = cellZone(cell);
@@ -404,7 +468,9 @@ export function recomputeCity(w: World): void {
         14 * share(nearWorkshop) -
         (100 - powerCover) * 0.12 -
         (100 - waterCover) * 0.1 -
-        12 * unemployment,
+        12 * unemployment +
+        taxHappiness(c.taxRate) +
+        fx.happiness,
       0,
       100,
     ),
@@ -419,7 +485,11 @@ export function recomputeCity(w: World): void {
   const demandWorkshop =
     pop < 4 ? 0 : clamp01(0.35 + 0.8 * ((workforce - jobs) / Math.max(8, workforce)));
 
-  const tax = Math.round(pop * TAX_PER_RESIDENT * (0.6 + 0.4 * (happiness / 100)));
+  // Taxes scale with the rate (×1 at the default, so the figure is the old one to the coin); events scale them too.
+  const tax = Math.round(
+    pop * TAX_PER_RESIDENT * (0.6 + 0.4 * (happiness / 100)) * taxIncomeFactor(c.taxRate) * fx.tax,
+  );
+  const tradeToday = Math.round(trade * fx.trade);
   const upkeep = Math.round(roads * ROAD_UPKEEP + utilityUpkeep);
 
   const stats: CityStats = {
@@ -445,9 +515,9 @@ export function recomputeCity(w: World): void {
     demandMarket: Math.round(demandMarket * 100),
     demandWorkshop: Math.round(demandWorkshop * 100),
     tax,
-    trade,
+    trade: tradeToday,
     upkeep,
-    net: tax + trade - upkeep,
+    net: tax + tradeToday - upkeep,
   };
   c.stats = stats;
   c.dirty = false;
@@ -567,9 +637,10 @@ function growLots(w: World, ev: WorldEvent[]): boolean {
 function movePeople(w: World): void {
   const c = w.city;
   const s = c.stats;
+  const before = c.population;
   const jobFactor = s.workforce <= 0 ? 1 : clamp01(s.jobs / s.workforce);
   const desirability = clamp(
-    0.45 + 0.3 * clamp01((s.happiness - 30) / 70) + 0.25 * jobFactor,
+    0.45 + 0.3 * clamp01((s.happiness - 30) / 70) + 0.25 * jobFactor + taxDesirability(c.taxRate),
     0.15,
     1,
   );
@@ -581,6 +652,9 @@ function movePeople(w: World): void {
     c.population -= Math.ceil((c.population - target) * MOVE_OUT_SHARE);
   }
   c.population = Math.max(0, Math.min(c.population, Math.max(s.housing, 0)));
+  // People ride out a storm, a dry spell or a festival: while an event lasts nobody leaves, so a cut can never
+  // cost the town a resident (it only slows growth). The usual rules resume the day it ends.
+  if (c.event) c.population = Math.max(c.population, before);
   c.peakPopulation = Math.max(c.peakPopulation, c.population);
 }
 
@@ -604,6 +678,29 @@ function settleDay(w: World, ev: WorldEvent[]): void {
     }
   }
   ev.push({ type: 'cityDay', day: c.day, net, population: c.population });
+  advanceEvent(w, ev);
+}
+
+/**
+ * The day's close, for events: the one in progress loses a day (and ends when none are left), otherwise a quiet town
+ * may draw a new one. Only `hash01` is consulted, so every replica starts and ends the same events on the same day.
+ */
+function advanceEvent(w: World, ev: WorldEvent[]): void {
+  const c = w.city;
+  if (c.event) {
+    c.event.daysLeft -= 1;
+    if (c.event.daysLeft > 0) return;
+    ev.push({ type: 'cityEventEnded', id: c.event.id, day: c.day });
+    c.event = null;
+    recomputeCity(w);
+    return;
+  }
+  const id = drawCityEvent(w, c.day);
+  if (!id) return;
+  const days = CITY_EVENTS[id].days;
+  c.event = { id, since: c.day, daysLeft: days };
+  ev.push({ type: 'cityEventStarted', id, day: c.day, days });
+  recomputeCity(w);
 }
 
 function checkMilestones(w: World, ev: WorldEvent[]): void {

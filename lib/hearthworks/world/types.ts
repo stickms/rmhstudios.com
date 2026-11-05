@@ -114,7 +114,7 @@ export interface PlayerState {
 
 /** Plain, JSON-serialisable data: everything a save or a P2P checkpoint needs. */
 export interface World {
-  version: 2;
+  version: 3;
   seed: number;
   size: number;
   tick: number;

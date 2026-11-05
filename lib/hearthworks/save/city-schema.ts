@@ -1,8 +1,15 @@
 import { z } from 'zod';
-import { MILESTONE_IDS } from '../content';
+import {
+  CITY_EVENT_IDS,
+  CITY_EVENTS,
+  DEFAULT_TAX_RATE,
+  MAX_TAX_RATE,
+  MILESTONE_IDS,
+  MIN_TAX_RATE,
+} from '../content';
 import { cellUtility, cellZone, createCity, packCell } from '../world';
 
-/** The city layer's part of a save (version 2). */
+/** The city layer's part of a save (version 2; the tax rate and events are version 3). */
 const int = z.number().int();
 const count = int.nonnegative().default(0);
 
@@ -46,6 +53,14 @@ const validCell = (c: number) => {
   return true;
 };
 
+const cityEventSchema = z
+  .object({
+    id: z.enum(CITY_EVENT_IDS),
+    since: int.nonnegative(),
+    daysLeft: int.min(1),
+  })
+  .refine((e) => e.daysLeft <= CITY_EVENTS[e.id].days, 'event outlasts its length');
+
 export const citySchema = z.object({
   cells: z.array(int.min(0).max(255)).refine((cs) => cs.every(validCell), 'bad city cell'),
   flags: z.array(int.min(0).max(7)),
@@ -56,6 +71,8 @@ export const citySchema = z.object({
   day: int.nonnegative(),
   reached: z.array(milestoneId).max(64),
   claimed: z.array(milestoneId).max(64),
+  taxRate: int.min(MIN_TAX_RATE).max(MAX_TAX_RATE),
+  event: cityEventSchema.nullable(),
   stats: cityStatsSchema.default(() => createCity(1).stats),
 });
 
@@ -108,4 +125,17 @@ export function migrateToCity(json: unknown): unknown {
   }
   city.dirty = true;
   return { ...w, buildings: rest, city };
+}
+
+/**
+ * Version 2 → 3: the city gains a tax rate and an event slot. A version 2 city (or none at all, for version 1) gets
+ * the default rate — the one at which income, happiness and move-in are exactly what they were — and no event. A
+ * version 3 save must carry both (the schema refuses one that does not). Raw JSON in, raw JSON out.
+ */
+export function migrateCityToV3(json: unknown, fromVersion: number): unknown {
+  if (fromVersion >= 3 || !json || typeof json !== 'object') return json;
+  const w = json as Record<string, unknown>;
+  const city = w.city;
+  if (!city || typeof city !== 'object') return json;
+  return { ...w, city: { taxRate: DEFAULT_TAX_RATE, event: null, ...(city as object) } };
 }

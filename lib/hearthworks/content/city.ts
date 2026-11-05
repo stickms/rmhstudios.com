@@ -183,6 +183,74 @@ export const WORKSHOP_RADIUS = 3;
 /** Income per resident per day, scaled by how content they are. */
 export const TAX_PER_RESIDENT = 1.5;
 
+/* ── Tax rate ─────────────────────────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * The town's tax rate is a whole percent the players set together (`setTaxRate`). `DEFAULT_TAX_RATE` is the rate at
+ * which every rule below is neutral: daily taxes equal `TAX_PER_RESIDENT` per resident exactly as they did before the
+ * rate existed, and happiness and move-in are untouched. Taxes scale in proportion to the rate; each point above (or
+ * below) the default costs (or gives back) the happiness and desirability below.
+ */
+export const MIN_TAX_RATE = 0;
+export const MAX_TAX_RATE = 20;
+export const DEFAULT_TAX_RATE = 9;
+/** Happiness points lost per percentage point above the default (gained per point below), before rounding. */
+export const TAX_HAPPINESS_PER_POINT = 0.8;
+/** Desirability (0..1, what residents weigh when deciding to move in) lost per point above the default, gained per point below. */
+export const TAX_DESIRABILITY_PER_POINT = 0.03;
+
+export const isTaxRate = (v: unknown): v is number =>
+  typeof v === 'number' && Number.isInteger(v) && v >= MIN_TAX_RATE && v <= MAX_TAX_RATE;
+
+/** Daily taxes scale with the rate: 1 at the default. */
+export const taxIncomeFactor = (rate: number): number => rate / DEFAULT_TAX_RATE;
+
+/* ── Town events ──────────────────────────────────────────────────────────────────────────────────────────── */
+
+export const CITY_EVENT_IDS = ['festival', 'tradeFair', 'harvest', 'storm', 'drySpell'] as const;
+export type CityEventId = (typeof CITY_EVENT_IDS)[number];
+
+export interface CityEventDef {
+  name: string;
+  /** Town days it lasts. */
+  days: number;
+  /** Relative odds of being the one drawn (of the events that can happen to this town). */
+  weight: number;
+  /** Added to happiness (points, before rounding). */
+  happiness: number;
+  /** Multiply what power / water producers supply (a partial cut, never a blackout). */
+  power: number;
+  water: number;
+  /** Multiply the day's trade income and tax income. */
+  trade: number;
+  tax: number;
+  /** A cut only happens to a town that has something to cut. */
+  needs: 'power' | 'water' | null;
+}
+
+const NEUTRAL = { happiness: 0, power: 1, water: 1, trade: 1, tax: 1, needs: null } as const;
+
+export const CITY_EVENTS: Record<CityEventId, CityEventDef> = {
+  festival: { ...NEUTRAL, name: 'Festival', days: 3, weight: 3, happiness: 8, trade: 1.15 },
+  tradeFair: { ...NEUTRAL, name: 'Market fair', days: 2, weight: 3, trade: 1.5 },
+  harvest: { ...NEUTRAL, name: 'Harvest windfall', days: 2, weight: 3, happiness: 2, tax: 1.35 },
+  storm: { ...NEUTRAL, name: 'Storm', days: 2, weight: 2, power: 0.6, needs: 'power' },
+  drySpell: { ...NEUTRAL, name: 'Dry spell', days: 3, weight: 2, water: 0.65, needs: 'water' },
+};
+
+export const isCityEventId = (v: unknown): v is CityEventId =>
+  typeof v === 'string' && (CITY_EVENT_IDS as readonly string[]).includes(v);
+
+/** The town is only big enough to be noticed (and to have anything to lose) from this many residents. */
+export const EVENT_MIN_POPULATION = 20;
+/** No event before this town day, so the first minutes are the player's own. */
+export const EVENT_MIN_DAY = 3;
+/** Chance each town day (when nothing is happening and the town is big enough) that an event begins. With the events' own length that is roughly one every nine days. */
+export const EVENT_CHANCE = 0.15;
+/** Salts for the events' hash draws (negative, so they never match a tile index used by lot growth). */
+export const EVENT_SALT_START = -1;
+export const EVENT_SALT_PICK = -2;
+
 /* ── Time ─────────────────────────────────────────────────────────────────────────────────────────────────── */
 
 /** Ticks (50 ms) between the derived-data refresh, between growth steps, and per town day. */

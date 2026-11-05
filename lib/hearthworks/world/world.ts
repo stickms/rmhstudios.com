@@ -5,7 +5,16 @@ import { agentOnTile } from './agents';
 import { MAX_HP, applyCrimeCommand, crimeGate, newArms } from './crime';
 import { tickCrime } from './police';
 import { cellLevel, cellRoad, cellUtility, createCity } from './city-cells';
-import { claimMilestone, placeRoad, placeUtility, removeRoad, removeUtility, unzone, zone } from './city-commands';
+import {
+  claimMilestone,
+  placeRoad,
+  placeUtility,
+  removeRoad,
+  removeUtility,
+  setTaxRate,
+  unzone,
+  zone,
+} from './city-commands';
 import { recomputeCity, touchCity } from './city';
 import { buildingAt, cropStage, inBounds, tileIndex } from './helpers';
 import { fbm } from './noise';
@@ -73,7 +82,7 @@ export function createWorld(seed: number, size: number): World {
     }
   }
   return {
-    version: 2,
+    version: 3,
     seed: s32,
     size: n,
     tick: 0,
@@ -272,7 +281,8 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
     case 'unzone':
     case 'placeUtility':
     case 'removeUtility':
-    case 'claimMilestone': {
+    case 'claimMilestone':
+    case 'setTaxRate': {
       const reason =
         cmd.type === 'placeRoad'
           ? placeRoad(w, p, cmd, events)
@@ -286,7 +296,9 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
                   ? placeUtility(w, p, cmd, events)
                   : cmd.type === 'removeUtility'
                     ? removeUtility(w, p, cmd, events)
-                    : claimMilestone(w, p, cmd, events);
+                    : cmd.type === 'claimMilestone'
+                      ? claimMilestone(w, p, cmd, events)
+                      : setTaxRate(w, p, cmd, events);
       if (reason) reject(events, cmd, reason);
       return;
     }

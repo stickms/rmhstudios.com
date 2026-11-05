@@ -6,7 +6,16 @@
  */
 
 import { z } from 'zod';
-import { BUILDING_IDS, CROP_IDS, ITEM_IDS, UTILITY_IDS, WEAPON_IDS, ZONE_IDS } from '../content';
+import {
+  BUILDING_IDS,
+  CROP_IDS,
+  ITEM_IDS,
+  MAX_TAX_RATE,
+  MIN_TAX_RATE,
+  UTILITY_IDS,
+  WEAPON_IDS,
+  ZONE_IDS,
+} from '../content';
 import { SKIN_IDS } from '../skins';
 import type { LocalCommand } from '../store';
 import { decodeWorld, encodeWorld } from '../save';
@@ -14,12 +23,13 @@ import type { World } from '../world';
 
 /**
  * v1: welcome / tick / successor. v2: `reject` (the host tells a peer, and only that peer, which of its commands
- * were refused and why). A v2 host talks to a v1 peer unchanged (the peer counts `reject` as a protocol error and
- * carries on), and a v2 peer accepts a v1 host (it simply never hears a `reject`); a host NEWER than we are is
- * refused (`PeerSession.incompatible`) rather than half-understood.
+ * were refused and why). v3: the simulation itself changed — `setTaxRate`, the tax rate and town events in the city
+ * state, and a save/snapshot version of 3 — so a replica running the old rules would silently drift from the host.
+ * Unlike v2, v3 is therefore NOT compatible both ways: a peer refuses a host older than `MIN_PROTOCOL_VERSION` and a
+ * host newer than itself (`PeerSession.incompatible`) rather than play half-understood rules.
  */
-export const PROTOCOL_VERSION = 2;
-export const MIN_PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 3;
+export const MIN_PROTOCOL_VERSION = 3;
 /** A peer's JSON message may be at most this large. */
 export const MAX_PEER_MESSAGE_BYTES = 4096;
 /** A host's JSON message may be at most this large (a tick of 8 players' commands is a few KB). */
@@ -70,6 +80,7 @@ export const localCommandSchema: z.ZodType<LocalCommand> = z.discriminatedUnion(
   z.object({ type: z.literal('placeUtility'), kind: z.enum(UTILITY_IDS), x: coord, z: coord }).strict(),
   z.object({ type: z.literal('removeUtility'), x: coord, z: coord }).strict(),
   z.object({ type: z.literal('claimMilestone'), id: z.string().min(1).max(32) }).strict(),
+  z.object({ type: z.literal('setTaxRate'), rate: int.min(MIN_TAX_RATE).max(MAX_TAX_RATE) }).strict(),
   z.object({ type: z.literal('buySkin'), skin: z.enum(SKIN_IDS) }).strict(),
   z.object({ type: z.literal('setSkin'), skin: z.enum(SKIN_IDS) }).strict(),
 ]) as z.ZodType<LocalCommand>;
@@ -105,6 +116,7 @@ const COMMAND_TYPES_HAVE_SCHEMAS: Record<LocalCommand['type'], true> = {
   placeUtility: true,
   removeUtility: true,
   claimMilestone: true,
+  setTaxRate: true,
   buySkin: true,
   setSkin: true,
 };
