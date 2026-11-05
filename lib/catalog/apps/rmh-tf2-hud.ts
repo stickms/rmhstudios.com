@@ -16,6 +16,8 @@ const entry: AppInfo = {
   color: 'from-orange-500/20 to-red-700/20 hover:border-orange-500/50',
   tags: ['TF2', 'HUD', 'Loadout', 'Beta'],
   imagePath: '/images/games/rmh-tf2-hud.webp',
+  bannerPath: '/images/games/banners/rmh-tf2-hud.webp',
+  logoPath: '/images/games/logos/rmh-tf2-hud.webp',
   authGate: false,
 };
 

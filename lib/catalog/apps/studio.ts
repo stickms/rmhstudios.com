@@ -16,6 +16,8 @@ const entry: AppInfo = {
   color: 'from-cyan-500/20 to-purple-600/20 hover:border-cyan-500/50',
   tags: ['DAW', 'Music Production', 'Beta'],
   imagePath: '/images/games/rmhstudio.webp',
+  bannerPath: '/images/games/banners/rmhstudio.webp',
+  logoPath: '/images/games/logos/rmhstudio.webp',
   authGate: true,
 };
 

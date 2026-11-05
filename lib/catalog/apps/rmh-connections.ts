@@ -16,6 +16,8 @@ const entry: AppInfo = {
   color: 'from-violet-500/20 to-purple-600/20 hover:border-violet-500/50',
   tags: ['Discord', 'Puzzle', 'Daily'],
   imagePath: '/images/games/rmhconnections.webp',
+  bannerPath: '/images/games/banners/rmhconnections.webp',
+  logoPath: '/images/games/logos/rmhconnections.webp',
   authGate: false,
   hidden: true,
 };

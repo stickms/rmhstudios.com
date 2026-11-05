@@ -18,6 +18,8 @@ const entry: AppInfo = {
   color: 'from-sky-500/20 to-amber-400/20 hover:border-sky-400/50',
   tags: ['Planner', 'Movies', 'AI'],
   imagePath: '/images/games/dunesday.webp',
+  bannerPath: '/images/games/banners/dunesday.webp',
+  logoPath: '/images/games/logos/dunesday.webp',
   authGate: false,
   // Full-screen top-level route (app/routes/dunesday.tsx) with its own Frutiger
   // Aero palette (components/dunesday/dunesday.css), so the site theme class
