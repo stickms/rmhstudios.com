@@ -75,7 +75,7 @@ export const IMAGE_VARIANTS: Readonly<Record<string, ImageVariant>> = {
   "/images/games/banners/synapse-storm.webp": { hash: 'aa8058f4', widths: [320, 640, 960, 1280] },
   "/images/games/banners/temple-of-joy.webp": { hash: 'bdbe145c', widths: [320, 640, 960, 1280] },
   "/images/games/banners/velum2099.webp": { hash: '9d3b90b5', widths: [320, 640, 960, 1280] },
-  "/images/games/banners/versecraft.webp": { hash: '8f680b8f', widths: [320, 640, 960, 1280] },
+  "/images/games/banners/versecraft.webp": { hash: 'a44d496b', widths: [320, 640, 960, 1280] },
   "/images/games/banners/void-breaker.webp": { hash: '1538d7ce', widths: [320, 640, 960, 1280] },
   "/images/games/csgo.webp": { hash: '6a0ecd68', widths: [320, 640] },
   "/images/games/cursed_logic.webp": { hash: 'f306e533', widths: [320, 640] },
