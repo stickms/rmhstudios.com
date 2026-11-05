@@ -50,13 +50,13 @@ describe('a refused command is told to the peer that sent it, and only that peer
     const alice = peers.get('alice')!;
     const m = mid(host.world);
     // The host builds on the tile in the same tick; alice's replica has not seen that yet, so she predicts success.
-    host.submit({ type: 'place', kind: 'road', x: m + 1, z: m });
+    host.submit({ type: 'place', kind: 'park', x: m + 1, z: m });
     alice.send({ type: 'place', kind: 'cottage', x: m + 1, z: m });
     expect(alice.view!.buildings.map((b) => b.kind)).toEqual(['cottage']);
     tick(2);
     expect(alice.drainEvents()).toEqual([{ type: 'rejected', command: 'place', playerId: 'alice', reason: 'occupied' }]);
     expect(alice.pendingCount).toBe(0);
-    expect(alice.view!.buildings.map((b) => b.kind)).toEqual(['road']); // the optimistic cottage is gone
+    expect(alice.view!.buildings.map((b) => b.kind)).toEqual(['park']); // the optimistic cottage is gone
     expect(alice.drainEvents()).toEqual([]); // draining empties the queue
     expect(host.stats.rejectsSent).toBe(1);
   });
@@ -83,7 +83,7 @@ describe('a refused command is told to the peer that sent it, and only that peer
       if (f.kind === 'json') seen.push(f.value);
       original?.(d);
     };
-    host.submit({ type: 'place', kind: 'road', x: m + 1, z: m });
+    host.submit({ type: 'place', kind: 'park', x: m + 1, z: m });
     peers.get('alice')!.send({ type: 'place', kind: 'cottage', x: m + 1, z: m });
     tick(2);
     expect(peers.get('alice')!.drainEvents()).toHaveLength(1);
@@ -93,9 +93,9 @@ describe('a refused command is told to the peer that sent it, and only that peer
 
     // The host's own screen shows the host's refusals only: the world reports everyone's.
     const driver = hostDriver(host, () => 0);
-    host.submit({ type: 'place', kind: 'road', x: m + 5, z: m });
-    host.submit({ type: 'place', kind: 'road', x: m + 5, z: m }); // refused: the host's own
-    peers.get('alice')!.send({ type: 'place', kind: 'road', x: m + 5, z: m }); // refused: alice's
+    host.submit({ type: 'place', kind: 'park', x: m + 5, z: m });
+    host.submit({ type: 'place', kind: 'park', x: m + 5, z: m }); // refused: the host's own
+    peers.get('alice')!.send({ type: 'place', kind: 'park', x: m + 5, z: m }); // refused: alice's
     settle(all);
     const rejected = driver.advance(60).filter((e) => e.type === 'rejected') as { playerId: string }[];
     expect(rejected.map((e) => e.playerId)).toEqual(['hosty']);
@@ -105,14 +105,14 @@ describe('a refused command is told to the peer that sent it, and only that peer
     const { host, peers, tick } = setup(['alice']);
     const alice = peers.get('alice')!;
     const m = mid(host.world);
-    host.submit({ type: 'place', kind: 'road', x: m + 1, z: m }); // takes the tile of alice's FIRST command
+    host.submit({ type: 'place', kind: 'park', x: m + 1, z: m }); // takes the tile of alice's FIRST command
     alice.send({ type: 'place', kind: 'cottage', x: m + 1, z: m }); // seq 0: refused
     alice.send({ type: 'place', kind: 'cottage', x: m + 2, z: m }); // seq 1: accepted
     tick(2);
     expect(alice.drainEvents()).toEqual([{ type: 'rejected', command: 'place', playerId: 'alice', reason: 'occupied' }]);
     const shape = (w: World) => w.buildings.map((b) => `${b.kind}@${b.x}`).sort();
-    expect(shape(host.world)).toEqual([`cottage@${m + 2}`, `road@${m + 1}`]);
-    expect(shape(alice.view!)).toEqual([`cottage@${m + 2}`, `road@${m + 1}`]);
+    expect(shape(host.world)).toEqual([`cottage@${m + 2}`, `park@${m + 1}`]);
+    expect(shape(alice.view!)).toEqual([`cottage@${m + 2}`, `park@${m + 1}`]);
   });
 
   it('a command dropped for rate is taken back quietly: no event, no ghost, the peer stays connected', () => {
@@ -136,7 +136,7 @@ describe('a refused command is told to the peer that sent it, and only that peer
     const m = mid(host.world);
     // The command is lost on its way (the host never sees it, never refuses it).
     peerEnds.get('alice')!.filter = () => false;
-    alice.send({ type: 'place', kind: 'road', x: m + 1, z: m });
+    alice.send({ type: 'place', kind: 'park', x: m + 1, z: m });
     tick(2);
     expect(alice.view!.buildings).toHaveLength(1);
     clock.now = PENDING_TTL_MS - 1;
@@ -167,7 +167,7 @@ describe('a refused command is told to the peer that sent it, and only that peer
     const store = createHearthworksStore({ seed: 5, size: 32, playerId: 'alice' });
     store.getState().attachDriver(peerDriver(alice, () => 0), { stash: true });
     const m = mid(host.world);
-    host.submit({ type: 'place', kind: 'road', x: m + 1, z: m });
+    host.submit({ type: 'place', kind: 'park', x: m + 1, z: m });
     store.getState().dispatch({ type: 'place', kind: 'cottage', x: m + 1, z: m });
     tick(2);
     store.getState().advance(16);
@@ -180,7 +180,7 @@ describe('a refused command is told to the peer that sent it, and only that peer
     const bob = peers.get('bob')!;
     // Bob's link to the host is cut before this command is delivered; the host dies; bob is promoted.
     peerEnds.get('bob')!.filter = () => false;
-    bob.send({ type: 'place', kind: 'road', x: m + 4, z: m });
+    bob.send({ type: 'place', kind: 'park', x: m + 4, z: m });
     tick(1);
     const next = bob.promote();
     next.step();
@@ -201,7 +201,7 @@ describe('host frames are validated before a peer acts on them', () => {
       if (f.kind === 'json') seen.push(f.value);
       original?.(d);
     };
-    host.submit({ type: 'place', kind: 'road', x: 10, z: 10 });
+    host.submit({ type: 'place', kind: 'park', x: 10, z: 10 });
     // a refusal for alice (the tile is taken this tick), so a reject frame exists too
     hostEnds.get('alice')!.other.send(encodeJson({ t: 'cmd', seq: 0, cmd: { type: 'place', kind: 'cottage', x: 10, z: 10 } }));
     settle(all);
@@ -315,7 +315,7 @@ describe('a peer cannot make the host spend its bandwidth', () => {
     // Alice misses a tick: she asks, and the host's answer is lost.
     let dropSnapshots = true;
     hostEnds.get('alice')!.filter = (d) => !(dropSnapshots && d[0] === 2);
-    host.submit({ type: 'place', kind: 'road', x: 3, z: 3 });
+    host.submit({ type: 'place', kind: 'park', x: 3, z: 3 });
     hostEnds.get('alice')!.filter = (d) => d[0] !== 1 && !(dropSnapshots && d[0] === 2);
     host.step();
     settle([...hostEnds.values(), ...peerEnds.values()]);
@@ -342,7 +342,7 @@ describe('the world is unchanged by applying commands one at a time', () => {
     }
     const m = 16;
     const cmds = [
-      { type: 'place', kind: 'road', x: m + 1, z: m, playerId: 'p1' },
+      { type: 'place', kind: 'park', x: m + 1, z: m, playerId: 'p1' },
       { type: 'place', kind: 'cottage', x: m + 1, z: m, playerId: 'p2' }, // occupied
       { type: 'move', x: m + 3, z: m, playerId: 'p3' },
       { type: 'place', kind: 'cottage', x: m + 2, z: m, playerId: 'p2' },
