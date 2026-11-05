@@ -84,7 +84,7 @@ describe('catalog barrel', () => {
     expect(missing).toEqual([]);
   });
 
-  it('bannerPath, when declared, exists under public/ and is at most 400 KB', () => {
+  it('bannerPath, when declared, exists under public/ and its master is at most 1.5 MB', () => {
     // The library's detail hero reads `bannerPath`; a typo'd path would render
     // as a broken wide image on the page the visitor is looking at.
     const problems = [...games, ...apps]
@@ -92,7 +92,10 @@ describe('catalog barrel', () => {
       .flatMap((e) => {
         const file = join(process.cwd(), 'public', e.bannerPath as string);
         if (!existsSync(file)) return [`${e.id}: ${e.bannerPath} is missing`];
-        return statSync(file).size > 400 * 1024 ? [`${e.id}: ${e.bannerPath} is over 400 KB`] : [];
+        // The master is 3840 px wide so the page can serve a sharp 1920/2560 px variant on a retina screen; the page
+        // never ships the master itself (it is resized to build-time variants), so the ceiling is for the repo, not
+        // for the visitor.
+        return statSync(file).size > 1536 * 1024 ? [`${e.id}: ${e.bannerPath} is over 1.5 MB`] : [];
       });
     expect(problems).toEqual([]);
   });

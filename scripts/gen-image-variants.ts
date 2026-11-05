@@ -52,8 +52,13 @@ import sharp from 'sharp';
 const PUBLIC_IMAGES = join(process.cwd(), 'public', 'images');
 const MANIFEST = join(process.cwd(), 'lib', 'images', 'variants.gen.ts');
 
-/** Matches `WIDTHS` in components/ui/OptimizedImage.tsx. */
-const WIDTHS = [320, 640, 960, 1280] as const;
+/**
+ * The rungs generated for every master wide enough for them. 1920 and 2560 exist for wide art — the library's hero
+ * banners are masters of 3840 px shown across a 1900 px viewport (3800 device px on a retina screen); with the old
+ * ceiling of 1280 the browser stretched a 1280 px file two or three times and the pixels showed. A master narrower than
+ * a rung never gets that rung (no upscaling), so cards and thumbnails are unaffected.
+ */
+const WIDTHS = [320, 640, 960, 1280, 1920, 2560] as const;
 
 const SOURCE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp']);
 
