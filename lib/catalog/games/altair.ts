@@ -15,6 +15,8 @@ const entry: GameInfo = {
   color: 'from-cyan-500/20 to-blue-600/20 hover:border-cyan-500/50',
   tags: ['Deckbuilder', 'Roguelike', 'Strategy'],
   imagePath: '/images/games/altair.webp',
+  bannerPath: '/images/games/banners/altair.webp',
+  logoPath: '/images/games/logos/altair.webp',
   authGate: true,
 };
 

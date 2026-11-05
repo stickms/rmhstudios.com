@@ -25,6 +25,8 @@ export type CuratedBuild = {
   thumbnailUrl: string | null;
   /** Wide hero image for the library detail pane, or null. */
   bannerUrl: string | null;
+  /** The title as a stylized wordmark for the detail pane's hero, or null (the title is then plain text). */
+  logoUrl?: string | null;
   /** Where the build actually lives (the playable/usable page). */
   href: string;
   cta: string;
@@ -58,6 +60,7 @@ export function listCuratedBuilds(): CuratedBuild[] {
       longDescription: g.longDescription,
       thumbnailUrl: g.imagePath ?? null,
       bannerUrl: g.bannerPath ?? null,
+      logoUrl: g.logoPath ?? null,
       href: g.href,
       cta: g.cta,
       tags: g.tags,
@@ -76,6 +79,7 @@ export function listCuratedBuilds(): CuratedBuild[] {
       longDescription: a.longDescription,
       thumbnailUrl: a.imagePath ?? null,
       bannerUrl: a.bannerPath ?? null,
+      logoUrl: a.logoPath ?? null,
       href: a.href,
       cta: a.cta,
       tags: a.tags,

@@ -16,6 +16,8 @@ const entry: GameInfo = {
   color: 'from-orange-500/20 to-pink-600/20 hover:border-orange-500/50',
   tags: ['Arcade', 'Shooter', '3D', 'Survival'],
   imagePath: '/images/games/voidbreaker.webp',
+  bannerPath: '/images/games/banners/void-breaker.webp',
+  logoPath: '/images/games/logos/void-breaker.webp',
   authGate: true,
 };
 

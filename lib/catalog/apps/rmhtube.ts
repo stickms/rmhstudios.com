@@ -15,6 +15,8 @@ const entry: AppInfo = {
   color: 'from-red-500/20 to-purple-600/20 hover:border-red-500/50',
   tags: ['Watch Party', 'Real-time', 'Beta'],
   imagePath: '/images/games/rmhtube.webp',
+  bannerPath: '/images/games/banners/rmhtube.webp',
+  logoPath: '/images/games/logos/rmhtube.webp',
   authGate: true,
 };
 

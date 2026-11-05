@@ -16,6 +16,8 @@ const entry: AppInfo = {
   color: 'from-indigo-500/20 to-blue-600/20 hover:border-indigo-500/50',
   tags: ['Discord', 'Word Game', 'Daily'],
   imagePath: '/images/games/rmhdle.webp',
+  bannerPath: '/images/games/banners/rmhdle.webp',
+  logoPath: '/images/games/logos/rmhdle.webp',
   authGate: false,
   hidden: true,
 };

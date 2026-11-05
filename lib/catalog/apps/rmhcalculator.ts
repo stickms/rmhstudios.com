@@ -17,6 +17,8 @@ const entry: AppInfo = {
   color: 'from-indigo-500/20 to-cyan-500/20 hover:border-indigo-500/50',
   tags: ['Calculator', 'Graphing', 'AI', 'DeepSeek', 'Beta'],
   imagePath: '/images/games/rmhcalculator.webp',
+  bannerPath: '/images/games/banners/rmhcalculator.webp',
+  logoPath: '/images/games/logos/rmhcalculator.webp',
   authGate: true,
   // Full-screen top-level route (app/routes/rmhcalculator.tsx) styled with
   // the --site-* theme tokens, so keep the site theme class applied.

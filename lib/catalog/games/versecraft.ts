@@ -16,6 +16,8 @@ const entry: GameInfo = {
   color: 'from-amber-700/20 to-purple-800/20 hover:border-amber-500/50',
   tags: ['Visual Novel', 'AI-Generated', 'Romance', 'Poetry'],
   imagePath: '/images/games/versecraft.webp',
+  bannerPath: '/images/games/banners/versecraft.webp',
+  logoPath: '/images/games/logos/versecraft.webp',
   authGate: false,
 };
 

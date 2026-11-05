@@ -17,6 +17,8 @@ const entry: AppInfo = {
   color: 'from-violet-500/20 to-fuchsia-600/20 hover:border-violet-500/50',
   tags: ['AI', 'CLI', 'Developer Tools', 'Beta'],
   imagePath: '/images/games/rmhcode.webp',
+  bannerPath: '/images/games/banners/rmhcode.webp',
+  logoPath: '/images/games/logos/rmhcode.webp',
   authGate: true,
   usesSiteTheme: true,
 };

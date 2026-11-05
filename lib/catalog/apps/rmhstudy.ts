@@ -15,6 +15,8 @@ const entry: AppInfo = {
   color: 'from-amber-500/20 to-rose-500/20 hover:border-amber-500/50',
   tags: ['Pomodoro', 'Study', 'Productivity', 'Beta'],
   imagePath: '/images/games/rmhstudy.webp',
+  bannerPath: '/images/games/banners/rmhstudy.webp',
+  logoPath: '/images/games/logos/rmhstudy.webp',
   authGate: true,
 };
 

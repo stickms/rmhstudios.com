@@ -17,6 +17,8 @@ const entry: GameInfo = {
   color: 'from-orange-500/20 to-stone-800/20 hover:border-orange-500/50',
   tags: ['Valve', 'FPS', 'Single-player', 'Beta'],
   imagePath: '/images/games/half-life-2.webp',
+  bannerPath: '/images/games/banners/half-life-2.webp',
+  logoPath: '/images/games/logos/half-life-2.webp',
   authGate: false,
 };
 

@@ -10,6 +10,8 @@ const entry: AppInfo = {
     'RMH Strategies is the unified platform layer for the RMH ecosystem. Earn XP across all RMH products with a single reputation system, compete on daily puzzle leaderboards across five modes (Alibi, Spectrum, Outcast, Chainlink, Impostor), access tiered Safehouse intelligence, track public incidents as entertainment, and unlock Sahur Mode — a chaotic 3 AM experience with triple XP and a bat cursor.',
   href: '/strategies',
   imagePath: '/images/games/rmhstrategies.webp',
+  bannerPath: '/images/games/banners/rmhstrategies.webp',
+  logoPath: '/images/games/logos/rmhstrategies.webp',
   status: 'Beta',
   cta: 'Enter the Coalition',
   isSteam: false,
