@@ -6,6 +6,7 @@ export * from './crime';
 export {
   tickCrime,
   wantedOfficers,
+  responseTicks,
   placeOfficer,
   MAX_OFFICERS,
   COMBINE_HEAT,

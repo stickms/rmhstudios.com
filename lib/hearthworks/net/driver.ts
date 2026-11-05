@@ -13,14 +13,19 @@ import { TICK_MS, type World, type WorldEvent } from '../world';
 import type { HearthworksConnector, LobbySession } from './connector';
 import type { HostSession } from './host';
 import type { PeerSession } from './peer';
+import { RemotePoses } from './poses';
+
+const frameClock = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
 /** Frames longer than this many ticks (a hidden tab) drop the backlog instead of running a burst. */
 const MAX_TICKS_PER_ADVANCE = 6;
 
-export function hostDriver(host: HostSession): MultiplayerDriver {
+export function hostDriver(host: HostSession, now: () => number = frameClock): MultiplayerDriver {
   let acc = 0;
+  const poses = new RemotePoses(() => host.hostId);
   return {
     playerId: host.hostId,
+    poses,
     world: () => host.world,
     send: (cmd: LocalCommand) => host.submit(cmd),
     advance(dtMs) {
@@ -33,17 +38,27 @@ export function hostDriver(host: HostSession): MultiplayerDriver {
         steps++;
       }
       if (steps === MAX_TICKS_PER_ADVANCE) acc = 0;
-      return events;
+      poses.observe(host.world, now());
+      // The world reports every player's refusals; this player's screen shows only its own (a peer's refused
+      // command is told to that peer, not toasted at the host).
+      return events.filter((e) => e.type !== 'rejected' || e.playerId === host.hostId);
     },
   };
 }
 
-export function peerDriver(peer: PeerSession): MultiplayerDriver {
+export function peerDriver(peer: PeerSession, now: () => number = frameClock): MultiplayerDriver {
+  const poses = new RemotePoses(() => peer.myId);
   return {
     playerId: peer.myId,
+    poses,
     world: (): World | null => peer.view,
-    send: (cmd: LocalCommand) => peer.send(cmd),
-    advance: () => [],
+    send: (cmd: LocalCommand) => void peer.send(cmd),
+    advance() {
+      const view = peer.view;
+      if (view) poses.observe(view, now());
+      // The host's answers to this player's refused commands, as the same events the single-player sim emits.
+      return peer.drainEvents();
+    },
   };
 }
 

@@ -8,7 +8,7 @@
  */
 
 import { OFFICERS, WEAPONS, type OfficerKind } from '../content';
-import { newMover, startPath, stepMover, stopMover, type Mover } from '../nav';
+import { moveBetween, newMover, startPath, stepMover, stopMover, type Mover } from '../nav';
 import { resolveShot, sightLine, drawRandom, type ShotTarget } from './ballistics';
 import {
   WANTED_HEAT,
@@ -31,13 +31,24 @@ export const COMBINE_HEAT = 75;
 /** Below this heat — and far enough away — an officer gives up. */
 export const CALM_HEAT = 15;
 export const LOSE_DISTANCE = 12;
-/** How many ticks between looks at whether a gate needs an officer. */
-const SPAWN_CHECK_TICKS = 60;
+/**
+ * How many ticks between looks at whether a wanted player needs another officer: the hotter they are, the faster the
+ * police answer (8 s at the start, 6 s from heat 60, 5 s from heat 80). Every cadence is a multiple of the
+ * base tick, which is how often the gates are looked at.
+ */
+const SPAWN_LOOK_TICKS = 20;
+export function responseTicks(heat: number): number {
+  return heat >= 80 ? 100 : heat >= 60 ? 120 : 160;
+}
 /** A gate is a shore tile at least this far (tiles) from the hunted player; a small map scales it down. */
-const GATE_MIN_DISTANCE = 10;
+const GATE_MIN_DISTANCE = 18;
 const GATE_ATTEMPTS = 5;
+/** The share of eligible shore tiles (the farthest ones) a squad may come ashore at. */
+const FAR_GATE_SHARE = 0.25;
+/** The most officers one look at the gates may land: reinforcements trickle in, they do not arrive as a wall. */
+const SPAWN_BURST = 1;
 /** Route searches: at most this many per tick across all officers, each limited to this many tiles expanded. */
-const PLANS_PER_TICK = 2;
+const PLANS_PER_TICK = 1;
 const PLAN_EXPANSIONS = 3500;
 /** An officer re-plans at most this often, and only when the target has moved this far from the route's end. */
 const REPLAN_TICKS = 10;
@@ -47,8 +58,12 @@ const PACE = 2;
 /** Cuffing takes this long, and reaches this far (tiles). */
 export const ARREST_TICKS = 15;
 export const ARREST_REACH = 1.5;
+/** A new arrival forms up for this long before opening fire (2 s). */
+const FORM_UP_TICKS = 40;
 /** An officer gives up on someone they cannot reach after this many failed searches. */
 const MAX_PLAN_FAILS = 12;
+/** A leaving officer with no route to the gate goes after this many failed searches (about 2 s). */
+const LEAVE_PLAN_FAILS = 4;
 /** A leaving officer vanishes after this long even if the gate cannot be reached (1 minute). */
 const LEAVE_TIMEOUT_TICKS = 1200;
 /** They open fire at this fraction of their weapon's range, and stand off at this fraction. */
@@ -65,15 +80,64 @@ export function wantedOfficers(heat: number): number {
 const dist2 = (ax: number, az: number, bx: number, bz: number) =>
   (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
 
-/** Shore tiles — walkable, beside water — far from the target: where the police come ashore. */
+const STEPS8: readonly (readonly [number, number])[] = [
+  [0, -1],
+  [1, 0],
+  [0, 1],
+  [-1, 0],
+  [1, -1],
+  [1, 1],
+  [-1, 1],
+  [-1, -1],
+  [0, -2],
+  [2, 0],
+  [0, 2],
+  [-2, 0],
+];
+
+/**
+ * Every tile from which the target can be walked to (steps, climbs, drops and one-tile water jumps, each used in the
+ * direction the officer would take it). One flood fill, so the gates offered are ones the police can actually use,
+ * instead of searching routes from gates that turn out to be on a separate shore.
+ */
+function reachesTarget(w: World, tx: number, tz: number): Uint8Array {
+  const n = w.size;
+  const seen = new Uint8Array(n * n);
+  const queue: number[] = [];
+  const sx = Math.min(n - 1, Math.max(0, tx));
+  const sz = Math.min(n - 1, Math.max(0, tz));
+  seen[sz * n + sx] = 1;
+  queue.push(sz * n + sx);
+  for (let head = 0; head < queue.length; head++) {
+    const i = queue[head];
+    const x = i % n;
+    const z = (i - x) / n;
+    for (const [dx, dz] of STEPS8) {
+      const nx = x + dx;
+      const nz = z + dz;
+      if (nx < 0 || nz < 0 || nx >= n || nz >= n || seen[nz * n + nx]) continue;
+      if (!moveBetween(w, nx, nz, x, z)) continue;
+      seen[nz * n + nx] = 1;
+      queue.push(nz * n + nx);
+    }
+  }
+  return seen;
+}
+
+/**
+ * Shore tiles — walkable, beside water — far from the target: where the police come ashore. Only the farthest
+ * quarter of them are offered, so the response is a walk across the island (time to react), not a few steps.
+ */
 function gateCandidates(w: World, tx: number, tz: number): number[] {
   const n = w.size;
-  const minD = Math.min(GATE_MIN_DISTANCE, Math.floor(n / 3));
-  const out: number[] = [];
+  const reach = reachesTarget(w, tx, tz);
+  const minD = Math.min(GATE_MIN_DISTANCE, Math.floor(n * 0.4));
+  const out: { idx: number; d: number }[] = [];
   const edge = (x: number, z: number) => x === 0 || z === 0 || x === n - 1 || z === n - 1;
   for (let z = 0; z < n; z++) {
     for (let x = 0; x < n; x++) {
-      if (Math.max(Math.abs(x - tx), Math.abs(z - tz)) < minD || tileBlocked(w, x, z)) continue;
+      const d = Math.max(Math.abs(x - tx), Math.abs(z - tz));
+      if (d < minD || !reach[z * n + x] || tileBlocked(w, x, z)) continue;
       let shore = edge(x, z);
       for (let dz = -1; dz <= 1 && !shore; dz++) {
         for (let dx = -1; dx <= 1 && !shore; dx++) {
@@ -83,10 +147,13 @@ function gateCandidates(w: World, tx: number, tz: number): number[] {
             shore = true;
         }
       }
-      if (shore) out.push(z * n + x);
+      if (shore) out.push({ idx: z * n + x, d });
     }
   }
-  return out;
+  if (out.length === 0) return [];
+  // Farthest first (ties by tile index, so every replica orders them alike); keep the farthest quarter.
+  out.sort((a, b) => b.d - a.d || a.idx - b.idx);
+  return out.slice(0, Math.max(1, Math.ceil(out.length * FAR_GATE_SHARE))).map((c) => c.idx);
 }
 
 /**
@@ -123,7 +190,7 @@ export function placeOfficer(
     gateX: gx,
     gateZ: gz,
     mag: WEAPONS[def.weapon].magazine,
-    readyAt: w.tick + 10,
+    readyAt: w.tick + FORM_UP_TICKS,
     reloadDoneAt: 0,
     nextPlanTick: w.tick + REPLAN_TICKS,
     planFails: 0,
@@ -140,7 +207,9 @@ export function placeOfficer(
 function spawnOfficer(w: World, target: PlayerState, ev: WorldEvent[]): boolean {
   const cands = gateCandidates(w, Math.round(target.x), Math.round(target.z));
   if (cands.length === 0) return false;
-  const kind = target.heat >= COMBINE_HEAT ? 'combine-soldier' : 'metrocop';
+  // The first officer a wanted player meets is always a Metrocop; soldiers come as reinforcements at high heat.
+  const reinforcing = w.officers.some((o) => o.mode === 'hunt' && o.target === target.id);
+  const kind = reinforcing && target.heat >= COMBINE_HEAT ? 'combine-soldier' : 'metrocop';
   for (let attempt = 0; attempt < GATE_ATTEMPTS; attempt++) {
     const idx = cands[Math.floor(drawRandom(w) * cands.length)];
     const gx = idx % w.size;
@@ -153,14 +222,16 @@ function spawnOfficer(w: World, target: PlayerState, ev: WorldEvent[]): boolean 
 }
 
 function trySpawn(w: World, ev: WorldEvent[]): void {
-  if (w.officers.length >= MAX_OFFICERS) return;
+  // One officer per look (SPAWN_BURST), by a gate of his own: a squad builds up rather than appearing whole.
+  let landed = 0;
   for (const id of Object.keys(w.players).sort()) {
     const p = w.players[id];
-    if (isDowned(w, p)) continue;
+    if (isDowned(w, p) || w.tick % responseTicks(p.heat) !== 0) continue;
     const have = w.officers.filter((o) => o.mode === 'hunt' && o.target === id).length;
-    if (have < wantedOfficers(p.heat)) {
-      spawnOfficer(w, p, ev);
-      return;
+    for (let n = have; n < wantedOfficers(p.heat); n++) {
+      if (w.officers.length >= MAX_OFFICERS || landed >= SPAWN_BURST) return;
+      if (!spawnOfficer(w, p, ev)) break;
+      landed++;
     }
   }
 }
@@ -252,6 +323,8 @@ function stepOfficer(w: World, o: Officer, budget: Budget, ev: WorldEvent[]): vo
     if (Math.max(Math.abs(Math.round(m.x) - o.gateX), Math.abs(Math.round(m.z) - o.gateZ)) <= 1)
       return removeOfficer(w, o, ev);
     travel(w, o, { x: o.gateX, z: o.gateZ }, 1, budget, blocked);
+    // A drop cannot be climbed back: one who has no way home radios for a pickup instead of standing about.
+    if (o.planFails >= LEAVE_PLAN_FAILS) return removeOfficer(w, o, ev);
     return;
   }
 
@@ -292,12 +365,14 @@ function stepOfficer(w: World, o: Officer, budget: Budget, ev: WorldEvent[]): vo
     ) {
       firedNow = true;
       o.mag -= 1;
-      o.readyAt = w.tick + gun.fireTicks * def.fireMul;
+      o.readyAt = w.tick + Math.round(gun.fireTicks * def.fireMul);
       o.firedTick = w.tick;
       const targets: ShotTarget[] = [];
       for (const id of Object.keys(w.players).sort()) {
         const q = w.players[id];
-        if (!isDowned(w, q)) targets.push({ id, x: q.x, z: q.z });
+        // A bullet meant for the wanted player never finds someone innocent who happens to be in the line.
+        if (!isDowned(w, q) && (q.id === target.id || q.heat >= CALM_HEAT))
+          targets.push({ id, x: q.x, z: q.z });
       }
       const r = resolveShot(
         w,
@@ -337,8 +412,9 @@ function stepOfficer(w: World, o: Officer, budget: Budget, ev: WorldEvent[]): vo
 
 /** Everything the law does in one tick, after the players' own upkeep. */
 export function tickCrime(w: World, ev: WorldEvent[]): void {
+  // The gates are looked at before this tick's cooling, so heat sitting just on a step is judged where it stood.
+  if (w.tick % SPAWN_LOOK_TICKS === 0) trySpawn(w, ev);
   tickPlayersCombat(w, ev);
-  if (w.tick % SPAWN_CHECK_TICKS === 0) trySpawn(w, ev);
   const budget: Budget = { plans: 0 };
   for (const o of [...w.officers]) {
     if (w.officers.includes(o)) stepOfficer(w, o, budget, ev);

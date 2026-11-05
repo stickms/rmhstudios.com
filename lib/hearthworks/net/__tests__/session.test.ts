@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createWorld, stepWorld, buildingAt, type World } from '../../world';
-import { HostSession, PEER_COMMANDS_PER_SECOND } from '../host';
+import { HostSession, PEER_COMMANDS_PER_SECOND, SNAPSHOT_MIN_TICKS } from '../host';
 import { PeerSession } from '../peer';
 import { encodeJson } from '../protocol';
 import { linkPair, settle, type TestLink } from './memory-link';
@@ -119,7 +119,8 @@ describe('a hostile or broken peer', () => {
     const m = Math.floor(host.world.size / 2);
     for (let i = 0; i < 500; i++) a.send({ type: 'remove', x: m, z: m });
     tick(1);
-    expect(host.stats.rateLimited).toBeGreaterThan(300);
+    // The peer itself holds back past MAX_PENDING (256) unanswered commands; the host drops what exceeds its rate.
+    expect(host.stats.rateLimited).toBeGreaterThan(150);
     expect(PEER_COMMANDS_PER_SECOND).toBeLessThanOrEqual(60);
   });
 });
@@ -142,7 +143,7 @@ describe('desync recovery', () => {
     host.step(); // lost
     settle(all);
     host.submit({ type: 'place', kind: 'road', x: m + 2, z: m });
-    tick(3); // gap noticed → resync → snapshot
+    tick(SNAPSHOT_MIN_TICKS + 3); // gap noticed → resync → (cooldown) → snapshot
     expect(a.stats.resyncs).toBe(1);
     expect(a.ready).toBe(true);
     expect(same(a.view!, host.world)).toBe(true);

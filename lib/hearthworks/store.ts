@@ -3,6 +3,7 @@ import { useStore } from 'zustand';
 import type { BuildingId, CropId } from './content';
 import type { ViewKind } from './camera';
 import { createWorld, stepWorld, type Command, type World, type WorldEvent } from './world';
+import type { RemotePoses } from './net/poses';
 
 type DistributiveOmit<T, K extends keyof never> = T extends unknown ? Omit<T, K> : never;
 /** A command as the local player issues it: the store stamps `playerId`. */
@@ -30,6 +31,11 @@ export interface MultiplayerDriver {
   send(cmd: LocalCommand): void;
   /** Move time forward (a host steps its fixed ticks; a peer has nothing to step) and return the events. */
   advance(dtMs: number): readonly WorldEvent[];
+  /**
+   * The other players' interpolated motion (lib/hearthworks/net/poses.ts): `poses.sample(id, performance.now())`
+   * is where to draw them this frame (a hundred ms in the past, smoothed), with `speed` and `yaw` for animation.
+   */
+  readonly poses?: RemotePoses;
 }
 
 export interface HearthworksState {

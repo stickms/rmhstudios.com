@@ -328,7 +328,9 @@ export class DirectConnection {
     if (this.opts.role === 'member' && d.type !== 'offer') return;
     await this.pc.setRemoteDescription({ type: d.type, sdp: d.sdp });
     this.remoteSet = true;
-    for (const c of this.pending.splice(0)) await this.pc.addIceCandidate(c);
+    // One candidate the browser refuses (a stale one, a malformed one) must not stop the rest, or the answer:
+    // the answer is what lets the other side's candidates pair up at all.
+    for (const c of this.pending.splice(0)) await this.pc.addIceCandidate(c).catch(() => {});
     if (d.type === 'offer') {
       const answer = await this.pc.createAnswer();
       await this.pc.setLocalDescription(answer);

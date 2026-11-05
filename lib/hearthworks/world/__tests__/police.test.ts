@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { OFFICERS } from '../../content';
 import {
   ARREST_TICKS,
+  arrestFine,
   MAX_OFFICERS,
   START_MONEY,
   placeOfficer,
@@ -33,7 +34,7 @@ describe('when the police come', () => {
     const w = arena(32);
     const p = withPlayer(w, 16, 16);
     p.heat = 50;
-    const events = ticks(w, 70);
+    const events = ticks(w, 200); // the gates are looked at every few seconds, not every tick
     expect(w.officers).toHaveLength(1);
     const o = w.officers[0];
     expect(o).toMatchObject({ kind: 'metrocop', mode: 'hunt', target: P });
@@ -43,7 +44,7 @@ describe('when the police come', () => {
       [-1, 0, 1].some((dx) => w.terrain[(o.gateZ + dz) * w.size + o.gateX + dx] === 'water'),
     );
     expect(beside).toBe(true);
-    expect(tileDistance(o.gateX, o.gateZ, 16, 16)).toBeGreaterThanOrEqual(10);
+    expect(tileDistance(o.gateX, o.gateZ, 16, 16)).toBeGreaterThanOrEqual(12);
   });
 
   it('scales up to Combine soldiers and never exceeds the cap', () => {
@@ -52,13 +53,16 @@ describe('when the police come', () => {
     p.heat = 100;
     p.hp = 1e6; // armed and unkillable for this test: unarmed they would simply arrest and go home
     give(w, P, 'pistol');
-    for (let i = 0; i < 400; i++) {
+    for (let i = 0; i < 900; i++) {
       p.heat = 100; // keep it burning
       ticks(w, 1);
     }
     expect(w.officers.length).toBe(MAX_OFFICERS);
-    expect(w.officers.every((o) => o.kind === 'combine-soldier')).toBe(true);
-    expect(w.officers.every((o) => o.hp === OFFICERS['combine-soldier'].hp)).toBe(true);
+    // The first officer a wanted player meets is a Metrocop; the soldiers are the reinforcements.
+    const byArrival = [...w.officers].sort((a, b) => a.id - b.id);
+    expect(byArrival[0].kind).toBe('metrocop');
+    expect(byArrival.slice(1).every((o) => o.kind === 'combine-soldier')).toBe(true);
+    expect(byArrival.every((o) => o.hp === OFFICERS[o.kind].hp)).toBe(true);
   });
 
   it('only comes ashore where the hunt can be walked: a player cut off by water gets no police', () => {
@@ -215,7 +219,9 @@ describe('arrest or fight', () => {
     const all = ticks(w, 400);
     const a = ev(all, 'arrested')[0];
     expect(a).toMatchObject({ playerId: P, officerId: o.id });
-    expect(a.fine).toBe(Math.floor((START_MONEY * 15) / 100));
+    // The fine follows the heat at the moment of the arrest (70 when the officer set out, a little less by now).
+    expect(a.fine).toBeGreaterThanOrEqual(arrestFine(START_MONEY, 55));
+    expect(a.fine).toBeLessThanOrEqual(arrestFine(START_MONEY, 70));
     expect(a.confiscated).toEqual({ 'mystery-tonic': 3 });
     expect(p.money).toBe(START_MONEY - a.fine);
     expect(p.inventory['mystery-tonic']).toBeUndefined();

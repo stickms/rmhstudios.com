@@ -25,6 +25,11 @@ export interface FakeSocket {
   received: Received[];
   /** Set when the server hung up on it (`socket.disconnect()`, e.g. `bindEvents` on a bad payload). */
   disconnected: boolean;
+  /**
+   * Emits that asked for an acknowledgement (`socket.timeout(ms).emit(event, payload, cb)`): a test answers one
+   * with `respond()` (the client acked) or `expire()` (the client was silent and the timeout fired).
+   */
+  acks: Array<{ event: string; payload: unknown; respond(): void; expire(): void }>;
 }
 
 export function makeWorld(...registers: Array<(io: Server, socket: Socket) => void>) {
@@ -58,6 +63,7 @@ export function makeWorld(...registers: Array<(io: Server, socket: Socket) => vo
       handlers: new Map<string, Handler>(),
       received: [] as Received[],
       disconnected: false,
+      acks: [] as FakeSocket['acks'],
       on(event: string, fn: Handler) {
         fake.handlers.set(event, fn);
       },
@@ -68,6 +74,20 @@ export function makeWorld(...registers: Array<(io: Server, socket: Socket) => vo
         emit(event: string, payload: unknown) {
           fake.received.push({ event, payload, volatile: true });
         },
+      },
+      timeout() {
+        return {
+          emit(event: string, payload: unknown, cb: (err: unknown) => void) {
+            fake.received.push({ event, payload, volatile: false });
+            let done = false;
+            const once = (err: unknown) => {
+              if (done) return;
+              done = true;
+              cb(err);
+            };
+            fake.acks.push({ event, payload, respond: () => once(null), expire: () => once(new Error('operation has timed out')) });
+          },
+        };
       },
       join(room: string) {
         fake.rooms.add(room);

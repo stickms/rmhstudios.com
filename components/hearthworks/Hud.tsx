@@ -345,5 +345,8 @@ function reasonText(t: ReturnType<typeof useTranslation>['t'], reason: RejectRea
       return t('err-bad-aim', { defaultValue: 'Aim somewhere else.' });
     case 'downed':
       return t('err-downed', { defaultValue: 'You are down.' });
+    default:
+      // A refusal this build has no wording for (a newer host's rule): say something rather than an empty toast.
+      return t('err-generic', { defaultValue: 'That did not work.' });
   }
 }

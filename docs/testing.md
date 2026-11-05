@@ -491,6 +491,19 @@ signed cookie without reading the (deleted) session row. Fixed by forcing
 Out of scope (each needs external services): Stripe checkout/webhooks, OAuth
 providers, the Socket.IO hubs, email delivery.
 
+### 9. Hearthworks real-WebRTC e2e (not in CI)
+
+`testing/hearthworks-e2e/` runs real Chromium pages with real `RTCPeerConnection`s against a Node socket.io
+harness that hosts the production Hearthworks hub handler (fake session lookup, no DB). Host crash/freeze,
+migration, late join, flood, password and hub-restart scenarios. Opt-in:
+
+```bash
+pnpm test:hearthworks:e2e                  # default scenarios
+pnpm exec tsx testing/hearthworks-e2e/run.ts --list
+```
+
+Details, what it proved and what loopback cannot prove: [`hearthworks-multiplayer.md`](./hearthworks-multiplayer.md).
+
 ### Server perf harness (not in CI)
 
 The server-side performance program ([`docs/server-perf-2026-10-21/`](server-perf-2026-10-21/index.md))

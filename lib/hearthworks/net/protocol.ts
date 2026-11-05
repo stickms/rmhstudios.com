@@ -12,9 +12,22 @@ import type { LocalCommand } from '../store';
 import { decodeWorld, encodeWorld } from '../save';
 import type { World } from '../world';
 
-export const PROTOCOL_VERSION = 1;
+/**
+ * v1: welcome / tick / successor. v2: `reject` (the host tells a peer, and only that peer, which of its commands
+ * were refused and why). A v2 host talks to a v1 peer unchanged (the peer counts `reject` as a protocol error and
+ * carries on), and a v2 peer accepts a v1 host (it simply never hears a `reject`); a host NEWER than we are is
+ * refused (`PeerSession.incompatible`) rather than half-understood.
+ */
+export const PROTOCOL_VERSION = 2;
+export const MIN_PROTOCOL_VERSION = 1;
 /** A peer's JSON message may be at most this large. */
 export const MAX_PEER_MESSAGE_BYTES = 4096;
+/** A host's JSON message may be at most this large (a tick of 8 players' commands is a few KB). */
+export const MAX_HOST_MESSAGE_BYTES = 64 * 1024;
+/** Refusals in one `reject` frame. */
+export const MAX_REJECT_ITEMS = 64;
+/** The reason sent when the host dropped a command unread because the peer was over its rate (not a world rule). */
+export const RATE_LIMITED = 'rate-limited';
 
 const int = z.number().int();
 const coord = int.min(0).max(4096);
@@ -96,11 +109,44 @@ export interface TickCommand {
   cmd: LocalCommand;
 }
 
+/** One refusal: the peer's command `seq` and why (a world `RejectReason`, or `rate-limited`). */
+export type RejectItem = [seq: number, reason: string];
+
 /** Host → peer (JSON frames; snapshots are a separate binary frame). */
 export type HostMessage =
   | { t: 'welcome'; v: number; you: string; successor: string | null }
   | { t: 'tick'; n: number; cmds: TickCommand[]; acks: Record<string, number> }
-  | { t: 'successor'; id: string | null };
+  | { t: 'successor'; id: string | null }
+  /** To the issuing peer ONLY (never broadcast): these commands were refused, here is why. */
+  | { t: 'reject'; items: RejectItem[] };
+
+const zPlayerId = z.string().min(1).max(64);
+/** A reason is a short kebab-case code; the UI maps the ones it knows and shows a generic line for the rest. */
+const zReason = z.string().regex(/^[a-z][a-z0-9-]{0,31}$/);
+
+/**
+ * Every host frame is parsed before a peer acts on it: the host is another player's browser, and a modified one
+ * must not be able to crash or confuse the replicas (a tick's commands go through the same command schema the
+ * host applies to peers).
+ */
+export const hostMessageSchema = z.discriminatedUnion('t', [
+  z.object({ t: z.literal('welcome'), v: int.min(0).max(1000), you: zPlayerId, successor: zPlayerId.nullable() }).strict(),
+  z
+    .object({
+      t: z.literal('tick'),
+      n: int.min(0).max(2 ** 31),
+      cmds: z.array(z.object({ p: zPlayerId, cmd: localCommandSchema }).strict()).max(512),
+      acks: z.record(zPlayerId, int.min(-1).max(2 ** 31)).refine((a) => Object.keys(a).length <= 64),
+    })
+    .strict(),
+  z.object({ t: z.literal('successor'), id: zPlayerId.nullable() }).strict(),
+  z
+    .object({
+      t: z.literal('reject'),
+      items: z.array(z.tuple([int.min(0).max(2 ** 31), zReason])).max(MAX_REJECT_ITEMS),
+    })
+    .strict(),
+]);
 
 const FRAME_JSON = 1;
 const FRAME_SNAPSHOT = 2;

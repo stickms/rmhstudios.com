@@ -96,6 +96,7 @@ const VALID: Record<keyof typeof HW_C2S, unknown> = {
   'hearthworks:p2p:relay': encodeRelay(1, false, new Uint8Array([1])),
   'hearthworks:p2p:successor': { peerId: null },
   'hearthworks:p2p:kick': { peerId: 'aaaaaaaaaa01' },
+  'hearthworks:p2p:host-silent': {},
   'hearthworks:p2p:leave': {},
 };
 

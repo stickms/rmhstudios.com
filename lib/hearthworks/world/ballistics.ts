@@ -65,10 +65,20 @@ export function sightLine(w: World, ax: number, az: number, bx: number, bz: numb
   const steps = Math.max(Math.abs(x1 - x0), Math.abs(z1 - z0));
   const h0 = ground(w, x0, z0) + EYE;
   const h1 = ground(w, x1, z1) + CHEST;
-  for (let i = 1; i < steps; i++) {
+  let px = x0;
+  let pz = z0;
+  for (let i = 1; i <= steps; i++) {
     const x = x0 + Math.round(((x1 - x0) * i) / steps);
     const z = z0 + Math.round(((z1 - z0) * i) / steps);
-    if (surface(w, x, z) > h0 + ((h1 - h0) * i) / steps) return { clear: false, x, z };
+    // A diagonal step squeezes between the two tiles it passes beside: if both stand above the line, that is a wall
+    // meeting at a corner, and nothing gets through the join.
+    if (x !== px && z !== pz) {
+      const hMid = h0 + ((h1 - h0) * (i - 0.5)) / steps;
+      if (surface(w, x, pz) > hMid && surface(w, px, z) > hMid) return { clear: false, x, z: pz };
+    }
+    px = x;
+    pz = z;
+    if (i < steps && surface(w, x, z) > h0 + ((h1 - h0) * i) / steps) return { clear: false, x, z };
   }
   return { clear: true, x: x1, z: z1 };
 }
