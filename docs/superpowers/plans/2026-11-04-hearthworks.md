@@ -146,7 +146,7 @@ Each layer extends `World`/`stepWorld`/content tables with tests first, then sce
 - **3B Kitchen & trade:** recipes with stacking effects, stalls/shops, NPC customers with demand per district (ports CookGame).
 - **3C Crime & police:** crime-route products, heat meter, Metrocop/Combine patrols that engage at high heat; weapon tables sourced from CS:GO/HL2 channels; combat resolved by the host sim with lag compensation.
 - **3D Automation & workers:** machines, belts, hireable workers with role/wage/skill; closed-form offline catch-up (cap 24 h).
-- **3E City layer:** roads, zones, utilities, milestones (ports Isleworks).
+- **3E City layer:** roads, zones, utilities, milestones (ports Isleworks). **Built:** the rules, numbers and what was left behind are in [`docs/hearthworks-city.md`](../../hearthworks-city.md); roads are a navigation layer (cheap, fast tiles for NPC pathing), zones grow lots that become residents and customers, utilities run along the roads, and milestones unlock zones, utilities and a look.
 
 ## Phase 4 — Multiplayer (PR)
 

@@ -146,7 +146,7 @@ describe('channelPairToLink', () => {
       await settle(100);
     }
     const m = Math.floor(world.size / 2);
-    peer.send({ type: 'place', kind: 'road', x: m + 2, z: m });
+    peer.send({ type: 'place', kind: 'park', x: m + 2, z: m });
     for (let i = 0; i < 3; i++) {
       hostSession.step();
       await settle(100);

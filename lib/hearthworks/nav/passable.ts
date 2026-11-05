@@ -9,14 +9,15 @@
  */
 
 import { MAX_FALL, MAX_STEP_UP, levelAt, tileBlocked } from '../avatar/collision';
-import type { World } from '../world';
+import { ROAD_STEP_COST } from '../content/city';
+import { roadLink, type World } from '../world';
 
 export { MAX_FALL, MAX_STEP_UP };
 
 export type MoveKind = 'walk' | 'jump' | 'fall';
 export interface Move {
   kind: MoveKind;
-  /** Planning cost (≥ the number of tiles covered, so the octile heuristic is admissible). */
+  /** Planning cost (≥ the tiles covered × `ROAD_STEP_COST` — the cheapest step there is — so the scaled octile heuristic is admissible). */
   cost: number;
 }
 
@@ -55,6 +56,8 @@ export function adjacentMove(world: World, ax: number, az: number, bx: number, b
       if (Math.abs(lc - levelAt(world, ax, az)) > MAX_STEP_UP || Math.abs(lc - levelAt(world, bx, bz)) > MAX_STEP_UP) return null;
     }
   }
+  // Road is the cheap way round: a step between joined road tiles is a plain walk even up or down a ramp.
+  if (!diagonal && roadLink(world, ax, az, bx, bz)) return { kind: 'walk', cost: ROAD_STEP_COST };
   return stepCost(levelAt(world, bx, bz) - levelAt(world, ax, az), diagonal);
 }
 

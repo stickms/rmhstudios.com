@@ -82,6 +82,9 @@ export function CameraRig() {
         pinch = d;
       }
       if (travelled < POINTER_SLOP) return;
+      // A road or zone stroke owns a single-finger / left-button drag; two fingers or the right button still pan.
+      const armed = hearthworksStore.getState().tool.kind;
+      if ((armed === 'road' || armed === 'zone') && pointers.size === 1 && (e.buttons & 1) === 1) return;
       // Pixels → ground units at the point we look at: a screen pixel covers 2·d·tan(fov/2)/height.
       const unit = (2 * rt.isoDistance * Math.tan((ISO_FOV * Math.PI) / 360)) / el.clientHeight;
       const k = 1 / ISO_ELEVATION_SIN;

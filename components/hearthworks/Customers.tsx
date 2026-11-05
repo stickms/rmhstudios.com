@@ -3,7 +3,7 @@
 import { useTranslation } from 'react-i18next';
 import { ITEMS } from '@/lib/hearthworks/content';
 import { hearthworksStore, useHearthworks } from '@/lib/hearthworks/store';
-import { CUSTOMER_PREMIUM } from '@/lib/hearthworks/world';
+import { customerPremium } from '@/lib/hearthworks/world';
 
 /** Who is waiting at your stalls, what they want, and what they will pay. Serving needs you close by. */
 export function Customers() {
@@ -25,7 +25,7 @@ export function Customers() {
       ) : (
         <ul className="hw-list">
           {npcs.map((n) => {
-            const pay = Math.floor(ITEMS[n.want].price * n.qty * CUSTOMER_PREMIUM);
+            const pay = Math.floor(ITEMS[n.want].price * n.qty * customerPremium(world));
             const have = (inventory?.[n.want] ?? 0) >= n.qty;
             return (
               <li key={n.id} className="hw-row">

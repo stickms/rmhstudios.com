@@ -262,6 +262,6 @@ describe('building around people', () => {
       { type: 'place', playerId: P, kind: 'cottage', x: m, z: m },
       { type: 'place', playerId: P, kind: 'road', x: m, z: m },
     ]);
-    expect(ev.map((e) => (e.type === 'rejected' ? `x:${e.reason}` : e.type))).toEqual(['x:occupied', 'placed']);
+    expect(ev.map((e) => (e.type === 'rejected' ? `x:${e.reason}` : e.type))).toEqual(['x:occupied', 'roadsLaid']);
   });
 });

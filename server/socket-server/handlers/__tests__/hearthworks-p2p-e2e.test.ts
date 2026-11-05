@@ -81,11 +81,11 @@ describe('a host and two members', () => {
     a.store.getState().dispatch({ type: 'place', kind: 'cottage', ...p1 });
     expect(buildingAt(worldOf(a), p1.x, p1.z)?.kind).toBe('cottage'); // prediction, before any tick
     expect(buildingAt(worldOf(h), p1.x, p1.z)).toBeUndefined();
-    b.store.getState().dispatch({ type: 'place', kind: 'road', ...p2 });
-    h.store.getState().dispatch({ type: 'place', kind: 'road', ...p3 });
+    b.store.getState().dispatch({ type: 'place', kind: 'park', ...p2 });
+    h.store.getState().dispatch({ type: 'place', kind: 'park', ...p3 });
     await rig.until(() => same(worldOf(a), worldOf(h)) && same(worldOf(b), worldOf(h)) && !!buildingAt(worldOf(h), p3.x, p3.z), 'replicas converge');
     expect(buildingAt(worldOf(h), p1.x, p1.z)?.kind).toBe('cottage');
-    expect(buildingAt(worldOf(h), p2.x, p2.z)?.kind).toBe('road');
+    expect(buildingAt(worldOf(h), p2.x, p2.z)?.kind).toBe('park');
     // The cottage cost Ann money once (not twice: prediction + the host's tick are one command).
     const annMoney = worldOf(h).players['acct-ann'].money;
     expect(worldOf(a).players['acct-ann'].money).toBe(annMoney);
@@ -180,8 +180,8 @@ describe('the host drops', () => {
     // ...and play continues: Bob builds, Ann (the host now) builds, both land in the new host's world.
     const p2 = spot(after, 2);
     const p3 = spot(after, 3);
-    b.store.getState().dispatch({ type: 'place', kind: 'road', ...p2 });
-    a.store.getState().dispatch({ type: 'place', kind: 'road', ...p3 });
+    b.store.getState().dispatch({ type: 'place', kind: 'park', ...p2 });
+    a.store.getState().dispatch({ type: 'place', kind: 'park', ...p3 });
     await rig.until(() => !!buildingAt(worldOf(a), p2.x, p2.z) && !!buildingAt(worldOf(a), p3.x, p3.z), 'new commands applied');
     await rig.until(() => same(worldOf(b), worldOf(a)), 'still identical');
 
@@ -400,7 +400,7 @@ describe('failures and hostile conditions', () => {
     await rig.until(() => a.connector.state.phase === 'member' && (a.connector.session as { peer: { ready: boolean; hostLost: boolean } }).peer.ready && !peer.hostLost, 'rebound after a re-join', 30_000);
     expect(a.connector.session?.kind).toBe('member');
     const p1 = spot(worldOf(h), 1);
-    a.store.getState().dispatch({ type: 'place', kind: 'road', ...p1 });
+    a.store.getState().dispatch({ type: 'place', kind: 'park', ...p1 });
     await rig.until(() => !!buildingAt(worldOf(h), p1.x, p1.z) && same(worldOf(a), worldOf(h)), 'works after the re-join');
   });
 
@@ -447,7 +447,7 @@ describe('failures and hostile conditions', () => {
       annConn.member.reliable.send(whole);
     };
     const p1 = spot(worldOf(h), 4);
-    frame({ t: 'cmd', seq: 0, cmd: { type: 'place', kind: 'road', ...p1, playerId: 'acct-bob' } }); // extra field
+    frame({ t: 'cmd', seq: 0, cmd: { type: 'place', kind: 'park', ...p1, playerId: 'acct-bob' } }); // extra field
     frame({ t: 'cmd', seq: 1, cmd: { type: 'join' } });
     for (let i = 2; i < 400; i++) frame({ t: 'cmd', seq: i, cmd: { type: 'move', x: 1, z: 1 } });
     await rig.advance(500);

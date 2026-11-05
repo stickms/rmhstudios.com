@@ -1,4 +1,5 @@
 import type { HearthworksStore } from './store';
+import { cellUtility, cellZone, roadAt } from './world';
 
 /** Apply the armed tool to a tile — what a click does in the isometric view and what Use does in third-person. */
 export function applyToolAt(store: HearthworksStore, tx: number, tz: number): void {
@@ -7,8 +8,25 @@ export function applyToolAt(store: HearthworksStore, tx: number, tz: number): vo
     case 'build':
       dispatch({ type: 'place', kind: tool.building, x: tx, z: tz });
       break;
-    case 'remove':
-      dispatch({ type: 'remove', x: tx, z: tz });
+    case 'remove': {
+      // Clear takes away whatever stands here: a building first, then a utility, a road, a zone.
+      const { world } = store.getState();
+      const cell = world.city.cells[tz * world.size + tx] ?? 0;
+      if (world.buildings.some((b) => b.x === tx && b.z === tz)) dispatch({ type: 'remove', x: tx, z: tz });
+      else if (cellUtility(cell)) dispatch({ type: 'removeUtility', x: tx, z: tz });
+      else if (roadAt(world, tx, tz)) dispatch({ type: 'removeRoad', x: tx, z: tz });
+      else if (cellZone(cell)) dispatch({ type: 'unzone', x: tx, z: tz });
+      else dispatch({ type: 'remove', x: tx, z: tz });
+      break;
+    }
+    case 'road':
+      dispatch({ type: 'placeRoad', x: tx, z: tz });
+      break;
+    case 'zone':
+      dispatch({ type: 'zone', zone: tool.zone, x: tx, z: tz });
+      break;
+    case 'utility':
+      dispatch({ type: 'placeUtility', kind: tool.utility, x: tx, z: tz });
       break;
     case 'plant':
       dispatch({ type: 'plant', crop: tool.crop, x: tx, z: tz });

@@ -7,7 +7,11 @@ import {
   CookingPot,
   Cog,
   Crosshair,
+  Droplet,
+  Droplets,
+  Factory,
   Handshake,
+  Landmark,
   Shirt,
   Users,
   Coins,
@@ -19,7 +23,9 @@ import {
   Trash2,
   Trees,
   UsersRound,
+  Waves,
   Wheat,
+  Wind,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -28,15 +34,25 @@ import {
   CROPS,
   CROP_IDS,
   ITEMS,
+  MILESTONES,
   RECIPES,
+  ROAD_COST,
+  UTILITIES,
+  UTILITY_IDS,
+  ZONES,
+  ZONE_IDS,
   isItemId,
   type BuildingId,
+  type UnlockId,
+  type UtilityId,
+  type ZoneId,
 } from '@/lib/hearthworks/content';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import { hearthworksStore, useHearthworks, type Tool } from '@/lib/hearthworks/store';
 import type { RejectReason } from '@/lib/hearthworks/world';
-import { HIRE_COST } from '@/lib/hearthworks/world';
+import { HIRE_COST, utilityUnlocked, zoneUnlocked } from '@/lib/hearthworks/world';
 import { Armory, Vitals } from './Armory';
+import { CityPanel, CityReadout, milestoneText, unlockName, utilityName, zoneName } from './CityPanel';
 import { Customers } from './Customers';
 import { MultiplayerPanel } from './MultiplayerPanel';
 import { ViewToggle, WalkControls } from './ViewControls';
@@ -52,10 +68,15 @@ const BUILDING_ICON: Record<BuildingId, LucideIcon> = {
   harvester: Cog,
 };
 
+const ZONE_ICON: Record<ZoneId, LucideIcon> = { homes: House, market: Store, workshop: Factory };
+const UTILITY_ICON: Record<UtilityId, LucideIcon> = { well: Droplet, windmill: Wind, pump: Droplets, waterwheel: Waves };
+
 function sameTool(a: Tool, b: Tool): boolean {
   if (a.kind !== b.kind) return false;
   if (a.kind === 'build' && b.kind === 'build') return a.building === b.building;
   if (a.kind === 'plant' && b.kind === 'plant') return a.crop === b.crop;
+  if (a.kind === 'zone' && b.kind === 'zone') return a.zone === b.zone;
+  if (a.kind === 'utility' && b.kind === 'utility') return a.utility === b.utility;
   return true;
 }
 
@@ -64,11 +85,14 @@ function ToolButton({
   label,
   Icon,
   hint,
+  lockedBy,
 }: {
   tool: Tool;
   label: string;
   Icon: LucideIcon;
   hint?: string;
+  /** Why this tool cannot be used yet (a milestone to reach), or undefined when it can. */
+  lockedBy?: string;
 }) {
   const current = useHearthworks((s) => s.tool);
   const active = sameTool(current, tool);
@@ -77,7 +101,8 @@ function ToolButton({
       type="button"
       className="hw-tool"
       aria-pressed={active}
-      title={hint ? `${label} · ${hint}` : label}
+      disabled={lockedBy !== undefined}
+      title={lockedBy ?? (hint ? `${label} · ${hint}` : label)}
       onClick={() => hearthworksStore.getState().setTool(active ? { kind: 'inspect' } : tool)}
     >
       <Icon aria-hidden size={20} />
@@ -92,7 +117,15 @@ export function Hud() {
   const money = useHearthworks((s) => s.world.players[s.playerId]?.money ?? 0);
   const inventory = useHearthworks((s) => s.world.players[s.playerId]?.inventory);
   const lastEvents = useHearthworks((s) => s.lastEvents);
-  const [panel, setPanel] = useState<'pantry' | 'wardrobe' | 'customers' | 'armory' | 'multiplayer' | null>(null);
+  const [panel, setPanel] = useState<'pantry' | 'wardrobe' | 'customers' | 'armory' | 'multiplayer' | 'city' | null>(null);
+  // The dock shows either the farm and kitchen tools or the town tools; picking a town tool anywhere switches it.
+  const [dock, setDock] = useState<'farm' | 'city'>('farm');
+  const toolKind = useHearthworks((s) => s.tool.kind);
+  useEffect(() => {
+    if (toolKind === 'road' || toolKind === 'zone' || toolKind === 'utility') setDock('city');
+  }, [toolKind]);
+  const world = useHearthworks((s) => s.world);
+  const cityRev = useHearthworks((s) => s.rev);
   // An invite link (?lobby=CODE) opens the multiplayer panel, which joins it.
   const invite = useLobbyInvite();
   useEffect(() => {
@@ -106,6 +139,23 @@ export function Hud() {
     for (const e of lastEvents) {
       if (e.type === 'skinBought')
         toast(t('skin-bought', { defaultValue: 'New look unlocked!' }), { id: 'hw-skin' });
+      if (e.type === 'milestoneReached')
+        toast(
+          t('toast-milestone', {
+            defaultValue: 'Milestone reached: {{name}}. Claim the reward in Town.',
+            name: milestoneText(t, e.id).name,
+          }),
+          { id: `hw-ms-${e.id}` },
+        );
+      if (e.type === 'milestoneClaimed' && e.playerId === hearthworksStore.getState().playerId)
+        toast(
+          t('toast-claimed', {
+            defaultValue: '{{name}} reward: +{{reward}}',
+            name: milestoneText(t, e.id).name,
+            reward: e.reward,
+          }),
+          { id: `hw-claim-${e.id}` },
+        );
       if (e.type === 'officerSpawned') toast(t('police-coming', { defaultValue: 'Police are on the island.' }), { id: 'hw-police' });
       if (e.type === 'arrested')
         toast(t('arrested', { defaultValue: 'Arrested. Fined {{fine}} and your contraband was taken.', fine: e.fine }), { id: 'hw-arrest' });
@@ -143,6 +193,18 @@ export function Hud() {
         >
           <UsersRound aria-hidden size={18} />
           <span>{t('mp-title', { defaultValue: 'Play together' })}</span>
+        </button>
+        <button
+          type="button"
+          className="hw-chip hw-chip--button"
+          aria-expanded={panel === 'city'}
+          onClick={() => setPanel((p) => (p === 'city' ? null : 'city'))}
+        >
+          <Landmark aria-hidden size={18} />
+          <span>{t('city-title', { defaultValue: 'Town' })}</span>
+          {world.city.reached.length > world.city.claimed.length && (
+            <b className="hw-badge">{world.city.reached.length - world.city.claimed.length}</b>
+          )}
         </button>
         <button
           type="button"
@@ -185,6 +247,7 @@ export function Hud() {
 
       {panel === 'wardrobe' && <Wardrobe />}
       {panel === 'customers' && <Customers />}
+      {panel === 'city' && <CityPanel />}
       {panel === 'armory' && <Armory />}
       <Vitals />
       {panel === 'multiplayer' && <MultiplayerPanel />}
@@ -244,49 +307,103 @@ export function Hud() {
       )}
 
       <WalkControls />
-      <nav className="hw-dock" aria-label={t('tools-label', { defaultValue: 'Tools' })}>
+      <nav className="hw-dock" aria-label={t('tools-label', { defaultValue: 'Tools' })} data-mode={dock}>
+        <div className="hw-dock__modes" role="group" aria-label={t('dock-modes', { defaultValue: 'Tool set' })}>
+          <button type="button" className="hw-mode" aria-pressed={dock === 'farm'} onClick={() => setDock('farm')}>
+            <Sprout aria-hidden size={16} />
+            <span>{t('dock-farm', { defaultValue: 'Farm' })}</span>
+          </button>
+          <button type="button" className="hw-mode" aria-pressed={dock === 'city'} onClick={() => setDock('city')}>
+            <Landmark aria-hidden size={16} />
+            <span>{t('dock-city', { defaultValue: 'Town' })}</span>
+          </button>
+        </div>
         <ToolButton
           tool={{ kind: 'inspect' }}
           label={t('tool-look', { defaultValue: 'Look' })}
           Icon={MousePointer2}
         />
-        {BUILDING_IDS.map((b) => (
-          <ToolButton
-            key={b}
-            tool={{ kind: 'build', building: b }}
-            label={BUILDINGS[b].name}
-            Icon={BUILDING_ICON[b]}
-            hint={String(BUILDINGS[b].cost)}
-          />
-        ))}
-        {CROP_IDS.map((c) => (
-          <ToolButton
-            key={c}
-            tool={{ kind: 'plant', crop: c }}
-            label={CROPS[c].name}
-            Icon={Sprout}
-            hint={String(CROPS[c].seedPrice)}
-          />
-        ))}
-        <ToolButton
-          tool={{ kind: 'harvest' }}
-          label={t('tool-harvest', { defaultValue: 'Harvest' })}
-          Icon={Wheat}
-        />
-        <ToolButton
-          tool={{ kind: 'hire' }}
-          label={t('tool-hire', { defaultValue: 'Hire' })}
-          Icon={Handshake}
-          hint={String(HIRE_COST)}
-        />
+        {dock === 'farm' ? (
+          <>
+            {BUILDING_IDS.filter((b) => b !== 'road').map((b) => (
+              <ToolButton
+                key={b}
+                tool={{ kind: 'build', building: b }}
+                label={BUILDINGS[b].name}
+                Icon={BUILDING_ICON[b]}
+                hint={String(BUILDINGS[b].cost)}
+              />
+            ))}
+            {CROP_IDS.map((c) => (
+              <ToolButton
+                key={c}
+                tool={{ kind: 'plant', crop: c }}
+                label={CROPS[c].name}
+                Icon={Sprout}
+                hint={String(CROPS[c].seedPrice)}
+              />
+            ))}
+            <ToolButton
+              tool={{ kind: 'harvest' }}
+              label={t('tool-harvest', { defaultValue: 'Harvest' })}
+              Icon={Wheat}
+            />
+            <ToolButton
+              tool={{ kind: 'hire' }}
+              label={t('tool-hire', { defaultValue: 'Hire' })}
+              Icon={Handshake}
+              hint={String(HIRE_COST)}
+            />
+          </>
+        ) : (
+          <>
+            <ToolButton
+              tool={{ kind: 'road' }}
+              label={t('tool-road', { defaultValue: 'Road' })}
+              Icon={Route}
+              hint={String(ROAD_COST)}
+            />
+            {ZONE_IDS.map((z) => (
+              <ToolButton
+                key={z}
+                tool={{ kind: 'zone', zone: z }}
+                label={zoneName(t, z)}
+                Icon={ZONE_ICON[z]}
+                hint={String(ZONES[z].cost)}
+                lockedBy={cityRev >= 0 && !zoneUnlocked(world, z) ? lockHint(t, `zone:${z}` as UnlockId) : undefined}
+              />
+            ))}
+            {UTILITY_IDS.map((u) => (
+              <ToolButton
+                key={u}
+                tool={{ kind: 'utility', utility: u }}
+                label={utilityName(t, u)}
+                Icon={UTILITY_ICON[u]}
+                hint={String(UTILITIES[u].cost)}
+                lockedBy={cityRev >= 0 && !utilityUnlocked(world, u) ? lockHint(t, `utility:${u}` as UnlockId) : undefined}
+              />
+            ))}
+          </>
+        )}
         <ToolButton
           tool={{ kind: 'remove' }}
           label={t('tool-clear', { defaultValue: 'Clear' })}
           Icon={Trash2}
         />
       </nav>
+      {dock === 'city' && <CityReadout />}
     </>
   );
+}
+
+/** Why a town tool is greyed out: the milestone that opens it. */
+function lockHint(t: ReturnType<typeof useTranslation>['t'], unlock: UnlockId): string {
+  const by = MILESTONES.find((m) => m.unlocks.includes(unlock));
+  return t('locked-until', {
+    defaultValue: 'Reach {{milestone}} to unlock {{what}}.',
+    milestone: by ? milestoneText(t, by.id).name : '',
+    what: unlockName(t, unlock),
+  });
 }
 
 function reasonText(t: ReturnType<typeof useTranslation>['t'], reason: RejectReason): string {
@@ -345,6 +462,18 @@ function reasonText(t: ReturnType<typeof useTranslation>['t'], reason: RejectRea
       return t('err-bad-aim', { defaultValue: 'Aim somewhere else.' });
     case 'downed':
       return t('err-downed', { defaultValue: 'You are down.' });
+    case 'bad-shape':
+      return t('err-bad-shape', { defaultValue: 'Roads run in straight lines. Drag out an L if you need a corner.' });
+    case 'locked':
+      return t('err-locked', { defaultValue: 'Not unlocked yet. Reach the next milestone.' });
+    case 'no-shore':
+      return t('err-no-shore', { defaultValue: 'That needs open water right beside it.' });
+    case 'unknown-milestone':
+      return t('err-unknown-milestone', { defaultValue: 'There is no such milestone.' });
+    case 'not-reached':
+      return t('err-not-reached', { defaultValue: 'You have not reached that milestone yet.' });
+    case 'already-claimed':
+      return t('err-already-claimed', { defaultValue: 'That reward has already been claimed.' });
     default:
       // A refusal this build has no wording for (a newer host's rule): say something rather than an empty toast.
       return t('err-generic', { defaultValue: 'That did not work.' });

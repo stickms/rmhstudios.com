@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUILDING_IDS, CROP_IDS } from '../../content';
+import { BUILDING_IDS, CROP_IDS, UTILITY_IDS, ZONE_IDS } from '../../content';
 import { PALETTE, PROCEDURAL_MODELS, checkStyle, resolveModel, type ModelId } from '..';
 
 describe('palette', () => {
@@ -9,10 +9,14 @@ describe('palette', () => {
 });
 
 describe('procedural models', () => {
-  it('has a model for every building, crop and tree, and each passes the style rules', () => {
+  it('has a model for every building, crop, tree, lot level and utility, and each passes the style rules', () => {
     const ids: ModelId[] = [
       ...BUILDING_IDS.map((b) => `building:${b}` as const),
       ...CROP_IDS.map((c) => `crop:${c}` as const),
+      ...ZONE_IDS.flatMap((z) => ([1, 2, 3] as const).map((l) => `lot:${z}:${l}` as const)),
+      ...UTILITY_IDS.map((u) => `utility:${u}` as const),
+      'city:green',
+      'marker:unserved',
       'tree',
       'pine',
     ];

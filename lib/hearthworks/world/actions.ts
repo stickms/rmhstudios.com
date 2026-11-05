@@ -4,6 +4,7 @@ import { BUILDINGS, CROPS, ITEMS, type ItemId } from '../content';
 import { doorTile, newBudget, staticBlockers } from './agents';
 import { sendHome } from './customers';
 import { newFarmhand } from './farmhands';
+import { lotLevelAt, zoneAt } from './city-cells';
 import { buildingAt, inBounds, tileDistance, tileIndex } from './helpers';
 import { nextRandom } from './rng';
 import type { Command, PlayerState, RejectReason, World, WorldEvent } from './types';
@@ -14,6 +15,14 @@ export const SERVE_REACH = 3;
 export const FORAGE_COOLDOWN_TICKS = 600;
 /** Customers pay this much over the stall price: the premium for having a buyer come to you. */
 export const CUSTOMER_PREMIUM = 1.5;
+/** Every shop lot in town adds a little foot traffic to what customers pay, up to this much extra. */
+export const FOOT_TRAFFIC_BONUS = 0.05;
+export const FOOT_TRAFFIC_MAX = 0.3;
+/** What a customer pays over the stall price right now. */
+export const customerPremium = (w: World): number =>
+  CUSTOMER_PREMIUM + Math.min(FOOT_TRAFFIC_MAX, w.city.stats.markets * FOOT_TRAFFIC_BONUS);
+/** A home lot must have grown to this level before someone can be hired to live there. */
+export const HOME_LOT_HIRE_LEVEL = 2;
 export const HIRE_COST = 100;
 export const WORKERS_PER_COTTAGE = 2;
 
@@ -62,7 +71,7 @@ export function serve(
   if (tileDistance(p.x, p.z, npc.x, npc.z) > SERVE_REACH) return 'too-far';
   if ((p.inventory[npc.want] ?? 0) < npc.qty) return 'missing-ingredients';
   p.inventory[npc.want] = (p.inventory[npc.want] ?? 0) - npc.qty;
-  const earned = Math.floor(ITEMS[npc.want].price * npc.qty * CUSTOMER_PREMIUM);
+  const earned = Math.floor(ITEMS[npc.want].price * npc.qty * customerPremium(w));
   p.money += earned;
   ev.push({ type: 'served', playerId: p.id, npcId: npc.id, item: npc.want, qty: npc.qty, earned });
   // Happy, they walk back the way they came; if they somehow cannot, they are simply gone.
@@ -95,8 +104,11 @@ export function hire(
   ev: WorldEvent[],
 ): Result {
   if (!inBounds(w, cmd.x, cmd.z)) return 'out-of-bounds';
-  const home = buildingAt(w, cmd.x, cmd.z);
-  if (!home || home.kind !== 'cottage') return 'no-cottage';
+  // Hired people live in a cottage, or in a grown home lot of the town.
+  const cottage = buildingAt(w, cmd.x, cmd.z);
+  const lot = zoneAt(w, cmd.x, cmd.z) === 'homes' && lotLevelAt(w, cmd.x, cmd.z) >= HOME_LOT_HIRE_LEVEL;
+  if (!(cottage?.kind === 'cottage') && !lot) return 'no-cottage';
+  const home = { x: cmd.x, z: cmd.z };
   const here = w.workers.filter((k) => k.homeX === home.x && k.homeZ === home.z).length;
   if (here >= WORKERS_PER_COTTAGE) return 'too-many-workers';
   if (p.money < HIRE_COST) return 'cannot-afford';

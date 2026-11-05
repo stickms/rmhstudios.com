@@ -5,7 +5,8 @@
  * so every replica agrees to the bit.
  */
 
-import { LEVEL_HEIGHT, WATER_LEVEL, tileTop, type World } from '../world';
+import { ROAD_STEP_TIME } from '../content/city';
+import { LEVEL_HEIGHT, WATER_LEVEL, roadLink, tileTop, type World } from '../world';
 import { findPath, type PathOptions, type PathStep } from './astar';
 import { moveBetween, type Blocker, type MoveKind } from './passable';
 
@@ -38,8 +39,9 @@ export function newMover(x: number, z: number): Mover {
 export type MoverStatus = 'idle' | 'moving' | 'arrived' | 'blocked';
 
 /** How many ticks a step takes. Diagonals are longer; a jump is a quick hop, a fall quicker still. */
-export function stepTicks(kind: MoveKind, dx: number, dz: number): number {
+export function stepTicks(kind: MoveKind, dx: number, dz: number, onRoad = false): number {
   const dist = Math.hypot(dx, dz);
+  if (onRoad && kind === 'walk') return Math.max(1, Math.round(TICKS_PER_TILE * dist * ROAD_STEP_TIME));
   if (kind === 'jump') return Math.round(JUMP_TICKS * Math.max(1, dist * 0.8));
   if (kind === 'fall') return Math.round(FALL_TICKS + dist * 6);
   return Math.round(TICKS_PER_TILE * dist);
@@ -89,7 +91,7 @@ export function stepMover(world: World, m: Mover, blocked?: Blocker): MoverStatu
     }
     m.yaw = Math.atan2(next.x - m.fromX, next.z - m.fromZ);
   }
-  const dur = stepTicks(next.kind, next.x - m.fromX, next.z - m.fromZ);
+  const dur = stepTicks(next.kind, next.x - m.fromX, next.z - m.fromZ, roadLink(world, m.fromX, m.fromZ, next.x, next.z));
   m.leg += 1;
   const f = Math.min(1, m.leg / dur);
   m.x = m.fromX + (next.x - m.fromX) * f;
@@ -116,7 +118,7 @@ export function moverY(world: World, m: Mover): number {
   const step = m.path[0];
   if (!step) return tileTop(world, m.x, m.z);
   const toTop = tileTop(world, step.x, step.z);
-  const dur = stepTicks(step.kind, step.x - m.fromX, step.z - m.fromZ);
+  const dur = stepTicks(step.kind, step.x - m.fromX, step.z - m.fromZ, roadLink(world, m.fromX, m.fromZ, step.x, step.z));
   const f = Math.min(1, Math.max(0, m.leg / dur));
   const smooth = f * f * (3 - 2 * f);
   if (step.kind === 'jump') return fromTop + (toTop - fromTop) * smooth + Math.sin(Math.PI * f) * (LEVEL_HEIGHT * 0.9);

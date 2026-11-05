@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { BUILDING_IDS, CROP_IDS, ITEM_IDS, WEAPON_IDS } from '../content';
+import { BUILDING_IDS, CROP_IDS, ITEM_IDS, UTILITY_IDS, WEAPON_IDS, ZONE_IDS } from '../content';
 import { SKIN_IDS } from '../skins';
 import type { LocalCommand } from '../store';
 import { decodeWorld, encodeWorld } from '../save';
@@ -62,6 +62,14 @@ export const localCommandSchema: z.ZodType<LocalCommand> = z.discriminatedUnion(
   z.object({ type: z.literal('collect'), x: coord, z: coord }).strict(),
   z.object({ type: z.literal('hire'), x: coord, z: coord }).strict(),
   z.object({ type: z.literal('fire'), workerId: int.min(0).max(2 ** 31) }).strict(),
+  // The city layer. A run or a brush stroke names its far corner; the sim bounds its size, this only bounds the numbers.
+  z.object({ type: z.literal('placeRoad'), x: coord, z: coord, x2: coord.optional(), z2: coord.optional() }).strict(),
+  z.object({ type: z.literal('removeRoad'), x: coord, z: coord, x2: coord.optional(), z2: coord.optional() }).strict(),
+  z.object({ type: z.literal('zone'), zone: z.enum(ZONE_IDS), x: coord, z: coord, x2: coord.optional(), z2: coord.optional() }).strict(),
+  z.object({ type: z.literal('unzone'), x: coord, z: coord, x2: coord.optional(), z2: coord.optional() }).strict(),
+  z.object({ type: z.literal('placeUtility'), kind: z.enum(UTILITY_IDS), x: coord, z: coord }).strict(),
+  z.object({ type: z.literal('removeUtility'), x: coord, z: coord }).strict(),
+  z.object({ type: z.literal('claimMilestone'), id: z.string().min(1).max(32) }).strict(),
   z.object({ type: z.literal('buySkin'), skin: z.enum(SKIN_IDS) }).strict(),
   z.object({ type: z.literal('setSkin'), skin: z.enum(SKIN_IDS) }).strict(),
 ]) as z.ZodType<LocalCommand>;
@@ -90,6 +98,13 @@ const COMMAND_TYPES_HAVE_SCHEMAS: Record<LocalCommand['type'], true> = {
   collect: true,
   hire: true,
   fire: true,
+  placeRoad: true,
+  removeRoad: true,
+  zone: true,
+  unzone: true,
+  placeUtility: true,
+  removeUtility: true,
+  claimMilestone: true,
   buySkin: true,
   setSkin: true,
 };

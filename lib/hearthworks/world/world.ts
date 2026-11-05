@@ -4,6 +4,9 @@ import { collect, fire, forage, hire, serve } from './actions';
 import { agentOnTile } from './agents';
 import { MAX_HP, applyCrimeCommand, crimeGate, newArms } from './crime';
 import { tickCrime } from './police';
+import { cellLevel, cellRoad, cellUtility, createCity } from './city-cells';
+import { claimMilestone, placeRoad, placeUtility, removeRoad, removeUtility, unzone, zone } from './city-commands';
+import { recomputeCity, touchCity } from './city';
 import { buildingAt, cropStage, inBounds, tileIndex } from './helpers';
 import { fbm } from './noise';
 import { tickSystems } from './systems';
@@ -70,7 +73,7 @@ export function createWorld(seed: number, size: number): World {
     }
   }
   return {
-    version: 1,
+    version: 2,
     seed: s32,
     size: n,
     tick: 0,
@@ -86,6 +89,7 @@ export function createWorld(seed: number, size: number): World {
     foraged: {},
     npcs: [],
     workers: [],
+    city: createCity(n),
   };
 }
 
@@ -146,10 +150,22 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
     }
     case 'place': {
       if (!isBuildingId(cmd.kind)) return reject(events, cmd, 'nothing-there');
+      // Roads belong to the city layer now; `place road` is kept as a single-tile alias for saves and clients that predate it.
+      if (cmd.kind === 'road') {
+        const reason = placeRoad(w, p, { type: 'placeRoad', playerId: p.id, x: cmd.x, z: cmd.z }, events);
+        if (reason) reject(events, cmd, reason);
+        return;
+      }
       if (!inBounds(w, cmd.x, cmd.z)) return reject(events, cmd, 'out-of-bounds');
       if (w.terrain[tileIndex(w, cmd.x, cmd.z)] !== 'grass')
         return reject(events, cmd, 'bad-terrain');
       if (buildingAt(w, cmd.x, cmd.z)) return reject(events, cmd, 'occupied');
+      {
+        // A road, a utility or a developed lot already holds the tile; an empty zone is simply built over.
+        const cell = w.city.cells[tileIndex(w, cmd.x, cmd.z)];
+        if (cellRoad(cell) || cellUtility(cell) || cellLevel(cell) > 0)
+          return reject(events, cmd, 'occupied');
+      }
       // Never wall someone in: a solid building cannot go up on a tile a player, a customer or a farmhand is standing on.
       if (
         SOLID_BUILDINGS.has(cmd.kind) &&
@@ -165,6 +181,8 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
       const rot = ([0, 1, 2, 3].includes(cmd.rot ?? 0) ? (cmd.rot ?? 0) : 0) as Rot;
       const building: Building = { id: w.nextId++, kind: cmd.kind, x: cmd.x, z: cmd.z, rot };
       w.buildings.push(building);
+      w.city.cells[tileIndex(w, cmd.x, cmd.z)] = 0;
+      touchCity(w);
       events.push({ type: 'placed', building });
       return;
     }
@@ -176,6 +194,7 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
       p.money += refund;
       w.buildings = w.buildings.filter((o) => o.id !== b.id);
       w.crops = w.crops.filter((c) => !(c.x === b.x && c.z === b.z));
+      touchCity(w);
       events.push({ type: 'removed', buildingId: b.id, refund });
       return;
     }
@@ -247,6 +266,30 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
       if (reason && reason !== 'silent') reject(events, cmd, reason);
       return;
     }
+    case 'placeRoad':
+    case 'removeRoad':
+    case 'zone':
+    case 'unzone':
+    case 'placeUtility':
+    case 'removeUtility':
+    case 'claimMilestone': {
+      const reason =
+        cmd.type === 'placeRoad'
+          ? placeRoad(w, p, cmd, events)
+          : cmd.type === 'removeRoad'
+            ? removeRoad(w, p, cmd, events)
+            : cmd.type === 'zone'
+              ? zone(w, p, cmd, events)
+              : cmd.type === 'unzone'
+                ? unzone(w, p, cmd, events)
+                : cmd.type === 'placeUtility'
+                  ? placeUtility(w, p, cmd, events)
+                  : cmd.type === 'removeUtility'
+                    ? removeUtility(w, p, cmd, events)
+                    : claimMilestone(w, p, cmd, events);
+      if (reason) reject(events, cmd, reason);
+      return;
+    }
     case 'buySkin': {
       if (!isSkinId(cmd.skin)) return reject(events, cmd, 'unknown-skin');
       if (p.ownedSkins.includes(cmd.skin)) return reject(events, cmd, 'already-owned');
@@ -287,6 +330,8 @@ function applyCommand(w: World, cmd: Command, events: WorldEvent[]) {
 export function stepWorld(world: World, dtMs: number, cmds: readonly Command[] = []): WorldEvent[] {
   const events: WorldEvent[] = [];
   for (const cmd of cmds) applyCommand(world, cmd, events);
+  // Commands that touched the city are settled at once, so the HUD and the next command see consistent coverage.
+  if (world.city.dirty) recomputeCity(world);
   world.accMs += Number.isFinite(dtMs) && dtMs > 0 ? dtMs : 0;
   while (world.accMs >= TICK_MS) {
     world.accMs -= TICK_MS;

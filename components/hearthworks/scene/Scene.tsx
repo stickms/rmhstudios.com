@@ -16,6 +16,7 @@ import { CROPS } from '@/lib/hearthworks/content';
 import { hearthworksStore, useHearthworks } from '@/lib/hearthworks/store';
 import { runtime } from '@/lib/hearthworks/runtime-instance';
 import { interactAt } from '@/lib/hearthworks/tools';
+import { roadCommands, zoneCommand, type Tile } from '@/lib/hearthworks/city-input';
 import { Avatar } from './Avatar';
 import { FigureSystem } from './figure-system';
 import Combat from './Combat';
@@ -23,6 +24,7 @@ import { People } from './People';
 import { RemotePlayers } from './RemotePlayers';
 import { CameraRig } from './CameraRig';
 import { cropStage, tileTop, type Rot, type World } from '@/lib/hearthworks/world';
+import { CityLayer, StrokePreview } from './City';
 import { InstancedModels, type ModelInstance } from './InstancedModels';
 
 const CLICK_SLOP = 6;
@@ -89,6 +91,7 @@ function Board() {
   const world = useHearthworks((s) => s.world);
   const rev = useHearthworks((s) => s.rev);
   const toolKind = useHearthworks((s) => s.tool.kind);
+  const view = useHearthworks((s) => s.view);
   const trees = useMemo(() => treeInstances(world), [world]);
   // `rev` is the signal that the (mutated-in-place) world changed what is drawn.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -106,6 +109,37 @@ function Board() {
   useEffect(() => () => ground.geometry.dispose(), [ground]);
   const [hover, setHover] = useState<{ x: number; z: number } | null>(null);
   const down = useRef<{ x: number; y: number } | null>(null);
+  const tool = useHearthworks((s) => s.tool);
+  // A road or zone drag in progress: where it began and the tile under the pointer now.
+  const [stroke, setStroke] = useState<{ from: Tile; to: Tile } | null>(null);
+  const strokeRef = useRef(stroke);
+  strokeRef.current = stroke;
+  const toolRef = useRef(tool);
+  toolRef.current = tool;
+  const dragTool = tool.kind === 'road' || tool.kind === 'zone';
+
+  // Lift anywhere (even off the board, over the HUD) finishes the stroke; Escape drops it.
+  useEffect(() => {
+    if (!stroke) return;
+    const finish = () => {
+      const s = strokeRef.current;
+      const t = toolRef.current;
+      setStroke(null);
+      if (!s) return;
+      const { dispatch } = hearthworksStore.getState();
+      if (t.kind === 'road') for (const c of roadCommands(s.from, s.to)) dispatch(c);
+      else if (t.kind === 'zone') dispatch(zoneCommand(t.zone, s.from, s.to));
+    };
+    const cancel = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setStroke(null);
+    };
+    window.addEventListener('pointerup', finish);
+    window.addEventListener('keydown', cancel);
+    return () => {
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('keydown', cancel);
+    };
+  }, [stroke === null]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tileOf = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
@@ -124,10 +158,17 @@ function Board() {
         onPointerMove={(e) => {
           const t = tileOf(e);
           setHover((h) => (h?.x === t?.x && h?.z === t?.z ? h : t));
+          if (t) setStroke((s) => (s && (s.to.x !== t.x || s.to.z !== t.z) ? { from: s.from, to: t } : s));
         }}
         onPointerLeave={() => setHover(null)}
         onPointerDown={(e) => {
-          if (e.button === 0) down.current = { x: e.clientX, y: e.clientY };
+          if (e.button !== 0) return;
+          const t = tileOf(e);
+          if (dragTool && t && hearthworksStore.getState().view === 'iso' && runtime.progress < 0.01) {
+            setStroke({ from: t, to: t });
+            return;
+          }
+          down.current = { x: e.clientX, y: e.clientY };
         }}
         onPointerUp={(e) => {
           const d = down.current;
@@ -141,8 +182,10 @@ function Board() {
         <meshStandardMaterial vertexColors roughness={0.95} metalness={0} />
       </mesh>
       <InstancedModels instances={trees} />
+      <CityLayer world={world} rev={rev} markers={view === 'iso'} />
       <InstancedModels instances={entities} />
-      {hover && toolKind !== 'inspect' && (
+      {stroke && <StrokePreview world={world} tool={tool} from={stroke.from} to={stroke.to} />}
+      {hover && toolKind !== 'inspect' && !stroke && (
         <mesh position={[hover.x, tileTop(world, hover.x, hover.z) + 0.03, hover.z]} rotation-x={-Math.PI / 2} renderOrder={2}>
           <planeGeometry args={[0.96, 0.96]} />
           <meshBasicMaterial color={PALETTE.ink} transparent opacity={0.3} depthWrite={false} />
