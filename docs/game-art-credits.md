@@ -437,6 +437,22 @@ keep the drawn-from-scratch look (lambda disc, crosshair, portal rings, stick-fi
 
 Everything else (clouds, cogs, leaves, bubbles, paper, grid, grain, scanlines, rings, figures) is drawn procedurally in `scripts/`.
 
+### Library banners, batch F (Dream Rift, Gabriel's Horn, Kowloon Knockout, Slice It, Synapse Storm)
+
+#### Attributions: game banners v3 (dream-rift, gabriels-horn, kowloon-knockout, slice-it, synapse-storm)
+
+No new third-party assets were used in this round. Every source image was already downloaded and credited in
+`game-art-v2/ATTRIBUTIONS*.md` for the cards; the banners re-use them (re-processed for a 1920x640 format).
+All are public domain / CC0 as listed there. Fonts are not used (the banners carry no title text).
+
+- dream-rift: Utagawa Hiroshige, "Wild Geese Flying under the Full Moon", ca. 1833, The Met (Open Access, CC0, object 36742). Re-used via the card's recoloured print (violet/cyan/pink, pixel dissolve), here as a feathered oval moon window under the bullet rings. Bullet rings, core and pixel player are the previous banner's own artwork.
+- gabriels-horn: Jusepe de Ribera, "Saint Jerome Hearing the Trumpet of the Last Judgment", etching, ca. 1621, The Met (Open Access, CC0, object 397952). Re-used as a faint gold-foil etching (angel, wings, clouds) behind the horn. Horn, dice, cards and sunburst are the previous banner's own artwork; harlequin lattice is procedural.
+- kowloon-knockout: Wonderlane, "Neon sign of the world ... Hong Kong 1990" (Flickr, CC0 1.0, https://www.flickr.com/photos/71401718@N00/14469754044). Re-used as a pink halftone texture behind the neon skyline. Neon fighters and kanji signs are the previous banner's own artwork (digits/text on signs unchanged: single kanji props only).
+- slice-it: William P. Gottlieb, "Portrait of Sid Catlett, ca. Mar. 1947", Library of Congress (item 2023867522, public domain per the photographer's wishes). Re-used as the card's cyan/pink line-screen of the raised hand, stick and cymbal; the face is outside the crop. Lane, blades, laser and EQ bars are the previous banner's own artwork; groove rings are procedural.
+- synapse-storm: S. Ramon y Cajal, "Histologie du systeme nerveux de l'homme et des vertebres" (Paris 1909), Fig. 60, Internet Archive item `b21270879_001` (public domain by age); rawpixel "lightning bolt storm" (CC0 / public domain, https://www.rawpixel.com/image/3285791/free-photo-image-nature-storm-lightning). Re-used as glowing neuron line-art (labels and caption removed) and thin lightning forks. Orb, rings, bolts and tiles are the previous banner's own artwork (numerals in the tiles replaced by pictograms).
+
+Build scripts: `game-banners-v3/Fsrc/build_{dr,gh,kk,si,ss}.py` (+ `lib3.py`, `sim.py`).
+
 ### Library banners, batch G (Daily Puzzles, House Always Wins, Laundry Sort, Neon Driftway, Temple of Joy)
 
 #### Attributions: game banners v3 (daily-puzzles, house-always-wins, laundry-sort, neon-driftway, temple-of-joy)
