@@ -84,8 +84,10 @@ export function GamePage({ data }: { data: GamePageData }) {
             <OptimizedImage
               src={hero.src}
               alt=""
-              width={1280}
-              height={427}
+              // Full-bleed across the viewport: `fullWidth` sizes the candidate from the real viewport and the screen's
+              // density (not from the 1280 hint), and `width` picks the default file for browsers that ignore srcset.
+              layout="fullWidth"
+              width={1920}
               priority
               className="stm-hero-img"
               // Stamped `data-loaded` by the site's media-reveal script as it loads.
