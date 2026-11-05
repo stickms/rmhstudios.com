@@ -11,6 +11,8 @@ function Slider({
  value,
  min = 0,
  max = 100,
+ 'aria-label': ariaLabel,
+ 'aria-labelledby': ariaLabelledby,
  ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
  const _values = React.useMemo(
@@ -53,6 +55,9 @@ function Slider({
  // slop starts the drag instead of cancelling it. Jelly owns its hover and press scale,
  // so there is no CSS hover scale to fight it; the droplet look is jelly-coverage.css §4.
  data-jelly="drag"
+ // Radix names the role=slider thumb, not the root: hand the caller's label down to it.
+ aria-label={ariaLabel}
+ aria-labelledby={ariaLabelledby}
  key={index}
  className="relative block size-4 shrink-0 rounded-full border border-site-border bg-site-surface-opaque after:absolute after:-inset-3.5 after:content-[''] disabled:pointer-events-none disabled:opacity-50"
  />

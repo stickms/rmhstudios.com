@@ -52,7 +52,15 @@ import { hearthworksStore, useHearthworks, type Tool } from '@/lib/hearthworks/s
 import type { RejectReason } from '@/lib/hearthworks/world';
 import { HIRE_COST, utilityUnlocked, zoneUnlocked } from '@/lib/hearthworks/world';
 import { Armory, Vitals } from './Armory';
-import { CityPanel, CityReadout, milestoneText, unlockName, utilityName, zoneName } from './CityPanel';
+import {
+  CityPanel,
+  CityReadout,
+  cityEventText,
+  milestoneText,
+  unlockName,
+  utilityName,
+  zoneName,
+} from './CityPanel';
 import { Customers } from './Customers';
 import { MultiplayerPanel } from './MultiplayerPanel';
 import { ViewToggle, WalkControls } from './ViewControls';
@@ -156,6 +164,30 @@ export function Hud() {
           }),
           { id: `hw-claim-${e.id}` },
         );
+      if (e.type === 'cityEventStarted') {
+        const text = cityEventText(t, e.id);
+        toast(
+          t('toast-event-start', {
+            defaultValue: '{{name}}: {{effect}}',
+            name: text.name,
+            effect: text.effect,
+          }),
+          { id: `hw-event-${e.id}-${e.day}` },
+        );
+      }
+      if (e.type === 'cityEventEnded')
+        toast(
+          t('toast-event-end', {
+            defaultValue: '{{name}} is over.',
+            name: cityEventText(t, e.id).name,
+          }),
+          { id: `hw-event-end-${e.id}-${e.day}` },
+        );
+      // Your own change is on the slider under your hand; someone else's is worth a line.
+      if (e.type === 'taxRateSet' && e.playerId !== hearthworksStore.getState().playerId)
+        toast(t('toast-tax-set', { defaultValue: 'Tax rate set to {{rate}}%.', rate: e.rate }), {
+          id: 'hw-tax',
+        });
       if (e.type === 'officerSpawned') toast(t('police-coming', { defaultValue: 'Police are on the island.' }), { id: 'hw-police' });
       if (e.type === 'arrested')
         toast(t('arrested', { defaultValue: 'Arrested. Fined {{fine}} and your contraband was taken.', fine: e.fine }), { id: 'hw-arrest' });

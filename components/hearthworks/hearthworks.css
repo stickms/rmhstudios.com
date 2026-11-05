@@ -611,3 +611,33 @@
 .hw-meter--wide {
   grid-template-columns: 52px 1fr 48px;
 }
+
+/* The tax-rate slider and the town event banner (Town panel). */
+.hw-tax {
+  display: grid;
+  gap: 10px;
+}
+
+.hw-tax [data-slot='slider'] {
+  margin-block: 4px;
+}
+
+.hw-event {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--hw-rule);
+  border-radius: var(--hw-radius-sm);
+  background: var(--hw-butter);
+  color: var(--hw-ink);
+}
+
+.hw-event .hw-muted {
+  color: var(--hw-ink);
+}
+
+.hw-event[data-event='storm'],
+.hw-event[data-event='drySpell'] {
+  background: var(--hw-blush);
+}

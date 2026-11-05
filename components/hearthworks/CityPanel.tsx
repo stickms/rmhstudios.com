@@ -1,10 +1,16 @@
 'use client';
 
 import type { TFunction } from 'i18next';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Coins, Droplets, Smile, UsersRound, Zap } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import {
+  DEFAULT_TAX_RATE,
+  MAX_TAX_RATE,
   MILESTONES,
+  MIN_TAX_RATE,
+  type CityEventId,
   type MilestoneDef,
   type UnlockId,
   type UtilityId,
@@ -76,6 +82,66 @@ export function milestoneText(t: TFunction, id: string): { name: string; goal: s
     default:
       return { name: id, goal: '' };
   }
+}
+
+/** The words for a town event: its name, and in plain words what it does. */
+export function cityEventText(t: TFunction, id: CityEventId): { name: string; effect: string } {
+  switch (id) {
+    case 'festival':
+      return {
+        name: t('event-festival', { defaultValue: 'Festival' }),
+        effect: t('event-festival-effect', {
+          defaultValue: 'People are happier and shops do a little more business.',
+        }),
+      };
+    case 'tradeFair':
+      return {
+        name: t('event-trade-fair', { defaultValue: 'Market fair' }),
+        effect: t('event-trade-fair-effect', {
+          defaultValue: 'Shops and workshops earn half as much again.',
+        }),
+      };
+    case 'harvest':
+      return {
+        name: t('event-harvest', { defaultValue: 'Harvest windfall' }),
+        effect: t('event-harvest-effect', { defaultValue: 'Taxes bring in a third more.' }),
+      };
+    case 'storm':
+      return {
+        name: t('event-storm', { defaultValue: 'Power-line storm' }),
+        effect: t('event-storm-effect', {
+          defaultValue: 'Windmills and water wheels give less power. Nobody leaves.',
+        }),
+      };
+    case 'drySpell':
+      return {
+        name: t('event-dry-spell', { defaultValue: 'Dry spell' }),
+        effect: t('event-dry-spell-effect', {
+          defaultValue: 'Wells and pumps give less water. Nobody leaves.',
+        }),
+      };
+  }
+}
+
+/** What a tax rate does, in words: more money and less cheer above the standard rate, the reverse below. */
+export function taxEffectText(t: TFunction, rate: number): string {
+  if (rate === DEFAULT_TAX_RATE)
+    return t('tax-effect-standard', {
+      defaultValue: 'Standard rate. People are neither pleased nor bothered.',
+    });
+  if (rate > DEFAULT_TAX_RATE)
+    return t('tax-effect-high', {
+      defaultValue:
+        'Higher taxes bring in more from each resident, but people are less happy and fewer move in.',
+    });
+  if (rate === MIN_TAX_RATE)
+    return t('tax-effect-none', {
+      defaultValue:
+        'No taxes. People are glad and more move in, but the town earns nothing from them.',
+    });
+  return t('tax-effect-low', {
+    defaultValue: 'Lower taxes keep people happy and draw more in, but the town earns less.',
+  });
 }
 
 export function unlockName(t: TFunction, id: UnlockId): string {
@@ -222,6 +288,58 @@ function MilestoneRow({ def }: { def: MilestoneDef }) {
   );
 }
 
+/** The tax-rate slider. The thumb moves freely; the command is sent once, when the player lets go (or presses a key). */
+function TaxControl() {
+  const { t } = useTranslation('c-hearthworks');
+  const rate = useHearthworks((s) => s.world.city.taxRate);
+  const [draft, setDraft] = useState<number | null>(null);
+  const shown = draft ?? rate;
+  return (
+    <div className="hw-tax">
+      <div className="hw-row">
+        <span id="hw-tax-label">{t('tax-rate', { defaultValue: 'Tax rate' })}</span>
+        <b>{shown}%</b>
+      </div>
+      <Slider
+        aria-labelledby="hw-tax-label"
+        min={MIN_TAX_RATE}
+        max={MAX_TAX_RATE}
+        step={1}
+        value={[shown]}
+        onValueChange={([v]) => setDraft(v ?? rate)}
+        onValueCommit={([v]) => {
+          setDraft(null);
+          if (v !== undefined && v !== rate)
+            hearthworksStore.getState().dispatch({ type: 'setTaxRate', rate: v });
+        }}
+      />
+      <p className="hw-muted" aria-live="polite">
+        {taxEffectText(t, shown)}
+      </p>
+    </div>
+  );
+}
+
+/** The event in progress, if any: what it is, what it does, and how long it lasts. */
+function EventBanner() {
+  const { t } = useTranslation('c-hearthworks');
+  const event = useHearthworks((s) => s.world.city.event);
+  useHearthworks((s) => s.rev);
+  if (!event) return null;
+  const text = cityEventText(t, event.id);
+  return (
+    <div className="hw-event" role="status" data-event={event.id}>
+      <div className="hw-row">
+        <b>{text.name}</b>
+        <span className="hw-muted">
+          {t('event-days-left', { defaultValue: 'Days left: {{days}}', days: event.daysLeft })}
+        </span>
+      </div>
+      <p className="hw-muted">{text.effect}</p>
+    </div>
+  );
+}
+
 /** The town panel: how it is doing, what it wants, the budget, and the milestones with their rewards. */
 export function CityPanel() {
   const { t } = useTranslation('c-hearthworks');
@@ -235,6 +353,7 @@ export function CityPanel() {
     >
       <h2 className="hw-panel__title">{t('city-title', { defaultValue: 'Town' })}</h2>
       <p className="hw-muted">{stepText(t, nextStep(world))}</p>
+      <EventBanner />
 
       <h3 className="hw-panel__sub">{t('city-people', { defaultValue: 'People' })}</h3>
       <Meter
@@ -287,6 +406,9 @@ export function CityPanel() {
           <b>{signed(s.net)}</b>
         </li>
       </ul>
+
+      <h3 className="hw-panel__sub">{t('tax-title', { defaultValue: 'Taxes' })}</h3>
+      <TaxControl />
 
       <h3 className="hw-panel__sub">{t('city-milestones', { defaultValue: 'Milestones' })}</h3>
       <ul className="hw-list">
