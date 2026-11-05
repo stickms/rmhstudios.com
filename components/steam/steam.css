@@ -52,6 +52,8 @@
 
   --stm-radius: 2px;
   --stm-header-h: 56px;
+  /* The bottom bar's height, which it keeps pinned (below) and the sticky sidebar leaves room for. */
+  --stm-bottom-h: calc(40px + env(safe-area-inset-bottom));
 
   font-family: var(--font-inter), 'Inter Fallback', 'Motiva Sans', Arial, Helvetica, sans-serif;
   font-size: 14px;
@@ -224,11 +226,16 @@
 /* ─── Bottom bar ──────────────────────────────────────────────────────────── */
 
 .stm-bottombar {
+  /* Always in view, as Steam's own bottom bar is: it pins to the bottom of the window while the page
+     scrolls, and sits at the end of a short page. On iOS WebKit it stays in the flow instead (below). */
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
   background: var(--stm-header);
   display: flex;
   align-items: center;
   gap: 28px;
-  min-height: 40px;
+  min-height: var(--stm-bottom-h);
   padding: 0 max(16px, env(safe-area-inset-right)) env(safe-area-inset-bottom)
     max(16px, env(safe-area-inset-left));
   color: var(--stm-muted);
@@ -249,6 +256,15 @@
   height: 16px;
 }
 
+/* iOS 26 Safari paints the strip behind its floating tab bar from any layer pinned to the bottom edge, as one
+   flat band, so there the bar stays at the end of the page; the sidebar then has no bar to clear. */
+html.ios-webkit .stm-bottombar {
+  position: static;
+}
+html.ios-webkit .steam {
+  --stm-bottom-h: 0px;
+}
+
 /* ─── Library: sidebar + main ─────────────────────────────────────────────── */
 
 .stm-lib {
@@ -263,7 +279,7 @@
   position: sticky;
   top: var(--stm-header-h);
   align-self: start;
-  height: calc(100dvh - var(--stm-header-h));
+  height: calc(100dvh - var(--stm-header-h) - var(--stm-bottom-h));
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -2500,9 +2516,10 @@ html[dir='rtl'] .stm-drawer-panel {
   transform: translateY(-2px);
 }
 
-/* In-page links (Achievements, Reviews, ...) land below the pinned header, not under it. */
+/* In-page links (Achievements, Reviews, ...) land between the pinned bars, not under either. */
 .steam [id] {
   scroll-margin-top: calc(var(--stm-header-h) + 8px);
+  scroll-margin-bottom: calc(var(--stm-bottom-h) + 8px);
 }
 
 /* ─── Points shop (/games/shop) ───────────────────────────────────────────── */

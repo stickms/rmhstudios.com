@@ -2,13 +2,15 @@
 
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { useLocation } from '@tanstack/react-router';
-import { isNativeMaterialRoute } from '@/lib/native-material-routes';
+import { isNativeCursorRoute } from '@/lib/native-cursor-routes';
 import { useGlobeCursorStore } from '@/stores/globeCursorStore';
 
 /**
  * The globe cursor's gate, mounted once by `__root.tsx`.
  *
- * Its static closure is the settings store and nothing else; the engine (and
+ * It is drawn only on site pages: games and apps keep the system cursor
+ * (`lib/native-cursor-routes.ts`). Its static closure is the settings store, the
+ * route list (the catalog, already in the main bundle) and nothing else; the engine (and
  * the Thurston eversion it samples) is a lazy chunk that loads only when the
  * cursor is enabled on a device with a fine, hovering pointer. A phone never
  * downloads it, and neither does a desktop with the cursor switched off.
@@ -34,8 +36,8 @@ export function GlobeCursorRoot() {
     return () => mq.removeEventListener('change', onChange);
   }, [hydrate]);
 
-  // Some apps (the TF2 HUD Editor) use the plain system cursor.
-  if (!hydrated || !enabled || !fine || isNativeMaterialRoute(pathname)) return null;
+  // Games and apps use the plain system cursor (or their own); the globe is for the site pages.
+  if (!hydrated || !enabled || !fine || isNativeCursorRoute(pathname)) return null;
   return (
     <Suspense fallback={null}>
       <GlobeCursor />
