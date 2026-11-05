@@ -1,4 +1,4 @@
-import { LEVEL_HEIGHT, SOLID_BUILDINGS } from '../world';
+import { LEVEL_HEIGHT, SOLID_BUILDINGS, citySolidAt } from '../world';
 import type { World } from '../world';
 
 /** Body radius in tiles (a person is ~0.5 m wide against a ~4 m tile). */
@@ -19,6 +19,7 @@ export function tileBlocked(world: World, tx: number, tz: number): boolean {
     return true;
   const kind = world.terrain[tz * world.size + tx];
   if (kind === 'water' || kind === 'forest') return true;
+  if (citySolidAt(world, tx, tz)) return true; // a developed lot or a utility
   return world.buildings.some((b) => b.x === tx && b.z === tz && SOLID_BUILDINGS.has(b.kind));
 }
 

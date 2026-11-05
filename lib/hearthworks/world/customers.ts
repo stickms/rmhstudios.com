@@ -17,6 +17,7 @@ import {
   walk,
   type Budget,
 } from './agents';
+import { FLAG_CONNECTED, cellLevel, cellZone } from './city-cells';
 import { tileDistance } from './helpers';
 import { draw } from './rng';
 import type { Building, Npc, World, WorldEvent } from './types';
@@ -25,6 +26,12 @@ export const CUSTOMER_EVERY_TICKS = 200;
 export const CUSTOMER_PATIENCE_TICKS = 1200;
 /** A gate is at least this many tiles from the stall, so a customer visibly walks in. */
 export const MIN_GATE_DISTANCE = 8;
+/** Residents live nearby, so they only need to be this far from the stall to be seen walking over. */
+const MIN_HOME_DISTANCE = 3;
+const RESIDENT_EVERY_MIN = 100;
+const RESIDENT_CAP_BONUS = 4;
+/** A town of this many people sends half its customers from home. */
+const RESIDENT_HALF_SHARE = 12;
 /** Gates tried (and route searches spent) per arrival. */
 const SPAWN_ATTEMPTS = 3;
 /** Longest route (in tile-costs) a customer will set out on. */
@@ -52,6 +59,33 @@ function pickGate(w: World, stall: Building): { x: number; z: number } | null {
   const gate = nearestWalkable(w, px, pz, undefined, 10);
   if (!gate || tileDistance(gate.x, gate.z, stall.x, stall.z) < MIN_GATE_DISTANCE) return null;
   return gate;
+}
+
+/** Residents of the town who can walk to a stall: the home lots (and cottages) on the road network, with the tile in front of each. */
+function homeGates(w: World): { x: number; z: number }[] {
+  if (w.city.population <= 0) return [];
+  const out: { x: number; z: number }[] = [];
+  const n = w.size;
+  for (let i = 0; i < w.city.cells.length; i++) {
+    const cell = w.city.cells[i];
+    if (cellZone(cell) !== 'homes' || cellLevel(cell) === 0 || (w.city.flags[i] & FLAG_CONNECTED) === 0) continue;
+    out.push({ x: i % n, z: Math.floor(i / n) });
+  }
+  return out;
+}
+
+/** A road-side tile beside a random home lot — where a resident sets out from — or null if they are all walled in. */
+function pickHomeGate(w: World, homes: { x: number; z: number }[], stall: Building): { x: number; z: number } | null {
+  const home = homes[Math.floor(draw(w) * homes.length)];
+  const gate = nearestWalkable(w, home.x, home.z, undefined, 2);
+  if (!gate || tileDistance(gate.x, gate.z, stall.x, stall.z) < MIN_HOME_DISTANCE) return null;
+  return gate;
+}
+
+/** More residents, more footfall: a bigger town keeps more customers about, and sends them more often. */
+export function customerRhythm(w: World): { every: number; bonus: number } {
+  const pop = w.city.population;
+  return { every: Math.max(RESIDENT_EVERY_MIN, CUSTOMER_EVERY_TICKS - pop * 3), bonus: Math.min(RESIDENT_CAP_BONUS, Math.floor(pop / 8)) };
 }
 
 /**
@@ -114,13 +148,17 @@ export function tickCustomers(w: World, ev: WorldEvent[], budget: Budget): void 
   for (const n of [...w.npcs]) if (!tickCustomer(w, n, ev, budget)) gone.add(n.id);
   if (gone.size > 0) w.npcs = w.npcs.filter((n) => !gone.has(n.id));
 
-  if (w.tick % CUSTOMER_EVERY_TICKS !== 0) return;
+  const rhythm = customerRhythm(w);
+  if (w.tick % rhythm.every !== 0) return;
   const stalls = w.buildings.filter((b) => b.kind === 'stall');
   const active = w.npcs.filter((n) => n.mode !== 'leaving').length;
-  if (stalls.length === 0 || active >= Math.min(4, 1 + stalls.length * 2)) return;
+  if (stalls.length === 0 || active >= Math.min(4, 1 + stalls.length * 2) + rhythm.bonus) return;
   const stall = stalls[Math.floor(draw(w) * stalls.length)];
+  // Once the town has people, most customers are residents walking over from their own front doors.
+  const homes = homeGates(w);
+  const resident = homes.length > 0 && draw(w) < w.city.population / (w.city.population + RESIDENT_HALF_SHARE);
   for (let attempt = 0; attempt < SPAWN_ATTEMPTS && budget.searches > 0; attempt++) {
-    const gate = pickGate(w, stall);
+    const gate = resident ? pickHomeGate(w, homes, stall) : pickGate(w, stall);
     if (!gate) continue;
     budget.searches -= 1;
     // Reach any free tile beside the stall; others' standing places and destinations are not offered.

@@ -1,6 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { useStore } from 'zustand';
-import type { BuildingId, CropId } from './content';
+import type { BuildingId, CropId, UtilityId, ZoneId } from './content';
 import type { ViewKind } from './camera';
 import { createWorld, stepWorld, type Command, type World, type WorldEvent } from './world';
 import type { RemotePoses } from './net/poses';
@@ -15,7 +15,11 @@ export type Tool =
   | { kind: 'remove' }
   | { kind: 'hire' }
   | { kind: 'plant'; crop: CropId }
-  | { kind: 'harvest' };
+  | { kind: 'harvest' }
+  // The city layer: drag to lay road, drag a rectangle to zone, click to place a utility.
+  | { kind: 'road' }
+  | { kind: 'zone'; zone: ZoneId }
+  | { kind: 'utility'; utility: UtilityId };
 
 /**
  * Where the world comes from when it is shared (lib/hearthworks/net/driver.ts builds these). While a driver is

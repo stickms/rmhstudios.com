@@ -2,6 +2,7 @@ import type { BuildingId, CropId, ItemId } from '../content';
 import type { Mover } from '../nav/mover';
 import type { SkinId } from '../skins';
 import type { Arms, CrimeCommand, CrimeEvent, CrimeReject, Officer } from './crime-types';
+import type { CityCommand, CityEvent, CityReject, CityState } from './city-types';
 
 /** One simulation tick is 50 ms of game time (20 Hz — the rate the P2P layer will stream at). */
 export const TICK_MS = 50;
@@ -113,7 +114,7 @@ export interface PlayerState {
 
 /** Plain, JSON-serialisable data: everything a save or a P2P checkpoint needs. */
 export interface World {
-  version: 1;
+  version: 2;
   seed: number;
   size: number;
   tick: number;
@@ -135,10 +136,13 @@ export interface World {
   foraged: Record<string, number>;
   npcs: Npc[];
   workers: Worker[];
+  /** The city layer: roads, zones, utilities, population and milestones (world/city.ts). */
+  city: CityState;
 }
 
 export type Command =
   | CrimeCommand
+  | CityCommand
   | { type: 'join'; playerId: string }
   | { type: 'move'; playerId: string; x: number; z: number }
   | { type: 'place'; playerId: string; kind: BuildingId; x: number; z: number; rot?: Rot }
@@ -157,6 +161,7 @@ export type Command =
 
 export type WorldEvent =
   | CrimeEvent
+  | CityEvent
   | { type: 'joined'; playerId: string }
   | { type: 'placed'; building: Building }
   | { type: 'removed'; buildingId: number; refund: number }
@@ -179,6 +184,7 @@ export type WorldEvent =
 
 export type RejectReason =
   | CrimeReject
+  | CityReject
   | 'unknown-player'
   | 'out-of-bounds'
   | 'bad-terrain'

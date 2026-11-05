@@ -1,3 +1,4 @@
+import { ROAD_STEP_COST } from '../content/city';
 import type { World } from '../world';
 import { adjacentMove, gapMove, walkable, type Blocker, type MoveKind } from './passable';
 
@@ -125,7 +126,10 @@ export function findPath(
   const start = sz * n + sx;
   g[start] = 0;
   const heap = new Heap();
-  const h0 = octile(gx - sx, gz - sz);
+  // Roads make a step cheaper than 1, so the straight-line estimate must shrink with them or it would overshoot and
+  // stop being admissible. Without roads the scale is 1 and the search is exactly what it always was.
+  const hScale = world.city.roadCount > 0 ? ROAD_STEP_COST : 1;
+  const h0 = octile(gx - sx, gz - sz) * hScale;
   heap.push(h0, h0, start);
   const KINDS: MoveKind[] = ['walk', 'jump', 'fall'];
   const kindCode = { walk: 0, jump: 1, fall: 2 } as const;
@@ -156,7 +160,7 @@ export function findPath(
         g[ni] = ng;
         parent[ni] = cur;
         kind[ni] = kindCode[move.kind];
-        const h = octile(gx - nx, gz - nz);
+        const h = octile(gx - nx, gz - nz) * hScale;
         heap.push(ng + h, h, ni);
       }
     };

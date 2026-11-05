@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createHearthworksStore } from '../store';
 import { applyToolAt, tileInFront } from '../tools';
-import { TICK_MS, buildingAt } from '../world';
+import { TICK_MS, buildingAt, roadAt } from '../world';
 
 describe('applyToolAt', () => {
   it('dispatches the armed tool and does nothing for the inspect tool', () => {
@@ -13,10 +13,11 @@ describe('applyToolAt', () => {
     store.getState().setTool({ kind: 'build', building: 'road' });
     applyToolAt(store, m, m);
     store.getState().advance(TICK_MS);
-    expect(buildingAt(store.getState().world, m, m)?.kind).toBe('road');
+    expect(roadAt(store.getState().world, m, m)).toBe(true);
     store.getState().setTool({ kind: 'remove' });
     applyToolAt(store, m, m);
     store.getState().advance(TICK_MS);
+    expect(roadAt(store.getState().world, m, m)).toBe(false);
     expect(buildingAt(store.getState().world, m, m)).toBeUndefined();
   });
 });
