@@ -20,6 +20,7 @@ import viCEconomy from "@/locales/vi/c-economy.json";
 import viCElections from "@/locales/vi/c-elections.json";
 import viCGabrielsHorn from "@/locales/vi/c-gabriels-horn.json";
 import viCGame from "@/locales/vi/c-game.json";
+import viCHearthworks from "@/locales/vi/c-hearthworks.json";
 import viCHistory from "@/locales/vi/c-history.json";
 import viCHouseAlwaysWins from "@/locales/vi/c-house-always-wins.json";
 import viCKaikaiDebt from "@/locales/vi/c-kaikai-debt.json";
@@ -116,6 +117,7 @@ const viResources = {
   "c-elections": viCElections,
   "c-gabriels-horn": viCGabrielsHorn,
   "c-game": viCGame,
+  "c-hearthworks": viCHearthworks,
   "c-history": viCHistory,
   "c-house-always-wins": viCHouseAlwaysWins,
   "c-kaikai-debt": viCKaikaiDebt,

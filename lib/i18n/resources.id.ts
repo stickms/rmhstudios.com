@@ -20,6 +20,7 @@ import idCEconomy from "@/locales/id/c-economy.json";
 import idCElections from "@/locales/id/c-elections.json";
 import idCGabrielsHorn from "@/locales/id/c-gabriels-horn.json";
 import idCGame from "@/locales/id/c-game.json";
+import idCHearthworks from "@/locales/id/c-hearthworks.json";
 import idCHistory from "@/locales/id/c-history.json";
 import idCHouseAlwaysWins from "@/locales/id/c-house-always-wins.json";
 import idCKaikaiDebt from "@/locales/id/c-kaikai-debt.json";
@@ -116,6 +117,7 @@ const idResources = {
   "c-elections": idCElections,
   "c-gabriels-horn": idCGabrielsHorn,
   "c-game": idCGame,
+  "c-hearthworks": idCHearthworks,
   "c-history": idCHistory,
   "c-house-always-wins": idCHouseAlwaysWins,
   "c-kaikai-debt": idCKaikaiDebt,

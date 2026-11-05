@@ -20,6 +20,7 @@ import deCEconomy from "@/locales/de/c-economy.json";
 import deCElections from "@/locales/de/c-elections.json";
 import deCGabrielsHorn from "@/locales/de/c-gabriels-horn.json";
 import deCGame from "@/locales/de/c-game.json";
+import deCHearthworks from "@/locales/de/c-hearthworks.json";
 import deCHistory from "@/locales/de/c-history.json";
 import deCHouseAlwaysWins from "@/locales/de/c-house-always-wins.json";
 import deCKaikaiDebt from "@/locales/de/c-kaikai-debt.json";
@@ -116,6 +117,7 @@ const deResources = {
   "c-elections": deCElections,
   "c-gabriels-horn": deCGabrielsHorn,
   "c-game": deCGame,
+  "c-hearthworks": deCHearthworks,
   "c-history": deCHistory,
   "c-house-always-wins": deCHouseAlwaysWins,
   "c-kaikai-debt": deCKaikaiDebt,

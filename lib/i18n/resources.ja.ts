@@ -20,6 +20,7 @@ import jaCEconomy from "@/locales/ja/c-economy.json";
 import jaCElections from "@/locales/ja/c-elections.json";
 import jaCGabrielsHorn from "@/locales/ja/c-gabriels-horn.json";
 import jaCGame from "@/locales/ja/c-game.json";
+import jaCHearthworks from "@/locales/ja/c-hearthworks.json";
 import jaCHistory from "@/locales/ja/c-history.json";
 import jaCHouseAlwaysWins from "@/locales/ja/c-house-always-wins.json";
 import jaCKaikaiDebt from "@/locales/ja/c-kaikai-debt.json";
@@ -116,6 +117,7 @@ const jaResources = {
   "c-elections": jaCElections,
   "c-gabriels-horn": jaCGabrielsHorn,
   "c-game": jaCGame,
+  "c-hearthworks": jaCHearthworks,
   "c-history": jaCHistory,
   "c-house-always-wins": jaCHouseAlwaysWins,
   "c-kaikai-debt": jaCKaikaiDebt,

@@ -20,6 +20,7 @@ import zhCEconomy from "@/locales/zh/c-economy.json";
 import zhCElections from "@/locales/zh/c-elections.json";
 import zhCGabrielsHorn from "@/locales/zh/c-gabriels-horn.json";
 import zhCGame from "@/locales/zh/c-game.json";
+import zhCHearthworks from "@/locales/zh/c-hearthworks.json";
 import zhCHistory from "@/locales/zh/c-history.json";
 import zhCHouseAlwaysWins from "@/locales/zh/c-house-always-wins.json";
 import zhCKaikaiDebt from "@/locales/zh/c-kaikai-debt.json";
@@ -118,6 +119,7 @@ const zhResources = {
   "c-elections": zhCElections,
   "c-gabriels-horn": zhCGabrielsHorn,
   "c-game": zhCGame,
+  "c-hearthworks": zhCHearthworks,
   "c-history": zhCHistory,
   "c-house-always-wins": zhCHouseAlwaysWins,
   "c-kaikai-debt": zhCKaikaiDebt,

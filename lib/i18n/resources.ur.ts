@@ -20,6 +20,7 @@ import urCEconomy from "@/locales/ur/c-economy.json";
 import urCElections from "@/locales/ur/c-elections.json";
 import urCGabrielsHorn from "@/locales/ur/c-gabriels-horn.json";
 import urCGame from "@/locales/ur/c-game.json";
+import urCHearthworks from "@/locales/ur/c-hearthworks.json";
 import urCHistory from "@/locales/ur/c-history.json";
 import urCHouseAlwaysWins from "@/locales/ur/c-house-always-wins.json";
 import urCKaikaiDebt from "@/locales/ur/c-kaikai-debt.json";
@@ -116,6 +117,7 @@ const urResources = {
   "c-elections": urCElections,
   "c-gabriels-horn": urCGabrielsHorn,
   "c-game": urCGame,
+  "c-hearthworks": urCHearthworks,
   "c-history": urCHistory,
   "c-house-always-wins": urCHouseAlwaysWins,
   "c-kaikai-debt": urCKaikaiDebt,

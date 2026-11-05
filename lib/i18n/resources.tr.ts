@@ -20,6 +20,7 @@ import trCEconomy from "@/locales/tr/c-economy.json";
 import trCElections from "@/locales/tr/c-elections.json";
 import trCGabrielsHorn from "@/locales/tr/c-gabriels-horn.json";
 import trCGame from "@/locales/tr/c-game.json";
+import trCHearthworks from "@/locales/tr/c-hearthworks.json";
 import trCHistory from "@/locales/tr/c-history.json";
 import trCHouseAlwaysWins from "@/locales/tr/c-house-always-wins.json";
 import trCKaikaiDebt from "@/locales/tr/c-kaikai-debt.json";
@@ -116,6 +117,7 @@ const trResources = {
   "c-elections": trCElections,
   "c-gabriels-horn": trCGabrielsHorn,
   "c-game": trCGame,
+  "c-hearthworks": trCHearthworks,
   "c-history": trCHistory,
   "c-house-always-wins": trCHouseAlwaysWins,
   "c-kaikai-debt": trCKaikaiDebt,
