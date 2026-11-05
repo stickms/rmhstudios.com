@@ -112,6 +112,21 @@ Opt-in: not in `pnpm test` (the file is `run.ts`, not `*.test.ts`) and not in CI
 | `motion`       | a member walking at 10 Hz of `move` is drawn with ~⅓ of the world's per-frame jump                                                                                                                                                        |
 | `freeze`       | the host is SIGSTOPped: members notice (10 s link timeout), report the silent host, the hub probes it and hands the room over (~17 s total)                                                                                               |
 
+### Timing sensitivity on slow machines
+
+Two steps depend on timing and can fail on a machine that is busy or renders in software, even though each
+passes on its own:
+
+- `motion` compares the largest per-frame jump of the drawn avatar with the world's (`drawn < 0.5 × raw`). The
+  ~⅓ above holds at about 60 frames per second; at about 25 fps (headless Chromium on software GL while other
+  work is running) each frame is naturally a bigger step and the ratio reads ~0.6 with the interpolation working.
+- `hub-restart` checks that two replicas agree at the newest common tick; right after the hub comes back it
+  can sample while one replica is a tick behind. The hashes at the common ticks it prints were equal in the one
+  failure seen.
+
+Run a failing scenario alone first (`run.ts motion`) before treating a red run as a regression. Neither
+step runs in CI.
+
 ### Bugs found while verifying (all fixed, with regression tests where deterministic)
 
 Items 1–2 were found by the real-browser run itself (it failed, then passed after the fix). Items 3–11 were
