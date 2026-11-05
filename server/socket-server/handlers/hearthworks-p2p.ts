@@ -47,12 +47,15 @@ import {
   type WorldDigest,
 } from '../../../lib/hearthworks/net/events';
 import { SignalHub, type HubAccount, type HubMember, type HubRoom } from '../p2p/signal-hub';
+import { PasswordGuard, makeLock, type RoomLock } from '../p2p/room-password';
 
 interface RoomMeta {
   name: string;
   maxPlayers: number;
   world: WorldDigest;
   isPrivate: boolean;
+  /** Set when the host locked the room. Only a salted hash is kept (room-password.ts); the room list says `locked`. */
+  lock: RoomLock | null;
 }
 type MemberMeta = Record<string, never>;
 type Room = HubRoom<RoomMeta, MemberMeta>;
@@ -62,6 +65,9 @@ type Member = HubMember<MemberMeta>;
 const RELAY_UNRELIABLE_BACKLOG = 16;
 
 let ioRef: Server | null = null;
+
+/** Guesses at locked rooms: per account and room, per socket, per room (room-password.ts). */
+const passwordGuard = new PasswordGuard();
 
 const hub = new SignalHub<RoomMeta, MemberMeta>({
   limits: {
@@ -138,6 +144,7 @@ function entry(room: Room): HwRoomEntry {
     players: Math.min(HW_LIMITS.MAX_PLAYERS, 1 + admitted),
     maxPlayers: room.meta.maxPlayers,
     world: room.meta.world,
+    ...(room.meta.lock ? { locked: true as const } : {}),
   };
 }
 
@@ -171,6 +178,7 @@ function entriesOf(room: Room, userId: string, keep?: Member): Member[] {
 function closeRoom(io: Server, room: Room, reason: 'host-closed' | 'host-lost'): void {
   if (room.closed) return;
   const members = hub.close(room);
+  passwordGuard.forgetRoom(room.code);
   for (const m of members) emitTo(io, m.socketId, 'hearthworks:p2p:closed', { code: room.code, reason });
   logger.info({ event: 'hearthworks_p2p_room_closed', code: room.code, reason });
 }
@@ -196,6 +204,30 @@ function promoteRoom(io: Server, room: Room, successor: Member): void {
     emitTo(io, room.hostSocketId, 'hearthworks:p2p:join-request', joinRequest(m));
   }
   logger.info({ event: 'hearthworks_p2p_host_migrated', code: room.code, migrations: room.migrations, members: room.members.size });
+}
+
+/** Rooms whose host is being probed right now (one probe per room at a time). */
+const probing = new Set<string>();
+
+/**
+ * A member says the host went silent. If the host's hub socket is still open, ask it to answer: the answer is
+ * produced by socket.io-client itself, so a frozen tab or a dead network cannot give it. No answer in
+ * `PROBE_MS` and the host is treated as gone at once — `hostDisconnected` with the migrate grace — instead of
+ * waiting out the socket heartbeat. The deposed socket is told, so a tab that thaws does not go on hosting.
+ */
+function probeHost(io: Server, room: Room): void {
+  const hostSocketId = room.hostSocketId;
+  if (room.closed || !hostSocketId || probing.has(room.code)) return;
+  const hostSocket = io.sockets.sockets.get(hostSocketId);
+  if (!hostSocket) return;
+  probing.add(room.code);
+  hostSocket.timeout(HW_LIMITS.PROBE_MS).emit('hearthworks:p2p:probe', {}, (err: unknown) => {
+    probing.delete(room.code);
+    if (!err || room.closed || room.hostSocketId !== hostSocketId) return; // alive, or already handled
+    logger.info({ event: 'hearthworks_p2p_host_probe_failed', code: room.code });
+    hub.hostDisconnected(hostSocketId, () => HW_LIMITS.MIGRATE_GRACE_MS);
+    hostSocket.emit('hearthworks:p2p:closed', { code: room.code, reason: 'host-lost' } satisfies HwS2CPayload<'hearthworks:p2p:closed'>);
+  });
 }
 
 /** The host's grace ran out: promote if anyone can take over, else hold on to the full grace, then expire. */
@@ -277,6 +309,8 @@ export function registerHearthworksP2pHandlers(io: Server, socket: Socket): void
         maxPlayers: data.maxPlayers,
         world: data.world,
         isPrivate: data.private === true,
+        // Hashed here and dropped: the plaintext is never stored, logged or sent anywhere.
+        lock: data.password ? makeLock(data.password) : null,
       };
       const room = hub.host(socket.id, me, meta, data.resume);
       if (room === 'room-limit') return fail(socket, event, 'room-limit');
@@ -298,14 +332,33 @@ export function registerHearthworksP2pHandlers(io: Server, socket: Socket): void
       if (!room) return fail(socket, event, 'not-found');
       if (room.kicked.has(me.userId)) return fail(socket, event, 'kicked');
       if (room.host.userId === me.userId || hub.hostedBy(socket.id)) return fail(socket, event, 'invalid');
-      // The same account from another socket (a rejoin after a drop, a second tab): the old entries go quietly.
-      for (const old of entriesOf(room, me.userId)) hub.removeMember(room, old);
+      // A locked room opens to the right password only. An account already seated in the room (a reconnect)
+      // proved itself once and is not asked again.
+      if (room.meta.lock && !entriesOf(room, me.userId).some((m) => m.admitted)) {
+        if (!data.password) return fail(socket, event, 'password-required');
+        const verdict = passwordGuard.attempt(room.meta.lock, data.password, { roomCode: room.code, userId: me.userId, socketId: socket.id });
+        if (verdict === 'rate-limited') return fail(socket, event, 'rate-limited');
+        if (verdict === 'wrong') return fail(socket, event, 'wrong-password');
+      }
+      // The same account from another socket (a rejoin after a drop, a second tab): the old entries go quietly. A
+      // seat the host already admitted is kept — its place in the line of succession too — so a member that
+      // re-asks while the host is unreachable does not lose its right to take the room over (the host still gets a
+      // join request and re-connects it).
+      const previous = entriesOf(room, me.userId);
+      const seat = previous.find((m) => m.admitted) ?? null;
+      const wasSuccessor = !!seat && room.successor === seat.peerId;
+      for (const old of previous) hub.removeMember(room, old);
       // This socket was a member somewhere else: leave there first, and tell that host.
       const elsewhere = hub.memberOf(socket.id);
       if (elsewhere) dropMember(io, elsewhere.room, elsewhere.member, 'left');
       if (1 + room.members.size >= room.meta.maxPlayers) return fail(socket, event, 'full');
       const member = hub.addMember(room, socket.id, me, 'player', {});
       if (!member) return fail(socket, event, 'full');
+      if (seat) {
+        hub.admit(member);
+        member.joinSeq = seat.joinSeq;
+        if (wasSuccessor) room.successor = member.peerId;
+      }
       socket.emit('hearthworks:p2p:joining', {
         code: room.code,
         peerId: member.peerId,
@@ -430,6 +483,12 @@ export function registerHearthworksP2pHandlers(io: Server, socket: Socket): void
       broadcastRoster(io, room);
     },
 
+    'hearthworks:p2p:host-silent': () => {
+      if (!account('hearthworks:p2p:host-silent')) return;
+      const mine = hub.memberOf(socket.id);
+      if (mine?.member.admitted) probeHost(io, mine.room);
+    },
+
     'hearthworks:p2p:leave': () => {
       if (!account('hearthworks:p2p:leave')) return;
       const room = hub.hostedBy(socket.id);
@@ -454,6 +513,7 @@ export function registerHearthworksP2pHandlers(io: Server, socket: Socket): void
 
 /** The socket went: a member's entry goes with it; a host's room is held for its grace. */
 export function handleHearthworksP2pDisconnect(io: Server, socket: Socket): void {
+  passwordGuard.forgetSocket(socket.id);
   const mine = hub.memberOf(socket.id);
   if (mine) dropMember(io, mine.room, mine.member, 'disconnected');
   hub.hostDisconnected(socket.id, (room) => (hub.successorFor(room) ? HW_LIMITS.MIGRATE_GRACE_MS : HW_LIMITS.HOST_GRACE_MS));
@@ -462,5 +522,7 @@ export function handleHearthworksP2pDisconnect(io: Server, socket: Socket): void
 /** Test seam: forget every room and timer. */
 export function resetHearthworksP2pForTests(): void {
   hub.reset();
+  passwordGuard.reset();
+  probing.clear();
   ioRef = null;
 }

@@ -352,6 +352,7 @@ export const config = {
     'hearthworks:p2p:successor': { max: 60, windowMs: 60_000 },
     'hearthworks:p2p:kick': { max: 30, windowMs: 60_000 },
     'hearthworks:p2p:leave': { max: 20, windowMs: 60_000 },
+    'hearthworks:p2p:host-silent': { max: 6, windowMs: 60_000 },
     // ─── High-frequency relay / movement events ───
     // Movement + per-frame update events were previously unmetered (the rate
     // limiter returns true for events with no rule), so a single socket could

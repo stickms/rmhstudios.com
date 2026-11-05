@@ -26,10 +26,15 @@ export const HW_LIMITS = {
   /** The `generateRoomCode` alphabet (server/socket-server/utils.ts): no I, O, 0 or 1. */
   CODE_RE: /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/,
   NAME_MAX: 40,
+  /** A room password is short on purpose: it keeps strangers out of a listed room, it is not an account. */
+  PASSWORD_MIN: 4,
+  PASSWORD_MAX: 32,
   SDP_MAX_LENGTH: 16_384,
   CANDIDATE_MAX_LENGTH: 512,
   PEER_ID_LENGTH: 12,
   TOKEN_LENGTH: 24,
+  /** How long the hub waits for a host to answer a `probe` before it counts as gone. */
+  PROBE_MS: 5_000,
   /** A room whose host's socket went with nobody to take over is held this long for it to come back. */
   HOST_GRACE_MS: 30_000,
   /** With a successor, the hub waits only this long for a blip to heal before it hands the room over. */
@@ -100,6 +105,9 @@ export const zHubErrorCode = z.enum([
   'invalid',
   'room-limit',
   'not-host',
+  /** The room is locked and the join carried no password. */
+  'password-required',
+  'wrong-password',
 ]);
 export type HwHubErrorCode = z.infer<typeof zHubErrorCode>;
 
@@ -110,6 +118,8 @@ export const zRoomEntry = z.object({
   players: z.number().int().min(1).max(HW_LIMITS.MAX_PLAYERS),
   maxPlayers: z.number().int().min(HW_LIMITS.MIN_PLAYERS).max(HW_LIMITS.MAX_PLAYERS),
   world: zWorldDigest,
+  /** Present (true) only when joining needs a password. The password itself never leaves the hub's memory. */
+  locked: z.boolean().optional(),
 });
 export type HwRoomEntry = z.infer<typeof zRoomEntry>;
 
@@ -131,11 +141,16 @@ export const HW_C2S = {
     world: zWorldDigest,
     /** Unlisted: joinable only with the code or an invite link. */
     private: z.boolean().optional(),
+    /**
+     * Lock the room: joiners must present this. The hub keeps only a salted hash, in memory, and never echoes it
+     * (the room list says `locked: true`). Resending it with `resume` re-applies the lock to a room the hub forgot.
+     */
+    password: z.string().min(HW_LIMITS.PASSWORD_MIN).max(HW_LIMITS.PASSWORD_MAX).optional(),
     /** Reclaim a room after this socket reconnected (the token came with `hosted`). */
     resume: z.object({ code: zCode, token: zToken }).optional(),
   }),
   'hearthworks:p2p:list': z.object({}),
-  'hearthworks:p2p:join': z.object({ code: zCode }),
+  'hearthworks:p2p:join': z.object({ code: zCode, password: z.string().max(HW_LIMITS.PASSWORD_MAX).optional() }),
   'hearthworks:p2p:admit': z.object({
     peerId: zPeerId,
     accept: z.boolean(),
@@ -155,6 +170,12 @@ export const HW_C2S = {
   /** The host names the member that takes over if it leaves (null: nobody). */
   'hearthworks:p2p:successor': z.object({ peerId: zPeerId.nullable() }),
   'hearthworks:p2p:kick': z.object({ peerId: zPeerId }),
+  /**
+   * A member reports that its link to the host went silent. The hub asks the host's socket to answer a probe; if it
+   * does not within `HW_LIMITS.PROBE_MS` the host is treated as gone NOW (the socket.io heartbeat alone would take
+   * up to 45 s to notice a frozen tab or a vanished network) and the room is handed over.
+   */
+  'hearthworks:p2p:host-silent': z.object({}),
   /** A member leaves; a host hands the room to its successor, or closes it when nobody can take over. */
   'hearthworks:p2p:leave': z.object({}),
 } as const satisfies Record<string, z.ZodType>;
@@ -202,6 +223,8 @@ export const HW_S2C = {
   'hearthworks:p2p:host-changed': z.object({ code: zCode, hostPeerId: zPeerId, hostUserId: zUserId, hostName: zName }),
   /** To the successor: the room is yours. */
   'hearthworks:p2p:promote': z.object({ code: zCode, token: zToken, peerId: zPeerId, ice: zIceServers }),
+  /** To the host, with a socket.io ack: answered by the client library itself, so a frozen page cannot. */
+  'hearthworks:p2p:probe': z.object({}),
   'hearthworks:p2p:closed': z.object({ code: zCode, reason: z.enum(['host-closed', 'host-lost']) }),
   'hearthworks:p2p:error': z.object({ event: z.string().max(64), code: zHubErrorCode }),
 } as const satisfies Record<string, z.ZodType>;

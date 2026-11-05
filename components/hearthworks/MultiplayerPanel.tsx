@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Check, Copy, Crown, LogOut, RefreshCw, UserX } from 'lucide-react';
+import { Check, Copy, Crown, Lock, LogOut, RefreshCw, UserX } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { useLobbyInvite, useLobbyInviteJoin, useLobbyLink } from '@/hooks/useLobbyLink';
 import { lobbyReturnPath } from '@/lib/lobby-link';
@@ -44,6 +44,12 @@ function errorText(t: TFn, error: LobbyError): string {
       return t('mp-err-lost', { defaultValue: 'Lost the connection to the room.' });
     case 'invalid':
       return t('mp-err-invalid', { defaultValue: 'That did not work. Try again.' });
+    case 'password-required':
+      return t('mp-err-password-required', { defaultValue: 'That room needs a password.' });
+    case 'wrong-password':
+      return t('mp-err-wrong-password', { defaultValue: 'That password is not right.' });
+    case 'incompatible':
+      return t('mp-err-incompatible', { defaultValue: 'That room runs a newer version of the game. Reload the page to update.' });
   }
 }
 
@@ -71,17 +77,23 @@ export function MultiplayerPanel() {
   const { data: session } = useSession();
   const signedIn = !!session?.user;
   const invite = useLobbyInvite();
-  const ids = { name: useId(), max: useId(), code: useId() };
+  const ids = { name: useId(), max: useId(), code: useId(), hostPw: useId(), hostPwHint: useId(), joinPw: useId() };
   const [name, setName] = useState('');
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [priv, setPriv] = useState(false);
   const [code, setCode] = useState('');
+  const [hostPassword, setHostPassword] = useState('');
+  const [joinPassword, setJoinPassword] = useState('');
+  const joinPasswordInput = useRef<HTMLInputElement>(null);
+  const lastJoin = useRef('');
   const { copied, copyLink } = useLobbyLink({ code: lobby.code, path: '/hearthworks' });
 
   const idle = lobby.phase === 'idle' || lobby.phase === 'closed';
 
-  const join = useCallback((c: string) => {
-    void ensureLobby().then((l) => l.joinRoom(c.trim().toUpperCase()));
+  const join = useCallback((c: string, password?: string) => {
+    const room = c.trim().toUpperCase();
+    lastJoin.current = room;
+    void ensureLobby().then((l) => l.joinRoom(room, password?.trim() || undefined));
   }, []);
   // An invite link opens the game already joining (once the account is known).
   useLobbyInviteJoin(signedIn, join);
@@ -93,10 +105,26 @@ export function MultiplayerPanel() {
     if (signedIn && idle) refresh();
   }, [signedIn, idle, refresh]);
 
+  // A refused password (or a locked room reached by an invite link) leaves the room code in the form, so the
+  // player only has to type the password.
+  useEffect(() => {
+    if (lobby.error === 'password-required' || lobby.error === 'wrong-password') {
+      if (lastJoin.current) setCode(lastJoin.current);
+      joinPasswordInput.current?.focus();
+    }
+  }, [lobby.error]);
+
+  const hostPasswordTrimmed = hostPassword.trim();
+  const hostPasswordTooShort = hostPasswordTrimmed.length > 0 && hostPasswordTrimmed.length < HW_LIMITS.PASSWORD_MIN;
+
   const host = () => {
+    if (hostPasswordTooShort) return;
     const world = hearthworksStore.getState().world;
     const roomName = name.trim() || t('mp-name-default', { defaultValue: 'Our world' });
-    void ensureLobby().then((l) => l.hostRoom({ name: roomName, maxPlayers, world, private: priv }));
+    void ensureLobby().then((l) =>
+      l.hostRoom({ name: roomName, maxPlayers, world, private: priv, ...(hostPasswordTrimmed ? { password: hostPasswordTrimmed } : {}) }),
+    );
+    setHostPassword('');
   };
 
   const title = t('mp-title', { defaultValue: 'Play together' });
@@ -135,7 +163,9 @@ export function MultiplayerPanel() {
         : t('mp-leave-close', { defaultValue: 'Close room' });
     return (
       <section className="hw-panel hw-panel--tall" aria-label={title}>
-        <h2 className="hw-panel__title">{lobby.roomName ?? title}</h2>
+        <h2 className="hw-panel__title">
+          {lobby.locked && <Lock aria-label={t('mp-locked-badge', { defaultValue: 'Password protected' })} size={16} />} {lobby.roomName ?? title}
+        </h2>
         <p className="hw-muted" role="status">
           {status}
         </p>
@@ -223,8 +253,31 @@ export function MultiplayerPanel() {
         <input type="checkbox" checked={priv} onChange={(e) => setPriv(e.target.checked)} />{' '}
         {t('mp-private-label', { defaultValue: 'Invite only (not listed)' })}
       </label>
+      <div className="hw-field">
+        <label htmlFor={ids.hostPw}>{t('mp-password-label', { defaultValue: 'Room password (optional)' })}</label>
+        <input
+          id={ids.hostPw}
+          className="hw-input"
+          type="password"
+          value={hostPassword}
+          minLength={HW_LIMITS.PASSWORD_MIN}
+          maxLength={HW_LIMITS.PASSWORD_MAX}
+          autoComplete="new-password"
+          spellCheck={false}
+          aria-describedby={ids.hostPwHint}
+          aria-invalid={hostPasswordTooShort || undefined}
+          onChange={(e) => setHostPassword(e.target.value)}
+        />
+        <small id={ids.hostPwHint} className={hostPasswordTooShort ? 'hw-error' : 'hw-muted'}>
+          {t('mp-password-hint', {
+            defaultValue: 'Players need it to join, even with the code. {{min}}–{{max}} characters.',
+            min: HW_LIMITS.PASSWORD_MIN,
+            max: HW_LIMITS.PASSWORD_MAX,
+          })}
+        </small>
+      </div>
       <p>
-        <button type="button" className="hw-small" onClick={host}>
+        <button type="button" className="hw-small" onClick={host} disabled={hostPasswordTooShort}>
           {t('mp-host-button', { defaultValue: 'Host this world' })}
         </button>
       </p>
@@ -234,7 +287,7 @@ export function MultiplayerPanel() {
         className="hw-field hw-field--inline"
         onSubmit={(e) => {
           e.preventDefault();
-          if (code.trim()) join(code);
+          if (code.trim()) join(code, joinPassword);
         }}
       >
         <label htmlFor={ids.code} className="hw-sr">
@@ -250,6 +303,21 @@ export function MultiplayerPanel() {
           spellCheck={false}
           placeholder={t('mp-code-placeholder', { defaultValue: 'ABC123' })}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
+        />
+        <label htmlFor={ids.joinPw} className="hw-sr">
+          {t('mp-join-password-label', { defaultValue: 'Room password, if it has one' })}
+        </label>
+        <input
+          id={ids.joinPw}
+          ref={joinPasswordInput}
+          className="hw-input"
+          type="password"
+          value={joinPassword}
+          maxLength={HW_LIMITS.PASSWORD_MAX}
+          autoComplete="off"
+          spellCheck={false}
+          placeholder={t('mp-join-password-placeholder', { defaultValue: 'Password (if any)' })}
+          onChange={(e) => setJoinPassword(e.target.value)}
         />
         <button type="submit" className="hw-small" disabled={code.trim().length < 6}>
           {t('mp-join-button', { defaultValue: 'Join' })}
@@ -269,13 +337,26 @@ export function MultiplayerPanel() {
           {lobby.rooms.map((r) => (
             <li key={r.code} className="hw-row">
               <span>
-                {r.name}
+                {r.locked && <Lock aria-label={t('mp-locked-badge', { defaultValue: 'Password protected' })} size={14} />} {r.name}
                 <span className="hw-muted">
                   {' '}
                   · {r.host} · {t('mp-room-count', { defaultValue: '{{players}}/{{max}} players', players: r.players, max: r.maxPlayers })}
                 </span>
               </span>
-              <button type="button" className="hw-small" disabled={r.players >= r.maxPlayers} onClick={() => join(r.code)}>
+              <button
+                type="button"
+                className="hw-small"
+                disabled={r.players >= r.maxPlayers}
+                onClick={() => {
+                  // A locked room needs its password first: put the code in the form and ask for it there.
+                  if (r.locked && !joinPassword.trim()) {
+                    setCode(r.code);
+                    joinPasswordInput.current?.focus();
+                    return;
+                  }
+                  join(r.code, r.locked ? joinPassword : undefined);
+                }}
+              >
                 {t('mp-join-button', { defaultValue: 'Join' })}
               </button>
             </li>

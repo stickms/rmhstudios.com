@@ -88,7 +88,12 @@ export type LobbyError =
   | 'offline'
   | 'timeout'
   | 'lost'
-  | 'invalid';
+  | 'invalid'
+  /** The room is locked and no password was given. */
+  | 'password-required'
+  | 'wrong-password'
+  /** The host speaks a newer protocol than this build: reload to update. */
+  | 'incompatible';
 
 export interface LobbyPlayer {
   id: string;
@@ -105,6 +110,8 @@ export interface LobbyState {
   role: 'host' | 'member' | null;
   code: string | null;
   roomName: string | null;
+  /** The room asks for a password (known to the host, and to a member who got in with one). */
+  locked: boolean;
   error: LobbyError | null;
   /** This player's account id (its id in the world). */
   me: string | null;
@@ -121,6 +128,8 @@ export interface HostRoomOptions {
   /** The world to share; the hosting player's offline seat is re-keyed to the account. */
   world: World;
   private?: boolean;
+  /** Lock the room: joiners need this (`HW_LIMITS.PASSWORD_MIN`…`PASSWORD_MAX` characters). */
+  password?: string;
 }
 
 /** A hub answer or a link must show up within these, or the attempt is given up. */
@@ -136,6 +145,7 @@ const emptyState = (): LobbyState => ({
   role: null,
   code: null,
   roomName: null,
+  locked: false,
   error: null,
   me: null,
   players: [],
@@ -205,6 +215,10 @@ export class HearthworksConnector {
   private connGen = 0;
   private rejoins = 0;
   private code: string | null = null;
+  /** The room's password, kept in this tab's memory only: re-sent when the hub needs it again (a hub restart, a rejoin). */
+  private password: string | null = null;
+  /** True once a host / join request has gone to the hub (so giving up has to say so). */
+  private hubEngaged = false;
   private maxPlayers: number = HW_LIMITS.MAX_PLAYERS;
 
   constructor(opts: ConnectorOptions) {
@@ -264,18 +278,21 @@ export class HearthworksConnector {
     if (this.destroyed || this.st.phase !== 'starting') return;
     this.me = me;
     this.pendingHost = opts;
-    this.set({ me: me.id, roomName: opts.name });
+    this.password = opts.password || null;
+    this.set({ me: me.id, roomName: opts.name, locked: !!opts.password });
     this.armDeadline(START_TIMEOUT_MS, 'offline');
+    this.hubEngaged = true;
     this.hub.emit('hearthworks:p2p:host', {
       name: opts.name,
       maxPlayers: opts.maxPlayers,
       world: { seed: opts.world.seed, size: opts.world.size },
       ...(opts.private ? { private: true } : {}),
+      ...(opts.password ? { password: opts.password } : {}),
     });
   }
 
-  /** Join a room by its code. */
-  async joinRoom(code: string): Promise<void> {
+  /** Join a room by its code (and its password, if it has one). */
+  async joinRoom(code: string, password?: string): Promise<void> {
     if (!this.canStart()) return;
     this.set({ phase: 'starting', role: 'member', error: null, code });
     const me = await this.hub.account();
@@ -283,10 +300,16 @@ export class HearthworksConnector {
     if (this.destroyed || this.st.phase !== 'starting') return;
     this.me = me;
     this.code = code;
+    this.password = password || null;
     this.rejoins = 0;
-    this.set({ me: me.id });
+    this.set({ me: me.id, locked: !!password });
     this.armDeadline(START_TIMEOUT_MS, 'offline');
-    this.hub.emit('hearthworks:p2p:join', { code });
+    this.hubEngaged = true;
+    this.hub.emit('hearthworks:p2p:join', this.joinPayload(code));
+  }
+
+  private joinPayload(code: string): HwC2SPayload<'hearthworks:p2p:join'> {
+    return this.password ? { code, password: this.password } : { code };
   }
 
   /** Host only: remove a player (it cannot come back to this room). */
@@ -325,6 +348,9 @@ export class HearthworksConnector {
   /* ── Teardown ─────────────────────────────────────────────────────────── */
 
   private fail(error: LobbyError): void {
+    // Giving up must also tell the hub, or this socket stays on the room's books as a member (or a host) that
+    // nobody is running: a room can be promoted to a tab that has already walked away.
+    if (this.hub.status === 'connected' && this.hubEngaged) this.hub.emit('hearthworks:p2p:leave', {});
     this.reset(error);
   }
 
@@ -346,6 +372,8 @@ export class HearthworksConnector {
     this.code = null;
     this.namedSuccessor = null;
     this.token = '';
+    this.password = null;
+    this.hubEngaged = false;
     const rooms = this.st.rooms;
     this.st = { ...emptyState(), rooms, phase: error ? 'closed' : 'idle', error };
     for (const fn of [...this.listeners]) fn();
@@ -357,7 +385,6 @@ export class HearthworksConnector {
     this.cancelDeadline = this.sched.after(ms, () => {
       this.cancelDeadline = null;
       this.log(`gave up: ${error}`);
-      if (this.hub.status === 'connected') this.hub.emit('hearthworks:p2p:leave', {});
       this.fail(error);
     });
   }
@@ -413,10 +440,11 @@ export class HearthworksConnector {
         maxPlayers: o.maxPlayers,
         world: { seed: o.world.seed, size: o.world.size },
         ...(o.private ? { private: true } : {}),
+        ...(this.password ? { password: this.password } : {}),
         resume: { code: this.code, token: this.token },
       });
     } else if (this.st.role === 'member' && this.code && (this.st.phase === 'member' || this.st.phase === 'migrating' || this.st.phase === 'joining')) {
-      this.hub.emit('hearthworks:p2p:join', { code: this.code });
+      this.hub.emit('hearthworks:p2p:join', this.joinPayload(this.code));
     }
   }
 
@@ -556,6 +584,9 @@ export class HearthworksConnector {
     this.ice = resolveIceServers(d.ice);
     this.cancelRejoin?.();
     this.cancelRejoin = null;
+    // Admitted by a NEW host after a migration: the link to it has to open, or the member gives up cleanly
+    // instead of sitting in 'migrating' for good (cleared when the link opens).
+    if (this.st.phase === 'migrating') this.armDeadline(CONNECT_TIMEOUT_MS, 'lost');
     this.startMemberConn();
   }
 
@@ -647,6 +678,9 @@ export class HearthworksConnector {
     if (this.st.phase === 'migrating' || !this.code) return;
     this.closeMemberConn();
     this.set({ phase: 'migrating' });
+    // Tell the hub the host went quiet: if the host's socket is still open (a frozen tab, a dead network) the hub
+    // would otherwise wait out its own heartbeat, up to 45 s, longer than a member keeps trying.
+    if (this.hub.status === 'connected') this.hub.emit('hearthworks:p2p:host-silent', {});
     this.armRejoin();
   }
 
@@ -660,7 +694,7 @@ export class HearthworksConnector {
         return;
       }
       this.rejoins++;
-      this.hub.emit('hearthworks:p2p:join', { code: this.code });
+      this.hub.emit('hearthworks:p2p:join', this.joinPayload(this.code));
       this.armRejoin();
     });
   }
@@ -701,7 +735,7 @@ export class HearthworksConnector {
     this.myPeerId = d.peerId;
     this.ice = resolveIceServers(d.ice);
     this.namedSuccessor = null;
-    this.pendingHost = { name: this.st.roomName ?? '', maxPlayers: this.maxPlayers, world: hs.world };
+    this.pendingHost = { name: this.st.roomName ?? '', maxPlayers: this.maxPlayers, world: hs.world, ...(this.password ? { password: this.password } : {}) };
     // Until the hub's next roster: this player is the host now, the old host is not in the room.
     this.roster = [{ id: this.me.id, name: this.me.name, host: true }, ...this.roster.filter((p) => !p.host && p.id !== this.me?.id)];
     this.set({ role: 'host', phase: 'hosting' });
@@ -738,8 +772,10 @@ export class HearthworksConnector {
         this.namedSuccessor = peerId;
         this.hub.emit('hearthworks:p2p:successor', { peerId });
       }
-    } else if (this.st.phase === 'member' && this.peer?.hostLost) {
-      this.beginRecovery();
+    } else if (this.st.phase === 'member' && this.peer) {
+      this.peer.update();
+      if (this.peer.incompatible) this.fail('incompatible');
+      else if (this.peer.hostLost) this.beginRecovery();
     }
     this.refreshPlayers();
   }
