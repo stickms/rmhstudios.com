@@ -3,3 +3,4 @@ export * from './models';
 export * from './style-rules';
 export * from './resolve';
 export * from './terrain-mesh';
+export * from './city-mesh';

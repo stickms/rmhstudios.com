@@ -34,8 +34,8 @@ const AO_STRENGTH = [1, 0.93, 0.85, 0.76] as const;
 
 type Rgb = readonly [number, number, number];
 
-const srgbToLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-function hexToLinear(hex: string): Rgb {
+export const srgbToLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+export function hexToLinear(hex: string): Rgb {
   const n = Number.parseInt(hex.slice(1), 16);
   return [srgbToLinear(((n >> 16) & 255) / 255), srgbToLinear(((n >> 8) & 255) / 255), srgbToLinear((n & 255) / 255)];
 }

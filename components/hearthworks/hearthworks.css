@@ -517,3 +517,97 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* The town layer: the dock's tool-set switch, the vital-signs line above it, and the milestones list. */
+.hw-dock__modes {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+  border-right: 1px solid var(--hw-rule);
+}
+
+.hw-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--hw-radius-sm);
+  background: transparent;
+  color: var(--hw-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 160ms var(--hw-ease);
+}
+
+.hw-mode:hover {
+  background: var(--hw-sky);
+}
+
+.hw-mode[aria-pressed='true'] {
+  background: var(--hw-aqua);
+  border-color: var(--hw-teal);
+}
+
+.hw-tool:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.hw-city-readout {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 88px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: 6px 14px;
+  border: 1px solid var(--hw-rule);
+  border-radius: var(--hw-radius-sm);
+  background: var(--hw-panel);
+  color: var(--hw-ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.hw-city-readout > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hw-city-readout > span[data-low='true'] {
+  color: #8a2f22;
+}
+
+.hw-milestone {
+  display: grid;
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid var(--hw-rule);
+}
+
+.hw-milestone p {
+  margin: 0;
+}
+
+.hw-milestone[data-state='claimed'] {
+  opacity: 0.6;
+}
+
+.hw-milestone[data-state='reached'] .hw-small {
+  background: var(--hw-butter);
+}
+
+.hw-meter--wide {
+  grid-template-columns: 52px 1fr 48px;
+}
