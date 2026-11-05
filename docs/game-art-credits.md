@@ -484,3 +484,116 @@ No new third-party assets were downloaded for this batch. Everything is re-compo
 - **versecraft**: the owner's illustrated figure, cut out earlier for the banner (`jack/work/vc_fig.png`, from the original card art `oldcards/versecraft.webp`); alpha edge eroded about 2 px to remove a sky fringe, otherwise unaltered, face and body untouched. The out-of-focus hedge on the left is a crop of the same card's painted garden (no text in the crop). Palms, house, pool and sky are our own vector drawing (as in the previous banner), shaded and re-lit.
 
 Fonts: none used (no text in any banner). Tools: Python (PIL, numpy, OpenCV), headless Chromium via Playwright. Build scripts: `game-banners-v3/scripts/`.
+
+### Banner redo (v4), apps: batch A
+
+#### Attributions: v4 banners, batch A (new third-party assets only)
+
+Everything listed in `../../app-art-v3/A/ATTRIBUTIONS.md` still applies (same face imagery, same fonts, same NASA/LoC/Commons sources). The v4 banners add the following.
+
+| Asset (exact title) | Creator / source | URL | Licence | Used in | Changes |
+|---|---|---|---|---|---|
+| NASA image GRC-1956-C-41394 (Rolls Royce Avon RA-14 Engine in the Altitude Wind Tunnel, 1956) | NASA Lewis (Glenn) Research Center | https://images-assets.nasa.gov/image/GRC-1956-C-41394/GRC-1956-C-41394~medium.jpg | NASA media, public domain (credit NASA) | rmh-tf2-hud banner, left side | Greyscale, red duotone, faded with a mask, dimmed, grain |
+| NASA image GRC-1950-C-26414 (Noise Suppression Addition to the 8- by 6-Foot Supersonic Wind Tunnel, 1950) | NASA Lewis (Glenn) Research Center | https://images-assets.nasa.gov/image/GRC-1950-C-26414/GRC-1950-C-26414~medium.jpg | NASA media, public domain (credit NASA) | rmh-tf2-hud banner, right side | Greyscale, blue duotone, faded with a mask, grain |
+| NASA image GRC-1951-C-27174 (NACA Computer at the Lewis Flight Propulsion Laboratory, 1951) | NASA Lewis (Glenn) Research Center | https://images-assets.nasa.gov/image/GRC-1951-C-27174/GRC-1951-C-27174_medium.jpg (via images-assets.nasa.gov/image/GRC-1951-C-27174) | NASA media, public domain (credit NASA) | rmhcalculator banner (taped print "Friden, 1951") | Cropped to the Friden calculator only (the person in the photo is cut out of frame), blue duotone, dimmed |
+| Compass rose from "Sanborn Fire Insurance Map from Boston, Suffolk County, Massachusetts" (East Boston sheet 5, 1900) | Sanborn Map Company, Library of Congress | https://www.loc.gov/item/sanborn03693_012/ | Public domain (LoC Sanborn Maps Collection) | rmhhomes banner | Cropped from the sheet, inverted to cream-on-transparent, dimmed |
+
+New in-house drawn elements: house elevation line drawing, route line, circular stamp, ghost HUD panels, slide-rule scale, plotted curves, bib and print props. Fonts are unchanged from v3 (all SIL OFL 1.1, Google Fonts).
+
+### Banner redo (v4), apps: batch C
+
+#### Attributions: batch C v4 banners
+No new third-party assets were added in v4. The banners reuse the v3 batch C assets, all documented with title, creator, URL,
+licence and changes in `../../app-art-v3/C/ATTRIBUTIONS.md` (copies live in `_assets/`; fonts in `fonts/`, all SIL OFL 1.1):
+- rmhtube: LOC c1926 projectionist photo (no known restrictions), "Old Film Projector" (CC0), owner's existing face portrait.
+- rmhconnections: "Cork board texture" (CC0), "Old map" (CC0).
+- rmhdle: "Crosswords newspaper", "Crossword game" tiles (CC0).
+- rmhstudio: "Mixing console" (freestocks.org, CC0), Nagra reel-to-reel (Smithsonian, CC0), LOC Voice of America control room (no known restrictions).
+New in v4 but generated, not third-party: VU meters, LED columns, crossword grid, polaroid/index-card props, film-strip frames.
+
+### Banner redo (v4), apps: batch D
+
+#### v4 banners: attributions for NEW third-party assets
+Everything else (Met map, knight, manuscript strip; rope-core and PCB photos; cardboard texture; LoC crate board; the owner's face cut-outs; fonts) is unchanged from `app-art-v3/D/ATTRIBUTIONS.md`.
+
+- **Queen Chess Piece**, 13th century, whale ivory, The Metropolitan Museum of Art, Pfeiffer Fund, 2012, object 479682. https://www.metmuseum.org/art/collection/search/479682 (image DP285164). Licence: Met Open Access, CC0. Changes: cut out from the grey backdrop (GrabCut), feathered; used full-colour mid-ground and dimmed/sepia-toned as receding "shadow pieces" in the rmhstrategies banner.
+- **[Trademark registration by Alfred Joseph Warne-Browne for W.B. brand Packing Boxes and Cases]**, 1910, Library of Congress Prints & Photographs Division, TRADEMARKS no. 79175. https://www.loc.gov/item/2026706247/ (file https://tile.loc.gov/storage-services/service/pnp/trmk/1t70000/1t79000/1t79100/1t79175v.jpg). LoC rights: "No known restrictions on publication." Changes: only the engraved fish emblem was cropped, thresholded to an ink-only alpha layer and tinted RMH blue as a ghosted, tone-on-tone mark in the rmhbox banner.
+- **[Trademark registration by Trusweve Package Manufacturing Company for Insuloid brand Woven Slat Packing Cases]**, 1911, Library of Congress Prints & Photographs Division, TRADEMARKS no. 80818. https://www.loc.gov/item/2026707861/ (file https://tile.loc.gov/storage-services/service/pnp/trmk/1t80000/1t80000/1t80800/1t80818v.jpg). LoC rights: "No known restrictions on publication." Changes: only the hand-cut stencil word was cropped, thresholded to an ink-only alpha layer and tinted blue as a ghosted background mark (historic ephemera, low contrast; not a claim of any brand association).
+- Fonts used in v4 are the same OFL families as v3 (Almendra, IM Fell DW Pica, VT323, Martian Mono, Stardos Stencil, Black Ops One, all SIL OFL 1.1 from google/fonts).
+- Code panels, terminal text, stamps, tape, pins and thread are original drawings/typesetting.
+
+### Banner redo (v4), games: batch E
+
+#### Game banners v4 (E): attributions
+
+Open licences only: NASA media and US Government works are public domain; Library of Congress items carry no known restrictions; the Met item is CC0; Kenney assets are CC0. Nothing from Valve is used. No fonts are rendered as part of any game name (micro-type only: Space Mono, Courier Prime, Share Tech Mono, DM Mono, all SIL OFL, already used in game-art-v2).
+
+##### NEW assets (not credited in earlier files)
+| Banner | Asset | Creator / source | Licence | Changes |
+|---|---|---|---|---|
+| altair | "Skylab" (NASA id 0102625): engineers testing the twin-pole sunshade at the Skylab mockup, MSFC Building 4619, May 1973 | NASA / Marshall Space Flight Center. https://images.nasa.gov/details/0102625 (file `0102625~orig.jpg`) | NASA media, public domain | Mirrored to fill, softened, cyan duotone, darkened as the receding backdrop |
+| half-life-2 | HAER NY-289-1, grain elevators along the water, Buffalo NY (photo file `350072pv`; exact record title not retrieved) | Historic American Engineering Record, Library of Congress, Prints & Photographs Division | US Government work, public domain | Cropped inside the film border, mirrored to fill, black and orange halftone plates, burned and desaturated on the left |
+| portal | "Clean Room in the Zero Gravity Research Facility" (NASA id GRC-1968-C-02344), 1968 | NASA Glenn (Lewis) Research Center. https://images.nasa.gov/details/GRC-1968-C-02344 | NASA media, public domain | Halftone observation window; also a ghosted wall texture |
+| portal | "Clean Room Facility" (NASA id GRC-2016-C-02363), 2016 | NASA Glenn Research Center. https://images.nasa.gov/details/GRC-2016-C-02363 | NASA media, public domain | Flipped, blue halftone duotone observation window |
+| portal | "Dawn Spacecraft Processing" (NASA id KSC-07PD-0862), 2007-04-10 | NASA Kennedy Space Center. https://images.nasa.gov/details/KSC-07PD-0862 | NASA media, public domain | Cropped, orange halftone duotone observation window |
+
+##### Already credited earlier (one line each)
+- altair: NASA/MSFC "Ben Franklin" PX-15 interior, id 6900903 (game-art-v2/ATTRIBUTIONS.md): re-cropped large, cyan duotone, magenta misregistration, amber door and echo figure drawn.
+- csgo: LoC Matson Collection "Jerusalem, Damascus Gate", 15028u.tif (game-art-v2/ATTRIBUTIONS.md): full-bleed black, orange and blue halftone plates on paper, mirrored on the left.
+- half-life-2: LoC / HAER "Standard Elevator, Buffalo", 350161pv (game-art-v2/ATTRIBUTIONS.md): the card's tower plate, re-cropped.
+- portal: NASA/KSC "Dawn Spacecraft Processing", KSC-07PD-0861 (game-art-v2/ATTRIBUTIONS.md): the two portal windows.
+- hearthworks: Kenney "Isometric Landscape" and "Isometric Miniature Farm" islets, recoloured (hearthworks-brand/ATTRIBUTIONS.md); the Met Open Access "Bird's-Eye View of a French Chateau and Formal Garden", object 913662 (game-art-v2/ATTRIBUTIONS-temple-of-joy.md), used as the full-bleed engraved teal plan.
+
+Everything else (rings, lambda disc, crosshair, figures, labels, barcodes, clouds, grids, grain, scanlines) is drawn procedurally in `scripts/`.
+
+### Banner redo (v4), games: batch F
+
+#### Attributions: game banners v4 (dream-rift, gabriels-horn, kowloon-knockout, slice-it, synapse-storm)
+
+No NEW third-party assets. Every source was already downloaded and credited for the cards in `game-art-v2/ATTRIBUTIONS*.md`
+(all CC0 / public domain); the banners re-process them at a larger scale. Two Wikimedia Commons CC0 Hong Kong night photos
+(Wilfredor) were looked at for kowloon-knockout but the download was rate-limited (HTTP 429), so they are NOT used.
+
+- dream-rift: Utagawa Hiroshige, "Wild Geese Flying under the Full Moon", c. 1833, The Met (CC0, object 36742), rotated 90 degrees and re-coloured (violet night, lilac moon, cyan wing patches, pink seals), pixel-dissolved toward the left. Bullets and micro-type are own drawing.
+- gabriels-horn: Jusepe de Ribera, "Saint Jerome Hearing the Trumpet of the Last Judgment", etching c. 1621, The Met (CC0, object 397952), full-bleed gold foil with lilac under-print. Horn, dice and sunburst from the previous banner art.
+- kowloon-knockout: Wonderlane, Hong Kong 1990 street (Flickr, CC0 1.0), pink + yellow halftone plates. Neon fighters and kanji signs from the previous banner art (decorative scene props).
+- slice-it: William P. Gottlieb, Sid Catlett, c. 1947, Library of Congress (public domain per the photographer); cymbal/drum-kit area only, no face, as cyan and pink line-screens cut by the laser.
+- synapse-storm: S. Ramon y Cajal, Histologie du systeme nerveux (Paris 1909), Fig. 60, Internet Archive `b21270879_001` (public domain by age); rawpixel "lightning bolt storm" (CC0 / public domain).
+- Fonts (SIL OFL, already credited): Silkscreen, DotGothic16, Share Tech Mono, IBM Plex Mono, IM Fell English / English SC, IM Fell Pica Italic.
+
+Scripts: `game-banners-v4/Fsrc/build_{dr4,gh4,kk4,si4,ss4}.py`, `lib4.py`, `sim.py`.
+
+### Banner redo (v4), games: batch G
+
+#### Attributions: game banners v4 (daily-puzzles, house-always-wins, laundry-sort, neon-driftway, temple-of-joy)
+
+Only open licences. Everything is re-printed (halftone / riso plates / tritone maps, cropped, grained); nothing is used as found.
+
+##### New in v4
+- **"Highway light trains at night (Unsplash)"**, Wikimedia Commons, https://commons.wikimedia.org/wiki/File:Highway_light_trains_at_night_(Unsplash).jpg . Licence: CC0 (as listed in the Commons file search; the Commons description page was not re-fetched because the API rate-limited the follow-up request, so the photographer's name is not recorded here). Used in neon-driftway as the main photo layer. Changes: mirrored, cropped, split into a cyan plate (white trails) and a pink plate (red trails), re-printed as 6.5 px AM halftones with 2-3 px misregistration, screen-blended on near-black stock.
+- **"Fragmentary Smiling Figure" (Remojadas, 6th-9th c.)**, The Metropolitan Museum of Art, object 312773, https://www.metmuseum.org/art/collection/search/312773 (image `1979.206.577`). Licence: Met Open Access, CC0. Used in temple-of-joy twice: as a large tone-on-tone brown halftone ghost on the left, and as a die-cut tritone cutout on the right. Changes: cut from the grey backdrop with GrabCut, re-mapped to a brown/gold tritone, shadow halftone, cream die-cut border. (It was already downloaded for the v2 card work, in `_a_temple/`, but was not used there.)
+- Fonts (SIL OFL, from `game-art-v2/_fonts` or the earlier `_tools/fonts`): IBM Plex Mono (micro-type on neon-driftway, house-always-wins, temple-of-joy, daily-puzzles), Gloock (the "$1,000,000" marker on house-always-wins), Instrument Serif Italic (loaded, not shown), Racing Sans One (the "88" speed-limit sign), Fredoka, Abril Fatface, Alfa Slab One, Anton, Rozha One (daily-puzzles tiles), Shrikhand and Space Mono (laundry-sort labels).
+
+##### Downloaded for evaluation, NOT used (in `game-banners-v4/dl/`)
+- Highsmith, "Neon sign of the old Lucky Motel" (LoC 2023697166), "Neon sign of the Ambassador Hotel" (LoC 2023697164), "Fremont East District sign" (LoC 2023697163): Library of Congress, Carol M. Highsmith, public-domain dedication. Not used.
+- Commons "Tel aviv panoramapublic domain 4.jpg" (CC0) and "Schlossbergtunnel in Tübingen bei Nacht 2019 001.jpg" (CC0): not used.
+
+##### Reused, already credited in earlier files (`game-art-v2/ATTRIBUTIONS*.md`)
+- daily-puzzles: 1924 "Cross Word Puzzle Book" page (Internet Archive `crosswordpuzzleb00unse`, public domain) via the card's grid plate `daily-puzzles/work/grid.png`, mirrored to run full width.
+- house-always-wins: Carol M. Highsmith "Neon casino sign, Las Vegas" (LoC LC-DIG-highsm-17922) as the full-width canopy plate and bokeh; Highsmith "Vintage slot machine at the Casino Legends Hall of Fame" (LoC 2011631860), previously downloaded but NOT used on the card, is now used as a cut-out hero prop (no known restrictions; Highsmith public-domain dedication).
+- laundry-sort: F. E. Church "Laundry Hung Out to Dry" (Cooper Hewitt, Smithsonian Open Access, CC0); 1919 Voss washing-machine ad (Flickr, Matthew Paul Argall, Public Domain Mark); Wells' Smoke Shop postcard "Wash-Day at a Mountain Home, Asheville" (Flickr, PDM; downloaded earlier, now used as the navy halftone on the left).
+- temple-of-joy: Met 313386 "Smiling figure (Sonriente)", CC0, via the card's die-cut `_w_temple/fig.png` and paper texture.
+- All vector scenes (cards, globe, arch, dealer silhouette, chips, dice, playing cards, skyline, smileys, plinth, speed-limit sign) are original procedural work.
+
+### Banner redo (v4), games: batch H
+
+#### Attributions: game banners v4 (velum2099, versecraft, void-breaker, nightrail)
+
+No new third-party asset was downloaded for this batch; everything is re-composited from sources already credited in earlier files (`game-art-v2/ATTRIBUTIONS-temple-of-joy.md`, `ATTRIBUTIONS-neon-driftway.md`, `jack/ATTRIBUTIONS.md`). Only open licences. No game name appears in any banner. (The Ring Nebula, GSFC_20171208_Archive_e001464, was considered and left out: its credit line includes ground-based data from a third party.)
+
+- **velum2099**: Wikimedia Commons CC0 photo "Alone in Tokyo III" (47956673191, the same photo as the card), already credited. Changes: re-cropped and placed right at a larger scale; a mirrored, defocused copy of its upper street/neon area continues the scene leftwards; cyan/magenta riso halftone (7 px cell, misregistered magenta plate), cool rim light on the courier, bloom and light leaks. The courier slip, red stamp (kanji for "out for delivery"), HUD brackets and route text are our own typesetting (fonts OFL: Dela Gothic One, DotGothic16, IBM Plex Mono). A second Commons photo (a tunnel, 50318810096) was tried and removed because its licence could not be re-verified (Commons API rate-limited).
+- **void-breaker**: NASA / ESA / HEIC / Hubble Heritage Team, Cat's Eye Nebula, id `GSFC_20171208_Archive_e002155` (public domain), already credited. Changes: gold halftone re-rendered at banner scale (arena disc, wide field, two faint rotated copies on the left); rings, ticks, shards, ship, enemies, hazard stripes, hex grid and micro-type drawn by us (IBM Plex Mono, OFL).
+- **nightrail**: Library of Congress FSA/OWI, LC-USW3-012681-D (no known restrictions), already credited. Changes: crop inside the rebate, card tritone, enlarged; the right-hand half of the same frame mirrored and darkened to continue the yard to the left; amber bloom, paper texture, film grain. Timetable strip, tape, stamp and waybill text are our own (IBM Plex Mono, OFL). Lettering on the boxcar is part of the photograph.
+- **versecraft**: the owner's illustrated card art (`oldcards/versecraft.webp`) with the owner's figure untouched, scaled 1.26x and placed right; the left of the scene continues the same painting (mirrored garden strip from the card's own left edge, defocused and shaded), plus soft light rays and grain. No text.
+
+Tools: Python (PIL, numpy, OpenCV), headless Chromium via Playwright. Scripts: `game-banners-v4/scripts/`.
