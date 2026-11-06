@@ -136,6 +136,16 @@ export function UploadModal({
   itemsRef.current = items;
   const startedRef = useRef<Set<string>>(new Set());
   const processingRef = useRef(false);
+  // An analysis outlives its row when the row is removed (or replaced) or the
+  // modal closes mid-read. It checks this before every write and before it
+  // creates the cover's object URL, so nothing lands on a gone row and no URL
+  // is minted that nobody will revoke.
+  const mountedRef = useRef(true);
+  const removedRef = useRef<Set<string>>(new Set());
+  const isLive = useCallback(
+    (id: string) => mountedRef.current && !removedRef.current.has(id),
+    [],
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !publishing && onClose();
@@ -144,12 +154,13 @@ export function UploadModal({
   }, [onClose, publishing]);
 
   // Revoke every cover object URL on unmount.
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
       for (const it of itemsRef.current) if (it.coverUrl) URL.revokeObjectURL(it.coverUrl);
-    },
-    [],
-  );
+    };
+  }, []);
 
   const patch = useCallback((id: string, next: Partial<UploadItem>) => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...next } : it)));
@@ -163,9 +174,11 @@ export function UploadModal({
       try {
         analysis = await analyzeBook(item.file);
       } catch {
+        if (!isLive(item.id)) return;
         patch(item.id, { status: 'error', error: t('error-book-read', { defaultValue: "Couldn't read this file. It may be encrypted or corrupt." }) });
         return;
       }
+      if (!isLive(item.id)) return;
       const coverUrl = analysis.cover ? URL.createObjectURL(analysis.cover) : null;
       patch(item.id, {
         format: analysis.format,
@@ -183,14 +196,16 @@ export function UploadModal({
         });
         if (res.ok) {
           const draft = await res.json();
+          if (!isLive(item.id)) return;
           patch(item.id, { title: draft.title || humanizeFilename(item.file.name), description: draft.description || '' });
         }
       } catch {
         /* keep the filename-derived title */
       }
+      if (!isLive(item.id)) return;
       patch(item.id, { status: 'ready' });
     },
-    [patch, t],
+    [isLive, patch, t],
   );
 
   // Drain the queue with bounded concurrency — all titles/descriptions/covers
@@ -251,7 +266,10 @@ export function UploadModal({
       // Non-admins keep a single file: replace whatever was there.
       setItems((prev) => {
         if (!allowMany) {
-          for (const it of prev) if (it.coverUrl) URL.revokeObjectURL(it.coverUrl);
+          for (const it of prev) {
+            removedRef.current.add(it.id);
+            if (it.coverUrl) URL.revokeObjectURL(it.coverUrl);
+          }
           startedRef.current = new Set();
           return accepted.slice(0, 1);
         }
@@ -264,6 +282,7 @@ export function UploadModal({
   );
 
   const removeItem = useCallback((id: string) => {
+    removedRef.current.add(id);
     setItems((prev) => {
       const it = prev.find((i) => i.id === id);
       if (it?.coverUrl) URL.revokeObjectURL(it.coverUrl);

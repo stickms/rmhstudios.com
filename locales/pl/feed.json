@@ -314,6 +314,7 @@
   "deck-marketplace": "Browse decks",
   "deck-not-found": "Deck not found",
   "deck-public-suffix": "· public",
+  "deck-review-load-failed": "Nie udało się wczytać kart",
   "deck-search-label": "Search public decks",
   "deck-search-placeholder": "Search public decks…",
   "deck-title-placeholder": "Deck title",

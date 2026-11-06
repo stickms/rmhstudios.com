@@ -757,5 +757,7 @@
   "ladder.companies.count_other": "{{count}} companies",
   "ladder.health.failures_other": "{{count}} consecutive failures",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "Không thể kết nối với thanh toán. Hãy thử lại.",
+  "space-end-offline": "Chưa kết nối. Hãy thử lại sau giây lát."
 }

@@ -134,6 +134,10 @@ export function ComposeBox({
   const [imageAlts, setImageAlts] = useState<string[]>([]);
   const [altEditIndex, setAltEditIndex] = useState<number | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  // Uploads in flight. Posting waits for them, and `uploadEpochRef` (bumped by
+  // every reset) drops URLs that arrive after the post they belonged to.
+  const [uploadingCount, setUploadingCount] = useState(0);
+  const uploadEpochRef = useRef(0);
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleAt, setScheduleAt] = useState(''); // datetime-local value
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
@@ -188,24 +192,31 @@ export function ComposeBox({
     (hasContent || hasPoll || hasGif || hasImages || !!codeEmbed.embed) &&
     remaining >= 0 &&
     !submitting &&
+    uploadingCount === 0 &&
     missingAlt.length === 0;
 
   const uploadImages = useCallback(async (files: File[]) => {
     if (files.length === 0) return;
     setImageError(null);
+    const epoch = uploadEpochRef.current;
     const form = new FormData();
     files.forEach((f) => form.append('images', f));
+    setUploadingCount((n) => n + 1);
     try {
       const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
+      if (epoch !== uploadEpochRef.current) return;
       if (!res.ok) {
         const { error } = await res.json().catch(() => ({ error: 'Upload failed' }));
         setImageError(error ?? 'Upload failed');
         return;
       }
       const { urls } = await res.json();
+      if (epoch !== uploadEpochRef.current) return;
       setImageUrls((prev) => [...prev, ...urls].slice(0, MAX_IMAGES));
     } catch {
-      setImageError('Upload failed');
+      if (epoch === uploadEpochRef.current) setImageError('Upload failed');
+    } finally {
+      setUploadingCount((n) => Math.max(0, n - 1));
     }
   }, []);
 
@@ -305,6 +316,7 @@ export function ComposeBox({
   };
 
   const resetForm = () => {
+    uploadEpochRef.current += 1;
     clearComposeDraft();
     setContent('');
     setAudience('PUBLIC');
@@ -359,6 +371,27 @@ export function ComposeBox({
     setImageUrls(d.imageUrls);
     setImageAlts(d.imageAlts);
     postsPlus.restore(d.postsPlus);
+  };
+  // Whether the composer is still as `resetForm` left it. A failed optimistic
+  // post restores its draft only into an empty box; if the user has started the
+  // next post meanwhile, the failed text is prepended instead of overwriting it.
+  const composerEmptyRef = useRef(true);
+  useEffect(() => {
+    composerEmptyRef.current =
+      !content.trim() &&
+      attachment === null &&
+      imageUrls.length === 0 &&
+      !gifUrl.trim() &&
+      !codeEmbed.embed;
+  });
+  const restoreFailedDraft = (d: ReturnType<typeof snapshotDraft>) => {
+    if (composerEmptyRef.current) {
+      restoreDraft(d);
+      return;
+    }
+    if (d.content.trim()) {
+      setContent((cur) => (cur.trim() ? `${d.content}\n\n${cur}` : d.content));
+    }
   };
 
   // Build the post the user *would* see, so it can appear at the top of the
@@ -499,7 +532,7 @@ export function ComposeBox({
       if (!response.ok) {
         const message = (data as { error?: string } | null)?.error;
         removeItem(tempId);
-        restoreDraft(draft);
+        restoreFailedDraft(draft);
         toast.error(message || t('post-error', { defaultValue: 'Could not post' }));
         return;
       }
@@ -508,7 +541,7 @@ export function ComposeBox({
       // and restore the draft, same as an explicit failure.
       if (!data) {
         removeItem(tempId);
-        restoreDraft(draft);
+        restoreFailedDraft(draft);
         toast.error(t('post-error', { defaultValue: 'Could not post' }));
         return;
       }
@@ -516,7 +549,7 @@ export function ComposeBox({
     } catch (error) {
       console.error('Post error:', error);
       removeItem(tempId);
-      restoreDraft(draft);
+      restoreFailedDraft(draft);
       toast.error(t('post-error', { defaultValue: 'Could not post' }));
     }
   };
@@ -653,7 +686,12 @@ export function ComposeBox({
             type="button"
             onClick={() => {
               setContent(pendingDraft.content);
-              if (pendingDraft.gifUrl) setGifUrl(pendingDraft.gifUrl);
+              if (pendingDraft.gifUrl) {
+                // `hasGif` needs the attachment too, or the GIF is restored
+                // invisibly and never posted.
+                setAttachment('gif');
+                setGifUrl(pendingDraft.gifUrl);
+              }
               setPendingDraft(null);
             }}
             className="shrink-0 text-xs font-semibold text-site-accent hover:underline"
@@ -1163,6 +1201,7 @@ export function ComposeBox({
                 </button>
                 <button
                   onClick={() => {
+                    if (attachment === 'gif') setGifUrl('');
                     setAttachment((a) => (a === 'gif' ? null : 'gif'));
                     setPoll({ question: '', options: ['', ''], multiSelect: false });
                     setMenuOpen(false);

@@ -218,5 +218,6 @@
   "warming-up-the-model": "Warming up the model.",
   "welcome-back": "Welcome back",
   "writing-the-code": "Writing the code.",
-  "blog-reading-time": "{{minutes}} min read"
+  "blog-reading-time": "{{minutes}} min read",
+  "social-error": "Could not start sign-in. Try again."
 }

@@ -757,5 +757,7 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "دسترسی به صورت‌حساب ممکن نشد. دوباره امتحان کنید.",
+  "space-end-offline": "متصل نیستید. کمی بعد دوباره امتحان کنید."
 }

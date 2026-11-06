@@ -28,6 +28,7 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
   const cost = PRICES[tier] * months;
 
   const submit = async () => {
+    if (submitting) return;
     setSubmitting(true);
     try {
       const res = await fetch('/api/gift-sub', {
@@ -49,13 +50,16 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
       } else {
         toast.error(data.error || t('gift-error', { defaultValue: 'Could not gift membership' }));
       }
+    } catch {
+      toast.error(t('gift-error', { defaultValue: 'Could not gift membership' }));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    // Not dismissable mid-send: closing would hide whether the coins moved.
+    <Dialog open={open} onOpenChange={(next) => (submitting && !next ? undefined : onOpenChange(next))}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -77,8 +81,9 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
                   key={tierOpt}
                   type="button"
                   onClick={() => setTier(tierOpt)}
+                  disabled={submitting}
                   data-jelly
-                  className={`rounded-site border px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`rounded-site border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
                     tier === tierOpt ? 'border-site-accent bg-site-accent/10 text-site-text' : 'border-site-border text-site-text-muted hover:text-site-text'
                   }`}
                 >
@@ -99,8 +104,9 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
                   key={m}
                   type="button"
                   onClick={() => setMonths(m)}
+                  disabled={submitting}
                   data-jelly
-                  className={`flex-1 rounded-site-sm border px-2 py-1.5 text-sm font-medium transition-colors ${
+                  className={`flex-1 rounded-site-sm border px-2 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${
                     months === m ? 'border-site-accent bg-site-accent/10 text-site-text' : 'border-site-border text-site-text-muted hover:text-site-text'
                   }`}
                 >

@@ -757,5 +757,7 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "Δεν ήταν δυνατή η σύνδεση με τη χρέωση. Δοκιμάστε ξανά.",
+  "space-end-offline": "Δεν υπάρχει σύνδεση. Δοκιμάστε ξανά σε λίγο."
 }

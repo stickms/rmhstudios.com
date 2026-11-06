@@ -104,6 +104,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  const [viewCount, setViewCount] = useState(comment.viewCount ?? 0);
  const { run: runLike } = useOptimisticAction();
  const { run: runRepost } = useOptimisticAction();
+ const { run: runReaction } = useOptimisticAction();
  const promptSignIn = useSignInPrompt();
  const [reactions, setReactions] = useState<ReactionSummary[]>(comment.reactions ?? []);
  const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number } | null>(null);
@@ -215,17 +216,16 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  return;
  }
  const prev = reactions;
- setReactions(applyReactionToggle(prev, emoji));
- try {
- const res = await fetch(`/api/comments/${comment.id}/react`, {
+ await runReaction({
+ apply: () => setReactions(applyReactionToggle(prev, emoji)),
+ rollback: () => setReactions(prev),
+ commit: () =>
+ fetch(`/api/comments/${comment.id}/react`, {
  method:'POST',
  headers: {'Content-Type':'application/json'},
  body: JSON.stringify({ emoji }),
+ }),
  });
- if (!res.ok) throw new Error('react failed');
- } catch {
- setReactions(prev);
- }
  };
 
  const handleDelete = async () => {

@@ -129,6 +129,10 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   const [draft, setDraft] = useState('');
   const [pinDraft, setPinDraft] = useState('');
   const [bursts, setBursts] = useState<Burst[]>([]);
+  // Host actions in flight: Go live waits on its POST, End waits for the
+  // server's ENDED broadcast (the socket stays up until then).
+  const [startingLive, setStartingLive] = useState(false);
+  const [ending, setEnding] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -144,8 +148,11 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   );
 
   // ─── Live socket connection (skipped for ended spaces) ───
+  // Keyed on "ended" rather than the whole status: SCHEDULED → LIVE must not
+  // tear the socket down and rejoin.
+  const ended = status === 'ENDED';
   useEffect(() => {
-    if (status === 'ENDED') return;
+    if (ended) return;
     const base = import.meta.env.VITE_SOCKET_URL;
     if (!base) return;
 
@@ -169,7 +176,10 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       setConnected(true);
       socket.emit(SPACE_C2S.JOIN, { spaceId: initialSpace.id });
     });
-    socket.on('disconnect', () => setConnected(false));
+    socket.on('disconnect', () => {
+      setConnected(false);
+      setEnding(false);
+    });
     socket.on(
       SPACE_S2C.STATE,
       (s: {
@@ -194,11 +204,13 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       setPinned(p?.pinned ?? null),
     );
     socket.on(SPACE_S2C.ENDED, () => {
+      setEnding(false);
       setStatus('ENDED');
       toast(t('space-ended', { defaultValue: 'This Space has ended' }));
     });
     bindSlowModeEvents(socket, 'space');
     socket.on(SPACE_S2C.ERROR, (e: { message?: string }) => {
+      setEnding(false);
       if (e?.message) toast.error(e.message);
     });
 
@@ -208,7 +220,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [initialSpace.id, status, pushBurst, t]);
+  }, [initialSpace.id, ended, pushBurst, t]);
 
   // Keep the chat pinned to the latest message.
   useEffect(() => {
@@ -238,6 +250,8 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   );
 
   const goLive = useCallback(async () => {
+    if (startingLive) return;
+    setStartingLive(true);
     try {
       const res = await fetch(`/api/spaces/${initialSpace.id}/start`, { method: 'POST' });
       if (!res.ok) {
@@ -248,13 +262,26 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       toast.success(t('space-now-live', { defaultValue: 'You are live' }));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to start');
+    } finally {
+      setStartingLive(false);
     }
-  }, [initialSpace.id, t]);
+  }, [initialSpace.id, startingLive, t]);
 
+  // No optimistic ENDED: the server broadcasts SPACE_S2C.ENDED to the room
+  // (this socket included) once it has accepted the end, and that handler
+  // flips the status. Until then the socket stays up so an error can arrive.
   const endSpace = useCallback(() => {
-    socketRef.current?.emit(SPACE_C2S.END, { spaceId: initialSpace.id });
-    setStatus('ENDED');
-  }, [initialSpace.id]);
+    if (ending) return;
+    const socket = socketRef.current;
+    if (!socket?.connected) {
+      toast.error(
+        t('space-end-offline', { defaultValue: 'Not connected. Try again in a moment.' }),
+      );
+      return;
+    }
+    setEnding(true);
+    socket.emit(SPACE_C2S.END, { spaceId: initialSpace.id });
+  }, [ending, initialSpace.id, t]);
 
   const submitPin = useCallback(() => {
     const ref = pinDraft.trim();
@@ -301,12 +328,12 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   const hostActions = isHost ? (
     <>
       {status === 'SCHEDULED' && (
-        <Button size="sm" variant="accent" onClick={goLive}>
+        <Button size="sm" variant="accent" onClick={goLive} loading={startingLive}>
           {t('space-go-live', { defaultValue: 'Go live' })}
         </Button>
       )}
       {status === 'LIVE' && (
-        <Button size="sm" variant="outline" onClick={endSpace}>
+        <Button size="sm" variant="outline" onClick={endSpace} loading={ending}>
           {t('space-end', { defaultValue: 'End' })}
         </Button>
       )}

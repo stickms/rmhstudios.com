@@ -66,35 +66,43 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
   const [loading, setLoading] = useState(true);
   const [freshCodes, setFreshCodes] = useState<string[] | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const [completionEmail, setCompletionEmail] = useState('');
   const [completing, setCompleting] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!signedIn) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const [codesRes, holdRes, requestsRes] = await Promise.all([
-        fetch('/api/account/recovery/codes'),
-        fetch('/api/account/recovery/hold'),
-        fetch('/api/account/recovery/requests'),
-      ]);
-      if (codesRes.ok) setStatus((await codesRes.json()) as CodeStatus);
-      if (holdRes.ok) setHold((await holdRes.json()) as HoldState);
-      if (requestsRes.ok) {
-        const data = (await requestsRes.json()) as { mine: RequestRow[] };
-        setRequests(data.mine.filter((row) => row.phase !== 'expired' && row.phase !== 'rejected'));
+  // `quiet` refreshes in place: after generating, the one-time codes are on
+  // screen and must not vanish behind the loading spinner while it reloads.
+  const load = useCallback(
+    async (quiet = false) => {
+      if (!signedIn) {
+        setLoading(false);
+        return;
       }
-    } catch {
-      // Leave the panel in its empty state rather than throwing at the user.
-    } finally {
-      setLoading(false);
-    }
-  }, [signedIn]);
+      if (!quiet) setLoading(true);
+      try {
+        const [codesRes, holdRes, requestsRes] = await Promise.all([
+          fetch('/api/account/recovery/codes'),
+          fetch('/api/account/recovery/hold'),
+          fetch('/api/account/recovery/requests'),
+        ]);
+        if (codesRes.ok) setStatus((await codesRes.json()) as CodeStatus);
+        if (holdRes.ok) setHold((await holdRes.json()) as HoldState);
+        if (requestsRes.ok) {
+          const data = (await requestsRes.json()) as { mine: RequestRow[] };
+          setRequests(
+            data.mine.filter((row) => row.phase !== 'expired' && row.phase !== 'rejected'),
+          );
+        }
+      } catch {
+        // Leave the panel in its empty state rather than throwing at the user.
+      } finally {
+        setLoading(false);
+      }
+    },
+    [signedIn],
+  );
 
   useEffect(() => {
     void load();
@@ -122,13 +130,16 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
         return;
       }
       setFreshCodes(data.codes);
-      await load();
+      await load(true);
+    } catch {
+      toast.error(t('recovery-codes-failed', { defaultValue: 'Could not generate codes.' }));
     } finally {
       setGenerating(false);
     }
   };
 
   const cancelRequest = async (row: RequestRow) => {
+    if (cancellingId !== null) return;
     const confirmed = await confirm({
       title: t('recovery-cancel-title', { defaultValue: 'Cancel this recovery request?' }),
       description: t('recovery-cancel-confirm', {
@@ -138,15 +149,24 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
       danger: true,
     });
     if (!confirmed) return;
-    const res = await fetch(`/api/account/recovery/requests/${encodeURIComponent(row.id)}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) {
+    setCancellingId(row.id);
+    try {
+      const res = await fetch(`/api/account/recovery/requests/${encodeURIComponent(row.id)}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        toast.error(
+          t('recovery-cancel-failed', { defaultValue: 'Could not cancel that request.' }),
+        );
+        return;
+      }
+      setRequests((prev) => prev.filter((item) => item.id !== row.id));
+      toast.success(t('recovery-cancelled', { defaultValue: 'Recovery request cancelled.' }));
+    } catch {
       toast.error(t('recovery-cancel-failed', { defaultValue: 'Could not cancel that request.' }));
-      return;
+    } finally {
+      setCancellingId(null);
     }
-    setRequests((prev) => prev.filter((item) => item.id !== row.id));
-    toast.success(t('recovery-cancelled', { defaultValue: 'Recovery request cancelled.' }));
   };
 
   const submitCompletion = async (event: React.FormEvent) => {
@@ -275,6 +295,8 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
                     variant="danger"
                     size="sm"
                     className="mt-2"
+                    loading={cancellingId === row.id}
+                    disabled={cancellingId !== null}
                     onClick={() => void cancelRequest(row)}
                   >
                     {t('recovery-cancel', { defaultValue: 'Cancel request' })}

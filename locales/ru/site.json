@@ -805,5 +805,7 @@
   "ladder.health.showErrors_few": "{{count}} errors",
   "ladder.health.showErrors_many": "{{count}} errors",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "Не удалось связаться с оплатой. Попробуйте ещё раз.",
+  "space-end-offline": "Нет подключения. Попробуйте ещё раз через минуту."
 }

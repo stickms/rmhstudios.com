@@ -757,5 +757,7 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "ਬਿਲਿੰਗ ਤੱਕ ਨਹੀਂ ਪਹੁੰਚ ਸਕੇ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+  "space-end-offline": "ਕਨੈਕਟ ਨਹੀਂ ਹੈ। ਥੋੜ੍ਹੀ ਦੇਰ ਬਾਅਦ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"
 }

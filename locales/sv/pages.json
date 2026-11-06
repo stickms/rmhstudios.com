@@ -217,5 +217,6 @@
   "warming-up-the-model": "Warming up the model.",
   "welcome-back": "Welcome back",
   "writing-the-code": "Writing the code.",
-  "post-view-on-rmh": "View on RMH Studios"
+  "post-view-on-rmh": "View on RMH Studios",
+  "social-error": "Det gick inte att starta inloggningen. Försök igen."
 }

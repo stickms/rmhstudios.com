@@ -789,5 +789,7 @@
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_many": "{{count}} errors",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "Não foi possível acessar o faturamento. Tente novamente.",
+  "space-end-offline": "Sem conexão. Tente novamente em instantes."
 }

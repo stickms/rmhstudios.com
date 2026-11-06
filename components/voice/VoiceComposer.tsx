@@ -69,8 +69,18 @@ export function VoiceComposer({
 
   const recorderRef = useRef<VoiceRecorder | null>(null);
   const previewUrlRef = useRef<string | null>(null);
+  // Bumped by every reset and by unmount: a `start()` that resolves after
+  // either (the permission prompt can sit open for seconds) cancels its own
+  // recorder instead of adopting it, so the microphone is never left live.
+  const sessionRef = useRef(0);
+  const mountedRef = useRef(true);
+  // Lets the duration-cap callback (created before `stopRecording` exists)
+  // move the composer to review.
+  const stopRecordingRef = useRef<() => void>(() => {});
 
-  const [phase, setPhase] = useState<'idle' | 'recording' | 'review' | 'sending'>('idle');
+  const [phase, setPhase] = useState<
+    'idle' | 'starting' | 'recording' | 'stopping' | 'review' | 'sending'
+  >('idle');
   const [elapsedMs, setElapsedMs] = useState(0);
   const [livePeaks, setLivePeaks] = useState<number[]>([]);
   const [clip, setClip] = useState<{
@@ -82,7 +92,7 @@ export function VoiceComposer({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [note, setNote] = useState('');
 
-  const active = phase !== 'idle';
+  const active = phase !== 'idle' && phase !== 'starting';
   useEffect(() => {
     onActiveChange?.(active);
   }, [active, onActiveChange]);
@@ -99,7 +109,10 @@ export function VoiceComposer({
   // (route change, conversation switch) otherwise leaves the browser's recording
   // indicator lit with nothing on screen explaining it.
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
+      sessionRef.current += 1;
       recorderRef.current?.cancel();
       recorderRef.current = null;
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
@@ -107,6 +120,7 @@ export function VoiceComposer({
   }, []);
 
   const reset = useCallback(() => {
+    sessionRef.current += 1;
     recorderRef.current?.cancel();
     recorderRef.current = null;
     releasePreview();
@@ -118,6 +132,7 @@ export function VoiceComposer({
   }, [releasePreview]);
 
   const startRecording = useCallback(async () => {
+    if (phase !== 'idle' || recorderRef.current) return;
     if (!canRecordVoice()) {
       toast.error(
         t('voice-unsupported', {
@@ -127,6 +142,7 @@ export function VoiceComposer({
       return;
     }
 
+    const session = ++sessionRef.current;
     const recorder = new VoiceRecorder(tier, {
       onTick: (level, elapsed) => {
         setElapsedMs(elapsed);
@@ -140,16 +156,23 @@ export function VoiceComposer({
             defaultValue: 'Recording stopped at your plan’s length limit.',
           }),
         );
+        // The encoder has stopped by itself; take the clip to review rather
+        // than leaving a live-looking recorder that nothing is feeding.
+        stopRecordingRef.current();
       },
       onError: () => {
+        if (session !== sessionRef.current) return;
         toast.error(t('voice-record-failed', { defaultValue: 'Recording failed.' }));
         reset();
       },
     });
 
+    setPhase('starting');
     try {
       await recorder.start();
     } catch (err) {
+      if (session !== sessionRef.current || !mountedRef.current) return;
+      setPhase('idle');
       const reason = err instanceof VoiceRecorderError ? err.reason : 'failed';
       toast.error(
         reason === 'denied'
@@ -161,16 +184,25 @@ export function VoiceComposer({
       return;
     }
 
+    if (session !== sessionRef.current || !mountedRef.current) {
+      // Reset or unmounted while the permission prompt was open.
+      recorder.cancel();
+      return;
+    }
     recorderRef.current = recorder;
     setElapsedMs(0);
     setLivePeaks([]);
     setPhase('recording');
-  }, [reset, t, tier]);
+  }, [phase, reset, t, tier]);
 
   const stopRecording = useCallback(async () => {
     const recorder = recorderRef.current;
     if (!recorder) return;
+    const session = sessionRef.current;
+    setPhase('stopping');
     const result = await recorder.stop();
+    // Discarded (or unmounted) while the encoder flushed.
+    if (session !== sessionRef.current || recorderRef.current !== recorder) return;
     recorderRef.current = null;
     if (!result || result.durationMs < 400) {
       // Anything under ~0.4s is a mis-tap, not a message.
@@ -184,6 +216,11 @@ export function VoiceComposer({
     setClip(result);
     setPhase('review');
   }, [reset, t]);
+  useEffect(() => {
+    stopRecordingRef.current = () => {
+      void stopRecording();
+    };
+  }, [stopRecording]);
 
   const send = useCallback(async () => {
     if (!clip) return;
@@ -223,7 +260,8 @@ export function VoiceComposer({
       <button
         type="button"
         onClick={startRecording}
-        disabled={disabled}
+        disabled={disabled || phase === 'starting'}
+        aria-busy={phase === 'starting'}
         aria-label={t('voice-record', { defaultValue: 'Record a voice message' })}
         className="flex size-11 shrink-0 items-center justify-center rounded-site text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-accent disabled:opacity-50"
       >
@@ -236,7 +274,7 @@ export function VoiceComposer({
 
   return (
     <div className="w-full min-w-0">
-      {phase === 'recording' ? (
+      {phase === 'recording' || phase === 'stopping' ? (
         <div className="flex w-full min-w-0 items-center gap-2">
           <span
             aria-hidden="true"
@@ -268,6 +306,7 @@ export function VoiceComposer({
             variant="accent"
             size="sm"
             onClick={stopRecording}
+            disabled={phase === 'stopping'}
             className="h-11 shrink-0 rounded-site px-3"
             aria-label={t('voice-stop', { defaultValue: 'Stop recording' })}
           >

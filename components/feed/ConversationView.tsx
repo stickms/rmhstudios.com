@@ -879,7 +879,7 @@ export function ConversationView({
     const content = input.trim();
     const pendingGif = gifUrl;
     const pendingImages = imageUrls;
-    if ((!content && !pendingGif && pendingImages.length === 0) || sending) return;
+    if ((!content && !pendingGif && pendingImages.length === 0) || sending || uploading) return;
 
     // M4: a slash command is run (by the server, or locally for /remind and
     // /gif) instead of being sent as text.

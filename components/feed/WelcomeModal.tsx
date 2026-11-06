@@ -42,6 +42,8 @@ export function WelcomeModal() {
  // Hold until the first-run language chooser is done so we don't stack
  // two dialogs; it fires `rmh:lang-picked`when dismissed.
  if (!localStorage.getItem(STORAGE_KEY) && localStorage.getItem(LANG_PICKED_KEY)) {
+ // Every open starts at the first step, not where a previous one left off.
+ setStep(0);
  setOpen(true);
  }
  } catch {

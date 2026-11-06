@@ -38,7 +38,14 @@ function ConversationPage() {
 
   return (
     <PageFrame rightSidebar={<MessagesRightSidebar />}>
-      <ConversationView conversationId={conversationId} initialOtherUser={otherUser} />
+      {/* Keyed so every per-conversation state (messages, cursors, the
+          initial-fetch latch, drafts) starts fresh when the id changes, and
+          a response for the previous thread lands on an unmounted view. */}
+      <ConversationView
+        key={conversationId}
+        conversationId={conversationId}
+        initialOtherUser={otherUser}
+      />
     </PageFrame>
   );
 }

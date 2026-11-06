@@ -254,17 +254,33 @@ function PlayModal({
  } | null>(null);
  const [busy, setBusy] = useState(false);
 
+ // The puzzle this modal is showing; a fetch or guess result for a previous
+ // id is dropped, and per-puzzle state starts over when the id changes.
+ const idRef = useRef(id);
  useEffect(() => {
+ idRef.current = id;
+ let cancelled = false;
+ setPuzzle(null);
+ setRevealed(1);
+ setGuess('');
+ setResult(null);
+ setBusy(false);
  fetch(`/api/rmhmusic/guess/${id}`, { credentials:'include'})
  .then((r) => (r.ok ? r.json() : null))
  .then((p: Puzzle | null) => {
+ if (cancelled) return;
  setPuzzle(p);
  if (p?.solved) setResult({ correct: true, title: p.title ?? undefined });
- });
+ })
+ .catch(() => {});
+ return () => {
+ cancelled = true;
+ };
  }, [id]);
 
  async function submit() {
  if (!guess.trim() || busy) return;
+ const forId = id;
  setBusy(true);
  try {
  const res = await fetch(`/api/rmhmusic/guess/${id}/attempt`, {
@@ -274,12 +290,15 @@ function PlayModal({
  body: JSON.stringify({ guess: guess.trim(), hintsUsed: revealed - 1 }),
  });
  const data = await res.json().catch(() => ({}));
+ if (forId !== idRef.current) return;
  if (res.ok) {
  if (data.correct) setResult({ correct: true, title: data.title, reward: data.reward });
  else setResult({ correct: false });
  }
+ } catch {
+ /* network blip — the guess can be resubmitted */
  } finally {
- setBusy(false);
+ if (forId === idRef.current) setBusy(false);
  }
  }
 
@@ -345,6 +364,7 @@ function PlayModal({
  {revealed < puzzle.hints.length && (
  <button
  onClick={() => setRevealed((r) => r + 1)}
+ disabled={busy}
  className="mt-4 inline-flex min-h-8 items-center gap-2 text-xs font-semibold text-site-accent hover:underline"
  >
  <Lightbulb className="h-3.5 w-3.5"aria-hidden />{''}

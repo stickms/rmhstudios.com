@@ -1526,5 +1526,6 @@
   "muted-import-failed": "Dosya okunamadı.",
   "message-edit-length": "{{used}}/{{max}}",
   "palette-whats-new": "What’s new",
-  "palette-unread": "Unread"
+  "palette-unread": "Unread",
+  "deck-review-load-failed": "Kartlar yüklenemedi"
 }

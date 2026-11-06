@@ -98,6 +98,14 @@ export class VoiceRecorder {
   private startedAt = 0;
   private stoppedAt = 0;
   private cancelled = false;
+  /**
+   * Settles when the encoder's `stop` event has fired. Created at start, so a
+   * `stop()` called after the duration cap already stopped the encoder awaits a
+   * promise that has settled instead of an `onstop` that will never fire again.
+   */
+  private stopped: Promise<void> = Promise.resolve();
+  /** The one in-flight `stop()`, so a second tap gets the same clip. */
+  private stopping: Promise<RecordedClip | null> | null = null;
 
   constructor(
     private readonly tier: Tier,
@@ -141,6 +149,13 @@ export class VoiceRecorder {
       throw new VoiceRecorderError('failed');
     }
 
+    let resolveStopped: () => void = () => {};
+    this.stopped = new Promise<void>((resolve) => {
+      resolveStopped = resolve;
+    });
+    this.stopping = null;
+    this.recorder.onstop = () => resolveStopped();
+
     this.recorder.ondataavailable = (event) => {
       if (event.data && event.data.size > 0) this.chunks.push(event.data);
     };
@@ -169,15 +184,17 @@ export class VoiceRecorder {
   }
 
   /** Stop and resolve the finished clip. Resolves `null` if it was cancelled. */
-  async stop(): Promise<RecordedClip | null> {
+  stop(): Promise<RecordedClip | null> {
+    if (!this.stopping) this.stopping = this.finish();
+    return this.stopping;
+  }
+
+  private async finish(): Promise<RecordedClip | null> {
     const recorder = this.recorder;
     if (!recorder) return null;
 
-    const finished = new Promise<void>((resolve) => {
-      recorder.onstop = () => resolve();
-    });
     this.requestStop();
-    await finished;
+    await this.stopped;
 
     const durationMs = Math.max(0, (this.stoppedAt || Date.now()) - this.startedAt);
     const contentType = recorder.mimeType || 'audio/webm';

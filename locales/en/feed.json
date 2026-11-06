@@ -1595,5 +1595,6 @@
   "muted-import-failed": "Could not read that file.",
   "message-edit-length": "{{used}}/{{max}}",
   "palette-whats-new": "What’s new",
-  "palette-unread": "Unread"
+  "palette-unread": "Unread",
+  "deck-review-load-failed": "Could not load cards"
 }

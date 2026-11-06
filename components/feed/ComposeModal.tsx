@@ -69,6 +69,10 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  const [imageAlts, setImageAlts] = useState<string[]>([]);
  const [altEditIndex, setAltEditIndex] = useState<number | null>(null);
  const [imageError, setImageError] = useState<string | null>(null);
+ // Uploads in flight block Post; the epoch (bumped when a post goes out)
+ // drops URLs that arrive after the post they were meant for.
+ const [uploadingCount, setUploadingCount] = useState(0);
+ const uploadEpochRef = useRef(0);
  // The portal target only exists on the client; render nothing until mounted.
  const [mounted, setMounted] = useState(false);
  const imageInputRef = useRef<HTMLInputElement>(null);
@@ -116,7 +120,10 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  const hasImages = imageUrls.length > 0;
  const hasContent = content.trim().length > 0;
  const canSubmit =
- (hasContent || hasPoll || hasGif || hasImages || !!quoteItem) && remaining >= 0 && !submitting;
+ (hasContent || hasPoll || hasGif || hasImages || !!quoteItem) &&
+ remaining >= 0 &&
+ !submitting &&
+ uploadingCount === 0;
 
  const handleImageFiles = async (files: FileList | null) => {
  if (!files || files.length === 0) return;
@@ -126,17 +133,23 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  Array.from(files)
  .slice(0, remainingSlots)
  .forEach((f) => form.append('images', f));
+ const epoch = uploadEpochRef.current;
+ setUploadingCount((n) => n + 1);
  try {
  const res = await fetch('/api/rmharks/image', { method:'POST', body: form });
+ if (epoch !== uploadEpochRef.current) return;
  if (!res.ok) {
  const { error } = await res.json().catch(() => ({ error:'Upload failed'}));
  setImageError(error ??'Upload failed');
  return;
  }
  const { urls } = await res.json();
+ if (epoch !== uploadEpochRef.current) return;
  setImageUrls((prev) => [...prev, ...urls].slice(0, MAX_IMAGES));
  } catch {
- setImageError('Upload failed');
+ if (epoch === uploadEpochRef.current) setImageError('Upload failed');
+ } finally {
+ setUploadingCount((n) => Math.max(0, n - 1));
  }
  };
 
@@ -176,6 +189,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  }
 
  const item = await res.json();
+ uploadEpochRef.current += 1;
  prependItem(item);
  if (!quoteItem && !initialContent) clearComposeDraft();
  setContent('');
@@ -252,6 +266,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  <button
  type="button"
  onClick={() => {
+ if (attachment === 'gif') setGifUrl('');
  setAttachment((a) => (a ==='gif'? null :'gif'));
  setPoll({ question:'', options: ['',''], multiSelect: false });
  }}
