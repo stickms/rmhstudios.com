@@ -120,6 +120,13 @@ export function createReader(
   /** Last paragraph announced, so `onParagraph` fires once per paragraph. */
   let announced = -1;
   let destroyed = false;
+  /**
+   * The current utterance chain. `cancel()` fires the old chain's `end` /
+   * `error` asynchronously — after a re-play has already set 'playing' — so a
+   * stale handler would start a second chain or drop the new one to idle.
+   * Every handler checks its chain is still the current one.
+   */
+  let chain = 0;
 
   const setState = (next: ReaderState) => {
     if (state === next) return;
@@ -127,7 +134,8 @@ export function createReader(
     onStateChange?.(next);
   };
 
-  const speak = (at: number) => {
+  const speak = (at: number, run: number) => {
+    if (run !== chain) return;
     if (destroyed || at >= chunks.length) {
       cursor = chunks.length;
       announced = -1;
@@ -151,7 +159,7 @@ export function createReader(
     utterance.volume = volume;
 
     utterance.onstart = () => {
-      if (destroyed) return;
+      if (destroyed || run !== chain) return;
       setState('playing');
       if (chunk.paragraph !== announced) {
         announced = chunk.paragraph;
@@ -161,11 +169,11 @@ export function createReader(
     utterance.onend = () => {
       // `cancel()` also fires `onend`; the state check keeps a stop from
       // immediately starting the next chunk.
-      if (destroyed || state !== 'playing') return;
-      speak(at + 1);
+      if (destroyed || run !== chain || state !== 'playing') return;
+      speak(at + 1, run);
     };
     utterance.onerror = () => {
-      if (destroyed) return;
+      if (destroyed || run !== chain) return;
       setState('idle');
     };
 
@@ -173,6 +181,7 @@ export function createReader(
   };
 
   const stop = () => {
+    chain++;
     setState('idle');
     cursor = 0;
     announced = -1;
@@ -190,11 +199,12 @@ export function createReader(
       // Safari and Chrome keep ONE global utterance queue per document, so a
       // second reader (or a re-play) has to clear whatever is still queued or
       // the two articles interleave.
+      chain++;
       synth.cancel();
       const start = from === undefined ? 0 : chunks.findIndex((c) => c.paragraph >= from);
       announced = -1;
       setState('playing');
-      speak(start === -1 ? 0 : start);
+      speak(start === -1 ? 0 : start, chain);
     },
     pause: () => {
       if (destroyed || state !== 'playing') return;
@@ -212,6 +222,7 @@ export function createReader(
     destroy: () => {
       if (destroyed) return;
       destroyed = true;
+      chain++;
       // Guaranteed: an unmounted article must not keep talking.
       synth.cancel();
       state = 'idle';

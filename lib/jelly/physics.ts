@@ -523,6 +523,10 @@ export function installJellyPhysics(
     if (b.cornerWritten) s.borderRadius = b.inlineRadius;
     if (b.press) b.el.removeAttribute('data-jelly-active');
     if (b.latticeDrive) setLatticeDrive(b.el, null);
+    // A delegated drag announced `drag:start`; forgetting the body must close it, or the arcs' quiet tracker holds
+    // `drag` forever. (A `reportJellyDrag` owner's end is announced by `reportJellyDrag` itself.)
+    if (b.drag && b.drag.pointerId !== null) jellyBus.emit('drag:end', { el: b.el });
+    b.drag = null;
     if (b.dent) {
       if (b.dent.published) setDent(b.el, null);
       lens.release(b.el);
@@ -708,7 +712,11 @@ export function installJellyPhysics(
     const el = bodyElFrom(e.target);
     if (!el) return;
     const existing = bodies.get(el);
-    if (existing?.hovering) return;
+    if (existing?.hovering) {
+      // Still over the same body (pointerover from a child): a body released under the pointer is hovered again.
+      if (!existing.press && !existing.drag) existing.phase = 'hover';
+      return;
+    }
     const b = existing ?? create(el);
     if (!b) return;
     b.hovering = true;
@@ -753,6 +761,9 @@ export function installJellyPhysics(
     if (field && field !== el && el.contains(field)) return;
     const b = bodyFor(el);
     if (!b) return;
+    // A second pointer takes the body over: finish the first press (and its delegated drag) silently, or its
+    // pointerup no longer matches and `b.drag` sticks — busy forever, `drag:end` never sent.
+    if (b.press && b.press.pointerId !== e.pointerId) release(b, b.press.cx, b.press.cy, true);
     b.press = {
       pointerId: e.pointerId,
       ox: e.clientX,
@@ -822,7 +833,8 @@ export function installJellyPhysics(
       b.drag = null;
       jellyBus.emit('drag:end', { el: b.el });
     }
-    b.phase = 'released';
+    // An external drag (`reportJellyDrag`) outlives a press on its host: still dragged.
+    b.phase = b.drag ? 'dragged' : 'released';
     if (!b.ready) b.pendingRelease = { x, y, held, cancelled };
     else settleRelease(b, x, y, held, cancelled);
     requestFrame();

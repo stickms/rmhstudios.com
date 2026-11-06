@@ -96,7 +96,11 @@ export interface RealtimeClient {
    * time-sensitive, which should be re-derived from fresh state instead.
    */
   emit(event: string, data?: unknown, options?: { queue?: boolean }): boolean;
-  /** Force an immediate reconnection attempt, ignoring the backoff. */
+  /**
+   * Force an immediate reconnection attempt, ignoring the backoff. This is the
+   * manual retry: unlike the automatic wake signals it also dials after an
+   * auth `error` (but not after `protocolOutdated`).
+   */
   reconnectNow(): void;
   /** Close and release every listener, including the document-level ones. */
   destroy(): void;
@@ -209,6 +213,10 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
     const isReconnect = hasConnected;
     hasConnected = true;
     attempt = 0;
+    // An auth failure turned retries off; a later successful connect (a manual
+    // retry after signing in again) must turn them back on, or the next blip
+    // would strand the client with no retry at all.
+    socket.io.reconnection(true);
     setStatus('connected');
 
     onConnect?.(socket, { isReconnect });
@@ -268,7 +276,11 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
    * an outage still waits out the current 5s window before anything happens.
    */
   const reconnectNow = () => {
-    if (destroyed || socket.connected) return;
+    // An outdated bundle fails identically forever — only a reload fixes it.
+    if (destroyed || socket.connected || protocolOutdated) return;
+    // A manual retry is the "user action" a terminal `error` asks for: give
+    // socket.io its retries back (an auth failure turned them off).
+    socket.io.reconnection(true);
     // `_backOff` is manager-internal; guard so a socket.io upgrade that renames
     // it degrades to the ordinary (still correct, just slower) retry.
     const backoff = (socket.io as unknown as { backoff?: { reset(): void } }).backoff;
@@ -276,15 +288,25 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
     socket.connect();
   };
 
-  const onVisible = () => {
-    if (document.visibilityState === 'visible') reconnectNow();
+  /**
+   * Wake signals skip the backoff, but never undo a terminal verdict: `error`
+   * (bad credentials, outdated protocol) needs the user, so only the explicit
+   * `reconnectNow()` (the banner's Retry) dials after it. A server kick is
+   * still woken: `disconnected` shows no banner, so it has no Retry to wait on.
+   */
+  const wake = () => {
+    if (status === 'error') return;
+    reconnectNow();
   };
-  const onOnline = () => reconnectNow();
-  const onFocus = () => reconnectNow();
+  const onVisible = () => {
+    if (document.visibilityState === 'visible') wake();
+  };
+  const onOnline = () => wake();
+  const onFocus = () => wake();
   const onPageShow = (event: PageTransitionEvent) => {
     // A bfcache restore resumes a page whose socket the browser froze and
     // closed; there is no `visibilitychange` for it on some engines.
-    if (event.persisted) reconnectNow();
+    if (event.persisted) wake();
   };
 
   if (typeof document !== 'undefined') {

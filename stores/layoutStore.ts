@@ -65,6 +65,14 @@ interface LayoutStore {
 
 const DEFAULT_SIDEBAR: SidebarPref = { pinned: [], hidden: [], order: [] };
 
+/**
+ * Edited since `hydrate()` started. The account fetch resolves after first
+ * paint; an edit made before it lands (and already PUT to the account) must
+ * not be overwritten by the older row it returns. Per field, because each
+ * mutation persists only its own field.
+ */
+const editedSinceHydrate = { sidebar: false, homeStack: false };
+
 export const useLayoutStore = create<LayoutStore>((set, get) => ({
   sidebar: DEFAULT_SIDEBAR,
   homeStack: [],
@@ -72,6 +80,8 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
 
   hydrate: () => {
     if (get().hydrated) return;
+    editedSinceHydrate.sidebar = false;
+    editedSinceHydrate.homeStack = false;
     // Synchronous mirror read first (no flash), normalized through the parser.
     const applied = parseLayoutPref({
       sidebar: readMirror<unknown>(LAYOUT_SIDEBAR_KEY, {}),
@@ -84,9 +94,16 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
       .then((d: { sidebar?: unknown; homeStack?: unknown } | null) => {
         if (!d) return;
         const server = parseLayoutPref(d);
-        writeMirror(LAYOUT_SIDEBAR_KEY, server.sidebar);
-        writeMirror(LAYOUT_HOMESTACK_KEY, server.homeStack);
-        set({ sidebar: server.sidebar, homeStack: server.homeStack });
+        const patch: Partial<Pick<LayoutStore, 'sidebar' | 'homeStack'>> = {};
+        if (!editedSinceHydrate.sidebar) {
+          writeMirror(LAYOUT_SIDEBAR_KEY, server.sidebar);
+          patch.sidebar = server.sidebar;
+        }
+        if (!editedSinceHydrate.homeStack) {
+          writeMirror(LAYOUT_HOMESTACK_KEY, server.homeStack);
+          patch.homeStack = server.homeStack;
+        }
+        set(patch);
       })
       .catch(() => {});
   },
@@ -97,6 +114,7 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
       ? { pinned: pinned.filter((p) => p !== id), hidden, order }
       : // Pinning implies un-hiding (can't be both).
         { pinned: [...pinned, id], hidden: hidden.filter((h) => h !== id), order };
+    editedSinceHydrate.sidebar = true;
     writeMirror(LAYOUT_SIDEBAR_KEY, next);
     set({ sidebar: next });
     void persist({ sidebar: next });
@@ -107,6 +125,7 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
     const next: SidebarPref = hidden.includes(id)
       ? { pinned, hidden: hidden.filter((h) => h !== id), order }
       : { pinned: pinned.filter((p) => p !== id), hidden: [...hidden, id], order };
+    editedSinceHydrate.sidebar = true;
     writeMirror(LAYOUT_SIDEBAR_KEY, next);
     set({ sidebar: next });
     void persist({ sidebar: next });
@@ -114,6 +133,7 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
 
   setSidebarOrder: (order) => {
     const next: SidebarPref = { ...get().sidebar, order };
+    editedSinceHydrate.sidebar = true;
     writeMirror(LAYOUT_SIDEBAR_KEY, next);
     set({ sidebar: next });
     void persist({ sidebar: next });
@@ -121,12 +141,14 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
 
   resetSidebar: () => {
     const next: SidebarPref = { pinned: [], hidden: [], order: [] };
+    editedSinceHydrate.sidebar = true;
     writeMirror(LAYOUT_SIDEBAR_KEY, next);
     set({ sidebar: next });
     void persist({ sidebar: next });
   },
 
   setHomeStack: (stack) => {
+    editedSinceHydrate.homeStack = true;
     writeMirror(LAYOUT_HOMESTACK_KEY, stack);
     set({ homeStack: stack });
     void persist({ homeStack: stack });

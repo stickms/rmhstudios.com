@@ -535,6 +535,34 @@ function createWatcher(doc: Document, win: NonNullable<Document['defaultView']>)
     attributes: true,
     attributeFilter: [...JELLY_ENV_ATTRIBUTES],
   });
+  // `hardOff` also reads the app tier's high-contrast class, which lives on an app shell inside <body>, not on
+  // <html>: watch the body too (as `lib/liquid/runtime.ts` does), and notify only when its presence flips.
+  const contrastOn = () =>
+    typeof doc.querySelector === 'function' && !!doc.querySelector(APP_HIGH_CONTRAST_SELECTOR);
+  let highContrast = contrastOn();
+  const contrastObserver = new win.MutationObserver((records) => {
+    if (
+      records?.length &&
+      !records.some(
+        (r) =>
+          r.type === 'childList' ||
+          (r.target as Element).matches?.(`.app-theme,${APP_HIGH_CONTRAST_SELECTOR}`),
+      )
+    )
+      return;
+    const next = contrastOn();
+    if (next === highContrast) return;
+    highContrast = next;
+    notify();
+  });
+  if (doc.body) {
+    contrastObserver.observe(doc.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+  }
   doc.addEventListener('visibilitychange', notify);
   return {
     doc,
@@ -542,6 +570,7 @@ function createWatcher(doc: Document, win: NonNullable<Document['defaultView']>)
     dispose: () => {
       for (const q of queries) q.removeEventListener('change', notify);
       observer.disconnect();
+      contrastObserver.disconnect();
       doc.removeEventListener('visibilitychange', notify);
     },
   };

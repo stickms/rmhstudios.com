@@ -102,6 +102,13 @@ const CAPTURE_TIMEOUT_MS = 4000;
 const SCALE_CAP = 1.25;
 /** After this many failures in a row the provider stops trying until the page changes route. */
 const MAX_FAILURES = 3;
+/**
+ * A request that finds the gate closed (`canCapture()` false: mid-scroll, the hub open, the app tier's high contrast)
+ * is retried after this, doubling up to {@link GATE_RETRY_MAX_MS}, until it runs. Not every gate has an opening edge
+ * that re-requests, so returning without one lost the request for good.
+ */
+const GATE_RETRY_MS = 1000;
+const GATE_RETRY_MAX_MS = 8000;
 
 export interface SceneProvider {
   /** Ask for a fresh picture once things settle. Cheap; coalesces. */
@@ -123,6 +130,7 @@ export function createSceneProvider(options: SceneOptions): SceneProvider {
   let pending = false;
   let lastAt = -Infinity;
   let failures = 0;
+  let gateWaits = 0;
   let disposed = false;
   let session: { captureViewport: (o: unknown) => Promise<unknown>; dispose: () => void } | null =
     null;
@@ -158,7 +166,14 @@ export function createSceneProvider(options: SceneOptions): SceneProvider {
       pending = true;
       return;
     }
-    if (failures >= MAX_FAILURES || !options.canCapture()) return;
+    if (failures >= MAX_FAILURES) return;
+    if (!options.canCapture()) {
+      // Still owed: look again once the gate may have opened.
+      schedule(Math.min(GATE_RETRY_MAX_MS, GATE_RETRY_MS * 2 ** gateWaits));
+      gateWaits = Math.min(gateWaits + 1, 8);
+      return;
+    }
+    gateWaits = 0;
     const policy = options.policy ? options.policy() : SCENE_POLICY.full;
     if (!policy) return;
     const wait =

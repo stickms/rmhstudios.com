@@ -148,12 +148,16 @@ export class JellyGovernor {
   /**
    * @param tier picks the cost target ({@link GOVERNOR_COST_TARGET_MS}).
    * @param baseClockHz the clock the tier would run before any step (the interval rule uses the CURRENT clock).
+   * @param startStep the step to start from: a governor rebuilt for a new base clock within the same route keeps the
+   *   step its predecessor reached (never back up within a route). It warms up again either way.
    */
   constructor(
     tier: JellyTier,
     private readonly baseClockHz: number,
+    startStep = 0,
   ) {
     this.costTargetMs = GOVERNOR_COST_TARGET_MS[tier];
+    this._step = Math.max(0, Math.min(GOVERNOR_MAX_STEP, Math.floor(startStep)));
   }
 
   /** The clock in force at the current step. */

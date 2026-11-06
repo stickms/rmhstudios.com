@@ -221,7 +221,12 @@ export class DoughBody {
         this.version++;
         return true;
       })
-      .catch(() => false);
+      .catch(() => false)
+      .then((ok) => {
+        // Not loaded: forget it so a later call can try again (`wasmModule` bounds the fetches).
+        if (!ok) this.wasmLoading = undefined;
+        return ok;
+      });
     return this.wasmLoading;
   }
 

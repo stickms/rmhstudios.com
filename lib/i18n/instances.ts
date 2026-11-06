@@ -110,19 +110,35 @@ async function backfillLocaleRest(locale: Locale): Promise<void> {
 }
 
 /**
+ * The latest requested switch. A switch A→B made while A's chunk is still in
+ * flight must not be undone when that chunk lands: only the newest request may
+ * call `changeLanguage`.
+ */
+let switchGen = 0;
+
+/**
  * Pull a language's chunk in (if not already present) and switch to it. en
  * renders from its defaults immediately and backfills; every other language
- * resolves to its own dynamically-imported chunk.
+ * resolves to its own dynamically-imported chunk. A failed chunk load keeps the
+ * current language (and is retried by the next switch) instead of surfacing as
+ * an unhandled rejection.
  */
-async function loadAndSwitch(locale: Locale): Promise<void> {
-  if (locale === DEFAULT_LOCALE) void backfillEn();
-  else if (!clientI18n.hasResourceBundle(locale, 'common')) {
-    const bundle = await LOCALE_LOADERS[locale]();
-    for (const [ns, data] of Object.entries(bundle)) {
-      clientI18n.addResourceBundle(locale, ns, data, true, true);
+async function loadAndSwitch(locale: Locale, gen: number): Promise<void> {
+  try {
+    if (locale === DEFAULT_LOCALE) void backfillEn();
+    else if (!clientI18n.hasResourceBundle(locale, 'common')) {
+      const bundle = await LOCALE_LOADERS[locale]();
+      // Registering a superseded locale's bundle is harmless (it is cached for
+      // a later switch); switching to it is not.
+      for (const [ns, data] of Object.entries(bundle)) {
+        clientI18n.addResourceBundle(locale, ns, data, true, true);
+      }
     }
+    if (gen !== switchGen) return;
+    if (clientI18n.language !== locale) await clientI18n.changeLanguage(locale);
+  } catch (error) {
+    console.warn(`[i18n] Could not load locale "${locale}"`, error);
   }
-  if (clientI18n.language !== locale) await clientI18n.changeLanguage(locale);
 }
 
 /**
@@ -150,10 +166,13 @@ export function ensureClientLocale(locale: Locale, initialResources?: LocaleBund
       // off the critical path; without one (client-only render path), load the
       // whole locale chunk and switch.
       if (initialResources) void backfillLocaleRest(locale);
-      else void loadAndSwitch(locale);
+      else void loadAndSwitch(locale, ++switchGen);
     }
-  } else if (clientI18n.language !== locale) {
-    void loadAndSwitch(locale);
+  } else {
+    // Every request supersedes any switch still in flight — including a switch
+    // back to the language already active (A→B→A while B's chunk loads).
+    const gen = ++switchGen;
+    if (clientI18n.language !== locale) void loadAndSwitch(locale, gen);
   }
   return clientI18n;
 }

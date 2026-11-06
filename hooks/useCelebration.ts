@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 
 type CelebrationKind = 'confetti' | 'fireworks';
@@ -34,10 +34,25 @@ function themeColors(): string[] {
  * - Defaults to theme-accent colors so it matches the active theme.
  */
 export function useCelebration() {
+  // The fireworks burst runs a short self-terminating frame loop; an unmount mid-burst cancels it (and a burst whose
+  // chunk lands after unmount never starts).
+  const life = useRef({ alive: true, frames: new Set<number>() });
+  useEffect(() => {
+    const l = life.current;
+    l.alive = true;
+    return () => {
+      l.alive = false;
+      for (const id of l.frames) cancelAnimationFrame(id);
+      l.frames.clear();
+    };
+  }, []);
+
   return useCallback(async (options: CelebrationOptions = {}) => {
     if (prefersReducedMotion() || typeof window === 'undefined') return;
+    const l = life.current;
     try {
       const confetti = (await import('canvas-confetti')).default;
+      if (!l.alive) return;
       const colors = options.colors ?? themeColors();
       const origin = { x: options.origin?.x ?? 0.5, y: options.origin?.y ?? 0.6 };
       // The jelly discharges at the burst's origin. `dischargeAt` applies every arc gate and the flash ledger, and
@@ -50,9 +65,15 @@ export function useCelebration() {
 
       if (options.kind === 'fireworks') {
         const end = Date.now() + 800;
+        let id = 0;
         const frame = () => {
+          l.frames.delete(id);
+          if (!l.alive) return;
           confetti({ particleCount: 40, spread: 70, startVelocity: 45, origin, colors });
-          if (Date.now() < end) requestAnimationFrame(frame);
+          if (Date.now() < end) {
+            id = requestAnimationFrame(frame);
+            l.frames.add(id);
+          }
         };
         frame();
         return;
