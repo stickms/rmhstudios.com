@@ -58,7 +58,10 @@ Consequences:
     token attaches `socket.data.userId/userName/avatarUrl`.
   - **Handler contract**: `handlers/<game>.ts` exports
     `register<Game>Handlers(io, socket)` + `handle<Game>Disconnect(io,
-socket)` (casino games also `initialize<Game>(io)` at boot). Registered
+socket)` (casino games also `initialize<Game>(io)` at boot, and a
+    `…OnShutdown()` that `shutdown()` in `index.ts` calls before `io.close()` to
+    refund every debited-but-unsettled stake and kill the tables — contract in
+    `handlers/casino-shutdown.ts`; a new casino game needs one). Registered
     per-connection in `index.ts`. Isolation is by event-name prefix
     (`rmhtype:*`, `altair:*`, `bj:*`, …) + socket.io rooms — **no namespaces**.
   - The rate-limit rule map in `config.ts` doubles as the catalog of valid

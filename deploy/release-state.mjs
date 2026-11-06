@@ -25,11 +25,28 @@ function atomicWrite(dir, name, value) {
     try { fsyncSync(directory); } finally { closeSync(directory); }
   }
 }
+/**
+ * Phases after which deploy.sh never records again for the same release id:
+ * `success` and `fail` are written by update_deploy_status, which is always
+ * followed by exit (and DEPLOY_REPORTED=1 keeps the exit trap from adding a
+ * `fail`); `superseded` is followed by `exit 0`. A rollback of a successful
+ * release runs under a NEW id (the post-deploy guard unsets DEPLOY_RELEASE_ID;
+ * the webhook uses `release-rollback-…`), and the webhook refuses an id the
+ * journal already holds. So a write after one of these can only come from a
+ * second process reusing the id, and must not rewrite the outcome CI reads.
+ *
+ * `rolledback` is deliberately NOT terminal: a web auto-rollback records it
+ * twice (hotswap-web.sh's `::deploy-event::rolledback`, then
+ * `update_deploy_status rolledback`, a bare call under `set -e`), and a lost
+ * hotswap exit code turns the second record into `fail`.
+ */
+export const TERMINAL_PHASES = new Set(['success', 'fail', 'superseded']);
 export function recordRelease(dir, id, sha, phase, now = Date.now()) {
   if (!releaseIdPattern.test(id) || !id.startsWith('release-') || !shaPattern.test(sha)) throw new Error('Invalid release identity');
   if (!/^[a-z][a-z0-9-]{0,47}$/.test(phase)) throw new Error('Invalid release phase');
   const existing = readState(dir, id);
   if (existing && existing.sha !== sha) throw new Error('Release SHA cannot change');
+  if (existing && TERMINAL_PHASES.has(existing.phase)) throw new Error(`Release already ended (${existing.phase}); refusing ${phase}`);
   const state = existing ?? { id, sha, requestedAt: Number(process.env.DEPLOY_REQUESTED_AT || Math.floor(now / 1000)) * 1000, previous: readState(dir, 'live'), events: [] };
   // A queued request may outlive another deployment. Its rollback snapshot must
   // describe the release serving when it acquires the lock, not when it queued.

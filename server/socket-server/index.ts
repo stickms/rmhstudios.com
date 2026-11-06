@@ -43,25 +43,30 @@ import {
   handleBlackjackDisconnect,
   initializeBlackjackPublicTable,
   listPublicRooms as listBlackjackRooms,
+  refundBlackjackOnShutdown,
 } from './handlers/blackjack';
 import {
   registerHoldemHandlers,
   handleHoldemDisconnect,
   initializeHoldem,
   listPublicRooms as listHoldemRooms,
+  cashOutHoldemOnShutdown,
 } from './handlers/holdem';
 import {
   registerBaccaratHandlers,
   handleBaccaratDisconnect,
   initializeBaccarat,
   listPublicRooms as listBaccaratRooms,
+  refundBaccaratOnShutdown,
 } from './handlers/baccarat';
 import {
   registerRouletteHandlers,
   handleRouletteDisconnect,
   initializeRoulette,
   listPublicRooms as listRouletteRooms,
+  refundRouletteOnShutdown,
 } from './handlers/roulette';
+import { CASINO_SHUTDOWN_DEADLINE_MS } from './handlers/casino-shutdown';
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
 import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/doctrine';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
@@ -561,8 +566,9 @@ io.on('connection', (socket) => {
     // During shutdown io.close() disconnects everyone at once. Handlers whose
     // disconnect only holds in-memory state for a reconnect (grace windows,
     // queue seats, lobby cleanup timers) are skipped — the process is going
-    // away. Everything that settles money or persists state (casino refunds and
-    // cash-outs, calls, resumable games) still runs.
+    // away. Everything that persists state (calls, resumable games) still runs.
+    // The casino handlers still run too, but find nothing: shutdown() refunded
+    // their stakes and emptied their tables before calling io.close().
     if (!shuttingDown) handleMatchmakingDisconnect(socket);
     void handleCallDisconnect(io, socket);
     void handleGroupCallDisconnect(io, socket);
@@ -606,23 +612,55 @@ function shutdown(signal: string): void {
   shuttingDown = true;
   logger.info({ event: 'shutdown_initiated', signal });
 
-  io.close(() => {
-    logger.info({ event: 'sockets_closed' });
-  });
-
-  httpServer.close(() => {
-    logger.info({ event: 'http_server_closed' });
-    const cleanup = Promise.all([
-      disconnectPrisma(),
-      authPool ? authPool.end() : Promise.resolve(),
-    ]);
-    cleanup.finally(() => process.exit(0));
-  });
-
+  // Armed first, so nothing below can leave the process without a deadline.
   setTimeout(() => {
     logger.error({ event: 'forced_shutdown', reason: 'timeout' });
     process.exit(1);
   }, config.SHUTDOWN_TIMEOUT_MS);
+
+  // Casino stakes live only in this process. Each module claims every stake
+  // that is debited but unsettled (bets in a round in progress, Hold'em stacks
+  // and pot contributions) SYNCHRONOUSLY inside this call and marks its tables
+  // dead, so it must run before io.close(): the disconnect fan-out that follows
+  // then finds nothing to cash out, and no payout timer can pay a refunded
+  // stake. The credits themselves are awaited below, before Prisma closes.
+  // Bounded to half the force-exit window (Docker's default 10s stop grace —
+  // the socket service sets no stop_grace_period) so the pool still closes.
+  const casinoDeadlineMs = Math.min(CASINO_SHUTDOWN_DEADLINE_MS, config.SHUTDOWN_TIMEOUT_MS / 2);
+  const refundCasino = (game: string, run: (deadlineMs: number) => Promise<unknown>) => {
+    try {
+      return run(casinoDeadlineMs);
+    } catch (err) {
+      // A throw here must not stop the other tables, or io.close() below.
+      logger.error({ event: 'casino_shutdown_error', game, error: String(err) });
+      return Promise.resolve();
+    }
+  };
+  const casinoRefunds = Promise.allSettled([
+    refundCasino('blackjack', refundBlackjackOnShutdown),
+    refundCasino('roulette', refundRouletteOnShutdown),
+    refundCasino('baccarat', refundBaccaratOnShutdown),
+    refundCasino('holdem', cashOutHoldemOnShutdown),
+  ]);
+
+  io.close(() => {
+    logger.info({ event: 'sockets_closed' });
+  });
+
+  const httpClosed = new Promise<void>((resolve) => {
+    httpServer.close(() => {
+      logger.info({ event: 'http_server_closed' });
+      resolve();
+    });
+  });
+
+  // Prisma closes only after the refunds have landed (or hit their deadline).
+  void Promise.all([casinoRefunds, httpClosed])
+    .then(() =>
+      Promise.all([disconnectPrisma(), authPool ? authPool.end() : Promise.resolve()]),
+    )
+    .catch((err: unknown) => logger.error({ event: 'shutdown_cleanup_error', error: String(err) }))
+    .finally(() => process.exit(0));
 }
 
 process.on('SIGINT', () => shutdown('SIGINT'));

@@ -18,6 +18,12 @@ import {
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
 import {
+  InFlight,
+  settleShutdownClaims,
+  type ShutdownRefundSummary,
+  type StakeClaim,
+} from './casino-shutdown';
+import {
   type Card,
   createShoe,
   handValue,
@@ -91,6 +97,11 @@ interface BaccaratRoom {
   // the gap started betting and the stray timer then restarted it, zeroing
   // every debited bet.
   restartTimer: ReturnType<typeof setTimeout> | null;
+  // True from the moment resolveRound has computed this round's payouts (its
+  // settlement transaction then owns every bet) until the next betting phase.
+  // The phase stays 'dealing'/'drawing' across that await, so shutdown reads
+  // this to tell a deal still owed a refund from one already being paid.
+  settling: boolean;
   roundNumber: number;
   bettingDeadline: number | null;
   history: BaccaratResult[];
@@ -102,6 +113,10 @@ const rooms = new Map<string, BaccaratRoom>();
 const socketToUserId = new Map<string, string>();
 const userToRoom = new Map<string, string>();
 let ioRef: Server;
+// Set once by refundBaccaratOnShutdown(): from then on no room is live.
+let closing = false;
+// Debits, refunds and payout transactions still awaiting the database.
+const inFlight = new InFlight();
 
 // Socket.io room that lobby browsers join so room-list updates reach only the
 // clients currently viewing the lobby — not every connected socket on the
@@ -239,9 +254,12 @@ function roundInProgress(room: BaccaratRoom): boolean {
   return room.phase !== 'idle' && room.phase !== 'betting';
 }
 
-/** The room is still the live one for this id (not destroyed while we awaited). */
+/**
+ * The room is still the live one for this id (not destroyed while we awaited),
+ * and the hub is not shutting down (its stakes were refunded at shutdown).
+ */
 function isLive(room: BaccaratRoom): boolean {
-  return rooms.get(room.roomId) === room;
+  return !closing && rooms.get(room.roomId) === room;
 }
 
 /** The async deal for `round` may continue (room alive, same round, still dealing). */
@@ -254,7 +272,11 @@ function stillDealing(room: BaccaratRoom, round: number): boolean {
 }
 
 /** Return a stake that never reached a deal. Errors are logged, never thrown. */
-async function refundStake(room: BaccaratRoom, userId: string, amount: number, note: string) {
+function refundStake(room: BaccaratRoom, userId: string, amount: number, note: string) {
+  return inFlight.track(refundStakeNow(room, userId, amount, note));
+}
+
+async function refundStakeNow(room: BaccaratRoom, userId: string, amount: number, note: string) {
   if (amount <= 0) return;
   try {
     const prisma = getPrismaClient();
@@ -298,6 +320,7 @@ function startBettingPhase(room: BaccaratRoom) {
   }
 
   room.phase = 'betting';
+  room.settling = false;
   room.roundNumber++;
   room.playerHand = [];
   room.bankerHand = [];
@@ -399,7 +422,7 @@ async function dealCards(room: BaccaratRoom) {
 
   if (playerNat || bankerNat) {
     // No drawing phase — go straight to results
-    resolveRound(room);
+    void inFlight.track(resolveRound(room));
     return;
   }
 
@@ -427,7 +450,7 @@ async function dealCards(room: BaccaratRoom) {
   if (!stillDealing(room, round)) return;
   }
 
-  resolveRound(room);
+  void inFlight.track(resolveRound(room));
 }
 
 async function revealCard(
@@ -451,6 +474,8 @@ async function revealCard(
 
 async function resolveRound(room: BaccaratRoom) {
   if (!isLive(room) || (room.phase !== 'dealing' && room.phase !== 'drawing')) return;
+  // From here the settlement below owns every bet on the table (see `settling`).
+  room.settling = true;
   const result = determineResult(room.playerHand, room.bankerHand);
   const sideBets = calculateSideBets(room.playerHand, room.bankerHand, result);
 
@@ -717,6 +742,7 @@ function onCreateRoom(socket: Socket, payload: unknown) {
     bettingTimer: null,
     resultsTimer: null,
     restartTimer: null,
+    settling: false,
     roundNumber: 0,
     bettingDeadline: null,
     history: [],
@@ -1166,8 +1192,8 @@ export function registerBaccaratHandlers(io: Server, socket: Socket): void {
   socket.on(C2S.LEAVE_ROOM, () => onLeaveRoom(socket));
   socket.on(C2S.UPDATE_ROOM, (payload) => onUpdateRoom(socket, payload));
 
-  socket.on(C2S.PLACE_BET, (payload) => onPlaceBet(socket, payload));
-  socket.on(C2S.CLEAR_BETS, () => onClearBets(socket));
+  socket.on(C2S.PLACE_BET, (payload) => inFlight.track(onPlaceBet(socket, payload)));
+  socket.on(C2S.CLEAR_BETS, () => inFlight.track(onClearBets(socket)));
 }
 
 export function handleBaccaratDisconnect(_io: Server, socket: Socket): void {
@@ -1200,4 +1226,50 @@ export function handleBaccaratDisconnect(_io: Server, socket: Socket): void {
     // Mid-round: keep the player seat so they get payouts, just remove socket mapping
     socketToUserId.delete(socket.id);
   }
+}
+
+// ── Shutdown ───────────────────────────────────────────────────────
+
+/**
+ * Hub shutdown: refund every bet on a table that is betting or dealing and has
+ * not started settling, then kill every room. A round whose payout transaction
+ * is already in flight (`settling`) is left to it — that transaction computed
+ * every seat's credit before awaiting, and shutdown waits for it via
+ * `inFlight`. `results` is settled; `idle` holds no bets.
+ *
+ * Exactly-once: bets are read and zeroed synchronously, before anything
+ * awaits, and `closing` makes every room not-live, so the deal's reveal steps
+ * (`stillDealing`), resolveRound, the results sweep, leave/disconnect and the
+ * post-debit re-checks can no longer reach them. A bet whose debit is still in
+ * flight is not on the seat yet; its handler refunds it when it sees the room
+ * is gone, and the returned promise waits for that too.
+ */
+export function refundBaccaratOnShutdown(deadlineMs?: number): Promise<ShutdownRefundSummary> {
+  closing = true;
+  const claims: StakeClaim[] = [];
+  for (const room of rooms.values()) {
+    clearTimers(room);
+    const unsettled =
+      room.phase === 'betting' ||
+      ((room.phase === 'dealing' || room.phase === 'drawing') && !room.settling);
+    for (const p of room.players.values()) {
+      const amount = unsettled ? totalBets(p.bets) : 0;
+      p.bets = emptyBets();
+      p.totalBetThisRound = 0;
+      if (amount > 0) {
+        claims.push({
+          game: 'baccarat',
+          roomId: room.roomId,
+          userId: p.userId,
+          amount,
+          round: room.roundNumber,
+          detail: `phase=${room.phase}`,
+        });
+      }
+    }
+  }
+  rooms.clear();
+  userToRoom.clear();
+  socketToUserId.clear();
+  return settleShutdownClaims('baccarat', claims, inFlight, deadlineMs);
 }
