@@ -15,7 +15,7 @@ import { logger } from './logger';
 import { S2C } from '../../lib/rmhbox/events';
 import { getEligibleMinigames } from '../../lib/rmhbox/minigame-registry';
 import { VOTE_CANDIDATE_COUNT, VOTE_DURATION_SECONDS, MIN_PLAYERS } from '../../lib/rmhbox/constants';
-import { validated, StartVoteSchema, CastVoteSchema, ForceSkipSchema } from './schemas';
+import { validated, StartVoteSchema, CastVoteSchema } from './schemas';
 import type { VoteCandidate, VoteStartedPayload, VoteCastPayload, VoteResultPayload } from '../../lib/rmhbox/types';
 
 // ─── Active Vote State ───────────────────────────────────────────
@@ -42,6 +42,25 @@ export class VoteManager {
     this.io = io;
     this.lobbyManager = lobbyManager;
     this.gameCoordinator = gameCoordinator;
+    // Force-skip arrives through the coordinator's single listener, which
+    // dispatches VOTING here (two listeners made it order-dependent).
+    this.gameCoordinator.setVoteSkipHandler((lobbyId) => {
+      const lobby = this.lobbyManager.getLobby(lobbyId);
+      if (!lobby || lobby.state !== 'VOTING') return;
+      logger.info({ event: 'vote_force_skipped', lobbyId });
+      this.resolveVote(lobbyId);
+    });
+    // Session end / disband: drop the vote and its timers.
+    this.lobbyManager.onTeardown((lobbyId) => this.cancelVote(lobbyId));
+  }
+
+  /** Drop a lobby's active vote and clear its timers (no result). */
+  cancelVote(lobbyId: string): void {
+    const activeVote = this.activeVotes.get(lobbyId);
+    if (!activeVote) return;
+    clearTimeout(activeVote.timer);
+    if (activeVote.graceTimer) clearTimeout(activeVote.graceTimer);
+    this.activeVotes.delete(lobbyId);
   }
 
   // ─── Connection Handler ──────────────────────────────────────
@@ -49,7 +68,8 @@ export class VoteManager {
   handleConnection(socket: Socket): void {
     socket.on('rmhbox:game:start_vote', validated(socket, 'rmhbox:game:start_vote', StartVoteSchema, (s, d) => this.onStartVote(s, d)));
     socket.on('rmhbox:game:cast_vote', validated(socket, 'rmhbox:game:cast_vote', CastVoteSchema, (s, d) => this.onCastVote(s, d)));
-    socket.on('rmhbox:game:force_skip', validated(socket, 'rmhbox:game:force_skip', ForceSkipSchema, (s, d) => this.forceSkip(s, d)));
+    // rmhbox:game:force_skip is NOT registered here: GameCoordinator owns the
+    // event and dispatches VOTING through setVoteSkipHandler (see constructor).
   }
 
   // ─── Vote Initiation (§1.2) ──────────────────────────────────
@@ -211,6 +231,13 @@ export class VoteManager {
   resolveVote(lobbyId: string): void {
     const activeVote = this.activeVotes.get(lobbyId);
     if (!activeVote) return;
+    // A vote only resolves out of VOTING; anything else (session ended,
+    // disbanded) drops it instead of starting a game over that state.
+    const current = this.lobbyManager.getLobby(lobbyId);
+    if (!current || current.state !== 'VOTING') {
+      this.cancelVote(lobbyId);
+      return;
+    }
 
     clearTimeout(activeVote.timer);
     if (activeVote.graceTimer) clearTimeout(activeVote.graceTimer);
@@ -243,6 +270,7 @@ export class VoteManager {
 
   // ─── Host Force-Skip (§1.5) ──────────────────────────────────
 
+  /** Kept for direct callers; the socket event is dispatched by GameCoordinator. */
   forceSkip(socket: Socket, payload: { lobbyId: string }): void {
     const userId = socket.data.userId as string;
     const lobby = this.lobbyManager.getLobbyByUserId(userId);

@@ -49,8 +49,17 @@ const SCRAPE_ENABLED = process.env.HOMES_SCRAPE_ENABLED !== 'false';
 
 let running = false;
 
+/** Set once shutdown begins: no new run (cron or bootstrap) starts. */
+let stopping = false;
+
+/** Docker's default stop grace is 10s; give up waiting on a run well inside it. */
+const SHUTDOWN_DEADLINE_MS = (() => {
+  const n = Number(process.env.HOMES_SHUTDOWN_DEADLINE_MS);
+  return Number.isInteger(n) && n > 0 ? n : 8_000;
+})();
+
 async function tick() {
-  if (!SCRAPE_ENABLED) return;
+  if (!SCRAPE_ENABLED || stopping) return;
   if (running) {
     console.log('[homes-worker] Tick skipped — previous run still in flight');
     return;
@@ -82,7 +91,7 @@ async function tick() {
 // no external listings yet. Every step is idempotent and skipped once done.
 
 async function bootstrap() {
-  if (!SCRAPE_ENABLED || running) return;
+  if (!SCRAPE_ENABLED || running || stopping) return;
   running = true;
   try {
     const sourceCount = await prisma.homeSource.count();
@@ -119,23 +128,36 @@ void bootstrap();
 // ─── Graceful shutdown ──────────────────────────────────────────
 
 async function shutdown(signal: string) {
+  // Re-entrant: a second signal must not stop the task / start a second wait.
+  if (stopping) return;
+  stopping = true;
   console.log(`[homes-worker] ${signal} received, shutting down...`);
 
   await task.stop();
 
   if (running) {
     console.log('[homes-worker] Waiting for in-flight run to complete...');
-    await new Promise<void>((resolve) => {
+    const drained = await new Promise<boolean>((resolve) => {
+      const deadline = setTimeout(() => {
+        clearInterval(interval);
+        resolve(false);
+      }, SHUTDOWN_DEADLINE_MS);
       const interval = setInterval(() => {
         if (!running) {
           clearInterval(interval);
-          resolve();
+          clearTimeout(deadline);
+          resolve(true);
         }
       }, 500);
     });
+    if (!drained) {
+      console.error(
+        `[homes-worker] In-flight run did not finish within ${SHUTDOWN_DEADLINE_MS}ms — exiting anyway`,
+      );
+    }
   }
 
-  await prisma.$disconnect();
+  await prisma.$disconnect().catch(() => undefined);
   process.exit(0);
 }
 

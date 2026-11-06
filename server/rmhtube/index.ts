@@ -123,8 +123,16 @@ roomManager.startGarbageCollector();
 /** Upper bound on a chat flush during shutdown; well inside SHUTDOWN_TIMEOUT_MS. */
 const FLUSH_BOUND_MS = Math.max(1_000, Math.floor(config.SHUTDOWN_TIMEOUT_MS / 2));
 
+let shuttingDown = false;
+
 function shutdown(signal: string): void {
+  // A second signal must not re-run the flushes or arm a second exit timer.
+  if (shuttingDown) return;
+  shuttingDown = true;
   logger.info({ event: 'shutdown_initiated', signal });
+  // io.close() disconnects every socket: those must not start grace timers
+  // or write member-leave rows as if the whole room had walked out.
+  roomManager.shuttingDown = true;
 
   io.close(() => {
     logger.info({ event: 'sockets_closed' });

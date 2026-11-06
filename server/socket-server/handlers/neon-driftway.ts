@@ -51,6 +51,27 @@ function broadcastLobby(io: Server, lobbyId: string): void {
   });
 }
 
+/**
+ * End the race once every remaining racer has finished. Run on finish AND on
+ * leave/disconnect: a racer who dropped mid-race used to leave the lobby stuck
+ * in PLAYING forever, because the all-finished check only ran on a finish.
+ * (The status goes straight back to WAITING; 'FINISHED' is never used.)
+ */
+function maybeEndRace(io: Server, roomId: string, lobby: NDWLobby): void {
+  if (lobby.status !== 'PLAYING' || lobby.players.size === 0) return;
+  if (!Array.from(lobby.players.values()).every((p) => p.finished)) return;
+  lobby.status = 'WAITING';
+  const rankings = Array.from(lobby.players.values())
+    .sort((a, b) => b.score - a.score)
+    .map((p, i) => ({ id: p.id, name: p.name, score: p.score, rank: i + 1 }));
+  io.to(`ndw:${roomId}`).emit('ndw:gameOver', { rankings });
+  lobby.players.forEach((p) => {
+    p.ready = false;
+    p.finished = false;
+  });
+  broadcastLobby(io, roomId);
+}
+
 export function registerNeonDriftwayHandlers(io: Server, socket: Socket): void {
   socket.on('ndw:joinLobby', (payload: { roomId?: string; playerName?: string }) => {
     const roomId = sanitizeLobbyId(payload?.roomId);
@@ -107,7 +128,8 @@ export function registerNeonDriftwayHandlers(io: Server, socket: Socket): void {
       levelId: lobby.levelId,
     });
     setTimeout(() => {
-      if (lobby.status !== 'COUNTDOWN') return;
+      // The lobby may have emptied (and the id been reused) during the countdown.
+      if (ndwLobbies.get(roomId) !== lobby || lobby.status !== 'COUNTDOWN') return;
       lobby.status = 'PLAYING';
       io.to(`ndw:${roomId}`).emit('ndw:gameStarted', { levelId: lobby.levelId });
       broadcastLobby(io, roomId);
@@ -186,23 +208,14 @@ export function registerNeonDriftwayHandlers(io: Server, socket: Socket): void {
     const roomId = sanitizeLobbyId(payload?.roomId);
     const lobby = ndwLobbies.get(roomId);
     if (!lobby) return;
+    // Only a racer in a running race can finish (and only once).
+    if (lobby.status !== 'PLAYING') return;
     const player = lobby.players.get(socket.id);
-    if (!player) return;
+    if (!player || player.finished) return;
     player.finished = true;
     player.score = typeof payload?.finalScore === 'number' ? payload.finalScore : player.score;
     io.to(`ndw:${roomId}`).emit('ndw:playerDisconnected', { id: socket.id, reason: 'finished' });
-    if (Array.from(lobby.players.values()).every((p) => p.finished)) {
-      lobby.status = 'WAITING';
-      const rankings = Array.from(lobby.players.values())
-        .sort((a, b) => b.score - a.score)
-        .map((p, i) => ({ id: p.id, name: p.name, score: p.score, rank: i + 1 }));
-      io.to(`ndw:${roomId}`).emit('ndw:gameOver', { rankings });
-      lobby.players.forEach((p) => {
-        p.ready = false;
-        p.finished = false;
-      });
-      broadcastLobby(io, roomId);
-    }
+    maybeEndRace(io, roomId, lobby);
   });
 
   socket.on('ndw:leaveLobby', (payload: { roomId?: string }) => {
@@ -216,6 +229,7 @@ export function registerNeonDriftwayHandlers(io: Server, socket: Socket): void {
     } else {
       if (lobby.hostId === socket.id) lobby.hostId = lobby.players.keys().next().value || '';
       broadcastLobby(io, roomId);
+      maybeEndRace(io, roomId, lobby);
     }
   });
 }
@@ -234,6 +248,7 @@ export function handleNeonDriftwayDisconnect(io: Server, socket: Socket): void {
           reason: 'disconnect',
         });
         broadcastLobby(io, roomId);
+        maybeEndRace(io, roomId, lobby);
       }
       break;
     }

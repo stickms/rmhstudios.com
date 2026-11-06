@@ -186,6 +186,10 @@ export class SyncEngine {
 
     const previous = room.videoState;
     const mode = payload.live ? 'live' : 'vod';
+    // While the room is holding for slow peers it is paused; a routine
+    // report from a leader whose player has not yet applied that pause must
+    // not flip it back to playing (only an explicit play edge ends a wait).
+    const playing = room.peerWait.startedAt !== null ? false : payload.playing;
 
     // `rev` marks a DELIBERATE change to the room, not merely a fresher
     // measurement of it — a routine report re-anchors the same intent, so it
@@ -194,14 +198,14 @@ export class SyncEngine {
     // the room, follow it", and bumping it twice a second would have had the
     // leader's own report echo back and undo whatever it had just done.
     const changed =
-      previous.playing !== payload.playing ||
+      previous.playing !== playing ||
       previous.mode !== mode ||
       previous.stalled !== payload.stalled ||
       Math.abs(previous.playbackRate - payload.playbackRate) > 0.01;
 
     room.videoState = {
       mode,
-      playing: payload.playing,
+      playing,
       currentTime: payload.currentTime,
       playbackRate: payload.playbackRate,
       updatedAt: anchoredAt,

@@ -46,4 +46,5 @@ func (p *panicRepo) DueChannels(_ context.Context, _ time.Time) ([]DueChannel, e
 func (p *panicRepo) Participants(_ context.Context, _, _ string) ([]Participant, error) {
 	return nil, nil
 }
-func (p *panicRepo) ClearRecap(_ context.Context, _ string) error { return nil }
+func (p *panicRepo) ClearRecap(_ context.Context, _ string) error                   { return nil }
+func (p *panicRepo) RestoreRecap(_ context.Context, _, _ string, _ time.Time) error { return nil }

@@ -73,6 +73,12 @@ interface TypeRoom {
   countdownTimer: ReturnType<typeof setTimeout> | null;
   progressBroadcastTimer: ReturnType<typeof setInterval> | null;
   nextRoundTimer: ReturnType<typeof setTimeout> | null;
+  /**
+   * The 5-minute round timeout. It was never stored, so it could not be
+   * cleared, and its only guard was state === 'TYPING' — round N's timer
+   * ended round N+1 early. Now stored, cleared, and tagged with the round.
+   */
+  roundTimeoutTimer?: ReturnType<typeof setTimeout> | null;
   roundResults: Array<{ rankings: any[] }>;
   /**
    * True when the passage was written by the AI for a player-chosen topic.
@@ -505,6 +511,14 @@ function cleanupRoomTimers(room: TypeRoom): void {
     clearTimeout(room.nextRoundTimer);
     room.nextRoundTimer = null;
   }
+  clearRoundTimeout(room);
+}
+
+function clearRoundTimeout(room: TypeRoom): void {
+  if (room.roundTimeoutTimer) {
+    clearTimeout(room.roundTimeoutTimer);
+    room.roundTimeoutTimer = null;
+  }
 }
 
 function removeRoom(roomId: string): void {
@@ -685,6 +699,7 @@ function checkAllPlayersFinished(io: Server, room: TypeRoom): void {
 }
 
 function endRound(io: Server, room: TypeRoom): void {
+  clearRoundTimeout(room);
   if (room.progressBroadcastTimer) {
     clearInterval(room.progressBroadcastTimer);
     room.progressBroadcastTimer = null;
@@ -813,7 +828,11 @@ function startRound(io: Server, room: TypeRoom): void {
     startProgressBroadcast(io, room);
 
     // Round timeout
-    setTimeout(() => {
+    clearRoundTimeout(room);
+    const round = room.currentRound;
+    room.roundTimeoutTimer = setTimeout(() => {
+      room.roundTimeoutTimer = null;
+      if (rooms.get(room.roomId) !== room || room.currentRound !== round) return;
       if (room.state === 'TYPING') {
         logger.info({
           event: 'rmhtype_round_timeout',
@@ -1820,7 +1839,10 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       });
 
       // Solo round timeout
-      setTimeout(() => {
+      clearRoundTimeout(soloRoom);
+      soloRoom.roundTimeoutTimer = setTimeout(() => {
+        soloRoom.roundTimeoutTimer = null;
+        if (rooms.get(soloRoomId) !== soloRoom) return;
         if (soloRoom.state === 'TYPING') {
           const soloPlayer = soloRoom.players.get(userId);
           if (soloPlayer && !soloPlayer.finished) {

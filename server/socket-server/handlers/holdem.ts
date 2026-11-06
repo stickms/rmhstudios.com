@@ -76,6 +76,9 @@ interface PlayerSeat {
   lastAction: PlayerAction;
   sittingOut: boolean;
   showCards: Set<number>; // indices of hole cards the player chose to reveal (0 and/or 1)
+  // Per-seat in-flight lock for the rebuy debit, so a double-click can't debit
+  // twice (the second overwrote totalChips, losing one buy-in).
+  rebuying?: boolean;
   sessionStats: {
     totalBuyIn: number;
     totalCashOut: number;
@@ -115,6 +118,9 @@ interface HoldemRoom {
   turnIdx: number;
   turnTimer: ReturnType<typeof setTimeout> | null;
   resultsTimer: ReturnType<typeof setTimeout> | null;
+  // The all-in run-out → endHand delay and the showdown reveal → finish delay.
+  // Both were untracked, so destroyRoom/reapIfEmpty could not cancel them.
+  handTimer: ReturnType<typeof setTimeout> | null;
   handNumber: number;
   lastRaiseAmount: number;
   resultsEndTime: number | null;
@@ -305,6 +311,26 @@ function clearTimers(room: HoldemRoom) {
     clearTimeout(room.resultsTimer);
     room.resultsTimer = null;
   }
+  if (room.handTimer) {
+    clearTimeout(room.handTimer);
+    room.handTimer = null;
+  }
+}
+
+/** The room is still the live one for this id (not destroyed while we awaited). */
+function isLive(room: HoldemRoom): boolean {
+  return rooms.get(room.roomId) === room;
+}
+
+/** Run fn after ms, only if the room is alive and still on the same hand. */
+function scheduleHandStep(room: HoldemRoom, ms: number, fn: () => void) {
+  if (room.handTimer) clearTimeout(room.handTimer);
+  const hand = room.handNumber;
+  room.handTimer = setTimeout(() => {
+    room.handTimer = null;
+    if (!isLive(room) || room.handNumber !== hand) return;
+    fn();
+  }, ms);
 }
 
 function startNewHand(room: HoldemRoom) {
@@ -549,7 +575,7 @@ function dealRemaining(room: HoldemRoom) {
   });
 
   room.phase = 'showdown';
-  setTimeout(() => endHand(room), 1500);
+  scheduleHandStep(room, 1500, () => endHand(room));
 }
 
 // ── Hand Resolution ───────────────────────────────────────────────
@@ -673,13 +699,13 @@ function endHand(room: HoldemRoom) {
     // finished everywhere. The wait is held on the server, so every client
     // reveals together and no client can compute the result early.
     broadcastPersonalizedState(room);
-    setTimeout(() => {
+    scheduleHandStep(room, SHOWDOWN_REVEAL_MS, () => {
       ioRef.to(roomKey(room.roomId)).emit(S2C.HAND_RESULT, {
         results,
         pot: room.pot,
       });
       finish();
-    }, SHOWDOWN_REVEAL_MS);
+    });
   }
 
   // Finalize the hand: move to the results phase, clear the pot, and schedule the
@@ -696,14 +722,17 @@ function endHand(room: HoldemRoom) {
 
     // Sit out busted players, then start next hand
     room.resultsTimer = setTimeout(async () => {
+      room.resultsTimer = null;
       room.resultsEndTime = null;
-      // Remove disconnected/busted players
+      // Remove disconnected/busted players. Each seat is detached BEFORE its
+      // cash-out awaits, so nothing can act on (or cash out) it meanwhile.
+      const leavers: PlayerSeat[] = [];
       for (const [userId, p] of room.players) {
         const sock = ioRef.sockets.sockets.get(p.socketId);
         if (!sock || !sock.connected) {
-          await cashOutPlayer(room, p);
           room.players.delete(userId);
           userToRoom.delete(userId);
+          leavers.push(p);
           continue;
         }
         if (p.totalChips === 0) {
@@ -712,7 +741,9 @@ function endHand(room: HoldemRoom) {
           p.folded = true;
         }
       }
+      for (const p of leavers) await cashOutPlayer(room, p);
 
+      if (!isLive(room) || room.phase !== 'results') return;
       if (room.players.size === 0) {
         destroyRoom(room.roomId);
         return;
@@ -797,23 +828,32 @@ function calculateSidePots(room: HoldemRoom) {
 }
 
 async function cashOutPlayer(room: HoldemRoom, player: PlayerSeat) {
-  if (player.totalChips > 0) {
+  // Claim the chips synchronously: totalChips was never zeroed, so a second
+  // cash-out (leave + disconnect, or the results sweep) credited them again.
+  const amount = player.totalChips;
+  if (amount > 0) {
+    player.totalChips = 0;
     try {
       const prisma = getPrismaClient();
       // Chips returning to the wallet: a faucet, paired with the WAGER sink
       // that took the buy-in, so a table's net coin creation is measurable.
-      await creditCoinsOn(prisma, player.userId, player.totalChips, {
+      await creditCoinsOn(prisma, player.userId, amount, {
         type: 'WAGER',
         entityType: 'holdem',
         entityId: room.roomId,
         note: "Hold'em cash out",
       });
       const coins = await getBalanceOn(prisma, player.userId);
-      player.sessionStats.totalCashOut = player.totalChips;
+      player.sessionStats.totalCashOut = amount;
       const sock = ioRef.sockets.sockets.get(player.socketId);
       if (sock) sock.emit(S2C.BALANCE_UPDATE, { coins });
     } catch (err) {
-      logger.error({ event: 'holdem_cashout_error', userId: player.userId, error: String(err) });
+      logger.error({
+        event: 'holdem_cashout_error',
+        userId: player.userId,
+        amount,
+        error: String(err),
+      });
     }
   }
 }
@@ -919,6 +959,7 @@ async function onCreateRoom(socket: Socket, payload: unknown) {
     turnIdx: 0,
     turnTimer: null,
     resultsTimer: null,
+    handTimer: null,
     handNumber: 0,
     lastRaiseAmount: bigBlind,
     resultsEndTime: null,
@@ -1023,7 +1064,7 @@ async function joinRoom(room: HoldemRoom, socket: Socket) {
   const userName = (socket.data.userName as string) || 'Player';
   const avatarUrl = (socket.data.avatarUrl as string | null) || null;
 
-  const seatIndex = getNextSeatIndex(room);
+  let seatIndex = getNextSeatIndex(room);
   if (seatIndex < 0) {
     socket.emit(S2C.ERROR, { message: 'No seats available.' });
     return;
@@ -1047,6 +1088,23 @@ async function joinRoom(room: HoldemRoom, socket: Socket) {
       });
       return getBalanceOn(tx, userId);
     });
+
+    // Re-check after the await: a double-clicked join already seated this
+    // user (the second seat would overwrite the first and lose its buy-in),
+    // the table filled, or it was torn down. Hand the buy-in back.
+    seatIndex = getNextSeatIndex(room);
+    if (!isLive(room) || room.players.has(userId) || seatIndex < 0) {
+      await creditCoinsOn(getPrismaClient(), userId, room.buyIn, {
+        type: 'WAGER',
+        entityType: 'holdem',
+        entityId: room.roomId,
+        note: "Hold'em buy-in refund (seat unavailable)",
+      }).catch((err) =>
+        logger.error({ event: 'holdem_buyin_refund_error', userId, error: String(err) }),
+      );
+      if (!room.players.has(userId)) socket.emit(S2C.ERROR, { message: 'No seats available.' });
+      return;
+    }
 
     const player: PlayerSeat = {
       seatIndex,
@@ -1157,13 +1215,16 @@ async function leaveRoom(userId: string, socketId: string) {
     player.folded = true;
   }
 
-  // Cash out their chips
-  await cashOutPlayer(room, player);
-
+  // Detach the seat BEFORE the cash-out awaits: while it was still seated a
+  // second leave (leave event + disconnect) or the results sweep could cash
+  // the same chips out again, and the seat could still be acted on.
   const seatIndex = player.seatIndex;
   room.players.delete(userId);
   userToRoom.delete(userId);
   socketToUserId.delete(socketId);
+
+  // Cash out their chips
+  await cashOutPlayer(room, player);
 
   const sock = ioRef.sockets.sockets.get(socketId);
   if (sock) {
@@ -1191,6 +1252,7 @@ async function leaveRoom(userId: string, socketId: string) {
     destroyRoom(roomId);
     return;
   }
+  if (!isLive(room)) return;
 
   broadcastPersonalizedState(room);
   broadcastRoomList();
@@ -1554,11 +1616,12 @@ export function registerHoldemHandlers(io: Server, socket: Socket): void {
     if (!room) return;
     const player = room.players.get(userId);
     if (!player) return;
-    if (player.totalChips > 0) {
+    if (player.totalChips > 0 || player.rebuying) {
       socket.emit(S2C.ERROR, { message: 'You still have chips.' });
       return;
     }
 
+    player.rebuying = true;
     try {
       const prisma = getPrismaClient();
       const result = await prisma.$transaction(async (tx) => {
@@ -1572,6 +1635,21 @@ export function registerHoldemHandlers(io: Server, socket: Socket): void {
         });
         return getBalanceOn(tx, userId);
       });
+
+      // The player may have left (seat detached and cashed out) while the
+      // debit awaited: hand the buy-in straight back instead of crediting a
+      // seat nobody holds.
+      if (!isLive(room) || room.players.get(userId) !== player) {
+        await creditCoinsOn(getPrismaClient(), userId, room.buyIn, {
+          type: 'WAGER',
+          entityType: 'holdem',
+          entityId: room.roomId,
+          note: "Hold'em rebuy refund (left table)",
+        }).catch((err) =>
+          logger.error({ event: 'holdem_rebuy_refund_error', userId, error: String(err) }),
+        );
+        return;
+      }
 
       player.totalChips = room.buyIn;
       player.sessionStats.totalBuyIn += room.buyIn;
@@ -1595,6 +1673,8 @@ export function registerHoldemHandlers(io: Server, socket: Socket): void {
         logger.error({ event: 'holdem_rebuy_error', userId, error: String(err) });
         socket.emit(S2C.ERROR, { message: 'Failed to rebuy.' });
       }
+    } finally {
+      player.rebuying = false;
     }
   });
 
@@ -1717,6 +1797,7 @@ registerPartyGame('holdem', {
       turnIdx: 0,
       turnTimer: null,
       resultsTimer: null,
+      handTimer: null,
       handNumber: 0,
       lastRaiseAmount: bigBlind,
       resultsEndTime: null,
@@ -1734,8 +1815,7 @@ registerPartyGame('holdem', {
     // empty of `players` transiently during teardown, and deleting one that is
     // still running timers would strand them.
     if (!room || room.players.size > 0 || room.phase !== 'waiting') return;
-    if (room.turnTimer) clearTimeout(room.turnTimer);
-    if (room.resultsTimer) clearTimeout(room.resultsTimer);
+    clearTimers(room);
     rooms.delete(roomId);
     logger.info({ event: 'holdem_party_room_reaped', roomId });
   },

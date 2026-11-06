@@ -14,7 +14,7 @@
 import 'dotenv/config';
 import { installProcessGuards } from '../../lib/perf/process-guards';
 
-import { type Job } from 'pg-boss';
+import { type Job, type PgBoss } from 'pg-boss';
 import { createLogger } from '@/server/shared/logger';
 import { startProcessMetrics } from '../../lib/perf/process-metrics';
 import { registerPrismaPoolGauges, startPerfPublisher } from '../../lib/perf/publish.server';
@@ -56,6 +56,37 @@ installProcessGuards({ service: 'jobs' });
 
 const log = createLogger('jobs');
 
+// ─── Shutdown (installed before any startup await) ────────────────
+// The handlers used to be registered at the very end of main(), after every
+// queue registration: a SIGTERM during startup took Node's default (immediate
+// exit, no graceful pg-boss stop) and a second signal re-ran the whole stop.
+let stopping = false;
+let bossRef: PgBoss | null = null;
+const stoppers: Array<() => void> = [];
+
+async function shutdown(sig: string): Promise<void> {
+  if (stopping) return;
+  stopping = true;
+  log.info({ event: 'jobs.stopping', signal: sig });
+  for (const stop of stoppers) {
+    try {
+      stop();
+    } catch {
+      /* best-effort */
+    }
+  }
+  if (bossRef) {
+    try {
+      await bossRef.stop({ graceful: true });
+    } catch {
+      /* best-effort */
+    }
+  }
+  process.exit(0);
+}
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));
+
 async function main() {
   // Process metrics for the admin performance page: sample this worker and publish
   // a snapshot to Redis every 10 s (best-effort; see lib/perf/publish.server.ts).
@@ -75,6 +106,8 @@ async function main() {
     });
     process.exit(1);
   }
+  bossRef = boss;
+  if (stopping) return; // a signal arrived during start; shutdown() stops boss
 
   await boss.work<ProgressionJob>(PROGRESSION_QUEUE, async (jobs: Job<ProgressionJob>[]) => {
     for (const job of jobs) {
@@ -327,25 +360,12 @@ async function main() {
   // On-call app alarms (lib/oncall/checks.server.ts): once a minute, read the
   // fleet's own telemetry and page the watchdog. Also this worker's heartbeat —
   // if the jobs container dies, the silence pages. No-op until ONCALL_* are set.
-  const stopOncall = startOncallChecks();
+  if (stopping) return;
+  stoppers.push(startOncallChecks());
   // One-minute rollups of the fleet's telemetry into ops_metric_minute, for the
   // /admin/alarms graphs (lib/ops/metrics-store.server.ts). Runs regardless of
   // on-call being configured.
-  const stopRollup = startMetricsRollup();
-
-  const shutdown = async (sig: string) => {
-    log.info({ event: 'jobs.stopping', signal: sig });
-    stopOncall();
-    stopRollup();
-    try {
-      await boss.stop({ graceful: true });
-    } catch {
-      /* best-effort */
-    }
-    process.exit(0);
-  };
-  process.on('SIGTERM', () => void shutdown('SIGTERM'));
-  process.on('SIGINT', () => void shutdown('SIGINT'));
+  stoppers.push(startMetricsRollup());
 }
 
 main().catch((e) => {

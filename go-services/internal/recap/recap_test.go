@@ -2,6 +2,7 @@ package recap
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -143,6 +144,8 @@ type fakeRepo struct {
 	due          []DueChannel
 	participants map[string][]Participant // key: guildID|dateKey
 	cleared      []string
+	restored     []string
+	clearErr     error
 }
 
 func (f *fakeRepo) DueChannels(ctx context.Context, now time.Time) ([]DueChannel, error) {
@@ -152,7 +155,14 @@ func (f *fakeRepo) Participants(ctx context.Context, guildID, dateKey string) ([
 	return f.participants[guildID+"|"+dateKey], nil
 }
 func (f *fakeRepo) ClearRecap(ctx context.Context, channelID string) error {
+	if f.clearErr != nil {
+		return f.clearErr
+	}
 	f.cleared = append(f.cleared, channelID)
+	return nil
+}
+func (f *fakeRepo) RestoreRecap(ctx context.Context, channelID, dateKey string, now time.Time) error {
+	f.restored = append(f.restored, channelID)
 	return nil
 }
 
@@ -241,5 +251,41 @@ func TestProcessDueRecaps_ForbiddenStillClears(t *testing.T) {
 	}
 	if len(repo.cleared) != 1 {
 		t.Errorf("expected clear after 403, got %v", repo.cleared)
+	}
+}
+
+// A failed claim (clear) skips the post, so a DB hiccup can never post the same
+// recap again on every tick.
+func TestProcessDueRecaps_ClearFailureDoesNotPost(t *testing.T) {
+	repo := &fakeRepo{
+		due: []DueChannel{{ID: "c1", GuildID: "g1", ChannelID: "ch1", RecapDateKey: "2026-01-15"}},
+		participants: map[string][]Participant{
+			"g1|2026-01-15": {{Username: "a", Status: "completed", Moves: intptr(2)}},
+		},
+		clearErr: errors.New("db down"),
+	}
+	poster := &fakePoster{}
+	r := newTestRunner(repo, poster)
+	_ = r.processDueRecaps(context.Background())
+	if len(poster.posts) != 0 {
+		t.Errorf("posted despite failing to claim the recap: %v", poster.posts)
+	}
+}
+
+// A transport error restores the schedule so the recap is retried, not lost.
+func TestProcessDueRecaps_TransportErrorRestores(t *testing.T) {
+	repo := &fakeRepo{
+		due: []DueChannel{{ID: "c1", GuildID: "g1", ChannelID: "ch1", RecapDateKey: "2026-01-15"}},
+		participants: map[string][]Participant{
+			"g1|2026-01-15": {{Username: "a", Status: "completed", Moves: intptr(2)}},
+		},
+	}
+	poster := &fakePoster{postErr: errors.New("connection reset")}
+	r := newTestRunner(repo, poster)
+	if err := r.processDueRecaps(context.Background()); err != nil {
+		t.Fatalf("processDueRecaps: %v", err)
+	}
+	if len(repo.restored) != 1 || repo.restored[0] != "c1" {
+		t.Errorf("expected c1 restored after a transport error, got %v", repo.restored)
 	}
 }
