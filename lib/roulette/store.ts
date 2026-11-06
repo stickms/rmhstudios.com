@@ -166,8 +166,9 @@ export const useRouletteStore = create<RouletteStore>((set) => ({
     })),
 
   // Local bet staging
+  // Bets can only be staged while the table is taking them.
   addStagedBet: (bet) =>
-    set((s) => ({ stagedBets: [...s.stagedBets, bet] })),
+    set((s) => (s.tablePhase === 'betting' ? { stagedBets: [...s.stagedBets, bet] } : s)),
   clearStagedBets: () => set({ stagedBets: [] }),
 
   setError: (error) => set({ error }),

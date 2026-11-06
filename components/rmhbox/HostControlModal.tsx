@@ -28,6 +28,7 @@ import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
 import { toast } from '@/lib/rmhbox/toast-store';
+import { isInGameLobbyState } from '@/lib/rmhbox/lobby-state';
 
 export default function HostControlModal() {
   const { t } = useTranslation('c-rmhbox');
@@ -75,7 +76,7 @@ export default function HostControlModal() {
   if (!isHost) return null;
 
   const otherPlayers = lobby.players.filter((p) => p.userId !== lobby.myUserId);
-  const isInGame = lobby.state === 'PLAYING' || lobby.state === 'COUNTDOWN' || lobby.state === 'INSTRUCTIONS' || lobby.state === 'PRELOADING' || lobby.state === 'ROUND_RESULTS';
+  const isInGame = isInGameLobbyState(lobby.state);
   const canPromoteSpectators = lobby.state === 'WAITING' || lobby.state === 'ROUND_RESULTS';
 
   return (

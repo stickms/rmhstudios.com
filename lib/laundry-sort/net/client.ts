@@ -98,6 +98,9 @@ function registerHandlers(socket: Socket): void {
 
   socket.on(S2C.START, (payload: MatchStartPayload) => {
     const s = store();
+    // Only a versus lobby member starts a match: a late START after leaving for
+    // the menu or a solo run must not pull the player into it.
+    if (s.mode !== 'versus' || (s.screen !== 'lobby' && s.screen !== 'results' && s.screen !== 'playing')) return;
     s.setCountdown(null);
     s.setResults(null);
     s.setLiveScores([]);
@@ -111,6 +114,9 @@ function registerHandlers(socket: Socket): void {
 
   socket.on(S2C.RESULTS, (results: MatchResults) => {
     const s = store();
+    // Results belong to the versus match on screen, not to whatever the player
+    // moved on to (menu, browse, a solo run).
+    if (s.mode !== 'versus' || (s.screen !== 'playing' && s.screen !== 'results')) return;
     s.setResults(results);
     s.setScreen('results');
   });

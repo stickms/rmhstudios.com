@@ -84,7 +84,15 @@ export function PokerGame({ onClose }: { onClose: () => void }) {
   const debt = useHouseAlwaysWinsStore((s) => s.debt);
   const chips = useHouseAlwaysWinsStore((s) => s.chips);
 
-  const [phase, setPhase] = useState<Phase>("stake");
+  const [phase, setPhaseState] = useState<Phase>("stake");
+  // The phase as of the last transition, read synchronously by deal/draw so two
+  // fast Enters (or a key and a click) cannot settle one hand twice — the
+  // store's debt and chips are persistent.
+  const phaseRef = useRef<Phase>("stake");
+  const setPhase = useCallback((p: Phase) => {
+    phaseRef.current = p;
+    setPhaseState(p);
+  }, []);
   const [stake, setStake] = useState(10);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
   const [aiHand, setAiHand] = useState<Card[]>([]);
@@ -94,6 +102,7 @@ export function PokerGame({ onClose }: { onClose: () => void }) {
   const deckRef = useRef<Card[]>([]);
 
   const deal = useCallback((s: number) => {
+    if (phaseRef.current !== "stake") return;
     const d = makeDeck();
     const p = [d.pop()!, d.pop()!, d.pop()!, d.pop()!, d.pop()!];
     const a = [d.pop()!, d.pop()!, d.pop()!, d.pop()!, d.pop()!];
@@ -106,7 +115,7 @@ export function PokerGame({ onClose }: { onClose: () => void }) {
     setSettleMsg("");
     setPhase("draw");
     SfxManager.play("deal");
-  }, []);
+  }, [setPhase]);
 
   const settle = useCallback((outcome: Showdown["outcome"], s: number) => {
     const st = useHouseAlwaysWinsStore.getState();
@@ -137,6 +146,8 @@ export function PokerGame({ onClose }: { onClose: () => void }) {
   }, []);
 
   const draw = useCallback(() => {
+    if (phaseRef.current !== "draw") return;
+    setPhase("showdown");
     const p2 = drawReplacements(playerHand, hold, deckRef.current);
     const aMask = aiHold(aiHand);
     const a2 = drawReplacements(aiHand, aMask, deckRef.current);
@@ -145,8 +156,7 @@ export function PokerGame({ onClose }: { onClose: () => void }) {
     setAiHand(a2);
     setResult(sd);
     settle(sd.outcome, stake);
-    setPhase("showdown");
-  }, [playerHand, aiHand, hold, stake, settle]);
+  }, [playerHand, aiHand, hold, stake, settle, setPhase]);
 
   const toggleHold = useCallback(
     (i: number) => {
@@ -189,7 +199,7 @@ export function PokerGame({ onClose }: { onClose: () => void }) {
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [phase, toggleHold, draw, deal, onClose]);
+  }, [phase, toggleHold, draw, deal, onClose, setPhase]);
 
   const outcomeColor =
     result?.outcome === "win" ? "#5fd2a0" : result?.outcome === "lose" ? "#c0392b" : "#d4a054";

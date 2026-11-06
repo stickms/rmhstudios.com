@@ -443,6 +443,9 @@ export class StoryManager {
     _openChoice(o) {
         const options = (o.choices || []).map(ch => ({ id: ch.id, label: ch.label, desc: ch.desc }));
         this.hud.showChoice(o.label || 'Choose', options, (id) => {
+            // One answer per prompt: a repeat (double click, a key and a click)
+            // would skip an objective and could pay the mission's rewards twice.
+            if (this.state !== 'awaitChoice') return;
             const choice = (o.choices || []).find(ch => ch.id === id);
             if (choice) this._applyChoiceResult(choice.result);
             this.state = 'running';
@@ -484,6 +487,7 @@ export class StoryManager {
     }
 
     _resolveEnding(ending) {
+        if (this.state === 'done' || this.state === 'failed') return;
         if (ending.id === 'C_sell') this.save.setChoice('finalSell', true);
         this.save.unlockEnding(ending.id);
         if (ending.palette) this.save.unlockPalette(ending.palette);
@@ -501,6 +505,8 @@ export class StoryManager {
     /* ═══ mission resolution ═══ */
 
     _completeMission() {
+        // Terminal states are final until startMission(): never pay twice.
+        if (this.state === 'done' || this.state === 'failed') return;
         this.state = 'done';
         this.mission.clearPursuit();
         this.mission.target = null;
@@ -537,6 +543,7 @@ export class StoryManager {
     }
 
     _failMission() {
+        if (this.state === 'done' || this.state === 'failed') return;
         this.state = 'failed';
         this.mission.clearPursuit();
         this.mission.target = null;

@@ -31,6 +31,7 @@ import { calculateEnemyIntents } from './endTurn';
 // ── Start game: show starter relic choice ──
 
 export function computeStartGame(prev: GameState): GameState {
+  if (prev.phase !== 'landing') return prev;
   const commons = RELIC_CATALOG.filter(r => r.rarity === 'common');
   const shuffled = [...commons].sort(() => Math.random() - 0.5);
   const choices = shuffled.slice(0, 3);
@@ -40,6 +41,7 @@ export function computeStartGame(prev: GameState): GameState {
 // ── Select starter relic and begin first combat ──
 
 export function computeSelectStarterRelic(prev: GameState, relic: RelicTemplate): GameState {
+  if (prev.phase !== 'starter-relic') return prev;
   const newRelic = new Relic({ ...relic, id: Date.now() + Math.floor(Math.random() * 100000) });
   const ownedRelics = [...prev.ownedRelics, newRelic];
 
@@ -56,6 +58,7 @@ export function computeProceedFromShop(prev: GameState): GameState {
 // ── Advance to next floor (after card reward → shop) ──
 
 export function computeNextFloor(prev: GameState): GameState {
+  if (prev.phase !== 'reward') return prev;
   const newFloor = prev.floor + 1;
   const newEnemies = createEnemies(newFloor);
 
@@ -377,6 +380,7 @@ export function computeConfirmOverwriterPen(prev: GameState, newCardKey: string)
 // ── Rest or Shop choice ──
 
 export function computeChooseRest(prev: GameState): GameState {
+  if (prev.phase !== 'rest-or-shop') return prev;
   const healAmt = Math.floor(prev.playerMaxHp * 0.5);
   const newHp = Math.min(prev.playerMaxHp, prev.playerHp + healAmt);
 
@@ -415,6 +419,7 @@ export function computeChooseRest(prev: GameState): GameState {
 }
 
 export function computeChooseShop(prev: GameState): GameState {
+  if (prev.phase !== 'rest-or-shop') return prev;
   const newFloor = prev.floor + 1;
   const newEnemies = createEnemies(newFloor);
   const types: Array<'Pulse' | 'Sine' | 'Saw' | 'Noise'> = ['Pulse', 'Sine', 'Saw', 'Noise'];

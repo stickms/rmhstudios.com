@@ -1,6 +1,6 @@
 import type { UpgradeChoice } from './upgrades';
 
-export type GameState = 'menu' | 'countdown' | 'playing' | 'waveBreak' | 'paused' | 'gameOver' | 'mapTransition' | 'upgrade';
+export type GameState = 'menu' | 'countdown' | 'playing' | 'waveBreak' | 'paused' | 'gameOver' | 'upgrade';
 
 /** Boss multi-phase: phase 1 = standard, 2 = arena shift (50% HP), 3 = tentacle rage (25% HP) */
 export type BossPhase = 1 | 2 | 3;
@@ -247,7 +247,6 @@ export interface HUDState {
   allyDowned: boolean;
   /** Current map name */
   mapName: string;
-  mapTransition: boolean;
   /** Boss 30 reality warp */
   controlsInverted: boolean;
   /** Boss 20 arena shrink (0 = full, 1 = max shrink) */

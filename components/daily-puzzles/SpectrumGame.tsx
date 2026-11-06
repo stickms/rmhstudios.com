@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Lock, ArrowUp, ArrowDown } from 'lucide-react';
@@ -78,6 +78,21 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
     const [result, setResult] = useState<ReturnType<typeof computeSpectrumScore> | null>(null);
     const [showResults, setShowResults] = useState(false);
 
+    // The results reveal is delayed for the animation. One tracked timer, so a
+    // reveal scheduled by the server fetch or a lock-in never fires after unmount
+    // or stacks with another.
+    const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const revealResults = useCallback((delayMs: number) => {
+        if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+        revealTimerRef.current = setTimeout(() => {
+            revealTimerRef.current = null;
+            setShowResults(true);
+        }, delayMs);
+    }, []);
+    useEffect(() => () => {
+        if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+    }, []);
+
     // Check for existing completion on mount
     useEffect(() => {
         const existing = getResult('spectrum', dateKey);
@@ -95,19 +110,23 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
     const session = useSession();
 
     useEffect(() => {
+        let cancelled = false;
         if (session.data && !hasCompleted('spectrum', dateKey)) {
             fetchResultFromServer('spectrum', dateKey).then(serverResult => {
-                if (serverResult) {
+                if (serverResult && !cancelled) {
                     saveResult('spectrum', dateKey, serverResult);
                     const savedResult = serverResult.resultJson;
                     setResult(savedResult);
                     setPlayerOrder(savedResult.itemScores.map((s: { name: string }) => s.name));
                     setLocked(true);
-                    setTimeout(() => setShowResults(true), 100);
+                    revealResults(100);
                 }
             });
         }
-    }, [dateKey, session.data]);
+        return () => {
+            cancelled = true;
+        };
+    }, [dateKey, session.data, revealResults]);
 
     const moveItem = useCallback((index: number, direction: -1 | 1) => {
         if (locked) return;
@@ -137,8 +156,8 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
         }, !!session.data);
 
         // Animate results after a brief pause
-        setTimeout(() => setShowResults(true), 600);
-    }, [locked, playerOrder, puzzle._solution, dateKey]);
+        revealResults(600);
+    }, [locked, playerOrder, puzzle._solution, dateKey, revealResults]);
 
     const shareText = result
         ? generateSpectrumShare(

@@ -42,7 +42,7 @@ import { detectHeadset } from '@/lib/neon-driftway/headset';
 import {
   LEVELS, LEVEL_2_UNLOCK_DISTANCE, LEVEL_3_UNLOCK_DISTANCE, MPS_PER_UNIT,
 } from '@/lib/neon-driftway/constants';
-import type { GameState, InputState, LevelId, RunStats } from '@/lib/neon-driftway/types';
+import type { InputState, LevelId, RunStats } from '@/lib/neon-driftway/types';
 import { isFullscreen, isLowPowerDevice, supportsWebGL, toggleFullscreen } from '@/lib/shared/platform';
 import { useGameSession } from '@/hooks/useGameSession';
 
@@ -139,6 +139,8 @@ export function NeonDriftwayGame() {
   });
 
   const [uiState, setUiState] = useState<UIState>('menu');
+  const uiStateRef = useRef(uiState);
+  uiStateRef.current = uiState;
   const [unlockedLevels, setUnlockedLevels] = useState<Set<LevelId>>(new Set([1 as LevelId]));
   const [runStats, setRunStats] = useState<RunStats | null>(null);
   const [currentLevel, setCurrentLevel] = useState<LevelId>(1);
@@ -165,7 +167,7 @@ export function NeonDriftwayGame() {
     const game = gameRef.current;
     if (!game || game.isMultiplayer || stereoRef.current) return;
     if (game.state !== 'playing' && game.state !== 'paused') return;
-    if (game.state === 'playing') game.state = 'paused' as GameState;
+    game.pause();
     setPhotoMode(true);
   }, []);
 
@@ -333,7 +335,7 @@ export function NeonDriftwayGame() {
     const onLost = (event: Event) => {
       event.preventDefault();
       const game = gameRef.current;
-      if (game && game.state === 'playing') game.state = 'paused' as GameState;
+      game?.pause();
       setContextLost(true);
     };
     const onRestored = () => {
@@ -421,6 +423,10 @@ export function NeonDriftwayGame() {
     };
 
     const onGameOver = (data: { rankings: { id: string; name: string; score: number; rank: number }[] }) => {
+      // Only a race this client is in (or has just finished) can end; a late
+      // event after leaving for the menu or a solo run must not yank the screen.
+      const ui = uiStateRef.current;
+      if (ui !== 'multiplayerPlaying' && ui !== 'multiplayerGameOver') return;
       setMultiplayerRankings(data.rankings);
       setUiState('multiplayerGameOver');
     };
@@ -487,9 +493,7 @@ export function NeonDriftwayGame() {
       const input = inputRef.current;
       input.up = input.down = input.left = input.right = input.boost = input.pause = input.restart = input.ability = false;
       input.steer = 0;
-      if (gameRef.current?.state === 'playing' && !gameRef.current.isMultiplayer) {
-        gameRef.current.state = 'paused' as GameState;
-      }
+      gameRef.current?.pause();
     };
 
     window.addEventListener('keydown', kd);
@@ -510,8 +514,7 @@ export function NeonDriftwayGame() {
     id: 'neon-driftway',
     active: uiState === 'playing' || uiState === 'multiplayerPlaying',
     onPause: () => {
-      const game = gameRef.current;
-      if (game?.state === 'playing' && !game.isMultiplayer) game.state = 'paused' as GameState;
+      gameRef.current?.pause();
     },
   });
 
@@ -601,7 +604,8 @@ export function NeonDriftwayGame() {
             if (multiplayerRoomRef.current) {
               NDWMultiplayerClient.getInstance().sendPlayerFinished(multiplayerRoomRef.current, stats.score);
             }
-            setUiState('multiplayerGameOver');
+            // Idempotent with the server's ndw:gameOver, which may land first.
+            setUiState((prev) => (prev === 'multiplayerPlaying' ? 'multiplayerGameOver' : prev));
           } else {
             setUiState(newState as 'gameOver' | 'levelComplete');
 
@@ -717,9 +721,8 @@ export function NeonDriftwayGame() {
 
   const handleTouchPause = useCallback(() => {
     const game = gameRef.current;
-    if (!game) return;
-    if (game.state === 'playing') game.state = 'paused' as GameState;
-    else if (game.state === 'paused') game.resume();
+    if (!game || game.isMultiplayer) return;
+    if (!game.pause()) game.resume();
   }, []);
 
   const handleCanvasPointerUp = useCallback(() => {
@@ -729,8 +732,7 @@ export function NeonDriftwayGame() {
   }, []);
 
   const handleContinueEndless = useCallback(() => {
-    gameRef.current?.continueEndless();
-    setUiState('playing');
+    if (gameRef.current?.continueEndless()) setUiState('playing');
   }, []);
 
   const handleGoToMultiplayer = useCallback(() => setUiState('multiplayerMenu'), []);

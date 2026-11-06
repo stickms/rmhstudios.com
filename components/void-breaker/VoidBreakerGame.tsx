@@ -9,7 +9,7 @@ import { VoidBreakerRenderer } from '@/lib/void-breaker/renderer';
 import { VoidBreakerRenderer3D, type VBRenderer } from '@/lib/void-breaker/renderer3d';
 import { VoidBreakerAudio } from '@/lib/void-breaker/audio';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, MAX_SHARDS, DET_MIN_SHARDS, DASH_COOLDOWN, FOCUS_COOLDOWN } from '@/lib/void-breaker/constants';
-import type { InputState, RunStats, GameState, HUDState } from '@/lib/void-breaker/types';
+import type { InputState, RunStats, HUDState } from '@/lib/void-breaker/types';
 import type { UpgradeId } from '@/lib/void-breaker/upgrades';
 import {
   loadMeta, metaBonuses, buyNode, awardCores, emptyMeta,
@@ -66,7 +66,7 @@ const EMPTY_HUD: HUDState = {
   focusReady: true, focusActive: false, focusCooldownFraction: 0,
   detonateReady: false, dialogue: null,
   allyActive: false, allyHp: 0, allyMaxHp: 6, allyDowned: false,
-  mapName: 'Kowloon Void Zone', mapTransition: false,
+  mapName: 'Kowloon Void Zone',
   controlsInverted: false, arenaShrinkFraction: 0,
   voidPulseReady: false, phaseShiftReady: false, phaseShiftActive: false,
   reflectShieldReady: false, reflectShieldActive: false,
@@ -249,8 +249,7 @@ export function VoidBreakerGame() {
       const inp = inputRef.current;
       inp.up = inp.down = inp.left = inp.right = inp.detonate = inp.dash = inp.focus = inp.pause = false;
       const g = gameRef.current;
-      if (g && (g.state === 'playing' || g.state === 'waveBreak')) {
-        g.state = 'paused' as GameState;
+      if (g?.pause()) {
         setShowPauseMenu(true);
         pauseMusic();
       }
@@ -434,7 +433,6 @@ export function VoidBreakerGame() {
             allyMaxHp: ally.maxHp,
             allyDowned: ally.state === 'downed',
             mapName: game.currentMapConfig.name,
-            mapTransition: (game.state as string) === 'mapTransition',
             controlsInverted: game.controlsInverted,
             arenaShrinkFraction: game.arenaShrinkFraction,
             voidPulseReady: ab.unlockedIds.has('void_pulse') && ab.voidPulseCooldown <= 0,
@@ -469,12 +467,13 @@ export function VoidBreakerGame() {
   const showPauseMenuRef = useRef(false);
   useEffect(() => {
     showPauseMenuRef.current = showPauseMenu;
-    // When pause menu dismissed, sync back to playing
-    if (!showPauseMenu && gameRef.current?.state === 'paused') {
+    // When pause menu dismissed, sync back to playing — only while the run is
+    // the visible screen (Save & Quit closes the menu on its way to 'menu').
+    if (!showPauseMenu && uiState === 'playing' && gameRef.current?.state === 'paused') {
       gameRef.current.resume();
       playMusic();
     }
-  }, [showPauseMenu, playMusic]);
+  }, [showPauseMenu, uiState, playMusic]);
 
   // Keep a fresh HUD snapshot for transition effects (boss intro reads name/phase
   // at the moment the boss appears without re-firing when the phase later changes).
@@ -542,6 +541,7 @@ export function VoidBreakerGame() {
       const stateBlob = game.serializeGameState();
       saveGame(stateBlob as Record<string, unknown>);
     }
+    game?.quitToMenu();
     setShowPauseMenu(false);
     showPauseMenuRef.current = false;
     setUiState('menu');
@@ -607,8 +607,7 @@ export function VoidBreakerGame() {
   const handleTouchPause = useCallback(() => {
     const game = gameRef.current;
     if (!game) return;
-    if (game.state === 'playing' || game.state === 'waveBreak') {
-      game.state = 'paused' as GameState;
+    if (game.pause()) {
       setShowPauseMenu(true);
       showPauseMenuRef.current = true;
       pauseMusic();
@@ -1095,18 +1094,6 @@ export function VoidBreakerGame() {
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Map Transition Overlay ───────────────────────────────────────── */}
-      {showGame && hud.mapTransition && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-          <div className="text-center">
-            <div className="text-3xl font-black text-[#00f5ff] tracking-widest animate-pulse drop-shadow-[0_0_40px_rgba(0,245,255,0.8)]">
-              {t('zone-advance', { defaultValue: 'ZONE ADVANCE' })}
-            </div>
-            <div className="text-sm text-zinc-400 font-mono mt-2">{hud.mapName}</div>
           </div>
         </div>
       )}

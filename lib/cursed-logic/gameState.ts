@@ -144,17 +144,22 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set) => ({
     }),
 
   setReveal: (protocolAction, probeRevealed = null) =>
-    set({
-      phase: 'reveal',
-      pendingProtocolAction: protocolAction,
-      probeRevealedIntent: probeRevealed,
-      revealStep: 0,
+    set((s) => {
+      if (s.phase !== 'commit' || s.result) return s;
+      return {
+        phase: 'reveal',
+        pendingProtocolAction: protocolAction,
+        probeRevealedIntent: probeRevealed,
+        revealStep: 0,
+      };
     }),
 
   setRevealStep: (step) => set({ revealStep: step }),
 
   applyResolution: (lastRound, nextCharge, nextModifier, skipExposed = false) =>
     set((s) => {
+      // Resolves the round being revealed (directly or after its minigame) — once.
+      if ((s.phase !== 'reveal' && s.phase !== 'minigame') || s.result) return s;
       let newIntegrity = Math.max(0, s.integrity - lastRound.playerDamage);
       const eff = getStanceEffect(s.currentStance);
       const prepareImmune = eff === 'prepare_immune';
@@ -225,11 +230,14 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set) => ({
     }),
 
   setMinigamePending: (lastRound, nextCharge, nextModifier, kind, chaosDistort) =>
-    set({
-      phase: 'minigame',
-      minigameKind: kind,
-      minigameChaosDistort: chaosDistort,
-      pendingMinigameResolution: { lastRound, nextCharge, nextModifier },
+    set((s) => {
+      if (s.phase !== 'reveal' || s.result) return s;
+      return {
+        phase: 'minigame',
+        minigameKind: kind,
+        minigameChaosDistort: chaosDistort,
+        pendingMinigameResolution: { lastRound, nextCharge, nextModifier },
+      };
     }),
 
   completeMinigame: (success) => {
@@ -251,16 +259,21 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set) => ({
   },
 
   pickMilestone: (choice) =>
-    set((s) => ({
-      runUpgrades: [...s.runUpgrades, choice],
-      milestoneChoices: null,
-      phase: 'resolved',
-    })),
+    set((s) => {
+      if (s.phase !== 'milestone' || !s.milestoneChoices?.includes(choice)) return s;
+      return {
+        runUpgrades: [...s.runUpgrades, choice],
+        milestoneChoices: null,
+        phase: 'resolved',
+      };
+    }),
 
   setRevealedProtocolIntent: (action) => set({ revealedProtocolIntent: action }),
   setProbeRevealedNextIntent: (action) => set({ probeRevealedNextIntent: action }),
   setProbeRevealedRoundAfterNext: (action) => set({ probeRevealedRoundAfterNext: action }),
 
+  // Misnomer kept for its callers: this opens the next round at 'stance' (the
+  // stance pick precedes 'commit').
   advanceToCommit: () =>
     set((s) => {
       if (s.result) return s;
@@ -274,7 +287,7 @@ export const useCursedLogicStore = create<CursedLogicStore>()((set) => ({
       };
     }),
 
-  setGameOver: (result) => set({ phase: 'gameover', result }),
+  setGameOver: (result) => set((s) => (s.result ? s : { phase: 'gameover', result })),
 
   resetGame: (overrides) => {
     const mod = overrides?.runModifier ?? null;

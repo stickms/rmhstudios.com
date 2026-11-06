@@ -74,7 +74,6 @@ import {
   VOID_PULSE_DAMAGE,
   ALLY_PROJ_SPEED,
   ALLY_PROJ_DAMAGE,
-  MAP_TRANSITION_DURATION,
   DROP_HEART_CHANCE,
   HEART_PICKUP_LIFETIME,
   HEART_HEAL_AMOUNT,
@@ -242,7 +241,6 @@ export class VoidBreakerEngine {
   currentMapConfig: MapConfig = getMapForWave(1);
   obstacles: Obstacle[] = [];
   /** Map transition fade timer */
-  mapTransitionTimer = 0;
   /** Boss 20: arena shrink (0 = full size, 1 = max shrink) */
   arenaShrinkFraction = 0;
   /** Boss 30: controls currently inverted */
@@ -449,7 +447,6 @@ export class VoidBreakerEngine {
     this.abilityProg.reset();
     this.currentMapConfig = getMapForWave(1);
     this.obstacles = buildObstacles(this.currentMapConfig);
-    this.mapTransitionTimer = 0;
     this.arenaShrinkFraction = 0;
     this.controlsInverted = false;
     this.invertTimer = 0;
@@ -504,6 +501,22 @@ export class VoidBreakerEngine {
       this.state = this.waveBreakTimer > 0 ? 'waveBreak' : 'playing';
       this.prevPause = true;
     }
+  }
+
+  /** Pause a running wave (blur, touch pause). The counterpart of resume(). */
+  pause(): boolean {
+    if (this.state !== 'playing' && this.state !== 'waveBreak') return false;
+    this.state = 'paused';
+    return true;
+  }
+
+  /**
+   * Leave the run for the menu (Save & Quit). 'menu' is a non-running state:
+   * the render loop stops ticking and resume() is a no-op, so the abandoned run
+   * cannot keep simulating — or reach gameOver and pay out — behind the menu.
+   */
+  quitToMenu(): void {
+    this.state = 'menu';
   }
 
   get totalMultiplier(): number {
@@ -670,8 +683,7 @@ export class VoidBreakerEngine {
       // getMapForWave() (obstacles rebuild on zone change). The old "walk to the
       // door" trigger entered a 'mapTransition' state the render loop never
       // ticked — a hard soft-lock on waves 15/30 — and let players skip those
-      // bosses by walking right. Removed; advanceMap()/triggerMapTransition()
-      // remain unused and can be deleted in a dedicated cleanup.
+      // bosses by walking right. Removed, along with the unreachable state.
 
       // Detonation
       if (
@@ -731,15 +743,6 @@ export class VoidBreakerEngine {
           this.startNextWave();
           this.state = 'playing';
         }
-      }
-
-      // Map transition fade
-      if ((this.state as string) === 'mapTransition') {
-        this.mapTransitionTimer -= dt;
-        if (this.mapTransitionTimer <= 0) {
-          this.advanceMap();
-        }
-        return;
       }
 
       if (this.state === 'playing' && this.waveEnemiesAlive <= 0) {
@@ -2684,38 +2687,6 @@ export class VoidBreakerEngine {
         break;
       }
     }
-  }
-
-  /** Start map transition fade */
-  private triggerMapTransition(): void {
-    this.state = 'mapTransition' as GameState;
-    this.mapTransitionTimer = MAP_TRANSITION_DURATION;
-    const nextMap = getMapForWave(this.wave + 1);
-    this.popups.push({
-      text: nextMap.transitionLore || 'ADVANCING ZONE...',
-      x: this.player.x,
-      y: this.player.y - 50,
-      life: MAP_TRANSITION_DURATION,
-      maxLife: MAP_TRANSITION_DURATION,
-      color: '#00f5ff',
-    });
-  }
-
-  /** Advance to next map after transition fade */
-  private advanceMap(): void {
-    const nextMap = getMapForWave(this.wave + 1);
-    this.currentMapConfig = nextMap;
-    this.obstacles = buildObstacles(nextMap);
-    this.arenaShrinkFraction = 0; // reset arena shrink
-    // Clear enemies and projectiles from old map
-    for (const e of this.enemies) e.active = false;
-    for (const pr of this.projectiles) pr.active = false;
-    // Reposition player to left side of new map
-    this.player.x = ARENA_W * 0.08;
-    this.player.y = ARENA_HH;
-    this.state = 'playing';
-    this.startNextWave();
-    this.state = 'playing';
   }
 
   // ── Heart Pickups ─────────────────────────────────────────────────────────

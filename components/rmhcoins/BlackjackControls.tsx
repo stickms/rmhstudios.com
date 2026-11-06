@@ -20,7 +20,6 @@ export function BlackjackControls({ coins }: Props) {
     myUserId,
     players,
     bettingCountdown,
-    insuranceOffered,
     insuranceTimeout,
     error,
   } = useBlackjackStore();
