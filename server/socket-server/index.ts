@@ -476,6 +476,9 @@ function requestHandler(_req: IncomingMessage, res: ServerResponse): void {
 
 // ─── HTTP + Socket.io Server ────────────────────────────────────
 
+/** Set by shutdown(); read by the disconnect fan-out below. */
+let shuttingDown = false;
+
 const httpServer = createServer(requestHandler);
 
 const io = new Server(httpServer, {
@@ -555,18 +558,23 @@ io.on('connection', (socket) => {
 
     handleSpacesDisconnect(io, socket);
     handlePartyDisconnect(io, socket);
-    handleMatchmakingDisconnect(socket);
+    // During shutdown io.close() disconnects everyone at once. Handlers whose
+    // disconnect only holds in-memory state for a reconnect (grace windows,
+    // queue seats, lobby cleanup timers) are skipped — the process is going
+    // away. Everything that settles money or persists state (casino refunds and
+    // cash-outs, calls, resumable games) still runs.
+    if (!shuttingDown) handleMatchmakingDisconnect(socket);
     void handleCallDisconnect(io, socket);
     void handleGroupCallDisconnect(io, socket);
     handleControllerDisconnect(io, socket);
-    handleSynapseStormDisconnect(io, socket);
+    if (!shuttingDown) handleSynapseStormDisconnect(io, socket);
     handleSliceItDisconnect(io, socket);
-    handleNeonDriftwayDisconnect(io, socket);
-    handleRmhTypeDisconnect(io, socket);
+    if (!shuttingDown) handleNeonDriftwayDisconnect(io, socket);
+    if (!shuttingDown) handleRmhTypeDisconnect(io, socket);
     handleRmhStudyDisconnect(io, socket);
     handleAltairDisconnect(io, socket);
     handleKowloonKnockoutDisconnect(io, socket);
-    handleRmhMusicDisconnect(io, socket);
+    if (!shuttingDown) handleRmhMusicDisconnect(io, socket);
     handleBlackjackDisconnect(io, socket);
     handleHoldemDisconnect(io, socket);
     handleBaccaratDisconnect(io, socket);
@@ -589,8 +597,13 @@ io.on('connection', (socket) => {
 });
 
 // ─── Graceful shutdown ──────────────────────────────────────────
+// (`shuttingDown` is declared near the top of the file: the disconnect
+// fan-out above reads it.)
 
 function shutdown(signal: string): void {
+  // A second signal must not re-close or arm a second force-exit timer.
+  if (shuttingDown) return;
+  shuttingDown = true;
   logger.info({ event: 'shutdown_initiated', signal });
 
   io.close(() => {

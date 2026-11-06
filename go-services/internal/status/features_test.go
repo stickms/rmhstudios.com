@@ -579,3 +579,53 @@ func TestAlertForSkipsConnectionStalls(t *testing.T) {
 		t.Error("a plain timeout (server did not answer) must still page")
 	}
 }
+
+// TestIncidentLifecycleGuards: resolved is terminal for admin updates, an auto
+// incident resolved by hand while the service still fails is replaced by a
+// fresh one, and trimming never drops an open auto incident.
+func TestIncidentLifecycleGuards(t *testing.T) {
+	f := &flaky{st: StatusUp}
+	svc := New(Config{Targets: []Target{{Name: "api", Group: "Core", Probe: f.probe}}})
+	p, st := svc.prober, svc.store
+	run := func(s Status) { f.st = s; p.ProbeOnce(context.Background()) }
+	now := time.Now()
+
+	run(StatusDown)
+	run(StatusDown)
+	run(StatusDown)
+	incs := st.Incidents()
+	if len(incs) != 1 || incs[0].Resolved() {
+		t.Fatalf("want one open incident, got %+v", incs)
+	}
+	resolved, investigating, body := StateResolved, StateInvestigating, "fixed by hand"
+	if _, err := st.AddIncidentUpdate(incs[0].ID, IncidentInput{State: &resolved, Body: &body}, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.AddIncidentUpdate(incs[0].ID, IncidentInput{State: &investigating, Body: &body}, now); err == nil {
+		t.Fatal("a resolved incident was reopened")
+	}
+	if _, err := st.AddIncidentUpdate(incs[0].ID, IncidentInput{Body: &body}, now); err != nil {
+		t.Fatalf("a note on a resolved incident was refused: %v", err)
+	}
+
+	run(StatusDown) // still failing after the manual resolve
+	incs = st.Incidents()
+	open := 0
+	for _, inc := range incs {
+		if !inc.Resolved() {
+			open++
+		}
+	}
+	if len(incs) != 2 || open != 1 {
+		t.Fatalf("want a fresh open incident after a manual resolve, got %+v", incs)
+	}
+
+	st.mu.Lock()
+	st.maxIncidents = 1
+	st.trimLocked()
+	left := append([]*Incident(nil), st.incidents...)
+	st.mu.Unlock()
+	if len(left) != 1 || left[0].Resolved() || left[0].Kind != "auto" {
+		t.Fatalf("trim dropped the open auto incident: %+v", left)
+	}
+}

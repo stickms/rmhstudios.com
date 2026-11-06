@@ -38,9 +38,16 @@ export class ReconnectionHandler {
       this.roomManager.graceTimers.delete(userId);
     }
 
-    // Check for duplicate session (same user, different tab/device)
-    if (member.socketId && member.isConnected) {
-      const oldSocket = this.io.sockets.sockets.get(member.socketId);
+    // Check for duplicate session (same user, different tab/device).
+    // Re-point the member at the new socket BEFORE kicking the old one:
+    // disconnect(true) runs the old socket's disconnect handler synchronously,
+    // and RoomManager.handleDisconnect ignores a socket the member no longer
+    // owns (it used to mark this live session offline and start its grace).
+    const previousSocketId = member.isConnected ? member.socketId : null;
+    member.socketId = socket.id;
+    member.isConnected = true;
+    if (previousSocketId) {
+      const oldSocket = this.io.sockets.sockets.get(previousSocketId);
       if (oldSocket && oldSocket.id !== socket.id) {
         // Disconnect the old socket
         oldSocket.emit(S2C.ERROR, {

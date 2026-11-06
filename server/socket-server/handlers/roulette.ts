@@ -72,6 +72,10 @@ interface RouletteRoom {
   bettingTimer: ReturnType<typeof setTimeout> | null;
   resultsTimer: ReturnType<typeof setTimeout> | null;
   spinTimer: ReturnType<typeof setTimeout> | null;
+  // The 2s "nobody bet, try again" restart. It was untracked, so a join during
+  // the gap started betting and the stray timer then restarted it, zeroing
+  // every debited bet.
+  restartTimer: ReturnType<typeof setTimeout> | null;
   roundNumber: number;
   bettingDeadline: number | null;
   lastResult: number | null;
@@ -219,7 +223,7 @@ function broadcastRoomList() {
       ownerName: r.ownerName,
       playerCount: r.players.size,
       maxPlayers: r.maxPlayers,
-      inProgress: r.phase !== 'idle' && r.phase !== 'betting',
+      inProgress: roundInProgress(r),
     }));
   ioRef.to(LOBBY_ROOM).emit(S2C.ROOM_LIST, { rooms: list });
 }
@@ -249,9 +253,52 @@ function clearTimers(room: RouletteRoom) {
     clearTimeout(room.spinTimer);
     room.spinTimer = null;
   }
+  if (room.restartTimer) {
+    clearTimeout(room.restartTimer);
+    room.restartTimer = null;
+  }
+}
+
+/** The wheel is spinning or showing results: stakes are committed. */
+function roundInProgress(room: RouletteRoom): boolean {
+  return room.phase !== 'idle' && room.phase !== 'betting';
+}
+
+/** The room is still the live one for this id (not destroyed while we awaited). */
+function isLive(room: RouletteRoom): boolean {
+  return rooms.get(room.roomId) === room;
+}
+
+/** Return a stake that never reached a spin. Errors are logged, never thrown. */
+async function refundStake(room: RouletteRoom, userId: string, amount: number, note: string) {
+  if (amount <= 0) return;
+  try {
+    const prisma = getPrismaClient();
+    const balance = await prisma.$transaction(async (tx) => {
+      await creditCoinsOn(tx, userId, amount, {
+        tx,
+        type: 'WAGER',
+        entityType: 'roulette',
+        entityId: room.roomId,
+        note,
+      });
+      return getBalanceOn(tx, userId);
+    });
+    for (const [sid, uid] of socketToUserId) {
+      if (uid === userId) ioRef.sockets.sockets.get(sid)?.emit(S2C.BALANCE_UPDATE, { coins: balance });
+    }
+  } catch (err) {
+    logger.error({ event: 'rl_refund_error', roomId: room.roomId, userId, amount, error: String(err) });
+  }
 }
 
 function startBettingPhase(room: RouletteRoom) {
+  if (room.restartTimer) {
+    clearTimeout(room.restartTimer);
+    room.restartTimer = null;
+  }
+  // Only from idle: re-entering over a live betting phase wiped debited bets.
+  if (room.phase !== 'idle' || !isLive(room)) return;
   if (room.players.size === 0) {
     room.phase = 'idle';
     broadcastTableState(room);
@@ -297,7 +344,10 @@ function endBettingPhase(room: RouletteRoom) {
     room.phase = 'idle';
     broadcastTableState(room);
     if (room.players.size > 0) {
-      setTimeout(() => startBettingPhase(room), 2000);
+      room.restartTimer = setTimeout(() => {
+        room.restartTimer = null;
+        startBettingPhase(room);
+      }, 2000);
     }
     return;
   }
@@ -328,6 +378,7 @@ function startSpinPhase(room: RouletteRoom) {
 }
 
 async function resolvePayouts(room: RouletteRoom, result: number) {
+  if (room.phase !== 'spinning' || !isLive(room)) return;
   room.lastResult = result;
   room.history.unshift(result);
   if (room.history.length > MAX_HISTORY) {
@@ -411,10 +462,12 @@ async function resolvePayouts(room: RouletteRoom, result: number) {
     logger.error({ event: 'rl_payout_error', roomId: room.roomId, error: String(err) });
   }
 
+  if (!isLive(room)) return;
   room.phase = 'results';
   broadcastTableState(room);
 
   room.resultsTimer = setTimeout(() => {
+    room.resultsTimer = null;
     // Prune players who left or disconnected, now that payouts have settled.
     for (const [uid, p] of room.players) {
       const sock = p.socketId ? ioRef.sockets.sockets.get(p.socketId) : null;
@@ -447,6 +500,7 @@ async function resolvePayouts(room: RouletteRoom, result: number) {
     }
 
     broadcastRoomList();
+    room.phase = 'idle';
     startBettingPhase(room);
   }, RESULTS_DISPLAY_MS);
 }
@@ -474,7 +528,7 @@ export function listPublicRooms() {
       ownerName: r.ownerName,
       playerCount: r.players.size,
       maxPlayers: r.maxPlayers,
-      inProgress: r.phase !== 'idle' && r.phase !== 'betting',
+      inProgress: roundInProgress(r),
     }));
 }
 
@@ -530,6 +584,7 @@ function onCreateRoom(socket: Socket, payload: unknown) {
     bettingTimer: null,
     resultsTimer: null,
     spinTimer: null,
+    restartTimer: null,
     roundNumber: 0,
     bettingDeadline: null,
     lastResult: null,
@@ -695,7 +750,7 @@ function leaveRoom(userId: string, socketId: string) {
 
   // If the player leaves while the wheel is spinning / showing results and
   // still has an active bet, keep the seat so the pending payout settles.
-  const roundActive = room.phase === 'spinning' || room.phase === 'results';
+  const roundActive = roundInProgress(room);
   if (roundActive && player.totalBetThisRound > 0) {
     player.pendingRemoval = true;
     player.socketId = '';
@@ -709,6 +764,13 @@ function leaveRoom(userId: string, socketId: string) {
     logger.info({ event: 'rl_player_left_pending_payout', roomId, userId, seatIndex });
     return;
   }
+
+  // Bets placed this betting phase never reached a spin: give them back (they
+  // used to vanish with the deleted seat).
+  const uncommitted = player.totalBetThisRound;
+  player.bets = [];
+  player.totalBetThisRound = 0;
+  void refundStake(room, userId, uncommitted, 'Roulette bet refund (left table)');
 
   room.players.delete(userId);
   userToRoom.delete(userId);
@@ -843,6 +905,7 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
     return;
   }
 
+  const round = room.roundNumber;
   try {
     const prisma = getPrismaClient();
     const result = await prisma.$transaction(async (tx: any) => {
@@ -860,6 +923,18 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
       });
       return getBalanceOn(tx, userId);
     });
+
+    // Betting may have closed (or the player left) while the debit awaited.
+    if (
+      !isLive(room) ||
+      room.phase !== 'betting' ||
+      room.roundNumber !== round ||
+      room.players.get(userId) !== player
+    ) {
+      socket.emit(S2C.ERROR, { message: 'Betting closed — your bet was refunded.' });
+      await refundStake(room, userId, amount, 'Roulette bet refund (betting closed)');
+      return;
+    }
 
     player.bets.push({ type: betType, numbers, amount });
     player.totalBetThisRound += amount;
@@ -905,7 +980,13 @@ async function onClearBets(socket: Socket) {
     return;
   }
 
-  const refundAmount = player.totalBetThisRound;
+  // Take exactly the bets being cleared off the seat now, synchronously: a bet
+  // whose debit commits while this refund awaits is kept, not wiped unrefunded.
+  const cleared = player.bets;
+  const refundAmount = cleared.reduce((sum, b) => sum + b.amount, 0);
+  const round = room.roundNumber;
+  player.bets = [];
+  player.totalBetThisRound -= refundAmount;
 
   try {
     const prisma = getPrismaClient();
@@ -922,13 +1003,19 @@ async function onClearBets(socket: Socket) {
       return getBalanceOn(tx, userId);
     });
 
-    player.bets = [];
-    player.totalBetThisRound = 0;
-
     socket.emit(S2C.BALANCE_UPDATE, { coins: result });
     broadcastTableState(room);
   } catch (err) {
     logger.error({ event: 'rl_clear_bets_error', userId, error: String(err) });
+    // The refund didn't land: put the bets back if they can still play.
+    if (isLive(room) && room.roundNumber === round && room.players.get(userId) === player && room.phase === 'betting') {
+      player.bets = [...cleared, ...player.bets];
+      player.totalBetThisRound += refundAmount;
+      broadcastTableState(room);
+    } else {
+      // Too late to play them: retry the refund once instead of losing them.
+      void refundStake(room, userId, refundAmount, 'Roulette bet cleared (retry)');
+    }
     socket.emit(S2C.ERROR, { message: 'Failed to clear bets.' });
   }
 }
@@ -978,7 +1065,7 @@ export function handleRouletteDisconnect(_io: Server, socket: Socket): void {
   }
 
   // In idle or betting phase, fully remove the player
-  if (room.phase === 'idle' || room.phase === 'betting') {
+  if (!roundInProgress(room)) {
     leaveRoom(userId, socket.id);
   } else {
     // During spinning/results, just mark socket as stale — cleanup after results

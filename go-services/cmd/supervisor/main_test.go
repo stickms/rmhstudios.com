@@ -129,3 +129,43 @@ func TestRunGroupRestartsPanickingWorker(t *testing.T) {
 		t.Fatalf("expected clean stop, got %v", err)
 	}
 }
+
+// A worker that returns nil before shutdown has stopped doing its job; it is
+// restarted on the same backoff as a panic, and a later shutdown still drains.
+func TestRunGroupRestartsWorkerReturningNilEarly(t *testing.T) {
+	prevMin := panicBackoffMin
+	panicBackoffMin = time.Millisecond
+	defer func() { panicBackoffMin = prevMin }()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	attempts := make(chan int, 8)
+	n := 0
+	runs := map[string]worker.RunFunc{
+		"quitter": func(ctx context.Context, d worker.Deps) error {
+			n++
+			attempts <- n
+			if n < 3 {
+				return nil
+			}
+			<-ctx.Done()
+			return nil
+		},
+	}
+	done := make(chan error, 1)
+	go func() { done <- runGroup(ctx, runs, depsFor, testLogger, time.Second) }()
+
+	deadline := time.After(2 * time.Second)
+	for got := 0; got < 3; {
+		select {
+		case got = <-attempts:
+		case err := <-done:
+			t.Fatalf("group exited early: %v", err)
+		case <-deadline:
+			t.Fatalf("worker was not restarted (attempts=%d)", got)
+		}
+	}
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatalf("expected clean stop, got %v", err)
+	}
+}

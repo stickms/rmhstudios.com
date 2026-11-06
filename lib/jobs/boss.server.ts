@@ -23,7 +23,19 @@ const SCHEMA = process.env.PGBOSS_SCHEMA || 'pgboss';
 export const PROGRESSION_QUEUE = 'engagement.progression';
 const QUEUES = [PROGRESSION_QUEUE];
 
-let bossPromise: Promise<PgBoss | null> | null = null;
+/**
+ * Memoised per mode. A single promise used to be cached for whichever mode was
+ * asked first, so a later `getBoss(true)` silently got a send-only instance;
+ * and a failed start was cached forever, so one blip at boot meant the queue
+ * was never used again by that process.
+ */
+const bossPromises: { worker: Promise<PgBoss | null> | null; producer: Promise<PgBoss | null> | null } = {
+  worker: null,
+  producer: null,
+};
+/** When each mode last failed to start; a retry is allowed after RETRY_AFTER_MS. */
+const failedAt: { worker: number | null; producer: number | null } = { worker: null, producer: null };
+const RETRY_AFTER_MS = 30_000;
 
 async function create(worker: boolean): Promise<PgBoss | null> {
   if (!CONN) return null;
@@ -39,9 +51,15 @@ async function create(worker: boolean): Promise<PgBoss | null> {
       application_name: worker ? 'rmh-jobs' : 'rmh-web-producer',
     });
     boss.on('error', (e: Error) => console.error('[pg-boss] error:', e?.message));
-    await boss.start();
-    // createQueue is idempotent — safe for both producer and worker to call.
-    for (const q of QUEUES) await boss.createQueue(q);
+    try {
+      await boss.start();
+      // createQueue is idempotent — safe for both producer and worker to call.
+      for (const q of QUEUES) await boss.createQueue(q);
+    } catch (e) {
+      // Don't leave a half-started instance (pool, timers) behind a retry.
+      await boss.stop({ graceful: false }).catch(() => undefined);
+      throw e;
+    }
     return boss;
   } catch (e) {
     console.error('[pg-boss] start failed; jobs will run inline:', (e as Error)?.message);
@@ -56,6 +74,19 @@ async function create(worker: boolean): Promise<PgBoss | null> {
  * callers can fall back to inline execution.
  */
 export function getBoss(worker = false): Promise<PgBoss | null> {
-  if (!bossPromise) bossPromise = create(worker);
-  return bossPromise;
+  const mode = worker ? 'worker' : 'producer';
+  // A producer can send through the worker instance; never the reverse.
+  if (!worker && bossPromises.worker && failedAt.worker === null) return bossPromises.worker;
+  const failed = failedAt[mode];
+  if (bossPromises[mode] && failed !== null && Date.now() - failed >= RETRY_AFTER_MS) {
+    bossPromises[mode] = null;
+    failedAt[mode] = null;
+  }
+  if (!bossPromises[mode]) {
+    bossPromises[mode] = create(worker).then((boss) => {
+      if (!boss && CONN) failedAt[mode] = Date.now();
+      return boss;
+    });
+  }
+  return bossPromises[mode]!;
 }

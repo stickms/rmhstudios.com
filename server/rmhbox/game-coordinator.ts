@@ -110,6 +110,50 @@ export class GameCoordinator {
     this.lobbyManager.onSpectatorJoinedMidGame = (lobbyId, spectatorUserId, socket) => {
       this.handleSpectatorJoinedMidGame(lobbyId, spectatorUserId, socket);
     };
+    // A player who leaves for good mid-game: tell the handler (its roster is a
+    // snapshot) and re-check the player floor, exactly as for a disconnect.
+    this.lobbyManager.onPlayerRemoved = (lobbyId, userId) => {
+      const lobby = this.lobbyManager.getLobby(lobbyId);
+      if (!lobby || lobby.state !== 'PLAYING' || !lobby.currentGame?.handler) return;
+      try {
+        lobby.currentGame.handler.handlePlayerDisconnect(userId);
+      } catch (err) {
+        logger.error({ event: 'game_remove_handler_error', lobbyId, userId, error: String(err) });
+      }
+      this.checkPlayerFloor(lobby);
+    };
+    // Session end / disband: stop the game, its timers and grace windows.
+    this.lobbyManager.onTeardown((lobbyId) => this.teardownLobby(lobbyId));
+  }
+
+  /**
+   * Force-skip during VOTING belongs to the VoteManager. It used to listen on
+   * the same socket event and both handlers ran, so the result depended on
+   * registration order (a vote resolved into GAME_SETTINGS could be skipped
+   * again in the same event). Now this is the only listener and it dispatches.
+   */
+  private voteSkipHandler: ((lobbyId: string) => void) | null = null;
+
+  setVoteSkipHandler(fn: (lobbyId: string) => void): void {
+    this.voteSkipHandler = fn;
+  }
+
+  /** Stop everything this coordinator runs for a lobby (session end, disband). */
+  teardownLobby(lobbyId: string): void {
+    const lobby = this.lobbyManager.getLobby(lobbyId);
+    const handler = lobby?.currentGame?.handler;
+    if (handler) {
+      try {
+        handler.cleanup();
+      } catch {
+        // Ignore cleanup errors during teardown
+      }
+    }
+    if (lobby) lobby.currentGame = null;
+    this.clearLifecycleTimers(lobbyId);
+    this.lifecycles.delete(lobbyId);
+    this.cancelDisconnectGrace(lobbyId);
+    this.spectatorTargets.delete(lobbyId);
   }
 
   // ─── Connection Handler (§2.6) ────────────────────────────────
@@ -133,6 +177,11 @@ export class GameCoordinator {
     const userId = socket.data.userId as string;
     const lobby = this.lobbyManager.getLobbyByUserId(userId);
     if (!lobby || lobby.state !== 'PLAYING' || !lobby.currentGame) return;
+    // LobbyManager.handleDisconnect (which runs first) marks the player
+    // offline only for their CURRENT socket. Still connected means this was a
+    // stale socket (an old tab, the duplicate-session kick): ignore it.
+    const player = lobby.players.get(userId);
+    if (!player || player.isConnected) return;
 
     const handler = lobby.currentGame.handler;
 
@@ -143,7 +192,12 @@ export class GameCoordinator {
       logger.error({ event: 'game_disconnect_handler_error', lobbyId: lobby.id, userId, error: String(err) });
     }
 
-    // Check if remaining connected players < minPlayers — defer force-end
+    this.checkPlayerFloor(lobby);
+  }
+
+  /** Remaining connected players < minPlayers → start the deferred force-end. */
+  private checkPlayerFloor(lobby: RMHboxLobby): void {
+    if (!lobby.currentGame) return;
     const def = MINIGAME_REGISTRY[lobby.currentGame.minigameId];
     if (def) {
       const connectedCount = Array.from(lobby.players.values()).filter((p) => p.isConnected).length;
@@ -306,8 +360,10 @@ export class GameCoordinator {
     const lifecycle = this.lifecycles.get(lobby.id);
 
     switch (lobby.state) {
-      // VOTING is handled by VoteManager — this handler won't fire for VOTING
-      // because VoteManager also registers on the same event and validates state
+      case 'VOTING':
+        this.voteSkipHandler?.(lobby.id);
+        break;
+
       case 'GAME_SETTINGS':
         logger.info({ event: 'force_skip_game_settings', lobbyId: lobby.id, userId });
         this.clearLifecycleTimers(lobby.id);
@@ -826,7 +882,7 @@ export class GameCoordinator {
         type: 'STATE_CHANGED',
         payload: { state: 'WAITING', reason: 'INVALID_GAME', message: 'Unknown minigame selected.' },
       });
-      lobby.state = 'WAITING';
+      this.abortGameFlow(lobby);
       return;
     }
 
@@ -839,7 +895,7 @@ export class GameCoordinator {
           type: 'STATE_CHANGED',
           payload: { state: 'WAITING', reason: 'INSUFFICIENT_PLAYERS', message: 'Not enough players for this game.' },
         });
-        lobby.state = 'WAITING';
+        this.abortGameFlow(lobby);
         return;
       }
     }
@@ -873,6 +929,14 @@ export class GameCoordinator {
 
     logger.info({ event: 'game_flow_started', lobbyId, minigameId });
     this.startInstructions(lobby, minigameId);
+  }
+
+  /** A game flow that never started: back to a clean WAITING (no game, no lifecycle). */
+  private abortGameFlow(lobby: RMHboxLobby): void {
+    lobby.currentGame = null;
+    lobby.state = 'WAITING';
+    this.clearLifecycleTimers(lobby.id);
+    this.lifecycles.delete(lobby.id);
   }
 
   // ─── Step 1: INSTRUCTIONS Phase ───────────────────────────────
@@ -911,7 +975,11 @@ export class GameCoordinator {
 
     // Start instruction timer with tick broadcast
     const timerHandle = this.stateSync.startTimerBroadcast(lobby.id, durationSeconds, () => {
-      this.startPreloading(lobby);
+      // Re-read like every other phase timer: the captured lobby may have
+      // been skipped, cancelled, ended or disbanded meanwhile.
+      const currentLobby = this.lobbyManager.getLobby(lobby.id);
+      if (!currentLobby || currentLobby !== lobby || currentLobby.state !== 'INSTRUCTIONS') return;
+      this.startPreloading(currentLobby);
     });
 
     this.lifecycles.set(lobby.id, {
@@ -1070,6 +1138,11 @@ export class GameCoordinator {
       return;
     }
 
+    // Results/errors are accepted only from the handler that is still the
+    // lobby's current game (not one torn down by force-end/session end).
+    let instance: BaseMinigame | null = null;
+    const isCurrent = () => instance !== null && lobby.currentGame?.handler === instance;
+
     // Build MinigameContext for the handler
     const context: MinigameContext = {
       lobbyId: lobby.id,
@@ -1102,9 +1175,11 @@ export class GameCoordinator {
         }
       },
       onComplete: (results: MinigameResults) => {
+        if (!isCurrent()) return;
         this.handleGameComplete(lobby.id, results);
       },
       onError: (error: Error) => {
+        if (!isCurrent()) return;
         this.handleGameError(lobby.id, error);
       },
     };
@@ -1112,6 +1187,7 @@ export class GameCoordinator {
     // Instantiate game handler with fault isolation
     try {
       const gameInstance = new GameClass(context);
+      instance = gameInstance;
       lobby.currentGame = {
         minigameId,
         handler: gameInstance,
@@ -1168,7 +1244,11 @@ export class GameCoordinator {
 
   handleGameComplete(lobbyId: string, results: MinigameResults): void {
     const lobby = this.lobbyManager.getLobby(lobbyId);
-    if (!lobby) return;
+    // Only a PLAYING lobby can complete: a late onComplete (session ended,
+    // force-end, a second call) used to overwrite SESSION_RESULTS and add the
+    // scores and match history twice.
+    if (!lobby || lobby.state !== 'PLAYING') return;
+    this.cancelDisconnectGrace(lobbyId);
 
     // Clean up game handler
     if (lobby.currentGame?.handler) {
@@ -1303,6 +1383,7 @@ export class GameCoordinator {
     // Clean up lifecycle tracking
     this.clearLifecycleTimers(lobbyId);
     this.lifecycles.delete(lobbyId);
+    this.cancelDisconnectGrace(lobbyId);
     this.spectatorTargets.delete(lobbyId);
   }
 

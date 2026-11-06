@@ -19,6 +19,8 @@ import { CHAT_HISTORY_LENGTH, RADIO_CODE } from '../../lib/rmhmusic/constants';
 export class RoomManager {
   public rooms = new Map<string, ServerRoom>();
   private socketToRoom = new Map<string, string>();
+  /** Disconnect grace timers keyed `${roomId}:${userId}` (were untracked and could stack). */
+  private readonly graceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private userToSocket = new Map<string, string>();
   private gcTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -168,6 +170,8 @@ export class RoomManager {
 
     const existing = room.members.get(userId);
     if (existing) {
+      clearTimeout(this.graceTimers.get(`${room.id}:${userId}`));
+      this.graceTimers.delete(`${room.id}:${userId}`);
       existing.socketId = socket.id;
       existing.isConnected = true;
       existing.disconnectedAt = null;
@@ -212,18 +216,31 @@ export class RoomManager {
 
     const member = room.members.get(userId);
     if (!member) return;
+    // A late disconnect from an old tab must not mark the live session
+    // offline (and get it removed when the grace expires).
+    if (member.socketId !== socket.id) {
+      this.socketToRoom.delete(socket.id);
+      return;
+    }
 
     member.isConnected = false;
     member.disconnectedAt = Date.now();
 
-    setTimeout(() => {
-      const r = this.rooms.get(roomId);
-      if (!r) return;
-      const m = r.members.get(userId);
-      if (m && !m.isConnected) {
-        this.removeMember(socket, roomId, userId);
-      }
-    }, config.graceMs);
+    // One grace timer per member: replace, never stack.
+    const graceKey = `${roomId}:${userId}`;
+    clearTimeout(this.graceTimers.get(graceKey));
+    this.graceTimers.set(
+      graceKey,
+      setTimeout(() => {
+        this.graceTimers.delete(graceKey);
+        const r = this.rooms.get(roomId);
+        if (!r) return;
+        const m = r.members.get(userId);
+        if (m && !m.isConnected) {
+          this.removeMember(socket, roomId, userId);
+        }
+      }, config.graceMs),
+    );
 
     this.socketToRoom.delete(socket.id);
     this.broadcastAction(room, 'MEMBER_DISCONNECTED', { userId });

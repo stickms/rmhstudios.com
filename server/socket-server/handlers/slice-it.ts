@@ -1740,8 +1740,16 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
       const song = await resolveSong(payload.songId);
       if (!song) return fail(sock, 'song_unavailable', 'That track is no longer available.');
 
+      // Re-check after the await: the lobby may be gone or replaced, a match
+      // may have started, or host may have passed to someone else (or this
+      // socket left) — a stale pick must not land on any of those.
       const live = lobbies.get(lobby.code);
-      if (!live) return;
+      if (!live || live !== lobby) return;
+      const now = lobbyOf(sock);
+      if (!now || now.lobby !== live || !isHost(live, now.seat)) {
+        return fail(sock, 'not_host', 'Only the host can pick the song.');
+      }
+      if (live.state !== 'waiting') return fail(sock, 'in_progress', 'A match is in progress.');
       // A host who picks a track while a ballot is open has overruled it. The
       // ballot is closed rather than left running, because letting it resolve
       // later would silently overwrite the pick the host just made.

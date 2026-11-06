@@ -1346,6 +1346,13 @@ export class UndercoverEditorGame extends BaseMinigame {
   // ─── Force End ──────────────────────────────────────────────────────
 
   forceEnd(reason: string): void {
+    // The coordinator's "not enough players" end must end the game: treating
+    // it as a host skip only advanced one phase and left the game running.
+    if (reason === 'insufficient_players') {
+      this.cleanup();
+      this.context.onComplete(this.computeResults());
+      return;
+    }
     if (this.state.phase === 'READING') {
       // Host forcing READING to end — skip to REVIEW
       logger.info({

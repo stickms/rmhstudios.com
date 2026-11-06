@@ -91,6 +91,38 @@ export class LobbyManager {
   /** Optional callback invoked when a new spectator joins a lobby mid-game. */
   onSpectatorJoinedMidGame?: (lobbyId: string, spectatorUserId: string, socket: Socket) => void;
 
+  /**
+   * Called when a player leaves the lobby for good (leave, kick, grace expiry)
+   * while it still exists, so the running minigame — which holds a roster
+   * snapshot — hears about it.
+   */
+  onPlayerRemoved?: (lobbyId: string, userId: string) => void;
+
+  /**
+   * Teardown listeners: the game coordinator and vote manager stop their
+   * timers, handlers and votes for a lobby whose session is ending or which is
+   * being disbanded. Without this a running game or vote kept ticking under
+   * SESSION_RESULTS / after the lobby was gone.
+   */
+  private readonly teardownListeners: Array<(lobbyId: string) => void> = [];
+
+  /** Set during process shutdown: disconnects no longer start grace windows. */
+  shuttingDown = false;
+
+  onTeardown(fn: (lobbyId: string) => void): void {
+    this.teardownListeners.push(fn);
+  }
+
+  private teardown(lobbyId: string): void {
+    for (const fn of this.teardownListeners) {
+      try {
+        fn(lobbyId);
+      } catch (err) {
+        logger.error({ event: 'lobby_teardown_listener_error', lobbyId, error: String(err) });
+      }
+    }
+  }
+
   constructor(io: Server) {
     this.io = io;
   }
@@ -154,7 +186,9 @@ export class LobbyManager {
   /** Broadcast a game action to all members in a lobby with auto-incrementing seq */
   broadcastAction(lobbyId: string, action: { type: string; payload?: unknown }): void {
     const seq = (this.seqCounters.get(lobbyId) ?? 0) + 1;
-    this.seqCounters.set(lobbyId, seq);
+    // Don't recreate the counter for a disbanded lobby (a late timer or
+    // handler broadcasting after disband used to leak one per lobby).
+    if (this.lobbies.has(lobbyId)) this.seqCounters.set(lobbyId, seq);
     const fullAction: GameAction = {
       type: action.type,
       payload: action.payload ?? null,
@@ -244,8 +278,12 @@ export class LobbyManager {
     const userId = socket.data.userId as string;
     const lobby = this.getLobbyByUserId(userId);
     if (!lobby) return;
+    if (this.shuttingDown) return;
 
     const player = lobby.players.get(userId);
+    // A late disconnect from an old tab (or the duplicate-session socket
+    // being kicked) must not mark the live session offline.
+    if (player && player.socketId !== socket.id) return;
     if (player) {
       player.isConnected = false;
       player.isReady = false;
@@ -273,6 +311,7 @@ export class LobbyManager {
     }
 
     const spectator = lobby.spectators.get(userId);
+    if (spectator && spectator.socketId !== socket.id) return;
     if (spectator) {
       // Spectators are removed immediately — no grace period
       lobby.spectators.delete(userId);
@@ -707,6 +746,10 @@ export class LobbyManager {
         socketRoom.leave(`lobby:${lobby.id}:player:${userId}`);
       }
     }
+    // A running minigame shares this player object through its roster
+    // snapshot: mark it gone so the snapshot agrees with the lobby.
+    player.isConnected = false;
+    player.socketId = null;
 
     // Handle host succession
     if (wasHost) {
@@ -808,6 +851,12 @@ export class LobbyManager {
     this.addSystemChat(lobby.id, `${userName} left`);
 
     logger.info({ event: 'player_left', lobbyId: lobby.id, userId });
+
+    try {
+      this.onPlayerRemoved?.(lobby.id, userId);
+    } catch (err) {
+      logger.error({ event: 'player_removed_listener_error', lobbyId: lobby.id, userId, error: String(err) });
+    }
   }
 
   // ─── Host controls (§5) ────────────────────────────────────
@@ -856,6 +905,9 @@ export class LobbyManager {
     // Remove the target
     if (targetPlayer) {
       lobby.players.delete(payload.targetUserId);
+      // Shared with a running minigame's roster snapshot (see removePlayer).
+      targetPlayer.isConnected = false;
+      targetPlayer.socketId = null;
     } else {
       lobby.spectators.delete(payload.targetUserId);
     }
@@ -872,6 +924,14 @@ export class LobbyManager {
     this.addSystemChat(lobby.id, `${targetUserName} was kicked by the host`);
 
     logger.info({ event: 'player_kicked', lobbyId: lobby.id, targetUserId: payload.targetUserId, byUserId: userId });
+
+    if (targetPlayer) {
+      try {
+        this.onPlayerRemoved?.(lobby.id, payload.targetUserId);
+      } catch (err) {
+        logger.error({ event: 'player_removed_listener_error', lobbyId: lobby.id, error: String(err) });
+      }
+    }
   }
 
   private transferHost(socket: Socket, payload: { lobbyId: string; targetUserId: string }): void {
@@ -971,6 +1031,13 @@ export class LobbyManager {
       return;
     }
 
+    // Ending twice re-broadcast the results and leaked the first disband timer.
+    if (lobby.state === 'SESSION_RESULTS' || lobby.state === 'DISBANDED') return;
+
+    // Stop whatever is running (a game, a vote, a phase timer) first: its
+    // completion used to land on SESSION_RESULTS and overwrite it.
+    this.teardown(lobby.id);
+
     // Transition to SESSION_RESULTS
     lobby.state = 'SESSION_RESULTS';
     lobby.lastActivityAt = Date.now();
@@ -995,6 +1062,8 @@ export class LobbyManager {
     });
 
     // Schedule disband after delay
+    const previous = this.disbandTimers.get(lobby.id);
+    if (previous) clearTimeout(previous);
     const timer = setTimeout(() => {
       this.disbandTimers.delete(lobby.id);
       this.disband(lobby.id, 'Session ended');
@@ -1504,6 +1573,8 @@ export class LobbyManager {
     const lobby = this.lobbies.get(lobbyId);
     if (!lobby) return;
 
+    // Stop the coordinator's game/timers/grace and the vote manager's vote.
+    this.teardown(lobbyId);
     lobby.state = 'DISBANDED';
 
     logger.info({ event: 'lobby_disbanded', lobbyId, reason });

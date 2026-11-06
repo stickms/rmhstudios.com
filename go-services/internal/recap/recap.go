@@ -47,6 +47,10 @@ type Repo interface {
 	Participants(ctx context.Context, guildID, dateKey string) ([]Participant, error)
 	// ClearRecap sets recapDateKey=NULL, recapDueAt=NULL for the channel id.
 	ClearRecap(ctx context.Context, channelID string) error
+	// RestoreRecap puts a cleared schedule back (recapDateKey=dateKey,
+	// recapDueAt=now) so the next tick retries it — only if nothing has
+	// rescheduled the channel since it was cleared.
+	RestoreRecap(ctx context.Context, channelID, dateKey string, now time.Time) error
 }
 
 // Poster abstracts sending a built message to a Discord channel. Implemented by

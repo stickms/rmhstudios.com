@@ -65,7 +65,13 @@ export class ReconnectionHandler {
     if (!member) return;
 
     // ─── Handle Duplicate Session (§9.4) ─────────────────────
+    // Point the member at the new socket BEFORE kicking the old one:
+    // disconnect(true) runs the old socket's disconnect handlers
+    // synchronously, and they ignore a socket that is no longer the member's
+    // (previously a spectator was deleted, and a player marked offline, here).
     const existingSocketId = member.socketId;
+    member.socketId = socket.id;
+    member.isConnected = true;
     if (existingSocketId && existingSocketId !== socket.id) {
       const oldSocket = this.io.sockets.sockets?.get(existingSocketId);
       if (oldSocket) {

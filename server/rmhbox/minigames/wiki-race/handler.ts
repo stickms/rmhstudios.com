@@ -185,10 +185,20 @@ export class WikiRaceMinigame extends BaseMinigame {
       difficulty: this.state.articlePair.difficulty,
     });
 
-    // Fetch start article for each player
+    // Fetch start article for each player. Tagged with the round: a slow
+    // fetch from round N resolving during round N+1 must not overwrite the
+    // new round's links and article.
     const startTitle = this.state.articlePair.startArticle.title;
+    const round = this.state.currentRound;
     this.fetchAndSendArticle(startTitle).then((article) => {
       if (!this.isRunning || !article) return;
+      if (
+        this.state.currentRound !== round ||
+        this.state.phase !== WikiRacePhase.NAVIGATION ||
+        this.state.articlePair.startArticle.title !== startTitle
+      ) {
+        return;
+      }
       // Populate links for all players from the start article
       for (const ps of this.state.playerStates.values()) {
         ps.currentArticleLinks = new Set(article.links);

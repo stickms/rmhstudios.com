@@ -87,6 +87,10 @@ interface BaccaratRoom {
   revealedBankerCards: Card[];
   bettingTimer: ReturnType<typeof setTimeout> | null;
   resultsTimer: ReturnType<typeof setTimeout> | null;
+  // The 2s "nobody bet, try again" restart. It was untracked, so a join during
+  // the gap started betting and the stray timer then restarted it, zeroing
+  // every debited bet.
+  restartTimer: ReturnType<typeof setTimeout> | null;
   roundNumber: number;
   bettingDeadline: number | null;
   history: BaccaratResult[];
@@ -198,7 +202,7 @@ function broadcastRoomList() {
       ownerName: r.ownerName,
       playerCount: r.players.size,
       maxPlayers: r.maxPlayers,
-      inProgress: r.phase !== 'idle' && r.phase !== 'betting',
+      inProgress: roundInProgress(r),
     }));
   ioRef.to(LOBBY_ROOM).emit(S2C.ROOM_LIST, { rooms: list });
 }
@@ -224,6 +228,52 @@ function clearTimers(room: BaccaratRoom) {
     clearTimeout(room.resultsTimer);
     room.resultsTimer = null;
   }
+  if (room.restartTimer) {
+    clearTimeout(room.restartTimer);
+    room.restartTimer = null;
+  }
+}
+
+/** Cards are out or results are showing: stakes are committed. */
+function roundInProgress(room: BaccaratRoom): boolean {
+  return room.phase !== 'idle' && room.phase !== 'betting';
+}
+
+/** The room is still the live one for this id (not destroyed while we awaited). */
+function isLive(room: BaccaratRoom): boolean {
+  return rooms.get(room.roomId) === room;
+}
+
+/** The async deal for `round` may continue (room alive, same round, still dealing). */
+function stillDealing(room: BaccaratRoom, round: number): boolean {
+  return (
+    isLive(room) &&
+    room.roundNumber === round &&
+    (room.phase === 'dealing' || room.phase === 'drawing')
+  );
+}
+
+/** Return a stake that never reached a deal. Errors are logged, never thrown. */
+async function refundStake(room: BaccaratRoom, userId: string, amount: number, note: string) {
+  if (amount <= 0) return;
+  try {
+    const prisma = getPrismaClient();
+    const balance = await prisma.$transaction(async (tx) => {
+      await creditCoinsOn(tx, userId, amount, {
+        tx,
+        type: 'WAGER',
+        entityType: 'baccarat',
+        entityId: room.roomId,
+        note,
+      });
+      return getBalanceOn(tx, userId);
+    });
+    for (const [sid, uid] of socketToUserId) {
+      if (uid === userId) ioRef.sockets.sockets.get(sid)?.emit(S2C.BALANCE_UPDATE, { coins: balance });
+    }
+  } catch (err) {
+    logger.error({ event: 'bacc_refund_error', roomId: room.roomId, userId, amount, error: String(err) });
+  }
 }
 
 // ── Async Delay ────────────────────────────────────────────────────
@@ -235,6 +285,12 @@ function delay(ms: number): Promise<void> {
 // ── Round Lifecycle ────────────────────────────────────────────────
 
 function startBettingPhase(room: BaccaratRoom) {
+  if (room.restartTimer) {
+    clearTimeout(room.restartTimer);
+    room.restartTimer = null;
+  }
+  // Only from idle: re-entering over a live betting phase wiped debited bets.
+  if (room.phase !== 'idle' || !isLive(room)) return;
   if (room.players.size === 0) {
     room.phase = 'idle';
     broadcastTableState(room);
@@ -285,7 +341,10 @@ function endBettingPhase(room: BaccaratRoom) {
     room.phase = 'idle';
     broadcastTableState(room);
     if (room.players.size > 0) {
-      setTimeout(() => startBettingPhase(room), 2000);
+      room.restartTimer = setTimeout(() => {
+        room.restartTimer = null;
+        startBettingPhase(room);
+      }, 2000);
     }
     return;
   }
@@ -297,6 +356,9 @@ function endBettingPhase(room: BaccaratRoom) {
 
 async function dealCards(room: BaccaratRoom) {
   room.phase = 'dealing';
+  // The reveal is a chain of awaited delays that clearTimers/destroyRoom can't
+  // cancel; every step re-checks it is still this round's deal.
+  const round = room.roundNumber;
 
   if (room.shoe.length < RESHUFFLE_THRESHOLD) {
     room.shoe = createShoe(8);
@@ -317,15 +379,19 @@ async function dealCards(room: BaccaratRoom) {
   // Order: Player card 1, Banker card 1, Player card 2, Banker card 2
   await revealCard(room, 'player', pCard1, 0);
   await delay(CARD_REVEAL_DELAY_MS);
+  if (!stillDealing(room, round)) return;
 
   await revealCard(room, 'banker', bCard1, 0);
   await delay(CARD_REVEAL_DELAY_MS);
+  if (!stillDealing(room, round)) return;
 
   await revealCard(room, 'player', pCard2, 1);
   await delay(CARD_REVEAL_DELAY_MS);
+  if (!stillDealing(room, round)) return;
 
   await revealCard(room, 'banker', bCard2, 1);
   await delay(CARD_REVEAL_DELAY_MS);
+  if (!stillDealing(room, round)) return;
 
   // Check for naturals
   const playerNat = isNatural(room.playerHand);
@@ -349,6 +415,7 @@ async function dealCards(room: BaccaratRoom) {
     room.playerHand.push(playerThirdCard);
     await revealCard(room, 'player', playerThirdCard, 2);
     await delay(CARD_REVEAL_DELAY_MS);
+  if (!stillDealing(room, round)) return;
   }
 
   // Banker third card
@@ -357,6 +424,7 @@ async function dealCards(room: BaccaratRoom) {
     room.bankerHand.push(bankerThirdCard);
     await revealCard(room, 'banker', bankerThirdCard, 2);
     await delay(CARD_REVEAL_DELAY_MS);
+  if (!stillDealing(room, round)) return;
   }
 
   resolveRound(room);
@@ -382,6 +450,7 @@ async function revealCard(
 // ── Payouts ───────────────────────────────────────────────────────
 
 async function resolveRound(room: BaccaratRoom) {
+  if (!isLive(room) || (room.phase !== 'dealing' && room.phase !== 'drawing')) return;
   const result = determineResult(room.playerHand, room.bankerHand);
   const sideBets = calculateSideBets(room.playerHand, room.bankerHand, result);
 
@@ -520,10 +589,12 @@ async function resolveRound(room: BaccaratRoom) {
     logger.error({ event: 'bacc_payout_error', roomId: room.roomId, error: String(err) });
   }
 
+  if (!isLive(room)) return;
   room.phase = 'results';
   broadcastTableState(room);
 
   room.resultsTimer = setTimeout(() => {
+    room.resultsTimer = null;
     // Prune players who left or disconnected (now that their payout has settled).
     for (const [uid, p] of room.players) {
       const sock = p.socketId ? ioRef.sockets.sockets.get(p.socketId) : null;
@@ -557,6 +628,7 @@ async function resolveRound(room: BaccaratRoom) {
     }
 
     broadcastRoomList();
+    room.phase = 'idle';
     startBettingPhase(room);
   }, RESULTS_DISPLAY_MS);
 }
@@ -584,7 +656,7 @@ export function listPublicRooms() {
       ownerName: r.ownerName,
       playerCount: r.players.size,
       maxPlayers: r.maxPlayers,
-      inProgress: r.phase !== 'idle' && r.phase !== 'betting',
+      inProgress: roundInProgress(r),
     }));
 }
 
@@ -644,6 +716,7 @@ function onCreateRoom(socket: Socket, payload: unknown) {
     revealedBankerCards: [],
     bettingTimer: null,
     resultsTimer: null,
+    restartTimer: null,
     roundNumber: 0,
     bettingDeadline: null,
     history: [],
@@ -809,8 +882,7 @@ function leaveRoom(userId: string, socketId: string) {
   // If the player leaves while a round is in progress and still has an active
   // bet, keep the seat so the pending payout still settles. Detach the socket
   // now; the seat is pruned once the round resolves.
-  const roundActive =
-    room.phase === 'dealing' || room.phase === 'drawing' || room.phase === 'results';
+  const roundActive = roundInProgress(room);
   if (roundActive && player.totalBetThisRound > 0) {
     player.pendingRemoval = true;
     player.socketId = '';
@@ -824,6 +896,13 @@ function leaveRoom(userId: string, socketId: string) {
     logger.info({ event: 'bacc_player_left_pending_payout', roomId, userId, seatIndex });
     return;
   }
+
+  // Bets placed this betting phase never reached a deal: give them back (they
+  // used to vanish with the deleted seat).
+  const uncommitted = player.totalBetThisRound;
+  player.bets = emptyBets();
+  player.totalBetThisRound = 0;
+  void refundStake(room, userId, uncommitted, 'Baccarat bet refund (left table)');
 
   room.players.delete(userId);
   userToRoom.delete(userId);
@@ -959,6 +1038,7 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
     return;
   }
 
+  const round = room.roundNumber;
   try {
     const prisma = getPrismaClient();
     const result = await prisma.$transaction(async (tx: any) => {
@@ -976,6 +1056,18 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
       });
       return getBalanceOn(tx, userId);
     });
+
+    // Betting may have closed (or the player left) while the debit awaited.
+    if (
+      !isLive(room) ||
+      room.phase !== 'betting' ||
+      room.roundNumber !== round ||
+      room.players.get(userId) !== player
+    ) {
+      socket.emit(S2C.ERROR, { message: 'Betting closed — your bet was refunded.' });
+      await refundStake(room, userId, amount, 'Baccarat bet refund (betting closed)');
+      return;
+    }
 
     // Add to the specific bet type
     player.bets[betType as BetType] += amount;
@@ -1017,8 +1109,14 @@ async function onClearBets(socket: Socket) {
   const player = room.players.get(userId);
   if (!player) return;
 
-  const refundAmount = player.totalBetThisRound;
+  // Take exactly the bets being cleared off the seat now, synchronously: a bet
+  // whose debit commits while this refund awaits is kept, not wiped unrefunded.
+  const cleared = player.bets;
+  const refundAmount = totalBets(cleared);
   if (refundAmount <= 0) return;
+  const round = room.roundNumber;
+  player.bets = emptyBets();
+  player.totalBetThisRound -= refundAmount;
 
   try {
     const prisma = getPrismaClient();
@@ -1035,13 +1133,19 @@ async function onClearBets(socket: Socket) {
       return getBalanceOn(tx, userId);
     });
 
-    player.bets = emptyBets();
-    player.totalBetThisRound = 0;
-
     socket.emit(S2C.BALANCE_UPDATE, { coins: result });
     broadcastTableState(room);
   } catch (err) {
     logger.error({ event: 'bacc_clear_bets_error', userId, error: String(err) });
+    // The refund didn't land: put the bets back if they can still play.
+    if (isLive(room) && room.roundNumber === round && room.players.get(userId) === player && room.phase === 'betting') {
+      for (const k of Object.keys(cleared) as BetType[]) player.bets[k] += cleared[k];
+      player.totalBetThisRound += refundAmount;
+      broadcastTableState(room);
+    } else {
+      // Too late to play them: retry the refund once instead of losing them.
+      void refundStake(room, userId, refundAmount, 'Baccarat bet cleared (retry)');
+    }
     socket.emit(S2C.ERROR, { message: 'Failed to clear bets.' });
   }
 }
@@ -1090,7 +1194,7 @@ export function handleBaccaratDisconnect(_io: Server, socket: Socket): void {
     return;
   }
 
-  if (room.phase === 'idle' || room.phase === 'betting') {
+  if (!roundInProgress(room)) {
     leaveRoom(userId, socket.id);
   } else {
     // Mid-round: keep the player seat so they get payouts, just remove socket mapping

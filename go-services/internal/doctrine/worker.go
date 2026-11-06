@@ -423,10 +423,21 @@ func (w *Worker) applyReputationDecay(ctx context.Context) error {
 	return nil
 }
 
-// inactiveReputations finds reputations with lastActiveAt < cutoff and totalXp > 0.
+// notDecayedThisWeekSQL excludes a reputation that already has this ISO week's
+// WEEKLY_DECAY ledger row (Postgres weeks start on Monday). Decay never touches
+// "lastActiveAt" and the scheduler fires every Monday hour (and again on every
+// restart), so without it one inactive player was decayed up to 24x a week.
+// It is checked both in the read and in the conditional UPDATE, which runs in
+// the same transaction as the ledger insert, so a pass can apply at most once.
+const notDecayedThisWeekSQL = `NOT EXISTS (SELECT 1 FROM "doctrine_reputation_ledger" l
+	WHERE l."reputationId" = r."id" AND l."action" = 'WEEKLY_DECAY'
+	AND l."createdAt" >= date_trunc('week', now()))`
+
+// inactiveReputations finds reputations with lastActiveAt < cutoff and totalXp > 0
+// that have not been decayed yet this week.
 func (w *Worker) inactiveReputations(ctx context.Context, cutoff time.Time) ([]inactiveRep, error) {
 	rows, err := w.db.Pool.Query(ctx,
-		`SELECT "id", "totalXp" FROM "doctrine_reputation" WHERE "lastActiveAt" < $1 AND "totalXp" > 0`,
+		`SELECT r."id", r."totalXp" FROM "doctrine_reputation" r WHERE r."lastActiveAt" < $1 AND r."totalXp" > 0 AND `+notDecayedThisWeekSQL,
 		cutoff,
 	)
 	if err != nil {
@@ -456,11 +467,12 @@ func (w *Worker) inactiveReputations(ctx context.Context, cutoff time.Time) ([]i
 // is conditional on the total still being the one the new value was computed
 // from ($3), so an XP award landing between the read and this write is never
 // overwritten: that row is skipped (RETURNING omits it) and gets no ledger row.
+// A row already decayed this week is skipped the same way (notDecayedThisWeekSQL).
 // The ledger delta is computed in SQL from the old total, so for every row that
 // IS decayed the delta equals the change actually written.
 const decayUpdateSQL = `UPDATE "doctrine_reputation" r SET "totalXp" = t.xp
 	FROM unnest($1::text[], $2::int[], $3::int[]) AS t(id, xp, old)
-	WHERE r."id" = t.id AND r."totalXp" = t.old
+	WHERE r."id" = t.id AND r."totalXp" = t.old AND ` + notDecayedThisWeekSQL + `
 	RETURNING r."id"`
 
 const decayLedgerSQL = `INSERT INTO "doctrine_reputation_ledger"
