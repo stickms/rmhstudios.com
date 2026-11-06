@@ -1315,7 +1315,11 @@ step_start "Hotswapping web container (blue/green, smoke + bake)..."
 hotswap_rc=1
 while IFS= read -r line; do
     case "$line" in
-        ::deploy-stage::*) stage "${line#::deploy-stage::}" ;;
+        # stage() writes the journal too (release_event), and must not abort the
+        # loop either (see below). In a `||` list errexit is off inside stage, so
+        # a refused or failed write is reported by release-state.mjs on stderr
+        # and the loop keeps reading.
+        ::deploy-stage::*) stage "${line#::deploy-stage::}" || log "WARNING: release journal could not record stage ${line#::deploy-stage::}" ;;
         ::deploy-note::*)  stage_note "${line#::deploy-note::}" ;;
         # Journal writes here must never abort the loop: traffic has already
         # moved (or moved back) when these arrive, and under `set -e` a failing

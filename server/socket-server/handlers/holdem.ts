@@ -8,6 +8,12 @@
 import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../prisma-client';
 import { debitCoinsOn, creditCoinsOn, getBalanceOn } from '../../../lib/economy/ledger-core';
+import {
+  InFlight,
+  settleShutdownClaims,
+  type ShutdownRefundSummary,
+  type StakeClaim,
+} from './casino-shutdown';
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
 import {
@@ -110,6 +116,11 @@ interface HoldemRoom {
   communityCards: Card[];
   pot: number;
   sidePots: SidePot[];
+  // True once endHand has paid this hand's pot into the winners' totalChips
+  // (totalBetThisHand is then history, not a stake) until the next hand
+  // starts. The phase is 'showdown' both before and after that point, so
+  // shutdown reads this to avoid refunding a contribution already paid out.
+  potAwarded: boolean;
   currentTurnUserId: string | null;
   currentBet: number;
   minRaise: number;
@@ -149,6 +160,10 @@ const rooms = new Map<string, HoldemRoom>();
 const socketToUserId = new Map<string, string>();
 const userToRoom = new Map<string, string>();
 let ioRef: Server;
+// Set once by cashOutHoldemOnShutdown(): from then on no room is live.
+let closing = false;
+// Buy-in/rebuy debits, their refunds and cash-outs still awaiting the database.
+const inFlight = new InFlight();
 
 // Socket.io room that lobby browsers join so room-list updates reach only the
 // clients currently viewing the lobby — not every connected socket on the
@@ -317,9 +332,12 @@ function clearTimers(room: HoldemRoom) {
   }
 }
 
-/** The room is still the live one for this id (not destroyed while we awaited). */
+/**
+ * The room is still the live one for this id (not destroyed while we awaited),
+ * and the hub is not shutting down (every seat was cashed out at shutdown).
+ */
 function isLive(room: HoldemRoom): boolean {
-  return rooms.get(room.roomId) === room;
+  return !closing && rooms.get(room.roomId) === room;
 }
 
 /** Run fn after ms, only if the room is alive and still on the same hand. */
@@ -346,6 +364,7 @@ function startNewHand(room: HoldemRoom) {
   room.communityCards = [];
   room.pot = 0;
   room.sidePots = [];
+  room.potAwarded = false;
   room.currentBet = 0;
   room.minRaise = room.bigBlind;
   room.currentTurnUserId = null;
@@ -595,6 +614,7 @@ function endHand(room: HoldemRoom) {
     // Last man standing
     const winner = active[0];
     winner.totalChips += room.pot;
+    room.potAwarded = true;
     winner.sessionStats.handsWon++;
     if (room.pot > winner.sessionStats.biggestPot) {
       winner.sessionStats.biggestPot = room.pot;
@@ -676,6 +696,8 @@ function endHand(room: HoldemRoom) {
         }
       }
     }
+
+    room.potAwarded = true;
 
     // Include all players in results (folded players lost their bets)
     const results = Array.from(room.players.values())
@@ -827,7 +849,11 @@ function calculateSidePots(room: HoldemRoom) {
     pots.length > 0 ? pots : [{ amount: room.pot, eligible: active.map((p) => p.userId) }];
 }
 
-async function cashOutPlayer(room: HoldemRoom, player: PlayerSeat) {
+function cashOutPlayer(room: HoldemRoom, player: PlayerSeat): Promise<void> {
+  return inFlight.track(cashOutPlayerNow(room, player));
+}
+
+async function cashOutPlayerNow(room: HoldemRoom, player: PlayerSeat) {
   // Claim the chips synchronously: totalChips was never zeroed, so a second
   // cash-out (leave + disconnect, or the results sweep) credited them again.
   const amount = player.totalChips;
@@ -951,6 +977,7 @@ async function onCreateRoom(socket: Socket, payload: unknown) {
     communityCards: [],
     pot: 0,
     sidePots: [],
+    potAwarded: false,
     currentTurnUserId: null,
     currentBet: 0,
     minRaise: bigBlind,
@@ -1507,19 +1534,19 @@ export function registerHoldemHandlers(io: Server, socket: Socket): void {
 
   socket.on(C2S.LIST_ROOMS, () => onListRooms(socket));
   socket.on(C2S.CREATE_ROOM, (payload) => {
-    onCreateRoom(socket, payload).catch((err) =>
-      logger.error({ event: 'holdem_create_room_error', error: String(err) }),
-    );
+    inFlight
+      .track(onCreateRoom(socket, payload))
+      .catch((err) => logger.error({ event: 'holdem_create_room_error', error: String(err) }));
   });
   socket.on(C2S.JOIN_ROOM, (payload) => {
-    onJoinRoom(socket, payload).catch((err) =>
-      logger.error({ event: 'holdem_join_room_error', error: String(err) }),
-    );
+    inFlight
+      .track(onJoinRoom(socket, payload))
+      .catch((err) => logger.error({ event: 'holdem_join_room_error', error: String(err) }));
   });
   socket.on(C2S.LEAVE_ROOM, () => {
-    onLeaveRoom(socket).catch((err) =>
-      logger.error({ event: 'holdem_leave_room_error', error: String(err) }),
-    );
+    inFlight
+      .track(onLeaveRoom(socket))
+      .catch((err) => logger.error({ event: 'holdem_leave_room_error', error: String(err) }));
   });
   socket.on(C2S.UPDATE_ROOM, (payload) => onUpdateRoom(socket, payload));
 
@@ -1607,7 +1634,7 @@ export function registerHoldemHandlers(io: Server, socket: Socket): void {
     }
   });
 
-  socket.on(C2S.REBUY, async () => {
+  async function onRebuy() {
     const userId = socketToUserId.get(socket.id);
     if (!userId) return;
     const roomId = userToRoom.get(userId);
@@ -1676,7 +1703,10 @@ export function registerHoldemHandlers(io: Server, socket: Socket): void {
     } finally {
       player.rebuying = false;
     }
-  });
+  }
+  // Tracked so shutdown waits for a rebuy whose debit is in flight (the
+  // refund-if-gone branch above is what returns that buy-in).
+  socket.on(C2S.REBUY, () => void inFlight.track(onRebuy()));
 
   socket.on(C2S.SHOW_CARDS, (payload: unknown) => {
     const userId = socketToUserId.get(socket.id);
@@ -1789,6 +1819,7 @@ registerPartyGame('holdem', {
       communityCards: [],
       pot: 0,
       sidePots: [],
+      potAwarded: false,
       currentTurnUserId: null,
       currentBet: 0,
       minRaise: bigBlind,
@@ -1820,3 +1851,68 @@ registerPartyGame('holdem', {
     logger.info({ event: 'holdem_party_room_reaped', roomId });
   },
 });
+
+// ── Shutdown ───────────────────────────────────────────────────────
+
+/**
+ * Hub shutdown: cash out every seated player and kill every room. A hand in
+ * progress is voided, not played out: each seat gets back what it committed to
+ * this hand's pot (folded or not) plus its remaining stack, and no hand is ever
+ * paid. Once endHand has awarded the pot (`potAwarded`, also true through
+ * `results` and a `waiting` that follows a hand) the stacks already hold it,
+ * so only the stacks are paid.
+ *
+ * Exactly-once: chips and contributions are read and zeroed synchronously,
+ * before anything awaits — the same claim cashOutPlayer makes — and `closing`
+ * makes every room not-live, so the turn/hand/results timers, the results
+ * sweep's cash-outs and leave/disconnect can no longer reach them. A buy-in or
+ * rebuy whose debit is still in flight is not on a seat yet; its handler
+ * refunds it when it sees the room is gone, and the returned promise waits for
+ * that too.
+ */
+export function cashOutHoldemOnShutdown(deadlineMs?: number): Promise<ShutdownRefundSummary> {
+  closing = true;
+  const claims: StakeClaim[] = [];
+  for (const room of rooms.values()) {
+    clearTimers(room);
+    const handLive = room.phase !== 'waiting' && room.phase !== 'results' && !room.potAwarded;
+    let committedTotal = 0;
+    for (const p of room.players.values()) {
+      const stack = p.totalChips;
+      const committed = handLive ? p.totalBetThisHand : 0;
+      committedTotal += committed;
+      p.totalChips = 0;
+      p.totalBetThisHand = 0;
+      p.currentBet = 0;
+      const amount = stack + committed;
+      if (amount > 0) {
+        claims.push({
+          game: 'holdem',
+          roomId: room.roomId,
+          userId: p.userId,
+          amount,
+          round: room.handNumber,
+          detail: `phase=${room.phase} stack=${stack} committed=${committed}`,
+        });
+      }
+    }
+    // What is left came from players who folded and left this hand: they gave
+    // it up when they left (cashOutPlayer paid their stack), and a voided hand
+    // has no winner to pay it to. Logged so the books show where it went.
+    const forfeited = handLive ? room.pot - committedTotal : 0;
+    if (forfeited > 0) {
+      logger.info({
+        event: 'holdem_shutdown_forfeited_pot',
+        roomId: room.roomId,
+        handNumber: room.handNumber,
+        amount: forfeited,
+      });
+    }
+    room.pot = 0;
+    room.sidePots = [];
+  }
+  rooms.clear();
+  userToRoom.clear();
+  socketToUserId.clear();
+  return settleShutdownClaims('holdem', claims, inFlight, deadlineMs);
+}

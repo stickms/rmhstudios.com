@@ -17,6 +17,12 @@ import {
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
 import {
+  InFlight,
+  settleShutdownClaims,
+  type ShutdownRefundSummary,
+  type StakeClaim,
+} from './casino-shutdown';
+import {
   type Bet,
   type BetType,
   spin,
@@ -76,6 +82,11 @@ interface RouletteRoom {
   // the gap started betting and the stray timer then restarted it, zeroing
   // every debited bet.
   restartTimer: ReturnType<typeof setTimeout> | null;
+  // True from the moment resolvePayouts has computed this round's payouts
+  // (its settlement transaction then owns every bet) until the next betting
+  // phase. The phase stays 'spinning' across that await, so shutdown reads
+  // this to tell a spin still owed a refund from one already being paid.
+  settling: boolean;
   roundNumber: number;
   bettingDeadline: number | null;
   lastResult: number | null;
@@ -164,6 +175,10 @@ const rooms = new Map<string, RouletteRoom>();
 const socketToUserId = new Map<string, string>();
 const userToRoom = new Map<string, string>();
 let ioRef: Server;
+// Set once by refundRouletteOnShutdown(): from then on no room is live.
+let closing = false;
+// Debits, refunds and payout transactions still awaiting the database.
+const inFlight = new InFlight();
 
 // Socket.io room that lobby browsers join so room-list updates reach only the
 // clients currently viewing the lobby — not every connected socket on the
@@ -264,13 +279,20 @@ function roundInProgress(room: RouletteRoom): boolean {
   return room.phase !== 'idle' && room.phase !== 'betting';
 }
 
-/** The room is still the live one for this id (not destroyed while we awaited). */
+/**
+ * The room is still the live one for this id (not destroyed while we awaited),
+ * and the hub is not shutting down (its stakes were refunded at shutdown).
+ */
 function isLive(room: RouletteRoom): boolean {
-  return rooms.get(room.roomId) === room;
+  return !closing && rooms.get(room.roomId) === room;
 }
 
 /** Return a stake that never reached a spin. Errors are logged, never thrown. */
-async function refundStake(room: RouletteRoom, userId: string, amount: number, note: string) {
+function refundStake(room: RouletteRoom, userId: string, amount: number, note: string) {
+  return inFlight.track(refundStakeNow(room, userId, amount, note));
+}
+
+async function refundStakeNow(room: RouletteRoom, userId: string, amount: number, note: string) {
   if (amount <= 0) return;
   try {
     const prisma = getPrismaClient();
@@ -306,6 +328,7 @@ function startBettingPhase(room: RouletteRoom) {
   }
 
   room.phase = 'betting';
+  room.settling = false;
   room.roundNumber++;
 
   for (const p of room.players.values()) {
@@ -373,12 +396,14 @@ function startSpinPhase(room: RouletteRoom) {
   // Wait for client animation to complete, then resolve payouts
   room.spinTimer = setTimeout(() => {
     room.spinTimer = null;
-    resolvePayouts(room, result);
+    void inFlight.track(resolvePayouts(room, result));
   }, SPIN_ANIMATION_DELAY_MS);
 }
 
 async function resolvePayouts(room: RouletteRoom, result: number) {
   if (room.phase !== 'spinning' || !isLive(room)) return;
+  // From here the settlement below owns every bet on the table (see `settling`).
+  room.settling = true;
   room.lastResult = result;
   room.history.unshift(result);
   if (room.history.length > MAX_HISTORY) {
@@ -585,6 +610,7 @@ function onCreateRoom(socket: Socket, payload: unknown) {
     resultsTimer: null,
     spinTimer: null,
     restartTimer: null,
+    settling: false,
     roundNumber: 0,
     bettingDeadline: null,
     lastResult: null,
@@ -1036,8 +1062,8 @@ export function registerRouletteHandlers(io: Server, socket: Socket): void {
   socket.on(C2S.LEAVE_ROOM, () => onLeaveRoom(socket));
   socket.on(C2S.UPDATE_ROOM, (payload) => onUpdateRoom(socket, payload));
 
-  socket.on(C2S.PLACE_BET, (payload) => onPlaceBet(socket, payload));
-  socket.on(C2S.CLEAR_BETS, () => onClearBets(socket));
+  socket.on(C2S.PLACE_BET, (payload) => inFlight.track(onPlaceBet(socket, payload)));
+  socket.on(C2S.CLEAR_BETS, () => inFlight.track(onClearBets(socket)));
 }
 
 export function handleRouletteDisconnect(_io: Server, socket: Socket): void {
@@ -1071,4 +1097,50 @@ export function handleRouletteDisconnect(_io: Server, socket: Socket): void {
     // During spinning/results, just mark socket as stale — cleanup after results
     socketToUserId.delete(socket.id);
   }
+}
+
+// ── Shutdown ───────────────────────────────────────────────────────
+
+/**
+ * Hub shutdown: refund every bet on a table that is betting or spinning and
+ * has not started settling, then kill every room. A spin whose payout
+ * transaction is already in flight (`settling`) is left to it — that
+ * transaction computed every seat's credit before awaiting, and shutdown waits
+ * for it via `inFlight`. `results` is settled; `idle` holds no bets.
+ *
+ * Exactly-once: bets are read and zeroed synchronously, before anything
+ * awaits, and `closing` makes every room not-live, so the spin timer, the
+ * results sweep, leave/disconnect and the post-debit re-checks can no longer
+ * reach them. A bet whose debit is still in flight is not on the seat yet; its
+ * handler refunds it when it sees the room is gone, and the returned promise
+ * waits for that too.
+ */
+export function refundRouletteOnShutdown(deadlineMs?: number): Promise<ShutdownRefundSummary> {
+  closing = true;
+  const claims: StakeClaim[] = [];
+  for (const room of rooms.values()) {
+    clearTimers(room);
+    const unsettled =
+      room.phase === 'betting' || (room.phase === 'spinning' && !room.settling);
+    for (const p of room.players.values()) {
+      const amount = unsettled ? p.bets.reduce((sum, b) => sum + b.amount, 0) : 0;
+      const count = p.bets.length;
+      p.bets = [];
+      p.totalBetThisRound = 0;
+      if (amount > 0) {
+        claims.push({
+          game: 'roulette',
+          roomId: room.roomId,
+          userId: p.userId,
+          amount,
+          round: room.roundNumber,
+          detail: `phase=${room.phase} bets=${count}`,
+        });
+      }
+    }
+  }
+  rooms.clear();
+  userToRoom.clear();
+  socketToUserId.clear();
+  return settleShutdownClaims('roulette', claims, inFlight, deadlineMs);
 }

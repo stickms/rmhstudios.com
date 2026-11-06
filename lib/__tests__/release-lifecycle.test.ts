@@ -66,6 +66,68 @@ describe('durable release fencing', () => {
     restoreRelease(dir, 'release-b');
     expect(readState(dir, 'live')?.sha).toBe(first);
   });
+  it('records the sequences deploy.sh actually writes, including a twice-recorded rollback', () => {
+    const dir = temporary();
+    const sequences: Record<string, string[]> = {
+      // fetch → … → hotswap bake marker → traffic-moved → health → validated → success
+      'release-ok': [
+        'queued',
+        'lock-acquired',
+        'fetched',
+        'fetch',
+        'pull',
+        'pulled',
+        'migrate',
+        'services',
+        'assets-published',
+        'swap',
+        'traffic-moved',
+        'bake',
+        'health',
+        'validated',
+        'success',
+      ],
+      // hotswap's ::deploy-event::rolledback, then update_deploy_status rolledback
+      'release-web-rollback': [
+        'queued',
+        'lock-acquired',
+        'fetched',
+        'swap',
+        'traffic-moved',
+        'bake',
+        'rolledback',
+        'rolledback',
+      ],
+      // a lost hotswap exit code reports `fail` after the rollback event
+      'release-rc-lost': ['queued', 'lock-acquired', 'swap', 'rolledback', 'fail'],
+      'release-queued-out': ['queued', 'superseded'],
+      'release-stale-rollback': ['queued', 'lock-acquired', 'superseded'],
+    };
+    for (const [id, phases] of Object.entries(sequences)) {
+      for (const phase of phases) recordRelease(dir, id, first, phase);
+      expect(readState(dir, id)?.phase).toBe(phases[phases.length - 1]);
+      expect(readState(dir, id)?.events.map((e: { phase: string }) => e.phase)).toEqual(phases);
+    }
+  });
+  it('refuses any phase after success, fail or superseded, leaving the outcome CI reads intact', () => {
+    const dir = temporary();
+    for (const terminal of ['success', 'fail', 'superseded']) {
+      const id = `release-${terminal}`;
+      recordRelease(dir, id, first, 'queued');
+      recordRelease(dir, id, first, terminal);
+      // The exit trap's `release_event fail || true`, a reused id's `queued`, a stray stage.
+      for (const later of ['fail', 'queued', 'lock-acquired', 'bake', 'success', terminal])
+        expect(() => recordRelease(dir, id, first, later)).toThrow('Release already ended');
+      const state = readState(dir, id);
+      expect(state?.phase).toBe(terminal);
+      expect(state?.events).toHaveLength(2);
+    }
+  });
+  it('still refuses a changed SHA before reporting an ended release', () => {
+    const dir = temporary();
+    recordRelease(dir, 'release-a', first, 'success');
+    expect(() => recordRelease(dir, 'release-a', second, 'queued')).toThrow('SHA cannot change');
+  });
   it('records unknown serving identity when first adoption rolls back an older container', () => {
     const dir = temporary();
     recordRelease(dir, 'release-first', first, 'queued');
