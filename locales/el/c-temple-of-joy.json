@@ -212,6 +212,8 @@
   "save-just-now": "just now",
   "save-last": "Last saved",
   "save-lifetime": "{{joy}} joy, all time.",
+  "save-load-failed": "Δεν ήταν δυνατή η φόρτωση της αποθήκευσής σας.",
+  "save-load-retry": "Δοκιμάστε ξανά",
   "save-note": "The temple saves itself every {{seconds}} seconds, again shortly after you stop playing, and again the moment the tab is closed or backgrounded. You should never need the button below.",
   "save-now": "Save now",
   "save-playtime": "Time in the temple",

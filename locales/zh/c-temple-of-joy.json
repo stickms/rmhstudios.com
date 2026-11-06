@@ -210,6 +210,8 @@
   "save-just-now": "刚刚",
   "save-last": "上次保存",
   "save-lifetime": "累计 {{joy}} 喜悦。",
+  "save-load-failed": "无法加载你的存档。",
+  "save-load-retry": "重试",
   "save-note": "圣殿每 {{seconds}} 秒自动保存一次，在你停止游玩后不久再保存一次，并在标签页关闭或转入后台的瞬间再保存一次。你本不需要下方的按钮。",
   "save-now": "立即保存",
   "save-playtime": "在圣殿中的时间",

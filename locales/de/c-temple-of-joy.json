@@ -212,6 +212,8 @@
   "save-just-now": "gerade eben",
   "save-last": "Zuletzt gespeichert",
   "save-lifetime": "{{joy}} Freude, insgesamt.",
+  "save-load-failed": "Dein Spielstand konnte nicht geladen werden.",
+  "save-load-retry": "Erneut versuchen",
   "save-note": "Der Tempel speichert sich alle {{seconds}} Sekunden selbst, kurz nachdem du aufhörst zu spielen, und noch einmal in dem Moment, in dem der Tab geschlossen oder in den Hintergrund gelegt wird. Du solltest den Knopf unten nie brauchen.",
   "save-now": "Jetzt speichern",
   "save-playtime": "Zeit im Tempel",

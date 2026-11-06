@@ -307,5 +307,7 @@
   "vigil-sinners_many": "Грешников: {{count}}, удерживают",
   "vigil-sinners_other": "Грешников: {{count}}, удерживают",
   "vigil-title": "Ночная служба",
-  "vigil-window": "Часы, которые считаются"
+  "vigil-window": "Часы, которые считаются",
+  "save-load-failed": "Не удалось загрузить сохранение.",
+  "save-load-retry": "Повторить"
 }

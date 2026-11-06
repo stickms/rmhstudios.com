@@ -210,6 +210,8 @@
   "save-just-now": "방금",
   "save-last": "마지막 저장",
   "save-lifetime": "누적 기쁨 {{joy}}.",
+  "save-load-failed": "저장 데이터를 불러올 수 없습니다.",
+  "save-load-retry": "다시 시도",
   "save-note": "성전은 {{seconds}}초마다 저절로 저장되고, 플레이를 멈춘 직후와 탭을 닫거나 백그라운드로 보내는 순간에도 다시 저장됩니다. 아래 버튼은 필요할 일이 없을 것입니다.",
   "save-now": "지금 저장",
   "save-playtime": "성전에서 보낸 시간",
