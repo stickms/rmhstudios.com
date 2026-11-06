@@ -1,14 +1,17 @@
 import { z } from 'zod';
 import { BUILDING_IDS, CROP_IDS, ITEM_IDS } from '../content';
 import { DEFAULT_SKIN, SKIN_IDS } from '../skins';
-import { citySchema, migrateToCity } from './city-schema';
+import { citySchema, migrateCityToV3, migrateToCity } from './city-schema';
 import { officerSchema, playerCrimeFields } from './crime-schema';
 import { MAX_LEVEL, MAX_WORLD_SIZE, MIN_WORLD_SIZE, createCity, type World } from '../world';
 
 /** 'HWLD' + a version byte, then the world as UTF-8 JSON. */
 const MAGIC = [0x48, 0x57, 0x4c, 0x44] as const;
-/** 2 added the city layer (roads, zones, utilities, milestones). Version 1 saves still load, with an empty town. */
-export const SAVE_VERSION = 2;
+/**
+ * 2 added the city layer (roads, zones, utilities, milestones). 3 added the town's tax rate and event slot to it.
+ * Older saves still load: version 1 with an empty town, version 2 with the default tax rate and no event.
+ */
+export const SAVE_VERSION = 3;
 const OLDEST_SAVE_VERSION = 1;
 const MAX_SAVE_BYTES = 8 * 1024 * 1024;
 
@@ -47,7 +50,7 @@ function withMoverDefaults<T extends { x: number; z: number; fromX?: number; fro
 
 const worldSchema = z
   .object({
-    version: z.union([z.literal(1), z.literal(2)]),
+    version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
     seed: int.nonnegative(),
     size: int.min(MIN_WORLD_SIZE).max(MAX_WORLD_SIZE),
     tick: int.nonnegative(),
@@ -152,7 +155,7 @@ const worldSchema = z
   .refine((w) => w.terrain.length === w.size * w.size && w.height.length === w.terrain.length, {
     message: 'terrain size mismatch',
   })
-  .transform((w) => ({ ...w, version: 2 as const, city: w.city ?? createCity(w.size) }))
+  .transform((w) => ({ ...w, version: 3 as const, city: w.city ?? createCity(w.size) }))
   .refine((w) => w.city.cells.length === w.terrain.length && w.city.flags.length === w.terrain.length, {
     message: 'city size mismatch',
   });
@@ -179,7 +182,7 @@ export function decodeWorld(bytes: Uint8Array): World {
   } catch {
     throw new SaveFormatError('save data is corrupted');
   }
-  const parsed = worldSchema.safeParse(migrateToCity(json));
+  const parsed = worldSchema.safeParse(migrateCityToV3(migrateToCity(json), version));
   if (!parsed.success) throw new SaveFormatError('save data is invalid');
   return parsed.data as World;
 }

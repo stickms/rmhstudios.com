@@ -1,4 +1,5 @@
 import {
+  DEFAULT_TAX_RATE,
   ROAD_MAX_GRADE,
   UTILITY_IDS,
   ZONE_IDS,
@@ -80,6 +81,8 @@ export function createCity(size: number): CityState {
     day: 0,
     reached: [],
     claimed: [],
+    taxRate: DEFAULT_TAX_RATE,
+    event: null,
     stats: emptyStats(),
   };
 }

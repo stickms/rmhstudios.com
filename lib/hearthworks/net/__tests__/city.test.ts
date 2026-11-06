@@ -19,6 +19,7 @@ const SAMPLES: LocalCommand[] = [
   { type: 'placeUtility', kind: 'windmill', x: 4, z: 5 },
   { type: 'removeUtility', x: 4, z: 5 },
   { type: 'claimMilestone', id: 'hamlet' },
+  { type: 'setTaxRate', rate: 12 },
 ];
 
 describe('the city commands on the wire', () => {
@@ -43,6 +44,11 @@ describe('the city commands on the wire', () => {
     expect(ok({ type: 'claimMilestone', id: '' })).toBe(false);
     expect(ok({ type: 'claimMilestone', id: 'x'.repeat(64) })).toBe(false);
     expect(ok({ type: 'removeUtility', x: 1 })).toBe(false);
+    for (const rate of [-1, 21, 9.5, '9', null, Number.NaN]) expect(ok({ type: 'setTaxRate', rate })).toBe(false);
+    expect(ok({ type: 'setTaxRate' })).toBe(false);
+    expect(ok({ type: 'setTaxRate', rate: 9, playerId: 'bob' })).toBe(false);
+    expect(ok({ type: 'setTaxRate', rate: 0 })).toBe(true);
+    expect(ok({ type: 'setTaxRate', rate: 20 })).toBe(true);
   });
 });
 
@@ -128,6 +134,21 @@ describe('replicas stay identical while a town is built and grows', () => {
     tick(5);
     expect(carol.ready).toBe(true);
     expect(worldHash(carol.view!)).toBe(worldHash(host.world));
+    // A tax rate set by a peer reaches every replica, and a latecomer's snapshot carries it.
+    bob.send({ type: 'setTaxRate', rate: 15 });
+    tick(3);
+    expect(host.world.city.taxRate).toBe(15);
+    expect(alice.view!.city.taxRate).toBe(15);
+    expect(bob.view!.city.taxRate).toBe(15);
+    expect(same(alice.view!, host.world)).toBe(true);
+    const [h2, p2] = linkPair();
+    host.addPeer('dave', h2);
+    const dave = new PeerSession('dave', p2);
+    links.push(h2, p2);
+    settle(links);
+    tick(5);
+    expect(dave.view!.city.taxRate).toBe(15);
+    expect(worldHash(dave.view!)).toBe(worldHash(host.world));
     // …and the snapshot round trip alone preserves the hash.
     expect(worldHash(decodeWorld(encodeWorld(host.world)))).toBe(worldHash(host.world));
   }, 60_000);

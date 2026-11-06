@@ -2,6 +2,7 @@
 
 import {
   MILESTONES,
+  isTaxRate,
   ROAD_COST,
   ROAD_REFUND,
   ROAD_RUN_MAX,
@@ -278,5 +279,25 @@ export function claimMilestone(
     skin = def.rewardSkin;
   }
   ev.push({ type: 'milestoneClaimed', playerId: p.id, id: def.id, reward: def.reward, skin });
+  return null;
+}
+
+/**
+ * Set the town's tax rate (a whole percent inside the content range). The rate belongs to the town, not to a player,
+ * so any player may change it; the last command in tick order wins, which every replica agrees on. Setting the rate
+ * it already has changes nothing and says nothing.
+ */
+export function setTaxRate(
+  w: World,
+  p: PlayerState,
+  cmd: Cmd<'setTaxRate'>,
+  ev: WorldEvent[],
+): Result {
+  if (!isTaxRate(cmd.rate)) return 'bad-amount';
+  const from = w.city.taxRate;
+  if (cmd.rate === from) return null;
+  w.city.taxRate = cmd.rate;
+  touchCity(w);
+  ev.push({ type: 'taxRateSet', playerId: p.id, rate: cmd.rate, from });
   return null;
 }

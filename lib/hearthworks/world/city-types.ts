@@ -1,4 +1,4 @@
-import type { UtilityId, ZoneId } from '../content/city';
+import type { CityEventId, UtilityId, ZoneId } from '../content/city';
 
 /**
  * The city layer's state: plain, JSON-serialisable data that lives inside `World` and travels with every save and
@@ -47,6 +47,14 @@ export interface CityStats {
   net: number;
 }
 
+/** The one town event in progress: which, and how many town days it still has (1 = ends at the next day's close). */
+export interface ActiveCityEvent {
+  id: CityEventId;
+  /** The town day it began on. */
+  since: number;
+  daysLeft: number;
+}
+
 export interface CityState {
   /** size × size packed cells (see above), same layout as `terrain`. */
   cells: number[];
@@ -64,6 +72,10 @@ export interface CityState {
   /** Milestones reached (in order) and the subset whose reward has been claimed. */
   reached: string[];
   claimed: string[];
+  /** Percent the players tax residents at (content: MIN/MAX/DEFAULT_TAX_RATE). Set by `setTaxRate`. */
+  taxRate: number;
+  /** The event in progress, if any (at most one). Drawn only from `hash01`, never the world's rng. */
+  event: ActiveCityEvent | null;
   stats: CityStats;
 }
 
@@ -74,7 +86,8 @@ export type CityCommand =
   | { type: 'unzone'; playerId: string; x: number; z: number; x2?: number; z2?: number }
   | { type: 'placeUtility'; playerId: string; kind: UtilityId; x: number; z: number }
   | { type: 'removeUtility'; playerId: string; x: number; z: number }
-  | { type: 'claimMilestone'; playerId: string; id: string };
+  | { type: 'claimMilestone'; playerId: string; id: string }
+  | { type: 'setTaxRate'; playerId: string; rate: number };
 
 export type CityEvent =
   | { type: 'roadsLaid'; playerId: string; count: number; cost: number }
@@ -86,7 +99,10 @@ export type CityEvent =
   | { type: 'lotGrew'; x: number; z: number; zone: ZoneId; level: number }
   | { type: 'milestoneReached'; id: string }
   | { type: 'milestoneClaimed'; playerId: string; id: string; reward: number; skin: string | null }
-  | { type: 'cityDay'; day: number; net: number; population: number };
+  | { type: 'cityDay'; day: number; net: number; population: number }
+  | { type: 'taxRateSet'; playerId: string; rate: number; from: number }
+  | { type: 'cityEventStarted'; id: CityEventId; day: number; days: number }
+  | { type: 'cityEventEnded'; id: CityEventId; day: number };
 
 export type CityReject =
   'bad-shape' | 'locked' | 'no-shore' | 'unknown-milestone' | 'not-reached' | 'already-claimed';

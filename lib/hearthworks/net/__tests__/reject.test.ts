@@ -273,7 +273,7 @@ describe('host frames are validated before a peer acts on them', () => {
     expect(before).toBeDefined();
   });
 
-  it('a host older than this build is understood; a host newer than it is refused, not half-understood', () => {
+  it('a host of an older rulebook or a newer protocol is refused, not half-understood; the current one is welcome', () => {
     expect(MIN_PROTOCOL_VERSION).toBeLessThanOrEqual(PROTOCOL_VERSION);
     const mk = (v: number) => {
       const [h, p] = linkPair();
@@ -285,6 +285,10 @@ describe('host frames are validated before a peer acts on them', () => {
     const old = mk(MIN_PROTOCOL_VERSION);
     expect(old.peer.incompatible).toBe(false);
     expect(old.p.open).toBe(true);
+    // v3 changed the simulation (tax rate, town events): a v2 host's replicas would drift from ours, so it is refused.
+    const older = mk(MIN_PROTOCOL_VERSION - 1);
+    expect(older.peer.incompatible).toBe(true);
+    expect(older.p.open).toBe(false);
     const newer = mk(PROTOCOL_VERSION + 1);
     expect(newer.peer.incompatible).toBe(true);
     expect(newer.p.open).toBe(false);

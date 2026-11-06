@@ -21,7 +21,7 @@ Code: `lib/hearthworks/net/`, `lib/shared/p2p/`, `server/socket-server/handlers/
   from its replica; everyone else re-joins it. Money, buildings and history survive; commands a peer had
   not seen confirmed are replayed to the new host and de-duplicated by `seq`.
 
-## Wire protocol (v2)
+## Wire protocol (v3)
 
 Frames ride a `ReliableLink` (`lib/shared/p2p/reliable-link.ts`): fragmentation above 16 KB, 256 KiB
 high-water backpressure, ping/pong keepalive, 10 s silence = closed.
@@ -34,6 +34,15 @@ high-water backpressure, ping/pong keepalive, 10 s silence = closed.
 | host → peer   | `successor {id}`                                    |                                                                                                                            |
 | host → peer   | **`reject {items: [[seq, reason], …]}`** (v2)       | **to the issuing peer only.** `reason` is the world's `RejectReason`, or `rate-limited` for a command dropped unread       |
 | host → peer   | snapshot (binary)                                   | whole world + acks; at most one per `SNAPSHOT_MIN_TICKS` per peer (a `resync` flood is coalesced, never lost)              |
+
+**Versions.** v1: welcome / tick / successor. v2 added `reject` and was compatible both ways (a v2 host and a v1 peer
+carried on). **v3 changed the simulation itself** — the `setTaxRate` command, a tax rate and a town event in the city
+state, and save/snapshot version 3 — and every replica must run identical rules or the worlds drift without any
+error. So `MIN_PROTOCOL_VERSION` rose to 3 with `PROTOCOL_VERSION`: a v3 peer refuses a v2 host (it would send
+commands the host's schema rejects and apply ticks the old sim would not reproduce), and a v2 peer refuses a v3
+host (it would fail to decode the version 3 snapshot). Anything that changes a world rule or the state shape bumps
+the protocol and moves `MIN_PROTOCOL_VERSION` with it; an additive frame (like `reject`) need not. The town's tax
+rate and event live in `World.city`, so snapshots, host migration and late joiners carry them with no extra frame.
 
 Every host frame is parsed with `hostMessageSchema` before a peer acts on it (a modified host cannot
 crash or confuse the replicas). A refused command surfaces as the same `rejected` world event the

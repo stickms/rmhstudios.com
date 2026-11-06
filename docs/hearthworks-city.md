@@ -32,7 +32,7 @@ You still farm, cook and sell. The town adds a second way to make a place worth 
 | Derived data and stepping (`recomputeCity`, `tickCity`) | `lib/hearthworks/world/city.ts` |
 | Command handlers | `lib/hearthworks/world/city-commands.ts` |
 | Pathfinding and walking on roads | `lib/hearthworks/nav/{passable,astar,mover}.ts` |
-| Save format v2 and v1 migration | `lib/hearthworks/save/{format,city-schema}.ts` |
+| Save format v3 and the v2 / v1 migrations | `lib/hearthworks/save/{format,city-schema}.ts` |
 | Peer command schemas | `lib/hearthworks/net/protocol.ts` |
 | Drag → commands | `lib/hearthworks/city-input.ts` |
 | Road and zone meshes, lot / utility models | `lib/hearthworks/art/{city-mesh,models}.ts` |
@@ -46,6 +46,8 @@ You still farm, cook and sell. The town adds a second way to make a place worth 
   level (0 = empty zoned tile, 1–3 = developed lot), bits 5–7 utility. This is the authoritative layer.
 - `flags` — derived per tile: 1 connected to the town's road network, 2 powered, 4 watered.
 - `population`, `peakPopulation`, `day`, `reached` / `claimed` milestones, `roadCount` — stateful.
+- `taxRate` — the tax rate in whole percent (`setTaxRate`); `event` — the town event in progress, if any
+  (`{id, since, daysLeft}`), at most one.
 - `stats` — derived numbers for the HUD and the rules (people, jobs, coverage, happiness, demand, budget).
 - `dirty` — set by anything that changes what the derived data depends on; the next step refreshes it.
 
@@ -136,10 +138,59 @@ Without power a lot works at 30% of its jobs, a home holds half its housing; wit
 ### The day and the budget
 
 Every 60 s of game time is a **town day**. The day's accounts are `taxes (1.5 per resident, scaled 60–100% by
-happiness) + trade (powered shop and workshop lots) − upkeep (roads and utilities)`. The net is **shared
+happiness, then by the tax rate) + trade (powered shop and workshop lots) − upkeep (roads and utilities)`, with an
+active event's multipliers on taxes and trade (below). The net is **shared
 evenly between every player in the world** (the remainder goes to the first in id order); a deficit is charged
 the same way, never below zero money. The HUD shows the figure as "per day"; it is the same number the
 `cityDay` event announces.
+
+### Tax rate
+
+The players set one **tax rate** for the town, a whole percent from 0 to 20 (`setTaxRate {rate}`). The default is
+**9%**, and 9% is the rate at which everything is exactly as it was before the rate existed: the day's taxes, happiness
+and move-in are bit-for-bit the old ones (a test pins the old figures, and a tick-by-tick comparison against the
+pre-rate simulation was identical until the first event). Away from the default:
+
+- **Income** scales in proportion to the rate: `taxes × rate / 9`. 0% earns nothing; 20% earns 2.2× per resident.
+- **Happiness** moves 0.8 points per percentage point: −0.8 for each point above 9, +0.8 for each below (before
+  rounding and the 0–100 clamp). 20% costs 8.8, 0% adds 7.2.
+- **Move-in** (desirability, the share of housing residents want to fill) moves 0.03 per point: −0.03 above 9,
+  +0.03 below, inside the usual 0.15–1 clamp. 20% takes 0.33 off, which is why a heavily taxed town stays small.
+
+So taxes per head rise with the rate while the people fall, and there is a hump rather than a ramp: on a test town
+the daily net is flat from about 5% to 18% and best near 12%, and falls either side. (The numbers are a first pass and
+want playtesting.) Any player may change the rate; commands run in tick order so the last one wins on every replica.
+Setting the rate it already has does nothing and says nothing. A rate that is not a whole number in 0–20 is refused
+with `bad-amount`. The change announces `taxRateSet`.
+
+### Town events
+
+Rarely, something happens to the town. There are five, **at most one at a time**, each with a length in town days and
+a few multipliers (all in `CITY_EVENTS`):
+
+| Event | Days | Does | Needs |
+| --- | --- | --- | --- |
+| Festival | 3 | happiness +8, trade ×1.15 | – |
+| Market fair | 2 | trade ×1.5 | – |
+| Harvest windfall | 2 | taxes ×1.35, happiness +2 | – |
+| Power-line storm | 2 | power producers give ×0.6 (rounded down per producer) | a power producer |
+| Dry spell | 3 | water producers give ×0.65 | a water producer |
+
+- **When.** At each day's close, if no event is on, the town has at least 20 residents, and it is day 3 or later, a
+  hash of (seed, day) says whether one starts (15% of days: with the events' own length that is about one every nine
+  days). A second hash picks which, weighted (3/3/3/2/2), from the events the town can feel (a storm needs a power
+  producer, a dry spell a water one). Both draws are `hash01(seed, salt, day)` — never `w.rng` — so every replica
+  draws the same event on the same day and no other random stream moved. The day's accounts are settled before the
+  event is drawn, so an event begins on the next day's books.
+- **How long.** `daysLeft` falls by one at each day's close; at zero the event ends. Both ends announce
+  `cityEventStarted` / `cityEventEnded` (the HUD turns them into toasts).
+- **Applying it.** `recomputeCity` reads the active event: producers' supply is scaled before power and water are
+  handed out (so coverage, happiness and lot growth all feel it), happiness gets its offset, and the day's trade and
+  taxes their multipliers.
+- **It cannot wipe out a town.** Cuts are at most 40% and last at most three days; **nobody moves out while an event
+  lasts** (the population never falls in `movePeople`), and nothing is destroyed. A storm or dry spell can only dim
+  lots, slow growth and cost a day or two of income. Milestones are measured continuously and stay reached, so an
+  event's boost can tip one over the line; that is accepted (a festival is allowed to make people happy).
 
 ### Milestones
 
@@ -172,9 +223,10 @@ thresholds.
 All flow through `applyCommand` like `place` and `plant`, with a zod schema each in `net/protocol.ts` (a
 compile-time table fails the build when a command type has none):
 
-`placeRoad` · `removeRoad` · `zone` · `unzone` · `placeUtility` · `removeUtility` · `claimMilestone`
+`placeRoad` · `removeRoad` · `zone` · `unzone` · `placeUtility` · `removeUtility` · `claimMilestone` · `setTaxRate`
 
-Rejections: `bad-shape` (a road run that is not straight), `bad-amount` (too long / too big), `locked`
+Rejections: `bad-shape` (a road run that is not straight), `bad-amount` (too long / too big, or a tax rate outside
+0–20 / not a whole number), `locked`
 (milestone not reached), `no-shore`, `not-reached`, `already-claimed`, `unknown-milestone`, plus the
 existing `out-of-bounds`, `bad-terrain`, `occupied`, `nothing-there`, `cannot-afford`.
 
@@ -184,7 +236,8 @@ zone stroke as one rectangle, so a drag is one or two commands, not one per tile
 ## Determinism
 
 - The city never draws from the world's rng except in `customers.ts` (which already did, and only when the
-  town has people). Growth uses `hash01(seed, tile, step)`.
+  town has people). Growth uses `hash01(seed, tile, step)`; town events use `hash01(seed, salt, day)` with negative
+  salts, which cannot meet a tile index.
 - Everything derived is a pure function of cells, buildings, terrain and tick, visited in tile-index order
   with explicit tie-breaks.
 - `worldHash(world)` (`world/hash.ts`) is a canonical fingerprint; `city.test.ts` checks that the same seed and
@@ -194,10 +247,13 @@ zone stroke as one rectangle, so a drag is one or two commands, not one per tile
 
 ## Save format
 
-`SAVE_VERSION` is 2. `decodeWorld` accepts 1 and 2. A version 1 save gets an empty city; any `road` buildings in
-it become road tiles (on grass or sand tiles that are free) and are removed from `buildings`. The city schema
-refuses a lying save (wrong cell count, a level with no zone, an unknown utility or milestone, negative
-population).
+`SAVE_VERSION` is 3. `decodeWorld` accepts 1, 2 and 3. A version 1 save gets an empty city; any `road` buildings in
+it become road tiles (on grass or sand tiles that are free) and are removed from `buildings`. A version 2 save gets
+the default tax rate (9%) and no event (`migrateCityToV3`), so a town loads as it was and earns what it earned; a
+version 3 save must carry both. The city schema refuses a lying save (wrong cell count, a level with no zone, an
+unknown utility, milestone or event, a tax rate outside 0–20 or not whole, an event longer than its length, negative
+population). The P2P snapshot is the same bytes, so a checkpoint carries the rate and the event; the wire protocol is
+version 3 for the same reason (see `hearthworks-multiplayer.md`).
 
 ## What was left behind from Isleworks, and why
 
@@ -211,8 +267,10 @@ instead of placing every house. Not ported:
   catalogue belongs to a game about the city alone. Parks, stalls and kitchens already exist here.
 - Pollution, noise and traffic fields: replaced by a single "workshop next door" penalty and the road network
   itself. Congestion needs per-tile traffic that the fixed-tick sim does not model.
-- Tax-rate control, random city events, land-parcel purchase, the 120-month ledger and building condition
-  decay. Each is a clean follow-up (a `setTaxRate` command, events from `w.rng`).
+- Land-parcel purchase, the 120-month ledger and building condition decay.
+- Isleworks' disaster list (fires, earthquakes, floods that destroy buildings): Hearthworks' five events are
+  deliberately gentle, partial and short, and only ever from `hash01`, never `w.rng`. Tax control and events are
+  ported above.
 - Its renderer, HUD and cloud save.
 
 ## Interface
@@ -221,8 +279,10 @@ instead of placing every house. Not ported:
   (drag a rectangle), Well, Windmill, Pumping station, Water wheel. Locked tools say which milestone opens them.
   **Clear** takes away whatever is under it (a building, then a utility, a road, a zone). Escape drops a
   drag in progress; the right mouse button and two fingers still pan.
-- The **Town** chip opens the panel: next step, people / mood / power / water, what each zone wants, the
-  budget, and the milestones with a **Claim** button. A badge counts rewards waiting.
+- The **Town** chip opens the panel: next step, the active event (name, what it does, days left), people / mood /
+  power / water, what each zone wants, the budget, the **tax-rate slider** (0–20%, with a line saying in plain words
+  what the chosen rate does; the command is sent when you let go) and the milestones with a **Claim** button. A badge
+  counts rewards waiting. Events show as toasts when they begin and end, and so does another player's tax change.
 - **Walk view** shows the result (roads, lots and utilities) without the planning markers; road, zone and
   utility tools still work from the Use button on the tile in front of you.
 - Roads are drawn as a lane with arms to every joined neighbour, following the block heights and ramping
