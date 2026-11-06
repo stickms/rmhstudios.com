@@ -131,7 +131,13 @@ export async function updateTheme(
   const patch: { name?: string; tokens?: object } = {};
   if (data.name !== undefined) patch.name = data.name;
   if (data.tokens !== undefined) patch.tokens = parseTokens(data.tokens) as object;
-  await prisma.userTheme.update({ where: { id }, data: patch });
+  // A token edit is conditional on the theme still being a DRAFT: one racing
+  // publish must not land unvalidated tokens on a published theme.
+  const { count } = await prisma.userTheme.updateMany({
+    where: { id, ...(data.tokens !== undefined ? { status: 'DRAFT' } : {}) },
+    data: patch,
+  });
+  if (count === 0) throw new ThemeError('IMMUTABLE');
 }
 
 export async function deleteOrDelistTheme(authorId: string, id: string): Promise<void> {
@@ -144,14 +150,24 @@ export async function deleteOrDelistTheme(authorId: string, id: string): Promise
 
 export async function publishTheme(authorId: string, id: string, priceCoins: number): Promise<void> {
   await requireMember(authorId);
-  const theme = await prisma.userTheme.findUnique({ where: { id }, select: { authorId: true, tokens: true } });
+  const theme = await prisma.userTheme.findUnique({
+    where: { id },
+    select: { authorId: true, tokens: true, status: true, updatedAt: true },
+  });
   if (!theme) throw new ThemeError('NOT_FOUND');
   if (theme.authorId !== authorId) throw new ThemeError('FORBIDDEN');
   // One gate for price, token safety and WCAG AA. v1 drafts upcast inside it,
   // so an old draft is held to the same legibility bar as a new one.
   const result = validateThemeForPublish(theme.tokens, priceCoins);
   if (!result.ok) throw new ThemeError(result.code === 'CONTRAST' ? 'CONTRAST_GATE' : result.code);
-  await prisma.userTheme.update({ where: { id }, data: { status: 'PUBLISHED', priceCoins } });
+  // CAS on the exact row the gate validated (status + updatedAt): a token edit
+  // or a delist landing after the read makes count 0, so the published tokens
+  // are always the ones that passed the contrast gate.
+  const { count } = await prisma.userTheme.updateMany({
+    where: { id, status: theme.status, updatedAt: theme.updatedAt },
+    data: { status: 'PUBLISHED', priceCoins },
+  });
+  if (count === 0) throw new ThemeError('CONFLICT');
 }
 
 export interface BuyResult {

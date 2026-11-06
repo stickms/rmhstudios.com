@@ -109,6 +109,23 @@ export async function registerForTournament(
       if (t._count.entrants >= t.maxPlayers) {
         throw new TournamentError('Tournament is full', 'FULL', 409);
       }
+      // Claim the tournament row while it is still REGISTRATION. This is the
+      // guard (the read above is not, under READ COMMITTED): a concurrent
+      // cancel/start that flipped the status makes count 0, and one that is
+      // still in flight holds the row lock until it commits — so an entrant can
+      // never be added (and charged) after cancel has computed its refunds.
+      const claimed = await tx.tournament.updateMany({
+        where: { id: t.id, status: 'REGISTRATION' },
+        data: { prizePoolCoins: { increment: t.entryFeeCoins } },
+      });
+      if (claimed.count === 0) {
+        throw new TournamentError('Registration is closed', 'CLOSED', 409);
+      }
+      // Re-count under the row lock: concurrent registrations serialise on it.
+      const count = await tx.tournamentEntrant.count({ where: { tournamentId: t.id } });
+      if (count >= t.maxPlayers) {
+        throw new TournamentError('Tournament is full', 'FULL', 409);
+      }
       const existing = await tx.tournamentEntrant.findUnique({
         where: { tournamentId_userId: { tournamentId: t.id, userId: opts.userId } },
       });
@@ -116,10 +133,6 @@ export async function registerForTournament(
 
       if (t.entryFeeCoins > 0) {
         await debitCoins(tx, opts.userId, t.entryFeeCoins);
-        await tx.tournament.update({
-          where: { id: t.id },
-          data: { prizePoolCoins: { increment: t.entryFeeCoins } },
-        });
         await recordWagerTxn(tx, {
           senderId: opts.userId,
           // Hold: the entry fee leaves the entrant's balance for the pot.
@@ -153,10 +166,22 @@ export async function withdrawFromTournament(
     if (t.status !== 'REGISTRATION') {
       throw new TournamentError('Cannot withdraw after start', 'STARTED', 409);
     }
+    // Lock the row while still REGISTRATION (see registerForTournament): a
+    // racing cancel/start either already flipped it (count 0) or waits for us.
+    const claimed = await tx.tournament.updateMany({
+      where: { id: t.id, status: 'REGISTRATION' },
+      data: { updatedAt: new Date() },
+    });
+    if (claimed.count === 0) {
+      throw new TournamentError('Cannot withdraw after start', 'STARTED', 409);
+    }
     const entrant = await tx.tournamentEntrant.findUnique({
       where: { tournamentId_userId: { tournamentId: t.id, userId: opts.userId } },
     });
     if (!entrant) return;
+    // Conditional delete: two racing withdrawals refund once.
+    const removed = await tx.tournamentEntrant.deleteMany({ where: { id: entrant.id } });
+    if (removed.count === 0) return;
     if (t.entryFeeCoins > 0) {
       await creditCoins(tx, opts.userId, t.entryFeeCoins);
       await tx.tournament.update({
@@ -169,9 +194,9 @@ export async function withdrawFromTournament(
         entityType: 'tournament',
         entityId: t.id,
         note: 'Tournament withdrawal refund',
+        idempotencyKey: `tournament:entrant:${entrant.id}:withdraw`,
       });
     }
-    await tx.tournamentEntrant.delete({ where: { id: entrant.id } });
   });
 }
 
@@ -189,43 +214,59 @@ export async function startTournament(
   if (t.status !== 'REGISTRATION') {
     throw new TournamentError('Already started', 'STARTED', 409);
   }
-  const entrants = await db.tournamentEntrant.findMany({
-    where: { tournamentId: t.id },
-    orderBy: { joinedAt: 'asc' },
-  });
-  if (entrants.length < t.minPlayers) {
-    throw new TournamentError('Not enough players to start', 'TOO_FEW', 400);
-  }
+  // Everything below runs inside one transaction that first claims the
+  // REGISTRATION → LIVE transition (CAS). Two racing starts can no longer both
+  // build a bracket, and the entrant list is read after the claim, so a
+  // registration racing the start is either in the bracket or refused.
+  const loadEntrants = (tx: Prisma.TransactionClient) =>
+    tx.tournamentEntrant.findMany({ where: { tournamentId: t.id }, orderBy: { joinedAt: 'asc' } });
+  const claimStart = async (tx: Prisma.TransactionClient, extra: { swissRounds?: number }) => {
+    const claimed = await tx.tournament.updateMany({
+      where: { id: t.id, status: 'REGISTRATION' },
+      data: { status: 'LIVE', startedAt: new Date(), ...extra },
+    });
+    if (claimed.count === 0) throw new TournamentError('Already started', 'STARTED', 409);
+  };
+  const assertEnough = (n: number) => {
+    if (n < t.minPlayers) {
+      throw new TournamentError('Not enough players to start', 'TOO_FEW', 400);
+    }
+  };
 
-  // Seed by join order, then build the bracket over entrant ids.
-  const orderedIds = entrants.map((e) => e.id);
   if (t.format === 'SWISS') {
-    const pairs = pairRound(orderedIds, []);
-    if (!pairs) throw new TournamentError('Could not pair the first round', 'UNPAIRABLE', 400);
     await db.$transaction(async (tx) => {
+      // Lock first (rounds are fixed after reading entrants, under the lock).
+      await claimStart(tx, {});
+      const entrants = await loadEntrants(tx);
+      assertEnough(entrants.length);
+      const orderedIds = entrants.map((e) => e.id);
+      const pairs = pairRound(orderedIds, []);
+      if (!pairs) throw new TournamentError('Could not pair the first round', 'UNPAIRABLE', 400);
       for (let i = 0; i < entrants.length; i++) {
         await tx.tournamentEntrant.update({ where: { id: entrants[i].id }, data: { seed: i + 1 } });
       }
       await createSwissRound(tx, t.id, 1, pairs);
       await tx.tournament.update({
         where: { id: t.id },
-        data: {
-          status: 'LIVE',
-          startedAt: new Date(),
-          swissRounds: Math.max(1, recommendedRounds(orderedIds.length)),
-        },
+        data: { swissRounds: Math.max(1, recommendedRounds(orderedIds.length)) },
       });
     });
     return;
   }
-  const bracket = generateBracket(t.format as 'SINGLE_ELIM' | 'ROUND_ROBIN', orderedIds);
-
-  // Match ids are minted here rather than discovered from the database, so the
-  // whole bracket — including every nextMatchId link — is fully resolved before
-  // the transaction opens (see resolveBracketRows).
-  const matchRows = resolveBracketRows(bracket.matches, randomUUID);
 
   await db.$transaction(async (tx) => {
+    await claimStart(tx, {});
+    const entrants = await loadEntrants(tx);
+    assertEnough(entrants.length);
+
+    // Seed by join order, then build the bracket over entrant ids. Match ids
+    // are minted here rather than discovered from the database, so the whole
+    // bracket — including every nextMatchId link — is fully resolved before
+    // anything is written (see resolveBracketRows).
+    const orderedIds = entrants.map((e) => e.id);
+    const bracket = generateBracket(t.format as 'SINGLE_ELIM' | 'ROUND_ROBIN', orderedIds);
+    const matchRows = resolveBracketRows(bracket.matches, randomUUID);
+
     // Assign seeds.
     for (let i = 0; i < entrants.length; i++) {
       await tx.tournamentEntrant.update({
@@ -258,11 +299,6 @@ export async function startTournament(
         })),
       });
     }
-
-    await tx.tournament.update({
-      where: { id: t.id },
-      data: { status: 'LIVE', startedAt: new Date() },
-    });
   });
 
   // Resolve first-round byes: walk each BYE match and advance its lone entrant.
@@ -378,16 +414,20 @@ export async function settleMatch(
       throw new TournamentError('Winner must be in this match', 'BAD_WINNER', 400);
     }
     const loserId = validEntrants.find((e) => e !== opts.winnerEntrantId) ?? null;
-    const swiss =
-      (
-        await tx.tournament.findUnique({
-          where: { id: opts.tournamentId },
-          select: { format: true },
-        })
-      )?.format === 'SWISS';
+    const tournament = await tx.tournament.findUnique({
+      where: { id: opts.tournamentId },
+      select: { format: true, status: true },
+    });
+    if (tournament?.status !== 'LIVE') {
+      throw new TournamentError('Tournament is not live', 'NOT_LIVE', 409);
+    }
+    const swiss = tournament.format === 'SWISS';
 
-    await tx.tournamentMatch.update({
-      where: { id: match.id },
+    // CAS on "not yet complete": a concurrent settle of the same match (two
+    // reports, or a report racing the hub) sees count 0 and changes nothing,
+    // so wins/losses and the bracket advance are applied exactly once.
+    const claimed = await tx.tournamentMatch.updateMany({
+      where: { id: match.id, state: { not: 'COMPLETE' } },
       data: {
         winnerEntrantId: opts.winnerEntrantId,
         state: 'COMPLETE',
@@ -395,6 +435,7 @@ export async function settleMatch(
         completedAt: new Date(),
       },
     });
+    if (claimed.count === 0) return { settled: false, isFinal: false, swiss: false };
     await tx.tournamentEntrant.update({
       where: { id: opts.winnerEntrantId },
       data: { wins: { increment: 1 } },
@@ -435,7 +476,16 @@ export async function settleMatch(
 async function maybeCompleteTournament(tournamentId: string, db: Db): Promise<boolean> {
   return db.$transaction(async (tx) => {
     const t = await tx.tournament.findUnique({ where: { id: tournamentId } });
-    if (!t || t.status === 'COMPLETE') return false;
+    if (!t || t.status !== 'LIVE') return false;
+    // Claim LIVE → COMPLETE before paying anything (CAS on the status and the
+    // pool we are about to distribute). A cancelled tournament has already
+    // refunded its pool and can never be completed; a concurrent completion or
+    // cancel makes count 0 and this one pays nothing.
+    const claimed = await tx.tournament.updateMany({
+      where: { id: t.id, status: 'LIVE', prizePoolCoins: t.prizePoolCoins },
+      data: { status: 'COMPLETE', completedAt: new Date(), prizePoolCoins: 0 },
+    });
+    if (claimed.count === 0) return false;
 
     const entrants = await tx.tournamentEntrant.findMany({ where: { tournamentId } });
 
@@ -487,16 +537,13 @@ async function maybeCompleteTournament(tournamentId: string, db: Db): Promise<bo
           entityType: 'tournament',
           entityId: t.id,
           note: `Tournament placement #${placement}`,
+          idempotencyKey: `tournament:${t.id}:payout:${ranked[i].userId}`,
         });
         await tx.tournamentPayout.create({
           data: { tournamentId: t.id, userId: ranked[i].userId, placement, amountCoins: amount },
         });
       }
     }
-    await tx.tournament.update({
-      where: { id: t.id },
-      data: { status: 'COMPLETE', completedAt: new Date(), prizePoolCoins: 0 },
-    });
     return true;
   });
 }
@@ -586,6 +633,16 @@ export async function cancelTournament(
       throw new TournamentError('Only the host can cancel', 'FORBIDDEN', 403);
     }
     if (t.status === 'COMPLETE' || t.status === 'CANCELLED') return;
+    // Claim the terminal transition FIRST, then read entrants. Registration and
+    // withdrawal CAS on REGISTRATION too, so once this commits no entrant can be
+    // added or removed; and any that committed before it are visible to the
+    // entrant read below (a fresh statement under READ COMMITTED). A racing
+    // completion or second cancel makes count 0 and refunds nothing.
+    const claimed = await tx.tournament.updateMany({
+      where: { id: t.id, status: { in: ['REGISTRATION', 'LIVE'] } },
+      data: { status: 'CANCELLED', prizePoolCoins: 0 },
+    });
+    if (claimed.count === 0) return;
 
     const entrants = await tx.tournamentEntrant.findMany({ where: { tournamentId: t.id } });
     for (const e of entrants) {
@@ -597,6 +654,7 @@ export async function cancelTournament(
           entityType: 'tournament',
           entityId: t.id,
           note: 'Tournament cancelled refund',
+          idempotencyKey: `tournament:${t.id}:cancel-refund:${e.userId}`,
         });
       }
     }
@@ -608,12 +666,9 @@ export async function cancelTournament(
         entityType: 'tournament',
         entityId: t.id,
         note: 'Tournament cancelled seed refund',
+        idempotencyKey: `tournament:${t.id}:seed-refund`,
       });
     }
-    await tx.tournament.update({
-      where: { id: t.id },
-      data: { status: 'CANCELLED', prizePoolCoins: 0 },
-    });
   });
 }
 
@@ -633,10 +688,19 @@ export async function linkTournamentMatchSession(
   if (!entrants.some((e) => e.userId === opts.userId)) {
     throw new TournamentError('Not your match', 'FORBIDDEN', 403);
   }
-  await db.tournamentMatch.update({
-    where: { id: opts.matchId },
+  // Only a playable match of a live tournament can go LIVE; never revive a
+  // COMPLETE match (or one whose tournament was cancelled).
+  const linked = await db.tournamentMatch.updateMany({
+    where: {
+      id: opts.matchId,
+      state: { in: ['READY', 'LIVE'] },
+      tournament: { status: 'LIVE' },
+    },
     data: { gameSessionRef: opts.gameSessionRef, state: 'LIVE' },
   });
+  if (linked.count === 0) {
+    throw new TournamentError('Match is not ready', 'NOT_READY', 409);
+  }
 }
 
 // ─── Reads / serialization ───────────────────────────────────────────────

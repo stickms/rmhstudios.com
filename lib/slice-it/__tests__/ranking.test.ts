@@ -47,6 +47,17 @@ vi.mock('@/lib/prisma.server', () => ({
         }
         return { id: state.chart?.id };
       }),
+      // The status writes are compare-and-swaps on the rankStatus read.
+      updateMany: vi.fn(
+        async ({ where, data }: { where: { rankStatus?: string }; data: Record<string, unknown> }) => {
+          if (!state.chart || (where.rankStatus !== undefined && state.chart.rankStatus !== where.rankStatus)) {
+            return { count: 0 };
+          }
+          state.updates.push(data);
+          if (typeof data.rankStatus === 'string') state.chart.rankStatus = data.rankStatus;
+          return { count: 1 };
+        },
+      ),
       aggregate: vi.fn(async () => ({ _max: { rating: null } })),
     },
     sliceRun: {

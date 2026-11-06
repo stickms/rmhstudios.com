@@ -4,7 +4,13 @@ import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { createNotification } from '@/lib/notifications.server';
-import { AUTO_BAN_THRESHOLD, activeStrikeWhere } from '@/lib/moderation/standing.server';
+import {
+  AUTO_BAN_DURATION_MS,
+  AUTO_BAN_REASON,
+  AUTO_BAN_THRESHOLD,
+  activeStrikeWhere,
+} from '@/lib/moderation/standing.server';
+import { DELETED_ACCOUNT_BAN_REASON, isDeletedAccount } from '@/lib/account-lifecycle';
 
 /**
  * POST /api/admin/users/$id/strike — issue a warning strike. Admin only.
@@ -34,9 +40,12 @@ export const Route = createFileRoute('/api/admin/users/$id/strike')({
         async ({ params, session, body }) => {
           const target = await prisma.user.findUnique({
             where: { id: params.id },
-            select: { id: true },
+            select: { id: true, banReason: true },
           });
           if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
+          if (isDeletedAccount(target)) {
+            return Response.json({ error: 'This account has been deleted' }, { status: 409 });
+          }
 
           const strike = await prisma.userStrike.create({
             data: {
@@ -63,20 +72,29 @@ export const Route = createFileRoute('/api/admin/users/$id/strike')({
           });
           let autoBanned = false;
           if (activeStrikes >= AUTO_BAN_THRESHOLD) {
-            await prisma.user.update({
-              where: { id: params.id },
-              data: {
-                bannedUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                banReason: 'Reached 3 strikes',
+            const until = new Date(Date.now() + AUTO_BAN_DURATION_MS);
+            // Conditional: the auto-ban only ever extends. A longer (manual or
+            // permanent) ban is never shortened to 7 days, and a deletion
+            // tombstone is never overwritten.
+            const banned = await prisma.user.updateMany({
+              where: {
+                id: params.id,
+                AND: [
+                  { OR: [{ bannedUntil: null }, { bannedUntil: { lt: until } }] },
+                  { OR: [{ banReason: null }, { banReason: { not: DELETED_ACCOUNT_BAN_REASON } }] },
+                ],
               },
+              data: { bannedUntil: until, banReason: AUTO_BAN_REASON },
             });
-            await prisma.session.deleteMany({ where: { userId: params.id } }).catch(() => {});
-            await logAdminAction(session.user.id, 'user.autoban', {
-              targetType: 'user',
-              targetId: params.id,
-              detail: '3 strikes',
-            });
-            autoBanned = true;
+            if (banned.count > 0) {
+              await prisma.session.deleteMany({ where: { userId: params.id } }).catch(() => {});
+              await logAdminAction(session.user.id, 'user.autoban', {
+                targetType: 'user',
+                targetId: params.id,
+                detail: `${AUTO_BAN_THRESHOLD} strikes`,
+              });
+              autoBanned = true;
+            }
           }
 
           // Point the notification at the strike so the user lands on their

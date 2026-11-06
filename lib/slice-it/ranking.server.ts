@@ -190,13 +190,22 @@ export async function evaluateQualification(chartId: string): Promise<Qualificat
   const next: RankStatus = report.eligible ? 'qualified' : 'unranked';
 
   if (next !== status) {
-    await prisma.chart.update({
-      where: { id: chart.id },
+    // CAS on the status this evaluation read: the stats above take a while,
+    // and a moderator promoting (or demoting) the chart meanwhile must win —
+    // an automatic transition never overwrites a human decision.
+    const moved = await prisma.chart.updateMany({
+      where: { id: chart.id, rankStatus: chart.rankStatus },
       // `rankStatusBy` stays null: there is no actor. That null is how the audit
       // trail distinguishes an automatic transition from a moderator's decision.
       data: { rankStatus: next, rankStatusAt: new Date(), rankStatusBy: null },
-      select: { id: true },
     });
+    if (moved.count === 0) {
+      const fresh = await prisma.chart.findUnique({
+        where: { id: chart.id },
+        select: { rankStatus: true },
+      });
+      return { ...report, status: toRankStatus(fresh?.rankStatus ?? chart.rankStatus) };
+    }
   }
 
   return { ...report, status: next };
@@ -380,12 +389,12 @@ export async function promoteToRanked(chartId: string, moderatorId: string): Pro
   if (!chart || toRankStatus(chart.rankStatus) !== 'qualified') return false;
 
   await rateAndStoreChart(chartId);
-  await prisma.chart.update({
-    where: { id: chartId },
+  // CAS: the automatic gate may have dropped it back to unranked meanwhile.
+  const moved = await prisma.chart.updateMany({
+    where: { id: chartId, rankStatus: chart.rankStatus },
     data: { rankStatus: 'ranked', rankStatusAt: new Date(), rankStatusBy: moderatorId },
-    select: { id: true },
   });
-  return true;
+  return moved.count > 0;
 }
 
 /**
@@ -408,12 +417,11 @@ export async function demote(chartId: string, moderatorId: string): Promise<bool
   });
   if (!chart || toRankStatus(chart.rankStatus) === 'unranked') return false;
 
-  await prisma.chart.update({
-    where: { id: chartId },
+  const moved = await prisma.chart.updateMany({
+    where: { id: chartId, rankStatus: chart.rankStatus },
     data: { rankStatus: 'unranked', rankStatusAt: new Date(), rankStatusBy: moderatorId },
-    select: { id: true },
   });
-  return true;
+  return moved.count > 0;
 }
 
 /**

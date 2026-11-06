@@ -59,6 +59,23 @@ vi.mock('@/lib/prisma.server', () => ({
           return { id: where.id };
         },
       ),
+      updateMany: vi.fn(
+        async ({
+          where,
+          data,
+        }: {
+          where: { id: string; rankStatus?: string };
+          data: Record<string, unknown>;
+        }) => {
+          const chart = state.charts.find((row) => row.id === where.id);
+          if (!chart || (where.rankStatus !== undefined && chart.rankStatus !== where.rankStatus)) {
+            return { count: 0 };
+          }
+          state.updates.push({ id: where.id, data });
+          if (typeof data.rankStatus === 'string') chart.rankStatus = data.rankStatus;
+          return { count: 1 };
+        },
+      ),
       aggregate: vi.fn(async () => ({ _max: { rating: null } })),
     },
     sliceRun: {

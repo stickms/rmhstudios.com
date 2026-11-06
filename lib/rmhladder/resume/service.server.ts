@@ -382,9 +382,14 @@ export async function analyzeResume(
   if (!version?.redactedTextEncrypted) throw new Error('Resume text is not ready for analysis');
   const provider = configuredLadderAiProvider(args.provider);
   const now = new Date();
+  // Every status write below is a compare-and-swap through Prisma's extended
+  // unique `where` (`{ id, status }`): it throws P2025 when the row is not in
+  // the expected state. The route's reaper fails stale `processing` rows, so
+  // a late worker must not resurrect one (failed → complete), and a reserved
+  // task is claimed only while still `queued`.
   const task = args.reservedTaskId
     ? await prisma.ladderAiTask.update({
-        where: { id: args.reservedTaskId },
+        where: { id: args.reservedTaskId, status: 'queued' },
         data: {
           status: 'processing',
           provider: provider.name,
@@ -421,23 +426,33 @@ export async function analyzeResume(
     const redactedText = decryptResumeText(version.redactedTextEncrypted as string, { aad });
     const analyzed = await analyzeRedactedResume(redactedText, { client: provider });
     const completedAt = new Date();
+    // Task first: it is the authority the reaper and the in-flight check read.
+    // If it was reaped while the model ran, this throws and the catch below
+    // fails the (still processing) review instead of completing it.
+    try {
+      await prisma.ladderAiTask.update({
+        where: { id: task.id, status: 'processing' },
+        data: {
+          status: 'complete',
+          outputRef: review.id,
+          dedupeKey: null,
+          finishedAt: completedAt,
+          error: null,
+        },
+      });
+    } catch (error) {
+      if ((error as { code?: string } | null)?.code === 'P2025') {
+        throw new Error('Review timed out before completion', { cause: error });
+      }
+      throw error;
+    }
     const completedReview = await prisma.ladderResumeReview.update({
-      where: { id: review.id },
+      where: { id: review.id, status: 'processing' },
       data: {
         status: 'complete',
         profile: analyzed.analysis.profile,
         review: analyzed.analysis.review,
         completedAt,
-        error: null,
-      },
-    });
-    await prisma.ladderAiTask.update({
-      where: { id: task.id },
-      data: {
-        status: 'complete',
-        outputRef: review.id,
-        dedupeKey: null,
-        finishedAt: completedAt,
         error: null,
       },
     });
@@ -453,13 +468,13 @@ export async function analyzeResume(
       ...(review
         ? [
             prisma.ladderResumeReview.update({
-              where: { id: review.id },
+              where: { id: review.id, status: 'processing' },
               data: { status: 'failed', error: message, completedAt: failedAt },
             }),
           ]
         : []),
       prisma.ladderAiTask.update({
-        where: { id: task.id },
+        where: { id: task.id, status: 'processing' },
         data: { status: 'failed', error: message, dedupeKey: null, finishedAt: failedAt },
       }),
     ]);

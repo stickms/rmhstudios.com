@@ -317,14 +317,24 @@ export async function buyListing({
 
 // ─── Cancel ──────────────────────────────────────────────────────────────────
 
-/** Release escrow: flip an ACTIVE listing owned by `sellerId` to CANCELED. */
+/**
+ * Release escrow: flip an ACTIVE or HELD listing owned by `sellerId` to
+ * CANCELED.
+ *
+ * HELD (an anomalously priced buy frozen for review) moved no funds and
+ * recorded no buyer, and nothing ever moves a listing out of it — no admin
+ * release exists — so without this exit the seller's item stayed escrowed
+ * forever. Cancelling a HELD listing is exactly as safe as cancelling an ACTIVE
+ * one. The CAS on the status set is what keeps a racing buy (ACTIVE → SOLD)
+ * from being cancelled under it.
+ */
 export async function cancelListing(listingId: string, sellerId: string): Promise<void> {
   const res = await prisma.marketListing.updateMany({
-    where: { id: listingId, sellerId, status: 'ACTIVE' },
+    where: { id: listingId, sellerId, status: { in: ['ACTIVE', 'HELD'] } },
     data: { status: 'CANCELED', closedAt: new Date() },
   });
   if (res.count === 0) {
-    // Either it doesn't exist, isn't yours, or isn't ACTIVE (sold/held/canceled).
+    // Either it doesn't exist, isn't yours, or is already closed (sold/canceled).
     throw new MarketError('NOT_AVAILABLE', 'That listing can no longer be canceled', 409);
   }
 }

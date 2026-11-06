@@ -330,8 +330,36 @@ async function uniqueSlug(suggested: string): Promise<string> {
   return nanoid(10).toLowerCase();
 }
 
+/**
+ * A brand-new page's "generating" placeholder older than this was lost: its
+ * build died with the process (the `finally` that flips it to "error" never
+ * ran). Comfortably past the viewer's own 18-minute hard cap.
+ */
+const VIBE_GENERATING_STALE_MS = 20 * 60_000;
+
 export async function getVibePage(slug: string) {
-  return prisma.vibePage.findUnique({ where: { slug } });
+  const page = await prisma.vibePage.findUnique({ where: { slug } });
+  if (
+    page &&
+    page.status === 'generating' &&
+    page.updatedAt.getTime() < Date.now() - VIBE_GENERATING_STALE_MS
+  ) {
+    // Settle it on read (CAS on still-generating and still-stale, so a build
+    // finishing at this instant wins) instead of showing "building" forever.
+    const { count } = await prisma.vibePage
+      .updateMany({
+        where: {
+          id: page.id,
+          status: 'generating',
+          updatedAt: { lt: new Date(Date.now() - VIBE_GENERATING_STALE_MS) },
+        },
+        data: { status: 'error' },
+      })
+      .catch(() => ({ count: 0 }));
+    if (count > 0) return { ...page, status: 'error' };
+    return prisma.vibePage.findUnique({ where: { slug } });
+  }
+  return page;
 }
 
 export type VibeVersionSummary = {

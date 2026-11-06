@@ -228,7 +228,13 @@ async function deliverOne(id: string, now: Date): Promise<Outcome> {
       : null;
 
     if (!gift.recipientId || !item || owns) {
-      await tx.scheduledGift.update({ where: { id }, data: { status: 'REFUNDED' } });
+      // The claim above provisionally wrote DELIVERED + deliveredAt (it is the
+      // lock). A refund was never delivered, so the stamp comes off with it:
+      // REFUNDED rows carry no deliveredAt. Conditional on our own claim.
+      await tx.scheduledGift.updateMany({
+        where: { id, status: 'DELIVERED' },
+        data: { status: 'REFUNDED', deliveredAt: null },
+      });
       await creditCoins(gift.senderId, gift.price, {
         tx,
         type: 'GIFT',

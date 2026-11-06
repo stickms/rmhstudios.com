@@ -105,14 +105,29 @@ export async function placeTrade(
   if (amount <= 0) throw new PredictionError('Invalid amount', 'INVALID_AMOUNT');
 
   return db.$transaction(async (tx) => {
-    const market = await tx.prediction.findUnique({ where: { id: predictionId } });
-    if (!market) throw new PredictionError('Market not found', 'NOT_FOUND', 404);
-    if (market.status !== 'OPEN') {
+    const seen = await tx.prediction.findUnique({ where: { id: predictionId } });
+    if (!seen) throw new PredictionError('Market not found', 'NOT_FOUND', 404);
+    if (seen.status !== 'OPEN') {
       throw new PredictionError('Market is not open for trading', 'NOT_OPEN');
     }
-    if (market.closesAt && market.closesAt.getTime() <= Date.now()) {
+    if (seen.closesAt && seen.closesAt.getTime() <= Date.now()) {
       throw new PredictionError('Trading has closed for this market', 'CLOSED');
     }
+
+    // The guard: a conditional write on OPEN, done before any money moves. It
+    // row-locks the market until this trade commits, so a resolution racing it
+    // either already flipped the status (count 0 — no shares bought on a
+    // resolved market, which would debit and never pay) or waits for us and
+    // then sees this position when it pays out. Concurrent trades serialise on
+    // the same lock, and the re-read below prices against the current q.
+    const locked = await tx.prediction.updateMany({
+      where: { id: predictionId, status: 'OPEN' },
+      data: { volume: { increment: amount } },
+    });
+    if (locked.count === 0) {
+      throw new PredictionError('Market is not open for trading', 'NOT_OPEN');
+    }
+    const market = await tx.prediction.findUniqueOrThrow({ where: { id: predictionId } });
 
     await tx.userProfile.upsert({
       where: { userId },
@@ -150,7 +165,6 @@ export async function placeTrade(
       data: {
         qYes: side === 'YES' ? { increment: shares } : undefined,
         qNo: side === 'NO' ? { increment: shares } : undefined,
-        volume: { increment: amount },
       },
     });
 
@@ -221,6 +235,19 @@ export async function resolvePrediction(
       throw new PredictionError('Only open markets can be resolved', 'NOT_OPEN');
     }
 
+    // Claim OPEN → RESOLVED_* first (CAS). Two racing resolutions (even YES vs
+    // NO) cannot both pay: the loser sees count 0. A trade holding the row
+    // lock commits first, and the positions read below — a fresh statement —
+    // includes it.
+    const claimed = await tx.prediction.updateMany({
+      where: { id: predictionId, status: 'OPEN' },
+      data: {
+        status: outcome === 'YES' ? 'RESOLVED_YES' : 'RESOLVED_NO',
+        resolvedAt: new Date(),
+      },
+    });
+    if (claimed.count === 0) return { resolved: false, payouts: 0 };
+
     const positions = await tx.predictionPosition.findMany({ where: { predictionId } });
     let totalPayout = 0;
     for (const pos of positions) {
@@ -242,14 +269,6 @@ export async function resolvePrediction(
       await tx.predictionPosition.update({ where: { id: pos.id }, data: { settled: true } });
     }
 
-    await tx.prediction.update({
-      where: { id: predictionId },
-      data: {
-        status: outcome === 'YES' ? 'RESOLVED_YES' : 'RESOLVED_NO',
-        resolvedAt: new Date(),
-      },
-    });
-
     return { resolved: true, payouts: totalPayout };
   });
 }
@@ -264,10 +283,14 @@ export async function moderatePrediction(opts: {
   if (market.status !== 'PENDING') {
     throw new PredictionError('Only pending markets can be moderated', 'NOT_PENDING');
   }
-  return prisma.prediction.update({
-    where: { id: opts.predictionId },
+  const { count } = await prisma.prediction.updateMany({
+    where: { id: opts.predictionId, status: 'PENDING' },
     data: { status: opts.approve ? 'OPEN' : 'DENIED' },
   });
+  if (count === 0) {
+    throw new PredictionError('Only pending markets can be moderated', 'NOT_PENDING');
+  }
+  return prisma.prediction.findUniqueOrThrow({ where: { id: opts.predictionId } });
 }
 
 /** Fetch + serialize a list of markets for the client. */

@@ -44,6 +44,8 @@ import { deleteObject } from '@/lib/storage/s3.server';
 import { keepOnRestoreTx } from '@/lib/posts-plus/keep.server';
 import { purgeFromCdn } from '@/lib/storage/cdn.server';
 import {
+  authorDeletedWhere,
+  AUTOMOD_HOLD,
   TRASH_PAGE_SIZE,
   checkPurgeEligibility,
   checkRestoreEligibility,
@@ -128,7 +130,14 @@ export async function listTrash(
   const [posts, comments] = await Promise.all([
     wantPosts
       ? prisma.rMHark.findMany({
-          where: { userId, deletedAt: { not: null } },
+          // A post AutoMod is holding is not in the author's bin: it was never
+          // deleted by them and is not theirs to restore or purge. (`not` alone
+          // would also drop the NULL legacy rows, hence the OR.)
+          where: {
+            userId,
+            deletedAt: { not: null },
+            OR: [{ deletedBy: null }, { deletedBy: { not: AUTOMOD_HOLD } }],
+          },
           orderBy: [{ deletedAt: 'desc' }, { id: 'desc' }],
           take,
           ...(cursor.post ? { cursor: { id: cursor.post }, skip: 1 } : {}),
@@ -342,21 +351,28 @@ async function restorePost(
   );
   if (!eligible.ok) return eligible;
 
-  await prisma.$transaction(async (tx) => {
+  const restored = await prisma.$transaction(async (tx) => {
     // `updateMany` with the deleted predicate makes the restore idempotent under
     // a double-submit: the second one matches zero rows and the counter work
     // below is skipped with it.
+    // ...and the author-deleted predicate makes it a CAS on the state the
+    // eligibility check saw: a moderator takedown landing in between is not
+    // undone by this write.
     const { count } = await tx.rMHark.updateMany({
-      where: { id, userId, deletedAt: { not: null } },
+      where: { id, userId, ...authorDeletedWhere() },
       data: { deletedAt: null, deletedBy: null, deletedByAdmin: false },
     });
-    if (count === 0) return;
+    if (count === 0) return false;
     await linkPostHashtags(tx, id, post.content);
     await restorePostCounters(tx, userId, post.communityId);
     // posts-plus X8: restoring is an explicit "keep this" - neither its TTL nor
     // the account auto-delete job may take it again.
     await keepOnRestoreTx(tx, id, userId);
+    return true;
   });
+  // Nothing changed (double-submit, or taken down since the check): do not
+  // broadcast the content back to open detail views.
+  if (!restored) return { ok: true };
 
   // The post reappears for anyone holding its detail view open. There is no
   // `rmhark.restored` event type and `lib/feed-sse.ts` is not this change's to
@@ -459,10 +475,12 @@ async function restoreComment(
   // restore would therefore inflate both by one per restored comment, which is
   // the exact drift this feature is supposed to avoid. Restoring through the
   // same paths that decremented means doing nothing when nothing decremented.
-  await prisma.rMHarkComment.updateMany({
-    where: { id, userId, deletedAt: { not: null } },
+  const { count } = await prisma.rMHarkComment.updateMany({
+    where: { id, userId, ...authorDeletedWhere() },
     data: { deletedAt: null, deletedBy: null, deletedByAdmin: false },
   });
+  // Restored concurrently, or taken down by a moderator since the check above.
+  if (count === 0) return { ok: true };
 
   void screenNewContent({
     entityType: 'comment',
@@ -495,7 +513,7 @@ export async function purgeItem(userId: string, kind: TrashKind, id: string): Pr
     if (!comment) return { ok: false, reason: 'not-found' };
     const eligible = checkPurgeEligibility(userId, { ownerId: comment.userId, ...comment });
     if (!eligible.ok) return eligible;
-    await prisma.rMHarkComment.deleteMany({ where: { id, userId, deletedAt: { not: null } } });
+    await prisma.rMHarkComment.deleteMany({ where: { id, userId, ...authorDeletedWhere() } });
     return { ok: true };
   }
 
@@ -507,8 +525,17 @@ export async function purgeItem(userId: string, kind: TrashKind, id: string): Pr
   const eligible = checkPurgeEligibility(userId, { ownerId: post.userId, ...post });
   if (!eligible.ok) return eligible;
 
-  await releasePostMedia(id);
-  await prisma.rMHark.deleteMany({ where: { id, userId, deletedAt: { not: null } } });
+  // Delete the row first (CAS on still author-deleted), then release the media
+  // it held: a moderator takedown landing after the check keeps its evidence.
+  // The FK is SetNull, so the media list is captured before the delete.
+  const media = await prisma.media.findMany({
+    where: { postId: id },
+    select: { id: true, key: true },
+  });
+  const { count } = await prisma.rMHark.deleteMany({
+    where: { id, userId, ...authorDeletedWhere() },
+  });
+  if (count > 0) await releasePostMedia(media);
   return { ok: true };
 }
 
@@ -517,8 +544,7 @@ export async function purgeItem(userId: string, kind: TrashKind, id: string): Pr
  * logged and skipped — the row survives so `sweepUnreferencedMedia` retries it
  * later, which is strictly better than deleting the row and losing the key.
  */
-async function releasePostMedia(postId: string): Promise<void> {
-  const media = await prisma.media.findMany({ where: { postId }, select: { id: true, key: true } });
+async function releasePostMedia(media: { id: string; key: string }[]): Promise<void> {
   if (media.length === 0) return;
   const released: string[] = [];
   for (const item of media) {

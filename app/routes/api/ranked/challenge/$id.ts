@@ -45,13 +45,17 @@ export const Route = createFileRoute('/api/ranked/challenge/$id')({
               );
             if (challenge.status !== 'pending')
               return Response.json({ error: 'Already responded' }, { status: 409 });
-            await prisma.rankedChallenge.update({
-              where: { id: challenge.id },
+            // CAS on 'pending': a double-tap or accept-vs-decline race cannot
+            // flip an already-answered (or already-reported) challenge.
+            const responded = await prisma.rankedChallenge.updateMany({
+              where: { id: challenge.id, status: 'pending' },
               data: {
                 status: body.action === 'accept' ? 'accepted' : 'declined',
                 ...(body.action === 'decline' ? { resolvedAt: new Date() } : {}),
               },
             });
+            if (responded.count === 0)
+              return Response.json({ error: 'Already responded' }, { status: 409 });
             return Response.json({ success: true });
           }
 

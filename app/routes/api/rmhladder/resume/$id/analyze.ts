@@ -80,6 +80,22 @@ export const Route = createFileRoute('/api/rmhladder/resume/$id/analyze')({
               finishedAt: new Date(),
             },
           });
+          // The review rows those tasks were writing go with them; otherwise the
+          // UI shows a review "processing" forever. (A late worker can no longer
+          // complete either: analyzeResume's writes are conditional on
+          // `processing`.)
+          await prisma.ladderResumeReview.updateMany({
+            where: {
+              resumeVersionId: parsed.data.versionId,
+              status: 'processing',
+              createdAt: { lt: staleAt },
+            },
+            data: {
+              status: 'failed',
+              error: 'Review timed out before completion',
+              completedAt: new Date(),
+            },
+          });
           const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
           const configuredLimit = Number(process.env.LADDER_AI_DAILY_REVIEW_LIMIT ?? 200);
           const globalLimit =

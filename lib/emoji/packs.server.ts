@@ -277,8 +277,16 @@ export async function addItem(
   });
   if (clash) throw new PackError(`":${input.name}:" is already used in this pack.`, 409);
 
-  const [item] = await prisma.$transaction([
-    prisma.emojiPackItem.create({
+  const item = await prisma.$transaction(async (tx) => {
+    // CAS on PENDING: two racing addItem calls cannot both claim one upload.
+    // No postId and no attachedAt — the media sweep's "post was hard-deleted"
+    // branch keys on attachedAt, so pack images are never mistaken for it.
+    const claimed = await tx.media.updateMany({
+      where: { id: media.id, status: 'PENDING' },
+      data: { status: 'ATTACHED' },
+    });
+    if (claimed.count === 0) throw new PackError('That upload is already in use.');
+    const created = await tx.emojiPackItem.create({
       data: {
         packId,
         name: input.name,
@@ -289,9 +297,8 @@ export async function addItem(
         position: pack.itemCount,
       },
       select: itemSelect,
-    }),
-    prisma.media.update({ where: { id: media.id }, data: { status: 'ATTACHED' } }),
-    prisma.emojiPack.update({
+    });
+    await tx.emojiPack.update({
       where: { id: packId },
       data: {
         itemCount: { increment: 1 },
@@ -299,8 +306,9 @@ export async function addItem(
         // approved while empty and filled with anything afterwards.
         status: 'PENDING',
       },
-    }),
-  ]);
+    });
+    return created;
+  });
   return { ...item, kind: item.kind as PackItem['kind'] };
 }
 

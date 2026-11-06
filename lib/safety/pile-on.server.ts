@@ -74,36 +74,52 @@ export async function acceptGuard(postId: string, userId: string): Promise<Date 
   const g = await getGuard(postId, userId);
   if (!g || g.status !== 'OFFERED') return null;
   const expiresAt = new Date(Date.now() + PILE_ON_LIMIT_MS);
-  await prisma.$transaction([
-    prisma.rMHark.update({ where: { id: postId }, data: { replyControl: 'FOLLOWING' } }),
-    prisma.pileOnGuard.update({ where: { postId }, data: { status: 'ACTIVE', expiresAt } }),
-  ]);
-  return expiresAt;
+  // CAS on OFFERED first, so accept racing dismiss (or a double tap) cannot
+  // re-activate a dismissed/reverted guard and re-limit the post.
+  const accepted = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.pileOnGuard.updateMany({
+      where: { postId, status: 'OFFERED' },
+      data: { status: 'ACTIVE', expiresAt },
+    });
+    if (claimed.count === 0) return false;
+    await tx.rMHark.update({ where: { id: postId }, data: { replyControl: 'FOLLOWING' } });
+    return true;
+  });
+  return accepted ? expiresAt : null;
 }
 
 export async function dismissGuard(postId: string, userId: string): Promise<boolean> {
   const g = await getGuard(postId, userId);
   if (!g || g.status !== 'OFFERED') return false;
-  await prisma.pileOnGuard.update({ where: { postId }, data: { status: 'DISMISSED' } });
-  return true;
+  const { count } = await prisma.pileOnGuard.updateMany({
+    where: { postId, status: 'OFFERED' },
+    data: { status: 'DISMISSED' },
+  });
+  return count > 0;
 }
 
 /** Restore one ACTIVE guard's previous control (only if nobody changed it meanwhile). */
-async function revert(postId: string, previous: RMHarkReplyControl): Promise<void> {
-  await prisma.$transaction([
-    prisma.rMHark.updateMany({
+async function revert(postId: string, previous: RMHarkReplyControl): Promise<boolean> {
+  // CAS ACTIVE → REVERTED first: the undo and the hourly sweep racing (or two
+  // sweeps) restore the control once, and never for a guard that is not active.
+  return prisma.$transaction(async (tx) => {
+    const claimed = await tx.pileOnGuard.updateMany({
+      where: { postId, status: 'ACTIVE' },
+      data: { status: 'REVERTED' },
+    });
+    if (claimed.count === 0) return false;
+    await tx.rMHark.updateMany({
       where: { id: postId, replyControl: 'FOLLOWING' },
       data: { replyControl: previous },
-    }),
-    prisma.pileOnGuard.update({ where: { postId }, data: { status: 'REVERTED' } }),
-  ]);
+    });
+    return true;
+  });
 }
 
 export async function undoGuard(postId: string, userId: string): Promise<boolean> {
   const g = await getGuard(postId, userId);
   if (!g || g.status !== 'ACTIVE') return false;
-  await revert(postId, g.previousControl);
-  return true;
+  return revert(postId, g.previousControl);
 }
 
 /** Hourly sweep: lift every limit whose 24h has passed. */
