@@ -813,5 +813,7 @@
   "ventures-subtitle": "The brands and programmes built around RMH Studios.",
   "your-current-plan": "Your current plan",
   "membership-action-failed": "Could not reach billing. Try again.",
-  "space-end-offline": "Not connected. Try again in a moment."
+  "space-end-offline": "Not connected. Try again in a moment.",
+  "market-under-review": "Under review",
+  "market-under-review-hint": "A buy at this price was paused for a quick check. No coins moved. Cancel to get the item back now."
 }

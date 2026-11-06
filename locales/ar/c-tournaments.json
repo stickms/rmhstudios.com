@@ -93,5 +93,7 @@
   "title": "Tournaments",
   "unknown": "TBD",
   "withdraw": "Withdraw",
-  "withdrew": "Withdrew and refunded"
+  "withdrew": "Withdrew and refunded",
+  "match-cancelled": "ملغاة",
+  "status-cancelled": "ملغاة"
 }

@@ -10,7 +10,9 @@ import { pageSize } from '@/lib/pagination';
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { userDisplaySelect } from '@/lib/user-display';
+import { logAdminAction } from '@/lib/admin-audit.server';
+import { createNotification } from '@/lib/notifications.server';
+import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
 import {
   MAX_ITEMS_PER_PACK,
   MAX_PACKS_PER_USER,
@@ -394,4 +396,143 @@ export async function reorderSubscriptions(userId: string, packIds: string[]): P
       }),
     ),
   );
+}
+
+// ─── Moderation ──────────────────────────────────────────────────────────
+
+/** How many items the review queue shows per pack — enough to judge it at a glance. */
+const QUEUE_PREVIEW_ITEMS = 24;
+
+export interface PendingPack {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  kind: string;
+  visibility: string;
+  itemCount: number;
+  createdAt: Date;
+  /**
+   * The version the reviewer saw. Sent back with the decision so an item added
+   * after the queue loaded cannot ride an approval nobody looked at.
+   */
+  updatedAt: Date;
+  owner: ResolvedUser;
+  items: PackItem[];
+}
+
+/**
+ * What the review queue holds. Empty packs are left out — there is nothing to
+ * judge, browse never lists an empty pack, and adding the first item puts it
+ * back in the queue. Private packs are left out too: only their owner can ever
+ * use one, so approval would change nothing.
+ */
+const pendingQueueWhere = {
+  status: 'PENDING',
+  itemCount: { gt: 0 },
+  visibility: { not: 'private' },
+} as const;
+
+/** The admin review queue: packs awaiting a decision, oldest edit first. */
+export async function listPendingPacks(opts: { take?: number } = {}): Promise<PendingPack[]> {
+  const rows = await prisma.emojiPack.findMany({
+    where: pendingQueueWhere,
+    orderBy: { updatedAt: 'asc' },
+    take: pageSize(opts.take, 50, 100),
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      description: true,
+      kind: true,
+      visibility: true,
+      itemCount: true,
+      createdAt: true,
+      updatedAt: true,
+      owner: { select: userDisplaySelect },
+      items: { select: itemSelect, orderBy: { position: 'asc' }, take: QUEUE_PREVIEW_ITEMS },
+    },
+  });
+  return rows.map(({ owner, items, ...pack }) => ({
+    ...pack,
+    owner: resolveUser(owner),
+    items: items.map((i) => ({ ...i, kind: i.kind as PackItem['kind'] })),
+  }));
+}
+
+/** Count for the admin review badge — the same filter as the queue itself. */
+export function countPendingPacks(): Promise<number> {
+  return prisma.emojiPack.count({ where: pendingQueueWhere });
+}
+
+export type PackModerationAction = 'approve' | 'remove';
+
+/**
+ * Approve or remove a pack. A compare-and-swap on `status`:
+ *
+ *   - approve: PENDING → APPROVED (and only with at least one item)
+ *   - remove:  PENDING | APPROVED → REMOVED
+ *
+ * so two admins deciding at once, or an approve racing a remove, leave exactly
+ * one winner, and a removed pack can never be approved back. When `version`
+ * (the `updatedAt` the reviewer saw) is given it is part of the swap too: an
+ * owner who adds an item while the pack sits in the queue invalidates the
+ * review in flight instead of having the new item approved unseen.
+ *
+ * Returns `applied: false` when the swap lost (already decided, edited since,
+ * or not in a state the action applies to) — no audit row and no notification
+ * in that case. Throws `PackError(404)` for an unknown pack.
+ */
+export async function moderatePack(
+  idOrSlug: string,
+  action: PackModerationAction,
+  adminId: string,
+  reason?: string,
+  version?: Date,
+): Promise<{ applied: boolean; status: string }> {
+  const pack = await prisma.emojiPack.findFirst({
+    where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }] },
+    select: { id: true, slug: true, name: true, ownerId: true, status: true },
+  });
+  if (!pack) throw new PackError('Pack not found.', 404);
+
+  const next = action === 'approve' ? 'APPROVED' : 'REMOVED';
+  const { count } = await prisma.emojiPack.updateMany({
+    where: {
+      id: pack.id,
+      ...(action === 'approve'
+        ? { status: 'PENDING', itemCount: { gt: 0 } }
+        : { status: { in: ['PENDING', 'APPROVED'] } }),
+      ...(version ? { updatedAt: version } : {}),
+    },
+    data: { status: next },
+  });
+
+  if (count === 0) {
+    const current = await prisma.emojiPack.findUnique({
+      where: { id: pack.id },
+      select: { status: true },
+    });
+    return { applied: false, status: current?.status ?? pack.status };
+  }
+
+  const note = reason?.trim().slice(0, 500) || undefined;
+  await logAdminAction(adminId, `emoji-pack.${action}`, {
+    targetType: 'emoji-pack',
+    targetId: pack.id,
+    detail: note ? `${pack.slug}: ${note}` : pack.slug,
+  });
+  void createNotification({
+    userId: pack.ownerId,
+    type: 'SYSTEM',
+    entityType: 'emoji-pack',
+    entityId: pack.id,
+    preview:
+      action === 'approve'
+        ? `Your pack "${pack.name}" was approved — anyone can install it now`
+        : `Your pack "${pack.name}" was removed by moderators${note ? `: ${note}` : ''}`,
+    link: '/emoji-packs',
+  }).catch(() => {});
+
+  return { applied: true, status: next };
 }

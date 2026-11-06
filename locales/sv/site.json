@@ -759,5 +759,7 @@
   "ladder.health.showErrors_one": "{{count}} error",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "Det gick inte att nå faktureringen. Försök igen.",
-  "space-end-offline": "Inte ansluten. Försök igen om en stund."
+  "space-end-offline": "Inte ansluten. Försök igen om en stund.",
+  "market-under-review": "Granskas",
+  "market-under-review-hint": "Ett köp till det här priset pausades för en snabb kontroll. Inga mynt flyttades. Avbryt för att få tillbaka föremålet nu."
 }

@@ -791,5 +791,7 @@
   "ladder.health.showErrors_one": "{{count}} error",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "Nie udało się połączyć z rozliczeniami. Spróbuj ponownie.",
-  "space-end-offline": "Brak połączenia. Spróbuj ponownie za chwilę."
+  "space-end-offline": "Brak połączenia. Spróbuj ponownie za chwilę.",
+  "market-under-review": "W trakcie przeglądu",
+  "market-under-review-hint": "Zakup po tej cenie wstrzymano do szybkiej kontroli. Żadne monety nie zostały przeniesione. Anuluj, aby od razu odzyskać przedmiot."
 }

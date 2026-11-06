@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 981 files across 197 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 985 files across 197 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-89 routes.
+93 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -85,6 +85,8 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/delight/translations/:id` | `POST` | `app/routes/api/admin/delight/translations/$id/index.ts` |
 | `/api/admin/delight/translations/export` | `GET` | `app/routes/api/admin/delight/translations/export/index.ts` |
 | `/api/admin/economy` | `GET` | `app/routes/api/admin/economy.ts` |
+| `/api/admin/emoji-packs` | `GET` | `app/routes/api/admin/emoji-packs.ts` |
+| `/api/admin/emoji-packs/:id` | `POST` | `app/routes/api/admin/emoji-packs/$id.ts` |
 | `/api/admin/flags` | `DELETE` `GET` `PUT` | `app/routes/api/admin/flags.ts` |
 | `/api/admin/forecasting/seasons` | `POST` | `app/routes/api/admin/forecasting/seasons.ts` |
 | `/api/admin/gift-exchanges/:id/verify` | `GET` | `app/routes/api/admin/gift-exchanges/$id/verify.ts` |
@@ -100,6 +102,8 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/library/reorder` | `POST` | `app/routes/api/admin/library/reorder.ts` |
 | `/api/admin/library/storage-health` | `GET` | `app/routes/api/admin/library/storage-health.ts` |
 | `/api/admin/link-rules` | `DELETE` `GET` `POST` | `app/routes/api/admin/link-rules.ts` |
+| `/api/admin/market` | `GET` | `app/routes/api/admin/market/index.ts` |
+| `/api/admin/market/:id` | `POST` | `app/routes/api/admin/market/$id.ts` |
 | `/api/admin/mod-macros` | `DELETE` `GET` `POST` | `app/routes/api/admin/mod-macros.ts` |
 | `/api/admin/oncall` | `GET` | `app/routes/api/admin/oncall.ts` |
 | `/api/admin/oncall-rules` | `GET` `PATCH` | `app/routes/api/admin/oncall-rules.ts` |

@@ -759,5 +759,7 @@
   "ladder.health.showErrors_one": "{{count}} error",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "ਬਿਲਿੰਗ ਤੱਕ ਨਹੀਂ ਪਹੁੰਚ ਸਕੇ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
-  "space-end-offline": "ਕਨੈਕਟ ਨਹੀਂ ਹੈ। ਥੋੜ੍ਹੀ ਦੇਰ ਬਾਅਦ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"
+  "space-end-offline": "ਕਨੈਕਟ ਨਹੀਂ ਹੈ। ਥੋੜ੍ਹੀ ਦੇਰ ਬਾਅਦ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+  "market-under-review": "ਸਮੀਖਿਆ ਅਧੀਨ",
+  "market-under-review-hint": "ਇਸ ਕੀਮਤ 'ਤੇ ਖਰੀਦ ਇੱਕ ਤੇਜ਼ ਜਾਂਚ ਲਈ ਰੋਕੀ ਗਈ ਹੈ। ਕੋਈ ਸਿੱਕੇ ਨਹੀਂ ਹਿੱਲੇ। ਆਈਟਮ ਹੁਣੇ ਵਾਪਸ ਲੈਣ ਲਈ ਰੱਦ ਕਰੋ।"
 }

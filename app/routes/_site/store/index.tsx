@@ -46,7 +46,7 @@ const fetchStore = createServerFn({ method: 'GET' }).handler(async () => {
   const [tier, shop, listings] = await Promise.all([
     userId ? getUserTier(userId) : Promise.resolve('free' as Tier),
     getShopData(userId),
-    browse({ sort: 'recent' }),
+    browse({ sort: 'recent', viewerId: userId }),
   ]);
   return {
     tier,

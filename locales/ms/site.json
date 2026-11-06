@@ -743,5 +743,7 @@
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "Tidak dapat menghubungi pengebilan. Cuba lagi.",
-  "space-end-offline": "Tidak bersambung. Cuba lagi sebentar lagi."
+  "space-end-offline": "Tidak bersambung. Cuba lagi sebentar lagi.",
+  "market-under-review": "Dalam semakan",
+  "market-under-review-hint": "Pembelian pada harga ini dijeda untuk semakan pantas. Tiada syiling berpindah. Batalkan untuk mendapatkan item semula sekarang."
 }

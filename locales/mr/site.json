@@ -759,5 +759,7 @@
   "ladder.health.showErrors_one": "{{count}} error",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "बिलिंगशी संपर्क होऊ शकला नाही. पुन्हा प्रयत्न करा.",
-  "space-end-offline": "कनेक्ट नाही. थोड्या वेळाने पुन्हा प्रयत्न करा."
+  "space-end-offline": "कनेक्ट नाही. थोड्या वेळाने पुन्हा प्रयत्न करा.",
+  "market-under-review": "पुनरावलोकनाधीन",
+  "market-under-review-hint": "या किमतीतील खरेदी जलद तपासणीसाठी थांबवली आहे. कोणतीही नाणी हलवली गेली नाहीत. आयटम आत्ताच परत मिळवण्यासाठी रद्द करा."
 }

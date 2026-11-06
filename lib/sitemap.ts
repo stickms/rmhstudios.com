@@ -338,6 +338,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/blog': 'admin',
   '/admin/blog/new': 'admin',
   '/admin/economy': 'admin',
+  '/admin/market': 'admin',
+  '/admin/emoji-packs': 'admin',
   '/admin/delight': 'admin',
   '/admin/bots': 'admin',
   '/admin/canvas': 'admin', // P19 Z5/X3

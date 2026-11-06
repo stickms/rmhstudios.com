@@ -115,8 +115,6 @@ const PUBLIC_BUT_NOT_CACHED: Record<string, string> = {
   '/api/gift-sub':
     'raw handler; constant price table, cacheable once adopted onto defineHandler (body edit, WS4)',
   '/api/versecraft/world': 'raw handler; GET also writes',
-  '/api/market/listings':
-    'a seller or buyer must see their own action at once and a browser copy cannot be purged',
   '/api/awards': 'the giver must see the award immediately after paying coins for it',
   '/api/ai/takeaways':
     "returns 200 [] when the AI call fails; an HTTP cache would pin that failure (the handler's own memo deliberately never does)",

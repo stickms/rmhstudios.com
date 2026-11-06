@@ -791,5 +791,7 @@
   "ladder.health.showErrors_one": "{{count}} error",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "Не вдалося зв’язатися з оплатою. Спробуйте ще раз.",
-  "space-end-offline": "Немає з’єднання. Спробуйте ще раз за хвилину."
+  "space-end-offline": "Немає з’єднання. Спробуйте ще раз за хвилину.",
+  "market-under-review": "На перевірці",
+  "market-under-review-hint": "Купівлю за цією ціною призупинено для швидкої перевірки. Монети не переказувалися. Скасуйте, щоб одразу повернути предмет."
 }

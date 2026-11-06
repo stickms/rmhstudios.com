@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { RARITY_COLORS, type Rarity, type ShopItemKind } from '@/lib/shop/catalog';
@@ -17,6 +18,11 @@ export interface MarketListingView {
   id: string;
   itemId: string;
   priceCoins: number;
+  /**
+   * HELD = frozen for admin review after an anomalously priced buy. The API only
+   * returns HELD listings to their own seller. Absent on older payloads (ACTIVE).
+   */
+  status?: 'ACTIVE' | 'HELD';
   createdAt: string;
   item: {
     id: string;
@@ -91,6 +97,7 @@ export function ListingCard({
   const [busy, setBusy] = useState(false);
   const rarity = listing.item?.rarity ?? 'common';
   const name = listing.item?.name ?? listing.itemId;
+  const held = listing.status === 'HELD';
 
   const buy = async () => {
     setBusy(true);
@@ -158,6 +165,11 @@ export function ListingCard({
           >
             {rarity}
           </span>
+          {held && (
+            <Badge variant="warning" size="sm">
+              {t('market-under-review', { defaultValue: 'Under review' })}
+            </Badge>
+          )}
         </div>
         <div className="mt-0.5 flex items-center gap-2 text-xs text-site-text-muted">
           <UserAvatar
@@ -172,6 +184,14 @@ export function ListingCard({
               : (listing.seller.name ?? t('market-seller', { defaultValue: 'Seller' }))}
           </span>
         </div>
+        {held && isOwn && (
+          <p className="mt-2 text-xs text-site-text-muted">
+            {t('market-under-review-hint', {
+              defaultValue:
+                'A buy at this price was paused for a quick check. No coins moved. Cancel to get the item back now.',
+            })}
+          </p>
+        )}
       </div>
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3">
         <span className="inline-flex items-center gap-1 text-sm font-semibold text-site-text">
@@ -181,7 +201,7 @@ export function ListingCard({
           <Button size="sm" variant="secondary" loading={busy} onClick={cancel}>
             {t('market-cancel', { defaultValue: 'Cancel' })}
           </Button>
-        ) : canBuy ? (
+        ) : canBuy && !held ? (
           <Button size="sm" variant="accent" loading={busy} onClick={buy}>
             {t('market-buy', { defaultValue: 'Buy' })}
           </Button>

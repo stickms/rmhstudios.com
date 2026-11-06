@@ -6,10 +6,14 @@ export interface AdminReviewCounts {
   reports: number;
   /** Strike appeals awaiting a decision. */
   appeals: number;
+  /** Emoji & sticker packs awaiting moderation. */
+  emojiPacks: number;
+  /** Marketplace listings held for price review. */
+  market: number;
   total: number;
 }
 
-const EMPTY: AdminReviewCounts = { reports: 0, appeals: 0, total: 0 };
+const EMPTY: AdminReviewCounts = { reports: 0, appeals: 0, emojiPacks: 0, market: 0, total: 0 };
 
 /**
  * Polls the count of items needing admin review (open reports, …) so the Admin
@@ -29,6 +33,8 @@ export function useAdminReviewCount(isAdmin: boolean, intervalMs = 60_000) {
         setCounts({
           reports: data.reports ?? 0,
           appeals: data.appeals ?? 0,
+          emojiPacks: data.emojiPacks ?? 0,
+          market: data.market ?? 0,
           total: data.total,
         });
       }

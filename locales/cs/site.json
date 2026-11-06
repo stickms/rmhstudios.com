@@ -791,5 +791,7 @@
   "ladder.health.showErrors_one": "{{count}} error",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "Nepodařilo se spojit s fakturací. Zkuste to znovu.",
-  "space-end-offline": "Nejste připojeni. Zkuste to za chvíli znovu."
+  "space-end-offline": "Nejste připojeni. Zkuste to za chvíli znovu.",
+  "market-under-review": "Probíhá kontrola",
+  "market-under-review-hint": "Nákup za tuto cenu byl pozastaven kvůli rychlé kontrole. Žádné mince se nepřesunuly. Zrušte nabídku a předmět hned získáte zpět."
 }

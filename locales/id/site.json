@@ -759,5 +759,7 @@
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "Tidak dapat menghubungi penagihan. Coba lagi.",
-  "space-end-offline": "Tidak terhubung. Coba lagi sebentar lagi."
+  "space-end-offline": "Tidak terhubung. Coba lagi sebentar lagi.",
+  "market-under-review": "Sedang ditinjau",
+  "market-under-review-hint": "Pembelian dengan harga ini dijeda untuk pemeriksaan singkat. Tidak ada koin yang berpindah. Batalkan untuk mendapatkan item kembali sekarang."
 }
