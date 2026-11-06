@@ -100,7 +100,8 @@ const db: any = {
       const s = store.state;
       const l = where.id ? s.listings.get(where.id) : undefined;
       if (!l) return { count: 0 };
-      if (where.status && l.status !== where.status) return { count: 0 };
+      if (typeof where.status === 'string' && l.status !== where.status) return { count: 0 };
+      if (where.status?.in && !where.status.in.includes(l.status)) return { count: 0 };
       if (where.sellerId && l.sellerId !== where.sellerId) return { count: 0 };
       if (data.status) l.status = data.status;
       if ('buyerId' in data) l.buyerId = data.buyerId;
@@ -533,6 +534,20 @@ describe('cancelListing', () => {
     seedTradeable(1000);
     await cancelListing('L1', SELLER);
     expect(store.state.listings.get('L1')!.status).toBe('CANCELED');
+  });
+
+  it('lets the seller cancel a HELD listing (the only exit from HELD)', async () => {
+    seedTradeable(1000);
+    store.state.listings.get('L1')!.status = 'HELD';
+    await cancelListing('L1', SELLER);
+    expect(store.state.listings.get('L1')!.status).toBe('CANCELED');
+  });
+
+  it('never cancels a SOLD listing', async () => {
+    seedTradeable(1000);
+    store.state.listings.get('L1')!.status = 'SOLD';
+    await expect(cancelListing('L1', SELLER)).rejects.toMatchObject({ code: 'NOT_AVAILABLE' });
+    expect(store.state.listings.get('L1')!.status).toBe('SOLD');
   });
 
   it('refuses to cancel a listing you do not own', async () => {

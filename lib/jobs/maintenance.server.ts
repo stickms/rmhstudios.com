@@ -22,6 +22,7 @@ import { fireDueReminders } from '@/lib/reminders/reminders.server';
 import { computeCohortRetention } from '@/lib/ops/cohorts.server';
 import { revertExpiredPileOnGuards } from '@/lib/safety/pile-on.server';
 import { runDeepseekBalanceJob } from '@/lib/deepseek/balance.server';
+import { refundExpiredPools } from '@/lib/commerce/pools.server';
 
 export const OUTBOX_DRAIN_QUEUE = 'outbox.drain';
 export const MAINTENANCE_QUEUE = 'platform.maintenance';
@@ -125,6 +126,15 @@ export async function runMaintenance(): Promise<MaintenanceResult> {
     await revertExpiredPileOnGuards();
   } catch (err) {
     console.error('[maintenance] pile-on revert failed:', (err as Error)?.message);
+  }
+  try {
+    // Pools that expired short of their goal hold contributors' coins in
+    // escrow until this runs; it had no caller before. Idempotent and safe
+    // to run concurrently with itself (claims + ledger keys), and it pages
+    // (50 pools per run), so an hourly cadence drains any backlog.
+    await refundExpiredPools();
+  } catch (err) {
+    console.error('[maintenance] pool refund sweep failed:', (err as Error)?.message);
   }
   return result;
 }

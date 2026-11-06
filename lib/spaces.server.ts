@@ -143,11 +143,20 @@ export async function startSpace(id: string, hostId: string): Promise<SpaceView>
   if (existing.hostId !== hostId) throw new SpaceError(403, 'Only the host can start this Space');
   if (existing.status === 'ENDED') throw new SpaceError(400, 'This Space has already ended');
 
-  const row = await prisma.space.update({
-    where: { id },
-    data: { status: 'LIVE', startedAt: existing.startedAt ?? new Date() },
-    select: spaceSelect,
-  });
+  // CAS on not-ENDED: an end landing after the check above must not be undone
+  // (ENDED → LIVE). `update` with the extended where throws P2025 on a miss.
+  const row = await prisma.space
+    .update({
+      where: { id, status: { in: ['SCHEDULED', 'LIVE'] } },
+      data: { status: 'LIVE', startedAt: existing.startedAt ?? new Date() },
+      select: spaceSelect,
+    })
+    .catch((err: unknown) => {
+      if ((err as { code?: string } | null)?.code === 'P2025') {
+        throw new SpaceError(400, 'This Space has already ended');
+      }
+      throw err;
+    });
   const view = shapeSpace(row);
   // §9 rich presence: the host is now "Live in a Space". Ephemeral — clears on
   // endSpace or with the heartbeat if they drop. One of the ~10 activity touch
@@ -164,6 +173,12 @@ export async function endSpace(id: string, hostId: string): Promise<SpaceView> {
   });
   if (!existing) throw new SpaceError(404, 'Space not found');
   if (existing.hostId !== hostId) throw new SpaceError(403, 'Only the host can end this Space');
+  // Ending twice keeps the first endedAt.
+  if (existing.status === 'ENDED') {
+    const ended = await prisma.space.findUnique({ where: { id }, select: spaceSelect });
+    if (!ended) throw new SpaceError(404, 'Space not found');
+    return shapeSpace(ended);
+  }
 
   const row = await prisma.space.update({
     where: { id },

@@ -27,6 +27,14 @@ const DELIVERY_TIMEOUT_MS = 10_000;
 /** Backoff per attempt number (1-indexed), capped at the last entry. */
 const BACKOFF_MS = [0, 60_000, 5 * 60_000, 30 * 60_000, 2 * 60 * 60_000, 6 * 60 * 60_000];
 
+/**
+ * How long a claimed attempt owns its delivery. The claim pushes
+ * `nextAttemptAt` this far out, so the drain cannot pick the same row up while
+ * the request is in flight; if the process dies mid-attempt the lease lapses and
+ * the drain retries it (as the next attempt). Comfortably above the timeout.
+ */
+const ATTEMPT_LEASE_MS = DELIVERY_TIMEOUT_MS * 6;
+
 function backoffFor(attempt: number): number {
   return BACKOFF_MS[Math.min(attempt, BACKOFF_MS.length - 1)];
 }
@@ -40,6 +48,20 @@ interface EndpointRow {
 
 /** Attempt a single delivery and record the outcome. */
 async function attemptDelivery(deliveryId: string, event: string, payload: unknown, endpoint: EndpointRow, attemptNo: number): Promise<void> {
+  // Claim attempt N with a compare-and-swap on (PENDING, N-1 attempts). The
+  // first attempt from emit and a drain pass (or two overlapping drains) race
+  // for the same row; exactly one wins and sends, the rest see count 0.
+  const claimed = await prisma.webhookDelivery
+    .updateMany({
+      where: { id: deliveryId, status: 'PENDING', attempts: attemptNo - 1 },
+      data: { attempts: attemptNo, nextAttemptAt: new Date(Date.now() + ATTEMPT_LEASE_MS) },
+    })
+    .catch((e) => {
+      console.error('[webhooks] claim failed:', e);
+      return { count: 0 };
+    });
+  if (claimed.count === 0) return;
+
   const body = JSON.stringify(payload);
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = `t=${timestamp},v1=${signWebhookPayload(endpoint.secret, timestamp, body)}`;
@@ -79,10 +101,12 @@ async function attemptDelivery(deliveryId: string, event: string, payload: unkno
 
   const ok = status >= 200 && status < 300;
   if (ok) {
+    // Result writes are conditional on still owning attempt N, so they can
+    // never overwrite a DELIVERED/FAILED row or a later attempt's outcome.
     await prisma.$transaction([
-      prisma.webhookDelivery.update({
-        where: { id: deliveryId },
-        data: { status: 'DELIVERED', attempts: attemptNo, responseStatus: status, deliveredAt: new Date(), error: null },
+      prisma.webhookDelivery.updateMany({
+        where: { id: deliveryId, status: 'PENDING', attempts: attemptNo },
+        data: { status: 'DELIVERED', responseStatus: status, deliveredAt: new Date(), error: null },
       }),
       prisma.webhookEndpoint.update({ where: { id: endpoint.id }, data: { failureCount: 0, lastDeliveryAt: new Date() } }),
     ]).catch((e) => console.error('[webhooks] mark delivered failed:', e));
@@ -92,11 +116,10 @@ async function attemptDelivery(deliveryId: string, event: string, payload: unkno
   const exhausted = attemptNo >= MAX_ATTEMPTS;
   const nextAttemptAt = new Date(Date.now() + backoffFor(attemptNo));
   await prisma.webhookDelivery
-    .update({
-      where: { id: deliveryId },
+    .updateMany({
+      where: { id: deliveryId, status: 'PENDING', attempts: attemptNo },
       data: {
         status: exhausted ? 'FAILED' : 'PENDING',
-        attempts: attemptNo,
         responseStatus: status || null,
         error: errMsg ?? `HTTP ${status}`,
         nextAttemptAt,
@@ -135,7 +158,16 @@ export async function emitWebhookEvent(userId: string, event: string, data: unkn
     await Promise.all(
       targets.map(async (endpoint) => {
         const delivery = await prisma.webhookDelivery.create({
-          data: { endpointId: endpoint.id, event, payload: payloadBase as object, status: 'PENDING', attempts: 0 },
+          // Not due yet: the immediate attempt below owns the first send. If it
+          // never claims (process exit), the drain picks it up after the lease.
+          data: {
+            endpointId: endpoint.id,
+            event,
+            payload: payloadBase as object,
+            status: 'PENDING',
+            attempts: 0,
+            nextAttemptAt: new Date(Date.now() + ATTEMPT_LEASE_MS),
+          },
           select: { id: true },
         });
         // Fire-and-forget the first attempt; retries are handled by the drain.
@@ -166,7 +198,7 @@ export async function deliverDuePending(max = 50): Promise<number> {
   // statement rather than an UPDATE apiece.
   const disabled = due.filter((d) => !d.endpoint.enabled);
   if (disabled.length > 0) {
-    await prisma.webhookDelivery.updateMany({ where: { id: { in: disabled.map((d) => d.id) } }, data: { status: 'FAILED', error: 'endpoint disabled' } }).catch(() => {});
+    await prisma.webhookDelivery.updateMany({ where: { id: { in: disabled.map((d) => d.id) }, status: 'PENDING' }, data: { status: 'FAILED', error: 'endpoint disabled' } }).catch(() => {});
   }
 
   // The rest are outbound HTTP calls, previously awaited strictly one after

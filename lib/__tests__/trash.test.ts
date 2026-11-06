@@ -65,6 +65,17 @@ describe('resolveDeletedBy — the moderation discriminator', () => {
   it('fails closed on a value it does not recognise', () => {
     expect(resolveDeletedBy({ deletedBy: 'automod', deletedByAdmin: true })).toBe('moderator');
     expect(resolveDeletedBy({ deletedBy: '', deletedByAdmin: true })).toBe('moderator');
+    // Unknown and NOT admin-flagged still fails closed.
+    expect(resolveDeletedBy({ deletedBy: 'automod', deletedByAdmin: false })).toBe('system');
+  });
+
+  it('never lets the author restore a post AutoMod is holding', () => {
+    expect(resolveDeletedBy({ deletedBy: 'automod_hold', deletedByAdmin: false })).not.toBe('author');
+  });
+
+  it('lets an admin takedown win over an earlier author delete', () => {
+    // Author deleted it, then a report was resolved with "remove content".
+    expect(resolveDeletedBy({ deletedBy: 'author', deletedByAdmin: true })).toBe('moderator');
   });
 });
 

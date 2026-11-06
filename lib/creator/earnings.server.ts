@@ -210,6 +210,9 @@ export async function reviewRedemption(
   },
   db: Db = prisma,
 ): Promise<{ status: string }> {
+  // `changed` is false when this call lost the race or found the request
+  // already decided: no second notification, audit row or tier bust.
+  let changed = false as boolean;
   const finalStatus = await db.$transaction(async (tx) => {
     const req = await tx.redemptionRequest.findUnique({ where: { id: opts.id } });
     if (!req) throw new RedemptionError('Request not found', 'NOT_FOUND', 404);
@@ -217,8 +220,25 @@ export async function reviewRedemption(
       return req.status; // idempotent — already terminal
     }
 
+    // Every transition is a compare-and-swap on the status read above, claimed
+    // BEFORE any value moves: two admins approving at once, or an approve
+    // racing a reject, leave exactly one winner — the loser's count is 0 and it
+    // grants/refunds nothing. Legal edges: PENDING → APPROVED | FULFILLED |
+    // REJECTED, APPROVED → FULFILLED | REJECTED.
+    const claim = (data: Prisma.RedemptionRequestUncheckedUpdateManyInput) =>
+      tx.redemptionRequest.updateMany({ where: { id: req.id, status: req.status }, data });
+    const current = async () =>
+      (await tx.redemptionRequest.findUnique({ where: { id: req.id }, select: { status: true } }))
+        ?.status ?? req.status;
+
     if (opts.action === 'reject') {
-      // Refund the burned coins.
+      const { count } = await claim({
+        status: 'REJECTED',
+        reviewedById: opts.adminId,
+        reviewNote: opts.note?.slice(0, 500) ?? null,
+        reviewedAt: new Date(),
+      });
+      if (count === 0) return current();
       // Refund the burned coins. Keyed on the request id so a retried
       // rejection cannot refund twice.
       await creditCoinsOn(tx, req.userId, req.amountCoins, {
@@ -228,36 +248,33 @@ export async function reviewRedemption(
         note: 'Redemption rejected refund',
         idempotencyKey: `redemption-refund:${req.id}`,
       });
-      await tx.redemptionRequest.update({
-        where: { id: req.id },
-        data: {
-          status: 'REJECTED',
-          reviewedById: opts.adminId,
-          reviewNote: opts.note?.slice(0, 500) ?? null,
-          reviewedAt: new Date(),
-        },
-      });
+      changed = true;
       return 'REJECTED';
     }
 
     // approve / fulfill → grant the value (coins already burned at request time).
-    if (req.kind === 'SUB_CREDIT' && req.tierGranted && req.monthsGranted) {
+    const terminal = opts.action === 'fulfill' || req.kind === 'SUB_CREDIT';
+    if (!terminal && req.status === 'APPROVED') return 'APPROVED'; // already approved
+    const { count } = await claim({
+      status: terminal ? 'FULFILLED' : 'APPROVED',
+      reviewedById: opts.adminId,
+      reviewNote: opts.note?.slice(0, 500) ?? req.reviewNote,
+      externalRef: opts.externalRef?.slice(0, 120) ?? req.externalRef,
+      reviewedAt: new Date(),
+      fulfilledAt: terminal ? new Date() : req.fulfilledAt,
+    });
+    if (count === 0) return current();
+    // Granted exactly once: only the claim that took the request out of
+    // PENDING grants (a SUB_CREDIT goes straight to FULFILLED, so it is never
+    // APPROVED-then-fulfilled).
+    if (req.status === 'PENDING' && req.kind === 'SUB_CREDIT' && req.tierGranted && req.monthsGranted) {
       await grantSubMonths(tx, req.userId, req.tierGranted, req.monthsGranted);
     }
-    const terminal = opts.action === 'fulfill' || req.kind === 'SUB_CREDIT';
-    await tx.redemptionRequest.update({
-      where: { id: req.id },
-      data: {
-        status: terminal ? 'FULFILLED' : 'APPROVED',
-        reviewedById: opts.adminId,
-        reviewNote: opts.note?.slice(0, 500) ?? req.reviewNote,
-        externalRef: opts.externalRef?.slice(0, 120) ?? req.externalRef,
-        reviewedAt: new Date(),
-        fulfilledAt: terminal ? new Date() : req.fulfilledAt,
-      },
-    });
+    changed = true;
     return terminal ? 'FULFILLED' : 'APPROVED';
   });
+
+  if (!changed) return { status: finalStatus };
 
   await logAdminAction(opts.adminId, `redemption.${opts.action}`, {
     targetType: 'redemption',

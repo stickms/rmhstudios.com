@@ -184,7 +184,16 @@ export const updateSecurityReport = createServerFn({ method: 'POST' })
     }
     if (Object.keys(update).length === 0) return { ok: false, error: 'Nothing to update.' };
 
-    const updated = await prisma.securityReport.update({ where: { id: body.id }, data: update });
+    // The admin panel's status control is a free select (any → any is the
+    // workflow), so there is no expected state to compare against; but a row
+    // deleted by another admin in the meantime is a refusal, not a 500.
+    const updated = await prisma.securityReport
+      .update({ where: { id: body.id }, data: update })
+      .catch((err: unknown) => {
+        if ((err as { code?: string } | null)?.code === 'P2025') return null;
+        throw err;
+      });
+    if (!updated) return { ok: false, error: 'Report not found.' };
     await logAdminAction(session.user.id, 'security_report.update', {
       targetType: 'security_report',
       targetId: body.id,

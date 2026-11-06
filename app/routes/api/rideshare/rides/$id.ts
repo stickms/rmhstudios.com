@@ -124,10 +124,20 @@ export const Route = createFileRoute('/api/rideshare/rides/$id')({
           if (ride.status === 'COMPLETED' || ride.status === 'CANCELLED') {
             return Response.json({ error: 'Ride is already closed.' }, { status: 409 });
           }
-          await prisma.ride.update({
-            where: { id: rideId },
+          // CAS on the open states: a cancel racing `complete` cannot turn a
+          // COMPLETED trip back into CANCELLED. A driver may only cancel while
+          // still the assigned driver.
+          const result = await prisma.ride.updateMany({
+            where: {
+              id: rideId,
+              status: { notIn: ['COMPLETED', 'CANCELLED'] },
+              ...(isRider ? { riderId: userId } : { driverId: userId }),
+            },
             data: { status: 'CANCELLED', cancelledAt: new Date() },
           });
+          if (result.count === 0) {
+            return Response.json({ error: 'Ride is already closed.' }, { status: 409 });
+          }
           // Tell the other party, if there is one.
           if (isRider && ride.driverId) {
             await notifyDriver(ride.driverId, userId, ride, 'The rider cancelled this trip.');

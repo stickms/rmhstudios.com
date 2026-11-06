@@ -477,14 +477,16 @@ export async function reverifyPending(limit = 50): Promise<ReverifyResult> {
     result.checked++;
     if (!replay) {
       // The replay is gone (owner deleted it), so the run can never be checked.
-      result.rejected++;
-      await prisma.speedrunEntry.update({
-        where: { id: row.id },
+      // Conditional on still pending: an admin verdict that landed while the
+      // sweep ran is never overwritten by automation.
+      const { count } = await prisma.speedrunEntry.updateMany({
+        where: { id: row.id, status: 'pending' },
         data: {
           status: 'rejected',
           rejectReason: clampReason('The replay this run points at no longer exists.'),
         },
       });
+      if (count > 0) result.rejected++;
       continue;
     }
 
@@ -504,11 +506,9 @@ export async function reverifyPending(limit = 50): Promise<ReverifyResult> {
       continue;
     }
 
-    if (verdict.status === 'verified') result.verified++;
-    else result.rejected++;
-
-    await prisma.speedrunEntry.update({
-      where: { id: row.id },
+    const { count } = await prisma.speedrunEntry.updateMany({
+      // CAS on 'pending' (see above): the sweep never overrides a human.
+      where: { id: row.id, status: 'pending' },
       data: {
         status: verdict.status,
         score: verdict.derivedScore ?? row.score,
@@ -516,6 +516,9 @@ export async function reverifyPending(limit = 50): Promise<ReverifyResult> {
         verifiedAt: verdict.status === 'verified' ? new Date() : null,
       },
     });
+    if (count === 0) continue;
+    if (verdict.status === 'verified') result.verified++;
+    else result.rejected++;
   }
 
   return result;

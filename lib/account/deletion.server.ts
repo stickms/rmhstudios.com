@@ -58,10 +58,23 @@ export async function scheduleDeletion(userId: string, now: Date = new Date()): 
   if (existing?.deletionScheduledAt) return existing.deletionScheduledAt;
 
   const scheduledAt = new Date(now.getTime() + DELETION_GRACE_MS);
-  await prisma.user.update({
-    where: { id: userId },
+  // CAS on "not yet scheduled" so a double-submit cannot push the date out, and
+  // never on a tombstone (already erased — there is nothing left to schedule).
+  const { count } = await prisma.user.updateMany({
+    where: {
+      id: userId,
+      deletionScheduledAt: null,
+      OR: [{ banReason: null }, { banReason: { not: DELETED_ACCOUNT_BAN_REASON } }],
+    },
     data: { deletionScheduledAt: scheduledAt },
   });
+  if (count === 0) {
+    const fresh = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { deletionScheduledAt: true },
+    });
+    if (fresh?.deletionScheduledAt) return fresh.deletionScheduledAt;
+  }
   return scheduledAt;
 }
 
@@ -88,8 +101,17 @@ export async function cancelDeletion(userId: string): Promise<boolean> {
   if (!user?.deletionScheduledAt) return false;
   if (isDeletedAccount(user)) return false;
 
-  await prisma.user.update({ where: { id: userId }, data: { deletionScheduledAt: null } });
-  return true;
+  // Conditional: a finalisation racing this sign-in has already tombstoned the
+  // row (and cleared the date); do not report a cancellation that did not land.
+  const { count } = await prisma.user.updateMany({
+    where: {
+      id: userId,
+      deletionScheduledAt: { not: null },
+      OR: [{ banReason: null }, { banReason: { not: DELETED_ACCOUNT_BAN_REASON } }],
+    },
+    data: { deletionScheduledAt: null },
+  });
+  return count > 0;
 }
 
 /** Whether an account is inside its grace window (for the "pending deletion"
@@ -133,7 +155,9 @@ export async function finalizeDueDeletions(
     where: {
       deletionScheduledAt: { not: null, lte: now },
       // Already-tombstoned rows would otherwise be re-scrubbed on every sweep.
-      banReason: { not: DELETED_ACCOUNT_BAN_REASON },
+      // (`not` alone is `banReason <> X`, which is NULL — i.e. false — for the
+      // ordinary unbanned account, so the sweep would never finalise anyone.)
+      OR: [{ banReason: null }, { banReason: { not: DELETED_ACCOUNT_BAN_REASON } }],
     },
     select: { id: true },
     orderBy: { deletionScheduledAt: 'asc' },

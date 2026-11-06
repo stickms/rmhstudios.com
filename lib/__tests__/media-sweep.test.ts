@@ -102,5 +102,8 @@ describe("sweepUnreferencedMedia", () => {
       postId: null,
     });
     expect(thirdBranch.createdAt?.lt).toBeInstanceOf(Date);
+    // Emoji-pack items are ATTACHED with no post and never get attachedAt;
+    // the branch must exclude them or the sweep deletes every pack image.
+    expect(thirdBranch.attachedAt).toEqual({ not: null });
   });
 });
