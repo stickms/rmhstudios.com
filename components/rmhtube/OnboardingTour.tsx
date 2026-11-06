@@ -47,6 +47,8 @@ export default function OnboardingTour() {
 
   const handleClose = useCallback(() => {
     updateSettings({ hasSeenTour: true });
+    // A replayed tour (hasSeenTour reset) starts from the first step.
+    setStep(0);
   }, [updateSettings]);
 
   const handleNext = useCallback(() => {

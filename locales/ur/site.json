@@ -773,5 +773,7 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "بلنگ تک رسائی نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+  "space-end-offline": "منسلک نہیں ہیں۔ تھوڑی دیر بعد دوبارہ کوشش کریں۔"
 }

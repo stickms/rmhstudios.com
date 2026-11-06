@@ -139,6 +139,9 @@ export default function RmhTypeSolo() {
   }, [soloPassage, soloPassageId, finished, startTime, source, typedText]);
 
   const handleRetry = useCallback(() => {
+    // Same gate as the Start button: offline, SOLO_START goes nowhere and the
+    // cleared screen would wait for a passage that never comes.
+    if (useRmhTypeStore.getState().connectionStatus !== 'connected') return;
     useRmhTypeStore.getState().clearSolo();
     setTypedText('');
     setStartTime(null);
@@ -362,7 +365,8 @@ export default function RmhTypeSolo() {
               <div className="flex gap-3">
                 <button
                   onClick={handleRetry}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                  disabled={connectionStatus !== 'connected'}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
                 >
                   <RotateCcw className="h-4 w-4" />
                   {t("try-again", { defaultValue: "Try Again" })}

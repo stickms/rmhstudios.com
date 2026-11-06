@@ -191,7 +191,20 @@ function LoginPage() {
   const handleSocial = (provider: 'discord' | 'github') => async () => {
     setPending(provider);
     setError(null);
-    await authClient.signIn.social({ provider, callbackURL });
+    const failed = (message?: string | null) => {
+      setPending(null);
+      setError(
+        message || t('social-error', { defaultValue: 'Could not start sign-in. Try again.' }),
+      );
+    };
+    try {
+      const res = await authClient.signIn.social({ provider, callbackURL });
+      // On success the client is already navigating to the provider; stay
+      // pending so the page doesn't unlock in the moment before it unloads.
+      if (res?.error) failed(res.error.message);
+    } catch {
+      failed();
+    }
   };
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {

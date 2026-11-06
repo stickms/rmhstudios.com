@@ -25,7 +25,7 @@ export function MembershipPage({ currentTier }: { currentTier: Tier | null }) {
         <header className="stm-shop-head">
           <h1 className="stm-web-title">{t('steam-membership-title', { defaultValue: 'Membership' })}</h1>
           {paying ? (
-            <button type="button" className="stm-btn stm-btn-ghost" disabled={busy === 'portal'} onClick={() => void manageBilling()}>
+            <button type="button" className="stm-btn stm-btn-ghost" disabled={busy !== null} onClick={() => void manageBilling()}>
               {t('steam-membership-billing', { defaultValue: 'Manage billing' })}
             </button>
           ) : null}
@@ -84,7 +84,7 @@ export function MembershipPage({ currentTier }: { currentTier: Tier | null }) {
                     <button
                       type="button"
                       className="stm-btn stm-btn-blue"
-                      disabled={busy === plan.tier}
+                      disabled={busy !== null}
                       onClick={() => void subscribe(plan.tier as 'starter' | 'pro')}
                     >
                       {action === 'upgrade'

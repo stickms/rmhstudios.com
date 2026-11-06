@@ -85,30 +85,40 @@ function AdminUsersPage() {
     if (session && !(session.user as any).isAdmin) navigate({ to: '/' });
   }, [session, navigate]);
 
+  // Bumped whenever the query (search / account filter) changes: a first page
+  // or a "load more" page that answers an older query is dropped, never
+  // appended to the new query's rows.
+  const queryGen = useRef(0);
   useEffect(() => {
+    const gen = ++queryGen.current;
+    const abort = new AbortController();
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const res = await fetch(listUrl());
-        if (res.ok) { const data = await res.json(); setUsers(data.items || []); setNextCursor(data.nextCursor); setHasMore(data.hasMore); }
-      } catch (error) { console.error("Failed to fetch users", error); } finally { setLoading(false); }
+        const res = await fetch(listUrl(), { signal: abort.signal });
+        if (gen !== queryGen.current) return;
+        if (res.ok) { const data = await res.json(); if (gen !== queryGen.current) return; setUsers(data.items || []); setNextCursor(data.nextCursor); setHasMore(data.hasMore); }
+      } catch (error) { if (!abort.signal.aborted) console.error("Failed to fetch users", error); } finally { if (gen === queryGen.current) setLoading(false); }
     };
     const timeoutId = setTimeout(() => fetchUsers(), 500);
-    return () => clearTimeout(timeoutId);
+    return () => { clearTimeout(timeoutId); abort.abort(); };
   }, [listUrl]);
 
   const loadMore = async () => {
-    if (!nextCursor || loadingMore) return;
+    if (!nextCursor || loadingMore || loading) return;
+    const gen = queryGen.current;
     setLoadingMore(true);
     try {
       const res = await fetch(listUrl(nextCursor));
-      if (res.ok) { const data = await res.json(); setUsers(prev => [...prev, ...(data.items || [])]); setNextCursor(data.nextCursor); setHasMore(data.hasMore); }
+      if (gen !== queryGen.current) return;
+      if (res.ok) { const data = await res.json(); if (gen !== queryGen.current) return; setUsers(prev => [...prev, ...(data.items || [])]); setNextCursor(data.nextCursor); setHasMore(data.hasMore); }
     } catch (error) { console.error("Failed to fetch more users", error); } finally { setLoadingMore(false); }
   };
 
   const toggleStatus = async (userId: string, field: 'isAdmin' | 'isVerified', currentValue: boolean) => {
     if (field === 'isAdmin' && !currentValue && !(await confirm({ title: t("confirm-grant-admin", { defaultValue: "Are you sure you want to grant Admin privileges to this user? They will have full access to the database." }), danger: true }))) return;
     if (field === 'isAdmin' && currentValue && userId === session?.user?.id) { toast.error(t("alert-self-admin-remove", { defaultValue: "You cannot remove your own admin privileges from the dashboard." })); return; }
+    if (updating !== null) return;
     setUpdating(userId);
     try {
       const res = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, [field]: !currentValue }) });
@@ -132,6 +142,7 @@ function AdminUsersPage() {
       toast.error(t("alert-invalid-membership-choice", { defaultValue: 'Enter "starter", "pro", or "revoke".' }));
       return;
     }
+    if (updating !== null) return;
     setUpdating(userId);
     try {
       const res = await fetch(`/api/admin/users/${userId}/grant-membership`, {
@@ -153,6 +164,7 @@ function AdminUsersPage() {
       toast.error(t("alert-invalid-coins", { defaultValue: "Enter a whole number of 0 or more." }));
       return;
     }
+    if (updating !== null) return;
     setUpdating(user.id);
     try {
       const res = await fetch(`/api/admin/users/${user.id}/set-coins`, {
@@ -176,6 +188,7 @@ function AdminUsersPage() {
 
   const saveHandle = async (userId: string) => {
     if (!handleInput.trim()) return;
+    if (updating !== null) return;
     setUpdating(userId);
     setHandleError(null);
     try {
@@ -185,7 +198,10 @@ function AdminUsersPage() {
     } catch { setHandleError(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
   };
 
-  const busyOf = (id: string) => updating === id;
+  // One `updating` slot for the whole table: while any row's write is in
+  // flight every row's actions are disabled, so a second write can't start and
+  // then have the first one's `finally` clear its busy state.
+  const busyOf = (_id: string) => updating !== null;
 
   return (
     <PageLayout

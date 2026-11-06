@@ -42,8 +42,19 @@ export default function ThreadSheet({
   const endRef = useRef<HTMLDivElement>(null);
   const base = `/api/chats/group/${encodeURIComponent(target.groupId)}/thread/${encodeURIComponent(target.parentId)}`;
 
+  // The thread a send belongs to; a reply that resolves after the sheet moved
+  // to another thread is not appended to it.
+  const baseRef = useRef(base);
   useEffect(() => {
     let active = true;
+    baseRef.current = base;
+    // A different thread: nothing of the previous one carries over.
+    setParent(null);
+    setReplies([]);
+    setMissing(false);
+    setLoading(true);
+    setDraft('');
+    setSending(false);
     (async () => {
       try {
         const res = await fetch(base, { credentials: 'include' });
@@ -53,8 +64,11 @@ export default function ThreadSheet({
           return;
         }
         const data = (await res.json()) as { parent: ThreadMessage; replies: ThreadMessage[] };
+        if (!active) return;
         setParent(data.parent);
         setReplies(data.replies);
+      } catch {
+        if (active) setMissing(true);
       } finally {
         if (active) setLoading(false);
       }
@@ -89,14 +103,16 @@ export default function ThreadSheet({
       });
       if (!res.ok) throw new Error('reply failed');
       const data = (await res.json()) as { reply: ThreadMessage };
+      if (baseRef.current !== base) return;
       setReplies((prev) =>
         prev.some((r) => r.id === data.reply.id) ? prev : [...prev, data.reply],
       );
       setDraft('');
     } catch {
-      toast.error(t('thread-reply-failed', { defaultValue: 'Could not send your reply' }));
+      if (baseRef.current === base)
+        toast.error(t('thread-reply-failed', { defaultValue: 'Could not send your reply' }));
     } finally {
-      setSending(false);
+      if (baseRef.current === base) setSending(false);
     }
   }, [base, draft, sending, t]);
 

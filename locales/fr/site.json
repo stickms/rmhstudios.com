@@ -789,5 +789,7 @@
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_many": "{{count}} errors",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "Impossible de joindre la facturation. Réessayez.",
+  "space-end-offline": "Non connecté. Réessayez dans un instant."
 }

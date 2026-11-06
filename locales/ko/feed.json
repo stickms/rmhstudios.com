@@ -1481,5 +1481,6 @@
   "muted-import-failed": "파일을 읽을 수 없습니다.",
   "message-edit-length": "{{used}}/{{max}}",
   "palette-whats-new": "What’s new",
-  "palette-unread": "Unread"
+  "palette-unread": "Unread",
+  "deck-review-load-failed": "카드를 불러올 수 없습니다"
 }

@@ -43,6 +43,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
       toast.error(t("tip-invalid", { defaultValue: "That tip amount isn't allowed." }));
       return;
     }
+    if (submitting) return;
     setSubmitting(true);
     try {
       const res = await fetch('/api/coins/tip', {
@@ -61,13 +62,16 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
       } else {
         toast.error(data.error || t("tip-error", { defaultValue: "Could not send tip" }));
       }
+    } catch {
+      toast.error(t("tip-error", { defaultValue: "Could not send tip" }));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    // Not dismissable mid-send: closing would hide whether the coins moved.
+    <Dialog open={open} onOpenChange={(next) => (submitting && !next ? undefined : onOpenChange(next))}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{t("tip-dialog-title", { defaultValue: "Send a tip" })}</DialogTitle>

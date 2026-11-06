@@ -789,5 +789,7 @@
   "ladder.health.showErrors_few": "{{count}} errors",
   "ladder.health.showErrors_many": "{{count}} errors",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "Nie udało się połączyć z rozliczeniami. Spróbuj ponownie.",
+  "space-end-offline": "Brak połączenia. Spróbuj ponownie za chwilę."
 }

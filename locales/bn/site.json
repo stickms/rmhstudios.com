@@ -757,5 +757,7 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "বিলিংয়ে পৌঁছানো যায়নি। আবার চেষ্টা করুন।",
+  "space-end-offline": "সংযুক্ত নেই। একটু পরে আবার চেষ্টা করুন।"
 }

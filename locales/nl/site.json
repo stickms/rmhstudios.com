@@ -757,5 +757,7 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "Facturering is niet bereikbaar. Probeer het opnieuw.",
+  "space-end-offline": "Niet verbonden. Probeer het zo meteen opnieuw."
 }

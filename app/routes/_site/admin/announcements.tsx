@@ -92,6 +92,10 @@ function AdminAnnouncementsPage() {
   const [gifUrl, setGifUrl] = useState('');
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
+  // Uploads in flight block Publish; the epoch (bumped by resetForm) drops
+  // URLs that land after the announcement they were meant for went out.
+  const [uploadingCount, setUploadingCount] = useState(0);
+  const uploadEpochRef = useRef(0);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -115,6 +119,7 @@ function AdminAnnouncementsPage() {
   const hasGif = attachment === 'gif' && gifUrl.trim() && isValidMediaUrl(gifUrl.trim());
 
   const resetForm = () => {
+    uploadEpochRef.current += 1;
     setTitle('');
     setBody('');
     setLinkUrl('');
@@ -136,26 +141,32 @@ function AdminAnnouncementsPage() {
     Array.from(files)
       .slice(0, remainingSlots)
       .forEach((f) => form.append('images', f));
+    const epoch = uploadEpochRef.current;
+    setUploadingCount((n) => n + 1);
     try {
       const res = await fetch('/api/rmharks/image', {
         method: 'POST',
         body: form,
         credentials: 'include',
       });
+      if (epoch !== uploadEpochRef.current) return;
       if (!res.ok) {
         const { error } = await res.json().catch(() => ({ error: 'Upload failed' }));
         setImageError(error ?? 'Upload failed');
         return;
       }
       const { urls } = await res.json();
+      if (epoch !== uploadEpochRef.current) return;
       setImageUrls((prev) => [...prev, ...urls].slice(0, MAX_ANNOUNCEMENT_IMAGES));
     } catch {
-      setImageError('Upload failed');
+      if (epoch === uploadEpochRef.current) setImageError('Upload failed');
+    } finally {
+      setUploadingCount((n) => Math.max(0, n - 1));
     }
   };
 
   const create = async () => {
-    if (!title.trim() || !body.trim()) return;
+    if (!title.trim() || !body.trim() || submitting || uploadingCount > 0) return;
     setSubmitting(true);
     try {
       const payload: Record<string, unknown> = {
@@ -189,6 +200,8 @@ function AdminAnnouncementsPage() {
         const d = await res.json().catch(() => ({}));
         toast.error(d.error || t('failed-to-publish', { defaultValue: 'Failed to publish' }));
       }
+    } catch {
+      toast.error(t('failed-to-publish', { defaultValue: 'Failed to publish' }));
     } finally {
       setSubmitting(false);
     }
@@ -537,7 +550,7 @@ function AdminAnnouncementsPage() {
               variant="accent"
               onClick={create}
               loading={submitting}
-              disabled={!title.trim() || !body.trim()}
+              disabled={!title.trim() || !body.trim() || uploadingCount > 0}
             >
               {submitting
                 ? t('publishing', { defaultValue: 'Publishing…' })

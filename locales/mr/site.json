@@ -757,5 +757,7 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "बिलिंगशी संपर्क होऊ शकला नाही. पुन्हा प्रयत्न करा.",
+  "space-end-offline": "कनेक्ट नाही. थोड्या वेळाने पुन्हा प्रयत्न करा."
 }

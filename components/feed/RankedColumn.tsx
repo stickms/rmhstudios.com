@@ -147,6 +147,7 @@ export function RankedColumn({
 
  async function sendChallenge() {
  if (!game || !opponent.trim()) return;
+ if (busy !== null) return;
  setBusy('send');
  setFormMsg(null);
  try {
@@ -170,6 +171,7 @@ export function RankedColumn({
  }
 
  async function act(id: string, body: object, key: string) {
+ if (busy !== null) return;
  setBusy(key);
  try {
  const res = await fetch(`/api/ranked/challenge/${id}`, {
@@ -238,7 +240,7 @@ export function RankedColumn({
  size="sm"
  variant="accent"
  loading={busy ==='send'}
- disabled={!opponent.trim()}
+ disabled={!opponent.trim() || busy !== null}
  onClick={sendChallenge}
  >
  {t('challenge-btn', { defaultValue:'Challenge'})}
@@ -275,7 +277,7 @@ export function RankedColumn({
  <Button
  size="sm"
  variant="accent"
- disabled={busy === `a:${c.id}`}
+ disabled={busy !== null}
  onClick={() => act(c.id, { action:'accept'}, `a:${c.id}`)}
  >
  <Check className="h-3.5 w-3.5"aria-hidden />{''}
@@ -284,7 +286,7 @@ export function RankedColumn({
  <Button
  size="sm"
  variant="ghost"
- disabled={busy === `a:${c.id}`}
+ disabled={busy !== null}
  onClick={() => act(c.id, { action:'decline'}, `a:${c.id}`)}
  className="text-site-text-muted hover:text-site-danger"
  aria-label={t('decline-challenge', { defaultValue:'Decline challenge'})}
@@ -439,7 +441,7 @@ function ReportButtons({
  <Button
  size="xs"
  variant="outline"
- disabled={busy === `r:${id}`}
+ disabled={busy !== null}
  onClick={() => act(id, { action:'report', result:'win'}, `r:${id}`)}
  >
  {t('won', { defaultValue:'Won'})}
@@ -447,7 +449,7 @@ function ReportButtons({
  <Button
  size="xs"
  variant="outline"
- disabled={busy === `r:${id}`}
+ disabled={busy !== null}
  onClick={() => act(id, { action:'report', result:'loss'}, `r:${id}`)}
  >
  {t('lost', { defaultValue:'Lost'})}
@@ -455,7 +457,7 @@ function ReportButtons({
  <Button
  size="xs"
  variant="ghost"
- disabled={busy === `r:${id}`}
+ disabled={busy !== null}
  onClick={() => act(id, { action:'report', result:'draw'}, `r:${id}`)}
  className="text-site-text-muted"
  >
