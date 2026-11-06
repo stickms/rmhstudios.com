@@ -119,6 +119,9 @@ export function useLiquidInteractions(enabled = true): void {
       // Reverse order: consumers before the registry they read.
       for (const stop of stops.reverse()) stop();
       stops.length = 0;
+      // The material is gone (a native-material route, or unmount): glass that mounts now must not fade in as if
+      // the jelly were running.
+      document.documentElement.removeAttribute('data-jelly-ready');
     };
   }, [enabled]);
 }

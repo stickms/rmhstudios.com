@@ -303,5 +303,7 @@
   "vigil-sinners_many": "{{count}} Pecadores, reteniendo",
   "vigil-sinners_other": "{{count}} Pecadores, reteniendo",
   "vigil-title": "El oficio nocturno",
-  "vigil-window": "Horas que cuentan"
+  "vigil-window": "Horas que cuentan",
+  "save-load-failed": "No se pudo cargar tu partida guardada.",
+  "save-load-retry": "Reintentar"
 }

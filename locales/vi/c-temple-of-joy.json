@@ -210,6 +210,8 @@
   "save-just-now": "vừa xong",
   "save-last": "Lưu lần cuối",
   "save-lifetime": "{{joy}} niềm vui, tổng cộng.",
+  "save-load-failed": "Không thể tải bản lưu của bạn.",
+  "save-load-retry": "Thử lại",
   "save-note": "Ngôi đền tự lưu mỗi {{seconds}} giây, lưu lại ngay sau khi bạn ngừng chơi, và lưu thêm lần nữa lúc tab bị đóng hoặc chuyển xuống nền. Bạn không bao giờ cần đến nút bên dưới.",
   "save-now": "Lưu ngay",
   "save-playtime": "Thời gian trong đền",

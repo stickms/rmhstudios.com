@@ -17,6 +17,18 @@ import type { FeedSSEEvent, FeedSSEEventType, FeedSSEDelivery } from "@/lib/feed
 
 const SSE_URL = "/api/feed/stream";
 const MAX_BACKOFF = 30_000;
+/**
+ * The backoff resets only once a connection has stayed up this long. Resetting
+ * on `connected` meant a server that accepts and then drops (a proxy timeout, a
+ * crash loop) was re-dialled every ~1s forever.
+ */
+const STABLE_MS = 30_000;
+/**
+ * Consecutive failures before the stream stops retrying on its own (≈2.5 min of
+ * backoff). It resumes on the next wake signal — `online`, the tab becoming
+ * visible again, a bfcache restore — rather than hammering a dead endpoint.
+ */
+const MAX_RETRIES = 10;
 
 /* ------------------------------------------------------------------ */
 /*  Singleton connection — stored on globalThis to survive HMR          */
@@ -27,6 +39,10 @@ interface SSEState {
   refCount: number;
   retries: number;
   reconnectTimer: ReturnType<typeof setTimeout> | null;
+  /** Pending "this connection is stable" reset of `retries`. */
+  stableTimer?: ReturnType<typeof setTimeout> | null;
+  /** Retries exhausted: idle until a wake signal. */
+  gaveUp?: boolean;
   listeners: Set<(event: FeedSSEEvent) => void>;
 }
 
@@ -73,6 +89,10 @@ function closeConnection() {
     clearTimeout(s.reconnectTimer);
     s.reconnectTimer = null;
   }
+  if (s.stableTimer) {
+    clearTimeout(s.stableTimer);
+    s.stableTimer = null;
+  }
   if (s.es) {
     s.es.close();
     s.es = null;
@@ -93,8 +113,27 @@ function handlePageShow(e: PageTransitionEvent) {
   const s = getState();
   if (s.refCount > 0 && !s.es) {
     s.retries = 0;
+    s.gaveUp = false;
     openConnection();
   }
+}
+
+/** `online` / tab visible: revive a stream that ran out of retries. */
+function handleWake() {
+  if (document.visibilityState === "hidden") return;
+  const s = getState();
+  if (!s.gaveUp || s.refCount === 0 || s.es) return;
+  s.gaveUp = false;
+  s.retries = 0;
+  openConnection();
+}
+
+function setWakeListeners(on: boolean) {
+  window.removeEventListener("online", handleWake);
+  document.removeEventListener("visibilitychange", handleWake);
+  if (!on) return;
+  window.addEventListener("online", handleWake);
+  document.addEventListener("visibilitychange", handleWake);
 }
 
 function openConnection() {
@@ -113,7 +152,14 @@ function openConnection() {
   window.addEventListener("pageshow", handlePageShow);
 
   es.addEventListener("connected", () => {
-    getState().retries = 0;
+    const st = getState();
+    if (st.es !== es) return;
+    if (st.stableTimer) clearTimeout(st.stableTimer);
+    st.stableTimer = setTimeout(() => {
+      const cur = getState();
+      cur.stableTimer = null;
+      if (cur.es === es) cur.retries = 0;
+    }, STABLE_MS);
   });
 
   for (const type of EVENT_TYPES) {
@@ -123,10 +169,21 @@ function openConnection() {
   es.onerror = () => {
     es.close();
     const st = getState();
-    if (st.es === es) st.es = null;
+    // A stale connection's error (already replaced or closed) schedules nothing.
+    if (st.es !== es) return;
+    st.es = null;
+    if (st.stableTimer) {
+      clearTimeout(st.stableTimer);
+      st.stableTimer = null;
+    }
 
     // Only reconnect if there are active subscribers
     if (st.refCount > 0) {
+      if (st.retries >= MAX_RETRIES) {
+        // Terminal until a wake signal (see `handleWake`).
+        st.gaveUp = true;
+        return;
+      }
       const delay = Math.min(1000 * 2 ** st.retries, MAX_BACKOFF);
       st.retries++;
       st.reconnectTimer = setTimeout(openConnection, delay);
@@ -138,6 +195,8 @@ function subscribe() {
   const s = getState();
   s.refCount++;
   if (s.refCount === 1) {
+    s.gaveUp = false;
+    setWakeListeners(true);
     openConnection();
   }
 }
@@ -149,7 +208,9 @@ function unsubscribe() {
     closeConnection();
     window.removeEventListener("pagehide", handlePageHide);
     window.removeEventListener("pageshow", handlePageShow);
+    setWakeListeners(false);
     s.retries = 0;
+    s.gaveUp = false;
   }
 }
 

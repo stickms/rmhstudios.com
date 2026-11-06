@@ -53,6 +53,12 @@ let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let retryCount = 0;
 let pageLifecycleBound = false;
 let count = 0;
+/**
+ * The server said we are signed out (the polling probe got 401/403). Terminal
+ * until a subscriber starts the stream again (e.g. after signing back in):
+ * without it the stream and the probe retried an endpoint that can only refuse.
+ */
+let signedOut = false;
 
 function hasSubscribers() {
   return streamSubscribers.size > 0 || countSubscribers.size > 0;
@@ -74,8 +80,19 @@ function startPolling() {
   if (fallbackInterval) return;
   const fetchUnread = () => {
     fetch('/api/messages/unread-count')
-      .then((res) => res.json())
-      .then((data) => broadcastCount(data.count ?? 0))
+      .then((res) => {
+        if (res.status === 401 || res.status === 403) {
+          // Signed out (or session expired): stop the stream and the probe.
+          stop();
+          signedOut = true;
+          broadcastCount(0);
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data) broadcastCount(data.count ?? 0);
+      })
       .catch(() => {});
   };
   fetchUnread();
@@ -107,11 +124,17 @@ function connectSSE() {
   for (const type of STREAM_EVENTS) {
     es.addEventListener(type, (event) => dispatch(type, (event as MessageEvent).data));
   }
+  // The stream is back: the fallback poll is redundant from here (the backoff
+  // still only resets on a live event, so an accept-then-drop keeps backing off).
+  es.onopen = () => {
+    if (eventSource === es) stopPolling();
+  };
 
   es.onerror = () => {
     es.close();
-    if (eventSource === es) eventSource = null;
-    if (!hasSubscribers()) return;
+    if (eventSource !== es) return; // a replaced or stopped stream schedules nothing
+    eventSource = null;
+    if (!hasSubscribers() || signedOut) return;
 
     retryCount++;
     // Keep the badge fresh via polling while SSE is down (after a few failures),
@@ -121,7 +144,7 @@ function connectSSE() {
     if (reconnectTimer) clearTimeout(reconnectTimer);
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null;
-      if (hasSubscribers() && !eventSource) connectSSE();
+      if (hasSubscribers() && !eventSource && !signedOut) connectSSE();
     }, delay);
   };
 }
@@ -136,6 +159,8 @@ function ensureStarted() {
     window.addEventListener('pageshow', resume);
     pageLifecycleBound = true;
   }
+  // A (re)starting subscriber is a fresh attempt: a sign-in after a sign-out.
+  signedOut = false;
   if (!eventSource && !fallbackInterval) connectSSE();
 }
 
@@ -159,7 +184,8 @@ function suspend() {
 }
 
 function resume(e: PageTransitionEvent) {
-  if (e.persisted && hasSubscribers() && !eventSource && !fallbackInterval) connectSSE();
+  if (e.persisted && hasSubscribers() && !signedOut && !eventSource && !fallbackInterval)
+    connectSSE();
 }
 
 /** Tear the shared connection down only once nobody is listening. */

@@ -212,6 +212,8 @@
   "save-just-now": "az önce",
   "save-last": "Son kayıt",
   "save-lifetime": "Tüm zamanlarda {{joy}} neşe.",
+  "save-load-failed": "Kaydın yüklenemedi.",
+  "save-load-retry": "Tekrar dene",
   "save-note": "Tapınak her {{seconds}} saniyede bir kendini kaydeder, oynamayı bıraktıktan kısa süre sonra yeniden ve sekme kapandığında ya da arka plana alındığında bir kez daha. Aşağıdaki düğmeye hiç ihtiyaç duymamalısınız.",
   "save-now": "Şimdi kaydet",
   "save-playtime": "Tapınakta geçen süre",

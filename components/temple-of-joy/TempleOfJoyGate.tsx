@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { useCloudSave } from '@/hooks/useCloudSave';
 import { saveToState, summarizeTempleSave, templeSave } from '@/lib/temple-of-joy/persistence';
 import { TempleOfJoyGame } from './TempleOfJoyGame';
+import { TempleButton } from './ui';
 
 function LoadingScreen() {
   const { t } = useTranslation('c-temple-of-joy');
@@ -48,6 +49,25 @@ export function TempleOfJoyGate() {
   });
 
   if (cloud.status === 'loading') return <LoadingScreen />;
+
+  // The cloud save could not be resolved, so neither copy is known. Mounting a
+  // fresh temple here would let its autosave overwrite the account's save, so
+  // the doors stay shut until a retry resolves it.
+  if (cloud.status === 'failed') {
+    return (
+      <div className="toj" data-theme="dawn">
+        <div className="toj-loading" role="alert">
+          <h1 className="toj-loading-title">Temple of Joy</h1>
+          <p className="toj-loading-note">
+            {t('save-load-failed', { defaultValue: 'Your save could not be loaded.' })}
+          </p>
+          <TempleButton variant="gold" onClick={cloud.reload}>
+            {t('save-load-retry', { defaultValue: 'Try again' })}
+          </TempleButton>
+        </div>
+      </div>
+    );
+  }
 
   // Two temples that have both been played. The dialog is the only way out of
   // this state — see `SaveConflictDialog` for why it cannot be dismissed — and

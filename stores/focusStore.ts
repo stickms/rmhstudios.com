@@ -90,10 +90,19 @@ interface FocusStore {
   isActive: () => boolean;
 }
 
+/** The longest delay `setTimeout` honours (2^31 − 1 ms). */
+const MAX_TIMEOUT_MS = 2_147_483_647;
+
 export const useFocusStore = create<FocusStore>((set, get) => {
   const arm = (until: number) => {
     clearExpiry();
-    expiryTimer = setTimeout(() => get().end(), Math.max(0, until - Date.now()));
+    const wait = until - Date.now();
+    // setTimeout holds a signed 32-bit delay: past ~24.8 days it fires at once and would end a long window
+    // immediately. Wait the longest it can, then re-arm for the remainder.
+    expiryTimer = setTimeout(
+      () => (wait > MAX_TIMEOUT_MS ? arm(until) : get().end()),
+      Math.max(0, Math.min(wait, MAX_TIMEOUT_MS)),
+    );
   };
 
   return {

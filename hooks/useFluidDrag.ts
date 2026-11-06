@@ -108,6 +108,15 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
   const tracker = useRef(new VelocityTracker());
   const settler = useRef<Settle | null>(null);
   const dismissing = useRef(false);
+  /** The element this drag reported to jelly, so an unmount or a stale drag can close it (`drag:end`). */
+  const jellyEl = useRef<HTMLElement | null>(null);
+
+  /** Tell jelly the reported drag is over; without it the soft body stays `dragged` (busy) forever. */
+  const endJelly = useCallback((vx = 0, vy = 0) => {
+    const el = jellyEl.current;
+    jellyEl.current = null;
+    if (el) reportJellyDrag(el, vx, vy, 'end');
+  }, []);
 
   const stop = useCallback(() => {
     settler.current?.cancel();
@@ -139,7 +148,11 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
       const o = opts.current;
-      if (o.disabled || e.button > 0 || pointerId.current !== null) return;
+      if (o.disabled || e.button > 0) return;
+      // A second press from the SAME pointer means its pointerup never reached us (released outside the window, a
+      // swallowed event): the old drag is stale, so close it and take this one rather than refusing every later drag.
+      if (pointerId.current !== null && pointerId.current !== e.pointerId) return;
+      if (pointerId.current !== null) endJelly();
       // Interrupting a settle is the point: take over from wherever it is, with
       // whatever velocity it has, rather than letting it finish first.
       stop();
@@ -151,7 +164,7 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
       tracker.current.reset();
       tracker.current.add(state.current.value, e.timeStamp);
     },
-    [stop],
+    [stop, endJelly],
   );
 
   useEffect(() => {
@@ -174,6 +187,8 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
       o.onUpdate(next);
       const jelly = o.jellyTarget?.();
       if (jelly) {
+        if (jellyEl.current && jellyEl.current !== jelly) endJelly();
+        jellyEl.current = jelly;
         const v = tracker.current.get();
         reportJellyDrag(jelly, axis === 'x' ? v : 0, axis === 'y' ? v : 0, 'move');
       }
@@ -191,8 +206,10 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
       const jelly = o.jellyTarget?.();
       if (jelly) {
         const axis = o.axis ?? 'y';
+        if (jellyEl.current && jellyEl.current !== jelly) endJelly();
+        jellyEl.current = null;
         reportJellyDrag(jelly, axis === 'x' ? velocity : 0, axis === 'y' ? velocity : 0, 'end');
-      }
+      } else endJelly();
 
       const dimension = Math.max(1, o.dimension());
       const threshold = dimension * (o.dismissAt ?? 0.5);
@@ -225,15 +242,18 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
     return () => {
       for (const off of offs) off();
     };
-  }, [settle]);
+  }, [settle, endJelly]);
 
-  // Unmount: stop the settle's frame driver (the pointer subscriptions are released above).
+  // Unmount: stop the settle's frame driver (the pointer subscriptions are released above), and close a drag still in
+  // progress — its pointerup will never be heard now.
   useEffect(
     () => () => {
+      pointerId.current = null;
+      endJelly();
       settler.current?.dispose();
       settler.current = null;
     },
-    [],
+    [endJelly],
   );
 
   return {

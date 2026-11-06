@@ -14,6 +14,8 @@ export class AudioManager {
   // Track position logic
   private offsetAtLastRateChange: number = 0;
   private timeAtLastRateChange: number = 0;
+  /** The latest `loadTrack`/`loadFromBuffer`: an older load that resolves later must not replace it. */
+  private loadToken = 0;
 
   private constructor() {}
 
@@ -42,20 +44,26 @@ export class AudioManager {
 
   public async loadTrack(url: string): Promise<AudioBuffer> {
     if (!this.audioContext) this.initialize();
+    const token = ++this.loadToken;
     
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to fetch audio: ${response.status} ${response.statusText}`);
     const arrayBuffer = await response.arrayBuffer();
-    this.buffer = await this.audioContext!.decodeAudioData(arrayBuffer);
+    const buffer = await this.audioContext!.decodeAudioData(arrayBuffer);
+    // Superseded by a later load: hand the caller its buffer, but leave the current track alone.
+    if (token !== this.loadToken) return buffer;
+    // A new track starts from the top: the old source must not keep sounding over it.
+    this.stop();
+    this.buffer = buffer;
     return this.buffer;
   }
 
   /** Load a pre-decoded AudioBuffer directly, avoiding a network request. */
   public loadFromBuffer(buffer: AudioBuffer): void {
     if (!this.audioContext) this.initialize();
+    this.loadToken++;
+    this.stop();
     this.buffer = buffer;
-    this.pauseTime = 0;
-    this.isPlaying = false;
   }
 
   /**
@@ -118,7 +126,9 @@ export class AudioManager {
     // runway re-scheduled as a fresh lead-in — the alternative, clamping it to
     // 0, would swallow the rest of the runway and drop the player straight into
     // the song with notes already on top of the line.
-    const paused = this.pauseTime;
+    // A track that ran out (`onended` parks the clock at the end) plays again from the top.
+    const duration = this.getDuration();
+    const paused = duration > 0 && this.pauseTime >= duration ? 0 : this.pauseTime;
     const offset = Math.max(0, paused);
     const pendingLeadIn = Math.max(0, leadInSeconds, paused < 0 ? -paused : 0);
 
@@ -144,9 +154,15 @@ export class AudioManager {
 
     this.isPlaying = true;
     
-    this.source.onended = () => {
-      // Handle natural end vs stop
-      // if (this.isPlaying) this.isPlaying = false; 
+    const source = this.source;
+    source.onended = () => {
+      // `pause`/`seek`/`stop`/a re-play replace or null `this.source` before their own `onended` arrives, so only a
+      // natural end still finds its source current. Park the clock at the end (callers detect the end by
+      // `getCurrentTime() >= getDuration()`), so `isPlaying` no longer sticks at true after the track ran out.
+      if (this.source !== source) return;
+      this.source = null;
+      this.pauseTime = this.getDuration();
+      this.isPlaying = false;
     };
   }
 

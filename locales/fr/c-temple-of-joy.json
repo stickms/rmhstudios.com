@@ -303,5 +303,7 @@
   "vigil-sinners_many": "{{count}} Pécheurs, retenant",
   "vigil-sinners_other": "{{count}} Pécheurs, retenant",
   "vigil-title": "L'office de nuit",
-  "vigil-window": "Heures comptées"
+  "vigil-window": "Heures comptées",
+  "save-load-failed": "Impossible de charger votre sauvegarde.",
+  "save-load-retry": "Réessayer"
 }

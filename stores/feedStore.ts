@@ -95,6 +95,8 @@ const FEED_FETCH_TIMEOUT_MS = 20_000;
 // a newer surface. `activeController` lets a surface switch cancel the in-flight
 // request outright.
 let requestGeneration = 0;
+/** Which load the current `error` came from, so `retry()` redoes THAT load (a failed refresh is not a next page). */
+let failedLoad: 'refresh' | 'page' | null = null;
 let activeController: AbortController | null = null;
 
 /** Invalidate any in-flight fetch and abort it (used on surface changes/reset). */
@@ -196,6 +198,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       if (generation !== requestGeneration) return;
       // Keep the existing timeline on a failed refresh — only surface the error.
       if (!controller.signal.aborted) console.error('Feed refresh error:', error);
+      failedLoad = 'refresh';
       set({ loading: false, error: true });
     } finally {
       clearTimeout(timeout);
@@ -206,8 +209,11 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   retry: () => {
     // Clear the error and re-drive the current surface. `loading` is already
     // false after any failure, so the guard in fetchNextPage lets this through.
+    const failed = failedLoad;
+    failedLoad = null;
     set({ error: false });
-    get().fetchNextPage();
+    if (failed === 'refresh') void get().refresh();
+    else get().fetchNextPage();
   },
 
   hydrate: (items, cursor, hasMore, mutedWords) => {
@@ -283,6 +289,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       // forever, and preserve `hasMore` so one transient drop never permanently
       // kills pagination.
       if (!controller.signal.aborted) console.error('Feed fetch error:', error);
+      failedLoad = 'page';
       set({ loading: false, initialized: true, error: true });
     } finally {
       clearTimeout(timeout);

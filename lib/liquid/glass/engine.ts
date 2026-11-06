@@ -560,10 +560,12 @@ export function installLiquidGlass(doc: Document = document): () => void {
     const nextTier = jellyTier(env);
     budget = jellyBudget(env);
     mode = jellyMode(env);
-    if (nextTier !== tier || budget.clockHz !== governorBase) {
+    // A clock of 0 (hidden tab, Still, a game playing) is a pause, not a new base: keep the governor across it. A new
+    // tier or a new non-zero base rebuilds it, carrying its step — never back up within a route (04 §3.3).
+    if (nextTier !== tier || (budget.clockHz > 0 && budget.clockHz !== governorBase)) {
       tier = nextTier;
-      governorBase = budget.clockHz;
-      governor = new JellyGovernor(tier, governorBase);
+      if (budget.clockHz > 0) governorBase = budget.clockHz;
+      governor = new JellyGovernor(tier, governorBase, governor.step);
     }
     governed = governBudget(budget, governor.step);
     publishGovernorStep(governor.step);
@@ -1146,6 +1148,13 @@ export function installLiquidGlass(doc: Document = document): () => void {
       // Canvases made before the worker answered move to it; new ones go to it directly.
       onReady: () => {
         win.clearTimeout(workerWait);
+        // Answered after we stopped waiting: the page renderer already draws. Migrating now would leave it alive
+        // beside the worker; retire the worker instead.
+        if (workerGaveUp) {
+          worker?.dispose();
+          worker = null;
+          return;
+        }
         sendScene();
         for (const s of surfaces.values()) moveRimToWorker(s);
         for (const s of hazeSet) moveHazeToWorker(s);
