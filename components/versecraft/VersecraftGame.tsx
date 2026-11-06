@@ -64,7 +64,7 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
           useGameStore.setState({
             ...save.state,
             screen: urlScreen,
-            previousScreen: null,
+            screenStack: [],
             currentPoemScore: null,
           });
         }

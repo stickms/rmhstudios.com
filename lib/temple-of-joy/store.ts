@@ -260,11 +260,12 @@ export const useTempleStore = create<TempleStore>()(
     setStewardEnabled: (stewardEnabled) => set({ stewardEnabled }),
     setConfirmAscend: (confirmAscend) => set({ confirmAscend }),
     setReducedFlourish: (reducedFlourish) => set({ reducedFlourish }),
-    setShowAscendDialog: (showAscendDialog) => set({ showAscendDialog }),
-    setShowVigilDialog: (showVigilDialog) => set({ showVigilDialog }),
-    setShowMannaDialog: (showMannaDialog) => set({ showMannaDialog }),
-    setShowResetDialog: (showResetDialog) => set({ showResetDialog }),
-    setShowBowl: (showBowl) => set({ showBowl }),
+    // One modal at a time: opening any of them closes the rest.
+    setShowAscendDialog: (open) => set(open ? { ...Actions.NO_MODAL, showAscendDialog: true } : { showAscendDialog: false }),
+    setShowVigilDialog: (open) => set(open ? { ...Actions.NO_MODAL, showVigilDialog: true } : { showVigilDialog: false }),
+    setShowMannaDialog: (open) => set(open ? { ...Actions.NO_MODAL, showMannaDialog: true } : { showMannaDialog: false }),
+    setShowResetDialog: (open) => set(open ? { ...Actions.NO_MODAL, showResetDialog: true } : { showResetDialog: false }),
+    setShowBowl: (open) => set(open ? { ...Actions.NO_MODAL, showBowl: true } : { showBowl: false }),
     dismissNotice: (id) => set((s) => Actions.doDismissNotice(s, id)),
 
     load: (partial) => set(partial),

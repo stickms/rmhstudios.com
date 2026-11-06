@@ -17,6 +17,7 @@ import { refillDeckFromDiscard } from './deckManagement';
  * Returns the prev state unchanged if the play is invalid.
  */
 export function computePlayCard(prev: GameState, cardIndex: number): GameState {
+  if (prev.phase !== 'combat') return prev;
   if (cardIndex < 0 || cardIndex >= prev.hand.length) return prev;
   const card = prev.hand[cardIndex];
 
@@ -207,6 +208,7 @@ export function computePlayCard(prev: GameState, cardIndex: number): GameState {
  * (e.g., card has irreversible effects).
  */
 export function computeUnplayCard(prev: GameState, cardIndex: number): GameState {
+  if (prev.phase !== 'combat') return prev;
   if (cardIndex < 0 || cardIndex >= prev.playedThisTurn.length) return prev;
   const card = prev.playedThisTurn[cardIndex];
 

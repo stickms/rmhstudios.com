@@ -115,6 +115,31 @@ export function SignalForgeGame() {
     hamburgerRect.current = out.hamburgerRect;
   }, [gameState, canvasSize, tooltipTick]);
 
+  // ── Server persistence, serialized ──
+  // Saves and clears are async and were unordered, so a save sent just before
+  // game over could land after the clear and resurrect the finished run. Every
+  // write now runs in order on one chain, and a clear bumps an epoch that
+  // drops any save queued before it.
+  const persistQueueRef = useRef<Promise<unknown>>(Promise.resolve());
+  const persistEpochRef = useRef(0);
+
+  const queueSave = useCallback((state: GameState) => {
+    const epoch = persistEpochRef.current;
+    const run = persistQueueRef.current.then(async () => {
+      if (epoch !== persistEpochRef.current) return;
+      const ok = await saveRunToServer(state);
+      if (ok && epoch === persistEpochRef.current) setHasSavedRun(true);
+    });
+    persistQueueRef.current = run.catch(() => {});
+  }, []);
+
+  const queueClear = useCallback((): Promise<boolean> => {
+    persistEpochRef.current++;
+    const run = persistQueueRef.current.then(() => clearSavedRunOnServer());
+    persistQueueRef.current = run.catch(() => {});
+    return run;
+  }, []);
+
   // ── Game logic callbacks (thin wrappers around pure functions) ──
 
   const playCard = useCallback((cardIndex: number) => {
@@ -134,9 +159,9 @@ export function SignalForgeGame() {
   }, []);
 
   const startGame = useCallback(() => {
-    clearSavedRunOnServer();
+    void queueClear();
     setGameState(prev => computeStartGame(prev));
-  }, []);
+  }, [queueClear]);
 
   const selectStarterRelic = useCallback((relic: RelicTemplate) => {
     setGameState(prev => computeSelectStarterRelic(prev, relic));
@@ -226,9 +251,9 @@ export function SignalForgeGame() {
   // ── Server-side persistence ──
 
   const clearSavedRun = useCallback(async () => {
-    const ok = await clearSavedRunOnServer();
+    const ok = await queueClear();
     if (ok) setHasSavedRun(false);
-  }, []);
+  }, [queueClear]);
 
   const loadSavedRun = useCallback(async () => {
     const restored = await loadSavedRunFromServer();
@@ -261,16 +286,15 @@ export function SignalForgeGame() {
     prevTurnRef.current = gameState.turn;
 
     if (gameState.phase === 'game-over' && prevPhase !== 'game-over') {
-      clearSavedRunOnServer().then(ok => { if (ok) setHasSavedRun(false); });
+      queueClear().then(ok => { if (ok) setHasSavedRun(false); });
       return;
     }
     if (gameState.phase !== prevPhase && gameState.phase !== 'landing' && gameState.phase !== 'game-over') {
-      saveRunToServer(gameState).then(ok => { if (ok) setHasSavedRun(true); });
+      queueSave(gameState);
+    } else if (gameState.phase === 'combat' && gameState.turn > prevTurn) {
+      queueSave(gameState);
     }
-    if (gameState.phase === 'combat' && gameState.turn > prevTurn) {
-      saveRunToServer(gameState).then(ok => { if (ok) setHasSavedRun(true); });
-    }
-  }, [gameState.phase, gameState.turn, gameState]);
+  }, [gameState.phase, gameState.turn, gameState, queueSave, queueClear]);
 
   // ── Keyboard shortcuts ──
 

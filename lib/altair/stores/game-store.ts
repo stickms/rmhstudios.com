@@ -103,6 +103,11 @@ export type GamePhase =
   | 'victory'
   | 'meta_shop';
 
+/** A run that has started and not ended (death/victory are terminal until the next startRun). */
+function isLiveRunPhase(phase: GamePhase): boolean {
+  return phase === 'playing' || phase === 'upgrading' || phase === 'paused';
+}
+
 /** XP required to go from `level` to `level+1` — v1.1 — steeper cubic XP curve */
 export function xpRequired(level: number): number {
   return Math.floor(8 + level * 4 + level * level * 0.6 + level * level * level * 0.008);
@@ -172,6 +177,8 @@ interface GameState {
   setBossActive: (active: boolean) => void;
   recordBossKill: (bossId: string) => void;
   togglePause: () => void;
+  /** Pause from outside the player's toggle (e.g. a lost WebGL context); records previousPhase. */
+  pause: () => void;
   revive: () => void;
   die: () => void;
   victory: () => void;
@@ -358,10 +365,17 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
     });
   },
 
-  setUpgradeChoices: (choices) => set({ upgradeChoices: choices, phase: 'upgrading' }),
+  setUpgradeChoices: (choices) => {
+    // A level-up only opens the picker from a live run (a second level-up in the
+    // same step re-rolls it); never out of death, victory, pause or the menus.
+    const { phase } = get();
+    if (phase !== 'playing' && phase !== 'upgrading') return;
+    set({ upgradeChoices: choices, phase: 'upgrading' });
+  },
 
   pickUpgrade: (index) => {
     const s = get();
+    if (s.phase !== 'upgrading') return;
     const choice = s.upgradeChoices[index];
     if (!choice) return;
 
@@ -513,19 +527,30 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
     }
   },
 
+  pause: () => {
+    const s = get();
+    if (s.phase !== 'playing' && s.phase !== 'upgrading') return;
+    set({ phase: 'paused', previousPhase: s.phase });
+  },
+
   revive: () => {
-    set((s) => ({
+    const s = get();
+    if (s.revivalsRemaining <= 0 || (s.phase !== 'playing' && s.phase !== 'upgrading')) return;
+    set({
       phase: 'playing',
       hp: s.maxHp,
       revivalsRemaining: s.revivalsRemaining - 1,
-    }));
+    });
   },
 
-  die: () => set({ phase: 'dead' }),
+  die: () => {
+    if (!isLiveRunPhase(get().phase)) return;
+    set({ phase: 'dead' });
+  },
 
   victory: () => {
-    const s = get();
-    // Completion bonus
+    // Once per run: a second call must not pay the completion bonus again.
+    if (!isLiveRunPhase(get().phase)) return;
     get().addCoins(150, 'completionBonus');
     set({ phase: 'victory' });
   },

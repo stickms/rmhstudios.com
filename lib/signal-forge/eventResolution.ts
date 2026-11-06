@@ -12,7 +12,7 @@ import { Card, createGlitchCard, CARD_CATALOG } from './Card';
  * Resolve an event choice and return the updated game state.
  */
 export function computeResolveEventChoice(prev: GameState, choiceIndex: number): GameState {
-  if (!prev.currentEvent) return prev;
+  if (prev.phase !== 'event' || !prev.currentEvent) return prev;
   const event = prev.currentEvent;
   const choice = event.choices[choiceIndex];
 

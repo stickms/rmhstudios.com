@@ -79,9 +79,15 @@ export default function GameView() {
         else s = createLocalSession(runtime.config);
 
         s.setInputSource(src);
+        // The KO beat before the result screen. Tracked so leaving the match
+        // inside those 1.8s (or a new runtime) cannot force the result screen.
+        let resultTimer: number | undefined;
         s.onResult((winnerSeat) => {
             const finalHud = s.getHud();
-            window.setTimeout(() => {
+            window.clearTimeout(resultTimer);
+            resultTimer = window.setTimeout(() => {
+                resultTimer = undefined;
+                if (sessionRef.current !== s) return;
                 setMatchResult({ winnerSeat, mode: finalHud.mode, fighters: finalHud.fighters });
                 setPhase('result');
             }, 1800);
@@ -93,6 +99,7 @@ export default function GameView() {
         setInput(src);
 
         return () => {
+            window.clearTimeout(resultTimer);
             s.stop();
             src.detach();
             sessionRef.current = null;

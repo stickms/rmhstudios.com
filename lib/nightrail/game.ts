@@ -122,6 +122,8 @@ export interface RunState {
   popups: Popup[];
 
   phase: RunPhase;
+  /** The phase a pause returns to — the countdown pauses too, and resumes as one. */
+  resumePhase: 'countdown' | 'playing';
   /** Seconds left on the pre-run countdown. */
   countdown: number;
   /** Seconds of racing elapsed. Excludes the countdown. */
@@ -285,6 +287,7 @@ export function createRun(level: LevelConfig, seed = 1): RunState {
     particles: [],
     popups: [],
     phase: 'countdown',
+    resumePhase: 'playing',
     countdown: COUNTDOWN_SECONDS,
     elapsed: 0,
     score: 0,
@@ -876,6 +879,26 @@ function stepEphemera(state: RunState, dt: number): void {
     state.popups[i].life -= dt;
     if (state.popups[i].life <= 0) state.popups.splice(i, 1);
   }
+}
+
+// ── Pause ───────────────────────────────────────────────────────────────────
+
+/**
+ * Pause a live run — racing or still counting down (a backgrounded tab must
+ * not let the countdown run out and the train set off unseen). The only
+ * writers of 'paused'; {@link resumeRun} restores the phase it came from.
+ */
+export function pauseRun(state: RunState): boolean {
+  if (state.phase !== 'playing' && state.phase !== 'countdown') return false;
+  state.resumePhase = state.phase;
+  state.phase = 'paused';
+  return true;
+}
+
+export function resumeRun(state: RunState): boolean {
+  if (state.phase !== 'paused') return false;
+  state.phase = state.resumePhase;
+  return true;
 }
 
 // ── Frame entry point ───────────────────────────────────────────────────────

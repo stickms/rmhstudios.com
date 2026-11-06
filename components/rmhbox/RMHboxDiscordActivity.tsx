@@ -20,6 +20,7 @@ import SpectatorBanner from '@/components/rmhbox/SpectatorBanner';
 import MinigameRenderer from '@/components/rmhbox/minigames/MinigameRenderer';
 import GameShell from '@/components/rmhbox/GameShell';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
+import { isInGameLobbyState } from '@/lib/rmhbox/lobby-state';
 
 // Discord embedded app layout modes
 const LAYOUT_FOCUSED = 0;
@@ -338,11 +339,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
     // countdown or results — and a Discord host had no way to pause or skip.
     // Only the 'game' context is used here: the others render a back link to
     // /rmhbox, which would navigate the iframe out of the Activity.
-    const isGamePhase = !!lobby && (
-        lobby.state === 'INSTRUCTIONS' || lobby.state === 'PRELOADING' ||
-        lobby.state === 'COUNTDOWN' || lobby.state === 'PLAYING' ||
-        lobby.state === 'ROUND_RESULTS' || lobby.state === 'GAME_SETTINGS'
-    );
+    const isGamePhase = !!lobby && isInGameLobbyState(lobby.state);
 
     return (
         <RMHboxShell>

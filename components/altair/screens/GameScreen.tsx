@@ -148,7 +148,7 @@ function GameScreenInner({ onQuit, onSettings }: GameScreenProps) {
 
     const handleContextLost = (e: Event) => {
       e.preventDefault();
-      useAltairGameStore.setState({ phase: 'paused' });
+      useAltairGameStore.getState().pause();
       addToast(t("webgl-context-lost", { defaultValue: "WebGL context lost! Please reload the page." }), 'error');
     };
     canvas.addEventListener('webglcontextlost', handleContextLost);
