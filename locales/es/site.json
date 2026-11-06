@@ -791,5 +791,7 @@
   "ladder.health.showErrors_one": "{{count}} error",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "No se pudo conectar con la facturación. Inténtalo de nuevo.",
-  "space-end-offline": "Sin conexión. Inténtalo de nuevo en un momento."
+  "space-end-offline": "Sin conexión. Inténtalo de nuevo en un momento.",
+  "market-under-review": "En revisión",
+  "market-under-review-hint": "Una compra a este precio se pausó para una revisión rápida. No se movieron monedas. Cancela para recuperar el artículo ahora."
 }

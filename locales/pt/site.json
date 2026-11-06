@@ -791,5 +791,7 @@
   "ladder.health.showErrors_one": "{{count}} error",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "Não foi possível acessar o faturamento. Tente novamente.",
-  "space-end-offline": "Sem conexão. Tente novamente em instantes."
+  "space-end-offline": "Sem conexão. Tente novamente em instantes.",
+  "market-under-review": "Em revisão",
+  "market-under-review-hint": "Uma compra por este preço foi pausada para uma verificação rápida. Nenhuma moeda foi movida. Cancele para recuperar o item agora."
 }

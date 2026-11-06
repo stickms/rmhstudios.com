@@ -9,7 +9,8 @@ vi.mock('@/lib/admin-review.server', () => ({ notifyAdminsOfReview }));
 // getCreatorEarnings (imported in test e) transitively pulls these in; stub them
 // so the test doesn't load the push/redis chain and stays isolated.
 vi.mock('@/lib/notifications.server', () => ({ createNotification: vi.fn() }));
-vi.mock('@/lib/admin-audit.server', () => ({ logAdminAction: vi.fn() }));
+const logAdminAction = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/lib/admin-audit.server', () => ({ logAdminAction }));
 
 // ── Stateful, rollback-aware Prisma mock ────────────────────────────────────
 // Models the two invariants under test: the conditional `updateMany where
@@ -26,6 +27,7 @@ interface ListingRow {
   buyerId: string | null;
   createdAt: Date;
   closedAt: Date | null;
+  reviewedAt?: Date | null;
 }
 interface InvRow {
   id: string;
@@ -106,6 +108,7 @@ const db: any = {
       if (data.status) l.status = data.status;
       if ('buyerId' in data) l.buyerId = data.buyerId;
       if ('closedAt' in data) l.closedAt = data.closedAt;
+      if ('reviewedAt' in data) l.reviewedAt = data.reviewedAt;
       return { count: 1 };
     },
     count: async ({ where }: any) => {
@@ -225,7 +228,8 @@ function clone<T>(v: T): T {
 vi.mock('@/lib/prisma.server', () => ({ prisma: db }));
 
 // Import AFTER the mocks are registered.
-const { listItem, buyListing, cancelListing } = await import('@/lib/market/market.server');
+const { listItem, buyListing, cancelListing, resolveHeldListing } =
+  await import('@/lib/market/market.server');
 const {
   isTradable,
   marketFee,
@@ -272,6 +276,7 @@ function seedTradeable(price = 1000) {
 beforeEach(() => {
   store.state = emptyState();
   notifyAdminsOfReview.mockClear();
+  logAdminAction.mockClear();
 });
 
 // ── Pure guards ──────────────────────────────────────────────────────────────
@@ -461,6 +466,7 @@ describe('buyListing', () => {
     expect(s.inventory.get('inv-1')!.userId).toBe(SELLER); // NOT transferred
     expect(s.ledger).toHaveLength(0);
     expect(notifyAdminsOfReview).toHaveBeenCalledTimes(1);
+    expect(notifyAdminsOfReview.mock.calls[0][0]).toMatchObject({ link: '/admin/market' });
   });
 });
 
@@ -556,6 +562,115 @@ describe('cancelListing', () => {
       code: 'NOT_AVAILABLE',
     });
     expect(store.state.listings.get('L1')!.status).toBe('ACTIVE');
+  });
+});
+
+// ── Admin review of HELD listings ───────────────────────────────────────────
+describe('resolveHeldListing', () => {
+  /** An anomalously priced listing (500× the median) already frozen as HELD. */
+  function seedHeld() {
+    seedTradeable(50_000);
+    const s = store.state;
+    for (let i = 0; i < 3; i++) {
+      s.listings.set(`sold-${i}`, {
+        id: `sold-${i}`,
+        sellerId: 'x',
+        inventoryId: `soldinv-${i}`,
+        itemId: TRADABLE_ITEM,
+        priceCoins: 100,
+        status: 'SOLD',
+        buyerId: 'y',
+        createdAt: OLD,
+        closedAt: new Date(),
+      });
+    }
+    s.listings.get('L1')!.status = 'HELD';
+    s.profiles.get(BUYER)!.coins = 60_000;
+  }
+
+  it('release: HELD → ACTIVE once, audited, and the frozen buy is not executed', async () => {
+    seedHeld();
+    const res = await resolveHeldListing({
+      listingId: 'L1',
+      adminId: 'admin-1',
+      action: 'release',
+    });
+    expect(res.status).toBe('ACTIVE');
+    const l = store.state.listings.get('L1')!;
+    expect(l.status).toBe('ACTIVE');
+    expect(l.reviewedAt).toBeInstanceOf(Date);
+    expect(l.buyerId).toBeNull();
+    expect(store.state.ledger).toHaveLength(0); // no coins moved by the release
+    expect(store.state.inventory.get('inv-1')!.userId).toBe(SELLER);
+    expect(logAdminAction).toHaveBeenCalledTimes(1);
+    expect(logAdminAction).toHaveBeenCalledWith('admin-1', 'market.held.release', {
+      targetType: 'market_listing',
+      targetId: 'L1',
+    });
+
+    // A second release (double click / second admin) loses the CAS.
+    await expect(
+      resolveHeldListing({ listingId: 'L1', adminId: 'admin-2', action: 'release' }),
+    ).rejects.toMatchObject({ code: 'NOT_AVAILABLE' });
+    expect(logAdminAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('a released listing sells at the reviewed price instead of re-freezing', async () => {
+    seedHeld();
+    await resolveHeldListing({ listingId: 'L1', adminId: 'admin-1', action: 'release' });
+    const res = await buyListing({ buyerId: BUYER, listingId: 'L1' });
+    expect(res.status).toBe('SOLD');
+    expect(store.state.inventory.get('inv-1')!.userId).toBe(BUYER);
+    expect(store.state.profiles.get(BUYER)!.coins).toBe(10_000);
+  });
+
+  it('never releases or cancels a listing that is not HELD', async () => {
+    for (const status of ['SOLD', 'CANCELED', 'ACTIVE'] as const) {
+      for (const action of ['release', 'cancel'] as const) {
+        seedHeld();
+        store.state.listings.get('L1')!.status = status;
+        await expect(
+          resolveHeldListing({ listingId: 'L1', adminId: 'admin-1', action }),
+        ).rejects.toMatchObject({ code: 'NOT_AVAILABLE' });
+        expect(store.state.listings.get('L1')!.status).toBe(status);
+      }
+    }
+    expect(logAdminAction).not.toHaveBeenCalled();
+  });
+
+  it('cancel: closes HELD once and returns the item to the seller', async () => {
+    seedHeld();
+    const res = await resolveHeldListing({ listingId: 'L1', adminId: 'admin-1', action: 'cancel' });
+    expect(res.status).toBe('CANCELED');
+    expect(store.state.listings.get('L1')!.status).toBe('CANCELED');
+    expect(store.state.inventory.get('inv-1')!.userId).toBe(SELLER);
+    expect(store.state.ledger).toHaveLength(0);
+    expect(logAdminAction).toHaveBeenCalledWith('admin-1', 'market.held.cancel', {
+      targetType: 'market_listing',
+      targetId: 'L1',
+    });
+
+    // Exactly once: a repeat admin cancel and a racing seller cancel both lose.
+    await expect(
+      resolveHeldListing({ listingId: 'L1', adminId: 'admin-1', action: 'cancel' }),
+    ).rejects.toMatchObject({ code: 'NOT_AVAILABLE' });
+    await expect(cancelListing('L1', SELLER)).rejects.toMatchObject({ code: 'NOT_AVAILABLE' });
+    expect(logAdminAction).toHaveBeenCalledTimes(1);
+
+    // The item is the seller's again: they can re-list it, and the recycled row
+    // does not inherit the old review.
+    const relisted = await listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 500 });
+    expect(relisted.status).toBe('ACTIVE');
+    expect(relisted.reviewedAt ?? null).toBeNull();
+  });
+
+  it('a seller cancel wins over a later admin release', async () => {
+    seedHeld();
+    await cancelListing('L1', SELLER);
+    await expect(
+      resolveHeldListing({ listingId: 'L1', adminId: 'admin-1', action: 'release' }),
+    ).rejects.toMatchObject({ code: 'NOT_AVAILABLE' });
+    expect(store.state.listings.get('L1')!.status).toBe('CANCELED');
   });
 });
 

@@ -775,5 +775,7 @@
   "ladder.health.showErrors_one": "{{count}} error",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "बिलिंग तक नहीं पहुँच सके। फिर से कोशिश करें।",
-  "space-end-offline": "कनेक्ट नहीं है। थोड़ी देर में फिर से कोशिश करें।"
+  "space-end-offline": "कनेक्ट नहीं है। थोड़ी देर में फिर से कोशिश करें।",
+  "market-under-review": "समीक्षाधीन",
+  "market-under-review-hint": "इस कीमत पर खरीद को एक त्वरित जाँच के लिए रोका गया है। कोई कॉइन स्थानांतरित नहीं हुआ। आइटम अभी वापस पाने के लिए रद्द करें।"
 }

@@ -28,6 +28,15 @@ export class TournamentError extends Error {
   }
 }
 
+/** Reporting a result for a match its tournament's cancellation closed. */
+function matchCancelledError(): TournamentError {
+  return new TournamentError(
+    'This match was cancelled with its tournament',
+    'MATCH_CANCELLED',
+    409,
+  );
+}
+
 // ─── Create ──────────────────────────────────────────────────────────────
 
 export async function createTournament(
@@ -409,6 +418,7 @@ export async function settleMatch(
       throw new TournamentError('Match not found', 'NOT_FOUND', 404);
     }
     if (match.state === 'COMPLETE') return { settled: false, isFinal: false, swiss: false };
+    if (match.state === 'CANCELLED') throw matchCancelledError();
     const validEntrants = [match.entrantAId, match.entrantBId].filter(Boolean) as string[];
     if (!validEntrants.includes(opts.winnerEntrantId)) {
       throw new TournamentError('Winner must be in this match', 'BAD_WINNER', 400);
@@ -423,11 +433,12 @@ export async function settleMatch(
     }
     const swiss = tournament.format === 'SWISS';
 
-    // CAS on "not yet complete": a concurrent settle of the same match (two
-    // reports, or a report racing the hub) sees count 0 and changes nothing,
-    // so wins/losses and the bracket advance are applied exactly once.
+    // CAS on "still open": a concurrent settle of the same match (two reports,
+    // or a report racing the hub) sees count 0 and changes nothing, so
+    // wins/losses and the bracket advance are applied exactly once. A match
+    // closed by a cancel racing this settle is not open either.
     const claimed = await tx.tournamentMatch.updateMany({
-      where: { id: match.id, state: { not: 'COMPLETE' } },
+      where: { id: match.id, state: { notIn: ['COMPLETE', 'CANCELLED'] } },
       data: {
         winnerEntrantId: opts.winnerEntrantId,
         state: 'COMPLETE',
@@ -563,12 +574,16 @@ export async function reportMatch(
 ): Promise<{ settled: boolean; tournamentComplete: boolean }> {
   const t = await db.tournament.findUnique({ where: { id: opts.tournamentId } });
   if (!t) throw new TournamentError('Tournament not found', 'NOT_FOUND', 404);
-  if (t.status !== 'LIVE') throw new TournamentError('Tournament is not live', 'NOT_LIVE', 409);
 
   const match = await db.tournamentMatch.findUnique({ where: { id: opts.matchId } });
   if (!match || match.tournamentId !== t.id) {
     throw new TournamentError('Match not found', 'NOT_FOUND', 404);
   }
+  // Checked before the tournament status so the reporter learns WHY: the match
+  // was closed by the tournament's cancellation, not merely "not live".
+  if (match.state === 'CANCELLED') throw matchCancelledError();
+  if (t.status !== 'LIVE') throw new TournamentError('Tournament is not live', 'NOT_LIVE', 409);
+
   // Authorization: host or admin may report any match; a participant may report
   // only their own match.
   const isHost = t.createdById === opts.reporterId || opts.isAdmin;
@@ -621,7 +636,7 @@ export async function reportTournamentMatchByGameSession(
   return { settled: res.settled };
 }
 
-/** Cancel a tournament and refund all escrowed coins (fees + seed). */
+/** Cancel a tournament, close its open matches, and refund all escrowed coins (fees + seed). */
 export async function cancelTournament(
   opts: { tournamentId: string; byUserId: string; isAdmin?: boolean },
   db: Db = prisma,
@@ -643,6 +658,15 @@ export async function cancelTournament(
       data: { status: 'CANCELLED', prizePoolCoins: 0 },
     });
     if (claimed.count === 0) return;
+
+    // Close every match still open. Nothing can settle or link them any more
+    // (both require a LIVE tournament), so left alone they would sit in
+    // PENDING/READY/LIVE forever and render as playable in the bracket.
+    // COMPLETE and BYE rows keep their results.
+    await tx.tournamentMatch.updateMany({
+      where: { tournamentId: t.id, state: { in: ['PENDING', 'READY', 'LIVE'] } },
+      data: { state: 'CANCELLED' },
+    });
 
     const entrants = await tx.tournamentEntrant.findMany({ where: { tournamentId: t.id } });
     for (const e of entrants) {

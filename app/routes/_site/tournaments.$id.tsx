@@ -189,7 +189,9 @@ function TournamentDetailPage() {
             ? t('registering', { defaultValue: 'Registering' })
             : tourney.status === 'LIVE'
               ? t('live', { defaultValue: 'Live' })
-              : t('done-tournaments-id', { defaultValue: 'Finished' })}
+              : tourney.status === 'CANCELLED'
+                ? t('status-cancelled', { defaultValue: 'Cancelled' })
+                : t('done-tournaments-id', { defaultValue: 'Finished' })}
         </Badge>
       }
     >
@@ -311,8 +313,10 @@ function TournamentDetailPage() {
           )}
         </div>
 
-        {/* Bracket (live / complete) */}
-        {(tourney.status === 'LIVE' || tourney.status === 'COMPLETE') && (
+        {/* Bracket (live / complete, or cancelled after it started: its open matches read "Cancelled") */}
+        {(tourney.status === 'LIVE' ||
+          tourney.status === 'COMPLETE' ||
+          (tourney.status === 'CANCELLED' && (tourney.matches?.length ?? 0) > 0)) && (
           <div>
             <h2 className="site-section-label mb-3">
               {t('bracket-tournaments-id', { defaultValue: 'Bracket' })}

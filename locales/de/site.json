@@ -775,5 +775,7 @@
   "ladder.health.showErrors_one": "{{count}} error",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "Die Abrechnung ist nicht erreichbar. Versuche es erneut.",
-  "space-end-offline": "Nicht verbunden. Versuche es gleich noch einmal."
+  "space-end-offline": "Nicht verbunden. Versuche es gleich noch einmal.",
+  "market-under-review": "In Prüfung",
+  "market-under-review-hint": "Ein Kauf zu diesem Preis wurde für eine kurze Prüfung angehalten. Es wurden keine Münzen bewegt. Storniere jetzt, um den Artikel zurückzubekommen."
 }

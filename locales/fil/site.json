@@ -759,5 +759,7 @@
   "ladder.health.showErrors_one": "{{count}} error",
   "ladder.health.showErrors_other": "{{count}} errors",
   "membership-action-failed": "Hindi maabot ang billing. Subukang muli.",
-  "space-end-offline": "Hindi nakakonekta. Subukang muli maya-maya."
+  "space-end-offline": "Hindi nakakonekta. Subukang muli maya-maya.",
+  "market-under-review": "Sinusuri",
+  "market-under-review-hint": "Ang pagbili sa presyong ito ay pansamantalang itinigil para sa mabilis na pagsusuri. Walang coins na nailipat. Kanselahin para makuha agad ang item."
 }

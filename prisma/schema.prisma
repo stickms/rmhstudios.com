@@ -7317,6 +7317,7 @@ enum TournamentMatchState {
   LIVE
   COMPLETE
   BYE // auto-advanced (odd bracket)
+  CANCELLED // closed unplayed because its tournament was cancelled
 }
 
 model Tournament {
@@ -7648,6 +7649,10 @@ model MarketListing {
   buyerId     String?
   createdAt   DateTime      @default(now())
   closedAt    DateTime?
+  // Set when an admin reviewed a HELD listing and released it: the reviewed
+  // price no longer trips the anomaly hold, so the listing can actually sell.
+  // Cleared whenever the row is recycled into a new listing.
+  reviewedAt  DateTime?
 
   seller User  @relation("MarketSeller", fields: [sellerId], references: [id], onDelete: Cascade)
   buyer  User? @relation("MarketBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
