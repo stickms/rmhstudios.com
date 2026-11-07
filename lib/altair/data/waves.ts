@@ -72,14 +72,14 @@ export const WAVE_TIMELINE: readonly WaveEvent[] = [
   {
     startTime: 45,
     endTime: 90,
-    description: 'First swarm. Shamblers and Bats. Bat packs of 4-6.',
+    description: 'First swarm. Husks and Flickers. Flicker packs of 4-6.',
     enemyComposition: ['shambler', 'bat'],
     spawnRateMultiplier: 1.0,
   },
   {
     startTime: 90,
     endTime: 150,
-    description: 'Tier 2 intro. Skeleton Warriors (1 per 6s).',
+    description: 'Tier 2 intro. Riggers (1 per 6s).',
     enemyComposition: ['shambler', 'bat', 'skeleton_warrior'],
     spawnRateMultiplier: 1.0,
   },
@@ -147,14 +147,14 @@ export const WAVE_TIMELINE: readonly WaveEvent[] = [
   {
     startTime: 450,
     endTime: 510,
-    description: 'Bone Golem debut (1 per 20s). Cultist pairs start.',
+    description: 'Bulkhead debut (1 per 20s). Relay pairs start.',
     enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem'],
     spawnRateMultiplier: 1.0,
   },
   {
     startTime: 510,
     endTime: 600,
-    description: 'Pre-boss ramp. 1.5x budget. Witch+Werewolf combos. Double Bone Golems.',
+    description: 'Pre-boss ramp. 1.5x budget. Jammer+Stalker combos. Double Bulkheads.',
     enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist', 'werewolf', 'witch', 'shadow', 'bone_golem'],
     spawnRateMultiplier: 1.5,
     specialEvent: 'pre_boss_ramp',
