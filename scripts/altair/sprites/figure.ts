@@ -156,7 +156,7 @@ function body(g: Grid, v: View, behind: boolean): void {
   }
 }
 
-function shade(grid: Grid, palette: Palette): Uint8ClampedArray {
+export function shade(grid: Grid, palette: Palette): Uint8ClampedArray {
   const out = new Uint8ClampedArray(SIZE * SIZE * 4);
   const lit = (x: number, y: number, p: Part) => {
     const a = grid.at(x, y - 1);

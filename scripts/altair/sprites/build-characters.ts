@@ -13,9 +13,11 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { renderSheet, SIZE } from './figure';
 import { CLASS_ART } from './characters';
+import { ENEMY_ART, ECHO_ALLY, renderEnemySheet } from './creatures';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const DEFAULT_OUT = join(HERE, '..', '..', '..', 'public', 'sprites', 'altair', 'characters');
+const PUBLIC_ALTAIR = join(HERE, '..', '..', '..', 'public', 'sprites', 'altair');
+const DEFAULT_OUT = join(PUBLIC_ALTAIR, 'characters');
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -35,13 +37,29 @@ async function main() {
       .png({ compressionLevel: 9 })
       .toFile(join(out, art.file));
   }
+  // Enemies go beside the characters when --out is given (so previews stay out of public/), else into enemies/.
+  const enemyOut = arg('out') ? join(out, 'enemies') : join(PUBLIC_ALTAIR, 'enemies');
+  mkdirSync(enemyOut, { recursive: true });
+  for (const art of ENEMY_ART) {
+    const rgba = renderEnemySheet(art.draw, art.palette);
+    sheets.push({ id: art.id, rgba });
+    await sharp(Buffer.from(rgba.buffer), { raw: { width: W, height: W, channels: 4 } })
+      .png({ compressionLevel: 9 })
+      .toFile(join(enemyOut, art.file));
+  }
+  // The Echo-Binder's allies get their own cyan sheet (they used to borrow the skeleton's).
+  const echo = renderEnemySheet(ECHO_ALLY.draw, ECHO_ALLY.palette);
+  await sharp(Buffer.from(echo.buffer), { raw: { width: W, height: W, channels: 4 } })
+    .png({ compressionLevel: 9 })
+    .toFile(join(out, ECHO_ALLY.file));
+  sheets.push({ id: 'echo', rgba: echo });
   process.stdout.write(`wrote ${sheets.length} sheets to ${out}\n`);
 
   if (preview) {
-    // Contact sheet: classes in a 4x2 grid, each sheet magnified 5x on a dark ground.
+    // Contact sheet: every sheet in a grid, each sheet magnified 5x on a dark ground.
     const scale = 5;
     const cell = W * scale + 12;
-    const cols = 4;
+    const cols = 6;
     const rows = Math.ceil(sheets.length / cols);
     const bg = Buffer.alloc(cell * cols * cell * rows * 4);
     for (let i = 0; i < bg.length; i += 4) {

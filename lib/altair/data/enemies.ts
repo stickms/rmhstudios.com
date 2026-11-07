@@ -1,9 +1,10 @@
 // =============================================================================
-// ALTAIR -- Enemies (GDD Section 9)
+// ALTAIR -- Enemies: the Echoes, drones and anomalies of Outpost 13 (GDD Section 9)
 // =============================================================================
 // Enemies are organized into tiers that progressively unlock as the run
 // progresses. All HP, damage, and speed values are base values at spawn time --
 // they are further modified by the difficulty scaling system (Section 13).
+// Ids are save data and never change; names and text are the cast's.
 // =============================================================================
 
 export type EnemyTier = 1 | 2 | 3 | 4 | 5 | 6;
@@ -50,7 +51,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   // ===========================================================================
   {
     id: 'shambler',
-    name: 'Shambler',
+    name: 'Husk',
     tier: 1,
     baseHp: 10,
     baseDamage: 12,
@@ -62,12 +63,12 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#6B8E23',
     radius: 12,
     canFly: false,
-    description: 'Ragged zombie. Walks directly toward player. No special abilities. Appears in massive swarms.',
+    description: 'An Echo of a crew member still walking its last route. Walks directly toward the player. No special abilities. Appears in massive swarms.',
     specialParams: {},
   },
   {
     id: 'bat',
-    name: 'Bat',
+    name: 'Flicker',
     tier: 1,
     baseHp: 6,
     baseDamage: 10,
@@ -79,7 +80,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#4A4A4A',
     radius: 13,
     canFly: true,
-    description: 'Small dark bat with erratic flight. Moves in sinusoidal wave pattern, harder to hit with narrow projectiles.',
+    description: 'Small glitching drone with erratic flight. Moves in a sinusoidal wave pattern, harder to hit with narrow projectiles.',
     specialParams: {
       waveAmplitude: 30,
       wavePeriod: 2.2,
@@ -91,7 +92,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   // ===========================================================================
   {
     id: 'skeleton_warrior',
-    name: 'Skeleton Warrior',
+    name: 'Rigger',
     tier: 2,
     baseHp: 28,
     baseDamage: 18,
@@ -103,7 +104,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#D2B48C',
     radius: 14,
     canFly: false,
-    description: 'Armed skeleton with rusty sword. When within 50px, performs a lunging sword strike (70px reach, 0.3s duration, 0.5s windup). Attacks every 1.5s when adjacent.',
+    description: 'Unmanned work-frame with a plasma cutter. When within 50px, performs a lunging cutter strike (70px reach, 0.3s duration, 0.5s windup). Attacks every 1.5s when adjacent.',
     specialParams: {
       lungeRange: 50,
       lungeReach: 70,
@@ -114,7 +115,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     id: 'ghost',
-    name: 'Ghost',
+    name: 'Static',
     tier: 2,
     baseHp: 18,
     baseDamage: 14,
@@ -126,7 +127,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#B0C4DE',
     radius: 12,
     canFly: true,
-    description: 'Translucent floating specter. Passes through other enemies. Every 4 seconds, becomes intangible for 1.5 seconds (immune to damage, still deals contact damage).',
+    description: 'Fraying, translucent echo. Passes through other enemies. Every 4 seconds, becomes intangible for 1.5 seconds (immune to damage, still deals contact damage).',
     specialParams: {
       phaseCooldown: 4,
       phaseDuration: 1.5,
@@ -138,7 +139,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   // ===========================================================================
   {
     id: 'werewolf',
-    name: 'Werewolf',
+    name: 'Stalker',
     tier: 3,
     baseHp: 75,
     baseDamage: 22,
@@ -150,7 +151,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#8B4513',
     radius: 18,
     canFly: false,
-    description: 'Large bipedal wolf. At 200px range, enters a 1-second crouch then pounces at 350px/s covering 250px. Pauses 0.8s after landing. Pounce cooldown: 6 seconds.',
+    description: 'Low, fast quadruped anomaly. At 200px range, coils for 1 second then pounces at 350px/s covering 250px. Pauses 0.8s after landing. Pounce cooldown: 6 seconds.',
     specialParams: {
       pounceRange: 200,
       pounceSpeed: 380,
@@ -162,7 +163,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     id: 'cultist',
-    name: 'Cultist',
+    name: 'Relay',
     tier: 3,
     baseHp: 35,
     baseDamage: 14,
@@ -174,7 +175,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#800080',
     radius: 12,
     canFly: false,
-    description: 'Robed figure with glowing staff. Maintains 200px distance from player. Every 3 seconds, fires a dark orb projectile (200px/s speed, 12px size, lasts 3 seconds, passes through enemies).',
+    description: 'Hooded beacon holding a charged signal orb. Maintains 200px distance from the player. Every 3 seconds, fires a signal orb (200px/s speed, 12px size, lasts 3 seconds, passes through enemies).',
     specialParams: {
       preferredRange: 200,
       projectileSpeed: 200,
@@ -185,7 +186,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     id: 'swarm_rat',
-    name: 'Swarm Rat',
+    name: 'Mite',
     tier: 3,
     baseHp: 4,
     baseDamage: 2,
@@ -197,7 +198,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#A0522D',
     radius: 9,
     canFly: false,
-    description: 'Tiny scurrying rat. Always spawns in packs of 8-12 with slightly randomized speed (+/-20%). Moves directly toward player.',
+    description: 'Tiny skittering drone. Always spawns in packs of 8-12 with slightly randomized speed (+/-20%). Moves directly toward the player.',
     specialParams: {
       packSizeMin: 8,
       packSizeMax: 12,
@@ -210,7 +211,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   // ===========================================================================
   {
     id: 'witch',
-    name: 'Witch',
+    name: 'Jammer',
     tier: 4,
     baseHp: 50,
     baseDamage: 0,
@@ -222,7 +223,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#9400D3',
     radius: 14,
     canFly: true,
-    description: 'Hovering figure with dark aura. Stays at 250px range. Every 8s casts Curse: -15% Move Speed for 4s (stacks 2x). Every 12s casts Empower: +25% speed and +20% damage to allies in 200px for 5s.',
+    description: 'Hovering disc that broadcasts noise. Stays at 250px range. Every 8s casts Jam: -15% Move Speed for 4s (stacks 2x). Every 12s casts Overclock: +25% speed and +20% damage to allies in 200px for 5s.',
     specialParams: {
       preferredRange: 250,
       curseCooldown: 8,
@@ -238,7 +239,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     id: 'bone_golem',
-    name: 'Bone Golem',
+    name: 'Bulkhead',
     tier: 4,
     baseHp: 180,
     baseDamage: 25,
@@ -250,7 +251,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#F5F5DC',
     radius: 24,
     canFly: false,
-    description: 'Hulking skeleton construct, twice normal size. Every 5s performs ground slam: 1s windup (50% damage reduction during), 150px radius shockwave dealing 30 damage with 0.5s stun. On death, splits into 3 Skeleton Warriors.',
+    description: 'Hulking loading frame, twice normal size. Every 5s performs a ground slam: 1s windup (50% damage reduction during), 150px radius shockwave dealing 30 damage with 0.5s stun. On death, splits into 3 Riggers.',
     specialParams: {
       slamCooldown: 5,
       slamWindup: 1.0,
@@ -265,7 +266,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     id: 'shadow',
-    name: 'Shadow',
+    name: 'Blind Spot',
     tier: 4,
     baseHp: 40,
     baseDamage: 18,
@@ -277,7 +278,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#1A1A2E',
     radius: 12,
     canFly: false,
-    description: 'Dark humanoid silhouette that flickers. Invisible until within 150px of player (fades in over 0.3s). Damage while invisible reveals immediately. Re-cloaks every 10s when >200px from player.',
+    description: 'Dark person-shaped gap that flickers. Invisible until within 150px of the player (fades in over 0.3s). Damage while invisible reveals immediately. Re-cloaks every 10s when >200px from the player.',
     specialParams: {
       revealRange: 150,
       fadeInDuration: 0.3,
@@ -291,7 +292,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   // ===========================================================================
   {
     id: 'vampire_noble',
-    name: 'Vampire Noble',
+    name: 'Siphon',
     tier: 5,
     baseHp: 120,
     baseDamage: 25,
@@ -303,7 +304,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#8B0000',
     radius: 16,
     canFly: false,
-    description: 'Pale aristocrat in dark cloak. At 100px, performs rapid 3-hit claw combo (22 damage each, 0.2s between hits). Every 8s summons 4 bats. Passively heals 5 HP/s (lifesteal aura).',
+    description: 'Tall leech frame trailing drain cables. At 100px, performs a rapid 3-hit claw combo (22 damage each, 0.2s between hits). Every 8s releases 4 Flickers. Passively heals 5 HP/s (lifesteal aura).',
     specialParams: {
       meleeRange: 100,
       comboDamage: 25,
@@ -318,7 +319,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     id: 'arcane_construct',
-    name: 'Arcane Construct',
+    name: 'Lattice',
     tier: 5,
     baseHp: 85,
     baseDamage: 28,
@@ -330,7 +331,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#00CED1',
     radius: 16,
     canFly: true,
-    description: 'Floating geometric shape with glowing runes. Hovers at 300px from player. Every 4s telegraphs a laser beam (red line for 1s) then fires a piercing beam (20px wide, infinite range, 0.5s, 25 damage). Uses leading shots.',
+    description: 'Floating diamond of struts around a lens. Hovers at 300px from the player. Every 4s telegraphs a laser beam (red line for 1s) then fires a piercing beam (20px wide, infinite range, 0.5s, 25 damage). Uses leading shots.',
     specialParams: {
       preferredRange: 300,
       laserCooldown: 4,
@@ -342,7 +343,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     id: 'plague_bearer',
-    name: 'Plague Bearer',
+    name: 'Bloat',
     tier: 5,
     baseHp: 65,
     baseDamage: 10,
@@ -354,7 +355,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#2E8B57',
     radius: 16,
     canFly: false,
-    description: 'Bloated green zombie. Leaves a 40px poison trail (3s duration, 4 damage/tick, 2 ticks/s). On death, explodes into 120px radius poison cloud lasting 4s. Contact also applies 3 damage/s poison DoT for 3s.',
+    description: 'Swollen sac that weeps toxin. Leaves a 40px poison trail (3s duration, 4 damage/tick, 2 ticks/s). On death, bursts into a 120px radius poison cloud lasting 4s. Contact also applies 3 damage/s poison DoT for 3s.',
     specialParams: {
       trailWidth: 40,
       trailDuration: 3,
@@ -372,7 +373,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   // ===========================================================================
   {
     id: 'death_knight',
-    name: 'Death Knight',
+    name: 'Warden',
     tier: 6,
     baseHp: 220,
     baseDamage: 40,
@@ -384,7 +385,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#4B0082',
     radius: 20,
     canFly: false,
-    description: 'Armored undead knight with flaming sword. Melee swing every 2s in 140-degree arc (100px reach). Every 6s emits 4 directional shockwaves (N/S/E/W, 30px wide, 300px travel, 20 damage). Has 3 Armor. Drops Food on death.',
+    description: 'Heavy station security with an arc cutter. Melee swing every 2s in a 140-degree arc (100px reach). Every 6s emits 4 directional shockwaves (N/S/E/W, 30px wide, 300px travel, 20 damage). Has 3 Armor. Drops Food on death.',
     specialParams: {
       meleeArc: 140,
       meleeReach: 100,
@@ -400,7 +401,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     id: 'banshee',
-    name: 'Banshee',
+    name: 'Shriek',
     tier: 6,
     baseHp: 55,
     baseDamage: 12,
@@ -412,7 +413,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#E6E6FA',
     radius: 14,
     canFly: true,
-    description: 'Floating ghostly woman. Phases through all enemies. Every 7s performs Wailing Scream: disables all player weapons for 2s within 400px range. Scream has 1.5s windup (killing during windup cancels).',
+    description: 'Speaker-headed drone. Phases through all enemies. Every 7s performs a Wailing Scream: disables all player weapons for 2s within 400px range. The scream has a 1.5s windup (killing during windup cancels).',
     specialParams: {
       screamCooldown: 7,
       screamWindup: 1.5,
@@ -422,7 +423,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     id: 'lich',
-    name: 'Lich',
+    name: 'Conductor',
     tier: 6,
     baseHp: 160,
     baseDamage: 22,
@@ -434,7 +435,7 @@ export const ENEMIES: readonly EnemyDef[] = [
     color: '#483D8B',
     radius: 16,
     canFly: false,
-    description: 'Skeletal mage in ornate robes with floating phylactery. Stays at 350px range. Every 5s fires fan of 5 projectiles (60-degree arc, 20 damage each, 180 speed). Every 15s resurrects up to 3 nearby dead enemies at 50% HP. Has a phylactery (30 HP) that must be destroyed first.',
+    description: 'Robed signal-master with a floating core. Stays at 350px range. Every 5s fires a fan of 5 projectiles (60-degree arc, 20 damage each, 180 speed). Every 15s restarts up to 3 nearby dead enemies at 50% HP. Has a core (30 HP) that must be destroyed first.',
     specialParams: {
       preferredRange: 350,
       volleyCooldown: 5,
