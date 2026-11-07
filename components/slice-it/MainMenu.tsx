@@ -315,8 +315,8 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 className="slice-bar__logo"
                 src="/images/games/logos/slice-it.svg"
                 alt={t('game-title', { defaultValue: 'Slice It!' })}
-                width={1120}
-                height={319}
+                width={1015}
+                height={504}
                 decoding="async"
                 fetchPriority="high"
               />
@@ -356,11 +356,11 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   animate="animate"
                 >
                   <img
-                    className="mx-auto h-8 w-auto"
+                    className="mx-auto h-24 w-auto"
                     src="/images/games/logos/slice-it.svg"
                     alt=""
-                    width={1120}
-                    height={319}
+                    width={1015}
+                    height={504}
                     decoding="async"
                   />
                   <hr className="slice-slash" />

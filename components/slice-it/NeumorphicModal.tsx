@@ -83,7 +83,7 @@ export function NeumorphicModal({
                   onClose();
                 }}
                 className={cn(
-                  'flex-1 h-11 rounded-[10px] font-bold tracking-wider transition-colors text-[#04112b]',
+                  'flex-1 h-11 rounded-[10px] font-bold tracking-wider transition-colors text-[#050921]',
                   variant === 'danger'
                     ? 'bg-slice-danger hover:brightness-110'
                     : 'bg-slice-primary hover:brightness-110',

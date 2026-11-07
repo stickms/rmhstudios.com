@@ -126,8 +126,8 @@ export const APP_ROUTE_THEME_BG: Record<
     key: 'slice-it-storage',
     darkFlag: 'isDarkMode',
     defaultDark: true,
-    dark: '#040818',
-    light: '#040818',
+    dark: '#0b1241',
+    light: '#0b1241',
   },
   // The PF2e board. Grounds mirror `--pf2e-bg` in
   // `components/pf2ecal/pf2ecal.css` — true black in dark, iOS systemGrey6 in

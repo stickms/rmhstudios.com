@@ -1,18 +1,31 @@
 @import '../shared/game-fonts/fonts.css';
 
 /* ============================================================
-   Slice It!: the one theme.
+   Slice It!: "Pressing".
 
-   There is no light mode and no toggle. The game has a single look, taken from
-   its key art (`public/images/games/slice_it.webp`) and the scheme in
-   `docs/game-design-schemes/slice-it.json`: a navy ground, electric cyan and
-   hot pink split by a diagonal slash, off-white type, IBM Plex Mono for the
-   small print. Cyan is the top lane and pink is the bottom lane everywhere —
-   the playfield, the HUD, the lobby, the buttons.
+   The game is a record you cut, and the interface is the sleeve, label and
+   liner notes of that record. The look comes from the key art
+   (`public/images/games/slice_it.webp`), which is a printed sleeve — line-screened
+   duotone, grain, a wordmark cut on a diagonal, small mono catalogue text — and
+   not from a neon scheme.
 
-   Display is Audiowide, reading text is Jost, figures and labels are IBM Plex
-   Mono. Radius is 10px. A surface is a flat navy panel with a 1px hairline; the
-   accent colours are for state (selected, focused, live), never decoration.
+   Two spot inks on dark stock, paper-white type:
+     ink   #0b1241  the stock — every ground
+     label #050921  wells, fields, the sleeve box
+     cyan  #2db3f0  side A · the top lane · selected
+     pink  #f4509f  side B · the bottom lane · the record · danger
+     paper #f0f1f6  type, the primary button, hover
+
+   No glow, no glass, no gradient washes, no drop shadows, no rounded cards. Depth
+   is overprint and a hard offset. Texture is a line screen, halftone dots and
+   grain (see `.slice-screen-*`). The one device is the slice: a diagonal cut,
+   eight degrees, a hairline gap.
+
+   Type: Archivo for everything (width 125 / weight 900 for titles, capitals);
+   Bodoni Moda Italic for one word at a time; IBM Plex Mono for every number,
+   label and catalogue line.
+
+   There is no light mode. Tokens: docs/game-design-schemes/slice-it.json.
    ============================================================ */
 
 @layer base {
@@ -24,67 +37,69 @@
    */
   .slice-theme,
   .slice-tokens {
-    --slice-bg: #040818;
-    --slice-bg-alt: #0a1442;
-    --slice-card-bg: #0c1640;
-    --slice-surface-hover: #12235c;
-    --slice-border: #1d3f8a;
-    --slice-text: #eaf6ff;
+    --slice-bg: #0b1241;
+    --slice-bg-alt: #101a55;
+    --slice-label: #050921;
+    --slice-card-bg: #050921;
+    --slice-surface-hover: #101a55;
+    --slice-paper: #f0f1f6;
+    --slice-paper-2: #b9bdcf;
+    --slice-border: rgba(240, 241, 246, 0.28);
+    --slice-text: #f0f1f6;
     --slice-text-darker: #ffffff;
-    --slice-text-muted: #8eb4d8;
-    --slice-text-light: #7c9ec9;
-    --slice-primary: #18b6ff;
-    --slice-accent: #ff3d8b;
-    --slice-danger: #ff3d5c;
+    --slice-text-muted: #8f9ac9;
+    --slice-text-light: #8f9ac9;
+    --slice-primary: #2db3f0;
+    --slice-accent: #f4509f;
+    --slice-danger: #f4509f;
 
-    /* Lanes: cyan on top, pink below. The same two colours as the key art. */
-    --slice-lane-top: #18b6ff;
-    --slice-lane-bottom: #ff3d8b;
+    /* Lanes: cyan on top, pink below — the same two inks as the key art. */
+    --slice-lane-top: #2db3f0;
+    --slice-lane-bottom: #f4509f;
 
-    /* The two "shadow" tokens survive because a lot of the game still names
-       them. They no longer describe a light source: `dark` is a deep navy that
-       sinks a panel into the ground and `light` is a whisper of cyan. */
-    --slice-shadow-dark: rgba(2, 4, 15, 0.78);
-    --slice-shadow-light: rgba(24, 182, 255, 0.07);
+    /* Named by the old material and still read by a lot of the game. They no
+       longer describe a light source: `dark` is the label black and `light` is
+       nearly nothing. */
+    --slice-shadow-dark: #050921;
+    --slice-shadow-light: rgba(240, 241, 246, 0.06);
 
-    --slice-input-bg: #070e2b;
-    --slice-input-border: rgba(29, 63, 138, 0.9);
-    --slice-text-shadow: rgba(24, 182, 255, 0.35);
+    --slice-input-bg: #050921;
+    --slice-input-border: rgba(240, 241, 246, 0.28);
+    --slice-text-shadow: #f4509f;
 
-    /* Playfield. The rail is bright enough to read as a track on the navy
-       ground, the hold tail is the ink at half strength, and the vignette
-       darkens toward true black as the combo builds. */
-    --slice-rail: #2a4aa3;
-    --slice-hold-trail: rgba(234, 246, 255, 0.5);
+    /* Playfield: the groove edge, the hold tail, the vignette. */
+    --slice-rail: rgba(240, 241, 246, 0.3);
+    --slice-hold-trail: rgba(240, 241, 246, 0.5);
     --slice-vignette: #000000;
-    --slice-note-shadow: rgba(2, 4, 15, 0.7);
+    --slice-note-shadow: rgba(5, 9, 33, 0.7);
 
-    --slice-display: 'Audiowide', 'Michroma', 'Arial Black', sans-serif;
-    --slice-body: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --slice-display: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --slice-body: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --slice-serif: 'Bodoni Moda', 'Didot', 'Times New Roman', serif;
     --slice-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
-    --slice-radius: 10px;
+    --slice-radius: 0px;
 
-    /* Tailwind's palette, retargeted for this subtree. A great many controls in
-       the game are written as `bg-blue-500` / `text-pink-400`; those were the
-       light theme's colours and clash with the scheme. Utilities read the
-       variable, so redefining it here recolours all of them at once. */
-    --color-blue-300: #8fdcff;
-    --color-blue-400: #4cc6ff;
-    --color-blue-500: #18b6ff;
-    --color-blue-600: #0f9fe6;
-    --color-blue-700: #0a7fb8;
-    --color-sky-400: #4cc6ff;
-    --color-sky-500: #18b6ff;
-    --color-cyan-400: #4cc6ff;
-    --color-cyan-500: #18b6ff;
-    --color-pink-300: #ff8fbd;
-    --color-pink-400: #ff6aa5;
-    --color-pink-500: #ff3d8b;
-    --color-pink-600: #e0287a;
-    --color-rose-500: #ff3d8b;
-    --color-red-400: #ff6b83;
-    --color-red-500: #ff3d5c;
-    --color-red-600: #e02a49;
+    /* Tailwind's palette, retargeted for this subtree. A great many controls are
+       written as `bg-blue-500` / `text-pink-400`; those were the old scheme's
+       colours. Utilities read the variable, so redefining it here recolours all of
+       them at once. */
+    --color-blue-300: #8fd8f7;
+    --color-blue-400: #5cc4f3;
+    --color-blue-500: #2db3f0;
+    --color-blue-600: #1c9bd6;
+    --color-blue-700: #167cab;
+    --color-sky-400: #5cc4f3;
+    --color-sky-500: #2db3f0;
+    --color-cyan-400: #5cc4f3;
+    --color-cyan-500: #2db3f0;
+    --color-pink-300: #f89cc8;
+    --color-pink-400: #f677b3;
+    --color-pink-500: #f4509f;
+    --color-pink-600: #d93a89;
+    --color-rose-500: #f4509f;
+    --color-red-400: #f677b3;
+    --color-red-500: #f4509f;
+    --color-red-600: #d93a89;
   }
 }
 
@@ -98,16 +113,99 @@
   font-family: var(--slice-body);
 }
 
-/* ─── Buttons ──────────────────────────────────────────────────────────────
+/* ─── Type ──────────────────────────────────────────────────────────────── */
+
+/* Titles, scores, buttons: Archivo at its widest and heaviest, capitals, tight. */
+.slice-display {
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+}
+
+/* One word at a time: an artist, an emphasis. Never a sentence. */
+.slice-serif {
+  font-family: var(--slice-serif);
+  font-style: italic;
+  font-weight: 600;
+}
+
+/* Small print: short, literal, spaced — the key art's catalogue lines. */
+.slice-label {
+  font-family: var(--slice-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--slice-text-muted);
+}
+
+.slice-figure {
+  font-family: var(--slice-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Print texture ─────────────────────────────────────────────────────────
+ *
+ * Texture is a print, not light. Line screens and halftone sit behind big shapes
+ * (lane grooves, covers, the hero), never behind small text.
+ */
+.slice-screen-cyan {
+  background-image: repeating-linear-gradient(-8deg, rgba(45, 179, 240, 0.6) 0 1px, transparent 1px 5px);
+}
+.slice-screen-pink {
+  background-image: repeating-linear-gradient(-8deg, rgba(244, 80, 159, 0.6) 0 1px, transparent 1px 5px);
+}
+.slice-dots-cyan {
+  background-image: radial-gradient(circle, #2db3f0 36%, transparent 40%);
+  background-size: 7px 7px;
+}
+.slice-dots-pink {
+  background-image: radial-gradient(circle, #f4509f 36%, transparent 40%);
+  background-size: 7px 7px;
+}
+
+/* The slice, as a divider: cyan, a paper cut, pink. */
+.slice-slash {
+  display: block;
+  height: 2px;
+  border: 0;
+  background: linear-gradient(
+    100deg,
+    var(--slice-primary) 0%,
+    var(--slice-primary) 46%,
+    var(--slice-paper) 50%,
+    var(--slice-accent) 54%,
+    var(--slice-accent) 100%
+  );
+}
+
+/* A stamp: a boxed word, slightly crooked, misregistered by a hard offset. */
+.slice-stamp {
+  display: inline-block;
+  padding: 6px 12px;
+  border: 3px solid currentColor;
+  font-family: var(--slice-mono);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transform: rotate(-5deg);
+  box-shadow: 3px 2px 0 var(--slice-primary);
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────────────────
  *
  * The shared `Button` is built for the site's material. Where that material is
- * off (the `perf-lite` tier — any device without a capable GPU, and headless
- * browsers) `liquid-glass.css` gives every flat button an opaque SITE surface via
- * an UNLAYERED rule, which beats every `bg-*` utility and painted the game's cyan
- * PLAY buttons white with white text. Inside the game a button is the game's own
- * control, so that rule is handed back to the layered cascade (`revert-layer`:
- * the button's own classes, then the reset) and the variants below are the game's
- * look for the ones that carry no colour of their own.
+ * off (the `perf-lite` tier) `liquid-glass.css` gives every flat button an opaque
+ * SITE surface via an UNLAYERED rule, which beats every `bg-*` utility. Inside
+ * the game a button is the game's own control, so that rule is handed back to
+ * the layered cascade (`revert-layer`).
  */
 html.perf-lite .slice-theme [data-jelly-rest='flat'],
 html.perf-lite .slice-tokens [data-jelly-rest='flat'] {
@@ -115,19 +213,33 @@ html.perf-lite .slice-tokens [data-jelly-rest='flat'] {
   border-color: revert-layer;
 }
 
+/* Hard edges everywhere in the game; a circle stays a circle. */
+.slice-theme [class*='rounded-']:not(.rounded-full),
+.slice-tokens [class*='rounded-']:not(.rounded-full),
+.slice-theme [data-slot='button'],
+.slice-tokens [data-slot='button'] {
+  border-radius: 0;
+}
+
+.slice-theme [data-slot='button'],
+.slice-tokens [data-slot='button'] {
+  font-family: var(--slice-body);
+  font-weight: 700;
+}
+
 .slice-theme [data-slot='button'][data-variant='outline']:not([class*='bg-']),
 .slice-theme [data-slot='button'][data-variant='secondary']:not([class*='bg-']),
 .slice-tokens [data-slot='button'][data-variant='outline']:not([class*='bg-']),
 .slice-tokens [data-slot='button'][data-variant='secondary']:not([class*='bg-']) {
-  background-color: var(--slice-card-bg);
-  border-color: var(--slice-border);
-  color: var(--slice-text);
+  background-color: transparent;
+  border-color: var(--slice-paper);
+  color: var(--slice-paper);
 }
 
 .slice-theme [data-slot='button'][data-variant='outline']:not([class*='bg-']):hover,
 .slice-theme [data-slot='button'][data-variant='secondary']:not([class*='bg-']):hover {
-  background-color: var(--slice-surface-hover);
-  border-color: rgba(24, 182, 255, 0.6);
+  background-color: var(--slice-paper);
+  color: var(--slice-bg);
 }
 
 .slice-theme [data-slot='button'][data-variant='ghost']:not([class*='bg-']),
@@ -136,23 +248,77 @@ html.perf-lite .slice-tokens [data-jelly-rest='flat'] {
 }
 
 .slice-theme [data-slot='button'][data-variant='ghost']:not([class*='bg-']):hover {
-  background-color: var(--slice-surface-hover);
-  color: #fff;
+  background-color: var(--slice-paper);
+  color: var(--slice-bg);
 }
 
-/* Dark ink on the cyan fills: white on #18b6ff is 2.4:1. */
-.slice-theme :is(.bg-blue-500, .bg-blue-600, .bg-sky-500, .bg-cyan-500).text-white,
-.slice-tokens :is(.bg-blue-500, .bg-blue-600, .bg-sky-500, .bg-cyan-500).text-white {
-  color: #04112b;
+/* Dark ink on the cyan and pink fills: paper-white on a spot ink is too weak. */
+.slice-theme :is(.bg-blue-500, .bg-blue-600, .bg-sky-500, .bg-cyan-500, .bg-pink-500, .bg-red-500).text-white,
+.slice-tokens :is(.bg-blue-500, .bg-blue-600, .bg-sky-500, .bg-cyan-500, .bg-pink-500, .bg-red-500).text-white {
+  color: var(--slice-label);
+}
+
+/* The primary action: a paper slab whose right edge is the cut. */
+.slice-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 38px 0 26px;
+  border: 0;
+  cursor: pointer;
+  background: var(--slice-paper);
+  color: var(--slice-bg);
+  font-family: var(--slice-display);
+  font-size: 15px;
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+}
+.slice-btn-primary:hover {
+  background: var(--slice-primary);
+}
+.slice-btn-primary:active {
+  transform: translate(2px, 2px);
+}
+
+/* The quiet one: outlined in paper, inverts on hover. */
+.slice-btn-alt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 26px;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  color: var(--slice-paper);
+  box-shadow: inset 0 0 0 1.5px var(--slice-paper);
+  font-family: var(--slice-display);
+  font-size: 15px;
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.slice-btn-alt:hover {
+  background: var(--slice-paper);
+  color: var(--slice-bg);
 }
 
 /* ─── The site's glass is off in here ──────────────────────────────────────
  *
  * Shared primitives (`Card`, `Dialog`, `Input`…) arrive wearing the site's glass
  * roles. The game has its own flat material, so inside it every role is the same
- * navy panel with a hairline, and the haze and rim layers the roles would carry
- * are not drawn. (The layout root also opts the subtree out of the jelly engine,
- * so nothing is armed to draw them.)
+ * label-black panel with a hairline, and the haze and rim layers the roles would
+ * carry are not drawn. (The layout root also opts the subtree out of the jelly
+ * engine, so nothing is armed to draw them.)
  */
 html .slice-theme :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay),
 html .slice-tokens :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay) {
@@ -182,51 +348,36 @@ html .slice-theme [data-slot='textarea'] {
 /* ─── Material ─────────────────────────────────────────────────────────────
  *
  * Every raised, inset and chrome surface in the game still carries one of the
- * `.neumorphic*` class names — there are hundreds of uses — but they are flat
- * navy panels with a hairline now. Raised = a card (panel + border), inset = a
- * field or a value (darker well + border), chrome = a bar.
+ * `.neumorphic*` class names — there are hundreds of uses — but they are flat,
+ * hard-edged label-black stock with a paper hairline. Raised = a card, inset = a
+ * field or a value, chrome = a bar. The selected state is the cut.
  */
 
-.neumorphic {
+.neumorphic,
+.neumorphic-sm,
+.neumorphic-chip {
   background: var(--slice-card-bg);
   border: 1px solid var(--slice-border);
   box-shadow: none;
-  border-radius: var(--slice-radius);
+  border-radius: 0;
+}
+
+.neumorphic-chip {
+  border-radius: 0;
 }
 
 .neumorphic-inset {
   background: var(--slice-input-bg);
   border: 1px solid var(--slice-input-border);
   box-shadow: none;
-  border-radius: var(--slice-radius);
-}
-
-.neumorphic-sm {
-  background: var(--slice-card-bg);
-  border: 1px solid var(--slice-border);
-  box-shadow: none;
-  border-radius: 8px;
-}
-
-.neumorphic-chip {
-  background: var(--slice-card-bg);
-  border: 1px solid var(--slice-border);
-  box-shadow: none;
-  border-radius: 9999px;
-}
-
-.neumorphic-chrome {
-  background: var(--slice-bg-alt);
-  border-bottom: 1px solid var(--slice-border);
-  box-shadow: none;
   border-radius: 0;
 }
 
-/* A readout over the playfield (score, speed, accuracy): flat navy, a hairline. */
-.slice-hud-card {
-  background: rgba(10, 20, 66, 0.78);
-  border: 1px solid var(--slice-border);
-  border-radius: 8px;
+.neumorphic-chrome {
+  background: var(--slice-label);
+  border-bottom: 1px solid var(--slice-border);
+  box-shadow: none;
+  border-radius: 0;
 }
 
 /* The chart editor's timeline well. */
@@ -234,23 +385,29 @@ html .slice-theme [data-slot='textarea'] {
   background: var(--slice-input-bg);
   border: 1px solid var(--slice-input-border);
   box-shadow: none;
-  border-radius: var(--slice-radius);
+  border-radius: 0;
 }
 
-/* A circle is a shape, not a corner radius: the unlayered radii above would
-   otherwise beat Tailwind's `rounded-full` utility (which lives in a layer). */
+/* A circle is a shape, not a corner radius. */
 .neumorphic.rounded-full,
 .neumorphic-inset.rounded-full,
 .neumorphic-sm.rounded-full {
   border-radius: 9999px;
 }
 
-/* Selected tool / active tab / the open mode: a cyan hairline and a faint glow. */
+/* A readout over the playfield (score, speed, accuracy): label black, a hairline. */
+.slice-hud-card {
+  background: rgba(5, 9, 33, 0.82);
+  border: 1px solid var(--slice-border);
+  border-radius: 0;
+}
+
+/* Selected tool / active tab / the open mode: cyan ink. */
 .neumorphic-active {
-  color: var(--slice-primary);
-  border-color: rgba(24, 182, 255, 0.7);
-  background: color-mix(in srgb, var(--slice-primary) 10%, var(--slice-card-bg));
-  box-shadow: 0 0 10px rgba(24, 182, 255, 0.22);
+  background: var(--slice-primary);
+  border-color: var(--slice-primary);
+  color: var(--slice-label);
+  box-shadow: none;
 }
 
 .neumorphic,
@@ -259,81 +416,32 @@ html .slice-theme [data-slot='textarea'] {
 .neumorphic-chrome,
 .neumorphic-inset,
 .neumorphic-active {
-  transition:
-    border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
-    color 160ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: none;
 }
 
-/* Interactive panels light their hairline on hover. */
+/* Interactive panels invert to paper on hover: instant, like a press. */
 button.neumorphic:hover,
 button.neumorphic-sm:hover,
 a.neumorphic:hover,
 a.neumorphic-sm:hover,
 .neumorphic[role='button']:hover {
-  background: var(--slice-surface-hover);
-  border-color: rgba(24, 182, 255, 0.6);
+  background: var(--slice-paper);
+  color: var(--slice-bg);
+  border-color: var(--slice-paper);
 }
 
 .soft-glow-text {
-  text-shadow: 0 0 10px currentColor;
+  text-shadow: 2px 2px 0 var(--slice-accent);
 }
 
 @keyframes combo-bounce {
   0% {
-    transform: scale(1.4);
-  }
-
-  50% {
-    transform: scale(0.95);
+    transform: scale(1.25);
   }
 
   100% {
     transform: scale(1);
   }
-}
-
-/* ─── Small print ──────────────────────────────────────────────────────────
- *
- * The key art sets its labels in a monospace ("RMH-050", "33 1/3 RPM / SIDE A",
- * "A1 DOWNBEAT"). The same voice here: short, literal, spaced.
- */
-.slice-label {
-  font-family: var(--slice-mono);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--slice-text-muted);
-}
-
-.slice-figure {
-  font-family: var(--slice-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.slice-display {
-  font-family: var(--slice-display);
-  letter-spacing: 0.04em;
-}
-
-/* The slash: the one motif on the key art. A hairline that runs cyan into pink,
-   used as the rule under a header and between sections. */
-.slice-slash {
-  display: block;
-  height: 2px;
-  border: 0;
-  background: linear-gradient(
-    100deg,
-    var(--slice-primary) 0%,
-    var(--slice-primary) 46%,
-    #ffffff 50%,
-    var(--slice-accent) 54%,
-    var(--slice-accent) 100%
-  );
-  opacity: 0.9;
 }
 
 /* ─── Shared controls ──────────────────────────────────────────────────────
@@ -344,25 +452,37 @@ a.neumorphic-sm:hover,
  * a theme for exactly this.
  */
 .slice-theme [data-slot='slider-track'] {
-  background: var(--slice-input-bg);
+  background-color: var(--slice-input-bg);
+  background-image: repeating-linear-gradient(-8deg, rgba(45, 179, 240, 0.6) 0 1px, transparent 1px 5px);
   border: 1px solid var(--slice-input-border);
   box-shadow: none;
+  border-radius: 0;
 }
 
 .slice-theme [data-slot='slider-range'] {
-  background: linear-gradient(90deg, var(--slice-primary), var(--slice-accent));
+  background: var(--slice-primary);
+  border-radius: 0;
 }
 
+/* The thumb is the needle: a paper bar. */
 .slice-theme [data-slot='slider-thumb'] {
-  background: var(--slice-text);
-  border-color: var(--slice-primary);
-  box-shadow: 0 0 8px rgba(24, 182, 255, 0.5);
+  width: 4px;
+  height: 22px;
+  border: 0;
+  border-radius: 0;
+  background: var(--slice-paper);
+  box-shadow: none;
 }
 
 .slice-theme [data-slot='liquid-tabs'] {
   --tab-thumb-bg: var(--slice-primary);
-  --tab-thumb-ink: #04112b;
+  --tab-thumb-ink: var(--slice-label);
   --tab-thumb-border: var(--slice-primary);
+}
+
+/* A switch is a slide: a hairline box and a square knob. */
+.slice-theme [data-slot='switch'] {
+  border-radius: 0;
 }
 
 .slice-theme [data-slot='switch'][aria-checked='true'] {
@@ -371,24 +491,26 @@ a.neumorphic-sm:hover,
 }
 
 .slice-theme [data-slot='switch'][aria-checked='true'] > span {
-  background-color: #04112b;
+  background-color: var(--slice-label);
+  border-radius: 0;
 }
 
 .slice-theme [data-slot='switch'][aria-checked='false'] {
-  background-color: var(--slice-input-bg);
-  border-color: var(--slice-input-border);
+  background-color: transparent;
+  border-color: var(--slice-paper);
   box-shadow: none;
 }
 
 .slice-theme [data-slot='switch'][aria-checked='false'] > span {
-  background-color: var(--slice-text-muted);
+  background-color: var(--slice-paper);
+  border-radius: 0;
 }
 
-/* The shape of content that has not arrived: a well with a sheen across it. */
+/* The shape of content that has not arrived: a well with a sweep across it. */
 .slice-skeleton {
   position: relative;
   overflow: hidden;
-  border-radius: var(--slice-radius);
+  border-radius: 0;
   background: var(--slice-input-bg);
   border: 1px solid var(--slice-input-border);
 }
@@ -398,13 +520,8 @@ a.neumorphic-sm:hover,
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--slice-primary) 14%, transparent),
-    transparent
-  );
-  animation: slice-skeleton-sheen 1.6s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, rgba(240, 241, 246, 0.08), transparent);
+  animation: slice-skeleton-sheen 1.6s linear infinite;
 }
 
 @keyframes slice-skeleton-sheen {

@@ -1190,14 +1190,14 @@ function ModifierPanel({
       key: 'normal',
       label: t('normal', { defaultValue: 'Normal' }),
       notes: '100%',
-      color: '#18b6ff',
+      color: '#2db3f0',
     },
     { key: 'hard', label: t('hard', { defaultValue: 'Hard' }), notes: '150%', color: '#f97316' },
     {
       key: 'expert',
       label: t('expert', { defaultValue: 'Expert' }),
       notes: '200%',
-      color: '#ff3d5c',
+      color: '#f4509f',
     },
   ] as const;
 

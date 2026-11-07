@@ -1,36 +1,41 @@
 {
   "id": "slice-it",
-  "mood": "Sharp and rhythmic: glowing lanes, a laser slash and music you can see.",
+  "mood": "A record you cut: a printed sleeve, liner notes, two inks and a diagonal slice.",
+  "concept": "The interface is the sleeve, label and liner notes of the pressing on the key art. Everything is a print in two spot inks on dark stock with paper-white type; depth is overprint and a hard offset, never light.",
   "palette": {
-    "bg": "#040818",
-    "bgAlt": "#0A1442",
-    "surface": "#0C1640",
-    "surfaceHover": "#12235C",
-    "ink": "#EAF6FF",
-    "inkMuted": "#8EB4D8",
-    "accent": "#18B6FF",
-    "accent2": "#FF3D8B",
-    "danger": "#FF3D5C",
-    "border": "#1D3F8A"
+    "ink": "#0B1241",
+    "label": "#050921",
+    "cyan": "#2DB3F0",
+    "pink": "#F4509F",
+    "paper": "#F0F1F6",
+    "smallPrint": "#8F9AC9",
+    "rule": "rgba(240,241,246,0.28)"
+  },
+  "roles": {
+    "cyan": "side A, the top lane, selected, the player",
+    "pink": "side B, the bottom lane, the record, danger",
+    "paper": "all type, the primary button, hover",
+    "label": "wells, fields, the sleeve box"
   },
   "fonts": {
-    "display": "Audiowide",
-    "body": "Jost",
-    "mono": "IBM Plex Mono"
+    "display": "Archivo (width 125, weight 900, capitals)",
+    "accent": "Bodoni Moda Italic (one word at a time)",
+    "mono": "IBM Plex Mono (every number, label and catalogue line)"
   },
   "shape": {
-    "radius": "10px",
-    "borderStyle": "1px solid cyan at 60% with a soft glow",
-    "texture": "equalizer bars along the horizon"
+    "radius": "0",
+    "borderStyle": "1px paper hairline at 28%; the primary button's right edge is the cut",
+    "texture": "line screen, halftone dots, grain; misregistration by hard offset"
   },
   "motifs": [
-    "three-lane runway",
-    "pink laser slash",
-    "split glowing blocks",
-    "equalizer bars",
-    "cyan neon"
+    "the slice (a diagonal cut, eight degrees, a hairline gap)",
+    "45 rpm discs as notes",
+    "the sleeve's printed track box (A1 Library, A2 Daily, B1 Setlists, B2 Versus)",
+    "catalogue numbers and sides",
+    "stamps"
   ],
-  "buttonStyle": "Primary is a cyan neon-outline button with white Audiowide text that fills pink-to-cyan on hover; secondary is a dark button with a pink hairline.",
-  "backdrop": "Navy gradient with a perspective runway whose lane lines scroll toward the viewer slowly, and two rows of equalizer bars gently easing in height (opacity/transform, under 1 Hz).",
-  "motion": "Gentle, slow drifts only; nothing flashes or pulses faster than once per second (WCAG 2.3.1), and all ambient motion stops when the user picks reduced motion."
+  "buttonStyle": "Primary is a paper slab with the cut as its right edge, inverting to cyan on hover; secondary is outlined in paper and inverts on hover. No radius, no glow.",
+  "backdrop": "Flat ink with grain. No runway, no equalizer bars, no gradient wash.",
+  "motion": "Mechanical: stepped and short. Hover is an instant invert, a selection cuts in 180 ms, screens change with a wipe along the slice line. A hit slices the note in two and the halves slide apart; nothing flashes. Ambient motion is a single slow groove drift that stops when the tab is hidden.",
+  "notThis": "Neon outlines, glow, glass, equalizer bars, perspective runways, rounded pill cards, gradient buttons, sparkles."
 }
