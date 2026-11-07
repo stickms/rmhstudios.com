@@ -47,6 +47,15 @@ export const Route = createFileRoute('/api/moderation/block')({
             return Response.json({ success: true, blocked: false });
           }
 
+          // Admins cannot be blocked (an existing block can still be lifted above).
+          const target = await prisma.user.findUnique({
+            where: { id: blockedId },
+            select: { isAdmin: true },
+          });
+          if (target?.isAdmin) {
+            return Response.json({ error: 'You cannot block an admin' }, { status: 403 });
+          }
+
           // Create the block and tear down follows both ways in one transaction.
           await prisma.$transaction([
             prisma.userBlock.create({ data: { blockerId, blockedId } }),

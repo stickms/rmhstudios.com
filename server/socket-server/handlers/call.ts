@@ -108,6 +108,13 @@ async function loadCallPermission(
 ): Promise<{ allowed: true } | { allowed: false; reason: CallRejectReason }> {
   const prisma = getPrismaClient();
 
+  // Admins may call anybody: no block, privacy or follow requirement applies.
+  const caller = await prisma.user.findUnique({
+    where: { id: callerId },
+    select: { isAdmin: true },
+  });
+  if (caller?.isAdmin) return { allowed: true };
+
   const [block, prefs, follow] = await Promise.all([
     // Either direction bars the call.
     prisma.userBlock.findFirst({
