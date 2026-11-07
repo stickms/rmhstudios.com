@@ -30,6 +30,13 @@ import {
   DEFAULT_CALL_PRIVACY,
   type CallPrivacy,
 } from '../../../lib/call/state';
+import {
+  DEFAULT_CALL_ANSWER_MODE,
+  isCallAnswerMode,
+  ringsPhone,
+  type CallAnswerMode,
+} from '../../../lib/call/answer';
+import { requestCallAutoReply } from '../call-auto-reply';
 
 /** A call in flight, keyed by callId. Ephemeral by design — a restart drops
  *  live calls, and the peers notice through ICE rather than through us. */
@@ -111,7 +118,9 @@ function endCall(io: Server, call: LiveCall, reason: CallEndReason): void {
 async function loadCallPermission(
   callerId: string,
   calleeId: string,
-): Promise<{ allowed: true } | { allowed: false; reason: CallRejectReason }> {
+): Promise<
+  { allowed: true; answerMode: CallAnswerMode } | { allowed: false; reason: CallRejectReason }
+> {
   const prisma = getPrismaClient();
 
   const [block, prefs, calleeFollow, callerFollow, caller, mute] = await Promise.all([
@@ -127,7 +136,7 @@ async function loadCallPermission(
     }),
     prisma.notificationPreference.findUnique({
       where: { userId: calleeId },
-      select: { callPrivacy: true },
+      select: { callPrivacy: true, callAnswerMode: true },
     }),
     // Does the CALLEE follow the CALLER? Permission is granted by the person
     // being called, never claimed by the caller.
@@ -148,7 +157,12 @@ async function loadCallPermission(
       select: { id: true },
     }),
   ]);
-  if (caller?.isAdmin) return { allowed: true };
+  // How the callee wants calls answered applies to everyone, admins included:
+  // "do not ring me" is not a privacy rule an admin is exempt from.
+  const answerMode = isCallAnswerMode(prefs?.callAnswerMode)
+    ? prefs.callAnswerMode
+    : DEFAULT_CALL_ANSWER_MODE;
+  if (caller?.isAdmin) return { allowed: true, answerMode };
 
   const raw = prefs?.callPrivacy;
   const privacy: CallPrivacy = isCallPrivacy(raw) ? raw : DEFAULT_CALL_PRIVACY;
@@ -160,7 +174,9 @@ async function loadCallPermission(
     calleeFollowsCaller: Boolean(calleeFollow),
     callerFollowsCallee: Boolean(callerFollow),
   });
-  return verdict.allowed ? { allowed: true } : { allowed: false, reason: verdict.reason };
+  return verdict.allowed
+    ? { allowed: true, answerMode }
+    : { allowed: false, reason: verdict.reason };
 }
 
 export function registerCallHandlers(io: Server, socket: Socket): void {
@@ -188,7 +204,12 @@ export function registerCallHandlers(io: Server, socket: Socket): void {
     // shared registry rather than `byUser` so a person standing in a group
     // voice room counts as busy here too — one microphone, one call.
     if (getBusy(callerId)) return reject('busy');
-    if (getBusy(calleeId)) return reject('busy');
+    if (getBusy(calleeId)) {
+      // The web tier decides whether this callee wants a reply and whether this
+      // caller may have one; the hub only reports that the call could not ring.
+      requestCallAutoReply({ callerId, calleeId, trigger: 'busy' });
+      return reject('busy');
+    }
 
     let permission;
     try {
@@ -201,6 +222,14 @@ export function registerCallHandlers(io: Server, socket: Socket): void {
       // 'blocked' and 'privacy' are reported to the caller identically as a
       // refusal by the client, so a block cannot be probed for.
       return reject(permission.reason);
+    }
+
+    // "Don't ring me, message them instead." Checked after permission so a person
+    // who may not call at all is refused exactly as before and never answered.
+    // The caller is told the callee is unavailable, which is true.
+    if (!ringsPhone(permission.answerMode)) {
+      requestCallAutoReply({ callerId, calleeId, trigger: 'unavailable' });
+      return reject('offline');
     }
 
     // Is anyone actually there? A call to a closed tab should say so rather
@@ -252,7 +281,14 @@ export function registerCallHandlers(io: Server, socket: Socket): void {
     // cannot ring someone indefinitely.
     call.ringTimer = setTimeout(() => {
       const live = calls.get(call.id);
-      if (live) endCall(io, live, 'missed');
+      if (live) {
+        endCall(io, live, 'missed');
+        requestCallAutoReply({
+          callerId: live.callerId,
+          calleeId: live.calleeId,
+          trigger: 'missed',
+        });
+      }
     }, RING_TIMEOUT_MS);
     calls.set(call.id, call);
     byUser.set(callerId, call.id);
