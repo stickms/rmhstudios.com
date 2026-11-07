@@ -11,6 +11,8 @@ import { sanitizeFighterModelId } from '@/lib/kowloon-knockout/render/fighter/mo
 import FighterTrappings from './FighterTrappings';
 import StickFighter from './StickFighter';
 import SkeletalFighter from './SkeletalFighter';
+import SourceFighter from './SourceFighter';
+import { clearSourceModel } from '@/lib/kowloon-knockout/render/fighter/sourceModels';
 
 type FramesRef = MutableRefObject<RenderFighter[]>;
 
@@ -64,8 +66,8 @@ function LoadingPlaceholder({ seat, framesRef }: { seat: number; framesRef: Fram
     );
 }
 
-/** Per-seat fighter. The animated skeletal fighter on every tier; the procedural
- *  StickFighter only if the animated renderers could not load at all. */
+/** Per-seat fighter: the seat's chosen Source model, else the animated Y-Bot (also
+ *  the fallback if that model cannot load); the procedural StickFighter only if both fail. */
 export default function Fighter({ seat, framesRef }: { seat: number; framesRef: FramesRef }) {
     const modelId = sanitizeFighterModelId(framesRef.current.find((f) => f.seat === seat)?.modelId);
     const [failed, setFailed] = useState<FighterFailures>({ source: false, skeletal: false });
@@ -76,6 +78,19 @@ export default function Fighter({ seat, framesRef }: { seat: number; framesRef: 
     const placeholder = <LoadingPlaceholder seat={seat} framesRef={framesRef} />;
 
     if (view === 'stick') return <StickFighter seat={seat} framesRef={framesRef} />;
+    if (view === 'source') {
+        return (
+            <FighterBoundary
+                key={`source-${modelId}`}
+                onFail={() => setFailed((f) => ({ ...f, source: true }))}
+                onRetryReset={() => clearSourceModel(modelId)}
+            >
+                <Suspense fallback={placeholder}>
+                    <SourceFighter seat={seat} framesRef={framesRef} modelId={modelId} />
+                </Suspense>
+            </FighterBoundary>
+        );
+    }
     return (
         <FighterBoundary
             key="skeletal"
