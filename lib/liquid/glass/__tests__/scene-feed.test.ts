@@ -7,6 +7,8 @@
  * (the capture itself is `scene.ts`'s concern, not the feed's).
  */
 // @vitest-environment node
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { SceneOptions, SceneShot } from '../scene';
@@ -151,6 +153,25 @@ describe('acquireSceneFeed', () => {
     c.release();
   });
 
+  it('a globe mounting and unmounting under a long-lived share neither disposes nor clears the scene', () => {
+    // The shell's share (RadialShell) lives for the whole page; the hub's globe takes and gives back its own.
+    const shell = acquireSceneFeed(asDoc());
+    for (let i = 0; i < 3; i++) {
+      const globe = acquireSceneFeed(asDoc());
+      globe.release();
+    }
+    expect(createSceneProvider).toHaveBeenCalledTimes(1);
+    expect(calls).not.toContain('dispose');
+    expect(clearScene).not.toHaveBeenCalled();
+    // The picture must stay owed across those mounts: the provider still answers requests.
+    calls.length = 0;
+    shell.request('route');
+    expect(calls).toEqual(['reset', 'request:route']);
+    shell.release();
+    expect(calls).toContain('dispose');
+    expect(clearScene).toHaveBeenCalledTimes(1);
+  });
+
   it('publishes each shot to the scene store, then closes the bitmap', async () => {
     const feed = acquireSceneFeed(asDoc());
     const order: string[] = [];
@@ -227,5 +248,27 @@ describe('acquireSceneFeed', () => {
     env.media.print = false;
     expect(can()).toBe(true);
     feed.release();
+  });
+});
+
+/**
+ * Who holds the long-lived share. A capture is refused while the hub is open, so a feed that lives only while a globe
+ * is mounted never gets a picture for the hub's globe (it mounts with the hub). The shell holds a share for its whole
+ * lifetime; the globe only reads the store (`onSceneChange` / `currentScene`).
+ */
+describe('scene feed ownership', () => {
+  const source = (file: string) => readFileSync(join(process.cwd(), file), 'utf8');
+
+  it('RadialShell acquires the feed, releases it, and forwards route changes', () => {
+    const shell = source('components/radial/RadialShell.tsx');
+    expect(shell).toMatch(/acquireSceneFeed\(\)/);
+    expect(shell).toMatch(/\.release\(\)/);
+    expect(shell).toMatch(/\.request\('route'\)/);
+  });
+
+  it('LiquidGlobe does not own the feed: it reads the scene store only', () => {
+    const globe = source('components/radial/LiquidGlobe.tsx');
+    expect(globe).not.toMatch(/acquireSceneFeed/);
+    expect(globe).toMatch(/onSceneChange\(refreshScene\)/);
   });
 });
