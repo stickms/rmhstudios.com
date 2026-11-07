@@ -58,17 +58,17 @@ import {
 } from '@/lib/slice-it/constants';
 import { judge } from '@/lib/slice-it/scoring';
 
-// Neumorphic Palette (dark-mode-aware colors are read from CSS vars at render time)
+// Fallback palette (the live colours are read from the lane palette and the --slice-* tokens at render time)
 const COLORS = {
-  lane1: '#3b82f6', // Blue
-  lane2: '#f472b6', // Pink
-  grid: '#cbd5e0',
-  bomb: '#ef4444',
+  lane1: '#18b6ff', // Cyan
+  lane2: '#ff3d8b', // Pink
+  grid: '#2a4aa3',
+  bomb: '#ffd23d',
   slice: {
     SPEED: '#a78bfa',
     MOVING: '#facc15',
     SILENT: '#94a3b8',
-    BOMB: '#ef4444',
+    BOMB: '#ffd23d',
     DEFAULT: 'var(--slice-shadow-light)',
   },
 };
@@ -367,8 +367,9 @@ function drawShadowedNote(
 let troughLayer: { key: string; canvas: HTMLCanvasElement } | null = null;
 
 /**
- * The neumorphic troughs for every lane, blurred once. Returns null if a 2D
- * context cannot be had, in which case the caller draws them the slow way.
+ * The lane troughs: a flat navy band with a hairline on each edge, drawn once and
+ * reused every frame. No blur — the look is the scheme's flat panel, not a raised
+ * surface — so it costs one `drawImage`.
  */
 function getTroughLayer(options: {
   W: number;
@@ -378,12 +379,10 @@ function getTroughLayer(options: {
   lanes: readonly number[];
   thickness: number;
   fill: string;
-  dark: string;
-  light: string;
-  glow: number;
+  edge: string;
 }): HTMLCanvasElement | null {
-  const { W, H, dpr, vertical, lanes, thickness, fill, dark, light, glow } = options;
-  const key = `${W}x${H}|${dpr}|${vertical}|${lanes.join(',')}|${thickness}|${fill}|${dark}|${light}|${glow}`;
+  const { W, H, dpr, vertical, lanes, thickness, fill, edge } = options;
+  const key = `${W}x${H}|${dpr}|${vertical}|${lanes.join(',')}|${thickness}|${fill}|${edge}`;
   if (troughLayer?.key === key) return troughLayer.canvas;
 
   const canvas = troughLayer?.canvas ?? document.createElement('canvas');
@@ -394,22 +393,24 @@ function getTroughLayer(options: {
   c.scale(dpr, dpr);
   const w = W / dpr;
   const h = H / dpr;
-  const lift = glow * 3;
-  c.fillStyle = fill;
+  const hair = 1 / dpr;
   for (const lane of lanes) {
     const x = vertical ? lane - thickness / 2 : 0;
     const y = vertical ? 0 : lane - thickness / 2;
     const rw = vertical ? thickness : w;
     const rh = vertical ? h : thickness;
-    c.shadowColor = dark;
-    c.shadowBlur = glow * 10;
-    c.shadowOffsetX = lift;
-    c.shadowOffsetY = lift;
+    c.globalAlpha = 0.7;
+    c.fillStyle = fill;
     c.fillRect(x, y, rw, rh);
-    c.shadowColor = light;
-    c.shadowOffsetX = -lift;
-    c.shadowOffsetY = -lift;
-    c.fillRect(x, y, rw, rh);
+    c.globalAlpha = 1;
+    c.fillStyle = edge;
+    if (vertical) {
+      c.fillRect(x, y, hair, rh);
+      c.fillRect(x + rw - hair, y, hair, rh);
+    } else {
+      c.fillRect(x, y, rw, hair);
+      c.fillRect(x, y + rh - hair, rw, hair);
+    }
   }
   troughLayer = { key, canvas };
   return canvas;
@@ -474,32 +475,6 @@ function traceNoteBody(
       ctx.roundRect(cx - half, cy - half, size, size, 9);
       break;
   }
-}
-
-/** A note body's bevel and under-edge, derived from its own colour. */
-interface NoteShades {
-  bevel: string;
-  shade: string;
-}
-
-/**
- * The two derived tones for a note colour, memoised by colour.
- *
- * `interpolateHex` builds strings, and the draw loop touches every visible note
- * every frame. The set of note colours is tiny and fixed (two lane colours, the
- * type colours, the bomb) so a `Map` converges after one frame and the hot path
- * is a lookup. Not an LRU on purpose: an unbounded cache over a bounded key
- * space is just a table.
- */
-function noteShades(cache: Map<string, NoteShades>, color: string): NoteShades {
-  const hit = cache.get(color);
-  if (hit) return hit;
-  const shades: NoteShades = {
-    bevel: interpolateHex(color, '#ffffff', 0.45),
-    shade: interpolateHex(color, '#000000', 0.45),
-  };
-  cache.set(color, shades);
-  return shades;
 }
 
 /**
@@ -644,7 +619,7 @@ interface BackdropCache {
   auroraB: CanvasGradient | null;
   /** Per-bar peaks, refilled in place every frame. */
   bars: Float32Array;
-  /** Danger-greyed lane colours, keyed `${hex}:${step}`. See `noteShades`. */
+  /** Danger-greyed lane colours, keyed `${hex}:${step}`. */
   tint: Map<string, string>;
 }
 
@@ -679,7 +654,7 @@ interface MapWithEnvelope extends BeatMap {
 }
 
 /**
- * The colour a backdrop actually draws in. Memoised like `noteShades`.
+ * The colour a backdrop actually draws in. Memoised per colour.
  *
  * Two corrections on the lane colour, both of which change only when something
  * a player did changes — the theme, or eight steps of health — so the whole set
@@ -964,8 +939,8 @@ export function GameCanvas() {
   const readTheme = (canvas: HTMLCanvasElement) => {
     const cs = getComputedStyle(canvas);
     const v = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
-    const holdTrail = v('--slice-hold-trail', 'rgba(255, 255, 255, 0.5)');
-    const bg = v('--slice-bg', '#e0e5ec');
+    const holdTrail = v('--slice-hold-trail', 'rgba(234, 246, 255, 0.5)');
+    const bg = v('--slice-bg', '#040818');
     // V7 — whether the playfield is a light one, which decides whether the
     // backdrop lights it or shades it (see `backdropInk`). Resolved from the
     // background's own luminance rather than from the store's `isDarkMode`,
@@ -985,17 +960,19 @@ export function GameCanvas() {
       // MutationObserver below re-reads it when `perf-lite` is toggled.
       glow: canvasGlowEnabled(),
       bg,
-      shadowDark: v('--slice-shadow-dark', '#a3b1c6'),
-      shadowLight: v('--slice-shadow-light', '#ffffff'),
-      textColor: v('--slice-text-muted', '#64748b'),
-      textShadowColor: v('--slice-text-shadow', 'rgba(0,0,0,0.3)'),
-      rail: v('--slice-rail', '#cbd5e0'),
-      noteShadow: v('--slice-note-shadow', 'rgba(163, 177, 198, 0.6)'),
+      bgAlt: v('--slice-bg-alt', '#0a1442'),
+      border: v('--slice-border', '#1d3f8a'),
+      shadowDark: v('--slice-shadow-dark', 'rgba(2, 4, 15, 0.78)'),
+      shadowLight: v('--slice-shadow-light', 'rgba(24, 182, 255, 0.07)'),
+      textColor: v('--slice-text-muted', '#8eb4d8'),
+      textShadowColor: v('--slice-text-shadow', 'rgba(24,182,255,0.35)'),
+      rail: v('--slice-rail', '#2a4aa3'),
+      noteShadow: v('--slice-note-shadow', 'rgba(2, 4, 15, 0.7)'),
       // As `r, g, b` so the vignette gradient can build a matching fully
       // transparent stop. Interpolating to the `transparent` keyword instead
       // fades toward transparent BLACK, which tints the mid-stops on any
       // theme whose vignette colour is not already black.
-      vignetteRgb: rgbTriplet(v('--slice-vignette', '#64748b'), '100, 116, 139'),
+      vignetteRgb: rgbTriplet(v('--slice-vignette', '#000000'), '0, 0, 0'),
       holdTrail,
       // The held-note variant is a fixed transform of the same colour — compute
       // it with the cache rather than re-running the regex per note per frame.
@@ -1003,8 +980,8 @@ export function GameCanvas() {
     };
   };
 
-  // DarkModeWrapper toggles `.dark` on <html>, which is what re-resolves the
-  // scoped `--slice-*` values. Drop the cache when that happens (and on unmount).
+  // Drop the cached theme when `perf-lite` or the root classes change (and on
+  // unmount); the `--slice-*` values themselves are fixed.
   useEffect(() => {
     const observer = new MutationObserver(() => {
       themeRef.current = null;
@@ -1823,8 +1800,6 @@ export function GameCanvas() {
     vignette: CanvasGradient | null;
   }>({ w: 0, h: 0, vignette: null });
 
-  /** Derived note tones, keyed by note colour. See `noteShades`. */
-  const noteShadesRef = useRef<Map<string, NoteShades>>(new Map());
 
   /**
    * V7 — the smoothed loudness the backdrop is drawn at, 0–1, and everything
@@ -2095,71 +2070,27 @@ export function GameCanvas() {
       ctx.restore();
     }
 
-    // 1. Draw Tracks (Neumorphic Trough)
     const { shadowDark, shadowLight } = theme;
-    // The blurred troughs are the same every frame, so they are blurred once (see
-    // "Cached blur layers") and drawn here; the per-lane loop below then only
-    // draws the rails.
-    const troughSprite = glow
-      ? getTroughLayer({
-          W,
-          H,
-          dpr,
-          vertical: isMobileV,
-          lanes: LANE_POS,
-          thickness: BAR_H * 1.5,
-          fill: bgColor,
-          dark: shadowDark,
-          light: shadowLight,
-          glow,
-        })
-      : null;
+    // 1. Draw Tracks: a flat band per lane with a hairline on each edge, drawn once
+    // into a cached layer and blitted here. The per-lane loop below draws the rails.
+    const troughSprite = getTroughLayer({
+      W,
+      H,
+      dpr,
+      vertical: isMobileV,
+      lanes: LANE_POS,
+      thickness: BAR_H * 1.5,
+      fill: theme.bgAlt,
+      edge: theme.border,
+    });
     if (troughSprite) ctx.drawImage(troughSprite, 0, 0, w, h);
     LANE_POS.forEach((laneVal, i) => {
-      const trackThickness = BAR_H * 1.5;
       // V13 — the rail's own colour, which is what saturates with combo. The
       // lane palette rather than a new colour of its own: `palettes.ts` is the
       // thing that keeps this game legible to a colour-blind player, and a
       // decoration that introduces a hue outside it would be the one part of
       // the playfield that ignores the setting.
       const railColor = isOneTrack ? laneA : laneColor(palette, i);
-
-      // The trough's offsets are gated on `glow` alongside its blur, for the
-      // same reason the notes' are: `shadowBlur: 0` with a live offset still
-      // paints a hard-edged copy, so on `perf-lite` and under reduced motion
-      // each lane was drawing two crisp duplicate bars 6px apart instead of
-      // one flat trough. The comment on `glow` above claimed "offsets are
-      // always 0 here" — this is the code that made that untrue.
-      const troughLift = glow * 3;
-      if (!troughSprite) {
-        if (isMobileV) {
-          // Vertical tracks running top-to-bottom
-          ctx.shadowColor = shadowDark;
-          ctx.shadowBlur = glow * 10;
-          ctx.shadowOffsetX = troughLift;
-          ctx.shadowOffsetY = troughLift;
-          ctx.fillStyle = bgColor;
-          ctx.fillRect(laneVal - trackThickness / 2, 0, trackThickness, h);
-          ctx.shadowColor = shadowLight;
-          ctx.shadowBlur = glow * 10;
-          ctx.shadowOffsetX = -troughLift;
-          ctx.shadowOffsetY = -troughLift;
-          ctx.fillRect(laneVal - trackThickness / 2, 0, trackThickness, h);
-        } else {
-          // Horizontal tracks running left-to-right (desktop)
-          ctx.shadowColor = shadowDark;
-          ctx.shadowBlur = glow * 10;
-          ctx.shadowOffsetX = troughLift;
-          ctx.shadowOffsetY = troughLift;
-          ctx.fillStyle = bgColor;
-          ctx.fillRect(0, laneVal - trackThickness / 2, w, trackThickness);
-          ctx.shadowColor = shadowLight;
-          ctx.shadowBlur = glow * 10;
-          ctx.shadowOffsetX = -troughLift;
-          ctx.shadowOffsetY = -troughLift;
-          ctx.fillRect(0, laneVal - trackThickness / 2, w, trackThickness);
-        }
-      }
 
       // The rail line, and V13's glow along it.
       //
@@ -2630,7 +2561,6 @@ export function GameCanvas() {
           // would mean a `createLinearGradient` per note per frame, which is
           // the one allocation the draw loop cannot have.
           const size = BAR_H;
-          const shades = noteShades(noteShadesRef.current, color);
 
           // V13 — the energy trail. Behind the note, in the direction it came
           // from, lengthening with the streak. This is the note-level half of
@@ -2663,33 +2593,17 @@ export function GameCanvas() {
             ctx.restore();
           }
 
-          // ── The neumorphic extrusion ─────────────────────────────────────
+          // ── The body ─────────────────────────────────────────────────────
           //
-          // The note is RAISED out of the trough it travels in, in the same
-          // language the trough and the receptors already speak: one light
-          // source at the top-left, a light shadow on that side and a dark one
-          // opposite. `.neumorphic` in slice-it.css is the same pair of offsets.
-          //
-          // A single drop shadow — what this had before the restyle — reads as
-          // a sticker lying ON the playfield rather than an object standing out
-          // of it, and it was the one thing on screen lit from a different
-          // direction than everything around it.
-          //
-          // `skin.neumorphic` can turn it off, and that is a stated flat look
-          // rather than a broken one — which is exactly why `Skin` carries the
-          // flag instead of the renderer guessing from the shape.
-          //
-          // The offset is gated on `glow` as well as the blur. A canvas shadow
-          // with `shadowBlur: 0` and a NON-zero offset still draws — as a hard
-          // edged copy of the shape. Zeroing only the blur (which is what the
-          // rest of this renderer does) would hand `perf-lite` and reduced
-          // motion two crisp duplicates per note instead of one calm note.
-          const lift = glow && skin.neumorphic ? Math.max(2, size * 0.1) : 0;
+          // A flat note in its lane colour with a soft halo of that same colour
+          // and a thin light rim — the scheme's neon, not a raised surface. The
+          // halo is the only blur on a note, and it comes from one cached sprite
+          // per colour (see "Cached blur layers"), so a busy chart costs a
+          // `drawImage` per note rather than a blur. With `glow` off (perf-lite)
+          // there is no halo, just the body and the rim.
           ctx.save();
           ctx.fillStyle = color;
           if (glow > 0) {
-            // Both shadow passes (or the single base shadow on a flat skin) come
-            // from one cached sprite — see "Cached blur layers".
             drawShadowedNote(
               ctx,
               skin.noteShape,
@@ -2698,53 +2612,19 @@ export function GameCanvas() {
               size,
               isMobileV,
               color,
-              lift > 0
-                ? [
-                    { color: shadowDark, blur: glow * 9, dx: lift, dy: lift },
-                    { color: shadowLight, blur: glow * 9, dx: -lift, dy: -lift },
-                  ]
-                : [{ color: theme.noteShadow, blur: glow * 8, dx: 4, dy: 4 }],
+              [{ color, blur: glow * 9, dx: 0, dy: 0 }],
               dpr,
             );
           } else {
             traceNoteBody(ctx, skin.noteShape, nx, ny, size, isMobileV);
             ctx.fill();
           }
+          ctx.shadowColor = 'transparent';
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+          ctx.lineWidth = 1.25;
+          traceNoteBody(ctx, skin.noteShape, nx, ny, size, isMobileV);
+          ctx.stroke();
           ctx.restore();
-
-          // ── The rim that actually makes it read as raised ────────────────
-          //
-          // The dual shadow above is the game's neumorphic language, and on a
-          // COLOURED object it is nearly all it can do: `.neumorphic` works
-          // because the surface is the same colour as the ground behind it, so
-          // the shadows are the entire effect. A note is not — and in the dark
-          // theme `--slice-shadow-light` (#222228) sits so close to
-          // `--slice-bg` (#16161a) that the lit side had nothing to show.
-          //
-          // So the extrusion is carried by the note's OWN tones: the same
-          // shape drawn three times, lit tone at full size, shade offset down
-          // the light axis, and the body inset over both. What is left visible
-          // is a thick lit rim at the top-left and a shaded one at the
-          // bottom-right — one light source, the same one the trough uses.
-          //
-          // Three solid fills of a path already being traced; no gradient (a
-          // `createLinearGradient` per note per frame is the one allocation
-          // this loop cannot have) and no per-shape special-casing.
-          if (skin.neumorphic) {
-            const relief = Math.max(1.5, size * 0.07);
-            ctx.save();
-            ctx.shadowColor = 'transparent';
-            ctx.fillStyle = shades.bevel;
-            traceNoteBody(ctx, skin.noteShape, nx, ny, size, isMobileV);
-            ctx.fill();
-            ctx.fillStyle = shades.shade;
-            traceNoteBody(ctx, skin.noteShape, nx + relief, ny + relief, size, isMobileV);
-            ctx.fill();
-            ctx.fillStyle = color;
-            traceNoteBody(ctx, skin.noteShape, nx, ny, size - relief * 2.2, isMobileV);
-            ctx.fill();
-            ctx.restore();
-          }
 
           // ── The rhythm ───────────────────────────────────────────────────
           //

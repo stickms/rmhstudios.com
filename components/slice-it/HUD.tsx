@@ -152,16 +152,16 @@ export function HUD({ engine }: HUDProps) {
               here is what lets the accuracy row below collapse to a single
               line, which is a line of height the progress bar was being pushed
               down by. */}
-          <div className="bg-slice-bg shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] rounded-2xl px-4 py-2">
-            <div className="text-[10px] sm:text-xs text-slice-text-muted uppercase tracking-wider font-bold leading-none mb-1">
+          <div className="slice-hud-card px-3 py-1.5">
+            <div className="slice-label mb-1">
               {t('score-hud', { defaultValue: 'Score' })}
             </div>
             <div className="flex items-baseline gap-2.5">
-              <span className="text-xl sm:text-2xl font-bold text-slice-text leading-tight tabular-nums">
+              <span className="slice-figure text-xl sm:text-2xl font-medium text-slice-text leading-tight">
                 {score.toLocaleString()}
               </span>
               {engine && (
-                <span className="text-lg sm:text-xl font-black text-slice-text-darker soft-glow-text leading-tight">
+                <span className="slice-display text-lg sm:text-xl text-slice-primary soft-glow-text leading-tight">
                   {grade}
                 </span>
               )}
@@ -172,9 +172,9 @@ export function HUD({ engine }: HUDProps) {
               One row from `sm` up and wrapping to two below it, so a 320px
               phone never has to choose between the number and the hint. */}
           {engine && (
-            <div className="bg-slice-bg shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] rounded-2xl px-3 py-1.5 min-w-28 max-w-[60vw]">
+            <div className="slice-hud-card px-3 py-1.5 min-w-28 max-w-[60vw]">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <span className="font-mono text-sm sm:text-base font-bold text-slice-text tabular-nums">
+                <span className="slice-figure text-sm sm:text-base font-medium text-slice-text">
                   {(sample.accuracy * 100).toFixed(2)}%
                 </span>
                 {next && missesLeft !== null && (
@@ -192,11 +192,11 @@ export function HUD({ engine }: HUDProps) {
         </div>
 
         {/* Speed row — shifted left to avoid settings gear overlap */}
-        <div className="bg-slice-bg shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] rounded-2xl px-4 py-2 text-right mr-10 sm:mr-12">
-          <div className="text-[10px] sm:text-xs text-slice-text-muted uppercase tracking-wider font-bold leading-none mb-1">
+        <div className="slice-hud-card px-3 py-1.5 text-right mr-10 sm:mr-12">
+          <div className="slice-label mb-1">
             {t('speed', { defaultValue: 'Speed' })}
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-slice-text leading-tight">
+          <div className="slice-figure text-xl sm:text-2xl font-medium text-slice-text leading-tight">
             {modifiers.speed.toFixed(1)}x
           </div>
         </div>
@@ -210,7 +210,7 @@ export function HUD({ engine }: HUDProps) {
             className={`absolute top-1 sm:top-2 ${COMBO_ANCHOR[comboPosition]}`}
             style={{ animation: 'combo-bounce 0.15s ease-out' }}
           >
-            <span className="text-3xl sm:text-5xl font-black italic text-slice-text soft-glow-text drop-shadow-lg">
+            <span className="slice-display text-3xl sm:text-5xl text-slice-text soft-glow-text">
               {combo}x
             </span>
           </div>
@@ -226,7 +226,7 @@ export function HUD({ engine }: HUDProps) {
           >
             <span
               className={`text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] ${
-                sample.isPerfect ? 'text-cyan-500' : 'text-slice-text-muted'
+                sample.isPerfect ? 'text-slice-primary' : 'text-slice-text-muted'
               }`}
             >
               {sample.isPerfect
@@ -248,16 +248,16 @@ export function HUD({ engine }: HUDProps) {
                 ? ts('gauge-broken', { defaultValue: 'Gauge broken' })
                 : ts('gauge', { defaultValue: 'Gauge' })}
             </span>
-            <div className="flex-1 h-2 bg-slice-bg rounded-full overflow-hidden shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]">
+            <div className="flex-1 h-1.5 bg-slice-input-bg border border-slice-input-border rounded-full overflow-hidden">
               <div
                 className={`h-full origin-left rounded-full transition-transform duration-150 ${
                   sample.gaugeBroken
                     ? 'bg-slice-text-light'
                     : healthRatio < 0.25
-                      ? 'bg-red-500'
+                      ? 'bg-slice-danger'
                       : healthRatio < 0.5
                         ? 'bg-amber-400'
-                        : 'bg-emerald-400'
+                        : 'bg-slice-primary'
                 }`}
                 // `scaleX` rather than `width`: a bar that moves every judgement
                 // is a bar that would reflow the HUD every judgement.
@@ -279,10 +279,10 @@ export function HUD({ engine }: HUDProps) {
       {duration > 0 && (
         <div className="px-1 pointer-events-none">
           <div className="flex items-center gap-2 sm:gap-3">
-            <span className="text-xs font-bold text-slice-text-muted w-10 text-right shrink-0">
+            <span className="slice-figure text-xs text-slice-text-muted w-10 text-right shrink-0">
               {fmt(elapsed)}
             </span>
-            <div className="relative flex-1 h-2 bg-slice-bg rounded-full overflow-hidden shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]">
+            <div className="relative flex-1 h-1.5 bg-slice-input-bg border border-slice-input-border rounded-full overflow-hidden">
               {/* H5 — section boundaries. Skipped at `start <= 0`: the first
                   section always begins at the bar's own left edge, where a
                   tick would just double the bar's rounded corner. */}
@@ -292,16 +292,16 @@ export function HUD({ engine }: HUDProps) {
                   .map((s) => (
                     <span
                       key={s.start}
-                      className="absolute top-0 h-full w-px bg-slice-shadow-dark/60"
+                      className="absolute top-0 h-full w-px bg-slice-text-muted/50"
                       style={{ left: `${Math.min(100, (s.start / duration) * 100)}%` }}
                     />
                   ))}
               <div
-                className="h-full bg-blue-400 rounded-full transition-none"
+                className="h-full bg-linear-to-r from-slice-primary to-slice-accent rounded-full transition-none"
                 style={{ width: `${progress * 100}%` }}
               />
             </div>
-            <span className="text-xs font-bold text-slice-text-muted w-10 shrink-0">
+            <span className="slice-figure text-xs text-slice-text-muted w-10 shrink-0">
               {fmt(duration)}
             </span>
           </div>

@@ -1,558 +1,315 @@
-@import '../shared/game-fonts/fonts.css';
-
 /* ============================================================
-   Slice It!: main menu
-   Scheme: docs/game-design-schemes/slice-it.json
-   Sharp and rhythmic: a navy ground, cyan neon (1px, 60% with a soft glow),
-   a pink laser slash, equalizer bars on the horizon and a three-lane runway
-   whose beat lines slide toward the player. Audiowide for display, Jost for
-   reading text, IBM Plex Mono for figures.
+   Slice It!: main menu layout.
+   Scheme: docs/game-design-schemes/slice-it.json — tokens live in slice-it.css.
 
-   The masthead (`.slice-menu__mast`) is always the dark neon stage. In the
-   game's dark mode the whole menu (library, daily, setlists, lobby) takes the
-   scheme palette by redefining the `--slice-*` tokens below; the light
-   neumorphic mode keeps its own palette under a dark masthead.
+   One slim bar on top (back, wordmark, the four places you can go, the player)
+   with the key art's slash under it; below it the library on the left and the
+   track details in a column on the right. On a phone the nav moves to the foot of
+   the screen, where a thumb is, and the details slide over the library.
 
-   Motion is CSS-only transform/opacity at well under 1 Hz and stops under
-   prefers-reduced-motion. Nothing flashes.
+   Nothing here animates by itself. State is shown by border and glow, never by
+   motion.
    ============================================================ */
 
 .slice-menu {
-  --sm-bg: #040818;
-  --sm-bg-alt: #0a1442;
-  --sm-surface: #0c1640;
-  --sm-surface-hover: #12235c;
-  --sm-ink: #eaf6ff;
-  --sm-muted: #8eb4d8;
-  --sm-cyan: #18b6ff;
-  --sm-pink: #ff3d8b;
-  --sm-border: #1d3f8a;
-  --sm-display: 'Audiowide', 'Michroma', 'Arial Black', sans-serif;
-  --sm-body: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --sm-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
-
-  font-family: var(--sm-body);
+  font-family: var(--slice-body);
 }
 
-/* ── Dark mode: the scheme palette for everything inside the menu ───────── */
+/* ── The bar ──────────────────────────────────────────────── */
 
-:is(.dark, .slice-theme.dark, html[data-app-dark='1']) .slice-menu,
-html.dark:not([data-app-dark='0']) .slice-menu {
-  --slice-bg: #040818;
-  --slice-card-bg: #0c1640;
-  --slice-text: #eaf6ff;
-  --slice-text-darker: #ffffff;
-  --slice-text-muted: #8eb4d8;
-  --slice-text-light: #7c9ec9;
-  --slice-shadow-dark: #02040f;
-  --slice-shadow-light: #101d52;
-  --slice-input-bg: #070e2b;
-  --slice-input-border: rgba(29, 63, 138, 0.8);
-  --slice-primary: #18b6ff;
-  --slice-accent: #ff3d8b;
-}
-
-/* The library's PLAY buttons: cyan with dark ink (white on #3b82f6 was 3.7:1). */
-:is(.dark, .slice-theme.dark, html[data-app-dark='1']) .slice-menu .bg-blue-500:not(.slice-btn) {
-  background-color: var(--sm-cyan);
-  color: #04112b;
-  box-shadow: 0 0 10px rgba(24, 182, 255, 0.45);
-}
-:is(.dark, .slice-theme.dark, html[data-app-dark='1'])
-  .slice-menu
-  .bg-blue-500:not(.slice-btn):hover {
-  background-color: #5ccfff;
-}
-
-/* ── Masthead ───────────────────────────────────────────────── */
-
-.slice-menu__mast {
-  /* The masthead is a dark stage in both modes, so its text tokens are pinned. */
-  --slice-text: #eaf6ff;
-  --slice-text-muted: #8eb4d8;
+.slice-bar {
   position: relative;
+  z-index: 2;
   flex-shrink: 0;
-  isolation: isolate;
-  overflow: hidden;
-  color: var(--sm-ink);
-  background:
-    radial-gradient(ellipse 30% 90% at 88% -20%, rgba(255, 61, 139, 0.14), transparent 70%),
-    radial-gradient(ellipse 30% 90% at 8% -20%, rgba(24, 182, 255, 0.12), transparent 70%),
-    linear-gradient(180deg, var(--sm-bg) 0%, var(--sm-bg-alt) 150%);
-  border-bottom: 1px solid rgba(24, 182, 255, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: calc(52px + var(--safe-top, 0px));
+  padding: var(--safe-top, 0px) max(16px, var(--safe-right, 0px)) 0 max(12px, var(--safe-left, 0px));
+  background: var(--slice-bg);
 }
 
-/* A soft cyan edge glow just inside the bottom border. */
-.slice-menu__mast::after {
+/* The slash, as the bar's lower edge: cyan, a white cut, pink. */
+.slice-bar::after {
   content: '';
   position: absolute;
   inset: auto 0 0 0;
-  height: 18px;
-  background: linear-gradient(0deg, rgba(24, 182, 255, 0.2), transparent);
+  height: 2px;
+  background: linear-gradient(
+    100deg,
+    var(--slice-primary) 0%,
+    var(--slice-primary) 46%,
+    #ffffff 50%,
+    var(--slice-accent) 54%,
+    var(--slice-accent) 100%
+  );
+  opacity: 0.85;
   pointer-events: none;
-  z-index: 1;
 }
 
-.slice-menu__bar {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 12px;
-  padding: 12px 16px;
-  padding-left: max(16px, var(--safe-left, 0px));
-  padding-right: max(16px, var(--safe-right, 0px));
-}
-
-/* Everything that is not the stage sits above it. */
-.slice-menu__brand,
-.slice-menu__who,
-.slice-menu__actions {
-  position: relative;
-  z-index: 1;
-}
-
-.slice-menu__brand {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.slice-menu__title {
-  margin: 0;
+.slice-bar__title {
+  margin: 0 4px 0 2px;
   line-height: 0;
 }
 
-.slice-menu__logo {
+.slice-bar__logo {
   display: block;
   width: auto;
-  height: clamp(40px, 11vw, 52px);
-  max-width: 100%;
+  height: 22px;
 }
 
-.slice-menu__tagline {
-  display: none;
-  margin: 0 0 0 4px;
-  color: var(--sm-muted);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.slice-menu__who {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.slice-menu__avatar {
-  border-radius: 9999px;
-  box-shadow:
-    0 0 0 2px var(--sm-bg-alt),
-    0 0 0 3px rgba(24, 182, 255, 0.75),
-    0 0 12px rgba(24, 182, 255, 0.4);
-}
-
-.slice-menu__name {
-  max-width: 14ch;
-  font-family: var(--sm-display);
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--sm-ink);
-}
-
-.slice-menu__actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.5fr auto auto;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-/* A tablet: the controls keep their own row, right-aligned. */
-@media (min-width: 640px) and (min-height: 620px) {
-  .slice-menu__logo {
-    height: 56px;
-  }
-  .slice-menu__tagline {
-    display: block;
-  }
-  .slice-menu__actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-  }
-  .slice-menu__who {
-    margin-left: auto;
-  }
-  .slice-menu__brand {
-    flex: 1 1 auto;
-  }
-}
-
-/* A desktop: one row, with the stage as the free space between the wordmark
-   and the controls. */
-@media (min-width: 1100px) and (min-height: 620px), (min-width: 640px) and (max-height: 619px) {
-  .slice-menu__bar {
-    flex-wrap: nowrap;
-    gap: 16px;
-    min-height: 124px;
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-  .slice-menu__brand {
-    flex: 0 0 auto;
-  }
-  .slice-menu__who {
-    margin-left: 0;
-  }
-  .slice-menu__actions {
-    display: flex;
-    justify-content: flex-end;
-    width: auto;
-    flex-shrink: 0;
-  }
-  .slice-menu__logo {
-    height: 62px;
-  }
-}
-
-/* A landscape phone: one slim row, the stage in the gap. */
-@media (min-width: 640px) and (max-height: 619px) {
-  .slice-menu__bar {
-    min-height: 68px;
-    gap: 12px;
-  }
-  .slice-menu__logo {
-    height: 38px;
-  }
-}
-
-/* ── Buttons: neon outlines, state by glow, never by motion ──── */
-
-.slice-menu .slice-btn {
-  --c: var(--sm-cyan);
-  position: relative;
+.slice-bar__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0;
-  height: 40px;
-  min-width: 40px;
-  padding: 0 12px;
-  border: 1px solid rgba(24, 182, 255, 0.6);
-  border-radius: 10px;
-  background: rgba(12, 22, 64, 0.78);
-  color: var(--sm-ink);
-  font-family: var(--sm-display);
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--slice-text-muted);
+  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  box-shadow: none;
   transition:
-    color 0.18s ease,
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.2s ease;
+    color 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease;
 }
 
-.slice-menu .slice-btn:focus-visible {
+.slice-bar__icon:hover {
+  background: var(--slice-surface-hover);
+  border-color: var(--slice-border);
+  color: #fff;
+}
+
+.slice-menu :is(.slice-bar__icon, .slice-nav__item, .slice-btn-primary):focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
 
-/* Primary: cyan neon outline, white type, fills pink to cyan on hover. */
-.slice-menu .slice-btn--primary {
-  padding: 0 16px;
-  border-color: rgba(24, 182, 255, 0.85);
-  background: rgba(4, 8, 24, 0.7);
-  color: #fff;
-  box-shadow:
-    0 0 0 1px rgba(24, 182, 255, 0.22),
-    0 0 10px rgba(24, 182, 255, 0.45),
-    inset 0 0 10px rgba(24, 182, 255, 0.22);
-}
-.slice-menu .slice-btn--primary:hover,
-.slice-menu .slice-btn--primary:focus-visible {
-  border-color: rgba(255, 255, 255, 0.55);
-  background: linear-gradient(90deg, #d61f6e 0%, #0a78b0 100%);
-  box-shadow:
-    0 0 12px rgba(255, 61, 139, 0.5),
-    0 0 18px rgba(24, 182, 255, 0.5);
-}
-.slice-menu .slice-btn--primary:active {
-  background: linear-gradient(90deg, #b3175a 0%, #08628f 100%);
-}
-
-/* Secondary: dark body, pink hairline; the open mode glows pink. */
-.slice-menu .slice-btn--mode {
-  border-color: rgba(255, 61, 139, 0.55);
-}
-.slice-menu .slice-btn--mode:hover {
-  border-color: var(--sm-pink);
-  background: var(--sm-surface-hover);
-  box-shadow: 0 0 10px rgba(255, 61, 139, 0.35);
-}
-.slice-menu .slice-btn--mode[aria-pressed='true'] {
-  border-color: var(--sm-pink);
-  background: color-mix(in srgb, var(--sm-pink) 18%, var(--sm-bg));
-  color: #fff;
-  box-shadow:
-    0 0 10px rgba(255, 61, 139, 0.5),
-    inset 0 0 10px rgba(255, 61, 139, 0.25);
-}
-
-/* Icon buttons: quiet until touched. */
-.slice-menu .slice-btn--icon {
-  padding: 0;
-  border-color: rgba(29, 63, 138, 0.95);
-  color: var(--sm-muted);
-}
-.slice-menu .slice-btn--icon:hover {
-  border-color: rgba(24, 182, 255, 0.8);
-  background: var(--sm-surface-hover);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(24, 182, 255, 0.3);
-}
-
-/* ── The stage behind the masthead ───────────────────────────── */
-
-/* Narrow: fills the whole masthead behind the controls. */
-.slice-stage {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* Tablet: clear of the wordmark and its tagline. */
-@media (min-width: 640px) and (max-width: 1099px) and (min-height: 620px) {
-  .slice-stage {
-    left: 290px;
-  }
-}
-
-/* Wide: it becomes the flexible gap between wordmark and controls. */
-@media (min-width: 1100px) and (min-height: 620px), (min-width: 640px) and (max-height: 619px) {
-  .slice-stage {
-    position: relative;
-    inset: auto;
-    flex: 1 1 0;
-    align-self: stretch;
-    min-width: 120px;
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
-    mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
-  }
-}
-
-/* Equalizer bars stand on the horizon (46% up the stage) and ease in height. */
-.slice-stage__eq {
-  position: absolute;
-  bottom: 46%;
+.slice-bar__who {
   display: flex;
-  align-items: flex-end;
-  gap: 5px;
-  width: 44%;
-  height: 46%;
-}
-.slice-stage__eq--left {
-  left: 0;
-  justify-content: flex-end;
-}
-.slice-stage__eq--right {
-  right: 0;
-  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  min-width: 0;
 }
 
-.slice-stage__bar {
-  flex: 0 0 6px;
-  height: var(--h);
-  border-radius: 2px 2px 0 0;
-  opacity: 0.55;
-  transform-origin: 50% 100%;
-  animation: slice-eq var(--t, 4s) ease-in-out var(--d, 0s) infinite alternate;
-}
-.slice-stage__bar--cyan {
-  background: #18b6ff;
-}
-.slice-stage__bar--pink {
-  background: #ff3d8b;
-}
-.slice-stage__bar--violet {
-  background: #7a5cff;
-}
-
-@keyframes slice-eq {
-  from {
-    transform: scaleY(0.55);
-  }
-  to {
-    transform: scaleY(1);
-  }
-}
-
-/* Runway: a floor in perspective. The lane lines are static; the beat lines
-   are one tile taller than the view and slide exactly one tile, so the loop is
-   seamless. */
-.slice-stage__runway {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 54%;
-  bottom: 0;
-  overflow: hidden;
-  perspective: 130px;
-  perspective-origin: 50% 0;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 40%);
-  mask-image: linear-gradient(180deg, transparent 0, #000 40%);
-}
-
-.slice-stage__runway::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(24, 182, 255, 0.8) 20%,
-    rgba(24, 182, 255, 0.8) 80%,
-    transparent
-  );
-  z-index: 1;
-}
-
-.slice-stage__plane {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 1400px;
-  height: 320px;
-  margin-left: -700px;
-  overflow: hidden;
-  transform-origin: 50% 0;
-  transform: rotateX(72deg);
-  background:
-    linear-gradient(
-      90deg,
-      transparent calc(50% - 1px),
-      rgba(255, 255, 255, 0.55) calc(50% - 1px) calc(50% + 1px),
-      transparent calc(50% + 1px)
-    ),
-    repeating-linear-gradient(90deg, transparent 0 98px, rgba(24, 182, 255, 0.55) 98px 100px);
-  background-position:
-    50% 0,
-    calc(50% + 50px) 0;
-}
-
-.slice-stage__beats {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -100px;
-  bottom: 0;
-  background: repeating-linear-gradient(
-    180deg,
-    transparent 0 98px,
-    rgba(255, 61, 139, 0.75) 98px 100px
-  );
-  animation: slice-run 3.2s linear infinite;
-  will-change: transform;
-}
-
-@keyframes slice-run {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(0, 100px, 0);
-  }
-}
-
-/* A split glowing block with a pink laser slash through it. */
-.slice-stage__block {
-  position: absolute;
-  left: 56%;
-  top: 40%;
-  width: 54px;
-  height: 42px;
-  transform: translate(-50%, -50%) rotate(-9deg);
-}
-.slice-stage__shard {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, #8fdcff, #18b6ff 70%);
-  opacity: 0.8;
-}
-.slice-stage__shard--a {
-  clip-path: polygon(0 0, 100% 0, 0 100%);
-  transform: translate(-5px, -4px);
-}
-.slice-stage__shard--b {
-  clip-path: polygon(100% 0, 100% 100%, 0 100%);
-  transform: translate(5px, 4px);
-}
-
-.slice-stage__slash {
-  position: absolute;
-  left: 18%;
-  right: 4%;
-  top: 41%;
-  height: 3px;
-  border-radius: 2px;
-  transform: rotate(-9deg);
-  background: linear-gradient(90deg, transparent, #ff3d8b 16%, #fff 50%, #ff3d8b 84%, transparent);
+.slice-bar__avatar {
+  border-radius: 9999px;
   box-shadow:
-    0 0 5px #ff3d8b,
-    0 0 14px rgba(255, 61, 139, 0.75),
-    0 0 32px rgba(255, 61, 139, 0.4);
-  opacity: 0.85;
+    0 0 0 1px var(--slice-bg),
+    0 0 0 2px rgba(24, 182, 255, 0.7);
 }
 
-@media (min-width: 1100px) and (min-height: 620px), (min-width: 640px) and (max-height: 619px) {
-  .slice-stage__block {
-    left: 50%;
-    top: 44%;
-  }
-  .slice-stage__slash {
-    left: -8%;
-    right: -8%;
-    top: 45%;
+.slice-bar__name {
+  display: none;
+  max-width: 14ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--slice-text);
+}
+
+@media (min-width: 900px) {
+  .slice-bar__name {
+    display: block;
   }
 }
 
-/* Phone: the logo owns the left of the first row, so the stage keeps to the
-   blank between the wordmark and the avatar. */
+/* ── Navigation ───────────────────────────────────────────── */
+
+.slice-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 14px;
+}
+
+.slice-nav__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--slice-text-muted);
+  font-family: var(--slice-display);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+/* The track number, as the key art prints it ("A1 DOWNBEAT"). */
+.slice-nav__idx {
+  font-family: var(--slice-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--slice-accent);
+}
+
+.slice-nav__icon {
+  display: none;
+  width: 20px;
+  height: 20px;
+}
+
+.slice-nav__item:hover {
+  background: var(--slice-surface-hover);
+  color: #fff;
+}
+
+.slice-nav__item[aria-pressed='true'] {
+  color: #fff;
+  border-color: rgba(24, 182, 255, 0.6);
+  background: rgba(24, 182, 255, 0.12);
+  box-shadow: 0 0 12px rgba(24, 182, 255, 0.18);
+}
+
+.slice-nav__item--versus:hover {
+  border-color: rgba(255, 61, 139, 0.6);
+}
+
+/* ── The details column (wide) ────────────────────────────── */
+
+.slice-side {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 clamp(360px, 34vw, 480px);
+  min-height: 0;
+  border-left: 1px solid var(--slice-border);
+  background: var(--slice-bg-alt);
+}
+
+.slice-side__empty {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+}
+
+.slice-side__art {
+  aspect-ratio: 3 / 1;
+  overflow: hidden;
+  border: 1px solid rgba(24, 182, 255, 0.5);
+  border-radius: var(--slice-radius);
+  box-shadow: 0 0 18px rgba(24, 182, 255, 0.14);
+  background: var(--slice-bg);
+}
+
+/* ── The details sheet (narrow) ───────────────────────────── */
+
+.slice-sheet {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 640px;
+  overflow: hidden;
+  border-left: 1px solid var(--slice-border);
+  background: var(--slice-bg-alt);
+}
+
+.slice-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px 6px 16px;
+  border-bottom: 1px solid var(--slice-border);
+}
+
+/* ── Panels and the primary button ────────────────────────── */
+
+.slice-panel {
+  border: 1px solid rgba(24, 182, 255, 0.5);
+  border-radius: var(--slice-radius);
+  background: var(--slice-card-bg);
+  box-shadow:
+    0 0 0 1px rgba(24, 182, 255, 0.1),
+    0 18px 48px rgba(0, 0, 0, 0.55);
+}
+
+.slice-menu .slice-btn-primary {
+  height: 44px;
+  border: 0;
+  border-radius: var(--slice-radius);
+  background: var(--slice-primary);
+  color: #04112b;
+  font-family: var(--slice-display);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition:
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.slice-menu .slice-btn-primary:hover {
+  background: #5ccfff;
+  box-shadow: 0 0 14px rgba(24, 182, 255, 0.45);
+}
+
+/* ── A phone ──────────────────────────────────────────────── */
+
 @media (max-width: 639px) {
-  .slice-stage__eq--left,
-  .slice-stage__block {
+  .slice-bar {
+    min-height: calc(48px + var(--safe-top, 0px));
+  }
+
+  .slice-bar__logo {
+    height: 20px;
+  }
+
+  /* The nav is the last thing in the column, under the library: in the flow, not
+     pinned, so nothing sits flush to the screen edge. */
+  .slice-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    margin: 0;
+    padding: 6px max(8px, var(--safe-right, 0px)) calc(6px + var(--safe-bottom, 0px))
+      max(8px, var(--safe-left, 0px));
+    flex-shrink: 0;
+    border-top: 1px solid var(--slice-border);
+    background: var(--slice-bg-alt);
+  }
+
+  .slice-nav__item {
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    height: 52px;
+    padding: 0;
+    font-size: 10px;
+  }
+
+  .slice-nav__icon {
+    display: block;
+  }
+
+  .slice-nav__idx {
     display: none;
   }
-  .slice-stage__eq--right {
-    left: 47%;
-    right: auto;
-    width: 36%;
-  }
-  .slice-stage__slash {
-    left: 38%;
-    right: 6%;
-    top: 36%;
-  }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .slice-stage__bar,
-  .slice-stage__beats {
-    animation: none;
+  .slice-sheet {
+    max-width: none;
+    border-left: 0;
   }
 }

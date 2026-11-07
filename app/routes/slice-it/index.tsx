@@ -1,14 +1,10 @@
 import { Suspense } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { DarkModeWrapper } from '@/components/slice-it/DarkModeWrapper';
+import { createFileRoute } from '@tanstack/react-router';
+import { SliceThemeWrapper } from '@/components/slice-it/SliceThemeWrapper';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { SliceItLoading } from '@/components/slice-it/SliceItLoading';
 import { validateLibrarySearch } from '@/lib/slice-it/library-search';
 import { buildCanonical, buildMeta } from '@/lib/seo';
-import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 // Static, not `lazy()`: Start already splits this route's component into its own
 // chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
@@ -18,42 +14,9 @@ import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { GameCanvas } from '@/components/slice-it/GameCanvas';
 
 function SliceItPage() {
-  const { t } = useTranslation('r-slice-it');
-  const goBack = useBackOrFallback();
   return (
-    <DarkModeWrapper>
-      <main className="app-viewport slice-theme bg-slice-bg transition-colors duration-site">
-        {/* Header — clears the notch (§12.1 rule 1); the world below runs edge to edge. */}
-        <div className="flex shrink-0 items-center gap-3 border-b border-slice-shadow-dark/30 bg-slice-bg pt-[calc(0.75rem+var(--safe-top))] pr-[calc(0.75rem+var(--safe-right))] pb-3 pl-[calc(0.75rem+var(--safe-left))] transition-colors duration-site">
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="text-slice-text-muted transition-colors hover:bg-slice-shadow-dark/20 hover:text-slice-text"
-          >
-            <Link to="/games" onClick={goBack}>
-              <ArrowLeft aria-hidden />
-              <span className="hidden font-bold sm:inline">
-                {t('back-to-builds', { defaultValue: 'Back to Builds' })}
-              </span>
-              <span className="sr-only sm:hidden">
-                {t('back-to-builds', { defaultValue: 'Back to Builds' })}
-              </span>
-            </Link>
-          </Button>
-          <span aria-hidden className="hidden text-xs font-black text-slice-text-light sm:inline">
-            |
-          </span>
-          <img
-            src="/images/games/logos/slice-it.svg"
-            alt={t('game-title', { defaultValue: 'Slice It!' })}
-            width={1120}
-            height={319}
-            decoding="async"
-            className="hidden h-7 w-auto sm:block"
-          />
-        </div>
-
+    <SliceThemeWrapper>
+      <main className="app-viewport slice-theme bg-slice-bg">
         {/* Game Canvas — occupies remaining space */}
         <div className="flex-1 min-h-0 w-full relative">
           <GameErrorBoundary gameName="Slice It">
@@ -65,7 +28,7 @@ function SliceItPage() {
           </GameErrorBoundary>
         </div>
       </main>
-    </DarkModeWrapper>
+    </SliceThemeWrapper>
   );
 }
 

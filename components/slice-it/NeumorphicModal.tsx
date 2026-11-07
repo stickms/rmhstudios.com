@@ -43,26 +43,25 @@ export function NeumorphicModal({
             paints, and an opaque scrim is not a scrim. */}
         <DialogPrimitive.Overlay
           data-motion="fade"
-          className="slice-tokens fixed inset-0 z-100 bg-black/40 backdrop-blur-sm"
+          className="slice-tokens fixed inset-0 z-100 bg-black/65"
         />
         <DialogPrimitive.Content
           data-motion="rise"
           className={cn(
-            'slice-tokens fixed left-[50%] top-[50%] z-101 w-[90%] max-w-md translate-x-[-50%] translate-y-[-50%] p-8 outline-none',
-            'bg-slice-bg font-[Outfit,sans-serif] rounded-[2.5rem]',
-            'shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)]',
-            'border border-slice-shadow-light/20',
+            'slice-tokens fixed left-[50%] top-[50%] z-101 w-[90%] max-w-md translate-x-[-50%] translate-y-[-50%] p-7 outline-none',
+            'bg-slice-card-bg text-slice-text font-(family-name:--slice-body) rounded-[10px]',
+            'border border-slice-primary/60 shadow-[0_0_0_1px_rgba(24,182,255,0.12),0_24px_60px_rgba(0,0,0,0.65)]',
           )}
         >
-          <div className="flex flex-col items-center text-center space-y-6">
+          <div className="flex flex-col items-center text-center space-y-5">
             {variant === 'danger' && (
-              <div className="w-16 h-16 rounded-2xl bg-slice-bg shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] flex items-center justify-center text-red-500 mb-2">
-                <AlertTriangle className="w-8 h-8" />
+              <div className="w-14 h-14 rounded-[10px] bg-slice-input-bg border border-slice-danger/60 flex items-center justify-center text-slice-danger">
+                <AlertTriangle className="w-7 h-7" />
               </div>
             )}
 
             <div className="space-y-2">
-              <DialogPrimitive.Title className="text-2xl font-black text-slice-text-darker uppercase tracking-tight">
+              <DialogPrimitive.Title className="slice-display text-xl text-slice-text-darker uppercase">
                 {title}
               </DialogPrimitive.Title>
               <DialogPrimitive.Description className="text-slice-text-muted font-medium leading-relaxed">
@@ -70,11 +69,11 @@ export function NeumorphicModal({
               </DialogPrimitive.Description>
             </div>
 
-            <div className="flex gap-4 w-full pt-4">
+            <div className="flex gap-3 w-full pt-2">
               <Button
                 variant="ghost"
                 onClick={onClose}
-                className="flex-1 py-6 rounded-2xl text-slice-text-light font-bold hover:text-slice-text hover:bg-slice-shadow-dark/20 transition-colors shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]"
+                className="flex-1 h-11 rounded-[10px] border border-slice-border text-slice-text-muted font-bold hover:text-slice-text hover:bg-slice-surface-hover transition-colors"
               >
                 {resolvedCancelText}
               </Button>
@@ -84,10 +83,10 @@ export function NeumorphicModal({
                   onClose();
                 }}
                 className={cn(
-                  'flex-1 py-6 rounded-2xl font-black tracking-widest transition shadow-lg transform active:scale-95',
+                  'flex-1 h-11 rounded-[10px] font-bold tracking-wider transition-colors text-[#04112b]',
                   variant === 'danger'
-                    ? 'bg-red-500 hover:bg-red-600 text-white shadow-[0_10px_20px_rgba(239,68,68,0.4)]'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white shadow-[0_10px_20px_rgba(59,130,246,0.4)]',
+                    ? 'bg-slice-danger hover:brightness-110'
+                    : 'bg-slice-primary hover:brightness-110',
                 )}
               >
                 {resolvedConfirmText}
@@ -97,7 +96,7 @@ export function NeumorphicModal({
 
           <DialogPrimitive.Close asChild>
             <button
-              className="absolute top-6 right-6 p-2 rounded-xl text-slice-text-light hover:text-slice-text transition-colors shadow-[4px_4px_8px_var(--slice-shadow-dark),-4px_-4px_8px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
+              className="absolute top-4 right-4 p-2 rounded-[8px] text-slice-text-muted hover:text-slice-text hover:bg-slice-surface-hover transition-colors"
               aria-label={t('close-neumorphic-modal', { defaultValue: 'Close' })}
             >
               <X className="w-4 h-4" />

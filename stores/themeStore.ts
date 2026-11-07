@@ -68,7 +68,7 @@ export const APP_THEME_BG = '#0b0b0b';
  *
  * The pre-paint script paints `APP_THEME_BG` for every excluded route, which is
  * right for a game that is dark and wrong for one that is not: Slice It's light
- * theme is `#e0e5ec`, so opening it painted the document near-black and then
+ * theme was `#e0e5ec`, so opening it painted the document near-black and then
  * flipped to near-white as soon as `.slice-theme` resolved. A full-screen
  * black-to-white flash on every load.
  *
@@ -119,13 +119,15 @@ export const APP_ROUTE_THEME_BG: Record<
     dark: '#171d25',
     light: '#171d25',
   },
+  // Slice It has one theme (`--slice-bg` in `components/slice-it/slice-it.css`),
+  // so both grounds are the same navy whatever an older save says. The key and
+  // flag stay only because an entry must name them.
   '/slice-it': {
     key: 'slice-it-storage',
     darkFlag: 'isDarkMode',
-    // `isDarkMode: true` in `lib/slice-it/store.ts` — Slice It opens dark.
     defaultDark: true,
-    dark: '#16161a',
-    light: '#e0e5ec',
+    dark: '#040818',
+    light: '#040818',
   },
   // The PF2e board. Grounds mirror `--pf2e-bg` in
   // `components/pf2ecal/pf2ecal.css` — true black in dark, iOS systemGrey6 in

@@ -44,7 +44,7 @@ import { LOBBY_CODE_LENGTH } from '@/lib/slice-it/constants';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import * as net from '@/lib/slice-it/net/client';
 import type { LobbyErrorCode } from '@/lib/slice-it/net/events';
-import { DarkModeWrapper } from '@/components/slice-it/DarkModeWrapper';
+import { SliceThemeWrapper } from '@/components/slice-it/SliceThemeWrapper';
 import { CalibrationScreen } from '@/components/slice-it/CalibrationScreen';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
@@ -316,7 +316,7 @@ export function SliceItDiscordActivity({ discord, onExit }: Props) {
   // 'ready'/'solo' branch, or the pairing screen paints with every one of
   // them resolving to nothing.
   return (
-    <DarkModeWrapper>
+    <SliceThemeWrapper>
       <link rel="stylesheet" href={sliceItCss} />
       {isPairing ? (
         <div className="slice-theme min-h-dvh w-full flex items-center justify-center bg-slice-bg p-4">
@@ -355,7 +355,7 @@ export function SliceItDiscordActivity({ discord, onExit }: Props) {
       ) : (
         <div
           className="slice-theme relative h-dvh w-full flex flex-col overflow-hidden bg-slice-bg text-slate-700 dark:text-slate-200 transition-colors duration-300"
-          style={{ fontFamily: '"Outfit", sans-serif' }}
+          style={{ fontFamily: 'var(--slice-body)' }}
         >
           <header className="shrink-0 flex flex-col z-40 border-b border-slice-shadow-dark/30 bg-slice-bg">
             <div className="flex items-center justify-between gap-3 px-3 py-2">
@@ -469,7 +469,7 @@ export function SliceItDiscordActivity({ discord, onExit }: Props) {
           {showCalibration && <CalibrationScreen onBack={() => setShowCalibration(false)} />}
         </div>
       )}
-    </DarkModeWrapper>
+    </SliceThemeWrapper>
   );
 }
 

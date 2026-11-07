@@ -512,7 +512,7 @@ const ModifierPresets = () => {
 /** A titled block. One shape for every section so the drawer reads as a list. */
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="space-y-4">
-    <h3 className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">
+    <h3 className="slice-label ml-1">
       {title}
     </h3>
     {children}
@@ -665,12 +665,12 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
           splash in `MainMenu.tsx` carries the same width-AND-height guard for
           exactly this viewport. */}
       <div className="flex items-center justify-between gap-3 mb-5 sm:mb-12">
-        <h2 className="min-w-0 text-xl [@media(min-width:640px)_and_(min-height:620px)]:text-5xl font-black text-slice-text tracking-tighter uppercase italic text-balance">
+        <h2 className="slice-display min-w-0 text-xl [@media(min-width:640px)_and_(min-height:620px)]:text-3xl text-slice-text uppercase text-balance">
           {t('c-game:system-configuration', { defaultValue: 'System Configuration' })}
         </h2>
         <Button
           variant="ghost"
-          className="shrink-0 bg-slice-bg shadow-[5px_5px_12px_var(--slice-shadow-dark),-5px_-5px_12px_var(--slice-shadow-light)] active:shadow-inner text-slice-text-muted hover:text-slice-text font-black uppercase tracking-[0.2em] px-5 [@media(min-width:640px)_and_(min-height:620px)]:px-10 h-10 [@media(min-width:640px)_and_(min-height:620px)]:h-16 rounded-2xl text-sm"
+          className="neumorphic-sm shrink-0 text-slice-text-muted hover:text-slice-text font-bold uppercase tracking-[0.12em] px-5 h-10 text-sm"
           onClick={onClose}
         >
           {t('c-game:close', { defaultValue: 'CLOSE' })}

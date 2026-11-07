@@ -17,14 +17,12 @@ import {
   Loader2,
   Lock,
   Minus,
-  Moon,
   RotateCw,
   Scale,
   Send,
   Settings,
   Share2,
   Shuffle,
-  Sun,
   Target,
   UserX,
   Vote,
@@ -89,8 +87,6 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
   const chat = useSliceItStore((s) => s.chat);
   const modifiers = useSliceItStore((s) => s.modifiers);
   const setModifiers = useSliceItStore((s) => s.setModifiers);
-  const isDarkMode = useSliceItStore((s) => s.isDarkMode);
-  const setIsDarkMode = useSliceItStore((s) => s.setIsDarkMode);
 
   const [codeInput, setCodeInput] = React.useState('');
   const [copied, setCopied] = React.useState(false);
@@ -434,21 +430,11 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
 
     return (
       <div className="absolute inset-0 z-60 flex items-center-safe justify-center-safe overflow-y-auto bg-slice-bg p-4 text-slice-text">
-        <Card className="w-full max-w-2xl bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none my-auto">
+        <Card className="w-full max-w-2xl bg-slice-card-bg border border-slice-border rounded-[10px] shadow-none my-auto">
           <CardHeader>
             <div className="flex justify-between items-center gap-2 mb-2">
               <ConnectionPill connection={connection} />
               <div className="flex items-center gap-2">
-                <IconToggle
-                  onClick={() => setIsDarkMode(!isDarkMode)}
-                  label={
-                    isDarkMode
-                      ? t('switch-to-light-mode', { defaultValue: 'Switch to Light Mode' })
-                      : t('switch-to-dark-mode', { defaultValue: 'Switch to Dark Mode' })
-                  }
-                >
-                  {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                </IconToggle>
                 {onOpenSettings && (
                   <IconToggle
                     onClick={onOpenSettings}
@@ -1204,14 +1190,14 @@ function ModifierPanel({
       key: 'normal',
       label: t('normal', { defaultValue: 'Normal' }),
       notes: '100%',
-      color: '#3b82f6',
+      color: '#18b6ff',
     },
     { key: 'hard', label: t('hard', { defaultValue: 'Hard' }), notes: '150%', color: '#f97316' },
     {
       key: 'expert',
       label: t('expert', { defaultValue: 'Expert' }),
       notes: '200%',
-      color: '#ef4444',
+      color: '#ff3d5c',
     },
   ] as const;
 

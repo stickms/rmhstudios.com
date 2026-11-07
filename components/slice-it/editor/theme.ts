@@ -35,14 +35,14 @@ export function readEditorTheme(element: HTMLElement): EditorTheme {
   const v = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
   return {
     glow: canvasGlowEnabled(),
-    bg: v('--slice-bg', '#e0e5ec'),
-    shadowDark: v('--slice-shadow-dark', '#a3b1c6'),
-    shadowLight: v('--slice-shadow-light', '#ffffff'),
-    text: v('--slice-text', '#4a5568'),
-    textMuted: v('--slice-text-muted', '#64748b'),
-    primary: v('--slice-primary', '#3b82f6'),
-    accent: v('--slice-accent', '#f472b6'),
-    holdTrail: v('--slice-hold-trail', 'rgba(30, 30, 50, 0.65)'),
+    bg: v('--slice-bg', '#040818'),
+    shadowDark: v('--slice-shadow-dark', 'rgba(2, 4, 15, 0.78)'),
+    shadowLight: v('--slice-shadow-light', 'rgba(24, 182, 255, 0.07)'),
+    text: v('--slice-text', '#eaf6ff'),
+    textMuted: v('--slice-text-muted', '#8eb4d8'),
+    primary: v('--slice-primary', '#18b6ff'),
+    accent: v('--slice-accent', '#ff3d8b'),
+    holdTrail: v('--slice-hold-trail', 'rgba(234, 246, 255, 0.5)'),
   };
 }
 

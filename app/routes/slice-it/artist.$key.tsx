@@ -3,7 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Disc3, Loader2, Music, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DarkModeWrapper } from '@/components/slice-it/DarkModeWrapper';
+import { SliceThemeWrapper } from '@/components/slice-it/SliceThemeWrapper';
 import { formatSongDuration, type LibrarySong } from '@/lib/slice-it/library-filters';
 import { packLibraryPath, type PackSummary } from '@/lib/slice-it/packs';
 import { buildCanonical, buildMeta } from '@/lib/seo';
@@ -80,7 +80,7 @@ function ArtistPage() {
   }, [key]);
 
   return (
-    <DarkModeWrapper>
+    <SliceThemeWrapper>
       {/* A page you read top to bottom is a DOCUMENT (§12.1 rule 6): the window
           scrolls, not a `fixed inset-0` box inside it. */}
       <main className="slice-theme min-h-svh bg-slice-bg transition-colors duration-site">
@@ -233,7 +233,7 @@ function ArtistPage() {
           )}
         </div>
       </main>
-    </DarkModeWrapper>
+    </SliceThemeWrapper>
   );
 }
 

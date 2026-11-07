@@ -76,7 +76,6 @@ interface SliceItState {
    * "calibrating did not help" is such a common complaint in this genre.
    */
   inputOffset: number;
-  isDarkMode: boolean;
   /**
    * Colour notes by the beat subdivision they snapped to (`Slice.quant`) rather
    * than by lane. On by default, because it is the genre standard and the lane a
@@ -238,7 +237,6 @@ interface SliceItState {
   setSfxVolume: (volume: number) => void;
   setHitSound: (hitSound: string) => void;
   setAudioOffset: (offset: number) => void;
-  setIsDarkMode: (isDark: boolean) => void;
   setQuantColors: (value: boolean) => void;
   setLanePalette: (value: string) => void;
   setNoteSkin: (value: string) => void;
@@ -345,7 +343,6 @@ export const useSliceItStore = create<SliceItState>()(
       sfxVolume: 80,
       hitSound: 'default',
       audioOffset: 0,
-      isDarkMode: true,
       quantColors: true,
       lanePalette: 'default',
       noteSkin: 'default',
@@ -381,7 +378,6 @@ export const useSliceItStore = create<SliceItState>()(
       setHitSound: (hitSound) => set({ hitSound }),
       setAudioOffset: (audioOffset) =>
         set({ audioOffset: Math.max(-500, Math.min(500, Math.round(audioOffset))) }),
-      setIsDarkMode: (isDarkMode) => set({ isDarkMode }),
       setQuantColors: (quantColors) => set({ quantColors }),
       setLanePalette: (lanePalette) => set({ lanePalette }),
       setNoteSkin: (noteSkin) => set({ noteSkin }),
@@ -488,7 +484,6 @@ export const useSliceItStore = create<SliceItState>()(
         sfxVolume: state.sfxVolume,
         hitSound: state.hitSound,
         audioOffset: state.audioOffset,
-        isDarkMode: state.isDarkMode,
         quantColors: state.quantColors,
         lanePalette: state.lanePalette,
         noteSkin: state.noteSkin,

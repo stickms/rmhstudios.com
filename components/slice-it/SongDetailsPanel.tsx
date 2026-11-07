@@ -670,9 +670,9 @@ export function SongDetailsPanel({
               const isActive = modifiers.difficulty === d;
               const colorMap: Record<Difficulty, string> = {
                 easy: '#22c55e',
-                normal: '#3b82f6',
+                normal: '#18b6ff',
                 hard: '#f97316',
-                expert: '#ef4444',
+                expert: '#ff3d5c',
               };
               const noteMap: Record<Difficulty, string> = {
                 easy: '70%',
@@ -732,7 +732,7 @@ export function SongDetailsPanel({
                   oneTrack: !modifiers.switching ? false : modifiers.oneTrack,
                 })
               }
-              color="#3b82f6"
+              color="#18b6ff"
             />
             <ModifierToggle
               label={t('mod-spin', { defaultValue: 'Spin' })}

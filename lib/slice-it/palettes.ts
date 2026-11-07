@@ -28,11 +28,17 @@ export interface LanePalette {
 }
 
 export const LANE_PALETTES = {
-  /** The shipped look. Kept as the default so nobody's game changes silently. */
+  /**
+   * The game's own two colours, from its key art and design scheme
+   * (`docs/game-design-schemes/slice-it.json`): cyan on the top lane, pink on the
+   * bottom. Bombs are amber rather than red — the scheme's pink and any red sit
+   * too close together to tell apart at speed — and are still drawn as a spiked
+   * polygon, so colour is never the only signal.
+   */
   default: {
     id: 'default',
-    lanes: ['#3b82f6', '#f472b6', '#22c55e', '#eab308', '#a855f7', '#f97316'],
-    bomb: '#ef4444',
+    lanes: ['#18b6ff', '#ff3d8b', '#22c55e', '#eab308', '#a855f7', '#f97316'],
+    bomb: '#ffd23d',
   },
   /**
    * Okabe–Ito blue/orange: the safest two-hue pair there is, distinguishable
