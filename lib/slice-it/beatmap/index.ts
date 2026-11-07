@@ -6,8 +6,9 @@
  * ```
  * decode → mono + decimate → STFT → log-band spectrogram
  *        → SuperFlux onset function → adaptive peak picking
- *        → comb-filter tempo → DP beat tracking
- *        → grid quantisation → density-budgeted charting (×4 difficulties)
+ *        → attack refinement against the waveform → sustain per onset
+ *        → comb-filter tempo → DP beat tracking → constant-tempo grid fit
+ *        → grid quantisation → register-ranked, density-budgeted charting (×4)
  * ```
  *
  * ## Why this replaces `lib/audio/BeatDetector`
@@ -42,8 +43,17 @@
 import type { BeatMap, Difficulty, Slice } from '../types';
 import { prepareAudio, type AudioLike, type PreparedAudio } from './audio';
 import { computeSpectrogram, type Spectrogram } from './spectrum';
-import { detectOnsets, onsetStrengthSignal } from './onsets';
-import { bpmFromBeats, estimateTempo, syntheticBeats, trackBeats } from './tempo';
+import { BEAT_HIGH_WEIGHT, detectOnsets, onsetStrengthSignal } from './onsets';
+import {
+  alignBeatsToOnsets,
+  bpmFromBeats,
+  estimateTempo,
+  fitConstantTempo,
+  syntheticBeats,
+  trackBeats,
+} from './tempo';
+import { refineOnsetTimes } from './attack';
+import { lowBandEnvelope } from './lowband';
 import { buildCharts, quantizeOnsets } from './charter';
 import { computeEnvelope, type PeakEnvelope } from './envelope';
 import { detectSections, type Section } from './sections';
@@ -103,7 +113,11 @@ export interface AnalysisArtefacts {
  * reproduce. Version 1 is the legacy `BeatDetector` output, which carries no
  * version field at all — hence `analysisVersion ?? 1`.
  */
-export const BEATMAP_VERSION = 2;
+export const BEATMAP_VERSION = 3;
+// v3: notes sit on the audible attack (was ~16 ms early), held notes are detected
+// per onset and snapped to the grid (was none), lanes follow the song's own timbre
+// clusters, the sparse tiers rank hits within their register, and a steady tempo
+// is fitted as an exact grid (BPM was off by up to ~1).
 
 export interface GeneratedBeatmap extends BeatMap {
   analysisVersion: number;
@@ -193,13 +207,17 @@ export function reconcileBpm(detected: number, hint: number | undefined): number
  * the upload. It only rejects input it cannot read at all.
  */
 export function generateBeatmap(audio: AudioLike, options: GenerateOptions): GeneratedBeatmap {
-  const { samples, sampleRate, duration } = options.precomputed?.prepared ?? prepareAudio(audio);
+  const prepared = options.precomputed?.prepared ?? prepareAudio(audio);
+  const { samples, sampleRate, duration } = prepared;
 
   const spec = options.precomputed?.spectrogram ?? computeSpectrogram(samples, sampleRate);
   const odf = onsetStrengthSignal(spec);
-  const tempo = estimateTempo(odf, spec.frameDuration);
+  // Tempo and beat phase come from a flux with the hat region turned down, so the
+  // grid lands on the kick and snare instead of the off-beat (see BEAT_HIGH_WEIGHT).
+  const beatOdf = onsetStrengthSignal(spec, { highWeight: BEAT_HIGH_WEIGHT });
+  const tempo = estimateTempo(beatOdf, spec.frameDuration);
 
-  let beats = trackBeats(odf, spec.frameDuration, tempo.periodFrames);
+  let beats = trackBeats(beatOdf, spec.frameDuration, tempo.periodFrames);
   let bpm = bpmFromBeats(beats, tempo.bpm);
   bpm = reconcileBpm(bpm, options.bpmHint);
 
@@ -210,7 +228,28 @@ export function generateBeatmap(audio: AudioLike, options: GenerateOptions): Gen
     beats = syntheticBeats(duration, bpm);
   }
 
-  const onsets = detectOnsets(spec, odf, { maxSustainSeconds: (60 / bpm) * 4 });
+  const onsets = detectOnsets(spec, odf, {
+    maxSustainSeconds: (60 / bpm) * 4,
+    lowEnvelope: lowBandEnvelope(samples, sampleRate, spec.frames),
+  });
+
+  // The detector notices a sound before it is audible. Move every onset to where
+  // the waveform actually rises (see attack.ts).
+  refineOnsetTimes(onsets, samples, prepared.sampleRate);
+
+  // A track made to a click is on an exact grid; use it. A live one keeps the
+  // tracked beats.
+  const fit = beats.length >= 4 ? fitConstantTempo(beats, duration) : null;
+  if (fit) {
+    beats = fit.beats;
+    bpm = reconcileBpm(fit.bpm, options.bpmHint);
+  }
+
+  // The tracker's beats are peaks of a flux function, which peaks before the sound
+  // is audible, and notes snap to this grid. The refined onsets are accurate, so
+  // let the ones near a beat say where it should be.
+  if (beats.length >= 4) beats = alignBeatsToOnsets(beats, onsets.map((o) => o.time));
+
   let quantized = quantizeOnsets(onsets, beats);
 
   /* Which candidates survived quantisation, by spectrogram frame.
