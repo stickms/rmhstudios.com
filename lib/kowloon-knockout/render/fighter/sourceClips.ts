@@ -17,9 +17,10 @@ import {
     AnimationClip, Euler, MathUtils, Quaternion, QuaternionKeyframeTrack, Vector3, VectorKeyframeTrack,
     type KeyframeTrack, type Object3D,
 } from 'three';
-import { CLIP_KEYS, type ClipKey } from './clips';
+import { CLIPS, CLIP_KEYS, type ClipKey } from './clips';
 import { JOINTS, type JointName, type RigJoints } from './boneMaps';
 import { POSE_CLIPS, type Limb2, type Pose, type Vec3 } from './sourcePoses';
+import { fixHemisphere, smoothQuaternions, smoothVectors } from './smooth';
 
 export interface ClipBuildOptions {
     /** Character height in metres after scaling (hips displacement is a fraction of it). */
@@ -185,12 +186,19 @@ export function buildSourceClips(
             }
         }
 
+        // The solved poses are the keys; bake a smooth curve through them (smooth.ts) so limbs ease through each
+        // pose instead of changing speed at it — that is what read as animations that "cut and stop".
+        const loop = CLIPS[key].loop;
         const tracks: KeyframeTrack[] = [];
         for (const [j, values] of qValues) {
             const b = rig[j]!;
-            tracks.push(new QuaternionKeyframeTrack(`${b.name}.quaternion`, times, fixHemisphere(values)));
+            const baked = smoothQuaternions(times, fixHemisphere(values), loop);
+            tracks.push(new QuaternionKeyframeTrack(`${b.name}.quaternion`, baked.times, baked.values));
         }
-        if (hipsPos.length === times.length * 3) tracks.push(new VectorKeyframeTrack(`${hips.name}.position`, times, hipsPos));
+        if (hipsPos.length === times.length * 3) {
+            const baked = smoothVectors(times, hipsPos, loop);
+            tracks.push(new VectorKeyframeTrack(`${hips.name}.position`, baked.times, baked.values));
+        }
         if (tracks.length) out[key] = new AnimationClip(`kk_${key}`, def.duration, tracks);
     }
     return out;
@@ -199,14 +207,4 @@ export function buildSourceClips(
 function isUnder(o: Object3D, ancestor: Object3D): boolean {
     for (let p: Object3D | null = o; p; p = p.parent) if (p === ancestor) return true;
     return false;
-}
-
-/** Flip quaternions that sit across the hemisphere from the previous key so slerp takes the short way. */
-function fixHemisphere(v: number[]): number[] {
-    const out = v.slice();
-    for (let i = 4; i < out.length; i += 4) {
-        const dot = out[i] * out[i - 4] + out[i + 1] * out[i - 3] + out[i + 2] * out[i - 2] + out[i + 3] * out[i - 1];
-        if (dot < 0) for (let k = 0; k < 4; k++) out[i + k] = -out[i + k];
-    }
-    return out;
 }

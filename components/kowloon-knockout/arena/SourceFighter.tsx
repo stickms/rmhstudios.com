@@ -7,6 +7,7 @@ import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.j
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import { CLIPS, CLIP_KEYS, type ClipKey } from '@/lib/kowloon-knockout/render/fighter/clips';
 import { resolveClip } from '@/lib/kowloon-knockout/render/fighter/stateMachine';
+import { useFighterMotion } from './useFighterMotion';
 import { autoScaleToHeight, lateralYaw } from '@/lib/kowloon-knockout/render/fighter/fighterRig';
 import { resolveRig } from '@/lib/kowloon-knockout/render/fighter/boneMaps';
 import { buildSourceClips } from '@/lib/kowloon-knockout/render/fighter/sourceClips';
@@ -18,7 +19,6 @@ import FighterTrappings from './FighterTrappings';
 type FramesRef = MutableRefObject<RenderFighter[]>;
 
 const TARGET_HEIGHT = 1.8;
-const FLASH = new THREE.Color('#ff2244');
 
 interface Instance {
     model: THREE.Group;
@@ -26,13 +26,6 @@ interface Instance {
     actions: Partial<Record<ClipKey, THREE.AnimationAction>>;
     emissiveMats: THREE.MeshStandardMaterial[];
     dispose: () => void;
-}
-
-function dampAngle(current: number, target: number, t: number): number {
-    let d = target - current;
-    while (d > Math.PI) d -= Math.PI * 2;
-    while (d < -Math.PI) d += Math.PI * 2;
-    return current + d * t;
 }
 
 /** Zero the hips' ground-plane drift in a native clip: the sim owns where a fighter stands. */
@@ -80,7 +73,7 @@ export default function SourceFighter({ seat, framesRef, modelId, showNameplate 
     const ring = useRef<THREE.Mesh>(null);
     const modelHost = useRef<THREE.Group>(null);
     const instance = useRef<Instance | null>(null);
-    const currentClip = useRef<ClipKey | null>(null);
+    const motion = useFighterMotion(seat);
 
     useLayoutEffect(() => {
         const host = modelHost.current;
@@ -152,7 +145,7 @@ export default function SourceFighter({ seat, framesRef, modelId, showNameplate 
             },
         };
         instance.current = inst;
-        currentClip.current = null;
+        motion.reset();
 
         // The game's own run cycle for TF2 classes, when the sync published it.
         let cancelled = false;
@@ -161,7 +154,7 @@ export default function SourceFighter({ seat, framesRef, modelId, showNameplate 
             loadTf2NativeWalk(def.tf2Class).then((clip) => {
                 if (cancelled || !clip) return;
                 const old = inst.actions.walk;
-                if (old && currentClip.current === 'walk') return; // don't swap mid-stride
+                if (old && motion.currentClip() === 'walk') return; // don't swap mid-stride
                 inst.actions.walk = configure(mixer, stripHipsXZ(clip, hipsName), 'walk');
             });
         }
@@ -170,42 +163,23 @@ export default function SourceFighter({ seat, framesRef, modelId, showNameplate 
             inst.dispose();
             if (instance.current === inst) instance.current = null;
         };
-    }, [gltf, def]);
+    }, [gltf, def, motion]);
 
     useFrame((_, deltaRaw) => {
         const rf = framesRef.current.find((f) => f.seat === seat);
         const r = root.current;
         const inst = instance.current;
         if (!rf || !r || !inst) return;
-        const delta = Math.min(0.05, deltaRaw);
+        const host = modelHost.current;
+        if (!host) return;
 
-        r.position.x += (rf.x - r.position.x) * 0.5;
-        r.position.z += (rf.z - r.position.z) * 0.5;
-        const faceY = Math.atan2(Math.cos(rf.yaw), Math.sin(rf.yaw));
-        r.rotation.y = dampAngle(r.rotation.y, faceY, 0.4);
-
-        const clip = resolveClip(rf).clip;
-        const next = inst.actions[clip];
-        if (next && currentClip.current !== clip) {
-            const prev = currentClip.current ? inst.actions[currentClip.current] : undefined;
-            if (!CLIPS[clip].loop) next.reset();
-            next.enabled = true;
-            next.play();
-            if (prev && prev !== next) next.crossFadeFrom(prev, CLIPS[clip].fade, false);
-            else next.setEffectiveWeight(1);
-            currentClip.current = clip;
+        // Smoothed position/facing, the clip driver and the impact reaction (useFighterMotion).
+        const flash = motion.step({
+            rf, root: r, host, mixer: inst.mixer, actions: inst.actions, want: resolveClip(rf).clip, deltaRaw,
+        });
+        for (const mat of inst.emissiveMats) {
+            mat.emissive.setRGB(flash.color[0], flash.color[1], flash.color[2]).multiplyScalar(flash.amount);
         }
-        const active = inst.actions[clip];
-        if (active && !CLIPS[clip].loop) {
-            active.paused = true;
-            active.time = rf.actionProgress * active.getClip().duration;
-        } else if (active) {
-            active.paused = false;
-        }
-        inst.mixer.update(delta);
-
-        const flash = rf.hitFlash > 0 ? Math.min(1, rf.hitFlash / 8) : 0;
-        for (const mat of inst.emissiveMats) mat.emissive.copy(FLASH).multiplyScalar(flash * 0.9);
         if (shadow.current) shadow.current.scale.setScalar(rf.state === 'knockedOut' ? 1.4 : 1);
         if (ring.current) (ring.current.material as THREE.MeshBasicMaterial).opacity = rf.alive ? 0.85 : 0.3;
     });
