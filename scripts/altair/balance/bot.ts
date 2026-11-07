@@ -132,13 +132,15 @@ function steer(
   let danger = 0;
   const sense2 = p.senseRadius * p.senseRadius;
   for (const e of enemies) {
+    if (e.isDead) continue; // a corpse fading out is not a threat
     const dx = px - e.x;
     const dy = py - e.y;
     const d2 = dx * dx + dy * dy;
     if (d2 > sense2 || d2 < 1) continue;
     const d = Math.sqrt(d2);
-    // Bosses and heavy hitters are respected more; close enemies dominate.
-    const weight = (e.isBoss ? 2.2 : 1) * Math.min(3, 1 + e.damage / 25);
+    // Heavy hitters are respected more; close enemies dominate. A healthy player fights a boss instead
+    // of only running from it, so its push is weaker until health drops.
+    const weight = (e.isBoss ? (hpFrac > 0.55 ? 0.7 : 2.2) : 1) * Math.min(3, 1 + e.damage / 25);
     const f = (weight * 60) / Math.max(24, d - e.radius);
     rx += (dx / d) * f;
     ry += (dy / d) * f;
@@ -183,7 +185,7 @@ function steer(
     let target: EnemyEntity | null = null;
     let targetD2 = 300 * 300;
     for (const e of enemies) {
-      if (e.isBoss) continue;
+      if (e.isBoss || e.isDead) continue;
       const dx = e.x - px;
       const dy = e.y - py;
       const d2 = dx * dx + dy * dy;
@@ -198,6 +200,19 @@ function steer(
       const d = Math.sqrt(targetD2) || 1;
       rx += (dx / d) * 1.1;
       ry += (dy / d) * 1.1;
+    }
+  }
+  // A boss fight: close to a distance the player's weapons can work at (nearer while healthy), and keep it
+  // there. Without this the bot only ever flees a boss and says nothing about whether it can be beaten.
+  const boss = enemies.find((e) => e.isBoss && !e.isDead);
+  if (boss && hpFrac > 0.45) {
+    const dx = boss.x - px;
+    const dy = boss.y - py;
+    const d = Math.hypot(dx, dy) || 1;
+    const want = hpFrac > 0.7 ? 130 : 210;
+    if (d > want) {
+      rx += (dx / d) * 1.4;
+      ry += (dy / d) * 1.4;
     }
   }
   // Slow circling keeps the bot from standing still or running into a dead end.
