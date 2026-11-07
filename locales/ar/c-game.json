@@ -339,5 +339,16 @@
   "your-track": "مسارك",
   "cover-format-unsupported-panel": "صيغة الصورة هذه غير مدعومة. استخدم JPEG أو PNG أو WebP.",
   "velum-retry": "إعادة المحاولة",
-  "velum-start-failed": "تعذر تشغيل Velum 2099. تحتاج اللعبة إلى WebGL — فعّل تسريع الأجهزة أو جرّب متصفحًا آخر."
+  "velum-start-failed": "تعذر تشغيل Velum 2099. تحتاج اللعبة إلى WebGL — فعّل تسريع الأجهزة أو جرّب متصفحًا آخر.",
+  "side-a": "Side A",
+  "menu-rpm": "33 1/3 RPM",
+  "operator": "Operator",
+  "library-tracks": "Library · {{count}} tracks",
+  "col-title": "Title / artist",
+  "col-density": "Density",
+  "col-bpm": "BPM",
+  "col-time": "Time",
+  "pressings": "Pressings",
+  "notes-pct-named": "{{name}}, {{pct}} notes",
+  "plays-short": "plays"
 }

@@ -73,30 +73,20 @@ interface ArtistChip {
 }
 
 /**
- * V8 — the hover density strip: sixty-four bars, one per bucket of
- * `songs.server.ts#densityStrip`, previewing where a chart is busy without
- * ever fetching the chart itself.
- *
- * Pure CSS opacity/height, not a canvas — this sits on a list row repeated
- * dozens of times, which is exactly the surface `.glass-fill`/budget rules
- * exist for, and a 64-bar CSS reveal costs nothing this screen's frame timing
- * has to account for.
+ * V8 — the density strip: one bar per bucket of `songs.server.ts#densityStrip`,
+ * showing where a chart is busy without ever fetching the chart itself. On a
+ * record sleeve this is the waveform printed beside each track. Plain flex
+ * children and a `currentColor` fill: it sits in a row repeated dozens of times,
+ * so it is markup, not a canvas.
  */
 function DensityStrip({ density }: { density?: number[] }) {
-  if (!density || density.length === 0) return null;
+  if (!density || density.length === 0) return <span className="slice-trow__dens" aria-hidden />;
   return (
-    <div
-      className="absolute inset-x-0 bottom-0 h-3.5 flex items-end gap-px px-0.5 opacity-0 group-hover:opacity-80 transition-opacity duration-150 pointer-events-none"
-      aria-hidden
-    >
+    <span className="slice-trow__dens" aria-hidden>
       {density.map((value, i) => (
-        <span
-          key={i}
-          className="flex-1 min-w-px bg-blue-300 rounded-t-[1px]"
-          style={{ height: `${Math.max(8, (value / 255) * 100)}%` }}
-        />
+        <span key={i} style={{ height: `${Math.max(14, (value / 255) * 100)}%` }} />
       ))}
-    </div>
+    </span>
   );
 }
 
@@ -583,6 +573,14 @@ export function SongLibrary({
           scrollsAsOneColumn ? 'sticky top-0 z-20' : ''
         }`}
       >
+        {/* The side's heading, as the sleeve prints it. */}
+        <div className="slice-lib-head">
+          <h2 className="slice-display">{t('side-a', { defaultValue: 'Side A' })}</h2>
+          <span className="slice-label">
+            {t('library-tracks', { defaultValue: 'Library · {{count}} tracks', count: total })}
+          </span>
+        </div>
+
         <div className="relative flex-1 min-w-[10rem]">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4"
@@ -844,7 +842,7 @@ export function SongLibrary({
           )}
         </>
       ) : (
-        <div className="flex-1 overflow-y-auto p-2">
+        <div className="flex-1 overflow-y-auto px-2.5 pb-2">
           {visibleSongs.length === 0 && !loading && (
             <p className="text-center text-slice-text-light py-12 text-sm font-bold">
               {filters.q
@@ -860,130 +858,105 @@ export function SongLibrary({
               This branch used to render NOTHING while `loading` was true with
               nothing yet fetched — the chrome around it was live and the list
               area was blank, so the library read as empty right up until the
-              rows appeared, and a slow query looked like a broken page. The
-              table view opposite already passes `loading` down to `SongTable`;
-              the grid had no equivalent. Rows only, no controls: a skeleton
-              that draws buttons invites a click on a button that is not there
-              yet. */}
+              rows appeared. Rows only, no controls: a skeleton that draws
+              buttons invites a click on a button that is not there yet. Same
+              grid as the real row, so nothing moves when they land. */}
           {visibleSongs.length === 0 && loading && (
-            <ul
-              className="divide-y divide-slice-shadow-dark/40"
-              aria-hidden
-              data-testid="library-skeleton"
-            >
-              {/* The real row's metrics, not a generic placeholder: `p-2`, the
-                  8px preview button, the 10px cover, the same two text lines
-                  and the same `border-l-4` gutter the selected state uses. A
-                  skeleton of a different height is a second layout the page has
-                  to jump out of when the rows land. */}
+            <ul aria-hidden data-testid="library-skeleton">
               {Array.from({ length: 6 }, (_, i) => (
-                <li
-                  key={i}
-                  className="p-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-l-4 border-l-transparent"
-                >
-                  <div className="flex items-center gap-3 w-full sm:w-auto sm:flex-1 min-w-0">
-                    <div className="slice-skeleton h-8 w-8 shrink-0 rounded-full" />
-                    <div className="slice-skeleton h-10 w-10 shrink-0 rounded-md" />
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <div className="slice-skeleton h-3.5 w-1/2 max-w-56" />
-                      <div className="slice-skeleton h-2.5 w-1/3 max-w-40" />
-                    </div>
-                  </div>
+                <li key={i} className="slice-trow slice-trow--skeleton">
+                  <span className="slice-skeleton h-3 w-6" />
+                  <span className="slice-skeleton size-11" />
+                  <span className="min-w-0 space-y-1.5">
+                    <span className="slice-skeleton block h-3.5 w-1/2 max-w-56" />
+                    <span className="slice-skeleton block h-2.5 w-1/3 max-w-40" />
+                  </span>
                 </li>
               ))}
             </ul>
           )}
 
-          {/* Dividers, because the row wraps on a phone: with the controls on
-              their own line and nothing marking where one track ends, the
-              cluster sat halfway between its own title and the next one and
-              read as belonging to the wrong track. A hairline is the cheapest
-              thing that restores the grouping, and it earns its place at
-              desktop width too. */}
-          <ul className="divide-y divide-slice-shadow-dark/40">
-            {visibleSongs.map((song) => (
-              <li key={song.id}>
-                {/* Wraps below `sm`, and that is the whole fix for this row.
-                    `touch-target` sets a real `min-width: 44px`, so the five
-                    controls here are 44px each whatever their `w-8` says —
-                    correct for a finger, but 140px of a 358px row. With the
-                    cover and the preview button that left the title 82px, so
-                    every title elided including "Glass Arcade". Shrinking the
-                    targets would trade an a11y guarantee for legibility; taking
-                    a second line trades only vertical space, and a library is
-                    scrolled anyway. From `sm` up nothing wraps and the row is
-                    unchanged. */}
-                <div
-                  className={`p-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 group hover:bg-slice-shadow-dark/40 cursor-pointer border-l-4 ${
-                    selectedSongId === song.id
-                      ? 'bg-blue-500/10 border-l-blue-500'
-                      : 'bg-transparent border-l-transparent'
-                  }`}
-                  onClick={() => onHighlight(song)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') onHighlight(song);
-                  }}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="flex items-center gap-3 w-full sm:w-auto sm:flex-1 min-w-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-8 h-8 rounded-full bg-slice-shadow-dark text-blue-500 shrink-0 touch-target"
+          {/* Column heads, as the sleeve prints them. Hidden on a phone, where
+              the row is two lines and the heads would label nothing. */}
+          {visibleSongs.length > 0 && (
+            <div className="slice-trow slice-trow--head" aria-hidden>
+              <span>#</span>
+              <span />
+              <span>{t('col-title', { defaultValue: 'Title / artist' })}</span>
+              <span className="slice-trow__dens-col">{t('col-density', { defaultValue: 'Density' })}</span>
+              <span className="slice-trow__num-col">{t('col-bpm', { defaultValue: 'BPM' })}</span>
+              <span className="slice-trow__num-col">{t('col-time', { defaultValue: 'Time' })}</span>
+              <span />
+            </div>
+          )}
+
+          <ul>
+            {visibleSongs.map((song, index) => {
+              const previewing = previewId === song.id && !previewRef.current?.paused;
+              return (
+                <li key={song.id}>
+                  {/* The row is one grid: number, cover (which is also the
+                      preview button), title and artist, the density strip,
+                      tempo, length, and the actions. Hover inverts it to paper
+                      and the selected row is cut paper | pink — the same device
+                      as the wordmark. The actions stay at their 44px touch
+                      targets; on a phone the strip and the figures drop out so
+                      the title keeps the width. */}
+                  <div
+                    className={`slice-trow group ${selectedSongId === song.id ? 'is-sel' : ''}`}
+                    onClick={() => onHighlight(song)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') onHighlight(song);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={selectedSongId === song.id}
+                  >
+                    <span className="slice-trow__no">A{index + 1}</span>
+
+                    <button
+                      type="button"
+                      className="slice-trow__cover"
                       onClick={(e) => {
                         e.stopPropagation();
                         togglePreview(song);
                       }}
                       aria-label={t('preview', { defaultValue: 'Preview' })}
                     >
-                      {previewId === song.id && !previewRef.current?.paused ? (
-                        <Pause className="w-4 h-4" />
-                      ) : (
-                        <Play className="w-4 h-4 ml-0.5" />
-                      )}
-                    </Button>
-
-                    <div className="w-10 h-10 rounded-md bg-slice-shadow-dark shrink-0 overflow-hidden relative">
                       {song.coverUrl ? (
-                        <img
-                          src={song.coverUrl}
-                          alt=""
-                          loading="lazy"
-                          className="w-full h-full object-cover"
-                        />
+                        <img src={song.coverUrl} alt="" loading="lazy" />
                       ) : (
-                        <span className="absolute inset-0 flex items-center justify-center text-slice-text-muted font-bold text-xs">
-                          {song.title.charAt(0)}
-                        </span>
+                        <span
+                          className={`slice-trow__ph ${index % 2 ? 'slice-dots-pink' : 'slice-dots-cyan'}`}
+                        />
                       )}
-                      <DensityStrip density={song.densityStrip} />
-                    </div>
+                      <span className="slice-trow__cover-ic" data-on={previewing || undefined}>
+                        {previewing ? (
+                          <Pause className="size-4" aria-hidden />
+                        ) : (
+                          <Play className="size-4" aria-hidden />
+                        )}
+                      </span>
+                    </button>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-slice-text text-sm leading-tight truncate">
-                        {song.title}
-                      </div>
-                      <div className="text-xs text-slice-text-muted truncate">
+                    <div className="min-w-0">
+                      <div className="slice-trow__title">{song.title}</div>
+                      <div className="slice-trow__artist">
                         {/* L15 — the first thing anyone tries after playing a
                             track they liked. `artistKey` comes off the row, so
-                            the client never re-derives it and the two cannot
-                            disagree about what a key is. `stopPropagation`
+                            the client never re-derives it. `stopPropagation`
                             because the whole row is also a button. */}
                         {song.artistKey ? (
                           <a
                             href={artistPath(song.artistKey)}
                             onClick={(e) => e.stopPropagation()}
-                            className="hover:text-slice-text hover:underline"
+                            className="hover:underline"
                           >
                             {song.artist}
                           </a>
                         ) : (
                           song.artist
                         )}
-                        {song.bpm > 0 ? ` • ${Math.round(song.bpm)} BPM` : ''} •{' '}
-                        {formatSongDuration(song.duration)}
-                        {song.chartRating !== null && ` • ★ ${song.chartRating.toFixed(1)}`}
                       </div>
                       {/* O3 — the row stays visible while the worker charts it.
                           Hiding a pending song would read as a failed upload,
@@ -992,125 +965,99 @@ export function SongLibrary({
                           which is exactly what a `failed` state falls through
                           to as well. */}
                       {song.analysisState === 'pending' && (
-                        <div className="text-[10px] text-slice-text-light">
+                        <div className="slice-trow__note slice-trow__note--live">
                           {t('charting', { defaultValue: 'Charting…' })}
                         </div>
                       )}
                       {song.analysisState === 'failed' && (
-                        <div className="text-[10px] text-slice-text-light">
+                        <div className="slice-trow__note">
                           {t('charting-failed', {
                             defaultValue: 'Charting failed — a chart is generated on play',
                           })}
                         </div>
                       )}
-                      {/* `flex-wrap` + `min-w-0`: flex children default to
-                          `min-width: auto`, so this row refused to shrink below
-                          its three items' min-content width and overflowed the
-                          `min-w-0` column it lives in — sliding the owner badge
-                          underneath the delete button on a phone, where it
-                          overlapped by up to 32px. Wrapping is the honest
-                          answer: the stats are the least important line in the
-                          row, so they take a second line rather than stealing
-                          the title's. */}
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 min-w-0 mt-0.5">
-                        <span className="flex items-center gap-1 text-[10px] text-slice-text-light">
-                          <Play className="w-2.5 h-2.5 fill-current" aria-hidden />
-                          {song.plays}
-                        </span>
-                        <span
-                          className={`flex items-center gap-1 text-[10px] ${
-                            song.isLiked ? 'text-red-400' : 'text-slice-text-light'
-                          }`}
+                      {song.isOwner && (
+                        <div className="slice-trow__note slice-trow__note--own">
+                          {t('your-track', { defaultValue: 'YOUR TRACK' })}
+                        </div>
+                      )}
+                    </div>
+
+                    <span className="slice-trow__dens-col">
+                      <DensityStrip density={song.densityStrip} />
+                    </span>
+                    <span className="slice-trow__num slice-trow__num-col">
+                      {song.bpm > 0 ? Math.round(song.bpm) : '—'}
+                    </span>
+                    <span className="slice-trow__num slice-trow__num-col">
+                      {formatSongDuration(song.duration)}
+                    </span>
+
+                    <div className="slice-trow__acts">
+                      {!readOnly && song.isOwner && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteId(song.id);
+                          }}
+                          // Visible by default and hover-revealed only where hover
+                          // exists: `opacity-0` alone left the control invisible on
+                          // every touch device while it still took its width.
+                          // Ghost, not filled: this is only the entry point to a
+                          // confirm dialog, and a filled red block per row on a
+                          // library you own every track of was the loudest thing
+                          // on the screen.
+                          className="h-8 w-8 touch-target text-red-400 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                          aria-label={t('delete-song', { defaultValue: 'Delete Song' })}
                         >
-                          <Heart
-                            className={`w-2.5 h-2.5 ${song.isLiked ? 'fill-current' : ''}`}
-                            aria-hidden
-                          />
-                          {song.likeCount}
-                        </span>
-                        {song.isOwner && (
-                          <span className="text-[10px] text-blue-500 font-bold">
-                            {t('your-track', { defaultValue: 'YOUR TRACK' })}
-                          </span>
-                        )}
-                      </div>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {session && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-8 w-8 shrink-0 touch-target ${
+                            song.isLiked ? 'text-red-500' : 'text-slice-text-light'
+                          }`}
+                          onClick={(e) => void handleLike(e, song)}
+                          disabled={likingId === song.id}
+                          aria-label={
+                            song.isLiked
+                              ? t('unlike', { defaultValue: 'Unlike' })
+                              : t('like', { defaultValue: 'Like' })
+                          }
+                        >
+                          <Heart className={`w-4 h-4 ${song.isLiked ? 'fill-current' : ''}`} />
+                        </Button>
+                      )}
+                      {/* `onSelect` is "the row's primary action", and what that
+                          IS belongs to the caller: the solo menu opens the details
+                          panel so a run is confirmed before it starts, and the
+                          multiplayer lobby nominates the song. Icon-only on a
+                          phone; the accessible name is the same. */}
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            stopPreview();
+                            onSelect(song);
+                          }}
+                          className="slice-go touch-target"
+                          aria-label={selectLabel}
+                        >
+                          <SelectIcon className="size-4 sm:hidden" aria-hidden />
+                          <span className="hidden sm:inline">{selectLabel}</span>
+                        </button>
+                      )}
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-1 shrink-0 ml-auto">
-                    {!readOnly && song.isOwner && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteId(song.id);
-                        }}
-                        // Visible by default and hover-revealed only where hover
-                        // exists. `opacity-0 group-hover:opacity-100` alone meant
-                        // the control was invisible on every touch device while
-                        // still taking its 32px of a row that had none to spare.
-                        //
-                        // Ghost, not `destructive`: filled red is the weight of a
-                        // confirm dialog's commit button, and this is only the
-                        // entry point to one — `deleteId` opens a confirm. On a
-                        // library where you own every track, one filled red block
-                        // per row was the loudest thing on the screen and it was
-                        // shouting about the action you least want taken.
-                        className="h-8 w-8 rounded-lg touch-target text-red-400 hover:text-red-300 hover:bg-red-500/10 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-                        aria-label={t('delete-song', { defaultValue: 'Delete Song' })}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    )}
-                    {session && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`h-8 w-8 rounded-lg shrink-0 touch-target ${
-                          song.isLiked ? 'text-red-500' : 'text-slice-text-light'
-                        }`}
-                        onClick={(e) => void handleLike(e, song)}
-                        disabled={likingId === song.id}
-                        aria-label={
-                          song.isLiked
-                            ? t('unlike', { defaultValue: 'Unlike' })
-                            : t('like', { defaultValue: 'Like' })
-                        }
-                      >
-                        <Heart className={`w-4 h-4 ${song.isLiked ? 'fill-current' : ''}`} />
-                      </Button>
-                    )}
-                    {/* Icon-only below `sm`. A 390px row has to seat a preview
-                        button, cover art, the title, a delete, a like and this
-                        — which left the title 70px, so EVERY title elided,
-                        "Rust Bloom" included. The word PLAY is the most
-                        expendable 35px in the row: the glyph is the same
-                        control, and the accessible name is unchanged. */}
-                    {/* `onSelect` is "the row's primary action", and what that
-                        IS belongs to the caller: the solo menu opens the details
-                        panel so a run is confirmed before it starts, and the
-                        multiplayer lobby nominates the song. Deciding here would
-                        have made the lobby's picker open a details drawer
-                        instead of picking. */}
-                    {!readOnly && (
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          stopPreview();
-                          onSelect(song);
-                        }}
-                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold h-8 w-8 p-0 sm:w-auto sm:px-3 rounded-lg text-xs touch-target"
-                        aria-label={selectLabel}
-                      >
-                        <SelectIcon className="w-4 h-4 sm:hidden" aria-hidden />
-                        <span className="hidden sm:inline">{selectLabel}</span>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
 
           {nextCursor && (

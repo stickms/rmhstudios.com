@@ -324,5 +324,16 @@
   "your-track": "VOTRE PISTE",
   "cover-format-unsupported-panel": "Ce format d’image n’est pas pris en charge. Utilisez JPEG, PNG ou WebP.",
   "velum-retry": "Réessayer",
-  "velum-start-failed": "Velum 2099 n’a pas pu démarrer. Il nécessite WebGL : activez l’accélération matérielle ou essayez un autre navigateur."
+  "velum-start-failed": "Velum 2099 n’a pas pu démarrer. Il nécessite WebGL : activez l’accélération matérielle ou essayez un autre navigateur.",
+  "side-a": "Side A",
+  "menu-rpm": "33 1/3 RPM",
+  "operator": "Operator",
+  "library-tracks": "Library · {{count}} tracks",
+  "col-title": "Title / artist",
+  "col-density": "Density",
+  "col-bpm": "BPM",
+  "col-time": "Time",
+  "pressings": "Pressings",
+  "notes-pct-named": "{{name}}, {{pct}} notes",
+  "plays-short": "plays"
 }
