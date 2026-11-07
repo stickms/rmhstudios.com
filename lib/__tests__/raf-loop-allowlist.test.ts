@@ -191,6 +191,11 @@ const ALLOW = new Set<string>([
   // cancels the frame on unmount, a hidden tab cancels it and `visibilitychange` restarts it, and it
   // is capped at 30 fps with a fixed-size buffer (no per-frame canvas reallocation).
   'components/altair/menu/MenuBackdrop.tsx',
+  // Kowloon Knockout main-menu backdrop (pixel-art street). Same bounds as the Altair one: the effect
+  // cancels the frame on unmount, a hidden tab cancels it and `visibilitychange` restarts it, Jelly
+  // motion Still draws one frame and stops (a MutationObserver restarts it), and it is capped at 30 fps
+  // (15 on the Low graphics preference) with a fixed-size buffer (no per-frame canvas reallocation).
+  'components/kowloon-knockout/MenuBackdrop.tsx',
   // The ONE jelly frame (#989). The engine, the soft body, the arc renderer and
   // the fallback cursor light are drivers on it (`drive(fn, { order })`) and call
   // no rAF themselves. No frame is requested while no driver is awake; `stop()`
