@@ -22,20 +22,15 @@ import {
   type BufferGeometry,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import type { ModelEntry } from '../model-manifest';
+import type { ClipNames, ModelEntry } from '../model-manifest';
 
 export const FIXTURE_HEIGHT = 1.8;
 
 const BONES = ['Hips', 'Spine', 'Head', 'LegL', 'LegR', 'ArmL', 'ArmR', 'HandR'] as const;
 type BoneName = (typeof BONES)[number];
 
-export const FIXTURE_ENTRY: ModelEntry = {
-  file: 'fixture.glb',
-  height: FIXTURE_HEIGHT,
-  yaw: 0,
-  handBone: 'HandR',
-  bytes: 20_000,
-  provenance: 'stand-in',
+/** The animation names inside the fixture (what the animator is handed once a model is loaded). */
+export const FIXTURE_CLIPS = {
   clips: {
     idle: 'Idle',
     walk: 'Walk',
@@ -48,13 +43,36 @@ export const FIXTURE_ENTRY: ModelEntry = {
     death: 'Death',
     interact: 'Interact',
   },
-};
+} satisfies { clips: ClipNames };
 
 /** The same model with only the two required clips. */
-export const MINIMAL_ENTRY: ModelEntry = {
-  ...FIXTURE_ENTRY,
-  clips: { idle: 'Idle', walk: 'Walk' },
+export const MINIMAL_CLIPS = { clips: { idle: 'Idle', walk: 'Walk' } } satisfies { clips: ClipNames };
+
+/** A manifest entry (v2) that names the fixture's clips; the fixture stands in for `models/fixture.mdl` of the `hl2` channel. */
+export const FIXTURE_ENTRY: ModelEntry = {
+  game: 'hl2',
+  mdl: 'models/fixture.mdl',
+  skin: 0,
+  height: FIXTURE_HEIGHT,
+  yaw: 0,
+  handBone: 'HandR',
+  provenance: 'steam-r2',
+  clips: {
+    idle: { clip: 'Idle' },
+    walk: { clip: 'Walk' },
+    run: { clip: 'Run' },
+    jump: { clip: 'Jump' },
+    fall: { clip: 'Fall' },
+    shoot: { clip: 'Shoot' },
+    reload: { clip: 'Reload' },
+    hurt: { clip: 'Hurt' },
+    death: { clip: 'Death' },
+    interact: { clip: 'Interact' },
+  },
 };
+
+/** The same entry with only the two required clips. */
+export const MINIMAL_ENTRY: ModelEntry = { ...FIXTURE_ENTRY, clips: { idle: { clip: 'Idle' }, walk: { clip: 'Walk' } } };
 
 function part(
   bone: BoneName,

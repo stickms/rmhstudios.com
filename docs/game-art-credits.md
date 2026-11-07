@@ -2,7 +2,7 @@
 
 All 19 cards, icons and banners are original vector artwork drawn in SVG by `scripts/` (rendered with headless Chromium). The only third-party assets are open-licensed fonts from Google Fonts (SIL Open Font License 1.1), downloaded from https://github.com/google/fonts (path `ofl/<family>/...`, raw files at https://raw.githubusercontent.com/google/fonts/main/ofl/<family>/). The OFL permits commercial use and embedding in artwork; no attribution is required.
 
-No official Valve / Counter-Strike / Half-Life / Portal files are used. The three ports (csgo, half-life-2, portal) mimic the franchise look only (orange/black lambda, sand-and-orange Dust II look, white Aperture-style test chamber with orange and blue portal rings), all drawn from scratch. Steam key art was looked at for reference during planning but was neither used nor shipped; nothing from it is in any output.
+No official Valve / Counter-Strike / Half-Life / Portal files are used in the card art. (The 3D games load Valve models and maps at run time from the site's own Steam-sourced asset channels, and Hearthworks does the same for its character skins; nothing of that is committed here. See `docs/tf2-game.md` and `public/models/hearthworks/CREDITS.md`.) The three ports (csgo, half-life-2, portal) mimic the franchise look only (orange/black lambda, sand-and-orange Dust II look, white Aperture-style test chamber with orange and blue portal rings), all drawn from scratch. Steam key art was looked at for reference during planning but was neither used nor shipped; nothing from it is in any output.
 
 | Game | Font(s) used (Google Fonts, OFL 1.1) | Source path (google/fonts `ofl/`) | Changes |
 |---|---|---|---|
