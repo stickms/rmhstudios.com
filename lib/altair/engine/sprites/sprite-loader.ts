@@ -6,6 +6,7 @@
 // =============================================================================
 
 import { getGLContext, getContextGeneration, createTextureFromImage } from '../webgl/webgl-textures';
+import { loadCorsImage } from './cors-image';
 
 export interface SpriteSheet {
   image: HTMLImageElement;
@@ -46,23 +47,27 @@ export function loadSpriteSheet(
     glTextureGeneration: 0,
   };
 
-  image.onload = () => {
-    sheet.cols = Math.floor(image.naturalWidth / frameWidth) || 1;
-    sheet.rows = Math.floor(image.naturalHeight / frameHeight) || 1;
-    sheet.loaded = true;
-    // Auto-create WebGL texture if GL context is ready
-    const gl = getGLContext();
-    if (gl) {
-      sheet.glTexture = createTextureFromImage(gl, image);
-      sheet.glTextureGeneration = getContextGeneration();
-    }
-  };
-  image.onerror = () => {
-    // Mark as loaded with a 0x0 so the game can fall back to vector rendering
-    sheet.loaded = false;
-  };
-  image.src = src;
   cache.set(src, sheet);
+  // CORS mode is required: the sheet comes from the CDN, and WebGL refuses to upload a tainted image.
+  loadCorsImage(
+    image,
+    src,
+    () => {
+      sheet.cols = Math.floor(image.naturalWidth / frameWidth) || 1;
+      sheet.rows = Math.floor(image.naturalHeight / frameHeight) || 1;
+      sheet.loaded = true;
+      // Auto-create WebGL texture if GL context is ready
+      const gl = getGLContext();
+      if (gl) {
+        sheet.glTexture = createTextureFromImage(gl, image);
+        sheet.glTextureGeneration = getContextGeneration();
+      }
+    },
+    () => {
+      // Leave `loaded` false so the game can fall back to vector rendering
+      sheet.loaded = false;
+    },
+  );
   return sheet;
 }
 
@@ -119,21 +124,24 @@ export function preloadAllSprites(
         if (settled >= total) resolve();
       };
 
-      image.onload = () => {
-        sheet.cols = Math.floor(image.naturalWidth / entry.frameWidth) || 1;
-        sheet.rows = Math.floor(image.naturalHeight / entry.frameHeight) || 1;
-        sheet.loaded = true;
-        const gl = getGLContext();
-        if (gl) {
-          sheet.glTexture = createTextureFromImage(gl, image);
-          sheet.glTextureGeneration = getContextGeneration();
-        }
-        settle();
-      };
-      image.onerror = settle; // allow game to continue with vector fallback
-
       cache.set(entry.src, sheet);
-      image.src = entry.src;
+      // `settle` on failure lets the game continue with the vector fallback.
+      loadCorsImage(
+        image,
+        entry.src,
+        () => {
+          sheet.cols = Math.floor(image.naturalWidth / entry.frameWidth) || 1;
+          sheet.rows = Math.floor(image.naturalHeight / entry.frameHeight) || 1;
+          sheet.loaded = true;
+          const gl = getGLContext();
+          if (gl) {
+            sheet.glTexture = createTextureFromImage(gl, image);
+            sheet.glTextureGeneration = getContextGeneration();
+          }
+          settle();
+        },
+        settle,
+      );
     }
   });
 }
