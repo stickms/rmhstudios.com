@@ -223,7 +223,7 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
  * selected by a class the SERVER has to guess at (the store default) and only
  * gets right after hydration. The attribute is the one piece of that state that
  * exists before first paint, so the page's stylesheet keys its tokens off it and
- * both halves agree from frame 0 — see `slice-it.css` and `pf2ecal.css`. Each
+ * both halves agree from frame 0 — see `pf2ecal.css`. Each
  * scopes it to its own descendants, so neither can touch the site theme.
  *
  * The entry's shape is documented where it lives (`APP_ROUTE_THEME_BG` in

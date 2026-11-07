@@ -1,158 +1,240 @@
+@import '../shared/game-fonts/fonts.css';
+
+/* ============================================================
+   Slice It!: the one theme.
+
+   There is no light mode and no toggle. The game has a single look, taken from
+   its key art (`public/images/games/slice_it.webp`) and the scheme in
+   `docs/game-design-schemes/slice-it.json`: a navy ground, electric cyan and
+   hot pink split by a diagonal slash, off-white type, IBM Plex Mono for the
+   small print. Cyan is the top lane and pink is the bottom lane everywhere —
+   the playfield, the HUD, the lobby, the buttons.
+
+   Display is Audiowide, reading text is Jost, figures and labels are IBM Plex
+   Mono. Radius is 10px. A surface is a flat navy panel with a 1px hairline; the
+   accent colours are for state (selected, focused, live), never decoration.
+   ============================================================ */
+
 @layer base {
   /*
-   * `html[data-app-dark='0'] .slice-theme` repeats this block at a higher
-   * specificity than `.slice-theme.dark`, and that is the whole point.
-   *
-   * The game's light/dark toggle lives in a persisted zustand store, so the
-   * SERVER cannot know it: SSR renders `DarkModeWrapper` with the store default
-   * (dark) and hydration corrects it a beat later. The pre-paint script in
-   * `__root.tsx` DOES know it — it already reads that store to pick the root
-   * background — and publishes the answer as `data-app-dark` before first paint.
-   * Keying the tokens off the attribute as well as the class means the two never
-   * disagree: a player who chose light gets light in the very first frame
-   * instead of a dark one that flips.
-   *
-   * It also fixes the routes with no `DarkModeWrapper` at all (the chart editor,
-   * the player page): they inherit their tokens from the layout wrapper in
-   * `app/routes/slice-it.tsx`, which never carried `dark`, so they rendered
-   * light for a dark-mode player permanently — not for a frame.
-   *
-   * With no attribute (script blocked, or the Discord Activity, which ships a
-   * minimal head with no inline script) nothing matches and the class alone
-   * decides, exactly as before.
+   * `.slice-tokens` is the same tokens with no paint, for a Radix portal: a
+   * dialog or toast portals to <body>, outside every `.slice-theme`, so it needs
+   * the variables and must not inherit the unlayered `background-color` below
+   * (which would turn a scrim opaque).
    */
   .slice-theme,
-  .slice-tokens,
-  html[data-app-dark='0'] .slice-theme,
-  html[data-app-dark='0'] .slice-tokens {
-    --slice-bg: #e0e5ec;
-    --slice-text: #4a5568;
-    /*
-     * The highlight side of every neumorphic shadow in the game — and it is
-     * TRANSLUCENT on purpose.
-     *
-     * It used to be opaque `#ffffff` on a `#e0e5ec` ground. Every recipe here
-     * pairs a 4px offset with an 8px blur, so an opaque highlight does not fall
-     * off inside that distance: it floods. On a row of cards 8px apart the
-     * halos met in the middle and filled the gaps solid white, and around each
-     * `border-radius` the white came right up to the curve — so the corner read
-     * as a notch cut out of a white square rather than as a soft edge, which is
-     * the opposite of what this material is for. At 0.7 the highlight still
-     * lifts the top-left edge and now has somewhere to fade to.
-     *
-     * The dark theme never had the problem: `#222228` on `#16161a` is already a
-     * small delta, so it is left alone.
-     */
-    --slice-shadow-light: rgba(255, 255, 255, 0.7);
-    --slice-shadow-dark: #a3b1c6;
-    --slice-primary: #3b82f6;
-    /* Soft blue */
-    --slice-accent: #f472b6;
-    /* Soft pink */
-
-    --slice-lane-top: #3b82f6;
-    --slice-lane-bottom: #f472b6;
-    --slice-text-muted: #64748b;
-    /* Both of these used to come from the duplicate block in `globals.css` —
-       the light theme here never declared them, so removing that copy would
-       have left them undefined. Declared now, so this block is complete. */
-    --slice-text-light: #94a3b8;
-    /* A card is the same ground as the page in light mode: the material's
-       depth comes from the shadow pair, not from a fill that differs. */
-    --slice-card-bg: #e0e5ec;
-    --slice-text-shadow: rgba(0, 0, 0, 0.3);
-    --slice-hold-trail: rgba(30, 30, 50, 0.65);
-    --slice-text-darker: #2d3748;
-    --slice-input-bg: #dce1e9;
-    --slice-input-border: rgba(163, 177, 198, 0.8);
-
-    /* The lane rail the notes travel along. Was a `#cbd5e0` literal inside the
-       canvas draw loop, which is a LIGHT-theme grey that the dark theme drew
-       anyway — the one bright line on an otherwise near-black playfield. */
-    --slice-rail: #cbd5e0;
-    /* V13 — the colour the playfield edges darken toward as combo builds. */
-    --slice-vignette: #64748b;
-    /* The note's drop shadow. Also a literal in the draw loop until now, and
-       the same bug as the rail: this is a light-theme shadow, so on the dark
-       theme every note wore a pale halo instead of casting anything. */
-    --slice-note-shadow: rgba(163, 177, 198, 0.6);
-  }
-
-  /*
-   * Three selectors, three sources of "dark".
-   *
-   * `.dark .slice-theme` is the site theme, inherited from <html>.
-   * `.slice-theme.dark` is the game's own toggle, which `DarkModeWrapper` puts
-   * on its wrapper — it used to write to <html> instead, overriding the
-   * player's site-wide theme for as long as the game was open and clearing it
-   * on the way out.
-   * `html[data-app-dark='1'] .slice-theme` is that same toggle as the pre-paint
-   * script read it, which is the only one of the three that exists before
-   * hydration — see the note on the light block above.
-   */
-  .dark .slice-theme,
-  .dark .slice-tokens,
-  .slice-theme.dark,
-  html[data-app-dark='1'] .slice-theme,
-  html[data-app-dark='1'] .slice-tokens {
-    --slice-bg: #16161a;
-    --slice-text: #f0f0f0;
+  .slice-tokens {
+    --slice-bg: #040818;
+    --slice-bg-alt: #0a1442;
+    --slice-card-bg: #0c1640;
+    --slice-surface-hover: #12235c;
+    --slice-border: #1d3f8a;
+    --slice-text: #eaf6ff;
     --slice-text-darker: #ffffff;
-    --slice-text-muted: #a1a1aa;
-    --slice-text-light: #71717a;
-    --slice-shadow-light: #222228;
-    --slice-shadow-dark: #0b0b0d;
-    --slice-text-shadow: rgba(255, 255, 255, 0.3);
-    --slice-card-bg: #1e1e24;
-    --slice-primary: #60a5fa;
-    --slice-accent: #f472b6;
-    --slice-hold-trail: rgba(255, 255, 255, 0.5);
-    --slice-input-bg: #121216;
-    --slice-input-border: rgba(0, 0, 0, 0.5);
-    --slice-rail: #43434f;
+    --slice-text-muted: #8eb4d8;
+    --slice-text-light: #7c9ec9;
+    --slice-primary: #18b6ff;
+    --slice-accent: #ff3d8b;
+    --slice-danger: #ff3d5c;
+
+    /* Lanes: cyan on top, pink below. The same two colours as the key art. */
+    --slice-lane-top: #18b6ff;
+    --slice-lane-bottom: #ff3d8b;
+
+    /* The two "shadow" tokens survive because a lot of the game still names
+       them. They no longer describe a light source: `dark` is a deep navy that
+       sinks a panel into the ground and `light` is a whisper of cyan. */
+    --slice-shadow-dark: rgba(2, 4, 15, 0.78);
+    --slice-shadow-light: rgba(24, 182, 255, 0.07);
+
+    --slice-input-bg: #070e2b;
+    --slice-input-border: rgba(29, 63, 138, 0.9);
+    --slice-text-shadow: rgba(24, 182, 255, 0.35);
+
+    /* Playfield. The rail is bright enough to read as a track on the navy
+       ground, the hold tail is the ink at half strength, and the vignette
+       darkens toward true black as the combo builds. */
+    --slice-rail: #2a4aa3;
+    --slice-hold-trail: rgba(234, 246, 255, 0.5);
     --slice-vignette: #000000;
-    --slice-note-shadow: rgba(0, 0, 0, 0.7);
+    --slice-note-shadow: rgba(2, 4, 15, 0.7);
+
+    --slice-display: 'Audiowide', 'Michroma', 'Arial Black', sans-serif;
+    --slice-body: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --slice-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --slice-radius: 10px;
+
+    /* Tailwind's palette, retargeted for this subtree. A great many controls in
+       the game are written as `bg-blue-500` / `text-pink-400`; those were the
+       light theme's colours and clash with the scheme. Utilities read the
+       variable, so redefining it here recolours all of them at once. */
+    --color-blue-300: #8fdcff;
+    --color-blue-400: #4cc6ff;
+    --color-blue-500: #18b6ff;
+    --color-blue-600: #0f9fe6;
+    --color-blue-700: #0a7fb8;
+    --color-sky-400: #4cc6ff;
+    --color-sky-500: #18b6ff;
+    --color-cyan-400: #4cc6ff;
+    --color-cyan-500: #18b6ff;
+    --color-pink-300: #ff8fbd;
+    --color-pink-400: #ff6aa5;
+    --color-pink-500: #ff3d8b;
+    --color-pink-600: #e0287a;
+    --color-rose-500: #ff3d8b;
+    --color-red-400: #ff6b83;
+    --color-red-500: #ff3d5c;
+    --color-red-600: #e02a49;
   }
 }
 
 /*
  * `.slice-theme` is a SURFACE — it declares the tokens and paints itself with
- * them. `.slice-tokens` (declared with it above) is the same tokens and no
- * paint, for the one place that needs them apart: a Radix portal.
- *
- * A dialog, popover or toast portals to `<body>`, which is outside every
- * `.slice-theme` in the tree, so `bg-slice-bg` and every
- * `shadow-[…var(--slice-shadow-dark)]` in it resolved to nothing and the modal
- * came out in the browser's defaults instead of the game's palette — and, being
- * unthemed, identical in light and dark. Adding `.slice-theme` to the portalled
- * element fixes the tokens and breaks the overlay, because the unlayered
- * `background-color` below outranks a `bg-black/40` utility and turns a scrim
- * opaque. `.slice-tokens` is the half a portal actually wants.
- *
- * Both are matched by the `data-app-dark` selectors above, which are anchored at
- * `html` — so a portalled subtree resolves the right light/dark set even though
- * it escaped the wrapper carrying the class.
+ * them.
  */
 .slice-theme {
   background-color: var(--slice-bg);
   color: var(--slice-text);
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--slice-body);
 }
 
+/* ─── Buttons ──────────────────────────────────────────────────────────────
+ *
+ * The shared `Button` is built for the site's material. Where that material is
+ * off (the `perf-lite` tier — any device without a capable GPU, and headless
+ * browsers) `liquid-glass.css` gives every flat button an opaque SITE surface via
+ * an UNLAYERED rule, which beats every `bg-*` utility and painted the game's cyan
+ * PLAY buttons white with white text. Inside the game a button is the game's own
+ * control, so that rule is handed back to the layered cascade (`revert-layer`:
+ * the button's own classes, then the reset) and the variants below are the game's
+ * look for the ones that carry no colour of their own.
+ */
+html.perf-lite .slice-theme [data-jelly-rest='flat'],
+html.perf-lite .slice-tokens [data-jelly-rest='flat'] {
+  background-color: revert-layer;
+  border-color: revert-layer;
+}
+
+.slice-theme [data-slot='button'][data-variant='outline']:not([class*='bg-']),
+.slice-theme [data-slot='button'][data-variant='secondary']:not([class*='bg-']),
+.slice-tokens [data-slot='button'][data-variant='outline']:not([class*='bg-']),
+.slice-tokens [data-slot='button'][data-variant='secondary']:not([class*='bg-']) {
+  background-color: var(--slice-card-bg);
+  border-color: var(--slice-border);
+  color: var(--slice-text);
+}
+
+.slice-theme [data-slot='button'][data-variant='outline']:not([class*='bg-']):hover,
+.slice-theme [data-slot='button'][data-variant='secondary']:not([class*='bg-']):hover {
+  background-color: var(--slice-surface-hover);
+  border-color: rgba(24, 182, 255, 0.6);
+}
+
+.slice-theme [data-slot='button'][data-variant='ghost']:not([class*='bg-']),
+.slice-tokens [data-slot='button'][data-variant='ghost']:not([class*='bg-']) {
+  color: var(--slice-text-muted);
+}
+
+.slice-theme [data-slot='button'][data-variant='ghost']:not([class*='bg-']):hover {
+  background-color: var(--slice-surface-hover);
+  color: #fff;
+}
+
+/* Dark ink on the cyan fills: white on #18b6ff is 2.4:1. */
+.slice-theme :is(.bg-blue-500, .bg-blue-600, .bg-sky-500, .bg-cyan-500).text-white,
+.slice-tokens :is(.bg-blue-500, .bg-blue-600, .bg-sky-500, .bg-cyan-500).text-white {
+  color: #04112b;
+}
+
+/* ─── The site's glass is off in here ──────────────────────────────────────
+ *
+ * Shared primitives (`Card`, `Dialog`, `Input`…) arrive wearing the site's glass
+ * roles. The game has its own flat material, so inside it every role is the same
+ * navy panel with a hairline, and the haze and rim layers the roles would carry
+ * are not drawn. (The layout root also opts the subtree out of the jelly engine,
+ * so nothing is armed to draw them.)
+ */
+html .slice-theme :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay),
+html .slice-tokens :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay) {
+  background-color: var(--slice-card-bg);
+  background-image: none;
+  border: 1px solid var(--slice-border);
+  box-shadow: none;
+  color: var(--slice-text);
+}
+
+html .slice-theme .glass-inset,
+html .slice-tokens .glass-inset,
+html .slice-theme [data-slot='input'],
+html .slice-theme [data-slot='textarea'] {
+  background-color: var(--slice-input-bg);
+  background-image: none;
+  border: 1px solid var(--slice-input-border);
+  box-shadow: none;
+  color: var(--slice-text);
+}
+
+.slice-theme :is(.jelly-flow, .jelly-haze-canvas, canvas[data-liquid-glass]),
+.slice-tokens :is(.jelly-flow, .jelly-haze-canvas, canvas[data-liquid-glass]) {
+  display: none;
+}
+
+/* ─── Material ─────────────────────────────────────────────────────────────
+ *
+ * Every raised, inset and chrome surface in the game still carries one of the
+ * `.neumorphic*` class names — there are hundreds of uses — but they are flat
+ * navy panels with a hairline now. Raised = a card (panel + border), inset = a
+ * field or a value (darker well + border), chrome = a bar.
+ */
+
 .neumorphic {
-  background: var(--slice-bg);
-  box-shadow:
-    9px 9px 16px var(--slice-shadow-dark),
-    -9px -9px 16px var(--slice-shadow-light);
-  border-radius: 20px;
+  background: var(--slice-card-bg);
+  border: 1px solid var(--slice-border);
+  box-shadow: none;
+  border-radius: var(--slice-radius);
 }
 
 .neumorphic-inset {
-  background: var(--slice-bg);
-  box-shadow:
-    inset 6px 6px 10px var(--slice-shadow-dark),
-    inset -6px -6px 10px var(--slice-shadow-light);
-  border-radius: 15px;
+  background: var(--slice-input-bg);
+  border: 1px solid var(--slice-input-border);
+  box-shadow: none;
+  border-radius: var(--slice-radius);
+}
+
+.neumorphic-sm {
+  background: var(--slice-card-bg);
+  border: 1px solid var(--slice-border);
+  box-shadow: none;
+  border-radius: 8px;
+}
+
+.neumorphic-chip {
+  background: var(--slice-card-bg);
+  border: 1px solid var(--slice-border);
+  box-shadow: none;
+  border-radius: 9999px;
+}
+
+.neumorphic-chrome {
+  background: var(--slice-bg-alt);
+  border-bottom: 1px solid var(--slice-border);
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* A readout over the playfield (score, speed, accuracy): flat navy, a hairline. */
+.slice-hud-card {
+  background: rgba(10, 20, 66, 0.78);
+  border: 1px solid var(--slice-border);
+  border-radius: 8px;
+}
+
+/* The chart editor's timeline well. */
+.editor-timeline {
+  background: var(--slice-input-bg);
+  border: 1px solid var(--slice-input-border);
+  box-shadow: none;
+  border-radius: var(--slice-radius);
 }
 
 /* A circle is a shape, not a corner radius: the unlayered radii above would
@@ -161,6 +243,37 @@
 .neumorphic-inset.rounded-full,
 .neumorphic-sm.rounded-full {
   border-radius: 9999px;
+}
+
+/* Selected tool / active tab / the open mode: a cyan hairline and a faint glow. */
+.neumorphic-active {
+  color: var(--slice-primary);
+  border-color: rgba(24, 182, 255, 0.7);
+  background: color-mix(in srgb, var(--slice-primary) 10%, var(--slice-card-bg));
+  box-shadow: 0 0 10px rgba(24, 182, 255, 0.22);
+}
+
+.neumorphic,
+.neumorphic-sm,
+.neumorphic-chip,
+.neumorphic-chrome,
+.neumorphic-inset,
+.neumorphic-active {
+  transition:
+    border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Interactive panels light their hairline on hover. */
+button.neumorphic:hover,
+button.neumorphic-sm:hover,
+a.neumorphic:hover,
+a.neumorphic-sm:hover,
+.neumorphic[role='button']:hover {
+  background: var(--slice-surface-hover);
+  border-color: rgba(24, 182, 255, 0.6);
 }
 
 .soft-glow-text {
@@ -181,101 +294,103 @@
   }
 }
 
-/* ─── chart editor ─────────────────────────────────────────────────────────
+/* ─── Small print ──────────────────────────────────────────────────────────
  *
- * `docs/slice-it-chart-editor.md` §12.2. The editor gets no separate stylesheet,
- * because a second file means a second set of shadow values that drift from the
- * pair above.
- *
- * The rule that makes neumorphism read correctly: raised = interactive, inset =
- * a container or a value. A button is `.neumorphic`; the track it slides along
- * is `.neumorphic-inset`; the timeline the notes sit in is `.editor-timeline`.
+ * The key art sets its labels in a monospace ("RMH-050", "33 1/3 RPM / SIDE A",
+ * "A1 DOWNBEAT"). The same voice here: short, literal, spaced.
  */
-
-/* Toolbar buttons: smaller radius and shadow so a row of them does not read as
-   a row of pillows. Scale the offsets with the element, not a fixed 9px. */
-.neumorphic-sm {
-  background: var(--slice-bg);
-  box-shadow:
-    4px 4px 8px var(--slice-shadow-dark),
-    -4px -4px 8px var(--slice-shadow-light);
-  border-radius: 12px;
+.slice-label {
+  font-family: var(--slice-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slice-text-muted);
 }
 
-/* The timeline well. Inset, because notes sit *inside* it. */
-.editor-timeline {
-  background: var(--slice-bg);
-  box-shadow:
-    inset 8px 8px 14px var(--slice-shadow-dark),
-    inset -8px -8px 14px var(--slice-shadow-light);
-  border-radius: 18px;
+.slice-figure {
+  font-family: var(--slice-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Selected tool / active difficulty tab. Neumorphism has no borders to
-   highlight, so selection is the accent colour plus the pressed depth. */
-.neumorphic-active {
-  color: var(--slice-primary);
-  box-shadow:
-    inset 4px 4px 8px var(--slice-shadow-dark),
-    inset -4px -4px 8px var(--slice-shadow-light);
+.slice-display {
+  font-family: var(--slice-display);
+  letter-spacing: 0.04em;
 }
 
-/*
- * The shared `ui/slider` primitive, in the game's own palette.
+/* The slash: the one motif on the key art. A hairline that runs cyan into pink,
+   used as the rule under a header and between sections. */
+.slice-slash {
+  display: block;
+  height: 2px;
+  border: 0;
+  background: linear-gradient(
+    100deg,
+    var(--slice-primary) 0%,
+    var(--slice-primary) 46%,
+    #ffffff 50%,
+    var(--slice-accent) 54%,
+    var(--slice-accent) 100%
+  );
+  opacity: 0.9;
+}
+
+/* ─── Shared controls ──────────────────────────────────────────────────────
  *
- * `Slider` paints its three parts with `--site-*` tokens — `bg-site-border`
- * track, `bg-site-accent` range, `bg-site-surface-opaque` thumb. Those are the
- * right tokens for a `_site` page, but `.slice-theme` only scopes `--slice-*`,
- * so inside the game they resolve against whatever the ROOT theme happens to
- * hold. Measured on the shipped dark theme that is `--site-accent: #000000`,
- * `--site-border: rgba(0,0,0,0.16)` and a fully transparent surface: a black
- * range on a near-black track under an invisible thumb. Every slider in the
- * game — master volume, effects, playback speed, lane cover, and the five in
- * the settings drawer — read as one flat dark bar with no discernible value.
- *
- * Restyled through `[data-slot]` rather than by forking the primitive or
- * passing a `className` at each of the call sites, which is the mechanism
- * `globals.css` already uses to let a theme restyle a shared component. One
- * rule here fixes every slider the game will ever mount.
- *
- * Neumorphic depth rule: the track is a recessed channel, the thumb is a raised
- * cap, the range is the accent liquid between them.
+ * `ui/slider`, `ui/switch` and `LiquidTabs` paint with `--site-*` tokens, which
+ * inside `.slice-theme` resolve against the ROOT theme and came out black. They
+ * are restyled through `[data-slot]`, the mechanism `globals.css` already gives
+ * a theme for exactly this.
  */
 .slice-theme [data-slot='slider-track'] {
-  background: var(--slice-bg);
-  box-shadow:
-    inset 2px 2px 4px var(--slice-shadow-dark),
-    inset -2px -2px 4px var(--slice-shadow-light);
+  background: var(--slice-input-bg);
+  border: 1px solid var(--slice-input-border);
+  box-shadow: none;
 }
 
 .slice-theme [data-slot='slider-range'] {
-  background: var(--slice-primary);
+  background: linear-gradient(90deg, var(--slice-primary), var(--slice-accent));
 }
 
 .slice-theme [data-slot='slider-thumb'] {
-  background: var(--slice-bg);
-  border-color: var(--slice-shadow-dark);
-  box-shadow:
-    2px 2px 5px var(--slice-shadow-dark),
-    -2px -2px 5px var(--slice-shadow-light);
+  background: var(--slice-text);
+  border-color: var(--slice-primary);
+  box-shadow: 0 0 8px rgba(24, 182, 255, 0.5);
 }
 
-/*
- * A neumorphic placeholder — the shape of content that has not arrived.
- *
- * Inset, because a skeleton is a hole where something will go, not a raised
- * card sitting on the surface; the sheen that crosses it is what separates
- * "loading" from "an empty well". Sized and positioned by the caller, so one
- * class covers a title line, a cover tile and a table row.
- */
+.slice-theme [data-slot='liquid-tabs'] {
+  --tab-thumb-bg: var(--slice-primary);
+  --tab-thumb-ink: #04112b;
+  --tab-thumb-border: var(--slice-primary);
+}
+
+.slice-theme [data-slot='switch'][aria-checked='true'] {
+  background-color: var(--slice-primary);
+  border-color: var(--slice-primary);
+}
+
+.slice-theme [data-slot='switch'][aria-checked='true'] > span {
+  background-color: #04112b;
+}
+
+.slice-theme [data-slot='switch'][aria-checked='false'] {
+  background-color: var(--slice-input-bg);
+  border-color: var(--slice-input-border);
+  box-shadow: none;
+}
+
+.slice-theme [data-slot='switch'][aria-checked='false'] > span {
+  background-color: var(--slice-text-muted);
+}
+
+/* The shape of content that has not arrived: a well with a sheen across it. */
 .slice-skeleton {
   position: relative;
   overflow: hidden;
-  border-radius: 12px;
-  background: var(--slice-bg);
-  box-shadow:
-    inset 3px 3px 6px var(--slice-shadow-dark),
-    inset -3px -3px 6px var(--slice-shadow-light);
+  border-radius: var(--slice-radius);
+  background: var(--slice-input-bg);
+  border: 1px solid var(--slice-input-border);
 }
 
 .slice-skeleton::after {
@@ -286,7 +401,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--slice-shadow-light) 55%, transparent),
+    color-mix(in srgb, var(--slice-primary) 14%, transparent),
     transparent
   );
   animation: slice-skeleton-sheen 1.6s ease-in-out infinite;
@@ -298,138 +413,8 @@
   }
 }
 
-/*
- * Reduced motion gets the well without the sweep. The placeholder still reads
- * as a placeholder — it is inset where real content is raised — so nothing is
- * lost but the movement.
- */
-
-/*
- * LiquidTabs' selected segment in Slice It!'s own accent.
- *
- * The thumb paints `--tab-thumb-bg` with `--tab-thumb-ink` on top (globals.css
- * §LiquidTabs). Those default to the ROOT theme's neutral surface, which inside
- * `.slice-theme` is a grey slab in a game whose entire accent language is
- * `--slice-primary` blue. The strip exposes its paint as custom properties for
- * exactly this kind of re-skin, so the tab strip stays the one sanctioned
- * switcher rather than being forked. `--slice-primary` is a mid blue at every
- * theme, so white is the safe ink.
- */
-.slice-theme [data-slot='liquid-tabs'] {
-  --tab-thumb-bg: var(--slice-primary);
-  --tab-thumb-ink: #ffffff;
-  --tab-thumb-border: var(--slice-primary);
-}
-
-/*
- * Pill-scale neumorphism, for chips and small filter controls.
- *
- * `.neumorphic-sm` is sized for a ~36px toolbar button: a 4px offset with an
- * 8px blur reaches 12px past the element's left and top edges. On a 25px-tall
- * artist chip in a row with a 6px gap, that halo crosses the whole gap and
- * meets its neighbour's, so the space BETWEEN two pills lights up into a solid
- * bar — read as "a white rectangle behind the pills", which is exactly what it
- * is. The shadow has to scale with the element it lifts.
- *
- * `9999px`, not `12px`: a 12px radius on a 25px-tall element leaves a flat
- * segment top and bottom, so the pill has corners where it should have ends.
- * That is the other half of "items sticking out weirdly" — the shape was never
- * quite round.
- */
-.neumorphic-chip {
-  background: var(--slice-bg);
-  box-shadow:
-    2px 2px 4px var(--slice-shadow-dark),
-    -2px -2px 4px var(--slice-shadow-light);
-  border-radius: 9999px;
-}
-
-/*
- * Sticky chrome — a header that floats above the rows it labels.
- *
- * Two things make this its own recipe rather than `.neumorphic-sm`:
- *
- * 1. **It casts downward only.** A sticky header lives inside a scroll
- *    container, pinned to its top edge, and that edge is a clip boundary — an
- *    upward or leftward halo is guaranteed to be cut off in a straight line,
- *    which is the opposite of soft. There is also nothing above it to cast
- *    onto. The top light is an `inset` rim instead, which cannot be clipped
- *    because it is painted inside the box.
- * 2. **It has no radius.** These headers span the full width of their
- *    scroller, so a 15px radius put rounded ends exactly where the container
- *    clips — the header read as a pill with its ends sliced off.
- *
- * It replaced `.neumorphic-inset` on the library table head, which is the
- * PRESSED recipe: it drew the one piece of chrome standing above the list as
- * though it were a well sunk into it.
- */
-.neumorphic-chrome {
-  background: var(--slice-bg);
-  box-shadow:
-    0 4px 8px var(--slice-shadow-dark),
-    inset 0 1px 0 var(--slice-shadow-light);
-  border-radius: 0;
-}
-
-/*
- * Depth is this material's only affordance, so it has to MOVE.
- *
- * There was a `prefers-reduced-motion` block below disabling transitions on
- * these classes and no transition anywhere to disable — hover and press
- * snapped between shadow states. Declaring it here makes every neumorphic
- * surface in the game ease between raised, pressed and inset, and makes that
- * reduced-motion guard mean something.
- *
- * `box-shadow` and `background-color` only. Not `all`: these elements also
- * animate `transform` on press in places, and a transition on transform would
- * fight the spring driving it.
- */
-.neumorphic,
-.neumorphic-sm,
-.neumorphic-chip,
-.neumorphic-chrome,
-.neumorphic-inset,
-.neumorphic-active {
-  transition:
-    box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
-    color 160ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/*
- * `ui/switch` in the game's palette — the third and last of these.
- *
- * Same cause as the slider and the tab capsule: the track paints
- * `bg-site-accent` when on and the knob `bg-site-accent-fg`, and inside
- * `.slice-theme` those resolve against the root theme, which measured
- * `#000000`. Every modifier toggle in the song details panel and the editor's
- * ghost-notes switch rendered as a black pill.
- *
- * Scoped by `[data-slot='switch']` and `aria-checked`, so only the ON state is
- * re-skinned — the OFF track is a neutral surface in both palettes and already
- * reads correctly. The knob is given an explicit light value rather than a
- * token: it sits on `--slice-primary` in both themes, so it must contrast with
- * a mid blue, not with whatever the site's accent foreground happens to be.
- */
-.slice-theme [data-slot='switch'][aria-checked='true'] {
-  background-color: var(--slice-primary);
-  border-color: var(--slice-primary);
-}
-
-.slice-theme [data-slot='switch'][aria-checked='true'] > span {
-  background-color: #ffffff;
-}
-
-/* Off: the game's own recessed channel rather than a flat site surface, so the
-   control reads as part of this material in both states. */
-.slice-theme [data-slot='switch'][aria-checked='false'] {
-  background-color: var(--slice-bg);
-  border-color: var(--slice-shadow-dark);
-  box-shadow:
-    inset 2px 2px 4px var(--slice-shadow-dark),
-    inset -2px -2px 4px var(--slice-shadow-light);
-}
-
-.slice-theme [data-slot='switch'][aria-checked='false'] > span {
-  background-color: var(--slice-text-muted);
+@media (prefers-reduced-motion: reduce) {
+  .slice-skeleton::after {
+    animation: none;
+  }
 }

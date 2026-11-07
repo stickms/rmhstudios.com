@@ -999,7 +999,7 @@ function drawBeatGrid(
     points,
   );
   ctx.save();
-  ctx.font = '11px "Outfit", sans-serif';
+  ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
   ctx.textBaseline = 'middle';
   for (const line of lines) {
     const y = Math.round(yOf(view, line.time)) + 0.5;

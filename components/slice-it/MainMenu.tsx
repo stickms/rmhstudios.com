@@ -9,8 +9,9 @@ import { APPLE_SPRING, DURATION, EASE, scaleIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { CalendarDays, ListMusic, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Library, ListMusic, Settings, Swords } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
 import { hitSoundPath, hitSoundPreloadList } from '@/lib/slice-it/hit-sound-pool';
@@ -20,7 +21,9 @@ import { addMatchListener, spectatingLobbyCode } from '@/lib/slice-it/net/client
 import { useStartRun } from '@/lib/slice-it/useStartRun';
 import type { SliceSong } from '@/lib/slice-it/types';
 import { useStableSession } from '@/hooks/useStableSession';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { SongLibrary } from '@/components/slice-it/SongLibrary';
 import { CalibrationScreen } from '@/components/slice-it/CalibrationScreen';
 import { MultiplayerLobby } from '@/components/slice-it/MultiplayerLobby';
@@ -28,7 +31,6 @@ import { SongDetailsPanel } from '@/components/slice-it/SongDetailsPanel';
 import { DailyPanel } from '@/components/slice-it/modes/DailyPanel';
 import { SettingsPanel } from '@/components/slice-it/SettingsPanel';
 import { SetlistPanel } from '@/components/slice-it/modes/SetlistPanel';
-import { MenuStage } from '@/components/slice-it/MenuStage';
 import './slice-menu.css';
 
 /**
@@ -55,14 +57,18 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const hitSound = useSliceItStore((state) => state.hitSound);
   const setSongId = useSliceItStore((state) => state.setSongId);
   const setIsMultiplayer = useSliceItStore((state) => state.setIsMultiplayer);
-  const isDarkMode = useSliceItStore((state) => state.isDarkMode);
-  const setIsDarkMode = useSliceItStore((state) => state.setIsDarkMode);
   const engine = propEngine;
   // Not `authClient.useSession()` directly: its focus revalidation reports a
   // momentary `{ data: null, isPending: false }` when you come back to the tab,
   // which threw the sign-in takeover over a live session. See the hook.
   const session = useStableSession();
   const navigate = useNavigate();
+  const goBack = useBackOrFallback();
+  // The details panel is a column beside the library on a wide screen and a sheet
+  // over it on a narrow one; the primary nav is in the bar on a tablet and up and
+  // at the foot of the screen (where a thumb is) on a phone.
+  const isWide = useMediaQuery('(min-width: 1024px)');
+  const isPhone = useMediaQuery('(max-width: 639px)');
   const search = useSearch({ strict: false }) as Record<string, string | undefined>;
   const { startRun, isLoading } = useStartRun(engine);
   const [showSettings, setShowSettings] = React.useState(false);
@@ -207,6 +213,54 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
     });
   }, [engine, startRun, setIsMultiplayer]);
 
+  // The four places the menu goes. Three swap the stage; Versus opens the lobby.
+  const navItems = (
+    <nav className="slice-nav" aria-label={t('menu-nav', { defaultValue: 'Slice It! menu' })}>
+      <button
+        type="button"
+        className="slice-nav__item"
+        aria-pressed={soloMode === 'library'}
+        onClick={() => setSoloMode('library')}
+      >
+        <Library className="slice-nav__icon" aria-hidden />
+        <span className="slice-nav__idx">A1</span>
+        <span>{t('menu-nav-library', { defaultValue: 'Library' })}</span>
+      </button>
+      <button
+        type="button"
+        className="slice-nav__item"
+        aria-pressed={soloMode === 'daily'}
+        aria-label={ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
+        onClick={() => setSoloMode(soloMode === 'daily' ? 'library' : 'daily')}
+      >
+        <CalendarDays className="slice-nav__icon" aria-hidden />
+        <span className="slice-nav__idx">A2</span>
+        <span>{t('menu-nav-daily', { defaultValue: 'Daily' })}</span>
+      </button>
+      <button
+        type="button"
+        className="slice-nav__item"
+        aria-pressed={soloMode === 'setlists'}
+        aria-label={ts('setlists', { defaultValue: 'Setlists' })}
+        onClick={() => setSoloMode(soloMode === 'setlists' ? 'library' : 'setlists')}
+      >
+        <ListMusic className="slice-nav__icon" aria-hidden />
+        <span className="slice-nav__idx">B1</span>
+        <span>{t('menu-nav-setlists', { defaultValue: 'Setlists' })}</span>
+      </button>
+      <button
+        type="button"
+        className="slice-nav__item slice-nav__item--versus"
+        aria-label={t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
+        onClick={() => setShowMultiplayer(true)}
+      >
+        <Swords className="slice-nav__icon" aria-hidden />
+        <span className="slice-nav__idx">B2</span>
+        <span>{t('menu-nav-versus', { defaultValue: 'Versus' })}</span>
+      </button>
+    </nav>
+  );
+
   // Unified Main Menu View
   return (
     <div className="slice-menu absolute inset-0 z-50 flex flex-col overflow-hidden bg-slice-bg text-slice-text">
@@ -235,231 +289,104 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
               track is different: it replaces the stage, so it is allowed to
               cover it. */}
           {isLoading && (
-            <div className="absolute inset-0 z-70 bg-slice-bg/80 flex items-center justify-center flex-col gap-4">
-              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <div className="text-blue-500 font-extrabold animate-pulse uppercase tracking-widest">
+            <div className="absolute inset-0 z-70 bg-slice-bg/85 flex items-center justify-center flex-col gap-4">
+              <div className="w-9 h-9 border-[3px] border-slice-primary border-t-transparent rounded-full animate-spin" />
+              <div className="slice-label text-slice-primary animate-pulse">
                 {t('initializing-track', { defaultValue: 'Initializing Track' })}
               </div>
             </div>
           )}
 
-          {/* Masthead: the game's wordmark over its neon runway, with the player
-              and the mode buttons on top. The stage is decoration only. */}
-          <div className="slice-menu__mast">
-            <div className="slice-menu__bar">
-              <div className="slice-menu__brand">
-                <h1 className="slice-menu__title">
-                  <img
-                    className="slice-menu__logo"
-                    src="/images/games/logos/slice-it.svg"
-                    alt={t('game-title', { defaultValue: 'Slice It!' })}
-                    width={1120}
-                    height={319}
-                    decoding="async"
-                    fetchPriority="high"
-                  />
-                </h1>
-                <p className="slice-menu__tagline">
-                  {t('menu-tagline', { defaultValue: 'Slice through every beat.' })}
-                </p>
-              </div>
-              {/* On a wide screen the stage is the free space between the wordmark
-                  and the controls; on a narrow one it fills the masthead behind them. */}
-              <MenuStage />
-              <div className="slice-menu__who">
-                {/* The player's actual avatar. This was a `<div>` printing the
-                  first letter of their name and nothing else — the session
-                  carries `user.image` and it was never read, so everyone was a
-                  grey initial. `UserAvatar` is the shared primitive: it proxies
-                  a remote avatar through the image optimizer and falls back to
-                  the default asset if that fetch fails, which a hand-rolled
-                  `<img>` here would not. The neumorphic ring keeps it in the
-                  game's material rather than sitting on the surface as a flat
-                  circle. */}
-                <UserAvatar
-                  src={avatarUrl}
-                  alt={userName || 'Player'}
-                  size={40}
-                  fallbackName={userName || undefined}
-                  className="slice-menu__avatar shrink-0"
-                />
-                {/* Hidden below `sm`, not truncated. Truncating kept the name in
-                  the layout while the five buttons opposite squeezed it to 24px
-                  — one letter and an ellipsis, directly beside an avatar
-                  already showing that same letter. The name is not a control
-                  and repeating one glyph is not information, so on a phone the
-                  avatar carries identity alone and the row's width goes to the
-                  buttons that need it. `min-w-0` + truncate still hold from
-                  `sm` up, where a long display name would otherwise push those
-                  buttons off the right edge. */}
-                <div className="hidden [@media(min-width:640px)_and_(min-height:620px)]:flex min-w-0 items-center">
-                  <div className="slice-menu__name truncate">{userName || 'GUEST'}</div>
-                </div>
-              </div>
-
-              <div className="slice-menu__actions">
-                {/* S1 / S8 entry points. Plain buttons rather than a tab strip:
-                  each one swaps the whole stage for a different mode, and only
-                  one of the three is ever the current view. */}
-                <Button
-                  variant="ghost"
-                  data-jelly="off"
-                  className="slice-btn slice-btn--mode"
-                  onClick={() => setSoloMode(soloMode === 'daily' ? 'library' : 'daily')}
-                  aria-label={ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
-                  aria-pressed={soloMode === 'daily'}
-                >
-                  <CalendarDays className="w-4 h-4 [@media(min-width:640px)_and_(min-height:620px)]:mr-1.5" />
-                  <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
-                    {ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
-                  </span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  data-jelly="off"
-                  className="slice-btn slice-btn--mode"
-                  onClick={() => setSoloMode(soloMode === 'setlists' ? 'library' : 'setlists')}
-                  aria-label={ts('setlists', { defaultValue: 'Setlists' })}
-                  aria-pressed={soloMode === 'setlists'}
-                >
-                  <ListMusic className="w-4 h-4 [@media(min-width:640px)_and_(min-height:620px)]:mr-1.5" />
-                  <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
-                    {ts('setlists', { defaultValue: 'Setlists' })}
-                  </span>
-                </Button>
-                {/* The primary action: a cyan neon outline that fills on hover. It
-                  does not pulse. It used to pulse forever, and while signed out it
-                  sits under the full-menu `backdrop-blur-xl` sign-in veil, so
-                  every pulse frame re-blurred the whole menu: 10fps and a full
-                  core at rest on desktop, 60fps / idle with the pulse stopped
-                  (perf audit 2026-10-08). The look is `.slice-btn--primary` in
-                  `slice-menu.css`. */}
-                <Button
-                  variant="outline"
-                  data-jelly="off"
-                  className="slice-btn slice-btn--primary"
-                  onClick={() => setShowMultiplayer(true)}
-                  aria-label={t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="[@media(min-width:640px)_and_(min-height:620px)]:mr-1.5"
-                  >
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                  <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
-                    {t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
-                  </span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  data-jelly="off"
-                  className="slice-btn slice-btn--icon"
-                  onClick={() => setIsDarkMode(!isDarkMode)}
-                  aria-label={
-                    isDarkMode
-                      ? t('switch-to-light-mode', { defaultValue: 'Switch to Light Mode' })
-                      : t('switch-to-dark-mode', { defaultValue: 'Switch to Dark Mode' })
-                  }
-                  title={
-                    isDarkMode
-                      ? t('switch-to-light-mode', { defaultValue: 'Switch to Light Mode' })
-                      : t('switch-to-dark-mode', { defaultValue: 'Switch to Dark Mode' })
-                  }
-                >
-                  {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  data-jelly="off"
-                  className="slice-btn slice-btn--icon"
-                  onClick={() => setShowSettings(true)}
-                >
-                  <span className="sr-only">{t('settings', { defaultValue: 'Settings' })}</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                </Button>
-              </div>
+          {/* One slim bar: back, wordmark, the four places you can go, and the
+              player. It replaces a 60px route header stacked over a 125px
+              masthead — the game's art lives in the details column now, and
+              the slash under the bar is the key art's one motif. */}
+          <header className="slice-bar">
+            <Link
+              to="/games"
+              onClick={goBack}
+              className="slice-bar__icon"
+              aria-label={ts('back-to-builds', { defaultValue: 'Back to Builds' })}
+            >
+              <ArrowLeft className="size-[18px]" aria-hidden />
+            </Link>
+            <h1 className="slice-bar__title">
+              <img
+                className="slice-bar__logo"
+                src="/images/games/logos/slice-it.svg"
+                alt={t('game-title', { defaultValue: 'Slice It!' })}
+                width={1120}
+                height={319}
+                decoding="async"
+                fetchPriority="high"
+              />
+            </h1>
+            {!isPhone && navItems}
+            <div className="slice-bar__who">
+              <UserAvatar
+                src={avatarUrl}
+                alt={userName || 'Player'}
+                size={30}
+                fallbackName={userName || undefined}
+                className="slice-bar__avatar shrink-0"
+              />
+              <span className="slice-bar__name slice-figure">{userName || 'GUEST'}</span>
+              <button
+                type="button"
+                className="slice-bar__icon"
+                onClick={() => setShowSettings(true)}
+                aria-label={t('settings', { defaultValue: 'Settings' })}
+              >
+                <Settings className="size-[18px]" aria-hidden />
+              </button>
             </div>
-          </div>
+          </header>
 
           <div className="flex-1 min-h-0 flex relative">
-            {/* Auth overlay.
-                `items-center-safe`/`justify-center-safe` + `overflow-y-auto`:
-                plain `items-center` centres the panel and then clips it at BOTH
-                ends once it is taller than the box, putting the heading and the
-                Log In button out of reach with no way to scroll to them. On a
-                landscape phone (844×390 leaves ~320px of stage) this card was
-                ~420px tall, so that was every landscape session.
-
-                The splash sizes are gated on width AND height rather than on
-                `sm:` alone. `sm:` is a width test, and a landscape phone passes
-                it with 320px of stage — which is how the Log In button ended up
-                below the fold of the screen whose only purpose is that button.
-                Scrolling now reaches it; sizing it means you don't have to. */}
+            {/* Auth overlay. `items-center-safe` + `overflow-y-auto`: plain
+                `items-center` clips the card at both ends once it is taller than
+                the box (a landscape phone), putting the Log In button out of
+                reach. */}
             {session.signedOut && (
-              <div className="absolute inset-0 z-60 bg-slice-bg/90 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain p-6 sm:p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_var(--slice-shadow-dark),inset_-15px_-15px_40px_var(--slice-shadow-light)]">
+              <div className="absolute inset-0 z-60 bg-slice-bg/92 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain p-6">
                 <motion.div
-                  className="w-full max-w-md space-y-4 [@media(min-width:640px)_and_(min-height:620px)]:space-y-10 text-center"
+                  className="slice-panel w-full max-w-sm space-y-5 p-7 text-center"
                   variants={scaleIn}
                   initial="initial"
                   animate="animate"
                 >
-                  <h3 className="text-2xl [@media(min-width:640px)_and_(min-height:620px)]:text-5xl font-black tracking-tighter uppercase italic text-slice-text">
+                  <img
+                    className="mx-auto h-8 w-auto"
+                    src="/images/games/logos/slice-it.svg"
+                    alt=""
+                    width={1120}
+                    height={319}
+                    decoding="async"
+                  />
+                  <hr className="slice-slash" />
+                  <h3 className="slice-display text-xl uppercase text-slice-text">
                     {t('connect-to-start', { defaultValue: 'Connect to Start' })}
                   </h3>
-                  <p className="text-slice-text-muted font-bold uppercase text-[10px] sm:text-xs tracking-[0.35em] sm:tracking-[0.5em] opacity-60">
+                  <p className="slice-label normal-case tracking-normal text-[13px] leading-snug">
                     {t('auth-required', {
                       defaultValue: 'Authentication is required for leaderboard ranking',
                     })}
                   </p>
-                  <div className="space-y-6">
-                    <Button
-                      className="w-full py-4 [@media(min-width:640px)_and_(min-height:620px)]:py-12 text-lg [@media(min-width:640px)_and_(min-height:620px)]:text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_var(--slice-shadow-light)] rounded-[2.5rem] transition-colors transform hover:scale-[1.03] active:scale-95 uppercase"
-                      onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
-                    >
-                      {t('log-in', { defaultValue: 'Log In' })}
-                    </Button>
-                  </div>
+                  <Button
+                    className="slice-btn-primary w-full"
+                    onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
+                  >
+                    {t('log-in', { defaultValue: 'Log In' })}
+                  </Button>
                 </motion.div>
               </div>
             )}
 
             {/* The stage: library, daily challenge (S1), or setlists/courses
                 (S8/S2). One at a time — each is a different mode, not a filter
-                over the same list. */}
-            {/* Cross-faded, and `mode="wait"` so the outgoing mode is gone
-                before the next one measures itself — overlapping two full-height
-                stages in the same box makes the incoming one lay out against a
-                container that is still twice as tall, which lands as a jump on
-                the frame the old one unmounts. A fade rather than a slide: these
-                three are peers, not a stack with a direction. */}
-            <div className="w-full flex flex-col overflow-hidden">
+                over the same list. Cross-faded, and `mode="wait"` so the
+                outgoing mode is gone before the next one measures itself. */}
+            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={soloMode}
@@ -491,9 +418,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                          from the last song, with nothing in between to look at —
                          and those controls, plus the score multiplier they add up
                          to, all live in the panel. `START GAME` there is the
-                         control that commits. The lobby keeps its own meaning for
-                         `onSelect` (nominate this song), which is why this is
-                         decided here and not inside `SongLibrary`. */
+                         control that commits. */
                       onSelect={handleSelectSong}
                       onHighlight={handleSelectSong}
                       selectedSongId={selectedSong?.id ?? null}
@@ -504,30 +429,56 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
               </AnimatePresence>
             </div>
 
-            {/* Sidebar - Song Details */}
-            {/* The details sidebar slides; it used to appear and vanish.
-                `duration-300` was on the panel with no `transition-*` property
-                to drive and no exit path at all — `{selectedSong && …}` unmounts
-                synchronously, so a close is a hard cut however the panel is
-                styled. `AnimatePresence` is what gives the exit somewhere to
-                happen, and it keeps rendering the OUTGOING element, so the panel
-                still has its song on the way out even though state is already
-                null. A spring, not a duration: this is a surface that travels.
-                The global `MotionConfig reducedMotion="user"` already collapses
-                both to an instant swap for anyone who asks. */}
-            {/* Two KEYED siblings, not a fragment.
-                `AnimatePresence` tracks its direct children by key; a bare `<>`
-                is one untracked child, so the backdrop and the panel were not
-                individually presence-managed and the pair flashed on open —
-                the fade would start, then snap as the group re-rendered. An
-                array of keyed motion elements is the shape it actually
-                supports. */}
+            {/* Wide: the details are a column beside the library, always there —
+                the key art when nothing is picked, the track when something is. */}
+            {isWide && soloMode === 'library' && (
+              <aside className="slice-side" aria-label={t('song-details', { defaultValue: 'Song Details' })}>
+                {selectedSong ? (
+                  <div className="min-h-0 flex-1 overflow-y-auto">
+                    <SongDetailsPanel
+                      song={selectedSong}
+                      onPlay={handleStartGame}
+                      onSongUpdated={(updates) =>
+                        setSelectedSong((current) => (current ? { ...current, ...updates } : current))
+                      }
+                    />
+                  </div>
+                ) : (
+                  <div className="slice-side__empty">
+                    <div className="slice-side__art">
+                      <OptimizedImage
+                        src="/images/games/banners/slice-it.webp"
+                        alt=""
+                        width={840}
+                        height={280}
+                        priority
+                        className="size-full object-cover"
+                      />
+                    </div>
+                    <p className="slice-display text-lg uppercase text-slice-text">
+                      {t('menu-tagline', { defaultValue: 'Slice through every beat.' })}
+                    </p>
+                    <hr className="slice-slash" />
+                    <p className="slice-label normal-case tracking-normal text-[13px] leading-relaxed">
+                      {t('side-empty', {
+                        defaultValue: 'Pick a track to see its charts, your scores and the modifiers.',
+                      })}
+                    </p>
+                  </div>
+                )}
+              </aside>
+            )}
+
+            {/* Narrow: the details slide over the library. The sheet slides; it
+                used to appear and vanish. A spring, not a duration: this is a
+                surface that travels. Two KEYED siblings, not a fragment —
+                `AnimatePresence` tracks its direct children by key. */}
             <AnimatePresence>
-              {selectedSong && [
+              {!isWide && selectedSong && [
                 <motion.button
                   key="song-details-backdrop"
                   type="button"
-                  className="absolute inset-0 bg-black/20 z-65"
+                  className="absolute inset-0 bg-black/50 z-65"
                   onClick={() => setSelectedSong(null)}
                   aria-label={t('close-song-details', { defaultValue: 'Close song details' })}
                   initial={{ opacity: 0 }}
@@ -537,49 +488,45 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 />,
                 <motion.div
                   key="song-details-panel"
-                  className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 flex flex-col overflow-hidden"
+                  className="slice-sheet"
                   initial={{ x: '100%' }}
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={APPLE_SPRING.smooth}
                 >
-                  {/* Sidebar Header */}
-                  <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
-                    <h2 className="text-lg font-black text-slice-text">
+                  <div className="slice-sheet__head">
+                    <span className="slice-label">
                       {t('song-details', { defaultValue: 'Song Details' })}
-                    </h2>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark rounded-lg"
+                    </span>
+                    <button
+                      type="button"
+                      className="slice-bar__icon"
                       onClick={() => setSelectedSong(null)}
+                      aria-label={t('close-song-details', { defaultValue: 'Close song details' })}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
+                        width="18"
+                        height="18"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
+                        aria-hidden
                       >
                         <line x1="18" y1="6" x2="6" y2="18" />
                         <line x1="6" y1="6" x2="18" y2="18" />
                       </svg>
-                    </Button>
+                    </button>
                   </div>
-
-                  {/* Sidebar Content */}
                   <div className="flex-1 overflow-y-auto">
                     <SongDetailsPanel
                       song={selectedSong}
                       onPlay={handleStartGame}
                       onSongUpdated={(updates) =>
-                        setSelectedSong((current) =>
-                          current ? { ...current, ...updates } : current,
-                        )
+                        setSelectedSong((current) => (current ? { ...current, ...updates } : current))
                       }
                     />
                   </div>
@@ -587,6 +534,8 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
               ]}
             </AnimatePresence>
           </div>
+
+          {isPhone && navItems}
         </>
       )}
 
