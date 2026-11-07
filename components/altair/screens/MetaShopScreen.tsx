@@ -56,7 +56,7 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
   };
 
   return (
-    <div className="altair-parchment flex flex-col flex-1 px-4 pt-4 pb-12 max-w-2xl w-full mx-auto">
+    <div className="altair-scan flex flex-col flex-1 px-4 pt-4 pb-12 max-w-2xl w-full mx-auto">
       {/* Coin balance */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-(--altair-text)">{t("meta-shop-title", { defaultValue: "Meta Shop" })}</h2>

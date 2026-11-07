@@ -168,7 +168,7 @@ export function LevelUpPicker({
               <div key={i} className="relative group">
                 <button
                   onClick={() => onPick(i)}
-                  className={`altair-parchment-surface w-36 sm:w-44 p-3 sm:p-4 rounded-(--altair-radius-lg) border bg-(--altair-surface) hover:bg-(--altair-surface-hover) hover:border-(--altair-border-bright) transition-colors text-left altair-modal ${
+                  className={`altair-scan-surface w-36 sm:w-44 p-3 sm:p-4 rounded-(--altair-radius-lg) border bg-(--altair-surface) hover:bg-(--altair-surface-hover) hover:border-(--altair-border-bright) transition-colors text-left altair-modal ${
                     isFocused ? 'border-2 border-(--altair-accent) ring-2 ring-(--altair-accent)/30 scale-[1.03]' : 'border-(--altair-border)'
                   }`}
                   style={{ animationDelay: `${i * 0.05}s` }}

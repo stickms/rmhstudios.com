@@ -55,26 +55,41 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
     enabled: !showLeaderboard && !showPatchnotes,
   });
 
-  const focusClass = (i: number) =>
-    focusedIndex === i ? 'ring-2 ring-(--altair-accent)/50 scale-[1.02]' : '';
+  // Keyboard focus is a data attribute the theme styles (altair.css `.altair-btn`),
+  // not a per-button ring + scale, so every control lights the same way.
+  const focused = (i: number) => (focusedIndex === i ? 'true' : undefined);
 
   return (
-    <div className="altair-parchment flex flex-col items-center justify-center flex-1 px-4 py-8">
+    <div className="altair-scan flex flex-col items-center justify-center flex-1 px-4 py-8">
+      {/* Backdrop: the corridor at the end of Outpost 13 */}
+      <div className="altair-corridor" aria-hidden="true">
+        <div className="altair-corridor__frames">
+          <span className="altair-corridor__frame" />
+          <span className="altair-corridor__frame" />
+          <span className="altair-corridor__frame" />
+          <span className="altair-corridor__frame" />
+          <span className="altair-corridor__frame" />
+          <span className="altair-corridor__frame" />
+        </div>
+        <span className="altair-corridor__lamp altair-corridor__lamp--l" />
+        <span className="altair-corridor__lamp altair-corridor__lamp--r" />
+      </div>
+
       {/* Title */}
       <div className="text-center mb-12">
-        <h1
-          className="text-7xl md:text-8xl font-black tracking-[0.15em] text-(--altair-accent) mb-3"
-          style={{ fontFamily: 'var(--altair-font-display)', textShadow: '0 0 40px rgba(200, 164, 74, 0.3)' }}
-        >
-          ALTAIR
+        <p className="altair-label mb-4">
+          {t("outpost-13", { defaultValue: "Outpost 13 · Extraction thriller" })}
+        </p>
+        <h1 className="text-5xl sm:text-7xl md:text-8xl tracking-[0.12em] mb-3 pl-[0.12em]">
+          <span className="altair-glitch" data-text="ALTAIR">
+            ALTAIR
+          </span>
         </h1>
-        <p className="text-(--altair-text-muted) text-sm tracking-widest uppercase"
-          style={{ fontFamily: 'var(--altair-font-display)' }}
-        >
-          {t("survive-the-realm", { defaultValue: "Survive the Realm" })}
+        <p className="altair-label">
+          {t("signal-lost", { defaultValue: "Fragmented memory · Echo detected" })}
         </p>
         {doubleTimeUnlocked && (
-          <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-(--altair-warning-dim) text-(--altair-warning) text-xs font-bold">
+          <div className="mt-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-(--altair-radius) bg-(--altair-warning-dim) text-(--altair-warning) text-xs font-bold">
             <Zap size={12} />
             {t("double-time-unlocked", { defaultValue: "Double Time Unlocked" })}
           </div>
@@ -82,68 +97,75 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
       </div>
 
       {/* Menu buttons */}
-      <div className="flex flex-col gap-3 w-full max-w-xs">
+      <div className="flex flex-col gap-2 w-full max-w-xs">
         <button
           onClick={onPlay}
-          className={`flex items-center justify-center gap-2 py-4 rounded-(--altair-radius) font-bold text-(--altair-accent-fg) text-lg tracking-wider bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-colors shadow-(--altair-shadow) ${focusClass(0)}`}
+          data-focused={focused(0)}
+          className="altair-btn py-4 text-base"
         >
-          <Play size={20} />
+          <Play size={18} />
           {t("play", { defaultValue: "PLAY" })}
         </button>
 
         <button
           onClick={onMultiplayer}
-          className={`flex items-center justify-center gap-2 py-3 rounded-(--altair-radius) font-bold text-(--altair-hud-ink) tracking-wider bg-(--altair-info) hover:brightness-110 transition shadow-(--altair-shadow) ${focusClass(1)}`}
+          data-focused={focused(1)}
+          className="altair-btn py-3"
         >
-          <Users size={18} />
+          <Users size={16} />
           {t("multiplayer", { defaultValue: "MULTIPLAYER" })}
         </button>
 
         <button
           onClick={onMetaShop}
-          className={`flex items-center gap-2 px-4 py-3 rounded-(--altair-radius) font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors ${focusClass(2)}`}
+          data-focused={focused(2)}
+          className="altair-btn altair-btn--ghost px-4 py-3"
         >
-          <ShoppingBag size={18} />
+          <ShoppingBag size={16} />
           {t("meta-shop", { defaultValue: "Meta Shop" })}
-          <span className="ml-auto text-sm text-(--altair-warning) font-bold">{t("coins-count", { defaultValue: "{{coins}} coins", coins })}</span>
+          <span className="ml-auto text-sm text-(--altair-amber) font-mono">{t("coins-count", { defaultValue: "{{coins}} coins", coins })}</span>
         </button>
 
         <button
           onClick={onSettings}
-          className={`flex items-center justify-center gap-2 py-3 rounded-(--altair-radius) font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors ${focusClass(3)}`}
+          data-focused={focused(3)}
+          className="altair-btn altair-btn--ghost py-3"
         >
-          <Settings size={18} />
+          <Settings size={16} />
           {t("settings", { defaultValue: "Settings" })}
         </button>
 
         <button
           onClick={handleToggleLeaderboard}
-          className={`flex items-center justify-center gap-2 py-3 rounded-(--altair-radius) font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors ${focusClass(4)}`}
+          data-focused={focused(4)}
+          className="altair-btn altair-btn--ghost py-3"
         >
-          <Trophy size={18} />
+          <Trophy size={16} />
           {t("leaderboard", { defaultValue: "Leaderboard" })}
         </button>
 
         <button
           onClick={onBestiary}
-          className={`flex items-center justify-center gap-2 py-3 rounded-(--altair-radius) font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors ${focusClass(5)}`}
+          data-focused={focused(5)}
+          className="altair-btn altair-btn--ghost py-3"
         >
-          <Book size={18} />
+          <Book size={16} />
           {t("bestiary", { defaultValue: "Bestiary" })}
           <CodexBadge />
         </button>
 
         <button
           onClick={handleOpenPatchnotes}
-          className={`flex items-center justify-center gap-2 py-3 rounded-(--altair-radius) font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-colors ${focusClass(6)}`}
+          data-focused={focused(6)}
+          className="altair-btn altair-btn--ghost py-3"
         >
-          <ScrollText size={18} />
+          <ScrollText size={16} />
           {t("patch-notes", { defaultValue: "Patch Notes" })}
         </button>
       </div>
 
       {/* Stats footer */}
-      <div className="mt-8 text-center text-(--altair-text-dim) text-xs">
+      <div className="mt-8 text-center altair-label">
         <p>{t("runs-played", { defaultValue: "Runs played: {{totalRuns}}", totalRuns })}</p>
       </div>
 
@@ -234,7 +256,7 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-(--altair-hud-scrim)/60 altair-overlay" onClick={onClose}>
       <div
-        className="altair-parchment-surface bg-(--altair-surface) border border-(--altair-border) rounded-(--altair-radius-lg) w-full max-w-lg mx-4 altair-modal overflow-hidden"
+        className="altair-scan-surface bg-(--altair-surface) border border-(--altair-border) rounded-(--altair-radius-lg) w-full max-w-lg mx-4 altair-modal overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

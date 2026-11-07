@@ -346,7 +346,7 @@ export default function PatchnotesModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-(--altair-hud-scrim)/60 altair-overlay" onClick={onClose}>
       <div
-        className="altair-parchment-surface bg-(--altair-surface) border border-(--altair-border) rounded-(--altair-radius-lg) w-full max-w-2xl mx-4 altair-modal overflow-hidden flex flex-col"
+        className="altair-scan-surface bg-(--altair-surface) border border-(--altair-border) rounded-(--altair-radius-lg) w-full max-w-2xl mx-4 altair-modal overflow-hidden flex flex-col"
         style={{ maxHeight: 'min(85vh, 700px)' }}
         onClick={(e) => e.stopPropagation()}
       >
