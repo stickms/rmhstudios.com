@@ -88,14 +88,28 @@ export async function updateExperiment(
   id: string,
   patch: { status?: 'DRAFT' | 'RUNNING' | 'STOPPED'; testPct?: number },
 ): Promise<boolean> {
-  const res = await prisma.experiment.updateMany({
-    // Re-weighting a live experiment would move members between arms.
-    where: patch.testPct ? { id, status: { not: 'RUNNING' } } : { id },
-    data: {
-      ...patch,
-      ...(patch.status === 'RUNNING' ? { startedAt: new Date() } : {}),
-    },
-  });
+  // Re-weighting a live experiment would move members between arms; and
+  // (re)starting one is conditional on it not already running.
+  const guarded = patch.testPct || patch.status === 'RUNNING';
+  const where = guarded ? { id, status: { not: 'RUNNING' as const } } : { id };
+  let res: { count: number };
+  if (patch.status === 'RUNNING') {
+    // `startedAt` is the start of the analysis window: stamp it on the first
+    // start only. Resuming a STOPPED experiment keeps its original start (it
+    // used to be reset, silently truncating the window the results cover).
+    res = await prisma.experiment.updateMany({
+      where: { ...where, startedAt: null },
+      data: { ...patch, startedAt: new Date() },
+    });
+    if (res.count === 0) {
+      res = await prisma.experiment.updateMany({
+        where: { ...where, startedAt: { not: null } },
+        data: patch,
+      });
+    }
+  } else {
+    res = await prisma.experiment.updateMany({ where, data: patch });
+  }
   apiCache.invalidate(RUNNING_KEY);
   return res.count > 0;
 }

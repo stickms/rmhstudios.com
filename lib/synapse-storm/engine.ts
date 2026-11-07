@@ -96,11 +96,6 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
     useEffect(() => { modeRef.current = mode; }, [mode]);
     useEffect(() => { mpConfigRef.current = mpConfig; }, [mpConfig]);
 
-    // Keep ref in sync
-    useEffect(() => {
-        stateRef.current = state;
-    }, [state]);
-
     const clearTimers = useCallback(() => {
         if (spawnTimerRef.current) clearTimeout(spawnTimerRef.current);
         if (gameLoopRef.current) clearInterval(gameLoopRef.current);
@@ -109,6 +104,22 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
         gameLoopRef.current = null;
         ambientRef.current = null;
     }, []);
+
+    /**
+     * The one writer of game state. `stateRef` is the synchronous source of
+     * truth and `fn` runs exactly once, here — never as a React updater, which
+     * StrictMode invokes twice — so the sounds, the music stop and the
+     * multiplayer `onGameOver` emit inside it fire once. A transition into
+     * 'gameover' also stops every timer, so nothing ticks a finished run.
+     */
+    const apply = useCallback((fn: (prev: GameState) => GameState) => {
+        const prev = stateRef.current;
+        const next = fn(prev);
+        if (next === prev) return;
+        stateRef.current = next;
+        setState(next);
+        if (next.status === 'gameover' && prev.status !== 'gameover') clearTimers();
+    }, [clearTimers]);
 
     // Spawn logic
     const spawnPuzzle = useCallback(() => {
@@ -164,18 +175,18 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
         soundManager.spawn();
         if (puzzle.isPriority) soundManager.priority();
 
-        setState((prev) => ({
+        apply((prev) => ({
             ...prev,
             lastPowerupSpawnAt: isPowerup ? now : prev.lastPowerupSpawnAt,
             activePuzzles: [...prev.activePuzzles, activePuzzle],
         }));
 
         spawnTimerRef.current = setTimeout(spawnPuzzle, nextInterval);
-    }, []);
+    }, [apply]);
 
     // Game tick (100ms)
     const gameTick = useCallback(() => {
-        setState((prev) => {
+        apply((prev) => {
             if (prev.status !== 'playing') return prev;
 
             const now = Date.now();
@@ -370,7 +381,7 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
 
             return nextState;
         });
-    }, []);
+    }, [apply]);
 
     // Start game
     const beginGame = useCallback(() => {
@@ -389,24 +400,24 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
         const now = Date.now();
         const startTime = isMP ? mpConfigRef.current!.matchStartAt : now;
 
-        setState({
+        apply(() => ({
             ...INITIAL_STATE,
             status: 'playing',
             startTime,
             lastTickAt: now,
             nextBurstAt: now + 1000 * (45 + Math.random() * 30),
             isSaturated: false,
-        });
+        }));
 
         if (!isMP) {
-            // Singleplayer: use original spawn loop
-            setTimeout(() => spawnPuzzle(), 1000);
+            // Singleplayer: use original spawn loop (tracked, so clearTimers stops it)
+            spawnTimerRef.current = setTimeout(spawnPuzzle, 1000);
         }
         // Multiplayer spawning is handled in gameTick
 
         gameLoopRef.current = setInterval(gameTick, 100);
         ambientRef.current = setInterval(() => soundManager.ambient(), 6000);
-    }, [clearTimers, spawnPuzzle, gameTick]);
+    }, [clearTimers, spawnPuzzle, gameTick, apply]);
 
     // Handlers pass a click event to `startGame`, so the two entry points are
     // separate functions rather than one with an options argument.
@@ -426,7 +437,8 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
 
     // Solve puzzle
     const solvePuzzle = useCallback((puzzleId: string, correct: boolean) => {
-        setState((prev) => {
+        apply((prev) => {
+            if (prev.status !== 'playing') return prev;
             const puzzle = prev.activePuzzles.find((p) => p.id === puzzleId);
             if (!puzzle || puzzle.solved || puzzle.expired) return prev;
 
@@ -523,11 +535,11 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
                 };
             }
         });
-    }, []);
+    }, [apply]);
 
     // Skip memory phase
     const skipMemoryPhase = useCallback((puzzleId: string) => {
-        setState((prev) => {
+        apply((prev) => {
             const puzzle = prev.activePuzzles.find((p) => p.id === puzzleId);
             if (!puzzle || puzzle.category !== 'memory' || puzzle.memoryPhase !== 'show') return prev;
 
@@ -545,14 +557,14 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
                 ),
             };
         });
-    }, []);
+    }, [apply]);
 
     // Return to menu
     const returnToMenu = useCallback(() => {
         clearTimers();
         synapseStormMusic.stop();
-        setState(INITIAL_STATE);
-    }, [clearTimers]);
+        apply(() => INITIAL_STATE);
+    }, [clearTimers, apply]);
 
     // Cleanup on unmount
     useEffect(() => {

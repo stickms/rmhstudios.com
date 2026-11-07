@@ -314,7 +314,14 @@ func (s *Store) HandleEvents(events []Event) {
 	changed := false
 	for _, ev := range events {
 		open := s.openAutoLocked(ev.Service)
-		switch ev.Kind {
+		kind := ev.Kind
+		if kind == EventStillFailing && open == nil {
+			// The open auto incident was resolved (by an admin) while the
+			// service kept failing: the outage still needs an incident, so open
+			// a fresh one rather than dropping every later failure.
+			kind = EventFailing
+		}
+		switch kind {
 		case EventFailing:
 			if open != nil {
 				continue
@@ -392,10 +399,26 @@ func (s *Store) HandleEvents(events []Event) {
 	s.notify(notes)
 }
 
+// trimLocked drops the oldest incidents past maxIncidents, but never an
+// unresolved automatic one: the prober finds it again by service to escalate
+// and resolve it, so dropping it would orphan a live outage.
 func (s *Store) trimLocked() {
-	if s.maxIncidents > 0 && len(s.incidents) > s.maxIncidents {
-		s.incidents = s.incidents[len(s.incidents)-s.maxIncidents:]
+	if s.maxIncidents <= 0 || len(s.incidents) <= s.maxIncidents {
+		return
 	}
+	excess := len(s.incidents) - s.maxIncidents
+	kept := s.incidents[:0]
+	for _, inc := range s.incidents {
+		if excess > 0 && !(inc.Kind == "auto" && !inc.Resolved()) {
+			excess--
+			continue
+		}
+		kept = append(kept, inc)
+	}
+	for i := len(kept); i < len(s.incidents); i++ {
+		s.incidents[i] = nil
+	}
+	s.incidents = kept
 }
 
 func (s *Store) notify(notes []Notification) {
@@ -643,6 +666,14 @@ func (s *Store) AddIncidentUpdate(id string, in IncidentInput, now time.Time) (I
 		}
 		state = *in.State
 	}
+	// Lifecycle: investigating/identified/monitoring move freely among
+	// themselves and into resolved; resolved is terminal. A resolved incident
+	// can still take a note (state stays resolved), but a recurrence is a new
+	// incident, so its history and duration stay true.
+	if inc.State == StateResolved && state != StateResolved {
+		s.mu.Unlock()
+		return Incident{}, errors.New("incident is resolved; open a new incident instead of reopening it")
+	}
 	if in.Impact != nil && validImpact(*in.Impact) {
 		inc.Impact = *in.Impact
 	}
@@ -651,8 +682,6 @@ func (s *Store) AddIncidentUpdate(id string, in IncidentInput, now time.Time) (I
 	if state == StateResolved && inc.State != StateResolved {
 		inc.ResolvedAt = now.UnixMilli()
 		event = "incident.resolved"
-	} else if state != StateResolved {
-		inc.ResolvedAt = 0
 	}
 	inc.State = state
 	inc.UpdatedAt = now.UnixMilli()

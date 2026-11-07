@@ -190,7 +190,9 @@ export class GameSession {
         }
 
         const poll = this.input.poll();
-        if (poll.pausePressed && this.phase !== 'done') {
+        // Only a solo run can pause: a paused co-op host would stop director()
+        // (and with it the run) for every guest. Same rule as useGameSession.
+        if (poll.pausePressed && this.phase !== 'done' && useDreamRift.getState().mode === 'single') {
             const paused = !useDreamRift.getState().paused;
             useDreamRift.getState().setPaused(paused);
             this.sfx.play('pause');
@@ -754,6 +756,10 @@ export class GameSession {
 
     private onCommand(d: Record<string, number | string | boolean | null>): void {
         if (this.isHost) return; // host already applied locally
+        // Once the run has ended ('done' — victory, game over or a practice end)
+        // a late or duplicated host command must not restart a stage, re-enter a
+        // phase or run beginEnding/finishRun a second time.
+        if (this.phase === 'done') return;
         switch (d.t) {
             case 'phase':
                 this.applyPhase(d.phase as DirectorPhase);

@@ -220,6 +220,13 @@ export function useDraft<T>({
   const isDirtyRef = useRef(isDirty);
   isDirtyRef.current = isDirty;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * A debounced write is owed. Separate from `timer` because React runs the
+   * autosave effect's cleanup (which clears the timer) BEFORE the unmount
+   * flush below on unmount — reading `timer` there always saw null, and a
+   * draft typed within the debounce of navigating away was lost.
+   */
+  const pending = useRef(false);
 
   const write = useCallback(() => {
     const k = keyRef.current;
@@ -231,6 +238,8 @@ export function useDraft<T>({
       void deleteDraft(k);
     }
   }, [surface, entityId, userId]);
+  const writeRef = useRef(write);
+  writeRef.current = write;
 
   // Load pass. Runs per key, so switching entities re-asks the store.
   useEffect(() => {
@@ -257,18 +266,30 @@ export function useDraft<T>({
 
   // Autosave pass.
   useEffect(() => {
-    if (!enabled || !key || !ready) return;
+    // Disabled, keyless, loading, or (below) a restore prompt open: whatever
+    // write was owed is no longer wanted.
+    if (!enabled || !key || !ready) {
+      pending.current = false;
+      return;
+    }
     // Suspended while a restore prompt is open. The editor is empty at that
     // moment by definition — the user has not answered yet — and writing that
     // empty value back would delete the very draft being offered.
-    if (recovered !== null) return;
+    if (recovered !== null) {
+      pending.current = false;
+      return;
+    }
 
     if (timer.current) clearTimeout(timer.current);
+    pending.current = true;
     timer.current = setTimeout(() => {
       timer.current = null;
+      pending.current = false;
       write();
     }, DEBOUNCE_MS);
 
+    // Clears the timer only: `pending` survives so the unmount flush still
+    // sees the owed write (a re-run re-arms it; an early return drops it).
     return () => {
       if (timer.current) clearTimeout(timer.current);
       timer.current = null;
@@ -277,16 +298,18 @@ export function useDraft<T>({
 
   // Flush on unmount — but only a write we had already committed to. Navigating
   // away mid-sentence must still save; a component that was idle must not get a
-  // spurious write (it would resurrect a draft `clear()` just removed).
+  // spurious write (it would resurrect a draft `clear()` just removed). Mount-
+  // only, so a `write` identity change (a new user) never flushes mid-life.
   useEffect(
     () => () => {
-      if (timer.current) {
-        clearTimeout(timer.current);
-        timer.current = null;
-        write();
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+      if (pending.current) {
+        pending.current = false;
+        writeRef.current();
       }
     },
-    [write],
+    [],
   );
 
   const accept = useCallback(() => {
@@ -301,6 +324,7 @@ export function useDraft<T>({
   }, []);
 
   const clear = useCallback(() => {
+    pending.current = false;
     if (timer.current) {
       clearTimeout(timer.current);
       timer.current = null;

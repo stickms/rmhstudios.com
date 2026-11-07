@@ -28,7 +28,12 @@ import type { CloudSave } from '@/lib/game-saves/cloud-save';
 import type { SaveOrigin, SaveSummary } from '@/lib/game-saves/conflict';
 import { SaveConflictDialog } from '@/components/shared/SaveConflictDialog';
 
-export type CloudSaveStatus = 'loading' | 'ready' | 'conflict';
+/**
+ * `failed`: `resolve()` threw (an unreadable local copy, a store bug). Terminal
+ * until `reload()`. Neither copy is known, so a caller must NOT start a new game
+ * on it (its autosave would overwrite the account) — render a retry instead.
+ */
+export type CloudSaveStatus = 'loading' | 'ready' | 'conflict' | 'failed';
 
 export interface UseCloudSaveResult<T> {
   status: CloudSaveStatus;
@@ -83,9 +88,21 @@ export function useCloudSave<T>(
     const cloudSave = latest.current;
     cloudSave.setIdentity(userId);
     setStatus('loading');
+    // A new identity (or a reload) starts clean: the previous player's save and
+    // conflict must not be readable while this one loads.
+    setSave(null);
+    setConflict(null);
 
     void (async () => {
-      const choice = await cloudSave.resolve();
+      let choice: Awaited<ReturnType<CloudSave<T>['resolve']>>;
+      try {
+        choice = await cloudSave.resolve();
+      } catch (error) {
+        if (cancelled) return;
+        console.error('[useCloudSave] Could not resolve the save', error);
+        setStatus('failed');
+        return;
+      }
       // A sign-out mid-fetch would otherwise drop one account's save into the
       // next player's game.
       if (cancelled) return;

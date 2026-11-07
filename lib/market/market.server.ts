@@ -32,12 +32,14 @@ import { getShopItem, type ShopItem } from '@/lib/shop/catalog';
 import { levelFromXp } from '@/lib/xp/levels';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
+import { logAdminAction } from '@/lib/admin-audit.server';
 import {
   isTradable,
   isPriceInBounds,
   minPriceFor,
   marketFee,
   isAnomalousPrice,
+  median,
   MIN_PRICE,
   MAX_PRICE,
   MIN_SELLER_LEVEL,
@@ -159,6 +161,8 @@ export async function listItem({
           status: 'ACTIVE',
           buyerId: null,
           closedAt: null,
+          // A previous admin review approved the OLD listing's price, not this one.
+          reviewedAt: null,
           createdAt: new Date(),
         },
       });
@@ -190,7 +194,9 @@ export interface BuyResult {
  *
  * Anomaly path: if the price is ≥ 10× the item's 30-day median sale price, the
  * listing is frozen (ACTIVE→HELD) and **no funds move**; admins are notified to
- * review it. The buyer is told it's under review.
+ * review it. The buyer is told it's under review. A listing an admin already
+ * reviewed and released (`reviewedAt` set) skips the guard — otherwise the
+ * release would only re-freeze on the very next buy.
  */
 export async function buyListing({
   buyerId,
@@ -216,17 +222,21 @@ export async function buyListing({
     if (dup) throw new MarketError('ALREADY_OWNED', 'You already own this item');
 
     // Anomaly guard: freeze suspiciously-priced buys before any money moves.
-    const recentSold = await tx.marketListing.findMany({
-      where: {
-        itemId: listing.itemId,
-        status: 'SOLD',
-        closedAt: { gte: new Date(Date.now() - THIRTY_DAYS_MS) },
-      },
-      select: { priceCoins: true },
-      orderBy: { closedAt: 'desc' },
-      take: 500,
-    });
+    // Skipped once an admin has reviewed and released this exact listing.
+    const recentSold = listing.reviewedAt
+      ? []
+      : await tx.marketListing.findMany({
+          where: {
+            itemId: listing.itemId,
+            status: 'SOLD',
+            closedAt: { gte: new Date(Date.now() - THIRTY_DAYS_MS) },
+          },
+          select: { priceCoins: true },
+          orderBy: { closedAt: 'desc' },
+          take: 500,
+        });
     if (
+      !listing.reviewedAt &&
       isAnomalousPrice(
         listing.priceCoins,
         recentSold.map((r) => r.priceCoins),
@@ -309,7 +319,7 @@ export async function buyListing({
     void notifyAdminsOfReview({
       preview: `Marketplace listing held for review: ${result.price} coins (≥10× median)`,
       kind: 'market',
-      link: '/admin/reports',
+      link: '/admin/market',
     }).catch(() => {});
   }
   return result;
@@ -317,16 +327,153 @@ export async function buyListing({
 
 // ─── Cancel ──────────────────────────────────────────────────────────────────
 
-/** Release escrow: flip an ACTIVE listing owned by `sellerId` to CANCELED. */
-export async function cancelListing(listingId: string, sellerId: string): Promise<void> {
+/**
+ * The one way a listing is closed without a sale: CAS the status to CANCELED.
+ *
+ * The escrow is the listing row itself (`inventoryId @unique`); the inventory
+ * row never leaves the seller while listed. So flipping the listing to a
+ * terminal status IS the return of the item — the seller can equip it again, or
+ * re-list it (`listItem` recycles the terminal row). Returns whether this call
+ * won the CAS; a loser changes nothing, so the item is returned exactly once.
+ */
+async function closeListingAsCanceled(where: Prisma.MarketListingWhereInput): Promise<boolean> {
   const res = await prisma.marketListing.updateMany({
-    where: { id: listingId, sellerId, status: 'ACTIVE' },
+    where,
     data: { status: 'CANCELED', closedAt: new Date() },
   });
-  if (res.count === 0) {
-    // Either it doesn't exist, isn't yours, or isn't ACTIVE (sold/held/canceled).
+  return res.count > 0;
+}
+
+/**
+ * Release escrow: flip an ACTIVE or HELD listing owned by `sellerId` to
+ * CANCELED.
+ *
+ * HELD (an anomalously priced buy frozen for review) moved no funds and
+ * recorded no buyer, so cancelling it is exactly as safe as cancelling an
+ * ACTIVE one; the seller need not wait for the admin review. The CAS on the
+ * status set is what keeps a racing buy (ACTIVE → SOLD) from being cancelled
+ * under it.
+ */
+export async function cancelListing(listingId: string, sellerId: string): Promise<void> {
+  const closed = await closeListingAsCanceled({
+    id: listingId,
+    sellerId,
+    status: { in: ['ACTIVE', 'HELD'] },
+  });
+  if (!closed) {
+    // Either it doesn't exist, isn't yours, or is already closed (sold/canceled).
     throw new MarketError('NOT_AVAILABLE', 'That listing can no longer be canceled', 409);
   }
+}
+
+// ─── Admin review of HELD listings ─────────────────────────────────────────
+
+export interface HeldListing {
+  id: string;
+  itemId: string;
+  priceCoins: number;
+  createdAt: string;
+  item: Pick<ShopItem, 'id' | 'name' | 'kind' | 'rarity'> | null;
+  seller: ReturnType<typeof resolveUser>;
+  /** 30-day median SOLD price for the item — the baseline the hold tripped on. */
+  medianCoins: number | null;
+  /** How many recent sales that median is drawn from. */
+  recentSales: number;
+}
+
+/**
+ * Listings frozen for anomaly review (status HELD), oldest first, each with the
+ * 30-day median it was measured against so the admin can judge the price.
+ */
+export async function listHeldListings(limit = 100): Promise<HeldListing[]> {
+  const rows = await prisma.marketListing.findMany({
+    where: { status: 'HELD' },
+    orderBy: { createdAt: 'asc' },
+    take: Math.min(Math.max(limit, 1), 200),
+    include: { seller: { select: userDisplaySelect } },
+  });
+  if (rows.length === 0) return [];
+
+  // The same window and sample the hold was measured on in `buyListing`
+  // (30 days, newest 500 sales), per item, so one busy item can't crowd out
+  // another's baseline. Held listings are rare; the item set is small.
+  const itemIds = [...new Set(rows.map((r) => r.itemId))];
+  const since = new Date(Date.now() - THIRTY_DAYS_MS);
+  const samples = await Promise.all(
+    itemIds.map((itemId) =>
+      prisma.marketListing.findMany({
+        where: { itemId, status: 'SOLD', closedAt: { gte: since } },
+        select: { priceCoins: true },
+        orderBy: { closedAt: 'desc' },
+        take: 500,
+      }),
+    ),
+  );
+  const pricesByItem = new Map(
+    itemIds.map((id, i) => [id, samples[i].map((s) => s.priceCoins)] as const),
+  );
+
+  return rows.map((r) => {
+    const item = getShopItem(r.itemId);
+    const prices = pricesByItem.get(r.itemId) ?? [];
+    return {
+      id: r.id,
+      itemId: r.itemId,
+      priceCoins: r.priceCoins,
+      createdAt: r.createdAt.toISOString(),
+      item: item ? { id: item.id, name: item.name, kind: item.kind, rarity: item.rarity } : null,
+      seller: resolveUser(r.seller),
+      medianCoins: prices.length ? median(prices) : null,
+      recentSales: prices.length,
+    };
+  });
+}
+
+export type HeldListingAction = 'release' | 'cancel';
+
+/**
+ * Resolve a HELD listing. Both outcomes CAS on `status = HELD`, so a seller
+ * cancelling at the same moment (or a second admin) loses cleanly with
+ * NOT_AVAILABLE and nothing is applied twice.
+ *
+ *  - **release** — HELD → ACTIVE and mark it reviewed, so it can sell again at
+ *    the reviewed price without re-tripping the anomaly hold. The frozen buy is
+ *    NOT executed: it never debited the buyer, and nothing recorded who they
+ *    were; they (or anyone) must buy again.
+ *  - **cancel** — HELD → CANCELED via the same close as a seller cancel, which
+ *    returns the escrowed item to the seller.
+ *
+ * Writes an admin audit row for the outcome.
+ */
+export async function resolveHeldListing({
+  listingId,
+  adminId,
+  action,
+}: {
+  listingId: string;
+  adminId: string;
+  action: HeldListingAction;
+}): Promise<{ status: 'ACTIVE' | 'CANCELED' }> {
+  let applied: boolean;
+  if (action === 'release') {
+    const res = await prisma.marketListing.updateMany({
+      where: { id: listingId, status: 'HELD' },
+      data: { status: 'ACTIVE', reviewedAt: new Date() },
+    });
+    applied = res.count > 0;
+  } else {
+    applied = await closeListingAsCanceled({ id: listingId, status: 'HELD' });
+  }
+  if (!applied) {
+    throw new MarketError('NOT_AVAILABLE', 'That listing is no longer under review', 409);
+  }
+
+  await logAdminAction(
+    adminId,
+    action === 'release' ? 'market.held.release' : 'market.held.cancel',
+    { targetType: 'market_listing', targetId: listingId },
+  );
+  return { status: action === 'release' ? 'ACTIVE' : 'CANCELED' };
 }
 
 // ─── Browse / read ─────────────────────────────────────────────────────────
@@ -337,6 +484,8 @@ export interface BrowseListing {
   id: string;
   itemId: string;
   priceCoins: number;
+  /** HELD only ever reaches the listing's own seller (see `browse`). */
+  status: 'ACTIVE' | 'HELD';
   createdAt: string;
   item: Pick<ShopItem, 'id' | 'name' | 'kind' | 'rarity' | 'data'> | null;
   seller: ReturnType<typeof resolveUser>;
@@ -346,12 +495,23 @@ export interface BrowseInput {
   itemId?: string | null;
   sort?: BrowseSort;
   limit?: number;
+  /**
+   * The signed-in viewer. Their own HELD listings are included so a seller can
+   * see one is under review and cancel it; nobody else's HELD rows ever are.
+   */
+  viewerId?: string | null;
 }
 
-/** Browse ACTIVE listings, optionally filtered by item, with a sort. Public. */
-export async function browse({ itemId, sort = 'recent', limit = 60 }: BrowseInput = {}): Promise<
-  BrowseListing[]
-> {
+/**
+ * Browse ACTIVE listings, optionally filtered by item, with a sort. Public,
+ * plus the viewer's own HELD listings when `viewerId` is given.
+ */
+export async function browse({
+  itemId,
+  sort = 'recent',
+  limit = 60,
+  viewerId = null,
+}: BrowseInput = {}): Promise<BrowseListing[]> {
   const orderBy: Prisma.MarketListingOrderByWithRelationInput =
     sort === 'price_asc'
       ? { priceCoins: 'asc' }
@@ -360,7 +520,12 @@ export async function browse({ itemId, sort = 'recent', limit = 60 }: BrowseInpu
         : { createdAt: 'desc' };
 
   const rows = await prisma.marketListing.findMany({
-    where: { status: 'ACTIVE', ...(itemId ? { itemId } : {}) },
+    where: {
+      ...(viewerId
+        ? { OR: [{ status: 'ACTIVE' as const }, { status: 'HELD' as const, sellerId: viewerId }] }
+        : { status: 'ACTIVE' as const }),
+      ...(itemId ? { itemId } : {}),
+    },
     orderBy,
     take: Math.min(Math.max(limit, 1), 100),
     include: { seller: { select: userDisplaySelect } },
@@ -372,6 +537,7 @@ export async function browse({ itemId, sort = 'recent', limit = 60 }: BrowseInpu
       id: r.id,
       itemId: r.itemId,
       priceCoins: r.priceCoins,
+      status: r.status === 'HELD' ? ('HELD' as const) : ('ACTIVE' as const),
       createdAt: r.createdAt.toISOString(),
       item: item
         ? { id: item.id, name: item.name, kind: item.kind, rarity: item.rarity, data: item.data }

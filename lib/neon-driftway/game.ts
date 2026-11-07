@@ -282,8 +282,8 @@ export class NeonDriftwayEngine {
     }
 
     if (this.state === 'playing') {
-      // Edge-detect pause
-      if (input.pause && !this.prevPause) {
+      // Edge-detect pause (solo only — a multiplayer race cannot pause)
+      if (input.pause && !this.prevPause && !this.isMultiplayer) {
         this.state = 'paused';
         this.prevPause = input.pause;
         return;
@@ -339,9 +339,19 @@ export class NeonDriftwayEngine {
     }
   }
 
-  continueEndless(): void {
+  /** Pause a running solo race. Multiplayer races cannot pause. */
+  pause(): boolean {
+    if (this.state !== 'playing' || this.isMultiplayer) return false;
+    this.state = 'paused';
+    return true;
+  }
+
+  /** Keep driving past the finish line — only from the level-complete screen. */
+  continueEndless(): boolean {
+    if (this.state !== 'levelComplete') return false;
     this.continuedEndless = true;
     this.state = 'playing';
+    return true;
   }
 
   /** Called when server applies slowdown to this player (multiplayer ability) */

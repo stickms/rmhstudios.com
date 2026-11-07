@@ -113,9 +113,9 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     id: 'quest-reward',
     kind: 'faucet',
     surface: 'Completing a quest',
-    source: 'lib/quests/engine.server.ts',
+    source: 'lib/quests/engine.server.ts, lib/game/results.server.ts',
     bounded: true,
-    note: 'Fixed coins per quest definition; the quest set is finite per cycle.',
+    note: 'Fixed coins per quest definition (arcade daily challenges included); the quest set is finite per cycle.',
   },
   {
     id: 'achievement-reward',

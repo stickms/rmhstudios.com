@@ -116,8 +116,12 @@ export function useEvertPointLayer(): void {
       else placeEvert(hit.el, e.clientX, e.clientY);
     };
 
+    /** Released presses still holding for {@link EVERT_MIN_PRESS_MS}: tracked so teardown can lift them first. */
+    const lifting = new Set<Press>();
+
     const lift = (press: Press) => {
       if (press.timer) clearTimeout(press.timer);
+      lifting.delete(press);
       if (!press.ghost) {
         press.el.removeAttribute('data-pressed');
         return;
@@ -133,7 +137,10 @@ export function useEvertPointLayer(): void {
       presses.delete(pointerId);
       const left = EVERT_MIN_PRESS_MS - (performance.now() - press.at);
       if (immediate || left <= 0) lift(press);
-      else press.timer = setTimeout(() => lift(press), left);
+      else {
+        lifting.add(press);
+        press.timer = setTimeout(() => lift(press), left);
+      }
     };
 
     const onDown = (e: PointerEvent) => {
@@ -227,6 +234,8 @@ export function useEvertPointLayer(): void {
       document.removeEventListener('visibilitychange', releaseAll);
       for (const press of presses.values()) lift(press);
       presses.clear();
+      // A delayed lift must not fire after the ghosts are gone.
+      for (const press of [...lifting]) lift(press);
       disposeGhosts();
     };
   }, []);

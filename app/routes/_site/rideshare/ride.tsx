@@ -151,10 +151,13 @@ function RequestRidePage() {
 
   // Fetch road distance/duration whenever both endpoints are set.
   useEffect(() => {
+    // A new pair of endpoints: the previous route's fare no longer applies.
+    setRouteInfo(null);
     if (!pickup || !dropoff) {
-      setRouteInfo(null);
+      setRouting(false);
       return;
     }
+    const abort = new AbortController();
     let cancelled = false;
     setRouting(true);
     const params = new URLSearchParams({
@@ -163,7 +166,7 @@ function RequestRidePage() {
       toLat: String(dropoff.lat),
       toLng: String(dropoff.lng),
     });
-    fetch(`/api/rideshare/directions?${params}`)
+    fetch(`/api/rideshare/directions?${params}`, { signal: abort.signal })
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
@@ -178,6 +181,10 @@ function RequestRidePage() {
       .finally(() => !cancelled && setRouting(false));
     return () => {
       cancelled = true;
+      abort.abort();
+      // The next run (if any) sets it again; a cleared endpoint must not
+      // leave the spinner on.
+      setRouting(false);
     };
   }, [pickup, dropoff]);
 

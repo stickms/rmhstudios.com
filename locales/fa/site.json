@@ -757,5 +757,9 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "دسترسی به صورت‌حساب ممکن نشد. دوباره امتحان کنید.",
+  "space-end-offline": "متصل نیستید. کمی بعد دوباره امتحان کنید.",
+  "market-under-review": "در حال بررسی",
+  "market-under-review-hint": "خرید با این قیمت برای یک بررسی سریع متوقف شد. هیچ سکه‌ای جابه‌جا نشد. برای پس گرفتن فوری کالا، لغو کنید."
 }

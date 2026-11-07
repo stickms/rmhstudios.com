@@ -773,5 +773,9 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "Faturalandırmaya ulaşılamadı. Tekrar deneyin.",
+  "space-end-offline": "Bağlı değil. Birazdan tekrar deneyin.",
+  "market-under-review": "İnceleniyor",
+  "market-under-review-hint": "Bu fiyattan bir satın alma hızlı bir kontrol için duraklatıldı. Hiç jeton aktarılmadı. Ürünü hemen geri almak için iptal edin."
 }

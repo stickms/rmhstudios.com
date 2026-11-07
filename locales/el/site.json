@@ -757,5 +757,9 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "Δεν ήταν δυνατή η σύνδεση με τη χρέωση. Δοκιμάστε ξανά.",
+  "space-end-offline": "Δεν υπάρχει σύνδεση. Δοκιμάστε ξανά σε λίγο.",
+  "market-under-review": "Υπό έλεγχο",
+  "market-under-review-hint": "Μια αγορά σε αυτή την τιμή τέθηκε σε αναμονή για γρήγορο έλεγχο. Δεν μετακινήθηκαν νομίσματα. Ακυρώστε για να πάρετε πίσω το αντικείμενο τώρα."
 }

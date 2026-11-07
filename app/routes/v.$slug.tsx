@@ -146,12 +146,30 @@ function VibeViewer() {
   const [activeVersionId, setActiveVersionId] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  // The in-flight customize stream, aborted on slug change and unmount, and a
+  // generation counter every async step checks before it writes state — so a
+  // result for the previous page never lands on this one.
+  const customizeAbortRef = useRef<AbortController | null>(null);
+  const genRef = useRef(0);
+  // Latest-wins token for version previews (and anything that supersedes one).
+  const previewSeqRef = useRef(0);
 
   const latestVersionId = versions && versions.length ? versions[versions.length - 1].id : null;
   // We're viewing an earlier variant when an older version is explicitly selected.
   const viewingOlder = activeVersionId !== null && activeVersionId !== latestVersionId;
 
   // Loader data is per-slug; reset local state when navigating between pages.
+  // A different page: abandon the previous page's customize and previews.
+  useEffect(() => {
+    genRef.current += 1;
+    previewSeqRef.current += 1;
+    customizeAbortRef.current?.abort();
+    customizeAbortRef.current = null;
+    setBusy(false);
+    setThinking('');
+    setContent('');
+    setError(null);
+  }, [slug]);
   useEffect(() => {
     setHtml(initialHtml);
     setLatestHtml(initialHtml);
@@ -161,6 +179,14 @@ function VibeViewer() {
     setActiveVersionId(null);
     setHistoryOpen(false);
   }, [slug, initialHtml, initialStatus]);
+
+  useEffect(
+    () => () => {
+      genRef.current += 1;
+      customizeAbortRef.current?.abort();
+    },
+    [],
+  );
 
   // True once a background build has been running a while, so the overlay can
   // reassure the user it's still working rather than looking stuck.
@@ -236,9 +262,11 @@ function VibeViewer() {
   // Preview a specific version: swap the iframe to its HTML and mark it active.
   async function previewVersion(versionId: string) {
     if (busy) return;
+    const seq = ++previewSeqRef.current;
     setError(null);
     try {
       const version = await fetchVibeVersion({ data: { slug, versionId } });
+      if (seq !== previewSeqRef.current) return;
       if (!version) {
         setError(
           t('version-unavailable', { defaultValue: 'That version is no longer available.' }),
@@ -250,12 +278,14 @@ function VibeViewer() {
       setActiveVersionId(versionId);
       if (version.title) document.title = `${version.title} | RMH Studios`;
     } catch {
+      if (seq !== previewSeqRef.current) return;
       setError(t('version-load-error', { defaultValue: 'Could not load that version.' }));
     }
   }
 
   function backToLatest() {
     if (busy) return;
+    previewSeqRef.current += 1;
     setHtml(latestHtml);
     setRenderKey((k) => k + 1);
     setActiveVersionId(null);
@@ -272,7 +302,15 @@ function VibeViewer() {
 
   async function handleCustomize() {
     const trimmed = prompt.trim();
-    if (!trimmed || busy) return;
+    if (!trimmed || busy || customizeAbortRef.current) return;
+    const gen = genRef.current;
+    const abort = new AbortController();
+    customizeAbortRef.current = abort;
+    // A version preview resolving mid-customize must not swap the iframe.
+    previewSeqRef.current += 1;
+    // The page as it stood when this customize began: the fallback below asks
+    // "did the server's copy move past this?".
+    const baselineHtml = latestHtml;
     setBusy(true);
     setError(null);
     setThinking('');
@@ -285,29 +323,34 @@ function VibeViewer() {
       // When viewing an older variant, branch the customization off it; otherwise
       // continue from the page's latest version.
       const fromVersionId = viewingOlder ? (activeVersionId ?? undefined) : undefined;
-      await streamVibe({ slug, prompt: trimmed, fromVersionId, model }, (event) => {
-        if (event.type === 'thinking') {
-          setThinking((t) => t + event.text);
-        } else if (event.type === 'content') {
-          setContent((c) => c + event.text);
-        } else if (event.type === 'done') {
-          finalHtml = event.html;
-          finalTitle = event.title;
-        } else if (event.type === 'error') {
-          hadError = true;
-          setError(event.message);
-        }
-      });
+      await streamVibe(
+        { slug, prompt: trimmed, fromVersionId, model },
+        (event) => {
+          if (gen !== genRef.current) return;
+          if (event.type === 'thinking') {
+            setThinking((t) => t + event.text);
+          } else if (event.type === 'content') {
+            setContent((c) => c + event.text);
+          } else if (event.type === 'done') {
+            finalHtml = event.html;
+            finalTitle = event.title;
+          } else if (event.type === 'error') {
+            hadError = true;
+            setError(event.message);
+          }
+        },
+        abort.signal,
+      );
     } catch (err) {
+      if (gen !== genRef.current) return;
       hadError = true;
       setError(
         err instanceof VibeStreamError
           ? err.message
           : t('customize-error', { defaultValue: 'Something went wrong. Try again.' }),
       );
-    } finally {
-      setBusy(false);
     }
+    if (gen !== genRef.current) return;
 
     // Stream ended without a result and without an explicit error — most likely the
     // connection dropped. The customize runs to completion server-side regardless, so
@@ -316,7 +359,8 @@ function VibeViewer() {
     if (!finalHtml && !hadError) {
       try {
         const latest = await fetchVibe({ data: slug });
-        if (latest.html && latest.html !== latestHtml) {
+        if (gen !== genRef.current) return;
+        if (latest.html && latest.html !== baselineHtml) {
           finalHtml = latest.html;
           finalTitle = latest.title;
         } else {
@@ -328,10 +372,20 @@ function VibeViewer() {
           );
         }
       } catch {
+        if (gen !== genRef.current) return;
         hadError = true;
-        setError('Lost the connection before the update finished. Please try again.');
+        setError(
+          t('connection-lost', {
+            defaultValue: 'Lost the connection before the update finished. Please try again.',
+          }),
+        );
       }
     }
+
+    // Busy stays on through the fallback refetch, so a second customize can't
+    // start while this one is still deciding whether it landed.
+    customizeAbortRef.current = null;
+    setBusy(false);
 
     if (finalHtml && !hadError) {
       setHtml(finalHtml);

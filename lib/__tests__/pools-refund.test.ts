@@ -117,7 +117,12 @@ const prismaMock = vi.hoisted(() => {
           data: Record<string, unknown>;
         }) => {
           const hits = store.pools.filter((p) => matchPool(p, where));
-          for (const p of hits) Object.assign(p, data);
+          for (const p of hits) {
+            const { raised, ...rest } = data as { raised?: number | { increment: number } };
+            Object.assign(p, rest);
+            if (typeof raised === 'number') p.raised = raised;
+            else if (raised?.increment) p.raised += raised.increment;
+          }
           return { count: hits.length };
         },
       ),
@@ -511,6 +516,19 @@ describe('contribute — escrow', () => {
     seedPool({ expiresAt: FUTURE, settledAt: new Date() });
     await expect(contribute('p1', 'alice', 100)).rejects.toThrow(PoolError);
     expect(store.debited.size).toBe(0);
+  });
+
+  it('refuses a contribution that races settlement (stale open read)', async () => {
+    // The pool was open when contribute() read it, but another contributor's
+    // settle committed before the increment: the coins must not land in it.
+    const pool = seedPool({ expiresAt: FUTURE, goalCoins: 100, raised: 100 });
+    prismaMock.pool.findUnique.mockResolvedValueOnce({ ...pool, contributions: [] });
+    pool.settledAt = new Date();
+
+    await expect(contribute('p1', 'alice', 50)).rejects.toThrow(PoolError);
+    expect(store.debited.size).toBe(0);
+    expect(store.contributions).toHaveLength(0);
+    expect(store.pools[0].raised).toBe(100);
   });
 
   it('refuses a non-positive contribution', async () => {

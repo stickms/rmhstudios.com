@@ -1315,14 +1315,24 @@ step_start "Hotswapping web container (blue/green, smoke + bake)..."
 hotswap_rc=1
 while IFS= read -r line; do
     case "$line" in
-        ::deploy-stage::*) stage "${line#::deploy-stage::}" ;;
+        # stage() writes the journal too (release_event), and must not abort the
+        # loop either (see below). In a `||` list errexit is off inside stage, so
+        # a refused or failed write is reported by release-state.mjs on stderr
+        # and the loop keeps reading.
+        ::deploy-stage::*) stage "${line#::deploy-stage::}" || log "WARNING: release journal could not record stage ${line#::deploy-stage::}" ;;
         ::deploy-note::*)  stage_note "${line#::deploy-note::}" ;;
+        # Journal writes here must never abort the loop: traffic has already
+        # moved (or moved back) when these arrive, and under `set -e` a failing
+        # node call used to kill deploy.sh mid-swap — orphaning hotswap-web.sh's
+        # bake and leaving `live` stale. Log loudly and keep reading instead.
         ::deploy-event::traffic-moved)
-            node "$REPO_DIR/deploy/release-state.mjs" promote "$DEPLOY_STATE_DIR" "$DEPLOY_RELEASE_ID" "$PREV_RELEASE_ID"
-            release_event traffic-moved ;;
+            node "$REPO_DIR/deploy/release-state.mjs" promote "$DEPLOY_STATE_DIR" "$DEPLOY_RELEASE_ID" "$PREV_RELEASE_ID" \
+                || log "WARNING: release journal promote failed for $DEPLOY_RELEASE_ID (traffic already moved; live record is stale)"
+            release_event traffic-moved || log "WARNING: release journal could not record traffic-moved" ;;
         ::deploy-event::rolledback)
-            node "$REPO_DIR/deploy/release-state.mjs" restore "$DEPLOY_STATE_DIR" "$DEPLOY_RELEASE_ID"
-            release_event rolledback ;;
+            node "$REPO_DIR/deploy/release-state.mjs" restore "$DEPLOY_STATE_DIR" "$DEPLOY_RELEASE_ID" \
+                || log "WARNING: release journal restore failed for $DEPLOY_RELEASE_ID (traffic already rolled back)"
+            release_event rolledback || log "WARNING: release journal could not record rolledback" ;;
         ::deploy-rc::*)    hotswap_rc="${line#::deploy-rc::}" ;;
         *)                 printf '%s\n' "$line" ;;
     esac

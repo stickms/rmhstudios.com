@@ -52,11 +52,6 @@ func runGroup(
 		g.Go(func() error {
 			d := deps(name)
 			err := superviseWorker(gctx, run, d)
-			if err == nil && gctx.Err() == nil {
-				// A worker that returns nil before shutdown has simply stopped
-				// doing its job; the group can't tell, so say so.
-				d.Logger.Warn("worker exited before shutdown")
-			}
 			mu.Lock()
 			delete(pending, name)
 			mu.Unlock()
@@ -129,7 +124,10 @@ var (
 	panicBackoffReset = 5 * time.Minute
 )
 
-// superviseWorker runs one worker and restarts it in place when it panics.
+// superviseWorker runs one worker and restarts it in place when it panics, or
+// when it returns nil before shutdown (it has simply stopped doing its job —
+// every worker's Run blocks on ctx — so it is restarted on the same backoff
+// rather than left dead with only a log line).
 //
 // Without this, a panic in any worker's Run goroutine crashed the whole process
 // and took all six workers down with it. discord-bot and streak-saver have no
@@ -151,16 +149,20 @@ func superviseWorker(ctx context.Context, run worker.RunFunc, d worker.Deps) err
 		if d.Metrics != nil {
 			d.Metrics.WorkerUp.Set(0)
 		}
-		if !panicked {
+		if !panicked && (err != nil || ctx.Err() != nil) {
 			return err
-		}
-		if d.Metrics != nil {
-			d.Metrics.WorkerPanics.Inc()
 		}
 		if time.Since(started) >= panicBackoffReset {
 			backoff = panicBackoffMin
 		}
-		d.Logger.Error("worker panicked; restarting", "backoff", backoff.String())
+		if panicked {
+			if d.Metrics != nil {
+				d.Metrics.WorkerPanics.Inc()
+			}
+			d.Logger.Error("worker panicked; restarting", "backoff", backoff.String())
+		} else {
+			d.Logger.Warn("worker exited before shutdown; restarting", "backoff", backoff.String())
+		}
 		select {
 		case <-ctx.Done():
 			return nil

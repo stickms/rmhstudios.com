@@ -210,6 +210,8 @@
   "save-just-now": "baru saja",
   "save-last": "Terakhir disimpan",
   "save-lifetime": "{{joy}} sukacita, sepanjang waktu.",
+  "save-load-failed": "Simpanan Anda tidak dapat dimuat.",
+  "save-load-retry": "Coba lagi",
   "save-note": "Kuil menyimpan dirinya setiap {{seconds}} detik, lagi tak lama setelah kamu berhenti bermain, dan sekali lagi saat tab ditutup atau dipindah ke latar belakang. Kamu seharusnya tak pernah membutuhkan tombol di bawah.",
   "save-now": "Simpan sekarang",
   "save-playtime": "Waktu di kuil",

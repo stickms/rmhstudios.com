@@ -72,8 +72,15 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
               const aWon = m.winnerEntrantId && m.winnerEntrantId === m.entrantAId;
               const bWon = m.winnerEntrantId && m.winnerEntrantId === m.entrantBId;
               const ready = m.state === 'READY' || m.state === 'LIVE';
+              // Closed unplayed when the tournament was cancelled: muted, no winner, no report.
+              const cancelled = m.state === 'CANCELLED';
               return (
                 <div key={m.id} className="glass-fill flex flex-col gap-2 rounded-site p-4">
+                  {cancelled && (
+                    <span className="px-1 text-xs text-site-text-dim">
+                      {t('match-cancelled', { defaultValue: 'Cancelled' })}
+                    </span>
+                  )}
                   {[
                     { id: m.entrantAId, won: aWon },
                     { id: m.entrantBId, won: bWon },
@@ -83,7 +90,9 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
                       className={`flex items-center justify-between gap-2 rounded-site-sm px-3 py-2 text-sm ${
                         side.won
                           ? 'bg-site-accent-dim text-site-accent font-semibold'
-                          : 'text-site-text'
+                          : cancelled
+                            ? 'text-site-text-muted'
+                            : 'text-site-text'
                       }`}
                     >
                       <span className="truncate">
@@ -96,7 +105,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
                       {side.won && <Trophy className="size-3.5 shrink-0" aria-hidden />}
                     </div>
                   ))}
-                  {canReport && ready && m.entrantAId && m.entrantBId && (
+                  {canReport && ready && !cancelled && m.entrantAId && m.entrantBId && (
                     <div className="flex gap-2">
                       <Button
                         size="xs"

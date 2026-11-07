@@ -21,6 +21,25 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   links?: ConciergeLink[];
+  /** A local failure notice, shown in the thread but never sent back as history. */
+  error?: boolean;
+}
+
+/**
+ * The conversation as the model should see it: failure bubbles are ours, not
+ * the assistant's, and the question that failed was never answered, so both are
+ * left out rather than replayed as if the guide had said them.
+ */
+function historyFor(messages: Message[]) {
+  const out: Message[] = [];
+  for (const m of messages) {
+    if (m.error) {
+      if (out.length && out[out.length - 1].role === 'user') out.pop();
+      continue;
+    }
+    out.push(m);
+  }
+  return out.map((m) => ({ role: m.role, content: m.content }));
 }
 
 interface AssistantResponse {
@@ -64,7 +83,7 @@ export function ConciergePanel({ className }: { className?: string }) {
         return;
       }
 
-      const history = messages.map((m) => ({ role: m.role, content: m.content }));
+      const history = historyFor(messages);
       const userMsg: Message = { id: nextId(), role: 'user', content: q };
       setMessages((prev) => [...prev, userMsg]);
       setInput('');
@@ -88,7 +107,10 @@ export function ConciergePanel({ className }: { className?: string }) {
             toast.error(msg);
           }
           // Drop the optimistic user turn's expectation by adding an error bubble.
-          setMessages((prev) => [...prev, { id: nextId(), role: 'assistant', content: msg }]);
+          setMessages((prev) => [
+            ...prev,
+            { id: nextId(), role: 'assistant', content: msg, error: true },
+          ]);
           return;
         }
         setMessages((prev) => [
@@ -103,6 +125,7 @@ export function ConciergePanel({ className }: { className?: string }) {
             id: nextId(),
             role: 'assistant',
             content: t('concierge-error', { defaultValue: "Couldn't reach the guide. Try again." }),
+            error: true,
           },
         ]);
       } finally {

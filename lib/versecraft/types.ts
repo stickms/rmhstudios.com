@@ -264,7 +264,8 @@ export interface PlayerSettings {
 export interface GameState {
   // Screen
   screen: GameScreen;
-  previousScreen: GameScreen | null;
+  /** Screens to return to with goBack(), most recent last (a few deep, so overlay hops still return). */
+  screenStack: GameScreen[];
 
   // Story progress
   currentChapter: string;
@@ -323,7 +324,7 @@ export interface SaveFile {
   slotId: number;
   timestamp: number;
   playtime: number;
-  state: Omit<GameState, 'currentPoemScore' | 'previousScreen'>;
+  state: Omit<GameState, 'currentPoemScore' | 'screenStack'>;
   chapterTitle: string;
   playerName: string;
 }

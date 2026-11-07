@@ -34,6 +34,12 @@ interface Proposal {
   /** Suggestions dropped before they got this far (malformed, or for a file that was not shown). */
   malformed: number;
   state: 'pending' | 'applied' | 'discarded';
+  /**
+   * The editor overlay right after this batch was applied. Undo is offered only
+   * while the editor is still on exactly that state — once the player edits
+   * anything else, the global undo would revert THEIR edit, not this batch.
+   */
+  appliedOverlay?: unknown;
 }
 
 interface Message {
@@ -78,6 +84,7 @@ export default function HudAssistant({
   /** What the conversation is about (a panel, a problem, the scheme), until the player removes it. */
   const [ctx, setCtx] = useState<AiContext | null>(null);
   const request = useEditor((s) => s.assistantRequest);
+  const overlay = useEditor((s) => s.overlay);
   const takenNonce = useRef(0);
   const nextId = useRef(1);
   const endRef = useRef<HTMLDivElement>(null);
@@ -236,11 +243,24 @@ export default function HudAssistant({
       }));
       return;
     }
+    const before = store.overlay;
     store.applyBatch(`AI: ${m.text.slice(0, 60)}`, done.files);
-    patch(m.id, (x) => ({ ...x, proposal: { ...pr, applied: done.applied, state: 'applied' } }));
+    const after = useEditor.getState().overlay;
+    patch(m.id, (x) => ({
+      ...x,
+      proposal: {
+        ...pr,
+        applied: done.applied,
+        state: 'applied',
+        // No history step was recorded if nothing changed; nothing to undo.
+        appliedOverlay: after === before ? undefined : after,
+      },
+    }));
   };
 
   const undo = (m: Message) => {
+    const pr = m.proposal;
+    if (!pr?.appliedOverlay || useEditor.getState().overlay !== pr.appliedOverlay) return;
     useEditor.getState().undo();
     patch(m.id, (x) =>
       x.proposal ? { ...x, proposal: { ...x.proposal, state: 'discarded' } } : x,
@@ -408,7 +428,15 @@ export default function HudAssistant({
                           <Check className="size-4" aria-hidden />
                           {t('hud-ai-applied', { defaultValue: 'Applied. One undo reverts it.' })}
                         </span>
-                        <Btn size="sm" variant="ghost" icon={Undo2} onClick={() => undo(m)}>
+                        <Btn
+                          size="sm"
+                          variant="ghost"
+                          icon={Undo2}
+                          onClick={() => undo(m)}
+                          disabled={
+                            !m.proposal.appliedOverlay || m.proposal.appliedOverlay !== overlay
+                          }
+                        >
                           {t('ai-undo', { defaultValue: 'Undo' })}
                         </Btn>
                       </>

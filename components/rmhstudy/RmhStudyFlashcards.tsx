@@ -8,7 +8,7 @@
  * Flashcards page, linked from here.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { isTypingTarget } from '@/lib/shortcuts/registry';
 import { summarizeGrades } from '@/lib/rmhstudy/session-summary';
 import { useTranslation } from 'react-i18next';
@@ -52,6 +52,11 @@ export default function RmhStudyFlashcards() {
   const [grading, setGrading] = useState(false);
   const [done, setDone] = useState(false);
   const [grades, setGrades] = useState<number[]>([]);
+  // `grading` as a ref: two keypresses in one frame both read the same render's
+  // state, so the guard has to be synchronous. `sessionRef` is bumped by every
+  // start/exit; an await that resolves into a different session does nothing.
+  const gradingRef = useRef(false);
+  const sessionRef = useRef(0);
 
   const loadDecks = useCallback(async () => {
     setLoading(true);
@@ -73,13 +78,16 @@ export default function RmhStudyFlashcards() {
   }, [loadDecks]);
 
   const startReview = useCallback(async (deck: DeckRow) => {
+    const session = ++sessionRef.current;
     try {
       const res = await fetch(`/api/study/decks/${deck.id}/review`, { credentials: 'include' });
+      if (session !== sessionRef.current) return;
       if (!res.ok) {
         toast.error(t("could-not-load-cards", { defaultValue: "Could not load cards" }));
         return;
       }
       const data = await res.json();
+      if (session !== sessionRef.current) return;
       const due: DueCard[] = data.due ?? [];
       if (due.length === 0) {
         toast.info(t("no-cards-due", { defaultValue: "No cards due right now — nice work!" }));
@@ -91,14 +99,19 @@ export default function RmhStudyFlashcards() {
       setRevealed(false);
       setDone(false);
       setGrades([]);
+      gradingRef.current = false;
+      setGrading(false);
     } catch {
+      if (session !== sessionRef.current) return;
       toast.error(t("could-not-load-cards", { defaultValue: "Could not load cards" }));
     }
   }, []);
 
   const grade = useCallback(async (g: number) => {
     const card = cards[index];
-    if (!card || grading) return;
+    if (!card || gradingRef.current) return;
+    const session = sessionRef.current;
+    gradingRef.current = true;
     setGrading(true);
     setGrades((prev) => [...prev, g]);
     try {
@@ -111,15 +124,20 @@ export default function RmhStudyFlashcards() {
     } catch {
       /* keep going — the card stays in this local session */
     } finally {
-      setGrading(false);
+      if (session === sessionRef.current) {
+        gradingRef.current = false;
+        setGrading(false);
+      }
     }
+    // Exited (or started another deck) while the grade was saving.
+    if (session !== sessionRef.current) return;
     if (index + 1 >= cards.length) {
       setDone(true);
     } else {
       setIndex((i) => i + 1);
       setRevealed(false);
     }
-  }, [cards, index, grading]);
+  }, [cards, index]);
 
   // Keyboard review: Space/Enter reveals the card, 1-4 grades it (Again..Easy).
   // Ignored while typing, with a modifier held, and for Space/Enter on a focused
@@ -145,6 +163,9 @@ export default function RmhStudyFlashcards() {
   }, [reviewing, revealed, grade]);
 
   const exitReview = useCallback(() => {
+    sessionRef.current += 1;
+    gradingRef.current = false;
+    setGrading(false);
     setActiveDeck(null);
     setCards([]);
     setIndex(0);

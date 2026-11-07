@@ -66,8 +66,10 @@ export const Route = createFileRoute('/api/admin/rideshare/applications')({
             return Response.json({ error: 'Application already reviewed.' }, { status: 409 });
           }
 
-          const updated = await prisma.rideshareDriver.update({
-            where: { id },
+          // CAS on PENDING: two admins deciding at once cannot both write (an
+          // approve overwriting a reject, or vice versa).
+          const claimed = await prisma.rideshareDriver.updateMany({
+            where: { id, status: 'PENDING' },
             data: {
               status: action === 'approve' ? 'APPROVED' : 'REJECTED',
               rejectionReason:
@@ -76,6 +78,10 @@ export const Route = createFileRoute('/api/admin/rideshare/applications')({
               reviewedAt: new Date(),
             },
           });
+          if (claimed.count === 0) {
+            return Response.json({ error: 'Application already reviewed.' }, { status: 409 });
+          }
+          const updated = { status: action === 'approve' ? 'APPROVED' : 'REJECTED' };
 
           await prisma.adminAuditLog
             .create({

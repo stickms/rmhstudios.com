@@ -741,5 +741,9 @@
   "ladder.companies.count_other": "{{count}} companies",
   "ladder.health.failures_other": "{{count}} consecutive failures",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "ไม่สามารถเชื่อมต่อระบบชำระเงินได้ ลองอีกครั้ง",
+  "space-end-offline": "ไม่ได้เชื่อมต่อ ลองอีกครั้งในอีกสักครู่",
+  "market-under-review": "กำลังตรวจสอบ",
+  "market-under-review-hint": "การซื้อในราคานี้ถูกพักไว้เพื่อตรวจสอบสั้นๆ ไม่มีการโอนเหรียญ ยกเลิกเพื่อรับไอเทมคืนทันที"
 }

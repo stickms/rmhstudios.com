@@ -154,12 +154,19 @@ export function RadialHub() {
   const { resolved } = useResolvedUser();
   const user = session?.user as HubUser | undefined;
 
-  const [phase, setPhase] = useState<Phase>('closed');
+  const [phase, setPhaseState] = useState<Phase>('closed');
   const globeRef = useRef<HTMLDivElement | null>(null);
   // Read by `attachGlobe`, which fires from a ref callback and so cannot close
-  // over the render's `phase`.
+  // over the render's `phase`, and by the guards in `close`/`toggle`. Every
+  // phase change goes through `setPhase`, which writes it synchronously — a
+  // guard that runs between a `setPhase` and the next render (a timer, the
+  // navigation interceptor) must see the new phase, not the last rendered one.
   const phaseRef = useRef<Phase>(phase);
   phaseRef.current = phase;
+  const setPhase = useCallback((next: Phase) => {
+    phaseRef.current = next;
+    setPhaseState(next);
+  }, []);
   const orbRef = useRef<HTMLButtonElement | null>(null);
   /** The hub's root: the eversion hand-off's geometry is set on it as custom properties (radial.css). */
   const hubRef = useRef<HTMLDivElement | null>(null);
@@ -275,7 +282,7 @@ export function RadialHub() {
           live.current.dismiss();
         },
       }),
-    [],
+    [setPhase],
   );
 
   const close = useCallback(
@@ -285,13 +292,17 @@ export function RadialHub() {
       // lands on the (still open) scrim. Closing here would abort the run and
       // drop the BEFORE bitmap. The hand-off clears its flag before a fallback closes.
       if (handOffMachine.busy()) return;
+      // Landing on the orb owns the hub until its own timer closes it (the
+      // page change it triggered would otherwise cut the turn short), the
+      // same guard `toggle` has.
+      if (phaseRef.current === 'landing') return;
       clearTimer();
       restoreFocus.current = dismissed;
-      setPhase((p) => (p === 'closed' ? p : 'closing'));
+      if (phaseRef.current !== 'closed') setPhase('closing');
       // Keep the overlay mounted while every layer animates out, then hide it.
       timerRef.current = setTimeout(() => setPhase('closed'), MOTION_MS);
     },
-    [handOffMachine],
+    [handOffMachine, setPhase],
   );
 
   /** Navigation-driven close: the destination page owns focus from here. */
@@ -311,11 +322,10 @@ export function RadialHub() {
     landFocus.current = true;
     // Synchronously: the navigation is asked for straight after, and the site's interceptor asks the hub
     // whether it is still open before deciding to run the full-screen effect.
-    phaseRef.current = 'landing';
     hubRef.current?.style.setProperty('--land-ms', `${SELF_EVERT_MS}ms`);
     setPhase('landing');
     timerRef.current = setTimeout(() => setPhase('closed'), SELF_EVERT_MS + 60);
-  }, []);
+  }, [setPhase]);
 
   /**
    * A click on one of the hub's own links (the foot). On a phone it is instant, like a pin: the hub is marked
@@ -343,14 +353,15 @@ export function RadialHub() {
     clearTimer();
     // A tap before the docked globe has mounted mounts it now; it grows in from the orb (radial.css `@starting-style`).
     if (inPlace) setDockReady(true);
-    setPhase((p) => {
-      // Opening is a single synchronous transition — no pre-centring step.
-      if (p === 'closed') return 'open';
-      restoreFocus.current = true;
-      timerRef.current = setTimeout(() => setPhase('closed'), MOTION_MS);
-      return 'closing';
-    });
-  }, [handOffMachine, inPlace]);
+    // Opening is a single synchronous transition — no pre-centring step.
+    if (phaseRef.current === 'closed') {
+      setPhase('open');
+      return;
+    }
+    restoreFocus.current = true;
+    timerRef.current = setTimeout(() => setPhase('closed'), MOTION_MS);
+    setPhase('closing');
+  }, [handOffMachine, inPlace, setPhase]);
 
   // Backstop for the intent handlers: fetch the globe during the first idle
   // window after the shell settles. This is what keeps the lazy boundary honest

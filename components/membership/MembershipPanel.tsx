@@ -176,6 +176,7 @@ export function MembershipPanel({
                 variant="outline"
                 onClick={manageBilling}
                 loading={busy === 'portal'}
+                disabled={busy !== null}
               >
                 <ArrowUpRight aria-hidden />
                 {t('manage-billing', { defaultValue: 'Manage billing' })}
@@ -374,6 +375,7 @@ export function MembershipPanel({
                             type="button"
                             onClick={() => subscribe(plan.tier as 'starter' | 'pro')}
                             loading={busy === plan.tier}
+                            disabled={busy !== null}
                             // Ink tracks its surface: each variant carries its own
                             // paired foreground token, so neither fill can end up
                             // painting its label in the other's colour.

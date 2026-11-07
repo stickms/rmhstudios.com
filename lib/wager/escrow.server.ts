@@ -82,6 +82,14 @@ export async function recordWagerTxn(
     entityType: 'wager' | 'tournament';
     entityId: string;
     note?: string;
+    /**
+     * Deterministic dedupe token for a payout/refund (e.g. `wager:<id>:payout`).
+     * The ledger's unique index makes a second credit for the same movement
+     * fail, which aborts the surrounding transaction — so the balance credit
+     * written next to it rolls back too. Defense-in-depth behind the status
+     * compare-and-swap every caller does first.
+     */
+    idempotencyKey?: string;
   },
 ): Promise<void> {
   if (!Number.isInteger(opts.amount) || opts.amount <= 0) return;
@@ -94,6 +102,7 @@ export async function recordWagerTxn(
       note: opts.note?.slice(0, 280) ?? null,
       entityType: opts.entityType,
       entityId: opts.entityId.slice(0, 64),
+      idempotencyKey: opts.idempotencyKey?.slice(0, 128) ?? null,
     },
   });
 }

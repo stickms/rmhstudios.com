@@ -43,6 +43,8 @@ interface SSLobbyInMemory {
   currentMatchSeed: number | null;
   currentMatchStartAt: number | null;
   matchPlayers: Map<string, SSMatchPlayer>; // keyed by userId
+  /** The 3s countdown → matchStart timer; cleared on return-to-lobby/close. */
+  countdownTimer?: ReturnType<typeof setTimeout> | null;
 }
 
 // ─── Constants ───
@@ -107,6 +109,72 @@ function ssBroadcastLeaderboard(io: Server, lobby: SSLobbyInMemory): void {
   io.to(`ss:${lobby.code}`).emit('ss:leaderboardUpdate', { leaderboard });
 }
 
+/** Retire a lobby: CLOSED (so late timers/DB callbacks holding it bail) and gone. */
+function ssCloseLobby(lobby: SSLobbyInMemory): void {
+  lobby.status = 'CLOSED';
+  if (lobby.countdownTimer) {
+    clearTimeout(lobby.countdownTimer);
+    lobby.countdownTimer = null;
+  }
+  if (ssLobbies.get(lobby.code) === lobby) ssLobbies.delete(lobby.code);
+}
+
+/** Does this user still have a live socket seated in this lobby? */
+function ssIsPresent(lobby: SSLobbyInMemory, userId: string): boolean {
+  if (!lobby.players.has(userId)) return false;
+  const sid = ssUserSocketMap.get(userId);
+  return !!sid && ssSocketUserMap.get(sid) === userId;
+}
+
+/**
+ * End the match once every seat is done. A seat whose player left or dropped
+ * counts as done — it used to stay unfinished forever, so `allFinished` never
+ * became true and the lobby was stuck IN_MATCH.
+ */
+function ssMaybeFinishMatch(io: Server, lobby: SSLobbyInMemory): boolean {
+  if (lobby.status !== 'IN_MATCH' || lobby.matchPlayers.size === 0) return false;
+  const allFinished = Array.from(lobby.matchPlayers.values()).every(
+    (p) => p.finished || !ssIsPresent(lobby, p.userId),
+  );
+  if (!allFinished) return false;
+
+  lobby.status = 'WAITING';
+  if (lobby.countdownTimer) {
+    clearTimeout(lobby.countdownTimer);
+    lobby.countdownTimer = null;
+  }
+
+  const finalLeaderboard = Array.from(lobby.matchPlayers.values())
+    .sort((a, b) => b.score - a.score)
+    .map(p => ({
+      userId: p.userId, displayName: p.displayName,
+      score: p.score, maxCombo: p.maxCombo,
+      puzzlesSolved: p.puzzlesSolved, puzzlesMissed: p.puzzlesMissed,
+      finished: p.finished,
+    }));
+  io.to(`ss:${lobby.code}`).emit('ss:matchFinished', { leaderboard: finalLeaderboard });
+
+  for (const p of lobby.players.values()) p.isReady = false;
+  ssBroadcastLobby(io, lobby);
+  logger.info({ event: 'ss_match_finished', code: lobby.code });
+
+  const matchId = lobby.currentMatchId;
+  if (matchId) {
+    try {
+      const db = getPrismaClient();
+      db.sSMatch.update({
+        where: { id: matchId },
+        data: { status: 'FINISHED', endAt: new Date() },
+      }).then(() =>
+        db.sSLobby.update({ where: { id: lobby.id }, data: { status: 'WAITING' } })
+      ).catch((err: Error) => logger.warn({ event: 'ss_db_finish_match_persist_failed', error: err.message }));
+    } catch (err) {
+      logger.warn({ event: 'ss_db_prisma_unavailable', error: (err as Error).message });
+    }
+  }
+  return true;
+}
+
 function ssRemovePlayer(io: Server, socketId: string): void {
   const userId = ssSocketUserMap.get(socketId);
   const lobbyCode = ssSocketLobbyMap.get(socketId);
@@ -121,7 +189,7 @@ function ssRemovePlayer(io: Server, socketId: string): void {
   ssSocketLobbyMap.delete(socketId);
 
   if (lobby.players.size === 0) {
-    ssLobbies.delete(lobbyCode);
+    ssCloseLobby(lobby);
     return;
   }
 
@@ -138,6 +206,7 @@ function ssRemovePlayer(io: Server, socketId: string): void {
 
   if (lobby.status === 'IN_MATCH') {
     ssBroadcastLeaderboard(io, lobby);
+    ssMaybeFinishMatch(io, lobby);
   }
 }
 
@@ -365,7 +434,11 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
     io.to(`ss:${code}`).emit('ss:countdown', { countdownEndsAt: startAt });
     ssBroadcastLobby(io, lobby);
 
-    setTimeout(() => {
+    if (lobby.countdownTimer) clearTimeout(lobby.countdownTimer);
+    lobby.countdownTimer = setTimeout(() => {
+      lobby.countdownTimer = null;
+      // Returned to the lobby (or closed) during the countdown: no matchStart.
+      if (lobby.status !== 'IN_MATCH' || lobby.currentMatchId !== matchId) return;
       const leaderboard = Array.from(lobby.matchPlayers.values())
         .sort((a, b) => b.score - a.score)
         .map(p => ({
@@ -391,7 +464,12 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
       db.sSMatch.create({
         data: { id: matchId, lobbyId: lobby.id, seed, startAt: new Date(startAt), status: 'RUNNING' },
       }).then((dbMatch: any) => {
-        lobby.currentMatchId = dbMatch.id;
+        // Only adopt the row's id for the match it was created for: a late
+        // write used to stamp currentMatchId onto a lobby already back in
+        // WAITING (or into its next match).
+        if (lobby.status === 'IN_MATCH' && lobby.currentMatchId === matchId) {
+          lobby.currentMatchId = dbMatch.id;
+        }
         const creates = Array.from(lobby.players.entries()).map(([uid, p]: [string, SSPlayer]) =>
           db.sSPlayerMatch.create({
             data: { matchId: dbMatch.id, lobbyId: lobby.id, userId: uid, displayName: p.displayName },
@@ -503,25 +581,6 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
 
     ssBroadcastLeaderboard(io, lobby);
 
-    const allFinished = Array.from(lobby.matchPlayers.values()).every(p => p.finished);
-    if (allFinished) {
-      lobby.status = 'WAITING';
-
-      const finalLeaderboard = Array.from(lobby.matchPlayers.values())
-        .sort((a, b) => b.score - a.score)
-        .map(p => ({
-          userId: p.userId, displayName: p.displayName,
-          score: p.score, maxCombo: p.maxCombo,
-          puzzlesSolved: p.puzzlesSolved, puzzlesMissed: p.puzzlesMissed,
-          finished: p.finished,
-        }));
-      io.to(`ss:${lobby.code}`).emit('ss:matchFinished', { leaderboard: finalLeaderboard });
-
-      for (const p of lobby.players.values()) p.isReady = false;
-      ssBroadcastLobby(io, lobby);
-      logger.info({ event: 'ss_match_finished', code: lobby.code });
-    }
-
     // Fire-and-forget DB persistence
     try {
       const db = getPrismaClient();
@@ -533,18 +592,11 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
           finishedAt: new Date(), lastUpdateAt: new Date(),
         },
       }).catch((err: Error) => logger.warn({ event: 'ss_db_finish_player_persist_failed', error: err.message }));
-
-      if (allFinished) {
-        db.sSMatch.update({
-          where: { id: lobby.currentMatchId! },
-          data: { status: 'FINISHED', endAt: new Date() },
-        }).then(() =>
-          db.sSLobby.update({ where: { id: lobby.id }, data: { status: 'WAITING' } })
-        ).catch((err: Error) => logger.warn({ event: 'ss_db_finish_match_persist_failed', error: err.message }));
-      }
     } catch (err) {
       logger.warn({ event: 'ss_db_prisma_unavailable', error: (err as Error).message });
     }
+
+    ssMaybeFinishMatch(io, lobby);
   });
 
   // ─── Return to Lobby ───
@@ -561,7 +613,12 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
     if (!lobby) return;
     if (lobby.hostUserId !== userId) return;
 
+    if (lobby.status === 'CLOSED') return;
     lobby.status = 'WAITING';
+    if (lobby.countdownTimer) {
+      clearTimeout(lobby.countdownTimer);
+      lobby.countdownTimer = null;
+    }
     lobby.matchPlayers.clear();
     lobby.currentMatchId = null;
     lobby.currentMatchSeed = null;
@@ -600,6 +657,8 @@ export function handleSynapseStormDisconnect(io: Server, socket: Socket): void {
     // During a match: keep player data for reconnect, but clear socket mappings
     ssSocketUserMap.delete(socket.id);
     ssSocketLobbyMap.delete(socket.id);
+    // Their seat no longer blocks the match from finishing.
+    if (ssLobby) ssMaybeFinishMatch(io, ssLobby);
   }
 }
 
@@ -653,7 +712,7 @@ registerPartyGame('synapse-storm', {
     // the timer implies abandonment) is what makes this safe to run against a
     // lobby that filled up and is mid-match.
     if (!lobby || lobby.players.size > 0) return;
-    ssLobbies.delete(lobby.code);
+    ssCloseLobby(lobby);
     logger.info({ event: 'ss_party_lobby_reaped', code: lobby.code });
   },
 });

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
+import { countPendingPacks } from '@/lib/emoji/packs.server';
 
 export interface AdminReviewCounts {
   /** Open moderation reports awaiting a decision. */
@@ -8,6 +9,10 @@ export interface AdminReviewCounts {
   redemptions: number;
   /** Strike appeals awaiting a decision. */
   appeals: number;
+  /** Emoji & sticker packs awaiting moderation. */
+  emojiPacks: number;
+  /** Marketplace listings HELD for anomalous-price review. */
+  market: number;
   /** Total items needing admin attention (sum of the categories above). */
   total: number;
 }
@@ -18,12 +23,21 @@ export interface AdminReviewCounts {
  * object as more review queues are added (build submissions, …).
  */
 export async function getAdminReviewCounts(): Promise<AdminReviewCounts> {
-  const [reports, redemptions, appeals] = await Promise.all([
+  const [reports, redemptions, appeals, emojiPacks, market] = await Promise.all([
     prisma.contentReport.count({ where: { status: 'PENDING' } }),
     prisma.redemptionRequest.count({ where: { status: 'PENDING' } }),
     prisma.userStrike.count({ where: { appealStatus: 'PENDING' } }),
+    countPendingPacks(),
+    prisma.marketListing.count({ where: { status: 'HELD' } }),
   ]);
-  return { reports, redemptions, appeals, total: reports + redemptions + appeals };
+  return {
+    reports,
+    redemptions,
+    appeals,
+    emojiPacks,
+    market,
+    total: reports + redemptions + appeals + emojiPacks + market,
+  };
 }
 
 /**
@@ -51,8 +65,8 @@ export async function notifyAdminsOfReview(opts: {
           preview: opts.preview,
           link: opts.link ?? '/admin/reports',
           dedupeUnread: true,
-        })
-      )
+        }),
+      ),
     );
   } catch (err) {
     console.error('[admin-review] failed to notify admins:', err);

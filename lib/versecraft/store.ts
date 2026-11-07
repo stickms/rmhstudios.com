@@ -79,7 +79,7 @@ function createDefaultSettings(): PlayerSettings {
 export function createInitialState(): GameState {
   return {
     screen: 'menu',
-    previousScreen: null,
+    screenStack: [],
     currentChapter: 'ch01',
     currentSceneIndex: 0,
     currentDialogueIndex: 0,
@@ -313,14 +313,27 @@ interface GameActions {
   incrementPlaytime: () => void;
 }
 
+const SCREEN_STACK_MAX = 6;
+
 export const useGameStore = create<GameState & GameActions>()((set, get) => ({
   ...createInitialState(),
   isLoggedIn: false,
   isSyncing: false,
 
   // Navigation
-  setScreen: (screen) => set(s => ({ screen, previousScreen: s.screen })),
-  goBack: () => set(s => ({ screen: s.previousScreen || 'menu', previousScreen: null })),
+  // A small back stack: one level lost the dialogue after two overlay hops
+  // (dialogue → settings → save → back → back landed on the menu). Navigating
+  // to a screen already on the stack unwinds to it, so cycles never pile up.
+  setScreen: (screen) => set(s => {
+    const stack = [...s.screenStack, s.screen];
+    const seen = stack.indexOf(screen);
+    const next = seen >= 0 ? stack.slice(0, seen) : stack;
+    return { screen, screenStack: next.slice(-SCREEN_STACK_MAX) };
+  }),
+  goBack: () => set(s => ({
+    screen: s.screenStack[s.screenStack.length - 1] ?? 'menu',
+    screenStack: s.screenStack.slice(0, -1),
+  })),
 
   // Game flow
   startNewGame: () => set({
@@ -343,7 +356,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
           ...savedState,
           ...genLoadDefaults(savedState),
           screen: 'dialogue',
-          previousScreen: null,
+          screenStack: [],
           currentPoemScore: null,
           isLoggedIn: true,
         });
@@ -357,7 +370,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
         ...save.state,
         ...genLoadDefaults(save.state),
         screen: 'dialogue',
-        previousScreen: null,
+        screenStack: [],
         currentPoemScore: null,
       });
     }
@@ -813,7 +826,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
       ...save.state,
       ...genLoadDefaults(save.state),
       screen: 'dialogue',
-      previousScreen: null,
+      screenStack: [],
       currentPoemScore: null,
     });
     return true;

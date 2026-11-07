@@ -48,6 +48,12 @@ const BACKOFF_MS = [
 
 export const MAX_ATTEMPTS = BACKOFF_MS.length;
 
+/**
+ * How long a drain owns an event it claimed. Longer than any handler should
+ * take (they POST with ~10s timeouts); a crashed drain's rows come back after it.
+ */
+export const OUTBOX_LEASE_MS = 5 * 60_000;
+
 export function nextAttemptAt(attempts: number, from = new Date()): Date {
   const delay = BACKOFF_MS[Math.min(attempts, BACKOFF_MS.length - 1)];
   return new Date(from.getTime() + delay);
@@ -90,9 +96,11 @@ const handlers = new Map<string, OutboxHandler>();
 /**
  * Register a delivery handler for a topic.
  *
- * An unregistered topic is NOT an error and is NOT dropped — it stays pending
- * so that deploying the producer before the consumer (which is the normal
- * ordering during a rollout) doesn't lose events.
+ * An unregistered topic is NOT dropped — it stays pending on the normal
+ * backoff schedule so that deploying the producer before the consumer (which is
+ * the normal ordering during a rollout) doesn't lose events; each pass counts
+ * as an attempt, so a topic with no consumer at all ends up dead (kept for
+ * inspection) instead of retrying forever.
  */
 export function registerOutboxHandler(topic: string, handler: OutboxHandler): void {
   handlers.set(topic, handler);
@@ -135,17 +143,43 @@ export async function drainOutbox(batchSize = 50): Promise<DrainResult> {
   };
 
   for (const event of due) {
+    // Lease the row before touching it: a CAS that moves `nextAttempt` past
+    // the lease. Overlapping drains (a slow pass still running when the next
+    // cron tick starts, or two workers) read the same due rows; only the drain
+    // whose claim lands delivers, the rest see count 0 and skip. If this
+    // process dies mid-delivery, the lease lapses and the row is retried.
+    const claim = await prisma.outboxEvent
+      .updateMany({
+        where: { id: event.id, deliveredAt: null, deadAt: null, nextAttempt: event.nextAttempt },
+        data: { nextAttempt: new Date(Date.now() + OUTBOX_LEASE_MS) },
+      })
+      .catch(() => ({ count: 0 }));
+    if (claim.count === 0) {
+      result.skipped++;
+      continue;
+    }
+
     const handler = handlers.get(event.topic);
     if (!handler) {
       result.skipped++;
-      // Push the next attempt out so an unregistered topic doesn't spin the
-      // drain loop on every pass.
+      // Count it as a failed attempt and back off. Deploying a producer ahead
+      // of its consumer stays safe (the schedule spans ~7h before the row is
+      // marked dead, and dead rows are kept), but a topic nobody ever handles
+      // no longer retries forever.
+      const attempts = event.attempts + 1;
+      const exhausted = attempts >= MAX_ATTEMPTS;
       await prisma.outboxEvent
-        .update({
-          where: { id: event.id },
-          data: { nextAttempt: nextAttemptAt(event.attempts) },
+        .updateMany({
+          where: { id: event.id, deliveredAt: null, attempts: event.attempts },
+          data: {
+            attempts,
+            deadAt: exhausted ? new Date() : null,
+            nextAttempt: nextAttemptAt(attempts),
+            lastError: `no handler registered for topic ${event.topic}`.slice(0, 500),
+          },
         })
         .catch(() => undefined);
+      if (exhausted) result.dead++;
       continue;
     }
 
@@ -156,8 +190,8 @@ export async function drainOutbox(batchSize = 50): Promise<DrainResult> {
         payload: event.payload,
         attempts: event.attempts,
       });
-      await prisma.outboxEvent.update({
-        where: { id: event.id },
+      await prisma.outboxEvent.updateMany({
+        where: { id: event.id, deliveredAt: null },
         data: { deliveredAt: new Date(), lastError: null },
       });
       result.delivered++;
@@ -165,8 +199,10 @@ export async function drainOutbox(batchSize = 50): Promise<DrainResult> {
       const attempts = event.attempts + 1;
       const exhausted = attempts >= MAX_ATTEMPTS;
       await prisma.outboxEvent
-        .update({
-          where: { id: event.id },
+        .updateMany({
+          // Conditional on the attempt we leased, so a late failure write can
+          // never un-deliver a row or clobber a later attempt's bookkeeping.
+          where: { id: event.id, deliveredAt: null, attempts: event.attempts },
           data: {
             attempts,
             // Dead rows are kept, not deleted: "what did we fail to deliver

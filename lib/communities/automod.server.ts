@@ -23,9 +23,10 @@ import {
   type AutomodRuleInput,
 } from '@/lib/communities/automod';
 import type { ModItemDTO } from '@/lib/communities/plus';
+import { AUTOMOD_HOLD } from '@/lib/trash/types';
 
 /** `deletedBy` marker for a post AutoMod is holding (VarChar(12)). */
-export const HELD_BY = 'automod_hold';
+export const HELD_BY = AUTOMOD_HOLD;
 
 const RULES_TTL_MS = 5 * 60_000;
 const rulesKey = (communityId: string) => `community:automod:${communityId}`;
@@ -222,9 +223,11 @@ export async function resolveModItem(
       await resolveComment(item, decision);
     }
   } catch (e) {
-    // Put the item back so a transient failure doesn't lose it from the queue.
+    // Put the item back so a transient failure doesn't lose it from the queue —
+    // only if it is still the resolution this call wrote (never clobber a
+    // different moderator's later decision).
     await prisma.communityModItem.updateMany({
-      where: { id: itemId },
+      where: { id: itemId, status, resolvedById: moderatorId },
       data: { status: 'PENDING', resolvedById: null, resolvedAt: null },
     });
     throw e;
@@ -246,10 +249,12 @@ async function resolvePost(
   if (action === 'hold') {
     if (decision === 'approve' && post.deletedAt && post.deletedBy === HELD_BY) {
       await prisma.$transaction(async (tx) => {
-        await tx.rMHark.update({
-          where: { id: postId },
+        // CAS on "still held": only the first approval re-publishes and counts.
+        const released = await tx.rMHark.updateMany({
+          where: { id: postId, deletedBy: HELD_BY, deletedAt: { not: null } },
           data: { deletedAt: null, deletedBy: null },
         });
+        if (released.count === 0) return;
         await linkPostHashtags(tx, postId, post.content);
         await tx.user.update({ where: { id: post.userId }, data: { postCount: { increment: 1 } } });
         await tx.community.update({
@@ -258,17 +263,22 @@ async function resolvePost(
         });
       });
     } else if (decision === 'remove' && post.deletedBy === HELD_BY) {
-      await prisma.rMHark.update({ where: { id: postId }, data: { deletedBy: 'moderator' } });
+      await prisma.rMHark.updateMany({
+        where: { id: postId, deletedBy: HELD_BY },
+        data: { deletedBy: 'moderator' },
+      });
     }
     return;
   }
   // flag: the content is live. "Approve" just dismisses; "remove" takes it down.
   if (decision === 'remove' && !post.deletedAt) {
     await prisma.$transaction(async (tx) => {
-      await tx.rMHark.update({
-        where: { id: postId },
+      // CAS on "still live": a concurrent delete already did the counter work.
+      const removed = await tx.rMHark.updateMany({
+        where: { id: postId, deletedAt: null },
         data: { deletedAt: new Date(), deletedBy: 'moderator' },
       });
+      if (removed.count === 0) return;
       await unlinkPostHashtags(tx, postId);
       await tx.user.updateMany({
         where: { id: post.userId, postCount: { gt: 0 } },

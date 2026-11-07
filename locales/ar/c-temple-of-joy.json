@@ -315,5 +315,7 @@
   "vigil-sinners_many": "{{count}} من الخطاة، يحتفظون",
   "vigil-sinners_other": "{{count}} من الخطاة، يحتفظون",
   "vigil-title": "صلاة الليل",
-  "vigil-window": "الساعات المحتسبة"
+  "vigil-window": "الساعات المحتسبة",
+  "save-load-failed": "تعذّر تحميل حفظك.",
+  "save-load-retry": "حاول مرة أخرى"
 }

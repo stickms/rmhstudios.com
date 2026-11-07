@@ -92,6 +92,7 @@ export function SellSheet({
       );
       return;
     }
+    if (busy !== null) return;
     setBusy(item.id);
     try {
       const res = await fetch('/api/market/listings', {
@@ -181,6 +182,7 @@ export function SellSheet({
                     size="sm"
                     variant="accent"
                     loading={busy === item.id}
+                    disabled={busy !== null}
                     onClick={() => list(item)}
                   >
                     {t('market-list-action', { defaultValue: 'List' })}

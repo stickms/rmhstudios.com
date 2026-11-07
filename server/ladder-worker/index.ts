@@ -102,7 +102,21 @@ const cleanupLease = {
 };
 let cleanupRunning = false;
 
+/** Set once shutdown begins: no new tick (cron, bootstrap or cleanup) starts. */
+let stopping = false;
+
+/** Docker's default stop grace is 10s; give up waiting on a run well inside it. */
+const shutdownDeadlineMs = positiveInteger(process.env.LADDER_SHUTDOWN_DEADLINE_MS, 8_000);
+
+/** Thrown between pipeline steps once the DB lease has been lost. */
+class LeaseLostError extends Error {
+  constructor() {
+    super('database lease lost');
+  }
+}
+
 async function cleanupTick() {
+  if (stopping) return;
   if (cleanupRunning) {
     console.log('[ladder-worker] Cleanup skipped — previous run still in flight');
     return;
@@ -215,6 +229,7 @@ async function refreshMatchingAndAlerts() {
 }
 
 async function tick() {
+  if (stopping) return;
   if (running) {
     console.log('[ladder-worker] Tick skipped — previous run still in flight');
     return;
@@ -222,7 +237,13 @@ async function tick() {
 
   running = true;
   let leaseAcquired = false;
+  let leaseLost = false;
   let heartbeat: ReturnType<typeof setInterval> | undefined;
+  // Another worker may now hold the lease and be running the same pipeline:
+  // stop at the next step boundary instead of carrying on in parallel.
+  const assertLease = () => {
+    if (leaseLost) throw new LeaseLostError();
+  };
   try {
     leaseAcquired = await acquireWorkerLease(leasePrisma, workerLease);
     if (!leaseAcquired) {
@@ -232,8 +253,12 @@ async function tick() {
     heartbeat = setInterval(() => {
       void heartbeatWorkerLease(leasePrisma, workerLease)
         .then((renewed) => {
-          if (!renewed)
-            console.error('[ladder-worker] Lost database lease while a run was in flight');
+          if (!renewed) {
+            leaseLost = true;
+            console.error(
+              '[ladder-worker] Lost database lease while a run was in flight — stopping after the current step',
+            );
+          }
         })
         .catch((error) => console.error('[ladder-worker] Lease heartbeat failed:', error));
     }, leaseHeartbeatMs);
@@ -241,11 +266,14 @@ async function tick() {
 
     // Keep making bounded progress through unconfigured sources on every run.
     await probeBatch();
+    assertLease();
     const result = await runPipeline({ prisma: runPrisma }, { trigger: 'cron' });
     console.log(
       `[ladder-worker] Run complete [${result.runId}] — discovered=${result.discovered} created=${result.created} updated=${result.updated} verified=${result.verified} struck=${result.struck} expired=${result.expired} errors=${result.errors} reviewTasks=${result.reviewTasks} durationMs=${result.durationMs}`,
     );
+    assertLease();
     await refreshMatchingAndAlerts();
+    assertLease();
     try {
       const lastRun = await prisma.ladderScrapeRun.findFirst({
         where: { finishedAt: { not: null } },
@@ -271,9 +299,14 @@ async function tick() {
       console.error('[ladder-worker] Alert detection failed:', error);
     }
   } catch (e) {
-    console.error('[ladder-worker] Run failed:', e);
+    if (e instanceof LeaseLostError) {
+      console.error('[ladder-worker] Run stopped — database lease lost');
+    } else {
+      console.error('[ladder-worker] Run failed:', e);
+    }
   } finally {
     if (heartbeat) clearInterval(heartbeat);
+    // Release is owner-scoped, so it is a no-op if the lease was lost.
     if (leaseAcquired) {
       await releaseWorkerLease(leasePrisma, workerLease).catch((error) =>
         console.error('[ladder-worker] Lease release failed:', error),
@@ -291,7 +324,7 @@ async function tick() {
 // run is at least four hours old. Every step is idempotent.
 
 async function bootstrap() {
-  if (running) return;
+  if (running || stopping) return;
   running = true;
   let runImmediately = false;
   try {
@@ -327,6 +360,7 @@ async function bootstrap() {
     running = false;
   }
 
+  // tick() itself refuses once shutdown has begun (the cron is stopped by then).
   if (runImmediately) await tick();
 }
 
@@ -362,6 +396,9 @@ void bootstrap();
 // ─── Graceful shutdown ──────────────────────────────────────────
 
 async function shutdown(signal: string) {
+  // Re-entrant: a second signal must not stop the tasks / start a second wait.
+  if (stopping) return;
+  stopping = true;
   console.log(`[ladder-worker] ${signal} received, shutting down...`);
 
   await task.stop();
@@ -369,17 +406,33 @@ async function shutdown(signal: string) {
 
   if (running || cleanupRunning) {
     console.log('[ladder-worker] Waiting for in-flight run to complete...');
-    await new Promise<void>((resolve) => {
+    const drained = await new Promise<boolean>((resolve) => {
+      const deadline = setTimeout(() => {
+        clearInterval(interval);
+        resolve(false);
+      }, shutdownDeadlineMs);
       const interval = setInterval(() => {
         if (!running && !cleanupRunning) {
           clearInterval(interval);
-          resolve();
+          clearTimeout(deadline);
+          resolve(true);
         }
       }, 500);
     });
+    if (!drained) {
+      // The run dies with the process; hand the leases back now so the next
+      // worker does not sit out the whole TTL. Owner-scoped, so safe.
+      console.error(
+        `[ladder-worker] In-flight run did not finish within ${shutdownDeadlineMs}ms — exiting anyway`,
+      );
+      await Promise.allSettled([
+        releaseWorkerLease(leasePrisma, workerLease),
+        releaseWorkerLease(leasePrisma, cleanupLease),
+      ]);
+    }
   }
 
-  await prisma.$disconnect();
+  await prisma.$disconnect().catch(() => undefined);
   process.exit(0);
 }
 

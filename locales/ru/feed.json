@@ -1616,5 +1616,6 @@
   "muted-import-failed": "Не удалось прочитать файл.",
   "message-edit-length": "{{used}}/{{max}}",
   "palette-whats-new": "What’s new",
-  "palette-unread": "Unread"
+  "palette-unread": "Unread",
+  "deck-review-load-failed": "Не удалось загрузить карточки"
 }

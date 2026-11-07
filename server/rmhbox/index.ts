@@ -129,8 +129,22 @@ lobbyManager.startGarbageCollector();
 
 // ─── Graceful shutdown ──────────────────────────────────────────
 
+let shuttingDown = false;
+
 function shutdown(signal: string): void {
+  // A second signal must not re-run teardown or arm a second force-exit timer.
+  if (shuttingDown) return;
+  shuttingDown = true;
   logger.info({ event: 'shutdown_initiated', signal });
+
+  // Closing the server disconnects every socket: those disconnects must not
+  // start grace windows, and running games' timers must not keep firing
+  // (lobbies are in-memory and die with the process anyway).
+  lobbyManager.shuttingDown = true;
+  for (const lobbyId of Array.from(lobbyManager.getLobbies().keys())) {
+    gameCoordinator.teardownLobby(lobbyId);
+    voteManager.cancelVote(lobbyId);
+  }
 
   // Stop accepting new connections
   io.close(() => {

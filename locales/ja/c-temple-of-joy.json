@@ -210,6 +210,8 @@
   "save-just-now": "たったいま",
   "save-last": "最終保存",
   "save-lifetime": "通算で歓喜{{joy}}。",
+  "save-load-failed": "セーブデータを読み込めませんでした。",
+  "save-load-retry": "もう一度試す",
   "save-note": "神殿は{{seconds}}秒ごとに自動で保存され、プレイをやめた少しあとと、タブを閉じたりバックグラウンドにした瞬間にも保存されます。下のボタンは本来必要ありません。",
   "save-now": "いま保存",
   "save-playtime": "神殿で過ごした時間",

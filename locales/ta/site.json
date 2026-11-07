@@ -757,5 +757,9 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "பில்லிங்கை அணுக முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+  "space-end-offline": "இணைப்பில் இல்லை. சிறிது நேரத்தில் மீண்டும் முயற்சிக்கவும்.",
+  "market-under-review": "மதிப்பாய்வில்",
+  "market-under-review-hint": "இந்த விலையில் வாங்குதல் விரைவான சரிபார்ப்புக்காக இடைநிறுத்தப்பட்டது. எந்த நாணயமும் நகர்த்தப்படவில்லை. பொருளை இப்போதே திரும்பப் பெற ரத்துசெய்யுங்கள்."
 }

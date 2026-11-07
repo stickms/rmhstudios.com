@@ -152,21 +152,23 @@ export async function decideQuotaRequest(
   if (!req) return { ok: false, status: 404, error: 'Request not found.' };
   if (req.status !== 'pending') return { ok: false, status: 409, error: 'Request was already decided.' };
 
-  if (approve) {
-    const total = Math.max(1, Math.min(QUOTA_MAX, Math.floor(Number(grantedTotal ?? req.requestedTotal))));
-    await prisma.$transaction([
-      prisma.user.update({ where: { id: req.userId }, data: { libraryUploadQuota: total } }),
-      prisma.libraryQuotaRequest.update({
-        where: { id },
-        data: { status: 'approved', decidedByUserId: adminId, decidedAt: new Date() },
-      }),
-    ]);
-    void logAdminAction(adminId, 'library.quota.approve', { targetType: 'User', targetId: req.userId, detail: `→ ${total}` });
-  } else {
-    await prisma.libraryQuotaRequest.update({
-      where: { id },
-      data: { status: 'denied', decidedByUserId: adminId, decidedAt: new Date() },
+  // CAS on 'pending' first: two admins deciding at once (or approve vs deny)
+  // leave one decision, and the quota is only raised by the winner.
+  const decided = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.libraryQuotaRequest.updateMany({
+      where: { id, status: 'pending' },
+      data: { status: approve ? 'approved' : 'denied', decidedByUserId: adminId, decidedAt: new Date() },
     });
+    if (claimed.count === 0) return null;
+    if (!approve) return 0;
+    const total = Math.max(1, Math.min(QUOTA_MAX, Math.floor(Number(grantedTotal ?? req.requestedTotal))));
+    await tx.user.update({ where: { id: req.userId }, data: { libraryUploadQuota: total } });
+    return total;
+  });
+  if (decided === null) return { ok: false, status: 409, error: 'Request was already decided.' };
+  if (approve) {
+    void logAdminAction(adminId, 'library.quota.approve', { targetType: 'User', targetId: req.userId, detail: `→ ${decided}` });
+  } else {
     void logAdminAction(adminId, 'library.quota.deny', { targetType: 'User', targetId: req.userId });
   }
   return { ok: true, value: true };

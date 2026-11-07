@@ -130,8 +130,9 @@ func (r *Runner) runOnce(ctx context.Context) {
 	r.metrics.RecordJob("recap", "ok")
 }
 
-// processDueRecaps ports the Node processDueRecaps(): find due channels, build &
-// post the embed for each, then clear the schedule (always, even on 403/404).
+// processDueRecaps ports the Node processDueRecaps(): find due channels, claim
+// (clear) each schedule, then build & post the embed. A 403/404 stays cleared; a
+// transport error restores the schedule so the next tick retries.
 func (r *Runner) processDueRecaps(ctx context.Context) error {
 	channels, err := r.repo.DueChannels(ctx, time.Now())
 	if err != nil {
@@ -168,20 +169,29 @@ func (r *Runner) processOne(ctx context.Context, ch DueChannel) error {
 		return r.repo.ClearRecap(ctx, ch.ID)
 	}
 
+	// Claim the recap BEFORE posting: clearing after the post meant a failed
+	// clear re-posted the same recap every tick. If the clear fails we skip
+	// the post and the next tick tries again.
+	if err := r.repo.ClearRecap(ctx, ch.ID); err != nil {
+		return err
+	}
+
 	msg := &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{embed}}
 	status, postErr := r.poster.Post(ctx, ch.ChannelID, msg)
 	switch {
 	case postErr != nil:
-		// Transport error — log but still clear (Node clears unconditionally).
-		r.log.Warn("recap post error", "guildId", ch.GuildID, "error", postErr)
+		// Transport error — the recap never reached Discord, so put the
+		// schedule back and retry it on the next tick rather than losing it.
+		r.log.Warn("recap post error — will retry", "guildId", ch.GuildID, "error", postErr)
+		if err := r.repo.RestoreRecap(ctx, ch.ID, ch.RecapDateKey, time.Now()); err != nil {
+			return err
+		}
 	case status == 403 || status == 404:
-		r.log.Info("bot lacks access — clearing recap", "guildId", ch.GuildID, "status", status)
+		r.log.Info("bot lacks access — recap cleared", "guildId", ch.GuildID, "status", status)
 	default:
 		r.log.Info("posted recap", "guildId", ch.GuildID, "channelId", ch.ChannelID)
 	}
-
-	// Always clear the recap schedule (faithful to the Node comment).
-	return r.repo.ClearRecap(ctx, ch.ID)
+	return nil
 }
 
 // ─── production Repo (pgx) ───────────────────────────────────────────────────
@@ -265,6 +275,21 @@ func (p *pgRepo) Participants(ctx context.Context, guildID, dateKey string) ([]P
 	}
 	p.metrics.DBQueries.WithLabelValues("ok").Inc()
 	return out, nil
+}
+
+func (p *pgRepo) RestoreRecap(ctx context.Context, channelID, dateKey string, now time.Time) error {
+	_, err := p.db.Pool.Exec(ctx,
+		`UPDATE "discord_activity_channel"
+		    SET "recapDateKey" = $2, "recapDueAt" = $3
+		  WHERE "id" = $1 AND "recapDateKey" IS NULL AND "recapDueAt" IS NULL`,
+		channelID, dateKey, now,
+	)
+	if err != nil {
+		p.metrics.DBQueries.WithLabelValues("error").Inc()
+		return err
+	}
+	p.metrics.DBQueries.WithLabelValues("ok").Inc()
+	return nil
 }
 
 func (p *pgRepo) ClearRecap(ctx context.Context, channelID string) error {

@@ -106,6 +106,10 @@ export class RoomManager {
   readonly graceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   /** Leader-failover timers (roomId → timeout handle); see `scheduleLeaderFailover`. */
   private readonly leaderFailoverTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** "Room went empty → disband after ROOM_EMPTY_TIMEOUT_MS" timers, keyed by roomId. */
+  private readonly emptyRoomTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** Set during process shutdown: disconnects start no grace timers or DB writes. */
+  shuttingDown = false;
 
   private gcInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -142,6 +146,11 @@ export class RoomManager {
 
     const member = room.members.get(userId);
     if (!member) return;
+    // A late disconnect from an old tab (or the duplicate-session kick) must
+    // not mark the live session offline and start removing it.
+    if (member.socketId !== socket.id) return;
+    // Closing the server disconnects everyone: no grace timers, no DB writes.
+    if (this.shuttingDown) return;
 
     // Mark disconnected, start grace period
     member.isConnected = false;
@@ -150,8 +159,12 @@ export class RoomManager {
 
     this.broadcastAction(room, 'MEMBER_DISCONNECTED', { userId });
 
-    // Grace period: auto-remove after timeout
+    // Grace period: auto-remove after timeout. Replace (never stack) a timer.
+    clearTimeout(this.graceTimers.get(userId));
     const timer = setTimeout(() => {
+      this.graceTimers.delete(userId);
+      // They came back on another path (rejoin) without this timer clearing.
+      if (this.rooms.get(roomId)?.members.get(userId)?.isConnected) return;
       this.removeMember(roomId, userId, 'grace_expired');
     }, config.DISCONNECT_GRACE_PERIOD_MS);
     this.graceTimers.set(userId, timer);
@@ -388,8 +401,17 @@ export class RoomManager {
     }
 
     const now = Date.now();
+    clearTimeout(this.emptyRoomTimers.get(room.id));
+    this.emptyRoomTimers.delete(room.id);
     // Restore host role if this user is the room's host (e.g. solo host left and rejoined)
     const isReturningHost = room.hostUserId === userId;
+    // The room was emptied (removeMember skips the handoff when nobody is
+    // left) or restored from the DB: if the leader is not here, the newcomer
+    // takes playback control, otherwise nobody can play, pause or advance.
+    // Host ownership is NOT moved — the owner keeps it and gets control back
+    // when they return (restoreDesignatedLeader below).
+    const leader = room.members.get(room.leaderUserId);
+    const takesControl = !leader?.isConnected;
     const member: RmhTubeMember = {
       userId,
       userName,
@@ -403,6 +425,7 @@ export class RoomManager {
     };
 
     room.members.set(userId, member);
+    if (takesControl) room.leaderUserId = userId;
     this.userRoomIndex.set(userId, roomId);
     room.lastActivityAt = now;
 
@@ -414,6 +437,15 @@ export class RoomManager {
     });
 
     this.broadcastAction(room, 'MEMBER_JOINED', { userId, userName, avatarUrl });
+    if (takesControl) {
+      this.broadcastAction(room, 'LEADER_CHANGED', {
+        newLeaderUserId: userId,
+        newLeaderUserName: userName,
+        reason: 'failover',
+      });
+    } else {
+      this.restoreDesignatedLeader(room, userId);
+    }
     socket.emit(S2C.ROOM_STATE_SNAPSHOT, this.buildClientState(room, userId));
 
     logger.info({ event: 'member_joined', roomId, userId, userName });
@@ -457,13 +489,21 @@ export class RoomManager {
       logger.error({ event: 'db_member_leave_failed', roomId, userId, error: String(err) });
     });
 
-    // If room is now empty, schedule cleanup
+    // If room is now empty, schedule cleanup. Tracked so a rejoin cancels it
+    // and a second empty spell doesn't stack another timer.
     if (room.members.size === 0) {
-      setTimeout(() => {
-        if (this.rooms.has(roomId) && this.rooms.get(roomId)!.members.size === 0) {
-          this.disbandRoom(roomId, 'empty');
-        }
-      }, config.ROOM_EMPTY_TIMEOUT_MS);
+      clearTimeout(this.emptyRoomTimers.get(roomId));
+      this.emptyRoomTimers.set(
+        roomId,
+        setTimeout(() => {
+          this.emptyRoomTimers.delete(roomId);
+          if (this.rooms.has(roomId) && this.rooms.get(roomId)!.members.size === 0) {
+            this.disbandRoom(roomId, 'empty');
+          }
+        }, config.ROOM_EMPTY_TIMEOUT_MS),
+      );
+      // Nobody is left to hand host/leader to; joinRoom gives them to the
+      // first newcomer if the old host is not the one who comes back.
       return;
     }
 
@@ -897,6 +937,8 @@ export class RoomManager {
   private disbandRoom(roomId: string, reason: string): void {
     clearTimeout(this.leaderFailoverTimers.get(roomId));
     this.leaderFailoverTimers.delete(roomId);
+    clearTimeout(this.emptyRoomTimers.get(roomId));
+    this.emptyRoomTimers.delete(roomId);
     const room = this.rooms.get(roomId);
     if (!room) return;
 

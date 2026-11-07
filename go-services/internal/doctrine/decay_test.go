@@ -85,4 +85,18 @@ func TestDecayBatchSQL(t *testing.T) {
 	if xpA != 950 || xpB != 137 || dA != -50 || nB != 0 || act != "WEEKLY_DECAY" {
 		t.Fatalf("got xp %d/%d delta %d ledger(b)=%d action %s", xpA, xpB, dA, nB, act)
 	}
+	// A second pass in the same week (the hourly Monday ticker, or a restart)
+	// must not decay rep-a again: its WEEKLY_DECAY row for this week excludes it.
+	again, err := tx.Query(ctx, decayUpdateSQL, []string{"rep-a"}, []int32{902}, []int32{950})
+	if err != nil {
+		t.Fatalf("second update: %v", err)
+	}
+	n := 0
+	for again.Next() {
+		n++
+	}
+	again.Close()
+	if n != 0 {
+		t.Fatalf("second pass in the same week decayed %d rows, want 0", n)
+	}
 }

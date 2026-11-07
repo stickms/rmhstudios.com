@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles } from 'lucide-react';
 import { useSession } from '@/components/Providers';
@@ -167,14 +167,24 @@ function AskAboutQuery({ query }: { query: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
+  // The in-flight ask, aborted when the query changes (or the panel unmounts)
+  // so a slow answer for the previous query never lands under the new one.
+  const abortRef = useRef<AbortController | null>(null);
+
   // A new query invalidates any previous answer so the button reappears.
   useEffect(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
     setAnswer(null);
     setError(false);
     setLoading(false);
   }, [query]);
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const ask = useCallback(async () => {
+    abortRef.current?.abort();
+    const abort = new AbortController();
+    abortRef.current = abort;
     setLoading(true);
     setError(false);
     try {
@@ -183,15 +193,20 @@ function AskAboutQuery({ query }: { query: string }) {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ q: query }),
+        signal: abort.signal,
       });
       if (!res.ok) throw new Error(String(res.status));
       const data = await res.json();
+      if (abort.signal.aborted) return;
       setAnswer(typeof data.answer === 'string' ? data.answer : '');
       setSourceCount(typeof data.sourceCount === 'number' ? data.sourceCount : 0);
     } catch {
-      setError(true);
+      if (!abort.signal.aborted) setError(true);
     } finally {
-      setLoading(false);
+      if (abortRef.current === abort) {
+        abortRef.current = null;
+        setLoading(false);
+      }
     }
   }, [query]);
 

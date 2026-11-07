@@ -26,11 +26,28 @@ const DRAIN_TIMEOUT_MS = 2_000;
 
 export default function drainPlugin() {
   let draining = false;
+  let reraised = false;
+
+  // Hand the signal on to Nitro's own shutdown (or the default action) once.
+  // Both listeners come off, so neither signal is swallowed afterwards.
+  const reraise = (signal: string) => {
+    if (reraised) return;
+    reraised = true;
+    for (const [sig, handler] of Object.entries(handlers)) {
+      process.removeListener(sig as NodeJS.Signals, handler);
+    }
+    process.kill(process.pid, signal as NodeJS.Signals);
+  };
 
   const drain = async (signal: string) => {
     // Signals can arrive more than once (SIGTERM then SIGINT from an impatient
-    // operator); draining twice would double-write the second buffer.
-    if (draining) return;
+    // operator). Draining twice would double-write the buffer, but swallowing
+    // the second signal left the operator unable to stop the process: a
+    // second signal stops waiting on the flush and shuts down now.
+    if (draining) {
+      reraise(signal);
+      return;
+    }
     draining = true;
 
     try {
@@ -54,8 +71,7 @@ export default function drainPlugin() {
     }
 
     // Re-raise with the default handler so Nitro's own shutdown still runs.
-    process.removeListener(signal, handlers[signal]!);
-    process.kill(process.pid, signal as NodeJS.Signals);
+    reraise(signal);
   };
 
   const handlers: Record<string, () => void> = {

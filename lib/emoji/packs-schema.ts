@@ -35,3 +35,11 @@ export const addItemSchema = z.object({
   mediaId: z.string().min(1).max(64),
   alt: z.string().trim().min(1, 'Alt text is required').max(140),
 });
+
+/** Admin decision on a pack in the review queue. */
+export const moderatePackSchema = z.object({
+  action: z.enum(['approve', 'remove']),
+  reason: z.string().trim().max(500).optional(),
+  /** The pack's `updatedAt` as the reviewer saw it; a later edit makes the decision 409. */
+  version: z.iso.datetime().optional(),
+});

@@ -101,6 +101,13 @@ export function useDeviceAttitude({
   const [supported, setSupported] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [status, setStatus] = useState<MotionStatus>('unsupported');
+  /**
+   * The watchdog heard nothing. Kept apart from `supported` so it is not a
+   * permanent verdict: the listener stays attached, and a sample that arrives
+   * later (a sensor slow to wake, a tab that mounted hidden) brings the control
+   * back. Turning motion on again re-arms the watchdog.
+   */
+  const [silent, setSilent] = useState(false);
 
   // Handlers live in refs so a caller passing inline closures (the normal case)
   // doesn't tear down and re-arm the sensor on every render.
@@ -145,6 +152,7 @@ export function useDeviceAttitude({
     }
 
     setStatus('waiting');
+    setSilent(false);
 
     // The pose the viewer opened in is "facing the object", so however they are
     // holding the phone when they arrive is the front view.
@@ -179,6 +187,7 @@ export function useDeviceAttitude({
       target = orbitRotation(device, neutral, gain);
       if (!live) {
         live = true;
+        setSilent(false);
         setStatus('active');
       }
       schedule();
@@ -198,13 +207,23 @@ export function useDeviceAttitude({
     window.addEventListener('orientationchange', onRecenter, { passive: true });
     window.screen?.orientation?.addEventListener?.('change', onRecenter);
 
-    const watchdog = window.setTimeout(() => {
-      if (!live) setSupported(false);
-    }, WATCHDOG_MS);
+    // Hidden tabs get no sensor events: only count silence while visible.
+    let watchdog = 0;
+    const armWatchdog = () => {
+      window.clearTimeout(watchdog);
+      watchdog = 0;
+      if (live || document.visibilityState === 'hidden') return;
+      watchdog = window.setTimeout(() => {
+        if (!live) setSilent(true);
+      }, WATCHDOG_MS);
+    };
+    armWatchdog();
+    document.addEventListener('visibilitychange', armWatchdog);
 
     return () => {
       recenterRef.current = null;
       window.clearTimeout(watchdog);
+      document.removeEventListener('visibilitychange', armWatchdog);
       if (frame) cancelAnimationFrame(frame);
       window.removeEventListener('deviceorientation', onOrientation);
       window.removeEventListener('orientationchange', onRecenter);
@@ -235,8 +254,16 @@ export function useDeviceAttitude({
 
   const recenter = useCallback(() => recenterRef.current?.(), []);
 
+  const offered = supported && !silent;
   return useMemo(
-    () => ({ supported, enabled, status, toggle, recenter }),
-    [supported, enabled, status, toggle, recenter],
+    () => ({
+      supported: offered,
+      enabled,
+      // Silence reads as "no sensor here" until a sample proves otherwise.
+      status: silent && status === 'waiting' ? ('unsupported' as const) : status,
+      toggle,
+      recenter,
+    }),
+    [offered, silent, enabled, status, toggle, recenter],
   );
 }

@@ -1481,5 +1481,6 @@
   "muted-import-failed": "Không thể đọc tệp đó.",
   "message-edit-length": "{{used}}/{{max}}",
   "palette-whats-new": "What’s new",
-  "palette-unread": "Unread"
+  "palette-unread": "Unread",
+  "deck-review-load-failed": "Không thể tải thẻ"
 }

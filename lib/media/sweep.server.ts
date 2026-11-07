@@ -28,7 +28,15 @@ export async function sweepUnreferencedMedia(deps: SweepDeps): Promise<{ deleted
       OR: [
         { status: "PENDING", createdAt: { lt: orphanCutoff(now) } },
         { post: { deletedAt: { not: null, lt: deletedPostCutoff(now) } } },
-        { status: "ATTACHED", postId: null, createdAt: { lt: deletedPostCutoff(now) } },
+        // A post's media lost its postId (hard-deleted post, FK SetNull). Only
+        // post attachment stamps `attachedAt`; emoji-pack items are ATTACHED
+        // with no post and no attachedAt, and must not match this heuristic.
+        {
+          status: "ATTACHED",
+          postId: null,
+          attachedAt: { not: null },
+          createdAt: { lt: deletedPostCutoff(now) },
+        },
       ],
     },
     select: { id: true, key: true },

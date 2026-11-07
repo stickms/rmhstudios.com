@@ -307,5 +307,7 @@
   "vigil-sinners_many": "{{count}} Sinners, holding",
   "vigil-sinners_other": "{{count}} Sinners, holding",
   "vigil-title": "The night office",
-  "vigil-window": "Hours that count"
+  "vigil-window": "Hours that count",
+  "save-load-failed": "Vaše uložená hra se nepodařila načíst.",
+  "save-load-retry": "Zkusit znovu"
 }

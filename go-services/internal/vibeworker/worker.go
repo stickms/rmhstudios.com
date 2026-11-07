@@ -54,7 +54,15 @@ type Worker struct {
 
 	stopOnce sync.Once
 	done     chan struct{}
+	// loop tracks the ticker goroutine so Stop can wait for an in-flight
+	// render to finish before closing the capturer under it.
+	loop sync.WaitGroup
 }
+
+// stopWait bounds how long Stop waits for an in-flight render. Renders take
+// ctx, which is cancelled at shutdown, so this is only a backstop that stays
+// well inside the supervisor's drain grace.
+var stopWait = 30 * time.Second
 
 // New builds a Worker from a database, capturer, logger, and metrics. It wraps
 // the pool in the production PGRepo. capturer is injected so tests can supply a
@@ -79,7 +87,9 @@ func newWorker(repo Repo, capturer Capturer, logger *log.Logger, metrics *teleme
 // cancelled or Stop is called.
 func (w *Worker) Start(ctx context.Context) {
 	w.logger.Info("vibe-worker starting", "interval", pollInterval.String(), "batch", batchSize)
+	w.loop.Add(1)
 	go func() {
+		defer w.loop.Done()
 		w.processStale(ctx)
 		ticker := time.NewTicker(pollInterval)
 		defer ticker.Stop()
@@ -96,9 +106,17 @@ func (w *Worker) Start(ctx context.Context) {
 	}()
 }
 
-// Stop signals the ticker goroutine to exit and closes the capturer.
+// Stop signals the ticker goroutine to exit, waits (bounded by stopWait) for an
+// in-flight render to finish, then closes the capturer.
 func (w *Worker) Stop() {
 	w.stopOnce.Do(func() { close(w.done) })
+	exited := make(chan struct{})
+	go func() { w.loop.Wait(); close(exited) }()
+	select {
+	case <-exited:
+	case <-time.After(stopWait):
+		w.logger.Warn("vibe-worker: render still in flight at stop; closing capturer anyway", "waited", stopWait.String())
+	}
 	w.capturer.Close()
 }
 

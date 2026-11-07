@@ -773,5 +773,9 @@
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_few": "{{count}} errors",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "Facturarea nu a putut fi accesată. Încearcă din nou.",
+  "space-end-offline": "Nu ești conectat. Încearcă din nou peste câteva momente.",
+  "market-under-review": "În verificare",
+  "market-under-review-hint": "O cumpărare la acest preț a fost pusă pe pauză pentru o verificare rapidă. Nu s-au mutat monede. Anulează pentru a primi obiectul înapoi acum."
 }

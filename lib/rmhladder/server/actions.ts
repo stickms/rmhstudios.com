@@ -227,25 +227,47 @@ export async function resolveReviewTask(
 ): Promise<{ ok: boolean; error?: string }> {
   const task = await prisma.ladderReviewTask.findUnique({ where: { id: taskId } });
   if (!task) return { ok: false, error: 'task not found' };
+  if (task.status !== 'open') return { ok: false, error: 'task already resolved' };
+  if (resolution !== 'ignore' && !task.jobId) return { ok: false, error: 'task has no job' };
 
-  if (resolution !== 'ignore') {
-    if (!task.jobId) return { ok: false, error: 'task has no job' };
-    const effect = RESOLUTION_EFFECTS[resolution];
-    if (effect.jobStatus) {
-      await prisma.ladderJob.update({
-        where: { id: task.jobId },
-        data: { status: effect.jobStatus },
-      });
-    }
-    await prisma.ladderVerification.create({
-      data: { jobId: task.jobId, ...effect.verification, checkedAt: new Date() },
+  // Claim open → resolved FIRST (CAS through the extended unique where, which
+  // throws P2025 on a miss): two reviewers resolving one task at once (verify
+  // vs expire) cannot both apply their effect to the job.
+  try {
+    await prisma.ladderReviewTask.update({
+      where: { id: taskId, status: 'open' },
+      data: { status: 'resolved', resolution, resolvedById: userId, resolvedAt: new Date() },
     });
+  } catch (err) {
+    if ((err as { code?: string } | null)?.code === 'P2025') {
+      return { ok: false, error: 'task already resolved' };
+    }
+    throw err;
   }
 
-  await prisma.ladderReviewTask.update({
-    where: { id: taskId },
-    data: { status: 'resolved', resolution, resolvedById: userId, resolvedAt: new Date() },
-  });
+  if (resolution !== 'ignore' && task.jobId) {
+    const effect = RESOLUTION_EFFECTS[resolution];
+    try {
+      if (effect.jobStatus) {
+        await prisma.ladderJob.update({
+          where: { id: task.jobId },
+          data: { status: effect.jobStatus },
+        });
+      }
+      await prisma.ladderVerification.create({
+        data: { jobId: task.jobId, ...effect.verification, checkedAt: new Date() },
+      });
+    } catch (err) {
+      // Put the task back so a transient failure doesn't silently drop it.
+      await prisma.ladderReviewTask
+        .update({
+          where: { id: taskId, status: 'resolved', resolvedById: userId },
+          data: { status: 'open', resolution: null, resolvedById: null, resolvedAt: null },
+        })
+        .catch(() => undefined);
+      throw err;
+    }
+  }
   return { ok: true };
 }
 

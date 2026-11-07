@@ -115,6 +115,38 @@ function AdminDashboardPage() {
           />
 
           <AdminHubCard
+            to="/admin/emoji-packs"
+            title={t('emoji-packs-review-title', { defaultValue: 'Emoji Pack Review' })}
+            description={t('emoji-packs-review-description', {
+              defaultValue:
+                'Approve or remove new and edited emoji and sticker packs before other people can install them.',
+            })}
+            badge={
+              counts.emojiPacks > 0 ? (
+                <Badge variant="danger" size="sm" icon={false}>
+                  {counts.emojiPacks}
+                </Badge>
+              ) : undefined
+            }
+          />
+
+          <AdminHubCard
+            to="/admin/market"
+            title={t('market-review-title', { defaultValue: 'Marketplace Review' })}
+            description={t('market-review-card-description', {
+              defaultValue:
+                'Listings held after a buy far above the usual price. Release them back to sale, or cancel and return the item.',
+            })}
+            badge={
+              counts.market > 0 ? (
+                <Badge variant="danger" size="sm" icon={false}>
+                  {counts.market}
+                </Badge>
+              ) : undefined
+            }
+          />
+
+          <AdminHubCard
             to="/admin/security-reports"
             title={t('security-reports-title', { defaultValue: 'Security Reports' })}
             description={t('security-reports-description', {

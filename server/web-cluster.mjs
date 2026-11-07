@@ -65,11 +65,13 @@ if (!existsSync(workerEntry)) {
 
   const fork = (id) => {
     const worker = cluster.fork({ WORKER_ID: String(id) });
-    const slot = slots.get(id) ?? { failures: 0, startedAt: 0, timer: null };
+    const slot = slots.get(id) ?? { failures: 0, startedAt: 0, timer: null, listened: false };
     slot.startedAt = Date.now();
+    slot.listened = false;
     slot.worker = worker;
     slots.set(id, slot);
     worker.on('listening', () => {
+      slot.listened = true;
       listening.add(id);
       reportWorkers();
     });
@@ -78,7 +80,10 @@ if (!existsSync(workerEntry)) {
       reportWorkers();
       if (shuttingDown) return;
       const lived = Date.now() - slot.startedAt;
-      slot.failures = lived < EARLY_DEATH_MS ? slot.failures + 1 : 0;
+      // A worker that died before it ever listened failed to boot, however
+      // long it took to fail: keep backing off rather than resetting to an
+      // immediate respawn just because a slow boot crossed EARLY_DEATH_MS.
+      slot.failures = lived < EARLY_DEATH_MS || !slot.listened ? slot.failures + 1 : 0;
       const delay =
         slot.failures === 0
           ? 0

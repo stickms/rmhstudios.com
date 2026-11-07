@@ -7,7 +7,7 @@
  * *because* of that strike, the ban has to come off in the same operation —
  * otherwise a successful appeal leaves the punishment in place, which is worse
  * than having no appeal process at all. The lift is deliberately narrow: only
- * the auto-ban (`banReason` = 'Reached 3 strikes') is cleared, never a manual
+ * the auto-ban (`banReason` = `AUTO_BAN_REASON`) is cleared, never a manual
  * ban an admin issued for separate reasons.
  */
 
@@ -17,10 +17,11 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { createNotification } from '@/lib/notifications.server';
-import { AUTO_BAN_THRESHOLD, activeStrikeWhere } from '@/lib/moderation/standing.server';
-
-/** Set by the strike endpoint when the third active strike lands. */
-const AUTO_BAN_REASON = 'Reached 3 strikes';
+import {
+  AUTO_BAN_REASON,
+  AUTO_BAN_THRESHOLD,
+  activeStrikeWhere,
+} from '@/lib/moderation/standing.server';
 
 const schema = z.object({
   action: z.enum(['uphold', 'overturn']),

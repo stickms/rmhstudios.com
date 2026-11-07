@@ -11,7 +11,8 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { awardCoins } from '@/lib/coins.server';
+import { creditCoins } from '@/lib/economy/ledger.server';
+import { writeQuestProgress } from '@/lib/quests/engine.server';
 import { awardXp } from '@/lib/xp/engine.server';
 import {
   arcadeDayKey,
@@ -139,11 +140,11 @@ export async function reportGameResult(userId: string, payload: GameResultPayloa
         const row = byId.get(challenge.id);
         if (row?.completed) return false;
         const { progress, completed } = evaluate(challenge, payload, row?.progress ?? 0);
-        await prisma.userQuest.upsert({
-          where: { userId_questId_periodKey: { userId, questId: challenge.id, periodKey: dayKey } },
-          create: { userId, questId: challenge.id, periodKey: dayKey, progress, completed },
-          update: { progress, completed },
-        });
+        // Never un-completes a row a concurrent result already completed.
+        await writeQuestProgress(
+          { userId, questId: challenge.id, periodKey: dayKey },
+          { exists: !!row, progress, completed },
+        );
         return completed && !row?.completed;
       }),
     );
@@ -200,20 +201,27 @@ export async function claimArcadeChallenge(
   const def = challengesForDay(dayKey).find((c) => c.id === challengeId);
   if (!def) return null;
 
-  const claim = await prisma.userQuest.updateMany({
-    where: { userId, questId: challengeId, periodKey: dayKey, completed: true, claimed: false },
-    data: { claimed: true },
-  });
-  if (claim.count === 0) return null;
-
-  if (def.coins > 0) {
-    await awardCoins(userId, def.coins, {
-      type: 'REWARD',
-      note: `Arcade: ${def.title}`,
-      entityType: 'arcade',
-      entityId: def.id,
+  // Flip and coin credit commit together (see `claimQuest`): a failed credit
+  // no longer leaves the challenge claimed with nothing paid.
+  const claimed = await prisma.$transaction(async (tx) => {
+    const claim = await tx.userQuest.updateMany({
+      where: { userId, questId: challengeId, periodKey: dayKey, completed: true, claimed: false },
+      data: { claimed: true },
     });
-  }
+    if (claim.count === 0) return false;
+    if (def.coins > 0) {
+      await creditCoins(userId, def.coins, {
+        tx,
+        type: 'REWARD',
+        note: `Arcade: ${def.title}`,
+        entityType: 'arcade',
+        entityId: def.id,
+        idempotencyKey: `arcade-claim:${userId}:${challengeId}`,
+      });
+    }
+    return true;
+  });
+  if (!claimed) return null;
   if (def.xp > 0) await awardXp(userId, def.xp);
 
   return { xp: def.xp, coins: def.coins };

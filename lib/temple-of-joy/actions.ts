@@ -195,10 +195,19 @@ export function doFinishFrame(state: GameState, pins: number, firstBall: number)
   };
 }
 
+/** Every modal closed. Opening one spreads this first, so only one is ever up. */
+export const NO_MODAL = {
+  showAscendDialog: false,
+  showVigilDialog: false,
+  showMannaDialog: false,
+  showResetDialog: false,
+  showBowl: false,
+} as const satisfies Partial<GameState>;
+
 /** Open and close the alley. Refuses to open a lane that is not ready. */
 export function doOpenBowl(state: GameState): GameState {
   if (!computeBowlReady(state)) return state;
-  return { ...state, showBowl: true, bowl: { ...state.bowl, revealed: true } };
+  return { ...state, ...NO_MODAL, showBowl: true, bowl: { ...state.bowl, revealed: true } };
 }
 
 export function doCloseBowl(state: GameState): GameState {

@@ -207,6 +207,13 @@ export function registerCallHandlers(io: Server, socket: Socket): void {
       connectedAt: null,
       ringTimer: null,
     };
+    // The caller's socket may have dropped during the awaits above. Its
+    // disconnect found no call to end (nothing was published yet), so ringing
+    // now would ring the callee into a call nobody is on the other end of.
+    if (socket.disconnected) {
+      persist(call, 'cancelled');
+      return;
+    }
     // Claim both users before publishing the call into the live indexes. A
     // group call may have claimed either one while permission/presence/DB work
     // was in flight.
@@ -237,6 +244,10 @@ export function registerCallHandlers(io: Server, socket: Socket): void {
       })
       .catch(() => null);
 
+    // The call can have ended (caller hung up / disconnected, ring timeout)
+    // while the caller's profile loaded: don't ring for a dead call.
+    if (calls.get(call.id) !== call) return;
+
     io.to(userRoom(calleeId)).emit(CALL_S2C.INCOMING, {
       callId: call.id,
       from: {
@@ -263,9 +274,12 @@ export function registerCallHandlers(io: Server, socket: Socket): void {
     }
     call.connectedAt = Date.now();
 
+    // Conditional on still RINGING: both writes are fire-and-forget, and an
+    // unconditional CONNECTED landing after a quick hang-up's final status
+    // left a finished call recorded as CONNECTED forever.
     getPrismaClient()
-      .call.update({
-        where: { id: call.id },
+      .call.updateMany({
+        where: { id: call.id, status: 'RINGING' },
         data: { status: 'CONNECTED', connectedAt: new Date(call.connectedAt) },
       })
       .catch((err: unknown) =>
@@ -362,6 +376,9 @@ export async function handleCallDisconnect(io: Server, socket: Socket): Promise<
     // than an extra hang-up.
   }
 
+  // The call may have ended (or been replaced) while we awaited: ending it
+  // again double-emitted ENDED and double-persisted.
+  if (calls.get(callId) !== call) return;
   endCall(io, call, call.connectedAt ? 'hangup' : 'cancelled');
 }
 

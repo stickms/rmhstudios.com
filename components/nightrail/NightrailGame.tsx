@@ -23,7 +23,15 @@ import { useGameSession } from '@/hooks/useGameSession';
 // U14 — loaded only when a player opens photo mode.
 const PhotoMode = lazy(() => import('@/components/games/PhotoMode'));
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { createRun, emptyInput, stepRun, withInterpolatedPose, type RunState } from '@/lib/nightrail/game';
+import {
+  createRun,
+  emptyInput,
+  pauseRun,
+  resumeRun,
+  stepRun,
+  withInterpolatedPose,
+  type RunState,
+} from '@/lib/nightrail/game';
 import { NightrailRenderer3D } from '@/lib/nightrail/renderer3d';
 import { FrameCap, MENU_BACKDROP_FPS } from '@/lib/render/frame-cap';
 import { NightrailAudio } from '@/lib/nightrail/audio';
@@ -179,7 +187,7 @@ export function NightrailGame() {
     const onLost = (event: Event) => {
       event.preventDefault();
       const run = runRef.current;
-      if (run && run.phase === 'playing') run.phase = 'paused';
+      if (run) pauseRun(run);
       setContextLost(true);
     };
     const onRestored = () => {
@@ -291,7 +299,7 @@ export function NightrailGame() {
     // Alt-tabbing away with a key held would otherwise leave it held forever.
     const blur = () => {
       inputRef.current = { ...emptyInput() };
-      if (runRef.current?.phase === 'playing') runRef.current.phase = 'paused';
+      if (runRef.current) pauseRun(runRef.current);
     };
     window.addEventListener('keydown', kd);
     window.addEventListener('keyup', ku);
@@ -367,7 +375,7 @@ export function NightrailGame() {
     id: 'nightrail',
     active: uiState === 'playing',
     onPause: () => {
-      if (runRef.current?.phase === 'playing') runRef.current.phase = 'paused';
+      if (runRef.current) pauseRun(runRef.current);
     },
   });
 
@@ -418,8 +426,7 @@ export function NightrailGame() {
         // Escape toggles both ways. Edge-detected here rather than in the key
         // handler so a held key cannot strobe the pause state.
         if (input.pause && !prevPause) {
-          if (run.phase === 'playing') run.phase = 'paused';
-          else if (run.phase === 'paused') run.phase = 'playing';
+          if (!pauseRun(run)) resumeRun(run);
         }
         prevPause = input.pause;
 
@@ -485,7 +492,7 @@ export function NightrailGame() {
     const run = runRef.current;
     if (!run || uiStateRef.current !== 'playing') return;
     if (run.phase !== 'playing' && run.phase !== 'paused') return;
-    run.phase = 'paused';
+    pauseRun(run);
     photoModeRef.current = true;
     setPhotoMode(true);
   }, []);
@@ -501,7 +508,7 @@ export function NightrailGame() {
   const resume = useCallback(() => {
     if (photoModeRef.current) return;
     const run = runRef.current;
-    if (run?.phase === 'paused') run.phase = 'playing';
+    if (run) resumeRun(run);
     audioRef.current?.unlock();
   }, []);
 

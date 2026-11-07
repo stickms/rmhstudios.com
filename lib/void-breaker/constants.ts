@@ -94,11 +94,6 @@ export const REFLECT_SHIELD_DURATION = 1.5;
 export const ALLY_PROJ_SPEED = 420;
 export const ALLY_PROJ_DAMAGE = 1;
 
-// ── Map transition ───────────────────────────────────────────────────────────
-/** Player must reach this X coordinate (fraction of ARENA_W) to trigger map advance */
-export const MAP_DOOR_X_FRAC = 0.92;     // 92% of arena width
-export const MAP_TRANSITION_DURATION = 1.8; // seconds for fade
-
 // ── Heart Drops ──────────────────────────────────────────────────────────────
 /** Chance an enemy drops a heart on death (8%) */
 /** Enemy warp-in telegraph duration before it becomes active (seconds). */

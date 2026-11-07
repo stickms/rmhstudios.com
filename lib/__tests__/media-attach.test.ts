@@ -52,4 +52,20 @@ describe("resolveMediaForPost", () => {
     expect(res.ok).toBe(false);
     expect(d.prisma.media.findMany).not.toHaveBeenCalled();
   });
+
+  it("rolls back its own flips when a concurrent attach took one of the rows", async () => {
+    const d = deps([
+      { id: "media_a", url: "/a", userId: "u1", status: "PENDING" },
+      { id: "media_b", url: "/b", userId: "u1", status: "PENDING" },
+    ]);
+    // media_b was attached by someone else between the read and the flip.
+    d.prisma.media.updateMany.mockResolvedValueOnce({ count: 1 });
+    const res = await resolveMediaForPost(d, { userId: "u1", mediaIds: ["media_a", "media_b"], postId: "p1" });
+    expect(res).toEqual({ ok: false, error: expect.stringMatching(/already attached/i) });
+    expect(d.prisma.media.updateMany).toHaveBeenCalledTimes(2);
+    expect(d.prisma.media.updateMany).toHaveBeenLastCalledWith({
+      where: { id: { in: ["media_a", "media_b"] }, status: "ATTACHED", postId: "p1" },
+      data: { status: "PENDING", postId: null, attachedAt: null },
+    });
+  });
 });

@@ -98,6 +98,7 @@ export function StorefrontColumn({
  }, [load]);
 
  async function create() {
+ if (busy !== null) return;
  setBusy('create');
  setError(null);
  try {
@@ -127,6 +128,7 @@ export function StorefrontColumn({
  }
 
  async function buy(id: string) {
+ if (busy !== null) return;
  setBusy(`buy:${id}`);
  try {
  const res = await fetch(`/api/storefront/products/${id}/buy`, {
@@ -145,6 +147,7 @@ export function StorefrontColumn({
  }
 
  async function toggleActive(p: Product) {
+ if (busy !== null) return;
  setBusy(`tog:${p.id}`);
  try {
  const res = await fetch(`/api/storefront/products/${p.id}`, {
@@ -160,6 +163,7 @@ export function StorefrontColumn({
  }
 
  async function remove(id: string) {
+ if (busy !== null) return;
  setBusy(`del:${id}`);
  try {
  const res = await fetch(`/api/storefront/products/${id}`, {
@@ -287,7 +291,7 @@ export function StorefrontColumn({
  <Button
  size="sm"
  variant="accent"
- disabled={!validForm || busy ==='create'}
+ disabled={!validForm || busy !== null}
  onClick={create}
  >
  {busy ==='create'? (
@@ -351,7 +355,7 @@ export function StorefrontColumn({
  <Button
  size="sm"
  variant="outline"
- disabled={busy === `tog:${p.id}`}
+ disabled={busy !== null}
  onClick={() => toggleActive(p)}
  >
  {p.active ? (
@@ -366,7 +370,7 @@ export function StorefrontColumn({
  <Button
  size="sm"
  variant="ghost"
- disabled={busy === `del:${p.id}`}
+ disabled={busy !== null}
  onClick={() => remove(p.id)}
  className="gap-1 text-site-text-muted hover:text-site-danger"
  >
@@ -381,7 +385,7 @@ export function StorefrontColumn({
  <Button
  size="sm"
  variant="accent"
- disabled={!signedIn || busy === `buy:${p.id}`}
+ disabled={!signedIn || busy !== null}
  onClick={() => buy(p.id)}
  >
  {busy === `buy:${p.id}`? (

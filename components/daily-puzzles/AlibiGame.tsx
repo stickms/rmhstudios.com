@@ -78,6 +78,13 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const startTimeRef = useRef<number | null>(null);
 
+    const stopTimer = useCallback(() => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+    }, []);
+
     // Check if already completed on mount
     useEffect(() => {
         if (hasCompleted('alibi', dateKey)) {
@@ -105,26 +112,24 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                     setGuesses(data.guesses ?? []);
                     setSolved(data.solved ?? false);
                     setFailed(data.failed ?? false);
+                    // The run may already be timing (the fetch can land after
+                    // "start"); stop it, or the interval keeps overwriting the
+                    // saved time on the result screen.
+                    stopTimer();
                     setScore(serverResult.score);
                     setElapsedSeconds(serverResult.timeSeconds ?? 0);
                     setPhase('result');
                 }
             });
         }
-    }, [dateKey, session.data]);
-
-    const stopTimer = useCallback(() => {
-        if (timerRef.current) {
-            clearInterval(timerRef.current);
-            timerRef.current = null;
-        }
-    }, []);
+    }, [dateKey, session.data, stopTimer]);
 
     useEffect(() => {
         return () => stopTimer();
     }, [stopTimer]);
 
     const startReading = () => {
+        stopTimer();
         setPhase('reading');
         startTimeRef.current = Date.now();
         timerRef.current = setInterval(() => {

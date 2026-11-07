@@ -27,14 +27,21 @@ export function PronunciationRecorder({
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [busy, setBusy] = useState(false);
+  // True from the tap until the microphone answers: the button is disabled so
+  // a second tap cannot open a second recorder (and leak the first one's mic).
+  const [starting, setStarting] = useState(false);
+  const startingRef = useRef(false);
+  const mountedRef = useRef(true);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
       recorderRef.current?.cancel();
+      recorderRef.current = null;
       audioRef.current?.pause();
-    },
-    [],
-  );
+    };
+  }, []);
 
   async function upload(clip: RecordedClip) {
     setBusy(true);
@@ -69,13 +76,30 @@ export function PronunciationRecorder({
   }
 
   async function start() {
+    if (startingRef.current || recorderRef.current) return;
+    startingRef.current = true;
+    setStarting(true);
+    try {
+      await startRecorder();
+    } finally {
+      startingRef.current = false;
+      if (mountedRef.current) setStarting(false);
+    }
+  }
+
+  async function startRecorder() {
     const { VoiceRecorder, VoiceRecorderError } = await import('@/lib/voice/recorder');
+    if (!mountedRef.current) return;
     const recorder = new VoiceRecorder('free', {
       onTick: (_level, ms) => {
         setElapsed(ms);
         if (ms >= PRONUNCIATION_MAX_MS) void finish();
       },
       onError: () => {
+        // The wrapper cancels itself; drop our handle so a later Stop or
+        // unmount doesn't act on a dead recorder.
+        if (recorderRef.current === recorder) recorderRef.current = null;
+        recorder.cancel();
         setRecording(false);
         toast.error(t('pron-error', { defaultValue: 'Recording failed. Try again.' }));
       },
@@ -83,12 +107,18 @@ export function PronunciationRecorder({
     try {
       await recorder.start();
     } catch (err) {
+      if (!mountedRef.current) return;
       const denied = err instanceof VoiceRecorderError && err.reason === 'denied';
       toast.error(
         denied
           ? t('pron-denied', { defaultValue: 'Allow microphone access to record.' })
           : t('pron-unsupported', { defaultValue: "This browser can't record audio." }),
       );
+      return;
+    }
+    if (!mountedRef.current) {
+      // Unmounted while the permission prompt was open: release the mic.
+      recorder.cancel();
       return;
     }
     recorderRef.current = recorder;
@@ -128,7 +158,13 @@ export function PronunciationRecorder({
           })}
         </Button>
       ) : (
-        <Button variant="outline" size="sm" loading={busy} onClick={() => void start()}>
+        <Button
+          variant="outline"
+          size="sm"
+          loading={busy}
+          disabled={starting}
+          onClick={() => void start()}
+        >
           <Mic aria-hidden />
           {url
             ? t('pron-rerecord', { defaultValue: 'Record again' })

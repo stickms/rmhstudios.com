@@ -837,5 +837,9 @@
   "ladder.health.showErrors_one": "{{count}} error",
   "ladder.health.showErrors_two": "{{count}} errors",
   "ladder.health.showErrors_zero": "{{count}} errors",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "تعذّر الوصول إلى الفوترة. حاول مرة أخرى.",
+  "space-end-offline": "غير متصل. حاول مرة أخرى بعد قليل.",
+  "market-under-review": "قيد المراجعة",
+  "market-under-review-hint": "أُوقف الشراء بهذا السعر مؤقتًا لفحص سريع. لم تُنقل أي عملات. ألغِ الآن لاستعادة العنصر."
 }

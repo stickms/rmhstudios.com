@@ -9,7 +9,7 @@
  * full Guess the Song page, linked from the header.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Music2, Loader2, ArrowLeft, ExternalLink, Lightbulb, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -45,6 +45,9 @@ export default function GuessPanel() {
   const [guess, setGuess] = useState('');
   const [result, setResult] = useState<{ correct: boolean; title?: string; reward?: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // The puzzle the panel is on. Bumped by open/back; a puzzle fetch or guess
+  // result that resolves for an older one is dropped.
+  const puzzleSeq = useRef(0);
 
   const loadPuzzles = useCallback(async () => {
     setLoading(true);
@@ -65,20 +68,29 @@ export default function GuessPanel() {
   }, [isGuessOpen, loadPuzzles]);
 
   const openPuzzle = useCallback(async (id: string) => {
+    const seq = ++puzzleSeq.current;
     setActive(null);
     setRevealed(1);
     setGuess('');
     setResult(null);
-    const res = await fetch(`/api/rmhmusic/guess/${id}`, { credentials: 'include' });
-    if (res.ok) {
-      const data = await res.json();
-      setActive(data);
-      if (data.solved) setResult({ correct: true, title: data.title });
+    setSubmitting(false);
+    try {
+      const res = await fetch(`/api/rmhmusic/guess/${id}`, { credentials: 'include' });
+      if (seq !== puzzleSeq.current) return;
+      if (res.ok) {
+        const data = await res.json();
+        if (seq !== puzzleSeq.current) return;
+        setActive(data);
+        if (data.solved) setResult({ correct: true, title: data.title });
+      }
+    } catch {
+      /* the list stays; the user can tap again */
     }
   }, []);
 
   const submitGuess = useCallback(async () => {
     if (!active || !guess.trim() || submitting) return;
+    const seq = puzzleSeq.current;
     setSubmitting(true);
     try {
       const res = await fetch(`/api/rmhmusic/guess/${active.id}/attempt`, {
@@ -88,17 +100,22 @@ export default function GuessPanel() {
         body: JSON.stringify({ guess: guess.trim(), hintsUsed: Math.max(0, revealed - 1) }),
       });
       const data = await res.json();
+      if (seq !== puzzleSeq.current) return;
       if (data.correct) {
         setResult({ correct: true, title: data.title, reward: data.reward });
       } else {
         setResult({ correct: false });
       }
+    } catch {
+      /* network blip — the guess can be resubmitted */
     } finally {
-      setSubmitting(false);
+      if (seq === puzzleSeq.current) setSubmitting(false);
     }
   }, [active, guess, revealed, submitting]);
 
   const backToList = useCallback(() => {
+    puzzleSeq.current += 1;
+    setSubmitting(false);
     setActive(null);
     loadPuzzles();
   }, [loadPuzzles]);
@@ -162,6 +179,7 @@ export default function GuessPanel() {
                   {revealed < active.hints.length && !result?.correct && (
                     <button
                       onClick={() => setRevealed((r) => r + 1)}
+                      disabled={submitting}
                       className="text-xs"
                       style={{ color: 'var(--app-accent)' }}
                     >

@@ -773,5 +773,9 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "بلنگ تک رسائی نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+  "space-end-offline": "منسلک نہیں ہیں۔ تھوڑی دیر بعد دوبارہ کوشش کریں۔",
+  "market-under-review": "زیرِ جائزہ",
+  "market-under-review-hint": "اس قیمت پر خریداری فوری جانچ کے لیے روک دی گئی ہے۔ کوئی سکے منتقل نہیں ہوئے۔ آئٹم ابھی واپس لینے کے لیے منسوخ کریں۔"
 }

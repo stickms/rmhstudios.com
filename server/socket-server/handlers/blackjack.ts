@@ -17,6 +17,12 @@ import {
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
 import {
+  InFlight,
+  settleShutdownClaims,
+  type ShutdownRefundSummary,
+  type StakeClaim,
+} from './casino-shutdown';
+import {
   type Card,
   createShoe,
   handValue,
@@ -129,6 +135,10 @@ interface PlayerSeat {
   // Set when a player leaves/disconnects mid-round but still has money at
   // stake. The seat is kept until payouts settle, then pruned.
   pendingRemoval?: boolean;
+  // Per-seat in-flight lock: set while a debit (bet, insurance, split, double)
+  // is awaiting the DB, so a double-click can't pass the state check twice and
+  // debit twice.
+  inFlight?: boolean;
 }
 
 function makeHand(cards: Card[], bet: number): Hand {
@@ -169,6 +179,11 @@ interface BlackjackRoom {
   resultsTimer: ReturnType<typeof setTimeout> | null;
   turnTimer: ReturnType<typeof setTimeout> | null;
   insuranceTimer: ReturnType<typeof setTimeout> | null;
+  // The 2s "nobody bet, try again" restart and the dealer-reveal → payout
+  // delay. Both were untracked, so clearTimers/destroyRoom could not cancel
+  // them and a stray restart re-ran startBettingPhase over a live round.
+  restartTimer: ReturnType<typeof setTimeout> | null;
+  payoutTimer: ReturnType<typeof setTimeout> | null;
   roundNumber: number;
   bettingDeadline: number | null;
   turnDeadline: number | null;
@@ -200,6 +215,10 @@ const rooms = new Map<string, BlackjackRoom>();
 const socketToUserId = new Map<string, string>();
 const userToRoom = new Map<string, string>();
 let ioRef: Server;
+// Set once by refundBlackjackOnShutdown(): from then on no room is live.
+let closing = false;
+// Debits, refunds and payout transactions still awaiting the database.
+const inFlight = new InFlight();
 
 // Socket.io room that lobby browsers join so room-list updates reach only the
 // clients currently viewing the lobby — not every connected socket on the
@@ -304,7 +323,7 @@ function broadcastRoomList() {
       ownerName: r.ownerName,
       playerCount: r.players.size,
       maxPlayers: r.maxPlayers,
-      inProgress: r.phase !== 'idle' && r.phase !== 'betting',
+      inProgress: roundInProgress(r),
     }));
   ioRef.to(LOBBY_ROOM).emit(S2C.ROOM_LIST, { rooms: list });
 }
@@ -338,9 +357,68 @@ function clearTimers(room: BlackjackRoom) {
     clearTimeout(room.insuranceTimer);
     room.insuranceTimer = null;
   }
+  if (room.restartTimer) {
+    clearTimeout(room.restartTimer);
+    room.restartTimer = null;
+  }
+  if (room.payoutTimer) {
+    clearTimeout(room.payoutTimer);
+    room.payoutTimer = null;
+  }
+}
+
+/** A hand is in progress: stakes are committed to the round (not refundable). */
+function roundInProgress(room: BlackjackRoom): boolean {
+  return room.phase !== 'idle' && room.phase !== 'betting';
+}
+
+/**
+ * The room is still the live one for this id (not destroyed while we awaited),
+ * and the hub is not shutting down (its stakes were refunded at shutdown).
+ */
+function isLive(room: BlackjackRoom): boolean {
+  return !closing && rooms.get(room.roomId) === room;
+}
+
+/**
+ * Return a stake that never made it into a round (betting closed while the
+ * debit was in flight, the player left during betting, or the action became
+ * illegal mid-await). Fire-and-forget safe: errors are logged.
+ */
+function refundStake(room: BlackjackRoom, userId: string, amount: number, note: string) {
+  return inFlight.track(refundStakeNow(room, userId, amount, note));
+}
+
+async function refundStakeNow(room: BlackjackRoom, userId: string, amount: number, note: string) {
+  if (amount <= 0) return;
+  try {
+    const prisma = getPrismaClient();
+    const balance = await prisma.$transaction(async (tx) => {
+      await creditCoinsOn(tx, userId, amount, {
+        tx,
+        type: 'WAGER',
+        entityType: 'blackjack',
+        entityId: room.roomId,
+        note,
+      });
+      return getBalanceOn(tx, userId);
+    });
+    for (const [sid, uid] of socketToUserId) {
+      if (uid === userId) ioRef.sockets.sockets.get(sid)?.emit(S2C.BALANCE_UPDATE, { coins: balance });
+    }
+  } catch (err) {
+    logger.error({ event: 'bj_refund_error', roomId: room.roomId, userId, amount, error: String(err) });
+  }
 }
 
 function startBettingPhase(room: BlackjackRoom) {
+  if (room.restartTimer) {
+    clearTimeout(room.restartTimer);
+    room.restartTimer = null;
+  }
+  // Only from idle: re-entering over a live betting phase zeroed every
+  // debited p.bet (stakes lost) and orphaned the running bettingTimer.
+  if (room.phase !== 'idle' || !isLive(room)) return;
   if (room.players.size === 0) {
     room.phase = 'idle';
     broadcastTableState(room);
@@ -412,7 +490,10 @@ function endBettingPhase(room: BlackjackRoom) {
     room.phase = 'idle';
     broadcastTableState(room);
     if (room.players.size > 0) {
-      setTimeout(() => startBettingPhase(room), 2000);
+      room.restartTimer = setTimeout(() => {
+        room.restartTimer = null;
+        startBettingPhase(room);
+      }, 2000);
     }
     return;
   }
@@ -460,7 +541,7 @@ function dealInitialCards(room: BlackjackRoom, bettors: PlayerSeat[]) {
     room.dealerHoleRevealed = true;
     room.phase = 'dealer_turn';
     broadcastTableState(room);
-    setTimeout(() => resolvePayouts(room), 1500);
+    schedulePayout(room, 1500);
     return;
   }
 
@@ -494,6 +575,7 @@ function offerInsurance(room: BlackjackRoom, bettors: PlayerSeat[]) {
   broadcastTableState(room);
 
   room.insuranceTimer = setTimeout(() => {
+    if (room.phase !== 'insurance') return;
     for (const p of room.players.values()) {
       if (p.insuranceDecision === 'pending') {
         p.insuranceDecision = 'declined';
@@ -537,7 +619,7 @@ function resolveInsurance(room: BlackjackRoom) {
     room.dealerHoleRevealed = true;
     room.phase = 'dealer_turn';
     broadcastTableState(room);
-    setTimeout(() => resolvePayouts(room), 1500);
+    schedulePayout(room, 1500);
     return;
   }
 
@@ -726,12 +808,21 @@ function dealerTurn(room: BlackjackRoom) {
     Math.max(0, room.dealerHand.length - 1) * DEAL_STAGGER_MS +
     CARD_FLIP_MS +
     REVEAL_SETTLE_BUFFER_MS;
-  setTimeout(() => resolvePayouts(room), revealSettleMs);
+  schedulePayout(room, revealSettleMs);
 }
 
 // ── Payouts ───────────────────────────────────────────────────────
 
+function schedulePayout(room: BlackjackRoom, delayMs: number) {
+  if (room.payoutTimer) clearTimeout(room.payoutTimer);
+  room.payoutTimer = setTimeout(() => {
+    room.payoutTimer = null;
+    void inFlight.track(resolvePayouts(room));
+  }, delayMs);
+}
+
 async function resolvePayouts(room: BlackjackRoom) {
+  if (room.phase !== 'dealer_turn' || !isLive(room)) return;
   room.phase = 'payout';
 
   const dealerVal = handValue(room.dealerHand).value;
@@ -861,10 +952,12 @@ async function resolvePayouts(room: BlackjackRoom) {
     logger.error({ event: 'bj_payout_error', roomId: room.roomId, error: String(err) });
   }
 
+  if (!isLive(room)) return;
   room.phase = 'results';
   broadcastTableState(room);
 
   room.resultsTimer = setTimeout(() => {
+    room.resultsTimer = null;
     // Prune players who left or disconnected, now that payouts have settled.
     for (const [uid, p] of room.players) {
       const sock = p.socketId ? ioRef.sockets.sockets.get(p.socketId) : null;
@@ -897,6 +990,7 @@ async function resolvePayouts(room: BlackjackRoom) {
     }
 
     broadcastRoomList();
+    room.phase = 'idle';
     startBettingPhase(room);
   }, RESULTS_DISPLAY_MS);
 }
@@ -930,7 +1024,7 @@ export function listPublicRooms() {
       ownerName: r.ownerName,
       playerCount: r.players.size,
       maxPlayers: r.maxPlayers,
-      inProgress: r.phase !== 'idle' && r.phase !== 'betting',
+      inProgress: roundInProgress(r),
     }));
 }
 
@@ -993,6 +1087,8 @@ function onCreateRoom(socket: Socket, payload: unknown) {
     resultsTimer: null,
     turnTimer: null,
     insuranceTimer: null,
+    restartTimer: null,
+    payoutTimer: null,
     roundNumber: 0,
     bettingDeadline: null,
     turnDeadline: null,
@@ -1167,7 +1263,7 @@ function leaveRoom(userId: string, socketId: string) {
 
   // If the player leaves while a round is live and still has money at stake,
   // keep the seat so payouts settle; detach the socket and prune after results.
-  const roundActive = room.phase !== 'idle' && room.phase !== 'betting';
+  const roundActive = roundInProgress(room);
   const atStake = player.bet > 0 || player.insuranceBet > 0 || player.hands.some((h) => h.bet > 0);
   if (roundActive && atStake) {
     player.pendingRemoval = true;
@@ -1187,6 +1283,12 @@ function leaveRoom(userId: string, socketId: string) {
     }
     return;
   }
+
+  // A bet placed during betting is not yet committed to a hand: give it back
+  // (it used to vanish with the deleted seat).
+  const uncommitted = room.phase === 'betting' ? player.bet : 0;
+  player.bet = 0;
+  void refundStake(room, userId, uncommitted, 'Blackjack bet refund (left table)');
 
   room.players.delete(userId);
   userToRoom.delete(userId);
@@ -1306,7 +1408,7 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
   const player = room.players.get(userId);
   if (!player) return;
 
-  if (player.status === 'betting') {
+  if (player.status === 'betting' || player.inFlight) {
     socket.emit(S2C.ERROR, { message: 'You already placed a bet.' });
     return;
   }
@@ -1319,6 +1421,9 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
     return;
   }
 
+  const round = room.roundNumber;
+  player.inFlight = true;
+  let debited = false;
   try {
     const prisma = getPrismaClient();
     const result = await prisma.$transaction(async (tx: any) => {
@@ -1336,6 +1441,20 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
       });
       return getBalanceOn(tx, userId);
     });
+    debited = true;
+    player.inFlight = false;
+
+    // Betting may have closed (or the player left) while the debit awaited.
+    if (
+      !isLive(room) ||
+      room.phase !== 'betting' ||
+      room.roundNumber !== round ||
+      room.players.get(userId) !== player
+    ) {
+      socket.emit(S2C.ERROR, { message: 'Betting closed — your bet was refunded.' });
+      await refundStake(room, userId, amount, 'Blackjack bet refund (betting closed)');
+      return;
+    }
 
     player.bet = amount;
     player.status = 'betting';
@@ -1348,9 +1467,11 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
     if (err instanceof Error && err.message === 'INSUFFICIENT_COINS') {
       socket.emit(S2C.ERROR, { message: 'Not enough coins.' });
     } else {
-      logger.error({ event: 'bj_bet_error', userId, error: String(err) });
+      logger.error({ event: 'bj_bet_error', userId, error: String(err), debited });
       socket.emit(S2C.ERROR, { message: 'Failed to place bet.' });
     }
+  } finally {
+    player.inFlight = false;
   }
 }
 
@@ -1365,9 +1486,11 @@ async function onTakeInsurance(socket: Socket) {
   if (!room || room.phase !== 'insurance') return;
 
   const player = room.players.get(userId);
-  if (!player || player.insuranceDecision !== 'pending') return;
+  if (!player || player.insuranceDecision !== 'pending' || player.inFlight) return;
 
   const insuranceAmount = Math.floor(player.bet / 2);
+  const round = room.roundNumber;
+  player.inFlight = true;
 
   try {
     const prisma = getPrismaClient();
@@ -1386,6 +1509,19 @@ async function onTakeInsurance(socket: Socket) {
       });
       return getBalanceOn(tx, userId);
     });
+    player.inFlight = false;
+
+    // The insurance window may have closed (timer) while the debit awaited.
+    if (
+      !isLive(room) ||
+      room.phase !== 'insurance' ||
+      room.roundNumber !== round ||
+      room.players.get(userId) !== player ||
+      player.insuranceDecision !== 'pending'
+    ) {
+      await refundStake(room, userId, insuranceAmount, 'Blackjack insurance refund (window closed)');
+      return;
+    }
 
     player.insuranceBet = insuranceAmount;
     player.insuranceDecision = 'taken';
@@ -1402,6 +1538,8 @@ async function onTakeInsurance(socket: Socket) {
     } else {
       logger.error({ event: 'bj_insurance_error', userId, error: String(err) });
     }
+  } finally {
+    player.inFlight = false;
   }
 }
 
@@ -1485,6 +1623,9 @@ async function onSplit(room: BlackjackRoom, socket: Socket, userId: string) {
   }
 
   const splitBet = hand.bet;
+  if (player.inFlight) return;
+  const round = room.roundNumber;
+  player.inFlight = true;
 
   // Deduct coins for the split bet
   try {
@@ -1504,6 +1645,13 @@ async function onSplit(room: BlackjackRoom, socket: Socket, userId: string) {
       });
       return getBalanceOn(tx, userId);
     });
+    player.inFlight = false;
+
+    // The turn may have timed out (auto-stand) while the debit awaited.
+    if (!handStillActable(room, player, hand, userId, round)) {
+      await refundStake(room, userId, splitBet, 'Blackjack split refund (turn over)');
+      return;
+    }
 
     socket.emit(S2C.BALANCE_UPDATE, { coins: result });
 
@@ -1548,6 +1696,8 @@ async function onSplit(room: BlackjackRoom, socket: Socket, userId: string) {
       logger.error({ event: 'bj_split_error', userId, error: String(err) });
       socket.emit(S2C.ERROR, { message: 'Failed to split.' });
     }
+  } finally {
+    player.inFlight = false;
   }
 }
 
@@ -1570,6 +1720,9 @@ async function onDoubleDown(room: BlackjackRoom, socket: Socket, userId: string)
   }
 
   const additionalBet = hand.bet;
+  if (player.inFlight) return;
+  const round = room.roundNumber;
+  player.inFlight = true;
 
   try {
     const prisma = getPrismaClient();
@@ -1588,6 +1741,12 @@ async function onDoubleDown(room: BlackjackRoom, socket: Socket, userId: string)
       });
       return getBalanceOn(tx, userId);
     });
+    player.inFlight = false;
+
+    if (!handStillActable(room, player, hand, userId, round)) {
+      await refundStake(room, userId, additionalBet, 'Blackjack double refund (turn over)');
+      return;
+    }
 
     hand.bet *= 2;
     hand.doubled = true;
@@ -1605,7 +1764,28 @@ async function onDoubleDown(room: BlackjackRoom, socket: Socket, userId: string)
       logger.error({ event: 'bj_double_error', userId, error: String(err) });
       socket.emit(S2C.ERROR, { message: 'Failed to double down.' });
     }
+  } finally {
+    player.inFlight = false;
   }
+}
+
+/** Re-check, after an awaited debit, that this hand can still take the action. */
+function handStillActable(
+  room: BlackjackRoom,
+  player: PlayerSeat,
+  hand: Hand,
+  userId: string,
+  round: number,
+): boolean {
+  return (
+    isLive(room) &&
+    room.roundNumber === round &&
+    room.phase === 'player_turns' &&
+    room.currentTurnUserId === userId &&
+    room.players.get(userId) === player &&
+    player.hands[player.activeHandIndex] === hand &&
+    hand.status === 'playing'
+  );
 }
 
 // ── Public API ─────────────────────────────────────────────────────
@@ -1624,8 +1804,8 @@ export function registerBlackjackHandlers(io: Server, socket: Socket): void {
   socket.on(C2S.LEAVE_ROOM, () => onLeaveRoom(socket));
   socket.on(C2S.UPDATE_ROOM, (payload) => onUpdateRoom(socket, payload));
 
-  socket.on(C2S.PLACE_BET, (payload) => onPlaceBet(socket, payload));
-  socket.on(C2S.TAKE_INSURANCE, () => onTakeInsurance(socket));
+  socket.on(C2S.PLACE_BET, (payload) => inFlight.track(onPlaceBet(socket, payload)));
+  socket.on(C2S.TAKE_INSURANCE, () => inFlight.track(onTakeInsurance(socket)));
   socket.on(C2S.DECLINE_INSURANCE, () => onDeclineInsurance(socket));
 
   socket.on(C2S.HIT, () => {
@@ -1658,7 +1838,7 @@ export function registerBlackjackHandlers(io: Server, socket: Socket): void {
     if (!roomId) return;
     const room = rooms.get(roomId);
     if (!room) return;
-    onDoubleDown(room, socket, userId);
+    void inFlight.track(onDoubleDown(room, socket, userId));
   });
 
   socket.on(C2S.SPLIT, () => {
@@ -1669,7 +1849,7 @@ export function registerBlackjackHandlers(io: Server, socket: Socket): void {
     if (!roomId) return;
     const room = rooms.get(roomId);
     if (!room) return;
-    onSplit(room, socket, userId);
+    void inFlight.track(onSplit(room, socket, userId));
   });
 }
 
@@ -1701,9 +1881,68 @@ export function handleBlackjackDisconnect(_io: Server, socket: Socket): void {
     forfeitPlayerTurn(room, userId);
   }
 
-  if (room.phase === 'idle' || room.phase === 'betting') {
+  if (!roundInProgress(room)) {
     leaveRoom(userId, socket.id);
   } else {
     socketToUserId.delete(socket.id);
   }
+}
+
+// ── Shutdown ───────────────────────────────────────────────────────
+
+/**
+ * Phases whose stakes are debited but not settled. `payout` is excluded: the
+ * settlement transaction has already computed every seat's credit and is in
+ * flight (tracked in `inFlight`), so it owns those stakes. `results` is
+ * settled; `idle` holds none.
+ */
+const UNSETTLED_PHASES: ReadonlySet<TablePhase> = new Set<TablePhase>([
+  'betting',
+  'insurance',
+  'dealing',
+  'player_turns',
+  'dealer_turn',
+]);
+
+/**
+ * Hub shutdown: refund every stake debited for a round that has not paid out —
+ * the base bet (or, once dealt, every hand's bet, which already includes
+ * doubles and splits) plus insurance — and kill every room.
+ *
+ * Exactly-once: the stakes are read and zeroed synchronously, before anything
+ * awaits, and `closing` makes every room not-live, so the payout timer, the
+ * results sweep, leave/disconnect and the post-debit re-checks can no longer
+ * reach them. A debit still in flight is not on a seat yet, so it is not
+ * claimed here; its handler refunds it when it sees the room is gone, and the
+ * returned promise waits for that too.
+ */
+export function refundBlackjackOnShutdown(deadlineMs?: number): Promise<ShutdownRefundSummary> {
+  closing = true;
+  const claims: StakeClaim[] = [];
+  for (const room of rooms.values()) {
+    clearTimers(room);
+    const unsettled = UNSETTLED_PHASES.has(room.phase);
+    for (const p of room.players.values()) {
+      const handStakes = p.hands.reduce((sum, h) => sum + h.bet, 0);
+      const main = p.hands.length > 0 ? handStakes : p.bet;
+      const amount = unsettled ? main + p.insuranceBet : 0;
+      p.bet = 0;
+      p.insuranceBet = 0;
+      for (const h of p.hands) h.bet = 0;
+      if (amount > 0) {
+        claims.push({
+          game: 'blackjack',
+          roomId: room.roomId,
+          userId: p.userId,
+          amount,
+          round: room.roundNumber,
+          detail: `phase=${room.phase} hands=${p.hands.length} insurance=${amount - main}`,
+        });
+      }
+    }
+  }
+  rooms.clear();
+  userToRoom.clear();
+  socketToUserId.clear();
+  return settleShutdownClaims('blackjack', claims, inFlight, deadlineMs);
 }

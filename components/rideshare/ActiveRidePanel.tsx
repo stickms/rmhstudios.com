@@ -108,12 +108,33 @@ export function ActiveRidePanel({
   const [busy, setBusy] = useState(false);
   const lastStatus = useRef<RideStatus | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Latest-wins token for `sync` (a slow poll must not overwrite a newer
+  // response, or land on a different ride), and a flag that pauses the poll
+  // while an action is in flight so it can't paint the pre-action state.
+  const syncSeq = useRef(0);
+  const actingRef = useRef(false);
+  // The star value being submitted; the stars go read-only while it is set.
+  const [rating, setRating] = useState<number | null>(null);
+
+  // A different ride: drop everything that belonged to the previous one.
+  useEffect(() => {
+    syncSeq.current += 1;
+    lastStatus.current = null;
+    actingRef.current = false;
+    setRide(null);
+    setLoading(true);
+    setBusy(false);
+    setRating(null);
+  }, [rideId]);
 
   const sync = useCallback(async () => {
+    const seq = ++syncSeq.current;
     try {
       const res = await fetch(`/api/rideshare/rides/${rideId}/sync`);
+      if (seq !== syncSeq.current) return;
       if (res.ok) {
         const data = await res.json();
+        if (seq !== syncSeq.current) return;
         setRide(data.ride);
         setRole(data.role);
         if (lastStatus.current && lastStatus.current !== data.ride.status) {
@@ -126,14 +147,18 @@ export function ActiveRidePanel({
           intervalRef.current = null;
         }
       }
+    } catch {
+      /* transient — the next poll retries */
     } finally {
-      setLoading(false);
+      if (seq === syncSeq.current) setLoading(false);
     }
   }, [rideId, onChange]);
 
   useEffect(() => {
     sync();
-    intervalRef.current = setInterval(sync, 4000);
+    intervalRef.current = setInterval(() => {
+      if (!actingRef.current) void sync();
+    }, 4000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
@@ -145,7 +170,10 @@ export function ActiveRidePanel({
   const locationState = useDriverLocationShare(sharingActive);
 
   async function act(action: 'start' | 'complete' | 'cancel') {
+    if (actingRef.current) return;
     if (action === 'cancel' && !(await confirm({ title: t("cancel-this-ride", { defaultValue: "Cancel this ride?" }), danger: true }))) return;
+    if (actingRef.current) return;
+    actingRef.current = true;
     setBusy(true);
     try {
       const res = await fetch(`/api/rideshare/rides/${rideId}`, {
@@ -160,7 +188,10 @@ export function ActiveRidePanel({
       }
       await sync();
       onChange?.();
+    } catch {
+      toast.error(t("action-failed", { defaultValue: "Action failed." }));
     } finally {
+      actingRef.current = false;
       setBusy(false);
     }
   }
@@ -180,18 +211,27 @@ export function ActiveRidePanel({
   }
 
   async function rate(value: number) {
-    const res = await fetch(`/api/rideshare/rides/${rideId}/rate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rating: value }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      toast.error(data.error || t("could-not-submit-rating", { defaultValue: "Could not submit rating." }));
-      return;
+    if (rating !== null) return;
+    setRating(value);
+    try {
+      const res = await fetch(`/api/rideshare/rides/${rideId}/rate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setRating(null);
+        toast.error(data.error || t("could-not-submit-rating", { defaultValue: "Could not submit rating." }));
+        return;
+      }
+      // Stays read-only at the submitted value until sync reports it.
+      toast.success(t("thanks-for-rating", { defaultValue: "Thanks for your rating!" }));
+      sync();
+    } catch {
+      setRating(null);
+      toast.error(t("could-not-submit-rating", { defaultValue: "Could not submit rating." }));
     }
-    toast.success(t("thanks-for-rating", { defaultValue: "Thanks for your rating!" }));
-    sync();
   }
 
   async function tip(cents: number) {
@@ -366,7 +406,11 @@ export function ActiveRidePanel({
             </div>
           ) : (
             <div className="mt-3 flex justify-center">
-              <StarRating value={0} onChange={rate} size={30} />
+              {rating !== null ? (
+                <StarRating value={rating} readOnly size={30} />
+              ) : (
+                <StarRating value={0} onChange={rate} size={30} />
+              )}
             </div>
           )}
         </div>

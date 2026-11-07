@@ -1481,5 +1481,6 @@
   "muted-import-failed": "无法读取该文件。",
   "message-edit-length": "{{used}}/{{max}}",
   "palette-whats-new": "What’s new",
-  "palette-unread": "Unread"
+  "palette-unread": "Unread",
+  "deck-review-load-failed": "无法加载卡片"
 }

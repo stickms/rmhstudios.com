@@ -7,7 +7,7 @@
  * no VAPID keys — callers should hide their toggle in that case.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
@@ -19,6 +19,14 @@ export function usePushSubscription(enabled: boolean) {
   const [supported, setSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [busy, setBusy] = useState(false);
+  /**
+   * The browser's notification permission is `denied`: a subscribe can only
+   * fail, and the prompt will not show again — the UI should say how to
+   * re-enable it in the browser rather than offer a toggle that does nothing.
+   */
+  const [denied, setDenied] = useState(false);
+  /** Synchronous guard: `busy` is state, so two clicks in one tick both saw it false. */
+  const inFlight = useRef(false);
 
   useEffect(() => {
     if (!enabled) return;
@@ -40,6 +48,7 @@ export function usePushSubscription(enabled: boolean) {
       ]);
       if (cancelled || !keyRes?.ok || !registration) return;
       setSupported(true);
+      setDenied(Notification.permission === 'denied');
       const sub = await registration.pushManager.getSubscription();
       if (!cancelled) setSubscribed(!!sub);
     })();
@@ -49,9 +58,12 @@ export function usePushSubscription(enabled: boolean) {
   }, [enabled]);
 
   const subscribe = useCallback(async (): Promise<boolean> => {
+    if (inFlight.current) return false;
+    inFlight.current = true;
     setBusy(true);
     try {
       const permission = await Notification.requestPermission();
+      setDenied(permission === 'denied');
       if (permission !== 'granted') return false;
 
       const keyRes = await fetch('/api/push/public-key');
@@ -80,11 +92,14 @@ export function usePushSubscription(enabled: boolean) {
     } catch {
       return false;
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   }, []);
 
   const unsubscribe = useCallback(async (): Promise<void> => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     try {
       const registration = await navigator.serviceWorker.getRegistration();
@@ -100,9 +115,10 @@ export function usePushSubscription(enabled: boolean) {
       }
       setSubscribed(false);
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   }, []);
 
-  return { supported, subscribed, busy, subscribe, unsubscribe };
+  return { supported, subscribed, busy, denied, subscribe, unsubscribe };
 }

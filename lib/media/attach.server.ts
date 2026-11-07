@@ -7,10 +7,17 @@ export interface AttachDeps {
   prisma: {
     media: {
       findMany(args: { where: { id: { in: string[] } } }): Promise<MediaRow[]>;
-      updateMany(args: {
-        where: { id: { in: string[] }; status: "PENDING" };
-        data: { status: "ATTACHED"; postId: string; attachedAt: Date };
-      }): Promise<{ count: number }>;
+      updateMany(
+        args:
+          | {
+              where: { id: { in: string[] }; status: "PENDING" };
+              data: { status: "ATTACHED"; postId: string; attachedAt: Date };
+            }
+          | {
+              where: { id: { in: string[] }; status: "ATTACHED"; postId: string };
+              data: { status: "PENDING"; postId: null; attachedAt: null };
+            },
+      ): Promise<{ count: number }>;
     };
   };
 }
@@ -41,6 +48,15 @@ export async function resolveMediaForPost(
     data: { status: "ATTACHED", postId, attachedAt: args.now ?? new Date() },
   });
   if (count !== mediaIds.length) {
+    // Undo the flips this call DID make (scoped to our postId, so a racing
+    // attach's rows are untouched). Left in place they would point at a post
+    // the caller is about to delete, and the upload could never be reused.
+    if (count > 0) {
+      await deps.prisma.media.updateMany({
+        where: { id: { in: mediaIds }, status: "ATTACHED", postId },
+        data: { status: "PENDING", postId: null, attachedAt: null },
+      });
+    }
     return { ok: false, error: "One or more media were already attached." };
   }
 

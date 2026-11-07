@@ -942,6 +942,24 @@ export function GameCanvas() {
     keybindsRef.current = keybinds;
   }, [keybinds]);
 
+  // The results screen's Retry runs a 3-2-1 countdown on timers. They are
+  // tracked so a second click cannot start an interleaved countdown, and so
+  // leaving the results screen (or unmounting) cancels a pending start.
+  const retryTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    if (status === 'FINISHED' || retryTimersRef.current.length === 0) return;
+    for (const id of retryTimersRef.current) clearTimeout(id);
+    retryTimersRef.current = [];
+    useSliceItStore.getState().setCountdown(0);
+  }, [status]);
+  useEffect(
+    () => () => {
+      for (const id of retryTimersRef.current) clearTimeout(id);
+      retryTimersRef.current = [];
+    },
+    [],
+  );
+
   // Settings overlay state (multiplayer: non-pausing settings panel)
   const [showSettings, setShowSettings] = useState(false);
   // Which lane's keybind is being re-mapped (null = not listening)
@@ -3593,22 +3611,26 @@ export function GameCanvas() {
             <GameOver
               engine={engine}
               onRetry={() => {
-                if (!engine) return;
+                // Re-entry guard: a countdown is already running.
+                if (!engine || retryTimersRef.current.length > 0) return;
                 engine.reset();
                 setCountdown(3);
-                setTimeout(() => {
-                  if (useSliceItStore.getState().status === 'FINISHED') setCountdown(2);
-                }, 1000);
-                setTimeout(() => {
-                  if (useSliceItStore.getState().status === 'FINISHED') setCountdown(1);
-                }, 2000);
-                setTimeout(() => {
-                  setCountdown(0);
-                  if (useSliceItStore.getState().status === 'FINISHED') {
-                    useSliceItStore.getState().setStatus('PLAYING');
-                    engine.start();
-                  }
-                }, 3000);
+                retryTimersRef.current = [
+                  setTimeout(() => {
+                    if (useSliceItStore.getState().status === 'FINISHED') setCountdown(2);
+                  }, 1000),
+                  setTimeout(() => {
+                    if (useSliceItStore.getState().status === 'FINISHED') setCountdown(1);
+                  }, 2000),
+                  setTimeout(() => {
+                    retryTimersRef.current = [];
+                    setCountdown(0);
+                    if (useSliceItStore.getState().status === 'FINISHED') {
+                      useSliceItStore.getState().setStatus('PLAYING');
+                      engine.start();
+                    }
+                  }, 3000),
+                ];
               }}
             />
           )}

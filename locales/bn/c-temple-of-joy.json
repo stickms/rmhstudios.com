@@ -212,6 +212,8 @@
   "save-just-now": "just now",
   "save-last": "Last saved",
   "save-lifetime": "{{joy}} joy, all time.",
+  "save-load-failed": "আপনার সেভ লোড করা যায়নি।",
+  "save-load-retry": "আবার চেষ্টা করুন",
   "save-note": "The temple saves itself every {{seconds}} seconds, again shortly after you stop playing, and again the moment the tab is closed or backgrounded. You should never need the button below.",
   "save-now": "Save now",
   "save-playtime": "Time in the temple",

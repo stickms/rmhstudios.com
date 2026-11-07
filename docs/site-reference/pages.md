@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 363 routes. 196 render inside the standard site shell (sidebar, nav, context rail); 167 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 365 routes. 198 render inside the standard site shell (sidebar, nav, context rail); 167 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -36,11 +36,13 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/deepseek` | DeepSeek Balance | admin | `app/routes/_site/admin/deepseek.tsx` |
 | `/admin/delight` | Delight tools \| Admin | admin | `app/routes/_site/admin/delight.tsx` |
 | `/admin/economy` | Coin Economy | admin | `app/routes/_site/admin/economy.tsx` |
+| `/admin/emoji-packs` | Emoji Pack Review | admin | `app/routes/_site/admin/emoji-packs.tsx` |
 | `/admin/flags` | Feature Flags | admin | `app/routes/_site/admin/flags.tsx` |
 | `/admin/insights` | Insights | admin | `app/routes/_site/admin/insights.tsx` |
 | `/admin/library` | Library \| Admin | admin | `app/routes/_site/admin/library.tsx` |
 | `/admin/library-quota` | redirects to `/admin/library?tab=appeals` | admin | `app/routes/_site/admin/library-quota.tsx` |
 | `/admin/library-storage` | redirects to `/admin/library?tab=storage` | admin | `app/routes/_site/admin/library-storage.tsx` |
+| `/admin/market` | Marketplace Review | admin | `app/routes/_site/admin/market.tsx` |
 | `/admin/patch-notes` | Patch Notes \| Admin | admin | `app/routes/_site/admin/patch-notes.tsx` |
 | `/admin/performance` | Performance | admin | `app/routes/_site/admin/performance.tsx` |
 | `/admin/predictions` | Prediction Markets \| Admin | admin | `app/routes/_site/admin/predictions.tsx` |

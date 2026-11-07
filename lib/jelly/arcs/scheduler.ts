@@ -260,7 +260,19 @@ export function createAmbientScheduler(opts: AmbientSchedulerOptions): AmbientSc
 // ── Quiet states ─────────────────────────────────────────────────────────────
 
 /** Resume delays after the last event (§2.3). */
-export const QUIET = { scrollMs: 800, typingMs: 2500, dragMs: 600, videoShare: 0.15 } as const;
+export const QUIET = {
+  scrollMs: 800,
+  typingMs: 2500,
+  dragMs: 600,
+  videoShare: 0.15,
+  /**
+   * Re-check cadence for quiet states that have no reliable close edge: `html[data-scrolling]` (stamped by
+   * `lib/scrollbar-reveal.ts` for 900ms, outliving `scrollMs`), the registry's scrolling flag, an open
+   * modal/menu/tooltip and a playing video scrolled out of view. Without it the resume edge reads one of them
+   * and nothing ever resumes ambient arcs, breakdown or attraction.
+   */
+  recheckMs: 500,
+} as const;
 
 /** Open modal dialogs, menus and tooltips: ambient arcs hold while one is up. */
 export const MODAL_SELECTOR =
@@ -304,6 +316,7 @@ export function createQuietTracker(doc: Document, opts: QuietTrackerOptions): Qu
   let dragUntil = -Infinity;
   const drags = new Set<Element>();
   let resumeTimer: TimerHandle | undefined;
+  let recheckTimer: TimerHandle | undefined;
   let disposed = false;
 
   const deadline = () => Math.max(scrollUntil, typingUntil, dragUntil);
@@ -317,8 +330,21 @@ export function createQuietTracker(doc: Document, opts: QuietTrackerOptions): Qu
       if (disposed) return;
       // Extended since (more scrolling / typing): wait out the remainder without an edge.
       if (deadline() > now()) return scheduleResume();
+      // A polled state still holds (the scrollbar attribute outlives `scrollMs`): poll until it clears.
+      if (reason() !== null) return recheck();
       opts.onChange();
     }, wait + 1);
+  };
+
+  /** Poll a quiet state with no close edge until it clears, then report the resume edge (one timer). */
+  const recheck = () => {
+    if (recheckTimer !== undefined || resumeTimer !== undefined || disposed) return;
+    recheckTimer = setTimeout(() => {
+      recheckTimer = undefined;
+      if (disposed || resumeTimer !== undefined) return;
+      if (reason() !== null) return recheck();
+      opts.onChange();
+    }, QUIET.recheckMs);
   };
 
   const onScroll = () => {
@@ -398,13 +424,22 @@ export function createQuietTracker(doc: Document, opts: QuietTrackerOptions): Qu
     return null;
   };
 
+  /** Reasons that only polling can see end (no event, no deadline). */
+  const polled = (r: QuietReason | null) => r === 'scrolling' || r === 'modal' || r === 'video';
+
   return {
-    quiet: () => reason() !== null,
+    quiet: () => {
+      const r = reason();
+      // Found quiet with no resume pending: make sure something eventually re-checks it.
+      if (polled(r)) recheck();
+      return r !== null;
+    },
     reason,
     dispose() {
       if (disposed) return;
       disposed = true;
       if (resumeTimer !== undefined) clearTimeout(resumeTimer);
+      if (recheckTimer !== undefined) clearTimeout(recheckTimer);
       doc.removeEventListener('scroll', onScroll, capture);
       doc.removeEventListener('keydown', onKey, capture);
       doc.removeEventListener('input', onKey, capture);

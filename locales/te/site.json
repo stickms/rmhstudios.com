@@ -757,5 +757,9 @@
   "ladder.health.reviewQueue_one": "Review queue · {{count}} open",
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "బిల్లింగ్‌ను చేరుకోలేకపోయాం. మళ్లీ ప్రయత్నించండి.",
+  "space-end-offline": "కనెక్ట్ కాలేదు. కాసేపటి తర్వాత మళ్లీ ప్రయత్నించండి.",
+  "market-under-review": "సమీక్షలో ఉంది",
+  "market-under-review-hint": "ఈ ధరకు కొనుగోలు శీఘ్ర తనిఖీ కోసం నిలిపివేయబడింది. ఏ నాణేలూ తరలించబడలేదు. వస్తువును ఇప్పుడే తిరిగి పొందడానికి రద్దు చేయండి."
 }

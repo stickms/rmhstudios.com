@@ -303,5 +303,7 @@
   "vigil-sinners_many": "{{count}} Peccatori, che trattengono",
   "vigil-sinners_other": "{{count}} Peccatori, che trattengono",
   "vigil-title": "L'ufficio notturno",
-  "vigil-window": "Ore che contano"
+  "vigil-window": "Ore che contano",
+  "save-load-failed": "Impossibile caricare il tuo salvataggio.",
+  "save-load-retry": "Riprova"
 }

@@ -28,8 +28,9 @@ interface BlackjackStore {
   lastRoundResults: RoundResultEntry[] | null;
   error: string | null;
 
-  // Insurance
-  insuranceOffered: boolean;
+  // Insurance. Whether it is on offer is `tablePhase === 'insurance'` — no
+  // separate flag to fall out of step with the phase. The server leaves the
+  // phase in the table state it broadcasts right after INSURANCE_RESOLVED.
   insuranceTimeout: number | null;
 
   setConnectionStatus: (s: ConnectionStatus) => void;
@@ -87,7 +88,6 @@ const initialState = {
   myUserId: null as string | null,
   lastRoundResults: null as RoundResultEntry[] | null,
   error: null as string | null,
-  insuranceOffered: false,
   insuranceTimeout: null as number | null,
 };
 
@@ -114,7 +114,6 @@ export const useBlackjackStore = create<BlackjackStore>((set) => ({
     bettingCountdown: null,
     turnTimeout: null,
     lastRoundResults: null,
-    insuranceOffered: false,
     insuranceTimeout: null,
   }),
   setRoomUpdated: (data) => set((s) => ({
@@ -176,7 +175,6 @@ export const useBlackjackStore = create<BlackjackStore>((set) => ({
       dealerHand: [],
       dealerValue: null,
       currentTurnUserId: null,
-      insuranceOffered: false,
       insuranceTimeout: null,
     }),
 
@@ -217,13 +215,11 @@ export const useBlackjackStore = create<BlackjackStore>((set) => ({
   handleInsuranceOffer: (data) =>
     set({
       tablePhase: 'insurance',
-      insuranceOffered: true,
       insuranceTimeout: data.timeoutSeconds,
     }),
 
   handleInsuranceResolved: () =>
     set({
-      insuranceOffered: false,
       insuranceTimeout: null,
     }),
 

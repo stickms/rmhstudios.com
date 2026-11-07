@@ -312,8 +312,21 @@ export async function contribute(
       if (pool.settledAt || pool.refundedAt) throw new PoolError('CLOSED');
       if (pool.expiresAt.getTime() <= Date.now()) throw new PoolError('EXPIRED');
 
-      // Row first: it carries the id the ledger key is built from, so the
-      // escrowed coins are always attributable to a refundable contribution.
+      // The guard. The read above is not one under READ COMMITTED: a settle or
+      // refund sweep committing after it would let these coins land in a
+      // closed pool, where nothing ever pays them out again. The increment is
+      // conditional on the pool still being open (the same predicate as
+      // `settlePool`'s claim), and it row-locks the pool until we commit, so a
+      // concurrent settle/refund is serialised behind us. count 0 → the whole
+      // transaction (contribution row and debit below) never happens.
+      const opened = await tx.pool.updateMany({
+        where: { id: poolId, settledAt: null, refundedAt: null, expiresAt: { gt: new Date() } },
+        data: { raised: { increment: coins } },
+      });
+      if (opened.count === 0) throw new PoolError('CLOSED');
+
+      // It carries the id the ledger key is built from, so the escrowed coins
+      // are always attributable to a refundable contribution.
       const row = await tx.poolContribution.create({
         data: { poolId, userId, coins },
         select: { id: true },
@@ -328,11 +341,11 @@ export async function contribute(
         idempotencyKey: poolContributeRefId(row.id),
       });
 
-      const updated = await tx.pool.update({
+      const updated = await tx.pool.findUnique({
         where: { id: poolId },
-        data: { raised: { increment: coins } },
         select: { raised: true, goalCoins: true },
       });
+      if (!updated) throw new PoolError('NOT_FOUND');
 
       let settled = false;
       if (updated.raised >= updated.goalCoins) {

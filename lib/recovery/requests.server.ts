@@ -280,9 +280,12 @@ export async function approveRecoveryRequest(
 
   const next = applyApproval(request, contactId);
   // Guarded on the approver list we read, so two contacts approving at the same
-  // instant cannot both write a stale list and lose one of the votes.
+  // instant cannot both write a stale list and lose one of the votes — and on
+  // the status we read, because this write sets a status: without it an
+  // approval racing the owner's cancel (or completion) would revive a
+  // REJECTED/USED request as APPROVED.
   const { count } = await prisma.recoveryRequest.updateMany({
-    where: { id: request.id, approvals: request.approvals },
+    where: { id: request.id, approvals: request.approvals, status: request.status },
     data: { approvals: next.approvals, approvedBy: next.approvedBy, status: next.status },
   });
   if (count !== 1) {

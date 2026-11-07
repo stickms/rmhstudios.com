@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from'react';
+import { toast } from 'sonner';
 import { Link, useNavigate } from'@tanstack/react-router';
 import { Loader2, ArrowLeft, Plus, Trash2, RotateCcw, GraduationCap, Check } from'lucide-react';
 import { Spinner } from'@/components/ui/spinner';
@@ -62,6 +63,18 @@ export function DeckStudyColumn({
  const [idx, setIdx] = useState(0);
  const [revealed, setRevealed] = useState(false);
  const [reviewBusy, setReviewBusy] = useState(false);
+ // Synchronous guards plus a session token (bumped on start and exit), so a
+ // double click starts one review and a grade that resolves after the user
+ // left (or restarted) the review does not advance the new one.
+ const reviewBusyRef = useRef(false);
+ const reviewSession = useRef(0);
+ const [startingReview, setStartingReview] = useState(false);
+ const exitReview = () => {
+ reviewSession.current += 1;
+ reviewBusyRef.current = false;
+ setReviewBusy(false);
+ setQueue(null);
+ };
 
  // Add card
  const [front, setFront] = useState('');
@@ -101,20 +114,38 @@ export function DeckStudyColumn({
  }, [load]);
 
  async function startReview() {
+ if (startingReview) return;
+ const session = ++reviewSession.current;
+ setStartingReview(true);
+ try {
  const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}/review`, {
  credentials:'include',
  });
+ if (session !== reviewSession.current) return;
  if (res.ok) {
  const data = await res.json();
+ if (session !== reviewSession.current) return;
+ reviewBusyRef.current = false;
+ setReviewBusy(false);
  setQueue(data.due ?? []);
  setIdx(0);
  setRevealed(false);
+ } else {
+ toast.error(t('deck-review-load-failed', { defaultValue:'Could not load cards'}));
+ }
+ } catch {
+ if (session === reviewSession.current)
+ toast.error(t('deck-review-load-failed', { defaultValue:'Could not load cards'}));
+ } finally {
+ setStartingReview(false);
  }
  }
 
  async function grade(g: number) {
- if (!queue || reviewBusy) return;
+ if (!queue || reviewBusyRef.current) return;
  const card = queue[idx];
+ const session = reviewSession.current;
+ reviewBusyRef.current = true;
  setReviewBusy(true);
  try {
  await fetch(`/api/study/cards/${card.id}/review`, {
@@ -123,6 +154,7 @@ export function DeckStudyColumn({
  headers: {'Content-Type':'application/json'},
  body: JSON.stringify({ grade: g }),
  });
+ if (session !== reviewSession.current) return;
  if (idx + 1 >= queue.length) {
  setQueue(null);
  await load();
@@ -130,8 +162,13 @@ export function DeckStudyColumn({
  setIdx((i) => i + 1);
  setRevealed(false);
  }
+ } catch {
+ /* the next grade retries; the card stays in this session */
  } finally {
+ if (session === reviewSession.current) {
+ reviewBusyRef.current = false;
  setReviewBusy(false);
+ }
  }
  }
 
@@ -198,7 +235,7 @@ export function DeckStudyColumn({
  <div>
  <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <button
- onClick={() => setQueue(null)}
+ onClick={exitReview}
  className="text-site-text-dim hover:text-site-text"
  >
  <ArrowLeft className="h-5 w-5"/>
@@ -273,6 +310,7 @@ export function DeckStudyColumn({
  variant="accent"
  className="w-full gap-2"
  disabled={cards.length === 0}
+ loading={startingReview}
  onClick={startReview}
  >
  <GraduationCap className="h-4 w-4"/>

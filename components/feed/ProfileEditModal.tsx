@@ -272,8 +272,12 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  bioRemaining >= 0 &&
  (!handleChanged || handleStatus ==='available');
 
+ // Each check takes a token; a response for a handle the user has since edited
+ // away from is dropped instead of marking the newer handle 'available'.
+ const handleCheckSeq = useRef(0);
  const checkHandle = useCallback(
  async (value: string) => {
+ const seq = ++handleCheckSeq.current;
  if (!value || value === initial.handle) {
  setHandleStatus('idle');
  return;
@@ -286,9 +290,10 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  try {
  const res = await fetch(`/api/handle/check?handle=${encodeURIComponent(value)}`);
  const data = (await res.json()) as { available?: boolean; reason?: string };
+ if (seq !== handleCheckSeq.current) return;
  setHandleStatus(data.available ?'available': data.reason ?'invalid':'taken');
  } catch {
- setHandleStatus('idle');
+ if (seq === handleCheckSeq.current) setHandleStatus('idle');
  }
  },
  [initial.handle],
@@ -300,6 +305,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  .replace(/[^a-z0-9_]/g,'')
  .slice(0, MAX_HANDLE);
  setHandle(sanitized);
+ handleCheckSeq.current += 1;
  setHandleStatus('idle');
  if (handleCheckTimeout.current) clearTimeout(handleCheckTimeout.current);
  handleCheckTimeout.current = setTimeout(() => checkHandle(sanitized), 400);
@@ -416,7 +422,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  confirmLabel: t('reset-avatar-btn', { defaultValue:'Reset avatar'}),
  danger: true,
  });
- if (!approved) return;
+ if (!approved || submitting || resettingAvatar) return;
 
  setResettingAvatar(true);
  setError(null);
@@ -447,7 +453,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  };
 
  const handleSave = async () => {
- if (submitting || !canSave) return;
+ if (submitting || resettingAvatar || !canSave) return;
  setSubmitting(true);
  setError(null);
 
@@ -706,6 +712,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  size="sm"
  className="text-site-danger"
  loading={resettingAvatar}
+ disabled={submitting}
  onClick={handleResetAvatar}
  >
  <RotateCcw aria-hidden />
@@ -1238,7 +1245,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  onClick={handleSave}
  loading={submitting}
  loadingText={t('saving', { defaultValue:'Saving…'})}
- disabled={!dirty || !canSave}
+ disabled={!dirty || !canSave || resettingAvatar}
  >
  <Sparkles aria-hidden />
  {t('save-profile', { defaultValue:'Save profile'})}

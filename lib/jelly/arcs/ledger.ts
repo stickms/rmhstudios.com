@@ -78,6 +78,8 @@ export function createFlashLedger(opts: FlashLedgerOptions = {}): FlashLedger {
     },
     reset() {
       onsets = [];
+      // The monotonic clock goes too: a reset ledger must not keep judging by a time it saw before.
+      latest = -Infinity;
     },
   };
 }

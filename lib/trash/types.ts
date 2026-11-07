@@ -49,10 +49,39 @@ export function resolveDeletedBy(row: {
   deletedBy?: string | null;
   deletedByAdmin?: boolean | null;
 }): DeletedBy {
+  // An admin takedown wins over whatever was there before: a post the author
+  // deleted and a moderator then took down (report resolve) keeps
+  // `deletedBy: 'author'` on legacy rows, and must not become restorable.
+  if (row.deletedByAdmin) return 'moderator';
   if (row.deletedBy === 'author' || row.deletedBy === 'moderator' || row.deletedBy === 'system') {
     return row.deletedBy;
   }
-  return row.deletedByAdmin ? 'moderator' : 'author';
+  // `null` is the legacy author delete (see above). Any other value — notably
+  // `AUTOMOD_HOLD`, a post AutoMod is holding for review — is a removal the
+  // author did not make, and fails closed.
+  if (row.deletedBy == null) return 'author';
+  return 'system';
+}
+
+/**
+ * `deletedBy` marker for a post AutoMod is holding for review (VarChar(12)).
+ * Lives here (pure) so the bin can exclude held posts; re-exported as
+ * `HELD_BY` from `lib/communities/automod.server.ts`.
+ */
+export const AUTOMOD_HOLD = 'automod_hold';
+
+/**
+ * The `where` fragment that matches only rows the author deleted — the rows a
+ * restore or purge may touch. Used as the compare-and-swap predicate so a row
+ * taken down by a moderator (or held by AutoMod) between the eligibility read
+ * and the write is left alone. Mirrors `resolveDeletedBy(...) === 'author'`.
+ */
+export function authorDeletedWhere() {
+  return {
+    deletedAt: { not: null },
+    deletedByAdmin: false,
+    OR: [{ deletedBy: null }, { deletedBy: 'author' }],
+  };
 }
 
 /* -------------------------------------------------------------------------- */

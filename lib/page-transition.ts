@@ -180,6 +180,8 @@ let pendingKind: NavKind | null = null;
 let epoch = 0;
 /** How long a resolved navigation may wait for its commit before the old page is un-dimmed (cancelled, same page). */
 const COMMIT_GRACE_MS = 250;
+/** The cap on `html[data-page-leaving]` for a navigation that never resolves or commits (an error, an abort). */
+let leaveCap: ReturnType<typeof setTimeout> | undefined;
 
 /**
  * The browser-side half. When a navigation starts, the OLD page is marked as leaving (`html[data-page-leaving]` =
@@ -202,6 +204,13 @@ export function installPageTransitions(router: RouterLike): () => void {
     // Back/forward lands where you were (BackNavAnimation): no dim at all.
     if (html.classList.contains('nav-pop')) return;
     html.dataset.pageLeaving = pendingKind;
+    // Bounded like the guard: a load that never resolves must not leave the old page dimmed for good.
+    const seen = epoch;
+    if (leaveCap !== undefined) clearTimeout(leaveCap);
+    leaveCap = setTimeout(() => {
+      leaveCap = undefined;
+      if (epoch === seen) delete html.dataset.pageLeaving;
+    }, GUARD_MAX_MS);
   });
   // Resolving is NOT the end of the leave: React commits the new page a moment AFTER `onResolved`, and un-dimming
   // here would flash the old page back to full opacity before it is replaced. The commit ends it
@@ -216,6 +225,8 @@ export function installPageTransitions(router: RouterLike): () => void {
     offStart();
     offEnd();
     pendingKind = null;
+    if (leaveCap !== undefined) clearTimeout(leaveCap);
+    leaveCap = undefined;
     delete html.dataset.pageLeaving;
   };
 }

@@ -789,5 +789,9 @@
   "ladder.health.reviewQueue_other": "Review queue · {{count}} open",
   "ladder.health.showErrors_many": "{{count}} errors",
   "ladder.health.showErrors_one": "{{count}} error",
-  "ladder.health.showErrors_other": "{{count}} errors"
+  "ladder.health.showErrors_other": "{{count}} errors",
+  "membership-action-failed": "Impossibile raggiungere la fatturazione. Riprova.",
+  "space-end-offline": "Non connesso. Riprova tra un momento.",
+  "market-under-review": "In revisione",
+  "market-under-review-hint": "Un acquisto a questo prezzo è stato sospeso per un rapido controllo. Nessuna moneta è stata spostata. Annulla per riavere subito l'oggetto."
 }

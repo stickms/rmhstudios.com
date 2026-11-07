@@ -134,6 +134,12 @@ export function DunesdayOS() {
     setPhase('login');
   }, []);
 
+  // The "closing" beat before the session ends. Tracked so a second end
+  // (shutdown then restart, a double click) replaces it instead of racing it,
+  // and so it never fires after the OS unmounts.
+  const endTimerRef = useRef(0);
+  useEffect(() => () => window.clearTimeout(endTimerRef.current), []);
+
   const endSession = useCallback((kind: 'shutdown' | 'restart' | 'logoff') => {
     try {
       sessionStorage.removeItem(SESSION_KEY);
@@ -143,7 +149,9 @@ export function DunesdayOS() {
     setClosing(kind);
     setPhase('closing');
     sfx.undo();
-    window.setTimeout(() => {
+    window.clearTimeout(endTimerRef.current);
+    endTimerRef.current = window.setTimeout(() => {
+      endTimerRef.current = 0;
       useOs.getState().resetSession();
       setLocked(false);
       if (kind === 'logoff') setPhase('login');

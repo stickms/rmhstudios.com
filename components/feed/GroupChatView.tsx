@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from'react';
 import { m as motion } from'framer-motion';
 import { useTranslation } from'react-i18next';
+import { toast } from 'sonner';
 import { Link, useNavigate } from'@tanstack/react-router';
 import {
  Loader2,
@@ -216,22 +217,36 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
 
  useEffect(() => {
  let active = true;
+ // A different chat: start from a clean slate, not the previous chat's
+ // flags (a stale `notFound` would hide this one; a stale `loading=false`
+ // would start live updates against an empty cursor).
+ setLoading(true);
+ setNotFound(false);
+ setGroup(null);
+ setMessages([]);
+ lastAtRef.current = null;
+ historyIds.current = new Set();
  (async () => {
+ try {
  const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}`, {
  credentials:'include',
  });
  if (!active) return;
  if (res.status === 404) {
  setNotFound(true);
- setLoading(false);
  return;
  }
  if (res.ok) {
  const data = await res.json();
+ if (!active) return;
  setGroup(data.group);
  setMsgs(data.group.messages ?? []);
  }
- setLoading(false);
+ } catch {
+ /* network failure: fall through to the loaded (empty) state */
+ } finally {
+ if (active) setLoading(false);
+ }
  })();
  return () => {
  active = false;
@@ -390,7 +405,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  }
  : null;
  const hasMedia = !!gifUrl || imageUrls.length > 0;
- if ((!text && !hasMedia && !poll) || sending) return;
+ if ((!text && !hasMedia && !poll) || sending || uploading) return;
 
  // M4: slash commands run instead of being sent as text.
  if (text.startsWith('/') && !hasMedia && !poll && (await slash.tryRun(text))) return;
@@ -398,6 +413,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  setSending(true);
  const pendingGif = gifUrl;
  const pendingImages = imageUrls;
+ const pendingPollDraft = pollDraft;
+ const restore = () => {
+ setInput(text);
+ setGifUrl(pendingGif);
+ setImageUrls(pendingImages);
+ setPollDraft(pendingPollDraft);
+ };
  setInput('');
  setGifUrl(null);
  setImageUrls([]);
@@ -418,11 +440,16 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  const data = await res.json();
  appendMessages([data.message]);
  } else {
- // Restore the draft on failure.
- setInput(text);
- setGifUrl(pendingGif);
- setImageUrls(pendingImages);
+ // Restore the draft (poll included) on failure.
+ restore();
+ const data = await res.json().catch(() => ({}));
+ toast.error(
+ data.error || t('failed-to-send-message', { defaultValue:'Failed to send message'}),
+ );
  }
+ } catch {
+ restore();
+ toast.error(t('failed-to-send-message', { defaultValue:'Failed to send message'}));
  } finally {
  setSending(false);
  }

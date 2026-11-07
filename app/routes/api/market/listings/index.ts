@@ -15,7 +15,9 @@ import { MIN_PRICE, MAX_PRICE } from '@/lib/market/tradable';
 
 /**
  * POST /api/market/listings — list one of your tradable inventory items for sale.
- * GET  /api/market/listings?item=&sort= — browse active listings (public).
+ * GET  /api/market/listings?item=&sort= — browse active listings (public). A
+ *      signed-in seller also gets their own HELD (under review) listings back,
+ *      marked `status: 'HELD'`, so they can see and cancel them.
  */
 const createSchema = z.object({
   itemId: z.string().min(1).max(64),
@@ -28,8 +30,8 @@ export const Route = createFileRoute('/api/market/listings/')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 60, windowMs: 60_000, prefix: 'market-browse' } },
-        async ({ request }) => {
+        { auth: 'optional', rateLimit: { limit: 60, windowMs: 60_000, prefix: 'market-browse' } },
+        async ({ request, userId }) => {
           const url = new URL(request.url);
           const item = url.searchParams.get('item');
           const sortParam = url.searchParams.get('sort');
@@ -40,7 +42,7 @@ export const Route = createFileRoute('/api/market/listings/')({
 
           // When filtered to one item, include its SOLD-price history for the sparkline.
           const [listings, history] = await Promise.all([
-            browse({ itemId, sort }),
+            browse({ itemId, sort, viewerId: userId }),
             itemId ? priceHistory(itemId) : Promise.resolve(null),
           ]);
           return Response.json({ listings, history });

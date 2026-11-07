@@ -33,9 +33,6 @@ interface BaccaratStore {
   // Last round result
   lastResult: RoundResultPayload | null;
 
-  // Card reveal animation queue
-  revealQueue: CardRevealPayload[];
-
   setConnectionStatus: (s: ConnectionStatus) => void;
   setMyUserId: (id: string | null) => void;
   setViewMode: (mode: ViewMode) => void;
@@ -63,7 +60,6 @@ interface BaccaratStore {
   handleBettingPhase: (data: { countdown: number; roundNumber: number }) => void;
   handleCardReveal: (data: CardRevealPayload) => void;
   handleRoundResult: (data: RoundResultPayload) => void;
-  popReveal: () => CardRevealPayload | undefined;
   setError: (msg: string | null) => void;
   reset: () => void;
 }
@@ -83,10 +79,9 @@ const initialState = {
   error: null as string | null,
   history: [] as BaccaratResult[],
   lastResult: null as RoundResultPayload | null,
-  revealQueue: [] as CardRevealPayload[],
 };
 
-export const useBaccaratStore = create<BaccaratStore>((set, get) => ({
+export const useBaccaratStore = create<BaccaratStore>((set) => ({
   ...initialState,
 
   setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
@@ -107,7 +102,6 @@ export const useBaccaratStore = create<BaccaratStore>((set, get) => ({
     bankerHand: [],
     bettingCountdown: null,
     lastResult: null,
-    revealQueue: [],
   }),
   setRoomUpdated: (data) => set((s) => ({
     roomInfo: s.roomInfo ? { ...s.roomInfo, ...data } : null,
@@ -157,24 +151,14 @@ export const useBaccaratStore = create<BaccaratStore>((set, get) => ({
       playerHand: [],
       bankerHand: [],
       lastResult: null,
-      revealQueue: [],
     }),
 
   handleCardReveal: (data) =>
     set((s) => ({
-      revealQueue: [...s.revealQueue, data],
       tablePhase: data.cardIndex <= 1 ? 'dealing' : 'drawing',
       playerHand: data.target === 'player' ? [...s.playerHand, data.card] : s.playerHand,
       bankerHand: data.target === 'banker' ? [...s.bankerHand, data.card] : s.bankerHand,
     })),
-
-  popReveal: () => {
-    const state = get();
-    if (state.revealQueue.length === 0) return undefined;
-    const [first, ...rest] = state.revealQueue;
-    set({ revealQueue: rest });
-    return first;
-  },
 
   handleRoundResult: (data) =>
     set((s) => ({

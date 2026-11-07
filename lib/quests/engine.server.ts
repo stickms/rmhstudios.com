@@ -37,15 +37,50 @@ export async function progressQuests(userId: string, type: QuestType, by = 1): P
         if (existing?.completed) return null;
         const next = Math.min((existing?.progress ?? 0) + by, q.target);
         const completed = next >= q.target;
-        return prisma.userQuest.upsert({
-          where: { userId_questId_periodKey: { userId, questId: q.id, periodKey } },
-          create: { userId, questId: q.id, periodKey, progress: next, completed },
-          update: { progress: next, completed },
-        });
+        return writeQuestProgress(
+          { userId, questId: q.id, periodKey },
+          { exists: !!existing, progress: next, completed },
+        );
       }),
     );
   } catch (err) {
     console.error('[quests] progress failed:', err);
+  }
+}
+
+/**
+ * Write a quest row's progress without ever un-completing it.
+ *
+ * The values are computed from a read taken before the write, so a blind
+ * upsert could land `completed: false` on a row a concurrent event had just
+ * completed — and, if it had also been claimed in between, leave the
+ * impossible `completed: false, claimed: true` state (the quest can then never
+ * be claimed again this period). The update is therefore conditional on the
+ * row still being incomplete; a missing row is created, and a create that
+ * loses the race to a concurrent one falls back to the conditional update.
+ *
+ * Shared by `progressQuests` and the arcade's `reportGameResult`.
+ */
+export async function writeQuestProgress(
+  key: { userId: string; questId: string; periodKey: string },
+  next: { exists: boolean; progress: number; completed: boolean },
+): Promise<void> {
+  const update = () =>
+    prisma.userQuest.updateMany({
+      where: { ...key, completed: false },
+      data: { progress: next.progress, completed: next.completed },
+    });
+  if (next.exists) {
+    await update();
+    return;
+  }
+  try {
+    await prisma.userQuest.create({
+      data: { ...key, progress: next.progress, completed: next.completed },
+    });
+  } catch (err) {
+    if ((err as { code?: string } | null)?.code !== 'P2002') throw err;
+    await update();
   }
 }
 
@@ -146,22 +181,30 @@ export async function claimQuest(userId: string, questId: string): Promise<{ xp:
   // yet claimed. Doing the guard in the WHERE clause (rather than read-then-write)
   // means concurrent claims cannot all observe `claimed:false` and each grant the
   // reward — only the single request that actually flips the row proceeds.
-  const claim = await prisma.userQuest.updateMany({
-    where: { userId, questId, periodKey, completed: true, claimed: false },
-    data: { claimed: true },
-  });
-  if (claim.count === 0) return null;
-
-  if (def.coins > 0) {
-    // The claim flip above is the idempotency guard (only one request flips
-    // `claimed`), so the grant here runs at most once per quest period.
-    await creditCoins(userId, def.coins, {
-      type: 'REWARD',
-      entityType: 'quest',
-      entityId: questId,
-      note: def.name,
+  //
+  // The coin credit commits in the SAME transaction as the flip: before, a
+  // credit that failed after the flip left the quest claimed with no coins
+  // paid and no way to retry. The ledger key (one per user, quest and period)
+  // is defense-in-depth behind the flip.
+  const claimed = await prisma.$transaction(async (tx) => {
+    const claim = await tx.userQuest.updateMany({
+      where: { userId, questId, periodKey, completed: true, claimed: false },
+      data: { claimed: true },
     });
-  }
+    if (claim.count === 0) return false;
+    if (def.coins > 0) {
+      await creditCoins(userId, def.coins, {
+        tx,
+        type: 'REWARD',
+        entityType: 'quest',
+        entityId: questId,
+        note: def.name,
+        idempotencyKey: `quest-claim:${userId}:${questId}:${periodKey}`,
+      });
+    }
+    return true;
+  });
+  if (!claimed) return null;
   if (def.xp > 0) await awardXp(userId, def.xp);
 
   // "Quest Master" achievement — count lifetime claimed quests.

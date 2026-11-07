@@ -19,6 +19,15 @@ export type StandingLevel = 'GOOD' | 'WARNED' | 'AT_RISK' | 'RESTRICTED';
 /** Active strikes needed for the automatic ban (mirrors the strike endpoint). */
 export const AUTO_BAN_THRESHOLD = 3;
 
+/**
+ * `user.banReason` the strike endpoint writes for the automatic ban. The appeal
+ * endpoint lifts only bans carrying exactly this reason, so both read it here.
+ */
+export const AUTO_BAN_REASON = 'Reached 3 strikes';
+
+/** How long the automatic three-strike ban lasts. */
+export const AUTO_BAN_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+
 /** Appeal window: a strike can only be contested this soon after issue. */
 export const APPEAL_WINDOW_DAYS = 30;
 

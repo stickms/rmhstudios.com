@@ -31,6 +31,7 @@ import MinigameRenderer from '@/components/rmhbox/minigames/MinigameRenderer';
 import GameShell from '@/components/rmhbox/GameShell';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import type { VoteCandidate, PlayerRanking, SessionStanding, Award, RoundResultsPayload, MatchSummary } from '@/lib/rmhbox/types';
+import { isInGameLobbyState } from '@/lib/rmhbox/lobby-state';
 
 function LobbyPage() {
   const { t } = useTranslation("r-rmhbox");
@@ -239,9 +240,7 @@ function LobbyPage() {
   const spectatorMode = lobby.currentGame?.spectatorMode ?? null;
 
   // Determine header context and title based on current lobby state
-  const isGamePhase = lobby.state === 'PLAYING' || lobby.state === 'COUNTDOWN'
-    || lobby.state === 'INSTRUCTIONS' || lobby.state === 'PRELOADING'
-    || lobby.state === 'ROUND_RESULTS' || lobby.state === 'GAME_SETTINGS';
+  const isGamePhase = isInGameLobbyState(lobby.state);
   const headerContext = isGamePhase ? 'game' as const : 'lobby' as const;
   const headerTitle = lobby.currentGame ? lobby.currentGame.displayName : undefined;
 

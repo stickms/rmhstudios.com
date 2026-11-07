@@ -5,7 +5,7 @@ const GAME_VERSION = '0.1.0';
 
 export function saveGame(state: GameState, slotId: number): boolean {
   try {
-    const { currentPoemScore, previousScreen, ...savableState } = state;
+    const { currentPoemScore, screenStack, ...savableState } = state;
     const saveFile: SaveFile = {
       version: GAME_VERSION,
       slotId,
@@ -89,9 +89,9 @@ export interface DbLoadResponse {
 
 export async function dbSave(state: GameState): Promise<boolean> {
   try {
-    const { currentPoemScore, previousScreen, ...savableState } = state;
+    const { currentPoemScore, screenStack, ...savableState } = state;
     void currentPoemScore;
-    void previousScreen;
+    void screenStack;
     const payload: DbSavePayload = {
       saveData: savableState,
       progress: {

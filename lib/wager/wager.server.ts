@@ -3,7 +3,7 @@ import type { PrismaClient, WagerMatch } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { createNotification } from '@/lib/notifications.server';
-import { creditCoins, debitCoins, EscrowError, recordWagerTxn } from './escrow.server';
+import { creditCoins, debitCoins, EscrowError, recordWagerTxn, type Tx } from './escrow.server';
 import { getWagerGame } from './eligible-games';
 import { rakeOf, WAGER_DEFAULT_EXPIRY_MS, WAGER_RAKE_BPS } from './constants';
 
@@ -233,41 +233,73 @@ export async function acceptWager(
 
 // ─── Cancel / refund ─────────────────────────────────────────────────────────
 
-/** Refund all escrowed stakes for a match and mark it with a terminal status. */
+/**
+ * Refund every stake actually escrowed for a match and mark it terminal.
+ *
+ * The opponent's stake is in escrow only once the match left OPEN (accept
+ * debits it); a *named* opponent on an OPEN challenge never paid. The
+ * transition is a compare-and-swap on the status this transaction read, done
+ * BEFORE any credit: under READ COMMITTED a concurrent accept/settle/cancel
+ * makes our `count` 0 and nothing is refunded twice or against the wrong pot.
+ *
+ * Returns the status the match was closed from, or null if it was not in
+ * `from` (already terminal, or moved under us) — a no-op.
+ */
+async function refundAndCloseTx(
+  tx: Tx,
+  matchId: string,
+  finalStatus: 'CANCELLED' | 'EXPIRED',
+  from: readonly WagerMatch['status'][],
+  extra: { resultSource?: string; note: string },
+): Promise<WagerMatch['status'] | null> {
+  const match = await tx.wagerMatch.findUnique({ where: { id: matchId } });
+  if (!match) throw new WagerError('Match not found', 'NOT_FOUND', 404);
+  if (!from.includes(match.status)) return null; // idempotent
+  const claimed = await tx.wagerMatch.updateMany({
+    where: { id: matchId, status: match.status },
+    data: {
+      status: finalStatus,
+      potCoins: 0,
+      ...(extra.resultSource ? { resultSource: extra.resultSource } : {}),
+    },
+  });
+  if (claimed.count === 0) return null; // lost a race; the winner owns the pot
+
+  await creditCoins(tx, match.challengerId, match.stakeCoins);
+  await recordWagerTxn(tx, {
+    recipientId: match.challengerId,
+    amount: match.stakeCoins,
+    entityType: 'wager',
+    entityId: match.id,
+    note: extra.note,
+    idempotencyKey: `wager:${match.id}:refund:${match.challengerId}`,
+  });
+  const opponentEscrowed = match.status !== 'OPEN' && match.opponentId != null;
+  if (opponentEscrowed && match.opponentId) {
+    await creditCoins(tx, match.opponentId, match.stakeCoins);
+    await recordWagerTxn(tx, {
+      recipientId: match.opponentId,
+      amount: match.stakeCoins,
+      entityType: 'wager',
+      entityId: match.id,
+      note: extra.note,
+      idempotencyKey: `wager:${match.id}:refund:${match.opponentId}`,
+    });
+  }
+  return match.status;
+}
+
 async function refundAndClose(
   db: Db,
   matchId: string,
   finalStatus: 'CANCELLED' | 'EXPIRED',
-): Promise<void> {
-  await db.$transaction(async (tx) => {
-    const match = await tx.wagerMatch.findUnique({ where: { id: matchId } });
-    if (!match) throw new WagerError('Match not found', 'NOT_FOUND', 404);
-    if (match.status !== 'OPEN' && match.status !== 'ACCEPTED') return; // idempotent
-
-    // Refund challenger their stake; refund opponent too if they had accepted.
-    await creditCoins(tx, match.challengerId, match.stakeCoins);
-    await recordWagerTxn(tx, {
-      recipientId: match.challengerId,
-      amount: match.stakeCoins,
-      entityType: 'wager',
-      entityId: match.id,
+): Promise<WagerMatch['status'] | null> {
+  // Cancel and expiry only ever close a challenge nobody accepted.
+  return db.$transaction((tx) =>
+    refundAndCloseTx(tx, matchId, finalStatus, ['OPEN'], {
       note: `Wager ${finalStatus.toLowerCase()} refund`,
-    });
-    if (match.status === 'ACCEPTED' && match.opponentId) {
-      await creditCoins(tx, match.opponentId, match.stakeCoins);
-      await recordWagerTxn(tx, {
-        recipientId: match.opponentId,
-        amount: match.stakeCoins,
-        entityType: 'wager',
-        entityId: match.id,
-        note: `Wager ${finalStatus.toLowerCase()} refund`,
-      });
-    }
-    await tx.wagerMatch.update({
-      where: { id: matchId },
-      data: { status: finalStatus, potCoins: 0 },
-    });
-  });
+    }),
+  );
 }
 
 export async function cancelWager(
@@ -285,7 +317,11 @@ export async function cancelWager(
   if (!isChallenger && !isNamedOpponent) {
     throw new WagerError('Not your challenge', 'FORBIDDEN', 403);
   }
-  await refundAndClose(db, opts.matchId, 'CANCELLED');
+  const closedFrom = await refundAndClose(db, opts.matchId, 'CANCELLED');
+  if (closedFrom == null) {
+    // Accepted (or otherwise moved) between the check above and the CAS.
+    throw new WagerError('Only an open challenge can be cancelled', 'NOT_OPEN', 409);
+  }
 }
 
 /** Sweep expired-but-unaccepted challenges (called opportunistically on reads). */
@@ -298,8 +334,7 @@ export async function expireStaleWagers(db: Db = prisma, limit = 25): Promise<nu
   let n = 0;
   for (const { id } of stale) {
     try {
-      await refundAndClose(db, id, 'EXPIRED');
-      n++;
+      if (await refundAndClose(db, id, 'EXPIRED')) n++;
     } catch {
       // best-effort; skip on contention
     }
@@ -331,16 +366,11 @@ export async function settleWager(
     }
     const rake = rakeOf(match.potCoins, match.rakeBps);
     const payout = match.potCoins - rake;
-    await creditCoins(tx, opts.winnerId, payout);
-    await recordWagerTxn(tx, {
-      recipientId: opts.winnerId,
-      amount: payout,
-      entityType: 'wager',
-      entityId: match.id,
-      note: `Wager won (${opts.source})`,
-    });
-    await tx.wagerMatch.update({
-      where: { id: match.id },
+    // Claim the transition first (CAS on the settleable states). A concurrent
+    // settle, void or second agreement report sees count 0 and pays nothing.
+    // potCoins is fixed once the match left OPEN, so the read value is the pot.
+    const claimed = await tx.wagerMatch.updateMany({
+      where: { id: match.id, status: { in: ['ACCEPTED', 'LIVE', 'DISPUTED'] } },
       data: {
         status: 'SETTLED',
         winnerId: opts.winnerId,
@@ -348,6 +378,16 @@ export async function settleWager(
         potCoins: 0,
         settledAt: new Date(),
       },
+    });
+    if (claimed.count === 0) return { settled: false, payout: 0 };
+    await creditCoins(tx, opts.winnerId, payout);
+    await recordWagerTxn(tx, {
+      recipientId: opts.winnerId,
+      amount: payout,
+      entityType: 'wager',
+      entityId: match.id,
+      note: `Wager won (${opts.source})`,
+      idempotencyKey: `wager:${match.id}:payout`,
     });
     return { settled: true, payout };
   });
@@ -389,12 +429,17 @@ export async function reportWagerResult(
     throw new WagerError('Reported winner must be a participant', 'BAD_WINNER', 400);
   }
 
-  await db.wagerMatch.update({
-    where: { id: opts.matchId },
+  // Conditional on the match still being reportable: a blind write here could
+  // flip a SETTLED/CANCELLED/DISPUTED match back to LIVE.
+  const recorded = await db.wagerMatch.updateMany({
+    where: { id: opts.matchId, status: { in: ['ACCEPTED', 'LIVE'] } },
     data: isChallenger
       ? { challengerReportedWinnerId: opts.winnerId, status: 'LIVE' }
       : { opponentReportedWinnerId: opts.winnerId, status: 'LIVE' },
   });
+  if (recorded.count === 0) {
+    throw new WagerError('This match cannot be reported right now', 'NOT_REPORTABLE', 409);
+  }
 
   const fresh = await db.wagerMatch.findUnique({ where: { id: opts.matchId } });
   if (!fresh) throw new WagerError('Match not found', 'NOT_FOUND', 404);
@@ -405,7 +450,10 @@ export async function reportWagerResult(
       await settleWager({ matchId: opts.matchId, winnerId: a, source: 'agreement' }, db);
       return { status: 'settled' };
     }
-    await db.wagerMatch.update({ where: { id: opts.matchId }, data: { status: 'DISPUTED' } });
+    await db.wagerMatch.updateMany({
+      where: { id: opts.matchId, status: 'LIVE' },
+      data: { status: 'DISPUTED' },
+    });
     return { status: 'disputed' };
   }
   return { status: 'recorded' };
@@ -422,33 +470,15 @@ export async function adjudicateWager(
     await db.wagerMatch.update({ where: { id: opts.matchId }, data: { adminNote: opts.note } });
   }
   if (opts.winnerId == null) {
-    // Void: refund both stakes. Reuse the refund path by forcing status.
-    await db.$transaction(async (tx) => {
-      const m = await tx.wagerMatch.findUnique({ where: { id: opts.matchId } });
-      if (!m || m.status === 'SETTLED' || m.status === 'CANCELLED') return;
-      await creditCoins(tx, m.challengerId, m.stakeCoins);
-      await recordWagerTxn(tx, {
-        recipientId: m.challengerId,
-        amount: m.stakeCoins,
-        entityType: 'wager',
-        entityId: m.id,
+    // Void: refund exactly the stakes in escrow (the opponent's only once the
+    // match left OPEN). EXPIRED/CANCELLED/SETTLED already gave the pot back or
+    // paid it out, so voiding them is a no-op rather than a second refund.
+    await db.$transaction((tx) =>
+      refundAndCloseTx(tx, opts.matchId, 'CANCELLED', ['OPEN', 'ACCEPTED', 'LIVE', 'DISPUTED'], {
+        resultSource: 'admin',
         note: 'Wager voided refund',
-      });
-      if (m.opponentId) {
-        await creditCoins(tx, m.opponentId, m.stakeCoins);
-        await recordWagerTxn(tx, {
-          recipientId: m.opponentId,
-          amount: m.stakeCoins,
-          entityType: 'wager',
-          entityId: m.id,
-          note: 'Wager voided refund',
-        });
-      }
-      await tx.wagerMatch.update({
-        where: { id: opts.matchId },
-        data: { status: 'CANCELLED', potCoins: 0, resultSource: 'admin' },
-      });
-    });
+      }),
+    );
     return { status: 'voided' };
   }
   await settleWager({ matchId: opts.matchId, winnerId: opts.winnerId, source: 'admin' }, db);
@@ -485,10 +515,15 @@ export async function linkWagerSession(
   if (match.challengerId !== opts.userId && match.opponentId !== opts.userId) {
     throw new WagerError('Only participants can link a session', 'FORBIDDEN', 403);
   }
-  await db.wagerMatch.update({
-    where: { id: opts.matchId },
+  // Only a match with both stakes in escrow can go LIVE; never revive a
+  // settled/cancelled/expired/disputed one.
+  const linked = await db.wagerMatch.updateMany({
+    where: { id: opts.matchId, status: { in: ['ACCEPTED', 'LIVE'] } },
     data: { gameSessionRef: opts.gameSessionRef, status: 'LIVE' },
   });
+  if (linked.count === 0) {
+    throw new WagerError('This match cannot be linked right now', 'NOT_LINKABLE', 409);
+  }
 }
 
 // ─── Reads ───────────────────────────────────────────────────────────────

@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => {
       userBlock: { findFirst: vi.fn() },
       notificationPreference: { findUnique: vi.fn() },
       follow: { findFirst: vi.fn() },
-      call: { create: vi.fn(), update: vi.fn() },
+      call: { create: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
       user: { findUnique: vi.fn() },
     },
   };
@@ -89,5 +89,49 @@ describe('1:1 call busy claims', () => {
     expect(__liveCallCount()).toBe(0);
     expect(getBusy('caller')).toBeNull();
     expect(getBusy('callee')).toEqual({ kind: 'gcall', id: 'group-call' });
+  });
+
+  it('does not ring the callee when the caller disconnected during the invite awaits', async () => {
+    let resolvePermission!: (value: null) => void;
+    mocks.prisma.userBlock.findFirst.mockImplementation(
+      () =>
+        new Promise<null>((resolve) => {
+          resolvePermission = resolve;
+        }),
+    );
+    mocks.prisma.notificationPreference.findUnique.mockResolvedValue({ callPrivacy: 'everyone' });
+    mocks.prisma.follow.findFirst.mockResolvedValue(null);
+    mocks.prisma.call.create.mockResolvedValue({ id: 'dead-call' });
+    mocks.prisma.call.update.mockResolvedValue({});
+
+    const handlers = new Map<string, (payload: unknown) => Promise<void> | void>();
+    const roomEmits: string[] = [];
+    const socket = {
+      id: 'caller-socket-2',
+      data: { userId: 'caller' },
+      disconnected: false,
+      on: (event: string, handler: (payload: unknown) => Promise<void> | void) =>
+        handlers.set(event, handler),
+      emit: vi.fn(),
+      join: () => {},
+    } as unknown as Socket & { disconnected: boolean };
+    const io = {
+      in: () => ({ fetchSockets: async () => [{ id: 'callee-socket' }] }),
+      to: () => ({ emit: (event: string) => roomEmits.push(event) }),
+    } as unknown as Server;
+
+    registerCallHandlers(io, socket);
+    const pending = handlers.get(CALL_C2S.INVITE)?.({ calleeId: 'callee' });
+    (socket as unknown as { disconnected: boolean }).disconnected = true;
+    resolvePermission(null);
+    await pending;
+
+    expect(roomEmits).not.toContain(CALL_S2C.INCOMING);
+    expect(__liveCallCount()).toBe(0);
+    expect(getBusy('caller')).toBeNull();
+    expect(getBusy('callee')).toBeNull();
+    expect(mocks.prisma.call.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'CANCELLED' }) }),
+    );
   });
 });

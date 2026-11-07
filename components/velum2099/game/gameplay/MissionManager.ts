@@ -193,6 +193,8 @@ export class MissionManager {
     }
 
     _completeDelivery() {
+        // Only a fare in progress can complete (once): _endDelivery returns to idle.
+        if (this.phase !== 'pickup' && this.phase !== 'deliver') return;
         const distBonus = this.timeMax ? Math.round((this.timeMax - (this.timeLeft || 0)) * 4) : 0;
         const timeBonus = Math.max(0, Math.round((this.timeLeft || 0) * 10));
         const base = this.isDrug ? 450 : 250;
@@ -217,6 +219,7 @@ export class MissionManager {
     }
 
     _failDelivery(reason) {
+        if (this.phase !== 'deliver') return;
         const penalty = Math.min(this.credits, 80);
         this.credits -= penalty;
         this.combo = 1;

@@ -218,5 +218,6 @@
   "welcome-back": "Bienvenido de nuevo",
   "writing-the-code": "Escribiendo el código.",
   "post-view-on-rmh": "View on RMH Studios",
-  "blog-reading-time": "{{minutes}} min de lectura"
+  "blog-reading-time": "{{minutes}} min de lectura",
+  "social-error": "No se pudo iniciar sesión. Inténtalo de nuevo."
 }

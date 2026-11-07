@@ -11,12 +11,22 @@ export interface ProjectionKernel {
 const compile = wasmModule(url);
 let kernel: ProjectionKernel | null = null;
 let pending: Promise<void> | undefined;
+/** Instances made: a kernel that threw is re-instantiated (fresh memory) once, then the JS bake is final. */
+let instances = 0;
+const MAX_INSTANCES = 2;
 
 /** Runs in whichever realm owns eversion: render worker or main-thread fallback. */
 export function warmProjectionWasm(): Promise<void> {
+  if (instances >= MAX_INSTANCES && !kernel) return pending ?? Promise.resolve();
   pending ??= compile()
     .then((module) => {
-      if (module) kernel = new WebAssembly.Instance(module).exports as unknown as ProjectionKernel;
+      if (module) {
+        instances++;
+        kernel = new WebAssembly.Instance(module).exports as unknown as ProjectionKernel;
+      } else {
+        // Not loaded (yet): a later warm may retry (`wasmModule` bounds the fetches).
+        pending = undefined;
+      }
     })
     .catch(() => {
       kernel = null;
@@ -41,6 +51,8 @@ export function tryBakePeirceLut(fit: FitParams, w = 1024, h = 512): Float32Arra
     return new Float32Array(kernel.memory.buffer, kernel.pointer(), w * h * 2).slice();
   } catch {
     kernel = null;
+    // Let the next warm build a fresh instance (bounded by MAX_INSTANCES).
+    pending = undefined;
     return null;
   }
 }

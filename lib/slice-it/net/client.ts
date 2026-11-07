@@ -315,9 +315,11 @@ function registerHandlers(socket: Socket): void {
   });
 
   socket.on(S2C.PAUSE, (payload: PausePayload) => {
-    const s = store();
-    s.setPause(payload ?? null);
-    s.setIsPaused(true);
+    // `pause` is the server's hold; `isPaused` is the local engine freeze and is
+    // owned by the engine (GameCanvas's onPause → engine.pause(), and the
+    // resume countdown → engine.resume()), so RESUME clearing only `pause` is
+    // symmetric with this.
+    store().setPause(payload ?? null);
     notify('onPause', (fn) => fn(payload));
   });
 

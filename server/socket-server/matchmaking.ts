@@ -57,6 +57,12 @@ interface GameQueue {
   entries: Map<string, QueueEntry>;
   recentWaits: number[];
   timer: ReturnType<typeof setInterval> | null;
+  /**
+   * A tick is awaiting createRoomForParty. A second interval tick used to run
+   * concurrently, see the (temporarily) empty queue and stopTicking — so the
+   * group restored after a failure was stranded with no timer.
+   */
+  ticking: boolean;
 }
 
 /** Per-game tuning. Absent = the defaults, which suit a 1v1. */
@@ -99,6 +105,12 @@ function configFor(game: string): QueueConfig {
 const queues = new Map<string, GameQueue>();
 /** Which queue a key is in, so LEAVE and disconnect do not have to search. */
 const keyToGame = new Map<string, string>();
+/**
+ * Keys taken out of a queue for a match whose room is still being created,
+ * key -> game. LEAVE during that await deletes the key here, so a failed room
+ * creation does not resurrect someone who already left.
+ */
+const inFlight = new Map<string, string>();
 
 /**
  * perf: socketId -> queue keys it was added under, so a disconnect looks up its
@@ -119,7 +131,7 @@ function indexSockets(key: string, socketIds: Iterable<string>): void {
 function queueFor(game: string): GameQueue {
   let q = queues.get(game);
   if (!q) {
-    q = { entries: new Map(), recentWaits: [], timer: null };
+    q = { entries: new Map(), recentWaits: [], timer: null, ticking: false };
     queues.set(game, q);
   }
   return q;
@@ -241,6 +253,7 @@ export function join(
 
 /** Leave whatever queue this key is in. Idempotent. */
 export function leave(key: string): void {
+  inFlight.delete(key);
   const game = keyToGame.get(key);
   if (!game) return;
   keyToGame.delete(key);
@@ -293,6 +306,9 @@ function stopTicking(game: string): void {
  */
 async function tick(game: string): Promise<void> {
   const q = queues.get(game);
+  // A previous tick is still creating a room: it owns this queue until it
+  // finishes (and re-arms or stops the timer itself).
+  if (q?.ticking) return;
   if (!q || q.entries.size === 0) {
     stopTicking(game);
     return;
@@ -314,11 +330,13 @@ async function tick(game: string): Promise<void> {
     for (const g of group) {
       q.entries.delete(g.entry.key);
       keyToGame.delete(g.entry.key);
+      inFlight.set(g.entry.key, game);
     }
 
     const impl = partyGames.get(game);
     if (impl) {
       const members = group.flatMap((g) => g.entry.members);
+      q.ticking = true;
       try {
         const ref = await impl.createRoomForParty(members);
         for (const g of group) {
@@ -356,11 +374,30 @@ async function tick(game: string): Promise<void> {
         logger.warn({ event: 'mm_room_failed', game, error: String(err) });
         // Put them back rather than dropping them: a game that briefly cannot
         // make a room should cost a couple of seconds, not the whole search.
+        // But only who is still searching: not a key that left (or re-joined,
+        // here or elsewhere) during the await, and only its sockets that are
+        // still connected (dropSocket removes a disconnected socket's row).
         for (const g of group) {
-          q.entries.set(g.entry.key, g.entry);
-          keyToGame.set(g.entry.key, game);
+          const key = g.entry.key;
+          if (inFlight.get(key) !== game) continue;
+          if (q.entries.has(key) || keyToGame.has(key)) continue;
+          for (const id of [...g.entry.socketIds]) {
+            if (!socketToKeys.get(id)?.has(key)) g.entry.socketIds.delete(id);
+          }
+          if (g.entry.socketIds.size === 0) continue;
+          q.entries.set(key, g.entry);
+          keyToGame.set(key, game);
+        }
+        // A leave/drop during the await may have stopped the timer.
+        if (q.entries.size > 0) ensureTicking(game);
+      } finally {
+        q.ticking = false;
+        for (const g of group) {
+          if (inFlight.get(g.entry.key) === game) inFlight.delete(g.entry.key);
         }
       }
+    } else {
+      for (const g of group) inFlight.delete(g.entry.key);
     }
   }
 
@@ -378,4 +415,5 @@ export function __resetMatchmaking(): void {
   queues.clear();
   keyToGame.clear();
   socketToKeys.clear();
+  inFlight.clear();
 }

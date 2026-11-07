@@ -28,7 +28,12 @@ const pending = new Map<string, GlassWorkItem>();
 let flushQueued = false;
 let renderer: GlassRenderer | null = null;
 
+let started = false;
+
 const start = () => {
+  // One context per worker: a repeated `init` must not orphan the first renderer and its adopted canvases.
+  if (started) return;
+  started = true;
   renderer = GlassRenderer.createOffscreen();
   if (!renderer) {
     post({ type: 'ready', ok: false });
