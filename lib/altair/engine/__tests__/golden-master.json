@@ -237,124 +237,101 @@
   "checkpoints": [
    [
     100,
-    "88c1236b36a15994"
+    "eb3d6648aeccf118"
    ],
    [
     200,
-    "735df5f0e2cb50a1"
+    "0c95f11e245b4f81"
    ],
    [
     300,
-    "15a001e8b101998d"
+    "a9bc2bc8bdf19798"
    ],
    [
     400,
-    "9df6bef5a1101486"
+    "b0bd8f741ed390bc"
    ],
    [
     500,
-    "71277e64d94fad9e"
+    "4f64776ca0c6753c"
    ],
    [
     600,
-    "1103fe41d75e53a2"
+    "6bcdd5a441332097"
    ],
    [
     700,
-    "e22f0c8921502c85"
+    "4eed4158c5beb854"
    ],
    [
     800,
-    "d0f121f1e38d4e09"
+    "57ae88fe3eb913bb"
    ],
    [
     900,
-    "cddcf5d69524c165"
+    "b36a67a71bfc229a"
    ],
    [
     1000,
-    "77f0f036f924ba34"
+    "c34352a7979818ee"
    ],
    [
-    1100,
-    "7071b649aabcec04"
-   ],
-   [
-    1200,
-    "98ef2756b71faa5b"
-   ],
-   [
-    1300,
-    "6312c582dd1afca4"
-   ],
-   [
-    1400,
-    "3974f41d690f7bf6"
+    1086,
+    "d7f3ac6048339a84"
    ]
   ],
   "events": [
    "f61:bossSpawn:hollow_king",
-   "f197:levelup:2:3",
-   "f330:levelup:3:3",
-   "f627:levelup:4:3",
-   "f663:levelup:5:3",
-   "f769:levelup:6:3",
-   "f1134:levelup:7:3"
+   "f330:levelup:2:3",
+   "f471:levelup:3:3",
+   "f689:levelup:4:3",
+   "f920:levelup:5:3",
+   "f1086:death"
   ],
   "final": {
-   "frames": 1401,
-   "time": 319.3666666666454,
-   "kills": 259,
-   "level": 7,
-   "xp": 62,
-   "coins": 6,
-   "enemies": 52,
-   "rngCalls": 13443,
-   "died": false
+   "frames": 1086,
+   "time": 314.13333333331684,
+   "kills": 115,
+   "level": 5,
+   "xp": 15,
+   "coins": 3,
+   "enemies": 102,
+   "rngCalls": 6725,
+   "died": true
   }
  },
  "plague-doctor-countess": {
   "checkpoints": [
    [
     100,
-    "b0ef1c9cf1c89748"
+    "a82e65c80c6d2d2c"
    ],
    [
     200,
-    "72af6e377ecfe980"
+    "ca0388a6c07684df"
    ],
    [
     300,
-    "c3d78bce237beeb9"
+    "9f79a4d345077908"
    ],
    [
-    400,
-    "22fff861a3c8f4be"
-   ],
-   [
-    480,
-    "d142786d7d4270c0"
+    319,
+    "cbd2bc88ed4648b4"
    ]
   ],
   "events": [
    "f61:bossSpawn:crimson_countess",
-   "f182:levelup:2:3",
-   "f190:levelup:3:3",
-   "f227:levelup:4:3",
-   "f310:levelup:5:3",
-   "f352:levelup:6:3",
-   "f434:levelup:7:3",
-   "f480:death"
+   "f319:death"
   ],
   "final": {
-   "frames": 480,
-   "time": 603.9999999999927,
-   "kills": 205,
-   "level": 7,
-   "xp": 13,
-   "coins": 37,
-   "enemies": 113,
-   "rngCalls": 10350,
+   "frames": 319,
+   "time": 601.3166666666618,
+   "kills": 16,
+   "level": 1,
+   "xp": 9,
+   "coins": 1,
+   "enemies": 209,
+   "rngCalls": 2104,
    "died": true
   }
  },
