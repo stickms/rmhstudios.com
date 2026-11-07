@@ -130,6 +130,19 @@ describe('ImpactBus', () => {
         expect(Math.abs(r.ox) + Math.abs(r.squash) + Math.abs(r.lean)).toBeLessThan(1e-3);
         expect(r.flash).toBe(0);
     });
+    it('with a clock, a hit-stop freezes the victim mid-recoil, then the recoil plays out', () => {
+        const bus = new ImpactBus();
+        const prof = bus.emit(hit({ power: 30 }), 1000);
+        // 60 ms inside the freeze: the knock-back has barely started to move
+        for (let i = 0; i < 4; i++) bus.step(1 / 60, 1000 + i * 16);
+        const frozen = Math.abs(bus.reaction(1).ox);
+        expect(frozen).toBeLessThan(0.02);
+        expect(bus.reaction(1).flash).toBeGreaterThan(0.9); // the flash holds too: a frozen white-hot frame
+        // after it releases the same recoil is visible
+        let peak = 0;
+        for (let i = 0; i < 30; i++) { bus.step(1 / 60, 1000 + prof.hitStopMs + 40 + i * 16); peak = Math.max(peak, bus.reaction(1).ox); }
+        expect(peak).toBeGreaterThan(0.15);
+    });
     it('a stalled frame cannot blow a spring up', () => {
         const bus = new ImpactBus();
         bus.emit(hit({ power: 45 }), 0);

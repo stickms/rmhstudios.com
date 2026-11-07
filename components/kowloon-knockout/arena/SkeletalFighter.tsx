@@ -9,6 +9,7 @@ import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import { CLIPS, ESSENTIAL_CLIP_KEYS, DEFERRED_CLIP_KEYS, FIGHTER_ASSET_DIR, RIG_FILE, type ClipKey } from '@/lib/kowloon-knockout/render/fighter/clips';
 import { loadFighterClip } from '@/lib/kowloon-knockout/render/fighter/clipLoader';
 import { resolveClip } from '@/lib/kowloon-knockout/render/fighter/stateMachine';
+import { useFighterMotion } from './useFighterMotion';
 import { stripRootMotionXZ } from '@/lib/kowloon-knockout/render/fighter/rootMotion';
 import { autoScaleToHeight, findBone } from '@/lib/kowloon-knockout/render/fighter/fighterRig';
 import FighterTrappings from './FighterTrappings';
@@ -19,7 +20,6 @@ const TARGET_HEIGHT = 1.8;
 const MODEL_YAW_OFFSET = 0;          // tune in browser if Y-Bot faces away from +Z
 const HEAD_BONES = ['mixamorigHead', 'mixamorig:Head'];
 const HIPS_BONES = ['mixamorigHips', 'mixamorig:Hips'];
-const FLASH = new THREE.Color('#ff2244');
 
 const RIG_URL = `${FIGHTER_ASSET_DIR}/${RIG_FILE}`;
 const ESSENTIAL_CLIP_URLS = ESSENTIAL_CLIP_KEYS.map((k) => `${FIGHTER_ASSET_DIR}/${CLIPS[k].file}`);
@@ -129,14 +129,6 @@ function createFighterInstance(
     return { model, mixer, actions, bodyMats, dispose };
 }
 
-/** Shortest-path angle damp (shared convention with StickFighter). */
-function dampAngle(current: number, target: number, t: number): number {
-    let d = target - current;
-    while (d > Math.PI) d -= Math.PI * 2;
-    while (d < -Math.PI) d += Math.PI * 2;
-    return current + d * t;
-}
-
 export default function SkeletalFighter({ seat, framesRef, showNameplate = true }: { seat: number; framesRef: FramesRef; showNameplate?: boolean }) {
     // Shared, cached loads via GLTFLoader. useLoader suspends; a missing file
     // throws → the Fighter dispatcher's ErrorBoundary falls back to StickFighter.
@@ -159,7 +151,7 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
     /** Empty group the model is attached to imperatively — see the effect below. */
     const modelHost = useRef<THREE.Group>(null);
     const instance = useRef<FighterInstance | null>(null);
-    const currentClip = useRef<ClipKey | null>(null);
+    const motion = useFighterMotion(seat);
 
     // Single owner of the fighter's GPU resources: this effect builds them,
     // attaches the model, streams the deferred clips in, and tears all of it
@@ -173,7 +165,7 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
         const host = modelHost.current;
         const inst = createFighterInstance(rig, clipScenes, colorHex, accentHex);
         instance.current = inst;
-        currentClip.current = null;
+        motion.reset();
         host?.add(inst.model);
 
         // Non-essential clips arrive behind the swap and register with this
@@ -193,7 +185,7 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
             inst.dispose();
             if (instance.current === inst) instance.current = null;
         };
-    }, [rig, clipScenes, colorHex, accentHex]);
+    }, [rig, clipScenes, colorHex, accentHex, motion]);
 
     // Local-only dance emote: pressing G toggles dancing. Applied only to the
     // local fighter and only while idle (any real action overrides it). Purely
@@ -216,47 +208,20 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
         const inst = instance.current;
         if (!rf || !r || !inst) return;
         const { mixer, actions, bodyMats } = inst;
-        const delta = Math.min(0.05, deltaRaw);
+        const host = modelHost.current;
+        if (!host) return;
 
-        // Position + facing (damped), reusing StickFighter's conventions.
-        r.position.x += (rf.x - r.position.x) * 0.5;
-        r.position.z += (rf.z - r.position.z) * 0.5;
-        const faceY = Math.atan2(Math.cos(rf.yaw), Math.sin(rf.yaw));
-        r.rotation.y = dampAngle(r.rotation.y, faceY, 0.4);
+        // Clip selection (+ local dance-emote override).
+        let want = resolveClip(rf).clip;
+        if (rf.isLocal && dancing.current && want === 'idle') want = 'dance';
 
-        // Clip selection (+ local dance-emote override) and crossfade.
-        let clip = resolveClip(rf).clip;
-        if (rf.isLocal && dancing.current && clip === 'idle') clip = 'dance';
-        const next = actions[clip];
-        if (next && currentClip.current !== clip) {
-            const prev = currentClip.current ? actions[currentClip.current] : undefined;
-            if (!CLIPS[clip].loop) next.reset();
-            next.enabled = true;
-            next.play();
-            if (prev && prev !== next) {
-                next.crossFadeFrom(prev, CLIPS[clip].fade, false); // prev→next weight ramp, no gap
-            } else {
-                next.setEffectiveWeight(1);
-            }
-            currentClip.current = clip;
-        }
+        // Smoothed position/facing, the clip driver and the impact reaction (useFighterMotion).
+        const flash = motion.step({ rf, root: r, host, mixer, actions, want, deltaRaw });
 
-        // One-shot clips (punch/hit/ko) are positioned by sim progress so they
-        // always play fully across the action window regardless of its length.
-        const active = actions[clip];
-        if (active && !CLIPS[clip].loop) {
-            active.paused = true;                 // we set time manually
-            active.time = rf.actionProgress * active.getClip().duration;
-        } else if (active) {
-            active.paused = false;                // looping clips advance with the mixer
-        }
-        mixer.update(delta);
-
-        // Hit flash → emissive pulse; dim when down.
-        const flash = rf.hitFlash > 0 ? Math.min(1, rf.hitFlash / 8) : 0;
+        // Hit flash → emissive pulse (white-hot on a heavy hit, cool on a block); dim when down.
         const dim = rf.alive ? 1 : 0.4;
         for (const mat of bodyMats) {
-            mat.emissive.copy(FLASH).multiplyScalar(flash * 0.9);
+            mat.emissive.setRGB(flash.color[0], flash.color[1], flash.color[2]).multiplyScalar(flash.amount);
             mat.color.setStyle(colorHex).multiplyScalar(dim);
         }
 

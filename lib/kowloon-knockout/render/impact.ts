@@ -199,20 +199,26 @@ export class ImpactBus {
         return prof;
     }
 
-    /** Advance the springs, decay trauma. `dt` in seconds (clamped: a hidden tab must not explode a spring). */
-    step(dtRaw: number): void {
+    /**
+     * Advance the springs, decay trauma. `dt` in seconds (clamped: a hidden tab must not explode a spring).
+     * Pass `now` (ms, the same clock `emit` used) and each fighter's springs run on ITS time scale, so a
+     * hit-stop freezes the victim mid-recoil and a knockout's slow motion slows the fall; without it they
+     * run in real time.
+     */
+    step(dtRaw: number, now?: number): void {
         const dt = Math.min(0.05, Math.max(0, dtRaw));
         this.clock += dt;
         this.trauma = Math.max(0, this.trauma - TRAUMA_DECAY * dt);
         this.fovKick *= Math.exp(-9 * dt);
         if (this.fovKick < 0.01) this.fovKick = 0;
-        for (const r of this.reactions.values()) {
-            // semi-implicit Euler: stable for these constants at dt <= 0.05
-            r.vx += (-SPRING_K * r.ox - SPRING_C * r.vx) * dt; r.ox += r.vx * dt;
-            r.vz += (-SPRING_K * r.oz - SPRING_C * r.vz) * dt; r.oz += r.vz * dt;
-            r.vsq += (-SPRING_K * r.squash - SPRING_C * r.vsq) * dt; r.squash += r.vsq * dt;
-            r.vlean += (-SPRING_K * r.lean - SPRING_C * r.vlean) * dt; r.lean += r.vlean * dt;
-            r.flash = Math.max(0, r.flash - FLASH_DECAY * dt * Math.max(0.3, r.flash));
+        for (const [seat, r] of this.reactions) {
+            const d = now === undefined ? dt : dt * this.timeScaleFor(seat, now);
+            // semi-implicit Euler: stable for these constants at d <= 0.05
+            r.vx += (-SPRING_K * r.ox - SPRING_C * r.vx) * d; r.ox += r.vx * d;
+            r.vz += (-SPRING_K * r.oz - SPRING_C * r.vz) * d; r.oz += r.vz * d;
+            r.vsq += (-SPRING_K * r.squash - SPRING_C * r.vsq) * d; r.squash += r.vsq * d;
+            r.vlean += (-SPRING_K * r.lean - SPRING_C * r.vlean) * d; r.lean += r.vlean * d;
+            r.flash = Math.max(0, r.flash - FLASH_DECAY * d * Math.max(0.3, r.flash));
             if (r.flash < 0.004) r.flash = 0;
         }
     }
