@@ -1,8 +1,8 @@
 /**
- * AltairShell — Client-side wrapper for the Altair theme system.
+ * AltairShell — Client-side wrapper for the Altair theme.
  *
- * Wraps children with the themed container and toast notifications.
- * Manages light/dark theme class based on persisted settings.
+ * Wraps children with the themed container and toast notifications. Altair has a
+ * single look (the Outpost 13 scheme from its game card); there is no light/dark mode.
  * Also manages background music lifecycle so it persists across route changes
  * (including multiplayer lobby/game pages).
  */
@@ -31,8 +31,6 @@ function findInteractive(target: EventTarget | null): Element | null {
 }
 
 export default function AltairShell({ children }: { children: React.ReactNode }) {
-  const theme = useAltairSettingsStore((s) => s.theme) ?? 'dark';
-
   // Load meta progression from DB on mount so it's ready before any game screen.
   useEffect(() => {
     useAltairMetaStore.getState().loadFromServer();
@@ -119,7 +117,7 @@ export default function AltairShell({ children }: { children: React.ReactNode })
   }, []);
 
   return (
-    <div className={`altair-theme app-page ${theme === 'light' ? 'altair-light' : ''}`}>
+    <div className="altair-theme app-page">
       <ToastContainer />
       {children}
     </div>

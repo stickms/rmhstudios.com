@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sun, Moon, RotateCcw, ArrowLeft, ArrowRight, Volume2 } from 'lucide-react';
+import { RotateCcw, ArrowLeft, ArrowRight, Volume2 } from 'lucide-react';
 import { useAltairSettingsStore, Keybinds } from '@/lib/altair/stores/settings-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { altairMusic } from '@/lib/altair/audio/music';
@@ -27,7 +27,7 @@ function keyLabel(code: string): string {
 }
 
 export default function SettingsScreen({ onBack }: SettingsScreenProps) {
-  const { theme, keybinds, screenShake, doubleTime, joystickSide, zoomTiles, masterVolume, musicVolume, sfxVolume, setTheme, setKeybind, resetKeybinds, setScreenShake, setDoubleTime, setJoystickSide, setZoomTiles, setMasterVolume, setMusicVolume, setSfxVolume } = useAltairSettingsStore();
+  const { keybinds, screenShake, doubleTime, joystickSide, zoomTiles, masterVolume, musicVolume, sfxVolume, setKeybind, resetKeybinds, setScreenShake, setDoubleTime, setJoystickSide, setZoomTiles, setMasterVolume, setMusicVolume, setSfxVolume } = useAltairSettingsStore();
   const doubleTimeUnlocked = useAltairMetaStore((s) => s.doubleTimeUnlocked);
   const [rebinding, setRebinding] = useState<keyof Keybinds | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -74,33 +74,6 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
   return (
     <div className="altair-scan flex flex-col flex-1 px-4 pt-4 pb-12 max-w-lg w-full mx-auto">
       <h2 className="text-2xl font-bold text-(--altair-text) mb-6">{t("settings", { defaultValue: "Settings" })}</h2>
-
-      {/* Theme */}
-      <section className="mb-6">
-        <h3 className="text-sm font-semibold text-(--altair-text) mb-3">{t("theme", { defaultValue: "Theme" })}</h3>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setTheme('dark')}
-            className={`flex-1 py-2.5 rounded-(--altair-radius) border font-medium transition-colors flex items-center justify-center gap-2 ${
-              theme === 'dark'
-                ? 'border-(--altair-accent) bg-(--altair-accent-dim) text-(--altair-accent)'
-                : 'border-(--altair-border) bg-(--altair-surface) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
-            }`}
-          >
-            <Moon size={16} /> {t("dark", { defaultValue: "Dark" })}
-          </button>
-          <button
-            onClick={() => setTheme('light')}
-            className={`flex-1 py-2.5 rounded-(--altair-radius) border font-medium transition-colors flex items-center justify-center gap-2 ${
-              theme === 'light'
-                ? 'border-(--altair-accent) bg-(--altair-accent-dim) text-(--altair-accent)'
-                : 'border-(--altair-border) bg-(--altair-surface) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
-            }`}
-          >
-            <Sun size={16} /> {t("light", { defaultValue: "Light" })}
-          </button>
-        </div>
-      </section>
 
       {/* Audio */}
       <section className="mb-6">

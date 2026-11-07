@@ -9,12 +9,12 @@
  * by scripts/altair/grade-sprites.ts (cyan = ally, magenta = hostile,
  * amber = loot and hazard).
  *
- * Dark is the native look. The light theme is a daylit lab variant of it.
+ * There is exactly one look: no light mode, no theme switch.
  */
 
 @import '../shared/game-fonts/fonts.css';
 
-/* ─── Dark Theme (default) ──────────────────────────────────────── */
+/* ─── The theme ─────────────────────────────────────────────────── */
 
 .altair-theme {
   /* Backgrounds — the void, then the rig's bulkheads */
@@ -72,41 +72,6 @@
   --altair-radius-sm: 1px;
   --altair-radius-lg: 4px;
   --altair-toast-bg: #0a1b2a;
-}
-
-/* ─── Light Theme (daylit lab) ──────────────────────────────────── */
-
-.altair-theme.altair-light {
-  --altair-bg: #e3eff2;
-  --altair-bg-subtle: #d6e6ea;
-  --altair-surface: #f3fafb;
-  --altair-surface-hover: #e6f2f5;
-  --altair-surface-active: #d3e6eb;
-  --altair-border: #b5ced6;
-  --altair-border-bright: #7fa6b3;
-  --altair-text: #06202c;
-  --altair-text-muted: #345a68;
-  --altair-text-dim: #5d808c;
-  --altair-accent: #087c86;
-  --altair-accent-hover: #066670;
-  --altair-accent-dim: rgba(8, 124, 134, 0.1);
-  --altair-accent-fg: #ffffff;
-  --altair-amber: #a85f00;
-  --altair-amber-dim: rgba(168, 95, 0, 0.1);
-  --altair-glitch-a: #087c86;
-  --altair-glitch-b: #c0187f;
-  --altair-success: #0f8a5c;
-  --altair-success-dim: rgba(15, 138, 92, 0.08);
-  --altair-danger: #c0187f;
-  --altair-danger-dim: rgba(192, 24, 127, 0.08);
-  --altair-warning: #9a5b00;
-  --altair-warning-dim: rgba(154, 91, 0, 0.08);
-  --altair-info: #1f6fc4;
-  --altair-info-dim: rgba(31, 111, 196, 0.08);
-  --altair-rare: #6b3fc4;
-  --altair-rare-dim: rgba(107, 63, 196, 0.08);
-  --altair-shadow: 0 0 0 1px rgba(8, 124, 134, 0.1), 0 6px 20px rgba(6, 32, 44, 0.12);
-  --altair-toast-bg: #f3fafb;
 }
 
 /* ─── Base Styles ───────────────────────────────────────────────── */
@@ -372,16 +337,6 @@
   opacity: 0.6;
 }
 
-.altair-light .altair-scan::after,
-.altair-light .altair-scan-surface::after {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 2px,
-    rgba(6, 32, 44, 0.04) 2px,
-    rgba(6, 32, 44, 0.04) 3px
-  );
-}
 
 /* One-point corridor: nested cyan-edged rectangles receding to a dark door,
    two amber lamps, a slow zoom. Place `.altair-corridor` first in a screen,
@@ -449,17 +404,42 @@
   to { opacity: 1; }
 }
 
-.altair-light .altair-corridor {
-  background: radial-gradient(ellipse at 50% 46%, #f6fcfd 0%, var(--altair-bg) 70%);
+/* The pixel-art scene (MenuBackdrop). The canvas is a low-res buffer scaled up, so it
+   must never be smoothed. It fades in over the CSS fallback once the first frame lands. */
+.altair-corridor__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  opacity: 0;
+  transition: opacity 0.6s var(--ease-smooth, ease);
 }
 
-.altair-light .altair-corridor__frame {
-  border-color: rgba(8, 124, 134, 0.25);
+.altair-corridor__canvas[data-ready='true'] {
+  opacity: 1;
 }
 
-.altair-light .altair-corridor__frame:nth-child(6) {
-  background: #cfe2e7;
+/* A scrim over the scene keeps menu text above 4.5:1 and gives the room a vignette:
+   darkest at the edges, a calm pool behind the buttons. */
+.altair-corridor::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 52%,
+    rgba(4, 8, 15, 0.74) 0%,
+    rgba(4, 8, 15, 0.4) 50%,
+    rgba(4, 8, 15, 0.7) 100%
+  );
 }
+
+
+
+
 
 /* ─── Toast Animations ──────────────────────────────────────────── */
 

@@ -7,6 +7,7 @@ import { ENEMIES, type EnemyDef } from '@/lib/altair/data/enemies';
 import { BOSSES, type BossDef } from '@/lib/altair/data/bosses';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { asset } from '@/lib/storage/asset';
+import { loadCorsImage } from '@/lib/altair/engine/sprites/cors-image';
 import CodexPanel, { CodexOpenButton } from '../CodexPanel';
 
 // Sprite paths (matching sprite-defs.ts)
@@ -70,8 +71,7 @@ function SpritePreview({ src, size, discovered, isBoss }: { src: string; size: n
     if (!ctx) return;
 
     const img = new Image();
-    img.src = src;
-    img.onload = () => {
+    loadCorsImage(img, src, () => {
       const frameSize = isBoss ? 32 : 16;
       ctx.clearRect(0, 0, size, size);
       ctx.imageSmoothingEnabled = false;
@@ -86,7 +86,7 @@ function SpritePreview({ src, size, discovered, isBoss }: { src: string; size: n
       } else {
         ctx.drawImage(img, 0, 0, frameSize, frameSize, 0, 0, size, size);
       }
-    };
+    });
   }, [src, size, discovered, isBoss]);
 
   return <canvas ref={canvasRef} width={size} height={size} className="block" />;

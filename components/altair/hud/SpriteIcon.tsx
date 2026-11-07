@@ -6,6 +6,7 @@
 'use client';
 
 import { useRef, useEffect, memo } from 'react';
+import { loadCorsImage } from '@/lib/altair/engine/sprites/cors-image';
 
 interface SpriteIconProps {
   sheetSrc: string;
@@ -34,7 +35,8 @@ const SpriteIcon = memo(function SpriteIcon({
     if (!ctx) return;
 
     const img = new Image();
-    img.onload = () => {
+    // Same CORS-mode request as the engine's, so one CDN URL is only ever fetched one way.
+    loadCorsImage(img, sheetSrc, () => {
       const cols = Math.floor(img.naturalWidth / frameWidth) || 1;
       const col = frameIndex % cols;
       const row = Math.floor(frameIndex / cols);
@@ -44,8 +46,7 @@ const SpriteIcon = memo(function SpriteIcon({
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, size, size);
       ctx.drawImage(img, sx, sy, frameWidth, frameHeight, 0, 0, size, size);
-    };
-    img.src = sheetSrc;
+    });
   }, [sheetSrc, frameIndex, frameWidth, frameHeight, size]);
 
   return (
