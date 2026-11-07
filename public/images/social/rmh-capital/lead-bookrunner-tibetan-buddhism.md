@@ -1,6 +1,6 @@
 # RMH Capital: lead bookrunner post (parody)
 
-Image: `lead-bookrunner-tibetan-buddhism.png` (1200×1200). The tombstone reads "RMH Capital is honored to serve as Lead Left Bookrunner".
+Image: `lead-bookrunner-tibetan-buddhism.png` (1200×1200), in the main site's style (graphite, Geist, one accent). It reads "RMH Capital is honored to serve as lead left bookrunner".
 
 ---
 

@@ -10,13 +10,12 @@ INSERT INTO "feed_announcement" (
 )
 SELECT
   'ann_rmhcapital_bookrunner_202611',
-  'RMH Capital is honored to serve as Lead Left Bookrunner',
-  'RMH Capital is honored to have served as Lead Left Bookrunner on the $35 million Senior Secured Enlightenment Facility supporting Bain Capital''s acquisition of Tibetan Buddhism.' || E'\n\n' ||
-  'The facility was oversubscribed within one kalpa, which let us tighten pricing to the Middle Way and remove all attachment covenants. Impermanence is the only constant. Fees are not.' || E'\n\n' ||
-  'Parody, after The Onion. This announcement appears as a matter of karma only.',
+  'RMH Capital is honored to serve as lead left bookrunner',
+  '$35M senior secured enlightenment facility for Bain Capital''s acquisition of Tibetan Buddhism.' || E'\n\n' ||
+  'Parody. This announcement appears as a matter of karma only.',
   '/rmh-capital',
   'Visit RMH Capital',
-  'success',
+  'info',
   true,
   true,
   u."id",
