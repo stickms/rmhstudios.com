@@ -73,6 +73,8 @@ function createFighterInstance(
     model.traverse((o) => {
         const sm = o as THREE.SkinnedMesh;
         if (sm.isSkinnedMesh) {
+            sm.castShadow = true;
+            sm.receiveShadow = true;
             const mat = (sm.material as THREE.MeshStandardMaterial).clone();
             mat.color.copy(baseColor);
             sm.material = mat;

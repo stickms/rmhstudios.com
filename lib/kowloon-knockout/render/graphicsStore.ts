@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { RenderTier } from './tier';
+import type { MenuFightersSetting } from './menuQuality';
 
 /** 'auto' = adaptive governor; a specific tier = locked (governor inert). */
 export type TierPreference = 'auto' | RenderTier;
@@ -8,6 +9,9 @@ export type TierPreference = 'auto' | RenderTier;
 interface GraphicsState {
     preference: TierPreference;
     setPreference: (p: TierPreference) => void;
+    /** The menu's 3D duel: 'auto' reads the device, or force smooth / pixel / off. */
+    menuFighters: MenuFightersSetting;
+    setMenuFighters: (m: MenuFightersSetting) => void;
     /** Most recent smoothed FPS from the in-Canvas Governor (ephemeral). */
     fps: number;
     setFps: (n: number) => void;
@@ -18,6 +22,8 @@ export const useGraphicsStore = create<GraphicsState>()(
         (set) => ({
             preference: 'auto',
             setPreference: (preference) => set({ preference }),
+            menuFighters: 'auto',
+            setMenuFighters: (menuFighters) => set({ menuFighters }),
             fps: 0,
             setFps: (fps) => set({ fps }),
         }),
@@ -35,8 +41,8 @@ export const useGraphicsStore = create<GraphicsState>()(
                     removeItem: () => undefined,
                 } as unknown as Storage;
             }),
-            // Persist only the user's preference; fps is runtime telemetry.
-            partialize: (s) => ({ preference: s.preference }),
+            // Persist only the user's choices; fps is runtime telemetry.
+            partialize: (s) => ({ preference: s.preference, menuFighters: s.menuFighters }),
         },
     ),
 );

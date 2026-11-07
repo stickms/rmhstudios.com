@@ -127,9 +127,11 @@ export interface StreetScene {
   /** Per-frame column lookups (length `width`), reused every frame. */
   readonly col: { farTop: Int16Array; farLx: Uint16Array; farId: Uint16Array; nearTop: Int16Array; nearLx: Uint16Array; nearId: Uint16Array };
   readonly fighters: [FighterSample, FighterSample, FighterSample];
+  /** Draw the pixel stick-figure cast and their hit sparks. Off when real 3D fighters stand on the street instead. */
+  readonly cast: boolean;
 }
 
-export function createStreetScene(width: number, height: number): StreetScene {
+export function createStreetScene(width: number, height: number, opts: { cast?: boolean } = {}): StreetScene {
   const portrait = height > width;
   const streetY = Math.round(height * (portrait ? 0.8 : 0.76));
   const signs: Sign[] = [];
@@ -156,6 +158,7 @@ export function createStreetScene(width: number, height: number): StreetScene {
       nearTop: new Int16Array(width), nearLx: new Uint16Array(width), nearId: new Uint16Array(width),
     },
     fighters: [createFighterSample(), createFighterSample(), createFighterSample()],
+    cast: opts.cast ?? true,
   };
 }
 
@@ -277,12 +280,12 @@ export function renderStreet(scene: StreetScene, t: number, px = 0, py = 0): voi
   }
 
   drawSigns(scene, t, offNear, shiftY);
-  drawCast(scene, t, lt, px, shake);
+  if (scene.cast) drawCast(scene, t, lt, px, shake);
   drawReflection(scene, t);
   drawRain(scene, t);
   drawSplashes(scene, t);
   drawSteam(scene, t, px);
-  drawSparks(scene, lt, px, shake);
+  if (scene.cast) drawSparks(scene, lt, px, shake);
   drawVignette(scene);
 }
 
