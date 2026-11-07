@@ -44,6 +44,17 @@ name: tf2-assets-sync
 #                            (410) are free apps in every account's base package.
 #                            Valve's texture files are not downloadable anonymously.
 #                            Use a dedicated account with Steam Guard off.
+#
+# Which Half-Life 2 / Portal depots (optional repository VARIABLES, Settings → Variables):
+#   HL2_STEAM_APP      219 (default: the free Half-Life 2 demo) or 220 (retail Half-Life 2)
+#   PORTAL_STEAM_APP   410 (default: the free Portal: First Slice) or 400 (retail Portal)
+# The playable characters Kowloon Knockout offers — Alyx, the Combine soldier, Chell — are requested of
+# every run (GAME_ALWAYS_MODELS in scripts/tf2-game/build-maps.ts) and published when the install holds
+# them; the models steps log which ones the depot lacks. If the free depots lack them, the retail ones
+# have them — but that publishes paid-game assets on the public, unauthenticated asset routes, which
+# lib/tf2-game/assets/game-maps.ts deliberately avoids ("never more" than the demos), so it is a switch
+# you flip knowingly, needs a Steam account that OWNS the retail game, and the account must be the
+# owner's. Changing a variable changes the app's Steam build id, so that game's channels rebuild once.
 
 on:
   schedule:
@@ -88,6 +99,9 @@ jobs:
       S3_FORCE_PATH_STYLE: 'false' # R2 uses virtual-hosted-style addressing (see .env.example)
       STEAM_USER: ${{ secrets.STEAM_USER }}
       STEAM_PASS: ${{ secrets.STEAM_PASS }}
+      # The Steam apps the Half-Life 2 and Portal channels are built from (see the header: free demos by default).
+      HL2_APP: ${{ vars.HL2_STEAM_APP || '219' }}
+      PORTAL_APP: ${{ vars.PORTAL_STEAM_APP || '410' }}
     steps:
       - name: Check configuration
         id: cfg
@@ -125,7 +139,7 @@ jobs:
         id: gate
         if: steps.cfg.outputs.ready == 'true'
         run: |
-          "$HOME/steamcmd/steamcmd.sh" +login anonymous +app_info_update 1 +app_info_print 440 +app_info_print 219 +app_info_print 410 +quit > appinfo.txt 2>&1 || true
+          "$HOME/steamcmd/steamcmd.sh" +login anonymous +app_info_update 1 +app_info_print 440 +app_info_print "$HL2_APP" +app_info_print "$PORTAL_APP" +quit > appinfo.txt 2>&1 || true
           # The public branch's build id of one app in the dump (each app's section starts at "AppID : <id>").
           buildid() {
             python3 - "$1" <<'PY'
@@ -141,8 +155,11 @@ jobs:
           print(b.group(1) if b else "")
           PY
           }
-          build=$(buildid 440); build_hl2=$(buildid 219); build_portal=$(buildid 410)
-          echo "Steam public builds: TF2 ${build:-unknown}, HL2 demo ${build_hl2:-unknown}, Portal First Slice ${build_portal:-unknown}"
+          build=$(buildid 440); build_hl2=$(buildid "$HL2_APP"); build_portal=$(buildid "$PORTAL_APP")
+          echo "Steam public builds: TF2 ${build:-unknown}, HL2 (app $HL2_APP) ${build_hl2:-unknown}, Portal (app $PORTAL_APP) ${build_portal:-unknown}"
+          if [ "$HL2_APP" != "219" ] || [ "$PORTAL_APP" != "410" ]; then
+            echo "::notice title=Retail Steam depots::HL2_STEAM_APP=$HL2_APP, PORTAL_STEAM_APP=$PORTAL_APP: building from retail depots instead of the free demos (see the workflow header)."
+          fi
           { echo "build=$build"; echo "build_hl2=$build_hl2"; echo "build_portal=$build_portal"; } >> "$GITHUB_OUTPUT"
           force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as models --state-key tf2-models/_state.json --build "$build" $force
@@ -359,7 +376,7 @@ jobs:
         timeout-minutes: 20
         run: |
           for i in 1 2 3; do
-            "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/hl2 +login "$STEAM_USER" "$STEAM_PASS" +app_update 219 validate +quit \
+            "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/hl2 +login "$STEAM_USER" "$STEAM_PASS" +app_update "$HL2_APP" validate +quit \
               > "$HOME/steam-hl2.log" 2>&1 || true
             grep -i -E 'success|error|fail|guard' "$HOME/steam-hl2.log" | grep -v -i password | tail -5
             [ -f /mnt/hl2/hl2/hl2_textures_dir.vpk ] && break
@@ -392,6 +409,8 @@ jobs:
           pnpm exec tsx scripts/tf2-assets/publish.ts get --key hl2-game/mdl/index.json --out /mnt/work/hl2-mdl-prev-index.json
           : > /mnt/work/hl2-models.list
           pnpm exec tsx scripts/tf2-game/build-maps.ts --root /mnt/hl2 --game hl2 --props-only --props-list-out /mnt/work/hl2-models.list
+          # Which of the playable characters (Alyx, the Combine soldier) this depot actually ships.
+          python3 -B scripts/tf2-game/character-audit.py --root /mnt/hl2 --search hl2 || true
           FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/models.py \
             --root /mnt/hl2 --search hl2 --list /mnt/work/hl2-models.list --out /mnt/work/hl2-mdl \
             --state /mnt/work/hl2-mdl-state.json --prev-index /mnt/work/hl2-mdl-prev-index.json
@@ -436,7 +455,7 @@ jobs:
         timeout-minutes: 20
         run: |
           for i in 1 2 3; do
-            "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/portal +login "$STEAM_USER" "$STEAM_PASS" +app_update 410 validate +quit \
+            "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/portal +login "$STEAM_USER" "$STEAM_PASS" +app_update "$PORTAL_APP" validate +quit \
               > "$HOME/steam-portal.log" 2>&1 || true
             grep -i -E 'success|error|fail|guard' "$HOME/steam-portal.log" | grep -v -i password | tail -5
             [ -f /mnt/portal/portal/portal_pak_dir.vpk ] && [ -f /mnt/portal/hl2/hl2_textures_dir.vpk ] && break
@@ -469,6 +488,8 @@ jobs:
           pnpm exec tsx scripts/tf2-assets/publish.ts get --key portal-game/mdl/index.json --out /mnt/work/portal-mdl-prev-index.json
           : > /mnt/work/portal-models.list
           pnpm exec tsx scripts/tf2-game/build-maps.ts --root /mnt/portal --game portal --props-only --props-list-out /mnt/work/portal-models.list
+          # Which of the playable characters (Chell, Alyx, the Combine soldier) this depot actually ships.
+          python3 -B scripts/tf2-game/character-audit.py --root /mnt/portal --search portal,hl2 || true
           FORCE=${{ inputs.force == true && '1' || '0' }} python3 -B scripts/tf2-game/models.py \
             --root /mnt/portal --search portal,hl2 --list /mnt/work/portal-models.list --out /mnt/work/portal-mdl \
             --state /mnt/work/portal-mdl-state.json --prev-index /mnt/work/portal-mdl-prev-index.json

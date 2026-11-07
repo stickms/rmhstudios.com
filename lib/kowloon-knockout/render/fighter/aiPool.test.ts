@@ -11,4 +11,9 @@ describe('AI model pool', () => {
         expect(AI_MODEL_POOL).toContain(randomAiModel(() => 0.999999));
         expect(AI_MODEL_POOL).toContain(randomAiModel(() => 0));
     });
+    it('holds only models verified in the published indexes', () => {
+        // Regression (hl2_combine threw "not in hl2 model index"): Alyx, the Combine soldier and Chell are in
+        // the roster but not here until a sync has published them — add them once mdl/index.json lists them.
+        for (const id of ['hl2_alyx', 'hl2_combine', 'portal_chell']) expect(AI_MODEL_POOL).not.toContain(id);
+    });
 });

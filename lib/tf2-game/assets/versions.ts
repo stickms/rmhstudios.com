@@ -85,7 +85,9 @@ export const GAME_ASSET_CHANNELS = {
     // 2: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`).
     // 3: characters carry their ragdoll (the .phy's solids and joint limits, ragdoll.py) in `ragdoll`.
     // 4: the maps' NPCs and actors (build-maps.ts collectActorModels) join the list, drawn and ragdolled.
-    builder: 4,
+    // 5: the playable characters join the list (GAME_ALWAYS_MODELS: Alyx, the Combine soldier, Chell) — a
+    //    changed list on an unchanged Steam build, so the gate needs a new builder to run again.
+    builder: 5,
     env: 'HL2_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },
@@ -111,7 +113,9 @@ export const GAME_ASSET_CHANNELS = {
     // 2: textures with an alpha channel above the size cap scale colour and alpha apart (models.py `fit`).
     // 3: characters carry their ragdoll (the .phy's solids and joint limits, ragdoll.py) in `ragdoll`.
     // 4: the maps' NPCs and actors (build-maps.ts collectActorModels) join the list, drawn and ragdolled.
-    builder: 4,
+    // 5: the playable characters join the list (GAME_ALWAYS_MODELS: Alyx, the Combine soldier, Chell) — a
+    //    changed list on an unchanged Steam build, so the gate needs a new builder to run again.
+    builder: 5,
     env: 'PORTAL_GAME_BUILDER_MODELS',
     script: 'scripts/tf2-game/models.py',
   },

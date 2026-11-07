@@ -748,11 +748,28 @@ export function collectActorModels(bsp: BspFile): string[] {
  * Portal's portal gun is the player's weapon, given by `weapon_portalgun` / the player's
  * equipment rather than placed as a prop model: its view model (drawn by the client in its own
  * viewmodel_fov pass) and its world model would otherwise never reach the model channel.
+ *
+ * Playable characters are listed here too, because Kowloon Knockout lets a player fight as one
+ * (lib/kowloon-knockout/render/fighter/models.ts reads them back from `mdl/index.json`):
+ *   - Alyx and the Combine soldier, for hl2. Portal's install ships Half-Life 2's shared content
+ *     (`hl2/`), so the portal list asks for them too — whichever install has them publishes them.
+ *   - Chell, for portal: the path varies by build (`models/player/chell…` in the later content,
+ *     `models/player.mdl` in Portal's own), so every candidate is listed and the ones present win.
+ * Only paths the install has are used (`alwaysModels`), so a name the free demo depots do not
+ * ship is skipped, not an error; `missingAlwaysModels` says which, so a run's log shows it.
  */
 export const GAME_ALWAYS_MODELS: Record<GameId, readonly string[]> = {
   tf2: [],
-  hl2: [],
-  portal: ['models/weapons/v_portalgun.mdl', 'models/weapons/w_portalgun.mdl'],
+  hl2: ['models/alyx.mdl', 'models/combine_soldier.mdl'],
+  portal: [
+    'models/weapons/v_portalgun.mdl',
+    'models/weapons/w_portalgun.mdl',
+    'models/player/chell/player.mdl',
+    'models/player/chell.mdl',
+    'models/player.mdl',
+    'models/alyx.mdl',
+    'models/combine_soldier.mdl',
+  ],
   // CS:GO's players, arms, weapons and equipment come from scripts/tf2-game/csgo-model-list.py.
   csgo: [],
 };
@@ -766,6 +783,11 @@ export const RADAR_GAMES: ReadonlySet<GameId> = new Set<GameId>(['csgo']);
 /** The game's always-included models that the install has (what models.py can read). */
 export function alwaysModels(fs: GameFileSystem, game: GameId): string[] {
   return GAME_ALWAYS_MODELS[game].filter((m) => fs.exists(m));
+}
+
+/** The always-included models the install does NOT have — logged so a sync run shows what a depot lacks. */
+export function missingAlwaysModels(fs: GameFileSystem, game: GameId): string[] {
+  return GAME_ALWAYS_MODELS[game].filter((m) => !fs.exists(m));
 }
 
 /**
@@ -1370,6 +1392,10 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   if (propsOnly) {
     const n = listMapProps(root, game, maps, flags.get('props-list-out')!, flags.get('extract-pak'));
     process.stdout.write(`props (${game}): ${n} models from ${maps.length} maps\n`);
+    // What the install lacks of the always-included models (playable characters, the portal gun), so a
+    // run's log says whether a depot ships them rather than the model silently never appearing.
+    const missing = missingAlwaysModels(openGameFileSystem(root, game), game);
+    if (missing.length) process.stdout.write(`always-included models not in this install (${game}): ${missing.join(', ')}\n`);
     return 0;
   }
 

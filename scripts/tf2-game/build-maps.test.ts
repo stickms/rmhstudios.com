@@ -31,6 +31,7 @@ import {
 import { isContentAddressed } from '../../lib/tf2-game/assets/paths';
 import type { GameId } from '../../lib/tf2-game/assets/versions';
 import {
+  alwaysModels,
   buildMaps,
   collectActorModels,
   decodeResourceText,
@@ -44,6 +45,7 @@ import {
   resolveRadar,
   listMapProps,
   materialKey,
+  missingAlwaysModels,
   openGameFileSystem,
   stripBsp,
   TEX_VERSION,
@@ -68,12 +70,32 @@ const mib = (b: number) => (b / 1048576).toFixed(1);
 
 describe('map package pieces', () => {
   it("always lists Portal's portal gun models, which no map names", () => {
-    expect(GAME_ALWAYS_MODELS.portal).toEqual([
+    expect(GAME_ALWAYS_MODELS.portal.slice(0, 2)).toEqual([
       'models/weapons/v_portalgun.mdl',
       'models/weapons/w_portalgun.mdl',
     ]);
     for (const list of Object.values(GAME_ALWAYS_MODELS))
       for (const m of list) expect(m).toMatch(/^models\/[a-z0-9_/]+\.mdl$/);
+  });
+
+  it('asks for the playable characters Kowloon Knockout offers: Alyx, the Combine soldier, Chell', () => {
+    expect(GAME_ALWAYS_MODELS.hl2).toEqual(expect.arrayContaining(['models/alyx.mdl', 'models/combine_soldier.mdl']));
+    // Portal's install carries HL2's shared content, so it asks for them too, plus every Chell candidate.
+    expect(GAME_ALWAYS_MODELS.portal).toEqual(
+      expect.arrayContaining([
+        'models/alyx.mdl', 'models/combine_soldier.mdl',
+        'models/player/chell/player.mdl', 'models/player/chell.mdl', 'models/player.mdl',
+      ]),
+    );
+    expect(new Set(GAME_ALWAYS_MODELS.portal).size).toBe(GAME_ALWAYS_MODELS.portal.length);
+  });
+
+  it('uses only the always-models an install has, and reports the ones it lacks', () => {
+    const fs = { exists: (p: string) => p === 'models/alyx.mdl' } as unknown as GameFileSystem;
+    expect(alwaysModels(fs, 'hl2')).toEqual(['models/alyx.mdl']);
+    expect(missingAlwaysModels(fs, 'hl2')).toEqual(['models/combine_soldier.mdl']);
+    expect(alwaysModels(fs, 'csgo')).toEqual([]);
+    expect(missingAlwaysModels(fs, 'csgo')).toEqual([]);
   });
 
   it("writes a map's embedded models and materials out as loose files and names its models", () => {
@@ -478,8 +500,9 @@ for (const suite of suites) {
       const props = readFileSync(path.join(out, 'props.list'), 'utf8').trim().split('\n');
       expect(props.length).toBeGreaterThan(5);
       expect(props.every((p) => /^models\/.+\.mdl$/.test(p))).toBe(true);
-      // Models the client draws that no map names (Portal's portal gun) ride along.
-      expect(props).toEqual(expect.arrayContaining([...GAME_ALWAYS_MODELS[suite.game]]));
+      // Models the client draws that no map names (Portal's portal gun, the playable characters the
+      // install has) ride along.
+      expect(props).toEqual(expect.arrayContaining(alwaysModels(openGameFileSystem(root, suite.game), suite.game)));
     });
 
     it('lists the props, and the always-included models, with --props-only', () => {
@@ -488,7 +511,7 @@ for (const suite of suites) {
       const n = listMapProps(root, suite.game, suite.maps, list);
       const props = readFileSync(list, 'utf8').trim().split('\n');
       expect(props.length).toBe(n);
-      expect(props).toEqual(expect.arrayContaining([...GAME_ALWAYS_MODELS[suite.game]]));
+      expect(props).toEqual(expect.arrayContaining(alwaysModels(openGameFileSystem(root, suite.game), suite.game)));
       // The same set the build appended.
       const built = readFileSync(path.join(out, 'props.list'), 'utf8').trim().split('\n');
       expect([...props].sort()).toEqual([...built].sort());
