@@ -1,20 +1,22 @@
 'use client';
 
-import { useRef, useMemo, useLayoutEffect } from 'react';
+import { useRef, useMemo, useLayoutEffect, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import type { GameSession } from '@/lib/kowloon-knockout/net/session';
 import { useRenderTier } from './RenderTierContext';
+import { useImpactBus } from './ImpactContext';
+import type { ImpactEvent, ImpactProfile } from '@/lib/kowloon-knockout/render/impact';
 import { particleBudget } from '@/lib/kowloon-knockout/render/particles/budget';
 import { stepParticle, type BurstParticle, type BurstKind } from '@/lib/kowloon-knockout/render/particles/burst';
 
 const BLACK = new THREE.Color('#000000');
 
-/** Pooled, instanced event bursts (hit/block/KO) driven by the session FX
- *  queue. Beefed in Phase 3: debris + smoke + sparks, tier-scaled cap. Stays on
- *  the CPU — bursts are bounded, event-emitted, and momentary (the GPU-emission
- *  path is the deliberately-avoided risk; see the Phase 3 spec). */
-export default function Fx({ session }: { session: GameSession }) {
+/** Pooled, instanced debris and smoke for hits and knockouts, spawned from the ImpactBus (the director is
+ *  the only reader of the session's event queue). The streaking sparks, rings and flashes are ImpactFx's.
+ *  Stays on the CPU — bursts are bounded, event-emitted, and momentary. A knockout's slow motion slows
+ *  these too. */
+export default function Fx() {
+    const bus = useImpactBus();
     const { tier } = useRenderTier();
     const MAX = particleBudget(tier).burstCap;
 
@@ -72,31 +74,42 @@ export default function Fx({ session }: { session: GameSession }) {
         activeRef.current = 0;
     }, [MAX, dummy]);
 
+    // Impacts arrive from the bus between frames; the frame loop turns them into particles.
+    const pending = useRef<ImpactEvent[]>([]);
+    useEffect(() => {
+        if (!bus) return;
+        return bus.subscribe((e: ImpactEvent, prof: ImpactProfile) => {
+            // A calm impact (Jelly motion Still) has no ring: it gets its few sparks and nothing else.
+            if (prof.ringSize > 0 && pending.current.length < 8) pending.current.push(e);
+        });
+    }, [bus]);
+
     useFrame((_, deltaRaw) => {
         const mesh = meshRef.current;
         if (!mesh) return;
-        const delta = Math.min(0.05, deltaRaw);
+        const slow = bus ? bus.slowScaleAt(performance.now()) : 1;
+        const delta = Math.min(0.05, deltaRaw) * slow;
 
         let spawned = false;
-        for (const e of session.drainFx()) {
+        const queued = pending.current;
+        for (let q = 0; q < queued.length; q++) {
+            const e = queued[q];
             spawned = true;
             if (e.kind === 'hit') {
-                const c = new THREE.Color(e.color);
-                spawn(Math.min(22, 8 + Math.round(e.power)), 'spark', e.x, e.y, e.z, c, 3.5);
-                spawn(Math.min(8, 3 + Math.round(e.power * 0.5)), 'debris', e.x, e.y, e.z, c, 2.5);
+                const c = new THREE.Color(e.color || '#ffcc00');
+                spawn(Math.min(10, 3 + Math.round(e.power * 0.5)), 'debris', e.x, e.y, e.z, c, 2.5);
                 // One dim, subtle puff per hit — additive grey, so punches read
                 // as a flash and a wisp, not a cloud.
                 spawn(1, 'smoke', e.x, e.y, e.z, new THREE.Color('#3a3a44'), 0.8);
-            } else if (e.kind === 'block') {
-                spawn(8, 'spark', e.x, e.y, e.z, new THREE.Color('#cfe8ff'), 2);
             } else if (e.kind === 'ko') {
-                spawn(40, 'spark', e.x, 1.1, e.z, new THREE.Color('#ffcc00'), 5);
                 spawn(28, 'debris', e.x, 1.1, e.z, new THREE.Color('#ffcc00'), 4);
                 // KO keeps a real smoke burst — the climactic moment — but dim
                 // and restrained.
                 spawn(8, 'smoke', e.x, 1.1, e.z, new THREE.Color('#5a5a66'), 1.2);
             }
+            // A block throws no debris: its sparks and ring are ImpactFx's.
         }
+        queued.length = 0;
 
         // Idle skip: nothing alive and no new event this frame → instances are
         // already zeroed (last live frame or the mount init), so there is no

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BEATS, DUEL_PERIOD, HOME_X, cameraDistance, duelAt, hitTimes } from './menuDuel';
+import { BEATS, DUEL_KO_POWER, DUEL_PERIOD, DUEL_POWER, HOME_X, cameraDistance, duelAt, duelImpacts, hitTimes } from './menuDuel';
 
 describe('menu duel', () => {
     it('is deterministic and loops', () => {
@@ -50,5 +50,63 @@ describe('menu duel', () => {
         const visibleHalf = Math.tan((34 * Math.PI) / 360) * phone * (9 / 16);
         expect(visibleHalf).toBeGreaterThanOrEqual(2.3 - 1e-9);
         expect(cameraDistance(0, 34)).toBeGreaterThan(0); // degenerate aspect is clamped, not NaN
+    });
+});
+
+describe('duelImpacts', () => {
+    const all = duelImpacts(0, DUEL_PERIOD);
+    it('lists every beat once per loop: blocks, hits and the knockout', () => {
+        expect(all).toHaveLength(BEATS.length);
+        expect(all.map((i) => i.kind)).toEqual(['block', 'hit', 'block', 'hit', 'hit', 'block', 'ko']);
+    });
+    it('power follows the punch, the knockout is the biggest', () => {
+        expect(all[1].power).toBe(DUEL_POWER.cross);
+        expect(all[3].power).toBe(DUEL_POWER.hook);
+        expect(all[4].power).toBe(DUEL_POWER.uppercut);
+        expect(all.at(-1)!.power).toBe(DUEL_KO_POWER);
+        expect(Math.max(...all.map((i) => i.power))).toBe(DUEL_KO_POWER);
+    });
+    it('names attacker and victim, and pushes away from the attacker', () => {
+        for (const i of all) {
+            expect(i.victim).not.toBe(i.attacker);
+            expect(i.dirX).toBe(i.attacker === 0 ? 1 : -1);
+            expect(i.dirZ).toBe(0);
+        }
+    });
+    it('places the contact on the victim, in front of the camera at chest height', () => {
+        for (const i of all) {
+            expect(Math.abs(i.x)).toBeLessThan(1.4);
+            expect(i.y).toBeGreaterThan(0.9);
+            expect(i.y).toBeLessThan(1.4);
+        }
+    });
+    it('reports an impact in exactly the window that contains it, once', () => {
+        const at = hitTimes()[1]; // the cross, a real hit
+        expect(duelImpacts(at - 0.01, at + 0.01)).toHaveLength(1);
+        expect(duelImpacts(at - 0.2, at - 0.01)).toHaveLength(0);
+        expect(duelImpacts(at, at + 0.2)).toHaveLength(0); // the window is (prev, t]
+        // stepping in small frames finds it exactly once
+        let n = 0;
+        for (let t = at - 0.3; t < at + 0.3; t += 1 / 30) n += duelImpacts(t, t + 1 / 30).length;
+        expect(n).toBe(1);
+    });
+    it('handles the loop wrapping, and any number of loops', () => {
+        const span = duelImpacts(DUEL_PERIOD - 0.1, DUEL_PERIOD + 1);
+        expect(span).toHaveLength(1); // the first beat's block, early in the next loop
+        expect(span[0].kind).toBe('block');
+        expect(duelImpacts(0, DUEL_PERIOD * 3)).toHaveLength(BEATS.length * 3);
+        expect(duelImpacts(DUEL_PERIOD * 5, DUEL_PERIOD * 5 + 3)).toHaveLength(duelImpacts(0, 3).length);
+    });
+    it('returns nothing for an empty, reversed or NaN window', () => {
+        expect(duelImpacts(2, 2)).toEqual([]);
+        expect(duelImpacts(3, 1)).toEqual([]);
+        expect(duelImpacts(NaN, 4)).toEqual([]);
+    });
+    it('impacts never arrive closer than a third of a second (WCAG flash rate)', () => {
+        const times: number[] = [];
+        let start = 0;
+        for (const b of BEATS) { times.push(start + 0.625); start += b.length; }
+        for (let i = 1; i < times.length; i++) expect(times[i] - times[i - 1]).toBeGreaterThan(1 / 3);
+        expect(times[0] + DUEL_PERIOD - times.at(-1)!).toBeGreaterThan(1 / 3);
     });
 });

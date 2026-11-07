@@ -27,6 +27,8 @@ export interface ImpactEvent {
     x: number; y: number; z: number;
     /** Unit vector on the ground plane, attacker → victim: which way the victim is pushed. */
     dirX: number; dirZ: number;
+    /** The attacker's accent colour (hits): sparks and rings take it. Optional: blocks and KOs have their own. */
+    color?: string;
 }
 
 export interface ImpactProfile {
@@ -197,6 +199,21 @@ export class ImpactBus {
         }
         for (const fn of this.listeners) fn(e, prof);
         return prof;
+    }
+
+    /**
+     * Tell subscribers about an impact WITHOUT any of its physical consequences: no camera trauma, no
+     * freeze, no slow motion, no knock-back, no ring. For Jelly motion Still, where only a few sparks
+     * mark the contact. Returns the profile the listeners got.
+     */
+    emitCalm(e: ImpactEvent): ImpactProfile {
+        const full = impactProfile(e.kind, e.power);
+        const calm: ImpactProfile = {
+            ...full, trauma: 0, hitStopMs: 0, slowMo: 1, slowMoMs: 0, recoil: 0, squash: 0, flash: 0,
+            ringSize: 0, ringLife: 0, fovKick: 0, sparks: Math.min(full.sparks, 8),
+        };
+        for (const fn of this.listeners) fn(e, calm);
+        return calm;
     }
 
     /**
