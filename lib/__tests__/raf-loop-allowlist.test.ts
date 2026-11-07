@@ -187,6 +187,10 @@ const SCAN_DIRS = ['components', 'app', 'hooks', 'lib', 'stores'];
 const ALLOW = new Set<string>([
   // Altair co-op match: the draw loop is cancelled in the effect cleanup (unmount); it only draws.
   'components/altair/multiplayer/MultiplayerGameScreen.tsx',
+  // Altair main-menu backdrop (pixel-art corridor). Bounded by MOUNT and by visibility: the effect
+  // cancels the frame on unmount, a hidden tab cancels it and `visibilitychange` restarts it, and it
+  // is capped at 30 fps with a fixed-size buffer (no per-frame canvas reallocation).
+  'components/altair/menu/MenuBackdrop.tsx',
   // The ONE jelly frame (#989). The engine, the soft body, the arc renderer and
   // the fallback cursor light are drivers on it (`drive(fn, { order })`) and call
   // no rAF themselves. No frame is requested while no driver is awake; `stop()`

@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X, ScrollText, Book } from 'lucide-react';
 import PatchnotesModal from './PatchnotesModal';
+import MenuBackdrop from '../menu/MenuBackdrop';
 import { CodexBadge } from '../CodexPanel';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
@@ -62,18 +63,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
   return (
     <div className="altair-scan flex flex-col items-center justify-center flex-1 px-4 py-8">
       {/* Backdrop: the corridor at the end of Outpost 13 */}
-      <div className="altair-corridor" aria-hidden="true">
-        <div className="altair-corridor__frames">
-          <span className="altair-corridor__frame" />
-          <span className="altair-corridor__frame" />
-          <span className="altair-corridor__frame" />
-          <span className="altair-corridor__frame" />
-          <span className="altair-corridor__frame" />
-          <span className="altair-corridor__frame" />
-        </div>
-        <span className="altair-corridor__lamp altair-corridor__lamp--l" />
-        <span className="altair-corridor__lamp altair-corridor__lamp--r" />
-      </div>
+      <MenuBackdrop />
 
       {/* Title */}
       <div className="text-center mb-12">

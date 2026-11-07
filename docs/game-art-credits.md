@@ -777,3 +777,7 @@ Source resolution limits: see the report (Wikimedia would only serve up to 1920 
 No new third-party art was added in this pass. The in-game sprite sheets in `public/sprites/altair/` are the existing CC0 sheets (Ninja Adventure, 16x16 DungeonTileset II) graded to the Altair card palette by `scripts/altair/grade-sprites.ts`; the untouched originals live in `scripts/altair/sprite-src/` and the script never writes there, so it can be re-run safely. Palette roles: cyan = allies, magenta = hostiles, amber = loot and hazards, dark teal = floor and props. The UI uses Michroma, Jost and IBM Plex Mono (SIL OFL 1.1, already in `components/shared/game-fonts/`); MedievalSharp was removed.
 
 Candidates checked and rejected for this pass: OpenGameArt "Spacers" (CC0, but side-view platformer frames, not top-down) and OpenGameArt "Sci-fi platform tiles" (CC0, side-view). Several itch.io top-down sci-fi packs were found, but their licences are paid or unstated, so none were used.
+
+## Altair menu scene (2026-11-07)
+
+The main-menu backdrop is original work with no third-party art: `lib/altair/menu/corridor-scene.ts` draws the corridor procedurally, and the Echo and the security drone are hand-authored pixel sprites in `lib/altair/menu/menu-sprites.ts` (text frames over the Outpost 13 palette). Nothing was downloaded for it.
