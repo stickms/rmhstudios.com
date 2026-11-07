@@ -17,8 +17,9 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import decode from '@audio/decode';
+import { decodeAudio } from '@/lib/audio/decode.server';
 
+import { requeueFailedAnalyses } from './analysis-queue.server';
 import { BEATMAP_VERSION, decodedToAudioLike, generateBeatmap } from './beatmap';
 import { chartHashOf } from './editor/hash.server';
 import { defaultPreviewStart } from './preview';
@@ -63,7 +64,7 @@ export async function regenerateSong(
   const stored = await readSongAudio(song.audioUrl);
   if (!stored) throw new Error(`audio missing for ${songId}`);
 
-  const analysis = generateBeatmap(decodedToAudioLike(await decode(stored.body)), {
+  const analysis = generateBeatmap(decodedToAudioLike(await decodeAudio(stored.body)), {
     id: song.id,
     name: song.title,
     artist: song.artist,
@@ -197,5 +198,8 @@ export async function registerRegenCron(boss: {
     if (result.attempted > 0) {
       console.info('[slice-it] regen sweep', result, 'remaining:', await staleChartCount());
     }
+    // Songs whose first chart failed — see `requeueFailedAnalyses`.
+    const requeued = await requeueFailedAnalyses(25);
+    if (requeued > 0) console.warn('[slice-it] re-queued failed analyses', requeued);
   });
 }

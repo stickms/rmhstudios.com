@@ -23,8 +23,7 @@
  * downstream of the upload response needs.
  */
 
-import decode from '@audio/decode';
-
+import { decodeAudio } from '@/lib/audio/decode.server';
 import { getBoss } from '@/lib/jobs/boss.server';
 import { prisma } from '@/lib/prisma.server';
 import { BEATMAP_VERSION, decodedToAudioLike, generateBeatmap } from './beatmap';
@@ -104,7 +103,7 @@ export async function runAnalysis(job: AnalysisJob): Promise<void> {
     const stored = await readSongAudio(song.audioUrl);
     if (!stored) throw new Error(`audio missing for ${song.id}`);
 
-    const audio = decodedToAudioLike(await decode(stored.body));
+    const audio = decodedToAudioLike(await decodeAudio(stored.body));
 
     // The STFT is ~64% of `generateBeatmap` and its FFT is 95% of that, so it is
     // computed here — across every core — and handed in, rather than being done
@@ -160,6 +159,55 @@ export async function runAnalysis(job: AnalysisJob): Promise<void> {
       .catch(() => {});
     throw error;
   }
+}
+
+/**
+ * Re-queue songs whose chart failed.
+ *
+ * Until the `@audio/decode` bundling fix (`lib/audio/decode.server.ts`) every
+ * upload the jobs worker touched ended up `failed`, and nothing ever looked at
+ * those rows again — they sat on "Charting failed" with a chart only if the
+ * uploader's browser happened to generate one locally. This is the way back.
+ *
+ * Throttled with a pg-boss `singletonKey` so one genuinely undecodable file is
+ * attempted at most once a week rather than every hour forever; the hourly
+ * sweep is what makes a recovered backlog drain, not what retries a bad file.
+ */
+export async function requeueFailedAnalyses(limit = 25): Promise<number> {
+  const boss = await getBoss();
+  if (!boss) return 0;
+
+  const failed = await prisma.song.findMany({
+    where: { analysisState: 'failed' },
+    select: { id: true, bpm: true },
+    orderBy: { createdAt: 'asc' },
+    take: limit,
+  });
+  if (failed.length === 0) return 0;
+
+  await boss.createQueue(ANALYSIS_QUEUE);
+  let queued = 0;
+  for (const song of failed) {
+    const id = await boss
+      .send(
+        ANALYSIS_QUEUE,
+        { songId: song.id, bpmHint: song.bpm && song.bpm > 0 ? song.bpm : undefined },
+        {
+          singletonKey: `reanalyse:${song.id}`,
+          singletonSeconds: 7 * 24 * 60 * 60,
+          retryLimit: 1,
+          expireInSeconds: 2 * 60 * 60,
+        },
+      )
+      .catch(() => null);
+    if (id) {
+      queued++;
+      await prisma.song
+        .update({ where: { id: song.id }, data: { analysisState: 'pending' } })
+        .catch(() => {});
+    }
+  }
+  return queued;
 }
 
 /** Register the worker. Called from `server/jobs/index.ts`. */
