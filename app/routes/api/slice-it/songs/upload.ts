@@ -5,7 +5,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { optimizeImage } from '@/lib/image-optimize';
 import { transcodeForGameplay } from '@/lib/audio/transcode.server';
-import decode from '@audio/decode';
+import { decodeAudio } from '@/lib/audio/decode.server';
 import {
   COVER_SIZE,
   MAX_DECODED_PCM_BYTES,
@@ -307,7 +307,7 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
             // and an orphaned object behind it.
             let audio: AudioLike;
             try {
-              audio = decodedToAudioLike(await decode(buffer));
+              audio = decodedToAudioLike(await decodeAudio(buffer));
             } catch {
               await unwind();
               return Response.json(
