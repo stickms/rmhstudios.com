@@ -81,5 +81,7 @@
   "waiting-host": "EV SAHİBİNİN BAŞLATMASI BEKLENİYOR...",
   "wins": "GALİBİYET",
   "you-lose": "KAYBETTİN",
-  "you-win": "KAZANDIN!"
+  "you-win": "KAZANDIN!",
+  "model": "MODEL",
+  "model-group-kowloon": "Kowloon"
 }

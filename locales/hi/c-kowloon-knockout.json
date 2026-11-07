@@ -81,5 +81,7 @@
   "waiting-host": "मेज़बान के शुरू करने की प्रतीक्षा में...",
   "wins": "जीत",
   "you-lose": "आप हार गए",
-  "you-win": "आप जीत गए!"
+  "you-win": "आप जीत गए!",
+  "model": "MODEL",
+  "model-group-kowloon": "Kowloon"
 }

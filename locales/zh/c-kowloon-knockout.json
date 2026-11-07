@@ -81,5 +81,7 @@
   "waiting-host": "等待房主开始...",
   "wins": "胜利",
   "you-lose": "你输了",
-  "you-win": "你赢了！"
+  "you-win": "你赢了！",
+  "model": "MODEL",
+  "model-group-kowloon": "Kowloon"
 }

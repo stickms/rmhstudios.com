@@ -11,6 +11,8 @@
 import type { Server, Socket } from 'socket.io';
 import { randomBytes } from 'node:crypto';
 import { generateRoomCode } from '../utils';
+import { sanitizeFighterModelId } from '../../../lib/kowloon-knockout/render/fighter/models';
+import { aiModelForSeat } from '../../../lib/kowloon-knockout/render/fighter/aiPool';
 
 // ── Event Constants ────────────────────────────────────────────────
 const C2S = {
@@ -63,14 +65,16 @@ type Mode = 'ffa' | 'teams';
 interface Slot {
     socketId: string;
     className: string;
+    /** Fighter model id; always a roster id (sanitised on the way in). */
+    modelId: string;
     /** Secret handed to this seat's client; presenting it reclaims the seat after a drop. */
     token: string;
     /** Set while the socket is gone and the seat is being held. */
     dropTimer?: ReturnType<typeof setTimeout>;
 }
 
-function newSlot(socketId: string, className: string): Slot {
-    return { socketId, className, token: randomBytes(16).toString('hex') };
+function newSlot(socketId: string, className: string, modelId: unknown): Slot {
+    return { socketId, className, modelId: sanitizeFighterModelId(modelId), token: randomBytes(16).toString('hex') };
 }
 
 interface KKRoom {
@@ -120,9 +124,9 @@ function roster(room: KKRoom) {
     for (let i = 0; i < room.arenaSize; i++) {
         const slot = room.slots[i];
         if (slot) {
-            out.push({ seat: i, className: slot.className, team: teamFor(room, i), name: `P${i + 1}`, connected: true, human: true });
+            out.push({ seat: i, className: slot.className, team: teamFor(room, i), name: `P${i + 1}`, modelId: slot.modelId, connected: true, human: true });
         } else {
-            out.push({ seat: i, className: aiClassFor(i), team: teamFor(room, i), name: 'CPU', connected: true, human: false });
+            out.push({ seat: i, className: aiClassFor(i), team: teamFor(room, i), name: 'CPU', modelId: aiModelForSeat(i), connected: true, human: false });
         }
     }
     return out;
@@ -247,7 +251,7 @@ function onResume(socket: Socket, payload: any): void {
         return;
     }
     const seats = roster(room).map((r) => ({
-        seat: r.seat, className: r.className, team: r.team,
+        seat: r.seat, className: r.className, modelId: r.modelId, team: r.team,
         kind: r.human ? 'human' : 'ai', name: r.name,
     }));
     socket.emit(S2C.RESUMED, {
@@ -268,7 +272,7 @@ function onCreateRoom(socket: Socket, payload: any): void {
         maxRounds: 3,
         state: 'lobby',
         isPublic: payload?.isPublic !== false, // public by default
-        slots: [newSlot(socket.id, payload?.fighterClass || DEFAULT_FIGHTER), null, null, null],
+        slots: [newSlot(socket.id, payload?.fighterClass || DEFAULT_FIGHTER, payload?.fighterModel), null, null, null],
     };
     rooms.set(code, room);
     socketToRoom.set(socket.id, code);
@@ -286,7 +290,7 @@ function onJoinRoom(socket: Socket, payload: any): void {
     if (seat === -1) { socket.emit(S2C.ERROR, { message: 'Room is full' }); return; }
 
     cleanupSocket(socket.id);
-    room.slots[seat] = newSlot(socket.id, payload?.fighterClass || DEFAULT_FIGHTER);
+    room.slots[seat] = newSlot(socket.id, payload?.fighterClass || DEFAULT_FIGHTER, payload?.fighterModel);
     socketToRoom.set(socket.id, code);
     if (room.arenaSize < seat + 1) room.arenaSize = seat + 1;
     if (room.mode === 'teams' && room.arenaSize % 2 !== 0) room.mode = 'ffa';
@@ -301,6 +305,7 @@ function onSetFighter(socket: Socket, payload: any): void {
     const seat = seatOf(room, socket.id);
     if (seat === -1) return;
     if (payload?.fighterClass) room.slots[seat]!.className = String(payload.fighterClass);
+    if (payload?.fighterModel !== undefined) room.slots[seat]!.modelId = sanitizeFighterModelId(payload.fighterModel);
     emitLobby(room);
 }
 
@@ -353,7 +358,7 @@ function onStart(socket: Socket): void {
 
     room.state = 'playing';
     const seats = roster(room).map((r) => ({
-        seat: r.seat, className: r.className, team: r.team,
+        seat: r.seat, className: r.className, modelId: r.modelId, team: r.team,
         kind: r.human ? 'human' : 'ai', name: r.name,
     }));
 

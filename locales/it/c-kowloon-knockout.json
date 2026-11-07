@@ -81,5 +81,7 @@
   "waiting-host": "IN ATTESA CHE L'HOST INIZI...",
   "wins": "VITTORIE",
   "you-lose": "HAI PERSO",
-  "you-win": "HAI VINTO!"
+  "you-win": "HAI VINTO!",
+  "model": "MODEL",
+  "model-group-kowloon": "Kowloon"
 }

@@ -81,5 +81,7 @@
   "waiting-host": "في انتظار المضيف للبدء...",
   "wins": "انتصارات",
   "you-lose": "لقد خسرت",
-  "you-win": "لقد فزت!"
+  "you-win": "لقد فزت!",
+  "model": "MODEL",
+  "model-group-kowloon": "Kowloon"
 }

@@ -81,5 +81,7 @@
   "waiting-host": "호스트 시작 대기 중...",
   "wins": "승리",
   "you-lose": "패배",
-  "you-win": "승리!"
+  "you-win": "승리!",
+  "model": "MODEL",
+  "model-group-kowloon": "Kowloon"
 }

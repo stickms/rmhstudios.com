@@ -7,6 +7,8 @@ import type { FighterClass, GamePhase, MatchMode } from '@/lib/kowloon-knockout/
 import type { MatchConfig, SeatConfig } from '@/lib/kowloon-knockout/game/config';
 import { defaultSeatName } from '@/lib/kowloon-knockout/game/config';
 import { ALL_FIGHTERS } from '@/lib/kowloon-knockout/game/fighters/stats';
+import { DEFAULT_FIGHTER_MODEL, sanitizeFighterModelId } from '@/lib/kowloon-knockout/render/fighter/models';
+import { randomAiModel } from '@/lib/kowloon-knockout/render/fighter/aiPool';
 import type { MatchSeat, LobbySeat } from '@/lib/kowloon-knockout/net/client';
 import type { HudFighter } from '@/lib/kowloon-knockout/net/session';
 
@@ -30,6 +32,10 @@ interface GameStore {
 
     selectedClass: FighterClass;
     setSelectedClass: (c: FighterClass) => void;
+
+    /** Fighter model id (render/fighter/models.ts); persisted in the browser. */
+    selectedModel: string;
+    setSelectedModel: (id: string) => void;
 
     // Local match setup
     mode: MatchMode;
@@ -77,6 +83,20 @@ interface GameStore {
     resetGame: () => void;
 }
 
+const MODEL_STORAGE_KEY = 'kk-fighter-model';
+
+/** The remembered model, or the default. Never throws (private windows, SSR). */
+export function readStoredModel(): string {
+    try {
+        if (typeof localStorage === 'undefined') return DEFAULT_FIGHTER_MODEL;
+        return sanitizeFighterModelId(localStorage.getItem(MODEL_STORAGE_KEY));
+    } catch { return DEFAULT_FIGHTER_MODEL; }
+}
+
+function writeStoredModel(id: string): void {
+    try { localStorage.setItem(MODEL_STORAGE_KEY, id); } catch { /* storage unavailable: choice lasts the session */ }
+}
+
 function randomClasses(count: number, exclude: FighterClass): FighterClass[] {
     const pool = ALL_FIGHTERS.filter((c) => c !== exclude);
     const out: FighterClass[] = [];
@@ -87,7 +107,7 @@ function randomClasses(count: number, exclude: FighterClass): FighterClass[] {
 }
 
 /** Build a single-player MatchConfig (seat 0 = you, the rest CPU). */
-function buildLocalConfig(selected: FighterClass, playerCount: number, mode: MatchMode, aiDifficulty: number, maxRounds: number): MatchConfig {
+function buildLocalConfig(selected: FighterClass, playerCount: number, mode: MatchMode, aiDifficulty: number, maxRounds: number, selectedModel: string): MatchConfig {
     const aiClasses = randomClasses(playerCount - 1, selected);
     const seats: SeatConfig[] = [];
     for (let i = 0; i < playerCount; i++) {
@@ -96,6 +116,7 @@ function buildLocalConfig(selected: FighterClass, playerCount: number, mode: Mat
         seats.push({
             seat: i,
             className,
+            modelId: i === 0 ? selectedModel : randomAiModel(),
             team: mode === 'teams' ? i % 2 : i,
             kind,
             displayName: i === 0 ? 'YOU' : defaultSeatName(i, className, 'ai'),
@@ -113,6 +134,7 @@ function buildHostConfig(seats: MatchSeat[], mode: MatchMode, maxRounds: number,
         seats: seats.map((s) => ({
             seat: s.seat,
             className: s.className,
+            modelId: s.modelId,
             team: s.team,
             kind: s.seat === localSeat ? 'human-local' : s.kind === 'ai' ? 'ai' : 'remote',
             displayName: s.name,
@@ -126,6 +148,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     selectedClass: 'jade_dragon',
     setSelectedClass: (selectedClass) => set({ selectedClass }),
+
+    // Starts at the default on the server and on first client render (no hydration
+    // mismatch); CharacterSelect loads the remembered choice in an effect.
+    selectedModel: DEFAULT_FIGHTER_MODEL,
+    setSelectedModel: (id) => {
+        const selectedModel = sanitizeFighterModelId(id);
+        writeStoredModel(selectedModel);
+        set({ selectedModel });
+    },
 
     mode: 'ffa',
     playerCount: 2,
@@ -171,17 +202,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
     clearLobbyRoom: () => set({ lobbySeats: [], roomCode: null }),
 
     startLocalMatch: () => {
-        const { selectedClass, playerCount, mode, aiDifficulty, maxRounds } = get();
-        const config = buildLocalConfig(selectedClass, playerCount, mode, aiDifficulty, maxRounds);
+        const { selectedClass, selectedModel, playerCount, mode, aiDifficulty, maxRounds } = get();
+        const config = buildLocalConfig(selectedClass, playerCount, mode, aiDifficulty, maxRounds, selectedModel);
         set({ runtime: { kind: 'local', config }, isMultiplayer: false, phase: 'fight' });
     },
     startTraining: () => {
-        const { selectedClass } = get();
+        const { selectedClass, selectedModel } = get();
         const config: MatchConfig = {
             mode: 'ffa', maxRounds: 1, aiDifficulty: 0,
             seats: [
-                { seat: 0, className: selectedClass, team: 0, kind: 'human-local', displayName: 'YOU' },
-                { seat: 1, className: selectedClass === 'iron_bull' ? 'stone_tiger' : 'iron_bull', team: 1, kind: 'remote', displayName: 'DUMMY' },
+                { seat: 0, className: selectedClass, modelId: selectedModel, team: 0, kind: 'human-local', displayName: 'YOU' },
+                { seat: 1, className: selectedClass === 'iron_bull' ? 'stone_tiger' : 'iron_bull', modelId: selectedModel, team: 1, kind: 'remote', displayName: 'DUMMY' },
             ],
         };
         set({ runtime: { kind: 'local', config, training: true }, isMultiplayer: false, phase: 'fight' });
@@ -200,3 +231,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         connectionStatus: 'disconnected', localSeat: 0, lobbySeats: [],
     }),
 }));
+
+/** Load the remembered fighter model into the store (client only; call from an effect so SSR and hydration match). */
+export function restoreStoredModel(): void {
+    const stored = readStoredModel();
+    if (stored !== useGameStore.getState().selectedModel) useGameStore.setState({ selectedModel: stored });
+}

@@ -13,6 +13,8 @@ const SOCKET_PATH = '/socket/';
 export interface LobbySeat {
     seat: number;
     className: FighterClass;
+    /** Fighter model id (render/fighter/models.ts); absent from an older hub = the default. */
+    modelId?: string;
     team: number;
     name: string;
     connected: boolean;
@@ -22,6 +24,7 @@ export interface LobbySeat {
 export interface MatchSeat {
     seat: number;
     className: FighterClass;
+    modelId?: string;
     team: number;
     kind: 'human-local' | 'remote' | 'ai';
     name: string;
@@ -161,14 +164,14 @@ export class NetworkClient {
     clearHandlers(): void { this.handlers.clear(); }
 
     // ── Lobby ──
-    createRoom(mode: MatchMode, fighterClass: FighterClass, isPublic: boolean): void {
-        this.socket?.emit('kk:create_room', { mode, fighterClass, isPublic });
+    createRoom(mode: MatchMode, fighterClass: FighterClass, isPublic: boolean, fighterModel?: string): void {
+        this.socket?.emit('kk:create_room', { mode, fighterClass, fighterModel, isPublic });
     }
-    joinRoom(code: string, fighterClass: FighterClass): void {
-        this.socket?.emit('kk:join_room', { code, fighterClass });
+    joinRoom(code: string, fighterClass: FighterClass, fighterModel?: string): void {
+        this.socket?.emit('kk:join_room', { code, fighterClass, fighterModel });
     }
-    setFighter(fighterClass: FighterClass, team: number): void {
-        this.socket?.emit('kk:set_fighter', { fighterClass, team });
+    setFighter(fighterClass: FighterClass, team: number, fighterModel?: string): void {
+        this.socket?.emit('kk:set_fighter', { fighterClass, team, fighterModel });
     }
     setConfig(cfg: { mode?: MatchMode; arenaSize?: number; maxRounds?: number; isPublic?: boolean }): void {
         this.socket?.emit('kk:set_config', cfg);
