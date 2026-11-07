@@ -44,12 +44,16 @@ export interface View {
 }
 
 export class Grid {
-  readonly parts: (Part | null)[] = new Array(SIZE * SIZE).fill(null);
+  readonly parts: (Part | null)[];
+  /** Square size in pixels: 16 for crew and enemies, 32 for bosses. */
+  constructor(readonly size: number = SIZE) {
+    this.parts = new Array(size * size).fill(null);
+  }
   put(x: number, y: number, part: Part): void {
     x = Math.round(x);
     y = Math.round(y);
-    if (x < 0 || y < 0 || x >= SIZE || y >= SIZE) return;
-    this.parts[y * SIZE + x] = part;
+    if (x < 0 || y < 0 || x >= this.size || y >= this.size) return;
+    this.parts[y * this.size + x] = part;
   }
   rect(x: number, y: number, w: number, h: number, part: Part): void {
     for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.put(x + i, y + j, part);
@@ -64,8 +68,8 @@ export class Grid {
     }
   }
   at(x: number, y: number): Part | null {
-    if (x < 0 || y < 0 || x >= SIZE || y >= SIZE) return null;
-    return this.parts[y * SIZE + x];
+    if (x < 0 || y < 0 || x >= this.size || y >= this.size) return null;
+    return this.parts[y * this.size + x];
   }
 }
 
@@ -157,7 +161,8 @@ function body(g: Grid, v: View, behind: boolean): void {
 }
 
 export function shade(grid: Grid, palette: Palette): Uint8ClampedArray {
-  const out = new Uint8ClampedArray(SIZE * SIZE * 4);
+  const N = grid.size;
+  const out = new Uint8ClampedArray(N * N * 4);
   const lit = (x: number, y: number, p: Part) => {
     const a = grid.at(x, y - 1);
     const b = grid.at(x - 1, y);
@@ -168,10 +173,10 @@ export function shade(grid: Grid, palette: Palette): Uint8ClampedArray {
     const b = grid.at(x + 1, y);
     return a !== p || b !== p;
   };
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
       const p = grid.at(x, y);
-      const i = (y * SIZE + x) * 4;
+      const i = (y * N + x) * 4;
       if (p) {
         const ramp = palette[p];
         let c = ramp[1];

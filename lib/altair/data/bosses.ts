@@ -57,8 +57,8 @@ export const BOSSES: readonly BossDef[] = [
   // ===========================================================================
   {
     id: 'hollow_king',
-    name: 'The Hollow King',
-    title: 'THE HOLLOW KING',
+    name: 'The Hollow Director',
+    title: 'THE HOLLOW DIRECTOR',
     spawnTime: 300,
     baseHp: 1700,
     baseSpeed: 90,
@@ -74,10 +74,10 @@ export const BOSSES: readonly BossDef[] = [
         attacks: [
           {
             id: 'hk_cleave',
-            name: 'Cleave',
+            name: 'Arc Sweep',
             cooldown: 3,
             damage: 30,
-            description: 'Swings blade in a 180-degree arc (range 150px). 0.8s windup.',
+            description: 'Swings the arc blade in a 180-degree arc (range 150px). 0.8s windup.',
             params: {
               arc: 180,
               range: 150,
@@ -86,20 +86,20 @@ export const BOSSES: readonly BossDef[] = [
           },
           {
             id: 'hk_summon_shambler',
-            name: 'Summon Shambler Guard',
+            name: 'Summon Husk Guard',
             cooldown: 16,
             damage: 0,
-            description: 'Summons 6 Shamblers in a circle around himself.',
+            description: 'Summons 6 Husks in a circle around itself.',
             params: {
               summonCount: 6,
             },
           },
           {
             id: 'hk_bone_spikes',
-            name: 'Bone Spikes',
+            name: 'Strut Spikes',
             cooldown: 8,
             damage: 25,
-            description: 'Spikes erupt from the ground in a line toward the player (7 spikes, 40px apart, 1 spike/0.2s). 0.5s ground crack telegraph.',
+            description: 'Struts erupt from the deck in a line toward the player (7 spikes, 40px apart, 1 spike/0.2s). 0.5s deck crack telegraph.',
             params: {
               spikeCount: 7,
               spikeSpacing: 40,
@@ -116,10 +116,10 @@ export const BOSSES: readonly BossDef[] = [
         attacks: [
           {
             id: 'hk_cleave_p2',
-            name: 'Cleave (Enhanced)',
+            name: 'Arc Sweep (Enhanced)',
             cooldown: 3,
             damage: 45,
-            description: 'Upgraded cleave: 270-degree arc, +10 damage over Phase 1.',
+            description: 'Upgraded sweep: 270-degree arc, +10 damage over Phase 1.',
             params: {
               arc: 270,
               range: 150,
@@ -128,10 +128,10 @@ export const BOSSES: readonly BossDef[] = [
           },
           {
             id: 'hk_death_march',
-            name: 'Death March',
+            name: 'Forced March',
             cooldown: 15,
             damage: 15,
-            description: 'Charges toward player at 280px/s for up to 400px, leaving a trail of bone spikes (persist 3s, 15 damage on contact). 1.0s telegraph.',
+            description: 'Charges toward player at 280px/s for up to 400px, leaving a trail of struts (persist 3s, 15 damage on contact). 1.0s telegraph.',
             params: {
               chargeSpeed: 280,
               chargeDistance: 400,
@@ -141,10 +141,10 @@ export const BOSSES: readonly BossDef[] = [
           },
           {
             id: 'hk_bone_prison',
-            name: 'Bone Prison',
+            name: 'Bulkhead Cage',
             cooldown: 20,
             damage: 20,
-            description: 'Creates ring of bone spikes (250px radius) around player with 4 gaps. Spikes deal 20 damage on contact, persist 4 seconds.',
+            description: 'Raises a ring of struts (250px radius) around player with 4 gaps. Spikes deal 20 damage on contact, persist 4 seconds.',
             params: {
               radius: 250,
               gapCount: 4,
@@ -162,8 +162,8 @@ export const BOSSES: readonly BossDef[] = [
     dropCoins: 35,
     dropChestCoins: [15, 25],
     dropWeaponUpgrades: [1, 2],
-    description: 'An enormous skeletal monarch wreathed in green flame, dragging a massive rusted blade.',
-    color: '#2D5A27',
+    description: 'The empty command frame of the station director, wreathed in magenta static, dragging a massive arc blade.',
+    color: '#C42A98',
   },
 
   // ===========================================================================
@@ -171,8 +171,8 @@ export const BOSSES: readonly BossDef[] = [
   // ===========================================================================
   {
     id: 'crimson_countess',
-    name: 'The Crimson Countess',
-    title: 'THE CRIMSON COUNTESS',
+    name: 'The Crimson Matron',
+    title: 'THE CRIMSON MATRON',
     spawnTime: 600,
     baseHp: 5500,
     baseSpeed: 105,
@@ -199,10 +199,10 @@ export const BOSSES: readonly BossDef[] = [
           },
           {
             id: 'cc_bat_cloud',
-            name: 'Bat Cloud',
+            name: 'Flicker Swarm',
             cooldown: 10,
             damage: 5,
-            description: 'Releases a spiral pattern of 16 bats expanding outward. Bats have 4 HP each, deal 5 damage, home loosely toward player, despawn after 5s.',
+            description: 'Releases a spiral pattern of 16 Flickers expanding outward. Flickers have 4 HP each, deal 5 damage, home loosely toward the player, despawn after 5s.',
             params: {
               batCount: 16,
               batHp: 4,
@@ -238,7 +238,7 @@ export const BOSSES: readonly BossDef[] = [
             name: 'Blood Rain',
             cooldown: 8,
             damage: 12,
-            description: 'Rains blood droplets in 250px radius at player position (~20 droplets over 1.5s). 1s telegraph. Each droplet heals Countess 2 HP if it hits the player.',
+            description: 'Rains blood droplets in 250px radius at player position (~20 droplets over 1.5s). 1s telegraph. Each droplet heals the Matron 2 HP if it hits the player.',
             params: {
               radius: 250,
               dropletCount: 20,
@@ -284,7 +284,7 @@ export const BOSSES: readonly BossDef[] = [
             name: 'Blood Fountain',
             cooldown: 0,
             damage: 15,
-            description: 'At phase 3 start, 4 blood fountains spawn at 200px in cardinal directions. Each heals Countess 3 HP/s and fires slow blood projectile at player every 3s (15 damage). Fountains have 80 HP.',
+            description: 'At phase 3 start, 4 blood fountains spawn at 200px in cardinal directions. Each heals the Matron 3 HP/s and fires slow blood projectile at player every 3s (15 damage). Fountains have 80 HP.',
             params: {
               fountainCount: 4,
               fountainHp: 80,
@@ -304,8 +304,8 @@ export const BOSSES: readonly BossDef[] = [
     dropCoins: 65,
     dropChestCoins: [15, 25],
     dropWeaponUpgrades: [2, 3],
-    description: 'A vampiric matriarch hovering above the ground, surrounded by swirling blood mist.',
-    color: '#8B0000',
+    description: 'The station medical officer, long since something else, hovering above the deck in a drifting red mist.',
+    color: '#FF3DB8',
   },
 
   // ===========================================================================
@@ -313,8 +313,8 @@ export const BOSSES: readonly BossDef[] = [
   // ===========================================================================
   {
     id: 'elder_lich_malachar',
-    name: 'Elder Lich Malachar',
-    title: 'THE ELDER LICH MALACHAR',
+    name: 'Conductor Malachar',
+    title: 'THE CONDUCTOR MALACHAR',
     spawnTime: 900,
     baseHp: 12000,
     baseSpeed: 75,
@@ -343,10 +343,10 @@ export const BOSSES: readonly BossDef[] = [
           },
           {
             id: 'elm_soul_barrage',
-            name: 'Soul Barrage',
+            name: 'Echo Barrage',
             cooldown: 3,
             damage: 20,
-            description: 'Fires 4 homing soul orbs (speed 150, 20 damage each, track for 4 seconds then dissipate). Orbs are destroyable (10 HP each).',
+            description: 'Fires 4 homing signal orbs (speed 150, 20 damage each, track for 4 seconds then dissipate). Orbs are destroyable (10 HP each).',
             params: {
               orbCount: 4,
               orbSpeed: 150,
@@ -356,10 +356,10 @@ export const BOSSES: readonly BossDef[] = [
           },
           {
             id: 'elm_mass_resurrection',
-            name: 'Mass Resurrection',
+            name: 'Mass Restart',
             cooldown: 20,
             damage: 0,
-            description: 'Resurrects up to 20 enemies killed in the last 20 seconds within 500px at 50% HP. Disabled if inner phylactery is destroyed.',
+            description: 'Restarts up to 20 enemies killed in the last 20 seconds within 500px at 50% HP. Disabled if the inner core is destroyed.',
             params: {
               range: 500,
               maxResurrect: 20,
@@ -409,7 +409,7 @@ export const BOSSES: readonly BossDef[] = [
           },
           {
             id: 'elm_soul_barrage_enrage',
-            name: 'Soul Barrage (Enraged)',
+            name: 'Echo Barrage (Enraged)',
             cooldown: 1.5,
             damage: 20,
             description: 'Fires 8 orbs instead of 4, all attack speeds doubled.',
@@ -422,10 +422,10 @@ export const BOSSES: readonly BossDef[] = [
           },
           {
             id: 'elm_mass_resurrection_enrage',
-            name: 'Mass Resurrection (Enraged)',
+            name: 'Mass Restart (Enraged)',
             cooldown: 10,
             damage: 0,
-            description: 'Resurrection at doubled speed.',
+            description: 'Restarts at doubled speed.',
             params: {
               range: 500,
               maxResurrect: 15,
@@ -443,8 +443,8 @@ export const BOSSES: readonly BossDef[] = [
     dropCoins: 90,
     dropChestCoins: [20, 25],
     dropWeaponUpgrades: [3, 3],
-    description: 'An ancient skeletal sorcerer floating above a runic circle, phylactery orbs spinning around it.',
-    color: '#483D8B',
+    description: 'The station conductor floating above a ring of signal glyphs, core orbs spinning around it.',
+    color: '#D98AE6',
   },
 
   // ===========================================================================
@@ -629,7 +629,7 @@ export const BOSSES: readonly BossDef[] = [
     dropCoins: 125,
     dropChestCoins: [25, 25],
     dropWeaponUpgrades: [2, 3],
-    description: 'A colossal amalgamation of every fallen enemy -- a towering mass of bone, shadow, and screaming faces.',
-    color: '#1A1A1A',
+    description: 'A colossal amalgamation of every fallen Echo -- a towering mass of scrap, static and screaming faces.',
+    color: '#FFB44D',
   },
 ] as const;

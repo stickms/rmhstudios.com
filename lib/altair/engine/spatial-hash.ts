@@ -7,15 +7,25 @@
 import { Entity } from './types';
 
 /**
- * Compute a string key for a cell coordinate.
+ * A cell's numeric key. It used to be the string `${cx},${cy}`, which allocated and hashed a string for every
+ * cell of every query (the hash was over half of a step's CPU once 200 enemies each queried the prop grid).
+ * `cy` is offset into [0, 131072) so the pair maps to one unique number for any |cell| below 65,536, i.e.
+ * +-6.5M px at the default 100px cell, far beyond the arena.
  */
-function cellKey(cx: number, cy: number): string {
-  return `${cx},${cy}`;
+function cellKey(cx: number, cy: number): number {
+  return cx * 131072 + (cy + 65536);
 }
+
+/**
+ * Dedupe scratch shared by every query. Queries never nest or interleave (each runs to completion
+ * synchronously), so one cleared Set replaces an allocation per query. Cell order, and therefore the order of
+ * results, is unchanged: the replay verifier depends on it.
+ */
+const seenScratch = new Set<number>();
 
 export class SpatialHash {
   private cellSize: number;
-  private cells: Map<string, Entity[]>;
+  private cells: Map<number, Entity[]>;
 
   constructor(cellSize: number = 100) {
     this.cellSize = cellSize;
@@ -63,8 +73,10 @@ export class SpatialHash {
     const minCY = Math.floor((y - radius) / this.cellSize);
     const maxCY = Math.floor((y + radius) / this.cellSize);
 
-    const seen = new Set<number>();
     const results: Entity[] = [];
+    if (this.cells.size === 0) return results;
+    const seen = seenScratch;
+    seen.clear();
 
     for (let cx = minCX; cx <= maxCX; cx++) {
       for (let cy = minCY; cy <= maxCY; cy++) {
@@ -98,8 +110,10 @@ export class SpatialHash {
     const minCY = Math.floor(y / this.cellSize);
     const maxCY = Math.floor((y + h) / this.cellSize);
 
-    const seen = new Set<number>();
     const results: Entity[] = [];
+    if (this.cells.size === 0) return results;
+    const seen = seenScratch;
+    seen.clear();
 
     for (let cx = minCX; cx <= maxCX; cx++) {
       for (let cy = minCY; cy <= maxCY; cy++) {
