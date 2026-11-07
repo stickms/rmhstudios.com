@@ -7,6 +7,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
+import './kk-screens.css';
 import type { GameSession } from '@/lib/kowloon-knockout/net/session';
 import type { TrainingController, TrainingView } from '@/lib/kowloon-knockout/game/training';
 import { PUNCH_DEFS, punchHitFrame } from '@/lib/kowloon-knockout/game/combat/punches';

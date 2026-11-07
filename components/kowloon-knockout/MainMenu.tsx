@@ -9,6 +9,7 @@ import GraphicsSettings from './GraphicsSettings';
 import { TrainingMenuButton } from './TrainingRoom';
 import MenuBackdrop from './MenuBackdrop';
 import './kk-menu.css';
+import './kk-screens.css';
 
 export default function MainMenu() {
     const { t } = useTranslation("c-kowloon-knockout");
@@ -42,6 +43,7 @@ export default function MainMenu() {
                             />
                         </h1>
                         <div className="title-tagline">{t("menu-tagline", { defaultValue: "HONG KONG • 1997" })}</div>
+                        <span className="kk-ticket" aria-hidden="true">REEL 07 · FRAME 19A</span>
                     </div>
 
                     <motion.div
@@ -111,6 +113,9 @@ export default function MainMenu() {
                             transition={{ duration: 0.3 }}
                         >
                             <h2 className="controls-title">{t("controls", { defaultValue: "CONTROLS" })}</h2>
+                            <p className="controls-touch-note">
+                                {t("touch-note", { defaultValue: "On a phone or tablet, use the on-screen stick and punch buttons." })}
+                            </p>
                             <div className="controls-grid">
                                 <div className="controls-section">
                                     <h3>{t("movement", { defaultValue: "MOVEMENT" })}</h3>
