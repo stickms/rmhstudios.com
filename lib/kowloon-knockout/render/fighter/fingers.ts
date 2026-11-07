@@ -151,7 +151,7 @@ export function tightness(clip: ClipKey, side: Side, u: number): number {
     switch (clip) {
         case 'idle': return 0.92 + flutter(2, 0.03, side === 'l' ? 0 : 0.25);        // a fist that breathes with the bounce
         case 'block': return 0.97 + flutter(1, 0.015, side === 'l' ? 0 : 0.5);       // clenched behind the gloves
-        case 'walk': return 0.72 + flutter(2, 0.05, side === 'l' ? 0 : 0.5);         // loosens on the move
+        case 'walk': case 'strafe': return 0.72 + flutter(2, 0.05, side === 'l' ? 0 : 0.5); // loosens on the move
         case 'jab': case 'cross': case 'hook': case 'uppercut': {
             const strike = STRIKE[clip]!;
             if (strike.hand !== side) return 0.9 + flutter(1, 0.015);                // the guard hand stays shut

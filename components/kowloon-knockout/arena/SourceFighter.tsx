@@ -11,6 +11,7 @@ import { useFighterMotion } from './useFighterMotion';
 import { autoScaleToHeight, lateralYaw } from '@/lib/kowloon-knockout/render/fighter/fighterRig';
 import { resolveRig } from '@/lib/kowloon-knockout/render/fighter/boneMaps';
 import { buildSourceClips } from '@/lib/kowloon-knockout/render/fighter/sourceClips';
+import { applyFists } from '@/lib/kowloon-knockout/render/fighter/fingers';
 import { getFighterModel } from '@/lib/kowloon-knockout/render/fighter/models';
 import { loadSourceModel, loadTf2NativeWalk } from '@/lib/kowloon-knockout/render/fighter/sourceModels';
 import { modelFrame } from '@/lib/tf2-game/render/model-axes';
@@ -129,6 +130,8 @@ export default function SourceFighter({ seat, framesRef, modelId, showNameplate 
 
         const rig = resolveRig(model, def.family);
         const clips = buildSourceClips(rig, { height: TARGET_HEIGHT, worldScale: scale });
+        // Boxer's fists and living fingers on top of the body clips (the hands are read from the bind pose, before any mixer).
+        applyFists(clips, model, def.family);
         const mixer = new THREE.AnimationMixer(model);
         const actions: Partial<Record<ClipKey, THREE.AnimationAction>> = {};
         for (const key of CLIP_KEYS) {
