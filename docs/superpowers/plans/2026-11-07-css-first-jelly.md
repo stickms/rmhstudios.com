@@ -39,6 +39,7 @@
 - [ ] **Step 2: `pnpm install`** (postinstall runs `prisma generate`). Expected: exits 0.
 - [ ] **Step 3: Baseline** — `pnpm check:consistency --fast` and `pnpm test`. Expected: both pass on a clean `main`; save the output summary. If the environment cannot be fixed, write that in every PR and rely on CI, merging only on green.
 - [ ] **Step 4: Merge the design PR** ([#1465](https://github.com/stickms/rmhstudios.com/pull/1465), docs only) once its CI is green, then restart the branch from main.
+- [ ] **Step 5: Build the UI coverage inventory** (read-only audit, committed as `docs/superpowers/plans/2026-11-07-css-first-jelly-coverage.md`). One row per area of the UI, covering at least: `_site/` pages and the radial shell (top bar, hub, orb, globe dock, nav rail, veil); each glass role (`fill/pane/chrome/overlay/inset`), buttons, fields, `LiquidTabs`, `JellyGroup`, dropdowns, popovers, dialogs, sheets, tooltips, toasts, command palette; the `--app-*` tier apps (`.app-glass`, `app-theme.css`); every game's menu/pause/HUD chrome (play-fields stay excluded); eversion (`data-evert`); the other WebGL globes (elections, temple of joy, `GlobeCursor`); `liquid-morph` and the `GlassFilter` host; the `/jelly` lab; native-material routes (TF2 HUD editor, exempt); every `.style-*` theme; phone and desktop widths; RTL locales (`ar`, `ur`); print; `perf-lite`; `jellyMotion` Lively/Calm/Still; `electricArcs` Full/Clicks/Off. Columns: how the material reaches it today, every engine-owned selector or attribute it depends on (`data-liquid-canvas`, `data-jelly-gel`, `data-jelly-haze`, `data-jelly-flow`, `.jelly-flow`, `.jelly-haze-canvas`, `canvas[data-liquid-glass]` — found by `grep` across `*.css`, `*.ts`, `*.tsx`), which task changes it, and how it is verified. Any row whose CSS only works while the engine is installed is a defect to fix in the owning task.
 
 ### Task 1 (PR 1): Scene feed replaces the engine
 
@@ -125,3 +126,14 @@
 - [ ] **Step 2: Remove the stale gate entries** (each backlog list is one-directional: delete the entry in the same commit) and run `pnpm test`.
 - [ ] **Step 3: Rewrite the docs** to describe the CSS-first material, the scene feed, the amended spring rule ("one spring source, no per-component curves") and what was lost. Keep the identity and layout sections.
 - [ ] **Step 4: Verify** `pnpm check:consistency:full`, entry-bundle budget (`scripts/check-bundle-budget.ts`) not exceeded, final `frame-budget.mjs` numbers recorded. Ship as in Task 1 Steps 9–10.
+
+### Task 6: UI coverage sweep
+
+**Files:**
+- Create: `scripts/audit-ui-matrix.mjs` (Playwright, uses the pre-installed Chromium; route list comes from the coverage inventory)
+- Modify: the coverage inventory (mark every row verified), plus whatever a failing row needs
+
+- [ ] **Step 1: Write the sweep.** For each inventory route × theme (`light`, `graphite`, plus one other `.style-*`) × width (phone 390, desktop 1440) × `jellyMotion` (`lively`, `still`): load the page and assert there is no `canvas[data-liquid-glass]`, `.jelly-haze-canvas` or `.jelly-flow` in the DOM, that no `requestAnimationFrame` callback fires over 2 s of stillness (count with an init script, excluding the globe's own canvases), and save a screenshot. Also load one RTL locale (`ar`) and the print media emulation.
+- [ ] **Step 2: Run it** against `pnpm dev` (or a production build) together with `pnpm audit:pages` and `pnpm audit:jelly-clip`. Expected: zero assertion failures; screenshots reviewed for broken fills, missing rims and clipped content. If the app cannot run in this environment, say so in the PR and rely on the inventory plus CI.
+- [ ] **Step 3: Fix every failing row** in the task that owns it, re-run, and mark the inventory rows verified.
+- [ ] **Step 4: Verify and ship** as in Task 1 Steps 9–10.
