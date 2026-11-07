@@ -70,6 +70,7 @@
     "test:balatro": "vitest run --config vitest.balatro.config.ts",
     "test:balatro:e2e": "vitest run --config vitest.balatro-e2e.config.ts",
     "test:hearthworks:e2e": "tsx testing/hearthworks-e2e/run.ts",
+    "test:hearthworks:models": "tsx testing/hearthworks-models/run.ts",
     "test:balatro:lua": "lua5.1 lib/balatro/lua/spec/runner.lua",
     "balatro:gen-protocol": "node_modules/.bin/tsx scripts/balatro/gen-lua-protocol.ts",
     "balatro:mp-pack": "python3 -I scripts/balatro/build-game-pack.py --mp-only",

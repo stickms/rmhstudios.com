@@ -339,7 +339,7 @@ export default tseslint.config(
   // Last in the file on purpose: the general block above sets `no-console` for
   // the whole repo, and flat config resolves by order.
   {
-    files: ['testing/e2e/*.mjs', 'testing/hearthworks-e2e/*.ts'],
+    files: ['testing/e2e/*.mjs', 'testing/hearthworks-e2e/*.ts', 'testing/hearthworks-models/*.ts'],
     rules: {
       'no-console': 'off',
     },
