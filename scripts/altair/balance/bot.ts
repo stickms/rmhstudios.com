@@ -115,6 +115,7 @@ function steer(
   pickups: readonly PickupEntity[],
   p: SkillProfile,
   tick: number,
+  hpFrac: number,
 ): { x: number; y: number } {
   let rx = 0;
   let ry = 0;
@@ -165,6 +166,29 @@ function steer(
     const pull = calm ? 1.2 : p.lootPull;
     rx += (dx / d) * pull * 1.4;
     ry += (dy / d) * pull * 1.4;
+  }
+  // Fight, don't just flee: while healthy and not swamped, close on the nearest ordinary enemy so
+  // melee weapons and auras can work. A player who only ever runs never kills anything.
+  if (hpFrac > 0.55 && danger < 3.2) {
+    let target: EnemyEntity | null = null;
+    let targetD2 = 300 * 300;
+    for (const e of enemies) {
+      if (e.isBoss) continue;
+      const dx = e.x - px;
+      const dy = e.y - py;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < targetD2 && d2 > 70 * 70) {
+        targetD2 = d2;
+        target = e;
+      }
+    }
+    if (target) {
+      const dx = target.x - px;
+      const dy = target.y - py;
+      const d = Math.sqrt(targetD2) || 1;
+      rx += (dx / d) * 1.1;
+      ry += (dy / d) * 1.1;
+    }
   }
   // Slow circling keeps the bot from standing still or running into a dead end.
   const phase = tick / 240;
@@ -217,7 +241,8 @@ export function playBot(opts: BotOptions): BotRun {
 
     if (i % profile.reactionSteps === 0) {
       const w = run.world;
-      dir = steer(w.player.x, w.player.y, w.enemies, w.projectiles, w.pickups, profile, i);
+      const hpFrac = w.player.maxHp > 0 ? w.player.hp / w.player.maxHp : 0;
+      dir = steer(w.player.x, w.player.y, w.enemies, w.projectiles, w.pickups, profile, i, hpFrac);
     }
     live.keys.clear();
     live.dx = dir.x;
