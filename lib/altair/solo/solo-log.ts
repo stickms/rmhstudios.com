@@ -21,6 +21,7 @@
 // =============================================================================
 
 import { MAX_LOG_NUMBERS, MAX_RUN_STEPS } from '../verify/run-log';
+import { HEAT_MAX } from '../data/heat';
 
 export const SOLO_LOG_VERSION = 1;
 
@@ -63,6 +64,11 @@ export interface SoloLoadout {
    * previously recorded log still verifies.
    */
   stats?: Record<string, number>;
+  /**
+   * Difficulty tier (lib/altair/data/heat.ts). OPTIONAL and omitted at Heat 0: a loadout without it is a
+   * standard run, which replays exactly as it always did.
+   */
+  heat?: number;
 }
 
 export type SoloEnd = 'dead' | 'victory' | 'quit';
@@ -177,7 +183,8 @@ export function checkLoadout(l: unknown): l is SoloLoadout {
     typeof o.extraChoice === 'boolean' &&
     lvl(o.catalystAffinity, 20) &&
     lvl(o.greed, 20) &&
-    (o.stats === undefined || checkStats(o.stats))
+    (o.stats === undefined || checkStats(o.stats)) &&
+    (o.heat === undefined || lvl(o.heat, HEAT_MAX))
   );
 }
 

@@ -194,5 +194,7 @@ export function canonicalLoadout(l: SoloLoadout): SoloLoadout {
     greed: l.greed,
     // Present only when non-empty, so a legacy loadout (no stats) keeps its exact old shape.
     ...(keys.length > 0 ? { stats: Object.fromEntries(keys.map((k) => [k, l.stats![k]])) } : {}),
+    // Present only above Heat 0, for the same reason: a standard run keeps its exact old shape.
+    ...(l.heat ? { heat: l.heat } : {}),
   };
 }

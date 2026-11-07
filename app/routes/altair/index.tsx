@@ -54,7 +54,7 @@ function AltairPage() {
   const computeFinalCoins = useCallback(() => {
     const gameState = useAltairGameStore.getState()
     const meta = useAltairMetaStore.getState()
-    return finalCoinsFor(gameState.coins, meta.getUpgradeLevel('meta_greed'), gameState.doubleTime)
+    return finalCoinsFor(gameState.coins, meta.getUpgradeLevel('meta_greed'), gameState.doubleTime, gameState.heat)
   }, [])
 
   const submitScore = useCallback((keepalive = false) => {
@@ -98,11 +98,14 @@ function AltairPage() {
       // (signed out, offline) the run is played and saved locally exactly as before.
       setSoloSession(null)
       clearSoloSession()
-      const issued = await startServerRun(classId, wantDoubleTime)
+      // Heat needs a server-issued run (it is replay-verified and its tier is checked against the account's
+      // verified victories); a run that falls back to local play is always standard.
+      const wantHeat = useAltairSettingsStore.getState().heat
+      const issued = await startServerRun(classId, wantDoubleTime, wantHeat)
       const doubleTime = issued ? issued.doubleTime : wantDoubleTime
       const loadout = issued ? issued.loadout : loadoutFromUpgrades(meta.upgrades)
 
-      startRun(classId, doubleTime, bonuses, loadout.rerolls, loadout.banishes, loadout.revival, loadout.extraChoice)
+      startRun(classId, doubleTime, bonuses, loadout.rerolls, loadout.banishes, loadout.revival, loadout.extraChoice, loadout.heat ?? 0)
       meta.incrementRuns()
       runFinalizedRef.current = false
       scoreSubmittedRef.current = false

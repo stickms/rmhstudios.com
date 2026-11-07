@@ -34,6 +34,7 @@ import type { Camera, CatalystState, GameWorld, InputState, PassiveState, Weapon
 import { useAltairGameStore } from '../stores/game-store';
 import { finalCoinsFor } from './loadout';
 import { SIM_VERSION } from '../sim-version';
+import { clampHeat } from '../data/heat';
 import {
   KEY_DOWN,
   KEY_LEFT,
@@ -179,9 +180,11 @@ export class SoloRun {
     this.tileGen = createTileGenerator();
     this.rt = createSimRuntime(this.world);
     if (loadout.stats) this.rt.metaBonuses = { ...loadout.stats };
+    const heat = clampHeat(loadout.heat);
+    if (heat > 0) this.world.heat = heat;
     this.callbacks = this.makeCallbacks();
 
-    store().startRun(classId, doubleTime, {}, loadout.rerolls, loadout.banishes, loadout.revival, loadout.extraChoice);
+    store().startRun(classId, doubleTime, {}, loadout.rerolls, loadout.banishes, loadout.revival, loadout.extraChoice, clampHeat(loadout.heat));
     store().addWeapon(this.world.weapons[0]?.weaponId || '');
     useAltairGameStore.setState({ hp: this.world.player.hp, maxHp: this.world.player.maxHp });
 
@@ -438,7 +441,7 @@ export class SoloRun {
       level: s.level,
       xp: s.xp,
       runCoins: s.coins,
-      finalCoins: finalCoinsFor(s.coins, this.setup.loadout.greed, this.setup.doubleTime),
+      finalCoins: finalCoinsFor(s.coins, this.setup.loadout.greed, this.setup.doubleTime, this.setup.loadout.heat ?? 0),
       coinBreakdown: { ...s.coinBreakdown },
       bossesDefeated: [...s.bossesDefeatedThisRun],
     };

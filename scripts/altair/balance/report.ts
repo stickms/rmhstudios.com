@@ -9,6 +9,7 @@
  *   --classes a,b,c   class ids (default: every class in lib/altair/data/classes.ts)
  *   --seeds N         seeds per class, 1..N (default 2)
  *   --skill s         novice | average | expert (default average)
+ *   --heat N          Heat tier to play at, 0..20 (default 0)
  *   --minutes M       stop each run at M game minutes (default 22; a full clear is 20:00)
  *   --json path       also write the raw rows as JSON
  *
@@ -27,6 +28,7 @@ function arg(name: string, fallback: string): string {
 const skill = arg('skill', 'average') as BotSkill;
 const seeds = Math.max(1, Number(arg('seeds', '2')));
 const minutes = Math.max(1, Number(arg('minutes', '22')));
+const heat = Math.max(0, Math.min(20, Math.trunc(Number(arg('heat', '0')))));
 const wanted = arg('classes', '').split(',').filter(Boolean);
 const classIds = (wanted.length ? wanted : CLASSES.map((c) => c.id)).filter((id) => CLASSES.some((c) => c.id === id));
 const jsonPath = arg('json', '');
@@ -51,11 +53,11 @@ interface Row {
 }
 
 const rows: Row[] = [];
-out(`skill=${skill} seeds=${seeds} minutes<=${minutes}\n`);
+out(`skill=${skill} heat=${heat} seeds=${seeds} minutes<=${minutes}\n`);
 out('class            seed  end      time   kills  lvl  boss  coins   sim-ms  weapons');
 for (const classId of classIds) {
   for (let seed = 1; seed <= seeds; seed++) {
-    const run = playBot({ seed: 1000 + seed, classId, skill, maxSteps: minutes * 60 * 60 });
+    const run = playBot({ seed: 1000 + seed, classId, skill, heat, maxSteps: minutes * 60 * 60 });
     const r = run.result;
     const row: Row = {
       classId,
@@ -82,6 +84,6 @@ out(
   `\n${rows.length} runs  victories ${wins}  avg time ${fmtTime(avg((r) => r.time))}  avg kills ${Math.round(avg((r) => r.kills))}  avg coins ${Math.round(avg((r) => r.runCoins))}`,
 );
 if (jsonPath) {
-  writeFileSync(jsonPath, JSON.stringify({ skill, seeds, minutes, rows }, null, 2));
+  writeFileSync(jsonPath, JSON.stringify({ skill, heat, seeds, minutes, rows }, null, 2));
   out(`wrote ${jsonPath}`);
 }

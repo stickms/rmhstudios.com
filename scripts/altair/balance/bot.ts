@@ -48,6 +48,8 @@ export interface BotOptions {
   skill?: BotSkill;
   loadout?: SoloLoadout;
   doubleTime?: boolean;
+  /** Heat tier to play at (lib/altair/data/heat.ts). Default 0. */
+  heat?: number;
   /** Stop after this many sim steps (60 per second). Default: 30 minutes. */
   maxSteps?: number;
   viewport?: { w: number; h: number };
@@ -200,7 +202,7 @@ function steer(
 
 export function playBot(opts: BotOptions): BotRun {
   const profile = PROFILES[opts.skill ?? 'average'];
-  const loadout = opts.loadout ?? DEFAULT_LOADOUT;
+  const loadout: SoloLoadout = { ...(opts.loadout ?? DEFAULT_LOADOUT), ...(opts.heat ? { heat: opts.heat } : {}) };
   const rand = lcg(opts.seed * 31 + opts.classId.length);
   const live = createInputState();
   const run = new SoloRun({

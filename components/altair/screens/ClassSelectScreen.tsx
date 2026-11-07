@@ -5,13 +5,14 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Lock, Swords, Shield, Zap, Coins } from 'lucide-react';
+import { Lock, Swords, Shield, Zap, Coins, Flame, Minus, Plus } from 'lucide-react';
 import { CLASSES, ClassDef } from '@/lib/altair/data/classes';
 import { WEAPONS } from '@/lib/altair/data/weapons';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { asset } from '@/lib/storage/asset';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
 import { useAltairToastStore } from '@/lib/altair/stores/toast-store';
+import { HEAT_MAX, clampHeat, heatModifiers } from '@/lib/altair/data/heat';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
 
@@ -47,6 +48,28 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
   const doubleTimeUnlocked = useAltairMetaStore((s) => s.doubleTimeUnlocked);
   const doubleTime = useAltairSettingsStore((s) => s.doubleTime);
   const setDoubleTime = useAltairSettingsStore((s) => s.setDoubleTime);
+  const heat = useAltairSettingsStore((s) => s.heat);
+  const setHeat = useAltairSettingsStore((s) => s.setHeat);
+
+  // How much Heat this account may start comes from the server's ledger of verified victories.
+  // Signed out, offline or never won: 0, and the picker stays out of the way.
+  const [heatUnlocked, setHeatUnlocked] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/altair/heat')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body: { unlocked?: unknown } | null) => {
+        if (!cancelled && body) setHeatUnlocked(clampHeat(body.unlocked));
+      })
+      .catch(() => {
+        /* no Heat without the server: the run is standard */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  // A saved choice above what is unlocked (a different account on this browser) plays at the cap.
+  const activeHeat = Math.min(heat, heatUnlocked);
 
   const handleGridSelect = useCallback((i: number) => {
     const cls = CLASSES[i];
@@ -183,6 +206,9 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
         onToggle={() => setDoubleTime(!doubleTime)}
       />
 
+      {/* Heat */}
+      <HeatPicker unlocked={heatUnlocked} value={activeHeat} onChange={setHeat} />
+
       {/* Action buttons */}
       <div className="mt-auto flex gap-3">
         <button
@@ -205,6 +231,46 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
           {t("begin-run", { defaultValue: "Begin Run" })}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ── Heat picker ────────────────────────────────────────────────────────
+
+/** Heat tiers: harder enemies, better pay. Hidden until the account has cleared the game once. */
+function HeatPicker({ unlocked, value, onChange }: { unlocked: number; value: number; onChange: (heat: number) => void }) {
+  const { t } = useTranslation("c-altair");
+  if (unlocked <= 0) return null;
+  const mods = heatModifiers(value);
+  const pct = (m: number) => Math.round((m - 1) * 100);
+  const button =
+    'size-9 pointer-coarse:size-11 rounded-(--altair-radius) flex items-center justify-center border border-(--altair-border) text-(--altair-text) hover:bg-(--altair-surface-hover) disabled:opacity-40 disabled:cursor-not-allowed transition-colors';
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 rounded-(--altair-radius-lg) bg-(--altair-surface) border border-(--altair-border) mb-4">
+      <Flame size={16} className={value > 0 ? 'text-(--altair-amber)' : 'text-(--altair-text-dim)'} aria-hidden />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-2">
+          <span className="text-sm font-semibold text-(--altair-text)">{t("heat-label", { defaultValue: "Heat" })}</span>
+          <span className="text-sm font-mono text-(--altair-amber)" data-testid="heat-value">{value}</span>
+          {value === 0 && <span className="text-xs text-(--altair-text-dim)">{t("heat-standard", { defaultValue: "Standard" })}</span>}
+        </div>
+        {value > 0 && (
+          <p className="text-xs text-(--altair-text-muted)">
+            {t("heat-effects", { defaultValue: "Enemies +{{hp}}% health, +{{dmg}}% damage · Coins +{{pay}}%", hp: pct(mods.hp), dmg: pct(mods.damage), pay: pct(mods.payout) })}
+          </p>
+        )}
+        {value === unlocked && unlocked < HEAT_MAX && (
+          <p className="text-xs text-(--altair-text-dim)">
+            {t("heat-next", { defaultValue: "Win at Heat {{tier}} to unlock Heat {{next}}", tier: value, next: value + 1 })}
+          </p>
+        )}
+      </div>
+      <button type="button" className={button} disabled={value <= 0} onClick={() => onChange(value - 1)} aria-label={t("heat-lower", { defaultValue: "Lower Heat" })}>
+        <Minus size={14} aria-hidden />
+      </button>
+      <button type="button" className={button} disabled={value >= Math.min(unlocked, HEAT_MAX)} onClick={() => onChange(value + 1)} aria-label={t("heat-raise", { defaultValue: "Raise Heat" })}>
+        <Plus size={14} aria-hidden />
+      </button>
     </div>
   );
 }

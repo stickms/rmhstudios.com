@@ -20,7 +20,14 @@
 // leaderboards. Never delete or repurpose an id; change its name, art or numbers instead.
 // =============================================================================
 
-export const SIM_VERSION = 1;
+/**
+ * History (newest last):
+ *   1  the game as first stamped.
+ *   2  Heat (difficulty tiers): heat > 0 changes enemy stats, spawn rate, boss health and payout.
+ *      Heat 0 plays exactly as version 1; the bump is so a Heat run can never be replayed by a server
+ *      that does not know Heat.
+ */
+export const SIM_VERSION: number = 2;
 
 /** The version a log was played on; logs that predate the stamp are version 1. */
 export function logSimVersion(log: { sim?: unknown }): number {

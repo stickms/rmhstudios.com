@@ -7,7 +7,7 @@ import { verifySoloRun, replaySoloRun, type TrustedSoloSetup } from '../verify-s
 import { SEV_INPUT, SEV_PICK, checkSoloLog, type SoloLog } from '../solo-log';
 import { loadoutFromUpgrades } from '../loadout';
 import { SIM_VERSION } from '../../sim-version';
-import { playSoloRun, type Recorded } from './fixture';
+import { playSoloRun, LOADOUT, type Recorded } from './fixture';
 
 vi.setConfig({ testTimeout: 180_000 });
 
@@ -30,13 +30,16 @@ describe('the sim version stamp', () => {
     expect(out).toMatchObject({ ok: false, reason: 'stale_sim' });
   });
 
-  it('a log recorded before the stamp existed is version 1 and still verifies while the server is on 1', async () => {
-    if (SIM_VERSION !== 1) return; // after a bump, legacy logs are stale by definition
+  it('a log recorded before the stamp existed is version 1: it verifies on a server at 1 and is stale on any later one', async () => {
     const log = clone(honest.log);
     delete log.sim;
     const out = await verifySoloRun(honest.trusted, log, honest.claim);
-    expect(out.ok).toBe(true);
-    if (out.ok) expect(out.verified).toEqual(honest.result);
+    if (SIM_VERSION === 1) {
+      expect(out.ok).toBe(true);
+      if (out.ok) expect(out.verified).toEqual(honest.result);
+    } else {
+      expect(out).toMatchObject({ ok: false, reason: 'stale_sim' });
+    }
   });
 
   it('a wrong setup is still a setup_mismatch even when the version is also stale', async () => {
@@ -52,6 +55,35 @@ describe('the sim version stamp', () => {
       log.sim = bad;
       expect(checkSoloLog(log)).toMatchObject({ ok: false, reason: 'bad sim version' });
     }
+  });
+});
+
+describe('a run at Heat', () => {
+  let heated: Recorded;
+  beforeAll(() => {
+    heated = playSoloRun({ loadout: { ...LOADOUT, heat: 10 } });
+  }, 120_000);
+
+  it('replays to exactly the numbers the player saw', async () => {
+    expect(heated.log.loadout.heat).toBe(10);
+    const out = await verifySoloRun(heated.trusted, clone(heated.log), heated.claim);
+    expect(out.ok).toBe(true);
+    if (out.ok) expect(out.verified).toEqual(heated.result);
+  });
+
+  it('actually plays differently from the same seed at Heat 0 (the modifiers are wired into the sim)', () => {
+    expect({ ...heated.result }).not.toEqual({ ...honest.result });
+  });
+
+  it('is refused when the issued run was standard (the log cannot raise its own Heat)', async () => {
+    const trusted = { ...heated.trusted, loadout: { ...heated.trusted.loadout, heat: undefined } };
+    expect(await verifySoloRun(trusted, clone(heated.log), heated.claim)).toMatchObject({ ok: false, reason: 'setup_mismatch' });
+  });
+
+  it('is refused when the log claims a different tier than the one issued', async () => {
+    const log = clone(heated.log);
+    log.loadout.heat = 3;
+    expect(await verifySoloRun(heated.trusted, log, heated.claim)).toMatchObject({ ok: false, reason: 'setup_mismatch' });
   });
 });
 
@@ -100,7 +132,10 @@ describe('recorded REAL browser runs', () => {
         loadout: rec.log.loadout,
         wallMs: (rec.log.steps / 60) * 1000 + 5000,
       };
-      const out = await verifySoloRun(trusted, clone(rec.log), {
+      // These were recorded before runs were stamped, so they are version 1. Stamping them as the current
+      // version proves the claim that matters: a standard (Heat 0) run still replays to the same numbers
+      // after every version bump, so a bump changes what the server accepts, never what Heat 0 plays like.
+      const out = await verifySoloRun(trusted, { ...clone(rec.log), sim: SIM_VERSION }, {
         victory: rec.result.status === 'victory',
         kills: rec.result.kills,
         level: rec.result.level,

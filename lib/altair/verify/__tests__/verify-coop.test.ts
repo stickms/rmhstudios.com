@@ -69,11 +69,12 @@ describe('the sim version stamp', () => {
     expect(await verifyCoopRun(honest.trusted, log, honest.claim)).toMatchObject({ ok: false, reason: 'stale_sim' });
   });
 
-  it('a log recorded before the stamp existed is version 1 and still verifies while the server is on 1', async () => {
-    if (SIM_VERSION !== 1) return; // after a bump, legacy logs are stale by definition
+  it('a log recorded before the stamp existed is version 1: it verifies on a server at 1 and is stale on any later one', async () => {
     const log = clone(honest.log);
     delete log.sim;
-    expect((await verifyCoopRun(honest.trusted, log, honest.claim)).ok).toBe(true);
+    const out = await verifyCoopRun(honest.trusted, log, honest.claim);
+    if (SIM_VERSION === 1) expect(out.ok).toBe(true);
+    else expect(out).toMatchObject({ ok: false, reason: 'stale_sim' });
   });
 
   it('refuses a malformed version field outright', () => {

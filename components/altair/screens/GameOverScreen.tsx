@@ -9,6 +9,8 @@ import { useTranslation } from "react-i18next";
 import { useAltairGameStore } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { altairSfx } from '@/lib/altair/audio/sfx';
+import { finalCoinsFor } from '@/lib/altair/solo/loadout';
+import { heatModifiers } from '@/lib/altair/data/heat';
 import { Trophy, Skull, Coins, Clock, Crosshair, Layers } from 'lucide-react';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
 
@@ -44,6 +46,7 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
   const weapons = useAltairGameStore((s) => s.weapons);
   const selectedClassId = useAltairGameStore((s) => s.selectedClassId);
   const doubleTime = useAltairGameStore((s) => s.doubleTime);
+  const heat = useAltairGameStore((s) => s.heat);
   const greedLevel = useAltairMetaStore((s) => s.getUpgradeLevel('meta_greed'));
 
   const { t } = useTranslation("c-altair");
@@ -56,9 +59,9 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
 
   // Calculate final coins with multipliers
   const greedMultiplier = 1 + greedLevel * 0.1;
-  const doubleTimeMultiplier = doubleTime ? 1.5 : 1;
-  const totalMultiplier = greedMultiplier * doubleTimeMultiplier;
-  const finalCoins = Math.floor(coins * totalMultiplier);
+  const heatMultiplier = heatModifiers(heat).payout;
+  // The same function the server pays by, so the number shown is the number paid.
+  const finalCoins = finalCoinsFor(coins, greedLevel, doubleTime, heat);
 
   // Award coins to meta store on render (in a real implementation this would be an effect)
   // For now, just display
@@ -167,6 +170,12 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
                 <div className="flex justify-between text-(--altair-text-muted)">
                   <span>{t("double-time-game-over-screen", { defaultValue: "Double Time (×1.5)" })}</span>
                   <span className="text-(--altair-warning)">×1.5</span>
+                </div>
+              )}
+              {heat > 0 && (
+                <div className="flex justify-between text-(--altair-text-muted)">
+                  <span>{t("heat-multiplier", { defaultValue: "Heat {{tier}} (×{{multiplier}})", tier: heat, multiplier: heatMultiplier.toFixed(2) })}</span>
+                  <span className="text-(--altair-amber)">×{heatMultiplier.toFixed(2)}</span>
                 </div>
               )}
             </div>

@@ -112,8 +112,15 @@ left. Payout grows with difficulty tier so a player who pushes harder is paid fo
 Each step is its own pull request, merged after CI is green; any step that changes the sim bumps
 `SIM_VERSION`.
 
-1. **Version stamp** (this PR): `SIM_VERSION`, logs stamped, stale logs settled as `unverified`.
-2. **Heat**: the tier model, server validation, payout scaling, and the bot gates for it.
+1. **Version stamp** (shipped, #1427): `SIM_VERSION`, logs stamped, stale logs settled as `unverified`.
+2. **Heat** (shipped; `SIM_VERSION` is now 2): `lib/altair/data/heat.ts`. Tier N+1 unlocks by a verified
+   victory at tier N, derived from the server's ledger (no migration: the tier rides inside the issued
+   loadout). Each tier adds +10% enemy health, +5% damage, +1% speed, +4% spawn budget, +12% boss health
+   and +12% coins; Heat 0 is the identity. First bot measurement (`--heat`, same seed, no meta upgrades):
+   at Heat 10 the knight dies at 4:11 against 5:52 at Heat 0, but the plague doctor dies at 0:54 against
+   5:22, a class whose slow-poison start cannot cope with doubled enemy health. The bot has no upgrades
+   and a real account needs ten wins to reach that tier, so this overstates it, but the early-game
+   sensitivity is real and the curve gets tuned in the balance pass (step 6).
 3. **The 5:00 wall**: rework the Hollow King and the early curve; tune against the bot.
 4. **Classes, two or three per PR**: new names, art and abilities, balanced with the bot.
 5. **Enemy roster and the other bosses**, with their sprites.
