@@ -7,7 +7,6 @@ import {
   CLIP_FALLBACKS,
   CLIP_SLOTS,
   EMPTY_MANIFEST,
-  MANIFEST_URL,
   MODEL_GAMES,
   clipNamesOf,
   getManifest,
@@ -16,6 +15,7 @@ import {
   missingRequiredClips,
   parseManifest,
   resetManifestForTests,
+  subscribeManifest,
   resolveClip,
 } from '../model-manifest';
 import { FIGURE_SCALE, figureWorldHeight, modelScale } from '../figure-scale';
@@ -119,8 +119,8 @@ describe('parseManifest (v2: remote sources, no files)', () => {
   });
 });
 
-describe('the committed manifest.json', () => {
-  const raw = JSON.parse(readFileSync(path.join(process.cwd(), 'public/models/hearthworks/manifest.json'), 'utf8')) as { version: number; models: Record<string, unknown> };
+describe('the bundled models.manifest.json', () => {
+  const raw = JSON.parse(readFileSync(path.join(process.cwd(), 'lib/hearthworks/skins/models.manifest.json'), 'utf8')) as { version: number; models: Record<string, unknown> };
   const parsed = parseManifest(raw);
 
   it('is v2 and accounts for every skin: a remote model or an explicit stand-in', () => {
@@ -150,9 +150,9 @@ describe('the committed manifest.json', () => {
     }
   });
 
-  it('ships no model data: nothing but the manifest and the credits in the folder', () => {
+  it('ships no model data: nothing but the credits in the public folder (the manifest is bundled)', () => {
     const files = readdirSync(path.join(process.cwd(), 'public/models/hearthworks'));
-    expect(files.sort()).toEqual(['CREDITS.md', 'manifest.json']);
+    expect(files.sort()).toEqual(['CREDITS.md']);
   });
 });
 
@@ -219,48 +219,31 @@ describe('figure size contract', () => {
   });
 });
 
-describe('loadManifest', () => {
+describe('the bundled manifest is what the game reads', () => {
   beforeEach(() => resetManifestForTests());
 
-  const ok = (body: unknown, status = 200) =>
-    vi.fn(async (_url?: unknown, _init?: unknown) => ({ ok: status >= 200 && status < 300, status, json: async () => body }) as unknown as Response);
-
-  it('fetches the manifest once and caches it', async () => {
-    const f = ok(v2({ citizen: entry() }));
-    const a = await loadManifest({ fetch: f });
-    const b = await loadManifest({ fetch: f });
-    expect(f).toHaveBeenCalledTimes(1);
-    expect(f.mock.calls[0][0]).toBe(MANIFEST_URL);
-    expect(a).toBe(b);
-    expect(getManifest().models.citizen).toBeDefined();
+  it('is available immediately and without any request', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    try {
+      const a = await loadManifest();
+      const b = await loadManifest();
+      expect(a).toBe(b);
+      expect(a).toBe(getManifest());
+      expect(getManifest().models.citizen).toBeDefined();
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
-  it.each([
-    ['a 404', () => ok({}, 404)],
-    ['invalid JSON', () => vi.fn(async () => ({ ok: true, json: async () => { throw new SyntaxError('x'); } }) as unknown as Response)],
-    ['a network error', () => vi.fn(async () => { throw new TypeError('offline'); })],
-    ['an invalid manifest', () => ok({ version: 9, models: {} })],
-    ['the retired v1 manifest', () => ok({ version: 1, models: {} })],
-  ])('never throws on %s: the answer is "no models"', async (_n, make) => {
-    const m = await loadManifest({ fetch: make() });
-    expect(m.models).toEqual({});
-  });
-
-  it('retries a failed fetch only after the retry window', async () => {
-    let t = 1_000;
-    const bad = vi.fn(async () => { throw new TypeError('offline'); });
-    await loadManifest({ fetch: bad, now: () => t });
-    await loadManifest({ fetch: bad, now: () => (t += 5_000) });
-    expect(bad).toHaveBeenCalledTimes(1);
-    const good = ok(v2({ citizen: entry() }));
-    const m = await loadManifest({ fetch: good, now: () => (t += 60_000) });
-    expect(good).toHaveBeenCalledTimes(1);
-    expect(m.models.citizen).toBeDefined();
-  });
-
-  it('shares one request between concurrent callers', async () => {
-    const f = ok(v2({}));
-    await Promise.all([loadManifest({ fetch: f }), loadManifest({ fetch: f })]);
-    expect(f).toHaveBeenCalledTimes(1);
+  it('tells subscribers when a test replaces it', () => {
+    const l = vi.fn();
+    const off = subscribeManifest(l);
+    resetManifestForTests(parseManifest(v2({ citizen: entry() })));
+    expect(l).toHaveBeenCalledTimes(1);
+    off();
+    resetManifestForTests();
+    expect(l).toHaveBeenCalledTimes(1);
   });
 });

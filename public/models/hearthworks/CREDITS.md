@@ -1,7 +1,7 @@
 # Hearthworks character models: credits and provenance
 
-**Nothing Valve-owned is committed in this repository.** This folder holds `manifest.json` (which model, which skin,
-which animation sequences, as text) and this file. The characters themselves are loaded **at run time** from the
+**Nothing Valve-owned is committed in this repository.** This folder holds only this file; the manifest (which model, which skin,
+which animation sequences, as text) is `lib/hearthworks/skins/models.manifest.json`, bundled into the app. The characters themselves are loaded **at run time** from the
 project's own asset channels in Cloudflare R2, the same ones the Source-engine games on this site use
 (`docs/tf2-game.md`, "Game assets" and "Models").
 

@@ -1,7 +1,7 @@
 /**
  * The page the model harness opens in a real Chromium: ONE Hearthworks person (`SkinFigure`, the production
  * component) on a ground plane, driven from the outside through `window.hw`. The figure loads its model exactly as
- * the game does: manifest.json → the asset channel's `mdl/index.json` → mesh GLB + anim pack, by same-origin URLs
+ * the game does: the bundled models.manifest.json → the asset channel's `mdl/index.json` → mesh GLB + anim pack, by same-origin URLs
  * (the harness server forwards those to the live site).
  *
  *   /?skin=gman&view=front|three|side|back|top&held=1
@@ -19,7 +19,7 @@ import { useSkinModel } from '../../../components/hearthworks/scene/useSkinModel
 import { newDrive, pushTrigger, type AirState, type FigureDrive } from '../../../lib/hearthworks/skins/animator';
 import { figureWorldHeight } from '../../../lib/hearthworks/skins/figure-scale';
 import { SKIN_IDS, isSkinId, type SkinId } from '../../../lib/hearthworks/skins/catalog';
-import type { OneShotSlot } from '../../../lib/hearthworks/skins/model-manifest';
+import { getManifest, resetManifestForTests, type Manifest, type OneShotSlot } from '../../../lib/hearthworks/skins/model-manifest';
 
 interface HwProbe {
   status(): { status: string; skin: string; mdl: string | null; triangles: number | null; height: number | null; clips: string[] };
@@ -33,6 +33,17 @@ declare global {
     hw: HwProbe;
     __hwState: ReturnType<HwProbe['status']>;
   }
+}
+
+// HW_TF2_SKIN=<n> (set when the page is bundled) shows the TF2 classes in another skin family (1 = BLU).
+const tf2Family = process.env.HW_TF2_SKIN;
+if (tf2Family) {
+  const base = getManifest();
+  const models: Manifest['models'] = {};
+  for (const [id, e] of Object.entries(base.models)) {
+    models[id as keyof Manifest['models']] = e && e.game === 'tf2' ? { ...e, skin: Number(tf2Family) } : e;
+  }
+  resetManifestForTests({ ...base, models });
 }
 
 const params = new URLSearchParams(location.search);
