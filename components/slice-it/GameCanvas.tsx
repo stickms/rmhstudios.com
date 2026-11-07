@@ -295,6 +295,126 @@ function drawNoteStem(
   }
 }
 
+/* ─── Cached blur layers ─────────────────────────────────────────────────────
+ *
+ * `shadowBlur` is the dearest thing a 2D canvas does, and Firefox pays for it on
+ * the CPU: the playfield used to run four full-width blurred trough fills plus two
+ * blurred fills for EVERY visible note, every frame. That is the stutter Firefox
+ * players saw (Chrome rasterises the blur on the GPU and hides it). The shapes
+ * being blurred do not change from frame to frame, so each is blurred ONCE into an
+ * offscreen layer and then drawn with `drawImage`, which every browser does for
+ * free. Same pixels, none of the per-frame blur.
+ *
+ * Canvas shadow blur and offsets are in DEVICE pixels and ignore the transform, so
+ * the layers are built at device resolution with the live ratio and keyed on it.
+ */
+
+interface ShadowPass {
+  color: string;
+  blur: number;
+  dx: number;
+  dy: number;
+}
+
+const NOTE_SPRITE_LIMIT = 48;
+const noteSprites = new Map<string, HTMLCanvasElement>();
+
+/** Draw a note body with its shadow passes from a cached sprite. */
+function drawShadowedNote(
+  ctx: CanvasRenderingContext2D,
+  shape: NoteShape,
+  cx: number,
+  cy: number,
+  size: number,
+  vertical: boolean,
+  color: string,
+  passes: readonly ShadowPass[],
+  dpr: number,
+): void {
+  const key = `${shape}|${size}|${vertical}|${color}|${dpr}|${passes
+    .map((p) => `${p.color},${p.blur},${p.dx},${p.dy}`)
+    .join(';')}`;
+  let sprite = noteSprites.get(key);
+  if (!sprite) {
+    // The widest any note shape reaches from its centre is 0.75 × size (the bar
+    // and the arrow); the blur's visible tail is about 1.7 × the blur radius.
+    let reach = 0;
+    for (const pass of passes) reach = Math.max(reach, pass.blur * 1.7 + Math.max(Math.abs(pass.dx), Math.abs(pass.dy)));
+    const side = Math.ceil(2 * (size * 0.75 * dpr + reach + 2));
+    sprite = document.createElement('canvas');
+    sprite.width = side;
+    sprite.height = side;
+    const sctx = sprite.getContext('2d');
+    if (!sctx) return;
+    sctx.scale(dpr, dpr);
+    const centre = side / dpr / 2;
+    sctx.fillStyle = color;
+    for (const pass of passes) {
+      sctx.shadowColor = pass.color;
+      sctx.shadowBlur = pass.blur;
+      sctx.shadowOffsetX = pass.dx;
+      sctx.shadowOffsetY = pass.dy;
+      traceNoteBody(sctx, shape, centre, centre, size, vertical);
+      sctx.fill();
+    }
+    if (noteSprites.size >= NOTE_SPRITE_LIMIT) noteSprites.clear();
+    noteSprites.set(key, sprite);
+  }
+  const span = sprite.width / dpr;
+  ctx.drawImage(sprite, cx - span / 2, cy - span / 2, span, span);
+}
+
+let troughLayer: { key: string; canvas: HTMLCanvasElement } | null = null;
+
+/**
+ * The neumorphic troughs for every lane, blurred once. Returns null if a 2D
+ * context cannot be had, in which case the caller draws them the slow way.
+ */
+function getTroughLayer(options: {
+  W: number;
+  H: number;
+  dpr: number;
+  vertical: boolean;
+  lanes: readonly number[];
+  thickness: number;
+  fill: string;
+  dark: string;
+  light: string;
+  glow: number;
+}): HTMLCanvasElement | null {
+  const { W, H, dpr, vertical, lanes, thickness, fill, dark, light, glow } = options;
+  const key = `${W}x${H}|${dpr}|${vertical}|${lanes.join(',')}|${thickness}|${fill}|${dark}|${light}|${glow}`;
+  if (troughLayer?.key === key) return troughLayer.canvas;
+
+  const canvas = troughLayer?.canvas ?? document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const c = canvas.getContext('2d');
+  if (!c) return null;
+  c.scale(dpr, dpr);
+  const w = W / dpr;
+  const h = H / dpr;
+  const lift = glow * 3;
+  c.fillStyle = fill;
+  for (const lane of lanes) {
+    const x = vertical ? lane - thickness / 2 : 0;
+    const y = vertical ? 0 : lane - thickness / 2;
+    const rw = vertical ? thickness : w;
+    const rh = vertical ? h : thickness;
+    c.shadowColor = dark;
+    c.shadowBlur = glow * 10;
+    c.shadowOffsetX = lift;
+    c.shadowOffsetY = lift;
+    c.fillRect(x, y, rw, rh);
+    c.shadowColor = light;
+    c.shadowOffsetX = -lift;
+    c.shadowOffsetY = -lift;
+    c.fillRect(x, y, rw, rh);
+  }
+  troughLayer = { key, canvas };
+  return canvas;
+}
+
 /**
  * Trace a tap note's BODY for a given skin shape, centred on `(cx, cy)`.
  *
@@ -1977,6 +2097,24 @@ export function GameCanvas() {
 
     // 1. Draw Tracks (Neumorphic Trough)
     const { shadowDark, shadowLight } = theme;
+    // The blurred troughs are the same every frame, so they are blurred once (see
+    // "Cached blur layers") and drawn here; the per-lane loop below then only
+    // draws the rails.
+    const troughSprite = glow
+      ? getTroughLayer({
+          W,
+          H,
+          dpr,
+          vertical: isMobileV,
+          lanes: LANE_POS,
+          thickness: BAR_H * 1.5,
+          fill: bgColor,
+          dark: shadowDark,
+          light: shadowLight,
+          glow,
+        })
+      : null;
+    if (troughSprite) ctx.drawImage(troughSprite, 0, 0, w, h);
     LANE_POS.forEach((laneVal, i) => {
       const trackThickness = BAR_H * 1.5;
       // V13 — the rail's own colour, which is what saturates with combo. The
@@ -1993,32 +2131,34 @@ export function GameCanvas() {
       // one flat trough. The comment on `glow` above claimed "offsets are
       // always 0 here" — this is the code that made that untrue.
       const troughLift = glow * 3;
-      if (isMobileV) {
-        // Vertical tracks running top-to-bottom
-        ctx.shadowColor = shadowDark;
-        ctx.shadowBlur = glow * 10;
-        ctx.shadowOffsetX = troughLift;
-        ctx.shadowOffsetY = troughLift;
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(laneVal - trackThickness / 2, 0, trackThickness, h);
-        ctx.shadowColor = shadowLight;
-        ctx.shadowBlur = glow * 10;
-        ctx.shadowOffsetX = -troughLift;
-        ctx.shadowOffsetY = -troughLift;
-        ctx.fillRect(laneVal - trackThickness / 2, 0, trackThickness, h);
-      } else {
-        // Horizontal tracks running left-to-right (desktop)
-        ctx.shadowColor = shadowDark;
-        ctx.shadowBlur = glow * 10;
-        ctx.shadowOffsetX = troughLift;
-        ctx.shadowOffsetY = troughLift;
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, laneVal - trackThickness / 2, w, trackThickness);
-        ctx.shadowColor = shadowLight;
-        ctx.shadowBlur = glow * 10;
-        ctx.shadowOffsetX = -troughLift;
-        ctx.shadowOffsetY = -troughLift;
-        ctx.fillRect(0, laneVal - trackThickness / 2, w, trackThickness);
+      if (!troughSprite) {
+        if (isMobileV) {
+          // Vertical tracks running top-to-bottom
+          ctx.shadowColor = shadowDark;
+          ctx.shadowBlur = glow * 10;
+          ctx.shadowOffsetX = troughLift;
+          ctx.shadowOffsetY = troughLift;
+          ctx.fillStyle = bgColor;
+          ctx.fillRect(laneVal - trackThickness / 2, 0, trackThickness, h);
+          ctx.shadowColor = shadowLight;
+          ctx.shadowBlur = glow * 10;
+          ctx.shadowOffsetX = -troughLift;
+          ctx.shadowOffsetY = -troughLift;
+          ctx.fillRect(laneVal - trackThickness / 2, 0, trackThickness, h);
+        } else {
+          // Horizontal tracks running left-to-right (desktop)
+          ctx.shadowColor = shadowDark;
+          ctx.shadowBlur = glow * 10;
+          ctx.shadowOffsetX = troughLift;
+          ctx.shadowOffsetY = troughLift;
+          ctx.fillStyle = bgColor;
+          ctx.fillRect(0, laneVal - trackThickness / 2, w, trackThickness);
+          ctx.shadowColor = shadowLight;
+          ctx.shadowBlur = glow * 10;
+          ctx.shadowOffsetX = -troughLift;
+          ctx.shadowOffsetY = -troughLift;
+          ctx.fillRect(0, laneVal - trackThickness / 2, w, trackThickness);
+        }
       }
 
       // The rail line, and V13's glow along it.
@@ -2547,20 +2687,29 @@ export function GameCanvas() {
           const lift = glow && skin.neumorphic ? Math.max(2, size * 0.1) : 0;
           ctx.save();
           ctx.fillStyle = color;
-          traceNoteBody(ctx, skin.noteShape, nx, ny, size, isMobileV);
-          if (lift > 0) {
-            ctx.shadowColor = shadowDark;
-            ctx.shadowBlur = glow * 9;
-            ctx.shadowOffsetX = lift;
-            ctx.shadowOffsetY = lift;
+          if (glow > 0) {
+            // Both shadow passes (or the single base shadow on a flat skin) come
+            // from one cached sprite — see "Cached blur layers".
+            drawShadowedNote(
+              ctx,
+              skin.noteShape,
+              nx,
+              ny,
+              size,
+              isMobileV,
+              color,
+              lift > 0
+                ? [
+                    { color: shadowDark, blur: glow * 9, dx: lift, dy: lift },
+                    { color: shadowLight, blur: glow * 9, dx: -lift, dy: -lift },
+                  ]
+                : [{ color: theme.noteShadow, blur: glow * 8, dx: 4, dy: 4 }],
+              dpr,
+            );
+          } else {
+            traceNoteBody(ctx, skin.noteShape, nx, ny, size, isMobileV);
             ctx.fill();
-            // Same path, opposite side. Neumorphism is the PAIR — either shadow
-            // alone is just a bevel.
-            ctx.shadowColor = shadowLight;
-            ctx.shadowOffsetX = -lift;
-            ctx.shadowOffsetY = -lift;
           }
-          ctx.fill();
           ctx.restore();
 
           // ── The rim that actually makes it read as raised ────────────────

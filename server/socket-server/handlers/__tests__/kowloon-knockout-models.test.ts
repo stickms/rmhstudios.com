@@ -43,11 +43,11 @@ describe('kowloon knockout: fighter model ids', () => {
     const guest = w.make('g1');
     host.fire('kk:create_room', { mode: 'ffa', isPublic: true, fighterModel: 'tf2_heavy' });
     const code = host.last('kk:room_created').code as string;
-    guest.fire('kk:join_room', { code, fighterModel: 'hl2_alyx' });
+    guest.fire('kk:join_room', { code, fighterModel: 'hl2_barney' });
     const lobby = host.last('kk:lobby_update');
-    expect(modelsOf(lobby).slice(0, 2)).toEqual(['tf2_heavy', 'hl2_alyx']);
+    expect(modelsOf(lobby).slice(0, 2)).toEqual(['tf2_heavy', 'hl2_barney']);
     host.fire('kk:start');
-    expect(guest.last('kk:match_start').seats.map((s: any) => s.modelId).slice(0, 2)).toEqual(['tf2_heavy', 'hl2_alyx']);
+    expect(guest.last('kk:match_start').seats.map((s: any) => s.modelId).slice(0, 2)).toEqual(['tf2_heavy', 'hl2_barney']);
   });
 
   it('coerces a forged or missing model id to the default Y-Bot', () => {

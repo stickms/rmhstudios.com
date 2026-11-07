@@ -2,7 +2,10 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { Suspense } from 'react';
 
+import { GameHero, GamePlayBar } from '@/components/steam/GameHero';
 import { SteamPane } from '@/components/steam/SteamPane';
+import { games } from '@/lib/games';
+import { hueFromString } from '@/lib/builds/curated';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
 import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
@@ -72,8 +75,25 @@ export const Route = createFileRoute('/games/_library/slice-it')({
 
 function SliceItHubPage() {
   const data = Route.useLoaderData();
+  const entry = games.find((game) => game.id === 'slice-it');
   return (
-    <SteamPane title="Slice It!">
+    <SteamPane
+      title="Slice It!"
+      hero={
+        entry ? (
+          <>
+            <GameHero
+              title={entry.title}
+              image={entry.imagePath ?? null}
+              bannerUrl={entry.bannerPath ?? null}
+              logoUrl={entry.logoPath ?? null}
+              hue={hueFromString(entry.id)}
+            />
+            <GamePlayBar href={entry.href} label={entry.cta} />
+          </>
+        ) : undefined
+      }
+    >
       <Suspense fallback={null}>
         <SliceItHub data={data} />
       </Suspense>

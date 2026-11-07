@@ -6,12 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { GameTracker } from '@/components/arcade/GameTracker';
 import { HowToPlay } from '@/components/games/HowToPlay';
 import { NightrailTrickBoard } from '@/components/games/NightrailTrickBoard';
-import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import type { LibraryExtras } from '@/lib/games/detail-types';
 import { formatLastPlayed, formatPlaytime } from '@/lib/games/format-playtime';
-import { heroSource, isOffSite } from '@/lib/games/library';
+import { isOffSite } from '@/lib/games/library';
 import type { GuideSummary, RatingAgg, ReviewView } from '@/lib/games/reviews';
 import type { TrickView } from '@/lib/trick-week/trick-week';
+import { GameHero } from './GameHero';
 import { SteamAchievements } from './SteamAchievements';
 import { CollectionMenu } from './CollectionMenu';
 import { SteamCards } from './SteamCards';
@@ -53,9 +53,6 @@ export type GamePageData = {
 export function GamePage({ data }: { data: GamePageData }) {
   const { t } = useTranslation('games-hub');
   const { extras } = data;
-  const hero = heroSource({ thumbnailUrl: data.image, bannerUrl: data.bannerUrl, hue: data.hue });
-  // The card stands in front of the hero art whenever it has one to show (over the banner, or alone with a blurred copy).
-  const hasCapsule = hero.kind === 'cropped-card' || (hero.kind === 'banner' && !!data.image);
   const isGame = data.kind === 'game';
   const offSite = isOffSite(data.playHref);
   const done = extras.achievements.filter((a) => a.unlocked).length;
@@ -77,71 +74,13 @@ export function GamePage({ data }: { data: GamePageData }) {
         {t('steam-back-library', { defaultValue: 'Library' })}
       </Link>
 
-      <div className="stm-hero" data-hero={hero.kind} data-capsule={hasCapsule ? 'true' : undefined}>
-        {hero.kind === 'banner' && hero.src ? (
-          <>
-            {/* The title's own banner is the backdrop; the card sits in front of it, as on Steam. */}
-            <OptimizedImage
-              src={hero.src}
-              alt=""
-              // Full-bleed across the viewport: `fullWidth` sizes the candidate from the real viewport and the screen's
-              // density (not from the 1280 hint), and `width` picks the default file for browsers that ignore srcset.
-              layout="fullWidth"
-              width={1920}
-              priority
-              className="stm-hero-img"
-              // Stamped `data-loaded` by the site's media-reveal script as it loads.
-              suppressHydrationWarning
-            />
-            {data.image ? (
-              <OptimizedImage
-                src={data.image}
-                alt=""
-                width={320}
-                height={480}
-                priority
-                className="stm-hero-capsule"
-                suppressHydrationWarning
-              />
-            ) : null}
-          </>
-        ) : hero.kind === 'cropped-card' && hero.src ? (
-          <>
-            {/* No wide art: a blurred copy fills the banner and the sharp capsule sits
-                beside the title, as Steam does for a game that only has a capsule. */}
-            <OptimizedImage
-              src={hero.src}
-              alt=""
-              width={320}
-              height={480}
-              className="stm-hero-backdrop"
-              suppressHydrationWarning
-            />
-            <OptimizedImage
-              src={hero.src}
-              alt=""
-              width={320}
-              height={480}
-              priority
-              className="stm-hero-capsule"
-              suppressHydrationWarning
-            />
-          </>
-        ) : (
-          <div className="stm-hero-tile" aria-hidden style={{ background: `hsl(${data.hue} 32% 22%)` }}>
-            {data.title.charAt(0)}
-          </div>
-        )}
-        <div className="stm-hero-fade" aria-hidden />
-        <h1 className="stm-hero-title">
-          {data.logoUrl ? (
-            // The wordmark carries the title's name and typeface; its alt text keeps the heading readable.
-            <img className="stm-hero-logo" src={data.logoUrl} alt={data.title} decoding="async" />
-          ) : (
-            data.title
-          )}
-        </h1>
-      </div>
+      <GameHero
+        title={data.title}
+        image={data.image}
+        bannerUrl={data.bannerUrl}
+        logoUrl={data.logoUrl}
+        hue={data.hue}
+      />
 
       <div className="stm-actionbar">
         <a
