@@ -50,11 +50,14 @@ interface Row {
   runCoins: number;
   wallMs: number;
   weapons: string[];
+  killedBy?: string;
+  bossActive: boolean;
+  timeline: { t: number; hp: number; enemies: number; level: number; boss: boolean }[];
 }
 
 const rows: Row[] = [];
 out(`skill=${skill} heat=${heat} seeds=${seeds} minutes<=${minutes}\n`);
-out('class            seed  end      time   kills  lvl  boss  coins   sim-ms  weapons');
+out('class            seed  end      time   kills  lvl  boss  coins   sim-ms  killed-by (boss fight?)  weapons');
 for (const classId of classIds) {
   for (let seed = 1; seed <= seeds; seed++) {
     const run = playBot({ seed: 1000 + seed, classId, skill, heat, maxSteps: minutes * 60 * 60 });
@@ -70,10 +73,13 @@ for (const classId of classIds) {
       runCoins: r.runCoins,
       wallMs: run.wallMs,
       weapons: run.weapons,
+      killedBy: run.killedBy,
+      bossActive: run.bossActiveAtEnd,
+      timeline: run.timeline,
     };
     rows.push(row);
     out(
-      `${classId.padEnd(16)} ${String(seed).padStart(4)}  ${r.status.padEnd(8)} ${fmtTime(r.gameTime).padStart(5)}  ${String(r.kills).padStart(5)}  ${String(r.level).padStart(3)}  ${String(row.bosses).padStart(4)}  ${String(r.runCoins).padStart(5)}  ${String(run.wallMs).padStart(6)}  ${run.weapons.join(',')}`,
+      `${classId.padEnd(16)} ${String(seed).padStart(4)}  ${r.status.padEnd(8)} ${fmtTime(r.gameTime).padStart(5)}  ${String(r.kills).padStart(5)}  ${String(r.level).padStart(3)}  ${String(row.bosses).padStart(4)}  ${String(r.runCoins).padStart(5)}  ${String(run.wallMs).padStart(6)}  ${(row.killedBy ?? '-').padEnd(16)}${row.bossActive ? '(boss)' : '      '}  ${run.weapons.join(',')}`,
     );
   }
 }

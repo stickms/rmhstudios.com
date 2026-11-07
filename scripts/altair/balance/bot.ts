@@ -65,6 +65,14 @@ export interface BotRun {
   weapons: string[];
   /** Lowest HP fraction seen in each game minute (a measure of how hard that minute was). */
   minuteLowHp: number[];
+  /** What dealt the final hit (an enemy or boss def id), when the run ended in defeat. */
+  killedBy?: string;
+  /** Whether a boss fight was under way when the run ended. */
+  bossActiveAtEnd: boolean;
+  /** Enemies alive when the run ended. */
+  enemiesAtEnd: number;
+  /** A sample every 30 game seconds: HP fraction, enemies alive, level, boss fight on. */
+  timeline: { t: number; hp: number; enemies: number; level: number; boss: boolean }[];
 }
 
 const DEFAULT_LOADOUT: SoloLoadout = {
@@ -209,11 +217,15 @@ export function playBot(opts: BotOptions): BotRun {
     setup: { seed: opts.seed, classId: opts.classId, doubleTime: !!opts.doubleTime, loadout },
     viewport: opts.viewport ?? { w: 1280, h: 720 },
     inputSource: () => live,
+    hooks: { onDeath: (id) => (killedBy = id) },
   });
 
   const max = opts.maxSteps ?? 30 * 60 * 60;
   const levelTimes: number[] = [];
   const minuteLowHp: number[] = [];
+  const timeline: BotRun['timeline'] = [];
+  let killedBy: string | undefined;
+  let nextSample = 0;
   let lastLevel = 1;
   let dir = { x: 0, y: 0 };
   const t0 = Date.now();
@@ -256,6 +268,16 @@ export function playBot(opts: BotOptions): BotRun {
       for (let l = lastLevel; l < level; l++) levelTimes.push(run.world.time);
       lastLevel = level;
     }
+    if (run.world.time >= nextSample) {
+      nextSample += 30;
+      timeline.push({
+        t: Math.round(run.world.time),
+        hp: run.world.player.maxHp > 0 ? Math.round((run.world.player.hp / run.world.player.maxHp) * 100) / 100 : 0,
+        enemies: run.world.enemies.length,
+        level: useAltairGameStore.getState().level,
+        boss: run.world.bossActive,
+      });
+    }
     const minute = Math.floor(run.world.time / 60);
     const frac = run.world.player.maxHp > 0 ? run.world.player.hp / run.world.player.maxHp : 0;
     minuteLowHp[minute] = Math.min(minuteLowHp[minute] ?? 1, frac);
@@ -267,5 +289,9 @@ export function playBot(opts: BotOptions): BotRun {
     levelTimes,
     weapons: run.world.weapons.map((w) => w.weaponId),
     minuteLowHp: Array.from(minuteLowHp, (v) => v ?? 1),
+    killedBy,
+    bossActiveAtEnd: run.world.bossActive,
+    enemiesAtEnd: run.world.enemies.length,
+    timeline,
   };
 }
