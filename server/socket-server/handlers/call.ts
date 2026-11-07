@@ -108,14 +108,7 @@ async function loadCallPermission(
 ): Promise<{ allowed: true } | { allowed: false; reason: CallRejectReason }> {
   const prisma = getPrismaClient();
 
-  // Admins may call anybody: no block, privacy or follow requirement applies.
-  const caller = await prisma.user.findUnique({
-    where: { id: callerId },
-    select: { isAdmin: true },
-  });
-  if (caller?.isAdmin) return { allowed: true };
-
-  const [block, prefs, follow] = await Promise.all([
+  const [block, prefs, follow, caller] = await Promise.all([
     // Either direction bars the call.
     prisma.userBlock.findFirst({
       where: {
@@ -136,7 +129,10 @@ async function loadCallPermission(
       where: { followerId: calleeId, followingId: callerId },
       select: { followerId: true },
     }),
+    // Admins may call anybody: no block, privacy or follow requirement applies.
+    prisma.user.findUnique({ where: { id: callerId }, select: { isAdmin: true } }),
   ]);
+  if (caller?.isAdmin) return { allowed: true };
 
   const raw = prefs?.callPrivacy;
   const privacy: CallPrivacy = isCallPrivacy(raw) ? raw : 'following';
