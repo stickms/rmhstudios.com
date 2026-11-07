@@ -8,26 +8,24 @@ import { reconcileSoftRender } from '@/lib/perf-tier';
  * Mount the Plasmatic Jelly document services once at the provider boundary, including full-screen app routes. One
  * effect, one teardown, in two steps. Only the fallback light is a static import: every other service is a dynamic
  * import, because this hook is in the client entry and the entry has a byte budget (OPT-01,
- * `scripts/check-bundle-budget.ts`) that the registry, carriers and governor alone put 3.8 KB over.
+ * `scripts/check-bundle-budget.ts`).
  *
  * **At once** (press feedback must never wait for the browser to go idle):
  * 1. the fallback cursor light (`lib/liquid/runtime.ts`);
- * 2. the jelly registry (`lib/jelly/registry.ts`) — observers only, no DOM writes; every service below reads it.
- *    Requested together with physics, its first consumer, and installed before it;
+ * 2. the jelly registry (`lib/jelly/registry.ts`) — observers only, no DOM writes. Requested together with physics,
+ *    its consumer, and installed before it;
  * 3. the soft-body physics (`lib/jelly/physics.ts`, a lazy chunk requested immediately, not at idle). Hosts DO move
  *    now, but only within the bounded squash/wobble and the ≤ 1.5 px neighbour nudge (`MOTION_BOUNDS`): hover plumps,
  *    press squashes, release wobbles. Text, hit areas and layout never move. Until the chunk lands, the CSS `:active`
  *    states are the press feedback.
  *
- * **After hydration, at idle** (they cost nothing on the first paint; the static haze floor and CSS rim are the
- * complete material until they arrive). These three INSERT nodes into hosts — a `.jelly-flow` first child, a rim
- * canvas last child, haze canvases — and a foreign child in a subtree React has not hydrated yet is a hydration
- * mismatch (#418) that throws the server markup away. This effect runs after the root's hydration commit, but a
- * Suspense boundary can still be dehydrated then, and a `requestIdleCallback` timeout fires on a busy main thread, so
- * they wait for the window `load` event (every script the page hydrates with has run) and then for idle:
- * 4. the CSS flow carriers (`lib/jelly/flow-carriers.ts`, lazy);
- * 5. the electric arcs (`lib/jelly/arcs`, lazy);
- * 6. the glass engine (`lib/liquid/glass/engine.ts`, lazy): rim slabs, haze canvases, cursor light.
+ * **After the window `load` event, at idle:** settle whether this browser draws in software (`reconcileSoftRender`,
+ * which puts the page on `perf-lite`), and otherwise stamp `html[data-jelly-ready]` so glass that mounts from then on
+ * fades in (app/jelly-material.css §7).
+ *
+ * The static CSS tier (`app/liquid-glass.css`, `app/jelly-material.css`) is the material: the glass engine, the CSS
+ * flow carriers, the governor and the electric arcs are no longer installed here (CSS-first jelly, PR 1). The page
+ * snapshot the liquid globe refracts comes from the globe's own scene feed (`lib/liquid/glass/scene-feed.ts`).
  *
  * Every optional chunk fails soft: the CSS material is the fallback for each.
  */
@@ -46,7 +44,7 @@ export function useLiquidInteractions(enabled = true): void {
     };
 
     keep(installLiquidInteractions());
-    // The registry is installed the moment its chunk lands, before physics and before anything at idle reads it.
+    // The registry is installed the moment its chunk lands, before physics reads it.
     const registry = import('@/lib/jelly/registry').then((m) =>
       keep(m.installJellyRegistry(document)),
     );
@@ -56,39 +54,11 @@ export function useLiquidInteractions(enabled = true): void {
 
     const start = () => {
       if (cancelled) return;
-      // Settle whether this browser draws in software BEFORE any layer is added. If it does, the page is on the low
-      // tier (`perf-lite`: the static CSS material, nothing moving on its own, press still works): the carriers, arcs and shader engine would only
-      // be loaded to switch themselves off, and on a software renderer even their setup is seconds of main thread.
+      // Settle whether this browser draws in software. If it does, the page is on the low tier (`perf-lite`: the
+      // static CSS material, nothing moving on its own, press still works) and the entrance fade stays off.
       if (reconcileSoftRender()) return;
       // From here on, glass that mounts fades in (app/jelly-material.css §7); the first paint never did.
       document.documentElement.setAttribute('data-jelly-ready', '');
-      // The engine's governor sheds carriers too (step 3); until its chunk loads the step is 0.
-      let governorStep = () => 0;
-      void Promise.all([
-        import('@/lib/jelly/flow-carriers'),
-        import('@/lib/jelly/governor'),
-        import('@/lib/jelly/tiers'),
-        registry,
-      ])
-        .then(([flow, governor, tiers]) =>
-          keep(
-            flow.installJellyFlow(document, {
-              budget: () => governor.governBudget(tiers.jellyBudget(), governorStep()),
-            }),
-          ),
-        )
-        .catch(failSoft);
-      void registry
-        .then(() => import('@/lib/jelly/arcs'))
-        .then((m) => keep(m.installElectricArcs(document)))
-        .catch(failSoft);
-      void registry
-        .then(() => import('@/lib/liquid/glass/engine'))
-        .then((m) => {
-          governorStep = m.jellyGovernorStep;
-          keep(m.installLiquidGlass());
-        })
-        .catch(failSoft);
     };
     // Safari has no requestIdleCallback (the DOM typings say every browser does), so feature-detect it.
     const w = window as Window & {
@@ -97,10 +67,8 @@ export function useLiquidInteractions(enabled = true): void {
     };
     const idle = typeof w.requestIdleCallback === 'function';
     let handle: number | null = null;
-    // The window `load` event is the gate on purpose (see the header: a node inserted into a subtree React has not
-    // hydrated is a #418). What was slow was not the gate but what came after it: an idle timeout of 2.5 s let a busy
-    // page hold the material back for that long, so it is 400 ms now, and a software renderer skips the material
-    // altogether (below).
+    // The window `load` event, then idle (400 ms at most): the soft-render probe is not free, and nothing here may
+    // compete with hydration.
     const schedule = () => {
       if (cancelled) return;
       handle = idle

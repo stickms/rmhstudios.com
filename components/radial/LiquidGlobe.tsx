@@ -40,6 +40,7 @@ import type { SelfEvertSkin } from './self-evert-skin';
 import { GLOBE_EVERT_EVENT, SELF_EVERT_MS } from './self-evert-timing';
 import { luminance, resolveColor } from '@/lib/liquid/glass/color';
 import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
+import { acquireSceneFeed, type SceneFeed } from '@/lib/liquid/glass/scene-feed';
 import { PLASMA_LOOK } from '@/lib/liquid/glass/policy';
 import {
   CALM,
@@ -844,6 +845,7 @@ export function LiquidGlobe({
    * body), never for a turn: a uniform glass ball looks the same at any rotation.
    */
   const jellyGlass = useRef<JellyGlass | null>(null);
+  const sceneFeed = useRef<SceneFeed | null>(null);
   /** Force one material frame (attach, resize). Raising it wakes the loop (`wakeOnRaise`). */
   const jellyDirty = useRef(false);
   useState(() => wakeOnRaise([dirty, jellyDirty], wakeLoop));
@@ -1038,7 +1040,7 @@ export function LiquidGlobe({
     const stage = stageRef.current;
     const host = glassRef.current;
     const root = document.documentElement;
-    /* The page behind the hub, refracted through the ball. The glass engine keeps the latest snapshot of the page (taken
+    /* The page behind the hub, refracted through the ball. The scene feed keeps the latest snapshot of the page (taken
        while it was idle, i.e. BEFORE the hub opened); the coat samples it through a ball-lens model at the hub's own blur.
        Placing it reads layout, so it happens when the globe attaches, resizes, finishes blooming, or a new picture lands,
        never per frame. */
@@ -1095,6 +1097,10 @@ export function LiquidGlobe({
     };
     if (ambient) window.addEventListener('scroll', onScroll, { passive: true });
     const stopScene = onSceneChange(refreshScene);
+    // The picture comes from the scene feed (lib/liquid/glass/scene-feed.ts), shared by every mounted globe: the first
+    // acquire asks for one, the last release disposes the capture and drops the picture.
+    const feed = acquireSceneFeed();
+    sceneFeed.current = feed;
     const sync = () => {
       if (cancelled || !host || !stage) return;
       if (!jellyEligible()) {
@@ -1206,6 +1212,8 @@ export function LiquidGlobe({
     return () => {
       cancelled = true;
       stopScene();
+      if (sceneFeed.current === feed) sceneFeed.current = null;
+      feed.release();
       globeRoot?.removeEventListener('animationend', onBloomEnd);
       globeRoot?.removeEventListener('transitionend', onGrowEnd as EventListener);
       window.removeEventListener('resize', refreshScene);
@@ -1220,6 +1228,15 @@ export function LiquidGlobe({
       if (stage) delete stage.dataset.globeCoat;
     };
   }, [jelly, jellyFrame, ambient]);
+
+  /* A new route is a new page behind the globe: ask the feed for a fresh picture of it. The first render needs none
+     (acquiring the feed already asked). */
+  const scenePath = useRef(pathname);
+  useEffect(() => {
+    if (scenePath.current === pathname) return;
+    scenePath.current = pathname;
+    sceneFeed.current?.request('route');
+  }, [pathname]);
 
   /* ── The coat's ambient clock ─────────────────────────────────────────────
      What the jelly policy allows the coat's haze to do right now (lib/jelly/tiers.ts — the same budget every slab's
