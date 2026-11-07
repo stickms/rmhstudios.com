@@ -42,6 +42,8 @@ export interface RenderFighter {
     seat: number;
     team: number;
     className: FighterClass;
+    /** Fighter model id (render/fighter/models.ts); absent = the default Y-Bot. */
+    modelId?: string;
     displayName: string;
     color: string;
     accent: string;
