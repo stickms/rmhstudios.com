@@ -449,6 +449,45 @@
   to { opacity: 1; }
 }
 
+/* The pixel-art scene (MenuBackdrop). The canvas is a low-res buffer scaled up, so it
+   must never be smoothed. It fades in over the CSS fallback once the first frame lands. */
+.altair-corridor__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  opacity: 0;
+  transition: opacity 0.6s var(--ease-smooth, ease);
+}
+
+.altair-corridor__canvas[data-ready='true'] {
+  opacity: 1;
+}
+
+/* A scrim over the scene keeps menu text above 4.5:1 and gives the room a vignette:
+   darkest at the edges, a calm pool behind the buttons. */
+.altair-corridor::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 52%,
+    rgba(4, 8, 15, 0.74) 0%,
+    rgba(4, 8, 15, 0.4) 50%,
+    rgba(4, 8, 15, 0.7) 100%
+  );
+}
+
+/* In the daylit lab the scene is a faint teal print under a pale veil, so the dark
+   ink the light theme uses for text keeps its contrast. */
+.altair-light .altair-corridor::after {
+  background: rgba(227, 239, 242, 0.84);
+}
+
 .altair-light .altair-corridor {
   background: radial-gradient(ellipse at 50% 46%, #f6fcfd 0%, var(--altair-bg) 70%);
 }
