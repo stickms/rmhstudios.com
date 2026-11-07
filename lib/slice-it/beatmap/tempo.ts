@@ -246,3 +246,114 @@ export function syntheticBeats(durationSeconds: number, bpm: number, offset = 0)
   for (let t = offset; t < durationSeconds; t += interval) beats.push(t);
   return beats;
 }
+
+/**
+ * A regular beat grid for a track whose tempo does not move.
+ *
+ * The DP tracker follows the audio, which is right for a live band and slightly
+ * wrong for anything produced to a click: its beats sit on 11.6 ms frames, so the
+ * period it reports is quantised (a 124 BPM track came out at 123.05) and each
+ * beat wobbles a frame either way. A chart snapped to that grid inherits the
+ * wobble, and the BPM shown in the library is off by a whole BPM.
+ *
+ * When the tracked beats lie on a straight line — the median error of a
+ * robust (Theil–Sen) fit under {@link GRID_FIT_TOLERANCE_S} — the line IS the
+ * tempo, and the grid is the line: exact period, no wobble, extended over the
+ * whole track. Otherwise (a ritardando, a live recording) this returns `null` and
+ * the tracked beats are used as they were.
+ */
+export const GRID_FIT_TOLERANCE_S = 0.012;
+const MIN_BEATS_FOR_FIT = 16;
+
+export interface GridFit {
+  /** Beat times covering `[0, duration]`, seconds. */
+  beats: number[];
+  /** Seconds per beat. */
+  period: number;
+  bpm: number;
+  /** Median |tracked − fitted|, seconds. */
+  medianError: number;
+}
+
+export function fitConstantTempo(beats: readonly number[], duration: number): GridFit | null {
+  if (beats.length < MIN_BEATS_FOR_FIT) return null;
+
+  // Integer beat indices, tolerating a skipped beat in the tracker's output.
+  const intervals: number[] = [];
+  for (let i = 1; i < beats.length; i++) intervals.push(beats[i] - beats[i - 1]);
+  const sortedIntervals = [...intervals].sort((a, b) => a - b);
+  const rough = sortedIntervals[Math.floor(sortedIntervals.length / 2)];
+  if (!(rough > 0.2 && rough < 2)) return null;
+  const index: number[] = [0];
+  for (let i = 1; i < beats.length; i++) {
+    index.push(index[i - 1] + Math.max(1, Math.round((beats[i] - beats[i - 1]) / rough)));
+  }
+
+  // Theil–Sen: the median slope over pairs a fixed distance apart, which a few
+  // mis-tracked beats cannot move.
+  const slopes: number[] = [];
+  const step = Math.max(4, Math.floor(beats.length / 8));
+  for (let i = 0; i + step < beats.length; i++) {
+    slopes.push((beats[i + step] - beats[i]) / (index[i + step] - index[i]));
+  }
+  slopes.sort((a, b) => a - b);
+  const period = slopes[Math.floor(slopes.length / 2)];
+  if (!(period > 0.2 && period < 2)) return null;
+  const offsets = beats.map((t, i) => t - index[i] * period).sort((a, b) => a - b);
+  const origin = offsets[Math.floor(offsets.length / 2)];
+
+  const errors = beats
+    .map((t, i) => Math.abs(t - (origin + index[i] * period)))
+    .sort((a, b) => a - b);
+  const medianError = errors[Math.floor(errors.length / 2)];
+  if (medianError > GRID_FIT_TOLERANCE_S) return null;
+
+  // Whole-track grid, from before the first beat to past the last.
+  const grid: number[] = [];
+  const first = Math.ceil(-origin / period);
+  for (let k = first; origin + k * period <= duration + period; k++) grid.push(origin + k * period);
+  if (grid.length < 4) return null;
+  return { beats: grid, period, bpm: 60 / period, medianError };
+}
+
+/**
+ * Shift a beat grid so it sits on the sounds that define the beat.
+ *
+ * The tracker finds the right tempo and the right beat, but its beat times are the
+ * peaks of a flux function and that peaks before the sound is audible — by an
+ * amount that depends on the song's attacks (about 18 ms on a drum loop). Every
+ * note is snapped to this grid, so the lead becomes every note's error.
+ *
+ * Once the onsets have been refined against the waveform they are accurate, so
+ * they can say where the grid should be: each onset within `maxOffset` of a beat
+ * votes with how far it is from it, and the median vote moves the whole grid.
+ * Onsets between beats (the subdivisions) are outside the window and do not vote.
+ * Too few votes, or a shift beyond `maxShift`, and the grid is left alone.
+ */
+export function alignBeatsToOnsets(
+  beats: readonly number[],
+  onsetTimes: readonly number[],
+  maxOffset = 0.06,
+  maxShift = 0.05,
+): number[] {
+  if (beats.length < 2 || onsetTimes.length === 0) return beats.slice();
+  const votes: number[] = [];
+  for (const t of onsetTimes) {
+    let lo = 0;
+    let hi = beats.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (beats[mid] < t) lo = mid + 1;
+      else hi = mid;
+    }
+    const nearest =
+      lo > 0 && Math.abs(beats[lo - 1] - t) < Math.abs(beats[lo] - t) ? beats[lo - 1] : beats[lo];
+    const offset = t - nearest;
+    if (Math.abs(offset) <= maxOffset) votes.push(offset);
+  }
+  if (votes.length < 8) return beats.slice();
+  votes.sort((a, b) => a - b);
+  const shift = votes[votes.length >> 1];
+  if (Math.abs(shift) > maxShift) return beats.slice();
+  return beats.map((t) => t + shift);
+}

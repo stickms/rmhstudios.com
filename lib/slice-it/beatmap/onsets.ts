@@ -29,7 +29,8 @@
  * at all — a fixed threshold tuned for a chorus finds nothing anywhere else.
  */
 
-import { bandEnergyRatio, type Spectrogram } from './spectrum';
+import type { Spectrogram } from './spectrum';
+import { measureSustainEnds } from './sustain';
 
 /** Kick/bass territory, and the hat/cymbal band the charter reads for lanes. */
 const LOW_BAND_HZ = 250;
@@ -46,9 +47,30 @@ export interface Onset {
   lowRatio: number;
   /** Fraction above 2 kHz. */
   highRatio: number;
-  /** Seconds the attack's energy stays elevated; 0 when it decays immediately. */
+  /** Seconds the note keeps sounding after the attack; 0 for a hit that decays at once. */
   sustain: number;
+  /**
+   * Where the sound sits in frequency: the energy-weighted mean of log2(Hz) over
+   * the attack's body. Lets the charter split kick-like from snare/hat-like
+   * sounds with a boundary fitted to THIS song instead of a fixed threshold.
+   * Absent on onsets rebuilt from a stored chart.
+   */
+  centroid?: number;
+  /** Absolute time the note stops sounding, when `sustain > 0`. */
+  holdEnd?: number;
 }
+
+/**
+ * Where "high" starts for beat tracking, and how much it counts there.
+ *
+ * Hi-hats and cymbals usually sit on the off-beat and have the widest flux in the
+ * song, so a tracker that listens to everything equally can lock half a beat out
+ * of phase (a house loop's tracked grid was 226 ms off a 484 ms beat) and every
+ * kick is then charted as an off-beat. Kick and snare — the events that define the
+ * beat — live below this line.
+ */
+const BEAT_HIGH_HZ = 3000;
+export const BEAT_HIGH_WEIGHT = 0.2;
 
 /** Lag in frames for the flux difference — ~35 ms at an 11.6 ms hop. */
 const FLUX_LAG = 3;
@@ -74,10 +96,22 @@ const MIN_ONSET_GAP_S = 0.03;
  * function, and running it on discrete picked onsets throws away exactly the
  * weak-but-regular pulse that makes a tempo obvious.
  */
-export function onsetStrengthSignal(spec: Spectrogram): Float32Array {
+export function onsetStrengthSignal(
+  spec: Spectrogram,
+  options: { highWeight?: number } = {},
+): Float32Array {
   const { data, frames, bands } = spec;
   const odf = new Float32Array(frames);
   if (frames === 0 || bands === 0) return odf;
+
+  // Per-band weights. 1 everywhere for onset detection; for BEAT tracking the
+  // hat/cymbal region is turned down (see `BEAT_HIGH_WEIGHT`) so the tracker
+  // follows the kick and snare rather than the subdivision.
+  const highWeight = options.highWeight ?? 1;
+  const weight = new Float32Array(bands).fill(1);
+  if (highWeight !== 1) {
+    for (let b = 0; b < bands; b++) if (spec.bandFreqs[b] >= BEAT_HIGH_HZ) weight[b] = highWeight;
+  }
 
   const filtered = new Float32Array(bands);
 
@@ -98,7 +132,7 @@ export function onsetStrengthSignal(spec: Spectrogram): Float32Array {
     let flux = 0;
     for (let b = 0; b < bands; b++) {
       const diff = data[row + b] - filtered[b];
-      if (diff > 0) flux += diff;
+      if (diff > 0) flux += diff * weight[b];
     }
     odf[f] = flux;
   }
@@ -121,38 +155,44 @@ function stats(signal: Float32Array): { mean: number; std: number } {
 }
 
 /**
- * How long the energy that arrived at `frame` stays up.
- *
- * A LONG (hold) note is exactly this question: did the attack decay, or is it a
- * pad/vocal/guitar note the player should hold through? Measured against the
- * frame's own peak so a quiet sustained note counts the same as a loud one.
+ * The attack's body, measured over the frames it occupies (not just the one the
+ * flux peaked on, which is mostly the click): band ratios and the spectral
+ * centroid. A kick's weight is in its first three or four frames, and reading
+ * only the first of them is why kicks used to come out looking like hi-hats.
  */
-function measureSustain(spec: Spectrogram, frame: number, maxFrames: number): number {
-  const { data, frames, bands, frameDuration } = spec;
-  if (frame >= frames) return 0;
+const BODY_FRAMES = 3;
 
-  const rowEnergy = (f: number) => {
+function bodyProfile(spec: Spectrogram, frame: number): {
+  low: number;
+  high: number;
+  centroid: number;
+} {
+  const { data, frames, bands, bandFreqs } = spec;
+  let total = 0;
+  let low = 0;
+  let high = 0;
+  let weighted = 0;
+  const last = Math.min(frames - 1, frame + BODY_FRAMES - 1);
+  for (let f = Math.max(0, frame); f <= last; f++) {
     const row = f * bands;
-    let sum = 0;
-    for (let b = 0; b < bands; b++) sum += data[row + b];
-    return sum;
-  };
-
-  const peak = rowEnergy(frame);
-  if (peak <= 0) return 0;
-  const floor = peak * 0.6;
-
-  let held = 0;
-  for (let f = frame + 1; f < frames && held < maxFrames; f++) {
-    if (rowEnergy(f) < floor) break;
-    held++;
+    for (let b = 0; b < bands; b++) {
+      const value = Math.expm1(data[row + b]);
+      const hz = bandFreqs[b];
+      total += value;
+      weighted += value * Math.log2(hz);
+      if (hz < LOW_BAND_HZ) low += value;
+      else if (hz >= HIGH_BAND_HZ) high += value;
+    }
   }
-  return held * frameDuration;
+  if (!(total > 0)) return { low: 0, high: 0, centroid: Math.log2(1000) };
+  return { low: low / total, high: high / total, centroid: weighted / total };
 }
 
 export interface DetectOnsetsOptions {
   /** Longest hold the charter will consider, seconds. Bounds the sustain scan. */
   maxSustainSeconds?: number;
+  /** Low-passed RMS per spectrogram frame (see `lowband.ts`), for bass holds. */
+  lowEnvelope?: Float32Array;
 }
 
 /** Run the full detector and return picked onsets in time order. */
@@ -166,7 +206,6 @@ export function detectOnsets(
 
   const { mean, std } = stats(odf);
   const delta = std * DELTA_SIGMA;
-  const maxSustainFrames = Math.ceil((options.maxSustainSeconds ?? 2) / frameDuration);
 
   const framesFor = (seconds: number) => Math.max(1, Math.round(seconds / frameDuration));
   const preMax = framesFor(PRE_MAX_S);
@@ -219,14 +258,31 @@ export function detectOnsets(
     }
 
     lastOnsetFrame = f;
+    const body = bodyProfile(spec, f);
     onsets.push({
       time: spec.frameTime(f),
       strength: Math.min(1, value / scale),
       frame: f,
-      lowRatio: bandEnergyRatio(spec, f, 0, LOW_BAND_HZ),
-      highRatio: bandEnergyRatio(spec, f, HIGH_BAND_HZ, Infinity),
-      sustain: measureSustain(spec, f, maxSustainFrames),
+      lowRatio: body.low,
+      highRatio: body.high,
+      sustain: 0,
+      centroid: body.centroid,
     });
+  }
+
+  // Held notes, from what each attack's own bands do afterwards.
+  const ends = measureSustainEnds(
+    spec,
+    onsets,
+    options.maxSustainSeconds ?? 2,
+    options.lowEnvelope,
+  );
+  for (let i = 0; i < onsets.length; i++) {
+    const end = ends[i];
+    if (end !== null && end > onsets[i].time) {
+      onsets[i].holdEnd = end;
+      onsets[i].sustain = end - onsets[i].time;
+    }
   }
 
   return onsets;

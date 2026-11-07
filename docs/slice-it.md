@@ -54,23 +54,48 @@ drumming drifts, and a chart that drifts away from the song is unplayable by the
 end. Ellis's tracker (2007) maximises `Σ odf(bᵢ) + α·Σ transition(bᵢ − bᵢ₋₁)`
 over the whole signal, so a missing kick cannot knock the grid out of phase.
 
+### Timing
+
+The detector's flux peaks about 16 ms before a sound is audible, so every onset is
+**refined against the waveform** (`beatmap/attack.ts`): the rectified first
+difference of the signal near the detection, walked back to where it rises out of
+its floor. The beat grid is then **aligned to the refined onsets** that fall near a
+beat (their median offset moves the grid), because the tracker's beats carry the
+same early lead. Tempo and beat phase are tracked on a flux with the hat/cymbal
+region turned down, so the grid lands on the kick and snare instead of locking half
+a beat out on the off-beat hats. A steady tempo is fitted as an **exact grid** (a
+Theil–Sen line through the tracked beats), which gives a precise BPM; a live track
+keeps the tracked beats.
+
 ### Charting
 
-Onsets are snapped to `{0, ¼, ⅓, ½, ⅔, ¾}` of the tracked beat, and anything
-further than 55 ms (or 18% of a beat) from every subdivision is **dropped** —
-those are reverb tails and vocal consonants, and charting them produces notes
-the player hears no reason for.
+An onset within ~30 ms (or 10% of a beat) of a grid position is snapped to it; one
+further out but within 55 ms (18%) keeps its **own time** and is marked off-grid
+(`quant: 16`); anything beyond that is dropped — reverb tails and vocal consonants.
+A note is never moved far from the sound the player hears.
 
-Difficulties are **nested**: Expert is selected from all candidates, Hard from
-Expert, Normal from Hard, Easy from Normal. A pattern learned on Normal is still
-there on Hard with more between the notes. Each tier has a notes-per-second
-budget and spends it on the strongest onsets, weighted by metric position, so a
-downbeat outranks a louder off-beat crash.
+**Holds** come from the audio, once per note (`beatmap/sustain.ts`): the bands an
+attack raised are followed forward, restricted to the ones that persist (a pad that
+starts on a kick is not released when the kick decays), and the hold ends at the
+release or where the next onset of a similar sound begins. The spectrogram cannot
+resolve below ~200 Hz, so a separate low-passed envelope (`beatmap/lowband.ts`) does
+the same for bass notes. The tail is snapped to a quarter-beat and must be at least
+0.4 s and 0.75 beat. Because it is decided per note, a hold is the same hold on every
+tier that keeps it; a tier only shortens it to clear a more important note in its lane.
 
-Lane assignment starts from frequency content — bass-dominant hits to lane 0,
-bright hits to lane 1, so the chart's shape tracks the drum pattern — then two
-playability rules override it: no more than 2 consecutive notes in one lane, and
-a per-tier minimum same-lane gap.
+Difficulties are **nested by construction**: Expert is selected from all candidates,
+and every easier tier is selected from the notes that **survived** the tier above,
+with their lanes fixed — it can drop a note, never move one, so an easier chart is
+always a subset (time and lane) of the harder one. Each tier has a notes-per-second
+budget and spends it on notes ranked **within their own register** (so a kick
+outranks a hi-hat when the budget is small), weighted by metric position, section
+energy and whether the note is held.
+
+Lanes follow the song's own timbres: onsets are split in two by spectral centroid
+with a 2-means fit (the lower cluster is lane 0), with a dead zone at the boundary
+where the lane that keeps the pattern alternating is taken. Playability rules then
+apply at the top tier: runs of more than 2 notes in a lane are broken unless they are
+spaced out, and there is a per-tier minimum same-lane gap.
 
 Everything arbitrary is seeded, so re-analysing a song produces the same chart.
 
@@ -78,6 +103,9 @@ Everything arbitrary is seeded, so re-analysing a song produces the same chart.
 
 `BEATMAP_VERSION` is stamped on every generated chart. Version 1 is the legacy
 generator, which wrote no version field at all — hence `analysisVersion ?? 1`.
+Version 3 is the timing, hold, lane and nesting rewrite described above; the hourly
+regeneration sweep brings stale generated charts forward (hand-edited ones are
+never touched).
 Songs predating the server-side analyser get charted in the browser by the first
 player to open them and the result is posted back to
 `/api/slice-it/songs/:id/patch-analysis`, which refuses anything that is not

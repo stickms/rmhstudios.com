@@ -33,10 +33,24 @@ import type { Onset } from './onsets';
 /** Grid positions within a beat: 16ths plus the two triplet positions. */
 const SUBDIVISIONS: readonly number[] = [0, 1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4, 1];
 
-/** Hard ceiling on how far a note may be moved to reach the grid, seconds. */
+/**
+ * How far from every grid position an onset may be before it is dropped as an
+ * artefact (a reverb tail, a vocal consonant), seconds…
+ */
 const MAX_SNAP_SECONDS = 0.055;
-/** …and as a fraction of the beat, so slow songs do not get a sloppier grid. */
+/** …and as a fraction of the beat, so slow songs do not get a sloppier filter. */
 const MAX_SNAP_FRACTION = 0.18;
+/**
+ * How far a note may be MOVED to sit on the grid.
+ *
+ * Onset times are accurate to a few milliseconds now (see `attack.ts`), so moving
+ * a note 50 ms to a grid line only moves it off the sound the player hears. A note
+ * within this distance of a grid position is snapped to it (the composed feel);
+ * one further out — a swung or human hit — keeps its true time and is marked
+ * off-grid, which the renderer and the editor already know how to show.
+ */
+const SNAP_MOVE_SECONDS = 0.03;
+const SNAP_MOVE_FRACTION = 0.1;
 
 export interface QuantizedNote {
   /** Snapped time, seconds. */
@@ -52,6 +66,21 @@ export interface QuantizedNote {
   fraction: number;
   /** Length of the beat this note sits in, seconds. */
   beatLength: number;
+  /** Spectral centroid (log2 Hz) of the attack; absent on a pool rebuilt from a chart. */
+  centroid?: number;
+  /**
+   * How long the note is held, seconds, already snapped to the beat grid — set
+   * ONLY when the sound really is sustained and long enough to be a hold. It is
+   * decided once per note, here, so a hold on Expert is the same hold (same
+   * length) on every easier tier that keeps the note.
+   */
+  holdDuration?: number;
+  /** Strength ranked within the note's own register (0–1); see {@link assignRanks}. */
+  rank?: number;
+  /** The lane this note's sound belongs on, when the song's timbres tell. */
+  laneHint?: 0 | 1;
+  /** True when the note was too far from the grid to snap, and keeps its own time. */
+  offGrid?: boolean;
 }
 
 /**
@@ -146,6 +175,7 @@ export function quantizeOnsets(onsets: Onset[], beats: number[]): QuantizedNote[
 
     const errorSeconds = bestError * beatLength;
     if (errorSeconds > Math.min(MAX_SNAP_SECONDS, beatLength * MAX_SNAP_FRACTION)) continue;
+    const snap = errorSeconds <= Math.min(SNAP_MOVE_SECONDS, beatLength * SNAP_MOVE_FRACTION);
 
     // A note snapped to the end of one beat is the start of the next.
     let beatIndex = index;
@@ -158,21 +188,68 @@ export function quantizeOnsets(onsets: Onset[], beats: number[]): QuantizedNote[
     const snappedLength =
       beatIndex + 1 < beats.length ? beats[beatIndex + 1] - snappedStart : beatLength;
 
+    const time = snap ? snappedStart + snappedFraction * snappedLength : onset.time;
     out.push({
-      time: snappedStart + snappedFraction * snappedLength,
+      time,
       strength: onset.strength,
       frame: onset.frame,
       lowRatio: onset.lowRatio,
       highRatio: onset.highRatio,
       sustain: onset.sustain,
       beatIndex,
-      fraction: snappedFraction,
+      fraction: snap ? snappedFraction : Math.max(0, Math.min(1, fraction)),
       beatLength: snappedLength,
+      ...(snap ? {} : { offGrid: true }),
+      ...(onset.centroid !== undefined ? { centroid: onset.centroid } : {}),
+      ...holdFor(onset, time, snappedLength, beats),
     });
   }
 
   out.sort((a, b) => a.time - b.time);
   return mergeCoincident(out);
+}
+
+/* ─── Holds ──────────────────────────────────────────────────────────────── */
+
+/** The shortest hold, seconds — clear of the lint's own 317 ms release window. */
+const MIN_HOLD_SECONDS = 0.4;
+/** …and as a share of the beat, so a slow song does not get a hold that is a blink. */
+const MIN_HOLD_BEATS = 0.75;
+/** The longest hold, in beats. */
+const MAX_HOLD_BEATS = 4;
+/** Hold tails end on quarter-beat positions (sixteenths): where a player expects them. */
+const TAIL_DIVISIONS = 4;
+
+/**
+ * Snap a tail time to the nearest quarter-beat of the grid.
+ *
+ * The audio's own release lands a little before or after the grid line (a bass
+ * note gated at 92% of two beats ends at 1.84, not 2.0), and a tail drawn at 1.84
+ * reads as a mistake. The grid position it was aiming for is the one to chart.
+ */
+function snapTail(time: number, beats: readonly number[]): number {
+  const index = Math.max(0, Math.min(beats.length - 2, beatIndexAt(beats as number[], time)));
+  const start = beats[index];
+  const length = beats[index + 1] - start;
+  if (!(length > 0)) return time;
+  const fraction = (time - start) / length;
+  const snapped = Math.round(fraction * TAIL_DIVISIONS) / TAIL_DIVISIONS;
+  return start + snapped * length;
+}
+
+/** `{ holdDuration }` for a sustained onset that is long enough to chart as one, else `{}`. */
+function holdFor(
+  onset: Onset,
+  noteTime: number,
+  beatLength: number,
+  beats: readonly number[],
+): { holdDuration?: number } {
+  const end = onset.holdEnd ?? (onset.sustain > 0 ? onset.time + onset.sustain : 0);
+  if (!(end > noteTime)) return {};
+  const duration = Math.min(snapTail(end, beats) - noteTime, beatLength * MAX_HOLD_BEATS);
+  return duration >= Math.max(MIN_HOLD_SECONDS, beatLength * MIN_HOLD_BEATS)
+    ? { holdDuration: duration }
+    : {};
 }
 
 /** Two onsets that snapped to the same grid position are one note. */
@@ -183,6 +260,9 @@ function mergeCoincident(notes: QuantizedNote[]): QuantizedNote[] {
     if (previous && Math.abs(previous.time - note.time) < 0.001) {
       previous.strength = Math.max(previous.strength, note.strength);
       previous.sustain = Math.max(previous.sustain, note.sustain);
+      if (note.holdDuration && !(previous.holdDuration && previous.holdDuration >= note.holdDuration)) {
+        previous.holdDuration = note.holdDuration;
+      }
       previous.lowRatio = (previous.lowRatio + note.lowRatio) / 2;
       previous.highRatio = (previous.highRatio + note.highRatio) / 2;
       continue;
@@ -214,10 +294,10 @@ export interface Tier {
  * two alternating buttons is already a 180 BPM sixteenth-note stream.
  */
 const TIERS: Record<Difficulty, Tier> = {
-  easy: { targetNps: 1.4, minGap: 0.3, laneMinGap: 0.45, holdShare: 0.2 },
-  normal: { targetNps: 2.8, minGap: 0.16, laneMinGap: 0.26, holdShare: 0.18 },
-  hard: { targetNps: 4.2, minGap: 0.105, laneMinGap: 0.17, holdShare: 0.14 },
-  expert: { targetNps: 6.0, minGap: 0.075, laneMinGap: 0.12, holdShare: 0.1 },
+  easy: { targetNps: 1.4, minGap: 0.3, laneMinGap: 0.45, holdShare: 0.35 },
+  normal: { targetNps: 2.8, minGap: 0.16, laneMinGap: 0.26, holdShare: 0.3 },
+  hard: { targetNps: 4.2, minGap: 0.105, laneMinGap: 0.17, holdShare: 0.22 },
+  expert: { targetNps: 6.0, minGap: 0.075, laneMinGap: 0.12, holdShare: 0.16 },
 };
 
 /** The order tiers are derived in — each is selected from the one before it. */
@@ -265,6 +345,7 @@ function sectionEnergyWeighter(sections?: Section[]): (time: number) => number {
 }
 
 function metricWeight(note: QuantizedNote): number {
+  if (note.offGrid) return 0.9;
   const onBeat = note.fraction < 0.001;
   if (onBeat) return note.beatIndex % 4 === 0 ? 1.6 : 1.35;
   if (Math.abs(note.fraction - 0.5) < 0.001) return 1.15;
@@ -293,6 +374,92 @@ function metricWeight(note: QuantizedNote): number {
 export function biasedBudget(base: number, bias: number): number {
   const clamped = Math.max(-2, Math.min(2, Number.isFinite(bias) ? bias : 0));
   return Math.max(8, Math.floor(base * Math.pow(1.45, clamped)));
+}
+
+/* ─── Ranking and lane hints ─────────────────────────────────────────────── */
+
+/**
+ * Rank every note's strength WITHIN its own register.
+ *
+ * Raw onset strength is a flux value, and a hi-hat's broadband flux is larger than
+ * a kick's. Selected by strength alone, the sparse tiers charted the hats and left
+ * the kick and snare — the backbone a player counts — out (on a test track Easy
+ * contained 3 of 128 kick/snare hits). Ranking each register against itself says
+ * "this is one of the kick's strongest hits", which is what matters when the budget
+ * is small. The floor keeps a weak hit from ranking at zero: it is still a hit.
+ */
+function assignRanks(notes: QuantizedNote[]): void {
+  const groups: Record<'low' | 'mid' | 'high', QuantizedNote[]> = { low: [], mid: [], high: [] };
+  for (const note of notes) groups[registerOf(note)].push(note);
+  for (const group of Object.values(groups)) {
+    if (group.length < 6) {
+      for (const note of group) note.rank = note.strength;
+      continue;
+    }
+    const sorted = [...group].sort((a, b) => a.strength - b.strength);
+    sorted.forEach((note, i) => {
+      note.rank = 0.35 + 0.65 * (i / (sorted.length - 1));
+    });
+  }
+}
+
+/** How much a register matters when the budget is tight: the low end carries the groove. */
+const REGISTER_WEIGHT: Record<'low' | 'mid' | 'high', number> = { low: 1.2, mid: 1.1, high: 0.9 };
+
+/** Octaves between the two timbre clusters below which they are not worth separating. */
+const MIN_CLUSTER_SEPARATION = 0.8;
+/** Octaves either side of the boundary where a sound is too close to call. */
+const LANE_AMBIGUITY = 0.2;
+
+/**
+ * Decide which lane each sound belongs on, from this song's own timbres.
+ *
+ * Fixed thresholds ("more than 42% below 250 Hz is lane 0") assume a mix of kick,
+ * snare and hats. A song of piano and strings has none of those, so every note fell
+ * on the same side of the line or was assigned at random. Here the notes are split
+ * in two by their spectral centroid with a 2-means fit, so the boundary is wherever
+ * THIS song's low sounds end and high sounds begin; the lower cluster is lane 0.
+ * Sounds within {@link LANE_AMBIGUITY} of the boundary get no hint and take the
+ * lane that keeps the pattern alternating, which is what plays well.
+ *
+ * With no centroid (a pool rebuilt from a stored chart) the old register ratios
+ * decide, as they did before.
+ */
+function assignLaneHints(notes: QuantizedNote[]): void {
+  const withCentroid = notes.filter((n) => n.centroid !== undefined);
+  if (withCentroid.length >= 12) {
+    const values = withCentroid.map((n) => n.centroid as number).sort((a, b) => a - b);
+    let lo = values[Math.floor(values.length * 0.1)];
+    let hi = values[Math.floor(values.length * 0.9)];
+    for (let iteration = 0; iteration < 16; iteration++) {
+      const boundary = (lo + hi) / 2;
+      let loSum = 0, loWeight = 0, hiSum = 0, hiWeight = 0;
+      for (const n of withCentroid) {
+        const c = n.centroid as number;
+        const w = 0.2 + n.strength;
+        if (c <= boundary) { loSum += c * w; loWeight += w; } else { hiSum += c * w; hiWeight += w; }
+      }
+      if (loWeight === 0 || hiWeight === 0) break;
+      const nextLo = loSum / loWeight;
+      const nextHi = hiSum / hiWeight;
+      if (Math.abs(nextLo - lo) + Math.abs(nextHi - hi) < 1e-4) { lo = nextLo; hi = nextHi; break; }
+      lo = nextLo;
+      hi = nextHi;
+    }
+    if (hi - lo >= MIN_CLUSTER_SEPARATION) {
+      const boundary = (lo + hi) / 2;
+      for (const n of notes) {
+        if (n.centroid === undefined) continue;
+        if (n.centroid < boundary - LANE_AMBIGUITY) n.laneHint = 0;
+        else if (n.centroid > boundary + LANE_AMBIGUITY) n.laneHint = 1;
+      }
+      return;
+    }
+  }
+  for (const n of notes) {
+    if (n.lowRatio >= LOW_LANE_BIAS) n.laneHint = 0;
+    else if (n.highRatio >= HIGH_LANE_BIAS) n.laneHint = 1;
+  }
 }
 
 /**
@@ -330,7 +497,14 @@ function selectTier(
     .map((note, index) => ({
       note,
       index,
-      priority: note.strength * metricWeight(note) * energyWeight(note.time),
+      // Rank within register, not raw flux (see `assignRanks`); a held note is
+      // what the music is doing at that moment, so it is kept in preference.
+      priority:
+        (note.rank ?? note.strength) *
+        REGISTER_WEIGHT[registerOf(note)] *
+        (note.holdDuration ? 1.25 : 1) *
+        metricWeight(note) *
+        energyWeight(note.time),
     }))
     // Ties broken by original index rather than by anything derived from
     // floating-point time, so the selection is byte-for-byte reproducible.
@@ -388,50 +562,91 @@ function registerOf(note: QuantizedNote): 'low' | 'mid' | 'high' {
 
 const LOW_LANE_BIAS = 0.42;
 const HIGH_LANE_BIAS = 0.3;
-/** A run of this many notes in one lane forces an alternation. */
+/** A run of this many notes in one lane forces an alternation… */
 const MAX_JACK_RUN = 2;
+/** …unless the notes have room between them, when a longer run is a bassline. */
+const MAX_SPACED_RUN = 4;
 
 /**
  * Assign lanes, place holds, and emit the final slices.
  *
- * Lane choice starts from the music — bass-dominant hits go to lane 0, bright
- * hits to lane 1, so the chart's shape tracks the drum pattern — and is then
- * overridden by two playability rules: no more than {@link MAX_JACK_RUN}
- * consecutive notes in one lane, and never two notes in the same lane closer
- * than the tier's `laneMinGap`.
+ * Two passes. The first asks each sound which lane it belongs on (the song's own
+ * timbre clusters, see {@link assignLaneHints}); the second walks the notes in
+ * time and applies what two fingers can actually do: no more than a few in a row
+ * on one lane, never two closer than the tier's `laneMinGap`, and nothing on a
+ * lane while a hold is on it. Looking a whole pass ahead is what lets a hold know
+ * which later notes would collide with it.
+ *
+ * Holds come from `note.holdDuration`, measured from the audio and snapped to the
+ * grid once, so the same note is the same hold on every tier. Here a hold is only
+ * shortened (never lengthened) — to end before the next note that wants its lane
+ * and is at least as important, and never below the playable minimum.
  */
+interface BuiltTier {
+  slices: Slice[];
+  /** The notes that survived, in time order — the pool the next easier tier draws from. */
+  kept: QuantizedNote[];
+  /** The lane each kept note ended up on, so an easier tier can leave it where it is. */
+  lanes: Map<QuantizedNote, number>;
+}
+
 function buildSlices(
   notes: QuantizedNote[],
   tier: Tier,
   difficulty: Difficulty,
   random: () => number,
-): Slice[] {
+  /** Lanes decided by the tier above. When given, this tier may only DROP notes. */
+  fixedLanes: Map<QuantizedNote, number> | null = null,
+): BuiltTier {
+  /* 1. The lane each sound asks for. */
+  const natural: number[] = new Array(notes.length);
+  let previousNatural = -1;
+  for (let i = 0; i < notes.length; i++) {
+    const fixed = fixedLanes?.get(notes[i]);
+    if (fixed !== undefined) {
+      natural[i] = fixed;
+      previousNatural = fixed;
+      continue;
+    }
+    const hint = notes[i].laneHint;
+    // No clear timbre: take the lane that keeps the pattern alternating, with a
+    // seeded coin only for the very first note.
+    const lane = hint !== undefined ? hint : previousNatural >= 0 ? 1 - previousNatural : random() < 0.5 ? 0 : 1;
+    natural[i] = lane;
+    previousNatural = lane;
+  }
+
+  /* 2. What two fingers can do. */
   const slices: Slice[] = [];
+  const kept: QuantizedNote[] = [];
+  const lanes = new Map<QuantizedNote, number>();
   const lastTimeInLane = [-Infinity, -Infinity];
   const holdEndInLane = [-Infinity, -Infinity];
   let runLane = -1;
   let runLength = 0;
   let holds = 0;
   const holdBudget = Math.floor(notes.length * tier.holdShare);
+  // An easier tier leaves every lane exactly as the tier above put it, so each of
+  // its notes is the SAME note (time and lane) one tier up — the nesting the
+  // difficulty ladder promises. It can only drop; it never moves a note.
+  const frozen = fixedLanes !== null;
 
   for (let i = 0; i < notes.length; i++) {
     const note = notes[i];
+    let lane = natural[i];
 
-    // 1. What the music suggests.
-    let lane: number;
-    if (note.lowRatio >= LOW_LANE_BIAS) lane = 0;
-    else if (note.highRatio >= HIGH_LANE_BIAS) lane = 1;
-    // Neither dominant — alternate, with a deterministic tie-break so a chart
-    // of pure mid-range hits still varies instead of sitting on one lane.
-    else lane = runLane >= 0 ? 1 - runLane : random() < 0.5 ? 0 : 1;
+    // Break jacks — but a run of notes with room between them is a bassline, not
+    // a jack, so it may be longer.
+    const sinceInLane = note.time - lastTimeInLane[lane];
+    const maxRun = sinceInLane >= tier.laneMinGap * 1.6 ? MAX_SPACED_RUN : MAX_JACK_RUN;
+    if (!frozen && lane === runLane && runLength >= maxRun) lane = 1 - lane;
 
-    // 2. Break jacks.
-    if (lane === runLane && runLength >= MAX_JACK_RUN) lane = 1 - lane;
-
-    // 3. Respect same-lane spacing; fall back to the other lane, then drop.
+    // Respect same-lane spacing and any hold on the lane; fall back to the other
+    // lane, then drop.
     if (note.time - lastTimeInLane[lane] < tier.laneMinGap || note.time < holdEndInLane[lane]) {
       const other = 1 - lane;
       if (
+        !frozen &&
         note.time - lastTimeInLane[other] >= tier.laneMinGap &&
         note.time >= holdEndInLane[other]
       ) {
@@ -441,21 +656,27 @@ function buildSlices(
       }
     }
 
-    // 4. Tap or hold. A hold needs the energy to actually sustain, room before
-    //    the next note in the same lane, and a slot in the tier's hold budget.
+    // Tap or hold.
     let type: Slice['type'] = 'STANDARD';
     let duration: number | undefined;
-    const minHold = note.beatLength * 0.75;
-    if (holds < holdBudget && note.sustain >= minHold) {
-      const nextInLane = findNextTime(notes, i + 1, note.time);
-      const available = nextInLane - note.time - tier.laneMinGap;
-      const wanted = Math.min(note.sustain, note.beatLength * 4);
-      // Quantise the tail to half-beats so a hold ends somewhere musical.
-      const stepped =
-        Math.floor(Math.min(wanted, available) / (note.beatLength / 2)) * (note.beatLength / 2);
-      if (stepped >= minHold) {
+    if (note.holdDuration && holds < holdBudget) {
+      const importance = note.rank ?? note.strength;
+      let limit = note.time + note.holdDuration;
+      for (let j = i + 1; j < notes.length; j++) {
+        const other = notes[j];
+        if (other.time >= limit) break;
+        // A note of equal or higher rank that wants this lane ends the hold; a
+        // weaker one is simply played on the other lane, or dropped, by step 2.
+        if (natural[j] === lane && (other.rank ?? other.strength) >= importance) {
+          limit = other.time - tier.laneMinGap;
+          break;
+        }
+      }
+      const step = note.beatLength / TAIL_DIVISIONS;
+      const fitted = Math.floor((limit - note.time) / step + 1e-6) * step;
+      if (fitted >= Math.max(MIN_HOLD_SECONDS, note.beatLength * MIN_HOLD_BEATS)) {
         type = 'LONG';
-        duration = stepped;
+        duration = fitted;
         holds++;
       }
     }
@@ -465,14 +686,15 @@ function buildSlices(
       time: Number(note.time.toFixed(4)),
       type,
       lane,
-      quant: quantOf(note.fraction),
-      // G12 — the register this attack sat in, from the SAME ratios step 1
-      // above used to pick a lane. Free: the analysis is already done, and it
-      // was being thrown away one line later.
+      quant: note.offGrid ? 16 : quantOf(note.fraction),
+      // G12 — the register this attack sat in, from the SAME ratios the lane
+      // hint falls back on.
       sound: registerOf(note),
       ...(duration !== undefined ? { duration: Number(duration.toFixed(4)) } : {}),
     });
 
+    kept.push(note);
+    lanes.set(note, lane);
     lastTimeInLane[lane] = note.time;
     if (duration !== undefined) holdEndInLane[lane] = note.time + duration;
     if (lane === runLane) runLength++;
@@ -482,15 +704,7 @@ function buildSlices(
     }
   }
 
-  return slices;
-}
-
-/** Time of the next note after index `from`, or +∞. */
-function findNextTime(notes: QuantizedNote[], from: number, after: number): number {
-  for (let i = from; i < notes.length; i++) {
-    if (notes[i].time > after) return notes[i].time;
-  }
-  return Infinity;
+  return { slices, kept, lanes };
 }
 
 /* ─── G7: chart-native mines ─────────────────────────────────────────────── */
@@ -747,29 +961,39 @@ export function buildCharts(
   const slices = {} as Record<Difficulty, Slice[]>;
   const noteCounts = {} as Record<Difficulty, number>;
 
-  let pool = notes;
+  // Copies, because ranks and lane hints are written onto them and the caller (the
+  // editor) keeps its pool between runs.
+  const prepared = notes.map((note) => ({ ...note }));
+  assignRanks(prepared);
+  assignLaneHints(prepared);
+
+  let pool = prepared;
+  let fixedLanes: Map<QuantizedNote, number> | null = null;
   for (const difficulty of TIER_ORDER) {
     const tier = TIERS[difficulty];
     const selected = selectTier(pool, tier, duration, sections, densityBias);
-    // The next (easier) tier draws from this one — that is the nesting.
-    pool = selected;
     const random = createSeededRandom(`${seed}:${difficulty}`);
-    const built = buildSlices(selected, tier, difficulty, random);
+    const built = buildSlices(selected, tier, difficulty, random, fixedLanes);
+
+    // The next (easier) tier draws from the notes that SURVIVED this one, with
+    // their lanes fixed — that is the nesting, by construction.
+    pool = built.kept;
+    fixedLanes = built.lanes;
 
     // G7. A separate PRNG stream, so a chart generated with mines has exactly
     // the same notes as one generated before mines existed — the mine sampler
     // cannot pull the lane assignments out from under `buildSlices`.
     const mines = placeMines(
-      built,
-      selected,
+      built.slices,
+      built.kept,
       tier,
       difficulty,
       duration,
       createSeededRandom(`${seed}:${difficulty}:mines`),
     );
 
-    slices[difficulty] = [...built, ...mines].sort((a, b) => a.time - b.time);
-    noteCounts[difficulty] = built.length;
+    slices[difficulty] = [...built.slices, ...mines].sort((a, b) => a.time - b.time);
+    noteCounts[difficulty] = built.slices.length;
   }
 
   return { slices, noteCounts };
