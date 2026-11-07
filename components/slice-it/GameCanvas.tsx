@@ -1267,6 +1267,7 @@ export function GameCanvas() {
       shadowDark: v('--slice-shadow-dark', 'rgba(2, 4, 15, 0.78)'),
       shadowLight: v('--slice-shadow-light', 'rgba(45, 179, 240, 0.07)'),
       textColor: v('--slice-text-muted', '#8f9ac9'),
+      muted: v('--slice-text-muted', '#8f9ac9'),
       // The printed playfield's three inks (see "The printed playfield").
       cyan: v('--slice-primary', PRESS_FALLBACK.cyan),
       pink: v('--slice-accent', PRESS_FALLBACK.pink),
@@ -2835,7 +2836,7 @@ export function GameCanvas() {
               BAR_H * 0.4,
               color,
               isMobileV,
-              isHeldActive,
+              Boolean(isHeldActive),
               dpr,
             );
             drawDisc(ctx, nx, ny, BAR_H, color, theme.paper, theme.ink, dpr);
