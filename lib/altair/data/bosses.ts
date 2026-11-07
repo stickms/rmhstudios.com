@@ -60,7 +60,7 @@ export const BOSSES: readonly BossDef[] = [
     name: 'The Hollow King',
     title: 'THE HOLLOW KING',
     spawnTime: 300,
-    baseHp: 2200,
+    baseHp: 1700,
     baseSpeed: 90,
     size: 3,
     armor: 3,
@@ -76,7 +76,7 @@ export const BOSSES: readonly BossDef[] = [
             id: 'hk_cleave',
             name: 'Cleave',
             cooldown: 3,
-            damage: 35,
+            damage: 30,
             description: 'Swings blade in a 180-degree arc (range 150px). 0.8s windup.',
             params: {
               arc: 180,
@@ -87,11 +87,11 @@ export const BOSSES: readonly BossDef[] = [
           {
             id: 'hk_summon_shambler',
             name: 'Summon Shambler Guard',
-            cooldown: 12,
+            cooldown: 16,
             damage: 0,
-            description: 'Summons 10 Shamblers in a circle around himself.',
+            description: 'Summons 6 Shamblers in a circle around himself.',
             params: {
-              summonCount: 10,
+              summonCount: 6,
             },
           },
           {

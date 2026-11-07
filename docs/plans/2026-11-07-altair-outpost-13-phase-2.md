@@ -121,7 +121,27 @@ Each step is its own pull request, merged after CI is green; any step that chang
    5:22, a class whose slow-poison start cannot cope with doubled enemy health. The bot has no upgrades
    and a real account needs ten wins to reach that tier, so this overstates it, but the early-game
    sensitivity is real and the curve gets tuned in the balance pass (step 6).
-3. **The 5:00 wall**: rework the Hollow King and the early curve; tune against the bot.
+3. **The 5:00 wall** (shipped; `SIM_VERSION` is now 3). What the bot actually found, in order:
+   - Three of four classes die to the Hollow King, but the squishy ones arrive at 5:00 already at 1-13%
+     health, and the Knight can die before the boss exists. It is attrition plus the boss, not the boss alone.
+   - **An engine flaw:** the wave director's spawn bank (`budgetAccumulator`) grew without limit while the
+     screen sat at the 200-enemy cap and was spent in one frame the moment enemies were cleared, so density
+     was pinned at 200 from ~1:30 and a boss arena sealed by clearing enemies refilled within seconds. The
+     bank is now bounded to ~3 s of spawning.
+   - Changes: an **arena seal** (lesser enemies collapse when a boss spawns, no drops or kill credit), the
+     bounded bank, and a leaner Hollow King (health 2200 to 1700, guards 10 to 6 every 16 s instead of 12,
+     cleave 35 to 30).
+   - **Tried and reverted:** trimming the budget growth ~20% and the pre-boss ramp 1.5x to 1.2x. Over four
+     seeds per class it left the median at 5:04 and traded classes against each other: the Hemomancer went
+     2:55 to 5:41 but the Knight, which levels by killing, fell 4:59 to 2:23 as early XP dried up.
+   - **Measured, four seeds per class, same bot, old game vs new:** no class is worse, the Knight no longer
+     dies before the boss (0 of 4, was 1 of 4), kills +7%, coins +10%, and survival inside the boss fight
+     roughly tripled (6 s to 17 s on the earlier version of this change). The Arcanist and Hemomancer are
+     bit-identical: they die before 5:00 for class-balance reasons that belong to step 4.
+   - **Not solved, and the bot cannot say:** nobody beat boss 1 in any version (0 of 16), and even a bot that
+     avoids ground hazards dies within ~25 s of the boss appearing. A boss's difficulty lives in telegraphs a
+     human reads and the bot does not, so this step does not claim the wall is gone. Boss difficulty needs the
+     real-player data in section 7.
 4. **Classes, two or three per PR**: new names, art and abilities, balanced with the bot.
 5. **Enemy roster and the other bosses**, with their sprites.
 6. **Economy pass**: tree cost, payout and pacing to the model in section 4.

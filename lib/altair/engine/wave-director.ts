@@ -290,7 +290,14 @@ export function updateWaveDirector(
   const bossModifier = world.bossActive ? 0.5 : 1.0;
 
   // Accumulate budget
-  state.budgetAccumulator += effectiveBudget * bossModifier * delta * heatModifiers(world.heat ?? 0).spawn;
+  const spawnRate = effectiveBudget * bossModifier * heatModifiers(world.heat ?? 0).spawn;
+  state.budgetAccumulator += spawnRate * delta;
+  // The bank holds at most ~3 s of spawning. It used to grow without limit while the screen sat at the
+  // enemy cap (spawning is blocked there), so the moment anything cleared enemies the whole reservoir was
+  // spent in one frame and the cap refilled instantly: density was pinned at 200 from ~1:30 whatever the
+  // player did, and a boss arena sealed by clearing enemies refilled before the player could move. With the
+  // bank bounded, pressure comes from the spawn RATE and a player who clears the screen gets room to breathe.
+  state.budgetAccumulator = Math.min(state.budgetAccumulator, Math.max(8, spawnRate * 3));
 
   // Surge spawning
   if (currentWave.specialEvent === 'surge') {

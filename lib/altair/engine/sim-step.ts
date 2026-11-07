@@ -31,7 +31,7 @@ import { fireWeapons, updateBoomerangs } from './weapon-system';
 import { updatePickups as updatePickupSystem, spawnBossDrops } from './pickup-system';
 import { updateWaveDirector as updateWaveDirectorSystem, spawnEnemyAt } from './wave-director';
 import { updateEnemyAI as updateEnemyAISystem, setEnemyPropHash } from './enemy-system';
-import { spawnBoss, updateBoss, snapshotBossHp, enforceBossDpsCap } from './boss-system';
+import { spawnBoss, updateBoss, snapshotBossHp, enforceBossDpsCap, sealArenaForBoss } from './boss-system';
 import { createCatalystRuntimeStates, updateCatalysts, onCatalystAttack } from './catalyst-system';
 import { DestructibleProp } from './tile-generator';
 import type { TileGenerator } from './tile-generator';
@@ -370,6 +370,7 @@ export function stepWorldPost(
 
     const newBossState = spawnBoss(world, waveEvents.bossSpawn);
     if (newBossState) {
+      sealArenaForBoss(world);
       rt.bossState = newBossState;
       world.enemies.push(newBossState.entity);
     }

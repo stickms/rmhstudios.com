@@ -26,8 +26,10 @@
  *   2  Heat (difficulty tiers): heat > 0 changes enemy stats, spawn rate, boss health and payout.
  *      Heat 0 plays exactly as version 1; the bump is so a Heat run can never be replayed by a server
  *      that does not know Heat.
+ *   3  Boss fights and spawn pacing: an arena seal when a boss spawns, a spawn bank bounded to ~3 s of
+ *      spawning (it used to be unbounded while the screen sat at the enemy cap), a leaner Hollow King.
  */
-export const SIM_VERSION: number = 2;
+export const SIM_VERSION: number = 3;
 
 /** The version a log was played on; logs that predate the stamp are version 1. */
 export function logSimVersion(log: { sim?: unknown }): number {

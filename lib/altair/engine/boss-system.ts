@@ -116,6 +116,21 @@ function createEvents(): BossSystemEvents {
 // =============================================================================
 
 /**
+ * Seal the arena for a boss fight: every lesser enemy collapses (no drops, no kill credit) so the fight is
+ * a readable duel against the boss and the minions it summons, instead of a boss dropped into a screen
+ * already packed to the 200-enemy cap. The balance bot found the pre-boss horde plus the boss was a
+ * wall every class died at (docs/plans/2026-11-07-altair-outpost-13-phase-2.md). Uses the normal corpse
+ * path, so they fade out; the boss itself and anything it summons afterwards are untouched.
+ */
+export function sealArenaForBoss(world: GameWorld): void {
+  for (const e of world.enemies) {
+    if (e.isBoss || e.isDead) continue;
+    e.isDead = true;
+    e.corpseTimer = 0.4;
+  }
+}
+
+/**
  * Spawn a boss by ID. Creates the EnemyEntity, scales stats, and returns
  * the initial BossState.
  */
