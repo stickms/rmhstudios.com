@@ -170,6 +170,32 @@ bot (`expert`) can clear the 20:00 boss on some seeds with the strongest class a
 clear the first boss on most; no class is more than ~2x another's median result without a stated reason.
 These are starting targets, to be revised once the bot is calibrated against real play.
 
+## 6b. Phase 3 (engine cost): the prop spatial hash
+
+Profiled the headless sim (`SoloRun`, knight, 90 s of game time at the 200-enemy cap, `node --cpu-prof`):
+**`SpatialHash.query` was 53% of all CPU**, and `collectObstacleBoxes`, which is the same query, another ~15%.
+Every ground enemy queries the prop grid three times per step, one of them with a 608 px radius (169 cells),
+and each cell lookup built and hashed a string key (`"${cx},${cy}"`) and each query allocated a `Set`.
+
+Change (`lib/altair/engine/spatial-hash.ts`): numeric cell keys, one reused dedupe set, and an early exit on an
+empty grid. Cell order and result order are unchanged.
+
+| At the 200-enemy cap | Before | After |
+| -------------------- | ------ | ----- |
+| ms per step          | 1.71   | 0.58  |
+| 90 s headless run    | 6.3 s  | 2.4 s |
+
+That is about 2.9x. A full 20-minute run is 72,000 steps, so replay verification goes from roughly 2 minutes
+to roughly 40 seconds of CPU per run (**extrapolated from the per-step cost, not a measured 20-minute run**; the
+bot cannot survive that long). Behaviour is bit-identical: the golden master hashes the whole world and
+passes with its file untouched, so no `SIM_VERSION` bump is needed. The query is still ~half of what is left;
+the next step would be a per-step candidate cache for the large navigation radius, which I did not take (the
+gain is uncertain and it must keep results exact). I also tried skipping unchanged-window tile generation and
+dropped it: about 4%, not worth touching world generation.
+
+**Not done:** an audit of the client render path and of the run-phase state machine; no profile of either was
+taken, so I make no claim about them.
+
 ## 7. What I need from the owner
 
 Real players' results are the only way to calibrate the bot and the payout model. `altair_solo_run` stores
