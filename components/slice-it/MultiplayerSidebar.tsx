@@ -137,7 +137,7 @@ export function MultiplayerSidebar() {
         {rows.map((row, index) => (
           <li
             key={row.socketId}
-            className="shrink-0 px-3 py-1.5 rounded-xl bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]"
+            className="shrink-0 px-3 py-1.5 rounded-xl bg-slice-bg border border-slice-border"
           >
             <span className="flex items-center gap-1.5 text-[10px] font-bold text-slice-text-light">
               <span>#{index + 1}</span>
@@ -167,7 +167,7 @@ export function MultiplayerSidebar() {
           {rows.map((row, index) => (
             <li
               key={row.socketId}
-              className="bg-slice-bg p-3 rounded-xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)]"
+              className="bg-slice-bg p-3 rounded-xl border border-slice-border"
             >
               <div className="flex justify-between items-center mb-1 gap-2">
                 <span className="font-bold text-slice-text text-sm truncate" title={row.name}>

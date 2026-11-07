@@ -253,7 +253,7 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
         </div>
       )}
 
-      <div className="bg-slice-bg rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] px-3 pb-3 pt-4 text-xs space-y-1 overflow-y-auto custom-scrollbar flex-1 min-h-[200px]">
+      <div className="bg-slice-bg rounded-xl border border-slice-border px-3 pb-3 pt-4 text-xs space-y-1 overflow-y-auto custom-scrollbar flex-1 min-h-[200px]">
         {isLoading ? (
           <div className="text-slice-text-light text-center py-4">
             {t('loading', { defaultValue: 'Loading...' })}
@@ -303,8 +303,8 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
         onOpenChange={(open) => !open && setWatching(null)}
       >
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-100 bg-black/50 backdrop-blur-sm" />
-          <DialogPrimitive.Content className="slice-theme bg-slice-bg fixed left-1/2 top-1/2 z-100 w-[min(48rem,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl shadow-2xl">
+          <DialogPrimitive.Overlay className="fixed inset-0 z-100 bg-black/50" />
+          <DialogPrimitive.Content className="slice-theme bg-slice-bg fixed left-1/2 top-1/2 z-100 w-[min(48rem,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl">
             <DialogPrimitive.Title className="sr-only">
               {ts('replay-title', { defaultValue: 'Replay' })}
             </DialogPrimitive.Title>
@@ -341,7 +341,7 @@ function FilterSelect({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-lg bg-slice-bg px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slice-text-light shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
+        className="w-full rounded-lg bg-slice-bg px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slice-text-light border border-slice-border"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

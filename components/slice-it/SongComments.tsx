@@ -87,7 +87,7 @@ export function SongComments({ songId }: SongCommentsProps) {
 
   if (!songId) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-slice-text-light gap-2 h-full min-h-[200px] bg-slice-bg rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]">
+      <div className="flex flex-col items-center justify-center p-8 text-slice-text-light gap-2 h-full min-h-[200px] bg-slice-bg rounded-xl border border-slice-border">
         <MessageSquare className="w-8 h-8 opacity-20" />
         <span className="text-xs">
           {t('select-song-to-view-comments', { defaultValue: 'Select a song to view comments' })}
@@ -97,7 +97,7 @@ export function SongComments({ songId }: SongCommentsProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-slice-bg rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] p-4 overflow-hidden">
+    <div className="flex flex-col h-full bg-slice-bg rounded-xl border border-slice-border p-4 overflow-hidden">
       <div className="pb-3 border-b border-slice-shadow-dark/30/50 mb-2 flex items-center gap-2">
         <MessageSquare className="w-4 h-4 text-slice-text-muted" />
         <span className="text-xs text-slice-text-muted font-bold uppercase tracking-widest">
@@ -125,10 +125,10 @@ export function SongComments({ songId }: SongCommentsProps) {
               initial="initial"
               animate="animate"
             >
-              <div className="w-6 h-6 rounded-full bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-[10px] shrink-0 shadow-sm mt-1">
+              <div className="w-6 h-6 rounded-full bg-slice-accent flex items-center justify-center text-white font-bold text-[10px] shrink-0 mt-1">
                 {comment.user.name?.[0] || '?'}
               </div>
-              <div className="bg-slice-card-bg/60 p-2 rounded-xl rounded-tl-none shadow-sm flex-1">
+              <div className="bg-slice-card-bg/60 p-2 rounded-xl rounded-tl-none flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="font-bold text-slice-text text-[10px]">{comment.user.name}</span>
                   <span className="text-[10px] text-slice-text-light">
@@ -155,7 +155,7 @@ export function SongComments({ songId }: SongCommentsProps) {
               onClick={handlePostComment}
               disabled={isPosting || !newComment.trim()}
               size="sm"
-              className="h-[40px] w-12 bg-blue-500 hover:bg-blue-600 text-white shadow-md rounded-lg p-0"
+              className="h-[40px] w-12 bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-0"
             >
               {t('post', { defaultValue: 'POST' })}
             </Button>

@@ -102,7 +102,7 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-        <section className="bg-slice-bg p-4 rounded-2xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]">
+        <section className="bg-slice-bg p-4 rounded-2xl border border-slice-border">
           {lobby?.song ? (
             <>
               <h2 className="font-black text-lg truncate">{lobby.song.title}</h2>
@@ -120,7 +120,7 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
             {teamTotals.map((total) => (
               <div
                 key={total.team}
-                className="p-4 rounded-2xl bg-slice-bg shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)]"
+                className="p-4 rounded-2xl bg-slice-bg border border-slice-border"
               >
                 <TeamBadge team={total.team} />
                 <span className="block mt-1 text-2xl font-black tabular-nums text-slice-text">
@@ -148,7 +148,7 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
               {rows.map((row, index) => (
                 <li
                   key={row.player.socketId || row.player.name}
-                  className={`flex items-center gap-3 p-3 rounded-xl bg-slice-bg shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] ${
+                  className={`flex items-center gap-3 p-3 rounded-xl bg-slice-bg border border-slice-border ${
                     row.player.disconnected ? 'opacity-50' : ''
                   }`}
                 >
@@ -204,7 +204,7 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
                 {results.teams.map((total) => (
                   <li
                     key={total.team}
-                    className={`p-3 rounded-xl bg-slice-bg shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] ${
+                    className={`p-3 rounded-xl bg-slice-bg border border-slice-border ${
                       total.place === 1 ? 'ring-2 ring-yellow-500/50' : ''
                     }`}
                   >
@@ -214,7 +214,8 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
                     </span>
                     <span className="block text-[10px] font-bold text-slice-text-light font-mono">
                       {(total.accuracy * 100).toFixed(1)}% ·{' '}
-                      {t('mp-team-players', { defaultValue_one: '{{count}} player',
+                      {t('mp-team-players', {
+                        defaultValue_one: '{{count}} player',
                         defaultValue: '{{count}} players',
                         count: total.players,
                       })}
@@ -227,7 +228,7 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
               {results.standings.map((standing) => (
                 <li
                   key={standing.socketId || standing.name}
-                  className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]"
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slice-bg border border-slice-border"
                 >
                   <span className="w-6 text-center text-sm font-black text-slice-text-light">
                     #{standing.place}

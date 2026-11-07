@@ -301,7 +301,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
   if (!session) {
     return (
       <Shell>
-        <Card className="w-full max-w-md bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none p-8 text-center">
+        <Card className="w-full max-w-md bg-slice-bg border border-slice-border p-8 text-center">
           <h2 className="text-2xl font-black text-slice-text-darker mb-4">
             {t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
           </h2>
@@ -312,7 +312,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
             })}
           </p>
           <Button
-            className="w-full py-6 bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg rounded-xl text-lg mb-4"
+            className="w-full py-6 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl text-lg mb-4"
             onClick={() => {
               window.location.href = `/login?callbackURL=${encodeURIComponent(window.location.pathname)}`;
             }}
@@ -353,7 +353,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
             {t('cancel', { defaultValue: 'CANCEL' })}
           </Button>
         </div>
-        <div className="flex-1 min-h-0 overflow-hidden rounded-2xl shadow-[inset_10px_10px_20px_var(--slice-shadow-dark),inset_-10px_-10px_20px_var(--slice-shadow-light)]">
+        <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-slice-border">
           <SongLibrary
             selectedSongId={lobby.song?.id ?? null}
             // Picking here puts the track on the lobby (or on the ballot); it
@@ -449,13 +449,13 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
             <CardTitle className="text-2xl font-black text-center text-slice-text-darker flex flex-col items-center gap-2">
               <span>{t('lobby-code', { defaultValue: 'LOBBY CODE' })}</span>
               <span className="flex items-center gap-3">
-                <span className="text-3xl sm:text-4xl tracking-widest text-blue-500 bg-slice-bg px-3 sm:px-4 py-2 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] font-mono">
+                <span className="text-3xl sm:text-4xl tracking-widest text-blue-500 bg-slice-bg px-3 sm:px-4 py-2 rounded-2xl border border-slice-border font-mono">
                   {lobby.code}
                 </span>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-12 w-12 shrink-0 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]"
+                  className="h-12 w-12 shrink-0 rounded-2xl border border-slice-border"
                   onClick={() => handleCopyInvite()}
                   title={t('copy-invite-link', { defaultValue: 'Copy Invite Link' })}
                   aria-label={t('copy-invite-link', { defaultValue: 'Copy Invite Link' })}
@@ -472,7 +472,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-12 w-12 shrink-0 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]"
+                  className="h-12 w-12 shrink-0 rounded-2xl border border-slice-border"
                   onClick={() => handleCopyInvite(true)}
                   title={ts('mp-copy-watch-link', { defaultValue: 'Copy Spectator Link' })}
                   aria-label={ts('mp-copy-watch-link', { defaultValue: 'Copy Spectator Link' })}
@@ -567,7 +567,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
               <h3 className="font-bold text-xs text-slice-text-light uppercase tracking-widest">
                 {t('selected-song', { defaultValue: 'Selected Song' })}
               </h3>
-              <div className="bg-slice-bg p-4 rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] flex justify-between items-center gap-3">
+              <div className="bg-slice-bg p-4 rounded-xl border border-slice-border flex justify-between items-center gap-3">
                 {lobby.song ? (
                   <span className="min-w-0">
                     <span className="block font-bold truncate">{lobby.song.title}</span>
@@ -599,7 +599,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
 
             <section className="space-y-2">
               <button
-                className="flex items-center gap-2 font-bold text-sm text-slice-text-darker uppercase tracking-widest hover:text-blue-500 w-full bg-slice-bg p-3 rounded-xl shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]"
+                className="flex items-center gap-2 font-bold text-sm text-slice-text-darker uppercase tracking-widest hover:text-blue-500 w-full bg-slice-bg p-3 rounded-xl border border-slice-border"
                 onClick={() => setShowModifiers((v) => !v)}
                 aria-expanded={showModifiers}
               >
@@ -636,7 +636,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
               </Button>
               {isHost ? (
                 <Button
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg rounded-xl disabled:opacity-50"
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl disabled:opacity-50"
                   onClick={() => net.startMatch()}
                   disabled={!canStart || connection !== 'connected'}
                 >
@@ -654,7 +654,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                 </Button>
               ) : (
                 <Button
-                  className={`flex-1 font-bold shadow-lg rounded-xl text-white ${
+                  className={`flex-1 font-bold rounded-xl text-white ${
                     me?.ready
                       ? 'bg-green-500 hover:bg-green-600'
                       : 'bg-orange-500 hover:bg-orange-600'
@@ -678,7 +678,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
 
   return (
     <Shell>
-      <Card className="w-full max-w-lg bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none">
+      <Card className="w-full max-w-lg bg-slice-bg border border-slice-border">
         <CardHeader>
           <div className="flex justify-center mb-1">
             <ConnectionPill connection={connection} />
@@ -696,7 +696,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
           </div>
 
           <Button
-            className="w-full py-6 bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg rounded-xl text-lg"
+            className="w-full py-6 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl text-lg"
             onClick={() => net.quickplay()}
             disabled={connection !== 'connected'}
           >
@@ -722,11 +722,11 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                 }
               }}
               placeholder={t('lobby-code-placeholder', { defaultValue: 'Lobby Code' })}
-              className="bg-(--slice-input-bg) border-(--slice-input-border) text-slice-text shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] rounded-xl uppercase text-center font-mono tracking-widest h-12"
+              className="bg-(--slice-input-bg) border-(--slice-input-border) text-slice-text border border-slice-border rounded-xl uppercase text-center font-mono tracking-widest h-12"
               aria-label={t('lobby-code', { defaultValue: 'LOBBY CODE' })}
             />
             <Button
-              className="bg-slice-bg text-blue-500 font-bold shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] rounded-xl px-6"
+              className="bg-slice-bg text-blue-500 font-bold border border-slice-border rounded-xl px-6"
               onClick={() => net.joinLobby(codeInput)}
               disabled={!net.normalizeLobbyCode(codeInput) || connection !== 'connected'}
             >
@@ -736,7 +736,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
 
           <Button
             variant="outline"
-            className="w-full rounded-xl shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]"
+            className="w-full rounded-xl border border-slice-border"
             onClick={() => net.createLobby(false)}
             disabled={connection !== 'connected'}
           >
@@ -752,7 +752,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                 {publicLobbies.map((row) => (
                   <li key={row.code} className="flex items-stretch gap-2">
                     <button
-                      className="flex-1 flex items-center justify-between gap-3 p-3 rounded-xl bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] hover:text-blue-500 text-left"
+                      className="flex-1 flex items-center justify-between gap-3 p-3 rounded-xl bg-slice-bg border border-slice-border hover:text-blue-500 text-left"
                       onClick={() => net.joinLobby(row.code)}
                     >
                       <span className="min-w-0">
@@ -771,7 +771,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-auto w-11 shrink-0 rounded-xl shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]"
+                      className="h-auto w-11 shrink-0 rounded-xl border border-slice-border"
                       onClick={() => {
                         if (net.spectateLobby(row.code)) setSpectatingCode(row.code);
                       }}
@@ -930,8 +930,8 @@ function TeamControls({
           aria-pressed={myTeam === team}
           className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest disabled:opacity-50 ${
             myTeam === team
-              ? `${TEAM_STYLES[team]} shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]`
-              : 'bg-slice-bg text-slice-text-muted shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
+              ? `${TEAM_STYLES[team]} border border-slice-border`
+              : 'bg-slice-bg text-slice-text-muted border border-slice-border'
           }`}
         >
           {team === 'a'
@@ -1005,8 +1005,8 @@ function VotePanel({
               <button
                 className={`w-full flex items-center justify-between gap-3 p-3 rounded-xl text-left disabled:opacity-50 ${
                   mine
-                    ? 'bg-blue-500/10 shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]'
-                    : 'bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
+                    ? 'bg-blue-500/10 border border-slice-border'
+                    : 'bg-slice-bg border border-slice-border'
                 }`}
                 onClick={() => net.voteForSong(nomination.song.id)}
                 disabled={disabled}
@@ -1092,7 +1092,7 @@ function PlayerRow({
   const { t } = useTranslation('c-game');
   return (
     <li
-      className={`flex justify-between items-center gap-2 p-3 rounded-xl bg-slice-bg shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] ${
+      className={`flex justify-between items-center gap-2 p-3 rounded-xl bg-slice-bg border border-slice-border ${
         player.disconnected ? 'opacity-50' : ''
       }`}
     >
@@ -1241,7 +1241,7 @@ function ModifierPanel({
   ] as const;
 
   return (
-    <div className="bg-slice-bg p-4 rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] space-y-3">
+    <div className="bg-slice-bg p-4 rounded-xl border border-slice-border space-y-3">
       <div className="space-y-1.5">
         <span className="text-xs font-bold text-slice-text-darker">
           {t('note-density', { defaultValue: 'Note Density' })}
@@ -1256,8 +1256,8 @@ function ModifierPanel({
                 aria-pressed={active}
                 className={`px-1.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide border ${
                   active
-                    ? 'text-white shadow-md'
-                    : 'bg-slice-bg text-slice-text-light border-slice-shadow-dark/50 shadow-[2px_2px_4px_var(--slice-shadow-dark),-2px_-2px_4px_var(--slice-shadow-light)]'
+                    ? 'text-white'
+                    : 'bg-slice-bg text-slice-text-light border-slice-shadow-dark/50 border border-slice-border'
                 }`}
                 style={
                   active ? { backgroundColor: level.color, borderColor: level.color } : undefined
@@ -1305,8 +1305,8 @@ function ModifierPanel({
           aria-pressed={modifiers[key]}
           className={`flex items-center justify-between w-full p-2 rounded-lg ${
             modifiers[key]
-              ? 'bg-blue-500/10 shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]'
-              : 'bg-slice-bg shadow-[2px_2px_4px_var(--slice-shadow-dark),-2px_-2px_4px_var(--slice-shadow-light)]'
+              ? 'bg-blue-500/10 border border-slice-border'
+              : 'bg-slice-bg border border-slice-border'
           }`}
           onClick={() => onChange({ [key]: !modifiers[key] } as Partial<Modifiers>)}
         >
@@ -1367,7 +1367,7 @@ function LobbyChat({
       <h3 className="font-bold text-xs text-slice-text-light uppercase tracking-widest">
         {t('lobby-chat', { defaultValue: 'Chat' })}
       </h3>
-      <div className="h-28 overflow-y-auto rounded-xl bg-slice-bg p-3 space-y-1 shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]">
+      <div className="h-28 overflow-y-auto rounded-xl bg-slice-bg p-3 space-y-1 border border-slice-border">
         {chat.length === 0 ? (
           <p className="text-xs text-slice-text-light italic">
             {t('chat-empty', { defaultValue: 'Say hello…' })}

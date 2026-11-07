@@ -149,12 +149,12 @@ const KeybindInput = ({
   const capture = useBindCapture(onChange);
 
   return (
-    <div className="flex justify-between items-center bg-slice-bg p-3 rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]">
+    <div className="flex justify-between items-center bg-slice-bg p-3 rounded-xl border border-slice-border">
       <span className="text-xs text-slice-text-muted uppercase font-bold">{label}</span>
       <Button
         variant="ghost"
         size="sm"
-        className={`font-mono text-xs w-32 rounded-lg ${capture.listening ? 'bg-blue-500/20 text-blue-400' : 'bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker'}`}
+        className={`font-mono text-xs w-32 rounded-lg ${capture.listening ? 'bg-blue-500/20 text-blue-400' : 'bg-slice-bg border border-slice-border text-slice-text-darker'}`}
         onClick={capture.toggle}
       >
         {capture.listening
@@ -188,9 +188,7 @@ const ToggleRow = ({
     aria-pressed={value}
     onClick={() => onChange(!value)}
     className={`w-full flex items-center justify-between gap-4 text-left p-4 rounded-2xl bg-slice-bg transition-shadow ${
-      value
-        ? 'shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)]'
-        : 'shadow-[4px_4px_10px_var(--slice-shadow-dark),-4px_-4px_10px_var(--slice-shadow-light)]'
+      value ? 'border border-slice-border' : 'border border-slice-border'
     }`}
   >
     <span className="min-w-0">
@@ -244,7 +242,7 @@ const ChoiceRow = <T extends string>({
           className={`px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-shadow ${
             value === opt.id
               ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.25)]'
-              : 'bg-slice-bg text-slice-text-darker shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
+              : 'bg-slice-bg text-slice-text-darker border border-slice-border'
           }`}
         >
           {opt.label}
@@ -315,7 +313,7 @@ const OffsetStepper = ({
       <button
         type="button"
         aria-label={`${label} −${step}ms`}
-        className="w-7 h-7 rounded-lg bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
+        className="w-7 h-7 rounded-lg bg-slice-bg border border-slice-border text-slice-text-darker font-bold text-sm flex items-center justify-center"
         onClick={() => onChange(value - step)}
       >
         −
@@ -327,7 +325,7 @@ const OffsetStepper = ({
       <button
         type="button"
         aria-label={`${label} +${step}ms`}
-        className="w-7 h-7 rounded-lg bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
+        className="w-7 h-7 rounded-lg bg-slice-bg border border-slice-border text-slice-text-darker font-bold text-sm flex items-center justify-center"
         onClick={() => onChange(value + step)}
       >
         +
@@ -387,7 +385,7 @@ const ExtraBindRow = ({ lane }: { lane: 0 | 1 }) => {
           key={code}
           type="button"
           onClick={() => remove(code)}
-          className="px-2.5 py-1.5 rounded-lg font-mono text-xs font-bold bg-slice-bg text-slice-text-darker shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
+          className="px-2.5 py-1.5 rounded-lg font-mono text-xs font-bold bg-slice-bg text-slice-text-darker border border-slice-border"
           aria-label={t('extra-binds-remove', {
             defaultValue: 'Remove {{bind}}',
             bind: formatBind(code),
@@ -407,7 +405,7 @@ const ExtraBindRow = ({ lane }: { lane: 0 | 1 }) => {
           className={`font-mono text-xs rounded-lg ${
             capture.listening
               ? 'bg-blue-500/20 text-blue-400'
-              : 'bg-slice-bg text-slice-text-darker shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
+              : 'bg-slice-bg text-slice-text-darker border border-slice-border'
           }`}
           onClick={capture.start}
         >
@@ -459,13 +457,13 @@ const ModifierPresets = () => {
           }}
           placeholder={t('preset-name-placeholder', { defaultValue: 'Name this setup' })}
           aria-label={t('preset-name-label', { defaultValue: 'Preset name' })}
-          className="flex-1 min-w-0 bg-slice-bg shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] rounded-xl px-4 py-3 text-sm font-bold text-slice-text focus:outline-none"
+          className="flex-1 min-w-0 bg-slice-bg border border-slice-border rounded-xl px-4 py-3 text-sm font-bold text-slice-text focus:outline-none"
         />
         <Button
           variant="ghost"
           disabled={!name.trim()}
           onClick={save}
-          className="shrink-0 rounded-xl px-4 font-black uppercase tracking-wide text-xs bg-slice-bg text-slice-text-darker shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] disabled:opacity-40"
+          className="shrink-0 rounded-xl px-4 font-black uppercase tracking-wide text-xs bg-slice-bg text-slice-text-darker border border-slice-border disabled:opacity-40"
         >
           {t('preset-save', { defaultValue: 'Save' })}
         </Button>
@@ -485,7 +483,7 @@ const ModifierPresets = () => {
               <button
                 type="button"
                 onClick={() => applyPreset(preset.id)}
-                className="flex-1 min-w-0 text-left px-4 py-3 rounded-xl text-sm font-black text-slice-text-darker bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] truncate"
+                className="flex-1 min-w-0 text-left px-4 py-3 rounded-xl text-sm font-black text-slice-text-darker bg-slice-bg border border-slice-border truncate"
               >
                 {preset.name}
               </button>
@@ -512,18 +510,14 @@ const ModifierPresets = () => {
 /** A titled block. One shape for every section so the drawer reads as a list. */
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="space-y-4">
-    <h3 className="slice-label ml-1">
-      {title}
-    </h3>
+    <h3 className="slice-label ml-1">{title}</h3>
     {children}
   </div>
 );
 
 /** The inset card the slider/choice sections sit on. */
 const Well = ({ children }: { children: React.ReactNode }) => (
-  <div className="bg-slice-bg p-6 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] space-y-5">
-    {children}
-  </div>
+  <div className="bg-slice-bg p-6 rounded-3xl border border-slice-border space-y-5">{children}</div>
 );
 
 interface SettingsPanelProps {
@@ -681,7 +675,7 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
         <Section title={t('c-game:authorized-operator', { defaultValue: 'Authorized Operator' })}>
           <input
             type="text"
-            className="w-full bg-slice-bg shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] rounded-2xl p-6 text-xl font-bold text-slice-text focus:outline-none transition-shadow"
+            className="w-full bg-slice-bg border border-slice-border rounded-2xl p-6 text-xl font-bold text-slice-text focus:outline-none transition-shadow"
             placeholder={t('c-game:enter-name', { defaultValue: 'Enter name' })}
             aria-label={t('c-game:authorized-operator', { defaultValue: 'Authorized Operator' })}
             maxLength={32}
@@ -692,7 +686,7 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
           <Section title={t('c-game:audio-output-level', { defaultValue: 'Audio Output Level' })}>
-            <div className="bg-slice-bg p-8 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] space-y-6">
+            <div className="bg-slice-bg p-8 rounded-3xl border border-slice-border space-y-6">
               <div className="flex justify-between text-sm font-black text-slice-text-darker">
                 <span>{t('c-game:master', { defaultValue: 'Master' })}</span>
                 <span className="text-blue-500 font-mono tabular-nums">{volume}%</span>
@@ -734,7 +728,7 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
             </div>
 
             {/* I1 — more than one key per lane. */}
-            <div className="bg-slice-bg p-4 rounded-2xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] space-y-3">
+            <div className="bg-slice-bg p-4 rounded-2xl border border-slice-border space-y-3">
               <p className="text-[10px] text-slice-text-light font-bold leading-snug">
                 {t('extra-binds-hint', {
                   defaultValue:
@@ -755,7 +749,7 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
 
             {/* A6 / I5 — input latency, separate from the audio offset. The
                 calibration screen writes the audio one; this is the hand. */}
-            <div className="bg-slice-bg p-4 rounded-2xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] space-y-3">
+            <div className="bg-slice-bg p-4 rounded-2xl border border-slice-border space-y-3">
               <OffsetStepper
                 label={t('input-offset', { defaultValue: 'Input Offset' })}
                 value={inputOffset}
@@ -772,7 +766,7 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
 
             <div className="pt-2">
               <Button
-                className="w-full h-16 bg-slice-bg text-slice-text-darker shadow-[8px_8px_16px_var(--slice-shadow-dark),-8px_-8px_16px_var(--slice-shadow-light)] active:shadow-inner rounded-2xl font-black text-sm tracking-widest uppercase transition"
+                className="w-full h-16 bg-slice-bg text-slice-text-darker border border-slice-border rounded-2xl font-black text-sm tracking-widest uppercase transition"
                 onClick={onCalibrate}
               >
                 {t('c-game:calibrate-synchronization', {
@@ -870,7 +864,7 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
               value={!!modifiers.lenientTiming}
               onChange={(next) => setModifiers({ ...modifiers, lenientTiming: next })}
             />
-            <div className="bg-slice-bg p-6 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]">
+            <div className="bg-slice-bg p-6 rounded-3xl border border-slice-border">
               <div className="text-[10px] text-slice-text-light font-bold leading-snug mb-3">
                 {t('timing-windows-hint', {
                   defaultValue:
@@ -1148,7 +1142,7 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
         </Section>
 
         <Section title={t('c-game:hit-sound-effect', { defaultValue: 'Hit Sound Effect' })}>
-          <div className="bg-slice-bg p-6 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]">
+          <div className="bg-slice-bg p-6 rounded-3xl border border-slice-border">
             {hitSoundCategories.map((category) => (
               <div key={category} className="mb-4 last:mb-0">
                 <div className="text-[9px] text-slice-text-light uppercase tracking-[0.3em] font-black mb-2 ml-1">
@@ -1161,8 +1155,8 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
                       type="button"
                       className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
                         hitSound === sound.id
-                          ? 'bg-blue-500 text-white shadow-[3px_3px_8px_rgba(59,130,246,0.4),-3px_-3px_8px_var(--slice-shadow-light)]'
-                          : 'bg-slice-bg text-slice-text-darker shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] hover:shadow-[1px_1px_3px_var(--slice-shadow-dark),-1px_-1px_3px_var(--slice-shadow-light)] active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]'
+                          ? 'bg-blue-500 text-white border border-slice-border'
+                          : 'bg-slice-bg text-slice-text-darker border border-slice-border hover:border border-slice-border'
                       }`}
                       onClick={() => {
                         setHitSound(sound.id);

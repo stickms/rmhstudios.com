@@ -336,5 +336,7 @@
   "pressings": "Pressings",
   "notes-pct-named": "{{name}}, {{pct}} notes",
   "plays-short": "plays",
-  "combo-label": "Combo"
+  "combo-label": "Combo",
+  "end-of-side": "End of side",
+  "pressed-by-you": "Pressed by you"
 }

@@ -9,12 +9,11 @@ import { useSliceItStore } from '@/lib/slice-it/store';
 import type { GameEngine } from '@/lib/slice-it/engine';
 import { useRunSummary, useSubmitScore } from '@/lib/slice-it/useSubmitScore';
 import { gradeFor } from '@/lib/slice-it/scoring';
-import { JUDGEMENT_COLORS, JUDGEMENT_ORDER, RANKED_MIN_SPEED } from '@/lib/slice-it/constants';
+import { JUDGEMENT_ORDER, RANKED_MIN_SPEED } from '@/lib/slice-it/constants';
 import type { RunStats } from '@/lib/slice-it/types';
 import type { TimingSummary } from '@/lib/slice-it/integrity';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { RotateCcw, Home, Trophy, Wand2 } from 'lucide-react';
+import { Wand2 } from 'lucide-react';
 import { offsetAdvice } from '@/lib/slice-it/timing-advice';
 
 interface GameOverProps {
@@ -42,19 +41,12 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
 
   // Read once per render, not per section: `getRunStats()` copies the histogram,
   // and four callers would be four copies of it a frame.
+  // The chart's own name, which is what the score submission carries too.
+  const songTitle = engine?.getActiveMap()?.name ?? null;
   const stats: RunStats | null = engine?.getRunStats() ?? null;
   const timing: TimingSummary | null = engine?.getTimingStats() ?? null;
 
   const accuracyPct = (accuracy * 100).toFixed(2);
-  const accuracyColor =
-    accuracy >= 1.0
-      ? 'text-cyan-500'
-      : accuracy >= 0.95
-        ? 'text-green-500'
-        : accuracy >= 0.8
-          ? 'text-yellow-500'
-          : 'text-slice-text-muted';
-
   // The delta against your own best is the most motivating single number here,
   // and it is the one that decides whether the player presses Retry.
   const bestDelta = previousBest !== null ? score - previousBest : null;
@@ -72,82 +64,84 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
   const advice = offsetAdvice(timing);
   const suggestedOffset = advice?.confident ? advice.suggestedDeltaMs : null;
 
-  const judgementPeak = stats ? Math.max(1, ...JUDGEMENT_ORDER.map((j) => stats.judgements[j])) : 1;
+  const grade = gradeFor(accuracy);
+  const failedTitle = stats?.failed
+    ? stats.failReason === 'perfectionist'
+      ? ts('perfectionist-failed', { defaultValue: 'NOT PERFECT' })
+      : ts('gauge-failed', { defaultValue: 'GAUGE EMPTY' })
+    : null;
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg/80 backdrop-blur-sm p-4">
-      <Card className="w-full max-w-md bg-slice-bg text-slice-text shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] border-none rounded-[2rem] overflow-hidden">
-        <CardHeader className="text-center pb-2 pt-8">
-          <CardTitle
-            className={`text-4xl sm:text-5xl font-black tracking-tight ${
-              stats?.failed ? 'text-red-500' : 'text-blue-500'
-            }`}
-          >
-            {stats?.failed
-              ? stats.failReason === 'perfectionist'
-                ? ts('perfectionist-failed', { defaultValue: 'NOT PERFECT' })
-                : ts('gauge-failed', { defaultValue: 'GAUGE EMPTY' })
-              : t('complete', { defaultValue: 'COMPLETE' })}
-          </CardTitle>
-          {isUnranked && (
-            <div className="mt-2 inline-flex items-center gap-1.5 bg-orange-500/20 text-orange-400 text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mx-auto">
-              <span>{t('unranked', { defaultValue: 'Unranked' })}</span>
-              <span className="text-[9px] font-normal normal-case tracking-normal text-orange-400">
-                {t('speed-below', { defaultValue: 'Speed below 1.0x' })}
+    <div className="slice-results absolute inset-0 z-50 overflow-y-auto overscroll-contain bg-slice-bg">
+      <div className="slice-results__line">
+        <span className="slice-chip">RMH-050</span>
+        <span className="slice-label">
+          {t('side-a', { defaultValue: 'Side A' })} <i>/</i>{' '}
+          {t('end-of-side', { defaultValue: 'End of side' })}
+        </span>
+      </div>
+
+      <div className="slice-results__grid">
+        {/* The grade, cut on the slice. Two clips of the same letter, the lower one
+            shifted along the cut; the real grade is read out by the label. */}
+        <div className="slice-results__grade">
+          <div className="slice-grade" aria-hidden>
+            <span className="slice-grade__half slice-grade__half--top">{grade}</span>
+            <span className="slice-grade__half slice-grade__half--bot">{grade}</span>
+          </div>
+          <span className="sr-only">
+            {t('grade-label', { defaultValue: 'Grade {{grade}}', grade })}
+          </span>
+          {isNewBest && (
+            <motion.div
+              className="slice-results__best"
+              variants={popIn}
+              initial="initial"
+              animate="animate"
+            >
+              <span className="slice-stamp text-pink-500">
+                {t('new-best', { defaultValue: 'NEW BEST!' })}
               </span>
+            </motion.div>
+          )}
+        </div>
+
+        {/* The liner notes. */}
+        <div className="slice-results__notes">
+          <div className="slice-label">
+            {t('side-a', { defaultValue: 'Side A' })} ·{' '}
+            {t('pressed-by-you', { defaultValue: 'Pressed by you' })}
+          </div>
+          <h2 className="slice-display slice-results__title">
+            {failedTitle ?? songTitle ?? t('complete', { defaultValue: 'COMPLETE' })}
+          </h2>
+          {failedTitle && songTitle && <div className="slice-serif text-2xl">{songTitle}</div>}
+          {isUnranked && (
+            <div className="slice-label mt-3 text-slice-accent">
+              {t('unranked', { defaultValue: 'Unranked' })} ·{' '}
+              {t('speed-below', { defaultValue: 'Speed below 1.0x' })}
             </div>
           )}
           {/* Full-combo and all-marvellous lamps, in the genre's escalation. */}
           {stats && stats.notesResolved > 0 && (stats.isFullCombo || stats.isPerfect) && (
-            <div className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.3em] px-3 py-1.5 rounded-full mx-auto bg-slice-bg shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]">
-              <span className={stats.isPerfect ? 'text-cyan-500' : 'text-emerald-500'}>
-                {stats.isPerfect
-                  ? ts('lamp-perfect', { defaultValue: 'Perfect' })
-                  : ts('lamp-full-combo', { defaultValue: 'Full Combo' })}
-              </span>
+            <div className="slice-label mt-3 text-slice-primary">
+              {stats.isPerfect
+                ? ts('lamp-perfect', { defaultValue: 'Perfect' })
+                : ts('lamp-full-combo', { defaultValue: 'Full Combo' })}
             </div>
           )}
           {stats?.gaugeBroken && !stats.failed && (
-            <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-slice-text-light">
+            <div className="slice-label mt-3">
               {ts('gauge-bonus-lost', { defaultValue: 'Gauge broke — bonus forfeited' })}
             </div>
           )}
-        </CardHeader>
 
-        <CardContent className="space-y-6 text-center relative z-10 p-8">
-          <div className="space-y-1">
-            <div className="text-sm text-slice-text-light uppercase tracking-widest font-bold">
-              {t('final-score', { defaultValue: 'Final Score' })}
-            </div>
-            {isNewBest && (
-              <motion.div
-                className="flex justify-center"
-                variants={popIn}
-                initial="initial"
-                animate="animate"
-              >
-                <div className="bg-yellow-400 text-black text-[10px] font-black px-2 py-1 rounded-md shadow-lg flex items-center gap-1">
-                  <Trophy className="w-3 h-3" />
-                  {t('new-best', { defaultValue: 'NEW BEST!' })}
-                </div>
-              </motion.div>
-            )}
-            {previousBest !== null && !isNewBest && (
-              <div className="text-[10px] font-bold uppercase tracking-widest text-slice-text-light">
-                {t('previous-best', {
-                  defaultValue: 'Best: {{score}}',
-                  score: previousBest.toLocaleString(),
-                })}
-              </div>
-            )}
-            <div className="text-4xl sm:text-6xl font-bold text-slice-text relative inline-block tabular-nums">
-              {score.toLocaleString()}
-            </div>
-            {bestDelta !== null && (
+          <div className="slice-results__score">
+            <div className="slice-label">{t('final-score', { defaultValue: 'Final Score' })}</div>
+            <div className="slice-results__figure">{score.toLocaleString()}</div>
+            {bestDelta !== null ? (
               <div
-                className={`text-xs font-bold tabular-nums ${
-                  bestDelta > 0 ? 'text-emerald-500' : 'text-slice-text-light'
-                }`}
+                className={`slice-figure text-sm ${bestDelta > 0 ? 'text-slice-primary' : 'text-slice-text-muted'}`}
               >
                 {bestDelta > 0
                   ? ts('best-delta-up', {
@@ -159,86 +153,67 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
                       delta: Math.abs(bestDelta).toLocaleString(),
                     })}
               </div>
+            ) : (
+              previousBest !== null && (
+                <div className="slice-figure text-sm text-slice-text-muted">
+                  {t('previous-best', {
+                    defaultValue: 'Best: {{score}}',
+                    score: previousBest.toLocaleString(),
+                  })}
+                </div>
+              )
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-slice-bg p-4 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] flex flex-col gap-1">
-              <div className="text-xs text-slice-text-light uppercase font-bold">
-                {t('max-chain', { defaultValue: 'Max Chain' })}
-              </div>
-              <div className="text-xl font-bold text-slice-text-darker">
-                {maxCombo > 0 ? `${maxCombo}x` : '--'}
-              </div>
-            </div>
-            <div className="bg-slice-bg p-4 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] flex flex-col gap-1">
-              <div className="text-xs text-slice-text-light uppercase font-bold">
-                {t('accuracy', { defaultValue: 'Accuracy' })}
-              </div>
-              <div className={`text-xl font-bold font-mono ${accuracyColor}`}>{accuracyPct}%</div>
-              <div className="text-[10px] font-black text-slice-text-light uppercase tracking-widest">
-                {t('grade-label', { defaultValue: 'Grade {{grade}}', grade: gradeFor(accuracy) })}
-              </div>
-            </div>
-            <div className="bg-slice-bg p-4 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] flex flex-col gap-1">
-              <div className="text-xs text-slice-text-light uppercase font-bold">
-                {t('speed', { defaultValue: 'Speed' })}
-              </div>
-              <div className="text-xl font-bold text-slice-text-darker">
-                {multiplier.toFixed(1)}x
-              </div>
-            </div>
-          </div>
-
-          {/* Judgement histogram.
-              Bars are scaled to the largest count, not to the note total: on a
-              good run MARVELOUS dwarfs everything and a total-scaled chart is one
-              bar and five slivers, which hides exactly the distribution the
-              player came to read. */}
-          {stats && stats.notesResolved > 0 && (
-            <dl className="bg-slice-bg px-4 py-3 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] space-y-1.5 text-left">
-              {JUDGEMENT_ORDER.map((judgement) => (
-                <div key={judgement} className="flex items-center gap-2">
-                  <dt
-                    className="w-20 shrink-0 text-[10px] font-black uppercase tracking-wider"
-                    style={{ color: JUDGEMENT_COLORS[judgement] }}
+          {/* The tally, as dotted leaders: judgement, dots, count. */}
+          <dl className="slice-results__tally">
+            {stats &&
+              stats.notesResolved > 0 &&
+              JUDGEMENT_ORDER.map((judgement) => (
+                <div key={judgement} className="slice-leader">
+                  <dt>{judgement}</dt>
+                  <i aria-hidden />
+                  <dd
+                    className={
+                      judgement === 'MARVELOUS' || judgement === 'PERFECT'
+                        ? 'text-slice-primary'
+                        : judgement === 'MISS' && stats.judgements[judgement] > 0
+                          ? 'text-slice-accent'
+                          : undefined
+                    }
                   >
-                    {judgement}
-                  </dt>
-                  <div className="flex-1 h-2 rounded-full bg-slice-shadow-dark/25 overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${(stats.judgements[judgement] / judgementPeak) * 100}%`,
-                        background: JUDGEMENT_COLORS[judgement],
-                      }}
-                    />
-                  </div>
-                  <dd className="w-10 shrink-0 text-right font-mono text-xs text-slice-text-darker tabular-nums">
                     {stats.judgements[judgement]}
                   </dd>
                 </div>
               ))}
-            </dl>
-          )}
+            <div className="slice-leader">
+              <dt>{t('max-chain', { defaultValue: 'Max Chain' })}</dt>
+              <i aria-hidden />
+              <dd>{maxCombo > 0 ? `${maxCombo}×` : '--'}</dd>
+            </div>
+            <div className="slice-leader">
+              <dt>{t('accuracy', { defaultValue: 'Accuracy' })}</dt>
+              <i aria-hidden />
+              <dd>{accuracyPct}%</dd>
+            </div>
+            <div className="slice-leader">
+              <dt>{t('speed', { defaultValue: 'Speed' })}</dt>
+              <i aria-hidden />
+              <dd className="text-slice-text-muted">{multiplier.toFixed(1)}×</dd>
+            </div>
+          </dl>
 
           {/* Timing distribution.
               Unstable rate is stdDev x 10 by convention (osu!), which puts a
               typical run in the 60–200 range instead of 6–20 — a scale players
               in this genre already read. */}
           {timing && timing.samples > 0 && (
-            <div className="bg-slice-bg px-4 py-3 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] text-left">
-              <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                <dt className="text-slice-text-light font-bold uppercase tracking-wider text-[10px]">
-                  {ts('unstable-rate', { defaultValue: 'Unstable rate' })}
-                </dt>
-                <dd className="font-mono text-right text-slice-text-darker tabular-nums">
-                  {(timing.stdDevMs * 10).toFixed(0)}
-                </dd>
-                <dt className="text-slice-text-light font-bold uppercase tracking-wider text-[10px]">
-                  {ts('timing-bias', { defaultValue: 'Bias' })}
-                </dt>
-                <dd className="font-mono text-right text-slice-text-darker tabular-nums">
+            <div className="slice-results__timing">
+              <dl className="slice-results__timing-list">
+                <dt>{ts('unstable-rate', { defaultValue: 'Unstable rate' })}</dt>
+                <dd>{(timing.stdDevMs * 10).toFixed(0)}</dd>
+                <dt>{ts('timing-bias', { defaultValue: 'Bias' })}</dt>
+                <dd>
                   {Math.abs(timing.meanMs).toFixed(1)} ms{' '}
                   {timing.meanMs < 0
                     ? ts('timing-early', { defaultValue: 'early' })
@@ -247,13 +222,13 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
               </dl>
 
               {/* One-tap calibration. The measurement already exists — it is
-                  submitted with every score for the integrity check — so the
-                  only thing standing between the player and a correct offset was
+                  submitted with every score for the integrity check — so the only
+                  thing standing between the player and a correct offset was
                   nobody offering it to them. */}
               {suggestedOffset !== null && (
                 <Button
                   variant="ghost"
-                  className="mt-3 w-full h-auto py-2.5 bg-slice-bg text-slice-text-darker text-[11px] font-bold normal-case tracking-normal rounded-xl shadow-[4px_4px_10px_var(--slice-shadow-dark),-4px_-4px_10px_var(--slice-shadow-light)] active:shadow-inner border-none flex items-center justify-center gap-2 whitespace-normal"
+                  className="slice-btn-alt mt-3 h-auto w-full whitespace-normal py-2.5 text-[11px] normal-case tracking-normal"
                   onClick={() => setAudioOffset(audioOffset + suggestedOffset)}
                 >
                   <Wand2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -271,25 +246,16 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
             </div>
           )}
 
-          <div className="flex gap-4">
-            <Button
-              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-black uppercase tracking-widest text-sm h-14 rounded-xl shadow-lg transition-colors border-none flex items-center justify-center gap-2 group"
-              onClick={onRetry}
-            >
-              <RotateCcw className="w-4 h-4 group-hover:rotate-[-120deg] transition-transform" />
+          <div className="slice-results__actions">
+            <Button className="slice-btn-primary" onClick={onRetry}>
               {t('retry', { defaultValue: 'Retry' })}
             </Button>
-            <Button
-              variant="ghost"
-              className="flex-1 bg-slice-bg hover:bg-slice-shadow-dark/20 text-slice-text-muted font-bold uppercase tracking-widest text-sm h-14 rounded-xl shadow-[4px_4px_10px_var(--slice-shadow-dark),-4px_-4px_10px_var(--slice-shadow-light)] active:shadow-inner transition-colors border-none flex items-center justify-center gap-2"
-              onClick={resetRun}
-            >
-              <Home className="w-4 h-4" />
+            <Button className="slice-btn-alt" onClick={resetRun}>
               {t('menu', { defaultValue: 'Menu' })}
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
