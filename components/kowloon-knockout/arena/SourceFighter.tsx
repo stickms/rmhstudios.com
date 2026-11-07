@@ -7,7 +7,7 @@ import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.j
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import { CLIPS, CLIP_KEYS, type ClipKey } from '@/lib/kowloon-knockout/render/fighter/clips';
 import { resolveClip } from '@/lib/kowloon-knockout/render/fighter/stateMachine';
-import { autoScaleToHeight } from '@/lib/kowloon-knockout/render/fighter/fighterRig';
+import { autoScaleToHeight, lateralYaw } from '@/lib/kowloon-knockout/render/fighter/fighterRig';
 import { resolveRig } from '@/lib/kowloon-knockout/render/fighter/boneMaps';
 import { buildSourceClips } from '@/lib/kowloon-knockout/render/fighter/sourceClips';
 import { getFighterModel } from '@/lib/kowloon-knockout/render/fighter/models';
@@ -45,6 +45,14 @@ function stripHipsXZ(clip: THREE.AnimationClip, hipsName: string): THREE.Animati
     return c;
 }
 
+/** Source skins are viewed at a grazing angle in a wide arena: 4x anisotropic filtering keeps them crisp
+ *  where mipmaps alone would smear. Textures are shared between seats, so each is touched once. */
+function sharpenTextures(mat: THREE.MeshStandardMaterial): void {
+    for (const tex of [mat.map, mat.normalMap, mat.emissiveMap, mat.roughnessMap, mat.metalnessMap]) {
+        if (tex && tex.anisotropy < 4) { tex.anisotropy = 4; tex.needsUpdate = true; }
+    }
+}
+
 function configure(mixer: THREE.AnimationMixer, clip: THREE.AnimationClip, key: ClipKey) {
     const a = mixer.clipAction(clip);
     if (!CLIPS[key].loop) { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; }
@@ -80,13 +88,23 @@ export default function SourceFighter({ seat, framesRef, modelId, showNameplate 
         host.updateMatrixWorld(true);
 
         const scaleGroup = new THREE.Group();
+        // Between the scale and the model frame: a turn that puts the skeleton's left on +X.
+        const yawGroup = new THREE.Group();
         const frameGroup = new THREE.Group();
         frameGroup.matrixAutoUpdate = false;
         frameGroup.matrix.copy(modelFrame(gltf.scene).matrix);
         const model = cloneSkeleton(gltf.scene) as THREE.Group;
         frameGroup.add(model);
-        scaleGroup.add(frameGroup);
+        yawGroup.add(frameGroup);
+        scaleGroup.add(yawGroup);
         host.add(scaleGroup);
+        host.updateMatrixWorld(true);
+        {
+            const probe = resolveRig(model, def.family);
+            const l = probe.upperArmL ?? probe.thighL;
+            const r = probe.upperArmR ?? probe.thighR;
+            if (l && r) yawGroup.rotation.y = lateralYaw(l.getWorldPosition(new THREE.Vector3()), r.getWorldPosition(new THREE.Vector3()));
+        }
 
         const scale = autoScaleToHeight(scaleGroup, TARGET_HEIGHT);
         host.updateMatrixWorld(true);
@@ -100,10 +118,17 @@ export default function SourceFighter({ seat, framesRef, modelId, showNameplate 
             const m = o as THREE.SkinnedMesh;
             if (!m.isMesh) return;
             m.frustumCulled = false;
+            // Lit properly in the arena: cast and receive the key light's shadow.
+            m.castShadow = true;
+            m.receiveShadow = true;
             const mats = Array.isArray(m.material) ? m.material : [m.material];
             const cloned = mats.map((x) => x.clone());
             m.material = Array.isArray(m.material) ? cloned : cloned[0];
-            for (const mat of cloned) if ((mat as THREE.MeshStandardMaterial).emissive) emissiveMats.push(mat as THREE.MeshStandardMaterial);
+            for (const mat of cloned) {
+                const std = mat as THREE.MeshStandardMaterial;
+                if (std.emissive) emissiveMats.push(std);
+                sharpenTextures(std);
+            }
         });
 
         const rig = resolveRig(model, def.family);

@@ -83,4 +83,16 @@ describe('renderStreet', () => {
     for (const [px, py] of [[-1, -1], [1, 1], [0, 1], [1, -1]] as const) renderStreet(scene, 11.5, px, py);
     expect(scene.buf.length).toBe(320 * 180);
   });
+
+  it('draws the street without the pixel cast when 3D fighters stand on it instead', () => {
+    const withCast = createStreetScene(320, 180);
+    const bare = createStreetScene(320, 180, { cast: false });
+    renderStreet(withCast, 2.2);
+    renderStreet(bare, 2.2);
+    expect(bare.cast).toBe(false);
+    let differs = 0;
+    for (let i = 0; i < bare.buf.length; i++) if (bare.buf[i] !== withCast.buf[i]) differs++;
+    expect(differs).toBeGreaterThan(50); // the fighters are gone from the buffer
+    expect(differs).toBeLessThan(bare.buf.length / 4); // and only they: the street is the same
+  });
 });

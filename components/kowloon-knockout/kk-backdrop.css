@@ -48,3 +48,20 @@
   inset: 0;
   background: radial-gradient(ellipse 70% 55% at 50% 38%, rgb(5 2 13 / 0.62), rgb(5 2 13 / 0) 100%);
 }
+
+/* The 3D duel: a transparent canvas over the street. Its camera puts the fighters' feet 86% of the way
+   down, so the layer is sized to land them on the street's kerb (76% down the scene on a wide screen,
+   80% on a tall one). No pointer events; it only ever shows decoration. */
+.kowloon-knockout .kk-scene__duel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 88.4%;
+  pointer-events: none;
+}
+@media (max-aspect-ratio: 1/1) {
+  .kowloon-knockout .kk-scene__duel {
+    height: 93%;
+  }
+}

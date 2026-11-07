@@ -3,6 +3,7 @@ import { AnimationMixer, Bone, Group, Vector3, type Object3D } from 'three';
 import { CLIP_KEYS } from './clips';
 import { BONE_NAMES, normalizeBoneName, resolveRig } from './boneMaps';
 import { buildSourceClips } from './sourceClips';
+import { lateralYaw } from './fighterRig';
 import type { BoneFamily } from './models';
 
 const VB = 'ValveBipedBip01_'; // GLTFLoader strips the dot
@@ -138,5 +139,23 @@ describe('buildSourceClips', () => {
         const last = track.values[track.values.length - 2]; // y at the last key
         // rest y = 1; drop 0.455 * 1.8 m at scale 0.5 => local drop of ~1.638
         expect(last).toBeCloseTo(1 - (0.455 * 1.8) / 0.5, 1);
+    });
+});
+
+describe('lateralYaw', () => {
+    const v = (x: number, z: number) => new Vector3(x, 1.4, z);
+    it('is 0 when the left shoulder is already on +X', () => {
+        expect(lateralYaw(v(0.2, 0), v(-0.2, 0))).toBeCloseTo(0);
+    });
+    it('turns a model whose arms run along Z (HL2 after the frame) so left lands on +X', () => {
+        for (const [l, r] of [[v(0, 0.2), v(0, -0.2)], [v(0, -0.2), v(0, 0.2)], [v(-0.2, 0), v(0.2, 0)], [v(0.1, 0.15), v(-0.1, -0.15)]]) {
+            const yaw = lateralYaw(l, r);
+            const turned = l.clone().sub(r).applyAxisAngle(new Vector3(0, 1, 0), yaw);
+            expect(turned.x).toBeGreaterThan(0.2);
+            expect(Math.abs(turned.z)).toBeLessThan(1e-9);
+        }
+    });
+    it('does not blow up when the shoulders are stacked', () => {
+        expect(lateralYaw(new Vector3(0, 1, 0), new Vector3(0, 0.5, 0))).toBe(0);
     });
 });

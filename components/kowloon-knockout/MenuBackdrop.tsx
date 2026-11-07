@@ -15,13 +15,16 @@
  */
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { jellyMotionLevel } from '@/lib/jelly/tiers';
 import { useGraphicsStore } from '@/lib/kowloon-knockout/render/graphicsStore';
 import {
   STILL_TIME, bufferSizeFor, createStreetScene, renderStreet, type StreetScene,
 } from '@/lib/kowloon-knockout/menu/street-scene';
 import './kk-backdrop.css';
+
+// The 3D duel (three.js + the model loaders) is its own chunk: the menu paints the street first.
+const MenuFighters3D = lazy(() => import('@/components/kowloon-knockout/MenuFighters3D'));
 
 export { bufferSizeFor };
 
@@ -62,7 +65,8 @@ export default function MenuBackdrop() {
       if (scene && scene.width === w && scene.height === h) return;
       canvas.width = w;
       canvas.height = h;
-      scene = createStreetScene(w, h);
+      // The street's own pixel fighters are retired: two real 3D characters spar on it (MenuFighters3D).
+      scene = createStreetScene(w, h, { cast: false });
       image = new ImageData(new Uint8ClampedArray(scene.buf.buffer), w, h);
       // A layout change while still: redraw the one frame at the new size.
       if (jellyMotionLevel() === 'still') paint(STILL_TIME);
@@ -126,6 +130,11 @@ export default function MenuBackdrop() {
     <div className="kk-scene" aria-hidden="true">
       {!ready && <span className="kk-scene__fallback" />}
       <canvas ref={canvasRef} className="kk-scene__canvas" data-ready={ready ? 'true' : undefined} />
+      {ready && (
+        <Suspense fallback={null}>
+          <MenuFighters3D className="kk-scene__duel" />
+        </Suspense>
+      )}
       <span className="kk-scene__scrim" />
     </div>
   );

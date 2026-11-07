@@ -1254,6 +1254,13 @@
   justify-content: center;
 }
 
+.kowloon-knockout .kk-graphics-subtitle {
+  margin: 14px 0 8px;
+  font-size: 10px;
+  font-weight: 400;
+  color: #ffc400;
+}
+
 .kowloon-knockout .kk-graphics-fps {
   font-variant-numeric: tabular-nums;
 }
