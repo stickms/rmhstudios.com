@@ -916,7 +916,8 @@ export function SongLibrary({
 
                     <button
                       type="button"
-                      className="slice-trow__cover"
+                      className={`slice-trow__cover ${song.coverUrl ? 'slice-duotone' : ''}`}
+                      data-ink={index % 2 ? 'pink' : undefined}
                       onClick={(e) => {
                         e.stopPropagation();
                         togglePreview(song);

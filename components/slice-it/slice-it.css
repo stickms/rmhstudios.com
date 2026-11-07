@@ -861,3 +861,60 @@ a.neumorphic-sm:hover,
   gap: 14px;
   margin-top: 28px;
 }
+
+/* ─── Duotone covers ────────────────────────────────────────────────────────
+ *
+ * A cover is printed in one spot ink on label black, with a halftone screen:
+ * the photograph in grey, multiplied by the ink (black stays black, white
+ * becomes the ink), then floored at the label so shadows are ink stock rather
+ * than void. Three static layers, so it costs the compositor nothing per frame.
+ * `data-ink="pink"` prints it in side B's ink instead.
+ */
+.slice-duotone {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--slice-label);
+  --duo: var(--slice-primary);
+}
+
+.slice-duotone[data-ink='pink'] {
+  --duo: var(--slice-accent);
+}
+
+.slice-duotone > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.2) brightness(1.08);
+}
+
+.slice-duotone::before,
+.slice-duotone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Above the picture they blend with (a `::before` is painted first, i.e. under
+     an image child, unless it is positioned and raised). */
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* The ink, with the halftone: dots of full ink in a shade of the ink. */
+.slice-duotone::before {
+  background:
+    radial-gradient(circle, transparent 0 38%, rgba(5, 9, 33, 0.5) 44%) 0 0 / 5px 5px,
+    var(--duo);
+  mix-blend-mode: multiply;
+}
+
+.slice-duotone::after {
+  background: var(--slice-label);
+  mix-blend-mode: lighten;
+}
+
+/* Labels printed on a cover sit above its layers. */
+.slice-duotone > :not(img) {
+  z-index: 2;
+}

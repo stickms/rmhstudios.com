@@ -16,7 +16,19 @@
   font-family: var(--slice-body);
 }
 
-.slice-menu :is(.slice-bar__icon, .slice-nav__item, .slice-btn-primary, .slice-chip, .slice-go, .slice-press, .slice-sq, .slice-mod, .slice-trow, .slice-trow__cover):focus-visible {
+.slice-menu
+  :is(
+    .slice-bar__icon,
+    .slice-nav__item,
+    .slice-btn-primary,
+    .slice-chip,
+    .slice-go,
+    .slice-press,
+    .slice-sq,
+    .slice-mod,
+    .slice-trow,
+    .slice-trow__cover
+  ):focus-visible {
   outline: 2px solid var(--slice-primary);
   outline-offset: 2px;
 }
@@ -808,6 +820,93 @@
   .slice-trow__num-col {
     display: none;
   }
+}
+
+/* ─── The picked record on a phone ──────────────────────────────────────────── */
+.slice-prec {
+  flex-shrink: 0;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--slice-border);
+  background: var(--slice-label);
+}
+
+.slice-prec__row {
+  display: flex;
+  gap: 12px;
+}
+
+.slice-prec__cover {
+  position: relative;
+  flex-shrink: 0;
+  width: 92px;
+  height: 92px;
+  border: 1px solid var(--slice-border);
+}
+
+.slice-prec__text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.slice-prec__title {
+  margin: 0;
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: 21px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.slice-prec__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.slice-prec__meta .slice-rec__artist {
+  font-size: 17px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slice-prec__meta .slice-label b {
+  font-weight: 500;
+  color: var(--slice-paper);
+}
+
+.slice-prec .slice-press {
+  height: 50px;
+}
+
+.slice-prec .slice-press__big {
+  font-size: 16px;
+}
+
+.slice-prec__go {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.slice-prec__go .slice-btn-primary {
+  flex: 1;
+  height: 50px;
+  gap: 10px;
+}
+
+.slice-prec__go .slice-sq {
+  height: 50px;
+  min-width: 72px;
 }
 
 /* ── The details sheet (narrow) ───────────────────────────── */
