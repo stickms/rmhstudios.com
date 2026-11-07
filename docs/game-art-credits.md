@@ -19,7 +19,7 @@ No official Valve / Counter-Strike / Half-Life / Portal files are used in the ca
 | nightrail | Michroma, Jost | as above | Neon glow |
 | portal | Jost | jost/Jost[wght].ttf | "O" replaced with a drawn blue portal ring |
 | rmhbox | Titan One, Fredoka | titanone/TitanOne-Regular.ttf, fredoka/Fredoka[wdth,wght].ttf | Two-colour wordmark, stroke |
-| slice-it | Audiowide, Jost | audiowide/Audiowide-Regular.ttf | Neon glow |
+| slice-it | Archivo, Bodoni Moda, IBM Plex Mono | archivo/Archivo[wdth,wght].ttf, bodonimoda/BodoniModa-Italic[wght].ttf | "SLICE" cut on a diagonal in Archivo (width 125, weight 900) with a Bodoni Moda italic "it!"; outlines converted to paths (`public/images/games/logos/slice-it.svg`) |
 | synapse-storm | Exo 2 (Italic), Jost, Orbitron | orbitron/Orbitron[wght].ttf | Neon glow |
 | temple-of-joy | Cinzel, Jost | cinzel/Cinzel[wght].ttf | Gold gradient, stroke, shadow |
 | velum2099 | Orbitron, Jost | orbitron/Orbitron[wght].ttf | Gradient fill, neon glow |

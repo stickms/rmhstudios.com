@@ -229,7 +229,7 @@ export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
       }
 
       context.globalAlpha = slice.hit ? 0.25 : 1;
-      context.fillStyle = slice.type === 'BOMB' ? '#ffd23d' : lane === 0 ? '#18b6ff' : '#ff3d8b';
+      context.fillStyle = slice.type === 'BOMB' ? '#f0f1f6' : lane === 0 ? '#2db3f0' : '#f4509f';
       context.beginPath();
       context.arc(x, y, slice.type === 'BOMB' ? 9 : 11, 0, Math.PI * 2);
       context.fill();

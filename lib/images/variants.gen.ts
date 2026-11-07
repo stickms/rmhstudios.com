@@ -117,7 +117,7 @@ export const IMAGE_VARIANTS: Readonly<Record<string, ImageVariant>> = {
   "/images/games/logos/rmhstudy.webp": { hash: '623b844a', widths: [320, 640, 960] },
   "/images/games/logos/rmhtube.webp": { hash: '818e2afa', widths: [320, 640, 960] },
   "/images/games/logos/rmhtype.webp": { hash: 'd0709797', widths: [320, 640, 960] },
-  "/images/games/logos/slice-it.webp": { hash: '85b9f883', widths: [320, 640, 960] },
+  "/images/games/logos/slice-it.webp": { hash: 'ddcfbbba', widths: [320, 640, 960] },
   "/images/games/logos/synapse-storm.webp": { hash: 'e31ed407', widths: [320, 640, 960] },
   "/images/games/logos/temple-of-joy.webp": { hash: 'e319de94', widths: [320, 640, 960] },
   "/images/games/logos/velum2099.webp": { hash: '5da73f93', widths: [320, 640, 960] },

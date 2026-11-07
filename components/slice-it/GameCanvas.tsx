@@ -60,15 +60,15 @@ import { judge } from '@/lib/slice-it/scoring';
 
 // Fallback palette (the live colours are read from the lane palette and the --slice-* tokens at render time)
 const COLORS = {
-  lane1: '#18b6ff', // Cyan
-  lane2: '#ff3d8b', // Pink
-  grid: '#2a4aa3',
-  bomb: '#ffd23d',
+  lane1: '#2db3f0', // Cyan
+  lane2: '#f4509f', // Pink
+  grid: 'rgba(240, 241, 246, 0.3)',
+  bomb: '#f0f1f6',
   slice: {
     SPEED: '#a78bfa',
     MOVING: '#facc15',
     SILENT: '#94a3b8',
-    BOMB: '#ffd23d',
+    BOMB: '#f0f1f6',
     DEFAULT: 'var(--slice-shadow-light)',
   },
 };
@@ -940,7 +940,7 @@ export function GameCanvas() {
     const cs = getComputedStyle(canvas);
     const v = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
     const holdTrail = v('--slice-hold-trail', 'rgba(234, 246, 255, 0.5)');
-    const bg = v('--slice-bg', '#040818');
+    const bg = v('--slice-bg', '#0b1241');
     // V7 — whether the playfield is a light one, which decides whether the
     // backdrop lights it or shades it (see `backdropInk`). Resolved from the
     // background's own luminance rather than from the store's `isDarkMode`,
@@ -960,13 +960,13 @@ export function GameCanvas() {
       // MutationObserver below re-reads it when `perf-lite` is toggled.
       glow: canvasGlowEnabled(),
       bg,
-      bgAlt: v('--slice-bg-alt', '#0a1442'),
-      border: v('--slice-border', '#1d3f8a'),
+      bgAlt: v('--slice-bg-alt', '#101a55'),
+      border: v('--slice-border', 'rgba(240, 241, 246, 0.28)'),
       shadowDark: v('--slice-shadow-dark', 'rgba(2, 4, 15, 0.78)'),
-      shadowLight: v('--slice-shadow-light', 'rgba(24, 182, 255, 0.07)'),
-      textColor: v('--slice-text-muted', '#8eb4d8'),
+      shadowLight: v('--slice-shadow-light', 'rgba(45, 179, 240, 0.07)'),
+      textColor: v('--slice-text-muted', '#8f9ac9'),
       textShadowColor: v('--slice-text-shadow', 'rgba(24,182,255,0.35)'),
-      rail: v('--slice-rail', '#2a4aa3'),
+      rail: v('--slice-rail', 'rgba(240, 241, 246, 0.3)'),
       noteShadow: v('--slice-note-shadow', 'rgba(2, 4, 15, 0.7)'),
       // As `r, g, b` so the vignette gradient can build a matching fully
       // transparent stop. Interpolating to the `transparent` keyword instead

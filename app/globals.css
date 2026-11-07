@@ -2287,6 +2287,8 @@ html.readable-font body {
   --color-slice-shadow-light: var(--slice-shadow-light);
   --color-slice-card-bg: var(--slice-card-bg);
   --color-slice-bg-alt: var(--slice-bg-alt);
+  --color-slice-label: var(--slice-label);
+  --color-slice-paper: var(--slice-paper);
   --color-slice-surface-hover: var(--slice-surface-hover);
   --color-slice-border: var(--slice-border);
   --color-slice-primary: var(--slice-primary);

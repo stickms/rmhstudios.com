@@ -1,11 +1,10 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
 import sliceItCss from '@/components/slice-it/slice-it.css?url';
-// The game's two faces, preloaded: Jost for reading text and Audiowide for
-// display (`slice-it.css` declares them; the scheme is
-// `docs/game-design-schemes/slice-it.json`).
-import jostFont from '@/components/shared/game-fonts/Jost/Jost-Variable.woff2?url';
-import audiowideFont from '@/components/shared/game-fonts/Audiowide/Audiowide-Regular.woff2?url';
+// The game's faces, preloaded: Archivo (everything) and IBM Plex Mono (numbers and
+// labels). Bodoni Moda Italic is a single word at a time and loads on demand.
+import archivoFont from '@/components/shared/game-fonts/Archivo/Archivo-wdth-wght.woff2?url';
+import plexMonoFont from '@/components/shared/game-fonts/IBMPlexMono/IBMPlexMono-Medium.woff2?url';
 
 function SliceItLayout() {
   // One theme, no toggle: `.slice-theme` carries the tokens (slice-it.css) and
@@ -26,7 +25,7 @@ export const Route = createFileRoute('/slice-it')({
   head: () =>
     gameRouteHead('slice-it', {
       links: [{ rel: 'stylesheet', href: sliceItCss }],
-      fontPreloads: [jostFont, audiowideFont],
+      fontPreloads: [archivoFont, plexMonoFont],
     }),
   component: SliceItLayout,
 });

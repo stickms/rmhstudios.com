@@ -55,7 +55,7 @@
 .slice-bar__logo {
   display: block;
   width: auto;
-  height: 22px;
+  height: 40px;
 }
 
 .slice-bar__icon {
@@ -100,7 +100,7 @@
   border-radius: 9999px;
   box-shadow:
     0 0 0 1px var(--slice-bg),
-    0 0 0 2px rgba(24, 182, 255, 0.7);
+    0 0 0 2px rgba(45, 179, 240, 0.7);
 }
 
 .slice-bar__name {
@@ -175,13 +175,13 @@
 
 .slice-nav__item[aria-pressed='true'] {
   color: #fff;
-  border-color: rgba(24, 182, 255, 0.6);
-  background: rgba(24, 182, 255, 0.12);
-  box-shadow: 0 0 12px rgba(24, 182, 255, 0.18);
+  border-color: rgba(45, 179, 240, 0.6);
+  background: rgba(45, 179, 240, 0.12);
+  box-shadow: 0 0 12px rgba(45, 179, 240, 0.18);
 }
 
 .slice-nav__item--versus:hover {
-  border-color: rgba(255, 61, 139, 0.6);
+  border-color: rgba(244, 80, 159, 0.6);
 }
 
 /* ── The details column (wide) ────────────────────────────── */
@@ -205,9 +205,9 @@
 .slice-side__art {
   aspect-ratio: 3 / 1;
   overflow: hidden;
-  border: 1px solid rgba(24, 182, 255, 0.5);
+  border: 1px solid rgba(45, 179, 240, 0.5);
   border-radius: var(--slice-radius);
-  box-shadow: 0 0 18px rgba(24, 182, 255, 0.14);
+  box-shadow: 0 0 18px rgba(45, 179, 240, 0.14);
   background: var(--slice-bg);
 }
 
@@ -237,11 +237,11 @@
 /* ── Panels and the primary button ────────────────────────── */
 
 .slice-panel {
-  border: 1px solid rgba(24, 182, 255, 0.5);
+  border: 1px solid rgba(45, 179, 240, 0.5);
   border-radius: var(--slice-radius);
   background: var(--slice-card-bg);
   box-shadow:
-    0 0 0 1px rgba(24, 182, 255, 0.1),
+    0 0 0 1px rgba(45, 179, 240, 0.1),
     0 18px 48px rgba(0, 0, 0, 0.55);
 }
 
@@ -250,7 +250,7 @@
   border: 0;
   border-radius: var(--slice-radius);
   background: var(--slice-primary);
-  color: #04112b;
+  color: #050921;
   font-family: var(--slice-display);
   font-size: 12px;
   font-weight: 400;
@@ -263,7 +263,7 @@
 
 .slice-menu .slice-btn-primary:hover {
   background: #5ccfff;
-  box-shadow: 0 0 14px rgba(24, 182, 255, 0.45);
+  box-shadow: 0 0 14px rgba(45, 179, 240, 0.45);
 }
 
 /* ── A phone ──────────────────────────────────────────────── */
@@ -274,7 +274,7 @@
   }
 
   .slice-bar__logo {
-    height: 20px;
+    height: 34px;
   }
 
   /* The nav is the last thing in the column, under the library: in the flow, not
