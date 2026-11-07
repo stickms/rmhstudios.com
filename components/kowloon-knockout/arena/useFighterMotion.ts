@@ -138,7 +138,7 @@ export function useFighterMotion(seat: number) {
         root.position.z = b.z;
         host.quaternion.copy(qMove);
         return flashStyle(0, 'hit', rf.hitFlash);
-    }, [bus, seat, axis]);
+    }, [bus, seat, axis, eMove, qMove, qSway]);
 
     /** The clip currently playing (null before the first frame). */
     const currentClip = useCallback(() => driver.current.current, []);
