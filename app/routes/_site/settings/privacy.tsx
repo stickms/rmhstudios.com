@@ -11,6 +11,7 @@ import { DataExportPanel } from '@/components/site/DataExportPanel';
 import { DeleteAccountPanel } from '@/components/site/DeleteAccountPanel';
 import { MutedWordsPanel } from '@/components/site/MutedWordsPanel';
 import { PresencePrivacyControls } from '@/components/settings/PresencePrivacyControls';
+import { CallPrivacyControls } from '@/components/settings/CallPrivacyControls';
 import { PlayLimitsPanel } from '@/components/settings/PlayLimitsPanel';
 import { PlaytimePrivacyControls } from '@/components/settings/PlaytimePrivacyControls';
 import { CookieConsentControls } from '@/components/site/CookieConsentControls';
@@ -58,6 +59,7 @@ function PrivacySettingsPage() {
         ) : (
           <>
             <PresencePrivacyControls />
+            <CallPrivacyControls />
             <PlaytimePrivacyControls />
             <MutedWordsPanel />
             <PlayLimitsPanel />
