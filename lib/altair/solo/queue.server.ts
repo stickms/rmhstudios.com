@@ -23,6 +23,8 @@ import type { SoloResult } from './solo-run';
 export type SoloProcessOutcome =
   | { status: 'saved'; coins: number }
   | { status: 'duplicate' }
+  /** Could not be replayed through no fault of the player (played on an older sim): paid once via the capped fallback. */
+  | { status: 'unverified'; reason: 'stale_sim'; detail: string }
   | { status: 'rejected'; reason: SoloFailure | 'no_run'; detail: string };
 
 export interface SoloRunRow {
@@ -40,6 +42,8 @@ export interface SoloProcessDeps {
   verify: typeof verifySoloRun;
   persist: (runId: string, userId: string, run: SoloResult) => Promise<SoloPersistOutcome>;
   reject: (runId: string, reason: string) => Promise<void>;
+  /** Settle as `unverified` (the client then takes the capped fallback payout, once). */
+  markUnverified: (runId: string, reason: string) => Promise<void>;
 }
 
 const defaultDeps: SoloProcessDeps = {
@@ -54,6 +58,12 @@ const defaultDeps: SoloProcessDeps = {
     await prisma.altairSoloRun.updateMany({
       where: { id: runId, status: 'submitted' },
       data: { status: 'rejected', rejectReason: reason.slice(0, 500) },
+    });
+  },
+  markUnverified: async (runId, reason) => {
+    await prisma.altairSoloRun.updateMany({
+      where: { id: runId, status: 'submitted' },
+      data: { status: 'unverified', rejectReason: reason.slice(0, 500) },
     });
   },
 };
@@ -81,6 +91,12 @@ export async function processSoloRun(job: SoloRunJob, deps: SoloProcessDeps = de
     job.claim,
     { timeoutMs: 10 * 60_000, chunkSteps: 100 },
   );
+  if (!out.ok && out.reason === 'stale_sim') {
+    // A deploy landed between this run starting and its log being replayed. Not cheating, not payable by replay.
+    console.warn(JSON.stringify({ event: 'altair.solo_stale_sim', runId: job.runId, user: job.userId, detail: out.detail }));
+    await deps.markUnverified(job.runId, `${out.reason}: ${out.detail}`);
+    return { status: 'unverified', reason: 'stale_sim', detail: out.detail };
+  }
   if (!out.ok) {
     console.warn(JSON.stringify({ event: 'altair.solo_rejected', runId: job.runId, user: job.userId, reason: out.reason, detail: out.detail }));
     await deps.reject(job.runId, `${out.reason}: ${out.detail}`);

@@ -69,6 +69,8 @@ export type SoloEnd = 'dead' | 'victory' | 'quit';
 
 export interface SoloLog {
   v: number;
+  /** The sim version the run was played on (lib/altair/sim-version.ts). Absent on older logs = 1. */
+  sim?: number;
   seed: number;
   classId: string;
   doubleTime: boolean;
@@ -184,6 +186,7 @@ export function checkSoloLog(raw: unknown): SoloLogCheck {
   if (!raw || typeof raw !== 'object') return { ok: false, reason: 'log is not an object' };
   const log = raw as Record<string, unknown>;
   if (log.v !== SOLO_LOG_VERSION) return { ok: false, reason: 'unsupported log version' };
+  if (log.sim !== undefined && (!isInt(log.sim) || log.sim < 1 || log.sim > 1_000_000)) return { ok: false, reason: 'bad sim version' };
   if (!isInt(log.seed) || log.seed < 0 || log.seed >= 2 ** 32) return { ok: false, reason: 'bad seed' };
   if (typeof log.classId !== 'string' || log.classId.length === 0 || log.classId.length > 64) {
     return { ok: false, reason: 'bad class' };

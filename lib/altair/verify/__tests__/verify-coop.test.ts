@@ -7,6 +7,7 @@ import { verifyCoopRun } from '../verify-coop';
 import { playHonestRun, SEED, type Recorded } from './fixture';
 import { checkRunLog, MAX_RUN_STEPS, MAX_LOG_NUMBERS, EV_INPUT } from '../run-log';
 import { replayRun } from '../replay';
+import { SIM_VERSION } from '../../sim-version';
 
 // A full replay is a few seconds of CPU; keep a loaded CI worker from tripping the 5 s default.
 vi.setConfig({ testTimeout: 120_000 });
@@ -54,6 +55,33 @@ describe('honest run', () => {
     const [a, b] = await Promise.all([replayRun(clone(honest.log)), replayRun(clone(honest.log))]);
     expect(a).toMatchObject({ ok: true });
     expect(a).toEqual(b);
+  });
+});
+
+describe('the sim version stamp', () => {
+  it('a recorded log carries the version it was played on', () => {
+    expect(honest.log.sim).toBe(SIM_VERSION);
+  });
+
+  it('a log played on another version is stale_sim, not a claim mismatch', async () => {
+    const log = clone(honest.log);
+    log.sim = SIM_VERSION + 1;
+    expect(await verifyCoopRun(honest.trusted, log, honest.claim)).toMatchObject({ ok: false, reason: 'stale_sim' });
+  });
+
+  it('a log recorded before the stamp existed is version 1 and still verifies while the server is on 1', async () => {
+    if (SIM_VERSION !== 1) return; // after a bump, legacy logs are stale by definition
+    const log = clone(honest.log);
+    delete log.sim;
+    expect((await verifyCoopRun(honest.trusted, log, honest.claim)).ok).toBe(true);
+  });
+
+  it('refuses a malformed version field outright', () => {
+    for (const bad of [0, -1, 1.5, '2', null]) {
+      const log = clone(honest.log) as unknown as Record<string, unknown>;
+      log.sim = bad;
+      expect(checkRunLog(log)).toMatchObject({ ok: false, reason: 'bad sim version' });
+    }
   });
 });
 

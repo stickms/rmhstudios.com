@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { verifySoloRun, replaySoloRun, type TrustedSoloSetup } from '../verify-solo';
 import { SEV_INPUT, SEV_PICK, checkSoloLog, type SoloLog } from '../solo-log';
 import { loadoutFromUpgrades } from '../loadout';
+import { SIM_VERSION } from '../../sim-version';
 import { playSoloRun, type Recorded } from './fixture';
 
 vi.setConfig({ testTimeout: 180_000 });
@@ -16,6 +17,43 @@ let honest: Recorded;
 beforeAll(() => {
   honest = playSoloRun({ resizeAt: 700 });
 }, 120_000);
+
+describe('the sim version stamp', () => {
+  it('a recorded log carries the version it was played on', () => {
+    expect(honest.log.sim).toBe(SIM_VERSION);
+  });
+
+  it('a log played on another version is stale_sim: no replay, and not a mismatch or a cheat', async () => {
+    const log = clone(honest.log);
+    log.sim = SIM_VERSION + 1;
+    const out = await verifySoloRun(honest.trusted, log, honest.claim);
+    expect(out).toMatchObject({ ok: false, reason: 'stale_sim' });
+  });
+
+  it('a log recorded before the stamp existed is version 1 and still verifies while the server is on 1', async () => {
+    if (SIM_VERSION !== 1) return; // after a bump, legacy logs are stale by definition
+    const log = clone(honest.log);
+    delete log.sim;
+    const out = await verifySoloRun(honest.trusted, log, honest.claim);
+    expect(out.ok).toBe(true);
+    if (out.ok) expect(out.verified).toEqual(honest.result);
+  });
+
+  it('a wrong setup is still a setup_mismatch even when the version is also stale', async () => {
+    const log = clone(honest.log);
+    log.sim = SIM_VERSION + 1;
+    log.seed += 1;
+    expect(await verifySoloRun(honest.trusted, log, honest.claim)).toMatchObject({ ok: false, reason: 'setup_mismatch' });
+  });
+
+  it('refuses a malformed version field outright', () => {
+    for (const bad of [0, -1, 1.5, '2', null, {}]) {
+      const log = clone(honest.log) as unknown as Record<string, unknown>;
+      log.sim = bad;
+      expect(checkSoloLog(log)).toMatchObject({ ok: false, reason: 'bad sim version' });
+    }
+  });
+});
 
 describe('an honest run', () => {
   it('is long enough to mean something (picks, reroll, banish, resize, a death)', () => {

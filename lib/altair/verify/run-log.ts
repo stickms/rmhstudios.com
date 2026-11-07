@@ -18,6 +18,8 @@
 // roster ++ joins (join order), never reused.
 // =============================================================================
 
+import { SIM_VERSION } from '../sim-version';
+
 export const RUN_LOG_VERSION = 1;
 
 /** Sim steps are 60 Hz. */
@@ -42,6 +44,8 @@ export interface LogPlayer {
 
 export interface RunLog {
   v: number;
+  /** The sim version the run was played on (lib/altair/sim-version.ts). Absent on older logs = 1. */
+  sim?: number;
   seed: number;
   doubleTime: boolean;
   roster: LogPlayer[];
@@ -124,6 +128,7 @@ export class RunRecorder {
   toLog(steps: number, seed: number, doubleTime: boolean): RunLog {
     return {
       v: RUN_LOG_VERSION,
+      sim: SIM_VERSION,
       seed,
       doubleTime,
       roster: this.roster,
@@ -170,6 +175,7 @@ export function checkRunLog(raw: unknown): LogCheck {
   if (!raw || typeof raw !== 'object') return { ok: false, reason: 'log is not an object' };
   const log = raw as Record<string, unknown>;
   if (log.v !== RUN_LOG_VERSION) return { ok: false, reason: 'unsupported log version' };
+  if (log.sim !== undefined && (!isInt(log.sim) || log.sim < 1 || log.sim > 1_000_000)) return { ok: false, reason: 'bad sim version' };
   if (!isInt(log.seed) || log.seed < 0 || log.seed >= 2 ** 32) return { ok: false, reason: 'bad seed' };
   if (typeof log.doubleTime !== 'boolean') return { ok: false, reason: 'bad doubleTime' };
   if (!isInt(log.steps) || log.steps < 1 || log.steps > MAX_RUN_STEPS) {
