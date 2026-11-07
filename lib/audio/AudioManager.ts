@@ -1,4 +1,5 @@
 import { getAudioContext } from '@/lib/shared/platform';
+import { SmoothedClock } from './smooth-clock';
 export class AudioManager {
   private static instance: AudioManager;
   private audioContext: AudioContext | null = null;
@@ -14,6 +15,12 @@ export class AudioManager {
   // Track position logic
   private offsetAtLastRateChange: number = 0;
   private timeAtLastRateChange: number = 0;
+  /**
+   * `audioContext.currentTime` advances in steps — coarse ones in Firefox — so reading it
+   * raw once per frame makes the notes freeze and jump. Everything that positions
+   * the playfield reads this smoothed view instead (see `smooth-clock.ts`).
+   */
+  private readonly clock = new SmoothedClock();
   /** The latest `loadTrack`/`loadFromBuffer`: an older load that resolves later must not replace it. */
   private loadToken = 0;
 
@@ -140,6 +147,7 @@ export class AudioManager {
     const startAt = now + leadIn;
 
     this.source.start(startAt, offset);
+    this.clock.reset();
 
     // Anchored to `startAt`, not `now`. `getCurrentTime()` is
     // `offsetAtLastRateChange + (now - timeAtLastRateChange) * rate`, so
@@ -174,6 +182,7 @@ export class AudioManager {
     this.pauseTime = this.getCurrentTime();
     this.isPlaying = false;
     this.source = null;
+    this.clock.reset();
   }
   
   public resume() {
@@ -218,6 +227,7 @@ export class AudioManager {
     this.startTime = 0;
     this.offsetAtLastRateChange = 0;
     this.timeAtLastRateChange = 0;
+    this.clock.reset();
   }
 
   public setPlaybackRate(rate: number) {
@@ -232,9 +242,11 @@ export class AudioManager {
             this.source.playbackRate.setValueAtTime(rate, now);
         }
         
-        // Update tracking for getCurrentTime
+        // Update tracking for getCurrentTime. Anchored on the smoothed clock
+        // `getCurrentTime` just read, or the position would step by however far
+        // that clock is ahead of the raw one.
         this.offsetAtLastRateChange = currentPos;
-        this.timeAtLastRateChange = now;
+        this.timeAtLastRateChange = this.clock.read(now, performance.now());
     }
     
     this.playbackRate = rate;
@@ -265,7 +277,7 @@ export class AudioManager {
     if (!this.audioContext) return 0;
     if (!this.isPlaying) return this.pauseTime;
     
-    const now = this.audioContext.currentTime;
+    const now = this.clock.read(this.audioContext.currentTime, performance.now());
     // Time passed since last rate change * rate + offset at that time
     return this.offsetAtLastRateChange + (now - this.timeAtLastRateChange) * this.playbackRate;
   }
