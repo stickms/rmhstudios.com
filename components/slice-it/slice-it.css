@@ -205,10 +205,11 @@
  * off (the `perf-lite` tier) `liquid-glass.css` gives every flat button an opaque
  * SITE surface via an UNLAYERED rule, which beats every `bg-*` utility. Inside
  * the game a button is the game's own control, so that rule is handed back to
- * the layered cascade (`revert-layer`).
+ * the layered cascade (`revert-layer`) — except `.slice-btn-primary`/`-alt`, which
+ * are unlayered themselves and would be reverted along with it.
  */
-html.perf-lite .slice-theme [data-jelly-rest='flat'],
-html.perf-lite .slice-tokens [data-jelly-rest='flat'] {
+html.perf-lite .slice-theme [data-jelly-rest='flat']:not(.slice-btn-primary, .slice-btn-alt),
+html.perf-lite .slice-tokens [data-jelly-rest='flat']:not(.slice-btn-primary, .slice-btn-alt) {
   background-color: revert-layer;
   border-color: revert-layer;
 }

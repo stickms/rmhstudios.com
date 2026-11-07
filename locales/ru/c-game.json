@@ -329,5 +329,16 @@
   "your-track": "ВАШ ТРЕК",
   "cover-format-unsupported-panel": "Этот формат изображения не поддерживается. Используйте JPEG, PNG или WebP.",
   "velum-retry": "Повторить",
-  "velum-start-failed": "Не удалось запустить Velum 2099. Нужен WebGL — включите аппаратное ускорение или попробуйте другой браузер."
+  "velum-start-failed": "Не удалось запустить Velum 2099. Нужен WebGL — включите аппаратное ускорение или попробуйте другой браузер.",
+  "side-a": "Side A",
+  "menu-rpm": "33 1/3 RPM",
+  "operator": "Operator",
+  "library-tracks": "Library · {{count}} tracks",
+  "col-title": "Title / artist",
+  "col-density": "Density",
+  "col-bpm": "BPM",
+  "col-time": "Time",
+  "pressings": "Pressings",
+  "notes-pct-named": "{{name}}, {{pct}} notes",
+  "plays-short": "plays"
 }

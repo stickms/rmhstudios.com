@@ -324,5 +324,16 @@
   "your-track": "IL TUO BRANO",
   "cover-format-unsupported-panel": "Questo formato di immagine non è supportato. Usa JPEG, PNG o WebP.",
   "velum-retry": "Riprova",
-  "velum-start-failed": "Impossibile avviare Velum 2099. Richiede WebGL: attiva l’accelerazione hardware o prova un altro browser."
+  "velum-start-failed": "Impossibile avviare Velum 2099. Richiede WebGL: attiva l’accelerazione hardware o prova un altro browser.",
+  "side-a": "Side A",
+  "menu-rpm": "33 1/3 RPM",
+  "operator": "Operator",
+  "library-tracks": "Library · {{count}} tracks",
+  "col-title": "Title / artist",
+  "col-density": "Density",
+  "col-bpm": "BPM",
+  "col-time": "Time",
+  "pressings": "Pressings",
+  "notes-pct-named": "{{name}}, {{pct}} notes",
+  "plays-short": "plays"
 }

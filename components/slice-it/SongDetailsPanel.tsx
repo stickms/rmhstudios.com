@@ -28,6 +28,7 @@ import { SongComments } from './SongComments';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import type { Difficulty, SliceSong } from '@/lib/slice-it/types';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { useSession } from '@/components/Providers';
 import { toast } from 'sonner';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
@@ -62,32 +63,31 @@ interface SongDetailsPanelProps {
   readOnly?: boolean;
 }
 
+/**
+ * A modifier: its name and the shared `Switch`, which the game's theme draws as
+ * a hairline slide with a square knob. A `label`, so the name is a click target
+ * as well and the switch is read out with it. The state is the cyan fill, never
+ * motion.
+ */
 const ModifierToggle = ({
   label,
   active,
   onClick,
-  color,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
-  color: string;
-}) => (
-  <div
-    className="flex justify-between items-center bg-slice-shadow-dark/20 hover:bg-slice-shadow-dark/50 p-2 rounded-lg border border-slice-shadow-dark/50 cursor-pointer transition-colors"
-    onClick={onClick}
-  >
-    <span className="text-xs text-slice-text font-bold uppercase select-none">{label}</span>
-    <div
-      className={`w-10 h-5 rounded-full transition-colors relative ${active ? '' : 'bg-slice-shadow-dark'}`}
-      style={{ backgroundColor: active ? color : undefined }}
-    >
-      <div
-        className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${active ? 'translate-x-[18px]' : ''}`}
-      />
-    </div>
-  </div>
-);
+}) => {
+  const id = React.useId();
+  return (
+    <label className="slice-mod">
+      <span id={id} className="slice-mod__label">
+        {label}
+      </span>
+      <Switch checked={active} onCheckedChange={() => onClick()} aria-labelledby={id} />
+    </label>
+  );
+};
 
 export function SongDetailsPanel({
   song,
@@ -454,174 +454,123 @@ export function SongDetailsPanel({
       )}
 
       <div className="flex flex-col">
-        {/* Header / Info */}
-        <div className="p-4 bg-slice-bg border-b border-slice-shadow-dark/30">
-          <div className="flex gap-4 items-start">
-            {/* Cover Art */}
-            <div className="w-32 h-32 rounded-lg bg-slice-shadow-dark shrink-0 overflow-hidden relative shadow-lg">
-              {song.coverUrl ? (
-                <img src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="flex items-center justify-center h-full text-slice-text-light font-black text-5xl select-none">
-                  {song.title.charAt(0)}
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2">
-                <h2 className="text-2xl font-black text-slice-text leading-tight mb-1">
-                  {song.title}
-                </h2>
-                {isOwner && (
-                  <button
-                    className="shrink-0 w-8 h-8 rounded-full bg-slice-shadow-dark/50 hover:bg-slice-shadow-dark border border-slice-shadow-dark/30 flex items-center justify-center text-slice-text-light hover:text-slice-text-darker transition-colors mt-0.5"
-                    onClick={openEdit}
-                    title={t('edit-track-info', { defaultValue: 'Edit track info' })}
-                  >
-                    <Settings className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              {/* L15 — "everything by this artist" from the panel you are
-                  already looking at. The key is derived here rather than read
-                  off the row because `SliceSong` (in `types.ts`) has no
-                  `artistKey` field; `artistKeyOf` is the same function the
-                  server writes the column with, which is the point of it being
-                  client-safe. */}
-              <div className="text-blue-500 font-bold text-lg mb-3">
-                {artistLinkKey ? (
-                  <a href={artistPath(artistLinkKey)} className="hover:underline">
-                    {song.artist}
-                  </a>
-                ) : (
-                  song.artist
-                )}
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slice-text-light uppercase">
-                    {t('tempo', { defaultValue: 'Tempo' })}
-                  </span>
-                  <span className="font-mono text-slice-text font-bold text-sm">
-                    {Math.round(song.bpm)} BPM
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slice-text-light uppercase">
-                    {t('duration', { defaultValue: 'Duration' })}
-                  </span>
-                  <span className="font-mono text-slice-text font-bold text-sm">
-                    {Math.floor(song.duration / 60)}:
-                    {Math.round(song.duration % 60)
-                      .toString()
-                      .padStart(2, '0')}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slice-text-light uppercase">
-                    {t('difficulty', { defaultValue: 'Difficulty' })}
-                  </span>
-                  <span
-                    className={`font-mono font-bold text-sm ${
-                      modifiers.difficulty === 'easy'
-                        ? 'text-green-500'
-                        : modifiers.difficulty === 'normal'
-                          ? 'text-blue-500'
-                          : modifiers.difficulty === 'hard'
-                            ? 'text-orange-500'
-                            : 'text-red-500'
-                    }`}
-                  >
-                    {modifiers.difficulty.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 mt-3 flex-wrap">
-                <div
-                  className="flex items-center gap-1.5 bg-slice-shadow-dark/20 px-2 py-1 rounded-md border border-slice-shadow-dark/30"
-                  title={t('total-plays', { defaultValue: 'Total plays' })}
-                >
-                  <Play className="w-3 h-3 text-blue-500 fill-current" />
-                  <span className="text-xs font-bold text-slice-text">{song.plays || 0}</span>
-                </div>
-                <div
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md border transition-colors ${song.isLiked ? 'bg-red-500/10 border-red-500/30' : 'bg-slice-shadow-dark/20 border-slice-shadow-dark/30'}`}
-                  title={t('likes', { defaultValue: 'Likes' })}
-                >
-                  <Heart
-                    className={`w-3 h-3 ${song.isLiked ? 'text-red-500 fill-current' : 'text-slice-text-light'}`}
-                  />
-                  <AnimatedCount
-                    value={song.likeCount || 0}
-                    className={`text-xs font-bold ${song.isLiked ? 'text-red-500' : 'text-slice-text'}`}
-                  />
-                </div>
-                {song.userPlays !== undefined && (
-                  <div
-                    className="flex items-center gap-1.5 bg-blue-500/10 px-2 py-1 rounded-md border border-blue-500/30"
-                    title={t('your-plays', { defaultValue: 'Your plays' })}
-                  >
-                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wide">
-                      YOU
-                    </span>
-                    <span className="text-xs font-bold text-blue-500">{song.userPlays}</span>
-                  </div>
-                )}
-              </div>
-            </div>
+        {/* The record: cover, title, artist, the pressings, START. The sleeve
+            column's one job is to answer "what will I be playing?". */}
+        <div className="slice-rec">
+          <div className="slice-rec__cover">
+            {song.coverUrl ? (
+              <img src={song.coverUrl} alt={song.title} />
+            ) : (
+              <span className="slice-rec__ph slice-dots-cyan" aria-hidden />
+            )}
+            <span className="slice-rec__tag">{t('side-a', { defaultValue: 'Side A' })}</span>
           </div>
 
-          {/* Play Button & Multiplier.
-              The row WRAPS. Four items — a button that will not shrink below
-              its label, two 56px squares and the multiplier chip — need ~300px
-              of fixed width plus gaps, which a 393px phone does not have once
-              the panel's padding is off. It overflowed instead, and the overflow
-              ran off the right edge of a panel that is `w-full` at that width:
-              the chip read "MULTIPL… x1.0". Below `sm` the play button takes the
-              whole first line (`basis-full`) so the wrap lands somewhere
-              deliberate — the two icon buttons and the chip on one row — rather
-              than leaving the chip stranded alone under a half-empty line. */}
-          {!readOnly && (
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Button
-                className="basis-full sm:flex-1 min-w-48 h-14 bg-blue-500 hover:bg-blue-600 text-white font-bold text-base rounded-lg active:scale-95 transition-colors flex items-center justify-center gap-3 group"
-                onClick={() => onPlay(song)}
+          <div className="slice-rec__head">
+            <h2 className="slice-rec__title">{song.title}</h2>
+            {isOwner && (
+              <button
+                type="button"
+                className="slice-bar__icon"
+                onClick={openEdit}
+                title={t('edit-track-info', { defaultValue: 'Edit track info' })}
+                aria-label={t('edit-track-info', { defaultValue: 'Edit track info' })}
               >
-                <Play className="w-6 h-6 fill-current group-hover:scale-110 transition-transform" />
-                <span className="uppercase tracking-wide">
-                  {t('start-game', { defaultValue: 'Start Game' })}
-                </span>
+                <Settings className="size-4" aria-hidden />
+              </button>
+            )}
+          </div>
+          {/* L15 — "everything by this artist" from the panel you are already
+              looking at. The key is derived here rather than read off the row
+              because `SliceSong` has no `artistKey` field; `artistKeyOf` is the
+              same function the server writes the column with. */}
+          <div className="slice-rec__meta">
+            <span className="slice-rec__artist">
+              {artistLinkKey ? (
+                <a href={artistPath(artistLinkKey)} className="hover:underline">
+                  {song.artist}
+                </a>
+              ) : (
+                song.artist
+              )}
+            </span>
+            <span className="slice-label">
+              <b>{Math.round(song.bpm)}</b> {t('bpm-label', { defaultValue: 'BPM' })} ·{' '}
+              <b>
+                {Math.floor(song.duration / 60)}:
+                {Math.round(song.duration % 60)
+                  .toString()
+                  .padStart(2, '0')}
+              </b>{' '}
+              · <b>{song.plays || 0}</b> {t('plays-short', { defaultValue: 'plays' })}
+            </span>
+          </div>
+
+          <div className="slice-label mt-4">{t('pressings', { defaultValue: 'Pressings' })}</div>
+          <div className="slice-press-row">
+            {(
+              [
+                ['easy', 'EZ', '70%'],
+                ['normal', 'NM', '100%'],
+                ['hard', 'HD', '150%'],
+                ['expert', 'EX', '200%'],
+              ] as [Difficulty, string, string][]
+            ).map(([d, code, pct]) => (
+              <button
+                key={d}
+                type="button"
+                className="slice-press"
+                aria-pressed={modifiers.difficulty === d}
+                aria-label={t('notes-pct-named', {
+                  defaultValue: '{{name}}, {{pct}} notes',
+                  name: d,
+                  pct,
+                })}
+                onClick={() => setModifiers({ ...modifiers, difficulty: d })}
+              >
+                <span>{code}</span>
+                <span className="slice-press__big">{pct}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* The START row WRAPS below `sm`: START, two 48px squares and the
+              multiplier need more than a phone has beside each other. */}
+          {!readOnly && (
+            <div className="slice-rec__go">
+              <Button className="slice-btn-primary" onClick={() => onPlay(song)}>
+                <Play className="size-4 fill-current" aria-hidden />
+                {t('start-game', { defaultValue: 'Start Game' })}
               </Button>
-              <Button
-                variant="ghost"
-                className={`h-14 w-14 rounded-lg border flex items-center justify-center transition-colors ${
-                  song.isLiked
-                    ? 'bg-red-500/10 border-red-500/50 text-red-500 shadow-[inset_2px_2px_4px_rgba(239,68,68,0.2)]'
-                    : 'bg-slice-card-bg border-slice-shadow-dark/50 text-slice-text-light hover:text-red-400 hover:border-red-400/50'
-                }`}
+              <button
+                type="button"
+                className="slice-sq"
+                data-on={song.isLiked || undefined}
                 onClick={handleLike}
                 disabled={isLiking}
+                aria-pressed={Boolean(song.isLiked)}
+                aria-label={
+                  song.isLiked
+                    ? t('unlike', { defaultValue: 'Unlike' })
+                    : t('like', { defaultValue: 'Like' })
+                }
               >
-                <Heart
-                  className={`w-6 h-6 transition-transform ${song.isLiked ? 'fill-current scale-110' : 'group-hover:scale-110'}`}
-                />
-              </Button>
+                <Heart className={`size-5 ${song.isLiked ? 'fill-current' : ''}`} aria-hidden />
+                <AnimatedCount value={song.likeCount || 0} className="slice-sq__n" />
+              </button>
               {/* L16 — the add-to-pack entry point. A pack builder reachable
                   only from the library toolbar can create packs and never fill
                   them; this is the half that puts a track into one. */}
               {session.data?.user && (
                 <Dialog open={packOpen} onOpenChange={setPackOpen}>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="h-14 w-14 rounded-lg border bg-slice-card-bg border-slice-shadow-dark/50 text-slice-text-light hover:text-blue-400 hover:border-blue-400/50 flex items-center justify-center transition-colors"
+                    <button
+                      type="button"
+                      className="slice-sq"
                       aria-label={t('add-to-pack', { defaultValue: 'Add to pack' })}
                     >
-                      <Layers className="w-6 h-6" aria-hidden />
-                    </Button>
+                      <Layers className="size-5" aria-hidden />
+                    </button>
                   </DialogTrigger>
                   <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none shadow-2xl rounded-2xl max-w-lg">
                     <DialogHeader>
@@ -633,13 +582,9 @@ export function SongDetailsPanel({
                   </DialogContent>
                 </Dialog>
               )}
-              <div className="ml-auto shrink-0 flex flex-col items-center px-4 py-2 bg-slice-card-bg rounded-lg border border-slice-shadow-dark/50">
-                <div className="text-[10px] font-bold text-slice-text-light uppercase">
-                  {t('multiplier', { defaultValue: 'Multiplier' })}
-                </div>
-                <div className="text-xl font-black text-blue-500 tabular-nums">
-                  x{getScoreMultiplier().toFixed(2)}
-                </div>
+              <div className="slice-rec__mult">
+                <span className="slice-label">{t('multiplier', { defaultValue: 'Multiplier' })}</span>
+                <b>×{getScoreMultiplier().toFixed(2)}</b>
               </div>
             </div>
           )}
@@ -648,9 +593,9 @@ export function SongDetailsPanel({
             <Link
               to="/slice-it/edit/$songId"
               params={{ songId: song.id }}
-              className="mt-3 flex items-center justify-center gap-2 h-10 rounded-lg border border-slice-shadow-dark/50 bg-slice-card-bg text-slice-text-light hover:text-slice-text text-xs font-bold uppercase tracking-wide transition-colors"
+              className="slice-rec__edit"
             >
-              <SlidersHorizontal className="w-4 h-4" aria-hidden />
+              <SlidersHorizontal className="size-4" aria-hidden />
               {t('edit-chart', { defaultValue: 'Edit chart' })}
             </Link>
           )}
@@ -661,52 +606,8 @@ export function SongDetailsPanel({
         <ChartPicker charts={charts} selectedId={selectedChartId} onSelect={setSelectedChartId} />
 
         {/* Modifiers Section */}
-        <div className="p-4 border-b border-slice-shadow-dark/30">
-          <h3 className="text-sm font-bold text-slice-text uppercase mb-3">
-            {t('difficulty', { defaultValue: 'Difficulty' })}
-          </h3>
-          <div className="grid grid-cols-4 gap-1.5 mb-4">
-            {(['easy', 'normal', 'hard', 'expert'] as Difficulty[]).map((d) => {
-              const isActive = modifiers.difficulty === d;
-              const colorMap: Record<Difficulty, string> = {
-                easy: '#22c55e',
-                normal: '#2db3f0',
-                hard: '#f97316',
-                expert: '#f4509f',
-              };
-              const noteMap: Record<Difficulty, string> = {
-                easy: '70%',
-                normal: '100%',
-                hard: '150%',
-                expert: '200%',
-              };
-              return (
-                <button
-                  key={d}
-                  onClick={() => setModifiers({ ...modifiers, difficulty: d })}
-                  className={`px-2 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors border ${
-                    isActive
-                      ? 'text-white shadow-md scale-[1.02]'
-                      : 'bg-slice-shadow-dark/20 text-slice-text-light border-slice-shadow-dark/30 hover:bg-slice-shadow-dark/50'
-                  }`}
-                  style={
-                    isActive
-                      ? { backgroundColor: colorMap[d], borderColor: colorMap[d] }
-                      : undefined
-                  }
-                >
-                  <div>{d}</div>
-                  <div
-                    className={`text-[10px] font-normal mt-0.5 ${isActive ? 'text-white/80' : 'text-slice-text-muted'}`}
-                  >
-                    {t('notes-pct', { defaultValue: '{{pct}} notes', pct: noteMap[d] })}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          <h3 className="text-sm font-bold text-slice-text uppercase mb-3">
+        <div className="slice-sec">
+          <h3 className="slice-section-title">
             {t('game-modifiers', { defaultValue: 'Game Modifiers' })}
           </h3>
           <div className="grid grid-cols-2 gap-2 mb-4">
@@ -714,13 +615,11 @@ export function SongDetailsPanel({
               label={t('mod-invisible', { defaultValue: 'Invisible' })}
               active={modifiers.invisible}
               onClick={() => setModifiers({ ...modifiers, invisible: !modifiers.invisible })}
-              color="#a855f7"
             />
             <ModifierToggle
               label={t('mod-bombs', { defaultValue: 'Bombs' })}
               active={modifiers.bombs}
               onClick={() => setModifiers({ ...modifiers, bombs: !modifiers.bombs })}
-              color="#f97316"
             />
             <ModifierToggle
               label={t('mod-switching', { defaultValue: 'Switching' })}
@@ -732,19 +631,16 @@ export function SongDetailsPanel({
                   oneTrack: !modifiers.switching ? false : modifiers.oneTrack,
                 })
               }
-              color="#2db3f0"
             />
             <ModifierToggle
               label={t('mod-spin', { defaultValue: 'Spin' })}
               active={modifiers.spin}
               onClick={() => setModifiers({ ...modifiers, spin: !modifiers.spin })}
-              color="#06b6d4"
             />
             <ModifierToggle
               label={t('mod-strict-timing', { defaultValue: 'Strict Timing' })}
               active={modifiers.strictTiming}
               onClick={() => setModifiers({ ...modifiers, strictTiming: !modifiers.strictTiming })}
-              color="#dc2626"
             />
             <ModifierToggle
               label={t('mod-one-track', { defaultValue: 'One Track' })}
@@ -756,7 +652,6 @@ export function SongDetailsPanel({
                   switching: !modifiers.oneTrack ? false : modifiers.switching,
                 })
               }
-              color="#8b5cf6"
             />
             {/* Sudden Death and S-Random (`M2`) were in `Modifiers`, priced in
                 `MODIFIER_BONUSES` and honoured by the engine with no toggle
@@ -768,13 +663,11 @@ export function SongDetailsPanel({
               label={t('mod-sudden-death', { defaultValue: 'Sudden Death' })}
               active={!!modifiers.suddenDeath}
               onClick={() => setModifiers({ ...modifiers, suddenDeath: !modifiers.suddenDeath })}
-              color="#e11d48"
             />
             <ModifierToggle
               label={t('mod-s-random', { defaultValue: 'S-Random' })}
               active={!!modifiers.sRandom}
               onClick={() => setModifiers({ ...modifiers, sRandom: !modifiers.sRandom })}
-              color="#0ea5e9"
             />
           </div>
 
@@ -784,7 +677,7 @@ export function SongDetailsPanel({
               with no fail state is not comparable to one with it, and no penalty
               because charging a player for needing an assist is the design
               mistake `ASSIST_MODIFIERS` exists to avoid. */}
-          <h3 className="text-sm font-bold text-slice-text uppercase mb-1">
+          <h3 className="slice-section-title">
             {t('assists', { defaultValue: 'Assists' })}
           </h3>
           <p className="text-[10px] text-slice-text-light font-bold leading-snug mb-3">
@@ -798,19 +691,16 @@ export function SongDetailsPanel({
               label={t('mod-no-fail', { defaultValue: 'No Fail' })}
               active={!!modifiers.noFail}
               onClick={() => setModifiers({ ...modifiers, noFail: !modifiers.noFail })}
-              color="#22c55e"
             />
             <ModifierToggle
               label={t('mod-assist', { defaultValue: 'Assist (0.75x)' })}
               active={!!modifiers.assist}
               onClick={() => setModifiers({ ...modifiers, assist: !modifiers.assist })}
-              color="#14b8a6"
             />
             <ModifierToggle
               label={t('mod-tap-holds', { defaultValue: 'Taps Only' })}
               active={!!modifiers.tapHolds}
               onClick={() => setModifiers({ ...modifiers, tapHolds: !modifiers.tapHolds })}
-              color="#84cc16"
             />
           </div>
 
@@ -850,8 +740,8 @@ export function SongDetailsPanel({
         </div>
 
         {/* Leaderboard Section */}
-        <div className="p-4 border-b border-slice-shadow-dark/30">
-          <h3 className="text-sm font-bold text-slice-text uppercase mb-3">
+        <div className="slice-sec">
+          <h3 className="slice-section-title">
             {t('leaderboard', { defaultValue: 'Leaderboard' })}
           </h3>
           <div className="bg-slice-shadow-dark/20 rounded-lg border border-slice-shadow-dark/50 p-3 max-h-[300px] overflow-y-auto">
@@ -860,8 +750,8 @@ export function SongDetailsPanel({
         </div>
 
         {/* Comments Section */}
-        <div className="p-4">
-          <h3 className="text-sm font-bold text-slice-text uppercase mb-3">
+        <div className="slice-sec">
+          <h3 className="slice-section-title">
             {t('comments', { defaultValue: 'Comments' })}
           </h3>
           <div className="bg-slice-shadow-dark/20 rounded-lg border border-slice-shadow-dark/50 p-3 min-h-[200px]">

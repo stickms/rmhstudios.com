@@ -324,5 +324,16 @@
   "your-track": "SUA MÚSICA",
   "cover-format-unsupported-panel": "Esse formato de imagem não é compatível. Use JPEG, PNG ou WebP.",
   "velum-retry": "Tentar novamente",
-  "velum-start-failed": "Não foi possível iniciar Velum 2099. Ele precisa de WebGL: ative a aceleração de hardware ou tente outro navegador."
+  "velum-start-failed": "Não foi possível iniciar Velum 2099. Ele precisa de WebGL: ative a aceleração de hardware ou tente outro navegador.",
+  "side-a": "Side A",
+  "menu-rpm": "33 1/3 RPM",
+  "operator": "Operator",
+  "library-tracks": "Library · {{count}} tracks",
+  "col-title": "Title / artist",
+  "col-density": "Density",
+  "col-bpm": "BPM",
+  "col-time": "Time",
+  "pressings": "Pressings",
+  "notes-pct-named": "{{name}}, {{pct}} notes",
+  "plays-short": "plays"
 }

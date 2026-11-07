@@ -1,21 +1,88 @@
 /* ============================================================
-   Slice It!: main menu layout.
+   Slice It!: main menu layout — "Pressing".
    Scheme: docs/game-design-schemes/slice-it.json — tokens live in slice-it.css.
 
-   One slim bar on top (back, wordmark, the four places you can go, the player)
-   with the key art's slash under it; below it the library on the left and the
-   track details in a column on the right. On a phone the nav moves to the foot of
-   the screen, where a thumb is, and the details slide over the library.
+   A record sleeve. On a wide screen: a 36px catalogue line on top; below it the
+   sleeve (wordmark, the printed A1/A2/B1/B2 track box, the record you picked) on
+   the left and the tracklist on the right. Below 1024px the sleeve is gone: a
+   slim bar carries the wordmark and the nav, and the record opens as a sheet.
+   On a phone the nav is the four cells at the foot of the screen, in the flow.
 
-   Nothing here animates by itself. State is shown by border and glow, never by
-   motion.
+   Flat, hard-edged, no glow, no radius. State is shown by fill (paper, cyan,
+   pink), never by motion.
    ============================================================ */
 
 .slice-menu {
   font-family: var(--slice-body);
 }
 
-/* ── The bar ──────────────────────────────────────────────── */
+.slice-menu :is(.slice-bar__icon, .slice-nav__item, .slice-btn-primary, .slice-chip, .slice-go, .slice-press, .slice-sq, .slice-mod, .slice-trow, .slice-trow__cover):focus-visible {
+  outline: 2px solid var(--slice-primary);
+  outline-offset: 2px;
+}
+
+/* ── The catalogue line (wide) ────────────────────────────── */
+
+.slice-line {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: calc(36px + var(--safe-top, 0px));
+  padding: var(--safe-top, 0px) max(28px, var(--safe-right, 0px)) 0 max(28px, var(--safe-left, 0px));
+  border-bottom: 1px solid var(--slice-border);
+  background: var(--slice-bg);
+}
+
+.slice-line__l,
+.slice-line__r {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.slice-line__r {
+  gap: 14px;
+}
+
+.slice-line .slice-label i {
+  font-style: normal;
+  padding: 0 4px;
+}
+
+.slice-line .slice-label b {
+  font-weight: 500;
+  color: var(--slice-paper);
+}
+
+/* The back link, as the key art prints its catalogue number. */
+.slice-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 7px;
+  border: 1.5px solid var(--slice-primary);
+  background: transparent;
+  color: var(--slice-primary);
+  font-family: var(--slice-mono);
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.slice-chip:hover {
+  background: var(--slice-primary);
+  color: var(--slice-label);
+}
+
+/* ── The bar (narrow) ─────────────────────────────────────── */
 
 .slice-bar {
   position: relative;
@@ -26,25 +93,8 @@
   gap: 8px;
   min-height: calc(52px + var(--safe-top, 0px));
   padding: var(--safe-top, 0px) max(16px, var(--safe-right, 0px)) 0 max(12px, var(--safe-left, 0px));
+  border-bottom: 1px solid var(--slice-border);
   background: var(--slice-bg);
-}
-
-/* The slash, as the bar's lower edge: cyan, a white cut, pink. */
-.slice-bar::after {
-  content: '';
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 2px;
-  background: linear-gradient(
-    100deg,
-    var(--slice-primary) 0%,
-    var(--slice-primary) 46%,
-    #ffffff 50%,
-    var(--slice-accent) 54%,
-    var(--slice-accent) 100%
-  );
-  opacity: 0.85;
-  pointer-events: none;
 }
 
 .slice-bar__title {
@@ -65,27 +115,16 @@
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  border: 0;
   background: transparent;
-  color: var(--slice-text-muted);
+  color: var(--slice-paper);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    color 0.16s ease,
-    background-color 0.16s ease,
-    border-color 0.16s ease;
 }
 
 .slice-bar__icon:hover {
-  background: var(--slice-surface-hover);
-  border-color: var(--slice-border);
-  color: #fff;
-}
-
-.slice-menu :is(.slice-bar__icon, .slice-nav__item, .slice-btn-primary):focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
+  background: var(--slice-paper);
+  color: var(--slice-label);
 }
 
 .slice-bar__who {
@@ -98,9 +137,7 @@
 
 .slice-bar__avatar {
   border-radius: 9999px;
-  box-shadow:
-    0 0 0 1px var(--slice-bg),
-    0 0 0 2px rgba(45, 179, 240, 0.7);
+  box-shadow: 0 0 0 1.5px var(--slice-primary);
 }
 
 .slice-bar__name {
@@ -115,13 +152,13 @@
   color: var(--slice-text);
 }
 
-@media (min-width: 900px) {
+@media (min-width: 640px) {
   .slice-bar__name {
     display: block;
   }
 }
 
-/* ── Navigation ───────────────────────────────────────────── */
+/* ── Navigation: A1 / A2 / B1 / B2 ────────────────────────── */
 
 .slice-nav {
   display: flex;
@@ -136,79 +173,641 @@
   gap: 7px;
   height: 34px;
   padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  border: 0;
   background: transparent;
-  color: var(--slice-text-muted);
-  font-family: var(--slice-display);
-  font-size: 11px;
+  color: var(--slice-paper);
+  font-family: var(--slice-mono);
+  font-size: 12px;
+  font-weight: 500;
   line-height: 1;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    color 0.16s ease,
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    box-shadow 0.16s ease;
 }
 
 /* The track number, as the key art prints it ("A1 DOWNBEAT"). */
 .slice-nav__idx {
-  font-family: var(--slice-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
+  font-weight: 600;
   color: var(--slice-accent);
 }
 
-.slice-nav__icon {
-  display: none;
-  width: 20px;
-  height: 20px;
+.slice-nav__item:hover {
+  background: var(--slice-paper);
+  color: var(--slice-label);
 }
 
-.slice-nav__item:hover {
-  background: var(--slice-surface-hover);
-  color: #fff;
+.slice-nav__item:hover .slice-nav__idx {
+  color: var(--slice-label);
 }
 
 .slice-nav__item[aria-pressed='true'] {
-  color: #fff;
-  border-color: rgba(45, 179, 240, 0.6);
-  background: rgba(45, 179, 240, 0.12);
-  box-shadow: 0 0 12px rgba(45, 179, 240, 0.18);
+  background: var(--slice-paper);
+  color: var(--slice-label);
 }
 
-.slice-nav__item--versus:hover {
-  border-color: rgba(244, 80, 159, 0.6);
+.slice-nav__item[aria-pressed='true'] .slice-nav__idx {
+  color: var(--slice-label);
 }
 
-/* ── The details column (wide) ────────────────────────────── */
-
-.slice-side {
+/* The sleeve's printed box: four rows, one hairline frame. */
+.slice-nav--box {
   display: flex;
   flex-direction: column;
-  flex: 0 0 clamp(360px, 34vw, 480px);
+  align-items: stretch;
+  gap: 0;
+  margin: 12px 0 0;
+  border: 1px solid var(--slice-border);
+  background: var(--slice-label);
+}
+
+.slice-nav--box .slice-nav__item {
+  height: auto;
+  gap: 12px;
+  padding: 11px 14px;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--slice-border);
+}
+
+.slice-nav--box .slice-nav__item:last-child {
+  border-bottom: 0;
+}
+
+.slice-nav--box .slice-nav__idx {
+  width: 22px;
+}
+
+/* ── The sleeve (wide) ────────────────────────────────────── */
+
+.slice-sleeve {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 clamp(380px, 32vw, 440px);
   min-height: 0;
-  border-left: 1px solid var(--slice-border);
-  background: var(--slice-bg-alt);
+  border-right: 1px solid var(--slice-border);
+  background: var(--slice-label);
+}
+
+.slice-sleeve__top {
+  flex-shrink: 0;
+  padding: 24px 28px 16px;
+}
+
+.slice-sleeve__title {
+  margin: 0;
+  line-height: 0;
+}
+
+.slice-sleeve__logo {
+  display: block;
+  width: min(100%, 300px);
+  height: auto;
+}
+
+.slice-sleeve__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .slice-side__empty {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 20px;
+  padding: 8px 28px 28px;
 }
 
 .slice-side__art {
   aspect-ratio: 3 / 1;
   overflow: hidden;
-  border: 1px solid rgba(45, 179, 240, 0.5);
-  border-radius: var(--slice-radius);
-  box-shadow: 0 0 18px rgba(45, 179, 240, 0.14);
+  border: 1px solid var(--slice-border);
   background: var(--slice-bg);
+}
+
+/* ── The record (the picked track, in the sleeve or the sheet) ─ */
+
+.slice-rec {
+  padding: 0 28px 20px;
+}
+
+.slice-sheet .slice-rec {
+  padding-top: 16px;
+}
+
+.slice-rec__cover {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border: 1px solid var(--slice-border);
+  background: var(--slice-bg);
+}
+
+.slice-rec__cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 44%;
+}
+
+.slice-rec__ph {
+  position: absolute;
+  inset: 0;
+}
+
+/* The catalogue tag printed on the corner of the cover. */
+.slice-rec__tag {
+  position: absolute;
+  inset: 0 auto auto 0;
+  padding: 5px 9px;
+  background: var(--slice-label);
+  color: var(--slice-paper);
+  font-family: var(--slice-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.slice-rec__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.slice-rec__title {
+  margin: 0;
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.slice-rec__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: 8px;
+}
+
+.slice-rec__artist {
+  font-family: var(--slice-serif);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 21px;
+  line-height: 1;
+}
+
+.slice-rec__meta .slice-label b {
+  font-weight: 500;
+  color: var(--slice-paper);
+}
+
+/* The four pressings: EZ NM HD EX, with how many of the notes each plays. */
+.slice-press-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.slice-press {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 62px;
+  padding: 9px 10px;
+  border: 1px solid var(--slice-border);
+  background: var(--slice-label);
+  color: var(--slice-paper);
+  font-family: var(--slice-mono);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.slice-press__big {
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+
+.slice-press:hover {
+  background: var(--slice-paper);
+  color: var(--slice-label);
+}
+
+.slice-press[aria-pressed='true'] {
+  border-color: var(--slice-primary);
+  background: var(--slice-primary);
+  color: var(--slice-label);
+}
+
+.slice-rec__go {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.slice-rec__go .slice-btn-primary {
+  flex: 1 1 11rem;
+  height: 48px;
+  gap: 10px;
+}
+
+/* A square control: like, add to pack. */
+.slice-sq {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 48px;
+  height: 48px;
+  padding: 0 10px;
+  border: 1px solid var(--slice-border);
+  background: var(--slice-label);
+  color: var(--slice-paper);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.slice-sq:hover {
+  background: var(--slice-paper);
+  color: var(--slice-label);
+}
+
+.slice-sq[data-on] {
+  border-color: var(--slice-accent);
+  color: var(--slice-accent);
+}
+
+.slice-sq__n {
+  font-family: var(--slice-mono);
+  font-size: 12px;
+}
+
+.slice-rec__mult {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-left: auto;
+  text-align: right;
+}
+
+.slice-rec__mult b {
+  font-family: var(--slice-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--slice-primary);
+}
+
+.slice-rec__edit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  margin-top: 12px;
+  border: 1px solid var(--slice-border);
+  color: var(--slice-paper);
+  font-family: var(--slice-mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.slice-rec__edit:hover {
+  background: var(--slice-paper);
+  color: var(--slice-label);
+}
+
+/* Sections under the record: modifiers, leaderboard, comments. */
+.slice-sec {
+  padding: 18px 28px;
+  border-top: 1px solid var(--slice-border);
+}
+
+.slice-section-title {
+  margin: 0 0 12px;
+  font-family: var(--slice-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--slice-text-muted);
+}
+
+/* A modifier: its name and a square switch. */
+.slice-mod {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--slice-border);
+  background: var(--slice-label);
+  color: var(--slice-paper);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.slice-mod:hover {
+  border-color: var(--slice-paper);
+}
+
+.slice-mod__label {
+  font-family: var(--slice-mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ── The tracklist ────────────────────────────────────────── */
+
+.slice-lib-head {
+  display: flex;
+  flex: 1 0 100%;
+  align-items: baseline;
+  gap: 14px;
+  padding: 6px 8px 2px;
+}
+
+.slice-lib-head h2 {
+  margin: 0;
+  font-size: 26px;
+}
+
+/* One grid for the heads, the rows and the skeleton, so they line up. */
+.slice-trow {
+  display: grid;
+  grid-template-columns: 44px 44px minmax(0, 1fr) minmax(0, 170px) 56px 52px auto;
+  align-items: center;
+  column-gap: 14px;
+  min-height: 62px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--slice-border);
+  color: var(--slice-text);
+  list-style: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.slice-trow--head {
+  min-height: 34px;
+  border-top: 1px solid var(--slice-border);
+  color: var(--slice-text-muted);
+  font-family: var(--slice-mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  cursor: default;
+}
+
+.slice-trow--skeleton {
+  cursor: default;
+}
+
+.slice-trow:not(.slice-trow--head):not(.slice-trow--skeleton):hover {
+  background: var(--slice-paper);
+  color: var(--slice-label);
+}
+
+/* Selected: the row is cut, paper | pink — the wordmark's own device. */
+.slice-trow.is-sel:not(.slice-trow--head):not(.slice-trow--skeleton) {
+  background: linear-gradient(
+    98deg,
+    var(--slice-paper) 0 calc(66% - 2px),
+    var(--slice-label) calc(66% - 2px) calc(66% + 2px),
+    var(--slice-accent) calc(66% + 2px) 100%
+  );
+  color: var(--slice-label);
+}
+
+.slice-trow__no {
+  font-family: var(--slice-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--slice-accent);
+}
+
+.slice-trow:hover .slice-trow__no,
+.slice-trow.is-sel .slice-trow__no {
+  color: var(--slice-label);
+}
+
+/* The cover is also the preview button. */
+.slice-trow__cover {
+  position: relative;
+  display: block;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: var(--slice-label);
+  box-shadow: inset 0 0 0 1px var(--slice-border);
+  cursor: pointer;
+}
+
+.slice-trow__cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.slice-trow__ph {
+  position: absolute;
+  inset: 0;
+}
+
+.slice-trow__cover-ic {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--slice-label);
+  color: var(--slice-paper);
+}
+
+.slice-trow:hover .slice-trow__cover-ic,
+.slice-trow__cover:focus-visible .slice-trow__cover-ic,
+.slice-trow__cover-ic[data-on] {
+  display: flex;
+}
+
+.slice-trow__title {
+  overflow: hidden;
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: 15px;
+  line-height: 1.05;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slice-trow__artist {
+  overflow: hidden;
+  margin-top: 3px;
+  font-family: var(--slice-serif);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slice-trow__note {
+  margin-top: 3px;
+  font-family: var(--slice-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--slice-text-muted);
+}
+
+.slice-trow__note--live {
+  color: var(--slice-primary);
+}
+
+.slice-trow__note--own {
+  color: var(--slice-accent);
+}
+
+.slice-trow:hover .slice-trow__note,
+.slice-trow.is-sel .slice-trow__note {
+  color: #46508f;
+}
+
+.slice-trow__dens {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 30px;
+  color: var(--slice-primary);
+}
+
+.slice-trow__dens > span {
+  display: block;
+  flex: 1 1 0;
+  min-width: 1px;
+  background: currentColor;
+}
+
+.slice-trow:hover .slice-trow__dens,
+.slice-trow.is-sel .slice-trow__dens {
+  color: var(--slice-label);
+}
+
+.slice-trow__num {
+  font-family: var(--slice-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.slice-trow__acts {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* The row's action: the cut button in small. */
+.slice-go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  min-width: 32px;
+  padding: 0 22px 0 14px;
+  border: 0;
+  background: var(--slice-primary);
+  color: var(--slice-label);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.slice-go:hover {
+  background: var(--slice-label);
+  color: var(--slice-paper);
+}
+
+/* On the cut row the cyan button would sit on pink: take the label ink instead. */
+.slice-trow.is-sel .slice-go {
+  background: var(--slice-label);
+  color: var(--slice-paper);
+}
+
+.slice-trow:hover .slice-go:hover {
+  background: var(--slice-accent);
+  color: var(--slice-label);
+}
+
+/* Where the strip fits: a wide screen has the room, a tablet has it once the
+   sleeve is gone, and the range between has neither. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .slice-trow {
+    grid-template-columns: 40px 44px minmax(0, 1fr) 56px 52px auto;
+  }
+
+  .slice-trow__dens-col {
+    display: none;
+  }
+}
+
+@media (max-width: 759px) {
+  .slice-trow {
+    grid-template-columns: 34px 44px minmax(0, 1fr) auto;
+    column-gap: 10px;
+    padding: 0 10px;
+  }
+
+  .slice-trow--head {
+    display: none;
+  }
+
+  .slice-trow__dens-col,
+  .slice-trow__num-col {
+    display: none;
+  }
 }
 
 /* ── The details sheet (narrow) ───────────────────────────── */
@@ -223,7 +822,7 @@
   max-width: 640px;
   overflow: hidden;
   border-left: 1px solid var(--slice-border);
-  background: var(--slice-bg-alt);
+  background: var(--slice-label);
 }
 
 .slice-sheet__head {
@@ -237,33 +836,8 @@
 /* ── Panels and the primary button ────────────────────────── */
 
 .slice-panel {
-  border: 1px solid rgba(45, 179, 240, 0.5);
-  border-radius: var(--slice-radius);
-  background: var(--slice-card-bg);
-  box-shadow:
-    0 0 0 1px rgba(45, 179, 240, 0.1),
-    0 18px 48px rgba(0, 0, 0, 0.55);
-}
-
-.slice-menu .slice-btn-primary {
-  height: 44px;
-  border: 0;
-  border-radius: var(--slice-radius);
-  background: var(--slice-primary);
-  color: #050921;
-  font-family: var(--slice-display);
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  transition:
-    background-color 0.16s ease,
-    box-shadow 0.16s ease;
-}
-
-.slice-menu .slice-btn-primary:hover {
-  background: #5ccfff;
-  box-shadow: 0 0 14px rgba(45, 179, 240, 0.45);
+  border: 1px solid var(--slice-border);
+  background: var(--slice-label);
 }
 
 /* ── A phone ──────────────────────────────────────────────── */
@@ -282,34 +856,42 @@
   .slice-nav {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 4px;
+    gap: 0;
     margin: 0;
-    padding: 6px max(8px, var(--safe-right, 0px)) calc(6px + var(--safe-bottom, 0px))
-      max(8px, var(--safe-left, 0px));
+    padding: 0 max(0px, var(--safe-right, 0px)) var(--safe-bottom, 0px)
+      max(0px, var(--safe-left, 0px));
     flex-shrink: 0;
     border-top: 1px solid var(--slice-border);
-    background: var(--slice-bg-alt);
+    background: var(--slice-label);
   }
 
   .slice-nav__item {
     flex-direction: column;
+    align-items: flex-start;
     justify-content: center;
-    gap: 5px;
-    height: 52px;
-    padding: 0;
-    font-size: 10px;
+    gap: 6px;
+    height: 60px;
+    padding: 0 12px;
+    border-right: 1px solid var(--slice-border);
+    font-size: 11px;
   }
 
-  .slice-nav__icon {
-    display: block;
+  .slice-nav__item:last-child {
+    border-right: 0;
   }
 
   .slice-nav__idx {
-    display: none;
+    font-size: 12px;
   }
 
   .slice-sheet {
     max-width: none;
     border-left: 0;
+  }
+
+  .slice-rec,
+  .slice-sec {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }

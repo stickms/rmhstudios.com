@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { ArrowLeft, CalendarDays, Library, ListMusic, Settings, Swords } from 'lucide-react';
+import { ArrowLeft, Settings } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
 import { hitSoundPath, hitSoundPreloadList } from '@/lib/slice-it/hit-sound-pool';
@@ -214,15 +214,16 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   }, [engine, startRun, setIsMultiplayer]);
 
   // The four places the menu goes. Three swap the stage; Versus opens the lobby.
-  const navItems = (
-    <nav className="slice-nav" aria-label={t('menu-nav', { defaultValue: 'Slice It! menu' })}>
+  // On a wide screen they are the sleeve's printed track box; below that they sit
+  // in the bar (a tablet) or at the foot of the screen (a phone).
+  const renderNav = (box: boolean) => (
+    <nav className={box ? 'slice-nav slice-nav--box' : 'slice-nav'} aria-label={t('menu-nav', { defaultValue: 'Slice It! menu' })}>
       <button
         type="button"
         className="slice-nav__item"
         aria-pressed={soloMode === 'library'}
         onClick={() => setSoloMode('library')}
       >
-        <Library className="slice-nav__icon" aria-hidden />
         <span className="slice-nav__idx">A1</span>
         <span>{t('menu-nav-library', { defaultValue: 'Library' })}</span>
       </button>
@@ -233,7 +234,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
         aria-label={ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
         onClick={() => setSoloMode(soloMode === 'daily' ? 'library' : 'daily')}
       >
-        <CalendarDays className="slice-nav__icon" aria-hidden />
         <span className="slice-nav__idx">A2</span>
         <span>{t('menu-nav-daily', { defaultValue: 'Daily' })}</span>
       </button>
@@ -244,7 +244,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
         aria-label={ts('setlists', { defaultValue: 'Setlists' })}
         onClick={() => setSoloMode(soloMode === 'setlists' ? 'library' : 'setlists')}
       >
-        <ListMusic className="slice-nav__icon" aria-hidden />
         <span className="slice-nav__idx">B1</span>
         <span>{t('menu-nav-setlists', { defaultValue: 'Setlists' })}</span>
       </button>
@@ -254,7 +253,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
         aria-label={t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
         onClick={() => setShowMultiplayer(true)}
       >
-        <Swords className="slice-nav__icon" aria-hidden />
         <span className="slice-nav__idx">B2</span>
         <span>{t('menu-nav-versus', { defaultValue: 'Versus' })}</span>
       </button>
@@ -301,7 +299,40 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
               player. It replaces a 60px route header stacked over a 125px
               masthead — the game's art lives in the details column now, and
               the slash under the bar is the key art's one motif. */}
-          <header className="slice-bar">
+          {isWide ? (
+            <header className="slice-line">
+              <div className="slice-line__l">
+                <Link
+                  to="/games"
+                  onClick={goBack}
+                  className="slice-chip"
+                  aria-label={ts('back-to-builds', { defaultValue: 'Back to Builds' })}
+                >
+                  <ArrowLeft className="size-3.5" aria-hidden />
+                  RMH-050
+                </Link>
+                <span className="slice-label">
+                  {t('menu-rpm', { defaultValue: '33 1/3 RPM' })} <i>/</i>{' '}
+                  {t('side-a', { defaultValue: 'Side A' })}
+                </span>
+              </div>
+              <div className="slice-line__r">
+                <span className="slice-label">
+                  {t('operator', { defaultValue: 'Operator' })}{' '}
+                  <b className="slice-figure">{userName || 'GUEST'}</b>
+                </span>
+                <button
+                  type="button"
+                  className="slice-bar__icon"
+                  onClick={() => setShowSettings(true)}
+                  aria-label={t('settings', { defaultValue: 'Settings' })}
+                >
+                  <Settings className="size-[18px]" aria-hidden />
+                </button>
+              </div>
+            </header>
+          ) : (
+            <header className="slice-bar">
             <Link
               to="/games"
               onClick={goBack}
@@ -321,7 +352,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 fetchPriority="high"
               />
             </h1>
-            {!isPhone && navItems}
+            {!isPhone && renderNav(false)}
             <div className="slice-bar__who">
               <UserAvatar
                 src={avatarUrl}
@@ -341,6 +372,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
               </button>
             </div>
           </header>
+          )}
 
           <div className="flex-1 min-h-0 flex relative">
             {/* Auth overlay. `items-center-safe` + `overflow-y-auto`: plain
@@ -386,6 +418,62 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 (S8/S2). One at a time — each is a different mode, not a filter
                 over the same list. Cross-faded, and `mode="wait"` so the
                 outgoing mode is gone before the next one measures itself. */}
+            {/* Wide: the sleeve. The wordmark, the printed track box that is the
+                navigation, and the record you have picked — its cover, its
+                pressings, START. It is on every mode, because the nav lives in
+                it; the record only shows in the library. */}
+            {isWide && (
+              <aside className="slice-sleeve" aria-label={t('song-details', { defaultValue: 'Song Details' })}>
+                <div className="slice-sleeve__top">
+                  <h1 className="slice-sleeve__title">
+                    <img
+                      className="slice-sleeve__logo"
+                      src="/images/games/logos/slice-it.svg"
+                      alt={t('game-title', { defaultValue: 'Slice It!' })}
+                      width={1015}
+                      height={504}
+                      decoding="async"
+                      fetchPriority="high"
+                    />
+                  </h1>
+                  {renderNav(true)}
+                </div>
+                <div className="slice-sleeve__body">
+                  {soloMode === 'library' && selectedSong ? (
+                    <SongDetailsPanel
+                      song={selectedSong}
+                      onPlay={handleStartGame}
+                      onSongUpdated={(updates) =>
+                        setSelectedSong((current) => (current ? { ...current, ...updates } : current))
+                      }
+                    />
+                  ) : (
+                    <div className="slice-side__empty">
+                      <div className="slice-side__art">
+                        <OptimizedImage
+                          src="/images/games/banners/slice-it.webp"
+                          alt=""
+                          width={840}
+                          height={280}
+                          priority
+                          className="size-full object-cover"
+                        />
+                      </div>
+                      <p className="slice-display text-lg text-slice-text">
+                        {t('menu-tagline', { defaultValue: 'Slice through every beat.' })}
+                      </p>
+                      <hr className="slice-slash" />
+                      <p className="slice-label normal-case tracking-normal text-[13px] leading-relaxed">
+                        {t('side-empty', {
+                          defaultValue: 'Pick a track to see its charts, your scores and the modifiers.',
+                        })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </aside>
+            )}
+
             <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
@@ -428,46 +516,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 </motion.div>
               </AnimatePresence>
             </div>
-
-            {/* Wide: the details are a column beside the library, always there —
-                the key art when nothing is picked, the track when something is. */}
-            {isWide && soloMode === 'library' && (
-              <aside className="slice-side" aria-label={t('song-details', { defaultValue: 'Song Details' })}>
-                {selectedSong ? (
-                  <div className="min-h-0 flex-1 overflow-y-auto">
-                    <SongDetailsPanel
-                      song={selectedSong}
-                      onPlay={handleStartGame}
-                      onSongUpdated={(updates) =>
-                        setSelectedSong((current) => (current ? { ...current, ...updates } : current))
-                      }
-                    />
-                  </div>
-                ) : (
-                  <div className="slice-side__empty">
-                    <div className="slice-side__art">
-                      <OptimizedImage
-                        src="/images/games/banners/slice-it.webp"
-                        alt=""
-                        width={840}
-                        height={280}
-                        priority
-                        className="size-full object-cover"
-                      />
-                    </div>
-                    <p className="slice-display text-lg uppercase text-slice-text">
-                      {t('menu-tagline', { defaultValue: 'Slice through every beat.' })}
-                    </p>
-                    <hr className="slice-slash" />
-                    <p className="slice-label normal-case tracking-normal text-[13px] leading-relaxed">
-                      {t('side-empty', {
-                        defaultValue: 'Pick a track to see its charts, your scores and the modifiers.',
-                      })}
-                    </p>
-                  </div>
-                )}
-              </aside>
-            )}
 
             {/* Narrow: the details slide over the library. The sheet slides; it
                 used to appear and vanish. A spring, not a duration: this is a
@@ -535,7 +583,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             </AnimatePresence>
           </div>
 
-          {isPhone && navItems}
+          {isPhone && renderNav(false)}
         </>
       )}
 
