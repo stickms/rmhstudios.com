@@ -11,7 +11,7 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import { MODEL_BUILDER_VERSION } from '@/lib/tf2-loadout/model-sync';
 import { gameAssetApi } from '@/lib/tf2-game/assets/urls';
-import type { FighterModelDef, SourceGame } from './models';
+import { modelSources, type FighterModelDef, type MdlGame, type SourceGame } from './models';
 
 let loader: Tf2GLTFLoader | null = null;
 const getLoader = () => (loader ??= new Tf2GLTFLoader());
@@ -37,11 +37,17 @@ export const tf2BodyUrl = (cls: string): string =>
 async function resolveUrl(def: FighterModelDef): Promise<string> {
     if (def.game === 'tf2') return tf2BodyUrl(def.tf2Class!);
     if (def.game === 'ybot') throw new Error('ybot is not a Source model');
-    const index = await loadMdlIndex(def.game);
-    const entry = index?.[def.mdl!.toLowerCase()];
-    if (!entry?.glb) throw new Error(`${def.id}: not in ${def.game} model index`);
-    const path = entry.glb.startsWith('mdl/') ? entry.glb : `mdl/${entry.glb}`;
-    return gameAssetApi(def.game) + path;
+    // The first game channel (then MDL path) whose index lists it.
+    const sources = modelSources(def);
+    const indexes = new Map<MdlGame, Record<string, { glb?: string }> | null>();
+    for (const { game } of sources) if (!indexes.has(game)) indexes.set(game, await loadMdlIndex(game));
+    for (const { game, mdl } of sources) {
+        const entry = indexes.get(game)?.[mdl];
+        if (!entry?.glb) continue;
+        const path = entry.glb.startsWith('mdl/') ? entry.glb : `mdl/${entry.glb}`;
+        return gameAssetApi(game) + path;
+    }
+    throw new Error(`${def.id}: not in the ${[...indexes.keys()].join('/')} model index`);
 }
 
 export function loadSourceModel(def: FighterModelDef): Promise<GLTF> {

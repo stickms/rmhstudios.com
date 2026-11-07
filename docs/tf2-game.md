@@ -677,6 +677,18 @@ in `lib/tf2-game/assets/versions.ts`; the workflow reads them from there.
 | `hl2-menu`, `portal-menu`      | `hl2-game/menu/`, `portal-game/menu/`                       | `menu_ui.py --game hl2\|portal`: GameUI's files, console backgrounds, chapter pictures, fonts, words | `menu/index.json`                   |
 | `csgo-*` (five channels)       | `csgo-game/<kind>/`, shared `csgo-game/tex/`                | `csgo-assets-sync.yml` (app 740), see [CS:GO (Dust II)](#csgo-dust-ii)                               | each kind's `index.json`            |
 
+**Playable characters (Kowloon Knockout).** Kowloon Knockout lets a player fight as a Source character, read back
+from these channels' `mdl/index.json` (`lib/kowloon-knockout/render/fighter/models.ts`). Maps never name them, so
+`GAME_ALWAYS_MODELS` in `scripts/tf2-game/build-maps.ts` asks for them on every run: Alyx and the Combine soldier
+(`hl2`, and `portal` too, whose install carries Half-Life 2's shared content) and Chell (`portal`, whose file name
+varies by build, so every candidate is listed). A path the install lacks is skipped, not an error;
+`scripts/tf2-game/character-audit.py` prints which ones each depot has (and any other character-looking model it
+holds) in the run's log, so a depot that lacks one is visible instead of a menu entry that never appears. The
+roster hides a character until a published index lists it. If the free depots lack them, the retail ones
+have them: set the repository **variables** `HL2_STEAM_APP=220` and/or `PORTAL_STEAM_APP=400` (the default is the
+free demos, 219 / 410). That is a deliberate step past the "demos only" line in `game-maps.ts`: it publishes
+paid-game assets on the public asset routes, and the Steam account must own the retail game.
+
 `GET /api/tf2-game/assets/<kind>/<file>` serves them (`lib/tf2-game/assets/store.server.ts`,
 paths checked by `paths.ts`): content-addressed files are immutable for a year,
 index files revalidate after five minutes, Brotli passes through. In the

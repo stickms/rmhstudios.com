@@ -11,6 +11,8 @@
 // ============================================================
 
 export type SourceGame = 'tf2' | 'hl2' | 'portal' | 'csgo';
+/** The games whose models come from an `mdl/index.json` (TF2's come from the loadout's class bodies). */
+export type MdlGame = Exclude<SourceGame, 'tf2'>;
 
 /** Skeleton naming scheme, see boneMaps.ts. */
 export type BoneFamily = 'bip' | 'valvebiped' | 'csgo';
@@ -23,9 +25,23 @@ export interface FighterModelDef {
     /** `ybot` is bundled; the rest come from R2. */
     game: 'ybot' | SourceGame;
     family: BoneFamily | null;
-    /** TF2: the class body (`class_<cls>`); others: the MDL path in `mdl/index.json`. */
+    /** TF2: the class body (`class_<cls>`). */
     tf2Class?: string;
-    mdl?: string;
+    /** Others: the MDL path in `mdl/index.json` — or several, tried in order (Chell's file name varies by build). */
+    mdl?: string | readonly string[];
+    /**
+     * Which game channels may hold it, in priority order (default: just `game`). Portal's install ships
+     * Half-Life 2's shared content, so an HL2 character the demo depot lacks can come from there.
+     */
+    games?: readonly MdlGame[];
+}
+
+/** Every (game, MDL path) that would satisfy this model, best first. Empty for the Y-Bot and TF2 bodies. */
+export function modelSources(def: FighterModelDef): { game: MdlGame; mdl: string }[] {
+    if (def.game === 'ybot' || def.game === 'tf2' || !def.mdl) return [];
+    const paths = (Array.isArray(def.mdl) ? def.mdl : [def.mdl]) as string[];
+    const games = def.games ?? [def.game];
+    return games.flatMap((game) => paths.map((mdl) => ({ game, mdl: mdl.toLowerCase() })));
 }
 
 export const DEFAULT_FIGHTER_MODEL = 'ybot';
@@ -37,10 +53,10 @@ const csgo = (name: string, label: string): FighterModelDef => ({
     id: `csgo_${name}`, label, group: 'Counter-Strike', game: 'csgo', family: 'csgo',
     mdl: `models/player/custom_player/legacy/${name}.mdl`,
 });
-const hl2 = (id: string, label: string, mdl: string): FighterModelDef => ({
-    id: `hl2_${id}`, label, group: 'Half-Life 2', game: 'hl2', family: 'valvebiped', mdl,
+const hl2 = (id: string, label: string, mdl: string, games?: readonly MdlGame[]): FighterModelDef => ({
+    id: `hl2_${id}`, label, group: 'Half-Life 2', game: 'hl2', family: 'valvebiped', mdl, games,
 });
-const portal = (id: string, label: string, mdl: string): FighterModelDef => ({
+const portal = (id: string, label: string, mdl: string | readonly string[]): FighterModelDef => ({
     id: `portal_${id}`, label, group: 'Portal', game: 'portal', family: 'valvebiped', mdl,
 });
 
@@ -53,6 +69,11 @@ export const FIGHTER_MODELS: readonly FighterModelDef[] = [
     // player models; HL2 ships the humans below (no Combine soldier or Alyx in the demo data);
     // Portal publishes no humanoid yet, so its entry stays hidden until one is uploaded.
     csgo('tm_phoenix', 'Phoenix'), csgo('ctm_sas', 'SAS'),
+    // Alyx and the Combine soldier are requested of the asset sync (GAME_ALWAYS_MODELS in
+    // scripts/tf2-game/build-maps.ts); they appear here once an install that has them has published them,
+    // from the HL2 channel or, failing that, Portal's (which carries Half-Life 2's shared content).
+    hl2('alyx', 'Alyx', 'models/alyx.mdl', ['hl2', 'portal']),
+    hl2('combine', 'Combine Soldier', 'models/combine_soldier.mdl', ['hl2', 'portal']),
     hl2('police', 'Metrocop', 'models/police.mdl'),
     hl2('barney', 'Barney', 'models/barney.mdl'),
     hl2('gman', 'G-Man', 'models/gman_high.mdl'),
@@ -65,7 +86,7 @@ export const FIGHTER_MODELS: readonly FighterModelDef[] = [
     hl2('citizen_m9', 'Citizen (Male 9)', 'models/humans/group01/male_09.mdl'),
     hl2('citizen_f6', 'Citizen (Female 6)', 'models/humans/group01/female_06.mdl'),
     hl2('citizen_f7', 'Citizen (Female 7)', 'models/humans/group01/female_07.mdl'),
-    portal('chell', 'Chell', 'models/player/chell/player.mdl'),
+    portal('chell', 'Chell', ['models/player/chell/player.mdl', 'models/player/chell.mdl', 'models/player.mdl']),
 ];
 
 const BY_ID = new Map(FIGHTER_MODELS.map((m) => [m.id, m]));
@@ -94,7 +115,7 @@ export interface ModelAvailability {
 export function isModelAvailable(def: FighterModelDef, avail: ModelAvailability): boolean {
     if (def.game === 'ybot') return true;
     if (def.game === 'tf2') return !!avail.tf2?.has(`class_${def.tf2Class}`);
-    return !!avail.mdl[def.game]?.has(def.mdl!.toLowerCase());
+    return modelSources(def).some((src) => !!avail.mdl[src.game]?.has(src.mdl));
 }
 
 export function availableFighterModels(avail: ModelAvailability): FighterModelDef[] {
