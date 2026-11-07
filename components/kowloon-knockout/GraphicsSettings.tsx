@@ -3,6 +3,7 @@
 import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useGraphicsStore, type TierPreference } from '@/lib/kowloon-knockout/render/graphicsStore';
+import './kk-screens.css';
 
 const PRESETS: { value: TierPreference; tKey: string; defaultLabel: string }[] = [
     { value: 'auto', tKey: 'quality-auto', defaultLabel: 'Auto' },
