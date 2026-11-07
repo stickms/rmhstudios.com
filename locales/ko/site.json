@@ -771,5 +771,9 @@
   "membership-action-failed": "결제 서비스에 연결할 수 없습니다. 다시 시도하세요.",
   "space-end-offline": "연결되지 않았습니다. 잠시 후 다시 시도하세요.",
   "market-under-review": "검토 중",
-  "market-under-review-hint": "이 가격의 구매는 빠른 확인을 위해 일시 중지되었습니다. 코인은 이동하지 않았습니다. 지금 취소하면 아이템을 돌려받습니다."
+  "market-under-review-hint": "이 가격의 구매는 빠른 확인을 위해 일시 중지되었습니다. 코인은 이동하지 않았습니다. 지금 취소하면 아이템을 돌려받습니다.",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

@@ -501,6 +501,8 @@ export function canJoinGroupCall(args: {
   privacy: CallPrivacy;
   /** Either direction of block bars the ring. */
   blocked: boolean;
+  /** Has the INVITEE muted the STARTER (and has that mute not lapsed)? */
+  muted: boolean;
   /** Does the INVITEE follow the STARTER? */
   calleeFollowsCaller: boolean;
   /** Does the STARTER follow the INVITEE? */

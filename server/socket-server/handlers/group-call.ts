@@ -723,6 +723,7 @@ async function screenInvitees(
   let prefs: Array<{ userId: string; callPrivacy: string }>;
   let follows: Array<{ followerId: string }>;
   let followedBy: Array<{ followingId: string }>;
+  let mutes: Array<{ userId: string }>;
   let users: Array<{ id: string; name: string | null; image: string | null; handle: string | null }>;
   let inviterIsAdmin = false;
   try {
@@ -731,7 +732,7 @@ async function screenInvitees(
     // the room bars the ring just as one with the inviter does.
     const others = [...new Set([...roomIds, ...inviteeIds])].filter((id) => id !== inviterId);
     let inviter: { isAdmin: boolean } | null;
-    [blocks, pairBlocks, prefs, follows, followedBy, users, inviter] = await Promise.all([
+    [blocks, pairBlocks, prefs, follows, followedBy, users, inviter, mutes] = await Promise.all([
       prisma.userBlock.findMany({
         // Either direction bars the ring.
         where: {
@@ -769,6 +770,11 @@ async function screenInvitees(
         select: userChipSelect,
       }),
       prisma.user.findUnique({ where: { id: inviterId }, select: { isAdmin: true } }),
+      // Invitees who have muted the inviter, and not yet let it lapse.
+      prisma.callMute.findMany({
+        where: { userId: { in: inviteeIds }, mutedUserId: inviterId, until: { gt: new Date() } },
+        select: { userId: true },
+      }),
     ]);
     inviterIsAdmin = Boolean(inviter?.isAdmin);
   } catch (err) {
@@ -800,6 +806,7 @@ async function screenInvitees(
   }
   const followsInviter = new Set(follows.map((f) => f.followerId));
   const followedByInviter = new Set(followedBy.map((f) => f.followingId));
+  const mutedInviter = new Set(mutes.map((m) => m.userId));
   const userById = new Map(users.map((u) => [u.id, u]));
 
   // Presence, once per invitee. `fetchSockets` is the adapter-aware way to ask
@@ -829,6 +836,7 @@ async function screenInvitees(
     const verdict = canJoinGroupCall({
       privacy: privacyBy.get(id) ?? DEFAULT_CALL_PRIVACY,
       blocked: blocked.has(id),
+      muted: mutedInviter.has(id),
       calleeFollowsCaller: followsInviter.has(id),
       callerFollowsCallee: followedByInviter.has(id),
     });

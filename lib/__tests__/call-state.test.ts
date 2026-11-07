@@ -222,7 +222,12 @@ describe('duration', () => {
 });
 
 describe('who may call whom', () => {
-  const base = { blocked: false, calleeFollowsCaller: false, callerFollowsCallee: false };
+  const base = {
+    blocked: false,
+    muted: false,
+    calleeFollowsCaller: false,
+    callerFollowsCallee: false,
+  };
 
   it('lets anyone call when the setting is everyone', () => {
     expect(canCall({ ...base, privacy: 'everyone' })).toEqual({ allowed: true });
@@ -256,6 +261,28 @@ describe('who may call whom', () => {
     }
   });
 
+  it('lets a timed mute beat every privacy setting, reported as privacy', () => {
+    // Even `everyone`, and even a mutual: "not you, not now" is the callee's word.
+    for (const privacy of CALL_PRIVACY_VALUES) {
+      expect(
+        canCall({
+          privacy,
+          blocked: false,
+          muted: true,
+          calleeFollowsCaller: true,
+          callerFollowsCallee: true,
+        }),
+      ).toEqual({ allowed: false, reason: 'privacy' });
+    }
+  });
+
+  it('reports a block as a block even when the caller is also muted', () => {
+    expect(canCall({ ...base, privacy: 'everyone', blocked: true, muted: true })).toEqual({
+      allowed: false,
+      reason: 'blocked',
+    });
+  });
+
   it('defaults to mutuals', () => {
     expect(DEFAULT_CALL_PRIVACY).toBe('mutuals');
   });
@@ -263,7 +290,13 @@ describe('who may call whom', () => {
   it('lets a block beat every privacy setting', () => {
     for (const privacy of CALL_PRIVACY_VALUES) {
       expect(
-        canCall({ privacy, blocked: true, calleeFollowsCaller: true, callerFollowsCallee: true }),
+        canCall({
+          privacy,
+          blocked: true,
+          muted: false,
+          calleeFollowsCaller: true,
+          callerFollowsCallee: true,
+        }),
       ).toEqual({ allowed: false, reason: 'blocked' });
     }
   });

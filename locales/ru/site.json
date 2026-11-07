@@ -819,5 +819,9 @@
   "membership-action-failed": "Не удалось связаться с оплатой. Попробуйте ещё раз.",
   "space-end-offline": "Нет подключения. Попробуйте ещё раз через минуту.",
   "market-under-review": "На проверке",
-  "market-under-review-hint": "Покупка по этой цене приостановлена для быстрой проверки. Монеты не переводились. Отмените, чтобы сразу вернуть предмет."
+  "market-under-review-hint": "Покупка по этой цене приостановлена для быстрой проверки. Монеты не переводились. Отмените, чтобы сразу вернуть предмет.",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

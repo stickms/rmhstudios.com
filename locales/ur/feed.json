@@ -1527,5 +1527,19 @@
   "message-edit-length": "{{used}}/{{max}}",
   "palette-whats-new": "What’s new",
   "palette-unread": "Unread",
-  "deck-review-load-failed": "کارڈ لوڈ نہیں ہو سکے"
+  "deck-review-load-failed": "کارڈ لوڈ نہیں ہو سکے",
+  "call-duration-1h": "1 hour",
+  "call-duration-8h": "8 hours",
+  "call-duration-24h": "24 hours",
+  "call-duration-1w": "1 week",
+  "call-restrict-failed": "Declined, but that could not be saved. They may be able to call again.",
+  "call-muted-toast": "Muted {{name}} for {{duration}}",
+  "call-blocked-toast": "Blocked {{name}}",
+  "call-block-title": "Block {{name}}?",
+  "call-block-desc": "They will not be able to call you, and you will both stop following each other.",
+  "call-block-confirm": "Block",
+  "call-more-options": "Mute or block this caller",
+  "call-mute-heading": "Mute calls from {{name}}",
+  "call-mute-for": "For {{duration}}",
+  "call-block": "Block {{name}}"
 }

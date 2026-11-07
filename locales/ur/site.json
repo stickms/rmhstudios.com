@@ -787,5 +787,9 @@
   "membership-action-failed": "بلنگ تک رسائی نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
   "space-end-offline": "منسلک نہیں ہیں۔ تھوڑی دیر بعد دوبارہ کوشش کریں۔",
   "market-under-review": "زیرِ جائزہ",
-  "market-under-review-hint": "اس قیمت پر خریداری فوری جانچ کے لیے روک دی گئی ہے۔ کوئی سکے منتقل نہیں ہوئے۔ آئٹم ابھی واپس لینے کے لیے منسوخ کریں۔"
+  "market-under-review-hint": "اس قیمت پر خریداری فوری جانچ کے لیے روک دی گئی ہے۔ کوئی سکے منتقل نہیں ہوئے۔ آئٹم ابھی واپس لینے کے لیے منسوخ کریں۔",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

@@ -27,6 +27,7 @@ import {
 import { IDLE, isBusy, reduce, type CallEvent, type CallState } from '@/lib/call/state';
 import { CallPeer, callSupported } from '@/lib/call/peer';
 import type { IceServer } from '@/lib/call/ice';
+import type { CallMuteDuration } from '@/lib/call/mute';
 
 interface CallStore extends CallState {
   /** Who we are talking to, for the UI. */
@@ -260,6 +261,63 @@ export async function acceptCall(): Promise<void> {
 export function declineCall(): void {
   if (store().phase !== 'incoming') return;
   finish('declined');
+}
+
+/** What to do to the caller of a ringing call, on top of declining it. */
+export type CallRestriction = { kind: 'mute'; duration: CallMuteDuration } | { kind: 'block' };
+
+async function postJson(url: string, body: unknown): Promise<Response> {
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+}
+
+/**
+ * Decline the ringing call and mute or block whoever is on the other end.
+ *
+ * Declines first and records second. The ring is the urgent part: it should
+ * stop on the tap, not after two round trips, and a failed save leaves the user
+ * where a plain decline would. The caller sees an ordinary decline either way.
+ *
+ * The caller is passed in rather than read from the store: the user may sit on
+ * a "Block?" confirmation while the caller hangs up, and the answer they give
+ * still has to apply to the person they were asked about. Only the decline is
+ * conditional — it happens if THAT person's call is still the one ringing.
+ *
+ * Resolves true only if the restriction was saved, so the banner can say so
+ * rather than promise a silence that did not stick.
+ */
+export async function declineAndRestrict(
+  targetUserId: string,
+  restriction: CallRestriction,
+): Promise<boolean> {
+  const s = store();
+  if (s.phase === 'incoming' && s.peer?.id === targetUserId) finish('declined');
+
+  try {
+    if (restriction.kind === 'mute') {
+      const res = await postJson('/api/calls/mute', {
+        targetUserId,
+        duration: restriction.duration,
+      });
+      return res.ok;
+    }
+    // `/api/moderation/block` is a TOGGLE. A caller who can ring us is not
+    // blocked, so one POST blocks — but if a block raced in from another tab
+    // that POST would lift it, so check what came back and put it right.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const res = await postJson('/api/moderation/block', { targetUserId });
+      if (!res.ok) return false;
+      const data = (await res.json()) as { blocked?: boolean };
+      if (data.blocked) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 export function hangUp(): void {

@@ -6,12 +6,18 @@ import { Phone } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { Button } from '@/components/ui/button';
 import {
   CALL_PRIVACY_VALUES,
   DEFAULT_CALL_PRIVACY,
   isCallPrivacy,
   type CallPrivacy,
 } from '@/lib/call/state';
+
+interface ActiveMute {
+  until: string;
+  user: { id: string; name: string | null; handle: string | null };
+}
 
 /**
  * CallPrivacyControls — who may ring this account. Sits in Settings → Privacy
@@ -22,6 +28,36 @@ export function CallPrivacyControls() {
   const { t } = useTranslation('site');
   const [value, setValue] = useState<CallPrivacy>(DEFAULT_CALL_PRIVACY);
   const [loaded, setLoaded] = useState(false);
+  const [mutes, setMutes] = useState<ActiveMute[]>([]);
+
+  // People muted from the incoming-call banner. Listed here so a mute is never
+  // something you can set and then not find again.
+  useEffect(() => {
+    fetch('/api/calls/mute', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { mutes?: ActiveMute[] } | null) => {
+        if (d?.mutes) setMutes(d.mutes);
+      })
+      .catch(() => {});
+  }, []);
+
+  function unmute(targetUserId: string) {
+    const previous = mutes;
+    setMutes((list) => list.filter((m) => m.user.id !== targetUserId));
+    fetch('/api/calls/mute', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ targetUserId }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+      })
+      .catch(() => {
+        setMutes(previous);
+        toast.error(t('call-privacy-save-error', { defaultValue: 'Could not save' }));
+      });
+  }
 
   useEffect(() => {
     fetch('/api/calls/privacy', { credentials: 'include' })
@@ -106,6 +142,46 @@ export function CallPrivacyControls() {
           ))}
         </div>
       </fieldset>
+
+      {mutes.length > 0 && (
+        <div className="border-t border-site-border pt-3">
+          <p className="mb-2 text-sm font-medium text-site-text">
+            {t('call-mutes-heading', { defaultValue: 'Muted callers' })}
+          </p>
+          <ul className="flex flex-col gap-1">
+            {mutes.map((m) => {
+              const who = m.user.name || m.user.handle || t('someone', { defaultValue: 'Someone' });
+              return (
+                <li key={m.user.id} className="flex items-center justify-between gap-3 px-3 py-1">
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm text-site-text">{who}</span>
+                    <span className="block text-xs text-site-text-muted">
+                      {t('call-mutes-until', {
+                        defaultValue: 'Until {{time}}',
+                        time: new Date(m.until).toLocaleString(undefined, {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        }),
+                      })}
+                    </span>
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => unmute(m.user.id)}
+                    aria-label={t('call-mutes-unmute-aria', {
+                      defaultValue: 'Unmute {{name}}',
+                      name: who,
+                    })}
+                  >
+                    {t('call-mutes-unmute', { defaultValue: 'Unmute' })}
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </SettingsSection>
   );
 }

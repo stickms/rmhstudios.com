@@ -825,5 +825,9 @@
   "membership-action-failed": "Could not reach billing. Try again.",
   "space-end-offline": "Not connected. Try again in a moment.",
   "market-under-review": "Under review",
-  "market-under-review-hint": "A buy at this price was paused for a quick check. No coins moved. Cancel to get the item back now."
+  "market-under-review-hint": "A buy at this price was paused for a quick check. No coins moved. Cancel to get the item back now.",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

@@ -787,5 +787,9 @@
   "membership-action-failed": "Die Abrechnung ist nicht erreichbar. Versuche es erneut.",
   "space-end-offline": "Nicht verbunden. Versuche es gleich noch einmal.",
   "market-under-review": "In Prüfung",
-  "market-under-review-hint": "Ein Kauf zu diesem Preis wurde für eine kurze Prüfung angehalten. Es wurden keine Münzen bewegt. Storniere jetzt, um den Artikel zurückzubekommen."
+  "market-under-review-hint": "Ein Kauf zu diesem Preis wurde für eine kurze Prüfung angehalten. Es wurden keine Münzen bewegt. Storniere jetzt, um den Artikel zurückzubekommen.",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

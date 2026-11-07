@@ -436,6 +436,7 @@ import { Route as ApiCalendarFeedIndexRouteImport } from './routes/api/calendar-
 import { Route as ApiCalendarTokenRouteImport } from './routes/api/calendar/$token'
 import { Route as ApiCallsHistoryRouteImport } from './routes/api/calls/history'
 import { Route as ApiCallsIceRouteImport } from './routes/api/calls/ice'
+import { Route as ApiCallsMuteRouteImport } from './routes/api/calls/mute'
 import { Route as ApiCallsPrivacyRouteImport } from './routes/api/calls/privacy'
 import { Route as ApiCanvasIndexRouteImport } from './routes/api/canvas/index'
 import { Route as ApiCanvasLogRouteImport } from './routes/api/canvas/log'
@@ -3536,6 +3537,11 @@ const ApiCallsHistoryRoute = ApiCallsHistoryRouteImport.update({
 const ApiCallsIceRoute = ApiCallsIceRouteImport.update({
   id: '/api/calls/ice',
   path: '/api/calls/ice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCallsMuteRoute = ApiCallsMuteRouteImport.update({
+  id: '/api/calls/mute',
+  path: '/api/calls/mute',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCallsPrivacyRoute = ApiCallsPrivacyRouteImport.update({
@@ -8930,6 +8936,7 @@ export interface FileRoutesByFullPath {
   '/api/calendar/$token': typeof ApiCalendarTokenRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
+  '/api/calls/mute': typeof ApiCallsMuteRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
   '/api/canvas/log': typeof ApiCanvasLogRoute
   '/api/canvas/place': typeof ApiCanvasPlaceRoute
@@ -10287,6 +10294,7 @@ export interface FileRoutesByTo {
   '/api/calendar/$token': typeof ApiCalendarTokenRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
+  '/api/calls/mute': typeof ApiCallsMuteRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
   '/api/canvas/log': typeof ApiCanvasLogRoute
   '/api/canvas/place': typeof ApiCanvasPlaceRoute
@@ -11671,6 +11679,7 @@ export interface FileRoutesById {
   '/api/calendar/$token': typeof ApiCalendarTokenRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
+  '/api/calls/mute': typeof ApiCallsMuteRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
   '/api/canvas/log': typeof ApiCanvasLogRoute
   '/api/canvas/place': typeof ApiCanvasPlaceRoute
@@ -13055,6 +13064,7 @@ export interface FileRouteTypes {
     | '/api/calendar/$token'
     | '/api/calls/history'
     | '/api/calls/ice'
+    | '/api/calls/mute'
     | '/api/calls/privacy'
     | '/api/canvas/log'
     | '/api/canvas/place'
@@ -14412,6 +14422,7 @@ export interface FileRouteTypes {
     | '/api/calendar/$token'
     | '/api/calls/history'
     | '/api/calls/ice'
+    | '/api/calls/mute'
     | '/api/calls/privacy'
     | '/api/canvas/log'
     | '/api/canvas/place'
@@ -15795,6 +15806,7 @@ export interface FileRouteTypes {
     | '/api/calendar/$token'
     | '/api/calls/history'
     | '/api/calls/ice'
+    | '/api/calls/mute'
     | '/api/calls/privacy'
     | '/api/canvas/log'
     | '/api/canvas/place'
@@ -16959,6 +16971,7 @@ export interface RootRouteChildren {
   ApiCalendarTokenRoute: typeof ApiCalendarTokenRoute
   ApiCallsHistoryRoute: typeof ApiCallsHistoryRoute
   ApiCallsIceRoute: typeof ApiCallsIceRoute
+  ApiCallsMuteRoute: typeof ApiCallsMuteRoute
   ApiCallsPrivacyRoute: typeof ApiCallsPrivacyRoute
   ApiCanvasLogRoute: typeof ApiCanvasLogRoute
   ApiCanvasPlaceRoute: typeof ApiCanvasPlaceRoute
@@ -20648,6 +20661,13 @@ declare module '@tanstack/react-router' {
       path: '/api/calls/ice'
       fullPath: '/api/calls/ice'
       preLoaderRoute: typeof ApiCallsIceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/calls/mute': {
+      id: '/api/calls/mute'
+      path: '/api/calls/mute'
+      fullPath: '/api/calls/mute'
+      preLoaderRoute: typeof ApiCallsMuteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/calls/privacy': {
@@ -29788,6 +29808,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCalendarTokenRoute: ApiCalendarTokenRoute,
   ApiCallsHistoryRoute: ApiCallsHistoryRoute,
   ApiCallsIceRoute: ApiCallsIceRoute,
+  ApiCallsMuteRoute: ApiCallsMuteRoute,
   ApiCallsPrivacyRoute: ApiCallsPrivacyRoute,
   ApiCanvasLogRoute: ApiCanvasLogRoute,
   ApiCanvasPlaceRoute: ApiCanvasPlaceRoute,

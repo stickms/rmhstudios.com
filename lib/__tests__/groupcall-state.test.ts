@@ -644,17 +644,25 @@ describe('glare — who offers to whom', () => {
 describe('who may be rung into a group call', () => {
   const MATRIX = CALL_PRIVACY_VALUES.flatMap((privacy) =>
     [true, false].flatMap((blocked) =>
-      [true, false].flatMap((calleeFollowsCaller) =>
-        [true, false].map((callerFollowsCallee) => ({
-          privacy,
-          blocked,
-          calleeFollowsCaller,
-          callerFollowsCallee,
-        })),
+      [true, false].flatMap((muted) =>
+        [true, false].flatMap((calleeFollowsCaller) =>
+          [true, false].map((callerFollowsCallee) => ({
+            privacy,
+            blocked,
+            muted,
+            calleeFollowsCaller,
+            callerFollowsCallee,
+          })),
+        ),
       ),
     ),
   );
-  const base = { blocked: false, calleeFollowsCaller: false, callerFollowsCallee: false };
+  const base = {
+    blocked: false,
+    muted: false,
+    calleeFollowsCaller: false,
+    callerFollowsCallee: false,
+  };
 
   it('is exactly the 1:1 rule, never a looser one', () => {
     // THE security property of this feature. A stranger who cannot ring you
@@ -701,12 +709,27 @@ describe('who may be rung into a group call', () => {
     ).toEqual({ allowed: false, reason: 'privacy' });
   });
 
+  it('refuses an invitee who has muted the starter, whatever the setting', () => {
+    for (const privacy of CALL_PRIVACY_VALUES) {
+      expect(
+        canJoinGroupCall({
+          privacy,
+          blocked: false,
+          muted: true,
+          calleeFollowsCaller: true,
+          callerFollowsCallee: true,
+        }),
+      ).toEqual({ allowed: false, reason: 'privacy' });
+    }
+  });
+
   it('lets a block beat every privacy setting', () => {
     for (const privacy of CALL_PRIVACY_VALUES) {
       expect(
         canJoinGroupCall({
           privacy,
           blocked: true,
+          muted: false,
           calleeFollowsCaller: true,
           callerFollowsCallee: true,
         }),

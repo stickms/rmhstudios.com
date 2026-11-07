@@ -771,5 +771,9 @@
   "membership-action-failed": "請求サービスに接続できませんでした。もう一度お試しください。",
   "space-end-offline": "接続されていません。少し待ってからもう一度お試しください。",
   "market-under-review": "審査中",
-  "market-under-review-hint": "この価格での購入は簡単な確認のため一時停止されました。コインは移動していません。今すぐアイテムを取り戻すにはキャンセルしてください。"
+  "market-under-review-hint": "この価格での購入は簡単な確認のため一時停止されました。コインは移動していません。今すぐアイテムを取り戻すにはキャンセルしてください。",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

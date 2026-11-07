@@ -771,5 +771,9 @@
   "membership-action-failed": "Không thể kết nối với thanh toán. Hãy thử lại.",
   "space-end-offline": "Chưa kết nối. Hãy thử lại sau giây lát.",
   "market-under-review": "Đang được duyệt",
-  "market-under-review-hint": "Một lần mua ở mức giá này đã được tạm dừng để kiểm tra nhanh. Không có xu nào được chuyển. Hủy để lấy lại vật phẩm ngay."
+  "market-under-review-hint": "Một lần mua ở mức giá này đã được tạm dừng để kiểm tra nhanh. Không có xu nào được chuyển. Hủy để lấy lại vật phẩm ngay.",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }
