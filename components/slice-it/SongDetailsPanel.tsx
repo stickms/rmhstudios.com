@@ -24,9 +24,10 @@ import {
 import { artistKeyOf, artistPath } from '@/lib/slice-it/artist';
 import { PackPanel } from './packs/PackPanel';
 import { Leaderboard } from './Leaderboard';
+import { Pressings } from './Pressings';
 import { SongComments } from './SongComments';
 import { useSliceItStore } from '@/lib/slice-it/store';
-import type { Difficulty, SliceSong } from '@/lib/slice-it/types';
+import type { SliceSong } from '@/lib/slice-it/types';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { useSession } from '@/components/Providers';
@@ -454,7 +455,7 @@ export function SongDetailsPanel({
         {/* The record: cover, title, artist, the pressings, START. The sleeve
             column's one job is to answer "what will I be playing?". */}
         <div className="slice-rec">
-          <div className="slice-rec__cover">
+          <div className="slice-rec__cover slice-duotone">
             {song.coverUrl ? (
               <img src={song.coverUrl} alt={song.title} />
             ) : (
@@ -504,32 +505,7 @@ export function SongDetailsPanel({
           </div>
 
           <div className="slice-label mt-4">{t('pressings', { defaultValue: 'Pressings' })}</div>
-          <div className="slice-press-row">
-            {(
-              [
-                ['easy', 'EZ', '70%'],
-                ['normal', 'NM', '100%'],
-                ['hard', 'HD', '150%'],
-                ['expert', 'EX', '200%'],
-              ] as [Difficulty, string, string][]
-            ).map(([d, code, pct]) => (
-              <button
-                key={d}
-                type="button"
-                className="slice-press"
-                aria-pressed={modifiers.difficulty === d}
-                aria-label={t('notes-pct-named', {
-                  defaultValue: '{{name}}, {{pct}} notes',
-                  name: d,
-                  pct,
-                })}
-                onClick={() => setModifiers({ ...modifiers, difficulty: d })}
-              >
-                <span>{code}</span>
-                <span className="slice-press__big">{pct}</span>
-              </button>
-            ))}
-          </div>
+          <Pressings />
 
           {/* The START row WRAPS below `sm`: START, two 48px squares and the
               multiplier need more than a phone has beside each other. */}

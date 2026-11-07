@@ -28,6 +28,7 @@ import { SongLibrary } from '@/components/slice-it/SongLibrary';
 import { CalibrationScreen } from '@/components/slice-it/CalibrationScreen';
 import { MultiplayerLobby } from '@/components/slice-it/MultiplayerLobby';
 import { SongDetailsPanel } from '@/components/slice-it/SongDetailsPanel';
+import { PhoneRecord } from '@/components/slice-it/PhoneRecord';
 import { DailyPanel } from '@/components/slice-it/modes/DailyPanel';
 import { SettingsPanel } from '@/components/slice-it/SettingsPanel';
 import { SetlistPanel } from '@/components/slice-it/modes/SetlistPanel';
@@ -106,6 +107,9 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
   // The track whose details panel is open.
   const [selectedSong, setSelectedSong] = React.useState<SliceSong | null>(null);
+  // Whether the record's full sheet is open. A tablet opens it on pick; a phone
+  // shows the compact record strip instead and opens the sheet on request.
+  const [sheetOpen, setSheetOpen] = React.useState(false);
   React.useEffect(() => {
     if (selectedSong?.id) setSongId(selectedSong.id);
   }, [selectedSong, setSongId]);
@@ -144,8 +148,18 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
     // Marking the open as a transition lets React render that subtree in
     // interruptible slices and yield between them, so the frames the animation
     // needs keep landing.
-    React.startTransition(() => setSelectedSong(song));
-  }, []);
+    React.startTransition(() => {
+      setSelectedSong(song);
+      setSheetOpen(!isPhone);
+    });
+  }, [isPhone]);
+
+  // Closing the sheet: a phone keeps the compact record (the pick stays); a tablet
+  // has no strip, so closing also clears the pick.
+  const closeSheet = React.useCallback(() => {
+    setSheetOpen(false);
+    if (!isPhone) setSelectedSong(null);
+  }, [isPhone]);
 
   const handleStartGame = React.useCallback(
     async (song: SliceSong) => {
@@ -475,6 +489,14 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             )}
 
             <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+              {/* A phone: the picked record, compact, above the list. */}
+              {isPhone && soloMode === 'library' && selectedSong && (
+                <PhoneRecord
+                  song={selectedSong}
+                  onStart={handleStartGame}
+                  onDetails={() => setSheetOpen(true)}
+                />
+              )}
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={soloMode}
@@ -522,12 +544,12 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 surface that travels. Two KEYED siblings, not a fragment —
                 `AnimatePresence` tracks its direct children by key. */}
             <AnimatePresence>
-              {!isWide && selectedSong && [
+              {!isWide && selectedSong && sheetOpen && [
                 <motion.button
                   key="song-details-backdrop"
                   type="button"
                   className="absolute inset-0 bg-black/50 z-65"
-                  onClick={() => setSelectedSong(null)}
+                  onClick={closeSheet}
                   aria-label={t('close-song-details', { defaultValue: 'Close song details' })}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -549,7 +571,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     <button
                       type="button"
                       className="slice-bar__icon"
-                      onClick={() => setSelectedSong(null)}
+                      onClick={closeSheet}
                       aria-label={t('close-song-details', { defaultValue: 'Close song details' })}
                     >
                       <svg
