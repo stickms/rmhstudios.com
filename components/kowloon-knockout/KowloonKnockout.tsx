@@ -11,6 +11,7 @@ import MultiplayerLobby from '@/components/kowloon-knockout/MultiplayerLobby';
 import ResultScreen from '@/components/kowloon-knockout/ResultScreen';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import './kowloon-knockout.css';
+import './kk-hud.css';
 import { useGameSession } from '@/hooks/useGameSession';
 
 const GameView = lazy(() => import('@/components/kowloon-knockout/arena/GameView'));
@@ -101,7 +102,7 @@ export default function KowloonKnockout() {
               style={{ width: '100%', height: '100%' }}
             >
               <Suspense fallback={
-                <div style={{ color: '#ffcc00', fontSize: '12px', display: 'grid', placeItems: 'center', height: '100%' }}>
+                <div className="kk-loading">
                   {t("loading", { defaultValue: "LOADING..." })}
                 </div>
               }>

@@ -1,0 +1,714 @@
+/* ============================================================
+   Kowloon Knockout — in-fight HUD, banners, nameplates, touch controls
+   Neon shop-sign language from the game card: hot pink / warm yellow / cyan /
+   violet on near-black plum, chunky outlines, Press Start 2P.
+
+   Flash safety (WCAG 2.3.1): nothing here pulses faster than ~1.3 Hz, banners
+   animate in once and stay, and no layer changes brightness over a large area.
+   No backdrop-filter, no `transition: all`.
+   ============================================================ */
+
+.kowloon-knockout {
+  --kk-pink: #ff2d95;
+  --kk-yellow: #ffd23f;
+  --kk-cyan: #3de8ff;
+  --kk-violet: #a66bff;
+  --kk-plum: #12041f;
+  --kk-plum-2: #1d0834;
+  --kk-ink: #fff3fb;
+  /* Base HUD type size: 6.5px on a 310px phone up to 9px on desktop. */
+  --kk-u: clamp(6.5px, 2.05vw, 9px);
+  --kk-pad-edge: clamp(8px, 3vw, 24px);
+  --kk-btn: clamp(56px, 15vmin, 76px);
+  --kk-gap: clamp(5px, 1.2vmin, 9px);
+  /* The route's back chip floats in the top-left corner (44px on touch + a 12px margin); the HUD starts below it. */
+  --kk-hud-top: calc(56px + clamp(2px, 0.8vh, 8px));
+}
+
+/* ── Arena host ───────────────────────────────────────────── */
+
+.kowloon-knockout .kk-canvas-host {
+  position: absolute;
+  inset: 0;
+}
+
+/* Portrait on a touch device: the action pad owns the bottom band, so the 3D view ends above it. */
+@media (orientation: portrait) {
+  .kowloon-knockout .kk-arena--touch .kk-canvas-host {
+    bottom: calc(var(--safe-bottom, 0px) + 3 * var(--kk-btn) + 2 * var(--kk-gap) + clamp(16px, 4vh, 30px));
+  }
+}
+
+/* ── HUD frame ────────────────────────────────────────────── */
+
+.kk-hud {
+  pointer-events: none;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--kk-ink);
+  font-size: var(--kk-u);
+  line-height: 1.2;
+}
+
+.kk-hud__bar {
+  position: absolute;
+  top: var(--kk-hud-top);
+  left: clamp(6px, 1.6vw, 14px);
+  right: clamp(6px, 1.6vw, 14px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: clamp(6px, 1.4vw, 14px);
+  align-items: start;
+}
+
+.kk-hud__col {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 1vh, 8px);
+  min-width: 0;
+}
+.kk-hud__col--r {
+  align-items: flex-end;
+}
+
+/* ── Fighter panel: a hanging neon sign ───────────────────── */
+
+.kk-fp {
+  --seat: var(--kk-cyan);
+  position: relative;
+  width: 100%;
+  max-width: min(284px, 100%);
+  box-sizing: border-box;
+  padding: clamp(4px, 1.1vw, 8px) clamp(6px, 1.5vw, 11px) clamp(5px, 1.2vw, 9px);
+  background: linear-gradient(180deg, rgba(29, 8, 52, 0.94), rgba(18, 4, 31, 0.94));
+  border: 2px solid var(--seat);
+  border-radius: 3px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.7),
+    0 0 9px color-mix(in srgb, var(--seat) 60%, transparent),
+    inset 0 0 12px color-mix(in srgb, var(--seat) 16%, transparent);
+  transition: opacity 0.3s linear;
+}
+
+/* Mounting wires: two short posts above the sign. */
+.kk-fp::before,
+.kk-fp::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  width: 2px;
+  height: 7px;
+  background: var(--seat);
+  opacity: 0.8;
+}
+.kk-fp::before { left: 14%; }
+.kk-fp::after { right: 14%; }
+
+.kk-fp.is-local {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.7),
+    0 0 0 3px color-mix(in srgb, var(--kk-yellow) 70%, transparent),
+    0 0 13px color-mix(in srgb, var(--seat) 70%, transparent),
+    inset 0 0 12px color-mix(in srgb, var(--seat) 18%, transparent);
+}
+
+.kk-fp.is-down {
+  opacity: 0.5;
+  filter: grayscale(0.7);
+}
+
+.kk-fp__kanji {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  font-family: 'Noto Sans TC', 'PingFang TC', 'Hiragino Sans CNS', 'Microsoft JhengHei', sans-serif;
+  font-weight: 900;
+  font-size: calc(var(--kk-u) * 3);
+  color: var(--seat);
+  opacity: 0.16;
+  pointer-events: none;
+}
+.kk-fp--r .kk-fp__kanji { right: auto; left: 6px; }
+
+.kk-fp__head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: clamp(3px, 0.9vw, 6px);
+  margin-bottom: clamp(3px, 0.8vw, 5px);
+  min-width: 0;
+}
+.kk-fp--r .kk-fp__head { flex-direction: row-reverse; }
+
+.kk-fp__tag {
+  flex: none;
+  padding: 2px 4px 1px;
+  background: var(--seat);
+  color: var(--kk-plum);
+  border-radius: 2px;
+  font-size: var(--kk-u);
+}
+
+.kk-fp__you {
+  flex: none;
+  color: var(--kk-yellow);
+  font-size: calc(var(--kk-u) * 0.9);
+}
+.kk-fp--r .kk-fp__you { transform: scaleX(-1); }
+
+.kk-fp__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--kk-ink);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--seat) 80%, transparent);
+  text-align: start;
+}
+.kk-fp--r .kk-fp__name { text-align: end; }
+
+.kk-fp__pips {
+  flex: none;
+  color: var(--kk-yellow);
+  font-size: calc(var(--kk-u) * 0.95);
+  letter-spacing: 1px;
+  text-shadow: 0 0 6px var(--kk-yellow);
+}
+
+/* ── Segmented neon bars ──────────────────────────────────── */
+
+.kk-bar {
+  position: relative;
+  box-sizing: border-box;
+  height: clamp(9px, 2.2vw, 13px);
+  background: #07000f;
+  border: 1px solid color-mix(in srgb, var(--seat, #fff) 55%, #000);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.kk-fp--r .kk-bar { direction: rtl; }
+
+.kk-bar > i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  /* Health is quantised to whole cells so the bar reads as a row of lit tubes. */
+  width: calc(var(--lit, 0) / var(--cells, 10) * 100%);
+  background: var(--tone, var(--kk-cyan));
+  box-shadow: 0 0 8px var(--tone, var(--kk-cyan));
+  transition: width 0.15s linear;
+}
+.kk-fp--r .kk-bar > i { left: auto; right: 0; }
+
+/* Cell dividers drawn over the fill. */
+.kk-bar--hp::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), #07000f calc(10% - 2px) 10%);
+  pointer-events: none;
+}
+
+.kk-bar--hp[data-tone='ok'] { --tone: var(--kk-cyan); }
+.kk-bar--hp[data-tone='warn'] { --tone: var(--kk-yellow); }
+.kk-bar--hp[data-tone='low'] { --tone: var(--kk-pink); }
+
+.kk-bar--st {
+  --tone: var(--kk-violet);
+  height: clamp(3px, 0.9vw, 5px);
+  margin-top: 3px;
+  border-width: 0;
+  background: rgba(166, 107, 255, 0.14);
+}
+.kk-bar--st > i {
+  width: auto;
+  box-shadow: none;
+}
+
+/* Low health: the sign shouts, at about 1.1 flashes a second. */
+.kk-fp.is-low {
+  border-color: var(--kk-pink);
+}
+.kk-fp.is-low .kk-bar--hp > i {
+  animation: kk-low 0.9s linear infinite alternate;
+}
+.kk-fp.is-low .kk-fp__tag::after {
+  content: '!';
+  margin-left: 2px;
+}
+@keyframes kk-low {
+  from { opacity: 1; }
+  to { opacity: 0.45; }
+}
+
+/* ── Round / timer plate ──────────────────────────────────── */
+
+.kk-plate {
+  box-sizing: border-box;
+  min-width: clamp(54px, 14vw, 94px);
+  padding: clamp(3px, 0.9vw, 6px) clamp(5px, 1.3vw, 10px);
+  text-align: center;
+  background: linear-gradient(180deg, rgba(29, 8, 52, 0.94), rgba(18, 4, 31, 0.94));
+  border: 2px solid var(--kk-yellow);
+  border-radius: 3px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.7),
+    0 0 10px rgba(255, 210, 63, 0.5),
+    inset 0 0 10px rgba(255, 210, 63, 0.14);
+}
+.kk-plate__round {
+  color: var(--kk-yellow);
+  font-size: calc(var(--kk-u) * 0.95);
+  text-shadow: 0 0 6px var(--kk-yellow);
+  white-space: nowrap;
+}
+.kk-plate__time {
+  margin: clamp(2px, 0.6vw, 4px) 0;
+  color: var(--kk-ink);
+  font-size: clamp(16px, 5vw, 26px);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.55);
+}
+.kk-plate__mode {
+  color: color-mix(in srgb, var(--kk-ink) 55%, transparent);
+  font-size: calc(var(--kk-u) * 0.78);
+  white-space: nowrap;
+}
+.kk-plate.is-urgent {
+  border-color: var(--kk-pink);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.7),
+    0 0 12px rgba(255, 45, 149, 0.6),
+    inset 0 0 10px rgba(255, 45, 149, 0.18);
+}
+.kk-plate.is-urgent .kk-plate__time {
+  color: var(--kk-pink);
+  text-shadow: 0 0 10px var(--kk-pink);
+}
+
+@media (max-width: 420px) {
+  .kk-plate__mode { display: none; }
+}
+
+/* ── Combo / counter-strike callout ───────────────────────── */
+
+.kk-callout {
+  --c: var(--kk-yellow);
+  position: absolute;
+  top: clamp(168px, 31%, 260px);
+  left: 50%;
+  translate: -50% 0;
+  max-width: 92%;
+  padding: 0 4px;
+  color: var(--c);
+  font-size: clamp(11px, 3.4vw, 20px);
+  white-space: nowrap;
+  -webkit-text-stroke: 3px var(--kk-plum);
+  paint-order: stroke fill;
+  text-shadow: 0 0 12px var(--c), 0 0 26px color-mix(in srgb, var(--c) 55%, transparent);
+}
+
+/* ── Banners: countdown, FIGHT!, round end ────────────────── */
+
+.kk-banner-layer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(18, 4, 31, 0.4);
+  overflow: hidden;
+}
+
+.kk-banner-stack {
+  position: relative;
+  text-align: center;
+  max-width: 94%;
+}
+
+.kk-banner {
+  font-size: clamp(30px, 11vmin, 72px);
+  line-height: 1;
+  -webkit-text-stroke: clamp(3px, 1vmin, 6px) var(--kk-plum);
+  paint-order: stroke fill;
+}
+.kk-banner--count {
+  color: var(--kk-yellow);
+  font-size: clamp(54px, 22vmin, 120px);
+  text-shadow: 0 0 14px var(--kk-yellow), 0 0 34px rgba(255, 210, 63, 0.55);
+}
+.kk-banner--fight {
+  color: var(--kk-pink);
+  font-size: clamp(32px, 13vmin, 76px);
+  text-shadow: 0 0 14px var(--kk-pink), 0 0 34px rgba(255, 45, 149, 0.55);
+}
+.kk-banner--end {
+  font-size: clamp(30px, 12vmin, 80px);
+  word-break: break-word;
+}
+.kk-banner--ko {
+  color: var(--kk-pink);
+  text-shadow: 0 0 16px var(--kk-pink), 0 0 40px rgba(255, 45, 149, 0.6);
+}
+.kk-banner--draw,
+.kk-banner--decision,
+.kk-banner--wins,
+.kk-banner--other {
+  color: var(--kk-yellow);
+  font-size: clamp(18px, 7.5vmin, 48px);
+  text-shadow: 0 0 14px var(--kk-yellow), 0 0 30px rgba(255, 210, 63, 0.5);
+}
+
+/* One slam per element (the countdown re-keys it each second). */
+.kk-banner--slam {
+  animation: kk-slam 0.3s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+@keyframes kk-slam {
+  from { transform: scale(1.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.kk-banner-kanji {
+  margin-top: clamp(6px, 1.6vmin, 12px);
+  font-family: 'Noto Sans TC', 'PingFang TC', 'Hiragino Sans CNS', 'Microsoft JhengHei', sans-serif;
+  font-weight: 900;
+  font-size: clamp(16px, 5vmin, 32px);
+  letter-spacing: 0.4em;
+  color: var(--kk-cyan);
+  text-shadow: 0 0 10px var(--kk-cyan);
+  animation: kk-fade-up 0.45s 0.15s linear both;
+}
+@keyframes kk-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* A neon band sweeps in behind the round-end text, once. */
+.kk-banner-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: clamp(70px, 24vmin, 150px);
+  translate: 0 -50%;
+  background: linear-gradient(90deg, transparent, rgba(255, 45, 149, 0.34) 18%, rgba(255, 45, 149, 0.34) 82%, transparent);
+  border-block: 2px solid rgba(255, 45, 149, 0.7);
+  transform-origin: center;
+  animation: kk-band 0.35s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.kk-banner-band--draw,
+.kk-banner-band--decision,
+.kk-banner-band--wins,
+.kk-banner-band--other {
+  background: linear-gradient(90deg, transparent, rgba(255, 210, 63, 0.26) 18%, rgba(255, 210, 63, 0.26) 82%, transparent);
+  border-block-color: rgba(255, 210, 63, 0.7);
+}
+@keyframes kk-band {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* ── Floating nameplates (above each 3D fighter) ──────────── */
+
+.kk-nameplate {
+  --plate: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Press Start 2P', monospace;
+  pointer-events: none;
+  user-select: none;
+  transform: translateY(-100%);
+  white-space: nowrap;
+}
+
+.kk-nameplate-tag {
+  padding: 3px 5px 2px;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--kk-plum);
+  background: var(--plate);
+  border: 2px solid var(--kk-plum);
+  border-radius: 3px;
+  box-shadow: 0 0 8px var(--plate);
+}
+
+.kk-nameplate-tri {
+  font-size: 12px;
+  line-height: 0.7;
+  text-shadow: 0 0 6px currentColor, 0 0 2px #000;
+  animation: kk-nameplate-bob 0.9s ease-in-out infinite;
+}
+@keyframes kk-nameplate-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+
+/* ── Network notice ───────────────────────────────────────── */
+
+.kowloon-knockout .kk-net-notice {
+  position: fixed;
+  top: calc(var(--safe-top, 0px) + clamp(168px, 30vh, 230px));
+  left: 50%;
+  translate: -50% 0;
+  z-index: 60;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(92vw, 560px);
+  padding: 8px 14px;
+  background: rgba(18, 4, 31, 0.95);
+  border: 2px solid var(--kk-yellow);
+  border-radius: 3px;
+  box-shadow: 0 0 12px rgba(255, 210, 63, 0.45);
+  color: var(--kk-yellow);
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(8px, 2.4vw, 11px);
+  line-height: 1.6;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* ── Loading / recovery cards ─────────────────────────────── */
+
+.kowloon-knockout .kk-loading {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--kk-yellow);
+  font-size: clamp(9px, 2.6vw, 12px);
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 8px var(--kk-yellow);
+}
+
+.kk-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10, 2, 18, 0.82);
+}
+.kk-overlay__card {
+  box-sizing: border-box;
+  width: min(100%, 420px);
+  padding: 18px 16px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(29, 8, 52, 0.96), rgba(18, 4, 31, 0.96));
+  border: 2px solid var(--kk-yellow);
+  border-radius: 3px;
+  box-shadow: 0 0 14px rgba(255, 210, 63, 0.4);
+  font-family: 'Press Start 2P', monospace;
+  color: var(--kk-yellow);
+}
+.kk-overlay__msg {
+  margin: 0 0 16px;
+  font-size: clamp(9px, 2.6vw, 11px);
+  line-height: 1.7;
+}
+.kk-overlay__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.kk-overlay__btn {
+  min-height: 48px;
+  min-width: 140px;
+  padding: 0 16px;
+  color: var(--kk-yellow);
+  background: transparent;
+  border: 2px solid var(--kk-yellow);
+  border-radius: 3px;
+  font: inherit;
+  font-size: clamp(8px, 2.4vw, 10px);
+  cursor: pointer;
+}
+.kk-overlay__btn:focus-visible {
+  outline: 2px solid var(--kk-cyan);
+  outline-offset: 2px;
+}
+
+/* ── Desktop key hint ─────────────────────────────────────── */
+
+.kk-controls-hint {
+  position: absolute;
+  bottom: calc(var(--safe-bottom, 0px) + 12px);
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  gap: 18px;
+  padding: 6px 14px;
+  background: rgba(18, 4, 31, 0.78);
+  border: 1px solid rgba(255, 210, 63, 0.4);
+  border-radius: 3px;
+  font-size: 8px;
+  color: color-mix(in srgb, var(--kk-ink) 60%, transparent);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.kk-controls-hint kbd {
+  margin-right: 4px;
+  padding: 1px 4px;
+  color: var(--kk-yellow);
+  border: 1px solid var(--kk-yellow);
+  border-radius: 3px;
+  font-size: 8px;
+}
+
+/* ============================================================
+   Touch controls
+   ============================================================ */
+
+.kk-controls {
+  pointer-events: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  font-family: 'Press Start 2P', monospace;
+}
+
+/* The stick zone is the whole lower-left of the screen: the ring appears under the thumb. */
+.kk-stick-zone {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 46%;
+  height: 62%;
+  pointer-events: auto;
+  touch-action: none;
+}
+.kk-controls--lefty .kk-stick-zone { left: auto; right: 0; }
+
+.kk-stick {
+  --ring: clamp(104px, 28vmin, 150px);
+  position: absolute;
+  left: var(--ox, calc(var(--kk-pad-edge) + var(--ring) / 2));
+  top: var(--oy, calc(100% - var(--kk-pad-edge) - var(--ring) / 2));
+  width: var(--ring);
+  height: var(--ring);
+  translate: -50% -50%;
+  box-sizing: border-box;
+  border: 3px solid rgba(61, 232, 255, 0.5);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(61, 232, 255, 0.1), rgba(18, 4, 31, 0.35) 70%);
+  box-shadow: 0 0 10px rgba(61, 232, 255, 0.25);
+  opacity: 0.6;
+  pointer-events: none;
+}
+.kk-controls--lefty .kk-stick:not(.is-active) {
+  left: calc(100% - var(--kk-pad-edge) - var(--ring) / 2);
+}
+.kk-stick.is-active {
+  opacity: 1;
+  border-color: var(--kk-cyan);
+  box-shadow: 0 0 14px rgba(61, 232, 255, 0.5);
+}
+.kk-stick__knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42%;
+  height: 42%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #b8f6ff, var(--kk-cyan) 60%);
+  box-shadow: 0 0 14px var(--kk-cyan);
+}
+
+/* The action pad: a 3x3 cluster. J on top, L left, K right, U below; block at the thumb's corner. */
+.kk-pad {
+  position: absolute;
+  right: var(--kk-pad-edge);
+  bottom: clamp(10px, 2.6vh, 22px);
+  display: grid;
+  grid-template-columns: repeat(3, var(--kk-btn));
+  grid-template-rows: repeat(3, var(--kk-btn));
+  gap: var(--kk-gap);
+  pointer-events: none;
+}
+.kk-controls--lefty .kk-pad { right: auto; left: var(--kk-pad-edge); }
+
+.kk-btn {
+  --c: var(--kk-cyan);
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: var(--kk-btn);
+  height: var(--kk-btn);
+  padding: 0;
+  color: var(--c);
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 34%, transparent), rgba(18, 4, 31, 0.85) 70%);
+  border: 3px solid var(--c);
+  border-radius: 50%;
+  box-shadow:
+    0 0 10px color-mix(in srgb, var(--c) 55%, transparent),
+    inset 0 0 10px color-mix(in srgb, var(--c) 22%, transparent);
+  font: inherit;
+  font-size: clamp(8px, 2.5vmin, 11px);
+  text-shadow: 0 0 6px var(--c);
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  transition: transform 0.07s linear;
+}
+.kk-btn.is-down {
+  transform: scale(0.92);
+  color: var(--kk-plum);
+  background: var(--c);
+  text-shadow: none;
+}
+.kk-btn:focus-visible {
+  outline: 2px solid var(--kk-ink);
+  outline-offset: 2px;
+}
+.kk-btn--j { grid-column: 2; grid-row: 1; }
+.kk-btn--l { grid-column: 1; grid-row: 2; }
+.kk-btn--k { grid-column: 3; grid-row: 2; }
+.kk-btn--u { grid-column: 2; grid-row: 3; }
+.kk-btn--b { grid-column: 3; grid-row: 3; }
+
+/* Hand swap sits in the pad's free top-left cell; a 44px hit area around a small glyph. */
+.kk-swap {
+  grid-column: 1;
+  grid-row: 1;
+  place-self: center;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: color-mix(in srgb, var(--kk-ink) 70%, transparent);
+  background: rgba(18, 4, 31, 0.55);
+  border: 1px solid rgba(255, 243, 251, 0.3);
+  border-radius: 50%;
+  font-size: 14px;
+  pointer-events: auto;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+.kk-swap:focus-visible {
+  outline: 2px solid var(--kk-ink);
+  outline-offset: 2px;
+}
+
+/* A short landscape phone: tighten the pad so it stays clear of the action. */
+@media (orientation: landscape) and (max-height: 430px) {
+  .kowloon-knockout {
+    --kk-btn: clamp(56px, 17vh, 64px);
+    --kk-gap: 4px;
+  }
+  .kk-fp { padding-block: 3px 4px; }
+  .kk-fp__head { margin-bottom: 2px; }
+  .kk-hud__col { gap: 4px; }
+  .kk-callout { top: clamp(124px, 36%, 180px); }
+}
+
+/* Fine pointers get no touch layer (GameView mounts it on mobile only), so nothing to hide here. */

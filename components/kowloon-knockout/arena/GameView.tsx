@@ -171,7 +171,9 @@ export default function GameView() {
     }, [frozen, unavailable]);
 
     return (
-        <div className="kk-arena" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        <div className={`kk-arena${isMobile ? ' kk-arena--touch' : ''}`} style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+            {/* The canvas host leaves the bottom band free in portrait on touch, so the action pad never hides a fighter. */}
+            <div className="kk-canvas-host">
             <GraphicsBoundary key={canvasKey} onError={onGraphicsError}>
             <Canvas
                 data-jelly-zone="playfield"
@@ -198,58 +200,39 @@ export default function GameView() {
                 {session?.training && <TrainingOverlay session={session} />}
             </Canvas>
             </GraphicsBoundary>
+            </div>
 
             {(frozen || unavailable) && !glLost && (
-                <div
-                    role="alert"
-                    style={{
-                        position: 'absolute', inset: 0, zIndex: 50, display: 'grid', placeItems: 'center',
-                        background: 'rgba(0,0,0,0.75)', color: '#ffcc00', textAlign: 'center', padding: 24,
-                    }}
-                >
-                    <div>
-                        <p style={{ marginBottom: 16 }}>
+                <div role="alert" className="kk-overlay">
+                    <div className="kk-overlay__card">
+                        <p className="kk-overlay__msg">
                             {unavailable
                                 ? t('graphics-unavailable', { defaultValue: '3D graphics could not start on this device.' })
                                 : t('graphics-stalled', { defaultValue: 'The picture stopped updating on this device.' })}
                         </p>
-                        <button
-                            type="button"
-                            onClick={() => window.location.reload()}
-                            style={{ minHeight: 44, minWidth: 160, padding: '0 20px', marginRight: 12, border: '2px solid #ffcc00', color: '#ffcc00', background: 'transparent' }}
-                        >
-                            {t('reload', { defaultValue: 'Reload' })}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setPhase('menu')}
-                            style={{ minHeight: 44, minWidth: 160, padding: '0 20px', border: '2px solid #ffcc00', color: '#ffcc00', background: 'transparent' }}
-                        >
-                            {t('back-to-menu', { defaultValue: 'Back to menu' })}
-                        </button>
+                        <div className="kk-overlay__actions">
+                            <button type="button" className="kk-overlay__btn" onClick={() => window.location.reload()}>
+                                {t('reload', { defaultValue: 'Reload' })}
+                            </button>
+                            <button type="button" className="kk-overlay__btn" onClick={() => setPhase('menu')}>
+                                {t('back-to-menu', { defaultValue: 'Back to menu' })}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {glLost && (
-                <div
-                    role="alert"
-                    style={{
-                        position: 'absolute', inset: 0, zIndex: 50, display: 'grid', placeItems: 'center',
-                        background: 'rgba(0,0,0,0.75)', color: '#ffcc00', textAlign: 'center', padding: 24,
-                    }}
-                >
-                    <div>
-                        <p style={{ marginBottom: 16 }}>
+                <div role="alert" className="kk-overlay">
+                    <div className="kk-overlay__card">
+                        <p className="kk-overlay__msg">
                             {t('graphics-lost', { defaultValue: 'Graphics were interrupted by your device.' })}
                         </p>
-                        <button
-                            type="button"
-                            onClick={() => setPhase('menu')}
-                            style={{ minHeight: 44, minWidth: 160, padding: '0 20px', border: '2px solid #ffcc00', color: '#ffcc00', background: 'transparent' }}
-                        >
-                            {t('back-to-menu', { defaultValue: 'Back to menu' })}
-                        </button>
+                        <div className="kk-overlay__actions">
+                            <button type="button" className="kk-overlay__btn" onClick={() => setPhase('menu')}>
+                                {t('back-to-menu', { defaultValue: 'Back to menu' })}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
