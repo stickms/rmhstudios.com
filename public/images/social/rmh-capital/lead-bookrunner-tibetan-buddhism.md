@@ -1,6 +1,6 @@
 # RMH Capital: lead bookrunner post (parody)
 
-Image: `lead-bookrunner-tibetan-buddhism.png` (1200×1200)
+Image: `lead-bookrunner-tibetan-buddhism.png` (1200×1200). The tombstone reads "RMH Capital is honored to serve as Lead Left Bookrunner".
 
 ---
 
@@ -15,3 +15,5 @@ Thank you to our clients for their trust, and to the RMH Capital Leveraged Finan
 #RMHCapital #LeveragedFinance #MA #Bookrunner #Dharma
 
 _Parody. Inspired by The Onion. This announcement appears as a matter of karma only._
+
+Also published site-wide as a pinned feed announcement by migration `20261107150000_rmh_capital_bookrunner_announcement` (expires after 14 days).
