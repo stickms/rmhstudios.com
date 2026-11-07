@@ -81,5 +81,7 @@
   "waiting-host": "ESPERANDO QUE EL ANFITRIÓN INICIE...",
   "wins": "VICTORIAS",
   "you-lose": "PIERDES",
-  "you-win": "¡GANAS!"
+  "you-win": "¡GANAS!",
+  "model": "MODEL",
+  "model-group-kowloon": "Kowloon"
 }

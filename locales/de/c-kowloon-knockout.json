@@ -81,5 +81,7 @@
   "waiting-host": "WARTE AUF START DURCH GASTGEBER...",
   "wins": "SIEGE",
   "you-lose": "DU VERLIERST",
-  "you-win": "DU GEWINNST!"
+  "you-win": "DU GEWINNST!",
+  "model": "MODEL",
+  "model-group-kowloon": "Kowloon"
 }

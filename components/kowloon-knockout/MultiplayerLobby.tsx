@@ -3,11 +3,12 @@
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback } from 'react';
-import { useGameStore } from '@/lib/kowloon-knockout/store';
+import { useGameStore, restoreStoredModel } from '@/lib/kowloon-knockout/store';
 import { useLobbyInviteJoin, useLobbyLink } from '@/hooks/useLobbyLink';
 import { networkClient, type ServerMessage, type LobbyListing } from '@/lib/kowloon-knockout/net/client';
 import { CLASS_DISPLAY, ALL_FIGHTERS } from '@/lib/kowloon-knockout/game/fighters/stats';
 import { TEAM_COLORS } from '@/lib/kowloon-knockout/game/config';
+import ModelPicker from '@/components/kowloon-knockout/ModelPicker';
 
 export default function MultiplayerLobby() {
     const { t } = useTranslation('c-kowloon-knockout');
@@ -25,7 +26,7 @@ export default function MultiplayerLobby() {
         }
     };
     const {
-        selectedClass, setSelectedClass, resetMultiplayer, setPhase,
+        selectedClass, setSelectedClass, selectedModel, setSelectedModel, resetMultiplayer, setPhase,
         lobbySeats, localSeat, isHost, mode, playerCount, roomCode, isPublic, mpError, setMpError,
     } = useGameStore();
 
@@ -37,13 +38,17 @@ export default function MultiplayerLobby() {
     const [connecting, setConnecting] = useState(false);
     const [connected, setConnected] = useState(false);
 
+    // An invite link lands here without passing character select: load the remembered model first
+    // (effects run in order, so this precedes the invite-join effect below).
+    useEffect(() => { restoreStoredModel(); }, []);
+
     const inRoom = lobbySeats.length > 0;
     const { copied: linkCopied, copyLink } = useLobbyLink({ code: roomCode });
 
     // Arrived on an invite link: join the moment the socket is up. Emitting into
     // a socket that has not connected yet is a join that quietly never happened.
     useLobbyInviteJoin(connected && !inRoom, (code) => {
-        networkClient.joinRoom(code.toUpperCase(), useGameStore.getState().selectedClass);
+        networkClient.joinRoom(code.toUpperCase(), useGameStore.getState().selectedClass, useGameStore.getState().selectedModel);
     });
 
     // Connect on mount and keep the public lobby list fresh while browsing.
@@ -82,20 +87,20 @@ export default function MultiplayerLobby() {
     const handleCreate = async () => {
         setMpError(null);
         if (!(await ensureConnected())) return;
-        networkClient.createRoom(mode, selectedClass, createPublic);
+        networkClient.createRoom(mode, selectedClass, createPublic, selectedModel);
     };
 
     const handleJoinCode = async () => {
         if (joinCode.length !== 6) { setMpError(t('enter-room-code', { defaultValue: 'Enter a 6-character room code' })); return; }
         setMpError(null);
         if (!(await ensureConnected())) return;
-        networkClient.joinRoom(joinCode, selectedClass);
+        networkClient.joinRoom(joinCode, selectedClass, selectedModel);
     };
 
     const handleJoinListed = async (code: string) => {
         setMpError(null);
         if (!(await ensureConnected())) return;
-        networkClient.joinRoom(code, selectedClass);
+        networkClient.joinRoom(code, selectedClass, selectedModel);
     };
 
     const handleLeaveRoom = () => {
@@ -115,7 +120,7 @@ export default function MultiplayerLobby() {
         const cls = ALL_FIGHTERS[idx];
         setSelectedClass(cls);
         const myTeam = lobbySeats.find((s) => s.seat === localSeat)?.team ?? localSeat;
-        if (inRoom) networkClient.setFighter(cls, myTeam);
+        if (inRoom) networkClient.setFighter(cls, myTeam, selectedModel);
     };
 
     return (
@@ -213,6 +218,14 @@ export default function MultiplayerLobby() {
                             <span style={{ color: CLASS_DISPLAY[selectedClass].color, fontSize: 9, minWidth: 140, textAlign: 'center' }}>{CLASS_DISPLAY[selectedClass].name}</span>
                             <button className="carousel-arrow" onClick={() => changeFighter(1)}>▶</button>
                         </div>
+                        <ModelPicker
+                            value={selectedModel}
+                            onChange={(id) => {
+                                setSelectedModel(id);
+                                const myTeam = lobbySeats.find((s) => s.seat === localSeat)?.team ?? localSeat;
+                                networkClient.setFighter(selectedClass, myTeam, id);
+                            }}
+                        />
 
                         {isHost ? (
                             <>

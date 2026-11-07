@@ -20,6 +20,7 @@ import { TrainingController } from '@/lib/kowloon-knockout/game/training';
 import { LocalInputSource } from '@/lib/kowloon-knockout/game/input';
 import { actionProgress } from '@/lib/kowloon-knockout/game/combat/actionProgress';
 import { networkClient, type ServerMessage, type MatchSeat } from './client';
+import { sanitizeFighterModelId } from '@/lib/kowloon-knockout/render/fighter/models';
 import {
     encodeSnapshot, decodeSnapshot, encodeInput, decodeInput, heldChanged,
     type DecodedSnapshot, type WireInput,
@@ -82,7 +83,7 @@ export interface HudState {
 }
 
 interface SeatInfo {
-    seat: number; team: number; className: FighterClass; name: string;
+    seat: number; team: number; className: FighterClass; name: string; modelId?: string;
     color: string; accent: string; maxHealth: number; maxStamina: number;
     moveSpeed: number; isLocal: boolean;
 }
@@ -100,11 +101,11 @@ export interface GameSession {
     readonly training?: TrainingController;
 }
 
-function buildSeatInfo(seat: number, className: FighterClass, team: number, name: string, isLocal: boolean): SeatInfo {
+function buildSeatInfo(seat: number, className: FighterClass, team: number, name: string, isLocal: boolean, modelId?: string): SeatInfo {
     const d = CLASS_DISPLAY[className];
     const s = CLASS_STATS[className];
     return {
-        seat, team, className, name, isLocal,
+        seat, team, className, name, isLocal, modelId: sanitizeFighterModelId(modelId),
         color: d.color, accent: d.accent,
         maxHealth: s.maxHealth, maxStamina: s.stamina, moveSpeed: s.moveSpeed,
     };
@@ -178,7 +179,7 @@ class SimSession implements GameSession {
         this.world = createWorld(config);
         this.isHost = isHost;
         for (const s of config.seats) {
-            this.seats.set(s.seat, buildSeatInfo(s.seat, s.className, this.world.fighters.find(f => f.seat === s.seat)!.team, s.displayName, s.kind === 'human-local'));
+            this.seats.set(s.seat, buildSeatInfo(s.seat, s.className, this.world.fighters.find(f => f.seat === s.seat)!.team, s.displayName, s.kind === 'human-local', s.modelId));
         }
         this.localSeat = config.seats.find(s => s.kind === 'human-local')?.seat ?? 0;
         if (training) {
@@ -283,7 +284,7 @@ class SimSession implements GameSession {
             const punchFrame = f.punchFrame;
             const stateFrame = f.stateFrame;
             return {
-                seat: f.seat, team: f.team, className: f.className, displayName: f.displayName,
+                seat: f.seat, team: f.team, className: f.className, modelId: info.modelId, displayName: f.displayName,
                 color: info.color, accent: info.accent, isLocal: f.seat === this.localSeat,
                 x: f.x, z: f.z, yaw: f.yaw,
                 state, punch,
@@ -367,7 +368,7 @@ class GuestSession implements GameSession {
         this.localSeat = localSeat;
         this.mode = mode;
         for (const s of seats) {
-            this.seats.set(s.seat, buildSeatInfo(s.seat, s.className, s.team, s.name, s.seat === localSeat));
+            this.seats.set(s.seat, buildSeatInfo(s.seat, s.className, s.team, s.name, s.seat === localSeat, s.modelId));
         }
         this.localSpeed = (this.seats.get(localSeat)?.moveSpeed ?? 2) * MOVE_SPEED_SCALE;
     }
@@ -466,7 +467,7 @@ class GuestSession implements GameSession {
             const punchFrame = nf.punchFrame;
             const stateFrame = nf.stateFrame;
             return {
-                seat: nf.seat, team: info.team, className: info.className, displayName: info.name,
+                seat: nf.seat, team: info.team, className: info.className, modelId: info.modelId, displayName: info.name,
                 color: info.color, accent: info.accent, isLocal: nf.seat === this.localSeat,
                 x, z, yaw, state, punch,
                 punchFrame, stateFrame, actionProgress: actionProgress({ state, punch, punchFrame, stateFrame }), hitFlash: nf.hitFlash,

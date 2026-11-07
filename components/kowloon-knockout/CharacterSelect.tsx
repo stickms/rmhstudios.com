@@ -3,7 +3,8 @@
 import { useEffect, useCallback, lazy, Suspense } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { useGameStore } from '@/lib/kowloon-knockout/store';
+import { useGameStore, restoreStoredModel } from '@/lib/kowloon-knockout/store';
+import ModelPicker from '@/components/kowloon-knockout/ModelPicker';
 import { CLASS_DISPLAY, CLASS_STATS, ALL_FIGHTERS } from '@/lib/kowloon-knockout/game/fighters/stats';
 
 const FighterPreview3D = lazy(() => import('@/components/kowloon-knockout/arena/FighterPreview3D'));
@@ -17,7 +18,7 @@ const DIFFICULTIES: { label: string; value: number }[] = [
 export default function CharacterSelect() {
     const { t } = useTranslation('c-kowloon-knockout');
     const {
-        selectedClass, setSelectedClass, isMultiplayer, resetMultiplayer, setPhase,
+        selectedClass, setSelectedClass, selectedModel, setSelectedModel, isMultiplayer, resetMultiplayer, setPhase,
         mode, setMode, playerCount, setPlayerCount, aiDifficulty, setAiDifficulty,
         startLocalMatch,
     } = useGameStore();
@@ -37,6 +38,9 @@ export default function CharacterSelect() {
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
     }, [navigate]);
+
+    // Restore the remembered model once on the client (the store starts at the default so SSR matches).
+    useEffect(() => { restoreStoredModel(); }, []);
 
     // Teams need an even number of fighters.
     useEffect(() => {
@@ -99,7 +103,7 @@ export default function CharacterSelect() {
                             >
                                 <div className="fighter-detail-sprite" style={{ filter: 'contrast(1.1)' }}>
                                     <Suspense fallback={<div style={{ width: 200, height: 200 }} />}>
-                                        <FighterPreview3D fighterClass={selectedClass} size={200} />
+                                        <FighterPreview3D fighterClass={selectedClass} modelId={selectedModel} size={200} />
                                     </Suspense>
                                 </div>
                                 <div className="fighter-detail-info">
@@ -120,6 +124,8 @@ export default function CharacterSelect() {
 
                     <button className="carousel-arrow carousel-arrow-right" onClick={() => navigate(1)}>▶</button>
                 </div>
+
+                <ModelPicker value={selectedModel} onChange={setSelectedModel} />
 
                 {!isMultiplayer && (
                     <div className="match-options">

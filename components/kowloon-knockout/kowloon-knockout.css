@@ -969,3 +969,40 @@
     text-align: center;
     pointer-events: none;
 }
+
+/* Fighter model picker (character select + lobby): a native <select> so the
+   grouped list is keyboard- and screen-reader-complete. */
+.kowloon-knockout .kk-model-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.kowloon-knockout .kk-model-select {
+  min-width: 200px;
+  max-width: 100%;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--neon-purple);
+  color: var(--neon-yellow);
+  font-family: inherit;
+  font-size: 11px;
+  outline: none;
+}
+
+.kowloon-knockout .kk-model-select:focus-visible {
+  box-shadow: 0 0 15px rgba(204, 51, 255, 0.5);
+}
+
+.kowloon-knockout .kk-model-select option,
+.kowloon-knockout .kk-model-select optgroup {
+  background: #0a0a14;
+  color: #ffffff;
+}
+
+/* The preview shows the model alone: no floating P1 nameplate. */
+.kowloon-knockout .kk-model-preview .kk-nameplate {
+  display: none;
+}

@@ -11,6 +11,8 @@ export type SeatKind = 'human-local' | 'ai' | 'remote';
 export interface SeatConfig {
     seat: number;
     className: FighterClass;
+    /** Fighter model id (render only; the sim never reads it). */
+    modelId?: string;
     team: number;        // FFA: equals seat. Teams: 0 or 1.
     kind: SeatKind;
     displayName: string;
