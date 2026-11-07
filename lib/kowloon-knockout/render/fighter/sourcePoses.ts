@@ -15,7 +15,8 @@ import type { ClipKey } from './clips';
 
 export type Vec3 = readonly [number, number, number];
 
-export interface Limb2 { upper: Vec3; lower: Vec3 }
+/** A limb's segments, each a direction. `foot` (legs only) aims the foot toward its toes: pitch it down to stand on the ball of the foot. */
+export interface Limb2 { upper: Vec3; lower: Vec3; foot?: Vec3 }
 export interface Pose {
     hips?: { rot?: Vec3; pos?: Vec3 };
     spine?: Vec3; chest?: Vec3; neck?: Vec3; head?: Vec3;
@@ -43,12 +44,48 @@ export const GUARD: Pose = {
 const g = (over: Pose): Pose => over;
 
 export const POSE_CLIPS: Record<ClipKey, PoseClip> = {
+    // A boxer's bounce on the balls of the feet (~2 bounces a second). The hips offsets are solved so the
+    // balls stay planted while the heels lift (sourceClips.test.ts checks it): down with the heels
+    // flat and knees soft, up onto the toes with the legs straightening, down again — with the
+    // shoulders rolling, the head counter-turning and the guard hands bobbing a beat behind.
     idle: {
-        duration: 1.6, base: GUARD,
+        duration: 0.9, base: GUARD,
         frames: [
-            { t: 0, pose: g({ hips: { rot: [0, 12, 0], pos: [0, 0, 0] } }) },
-            { t: 0.5, pose: g({ hips: { rot: [0, 12, 0], pos: [0, -0.012, 0.004] }, chest: [10, 8, 0] }) },
-            { t: 1, pose: g({ hips: { rot: [0, 12, 0], pos: [0, 0, 0] } }) },
+            { t: 0, pose: g({
+                hips: { rot: [0, 12, 0], pos: [0, -0.010, 0] }, chest: [10, 8, 0], head: [-7, -20, 0],
+                legL: { upper: [0.14, -0.94, 0.30], lower: [0.10, -1, -0.10], foot: [0.04, -0.24, 0.97] },
+                legR: { upper: [-0.14, -0.97, -0.20], lower: [-0.10, -1, -0.05], foot: [-0.04, -0.24, 0.97] },
+                armL: { upper: [0.30, -0.80, 0.50], lower: [0.10, 0.54, 0.84] },
+                armR: { upper: [-0.30, -0.80, 0.45], lower: [-0.05, 0.60, 0.80] },
+            }) },
+            { t: 0.25, pose: g({
+                hips: { rot: [0, 16, 0], pos: [0, 0.008, 0] }, chest: [8, 12, 3], head: [-6, -24, -3],
+                legL: { upper: [0.13, -0.955, 0.27], lower: [0.10, -1, -0.08], foot: [0.04, -0.37, 0.93] },
+                legR: { upper: [-0.13, -0.975, -0.18], lower: [-0.10, -1, -0.04], foot: [-0.04, -0.37, 0.93] },
+                armL: { upper: [0.30, -0.76, 0.54], lower: [0.10, 0.62, 0.78] },
+                armR: { upper: [-0.30, -0.78, 0.48], lower: [-0.05, 0.66, 0.75] },
+            }) },
+            { t: 0.5, pose: g({
+                hips: { rot: [0, 12, 0], pos: [0, 0.029, 0] }, chest: [6, 8, 0], head: [-5, -20, 0],
+                legL: { upper: [0.13, -0.97, 0.22], lower: [0.10, -1, -0.06], foot: [0.04, -0.53, 0.85] },
+                legR: { upper: [-0.13, -0.985, -0.15], lower: [-0.10, -1, -0.03], foot: [-0.04, -0.53, 0.85] },
+                armL: { upper: [0.30, -0.74, 0.58], lower: [0.10, 0.68, 0.73] },
+                armR: { upper: [-0.30, -0.76, 0.52], lower: [-0.05, 0.71, 0.70] },
+            }) },
+            { t: 0.75, pose: g({
+                hips: { rot: [0, 8, 0], pos: [0, 0.008, 0] }, chest: [8, 4, -3], head: [-6, -16, 3],
+                legL: { upper: [0.13, -0.955, 0.27], lower: [0.10, -1, -0.08], foot: [0.04, -0.37, 0.93] },
+                legR: { upper: [-0.13, -0.975, -0.18], lower: [-0.10, -1, -0.04], foot: [-0.04, -0.37, 0.93] },
+                armL: { upper: [0.30, -0.78, 0.52], lower: [0.10, 0.58, 0.81] },
+                armR: { upper: [-0.30, -0.80, 0.46], lower: [-0.05, 0.63, 0.77] },
+            }) },
+            { t: 1, pose: g({
+                hips: { rot: [0, 12, 0], pos: [0, -0.010, 0] }, chest: [10, 8, 0], head: [-7, -20, 0],
+                legL: { upper: [0.14, -0.94, 0.30], lower: [0.10, -1, -0.10], foot: [0.04, -0.24, 0.97] },
+                legR: { upper: [-0.14, -0.97, -0.20], lower: [-0.10, -1, -0.05], foot: [-0.04, -0.24, 0.97] },
+                armL: { upper: [0.30, -0.80, 0.50], lower: [0.10, 0.54, 0.84] },
+                armR: { upper: [-0.30, -0.80, 0.45], lower: [-0.05, 0.60, 0.80] },
+            }) },
         ],
     },
     walk: {

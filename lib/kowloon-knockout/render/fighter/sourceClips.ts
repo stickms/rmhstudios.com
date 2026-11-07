@@ -28,12 +28,12 @@ export interface ClipBuildOptions {
     worldScale: number;
 }
 
-interface LimbSpec { upper: JointName; lower: JointName; pose: 'armL' | 'armR' | 'legL' | 'legR'; ref: 'chest' | 'hips' }
+interface LimbSpec { upper: JointName; lower: JointName; foot?: JointName; pose: 'armL' | 'armR' | 'legL' | 'legR'; ref: 'chest' | 'hips' }
 const LIMBS: LimbSpec[] = [
     { upper: 'upperArmL', lower: 'foreArmL', pose: 'armL', ref: 'chest' },
     { upper: 'upperArmR', lower: 'foreArmR', pose: 'armR', ref: 'chest' },
-    { upper: 'thighL', lower: 'shinL', pose: 'legL', ref: 'hips' },
-    { upper: 'thighR', lower: 'shinR', pose: 'legR', ref: 'hips' },
+    { upper: 'thighL', lower: 'shinL', foot: 'footL', pose: 'legL', ref: 'hips' },
+    { upper: 'thighR', lower: 'shinR', foot: 'footR', pose: 'legR', ref: 'hips' },
 ];
 const TRUNK: { joint: 'spine' | 'chest' | 'neck' | 'head'; pose: 'spine' | 'chest' | 'neck' | 'head' }[] = [
     { joint: 'spine', pose: 'spine' }, { joint: 'chest', pose: 'chest' },
@@ -53,7 +53,7 @@ export function normalizeSides(rig: RigJoints): RigJoints {
     if (worldPos(l).x >= worldPos(r).x) return rig;
     const swap = (a: JointName, b: JointName) => { const t = rig[a]; rig[a] = rig[b]; rig[b] = t; };
     swap('upperArmL', 'upperArmR'); swap('foreArmL', 'foreArmR');
-    swap('thighL', 'thighR'); swap('shinL', 'shinR');
+    swap('thighL', 'thighR'); swap('shinL', 'shinR'); swap('footL', 'footR');
     return { ...rig };
 }
 
@@ -86,7 +86,9 @@ export function buildSourceClips(
 
     const restDir = new Map<JointName, Vector3>();
     for (const l of LIMBS) {
-        for (const [j, lower] of [[l.upper, l.lower], [l.lower, null]] as [JointName, JointName | null][]) {
+        const segments: [JointName, JointName | null][] = [[l.upper, l.lower], [l.lower, l.foot ?? null]];
+        if (l.foot) segments.push([l.foot, null]);
+        for (const [j, lower] of segments) {
             const b = rig[j];
             const c = childOf(rig, j, lower);
             if (!b || !c) continue;
@@ -103,12 +105,13 @@ export function buildSourceClips(
 
         // Per-keyframe solved world orientations -> local quaternions per mapped joint.
         const joints = new Set<JointName>();
+        const addJoint = (j: JointName) => { if (rig[j]) joints.add(j); }; // a bone the skeleton lacks is never animated
         for (const { pose } of frames) {
-            if (pose.hips?.rot || pose.hips?.pos) joints.add('hips');
-            for (const t of TRUNK) if (pose[t.pose]) joints.add(t.joint);
+            if (pose.hips?.rot || pose.hips?.pos) addJoint('hips');
+            for (const t of TRUNK) if (pose[t.pose]) addJoint(t.joint);
             for (const l of LIMBS) {
                 const limb = pose[l.pose];
-                if (limb) { joints.add(l.upper); joints.add(l.lower); }
+                if (limb) { addJoint(l.upper); addJoint(l.lower); if (l.foot && limb.foot) addJoint(l.foot); }
             }
         }
         const times = frames.map((f) => f.t * def.duration);
@@ -163,7 +166,9 @@ export function buildSourceClips(
                 const refDelta = refBone
                     ? Wp(refBone).clone().multiply(restWorld.get(refBone)!.clone().invert())
                     : new Quaternion();
-                for (const [j, vec] of [[l.upper, limb?.upper], [l.lower, limb?.lower]] as [JointName, Vec3 | undefined][]) {
+                const segs: [JointName, Vec3 | undefined][] = [[l.upper, limb?.upper], [l.lower, limb?.lower]];
+                if (l.foot) segs.push([l.foot, limb?.foot]);
+                for (const [j, vec] of segs) {
                     const b = rig[j];
                     if (!b || !joints.has(j)) continue;
                     const rd = restDir.get(j);
