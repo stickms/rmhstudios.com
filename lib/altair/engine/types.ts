@@ -276,6 +276,11 @@ export interface GameWorld {
   catalysts: CatalystState[];
   time: number; // total elapsed seconds
   timeScale: number; // 1.0 normal, 2.0 double time
+  /**
+   * Difficulty tier (lib/altair/data/heat.ts). Set ONLY above Heat 0: a standard world has no `heat` key, so it is
+   * structurally identical to a world from before Heat existed (the golden master hashes the whole world).
+   */
+  heat?: number;
   nextId: number;
   bossActive: boolean;
   bossWarning: { bossId: string; timer: number } | null;

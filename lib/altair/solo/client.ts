@@ -16,12 +16,12 @@ export interface StartedRun {
 }
 
 /** Ask the server to issue a run and stage it for GameScreen. Null when it cannot (signed out, offline). */
-export async function startServerRun(classId: string, doubleTime: boolean): Promise<StartedRun | null> {
+export async function startServerRun(classId: string, doubleTime: boolean, heat = 0): Promise<StartedRun | null> {
   try {
     const res = await fetch('/api/altair/run/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ classId, doubleTime }),
+      body: JSON.stringify({ classId, doubleTime, ...(heat > 0 ? { heat } : {}) }),
       signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(5000) : undefined,
     });
     if (!res.ok) return null;

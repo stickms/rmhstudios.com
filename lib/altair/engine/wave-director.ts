@@ -16,6 +16,7 @@ import {
   HORDE_SURGE_MAX_RADIUS,
 } from '../data/waves';
 import { getHPScale, getDamageScale, getSpeedScale, getXPScale } from '../data/scaling';
+import { heatModifiers } from '../data/heat';
 import { rand } from './rng';
 import { dcos, dsin } from './dmath';
 
@@ -96,9 +97,11 @@ function spawnEnemy(
   const dmgScale = getDamageScale(timeMin);
   const spdScale = getSpeedScale(timeMin);
 
-  const baseHp = def.baseHp * hpScale * hpMultiplier;
-  const baseDmg = def.baseDamage * dmgScale;
-  const baseSpd = def.baseSpeed * spdScale;
+  // Heat 0 multiplies by exactly 1, so a standard run is bit-for-bit what it was before Heat existed.
+  const heat = heatModifiers(world.heat ?? 0);
+  const baseHp = def.baseHp * hpScale * hpMultiplier * heat.hp;
+  const baseDmg = def.baseDamage * dmgScale * heat.damage;
+  const baseSpd = def.baseSpeed * spdScale * heat.speed;
 
   // Speed variance for swarm rats
   let speedMod = 1;
@@ -287,7 +290,7 @@ export function updateWaveDirector(
   const bossModifier = world.bossActive ? 0.5 : 1.0;
 
   // Accumulate budget
-  state.budgetAccumulator += effectiveBudget * bossModifier * delta;
+  state.budgetAccumulator += effectiveBudget * bossModifier * delta * heatModifiers(world.heat ?? 0).spawn;
 
   // Surge spawning
   if (currentWave.specialEvent === 'surge') {

@@ -8,14 +8,16 @@
 // no `stats`) are part of the log and of the issued run row, and replay exactly as they were recorded.
 
 import { META_UPGRADES } from '../data/meta-upgrades';
+import { heatModifiers } from '../data/heat';
 import { META_STAT_KEYS, type SoloLoadout } from './solo-log';
 
 /** First-ever clear of a class pays this once per class, from the server (lib/altair/solo/persist.server.ts). */
 export const FIRST_CLEAR_BONUS = 200;
 
 /** The payout multiplier arithmetic, shared by the results screen, the meta save and the server. */
-export function finalCoinsFor(runCoins: number, greedLevel: number, doubleTime: boolean): number {
-  return Math.floor(runCoins * (1 + greedLevel * 0.1) * (doubleTime ? 1.5 : 1));
+export function finalCoinsFor(runCoins: number, greedLevel: number, doubleTime: boolean, heat = 0): number {
+  // At Heat 0 the extra factor is exactly 1, so the payout is what it always was.
+  return Math.floor(runCoins * (1 + greedLevel * 0.1) * (doubleTime ? 1.5 : 1) * heatModifiers(heat).payout);
 }
 
 const STAT_KEYS = new Set<string>(META_STAT_KEYS);

@@ -11,6 +11,8 @@ import { issueSoloRun } from '@/lib/altair/solo/issue.server';
 const body = z.object({
   classId: z.string().min(1).max(64),
   doubleTime: z.boolean().optional(),
+  // Difficulty tier; the server checks the account has unlocked it.
+  heat: z.number().int().min(0).max(20).optional(),
 });
 
 export const Route = createFileRoute('/api/altair/run/start')({
@@ -19,7 +21,7 @@ export const Route = createFileRoute('/api/altair/run/start')({
       POST: defineHandler(
         { rateLimit: { limit: 6, windowMs: 60_000, prefix: 'altair-run-start', scope: 'user' }, body },
         async ({ userId, body }) => {
-          const out = await issueSoloRun(userId, body.classId, !!body.doubleTime);
+          const out = await issueSoloRun(userId, body.classId, !!body.doubleTime, body.heat ?? 0);
           if (!out.ok) return apiError(out.error, 400);
           return Response.json(out.run);
         },

@@ -410,6 +410,7 @@ import { Route as ApiAiSmartRepliesRouteImport } from './routes/api/ai/smart-rep
 import { Route as ApiAiSuggestTagsRouteImport } from './routes/api/ai/suggest-tags'
 import { Route as ApiAiTakeawaysRouteImport } from './routes/api/ai/takeaways'
 import { Route as ApiAiTransformRouteImport } from './routes/api/ai/transform'
+import { Route as ApiAltairHeatRouteImport } from './routes/api/altair/heat'
 import { Route as ApiAltairLeaderboardRouteImport } from './routes/api/altair/leaderboard'
 import { Route as ApiAltairMatchRouteImport } from './routes/api/altair/match'
 import { Route as ApiAltairMetaRouteImport } from './routes/api/altair/meta'
@@ -3405,6 +3406,11 @@ const ApiAiTakeawaysRoute = ApiAiTakeawaysRouteImport.update({
 const ApiAiTransformRoute = ApiAiTransformRouteImport.update({
   id: '/api/ai/transform',
   path: '/api/ai/transform',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAltairHeatRoute = ApiAltairHeatRouteImport.update({
+  id: '/api/altair/heat',
+  path: '/api/altair/heat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAltairLeaderboardRoute = ApiAltairLeaderboardRouteImport.update({
@@ -8905,6 +8911,7 @@ export interface FileRoutesByFullPath {
   '/api/ai/suggest-tags': typeof ApiAiSuggestTagsRoute
   '/api/ai/takeaways': typeof ApiAiTakeawaysRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
+  '/api/altair/heat': typeof ApiAltairHeatRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
   '/api/altair/meta': typeof ApiAltairMetaRoute
@@ -10261,6 +10268,7 @@ export interface FileRoutesByTo {
   '/api/ai/suggest-tags': typeof ApiAiSuggestTagsRoute
   '/api/ai/takeaways': typeof ApiAiTakeawaysRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
+  '/api/altair/heat': typeof ApiAltairHeatRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
   '/api/altair/meta': typeof ApiAltairMetaRoute
@@ -11644,6 +11652,7 @@ export interface FileRoutesById {
   '/api/ai/suggest-tags': typeof ApiAiSuggestTagsRoute
   '/api/ai/takeaways': typeof ApiAiTakeawaysRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
+  '/api/altair/heat': typeof ApiAltairHeatRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
   '/api/altair/meta': typeof ApiAltairMetaRoute
@@ -13027,6 +13036,7 @@ export interface FileRouteTypes {
     | '/api/ai/suggest-tags'
     | '/api/ai/takeaways'
     | '/api/ai/transform'
+    | '/api/altair/heat'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
     | '/api/altair/meta'
@@ -14383,6 +14393,7 @@ export interface FileRouteTypes {
     | '/api/ai/suggest-tags'
     | '/api/ai/takeaways'
     | '/api/ai/transform'
+    | '/api/altair/heat'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
     | '/api/altair/meta'
@@ -15765,6 +15776,7 @@ export interface FileRouteTypes {
     | '/api/ai/suggest-tags'
     | '/api/ai/takeaways'
     | '/api/ai/transform'
+    | '/api/altair/heat'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
     | '/api/altair/meta'
@@ -16928,6 +16940,7 @@ export interface RootRouteChildren {
   ApiAiSuggestTagsRoute: typeof ApiAiSuggestTagsRoute
   ApiAiTakeawaysRoute: typeof ApiAiTakeawaysRoute
   ApiAiTransformRoute: typeof ApiAiTransformRoute
+  ApiAltairHeatRoute: typeof ApiAltairHeatRoute
   ApiAltairLeaderboardRoute: typeof ApiAltairLeaderboardRoute
   ApiAltairMatchRoute: typeof ApiAltairMatchRoute
   ApiAltairMetaRoute: typeof ApiAltairMetaRoute
@@ -20453,6 +20466,13 @@ declare module '@tanstack/react-router' {
       path: '/api/ai/transform'
       fullPath: '/api/ai/transform'
       preLoaderRoute: typeof ApiAiTransformRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/altair/heat': {
+      id: '/api/altair/heat'
+      path: '/api/altair/heat'
+      fullPath: '/api/altair/heat'
+      preLoaderRoute: typeof ApiAltairHeatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/altair/leaderboard': {
@@ -29749,6 +29769,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAiSuggestTagsRoute: ApiAiSuggestTagsRoute,
   ApiAiTakeawaysRoute: ApiAiTakeawaysRoute,
   ApiAiTransformRoute: ApiAiTransformRoute,
+  ApiAltairHeatRoute: ApiAltairHeatRoute,
   ApiAltairLeaderboardRoute: ApiAltairLeaderboardRoute,
   ApiAltairMatchRoute: ApiAltairMatchRoute,
   ApiAltairMetaRoute: ApiAltairMetaRoute,

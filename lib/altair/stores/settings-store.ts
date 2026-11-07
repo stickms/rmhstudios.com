@@ -4,6 +4,7 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { clampHeat } from '@/lib/altair/data/heat';
 
 export interface Keybinds {
   up: string;
@@ -24,6 +25,8 @@ const DEFAULT_KEYBINDS: Keybinds = {
 interface AltairSettingsState {
   keybinds: Keybinds;
   doubleTime: boolean;
+  /** The Heat tier chosen for the next run (clamped to what the account has unlocked when the run starts). */
+  heat: number;
   screenShake: boolean;
   joystickSide: 'left' | 'right';
   zoomTiles: number;   // tiles visible in each direction from center (4–20)
@@ -34,6 +37,7 @@ interface AltairSettingsState {
   setKeybind: (action: keyof Keybinds, key: string) => void;
   resetKeybinds: () => void;
   setDoubleTime: (enabled: boolean) => void;
+  setHeat: (heat: number) => void;
   setScreenShake: (enabled: boolean) => void;
   setJoystickSide: (side: 'left' | 'right') => void;
   setZoomTiles: (v: number) => void;
@@ -47,6 +51,7 @@ export const useAltairSettingsStore = create<AltairSettingsState>()(
     (set) => ({
       keybinds: { ...DEFAULT_KEYBINDS },
       doubleTime: false,
+      heat: 0,
       screenShake: true,
       joystickSide: 'left',
       zoomTiles: 8,
@@ -58,6 +63,7 @@ export const useAltairSettingsStore = create<AltairSettingsState>()(
         set((s) => ({ keybinds: { ...s.keybinds, [action]: key } })),
       resetKeybinds: () => set({ keybinds: { ...DEFAULT_KEYBINDS } }),
       setDoubleTime: (enabled) => set({ doubleTime: enabled }),
+      setHeat: (heat) => set({ heat: clampHeat(heat) }),
       setScreenShake: (enabled) => set({ screenShake: enabled }),
       setJoystickSide: (side) => set({ joystickSide: side }),
       setZoomTiles: (v) => set({ zoomTiles: Math.max(4, Math.min(20, Math.round(v))) }),
@@ -70,6 +76,7 @@ export const useAltairSettingsStore = create<AltairSettingsState>()(
       partialize: (s) => ({
         keybinds: s.keybinds,
         doubleTime: s.doubleTime,
+        heat: s.heat,
         screenShake: s.screenShake,
         joystickSide: s.joystickSide,
         zoomTiles: s.zoomTiles,

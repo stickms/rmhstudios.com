@@ -14,6 +14,7 @@ import {
 } from './types';
 import { BOSSES, BossDef } from '../data/bosses';
 import { getHPScale, getDamageScale, getSpeedScale } from '../data/scaling';
+import { heatModifiers } from '../data/heat';
 import { applyEmpower } from './status-effects';
 import { rand } from './rng';
 import { datan2, dcos, dsin } from './dmath';
@@ -130,7 +131,7 @@ export function spawnBoss(world: GameWorld, bossId: string): BossState | null {
   const dmgScale = getDamageScale(timeMinutes);
   const spdScale = getSpeedScale(timeMinutes);
 
-  const scaledHp = Math.round(def.baseHp * hpScale);
+  const scaledHp = Math.round(def.baseHp * hpScale * heatModifiers(world.heat ?? 0).bossHp);
   const scaledSpeed = def.baseSpeed * spdScale;
   const bossRadius = 12 * def.size; // base radius 12 * size multiplier
 
@@ -154,7 +155,7 @@ export function spawnBoss(world: GameWorld, bossId: string): BossState | null {
     aiState: 'boss',
     aiTimer: 0,
     aiTimer2: 0,
-    aiParams: { damageScale: dmgScale, speedScale: spdScale },
+    aiParams: { damageScale: dmgScale * heatModifiers(world.heat ?? 0).damage, speedScale: spdScale },
     statusEffects: [],
     isBoss: true,
     bossId,

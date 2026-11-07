@@ -48,6 +48,8 @@ export interface BotOptions {
   skill?: BotSkill;
   loadout?: SoloLoadout;
   doubleTime?: boolean;
+  /** Heat tier to play at (lib/altair/data/heat.ts). Default 0. */
+  heat?: number;
   /** Stop after this many sim steps (60 per second). Default: 30 minutes. */
   maxSteps?: number;
   viewport?: { w: number; h: number };
@@ -63,6 +65,14 @@ export interface BotRun {
   weapons: string[];
   /** Lowest HP fraction seen in each game minute (a measure of how hard that minute was). */
   minuteLowHp: number[];
+  /** What dealt the final hit (an enemy or boss def id), when the run ended in defeat. */
+  killedBy?: string;
+  /** Whether a boss fight was under way when the run ended. */
+  bossActiveAtEnd: boolean;
+  /** Enemies alive when the run ended. */
+  enemiesAtEnd: number;
+  /** A sample every 30 game seconds: HP fraction, enemies alive, level, boss fight on. */
+  timeline: { t: number; hp: number; enemies: number; level: number; boss: boolean }[];
 }
 
 const DEFAULT_LOADOUT: SoloLoadout = {
@@ -122,13 +132,15 @@ function steer(
   let danger = 0;
   const sense2 = p.senseRadius * p.senseRadius;
   for (const e of enemies) {
+    if (e.isDead) continue; // a corpse fading out is not a threat
     const dx = px - e.x;
     const dy = py - e.y;
     const d2 = dx * dx + dy * dy;
     if (d2 > sense2 || d2 < 1) continue;
     const d = Math.sqrt(d2);
-    // Bosses and heavy hitters are respected more; close enemies dominate.
-    const weight = (e.isBoss ? 2.2 : 1) * Math.min(3, 1 + e.damage / 25);
+    // Heavy hitters are respected more; close enemies dominate. A healthy player fights a boss instead
+    // of only running from it, so its push is weaker until health drops.
+    const weight = (e.isBoss ? (hpFrac > 0.55 ? 0.7 : 2.2) : 1) * Math.min(3, 1 + e.damage / 25);
     const f = (weight * 60) / Math.max(24, d - e.radius);
     rx += (dx / d) * f;
     ry += (dy / d) * f;
@@ -173,7 +185,7 @@ function steer(
     let target: EnemyEntity | null = null;
     let targetD2 = 300 * 300;
     for (const e of enemies) {
-      if (e.isBoss) continue;
+      if (e.isBoss || e.isDead) continue;
       const dx = e.x - px;
       const dy = e.y - py;
       const d2 = dx * dx + dy * dy;
@@ -190,6 +202,19 @@ function steer(
       ry += (dy / d) * 1.1;
     }
   }
+  // A boss fight: close to a distance the player's weapons can work at (nearer while healthy), and keep it
+  // there. Without this the bot only ever flees a boss and says nothing about whether it can be beaten.
+  const boss = enemies.find((e) => e.isBoss && !e.isDead);
+  if (boss && hpFrac > 0.45) {
+    const dx = boss.x - px;
+    const dy = boss.y - py;
+    const d = Math.hypot(dx, dy) || 1;
+    const want = hpFrac > 0.7 ? 130 : 210;
+    if (d > want) {
+      rx += (dx / d) * 1.4;
+      ry += (dy / d) * 1.4;
+    }
+  }
   // Slow circling keeps the bot from standing still or running into a dead end.
   const phase = tick / 240;
   rx += Math.cos(phase) * 0.35;
@@ -200,18 +225,22 @@ function steer(
 
 export function playBot(opts: BotOptions): BotRun {
   const profile = PROFILES[opts.skill ?? 'average'];
-  const loadout = opts.loadout ?? DEFAULT_LOADOUT;
+  const loadout: SoloLoadout = { ...(opts.loadout ?? DEFAULT_LOADOUT), ...(opts.heat ? { heat: opts.heat } : {}) };
   const rand = lcg(opts.seed * 31 + opts.classId.length);
   const live = createInputState();
   const run = new SoloRun({
     setup: { seed: opts.seed, classId: opts.classId, doubleTime: !!opts.doubleTime, loadout },
     viewport: opts.viewport ?? { w: 1280, h: 720 },
     inputSource: () => live,
+    hooks: { onDeath: (id) => (killedBy = id) },
   });
 
   const max = opts.maxSteps ?? 30 * 60 * 60;
   const levelTimes: number[] = [];
   const minuteLowHp: number[] = [];
+  const timeline: BotRun['timeline'] = [];
+  let killedBy: string | undefined;
+  let nextSample = 0;
   let lastLevel = 1;
   let dir = { x: 0, y: 0 };
   const t0 = Date.now();
@@ -254,6 +283,16 @@ export function playBot(opts: BotOptions): BotRun {
       for (let l = lastLevel; l < level; l++) levelTimes.push(run.world.time);
       lastLevel = level;
     }
+    if (run.world.time >= nextSample) {
+      nextSample += 30;
+      timeline.push({
+        t: Math.round(run.world.time),
+        hp: run.world.player.maxHp > 0 ? Math.round((run.world.player.hp / run.world.player.maxHp) * 100) / 100 : 0,
+        enemies: run.world.enemies.length,
+        level: useAltairGameStore.getState().level,
+        boss: run.world.bossActive,
+      });
+    }
     const minute = Math.floor(run.world.time / 60);
     const frac = run.world.player.maxHp > 0 ? run.world.player.hp / run.world.player.maxHp : 0;
     minuteLowHp[minute] = Math.min(minuteLowHp[minute] ?? 1, frac);
@@ -265,5 +304,9 @@ export function playBot(opts: BotOptions): BotRun {
     levelTimes,
     weapons: run.world.weapons.map((w) => w.weaponId),
     minuteLowHp: Array.from(minuteLowHp, (v) => v ?? 1),
+    killedBy,
+    bossActiveAtEnd: run.world.bossActive,
+    enemiesAtEnd: run.world.enemies.length,
+    timeline,
   };
 }

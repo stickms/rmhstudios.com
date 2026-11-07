@@ -147,6 +147,8 @@ interface GameState {
   bossActive: boolean;
   bossesDefeatedThisRun: string[];
   doubleTime: boolean;
+  /** Difficulty tier of this run (lib/altair/data/heat.ts); 0 = standard. */
+  heat: number;
   killMilestonesHit: number[]; // which milestones already awarded
   previousPhase: GamePhase; // for unpausing
 
@@ -154,7 +156,7 @@ interface GameState {
   setPhase: (phase: GamePhase) => void;
   goToMenu: () => void;
   goToClassSelect: () => void;
-  startRun: (classId: string, doubleTime: boolean, metaBonuses: Record<string, number>, metaRerolls: number, metaBanishes: number, metaRevival: number, extraChoice: boolean) => void;
+  startRun: (classId: string, doubleTime: boolean, metaBonuses: Record<string, number>, metaRerolls: number, metaBanishes: number, metaRevival: number, extraChoice: boolean, heat?: number) => void;
   takeDamage: (amount: number) => void;
   heal: (amount: number) => void;
   addXP: (amount: number) => void;
@@ -217,6 +219,7 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
   bossActive: false,
   bossesDefeatedThisRun: [],
   doubleTime: false,
+  heat: 0,
   killMilestonesHit: [],
   previousPhase: 'menu',
 
@@ -249,12 +252,13 @@ export const useAltairGameStore = create<GameState>((set, get) => ({
 
   goToClassSelect: () => set({ phase: 'class_select' }),
 
-  startRun: (classId, doubleTime, metaBonuses, metaRerolls, metaBanishes, metaRevival, extraChoice) => {
+  startRun: (classId, doubleTime, metaBonuses, metaRerolls, metaBanishes, metaRevival, extraChoice, heat = 0) => {
     // Base stats will be set by the game loop after reading class data
     set({
       phase: 'playing',
       selectedClassId: classId,
       doubleTime,
+      heat,
       hp: 100, // will be overridden by class
       maxHp: 100,
       xp: 0,
