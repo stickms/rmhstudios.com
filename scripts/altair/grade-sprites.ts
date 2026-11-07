@@ -5,7 +5,7 @@
  * copies into `public/sprites/altair/`, so the cast shares the game card's
  * palette (docs/game-design-schemes/altair.json) and reads at a glance:
  *
- *   allies   -> cyan   (characters, summons)
+ *   allies   -> cyan   (summons; the player characters are drawn, not graded: see sprites/build-characters.ts)
  *   hostiles -> magenta (enemies, bosses)
  *   loot     -> amber   (pickups, projectiles, icons)
  *   floor    -> dark teal duotone (tiles)
@@ -50,7 +50,6 @@ type Kind = keyof typeof RAMPS;
 
 /** Which ramp a sheet's body uses, from its path under the source root. */
 function kindFor(rel: string): Kind {
-  if (rel.startsWith('characters/')) return 'ally';
   if (rel.startsWith('enemies/') || rel.startsWith('bosses/')) return 'hostile';
   if (rel.startsWith('tiles/')) return 'floor';
   if (rel.startsWith('props/')) return 'props';

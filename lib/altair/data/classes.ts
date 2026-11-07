@@ -1,8 +1,10 @@
 // =============================================================================
-// ALTAIR -- Classes (GDD Section 6)
+// ALTAIR -- Classes: the Outpost 13 crew (GDD Section 6)
 // =============================================================================
 // Each class has unique base stat modifiers, a starting weapon, and two class
 // abilities (one innate from the start, one unlocked at level 10).
+// Ids and ability `type`s are save data and never change; names, text and colours are the crew's.
+// Allies read teal, cyan and amber (hostiles are magenta), so class colours stay in that family.
 // =============================================================================
 
 export interface AbilityDef {
@@ -35,9 +37,9 @@ export const CLASSES: readonly ClassDef[] = [
   // -------------------------------------------------------------------------
   {
     id: 'knight',
-    name: 'Knight',
-    description: 'A stalwart warrior with balanced stats and strong survivability. Ideal for beginners.',
-    tagline: 'Shield and Steel',
+    name: 'Vanguard',
+    description: 'Riot-shield point crew with balanced stats and the best survivability aboard. Ideal for a first descent.',
+    tagline: 'Hold the Line',
     difficulty: 'Easy',
     unlockCondition: 'Starting class',
     unlockCost: 0,
@@ -61,23 +63,23 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability1: {
       id: 'shield_wall',
-      name: 'Shield Wall',
+      name: 'Barrier Field',
       description:
-        'Every 25 seconds (affected by CDR), gains a shield absorbing 30 damage (scales +10 per player level milestone at 10, 20, 30). Shield lasts 8 seconds or until broken.',
+        'Every 25 seconds (affected by CDR), raises a barrier absorbing 30 damage (scales +10 per player level milestone at 10, 20, 30). The barrier lasts 8 seconds or until broken.',
       cooldown: 25,
       unlockLevel: 1,
       type: 'shield_wall',
     },
     ability2: {
       id: 'rally_cry',
-      name: 'Rally Cry',
+      name: 'Klaxon',
       description:
-        'Every 45 seconds (affected by CDR), emits a battle shout in a 250px radius (affected by Area). Enemies in range are stunned for 1.5 seconds and take 50 damage (affected by Might). Knight gains +15% Move Speed for 5 seconds.',
+        'Every 45 seconds (affected by CDR), sounds the station klaxon in a 250px radius (affected by Area). Enemies in range are stunned for 1.5 seconds and take 50 damage (affected by Might). The Vanguard gains +15% Move Speed for 5 seconds.',
       cooldown: 45,
       unlockLevel: 10,
       type: 'rally_cry',
     },
-    color: '#3B82F6',
+    color: '#19D3DA',
   },
 
   // -------------------------------------------------------------------------
@@ -85,9 +87,9 @@ export const CLASSES: readonly ClassDef[] = [
   // -------------------------------------------------------------------------
   {
     id: 'arcanist',
-    name: 'Arcanist',
-    description: 'A glass cannon mage who trades durability for devastating magical area attacks.',
-    tagline: 'Power Unbound',
+    name: 'Arcwright',
+    description: 'A field engineer who trades durability for devastating electromagnetic area attacks.',
+    tagline: 'Overcharge',
     difficulty: 'Medium',
     unlockCondition: 'Starting class',
     unlockCost: 0,
@@ -111,7 +113,7 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability1: {
       id: 'mana_surge',
-      name: 'Mana Surge',
+      name: 'Capacitor Surge',
       description:
         'Every 30 seconds, the next 2 weapon attacks deal 1.6x damage and have +30% Area. 5 second window to use.',
       cooldown: 30,
@@ -120,14 +122,14 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability2: {
       id: 'arcane_nova',
-      name: 'Arcane Nova',
+      name: 'EM Pulse',
       description:
-        'Every 40 seconds, unleashes an expanding ring of arcane energy (300px, affected by Area) dealing 60 damage (affected by Might) and applying a 25% slow for 2 seconds.',
+        'Every 40 seconds, releases an expanding ring of electromagnetic energy (300px, affected by Area) dealing 60 damage (affected by Might) and applying a 25% slow for 2 seconds.',
       cooldown: 40,
       unlockLevel: 10,
       type: 'arcane_nova',
     },
-    color: '#8B5CF6',
+    color: '#E6FBFF',
   },
 
   // -------------------------------------------------------------------------
@@ -135,9 +137,9 @@ export const CLASSES: readonly ClassDef[] = [
   // -------------------------------------------------------------------------
   {
     id: 'ranger',
-    name: 'Ranger',
-    description: 'A swift, evasive fighter who excels at kiting and projectile-based combat.',
-    tagline: 'Swift and Deadly',
+    name: 'Surveyor',
+    description: 'A fast scout who maps the dark ahead and wins by kiting and long-range fire.',
+    tagline: 'Eyes on the Dark',
     difficulty: 'Medium',
     unlockCondition: 'Starting class',
     unlockCost: 0,
@@ -162,7 +164,7 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability1: {
       id: 'evasion_roll',
-      name: 'Evasion Roll',
+      name: 'Thruster Dash',
       description:
         'Every 16 seconds, automatically dashes 170px in movement direction when an enemy comes within 60px, gaining invincibility frames for 0.5 seconds. Leaves a brief damage trail (8 dmg, 1s). If stationary, dashes away from the nearest enemy.',
       cooldown: 16,
@@ -171,14 +173,14 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability2: {
       id: 'hunters_mark',
-      name: "Hunter's Mark",
+      name: 'Survey Lock',
       description:
         "Every 30 seconds, the strongest enemy on screen is marked for 8 seconds. Marked enemies take +30% damage (+15% bosses) and drop 2x XP. Mark transfers to nearest enemy on kill (up to 2 times).",
       cooldown: 30,
       unlockLevel: 10,
       type: 'hunters_mark',
     },
-    color: '#22C55E',
+    color: '#6EE7B7',
   },
 
   // -------------------------------------------------------------------------
@@ -186,9 +188,9 @@ export const CLASSES: readonly ClassDef[] = [
   // -------------------------------------------------------------------------
   {
     id: 'plague_doctor',
-    name: 'Plague Doctor',
-    description: 'A poison specialist who controls space with lingering damage zones.',
-    tagline: 'Pestilence Incarnate',
+    name: 'Biotech',
+    description: 'A hazmat specialist who controls space with lingering toxin zones.',
+    tagline: 'Contain and Spread',
     difficulty: 'Medium',
     unlockCondition: 'Survive 10 minutes',
     unlockCost: 0,
@@ -212,23 +214,23 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability1: {
       id: 'miasma_trail',
-      name: 'Miasma Trail',
+      name: 'Toxin Trail',
       description:
-        'Passively leaves a poison trail (25px wide, affected by Area) that persists for 1.5 seconds (affected by Duration). Deals 4 damage per tick every 0.5 seconds (affected by Might). Trail applies 10% slow per stack, up to 2 stacks (20% slow).',
+        'Passively leaves a toxin trail (25px wide, affected by Area) that persists for 1.5 seconds (affected by Duration). Deals 4 damage per tick every 0.5 seconds (affected by Might). Trail applies 10% slow per stack, up to 2 stacks (20% slow).',
       cooldown: 0,
       unlockLevel: 1,
       type: 'miasma_trail',
     },
     ability2: {
       id: 'pandemic',
-      name: 'Pandemic',
+      name: 'Outbreak',
       description:
-        'Every 50 seconds, all currently poisoned enemies explode, dealing 30% of remaining poison damage as instant AoE in an 80px radius (affected by Area). Can chain up to 2 iterations with a 0.3 second delay.',
+        'Every 50 seconds, all currently poisoned enemies rupture, dealing 30% of remaining poison damage as instant AoE in an 80px radius (affected by Area). Can chain up to 2 iterations with a 0.3 second delay.',
       cooldown: 50,
       unlockLevel: 10,
       type: 'pandemic',
     },
-    color: '#10B981',
+    color: '#FFB44D',
   },
 
   // -------------------------------------------------------------------------
@@ -236,9 +238,9 @@ export const CLASSES: readonly ClassDef[] = [
   // -------------------------------------------------------------------------
   {
     id: 'berserker',
-    name: 'Berserker',
-    description: 'A high-risk melee fighter who grows stronger the more damage they take.',
-    tagline: 'Fury Unleashed',
+    name: 'Breacher',
+    description: 'A high-risk close-quarters demolitionist who hits harder the more damage the suit has taken.',
+    tagline: 'Through the Bulkhead',
     difficulty: 'Hard',
     unlockCondition: 'Kill 3,000 enemies in one run',
     unlockCost: 0,
@@ -262,7 +264,7 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability1: {
       id: 'blood_rage',
-      name: 'Blood Rage',
+      name: 'Suit Breach',
       description:
         'Passive. Gains bonus Might based on missing HP: bonus = 0.6 * (1 - currentHp / maxHp). At 100% HP = +0.00x, 50% HP = +0.30x, 25% HP = +0.45x.',
       cooldown: 0,
@@ -271,14 +273,14 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability2: {
       id: 'savage_slam',
-      name: 'Savage Slam',
+      name: 'Hull Slam',
       description:
         'Every 35 seconds, leaps to the densest cluster of enemies within 300px and slams down, dealing 90 damage (affected by Might) in a 150px radius (affected by Area). Inner 50px enemies are knocked back 80px and stunned for 0.7 seconds. Invulnerable during leap (~0.4s).',
       cooldown: 35,
       unlockLevel: 10,
       type: 'savage_slam',
     },
-    color: '#EF4444',
+    color: '#FF8A3D',
   },
 
   // -------------------------------------------------------------------------
@@ -286,9 +288,9 @@ export const CLASSES: readonly ClassDef[] = [
   // -------------------------------------------------------------------------
   {
     id: 'necromancer',
-    name: 'Necromancer',
-    description: 'A summoner who raises the dead to fight. Lower personal damage, but overwhelming numbers.',
-    tagline: 'Master of the Dead',
+    name: 'Echo-Binder',
+    description: 'A signals tech who binds Echoes of the lost crew to fight. Lower personal damage, but overwhelming numbers.',
+    tagline: 'Nobody Is Lost',
     difficulty: 'Hard',
     unlockCondition: 'Purchase in shop',
     unlockCost: 1500,
@@ -312,23 +314,23 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability1: {
       id: 'raise_dead',
-      name: 'Raise Dead',
+      name: 'Bind Echo',
       description:
-        'Every enemy killed has an 18% chance (affected by Luck) to raise a skeleton minion (25 HP, 10 damage/hit affected by Might, 1 attack/s, 180 speed, 10s duration affected by Duration). Max 6 active skeletons (8 at level 15, 10 at level 25).',
+        'Every enemy killed has an 18% chance (affected by Luck) to bind an Echo (25 HP, 10 damage/hit affected by Might, 1 attack/s, 180 speed, 10s duration affected by Duration). Max 6 active Echoes (8 at level 15, 10 at level 25).',
       cooldown: 0,
       unlockLevel: 1,
       type: 'raise_dead',
     },
     ability2: {
       id: 'army_of_darkness',
-      name: 'Army of Darkness',
+      name: 'Echo Wall',
       description:
-        'Every 60 seconds, summons a bone wall ring (200px radius, affected by Area) of 8 bone pillars (40 HP each). Enemies touching pillars take 25 damage and are knocked back. Lasts 5 seconds (affected by Duration). Skeletons inside gain +30% damage and attack speed.',
+        'Every 60 seconds, raises a ring of 8 resonance pillars (200px radius, affected by Area; 40 HP each). Enemies touching pillars take 25 damage and are knocked back. Lasts 5 seconds (affected by Duration). Echoes inside gain +30% damage and attack speed.',
       cooldown: 60,
       unlockLevel: 10,
       type: 'army_of_darkness',
     },
-    color: '#6B21A8',
+    color: '#7AA2F7',
   },
 
   // -------------------------------------------------------------------------
@@ -336,9 +338,9 @@ export const CLASSES: readonly ClassDef[] = [
   // -------------------------------------------------------------------------
   {
     id: 'chronomancer',
-    name: 'Chronomancer',
-    description: 'A time-bending spellcaster who manipulates enemy speed and cooldowns.',
-    tagline: 'Lord of Time',
+    name: 'Dilator',
+    description: 'A physicist with a time-dilation rig who slows enemies and bends cooldowns.',
+    tagline: 'Borrowed Seconds',
     difficulty: 'Hard',
     unlockCondition: 'Defeat the 15-minute boss',
     unlockCost: 0,
@@ -362,7 +364,7 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability1: {
       id: 'time_dilation_field',
-      name: 'Time Dilation Field',
+      name: 'Dilation Field',
       description:
         'Passive 120px radius aura (affected by Area). All enemies inside move and attack at 75% speed. Always active.',
       cooldown: 0,
@@ -371,14 +373,14 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability2: {
       id: 'temporal_rewind',
-      name: 'Temporal Rewind',
+      name: 'Rewind',
       description:
         'Every 55 seconds, rewinds 3 seconds of position and HP history. Teleports to previous position with whichever HP is higher. Invulnerable during rewind (~0.3s). All enemies within 150px of current position are frozen for 2.0 seconds.',
       cooldown: 55,
       unlockLevel: 10,
       type: 'temporal_rewind',
     },
-    color: '#F59E0B',
+    color: '#F5D76E',
   },
 
   // -------------------------------------------------------------------------
@@ -386,9 +388,9 @@ export const CLASSES: readonly ClassDef[] = [
   // -------------------------------------------------------------------------
   {
     id: 'hemomancer',
-    name: 'Hemomancer',
-    description: 'A blood mage who sacrifices HP for power and heals through violence.',
-    tagline: 'Blood is Power',
+    name: 'Hemosurgeon',
+    description: 'A field surgeon who spends their own blood for power and heals through violence.',
+    tagline: 'First, Do Some Harm',
     difficulty: 'Hard',
     unlockCondition: 'Complete a full 20:00 run',
     unlockCost: 0,
@@ -412,7 +414,7 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability1: {
       id: 'sanguine_feast',
-      name: 'Sanguine Feast',
+      name: 'Transfusion',
       description:
         'Passive. All damage dealt heals for 4% of damage dealt (lifesteal, after Might modifiers). Healing capped at 6 HP per second. Below 50% HP, lifesteal increases to 6%.',
       cooldown: 0,
@@ -421,13 +423,13 @@ export const CLASSES: readonly ClassDef[] = [
     },
     ability2: {
       id: 'blood_nova',
-      name: 'Blood Nova',
+      name: 'Hemorrhage Burst',
       description:
-        'Every 35 seconds, sacrifices 12% of current HP and detonates it as a blood explosion in a 250px radius (affected by Area). Damage equals 2.5x HP sacrificed plus 40 base damage (affected by Might). Enemies killed heal Hemomancer for 3 HP each (capped at 30 HP per Nova).',
+        'Every 35 seconds, sacrifices 12% of current HP and detonates it as a blood burst in a 250px radius (affected by Area). Damage equals 2.5x HP sacrificed plus 40 base damage (affected by Might). Enemies killed heal the Hemosurgeon for 3 HP each (capped at 30 HP per burst).',
       cooldown: 35,
       unlockLevel: 10,
       type: 'blood_nova',
     },
-    color: '#991B1B',
+    color: '#FFC9B8',
   },
 ] as const;

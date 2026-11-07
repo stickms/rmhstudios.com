@@ -142,7 +142,13 @@ Each step is its own pull request, merged after CI is green; any step that chang
      avoids ground hazards dies within ~25 s of the boss appearing. A boss's difficulty lives in telegraphs a
      human reads and the bot does not, so this step does not claim the wall is gone. Boss difficulty needs the
      real-player data in section 7.
-4. **Classes, two or three per PR**: new names, art and abilities, balanced with the bot.
+4. **Classes.** Split in two. **4a (shipped): the crew's identity** — new names, taglines, ability names and
+   text, palette-true class colours, and eight original sprite sheets (a generated 16x16 figure with a
+   four-frame walk cycle in four directions, differing by silhouette: riot shield, antenna, scope, respirator,
+   power axe, orbiting Echoes, time halo, blood-bag pack). Text and art only: **no mechanic changed, so
+   `SIM_VERSION` is untouched** and the golden master is unchanged. The old CC0-derived character sources
+   were removed. **4b (next): ability and weapon reworks**, balanced with the bot (the Arcwright and
+   Hemosurgeon die before 5:00 for class-balance reasons), which does bump `SIM_VERSION`.
 5. **Enemy roster and the other bosses**, with their sprites.
 6. **Economy pass**: tree cost, payout and pacing to the model in section 4.
 7. **Class mastery and sectors.**
