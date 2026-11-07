@@ -1,6 +1,6 @@
 # CSS-first Plasmatic Jelly — design
 
-Status: **draft for approval** · 2026-11-07 · Owner decision: approach A (chosen in conversation)
+Status: **approved** · 2026-11-07 · Owner decisions: approach A, engine kept for the globe only, rule rewrites approved, no look-check pause
 
 ## Intent and why
 
@@ -43,10 +43,10 @@ Other live consumers also stay: `lib/jelly/frame.ts`, `pointer.ts`, `soft-policy
 `useEvertPoint`), `tiers.ts` (`jellyMotionLevel` in four games), `arcs` (`strike`, `/jelly` lab), and
 `physics.reportJellyDrag` (needs a small shim when the physics service goes).
 
-**Consequence for the globe, needs an owner decision.** The globe refracts the page behind it using the snapshot the glass
-engine publishes. With the engine gone there is no snapshot; the globe handles that (`attachScene` returns early and
-`setScene(null)` switches the input off), so it keeps working but loses the page-behind-the-ball refraction. See
-"Open decisions".
+**Consequence for the globe (decided).** The globe refracts the page behind it using the snapshot the glass engine
+publishes. The owner chose to keep that, so the snapshot path stays alive in a reduced "globe-feed" engine mode (see
+"Decisions"). If the snapshot is ever absent the globe still works: `attachScene` returns early and `setScene(null)`
+switches the input off.
 
 ## Anti-goals (a failure even if it technically works)
 
@@ -98,9 +98,11 @@ and the dent's light dot (a radial gradient). No per-component listeners. `MOTIO
 idle. `dischargeAt` / `strike` stay exported so `app/routes/jelly.tsx` and existing callers keep working. The 3-onsets/s
 flash ledger stays (WCAG 2.3.1).
 
-**5. Removal.** Once nothing installs them: the glass engine and worker, GL renderer and shaders, scene capture and
-store, registry, governor, lattice/envelope/room, ambient arcs and field, ambient clock, the matching tests and the unwired
-`testing/e2e` scripts for them.
+**5. Removal.** Once nothing installs them: the engine's slab, haze, cursor-light, dent and lattice code, the rim/haze
+worker path, registry, lattice/envelope/room, ambient arcs and field, ambient clock, the matching tests and the unwired
+`testing/e2e` scripts for them. **Kept for the globe:** the snapshot path (`scene.ts`, `scene-store.ts`, the engine's
+publishing code in a reduced globe-feed mode), the governor's DPR cap, and the GLSL/colour/policy modules the globe
+imports (listed under Non-goals).
 
 ## Acceptance bar (my call)
 
@@ -161,15 +163,20 @@ rule, changing a rule happens in the same commit and says so in the message.
 - Measurement: compare before/after with the frame-budget harness the docs name (`testing/e2e/frame-budget.mjs`) and
   record the numbers in the PR.
 
-## Open decisions (owner)
+## Decisions (owner, 2026-11-07) — design approved
 
-1. **Globe page-refraction.** Drop it (recommended: simplest, the globe's own look remains, revisit in the globe
-   project), or keep one snapshot taken on route settle only, which keeps part of the capture cost.
-2. **Rewriting the owner-written rules.** The Plasmatic Jelly section of `CLAUDE.md` and
-   `docs/plasmatic-jelly-system.md` record owner decisions (silhouette bulge, lens dent, "never fake a law"). This work
-   amends them in PR 5. Confirm that is fine.
-3. **Sign-off on the look.** CI cannot judge it and the sandbox may not run a browser. Do you want to eyeball production
-   after PR 1 before I continue, or should I proceed on the acceptance bar above?
+1. **The engine stays, for the globe only.** The globe keeps refracting the page behind it, so the glass engine's
+   snapshot capture (`scene.ts`, `scene-store.ts`) and the engine module that publishes it remain. What goes is
+   everything the engine does for site surfaces: rim slabs, haze canvases, the ambient clock, lattice stepping, cursor
+   light and dent drawing. The engine is reduced to a **globe-feed mode**: slab budget 0, haze 0, clock 0, snapshot on.
+   *My call within that:* the snapshot's triggers shrink to load, route change, theme change and resize (no scroll-rest or
+   content-mutation recapture), keeping the 1.5 s minimum interval, and it only runs while the globe is mounted. PR 5
+   deletes the engine's slab/haze/lattice code, not the snapshot path, and moves the surviving pieces behind a name that
+   says what they are for. The "zero canvases at rest" goal therefore excludes the globe's own canvases and the snapshot.
+2. **Rewriting the owner-written rules is approved.** PR 5 amends the Plasmatic Jelly sections of `CLAUDE.md`,
+   `lib/CLAUDE.md`, `components/CLAUDE.md` and `docs/plasmatic-jelly-system.md`.
+3. **Proceed without a look-check.** No pause after PR 1 for the owner to inspect production. The acceptance bar above is
+   the gate; where the app cannot be run, the PR says so.
 
 ## Left to the builder
 
