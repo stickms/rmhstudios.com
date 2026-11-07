@@ -4,7 +4,7 @@
 // by every picker. Every failure is "not available", never an error: the roster
 // then offers only the bundled Y-Bot.
 import { useEffect, useState } from 'react';
-import { availableFighterModels, type FighterModelDef, type ModelAvailability } from './models';
+import { DEFAULT_FIGHTER_MODEL, availableFighterModels, type FighterModelDef, type ModelAvailability } from './models';
 
 type MdlGame = 'hl2' | 'portal' | 'csgo';
 const MDL_GAMES: readonly MdlGame[] = ['hl2', 'portal', 'csgo'];
@@ -58,4 +58,21 @@ export function useFighterRoster(): FighterModelDef[] {
         return () => { alive = false; };
     }, []);
     return roster;
+}
+
+/**
+ * Whether R2 holds `modelId`: 'unknown' until the lookup lands, then 'yes' / 'no'. The Y-Bot is
+ * always 'yes'. Lets the renderer skip a model it already knows is missing instead of
+ * attempting the load and throwing.
+ */
+export function useModelAvailability(modelId: string): 'unknown' | 'yes' | 'no' {
+    const [ids, setIds] = useState<ReadonlySet<string> | null>(null);
+    useEffect(() => {
+        let alive = true;
+        void loadFighterRoster().then((r) => { if (alive) setIds(new Set(r.map((m) => m.id))); });
+        return () => { alive = false; };
+    }, []);
+    if (modelId === DEFAULT_FIGHTER_MODEL) return 'yes';
+    if (!ids) return 'unknown';
+    return ids.has(modelId) ? 'yes' : 'no';
 }

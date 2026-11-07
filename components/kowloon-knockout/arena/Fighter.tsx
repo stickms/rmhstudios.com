@@ -8,6 +8,7 @@ import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import { FIGHTER_ASSET_DIR, RIG_FILE } from '@/lib/kowloon-knockout/render/fighter/clips';
 import { chooseFighterView, type FighterFailures } from '@/lib/kowloon-knockout/render/fighter/fighterView';
 import { sanitizeFighterModelId } from '@/lib/kowloon-knockout/render/fighter/models';
+import { useModelAvailability } from '@/lib/kowloon-knockout/render/fighter/useFighterRoster';
 import FighterTrappings from './FighterTrappings';
 import StickFighter from './StickFighter';
 import SkeletalFighter from './SkeletalFighter';
@@ -74,8 +75,12 @@ export default function Fighter({ seat, framesRef }: { seat: number; framesRef: 
     // A different model gets a fresh chance.
     useEffect(() => { setFailed({ source: false, skeletal: false }); }, [modelId]);
 
-    const view = chooseFighterView(modelId, failed);
+    // A model R2 is known not to hold is skipped without a load attempt (no thrown error, no
+    // console noise); while that is still being looked up, show the placeholder.
+    const availability = useModelAvailability(modelId);
+    const view = chooseFighterView(modelId, availability === 'no' ? { ...failed, source: true } : failed);
     const placeholder = <LoadingPlaceholder seat={seat} framesRef={framesRef} />;
+    if (view === 'source' && availability === 'unknown') return placeholder;
 
     if (view === 'stick') return <StickFighter seat={seat} framesRef={framesRef} />;
     if (view === 'source') {

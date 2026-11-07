@@ -49,22 +49,23 @@ export const FIGHTER_MODELS: readonly FighterModelDef[] = [
     tf2('scout', 'Scout'), tf2('soldier', 'Soldier'), tf2('pyro', 'Pyro'),
     tf2('demoman', 'Demoman'), tf2('heavy', 'Heavy'), tf2('engineer', 'Engineer'),
     tf2('medic', 'Medic'), tf2('sniper', 'Sniper'), tf2('spy', 'Spy'),
-    csgo('tm_phoenix', 'Phoenix'), csgo('tm_leet', 'Elite Crew'), csgo('tm_balkan_varianta', 'Balkan'),
-    csgo('tm_professional', 'Professional'), csgo('tm_separatist', 'Separatist'), csgo('tm_anarchist', 'Anarchist'),
-    csgo('ctm_sas', 'SAS'), csgo('ctm_swat', 'SWAT'), csgo('ctm_fbi', 'FBI'),
-    csgo('ctm_gign', 'GIGN'), csgo('ctm_st6', 'Seal Team 6'), csgo('ctm_idf', 'IDF'),
-    hl2('combine', 'Combine Soldier', 'models/combine_soldier.mdl'),
-    hl2('elite', 'Combine Elite', 'models/combine_super_soldier.mdl'),
+    // Verified against the published model indexes (2026-11-07): CS:GO ships exactly these two
+    // player models; HL2 ships the humans below (no Combine soldier or Alyx in the demo data);
+    // Portal publishes no humanoid yet, so its entry stays hidden until one is uploaded.
+    csgo('tm_phoenix', 'Phoenix'), csgo('ctm_sas', 'SAS'),
     hl2('police', 'Metrocop', 'models/police.mdl'),
-    hl2('alyx', 'Alyx', 'models/alyx.mdl'),
     hl2('barney', 'Barney', 'models/barney.mdl'),
-    hl2('eli', 'Eli', 'models/eli.mdl'),
+    hl2('gman', 'G-Man', 'models/gman_high.mdl'),
     hl2('kleiner', 'Kleiner', 'models/kleiner.mdl'),
-    hl2('citizen_m1', 'Citizen (M)', 'models/humans/group01/male_01.mdl'),
-    hl2('citizen_m2', 'Citizen (M2)', 'models/humans/group01/male_07.mdl'),
-    hl2('citizen_f1', 'Citizen (F)', 'models/humans/group01/female_01.mdl'),
+    hl2('citizen_m1', 'Citizen (Male 1)', 'models/humans/group01/male_01.mdl'),
+    hl2('citizen_m2', 'Citizen (Male 2)', 'models/humans/group01/male_02.mdl'),
+    hl2('citizen_m3', 'Citizen (Male 3)', 'models/humans/group01/male_03.mdl'),
+    hl2('citizen_m7', 'Citizen (Male 7)', 'models/humans/group01/male_07.mdl'),
+    hl2('citizen_m8', 'Citizen (Male 8)', 'models/humans/group01/male_08.mdl'),
+    hl2('citizen_m9', 'Citizen (Male 9)', 'models/humans/group01/male_09.mdl'),
+    hl2('citizen_f6', 'Citizen (Female 6)', 'models/humans/group01/female_06.mdl'),
+    hl2('citizen_f7', 'Citizen (Female 7)', 'models/humans/group01/female_07.mdl'),
     portal('chell', 'Chell', 'models/player/chell/player.mdl'),
-    portal('chell_legacy', 'Chell (classic)', 'models/player/chell.mdl'),
 ];
 
 const BY_ID = new Map(FIGHTER_MODELS.map((m) => [m.id, m]));

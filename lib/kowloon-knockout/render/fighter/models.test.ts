@@ -23,8 +23,13 @@ describe('fighter model roster', () => {
     it('filters to what R2 has (mdl paths compared lower-case)', () => {
         const got = availableFighterModels({
             tf2: new Set(['class_soldier', '123']),
-            mdl: { hl2: new Set(['models/alyx.mdl']), csgo: new Set(), portal: null },
+            mdl: { hl2: new Set(['models/barney.mdl']), csgo: new Set(), portal: null },
         }).map((m) => m.id);
-        expect(got).toEqual([DEFAULT_FIGHTER_MODEL, 'tf2_soldier', 'hl2_alyx']);
+        expect(got).toEqual([DEFAULT_FIGHTER_MODEL, 'tf2_soldier', 'hl2_barney']);
+    });
+    it('does not offer models the published HL2 data lacks', () => {
+        // Regression: hl2_combine / hl2_alyx were guessed paths absent from the bucket and threw at load.
+        const ids = FIGHTER_MODELS.map((m) => m.id);
+        for (const gone of ['hl2_combine', 'hl2_elite', 'hl2_alyx', 'hl2_eli']) expect(ids).not.toContain(gone);
     });
 });
