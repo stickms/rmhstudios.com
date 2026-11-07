@@ -1,6 +1,6 @@
 /**
  * Settings store for Altair — persisted to localStorage.
- * Manages theme, keybinds, and gameplay preferences.
+ * Manages keybinds and gameplay preferences. (There is no theme setting: Altair has one look.)
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -22,7 +22,6 @@ const DEFAULT_KEYBINDS: Keybinds = {
 };
 
 interface AltairSettingsState {
-  theme: 'dark' | 'light';
   keybinds: Keybinds;
   doubleTime: boolean;
   screenShake: boolean;
@@ -32,8 +31,6 @@ interface AltairSettingsState {
   musicVolume: number;  // 0–1
   sfxVolume: number;    // 0–1
 
-  setTheme: (theme: 'dark' | 'light') => void;
-  toggleTheme: () => void;
   setKeybind: (action: keyof Keybinds, key: string) => void;
   resetKeybinds: () => void;
   setDoubleTime: (enabled: boolean) => void;
@@ -47,8 +44,7 @@ interface AltairSettingsState {
 
 export const useAltairSettingsStore = create<AltairSettingsState>()(
   persist(
-    (set, get) => ({
-      theme: 'dark',
+    (set) => ({
       keybinds: { ...DEFAULT_KEYBINDS },
       doubleTime: false,
       screenShake: true,
@@ -58,8 +54,6 @@ export const useAltairSettingsStore = create<AltairSettingsState>()(
       musicVolume: 0.5,
       sfxVolume: 0.7,
 
-      setTheme: (theme) => set({ theme }),
-      toggleTheme: () => set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
       setKeybind: (action, key) =>
         set((s) => ({ keybinds: { ...s.keybinds, [action]: key } })),
       resetKeybinds: () => set({ keybinds: { ...DEFAULT_KEYBINDS } }),
@@ -74,7 +68,6 @@ export const useAltairSettingsStore = create<AltairSettingsState>()(
     {
       name: 'altair-settings',
       partialize: (s) => ({
-        theme: s.theme,
         keybinds: s.keybinds,
         doubleTime: s.doubleTime,
         screenShake: s.screenShake,

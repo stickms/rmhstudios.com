@@ -2,7 +2,7 @@
  * AltairHeader — Shared header across all Altair screens.
  *
  * Adapts its content based on the current context:
- * - Menu: "← Builds" back link, "ALTAIR" title, theme toggle
+ * - Menu: "← Builds" back link, "ALTAIR" title
  * - Game: game timer, "ALTAIR" title, settings gear
  * - Meta shop: "← Back" link, "Meta Shop" title, coin balance
  */
@@ -11,8 +11,7 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Sun, Moon, Settings, Circle } from 'lucide-react';
-import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
+import { ArrowLeft, Settings, Circle } from 'lucide-react';
 import { useAltairGameStore } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
@@ -40,8 +39,6 @@ export default function AltairHeader({
 }: AltairHeaderProps) {
   const { t } = useTranslation("c-altair");
   const goBack = useBackOrFallback();
-  const theme = useAltairSettingsStore((s) => s.theme);
-  const toggleTheme = useAltairSettingsStore((s) => s.toggleTheme);
   const timeSurvived = useAltairGameStore((s) => s.timeSurvived);
   const coins = useAltairMetaStore((s) => s.coins);
 
@@ -125,16 +122,6 @@ export default function AltairHeader({
             {t("coins-balance", { defaultValue: "{{count}} coins", count: coins })}
           </span>
         )}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          data-altair-sfx="menu_toggle"
-          aria-label={theme === 'dark' ? t("switch-to-light-mode", { defaultValue: "Switch to light mode" }) : t("switch-to-dark-mode", { defaultValue: "Switch to dark mode" })}
-          className="size-9 pointer-coarse:size-11 rounded-full flex items-center justify-center text-(--altair-text-muted) hover:text-(--altair-accent) hover:bg-(--altair-surface-hover) transition-colors"
-          title={theme === 'dark' ? t("switch-to-light-mode", { defaultValue: "Switch to light mode" }) : t("switch-to-dark-mode", { defaultValue: "Switch to dark mode" })}
-        >
-          {theme === 'dark' ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
-        </button>
         {isGame && onSettings && (
           <button
             type="button"
