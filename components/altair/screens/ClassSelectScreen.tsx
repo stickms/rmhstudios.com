@@ -83,7 +83,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
   const startingWeapon = selectedClass ? WEAPONS.find((w) => w.id === selectedClass.startingWeaponId) : null;
 
   return (
-    <div className="altair-parchment flex flex-col flex-1 px-4 pt-4 pb-12 max-w-3xl w-full mx-auto">
+    <div className="altair-scan flex flex-col flex-1 px-4 pt-4 pb-12 max-w-3xl w-full mx-auto">
       <h2 className="text-2xl font-bold text-(--altair-text) mb-1">{t("choose-your-class", { defaultValue: "Choose Your Class" })}</h2>
       <p className="text-sm text-(--altair-text-muted) mb-6">{t("select-class-prompt", { defaultValue: "Select a class to begin your run" })}</p>
 

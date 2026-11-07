@@ -10,16 +10,15 @@
  * The gate moved to that screen — `/altair/multiplayer` — where it is true. The
  * menu button that leads there asks with a modal instead, so a signed-out player
  * who taps MULTIPLAYER out of curiosity keeps the game they were already in.
+ *
+ * Type: Michroma / Jost / IBM Plex Mono come from the shared game-fonts pack,
+ * imported by altair.css itself so Vite hashes and serves the files.
  */
 
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
 import AltairShell from '@/components/altair/AltairShell';
 import altairCss from '@/components/altair/altair.css?url';
-// MedievalSharp, self-hosted with `font-display: optional` (app/fonts/), and its
-// Latin file preloaded so the title makes the face's window — lib/fonts/self-hosted.ts.
-import medievalSharpCss from '@/app/fonts/medievalsharp.css?url';
-import medievalSharpLatin from '@fontsource/medievalsharp/files/medievalsharp-latin-400-normal.woff2?url';
 
 function AltairLayout() {
   return (
@@ -31,11 +30,7 @@ function AltairLayout() {
 
 export const Route = createFileRoute('/altair')({
   head: () => gameRouteHead('altair', {
-      links: [
-        { rel: 'stylesheet', href: altairCss },
-        { rel: 'stylesheet', href: medievalSharpCss },
-      ],
-      fontPreloads: [medievalSharpLatin],
+      links: [{ rel: 'stylesheet', href: altairCss }],
     }),
   component: AltairLayout,
 });

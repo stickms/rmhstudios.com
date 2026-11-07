@@ -1,99 +1,112 @@
 /**
- * Altair — Dedicated Theme Stylesheet
+ * Altair — Dedicated Theme Stylesheet ("Outpost 13")
  *
- * Provides a fully isolated visual identity for the Altair survivor roguelite.
- * Medieval/fantasy palette with warm earthy tones, dark/light theme support,
- * custom scrollbar, selection colors, and utility animations.
+ * The visual identity of the Altair survivor roguelite, taken from its game
+ * card: a dead mining rig humming in the dark, teal duotone, amber emergency
+ * lamps, cyan/magenta glitch offset on titles, mono HUD labels, hard 2px
+ * corners. Source of truth for the palette and motifs is
+ * docs/game-design-schemes/altair.json; sprites are graded to the same palette
+ * by scripts/altair/grade-sprites.ts (cyan = ally, magenta = hostile,
+ * amber = loot and hazard).
+ *
+ * Dark is the native look. The light theme is a daylit lab variant of it.
  */
 
-/* MedievalSharp is NOT declared here. It is self-hosted in the generated
- * app/fonts/medievalsharp.css, which app/routes/altair.tsx links beside this
- * sheet and preloads — see lib/fonts/self-hosted.ts. */
+@import '../shared/game-fonts/fonts.css';
 
 /* ─── Dark Theme (default) ──────────────────────────────────────── */
 
 .altair-theme {
-  /* Backgrounds — dark aged wood / stone */
-  --altair-bg: #1a1410;
-  --altair-bg-subtle: #201a14;
-  --altair-surface: #2a2218;
-  --altair-surface-hover: #342a1e;
-  --altair-surface-active: #3e3224;
+  /* Backgrounds — the void, then the rig's bulkheads */
+  --altair-bg: #04080f;
+  --altair-bg-subtle: #071420;
+  --altair-surface: #0a1b2a;
+  --altair-surface-hover: #0f2a3e;
+  --altair-surface-active: #143650;
 
-  /* Borders — weathered bronze */
-  --altair-border: #3e3224;
-  --altair-border-bright: #5a4a36;
+  /* Borders — cold hull steel */
+  --altair-border: #0f3b52;
+  --altair-border-bright: #1c6482;
 
-  /* Text — parchment tones */
-  --altair-text: #e8dcc8;
-  --altair-text-muted: #a89878;
-  --altair-text-dim: #786850;
+  /* Text — instrument-panel white and fog */
+  --altair-text: #e6fbff;
+  --altair-text-muted: #8fb3bf;
+  --altair-text-dim: #5f8794;
 
-  /* Accent — burnished gold */
-  --altair-accent: #c8a44a;
-  --altair-accent-hover: #d4b45a;
-  --altair-accent-dim: rgba(200, 164, 74, 0.15);
-  /* Ink paired to the accent fill (white on burnished gold is ~2:1). */
-  --altair-accent-fg: #1a1410;
+  /* Accent — console cyan; amber is the secondary (lamps, loot, warnings) */
+  --altair-accent: #19d3da;
+  --altair-accent-hover: #4fe3e8;
+  --altair-accent-dim: rgba(25, 211, 218, 0.15);
+  --altair-accent-fg: #04080f;
+  --altair-amber: #ffb44d;
+  --altair-amber-dim: rgba(255, 180, 77, 0.14);
+  /* The glitch offset pair used on titles */
+  --altair-glitch-a: #19d3da;
+  --altair-glitch-b: #ff3db8;
   /* HUD ink + scrim: chrome that floats over the game world is always light-on-dark,
      whatever the menu theme is. Used as `text-(--altair-hud-ink)/70`, `bg-(--altair-hud-scrim)/40`. */
   --altair-hud-ink: #ffffff;
   --altair-hud-scrim: #000000;
 
   /* Semantic colors */
-  --altair-success: #5a9a4a;
-  --altair-success-dim: rgba(90, 154, 74, 0.12);
-  --altair-danger: #b84a3a;
-  --altair-danger-dim: rgba(184, 74, 58, 0.12);
-  --altair-warning: #d4a030;
-  --altair-warning-dim: rgba(212, 160, 48, 0.12);
-  --altair-info: #5a8ab4;
-  --altair-info-dim: rgba(90, 138, 180, 0.12);
-  --altair-rare: #8a5aaa;
-  --altair-rare-dim: rgba(138, 90, 170, 0.12);
+  --altair-success: #3de8a0;
+  --altair-success-dim: rgba(61, 232, 160, 0.12);
+  --altair-danger: #ff3db8;
+  --altair-danger-dim: rgba(255, 61, 184, 0.12);
+  --altair-warning: #ffb44d;
+  --altair-warning-dim: rgba(255, 180, 77, 0.12);
+  --altair-info: #4aa8ff;
+  --altair-info-dim: rgba(74, 168, 255, 0.12);
+  --altair-rare: #b58cff;
+  --altair-rare-dim: rgba(181, 140, 255, 0.12);
 
-  /* Fonts */
-  --altair-font-display: 'MedievalSharp', 'Georgia', serif;
-  --altair-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --altair-font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+  /* Fonts — Michroma (wide, instrument-panel) for titles, Jost for reading,
+     IBM Plex Mono for data. All three are self-hosted by fonts.css above. */
+  --altair-font-display: 'Michroma', 'Orbitron', 'Jost', system-ui, sans-serif;
+  --altair-font-body: 'Jost', 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --altair-font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Cascadia Code', monospace;
 
-  /* Layout */
-  --altair-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
-  --altair-radius: 8px;
-  --altair-radius-sm: 4px;
-  --altair-radius-lg: 12px;
-  --altair-toast-bg: #2a2218;
+  /* Layout — hard corners, no soft drop shadows */
+  --altair-shadow: 0 0 0 1px rgba(25, 211, 218, 0.08), 0 8px 28px rgba(0, 0, 0, 0.55);
+  --altair-radius: 2px;
+  --altair-radius-sm: 1px;
+  --altair-radius-lg: 4px;
+  --altair-toast-bg: #0a1b2a;
 }
 
-/* ─── Light Theme ───────────────────────────────────────────────── */
+/* ─── Light Theme (daylit lab) ──────────────────────────────────── */
 
 .altair-theme.altair-light {
-  --altair-bg: #f5f0e8;
-  --altair-bg-subtle: #ede5d8;
-  --altair-surface: #faf6f0;
-  --altair-surface-hover: #f0ead8;
-  --altair-surface-active: #e4dcc8;
-  --altair-border: #d2c8b0;
-  --altair-border-bright: #b8a888;
-  --altair-text: #2a2010;
-  --altair-text-muted: #6a5840;
-  --altair-text-dim: #9a8868;
-  --altair-accent: #a88830;
-  --altair-accent-hover: #8e7420;
-  --altair-accent-dim: rgba(168, 136, 48, 0.10);
+  --altair-bg: #e3eff2;
+  --altair-bg-subtle: #d6e6ea;
+  --altair-surface: #f3fafb;
+  --altair-surface-hover: #e6f2f5;
+  --altair-surface-active: #d3e6eb;
+  --altair-border: #b5ced6;
+  --altair-border-bright: #7fa6b3;
+  --altair-text: #06202c;
+  --altair-text-muted: #345a68;
+  --altair-text-dim: #5d808c;
+  --altair-accent: #087c86;
+  --altair-accent-hover: #066670;
+  --altair-accent-dim: rgba(8, 124, 134, 0.1);
   --altair-accent-fg: #ffffff;
-  --altair-success: #408a40;
-  --altair-success-dim: rgba(64, 138, 64, 0.08);
-  --altair-danger: #a04030;
-  --altair-danger-dim: rgba(160, 64, 48, 0.08);
-  --altair-warning: #b09020;
-  --altair-warning-dim: rgba(176, 144, 32, 0.08);
-  --altair-info: #4a78a0;
-  --altair-info-dim: rgba(74, 120, 160, 0.08);
-  --altair-rare: #7a4a9a;
-  --altair-rare-dim: rgba(122, 74, 154, 0.08);
-  --altair-shadow: 0 4px 24px rgba(40, 30, 10, 0.08);
-  --altair-toast-bg: #faf6f0;
+  --altair-amber: #a85f00;
+  --altair-amber-dim: rgba(168, 95, 0, 0.1);
+  --altair-glitch-a: #087c86;
+  --altair-glitch-b: #c0187f;
+  --altair-success: #0f8a5c;
+  --altair-success-dim: rgba(15, 138, 92, 0.08);
+  --altair-danger: #c0187f;
+  --altair-danger-dim: rgba(192, 24, 127, 0.08);
+  --altair-warning: #9a5b00;
+  --altair-warning-dim: rgba(154, 91, 0, 0.08);
+  --altair-info: #1f6fc4;
+  --altair-info-dim: rgba(31, 111, 196, 0.08);
+  --altair-rare: #6b3fc4;
+  --altair-rare-dim: rgba(107, 63, 196, 0.08);
+  --altair-shadow: 0 0 0 1px rgba(8, 124, 134, 0.1), 0 6px 20px rgba(6, 32, 44, 0.12);
+  --altair-toast-bg: #f3fafb;
 }
 
 /* ─── Base Styles ───────────────────────────────────────────────── */
@@ -102,6 +115,9 @@
   background-color: var(--altair-bg);
   color: var(--altair-text);
   font-family: var(--altair-font-body);
+  /* Michroma ships one weight; never let `font-black` fake a bold on it.
+     Jost is variable, so real weights still work for body copy. */
+  font-synthesis-weight: none;
   min-height: 100vh;
   /* `100vh` on mobile is the LARGEST viewport, so this ground is taller than
      the visible page whenever the browser toolbars are showing — the page
@@ -109,6 +125,19 @@
      always fills without overshooting; the plain `vh` line above stays as
      the fallback for engines that don't parse it. */
   min-height: 100svh;
+}
+
+/* Headings are instrument-panel type: Michroma at its one weight, wide set. */
+.altair-theme :is(h1, h2, h3) {
+  font-family: var(--altair-font-display);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+
+/* Numbers and readouts are data. */
+.altair-theme .tabular-nums,
+.altair-theme .font-mono {
+  font-family: var(--altair-font-mono);
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────────── */
@@ -120,12 +149,10 @@
 
 .altair-theme ::-webkit-scrollbar-track {
   background: var(--altair-bg-subtle);
-  border-radius: 4px;
 }
 
 .altair-theme ::-webkit-scrollbar-thumb {
   background: var(--altair-border-bright);
-  border-radius: 4px;
   transition: background 0.2s;
 }
 
@@ -148,25 +175,290 @@
 
 .altair-theme ::selection {
   background: var(--altair-accent);
-  color: #ffffff;
+  color: var(--altair-accent-fg);
 }
 
 .altair-theme ::-moz-selection {
   background: var(--altair-accent);
-  color: #ffffff;
+  color: var(--altair-accent-fg);
 }
 
-/* ─── Focus ─────────────────────────────────────────────────────── */
+/* ─── Focus: a cyan glow ring ───────────────────────────────────── */
 
 .altair-theme :focus-visible {
   outline: 2px solid var(--altair-accent);
   outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--altair-accent-dim);
 }
 
 /* ─── Buttons ───────────────────────────────────────────────────── */
 
 .altair-theme button:not(:disabled) {
   cursor: pointer;
+}
+
+.altair-theme button:disabled {
+  color: var(--altair-text-dim);
+}
+
+/* Primary: a flat cyan outline that fills 15% on hover. */
+.altair-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border: 1px solid var(--altair-accent);
+  border-radius: var(--altair-radius);
+  background: transparent;
+  color: var(--altair-accent);
+  font-family: var(--altair-font-display);
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.altair-btn:hover:not(:disabled),
+.altair-btn[data-focused='true'] {
+  background: var(--altair-accent-dim);
+  color: var(--altair-accent-hover);
+}
+
+/* Secondary: plain text with an amber bracket marker. */
+.altair-btn--ghost {
+  border-color: transparent;
+  color: var(--altair-text);
+  font-family: var(--altair-font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.altair-btn--ghost::before,
+.altair-btn--ghost::after {
+  color: var(--altair-amber);
+  font-family: var(--altair-font-mono);
+  opacity: 0.45;
+  transition: opacity 0.18s ease;
+}
+
+.altair-btn--ghost::before {
+  content: '[';
+  margin-right: 0.15rem;
+}
+
+.altair-btn--ghost::after {
+  content: ']';
+  margin-left: 0.15rem;
+}
+
+.altair-btn--ghost:hover:not(:disabled),
+.altair-btn--ghost[data-focused='true'] {
+  background: var(--altair-amber-dim);
+  color: var(--altair-text);
+}
+
+.altair-btn--ghost:hover:not(:disabled)::before,
+.altair-btn--ghost:hover:not(:disabled)::after,
+.altair-btn--ghost[data-focused='true']::before,
+.altair-btn--ghost[data-focused='true']::after {
+  opacity: 1;
+}
+
+/* ─── HUD label: tiny mono caps, the card's "OUTPOST 13" voice ──── */
+
+.altair-label {
+  font-family: var(--altair-font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--altair-text-muted);
+}
+
+/* ─── Glitch title ──────────────────────────────────────────────── */
+
+/* Cyan/magenta offset copies behind the title (set `data-text`). A slice of
+   them jitters sideways for a moment every ~10s; the ink itself never flashes. */
+.altair-glitch {
+  position: relative;
+  display: inline-block;
+  color: var(--altair-text);
+}
+
+.altair-glitch::before,
+.altair-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.altair-glitch::before {
+  color: var(--altair-glitch-a);
+  transform: translate(-0.04em, 0);
+}
+
+.altair-glitch::after {
+  color: var(--altair-glitch-b);
+  transform: translate(0.04em, 0);
+}
+
+@keyframes altair-glitch-slice {
+  0%,
+  92%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    translate: 0 0;
+  }
+  93% {
+    clip-path: inset(18% 0 62% 0);
+    translate: -0.09em 0;
+  }
+  95% {
+    clip-path: inset(58% 0 22% 0);
+    translate: 0.1em 0;
+  }
+  97% {
+    clip-path: inset(36% 0 44% 0);
+    translate: -0.05em 0;
+  }
+}
+
+.altair-glitch::before {
+  animation: altair-glitch-slice 10s steps(1, end) infinite;
+}
+
+.altair-glitch::after {
+  animation: altair-glitch-slice 10s steps(1, end) infinite reverse;
+}
+
+/* ─── Backdrop: scanlines and the corridor ──────────────────────── */
+
+/* Faint static scanlines (was the parchment grain). Names kept short because
+   every screen root carries one. */
+.altair-scan,
+.altair-scan-surface {
+  position: relative;
+  isolation: isolate;
+}
+
+.altair-scan::after,
+.altair-scan-surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  border-radius: inherit;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(25, 211, 218, 0.05) 2px,
+    rgba(25, 211, 218, 0.05) 3px
+  );
+}
+
+.altair-scan::after {
+  opacity: 0.9;
+}
+
+.altair-scan-surface::after {
+  opacity: 0.6;
+}
+
+.altair-light .altair-scan::after,
+.altair-light .altair-scan-surface::after {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(6, 32, 44, 0.04) 2px,
+    rgba(6, 32, 44, 0.04) 3px
+  );
+}
+
+/* One-point corridor: nested cyan-edged rectangles receding to a dark door,
+   two amber lamps, a slow zoom. Place `.altair-corridor` first in a screen,
+   absolutely filling it. */
+.altair-corridor {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(ellipse at 50% 46%, #0a2236 0%, var(--altair-bg) 62%);
+}
+
+.altair-corridor__frames {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  /* Recede behind the menu: the frames frame the title, they never compete with a button. */
+  opacity: 0.5;
+  animation: altair-corridor-drift 48s ease-in-out infinite alternate;
+}
+
+.altair-corridor__frame {
+  position: absolute;
+  aspect-ratio: 16 / 10;
+  border: 1px solid rgba(25, 211, 218, 0.22);
+  box-shadow: inset 0 0 40px rgba(25, 211, 218, 0.05);
+}
+
+.altair-corridor__frame:nth-child(1) { width: 118%; opacity: 0.35; }
+.altair-corridor__frame:nth-child(2) { width: 84%;  opacity: 0.45; }
+.altair-corridor__frame:nth-child(3) { width: 58%;  opacity: 0.55; }
+.altair-corridor__frame:nth-child(4) { width: 38%;  opacity: 0.65; }
+.altair-corridor__frame:nth-child(5) { width: 23%;  opacity: 0.75; }
+.altair-corridor__frame:nth-child(6) {
+  width: 12%;
+  opacity: 0.7;
+  background: #03070d;
+  border-color: rgba(25, 211, 218, 0.3);
+}
+
+.altair-corridor__lamp {
+  position: absolute;
+  top: 24%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--altair-amber);
+  box-shadow: 0 0 22px 8px rgba(255, 180, 77, 0.45);
+  animation: altair-lamp 5s ease-in-out infinite alternate;
+}
+
+.altair-corridor__lamp--l { left: 28%; }
+.altair-corridor__lamp--r { right: 28%; animation-delay: -2.5s; }
+
+@keyframes altair-corridor-drift {
+  from { transform: scale(1); }
+  to { transform: scale(1.07); }
+}
+
+/* Slow breathing, well under 1 Hz and only in brightness of a small lamp. */
+@keyframes altair-lamp {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+
+.altair-light .altair-corridor {
+  background: radial-gradient(ellipse at 50% 46%, #f6fcfd 0%, var(--altair-bg) 70%);
+}
+
+.altair-light .altair-corridor__frame {
+  border-color: rgba(8, 124, 134, 0.25);
+}
+
+.altair-light .altair-corridor__frame:nth-child(6) {
+  background: #cfe2e7;
 }
 
 /* ─── Toast Animations ──────────────────────────────────────────── */
@@ -225,44 +517,4 @@
 
 .altair-modal {
   animation: altair-slide-up 0.25s ease-out;
-}
-
-/* ─── Parchment / Paper Texture ────────────────────────────────── */
-
-.altair-parchment,
-.altair-parchment-surface {
-  position: relative;
-  isolation: isolate;
-}
-
-.altair-parchment::after,
-.altair-parchment-surface::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  border-radius: inherit;
-  mix-blend-mode: soft-light;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 200px 200px;
-}
-
-.altair-parchment::after {
-  opacity: 0.08;
-}
-
-.altair-parchment-surface::after {
-  opacity: 0.05;
-}
-
-.altair-light .altair-parchment::after {
-  opacity: 0.06;
-  mix-blend-mode: multiply;
-}
-
-.altair-light .altair-parchment-surface::after {
-  opacity: 0.04;
-  mix-blend-mode: multiply;
 }

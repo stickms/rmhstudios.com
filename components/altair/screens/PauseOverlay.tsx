@@ -28,7 +28,7 @@ export default function PauseOverlay({ onResume, onSettings, onQuit }: PauseOver
   return (
     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center altair-overlay">
       <div className="absolute inset-0 bg-(--altair-hud-scrim)/70" />
-      <div className="altair-parchment-surface absolute inset-0 sm:relative sm:inset-auto z-10 flex flex-col items-center justify-center bg-(--altair-surface) sm:rounded-(--altair-radius-lg) sm:p-8 p-6">
+      <div className="altair-scan-surface absolute inset-0 sm:relative sm:inset-auto z-10 flex flex-col items-center justify-center bg-(--altair-surface) sm:rounded-(--altair-radius-lg) sm:p-8 p-6">
         <div className="text-(--altair-text-dim) text-xs font-mono tracking-[0.4em] uppercase mb-2">
           {t("game-paused", { defaultValue: "Game Paused" })}
         </div>
