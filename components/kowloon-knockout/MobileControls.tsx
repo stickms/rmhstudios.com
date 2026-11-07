@@ -1,115 +1,200 @@
 'use client';
 
-import { useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { LocalInputSource } from '@/lib/kowloon-knockout/game/input';
 import type { PunchType } from '@/lib/kowloon-knockout/game/fighters/types';
+import { clampOrigin, stickVector } from '@/lib/kowloon-knockout/render/hudModel';
+import { hapticsEnabled, vibrate } from '@/lib/shared/platform';
+import './kk-hud.css';
 
-const JOY_R = 56;
+const HAND_KEY = 'kk-hand';
+type Hand = 'right' | 'left';
 
-const PUNCHES: { type: PunchType; label: string; color: string }[] = [
-    { type: 'jab', label: 'J', color: '#33ccff' },
-    { type: 'cross', label: 'K', color: '#33ff99' },
-    { type: 'hook', label: 'L', color: '#ffcc00' },
-    { type: 'uppercut', label: 'U', color: '#ff6633' },
+function readHand(): Hand {
+    try { return window.localStorage.getItem(HAND_KEY) === 'left' ? 'left' : 'right'; } catch { return 'right'; }
+}
+
+function tick(ms: number): void {
+    if (hapticsEnabled()) vibrate(ms);
+}
+
+const PUNCHES: { type: PunchType; cell: string; color: string }[] = [
+    { type: 'jab', cell: 'j', color: '#3de8ff' },
+    { type: 'hook', cell: 'l', color: '#ffd23f' },
+    { type: 'cross', cell: 'k', color: '#ff2d95' },
+    { type: 'uppercut', cell: 'u', color: '#ff7a3d' },
 ];
 
-/** Touch-screen controls: a left thumbstick for planar movement and a right
- *  cluster of punch buttons plus a block pad. Writes into the shared input source. */
+/**
+ * Touch controls: a floating stick (it appears under the thumb) and a clustered action pad.
+ * Every control owns its own pointer with capture, so the stick, a punch and a block can all be
+ * held at once. Writes into the shared LocalInputSource exactly as the old controls did
+ * (setVirtualMove / pressVirtualPunch / setVirtualBlock).
+ */
 export default function MobileControls({ input }: { input: LocalInputSource }) {
-    const joyBase = useRef<HTMLDivElement>(null);
-    const joyId = useRef<number | null>(null);
-    const [knob, setKnob] = useState({ x: 0, y: 0 });
+    const { t } = useTranslation('c-kowloon-knockout');
+    const [hand, setHand] = useState<Hand>('right');
+    useEffect(() => { setHand(readHand()); }, []);
+    const swapHand = () => {
+        const next: Hand = hand === 'right' ? 'left' : 'right';
+        setHand(next);
+        try { window.localStorage.setItem(HAND_KEY, next); } catch { /* private mode: not remembered */ }
+        input.setVirtualMove(0, 0);
+        input.setVirtualBlock(false);
+    };
 
-    const updateJoy = useCallback((clientX: number, clientY: number) => {
-        const el = joyBase.current;
+    // A long press must never open the browser's context menu mid-fight. (A listener, not a JSX
+    // handler: this layer is not interactive itself, only its controls are.)
+    const root = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const el = root.current;
         if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        let dx = clientX - cx;
-        let dy = clientY - cy;
-        const mag = Math.hypot(dx, dy);
-        if (mag > JOY_R) { dx = (dx / mag) * JOY_R; dy = (dy / mag) * JOY_R; }
-        setKnob({ x: dx, y: dy });
-        input.setVirtualMove(dx / JOY_R, dy / JOY_R);
-    }, [input]);
+        const stop = (e: Event) => e.preventDefault();
+        el.addEventListener('contextmenu', stop);
+        return () => el.removeEventListener('contextmenu', stop);
+    }, []);
 
-    const endJoy = useCallback(() => {
-        joyId.current = null;
-        setKnob({ x: 0, y: 0 });
+    // ── Floating stick ──
+    const zone = useRef<HTMLDivElement>(null);
+    const ring = useRef<HTMLDivElement>(null);
+    const stickId = useRef<number | null>(null);
+    const origin = useRef({ x: 0, y: 0 });
+    const radius = useRef(56);
+    const [stick, setStick] = useState<{ active: boolean; ox: number; oy: number; kx: number; ky: number }>({
+        active: false, ox: 0, oy: 0, kx: 0, ky: 0,
+    });
+
+    const stickDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+        if (stickId.current !== null) return;
+        const z = zone.current;
+        if (!z) return;
+        stickId.current = e.pointerId;
+        z.setPointerCapture(e.pointerId);
+        const rect = z.getBoundingClientRect();
+        const ringW = ring.current?.getBoundingClientRect().width ?? 112;
+        radius.current = ringW / 2;
+        const ox = clampOrigin(e.clientX - rect.left, rect.width, radius.current);
+        const oy = clampOrigin(e.clientY - rect.top, rect.height, radius.current);
+        origin.current = { x: rect.left + ox, y: rect.top + oy };
+        const r = stickVector(e.clientX - origin.current.x, e.clientY - origin.current.y, radius.current);
+        setStick({ active: true, ox, oy, kx: r.knobX, ky: r.knobY });
+        input.setVirtualMove(r.moveX, r.moveZ);
+    };
+    const stickMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+        if (stickId.current !== e.pointerId) return;
+        const r = stickVector(e.clientX - origin.current.x, e.clientY - origin.current.y, radius.current);
+        setStick((s) => ({ ...s, kx: r.knobX, ky: r.knobY }));
+        input.setVirtualMove(r.moveX, r.moveZ);
+    };
+    const stickEnd = useCallback((e?: ReactPointerEvent<HTMLDivElement>) => {
+        if (e && stickId.current !== e.pointerId) return;
+        stickId.current = null;
+        setStick({ active: false, ox: 0, oy: 0, kx: 0, ky: 0 });
         input.setVirtualMove(0, 0);
     }, [input]);
 
-    const btn = (extra: React.CSSProperties): React.CSSProperties => ({
-        display: 'grid', placeItems: 'center', borderRadius: '50%',
-        userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none',
-        fontFamily: '"Press Start 2P", monospace', pointerEvents: 'auto',
-        ...extra,
-    });
+    // Leaving the screen (or the controls unmounting) must not leave the fighter walking.
+    useEffect(() => () => { input.setVirtualMove(0, 0); input.setVirtualBlock(false); }, [input]);
+
+    // ── Action pad ──
+    const [down, setDown] = useState<Record<string, boolean>>({});
+    const press = (key: string, on: boolean) => setDown((d) => (d[key] === on ? d : { ...d, [key]: on }));
+
+    const punchDown = (type: PunchType) => (e: ReactPointerEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        press(type, true);
+        input.pressVirtualPunch(type);
+        tick(12);
+    };
+    const punchUp = (type: PunchType) => () => press(type, false);
+
+    const blockDown = (e: ReactPointerEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        press('block', true);
+        input.setVirtualBlock(true);
+        tick(8);
+    };
+    const blockUp = () => { press('block', false); input.setVirtualBlock(false); };
+
+    const labels: Record<PunchType, { short: string; full: string }> = {
+        jab: { short: t('pad-jab', { defaultValue: 'JAB' }), full: t('pad-jab-full', { defaultValue: 'Jab' }) },
+        cross: { short: t('pad-cross', { defaultValue: 'CRS' }), full: t('pad-cross-full', { defaultValue: 'Cross' }) },
+        hook: { short: t('pad-hook', { defaultValue: 'HOK' }), full: t('pad-hook-full', { defaultValue: 'Hook' }) },
+        uppercut: { short: t('pad-uppercut', { defaultValue: 'UPR' }), full: t('pad-uppercut-full', { defaultValue: 'Uppercut' }) },
+    };
 
     return (
-        // `app-hud` supplies the four device insets. A brawl is fought in
-        // landscape, so the thumbstick at `left: 24` and the punch diamond at
-        // `right: 24` are on precisely the two edges a phone puts its sensor
-        // housing and home indicator on — every offset below is now measured
-        // from the first pixel the hardware leaves alone.
-        <div className="app-hud" style={{ pointerEvents: 'none', touchAction: 'none' }} data-jelly-zone="hud" data-jelly-scope="off">
-            {/* Movement thumbstick */}
+        // `app-hud` supplies the four device insets, so the stick and the pad are measured from the
+        // first pixel the hardware leaves alone. The layer never takes a gesture itself.
+        <div
+            className={`app-hud kk-controls${hand === 'left' ? ' kk-controls--lefty' : ''}`}
+            data-jelly-zone="hud"
+            data-jelly-scope="off"
+            ref={root}
+        >
             <div
-                ref={joyBase}
-                onPointerDown={(e) => { joyId.current = e.pointerId; (e.target as HTMLElement).setPointerCapture(e.pointerId); updateJoy(e.clientX, e.clientY); }}
-                onPointerMove={(e) => { if (joyId.current === e.pointerId) updateJoy(e.clientX, e.clientY); }}
-                onPointerUp={endJoy}
-                onPointerCancel={endJoy}
-                style={{
-                    position: 'absolute', left: 24, bottom: 24, width: JOY_R * 2, height: JOY_R * 2,
-                    borderRadius: '50%', border: '2px solid #33ccff60', background: 'radial-gradient(circle, #33ccff18, #0000)',
-                    pointerEvents: 'auto', touchAction: 'none',
-                }}
+                ref={zone}
+                className="kk-stick-zone"
+                onPointerDown={stickDown}
+                onPointerMove={stickMove}
+                onPointerUp={stickEnd}
+                onPointerCancel={stickEnd}
+                onLostPointerCapture={stickEnd}
+                role="group"
+                aria-label={t('pad-stick', { defaultValue: 'Movement stick' })}
             >
-                <div style={{
-                    position: 'absolute', left: '50%', top: '50%',
-                    transform: `translate(calc(-50% + ${knob.x}px), calc(-50% + ${knob.y}px))`,
-                    width: 44, height: 44, borderRadius: '50%',
-                    background: '#33ccffaa', boxShadow: '0 0 12px #33ccff',
-                }} />
-            </div>
-
-            {/* Block pad */}
-            <div
-                onPointerDown={(e) => { e.preventDefault(); input.setVirtualBlock(true); }}
-                onPointerUp={() => input.setVirtualBlock(false)}
-                onPointerLeave={() => input.setVirtualBlock(false)}
-                onPointerCancel={() => input.setVirtualBlock(false)}
-                style={btn({
-                    position: 'absolute', right: 168, bottom: 30, width: 58, height: 58,
-                    border: '2px solid #cc33ff', background: '#cc33ff22', color: '#cc33ff', fontSize: 9,
-                })}
-            >
-                BLK
-            </div>
-
-            {/* Punch buttons in a diamond */}
-            {PUNCHES.map((p, i) => {
-                const layout = [
-                    { right: 84, bottom: 96 }, // jab (top)
-                    { right: 24, bottom: 60 }, // cross (right)
-                    { right: 144, bottom: 60 }, // hook (left)
-                    { right: 84, bottom: 24 }, // uppercut (bottom)
-                ][i];
-                return (
+                <div
+                    ref={ring}
+                    className={`kk-stick${stick.active ? ' is-active' : ''}`}
+                    style={stick.active ? ({ '--ox': `${stick.ox}px`, '--oy': `${stick.oy}px` } as CSSProperties) : undefined}
+                >
                     <div
+                        className="kk-stick__knob"
+                        style={{ transform: `translate(calc(-50% + ${stick.kx}px), calc(-50% + ${stick.ky}px))` }}
+                    />
+                </div>
+            </div>
+
+            <div className="kk-pad">
+                <button
+                    type="button"
+                    className="kk-swap"
+                    onClick={swapHand}
+                    aria-label={t('pad-swap', { defaultValue: 'Swap control sides' })}
+                >
+                    ⇄
+                </button>
+                {PUNCHES.map((p) => (
+                    <button
                         key={p.type}
-                        onPointerDown={(e) => { e.preventDefault(); input.pressVirtualPunch(p.type); }}
-                        style={btn({
-                            position: 'absolute', ...layout, width: 56, height: 56,
-                            border: `2px solid ${p.color}`, background: `${p.color}22`, color: p.color, fontSize: 14,
-                        })}
+                        type="button"
+                        className={`kk-btn kk-btn--${p.cell}${down[p.type] ? ' is-down' : ''}`}
+                        style={{ '--c': p.color } as CSSProperties}
+                        aria-label={labels[p.type].full}
+                        onPointerDown={punchDown(p.type)}
+                        onPointerUp={punchUp(p.type)}
+                        onPointerCancel={punchUp(p.type)}
+                        onLostPointerCapture={punchUp(p.type)}
                     >
-                        {p.label}
-                    </div>
-                );
-            })}
+                        {labels[p.type].short}
+                    </button>
+                ))}
+                <button
+                    type="button"
+                    className={`kk-btn kk-btn--b${down.block ? ' is-down' : ''}`}
+                    style={{ '--c': '#a66bff' } as CSSProperties}
+                    aria-label={t('pad-block-full', { defaultValue: 'Block (hold)' })}
+                    onPointerDown={blockDown}
+                    onPointerUp={blockUp}
+                    onPointerCancel={blockUp}
+                    onLostPointerCapture={blockUp}
+                >
+                    {t('pad-block', { defaultValue: 'BLK' })}
+                </button>
+            </div>
         </div>
     );
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import type { RefObject } from 'react';
+import type { CSSProperties, RefObject } from 'react';
+import '../kk-hud.css';
 import { Html } from '@react-three/drei';
 import type * as THREE from 'three';
 
@@ -19,7 +20,7 @@ export default function FighterTrappings({
         <>
             {showNameplate && (
                 <Html position={[0, 2.5, 0]} center distanceFactor={9} occlude={false} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
-                    <div className="kk-nameplate" style={{ color: plateColor }}>
+                    <div className="kk-nameplate" style={{ color: plateColor, '--plate': plateColor } as CSSProperties}>
                         <div className="kk-nameplate-tag">{plateLabel}</div>
                         <div className="kk-nameplate-tri">▼</div>
                     </div>
