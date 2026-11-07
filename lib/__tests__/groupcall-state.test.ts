@@ -644,9 +644,17 @@ describe('glare — who offers to whom', () => {
 describe('who may be rung into a group call', () => {
   const MATRIX = CALL_PRIVACY_VALUES.flatMap((privacy) =>
     [true, false].flatMap((blocked) =>
-      [true, false].map((calleeFollowsCaller) => ({ privacy, blocked, calleeFollowsCaller })),
+      [true, false].flatMap((calleeFollowsCaller) =>
+        [true, false].map((callerFollowsCallee) => ({
+          privacy,
+          blocked,
+          calleeFollowsCaller,
+          callerFollowsCallee,
+        })),
+      ),
     ),
   );
+  const base = { blocked: false, calleeFollowsCaller: false, callerFollowsCallee: false };
 
   it('is exactly the 1:1 rule, never a looser one', () => {
     // THE security property of this feature. A stranger who cannot ring you
@@ -662,32 +670,47 @@ describe('who may be rung into a group call', () => {
   });
 
   it('lets anyone be rung when the setting is everyone', () => {
-    expect(
-      canJoinGroupCall({ privacy: 'everyone', blocked: false, calleeFollowsCaller: false }),
-    ).toEqual({ allowed: true });
+    expect(canJoinGroupCall({ ...base, privacy: 'everyone' })).toEqual({ allowed: true });
   });
 
   it('refuses everyone when the setting is nobody', () => {
     expect(
-      canJoinGroupCall({ privacy: 'nobody', blocked: false, calleeFollowsCaller: true }),
+      canJoinGroupCall({
+        ...base,
+        privacy: 'nobody',
+        calleeFollowsCaller: true,
+        callerFollowsCallee: true,
+      }),
     ).toEqual({ allowed: false, reason: 'privacy' });
   });
 
-  it('requires the INVITEE to follow the STARTER on the default setting', () => {
+  it('requires the INVITEE and the STARTER to follow each other on mutuals', () => {
     expect(
-      canJoinGroupCall({ privacy: 'following', blocked: false, calleeFollowsCaller: true }),
+      canJoinGroupCall({
+        ...base,
+        privacy: 'mutuals',
+        calleeFollowsCaller: true,
+        callerFollowsCallee: true,
+      }),
     ).toEqual({ allowed: true });
     expect(
-      canJoinGroupCall({ privacy: 'following', blocked: false, calleeFollowsCaller: false }),
+      canJoinGroupCall({ ...base, privacy: 'mutuals', calleeFollowsCaller: true }),
+    ).toEqual({ allowed: false, reason: 'privacy' });
+    expect(
+      canJoinGroupCall({ ...base, privacy: 'mutuals', callerFollowsCallee: true }),
     ).toEqual({ allowed: false, reason: 'privacy' });
   });
 
   it('lets a block beat every privacy setting', () => {
     for (const privacy of CALL_PRIVACY_VALUES) {
-      expect(canJoinGroupCall({ privacy, blocked: true, calleeFollowsCaller: true })).toEqual({
-        allowed: false,
-        reason: 'blocked',
-      });
+      expect(
+        canJoinGroupCall({
+          privacy,
+          blocked: true,
+          calleeFollowsCaller: true,
+          callerFollowsCallee: true,
+        }),
+      ).toEqual({ allowed: false, reason: 'blocked' });
     }
   });
 });

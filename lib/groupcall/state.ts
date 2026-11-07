@@ -503,6 +503,8 @@ export function canJoinGroupCall(args: {
   blocked: boolean;
   /** Does the INVITEE follow the STARTER? */
   calleeFollowsCaller: boolean;
+  /** Does the STARTER follow the INVITEE? */
+  callerFollowsCallee: boolean;
 }): { allowed: true } | { allowed: false; reason: 'blocked' | 'privacy' } {
   return canCall(args);
 }

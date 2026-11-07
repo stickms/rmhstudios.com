@@ -8,6 +8,7 @@ import {
   durationSeconds,
   formatDuration,
   canCall,
+  DEFAULT_CALL_PRIVACY,
   isCallPrivacy,
   CALL_PRIVACY_VALUES,
   type CallState,
@@ -221,42 +222,57 @@ describe('duration', () => {
 });
 
 describe('who may call whom', () => {
+  const base = { blocked: false, calleeFollowsCaller: false, callerFollowsCallee: false };
+
   it('lets anyone call when the setting is everyone', () => {
-    expect(canCall({ privacy: 'everyone', blocked: false, calleeFollowsCaller: false })).toEqual({
-      allowed: true,
-    });
+    expect(canCall({ ...base, privacy: 'everyone' })).toEqual({ allowed: true });
   });
 
   it('refuses everyone when the setting is nobody', () => {
-    expect(canCall({ privacy: 'nobody', blocked: false, calleeFollowsCaller: true })).toEqual({
-      allowed: false,
-      reason: 'privacy',
-    });
+    expect(
+      canCall({
+        ...base,
+        privacy: 'nobody',
+        calleeFollowsCaller: true,
+        callerFollowsCallee: true,
+      }),
+    ).toEqual({ allowed: false, reason: 'privacy' });
   });
 
-  it('requires the CALLEE to follow the CALLER on the default setting', () => {
-    // The direction matters: permission is granted by the person being called.
-    expect(canCall({ privacy: 'following', blocked: false, calleeFollowsCaller: true })).toEqual({
-      allowed: true,
-    });
-    expect(canCall({ privacy: 'following', blocked: false, calleeFollowsCaller: false })).toEqual({
-      allowed: false,
-      reason: 'privacy',
-    });
+  it('requires BOTH people to follow each other on mutuals', () => {
+    expect(
+      canCall({ ...base, privacy: 'mutuals', calleeFollowsCaller: true, callerFollowsCallee: true }),
+    ).toEqual({ allowed: true });
+    // One direction is not a mutual, whichever direction it is.
+    for (const half of [
+      { calleeFollowsCaller: true, callerFollowsCallee: false },
+      { calleeFollowsCaller: false, callerFollowsCallee: true },
+      { calleeFollowsCaller: false, callerFollowsCallee: false },
+    ]) {
+      expect(canCall({ ...base, privacy: 'mutuals', ...half })).toEqual({
+        allowed: false,
+        reason: 'privacy',
+      });
+    }
+  });
+
+  it('defaults to mutuals', () => {
+    expect(DEFAULT_CALL_PRIVACY).toBe('mutuals');
   });
 
   it('lets a block beat every privacy setting', () => {
     for (const privacy of CALL_PRIVACY_VALUES) {
-      expect(canCall({ privacy, blocked: true, calleeFollowsCaller: true })).toEqual({
-        allowed: false,
-        reason: 'blocked',
-      });
+      expect(
+        canCall({ privacy, blocked: true, calleeFollowsCaller: true, callerFollowsCallee: true }),
+      ).toEqual({ allowed: false, reason: 'blocked' });
     }
   });
 
   it('validates the privacy value', () => {
     expect(isCallPrivacy('everyone')).toBe(true);
-    for (const bad of ['EVERYONE', '', null, undefined, 1, 'friends']) {
+    expect(isCallPrivacy('mutuals')).toBe(true);
+    // 'following' was retired; stale values must not be accepted as a setting.
+    for (const bad of ['EVERYONE', '', null, undefined, 1, 'friends', 'following']) {
       expect(isCallPrivacy(bad)).toBe(false);
     }
   });

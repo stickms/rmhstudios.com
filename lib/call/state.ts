@@ -213,9 +213,12 @@ export function formatDuration(totalSeconds: number): string {
 /* Who may call whom                                                          */
 /* -------------------------------------------------------------------------- */
 
-export type CallPrivacy = 'everyone' | 'following' | 'nobody';
+export type CallPrivacy = 'everyone' | 'mutuals' | 'nobody';
 
-export const CALL_PRIVACY_VALUES: readonly CallPrivacy[] = ['everyone', 'following', 'nobody'];
+export const CALL_PRIVACY_VALUES: readonly CallPrivacy[] = ['everyone', 'mutuals', 'nobody'];
+
+/** What a person who never chose gets. Mutuals: the feature is safe to leave on. */
+export const DEFAULT_CALL_PRIVACY: CallPrivacy = 'mutuals';
 
 export function isCallPrivacy(v: unknown): v is CallPrivacy {
   return typeof v === 'string' && (CALL_PRIVACY_VALUES as readonly string[]).includes(v);
@@ -226,9 +229,11 @@ export function isCallPrivacy(v: unknown): v is CallPrivacy {
  *
  * Ordering matters and is deliberate: a block wins over everything, including
  * an `everyone` setting, because a blocked user must not be able to make a
- * stranger's phone ring. `following` means *the callee follows the caller* —
- * not the other way round — so the permission is granted by the person being
- * called, which is the only direction that is safe.
+ * stranger's phone ring. `mutuals` means the two follow EACH OTHER. The callee's
+ * half is the permission they grant; the caller's half is what makes it a
+ * mutual rather than a fan ringing a celebrity who happens to follow back one
+ * account in a hundred. Both are read from the follow table by the server,
+ * never claimed by the caller.
  */
 export function canCall(args: {
   privacy: CallPrivacy;
@@ -236,10 +241,12 @@ export function canCall(args: {
   blocked: boolean;
   /** Does the CALLEE follow the CALLER? */
   calleeFollowsCaller: boolean;
+  /** Does the CALLER follow the CALLEE? */
+  callerFollowsCallee: boolean;
 }): { allowed: true } | { allowed: false; reason: 'blocked' | 'privacy' } {
   if (args.blocked) return { allowed: false, reason: 'blocked' };
   if (args.privacy === 'nobody') return { allowed: false, reason: 'privacy' };
-  if (args.privacy === 'following' && !args.calleeFollowsCaller) {
+  if (args.privacy === 'mutuals' && !(args.calleeFollowsCaller && args.callerFollowsCallee)) {
     return { allowed: false, reason: 'privacy' };
   }
   return { allowed: true };

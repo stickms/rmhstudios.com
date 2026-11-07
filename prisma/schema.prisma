@@ -653,10 +653,10 @@ model NotificationPreference {
   quietEnd   Int?
   tz         String? @db.VarChar(40)
 
-  /// Who may start a voice call with this user: 'everyone' | 'following'
-  /// (people this user follows) | 'nobody'. Enforced server-side in the call
+  /// Who may start a voice call with this user: 'everyone' | 'mutuals'
+  /// (people who follow each other) | 'nobody'. Enforced server-side in the call
   /// signaling handler, never by the caller's client.
-  callPrivacy String @default("following") @db.VarChar(10)
+  callPrivacy String @default("mutuals") @db.VarChar(10)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
