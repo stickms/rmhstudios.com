@@ -1072,7 +1072,9 @@
 
 .kowloon-knockout .kk-training-panel {
   position: absolute;
-  top: 12px;
+  /* Below the in-fight HUD bar (kk-hud.css): the two fighters' panels sit above it. */
+  --kk-panel-top: calc(var(--kk-hud-top, 60px) + clamp(52px, 9vh, 68px));
+  top: var(--kk-panel-top);
   right: 12px;
   z-index: 30;
   box-sizing: border-box;
@@ -1080,7 +1082,7 @@
   flex-direction: column;
   gap: 8px;
   width: min(280px, calc(100% - 24px));
-  max-height: calc(100% - 24px);
+  max-height: calc(100% - var(--kk-panel-top) - 12px);
   padding: 10px 12px;
   border: 2px solid var(--kk-cyan);
   border-radius: 4px;
