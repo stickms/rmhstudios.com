@@ -93,7 +93,7 @@ import {
   persistedStatus,
   shouldOffer,
 } from '../../../lib/groupcall/state';
-import { isCallPrivacy, type CallPrivacy } from '../../../lib/call/state';
+import { isCallPrivacy, DEFAULT_CALL_PRIVACY, type CallPrivacy } from '../../../lib/call/state';
 import { userChipSelect } from '../../../lib/user-display';
 import { PEER_GRACE_MS } from '../../../lib/shared/realtime/types';
 
@@ -722,6 +722,7 @@ async function screenInvitees(
   let pairBlocks: Array<{ blockerId: string; blockedId: string }>;
   let prefs: Array<{ userId: string; callPrivacy: string }>;
   let follows: Array<{ followerId: string }>;
+  let followedBy: Array<{ followingId: string }>;
   let users: Array<{ id: string; name: string | null; image: string | null; handle: string | null }>;
   let inviterIsAdmin = false;
   try {
@@ -730,7 +731,7 @@ async function screenInvitees(
     // the room bars the ring just as one with the inviter does.
     const others = [...new Set([...roomIds, ...inviteeIds])].filter((id) => id !== inviterId);
     let inviter: { isAdmin: boolean } | null;
-    [blocks, pairBlocks, prefs, follows, users, inviter] = await Promise.all([
+    [blocks, pairBlocks, prefs, follows, followedBy, users, inviter] = await Promise.all([
       prisma.userBlock.findMany({
         // Either direction bars the ring.
         where: {
@@ -757,6 +758,11 @@ async function screenInvitees(
       prisma.follow.findMany({
         where: { followerId: { in: inviteeIds }, followingId: inviterId },
         select: { followerId: true },
+      }),
+      // The reverse half, for `mutuals`: which invitees does the inviter follow?
+      prisma.follow.findMany({
+        where: { followerId: inviterId, followingId: { in: inviteeIds } },
+        select: { followingId: true },
       }),
       prisma.user.findMany({
         where: { id: { in: inviteeIds } },
@@ -793,6 +799,7 @@ async function screenInvitees(
     if (isCallPrivacy(p.callPrivacy)) privacyBy.set(p.userId, p.callPrivacy);
   }
   const followsInviter = new Set(follows.map((f) => f.followerId));
+  const followedByInviter = new Set(followedBy.map((f) => f.followingId));
   const userById = new Map(users.map((u) => [u.id, u]));
 
   // Presence, once per invitee. `fetchSockets` is the adapter-aware way to ask
@@ -820,9 +827,10 @@ async function screenInvitees(
       continue;
     }
     const verdict = canJoinGroupCall({
-      privacy: privacyBy.get(id) ?? 'following',
+      privacy: privacyBy.get(id) ?? DEFAULT_CALL_PRIVACY,
       blocked: blocked.has(id),
       calleeFollowsCaller: followsInviter.has(id),
+      callerFollowsCallee: followedByInviter.has(id),
     });
     // Admins may ring anybody: their own block/privacy/follow screen is skipped.
     if (!verdict.allowed && !inviterIsAdmin) {

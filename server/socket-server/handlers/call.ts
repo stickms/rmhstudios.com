@@ -23,7 +23,13 @@ import { checkRateLimit } from '../rate-limit';
 import { claimBusy, getBusy, releaseBusy } from '../busy-registry';
 import { CALL_C2S, CALL_S2C, RING_TIMEOUT_MS, MAX_SDP_BYTES, MAX_ICE_BYTES } from '../../../lib/call/events';
 import type { CallEndReason, CallRejectReason } from '../../../lib/call/events';
-import { canCall, persistedStatus, isCallPrivacy, type CallPrivacy } from '../../../lib/call/state';
+import {
+  canCall,
+  persistedStatus,
+  isCallPrivacy,
+  DEFAULT_CALL_PRIVACY,
+  type CallPrivacy,
+} from '../../../lib/call/state';
 
 /** A call in flight, keyed by callId. Ephemeral by design — a restart drops
  *  live calls, and the peers notice through ICE rather than through us. */
@@ -108,7 +114,7 @@ async function loadCallPermission(
 ): Promise<{ allowed: true } | { allowed: false; reason: CallRejectReason }> {
   const prisma = getPrismaClient();
 
-  const [block, prefs, follow, caller] = await Promise.all([
+  const [block, prefs, calleeFollow, callerFollow, caller] = await Promise.all([
     // Either direction bars the call.
     prisma.userBlock.findFirst({
       where: {
@@ -129,18 +135,24 @@ async function loadCallPermission(
       where: { followerId: calleeId, followingId: callerId },
       select: { followerId: true },
     }),
+    // And the reverse: `mutuals` needs both halves.
+    prisma.follow.findFirst({
+      where: { followerId: callerId, followingId: calleeId },
+      select: { followerId: true },
+    }),
     // Admins may call anybody: no block, privacy or follow requirement applies.
     prisma.user.findUnique({ where: { id: callerId }, select: { isAdmin: true } }),
   ]);
   if (caller?.isAdmin) return { allowed: true };
 
   const raw = prefs?.callPrivacy;
-  const privacy: CallPrivacy = isCallPrivacy(raw) ? raw : 'following';
+  const privacy: CallPrivacy = isCallPrivacy(raw) ? raw : DEFAULT_CALL_PRIVACY;
 
   const verdict = canCall({
     privacy,
     blocked: Boolean(block),
-    calleeFollowsCaller: Boolean(follow),
+    calleeFollowsCaller: Boolean(calleeFollow),
+    callerFollowsCallee: Boolean(callerFollow),
   });
   return verdict.allowed ? { allowed: true } : { allowed: false, reason: verdict.reason };
 }

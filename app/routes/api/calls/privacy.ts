@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateNotificationPrefs } from '@/lib/notifications.server';
-import { CALL_PRIVACY_VALUES, isCallPrivacy } from '@/lib/call/state';
+import { CALL_PRIVACY_VALUES, DEFAULT_CALL_PRIVACY, isCallPrivacy } from '@/lib/call/state';
 
 export const Route = createFileRoute('/api/calls/privacy')({
   server: {
@@ -20,7 +20,7 @@ export const Route = createFileRoute('/api/calls/privacy')({
           select: { callPrivacy: true },
         });
         const value = prefs?.callPrivacy;
-        return Response.json({ callPrivacy: isCallPrivacy(value) ? value : 'following' });
+        return Response.json({ callPrivacy: isCallPrivacy(value) ? value : DEFAULT_CALL_PRIVACY });
       }),
       PUT: defineHandler(
         {
