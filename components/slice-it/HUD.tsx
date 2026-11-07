@@ -142,92 +142,106 @@ export function HUD({ engine }: HUDProps) {
   const healthRatio = Math.max(0, Math.min(1, sample.health / HEALTH_MAX));
 
   return (
-    <div className="absolute top-0 left-0 right-0 pointer-events-none z-40 p-2 sm:p-4 flex flex-col gap-2 font-outfit" data-jelly-zone="hud">
-      {/* Score + Speed row */}
-      <div className="flex justify-between items-start relative px-1">
-        <div className="flex flex-col gap-2 items-start">
-          {/* The grade rides with the score rather than with the accuracy.
-              It is the headline the player glances at, so it belongs on the
-              raised card beside the number it summarises — and moving it up
-              here is what lets the accuracy row below collapse to a single
-              line, which is a line of height the progress bar was being pushed
-              down by. */}
-          <div className="slice-hud-card px-3 py-1.5">
-            <div className="slice-label mb-1">
-              {t('score-hud', { defaultValue: 'Score' })}
+    <div
+      className="absolute top-0 left-0 right-0 pointer-events-none z-40 px-3 pt-2 sm:px-6 sm:pt-3 flex flex-col gap-2"
+      data-jelly-zone="hud"
+    >
+      {/* Song progress: the groove, with a needle where the record is. A normal
+          child of the HUD column, not `absolute bottom-0 translate-y-full`:
+          hanging it below a box whose height grows with the score stack meant
+          every extra line up there pushed the bar further down until it landed
+          on the first lane and clipped the notes. */}
+      {duration > 0 && (
+        <div className="pointer-events-none pr-11 sm:pr-12">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="slice-label w-10 text-right shrink-0">{fmt(elapsed)}</span>
+            <div className="slice-hud-groove">
+              {/* H5 — section boundaries. Skipped at `start <= 0`: the first
+                  section always begins at the groove's own left edge. */}
+              {sections
+                .filter((s) => s.start > 0)
+                .map((s) => (
+                  <span
+                    key={s.start}
+                    className="slice-hud-groove__tick"
+                    style={{ left: `${Math.min(100, (s.start / duration) * 100)}%` }}
+                  />
+                ))}
+              <div className="slice-hud-groove__fill" style={{ width: `${progress * 100}%` }} />
+              <div className="slice-hud-groove__needle" style={{ left: `${progress * 100}%` }} />
             </div>
-            <div className="flex items-baseline gap-2.5">
-              <span className="slice-figure text-xl sm:text-2xl font-medium text-slice-text leading-tight">
-                {score.toLocaleString()}
-              </span>
-              {engine && (
-                <span className="slice-display text-lg sm:text-xl text-slice-primary soft-glow-text leading-tight">
-                  {grade}
-                </span>
-              )}
+            <span className="slice-label w-10 shrink-0">{fmt(duration)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Score + Speed row */}
+      <div className="flex justify-between items-start relative">
+        <div className="flex flex-col gap-1.5 items-start">
+          <div>
+            <div className="slice-label">{t('score-hud', { defaultValue: 'Score' })}</div>
+            <div className="mt-1 flex items-center gap-3 sm:gap-5">
+              <span className="slice-hud-score">{score.toLocaleString()}</span>
+              {/* The grade rides with the score: it is the headline the player
+                  glances at, stamped beside the number it summarises. */}
+              {engine && <span className="slice-hud-stamp">{grade}</span>}
             </div>
           </div>
 
-          {/* Live accuracy and what it costs to keep the next grade.
-              One row from `sm` up and wrapping to two below it, so a 320px
-              phone never has to choose between the number and the hint. */}
+          {/* Live accuracy and what it costs to keep the next grade. Wraps below
+              `sm` so a 320px phone never has to choose between the number and
+              the hint. */}
           {engine && (
-            <div className="slice-hud-card px-3 py-1.5 min-w-28 max-w-[60vw]">
-              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <span className="slice-figure text-sm sm:text-base font-medium text-slice-text">
-                  {(sample.accuracy * 100).toFixed(2)}%
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 max-w-[60vw]">
+              <span className="slice-figure text-[13px] text-slice-text">
+                {(sample.accuracy * 100).toFixed(2)}%
+              </span>
+              {next && missesLeft !== null && (
+                <span className="slice-label normal-case tracking-normal">
+                  {ts('misses-for-grade', {
+                    defaultValue: '{{n}} misses left for {{grade}}',
+                    n: missesLeft,
+                    grade: next.grade,
+                  })}
                 </span>
-                {next && missesLeft !== null && (
-                  <span className="text-[9px] sm:text-[10px] text-slice-text-light font-bold uppercase tracking-wider leading-tight">
-                    {ts('misses-for-grade', {
-                      defaultValue: '{{n}} misses left for {{grade}}',
-                      n: missesLeft,
-                      grade: next.grade,
-                    })}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Speed row — shifted left to avoid settings gear overlap */}
-        <div className="slice-hud-card px-3 py-1.5 text-right mr-10 sm:mr-12">
-          <div className="slice-label mb-1">
-            {t('speed', { defaultValue: 'Speed' })}
-          </div>
-          <div className="slice-figure text-xl sm:text-2xl font-medium text-slice-text leading-tight">
-            {modifiers.speed.toFixed(1)}x
+        {/* Speed — shifted left to avoid the settings gear */}
+        <div className="text-right mr-10 sm:mr-12">
+          <div className="slice-label">{t('speed', { defaultValue: 'Speed' })}</div>
+          <div className="slice-figure mt-1 text-xl sm:text-3xl font-medium text-slice-text leading-none">
+            {modifiers.speed.toFixed(1)}×
           </div>
         </div>
 
-        {/* Combo — H9 puts it where the player asked. `hidden` is a real
-            choice, not an accident: at speed the counter sits directly over the
-            approach lane, and some players would rather read the notes. */}
+        {/* Combo — H9 puts it where the player asked. `hidden` is a real choice,
+            not an accident: at speed the counter sits directly over the approach
+            lane, and some players would rather read the notes. */}
         {combo > 5 && comboPosition !== 'hidden' && (
-          <div
-            key={combo}
-            className={`absolute top-1 sm:top-2 ${COMBO_ANCHOR[comboPosition]}`}
-            style={{ animation: 'combo-bounce 0.15s ease-out' }}
-          >
-            <span className="slice-display text-3xl sm:text-5xl text-slice-text soft-glow-text">
-              {combo}x
-            </span>
+          <div className={`absolute top-0 sm:top-1 text-center ${COMBO_ANCHOR[comboPosition]}`}>
+            <div className="slice-hud-combo">
+              <span>×</span>
+              {combo}
+            </div>
+            <div className="slice-label mt-0.5 hidden sm:block">
+              {t('combo-label', { defaultValue: 'Combo' })}
+            </div>
           </div>
         )}
 
         {/* Full-combo / all-marvellous lamp. Tracks the combo counter's own
-            anchor so the two still read as one column wherever it has been
-            moved to, and disappears the instant it stops being true — which is
-            the feedback. */}
+            anchor so the two still read as one column wherever it has been moved
+            to, and disappears the instant it stops being true — which is the
+            feedback. */}
         {showChain && (
           <div
-            className={`absolute top-12 sm:top-16 flex flex-col items-center ${COMBO_ANCHOR[comboPosition]}`}
+            className={`absolute top-16 sm:top-[8.5rem] flex flex-col items-center ${COMBO_ANCHOR[comboPosition]}`}
           >
             <span
-              className={`text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] ${
-                sample.isPerfect ? 'text-slice-primary' : 'text-slice-text-muted'
-              }`}
+              className={`slice-label ${sample.isPerfect ? 'text-slice-primary' : 'text-slice-text-muted'}`}
             >
               {sample.isPerfect
                 ? ts('lamp-perfect', { defaultValue: 'Perfect' })
@@ -238,72 +252,28 @@ export function HUD({ engine }: HUDProps) {
       </div>
 
       {/* Health gauge — only when the run opted into it. An always-present bar
-          pinned at 100% would be chrome that means nothing; here its presence
-          IS the signal that this run can end early. */}
+          pinned at 100% would be chrome that means nothing; here its presence IS
+          the signal that this run can end early. */}
       {modifiers.healthGauge && (
-        <div className="px-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-slice-text-light shrink-0">
-              {sample.gaugeBroken
-                ? ts('gauge-broken', { defaultValue: 'Gauge broken' })
-                : ts('gauge', { defaultValue: 'Gauge' })}
-            </span>
-            <div className="flex-1 h-1.5 bg-slice-input-bg border border-slice-input-border rounded-full overflow-hidden">
-              <div
-                className={`h-full origin-left rounded-full transition-transform duration-150 ${
-                  sample.gaugeBroken
-                    ? 'bg-slice-text-light'
-                    : healthRatio < 0.25
-                      ? 'bg-slice-danger'
-                      : healthRatio < 0.5
-                        ? 'bg-amber-400'
-                        : 'bg-slice-primary'
-                }`}
-                // `scaleX` rather than `width`: a bar that moves every judgement
-                // is a bar that would reflow the HUD every judgement.
-                style={{ width: '100%', transform: `scaleX(${healthRatio})` }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Song progress bar.
-          A normal child of the HUD column, not `absolute bottom-0
-          translate-y-full`. Hanging it a full bar-height BELOW a box whose
-          height grows with the score stack meant every extra line up there —
-          the accuracy card, the misses hint, the health gauge — pushed the bar
-          further down, and at full height it landed on top of the first lane
-          and clipped the notes travelling along it. Inline, it sits inside the
-          HUD's own padding and the lane below stays clear. */}
-      {duration > 0 && (
-        <div className="px-1 pointer-events-none">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span className="slice-figure text-xs text-slice-text-muted w-10 text-right shrink-0">
-              {fmt(elapsed)}
-            </span>
-            <div className="relative flex-1 h-1.5 bg-slice-input-bg border border-slice-input-border rounded-full overflow-hidden">
-              {/* H5 — section boundaries. Skipped at `start <= 0`: the first
-                  section always begins at the bar's own left edge, where a
-                  tick would just double the bar's rounded corner. */}
-              {duration > 0 &&
-                sections
-                  .filter((s) => s.start > 0)
-                  .map((s) => (
-                    <span
-                      key={s.start}
-                      className="absolute top-0 h-full w-px bg-slice-text-muted/50"
-                      style={{ left: `${Math.min(100, (s.start / duration) * 100)}%` }}
-                    />
-                  ))}
-              <div
-                className="h-full bg-linear-to-r from-slice-primary to-slice-accent rounded-full transition-none"
-                style={{ width: `${progress * 100}%` }}
-              />
-            </div>
-            <span className="slice-figure text-xs text-slice-text-muted w-10 shrink-0">
-              {fmt(duration)}
-            </span>
+        <div className="flex items-center gap-2">
+          <span className="slice-label shrink-0">
+            {sample.gaugeBroken
+              ? ts('gauge-broken', { defaultValue: 'Gauge broken' })
+              : ts('gauge', { defaultValue: 'Gauge' })}
+          </span>
+          <div className="slice-hud-groove">
+            <div
+              className={`h-full origin-left transition-transform duration-150 ${
+                sample.gaugeBroken
+                  ? 'bg-slice-text-light'
+                  : healthRatio < 0.5
+                    ? 'bg-slice-accent'
+                    : 'bg-slice-primary'
+              }`}
+              // `scaleX` rather than `width`: a bar that moves every judgement is
+              // a bar that would reflow the HUD every judgement.
+              style={{ width: '100%', transform: `scaleX(${healthRatio})` }}
+            />
           </div>
         </div>
       )}
