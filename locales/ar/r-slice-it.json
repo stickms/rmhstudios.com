@@ -647,5 +647,7 @@
   "visibility-mode-flashlight": "Flashlight",
   "visibility-mode-hint": "Which way the Invisible modifier hides notes. Lane Cover is tuned live from the in-run pause menu, where the reaction window is shown in milliseconds.",
   "visibility-mode-label": "Effect",
-  "visibility-mode-lanecover": "Lane Cover"
+  "visibility-mode-lanecover": "Lane Cover",
+  "skin-record": "Record",
+  "note-skin-hint-record": "Record draws each tap as a 45 with a stem and a flag per subdivision, so the rhythm reads from the shape and not only from the colour. Every skin keeps the same hit target."
 }

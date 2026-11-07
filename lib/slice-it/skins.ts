@@ -24,7 +24,7 @@ import { LANE_PALETTES, type LanePalette, contrastRatio } from './palettes';
  * subdivision used to be carried by hue alone, which is the thing `palettes.ts`
  * exists to stop being the only channel.
  */
-export type NoteShape = 'notation' | 'pill' | 'circle' | 'bar' | 'arrow';
+export type NoteShape = 'disc' | 'notation' | 'pill' | 'circle' | 'bar' | 'arrow';
 
 export interface Skin {
   id: string;
@@ -49,18 +49,43 @@ export interface Skin {
    * this and a silently-flat skin would just look like the glow tier failing.
    */
   neumorphic: boolean;
+  /**
+   * The printed playfield ("Pressing"): lanes are line-screened grooves, the
+   * receptor is a plain paper ring with a tick, a struck disc is cut in two along
+   * the slice, a bomb is a paper star and a judgement is a crooked stamp. No glow,
+   * no rail, no energy treatment. Layout and hit targets are the same as every
+   * other skin; this only changes how the field is drawn.
+   */
+  groove: boolean;
   /** How this skin is obtained. `null` means everyone has it. */
   unlock: null | { kind: 'achievement' | 'coins' | 'pass'; ref: string };
 }
 
 export const SKINS: Record<string, Skin> = {
+  /**
+   * The record: each tap is a 45 — a groove-ringed disc with a paper label — and
+   * keeps the notation's stem and a flag per subdivision, so the rhythm still
+   * reads from the shape. A struck disc is cut in two on the slice (no particles).
+   */
   default: {
     id: 'default',
+    palette: 'default',
+    noteShape: 'disc',
+    judgementLine: 'solid',
+    hitBurst: 'none',
+    neumorphic: false,
+    groove: true,
+    unlock: null,
+  },
+  /** The engraved notehead the game shipped with before the record. */
+  notation: {
+    id: 'notation',
     palette: 'default',
     noteShape: 'notation',
     judgementLine: 'inset',
     hitBurst: 'particles',
     neumorphic: true,
+    groove: false,
     unlock: null,
   },
   /** The soft key the notation shape replaced, for anyone who preferred it. */
@@ -71,6 +96,7 @@ export const SKINS: Record<string, Skin> = {
     judgementLine: 'inset',
     hitBurst: 'particles',
     neumorphic: true,
+    groove: false,
     unlock: null,
   },
   orbs: {
@@ -80,6 +106,7 @@ export const SKINS: Record<string, Skin> = {
     judgementLine: 'glow',
     hitBurst: 'ring',
     neumorphic: true,
+    groove: false,
     unlock: null,
   },
   arrows: {
@@ -89,6 +116,7 @@ export const SKINS: Record<string, Skin> = {
     judgementLine: 'inset',
     hitBurst: 'particles',
     neumorphic: true,
+    groove: false,
     unlock: null,
   },
   minimal: {
@@ -98,6 +126,7 @@ export const SKINS: Record<string, Skin> = {
     judgementLine: 'solid',
     hitBurst: 'none',
     neumorphic: false,
+    groove: false,
     unlock: null,
   },
   neon: {
@@ -107,6 +136,7 @@ export const SKINS: Record<string, Skin> = {
     judgementLine: 'glow',
     hitBurst: 'ring',
     neumorphic: false,
+    groove: false,
     unlock: { kind: 'achievement', ref: 'game.slice_it.full_combo' },
   },
   cover: {
@@ -116,6 +146,7 @@ export const SKINS: Record<string, Skin> = {
     judgementLine: 'glow',
     hitBurst: 'particles',
     neumorphic: true,
+    groove: false,
     unlock: { kind: 'coins', ref: 'slice-skin-cover' },
   },
 };

@@ -350,5 +350,6 @@
   "col-time": "Time",
   "pressings": "Pressings",
   "notes-pct-named": "{{name}}, {{pct}} notes",
-  "plays-short": "plays"
+  "plays-short": "plays",
+  "combo-label": "Combo"
 }

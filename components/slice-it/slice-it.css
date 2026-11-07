@@ -155,10 +155,18 @@
  * (lane grooves, covers, the hero), never behind small text.
  */
 .slice-screen-cyan {
-  background-image: repeating-linear-gradient(-8deg, rgba(45, 179, 240, 0.6) 0 1px, transparent 1px 5px);
+  background-image: repeating-linear-gradient(
+    -8deg,
+    rgba(45, 179, 240, 0.6) 0 1px,
+    transparent 1px 5px
+  );
 }
 .slice-screen-pink {
-  background-image: repeating-linear-gradient(-8deg, rgba(244, 80, 159, 0.6) 0 1px, transparent 1px 5px);
+  background-image: repeating-linear-gradient(
+    -8deg,
+    rgba(244, 80, 159, 0.6) 0 1px,
+    transparent 1px 5px
+  );
 }
 .slice-dots-cyan {
   background-image: radial-gradient(circle, #2db3f0 36%, transparent 40%);
@@ -254,8 +262,10 @@ html.perf-lite .slice-tokens [data-jelly-rest='flat']:not(.slice-btn-primary, .s
 }
 
 /* Dark ink on the cyan and pink fills: paper-white on a spot ink is too weak. */
-.slice-theme :is(.bg-blue-500, .bg-blue-600, .bg-sky-500, .bg-cyan-500, .bg-pink-500, .bg-red-500).text-white,
-.slice-tokens :is(.bg-blue-500, .bg-blue-600, .bg-sky-500, .bg-cyan-500, .bg-pink-500, .bg-red-500).text-white {
+.slice-theme
+  :is(.bg-blue-500, .bg-blue-600, .bg-sky-500, .bg-cyan-500, .bg-pink-500, .bg-red-500).text-white,
+.slice-tokens
+  :is(.bg-blue-500, .bg-blue-600, .bg-sky-500, .bg-cyan-500, .bg-pink-500, .bg-red-500).text-white {
   color: var(--slice-label);
 }
 
@@ -396,13 +406,6 @@ html .slice-theme [data-slot='textarea'] {
   border-radius: 9999px;
 }
 
-/* A readout over the playfield (score, speed, accuracy): label black, a hairline. */
-.slice-hud-card {
-  background: rgba(5, 9, 33, 0.82);
-  border: 1px solid var(--slice-border);
-  border-radius: 0;
-}
-
 /* Selected tool / active tab / the open mode: cyan ink. */
 .neumorphic-active {
   background: var(--slice-primary);
@@ -435,16 +438,6 @@ a.neumorphic-sm:hover,
   text-shadow: 2px 2px 0 var(--slice-accent);
 }
 
-@keyframes combo-bounce {
-  0% {
-    transform: scale(1.25);
-  }
-
-  100% {
-    transform: scale(1);
-  }
-}
-
 /* ─── Shared controls ──────────────────────────────────────────────────────
  *
  * `ui/slider`, `ui/switch` and `LiquidTabs` paint with `--site-*` tokens, which
@@ -454,7 +447,11 @@ a.neumorphic-sm:hover,
  */
 .slice-theme [data-slot='slider-track'] {
   background-color: var(--slice-input-bg);
-  background-image: repeating-linear-gradient(-8deg, rgba(45, 179, 240, 0.6) 0 1px, transparent 1px 5px);
+  background-image: repeating-linear-gradient(
+    -8deg,
+    rgba(45, 179, 240, 0.6) 0 1px,
+    transparent 1px 5px
+  );
   border: 1px solid var(--slice-input-border);
   box-shadow: none;
   border-radius: 0;
@@ -535,4 +532,87 @@ a.neumorphic-sm:hover,
   .slice-skeleton::after {
     animation: none;
   }
+}
+
+/* ─── HUD ───────────────────────────────────────────────────────────────────
+ *
+ * Printed readouts on the field: no cards. The score is a mono figure, the grade a
+ * crooked stamp, the combo display type with a pink hard shadow, and progress a
+ * groove with a needle.
+ */
+.slice-hud-score {
+  font-family: var(--slice-mono);
+  font-weight: 600;
+  font-size: clamp(30px, 4.4vw, 64px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--slice-text);
+}
+
+.slice-hud-stamp {
+  display: inline-block;
+  padding: 0.06em 0.28em 0;
+  border: 3px solid var(--slice-accent);
+  color: var(--slice-accent);
+  box-shadow: 4px 3px 0 var(--slice-primary);
+  transform: rotate(-4deg);
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: clamp(24px, 4vw, 56px);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.slice-hud-combo {
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: clamp(44px, 8vw, 120px);
+  line-height: 0.95;
+  color: var(--slice-paper);
+  text-shadow: 0.04em 0.035em 0 var(--slice-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.slice-hud-combo > span {
+  font-size: 0.47em;
+  vertical-align: top;
+  position: relative;
+  top: 0.22em;
+  margin-right: 0.05em;
+}
+
+.slice-hud-groove {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  background: rgba(240, 241, 246, 0.18);
+}
+
+.slice-hud-groove__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--slice-primary);
+}
+
+.slice-hud-groove__needle {
+  position: absolute;
+  top: -7px;
+  width: 2px;
+  height: 18px;
+  margin-left: -1px;
+  background: var(--slice-paper);
+}
+
+.slice-hud-groove__tick {
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 10px;
+  background: var(--slice-paper);
+  opacity: 0.5;
 }

@@ -212,6 +212,8 @@ function drawNoteStem(
   vertical: boolean,
   /** Distance to the beamed partner's stem, along `along`, or 0 for none. */
   beamLength: number,
+  /** The stem's length in note sizes. Shorter on the record, whose head is bigger. */
+  stemLength = 1.5,
 ): void {
   // perp: the way the stem points. along: the way later notes lie.
   const perpX = vertical ? 1 : 0;
@@ -220,7 +222,7 @@ function drawNoteStem(
   const alongY = vertical ? -1 : 0;
 
   const stemW = Math.max(2, size * 0.11);
-  const stemH = size * 1.5;
+  const stemH = size * stemLength;
   const baseX = cx + alongX * size * 0.5 + perpX * size * 0.2;
   const baseY = cy + alongY * size * 0.5 + perpY * size * 0.2;
   const tipX = baseX + perpX * stemH;
@@ -295,6 +297,291 @@ function drawNoteStem(
   }
 }
 
+/* ─── The printed playfield ("Pressing") ─────────────────────────────────────
+ *
+ * Everything the `groove` skin draws that the older skins do not: line-screened
+ * lanes, 45rpm discs, the paper star, the groove tail, the stamped judgement.
+ * Each shape is built ONCE into an offscreen sprite or pattern and blitted, for the
+ * same reason as the blur layers below — per-frame path work on a busy chart is
+ * what Firefox choked on.
+ */
+
+/** A hard-edged ink on the playfield: the two spot inks and the paper. */
+const PRESS_FALLBACK = { cyan: '#2db3f0', pink: '#f4509f', paper: '#f0f1f6', ink: '#050921' };
+
+/** How long a struck disc takes to fall apart along the slice, ms. */
+const CUT_MS = 240;
+
+const screenTiles = new Map<string, HTMLCanvasElement>();
+let patternCache: { ctx: CanvasRenderingContext2D; map: Map<string, CanvasPattern | null> } | null =
+  null;
+
+/**
+ * One slanted line, as a tile that repeats without a seam.
+ *
+ * 36px across and 5px high, so the line falls 5px over its width — about 8°, the
+ * key art's slice angle — and wraps exactly at the tile edge. The extra lines a
+ * period above and below cover the corners the stroke's end caps would leave bare.
+ */
+function screenTile(
+  color: string,
+  alpha: number,
+  lineWidth: number,
+  dpr: number,
+): HTMLCanvasElement {
+  const key = `${color}|${alpha}|${lineWidth}|${dpr}`;
+  let tile = screenTiles.get(key);
+  if (tile) return tile;
+  tile = document.createElement('canvas');
+  tile.width = Math.round(36 * dpr);
+  tile.height = Math.round(5 * dpr);
+  const c = tile.getContext('2d');
+  if (c) {
+    c.scale(dpr, dpr);
+    c.strokeStyle = color;
+    c.globalAlpha = alpha;
+    c.lineWidth = lineWidth;
+    for (const o of [-5, 0, 5]) {
+      c.beginPath();
+      c.moveTo(0, 5 + o);
+      c.lineTo(36, o);
+      c.stroke();
+    }
+  }
+  if (screenTiles.size >= 24) screenTiles.clear();
+  screenTiles.set(key, tile);
+  return tile;
+}
+
+/** The line screen as a fill style, in the caller's coordinates (CSS px). */
+function screenFill(
+  ctx: CanvasRenderingContext2D,
+  color: string,
+  alpha: number,
+  lineWidth: number,
+  dpr: number,
+): CanvasPattern | null {
+  if (patternCache?.ctx !== ctx) patternCache = { ctx, map: new Map() };
+  const key = `${color}|${alpha}|${lineWidth}|${dpr}`;
+  if (patternCache.map.has(key)) return patternCache.map.get(key) ?? null;
+  const pattern = ctx.createPattern(screenTile(color, alpha, lineWidth, dpr), 'repeat');
+  // The tile is drawn at device resolution; this puts one tile pixel on one device
+  // pixel whatever the current scale is, so the lines stay a crisp 1–2px.
+  pattern?.setTransform(new DOMMatrix().scale(1 / dpr));
+  if (patternCache.map.size >= 24) patternCache.map.clear();
+  patternCache.map.set(key, pattern);
+  return pattern;
+}
+
+/**
+ * A 45: a disc in the lane's ink, ringed with grooves, with a paper label and a
+ * spindle hole. Blitted from a sprite keyed on everything that changes its pixels.
+ */
+function drawDisc(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  color: string,
+  paper: string,
+  ink: string,
+  dpr: number,
+): void {
+  const key = `disc|${size}|${color}|${paper}|${ink}|${dpr}`;
+  let sprite = noteSprites.get(key);
+  if (!sprite) {
+    const side = Math.ceil(size * dpr) + 4;
+    sprite = document.createElement('canvas');
+    sprite.width = side;
+    sprite.height = side;
+    const sctx = sprite.getContext('2d');
+    if (!sctx) return;
+    sctx.scale(dpr, dpr);
+    const c = side / dpr / 2;
+    const r = size / 2;
+    sctx.fillStyle = color;
+    sctx.beginPath();
+    sctx.arc(c, c, r, 0, Math.PI * 2);
+    sctx.fill();
+    // The grooves: a thin dark ring every 4px between the label and the rim.
+    sctx.strokeStyle = 'rgba(5, 9, 33, 0.28)';
+    sctx.lineWidth = 1;
+    for (let gr = r * 0.46; gr < r - 1; gr += 4) {
+      sctx.beginPath();
+      sctx.arc(c, c, gr, 0, Math.PI * 2);
+      sctx.stroke();
+    }
+    sctx.fillStyle = paper;
+    sctx.beginPath();
+    sctx.arc(c, c, r * 0.43, 0, Math.PI * 2);
+    sctx.fill();
+    sctx.fillStyle = ink;
+    sctx.beginPath();
+    sctx.arc(c, c, Math.max(1.5, r * 0.107), 0, Math.PI * 2);
+    sctx.fill();
+    if (noteSprites.size >= NOTE_SPRITE_LIMIT) noteSprites.clear();
+    noteSprites.set(key, sprite);
+  }
+  const span = sprite.width / dpr;
+  ctx.drawImage(sprite, cx - span / 2, cy - span / 2, span, span);
+}
+
+/**
+ * A struck disc, cut in two on the slice and sliding apart as it fades.
+ *
+ * Two clips of the same sprite along a line steeper than the lane — the same device
+ * as the wordmark — each translated a few pixels along the cut. `progress` is 0 at
+ * the strike and 1 when it is gone.
+ */
+function drawDiscCut(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  color: string,
+  paper: string,
+  ink: string,
+  dpr: number,
+  progress: number,
+): void {
+  const r = size / 2;
+  const travel = 3 + progress * 12;
+  const x0 = cx - r - 1;
+  const x1 = cx + r + 1;
+  const top = cy - r - 1;
+  const bottom = cy + r + 1;
+  const at = (f: number) => top + (bottom - top) * f;
+  const half = (dir: 1 | -1) => {
+    ctx.save();
+    ctx.translate(dir * travel * 0.9, dir * travel * 0.75);
+    ctx.beginPath();
+    if (dir === -1) {
+      ctx.moveTo(x0, top);
+      ctx.lineTo(x1, top);
+      ctx.lineTo(x1, at(0.36));
+      ctx.lineTo(x0, at(0.64));
+    } else {
+      ctx.moveTo(x0, at(0.64));
+      ctx.lineTo(x1, at(0.36));
+      ctx.lineTo(x1, bottom);
+      ctx.lineTo(x0, bottom);
+    }
+    ctx.closePath();
+    ctx.clip();
+    drawDisc(ctx, cx, cy, size, color, paper, ink, dpr);
+    ctx.restore();
+  };
+  half(-1);
+  half(1);
+}
+
+/**
+ * The bomb: a six-pointed star in paper with an ink centre. A shape, not a colour,
+ * so it cannot be mistaken for a note under any palette.
+ */
+function drawStar(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  outer: number,
+  fill: string,
+  ink: string,
+): void {
+  const inner = outer * 0.38;
+  ctx.beginPath();
+  for (let i = 0; i < 12; i++) {
+    const radius = i % 2 === 0 ? outer : inner;
+    const angle = (i * Math.PI) / 6 - Math.PI / 2;
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.fillStyle = ink;
+  ctx.beginPath();
+  ctx.arc(cx, cy, outer * 0.25, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/**
+ * A hold's groove: a slanted line screen in the lane's ink, outlined, with a round
+ * end. Solid while it is being held. `len` runs from the head toward later time.
+ */
+function drawGrooveTail(
+  ctx: CanvasRenderingContext2D,
+  nx: number,
+  ny: number,
+  len: number,
+  thick: number,
+  color: string,
+  vertical: boolean,
+  held: boolean,
+  dpr: number,
+): void {
+  const rr = thick / 2;
+  ctx.beginPath();
+  if (vertical) ctx.roundRect(nx - rr, ny - len, thick, len, [rr, rr, 0, 0]);
+  else ctx.roundRect(nx, ny - rr, len, thick, [0, rr, rr, 0]);
+  ctx.fillStyle = held ? color : (screenFill(ctx, color, 1, 2, dpr) ?? color);
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+/** Which ink a judgement is stamped in, and the other ink it is misregistered with. */
+function stampInks(text: string, theme: PressInks): { ink: string; shadow: string } {
+  if (text === 'PERFECT' || text === 'MARVELOUS') return { ink: theme.pink, shadow: theme.cyan };
+  if (text === 'GREAT') return { ink: theme.paper, shadow: theme.pink };
+  if (text === 'GOOD') return { ink: theme.cyan, shadow: theme.pink };
+  return { ink: theme.muted, shadow: theme.cyan };
+}
+
+interface PressInks {
+  cyan: string;
+  pink: string;
+  paper: string;
+  ink: string;
+  muted: string;
+}
+
+/**
+ * A stamped word: a boxed mono caption, a little crooked, printed twice a few
+ * pixels apart in two inks. Centred on `(x, y)`; returns half its width so the
+ * caller can set the timing beside it.
+ */
+function drawStamp(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  text: string,
+  inks: { ink: string; shadow: string },
+  scale: number,
+): number {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate((-5 * Math.PI) / 180);
+  const fontPx = Math.round(22 * scale);
+  ctx.font = `600 ${fontPx}px "IBM Plex Mono", ui-monospace, monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const label = text.toUpperCase();
+  const boxW = ctx.measureText(label).width + 26 * scale;
+  const boxH = fontPx + 14 * scale;
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = inks.shadow;
+  ctx.strokeRect(-boxW / 2 + 3, -boxH / 2 + 2, boxW, boxH);
+  ctx.strokeStyle = inks.ink;
+  ctx.strokeRect(-boxW / 2, -boxH / 2, boxW, boxH);
+  ctx.fillStyle = inks.ink;
+  ctx.fillText(label, 0, 1);
+  ctx.restore();
+  return boxW / 2;
+}
+
 /* ─── Cached blur layers ─────────────────────────────────────────────────────
  *
  * `shadowBlur` is the dearest thing a 2D canvas does, and Firefox pays for it on
@@ -339,7 +626,8 @@ function drawShadowedNote(
     // The widest any note shape reaches from its centre is 0.75 × size (the bar
     // and the arrow); the blur's visible tail is about 1.7 × the blur radius.
     let reach = 0;
-    for (const pass of passes) reach = Math.max(reach, pass.blur * 1.7 + Math.max(Math.abs(pass.dx), Math.abs(pass.dy)));
+    for (const pass of passes)
+      reach = Math.max(reach, pass.blur * 1.7 + Math.max(Math.abs(pass.dx), Math.abs(pass.dy)));
     const side = Math.ceil(2 * (size * 0.75 * dpr + reach + 2));
     sprite = document.createElement('canvas');
     sprite.width = side;
@@ -380,9 +668,11 @@ function getTroughLayer(options: {
   thickness: number;
   fill: string;
   edge: string;
+  /** One ink per lane: the lane is line-screened in it (the printed look). */
+  screens?: readonly string[];
 }): HTMLCanvasElement | null {
-  const { W, H, dpr, vertical, lanes, thickness, fill, edge } = options;
-  const key = `${W}x${H}|${dpr}|${vertical}|${lanes.join(',')}|${thickness}|${fill}|${edge}`;
+  const { W, H, dpr, vertical, lanes, thickness, fill, edge, screens } = options;
+  const key = `${W}x${H}|${dpr}|${vertical}|${lanes.join(',')}|${thickness}|${fill}|${edge}|${screens?.join(',') ?? ''}`;
   if (troughLayer?.key === key) return troughLayer.canvas;
 
   const canvas = troughLayer?.canvas ?? document.createElement('canvas');
@@ -394,7 +684,7 @@ function getTroughLayer(options: {
   const w = W / dpr;
   const h = H / dpr;
   const hair = 1 / dpr;
-  for (const lane of lanes) {
+  lanes.forEach((lane, laneIndex) => {
     const x = vertical ? lane - thickness / 2 : 0;
     const y = vertical ? 0 : lane - thickness / 2;
     const rw = vertical ? thickness : w;
@@ -403,6 +693,17 @@ function getTroughLayer(options: {
     c.fillStyle = fill;
     c.fillRect(x, y, rw, rh);
     c.globalAlpha = 1;
+    const screenInk = screens?.[laneIndex];
+    if (screenInk) {
+      // Behind the notes, so kept to a quiet 30%: a lane's own ink under a disc of
+      // the same ink must not eat the disc's edge.
+      const tile = c.createPattern(screenTile(screenInk, 0.3, 1, dpr), 'repeat');
+      if (tile) {
+        tile.setTransform(new DOMMatrix().scale(1 / dpr));
+        c.fillStyle = tile;
+        c.fillRect(x, y, rw, rh);
+      }
+    }
     c.fillStyle = edge;
     if (vertical) {
       c.fillRect(x, y, hair, rh);
@@ -411,7 +712,7 @@ function getTroughLayer(options: {
       c.fillRect(x, y, rw, hair);
       c.fillRect(x, y + rh - hair, rw, hair);
     }
-  }
+  });
   troughLayer = { key, canvas };
   return canvas;
 }
@@ -443,6 +744,7 @@ function traceNoteBody(
       // reads as notation rather than as a circle that happens to be squashed.
       ctx.ellipse(cx, cy, size * 0.58, size * 0.42, -0.36, 0, Math.PI * 2);
       break;
+    case 'disc':
     case 'circle':
       ctx.arc(cx, cy, half, 0, Math.PI * 2);
       break;
@@ -965,6 +1267,12 @@ export function GameCanvas() {
       shadowDark: v('--slice-shadow-dark', 'rgba(2, 4, 15, 0.78)'),
       shadowLight: v('--slice-shadow-light', 'rgba(45, 179, 240, 0.07)'),
       textColor: v('--slice-text-muted', '#8f9ac9'),
+      muted: v('--slice-text-muted', '#8f9ac9'),
+      // The printed playfield's three inks (see "The printed playfield").
+      cyan: v('--slice-primary', PRESS_FALLBACK.cyan),
+      pink: v('--slice-accent', PRESS_FALLBACK.pink),
+      paper: v('--slice-paper', PRESS_FALLBACK.paper),
+      ink: v('--slice-label', PRESS_FALLBACK.ink),
       textShadowColor: v('--slice-text-shadow', 'rgba(24,182,255,0.35)'),
       rail: v('--slice-rail', 'rgba(240, 241, 246, 0.3)'),
       noteShadow: v('--slice-note-shadow', 'rgba(2, 4, 15, 0.7)'),
@@ -1800,7 +2108,6 @@ export function GameCanvas() {
     vignette: CanvasGradient | null;
   }>({ w: 0, h: 0, vignette: null });
 
-
   /**
    * V7 — the smoothed loudness the backdrop is drawn at, 0–1, and everything
    * the backdrop keeps between frames.
@@ -1897,6 +2204,8 @@ export function GameCanvas() {
     const flashOff = runState.reducedFlash;
     const fx = runState.effectIntensity; // A7
     const mirrorOn = runState.mirror && !isOneTrack;
+    // The printed playfield: no glow, no rail, no energy treatment — see `Skin.groove`.
+    const groove = skin.groove;
 
     // V13 — playfield energy. One scalar, tracking the combo curve, driving
     // every "the run is going well" treatment below (lane rails, the vignette,
@@ -1910,7 +2219,7 @@ export function GameCanvas() {
     // rather than snapping to it — degrading to calm, not to broken.
     const energyTarget = glow && !flashOff ? comboEnergy(engine.getCombo()) : 0;
     energyRef.current = approachEnergy(energyRef.current, energyTarget, frameDelta);
-    const energy = energyRef.current * fx;
+    const energy = groove ? 0 : energyRef.current * fx;
 
     const isMobileV = h > w; // portrait canvas = mobile vertical mode
     // Before the first `play()` of a run the audio clock reads 0, which would
@@ -1940,15 +2249,35 @@ export function GameCanvas() {
     // give or take reading time, which is why it carries no score implication.
     const linePos = clampLinePosition(runState.linePosition);
     const CURSOR_MAIN = isMobileV ? h * (1 - linePos) : w * linePos;
+    // The record's lanes are fat grooves (a 56px disc in a 124px band on a 900px
+    // field) set close enough that the judgement stamp fits between them; every
+    // other skin keeps the slim lanes it always had. Where notes sit relative to
+    // the line is unchanged, so no hit window or reading time moves.
     const LANE_POS = isMobileV
       ? isOneTrack
         ? [w * 0.5]
-        : [w * 0.3, w * 0.7]
+        : groove
+          ? [w * 0.255, w * 0.745]
+          : [w * 0.3, w * 0.7]
       : isOneTrack
         ? [h * 0.5]
-        : [h * 0.3, h * 0.7];
-    const BAR_H = isMobileV ? Math.max(15, w * 0.06) : Math.max(15, h * 0.04);
-    const CURSOR_R = isMobileV ? Math.max(10, h * 0.008) : Math.max(10, w * 0.008);
+        : groove
+          ? [h * 0.4, h * 0.62]
+          : [h * 0.3, h * 0.7];
+    const BAR_H = groove
+      ? isMobileV
+        ? Math.max(20, w * 0.13)
+        : Math.max(24, h * 0.062)
+      : isMobileV
+        ? Math.max(15, w * 0.06)
+        : Math.max(15, h * 0.04);
+    const CURSOR_R = groove
+      ? BAR_H * 0.45
+      : isMobileV
+        ? Math.max(10, h * 0.008)
+        : Math.max(10, w * 0.008);
+    const TROUGH_T = groove ? (isMobileV ? w * 0.385 : BAR_H * 2.2) : BAR_H * 1.5;
+    const RECEPTOR_R = CURSOR_R * 1.5;
 
     // Helper: convert scroll-axis + lane-axis to canvas (x, y)
     const toCanvas = (scrollVal: number, laneVal: number) =>
@@ -2079,12 +2408,15 @@ export function GameCanvas() {
       dpr,
       vertical: isMobileV,
       lanes: LANE_POS,
-      thickness: BAR_H * 1.5,
-      fill: theme.bgAlt,
+      thickness: TROUGH_T,
+      fill: groove ? theme.ink : theme.bgAlt,
       edge: theme.border,
+      screens: groove ? (isOneTrack ? [laneA] : [laneA, laneB]) : undefined,
     });
     if (troughSprite) ctx.drawImage(troughSprite, 0, 0, w, h);
     LANE_POS.forEach((laneVal, i) => {
+      // The groove is the lane; a centre line over it would be a second one.
+      if (groove) return;
       // V13 — the rail's own colour, which is what saturates with combo. The
       // lane palette rather than a new colour of its own: `palettes.ts` is the
       // thing that keeps this game legible to a colour-blind player, and a
@@ -2241,6 +2573,8 @@ export function GameCanvas() {
         // Compute scroll position along the movement axis
         const timeDelta = slice.time - currentTime;
         let scrollVal = scrollPos(timeDelta);
+        // How far through being cut a struck disc is (0–1), or -1 when it is not.
+        let cutProgress = -1;
         // If this is a LONG note that has been hit and is active, clamp to cursor
         const isHeldActive =
           slice.hit &&
@@ -2255,8 +2589,16 @@ export function GameCanvas() {
         let noteAlpha = 1.0;
         if (slice.hit && slice.type !== 'LONG') {
           const elapsed = performance.now() - (slice.hitTime ?? 0);
-          noteAlpha = Math.max(0, 1 - elapsed / 50);
-          if (noteAlpha <= 0) continue; // Fully faded
+          if (groove && slice.type === 'STANDARD') {
+            // The struck disc stays on the receptor and falls apart along the slice.
+            cutProgress = elapsed / CUT_MS;
+            if (cutProgress >= 1) continue;
+            scrollVal = CURSOR_MAIN;
+            noteAlpha = 1 - cutProgress * cutProgress;
+          } else {
+            noteAlpha = Math.max(0, 1 - elapsed / 50);
+            if (noteAlpha <= 0) continue; // Fully faded
+          }
         } else {
           // Check if note is behind the cursor
           const distBehind = isMobileV
@@ -2384,7 +2726,7 @@ export function GameCanvas() {
 
         // Soft glow around the targeted (next hittable) note per lane
         const isTargeted = slice.id === targeted0 || slice.id === targeted1;
-        if (isTargeted && slice.type !== 'BOMB') {
+        if (isTargeted && slice.type !== 'BOMB' && !groove) {
           ctx.save();
           ctx.shadowColor = color;
           ctx.shadowBlur = glow * 18;
@@ -2416,7 +2758,10 @@ export function GameCanvas() {
           ctx.shadowOffsetY = 4;
         }
 
-        if (slice.type === 'BOMB') {
+        if (slice.type === 'BOMB' && groove) {
+          // The paper star. Its shape is the signal; the colour only reinforces it.
+          drawStar(ctx, nx, ny, CURSOR_R * 1.13, color, theme.ink);
+        } else if (slice.type === 'BOMB') {
           // A SPIKED polygon, not a disc.
           //
           // `palettes.ts` already documents this shape as the reason a palette
@@ -2479,7 +2824,23 @@ export function GameCanvas() {
             remainingDuration = slice.time + (slice.duration || 0) - currentTime;
           }
 
-          if (remainingDuration > 0) {
+          if (remainingDuration > 0 && groove) {
+            // A hold on the record: the disc rides the receptor and the groove it
+            // is playing runs out behind it, solid while it is held.
+            ctx.globalAlpha = noteAlpha;
+            drawGrooveTail(
+              ctx,
+              nx,
+              ny,
+              remainingDuration * PPS,
+              BAR_H * 0.4,
+              color,
+              isMobileV,
+              Boolean(isHeldActive),
+              dpr,
+            );
+            drawDisc(ctx, nx, ny, BAR_H, color, theme.paper, theme.ink, dpr);
+          } else if (remainingDuration > 0) {
             const len = remainingDuration * PPS;
             ctx.fillStyle = isHeldActive ? theme.holdTrailHeld : theme.holdTrail;
             ctx.globalAlpha = noteAlpha;
@@ -2601,9 +2962,18 @@ export function GameCanvas() {
           // per colour (see "Cached blur layers"), so a busy chart costs a
           // `drawImage` per note rather than a blur. With `glow` off (perf-lite)
           // there is no halo, just the body and the rim.
+          if (groove) {
+            if (cutProgress >= 0) {
+              drawDiscCut(ctx, nx, ny, size, color, theme.paper, theme.ink, dpr, cutProgress);
+            } else {
+              drawDisc(ctx, nx, ny, size, color, theme.paper, theme.ink, dpr);
+            }
+          }
           ctx.save();
           ctx.fillStyle = color;
-          if (glow > 0) {
+          if (groove) {
+            // Drawn above, from the cached disc.
+          } else if (glow > 0) {
             drawShadowedNote(
               ctx,
               skin.noteShape,
@@ -2620,10 +2990,12 @@ export function GameCanvas() {
             ctx.fill();
           }
           ctx.shadowColor = 'transparent';
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-          ctx.lineWidth = 1.25;
-          traceNoteBody(ctx, skin.noteShape, nx, ny, size, isMobileV);
-          ctx.stroke();
+          if (!groove) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+            ctx.lineWidth = 1.25;
+            traceNoteBody(ctx, skin.noteShape, nx, ny, size, isMobileV);
+            ctx.stroke();
+          }
           ctx.restore();
 
           // ── The rhythm ───────────────────────────────────────────────────
@@ -2637,7 +3009,10 @@ export function GameCanvas() {
           //
           // The tail is flat and un-extruded (see `drawNoteStem`) and takes the
           // head's colour: it is part of the note, not an annotation on it.
-          const notation = skin.noteShape === 'notation' ? flagsForQuant(slice.quant) : null;
+          const notation =
+            (skin.noteShape === 'notation' || skin.noteShape === 'disc') && cutProgress < 0
+              ? flagsForQuant(slice.quant)
+              : null;
           if (notation) {
             // Beaming. A run of eighths or sixteenths is joined by a bar rather
             // than each wearing its own flag — which is both what the rhythm
@@ -2679,6 +3054,7 @@ export function GameCanvas() {
               color,
               isMobileV,
               beamLength,
+              groove ? 1.1 : 1.5,
             );
             ctx.restore();
           } else if (quantAccent) {
@@ -2820,34 +3196,92 @@ export function GameCanvas() {
           ? LANE_POS[0] - BAR_H * 1.5 - 40
           : h * 0.5;
 
-      ctx.fillStyle = latestFeedback.color;
-      ctx.font = `900 ${Math.round((isMobileV ? 28 : 32) * judgementScale)}px sans-serif`;
-      ctx.shadowColor = latestFeedback.color;
-      ctx.shadowBlur = glow * 6;
-      ctx.fillText(latestFeedback.text, feedbackX, feedbackY);
+      if (groove) {
+        // Stamped in the gap between the lanes, beside the receptors, in the two
+        // spot inks. The size and opacity the player set still apply.
+        const stampX = isMobileV ? w / 2 : CURSOR_MAIN + 70 * judgementScale;
+        const half = drawStamp(
+          ctx,
+          stampX,
+          isOneTrack && !isMobileV ? LANE_POS[0] + BAR_H * 1.6 : feedbackY,
+          latestFeedback.text,
+          stampInks(latestFeedback.text, theme),
+          (isMobileV ? 0.7 : 1) * judgementScale,
+        );
+        if (latestFeedback.offset !== undefined && !isMobileV) {
+          const ms = Math.round(latestFeedback.offset * 1000);
+          ctx.font = `500 ${Math.round(13 * judgementScale)}px "IBM Plex Mono", ui-monospace, monospace`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = theme.textColor;
+          ctx.fillText(
+            `${ms > 0 ? '+' : ''}${ms} ms`,
+            stampX + half + 14,
+            isOneTrack ? LANE_POS[0] + BAR_H * 1.6 : feedbackY,
+          );
+          ctx.textBaseline = 'alphabetic';
+        }
+        ctx.restore();
+      } else {
+        ctx.fillStyle = latestFeedback.color;
+        ctx.font = `900 ${Math.round((isMobileV ? 28 : 32) * judgementScale)}px sans-serif`;
+        ctx.shadowColor = latestFeedback.color;
+        ctx.shadowBlur = glow * 6;
+        ctx.fillText(latestFeedback.text, feedbackX, feedbackY);
 
-      ctx.shadowColor = 'transparent';
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
 
-      if (latestFeedback.offset !== undefined) {
-        const ms = Math.round(latestFeedback.offset * 1000);
-        const sign = ms > 0 ? '+' : '';
-        const offsetText = `${sign}${ms}ms`;
+        if (latestFeedback.offset !== undefined) {
+          const ms = Math.round(latestFeedback.offset * 1000);
+          const sign = ms > 0 ? '+' : '';
+          const offsetText = `${sign}${ms}ms`;
 
-        ctx.font = `bold ${Math.round(16 * judgementScale)}px monospace`;
-        ctx.fillStyle = Math.abs(ms) < 20 ? '#334155' : '#64748b';
-        ctx.fillText(offsetText, feedbackX, feedbackY + 30 * judgementScale);
+          ctx.font = `bold ${Math.round(16 * judgementScale)}px monospace`;
+          ctx.fillStyle = Math.abs(ms) < 20 ? '#334155' : '#64748b';
+          ctx.fillText(offsetText, feedbackX, feedbackY + 30 * judgementScale);
+        }
+
+        ctx.restore();
       }
-
-      ctx.restore();
     }
 
     // 5. Cursors (Receptors)
     const { textColor, textShadowColor } = theme;
 
     const drawCursor = (cx: number, cy: number, color: string, label?: string) => {
+      if (groove) {
+        // A plain paper ring with a tick on the side the notes arrive from, and the
+        // key printed in a box at the edge of the field (landscape only).
+        ctx.shadowColor = 'transparent';
+        ctx.strokeStyle = theme.paper;
+        ctx.fillStyle = theme.paper;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(cx, cy, RECEPTOR_R, 0, Math.PI * 2);
+        ctx.stroke();
+        // The tick stands on the ring's outside, perpendicular to the lane.
+        if (isMobileV) ctx.fillRect(cx - RECEPTOR_R - 11, cy - 1.5, 14, 3);
+        else ctx.fillRect(cx - 1.5, cy - RECEPTOR_R - 11, 3, 14);
+        if (label) {
+          const keyInk = isOneTrack ? theme.paper : color;
+          ctx.font = `600 ${Math.round(BAR_H * 0.36)}px "IBM Plex Mono", ui-monospace, monospace`;
+          const boxW = Math.max(BAR_H * 0.82, ctx.measureText(label).width + 16);
+          const boxH = BAR_H * 0.82;
+          const boxX = Math.max(8, Math.min(34, cx - RECEPTOR_R - boxW - 14));
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = keyInk;
+          ctx.strokeRect(boxX, cy - boxH / 2, boxW, boxH);
+          ctx.fillStyle = keyInk;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(label, boxX + boxW / 2, cy + 1);
+          ctx.textBaseline = 'alphabetic';
+        }
+        return;
+      }
       // V13 — the receptor picks up the streak's glow before anything is drawn
       // on top of it, so the ring reads as lit from within rather than outlined
       // twice. Same continuous curve as the rails; no pulse, no period.
@@ -3075,16 +3509,22 @@ export function GameCanvas() {
           className={`relative bg-slice-bg overflow-hidden ${
             !lockAspect
               ? 'h-full w-full'
-              : `border-4 border-slice-shadow-light/40 shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] ${
-                  isPortrait ? 'h-full w-full rounded-2xl' : 'app-stage rounded-[2rem]'
-                }`
+              : `border border-slice-border ${isPortrait ? 'h-full w-full' : 'app-stage'}`
           }`}
         >
-          <canvas ref={canvasRef} className="w-full h-full cursor-pointer block touch-none select-none" data-jelly-zone="playfield" />
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full cursor-pointer block touch-none select-none"
+            data-jelly-zone="playfield"
+          />
 
           {/* Mobile Buttons — left/right split for portrait, top/bottom for landscape */}
           {showMobileButtons && status === 'PLAYING' && !isPaused && countdown === 0 && (
-            <div data-mobile-btn className="absolute inset-0 pointer-events-none flex flex-row" data-jelly-scope="off">
+            <div
+              data-mobile-btn
+              className="absolute inset-0 pointer-events-none flex flex-row"
+              data-jelly-scope="off"
+            >
               <button
                 data-mobile-btn
                 className="pointer-events-auto touch-none select-none flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
@@ -3161,7 +3601,7 @@ export function GameCanvas() {
           {/* Gear icon button — always visible during gameplay */}
           {status === 'PLAYING' && !isLoadingSong && countdown === 0 && (
             <button
-              className="absolute top-3 right-3 z-50 w-9 h-9 rounded-full bg-slice-bg shadow-[4px_4px_8px_var(--slice-shadow-dark),-4px_-4px_8px_var(--slice-shadow-light)] flex items-center justify-center text-slice-text-muted hover:text-slice-text transition-colors active:shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)]"
+              className="absolute top-3 right-3 z-50 w-9 h-9 bg-slice-bg border border-slice-border flex items-center justify-center text-slice-text-muted hover:text-slice-text transition-colors"
               data-mobile-btn
               onClick={() => {
                 if (isMultiplayer) {
@@ -3183,7 +3623,7 @@ export function GameCanvas() {
               to the server there. */}
           {canSkipLeadIn && (
             <button
-              className="absolute top-14 right-3 z-50 h-8 px-3 rounded-full bg-slice-bg shadow-[4px_4px_8px_var(--slice-shadow-dark),-4px_-4px_8px_var(--slice-shadow-light)] flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slice-text-muted hover:text-slice-text transition-colors active:shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)]"
+              className="absolute top-14 right-3 z-50 h-8 px-3 bg-slice-bg border border-slice-border flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slice-text-muted hover:text-slice-text transition-colors"
               data-mobile-btn
               onClick={skipLeadIn}
             >
@@ -3198,7 +3638,7 @@ export function GameCanvas() {
               `RESTART_HOLD_MS`. */}
           {restartHolding && (
             <div
-              className="absolute top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-slice-bg rounded-full px-4 py-2 shadow-[4px_4px_8px_var(--slice-shadow-dark),-4px_-4px_8px_var(--slice-shadow-light)]"
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-slice-bg px-4 py-2 border border-slice-border"
               role="status"
               aria-live="polite"
             >
@@ -3211,14 +3651,14 @@ export function GameCanvas() {
 
           {/* Singleplayer Pause Overlay (with settings) */}
           {isPaused && status === 'PLAYING' && !isMultiplayer && (
-            <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center-safe justify-center-safe overflow-y-auto">
-              <div className="bg-slice-bg p-6 rounded-[30px] shadow-[9px_9px_16px_var(--slice-shadow-dark),-9px_-9px_16px_var(--slice-shadow-light)] flex flex-col gap-4 items-center w-full max-w-sm mx-4 my-4">
+            <div className="absolute inset-0 z-50 bg-black/20 flex items-center-safe justify-center-safe overflow-y-auto">
+              <div className="bg-slice-bg p-6 rounded-[30px] border border-slice-border flex flex-col gap-4 items-center w-full max-w-sm mx-4 my-4">
                 <h2 className="text-3xl font-black text-slice-text">
                   {t('paused', { defaultValue: 'PAUSED' })}
                 </h2>
 
                 {/* Settings section */}
-                <div className="w-full bg-slice-shadow-dark/30 rounded-2xl p-4 shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] flex flex-col gap-4">
+                <div className="w-full bg-slice-shadow-dark/30 rounded-2xl p-4 border border-slice-border flex flex-col gap-4">
                   {/* Volume */}
                   <div className="flex flex-col gap-1.5">
                     <div className="flex justify-between items-center">
@@ -3264,7 +3704,7 @@ export function GameCanvas() {
                     </span>
                     <div className="flex items-center gap-2">
                       <button
-                        className="w-7 h-7 rounded-lg bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
+                        className="w-7 h-7 rounded-lg bg-slice-bg border border-slice-border text-slice-text-darker font-bold text-sm flex items-center justify-center"
                         onClick={() => setAudioOffset(audioOffset - 5)}
                       >
                         −
@@ -3274,7 +3714,7 @@ export function GameCanvas() {
                         {audioOffset}ms
                       </span>
                       <button
-                        className="w-7 h-7 rounded-lg bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
+                        className="w-7 h-7 rounded-lg bg-slice-bg border border-slice-border text-slice-text-darker font-bold text-sm flex items-center justify-center"
                         onClick={() => setAudioOffset(audioOffset + 5)}
                       >
                         +
@@ -3320,8 +3760,8 @@ export function GameCanvas() {
                         <button
                           className={`px-3 py-1.5 rounded-lg text-xs font-black font-mono transition-colors ${
                             listeningForKey === lane
-                              ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)] animate-pulse'
-                              : 'bg-slice-bg text-slice-text shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
+                              ? 'bg-blue-500 text-white animate-pulse'
+                              : 'bg-slice-bg text-slice-text border border-slice-border'
                           }`}
                           onClick={() => {
                             if (justAssignedKeyRef.current) return;
@@ -3347,7 +3787,7 @@ export function GameCanvas() {
 
                 <Button
                   size="lg"
-                  className="w-full shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] bg-slice-bg text-slice-text hover:bg-slice-shadow-dark/20 border-none active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]"
+                  className="w-full border border-slice-border bg-slice-bg text-slice-text hover:bg-slice-shadow-dark/20"
                   onClick={() => {
                     setListeningForKey(null);
                     engine?.resume();
@@ -3358,7 +3798,7 @@ export function GameCanvas() {
                 <Button
                   size="lg"
                   variant="ghost"
-                  className="w-full text-slice-text-muted hover:text-slice-text hover:bg-transparent shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]"
+                  className="w-full text-slice-text-muted hover:text-slice-text hover:bg-transparent border border-slice-border"
                   onClick={() => {
                     setListeningForKey(null);
                     engine?.reset();
@@ -3392,7 +3832,7 @@ export function GameCanvas() {
           {showSettings && status === 'PLAYING' && isMultiplayer && (
             <div
               data-settings-panel
-              className="absolute top-14 right-3 z-50 w-[min(18rem,calc(100vw-1.5rem))] bg-slice-bg rounded-[20px] shadow-[9px_9px_16px_var(--slice-shadow-dark),-9px_-9px_16px_var(--slice-shadow-light)] flex flex-col gap-3 p-4 duration-200"
+              className="absolute top-14 right-3 z-50 w-[min(18rem,calc(100vw-1.5rem))] bg-slice-bg rounded-[20px] border border-slice-border flex flex-col gap-3 p-4 duration-200"
               onMouseDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
             >
@@ -3401,14 +3841,14 @@ export function GameCanvas() {
                   {t('settings', { defaultValue: 'Settings' })}
                 </h2>
                 <button
-                  className="w-7 h-7 rounded-full bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] flex items-center justify-center text-slice-text-muted hover:text-slice-text active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
+                  className="w-7 h-7 rounded-full bg-slice-bg border border-slice-border flex items-center justify-center text-slice-text-muted hover:text-slice-text"
                   onClick={() => setShowSettings(false)}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <div className="bg-slice-shadow-dark/30 rounded-xl p-3 shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] flex flex-col gap-3">
+              <div className="bg-slice-shadow-dark/30 rounded-xl p-3 border border-slice-border flex flex-col gap-3">
                 {/* Volume */}
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between items-center">
@@ -3434,7 +3874,7 @@ export function GameCanvas() {
                   </span>
                   <div className="flex items-center gap-1.5">
                     <button
-                      className="w-6 h-6 rounded-md bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker font-bold text-xs flex items-center justify-center active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
+                      className="w-6 h-6 rounded-md bg-slice-bg border border-slice-border text-slice-text-darker font-bold text-xs flex items-center justify-center"
                       onClick={() => setAudioOffset(audioOffset - 5)}
                     >
                       −
@@ -3444,7 +3884,7 @@ export function GameCanvas() {
                       {audioOffset}ms
                     </span>
                     <button
-                      className="w-6 h-6 rounded-md bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker font-bold text-xs flex items-center justify-center active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
+                      className="w-6 h-6 rounded-md bg-slice-bg border border-slice-border text-slice-text-darker font-bold text-xs flex items-center justify-center"
                       onClick={() => setAudioOffset(audioOffset + 5)}
                     >
                       +
@@ -3499,8 +3939,8 @@ export function GameCanvas() {
                         <button
                           className={`px-2 py-1 rounded-md text-[10px] font-black font-mono transition-colors ${
                             listeningForKey === lane
-                              ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2)] animate-pulse'
-                              : 'bg-slice-bg text-slice-text shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
+                              ? 'bg-blue-500 text-white animate-pulse'
+                              : 'bg-slice-bg text-slice-text border border-slice-border'
                           }`}
                           onClick={() => {
                             if (justAssignedKeyRef.current) return;
@@ -3537,7 +3977,7 @@ export function GameCanvas() {
 
           {/* Synchronized Loading Overlay */}
           {status === 'PLAYING' && isLoadingSong && (
-            <div className="absolute inset-0 z-60 bg-slice-bg/90 backdrop-blur-md flex flex-col items-center justify-center p-10">
+            <div className="absolute inset-0 z-60 bg-slice-bg/90 flex flex-col items-center justify-center p-10">
               <div className="w-full max-w-md space-y-4">
                 <div className="flex justify-between items-end mb-1">
                   <span className="text-sm font-black text-slice-text-muted uppercase tracking-widest">
@@ -3547,9 +3987,9 @@ export function GameCanvas() {
                     {Math.round(loadingProgress)}%
                   </span>
                 </div>
-                <div className="h-4 bg-slice-bg rounded-full shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] p-1">
+                <div className="h-4 bg-slice-bg rounded-full border border-slice-border p-1">
                   <div
-                    className="h-full bg-linear-to-r from-blue-500 to-pink-500 w-full origin-left transition-transform duration-300 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                    className="h-full bg-slice-primary w-full origin-left transition-transform duration-300"
                     style={{ transform: `scaleX(${loadingProgress / 100})` }}
                   />
                 </div>
@@ -3558,10 +3998,12 @@ export function GameCanvas() {
                 {isMultiplayer && loadingPlayers.length > 0 && (
                   <div className="space-y-2 pt-2">
                     <p className="text-[11px] font-black text-slice-text-light uppercase tracking-widest text-center">
-                      {t('waiting-for-players-game-canvas', { defaultValue: 'Waiting for players...' })}
+                      {t('waiting-for-players-game-canvas', {
+                        defaultValue: 'Waiting for players...',
+                      })}
                     </p>
                     {/* Overall bar: X / total loaded */}
-                    <div className="h-2 bg-slice-bg rounded-full shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] overflow-hidden">
+                    <div className="h-2 bg-slice-bg rounded-full border border-slice-border overflow-hidden">
                       <div
                         className="h-full bg-green-400 w-full origin-left transition-transform duration-500"
                         style={{
@@ -3573,7 +4015,7 @@ export function GameCanvas() {
                       {loadingPlayers.map((p) => (
                         <div
                           key={p.socketId}
-                          className="flex items-center justify-between bg-slice-bg px-3 py-2 rounded-xl shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
+                          className="flex items-center justify-between bg-slice-bg px-3 py-2 rounded-xl border border-slice-border"
                         >
                           <span className="text-xs font-bold text-slice-text-darker truncate">
                             {p.name}
@@ -3607,7 +4049,7 @@ export function GameCanvas() {
           {status === 'PLAYING' && countdown > 0 && (
             <div className="absolute inset-0 z-70 flex items-center justify-center pointer-events-none">
               <motion.div key={countdown} variants={popIn} initial="initial" animate="animate">
-                <span className="text-[7rem] sm:text-[12rem] font-black italic text-slice-text soft-glow-text drop-shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+                <span className="slice-display text-[7rem] sm:text-[12rem] text-slice-text soft-glow-text">
                   {countdown}
                 </span>
               </motion.div>
@@ -3674,7 +4116,7 @@ export function GameCanvas() {
               initial="initial"
               animate="animate"
             >
-              <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl px-5 py-4 shadow-lg flex items-start gap-3">
+              <div className="bg-slice-label border-2 border-slice-accent px-5 py-4 flex items-start gap-3">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="22"
@@ -3685,17 +4127,17 @@ export function GameCanvas() {
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-amber-500 shrink-0 mt-0.5"
+                  className="text-slice-accent shrink-0 mt-0.5"
                 >
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                   <line x1="12" y1="9" x2="12" y2="13" />
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
                 <div>
-                  <p className="text-sm font-black text-amber-800 uppercase tracking-wide">
+                  <p className="text-sm font-black text-slice-text uppercase tracking-wide">
                     {t('no-input-device', { defaultValue: 'No Input Device Detected' })}
                   </p>
-                  <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                  <p className="text-xs text-slice-text-muted mt-1 leading-relaxed">
                     {t('no-input-device-desc', {
                       defaultValue:
                         'Connect a keyboard or controller to play. The game requires physical input to hit notes.',
@@ -3709,7 +4151,7 @@ export function GameCanvas() {
           {/* Gamepad connected indicator (brief) */}
           {hasGamepad && !hasKeyboard && !hasTouch && status === 'MENU' && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-90 duration-500">
-              <div className="bg-green-50 border-2 border-green-400 rounded-2xl px-5 py-3 shadow-lg flex items-center gap-3">
+              <div className="bg-slice-label border-2 border-slice-primary px-5 py-3 flex items-center gap-3">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -3720,12 +4162,12 @@ export function GameCanvas() {
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-green-600 shrink-0"
+                  className="text-slice-primary shrink-0"
                 >
                   <path d="M6 12h4m-2-2v4m5-3h.01M17 10h.01" />
                   <path d="M2 15.24V7.5A2.5 2.5 0 0 1 4.5 5h15A2.5 2.5 0 0 1 22 7.5v7.74a2.5 2.5 0 0 1-1.26 2.17l-5.5 3.17a2.5 2.5 0 0 1-2.49 0H11.24a2.5 2.5 0 0 1-2.49 0l-5.5-3.17A2.5 2.5 0 0 1 2 15.24Z" />
                 </svg>
-                <p className="text-sm font-black text-green-800 uppercase tracking-wide">
+                <p className="text-sm font-black text-slice-text uppercase tracking-wide">
                   {t('controller-connected', { defaultValue: 'Controller Connected' })}
                 </p>
               </div>
@@ -3768,7 +4210,7 @@ function PauseOverlay({ pause }: { pause: PausePayload }) {
 
   return (
     <div
-      className="absolute inset-0 z-80 flex items-center-safe justify-center-safe bg-slice-bg/85 backdrop-blur-sm p-6"
+      className="absolute inset-0 z-80 flex items-center-safe justify-center-safe bg-slice-bg/85 p-6"
       role="status"
       aria-live="polite"
     >
