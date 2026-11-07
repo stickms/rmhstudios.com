@@ -216,7 +216,7 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
         if (rf.isLocal && dancing.current && want === 'idle') want = 'dance';
 
         // Smoothed position/facing, the clip driver and the impact reaction (useFighterMotion).
-        const flash = motion.step({ rf, root: r, host, mixer, actions, want, deltaRaw });
+        const flash = motion.step({ rf, root: r, host, mixer, actions, want, deltaRaw, bounce: true });
 
         // Hit flash → emissive pulse (white-hot on a heavy hit, cool on a block); dim when down.
         const dim = rf.alive ? 1 : 0.4;

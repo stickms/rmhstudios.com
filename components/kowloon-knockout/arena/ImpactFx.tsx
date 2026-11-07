@@ -136,7 +136,7 @@ export default function ImpactFx({ sparkCap = 90, lite = false, overTransparent 
                     s.active = true; s.age = 0;
                     s.life = volley.lifeMin + (volley.lifeMax - volley.lifeMin) * Math.random();
                     s.x = e.x; s.y = e.y; s.z = e.z; s.vx = vx; s.vy = vy; s.vz = vz;
-                    s.thick = 0.022 + Math.random() * 0.02;
+                    s.thick = 0.010 + Math.random() * 0.012;
                     setColor(s, volley.color);
                 }
             }

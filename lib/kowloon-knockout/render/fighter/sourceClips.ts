@@ -40,6 +40,10 @@ const TRUNK: { joint: 'spine' | 'chest' | 'neck' | 'head'; pose: 'spine' | 'ches
     { joint: 'spine', pose: 'spine' }, { joint: 'chest', pose: 'chest' },
     { joint: 'neck', pose: 'neck' }, { joint: 'head', pose: 'head' },
 ];
+/** Collar bones: aimed by direction relative to the chest, solved before the arms that hang off them. */
+const SHOULDERS: { joint: 'shoulderL' | 'shoulderR'; pose: 'shoulderL' | 'shoulderR' }[] = [
+    { joint: 'shoulderL', pose: 'shoulderL' }, { joint: 'shoulderR', pose: 'shoulderR' },
+];
 
 const worldQuat = (o: Object3D): Quaternion => o.getWorldQuaternion(new Quaternion());
 const worldPos = (o: Object3D): Vector3 => o.getWorldPosition(new Vector3());
@@ -59,7 +63,14 @@ export function normalizeSides(rig: RigJoints): RigJoints {
 }
 
 function mergePose(base: Pose, over: Pose): Pose {
-    return { ...base, ...over, hips: { ...base.hips, ...over.hips } };
+    // Limbs merge per segment (an override of just `lower` keeps the base's `upper`); everything else replaces.
+    const limb = (a: Limb2 | undefined, b: Limb2 | undefined): Limb2 | undefined => (a && b ? { ...a, ...b } : (b ?? a));
+    return {
+        ...base, ...over,
+        hips: { ...base.hips, ...over.hips },
+        armL: limb(base.armL, over.armL), armR: limb(base.armR, over.armR),
+        legL: limb(base.legL, over.legL), legR: limb(base.legR, over.legR),
+    };
 }
 
 /** The bone a segment points at: the mapped lower joint, else its first bone child. */
@@ -97,6 +108,13 @@ export function buildSourceClips(
             if (d.lengthSq() > 1e-10) restDir.set(j, d.normalize());
         }
     }
+    for (const sh of SHOULDERS) {
+        const b = rig[sh.joint];
+        const c = childOf(rig, sh.joint, sh.joint === 'shoulderL' ? 'upperArmL' : 'upperArmR');
+        if (!b || !c) continue;
+        const d = worldPos(c).sub(worldPos(b));
+        if (d.lengthSq() > 1e-10) restDir.set(sh.joint, d.normalize());
+    }
     const hipsRestLocalPos = hips.position.clone();
 
     const out: Partial<Record<ClipKey, AnimationClip>> = {};
@@ -110,6 +128,7 @@ export function buildSourceClips(
         for (const { pose } of frames) {
             if (pose.hips?.rot || pose.hips?.pos) addJoint('hips');
             for (const t of TRUNK) if (pose[t.pose]) addJoint(t.joint);
+            for (const sh of SHOULDERS) if (pose[sh.pose]) addJoint(sh.joint);
             for (const l of LIMBS) {
                 const limb = pose[l.pose];
                 if (limb) { addJoint(l.upper); addJoint(l.lower); if (l.foot && limb.foot) addJoint(l.foot); }
@@ -158,6 +177,19 @@ export function buildSourceClips(
                 const v = pose[t.pose];
                 if (v) place(t.joint, eulerQuat(v));
                 else solved.set(t.joint, restLocal.get(b)!.clone());
+            }
+            for (const sh of SHOULDERS) {
+                const b = rig[sh.joint];
+                if (!b || !joints.has(sh.joint)) continue;
+                const vec = pose[sh.pose];
+                const rd = restDir.get(sh.joint);
+                if (!vec || !rd) { solved.set(sh.joint, restLocal.get(b)!.clone()); continue; }
+                const chestBone = rig.chest ?? rig.spine ?? rig.hips;
+                const chestDelta = chestBone
+                    ? Wp(chestBone).clone().multiply(restWorld.get(chestBone)!.clone().invert())
+                    : new Quaternion();
+                const target = new Vector3(vec[0], vec[1], vec[2]).normalize().applyQuaternion(chestDelta);
+                place(sh.joint, new Quaternion().setFromUnitVectors(rd, target));
             }
             for (const l of LIMBS) {
                 const limb: Limb2 | undefined = pose[l.pose];

@@ -133,7 +133,7 @@ describe('motion curves', () => {
     });
     it('streaks are longer for faster sparks and capped', () => {
         expect(streakLength(10)).toBeGreaterThan(streakLength(3));
-        expect(streakLength(1000)).toBe(0.9);
+        expect(streakLength(1000)).toBe(0.55);
         expect(streakLength(0)).toBeGreaterThan(0);
     });
 });

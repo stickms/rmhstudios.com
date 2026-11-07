@@ -179,11 +179,28 @@ describe('reactionPose / flashStyle', () => {
         expect(hot.color[1]).toBeGreaterThan(0.9);       // white-ish
         expect(cool.color[1]).toBeLessThan(0.3);         // red
         expect(hot.amount).toBeGreaterThan(cool.amount);
+        expect(hot.amount).toBeLessThanOrEqual(0.65); // never a flat white cut-out
         const block = flashStyle(0.5, 'block', 0);
         expect(block.color[2]).toBeGreaterThan(block.color[0]); // blue-white, not red
         const legacy = flashStyle(0, 'hit', 8);
-        expect(legacy.amount).toBeGreaterThan(0.8);
+        expect(legacy.amount).toBeGreaterThan(0.7);
         expect(flashStyle(0, 'hit', 0).amount).toBe(0);
         expect(flashStyle(NaN, 'hit', 0).amount).toBeGreaterThanOrEqual(0);
+    });
+});
+
+describe('ClipDriver locomotion speed', () => {
+    it('plays a walk at the cadence it is given, forward or backward, and everything else at 1', () => {
+        const { mixer, actions, driver } = rig();
+        driver.update(mixer, actions, { ...input('walk'), locoScale: 1.7 }, 1 / 60);
+        expect(actions.walk!.timeScale).toBeCloseTo(1.7);
+        driver.update(mixer, actions, { ...input('walk'), locoScale: -1.2 }, 1 / 60);
+        expect(actions.walk!.timeScale).toBeCloseTo(-1.2);
+        // a reversed loop keeps looping (time never runs off the end) and moves backward through the clip
+        const t0 = actions.walk!.time;
+        driver.update(mixer, actions, { ...input('walk'), locoScale: -1 }, 0.05);
+        expect(actions.walk!.time).not.toBeCloseTo(t0, 3);
+        driver.update(mixer, actions, input('jab', 0), 1 / 60);
+        expect(actions.jab!.timeScale).toBe(1);
     });
 });

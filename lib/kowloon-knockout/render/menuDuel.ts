@@ -13,7 +13,9 @@ export type DuelState = 'idle' | 'walking' | 'punching' | 'blocking' | 'hit' | '
 
 export interface DuelFrame {
     x: number;
-    /** Sim yaw: 0 faces +X (the right), PI faces -X. */
+    /** Depth: the fighters circle each other a little, toward and away from the camera. */
+    z: number;
+    /** Sim yaw: 0 faces +X (the right), PI faces -X; it turns to face the opponent as they circle. */
     yaw: number;
     state: DuelState;
     punch: PunchType | null;
@@ -56,7 +58,7 @@ function side(i: 0 | 1): { home: number; yaw: number; dir: 1 | -1 } {
 
 function beatFrames(beat: Beat, u: number): [DuelFrame, DuelFrame] {
     const frames = [0, 1].map((i): DuelFrame => ({
-        x: side(i as 0 | 1).home, yaw: side(i as 0 | 1).yaw, state: 'idle', punch: null,
+        x: side(i as 0 | 1).home, z: 0, yaw: side(i as 0 | 1).yaw, state: 'idle', punch: null,
         actionProgress: 0, hitFlash: 0, alive: true,
     })) as [DuelFrame, DuelFrame];
 
@@ -94,14 +96,64 @@ function beatFrames(beat: Beat, u: number): [DuelFrame, DuelFrame] {
     return frames;
 }
 
-/** The two fighters (seat 0 on the left, seat 1 on the right) at time `t`. */
-export function duelAt(t: number): [DuelFrame, DuelFrame] {
-    let u = ((t % DUEL_PERIOD) + DUEL_PERIOD) % DUEL_PERIOD;
+/**
+ * Continuous footwork under the scripted blows, so nobody ever stands planted: each fighter works in toward the
+ * other and back out on a slow tide and circles in depth, the two orbiting in opposite senses on incommensurate
+ * periods (so the pattern doesn't visibly repeat inside a loop, yet closes exactly at the loop's end). Returns the offset from where the beat has them.
+ */
+function footwork(t: number, who: 0 | 1): { dx: number; dz: number } {
+    const dir = who === 0 ? 1 : -1;
+    // whole numbers of cycles per loop (DUEL_PERIOD), so the footwork meets itself at the loop point with no pop
+    const w = TAU / DUEL_PERIOD;
+    const tide = 0.22 * Math.sin(w * 5 * t + (who === 0 ? 0 : 1.9)) + 0.07 * Math.sin(w * 11 * t + who);
+    const orbit = (who === 0 ? 1 : -1) * 0.30 * Math.sin(w * 3 * t + (who === 0 ? 0 : 0.8));
+    return { dx: dir * tide, dz: orbit };
+}
+const TAU = Math.PI * 2;
+/** Fighters faster than this (m/s) while the beat has them standing are shown walking (shuffling). */
+const WALKING_SPEED = 0.28;
+const VEL_EPS = 0.05;
+
+function loopTime(t: number): number { return ((t % DUEL_PERIOD) + DUEL_PERIOD) % DUEL_PERIOD; }
+
+/** Where each fighter is at `t`: the beat's position plus the footwork. */
+function positions(t: number): [{ x: number; z: number }, { x: number; z: number }] {
+    let u = loopTime(t);
+    let frames: [DuelFrame, DuelFrame] = beatFrames(BEATS[0], 0);
     for (const beat of BEATS) {
-        if (u < beat.length) return beatFrames(beat, u);
+        if (u < beat.length) { frames = beatFrames(beat, u); break; }
         u -= beat.length;
     }
-    return beatFrames(BEATS[0], 0);
+    const fw = [footwork(t, 0), footwork(t, 1)];
+    return [
+        { x: frames[0].x + fw[0].dx, z: fw[0].dz },
+        { x: frames[1].x + fw[1].dx, z: fw[1].dz },
+    ];
+}
+
+/** The two fighters (seat 0 on the left, seat 1 on the right) at time `t`. */
+export function duelAt(t: number): [DuelFrame, DuelFrame] {
+    let u = loopTime(t);
+    let frames: [DuelFrame, DuelFrame] = beatFrames(BEATS[0], 0);
+    for (const beat of BEATS) {
+        if (u < beat.length) { frames = beatFrames(beat, u); break; }
+        u -= beat.length;
+    }
+    const now = positions(t);
+    const before = positions(t - VEL_EPS);
+    const after = positions(t + VEL_EPS);
+    for (const i of [0, 1] as const) {
+        const f = frames[i];
+        f.x = now[i].x;
+        f.z = now[i].z;
+        const speed = Math.hypot(after[i].x - before[i].x, after[i].z - before[i].z) / (2 * VEL_EPS);
+        // standing in the beat but moving on the footwork: shuffling about
+        if (f.state === 'idle' && speed > WALKING_SPEED) f.state = 'walking';
+    }
+    // face each other as they circle: yaw 0 looks along +X, so a fighter faces atan2(dz, dx) to the other
+    frames[0].yaw = Math.atan2(now[1].z - now[0].z, now[1].x - now[0].x);
+    frames[1].yaw = Math.atan2(now[0].z - now[1].z, now[0].x - now[1].x);
+    return frames;
 }
 
 /** Times (seconds into the loop) at which a hit lands — for flash-rate accounting and tests. */
@@ -145,18 +197,20 @@ const BEAT_STARTS: { beat: Beat; start: number }[] = (() => {
     return BEATS.map((beat) => { const out = { beat, start }; start += beat.length; return out; });
 })();
 
-/** The impact of one beat, positioned from the fighters' poses at the instant of contact. */
-function impactOf(beat: Beat): DuelImpact {
-    const [l, r] = beatFrames(beat, HIT_AT);
+/** The impact of one beat, positioned from where the fighters actually are (footwork included) at contact. */
+function impactOf(beat: Beat, start: number): DuelImpact {
+    const [l, r] = duelAt(start + HIT_AT);
     const victim = (1 - beat.attacker) as 0 | 1;
     const vf = victim === 0 ? l : r;
     const af = beat.attacker === 0 ? l : r;
-    const dir = Math.sign(vf.x - af.x) || 1;
+    const dx = vf.x - af.x;
+    const dz = vf.z - af.z;
+    const len = Math.hypot(dx, dz) || 1;
     return {
         kind: beat.reaction === 'block' ? 'block' : beat.reaction === 'ko' ? 'ko' : 'hit',
         victim, attacker: beat.attacker,
         power: beat.reaction === 'ko' ? DUEL_KO_POWER : beat.reaction === 'block' ? BLOCK_POWER_SHOWN : DUEL_POWER[beat.punch],
-        x: vf.x, y: CONTACT_Y, z: 0, dirX: dir, dirZ: 0,
+        x: vf.x, y: CONTACT_Y, z: vf.z, dirX: dx / len, dirZ: dz / len,
     };
 }
 
@@ -173,7 +227,7 @@ export function duelImpacts(prevT: number, t: number): DuelImpact[] {
     for (let loop = firstLoop; loop <= lastLoop; loop++) {
         for (const { beat, start } of BEAT_STARTS) {
             const at = loop * DUEL_PERIOD + start + HIT_AT;
-            if (at > prevT && at <= t) out.push(impactOf(beat));
+            if (at > prevT && at <= t) out.push(impactOf(beat, start));
         }
     }
     return out;

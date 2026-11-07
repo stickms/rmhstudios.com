@@ -3,7 +3,7 @@
  *  `dance` is a render-only emote (not a sim state) — triggered locally by the
  *  player, never returned by resolveClip. */
 export type ClipKey =
-    | 'idle' | 'walk'
+    | 'idle' | 'walk' | 'strafe'
     | 'jab' | 'cross' | 'hook' | 'uppercut'
     | 'block' | 'hit' | 'stunned' | 'ko'
     | 'dance';
@@ -19,7 +19,7 @@ export interface ClipDef {
 }
 
 export const CLIP_KEYS: ClipKey[] = [
-    'idle', 'walk', 'jab', 'cross', 'hook', 'uppercut', 'block', 'hit', 'stunned', 'ko', 'dance',
+    'idle', 'walk', 'strafe', 'jab', 'cross', 'hook', 'uppercut', 'block', 'hit', 'stunned', 'ko', 'dance',
 ];
 
 /**
@@ -37,12 +37,15 @@ export const ESSENTIAL_CLIP_KEYS: ClipKey[] = ['idle', 'walk'];
 
 /** Everything else — fetched after the swap, in this order. */
 export const DEFERRED_CLIP_KEYS: ClipKey[] = CLIP_KEYS.filter(
-    (k) => !ESSENTIAL_CLIP_KEYS.includes(k),
+    // `strafe` is authored for the Source fighters only: the Y-Bot has no such Mixamo file and walks instead.
+    (k) => !ESSENTIAL_CLIP_KEYS.includes(k) && k !== 'strafe',
 );
 
 export const CLIPS: Record<ClipKey, ClipDef> = {
     idle:     { file: 'idle.glb',     loop: true,  fade: 0.2 },
     walk:     { file: 'walk.glb',     loop: true,  fade: 0.15 },
+    // Source fighters only (sourcePoses.ts); `file` is never loaded — the Y-Bot falls back to `walk`.
+    strafe:   { file: 'walk.glb',     loop: true,  fade: 0.15 },
     jab:      { file: 'jab.glb',      loop: false, fade: 0.08 },
     cross:    { file: 'cross.glb',    loop: false, fade: 0.08 },
     hook:     { file: 'hook.glb',     loop: false, fade: 0.08 },

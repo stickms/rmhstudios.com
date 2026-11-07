@@ -2,19 +2,57 @@ import { describe, expect, it } from 'vitest';
 import { BEATS, DUEL_KO_POWER, DUEL_PERIOD, DUEL_POWER, HOME_X, cameraDistance, duelAt, duelImpacts, hitTimes } from './menuDuel';
 
 describe('menu duel', () => {
-    it('is deterministic and loops', () => {
+    it('is deterministic and loops (the footwork closes exactly: nothing pops at the loop point)', () => {
         expect(duelAt(3.3)).toEqual(duelAt(3.3));
-        expect(duelAt(1.2)).toEqual(duelAt(1.2 + DUEL_PERIOD));
-        expect(duelAt(-0.5)).toEqual(duelAt(DUEL_PERIOD - 0.5));
+        for (const t of [0.3, 1.2, 4.7, 9.9]) {
+            for (const k of [1, 2, -1]) {
+                const a = duelAt(t);
+                const b = duelAt(t + k * DUEL_PERIOD);
+                for (const i of [0, 1]) {
+                    expect(b[i].x).toBeCloseTo(a[i].x, 6);
+                    expect(b[i].z).toBeCloseTo(a[i].z, 6);
+                    expect(b[i].state).toBe(a[i].state);
+                    expect(b[i].actionProgress).toBeCloseTo(a[i].actionProgress, 6);
+                }
+            }
+        }
+        expect(duelAt(-0.5)[0].x).toBeCloseTo(duelAt(DUEL_PERIOD - 0.5)[0].x, 6);
     });
-    it('keeps both fighters in a tight stage and facing each other', () => {
+    it('keeps both fighters on a tight stage, never crossing, and turned to face each other', () => {
         for (let t = 0; t < DUEL_PERIOD; t += 0.05) {
             const [l, r] = duelAt(t);
-            for (const f of [l, r]) expect(Math.abs(f.x)).toBeLessThan(HOME_X + 0.7);
-            expect(l.yaw).toBe(0);
-            expect(r.yaw).toBe(Math.PI);
+            for (const f of [l, r]) {
+                expect(Math.abs(f.x)).toBeLessThan(HOME_X + 0.7 + 0.35);
+                expect(Math.abs(f.z)).toBeLessThanOrEqual(0.37);
+            }
             expect(l.x).toBeLessThan(r.x); // never cross
+            // facing: the left fighter looks toward +X (yaw near 0), the right toward -X (near PI), within the circling
+            expect(Math.abs(l.yaw)).toBeLessThan(0.7);
+            expect(Math.abs(Math.abs(r.yaw) - Math.PI)).toBeLessThan(0.7);
         }
+    });
+    it('nobody stands planted: both fighters keep moving, circling in depth and working in and out', () => {
+        const xs: number[][] = [[], []];
+        const zs: number[][] = [[], []];
+        for (let t = 0; t < DUEL_PERIOD; t += 0.1) {
+            const fr = duelAt(t);
+            for (const i of [0, 1]) { xs[i].push(fr[i].x); zs[i].push(fr[i].z); }
+        }
+        for (const i of [0, 1]) {
+            expect(Math.max(...zs[i]) - Math.min(...zs[i])).toBeGreaterThan(0.4);   // orbit in depth
+            expect(Math.max(...xs[i]) - Math.min(...xs[i])).toBeGreaterThan(0.45);  // in and out
+        }
+        // and the two orbit in opposite senses
+        let opposed = 0;
+        for (let k = 0; k < zs[0].length; k++) if (Math.sign(zs[0][k]) !== Math.sign(zs[1][k])) opposed++;
+        expect(opposed / zs[0].length).toBeGreaterThan(0.6);
+    });
+    it('shows a shuffle when the beat has a fighter standing but the footwork has them moving', () => {
+        let walking = 0, idle = 0;
+        for (let t = 0; t < DUEL_PERIOD; t += 0.05) {
+            for (const f of duelAt(t)) { if (f.state === 'walking') walking++; if (f.state === 'idle') idle++; }
+        }
+        expect(walking).toBeGreaterThan(idle * 0.5); // mostly in motion, with only brief still moments
     });
     it('punches progress 0..1 and name a punch', () => {
         let seen = 0;
@@ -69,8 +107,10 @@ describe('duelImpacts', () => {
     it('names attacker and victim, and pushes away from the attacker', () => {
         for (const i of all) {
             expect(i.victim).not.toBe(i.attacker);
-            expect(i.dirX).toBe(i.attacker === 0 ? 1 : -1);
-            expect(i.dirZ).toBe(0);
+            // pushed away from the attacker: along +X for the left fighter's blows, -X for the right's (circling tilts it a little)
+            expect(Math.sign(i.dirX)).toBe(i.attacker === 0 ? 1 : -1);
+            expect(Math.hypot(i.dirX, i.dirZ)).toBeCloseTo(1, 6);
+            expect(Math.abs(i.dirZ)).toBeLessThan(0.6);
         }
     });
     it('places the contact on the victim, in front of the camera at chest height', () => {

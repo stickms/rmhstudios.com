@@ -62,7 +62,7 @@ describe('resolveRig', () => {
     it('matches names regardless of case and punctuation', () => {
         const root = makeSkeleton(vbNames, true);
         const rig = resolveRig(root, 'valvebiped');
-        expect(Object.keys(rig)).toHaveLength(15);
+        expect(Object.keys(rig)).toHaveLength(17); // + both collar bones
         expect(normalizeBoneName('ValveBiped.Bip01_L_UpperArm')).toBe(normalizeBoneName('valvebipedBip01_l_upperarm'));
     });
     it('copes with a skeleton missing bones', () => {
@@ -192,12 +192,13 @@ describe('idle bounce', () => {
         }
     });
 
-    it('bounces: the body rises and falls several centimetres every cycle', () => {
-        const hipsY = (t: number) => at(t).getObjectByName(`${VB}Pelvis`)!.getWorldPosition(new Vector3()).y;
-        const ys = [0, 0.25, 0.5, 0.75].map((f) => hipsY(f * duration));
-        expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(0.04);
-        expect(ys[2]).toBeGreaterThan(ys[0]); // up on the toes at mid-cycle
-        expect(ys[1]).toBeCloseTo(ys[3], 2);   // and symmetric on the way down
+    it('bounces twice per loop: the body rises and falls several centimetres each time', () => {
+        const hipsY = (f: number) => at(f * duration).getObjectByName(`${VB}Pelvis`)!.getWorldPosition(new Vector3()).y;
+        // two bounces per loop: bottoms at 0 and 0.5, tops at 0.25 and 0.75
+        const [b0, t1, b1, t2] = [0, 0.25, 0.5, 0.75].map(hipsY);
+        expect(Math.min(t1, t2) - Math.max(b0, b1)).toBeGreaterThan(0.03);
+        expect(t1).toBeCloseTo(t2, 1);
+        expect(b0).toBeCloseTo(b1, 1);
     });
 
     it('stays on the balls of the feet: heels lift at the top while the toes stay on the floor', () => {
@@ -206,18 +207,27 @@ describe('idle bounce', () => {
             return root.getObjectByName(`${VB}L_Toe0`)!.getWorldPosition(new Vector3()).sub(foot).normalize().y;
         };
         const bottom = at(0);
-        const top = at(duration * 0.5);
+        const top = at(duration * 0.25);
         expect(dirY(top)).toBeLessThan(dirY(bottom) - 0.25); // toes pitched well down at the top
-        // the lowest point of either foot never sinks through the floor (y = 0) nor floats high
-        for (const f of [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875]) {
-            const lo = lowestFootPoint(at(duration * f));
-            expect(lo).toBeGreaterThan(-0.03);
-            expect(lo).toBeLessThan(0.04);
+        // the lowest point of either foot never sinks through the floor (y = 0) nor floats high, anywhere in the loop
+        for (let i = 0; i < 16; i++) {
+            const lo = lowestFootPoint(at(duration * (i / 16)));
+            expect(lo).toBeGreaterThan(-0.04);
+            expect(lo).toBeLessThan(0.05);
         }
     });
 
+    it('shuffles and rocks: the feet and the weight move across the loop, not just up and down', () => {
+        const footZ = (f: number) => at(f * duration).getObjectByName(`${VB}L_Foot`)!.getWorldPosition(new Vector3()).z;
+        const hipsX = (f: number) => at(f * duration).getObjectByName(`${VB}Pelvis`)!.getWorldPosition(new Vector3()).x;
+        const zs = [0, 0.25, 0.5, 0.75].map(footZ);
+        const xs = [0, 0.25, 0.5, 0.75].map(hipsX);
+        expect(Math.max(...zs) - Math.min(...zs)).toBeGreaterThan(0.05);
+        expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(0.015);
+    });
+
     it('keeps the guard up while bouncing: both fists stay near face height and in front', () => {
-        for (const f of [0, 0.5]) {
+        for (const f of [0, 0.25]) {
             const root = at(duration * f);
             for (const side of ['L', 'R']) {
                 const hand = root.getObjectByName(`${VB}${side}_Hand`)!.getWorldPosition(new Vector3());
@@ -236,5 +246,77 @@ describe('idle bounce', () => {
         expect(clips.idle).toBeDefined();
         // (the unnamed foot bones still exist in this fixture, but nothing maps them, so nothing animates them)
         expect(clips.idle!.tracks.some((t) => /^foot[LR]\./.test(t.name))).toBe(false);
+    });
+});
+
+describe('whole-body movement', () => {
+    const build = () => {
+        const fresh = makeSkeleton(vbNames, false);
+        return { fresh, clips: buildSourceClips(resolveRig(fresh, 'valvebiped'), { height: 1.65, worldScale: 1 }) };
+    };
+    const at = (key: 'jab' | 'cross' | 'uppercut' | 'strafe' | 'walk' | 'hit' | 'block', t: number) => {
+        const { fresh, clips } = build();
+        pose(fresh, clips[key], t);
+        return fresh;
+    };
+    const wp = (root: Group, name: string) => root.getObjectByName(`${VB}${name}`)!.getWorldPosition(new Vector3());
+
+    it('has a sideways shuffle: the feet spread wide mid-step and close again', () => {
+        const spread = (t: number) => { const r = at('strafe', t); return wp(r, 'L_Foot').x - wp(r, 'R_Foot').x; };
+        expect(spread(0.7 * 0.5)).toBeGreaterThan(spread(0) + 0.05);
+        expect(spread(0.7 * 0.75)).toBeLessThan(spread(0.7 * 0.5) - 0.03);
+        expect(build().clips.strafe!.duration).toBeCloseTo(0.7);
+    });
+
+    it('throws the shoulder into a punch (it reaches forward, not just the arm)', () => {
+        const jab = (t: number) => wp(at('jab', t), 'L_UpperArm').z;
+        const cross = (t: number) => wp(at('cross', t), 'R_UpperArm').z;
+        expect(jab(0.4)).toBeGreaterThan(jab(0) + 0.05);
+        expect(cross(0.45)).toBeGreaterThan(cross(0) + 0.05);
+    });
+
+    it('a jab is a step: the body drives forward behind the fist and the lead foot lands further in', () => {
+        const hipsZ = (t: number) => wp(at('jab', t), 'Pelvis').z;
+        const footZ = (t: number) => wp(at('jab', t), 'L_Foot').z;
+        expect(hipsZ(0.4)).toBeGreaterThan(hipsZ(0.2) + 0.04);
+        expect(footZ(0.4)).toBeGreaterThan(footZ(0) + 0.05);
+    });
+
+    it('a cross pivots the rear foot up onto its toes and drops the weight', () => {
+        const root = at('cross', 0.45);
+        const dir = wp(root, 'R_Toe0').sub(wp(root, 'R_Foot')).normalize();
+        expect(dir.y).toBeLessThan(-0.45); // toes well below the ankle: heel off the floor
+        expect(wp(root, 'Pelvis').y).toBeLessThan(wp(at('cross', 0), 'Pelvis').y);
+    });
+
+    it('an uppercut dips under the target and then drives up through it', () => {
+        const y = (t: number) => wp(at('uppercut', t), 'Pelvis').y;
+        expect(y(0.3)).toBeLessThan(y(0) - 0.08);
+        expect(y(0.55)).toBeGreaterThan(y(0.3) + 0.1);
+    });
+
+    it('a block sits lower than the guard, shoulders up round the chin', () => {
+        const base = wp(at('walk', 0), 'Pelvis').y;
+        const blk = at('block', 0);
+        expect(wp(blk, 'Pelvis').y).toBeLessThan(base);
+        // the shoulder sits higher on the body than in the guard (a shrug), measured from the pelvis so the crouch doesn't hide it
+        const shoulderRise = (root: Group) => wp(root, 'L_UpperArm').y - wp(root, 'Pelvis').y;
+        expect(shoulderRise(blk)).toBeGreaterThan(shoulderRise(at('jab', 0)) + 0.01);
+    });
+
+    it('a hit snaps the body back and the rear leg steps to catch it', () => {
+        const root = at('hit', 0.25);
+        expect(wp(root, 'Pelvis').z).toBeLessThan(wp(at('hit', 0), 'Pelvis').z - 0.05);
+        expect(wp(root, 'R_Foot').z).toBeLessThan(wp(at('hit', 0), 'R_Foot').z - 0.04);
+    });
+
+    it('every clip builds with the shoulder (collar bone) tracks and no NaNs', () => {
+        const { clips } = build();
+        for (const key of CLIP_KEYS) {
+            const clip = clips[key]!;
+            expect(clip, key).toBeDefined();
+            for (const track of clip.tracks) for (const v of track.values) expect(Number.isFinite(v), `${key} ${track.name}`).toBe(true);
+        }
+        expect(clips.jab!.tracks.some((t) => /Clavicle/.test(t.name))).toBe(true);
     });
 });
